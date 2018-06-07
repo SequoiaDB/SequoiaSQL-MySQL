@@ -33,15 +33,8 @@ BOOLEAN is_field_indexable( const Field *field )
       case MYSQL_TYPE_INT24:
       case MYSQL_TYPE_FLOAT:
       case MYSQL_TYPE_DOUBLE:
-         return TRUE ;
       case MYSQL_TYPE_LONGLONG:
-         {
-            // unsigned long long is saved as DECIMAL. 
-            if ( !((Field_num *)(field))->unsigned_flag )
-               return TRUE ;
-            else 
-               return FALSE ;
-         }
+         return TRUE ;
       case MYSQL_TYPE_VARCHAR:
       case MYSQL_TYPE_STRING:
       case MYSQL_TYPE_VAR_STRING:
