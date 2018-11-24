@@ -2049,6 +2049,7 @@ static int sdb_close_connection(handlerton *hton, THD *thd) {
 }
 
 static int sdb_init_func(void *p) {
+  int rc = SDB_ERR_OK;
   Sdb_conn_addrs conn_addrs;
 #ifdef HAVE_PSI_INTERFACE
   init_sdb_psi_keys();
@@ -2070,6 +2071,16 @@ static int sdb_init_func(void *p) {
     return 1;
   }
 
+  String src_password(sdb_password, &my_charset_bin);
+  rc = sdb_encryption.encrypt(src_password, sdb_encoded_password);
+  if (SDB_ERR_OK != rc) {
+    SDB_LOG_ERROR("Failed to encrypt password, rc=%s", rc);
+    return 1;
+  }
+  for (int i = 0; i < src_password.length(); ++i) {
+    src_password[i] = '*';
+  }
+
   return 0;
 }
 
@@ -2084,18 +2095,15 @@ static int sdb_done_func(void *p) {
 static struct st_mysql_storage_engine sdb_storage_engine = {
     MYSQL_HANDLERTON_INTERFACE_VERSION};
 
-mysql_declare_plugin(sequoiadb){
-    MYSQL_STORAGE_ENGINE_PLUGIN,
-    &sdb_storage_engine,
-    "SequoiaDB",
-    "SequoiaDB Inc.",
-    sdb_plugin_info,
-    PLUGIN_LICENSE_GPL,
-    sdb_init_func, /* Plugin Init */
-    sdb_done_func, /* Plugin Deinit */
-    0x0300,        /* version */
-    NULL,          /* status variables */
-    sdb_sys_vars,  /* system variables */
-    NULL,          /* config options */
-    0,             /* flags */
-} mysql_declare_plugin_end;
+mysql_declare_plugin(sequoiadb) {
+  MYSQL_STORAGE_ENGINE_PLUGIN, &sdb_storage_engine, "SequoiaDB",
+      "SequoiaDB Inc.", sdb_plugin_info, PLUGIN_LICENSE_GPL,
+      sdb_init_func, /* Plugin Init */
+      sdb_done_func, /* Plugin Deinit */
+      0x0300,        /* version */
+      NULL,          /* status variables */
+      sdb_sys_vars,  /* system variables */
+      NULL,          /* config options */
+      0,             /* flags */
+}
+mysql_declare_plugin_end;

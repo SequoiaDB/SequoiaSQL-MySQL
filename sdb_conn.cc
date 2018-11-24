@@ -24,6 +24,8 @@
 #include "sdb_conf.h"
 #include "sdb_util.h"
 #include "sdb_errcode.h"
+#include "sdb_conf.h"
+#include "sdb_log.h"
 
 Sdb_conn::Sdb_conn(my_thread_id _tid)
     : m_transaction_on(false), m_thread_id(_tid) {}
@@ -45,9 +47,18 @@ int Sdb_conn::connect() {
     Sdb_conn_addrs conn_addrs;
     int tmp_rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
     DBUG_ASSERT(tmp_rc == 0);
+
+    String sdb_decoded_password;
+    rc = sdb_encryption.decrypt(sdb_encoded_password, sdb_decoded_password);
+    if (SDB_ERR_OK != rc) {
+      SDB_LOG_ERROR("Failed to decrypt password, rc=%d", rc);
+      goto error;
+    }
+
     rc = m_connection.connect(conn_addrs.get_conn_addrs(),
-                              conn_addrs.get_conn_num(), "", "");
-    if (rc != SDB_ERR_OK) {
+                              conn_addrs.get_conn_num(), sdb_user,
+                              sdb_decoded_password.ptr());
+    if (SDB_ERR_OK != rc) {
       goto error;
     }
   }

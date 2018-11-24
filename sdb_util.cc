@@ -15,10 +15,12 @@
 
 #include "sdb_util.h"
 #include <sql_table.h>
-#include <string.h>
 #include "sdb_log.h"
 #include "sdb_errcode.h"
 #include "sdb_def.h"
+#include <my_rnd.h>
+
+Sdb_encryption sdb_encryption;
 
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size) {
@@ -120,6 +122,65 @@ int sdb_convert_charset(const String &src_str, String &dst_str,
     rc = HA_ERR_UNKNOWN_CHARSET;
     goto error;
   }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+Sdb_encryption::Sdb_encryption() {
+  my_rand_buffer(m_key, KEY_LEN);
+}
+
+int Sdb_encryption::encrypt(const String &src, String &dst) {
+  int rc = SDB_ERR_OK;
+  int real_enc_len = 0;
+  int dst_len = my_aes_get_size(src.length(), AES_OPMODE);
+
+  if (dst.alloc(dst_len)) {
+    rc = SDB_ERR_OOM;
+    goto error;
+  }
+
+  dst.set_charset(&my_charset_bin);
+  real_enc_len = my_aes_encrypt((unsigned char *)src.ptr(), src.length() + 1,
+                                (unsigned char *)dst.c_ptr(), m_key, KEY_LEN,
+                                AES_OPMODE, NULL);
+  dst.length(real_enc_len);
+
+  if (real_enc_len != dst_len) {
+    // Bad parameters.
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_encryption::decrypt(const String &src, String &dst) {
+  int rc = SDB_ERR_OK;
+  int real_dec_len = 0;
+
+  if (dst.alloc(src.length())) {
+    rc = SDB_ERR_OOM;
+    goto error;
+  }
+
+  dst.set_charset(&my_charset_bin);
+  real_dec_len = my_aes_decrypt((unsigned char *)src.ptr(), src.length(),
+                                (unsigned char *)dst.c_ptr(), m_key, KEY_LEN,
+                                AES_OPMODE, NULL);
+  dst.length(real_dec_len);
+
+  if (real_dec_len < 0) {
+    // Bad parameters.
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+
 done:
   return rc;
 error:

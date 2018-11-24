@@ -18,6 +18,7 @@
 
 #include <sql_class.h>
 #include <thr_mutex.h>
+#include <my_aes.h>
 
 #define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -40,5 +41,19 @@ class Sdb_mutex_guard {
 
   ~Sdb_mutex_guard() { native_mutex_unlock(&m_mutex); }
 };
+
+class Sdb_encryption {
+  static const uint KEY_LEN = 32;
+  static const enum my_aes_opmode AES_OPMODE = my_aes_128_ecb;
+
+  unsigned char m_key[KEY_LEN];
+
+ public:
+  Sdb_encryption();
+  int encrypt(const String &src, String &dst);
+  int decrypt(const String &src, String &dst);
+};
+
+extern Sdb_encryption sdb_encryption;
 
 #endif
