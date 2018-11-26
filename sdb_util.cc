@@ -20,8 +20,6 @@
 #include "sdb_def.h"
 #include <my_rnd.h>
 
-Sdb_encryption sdb_encryption;
-
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size) {
   int rc = 0;

@@ -42,22 +42,22 @@ my_thread_id Sdb_conn::thread_id() {
 
 int Sdb_conn::connect() {
   int rc = SDB_ERR_OK;
+  String password;
+
   if (!m_connection.isValid()) {
     m_transaction_on = false;
     Sdb_conn_addrs conn_addrs;
     int tmp_rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
     DBUG_ASSERT(tmp_rc == 0);
 
-    String sdb_decoded_password;
-    rc = sdb_encryption.decrypt(sdb_encoded_password, sdb_decoded_password);
+    rc = sdb_get_password(password);
     if (SDB_ERR_OK != rc) {
       SDB_LOG_ERROR("Failed to decrypt password, rc=%d", rc);
       goto error;
     }
-
     rc = m_connection.connect(conn_addrs.get_conn_addrs(),
                               conn_addrs.get_conn_num(), sdb_user,
-                              sdb_decoded_password.ptr());
+                              password.ptr());
     if (SDB_ERR_OK != rc) {
       goto error;
     }

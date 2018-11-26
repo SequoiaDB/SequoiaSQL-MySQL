@@ -16,6 +16,7 @@
 #ifndef SDB_CONF__H
 #define SDB_CONF__H
 
+#include "sdb_util.h"
 #include <mysql/plugin.h>
 #include <my_global.h>
 #include <sql_string.h>
@@ -45,6 +46,9 @@ class Sdb_conn_addrs {
   int conn_num;
 };
 
+int sdb_encrypt_password();
+int sdb_get_password(String &res);
+
 extern char *sdb_conn_str;
 extern my_bool sdb_use_partition;
 extern my_bool sdb_use_bulk_insert;
@@ -52,8 +56,6 @@ extern int sdb_bulk_insert_size;
 extern my_bool sdb_use_autocommit;
 extern my_bool sdb_debug_log;
 extern char *sdb_user;
-extern char *sdb_password;
-extern String sdb_encoded_password;
 extern st_mysql_sys_var *sdb_sys_vars[];
 
 #endif

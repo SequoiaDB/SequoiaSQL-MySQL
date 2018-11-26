@@ -33,6 +33,7 @@ my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
 char *sdb_user = NULL;
 char *sdb_password = NULL;
 String sdb_encoded_password;
+Sdb_encryption sdb_passwd_encryption;
 
 static void sdb_use_partition_update(THD *thd, struct st_mysql_sys_var *var,
                                      void *var_ptr, const void *save) {
@@ -179,4 +180,26 @@ const char **Sdb_conn_addrs::get_conn_addrs() const {
 
 int Sdb_conn_addrs::get_conn_num() const {
   return conn_num;
+}
+
+int sdb_encrypt_password() {
+  int rc = 0;
+  String src_password(sdb_password, &my_charset_bin);
+
+  rc = sdb_passwd_encryption.encrypt(src_password, sdb_encoded_password);
+  if (rc) {
+    goto error;
+  }
+
+  for (int i = 0; i < src_password.length(); ++i) {
+    src_password[i] = '*';
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int sdb_get_password(String &res) {
+  return sdb_passwd_encryption.decrypt(sdb_encoded_password, res);
 }
