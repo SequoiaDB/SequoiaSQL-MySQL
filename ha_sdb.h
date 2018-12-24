@@ -295,8 +295,15 @@ class ha_sdb : public handler {
 
   int index_read_one(bson::BSONObj condition, int order_direction, uchar *buf);
 
+  my_bool get_uniq_key_cond(const uchar *rec_row, bson::BSONObj &cond);
+
+  my_bool get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond);
+
+  int get_query_flag(const uint sql_command, enum thr_lock_type lock_type);
+
  private:
   THR_LOCK_DATA lock_data;
+  enum thr_lock_type m_lock_type;
   Sdb_cl *collection;
   bool first_read;
   bson::BSONObj cur_rec;

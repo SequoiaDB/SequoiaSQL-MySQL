@@ -148,6 +148,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
   active_index = MAX_KEY;
   share = NULL;
+  m_lock_type = TL_IGNORE;
   collection = NULL;
   first_read = true;
   count_times = 0;
@@ -487,6 +488,87 @@ error:
   goto done;
 }
 
+/*
+  If table has unique keys, we can match a specific record by the value of
+  unique key instead of the whole record.
+*/
+my_bool ha_sdb::get_uniq_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
+  my_bool has_error = false;
+  // force cast to adapt sql layer unreasonable interface.
+  uchar *row = const_cast<uchar *>(rec_row);
+  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
+  if (row != table->record[0]) {
+    repoint_field_to_record(table, table->record[0], row);
+  }
+
+  // 1. match by primary key
+  uint index_no = table->s->primary_key;
+  if (index_no < MAX_KEY) {
+    const KEY *primary_key = table->s->key_info + index_no;
+    has_error = get_cond_from_key(primary_key, cond);
+    if (!has_error) {
+      goto done;
+    }
+  }
+
+  // 2. match by other unique index fields.
+  for (uint i = 0; i < table->s->keys; ++i) {
+    const KEY *key_info = table->s->key_info + i;
+    if (key_info->flags & HA_NOSAME) {
+      has_error = get_cond_from_key(key_info, cond);
+      if (!has_error) {
+        goto done;
+      }
+    }
+  }
+
+  // when we get here, there is no unique key to generate conditions.
+  has_error = true;
+
+done:
+  if (row != table->record[0]) {
+    repoint_field_to_record(table, row, table->record[0]);
+  }
+  dbug_tmp_restore_column_map(table->read_set, org_bitmap);
+  return has_error;
+}
+
+my_bool ha_sdb::get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond) {
+  my_bool has_error = false;
+  const KEY_PART_INFO *key_part = unique_key->key_part;
+  const KEY_PART_INFO *key_end = key_part + unique_key->user_defined_key_parts;
+  Field *field = NULL;
+  my_bool all_field_null = true;
+  bson::BSONObjBuilder builder;
+
+  for (; key_part != key_end; ++key_part) {
+    field = table->field[key_part->fieldnr - 1];
+
+    if (!field->is_null()) {
+      if (field_to_obj(field, builder)) {
+        has_error = true;
+        goto error;
+      }
+      all_field_null = false;
+    } else {
+      bson::BSONObjBuilder sub_builder(builder.subobjStart(field->field_name));
+      sub_builder.append("$isnull", 1);
+      sub_builder.doneFast();
+    }
+  }
+  // If all fields are NULL, more than one record may be matched!
+  if (all_field_null) {
+    has_error = true;
+    goto error;
+  }
+  cond = builder.obj();
+
+done:
+  return has_error;
+error:
+  goto done;
+}
+
 int ha_sdb::get_update_obj(const uchar *old_data, uchar *new_data,
                            bson::BSONObj &obj, bson::BSONObj &null_obj) {
   int rc = 0;
@@ -612,7 +694,7 @@ int ha_sdb::write_row(uchar *buf) {
       }
     }
   } else {
-    // TODO: SeqoiaDB C++ driver currently has no insert() method with a flag,
+    // TODO: SequoiaDB C++ driver currently has no insert() method with a flag,
     // we need send FLG_INSERT_CONTONDUP flag to server to ignore duplicate key
     // error, so that SequoiaDB will not rollback transaction, here we
     // temporarily use bulk_insert() instead, this should be revised when driver
@@ -639,6 +721,7 @@ error:
 
 int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
   int rc = 0;
+  bson::BSONObj cond;
   bson::BSONObj new_obj;
   bson::BSONObj null_obj;
   bson::BSONObj rule_obj;
@@ -663,7 +746,10 @@ int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
     rule_obj = BSON("$set" << new_obj << "$unset" << null_obj);
   }
 
-  rc = collection->update(rule_obj, cur_rec, SDB_EMPTY_BSON,
+  if (get_uniq_key_cond(old_data, cond)) {
+    cond = cur_rec;
+  }
+  rc = collection->update(rule_obj, cond, SDB_EMPTY_BSON,
                           UPDATE_KEEP_SHARDINGKEY);
   if (rc != 0) {
     if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
@@ -681,14 +767,17 @@ error:
 
 int ha_sdb::delete_row(const uchar *buf) {
   int rc = 0;
-  bson::BSONObj obj;
+  bson::BSONObj cond;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   ha_statistic_increment(&SSV::ha_delete_count);
 
-  rc = collection->del(cur_rec);
+  if (get_uniq_key_cond(buf, cond)) {
+    cond = cur_rec;
+  }
+  rc = collection->del(cond);
   if (rc != 0) {
     goto error;
   }
@@ -816,6 +905,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   int rc = 0;
   bson::BSONObj hint;
   bson::BSONObj order_by;
+  int flag = 0;
   KEY *key_info = table->key_info + active_index;
 
   DBUG_ASSERT(NULL != collection);
@@ -832,7 +922,9 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
-  rc = collection->query(condition, SDB_EMPTY_BSON, order_by, hint);
+  flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+  rc =
+      collection->query(condition, SDB_EMPTY_BSON, order_by, hint, 0, -1, flag);
   if (rc) {
     SDB_LOG_ERROR(
         "Collection[%s.%s] failed to query with "
@@ -913,14 +1005,13 @@ int ha_sdb::rnd_end() {
 
 int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   int rc = 0;
-  bool read_all;
-  THD *thd;
-  my_bitmap_map *org_bitmap;
+  THD *thd = NULL;
+  my_bool is_select = false;
+  my_bitmap_map *org_bitmap = NULL;
 
   memset(buf, 0, table->s->null_bytes);
-
-  read_all = !bitmap_is_clear_all(table->write_set);
   thd = table->in_use;
+  is_select = (SQLCOM_SELECT == thd_sql_command(thd));
 
   // allow zero date
   sql_mode_t old_sql_mode = thd->variables.sql_mode;
@@ -936,7 +1027,8 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   for (Field **fields = table->field; *fields; fields++) {
     Field *field = *fields;
 
-    if (!bitmap_is_set(table->read_set, field->field_index) && !read_all) {
+    // we only skip non included fields when SELECT.
+    if (is_select && !bitmap_is_set(table->read_set, field->field_index)) {
       continue;
     }
 
@@ -1105,12 +1197,15 @@ error:
 
 int ha_sdb::rnd_next(uchar *buf) {
   int rc = 0;
+  int flag = 0;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   if (first_read) {
-    rc = collection->query(pushed_condition);
+    flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+    rc = collection->query(pushed_condition, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
+                           SDB_EMPTY_BSON, 0, -1, flag);
     if (rc != 0) {
       goto error;
     }
@@ -1139,7 +1234,7 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   memcpy((void *)oid.getData(), pos, SDB_OID_LEN);
-  objBuilder.appendOID("_id", &oid);
+  objBuilder.appendOID(SDB_OID_FIELD, &oid);
   bson::BSONObj oidObj = objBuilder.obj();
 
   rc = collection->query_one(cur_rec, oidObj);
@@ -1362,6 +1457,7 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
+  m_lock_type = lock_type;
   rc = start_statement(thd, thd_sdb->start_stmt_count++);
   if (0 != rc) {
     thd_sdb->start_stmt_count--;
@@ -1850,46 +1946,38 @@ error:
 
 THR_LOCK_DATA **ha_sdb::store_lock(THD *thd, THR_LOCK_DATA **to,
                                    enum thr_lock_type lock_type) {
-  // TODO: to support commited-read, lock the record by s-lock while
-  //       normal read(not update, difference by lock_type). If the
-  //       record is not matched, unlock_row() will be called.
-  //       if lock_type == TL_READ then lock the record by s-lock
-  //       if lock_type == TL_WIRTE then lock the record by x-lock
-  /*  if (lock_type != TL_IGNORE && lock_data.type == TL_UNLOCK)
-    {*/
-  /*
-    Here is where we get into the guts of a row level lock.
-    If TL_UNLOCK is set
-    If we are not doing a LOCK TABLE or DISCARD/IMPORT
-    TABLESPACE, then allow multiple writers
+  /**
+    In this function, we can get the MySQL lock by parameter lock_type,
+    and tell MySQL which lock we can support by return a new THR_LOCK_DATA.
+    Then, we can change MySQL behavior of mutexes.
   */
-
-  /*    if ((lock_type >= TL_WRITE_CONCURRENT_INSERT &&
-           lock_type <= TL_WRITE) && !thd_in_lock_tables(thd)
-          && !thd_tablespace_op(thd))
-        lock_type = TL_WRITE_ALLOW_WRITE;*/
-
-  /*
-    In queries of type INSERT INTO t1 SELECT ... FROM t2 ...
-    MySQL would use the lock TL_READ_NO_INSERT on t2, and that
-    would conflict with TL_WRITE_ALLOW_WRITE, blocking all inserts
-    to t2. Convert the lock to a normal read lock to allow
-    concurrent inserts to t2.
-  */
-
-  /*    if (lock_type == TL_READ_NO_INSERT && !thd_in_lock_tables(thd))
-        lock_type = TL_READ;
-
-      lock_data.type=lock_type;
-    }
-
-    *to++= &lock_data;*/
+  m_lock_type = lock_type;
   return to;
 }
 
 void ha_sdb::unlock_row() {
   // TODO: this operation is not supported in sdb.
   //       unlock by _id or completed-record?
+}
+
+int ha_sdb::get_query_flag(const uint sql_command,
+                           enum thr_lock_type lock_type) {
+  /*
+    We always add flag QUERY_WITH_RETURNDATA to improve performance,
+    and we need to add the lock related flag QUERY_FOR_UPDATE in the following
+    cases:
+    1. SELECT ... FOR UPDATE
+    2. doing query in UPDATE ... or DELETE ...
+    3. SELECT ... LOCK IN SHARE MODE
+  */
+  int query_flag = QUERY_WITH_RETURNDATA;
+  if (lock_type >= TL_WRITE_CONCURRENT_INSERT &&
+          (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
+           SQLCOM_SELECT == sql_command) ||
+      TL_READ_WITH_SHARED_LOCKS == lock_type) {
+    query_flag |= QUERY_FOR_UPDATE;
+  }
+  return query_flag;
 }
 
 const Item *ha_sdb::cond_push(const Item *cond) {
@@ -1916,12 +2004,13 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     remain_cond = NULL;
   } else {
     if (NULL != ha_thd()) {
-      SDB_LOG_DEBUG("Condition can't be pushed down. db=[%s], sql=[%s]",
-                    ha_thd()->db().str, ha_thd()->query().str);
+      SDB_LOG_DEBUG(
+          "Condition can't be pushed down. db=[%s], table[%s], sql=[%s]",
+          db_name, table_name, ha_thd()->query().str);
     } else {
       SDB_LOG_DEBUG(
           "Condition can't be pushed down. "
-          "db=[unknown], sql=[unknown]");
+          "db=[unknown], table[unknown], sql=[unknown]");
     }
     pushed_condition = SDB_EMPTY_BSON;
   }
