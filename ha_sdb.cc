@@ -496,7 +496,7 @@ error:
   @return false if success
 */
 my_bool ha_sdb::get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
-  my_bool rc = false;
+  my_bool rc = true;
   // force cast to adapt sql layer unreasonable interface.
   uchar *row = const_cast<uchar *>(rec_row);
   my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
@@ -525,9 +525,6 @@ my_bool ha_sdb::get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
     }
   }
 
-  // when we get here, there is no unique key to generate conditions.
-  rc = true;
-
 done:
   if (row != table->record[0]) {
     repoint_field_to_record(table, row, table->record[0]);
@@ -540,7 +537,7 @@ done:
   @return false if success
 */
 my_bool ha_sdb::get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond) {
-  my_bool rc = false;
+  my_bool rc = true;
   const KEY_PART_INFO *key_part = unique_key->key_part;
   const KEY_PART_INFO *key_end = key_part + unique_key->user_defined_key_parts;
   my_bool all_field_null = true;
@@ -550,8 +547,8 @@ my_bool ha_sdb::get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond) {
     Field *field = table->field[key_part->fieldnr - 1];
 
     if (!field->is_null()) {
-      rc = field_to_obj(field, builder);
-      if (rc) {
+      if (SDB_ERR_OK != field_to_obj(field, builder)) {
+        rc = true;
         goto error;
       }
       all_field_null = false;
