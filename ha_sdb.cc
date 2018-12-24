@@ -277,6 +277,7 @@ int ha_sdb::reset() {
     delete collection;
     collection = NULL;
   }
+  m_lock_type = TL_IGNORE;
   pushed_condition = SDB_EMPTY_BSON;
   free_root(&blobroot, MYF(0));
   return 0;
@@ -491,9 +492,11 @@ error:
 /*
   If table has unique keys, we can match a specific record by the value of
   unique key instead of the whole record.
+
+  @return false if success
 */
-my_bool ha_sdb::get_uniq_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
-  my_bool has_error = false;
+my_bool ha_sdb::get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
+  my_bool rc = false;
   // force cast to adapt sql layer unreasonable interface.
   uchar *row = const_cast<uchar *>(rec_row);
   my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
@@ -505,8 +508,8 @@ my_bool ha_sdb::get_uniq_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
   uint index_no = table->s->primary_key;
   if (index_no < MAX_KEY) {
     const KEY *primary_key = table->s->key_info + index_no;
-    has_error = get_cond_from_key(primary_key, cond);
-    if (!has_error) {
+    rc = get_cond_from_key(primary_key, cond);
+    if (!rc) {
       goto done;
     }
   }
@@ -515,38 +518,40 @@ my_bool ha_sdb::get_uniq_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
   for (uint i = 0; i < table->s->keys; ++i) {
     const KEY *key_info = table->s->key_info + i;
     if (key_info->flags & HA_NOSAME) {
-      has_error = get_cond_from_key(key_info, cond);
-      if (!has_error) {
+      rc = get_cond_from_key(key_info, cond);
+      if (!rc) {
         goto done;
       }
     }
   }
 
   // when we get here, there is no unique key to generate conditions.
-  has_error = true;
+  rc = true;
 
 done:
   if (row != table->record[0]) {
     repoint_field_to_record(table, row, table->record[0]);
   }
   dbug_tmp_restore_column_map(table->read_set, org_bitmap);
-  return has_error;
+  return rc;
 }
 
+/*
+  @return false if success
+*/
 my_bool ha_sdb::get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond) {
-  my_bool has_error = false;
+  my_bool rc = false;
   const KEY_PART_INFO *key_part = unique_key->key_part;
   const KEY_PART_INFO *key_end = key_part + unique_key->user_defined_key_parts;
-  Field *field = NULL;
   my_bool all_field_null = true;
   bson::BSONObjBuilder builder;
 
   for (; key_part != key_end; ++key_part) {
-    field = table->field[key_part->fieldnr - 1];
+    Field *field = table->field[key_part->fieldnr - 1];
 
     if (!field->is_null()) {
-      if (field_to_obj(field, builder)) {
-        has_error = true;
+      rc = field_to_obj(field, builder);
+      if (rc) {
         goto error;
       }
       all_field_null = false;
@@ -558,13 +563,13 @@ my_bool ha_sdb::get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond) {
   }
   // If all fields are NULL, more than one record may be matched!
   if (all_field_null) {
-    has_error = true;
+    rc = true;
     goto error;
   }
   cond = builder.obj();
 
 done:
-  return has_error;
+  return rc;
 error:
   goto done;
 }
@@ -746,7 +751,7 @@ int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
     rule_obj = BSON("$set" << new_obj << "$unset" << null_obj);
   }
 
-  if (get_uniq_key_cond(old_data, cond)) {
+  if (get_unique_key_cond(old_data, cond)) {
     cond = cur_rec;
   }
   rc = collection->update(rule_obj, cond, SDB_EMPTY_BSON,
@@ -774,7 +779,7 @@ int ha_sdb::delete_row(const uchar *buf) {
 
   ha_statistic_increment(&SSV::ha_delete_count);
 
-  if (get_uniq_key_cond(buf, cond)) {
+  if (get_unique_key_cond(buf, cond)) {
     cond = cur_rec;
   }
   rc = collection->del(cond);
@@ -1005,13 +1010,9 @@ int ha_sdb::rnd_end() {
 
 int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   int rc = 0;
-  THD *thd = NULL;
-  my_bool is_select = false;
-  my_bitmap_map *org_bitmap = NULL;
-
+  THD *thd = table->in_use;
+  my_bool is_select = (SQLCOM_SELECT == thd_sql_command(thd));
   memset(buf, 0, table->s->null_bytes);
-  thd = table->in_use;
-  is_select = (SQLCOM_SELECT == thd_sql_command(thd));
 
   // allow zero date
   sql_mode_t old_sql_mode = thd->variables.sql_mode;
@@ -1022,7 +1023,7 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   thd->count_cuted_fields = CHECK_FIELD_IGNORE;
 
   /* Avoid asserts in ::store() for columns that are not going to be updated */
-  org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
+  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
 
   for (Field **fields = table->field; *fields; fields++) {
     Field *field = *fields;
@@ -1197,13 +1198,12 @@ error:
 
 int ha_sdb::rnd_next(uchar *buf) {
   int rc = 0;
-  int flag = 0;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   if (first_read) {
-    flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+    int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
     rc = collection->query(pushed_condition, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
                            SDB_EMPTY_BSON, 0, -1, flag);
     if (rc != 0) {

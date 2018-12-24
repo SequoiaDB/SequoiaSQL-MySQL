@@ -295,7 +295,7 @@ class ha_sdb : public handler {
 
   int index_read_one(bson::BSONObj condition, int order_direction, uchar *buf);
 
-  my_bool get_uniq_key_cond(const uchar *rec_row, bson::BSONObj &cond);
+  my_bool get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond);
 
   my_bool get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond);
 
