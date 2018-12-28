@@ -15,10 +15,10 @@
 
 #include "sdb_util.h"
 #include <sql_table.h>
-#include <string.h>
 #include "sdb_log.h"
 #include "sdb_errcode.h"
 #include "sdb_def.h"
+#include <my_rnd.h>
 
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size) {
@@ -110,7 +110,7 @@ int sdb_convert_charset(const String &src_str, String &dst_str,
   uint conv_errors = 0;
   if (dst_str.copy(src_str.ptr(), src_str.length(), src_str.charset(),
                    dst_charset, &conv_errors)) {
-    rc = SDB_ERR_OOM;
+    rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
   if (conv_errors) {
@@ -120,6 +120,94 @@ int sdb_convert_charset(const String &src_str, String &dst_str,
     rc = HA_ERR_UNKNOWN_CHARSET;
     goto error;
   }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+bool sdb_field_is_floating(enum_field_types type) {
+  switch (type) {
+    case MYSQL_TYPE_DOUBLE:
+    case MYSQL_TYPE_NEWDECIMAL:
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_FLOAT:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool sdb_field_is_date_time(enum_field_types type) {
+  switch (type) {
+    case MYSQL_TYPE_NEWDATE:
+    case MYSQL_TYPE_DATE:
+    case MYSQL_TYPE_TIMESTAMP2:
+    case MYSQL_TYPE_TIMESTAMP:
+    case MYSQL_TYPE_DATETIME2:
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_TIME2:
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_YEAR:
+      return true;
+    default:
+      return false;
+  }
+}
+
+Sdb_encryption::Sdb_encryption() {
+  my_rand_buffer(m_key, KEY_LEN);
+}
+
+int Sdb_encryption::encrypt(const String &src, String &dst) {
+  int rc = SDB_ERR_OK;
+  int real_enc_len = 0;
+  int dst_len = my_aes_get_size(src.length(), AES_OPMODE);
+
+  if (dst.alloc(dst_len)) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  dst.set_charset(&my_charset_bin);
+  real_enc_len = my_aes_encrypt((unsigned char *)src.ptr(), src.length() + 1,
+                                (unsigned char *)dst.c_ptr(), m_key, KEY_LEN,
+                                AES_OPMODE, NULL);
+  dst.length(real_enc_len);
+
+  if (real_enc_len != dst_len) {
+    // Bad parameters.
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_encryption::decrypt(const String &src, String &dst) {
+  int rc = SDB_ERR_OK;
+  int real_dec_len = 0;
+
+  if (dst.alloc(src.length())) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  dst.set_charset(&my_charset_bin);
+  real_dec_len = my_aes_decrypt((unsigned char *)src.ptr(), src.length(),
+                                (unsigned char *)dst.c_ptr(), m_key, KEY_LEN,
+                                AES_OPMODE, NULL);
+  dst.length(real_dec_len);
+
+  if (real_dec_len < 0) {
+    // Bad parameters.
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+
 done:
   return rc;
 error:

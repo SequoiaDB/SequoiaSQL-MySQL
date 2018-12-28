@@ -39,6 +39,7 @@ class Thd_sdb {
 
   uint lock_count;
   uint start_stmt_count;
+  uint save_point_count;
 
  private:
   THD* m_thd;

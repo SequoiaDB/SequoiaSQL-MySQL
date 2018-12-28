@@ -18,7 +18,8 @@
 
 #include <my_global.h>
 #include <my_thread_local.h>
-#include "client.hpp"
+#include <client.hpp>
+#include "sdb_def.h"
 
 class Sdb_cl;
 
@@ -45,7 +46,7 @@ class Sdb_conn {
   int get_cl(char *cs_name, char *cl_name, Sdb_cl &cl);
 
   int create_cl(char *cs_name, char *cl_name,
-                const bson::BSONObj &options = sdbclient::_sdbStaticObject);
+                const bson::BSONObj &options = SDB_EMPTY_BSON);
 
   int rename_cl(char *cs_name, char *old_cl_name, char *new_cl_name);
 

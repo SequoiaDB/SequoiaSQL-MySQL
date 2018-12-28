@@ -17,13 +17,14 @@
 #define MYSQL_SERVER
 #endif
 
-#include "sql_class.h"
-#include "sql_table.h"
 #include "ha_sdb.h"
+#include <sql_class.h>
+#include <sql_table.h>
 #include <mysql/plugin.h>
-#include <client.hpp>
 #include <mysql/psi/mysql_file.h>
+#include <json_dom.h>
 #include <time.h>
+#include <client.hpp>
 #include "sdb_log.h"
 #include "sdb_conf.h"
 #include "sdb_cl.h"
@@ -59,10 +60,12 @@ using namespace sdbclient;
 #endif /* DEBUG */
 
 #define SDB_ENGINE_INFO "SequoiaDB storage engine(" SDB_ENGINE_EDITION ")"
-#define SDB_VERSION_INFO \
-  "Plugin: " SDB_PLUGIN_VERSION ", Driver: " SDB_DRIVER_VERSION
+#define SDB_VERSION_INFO                                        \
+  "Plugin: " SDB_PLUGIN_VERSION ", Driver: " SDB_DRIVER_VERSION \
+  ", BuildTime: " __DATE__ " " __TIME__
 
 #define SDB_OID_LEN 12
+#define SDB_OID_FIELD "_id"
 #define SDB_FIELD_MAX_LEN (16 * 1024 * 1024)
 
 const static char *sdb_plugin_info = SDB_ENGINE_INFO ". " SDB_VERSION_INFO ".";
@@ -71,7 +74,6 @@ handlerton *sdb_hton = NULL;
 
 mysql_mutex_t sdb_mutex;
 static PSI_mutex_key key_mutex_sdb, key_mutex_SDB_SHARE_mutex;
-bson::BSONObj empty_obj;
 static HASH sdb_open_tables;
 static PSI_memory_key key_memory_sdb_share;
 static PSI_memory_key sdb_key_memory_blobroot;
@@ -146,21 +148,24 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
   active_index = MAX_KEY;
   share = NULL;
+  m_lock_type = TL_IGNORE;
   collection = NULL;
   first_read = true;
-  used_times = 0;
-  last_flush_time = time(NULL);
+  count_times = 0;
+  last_count_time = time(NULL);
   m_use_bulk_insert = false;
-  stats.records = 2;
+  stats.records = 0;
   memset(db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
   memset(table_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
   init_alloc_root(sdb_key_memory_blobroot, &blobroot, 8 * 1024, 0);
 }
 
 ha_sdb::~ha_sdb() {
-  m_bulk_insert_rows.clear();
   free_root(&blobroot, MYF(0));
-  DBUG_ASSERT(NULL == collection);
+  if (NULL != collection) {
+    delete collection;
+    collection = NULL;
+  }
 }
 
 const char **ha_sdb::bas_ext() const {
@@ -197,13 +202,20 @@ uint ha_sdb::max_supported_keys() const {
   return MAX_KEY;
 }
 
-uint ha_sdb::max_supported_key_part_length() const {
-  return 1000;
-}
-
 uint ha_sdb::max_supported_key_length() const {
   return 1000;
 }
+
+#if MYSQL_VERSION_ID >= 50723
+uint ha_sdb::max_supported_key_part_length(
+    HA_CREATE_INFO *create_info MY_ATTRIBUTE((unused))) const {
+  return 1000;
+}
+#else
+uint ha_sdb::max_supported_key_part_length() const {
+  return 1000;
+}
+#endif
 
 int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   int rc = 0;
@@ -212,7 +224,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   Sdb_cl cl;
 
   if (!(share = get_sdb_share(name, table))) {
-    rc = SDB_ERR_OOM;
+    rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
 
@@ -259,6 +271,8 @@ int ha_sdb::close(void) {
     free_sdb_share(share);
     share = NULL;
   }
+  m_bulk_insert_rows.clear();
+  m_bson_element_cache.release();
   return 0;
 }
 
@@ -267,11 +281,16 @@ int ha_sdb::reset() {
     delete collection;
     collection = NULL;
   }
+  // don't release bson element cache, so that we can reuse it
+  m_bulk_insert_rows.clear();
+  free_root(&blobroot, MYF(0));
+  m_lock_type = TL_IGNORE;
+  pushed_condition = SDB_EMPTY_BSON;
   return 0;
 }
 
-int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool output_null,
-                       bson::BSONObj &null_obj) {
+int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
+                       bool output_null, bson::BSONObj &null_obj) {
   int rc = 0;
   bson::BSONObjBuilder obj_builder;
   bson::BSONObjBuilder null_obj_builder;
@@ -279,6 +298,12 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool output_null,
   my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
+  }
+
+  if (gen_oid) {
+    // Generate and assign an OID for the _id field.
+    // _id should be the first element for good performance.
+    obj_builder.genOID();
   }
 
   for (Field **field = table->field; *field; field++) {
@@ -311,22 +336,32 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
 
   DBUG_ASSERT(NULL != field);
 
-  // TODO: process the quotes
   switch (field->type()) {
-    case MYSQL_TYPE_SHORT:
-    case MYSQL_TYPE_LONG:
     case MYSQL_TYPE_TINY:
-    case MYSQL_TYPE_YEAR:
-    case MYSQL_TYPE_INT24: {
-      if (((Field_num *)field)->unsigned_flag) {
-        obj_builder.append(field->field_name, (long long)(field->val_int()));
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_YEAR: {
+      // overflow is impossible, store as INT32
+      DBUG_ASSERT(field->val_int() <= INT_MAX32 &&
+                  field->val_int() >= INT_MIN32);
+      obj_builder.append(field->field_name, (int)field->val_int());
+      break;
+    }
+    case MYSQL_TYPE_BIT:
+    case MYSQL_TYPE_LONG: {
+      longlong value = field->val_int();
+      if (value > INT_MAX32 || value < INT_MIN32) {
+        // overflow, so store as INT64
+        obj_builder.append(field->field_name, (long long)value);
       } else {
-        obj_builder.append(field->field_name, (int)field->val_int());
+        obj_builder.append(field->field_name, (int)value);
       }
       break;
     }
     case MYSQL_TYPE_LONGLONG: {
-      if (((Field_num *)field)->unsigned_flag) {
+      longlong value = field->val_int();
+      if (value < 0 && ((Field_num *)field)->unsigned_flag) {
+        // overflow, so store as DECIMAL
         my_decimal tmp_val;
         char buff[MAX_FIELD_WIDTH];
         String str(buff, sizeof(buff), field->charset());
@@ -334,7 +369,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
         my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
         obj_builder.appendDecimal(field->field_name, str.c_ptr());
       } else {
-        obj_builder.append(field->field_name, field->val_int());
+        obj_builder.append(field->field_name, (long long)value);
       }
       break;
     }
@@ -351,15 +386,14 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
     case MYSQL_TYPE_MEDIUM_BLOB:
     case MYSQL_TYPE_LONG_BLOB:
     case MYSQL_TYPE_BLOB: {
-      Field_str *f = (Field_str *)field;
-      String *str;
       String val_tmp;
-      field->val_str(&val_tmp, &val_tmp);
-      if (f->binary()) {
+      field->val_str(&val_tmp);
+      if (((Field_str *)field)->binary()) {
         obj_builder.appendBinData(field->field_name, val_tmp.length(),
                                   bson::BinDataGeneral, val_tmp.ptr());
       } else {
-        str = &val_tmp;
+        String conv_str;
+        String *str = &val_tmp;
         if (!my_charset_same(str->charset(), &SDB_CHARSET)) {
           rc = sdb_convert_charset(*str, conv_str, &SDB_CHARSET);
           if (rc) {
@@ -418,27 +452,33 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
                                   tm.tv_usec);
       break;
     }
-
-      /*case MYSQL_TYPE_TIMESTAMP2:
-      {
-        Field_timestampf *f = (Field_timestampf *)(*field) ;
-        struct timeval tm ;
-        f->get_timestamp( &tm, NULL ) ;
-        obj_builder.appendTimestamp( (*field)->field_name,
-                                      tm.tv_sec*1000,
-                                      tm.tv_usec ) ;
-        break ;
-      }*/
-
     case MYSQL_TYPE_NULL:
       // skip the null value
       break;
     case MYSQL_TYPE_DATETIME: {
       char buff[MAX_FIELD_WIDTH];
       String str(buff, sizeof(buff), field->charset());
-      String unused;
-      field->val_str(&str, &unused);
+      field->val_str(&str);
       obj_builder.append(field->field_name, str.c_ptr());
+      break;
+    }
+    case MYSQL_TYPE_JSON: {
+      Json_wrapper wr;
+      String buf;
+      Field_json *field_json = dynamic_cast<Field_json *>(field);
+
+#if MYSQL_VERSION_ID >= 50722
+      if (field_json->val_json(&wr) || wr.to_binary(&buf)) {
+#else
+      if (field_json->val_json(&wr) || wr.to_value().raw_binary(&buf)) {
+#endif
+        my_error(ER_INVALID_JSON_BINARY_DATA, MYF(0));
+        rc = ER_INVALID_JSON_BINARY_DATA;
+        goto error;
+      }
+
+      obj_builder.appendBinData(field->field_name, buf.length(),
+                                bson::BinDataGeneral, buf.ptr());
       break;
     }
     default: {
@@ -448,6 +488,89 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
       goto error;
     }
   }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+/*
+  If table has unique keys, we can match a specific record by the value of
+  unique key instead of the whole record.
+
+  @return false if success
+*/
+my_bool ha_sdb::get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond) {
+  my_bool rc = true;
+  // force cast to adapt sql layer unreasonable interface.
+  uchar *row = const_cast<uchar *>(rec_row);
+  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
+  if (row != table->record[0]) {
+    repoint_field_to_record(table, table->record[0], row);
+  }
+
+  // 1. match by primary key
+  uint index_no = table->s->primary_key;
+  if (index_no < MAX_KEY) {
+    const KEY *primary_key = table->s->key_info + index_no;
+    rc = get_cond_from_key(primary_key, cond);
+    if (!rc) {
+      goto done;
+    }
+  }
+
+  // 2. match by other unique index fields.
+  for (uint i = 0; i < table->s->keys; ++i) {
+    const KEY *key_info = table->s->key_info + i;
+    if (key_info->flags & HA_NOSAME) {
+      rc = get_cond_from_key(key_info, cond);
+      if (!rc) {
+        goto done;
+      }
+    }
+  }
+
+done:
+  if (row != table->record[0]) {
+    repoint_field_to_record(table, row, table->record[0]);
+  }
+  dbug_tmp_restore_column_map(table->read_set, org_bitmap);
+  return rc;
+}
+
+/*
+  @return false if success
+*/
+my_bool ha_sdb::get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond) {
+  my_bool rc = true;
+  const KEY_PART_INFO *key_part = unique_key->key_part;
+  const KEY_PART_INFO *key_end = key_part + unique_key->user_defined_key_parts;
+  my_bool all_field_null = true;
+  bson::BSONObjBuilder builder;
+
+  for (; key_part != key_end; ++key_part) {
+    Field *field = table->field[key_part->fieldnr - 1];
+
+    if (!field->is_null()) {
+      if (SDB_ERR_OK != field_to_obj(field, builder)) {
+        rc = true;
+        goto error;
+      }
+      all_field_null = false;
+    } else {
+      bson::BSONObjBuilder sub_builder(builder.subobjStart(field->field_name));
+      sub_builder.append("$isnull", 1);
+      sub_builder.doneFast();
+    }
+  }
+  // If all fields are NULL, more than one record may be matched!
+  if (all_field_null) {
+    rc = true;
+    goto error;
+  }
+  cond = builder.obj();
+  rc = false;
 
 done:
   return rc;
@@ -536,6 +659,7 @@ int ha_sdb::flush_bulk_insert(bool ignore_dup_key) {
       rc = HA_ERR_FOUND_DUPP_KEY;
     }
   }
+  stats.records += m_bulk_insert_rows.size();
   m_bulk_insert_rows.clear();
   return rc;
 }
@@ -565,21 +689,28 @@ int ha_sdb::write_row(uchar *buf) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
-  rc = row_to_obj(buf, obj, FALSE, tmp_obj);
+  rc = row_to_obj(buf, obj, TRUE, FALSE, tmp_obj);
   if (rc != 0) {
     goto error;
   }
 
   if (m_use_bulk_insert) {
     m_bulk_insert_rows.push_back(obj);
-    if ((int)m_bulk_insert_rows.size() > sdb_bulk_insert_size) {
+    if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size) {
       rc = flush_bulk_insert(ignore_dup_key);
       if (rc != 0) {
         goto error;
       }
     }
   } else {
-    rc = collection->insert(obj);
+    // TODO: SequoiaDB C++ driver currently has no insert() method with a flag,
+    // we need send FLG_INSERT_CONTONDUP flag to server to ignore duplicate key
+    // error, so that SequoiaDB will not rollback transaction, here we
+    // temporarily use bulk_insert() instead, this should be revised when driver
+    // add new method in new version.
+    std::vector<bson::BSONObj> row(1, obj);
+    int flag = ignore_dup_key ? FLG_INSERT_CONTONDUP : 0;
+    rc = collection->bulk_insert(flag, row);
     if (rc != 0) {
       if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
         // convert to MySQL errcode
@@ -587,6 +718,8 @@ int ha_sdb::write_row(uchar *buf) {
       }
       goto error;
     }
+
+    stats.records++;
   }
 
 done:
@@ -597,6 +730,7 @@ error:
 
 int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
   int rc = 0;
+  bson::BSONObj cond;
   bson::BSONObj new_obj;
   bson::BSONObj null_obj;
   bson::BSONObj rule_obj;
@@ -621,7 +755,10 @@ int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
     rule_obj = BSON("$set" << new_obj << "$unset" << null_obj);
   }
 
-  rc = collection->update(rule_obj, cur_rec, sdbclient::_sdbStaticObject,
+  if (get_unique_key_cond(old_data, cond)) {
+    cond = cur_rec;
+  }
+  rc = collection->update(rule_obj, cond, SDB_EMPTY_BSON,
                           UPDATE_KEEP_SHARDINGKEY);
   if (rc != 0) {
     if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
@@ -639,17 +776,23 @@ error:
 
 int ha_sdb::delete_row(const uchar *buf) {
   int rc = 0;
-  bson::BSONObj obj;
+  bson::BSONObj cond;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   ha_statistic_increment(&SSV::ha_delete_count);
 
-  rc = collection->del(cur_rec);
+  if (get_unique_key_cond(buf, cond)) {
+    cond = cur_rec;
+  }
+  rc = collection->del(cond);
   if (rc != 0) {
     goto error;
   }
+
+  stats.records--;
+
 done:
   return rc;
 error:
@@ -694,12 +837,11 @@ error:
 
 int ha_sdb::index_last(uchar *buf) {
   int rc = 0;
-  rc = index_read_one(condition, -1, buf);
+  rc = index_read_one(pushed_condition, -1, buf);
   if (rc) {
     goto error;
   }
 done:
-  condition = empty_obj;
   return rc;
 error:
   goto done;
@@ -707,12 +849,11 @@ error:
 
 int ha_sdb::index_first(uchar *buf) {
   int rc = 0;
-  rc = index_read_one(condition, 1, buf);
+  rc = index_read_one(pushed_condition, 1, buf);
   if (rc) {
     goto error;
   }
 done:
-  condition = empty_obj;
   return rc;
 error:
   goto done;
@@ -722,24 +863,37 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
                            key_part_map keypart_map,
                            enum ha_rkey_function find_flag) {
   int rc = 0;
-  bson::BSONObj order, hint, condition_idx;
   bson::BSONObjBuilder cond_builder;
+  bson::BSONObj condition = pushed_condition;
+  bson::BSONObj condition_idx;
   int order_direction = 1;
 
   if (NULL != key_ptr && active_index < MAX_KEY) {
-    rc = build_match_obj_by_start_stop_key(active_index, key_ptr, keypart_map,
-                                           find_flag, end_range, table,
-                                           condition_idx, &order_direction);
-    if (rc) {
+    KEY *key_info = table->key_info + active_index;
+    key_range start_key;
+    start_key.key = key_ptr;
+    start_key.length = calculate_key_len(table, active_index, keypart_map);
+    start_key.keypart_map = keypart_map;
+    start_key.flag = find_flag;
+
+    rc = sdb_create_condition_from_key(table, key_info, &start_key, end_range,
+                                       0, (NULL != end_range) ? eq_range : 0,
+                                       condition_idx);
+    if (0 != rc) {
       SDB_LOG_ERROR("Fail to build index match object. rc: %d", rc);
       goto error;
     }
+
+    order_direction = sdb_get_key_direction(find_flag);
   }
 
   if (!condition.isEmpty()) {
-    cond_builder.appendElements(condition);
-    cond_builder.appendElements(condition_idx);
-    condition = cond_builder.obj();
+    if (!condition_idx.isEmpty()) {
+      bson::BSONArrayBuilder arr_builder;
+      arr_builder.append(condition);
+      arr_builder.append(condition_idx);
+      condition = BSON("$and" << arr_builder.arr());
+    }
   } else {
     condition = condition_idx;
   }
@@ -748,8 +902,8 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   if (rc) {
     goto error;
   }
+
 done:
-  condition = empty_obj;
   return rc;
 error:
   goto done;
@@ -760,31 +914,26 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   int rc = 0;
   bson::BSONObj hint;
   bson::BSONObj order_by;
-  KEY *idx_key = NULL;
-  const char *idx_name = NULL;
+  int flag = 0;
+  KEY *key_info = table->key_info + active_index;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(NULL != key_info);
+  DBUG_ASSERT(NULL != key_info->name);
 
-  idx_key = table->key_info + active_index;
-  idx_name = sdb_get_idx_name(idx_key);
-  if (idx_name) {
-    hint = BSON("" << idx_name);
-  } else {
-    SDB_LOG_ERROR("Index name not found.");
-    rc = SDB_ERR_INVALID_ARG;
-    goto error;
-  }
+  hint = BSON("" << key_info->name);
 
   idx_order_direction = order_direction;
-  rc = sdb_get_idx_order(idx_key, order_by, order_direction);
+  rc = sdb_get_idx_order(key_info, order_by, order_direction);
   if (rc) {
     SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
     goto error;
   }
 
+  flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
   rc =
-      collection->query(condition, sdbclient::_sdbStaticObject, order_by, hint);
+      collection->query(condition, SDB_EMPTY_BSON, order_by, hint, 0, -1, flag);
   if (rc) {
     SDB_LOG_ERROR(
         "Collection[%s.%s] failed to query with "
@@ -823,7 +972,7 @@ error:
 int ha_sdb::index_init(uint idx, bool sorted) {
   active_index = idx;
   if (!pushed_cond) {
-    condition = empty_obj;
+    pushed_condition = SDB_EMPTY_BSON;
   }
   free_root(&blobroot, MYF(0));
   return 0;
@@ -850,7 +999,7 @@ double ha_sdb::read_time(uint index, uint ranges, ha_rows rows) {
 int ha_sdb::rnd_init(bool scan) {
   first_read = true;
   if (!pushed_cond) {
-    condition = empty_obj;
+    pushed_condition = SDB_EMPTY_BSON;
   }
   free_root(&blobroot, MYF(0));
   return 0;
@@ -864,147 +1013,187 @@ int ha_sdb::rnd_end() {
 }
 
 int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
-  // TODO: parse other types
-  // get filed by field-name, order by filed_index
-  int rc = 0;
-  bool read_all;
-  my_bitmap_map *org_bitmap;
-
+  int rc = SDB_ERR_OK;
+  THD *thd = table->in_use;
+  my_bool is_select = (SQLCOM_SELECT == thd_sql_command(thd));
   memset(buf, 0, table->s->null_bytes);
 
-  read_all = !bitmap_is_clear_all(table->write_set);
+  // allow zero date
+  sql_mode_t old_sql_mode = thd->variables.sql_mode;
+  thd->variables.sql_mode &= ~(MODE_NO_ZERO_DATE | MODE_NO_ZERO_IN_DATE);
+
+  // ignore field warning
+  enum_check_fields old_check_fields = thd->count_cuted_fields;
+  thd->count_cuted_fields = CHECK_FIELD_IGNORE;
 
   /* Avoid asserts in ::store() for columns that are not going to be updated */
-  org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
+  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
 
-  for (Field **field = table->field; *field; field++) {
-    if (!bitmap_is_set(table->read_set, (*field)->field_index) && !read_all) {
+  bson::BSONObjIterator iter(obj);
+
+  rc = m_bson_element_cache.ensure(table->s->fields);
+  if (SDB_ERR_OK != rc) {
+    goto error;
+  }
+
+  for (Field **fields = table->field; *fields; fields++) {
+    Field *field = *fields;
+    bson::BSONElement elem;
+
+    // we only skip non included fields when SELECT.
+    if (is_select && !bitmap_is_set(table->read_set, field->field_index)) {
       continue;
     }
 
-    (*field)->reset();
-    bson::BSONElement befield;
-    befield = obj.getField((*field)->field_name);
-    if (befield.eoo() || befield.isNull()) {
-      (*field)->set_null();
+    if (!m_bson_element_cache[field->field_index].eoo()) {
+      elem = m_bson_element_cache[field->field_index];
+    } else {
+      while (iter.more()) {
+        bson::BSONElement elem_tmp = iter.next();
+        if (strcmp(elem_tmp.fieldName(), field->field_name) == 0) {
+          // current element match the field
+          elem = elem_tmp;
+          break;
+        }
+
+        if (strcmp(elem_tmp.fieldName(), SDB_OID_FIELD) == 0) {
+          // ignore _id
+          continue;
+        }
+
+        // find matched field to store the element
+        for (Field **next_fields = fields + 1; *next_fields; next_fields++) {
+          Field *next_field = *next_fields;
+          if (strcmp(elem_tmp.fieldName(), next_field->field_name) == 0) {
+            m_bson_element_cache[next_field->field_index] = elem_tmp;
+            break;
+          }
+        }
+      }
+    }
+
+    field->reset();
+
+    if (elem.eoo() || elem.isNull() || bson::Undefined == elem.type()) {
+      field->set_null();
       continue;
     }
 
-    switch (befield.type()) {
-      case bson::NumberInt:
-      case bson::NumberLong: {
-        longlong nr = befield.numberLong();
-        (*field)->store(nr, false);
-        break;
-      }
-      case bson::NumberDouble: {
-        double nr = befield.numberDouble();
-        (*field)->store(nr);
-        break;
-      }
-      case bson::BinData: {
-        int lenTmp = 0;
-        const char *dataTmp = befield.binData(lenTmp);
-        if (lenTmp < 0) {
-          lenTmp = 0;
-        }
-        (*field)->store(dataTmp, lenTmp, &my_charset_bin);
-        break;
-      }
-      // datetime is stored as string
-      case bson::String: {
-        String org_str(befield.valuestr(), befield.valuestrsize() - 1,
-                       &SDB_CHARSET);
-        String *str = &org_str;
-        if (!my_charset_same((*field)->charset(), &SDB_CHARSET)) {
-          rc = sdb_convert_charset(org_str, conv_str, (*field)->charset());
-          if (rc) {
-            goto error;
-          }
-          str = &conv_str;
-        }
-        (*field)->store(str->ptr(), str->length(), &my_charset_bin);
-        break;
-      }
-      case bson::NumberDecimal: {
-        bson::bsonDecimal valTmp = befield.numberDecimal();
-        string strValTmp = valTmp.toString();
-        (*field)->store(strValTmp.c_str(), strValTmp.length(), &my_charset_bin);
-        break;
-      }
-      case bson::Date:
-      case bson::Timestamp: {
-        longlong milTmp = 0;
-        longlong microTmp = 0;
-        struct timeval tv;
-        if (bson::Timestamp == befield.type()) {
-          milTmp = (longlong)(befield.timestampTime());
-          microTmp = befield.timestampInc();
-        } else {
-          milTmp = (longlong)(befield.date());
-        }
-        tv.tv_sec = milTmp / 1000;
-        tv.tv_usec = milTmp % 1000 * 1000 + microTmp;
-        if (is_temporal_type_with_date_and_time((*field)->type())) {
-          Field_temporal_with_date_and_time *f =
-              (Field_temporal_with_date_and_time *)(*field);
-          f->store_timestamp(&tv);
-        } else if ((*field)->type() == MYSQL_TYPE_TIMESTAMP2) {
-          Field_temporal_with_date_and_timef *f =
-              (Field_temporal_with_date_and_timef *)(*field);
-          f->store_timestamp(&tv);
-        } else if (is_temporal_type_with_date((*field)->type())) {
-          MYSQL_TIME myTime;
-          struct tm tmTmp;
-          localtime_r((const time_t *)(&tv.tv_sec), &tmTmp);
-          myTime.year = tmTmp.tm_year + 1900;
-          myTime.month = tmTmp.tm_mon + 1;
-          myTime.day = tmTmp.tm_mday;
-          myTime.hour = tmTmp.tm_hour;
-          myTime.minute = tmTmp.tm_min;
-          myTime.second = tmTmp.tm_sec;
-          myTime.second_part = 0;
-          myTime.neg = 0;
-          myTime.time_type = MYSQL_TIMESTAMP_DATETIME;
-          Field_temporal_with_date *f = (Field_temporal_with_date *)(*field);
-          if ((myTime.month < 1 || myTime.day < 1) ||
-              (myTime.year > 9999 || myTime.month > 12 || myTime.day > 31)) {
-            myTime.year = 0;
-            myTime.month = 0;
-            myTime.day = 0;
-          }
-          f->store_time(&myTime, MYSQL_TIMESTAMP_TIME);
-        } else {
-          longlong nr = (longlong)(befield.timestampTime()) * 1000 +
-                        befield.timestampInc();
-          (*field)->store(nr, false);
-        }
-        break;
-      }
-      case bson::Object:
-      case bson::Bool:
-      default:
-        (*field)->store("", 0, &my_charset_bin);
-        rc = SDB_ERR_TYPE_UNSUPPORTED;
-        goto error;
-    }
-    if ((*field)->flags & BLOB_FLAG) {
-      Field_blob *blob = *(Field_blob **)field;
-      uchar *src, *dst;
-      uint length, packlength;
-
-      packlength = blob->pack_length_no_ptr();
-      length = blob->get_length(blob->ptr);
-      memcpy(&src, blob->ptr + packlength, sizeof(char *));
-      if (src) {
-        dst = (uchar *)alloc_root(&blobroot, length);
-        memmove(dst, src, length);
-        memcpy(blob->ptr + packlength, &dst, sizeof(char *));
-      }
+    rc = bson_element_to_field(elem, field);
+    if (0 != rc) {
+      goto error;
     }
   }
+
 done:
   dbug_tmp_restore_column_map(table->write_set, org_bitmap);
+  thd->count_cuted_fields = old_check_fields;
+  thd->variables.sql_mode = old_sql_mode;
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
+  int rc = SDB_ERR_OK;
+
+  DBUG_ASSERT(0 == strcmp(elem.fieldName(), field->field_name));
+
+  switch (elem.type()) {
+    case bson::NumberInt:
+    case bson::NumberLong: {
+      longlong nr = elem.numberLong();
+      field->store(nr, false);
+      break;
+    }
+    case bson::NumberDouble: {
+      double nr = elem.numberDouble();
+      field->store(nr);
+      break;
+    }
+    case bson::BinData: {
+      int lenTmp = 0;
+      const char *dataTmp = elem.binData(lenTmp);
+      if (MYSQL_TYPE_JSON != field->type()) {
+        field->store(dataTmp, lenTmp, &my_charset_bin);
+      } else {
+        Field_json *field_json = dynamic_cast<Field_json *>(field);
+        json_binary::Value v = json_binary::parse_binary(dataTmp, lenTmp);
+        Json_wrapper wr(v);
+        field_json->store_json(&wr);
+      }
+      break;
+    }
+    case bson::String: {
+      // datetime is stored as string
+      field->store(elem.valuestr(), elem.valuestrsize() - 1, &SDB_CHARSET);
+      break;
+    }
+    case bson::NumberDecimal: {
+      bson::bsonDecimal valTmp = elem.numberDecimal();
+      string strValTmp = valTmp.toString();
+      field->store(strValTmp.c_str(), strValTmp.length(), &my_charset_bin);
+      break;
+    }
+    case bson::Date: {
+      MYSQL_TIME time_val;
+      struct timeval tv;
+      struct tm tm_val;
+
+      longlong millisec = (longlong)(elem.date());
+      tv.tv_sec = millisec / 1000;
+      tv.tv_usec = millisec % 1000 * 1000;
+      localtime_r((const time_t *)(&tv.tv_sec), &tm_val);
+
+      time_val.year = tm_val.tm_year + 1900;
+      time_val.month = tm_val.tm_mon + 1;
+      time_val.day = tm_val.tm_mday;
+      time_val.hour = 0;
+      time_val.minute = 0;
+      time_val.second = 0;
+      time_val.second_part = 0;
+      time_val.neg = 0;
+      time_val.time_type = MYSQL_TIMESTAMP_DATE;
+      if ((time_val.month < 1 || time_val.day < 1) ||
+          (time_val.year > 9999 || time_val.month > 12 || time_val.day > 31)) {
+        // Invalid date, the field has been reset to zero,
+        // so no need to store.
+      } else {
+        field->store_time(&time_val, 0);
+      }
+      break;
+    }
+    case bson::Timestamp: {
+      struct timeval tv;
+      longlong millisec = (longlong)(elem.timestampTime());
+      longlong microsec = elem.timestampInc();
+      tv.tv_sec = millisec / 1000;
+      tv.tv_usec = millisec % 1000 * 1000 + microsec;
+      field->store_timestamp(&tv);
+      break;
+    }
+    case bson::Object:
+    case bson::Bool:
+    default:
+      rc = SDB_ERR_TYPE_UNSUPPORTED;
+      goto error;
+  }
+  if (field->flags & BLOB_FLAG) {
+    Field_blob *blob = (Field_blob *)field;
+    uchar *src, *dst;
+    uint length, packlength;
+
+    packlength = blob->pack_length_no_ptr();
+    length = blob->get_length(blob->ptr);
+    memcpy(&src, blob->ptr + packlength, sizeof(char *));
+    if (src) {
+      dst = (uchar *)alloc_root(&blobroot, length);
+      memmove(dst, src, length);
+      memcpy(blob->ptr + packlength, &dst, sizeof(char *));
+    }
+  }
+
+done:
   return rc;
 error:
   goto done;
@@ -1066,8 +1255,9 @@ int ha_sdb::rnd_next(uchar *buf) {
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   if (first_read) {
-    rc = collection->query(condition);
-    condition = empty_obj;
+    int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+    rc = collection->query(pushed_condition, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
+                           SDB_EMPTY_BSON, 0, -1, flag);
     if (rc != 0) {
       goto error;
     }
@@ -1096,7 +1286,7 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   memcpy((void *)oid.getData(), pos, SDB_OID_LEN);
-  objBuilder.appendOID("_id", &oid);
+  objBuilder.appendOID(SDB_OID_FIELD, &oid);
   bson::BSONObj oidObj = objBuilder.obj();
 
   rc = collection->query_one(cur_rec, oidObj);
@@ -1130,33 +1320,33 @@ void ha_sdb::position(const uchar *record) {
 
 int ha_sdb::info(uint flag) {
   int rc = 0;
-  long long rec_num = 2;
+  long long rec_num = 0;
 
   rc = ensure_collection(ha_thd());
   if (0 != rc) {
     goto error;
   }
 
-  if (used_times++ % 100 == 0) {
+  if (count_times++ % 100 == 0) {
     rc = collection->get_count(rec_num);
     if (rc != 0) {
       goto error;
     }
-    last_flush_time = time(NULL);
-    used_times = 1;
-  } else if (used_times % 10 == 0) {
+    last_count_time = time(NULL);
+    count_times = 1;
+  } else if (count_times % 10 == 0) {
     time_t cur_time = time(NULL);
-    // flush rec_num every 5 minutes
-    if (difftime(cur_time, last_flush_time) > 5 * 60) {
+    // get record count every 5 minutes
+    if (difftime(cur_time, last_count_time) > 5 * 60) {
       rc = collection->get_count(rec_num);
       if (rc != 0) {
         goto error;
       }
-      last_flush_time = cur_time;
-      used_times = 1;
+      last_count_time = cur_time;
+      count_times = 1;
     }
   }
-  if (used_times != 1) {
+  if (count_times != 1) {
     goto done;
   }
 
@@ -1176,12 +1366,6 @@ int ha_sdb::info(uint flag) {
   stats.block_size = 0;
   stats.mrr_length_per_rec = 0;
   stats.table_in_mem_estimate = -1;
-
-  // optimizer interprets the values 0 and 1 as EXACT
-  // < 2 should not be returned.
-  if (stats.records < 2) {
-    stats.records = 2;
-  }
 
 done:
   return rc;
@@ -1213,7 +1397,7 @@ int ha_sdb::ensure_collection(THD *thd) {
 
     collection = new (std::nothrow) Sdb_cl();
     if (NULL == collection) {
-      rc = SDB_ERR_OOM;
+      rc = HA_ERR_OUT_OF_MEM;
       goto error;
     }
 
@@ -1242,23 +1426,31 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
   }
 
   if (0 == table_count) {
-    if (thd_test_options(thd, OPTION_BEGIN)) {
-      Sdb_conn *conn = check_sdb_in_thd(thd, true);
-      if (NULL == conn) {
-        rc = HA_ERR_NO_CONNECTION;
-        goto error;
-      }
-      DBUG_ASSERT(conn->thread_id() == thd->thread_id());
-
-      rc = conn->begin_transaction();
-      if (rc != 0) {
-        goto error;
-      }
-      trans_register_ha(thd, TRUE, ht, NULL);
+    Sdb_conn *conn = check_sdb_in_thd(thd, true);
+    if (NULL == conn) {
+      rc = HA_ERR_NO_CONNECTION;
+      goto error;
     }
+    DBUG_ASSERT(conn->thread_id() == thd->thread_id());
 
-    // TODO: AUTOCOMMIT
-
+    if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
+      if (!conn->is_transaction_on()) {
+        rc = conn->begin_transaction();
+        if (rc != 0) {
+          goto error;
+        }
+        trans_register_ha(thd, TRUE, ht, NULL);
+      }
+    } else {
+      // autocommit
+      if (sdb_use_autocommit && !conn->is_transaction_on()) {
+        rc = conn->begin_transaction();
+        if (rc != 0) {
+          goto error;
+        }
+        trans_register_ha(thd, FALSE, ht, NULL);
+      }
+    }
   } else {
     // there is more than one handler involved
   }
@@ -1288,14 +1480,18 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
     }
   } else {
     if (!--thd_sdb->lock_count) {
-      if (!(thd_test_options(thd, OPTION_BEGIN)) &&
+      if (!(thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) &&
           thd_sdb->get_conn()->is_transaction_on()) {
         /*
           Unlock is done without a transaction commit / rollback.
           This happens if the thread didn't update any rows
           We must in this case close the transaction to release resources
         */
-        rc = thd_sdb->get_conn()->commit_transaction();
+        if (thd->is_error()) {
+          rc = thd_sdb->get_conn()->rollback_transaction();
+        } else {
+          rc = thd_sdb->get_conn()->commit_transaction();
+        }
         if (0 != rc) {
           goto error;
         }
@@ -1313,6 +1509,7 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
+  m_lock_type = lock_type;
   rc = start_statement(thd, thd_sdb->start_stmt_count++);
   if (0 != rc) {
     thd_sdb->start_stmt_count--;
@@ -1506,20 +1703,30 @@ error:
 }
 
 int ha_sdb::delete_all_rows() {
+  int rc = 0;
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   if (collection->is_transaction_on()) {
-    return collection->del();
+    rc = collection->del();
+    if (0 == rc) {
+      stats.records = 0;
+    }
+    return rc;
   }
   return truncate();
 }
 
 int ha_sdb::truncate() {
+  int rc = 0;
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
-  return collection->truncate();
+  rc = collection->truncate();
+  if (0 == rc) {
+    stats.records = 0;
+  }
+  return rc;
 }
 
 ha_rows ha_sdb::records_in_range(uint inx, key_range *min_key,
@@ -1579,7 +1786,6 @@ int ha_sdb::rename_table(const char *from, const char *to) {
 
   if (strcmp(old_db_name, new_db_name) != 0) {
     rc = HA_ERR_NOT_ALLOWED_COMMAND;
-    SDB_PRINT_ERROR(rc, "Can't change database name when rename table.");
     goto error;
   }
 
@@ -1705,7 +1911,10 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   }
 
   if (!sharding_key.isEmpty()) {
-    options = BSON("ShardingKey" << sharding_key << "AutoSplit" << true);
+    options = BSON("ShardingKey" << sharding_key << "AutoSplit" << true
+                                 << "EnsureShardingIndex" << false
+                                 << "Compressed" << true << "CompressionType"
+                                 << "lzw");
   }
 
 done:
@@ -1716,33 +1925,27 @@ error:
 
 int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   int rc = 0;
-  sdbCollectionSpace cs;
-  uint str_field_len = 0;
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
   bson::BSONObj options;
-  bson::BSONObj comments;
-  my_bool use_partition = sdb_use_partition;
 
-  for (Field **field = form->field; *field; field++) {
-    if ((*field)->key_length() > str_field_len &&
-        ((*field)->type() == MYSQL_TYPE_VARCHAR ||
-         (*field)->type() == MYSQL_TYPE_STRING ||
-         (*field)->type() == MYSQL_TYPE_VAR_STRING ||
-         (*field)->type() == MYSQL_TYPE_BLOB ||
-         (*field)->type() == MYSQL_TYPE_TINY_BLOB ||
-         (*field)->type() == MYSQL_TYPE_MEDIUM_BLOB ||
-         (*field)->type() == MYSQL_TYPE_LONG_BLOB)) {
-      str_field_len = (*field)->key_length();
-      if (str_field_len >= SDB_FIELD_MAX_LEN) {
-        SDB_PRINT_ERROR(ER_TOO_BIG_FIELDLENGTH, ER(ER_TOO_BIG_FIELDLENGTH),
-                        (*field)->field_name,
-                        static_cast<ulong>(SDB_FIELD_MAX_LEN - 1));
-        rc = -1;
-        goto error;
-      }
+  for (Field **fields = form->field; *fields; fields++) {
+    Field *field = *fields;
+
+    if (field->key_length() >= SDB_FIELD_MAX_LEN) {
+      my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), field->field_name,
+               static_cast<ulong>(SDB_FIELD_MAX_LEN));
+      rc = ER_TOO_BIG_FIELDLENGTH;
+      goto error;
     }
-    if (Field::NEXT_NUMBER == (*field)->unireg_check) {
+
+    if (strcasecmp(field->field_name, SDB_OID_FIELD) == 0) {
+      my_error(ER_WRONG_COLUMN_NAME, MYF(0), field->field_name);
+      rc = ER_WRONG_COLUMN_NAME;
+      goto error;
+    }
+
+    if (Field::NEXT_NUMBER == field->unireg_check) {
       // TODO: support auto-increment field.
       //      it is auto-increment field if run here.
       //      the start-value is create_info->auto_increment_value
@@ -1755,7 +1958,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     goto error;
   }
 
-  rc = get_cl_options(form, create_info, options, use_partition);
+  rc = get_cl_options(form, create_info, options, sdb_use_partition);
   if (0 != rc) {
     goto error;
   }
@@ -1780,6 +1983,8 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   for (uint i = 0; i < form->s->keys; i++) {
     rc = sdb_create_index(form->s->key_info + i, cl);
     if (0 != rc) {
+      // we disabled sharding index,
+      // so do not ignore SDB_IXM_EXIST_COVERD_ONE
       goto error;
     }
   }
@@ -1793,46 +1998,38 @@ error:
 
 THR_LOCK_DATA **ha_sdb::store_lock(THD *thd, THR_LOCK_DATA **to,
                                    enum thr_lock_type lock_type) {
-  // TODO: to support commited-read, lock the record by s-lock while
-  //       normal read(not update, difference by lock_type). If the
-  //       record is not matched, unlock_row() will be called.
-  //       if lock_type == TL_READ then lock the record by s-lock
-  //       if lock_type == TL_WIRTE then lock the record by x-lock
-  /*  if (lock_type != TL_IGNORE && lock_data.type == TL_UNLOCK)
-    {*/
-  /*
-    Here is where we get into the guts of a row level lock.
-    If TL_UNLOCK is set
-    If we are not doing a LOCK TABLE or DISCARD/IMPORT
-    TABLESPACE, then allow multiple writers
+  /**
+    In this function, we can get the MySQL lock by parameter lock_type,
+    and tell MySQL which lock we can support by return a new THR_LOCK_DATA.
+    Then, we can change MySQL behavior of mutexes.
   */
-
-  /*    if ((lock_type >= TL_WRITE_CONCURRENT_INSERT &&
-           lock_type <= TL_WRITE) && !thd_in_lock_tables(thd)
-          && !thd_tablespace_op(thd))
-        lock_type = TL_WRITE_ALLOW_WRITE;*/
-
-  /*
-    In queries of type INSERT INTO t1 SELECT ... FROM t2 ...
-    MySQL would use the lock TL_READ_NO_INSERT on t2, and that
-    would conflict with TL_WRITE_ALLOW_WRITE, blocking all inserts
-    to t2. Convert the lock to a normal read lock to allow
-    concurrent inserts to t2.
-  */
-
-  /*    if (lock_type == TL_READ_NO_INSERT && !thd_in_lock_tables(thd))
-        lock_type = TL_READ;
-
-      lock_data.type=lock_type;
-    }
-
-    *to++= &lock_data;*/
+  m_lock_type = lock_type;
   return to;
 }
 
 void ha_sdb::unlock_row() {
   // TODO: this operation is not supported in sdb.
   //       unlock by _id or completed-record?
+}
+
+int ha_sdb::get_query_flag(const uint sql_command,
+                           enum thr_lock_type lock_type) {
+  /*
+    We always add flag QUERY_WITH_RETURNDATA to improve performance,
+    and we need to add the lock related flag QUERY_FOR_UPDATE in the following
+    cases:
+    1. SELECT ... FOR UPDATE
+    2. doing query in UPDATE ... or DELETE ...
+    3. SELECT ... LOCK IN SHARE MODE
+  */
+  int query_flag = QUERY_WITH_RETURNDATA;
+  if ((lock_type >= TL_WRITE_CONCURRENT_INSERT &&
+       (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
+        SQLCOM_SELECT == sql_command)) ||
+      TL_READ_WITH_SHARED_LOCKS == lock_type) {
+    query_flag |= QUERY_FOR_UPDATE;
+  }
+  return query_flag;
 }
 
 const Item *ha_sdb::cond_push(const Item *cond) {
@@ -1847,7 +2044,7 @@ const Item *ha_sdb::cond_push(const Item *cond) {
 
   try {
     sdb_parse_condtion(cond, &sdb_condition);
-    sdb_condition.to_bson(condition);
+    sdb_condition.to_bson(pushed_condition);
   } catch (bson::assertion e) {
     SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
     DBUG_ASSERT(0);
@@ -1859,14 +2056,15 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     remain_cond = NULL;
   } else {
     if (NULL != ha_thd()) {
-      SDB_LOG_DEBUG("Condition can't be pushed down. db=[%s], sql=[%s]",
-                    ha_thd()->db().str, ha_thd()->query().str);
+      SDB_LOG_DEBUG(
+          "Condition can't be pushed down. db=[%s], table[%s], sql=[%s]",
+          db_name, table_name, ha_thd()->query().str);
     } else {
       SDB_LOG_DEBUG(
           "Condition can't be pushed down. "
-          "db=[unknown], sql=[unknown]");
+          "db=[unknown], table[unknown], sql=[unknown]");
     }
-    condition = sdbclient::_sdbStaticObject;
+    pushed_condition = SDB_EMPTY_BSON;
   }
 done:
   return remain_cond;
@@ -1903,22 +2101,13 @@ static void init_sdb_psi_keys(void) {
 }
 #endif
 
-/*****************************************************************/ /**
- Commits a transaction in
- @return 0 */
-static int sdb_commit(
-    /*============*/
-    handlerton *hton, THD *thd, bool commit_trx) /*!< in: true - commit
-                                     transaction false - the current SQL
-                                     statement ended */
-{
+// Commit a transaction started in SequoiaDB.
+static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   int rc = 0;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  Sdb_conn *connection;
 
-  Sdb_conn *connection = NULL;
-
-  if (!commit_trx) {
-    goto done;
-  }
+  thd_sdb->start_stmt_count = 0;
 
   connection = check_sdb_in_thd(thd, true);
   if (NULL == connection) {
@@ -1927,13 +2116,29 @@ static int sdb_commit(
   }
   DBUG_ASSERT(connection->thread_id() == thd->thread_id());
 
-  thd_get_thd_sdb(thd)->start_stmt_count = 0;
+  if (!connection->is_transaction_on()) {
+    goto done;
+  }
 
-  if (connection->is_transaction_on()) {
-    rc = connection->commit_transaction();
-    if (0 != rc) {
-      goto error;
-    }
+  if (!all && thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
+    /*
+      An odditity in the handler interface is that commit on handlerton
+      is called to indicate end of statement only in cases where
+      autocommit isn't used and the all flag isn't set.
+
+      We also leave quickly when a transaction haven't even been started,
+      in this case we are safe that no clean up is needed. In this case
+      the MySQL Server could handle the query without contacting the
+      SequoiaDB.
+    */
+    thd_sdb->save_point_count++;
+    goto done;
+  }
+  thd_sdb->save_point_count = 0;
+
+  rc = connection->commit_transaction();
+  if (0 != rc) {
+    goto error;
   }
 
 done:
@@ -1942,22 +2147,13 @@ error:
   goto done;
 }
 
-/*****************************************************************/ /**
- Rolls back a transaction
- @return 0 if success */
-static int sdb_rollback(
-    /*==============*/
-    handlerton *hton, THD *thd, bool rollback_trx) /*!< in: TRUE - rollback
-                                     entire transaction FALSE - rollback the
-                                     current statement only */
-{
+// Rollback a transaction started in SequoiaDB.
+static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
   int rc = 0;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  Sdb_conn *connection;
 
-  Sdb_conn *connection = NULL;
-
-  if (!rollback_trx) {
-    goto done;
-  }
+  thd_sdb->start_stmt_count = 0;
 
   connection = check_sdb_in_thd(thd, true);
   if (NULL == connection) {
@@ -1966,18 +2162,31 @@ static int sdb_rollback(
   }
   DBUG_ASSERT(connection->thread_id() == thd->thread_id());
 
-  thd_get_thd_sdb(thd)->start_stmt_count = 0;
+  if (!connection->is_transaction_on()) {
+    goto done;
+  }
 
-  if (connection->is_transaction_on()) {
-    rc = connection->rollback_transaction();
-    if (0 != rc) {
-      goto error;
-    }
+  if (!all && thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN) &&
+      (thd_sdb->save_point_count > 0)) {
+    /*
+      Ignore end-of-statement until real rollback or commit is called
+      as SequoiaDB does not support rollback statement
+      - mark that rollback was unsuccessful, this will cause full rollback
+      of the transaction
+    */
+    thd_mark_transaction_to_rollback(thd, 1);
+    my_error(ER_WARN_ENGINE_TRANSACTION_ROLLBACK, MYF(0), "SequoiaDB");
+    goto done;
+  }
+  thd_sdb->save_point_count = 0;
+
+  rc = connection->rollback_transaction();
+  if (0 != rc) {
+    goto error;
   }
 
 done:
-  // always return 0 because rollback will not be failed.
-  return 0;
+  return rc;
 error:
   goto done;
 }
@@ -2024,6 +2233,7 @@ static int sdb_close_connection(handlerton *hton, THD *thd) {
 }
 
 static int sdb_init_func(void *p) {
+  int rc = SDB_ERR_OK;
   Sdb_conn_addrs conn_addrs;
 #ifdef HAVE_PSI_INTERFACE
   init_sdb_psi_keys();
@@ -2042,6 +2252,12 @@ static int sdb_init_func(void *p) {
   sdb_hton->close_connection = sdb_close_connection;
   if (conn_addrs.parse_conn_addrs(sdb_conn_str)) {
     SDB_LOG_ERROR("Invalid value sequoiadb_conn_addr=%s", sdb_conn_str);
+    return 1;
+  }
+
+  rc = sdb_encrypt_password();
+  if (SDB_ERR_OK != rc) {
+    SDB_LOG_ERROR("Failed to encrypt password, rc=%d", rc);
     return 1;
   }
 

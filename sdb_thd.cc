@@ -31,6 +31,7 @@ Thd_sdb::Thd_sdb(THD* thd)
   m_thread_id = thd_get_thread_id(thd);
   lock_count = 0;
   start_stmt_count = 0;
+  save_point_count = 0;
 }
 
 Thd_sdb::~Thd_sdb() {}

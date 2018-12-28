@@ -18,7 +18,7 @@
 
 #include <mysql/psi/mysql_thread.h>
 #include <vector>
-#include "client.hpp"
+#include <client.hpp>
 #include "sdb_def.h"
 #include "sdb_conn.h"
 
@@ -36,19 +36,18 @@ class Sdb_cl {
 
   const char *get_cl_name();
 
-  int query(const bson::BSONObj &condition = sdbclient::_sdbStaticObject,
-            const bson::BSONObj &selected = sdbclient::_sdbStaticObject,
-            const bson::BSONObj &orderBy = sdbclient::_sdbStaticObject,
-            const bson::BSONObj &hint = sdbclient::_sdbStaticObject,
-            INT64 numToSkip = 0, INT64 numToReturn = -1,
-            INT32 flags = QUERY_WITH_RETURNDATA);
+  int query(const bson::BSONObj &condition = SDB_EMPTY_BSON,
+            const bson::BSONObj &selected = SDB_EMPTY_BSON,
+            const bson::BSONObj &orderBy = SDB_EMPTY_BSON,
+            const bson::BSONObj &hint = SDB_EMPTY_BSON, INT64 numToSkip = 0,
+            INT64 numToReturn = -1, INT32 flags = QUERY_WITH_RETURNDATA);
 
   int query_one(bson::BSONObj &obj,
-                const bson::BSONObj &condition = sdbclient::_sdbStaticObject,
-                const bson::BSONObj &selected = sdbclient::_sdbStaticObject,
-                const bson::BSONObj &orderBy = sdbclient::_sdbStaticObject,
-                const bson::BSONObj &hint = sdbclient::_sdbStaticObject,
-                INT64 numToSkip = 0, INT32 flags = QUERY_WITH_RETURNDATA);
+                const bson::BSONObj &condition = SDB_EMPTY_BSON,
+                const bson::BSONObj &selected = SDB_EMPTY_BSON,
+                const bson::BSONObj &orderBy = SDB_EMPTY_BSON,
+                const bson::BSONObj &hint = SDB_EMPTY_BSON, INT64 numToSkip = 0,
+                INT32 flags = QUERY_WITH_RETURNDATA);
 
   int current(bson::BSONObj &obj);
 
@@ -59,18 +58,16 @@ class Sdb_cl {
   int bulk_insert(INT32 flag, std::vector<bson::BSONObj> &objs);
 
   int update(const bson::BSONObj &rule,
-             const bson::BSONObj &condition = sdbclient::_sdbStaticObject,
-             const bson::BSONObj &hint = sdbclient::_sdbStaticObject,
-             INT32 flag = 0);
+             const bson::BSONObj &condition = SDB_EMPTY_BSON,
+             const bson::BSONObj &hint = SDB_EMPTY_BSON, INT32 flag = 0);
 
   int upsert(const bson::BSONObj &rule,
-             const bson::BSONObj &condition = sdbclient::_sdbStaticObject,
-             const bson::BSONObj &hint = sdbclient::_sdbStaticObject,
-             const bson::BSONObj &setOnInsert = sdbclient::_sdbStaticObject,
-             INT32 flag = 0);
+             const bson::BSONObj &condition = SDB_EMPTY_BSON,
+             const bson::BSONObj &hint = SDB_EMPTY_BSON,
+             const bson::BSONObj &setOnInsert = SDB_EMPTY_BSON, INT32 flag = 0);
 
-  int del(const bson::BSONObj &condition = sdbclient::_sdbStaticObject,
-          const bson::BSONObj &hint = sdbclient::_sdbStaticObject);
+  int del(const bson::BSONObj &condition = SDB_EMPTY_BSON,
+          const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
   int create_index(const bson::BSONObj &indexDef, const CHAR *pName,
                    BOOLEAN isUnique, BOOLEAN isEnforced);

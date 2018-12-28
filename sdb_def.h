@@ -16,6 +16,8 @@
 #ifndef SDB_DEF__H
 #define SDB_DEF__H
 
+#include <client.hpp>
+
 #define SDB_CS_NAME_MAX_SIZE 127
 #define SDB_CL_NAME_MAX_SIZE 127
 
@@ -24,6 +26,6 @@
 
 #define SDB_CHARSET my_charset_utf8mb4_bin
 
-#define SDB_GLOBAL_DOMAIN_NAME "mysql_storage_engine_domain"
+const static bson::BSONObj SDB_EMPTY_BSON;
 
 #endif

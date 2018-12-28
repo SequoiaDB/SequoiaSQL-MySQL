@@ -14,10 +14,12 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 #include <handler.h>
+#include <mysql_version.h>
 #include <client.hpp>
 #include <vector>
 #include "sdb_def.h"
 #include "sdb_cl.h"
+#include "sdb_util.h"
 
 struct Sdb_share {
   char *table_name;
@@ -95,7 +97,11 @@ class ha_sdb : public handler {
     There is no need to implement ..._key_... methods if your engine doesn't
     support indexes.
    */
+#if MYSQL_VERSION_ID >= 50723
+  uint max_supported_key_part_length(HA_CREATE_INFO *create_info) const;
+#else
   uint max_supported_key_part_length() const;
+#endif
 
   /** @brief
     unireg.cc will call this to make sure that the storage engine can handle
@@ -265,7 +271,9 @@ class ha_sdb : public handler {
 
   int obj_to_row(bson::BSONObj &obj, uchar *buf);
 
-  int row_to_obj(uchar *buf, bson::BSONObj &obj, bool output_null,
+  int bson_element_to_field(const bson::BSONElement elem, Field *field);
+
+  int row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid, bool output_null,
                  bson::BSONObj &null_obj);
 
   int field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder);
@@ -290,20 +298,27 @@ class ha_sdb : public handler {
 
   int index_read_one(bson::BSONObj condition, int order_direction, uchar *buf);
 
+  my_bool get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond);
+
+  my_bool get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond);
+
+  int get_query_flag(const uint sql_command, enum thr_lock_type lock_type);
+
  private:
   THR_LOCK_DATA lock_data;
+  enum thr_lock_type m_lock_type;
   Sdb_cl *collection;
   bool first_read;
   bson::BSONObj cur_rec;
-  bson::BSONObj condition;
-  String conv_str;  // use for converting charset
+  bson::BSONObj pushed_condition;
   Sdb_share *share;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
   char table_name[SDB_CL_NAME_MAX_SIZE + 1];
-  time_t last_flush_time;
-  int used_times;
+  time_t last_count_time;
+  int count_times;
   MEM_ROOT blobroot;
   int idx_order_direction;
   bool m_use_bulk_insert;
   std::vector<bson::BSONObj> m_bulk_insert_rows;
+  Sdb_obj_cache<bson::BSONElement> m_bson_element_cache;
 };
