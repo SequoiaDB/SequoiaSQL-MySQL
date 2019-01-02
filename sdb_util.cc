@@ -104,6 +104,40 @@ error:
   goto done;
 }
 
+int sdb_rebuild_db_name_of_temp_table(char *db_name, int db_name_max_size) {
+  int db_name_len = (int)strlen(db_name);
+  int hostname_len = (int)strlen(glob_hostname);
+  int tmp_name_len = db_name_len + hostname_len + 1;
+
+  DBUG_ASSERT(db_name_len > 0);
+
+  if (0 == hostname_len) {
+    my_error(ER_BAD_HOST_ERROR, MYF(0));
+    return HA_ERR_GENERIC;
+  }
+  if (tmp_name_len > db_name_max_size) {
+    my_error(ER_TOO_LONG_IDENT, MYF(0));
+    return HA_ERR_GENERIC;
+  }
+
+  memmove(db_name + hostname_len + 1, db_name, db_name_len);
+  db_name[hostname_len] = '#';
+  memcpy(db_name, glob_hostname, hostname_len);
+  db_name[tmp_name_len] = '\0';
+  for (uint i = 0; i < tmp_name_len; i++) {
+    if ('.' == db_name[i]) {
+      db_name[i] = '_';
+    }
+  }
+
+  return 0;
+}
+
+bool sdb_is_tmp_table(const char *path, const char *table_name) {
+  return (is_prefix(path, opt_mysql_tmpdir) &&
+          is_prefix(table_name, tmp_file_prefix));
+}
+
 int sdb_convert_charset(const String &src_str, String &dst_str,
                         const CHARSET_INFO *dst_charset) {
   int rc = SDB_ERR_OK;

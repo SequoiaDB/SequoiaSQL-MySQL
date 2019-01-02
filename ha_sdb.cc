@@ -235,6 +235,14 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
 
+  if (sdb_is_tmp_table(name, table_name)) {
+    DBUG_ASSERT(table->s->tmp_table);
+    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
+      rc = HA_ERR_GENERIC;
+      goto error;
+    }
+  }
+
   connection = check_sdb_in_thd(ha_thd(), true);
   if (NULL == connection) {
     rc = HA_ERR_NO_CONNECTION;
@@ -1745,6 +1753,13 @@ int ha_sdb::delete_table(const char *from) {
     goto error;
   }
 
+  if (sdb_is_tmp_table(from, table_name)) {
+    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
+      rc = HA_ERR_GENERIC;
+      goto error;
+    }
+  }
+
   conn = check_sdb_in_thd(ha_thd(), true);
   if (NULL == conn) {
     rc = HA_ERR_NO_CONNECTION;
@@ -1782,6 +1797,20 @@ int ha_sdb::rename_table(const char *from, const char *to) {
                             new_table_name, SDB_CL_NAME_MAX_SIZE);
   if (0 != rc) {
     goto error;
+  }
+
+  if (sdb_is_tmp_table(from, old_table_name)) {
+    rc = sdb_rebuild_db_name_of_temp_table(old_db_name, SDB_CS_NAME_MAX_SIZE);
+    if (0 != rc) {
+      goto error;
+    }
+  }
+
+  if (sdb_is_tmp_table(to, new_table_name)) {
+    rc = sdb_rebuild_db_name_of_temp_table(new_db_name, SDB_CS_NAME_MAX_SIZE);
+    if (0 != rc) {
+      goto error;
+    }
   }
 
   if (strcmp(old_db_name, new_db_name) != 0) {
@@ -1927,6 +1956,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   int rc = 0;
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
+  bool create_temporary = (create_info->options & HA_LEX_CREATE_TMP_TABLE);
   bson::BSONObj options;
 
   for (Field **fields = form->field; *fields; fields++) {
@@ -1935,13 +1965,13 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     if (field->key_length() >= SDB_FIELD_MAX_LEN) {
       my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), field->field_name,
                static_cast<ulong>(SDB_FIELD_MAX_LEN));
-      rc = ER_TOO_BIG_FIELDLENGTH;
+      rc = HA_WRONG_CREATE_OPTION;
       goto error;
     }
 
     if (strcasecmp(field->field_name, SDB_OID_FIELD) == 0) {
       my_error(ER_WRONG_COLUMN_NAME, MYF(0), field->field_name);
-      rc = ER_WRONG_COLUMN_NAME;
+      rc = HA_WRONG_CREATE_OPTION;
       goto error;
     }
 
@@ -1956,6 +1986,13 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
                             SDB_CL_NAME_MAX_SIZE);
   if (0 != rc) {
     goto error;
+  }
+
+  if (create_temporary) {
+    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
+      rc = HA_WRONG_CREATE_OPTION;
+      goto error;
+    }
   }
 
   rc = get_cl_options(form, create_info, options, sdb_use_partition);

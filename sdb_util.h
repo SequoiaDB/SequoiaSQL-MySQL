@@ -30,6 +30,10 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
 int sdb_get_db_name_from_path(const char *path, char *db_name,
                               int db_name_max_size);
 
+int sdb_rebuild_db_name_of_temp_table(char *db_name, int db_name_max_size);
+
+bool sdb_is_tmp_table(const char *path, const char *table_name);
+
 int sdb_convert_charset(const String &src_str, String &dst_str,
                         const CHARSET_INFO *dst_charset);
 
