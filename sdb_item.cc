@@ -1260,18 +1260,22 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
           --buf_pos;
         }
         if ('(' == *p_cur || ')' == *p_cur || '[' == *p_cur || ']' == *p_cur ||
-            '{' == *p_cur || '}' == *p_cur || '\\' == *p_cur) {
-          // process the special character: '(', ')', '[',']','{','}'
+            '{' == *p_cur || '}' == *p_cur || '\\' == *p_cur || '^' == *p_cur ||
+            '$' == *p_cur || '.' == *p_cur || '|' == *p_cur || '*' == *p_cur ||
+            '+' == *p_cur || '?' == *p_cur || '-' == *p_cur) {
+          // process perl regexp special characters: {}[]()^$.|*+?-\
           // add '\' before the special character
           str_buf[buf_pos++] = '\\';
         }
         str_buf[buf_pos++] = *p_cur;
         p_prev = NULL;
       } else {
-        if ('(' == *p_cur || ')' == *p_cur || '[' == *p_cur || ']' == *p_cur ||
-            '{' == *p_cur || '}' == *p_cur ||
-            ('\\' == *p_cur && escape_char != *p_cur)) {
-          // process the special character: '(', ')', '[',']','{','}'
+        if (('(' == *p_cur || ')' == *p_cur || '[' == *p_cur || ']' == *p_cur ||
+             '{' == *p_cur || '}' == *p_cur || '^' == *p_cur || '$' == *p_cur ||
+             '.' == *p_cur || '|' == *p_cur || '*' == *p_cur || '+' == *p_cur ||
+             '?' == *p_cur || '-' == *p_cur || '\\' == *p_cur) &&
+            (escape_char != *p_cur)) {
+          // process perl regexp special characters: {}[]()^$.|*+?-\
           // add '\' before the special character
           str_buf[buf_pos++] = '\\';
           str_buf[buf_pos++] = *p_cur;
