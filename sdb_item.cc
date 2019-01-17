@@ -262,6 +262,20 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
     goto error;
   }
 
+  if (Item::FUNC_ITEM == item_val->type() &&
+      (strcmp("cast_as_date", ((Item_func *)item_val)->func_name()) == 0 ||
+       strcmp("cast_as_datetime", ((Item_func *)item_val)->func_name()) == 0)) {
+    rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+    goto error;
+  }
+
+  if (Item::CACHE_ITEM == item_val->type() &&
+      (MYSQL_TYPE_DATE == item_val->field_type() ||
+       MYSQL_TYPE_DATETIME == item_val->field_type())) {
+    rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+    goto error;
+  }
+
   if (Item::NULL_ITEM == item_val->type()) {
     // "$exists" appear in array is not support now
     if (NULL == arr_builder) {
