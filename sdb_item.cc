@@ -1140,6 +1140,7 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
   String *str_val_org;
   String str_val_conv;
   std::string regex_val;
+  bson::BSONObjBuilder regex_builder;
 
   if (!is_finished || para_list.elements != para_num_max) {
     rc = SDB_ERR_COND_INCOMPLETED;
@@ -1204,7 +1205,8 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
     // => {a:""}
     obj = BSON(item_field->field_name << regex_val);
   } else {
-    obj = BSON(item_field->field_name << BSON("$regex" << regex_val));
+    regex_builder.appendRegex(item_field->field_name, regex_val, "s");
+    obj = regex_builder.obj();
   }
 
 done:
