@@ -196,7 +196,7 @@ Sdb_encryption::Sdb_encryption() {
 int Sdb_encryption::encrypt(const String &src, String &dst) {
   int rc = SDB_ERR_OK;
   int real_enc_len = 0;
-  int dst_len = get_dst_len(src.length() + 1);
+  int dst_len = my_aes_get_size(src.length() + 1, AES_OPMODE);
 
   if (dst.alloc(dst_len)) {
     rc = HA_ERR_OUT_OF_MEM;
@@ -246,8 +246,4 @@ done:
   return rc;
 error:
   goto done;
-}
-
-int Sdb_encryption::get_dst_len(const int src_len) {
-  return my_aes_get_size(src_len, AES_OPMODE);
 }
