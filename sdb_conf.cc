@@ -14,6 +14,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 #include "sdb_conf.h"
+#include "sdb_lock.h"
 
 static const char *SDB_ADDR_DFT = "localhost:11810";
 static const char *SDB_USER_DFT = "";
@@ -35,61 +36,74 @@ my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
 
 String sdb_encoded_password;
 Sdb_encryption sdb_passwd_encryption;
+Sdb_rwlock password_lock;
 
-static void sdb_use_partition_update(THD *thd, struct st_mysql_sys_var *var,
-                                     void *var_ptr, const void *save) {
-  *static_cast<my_bool *>(var_ptr) = *static_cast<const my_bool *>(save);
+static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
+                                  void *save, struct st_mysql_value *value) {
+  char buff[SDB_CONN_ADDR_BUFF_SIZE];
+  int len = sizeof(buff);
+  const char *arg_addrs = value->val_str(value, buff, &len);
+  Sdb_conn_addrs conn_addrs;
+  if (0 == conn_addrs.parse_conn_addrs(arg_addrs)) {
+    *static_cast<const char **>(save) = arg_addrs;
+    return 0;
+  } else {
+    *static_cast<const char **>(save) = NULL;
+    return -1;
+  }
 }
 
-static void sdb_use_bulk_insert_update(THD *thd, struct st_mysql_sys_var *var,
-                                       void *var_ptr, const void *save) {
-  *static_cast<my_bool *>(var_ptr) = *static_cast<const my_bool *>(save);
+static int sdb_password_validate(THD *thd, struct st_mysql_sys_var *var,
+                                 void *save, struct st_mysql_value *value) {
+  Sdb_rwlock_write_guard guard(password_lock);
+  char buff[SDB_PASSWORD_BUFF_SIZE];
+  int len = sizeof(buff);
+  const char *arg_password = value->val_str(value, buff, &len);
+
+  *static_cast<const char **>(save) = arg_password;
+  int dst_len = sdb_passwd_encryption.get_dst_len(strlen(arg_password) + 1);
+  return sdb_encoded_password.alloc(dst_len);
 }
 
-static void sdb_bulk_insert_size_update(THD *thd, struct st_mysql_sys_var *var,
-                                        void *var_ptr, const void *save) {
-  *static_cast<int *>(var_ptr) = *static_cast<const int *>(save);
-}
-
-static void sdb_use_autocommit_update(THD *thd, struct st_mysql_sys_var *var,
-                                      void *var_ptr, const void *save) {
-  *static_cast<my_bool *>(var_ptr) = *static_cast<const my_bool *>(save);
-}
-
-static void sdb_debug_log_update(THD *thd, struct st_mysql_sys_var *var,
-                                 void *var_ptr, const void *save) {
-  *static_cast<my_bool *>(var_ptr) = *static_cast<const my_bool *>(save);
+static void sdb_password_update(THD *thd, struct st_mysql_sys_var* var,
+                                void *var_ptr, const void *save) {
+  Sdb_rwlock_write_guard guard(password_lock);
+  const char *arg_password = *static_cast<const char*const*>(save);
+  String src_password(arg_password, &my_charset_bin);
+  sdb_passwd_encryption.encrypt(src_password, sdb_encoded_password);
+  // for confidential, don't show the changes
+  *static_cast<const char**>(var_ptr) = sdb_password;
 }
 
 static MYSQL_SYSVAR_STR(conn_addr, sdb_conn_str,
-                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
-                        "SequoiaDB addresses", NULL, NULL, SDB_ADDR_DFT);
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
+                        "SequoiaDB addresses", sdb_conn_addr_validate, NULL,
+                        SDB_ADDR_DFT);
 static MYSQL_SYSVAR_STR(user, sdb_user,
-                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
                         "SequoiaDB authentication user", NULL, NULL,
                         SDB_USER_DFT);
 static MYSQL_SYSVAR_STR(password, sdb_password,
-                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
-                        "SequoiaDB authentication password", NULL, NULL,
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
+                        "SequoiaDB authentication password",
+                        sdb_password_validate, sdb_password_update,
                         SDB_PASSWORD_DFT);
 static MYSQL_SYSVAR_BOOL(use_partition, sdb_use_partition, PLUGIN_VAR_OPCMDARG,
-                         "create partition table on sequoiadb", NULL,
-                         sdb_use_partition_update, SDB_USE_PARTITION_DFT);
+                         "create partition table on sequoiadb", NULL, NULL,
+                         SDB_USE_PARTITION_DFT);
 static MYSQL_SYSVAR_BOOL(use_bulk_insert, sdb_use_bulk_insert,
                          PLUGIN_VAR_OPCMDARG, "enable bulk insert to sequoiadb",
-                         NULL, sdb_use_bulk_insert_update,
-                         SDB_DEFAULT_USE_BULK_INSERT);
+                         NULL, NULL, SDB_DEFAULT_USE_BULK_INSERT);
 static MYSQL_SYSVAR_INT(bulk_insert_size, sdb_bulk_insert_size,
-                        PLUGIN_VAR_OPCMDARG, "bulk insert size", NULL,
-                        sdb_bulk_insert_size_update,
+                        PLUGIN_VAR_OPCMDARG, "bulk insert size", NULL, NULL,
                         SDB_DEFAULT_BULK_INSERT_SIZE, 1, 100000, 0);
 static MYSQL_SYSVAR_BOOL(use_autocommit, sdb_use_autocommit,
                          PLUGIN_VAR_OPCMDARG,
                          "enable autocommit of sequoiadb storage engine", NULL,
-                         sdb_use_autocommit_update, SDB_DEFAULT_USE_AUTOCOMMIT);
+                         NULL, SDB_DEFAULT_USE_AUTOCOMMIT);
 static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
                          "turn on debug log of sequoiadb storage engine", NULL,
-                         sdb_debug_log_update, SDB_DEBUG_LOG_DFT);
+                         NULL, SDB_DEBUG_LOG_DFT);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {MYSQL_SYSVAR(conn_addr),
                                            MYSQL_SYSVAR(user),
@@ -202,5 +216,6 @@ error:
 }
 
 int sdb_get_password(String &res) {
+  Sdb_rwlock_read_guard guard(password_lock);
   return sdb_passwd_encryption.decrypt(sdb_encoded_password, res);
 }

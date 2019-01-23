@@ -51,6 +51,7 @@ class Sdb_encryption {
   Sdb_encryption();
   int encrypt(const String &src, String &dst);
   int decrypt(const String &src, String &dst);
+  int get_dst_len(const int src_len);
 };
 
 template <class T>

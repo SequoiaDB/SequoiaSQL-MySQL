@@ -22,6 +22,8 @@
 #include <sql_string.h>
 
 #define SDB_COORD_NUM_MAX 128
+#define SDB_CONN_ADDR_BUFF_SIZE 4096
+#define SDB_PASSWORD_BUFF_SIZE 1024
 
 class Sdb_conn_addrs {
  public:
