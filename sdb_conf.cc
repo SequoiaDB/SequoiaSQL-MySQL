@@ -65,14 +65,14 @@ static int sdb_password_validate(THD *thd, struct st_mysql_sys_var *var,
   return sdb_encoded_password.alloc(dst_len);
 }
 
-static void sdb_password_update(THD *thd, struct st_mysql_sys_var* var,
+static void sdb_password_update(THD *thd, struct st_mysql_sys_var *var,
                                 void *var_ptr, const void *save) {
   Sdb_rwlock_write_guard guard(password_lock);
-  const char *arg_password = *static_cast<const char*const*>(save);
+  const char *arg_password = *static_cast<const char *const *>(save);
   String src_password(arg_password, &my_charset_bin);
   sdb_passwd_encryption.encrypt(src_password, sdb_encoded_password);
   // for confidential, don't show the changes
-  *static_cast<const char**>(var_ptr) = sdb_password;
+  *static_cast<const char **>(var_ptr) = sdb_password;
 }
 
 static MYSQL_SYSVAR_STR(conn_addr, sdb_conn_str,
