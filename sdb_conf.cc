@@ -36,38 +36,11 @@ my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
 
 String sdb_encoded_password;
 Sdb_encryption sdb_passwd_encryption;
-Sdb_rwlock password_lock;
-
-static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
-                                  void *save, struct st_mysql_value *value) {
-  char buff[SDB_CONN_ADDR_BUFF_SIZE];
-  int len = sizeof(buff);
-  const char *arg_addrs = value->val_str(value, buff, &len);
-  Sdb_conn_addrs conn_addrs;
-  if (0 == conn_addrs.parse_conn_addrs(arg_addrs)) {
-    *static_cast<const char **>(save) = arg_addrs;
-    return 0;
-  } else {
-    *static_cast<const char **>(save) = NULL;
-    return -1;
-  }
-}
-
-static int sdb_password_validate(THD *thd, struct st_mysql_sys_var *var,
-                                 void *save, struct st_mysql_value *value) {
-  Sdb_rwlock_write_guard guard(password_lock);
-  char buff[SDB_PASSWORD_BUFF_SIZE];
-  int len = sizeof(buff);
-  const char *arg_password = value->val_str(value, buff, &len);
-
-  *static_cast<const char **>(save) = arg_password;
-  int dst_len = sdb_passwd_encryption.get_dst_len(strlen(arg_password) + 1);
-  return sdb_encoded_password.alloc(dst_len);
-}
+static Sdb_rwlock sdb_password_lock;
 
 static void sdb_password_update(THD *thd, struct st_mysql_sys_var *var,
                                 void *var_ptr, const void *save) {
-  Sdb_rwlock_write_guard guard(password_lock);
+  Sdb_rwlock_write_guard guard(sdb_password_lock);
   const char *arg_password = *static_cast<const char *const *>(save);
   String src_password(arg_password, &my_charset_bin);
   sdb_passwd_encryption.encrypt(src_password, sdb_encoded_password);
@@ -77,7 +50,7 @@ static void sdb_password_update(THD *thd, struct st_mysql_sys_var *var,
 
 static MYSQL_SYSVAR_STR(conn_addr, sdb_conn_str,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
-                        "SequoiaDB addresses", sdb_conn_addr_validate, NULL,
+                        "SequoiaDB addresses", NULL, NULL,
                         SDB_ADDR_DFT);
 static MYSQL_SYSVAR_STR(user, sdb_user,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
@@ -86,7 +59,7 @@ static MYSQL_SYSVAR_STR(user, sdb_user,
 static MYSQL_SYSVAR_STR(password, sdb_password,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
                         "SequoiaDB authentication password",
-                        sdb_password_validate, sdb_password_update,
+                        NULL, sdb_password_update,
                         SDB_PASSWORD_DFT);
 static MYSQL_SYSVAR_BOOL(use_partition, sdb_use_partition, PLUGIN_VAR_OPCMDARG,
                          "create partition table on sequoiadb", NULL, NULL,
@@ -216,6 +189,6 @@ error:
 }
 
 int sdb_get_password(String &res) {
-  Sdb_rwlock_read_guard guard(password_lock);
+  Sdb_rwlock_read_guard guard(sdb_password_lock);
   return sdb_passwd_encryption.decrypt(sdb_encoded_password, res);
 }
