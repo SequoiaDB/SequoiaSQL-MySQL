@@ -78,6 +78,26 @@ static HASH sdb_open_tables;
 static PSI_memory_key key_memory_sdb_share;
 static PSI_memory_key sdb_key_memory_blobroot;
 
+static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_ADDIDX =
+    Alter_inplace_info::ADD_INDEX | Alter_inplace_info::ADD_UNIQUE_INDEX |
+    Alter_inplace_info::ADD_PK_INDEX |
+    Alter_inplace_info::ALTER_COLUMN_NOT_NULLABLE;
+
+static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_DROPIDX =
+    Alter_inplace_info::DROP_INDEX | Alter_inplace_info::DROP_UNIQUE_INDEX |
+    Alter_inplace_info::DROP_PK_INDEX |
+    Alter_inplace_info::ALTER_COLUMN_NULLABLE;
+
+static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_OPERATIONS =
+    INPLACE_ONLINE_ADDIDX | INPLACE_ONLINE_DROPIDX |
+    Alter_inplace_info::ADD_COLUMN | Alter_inplace_info::DROP_COLUMN |
+    Alter_inplace_info::ALTER_STORED_COLUMN_ORDER |
+    Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
+    Alter_inplace_info::ALTER_COLUMN_DEFAULT |
+    Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH |
+    Alter_inplace_info::CHANGE_CREATE_OPTION;
+
+
 static uchar *sdb_get_key(Sdb_share *share, size_t *length,
                           my_bool not_used MY_ATTRIBUTE((unused))) {
   *length = share->table_name_length;
@@ -1536,20 +1556,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   enum_alter_inplace_result rs;
   KEY *keyInfo;
 
-  Alter_inplace_info::HA_ALTER_FLAGS inplace_online_operations =
-      Alter_inplace_info::ADD_INDEX | Alter_inplace_info::DROP_INDEX |
-      Alter_inplace_info::ADD_UNIQUE_INDEX |
-      Alter_inplace_info::DROP_UNIQUE_INDEX | Alter_inplace_info::ADD_PK_INDEX |
-      Alter_inplace_info::DROP_PK_INDEX |
-      Alter_inplace_info::ALTER_COLUMN_NOT_NULLABLE |
-      Alter_inplace_info::ALTER_COLUMN_NULLABLE |
-      Alter_inplace_info::ADD_COLUMN | Alter_inplace_info::DROP_COLUMN |
-      Alter_inplace_info::ALTER_STORED_COLUMN_ORDER |
-      Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
-      Alter_inplace_info::ALTER_COLUMN_DEFAULT |
-      Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH;
-
-  if (ha_alter_info->handler_flags & ~inplace_online_operations) {
+  if (ha_alter_info->handler_flags & ~INPLACE_ONLINE_OPERATIONS) {
     // include offline-operations
     // rs = handler::check_if_supported_inplace_alter(
     //                           altered_table, ha_alter_info ) ;
@@ -1647,36 +1654,14 @@ error:
   goto done;
 }
 
-bool ha_sdb::inplace_alter_table(TABLE *altered_table,
-                                 Alter_inplace_info *ha_alter_info) {
-  bool rs = false;
+bool ha_sdb::inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
+  bool rs = true;
   int rc = 0;
   THD *thd = current_thd;
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
 
-  Alter_inplace_info::HA_ALTER_FLAGS inplace_online_addidx =
-      Alter_inplace_info::ADD_INDEX | Alter_inplace_info::ADD_UNIQUE_INDEX |
-      Alter_inplace_info::ADD_PK_INDEX |
-      Alter_inplace_info::ALTER_COLUMN_NOT_NULLABLE;
-
-  Alter_inplace_info::HA_ALTER_FLAGS inplace_online_dropidx =
-      Alter_inplace_info::DROP_INDEX | Alter_inplace_info::DROP_UNIQUE_INDEX |
-      Alter_inplace_info::DROP_PK_INDEX |
-      Alter_inplace_info::ALTER_COLUMN_NULLABLE;
-
-  if (ha_alter_info->handler_flags &
-      ~(inplace_online_addidx | inplace_online_dropidx |
-        Alter_inplace_info::ADD_COLUMN | Alter_inplace_info::DROP_COLUMN |
-        Alter_inplace_info::ALTER_STORED_COLUMN_ORDER |
-        Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
-        Alter_inplace_info::ALTER_COLUMN_DEFAULT |
-        Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH)) {
-    SDB_PRINT_ERROR(HA_ERR_UNSUPPORTED,
-                    "Storage engine doesn't support the operation.");
-    rs = true;
-    goto error;
-  }
+  DBUG_ASSERT(ha_alter_info->handler_flags | INPLACE_ONLINE_OPERATIONS);
 
   conn = check_sdb_in_thd(thd, true);
   if (NULL == conn) {
@@ -1691,23 +1676,33 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     goto error;
   }
 
-  if (ha_alter_info->handler_flags & inplace_online_dropidx) {
-    rc = drop_index(cl, ha_alter_info);
-    if (0 != rc) {
-      SDB_PRINT_ERROR(ER_GET_ERRNO, ER(ER_GET_ERRNO), rc);
-      rs = true;
+  if (ha_alter_info->handler_flags & Alter_inplace_info::CHANGE_CREATE_OPTION) {
+    char *old_comment = table->s->comment.str;
+    char *new_comment = ha_alter_info->create_info->comment.str;
+    if (!(old_comment == new_comment ||
+          strcmp(old_comment, new_comment) == 0)) {
+      my_error(HA_ERR_WRONG_COMMAND, MYF(0));
       goto error;
     }
   }
 
-  if (ha_alter_info->handler_flags & inplace_online_addidx) {
-    rc = create_index(cl, ha_alter_info);
+  if (ha_alter_info->handler_flags & INPLACE_ONLINE_DROPIDX) {
+    rc = drop_index(cl, ha_alter_info);
     if (0 != rc) {
-      SDB_PRINT_ERROR(ER_GET_ERRNO, ER(ER_GET_ERRNO), rc);
-      rs = true;
+      my_error(ER_GET_ERRNO, MYF(0), rc);
       goto error;
     }
   }
+
+  if (ha_alter_info->handler_flags & INPLACE_ONLINE_ADDIDX) {
+    rc = create_index(cl, ha_alter_info);
+    if (0 != rc) {
+      my_error(ER_GET_ERRNO, MYF(0), rc);
+      goto error;
+    }
+  }
+
+  rs = false;
 
 done:
   return rs;
@@ -1914,7 +1909,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   bson::BSONObj sharding_key;
 
   if (create_info && create_info->comment.str) {
-    bson::BSONElement beOptions;
+    bson::BSONElement be_options;
     bson::BSONObj comments;
 
     rc = bson::fromjson(create_info->comment.str, comments);
@@ -1924,11 +1919,11 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
       goto error;
     }
 
-    beOptions = comments.getField("table_options");
-    if (beOptions.type() == bson::Object) {
-      options = beOptions.embeddedObject().copy();
+    be_options = comments.getField("table_options");
+    if (be_options.type() == bson::Object) {
+      options = be_options.embeddedObject().copy();
       goto done;
-    } else if (beOptions.type() != bson::EOO) {
+    } else if (be_options.type() != bson::EOO) {
       rc = SDB_ERR_INVALID_ARG;
       SDB_PRINT_ERROR(rc, "Failed to parse cl_options!");
       goto error;
