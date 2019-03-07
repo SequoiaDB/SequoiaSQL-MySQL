@@ -48,7 +48,7 @@ int sdb_get_key_direction(ha_rkey_function find_flag) {
   }
 }
 
-static BOOLEAN is_field_indexable(const Field *field) {
+static my_bool is_field_indexable(const Field *field) {
   switch (field->type()) {
     case MYSQL_TYPE_TINY:
     case MYSQL_TYPE_SHORT:
@@ -65,56 +65,50 @@ static BOOLEAN is_field_indexable(const Field *field) {
     case MYSQL_TYPE_TIME:
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_TIMESTAMP:
-      return TRUE;
+      return true;
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_BLOB: {
       if (!field->binary()) {
-        return TRUE;
+        return true;
       } else {
-        return FALSE;
+        return false;
       }
     }
     case MYSQL_TYPE_JSON:
     default:
-      return FALSE;
+      return false;
   }
 }
 
-int sdb_create_index(const KEY *keyInfo, Sdb_cl &cl) {
-  const KEY_PART_INFO *keyPart;
-  const KEY_PART_INFO *keyEnd;
+int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
+  const KEY_PART_INFO *key_part;
+  const KEY_PART_INFO *key_end;
   int rc = 0;
-  bson::BSONObj keyObj;
-  BOOLEAN isUnique = FALSE, isEnforced = FALSE;
+  bson::BSONObj key_obj;
+  my_bool is_unique = false, is_enforced = false;
 
-  bson::BSONObjBuilder keyObjBuilder;
-  keyPart = keyInfo->key_part;
-  keyEnd = keyPart + keyInfo->user_defined_key_parts;
-  for (; keyPart != keyEnd; ++keyPart) {
-    if (!is_field_indexable(keyPart->field)) {
+  bson::BSONObjBuilder key_obj_builder;
+  key_part = key_info->key_part;
+  key_end = key_part + key_info->user_defined_key_parts;
+  for (; key_part != key_end; ++key_part) {
+    if (!is_field_indexable(key_part->field)) {
       rc = HA_ERR_UNSUPPORTED;
       SDB_PRINT_ERROR(rc,
                       "column '%-.192s' cannot be used in key specification.",
-                      keyPart->field->field_name);
+                      key_part->field->field_name);
       goto error;
     }
     // TODO: ASC or DESC
-    keyObjBuilder.append(keyPart->field->field_name, 1);
+    key_obj_builder.append(key_part->field->field_name, 1);
   }
-  keyObj = keyObjBuilder.obj();
+  key_obj = key_obj_builder.obj();
 
-  if (!strcmp(keyInfo->name, primary_key_name)) {
-    isUnique = TRUE;
-    isEnforced = TRUE;
-  }
+  is_unique = key_info->flags & HA_NOSAME;
+  is_enforced = (0 == strcmp(key_info->name, primary_key_name));
 
-  if (keyInfo->flags & HA_NOSAME) {
-    isUnique = TRUE;
-  }
-
-  rc = cl.create_index(keyObj, keyInfo->name, isUnique, isEnforced);
+  rc = cl.create_index(key_obj, key_info->name, is_unique, is_enforced);
   if (rc) {
     goto error;
   }
@@ -127,17 +121,17 @@ error:
 int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order,
                       int order_direction) {
   int rc = SDB_ERR_OK;
-  const KEY_PART_INFO *keyPart;
-  const KEY_PART_INFO *keyEnd;
+  const KEY_PART_INFO *key_part;
+  const KEY_PART_INFO *key_end;
   bson::BSONObjBuilder obj_builder;
   if (!key_info) {
     rc = SDB_ERR_INVALID_ARG;
     goto error;
   }
-  keyPart = key_info->key_part;
-  keyEnd = keyPart + key_info->user_defined_key_parts;
-  for (; keyPart != keyEnd; ++keyPart) {
-    obj_builder.append(keyPart->field->field_name, order_direction);
+  key_part = key_info->key_part;
+  key_end = key_part + key_info->user_defined_key_parts;
+  for (; key_part != key_end; ++key_part) {
+    obj_builder.append(key_part->field->field_name, order_direction);
   }
   order = obj_builder.obj();
 
@@ -626,4 +620,33 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
 error:
   dbug_tmp_restore_column_map(table->read_set, old_map);
   return rc;
+}
+
+my_bool sdb_is_same_index(const KEY *a, const KEY *b) {
+  my_bool rs = false;
+  const KEY_PART_INFO *key_part_a = NULL;
+  const KEY_PART_INFO *key_part_b = NULL;
+
+  if (strcmp(a->name, b->name) != 0 ||
+      a->user_defined_key_parts != b->user_defined_key_parts ||
+      (a->flags & HA_NOSAME) != (b->flags & HA_NOSAME)) {
+    goto error;
+  }
+
+  key_part_a = a->key_part;
+  key_part_b = b->key_part;
+  for (uint i = 0; i < a->user_defined_key_parts; ++i) {
+    if (strcmp(key_part_a->field->field_name, key_part_b->field->field_name) !=
+        0) {
+      goto error;
+    }
+    ++key_part_a;
+    ++key_part_b;
+  }
+
+  rs = true;
+done:
+  return rs;
+error:
+  goto done;
 }

@@ -371,11 +371,13 @@ error:
   goto done;
 }
 
-int Sdb_cl::get_count(long long &count) {
+int Sdb_cl::get_count(long long &count, 
+                      const bson::BSONObj &condition, 
+                      const bson::BSONObj &hint) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.getCount(count);
+  rc = m_cl.getCount(count, condition, hint);
   if (rc != SDB_ERR_OK) {
     goto error;
   }

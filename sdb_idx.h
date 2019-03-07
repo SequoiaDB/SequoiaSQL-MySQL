@@ -20,7 +20,7 @@
 #include <client.hpp>
 #include "sdb_cl.h"
 
-int sdb_create_index(const KEY *keyInfo, Sdb_cl &cl);
+int sdb_create_index(const KEY *key_info, Sdb_cl &cl);
 
 int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction);
 
@@ -31,5 +31,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                                   bson::BSONObj &condition);
 
 int sdb_get_key_direction(ha_rkey_function find_flag);
+
+my_bool sdb_is_same_index(const KEY *a, const KEY *b);
 
 #endif
