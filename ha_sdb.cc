@@ -95,8 +95,7 @@ static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_OPERATIONS =
     Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
     Alter_inplace_info::ALTER_COLUMN_DEFAULT |
     Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH |
-    Alter_inplace_info::CHANGE_CREATE_OPTION;
-
+    Alter_inplace_info::CHANGE_CREATE_OPTION | Alter_inplace_info::RENAME_INDEX;
 
 static uchar *sdb_get_key(Sdb_share *share, size_t *length,
                           my_bool not_used MY_ATTRIBUTE((unused))) {
@@ -1615,14 +1614,30 @@ error:
   return false;
 }
 
-int ha_sdb::create_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info) {
-  const KEY *keyInfo;
+int ha_sdb::create_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
+                         List<char> &ignored_keys) {
+  const KEY *key_info;
   int rc = 0;
 
   for (uint i = 0; i < ha_alter_info->index_add_count; i++) {
-    keyInfo =
+    key_info =
         &ha_alter_info->key_info_buffer[ha_alter_info->index_add_buffer[i]];
-    rc = sdb_create_index(keyInfo, cl);
+    my_bool is_ignored = false;
+    List_iterator<char> iter(ignored_keys);
+    char *ignored_key_name = NULL;
+
+    while ((ignored_key_name = iter++)) {
+      if (0 == strcmp(ignored_key_name, key_info->name)) {
+        is_ignored = true;
+        break;
+      }
+    }
+
+    if (is_ignored) {
+      continue;
+    }
+
+    rc = sdb_create_index(key_info, cl);
     if (rc) {
       goto error;
     }
@@ -1633,7 +1648,8 @@ error:
   goto done;
 }
 
-int ha_sdb::drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info) {
+int ha_sdb::drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
+                       List<char> &ignored_keys) {
   int rc = 0;
 
   if (NULL == ha_alter_info->index_drop_buffer) {
@@ -1641,9 +1657,23 @@ int ha_sdb::drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info) {
   }
 
   for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
-    KEY *keyInfo = NULL;
-    keyInfo = ha_alter_info->index_drop_buffer[i];
-    rc = cl.drop_index(keyInfo->name);
+    KEY *key_info = ha_alter_info->index_drop_buffer[i];
+    my_bool is_ignored = false;
+    List_iterator<char> iter(ignored_keys);
+    char *ignored_key_name = NULL;
+
+    while ((ignored_key_name = iter++)) {
+      if (0 == strcmp(ignored_key_name, key_info->name)) {
+        is_ignored = true;
+        break;
+      }
+    }
+
+    if (is_ignored) {
+      continue;
+    }
+
+    rc = cl.drop_index(key_info->name);
     if (rc) {
       goto error;
     }
@@ -1654,12 +1684,14 @@ error:
   goto done;
 }
 
-bool ha_sdb::inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
+bool ha_sdb::inplace_alter_table(TABLE *altered_table,
+                                 Alter_inplace_info *ha_alter_info) {
   bool rs = true;
   int rc = 0;
   THD *thd = current_thd;
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
+  List<char> ignored_keys;
 
   DBUG_ASSERT(ha_alter_info->handler_flags | INPLACE_ONLINE_OPERATIONS);
 
@@ -1686,8 +1718,26 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_al
     }
   }
 
+  // If it's a redefinition of the secondary attributes, such as btree/hash and
+  // comment, don't recreate the index.
+  if (ha_alter_info->handler_flags & INPLACE_ONLINE_DROPIDX &&
+      ha_alter_info->handler_flags & INPLACE_ONLINE_ADDIDX) {
+    KEY *drop_key = NULL;
+    KEY *add_key = NULL;
+    for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
+      drop_key = ha_alter_info->index_drop_buffer[i];
+      for (uint j = 0; j < ha_alter_info->index_add_count; j++) {
+        add_key =
+            &ha_alter_info->key_info_buffer[ha_alter_info->index_add_buffer[j]];
+        if (sdb_is_same_index(drop_key, add_key)) {
+          ignored_keys.push_back(drop_key->name);
+        }
+      }
+    }
+  }
+
   if (ha_alter_info->handler_flags & INPLACE_ONLINE_DROPIDX) {
-    rc = drop_index(cl, ha_alter_info);
+    rc = drop_index(cl, ha_alter_info, ignored_keys);
     if (0 != rc) {
       my_error(ER_GET_ERRNO, MYF(0), rc);
       goto error;
@@ -1695,11 +1745,16 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table, Alter_inplace_info *ha_al
   }
 
   if (ha_alter_info->handler_flags & INPLACE_ONLINE_ADDIDX) {
-    rc = create_index(cl, ha_alter_info);
+    rc = create_index(cl, ha_alter_info, ignored_keys);
     if (0 != rc) {
       my_error(ER_GET_ERRNO, MYF(0), rc);
       goto error;
     }
+  }
+
+  if (ha_alter_info->handler_flags & Alter_inplace_info::RENAME_INDEX) {
+    my_error(HA_ERR_UNSUPPORTED, MYF(0), cl.get_cl_name());
+    goto error;
   }
 
   rs = false;
@@ -1890,11 +1945,6 @@ int ha_sdb::get_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
       sharding_key_builder.append(key_part->field->field_name, 1);
     }
     sharding_key = sharding_key_builder.obj();
-  } else {
-    Field **field = form->field;
-    if (*field) {
-      sharding_key = BSON((*field)->field_name << 1);
-    }
   }
 
 done:

@@ -82,7 +82,9 @@ class Sdb_cl {
 
   int drop();
 
-  int get_count(long long &count);
+  int get_count(long long &count,
+                const bson::BSONObj &condition = SDB_EMPTY_BSON, 
+                const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
  private:
   Sdb_conn *m_conn;
