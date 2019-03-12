@@ -404,8 +404,13 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
 
     case MYSQL_TYPE_DATE: {
       MYSQL_TIME ltime;
+      my_time_flags_t flags = TIME_FUZZY_DATE;
+      if (Item::FUNC_ITEM == item_val->type() &&
+          strcmp("cast_as_time", ((Item_func *)item_val)->func_name())) {
+        flags |= TIME_DATETIME_ONLY;
+      }
       if (STRING_RESULT == item_val->result_type() &&
-          !item_val->get_date(&ltime, TIME_FUZZY_DATE)) {
+          !item_val->get_date(&ltime, flags)) {
         struct tm tm_val;
         tm_val.tm_sec = ltime.second;
         tm_val.tm_min = ltime.minute;
@@ -453,8 +458,14 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
 
     case MYSQL_TYPE_DATETIME: {
       MYSQL_TIME ltime;
+      my_time_flags_t flags = TIME_FUZZY_DATE;
+      if (Item::FUNC_ITEM == item_val->type() &&
+          strcmp("cast_as_time", ((Item_func *)item_val)->func_name())) {
+        flags |= TIME_DATETIME_ONLY;
+      }
+
       if (item_val->result_type() != STRING_RESULT ||
-          item_val->get_date(&ltime, TIME_FUZZY_DATE) || ltime.year > 9999 ||
+          item_val->get_date(&ltime, flags) || ltime.year > 9999 ||
           ltime.year < 1000) {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;
         goto error;
