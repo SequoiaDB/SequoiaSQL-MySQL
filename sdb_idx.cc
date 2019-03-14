@@ -626,19 +626,22 @@ my_bool sdb_is_same_index(const KEY *a, const KEY *b) {
   my_bool rs = false;
   const KEY_PART_INFO *key_part_a = NULL;
   const KEY_PART_INFO *key_part_b = NULL;
+  const char *field_name_a = NULL;
+  const char *field_name_b = NULL;
 
   if (strcmp(a->name, b->name) != 0 ||
       a->user_defined_key_parts != b->user_defined_key_parts ||
       (a->flags & HA_NOSAME) != (b->flags & HA_NOSAME)) {
-    goto error;
+    goto done;
   }
 
   key_part_a = a->key_part;
   key_part_b = b->key_part;
   for (uint i = 0; i < a->user_defined_key_parts; ++i) {
-    if (strcmp(key_part_a->field->field_name, key_part_b->field->field_name) !=
-        0) {
-      goto error;
+    field_name_a = key_part_a->field->field_name;
+    field_name_b = key_part_b->field->field_name;
+    if (strcmp(field_name_a, field_name_b) != 0) {
+      goto done;
     }
     ++key_part_a;
     ++key_part_b;
@@ -647,6 +650,4 @@ my_bool sdb_is_same_index(const KEY *a, const KEY *b) {
   rs = true;
 done:
   return rs;
-error:
-  goto done;
 }

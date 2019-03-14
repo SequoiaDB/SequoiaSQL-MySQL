@@ -1615,28 +1615,18 @@ error:
 }
 
 int ha_sdb::create_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
-                         List<char> &ignored_keys) {
-  const KEY *key_info;
+                         Bitmap<MAX_INDEXES> &ignored_keys) {
   int rc = 0;
+  const KEY *key_info = NULL;
+  uint key_nr = 0;
 
   for (uint i = 0; i < ha_alter_info->index_add_count; i++) {
-    key_info =
-        &ha_alter_info->key_info_buffer[ha_alter_info->index_add_buffer[i]];
-    my_bool is_ignored = false;
-    List_iterator<char> iter(ignored_keys);
-    char *ignored_key_name = NULL;
-
-    while ((ignored_key_name = iter++)) {
-      if (0 == strcmp(ignored_key_name, key_info->name)) {
-        is_ignored = true;
-        break;
-      }
-    }
-
-    if (is_ignored) {
+    if (ignored_keys.is_set(i)) {
       continue;
     }
 
+    key_nr = ha_alter_info->index_add_buffer[i];
+    key_info = &ha_alter_info->key_info_buffer[key_nr];
     rc = sdb_create_index(key_info, cl);
     if (rc) {
       goto error;
@@ -1649,7 +1639,7 @@ error:
 }
 
 int ha_sdb::drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
-                       List<char> &ignored_keys) {
+                       Bitmap<MAX_INDEXES> &ignored_keys) {
   int rc = 0;
 
   if (NULL == ha_alter_info->index_drop_buffer) {
@@ -1657,22 +1647,11 @@ int ha_sdb::drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
   }
 
   for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
-    KEY *key_info = ha_alter_info->index_drop_buffer[i];
-    my_bool is_ignored = false;
-    List_iterator<char> iter(ignored_keys);
-    char *ignored_key_name = NULL;
-
-    while ((ignored_key_name = iter++)) {
-      if (0 == strcmp(ignored_key_name, key_info->name)) {
-        is_ignored = true;
-        break;
-      }
-    }
-
-    if (is_ignored) {
+    if (ignored_keys.is_set(i)) {
       continue;
     }
 
+    KEY *key_info = ha_alter_info->index_drop_buffer[i];
     rc = cl.drop_index(key_info->name);
     if (rc) {
       goto error;
@@ -1691,7 +1670,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   THD *thd = current_thd;
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
-  List<char> ignored_keys;
+  Bitmap<MAX_INDEXES> ignored_drop_keys;
+  Bitmap<MAX_INDEXES> ignored_add_keys;
 
   DBUG_ASSERT(ha_alter_info->handler_flags | INPLACE_ONLINE_OPERATIONS);
 
@@ -1722,22 +1702,21 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   // comment, don't recreate the index.
   if (ha_alter_info->handler_flags & INPLACE_ONLINE_DROPIDX &&
       ha_alter_info->handler_flags & INPLACE_ONLINE_ADDIDX) {
-    KEY *drop_key = NULL;
-    KEY *add_key = NULL;
     for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
-      drop_key = ha_alter_info->index_drop_buffer[i];
+      KEY *drop_key = ha_alter_info->index_drop_buffer[i];
       for (uint j = 0; j < ha_alter_info->index_add_count; j++) {
-        add_key =
-            &ha_alter_info->key_info_buffer[ha_alter_info->index_add_buffer[j]];
+        uint key_nr = ha_alter_info->index_add_buffer[j];
+        KEY *add_key = &ha_alter_info->key_info_buffer[key_nr];
         if (sdb_is_same_index(drop_key, add_key)) {
-          ignored_keys.push_back(drop_key->name);
+          ignored_drop_keys.set_bit(i);
+          ignored_add_keys.set_bit(j);
         }
       }
     }
   }
 
   if (ha_alter_info->handler_flags & INPLACE_ONLINE_DROPIDX) {
-    rc = drop_index(cl, ha_alter_info, ignored_keys);
+    rc = drop_index(cl, ha_alter_info, ignored_drop_keys);
     if (0 != rc) {
       my_error(ER_GET_ERRNO, MYF(0), rc);
       goto error;
@@ -1745,7 +1724,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   }
 
   if (ha_alter_info->handler_flags & INPLACE_ONLINE_ADDIDX) {
-    rc = create_index(cl, ha_alter_info, ignored_keys);
+    rc = create_index(cl, ha_alter_info, ignored_add_keys);
     if (0 != rc) {
       my_error(ER_GET_ERRNO, MYF(0), rc);
       goto error;

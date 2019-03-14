@@ -288,10 +288,10 @@ class ha_sdb : public handler {
   int flush_bulk_insert(bool ignore_dup_key);
 
   int create_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
-                   List<char> &ignored_keys);
+                   Bitmap<MAX_INDEXES> &ignored_keys);
 
   int drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
-                 List<char> &ignored_keys);
+                 Bitmap<MAX_INDEXES> &ignored_keys);
 
   int get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
                      bson::BSONObj &options, my_bool use_partition);
