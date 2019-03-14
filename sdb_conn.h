@@ -22,6 +22,7 @@
 #include "sdb_def.h"
 
 class Sdb_cl;
+class Sdb_statistics;
 
 class Sdb_conn {
  public:
@@ -54,6 +55,8 @@ class Sdb_conn {
   int drop_cl(char *cs_name, char *cl_name);
 
   int drop_cs(char *cs_name);
+
+  int get_cl_statistics(char *cs_name, char *cl_name, Sdb_statistics &stats);
 
   inline bool is_valid() { return m_connection.isValid(); }
 

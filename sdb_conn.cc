@@ -20,12 +20,14 @@
 #include "sdb_conn.h"
 #include <sql_class.h>
 #include <client.hpp>
+#include <sstream>
 #include "sdb_cl.h"
 #include "sdb_conf.h"
 #include "sdb_util.h"
 #include "sdb_errcode.h"
 #include "sdb_conf.h"
 #include "sdb_log.h"
+#include "ha_sdb.h"
 
 Sdb_conn::Sdb_conn(my_thread_id _tid)
     : m_transaction_on(false), m_thread_id(_tid) {}
@@ -285,6 +287,75 @@ done:
 error:
   if (IS_SDB_NET_ERR(rc)) {
     connect();
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
+int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
+                                Sdb_statistics &stats) {
+  int rc = SDB_ERR_OK;
+  sdbclient::sdbCursor cursor;
+  bson::BSONObj condition;
+  bson::BSONObj obj;
+  int retry_times = 2;
+  std::stringstream ss;
+
+  DBUG_ASSERT(NULL != cs_name);
+  DBUG_ASSERT(strlength(cs_name) != 0);
+
+  ss << "select CL.PageSize,"
+     << "sum(CL.TotalDataPages) as TotalDataPages,"
+     << "sum(CL.TotalIndexPages) as TotalIndexPages,"
+     << "sum(CL.TotalDataFreeSpace) as TotalDataFreeSpace,"
+     << "sum(CL.TotalRecords) as TotalRecords "
+     << "from "
+     << "("
+     << "select Name from $SNAPSHOT_CATA "
+     << "where MainCLName="
+     << "'" << cs_name << "." << cl_name << "' "
+     << "or (IsMainCL is null and Name="
+     << "'" << cs_name << "." << cl_name << "')"
+     << ") as CATA "
+     << "inner join "
+     << "("
+     << "select T.Name,"
+     << "T.Details.$[0].PageSize as PageSize,"
+     << "T.Details.$[0].TotalDataPages as TotalDataPages,"
+     << "T.Details.$[0].TotalIndexPages as TotalIndexPages,"
+     << "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace,"
+     << "T.Details.$[0].TotalRecords as TotalRecords "
+     << "from $SNAPSHOT_CL as T "
+     << "where T.NodeSelect='primary' split by T.Details"
+     << ") as CL "
+     << "on CATA.Name=CL.Name";
+
+  std::string sql = ss.str();
+
+retry:
+  rc = m_connection.exec(sql.c_str(), cursor);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  rc = cursor.next(obj);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  stats.page_size = obj.getIntField("PageSize");
+  stats.total_data_pages = obj.getIntField("TotalDataPages");
+  stats.total_index_pages = obj.getIntField("TotalIndexPages");
+  stats.total_data_free_space = obj.getField("TotalDataFreeSpace").numberLong();
+  stats.total_records = obj.getField("TotalRecords").numberLong();
+
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
+      goto retry;
+    }
   }
   convert_sdb_code(rc);
   goto done;

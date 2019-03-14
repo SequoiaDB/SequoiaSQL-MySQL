@@ -20,12 +20,34 @@
 #include "sdb_def.h"
 #include "sdb_cl.h"
 #include "sdb_util.h"
+#include "sdb_lock.h"
+
+/*
+  Stats that can be retrieved from SequoiaDB.
+*/
+struct Sdb_statistics {
+  int32 page_size;
+  int32 total_data_pages;
+  int32 total_index_pages;
+  int64 total_data_free_space;
+  int64 total_records;
+
+  Sdb_statistics() {
+    page_size = 0;
+    total_data_pages = 0;
+    total_index_pages = 0;
+    total_data_free_space = 0;
+    total_records = ~(int64)0;
+  }
+};
 
 struct Sdb_share {
   char *table_name;
-  uint table_name_length, use_count;
-  mysql_mutex_t mutex;
+  uint table_name_length;
+  uint use_count;
   THR_LOCK lock;
+  Sdb_mutex mutex;
+  Sdb_statistics stat;
 };
 
 class ha_sdb : public handler {
@@ -113,16 +135,6 @@ class ha_sdb : public handler {
     support indexes.
    */
   uint max_supported_key_length() const;
-
-  /** @brief
-    Called in test_quick_select to determine if indexes should be used.
-  */
-  virtual double scan_time();
-
-  /** @brief
-    This method will never be called if you do not implement indexes.
-  */
-  virtual double read_time(uint, uint, ha_rows rows);
 
   /*
     Everything below are methods that we implement in ha_example.cc.
@@ -241,6 +253,7 @@ class ha_sdb : public handler {
   int start_statement(THD *thd, uint table_count);
   int delete_all_rows(void);
   int truncate();
+  int analyze(THD *thd, HA_CHECK_OPT *check_opt);
   ha_rows records_in_range(uint inx, key_range *min_key, key_range *max_key);
   int delete_table(const char *from);
   int rename_table(const char *from, const char *to);
@@ -305,6 +318,8 @@ class ha_sdb : public handler {
   my_bool get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond);
 
   int get_query_flag(const uint sql_command, enum thr_lock_type lock_type);
+
+  int update_stats(THD *thd, bool do_read_stat);
 
  private:
   THR_LOCK_DATA lock_data;

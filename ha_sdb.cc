@@ -133,8 +133,6 @@ static Sdb_share *get_sdb_share(const char *table_name, TABLE *table) {
       goto error;
     }
     thr_lock_init(&share->lock);
-    mysql_mutex_init(key_mutex_SDB_SHARE_mutex, &share->mutex,
-                     MY_MUTEX_INIT_FAST);
   }
 
   share->use_count++;
@@ -155,7 +153,6 @@ static int free_sdb_share(Sdb_share *share) {
   if (!--share->use_count) {
     my_hash_delete(&sdb_open_tables, (uchar *)share);
     thr_lock_delete(&share->lock);
-    mysql_mutex_destroy(&share->mutex);
     my_free(share);
   }
   mysql_mutex_unlock(&sdb_mutex);
@@ -238,7 +235,6 @@ uint ha_sdb::max_supported_key_part_length() const {
 
 int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   int rc = 0;
-  ref_length = SDB_OID_LEN;  // length of _id
   Sdb_conn *connection = NULL;
   Sdb_cl cl;
 
@@ -278,6 +274,20 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   }
 
   thr_lock_data_init(&share->lock, &lock_data, (void *)this);
+
+  ref_length = SDB_OID_LEN;  // length of _id
+  stats.mrr_length_per_rec = ref_length + sizeof(void *);
+  /* max_data_file_length and max_index_file_length are actually not used in
+   * cost estimate.
+   */
+  stats.max_data_file_length = 8LL * 1024 * 1024 * 1024 * 1024;   // 8TB
+  stats.max_index_file_length = 8LL * 1024 * 1024 * 1024 * 1024;  // 8TB
+  stats.table_in_mem_estimate = 0;
+
+  rc = update_stats(ha_thd(), true);
+  if (0 != rc) {
+    goto error;
+  }
 
 done:
   return rc;
@@ -864,6 +874,7 @@ error:
 
 int ha_sdb::index_last(uchar *buf) {
   int rc = 0;
+  ha_statistic_increment(&SSV::ha_read_last_count);
   rc = index_read_one(pushed_condition, -1, buf);
   if (rc) {
     goto error;
@@ -876,6 +887,7 @@ error:
 
 int ha_sdb::index_first(uchar *buf) {
   int rc = 0;
+  ha_statistic_increment(&SSV::ha_read_first_count);
   rc = index_read_one(pushed_condition, 1, buf);
   if (rc) {
     goto error;
@@ -894,6 +906,8 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   bson::BSONObj condition = pushed_condition;
   bson::BSONObj condition_idx;
   int order_direction = 1;
+
+  ha_statistic_increment(&SSV::ha_read_key_count);
 
   if (NULL != key_ptr && active_index < MAX_KEY) {
     KEY *key_info = table->key_info + active_index;
@@ -1011,16 +1025,6 @@ int ha_sdb::index_end() {
   collection->close();
   active_index = MAX_KEY;
   return 0;
-}
-
-double ha_sdb::scan_time() {
-  // TODO*********
-  return 10;
-}
-
-double ha_sdb::read_time(uint index, uint ranges, ha_rows rows) {
-  // TODO********
-  return rows;
 }
 
 int ha_sdb::rnd_init(bool scan) {
@@ -1317,6 +1321,8 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
+  ha_statistic_increment(&SSV::ha_read_rnd_count);
+
   memcpy((void *)oid.getData(), pos, SDB_OID_LEN);
   objBuilder.appendOID(SDB_OID_FIELD, &oid);
   bson::BSONObj oidObj = objBuilder.obj();
@@ -1326,7 +1332,6 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
     goto error;
   }
 
-  ha_statistic_increment(&SSV::ha_read_rnd_count);
   rc = obj_to_row(cur_rec, buf);
   if (rc != 0) {
     goto error;
@@ -1352,52 +1357,81 @@ void ha_sdb::position(const uchar *record) {
 
 int ha_sdb::info(uint flag) {
   int rc = 0;
-  long long rec_num = 0;
 
-  rc = ensure_collection(ha_thd());
-  if (0 != rc) {
-    goto error;
-  }
-
-  if (count_times++ % 100 == 0) {
-    rc = collection->get_count(rec_num);
-    if (rc != 0) {
-      goto error;
-    }
-    last_count_time = time(NULL);
-    count_times = 1;
-  } else if (count_times % 10 == 0) {
-    time_t cur_time = time(NULL);
-    // get record count every 5 minutes
-    if (difftime(cur_time, last_count_time) > 5 * 60) {
-      rc = collection->get_count(rec_num);
-      if (rc != 0) {
+  if (flag & HA_STATUS_VARIABLE) {
+    if (!(flag & HA_STATUS_NO_LOCK) || stats.records == ~(ha_rows)0) {
+      rc = update_stats(ha_thd(), !(flag & HA_STATUS_NO_LOCK));
+      if (0 != rc) {
         goto error;
       }
-      last_count_time = cur_time;
-      count_times = 1;
     }
   }
-  if (count_times != 1) {
-    goto done;
+
+  if (flag & HA_STATUS_TIME) {
+    stats.create_time = 0;
+    stats.check_time = 0;
+    stats.update_time = 0;
   }
 
-  // TODO: fill the stats with actual info.
-  stats.data_file_length = (rec_num * 1024) + 32 * 1024 * 1024;
-  stats.max_data_file_length = 1099511627776LL;  // 1*1024*1024*1024*1024
-  stats.index_file_length = (rec_num * 100) + 32 * 1024 * 1024;
-  stats.max_index_file_length = 10737418240LL;  // 10*1024*1024*1024
-  stats.delete_length = 0;
-  stats.auto_increment_value = 0;
-  stats.records = rec_num;
-  stats.deleted = 0;
-  stats.mean_rec_length = 1024;
-  stats.create_time = 0;
-  stats.check_time = 0;
-  stats.update_time = 0;
-  stats.block_size = 0;
-  stats.mrr_length_per_rec = 0;
-  stats.table_in_mem_estimate = -1;
+  if (flag & HA_STATUS_AUTO) {
+    stats.auto_increment_value = 0;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
+  Sdb_statistics stat;
+  int rc = 0;
+
+  do {
+    if (share && !do_read_stat) {
+      share->mutex.lock();
+      stat = share->stat;
+      share->mutex.unlock();
+
+      DBUG_ASSERT(stat.total_records != ~(int64)0);  // should never be invalid
+
+      /* Accept shared cached statistics if total_records is valid. */
+      if (stat.total_records != ~(int64)0) {
+        break;
+      }
+    }
+
+    /* Request statistics from SequoiaDB */
+    Sdb_conn *conn = check_sdb_in_thd(thd, true);
+    if (NULL == conn) {
+      rc = HA_ERR_NO_CONNECTION;
+      goto error;
+    }
+    DBUG_ASSERT(conn->thread_id() == thd->thread_id());
+    rc = conn->get_cl_statistics(db_name, table_name, stat);
+    if (0 != rc) {
+      goto done;
+    }
+
+    /* Update shared statistics with fresh data */
+    if (share) {
+      Sdb_mutex_guard guard(share->mutex);
+      share->stat = stat;
+    }
+
+    break;
+  } while (0);
+
+  stats.block_size = (uint)stat.page_size;
+  stats.data_file_length = (ulonglong)stat.total_data_pages * stat.page_size;
+  stats.index_file_length = (ulonglong)stat.total_index_pages * stat.page_size;
+  stats.delete_length = (ulonglong)stat.total_data_free_space;
+  stats.records = (ha_rows)stat.total_records;
+  stats.mean_rec_length =
+      (0 == stats.records)
+          ? 0
+          : (ulong)((stats.data_file_length - stats.delete_length) /
+                    stats.records);
 
 done:
   return rc;
@@ -1769,6 +1803,10 @@ int ha_sdb::truncate() {
     stats.records = 0;
   }
   return rc;
+}
+
+int ha_sdb::analyze(THD *thd, HA_CHECK_OPT *check_opt) {
+  return update_stats(thd, true);
 }
 
 ha_rows ha_sdb::records_in_range(uint inx, key_range *min_key,
