@@ -76,6 +76,12 @@ class Sdb_cl {
 
   int truncate();
 
+  int set_attributes(const bson::BSONObj &options);
+
+  int create_auto_increment(const bson::BSONObj &options);
+
+  int drop_auto_increment(const char *field_name);
+
   void close();  // close m_cursor
 
   my_thread_id thread_id();
@@ -83,7 +89,7 @@ class Sdb_cl {
   int drop();
 
   int get_count(long long &count,
-                const bson::BSONObj &condition = SDB_EMPTY_BSON, 
+                const bson::BSONObj &condition = SDB_EMPTY_BSON,
                 const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
  private:

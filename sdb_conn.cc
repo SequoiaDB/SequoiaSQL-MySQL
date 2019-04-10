@@ -360,3 +360,36 @@ error:
   convert_sdb_code(rc);
   goto done;
 }
+
+int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type,
+                       const bson::BSONObj &condition,
+                       const bson::BSONObj &selected,
+                       const bson::BSONObj &orderBy, const bson::BSONObj &hint,
+                       INT64 numToSkip) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+  sdbclient::sdbCursor cursor;
+
+retry:
+  rc = m_connection.getSnapshot(cursor, snap_type, condition, selected, orderBy,
+                                hint, numToSkip, 1);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  rc = cursor.next(obj);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}

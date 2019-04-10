@@ -20,11 +20,23 @@
 
 #define SDB_CS_NAME_MAX_SIZE 127
 #define SDB_CL_NAME_MAX_SIZE 127
+#define SDB_CL_FULL_NAME_MAX_SIZE (SDB_CS_NAME_MAX_SIZE + SDB_CL_NAME_MAX_SIZE)
 
 #define SDB_IDX_FIELD_SIZE_MAX 1024
 #define SDB_MATCH_FIELD_SIZE_MAX 1024
 
 #define SDB_CHARSET my_charset_utf8mb4_bin
+
+#define SDB_FIELD_NAME_AUTOINCREMENT "AutoIncrement"
+#define SDB_FIELD_NAME_FIELD "Field"
+#define SDB_FIELD_NAME "Name"
+#define SDB_FIELD_SEQUENCE_NAME "SequenceName"
+#define SDB_FIELD_CURRENT_VALUE "CurrentValue"
+#define SDB_FIELD_INCREMENT "Increment"
+#define SDB_FIELD_START_VALUE "StartValue"
+#define SDB_FIELD_ACQUIRE_SIZE "AcquireSize"
+#define SDB_FIELD_CACHE_SIZE "CacheSize"
+#define SDB_FIELD_MAX_VALUE "MaxValue"
 
 const static bson::BSONObj SDB_EMPTY_BSON;
 

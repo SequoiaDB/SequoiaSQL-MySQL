@@ -338,6 +338,69 @@ error:
   goto done;
 }
 
+int Sdb_cl::set_attributes(const bson::BSONObj &options) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+retry:
+  rc = m_cl.setAttributes(options);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    bool is_transaction = m_conn->is_transaction_on();
+    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
+int Sdb_cl::drop_auto_increment(const char *field_name) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+retry:
+  rc = m_cl.dropAutoIncrement(field_name);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    bool is_transaction = m_conn->is_transaction_on();
+    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
+int Sdb_cl::create_auto_increment(const bson::BSONObj &options) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+retry:
+  rc = m_cl.createAutoIncrement(options);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    bool is_transaction = m_conn->is_transaction_on();
+    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
 void Sdb_cl::close() {
   m_cursor.close();
 }
@@ -371,8 +434,7 @@ error:
   goto done;
 }
 
-int Sdb_cl::get_count(long long &count, 
-                      const bson::BSONObj &condition, 
+int Sdb_cl::get_count(long long &count, const bson::BSONObj &condition,
                       const bson::BSONObj &hint) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;

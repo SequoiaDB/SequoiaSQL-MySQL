@@ -58,6 +58,12 @@ class Sdb_conn {
 
   int get_cl_statistics(char *cs_name, char *cl_name, Sdb_statistics &stats);
 
+  int snapshot(bson::BSONObj &obj, int snap_type,
+               const bson::BSONObj &condition = SDB_EMPTY_BSON,
+               const bson::BSONObj &selected = SDB_EMPTY_BSON,
+               const bson::BSONObj &orderBy = SDB_EMPTY_BSON,
+               const bson::BSONObj &hint = SDB_EMPTY_BSON, INT64 numToSkip = 0);
+
   inline bool is_valid() { return m_connection.isValid(); }
 
  private:
