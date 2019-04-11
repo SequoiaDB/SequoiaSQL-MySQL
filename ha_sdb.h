@@ -326,6 +326,8 @@ class ha_sdb : public handler {
                              const HA_CREATE_INFO *create_info,
                              bson::BSONObj &option);
 
+  void update_last_insert_id();
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
@@ -343,6 +345,8 @@ class ha_sdb : public handler {
   bool m_ignore_dup_key;
   bool m_write_can_replace;
   bool m_use_bulk_insert;
+  int m_bulk_insert_total;
   std::vector<bson::BSONObj> m_bulk_insert_rows;
   Sdb_obj_cache<bson::BSONElement> m_bson_element_cache;
+  bool m_has_update_insert_id;
 };

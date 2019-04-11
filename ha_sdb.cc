@@ -275,6 +275,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_ignore_dup_key = false;
   m_write_can_replace = false;
   m_use_bulk_insert = false;
+  m_bulk_insert_total = 0;
+  m_has_update_insert_id = false;
   stats.records = 0;
   memset(db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
   memset(table_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
@@ -429,6 +431,7 @@ int ha_sdb::reset() {
   m_ignore_dup_key = false;
   m_write_can_replace = false;
   m_use_bulk_insert = false;
+  m_has_update_insert_id = false;
   return 0;
 }
 
@@ -789,6 +792,7 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
     return;
   }
 
+  m_bulk_insert_total = rows;
   m_use_bulk_insert = true;
 }
 
@@ -811,6 +815,8 @@ int ha_sdb::flush_bulk_insert() {
       rc = HA_ERR_FOUND_DUPP_KEY;
     }
   }
+
+  update_last_insert_id();
   stats.records += m_bulk_insert_rows.size();
   m_bulk_insert_rows.clear();
   return rc;
@@ -829,13 +835,36 @@ int ha_sdb::end_bulk_insert() {
   return rc;
 }
 
+void ha_sdb::update_last_insert_id() {
+  int rc = SDB_ERR_OK;
+  if (!m_has_update_insert_id) {
+    Sdb_conn *conn = check_sdb_in_thd(ha_thd(), true);
+    bson::BSONObj result;
+    bson::BSONElement ele;
+
+    rc = conn->get_last_result_obj(result, false);
+    if (rc != 0) {
+      goto done;
+    }
+
+    ele = result.getField(SDB_FIELD_LAST_GEN_ID);
+    if (!ele.isNumber()) {
+      goto done;
+    }
+
+    insert_id_for_cur_row = ele.numberLong();
+    m_has_update_insert_id = true;
+  }
+done:
+  return;
+}
+
 int ha_sdb::write_row(uchar *buf) {
   int rc = 0;
   bson::BSONObj obj;
   bson::BSONObj tmp_obj;
   ulonglong auto_inc = 0;
   bool auto_inc_explicit_used = false;
-  bool ignore_dup_key = ha_thd()->lex && ha_thd()->lex->is_ignore();
   // TODO: ywx: consider detecting the change of auto_increment_increment
   // ulonglong increment = ha_thd()->variables.auto_increment_increment;
 
@@ -857,7 +886,8 @@ int ha_sdb::write_row(uchar *buf) {
 
   if (m_use_bulk_insert) {
     m_bulk_insert_rows.push_back(obj);
-    if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size) {
+    if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size || 
+        (int)m_bulk_insert_rows.size() == m_bulk_insert_total) {
       rc = flush_bulk_insert();
       if (rc != 0) {
         goto error;
@@ -876,6 +906,7 @@ int ha_sdb::write_row(uchar *buf) {
     } else if (m_ignore_dup_key) {
       flag = FLG_INSERT_CONTONDUP;
     }
+
     rc = collection->bulk_insert(flag, row);
     if (rc != 0) {
       if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
@@ -885,6 +916,7 @@ int ha_sdb::write_row(uchar *buf) {
       goto error;
     }
 
+    update_last_insert_id();
     stats.records++;
   }
 
@@ -1772,7 +1804,6 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
 enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
   enum_alter_inplace_result rs;
-  KEY *keyInfo = NULL;
   KEY *new_key = NULL;
   KEY_PART_INFO *key_part = NULL;
   List_iterator_fast<Create_field> cf_it(
