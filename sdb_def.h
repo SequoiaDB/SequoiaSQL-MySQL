@@ -37,6 +37,7 @@
 #define SDB_FIELD_ACQUIRE_SIZE "AcquireSize"
 #define SDB_FIELD_CACHE_SIZE "CacheSize"
 #define SDB_FIELD_MAX_VALUE "MaxValue"
+#define SDB_FIELD_LAST_GEN_ID "LastGenerateID"
 
 const static bson::BSONObj SDB_EMPTY_BSON;
 
