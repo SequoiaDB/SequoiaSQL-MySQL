@@ -38,41 +38,41 @@ class Sdb_cl {
 
   int query(const bson::BSONObj &condition = SDB_EMPTY_BSON,
             const bson::BSONObj &selected = SDB_EMPTY_BSON,
-            const bson::BSONObj &orderBy = SDB_EMPTY_BSON,
-            const bson::BSONObj &hint = SDB_EMPTY_BSON, INT64 numToSkip = 0,
-            INT64 numToReturn = -1, INT32 flags = QUERY_WITH_RETURNDATA);
+            const bson::BSONObj &order_by = SDB_EMPTY_BSON,
+            const bson::BSONObj &hint = SDB_EMPTY_BSON, longlong num_to_skip = 0,
+            longlong num_to_return = -1, int flags = QUERY_WITH_RETURNDATA);
 
   int query_one(bson::BSONObj &obj,
                 const bson::BSONObj &condition = SDB_EMPTY_BSON,
                 const bson::BSONObj &selected = SDB_EMPTY_BSON,
-                const bson::BSONObj &orderBy = SDB_EMPTY_BSON,
-                const bson::BSONObj &hint = SDB_EMPTY_BSON, INT64 numToSkip = 0,
-                INT32 flags = QUERY_WITH_RETURNDATA);
+                const bson::BSONObj &order_by = SDB_EMPTY_BSON,
+                const bson::BSONObj &hint = SDB_EMPTY_BSON, longlong num_to_skip = 0,
+                int flags = QUERY_WITH_RETURNDATA);
 
-  int current(bson::BSONObj &obj);
+  int current(bson::BSONObj &obj, my_bool get_owned = true);
 
-  int next(bson::BSONObj &obj);
+  int next(bson::BSONObj &obj, my_bool get_owned = true);
 
   int insert(bson::BSONObj &obj);
 
-  int bulk_insert(INT32 flag, std::vector<bson::BSONObj> &objs);
+  int bulk_insert(int flag, std::vector<bson::BSONObj> &objs);
 
   int update(const bson::BSONObj &rule,
              const bson::BSONObj &condition = SDB_EMPTY_BSON,
-             const bson::BSONObj &hint = SDB_EMPTY_BSON, INT32 flag = 0);
+             const bson::BSONObj &hint = SDB_EMPTY_BSON, int flag = 0);
 
   int upsert(const bson::BSONObj &rule,
              const bson::BSONObj &condition = SDB_EMPTY_BSON,
              const bson::BSONObj &hint = SDB_EMPTY_BSON,
-             const bson::BSONObj &setOnInsert = SDB_EMPTY_BSON, INT32 flag = 0);
+             const bson::BSONObj &set_on_insert = SDB_EMPTY_BSON, int flag = 0);
 
   int del(const bson::BSONObj &condition = SDB_EMPTY_BSON,
           const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
-  int create_index(const bson::BSONObj &indexDef, const CHAR *pName,
-                   BOOLEAN isUnique, BOOLEAN isEnforced);
+  int create_index(const bson::BSONObj &index_def, const CHAR *name,
+                   my_bool is_unique, my_bool is_enforced);
 
-  int drop_index(const char *pName);
+  int drop_index(const char *name);
 
   int truncate();
 
@@ -88,7 +88,7 @@ class Sdb_cl {
 
   int drop();
 
-  int get_count(long long &count,
+  int get_count(longlong &count,
                 const bson::BSONObj &condition = SDB_EMPTY_BSON,
                 const bson::BSONObj &hint = SDB_EMPTY_BSON);
 

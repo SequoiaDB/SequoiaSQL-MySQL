@@ -76,13 +76,13 @@ const char *Sdb_cl::get_cl_name() {
 }
 
 int Sdb_cl::query(const bson::BSONObj &condition, const bson::BSONObj &selected,
-                  const bson::BSONObj &orderBy, const bson::BSONObj &hint,
-                  INT64 numToSkip, INT64 numToReturn, INT32 flags) {
+                  const bson::BSONObj &order_by, const bson::BSONObj &hint,
+                  longlong num_to_skip, longlong num_to_return, int flags) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.query(m_cursor, condition, selected, orderBy, hint, numToSkip,
-                  numToReturn, flags);
+  rc = m_cl.query(m_cursor, condition, selected, order_by, hint, num_to_skip,
+                  num_to_return, flags);
   if (SDB_ERR_OK != rc) {
     goto error;
   }
@@ -102,13 +102,13 @@ error:
 
 int Sdb_cl::query_one(bson::BSONObj &obj, const bson::BSONObj &condition,
                       const bson::BSONObj &selected,
-                      const bson::BSONObj &orderBy, const bson::BSONObj &hint,
-                      INT64 numToSkip, INT32 flags) {
+                      const bson::BSONObj &order_by, const bson::BSONObj &hint,
+                      longlong num_to_skip, int flags) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCursor cursor_tmp;
   int retry_times = 2;
 retry:
-  rc = m_cl.query(cursor_tmp, condition, selected, orderBy, hint, numToSkip, 1,
+  rc = m_cl.query(cursor_tmp, condition, selected, order_by, hint, num_to_skip, 1,
                   flags);
   if (rc != SDB_ERR_OK) {
     goto error;
@@ -132,9 +132,9 @@ error:
   goto done;
 }
 
-int Sdb_cl::current(bson::BSONObj &obj) {
+int Sdb_cl::current(bson::BSONObj &obj, my_bool get_owned) {
   int rc = SDB_ERR_OK;
-  rc = m_cursor.current(obj);
+  rc = m_cursor.current(obj, get_owned);
   if (rc != SDB_ERR_OK) {
     if (SDB_DMS_EOC == rc) {
       rc = HA_ERR_END_OF_FILE;
@@ -149,9 +149,9 @@ error:
   goto done;
 }
 
-int Sdb_cl::next(bson::BSONObj &obj) {
+int Sdb_cl::next(bson::BSONObj &obj, my_bool get_owned) {
   int rc = SDB_ERR_OK;
-  rc = m_cursor.next(obj);
+  rc = m_cursor.next(obj, get_owned);
   if (rc != SDB_ERR_OK) {
     if (SDB_DMS_EOC == rc) {
       rc = HA_ERR_END_OF_FILE;
@@ -187,7 +187,7 @@ error:
   goto done;
 }
 
-int Sdb_cl::bulk_insert(INT32 flag, std::vector<bson::BSONObj> &objs) {
+int Sdb_cl::bulk_insert(int flag, std::vector<bson::BSONObj> &objs) {
   int rc = SDB_ERR_OK;
 
   rc = m_cl.bulkInsert(flag, objs);
@@ -203,12 +203,12 @@ error:
 }
 
 int Sdb_cl::upsert(const bson::BSONObj &rule, const bson::BSONObj &condition,
-                   const bson::BSONObj &hint, const bson::BSONObj &setOnInsert,
-                   INT32 flag) {
+                   const bson::BSONObj &hint, const bson::BSONObj &set_on_insert,
+                   int flag) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.upsert(rule, condition, hint, setOnInsert, flag);
+  rc = m_cl.upsert(rule, condition, hint, set_on_insert, flag);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -226,7 +226,7 @@ error:
 }
 
 int Sdb_cl::update(const bson::BSONObj &rule, const bson::BSONObj &condition,
-                   const bson::BSONObj &hint, INT32 flag) {
+                   const bson::BSONObj &hint, int flag) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
@@ -268,12 +268,12 @@ error:
   goto done;
 }
 
-int Sdb_cl::create_index(const bson::BSONObj &indexDef, const CHAR *pName,
-                         BOOLEAN isUnique, BOOLEAN isEnforced) {
+int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
+                         my_bool is_unique, my_bool is_enforced) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.createIndex(indexDef, pName, isUnique, isEnforced);
+  rc = m_cl.createIndex(index_def, name, is_unique, is_enforced);
   if (SDB_IXM_REDEF == rc) {
     rc = SDB_ERR_OK;
   }
@@ -293,11 +293,11 @@ error:
   goto done;
 }
 
-int Sdb_cl::drop_index(const char *pName) {
+int Sdb_cl::drop_index(const char *name) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.dropIndex(pName);
+  rc = m_cl.dropIndex(name);
   if (SDB_IXM_NOTEXIST == rc) {
     rc = SDB_ERR_OK;
   }

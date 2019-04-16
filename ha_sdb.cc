@@ -1409,7 +1409,7 @@ int ha_sdb::cur_row(uchar *buf) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
-  rc = collection->current(cur_rec);
+  rc = collection->current(cur_rec, false);
   if (rc != 0) {
     goto error;
   }
@@ -1431,7 +1431,7 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
-  rc = collection->next(obj);
+  rc = collection->next(obj, false);
   if (rc != 0) {
     if (HA_ERR_END_OF_FILE == rc) {
       table->status = STATUS_NOT_FOUND;

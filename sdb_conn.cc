@@ -338,7 +338,7 @@ retry:
     goto error;
   }
 
-  rc = cursor.next(obj);
+  rc = cursor.next(obj, false);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -364,15 +364,15 @@ error:
 int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type,
                        const bson::BSONObj &condition,
                        const bson::BSONObj &selected,
-                       const bson::BSONObj &orderBy, const bson::BSONObj &hint,
-                       INT64 numToSkip) {
+                       const bson::BSONObj &order_by, const bson::BSONObj &hint,
+                       INT64 num_to_skip) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
   sdbclient::sdbCursor cursor;
 
 retry:
-  rc = m_connection.getSnapshot(cursor, snap_type, condition, selected, orderBy,
-                                hint, numToSkip, 1);
+  rc = m_connection.getSnapshot(cursor, snap_type, condition, selected, order_by,
+                                hint, num_to_skip, 1);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
