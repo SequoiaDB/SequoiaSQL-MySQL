@@ -101,7 +101,8 @@ static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_OPERATIONS =
     Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
     Alter_inplace_info::ALTER_COLUMN_DEFAULT |
     Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH |
-    Alter_inplace_info::CHANGE_CREATE_OPTION | Alter_inplace_info::RENAME_INDEX;
+    Alter_inplace_info::CHANGE_CREATE_OPTION |
+    Alter_inplace_info::RENAME_INDEX | Alter_inplace_info::ALTER_RENAME;
 
 static uchar *sdb_get_key(Sdb_share *share, size_t *length,
                           my_bool not_used MY_ATTRIBUTE((unused))) {
@@ -886,7 +887,7 @@ int ha_sdb::write_row(uchar *buf) {
 
   if (m_use_bulk_insert) {
     m_bulk_insert_rows.push_back(obj);
-    if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size || 
+    if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size ||
         (int)m_bulk_insert_rows.size() == m_bulk_insert_total) {
       rc = flush_bulk_insert();
       if (rc != 0) {
