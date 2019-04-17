@@ -390,10 +390,12 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   stats.max_index_file_length = 8LL * 1024 * 1024 * 1024 * 1024;  // 8TB
   stats.table_in_mem_estimate = 0;
 
-  rc = update_stats(ha_thd(), true);
+  /*comment the update_stats to prevent consuming a lot of time
+    when load the tables in using database.*/
+  /*rc = update_stats(ha_thd(), true);
   if (0 != rc) {
     goto error;
-  }
+  }*/
 
 done:
   return rc;
@@ -1530,10 +1532,12 @@ int ha_sdb::info(uint flag) {
 
   if (flag & HA_STATUS_VARIABLE) {
     if (!(flag & HA_STATUS_NO_LOCK) || stats.records == ~(ha_rows)0) {
-      rc = update_stats(ha_thd(), !(flag & HA_STATUS_NO_LOCK));
+      /*comment the update_stats to prevent consuming a lot of time
+        when load the tables in using database.*/
+      /*rc = update_stats(ha_thd(), !(flag & HA_STATUS_NO_LOCK));
       if (0 != rc) {
         goto error;
-      }
+      }*/
     }
   }
 
@@ -2357,7 +2361,7 @@ void ha_sdb::build_auto_inc_option(const Field *field,
                                    bson::BSONObj &option) {
   bson::BSONObjBuilder build;
   ulonglong default_value = 0;
-  ulonglong start_value = 1;
+  longlong start_value = 1;
   struct system_variables *variables = &ha_thd()->variables;
   longlong max_value = field->get_max_int_value();
   if (max_value < 0 && ((Field_num *)field)->unsigned_flag) {
@@ -2373,7 +2377,7 @@ void ha_sdb::build_auto_inc_option(const Field *field,
   default_value = sdb_default_autoinc_acquire_size(field->type());
   build.append(SDB_FIELD_NAME_FIELD, field->field_name);
   build.append(SDB_FIELD_INCREMENT, (int)variables->auto_increment_increment);
-  build.append(SDB_FIELD_START_VALUE, (longlong)start_value);
+  build.append(SDB_FIELD_START_VALUE, start_value);
   build.append(SDB_FIELD_ACQUIRE_SIZE, (int)default_value);
   build.append(SDB_FIELD_CACHE_SIZE, (int)default_value);
   build.append(SDB_FIELD_MAX_VALUE, max_value);
