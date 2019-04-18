@@ -540,6 +540,11 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
     case MYSQL_TYPE_LONG_BLOB:
     case MYSQL_TYPE_BLOB: {
       String val_tmp;
+      if (MYSQL_TYPE_SET == field->real_type() ||
+          MYSQL_TYPE_ENUM == field->real_type()) {
+        obj_builder.append(field->field_name, field->val_int());
+        break;
+      }
       field->val_str(&val_tmp);
       if (((Field_str *)field)->binary()) {
         obj_builder.appendBinData(field->field_name, val_tmp.length(),

@@ -387,6 +387,19 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
           }
         }
 
+        if (MYSQL_TYPE_SET == field->real_type() ||
+            MYSQL_TYPE_ENUM == field->real_type()) {
+          Field_enum *field_enum = (Field_enum *)field;
+          for (uint32 i = 0; i < field_enum->typelib->count; i++) {
+            if (0 ==
+                strcmp(field_enum->typelib->type_names[i], pStr->c_ptr())) {
+              BSON_APPEND(field_name, i + 1, obj, arr_builder);
+              break;
+            }
+          }
+          break;
+        }
+
         if (NULL == arr_builder) {
           bson::BSONObjBuilder obj_builder;
           obj_builder.appendStrWithNoTerminating(field_name, pStr->ptr(),
@@ -948,8 +961,12 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
   if (cmp_with_field) {
     enum_field_types l_type = item_field->field->type();
     enum_field_types r_type = ((Item_field *)item_val)->field->type();
+    enum_field_types l_real_type = item_field->field->real_type();
+    enum_field_types r_real_type = ((Item_field *)item_val)->field->real_type();
 
-    if (MYSQL_TYPE_JSON == l_type || MYSQL_TYPE_JSON == r_type) {
+    if ((MYSQL_TYPE_JSON == l_type || MYSQL_TYPE_JSON == r_type) ||
+        (MYSQL_TYPE_SET == l_real_type && MYSQL_TYPE_ENUM == r_real_type) ||
+        (MYSQL_TYPE_SET == r_real_type && MYSQL_TYPE_ENUM == l_real_type)) {
       rc = SDB_ERR_COND_PART_UNSUPPORTED;
       goto error;
     }
