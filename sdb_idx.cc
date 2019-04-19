@@ -393,6 +393,11 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
     }
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_VAR_STRING: {
+      if (MYSQL_TYPE_SET == key_part->field->real_type() ||
+          MYSQL_TYPE_ENUM == key_part->field->real_type()) {
+        get_int_key_obj(key_ptr, key_part, op_str, obj);
+        break;
+      }
       if (!key_part->field->binary()) {
         if (!ignore_text_key) {
           rc = get_char_key_obj(key_ptr, key_part, op_str, obj);
