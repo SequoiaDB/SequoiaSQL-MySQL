@@ -389,14 +389,15 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
 
         if (MYSQL_TYPE_SET == field->real_type() ||
             MYSQL_TYPE_ENUM == field->real_type()) {
-          Field_enum *field_enum = (Field_enum *)field;
+          rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+          /*Field_enum *field_enum = (Field_enum *)field;
           for (uint32 i = 0; i < field_enum->typelib->count; i++) {
             if (0 ==
                 strcmp(field_enum->typelib->type_names[i], pStr->c_ptr())) {
               BSON_APPEND(field_name, i + 1, obj, arr_builder);
               break;
             }
-          }
+          }*/
           break;
         }
 
@@ -1191,7 +1192,9 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
            item_field->field_type() != MYSQL_TYPE_MEDIUM_BLOB &&
            item_field->field_type() != MYSQL_TYPE_LONG_BLOB &&
            item_field->field_type() != MYSQL_TYPE_BLOB) ||
-          item_field->field->binary()) {
+           item_field->field->binary() ||
+           item_field->field->real_type() == MYSQL_TYPE_SET ||
+           item_field->field->real_type() == MYSQL_TYPE_ENUM) {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;
         goto error;
       }
