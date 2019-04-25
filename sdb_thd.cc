@@ -53,7 +53,6 @@ bool Thd_sdb::recycle_conn() {
   int rc = SDB_ERR_OK;
   rc = m_conn.connect();
   if (SDB_ERR_OK != rc) {
-    SDB_LOG_ERROR("Failed to connect to sequoiadb");
     return false;
   }
 

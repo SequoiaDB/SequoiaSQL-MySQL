@@ -39,15 +39,16 @@ class Sdb_cl {
   int query(const bson::BSONObj &condition = SDB_EMPTY_BSON,
             const bson::BSONObj &selected = SDB_EMPTY_BSON,
             const bson::BSONObj &order_by = SDB_EMPTY_BSON,
-            const bson::BSONObj &hint = SDB_EMPTY_BSON, longlong num_to_skip = 0,
-            longlong num_to_return = -1, int flags = QUERY_WITH_RETURNDATA);
+            const bson::BSONObj &hint = SDB_EMPTY_BSON,
+            longlong num_to_skip = 0, longlong num_to_return = -1,
+            int flags = QUERY_WITH_RETURNDATA);
 
   int query_one(bson::BSONObj &obj,
                 const bson::BSONObj &condition = SDB_EMPTY_BSON,
                 const bson::BSONObj &selected = SDB_EMPTY_BSON,
                 const bson::BSONObj &order_by = SDB_EMPTY_BSON,
-                const bson::BSONObj &hint = SDB_EMPTY_BSON, longlong num_to_skip = 0,
-                int flags = QUERY_WITH_RETURNDATA);
+                const bson::BSONObj &hint = SDB_EMPTY_BSON,
+                longlong num_to_skip = 0, int flags = QUERY_WITH_RETURNDATA);
 
   int current(bson::BSONObj &obj, my_bool get_owned = true);
 

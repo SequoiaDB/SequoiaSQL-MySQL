@@ -29,6 +29,10 @@
 #include "sdb_log.h"
 #include "ha_sdb.h"
 
+#define SOURCE_THREAD_ID "Source"
+#define PREFIX_THREAD_ID "MySQL-"
+#define PREFIX_THREAD_ID_LEN 6
+
 Sdb_conn::Sdb_conn(my_thread_id _tid)
     : m_transaction_on(false), m_thread_id(_tid) {}
 
@@ -45,6 +49,8 @@ my_thread_id Sdb_conn::thread_id() {
 int Sdb_conn::connect() {
   int rc = SDB_ERR_OK;
   String password;
+  bson::BSONObj option;
+  char thread_id_str[32 + PREFIX_THREAD_ID_LEN] = {0};
 
   if (!m_connection.isValid()) {
     m_transaction_on = false;
@@ -64,6 +70,15 @@ int Sdb_conn::connect() {
                               conn_addrs.get_conn_num(), sdb_user,
                               password.ptr());
     if (SDB_ERR_OK != rc) {
+      SDB_LOG_ERROR("Failed to connect to sequoiadb");
+      goto error;
+    }
+
+    sprintf(thread_id_str, "%s%u", PREFIX_THREAD_ID, thread_id());
+    option = BSON(SOURCE_THREAD_ID << thread_id_str);
+    rc = set_session_attr(option);
+    if (SDB_ERR_OK != rc) {
+      SDB_LOG_ERROR("Failed to set session attr, rc=%d", rc);
       goto error;
     }
   }
@@ -371,8 +386,8 @@ int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type,
   sdbclient::sdbCursor cursor;
 
 retry:
-  rc = m_connection.getSnapshot(cursor, snap_type, condition, selected, order_by,
-                                hint, num_to_skip, 1);
+  rc = m_connection.getSnapshot(cursor, snap_type, condition, selected,
+                                order_by, hint, num_to_skip, 1);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -400,6 +415,28 @@ int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
 
 retry:
   rc = m_connection.getLastResultObj(result, get_owned);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
+int Sdb_conn::set_session_attr(const bson::BSONObj &option) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+
+retry:
+  rc = m_connection.setSessionAttr(option);
   if (rc != SDB_ERR_OK) {
     goto error;
   }

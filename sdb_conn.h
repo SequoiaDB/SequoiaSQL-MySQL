@@ -65,6 +65,7 @@ class Sdb_conn {
                const bson::BSONObj &hint = SDB_EMPTY_BSON, INT64 numToSkip = 0);
 
   int get_last_result_obj(bson::BSONObj &result, bool get_owned = false);
+  int set_session_attr(const bson::BSONObj &option);
 
   inline bool is_valid() { return m_connection.isValid(); }
 
