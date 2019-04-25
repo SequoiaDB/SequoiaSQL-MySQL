@@ -1192,9 +1192,9 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
            item_field->field_type() != MYSQL_TYPE_MEDIUM_BLOB &&
            item_field->field_type() != MYSQL_TYPE_LONG_BLOB &&
            item_field->field_type() != MYSQL_TYPE_BLOB) ||
-           item_field->field->binary() ||
-           item_field->field->real_type() == MYSQL_TYPE_SET ||
-           item_field->field->real_type() == MYSQL_TYPE_ENUM) {
+          item_field->field->binary() ||
+          item_field->field->real_type() == MYSQL_TYPE_SET ||
+          item_field->field->real_type() == MYSQL_TYPE_ENUM) {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;
         goto error;
       }

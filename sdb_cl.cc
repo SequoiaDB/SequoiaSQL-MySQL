@@ -108,8 +108,8 @@ int Sdb_cl::query_one(bson::BSONObj &obj, const bson::BSONObj &condition,
   sdbclient::sdbCursor cursor_tmp;
   int retry_times = 2;
 retry:
-  rc = m_cl.query(cursor_tmp, condition, selected, order_by, hint, num_to_skip, 1,
-                  flags);
+  rc = m_cl.query(cursor_tmp, condition, selected, order_by, hint, num_to_skip,
+                  1, flags);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -203,8 +203,8 @@ error:
 }
 
 int Sdb_cl::upsert(const bson::BSONObj &rule, const bson::BSONObj &condition,
-                   const bson::BSONObj &hint, const bson::BSONObj &set_on_insert,
-                   int flag) {
+                   const bson::BSONObj &hint,
+                   const bson::BSONObj &set_on_insert, int flag) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
