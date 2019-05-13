@@ -32,7 +32,9 @@ struct Sdb_statistics {
   int64 total_data_free_space;
   int64 total_records;
 
-  Sdb_statistics() {
+  Sdb_statistics() { init(); }
+
+  void init() {
     page_size = 0;
     total_data_pages = 0;
     total_index_pages = 0;
@@ -321,6 +323,8 @@ class ha_sdb : public handler {
   int get_query_flag(const uint sql_command, enum thr_lock_type lock_type);
 
   int update_stats(THD *thd, bool do_read_stat);
+
+  int ensure_stats(THD *thd);
 
   void build_auto_inc_option(const Field *field,
                              const HA_CREATE_INFO *create_info,

@@ -135,6 +135,7 @@ static Sdb_share *get_sdb_share(const char *table_name, TABLE *table) {
     share->table_name_length = length;
     share->table_name = tmp_name;
     strncpy(share->table_name, table_name, length);
+    share->stat.init();
 
     if (my_hash_insert(&sdb_open_tables, (uchar *)share)) {
       goto error;
@@ -390,12 +391,10 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   stats.max_index_file_length = 8LL * 1024 * 1024 * 1024 * 1024;  // 8TB
   stats.table_in_mem_estimate = 0;
 
-  /*comment the update_stats to prevent consuming a lot of time
-    when load the tables in using database.*/
-  /*rc = update_stats(ha_thd(), true);
+  rc = update_stats(ha_thd(), false);
   if (0 != rc) {
     goto error;
-  }*/
+  }
 
 done:
   return rc;
@@ -1536,13 +1535,15 @@ int ha_sdb::info(uint flag) {
   Sdb_conn *conn = NULL;
 
   if (flag & HA_STATUS_VARIABLE) {
-    if (!(flag & HA_STATUS_NO_LOCK) || stats.records == ~(ha_rows)0) {
-      /*comment the update_stats to prevent consuming a lot of time
-        when load the tables in using database.*/
-      /*rc = update_stats(ha_thd(), !(flag & HA_STATUS_NO_LOCK));
+    if (!(flag & HA_STATUS_NO_LOCK)) {
+      rc = update_stats(ha_thd(), true);
       if (0 != rc) {
         goto error;
-      }*/
+      }
+    }
+    rc = ensure_stats(ha_thd());
+    if (0 != rc) {
+      goto error;
     }
   }
 
@@ -1597,20 +1598,14 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
   Sdb_statistics stat;
   int rc = 0;
 
-  do {
-    if (share && !do_read_stat) {
+  if (!do_read_stat) {
+    /* Get shared statistics */
+    if (share) {
       share->mutex.lock();
       stat = share->stat;
       share->mutex.unlock();
-
-      DBUG_ASSERT(stat.total_records != ~(int64)0);  // should never be invalid
-
-      /* Accept shared cached statistics if total_records is valid. */
-      if (stat.total_records != ~(int64)0) {
-        break;
-      }
     }
-
+  } else {
     /* Request statistics from SequoiaDB */
     Sdb_conn *conn = check_sdb_in_thd(thd, true);
     if (NULL == conn) {
@@ -1628,9 +1623,7 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       Sdb_mutex_guard guard(share->mutex);
       share->stat = stat;
     }
-
-    break;
-  } while (0);
+  }
 
   stats.block_size = (uint)stat.page_size;
   stats.data_file_length = (ulonglong)stat.total_data_pages * stat.page_size;
@@ -1647,6 +1640,29 @@ done:
   return rc;
 error:
   convert_sdb_code(rc);
+  goto done;
+}
+
+int ha_sdb::ensure_stats(THD *thd) {
+  /*Try to get statistics from the table share.
+    If it's invalid, then try to read from sdb again.*/
+  int rc = 0;
+  if ((~(ha_rows)0) == stats.records) {
+    rc = update_stats(thd, false);
+    if (0 != rc) {
+      goto error;
+    }
+    if ((~(ha_rows)0) == stats.records) {
+      rc = update_stats(thd, true);
+      if (0 != rc) {
+        goto error;
+      }
+    }
+    DBUG_ASSERT((~(ha_rows)0) != stats.records);
+  }
+done:
+  return rc;
+error:
   goto done;
 }
 
@@ -1712,6 +1728,11 @@ error:
 
 int ha_sdb::start_statement(THD *thd, uint table_count) {
   int rc = 0;
+
+  rc = ensure_stats(thd);
+  if (0 != rc) {
+    goto error;
+  }
 
   rc = ensure_collection(thd);
   if (0 != rc) {
