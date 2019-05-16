@@ -264,6 +264,10 @@ error:
   goto done;
 }
 
+const char *sharding_related_options[] = {
+    SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE, SDB_FIELD_PARTITION,
+    SDB_FIELD_AUTO_SPLIT, SDB_FIELD_ENSURE_SHARDING_IDX};
+
 ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
   active_index = MAX_KEY;
@@ -2212,7 +2216,7 @@ error:
   goto done;
 }
 
-int ha_sdb::get_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
+int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
   int rc = 0;
   const KEY *shard_idx = NULL;
 
@@ -2249,12 +2253,13 @@ int ha_sdb::get_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
           }
 
           if (key_part_tmp == key_end_tmp) {
-            rc = SDB_ERR_INVALID_ARG;
-            SDB_PRINT_ERROR(
-                rc,
-                "The unique index('%-.192s') must include the field: '%-.192s'",
-                key_info->name, key_part->field->field_name);
-            goto error;
+            shard_idx = NULL;
+            SDB_LOG_WARNING(
+                "Unique index('%-.192s') not include the field: '%-.192s', "
+                "create non-partition table: %s.%s",
+                key_info->name, key_part->field->field_name, db_name,
+                table_name);
+            goto done;
           }
         }
       }
@@ -2270,19 +2275,55 @@ int ha_sdb::get_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
 
 done:
   return rc;
-error:
-  goto done;
+}
+
+int ha_sdb::filter_partition_options(const bson::BSONObj &options,
+                                     bson::BSONObj &filter_options) {
+  int rc = 0;
+  int num_of_options;
+  bson::BSONObjBuilder build;
+  bson::BSONObjBuilder filter_build;
+  bson::BSONObjIterator iter(options);
+  num_of_options =
+      sizeof(sharding_related_options) / sizeof(*sharding_related_options);
+  while (iter.more()) {
+    bool filter = false;
+    bson::BSONElement ele_tmp = iter.next();
+    for (int i = 0; i < num_of_options; i++) {
+      if (0 == strcasecmp(ele_tmp.fieldName(), sharding_related_options[i])) {
+        filter = true;
+        break;
+      }
+    }
+    if (filter) {
+      filter_build.append(ele_tmp);
+      continue;
+    }
+    build.append(ele_tmp);
+  }
+  bson::BSONObj filter_obj = filter_build.obj();
+  if (!filter_obj.isEmpty()) {
+    SDB_LOG_WARNING(
+        "Explicit not use partition, filter options: %-.192s on table: %s.%s",
+        filter_obj.toString(false, false).c_str(), db_name, table_name);
+  }
+  filter_options = build.obj();
+
+  return rc;
 }
 
 int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
-                           bson::BSONObj &options, my_bool use_partition) {
+                           bson::BSONObj &options) {
   int rc = 0;
   bson::BSONObj sharding_key;
+  bool explicit_not_use_partition = false;
 
   if (create_info && create_info->comment.str) {
     char *sdb_cmt_pos = NULL;
-    bson::BSONElement be_options;
+    bson::BSONElement table_options;
+    bson::BSONElement use_partition;
     bson::BSONObj comments;
+    bson::BSONObjBuilder build;
     if ((sdb_cmt_pos = strstr(create_info->comment.str, SDB_COMMENT)) == NULL) {
       goto comment_done;
     }
@@ -2311,39 +2352,61 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
       goto error;
     }
 
-    be_options = comments.getField("table_options");
-    if (be_options.type() == bson::Object) {
-      options = be_options.embeddedObject().copy();
-      goto done;
-    } else if (be_options.type() != bson::EOO) {
+    use_partition = comments.getField("use_partition");
+    if (use_partition.type() == bson::Bool) {
+      if (false == use_partition.Bool()) {
+        explicit_not_use_partition = true;
+      }
+    } else if (use_partition.type() != bson::EOO) {
       rc = SDB_ERR_INVALID_ARG;
-      my_printf_error(rc, "Failed to parse cl_options!", MYF(0));
+      my_printf_error(rc,
+                      "Failed to parse cl_options! Invalid type[%d] for "
+                      "use_partition",
+                      MYF(0), use_partition.type());
+      goto error;
+    }
+
+    table_options = comments.getField("table_options");
+    if (table_options.type() == bson::Object) {
+      if (explicit_not_use_partition) {
+        filter_partition_options(table_options.embeddedObject().copy(),
+                                 options);
+      } else {
+        options = table_options.embeddedObject().copy();
+      }
+      goto done;
+    } else if (table_options.type() != bson::EOO) {
+      rc = SDB_ERR_INVALID_ARG;
+      my_printf_error(rc,
+                      "Failed to parse cl_options! Invalid type[%d] for "
+                      "table_options",
+                      MYF(0), table_options.type());
       goto error;
     }
   }
 comment_done:
-  if (!use_partition) {
-    options = BSON("Compressed" << true << "CompressionType"
-                                << "lzw"
-                                << "ReplSize" << sdb_replica_size);
+  if (!sdb_use_partition || explicit_not_use_partition) {
+    options =
+        BSON(SDB_FIELD_COMPRESSED << true << SDB_FIELD_COMPRESSION_TYPE << "lzw"
+                                  << SDB_FIELD_REPLSIZE << sdb_replica_size);
     goto done;
   }
 
-  rc = get_sharding_key(form, sharding_key);
+  rc = get_default_sharding_key(form, sharding_key);
   if (rc != 0) {
     goto error;
   }
 
   if (!sharding_key.isEmpty()) {
-    options = BSON("ShardingKey" << sharding_key << "AutoSplit" << true
-                                 << "EnsureShardingIndex" << false
-                                 << "Compressed" << true << "CompressionType"
-                                 << "lzw"
-                                 << "ReplSize" << sdb_replica_size);
+    options = BSON(SDB_FIELD_SHARDING_KEY
+                   << sharding_key << SDB_FIELD_AUTO_SPLIT << true
+                   << SDB_FIELD_ENSURE_SHARDING_IDX << false
+                   << SDB_FIELD_COMPRESSED << true << SDB_FIELD_COMPRESSION_TYPE
+                   << "lzw" << SDB_FIELD_REPLSIZE << sdb_replica_size);
   } else {
-    options = BSON("Compressed" << true << "CompressionType"
-                                << "lzw"
-                                << "ReplSize" << sdb_replica_size);
+    options =
+        BSON(SDB_FIELD_COMPRESSED << true << SDB_FIELD_COMPRESSION_TYPE << "lzw"
+                                  << SDB_FIELD_REPLSIZE << sdb_replica_size);
   }
 
 done:
@@ -2436,7 +2499,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     }
   }
 
-  rc = get_cl_options(form, create_info, options, sdb_use_partition);
+  rc = get_cl_options(form, create_info, options);
   if (0 != rc) {
     goto error;
   }
