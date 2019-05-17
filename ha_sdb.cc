@@ -102,7 +102,9 @@ static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_OPERATIONS =
     Alter_inplace_info::ALTER_COLUMN_DEFAULT |
     Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH |
     Alter_inplace_info::CHANGE_CREATE_OPTION |
-    Alter_inplace_info::RENAME_INDEX | Alter_inplace_info::ALTER_RENAME;
+    Alter_inplace_info::RENAME_INDEX | Alter_inplace_info::ALTER_RENAME |
+    Alter_inplace_info::ALTER_COLUMN_INDEX_LENGTH |
+    Alter_inplace_info::ADD_FOREIGN_KEY | Alter_inplace_info::DROP_FOREIGN_KEY;
 
 static uchar *sdb_get_key(Sdb_share *share, size_t *length,
                           my_bool not_used MY_ATTRIBUTE((unused))) {
