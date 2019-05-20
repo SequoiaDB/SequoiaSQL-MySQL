@@ -309,10 +309,23 @@ class ha_sdb : public handler {
   int drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
                  Bitmap<MAX_INDEXES> &ignored_keys);
 
-  int get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
-                     bson::BSONObj &options, my_bool use_partition);
+  int filter_partition_options(const bson::BSONObj &options,
+                               bson::BSONObj &filter_options);
 
-  int get_sharding_key(TABLE *form, bson::BSONObj &options);
+  inline void build_options(const bson::BSONObj &options,
+                            const bson::BSONObj &sharding_key,
+                            bson::BSONObjBuilder &build);
+
+  int get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
+                     bson::BSONObj &options);
+
+  int get_default_sharding_key(TABLE *form, bson::BSONObj &options);
+
+  inline int get_sharding_key_from_options(const bson::BSONObj &options,
+                                           bson::BSONObj &sharding_key);
+
+  int get_sharding_key(TABLE *form, bson::BSONObj &options,
+                       bson::BSONObj &sharding_key);
 
   int index_read_one(bson::BSONObj condition, int order_direction, uchar *buf);
 

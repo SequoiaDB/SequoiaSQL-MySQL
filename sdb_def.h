@@ -39,6 +39,15 @@
 #define SDB_FIELD_MAX_VALUE "MaxValue"
 #define SDB_FIELD_LAST_GEN_ID "LastGenerateID"
 
+#define SDB_FIELD_SHARDING_KEY "ShardingKey"
+#define SDB_FIELD_SHARDING_TYPE "ShardingType"
+#define SDB_FIELD_PARTITION "Partition"
+#define SDB_FIELD_AUTO_SPLIT "AutoSplit"
+#define SDB_FIELD_ENSURE_SHARDING_IDX "EnsureShardingIndex"
+#define SDB_FIELD_REPLSIZE "ReplSize"
+#define SDB_FIELD_COMPRESSED "Compressed"
+#define SDB_FIELD_COMPRESSION_TYPE "CompressionType"
+
 const static bson::BSONObj SDB_EMPTY_BSON;
 
 #endif
