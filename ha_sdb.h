@@ -230,6 +230,8 @@ class ha_sdb : public handler {
   // int index_read(uchar *buf, const uchar *key_ptr, uint key_len,
   //               enum ha_rkey_function find_flage);
 
+  bool records_query();
+
   int index_init(uint idx, bool sorted);
 
   int index_end();
@@ -366,4 +368,6 @@ class ha_sdb : public handler {
   std::vector<bson::BSONObj> m_bulk_insert_rows;
   Sdb_obj_cache<bson::BSONElement> m_bson_element_cache;
   bool m_has_update_insert_id;
+  long long total_count;
+  bool count_query;
 };

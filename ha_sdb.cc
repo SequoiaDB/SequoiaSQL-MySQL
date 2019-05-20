@@ -25,6 +25,7 @@
 #include <json_dom.h>
 #include <time.h>
 #include <client.hpp>
+#include "item_sum.h"
 #include "sdb_log.h"
 #include "sdb_conf.h"
 #include "sdb_cl.h"
@@ -285,6 +286,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_use_bulk_insert = false;
   m_bulk_insert_total = 0;
   m_has_update_insert_id = false;
+  total_count = 0;
+  count_query = false;
   stats.records = 0;
   memset(db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
   memset(table_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
@@ -1014,6 +1017,7 @@ error:
 }
 
 int ha_sdb::index_next(uchar *buf) {
+  DBUG_ENTER("ha_sdb::index_next()");
   int rc = 0;
 
   DBUG_ASSERT(idx_order_direction == 1);
@@ -1026,12 +1030,13 @@ int ha_sdb::index_next(uchar *buf) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 int ha_sdb::index_prev(uchar *buf) {
+  DBUG_ENTER("ha_sdb::index_prev()");
   int rc = 0;
 
   DBUG_ASSERT(idx_order_direction == -1);
@@ -1044,7 +1049,7 @@ int ha_sdb::index_prev(uchar *buf) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -1060,6 +1065,26 @@ done:
   return rc;
 error:
   goto done;
+}
+
+bool ha_sdb::records_query() {
+  SELECT_LEX_UNIT *const unit = ha_thd()->lex->unit;
+  SELECT_LEX *const select = unit->first_select();
+  const bool single_query = unit->is_simple();
+  bool optimize_with_materialization =
+      ha_thd()->optimizer_switch_flag(OPTIMIZER_SWITCH_MATERIALIZATION);
+  if (single_query) {
+    if (1 == select->all_fields.elements) {
+      Item *query_item = select->all_fields.head();
+      if (Item::SUM_FUNC_ITEM == query_item->type() &&
+          ((Item_sum *)query_item)->sum_func() == Item_sum::COUNT_FUNC &&
+          bitmap_is_clear_all(table->read_set) &&
+          optimize_with_materialization) {
+        count_query = true;
+      }
+    }
+  }
+  return count_query;
 }
 
 int ha_sdb::index_first(uchar *buf) {
@@ -1078,6 +1103,7 @@ error:
 int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
                            key_part_map keypart_map,
                            enum ha_rkey_function find_flag) {
+  DBUG_ENTER("ha_sdb::index_read_map()");
   int rc = 0;
   bson::BSONObjBuilder cond_builder;
   bson::BSONObj condition = pushed_condition;
@@ -1122,7 +1148,7 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -1140,8 +1166,8 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   DBUG_ASSERT(NULL != key_info);
   DBUG_ASSERT(NULL != key_info->name);
 
+  count_query = false;
   hint = BSON("" << key_info->name);
-
   idx_order_direction = order_direction;
   rc = sdb_get_idx_order(key_info, order_by, order_direction);
   if (rc) {
@@ -1149,17 +1175,26 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
-  flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-  rc =
-      collection->query(condition, SDB_EMPTY_BSON, order_by, hint, 0, -1, flag);
-  if (rc) {
-    SDB_LOG_ERROR(
-        "Collection[%s.%s] failed to query with "
-        "condition[%s], order[%s], hint[%s]. rc: %d",
-        collection->get_cs_name(), collection->get_cl_name(),
-        condition.toString().c_str(), order_by.toString().c_str(),
-        hint.toString().c_str(), rc);
-    goto error;
+  if (sdb_optimizer_select_count && records_query()) {
+    rc = collection->get_count(total_count, condition, hint);
+    if (rc) {
+      SDB_LOG_ERROR("Fail to get count on table:%s.%s. rc: %d", db_name,
+                    table_name, rc);
+      goto error;
+    }
+  } else {
+    flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+    rc = collection->query(condition, SDB_EMPTY_BSON, order_by, hint, 0, -1,
+                           flag);
+    if (rc) {
+      SDB_LOG_ERROR(
+          "Collection[%s.%s] failed to query with "
+          "condition[%s], order[%s], hint[%s]. rc: %d",
+          collection->get_cs_name(), collection->get_cl_name(),
+          condition.toString().c_str(), order_by.toString().c_str(),
+          hint.toString().c_str(), rc);
+      goto error;
+    }
   }
 
   rc = (1 == order_direction) ? index_next(buf) : index_prev(buf);
@@ -1439,10 +1474,25 @@ error:
 }
 
 int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
+  DBUG_ENTER("ha_sdb::next_row()");
   int rc = 0;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  if (count_query) {
+    rc = (total_count != 0) ? 0 : HA_ERR_END_OF_FILE;
+    if (rc != 0) {
+      if (HA_ERR_END_OF_FILE == rc) {
+        table->status = STATUS_NOT_FOUND;
+      }
+      goto error;
+    }
+    DBUG_PRINT("query_count", ("total_count: %llu", total_count));
+    obj = SDB_EMPTY_BSON;
+    total_count--;
+    table->status = 0;
+    goto done;
+  }
 
   rc = collection->next(obj, false);
   if (rc != 0) {
@@ -1460,23 +1510,34 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
   table->status = 0;
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 int ha_sdb::rnd_next(uchar *buf) {
+  DBUG_ENTER("ha_sdb::rnd_next()");
   int rc = 0;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   if (first_read) {
-    int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-    rc = collection->query(pushed_condition, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
-                           SDB_EMPTY_BSON, 0, -1, flag);
-    if (rc != 0) {
-      goto error;
+    count_query = false;
+    if (sdb_optimizer_select_count && records_query()) {
+      rc = collection->get_count(total_count, SDB_EMPTY_BSON, SDB_EMPTY_BSON);
+      if (rc) {
+        SDB_LOG_ERROR("Fail to get count on table:%s.%s. rc: %d", db_name,
+                      table_name, rc);
+        goto error;
+      }
+    } else {
+      int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+      rc = collection->query(pushed_condition, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
+                             SDB_EMPTY_BSON, 0, -1, flag);
+      if (rc != 0) {
+        goto error;
+      }
     }
     first_read = false;
   }
@@ -1489,12 +1550,13 @@ int ha_sdb::rnd_next(uchar *buf) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
+  DBUG_ENTER("ha_sdb::rnd_pos()");
   int rc = 0;
   bson::BSONObjBuilder objBuilder;
   bson::OID oid;
@@ -1519,12 +1581,13 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 void ha_sdb::position(const uchar *record) {
+  DBUG_ENTER("ha_sdb::position()");
   bson::BSONElement beField;
   if (cur_rec.getObjectID(beField)) {
     bson::OID oid = beField.__oid();
@@ -1533,7 +1596,7 @@ void ha_sdb::position(const uchar *record) {
       SDB_LOG_ERROR("Unexpected _id's type: %d ", beField.type());
     }
   }
-  return;
+  DBUG_VOID_RETURN;
 }
 
 int ha_sdb::info(uint flag) {

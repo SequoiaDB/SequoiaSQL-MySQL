@@ -57,6 +57,7 @@ extern int sdb_bulk_insert_size;
 extern int sdb_replica_size;
 extern my_bool sdb_use_autocommit;
 extern my_bool sdb_debug_log;
+extern my_bool sdb_optimizer_select_count;
 extern st_mysql_sys_var *sdb_sys_vars[];
 
 #endif
