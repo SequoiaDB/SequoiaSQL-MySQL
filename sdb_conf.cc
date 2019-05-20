@@ -25,6 +25,9 @@ static const my_bool SDB_DEFAULT_USE_BULK_INSERT = TRUE;
 static const my_bool SDB_DEFAULT_USE_AUTOCOMMIT = TRUE;
 static const int SDB_DEFAULT_BULK_INSERT_SIZE = 100;
 static const int SDB_DEFAULT_REPLICA_SIZE = -1;
+/*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
+static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
+my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
 
 char *sdb_conn_str = NULL;
 char *sdb_user = NULL;
@@ -103,13 +106,23 @@ static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
                          "Turn on debug log of SequoiaDB storage engine. "
                          "Disabled by default.",
                          NULL, NULL, SDB_DEBUG_LOG_DFT);
+static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
+                         PLUGIN_VAR_OPCMDARG,
+                         "Optimizer switch for simple select count. "
+                         "Enabled by default.",
+                         NULL, NULL, TRUE);
 
-struct st_mysql_sys_var *sdb_sys_vars[] = {
-    MYSQL_SYSVAR(conn_addr),       MYSQL_SYSVAR(user),
-    MYSQL_SYSVAR(password),        MYSQL_SYSVAR(use_partition),
-    MYSQL_SYSVAR(use_bulk_insert), MYSQL_SYSVAR(bulk_insert_size),
-    MYSQL_SYSVAR(replica_size),    MYSQL_SYSVAR(use_autocommit),
-    MYSQL_SYSVAR(debug_log),       NULL};
+struct st_mysql_sys_var *sdb_sys_vars[] = {MYSQL_SYSVAR(conn_addr),
+                                           MYSQL_SYSVAR(user),
+                                           MYSQL_SYSVAR(password),
+                                           MYSQL_SYSVAR(use_partition),
+                                           MYSQL_SYSVAR(use_bulk_insert),
+                                           MYSQL_SYSVAR(bulk_insert_size),
+                                           MYSQL_SYSVAR(replica_size),
+                                           MYSQL_SYSVAR(use_autocommit),
+                                           MYSQL_SYSVAR(debug_log),
+                                           MYSQL_SYSVAR(optimizer_select_count),
+                                           NULL};
 
 Sdb_conn_addrs::Sdb_conn_addrs() : conn_num(0) {
   for (int i = 0; i < SDB_COORD_NUM_MAX; i++) {
