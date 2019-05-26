@@ -2021,6 +2021,7 @@ error:
 
 bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                                  Alter_inplace_info *ha_alter_info) {
+  DBUG_ENTER("ha_sdb::inplace_alter_table()");
   bool rs = true;
   int rc = 0;
   THD *thd = current_thd;
@@ -2072,57 +2073,66 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                         "Failed to alter auto_increment option "
                         "on cl[%s.%s]",
                         db_name, table_name);
-        rs = true;
         goto error;
       }
     }
   }
 
   if (alter_flags & Alter_inplace_info::DROP_STORED_COLUMN) {
+    bool found_col = false;
+    List_iterator_fast<Create_field> cf_it(
+        ha_alter_info->alter_info->create_list);
     if (table->found_next_number_field) {
-      rc = cl.drop_auto_increment(table->found_next_number_field->field_name);
-      if (0 != rc) {
-        SDB_PRINT_ERROR(rc,
-                        "Failed to drop auto_increment "
-                        "column[%s] on cl[%s.%s]",
-                        table->found_next_number_field->field_name, db_name,
-                        table_name);
-        rs = true;
-        goto error;
+      while (const Create_field *new_field = cf_it++) {
+        if (table->found_next_number_field == new_field->field) {
+          found_col = true;
+          break;
+        }
+        if (!found_col) {
+          rc = cl.drop_auto_increment(
+              table->found_next_number_field->field_name);
+          if (0 != rc) {
+            SDB_PRINT_ERROR(rc,
+                            "Failed to drop auto_increment "
+                            "column[%s] on cl[%s.%s]",
+                            table->found_next_number_field->field_name, db_name,
+                            table_name);
+            goto error;
+          }
+        }
       }
     }
   }
 
   if (alter_flags & Alter_inplace_info::ADD_STORED_BASE_COLUMN) {
     uint i = 0;
+    bool found_col = false;
+    const Field *field = NULL;
     List_iterator_fast<Create_field> cf_it(
         ha_alter_info->alter_info->create_list);
     while (const Create_field *new_field = cf_it++) {
       if (Field::NEXT_NUMBER == MTYP_TYPENR(new_field->unireg_check)) {
-        uint old_i = 0;
-        const Field *field = NULL;
         field = altered_table->field[i];
-        for (old_i = 0; old_i < table->s->fields; old_i++) {
+        for (uint old_i = 0; table->field[old_i]; old_i++) {
           if (new_field->field == table->field[old_i]) {
-            continue;
-          }
-          if (i > table->s->fields - 1 || old_i >= table->s->fields) {
-            bson::BSONObj option;
-            build_auto_inc_option(field, create_info, option);
-            rc = cl.create_auto_increment(option);
-            if (0 != rc) {
-              SDB_PRINT_ERROR(rc,
-                              "Failed to add auto_increment "
-                              "column[%s] on cl[%s.%s]",
-                              field->field_name, db_name, table_name);
-              rs = true;
-              goto error;
-            }
+            found_col = true;
             break;
           }
         }
+        if (!found_col) {
+          bson::BSONObj option;
+          build_auto_inc_option(field, create_info, option);
+          rc = cl.create_auto_increment(option);
+          if (0 != rc) {
+            SDB_PRINT_ERROR(rc,
+                            "Failed to add auto_increment "
+                            "column[%s] on cl[%s.%s]",
+                            field->field_name, db_name, table_name);
+            goto error;
+          }
+        }
+        i++;
       }
-      i++;
     }
   }
 
@@ -2167,7 +2177,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   rs = false;
 
 done:
-  return rs;
+  DBUG_RETURN(rs);
 error:
   goto done;
 }
