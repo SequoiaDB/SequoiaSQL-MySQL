@@ -268,9 +268,14 @@ error:
   goto done;
 }
 
-const char *sharding_related_options[] = {
-    SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE, SDB_FIELD_PARTITION,
-    SDB_FIELD_AUTO_SPLIT, SDB_FIELD_ENSURE_SHARDING_IDX};
+const char *sharding_related_fields[] = {
+    SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
+    SDB_FIELD_AUTO_SPLIT,   SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_ISMAINCL};
+
+const char *auto_fill_fields[] = {
+    SDB_FIELD_SHARDING_KEY,        SDB_FIELD_AUTO_SPLIT,
+    SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_COMPRESSED,
+    SDB_FIELD_COMPRESSION_TYPE,    SDB_FIELD_REPLSIZE};
 
 ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
@@ -2377,7 +2382,7 @@ inline int ha_sdb::get_sharding_key_from_options(const bson::BSONObj &options,
                                                  bson::BSONObj &sharding_key) {
   int rc = 0;
   bson::BSONElement tmp_elem;
-  tmp_elem = options.getField("ShardingKey");
+  tmp_elem = options.getField(SDB_FIELD_SHARDING_KEY);
   if (tmp_elem.type() == bson::Object) {
     sharding_key = tmp_elem.embeddedObject();
   } else if (tmp_elem.type() != bson::EOO) {
@@ -2402,7 +2407,7 @@ int ha_sdb::get_sharding_key(TABLE *form, bson::BSONObj &options,
     goto error;
   }
 
-  if (sharding_key.isEmpty()) {
+  if (sharding_key.isEmpty() && sdb_use_partition) {
     return get_default_sharding_key(form, sharding_key);
   }
 
@@ -2412,81 +2417,120 @@ error:
   goto done;
 }
 
-int ha_sdb::filter_partition_options(const bson::BSONObj &options,
-                                     bson::BSONObj &filter_options) {
-  int rc = 0;
-  int num_of_options;
-  bson::BSONObjBuilder build;
-  bson::BSONObjBuilder filter_build;
+void ha_sdb::filter_options(const bson::BSONObj &options,
+                            const char **filter_fields, int filter_num,
+                            bson::BSONObjBuilder &build,
+                            bson::BSONObjBuilder *filter_build) {
   bson::BSONObjIterator iter(options);
-  num_of_options =
-      sizeof(sharding_related_options) / sizeof(*sharding_related_options);
   while (iter.more()) {
     bool filter = false;
     bson::BSONElement ele_tmp = iter.next();
-    for (int i = 0; i < num_of_options; i++) {
-      if (0 == strcasecmp(ele_tmp.fieldName(), sharding_related_options[i])) {
+    for (int i = 0; i < filter_num; i++) {
+      if (0 == strcasecmp(ele_tmp.fieldName(), filter_fields[i])) {
         filter = true;
         break;
       }
     }
-    if (filter) {
-      filter_build.append(ele_tmp);
-      continue;
+    if (filter && filter_build) {
+      filter_build->append(ele_tmp);
     }
-    build.append(ele_tmp);
+
+    if (!filter) {
+      build.append(ele_tmp);
+    }
   }
+}
+
+int ha_sdb::filter_partition_options(const bson::BSONObj &options,
+                                     bson::BSONObj &table_options) {
+  int rc = 0;
+  int filter_num = 0;
+  bson::BSONObjBuilder build;
+  bson::BSONObjBuilder filter_build;
+  filter_num =
+      sizeof(sharding_related_fields) / sizeof(*sharding_related_fields);
+
+  filter_options(options, sharding_related_fields, filter_num, build,
+                 &filter_build);
   bson::BSONObj filter_obj = filter_build.obj();
   if (!filter_obj.isEmpty()) {
     SDB_LOG_WARNING(
         "Explicit not use partition, filter options: %-.192s on table: %s.%s",
         filter_obj.toString(false, false).c_str(), db_name, table_name);
   }
-  filter_options = build.obj();
+  table_options = build.obj();
 
   return rc;
 }
 
-inline void ha_sdb::build_options(const bson::BSONObj &options,
-                                  const bson::BSONObj &sharding_key,
-                                  bson::BSONObjBuilder &build) {
+int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
+                                      const bson::BSONObj &sharding_key,
+                                      bson::BSONObjBuilder &build) {
+  int rc = 0;
+  int filter_num = 0;
+  bool explicit_sharding_key = false;
+  bool explicit_compressed_type = false;
   bson::BSONElement tmp_ele;
-  bool has_sharding_key = !sharding_key.isEmpty();
+  bool compressed = false;
 
-  if (has_sharding_key) {
+  filter_num = sizeof(auto_fill_fields) / sizeof(*auto_fill_fields);
+  filter_options(options, auto_fill_fields, filter_num, build);
+
+  explicit_sharding_key = options.hasField(SDB_FIELD_SHARDING_KEY);
+  if (!sharding_key.isEmpty()) {
     build.append(SDB_FIELD_SHARDING_KEY, sharding_key);
-  }
-
-  if (!options.hasField(SDB_FIELD_AUTO_SPLIT)) {
-    if (has_sharding_key) {
+    if (!explicit_sharding_key && !options.hasField(SDB_FIELD_AUTO_SPLIT)) {
       build.appendBool(SDB_FIELD_AUTO_SPLIT, true);
     }
-  } else {
-    build.append(options.getField(SDB_FIELD_AUTO_SPLIT));
-  }
-  if (!options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
-    if (has_sharding_key) {
+    if (!explicit_sharding_key &&
+        !options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
       build.appendBool(SDB_FIELD_ENSURE_SHARDING_IDX, false);
     }
-  } else {
+  }
+
+  if (options.hasField(SDB_FIELD_AUTO_SPLIT)) {
+    build.append(options.getField(SDB_FIELD_AUTO_SPLIT));
+  }
+  if (options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
     build.append(options.getField(SDB_FIELD_ENSURE_SHARDING_IDX));
   }
 
   if (!options.hasField(SDB_FIELD_COMPRESSED)) {
     build.appendBool(SDB_FIELD_COMPRESSED, true);
+    compressed = true;
   } else {
+    tmp_ele = options.getField(SDB_FIELD_COMPRESSED);
+    if (tmp_ele.type() == bson::Bool) {
+      compressed = tmp_ele.Bool();
+    } else if (tmp_ele.type() != bson::EOO) {
+      rc = SDB_ERR_INVALID_ARG;
+      my_printf_error(rc,
+                      "Failed to parse Compressed! Invalid type[%d] for "
+                      "Compressed",
+                      MYF(0), tmp_ele.type());
+      goto error;
+    }
     build.append(options.getField(SDB_FIELD_COMPRESSED));
   }
-  if (!options.hasField(SDB_FIELD_COMPRESSION_TYPE)) {
+
+  if (!(explicit_compressed_type =
+            options.hasField(SDB_FIELD_COMPRESSION_TYPE)) &&
+      compressed) {
     build.append(SDB_FIELD_COMPRESSION_TYPE, "lzw");
-  } else {
+  } else if (explicit_compressed_type) {
     build.append(options.getField(SDB_FIELD_COMPRESSION_TYPE));
   }
+
   if (!options.hasField(SDB_FIELD_REPLSIZE)) {
     build.append(SDB_FIELD_REPLSIZE, sdb_replica_size);
   } else {
     build.append(options.getField(SDB_FIELD_REPLSIZE));
   }
+
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
@@ -2562,15 +2606,17 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
     }
   }
 comment_done:
-  if (sdb_use_partition && !explicit_not_use_partition) {
+  if (!explicit_not_use_partition) {
     rc = get_sharding_key(form, table_options, sharding_key);
     if (rc) {
       goto error;
     }
   }
 
-  build_options(table_options, sharding_key, build);
-
+  rc = auto_fill_default_options(table_options, sharding_key, build);
+  if (rc) {
+    goto error;
+  }
   options = build.obj();
 
 done:

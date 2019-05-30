@@ -42,11 +42,16 @@
 #define SDB_FIELD_SHARDING_KEY "ShardingKey"
 #define SDB_FIELD_SHARDING_TYPE "ShardingType"
 #define SDB_FIELD_PARTITION "Partition"
-#define SDB_FIELD_AUTO_SPLIT "AutoSplit"
-#define SDB_FIELD_ENSURE_SHARDING_IDX "EnsureShardingIndex"
 #define SDB_FIELD_REPLSIZE "ReplSize"
 #define SDB_FIELD_COMPRESSED "Compressed"
 #define SDB_FIELD_COMPRESSION_TYPE "CompressionType"
+#define SDB_FIELD_ISMAINCL "IsMainCL"
+#define SDB_FIELD_AUTO_SPLIT "AutoSplit"
+#define SDB_FIELD_GROUP "Group"
+#define SDB_FIELD_AUTOINDEXID "AutoIndexId"
+#define SDB_FIELD_ENSURE_SHARDING_IDX "EnsureShardingIndex"
+#define SDB_FIELD_STRICT_DATA_MODE "StrictDataMode"
+#define SDB_FIELD_AUTOINCREMENT SDB_FIELD_NAME_AUTOINCREMENT
 
 const static bson::BSONObj SDB_EMPTY_BSON;
 
