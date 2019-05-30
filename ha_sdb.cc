@@ -318,7 +318,7 @@ const char **ha_sdb::bas_ext() const {
 ulonglong ha_sdb::table_flags() const {
   return (HA_REC_NOT_IN_SEQ | HA_NO_READ_LOCAL_LOCK | HA_BINLOG_ROW_CAPABLE |
           HA_BINLOG_STMT_CAPABLE | HA_TABLE_SCAN_ON_INDEX | HA_NULL_IN_KEY |
-          HA_CAN_INDEX_BLOBS);
+          HA_CAN_INDEX_BLOBS | HA_AUTO_PART_KEY);
 }
 
 ulong ha_sdb::index_flags(uint inx, uint part, bool all_parts) const {
