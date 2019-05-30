@@ -312,11 +312,11 @@ class ha_sdb : public handler {
                  Bitmap<MAX_INDEXES> &ignored_keys);
 
   int filter_partition_options(const bson::BSONObj &options,
-                               bson::BSONObj &filter_options);
+                               bson::BSONObj &table_options);
 
-  inline void build_options(const bson::BSONObj &options,
-                            const bson::BSONObj &sharding_key,
-                            bson::BSONObjBuilder &build);
+  int auto_fill_default_options(const bson::BSONObj &options,
+                                const bson::BSONObj &sharding_key,
+                                bson::BSONObjBuilder &build);
 
   int get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
                      bson::BSONObj &options);
@@ -328,6 +328,10 @@ class ha_sdb : public handler {
 
   int get_sharding_key(TABLE *form, bson::BSONObj &options,
                        bson::BSONObj &sharding_key);
+
+  void filter_options(const bson::BSONObj &options, const char **filter_fields,
+                      int filter_num, bson::BSONObjBuilder &build,
+                      bson::BSONObjBuilder *filter_build = NULL);
 
   int index_read_one(bson::BSONObj condition, int order_direction, uchar *buf);
 
