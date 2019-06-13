@@ -27,6 +27,11 @@
 
 #define SDB_CHARSET my_charset_utf8mb4_bin
 
+#define SOURCE_THREAD_ID "Source"
+#define PREFIX_THREAD_ID "MySQL-"
+#define PREFIX_THREAD_ID_LEN 6
+#define TRANSAUTOROLLBACK "transautorollback"
+
 #define SDB_FIELD_NAME_AUTOINCREMENT "AutoIncrement"
 #define SDB_FIELD_NAME_FIELD "Field"
 #define SDB_FIELD_NAME "Name"
