@@ -28,10 +28,7 @@
 #include "sdb_conf.h"
 #include "sdb_log.h"
 #include "ha_sdb.h"
-
-#define SOURCE_THREAD_ID "Source"
-#define PREFIX_THREAD_ID "MySQL-"
-#define PREFIX_THREAD_ID_LEN 6
+#include "sdb_def.h"
 
 Sdb_conn::Sdb_conn(my_thread_id _tid)
     : m_transaction_on(false), m_thread_id(_tid) {}
@@ -75,7 +72,8 @@ int Sdb_conn::connect() {
     }
 
     sprintf(thread_id_str, "%s%u", PREFIX_THREAD_ID, thread_id());
-    option = BSON(SOURCE_THREAD_ID << thread_id_str);
+    option =
+        BSON(SOURCE_THREAD_ID << thread_id_str << TRANSAUTOROLLBACK << false);
     rc = set_session_attr(option);
     if (SDB_ERR_OK != rc) {
       SDB_LOG_ERROR("Failed to set session attr, rc=%d", rc);
