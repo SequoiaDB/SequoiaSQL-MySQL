@@ -1105,6 +1105,25 @@ error:
   goto done;
 }
 
+void ha_sdb::build_selector(bson::BSONObj &selector) {
+  int select_num = 0;
+  bson::BSONObjBuilder selector_builder;
+  uint threshold = sdb_selector_pushdown_threshold(ha_thd());
+  for (Field **fields = table->field; *fields; fields++) {
+    Field *field = *fields;
+    selector_builder.appendNull(SDB_OID_FIELD);
+    if (bitmap_is_set(table->read_set, field->field_index)) {
+      selector_builder.appendNull(field->field_name);
+      select_num++;
+    }
+  }
+  if (((double)select_num * 100 / table_share->fields) <= (double)threshold) {
+    selector = selector_builder.obj();
+  } else {
+    selector = SDB_EMPTY_BSON;
+  }
+}
+
 int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
                            key_part_map keypart_map,
                            enum ha_rkey_function find_flag) {
@@ -1163,6 +1182,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   int rc = 0;
   bson::BSONObj hint;
   bson::BSONObj order_by;
+  bson::BSONObj selector;
   int flag = 0;
   KEY *key_info = table->key_info + active_index;
 
@@ -1189,8 +1209,10 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
   } else {
     flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-    rc = collection->query(condition, SDB_EMPTY_BSON, order_by, hint, 0, -1,
-                           flag);
+    if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
+      build_selector(selector);
+    }
+    rc = collection->query(condition, selector, order_by, hint, 0, -1, flag);
     if (rc) {
       SDB_LOG_ERROR(
           "Collection[%s.%s] failed to query with "
@@ -1523,6 +1545,7 @@ error:
 int ha_sdb::rnd_next(uchar *buf) {
   DBUG_ENTER("ha_sdb::rnd_next()");
   int rc = 0;
+  bson::BSONObj selector;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
@@ -1538,7 +1561,10 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
     } else {
       int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-      rc = collection->query(pushed_condition, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
+      if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
+        build_selector(selector);
+      }
+      rc = collection->query(pushed_condition, selector, SDB_EMPTY_BSON,
                              SDB_EMPTY_BSON, 0, -1, flag);
       if (rc != 0) {
         goto error;

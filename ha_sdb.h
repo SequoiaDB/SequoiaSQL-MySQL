@@ -196,6 +196,8 @@ class ha_sdb : public handler {
   */
   int delete_row(const uchar *buf);
 
+  void build_selector(bson::BSONObj &selector);
+
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
     skip it and and MySQL will treat it as not implemented.
