@@ -280,6 +280,7 @@ const char *auto_fill_fields[] = {
 ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
   active_index = MAX_KEY;
+  m_idx_sorted = true;
   share = NULL;
   m_lock_type = TL_IGNORE;
   collection = NULL;
@@ -1174,10 +1175,14 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   count_query = false;
   hint = BSON("" << key_info->name);
   idx_order_direction = order_direction;
-  rc = sdb_get_idx_order(key_info, order_by, order_direction);
-  if (rc) {
-    SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
-    goto error;
+  if (m_idx_sorted) {
+    rc = sdb_get_idx_order(key_info, order_by, order_direction);
+    if (rc) {
+      SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
+      goto error;
+    }
+  } else {
+    order_by = SDB_EMPTY_BSON;
   }
 
   if (sdb_optimizer_select_count && records_query()) {
@@ -1229,6 +1234,7 @@ error:
 
 int ha_sdb::index_init(uint idx, bool sorted) {
   active_index = idx;
+  m_idx_sorted = sorted;
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }
@@ -1241,6 +1247,7 @@ int ha_sdb::index_end() {
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
   collection->close();
   active_index = MAX_KEY;
+  m_idx_sorted = true;
   return 0;
 }
 

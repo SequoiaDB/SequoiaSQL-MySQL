@@ -365,6 +365,7 @@ class ha_sdb : public handler {
   int count_times;
   MEM_ROOT blobroot;
   int idx_order_direction;
+  bool m_idx_sorted;
   bool m_ignore_dup_key;
   bool m_write_can_replace;
   bool m_use_bulk_insert;
