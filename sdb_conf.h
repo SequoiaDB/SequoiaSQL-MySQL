@@ -22,7 +22,6 @@
 #include <sql_string.h>
 
 #define SDB_COORD_NUM_MAX 128
-
 class Sdb_conn_addrs {
  public:
   Sdb_conn_addrs();
@@ -48,6 +47,7 @@ class Sdb_conn_addrs {
 
 int sdb_encrypt_password();
 int sdb_get_password(String &res);
+uint sdb_selector_pushdown_threshold(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;

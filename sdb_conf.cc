@@ -25,6 +25,7 @@ static const my_bool SDB_DEFAULT_USE_BULK_INSERT = TRUE;
 static const my_bool SDB_DEFAULT_USE_AUTOCOMMIT = TRUE;
 static const int SDB_DEFAULT_BULK_INSERT_SIZE = 100;
 static const int SDB_DEFAULT_REPLICA_SIZE = -1;
+static const uint SDB_SELECTOR_PUSHDOWN_THRESHOLD = 30;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
@@ -111,18 +112,23 @@ static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
                          "Optimizer switch for simple select count. "
                          "Enabled by default.",
                          NULL, NULL, TRUE);
-
-struct st_mysql_sys_var *sdb_sys_vars[] = {MYSQL_SYSVAR(conn_addr),
-                                           MYSQL_SYSVAR(user),
-                                           MYSQL_SYSVAR(password),
-                                           MYSQL_SYSVAR(use_partition),
-                                           MYSQL_SYSVAR(use_bulk_insert),
-                                           MYSQL_SYSVAR(bulk_insert_size),
-                                           MYSQL_SYSVAR(replica_size),
-                                           MYSQL_SYSVAR(use_autocommit),
-                                           MYSQL_SYSVAR(debug_log),
-                                           MYSQL_SYSVAR(optimizer_select_count),
-                                           NULL};
+static MYSQL_THDVAR_UINT(selector_pushdown_threshold, PLUGIN_VAR_OPCMDARG,
+                         "The threshold of selector push down to SequoiaDB.",
+                         NULL, NULL, SDB_SELECTOR_PUSHDOWN_THRESHOLD, 0, 100,
+                         0);
+struct st_mysql_sys_var *sdb_sys_vars[] = {
+    MYSQL_SYSVAR(conn_addr),
+    MYSQL_SYSVAR(user),
+    MYSQL_SYSVAR(password),
+    MYSQL_SYSVAR(use_partition),
+    MYSQL_SYSVAR(use_bulk_insert),
+    MYSQL_SYSVAR(bulk_insert_size),
+    MYSQL_SYSVAR(replica_size),
+    MYSQL_SYSVAR(use_autocommit),
+    MYSQL_SYSVAR(debug_log),
+    MYSQL_SYSVAR(optimizer_select_count),
+    MYSQL_SYSVAR(selector_pushdown_threshold),
+    NULL};
 
 Sdb_conn_addrs::Sdb_conn_addrs() : conn_num(0) {
   for (int i = 0; i < SDB_COORD_NUM_MAX; i++) {
@@ -232,4 +238,8 @@ error:
 int sdb_get_password(String &res) {
   Sdb_rwlock_read_guard guard(sdb_password_lock);
   return sdb_passwd_encryption.decrypt(sdb_encoded_password, res);
+}
+
+uint sdb_selector_pushdown_threshold(THD *thd) {
+  return THDVAR(thd, selector_pushdown_threshold);
 }
