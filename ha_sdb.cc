@@ -1110,9 +1110,9 @@ void ha_sdb::build_selector(bson::BSONObj &selector) {
   int select_num = 0;
   bson::BSONObjBuilder selector_builder;
   uint threshold = sdb_selector_pushdown_threshold(ha_thd());
+  selector_builder.appendNull(SDB_OID_FIELD);
   for (Field **fields = table->field; *fields; fields++) {
     Field *field = *fields;
-    selector_builder.appendNull(SDB_OID_FIELD);
     if (bitmap_is_set(table->read_set, field->field_index)) {
       selector_builder.appendNull(field->field_name);
       select_num++;
@@ -2816,7 +2816,8 @@ int ha_sdb::get_query_flag(const uint sql_command,
   int query_flag = QUERY_WITH_RETURNDATA;
   if ((lock_type >= TL_WRITE_CONCURRENT_INSERT &&
        (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
-        SQLCOM_SELECT == sql_command)) ||
+        SQLCOM_SELECT == sql_command || SQLCOM_UPDATE_MULTI == sql_command ||
+        SQLCOM_DELETE_MULTI == sql_command)) ||
       TL_READ_WITH_SHARED_LOCKS == lock_type) {
     query_flag |= QUERY_FOR_UPDATE;
   }
