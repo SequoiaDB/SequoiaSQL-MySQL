@@ -23,8 +23,11 @@ static const my_bool SDB_USE_PARTITION_DFT = TRUE;
 static const my_bool SDB_DEBUG_LOG_DFT = FALSE;
 static const my_bool SDB_DEFAULT_USE_BULK_INSERT = TRUE;
 static const my_bool SDB_DEFAULT_USE_AUTOCOMMIT = TRUE;
-static const int SDB_DEFAULT_BULK_INSERT_SIZE = 100;
-static const int SDB_DEFAULT_REPLICA_SIZE = -1;
+static const int SDB_DEFAULT_BULK_INSERT_SIZE = 2000;
+/* Always doing transactions on SDB, commit on SDB will make sure all the
+   replicas have completed sync datas. So default replsize: 1 to
+   improve write row performance.*/
+static const int SDB_DEFAULT_REPLICA_SIZE = 1;
 static const uint SDB_SELECTOR_PUSHDOWN_THRESHOLD = 30;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
@@ -96,7 +99,7 @@ static MYSQL_SYSVAR_INT(bulk_insert_size, sdb_bulk_insert_size,
                         NULL, NULL, SDB_DEFAULT_BULK_INSERT_SIZE, 1, 100000, 0);
 static MYSQL_SYSVAR_INT(replica_size, sdb_replica_size, PLUGIN_VAR_OPCMDARG,
                         "Replica size of write operations "
-                        "(Default: -1).",
+                        "(Default: 1).",
                         NULL, NULL, SDB_DEFAULT_REPLICA_SIZE, -1, 7, 0);
 static MYSQL_SYSVAR_BOOL(use_autocommit, sdb_use_autocommit,
                          PLUGIN_VAR_OPCMDARG,
