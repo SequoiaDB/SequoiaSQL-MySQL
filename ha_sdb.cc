@@ -2124,7 +2124,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
         ha_alter_info->alter_info->create_list);
     if (table->found_next_number_field) {
       while (const Create_field *new_field = cf_it++) {
-        if (table->found_next_number_field == new_field->field) {
+        if (strcmp(table->found_next_number_field->field_name,
+                   new_field->field->field_name) == 0) {
           found_col = true;
           break;
         }
@@ -2171,7 +2172,56 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
             goto error;
           }
         }
-        i++;
+      }
+      i++;
+    }
+  }
+
+  if (alter_flags & Alter_inplace_info::ALTER_STORED_COLUMN_TYPE &&
+      alter_flags & Alter_inplace_info::ALTER_COLUMN_DEFAULT) {
+    // Handle the change of AUTO_INCREMENT.
+    uint i = 0;
+    const Field *new_next_number_field = NULL;
+    List_iterator_fast<Create_field> cf_it(
+        ha_alter_info->alter_info->create_list);
+    while (const Create_field *new_field = cf_it++) {
+      if (Field::NEXT_NUMBER == MTYP_TYPENR(new_field->unireg_check)) {
+        new_next_number_field = altered_table->field[i];
+        break;
+      }
+      i++;
+    }
+    bool is_same_field = false;
+    if (table->found_next_number_field == new_next_number_field ||
+        (table->found_next_number_field && new_next_number_field &&
+         strcmp(table->found_next_number_field->field_name,
+                new_next_number_field->field_name) == 0)) {
+      is_same_field = true;
+    }
+    if (!is_same_field) {
+      if (table->found_next_number_field) {
+        rc = cl.drop_auto_increment(table->found_next_number_field->field_name);
+        if (0 != rc) {
+          SDB_PRINT_ERROR(rc,
+                          "Failed to drop auto_increment "
+                          "column[%s] on cl[%s.%s]",
+                          table->found_next_number_field->field_name, db_name,
+                          table_name);
+          goto error;
+        }
+      }
+      if (new_next_number_field) {
+        bson::BSONObj option;
+        build_auto_inc_option(new_next_number_field, create_info, option);
+        rc = cl.create_auto_increment(option);
+        if (0 != rc) {
+          SDB_PRINT_ERROR(rc,
+                          "Failed to add auto_increment "
+                          "column[%s] on cl[%s.%s]",
+                          new_next_number_field->field_name, db_name,
+                          table_name);
+          goto error;
+        }
       }
     }
   }
