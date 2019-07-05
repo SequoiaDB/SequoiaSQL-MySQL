@@ -30,7 +30,8 @@
 #define SOURCE_THREAD_ID "Source"
 #define PREFIX_THREAD_ID "MySQL-"
 #define PREFIX_THREAD_ID_LEN 6
-#define TRANSAUTOROLLBACK "transautorollback"
+#define TRANSAUTOROLLBACK "TransAutoRollback"
+#define TRANSAUTOCOMMIT "TransAutoCommit"
 
 #define SDB_FIELD_NAME_AUTOINCREMENT "AutoIncrement"
 #define SDB_FIELD_NAME_FIELD "Field"

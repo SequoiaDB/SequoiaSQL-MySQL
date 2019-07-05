@@ -68,11 +68,14 @@ class Sdb_conn {
   int set_session_attr(const bson::BSONObj &option);
 
   inline bool is_valid() { return m_connection.isValid(); }
+  inline void set_pushed_autocommit() { pushed_autocommit = true; }
+  inline bool get_pushed_autocommit() { return pushed_autocommit; }
 
  private:
   sdbclient::sdb m_connection;
   bool m_transaction_on;
   my_thread_id m_thread_id;
+  bool pushed_autocommit;
 };
 
 #endif

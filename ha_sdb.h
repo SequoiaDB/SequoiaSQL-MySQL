@@ -256,6 +256,7 @@ class ha_sdb : public handler {
   int info(uint);
   int extra(enum ha_extra_function operation);
   int external_lock(THD *thd, int lock_type);
+  bool pushdown_autocommit();
   int start_statement(THD *thd, uint table_count);
   int delete_all_rows(void);
   int truncate();

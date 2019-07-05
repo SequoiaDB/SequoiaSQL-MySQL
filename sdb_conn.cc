@@ -31,7 +31,7 @@
 #include "sdb_def.h"
 
 Sdb_conn::Sdb_conn(my_thread_id _tid)
-    : m_transaction_on(false), m_thread_id(_tid) {}
+    : m_transaction_on(false), m_thread_id(_tid), pushed_autocommit(false) {}
 
 Sdb_conn::~Sdb_conn() {}
 
@@ -72,8 +72,8 @@ int Sdb_conn::connect() {
     }
 
     sprintf(thread_id_str, "%s%u", PREFIX_THREAD_ID, thread_id());
-    option =
-        BSON(SOURCE_THREAD_ID << thread_id_str << TRANSAUTOROLLBACK << false);
+    option = BSON(SOURCE_THREAD_ID << thread_id_str << TRANSAUTOROLLBACK
+                                   << false << TRANSAUTOCOMMIT << true);
     rc = set_session_attr(option);
     if (SDB_ERR_OK != rc) {
       SDB_LOG_ERROR("Failed to set session attr, rc=%d", rc);
@@ -89,39 +89,51 @@ error:
 }
 
 int Sdb_conn::begin_transaction() {
+  DBUG_ENTER("Sdb_conn::begin_transaction");
   int rc = SDB_ERR_OK;
   int retry_times = 2;
   while (!m_transaction_on) {
-    rc = m_connection.transactionBegin();
-    if (SDB_ERR_OK == rc) {
+    if (pushed_autocommit) {
       m_transaction_on = true;
-      break;
-    } else if (IS_SDB_NET_ERR(rc) && --retry_times > 0) {
-      connect();
     } else {
-      goto error;
+      rc = m_connection.transactionBegin();
+      if (SDB_ERR_OK == rc) {
+        m_transaction_on = true;
+      } else if (IS_SDB_NET_ERR(rc) && --retry_times > 0) {
+        connect();
+      } else {
+        goto error;
+      }
     }
+    DBUG_PRINT("Sdb_conn::info",
+               ("Begin transaction, flag: %d", pushed_autocommit));
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   convert_sdb_code(rc);
   goto done;
 }
 
 int Sdb_conn::commit_transaction() {
+  DBUG_ENTER("Sdb_conn::commit_transaction");
   int rc = SDB_ERR_OK;
   if (m_transaction_on) {
     m_transaction_on = false;
-    rc = m_connection.transactionCommit();
-    if (rc != SDB_ERR_OK) {
-      goto error;
+    if (!pushed_autocommit) {
+      rc = m_connection.transactionCommit();
+      if (rc != SDB_ERR_OK) {
+        goto error;
+      }
     }
+    DBUG_PRINT("Sdb_conn::info",
+               ("Commit transaction, flag: %d", pushed_autocommit));
+    pushed_autocommit = false;
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   if (IS_SDB_NET_ERR(rc)) {
     connect();
@@ -131,15 +143,21 @@ error:
 }
 
 int Sdb_conn::rollback_transaction() {
+  DBUG_ENTER("Sdb_conn::rollback_transaction");
   if (m_transaction_on) {
     int rc = SDB_ERR_OK;
     m_transaction_on = false;
-    rc = m_connection.transactionRollback();
-    if (IS_SDB_NET_ERR(rc)) {
-      connect();
+    if (!pushed_autocommit) {
+      rc = m_connection.transactionRollback();
+      if (IS_SDB_NET_ERR(rc)) {
+        connect();
+      }
     }
+    DBUG_PRINT("Sdb_conn::info",
+               ("Rollback transaction, flag: %d", pushed_autocommit));
+    pushed_autocommit = false;
   }
-  return 0;
+  DBUG_RETURN(0);
 }
 
 bool Sdb_conn::is_transaction_on() {

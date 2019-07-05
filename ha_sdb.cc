@@ -20,6 +20,7 @@
 #include "ha_sdb.h"
 #include <sql_class.h>
 #include <sql_table.h>
+#include <sql_insert.h>
 #include <mysql/plugin.h>
 #include <mysql/psi/mysql_file.h>
 #include <json_dom.h>
@@ -1835,7 +1836,38 @@ error:
   goto done;
 }
 
+/*
+ only single SELECT/INSERT/REPLACE can pushdown autocommit;
+ The type of SQL cannot pushdown include but not limited to:
+   SQLCOM_LOAD/SQLCOM_INSERT_SELECT/SQLCOM_REPLACE_SELECT/SQLCOM_UPDATE/
+   SQLCOM_DELET/SQLCOM_UPDATE_MULTI/SQLCOM_DELETE_MULTI
+*/
+bool ha_sdb::pushdown_autocommit() {
+  bool can_push = false;
+  int sql_command = SQLCOM_END;
+  class Sql_cmd_insert_base *sql_cmd_insert_base = NULL;
+
+  sql_command = thd_sql_command(ha_thd());
+  if (SQLCOM_INSERT == sql_command || SQLCOM_REPLACE == sql_command) {
+    sql_cmd_insert_base =
+        dynamic_cast<Sql_cmd_insert_base *>(ha_thd()->lex->m_sql_cmd);
+    if (sql_cmd_insert_base != NULL &&
+        sql_cmd_insert_base->insert_many_values.elements <= 1) {
+      can_push = true;
+    }
+  }
+
+  if (SQLCOM_SELECT == sql_command) {
+    if (!(get_query_flag(sql_command, m_lock_type) & QUERY_FOR_UPDATE)) {
+      can_push = true;
+    }
+  }
+
+  return can_push;
+}
+
 int ha_sdb::start_statement(THD *thd, uint table_count) {
+  DBUG_ENTER("ha_sdb::start_statement");
   int rc = 0;
 
   rc = ensure_stats(thd);
@@ -1867,6 +1899,16 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     } else {
       // autocommit
       if (!conn->is_transaction_on()) {
+        /*TODO: table_count > 1 should consider starting statement in
+          external_lock of last table. If have triggers, may call start_stmt
+          and external_lock both when have trigger on the sql*/
+        if (1 == thd->lex->table_count && pushdown_autocommit()) {
+          conn->set_pushed_autocommit();
+        }
+
+        DBUG_PRINT("ha_sdb:info", ("pushdown autocommit flag: %d.",
+                                   conn->get_pushed_autocommit()));
+
         rc = conn->begin_transaction();
         if (rc != 0) {
           goto error;
@@ -1879,7 +1921,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
