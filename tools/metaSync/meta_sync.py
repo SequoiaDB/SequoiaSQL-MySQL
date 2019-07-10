@@ -131,7 +131,7 @@ class DateUtils:
             return 0
 
 
-class MysqlDisseminate:
+class MysqlMetaSync:
     """ parsing DDL operation in the audit log at a specified time interval and execute on other SSQL servers
 
     """
@@ -686,7 +686,7 @@ class MysqlDisseminate:
 
 
 def run_task(log):
-    ssql_mysql = MysqlDisseminate(log)
+    ssql_mysql = MysqlMetaSync(log)
     ssql_mysql.remove_current_hostname()    # 删除当前主机的主机名
     print(ssql_mysql.mysql_password)
     print(CryptoUtil.decrypt(ssql_mysql.mysql_password))

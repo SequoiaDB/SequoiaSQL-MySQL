@@ -10,7 +10,7 @@ install_dir = /opt/sequoiasql/mysql
 interval_time = 5
 
 [parse]
-parse_log_directory = D:\workspaces\python\mysqlDisseminateDDL\\auditlog
+parse_log_directory = D:\workspaces\python\metaSync\auditlog
 audit_log_file_name = server_audit.log
 file_last_modified_time = 0
 file_first_line_time = 0

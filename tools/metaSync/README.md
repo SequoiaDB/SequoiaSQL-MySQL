@@ -123,15 +123,15 @@ format=%(asctime)s [%(levelname)s] %(message)s
 datefmt=
 
 ```
-3. 将config,log.config,mysqlDisseminate放置同一目录，在sdbadmin用户下，执行以下命令执行程序
+3. 将config,log.config,meta_sync.py放置同一目录，在sdbadmin用户下，执行以下命令执行程序
 ```config
-python /home/sdbadmin/mysqlDisseminate &
+python /home/sdbadmin/meta_sync.py &
 ```
 4. 配置定时任务，定期检查程序是否存活，若不再运行，则重新运行程序
 ```bash
 crontab -e
 #每一分钟运行一次
-*/1 * * * * python /home/sdbadmin/mysqlDisseminate &
+*/1 * * * * python /home/sdbadmin/meta_sync.py &
 
 ```
 
