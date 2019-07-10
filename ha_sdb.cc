@@ -1902,7 +1902,8 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
         /*TODO: table_count > 1 should consider starting statement in
           external_lock of last table. If have triggers, may call start_stmt
           and external_lock both when have trigger on the sql*/
-        if (1 == thd->lex->table_count && pushdown_autocommit()) {
+        if (1 == thd->lex->table_count && !table->triggers &&
+            pushdown_autocommit()) {
           conn->set_pushed_autocommit();
         }
 
