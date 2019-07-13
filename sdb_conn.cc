@@ -374,9 +374,9 @@ retry:
     goto error;
   }
 
-  stats.page_size = obj.getIntField("PageSize");
-  stats.total_data_pages = obj.getIntField("TotalDataPages");
-  stats.total_index_pages = obj.getIntField("TotalIndexPages");
+  stats.page_size = obj.getField("PageSize").numberInt();
+  stats.total_data_pages = obj.getField("TotalDataPages").numberInt();
+  stats.total_index_pages = obj.getField("TotalIndexPages").numberInt();
   stats.total_data_free_space = obj.getField("TotalDataFreeSpace").numberLong();
   stats.total_records = obj.getField("TotalRecords").numberLong();
 
