@@ -73,6 +73,9 @@ class Sdb_cl {
   int create_index(const bson::BSONObj &index_def, const CHAR *name,
                    my_bool is_unique, my_bool is_enforced);
 
+  int create_index(const bson::BSONObj &index_def, const CHAR *name,
+                   const bson::BSONObj &options);
+
   int drop_index(const char *name);
 
   int truncate();

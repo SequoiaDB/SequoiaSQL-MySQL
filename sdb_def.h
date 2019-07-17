@@ -59,6 +59,9 @@
 #define SDB_FIELD_STRICT_DATA_MODE "StrictDataMode"
 #define SDB_FIELD_AUTOINCREMENT SDB_FIELD_NAME_AUTOINCREMENT
 
+#define SDB_FIELD_UNIQUE "Unique"
+#define SDB_FIELD_NOT_NULL "NotNull"
+
 const static bson::BSONObj SDB_EMPTY_BSON;
 
 #endif

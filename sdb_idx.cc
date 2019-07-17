@@ -83,13 +83,18 @@ static my_bool is_field_indexable(const Field *field) {
 }
 
 int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
+  int rc = 0;
   const KEY_PART_INFO *key_part;
   const KEY_PART_INFO *key_end;
-  int rc = 0;
-  bson::BSONObj key_obj;
-  my_bool is_unique = false, is_enforced = false;
+
+  bool is_unique = false;
+  bool all_is_not_null = true;
 
   bson::BSONObjBuilder key_obj_builder;
+  bson::BSONObj key_obj;
+  bson::BSONObjBuilder options_builder;
+  bson::BSONObj options;
+
   key_part = key_info->key_part;
   key_end = key_part + key_info->user_defined_key_parts;
   for (; key_part != key_end; ++key_part) {
@@ -100,15 +105,20 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
                       key_part->field->field_name);
       goto error;
     }
+    if (key_part->null_bit) {
+      all_is_not_null = false;
+    }
     // TODO: ASC or DESC
     key_obj_builder.append(key_part->field->field_name, 1);
   }
   key_obj = key_obj_builder.obj();
 
   is_unique = key_info->flags & HA_NOSAME;
-  is_enforced = (0 == strcmp(key_info->name, primary_key_name));
+  options_builder.append(SDB_FIELD_UNIQUE, is_unique);
+  options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
+  options = options_builder.obj();
 
-  rc = cl.create_index(key_obj, key_info->name, is_unique, is_enforced);
+  rc = cl.create_index(key_obj, key_info->name, options);
   if (rc) {
     goto error;
   }
@@ -633,6 +643,8 @@ my_bool sdb_is_same_index(const KEY *a, const KEY *b) {
   const KEY_PART_INFO *key_part_b = NULL;
   const char *field_name_a = NULL;
   const char *field_name_b = NULL;
+  bool a_all_not_null = true;
+  bool b_all_not_null = true;
 
   if (strcmp(a->name, b->name) != 0 ||
       a->user_defined_key_parts != b->user_defined_key_parts ||
@@ -648,8 +660,18 @@ my_bool sdb_is_same_index(const KEY *a, const KEY *b) {
     if (strcmp(field_name_a, field_name_b) != 0) {
       goto done;
     }
+    if (key_part_a->null_bit) {
+      a_all_not_null = false;
+    }
+    if (key_part_b->null_bit) {
+      b_all_not_null = false;
+    }
     ++key_part_a;
     ++key_part_b;
+  }
+
+  if (a_all_not_null != b_all_not_null) {
+    goto done;
   }
 
   rs = true;

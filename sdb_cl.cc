@@ -293,6 +293,31 @@ error:
   goto done;
 }
 
+int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
+                         const bson::BSONObj &options) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+retry:
+  rc = m_cl.createIndex(index_def, name, options);
+  if (SDB_IXM_REDEF == rc) {
+    rc = SDB_ERR_OK;
+  }
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    bool is_transaction = m_conn->is_transaction_on();
+    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
 int Sdb_cl::drop_index(const char *name) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
