@@ -346,8 +346,7 @@ class MysqlMetaSync:
                 # alter table rename
                 if low_sql.startswith("alter table") and low_sql.find("rename") != -1:
                     old_table_name = low_sql[low_sql.index("alter table") + 11: low_sql.index("rename")].strip()
-                    new_table_name = low_sql[low_sql.index("rename") + 6:].strip()
-
+                    new_table_name = low_sql[low_sql.index("rename to") + 9:].strip()
                     if old_table_name.find(".") == -1:
                         old_table_name = "`" + database + "`." + old_table_name
 
@@ -372,10 +371,10 @@ class MysqlMetaSync:
             get_create_new_table_sql = "show create table " + new_table_name
             self.logger(self.level["info"],
                         "begin to get create table [{new_table_name}] sql".format(new_table_name=new_table_name))
-
+            myHostName = socket.gethostname()
             get_create_new_table_sql_command = [
                 self.install_dir + '/bin/mysql',
-                '-h', 'localhost',
+                '-h', myHostName,
                 '-D', database,
                 '-P', self.port,
                 '-u', self.mysql_user,
