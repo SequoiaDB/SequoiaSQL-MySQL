@@ -389,6 +389,9 @@ int Sdb_cl::drop_auto_increment(const char *field_name) {
   int retry_times = 2;
 retry:
   rc = m_cl.dropAutoIncrement(field_name);
+  if (SDB_AUTOINCREMENT_FIELD_NOT_EXIST == rc) {
+    rc = SDB_ERR_OK;
+  }
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -410,6 +413,9 @@ int Sdb_cl::create_auto_increment(const bson::BSONObj &options) {
   int retry_times = 2;
 retry:
   rc = m_cl.createAutoIncrement(options);
+  if (SDB_AUTOINCREMENT_FIELD_CONFLICT == rc) {
+    rc = SDB_ERR_OK;
+  }
   if (rc != SDB_ERR_OK) {
     goto error;
   }
