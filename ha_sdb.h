@@ -21,6 +21,7 @@
 #include "sdb_cl.h"
 #include "sdb_util.h"
 #include "sdb_lock.h"
+#include "sdb_conf.h"
 
 /*
   Stats that can be retrieved from SequoiaDB.
@@ -379,3 +380,34 @@ class ha_sdb : public handler {
   long long total_count;
   bool count_query;
 };
+
+#define SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(thd, ret, default) \
+  {                                                         \
+    do {                                                    \
+      if (sdb_execute_only_in_mysql(thd)) {                 \
+        ret = default;                                      \
+        return ret;                                         \
+      }                                                     \
+    } while (0);                                            \
+  }
+
+#define SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(thd, ret, default) \
+  {                                                              \
+    do {                                                         \
+      if (sdb_execute_only_in_mysql(thd)) {                      \
+        ret = default;                                           \
+        DBUG_RETURN(ret);                                        \
+      }                                                          \
+    } while (0);                                                 \
+  }
+
+#define SDB_EXECUTE_ONLY_IN_MYSQL_VOID_RETURN(thd) \
+  {                                                \
+    do {                                           \
+      if (sdb_execute_only_in_mysql(thd)) {        \
+        return;                                    \
+      }                                            \
+    } while (0);                                   \
+  }
+
+

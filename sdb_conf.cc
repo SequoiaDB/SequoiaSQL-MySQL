@@ -119,6 +119,9 @@ static MYSQL_THDVAR_UINT(selector_pushdown_threshold, PLUGIN_VAR_OPCMDARG,
                          "The threshold of selector push down to SequoiaDB.",
                          NULL, NULL, SDB_SELECTOR_PUSHDOWN_THRESHOLD, 0, 100,
                          0);
+static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_OPCMDARG,
+                         "Commands execute only in mysql.", NULL, NULL, FALSE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -131,6 +134,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(debug_log),
     MYSQL_SYSVAR(optimizer_select_count),
     MYSQL_SYSVAR(selector_pushdown_threshold),
+    MYSQL_SYSVAR(execute_only_in_mysql),
     NULL};
 
 Sdb_conn_addrs::Sdb_conn_addrs() : conn_num(0) {
@@ -245,4 +249,8 @@ int sdb_get_password(String &res) {
 
 uint sdb_selector_pushdown_threshold(THD *thd) {
   return THDVAR(thd, selector_pushdown_threshold);
+}
+
+bool sdb_execute_only_in_mysql(THD *thd) {
+  return THDVAR(thd, execute_only_in_mysql);
 }

@@ -48,6 +48,7 @@ class Sdb_conn_addrs {
 int sdb_encrypt_password();
 int sdb_get_password(String &res);
 uint sdb_selector_pushdown_threshold(THD *thd);
+bool sdb_execute_only_in_mysql(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;

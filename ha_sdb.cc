@@ -28,7 +28,6 @@
 #include <client.hpp>
 #include "item_sum.h"
 #include "sdb_log.h"
-#include "sdb_conf.h"
 #include "sdb_cl.h"
 #include "sdb_conn.h"
 #include "sdb_thd.h"
@@ -79,7 +78,6 @@ using namespace sdbclient;
 const static char *sdb_plugin_info = SDB_ENGINE_INFO ". " SDB_VERSION_INFO ".";
 
 handlerton *sdb_hton = NULL;
-
 mysql_mutex_t sdb_mutex;
 static PSI_mutex_key key_mutex_sdb, key_mutex_SDB_SHARE_mutex;
 static HASH sdb_open_tables;
@@ -387,6 +385,8 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
   DBUG_ASSERT(connection->thread_id() == ha_thd()->thread_id());
+
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
 
   // Get collection to check if the collection is available.
   rc = connection->get_cl(db_name, table_name, cl);
@@ -1644,6 +1644,7 @@ int ha_sdb::info(uint flag) {
   int rc = 0;
   Sdb_conn *conn = NULL;
 
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
   if (flag & HA_STATUS_VARIABLE) {
     if (!(flag & HA_STATUS_NO_LOCK)) {
       rc = update_stats(ha_thd(), true);
@@ -1992,6 +1993,8 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   List_iterator_fast<Create_field> cf_it(
       ha_alter_info->alter_info->create_list);
 
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rs, HA_ALTER_INPLACE_NO_LOCK);
+
   if (ha_alter_info->handler_flags & ~INPLACE_ONLINE_OPERATIONS) {
     // include offline-operations
     // rs = handler::check_if_supported_inplace_alter(
@@ -2112,6 +2115,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   Sdb_cl cl;
   Bitmap<MAX_INDEXES> ignored_drop_keys;
   Bitmap<MAX_INDEXES> ignored_add_keys;
+
+  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rs, false);
 
   const HA_CREATE_INFO *create_info = ha_alter_info->create_info;
   const Alter_inplace_info::HA_ALTER_FLAGS alter_flags =
@@ -2335,6 +2340,8 @@ int ha_sdb::truncate() {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
+
   rc = collection->truncate();
   if (0 == rc) {
     stats.records = 0;
@@ -2355,6 +2362,8 @@ ha_rows ha_sdb::records_in_range(uint inx, key_range *min_key,
 int ha_sdb::delete_table(const char *from) {
   int rc = 0;
   Sdb_conn *conn = NULL;
+
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
 
   rc = sdb_parse_table_name(from, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
@@ -2390,6 +2399,8 @@ error:
 int ha_sdb::rename_table(const char *from, const char *to) {
   Sdb_conn *conn = NULL;
   int rc = 0;
+
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
 
   char old_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char old_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
@@ -2801,6 +2812,8 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   bool created_cs = false;
   bool created_cl = false;
 
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
+
   for (Field **fields = form->field; *fields; fields++) {
     Field *field = *fields;
 
@@ -3092,6 +3105,9 @@ static void sdb_drop_database(handlerton *hton, char *path) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
+
+  SDB_EXECUTE_ONLY_IN_MYSQL_VOID_RETURN(thd);
+
   DBUG_ASSERT(connection->thread_id() == thd->thread_id());
 
   rc = sdb_get_db_name_from_path(path, db_name, SDB_CS_NAME_MAX_SIZE);
