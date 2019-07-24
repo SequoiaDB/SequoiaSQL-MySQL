@@ -15,12 +15,10 @@ from datetime import datetime
 import subprocess
 import time
 import os
-
 import sys
 
 
 class CryptoUtil:
-
     def __init__(self):
         pass
 
@@ -166,6 +164,27 @@ class MysqlMetaSync:
         self.level_priority = {"DEBUG": 4, "INFO": 3, "WARNING": 2, "ERROR": 1}
         self.check_avg()
 
+    def __execute_command(self, command):
+        cmd_str = " ".join(command)
+        process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, error = process.communicate()
+        # If syntax error is encountered, it is most likely to be the sql_mode settings. So set the sql_mode to
+        # ANSI_QUOTES and try again.
+        if "" != error and "ERROR 1064" in error:
+            self.logger(self.level["warning"],
+                        "Encounter syntax error, retry with sql_mode set to ANSI_QUOTES...")
+            command[len(command) - 1] = 'set sql_mode="ANSI_QUOTES";' + command[len(command) - 1]
+            cmd_str = " ".join(command)
+            # Try again
+            process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, error = process.communicate()
+        if 0 != process.returncode:
+            self.logger(self.level["error"], "Execute command failed, subprocess return code: " +
+                        str(process.returncode) + ", error: " + error.strip())
+            return False
+        self.logger(self.level["info"], "Execute command succeed. Command detail: " + cmd_str)
+        return True
+
     def check_avg(self):
 
         # if not os.path.exists(self.log_directory):
@@ -236,15 +255,13 @@ class MysqlMetaSync:
             sorted(target_files, cmp=DateUtils.compare_mtime)
         return target_files
 
-    def execute_sql(self, exec_sql_info, db_required):
-        """execute sql in other mysql host
-
-        :param exec_sql_info: sql info include:user,database,sql
-        :return:
-        """
+    def execute_sql(self, exec_sql_info, db_required, session_attr=None):
         database = exec_sql_info["database"]
         sql = exec_sql_info["sql"]
+        if session_attr is not None:
+            sql = session_attr + sql
         for host in self.hosts:
+            # On other instances, the operation should only be done on MySQL.
             if db_required:
                 command = [self.install_dir + '/bin/mysql',
                            '-h', host,
@@ -262,30 +279,21 @@ class MysqlMetaSync:
                            '-p' + CryptoUtil.decrypt(self.mysql_password),
                            '-e', sql
                            ]
-            try:
-                self.logger(self.level["info"],
-                            "begin to connect [{host}]'s mysql server to execute sql".format(host=host))
-                process = subprocess.Popen(
-                    command,
-                    shell=False,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE
-                )
-                out, err = process.communicate()
-                if process.returncode != 0:
-                    self.logger(self.level["error"],
-                                "execute failed: host={host}, database={database}, user={user}, sql={sql}"
-                                .format(host=host, database=database, user=self.mysql_user, sql=sql))
-                    self.logger(self.level["error"], err.strip())
-                else:
+
+            while True:
+                try:
                     self.logger(self.level["info"],
-                                "execute sql info: host={host}, user={user}, database={database}, sql={sql}"
-                                .format(host=host, user=self.mysql_user, database=database, sql=sql))
-                self.logger(self.level["info"], "finish to execute sql")
-            except subprocess.CalledProcessError:
-                msg = traceback.format_exc()
-                self.logger(self.level["error"], "execute command failed: {command}".format(command=command))
-                self.logger(self.level["error"], msg)
+                                "begin to connect [{host}]'s mysql server to execute sql".format(host=host))
+                    if self.__execute_command(command):
+                        self.logger(self.level["info"], "finish to execute sql")
+                        break
+
+                    self.logger(self.level["error"], "Execute command failed. Sleep for 5 seconds and try again...")
+                    time.sleep(5)
+                except subprocess.CalledProcessError:
+                    msg = traceback.format_exc()
+                    self.logger(self.level["error"], "execute command failed: {command}".format(command=command))
+                    self.logger(self.level["error"], msg)
 
     def parse_audit_log_file(self, f):
         """ parse log file
@@ -332,7 +340,8 @@ class MysqlMetaSync:
                     or low_sql.startswith("declare") \
                     or low_sql.startswith("grant") \
                     or low_sql.startswith("revoke") \
-                    or low_sql.startswith("flush"):
+                    or low_sql.startswith("flush") \
+                    or low_sql.startswith("rename"):
 
                 database = row["database"]
                 if not database.strip():
@@ -343,25 +352,13 @@ class MysqlMetaSync:
                 elif database.startswith("`"):
                     database = database[1:-1]
 
-                # alter table rename
-                if low_sql.startswith("alter table") and low_sql.find("rename") != -1:
-                    old_table_name = low_sql[low_sql.index("alter table") + 11: low_sql.index("rename")].strip()
-                    new_table_name = low_sql[low_sql.index("rename to") + 9:].strip()
-                    if old_table_name.find(".") == -1:
-                        old_table_name = "`" + database + "`." + old_table_name
-
-                    if new_table_name.find(".") == -1:
-                        new_table_name = "`" + database + "`." + new_table_name
-
-                    self.rename_table(database, old_table_name, new_table_name)
-                else:
-                    db_required = True
-                    # replace " to ` to avoid to sync failed.
-                    exec_sql_info = {"database": database, "sql": str(sql).replace('"', '`')}
-                    # If it's create database operation, ignore the database argument.
-                    if low_sql.startswith("create database"):
-                        db_required = False
-                    self.execute_sql(exec_sql_info, db_required)
+                db_required = True
+                exec_sql_info = {"database": database, "sql": str(sql)}
+                # If it's create database operation, ignore the database argument.
+                if low_sql.startswith("create database"):
+                    db_required = False
+                session_attr = "set session sequoiadb_execute_only_in_mysql=on;"
+                self.execute_sql(exec_sql_info, db_required, session_attr)
             self.last_parse_row = row_number
         return actual_parse_count
 
@@ -371,10 +368,10 @@ class MysqlMetaSync:
             get_create_new_table_sql = "show create table " + new_table_name
             self.logger(self.level["info"],
                         "begin to get create table [{new_table_name}] sql".format(new_table_name=new_table_name))
-            myHostName = socket.gethostname()
+            my_host_name = socket.gethostname()
             get_create_new_table_sql_command = [
                 self.install_dir + '/bin/mysql',
-                '-h', myHostName,
+                '-h', my_host_name,
                 '-D', database,
                 '-P', self.port,
                 '-u', self.mysql_user,
@@ -408,7 +405,7 @@ class MysqlMetaSync:
         if mysql_process_out.lower().find("create table") != -1:
             process_out = mysql_process_out.split("\n")[1]
             start_index = process_out.lower().find("create table ")
-            create_new_table_sql = ' '.join((process_out[start_index:].replace("\\n", "").replace('"', '`')).split())
+            create_new_table_sql = ' '.join((process_out[start_index:].replace("\\n", "")).split())
 
             for host in self.hosts:
                 try:
@@ -638,8 +635,6 @@ class MysqlMetaSync:
                                                 )
                                         )
                             sys.exit(-1)
-                            finish_parse_file_list = False
-                            break
                     file_index = file_index + 1
                     if file_index < file_count:
                         parse_next_file = True
