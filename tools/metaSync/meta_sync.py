@@ -16,6 +16,7 @@ import subprocess
 import time
 import os
 import sys
+import re
 
 
 class CryptoUtil:
@@ -163,6 +164,17 @@ class MysqlMetaSync:
         self.level = {"debug": "DEBUG", "info": "INFO", "warning": "WARNING", "error": "ERROR"}
         self.level_priority = {"DEBUG": 4, "INFO": 3, "WARNING": 2, "ERROR": 1}
         self.check_avg()
+
+    @staticmethod
+    def __is_database_opr(sql):
+        sql = sql.lower().strip()
+        crt_db_regex = r'create(\s+)database'
+        drop_db_regex = r'drop(\s+)database'
+
+        if re.match(crt_db_regex, sql) or re.match(drop_db_regex, sql):
+            return True
+        else:
+            return False
 
     def __execute_command(self, command):
         cmd_str = " ".join(command)
@@ -354,8 +366,9 @@ class MysqlMetaSync:
 
                 db_required = True
                 exec_sql_info = {"database": database, "sql": str(sql)}
-                # If it's create database operation, ignore the database argument.
-                if low_sql.startswith("create database"):
+
+                # If it's create/drop database operation, ignore the database argument.
+                if self.__is_database_opr(low_sql):
                     db_required = False
                 session_attr = "set session sequoiadb_execute_only_in_mysql=on;"
                 self.execute_sql(exec_sql_info, db_required, session_attr)
