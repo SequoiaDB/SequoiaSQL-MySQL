@@ -144,7 +144,7 @@ class MysqlMetaSync:
         self.config.read(self.config_file)
 
         self.install_dir = self.config.get('mysql', 'install_dir')
-        self.hosts = self.config.get('mysql', 'hosts').split(',')
+        self.hosts = self.config.get('mysql', 'hosts').replace(' ', '').split(',')
         self.port = self.config.get('mysql', 'port')
         self.mysql_password_type = self.config.get('mysql', 'mysql_password_type')
         self.mysql_user = self.config.get('mysql', 'mysql_user')
