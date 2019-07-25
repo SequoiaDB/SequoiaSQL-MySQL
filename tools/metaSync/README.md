@@ -18,7 +18,7 @@ Mysql的ddl操作同步工具的实现原理是通过解析mysql的审计日志�
 1. 创建用于同步MySQL元数据的Mysql用户
 ```sql
 CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
-GRANT all on *.* TO 'sdbadmin'@'%';
+GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
 ```
 2. 将server_audit.so文件复制至mysql的安装目录下的lib/plugin目录下，server_audit.so下载地址：
 [server_audit.so下载](https://downloads.mariadb.com/Audit-Plugin/MariaDB-Audit-Plugin/)
