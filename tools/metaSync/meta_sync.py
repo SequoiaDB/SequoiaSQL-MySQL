@@ -192,9 +192,10 @@ class MysqlMetaSync:
             out, error = process.communicate()
         if 0 != process.returncode:
             self.logger(self.level["error"], "Execute command failed, subprocess return code: " +
-                        str(process.returncode) + ", error: " + error.strip())
+                        str(process.returncode) + ", error: " + error.strip() +
+                        ". Command: " + re.sub('-p[^\s]+\s', '', cmd_str))
             return False
-        self.logger(self.level["info"], "Execute command succeed. Command detail: " + cmd_str)
+        self.logger(self.level["info"], "Execute command succeed. Command detail: " + re.sub('-p[^\s]+\s', '', cmd_str))
         return True
 
     def check_avg(self):
@@ -695,8 +696,6 @@ class MysqlMetaSync:
 def run_task(log):
     ssql_mysql = MysqlMetaSync(log)
     ssql_mysql.remove_current_hostname()    # 删除当前主机的主机名
-    print(ssql_mysql.mysql_password)
-    print(CryptoUtil.decrypt(ssql_mysql.mysql_password))
     scheduler = sched.scheduler(time.time, time.sleep)  # 定时器
     while True:
         scheduler.enter(ssql_mysql.interval_time, 1, ssql_mysql.run_parse_task, ())
