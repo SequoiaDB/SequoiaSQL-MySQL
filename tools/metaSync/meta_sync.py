@@ -366,6 +366,9 @@ class MysqlMetaSync:
                     database = database[1:-1]
 
                 db_required = True
+                # Replace 'ALGORITHM=COPY' with one blank, as on other instances, the operation should never be done
+                # in copy mode.
+                sql = re.sub(r'[,]*(\s*)ALGORITHM(\s*)=(\s*)COPY(\s*)[,]*', ' ', sql, flags=re.IGNORECASE)
                 exec_sql_info = {"database": database, "sql": str(sql)}
 
                 # If it's create/drop database operation, ignore the database argument.
