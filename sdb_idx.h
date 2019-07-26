@@ -22,7 +22,8 @@
 
 int sdb_create_index(const KEY *key_info, Sdb_cl &cl);
 
-int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction);
+int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,
+                      bool secondary_sort_oid);
 
 int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                                   const key_range *start_key,

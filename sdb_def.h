@@ -27,6 +27,9 @@
 
 #define SDB_CHARSET my_charset_utf8mb4_bin
 
+#define SDB_OID_LEN 12
+#define SDB_OID_FIELD "_id"
+
 #define SOURCE_THREAD_ID "Source"
 #define PREFIX_THREAD_ID "MySQL-"
 #define PREFIX_THREAD_ID_LEN 6

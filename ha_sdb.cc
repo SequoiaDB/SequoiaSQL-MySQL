@@ -69,8 +69,6 @@ using namespace sdbclient;
 #define FLG_INSERT_REPLACEONDUP 0x00000004
 #endif
 
-#define SDB_OID_LEN 12
-#define SDB_OID_FIELD "_id"
 #define SDB_FIELD_MAX_LEN (16 * 1024 * 1024)
 
 #define SDB_COMMENT "sequoiadb"
@@ -288,6 +286,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   last_count_time = time(NULL);
   m_ignore_dup_key = false;
   m_write_can_replace = false;
+  m_secondary_sort_rowid = false;
   m_use_bulk_insert = false;
   m_bulk_insert_total = 0;
   m_has_update_insert_id = false;
@@ -448,6 +447,7 @@ int ha_sdb::reset() {
   pushed_condition = SDB_EMPTY_BSON;
   m_ignore_dup_key = false;
   m_write_can_replace = false;
+  m_secondary_sort_rowid = false;
   m_use_bulk_insert = false;
   m_has_update_insert_id = false;
   return 0;
@@ -1198,8 +1198,9 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   count_query = false;
   hint = BSON("" << key_info->name);
   idx_order_direction = order_direction;
-  if (m_idx_sorted) {
-    rc = sdb_get_idx_order(key_info, order_by, order_direction);
+  if (m_idx_sorted || m_secondary_sort_rowid) {
+    rc = sdb_get_idx_order(key_info, order_by, order_direction,
+                           m_secondary_sort_rowid);
     if (rc) {
       SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
       goto error;
@@ -1790,6 +1791,9 @@ int ha_sdb::extra(enum ha_extra_function operation) {
       break;
     case HA_EXTRA_WRITE_CANNOT_REPLACE:
       m_write_can_replace = false;
+      break;
+    case HA_EXTRA_SECONDARY_SORT_ROWID:
+      m_secondary_sort_rowid = true;
       break;
     default:
       break;

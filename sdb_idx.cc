@@ -128,8 +128,8 @@ error:
   goto done;
 }
 
-int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order,
-                      int order_direction) {
+int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,
+                      bool secondary_sort_oid) {
   int rc = SDB_ERR_OK;
   const KEY_PART_INFO *key_part;
   const KEY_PART_INFO *key_end;
@@ -142,6 +142,9 @@ int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order,
   key_end = key_part + key_info->user_defined_key_parts;
   for (; key_part != key_end; ++key_part) {
     obj_builder.append(key_part->field->field_name, order_direction);
+  }
+  if (secondary_sort_oid) {
+    obj_builder.append(SDB_OID_FIELD, 1);
   }
   order = obj_builder.obj();
 

@@ -372,6 +372,7 @@ class ha_sdb : public handler {
   bool m_idx_sorted;
   bool m_ignore_dup_key;
   bool m_write_can_replace;
+  bool m_secondary_sort_rowid;
   bool m_use_bulk_insert;
   int m_bulk_insert_total;
   std::vector<bson::BSONObj> m_bulk_insert_rows;
