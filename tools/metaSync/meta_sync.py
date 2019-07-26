@@ -164,6 +164,7 @@ class MysqlMetaSync:
         self.level = {"debug": "DEBUG", "info": "INFO", "warning": "WARNING", "error": "ERROR"}
         self.level_priority = {"DEBUG": 4, "INFO": 3, "WARNING": 2, "ERROR": 1}
         self.check_avg()
+        self.logger(self.level["info"], "Start MySQL meta_sync...")
 
     @staticmethod
     def __is_database_opr(sql):
@@ -302,7 +303,7 @@ class MysqlMetaSync:
                         break
 
                     self.logger(self.level["error"], "Execute command failed. Sleep for 5 seconds and try again...")
-                    time.sleep(5)
+                    time.sleep(3)
                 except subprocess.CalledProcessError:
                     msg = traceback.format_exc()
                     self.logger(self.level["error"], "execute command failed: {command}".format(command=command))
@@ -578,10 +579,25 @@ class MysqlMetaSync:
         elif log_level == self.level["debug"]:
             self.log.debug(message)
 
-        # if int(self.level_priority[self.log_level]) >= int(self.level_priority[log_level]):
-        #     with open(self.get_current_log_file(), "a") as log:
-        #         log.write('{time} [{level}] {msg}\n'.format(
-        #             time=DateUtils.get_current_time(), level=log_level, msg=message))
+
+def init_log(log_config_file):
+    try:
+        # Get the log file path from the log configuration file, and create the directory if it dose not exist.
+        config_parser = ConfigParser.ConfigParser()
+        config_parser.read(log_config_file)
+        log_file = config_parser.get("handler_rotatingFileHandler", "args").split('\'')[1]
+        curr_path = os.path.abspath(os.path.dirname(log_config_file))
+        log_file_full_path = os.path.join(curr_path, log_file)
+        log_file_parent_dir = os.path.abspath(os.path.join(log_file_full_path, ".."))
+        if not os.path.exists(log_file_parent_dir):
+            os.makedirs(log_file_parent_dir)
+
+        logging.config.fileConfig(log_config_file)
+        log = logging.getLogger("ddlLogger")
+        return log
+    except e:
+        print("Initialize logging failed. Error: " + e.message)
+        return None
 
 
 def run_task(log):
@@ -608,10 +624,12 @@ def main():
         pid = str(os.getpid())
         f.write(pid)
 
-    # get log.config
-    log_file_path = os.path.join(current_file_path, "log.config")
-    logging.config.fileConfig(log_file_path)
-    log = logging.getLogger("ddlLogger")
+    log_config_file= os.path.join(current_file_path, "log.config")
+    log = init_log(log_config_file)
+    if log is None:
+        print("Initialize logging failed. Exit...")
+        return 1
+
     run_task(log)
 
 
