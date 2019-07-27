@@ -8,6 +8,8 @@ install_dir = /opt/sequoiasql/mysql
 
 [execute]
 interval_time = 5
+ignore_error = true
+max_retry_times = 5
 
 [parse]
 parse_log_directory = D:\workspaces\python\metaSync\auditlog

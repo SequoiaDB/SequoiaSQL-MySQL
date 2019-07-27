@@ -19,6 +19,19 @@ import sys
 import re
 
 
+# MySQL error definitions
+MYSQL_OK = 0
+CONN_ERR = 1
+SYNTAX_ERR = 2
+UNHANDLED_ERR = 10000
+
+# Error key pattern in the error message.
+MYSQL_ERRORS = {
+    CONN_ERR: "ERROR 2003",
+    SYNTAX_ERR: "ERROR 1604"
+}
+
+
 class CryptoUtil:
     def __init__(self):
         pass
@@ -150,6 +163,13 @@ class MysqlMetaSync:
         self.mysql_user = self.config.get('mysql', 'mysql_user')
         self.mysql_password = self.config.get('mysql', 'mysql_password')
         self.interval_time = int(self.config.get('execute', 'interval_time'))
+        ignore_option = self.config.get('execute', 'ignore_error')
+        if "true" == ignore_option.lower():
+            self.ignore_error = True
+        else:
+            self.ignore_error = False
+        # self.ignore_error = self.config.get('execute', 'ignore_error')
+        self.max_retry_times = int(self.config.get('execute', 'max_retry_times'))
         self.parse_log_directory = self.config.get('parse', 'parse_log_directory')
         self.audit_log_file_name = self.config.get('parse', 'audit_log_file_name')
         self.file_last_modified_time = DateUtils.strtime_to_timestamp(
@@ -163,6 +183,7 @@ class MysqlMetaSync:
         self.SUCCESS_STATE = 0
         self.level = {"debug": "DEBUG", "info": "INFO", "warning": "WARNING", "error": "ERROR"}
         self.level_priority = {"DEBUG": 4, "INFO": 3, "WARNING": 2, "ERROR": 1}
+        self.ignore_file = "ignore.info"
         self.check_avg()
         self.logger(self.level["info"], "Start MySQL meta_sync...")
 
@@ -179,25 +200,47 @@ class MysqlMetaSync:
 
     def __execute_command(self, command):
         cmd_str = " ".join(command)
-        process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, error = process.communicate()
-        # If syntax error is encountered, it is most likely to be the sql_mode settings. So set the sql_mode to
-        # ANSI_QUOTES and try again.
-        if "" != error and "ERROR 1064" in error:
-            self.logger(self.level["warning"],
-                        "Encounter syntax error, retry with sql_mode set to ANSI_QUOTES...")
-            command[len(command) - 1] = 'set sql_mode="ANSI_QUOTES";' + command[len(command) - 1]
-            cmd_str = " ".join(command)
-            # Try again
+        # Remove the password from the command, for logging.
+        safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
+        try:
             process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, error = process.communicate()
-        if 0 != process.returncode:
-            self.logger(self.level["error"], "Execute command failed, subprocess return code: " +
-                        str(process.returncode) + ", error: " + error.strip() +
-                        ". Command: " + re.sub('-p[^\s]+\s', '', cmd_str))
-            return False
-        self.logger(self.level["info"], "Execute command succeed. Command detail: " + re.sub('-p[^\s]+\s', '', cmd_str))
-        return True
+            if "" != error and MYSQL_ERRORS[CONN_ERR] in error:
+                self.logger(self.level["error"], "Not able to connect to remote instance. Command: " + safe_cmd_str)
+                return CONN_ERR
+            elif "" != error and MYSQL_ERRORS[SYNTAX_ERR] in error:
+                # If syntax error is encountered, it is most likely to be the sql_mode settings. So set the sql_mode to
+                # ANSI_QUOTES and try again.
+                self.logger(self.level["warning"],
+                            "Encounter syntax error, retry with sql_mode set to ANSI_QUOTES...")
+                command[len(command) - 1] = 'set sql_mode="ANSI_QUOTES";' + command[len(command) - 1]
+                cmd_str = " ".join(command)
+                safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
+                # Try again
+                process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, error = process.communicate()
+                if "" != error and MYSQL_ERRORS[CONN_ERR] in error:
+                    self.logger(self.level["error"], "Not able to connect to remote instance. Command: " + safe_cmd_str)
+                    return CONN_ERR
+                elif "" != error and MYSQL_ERRORS[SYNTAX_ERR] in error:
+                    self.logger(self.level["error"], "Syntax error in statement. Command: " + safe_cmd_str)
+                    return SYNTAX_ERR
+            if 0 != process.returncode:
+                self.logger(self.level["error"], "Execute command failed, subprocess return code: " +
+                            str(process.returncode) + ", error: " + error.strip() +
+                            ". Command: " + safe_cmd_str)
+                return UNHANDLED_ERR
+            self.logger(self.level["info"], "Execute command succeed. Command detail: " + safe_cmd_str)
+            return MYSQL_OK
+        except subprocess.CalledProcessError:
+            msg = traceback.format_exc()
+            self.logger(self.level["error"], "Execute command failed: " + msg + ". Command: " + safe_cmd_str)
+            return UNHANDLED_ERR
+
+    def __log_ignore_stmt(self, stmt):
+        ignore_file = open(self.ignore_file, "a")
+        ignore_file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + " " + stmt + "\n")
+        ignore_file.close()
 
     def check_avg(self):
 
@@ -294,20 +337,25 @@ class MysqlMetaSync:
                            '-e', sql
                            ]
 
+            retry_times = 0
             while True:
-                try:
-                    self.logger(self.level["info"],
-                                "begin to connect [{host}]'s mysql server to execute sql".format(host=host))
-                    if self.__execute_command(command):
-                        self.logger(self.level["info"], "finish to execute sql")
-                        break
-
-                    self.logger(self.level["error"], "Execute command failed. Sleep for 5 seconds and try again...")
-                    time.sleep(3)
-                except subprocess.CalledProcessError:
-                    msg = traceback.format_exc()
-                    self.logger(self.level["error"], "execute command failed: {command}".format(command=command))
-                    self.logger(self.level["error"], msg)
+                self.logger(self.level["info"],
+                            "begin to connect [{host}]'s mysql server to execute sql".format(host=host))
+                retry_times += 1
+                result = self.__execute_command(command)
+                if MYSQL_OK == result:
+                    self.logger(self.level["info"], "finish to execute sql")
+                    break
+                elif CONN_ERR != result and self.ignore_error and retry_times > self.max_retry_times:
+                    cmd_str = " ".join(command)
+                    # Remove the password from the command, for logging.
+                    safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
+                    self.logger(self.level["error"], "Failed to execute command. Write command into ignore file... "
+                                "Command: " + safe_cmd_str)
+                    self.__log_ignore_stmt(safe_cmd_str)
+                    break
+                self.logger(self.level["error"], "Execute command failed. Sleep for 3 seconds and try again...")
+                time.sleep(3)
 
     def parse_audit_log_file(self, f):
         """ parse log file
