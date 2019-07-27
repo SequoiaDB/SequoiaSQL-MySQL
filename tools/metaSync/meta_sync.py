@@ -632,7 +632,10 @@ def init_log(log_config_file):
     try:
         # Get the log file path from the log configuration file, and create the directory if it dose not exist.
         config_parser = ConfigParser.ConfigParser()
-        config_parser.read(log_config_file)
+        files = config_parser.read(log_config_file)
+        if len(files) != 1:
+            print("Error: Read log configuration file failed")
+            return None
         log_file = config_parser.get("handler_rotatingFileHandler", "args").split('\'')[1]
         curr_path = os.path.abspath(os.path.dirname(log_config_file))
         log_file_full_path = os.path.join(curr_path, log_file)
@@ -643,8 +646,8 @@ def init_log(log_config_file):
         logging.config.fileConfig(log_config_file)
         log = logging.getLogger("ddlLogger")
         return log
-    except e:
-        print("Initialize logging failed. Error: " + e.message)
+    except BaseException as e:
+        print("Error: Initialize logging failed. Error number: " + ". Message: " + e.message)
         return None
 
 
