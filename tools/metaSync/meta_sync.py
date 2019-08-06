@@ -17,18 +17,21 @@ import time
 import os
 import sys
 import re
+import io
 
 
 # MySQL error definitions
 MYSQL_OK = 0
 CONN_ERR = 1
 SYNTAX_ERR = 2
+SYNTAX_ERR_2 = 3
 UNHANDLED_ERR = 10000
 
 # Error key pattern in the error message.
 MYSQL_ERRORS = {
     CONN_ERR: "ERROR 2003",
-    SYNTAX_ERR: "ERROR 1604"
+    SYNTAX_ERR: "ERROR 1604",
+    SYNTAX_ERR_2: "ERROR 1064"
 }
 
 
@@ -208,7 +211,8 @@ class MysqlMetaSync:
             if "" != error and MYSQL_ERRORS[CONN_ERR] in error:
                 self.logger(self.level["error"], "Not able to connect to remote instance. Command: " + safe_cmd_str)
                 return CONN_ERR
-            elif "" != error and MYSQL_ERRORS[SYNTAX_ERR] in error:
+            elif "" != error and (MYSQL_ERRORS[SYNTAX_ERR] in error or
+                                  MYSQL_ERRORS[SYNTAX_ERR_2] in error):
                 # If syntax error is encountered, it is most likely to be the sql_mode settings. So set the sql_mode to
                 # ANSI_QUOTES and try again.
                 self.logger(self.level["warning"],
@@ -222,7 +226,8 @@ class MysqlMetaSync:
                 if "" != error and MYSQL_ERRORS[CONN_ERR] in error:
                     self.logger(self.level["error"], "Not able to connect to remote instance. Command: " + safe_cmd_str)
                     return CONN_ERR
-                elif "" != error and MYSQL_ERRORS[SYNTAX_ERR] in error:
+                elif "" != error and (MYSQL_ERRORS[SYNTAX_ERR] in error or
+                                      MYSQL_ERRORS[SYNTAX_ERR_2] in error):
                     self.logger(self.level["error"], "Syntax error in statement. Command: " + safe_cmd_str)
                     return SYNTAX_ERR
             if 0 != process.returncode:
@@ -360,17 +365,24 @@ class MysqlMetaSync:
     def parse_audit_log_file(self, f):
         """ parse log file
 
-        :param f: the absolute path string of log file
+        :param f: file descriptor of the audit log file
         """
         audit_log_field = ["log_time", "server_host", "user", "remote_host", "thread_id", "seq", "operation",
                            "database",
                            "sql", "exec_state"]
         actual_parse_count = 0
-        for row_id, row in enumerate(csv.DictReader(f, fieldnames=audit_log_field, delimiter=',', quotechar="'",
-                                                    quoting=csv.QUOTE_ALL, escapechar='\\')):
-            row_number = row_id + 1  # row_id starts by 0
-            if int(self.last_parse_row) >= int(row_number):  # start from last parse row
+        row_number = 0
+        lines = f.readlines()
+        for line in lines:
+            row_number += 1
+            if int(self.last_parse_row) >= row_number:  # start from last parse row
                 continue
+            # The statement may contain '\n' or '\t'. They will impact the action of the DictReader. So remove
+            # them before parse.
+            line = line.replace('\n', ' ').replace('\t', ' ').strip()
+            reader_list = csv.DictReader(io.StringIO(unicode(line, "utf-8")), fieldnames=audit_log_field, delimiter=',',
+                                         quotechar="'", quoting=csv.QUOTE_ALL, escapechar='\\')
+            row = next(reader_list)
 
             actual_parse_count = actual_parse_count + 1
             # filter error log
@@ -393,7 +405,6 @@ class MysqlMetaSync:
                 continue
 
             # filter select,insert,update sql
-            # 避免大小写不一致
             sql = row["sql"]
             low_sql = sql.lower()
             if low_sql.startswith("alter") \
