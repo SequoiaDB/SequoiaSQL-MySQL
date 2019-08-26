@@ -70,57 +70,79 @@ static void sdb_password_update(THD *thd, struct st_mysql_sys_var *var,
   sdb_encrypt_password();
 }
 
+// Please declare configuration in the format below:
+// [// SDB_DOC_OPT = IGNORE]
+// static MYSQL_XXXVAR_XXX(name, varname, opt,
+//                         "<English Description>"
+//                         "(Default: <Default Value>)"
+//                         /*<Chinese Description>*/,
+//                         check, update, def);
+
 static MYSQL_SYSVAR_STR(conn_addr, sdb_conn_str,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
-                        "SequoiaDB addresses (Default: localhost:11810).",
+                        "SequoiaDB addresses. (Default: \"localhost:11810\")"
+                        /*SequoiaDB 连接地址。*/,
                         sdb_conn_addr_validate, NULL, SDB_ADDR_DFT);
 static MYSQL_SYSVAR_STR(user, sdb_user,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
-                        "SequoiaDB authentication user "
-                        "(Default value is empty).",
+                        "SequoiaDB authentication user. "
+                        "(Default: \"\")"
+                        /*SequoiaDB 鉴权用户。*/,
                         NULL, NULL, SDB_USER_DFT);
 static MYSQL_SYSVAR_STR(password, sdb_password,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
-                        "SequoiaDB authentication password "
-                        "(Default value is empty).",
+                        "SequoiaDB authentication password. "
+                        "(Default: \"\")"
+                        /*SequoiaDB 鉴权密码。*/,
                         NULL, sdb_password_update, SDB_PASSWORD_DFT);
 static MYSQL_SYSVAR_BOOL(use_partition, sdb_use_partition, PLUGIN_VAR_OPCMDARG,
                          "Create partition table on SequoiaDB. "
-                         "Enabled by default.",
+                         "(Default: ON)"
+                         /*是否启用自动分区。*/,
                          NULL, NULL, SDB_USE_PARTITION_DFT);
 static MYSQL_SYSVAR_BOOL(use_bulk_insert, sdb_use_bulk_insert,
                          PLUGIN_VAR_OPCMDARG,
-                         "Enable bulk insert to SequoiaDB. Enabled by default.",
+                         "Enable bulk insert to SequoiaDB. (Default: ON)"
+                         /*是否启用批量插入。*/,
                          NULL, NULL, SDB_DEFAULT_USE_BULK_INSERT);
 static MYSQL_SYSVAR_INT(bulk_insert_size, sdb_bulk_insert_size,
                         PLUGIN_VAR_OPCMDARG,
-                        "Maximum number of records per bulk insert "
-                        "(Default: 100).",
+                        "Maximum number of records per bulk insert. "
+                        "(Default: 100)"
+                        /*批量插入时每批的插入记录数。*/,
                         NULL, NULL, SDB_DEFAULT_BULK_INSERT_SIZE, 1, 100000, 0);
 static MYSQL_SYSVAR_INT(replica_size, sdb_replica_size, PLUGIN_VAR_OPCMDARG,
-                        "Replica size of write operations "
-                        "(Default: 1).",
+                        "Replica size of write operations. "
+                        "(Default: 1)"
+                        /*写操作需同步的副本数。取值范围为[-1, 7]。*/,
                         NULL, NULL, SDB_DEFAULT_REPLICA_SIZE, -1, 7, 0);
 static MYSQL_SYSVAR_BOOL(use_autocommit, sdb_use_autocommit,
                          PLUGIN_VAR_OPCMDARG,
                          "Enable autocommit of SequoiaDB storage engine. "
-                         "Enabled by default.",
+                         "(Default: ON)"
+                         /*是否启用自动提交模式(已弃用)。*/,
                          NULL, NULL, SDB_DEFAULT_USE_AUTOCOMMIT);
 static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
                          "Turn on debug log of SequoiaDB storage engine. "
-                         "Disabled by default.",
+                         "(Default: OFF)"
+                         /*是否打印debug日志。*/,
                          NULL, NULL, SDB_DEBUG_LOG_DFT);
 static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
                          PLUGIN_VAR_OPCMDARG,
                          "Optimizer switch for simple select count. "
-                         "Enabled by default.",
+                         "(Default: ON)"
+                         /*是否开启优化select count(*)行为。*/,
                          NULL, NULL, TRUE);
 static MYSQL_THDVAR_UINT(selector_pushdown_threshold, PLUGIN_VAR_OPCMDARG,
-                         "The threshold of selector push down to SequoiaDB.",
+                         "The threshold of selector push down to SequoiaDB. "
+                         "(Default: 30)"
+                         /*查询字段下压触发阈值，取值范围[0, 100]，单位：%。*/,
                          NULL, NULL, SDB_SELECTOR_PUSHDOWN_THRESHOLD, 0, 100,
                          0);
 static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_OPCMDARG,
-                         "Commands execute only in mysql.", NULL, NULL, FALSE);
+                         "Commands execute only in mysql. (Default: OFF)"
+                         /*DDL 命令只在 MySQL 执行，不下压到 SequoiaDB 执行。*/,
+                         NULL, NULL, FALSE);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
