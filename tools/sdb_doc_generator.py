@@ -20,7 +20,6 @@ import os
 import sys
 import getopt
 import re
-from enum import Enum
 
 ERR_OK = 0
 ERR_INVALID_ARG = 1
@@ -34,16 +33,12 @@ DFT_ARG_FORMAT = 'all'
 
 
 
-class FormatType(Enum):
-    markdown = 1
-    cnf = 2
-    all_type = 3
+def enum(*args):
+    enums = dict(zip(args, range(len(args))))
+    return type('Enum', (), enums)
 
-
-
-class Language(Enum):
-    english = 1
-    chinese = 2
+FormatType = enum('MARKDOWN', 'CNF', 'ALL')
+Language = enum('ENGLISH', 'CHINESE')
 
 
 
@@ -58,9 +53,9 @@ class DocTuple:
 
     @staticmethod
     def get_md_header(language):
-        if language == Language.chinese:
+        if language == Language.CHINESE:
             header = '|参数名|类型|默认值|动态生效|作用范围|说明|'
-        elif language == Language.english:
+        elif language == Language.ENGLISH:
             header = '|Parameter|Type|Default|Online|Scope|Description|'
         else:
             print("ERROR: Unknown language:" + fmt)
@@ -68,11 +63,11 @@ class DocTuple:
         header += '\n|---|---|---|---|---|---|'
         return header
     
-    def toString(self, fmt = FormatType.markdown):
-        if fmt == FormatType.markdown:
+    def toString(self, fmt = FormatType.MARKDOWN):
+        if fmt == FormatType.MARKDOWN:
             return "|" + self.name + "|" + self.type + "|" + self.default + \
                     "|" + self.online + "|" + self.scope + "|" + self.descript + "|"
-        elif fmt == FormatType.cnf:
+        elif fmt == FormatType.CNF:
             default_val = self.default
             last = len(default_val) - 1
             if (self.default[0] == '"' and self.default[last] == '"') or \
@@ -215,13 +210,13 @@ class DocExtractor:
             t.default = '-'
 
         # Get `descript`
-        if self.language == Language.english:
+        if self.language == Language.ENGLISH:
             if default_declare:
                 desp_end = comment.find(default_declare.group(0))
             else:
                 desp_end = len(comment)
             t.descript = comment[0:desp_end]
-        elif self.language == Language.chinese:
+        elif self.language == Language.CHINESE:
             while declare[bgn] != '/' or declare[bgn + 1] != '*':
                 bgn += 1
             bgn += 2
@@ -267,9 +262,9 @@ class DocExporter:
         self.fmt = fmt
 
     def get_file_path(self, out_dir, fmt):
-        if fmt == FormatType.markdown:
+        if fmt == FormatType.MARKDOWN:
             suffix = '.md'
-        elif fmt == FormatType.cnf:
+        elif fmt == FormatType.CNF:
             suffix = '.cnf'
 
         if not os.path.isdir(out_dir):
@@ -279,22 +274,22 @@ class DocExporter:
         return out_dir + '/' + OUT_FILE_NAME + suffix
 
     def export(self, tuples, out_dir):
-        if self.fmt == FormatType.markdown or self.fmt == FormatType.all_type:
-            path = self.get_file_path(out_dir, FormatType.markdown) 
+        if self.fmt == FormatType.MARKDOWN or self.fmt == FormatType.ALL:
+            path = self.get_file_path(out_dir, FormatType.MARKDOWN) 
             print("INFO: Exporting file " + path)
             with open(path, 'w') as f:
                 f.write(DocTuple.get_md_header(self.language))
                 f.write('\n')
                 for t in tuples:
-                    f.write(t.toString(FormatType.markdown)) 
+                    f.write(t.toString(FormatType.MARKDOWN)) 
                     f.write('\n')
 
-        if self.fmt == FormatType.cnf or self.fmt == FormatType.all_type:
-            path = self.get_file_path(out_dir, FormatType.cnf) 
+        if self.fmt == FormatType.CNF or self.fmt == FormatType.ALL:
+            path = self.get_file_path(out_dir, FormatType.CNF) 
             print("INFO: Exporting file " + path)
             with open(path, 'w') as f:
                 for t in tuples:
-                    f.write(t.toString(FormatType.cnf))
+                    f.write(t.toString(FormatType.CNF))
                     f.write('\n')
 
 
@@ -349,19 +344,19 @@ def main(argv):
             sys.exit(ERR_INVALID_ARG)
 
     if arg_language == 'cn':
-        language_type = Language.chinese
+        language_type = Language.CHINESE
     elif arg_language == 'en':
-        language_type = Language.english
+        language_type = Language.ENGLISH
     else:
         print("ERROR: Invalid language option. Please use 'cn' or 'en'")
         sys.exit(ERR_INVALID_ARG)
 
     if arg_format == 'all':
-        format_type = FormatType.all_type
+        format_type = FormatType.ALL
     elif arg_format == 'md':
-        format_type = FormatType.markdown
+        format_type = FormatType.MARKDOWN
     elif arg_format == 'cnf':
-        format_type = FormatType.cnf
+        format_type = FormatType.CNF
     else:
         print("ERROR: Invalid format option. Please use 'md', 'cnf' or 'all'")
         sys.exit(ERR_INVALID_ARG)
