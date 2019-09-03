@@ -34,11 +34,12 @@ DFT_ARG_FORMAT = 'all'
 MY_CNF_DEFAULT = \
 "[client]\n\
 default-character-set=utf8mb4\n\
+\n\
 [mysqld]\n\
 sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\n\
 character_set_server=utf8mb4\n\
 collation_server=utf8mb4_bin\n\
-default_storage_engine=SequoiaDB\n"
+default_storage_engine=SequoiaDB\n\n"
 
 
 
@@ -58,7 +59,8 @@ class DocTuple:
         self.default = ""
         self.online = ""
         self.scope = ""
-        self.descript = ""
+        self.desp_cn = ""
+        self.desp_en = ""
 
     @staticmethod
     def get_md_header(language):
@@ -69,20 +71,26 @@ class DocTuple:
         else:
             print("ERROR: Unknown language:" + fmt)
             return None
-        header += '\n|---|---|---|---|---|---|'
+        header += '\n|---|---|---|---|---|---|\n'
         return header
     
-    def toString(self, fmt = FormatType.MARKDOWN):
+    def toString(self, fmt = FormatType.MARKDOWN, language = Language.ENGLISH):
         if fmt == FormatType.MARKDOWN:
+            if language == Language.CHINESE:
+              descript = self.desp_cn
+            elif language == language.ENGLISH:
+              descript = self.desp_en
             return "|" + self.name + "|" + self.type + "|" + self.default + \
-                    "|" + self.online + "|" + self.scope + "|" + self.descript + "|"
+                    "|" + self.online + "|" + self.scope + "|" + descript + "|\n"
         elif fmt == FormatType.CNF:
             default_val = self.default
             last = len(default_val) - 1
             if (self.default[0] == '"' and self.default[last] == '"') or \
                 (self.default[0] == "'" and self.default[last] == "'"):
                 default_val = default_val[1:last]
-            return self.name + "=" + default_val
+            res = "# " + self.desp_en + "\n"
+            res += "# " + self.name + "=" + default_val + "\n\n"
+            return res
         else:
             print("ERROR: Unknown format:" + fmt)
             return None
@@ -218,21 +226,21 @@ class DocExtractor:
             print("WARN: No default value in " + t.name)
             t.default = '-'
 
-        # Get `descript`
-        if self.language == Language.ENGLISH:
-            if default_declare:
-                desp_end = comment.find(default_declare.group(0))
-            else:
-                desp_end = len(comment)
-            t.descript = comment[0:desp_end]
-        elif self.language == Language.CHINESE:
-            while declare[bgn] != '/' or declare[bgn + 1] != '*':
-                bgn += 1
-            bgn += 2
-            end = bgn
-            while declare[end] != '*' or declare[end + 1] != '/':
-                end += 1
-            t.descript = declare[bgn:end]
+        # Get `desp_en`
+        if default_declare:
+            desp_end = comment.find(default_declare.group(0))
+        else:
+            desp_end = len(comment)
+        t.desp_en = comment[0:desp_end]
+
+        # Get `desp_cn`
+        while declare[bgn] != '/' or declare[bgn + 1] != '*':
+            bgn += 1
+        bgn += 2
+        end = bgn
+        while declare[end] != '*' or declare[end + 1] != '/':
+            end += 1
+        t.desp_cn = declare[bgn:end]
 
         return t
 
@@ -287,19 +295,15 @@ class DocExporter:
             path = self.get_file_path(out_dir, FormatType.MARKDOWN) 
             with open(path, 'w') as f:
                 f.write(DocTuple.get_md_header(self.language))
-                f.write('\n')
                 for t in tuples:
-                    f.write(t.toString(FormatType.MARKDOWN)) 
-                    f.write('\n')
+                    f.write(t.toString(FormatType.MARKDOWN, self.language)) 
 
         if self.fmt == FormatType.CNF or self.fmt == FormatType.ALL:
             path = self.get_file_path(out_dir, FormatType.CNF) 
             with open(path, 'w') as f:
                 f.write(MY_CNF_DEFAULT)
                 for t in tuples:
-                    f.write('#')
                     f.write(t.toString(FormatType.CNF))
-                    f.write('\n')
 
 
 
