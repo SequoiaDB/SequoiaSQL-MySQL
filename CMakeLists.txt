@@ -108,3 +108,12 @@ else()
                    ${SDB_STATIC_LIBRARY})
   set_target_properties(sequoiadb PROPERTIES LINK_FLAGS ${SDB_LDFLAGS})
 endif()
+
+set(SEQUOIADB_DIR "${CMAKE_SOURCE_DIR}/storage/sequoiadb")
+
+execute_process(COMMAND python ${SEQUOIADB_DIR}/tools/sdb_doc_generator.py 
+                -o ${SEQUOIADB_DIR})
+install(FILES "${SEQUOIADB_DIR}/sdb_doc.cnf" 
+        DESTINATION "${CMAKE_INSTALL_PREFIX}/conf/sample/" 
+        RENAME "sample.cnf")
+

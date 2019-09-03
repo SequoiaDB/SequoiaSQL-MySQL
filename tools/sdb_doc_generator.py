@@ -31,6 +31,15 @@ DFT_ARG_LANG = 'cn'
 DFT_ARG_OUT = '.'
 DFT_ARG_FORMAT = 'all'
 
+MY_CNF_DEFAULT = \
+"[client]\n\
+default-character-set=utf8mb4\n\
+[mysqld]\n\
+sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\n\
+character_set_server=utf8mb4\n\
+collation_server=utf8mb4_bin\n\
+default_storage_engine=SequoiaDB\n"
+
 
 
 def enum(*args):
@@ -276,7 +285,6 @@ class DocExporter:
     def export(self, tuples, out_dir):
         if self.fmt == FormatType.MARKDOWN or self.fmt == FormatType.ALL:
             path = self.get_file_path(out_dir, FormatType.MARKDOWN) 
-            print("INFO: Exporting file " + path)
             with open(path, 'w') as f:
                 f.write(DocTuple.get_md_header(self.language))
                 f.write('\n')
@@ -286,9 +294,10 @@ class DocExporter:
 
         if self.fmt == FormatType.CNF or self.fmt == FormatType.ALL:
             path = self.get_file_path(out_dir, FormatType.CNF) 
-            print("INFO: Exporting file " + path)
             with open(path, 'w') as f:
+                f.write(MY_CNF_DEFAULT)
                 for t in tuples:
+                    f.write('#')
                     f.write(t.toString(FormatType.CNF))
                     f.write('\n')
 
@@ -371,7 +380,6 @@ def main(argv):
 
     exporter = DocExporter(language_type, format_type)
     exporter.export(tuples, arg_out)
-    print("INFO: Done")
 
 
 

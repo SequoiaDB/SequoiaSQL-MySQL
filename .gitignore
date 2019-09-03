@@ -3,3 +3,5 @@ CMakeFiles
 *.cmake
 libsequoiadb*.*
 build
+sdb_doc.cnf
+sdb_doc.md
