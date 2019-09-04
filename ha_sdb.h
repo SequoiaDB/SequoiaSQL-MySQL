@@ -309,12 +309,6 @@ class ha_sdb : public handler {
 
   int flush_bulk_insert();
 
-  int create_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
-                   Bitmap<MAX_INDEXES> &ignored_keys);
-
-  int drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
-                 Bitmap<MAX_INDEXES> &ignored_keys);
-
   int filter_partition_options(const bson::BSONObj &options,
                                bson::BSONObj &table_options);
 
@@ -355,6 +349,9 @@ class ha_sdb : public handler {
 
   void update_last_insert_id();
 
+  int alter_column(TABLE *altered_table, Alter_inplace_info *ha_alter_info,
+                   Sdb_conn *conn, Sdb_cl &cl);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
@@ -380,34 +377,3 @@ class ha_sdb : public handler {
   long long total_count;
   bool count_query;
 };
-
-#define SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(thd, ret, default) \
-  {                                                         \
-    do {                                                    \
-      if (sdb_execute_only_in_mysql(thd)) {                 \
-        ret = default;                                      \
-        return ret;                                         \
-      }                                                     \
-    } while (0);                                            \
-  }
-
-#define SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(thd, ret, default) \
-  {                                                              \
-    do {                                                         \
-      if (sdb_execute_only_in_mysql(thd)) {                      \
-        ret = default;                                           \
-        DBUG_RETURN(ret);                                        \
-      }                                                          \
-    } while (0);                                                 \
-  }
-
-#define SDB_EXECUTE_ONLY_IN_MYSQL_VOID_RETURN(thd) \
-  {                                                \
-    do {                                           \
-      if (sdb_execute_only_in_mysql(thd)) {        \
-        return;                                    \
-      }                                            \
-    } while (0);                                   \
-  }
-
-

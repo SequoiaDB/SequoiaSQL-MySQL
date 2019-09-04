@@ -35,9 +35,6 @@
     }                                                    \
   } while (0)
 
-static const uint MAX_TIME_DEC = 6;
-static const uint POWER_10[7] = {1, 10, 100, 1000, 10000, 100000, 1000000};
-
 // This function is similar to Item::get_timeval() but return true if value is
 // out of the supported range.
 static bool get_timeval(Item *item, struct timeval *tm) {
@@ -453,12 +450,12 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
         goto error;
       } else {
         uint dec = field->decimals();
-        if (dec < 6) {
-          uint power = POWER_10[MAX_TIME_DEC - dec];
+        if (dec < DATETIME_MAX_DECIMALS) {
+          uint power = log_10[DATETIME_MAX_DECIMALS - dec];
           tm.tv_usec = (tm.tv_usec / power) * power;
         }
         bson::OpTime t(tm.tv_sec, tm.tv_usec);
-        long long time_val = t.asDate();
+        longlong time_val = t.asDate();
         if (NULL == arr_builder) {
           bson::BSONObjBuilder obj_builder;
           obj_builder.appendTimestamp(field_name, time_val);
@@ -479,8 +476,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
       }
 
       if (item_val->result_type() != STRING_RESULT ||
-          item_val->get_date(&ltime, flags) || ltime.year > 9999 ||
-          ltime.year < 1000) {
+          item_val->get_date(&ltime, flags)) {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;
         goto error;
       } else {
@@ -508,8 +504,8 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
         time = time * 100 + ltime.second;
         if (ltime.second_part && dec > 0) {
           ulong second_part = ltime.second_part;
-          if (dec < 6) {
-            uint power = POWER_10[MAX_TIME_DEC - dec];
+          if (dec < DATETIME_MAX_DECIMALS) {
+            uint power = log_10[DATETIME_MAX_DECIMALS - dec];
             second_part = (second_part / power) * power;
           }
           double ms = second_part / (double)1000000;

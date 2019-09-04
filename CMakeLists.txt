@@ -41,7 +41,8 @@ set(SEQUOIADB_SOURCES
     sdb_cl.cc
     sdb_errcode.cc
     sdb_log.cc
-    sdb_idx.cc)
+    sdb_idx.cc
+    sdb_alter.cc)
 
 set(WITH_SDB_DRIVER "" CACHE PATH "Path to SequoiaDB C++ driver")
 set(SDB_DRIVER_PATH ${WITH_SDB_DRIVER})

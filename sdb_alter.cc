@@ -1,0 +1,1497 @@
+#include "ha_sdb.h"
+#include <sql_class.h>
+#include <mysql/plugin.h>
+#include <json_dom.h>
+#include "sdb_log.h"
+#include "sdb_idx.h"
+#include "sdb_thd.h"
+#include "sdb_item.h"
+
+static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_ADDIDX =
+    Alter_inplace_info::ADD_INDEX | Alter_inplace_info::ADD_UNIQUE_INDEX |
+    Alter_inplace_info::ADD_PK_INDEX |
+    Alter_inplace_info::ALTER_COLUMN_NOT_NULLABLE;
+
+static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_DROPIDX =
+    Alter_inplace_info::DROP_INDEX | Alter_inplace_info::DROP_UNIQUE_INDEX |
+    Alter_inplace_info::DROP_PK_INDEX |
+    Alter_inplace_info::ALTER_COLUMN_NULLABLE;
+
+static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_OPERATIONS =
+    INPLACE_ONLINE_ADDIDX | INPLACE_ONLINE_DROPIDX |
+    Alter_inplace_info::ADD_COLUMN | Alter_inplace_info::DROP_COLUMN |
+    Alter_inplace_info::ALTER_STORED_COLUMN_ORDER |
+    Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
+    Alter_inplace_info::ALTER_COLUMN_DEFAULT |
+    Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH |
+    Alter_inplace_info::CHANGE_CREATE_OPTION |
+    Alter_inplace_info::RENAME_INDEX | Alter_inplace_info::ALTER_RENAME |
+    Alter_inplace_info::ALTER_COLUMN_INDEX_LENGTH |
+    Alter_inplace_info::ADD_FOREIGN_KEY | Alter_inplace_info::DROP_FOREIGN_KEY;
+
+static const int SDB_TYPE_NUM = 23;
+static const uint INT_TYPE_NUM = 5;
+static const enum_field_types INT_TYPES[INT_TYPE_NUM] = {
+    MYSQL_TYPE_TINY, MYSQL_TYPE_SHORT, MYSQL_TYPE_INT24, MYSQL_TYPE_LONG,
+    MYSQL_TYPE_LONGLONG};
+static const uint FLOAT_EXACT_DIGIT_LEN = 5;
+static const uint DOUBLE_EXACT_DIGIT_LEN = 15;
+
+uint get_int_bit_num(enum_field_types type) {
+  static const uint INT_BIT_NUMS[INT_TYPE_NUM] = {8, 16, 24, 32, 64};
+  uint i = 0;
+  while (type != INT_TYPES[i]) {
+    ++i;
+  }
+  return INT_BIT_NUMS[i];
+}
+
+uint get_int_max_strlen(Field_num *field) {
+  static const uint INT_LEN8 = 4;
+  static const uint UINT_LEN8 = 3;
+  static const uint INT_LEN16 = 6;
+  static const uint UINT_LEN16 = 5;
+  static const uint INT_LEN24 = 8;
+  static const uint UINT_LEN24 = 8;
+  static const uint INT_LEN32 = 11;
+  static const uint UINT_LEN32 = 10;
+  static const uint INT_LEN64 = 20;
+  static const uint UINT_LEN64 = 20;
+  static const uint SIGNED_INT_LEN[INT_TYPE_NUM] = {
+      INT_LEN8, INT_LEN16, INT_LEN24, INT_LEN32, INT_LEN64};
+  static const uint UNSIGNED_INT_LEN[INT_TYPE_NUM] = {
+      UINT_LEN8, UINT_LEN16, UINT_LEN24, UINT_LEN32, UINT_LEN64};
+
+  uint i = 0;
+  while (INT_TYPES[i] != field->type()) {
+    ++i;
+  }
+
+  uint len = 0;
+  if (!field->unsigned_flag) {
+    len = SIGNED_INT_LEN[i];
+  } else {
+    len = UNSIGNED_INT_LEN[i];
+  }
+
+  return len;
+}
+
+void get_int_range(Field_num *field, longlong &low_bound, ulonglong &up_bound) {
+  static const ulonglong UINT_MAX64 = 0xFFFFFFFFFFFFFFFFLL;
+  static const ulonglong UNSIGNED_UP_BOUNDS[INT_TYPE_NUM] = {
+      UINT_MAX8, UINT_MAX16, UINT_MAX24, UINT_MAX32, UINT_MAX64};
+  static const longlong SIGNED_LOW_BOUNDS[INT_TYPE_NUM] = {
+      INT_MIN8, INT_MIN16, INT_MIN24, INT_MIN32, INT_MIN64};
+  static const longlong SIGNED_UP_BOUNDS[INT_TYPE_NUM] = {
+      INT_MAX8, INT_MAX16, INT_MAX24, INT_MAX32, INT_MAX64};
+
+  uint i = 0;
+  while (INT_TYPES[i] != field->type()) {
+    ++i;
+  }
+
+  if (!field->unsigned_flag) {
+    low_bound = SIGNED_LOW_BOUNDS[i];
+    up_bound = SIGNED_UP_BOUNDS[i];
+  } else {
+    low_bound = 0;
+    up_bound = UNSIGNED_UP_BOUNDS[i];
+  }
+}
+
+/*
+  Interface to build the cast rule.
+  @return false if success.
+*/
+class I_build_cast_rule {
+ public:
+  virtual ~I_build_cast_rule() {}
+  virtual bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                          Field *new_field) = 0;
+};
+
+class Return_success : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    return false;
+  }
+};
+
+Return_success suc;
+
+class Return_failure : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    return true;
+  }
+};
+
+Return_failure fai;
+
+class Cast_int2int : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    longlong old_low = 0;
+    ulonglong old_up = 0;
+    longlong new_low = 0;
+    ulonglong new_up = 0;
+
+    get_int_range((Field_num *)old_field, old_low, old_up);
+    get_int_range((Field_num *)new_field, new_low, new_up);
+    if (new_low <= old_low && old_up <= new_up) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_int2int i2i;
+
+class Cast_int2float : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    Field_num *int_field = (Field_num *)old_field;
+    Field_real *float_field = (Field_real *)new_field;
+    bool signed2unsigned =
+        !int_field->unsigned_flag && float_field->unsigned_flag;
+    uint float_len = 0;
+    uint int_len = get_int_max_strlen(int_field);
+
+    if (float_field->not_fixed) {
+      if (float_field->type() == MYSQL_TYPE_FLOAT) {
+        float_len = FLOAT_EXACT_DIGIT_LEN;
+      } else {  // == MYSQL_TYPE_DOUBLE
+        float_len = DOUBLE_EXACT_DIGIT_LEN;
+      }
+    } else {
+      uint m = new_field->field_length;
+      uint d = new_field->decimals();
+      float_len = m - d;
+    }
+
+    if (!int_field->unsigned_flag) {
+      --int_len;  // ignore the '-'
+    }
+    if (!signed2unsigned && float_len >= int_len) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_int2float i2f;
+
+class Cast_int2decimal : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    DBUG_ASSERT(new_field->type() == MYSQL_TYPE_NEWDECIMAL);
+
+    bool rs = true;
+    Field_num *int_field = (Field_num *)old_field;
+    Field_new_decimal *dec_field = (Field_new_decimal *)new_field;
+    bool signed2unsigned =
+        !int_field->unsigned_flag && dec_field->unsigned_flag;
+
+    uint m = dec_field->precision;
+    uint d = dec_field->decimals();
+    uint int_len = get_int_max_strlen(int_field);
+
+    if (!int_field->unsigned_flag) {
+      --int_len;  // ignore the '-'
+    }
+    if (!signed2unsigned && (m - d) >= int_len) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_int2decimal i2d;
+
+class Cast_int2bit : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    Field_num *int_field = (Field_num *)old_field;
+    uint int_bit_num = get_int_bit_num(old_field->type());
+
+    if (int_field->unsigned_flag && new_field->field_length >= int_bit_num) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_int2bit i2b;
+
+class Cast_int2set : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    uint int_bit_num = get_int_bit_num(old_field->type());
+    uint set_bit_num = ((Field_set *)new_field)->typelib->count;
+    bool is_unsigned = ((Field_num *)old_field)->unsigned_flag;
+    if (is_unsigned && set_bit_num >= int_bit_num) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_int2set i2s;
+
+class Cast_int2enum : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    uint enum_max = ((Field_enum *)new_field)->typelib->count;
+    bool is_unsigned = ((Field_num *)old_field)->unsigned_flag;
+    if (is_unsigned && enum_max >= old_field->get_max_int_value()) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_int2enum i2e;
+
+class Cast_float2float : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    Field_real *old_float = (Field_real *)old_field;
+    Field_real *new_float = (Field_real *)new_field;
+    bool signed2unsigned =
+        !old_float->unsigned_flag && new_float->unsigned_flag;
+    bool may_be_truncated = false;
+
+    if (old_float->type() == MYSQL_TYPE_DOUBLE &&
+        new_float->type() == MYSQL_TYPE_FLOAT) {
+      may_be_truncated = true;
+    } else {
+      if (!old_float->not_fixed && !new_float->not_fixed) {
+        if (old_float->field_length > new_float->field_length ||
+            old_float->decimals() > new_float->decimals()) {
+          may_be_truncated = true;
+        }
+      } else if (old_float->not_fixed && !new_float->not_fixed) {
+        may_be_truncated = true;
+      }
+    }
+
+    if (!signed2unsigned && !may_be_truncated) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_float2float f2f;
+
+class Cast_decimal2decimal : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    DBUG_ASSERT(old_field->type() == MYSQL_TYPE_NEWDECIMAL);
+    DBUG_ASSERT(new_field->type() == MYSQL_TYPE_NEWDECIMAL);
+
+    bool rs = true;
+    Field_new_decimal *old_dec = (Field_new_decimal *)old_field;
+    Field_new_decimal *new_dec = (Field_new_decimal *)new_field;
+    bool signed2unsigned = !old_dec->unsigned_flag && new_dec->unsigned_flag;
+
+    if (!signed2unsigned && old_dec->precision <= new_dec->precision &&
+        old_dec->decimals() <= new_dec->decimals()) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_decimal2decimal d2d;
+
+class Cast_char2char : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    /*
+      Binary-like types and string-like types are similar.
+      Their data types are ambiguous. The BINARY type is MYSQL_TYPE_STRING, and
+      the TEXT type is MYSQL_TYPE_BLOB. The exact flag to distinguish them is
+      Field::binary().
+     */
+    bool rs = true;
+    uint old_len = old_field->char_length();
+    uint new_len = new_field->char_length();
+    if (old_field->binary() == new_field->binary() && new_len >= old_len) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_char2char c2c;
+
+class Cast_bit2bit : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    if (old_field->field_length <= new_field->field_length) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_bit2bit b2b;
+
+class Cast_time2time : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    if (old_field->decimals() <= new_field->decimals()) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_time2time t2t;
+
+class Cast_datetime2datetime : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    if (old_field->decimals() <= new_field->decimals()) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_datetime2datetime m2m;
+
+class Cast_timestamp2timestamp : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    if (old_field->decimals() <= new_field->decimals()) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_timestamp2timestamp p2p;
+
+class Cast_set2set : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    TYPELIB *old_typelib = ((Field_set *)old_field)->typelib;
+    TYPELIB *new_typelib = ((Field_set *)new_field)->typelib;
+    bool is_append = true;
+    if (old_typelib->count <= new_typelib->count) {
+      for (uint i = 0; i < old_typelib->count; ++i) {
+        if (strcmp(old_typelib->type_names[i], new_typelib->type_names[i])) {
+          is_append = false;
+          break;
+        }
+      }
+    }
+    if (is_append) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_set2set s2s;
+
+class Cast_enum2enum : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    TYPELIB *old_typelib = ((Field_enum *)old_field)->typelib;
+    TYPELIB *new_typelib = ((Field_enum *)new_field)->typelib;
+    bool is_append = true;
+    if (old_typelib->count <= new_typelib->count) {
+      for (uint i = 0; i < old_typelib->count; ++i) {
+        if (strcmp(old_typelib->type_names[i], new_typelib->type_names[i])) {
+          is_append = false;
+          break;
+        }
+      }
+    }
+    if (is_append) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_enum2enum e2e;
+
+I_build_cast_rule *build_cast_funcs[SDB_TYPE_NUM][SDB_TYPE_NUM] = {
+    /* 00,   01,   02,   03,   04,   05,   06,   07,   08,   09,   10,   11,
+       12,   13,   14,   15,   16,   17,   18,   19,   20,   21,   22 */
+    /*00 TINY*/
+    {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+    /*01 SHORT*/
+    {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+    /*02 INT24*/
+    {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+    /*03 LONG*/
+    {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+    /*04 LONGLONG*/
+    {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+    /*05 FLOAT*/
+    {&fai, &fai, &fai, &fai, &fai, &f2f, &f2f, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*06 DOUBLE*/
+    {&fai, &fai, &fai, &fai, &fai, &f2f, &f2f, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*07 DECIMAL*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &d2d, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*08 STRING*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c, &c2c,
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*09 VAR_STRING*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c, &c2c,
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*10 TINY_BLOB*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c, &c2c,
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*11 BLOB*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c, &c2c,
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*12 MEDIUM_BLOB*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c, &c2c,
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*13 LONG_BLOB*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c, &c2c,
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*14 BIT*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &b2b, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*15 YEAR*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &suc, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*16 TIME*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &t2t, &fai, &fai, &fai, &fai, &fai, &fai},
+    /*17 DATE*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &suc, &fai, &fai, &fai, &fai, &fai},
+    /*18 DATETIME*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &fai, &m2m, &fai, &fai, &fai, &fai},
+    /*19 TIMESTAMP*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &p2p, &fai, &fai, &fai},
+    /*20 SET*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &s2s, &fai, &fai},
+    /*21 ENUM*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &e2e, &fai},
+    /*22 JSON*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &suc}};
+
+int get_type_idx(enum enum_field_types type) {
+  switch (type) {
+    case MYSQL_TYPE_TINY:
+      return 0;
+    case MYSQL_TYPE_SHORT:
+      return 1;
+    case MYSQL_TYPE_INT24:
+      return 2;
+    case MYSQL_TYPE_LONG:
+      return 3;
+    case MYSQL_TYPE_LONGLONG:
+      return 4;
+    case MYSQL_TYPE_FLOAT:
+      return 5;
+    case MYSQL_TYPE_DOUBLE:
+      return 6;
+    case MYSQL_TYPE_NEWDECIMAL:
+    case MYSQL_TYPE_DECIMAL:
+      return 7;
+    case MYSQL_TYPE_STRING:
+      return 8;
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_VAR_STRING:
+      return 9;
+    case MYSQL_TYPE_TINY_BLOB:
+      return 10;
+    case MYSQL_TYPE_BLOB:
+      return 11;
+    case MYSQL_TYPE_MEDIUM_BLOB:
+      return 12;
+    case MYSQL_TYPE_LONG_BLOB:
+      return 13;
+    case MYSQL_TYPE_BIT:
+      return 14;
+    case MYSQL_TYPE_YEAR:
+      return 15;
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_TIME2:
+      return 16;
+    case MYSQL_TYPE_DATE:
+    case MYSQL_TYPE_NEWDATE:
+      return 17;
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_DATETIME2:
+      return 18;
+    case MYSQL_TYPE_TIMESTAMP:
+    case MYSQL_TYPE_TIMESTAMP2:
+      return 19;
+    case MYSQL_TYPE_SET:
+      return 20;
+    case MYSQL_TYPE_ENUM:
+      return 21;
+    case MYSQL_TYPE_JSON:
+      return 22;
+    default: {
+      // impossible types
+      DBUG_ASSERT(false);
+      return 0;
+    }
+  }
+}
+
+const char *sdb_fieldtype2str(enum enum_field_types type) {
+  switch (type) {
+    case MYSQL_TYPE_BIT:
+      return "BIT";
+    case MYSQL_TYPE_BLOB:
+      return "BLOB";
+    case MYSQL_TYPE_DATE:
+      return "DATE";
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_DATETIME2:
+      return "DATETIME";
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_NEWDECIMAL:
+      return "DECIMAL";
+    case MYSQL_TYPE_DOUBLE:
+      return "DOUBLE";
+    case MYSQL_TYPE_ENUM:
+      return "ENUM";
+    case MYSQL_TYPE_FLOAT:
+      return "FLOAT";
+    case MYSQL_TYPE_GEOMETRY:
+      return "GEOMETRY";
+    case MYSQL_TYPE_INT24:
+      return "INT24";
+    case MYSQL_TYPE_JSON:
+      return "JSON";
+    case MYSQL_TYPE_LONG:
+      return "LONG";
+    case MYSQL_TYPE_LONGLONG:
+      return "LONGLONG";
+    case MYSQL_TYPE_LONG_BLOB:
+      return "LONG_BLOB";
+    case MYSQL_TYPE_MEDIUM_BLOB:
+      return "MEDIUM_BLOB";
+    case MYSQL_TYPE_NEWDATE:
+      return "NEWDATE";
+    case MYSQL_TYPE_NULL:
+      return "NULL";
+    case MYSQL_TYPE_SET:
+      return "SET";
+    case MYSQL_TYPE_SHORT:
+      return "SHORT";
+    case MYSQL_TYPE_STRING:
+      return "STRING";
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_TIME2:
+      return "TIME";
+    case MYSQL_TYPE_TIMESTAMP:
+    case MYSQL_TYPE_TIMESTAMP2:
+      return "TIMESTAMP";
+    case MYSQL_TYPE_TINY:
+      return "TINY";
+    case MYSQL_TYPE_TINY_BLOB:
+      return "TINY_BLOB";
+    case MYSQL_TYPE_VARCHAR:
+      return "VARCHAR";
+    case MYSQL_TYPE_VAR_STRING:
+      return "VAR_STRING";
+    case MYSQL_TYPE_YEAR:
+      return "YEAR";
+    default:
+      return "unknown type";
+  }
+}
+
+struct Col_alter_info : public Sql_alloc {
+  static const int CHANGE_DATA_TYPE = 1;
+  static const int ADD_AUTO_INC = 2;
+  static const int DROP_AUTO_INC = 4;
+  static const int TURN_TO_NOT_NULL = 8;
+
+  Field *before;
+  Field *after;
+  int op_flag;
+  bson::BSONObj cast_rule;
+};
+
+struct Sdb_alter_ctx : public inplace_alter_handler_ctx {
+  List<Field> dropped_columns;
+  List<Field> added_columns;
+  List<Item> default_values;
+  List<Col_alter_info> changed_columns;
+};
+
+int append_default_value(bson::BSONObjBuilder &builder, Field *field,
+                         Item *default_value) {
+  int rc = 0;
+  Sdb_func_isnull converter;
+  bson::BSONObj obj;
+
+  // Handle the BINARY and the VARBINARY.
+  if (field->binary() && (field->type() == MYSQL_TYPE_VARCHAR ||
+                          field->type() == MYSQL_TYPE_VAR_STRING ||
+                          field->type() == MYSQL_TYPE_STRING)) {
+    String str;
+    String *str_ptr = default_value->val_str(&str);
+    builder.appendBinData(field->field_name, str_ptr->length(),
+                          bson::BinDataGeneral, str_ptr->ptr());
+    goto done;
+  }
+
+  // Handle the SET and ENUM.
+  if (field->real_type() == MYSQL_TYPE_SET ||
+      field->real_type() == MYSQL_TYPE_ENUM) {
+    String str;
+    String *str_ptr = default_value->val_str(&str);
+
+    longlong org_val = field->val_int();
+    // Avoid assertion in ::store()
+    bitmap_set_bit(field->table->write_set, field->field_index);
+    type_conversion_status res =
+        field->store(str_ptr->c_ptr(), str_ptr->length(), str_ptr->charset());
+    DBUG_ASSERT(TYPE_OK == res);
+    longlong dft_value = field->val_int();
+    field->store(org_val);
+
+    builder.append(field->field_name, dft_value);
+    goto done;
+  }
+
+  // Convert from Item to BSONObj by get_item_val().
+  rc = converter.get_item_val(field->field_name, default_value, field, obj);
+  if (rc) {
+    goto error;
+  }
+  builder.appendElements(obj);
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
+  switch (field->real_type()) {
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_LONG:
+    case MYSQL_TYPE_LONGLONG:
+    case MYSQL_TYPE_YEAR:
+    case MYSQL_TYPE_BIT:
+    case MYSQL_TYPE_SET: {
+      builder.append(field->field_name, (int)0);
+      break;
+    }
+    case MYSQL_TYPE_FLOAT:
+    case MYSQL_TYPE_DOUBLE:
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_TIME2: {
+      builder.append(field->field_name, (double)0.0);
+      break;
+    }
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_TINY_BLOB:
+    case MYSQL_TYPE_MEDIUM_BLOB:
+    case MYSQL_TYPE_LONG_BLOB:
+    case MYSQL_TYPE_BLOB: {
+      if (!field->binary()) {
+        builder.append(field->field_name, "");
+      } else {
+        builder.appendBinData(field->field_name, 0, bson::BinDataGeneral, "");
+      }
+      break;
+    }
+    case MYSQL_TYPE_NEWDECIMAL:
+    case MYSQL_TYPE_DECIMAL: {
+      static const char *ZERO_DECIMAL = "0";
+      builder.appendDecimal(field->field_name, ZERO_DECIMAL);
+      break;
+    }
+    case MYSQL_TYPE_DATE:
+    case MYSQL_TYPE_NEWDATE: {
+      static const bson::Date_t ZERO_DATE((longlong)0);
+      builder.appendDate(field->field_name, ZERO_DATE);
+      break;
+    }
+    case MYSQL_TYPE_TIMESTAMP:
+    case MYSQL_TYPE_TIMESTAMP2: {
+      static const longlong ZERO_TIMESTAMP = 0;
+      builder.appendTimestamp(field->field_name, ZERO_TIMESTAMP);
+      break;
+    }
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_DATETIME2: {
+      static const char *ZERO_DATETIME = "0000-00-00 00:00:00";
+      builder.append(field->field_name, ZERO_DATETIME);
+      break;
+    }
+    case MYSQL_TYPE_ENUM: {
+      static const int FIRST_ENUM = 1;
+      builder.append(field->field_name, FIRST_ENUM);
+      break;
+    }
+    case MYSQL_TYPE_JSON: {
+      static const char *EMPTY_JSON_STR = "{}";
+      static const int EMPTY_JSON_STRLEN = 2;
+      static String json_bin;
+
+      if (json_bin.length() == 0) {
+        const char *parse_err;
+        size_t err_offset;
+        Json_dom *dom = Json_dom::parse(EMPTY_JSON_STR, EMPTY_JSON_STRLEN,
+                                        &parse_err, &err_offset);
+        DBUG_ASSERT(dom);
+        bool rs = json_binary::serialize(dom, &json_bin);
+        DBUG_ASSERT(!rs);
+        delete dom;
+      }
+
+      builder.appendBinData(field->field_name, json_bin.length(),
+                            bson::BinDataGeneral, json_bin.ptr());
+      break;
+    }
+    default: { DBUG_ASSERT(false); }
+  }
+}
+
+bool get_cast_rule(bson::BSONObjBuilder &builder, Field *old_field,
+                   Field *new_field) {
+  int old_idx = get_type_idx(old_field->real_type());
+  int new_idx = get_type_idx(new_field->real_type());
+  I_build_cast_rule &func = *build_cast_funcs[old_idx][new_idx];
+  return func(builder, old_field, new_field);
+}
+
+bool is_type_diff(Field *old_field, Field *new_field) {
+  bool rs = true;
+  if (old_field->real_type() != new_field->real_type()) {
+    goto done;
+  }
+  /*
+    Check the definition difference.
+    Some types are not suitable to be checked by Field::eq_def.
+    Reasons:
+    1. No need to check ZEROFILL for Field_num.
+    2. No need to check CHARACTER SET and COLLATE for Field_str.
+    3. It doesn't check Field::binary().
+    3. It doesn't check the M for Field_bit.
+    4. It doesn't check the fsp for time-like types.
+   */
+  switch (old_field->real_type()) {
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_LONG:
+    case MYSQL_TYPE_LONGLONG: {
+      if (((Field_num *)old_field)->unsigned_flag !=
+          ((Field_num *)new_field)->unsigned_flag) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_FLOAT:
+    case MYSQL_TYPE_DOUBLE: {
+      Field_real *old_float = (Field_real *)old_field;
+      Field_real *new_float = (Field_real *)new_field;
+      if (old_float->unsigned_flag != new_float->unsigned_flag ||
+          old_float->field_length != new_float->field_length ||
+          old_float->decimals() != new_float->decimals()) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_NEWDECIMAL: {
+      Field_new_decimal *old_dec = (Field_new_decimal *)old_field;
+      Field_new_decimal *new_dec = (Field_new_decimal *)new_field;
+      if (old_dec->unsigned_flag != new_dec->unsigned_flag ||
+          old_dec->precision != new_dec->precision ||
+          old_dec->decimals() != new_dec->decimals()) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VAR_STRING: {
+      if (old_field->char_length() != new_field->char_length() ||
+          old_field->binary() != new_field->binary()) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_BIT: {
+      if (old_field->field_length != new_field->field_length) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_TIME2:
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_TIMESTAMP: {
+      if (old_field->decimals() != new_field->decimals()) {
+        goto done;
+      }
+      break;
+    }
+    default: {
+      if (!old_field->eq_def(new_field)) {
+        goto done;
+      }
+      break;
+    }
+  }
+  rs = false;
+done:
+  return rs;
+}
+
+int ha_sdb::alter_column(TABLE *altered_table,
+                         Alter_inplace_info *ha_alter_info, Sdb_conn *conn,
+                         Sdb_cl &cl) {
+  static const int EMPTY_BUILDER_LEN = 8;
+
+  int rc = 0;
+  int tmp_rc = 0;
+  THD *thd = ha_thd();
+  const HA_CREATE_INFO *create_info = ha_alter_info->create_info;
+  Sdb_alter_ctx *ctx = (Sdb_alter_ctx *)ha_alter_info->handler_ctx;
+  List<Col_alter_info> &changed_columns = ctx->changed_columns;
+  longlong count = 0;
+
+  bson::BSONObjBuilder unset_builder;
+  List_iterator_fast<Field> dropped_it;
+  Field *field = NULL;
+
+  bson::BSONObjBuilder set_builder;
+  // bson::BSONObjBuilder inc_builder;
+  List_iterator_fast<Field> added_it;
+  List_iterator_fast<Item> def_value_it;
+  Item *def_value = NULL;
+
+  bson::BSONObjBuilder cast_builder;
+  List_iterator_fast<Col_alter_info> changed_it;
+  Col_alter_info *info = NULL;
+
+  bson::BSONObjBuilder builder;
+
+  rc = cl.get_count(count);
+  if (0 != rc) {
+    my_error(ER_GET_ERRNO, MYF(0), rc);
+    goto error;
+  }
+
+  // 1.Handle the dropped_columns
+  dropped_it.init(ctx->dropped_columns);
+  while ((field = dropped_it++)) {
+    unset_builder.append(field->field_name, "");
+    if (field->flags & AUTO_INCREMENT_FLAG) {
+      rc = cl.drop_auto_increment(field->field_name);
+      if (0 != rc) {
+        my_printf_error(rc,
+                        "Failed to drop auto_increment "
+                        "column[%s] on cl[%s.%s]",
+                        MYF(0), field->field_name, db_name, table_name);
+        goto error;
+      }
+    }
+  }
+
+  // 2.Handle the added_columns
+  added_it.init(ctx->added_columns);
+  def_value_it.init(ctx->default_values);
+  while ((field = added_it++)) {
+    def_value = def_value_it++;
+    if (!(field->flags & NO_DEFAULT_VALUE_FLAG) && def_value) {
+      rc = append_default_value(set_builder, field, def_value);
+      if (rc != 0) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, ER(rc), MYF(0), field->field_name);
+        goto error;
+      }
+    } else if (!field->maybe_null()) {
+      if (!(field->flags & AUTO_INCREMENT_FLAG)) {
+        append_zero_value(set_builder, field);
+      } else {
+        bson::BSONObj option;
+        build_auto_inc_option(field, create_info, option);
+        rc = cl.create_auto_increment(option);
+        if (0 != rc) {
+          my_printf_error(rc,
+                          "Failed to add auto_increment "
+                          "column[%s] on cl[%s.%s]",
+                          MYF(0), field->field_name, db_name, table_name);
+          goto error;
+        }
+        // inc_builder.append(field->field_name, get_inc_option(option));
+      }
+    }
+  }
+
+  // 3.Handle the changed_columns
+  changed_it.init(changed_columns);
+  while ((info = changed_it++)) {
+    if (info->op_flag & Col_alter_info::CHANGE_DATA_TYPE) {
+      cast_builder.appendElements(info->cast_rule);
+    }
+
+    if (info->op_flag & Col_alter_info::ADD_AUTO_INC) {
+      bson::BSONObj option;
+      build_auto_inc_option(info->after, create_info, option);
+      rc = cl.create_auto_increment(option);
+      if (0 != rc) {
+        my_printf_error(rc,
+                        "Failed to add auto_increment "
+                        "column[%s] on cl[%s.%s]",
+                        MYF(0), info->after->field_name, db_name, table_name);
+        goto error;
+      }
+    }
+
+    if (info->op_flag & Col_alter_info::DROP_AUTO_INC) {
+      rc = cl.drop_auto_increment(info->before->field_name);
+      if (0 != rc) {
+        my_printf_error(rc,
+                        "Failed to drop auto_increment "
+                        "column[%s] on cl[%s.%s]",
+                        MYF(0), info->before->field_name, db_name, table_name);
+        goto error;
+      }
+    }
+
+    if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL) {
+      bson::BSONObjBuilder rule_builder;
+      bson::BSONObjBuilder sub_rule(rule_builder.subobjStart("$set"));
+      append_zero_value(sub_rule, info->after);
+      sub_rule.done();
+
+      bson::BSONObjBuilder cond_builder;
+      bson::BSONObjBuilder sub_cond(
+          cond_builder.subobjStart(info->after->field_name));
+      sub_cond.append("$isnull", 1);
+      sub_cond.done();
+
+      if (count > sdb_alter_table_overhead_threshold(thd)) {
+        rc = HA_ERR_WRONG_COMMAND;
+        my_printf_error(
+            rc,
+            "Table is too big to be altered. The records count exceeds "
+            "the alter_table_overhead_threshold.",
+            MYF(0));
+        goto error;
+      }
+      if (!conn->is_transaction_on()) {
+        rc = conn->begin_transaction();
+        if (rc != 0) {
+          my_printf_error(rc, "Failed to begin transaction", MYF(0));
+        }
+      }
+      rc = cl.update(rule_builder.obj(), cond_builder.obj());
+      if (rc != 0) {
+        my_printf_error(rc, "Failed to update column[%s] on cl[%s.%s]", MYF(0),
+                        info->before->field_name, db_name, table_name);
+        goto error;
+      }
+    }
+  }
+
+  // 4.Full table update
+  if (unset_builder.len() > EMPTY_BUILDER_LEN) {
+    builder.append("$unset", unset_builder.obj());
+  }
+  if (set_builder.len() > EMPTY_BUILDER_LEN) {
+    builder.append("$set", set_builder.obj());
+  }
+  /*if (inc_builder.len() > EMPTY_BUILDER_LEN) {
+    builder.append("$inc", inc_builder.obj());
+  }
+  if (cast_builder.len() > EMPTY_BUILDER_LEN) {
+    builder.append("$cast", cast_builder.obj());
+  }*/
+
+  if (builder.len() > EMPTY_BUILDER_LEN) {
+    if (count > sdb_alter_table_overhead_threshold(thd)) {
+      rc = HA_ERR_WRONG_COMMAND;
+      my_printf_error(
+          rc,
+          "Table is too big to be altered. The records count exceeds "
+          "the alter_table_overhead_threshold.",
+          MYF(0));
+      goto error;
+    }
+    if (!conn->is_transaction_on()) {
+      rc = conn->begin_transaction();
+      if (rc != 0) {
+        my_printf_error(rc, "Failed to begin transaction", MYF(0));
+      }
+    }
+    rc = cl.update(builder.obj());
+    if (rc != 0) {
+      my_printf_error(rc, "Failed to update table[%s.%s]", MYF(0), db_name,
+                      table_name);
+      goto error;
+    }
+  }
+
+  if (conn->is_transaction_on()) {
+    rc = conn->commit_transaction();
+    if (rc != 0) {
+      my_printf_error(rc, "Failed to commit update transaction.", MYF(0));
+      goto error;
+    }
+  }
+
+  /*if (ha_alter_info->handler_flags &
+       Alter_inplace_info::ALTER_STORED_COLUMN_TYPE) {
+    bson::BSONObj result;
+    rc = conn->get_last_result_obj(result);
+    if (rc != 0) {
+      goto error;
+    }
+    if (has_warnings) {
+      if (ha_thd()->variables.sql_mode & MODE_ANSI) {
+        //push_warnings...
+      } else {
+        //print and return error
+      }
+    }
+  }*/
+
+done:
+  return rc;
+error:
+  if (conn->is_transaction_on()) {
+    tmp_rc = conn->rollback_transaction();
+    if (tmp_rc != 0) {
+      SDB_LOG_WARNING(
+          "Failed to rollback the transaction of inplace alteration of "
+          "table[%s.%s], rc: %d",
+          db_name, table_name, tmp_rc);
+    }
+  }
+  goto done;
+}
+
+int create_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
+                 Bitmap<MAX_INDEXES> &ignored_keys) {
+  int rc = 0;
+  const KEY *key_info = NULL;
+  uint key_nr = 0;
+
+  for (uint i = 0; i < ha_alter_info->index_add_count; i++) {
+    if (ignored_keys.is_set(i)) {
+      continue;
+    }
+
+    key_nr = ha_alter_info->index_add_buffer[i];
+    key_info = &ha_alter_info->key_info_buffer[key_nr];
+    rc = sdb_create_index(key_info, cl);
+    if (rc) {
+      goto error;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
+               Bitmap<MAX_INDEXES> &ignored_keys) {
+  int rc = 0;
+
+  if (NULL == ha_alter_info->index_drop_buffer) {
+    goto done;
+  }
+
+  for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
+    if (ignored_keys.is_set(i)) {
+      continue;
+    }
+
+    KEY *key_info = ha_alter_info->index_drop_buffer[i];
+    rc = cl.drop_index(key_info->name);
+    if (rc) {
+      goto error;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
+    TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
+  enum_alter_inplace_result rs;
+  List_iterator_fast<Create_field> cf_it;
+  Create_field *c_field = NULL;
+  uint i = 0;
+  Bitmap<MAX_FIELDS> matched_map;
+  Sdb_alter_ctx *ctx = NULL;
+  KEY *new_key = NULL;
+  KEY_PART_INFO *key_part = NULL;
+  Sdb_func_isnull converter;
+  bson::BSONObj unused_obj;
+
+  DBUG_ASSERT(!ha_alter_info->handler_ctx);
+
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rs, HA_ALTER_INPLACE_NO_LOCK);
+
+  if (ha_alter_info->handler_flags & ~INPLACE_ONLINE_OPERATIONS) {
+    rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+    goto error;
+  }
+
+  ctx = new Sdb_alter_ctx();
+  if (!ctx) {
+    rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+    goto error;
+  }
+  ha_alter_info->handler_ctx = ctx;
+
+  // Filter added_columns, dropped_columns and changed_columns
+  for (uint i = 0; table->field[i]; i++) {
+    Field *old_field = table->field[i];
+    bool found_col = false;
+    for (uint j = 0; altered_table->field[j]; j++) {
+      bson::BSONObjBuilder cast_builder;
+      Field *new_field = altered_table->field[j];
+      if (!matched_map.is_set(j) &&
+          strcmp(old_field->field_name, new_field->field_name) == 0) {
+        matched_map.set_bit(j);
+        found_col = true;
+
+        int op_flag = 0;
+        if (is_type_diff(old_field, new_field)) {
+          if (get_cast_rule(cast_builder, old_field, new_field)) {
+            ha_alter_info->unsupported_reason =
+                "Can't do such type conversion.";
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          }
+          op_flag |= Col_alter_info::CHANGE_DATA_TYPE;
+        }
+
+        bool old_is_auto_inc = (old_field->flags & AUTO_INCREMENT_FLAG);
+        bool new_is_auto_inc = (new_field->flags & AUTO_INCREMENT_FLAG);
+        if (!old_is_auto_inc && new_is_auto_inc) {
+          op_flag |= Col_alter_info::ADD_AUTO_INC;
+        } else if (old_is_auto_inc && !new_is_auto_inc) {
+          op_flag |= Col_alter_info::DROP_AUTO_INC;
+        }
+
+        if (!new_field->maybe_null() && old_field->maybe_null()) {
+          op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
+        }
+
+        if (op_flag) {
+          Col_alter_info *info = new Col_alter_info();
+          info->before = old_field;
+          info->after = new_field;
+          info->op_flag = op_flag;
+          info->cast_rule = cast_builder.obj();
+          ctx->changed_columns.push_back(info);
+        }
+        break;
+      }
+    }
+    if (!found_col) {
+      ctx->dropped_columns.push_back(old_field);
+    }
+  }
+
+  cf_it.init(ha_alter_info->alter_info->create_list);
+  i = 0;
+  while ((c_field = cf_it++)) {
+    if (!matched_map.is_set(i)) {
+      Field *field = altered_table->field[i];
+      // Avoid DEFAULT CURRENT_TIMESTAMP
+      if (real_type_with_now_as_default(field->real_type()) &&
+          field->has_insert_default_function()) {
+        ha_alter_info->unsupported_reason =
+            "DEFAULT CURRENT_TIMESTAMP is unsupported.";
+        rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+        goto error;
+      }
+      // Avoid ZERO DATE when sql_mode doesn't allow
+      if (MYSQL_TYPE_DATE == field->type() ||
+          MYSQL_TYPE_DATETIME == field->type() ||
+          MYSQL_TYPE_TIMESTAMP == field->type()) {
+        if (!(field->flags & NO_DEFAULT_VALUE_FLAG) && c_field->def) {
+          if (converter.get_item_val(field->field_name, c_field->def, field,
+                                     unused_obj)) {
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          }
+        }
+      }
+      ctx->added_columns.push_back(field);
+      ctx->default_values.push_back(c_field->def);
+    }
+    i++;
+  }
+
+  for (new_key = ha_alter_info->key_info_buffer;
+       new_key < ha_alter_info->key_info_buffer + ha_alter_info->key_count;
+       new_key++) {
+    /* Fix the key parts. */
+    for (key_part = new_key->key_part;
+         key_part < new_key->key_part + new_key->user_defined_key_parts;
+         key_part++) {
+      const Create_field *new_field;
+      DBUG_ASSERT(key_part->fieldnr < altered_table->s->fields);
+      cf_it.rewind();
+      for (uint fieldnr = 0; (new_field = cf_it++); fieldnr++) {
+        if (fieldnr == key_part->fieldnr) {
+          break;
+        }
+      }
+      DBUG_ASSERT(new_field);
+      key_part->field = altered_table->field[key_part->fieldnr];
+
+      key_part->null_offset = key_part->field->null_offset();
+      key_part->null_bit = key_part->field->null_bit;
+
+      if (new_field->field) {
+        continue;
+      }
+    }
+  }
+
+  rs = HA_ALTER_INPLACE_NO_LOCK;
+done:
+  return rs;
+error:
+  if (ctx) {
+    ctx->changed_columns.delete_elements();
+    delete ctx;
+    ha_alter_info->handler_ctx = NULL;
+  }
+  goto done;
+}
+
+bool ha_sdb::prepare_inplace_alter_table(TABLE *altered_table,
+                                         Alter_inplace_info *ha_alter_info) {
+  return false;
+}
+
+bool ha_sdb::inplace_alter_table(TABLE *altered_table,
+                                 Alter_inplace_info *ha_alter_info) {
+  DBUG_ENTER("sdb_inplace_alter_table()");
+  bool rs = true;
+  int rc = 0;
+  THD *thd = current_thd;
+  Sdb_conn *conn = NULL;
+  Sdb_cl cl;
+  Bitmap<MAX_INDEXES> ignored_drop_keys;
+  Bitmap<MAX_INDEXES> ignored_add_keys;
+  Sdb_alter_ctx *ctx = (Sdb_alter_ctx *)ha_alter_info->handler_ctx;
+
+  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rs, false);
+
+  const HA_CREATE_INFO *create_info = ha_alter_info->create_info;
+  const Alter_inplace_info::HA_ALTER_FLAGS alter_flags =
+      ha_alter_info->handler_flags;
+
+  DBUG_ASSERT(ha_alter_info->handler_flags | INPLACE_ONLINE_OPERATIONS);
+
+  conn = check_sdb_in_thd(thd, true);
+  if (NULL == conn) {
+    rc = HA_ERR_NO_CONNECTION;
+    goto error;
+  }
+
+  rc = conn->get_cl(db_name, table_name, cl);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Collection[%s.%s] is not available. rc: %d", db_name,
+                  table_name, rc);
+    goto error;
+  }
+
+  if (alter_flags & Alter_inplace_info::CHANGE_CREATE_OPTION) {
+    char *old_comment = table->s->comment.str;
+    char *new_comment = create_info->comment.str;
+    bson::BSONObj option;
+    if (!(old_comment == new_comment ||
+          strcmp(old_comment, new_comment) == 0)) {
+      my_error(HA_ERR_WRONG_COMMAND, MYF(0));
+      goto error;
+    }
+
+    if (create_info->used_fields & HA_CREATE_USED_AUTO) {
+      if (create_info->auto_increment_value >
+          table->file->stats.auto_increment_value) {
+        option = BSON(SDB_FIELD_NAME_FIELD
+                      << table->found_next_number_field->field_name
+                      << SDB_FIELD_CURRENT_VALUE
+                      << (INT64)create_info->auto_increment_value);
+      }
+      rc = cl.set_attributes(option);
+      if (0 != rc) {
+        my_printf_error(rc,
+                        "Failed to alter auto_increment option "
+                        "on cl[%s.%s]",
+                        MYF(0), db_name, table_name);
+        goto error;
+      }
+    }
+  }
+
+  // If it's a redefinition of the secondary attributes, such as btree/hash
+  // and comment, don't recreate the index.
+  if (alter_flags & INPLACE_ONLINE_DROPIDX &&
+      alter_flags & INPLACE_ONLINE_ADDIDX) {
+    for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
+      KEY *drop_key = ha_alter_info->index_drop_buffer[i];
+      for (uint j = 0; j < ha_alter_info->index_add_count; j++) {
+        uint key_nr = ha_alter_info->index_add_buffer[j];
+        KEY *add_key = &ha_alter_info->key_info_buffer[key_nr];
+        if (sdb_is_same_index(drop_key, add_key)) {
+          ignored_drop_keys.set_bit(i);
+          ignored_add_keys.set_bit(j);
+        }
+      }
+    }
+  }
+
+  if (alter_flags & INPLACE_ONLINE_DROPIDX) {
+    rc = drop_index(cl, ha_alter_info, ignored_drop_keys);
+    if (0 != rc) {
+      my_error(ER_GET_ERRNO, MYF(0), rc);
+      goto error;
+    }
+  }
+
+  if (alter_flags & INPLACE_ONLINE_ADDIDX) {
+    rc = create_index(cl, ha_alter_info, ignored_add_keys);
+    if (0 != rc) {
+      my_error(ER_GET_ERRNO, MYF(0), rc);
+      goto error;
+    }
+  }
+
+  if (alter_flags & Alter_inplace_info::RENAME_INDEX) {
+    my_error(HA_ERR_UNSUPPORTED, MYF(0), cl.get_cl_name());
+    goto error;
+  }
+
+  if (alter_flags & (Alter_inplace_info::DROP_STORED_COLUMN |
+                     Alter_inplace_info::ADD_STORED_BASE_COLUMN |
+                     Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
+                     Alter_inplace_info::ALTER_COLUMN_DEFAULT)) {
+    rc = alter_column(altered_table, ha_alter_info, conn, cl);
+    if (0 != rc) {
+      goto error;
+    }
+  }
+
+  rs = false;
+
+done:
+  if (ctx) {
+    ctx->changed_columns.delete_elements();
+    delete ctx;
+    ha_alter_info->handler_ctx = NULL;
+  }
+  DBUG_RETURN(rs);
+error:
+  goto done;
+}

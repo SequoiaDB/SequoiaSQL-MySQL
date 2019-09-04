@@ -49,6 +49,36 @@ int sdb_encrypt_password();
 int sdb_get_password(String &res);
 uint sdb_selector_pushdown_threshold(THD *thd);
 bool sdb_execute_only_in_mysql(THD *thd);
+longlong sdb_alter_table_overhead_threshold(THD *thd);
+
+#define SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(thd, ret, default) \
+  {                                                         \
+    do {                                                    \
+      if (sdb_execute_only_in_mysql(thd)) {                 \
+        ret = default;                                      \
+        return ret;                                         \
+      }                                                     \
+    } while (0);                                            \
+  }
+
+#define SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(thd, ret, default) \
+  {                                                              \
+    do {                                                         \
+      if (sdb_execute_only_in_mysql(thd)) {                      \
+        ret = default;                                           \
+        DBUG_RETURN(ret);                                        \
+      }                                                          \
+    } while (0);                                                 \
+  }
+
+#define SDB_EXECUTE_ONLY_IN_MYSQL_VOID_RETURN(thd) \
+  {                                                \
+    do {                                           \
+      if (sdb_execute_only_in_mysql(thd)) {        \
+        return;                                    \
+      }                                            \
+    } while (0);                                   \
+  }
 
 extern char *sdb_conn_str;
 extern char *sdb_user;

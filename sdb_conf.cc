@@ -28,7 +28,8 @@ static const int SDB_DEFAULT_BULK_INSERT_SIZE = 2000;
    replicas have completed sync datas. So default replsize: 1 to
    improve write row performance.*/
 static const int SDB_DEFAULT_REPLICA_SIZE = 1;
-static const uint SDB_SELECTOR_PUSHDOWN_THRESHOLD = 30;
+static const uint SDB_DEFAULT_SELECTOR_PUSHDOWN_THRESHOLD = 30;
+static const longlong SDB_DEFAULT_ALTER_TABLE_OVERHEAD_THRESHOLD = 10000000;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
@@ -133,12 +134,20 @@ static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
                          "(Default: ON)"
                          /*是否开启优化select count(*)行为。*/,
                          NULL, NULL, TRUE);
+static MYSQL_THDVAR_LONGLONG(
+    alter_table_overhead_threshold, PLUGIN_VAR_OPCMDARG,
+    "Overhead threshold of table alteration. When count of records exceeds it, "
+    "the alteration that needs to update the full table will be prohibited. "
+    "(Default: 10000000)."
+    /*更改表开销阈值。当表记录数超过这个阈值，需要全表更新的更改操作将被禁止。*/
+    ,
+    NULL, NULL, SDB_DEFAULT_ALTER_TABLE_OVERHEAD_THRESHOLD, 0, INT_MAX64, 0);
 static MYSQL_THDVAR_UINT(selector_pushdown_threshold, PLUGIN_VAR_OPCMDARG,
                          "The threshold of selector push down to SequoiaDB. "
                          "(Default: 30)"
                          /*查询字段下压触发阈值，取值范围[0, 100]，单位：%。*/,
-                         NULL, NULL, SDB_SELECTOR_PUSHDOWN_THRESHOLD, 0, 100,
-                         0);
+                         NULL, NULL, SDB_DEFAULT_SELECTOR_PUSHDOWN_THRESHOLD, 0,
+                         100, 0);
 static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_OPCMDARG,
                          "Commands execute only in mysql. (Default: OFF)"
                          /*DDL 命令只在 MySQL 执行，不下压到 SequoiaDB 执行。*/,
@@ -155,6 +164,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(use_autocommit),
     MYSQL_SYSVAR(debug_log),
     MYSQL_SYSVAR(optimizer_select_count),
+    MYSQL_SYSVAR(alter_table_overhead_threshold),
     MYSQL_SYSVAR(selector_pushdown_threshold),
     MYSQL_SYSVAR(execute_only_in_mysql),
     NULL};
@@ -275,4 +285,8 @@ uint sdb_selector_pushdown_threshold(THD *thd) {
 
 bool sdb_execute_only_in_mysql(THD *thd) {
   return THDVAR(thd, execute_only_in_mysql);
+}
+
+longlong sdb_alter_table_overhead_threshold(THD *thd) {
+  return THDVAR(thd, alter_table_overhead_threshold);
 }
