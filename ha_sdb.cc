@@ -1278,8 +1278,12 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   enum_check_fields old_check_fields = thd->count_cuted_fields;
   thd->count_cuted_fields = CHECK_FIELD_IGNORE;
 
-  /* Avoid asserts in ::store() for columns that are not going to be updated */
-  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
+  // Avoid asserts in ::store() for columns that are not going to be updated,
+  // but don't modify the read_set when select.
+  my_bitmap_map *org_bitmap = NULL;
+  if (!is_select || table->write_set != table->read_set) {
+    org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
+  }
 
   bson::BSONObjIterator iter(obj);
 
@@ -1332,7 +1336,16 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
     field->reset();
 
     if (elem.eoo() || elem.isNull() || bson::Undefined == elem.type()) {
-      field->set_null();
+      if (field->maybe_null()) {
+        field->set_null();
+      } else {
+        if (is_select) {
+          thd->raise_warning_printf(
+              ER_WARN_NULL_TO_NOTNULL, field->field_name,
+              thd->get_stmt_da()->current_row_for_condition());
+        }
+        field->set_default();
+      }
       continue;
     }
 
@@ -1343,7 +1356,9 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   }
 
 done:
-  dbug_tmp_restore_column_map(table->write_set, org_bitmap);
+  if (!is_select || table->write_set != table->read_set) {
+    dbug_tmp_restore_column_map(table->write_set, org_bitmap);
+  }
   thd->count_cuted_fields = old_check_fields;
   thd->variables.sql_mode = old_sql_mode;
   return rc;
