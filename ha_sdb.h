@@ -22,6 +22,7 @@
 #include "sdb_util.h"
 #include "sdb_lock.h"
 #include "sdb_conf.h"
+#include "sdb_condition.h"
 
 /*
   Stats that can be retrieved from SequoiaDB.
@@ -233,7 +234,18 @@ class ha_sdb : public handler {
   // int index_read(uchar *buf, const uchar *key_ptr, uint key_len,
   //               enum ha_rkey_function find_flage);
 
-  bool records_query();
+  int create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update);
+
+  bool optimize_count(bson::BSONObj &condition);
+
+  bool optimize_delete(bson::BSONObj &condition);
+
+  int optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
+                      bool &optimizer_update);
+
+  int optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
+                        bson::BSONObj &selector, bson::BSONObj &hint,
+                        int &num_to_return, bool &direct_op);
 
   int index_init(uint idx, bool sorted);
 
@@ -258,6 +270,7 @@ class ha_sdb : public handler {
   int extra(enum ha_extra_function operation);
   int external_lock(THD *thd, int lock_type);
   bool pushdown_autocommit();
+  int autocommit_statement(bool direct_op = false);
   int start_statement(THD *thd, uint table_count);
   int delete_all_rows(void);
   int truncate();
@@ -290,6 +303,8 @@ class ha_sdb : public handler {
 
  private:
   int ensure_collection(THD *thd);
+
+  int ensure_cond_ctx(THD *thd);
 
   int obj_to_row(bson::BSONObj &obj, uchar *buf);
 
@@ -376,4 +391,6 @@ class ha_sdb : public handler {
   bool m_has_update_insert_id;
   long long total_count;
   bool count_query;
+  bool auto_commit;
+  Sdb_cond_ctx *sdb_condition;
 };

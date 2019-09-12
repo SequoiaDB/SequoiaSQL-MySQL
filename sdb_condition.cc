@@ -16,16 +16,37 @@
 #ifndef MYSQL_SERVER
 #define MYSQL_SERVER
 #endif
-
+#include <sql_class.h>
 #include "sdb_condition.h"
 #include "sdb_errcode.h"
 
-Sdb_cond_ctx::Sdb_cond_ctx() {
-  cur_item = NULL;
-  status = SDB_COND_SUPPORTED;
+Sdb_cond_ctx::Sdb_cond_ctx(TABLE *cur_table, THD *ha_thd,
+                           my_bitmap_map *pushed_cond_buff,
+                           my_bitmap_map *where_cond_buff) {
+  init(cur_table, ha_thd, pushed_cond_buff, where_cond_buff);
 }
 
 Sdb_cond_ctx::~Sdb_cond_ctx() {
+  reset();
+}
+
+void Sdb_cond_ctx::init(TABLE *cur_table, THD *ha_thd,
+                        my_bitmap_map *pushed_cond_buff,
+                        my_bitmap_map *where_cond_buff) {
+  table = cur_table;
+  thd = ha_thd;
+  bitmap_init(&pushed_cond_set, pushed_cond_buff, table->s->fields, false);
+  bitmap_init(&where_cond_set, where_cond_buff, table->s->fields, false);
+  reset();
+}
+
+void Sdb_cond_ctx::reset() {
+  cur_item = NULL;
+  type = INVALID_TYPE;
+  sub_sel = false;
+  status = SDB_COND_UNCALLED;
+  bitmap_clear_all(&pushed_cond_set);
+  bitmap_clear_all(&where_cond_set);
   clear();
 }
 
@@ -37,12 +58,15 @@ void Sdb_cond_ctx::clear() {
     cur_item = NULL;
   }
 
-  while ((item_tmp = item_list.pop()) != NULL) {
+  while (item_list.elements && (item_tmp = item_list.pop()) != NULL) {
     delete item_tmp;
+    item_tmp = NULL;
   }
+  item_list.empty();
 }
 
 void Sdb_cond_ctx::pop_all() {
+  DBUG_ENTER("Sdb_cond_ctx::pop_all()");
   Sdb_item *item_tmp = NULL;
 
   if (SDB_COND_UNSUPPORTED == status) {
@@ -50,7 +74,7 @@ void Sdb_cond_ctx::pop_all() {
     goto done;
   }
 
-  while (!item_list.is_empty()) {
+  while (item_list.elements) {
     if (NULL == cur_item) {
       cur_item = item_list.pop();
       continue;
@@ -71,22 +95,24 @@ void Sdb_cond_ctx::pop_all() {
     cur_item = item_list.pop();
     if (0 != cur_item->push_sdb_item(item_tmp)) {
       delete item_tmp;
+      item_tmp = NULL;
     }
   }
 
 done:
-  return;
+  DBUG_VOID_RETURN;
 }
 
 void Sdb_cond_ctx::pop() {
+  DBUG_ENTER("Sdb_cond_ctx::pop()");
   int rc = SDB_ERR_OK;
   Sdb_item *item_tmp = NULL;
 
-  if (!keep_on() || item_list.is_empty()) {
+  if (!keep_on() || !item_list.elements) {
     goto done;
   }
 
-  while (!item_list.is_empty()) {
+  while (item_list.elements) {
     if (NULL == cur_item) {
       cur_item = item_list.pop();
       continue;
@@ -97,6 +123,7 @@ void Sdb_cond_ctx::pop() {
     rc = cur_item->push_sdb_item(item_tmp);
     if (0 != rc) {
       delete item_tmp;
+      item_tmp = NULL;
       goto error;
     }
 
@@ -107,13 +134,14 @@ void Sdb_cond_ctx::pop() {
   }
 
 done:
-  return;
+  DBUG_VOID_RETURN;
 error:
   update_stat(rc);
   goto done;
 }
 
 void Sdb_cond_ctx::update_stat(int rc) {
+  DBUG_ENTER("Sdb_cond_ctx::update_stat()");
   if (SDB_ERR_OK == rc) {
     goto done;
   }
@@ -135,17 +163,19 @@ void Sdb_cond_ctx::update_stat(int rc) {
   }
 
 done:
-  return;
+  DBUG_VOID_RETURN;
 }
 
 bool Sdb_cond_ctx::keep_on() {
+  DBUG_ENTER("Sdb_cond_ctx::keep_on()");
   if (SDB_COND_UNSUPPORTED == status || SDB_COND_BEFORE_SUPPORTED == status) {
-    return FALSE;
+    DBUG_RETURN(FALSE);
   }
-  return true;
+  DBUG_RETURN(true);
 }
 
 void Sdb_cond_ctx::push(Item *item) {
+  DBUG_ENTER("Sdb_cond_ctx::push()");
   int rc = SDB_ERR_OK;
   Sdb_item *item_tmp = NULL;
 
@@ -210,13 +240,14 @@ void Sdb_cond_ctx::push(Item *item) {
   }
 
 done:
-  return;
+  DBUG_VOID_RETURN;
 error:
   update_stat(rc);
   goto done;
 }
 
 Sdb_item *Sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
+  DBUG_ENTER("Sdb_cond_ctx::create_sdb_item()");
   Sdb_item *item = NULL;
   switch (cond_item->functype()) {
     case Item_func::COND_AND_FUNC: {
@@ -278,15 +309,19 @@ Sdb_item *Sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
       break;
     }
   }
-  return item;
+  item->pushed_cond_set = &pushed_cond_set;
+  DBUG_PRINT("ha_sdb:info", ("create new item name:%s", item->name()));
+  DBUG_RETURN(item);
 }
 
 int Sdb_cond_ctx::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_cond_ctx::to_bson()");
   static bson::BSONObj empty_obj;
   int rc = 0;
   if (NULL != cur_item) {
     rc = cur_item->to_bson(obj);
     if (0 == rc) {
+      cur_item = NULL;
       goto done;
     }
     update_stat(rc);
@@ -294,25 +329,148 @@ int Sdb_cond_ctx::to_bson(bson::BSONObj &obj) {
   obj = empty_obj;
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 }
 
 static void sdb_traverse_cond(const Item *cond_item, void *arg) {
+  DBUG_ENTER("sdb_traverse_cond()");
   Sdb_cond_ctx *sdb_ctx = (Sdb_cond_ctx *)arg;
+  Item_func::Functype type;
 
-  if (SDB_COND_UNSUPPORTED == sdb_ctx->status ||
-      SDB_COND_BEFORE_SUPPORTED == sdb_ctx->status) {
-    // skip all while occured unsupported-condition
-    goto done;
+  if (sdb_ctx->type == Sdb_cond_ctx::PUSHED_COND) {
+    if (SDB_COND_UNSUPPORTED == sdb_ctx->status ||
+        SDB_COND_BEFORE_SUPPORTED == sdb_ctx->status) {
+      // skip all while occured unsupported-condition
+      goto done;
+    }
+
+    sdb_ctx->push((Item *)cond_item);
   }
 
-  sdb_ctx->push((Item *)cond_item);
+  if (sdb_ctx->type == Sdb_cond_ctx::WHERE_COND && cond_item) {
+    switch (cond_item->type()) {
+      case Item::FIELD_ITEM:
+        for (Field **field = sdb_ctx->table->field; *field; field++) {
+          if (0 == strcmp((*field)->field_name, cond_item->item_name.ptr())) {
+            bitmap_set_bit(&sdb_ctx->where_cond_set, (*field)->field_index);
+            DBUG_PRINT("ha_sdb:info",
+                       ("Table: %s, field: %s is in where condition",
+                        *((*field)->table_name), (*field)->field_name));
+          }
+        }
+        break;
+      case Item::SUBSELECT_ITEM:
+        sdb_ctx->sub_sel = true;
+        break;
+      case Item::FUNC_ITEM:
+        type = ((Item_func *)cond_item)->functype();
+        if (Item_func::UNKNOWN_FUNC != type && Item_func::EQ_FUNC != type &&
+            Item_func::EQUAL_FUNC != type && Item_func::NE_FUNC != type &&
+            Item_func::LT_FUNC != type && Item_func::LE_FUNC != type &&
+            Item_func::GE_FUNC != type && Item_func::GT_FUNC != type &&
+            Item_func::FT_FUNC != type && Item_func::LIKE_FUNC != type &&
+            Item_func::ISNULL_FUNC != type &&
+            Item_func::ISNOTNULL_FUNC != type &&
+            Item_func::COND_AND_FUNC != type &&
+            Item_func::COND_OR_FUNC != type && Item_func::XOR_FUNC != type &&
+            Item_func::BETWEEN != type && Item_func::IN_FUNC != type &&
+            Item_func::MULT_EQUAL_FUNC != type &&
+            Item_func::INTERVAL_FUNC != type &&
+            Item_func::ISNOTNULLTEST_FUNC != type) {
+          sdb_ctx->status = SDB_COND_UNSUPPORTED;
+        }
+        break;
+      default:
+        break;
+    }
+  }
 done:
-  return;
+  DBUG_VOID_RETURN;
 }
 
 void sdb_parse_condtion(const Item *cond_item, Sdb_cond_ctx *sdb_ctx) {
+  DBUG_ENTER("sdb_parse_condtion()");
   ((Item *)cond_item)
       ->traverse_cond(&sdb_traverse_cond, (void *)sdb_ctx, Item::PREFIX);
-  sdb_ctx->pop_all();
+  if (sdb_ctx->type == Sdb_cond_ctx::PUSHED_COND) {
+    sdb_ctx->pop_all();
+  }
+  DBUG_VOID_RETURN;
+}
+
+void sdb_traverse_update(const Item *update_item, void *arg) {
+  DBUG_ENTER("traverse_update()");
+  update_arg *upd_arg = (struct update_arg *)arg;
+  Item_func *item_func = NULL;
+  enum_field_types type;
+  if (update_item) {
+    switch (update_item->type()) {
+      case Item::FIELD_ITEM:
+        type = update_item->field_type();
+        if (MYSQL_TYPE_DECIMAL != type && MYSQL_TYPE_TINY != type &&
+            MYSQL_TYPE_SHORT != type && MYSQL_TYPE_LONG != type &&
+            MYSQL_TYPE_FLOAT != type && MYSQL_TYPE_DOUBLE != type &&
+            MYSQL_TYPE_LONGLONG != type && MYSQL_TYPE_INT24 != type) {
+          *upd_arg->optimizer_update = false;
+          break;
+        }
+
+        /* item_name is not same as field_name. */
+        if (strcmp(update_item->item_name.ptr(), upd_arg->field->field_name)) {
+          *upd_arg->optimizer_update = false;
+          break;
+        }
+
+        /* set a = 10 - a; set a = a + a + 10*/
+        if (*upd_arg->field_count || upd_arg->minus) {
+          *upd_arg->optimizer_update = false;
+          break;
+        }
+
+        *upd_arg->field_count = true;
+        ((Item_field *)(update_item))->field->store(0);
+        if (((Item_field *)(update_item))->field->is_null()) {
+          ((Item_field *)(update_item))->field->set_notnull();
+        }
+        DBUG_PRINT("ha_sdb:info",
+                   ("Item: %s, type: %d is in update items",
+                    update_item->item_name.ptr(), update_item->type()));
+        break;
+      case Item::FUNC_ITEM:
+        item_func = (Item_func *)update_item;
+        upd_arg->minus = strcmp(item_func->func_name(), "-") ? false : true;
+        /* TODO: supported bit op like bitand, bitor, bitxor*/
+        if (strcmp(item_func->func_name(), "+") && !upd_arg->minus) {
+          *upd_arg->optimizer_update = false;
+          break;
+        }
+        DBUG_PRINT("ha_sdb:info",
+                   ("Item: %s, type: %d is in update items",
+                    item_func->func_name(), update_item->type()));
+        break;
+      case Item::INT_ITEM:
+      case Item::REAL_ITEM:
+      case Item::DECIMAL_ITEM:
+      case Item::STRING_ITEM:
+      case Item::DEFAULT_VALUE_ITEM:
+        DBUG_PRINT("ha_sdb:info",
+                   ("Item: %s, type: %d is in update items",
+                    update_item->item_name.ptr(), update_item->type()));
+        break;
+
+      case Item::COND_ITEM:
+        *upd_arg->optimizer_update = false;
+        DBUG_PRINT("ha_sdb:info", ("Item: %s, type: %d is in update items",
+                                   ((Item_func *)update_item)->func_name(),
+                                   update_item->type()));
+        break;
+      default:
+        *upd_arg->optimizer_update = false;
+        DBUG_PRINT("ha_sdb:info",
+                   ("Item: %s, type: %d is in update items",
+                    update_item->item_name.ptr(), update_item->type()));
+        break;
+    }
+  }
+  DBUG_VOID_RETURN;
 }

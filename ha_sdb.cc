@@ -18,23 +18,25 @@
 #endif
 
 #include "ha_sdb.h"
-#include <sql_class.h>
-#include <sql_table.h>
-#include <sql_insert.h>
-#include <mysql/plugin.h>
-#include <mysql/psi/mysql_file.h>
-#include <json_dom.h>
-#include <time.h>
-#include <client.hpp>
 #include "item_sum.h"
-#include "sdb_log.h"
 #include "sdb_cl.h"
 #include "sdb_conn.h"
-#include "sdb_thd.h"
-#include "sdb_util.h"
-#include "sdb_condition.h"
 #include "sdb_errcode.h"
 #include "sdb_idx.h"
+#include "sdb_log.h"
+#include "sdb_thd.h"
+#include "sdb_util.h"
+#include <client.hpp>
+#include <json_dom.h>
+#include <my_bit.h>
+#include <mysql/plugin.h>
+#include <mysql/psi/mysql_file.h>
+#include <sql_class.h>
+#include <sql_insert.h>
+#include <sql_table.h>
+#include <time.h>
+#include <sql_update.h>
+#include <table_trigger_dispatcher.h>
 
 using namespace sdbclient;
 
@@ -76,6 +78,7 @@ using namespace sdbclient;
 const static char *sdb_plugin_info = SDB_ENGINE_INFO ". " SDB_VERSION_INFO ".";
 
 handlerton *sdb_hton = NULL;
+
 mysql_mutex_t sdb_mutex;
 static PSI_mutex_key key_mutex_sdb, key_mutex_SDB_SHARE_mutex;
 static HASH sdb_open_tables;
@@ -269,6 +272,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_has_update_insert_id = false;
   total_count = 0;
   count_query = false;
+  auto_commit = false;
+  sdb_condition = NULL;
   stats.records = 0;
   memset(db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
   memset(table_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
@@ -280,6 +285,10 @@ ha_sdb::~ha_sdb() {
   if (NULL != collection) {
     delete collection;
     collection = NULL;
+  }
+  if (sdb_condition) {
+    delete sdb_condition;
+    sdb_condition = NULL;
   }
 }
 
@@ -406,6 +415,10 @@ int ha_sdb::close(void) {
   if (share) {
     free_sdb_share(share);
     share = NULL;
+  }
+  if (sdb_condition) {
+    delete sdb_condition;
+    sdb_condition = NULL;
   }
   m_bulk_insert_rows.clear();
   m_bson_element_cache.release();
@@ -867,8 +880,6 @@ int ha_sdb::write_row(uchar *buf) {
   bson::BSONObj tmp_obj;
   ulonglong auto_inc = 0;
   bool auto_inc_explicit_used = false;
-  // TODO: ywx: consider detecting the change of auto_increment_increment
-  // ulonglong increment = ha_thd()->variables.auto_increment_increment;
 
   ha_statistic_increment(&SSV::ha_write_count);
 
@@ -942,6 +953,12 @@ int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   ha_statistic_increment(&SSV::ha_update_count);
+  if (auto_commit) {
+    rc = autocommit_statement();
+    if (rc) {
+      goto error;
+    }
+  }
 
   rc = get_update_obj(old_data, new_data, new_obj, null_obj);
   if (rc != 0) {
@@ -978,6 +995,7 @@ error:
 }
 
 int ha_sdb::delete_row(const uchar *buf) {
+  DBUG_ENTER("ha_sdb::delete_row()");
   int rc = 0;
   bson::BSONObj cond;
 
@@ -985,6 +1003,12 @@ int ha_sdb::delete_row(const uchar *buf) {
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   ha_statistic_increment(&SSV::ha_delete_count);
+  if (auto_commit) {
+    rc = autocommit_statement();
+    if (rc) {
+      goto error;
+    }
+  }
 
   if (get_unique_key_cond(buf, cond)) {
     cond = cur_rec;
@@ -997,84 +1021,356 @@ int ha_sdb::delete_row(const uchar *buf) {
   stats.records--;
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 int ha_sdb::index_next(uchar *buf) {
   DBUG_ENTER("ha_sdb::index_next()");
-  int rc = 0;
-
   DBUG_ASSERT(idx_order_direction == 1);
-
   ha_statistic_increment(&SSV::ha_read_next_count);
 
-  rc = next_row(cur_rec, buf);
-  if (rc != 0) {
-    goto error;
+  if (count_query) {
+    DBUG_RETURN(cur_row(buf));
+  } else {
+    DBUG_RETURN(next_row(cur_rec, buf));
   }
-
-done:
-  DBUG_RETURN(rc);
-error:
-  goto done;
 }
 
 int ha_sdb::index_prev(uchar *buf) {
   DBUG_ENTER("ha_sdb::index_prev()");
-  int rc = 0;
-
   DBUG_ASSERT(idx_order_direction == -1);
-
   ha_statistic_increment(&SSV::ha_read_prev_count);
 
-  rc = next_row(cur_rec, buf);
-  if (rc != 0) {
-    goto error;
+  if (count_query) {
+    DBUG_RETURN(cur_row(buf));
+  } else {
+    DBUG_RETURN(next_row(cur_rec, buf));
   }
+}
 
+int ha_sdb::index_last(uchar *buf) {
+  first_read = true;
+  ha_statistic_increment(&SSV::ha_read_last_count);
+  return index_read_one(pushed_condition, -1, buf);
+}
+
+int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
+  DBUG_ENTER("ha_sdb::create_modifier_obj()");
+  int rc = 0;
+  Field *rfield = NULL;
+  Item *value = NULL;
+  Item_field *field = NULL;
+  bson::BSONObj set_obj;
+  bson::BSONObj inc_obj;
+  bson::BSONObjBuilder set_builder;
+  bson::BSONObjBuilder inc_builder;
+  Item *fld = NULL;
+
+  SELECT_LEX *const select_lex = ha_thd()->lex->select_lex;
+  Sql_cmd_update *sql_cmd_update = (Sql_cmd_update *)ha_thd()->lex->m_sql_cmd;
+  List<Item> *const item_list = &select_lex->item_list;
+  List<Item> *const update_value_list = &sql_cmd_update->update_value_list;
+
+  List_iterator_fast<Item> f(*item_list), v(*update_value_list);
+
+  while (*optimizer_update && (fld = f++)) {
+    bool field_count = false;
+    update_arg upd_arg;
+    field = fld->field_for_view_update();
+    DBUG_ASSERT(field != NULL);
+    /*set field's table is not the current table*/
+    if (field->table_ref->table != table) {
+      *optimizer_update = false;
+      SDB_LOG_DEBUG("optimizer update: %d table not table ref",
+                    *optimizer_update);
+      goto done;
+    }
+
+    rfield = field->field;
+    value = v++;
+    upd_arg.field = rfield;
+    upd_arg.optimizer_update = optimizer_update;
+    upd_arg.field_count = &field_count;
+    upd_arg.minus = false;
+
+    /* generated column cannot be optimized. */
+    if (rfield->is_gcol()) {
+      *optimizer_update = false;
+      goto done;
+    }
+
+    value->traverse_cond(&sdb_traverse_update, &upd_arg, Item::PREFIX);
+    if (!*optimizer_update) {
+      goto done;
+    }
+
+    bitmap_set_bit(table->write_set, rfield->field_index);
+    rc = value->save_in_field(rfield, false);
+    if (TYPE_OK != rc) {
+      if (rc < 0) {
+        my_message(ER_UNKNOWN_ERROR, ER(ER_UNKNOWN_ERROR), MYF(0));
+      }
+      *optimizer_update = false;
+      goto error;
+    }
+
+    bitmap_set_bit(table->read_set, rfield->field_index);
+    if (field_count) {
+      rc = field_to_obj(rfield, inc_builder);
+    } else {
+      /* set a = -100 (FUNC_ITEM:'-', INT_ITEM:100) */
+      rc = field_to_obj(rfield, set_builder);
+    }
+    if (0 != rc) {
+      goto error;
+    }
+  }
+  set_obj = set_builder.obj();
+  inc_obj = inc_builder.obj();
+
+  if (!set_obj.isEmpty() && !inc_obj.isEmpty()) {
+    rule = BSON("$set" << set_obj << "$inc" << inc_obj);
+  } else if (!set_obj.isEmpty()) {
+    rule = BSON("$set" << set_obj);
+  } else if (!inc_obj.isEmpty()) {
+    rule = BSON("$inc" << inc_obj);
+  }
 done:
   DBUG_RETURN(rc);
 error:
   goto done;
 }
 
-int ha_sdb::index_last(uchar *buf) {
+int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
+                            bool &optimizer_update) {
+  DBUG_ENTER("ha_sdb::optimize_update()");
+  DBUG_ASSERT(thd_sql_command(ha_thd()) == SQLCOM_UPDATE);
   int rc = 0;
-  ha_statistic_increment(&SSV::ha_read_last_count);
-  rc = index_read_one(pushed_condition, -1, buf);
+  bool has_triggers = false;
+  bson::BSONObjBuilder modifier_builder;
+  LEX *const lex = ha_thd()->lex;
+  SELECT_LEX *const select_lex = lex->select_lex;
+  ORDER *order = select_lex->order_list.first;
+  const bool using_limit = lex->unit->select_limit_cnt != HA_POS_ERROR;
+  TABLE_LIST *const table_list = select_lex->get_table_list();
+
+  has_triggers = table->triggers && table->triggers->has_update_triggers();
+
+  /* Triggers: cannot optimize because IGNORE keyword in the statement should
+     not affect the errors in the trigger execution if trigger statement does
+     not have IGNORE keyword. */
+  /* view: cannot optimize because it can not handle ER_VIEW_CHECK_FAILED */
+  if (has_triggers || using_limit || order || table_list->check_option ||
+      ha_thd()->lex->is_ignore() ||
+      !(ha_thd()->lex->current_select() == lex->unit->first_select())) {
+    optimizer_update = false;
+    goto done;
+  }
+
+  if (select_lex->where_cond()) {
+    sdb_condition->type = Sdb_cond_ctx::WHERE_COND;
+    sdb_parse_condtion(select_lex->where_cond(), sdb_condition);
+  }
+
+  if ((SDB_COND_UNCALLED == sdb_condition->status &&
+       !bitmap_is_clear_all(&sdb_condition->where_cond_set)) ||
+      SDB_COND_SUPPORTED != sdb_condition->status || sdb_condition->sub_sel) {
+    optimizer_update = false;
+    goto done;
+  }
+
+  /* cannot be optimized:
+     1. add function default columns that need to set default value on every
+     updated row. e.g. on UPDATE CURRENT_TIMESTAMP.
+     2. virtual column field is marked for read or write.
+  */
+  for (Field **fields = table->field; *fields; fields++) {
+    Field *field = *fields;
+    if ((field->has_insert_default_function() ||
+         field->has_update_default_function()) &&
+        bitmap_is_set(table->write_set, field->field_index)) {
+      optimizer_update = false;
+      goto done;
+    }
+
+    if (field->is_virtual_gcol() &&
+        (bitmap_is_set(table->read_set, field->field_index) ||
+         bitmap_is_set(table->write_set, field->field_index))) {
+      optimizer_update = false;
+      goto done;
+    }
+  }
+  optimizer_update = true;
+  rc = create_modifier_obj(rule, &optimizer_update);
   if (rc) {
+    optimizer_update = false;
     goto error;
   }
+
 done:
-  return rc;
+  DBUG_PRINT("ha_sdb:info",
+             ("optimizer update: %d, rule: %s, condition: %s", optimizer_update,
+              rule.toString(false, false).c_str(),
+              condition.toString(false, false).c_str()));
+  SDB_LOG_DEBUG("optimizer update: %d, rule: %s, condition: %s",
+                optimizer_update, rule.toString(false, false).c_str(),
+                condition.toString(false, false).c_str());
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
-bool ha_sdb::records_query() {
+bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
+  DBUG_ENTER("ha_sdb::optimize_delete()");
+  bool optimizer_delete = false;
+  bool has_triggers = false;
   SELECT_LEX_UNIT *const unit = ha_thd()->lex->unit;
   SELECT_LEX *const select = unit->first_select();
-  const bool single_query = unit->is_simple();
+  const bool using_limit = unit->select_limit_cnt != HA_POS_ERROR;
+  ORDER *order = select->order_list.first;
+  DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
+
+  has_triggers = table->triggers && table->triggers->has_delete_triggers();
+
+  if (order || using_limit || has_triggers ||
+      !(ha_thd()->lex->current_select() == unit->first_select())) {
+    optimizer_delete = false;
+    goto done;
+  }
+
+  if (select->where_cond()) {
+    sdb_condition->type = Sdb_cond_ctx::WHERE_COND;
+    sdb_parse_condtion(select->where_cond(), sdb_condition);
+  }
+
+  if ((SDB_COND_UNCALLED == sdb_condition->status &&
+       !bitmap_is_clear_all(&sdb_condition->where_cond_set)) ||
+      SDB_COND_SUPPORTED != sdb_condition->status || sdb_condition->sub_sel) {
+    optimizer_delete = false;
+    goto done;
+  }
+
+  for (Field **fields = table->field; *fields; fields++) {
+    Field *field = *fields;
+    if (field->is_virtual_gcol() &&
+        (bitmap_is_set(table->read_set, field->field_index) ||
+         bitmap_is_set(table->write_set, field->field_index))) {
+      optimizer_delete = false;
+      goto done;
+    }
+  }
+  optimizer_delete = true;
+done:
+  DBUG_PRINT("ha_sdb:info",
+             ("optimizer delete: %d, condition: %s", optimizer_delete,
+              condition.toString(false, false).c_str()));
+  SDB_LOG_DEBUG("optimizer delete: %d, condition: %s", optimizer_delete,
+                condition.toString(false, false).c_str());
+  DBUG_RETURN(optimizer_delete);
+}
+
+bool ha_sdb::optimize_count(bson::BSONObj &condition) {
+  DBUG_ENTER("ha_sdb::optimize_count()");
+  LEX *const lex = ha_thd()->lex;
+  SELECT_LEX_UNIT *const unit = ha_thd()->lex->unit;
+  SELECT_LEX *const select = unit->first_select();
   bool optimize_with_materialization =
       ha_thd()->optimizer_switch_flag(OPTIMIZER_SWITCH_MATERIALIZATION);
-  if (single_query) {
+  DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
+
+  count_query = false;
+  if (select->table_list.elements == 1 && lex->all_selects_list &&
+      !lex->all_selects_list->next_select_in_list() && !select->where_cond() &&
+      optimize_with_materialization) {
     if (1 == select->all_fields.elements) {
       Item *query_item = select->all_fields.head();
       if (Item::SUM_FUNC_ITEM == query_item->type() &&
           ((Item_sum *)query_item)->sum_func() == Item_sum::COUNT_FUNC &&
-          bitmap_is_clear_all(table->read_set) &&
-          optimize_with_materialization) {
+          bitmap_is_clear_all(table->read_set)) {
         count_query = true;
       }
     }
   }
-  return count_query;
+
+  DBUG_PRINT("ha_sdb:info", ("optimizer count: %d", count_query));
+  SDB_LOG_DEBUG("optimizer count: %d", count_query);
+  DBUG_RETURN(count_query);
+}
+
+int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
+                              bson::BSONObj &selector, bson::BSONObj &hint,
+                              int &num_to_return, bool &direct_op) {
+  DBUG_ENTER("ha_sdb::optimize()");
+  int rc = 0;
+  if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
+    if ((sdb_optimizer_select_count || (sdb_get_optimizer_options(ha_thd()) &
+                                        SDB_OPTIMIZER_OPTION_SELECT_COUNT)) &&
+        optimize_count(condition)) {
+      rc = collection->get_count(total_count, condition, hint);
+      if (rc) {
+        SDB_LOG_ERROR("Fail to get count on table:%s.%s. rc: %d", db_name,
+                      table_name, rc);
+        goto error;
+      }
+      num_to_return = 1;
+    }
+    build_selector(selector);
+  }
+
+  if (thd_sql_command(ha_thd()) == SQLCOM_DELETE &&
+      (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_DELETE) &&
+      optimize_delete(condition)) {
+    first_read = false;
+    rc = collection->del(condition);
+    if (!rc) {
+      rc = HA_ERR_END_OF_FILE;
+    }
+    table->status = STATUS_NOT_FOUND;
+    direct_op = true;
+    goto done;
+  }
+
+  if (thd_sql_command(ha_thd()) == SQLCOM_UPDATE &&
+      (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_UPDATE)) {
+    bool optimizer_update = false;
+    rc = optimize_update(rule, condition, optimizer_update);
+    if (rc) {
+      table->status = STATUS_NOT_FOUND;
+      rc = HA_ERR_END_OF_FILE;
+      goto error;
+    }
+    if (optimizer_update) {
+      first_read = false;
+      rc = collection->update(rule, condition, hint, UPDATE_KEEP_SHARDINGKEY);
+      if (rc != 0) {
+        if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
+          my_error(ER_DUP_KEY, MYF(0), table_name);
+          // convert to MySQL errcode
+          rc = HA_ERR_FOUND_DUPP_KEY;
+          goto error;
+          //}
+        }
+        table->status = STATUS_NOT_FOUND;
+        goto error;
+      } else {
+        rc = HA_ERR_END_OF_FILE;
+      }
+      table->status = STATUS_NOT_FOUND;
+      direct_op = true;
+      goto done;
+    }
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 int ha_sdb::index_first(uchar *buf) {
   int rc = 0;
+  first_read = true;
   ha_statistic_increment(&SSV::ha_read_first_count);
   rc = index_read_one(pushed_condition, 1, buf);
   if (rc) {
@@ -1100,6 +1396,8 @@ void ha_sdb::build_selector(bson::BSONObj &selector) {
   }
   if (((double)select_num * 100 / table_share->fields) <= (double)threshold) {
     selector = selector_builder.obj();
+    SDB_LOG_DEBUG("optimizer selector object: %d",
+                  selector.toString(false, false).c_str());
   } else {
     selector = SDB_EMPTY_BSON;
   }
@@ -1114,6 +1412,7 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   bson::BSONObj condition = pushed_condition;
   bson::BSONObj condition_idx;
   int order_direction = 1;
+  first_read = true;
 
   ha_statistic_increment(&SSV::ha_read_key_count);
 
@@ -1162,8 +1461,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                            uchar *buf) {
   int rc = 0;
   bson::BSONObj hint;
+  bson::BSONObj rule;
   bson::BSONObj order_by;
   bson::BSONObj selector;
+  int num_to_return = -1;
+  bool direct_op = false;
   int flag = 0;
   KEY *key_info = table->key_info + active_index;
 
@@ -1172,7 +1474,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   DBUG_ASSERT(NULL != key_info);
   DBUG_ASSERT(NULL != key_info->name);
 
-  count_query = false;
   hint = BSON("" << key_info->name);
   idx_order_direction = order_direction;
   rc = sdb_get_idx_order(key_info, order_by, order_direction,
@@ -1182,28 +1483,32 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     goto error;
   }
 
-  if (sdb_optimizer_select_count && records_query()) {
-    rc = collection->get_count(total_count, condition, hint);
+  flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+  rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
+                         direct_op);
+  if (rc) {
+    goto error;
+  }
+
+  if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
+       thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
+      auto_commit) {
+    rc = autocommit_statement(direct_op);
     if (rc) {
-      SDB_LOG_ERROR("Fail to get count on table:%s.%s. rc: %d", db_name,
-                    table_name, rc);
       goto error;
     }
-  } else {
-    flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-    if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
-      build_selector(selector);
-    }
-    rc = collection->query(condition, selector, order_by, hint, 0, -1, flag);
-    if (rc) {
-      SDB_LOG_ERROR(
-          "Collection[%s.%s] failed to query with "
-          "condition[%s], order[%s], hint[%s]. rc: %d",
-          collection->get_cs_name(), collection->get_cl_name(),
-          condition.toString().c_str(), order_by.toString().c_str(),
-          hint.toString().c_str(), rc);
-      goto error;
-    }
+  }
+
+  rc = collection->query(condition, selector, order_by, hint, 0, num_to_return,
+                         flag);
+  if (rc) {
+    SDB_LOG_ERROR(
+        "Collection[%s.%s] failed to query with "
+        "condition[%s], order[%s], hint[%s]. rc: %d",
+        collection->get_cs_name(), collection->get_cl_name(),
+        condition.toString().c_str(), order_by.toString().c_str(),
+        hint.toString().c_str(), rc);
+    goto error;
   }
 
   rc = (1 == order_direction) ? index_next(buf) : index_prev(buf);
@@ -1232,12 +1537,13 @@ error:
 }
 
 int ha_sdb::index_init(uint idx, bool sorted) {
+  DBUG_ENTER("ha_sdb::index_init()");
   active_index = idx;
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }
   free_root(&blobroot, MYF(0));
-  return 0;
+  DBUG_RETURN(0);
 }
 
 int ha_sdb::index_end() {
@@ -1249,12 +1555,13 @@ int ha_sdb::index_end() {
 }
 
 int ha_sdb::rnd_init(bool scan) {
+  DBUG_ENTER("ha_sdb::rnd_init()");
   first_read = true;
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }
   free_root(&blobroot, MYF(0));
-  return 0;
+  DBUG_RETURN(0);
 }
 
 int ha_sdb::rnd_end() {
@@ -1476,10 +1783,36 @@ error:
 }
 
 int ha_sdb::cur_row(uchar *buf) {
+  DBUG_ENTER("ha_sdb::cur_row()");
   int rc = 0;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  if (!first_read) {
+    /* need to return the first matched record here for
+       'select a, count(b) from table_name where ... '.
+    */
+    Item *field = NULL;
+    LEX *const lex = ha_thd()->lex;
+    SELECT_LEX *const select = lex->current_select();
+    List_iterator<Item> li(select->all_fields);
+    while ((field = li++)) {
+      Item::Type real_type = field->real_item()->type();
+      if (real_type == Item::SUM_FUNC_ITEM) {
+        Item_sum *sum_item = (Item_sum *)field->real_item();
+        if (sum_item->sum_func() == Item_sum::COUNT_FUNC) {
+          ((Item_sum_count *)sum_item)->make_const(total_count);
+        }
+      }
+    }
+    rc = HA_ERR_END_OF_FILE;
+    count_query = false;
+    cur_rec = SDB_EMPTY_BSON;
+    table->status = STATUS_NOT_FOUND;
+    DBUG_PRINT("query_count", ("total_count: %llu", total_count));
+    total_count = 0;
+    goto done;
+  }
 
   rc = collection->current(cur_rec, false);
   if (rc != 0) {
@@ -1491,8 +1824,9 @@ int ha_sdb::cur_row(uchar *buf) {
     goto error;
   }
 
+  first_read = first_read ? false : first_read;
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -1503,20 +1837,6 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
-  if (count_query) {
-    rc = (total_count != 0) ? 0 : HA_ERR_END_OF_FILE;
-    if (rc != 0) {
-      if (HA_ERR_END_OF_FILE == rc) {
-        table->status = STATUS_NOT_FOUND;
-      }
-      goto error;
-    }
-    DBUG_PRINT("query_count", ("total_count: %llu", total_count));
-    obj = SDB_EMPTY_BSON;
-    total_count--;
-    table->status = 0;
-    goto done;
-  }
 
   rc = collection->next(obj, false);
   if (rc != 0) {
@@ -1531,6 +1851,7 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
     goto error;
   }
 
+  first_read = first_read ? false : first_read;
   table->status = 0;
 
 done:
@@ -1542,37 +1863,50 @@ error:
 int ha_sdb::rnd_next(uchar *buf) {
   DBUG_ENTER("ha_sdb::rnd_next()");
   int rc = 0;
+  int num_to_return = -1;
+  bool direct_op = false;
+  bson::BSONObj rule;
   bson::BSONObj selector;
+  bson::BSONObj condition;
+  bson::BSONObj hint = SDB_EMPTY_BSON;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
 
   if (first_read) {
-    count_query = false;
-    if (sdb_optimizer_select_count && records_query()) {
-      rc = collection->get_count(total_count, SDB_EMPTY_BSON, SDB_EMPTY_BSON);
+    if (!pushed_condition.isEmpty()) {
+      condition = pushed_condition.copy();
+    }
+
+    int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+    rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
+                           direct_op);
+    if (rc) {
+      goto error;
+    }
+
+    if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
+         thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
+        auto_commit) {
+      rc = autocommit_statement(direct_op);
       if (rc) {
-        SDB_LOG_ERROR("Fail to get count on table:%s.%s. rc: %d", db_name,
-                      table_name, rc);
-        goto error;
-      }
-    } else {
-      int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-      if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
-        build_selector(selector);
-      }
-      rc = collection->query(pushed_condition, selector, SDB_EMPTY_BSON,
-                             SDB_EMPTY_BSON, 0, -1, flag);
-      if (rc != 0) {
         goto error;
       }
     }
-    first_read = false;
+
+    rc = collection->query(condition, selector, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
+                           0, num_to_return, flag);
+    if (rc != 0) {
+      goto error;
+    }
   }
 
   ha_statistic_increment(&SSV::ha_read_rnd_next_count);
-
-  rc = next_row(cur_rec, buf);
+  if (count_query) {
+    rc = cur_row(buf);
+  } else {
+    rc = next_row(cur_rec, buf);
+  }
   if (rc != 0) {
     goto error;
   }
@@ -1628,6 +1962,7 @@ void ha_sdb::position(const uchar *record) {
 }
 
 int ha_sdb::info(uint flag) {
+  DBUG_ENTER("ha_sdb::info()");
   int rc = 0;
   Sdb_conn *conn = NULL;
 
@@ -1686,13 +2021,14 @@ int ha_sdb::info(uint flag) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   convert_sdb_code(rc);
   goto done;
 }
 
 int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
+  DBUG_ENTER("ha_sdb::update_stats()");
   Sdb_statistics stat;
   int rc = 0;
 
@@ -1735,7 +2071,7 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
                     stats.records);
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   convert_sdb_code(rc);
   goto done;
@@ -1786,6 +2122,33 @@ int ha_sdb::extra(enum ha_extra_function operation) {
   }
 
   return 0;
+}
+
+int ha_sdb::ensure_cond_ctx(THD *thd) {
+  DBUG_ENTER("ha_sdb::ensute_bitmap");
+  int rc = 0;
+  Sdb_cond_ctx *cond_ctx = NULL;
+  my_bitmap_map *where_cond_buff = NULL;
+  my_bitmap_map *pushed_cond_buff = NULL;
+  DBUG_ASSERT(NULL != thd);
+
+  if (NULL == sdb_condition) {
+    if (!my_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
+                         &cond_ctx, sizeof(Sdb_cond_ctx), &where_cond_buff,
+                         bitmap_buffer_size(table->s->fields),
+                         &pushed_cond_buff,
+                         bitmap_buffer_size(table->s->fields), NullS)) {
+      goto error;
+    }
+
+    cond_ctx->init(table, current_thd, pushed_cond_buff, where_cond_buff);
+    sdb_condition = cond_ctx;
+  }
+  sdb_condition->reset();
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 int ha_sdb::ensure_collection(THD *thd) {
@@ -1857,8 +2220,40 @@ bool ha_sdb::pushdown_autocommit() {
   return can_push;
 }
 
+int ha_sdb::autocommit_statement(bool direct_op) {
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+
+  conn = check_sdb_in_thd(ha_thd(), true);
+  if (NULL == conn) {
+    rc = HA_ERR_NO_CONNECTION;
+    goto done;
+  }
+  DBUG_ASSERT(conn->thread_id() == ha_thd()->thread_id());
+
+  if (!conn->is_transaction_on()) {
+    if (1 == ha_thd()->lex->table_count && !table->triggers &&
+        (direct_op || pushdown_autocommit())) {
+      conn->set_pushed_autocommit();
+      SDB_LOG_DEBUG("optimizer pushdown autocommit: %d",
+                    conn->get_pushed_autocommit());
+    }
+
+    rc = conn->begin_transaction();
+    if (rc != 0) {
+      goto done;
+    }
+  }
+
+  DBUG_PRINT("ha_sdb:info", ("pushdown autocommit flag: %d.",
+                             (direct_op || conn->get_pushed_autocommit())));
+
+done:
+  return rc;
+}
+
 int ha_sdb::start_statement(THD *thd, uint table_count) {
-  DBUG_ENTER("ha_sdb::start_statement");
+  DBUG_ENTER("ha_sdb::start_statement()");
   int rc = 0;
 
   rc = ensure_stats(thd);
@@ -1867,6 +2262,11 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
   }
 
   rc = ensure_collection(thd);
+  if (0 != rc) {
+    goto error;
+  }
+
+  rc = ensure_cond_ctx(thd);
   if (0 != rc) {
     goto error;
   }
@@ -1880,6 +2280,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     DBUG_ASSERT(conn->thread_id() == thd->thread_id());
 
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
+      auto_commit = false;
       if (!conn->is_transaction_on()) {
         rc = conn->begin_transaction();
         if (rc != 0) {
@@ -1889,22 +2290,23 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
       }
     } else {
       // autocommit
+      auto_commit = true;
+      /* In order to pushdown autocommit when do UPDATE/DELETE ops, we do not
+         start the autocommit transaction until to the first query. Because we
+         can only know whether should pushdown autocommit or not until to the
+         first query.*/
       if (!conn->is_transaction_on()) {
-        /*TODO: table_count > 1 should consider starting statement in
-          external_lock of last table. If have triggers, may call start_stmt
-          and external_lock both when have trigger on the sql*/
-        if (1 == thd->lex->table_count && !table->triggers &&
-            pushdown_autocommit()) {
-          conn->set_pushed_autocommit();
+        if (thd_sql_command(ha_thd()) == SQLCOM_DELETE ||
+            thd_sql_command(ha_thd()) == SQLCOM_UPDATE) {
+          trans_register_ha(thd, FALSE, ht, NULL);
+          goto done;
         }
 
-        DBUG_PRINT("ha_sdb:info", ("pushdown autocommit flag: %d.",
-                                   conn->get_pushed_autocommit()));
-
-        rc = conn->begin_transaction();
+        rc = autocommit_statement();
         if (rc != 0) {
           goto error;
         }
+
         trans_register_ha(thd, FALSE, ht, NULL);
       }
     }
@@ -1979,6 +2381,13 @@ int ha_sdb::delete_all_rows() {
   int rc = 0;
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+
+  if (auto_commit) {
+    rc = autocommit_statement(true);
+    if (rc) {
+      return rc;
+    }
+  }
 
   if (collection->is_transaction_on()) {
     rc = collection->del();
@@ -2588,8 +2997,8 @@ int ha_sdb::get_query_flag(const uint sql_command,
 }
 
 const Item *ha_sdb::cond_push(const Item *cond) {
+  DBUG_ENTER("ha_sdb::cond_push()");
   const Item *remain_cond = cond;
-  Sdb_cond_ctx sdb_condition;
 
   // we can handle the condition which only involved current table,
   // can't handle conditions which involved other tables
@@ -2598,15 +3007,19 @@ const Item *ha_sdb::cond_push(const Item *cond) {
   }
 
   try {
-    sdb_parse_condtion(cond, &sdb_condition);
-    sdb_condition.to_bson(pushed_condition);
+    sdb_condition->reset();
+    sdb_condition->status = SDB_COND_SUPPORTED;
+    sdb_condition->type = Sdb_cond_ctx::PUSHED_COND;
+    sdb_parse_condtion(cond, sdb_condition);
+    sdb_condition->to_bson(pushed_condition);
+    sdb_condition->clear();
   } catch (bson::assertion e) {
     SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
     DBUG_ASSERT(0);
-    sdb_condition.status = SDB_COND_UNSUPPORTED;
+    sdb_condition->status = SDB_COND_UNSUPPORTED;
   }
 
-  if (SDB_COND_SUPPORTED == sdb_condition.status) {
+  if (SDB_COND_SUPPORTED == sdb_condition->status) {
     // TODO: build unanalysable condition
     remain_cond = NULL;
   } else {
@@ -2614,15 +3027,22 @@ const Item *ha_sdb::cond_push(const Item *cond) {
       SDB_LOG_DEBUG(
           "Condition can't be pushed down. db=[%s], table[%s], sql=[%s]",
           db_name, table_name, ha_thd()->query().str);
+      DBUG_PRINT(
+          "ha_sdb:info",
+          ("Condition can't be pushed down. db=[%s], table[%s], sql=[%s]",
+           db_name, table_name, ha_thd()->query().str));
     } else {
       SDB_LOG_DEBUG(
           "Condition can't be pushed down. "
           "db=[unknown], table[unknown], sql=[unknown]");
+      DBUG_PRINT("ha_sdb:info",
+                 ("Condition can't be pushed down. "
+                  "db=[unknown], table[unknown], sql=[unknown]"));
     }
     pushed_condition = SDB_EMPTY_BSON;
   }
 done:
-  return remain_cond;
+  DBUG_RETURN(remain_cond);
 }
 
 Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {

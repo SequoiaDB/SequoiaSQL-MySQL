@@ -23,7 +23,7 @@
 
 class Sdb_item : public Sql_alloc {
  public:
-  Sdb_item() : is_finished(FALSE) {}
+  Sdb_item() : is_finished(FALSE), pushed_cond_set(NULL) {}
   virtual ~Sdb_item(){};
 
   virtual int push_sdb_item(Sdb_item *cond_item) {
@@ -40,6 +40,9 @@ class Sdb_item : public Sql_alloc {
 
  protected:
   bool is_finished;
+
+ public:
+  MY_BITMAP *pushed_cond_set;
 };
 
 class Sdb_logic_item : public Sdb_item {

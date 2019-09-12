@@ -43,6 +43,14 @@ int sdb_bulk_insert_size = SDB_DEFAULT_BULK_INSERT_SIZE;
 int sdb_replica_size = SDB_DEFAULT_REPLICA_SIZE;
 my_bool sdb_use_autocommit = SDB_DEFAULT_USE_AUTOCOMMIT;
 my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
+ulonglong sdb_optimizer_options = SDB_OPTIMIZER_OPTIONS_DEFAULT;
+
+static const char *sdb_optimizer_options_names[] = {
+    "direct_count", "direct_delete", "direct_update", NullS};
+
+TYPELIB sdb_optimizer_options_typelib = {
+    array_elements(sdb_optimizer_options_names) - 1, "",
+    sdb_optimizer_options_names, NULL};
 
 static String sdb_encoded_password;
 static Sdb_encryption sdb_passwd_encryption;
@@ -153,6 +161,17 @@ static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_OPCMDARG,
                          /*DDL 命令只在 MySQL 执行，不下压到 SequoiaDB 执行。*/,
                          NULL, NULL, FALSE);
 
+static MYSQL_THDVAR_SET(
+    optimizer_options, sdb_optimizer_options,
+    "Optimizer_options[=option[,option...]], where "
+    "option can be 'direct_count', 'direct_delete'."
+    "direct_count: use count() instead of reading records "
+    "one by one for count queries. "
+    "direct_delete: direct delete without reading records."
+    "(Default: \"direct_count,direct_delete,direct_update\")"
+    /*SequoiaDB 优化选项开关，以决定是否优化计数、更新、删除操作。*/,
+    NULL, NULL, SDB_OPTIMIZER_OPTIONS_DEFAULT, &sdb_optimizer_options_typelib);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -167,6 +186,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(alter_table_overhead_threshold),
     MYSQL_SYSVAR(selector_pushdown_threshold),
     MYSQL_SYSVAR(execute_only_in_mysql),
+    MYSQL_SYSVAR(optimizer_options),
     NULL};
 
 Sdb_conn_addrs::Sdb_conn_addrs() : conn_num(0) {
@@ -289,4 +309,8 @@ bool sdb_execute_only_in_mysql(THD *thd) {
 
 longlong sdb_alter_table_overhead_threshold(THD *thd) {
   return THDVAR(thd, alter_table_overhead_threshold);
+}
+
+ulonglong sdb_get_optimizer_options(THD *thd) {
+  return THDVAR(thd, optimizer_options);
 }

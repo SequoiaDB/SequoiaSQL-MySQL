@@ -57,6 +57,7 @@ error:
 }
 
 int Sdb_logic_item::push_sdb_item(Sdb_item *cond_item) {
+  DBUG_ENTER("Sdb_logic_item::push_sdb_item()");
   int rc = 0;
   bson::BSONObj obj_tmp;
 
@@ -77,35 +78,39 @@ int Sdb_logic_item::push_sdb_item(Sdb_item *cond_item) {
     goto error;
   }
   delete cond_item;
-  children.append(obj_tmp);
+  children.append(obj_tmp.copy());
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 int Sdb_logic_item::push_item(Item *cond_item) {
+  DBUG_ENTER("Sdb_logic_item::push_item()");
   if (NULL != cond_item) {
-    return SDB_ERR_COND_UNEXPECTED_ITEM;
+    DBUG_RETURN(SDB_ERR_COND_UNEXPECTED_ITEM);
   }
   is_finished = TRUE;
-  return SDB_ERR_OK;
+  DBUG_RETURN(SDB_ERR_OK);
 }
 
 int Sdb_logic_item::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_logic_item::to_bson()");
   int rc = SDB_ERR_OK;
   if (is_ok) {
     obj = BSON(this->name() << children.arr());
   } else {
     rc = SDB_ERR_COND_INCOMPLETED;
   }
-  return rc;
+  DBUG_RETURN(rc);
 }
 
 int Sdb_and_item::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_and_item::to_bson()");
   obj = BSON(this->name() << children.arr());
-  return SDB_ERR_OK;
+  DBUG_PRINT("ha_sdb:info", ("sdb and item to bson, name:%s", this->name()));
+  DBUG_RETURN(SDB_ERR_OK);
 }
 
 Sdb_func_item::Sdb_func_item() : para_num_cur(0), para_num_max(1) {
@@ -126,12 +131,15 @@ Sdb_func_item::~Sdb_func_item() {
 }
 
 void Sdb_func_item::update_stat() {
+  DBUG_ENTER("Sdb_func_item::update_stat()");
   if (++para_num_cur >= para_num_max) {
     is_finished = TRUE;
   }
+  DBUG_VOID_RETURN;
 }
 
 int Sdb_func_item::push_sdb_item(Sdb_item *cond_item) {
+  DBUG_ENTER("Sdb_func_item::push_sdb_item()");
   int rc = SDB_ERR_OK;
   if (cond_item->type() != Item_func::UNKNOWN_FUNC) {
     rc = SDB_ERR_COND_UNEXPECTED_ITEM;
@@ -143,6 +151,7 @@ int Sdb_func_item::push_sdb_item(Sdb_item *cond_item) {
     if (rc != SDB_ERR_OK) {
       goto error;
     }
+    DBUG_PRINT("ha_sdb:info", ("push const item, name%s", cond_item->name()));
     delete cond_item;
   } else {
     if (l_child != NULL || r_child != NULL) {
@@ -151,43 +160,52 @@ int Sdb_func_item::push_sdb_item(Sdb_item *cond_item) {
     }
     if (para_num_cur != 0) {
       r_child = cond_item;
+      DBUG_PRINT("ha_sdb:info", ("r_child item, name%s", cond_item->name()));
     } else {
       l_child = cond_item;
+      DBUG_PRINT("ha_sdb:info", ("l_child item, name%s", cond_item->name()));
     }
     update_stat();
   }
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 int Sdb_func_item::push_item(Item *cond_item) {
+  DBUG_ENTER("Sdb_func_item::push_item()");
   int rc = SDB_ERR_OK;
 
   if (is_finished) {
     goto error;
   }
   para_list.push_back(cond_item);
+  DBUG_PRINT("ha_sdb:info", ("Func Item: %s push back item: %s", this->name(),
+                             cond_item->item_name.ptr()));
   update_stat();
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   rc = SDB_ERR_COND_UNSUPPORTED;
   goto done;
 }
 
 int Sdb_func_item::pop_item(Item *&para_item) {
+  DBUG_ENTER("Sdb_func_item::pop_item()");
   if (para_list.is_empty()) {
-    return SDB_ERR_EOF;
+    DBUG_RETURN(SDB_ERR_EOF);
   }
   para_item = para_list.pop();
-  return SDB_ERR_OK;
+  DBUG_PRINT("ha_sdb:info", ("Func Item: %s pop item: %s", this->name(),
+                             para_item->item_name.ptr()));
+  DBUG_RETURN(SDB_ERR_OK);
 }
 
 int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
                                 Field *field, bson::BSONObj &obj,
                                 bson::BSONArrayBuilder *arr_builder) {
+  DBUG_ENTER("Sdb_func_item::get_item_val()");
   int rc = SDB_ERR_OK;
   THD *thd = current_thd;
   // When type casting is needed, some mysql functions may raise warning,
@@ -210,20 +228,8 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
   }
 
   if (Item::NULL_ITEM == item_val->type()) {
-    // "$exists" appear in array is not support now
-    if (NULL == arr_builder) {
-      if (type() == Item_func::EQ_FUNC) {
-        obj = BSON("$exists" << 0);
-        goto done;
-      } else if (type() == Item_func::NE_FUNC) {
-        obj = BSON("$exists" << 1);
-        goto done;
-      } else if (type() == Item_func::EQUAL_FUNC) {
-        obj = BSON("$isnull" << 1);
-        goto done;
-      }
-    }
-    rc = SDB_ERR_OVF;
+    /* NULL in func: EQ_FUNC/NE_FUNC/EQUAL_FUNC is meanless.*/
+    rc = SDB_ERR_COND_UNEXPECTED_ITEM;
     goto error;
   }
 
@@ -573,7 +579,12 @@ done:
   if (has_err_handler) {
     thd->pop_internal_handler();
   }
-  return rc;
+  if (rc == SDB_ERR_OK && pushed_cond_set) {
+    bitmap_set_bit(pushed_cond_set, field->field_index);
+    DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
+                               *(field->table_name), field->field_name));
+  }
+  DBUG_RETURN(rc);
 error:
   // clear the cache to prevent important errors/warnings from being
   // ignored.
@@ -606,8 +617,10 @@ Sdb_func_isnull::Sdb_func_isnull() {}
 Sdb_func_isnull::~Sdb_func_isnull() {}
 
 int Sdb_func_isnull::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_func_isnull::to_bson()");
   int rc = SDB_ERR_OK;
   Item *item_tmp = NULL;
+  Item_field *item_field = NULL;
 
   if (!is_finished || para_list.elements != para_num_max) {
     rc = SDB_ERR_COND_INCOMPLETED;
@@ -624,10 +637,15 @@ int Sdb_func_isnull::to_bson(bson::BSONObj &obj) {
     rc = SDB_ERR_COND_UNKOWN_ITEM;
     goto error;
   }
-  obj = BSON(((Item_field *)item_tmp)->field_name << BSON(this->name() << 1));
+  item_field = (Item_field *)item_tmp;
+  obj = BSON(item_field->field_name << BSON(this->name() << 1));
+  bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
+  DBUG_PRINT("ha_sdb:info",
+             ("Table: %s, field: %s is in pushed condition",
+              *(item_field->field->table_name), item_field->field_name));
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -637,8 +655,10 @@ Sdb_func_isnotnull::Sdb_func_isnotnull() {}
 Sdb_func_isnotnull::~Sdb_func_isnotnull() {}
 
 int Sdb_func_isnotnull::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_func_isnotnull::to_bson()");
   int rc = SDB_ERR_OK;
   Item *item_tmp = NULL;
+  Item_field *item_field = NULL;
 
   if (!is_finished || para_list.elements != para_num_max) {
     rc = SDB_ERR_COND_INCOMPLETED;
@@ -650,10 +670,15 @@ int Sdb_func_isnotnull::to_bson(bson::BSONObj &obj) {
     rc = SDB_ERR_COND_UNKOWN_ITEM;
     goto error;
   }
-  obj = BSON(((Item_field *)item_tmp)->field_name << BSON(this->name() << 0));
+  item_field = (Item_field *)item_tmp;
+  obj = BSON(item_field->field_name << BSON(this->name() << 0));
+  bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
+  DBUG_PRINT("ha_sdb:info",
+             ("Table: %s, field: %s is in pushed condition",
+              *(item_field->field->table_name), item_field->field_name));
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -669,6 +694,7 @@ Sdb_func_cmp::Sdb_func_cmp() {}
 Sdb_func_cmp::~Sdb_func_cmp() {}
 
 int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_func_cmp::to_bson_with_child()");
   int rc = SDB_ERR_OK;
   Sdb_item *child = NULL;
   Item *field1 = NULL, *field2 = NULL, *field3 = NULL, *item_tmp;
@@ -885,12 +911,13 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_func_cmp::to_bson()");
   int rc = SDB_ERR_OK;
   bool inverse = FALSE;
   bool cmp_with_field = FALSE;
@@ -995,7 +1022,7 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
   obj = BSON(item_field->field_name << obj_tmp);
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   if (SDB_ERR_OVF == rc) {
     rc = SDB_ERR_COND_PART_UNSUPPORTED;
@@ -1010,6 +1037,7 @@ Sdb_func_between::Sdb_func_between(bool has_not) : Sdb_func_neg(has_not) {
 Sdb_func_between::~Sdb_func_between() {}
 
 int Sdb_func_between::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_func_between::to_bson()");
   int rc = SDB_ERR_OK;
   Item_field *item_field = NULL;
   Item *item_start = NULL, *item_end = NULL, *item_tmp = NULL;
@@ -1072,7 +1100,7 @@ int Sdb_func_between::to_bson(bson::BSONObj &obj) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   if (SDB_ERR_OVF == rc) {
     rc = SDB_ERR_COND_PART_UNSUPPORTED;
@@ -1087,6 +1115,7 @@ Sdb_func_in::Sdb_func_in(bool has_not, uint args_num) : Sdb_func_neg(has_not) {
 Sdb_func_in::~Sdb_func_in() {}
 
 int Sdb_func_in::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_func_in::to_bson()");
   int rc = SDB_ERR_OK;
   Item_field *item_field = NULL;
   Item *item_tmp = NULL;
@@ -1125,7 +1154,7 @@ int Sdb_func_in::to_bson(bson::BSONObj &obj) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   if (SDB_ERR_OVF == rc) {
     rc = SDB_ERR_COND_PART_UNSUPPORTED;
@@ -1138,6 +1167,7 @@ Sdb_func_like::Sdb_func_like(Item_func_like *item) : like_item(item) {}
 Sdb_func_like::~Sdb_func_like() {}
 
 int Sdb_func_like::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("Sdb_func_like::to_bson()");
   int rc = SDB_ERR_OK;
   Item_field *item_field = NULL;
   Item *item_tmp = NULL;
@@ -1216,14 +1246,20 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
     obj = regex_builder.obj();
   }
 
+  bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
+  DBUG_PRINT("ha_sdb:info",
+             ("Table: %s, field: %s is in pushed condition",
+              *(item_field->field->table_name), item_field->field_name));
+
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
                                  std::string &regex_str) {
+  DBUG_ENTER("Sdb_func_like::get_regex_str()");
   int rc = SDB_ERR_OK;
   const char *p_prev, *p_cur, *p_begin, *p_end, *p_last;
   char str_buf[SDB_MATCH_FIELD_SIZE_MAX + 2] = {0};  // reserve one byte for '\'
@@ -1321,5 +1357,5 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
   regex_str.append("$");
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 }

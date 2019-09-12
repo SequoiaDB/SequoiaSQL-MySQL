@@ -67,7 +67,7 @@ int Sdb_conn::connect() {
                               conn_addrs.get_conn_num(), sdb_user,
                               password.ptr());
     if (SDB_ERR_OK != rc) {
-      SDB_LOG_ERROR("Failed to connect to sequoiadb");
+      SDB_LOG_ERROR("Failed to connect to sequoiadb, rc=%d", rc);
       goto error;
     }
 

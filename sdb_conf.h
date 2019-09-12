@@ -21,6 +21,14 @@
 #include <my_global.h>
 #include <sql_string.h>
 
+#define SDB_OPTIMIZER_OPTION_SELECT_COUNT (1ULL << 0)
+#define SDB_OPTIMIZER_OPTION_DELETE (1ULL << 1)
+#define SDB_OPTIMIZER_OPTION_UPDATE (1ULL << 2)
+
+#define SDB_OPTIMIZER_OPTIONS_DEFAULT                                \
+  (SDB_OPTIMIZER_OPTION_SELECT_COUNT | SDB_OPTIMIZER_OPTION_DELETE | \
+   SDB_OPTIMIZER_OPTION_UPDATE)
+
 #define SDB_COORD_NUM_MAX 128
 class Sdb_conn_addrs {
  public:
@@ -50,7 +58,7 @@ int sdb_get_password(String &res);
 uint sdb_selector_pushdown_threshold(THD *thd);
 bool sdb_execute_only_in_mysql(THD *thd);
 longlong sdb_alter_table_overhead_threshold(THD *thd);
-
+ulonglong sdb_get_optimizer_options(THD *thd);
 #define SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(thd, ret, default) \
   {                                                         \
     do {                                                    \
@@ -89,6 +97,7 @@ extern int sdb_replica_size;
 extern my_bool sdb_use_autocommit;
 extern my_bool sdb_debug_log;
 extern my_bool sdb_optimizer_select_count;
+extern ulonglong sdb_optimizer_options;
 extern st_mysql_sys_var *sdb_sys_vars[];
 
 #endif

@@ -17,8 +17,10 @@
 #define SDB_CONDITION__H
 
 #include "sdb_item.h"
+#include "my_bitmap.h"
 
 enum SDB_COND_STATUS {
+  SDB_COND_UNCALLED = -1,
   SDB_COND_SUPPORTED = 1,
   SDB_COND_PART_SUPPORTED,
   SDB_COND_BEFORE_SUPPORTED,
@@ -27,11 +29,28 @@ enum SDB_COND_STATUS {
   SDB_COND_UNKNOWN = 65535
 };
 
+struct update_arg {
+  Field *field;
+  bool *field_count;
+  bool minus;
+  bool *optimizer_update;
+};
+
 class Sdb_cond_ctx : public Sql_alloc {
  public:
-  Sdb_cond_ctx();
+  /*PUSHED_COND: for pushed condition.
+    WHERE_COND:  for where condition.
+  */
+  enum Ctx_type { INVALID_TYPE = 0, PUSHED_COND, WHERE_COND };
+  Sdb_cond_ctx(TABLE *cur_table, THD *ha_thd, my_bitmap_map *pushed_cond_buff,
+               my_bitmap_map *where_cond_buff);
 
   ~Sdb_cond_ctx();
+
+  void init(TABLE *cur_table, THD *ha_thd, my_bitmap_map *pushed_cond_buff,
+            my_bitmap_map *where_cond_buff);
+
+  void reset();
 
   void push(Item *item);
 
@@ -52,8 +71,17 @@ class Sdb_cond_ctx : public Sql_alloc {
   Sdb_item *cur_item;
   List<Sdb_item> item_list;
   SDB_COND_STATUS status;
+
+ public:
+  THD *thd;
+  enum Ctx_type type;
+  TABLE *table;
+  MY_BITMAP where_cond_set;
+  MY_BITMAP pushed_cond_set;
+  bool sub_sel;
 };
 
 void sdb_parse_condtion(const Item *cond_item, Sdb_cond_ctx *sdb_cond);
+void sdb_traverse_update(const Item *update_item, void *arg);
 
 #endif
