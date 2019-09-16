@@ -33,10 +33,11 @@ DFT_ARG_FORMAT = 'all'
 
 MY_CNF_DEFAULT = \
 "[client]\n\
-default-character-set=utf8mb4\n\
+default_character_set=utf8mb4\n\
 \n\
 [mysqld]\n\
 sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\n\
+lower_case_table_names=1\n\
 character_set_server=utf8mb4\n\
 collation_server=utf8mb4_bin\n\
 default_storage_engine=SequoiaDB\n\n"
