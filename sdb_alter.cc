@@ -1416,7 +1416,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       goto error;
     }
 
-    if (create_info->used_fields & HA_CREATE_USED_AUTO) {
+    if (create_info->used_fields & HA_CREATE_USED_AUTO &&
+        table->found_next_number_field) {
       if (create_info->auto_increment_value >
           table->file->stats.auto_increment_value) {
         option = BSON(SDB_FIELD_NAME_FIELD
