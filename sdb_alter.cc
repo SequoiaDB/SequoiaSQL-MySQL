@@ -1462,6 +1462,11 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
   }
 
+  if (alter_flags & Alter_inplace_info::RENAME_INDEX) {
+    my_error(HA_ERR_UNSUPPORTED, MYF(0), cl.get_cl_name());
+    goto error;
+  }
+
   if (alter_flags & INPLACE_ONLINE_DROPIDX) {
     rc = drop_index(cl, ha_alter_info, ignored_drop_keys);
     if (0 != rc) {
@@ -1470,25 +1475,20 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
   }
 
-  if (alter_flags & INPLACE_ONLINE_ADDIDX) {
-    rc = create_index(cl, ha_alter_info, ignored_add_keys);
-    if (0 != rc) {
-      my_error(ER_GET_ERRNO, MYF(0), rc);
-      goto error;
-    }
-  }
-
-  if (alter_flags & Alter_inplace_info::RENAME_INDEX) {
-    my_error(HA_ERR_UNSUPPORTED, MYF(0), cl.get_cl_name());
-    goto error;
-  }
-
   if (alter_flags & (Alter_inplace_info::DROP_STORED_COLUMN |
                      Alter_inplace_info::ADD_STORED_BASE_COLUMN |
                      Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
                      Alter_inplace_info::ALTER_COLUMN_DEFAULT)) {
     rc = alter_column(altered_table, ha_alter_info, conn, cl);
     if (0 != rc) {
+      goto error;
+    }
+  }
+
+  if (alter_flags & INPLACE_ONLINE_ADDIDX) {
+    rc = create_index(cl, ha_alter_info, ignored_add_keys);
+    if (0 != rc) {
+      my_error(ER_GET_ERRNO, MYF(0), rc);
       goto error;
     }
   }
