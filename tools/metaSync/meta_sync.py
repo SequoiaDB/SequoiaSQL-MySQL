@@ -193,10 +193,8 @@ class MysqlMetaSync:
     @staticmethod
     def __is_database_opr(sql):
         sql = sql.lower().strip()
-        crt_db_regex = r'create(\s+)database'
-        drop_db_regex = r'drop(\s+)database'
-
-        if re.match(crt_db_regex, sql) or re.match(drop_db_regex, sql):
+        db_regex = r'create(\s+)database|drop(\s+)database|alter(\s+)database'
+        if re.match(db_regex, sql):
             return True
         else:
             return False
