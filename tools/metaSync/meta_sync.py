@@ -656,7 +656,7 @@ def init_log(log_config_file):
         log = logging.getLogger("ddlLogger")
         return log
     except BaseException as e:
-        print("Error: Initialize logging failed. Error number: " + ". Message: " + e.message)
+        print("Error: Initialize logging failed. Error Message: " + e.message)
         return None
 
 
@@ -679,7 +679,9 @@ def main():
             with open("/proc/{pid}/cmdline".format(pid=pid), "r") as process:
                 process_info = process.readline()
             if process_info.find(sys.argv[0]) != -1:
-                return
+                print("Only one meta sync process is allowed to run at the same"
+                      " time. Exit...")
+                return 1
     with open(pid_file, "w") as f:
         pid = str(os.getpid())
         f.write(pid)
@@ -697,4 +699,5 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 if __name__ == '__main__':
-    main()
+    exit(main())
+
