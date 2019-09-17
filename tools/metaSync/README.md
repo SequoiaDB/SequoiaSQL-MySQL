@@ -1,28 +1,30 @@
-# 目的
-Mysql的主备复制能够实现多个mysql节点之间的元数据同步问题，但备机只能提供读服务，无法充分利用多个mysql节点的能力。Mysql的ddl操作同步工具的设计目的就是为了解决多个mysql节点之间的元数据同步问题，但目前仍有使用限制，详见限制章节。
-Mysql的ddl操作同步工具的实现原理是通过解析mysql的审计日志，连接远端mysql机器，执行审计日志中符合要求的sql语句。
-由于mysql的审计插件目前只在mysql企业版中提供，社区版本暂时没有审计功能，但可以使用第三方提供的审计插件实现mysql的审计，目前第三方审计插件有：McAfee的MySQL Audit插件，MariaDB的server_audit插件以及Percona的audit log插件。本文档采用marriadb提供的server_audit-1.4.0的审计插件实现。
+# MySQL 元数据同步工具
+## 设计目标
+MySQL 主备复制能够实现多个 MySQL 节点之间的元数据同步，但备机只能提供读服务，无法充分利用多个 MySQL 节点的读写能力。MySQL 元数据同步工具的设计目标就是为了支持多个运行在主机模式（同时支持读写）的 MySQL 节点之间的元数据同步。
 
-# 限制
-1. 由于解析符合要求的sql后，连接到每台mysql服务器进行执行，会存在数据一致性的问题
-2. 所有mysql节点的服务端口需相同
-3. 需要在每台mysql节点的服务器上部署
-4. Mysql节点服务器之间需要使用主机名互通
-5. 目前支持同步ALTER，CREATE，DECLARE，GRANT，REVOKE，FLUSH操作
-6. 只同步在本机上的ddl操作或者从非mysql节点机器上连接mysql节点执行的ddl操作
-7. 目前支持python2
+MySQL 的元数据同步工具的实现原理是通过解析 MySQL 的审计日志，从中提取 SQL 语句，并连接到各远端 MySQL 实例执行，从而实现元数据同步到其它各节点。
 
-# 审计插件安装
-> 注意：为了避免增加审计插件后发生mysql无法启动的情况，强烈建议安装审计日志插件前，mysql环境需要已经搭好并启动运行，安装完插件后再重启mysql。
+由于 MySQL 的审计插件目前只在 MySQL 企业版中提供，因此社区版需要借助第三方提供的审计插件实现审计功能。目前第三方审计插件有：McAfee 的 MySQL Audit，MariaDB 的 server_audit 以及 Percona 的 audit log。本文采用 MarriaDB 提供的 server_audit-1.4.0 的审计插件实现，以在 SequoiaSQL-MySQL 中使用为例进行介绍。
 
-1. 创建用于同步MySQL元数据的Mysql用户
+## 使用约束
++ 不支持在不同实例上并发对相同数据库对象进行 DDL 操作，会造成一致性问题，如修改同一张表的属性
++ 由于同步工具需要过滤掉其它实例对应的同步工具同步到本实例的操作，因此，所有通过其它实例所在主机连接到本实例执行的操作产生的审计日志，都会被过滤掉（审计日志中会记录发起命令的客户端所在主机地址），包括用户或其它程序在其它实例所在主机连接到本实例执行的操作
++ 目前不支持一台主机上多个 MySQL 实例间同步，且所有主机上的 MySQL 实例需使用相同的服务端口
++ 需要在每个 MySQL 环境中部署审计插件及同步工具
++ MySQL 实例服务器之间需要使用主机名互通
++ 支持同步 ALTER，CREATE，DECLARE，GRANT，REVOKE，FLUSH 操作，其它操作暂不支持
++ 仅支持python2
+
+## 审计插件安装
+> 注意：为了避免增加审计插件后发生 MySQL 无法启动的情况，强烈建议在安装审计日志插件前，先完成 MySQL 环境的搭建及启动，安装完插件后再重启 MySQL 服务。
+
++ 在所有 MySQL 实例上创建用于同步元数据的 MySQL 用户，并授予所有权限，用户名与密码在所有实例上保持一致。
 ```sql
 CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
 GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
 ```
-2. 将server_audit.so文件复制至mysql的安装目录下的lib/plugin目录下，server_audit.so下载地址：
-[server_audit.so下载](https://downloads.mariadb.com/Audit-Plugin/MariaDB-Audit-Plugin/)
-3. 修改mysql配置文件/etc/my.cnf,在mysqld下添加以下内容：
++ 将 SequoiaSQL-MySQL 安装路径（默认为 /opt/sequoiasql/mysql）中 tools/lib 目录下的审计插件 server_audit.so 文件复制到安装目录下的 lib/plugin 目录下。
++ 修改 MySQL 实例的配置文件（SequoiaSQL-MySQL 实例的配置文件为数据路径下的 auto.cnf），在 mysqld 部分添加以下内容，审计日志文件路径请根据实际情况进行配置，并手动完成创建，如以下示例中的 auditlog 目录。
 ```config
 # 加载审计插件
 plugin-load=server_audit=server_audit.so
@@ -30,8 +32,8 @@ plugin-load=server_audit=server_audit.so
 server_audit_events=CONNECT,QUERY_DDL,QUERY_DCL
 # 开启审计
 server_audit_logging=ON
-# 审计日志文件名
-server_audit_file_path=/opt/sequoiasql/mysql/data/auditlog/server_audit.log
+# 审计日志路径及文件名
+server_audit_file_path=/opt/sequoiasql/mysql/database/auditlog/server_audit.log
 # 强制切分审计日志文件
 server_audit_file_rotate_now=OFF
 # 审计日志文件大小10MB，超过该大小进行切割，单位为byte
@@ -43,20 +45,23 @@ server_audit_output_type=file
 # 限制每行查询日志的大小为100kb，若表比较复杂，对应的操作语句比较长，建议增大该值
 server_audit_query_log_limit=102400
 ```
-4. 重启mysql
++ 重启 MySQL 实例
 ```config
-sdb_sql_ctl restart mysqld3306
+sdb_sql_ctl restart myinst
 ```
++ 检查审计日志文件目录，确保生成了审计日志文件 server_audit.log
 
-# 工具使用说明
-1. config配置如下:
+## 工具使用说明
+SequoiaSQL-MySQL 完成安装后，同步工具位于安装目录下的 tools/metaSync 目录下。
+### 工具配置项
+工具包含一个配置文件，名为 config，配置项如下：
 ```config
 [mysql]
 # mysql节点主机名，只能填主机名
 hosts = redhat-xjh-01,redhat-xjh-02
 # mysql服务端口
 port = 3306
-# 密码类型，0代表密码为明文，1代表密码为密文
+# 密码类型，0代表密码为明文，1代表密码为密文，初次使用配置为 0，密码使用明文，工具启动后会自动加密并更新此处配置
 mysql_password_type = 0
 # mysql用户
 mysql_user = sdbadmin
@@ -66,12 +71,12 @@ mysql_password = sdbadmin
 install_dir = /opt/sequoiasql/mysql
 
 [execute]
-# ddl同步间隔
+# 同步间隔
 interval_time = 5
 
 [parse]
 # 审计日志存储目录
-parse_log_directory = /opt/sequoiasql/mysql/data3306/auditlog
+parse_log_directory = /opt/sequoiasql/mysql/database/3306/auditlog
 # 审计日志文件名
 audit_log_file_name = server_audit.log
 # 最后扫描文件的最后修改时间
@@ -85,7 +90,8 @@ file_first_line_seq = 0
 # 最后扫描行号
 last_parse_row = 0
 ```
-2. log.config日志配置如下：
+### 日志配置项
+同步工具使用 python 的 logging 模块输出日志，配置文件为 log.config，配置项如下（日志目录会自动创建）：
 ```
 [loggers]
 keys=root,ddlLogger
@@ -116,27 +122,30 @@ formatter=loggerFormatter
 # 第2个参数为写入模式，值为'a+',不建议修改
 # 第3个参数为日志文件大小，单位为byte
 # 第4个参数为备份日志文件，即日志文件总数为10+1
-args=('run.log', 'a+', 104857600, 10)
+args=('logs/run.log', 'a+', 104857600, 10)
 
 [formatter_loggerFormatter]
 format=%(asctime)s [%(levelname)s] %(message)s
 datefmt=
 
 ```
-3. 将config,log.config,meta_sync.py放置同一目录，在sdbadmin用户下，执行以下命令执行程序
+### 启动工具
+在完成所有配置后，在各实例所在主机的 sdbadmin 用户下，执行以下命令在后台启动同步工具
 ```config
-python /home/sdbadmin/meta_sync.py &
+python /opt/sequoiasql/mysql/tools/metaSync/meta_sync.py &
 ```
-4. 配置定时任务，定期检查程序是否存活，若不再运行，则重新运行程序
+完成环境配置后，可通过在各实例进行少量 DDL 操作，进行简单的同步验证，验证完成后清理掉验证数据。
+
+可以通过配置定时任务提供基本的同步工具监控，定期检查程序是否在运行，若进程退出了，会被自动拉起。配置命令如下：
 ```bash
 crontab -e
 #每一分钟运行一次
-*/1 * * * * python /home/sdbadmin/meta_sync.py &
-
+*/1 * * * * python /opt/sequoiasql/mysql/tools/metaSync/meta_sync.py &
 ```
 
-# 审计日志配置参数说明
-[marriadb-audit-plugin官方说明](https://mariadb.com/kb/en/library/mariadb-audit-plugin-system-variables/)
+## 审计日志
+### 配置项
+此处简要介绍审计日志插件的各参数，详细信息可参考 [marriadb-audit-plugin 官方说明](https://mariadb.com/kb/en/library/mariadb-audit-plugin-system-variables/)。
 
 |参数|说明|备注|
 |---|---|---|
@@ -155,22 +164,27 @@ crontab -e
 |server_audit_syslog_info|输出到syslog的参数||
 |server_audit_syslog_priority|输出到syslog的参数||
 
-## 审计日志事件说明
-> 是指server_audit_events的值
+### 审计事件
+即 server_audit_events 的取值。
 
 |类型|说明|备注|
 |---|---|---|
 |CONNECT|记录连接信息||
 |QUERY|记录所有操作||
-|TABLE|Tables affected by query execution|暂时未知用途,建议配置|
+|TABLE|Tables affected by query execution||
 |QUERY_DDL|记录ddl操作||
 |QUERY_DML|记录DML操作||
 |QUERY_DML_NO_SELECT|记录DML操作,不包括SELECT||
 |QUERY_DCL|记录DCL操作||
 
-# 审计日志格式
+### 日志格式
+审计日志每一行的结构是固定的，包含以下内容：
+```
 timestamp,serverhost,username,host,connectionid,queryid,operation,database,object,retcode
-说明如下：
+```
+记录中的字段可能为空，但结构不变。
+
+各字段说明如下：
 
 |项|说明|备注|
 |---|---|---|
