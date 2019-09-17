@@ -1396,7 +1396,7 @@ void ha_sdb::build_selector(bson::BSONObj &selector) {
   }
   if (((double)select_num * 100 / table_share->fields) <= (double)threshold) {
     selector = selector_builder.obj();
-    SDB_LOG_DEBUG("optimizer selector object: %d",
+    SDB_LOG_DEBUG("optimizer selector object: %s",
                   selector.toString(false, false).c_str());
   } else {
     selector = SDB_EMPTY_BSON;
@@ -3213,9 +3213,16 @@ static int sdb_close_connection(handlerton *hton, THD *thd) {
 static int sdb_init_func(void *p) {
   int rc = SDB_ERR_OK;
   Sdb_conn_addrs conn_addrs;
+  sdbClientConf conf;
 #ifdef HAVE_PSI_INTERFACE
   init_sdb_psi_keys();
 #endif
+
+  /* disable sdbclient cs cache.*/
+  conf.enableCacheStrategy = false;
+  conf.cacheTimeInterval = 0;
+  sdbclient::initClient(&conf);
+
   sdb_hton = (handlerton *)p;
   mysql_mutex_init(key_mutex_sdb, &sdb_mutex, MY_MUTEX_INIT_FAST);
   (void)my_hash_init(&sdb_open_tables, system_charset_info, 32, 0, 0,

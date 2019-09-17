@@ -194,12 +194,14 @@ int Sdb_conn::create_cl(char *cs_name, char *cl_name,
   bool new_cl = false;
 
 retry:
-  rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
-  if (SDB_DMS_CS_EXIST == rc) {
-    rc = m_connection.getCollectionSpace(cs_name, cs);
-  } else if (SDB_OK == rc) {
-    new_cs = true;
+  rc = m_connection.getCollectionSpace(cs_name, cs);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+    if (SDB_OK == rc) {
+      new_cs = true;
+    }
   }
+
   if (rc != SDB_ERR_OK) {
     goto error;
   }
