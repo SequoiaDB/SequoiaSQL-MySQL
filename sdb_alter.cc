@@ -1426,15 +1426,20 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
 
     if (create_info->used_fields & HA_CREATE_USED_AUTO &&
-        table->found_next_number_field) {
-      if (create_info->auto_increment_value >
-          table->file->stats.auto_increment_value) {
-        option = BSON(SDB_FIELD_NAME_FIELD
-                      << table->found_next_number_field->field_name
-                      << SDB_FIELD_CURRENT_VALUE
-                      << (INT64)create_info->auto_increment_value);
-      }
-      rc = cl.set_attributes(option);
+        table->found_next_number_field &&
+        (create_info->auto_increment_value >
+         table->file->stats.auto_increment_value)) {
+      bson::BSONObjBuilder builder;
+      bson::BSONObjBuilder sub_builder(
+          builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+      sub_builder.append(SDB_FIELD_NAME_FIELD,
+                         table->found_next_number_field->field_name);
+      longlong current_value = create_info->auto_increment_value -
+                               thd->variables.auto_increment_increment;
+      sub_builder.append(SDB_FIELD_CURRENT_VALUE, current_value);
+      sub_builder.done();
+
+      rc = cl.set_attributes(builder.obj());
       if (0 != rc) {
         my_printf_error(rc,
                         "Failed to alter auto_increment option "
