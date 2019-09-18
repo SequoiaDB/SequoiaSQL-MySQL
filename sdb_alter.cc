@@ -1279,6 +1279,15 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
         }
 
         if (!new_field->maybe_null() && old_field->maybe_null()) {
+          // Avoid ZERO DATE when sql_mode doesn't allow
+          if (MYSQL_TYPE_DATE == new_field->type() ||
+              MYSQL_TYPE_DATETIME == new_field->type() ||
+              MYSQL_TYPE_TIMESTAMP == new_field->type()) {
+            if (ha_thd()->variables.sql_mode & MODE_NO_ZERO_DATE) {
+              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+              goto error;
+            }
+          }
           op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
         }
 
