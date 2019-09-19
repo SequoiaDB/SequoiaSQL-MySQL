@@ -1305,8 +1305,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   DBUG_ENTER("ha_sdb::optimize()");
   int rc = 0;
   if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
-    if ((sdb_optimizer_select_count || (sdb_get_optimizer_options(ha_thd()) &
-                                        SDB_OPTIMIZER_OPTION_SELECT_COUNT)) &&
+    if ((sdb_get_optimizer_options(ha_thd()) &
+         SDB_OPTIMIZER_OPTION_SELECT_COUNT) &&
         optimize_count(condition)) {
       rc = collection->get_count(total_count, condition, hint);
       if (rc) {
