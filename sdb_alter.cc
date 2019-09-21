@@ -1,7 +1,23 @@
+/* Copyright (c) 2018, SequoiaDB and/or its affiliates. All rights reserved.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+
 #include "ha_sdb.h"
 #include <sql_class.h>
 #include <mysql/plugin.h>
 #include <json_dom.h>
+#include <sql_time.h>
 #include "sdb_log.h"
 #include "sdb_idx.h"
 #include "sdb_thd.h"
@@ -711,57 +727,77 @@ struct Col_alter_info : public Sql_alloc {
 struct Sdb_alter_ctx : public inplace_alter_handler_ctx {
   List<Field> dropped_columns;
   List<Field> added_columns;
-  List<Item> default_values;
   List<Col_alter_info> changed_columns;
 };
 
-int append_default_value(bson::BSONObjBuilder &builder, Field *field,
-                         Item *default_value) {
+int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
   int rc = 0;
-  Sdb_func_isnull converter;
-  bson::BSONObj obj;
 
-  // Handle the BINARY and the VARBINARY.
-  if (field->binary() && (field->type() == MYSQL_TYPE_VARCHAR ||
-                          field->type() == MYSQL_TYPE_VAR_STRING ||
-                          field->type() == MYSQL_TYPE_STRING)) {
-    String str;
-    String *str_ptr = default_value->val_str(&str);
-    builder.appendBinData(field->field_name, str_ptr->length(),
-                          bson::BinDataGeneral, str_ptr->ptr());
-    goto done;
-  }
-
-  // Handle the SET and ENUM.
-  if (field->real_type() == MYSQL_TYPE_SET ||
-      field->real_type() == MYSQL_TYPE_ENUM) {
-    String str;
-    String *str_ptr = default_value->val_str(&str);
-
-    longlong org_val = field->val_int();
-    // Avoid assertion in ::store()
+  // Avoid assertion in ::store()
+  bool is_set = bitmap_is_set(field->table->write_set, field->field_index);
+  if (is_set) {
     bitmap_set_bit(field->table->write_set, field->field_index);
-    type_conversion_status res =
-        field->store(str_ptr->c_ptr(), str_ptr->length(), str_ptr->charset());
-    DBUG_ASSERT(TYPE_OK == res);
-    longlong dft_value = field->val_int();
-    field->store(org_val);
-
-    builder.append(field->field_name, dft_value);
-    goto done;
   }
 
-  // Convert from Item to BSONObj by get_item_val().
-  rc = converter.get_item_val(field->field_name, default_value, field, obj);
-  if (rc) {
-    goto error;
+  switch (field->type()) {
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_LONG:
+    case MYSQL_TYPE_LONGLONG:
+    case MYSQL_TYPE_BIT:
+    case MYSQL_TYPE_YEAR:
+    case MYSQL_TYPE_DATE: {
+      longlong org_val = field->val_int();
+      field->set_default();
+      rc = field_to_obj(field, builder);
+      field->store(org_val);
+      break;
+    }
+    case MYSQL_TYPE_FLOAT:
+    case MYSQL_TYPE_DOUBLE:
+    case MYSQL_TYPE_TIME: {
+      double org_val = field->val_real();
+      field->set_default();
+      rc = field_to_obj(field, builder);
+      field->store(org_val);
+      break;
+    }
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_TIMESTAMP: {
+      struct timeval org_val;
+      int warnings = 0;
+      field->get_timestamp(&org_val, &warnings);
+      field->set_default();
+      rc = field_to_obj(field, builder);
+      field->store_timestamp(&org_val);
+      break;
+    }
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_NEWDECIMAL:
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_VARCHAR: {
+      String org_val;
+      field->val_str(&org_val);
+      field->set_default();
+      rc = field_to_obj(field, builder);
+      field->store(org_val.ptr(), org_val.length(), org_val.charset());
+      break;
+    }
+    case MYSQL_TYPE_JSON:
+    case MYSQL_TYPE_BLOB:
+    default: {
+      // These types never have default.
+      DBUG_ASSERT(0);
+      rc = HA_ERR_INTERNAL_ERROR;
+    }
   }
-  builder.appendElements(obj);
 
-done:
+  if (is_set) {
+    bitmap_clear_bit(field->table->write_set, field->field_index);
+  }
   return rc;
-error:
-  goto done;
 }
 
 void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
@@ -964,8 +1000,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
   bson::BSONObjBuilder set_builder;
   // bson::BSONObjBuilder inc_builder;
   List_iterator_fast<Field> added_it;
-  List_iterator_fast<Item> def_value_it;
-  Item *def_value = NULL;
 
   bson::BSONObjBuilder cast_builder;
   List_iterator_fast<Col_alter_info> changed_it;
@@ -997,11 +1031,11 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
   // 2.Handle the added_columns
   added_it.init(ctx->added_columns);
-  def_value_it.init(ctx->default_values);
   while ((field = added_it++)) {
-    def_value = def_value_it++;
-    if (!(field->flags & NO_DEFAULT_VALUE_FLAG) && def_value) {
-      rc = append_default_value(set_builder, field, def_value);
+    my_ptrdiff_t offset = field->table->default_values_offset();
+    if (!field->is_real_null(offset) &&
+        !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
+      rc = append_default_value(set_builder, field);
       if (rc != 0) {
         rc = ER_WRONG_ARGUMENTS;
         my_printf_error(rc, ER(rc), MYF(0), field->field_name);
@@ -1223,14 +1257,11 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
   enum_alter_inplace_result rs;
   List_iterator_fast<Create_field> cf_it;
-  Create_field *c_field = NULL;
-  uint i = 0;
   Bitmap<MAX_FIELDS> matched_map;
   Sdb_alter_ctx *ctx = NULL;
   KEY *new_key = NULL;
   KEY_PART_INFO *key_part = NULL;
-  Sdb_func_isnull converter;
-  bson::BSONObj unused_obj;
+  sql_mode_t sql_mode = ha_thd()->variables.sql_mode;
 
   DBUG_ASSERT(!ha_alter_info->handler_ctx);
 
@@ -1281,13 +1312,10 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
 
         if (!new_field->maybe_null() && old_field->maybe_null()) {
           // Avoid ZERO DATE when sql_mode doesn't allow
-          if (MYSQL_TYPE_DATE == new_field->type() ||
-              MYSQL_TYPE_DATETIME == new_field->type() ||
-              MYSQL_TYPE_TIMESTAMP == new_field->type()) {
-            if (ha_thd()->variables.sql_mode & MODE_NO_ZERO_DATE) {
-              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-              goto error;
-            }
+          if (is_temporal_type_with_date(new_field->type()) &&
+              sql_mode & MODE_NO_ZERO_DATE) {
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
           }
           op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
         }
@@ -1308,9 +1336,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     }
   }
 
-  cf_it.init(ha_alter_info->alter_info->create_list);
-  i = 0;
-  while ((c_field = cf_it++)) {
+  for (uint i = 0; altered_table->field[i]; i++) {
     if (!matched_map.is_set(i)) {
       Field *field = altered_table->field[i];
       // Avoid DEFAULT CURRENT_TIMESTAMP
@@ -1322,23 +1348,26 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
         goto error;
       }
       // Avoid ZERO DATE when sql_mode doesn't allow
-      if (MYSQL_TYPE_DATE == field->type() ||
-          MYSQL_TYPE_DATETIME == field->type() ||
-          MYSQL_TYPE_TIMESTAMP == field->type()) {
-        if (!(field->flags & NO_DEFAULT_VALUE_FLAG) && c_field->def) {
-          if (converter.get_item_val(field->field_name, c_field->def, field,
-                                     unused_obj)) {
-            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-            goto error;
-          }
+      if (is_temporal_type_with_date(field->type()) &&
+          !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
+        MYSQL_TIME ltime;
+        int warnings = 0;
+        my_time_flags_t flags = TIME_FUZZY_DATE | TIME_INVALID_DATES;
+        flags |= (sql_mode & MODE_NO_ZERO_DATE) ? TIME_NO_ZERO_DATE : 0;
+        flags |= (sql_mode & MODE_NO_ZERO_IN_DATE) ? TIME_NO_ZERO_IN_DATE : 0;
+
+        if (field->get_date(&ltime, flags) ||
+            check_date(&ltime, non_zero_date(&ltime), flags, &warnings) ||
+            warnings) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
         }
       }
       ctx->added_columns.push_back(field);
-      ctx->default_values.push_back(c_field->def);
     }
-    i++;
   }
 
+  cf_it.init(ha_alter_info->alter_info->create_list);
   for (new_key = ha_alter_info->key_info_buffer;
        new_key < ha_alter_info->key_info_buffer + ha_alter_info->key_count;
        new_key++) {

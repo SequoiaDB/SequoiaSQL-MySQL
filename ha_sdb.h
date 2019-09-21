@@ -364,6 +364,8 @@ class ha_sdb : public handler {
 
   void update_last_insert_id();
 
+  int append_default_value(bson::BSONObjBuilder &builder, Field *field);
+
   int alter_column(TABLE *altered_table, Alter_inplace_info *ha_alter_info,
                    Sdb_conn *conn, Sdb_cl &cl);
 
