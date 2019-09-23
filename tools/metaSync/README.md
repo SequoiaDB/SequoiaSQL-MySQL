@@ -59,7 +59,7 @@ SequoiaSQL-MySQL 完成安装后，同步工具位于安装目录下的 tools/me
 ```config
 [mysql]
 # mysql节点主机名，只能填主机名
-hosts = redhat-xjh-01,redhat-xjh-02
+hosts = sdb1,sdb2,sdb3 
 # mysql服务端口
 port = 3306
 # 密码类型，0代表密码为明文，1代表密码为密文，初次使用配置为 0，密码使用明文，工具启动后会自动加密并更新此处配置
@@ -77,7 +77,7 @@ interval_time = 5
 
 [parse]
 # 审计日志存储目录
-parse_log_directory = /opt/sequoiasql/mysql/database/3306/auditlog
+parse_log_directory = /opt/sequoiasql/mysql/database/auditlog
 # 审计日志文件名
 audit_log_file_name = server_audit.log
 # 最后扫描文件的最后修改时间
