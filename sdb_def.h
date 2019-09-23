@@ -31,7 +31,7 @@
 #define SDB_OID_FIELD "_id"
 
 #define SOURCE_THREAD_ID "Source"
-#define PREFIX_THREAD_ID "MySQL-"
+#define PREFIX_THREAD_ID "MySQL"
 #define PREFIX_THREAD_ID_LEN 6
 #define TRANSAUTOROLLBACK "TransAutoRollback"
 #define TRANSAUTOCOMMIT "TransAutoCommit"

@@ -43,7 +43,6 @@ int sdb_bulk_insert_size = SDB_DEFAULT_BULK_INSERT_SIZE;
 int sdb_replica_size = SDB_DEFAULT_REPLICA_SIZE;
 my_bool sdb_use_autocommit = SDB_DEFAULT_USE_AUTOCOMMIT;
 my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
-ulonglong sdb_optimizer_options = SDB_OPTIMIZER_OPTIONS_DEFAULT;
 
 static const char *sdb_optimizer_options_names[] = {
     "direct_count", "direct_delete", "direct_update", NullS};
@@ -165,12 +164,13 @@ static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_OPCMDARG,
                          NULL, NULL, FALSE);
 
 static MYSQL_THDVAR_SET(
-    optimizer_options, sdb_optimizer_options,
+    optimizer_options, PLUGIN_VAR_OPCMDARG,
     "Optimizer_options[=option[,option...]], where "
-    "option can be 'direct_count', 'direct_delete'."
+    "option can be 'direct_count', 'direct_delete', 'direct_update'."
     "direct_count: use count() instead of reading records "
     "one by one for count queries. "
     "direct_delete: direct delete without reading records."
+    "direct_update: direct update without reading records."
     "(Default: \"direct_count,direct_delete,direct_update\")"
     /*SequoiaDB 优化选项开关，以决定是否优化计数、更新、删除操作。*/,
     NULL, NULL, SDB_OPTIMIZER_OPTIONS_DEFAULT, &sdb_optimizer_options_typelib);

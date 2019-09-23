@@ -30,6 +30,14 @@
 #include "ha_sdb.h"
 #include "sdb_def.h"
 
+static int sdb_proc_id() {
+#ifdef _WIN32
+  return GetCurrentProcessId();
+#else
+  return getpid();
+#endif
+}
+
 Sdb_conn::Sdb_conn(my_thread_id _tid)
     : m_transaction_on(false), m_thread_id(_tid), pushed_autocommit(false) {}
 
@@ -47,7 +55,18 @@ int Sdb_conn::connect() {
   int rc = SDB_ERR_OK;
   String password;
   bson::BSONObj option;
-  char thread_id_str[32 + PREFIX_THREAD_ID_LEN] = {0};
+  const char *hostname = NULL;
+  char source_str[32 + PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + sizeof(int)] = {
+      0};
+
+  int hostname_len = (int)strlen(glob_hostname);
+
+  if (0 >= hostname_len) {
+    static char empty[] = "";
+    hostname = empty;
+  } else {
+    hostname = glob_hostname;
+  }
 
   if (!m_connection.isValid()) {
     m_transaction_on = false;
@@ -71,9 +90,10 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    sprintf(thread_id_str, "%s%u", PREFIX_THREAD_ID, thread_id());
-    option = BSON(SOURCE_THREAD_ID << thread_id_str << TRANSAUTOROLLBACK
-                                   << false << TRANSAUTOCOMMIT << true);
+    sprintf(source_str, "%s%s%s:%d:%u", PREFIX_THREAD_ID,
+            strlen(hostname) ? ":" : "", hostname, sdb_proc_id(), thread_id());
+    option = BSON(SOURCE_THREAD_ID << source_str << TRANSAUTOROLLBACK << false
+                                   << TRANSAUTOCOMMIT << true);
     rc = set_session_attr(option);
     if (SDB_ERR_OK != rc) {
       SDB_LOG_ERROR("Failed to set session attr, rc=%d", rc);
