@@ -377,7 +377,7 @@ class MysqlMetaSync:
                 continue
             # The statement may contain '\n' or '\t'. They will impact the action of the DictReader. So remove
             # them before parse.
-            line = line.replace('\\n', ' ').replace('\\t', ' ').strip()
+            line = line.replace('\\r\\n', ' ').replace('\\n', ' ').replace('\\t', ' ').strip()
             reader_list = csv.DictReader(io.StringIO(unicode(line, "utf-8")), fieldnames=audit_log_field, delimiter=',',
                                          quotechar="'", quoting=csv.QUOTE_ALL, escapechar='\\')
             row = next(reader_list)
