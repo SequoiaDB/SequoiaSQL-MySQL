@@ -138,7 +138,7 @@ static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
 
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
-                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
+                         PLUGIN_VAR_OPCMDARG SDB_INVISIBLE,
                          "Optimizer switch for simple select count. "
                          "(Default: ON). This option is abandoned, please use "
                          "sequoiadb-optimizer-options='direct_count' instead."
