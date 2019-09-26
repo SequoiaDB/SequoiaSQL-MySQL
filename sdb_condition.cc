@@ -405,6 +405,8 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
   update_arg *upd_arg = (struct update_arg *)arg;
   Item_func *item_func = NULL;
   enum_field_types type;
+  Item *args = NULL;
+  bool minus = false;
   if (update_item) {
     switch (update_item->type()) {
       case Item::FIELD_ITEM:
@@ -424,8 +426,8 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
           break;
         }
 
-        /* set a = 10 - a; set a = a + a + 10*/
-        if (*upd_arg->field_count || upd_arg->minus) {
+        /* set a = a + a + 10*/
+        if (*upd_arg->field_count) {
           *upd_arg->optimizer_update = false;
           break;
         }
@@ -441,12 +443,29 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
         break;
       case Item::FUNC_ITEM:
         item_func = (Item_func *)update_item;
-        upd_arg->minus = strcmp(item_func->func_name(), "-") ? false : true;
+        minus = !strcmp(item_func->func_name(), "-") ? true : false;
         /* TODO: supported bit op like bitand, bitor, bitxor*/
-        if (strcmp(item_func->func_name(), "+") && !upd_arg->minus) {
+        if (strcmp(item_func->func_name(), "+") && !minus) {
           *upd_arg->optimizer_update = false;
           break;
         }
+
+        if (minus) {
+          if (item_func->argument_count() == 1) {
+            args = *(item_func->arguments());
+          }
+
+          if (item_func->argument_count() == 2) {
+            args = *(item_func->arguments() + 1);
+          }
+
+          /* set a = 10 - a; set a = a + a + 10*/
+          if (args->type() == Item::FIELD_ITEM) {
+            *upd_arg->optimizer_update = false;
+            break;
+          }
+        }
+
         DBUG_PRINT("ha_sdb:info",
                    ("Item: %s, type: %d is in update items",
                     item_func->func_name(), update_item->type()));

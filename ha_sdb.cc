@@ -1114,7 +1114,6 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     upd_arg.field = rfield;
     upd_arg.optimizer_update = optimizer_update;
     upd_arg.field_count = &field_count;
-    upd_arg.minus = false;
 
     /* generated column cannot be optimized. */
     if (sdb_field_is_gcol(rfield)) {
@@ -1197,7 +1196,9 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
 
   if ((SDB_COND_UNCALLED == sdb_condition->status &&
        !bitmap_is_clear_all(&sdb_condition->where_cond_set)) ||
-      SDB_COND_SUPPORTED != sdb_condition->status || sdb_condition->sub_sel) {
+      (SDB_COND_UNCALLED != sdb_condition->status &&
+       SDB_COND_SUPPORTED != sdb_condition->status) ||
+      sdb_condition->sub_sel) {
     optimizer_update = false;
     goto done;
   }

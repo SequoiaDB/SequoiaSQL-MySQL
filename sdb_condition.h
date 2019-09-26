@@ -32,7 +32,6 @@ enum SDB_COND_STATUS {
 struct update_arg {
   Field *field;
   bool *field_count;
-  bool minus;
   bool *optimizer_update;
 };
 
