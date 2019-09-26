@@ -1129,7 +1129,8 @@ int ha_sdb::alter_column(TABLE *altered_table,
           my_printf_error(rc, "Failed to begin transaction", MYF(0));
         }
       }
-      rc = cl.update(rule_builder.obj(), cond_builder.obj());
+      rc = cl.update(rule_builder.obj(), cond_builder.obj(), SDB_EMPTY_BSON,
+                     UPDATE_KEEP_SHARDINGKEY);
       if (rc != 0) {
         my_printf_error(rc, "Failed to update column[%s] on cl[%s.%s]", MYF(0),
                         sdb_field_name(info->before), db_name, table_name);
@@ -1168,7 +1169,8 @@ int ha_sdb::alter_column(TABLE *altered_table,
         my_printf_error(rc, "Failed to begin transaction", MYF(0));
       }
     }
-    rc = cl.update(builder.obj());
+    rc = cl.update(builder.obj(), SDB_EMPTY_BSON, SDB_EMPTY_BSON,
+                   UPDATE_KEEP_SHARDINGKEY);
     if (rc != 0) {
       my_printf_error(rc, "Failed to update table[%s.%s]", MYF(0), db_name,
                       table_name);
