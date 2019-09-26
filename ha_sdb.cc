@@ -1295,8 +1295,11 @@ done:
 
 bool ha_sdb::optimize_count(bson::BSONObj &condition) {
   DBUG_ENTER("ha_sdb::optimize_count()");
+  bson::BSONObjBuilder count_cond_blder;
   LEX *const lex = ha_thd()->lex;
   SELECT_LEX *const select = sdb_lex_first_select(ha_thd());
+  ORDER *order = select->order_list.first;
+  ORDER *group = select->group_list.first;
   bool optimize_with_materialization =
       sdb_optimizer_switch_flag(ha_thd(), OPTIMIZER_SWITCH_MATERIALIZATION);
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
@@ -1304,19 +1307,52 @@ bool ha_sdb::optimize_count(bson::BSONObj &condition) {
   count_query = false;
   if (select->table_list.elements == 1 && lex->all_selects_list &&
       !lex->all_selects_list->next_select_in_list() &&
-      !sdb_where_condition(ha_thd()) && optimize_with_materialization) {
-    if (1 == select->item_list.elements) {
-      Item *query_item = select->item_list.head();
-      if (Item::SUM_FUNC_ITEM == query_item->type() &&
-          ((Item_sum *)query_item)->sum_func() == Item_sum::COUNT_FUNC &&
-          bitmap_is_clear_all(table->read_set)) {
-        count_query = true;
+      !sdb_where_condition(ha_thd()) &&
+      !order && !group && optimize_with_materialization) {
+    List_iterator<Item> li(select->all_fields);
+    Item *item;
+    while ((item = li++)) {
+      if (item->type() == Item::SUM_FUNC_ITEM) {
+        Item_sum *sum_item = (Item_sum *)item;
+        /* arg_count = 2: 'select count(distinct a,b)' */
+        if (sum_item->has_with_distinct() || sum_item->get_arg_count() > 1 ||
+            sum_item->sum_func() != Item_sum::COUNT_FUNC) {
+          count_query = false;
+          goto done;
+        }
+        Item::Type type = sum_item->get_arg(0)->type();
+        if (type == Item::FIELD_ITEM) {
+          if (select->group_list.elements >= 1) {
+            count_query = false;
+            goto done;
+          }
+        }
+        /* support count(const) and count(field), not support count(func) */
+        if (type == Item::FIELD_ITEM || sum_item->const_item()) {
+          count_query = true;
+          count_cond_blder.append(sum_item->get_arg(0)->item_name.ptr(),
+                                  BSON("$isnull" << 0));
+        } else if (type == Item::INT_ITEM) {
+          // count(*)
+          count_query = true;
+        } else {
+          count_query = false;
+          goto done;
+        }
       }
+    }
+
+    if (count_query) {
+      count_cond_blder.appendElements(condition);
+      condition = count_cond_blder.obj();
     }
   }
 
-  DBUG_PRINT("ha_sdb:info", ("optimizer count: %d", count_query));
-  SDB_LOG_DEBUG("optimizer count: %d", count_query);
+done:
+  DBUG_PRINT("ha_sdb:info", ("optimizer count: %d, condition: %s", count_query,
+                             condition.toString(false, false).c_str()));
+  SDB_LOG_DEBUG("optimizer count: %d, condition: %s", count_query,
+                condition.toString(false, false).c_str());
   DBUG_RETURN(count_query);
 }
 
