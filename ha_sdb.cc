@@ -17,6 +17,7 @@
 #define MYSQL_SERVER
 #endif
 
+#include "sdb_sql.h"
 #include "ha_sdb.h"
 #include "item_sum.h"
 #include "sdb_cl.h"
@@ -27,7 +28,6 @@
 #include "sdb_thd.h"
 #include "sdb_util.h"
 #include <client.hpp>
-#include <json_dom.h>
 #include <my_bit.h>
 #include <mysql/plugin.h>
 #include <mysql/psi/mysql_file.h>
@@ -36,7 +36,15 @@
 #include <sql_table.h>
 #include <time.h>
 #include <sql_update.h>
+
+#ifdef IS_MYSQL
 #include <table_trigger_dispatcher.h>
+#include <json_dom.h>
+#endif
+
+#ifdef IS_MARIADB
+#include <sql_select.h>
+#endif
 
 using namespace sdbclient;
 
@@ -106,9 +114,9 @@ static Sdb_share *get_sdb_share(const char *table_name, TABLE *table) {
 
   if (!(share = (Sdb_share *)my_hash_search(&sdb_open_tables,
                                             (uchar *)table_name, length))) {
-    if (!my_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
-                         &share, sizeof(*share), &tmp_name, length + 1,
-                         NullS)) {
+    if (!sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
+                          &share, sizeof(*share), &tmp_name, length + 1,
+                          NullS)) {
       goto error;
     }
 
@@ -277,7 +285,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   stats.records = 0;
   memset(db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
   memset(table_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
-  init_alloc_root(sdb_key_memory_blobroot, &blobroot, 8 * 1024, 0);
+  sdb_init_alloc_root(&blobroot, sdb_key_memory_blobroot, "init_ha_sdb",
+                      8 * 1024, 0);
 }
 
 ha_sdb::~ha_sdb() {
@@ -320,6 +329,12 @@ uint ha_sdb::max_supported_record_length() const {
   return HA_MAX_REC_LENGTH;
 }
 
+#ifdef IS_MARIADB
+uint ha_sdb::max_key_part_length() const {
+  return MY_MIN(MAX_DATA_LENGTH_FOR_KEY, max_supported_key_part_length());
+}
+#endif
+
 uint ha_sdb::max_supported_keys() const {
   return MAX_KEY;
 }
@@ -328,16 +343,13 @@ uint ha_sdb::max_supported_key_length() const {
   return 4096;
 }
 
-#if MYSQL_VERSION_ID >= 50723
-uint ha_sdb::max_supported_key_part_length(
-    HA_CREATE_INFO *create_info MY_ATTRIBUTE((unused))) const {
-  return max_supported_key_length();
+uint ha_sdb::max_supported_key_part_length(HA_CREATE_INFO *create_info) const {
+  return max_supported_key_part_length();
 }
-#else
+
 uint ha_sdb::max_supported_key_part_length() const {
   return max_supported_key_length();
 }
-#endif
 
 int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   int rc = 0;
@@ -369,8 +381,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
-  DBUG_ASSERT(connection->thread_id() == ha_thd()->thread_id());
-
+  DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
   SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
 
   // Get collection to check if the collection is available.
@@ -390,7 +401,9 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
    */
   stats.max_data_file_length = 8LL * 1024 * 1024 * 1024 * 1024;   // 8TB
   stats.max_index_file_length = 8LL * 1024 * 1024 * 1024 * 1024;  // 8TB
+#ifdef IS_MYSQL
   stats.table_in_mem_estimate = 0;
+#endif
 
   rc = update_stats(ha_thd(), false);
   if (0 != rc) {
@@ -464,7 +477,7 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
   for (Field **field = table->field; *field; field++) {
     if ((*field)->is_null()) {
       if (output_null) {
-        null_obj_builder.append((*field)->field_name, "");
+        null_obj_builder.append(sdb_field_name(*field), "");
       }
     } else if (Field::NEXT_NUMBER == (*field)->unireg_check &&
                !auto_inc_explicit_used) {
@@ -502,7 +515,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
       // overflow is impossible, store as INT32
       DBUG_ASSERT(field->val_int() <= INT_MAX32 &&
                   field->val_int() >= INT_MIN32);
-      obj_builder.append(field->field_name, (int)field->val_int());
+      obj_builder.append(sdb_field_name(field), (int)field->val_int());
       break;
     }
     case MYSQL_TYPE_BIT:
@@ -510,9 +523,9 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
       longlong value = field->val_int();
       if (value > INT_MAX32 || value < INT_MIN32) {
         // overflow, so store as INT64
-        obj_builder.append(field->field_name, (long long)value);
+        obj_builder.append(sdb_field_name(field), (long long)value);
       } else {
-        obj_builder.append(field->field_name, (int)value);
+        obj_builder.append(sdb_field_name(field), (int)value);
       }
       break;
     }
@@ -525,16 +538,16 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
         String str(buff, sizeof(buff), field->charset());
         ((Field_num *)field)->val_decimal(&tmp_val);
         my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
-        obj_builder.appendDecimal(field->field_name, str.c_ptr());
+        obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
       } else {
-        obj_builder.append(field->field_name, (long long)value);
+        obj_builder.append(sdb_field_name(field), (long long)value);
       }
       break;
     }
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
     case MYSQL_TYPE_TIME: {
-      obj_builder.append(field->field_name, field->val_real());
+      obj_builder.append(sdb_field_name(field), field->val_real());
       break;
     }
     case MYSQL_TYPE_VARCHAR:
@@ -547,12 +560,12 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
       String val_tmp;
       if (MYSQL_TYPE_SET == field->real_type() ||
           MYSQL_TYPE_ENUM == field->real_type()) {
-        obj_builder.append(field->field_name, field->val_int());
+        obj_builder.append(sdb_field_name(field), field->val_int());
         break;
       }
       field->val_str(&val_tmp);
       if (((Field_str *)field)->binary()) {
-        obj_builder.appendBinData(field->field_name, val_tmp.length(),
+        obj_builder.appendBinData(sdb_field_name(field), val_tmp.length(),
                                   bson::BinDataGeneral, val_tmp.ptr());
       } else {
         String conv_str;
@@ -565,8 +578,8 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
           str = &conv_str;
         }
 
-        obj_builder.appendStrWithNoTerminating(field->field_name, str->ptr(),
-                                               str->length());
+        obj_builder.appendStrWithNoTerminating(sdb_field_name(field),
+                                               str->ptr(), str->length());
       }
       break;
     }
@@ -583,7 +596,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
       String str(buff, sizeof(buff), field->charset());
       String unused;
       f->val_str(&str, &unused);
-      obj_builder.appendDecimal(field->field_name, str.c_ptr());
+      obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
       break;
     }
     case MYSQL_TYPE_DATE: {
@@ -603,16 +616,15 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
       tm_val.tm_isdst = 0;
       time_t time_tmp = mktime(&tm_val);
       bson::Date_t dt((longlong)(time_tmp * 1000));
-      obj_builder.appendDate(field->field_name, dt);
+      obj_builder.appendDate(sdb_field_name(field), dt);
       break;
     }
     case MYSQL_TYPE_TIMESTAMP2:
     case MYSQL_TYPE_TIMESTAMP: {
-      struct timeval tm;
-      int warnings = 0;
-      field->get_timestamp(&tm, &warnings);
-      obj_builder.appendTimestamp(field->field_name, tm.tv_sec * 1000,
-                                  tm.tv_usec);
+      struct timeval tv;
+      sdb_field_get_timestamp(field, &tv);
+      obj_builder.appendTimestamp(sdb_field_name(field), tv.tv_sec * 1000,
+                                  tv.tv_usec);
       break;
     }
     case MYSQL_TYPE_NULL:
@@ -622,31 +634,29 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
       char buff[MAX_FIELD_WIDTH];
       String str(buff, sizeof(buff), field->charset());
       field->val_str(&str);
-      obj_builder.append(field->field_name, str.c_ptr());
+      obj_builder.append(sdb_field_name(field), str.c_ptr());
       break;
     }
+#ifdef IS_MYSQL
     case MYSQL_TYPE_JSON: {
       Json_wrapper wr;
       String buf;
       Field_json *field_json = dynamic_cast<Field_json *>(field);
 
-#if MYSQL_VERSION_ID >= 50722
       if (field_json->val_json(&wr) || wr.to_binary(&buf)) {
-#else
-      if (field_json->val_json(&wr) || wr.to_value().raw_binary(&buf)) {
-#endif
         my_error(ER_INVALID_JSON_BINARY_DATA, MYF(0));
         rc = ER_INVALID_JSON_BINARY_DATA;
         goto error;
       }
 
-      obj_builder.appendBinData(field->field_name, buf.length(),
+      obj_builder.appendBinData(sdb_field_name(field), buf.length(),
                                 bson::BinDataGeneral, buf.ptr());
       break;
     }
+#endif
     default: {
       SDB_PRINT_ERROR(ER_BAD_FIELD_ERROR, ER(ER_BAD_FIELD_ERROR),
-                      field->field_name, table_name);
+                      sdb_field_name(field), table_name);
       rc = ER_BAD_FIELD_ERROR;
       goto error;
     }
@@ -722,7 +732,8 @@ my_bool ha_sdb::get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond) {
       }
       all_field_null = false;
     } else {
-      bson::BSONObjBuilder sub_builder(builder.subobjStart(field->field_name));
+      bson::BSONObjBuilder sub_builder(
+          builder.subobjStart(sdb_field_name(field)));
       sub_builder.append("$isnull", 1);
       sub_builder.doneFast();
     }
@@ -741,7 +752,7 @@ error:
   goto done;
 }
 
-int ha_sdb::get_update_obj(const uchar *old_data, uchar *new_data,
+int ha_sdb::get_update_obj(const uchar *old_data, const uchar *new_data,
                            bson::BSONObj &obj, bson::BSONObj &null_obj) {
   int rc = 0;
   uint row_offset = (uint)(old_data - new_data);
@@ -750,7 +761,8 @@ int ha_sdb::get_update_obj(const uchar *old_data, uchar *new_data,
 
   my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
   if (new_data != table->record[0]) {
-    repoint_field_to_record(table, table->record[0], new_data);
+    repoint_field_to_record(table, table->record[0],
+                            const_cast<uchar *>(new_data));
   }
 
   for (Field **fields = table->field; *fields; fields++) {
@@ -758,7 +770,7 @@ int ha_sdb::get_update_obj(const uchar *old_data, uchar *new_data,
     bool is_null = field->is_null();
     if (is_null != field->is_null_in_record(old_data)) {
       if (is_null) {
-        null_obj_builder.append(field->field_name, "");
+        null_obj_builder.append(sdb_field_name(field), "");
       } else {
         rc = field_to_obj(field, obj_builder);
         if (0 != rc) {
@@ -779,7 +791,8 @@ int ha_sdb::get_update_obj(const uchar *old_data, uchar *new_data,
 
 done:
   if (new_data != table->record[0]) {
-    repoint_field_to_record(table, new_data, table->record[0]);
+    repoint_field_to_record(table, const_cast<uchar *>(new_data),
+                            table->record[0]);
   }
   dbug_tmp_restore_column_map(table->read_set, org_bitmap);
   return rc;
@@ -809,10 +822,14 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   m_use_bulk_insert = true;
 }
 
+void ha_sdb::start_bulk_insert(ha_rows rows, uint flags) {
+  start_bulk_insert(rows);
+}
+
 int ha_sdb::flush_bulk_insert() {
   DBUG_ASSERT(m_bulk_insert_rows.size() > 0);
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   int flag = 0;
   if (m_write_can_replace) {
@@ -843,7 +860,7 @@ int ha_sdb::end_bulk_insert() {
     if (m_bulk_insert_rows.size() > 0) {
       rc = flush_bulk_insert();
       // set it to fix bug: SEQUOIASQLMAINSTREAM-327
-      set_my_errno(rc);
+      sdb_set_errno(rc);
     }
   }
 
@@ -884,7 +901,7 @@ int ha_sdb::write_row(uchar *buf) {
   ha_statistic_increment(&SSV::ha_write_count);
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   if (table->next_number_field && buf == table->record[0] &&
       ((auto_inc = table->next_number_field->val_int()) != 0 ||
@@ -943,6 +960,10 @@ error:
 }
 
 int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
+  return update_row(old_data, const_cast<const uchar *>(new_data));
+}
+
+int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   int rc = 0;
   bson::BSONObj cond;
   bson::BSONObj new_obj;
@@ -950,7 +971,7 @@ int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
   bson::BSONObj rule_obj;
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   ha_statistic_increment(&SSV::ha_update_count);
   if (auto_commit) {
@@ -1000,7 +1021,7 @@ int ha_sdb::delete_row(const uchar *buf) {
   bson::BSONObj cond;
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   ha_statistic_increment(&SSV::ha_delete_count);
   if (auto_commit) {
@@ -1068,11 +1089,9 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
   bson::BSONObjBuilder inc_builder;
   Item *fld = NULL;
 
-  SELECT_LEX *const select_lex = ha_thd()->lex->select_lex;
-  Sql_cmd_update *sql_cmd_update = (Sql_cmd_update *)ha_thd()->lex->m_sql_cmd;
+  SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
   List<Item> *const item_list = &select_lex->item_list;
-  List<Item> *const update_value_list = &sql_cmd_update->update_value_list;
-
+  List<Item> *const update_value_list = sdb_update_values_list(ha_thd());
   List_iterator_fast<Item> f(*item_list), v(*update_value_list);
 
   while (*optimizer_update && (fld = f++)) {
@@ -1081,7 +1100,7 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     field = fld->field_for_view_update();
     DBUG_ASSERT(field != NULL);
     /*set field's table is not the current table*/
-    if (field->table_ref->table != table) {
+    if (field->used_tables() & ~sdb_table_map(table)) {
       *optimizer_update = false;
       SDB_LOG_DEBUG("optimizer update: %d table not table ref",
                     *optimizer_update);
@@ -1096,7 +1115,7 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     upd_arg.minus = false;
 
     /* generated column cannot be optimized. */
-    if (rfield->is_gcol()) {
+    if (sdb_field_is_gcol(rfield)) {
       *optimizer_update = false;
       goto done;
     }
@@ -1150,28 +1169,28 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
   int rc = 0;
   bool has_triggers = false;
   bson::BSONObjBuilder modifier_builder;
-  LEX *const lex = ha_thd()->lex;
-  SELECT_LEX *const select_lex = lex->select_lex;
+  SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
   ORDER *order = select_lex->order_list.first;
-  const bool using_limit = lex->unit->select_limit_cnt != HA_POS_ERROR;
+  const bool using_limit =
+      sdb_lex_unit(ha_thd())->select_limit_cnt != HA_POS_ERROR;
   TABLE_LIST *const table_list = select_lex->get_table_list();
 
-  has_triggers = table->triggers && table->triggers->has_update_triggers();
+  has_triggers = sdb_has_update_triggers(table);
 
   /* Triggers: cannot optimize because IGNORE keyword in the statement should
      not affect the errors in the trigger execution if trigger statement does
      not have IGNORE keyword. */
   /* view: cannot optimize because it can not handle ER_VIEW_CHECK_FAILED */
   if (has_triggers || using_limit || order || table_list->check_option ||
-      ha_thd()->lex->is_ignore() ||
-      !(ha_thd()->lex->current_select() == lex->unit->first_select())) {
+      sdb_lex_ignore(ha_thd()) ||
+      !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
     optimizer_update = false;
     goto done;
   }
 
-  if (select_lex->where_cond()) {
+  if (sdb_where_condition(ha_thd())) {
     sdb_condition->type = Sdb_cond_ctx::WHERE_COND;
-    sdb_parse_condtion(select_lex->where_cond(), sdb_condition);
+    sdb_parse_condtion(sdb_where_condition(ha_thd()), sdb_condition);
   }
 
   if ((SDB_COND_UNCALLED == sdb_condition->status &&
@@ -1188,14 +1207,14 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
   */
   for (Field **fields = table->field; *fields; fields++) {
     Field *field = *fields;
-    if ((field->has_insert_default_function() ||
-         field->has_update_default_function()) &&
+    if ((sdb_field_has_insert_def_func(field) ||
+         sdb_field_has_update_def_func(field)) &&
         bitmap_is_set(table->write_set, field->field_index)) {
       optimizer_update = false;
       goto done;
     }
 
-    if (field->is_virtual_gcol() &&
+    if (sdb_field_is_virtual_gcol(field) &&
         (bitmap_is_set(table->read_set, field->field_index) ||
          bitmap_is_set(table->write_set, field->field_index))) {
       optimizer_update = false;
@@ -1226,7 +1245,7 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
   DBUG_ENTER("ha_sdb::optimize_delete()");
   bool optimizer_delete = false;
   bool has_triggers = false;
-  SELECT_LEX_UNIT *const unit = ha_thd()->lex->unit;
+  SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
   SELECT_LEX *const select = unit->first_select();
   const bool using_limit = unit->select_limit_cnt != HA_POS_ERROR;
   ORDER *order = select->order_list.first;
@@ -1235,14 +1254,14 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
   has_triggers = table->triggers && table->triggers->has_delete_triggers();
 
   if (order || using_limit || has_triggers ||
-      !(ha_thd()->lex->current_select() == unit->first_select())) {
+      !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
     optimizer_delete = false;
     goto done;
   }
 
-  if (select->where_cond()) {
+  if (sdb_where_condition(ha_thd())) {
     sdb_condition->type = Sdb_cond_ctx::WHERE_COND;
-    sdb_parse_condtion(select->where_cond(), sdb_condition);
+    sdb_parse_condtion(sdb_where_condition(ha_thd()), sdb_condition);
   }
 
   if ((SDB_COND_UNCALLED == sdb_condition->status &&
@@ -1254,7 +1273,7 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
 
   for (Field **fields = table->field; *fields; fields++) {
     Field *field = *fields;
-    if (field->is_virtual_gcol() &&
+    if (sdb_field_is_virtual_gcol(field) &&
         (bitmap_is_set(table->read_set, field->field_index) ||
          bitmap_is_set(table->write_set, field->field_index))) {
       optimizer_delete = false;
@@ -1274,18 +1293,17 @@ done:
 bool ha_sdb::optimize_count(bson::BSONObj &condition) {
   DBUG_ENTER("ha_sdb::optimize_count()");
   LEX *const lex = ha_thd()->lex;
-  SELECT_LEX_UNIT *const unit = ha_thd()->lex->unit;
-  SELECT_LEX *const select = unit->first_select();
+  SELECT_LEX *const select = sdb_lex_first_select(ha_thd());
   bool optimize_with_materialization =
-      ha_thd()->optimizer_switch_flag(OPTIMIZER_SWITCH_MATERIALIZATION);
+      sdb_optimizer_switch_flag(ha_thd(), OPTIMIZER_SWITCH_MATERIALIZATION);
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   count_query = false;
   if (select->table_list.elements == 1 && lex->all_selects_list &&
-      !lex->all_selects_list->next_select_in_list() && !select->where_cond() &&
-      optimize_with_materialization) {
-    if (1 == select->all_fields.elements) {
-      Item *query_item = select->all_fields.head();
+      !lex->all_selects_list->next_select_in_list() &&
+      !sdb_where_condition(ha_thd()) && optimize_with_materialization) {
+    if (1 == select->item_list.elements) {
+      Item *query_item = select->item_list.head();
       if (Item::SUM_FUNC_ITEM == query_item->type() &&
           ((Item_sum *)query_item)->sum_func() == Item_sum::COUNT_FUNC &&
           bitmap_is_clear_all(table->read_set)) {
@@ -1390,7 +1408,7 @@ void ha_sdb::build_selector(bson::BSONObj &selector) {
   for (Field **fields = table->field; *fields; fields++) {
     Field *field = *fields;
     if (bitmap_is_set(table->read_set, field->field_index)) {
-      selector_builder.appendNull(field->field_name);
+      selector_builder.appendNull(sdb_field_name(field));
       select_num++;
     }
   }
@@ -1470,11 +1488,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   KEY *key_info = table->key_info + active_index;
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   DBUG_ASSERT(NULL != key_info);
-  DBUG_ASSERT(NULL != key_info->name);
+  DBUG_ASSERT(NULL != sdb_key_name(key_info));
 
-  hint = BSON("" << key_info->name);
+  hint = BSON("" << sdb_key_name(key_info));
   idx_order_direction = order_direction;
   rc = sdb_get_idx_order(key_info, order_by, order_direction,
                          m_secondary_sort_rowid);
@@ -1519,8 +1537,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
 
     case SDB_DMS_EOC:
+    // mysql add a flag of end of file
     case HA_ERR_END_OF_FILE: {
+#ifdef IS_MYSQL
       rc = HA_ERR_KEY_NOT_FOUND;
+#endif
       table->status = STATUS_NOT_FOUND;
       break;
     }
@@ -1548,7 +1569,7 @@ int ha_sdb::index_init(uint idx, bool sorted) {
 
 int ha_sdb::index_end() {
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   collection->close();
   active_index = MAX_KEY;
   return 0;
@@ -1566,7 +1587,7 @@ int ha_sdb::rnd_init(bool scan) {
 
 int ha_sdb::rnd_end() {
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   collection->close();
   return 0;
 }
@@ -1618,7 +1639,7 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
     } else {
       while (iter.more()) {
         bson::BSONElement elem_tmp = iter.next();
-        if (strcmp(elem_tmp.fieldName(), field->field_name) == 0) {
+        if (strcmp(elem_tmp.fieldName(), sdb_field_name(field)) == 0) {
           // current element match the field
           elem = elem_tmp;
           break;
@@ -1632,7 +1653,7 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
         // find matched field to store the element
         for (Field **next_fields = fields + 1; *next_fields; next_fields++) {
           Field *next_field = *next_fields;
-          if (strcmp(elem_tmp.fieldName(), next_field->field_name) == 0) {
+          if (strcmp(elem_tmp.fieldName(), sdb_field_name(next_field)) == 0) {
             m_bson_element_cache[next_field->field_index] = elem_tmp;
             break;
           }
@@ -1647,9 +1668,8 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
         field->set_null();
       } else {
         if (is_select) {
-          thd->raise_warning_printf(
-              ER_WARN_NULL_TO_NOTNULL, field->field_name,
-              thd->get_stmt_da()->current_row_for_condition());
+          thd->raise_warning_printf(ER_WARN_NULL_TO_NOTNULL, field->field_name,
+                                    sdb_thd_current_row(thd));
         }
         field->set_default();
       }
@@ -1676,7 +1696,7 @@ error:
 int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
   int rc = SDB_ERR_OK;
 
-  DBUG_ASSERT(0 == strcmp(elem.fieldName(), field->field_name));
+  DBUG_ASSERT(0 == strcmp(elem.fieldName(), sdb_field_name(field)));
 
   switch (elem.type()) {
     case bson::NumberInt:
@@ -1693,14 +1713,16 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
     case bson::BinData: {
       int lenTmp = 0;
       const char *dataTmp = elem.binData(lenTmp);
-      if (MYSQL_TYPE_JSON != field->type()) {
-        field->store(dataTmp, lenTmp, &my_charset_bin);
-      } else {
+#ifdef IS_MYSQL
+      if (MYSQL_TYPE_JSON == field->type()) {
         Field_json *field_json = dynamic_cast<Field_json *>(field);
         json_binary::Value v = json_binary::parse_binary(dataTmp, lenTmp);
         Json_wrapper wr(v);
         field_json->store_json(&wr);
+        break;
       }
+#endif
+      field->store(dataTmp, lenTmp, &my_charset_bin);
       break;
     }
     case bson::String: {
@@ -1738,7 +1760,7 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
         // Invalid date, the field has been reset to zero,
         // so no need to store.
       } else {
-        field->store_time(&time_val, 0);
+        sdb_field_store_time(field, &time_val);
       }
       break;
     }
@@ -1748,7 +1770,7 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
       longlong microsec = elem.timestampInc();
       tv.tv_sec = millisec / 1000;
       tv.tv_usec = millisec % 1000 * 1000 + microsec;
-      field->store_timestamp(&tv);
+      sdb_field_store_timestamp(field, &tv);
       break;
     }
     case bson::Bool: {
@@ -1787,15 +1809,14 @@ int ha_sdb::cur_row(uchar *buf) {
   int rc = 0;
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   if (!first_read) {
     /* need to return the first matched record here for
        'select a, count(b) from table_name where ... '.
     */
     Item *field = NULL;
     LEX *const lex = ha_thd()->lex;
-    SELECT_LEX *const select = lex->current_select();
-    List_iterator<Item> li(select->all_fields);
+    List_iterator<Item> li(sdb_lex_all_fields(lex));
     while ((field = li++)) {
       Item::Type real_type = field->real_item()->type();
       if (real_type == Item::SUM_FUNC_ITEM) {
@@ -1836,7 +1857,7 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
   int rc = 0;
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   rc = collection->next(obj, false);
   if (rc != 0) {
@@ -1871,7 +1892,7 @@ int ha_sdb::rnd_next(uchar *buf) {
   bson::BSONObj hint = SDB_EMPTY_BSON;
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   if (first_read) {
     if (!pushed_condition.isEmpty()) {
@@ -1924,7 +1945,7 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   bson::OID oid;
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   ha_statistic_increment(&SSV::ha_read_rnd_count);
 
@@ -1992,7 +2013,7 @@ int ha_sdb::info(uint flag) {
       goto error;
     }
 
-    DBUG_ASSERT(conn->thread_id() == ha_thd()->thread_id());
+    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
     rc = ensure_collection(ha_thd());
     if (0 != rc) {
@@ -2002,8 +2023,9 @@ int ha_sdb::info(uint flag) {
     snprintf(full_name, SDB_CL_FULL_NAME_MAX_SIZE, "%s.%s", db_name,
              table_name);
 
-    rc = sdb_autoinc_current_value(*conn, &auto_inc_val, full_name,
-                                   table->found_next_number_field->field_name);
+    rc = sdb_autoinc_current_value(
+        *conn, &auto_inc_val, full_name,
+        sdb_field_name(table->found_next_number_field));
     if (SDB_ERR_OK != rc) {
       sql_print_error("Error %lu in ::update_create_info(): %s.%s", (ulong)rc,
                       db_name, table_name);
@@ -2046,7 +2068,7 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       rc = HA_ERR_NO_CONNECTION;
       goto error;
     }
-    DBUG_ASSERT(conn->thread_id() == thd->thread_id());
+    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
     rc = conn->get_cl_statistics(db_name, table_name, stat);
     if (0 != rc) {
       goto done;
@@ -2114,9 +2136,11 @@ int ha_sdb::extra(enum ha_extra_function operation) {
     case HA_EXTRA_WRITE_CANNOT_REPLACE:
       m_write_can_replace = false;
       break;
+#ifdef IS_MYSQL
     case HA_EXTRA_SECONDARY_SORT_ROWID:
       m_secondary_sort_rowid = true;
       break;
+#endif
     default:
       break;
   }
@@ -2133,11 +2157,11 @@ int ha_sdb::ensure_cond_ctx(THD *thd) {
   DBUG_ASSERT(NULL != thd);
 
   if (NULL == sdb_condition) {
-    if (!my_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
-                         &cond_ctx, sizeof(Sdb_cond_ctx), &where_cond_buff,
-                         bitmap_buffer_size(table->s->fields),
-                         &pushed_cond_buff,
-                         bitmap_buffer_size(table->s->fields), NullS)) {
+    if (!sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
+                          &cond_ctx, sizeof(Sdb_cond_ctx), &where_cond_buff,
+                          bitmap_buffer_size(table->s->fields),
+                          &pushed_cond_buff,
+                          bitmap_buffer_size(table->s->fields), NullS)) {
       goto error;
     }
 
@@ -2155,7 +2179,7 @@ int ha_sdb::ensure_collection(THD *thd) {
   int rc = 0;
   DBUG_ASSERT(NULL != thd);
 
-  if (NULL != collection && collection->thread_id() != thd->thread_id()) {
+  if (NULL != collection && collection->thread_id() != sdb_thd_id(thd)) {
     delete collection;
     collection = NULL;
   }
@@ -2166,7 +2190,7 @@ int ha_sdb::ensure_collection(THD *thd) {
       rc = HA_ERR_NO_CONNECTION;
       goto error;
     }
-    DBUG_ASSERT(conn->thread_id() == thd->thread_id());
+    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
     collection = new (std::nothrow) Sdb_cl();
     if (NULL == collection) {
@@ -2199,14 +2223,10 @@ error:
 bool ha_sdb::pushdown_autocommit() {
   bool can_push = false;
   int sql_command = SQLCOM_END;
-  class Sql_cmd_insert_base *sql_cmd_insert_base = NULL;
 
   sql_command = thd_sql_command(ha_thd());
   if (SQLCOM_INSERT == sql_command || SQLCOM_REPLACE == sql_command) {
-    sql_cmd_insert_base =
-        dynamic_cast<Sql_cmd_insert_base *>(ha_thd()->lex->m_sql_cmd);
-    if (sql_cmd_insert_base != NULL &&
-        sql_cmd_insert_base->insert_many_values.elements <= 1) {
+    if (sdb_is_insert_single_value(ha_thd())) {
       can_push = true;
     }
   }
@@ -2229,7 +2249,7 @@ int ha_sdb::autocommit_statement(bool direct_op) {
     rc = HA_ERR_NO_CONNECTION;
     goto done;
   }
-  DBUG_ASSERT(conn->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   if (!conn->is_transaction_on()) {
     if (1 == ha_thd()->lex->table_count && !table->triggers &&
@@ -2277,7 +2297,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
       rc = HA_ERR_NO_CONNECTION;
       goto error;
     }
-    DBUG_ASSERT(conn->thread_id() == thd->thread_id());
+    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
       auto_commit = false;
@@ -2380,7 +2400,7 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
 int ha_sdb::delete_all_rows() {
   int rc = 0;
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   if (auto_commit) {
     rc = autocommit_statement(true);
@@ -2402,8 +2422,7 @@ int ha_sdb::delete_all_rows() {
 int ha_sdb::truncate() {
   int rc = 0;
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == ha_thd()->thread_id());
-
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
 
   rc = collection->truncate();
@@ -2447,7 +2466,7 @@ int ha_sdb::delete_table(const char *from) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
-  DBUG_ASSERT(conn->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   rc = conn->drop_cl(db_name, table_name);
   if (0 != rc) {
@@ -2507,7 +2526,7 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
-  DBUG_ASSERT(conn->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   rc = conn->rename_cl(old_db_name, old_table_name, new_table_name);
   if (0 != rc) {
@@ -2526,7 +2545,7 @@ int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
 
   for (uint i = 0; i < form->s->keys; i++) {
     const KEY *key_info = form->s->key_info + i;
-    if (!strcmp(key_info->name, primary_key_name)) {
+    if (!strcmp(sdb_key_name(key_info), primary_key_name)) {
       shard_idx = key_info;
       break;
     }
@@ -2550,8 +2569,8 @@ int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
           const KEY_PART_INFO *key_end_tmp =
               key_part_tmp + key_info->user_defined_key_parts;
           for (; key_part_tmp != key_end_tmp; ++key_part_tmp) {
-            if (0 == strcmp(key_part->field->field_name,
-                            key_part_tmp->field->field_name)) {
+            if (0 == strcmp(sdb_field_name(key_part->field),
+                            sdb_field_name(key_part_tmp->field))) {
               break;
             }
           }
@@ -2561,7 +2580,7 @@ int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
             SDB_LOG_WARNING(
                 "Unique index('%-.192s') not include the field: '%-.192s', "
                 "create non-partition table: %s.%s",
-                key_info->name, key_part->field->field_name, db_name,
+                key_info->name, sdb_field_name(key_part->field), db_name,
                 table_name);
             goto done;
           }
@@ -2572,7 +2591,7 @@ int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
     key_part = shard_idx->key_part;
     key_end = key_part + shard_idx->user_defined_key_parts;
     for (; key_part != key_end; ++key_part) {
-      sharding_key_builder.append(key_part->field->field_name, 1);
+      sharding_key_builder.append(sdb_field_name(key_part->field), 1);
     }
     sharding_key = sharding_key_builder.obj();
   }
@@ -2749,7 +2768,8 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
     bson::BSONElement options_ele;
     bson::BSONElement use_partition;
     bson::BSONObj comments;
-    if ((sdb_cmt_pos = strstr(create_info->comment.str, SDB_COMMENT)) == NULL) {
+    if ((sdb_cmt_pos = strstr(const_cast<char *>(create_info->comment.str),
+                              SDB_COMMENT)) == NULL) {
       goto comment_done;
     }
 
@@ -2856,7 +2876,7 @@ void ha_sdb::build_auto_inc_option(const Field *field,
     start_value = max_value;
   }
   default_value = sdb_default_autoinc_acquire_size(field->type());
-  build.append(SDB_FIELD_NAME_FIELD, field->field_name);
+  build.append(SDB_FIELD_NAME_FIELD, sdb_field_name(field));
   build.append(SDB_FIELD_INCREMENT, (int)variables->auto_increment_increment);
   build.append(SDB_FIELD_START_VALUE, start_value);
   build.append(SDB_FIELD_ACQUIRE_SIZE, (int)default_value);
@@ -2882,14 +2902,14 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     Field *field = *fields;
 
     if (field->key_length() >= SDB_FIELD_MAX_LEN) {
-      my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), field->field_name,
+      my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), sdb_field_name(field),
                static_cast<ulong>(SDB_FIELD_MAX_LEN));
       rc = HA_WRONG_CREATE_OPTION;
       goto error;
     }
 
-    if (strcasecmp(field->field_name, SDB_OID_FIELD) == 0) {
-      my_error(ER_WRONG_COLUMN_NAME, MYF(0), field->field_name);
+    if (strcasecmp(sdb_field_name(field), SDB_OID_FIELD) == 0) {
+      my_error(ER_WRONG_COLUMN_NAME, MYF(0), sdb_field_name(field));
       rc = HA_WRONG_CREATE_OPTION;
       goto error;
     }
@@ -2925,7 +2945,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
-  DBUG_ASSERT(conn->thread_id() == ha_thd()->thread_id());
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
                        &created_cl);
@@ -3002,7 +3022,7 @@ const Item *ha_sdb::cond_push(const Item *cond) {
 
   // we can handle the condition which only involved current table,
   // can't handle conditions which involved other tables
-  if (cond->used_tables() & ~table->pos_in_table_list->map()) {
+  if (cond->used_tables() & ~sdb_table_map(table)) {
     goto done;
   }
 
@@ -3026,11 +3046,11 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     if (NULL != ha_thd()) {
       SDB_LOG_DEBUG(
           "Condition can't be pushed down. db=[%s], table[%s], sql=[%s]",
-          db_name, table_name, ha_thd()->query().str);
+          db_name, table_name, sdb_thd_query(ha_thd()));
       DBUG_PRINT(
           "ha_sdb:info",
           ("Condition can't be pushed down. db=[%s], table[%s], sql=[%s]",
-           db_name, table_name, ha_thd()->query().str));
+           db_name, table_name, sdb_thd_query(ha_thd())));
     } else {
       SDB_LOG_DEBUG(
           "Condition can't be pushed down. "
@@ -3056,9 +3076,11 @@ static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
 
 #ifdef HAVE_PSI_INTERFACE
 
+#ifdef IS_MYSQL
 static PSI_memory_info all_sdb_memory[] = {
     {&key_memory_sdb_share, "Sdb_share", PSI_FLAG_GLOBAL},
     {&sdb_key_memory_blobroot, "blobroot", 0}};
+#endif
 
 static PSI_mutex_info all_sdb_mutexes[] = {
     {&key_mutex_sdb, "sdb", PSI_FLAG_GLOBAL},
@@ -3071,8 +3093,10 @@ static void init_sdb_psi_keys(void) {
   count = array_elements(all_sdb_mutexes);
   mysql_mutex_register(category, all_sdb_mutexes, count);
 
+#ifdef IS_MYSQL
   count = array_elements(all_sdb_memory);
   mysql_memory_register(category, all_sdb_memory, count);
+#endif
 }
 #endif
 
@@ -3089,7 +3113,7 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
-  DBUG_ASSERT(connection->thread_id() == thd->thread_id());
+  DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
 
   if (!connection->is_transaction_on()) {
     goto done;
@@ -3135,7 +3159,7 @@ static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
-  DBUG_ASSERT(connection->thread_id() == thd->thread_id());
+  DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
 
   if (!connection->is_transaction_on()) {
     goto done;
@@ -3183,7 +3207,7 @@ static void sdb_drop_database(handlerton *hton, char *path) {
 
   SDB_EXECUTE_ONLY_IN_MYSQL_VOID_RETURN(thd);
 
-  DBUG_ASSERT(connection->thread_id() == thd->thread_id());
+  DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
 
   rc = sdb_get_db_name_from_path(path, db_name, SDB_CS_NAME_MAX_SIZE);
   if (rc != 0) {
@@ -3225,8 +3249,8 @@ static int sdb_init_func(void *p) {
 
   sdb_hton = (handlerton *)p;
   mysql_mutex_init(key_mutex_sdb, &sdb_mutex, MY_MUTEX_INIT_FAST);
-  (void)my_hash_init(&sdb_open_tables, system_charset_info, 32, 0, 0,
-                     (my_hash_get_key)sdb_get_key, 0, 0, key_memory_sdb_share);
+  (void)sdb_hash_init(&sdb_open_tables, system_charset_info, 32, 0, 0,
+                      (my_hash_get_key)sdb_get_key, 0, 0, key_memory_sdb_share);
   sdb_hton->state = SHOW_OPTION_YES;
   sdb_hton->db_type = DB_TYPE_UNKNOWN;
   sdb_hton->create = sdb_create_handler;
@@ -3260,18 +3284,19 @@ static int sdb_done_func(void *p) {
 static struct st_mysql_storage_engine sdb_storage_engine = {
     MYSQL_HANDLERTON_INTERFACE_VERSION};
 
-mysql_declare_plugin(sequoiadb){
-    MYSQL_STORAGE_ENGINE_PLUGIN,
-    &sdb_storage_engine,
-    "SequoiaDB",
-    "SequoiaDB Inc.",
-    sdb_plugin_info,
-    PLUGIN_LICENSE_GPL,
-    sdb_init_func, /* Plugin Init */
-    sdb_done_func, /* Plugin Deinit */
-    0x0302,        /* version */
-    NULL,          /* status variables */
-    sdb_sys_vars,  /* system variables */
-    NULL,          /* config options */
-    0,             /* flags */
-} mysql_declare_plugin_end;
+#if defined IS_MYSQL
+mysql_declare_plugin(sequoiadb) {
+#elif defined IS_MARIADB
+maria_declare_plugin(sequoiadb){
+#endif
+  MYSQL_STORAGE_ENGINE_PLUGIN, &sdb_storage_engine, "SequoiaDB",
+      "SequoiaDB Inc.", sdb_plugin_info, PLUGIN_LICENSE_GPL,
+      sdb_init_func, /* Plugin Init */
+      sdb_done_func, /* Plugin Deinit */
+      0x0302,        /* version */
+      NULL,          /* status variables */
+      sdb_sys_vars,  /* system variables */
+      NULL,          /* config options */
+      0,             /* flags */
+}
+mysql_declare_plugin_end;

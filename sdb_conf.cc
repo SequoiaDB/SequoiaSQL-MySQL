@@ -116,7 +116,7 @@ static MYSQL_SYSVAR_BOOL(use_bulk_insert, sdb_use_bulk_insert,
 static MYSQL_SYSVAR_INT(bulk_insert_size, sdb_bulk_insert_size,
                         PLUGIN_VAR_OPCMDARG,
                         "Maximum number of records per bulk insert. "
-                        "(Default: 100)"
+                        "(Default: 2000)"
                         /*批量插入时每批的插入记录数。*/,
                         NULL, NULL, SDB_DEFAULT_BULK_INSERT_SIZE, 1, 100000, 0);
 static MYSQL_SYSVAR_INT(replica_size, sdb_replica_size, PLUGIN_VAR_OPCMDARG,
@@ -138,7 +138,7 @@ static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
 
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
-                         PLUGIN_VAR_OPCMDARG SDB_INVISIBLE,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
                          "Optimizer switch for simple select count. "
                          "(Default: ON). This option is abandoned, please use "
                          "sequoiadb-optimizer-options='direct_count' instead."

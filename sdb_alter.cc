@@ -13,38 +13,38 @@
   along with this program; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
+#ifndef MYSQL_SERVER
+#define MYSQL_SERVER
+#endif
+
+#include "sdb_sql.h"
 #include "ha_sdb.h"
 #include <sql_class.h>
 #include <mysql/plugin.h>
-#include <json_dom.h>
 #include <sql_time.h>
 #include "sdb_log.h"
 #include "sdb_idx.h"
 #include "sdb_thd.h"
 #include "sdb_item.h"
 
-static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_ADDIDX =
-    Alter_inplace_info::ADD_INDEX | Alter_inplace_info::ADD_UNIQUE_INDEX |
-    Alter_inplace_info::ADD_PK_INDEX |
-    Alter_inplace_info::ALTER_COLUMN_NOT_NULLABLE;
+#ifdef IS_MYSQL
+#include <json_dom.h>
+#endif
 
-static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_DROPIDX =
-    Alter_inplace_info::DROP_INDEX | Alter_inplace_info::DROP_UNIQUE_INDEX |
-    Alter_inplace_info::DROP_PK_INDEX |
-    Alter_inplace_info::ALTER_COLUMN_NULLABLE;
+static const alter_table_operations INPLACE_ONLINE_ADDIDX =
+    ALTER_ADD_NON_UNIQUE_NON_PRIM_INDEX | ALTER_ADD_UNIQUE_INDEX |
+    ALTER_ADD_PK_INDEX | ALTER_COLUMN_NOT_NULLABLE;
 
-static const Alter_inplace_info::HA_ALTER_FLAGS INPLACE_ONLINE_OPERATIONS =
-    INPLACE_ONLINE_ADDIDX | INPLACE_ONLINE_DROPIDX |
-    Alter_inplace_info::ADD_COLUMN | Alter_inplace_info::DROP_COLUMN |
-    Alter_inplace_info::ALTER_STORED_COLUMN_ORDER |
-    Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
-    Alter_inplace_info::ALTER_COLUMN_DEFAULT |
-    Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH |
-    Alter_inplace_info::CHANGE_CREATE_OPTION |
-    Alter_inplace_info::RENAME_INDEX | Alter_inplace_info::ALTER_RENAME |
-    Alter_inplace_info::ALTER_COLUMN_INDEX_LENGTH |
-    Alter_inplace_info::ALTER_INDEX_COMMENT |
-    Alter_inplace_info::ADD_FOREIGN_KEY | Alter_inplace_info::DROP_FOREIGN_KEY;
+static const alter_table_operations INPLACE_ONLINE_DROPIDX =
+    ALTER_DROP_NON_UNIQUE_NON_PRIM_INDEX | ALTER_DROP_UNIQUE_INDEX |
+    ALTER_DROP_PK_INDEX | ALTER_COLUMN_NULLABLE;
+
+static const alter_table_operations INPLACE_ONLINE_OPERATIONS =
+    INPLACE_ONLINE_ADDIDX | INPLACE_ONLINE_DROPIDX | ALTER_ADD_COLUMN |
+    ALTER_DROP_COLUMN | ALTER_STORED_COLUMN_ORDER | ALTER_STORED_COLUMN_TYPE |
+    ALTER_COLUMN_DEFAULT | ALTER_COLUMN_EQUAL_PACK_LENGTH |
+    ALTER_CHANGE_CREATE_OPTION | ALTER_RENAME_INDEX | ALTER_RENAME |
+    ALTER_COLUMN_INDEX_LENGTH | ALTER_ADD_FOREIGN_KEY | ALTER_DROP_FOREIGN_KEY;
 
 static const int SDB_TYPE_NUM = 23;
 static const uint INT_TYPE_NUM = 5;
@@ -637,8 +637,10 @@ int get_type_idx(enum enum_field_types type) {
       return 20;
     case MYSQL_TYPE_ENUM:
       return 21;
+#ifdef IS_MYSQL
     case MYSQL_TYPE_JSON:
       return 22;
+#endif
     default: {
       // impossible types
       DBUG_ASSERT(false);
@@ -671,8 +673,10 @@ const char *sdb_fieldtype2str(enum enum_field_types type) {
       return "GEOMETRY";
     case MYSQL_TYPE_INT24:
       return "INT24";
+#ifdef IS_MYSQL
     case MYSQL_TYPE_JSON:
       return "JSON";
+#endif
     case MYSQL_TYPE_LONG:
       return "LONG";
     case MYSQL_TYPE_LONGLONG:
@@ -766,11 +770,10 @@ int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_TIMESTAMP: {
       struct timeval org_val;
-      int warnings = 0;
-      field->get_timestamp(&org_val, &warnings);
+      sdb_field_get_timestamp(field, &org_val);
       field->set_default();
       rc = field_to_obj(field, builder);
-      field->store_timestamp(&org_val);
+      sdb_field_store_timestamp(field, &org_val);
       break;
     }
     case MYSQL_TYPE_DECIMAL:
@@ -785,7 +788,9 @@ int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
       field->store(org_val.ptr(), org_val.length(), org_val.charset());
       break;
     }
+#ifdef IS_MYSQL
     case MYSQL_TYPE_JSON:
+#endif
     case MYSQL_TYPE_BLOB:
     default: {
       // These types never have default.
@@ -810,14 +815,14 @@ void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
     case MYSQL_TYPE_YEAR:
     case MYSQL_TYPE_BIT:
     case MYSQL_TYPE_SET: {
-      builder.append(field->field_name, (int)0);
+      builder.append(sdb_field_name(field), (int)0);
       break;
     }
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
     case MYSQL_TYPE_TIME:
     case MYSQL_TYPE_TIME2: {
-      builder.append(field->field_name, (double)0.0);
+      builder.append(sdb_field_name(field), (double)0.0);
       break;
     }
     case MYSQL_TYPE_VARCHAR:
@@ -828,41 +833,43 @@ void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
     case MYSQL_TYPE_LONG_BLOB:
     case MYSQL_TYPE_BLOB: {
       if (!field->binary()) {
-        builder.append(field->field_name, "");
+        builder.append(sdb_field_name(field), "");
       } else {
-        builder.appendBinData(field->field_name, 0, bson::BinDataGeneral, "");
+        builder.appendBinData(sdb_field_name(field), 0, bson::BinDataGeneral,
+                              "");
       }
       break;
     }
     case MYSQL_TYPE_NEWDECIMAL:
     case MYSQL_TYPE_DECIMAL: {
       static const char *ZERO_DECIMAL = "0";
-      builder.appendDecimal(field->field_name, ZERO_DECIMAL);
+      builder.appendDecimal(sdb_field_name(field), ZERO_DECIMAL);
       break;
     }
     case MYSQL_TYPE_DATE:
     case MYSQL_TYPE_NEWDATE: {
       static const bson::Date_t ZERO_DATE((longlong)0);
-      builder.appendDate(field->field_name, ZERO_DATE);
+      builder.appendDate(sdb_field_name(field), ZERO_DATE);
       break;
     }
     case MYSQL_TYPE_TIMESTAMP:
     case MYSQL_TYPE_TIMESTAMP2: {
       static const longlong ZERO_TIMESTAMP = 0;
-      builder.appendTimestamp(field->field_name, ZERO_TIMESTAMP);
+      builder.appendTimestamp(sdb_field_name(field), ZERO_TIMESTAMP);
       break;
     }
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_DATETIME2: {
       static const char *ZERO_DATETIME = "0000-00-00 00:00:00";
-      builder.append(field->field_name, ZERO_DATETIME);
+      builder.append(sdb_field_name(field), ZERO_DATETIME);
       break;
     }
     case MYSQL_TYPE_ENUM: {
       static const int FIRST_ENUM = 1;
-      builder.append(field->field_name, FIRST_ENUM);
+      builder.append(sdb_field_name(field), FIRST_ENUM);
       break;
     }
+#ifdef IS_MYSQL
     case MYSQL_TYPE_JSON: {
       static const char *EMPTY_JSON_STR = "{}";
       static const int EMPTY_JSON_STRLEN = 2;
@@ -879,10 +886,11 @@ void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
         delete dom;
       }
 
-      builder.appendBinData(field->field_name, json_bin.length(),
+      builder.appendBinData(sdb_field_name(field), json_bin.length(),
                             bson::BinDataGeneral, json_bin.ptr());
       break;
     }
+#endif
     default: { DBUG_ASSERT(false); }
   }
 }
@@ -1016,14 +1024,14 @@ int ha_sdb::alter_column(TABLE *altered_table,
   // 1.Handle the dropped_columns
   dropped_it.init(ctx->dropped_columns);
   while ((field = dropped_it++)) {
-    unset_builder.append(field->field_name, "");
+    unset_builder.append(sdb_field_name(field), "");
     if (field->flags & AUTO_INCREMENT_FLAG) {
-      rc = cl.drop_auto_increment(field->field_name);
+      rc = cl.drop_auto_increment(sdb_field_name(field));
       if (0 != rc) {
         my_printf_error(rc,
                         "Failed to drop auto_increment "
                         "column[%s] on cl[%s.%s]",
-                        MYF(0), field->field_name, db_name, table_name);
+                        MYF(0), sdb_field_name(field), db_name, table_name);
         goto error;
       }
     }
@@ -1038,7 +1046,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
       rc = append_default_value(set_builder, field);
       if (rc != 0) {
         rc = ER_WRONG_ARGUMENTS;
-        my_printf_error(rc, ER(rc), MYF(0), field->field_name);
+        my_printf_error(rc, ER(rc), MYF(0), sdb_field_name(field));
         goto error;
       }
     } else if (!field->maybe_null()) {
@@ -1052,10 +1060,10 @@ int ha_sdb::alter_column(TABLE *altered_table,
           my_printf_error(rc,
                           "Failed to add auto_increment "
                           "column[%s] on cl[%s.%s]",
-                          MYF(0), field->field_name, db_name, table_name);
+                          MYF(0), sdb_field_name(field), db_name, table_name);
           goto error;
         }
-        // inc_builder.append(field->field_name, get_inc_option(option));
+        // inc_builder.append(sdb_field_name(field), get_inc_option(option));
       }
     }
   }
@@ -1075,18 +1083,20 @@ int ha_sdb::alter_column(TABLE *altered_table,
         my_printf_error(rc,
                         "Failed to add auto_increment "
                         "column[%s] on cl[%s.%s]",
-                        MYF(0), info->after->field_name, db_name, table_name);
+                        MYF(0), sdb_field_name(info->after), db_name,
+                        table_name);
         goto error;
       }
     }
 
     if (info->op_flag & Col_alter_info::DROP_AUTO_INC) {
-      rc = cl.drop_auto_increment(info->before->field_name);
+      rc = cl.drop_auto_increment(sdb_field_name(info->before));
       if (0 != rc) {
         my_printf_error(rc,
                         "Failed to drop auto_increment "
                         "column[%s] on cl[%s.%s]",
-                        MYF(0), info->before->field_name, db_name, table_name);
+                        MYF(0), sdb_field_name(info->before), db_name,
+                        table_name);
         goto error;
       }
     }
@@ -1099,7 +1109,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
       bson::BSONObjBuilder cond_builder;
       bson::BSONObjBuilder sub_cond(
-          cond_builder.subobjStart(info->after->field_name));
+          cond_builder.subobjStart(sdb_field_name(info->after)));
       sub_cond.append("$isnull", 1);
       sub_cond.done();
 
@@ -1121,7 +1131,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
       rc = cl.update(rule_builder.obj(), cond_builder.obj());
       if (rc != 0) {
         my_printf_error(rc, "Failed to update column[%s] on cl[%s.%s]", MYF(0),
-                        info->before->field_name, db_name, table_name);
+                        sdb_field_name(info->before), db_name, table_name);
         goto error;
       }
     }
@@ -1174,7 +1184,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
   }
 
   /*if (ha_alter_info->handler_flags &
-       Alter_inplace_info::ALTER_STORED_COLUMN_TYPE) {
+       ALTER_STORED_COLUMN_TYPE) {
     bson::BSONObj result;
     rc = conn->get_last_result_obj(result);
     if (rc != 0) {
@@ -1242,7 +1252,7 @@ int drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
     }
 
     KEY *key_info = ha_alter_info->index_drop_buffer[i];
-    rc = cl.drop_index(key_info->name);
+    rc = cl.drop_index(sdb_key_name(key_info));
     if (rc) {
       goto error;
     }
@@ -1287,7 +1297,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
       bson::BSONObjBuilder cast_builder;
       Field *new_field = altered_table->field[j];
       if (!matched_map.is_set(j) &&
-          strcmp(old_field->field_name, new_field->field_name) == 0) {
+          strcmp(sdb_field_name(old_field), sdb_field_name(new_field)) == 0) {
         matched_map.set_bit(j);
         found_col = true;
 
@@ -1340,8 +1350,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     if (!matched_map.is_set(i)) {
       Field *field = altered_table->field[i];
       // Avoid DEFAULT CURRENT_TIMESTAMP
-      if (real_type_with_now_as_default(field->real_type()) &&
-          field->has_insert_default_function()) {
+      if (sdb_is_current_timestamp(field)) {
         ha_alter_info->unsupported_reason =
             "DEFAULT CURRENT_TIMESTAMP is unsupported.";
         rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
@@ -1352,12 +1361,18 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
           !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
         MYSQL_TIME ltime;
         int warnings = 0;
-        my_time_flags_t flags = TIME_FUZZY_DATE | TIME_INVALID_DATES;
-        flags |= (sql_mode & MODE_NO_ZERO_DATE) ? TIME_NO_ZERO_DATE : 0;
-        flags |= (sql_mode & MODE_NO_ZERO_IN_DATE) ? TIME_NO_ZERO_IN_DATE : 0;
+        date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES |
+                            sdb_thd_time_round_mode(ha_thd());
+        if (sql_mode & MODE_NO_ZERO_DATE) {
+          flags |= TIME_NO_ZERO_DATE;
+        }
+        if (sql_mode & MODE_NO_ZERO_IN_DATE) {
+          flags |= TIME_NO_ZERO_IN_DATE;
+        }
 
         if (field->get_date(&ltime, flags) ||
-            check_date(&ltime, non_zero_date(&ltime), flags, &warnings) ||
+            check_date(&ltime, non_zero_date(&ltime), (ulonglong)flags,
+                       &warnings) ||
             warnings) {
           rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
           goto error;
@@ -1427,8 +1442,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rs, false);
 
   const HA_CREATE_INFO *create_info = ha_alter_info->create_info;
-  const Alter_inplace_info::HA_ALTER_FLAGS alter_flags =
-      ha_alter_info->handler_flags;
+  const alter_table_operations alter_flags = ha_alter_info->handler_flags;
 
   DBUG_ASSERT(ha_alter_info->handler_flags | INPLACE_ONLINE_OPERATIONS);
 
@@ -1445,9 +1459,9 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     goto error;
   }
 
-  if (alter_flags & Alter_inplace_info::CHANGE_CREATE_OPTION) {
-    char *old_comment = table->s->comment.str;
-    char *new_comment = create_info->comment.str;
+  if (alter_flags & ALTER_CHANGE_CREATE_OPTION) {
+    const char *old_comment = table->s->comment.str;
+    const char *new_comment = create_info->comment.str;
     bson::BSONObj option;
     if (!(old_comment == new_comment ||
           strcmp(old_comment, new_comment) == 0)) {
@@ -1463,7 +1477,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       bson::BSONObjBuilder sub_builder(
           builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
       sub_builder.append(SDB_FIELD_NAME_FIELD,
-                         table->found_next_number_field->field_name);
+                         sdb_field_name(table->found_next_number_field));
       longlong current_value = create_info->auto_increment_value -
                                thd->variables.auto_increment_increment;
       sub_builder.append(SDB_FIELD_CURRENT_VALUE, current_value);
@@ -1497,7 +1511,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
   }
 
-  if (alter_flags & Alter_inplace_info::RENAME_INDEX) {
+  if (alter_flags & ALTER_RENAME_INDEX) {
     my_error(HA_ERR_UNSUPPORTED, MYF(0), cl.get_cl_name());
     goto error;
   }
@@ -1510,10 +1524,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
   }
 
-  if (alter_flags & (Alter_inplace_info::DROP_STORED_COLUMN |
-                     Alter_inplace_info::ADD_STORED_BASE_COLUMN |
-                     Alter_inplace_info::ALTER_STORED_COLUMN_TYPE |
-                     Alter_inplace_info::ALTER_COLUMN_DEFAULT)) {
+  if (alter_flags & (ALTER_DROP_STORED_COLUMN | ALTER_ADD_STORED_BASE_COLUMN |
+                     ALTER_STORED_COLUMN_TYPE | ALTER_COLUMN_DEFAULT)) {
     rc = alter_column(altered_table, ha_alter_info, conn, cl);
     if (0 != rc) {
       goto error;

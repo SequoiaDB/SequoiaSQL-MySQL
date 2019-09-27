@@ -17,8 +17,9 @@
 #ifndef SDB_UTIL__H
 #define SDB_UTIL__H
 
+#include "sdb_sql.h"
 #include <sql_class.h>
-#include <my_aes.h>
+
 #include <client.hpp>
 #include "sdb_errcode.h"
 

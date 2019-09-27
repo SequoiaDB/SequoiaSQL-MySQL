@@ -30,6 +30,28 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
 endif()
 add_definitions(-Wno-error)
 
+# SDB_PROJECT_TYPE: 1 = MySQL; 2 = MariaDB
+if(NOT DEFINED SDB_PROJECT_TYPE)
+  find_file(SDB_MARIA_HEADER NAMES mariadb.h HINTS ${CMAKE_SOURCE_DIR}/sql)
+  if(${SDB_MARIA_HEADER} STREQUAL "SDB_MARIA_HEADER-NOTFOUND")
+    set(SDB_PROJECT_TYPE 1)
+  else()
+    set(SDB_PROJECT_TYPE 2)
+  endif()
+endif()
+
+if(SDB_PROJECT_TYPE EQUAL 1)
+  message(STATUS "Building for mainstream MySQL")
+  add_definitions(-DIS_MYSQL)
+elseif(SDB_PROJECT_TYPE EQUAL 2)
+  message(STATUS "Building for MariaDB")
+  add_definitions(-DIS_MARIADB)
+  # To ignore warnings in BSON library for C++11
+  add_definitions(-Wno-deprecated-declarations)
+else()
+  message(SEND_ERROR "Wrong value of SDB_PROJECT_TYPE")
+endif()
+   
 set(SEQUOIADB_SOURCES
     ha_sdb.cc
     sdb_conf.cc
@@ -42,7 +64,8 @@ set(SEQUOIADB_SOURCES
     sdb_errcode.cc
     sdb_log.cc
     sdb_idx.cc
-    sdb_alter.cc)
+    sdb_alter.cc
+    sdb_sql.cc)
 
 set(WITH_SDB_DRIVER "" CACHE PATH "Path to SequoiaDB C++ driver")
 set(SDB_DRIVER_PATH ${WITH_SDB_DRIVER})

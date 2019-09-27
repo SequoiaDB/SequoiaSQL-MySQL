@@ -16,6 +16,8 @@
 #ifndef MYSQL_SERVER
 #define MYSQL_SERVER
 #endif
+
+#include <my_global.h>
 #include <sql_class.h>
 #include "sdb_condition.h"
 #include "sdb_errcode.h"
@@ -297,7 +299,7 @@ Sdb_item *Sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
     }
     case Item_func::IN_FUNC: {
       Item_func_in *item_func = (Item_func_in *)cond_item;
-      item = new Sdb_func_in(item_func->negated, item_func->arg_count);
+      item = new Sdb_func_in(item_func->negated, sdb_item_arg_count(item_func));
       break;
     }
     case Item_func::LIKE_FUNC: {
@@ -351,11 +353,11 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
     switch (cond_item->type()) {
       case Item::FIELD_ITEM:
         for (Field **field = sdb_ctx->table->field; *field; field++) {
-          if (0 == strcmp((*field)->field_name, cond_item->item_name.ptr())) {
+          if (0 == strcmp(sdb_field_name((*field)), sdb_item_name(cond_item))) {
             bitmap_set_bit(&sdb_ctx->where_cond_set, (*field)->field_index);
             DBUG_PRINT("ha_sdb:info",
                        ("Table: %s, field: %s is in where condition",
-                        *((*field)->table_name), (*field)->field_name));
+                        *((*field)->table_name), sdb_field_name(*field)));
           }
         }
         break;
@@ -416,7 +418,8 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
         }
 
         /* item_name is not same as field_name. */
-        if (strcmp(update_item->item_name.ptr(), upd_arg->field->field_name)) {
+        if (strcmp(sdb_item_name(update_item),
+                   sdb_field_name(upd_arg->field))) {
           *upd_arg->optimizer_update = false;
           break;
         }
@@ -434,7 +437,7 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
         }
         DBUG_PRINT("ha_sdb:info",
                    ("Item: %s, type: %d is in update items",
-                    update_item->item_name.ptr(), update_item->type()));
+                    sdb_item_name(update_item), update_item->type()));
         break;
       case Item::FUNC_ITEM:
         item_func = (Item_func *)update_item;
@@ -448,14 +451,18 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
                    ("Item: %s, type: %d is in update items",
                     item_func->func_name(), update_item->type()));
         break;
+#if defined IS_MYSQL
       case Item::INT_ITEM:
       case Item::REAL_ITEM:
       case Item::DECIMAL_ITEM:
       case Item::STRING_ITEM:
+#elif defined IS_MARIADB
+      case Item::CONST_ITEM:
+#endif
       case Item::DEFAULT_VALUE_ITEM:
         DBUG_PRINT("ha_sdb:info",
                    ("Item: %s, type: %d is in update items",
-                    update_item->item_name.ptr(), update_item->type()));
+                    sdb_item_name(update_item), update_item->type()));
         break;
 
       case Item::COND_ITEM:
@@ -468,7 +475,7 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
         *upd_arg->optimizer_update = false;
         DBUG_PRINT("ha_sdb:info",
                    ("Item: %s, type: %d is in update items",
-                    update_item->item_name.ptr(), update_item->type()));
+                    sdb_item_name(update_item), update_item->type()));
         break;
     }
   }

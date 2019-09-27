@@ -17,14 +17,18 @@
 #define MYSQL_SERVER
 #endif
 
+#include <my_global.h>
 #include <sql_time.h>
 #include <my_dbug.h>
 #include "sdb_item.h"
 #include "sdb_errcode.h"
 #include "sdb_util.h"
 #include "sdb_def.h"
+
+#ifdef IS_MYSQL
 #include <json_dom.h>
 #include <item_json_func.h>
+#endif
 
 #define BSON_APPEND(field_name, value, obj, arr_builder) \
   do {                                                   \
@@ -39,13 +43,15 @@
 // out of the supported range.
 static bool get_timeval(Item *item, struct timeval *tm) {
   MYSQL_TIME ltime;
-  int warnings = 0;
+  int error_code = 0;
+  date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES |
+                      sdb_thd_time_round_mode(current_thd);
 
-  if (item->get_date(&ltime, TIME_FUZZY_DATE)) {
+  if (sdb_item_get_date(current_thd, item, &ltime, flags)) {
     goto error; /* Could not extract date from the value */
   }
 
-  if (datetime_to_timeval(current_thd, &ltime, tm, &warnings)) {
+  if (sdb_datetime_to_timeval(current_thd, &ltime, tm, &error_code)) {
     goto error; /* Value is out of the supported range */
   }
 
@@ -182,7 +188,7 @@ int Sdb_func_item::push_item(Item *cond_item) {
   }
   para_list.push_back(cond_item);
   DBUG_PRINT("ha_sdb:info", ("Func Item: %s push back item: %s", this->name(),
-                             cond_item->item_name.ptr()));
+                             sdb_item_name(cond_item)));
   update_stat();
 done:
   DBUG_RETURN(rc);
@@ -198,7 +204,7 @@ int Sdb_func_item::pop_item(Item *&para_item) {
   }
   para_item = para_list.pop();
   DBUG_PRINT("ha_sdb:info", ("Func Item: %s pop item: %s", this->name(),
-                             para_item->item_name.ptr()));
+                             sdb_item_name(para_item)));
   DBUG_RETURN(SDB_ERR_OK);
 }
 
@@ -252,7 +258,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
             char buff[MAX_FIELD_WIDTH] = {0};
             String str(buff, sizeof(buff), item_val->charset_for_protocol());
             item_val->val_decimal(&dec_tmp);
-            my_decimal2string(E_DEC_FATAL_ERROR, &dec_tmp, 0, 0, 0, &str);
+            sdb_decimal_to_string(E_DEC_FATAL_ERROR, &dec_tmp, 0, 0, 0, &str);
 
             rc = decimal.fromString(str.c_ptr());
             if (0 != rc) {
@@ -331,7 +337,6 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
         String *pStr = NULL;
         String conv_str;
         char buff[MAX_FIELD_WIDTH] = {0};
-        Json_wrapper wr;
         String buf;
         String str(buff, sizeof(buff), item_val->charset_for_protocol());
 
@@ -341,7 +346,10 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
               0 == strcmp("cast_as_datetime", func_name)) {
             rc = SDB_ERR_COND_UNEXPECTED_ITEM;
             goto error;
-          } else if (0 == strcmp("cast_as_json", func_name)) {
+          }
+#ifdef IS_MYSQL
+          else if (0 == strcmp("cast_as_json", func_name)) {
+            Json_wrapper wr;
             Item_json_typecast *item_json = NULL;
             item_json = dynamic_cast<Item_json_typecast *>(item_val);
 
@@ -357,9 +365,14 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
             }
             pStr = &buf;
           }
+#endif
         }
 
-        if (Item::CACHE_ITEM == item_val->type() &&
+        if ((Item::CACHE_ITEM == item_val->type()
+#ifdef IS_MARIADB
+             || Item::CONST_ITEM == item_val->type()
+#endif
+                 ) &&
             (MYSQL_TYPE_DATE == item_val->field_type() ||
              MYSQL_TYPE_DATETIME == item_val->field_type())) {
           rc = SDB_ERR_COND_UNEXPECTED_ITEM;
@@ -421,13 +434,10 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
 
     case MYSQL_TYPE_DATE: {
       MYSQL_TIME ltime;
-      my_time_flags_t flags = TIME_FUZZY_DATE;
-      if (Item::FUNC_ITEM == item_val->type() &&
-          strcmp("cast_as_time", ((Item_func *)item_val)->func_name())) {
-        flags |= TIME_DATETIME_ONLY;
-      }
+      date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES |
+                          sdb_thd_time_round_mode(current_thd);
       if (STRING_RESULT == item_val->result_type() &&
-          !item_val->get_date(&ltime, flags)) {
+          !sdb_item_get_date(thd, item_val, &ltime, flags)) {
         struct tm tm_val;
         tm_val.tm_sec = ltime.second;
         tm_val.tm_min = ltime.minute;
@@ -475,14 +485,10 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
 
     case MYSQL_TYPE_DATETIME: {
       MYSQL_TIME ltime;
-      my_time_flags_t flags = TIME_FUZZY_DATE;
-      if (Item::FUNC_ITEM == item_val->type() &&
-          strcmp("cast_as_time", ((Item_func *)item_val)->func_name())) {
-        flags |= TIME_DATETIME_ONLY;
-      }
-
+      date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES |
+                          sdb_thd_time_round_mode(current_thd);
       if (item_val->result_type() != STRING_RESULT ||
-          item_val->get_date(&ltime, flags)) {
+          sdb_item_get_date(thd, item_val, &ltime, flags)) {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;
         goto error;
       } else {
@@ -503,7 +509,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
     case MYSQL_TYPE_TIME: {
       MYSQL_TIME ltime;
       if (STRING_RESULT == item_val->result_type() &&
-          !item_val->get_time(&ltime)) {
+          !sdb_get_item_time(item_val, current_thd, &ltime)) {
         uint dec = field->decimals();
         double time = ltime.hour;
         time = time * 100 + ltime.minute;
@@ -559,7 +565,9 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
     }
 
     case MYSQL_TYPE_NULL:
+#ifdef IS_MYSQL
     case MYSQL_TYPE_JSON:
+#endif
     case MYSQL_TYPE_GEOMETRY:
     default: {
       rc = SDB_ERR_TYPE_UNSUPPORTED;
@@ -582,7 +590,7 @@ done:
   if (rc == SDB_ERR_OK && pushed_cond_set) {
     bitmap_set_bit(pushed_cond_set, field->field_index);
     DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
-                               *(field->table_name), field->field_name));
+                               *(field->table_name), sdb_field_name(field)));
   }
   DBUG_RETURN(rc);
 error:
@@ -638,11 +646,11 @@ int Sdb_func_isnull::to_bson(bson::BSONObj &obj) {
     goto error;
   }
   item_field = (Item_field *)item_tmp;
-  obj = BSON(item_field->field_name << BSON(this->name() << 1));
+  obj = BSON(sdb_item_field_name(item_field) << BSON(this->name() << 1));
   bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
-  DBUG_PRINT("ha_sdb:info",
-             ("Table: %s, field: %s is in pushed condition",
-              *(item_field->field->table_name), item_field->field_name));
+  DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
+                             *(item_field->field->table_name),
+                             sdb_item_field_name(item_field)));
 
 done:
   DBUG_RETURN(rc);
@@ -671,11 +679,11 @@ int Sdb_func_isnotnull::to_bson(bson::BSONObj &obj) {
     goto error;
   }
   item_field = (Item_field *)item_tmp;
-  obj = BSON(item_field->field_name << BSON(this->name() << 0));
+  obj = BSON(sdb_item_field_name(item_field) << BSON(this->name() << 0));
   bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
-  DBUG_PRINT("ha_sdb:info",
-             ("Table: %s, field: %s is in pushed condition",
-              *(item_field->field->table_name), item_field->field_name));
+  DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
+                             *(item_field->field->table_name),
+                             sdb_item_field_name(item_field)));
 
 done:
   DBUG_RETURN(rc);
@@ -756,12 +764,12 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
         goto error;
       }
       builder_tmp.appendElements(obj_tmp);
-      obj_tmp =
-          BSON((cmp_inverse ? this->name() : this->inverse_name())
-               << BSON("$field" << ((Item_field *)field1)->field->field_name));
+      obj_tmp = BSON(
+          (cmp_inverse ? this->name() : this->inverse_name())
+          << BSON("$field" << sdb_field_name(((Item_field *)field1)->field)));
       builder_tmp.appendElements(obj_tmp);
       obj_tmp = builder_tmp.obj();
-      obj = BSON(((Item_field *)field2)->field_name << obj_tmp);
+      obj = BSON(sdb_item_field_name(((Item_field *)field2)) << obj_tmp);
     } else {
       if (!field2->const_item()) {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;
@@ -790,7 +798,7 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
         // field1 - num < field3
         obj_tmp = BSON(
             (cmp_inverse ? this->inverse_name() : this->name())
-            << BSON("$field" << ((Item_field *)field3)->field->field_name));
+            << BSON("$field" << sdb_field_name(((Item_field *)field3)->field)));
       } else {
         // field1 - num1 < num3
         rc = get_item_val((cmp_inverse ? this->inverse_name() : this->name()),
@@ -801,7 +809,7 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
       }
       builder_tmp.appendElements(obj_tmp);
       obj_tmp = builder_tmp.obj();
-      obj = BSON(((Item_field *)field1)->field->field_name << obj_tmp);
+      obj = BSON(sdb_field_name(((Item_field *)field1)->field) << obj_tmp);
     }
   } else {
     if (!field1->const_item()) {
@@ -826,9 +834,9 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
         builder_tmp.appendElements(obj_tmp);
         obj_tmp = BSON(
             (cmp_inverse ? this->inverse_name() : this->name())
-            << BSON("$field" << ((Item_field *)field3)->field->field_name));
+            << BSON("$field" << sdb_field_name(((Item_field *)field3)->field)));
         builder_tmp.appendElements(obj_tmp);
-        obj = BSON(((Item_field *)field2)->field->field_name
+        obj = BSON(sdb_field_name(((Item_field *)field2)->field)
                    << builder_tmp.obj());
       } else {
         if (!field3->const_item()) {
@@ -849,7 +857,7 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
             goto error;
           }
           builder_tmp.appendElements(obj_tmp);
-          obj = BSON(((Item_field *)field2)->field->field_name
+          obj = BSON(sdb_field_name(((Item_field *)field2)->field)
                      << builder_tmp.obj());
         } else if (0 == strcmp(func->func_name(), "-")) {
           // num1 - field2 < num3   =>   num1 < num3 + field2
@@ -865,7 +873,7 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
             goto error;
           }
           builder_tmp.appendElements(obj_tmp);
-          obj = BSON(((Item_field *)field2)->field->field_name
+          obj = BSON(sdb_field_name(((Item_field *)field2)->field)
                      << builder_tmp.obj());
         } else if (0 == strcmp(func->func_name(), "*")) {
           // num1 * field2 < num3
@@ -881,7 +889,7 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
             goto error;
           }
           builder_tmp.appendElements(obj_tmp);
-          obj = BSON(((Item_field *)field2)->field->field_name
+          obj = BSON(sdb_field_name(((Item_field *)field2)->field)
                      << builder_tmp.obj());
         } else if (0 == strcmp(func->func_name(), "/")) {
           // num1 / field2 < num3   =>   num1 < num3 + field2
@@ -897,7 +905,7 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
             goto error;
           }
           builder_tmp.appendElements(obj_tmp);
-          obj = BSON(((Item_field *)field2)->field->field_name
+          obj = BSON(sdb_field_name(((Item_field *)field2)->field)
                      << builder_tmp.obj());
         } else {
           rc = SDB_ERR_COND_UNEXPECTED_ITEM;
@@ -987,10 +995,12 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
     enum_field_types r_type = ((Item_field *)item_val)->field->type();
     enum_field_types l_real_type = item_field->field->real_type();
     enum_field_types r_real_type = ((Item_field *)item_val)->field->real_type();
-
-    if ((MYSQL_TYPE_JSON == l_type || MYSQL_TYPE_JSON == r_type) ||
-        (MYSQL_TYPE_SET == l_real_type && MYSQL_TYPE_ENUM == r_real_type) ||
-        (MYSQL_TYPE_SET == r_real_type && MYSQL_TYPE_ENUM == l_real_type)) {
+    if ((MYSQL_TYPE_SET == l_real_type && MYSQL_TYPE_ENUM == r_real_type) ||
+        (MYSQL_TYPE_SET == r_real_type && MYSQL_TYPE_ENUM == l_real_type)
+#if defined IS_MYSQL
+        || (MYSQL_TYPE_JSON == l_type || MYSQL_TYPE_JSON == r_type)
+#endif
+    ) {
       rc = SDB_ERR_COND_PART_UNSUPPORTED;
       goto error;
     }
@@ -1009,9 +1019,9 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
       }
     }
 
-    obj = BSON(item_field->field_name
-               << BSON(name_tmp << BSON(
-                           "$field" << ((Item_field *)item_val)->field_name)));
+    obj = BSON(sdb_item_field_name(item_field)
+               << BSON(name_tmp << BSON("$field" << sdb_item_field_name(
+                                            (Item_field *)item_val))));
     goto done;
   }
 
@@ -1019,7 +1029,7 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
   if (rc) {
     goto error;
   }
-  obj = BSON(item_field->field_name << obj_tmp);
+  obj = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
 done:
   DBUG_RETURN(rc);
@@ -1070,13 +1080,13 @@ int Sdb_func_between::to_bson(bson::BSONObj &obj) {
     if (rc) {
       goto error;
     }
-    obj_start = BSON(item_field->field_name << obj_tmp);
+    obj_start = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
     rc = get_item_val("$gt", item_end, item_field->field, obj_tmp);
     if (rc) {
       goto error;
     }
-    obj_end = BSON(item_field->field_name << obj_tmp);
+    obj_end = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
     arr_builder.append(obj_start);
     arr_builder.append(obj_end);
@@ -1086,13 +1096,13 @@ int Sdb_func_between::to_bson(bson::BSONObj &obj) {
     if (rc) {
       goto error;
     }
-    obj_start = BSON(item_field->field_name << obj_tmp);
+    obj_start = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
     rc = get_item_val("$lte", item_end, item_field->field, obj_tmp);
     if (rc) {
       goto error;
     }
-    obj_end = BSON(item_field->field_name << obj_tmp);
+    obj_end = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
     arr_builder.append(obj_start);
     arr_builder.append(obj_end);
@@ -1148,9 +1158,11 @@ int Sdb_func_in::to_bson(bson::BSONObj &obj) {
   }
 
   if (negated) {
-    obj = BSON(item_field->field_name << BSON("$nin" << arr_builder.arr()));
+    obj = BSON(sdb_item_field_name(item_field)
+               << BSON("$nin" << arr_builder.arr()));
   } else {
-    obj = BSON(item_field->field_name << BSON("$in" << arr_builder.arr()));
+    obj = BSON(sdb_item_field_name(item_field)
+               << BSON("$in" << arr_builder.arr()));
   }
 
 done:
@@ -1181,8 +1193,8 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
     rc = SDB_ERR_COND_INCOMPLETED;
     goto error;
   }
-
-  if (!like_item->escape_is_evaluated() || !my_isascii(like_item->escape)) {
+  if (!sdb_item_like_escape_is_evaluated(like_item) ||
+      !my_isascii(like_item->escape)) {
     rc = SDB_ERR_COND_UNSUPPORTED;
     goto error;
   }
@@ -1195,7 +1207,7 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
   while (!para_list.is_empty()) {
     item_tmp = para_list.pop();
     if (Item::FIELD_ITEM != item_tmp->type()) {
-      if (item_tmp->type() != Item::STRING_ITEM  // only support string
+      if (!sdb_is_string_item(item_tmp)  // only support string
           || item_val != NULL) {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;
         goto error;
@@ -1240,16 +1252,16 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
   if (regex_val.empty()) {
     // select * from t1 where a like "";
     // => {a:""}
-    obj = BSON(item_field->field_name << regex_val);
+    obj = BSON(sdb_item_field_name(item_field) << regex_val);
   } else {
-    regex_builder.appendRegex(item_field->field_name, regex_val, "s");
+    regex_builder.appendRegex(sdb_item_field_name(item_field), regex_val, "s");
     obj = regex_builder.obj();
   }
 
   bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
-  DBUG_PRINT("ha_sdb:info",
-             ("Table: %s, field: %s is in pushed condition",
-              *(item_field->field->table_name), item_field->field_name));
+  DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
+                             *(item_field->field->table_name),
+                             sdb_item_field_name(item_field)));
 
 done:
   DBUG_RETURN(rc);

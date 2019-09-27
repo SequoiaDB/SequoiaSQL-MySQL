@@ -44,7 +44,7 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   }
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
-  filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1);
+  sdb_filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1, true);
 
   // scan db_name
   ptr--;
@@ -59,7 +59,7 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   }
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
-  filename_to_tablename(tmp_name, db_name, sizeof(tmp_buff) - 1);
+  sdb_filename_to_tablename(tmp_name, db_name, sizeof(tmp_buff) - 1, true);
 
 done:
   return rc;
@@ -96,7 +96,7 @@ int sdb_get_db_name_from_path(const char *path, char *db_name,
   }
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
-  filename_to_tablename(tmp_name, db_name, sizeof(tmp_buff) - 1);
+  sdb_filename_to_tablename(tmp_name, db_name, sizeof(tmp_buff) - 1, true);
 
 done:
   return rc;
@@ -134,6 +134,11 @@ int sdb_rebuild_db_name_of_temp_table(char *db_name, int db_name_max_size) {
 }
 
 bool sdb_is_tmp_table(const char *path, const char *table_name) {
+#ifdef IS_MARIADB
+  // TODO: why mariadb table is of old version?
+  static const uint OLD_VER_PREFIX_STR_LEN = 9;
+  table_name += OLD_VER_PREFIX_STR_LEN;
+#endif
   return (is_prefix(path, opt_mysql_tmpdir) &&
           is_prefix(table_name, tmp_file_prefix));
 }
@@ -196,7 +201,7 @@ Sdb_encryption::Sdb_encryption() {
 int Sdb_encryption::encrypt(const String &src, String &dst) {
   int rc = SDB_ERR_OK;
   int real_enc_len = 0;
-  int dst_len = my_aes_get_size(src.length(), AES_OPMODE);
+  int dst_len = sdb_aes_get_size(AES_OPMODE, src.length());
 
   if (dst.alloc(dst_len)) {
     rc = HA_ERR_OUT_OF_MEM;
@@ -204,9 +209,9 @@ int Sdb_encryption::encrypt(const String &src, String &dst) {
   }
 
   dst.set_charset(&my_charset_bin);
-  real_enc_len = my_aes_encrypt((unsigned char *)src.ptr(), src.length(),
-                                (unsigned char *)dst.c_ptr(), m_key, KEY_LEN,
-                                AES_OPMODE, NULL);
+  sdb_aes_crypt(AES_OPMODE, ENCRYPTION_FLAG_ENCRYPT | ENCRYPTION_FLAG_NOPAD,
+                (uchar *)src.ptr(), src.length(), (uchar *)dst.c_ptr(),
+                real_enc_len, m_key, KEY_LEN);
   dst.length(real_enc_len);
 
   if (real_enc_len != dst_len) {
@@ -231,9 +236,9 @@ int Sdb_encryption::decrypt(const String &src, String &dst) {
   }
 
   dst.set_charset(&my_charset_bin);
-  real_dec_len = my_aes_decrypt((unsigned char *)src.ptr(), src.length(),
-                                (unsigned char *)dst.c_ptr(), m_key, KEY_LEN,
-                                AES_OPMODE, NULL);
+  sdb_aes_crypt(AES_OPMODE, ENCRYPTION_FLAG_DECRYPT | ENCRYPTION_FLAG_NOPAD,
+                (uchar *)src.ptr(), src.length(), (uchar *)dst.c_ptr(),
+                real_dec_len, m_key, KEY_LEN);
   if (real_dec_len < 0) {
     // Bad parameters.
     rc = SDB_ERR_INVALID_ARG;

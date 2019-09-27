@@ -90,8 +90,9 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    sprintf(source_str, "%s%s%s:%d:%u", PREFIX_THREAD_ID,
-            strlen(hostname) ? ":" : "", hostname, sdb_proc_id(), thread_id());
+    sprintf(source_str, "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
+            strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
+            (ulonglong)thread_id());
     option = BSON(SOURCE_THREAD_ID << source_str << TRANSAUTOROLLBACK << false
                                    << TRANSAUTOCOMMIT << true);
     rc = set_session_attr(option);

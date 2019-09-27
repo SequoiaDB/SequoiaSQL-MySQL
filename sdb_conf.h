@@ -16,9 +16,9 @@
 #ifndef SDB_CONF__H
 #define SDB_CONF__H
 
+#include <my_global.h>
 #include "sdb_util.h"
 #include <mysql/plugin.h>
-#include <my_global.h>
 #include <sql_string.h>
 
 #define SDB_OPTIMIZER_OPTION_SELECT_COUNT (1ULL << 0)

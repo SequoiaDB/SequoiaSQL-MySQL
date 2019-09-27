@@ -16,6 +16,7 @@
 #ifndef SDB_ITEM__H
 #define SDB_ITEM__H
 
+#include "sdb_sql.h"
 #include <client.hpp>
 #include <item.h>
 #include <item_cmpfunc.h>

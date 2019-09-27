@@ -15,9 +15,14 @@
 
 #ifndef SDB_LOCK__H
 #define SDB_LOCK__H
+#include "sdb_sql.h"
 
+#if defined IS_MYSQL
 #include <thr_mutex.h>
 #include <thr_rwlock.h>
+#elif defined IS_MARIADB
+#include "my_pthread.h"
+#endif
 
 class Sdb_mutex {
   native_mutex_t m_mutex;

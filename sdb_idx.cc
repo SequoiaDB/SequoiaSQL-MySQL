@@ -17,6 +17,7 @@
 #define MYSQL_SERVER
 #endif
 
+#include <my_global.h>
 #include "sdb_idx.h"
 #include <myisampack.h>
 #include <bson/bson.hpp>
@@ -76,7 +77,9 @@ static my_bool is_field_indexable(const Field *field) {
         return false;
       }
     }
+#ifdef IS_MYSQL
     case MYSQL_TYPE_JSON:
+#endif
     default:
       return false;
   }
@@ -109,7 +112,7 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
       all_is_not_null = false;
     }
     // TODO: ASC or DESC
-    key_obj_builder.append(key_part->field->field_name, 1);
+    key_obj_builder.append(sdb_field_name(key_part->field), 1);
   }
   key_obj = key_obj_builder.obj();
 
@@ -118,7 +121,7 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
   options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
   options = options_builder.obj();
 
-  rc = cl.create_index(key_obj, key_info->name, options);
+  rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
   if (rc) {
     goto error;
   }
@@ -141,7 +144,7 @@ int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,
   key_part = key_info->key_part;
   key_end = key_part + key_info->user_defined_key_parts;
   for (; key_part != key_end; ++key_part) {
-    obj_builder.append(key_part->field->field_name, order_direction);
+    obj_builder.append(sdb_field_name(key_part->field), order_direction);
   }
   if (secondary_sort_oid) {
     obj_builder.append(SDB_OID_FIELD, 1);
@@ -346,8 +349,7 @@ static void get_timestamp_key_obj(const uchar *key_ptr,
                                   const KEY_PART_INFO *key_part,
                                   const char *op_str, bson::BSONObj &obj) {
   bson::BSONObjBuilder obj_builder;
-  struct timeval tm;
-  int warnings = 0;
+  struct timeval tv;
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   const uchar *old_ptr = field->ptr;
@@ -356,12 +358,12 @@ static void get_timestamp_key_obj(const uchar *key_ptr,
     field->set_notnull();
   }
   field->ptr = (uchar *)new_ptr;
-  field->get_timestamp(&tm, &warnings);
+  sdb_field_get_timestamp(field, &tv);
   field->ptr = (uchar *)old_ptr;
   if (is_null) {
     field->set_null();
   }
-  obj_builder.appendTimestamp(op_str, tm.tv_sec * 1000, tm.tv_usec);
+  obj_builder.appendTimestamp(op_str, tv.tv_sec * 1000, tv.tv_usec);
   obj = obj_builder.obj();
 }
 
@@ -441,7 +443,9 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
       }
       break;
     }
+#ifdef IS_MYSQL
     case MYSQL_TYPE_JSON:
+#endif
     default:
       rc = HA_ERR_UNSUPPORTED;
       goto error;
@@ -463,7 +467,7 @@ static inline int create_condition(Field *field, const KEY_PART_INFO *key_part,
   rc = get_key_part_value(key_part, key_ptr, op_str, ignore_text_key, op_obj);
   if (SDB_ERR_OK == rc) {
     if (!op_obj.isEmpty()) {
-      bson::BSONObj cond = BSON(field->field_name << op_obj);
+      bson::BSONObj cond = BSON(sdb_field_name(field) << op_obj);
       builder.append(cond);
     }
   }
@@ -535,7 +539,8 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
               goto prepare_for_next_key_part;
           }
           bson::BSONObj is_null_obj = BSON("$isnull" << is_null);
-          bson::BSONObj is_null_cond = BSON(field->field_name << is_null_obj);
+          bson::BSONObj is_null_cond =
+              BSON(sdb_field_name(field) << is_null_obj);
           builder.append(is_null_cond);
 
           /*
@@ -649,7 +654,7 @@ my_bool sdb_is_same_index(const KEY *a, const KEY *b) {
   bool a_all_not_null = true;
   bool b_all_not_null = true;
 
-  if (strcmp(a->name, b->name) != 0 ||
+  if (strcmp(sdb_key_name(a), sdb_key_name(b)) != 0 ||
       a->user_defined_key_parts != b->user_defined_key_parts ||
       (a->flags & HA_NOSAME) != (b->flags & HA_NOSAME)) {
     goto done;
@@ -658,8 +663,8 @@ my_bool sdb_is_same_index(const KEY *a, const KEY *b) {
   key_part_a = a->key_part;
   key_part_b = b->key_part;
   for (uint i = 0; i < a->user_defined_key_parts; ++i) {
-    field_name_a = key_part_a->field->field_name;
-    field_name_b = key_part_b->field->field_name;
+    field_name_a = sdb_field_name(key_part_a->field);
+    field_name_b = sdb_field_name(key_part_b->field);
     if (strcmp(field_name_a, field_name_b) != 0) {
       goto done;
     }

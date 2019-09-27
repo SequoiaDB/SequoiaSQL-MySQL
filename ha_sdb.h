@@ -13,6 +13,7 @@
   along with this program; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
+#include "sdb_sql.h"
 #include <handler.h>
 #include <mysql_version.h>
 #include <client.hpp>
@@ -103,6 +104,7 @@ class ha_sdb : public handler {
      */
   uint max_supported_record_length() const;
 
+  uint max_key_part_length() const;
   /** @brief
      unireg.cc will call this to make sure that the storage engine can handle
      the data it is about to send. Return *real* limits of your storage engine
@@ -123,11 +125,9 @@ class ha_sdb : public handler {
     There is no need to implement ..._key_... methods if your engine doesn't
     support indexes.
    */
-#if MYSQL_VERSION_ID >= 50723
   uint max_supported_key_part_length(HA_CREATE_INFO *create_info) const;
-#else
+
   uint max_supported_key_part_length() const;
-#endif
 
   /** @brief
     unireg.cc will call this to make sure that the storage engine can handle
@@ -163,10 +163,13 @@ class ha_sdb : public handler {
 
     @param[in] rows       estimated number of rows in bulk insert
                           or 0 if unknown.
+               flags      Flags to control index creation
 
     @details Initializes memory structures required for bulk insert.
   */
   void start_bulk_insert(ha_rows rows);
+
+  void start_bulk_insert(ha_rows rows, uint flags);
 
   /**
     @brief End bulk insert.
@@ -191,6 +194,8 @@ class ha_sdb : public handler {
     skip it and and MySQL will treat it as not implemented.
   */
   int update_row(const uchar *old_data, uchar *new_data);
+
+  int update_row(const uchar *old_data, const uchar *new_data);
 
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
@@ -315,8 +320,8 @@ class ha_sdb : public handler {
 
   int field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder);
 
-  int get_update_obj(const uchar *old_data, uchar *new_data, bson::BSONObj &obj,
-                     bson::BSONObj &null_obj);
+  int get_update_obj(const uchar *old_data, const uchar *new_data,
+                     bson::BSONObj &obj, bson::BSONObj &null_obj);
 
   int next_row(bson::BSONObj &obj, uchar *buf);
 
