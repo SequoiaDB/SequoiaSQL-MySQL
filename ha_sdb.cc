@@ -2055,6 +2055,7 @@ int ha_sdb::info(uint flag) {
   if ((flag & HA_STATUS_AUTO) && table->found_next_number_field) {
     DBUG_PRINT("info", ("HA_STATUS_AUTO"));
     ulonglong auto_inc_val = 0;
+    ulonglong inc = ha_thd()->variables.auto_increment_increment;
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 2] = {0};
 
     conn = check_sdb_in_thd(ha_thd(), true);
@@ -2078,12 +2079,13 @@ int ha_sdb::info(uint flag) {
         *conn, &auto_inc_val, full_name,
         sdb_field_name(table->found_next_number_field));
     if (SDB_ERR_OK != rc) {
-      sql_print_error("Error %lu in ::update_create_info(): %s.%s", (ulong)rc,
-                      db_name, table_name);
+      sql_print_error(
+          "Failed to get auto-increment current value. table: %s.%s, rc: %d",
+          db_name, table_name, rc);
       goto error;
     }
     if (auto_inc_val > 1) {
-      stats.auto_increment_value = auto_inc_val;
+      stats.auto_increment_value = auto_inc_val + inc;
     }
   }
 
