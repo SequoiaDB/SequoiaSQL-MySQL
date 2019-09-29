@@ -152,9 +152,7 @@ class MysqlMetaSync:
     """
 
     def __init__(self, log):
-        # 获取当前文件路径
-        current_file_path = os.path.split(os.path.realpath(__file__))[0]
-        self.config_file = os.path.join(current_file_path, "config")
+        self.config_file = os.path.join(my_home, "config")
         self.log = log
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.config_file)
@@ -670,8 +668,8 @@ def run_task(log):
 
 
 def main():
-    current_file_path = os.path.split(os.path.realpath(__file__))[0]
-    pid_file = os.path.join(current_file_path, "APP_ID")
+    os.chdir(my_home)
+    pid_file = os.path.join(my_home, "APP_ID")
     if os.path.exists(pid_file):
         with open(pid_file, "r") as f:
             pid = str(f.readline())
@@ -686,7 +684,7 @@ def main():
         pid = str(os.getpid())
         f.write(pid)
 
-    log_config_file= os.path.join(current_file_path, "log.config")
+    log_config_file= os.path.join(my_home, "log.config")
     log = init_log(log_config_file)
     if log is None:
         print("Initialize logging failed. Exit...")
@@ -697,6 +695,7 @@ def main():
 
 reload(sys)
 sys.setdefaultencoding('utf8')
+my_home = os.path.abspath(os.path.dirname(__file__))
 
 if __name__ == '__main__':
     exit(main())

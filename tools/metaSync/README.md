@@ -142,7 +142,7 @@ python /opt/sequoiasql/mysql/tools/metaSync/meta_sync.py &
 ```bash
 crontab -e
 #每一分钟运行一次
-*/1 * * * * cd /opt/sequoiasql/mysql/tools/metaSync && /usr/bin/python /opt/sequoiasql/mysql/tools/metaSync/meta_sync.py >/dev/null 2>&1 &
+*/1 * * * * /usr/bin/python /opt/sequoiasql/mysql/tools/metaSync/meta_sync.py >/dev/null 2>&1 &
 ```
 其中 /opt/sequoiasql/mysql/tools/metaSync 为同步工具默认路径，/usr/bin/python 为系统 python 路径。如 SequoiaSQL-MySQL 或 python 安装路径与默认值不同，请对应修改上述命令中的相关路径。配置完成后，观察同步脚本是否能定时被拉起。
 
