@@ -859,8 +859,10 @@ int ha_sdb::end_bulk_insert() {
     m_use_bulk_insert = false;
     if (m_bulk_insert_rows.size() > 0) {
       rc = flush_bulk_insert();
+#ifdef IS_MYSQL
       // set it to fix bug: SEQUOIASQLMAINSTREAM-327
-      sdb_set_errno(rc);
+      set_my_errno(rc);
+#endif
     }
   }
 

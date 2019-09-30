@@ -137,10 +137,6 @@ bool sdb_is_insert_single_value(THD *thd) {
           sql_cmd_insert_base->insert_many_values.elements <= 1);
 }
 
-void sdb_set_errno(int m_errno) {
-  set_my_errno(m_errno);
-}
-
 SELECT_LEX *sdb_lex_first_select(THD *thd) {
   return thd->lex->select_lex;
 }
@@ -329,8 +325,6 @@ List_iterator<Item> sdb_lex_all_fields(LEX *const lex) {
 bool sdb_is_insert_single_value(THD *thd) {
   return (thd->lex->many_values.elements <= 1);
 }
-
-void sdb_set_errno(int m_errno) {}
 
 SELECT_LEX *sdb_lex_first_select(THD *thd) {
   return thd->lex->first_select_lex();
