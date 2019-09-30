@@ -255,6 +255,8 @@ void sdb_decimal_to_string(uint mask, const my_decimal *d, uint fixed_prec,
 
 List_iterator<Item> sdb_lex_all_fields(LEX *const lex);
 
+void sdb_set_errno(int m_errno);
+
 uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
                                bool stay_quiet);
 
