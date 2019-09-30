@@ -1410,7 +1410,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     }
   }
 
-  rs = HA_ALTER_INPLACE_NO_LOCK_AFTER_PREPARE;
+  rs = HA_ALTER_INPLACE_NOCOPY_NO_LOCK;
 done:
   return rs;
 error:

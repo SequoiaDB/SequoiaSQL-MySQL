@@ -85,6 +85,9 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define ALTER_RENAME_INDEX Alter_inplace_info::RENAME_INDEX
 #define ALTER_RENAME Alter_inplace_info::ALTER_RENAME
 
+// Alter inplace result
+#define HA_ALTER_INPLACE_NOCOPY_NO_LOCK HA_ALTER_INPLACE_NO_LOCK_AFTER_PREPARE
+
 // About DATE
 #define date_mode_t my_time_flags_t
 #define time_round_mode_t my_time_flags_t
