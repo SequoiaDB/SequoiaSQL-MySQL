@@ -66,6 +66,7 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define ALTER_ADD_FOREIGN_KEY Alter_inplace_info::ADD_FOREIGN_KEY
 #define ALTER_DROP_FOREIGN_KEY Alter_inplace_info::DROP_FOREIGN_KEY
 #define ALTER_COLUMN_INDEX_LENGTH Alter_inplace_info::ALTER_COLUMN_INDEX_LENGTH
+#define ALTER_INDEX_COMMENT Alter_inplace_info::ALTER_INDEX_COMMENT
 
 // Column flags
 #define ALTER_ADD_COLUMN Alter_inplace_info::ADD_COLUMN
@@ -111,6 +112,9 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #ifdef IS_MARIADB
 // About table flags
 #define HA_NO_READ_LOCAL_LOCK 0
+
+// About alter flags
+#define ALTER_INDEX_COMMENT 0
 
 // About mutex
 #define native_mutex_t pthread_mutex_t
