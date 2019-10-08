@@ -872,8 +872,8 @@ void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
     }
 #ifdef IS_MYSQL
     case MYSQL_TYPE_JSON: {
-      static const char *EMPTY_JSON_STR = "{}";
-      static const int EMPTY_JSON_STRLEN = 2;
+      static const char *EMPTY_JSON_STR = "null";
+      static const int EMPTY_JSON_STRLEN = 4;
       static String json_bin;
 
       if (json_bin.length() == 0) {
