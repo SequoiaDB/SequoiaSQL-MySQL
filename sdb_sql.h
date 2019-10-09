@@ -80,6 +80,9 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
   Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH
 #define ALTER_COLUMN_NOT_NULLABLE Alter_inplace_info::ALTER_COLUMN_NOT_NULLABLE
 #define ALTER_COLUMN_NULLABLE Alter_inplace_info::ALTER_COLUMN_NULLABLE
+#define ALTER_COLUMN_STORAGE_TYPE Alter_inplace_info::ALTER_COLUMN_STORAGE_TYPE
+#define ALTER_COLUMN_COLUMN_FORMAT \
+  Alter_inplace_info::ALTER_COLUMN_COLUMN_FORMAT
 
 // Other alter flags
 #define ALTER_CHANGE_CREATE_OPTION Alter_inplace_info::CHANGE_CREATE_OPTION
