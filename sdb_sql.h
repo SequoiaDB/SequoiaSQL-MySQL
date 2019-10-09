@@ -96,9 +96,9 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define TIME_TIME_ONLY TIME_DATETIME_ONLY
 
 // About encryption
-#define ENCRYPTION_FLAG_DECRYPT 0
-#define ENCRYPTION_FLAG_ENCRYPT 1
-#define ENCRYPTION_FLAG_NOPAD 2
+#define my_random_bytes(buf, num) my_rand_buffer(buf, num)
+#define my_aes_mode my_aes_opmode
+#define MY_AES_ECB my_aes_128_ecb
 
 #if MYSQL_VERSION_ID < 50725
 #define PLUGIN_VAR_INVISIBLE 0
@@ -130,11 +130,6 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define native_rw_rdlock(A) pthread_rwlock_rdlock(A)
 #define native_rw_wrlock(A) pthread_rwlock_wrlock(A)
 #define native_rw_unlock(A) pthread_rwlock_unlock(A)
-
-// About encryption
-#define my_rand_buffer(buf, num) my_random_bytes(buf, num)
-#define my_aes_opmode my_aes_mode
-#define my_aes_128_ecb MY_AES_ECB
 
 // About type conversion
 #define type_conversion_status int
@@ -248,11 +243,13 @@ table_map sdb_table_map(TABLE *table);
 
 bool sdb_has_update_triggers(TABLE *table);
 
-void sdb_aes_crypt(enum my_aes_opmode AES_OPMODE, int flags, const uchar *src,
-                   int slen, uchar *dst, int &dlen, const uchar *key,
-                   uint klen);
+int sdb_aes_encrypt(enum my_aes_mode mode, const uchar *key, uint klen,
+                    const String &src, String &dst);
 
-uint sdb_aes_get_size(enum my_aes_opmode AES_OPMODE, uint slen);
+int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
+                    const String &src, String &dst);
+
+uint sdb_aes_get_size(enum my_aes_mode mode, uint slen);
 
 bool sdb_datetime_to_timeval(THD *thd, const MYSQL_TIME *ltime,
                              struct timeval *tm, int *error_code);

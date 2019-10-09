@@ -44,7 +44,7 @@ bool sdb_field_is_date_time(enum_field_types type);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
-  static const enum my_aes_opmode AES_OPMODE = my_aes_128_ecb;
+  static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;
 
   unsigned char m_key[KEY_LEN];
 

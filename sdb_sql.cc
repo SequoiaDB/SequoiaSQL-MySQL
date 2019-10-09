@@ -93,14 +93,59 @@ bool sdb_item_get_date(THD *thd, Item *item, MYSQL_TIME *ltime,
   return item->get_date(ltime, flags);
 }
 
-void sdb_aes_crypt(enum my_aes_opmode AES_OPMODE, int flags, const uchar *src,
-                   int slen, uchar *dst, int &dlen, const uchar *key,
-                   uint klen) {
-  if (flags & 1) {
-    dlen = my_aes_encrypt(src, slen, dst, key, klen, AES_OPMODE, NULL);
-  } else {
-    dlen = my_aes_decrypt(src, slen, dst, key, klen, AES_OPMODE, NULL);
+int sdb_aes_encrypt(enum my_aes_mode mode, const uchar *key, uint klen,
+                    const String &src, String &dst) {
+  int rc = 0;
+  int real_enc_len = 0;
+  int dst_len = sdb_aes_get_size(mode, src.length());
+
+  if (dst.alloc(dst_len)) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
   }
+
+  dst.set_charset(&my_charset_bin);
+  real_enc_len = my_aes_encrypt((uchar *)src.ptr(), src.length(),
+                                (uchar *)dst.c_ptr(), key, klen, mode, NULL);
+  dst.length(real_enc_len);
+
+  if (real_enc_len != dst_len) {
+    // Bad parameters.
+    rc = ER_WRONG_ARGUMENTS;
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
+                    const String &src, String &dst) {
+  int rc = 0;
+  int real_dec_len = 0;
+
+  if (dst.alloc(src.length() + 1)) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  dst.set_charset(&my_charset_bin);
+  real_dec_len = my_aes_decrypt((uchar *)src.ptr(), src.length(),
+                                (uchar *)dst.c_ptr(), key, klen, mode, NULL);
+  if (real_dec_len < 0) {
+    // Bad parameters.
+    rc = ER_WRONG_ARGUMENTS;
+    goto error;
+  }
+  dst.length(real_dec_len);
+  dst[real_dec_len] = 0;
+
+done:
+  return rc;
+error:
+  goto done;
 }
 
 uint sdb_aes_get_size(enum my_aes_opmode AES_OPMODE, uint slen) {
@@ -283,17 +328,54 @@ bool sdb_item_get_date(THD *thd, Item *item, MYSQL_TIME *ltime,
   return item->get_date(thd, ltime, flags);
 }
 
-void sdb_aes_crypt(enum my_aes_opmode AES_OPMODE, int flags, const uchar *src,
-                   int slen, uchar *dst, int &dlen, const uchar *key,
-                   uint klen) {
-  uint unsigned_dlen = 0;
-  my_aes_crypt(AES_OPMODE, flags, src, (uint)slen, dst, &unsigned_dlen, key,
-               klen, NULL, 0);
-  dlen = unsigned_dlen;
+int sdb_aes_encrypt(enum my_aes_mode mode, const uchar *key, uint klen,
+                    const String &src, String &dst) {
+  int rc = 0;
+  uint real_enc_len = 0;
+  int dst_len = sdb_aes_get_size(mode, src.length());
+
+  if (dst.alloc(dst_len)) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+  dst.set_charset(&my_charset_bin);
+
+  rc = my_aes_crypt(mode, ENCRYPTION_FLAG_ENCRYPT, (uchar *)src.ptr(),
+                    (uint)src.length(), (uchar *)dst.c_ptr(), &real_enc_len,
+                    key, klen, NULL, 0);
+  dst.length(real_enc_len);
+
+done:
+  return rc;
+error:
+  goto done;
 }
 
-uint sdb_aes_get_size(enum my_aes_opmode AES_OPMODE, uint slen) {
-  return my_aes_get_size(AES_OPMODE, slen);
+int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
+                    const String &src, String &dst) {
+  int rc = 0;
+  uint real_dec_len = 0;
+
+  if (dst.alloc(src.length() + 1)) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+  dst.set_charset(&my_charset_bin);
+
+  rc = my_aes_crypt(mode, ENCRYPTION_FLAG_DECRYPT, (uchar *)src.ptr(),
+                    (uint)src.length(), (uchar *)dst.c_ptr(), &real_dec_len,
+                    key, klen, NULL, 0);
+  dst.length(real_dec_len);
+  dst[real_dec_len] = 0;
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+uint sdb_aes_get_size(enum my_aes_mode mode, uint slen) {
+  return my_aes_get_size(mode, slen);
 }
 
 bool sdb_datetime_to_timeval(THD *thd, const MYSQL_TIME *ltime,

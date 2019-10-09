@@ -195,60 +195,13 @@ bool sdb_field_is_date_time(enum_field_types type) {
 }
 
 Sdb_encryption::Sdb_encryption() {
-  my_rand_buffer(m_key, KEY_LEN);
+  my_random_bytes(m_key, KEY_LEN);
 }
 
 int Sdb_encryption::encrypt(const String &src, String &dst) {
-  int rc = SDB_ERR_OK;
-  int real_enc_len = 0;
-  int dst_len = sdb_aes_get_size(AES_OPMODE, src.length());
-
-  if (dst.alloc(dst_len)) {
-    rc = HA_ERR_OUT_OF_MEM;
-    goto error;
-  }
-
-  dst.set_charset(&my_charset_bin);
-  sdb_aes_crypt(AES_OPMODE, ENCRYPTION_FLAG_ENCRYPT | ENCRYPTION_FLAG_NOPAD,
-                (uchar *)src.ptr(), src.length(), (uchar *)dst.c_ptr(),
-                real_enc_len, m_key, KEY_LEN);
-  dst.length(real_enc_len);
-
-  if (real_enc_len != dst_len) {
-    // Bad parameters.
-    rc = SDB_ERR_INVALID_ARG;
-    goto error;
-  }
-
-done:
-  return rc;
-error:
-  goto done;
+  return sdb_aes_encrypt(AES_OPMODE, m_key, KEY_LEN, src, dst);
 }
 
 int Sdb_encryption::decrypt(const String &src, String &dst) {
-  int rc = SDB_ERR_OK;
-  int real_dec_len = 0;
-
-  if (dst.alloc(src.length() + 1)) {
-    rc = HA_ERR_OUT_OF_MEM;
-    goto error;
-  }
-
-  dst.set_charset(&my_charset_bin);
-  sdb_aes_crypt(AES_OPMODE, ENCRYPTION_FLAG_DECRYPT | ENCRYPTION_FLAG_NOPAD,
-                (uchar *)src.ptr(), src.length(), (uchar *)dst.c_ptr(),
-                real_dec_len, m_key, KEY_LEN);
-  if (real_dec_len < 0) {
-    // Bad parameters.
-    rc = SDB_ERR_INVALID_ARG;
-    goto error;
-  }
-  dst.length(real_dec_len);
-  dst[real_dec_len] = 0;
-
-done:
-  return rc;
-error:
-  goto done;
+  return sdb_aes_decrypt(AES_OPMODE, m_key, KEY_LEN, src, dst);
 }
