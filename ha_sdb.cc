@@ -1309,7 +1309,7 @@ bool ha_sdb::optimize_count(bson::BSONObj &condition) {
       !lex->all_selects_list->next_select_in_list() &&
       !sdb_where_condition(ha_thd()) &&
       !order && !group && optimize_with_materialization) {
-    List_iterator<Item> li(select->all_fields);
+    List_iterator<Item> li(select->item_list);
     Item *item;
     while ((item = li++)) {
       if (item->type() == Item::SUM_FUNC_ITEM) {
@@ -1330,9 +1330,13 @@ bool ha_sdb::optimize_count(bson::BSONObj &condition) {
         /* support count(const) and count(field), not support count(func) */
         if (type == Item::FIELD_ITEM || sum_item->const_item()) {
           count_query = true;
-          count_cond_blder.append(sum_item->get_arg(0)->item_name.ptr(),
+          count_cond_blder.append(sdb_item_name(sum_item->get_arg(0)),
                                   BSON("$isnull" << 0));
+#if defined IS_MYSQL
         } else if (type == Item::INT_ITEM) {
+#elif defined IS_MARIADB
+        } else if (type == Item::CONST_ITEM) {
+#endif
           // count(*)
           count_query = true;
         } else {
