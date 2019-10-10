@@ -854,7 +854,8 @@ void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
     }
     case MYSQL_TYPE_DATE:
     case MYSQL_TYPE_NEWDATE: {
-      static const bson::Date_t ZERO_DATE((longlong)0);
+      // '0000-00-00'
+      static const bson::Date_t ZERO_DATE((longlong)-62170013143000);
       builder.appendDate(sdb_field_name(field), ZERO_DATE);
       break;
     }
@@ -887,8 +888,7 @@ void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
         Json_dom *dom = Json_dom::parse(EMPTY_JSON_STR, EMPTY_JSON_STRLEN,
                                         &parse_err, &err_offset);
         DBUG_ASSERT(dom);
-        bool rs = json_binary::serialize(dom, &json_bin);
-        DBUG_ASSERT(!rs);
+        json_binary::serialize(dom, &json_bin);
         delete dom;
       }
 
