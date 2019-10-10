@@ -340,6 +340,42 @@ class Cast_float2float : public I_build_cast_rule {
 
 Cast_float2float f2f;
 
+class Cast_float2decimal : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    Field_real *float_field = (Field_real *)old_field;
+    Field_new_decimal *dec_field = (Field_new_decimal *)new_field;
+
+    bool signed2unsigned =
+        !float_field->unsigned_flag && dec_field->unsigned_flag;
+    bool may_be_truncated = false;
+
+    if (float_field->not_fixed) {
+      may_be_truncated = true;
+    } else {
+      uint old_m = float_field->field_length;
+      uint new_m = dec_field->precision;
+      uint old_d = float_field->decimals();
+      uint new_d = dec_field->decimals();
+      if (old_d > new_d || (old_m - old_d) > (new_m - new_d)) {
+        may_be_truncated = true;
+      }
+    }
+
+    if (!signed2unsigned && !may_be_truncated) {
+      rs = false;
+      goto done;
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_float2decimal f2d;
+
 class Cast_decimal2decimal : public I_build_cast_rule {
  public:
   bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
@@ -537,10 +573,10 @@ I_build_cast_rule *build_cast_funcs[SDB_TYPE_NUM][SDB_TYPE_NUM] = {
     {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
      &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
     /*05 FLOAT*/
-    {&fai, &fai, &fai, &fai, &fai, &f2f, &f2f, &fai, &fai, &fai, &fai, &fai,
+    {&fai, &fai, &fai, &fai, &fai, &f2f, &f2f, &f2d, &fai, &fai, &fai, &fai,
      &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*06 DOUBLE*/
-    {&fai, &fai, &fai, &fai, &fai, &f2f, &f2f, &fai, &fai, &fai, &fai, &fai,
+    {&fai, &fai, &fai, &fai, &fai, &f2f, &f2f, &f2d, &fai, &fai, &fai, &fai,
      &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*07 DECIMAL*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &d2d, &fai, &fai, &fai, &fai,
