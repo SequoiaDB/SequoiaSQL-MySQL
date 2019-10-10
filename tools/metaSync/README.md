@@ -16,6 +16,7 @@ MySQL 的元数据同步工具的实现原理是通过解析 MySQL 的审计日�
 + MySQL 实例服务器之间需要使用主机名互通
 + 支持同步 ALTER，CREATE，DECLARE，GRANT，REVOKE，FLUSH 操作，其它操作暂不支持
 + 仅支持python2
++ 需要使用 SequoiaSQL-MySQL 3.2.3 或以上版本
 
 ## 审计插件安装
 > 注意：为了避免增加审计插件后发生 MySQL 无法启动的情况，强烈建议在安装审计日志插件前，先完成 MySQL 环境的搭建及启动，安装完插件后再重启 MySQL 服务。
@@ -56,7 +57,7 @@ sdb_sql_ctl restart myinst
 ## 工具使用说明
 SequoiaSQL-MySQL 完成安装后，同步工具位于安装目录下的 tools/metaSync 目录下。
 ### 工具配置项
-工具包含一个配置文件，名为 config，配置项如下：
+工具使用的配置文件名为 config。如果是全新安装，开始该文件是不存在的，需要从 config.sample 进行拷贝。如果是升级，则该文件应当已经存在。配置项如下：
 ```config
 [mysql]
 # mysql节点主机名，只能填主机名
@@ -71,29 +72,21 @@ mysql_user = sdbadmin
 mysql_password = sdbadmin
 # mysql安装目录
 install_dir = /opt/sequoiasql/mysql
+# 审计日志存储目录
+audit_log_directory = /opt/sequoiasql/mysql/database/auditlog
+# 审计日志文件名
+audit_log_file_name = server_audit.log
 
 [execute]
 # 同步间隔
 interval_time = 5
-
-[parse]
-# 审计日志存储目录
-parse_log_directory = /opt/sequoiasql/mysql/database/auditlog
-# 审计日志文件名
-audit_log_file_name = server_audit.log
-# 最后扫描文件的最后修改时间
-file_last_modified_time = 0
-# 首行审计日志开始时间戳
-file_first_line_time = 0
-# 首行审计日志开始线程号
-file_first_line_thread_id = 0
-# 首行审计日志开始序号
-file_first_line_seq = 0
-# 最后扫描行号
-last_parse_row = 0
+# 出错时是否忽略，如为 false，会一直重试
+ignore_error = true
+# 出错的情况下，忽略前的重试次数
+max_retry_times = 5
 ```
 ### 日志配置项
-同步工具使用 python 的 logging 模块输出日志，配置文件为 log.config，配置项如下（日志目录会自动创建）：
+同步工具使用 python 的 logging 模块输出日志，配置文件为 log.config。如果是全新安装，开始该文件是不存在的，需要从 log.config.sample 拷贝。配置项如下（日志目录会自动创建）：
 ```
 [loggers]
 keys=root,ddlLogger
@@ -127,10 +120,28 @@ formatter=loggerFormatter
 args=('logs/run.log', 'a+', 104857600, 10)
 
 [formatter_loggerFormatter]
-format=%(asctime)s [%(levelname)s] %(message)s
+format=%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s
 datefmt=
 
 ```
+### 状态文件
+工具在正常运行后，会在与 config 文件相同的目录下，创建名为 sync.stat 的文本文件，用于记录同步状态，以便工具在重启后，能接着之前的处理进度继续工作。
+该文件是在 3.2.4 版本中新增，早期版本进度信息也是存储于 config 文件中的。在从老版本升级到新版本后，会在第一次启动的时候自动进行升级，生成正确的配置文件和状态文件。状态文件的内容如下：
+```
+[status]
+# 最后扫描文件的最后修改时间
+file_last_modified_time = 0
+# 首行审计日志开始时间戳
+file_first_line_time = 0
+# 首行审计日志开始线程号
+file_first_line_thread_id = 0
+# 首行审计日志开始序号
+file_first_line_seq = 0
+# 最后扫描行号
+last_parse_row = 0
+```
+以上各值为初始值，会在运行过程中自动刷新。
+
 ### 启动工具
 在完成所有配置后，在各实例所在主机的 sdbadmin 用户下，执行以下命令在后台启动同步工具
 ```config
