@@ -473,6 +473,8 @@ class Cast_set2set : public I_build_cast_rule {
           break;
         }
       }
+    } else {
+      is_append = false;
     }
     if (is_append) {
       rs = false;
@@ -501,6 +503,8 @@ class Cast_enum2enum : public I_build_cast_rule {
           break;
         }
       }
+    } else {
+      is_append = false;
     }
     if (is_append) {
       rs = false;
