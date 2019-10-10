@@ -20,7 +20,6 @@ import re
 import io
 from keywords import *
 
-
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -45,7 +44,8 @@ class CryptoUtil:
 
     @classmethod
     def encrypt(cls, source_str):
-        random_choice = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()"
+        random_choice = ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                         "1234567890!@#$%^&*()")
         to_encrypt_arr = []
         shift_str = ""
         for char in source_str:
@@ -91,7 +91,8 @@ class DateUtils:
 
     @classmethod
     def get_current_time(cls):
-        """get current time of year-month-day hour:minute:second.microsecond format
+        """get current time of year-month-day hour:minute:second.microsecond
+           format
 
         :return: time of year-month-day hour:minute:second.microsecond format
         """
@@ -110,7 +111,8 @@ class DateUtils:
 
     @classmethod
     def datetime_to_timestamp(cls, datetime_obj):
-        local_timestamp = long(time.mktime(datetime_obj.timetuple()) * 1000000.0 + datetime_obj.microsecond)
+        local_timestamp = long(time.mktime(
+            datetime_obj.timetuple()) * 1000000.0 + datetime_obj.microsecond)
         return local_timestamp
 
     @classmethod
@@ -120,23 +122,27 @@ class DateUtils:
 
     @classmethod
     def timestamp_to_strtime(cls, timestamp, date_format):
-        return cls.datetime_to_strtime(cls.timestamp_to_datetime(timestamp), date_format)
+        return cls.datetime_to_strtime(cls.timestamp_to_datetime(timestamp),
+                                       date_format)
 
     @classmethod
     def strtime_to_timestamp(cls, timestr, date_format):
         try:
-            local_str_time = cls.datetime_to_timestamp(cls.strtime_to_datetime(timestr, date_format))
+            local_str_time = cls.datetime_to_timestamp(
+                cls.strtime_to_datetime(timestr, date_format))
             return local_str_time
-        except Exception as e:
+        except Exception:
             return 0
 
     @classmethod
     def get_file_ctime_timestamp(cls, f):
-        return cls.datetime_to_timestamp(datetime.fromtimestamp(os.path.getctime(f)))
+        return cls.datetime_to_timestamp(
+            datetime.fromtimestamp(os.path.getctime(f)))
 
     @classmethod
     def get_file_mtime_timestamp(cls, f):
-        return cls.datetime_to_timestamp(datetime.fromtimestamp(os.path.getmtime(f)))
+        return cls.datetime_to_timestamp(
+            datetime.fromtimestamp(os.path.getmtime(f)))
 
     @staticmethod
     def compare_mtime(x, y):
@@ -159,20 +165,20 @@ class Logger:
             # Get the log file path from the log configuration file, and create
             # the directory if it dose not exist.
             config_parser = ConfigParser.ConfigParser()
-            files = config_parser.read(config_file)
+            files = config_parser.read(log_config_file)
             if len(files) != 1:
                 print("[Error] Read log configuration file failed")
                 return 1
             log_file = config_parser.get("handler_rotatingFileHandler",
                                          "args").split('\'')[1]
-            curr_path = os.path.abspath(os.path.dirname(config_file))
+            curr_path = os.path.abspath(os.path.dirname(log_config_file))
             log_file_full_path = os.path.join(curr_path, log_file)
             log_file_parent_dir = \
                 os.path.abspath(os.path.join(log_file_full_path, ".."))
             if not os.path.exists(log_file_parent_dir):
                 os.makedirs(log_file_parent_dir)
 
-            logging.config.fileConfig(config_file)
+            logging.config.fileConfig(log_config_file)
             self.logger = logging.getLogger("ddlLogger")
             return 0
         except BaseException as e:
@@ -442,7 +448,8 @@ class PreProcessor:
 
 
 class MysqlMetaSync:
-    """ parsing DDL operation in the audit log at a specified time interval and execute on other SSQL servers
+    """ parsing DDL operation in the audit log at a specified time interval and
+        execute on other SSQL servers
 
     """
 
@@ -465,51 +472,58 @@ class MysqlMetaSync:
         # Remove the password from the command, for logging.
         safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
         try:
-            process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen(command, shell=False,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
             out, error = process.communicate()
             if "" != error and MYSQL_ERRORS[CONN_ERR] in error:
                 logger.error("Not able to connect to remote instance. "
-                                 "Command: " + safe_cmd_str)
+                             "Command: " + safe_cmd_str)
                 return CONN_ERR
             elif "" != error and (MYSQL_ERRORS[SYNTAX_ERR] in error or
                                   MYSQL_ERRORS[SYNTAX_ERR_2] in error):
-                # If syntax error is encountered, it is most likely to be the sql_mode settings. So set the sql_mode to
-                # ANSI_QUOTES and try again.
+                # If syntax error is encountered, it is most likely to be the
+                # sql_mode settings. So set the sql_mode to ANSI_QUOTES and
+                # try again.
                 logger.warn("Encounter syntax error, retry with sql_mode "
                             "set to ANSI_QUOTES...")
-                command[len(command) - 1] = 'set sql_mode="ANSI_QUOTES";' + command[len(command) - 1]
+                command[len(command) - 1] = 'set sql_mode="ANSI_QUOTES";' + \
+                                            command[len(command) - 1]
                 cmd_str = " ".join(command)
                 safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
                 # Try again
-                process = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                process = subprocess.Popen(command, shell=False,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
                 out, error = process.communicate()
                 if "" != error and MYSQL_ERRORS[CONN_ERR] in error:
                     logger.error("Not able to connect to remote instance. "
-                                     "Command: " + safe_cmd_str)
+                                 "Command: " + safe_cmd_str)
                     return CONN_ERR
                 elif "" != error and (MYSQL_ERRORS[SYNTAX_ERR] in error or
                                       MYSQL_ERRORS[SYNTAX_ERR_2] in error):
                     logger.error("Syntax error in statement. Command: " +
-                                     safe_cmd_str)
+                                 safe_cmd_str)
                     return SYNTAX_ERR
             if 0 != process.returncode:
                 logger.error("Execute command failed, subprocess return "
-                                 "code: " + str(process.returncode) +
-                                 ", error: " + error.strip() + ". Command: " +
-                                 safe_cmd_str)
+                             "code: " + str(process.returncode) +
+                             ", error: " + error.strip() + ". Command: " +
+                             safe_cmd_str)
                 return UNHANDLED_ERR
             logger.info("Execute command succeed. Command detail: " +
-                            safe_cmd_str)
+                        safe_cmd_str)
             return MYSQL_OK
         except subprocess.CalledProcessError:
             msg = traceback.format_exc()
             logger.error("Execute command failed: " + msg + ". Command: " +
-                             safe_cmd_str)
+                         safe_cmd_str)
             return UNHANDLED_ERR
 
     def __log_ignore_stmt(self, stmt):
         ignore_file = open(self.ignore_file, "a")
-        ignore_file.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + " " + stmt + "\n")
+        ignore_file.write(
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + " " + stmt + "\n")
         ignore_file.close()
 
     def get_audit_log_files(self):
@@ -521,13 +535,15 @@ class MysqlMetaSync:
         try:
             audit_log_path = option_mgr.get_audit_log_path()
             logger.info("get audit log file list in {directory}"
-                            .format(directory=audit_log_path))
+                        .format(directory=audit_log_path))
             for f in os.listdir(audit_log_path):
                 if f.startswith(option_mgr.get_audit_log_name()) \
                         and not f.endswith(".swp"):
                     file_path = os.path.join(audit_log_path, f)
-                    tmp_last_modified_time = DateUtils.get_file_mtime_timestamp(file_path)
-                    tmp_meta_modified_time = DateUtils.get_file_ctime_timestamp(file_path)
+                    tmp_last_modified_time = DateUtils.get_file_mtime_timestamp(
+                        file_path)
+                    tmp_meta_modified_time = DateUtils.get_file_ctime_timestamp(
+                        file_path)
                     if stat_mgr.get_file_last_mod_time() <= \
                             tmp_last_modified_time:
                         target_file = {
@@ -536,15 +552,18 @@ class MysqlMetaSync:
                             "mtime": tmp_last_modified_time,
                             "ctime": tmp_meta_modified_time
                         }
-                        logger.debug("{source} <= {target}, put audit log file [{file_name}] into list".format(
-                                     file_name=f,
-                                     source=stat_mgr.get_file_last_mod_time(),
-                                     target=tmp_last_modified_time)
+                        logger.debug(
+                            "{source} <= {target}, put audit log file "
+                            "[{file_name}] into list".format(
+                                file_name=f,
+                                source=stat_mgr.get_file_last_mod_time(),
+                                target=tmp_last_modified_time)
                         )
                         target_files.append(target_file)
         except OSError as e:
             if e.errno == 2:
-                logger.warn("audit file list was changed when collecting audit file list")
+                logger.warn("audit file list was changed when collecting "
+                            "audit file list")
                 target_files = []
             else:
                 raise e
@@ -581,7 +600,9 @@ class MysqlMetaSync:
 
             retry_times = 0
             while True:
-                logger.info("begin to connect [{host}]'s mysql server to execute sql".format(host=host))
+                logger.info(
+                    "begin to connect [{host}]'s mysql server to execute sql"
+                    .format(host=host))
                 retry_times += 1
                 result = self.__execute_command(command)
                 if MYSQL_OK == result:
@@ -593,12 +614,12 @@ class MysqlMetaSync:
                     # Remove the password from the command, for logging.
                     safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
                     logger.error("Failed to execute command. Write command "
-                                     "into ignore file... Command: " +
-                                     safe_cmd_str)
+                                 "into ignore file... Command: " +
+                                 safe_cmd_str)
                     self.__log_ignore_stmt(safe_cmd_str)
                     break
                 logger.error("Execute command failed. Sleep for 3 seconds "
-                                 "and try again...")
+                             "and try again...")
                 time.sleep(3)
 
     def parse_audit_log_file(self, f):
@@ -606,7 +627,8 @@ class MysqlMetaSync:
 
         :param f: file descriptor of the audit log file
         """
-        audit_log_field = ["log_time", "server_host", "user", "remote_host", "thread_id", "seq", "operation",
+        audit_log_field = ["log_time", "server_host", "user", "remote_host",
+                           "thread_id", "seq", "operation",
                            "database",
                            "sql", "exec_state"]
         actual_parse_count = 0
@@ -614,13 +636,18 @@ class MysqlMetaSync:
         lines = f.readlines()
         for line in lines:
             row_number += 1
-            if int(stat_mgr.get_last_parse_row()) >= row_number:  # start from last parse row
+            # start from last parse row
+            if int(stat_mgr.get_last_parse_row()) >= row_number:
                 continue
-            # The statement may contain '\n' or '\t'. They will impact the action of the DictReader. So remove
-            # them before parse.
-            line = line.replace('\\r\\n', ' ').replace('\\n', ' ').replace('\\t', ' ').strip()
-            reader_list = csv.DictReader(io.StringIO(unicode(line, "utf-8")), fieldnames=audit_log_field, delimiter=',',
-                                         quotechar="'", quoting=csv.QUOTE_ALL, escapechar='\\')
+            # The statement may contain '\n' or '\t'. They will impact the
+            # action of the DictReader. So remove them before parse.
+            line = line.replace('\\r\\n', ' ').replace('\\n', ' ').replace(
+                '\\t', ' ').strip()
+            reader_list = csv.DictReader(io.StringIO(unicode(line, "utf-8")),
+                                         fieldnames=audit_log_field,
+                                         delimiter=',',
+                                         quotechar="'", quoting=csv.QUOTE_ALL,
+                                         escapechar='\\')
             row = next(reader_list)
 
             actual_parse_count = actual_parse_count + 1
@@ -628,12 +655,14 @@ class MysqlMetaSync:
             exec_state = row["exec_state"]
             try:
                 if int(exec_state) != self.SUCCESS_STATE:
-                    logger.debug( "filter error log: {row}".format(row=row))
+                    logger.debug("filter error log: {row}".format(row=row))
                     stat_mgr.last_parse_row = row_number
                     continue
             except BaseException as e:
                 msg = traceback.format_exc()
-                logger.error("filter error audit log failed, err:{error}".format(error=msg))
+                logger.error(
+                    "filter error audit log failed, err:{error}".format(
+                        error=msg))
                 raise e
 
             # filter other mysql host log
@@ -666,12 +695,14 @@ class MysqlMetaSync:
                     database = database[1:-1]
 
                 db_required = True
-                # Replace 'ALGORITHM=COPY' with one blank, as on other instances, the operation should never be done
-                # in copy mode.
-                sql = re.sub(r'[,]*(\s*)ALGORITHM(\s*)=(\s*)COPY(\s*)[,]*', ' ', sql, flags=re.IGNORECASE)
+                # Replace 'ALGORITHM=COPY' with one blank, as on other
+                # instances, the operation should never be done in copy mode.
+                sql = re.sub(r'[,]*(\s*)ALGORITHM(\s*)=(\s*)COPY(\s*)[,]*', ' ',
+                             sql, flags=re.IGNORECASE)
                 exec_sql_info = {"database": database, "sql": str(sql)}
 
-                # If it's create/drop database operation, ignore the database argument.
+                # If it's create/drop database operation, ignore the database
+                # argument.
                 if self.__is_database_opr(low_sql):
                     db_required = False
                 session_attr = "set session sequoiadb_execute_only_in_mysql=on;"
@@ -694,7 +725,8 @@ class MysqlMetaSync:
                 self.sleep_time = 1
                 file_index = 0
                 file_count = len(files)
-                logger.info("audit log file list count is {count}".format(count=file_count))
+                logger.info("audit log file list count is {count}".format(
+                    count=file_count))
                 finish_parse_file_list = True
                 parse_next_file = False
                 for index in range(file_count):
@@ -705,7 +737,10 @@ class MysqlMetaSync:
                     current_file_mtime = current_file["mtime"]
                     with open(current_file_path, "rb") as f:
                         try:
-                            current_file_actual_ctime = DateUtils.get_file_ctime_timestamp(current_file_path)
+                            current_file_actual_ctime = \
+                                DateUtils.get_file_ctime_timestamp(
+                                    current_file_path
+                                )
                             # 文件列表中的文件个数发生变化的情况
                             if current_file_name.endswith(
                                     option_mgr.get_audit_log_name()) \
@@ -715,9 +750,13 @@ class MysqlMetaSync:
                                 pre_file = files[index - 1]
                                 pre_file_path = pre_file["file"]
                                 pre_file_ctime = pre_file["ctime"]
-                                pre_file_actual_ctime = DateUtils.get_file_ctime_timestamp(pre_file_path)
+                                pre_file_actual_ctime = \
+                                    DateUtils.get_file_ctime_timestamp(
+                                        pre_file_path
+                                    )
                                 if pre_file_ctime != pre_file_actual_ctime:
-                                    logger.warn("file list is changed, get file list again.")
+                                    logger.warn("file list is changed, get "
+                                                "file list again.")
                                     finish_parse_file_list = False
                                     break
                             if current_file_name.endswith(
@@ -741,24 +780,32 @@ class MysqlMetaSync:
                                 finish_parse_file_list = False
                         except OSError as e:
                             if e.errno == 2:
-                                logger.warn("audit file list was changed when get audit file {file} last modified time"
-                                            .format(file=current_file_name))
+                                logger.warn(
+                                    "audit file list was changed when get audit"
+                                    " file {file} last modified time"
+                                    .format(file=current_file_name))
                                 finish_parse_file_list = False
                                 break
                             else:
                                 msg = traceback.format_exc()
-                                logger.error("fail to get audit file [{file}] last modified time".format(
-                                                file=current_file_name))
+                                logger.error(
+                                    "fail to get audit file [{file}] last "
+                                    "modified time".format(
+                                        file=current_file_name
+                                    )
+                                )
                                 logger.error(msg)
                                 raise e
                         # parse file
                         line = f.readline()
                         if not line:
-                            logger.info("audit file [{file}] is empty".format(file=current_file_name))
+                            logger.info("audit file [{file}] is empty".format(
+                                file=current_file_name))
                             finish_parse_file_list = True
                             break
                         elements = line.split(",")
-                        first_line_time = DateUtils.strtime_to_timestamp(elements[0], "%Y%m%d %H:%M:%S")
+                        first_line_time = DateUtils.strtime_to_timestamp(
+                            elements[0], "%Y%m%d %H:%M:%S")
                         first_line_thread_id = long(elements[4])
                         first_line_seq = long(elements[5])
 
@@ -771,10 +818,9 @@ class MysqlMetaSync:
                             stat_mgr.set_file_last_mod_time(current_file_mtime)
 
                             logger.info(
-                                "parse audit log file: {file}, it's last "
-                                "modified time is {last_modified_time}"
-                                .format(file=current_file_name,
-                                        last_modified_time=
+                                "parse audit log file: {}, it's last "
+                                "modified time is {}"
+                                .format(current_file_name,
                                         DateUtils.timestamp_to_strtime(
                                             stat_mgr.get_file_last_mod_time(),
                                             "%Y-%m-%d-%H:%M:%S.%f")
@@ -783,15 +829,15 @@ class MysqlMetaSync:
                             f.seek(0)
                             actual_parse_count = self.parse_audit_log_file(f)
                             logger.info(
-                                "file row count: {row}, parse count: {count}"
-                                .format(row=stat_mgr.get_last_parse_row(),
-                                        count=actual_parse_count)
+                                "file row count: {}, parse count: {}"
+                                .format(stat_mgr.get_last_parse_row(),
+                                        actual_parse_count)
                             )
                         elif first_line_time == \
                                 stat_mgr.get_file_first_line_time() \
-                             and first_line_thread_id == \
-                                stat_mgr.get_file_first_line_thread_id()\
-                             and first_line_seq == \
+                                and first_line_thread_id == \
+                                stat_mgr.get_file_first_line_thread_id() \
+                                and first_line_seq == \
                                 stat_mgr.get_file_first_line_seq():
                             stat_mgr.set_file_last_mod_time(current_file_mtime)
                             logger.info(
@@ -830,9 +876,9 @@ class MysqlMetaSync:
                             f.seek(0)
                             actual_parse_count = self.parse_audit_log_file(f)
                             logger.info(
-                                "file row count : {row}, parse count: {count}"
-                                .format(row=stat_mgr.get_last_parse_row(),
-                                        count=actual_parse_count)
+                                "file row count : {}, parse count: {}"
+                                .format(stat_mgr.get_last_parse_row(),
+                                        actual_parse_count)
                             )
                         else:
                             logger.error(
@@ -875,16 +921,19 @@ class MysqlMetaSync:
 
 def init_log(log_config_file):
     try:
-        # Get the log file path from the log configuration file, and create the directory if it dose not exist.
+        # Get the log file path from the log configuration file, and create the
+        # directory if it dose not exist.
         config_parser = ConfigParser.ConfigParser()
         files = config_parser.read(log_config_file)
         if len(files) != 1:
             print("Error: Read log configuration file failed")
             return None
-        log_file = config_parser.get("handler_rotatingFileHandler", "args").split('\'')[1]
+        log_file = config_parser.get("handler_rotatingFileHandler", "args")\
+                   .split('\'')[1]
         curr_path = os.path.abspath(os.path.dirname(log_config_file))
         log_file_full_path = os.path.join(curr_path, log_file)
-        log_file_parent_dir = os.path.abspath(os.path.join(log_file_full_path, ".."))
+        log_file_parent_dir = os.path.abspath(
+            os.path.join(log_file_full_path, ".."))
         if not os.path.exists(log_file_parent_dir):
             os.makedirs(log_file_parent_dir)
 
