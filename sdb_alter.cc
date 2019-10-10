@@ -325,8 +325,11 @@ class Cast_float2float : public I_build_cast_rule {
       may_be_truncated = true;
     } else {
       if (!old_float->not_fixed && !new_float->not_fixed) {
-        if (old_float->field_length > new_float->field_length ||
-            old_float->decimals() > new_float->decimals()) {
+        uint old_m = old_float->field_length;
+        uint new_m = new_float->field_length;
+        uint old_d = old_float->decimals();
+        uint new_d = new_float->decimals();
+        if (old_d > new_d || (old_m - old_d) > (new_m - new_d)) {
           may_be_truncated = true;
         }
       } else if (old_float->not_fixed && !new_float->not_fixed) {
@@ -394,8 +397,12 @@ class Cast_decimal2decimal : public I_build_cast_rule {
     Field_new_decimal *new_dec = (Field_new_decimal *)new_field;
     bool signed2unsigned = !old_dec->unsigned_flag && new_dec->unsigned_flag;
 
-    if (!signed2unsigned && old_dec->precision <= new_dec->precision &&
-        old_dec->decimals() <= new_dec->decimals()) {
+    uint old_m = old_dec->precision;
+    uint new_m = new_dec->precision;
+    uint old_d = old_dec->decimals();
+    uint new_d = new_dec->decimals();
+    if (!signed2unsigned && old_d <= new_d &&
+        (old_m - old_d) <= (new_m - new_d)) {
       rs = false;
       goto done;
     }
