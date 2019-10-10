@@ -184,18 +184,24 @@ class Cast_int2float : public I_build_cast_rule {
     bool signed2unsigned =
         !int_field->unsigned_flag && float_field->unsigned_flag;
     uint float_len = 0;
+    uint float_len_max = 0;
     uint int_len = get_int_max_strlen(int_field);
 
+    if (float_field->type() == MYSQL_TYPE_FLOAT) {
+      float_len_max = FLOAT_EXACT_DIGIT_LEN;
+    } else {  // == MYSQL_TYPE_DOUBLE
+      float_len_max = DOUBLE_EXACT_DIGIT_LEN;
+    }
+
     if (float_field->not_fixed) {
-      if (float_field->type() == MYSQL_TYPE_FLOAT) {
-        float_len = FLOAT_EXACT_DIGIT_LEN;
-      } else {  // == MYSQL_TYPE_DOUBLE
-        float_len = DOUBLE_EXACT_DIGIT_LEN;
-      }
+      float_len = float_len_max;
     } else {
       uint m = new_field->field_length;
       uint d = new_field->decimals();
       float_len = m - d;
+      if (float_len > float_len_max) {
+        float_len = float_len_max;
+      }
     }
 
     if (!int_field->unsigned_flag) {
