@@ -1131,6 +1131,11 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     if (TYPE_OK != rc) {
       if (rc < 0) {
         my_message(ER_UNKNOWN_ERROR, ER(ER_UNKNOWN_ERROR), MYF(0));
+#ifdef IS_MYSQL
+      } else if (TYPE_WARN_OUT_OF_RANGE == rc || TYPE_WARN_TRUNCATED == rc ||
+                 TYPE_WARN_INVALID_STRING == rc) {
+        rc = HA_ERR_END_OF_FILE;
+#endif
       }
       *optimizer_update = false;
       goto error;
@@ -1307,8 +1312,8 @@ bool ha_sdb::optimize_count(bson::BSONObj &condition) {
   count_query = false;
   if (select->table_list.elements == 1 && lex->all_selects_list &&
       !lex->all_selects_list->next_select_in_list() &&
-      !sdb_where_condition(ha_thd()) &&
-      !order && !group && optimize_with_materialization) {
+      !sdb_where_condition(ha_thd()) && !order && !group &&
+      optimize_with_materialization) {
     List_iterator<Item> li(select->item_list);
     Item *item;
     while ((item = li++)) {
@@ -1399,7 +1404,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
     rc = optimize_update(rule, condition, optimizer_update);
     if (rc) {
       table->status = STATUS_NOT_FOUND;
-      rc = HA_ERR_END_OF_FILE;
+      rc = rc < 0 ? HA_ERR_END_OF_FILE : rc;
       goto error;
     }
     if (optimizer_update) {
