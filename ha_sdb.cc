@@ -848,6 +848,7 @@ int ha_sdb::flush_bulk_insert() {
 
   update_last_insert_id();
   stats.records += m_bulk_insert_rows.size();
+  share->stat.total_records += m_bulk_insert_rows.size();
   m_bulk_insert_rows.clear();
   return rc;
 }
@@ -950,6 +951,7 @@ int ha_sdb::write_row(uchar *buf) {
 
     update_last_insert_id();
     stats.records++;
+    share->stat.total_records++;
   }
 
 done:
@@ -1042,6 +1044,7 @@ int ha_sdb::delete_row(const uchar *buf) {
   }
 
   stats.records--;
+  share->stat.total_records--;
 
 done:
   DBUG_RETURN(rc);
