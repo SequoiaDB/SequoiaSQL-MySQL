@@ -214,6 +214,57 @@ class OptionMgr:
     def __update_conf(self):
         self.parser.write(open(config_file, 'w'))
 
+    def __validate(self):
+        if 0 == len(self.get_hosts()):
+            logging.error('No valid host is configured in the config file')
+            return 1
+
+        pwd_type = self.get_mysql_passwd_type()
+        if 0 != pwd_type and 1 != pwd_type:
+            logging.error('MySQL password type [{}] in configuration file is '
+                          'invalid'.format(pwd_type))
+            return 1
+
+        if 0 == len(self.get_mysql_user()):
+            logging.error('MySQL user name in configuration file is empty')
+            return 1
+
+        if 0 == len(self.get_mysql_passwd()):
+            logging.error('MySQL user password in configuration file is empty')
+            return 1
+
+        interval = self.get_scan_interval()
+        if interval < 1 or interval > 3600:
+            logging.error('Value of interval_time [{}] in configuration file '
+                          'is invalid'.format(interval))
+            return 1
+
+        ignore_error = self.get_option(KW_EXECUTE, KW_IGNORE_ERR).lower()
+        if 'true' != ignore_error and 'false' != ignore_error:
+            logging.error('Value of ignore_error [{}] in configuration file is '
+                          'invalid'.format(ignore_error))
+            return 1
+
+        retry_limit = self.get_retry_limit()
+        if retry_limit < 1 or retry_limit > 1000:
+            logging.error('Value of max_retry_times [{}] in configuration file '
+                          'is invalid'.format(retry_limit))
+            return 1
+
+        mysql_exec = os.path.join(self.get_mysql_home(), 'bin/mysql')
+        if not os.path.exists(mysql_exec):
+            logging.error('mysql is not found in the configured path: {}'
+                          .format(self.get_mysql_home()))
+            return 1
+
+        audit_file = os.path.join(self.get_audit_log_path(),
+                                  self.get_audit_log_name())
+        if not os.path.exists(audit_file):
+            logging.error('Audit file {} is not found'.format(audit_file))
+            return 1
+
+        return 0
+
     def __post_load(self):
         refresh_config = False
 
@@ -238,6 +289,11 @@ class OptionMgr:
             if not refresh_config:
                 refresh_config = True
 
+        rc = self.__validate()
+        if 0 != rc:
+            logging.error('Validate configuration failed: {}'.format(rc))
+            return rc
+
         # Encrypt the password in the configuration file if it's in plain text.
         if not self.is_mysql_pwd_encrypt():
             password = CryptoUtil.encrypt(self.get_mysql_passwd())
@@ -248,6 +304,8 @@ class OptionMgr:
         if refresh_config:
             self.__update_conf()
 
+        return 0
+
     def load_configs(self, config_file):
         config_file = os.path.join(my_home, config_file)
         if not os.path.exists(config_file):
@@ -256,7 +314,10 @@ class OptionMgr:
             return 1
         self.parser = ConfigParser.ConfigParser()
         self.parser.read(config_file)
-        self.__post_load()
+        rc = self.__post_load()
+        if 0 != rc:
+            logging.error('Load configurations failed: {}'.format(rc))
+            return rc
 
         return 0
 
@@ -313,13 +374,22 @@ class StatMgr:
         self.file_first_line_seq = 0
         self.last_parse_row = 0
 
-    def load_stat(self, stat_file):
-        if not os.path.exists(stat_file):
-            logger.error('Status file {} dose not exist'.format(stat_file))
-            return 1
+    def __init_stat_file(self):
+        self.set_file_last_mod_time(0)
+        self.set_file_first_line_time(0)
+        self.set_file_first_line_thread_id(0)
+        self.set_file_first_line_seq(0)
+        self.set_last_parse_row(0)
+        self.update_stat()
 
-        self.stat_file = stat_file
+    def load_stat(self, stat_file):
         self.parser = ConfigParser.ConfigParser()
+        self.stat_file = stat_file
+        if not os.path.exists(stat_file):
+            logger.warn('Status file {} dose not exist. Init it with default '
+                        'values'.format(stat_file))
+            self.__init_stat_file()
+
         self.parser.read(stat_file)
         stat_sec_name = 'status'
 
@@ -370,6 +440,9 @@ class StatMgr:
 
     def update_stat(self):
         stat_sec_name = 'status'
+        if not self.parser.has_section(stat_sec_name):
+            self.parser.add_section(stat_sec_name)
+
         self.parser.set(stat_sec_name, "file_last_modified_time",
                         DateUtils.timestamp_to_strtime(self.file_last_mod_time,
                                                        "%Y-%m-%d-%H:%M:%S.%f"))
