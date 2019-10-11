@@ -62,6 +62,10 @@ class DocTuple:
         self.desp_cn = ""
         self.desp_en = ""
 
+    def __repr__(self):
+        return repr((self.name, self.type, self.default, self.online,
+                     self.scope, self.desp_cn, self.desp_en))
+
     @staticmethod
     def get_md_header(language):
         if language == Language.CHINESE:
@@ -294,6 +298,7 @@ class DocExporter:
         if self.fmt == FormatType.MARKDOWN or self.fmt == FormatType.ALL:
             path = self.get_file_path(out_dir, FormatType.MARKDOWN) 
             with open(path, 'w') as f:
+                tuples = sorted(tuples, key = lambda tup: tup.name)
                 f.write(DocTuple.get_md_header(self.language))
                 for t in tuples:
                     f.write(t.toString(FormatType.MARKDOWN, self.language)) 
