@@ -287,6 +287,10 @@ my_bool sdb_hash_init(HASH *hash, CHARSET_INFO *charset,
                       key_length, get_key, free_element, flags, psi_key);
 }
 
+void sdb_string_free(String *str) {
+  str->mem_free();
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -442,7 +446,7 @@ bool sdb_has_update_triggers(TABLE *table) {
 }
 
 bool sdb_lex_ignore(THD *thd) {
-  return &thd->lex->ignore;
+  return thd->lex->ignore;
 }
 
 Item *sdb_where_condition(THD *thd) {
@@ -512,6 +516,10 @@ my_bool sdb_hash_init(HASH *hash, CHARSET_INFO *charset,
                       PSI_memory_key psi_key) {
   return my_hash_init(hash, charset, default_array_elements, key_offset,
                       key_length, get_key, free_element, flags);
+}
+
+void sdb_string_free(String *str) {
+  str->free();
 }
 
 #endif

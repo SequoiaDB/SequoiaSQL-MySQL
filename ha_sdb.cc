@@ -430,7 +430,7 @@ int ha_sdb::close(void) {
     share = NULL;
   }
   if (sdb_condition) {
-    delete sdb_condition;
+    my_free(sdb_condition);
     sdb_condition = NULL;
   }
   m_bulk_insert_rows.clear();
@@ -3326,6 +3326,7 @@ static int sdb_done_func(void *p) {
   // SHOW_COMP_OPTION state;
   my_hash_free(&sdb_open_tables);
   mysql_mutex_destroy(&sdb_mutex);
+  sdb_string_free(&sdb_encoded_password);
   return 0;
 }
 

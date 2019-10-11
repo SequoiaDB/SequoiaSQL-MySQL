@@ -174,6 +174,8 @@ void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
                          size_t pre_alloc_size MY_ATTRIBUTE((unused)));
 
+void sdb_string_free(String *str);
+
 // About THD
 my_thread_id sdb_thd_id(THD *thd);
 

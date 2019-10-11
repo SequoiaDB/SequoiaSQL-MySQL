@@ -46,7 +46,7 @@ class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;
 
-  unsigned char m_key[KEY_LEN];
+  uchar m_key[KEY_LEN];
 
  public:
   Sdb_encryption();

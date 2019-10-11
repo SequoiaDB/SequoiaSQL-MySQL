@@ -55,9 +55,9 @@ TYPELIB sdb_optimizer_options_typelib = {
     array_elements(sdb_optimizer_options_names) - 1, "",
     sdb_optimizer_options_names, NULL};
 
-static String sdb_encoded_password;
-static Sdb_encryption sdb_passwd_encryption;
-static Sdb_rwlock sdb_password_lock;
+String sdb_encoded_password;
+Sdb_encryption sdb_passwd_encryption;
+Sdb_rwlock sdb_password_lock;
 
 static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
                                   void *save, struct st_mysql_value *value) {

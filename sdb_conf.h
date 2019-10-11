@@ -104,4 +104,6 @@ extern my_bool sdb_use_autocommit;
 extern my_bool sdb_debug_log;
 extern st_mysql_sys_var *sdb_sys_vars[];
 
+extern String sdb_encoded_password;
+
 #endif
