@@ -78,11 +78,11 @@ audit_log_directory = /opt/sequoiasql/mysql/database/auditlog
 audit_log_file_name = server_audit.log
 
 [execute]
-# 同步间隔
+# 同步间隔，取值范围：[1-3600]
 interval_time = 5
 # 出错时是否忽略，如为 false，会一直重试
 ignore_error = true
-# 出错的情况下，忽略前的重试次数
+# 出错的情况下，忽略前的重试次数，取值范围：[1-1000]
 max_retry_times = 5
 ```
 ### 日志配置项
