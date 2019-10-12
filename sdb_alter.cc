@@ -1376,6 +1376,11 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
         } else if (old_is_auto_inc && !new_is_auto_inc) {
           op_flag |= Col_alter_info::DROP_AUTO_INC;
         }
+        // Temporarily unsupported for SEQUOIADBMAINSTREAM-4889.
+        if (op_flag & Col_alter_info::ADD_AUTO_INC) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
 
         if (!new_field->maybe_null() && old_field->maybe_null()) {
           // Avoid ZERO DATE when sql_mode doesn't allow
@@ -1434,6 +1439,11 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
           rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
           goto error;
         }
+      }
+      // Temporarily unsupported for SEQUOIADBMAINSTREAM-4889.
+      if (field->flags & AUTO_INCREMENT_FLAG) {
+        rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+        goto error;
       }
       ctx->added_columns.push_back(field);
     }
