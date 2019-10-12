@@ -180,9 +180,9 @@ static ulonglong sdb_default_autoinc_acquire_size(enum enum_field_types type) {
   return default_value;
 }
 
-static int sdb_autoinc_current_value(Sdb_conn &conn, ulonglong *cur_value,
-                                     const char *full_name,
-                                     const char *field_name) {
+static int sdb_autoinc_current_value(Sdb_conn &conn, const char *full_name,
+                                     const char *field_name,
+                                     ulonglong *cur_value, my_bool *initial) {
   int rc = SDB_ERR_OK;
   bson::BSONObj condition;
   bson::BSONObj selected;
@@ -226,7 +226,7 @@ static int sdb_autoinc_current_value(Sdb_conn &conn, ulonglong *cur_value,
 
     autoinc_name = e.valuestr();
     condition = BSON(SDB_FIELD_NAME << autoinc_name);
-    selected = BSON(SDB_FIELD_CURRENT_VALUE << "");
+    selected = BSON(SDB_FIELD_CURRENT_VALUE << "" << SDB_FIELD_INITIAL << "");
     rc = conn.snapshot(obj, SDB_SNAP_SEQUENCES, condition, selected);
     if (0 != rc) {
       SDB_PRINT_ERROR(rc, "Could not get snapshot.");
@@ -241,6 +241,15 @@ static int sdb_autoinc_current_value(Sdb_conn &conn, ulonglong *cur_value,
       goto error;
     }
     *cur_value = elem.numberLong();
+
+    elem = obj.getField(SDB_FIELD_INITIAL);
+    if (bson::Bool != elem.type()) {
+      SDB_LOG_WARNING("Invalid type: '%d' of 'Initial' in field: '%s'.",
+                      elem.type(), field_name);
+      rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+      goto error;
+    }
+    *initial = elem.boolean();
   } else {
     SDB_LOG_WARNING("Invalid auto_increment catalog obj '%s'",
                     obj.toString(false, false).c_str());
@@ -2054,20 +2063,23 @@ int ha_sdb::info(uint flag) {
 
   if ((flag & HA_STATUS_AUTO) && table->found_next_number_field) {
     DBUG_PRINT("info", ("HA_STATUS_AUTO"));
+    THD *thd = ha_thd();
+    Field *auto_inc_field = table->found_next_number_field;
+    ulonglong cur_value = 0;
     ulonglong auto_inc_val = 0;
-    ulonglong inc = ha_thd()->variables.auto_increment_increment;
+    my_bool initial = false;
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 2] = {0};
 
-    conn = check_sdb_in_thd(ha_thd(), true);
+    conn = check_sdb_in_thd(thd, true);
     if (NULL == conn) {
       SDB_PRINT_ERROR(HA_ERR_NO_CONNECTION,
                       "Could not connect to storage engine.");
       goto error;
     }
 
-    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
-    rc = ensure_collection(ha_thd());
+    rc = ensure_collection(thd);
     if (0 != rc) {
       goto error;
     }
@@ -2076,17 +2088,23 @@ int ha_sdb::info(uint flag) {
              table_name);
 
     rc = sdb_autoinc_current_value(
-        *conn, &auto_inc_val, full_name,
-        sdb_field_name(table->found_next_number_field));
+        *conn, full_name, sdb_field_name(auto_inc_field), &cur_value, &initial);
     if (SDB_ERR_OK != rc) {
       sql_print_error(
           "Failed to get auto-increment current value. table: %s.%s, rc: %d",
           db_name, table_name, rc);
       goto error;
     }
-    if (auto_inc_val > 1) {
-      stats.auto_increment_value = auto_inc_val + inc;
+    if (!initial) {
+      auto_inc_val = cur_value + thd->variables.auto_increment_increment;
+      ulonglong max_value = auto_inc_field->get_max_int_value();
+      if (auto_inc_val > max_value) {
+        auto_inc_val = max_value;
+      }
+    } else {
+      auto_inc_val = cur_value;
     }
+    stats.auto_increment_value = auto_inc_val;
   }
 
   if (flag & HA_STATUS_TIME) {

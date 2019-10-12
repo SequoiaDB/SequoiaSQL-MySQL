@@ -480,7 +480,7 @@ bool sdb_field_is_gcol(const Field *field) {
 }
 
 bool sdb_field_is_virtual_gcol(const Field *field) {
-  return field->stored_in_db();
+  return !field->stored_in_db();
 }
 
 bool sdb_field_has_insert_def_func(const Field *field) {

@@ -1608,6 +1608,9 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                          sdb_field_name(table->found_next_number_field));
       longlong current_value = create_info->auto_increment_value -
                                thd->variables.auto_increment_increment;
+      if (current_value < 1) {
+        current_value = 1;
+      }
       sub_builder.append(SDB_FIELD_CURRENT_VALUE, current_value);
       sub_builder.done();
 
