@@ -309,6 +309,36 @@ class Cast_int2enum : public I_build_cast_rule {
 
 Cast_int2enum i2e;
 
+class Cast_float2int : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    bool rs = true;
+    Field_real *float_field = (Field_real *)old_field;
+    Field_num *int_field = (Field_num *)new_field;
+    bool signed2unsigned =
+        !float_field->unsigned_flag && int_field->unsigned_flag;
+
+    if (!signed2unsigned && !float_field->not_fixed &&
+        0 == float_field->decimals()) {
+      uint float_len = float_field->field_length;
+      uint int_len = get_int_max_strlen(int_field);
+      if (!int_field->unsigned_flag) {
+        --int_len;  // ignore the '-'
+      }
+      if (int_len > float_len) {
+        rs = false;
+        goto done;
+      }
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_float2int f2i;
+
 class Cast_float2float : public I_build_cast_rule {
  public:
   bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
@@ -384,6 +414,37 @@ class Cast_float2decimal : public I_build_cast_rule {
 };
 
 Cast_float2decimal f2d;
+
+class Cast_decimal2int : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    DBUG_ASSERT(old_field->type() == MYSQL_TYPE_NEWDECIMAL);
+
+    bool rs = true;
+    Field_new_decimal *dec_field = (Field_new_decimal *)old_field;
+    Field_num *int_field = (Field_num *)new_field;
+    bool signed2unsigned =
+        !dec_field->unsigned_flag && int_field->unsigned_flag;
+
+    if (!signed2unsigned && 0 == dec_field->decimals()) {
+      uint dec_len = dec_field->precision;
+      uint int_len = get_int_max_strlen(int_field);
+      if (!int_field->unsigned_flag) {
+        --int_len;  // ignore the '-'
+      }
+      if (int_len > dec_len) {
+        rs = false;
+        goto done;
+      }
+    }
+
+  done:
+    return rs;
+  }
+};
+
+Cast_decimal2int d2i;
 
 class Cast_decimal2decimal : public I_build_cast_rule {
  public:
@@ -586,13 +647,13 @@ I_build_cast_rule *build_cast_funcs[SDB_TYPE_NUM][SDB_TYPE_NUM] = {
     {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
      &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
     /*05 FLOAT*/
-    {&fai, &fai, &fai, &fai, &fai, &f2f, &f2f, &f2d, &fai, &fai, &fai, &fai,
+    {&f2i, &f2i, &f2i, &f2i, &f2i, &f2f, &f2f, &f2d, &fai, &fai, &fai, &fai,
      &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*06 DOUBLE*/
-    {&fai, &fai, &fai, &fai, &fai, &f2f, &f2f, &f2d, &fai, &fai, &fai, &fai,
+    {&f2i, &f2i, &f2i, &f2i, &f2i, &f2f, &f2f, &f2d, &fai, &fai, &fai, &fai,
      &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*07 DECIMAL*/
-    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &d2d, &fai, &fai, &fai, &fai,
+    {&d2i, &d2i, &d2i, &d2i, &d2i, &fai, &fai, &d2d, &fai, &fai, &fai, &fai,
      &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*08 STRING*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c, &c2c,
