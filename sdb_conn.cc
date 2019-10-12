@@ -230,9 +230,19 @@ retry:
   rc = cs.createCollection(cl_name, options, cl);
   if (SDB_DMS_EXIST == rc) {
     rc = cs.getCollection(cl_name, cl);
+    /* CS cached on sdbclient. so SDB_DMS_CS_NOTEXIST maybe retuned here. */
+  } else if (SDB_DMS_CS_NOTEXIST == rc) {
+    rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+    if (SDB_OK == rc) {
+      new_cs = true;
+    } else if (SDB_DMS_CS_EXIST != rc) {
+      goto error;
+    }
+    goto retry;
   } else if (SDB_OK == rc) {
     new_cl = true;
   }
+
   if (rc != SDB_ERR_OK) {
     goto error;
   }
