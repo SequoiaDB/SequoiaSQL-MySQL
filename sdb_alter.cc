@@ -1108,6 +1108,13 @@ int ha_sdb::alter_column(TABLE *altered_table,
                          Alter_inplace_info *ha_alter_info, Sdb_conn *conn,
                          Sdb_cl &cl) {
   static const int EMPTY_BUILDER_LEN = 8;
+  static const char *EXCEED_THRESHOLD_MSG =
+      "Table is too big to be altered. The records count exceeds the "
+      "sequoiadb_alter_table_overhead_threshold.";
+  static const char *DROP_AUTOINC_MSG =
+      "Failed to drop the auto-increment field of cl[%s.%s]";
+  static const char *ADD_AUTOINC_MSG =
+      "Failed to add the auto-increment field of cl[%s.%s]";
 
   int rc = 0;
   int tmp_rc = 0;
@@ -1141,16 +1148,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
   dropped_it.init(ctx->dropped_columns);
   while ((field = dropped_it++)) {
     unset_builder.append(sdb_field_name(field), "");
-    if (field->flags & AUTO_INCREMENT_FLAG) {
-      rc = cl.drop_auto_increment(sdb_field_name(field));
-      if (0 != rc) {
-        my_printf_error(rc,
-                        "Failed to drop auto_increment "
-                        "column[%s] on cl[%s.%s]",
-                        MYF(0), sdb_field_name(field), db_name, table_name);
-        goto error;
-      }
-    }
   }
 
   // 2.Handle the added_columns
@@ -1169,16 +1166,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
       if (!(field->flags & AUTO_INCREMENT_FLAG)) {
         append_zero_value(set_builder, field);
       } else {
-        bson::BSONObj option;
-        build_auto_inc_option(field, create_info, option);
-        rc = cl.create_auto_increment(option);
-        if (0 != rc) {
-          my_printf_error(rc,
-                          "Failed to add auto_increment "
-                          "column[%s] on cl[%s.%s]",
-                          MYF(0), sdb_field_name(field), db_name, table_name);
-          goto error;
-        }
         // inc_builder.append(sdb_field_name(field), get_inc_option(option));
       }
     }
@@ -1187,34 +1174,9 @@ int ha_sdb::alter_column(TABLE *altered_table,
   // 3.Handle the changed_columns
   changed_it.init(changed_columns);
   while ((info = changed_it++)) {
-    if (info->op_flag & Col_alter_info::CHANGE_DATA_TYPE) {
+    if (info->op_flag & Col_alter_info::CHANGE_DATA_TYPE &&
+        !info->cast_rule.isEmpty()) {
       cast_builder.appendElements(info->cast_rule);
-    }
-
-    if (info->op_flag & Col_alter_info::ADD_AUTO_INC) {
-      bson::BSONObj option;
-      build_auto_inc_option(info->after, create_info, option);
-      rc = cl.create_auto_increment(option);
-      if (0 != rc) {
-        my_printf_error(rc,
-                        "Failed to add auto_increment "
-                        "column[%s] on cl[%s.%s]",
-                        MYF(0), sdb_field_name(info->after), db_name,
-                        table_name);
-        goto error;
-      }
-    }
-
-    if (info->op_flag & Col_alter_info::DROP_AUTO_INC) {
-      rc = cl.drop_auto_increment(sdb_field_name(info->before));
-      if (0 != rc) {
-        my_printf_error(rc,
-                        "Failed to drop auto_increment "
-                        "column[%s] on cl[%s.%s]",
-                        MYF(0), sdb_field_name(info->before), db_name,
-                        table_name);
-        goto error;
-      }
     }
 
     if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL) {
@@ -1231,11 +1193,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
       if (count > sdb_alter_table_overhead_threshold(thd)) {
         rc = HA_ERR_WRONG_COMMAND;
-        my_printf_error(
-            rc,
-            "Table is too big to be altered. The records count exceeds "
-            "the alter_table_overhead_threshold.",
-            MYF(0));
+        my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);
         goto error;
       }
       if (!conn->is_transaction_on()) {
@@ -1271,11 +1229,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
   if (builder.len() > EMPTY_BUILDER_LEN) {
     if (count > sdb_alter_table_overhead_threshold(thd)) {
       rc = HA_ERR_WRONG_COMMAND;
-      my_printf_error(
-          rc,
-          "Table is too big to be altered. The records count exceeds "
-          "the alter_table_overhead_threshold.",
-          MYF(0));
+      my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);
       goto error;
     }
     if (!conn->is_transaction_on()) {
@@ -1316,6 +1270,52 @@ int ha_sdb::alter_column(TABLE *altered_table,
       }
     }
   }*/
+
+  // 5.Create and drop auto-increment.
+  dropped_it.rewind();
+  while ((field = dropped_it++)) {
+    if (field->flags & AUTO_INCREMENT_FLAG) {
+      rc = cl.drop_auto_increment(sdb_field_name(field));
+      if (0 != rc) {
+        my_printf_error(rc, DROP_AUTOINC_MSG, MYF(0), db_name, table_name);
+        goto error;
+      }
+    }
+  }
+
+  added_it.rewind();
+  while ((field = added_it++)) {
+    if (field->flags & AUTO_INCREMENT_FLAG) {
+      bson::BSONObj option;
+      build_auto_inc_option(field, create_info, option);
+      rc = cl.create_auto_increment(option);
+      if (0 != rc) {
+        my_printf_error(rc, ADD_AUTOINC_MSG, MYF(0), db_name, table_name);
+        goto error;
+      }
+    }
+  }
+
+  changed_it.rewind();
+  while ((info = changed_it++)) {
+    if (info->op_flag & Col_alter_info::DROP_AUTO_INC) {
+      rc = cl.drop_auto_increment(sdb_field_name(info->before));
+      if (0 != rc) {
+        my_printf_error(rc, DROP_AUTOINC_MSG, MYF(0), db_name, table_name);
+        goto error;
+      }
+    }
+
+    if (info->op_flag & Col_alter_info::ADD_AUTO_INC) {
+      bson::BSONObj option;
+      build_auto_inc_option(info->after, create_info, option);
+      rc = cl.create_auto_increment(option);
+      if (0 != rc) {
+        my_printf_error(rc, ADD_AUTOINC_MSG, MYF(0), db_name, table_name);
+        goto error;
+      }
+    }
+  }
 
 done:
   return rc;
