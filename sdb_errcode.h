@@ -37,6 +37,11 @@ enum SDB_ERR_CODE {
   SDB_ERR_INNER_CODE_END = 50000
 };
 
+typedef enum {
+  SDB_ERROR,
+  SDB_WARNING
+} enum_sdb_error_level;
+
 void convert_sdb_code(int &rc);
 
 int get_sdb_code(int rc);

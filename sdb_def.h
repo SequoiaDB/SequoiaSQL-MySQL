@@ -63,6 +63,8 @@
 #define SDB_FIELD_STRICT_DATA_MODE "StrictDataMode"
 #define SDB_FIELD_AUTOINCREMENT SDB_FIELD_NAME_AUTOINCREMENT
 
+#define SDB_UPDATE_SHARDING_KEY_ERROR "sharding key cann't be updated in sequoiadb"
+
 #define SDB_FIELD_UNIQUE "Unique"
 #define SDB_FIELD_NOT_NULL "NotNull"
 

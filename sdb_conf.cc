@@ -47,6 +47,7 @@ int sdb_bulk_insert_size = SDB_DEFAULT_BULK_INSERT_SIZE;
 int sdb_replica_size = SDB_DEFAULT_REPLICA_SIZE;
 my_bool sdb_use_autocommit = SDB_DEFAULT_USE_AUTOCOMMIT;
 my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
+ulong sdb_error_level = SDB_ERROR;
 
 static const char *sdb_optimizer_options_names[] = {
     "direct_count", "direct_delete", "direct_update", NullS};
@@ -58,6 +59,13 @@ TYPELIB sdb_optimizer_options_typelib = {
 String sdb_encoded_password;
 Sdb_encryption sdb_passwd_encryption;
 Sdb_rwlock sdb_password_lock;
+
+static const char *sdb_error_level_names[] = {
+    "error", "warning", NullS};
+
+TYPELIB sdb_error_level_typelib = {
+    array_elements(sdb_error_level_names) - 1, "",
+    sdb_error_level_names, NULL};
 
 static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
                                   void *save, struct st_mysql_value *value) {
@@ -139,7 +147,11 @@ static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
                          "(Default: OFF)"
                          /*是否打印debug日志。*/,
                          NULL, NULL, SDB_DEBUG_LOG_DFT);
-
+static MYSQL_SYSVAR_ENUM(error_level, sdb_error_level,
+                         PLUGIN_VAR_RQCMDARG,
+                         "Sequoiadb error level for updating sharding key error."
+                         "(Default: error), available choices: error, warning",
+                         NULL, NULL, SDB_ERROR, &sdb_error_level_typelib);
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
@@ -189,6 +201,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(replica_size),
     MYSQL_SYSVAR(use_autocommit),
     MYSQL_SYSVAR(debug_log),
+    MYSQL_SYSVAR(error_level),
     MYSQL_SYSVAR(optimizer_select_count),
     MYSQL_SYSVAR(alter_table_overhead_threshold),
     MYSQL_SYSVAR(selector_pushdown_threshold),
