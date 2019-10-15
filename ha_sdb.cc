@@ -2390,6 +2390,11 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
 done:
   DBUG_RETURN(rc);
 error:
+  if (SDB_RTN_COORD_ONLY == get_sdb_code(rc)) {
+    my_printf_error(HA_ERR_UNSUPPORTED,
+                    "SequoiaDB standalone mode is not supported by plugin",
+                    MYF(0));
+  }
   goto done;
 }
 
