@@ -374,6 +374,8 @@ class ha_sdb : public handler {
   int alter_column(TABLE *altered_table, Alter_inplace_info *ha_alter_info,
                    Sdb_conn *conn, Sdb_cl &cl);
 
+  void print_error(int error, myf errflag);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;

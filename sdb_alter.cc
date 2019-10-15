@@ -1666,7 +1666,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   if (alter_flags & INPLACE_ONLINE_ADDIDX) {
     rc = create_index(cl, ha_alter_info, ignored_add_keys);
     if (0 != rc) {
-      my_error(ER_GET_ERRNO, MYF(0), rc);
+      print_error(rc, MYF(0));
       goto error;
     }
   }

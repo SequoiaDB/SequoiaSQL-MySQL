@@ -3145,6 +3145,28 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
   return idx_cond;
 }
 
+void ha_sdb::print_error(int error, myf errflag) {
+  DBUG_ENTER("ha_sdb::print_error");
+  DBUG_PRINT("enter",("error: %d",error));
+
+  if (SDB_INVALIDARG == get_sdb_code(error)) {
+    my_error(ER_WRONG_ARGUMENTS, MYF(0), "sdb sql statement");
+  } else if (SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY == get_sdb_code(error)) {
+    my_error(ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF, MYF(0), "UNIQUE INDEX");
+  } else if (SDB_IXM_DUP_KEY == get_sdb_code(error)) {
+    //TODO: report which unique key has dup entry
+    my_error(ER_DUP_ENTRY, MYF(0), "sdb error: 40038");
+  } else if (SDB_IXM_KEY_NOTNULL == get_sdb_code(error)) {
+    my_error(ER_INVALID_USE_OF_NULL, MYF(0), "SDB_IXM_KEY_NOTNULL");
+  } else if (get_sdb_code(error) < 0) {
+    my_error(ER_GET_ERRNO, MYF(0), error);
+  } else {
+    handler::print_error(error, errflag);
+  }
+
+  DBUG_VOID_RETURN;
+}
+
 static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
                                    MEM_ROOT *mem_root) {
   return new (mem_root) ha_sdb(hton, table);
