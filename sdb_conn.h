@@ -75,6 +75,9 @@ class Sdb_conn {
   inline bool is_valid() { return m_connection.isValid(); }
   inline void set_pushed_autocommit() { pushed_autocommit = true; }
   inline bool get_pushed_autocommit() { return pushed_autocommit; }
+  int get_last_error(bson::BSONObj &errObj) {
+    return m_connection.getLastErrorObj(errObj);
+  };
 
  private:
   sdbclient::sdb m_connection;

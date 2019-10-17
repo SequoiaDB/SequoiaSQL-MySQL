@@ -984,6 +984,7 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   bson::BSONObj new_obj;
   bson::BSONObj null_obj;
   bson::BSONObj rule_obj;
+  Sdb_conn *connection = check_sdb_in_thd(ha_thd(), true);
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -1021,13 +1022,19 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
       // convert to MySQL errcode
       rc = HA_ERR_FOUND_DUPP_KEY;
     } else if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
-      if (ha_thd()->lex->is_ignore()
-          && sdb_error_level == SDB_WARNING) {
-        push_warning(ha_thd(), Sql_condition::SL_WARNING,
-                     rc, SDB_UPDATE_SHARDING_KEY_ERROR);
+      bson::BSONObj errObj;
+      int sdb_rc = connection->get_last_error(errObj);
+      if (sdb_rc != SDB_OK) {
+        push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
+                     SDB_GET_LAST_ERROR_FAILED);
+      }
+
+      if (ha_thd()->lex->is_ignore() && SDB_WARNING == sdb_error_level) {
+        push_warning(ha_thd(), Sql_condition::SL_WARNING, rc,
+                     errObj.getStringField("description"));
         rc = HA_ERR_RECORD_IS_THE_SAME;
       } else {
-        my_printf_error(rc, SDB_UPDATE_SHARDING_KEY_ERROR, MYF(0));
+        my_printf_error(rc, errObj.getStringField("description"), MYF(0));
       }
     }
 
@@ -1394,6 +1401,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                               int &num_to_return, bool &direct_op) {
   DBUG_ENTER("ha_sdb::optimize()");
   int rc = 0;
+  Sdb_conn *connection = check_sdb_in_thd(ha_thd(), true);
+
   if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
     if ((sdb_get_optimizer_options(ha_thd()) &
          SDB_OPTIMIZER_OPTION_SELECT_COUNT) &&
@@ -1441,14 +1450,20 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
           rc = HA_ERR_FOUND_DUPP_KEY;
           goto error;
           //}
-        } else if(SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
-          if (ha_thd()->lex->is_ignore()
-              && sdb_error_level == SDB_WARNING) {
-            push_warning(ha_thd(), Sql_condition::SL_WARNING,
-                         rc, SDB_UPDATE_SHARDING_KEY_ERROR);
+        } else if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
+          bson::BSONObj errObj;
+          int sdb_rc = connection->get_last_error(errObj);
+          if (sdb_rc != SDB_OK) {
+            push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
+                         SDB_GET_LAST_ERROR_FAILED);
+          }
+
+          if (ha_thd()->lex->is_ignore() && SDB_WARNING == sdb_error_level) {
+            push_warning(ha_thd(), Sql_condition::SL_WARNING, rc,
+                         errObj.getStringField("description"));
             rc = HA_ERR_RECORD_IS_THE_SAME;
           } else {
-             my_printf_error(rc, SDB_UPDATE_SHARDING_KEY_ERROR, MYF(0));
+            my_printf_error(rc, errObj.getStringField("description"), MYF(0));
           }
         }
         table->status = STATUS_NOT_FOUND;
@@ -3168,14 +3183,14 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
 
 void ha_sdb::print_error(int error, myf errflag) {
   DBUG_ENTER("ha_sdb::print_error");
-  DBUG_PRINT("enter",("error: %d",error));
+  DBUG_PRINT("enter", ("error: %d", error));
 
   if (SDB_INVALIDARG == get_sdb_code(error)) {
     my_error(ER_WRONG_ARGUMENTS, MYF(0), "sdb sql statement");
   } else if (SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY == get_sdb_code(error)) {
     my_error(ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF, MYF(0), "UNIQUE INDEX");
   } else if (SDB_IXM_DUP_KEY == get_sdb_code(error)) {
-    //TODO: report which unique key has dup entry
+    // TODO: report which unique key has dup entry
     my_error(ER_DUP_ENTRY, MYF(0), "sdb error: 40038");
   } else if (SDB_IXM_KEY_NOTNULL == get_sdb_code(error)) {
     my_error(ER_INVALID_USE_OF_NULL, MYF(0), "SDB_IXM_KEY_NOTNULL");

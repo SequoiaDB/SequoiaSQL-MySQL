@@ -60,12 +60,10 @@ String sdb_encoded_password;
 Sdb_encryption sdb_passwd_encryption;
 Sdb_rwlock sdb_password_lock;
 
-static const char *sdb_error_level_names[] = {
-    "error", "warning", NullS};
+static const char *sdb_error_level_names[] = {"error", "warning", NullS};
 
-TYPELIB sdb_error_level_typelib = {
-    array_elements(sdb_error_level_names) - 1, "",
-    sdb_error_level_names, NULL};
+TYPELIB sdb_error_level_typelib = {array_elements(sdb_error_level_names) - 1,
+                                   "", sdb_error_level_names, NULL};
 
 static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
                                   void *save, struct st_mysql_value *value) {
@@ -147,11 +145,12 @@ static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
                          "(Default: OFF)"
                          /*是否打印debug日志。*/,
                          NULL, NULL, SDB_DEBUG_LOG_DFT);
-static MYSQL_SYSVAR_ENUM(error_level, sdb_error_level,
-                         PLUGIN_VAR_RQCMDARG,
-                         "Sequoiadb error level for updating sharding key error."
-                         "(Default: error), available choices: error, warning",
-                         NULL, NULL, SDB_ERROR, &sdb_error_level_typelib);
+static MYSQL_SYSVAR_ENUM(
+    error_level, sdb_error_level, PLUGIN_VAR_RQCMDARG,
+    "Sequoiadb error level for updating sharding key error."
+    "(Default: error), available choices: error, warning"
+    /* 错误级别控制，为error输出错误信息，为warning输出告警信息。*/,
+    NULL, NULL, SDB_ERROR, &sdb_error_level_typelib);
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
