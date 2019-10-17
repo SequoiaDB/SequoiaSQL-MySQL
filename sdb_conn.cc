@@ -223,7 +223,7 @@ retry:
     }
   }
 
-  if (rc != SDB_ERR_OK) {
+  if (SDB_ERR_OK != rc && SDB_DMS_CS_EXIST != rc) {
     goto error;
   }
 
