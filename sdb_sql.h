@@ -139,6 +139,12 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define type_conversion_status int
 #define TYPE_OK 0
 
+// About warning level
+#define SL_NOTE WARN_LEVEL_NOTE
+#define SL_WARNING WARN_LEVEL_WARN
+#define SL_ERROR WARN_LEVEL_ERROR
+#define SEVERITY_END WARN_LEVEL_END
+
 // Others
 #define DATETIME_MAX_DECIMALS MAX_DATETIME_PRECISION
 #define ha_statistic_increment(A) increment_statistics(A)

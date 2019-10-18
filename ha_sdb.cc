@@ -263,6 +263,32 @@ error:
   goto done;
 }
 
+#ifdef IS_MARIADB
+bool sdb_is_ror_scan(THD *thd, uint tablenr) {
+  int sql_command = thd_sql_command(thd);
+  int type = -1;
+
+  if (SQLCOM_SELECT == sql_command) {
+    JOIN_TAB **map2table = thd->lex->current_select->join->map2table;
+    QUICK_SELECT_I *quick = map2table[tablenr]->select->quick;
+    if (quick) {
+      type = quick->get_type();
+    }
+  } else if (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
+             SQLCOM_UPDATE_MULTI == sql_command ||
+             SQLCOM_DELETE_MULTI == sql_command) {
+    Explain_quick_select *quick_info =
+        thd->lex->explain->get_upd_del_plan()->quick_info;
+    if (quick_info) {
+      type = quick_info->quick_type;
+    }
+  }
+
+  return QUICK_SELECT_I::QS_TYPE_ROR_UNION == type ||
+         QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == type;
+}
+#endif
+
 const char *sharding_related_fields[] = {
     SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
     SDB_FIELD_AUTO_SPLIT,   SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_ISMAINCL};
@@ -1029,7 +1055,7 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
                      SDB_GET_LAST_ERROR_FAILED);
       }
 
-      if (ha_thd()->lex->is_ignore() && SDB_WARNING == sdb_error_level) {
+      if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
         push_warning(ha_thd(), Sql_condition::SL_WARNING, rc,
                      errObj.getStringField("description"));
         rc = HA_ERR_RECORD_IS_THE_SAME;
@@ -1458,7 +1484,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                          SDB_GET_LAST_ERROR_FAILED);
           }
 
-          if (ha_thd()->lex->is_ignore() && SDB_WARNING == sdb_error_level) {
+          if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
             push_warning(ha_thd(), Sql_condition::SL_WARNING, rc,
                          errObj.getStringField("description"));
             rc = HA_ERR_RECORD_IS_THE_SAME;
@@ -1659,6 +1685,9 @@ int ha_sdb::index_init(uint idx, bool sorted) {
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }
+#ifdef IS_MARIADB
+  m_secondary_sort_rowid = sdb_is_ror_scan(ha_thd(), table->tablenr);
+#endif
   free_root(&blobroot, MYF(0));
   DBUG_RETURN(0);
 }
