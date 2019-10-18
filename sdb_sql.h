@@ -145,6 +145,9 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define SL_ERROR WARN_LEVEL_ERROR
 #define SEVERITY_END WARN_LEVEL_END
 
+// error code macros transform
+#define ME_FATALERROR ME_FATAL
+
 // Others
 #define DATETIME_MAX_DECIMALS MAX_DATETIME_PRECISION
 #define ha_statistic_increment(A) increment_statistics(A)
@@ -273,6 +276,7 @@ List_iterator<Item> sdb_lex_all_fields(LEX *const lex);
 
 uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
                                bool stay_quiet);
-void push_warning(THD *thd, uint code, const char *message_text);
+
+void *trans_alloc(THD *thd, size_t size);
 
 #endif

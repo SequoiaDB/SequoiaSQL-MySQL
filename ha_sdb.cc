@@ -342,7 +342,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   count_query = false;
   auto_commit = false;
   sdb_condition = NULL;
-  stats.records = 0;
+  stats.records = ~(ha_rows)0;
   memset(db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
   memset(table_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
   sdb_init_alloc_root(&blobroot, sdb_key_memory_blobroot, "init_ha_sdb",
@@ -352,6 +352,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
        HA_BINLOG_STMT_CAPABLE | HA_TABLE_SCAN_ON_INDEX | HA_NULL_IN_KEY |
        HA_CAN_INDEX_BLOBS | HA_AUTO_PART_KEY);
   m_table_flags |= (sdb_use_transaction ? 0 : HA_NO_TRANSACTIONS);
+  
+  incr_stat = NULL;
 }
 
 ha_sdb::~ha_sdb() {
@@ -523,6 +525,8 @@ int ha_sdb::reset() {
   m_secondary_sort_rowid = false;
   m_use_bulk_insert = false;
   m_has_update_insert_id = false;
+  incr_stat = NULL;
+  stats.records = ~(ha_rows)0;
   return 0;
 }
 
@@ -1014,7 +1018,7 @@ int ha_sdb::flush_bulk_insert() {
 
   update_last_insert_id();
   stats.records += m_bulk_insert_rows.size();
-  share->stat.total_records += m_bulk_insert_rows.size();
+  incr_stat->no_uncommitted_rows_count += m_bulk_insert_rows.size();
   m_bulk_insert_rows.clear();
   return rc;
 }
@@ -1117,7 +1121,7 @@ int ha_sdb::write_row(uchar *buf) {
 
     update_last_insert_id();
     stats.records++;
-    share->stat.total_records++;
+    incr_stat->no_uncommitted_rows_count++;
   }
 
 done:
@@ -1218,7 +1222,7 @@ int ha_sdb::delete_row(const uchar *buf) {
   }
 
   stats.records--;
-  share->stat.total_records--;
+  incr_stat->no_uncommitted_rows_count--;
 
 done:
   DBUG_RETURN(rc);
@@ -1545,7 +1549,7 @@ done:
 int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                               bson::BSONObj &selector, bson::BSONObj &hint,
                               int &num_to_return, bool &direct_op) {
-  DBUG_ENTER("ha_sdb::optimize()");
+  DBUG_ENTER("ha_sdb::optimize_proccess");
   int rc = 0;
 
   if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
@@ -1568,6 +1572,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       optimize_delete(condition)) {
     first_read = false;
     rc = collection->del(condition);
+    // TODO: get deleted row and update table share's stats
     if (!rc) {
       rc = HA_ERR_END_OF_FILE;
     }
@@ -2228,6 +2233,15 @@ int ha_sdb::info(uint flag) {
       if (0 != rc) {
         goto error;
       }
+    } else if ((~(ha_rows)0) != ha_rows(share->stat.total_records)) {
+      if (incr_stat) {
+        stats.records =
+            share->stat.total_records + incr_stat->no_uncommitted_rows_count;
+      } else {
+        stats.records = share->stat.total_records;
+      }
+      DBUG_PRINT("info", ("read info from share, table name: %s, records: %d, ",
+                          table_name, (int)stats.records));
     }
     rc = ensure_stats(ha_thd());
     if (0 != rc) {
@@ -2296,6 +2310,8 @@ error:
 
 int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
   DBUG_ENTER("ha_sdb::update_stats()");
+  DBUG_PRINT("info", ("do_read_stat: %d", do_read_stat));
+
   Sdb_statistics stat;
   int rc = 0;
 
@@ -2337,6 +2353,9 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
           : (ulong)((stats.data_file_length - stats.delete_length) /
                     stats.records);
 
+  DBUG_PRINT("exit", ("stats.block_size: %u  "
+                      "stats.records: %d",
+                      (uint)stats.block_size, (int)stats.records));
 done:
   DBUG_RETURN(rc);
 error:
@@ -2347,6 +2366,7 @@ error:
 int ha_sdb::ensure_stats(THD *thd) {
   /*Try to get statistics from the table share.
     If it's invalid, then try to read from sdb again.*/
+  DBUG_ENTER("ha_sdb::ensure_stats");
   int rc = 0;
   if ((~(ha_rows)0) == stats.records) {
     rc = update_stats(thd, false);
@@ -2359,10 +2379,14 @@ int ha_sdb::ensure_stats(THD *thd) {
         goto error;
       }
     }
-    DBUG_ASSERT((~(ha_rows)0) != stats.records);
   }
+
+  DBUG_PRINT("info", ("stats.records: %d, share->stat.total_records: %d.",
+                      int(stats.records), int(share->stat.total_records)));
+  DBUG_ASSERT((~(ha_rows)0) != stats.records);
+  DBUG_ASSERT((~(ha_rows)0) != (ha_rows)share->stat.total_records);
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -2421,6 +2445,7 @@ error:
 }
 
 int ha_sdb::ensure_collection(THD *thd) {
+  DBUG_ENTER("ha_sdb::ensure_collection");
   int rc = 0;
   DBUG_ASSERT(NULL != thd);
 
@@ -2454,7 +2479,7 @@ int ha_sdb::ensure_collection(THD *thd) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -2596,18 +2621,23 @@ error:
 }
 
 int ha_sdb::external_lock(THD *thd, int lock_type) {
+  DBUG_ENTER("ha_sdb::external_lock");
+
   int rc = 0;
   Thd_sdb *thd_sdb = NULL;
-
   if (NULL == check_sdb_in_thd(thd)) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
 
   thd_sdb = thd_get_thd_sdb(thd);
-
   if (F_UNLCK != lock_type) {
     rc = start_statement(thd, thd_sdb->lock_count++);
+    if (0 != rc) {
+      thd_sdb->lock_count--;
+      goto error;
+    }
+    rc = add_share_to_open_table_shares(thd);
     if (0 != rc) {
       thd_sdb->lock_count--;
       goto error;
@@ -2642,14 +2672,22 @@ error:
 int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  DBUG_ENTER("ha_sdb::start_stmt");
 
   m_lock_type = lock_type;
   rc = start_statement(thd, thd_sdb->start_stmt_count++);
   if (0 != rc) {
-    thd_sdb->start_stmt_count--;
+    goto error;
+  }
+  rc = add_share_to_open_table_shares(thd);
+  if (0 != rc) {
+    goto error;
   }
 
-  return rc;
+  DBUG_RETURN(rc);
+error:
+  thd_sdb->start_stmt_count--;
+  DBUG_RETURN(rc);
 }
 
 int ha_sdb::delete_all_rows() {
@@ -2667,6 +2705,9 @@ int ha_sdb::delete_all_rows() {
   if (collection->is_transaction_on()) {
     rc = collection->del();
     if (0 == rc) {
+      Sdb_mutex_guard guard(share->mutex);
+      incr_stat->no_uncommitted_rows_count =
+          -(share->stat.total_records + incr_stat->no_uncommitted_rows_count);
       stats.records = 0;
     }
     return rc;
@@ -2682,6 +2723,8 @@ int ha_sdb::truncate() {
 
   rc = collection->truncate();
   if (0 == rc) {
+    Sdb_mutex_guard guard(share->mutex);
+    incr_stat->no_uncommitted_rows_count = -share->stat.total_records;
     stats.records = 0;
   }
   return rc;
@@ -2892,6 +2935,46 @@ done:
   return rc;
 error:
   goto done;
+}
+
+double ha_sdb::scan_time() {
+  DBUG_ENTER("ha_sdb::scan_time");
+  double res = rows2double(share->stat.total_index_pages);
+  DBUG_PRINT("exit", ("table: %s total_index_pages: %f", table_name, res));
+  DBUG_RETURN(res);
+}
+
+int ha_sdb::add_share_to_open_table_shares(THD *thd) {
+  DBUG_ENTER("ha_sdb::add_share_to_open_table_shares");
+
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  const void *key = share;
+  HASH_SEARCH_STATE state;
+  THD_SDB_SHARE *thd_sdb_share = (THD_SDB_SHARE *)my_hash_first(
+      &thd_sdb->open_table_shares, (const uchar *)&key, sizeof(key), &state);
+
+  while (thd_sdb_share && thd_sdb_share->key != key) {
+    thd_sdb_share = (THD_SDB_SHARE *)my_hash_next(
+        &thd_sdb->open_table_shares, (const uchar *)&key, sizeof(key), &state);
+  }
+
+  if (thd_sdb_share == 0) {
+    thd_sdb_share = (THD_SDB_SHARE *)trans_alloc(thd, sizeof(THD_SDB_SHARE));
+    if (!thd_sdb_share) {
+      my_error(ER_OUTOFMEMORY, MYF(ME_FATALERROR),
+               static_cast<int>(sizeof(THD_SDB_SHARE)));
+      DBUG_RETURN(1);
+    }
+    thd_sdb_share->key = key;
+    thd_sdb_share->stat.no_uncommitted_rows_count = 0;
+    my_hash_insert(&thd_sdb->open_table_shares, (uchar *)thd_sdb_share);
+  }
+
+  DBUG_PRINT("info",
+             ("key: %p, stat.no_uncommitted_rows_count: %d, handler: %p.", key,
+              int(thd_sdb_share->stat.no_uncommitted_rows_count), this));
+  incr_stat = &thd_sdb_share->stat;
+  DBUG_RETURN(0);
 }
 
 void ha_sdb::filter_options(const bson::BSONObj &options,
@@ -3406,7 +3489,8 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   bson::BSONObj errObj;
   int sdb_rc = connection->get_last_error(errObj);
   if (sdb_rc != SDB_OK) {
-    push_warning(ha_thd(), sdb_rc, SDB_GET_LAST_ERROR_FAILED);
+    push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
+                 SDB_GET_LAST_ERROR_FAILED);
   }
 
   // get error info from errObj
@@ -3420,7 +3504,7 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   switch (get_sdb_code(error)) {
     case SDB_UPDATE_SHARD_KEY:
       if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
-        push_warning(ha_thd(), error, err_str);
+        push_warning(ha_thd(), Sql_condition::SL_WARNING, error, err_str);
       } else {
         my_printf_error(error, "%s", MYF(0), err_str);
       }
@@ -3463,6 +3547,38 @@ static void init_sdb_psi_keys(void) {
 }
 #endif
 
+static void update_shares_stats(THD *thd) {
+  DBUG_ENTER("update_shares_stats");
+
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  for (uint i = 0; i < thd_sdb->open_table_shares.records; i++) {
+    THD_SDB_SHARE *thd_share =
+        (THD_SDB_SHARE *)my_hash_element(&thd_sdb->open_table_shares, i);
+    struct Sdb_local_table_statistics *local_stat = &thd_share->stat;
+    Sdb_share *share = (Sdb_share *)thd_share->key;
+
+    if (local_stat->no_uncommitted_rows_count) {
+      Sdb_mutex_guard guard(share->mutex);
+      DBUG_ASSERT(int64(~(ha_rows)0) !=
+                  share->stat.total_records);  // should never be invalid
+      if (int64(~(ha_rows)0) != share->stat.total_records) {
+        DBUG_PRINT("info", ("Update row_count for %s, row_count: %lu, with:%d",
+                            share->table_name, (ulong)share->stat.total_records,
+                            local_stat->no_uncommitted_rows_count));
+        share->stat.total_records =
+            (share->stat.total_records + local_stat->no_uncommitted_rows_count >
+             0)
+                ? share->stat.total_records +
+                      local_stat->no_uncommitted_rows_count
+                : 0;
+      }
+      local_stat->no_uncommitted_rows_count = 0;
+    }
+  }
+
+  DBUG_VOID_RETURN;
+}
+
 // Commit a transaction started in SequoiaDB.
 static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   DBUG_ENTER("sdb_commit");
@@ -3480,6 +3596,7 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
 
   if (!connection->is_transaction_on()) {
+    update_shares_stats(thd);
     goto done;
   }
 
@@ -3503,8 +3620,10 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   if (0 != rc) {
     goto error;
   }
+  update_shares_stats(thd);
 
 done:
+  my_hash_reset(&thd_sdb->open_table_shares);
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -3513,6 +3632,7 @@ error:
 // Rollback a transaction started in SequoiaDB.
 static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
   DBUG_ENTER("sdb_rollback");
+
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   Sdb_conn *connection;
@@ -3550,6 +3670,15 @@ static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
   }
 
 done:
+  // reset no_uncommitted_rows_count
+  for (uint i = 0; i < thd_sdb->open_table_shares.records; i++) {
+    THD_SDB_SHARE *thd_share =
+        (THD_SDB_SHARE *)my_hash_element(&thd_sdb->open_table_shares, i);
+    struct Sdb_local_table_statistics *local_stat = &thd_share->stat;
+    local_stat->no_uncommitted_rows_count = 0;
+  }
+
+  my_hash_reset(&thd_sdb->open_table_shares);
   DBUG_RETURN(rc);
 error:
   goto done;

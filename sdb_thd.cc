@@ -24,6 +24,12 @@
 #include "sdb_log.h"
 #include "sdb_errcode.h"
 
+uchar* thd_sdb_share_get_key(THD_SDB_SHARE* thd_sdb_share, size_t* length,
+                             my_bool not_used MY_ATTRIBUTE((unused))) {
+  *length = sizeof(thd_sdb_share->key);
+  return (uchar*)&thd_sdb_share->key;
+}
+
 Thd_sdb::Thd_sdb(THD* thd)
     : m_thd(thd),
       m_slave_thread(thd->slave_thread),
@@ -32,9 +38,15 @@ Thd_sdb::Thd_sdb(THD* thd)
   lock_count = 0;
   start_stmt_count = 0;
   save_point_count = 0;
+
+  (void)sdb_hash_init(&open_table_shares, table_alias_charset, 5, 0, 0,
+                      (my_hash_get_key)thd_sdb_share_get_key, 0, 0,
+                      PSI_INSTRUMENT_ME);
 }
 
-Thd_sdb::~Thd_sdb() {}
+Thd_sdb::~Thd_sdb() {
+  my_hash_free(&open_table_shares);
+}
 
 Thd_sdb* Thd_sdb::seize(THD* thd) {
   Thd_sdb* thd_sdb = new (std::nothrow) Thd_sdb(thd);

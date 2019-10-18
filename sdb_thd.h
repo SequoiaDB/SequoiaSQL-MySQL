@@ -22,6 +22,15 @@
 
 extern handlerton* sdb_hton;
 
+struct Sdb_local_table_statistics {
+  int no_uncommitted_rows_count;
+};
+
+typedef struct st_thd_sdb_share {
+  const void* key;
+  struct Sdb_local_table_statistics stat;
+} THD_SDB_SHARE;
+
 class Thd_sdb {
  private:
   Thd_sdb(THD* thd);
@@ -40,6 +49,10 @@ class Thd_sdb {
   uint lock_count;
   uint start_stmt_count;
   uint save_point_count;
+
+  // store stats info for each open table share
+  // update stats of m_share after transaction commit
+  HASH open_table_shares;
 
  private:
   THD* m_thd;

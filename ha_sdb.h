@@ -380,6 +380,11 @@ class ha_sdb : public handler {
 
   void print_error(int error, myf errflag);
 
+  double scan_time();
+
+  /*add current table share to open_table_share */
+  int add_share_to_open_table_shares(THD *thd);
+
   void handle_sdb_error(int error, myf errflag);
 
  private:
@@ -409,4 +414,6 @@ class ha_sdb : public handler {
   bool auto_commit;
   Sdb_cond_ctx *sdb_condition;
   ulonglong m_table_flags;
+  /*incremental stat of current table share in current thd*/
+  struct Sdb_local_table_statistics *incr_stat;
 };

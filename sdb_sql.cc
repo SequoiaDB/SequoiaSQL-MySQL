@@ -291,8 +291,8 @@ void sdb_string_free(String *str) {
   str->mem_free();
 }
 
-void push_warning(THD *thd, uint code, const char *message_text) {
-  push_warning(thd, Sql_condition::SL_WARNING, code, message_text);
+void *trans_alloc(THD *thd, size_t size) {
+  return thd->get_transaction()->allocate_memory(size);
 }
 
 #elif defined IS_MARIADB
@@ -526,8 +526,8 @@ void sdb_string_free(String *str) {
   str->free();
 }
 
-void push_warning(THD *thd, uint code, const char *message_text) {
-  push_warning(thd, Sql_condition::WARN_LEVEL_WARN, code, message_text);
+void *trans_alloc(THD *thd, size_t size) {
+  return thd->trans_alloc(size);
 }
 
 #endif
