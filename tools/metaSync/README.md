@@ -21,7 +21,7 @@ MySQL 的元数据同步工具的实现原理是通过解析 MySQL 的审计日�
 ## 审计插件安装
 > 注意：为了避免增加审计插件后发生 MySQL 无法启动的情况，强烈建议在安装审计日志插件前，先完成 MySQL 环境的搭建及启动，安装完插件后再重启 MySQL 服务。
 
-+ 在所有 MySQL 实例上创建用于同步元数据的 MySQL 用户，并授予所有权限，用户名与密码在所有实例上保持一致。
++ 在所有 MySQL 实例上创建用于同步元数据的 MySQL 用户，并授予所有权限，用户名与密码在所有实例上保持一致。注意：此处使用的密码 'sdbadmin' 仅为示例，请根据需要自行设置安全的密码。
 ```sql
 CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
 GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
@@ -129,18 +129,12 @@ datefmt=
 该文件是在 3.2.4 版本中新增，早期版本进度信息也是存储于 config 文件中的。在从老版本升级到新版本后，会在第一次启动的时候自动进行升级，生成正确的配置文件和状态文件。状态文件的内容如下：
 ```
 [status]
-# 最后扫描文件的最后修改时间
-file_last_modified_time = 0
-# 首行审计日志开始时间戳
-file_first_line_time = 0
-# 首行审计日志开始线程号
-file_first_line_thread_id = 0
-# 首行审计日志开始序号
-file_first_line_seq = 0
-# 最后扫描行号
-last_parse_row = 0
+# 最后扫描文件的审计日志文件的 inode
+file_inode = 4589549
+# 文件中最后处理的行号
+last_parse_row = 673
 ```
-以上各值为初始值，会在运行过程中自动刷新。
+以上各值为示例值，会在运行过程中自动刷新。
 
 ### 启动工具
 在完成所有配置后，在各实例所在主机的 sdbadmin 用户下，执行以下命令在后台启动同步工具

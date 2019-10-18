@@ -366,25 +366,17 @@ class OptionMgr:
 
 class StatMgr:
     def __init__(self):
-        self.stat_file = None
         self.parser = None
-        self.file_last_mod_time = 0
-        self.file_first_line_time = 0
-        self.file_first_line_thread_id = 0
-        self.file_first_line_seq = 0
+        self.file_inode = 0
         self.last_parse_row = 0
 
     def __init_stat_file(self):
-        self.set_file_last_mod_time(0)
-        self.set_file_first_line_time(0)
-        self.set_file_first_line_thread_id(0)
-        self.set_file_first_line_seq(0)
+        self.file_inode = 0
         self.set_last_parse_row(0)
         self.update_stat()
 
     def load_stat(self, stat_file):
         self.parser = ConfigParser.ConfigParser()
-        self.stat_file = stat_file
         if not os.path.exists(stat_file):
             logger.warn('Status file {} dose not exist. Init it with default '
                         'values'.format(stat_file))
@@ -392,45 +384,17 @@ class StatMgr:
 
         self.parser.read(stat_file)
         stat_sec_name = 'status'
-
-        self.file_last_mod_time = DateUtils.strtime_to_timestamp(
-            self.parser.get(stat_sec_name, 'file_last_modified_time'),
-            "%Y-%m-%d-%H:%M:%S.%f")
-        self.file_first_line_time = DateUtils.strtime_to_timestamp(
-            self.parser.get(stat_sec_name, 'file_first_line_time'),
-            "%Y-%m-%d-%H:%M:%S")
-        self.file_first_line_thread_id = \
-            int(self.parser.get(stat_sec_name, 'file_first_line_thread_id'))
-        self.file_first_line_seq = int(self.parser.get(stat_sec_name,
-                                                       'file_first_line_seq'))
+        self.file_inode = int(self.parser.get(stat_sec_name, 'file_inode'))
         self.last_parse_row = int(self.parser.get(stat_sec_name,
                                                   'last_parse_row'))
 
         return 0
 
-    def get_file_last_mod_time(self):
-        return self.file_last_mod_time
+    def get_file_inode(self):
+        return self.file_inode
 
-    def set_file_last_mod_time(self, newtime):
-        self.file_last_mod_time = newtime
-
-    def get_file_first_line_time(self):
-        return self.file_first_line_time
-
-    def set_file_first_line_time(self, newtime):
-        self.file_first_line_time = newtime
-
-    def get_file_first_line_thread_id(self):
-        return self.file_first_line_thread_id
-
-    def set_file_first_line_thread_id(self, thread_id):
-        self.file_first_line_thread_id = thread_id
-
-    def get_file_first_line_seq(self):
-        return self.file_first_line_seq
-
-    def set_file_first_line_seq(self, sequence):
-        self.file_first_line_seq = sequence
+    def set_file_inode(self, inode):
+        self.file_inode = inode
 
     def get_last_parse_row(self):
         return self.last_parse_row
@@ -443,16 +407,7 @@ class StatMgr:
         if not self.parser.has_section(stat_sec_name):
             self.parser.add_section(stat_sec_name)
 
-        self.parser.set(stat_sec_name, "file_last_modified_time",
-                        DateUtils.timestamp_to_strtime(self.file_last_mod_time,
-                                                       "%Y-%m-%d-%H:%M:%S.%f"))
-        self.parser.set(stat_sec_name, "file_first_line_time",
-                        DateUtils.timestamp_to_strtime(
-                            self.file_first_line_time, "%Y-%m-%d-%H:%M:%S"))
-        self.parser.set(stat_sec_name, "file_first_line_thread_id",
-                        self.file_first_line_thread_id)
-        self.parser.set(stat_sec_name, "file_first_line_seq",
-                        self.file_first_line_seq)
+        self.parser.set(stat_sec_name, 'file_inode', str(self.file_inode))
         self.parser.set(stat_sec_name, "last_parse_row", self.last_parse_row)
         self.parser.write(open(stat_file, 'w'))
 
@@ -469,6 +424,83 @@ class PreProcessor:
             version = 1
         return version
 
+    def __find_last_file_inode(self, conf_parser_old):
+        audit_log_path = conf_parser_old.get(
+            'parse', 'parse_log_directory'
+        )
+        audit_file_name = conf_parser_old.get(
+            'parse', 'audit_log_file_name'
+        )
+        mtime = DateUtils.strtime_to_timestamp(
+            conf_parser_old.get('parse', 'file_last_modified_time'),
+            '%Y-%m-%d-%H:%M:%S.%f'
+        )
+        first_line_time = DateUtils.strtime_to_timestamp(
+            conf_parser_old.get('parse', 'file_first_line_time'),
+            '%Y-%m-%d-%H:%M:%S'
+        )
+        first_line_thread_id = int(
+            conf_parser_old.get('parse', 'file_first_line_thread_id')
+        )
+        first_line_seq = int(
+            conf_parser_old.get('parse', 'file_first_line_seq')
+        )
+        last_parse_row = int(conf_parser_old.get('parse', 'last_parse_row'))
+
+        if 0 == mtime:
+            return 0
+
+        while True:
+            file_list = os.listdir(audit_log_path)
+            file_list = sorted(file_list)
+            file_inode = 0
+            file_list_change = False
+            for file in file_list:
+                if not file.startswith(audit_file_name):
+                    continue
+                if len(file) > len(audit_file_name):
+                    suffix = os.path.splitext(file)[-1]
+                    suffix_num = suffix[1:]
+                    if not suffix_num.isdigit():
+                        continue
+                file_path = os.path.join(audit_log_path, file)
+                file_inode_before = os.stat(file_path).st_ino
+                real_mod_time = DateUtils.get_file_mtime_timestamp(file_path)
+                f = open(file_path, 'r')
+                lines = f.readlines()
+                f.close()
+                real_line_num = len(lines)
+                if 0 == real_line_num:
+                    continue
+                line = lines[0]
+                elements = line.split(",")
+                real_first_line_time = DateUtils.strtime_to_timestamp(
+                    elements[0], "%Y%m%d %H:%M:%S")
+                real_first_line_thread_id = long(elements[4])
+                real_first_line_seq = long(elements[5])
+                if real_mod_time >= mtime and \
+                    real_first_line_time == first_line_time and \
+                    real_first_line_thread_id == first_line_thread_id and \
+                    real_first_line_seq == first_line_seq and \
+                    real_line_num >= last_parse_row:
+                    file_inode_after = os.stat(file_path).st_ino
+                    if file_inode_after != file_inode_before:
+                        # File list changed during the checking. Break the inner
+                        # loop and check again.
+                        file_list_change = True
+                        break
+                    else:
+                        file_inode = file_inode_after
+                        break
+            if file_list_change:
+                continue
+            if 0 != file_inode:
+                return file_inode
+            else:
+                logging.error('File with expect information not found')
+                return -1
+
+
     def __upgrade(self):
         logging.info('Upgrade from old version...')
         parse_sec_name = 'parse'
@@ -479,8 +511,15 @@ class PreProcessor:
             conf_parser = ConfigParser.ConfigParser()
             conf_parser.read(config_file)
             stat_parser = ConfigParser.ConfigParser()
+
+            file_inode = self.__find_last_file_inode(conf_parser)
+            if -1 == file_inode:
+                logging.error('Find file with expect information failed')
+                return 1
+
             parse_items = conf_parser.items(parse_sec_name)
             stat_parser.add_section(stat_sec_name)
+            stat_parser.set(stat_sec_name, 'file_inode', file_inode)
             for key, value in parse_items:
                 # Move the following two items into section 'mysql', and rename
                 # 'parse_log_directory' to 'audit_log_directory'.
@@ -490,7 +529,7 @@ class PreProcessor:
                                     value)
                 elif 'audit_log_file_name' == key:
                     conf_parser.set(mysql_sec_name, key, value)
-                else:
+                elif 'last_parse_row' == key:
                     stat_parser.set(stat_sec_name, key, value)
 
             stat_parser.write(open(stat_file, 'w'))
@@ -530,6 +569,7 @@ class MysqlMetaSync:
         self.sleep_time = 1
         self.SUCCESS_STATE = 0
         self.ignore_file = "ignore.info"
+        self.audit_file_suffix_len = 0
 
     @staticmethod
     def __is_database_opr(sql):
@@ -599,52 +639,6 @@ class MysqlMetaSync:
             datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + " " + stmt + "\n")
         ignore_file.close()
 
-    def get_audit_log_files(self):
-        """get the list of log files to be parsed
-
-        :return: list of log files to be parsed
-        """
-        target_files = []
-        try:
-            audit_log_path = option_mgr.get_audit_log_path()
-            logger.info("get audit log file list in {directory}"
-                        .format(directory=audit_log_path))
-            for f in os.listdir(audit_log_path):
-                if f.startswith(option_mgr.get_audit_log_name()) \
-                        and not f.endswith(".swp"):
-                    file_path = os.path.join(audit_log_path, f)
-                    tmp_last_modified_time = DateUtils.get_file_mtime_timestamp(
-                        file_path)
-                    tmp_meta_modified_time = DateUtils.get_file_ctime_timestamp(
-                        file_path)
-                    if stat_mgr.get_file_last_mod_time() <= \
-                            tmp_last_modified_time:
-                        target_file = {
-                            "name": f,
-                            "file": file_path,
-                            "mtime": tmp_last_modified_time,
-                            "ctime": tmp_meta_modified_time
-                        }
-                        logger.debug(
-                            "{source} <= {target}, put audit log file "
-                            "[{file_name}] into list".format(
-                                file_name=f,
-                                source=stat_mgr.get_file_last_mod_time(),
-                                target=tmp_last_modified_time)
-                        )
-                        target_files.append(target_file)
-        except OSError as e:
-            if e.errno == 2:
-                logger.warn("audit file list was changed when collecting "
-                            "audit file list")
-                target_files = []
-            else:
-                raise e
-        if target_files:
-            logger.debug("sort list")
-            sorted(target_files, cmp=DateUtils.compare_mtime)
-        return target_files
-
     def execute_sql(self, exec_sql_info, db_required, session_attr=None):
         database = exec_sql_info["database"]
         sql = exec_sql_info["sql"]
@@ -695,7 +689,151 @@ class MysqlMetaSync:
                              "and try again...")
                 time.sleep(3)
 
-    def parse_audit_log_file(self, f):
+    def __get_audit_file_list(self, sort=True, reverse_order=False):
+        audit_list = []
+        audit_path = option_mgr.get_audit_log_path()
+        audit_file_name = option_mgr.get_audit_log_name()
+
+        file_list = os.listdir(audit_path)
+        if 0 == len(file_list):
+            return audit_list
+
+        if sort:
+            file_list = sorted(file_list, reverse=reverse_order)
+
+        for f in file_list:
+            if f.startswith(audit_file_name):
+                if len(f) > len(audit_file_name):
+                    suffix = os.path.splitext(f)[-1]
+                    suffix_num = suffix[1:]
+                    if not suffix_num.isdigit():
+                        continue
+                    else:
+                        audit_list.append(f)
+                    if 0 == self.audit_file_suffix_len:
+                        self.audit_file_suffix_len = len(suffix_num)
+                else:
+                    audit_list.append(f)
+        return audit_list
+
+    def __get_eldest_audit_file(self):
+        audit_path = option_mgr.get_audit_log_path()
+        audit_file_name = option_mgr.get_audit_log_name()
+        audit_file = os.path.join(audit_path, audit_file_name)
+        while True:
+            audit_inode_before = os.stat(audit_file).st_ino
+            file_list = os.listdir(audit_path)
+            file_list = sorted(file_list, reverse=True)
+            if 0 == len(file_list):
+                logging.error('No files in the audit path')
+                return 0, None
+            has_audit_file = False
+            for f in file_list:
+                if f.startswith(audit_file_name):
+                    if len(f) > len(audit_file_name):
+                        suffix = os.path.splitext(f)[-1]
+                        suffix_num = suffix[1:]
+                        if not suffix_num.isdigit():
+                            continue
+                    has_audit_file = True
+                    file_path = os.path.join(audit_path, f)
+                    current_inode = os.stat(file_path).st_ino
+                    fd = open(file_path, 'r')
+                    audit_inode_after = os.stat(audit_file).st_ino
+                    if audit_inode_after != audit_inode_before:
+                        fd.close()
+                        break
+                    else:
+                        return current_inode, fd
+            if not has_audit_file:
+                logging.error('No audit file found in the audit path')
+                return 0, None
+
+    def get_next_file(self):
+        if 0 == stat_mgr.get_file_inode():
+            return self.__get_eldest_audit_file()
+        else:
+            audit_dir = option_mgr.get_audit_log_path()
+            base_file = os.path.join(audit_dir,
+                                     option_mgr.get_audit_log_name())
+            while True:
+                found_file = False
+                pre_file_inode = 0
+                base_inode_before = os.stat(base_file).st_ino
+                audit_file_list = self.__get_audit_file_list()
+                if len(audit_file_list) == 0:
+                    logging.error('No audit file in the audit path {}'.format(
+                        audit_dir
+                    ))
+                    return 0, None
+
+                for file in audit_file_list:
+                    file_path = os.path.join(audit_dir, file)
+                    curr_file_stat = os.stat(file_path)
+                    curr_file_inode = curr_file_stat.st_ino
+                    if 0 == curr_file_stat.st_size:
+                        if 0 == pre_file_inode:
+                            return curr_file_inode, None
+                        else:
+                            logging.error('Audit file {} with inode {} is '
+                                          'empty'.format(file, curr_file_inode))
+                            return 0, None
+
+                    if curr_file_inode == stat_mgr.get_file_inode():
+                        # Found the file with the expected inode id. Check if
+                        # all records in the file have been processed.
+                        found_file = True
+                        fd = open(file_path, 'r')
+                        index = -1
+                        for index, line in enumerate(fd):
+                            pass
+                        fd.seek(0)
+                        line_num = index + 1
+                        last_parse_row = stat_mgr.get_last_parse_row()
+                        if line_num > last_parse_row:
+                            # Check if file list is changed.
+                            base_inode_after = os.stat(base_file).st_ino
+                            if base_inode_after != base_inode_before:
+                                fd.close()
+                                break
+                            else:
+                                # Found!
+                                return curr_file_inode, fd
+                        elif line_num == last_parse_row:
+                            # All records in the file have been processed.
+                            base_inode_after = os.stat(base_file).st_ino
+                            if base_inode_after != base_inode_before:
+                                # File list changed. Need to check again.
+                                fd.close()
+                                break
+                            elif 0 == pre_file_inode:
+                                # It's the base audit file server_audit.log.
+                                fd.close()
+                                return curr_file_inode, None
+                            else:
+                                # All Records in the last file have been
+                                # processed, and it's not the base audit file.
+                                # So go to the previous one.
+                                stat_mgr.set_file_inode(pre_file_inode)
+                                stat_mgr.set_last_parse_row(0)
+                                stat_mgr.update_stat()
+                                break
+                        else:
+                            logging.error('Line number {} in file {} with '
+                                          'inode {} is less than the value {} '
+                                          'in the stat file'.format(
+                                line_num, file, curr_file_inode, last_parse_row
+                            ))
+                            return 0, None
+                    else:
+                        pre_file_inode = curr_file_inode
+                if not found_file:
+                    logging.error('Audit file with inode {} not found'.format(
+                        stat_mgr.get_file_inode()
+                    ))
+                    return 0, None
+
+    def parse_audit_log_file(self, inode, f):
         """ parse log file
 
         :param f: file descriptor of the audit log file
@@ -706,6 +844,7 @@ class MysqlMetaSync:
                            "sql", "exec_state"]
         actual_parse_count = 0
         row_number = 0
+        stat_mgr.set_file_inode(inode)
         lines = f.readlines()
         for line in lines:
             row_number += 1
@@ -781,215 +920,29 @@ class MysqlMetaSync:
                 session_attr = "set session sequoiadb_execute_only_in_mysql=on;"
                 self.execute_sql(exec_sql_info, db_required, session_attr)
             stat_mgr.set_last_parse_row(row_number)
+            stat_mgr.update_stat()
         return actual_parse_count
 
     def run_parse_task(self):
-        logger.info("begin to sync")
+        fd = None
         try:
             while True:
-                files = self.get_audit_log_files()
-                if not files:
-                    self.sleep_time = self.sleep_time ** 2
-                    logger.warn("after {sleep_time} seconds, retry to get "
-                                "audit file list."
-                                .format(sleep_time=self.sleep_time))
-                    time.sleep(self.sleep_time)
+                # Find and open the next file which should be processed.
+                inode, fd = self.get_next_file()
+                if 0 == inode:
+                    logging.error('Get next audit file failed')
+                    sys.exit(1)
+                if fd is None:
+                    # The file is found, but all operations have been processed.
+                    # Let's sleep for a while.
+                    time.sleep(option_mgr.get_scan_interval())
                     continue
-                self.sleep_time = 1
-                file_index = 0
-                file_count = len(files)
-                logger.info("audit log file list count is {count}".format(
-                    count=file_count))
-                finish_parse_file_list = True
-                parse_next_file = False
-                for index in range(file_count):
-                    current_file = files[index]
-                    current_file_path = current_file["file"]
-                    current_file_name = current_file["name"]
-                    current_file_ctime = current_file["ctime"]
-                    current_file_mtime = current_file["mtime"]
-                    with open(current_file_path, "rb") as f:
-                        try:
-                            current_file_actual_ctime = \
-                                DateUtils.get_file_ctime_timestamp(
-                                    current_file_path
-                                )
-                            # 文件列表中的文件个数发生变化的情况
-                            if current_file_name.endswith(
-                                    option_mgr.get_audit_log_name()) \
-                               and current_file_ctime != \
-                                    current_file_actual_ctime \
-                               and file_index >= 1:
-                                pre_file = files[index - 1]
-                                pre_file_path = pre_file["file"]
-                                pre_file_ctime = pre_file["ctime"]
-                                pre_file_actual_ctime = \
-                                    DateUtils.get_file_ctime_timestamp(
-                                        pre_file_path
-                                    )
-                                if pre_file_ctime != pre_file_actual_ctime:
-                                    logger.warn("file list is changed, get "
-                                                "file list again.")
-                                    finish_parse_file_list = False
-                                    break
-                            if current_file_name.endswith(
-                                    option_mgr.get_audit_log_name()) \
-                               and current_file_ctime != \
-                                    current_file_actual_ctime \
-                               and len(os.listdir(
-                                   option_mgr.get_audit_log_path())) != 1:
-                                logger.warn(
-                                    "file list is changed, get file list again."
-                                )
-                                finish_parse_file_list = False
-                                break
-                            elif not current_file_name.endswith(
-                                    option_mgr.get_audit_log_name()) \
-                                    and current_file_ctime != \
-                                    current_file_actual_ctime:
-                                logger.warn(
-                                    "file list is changed, get file list again."
-                                )
-                                finish_parse_file_list = False
-                        except OSError as e:
-                            if e.errno == 2:
-                                logger.warn(
-                                    "audit file list was changed when get audit"
-                                    " file {file} last modified time"
-                                    .format(file=current_file_name))
-                                finish_parse_file_list = False
-                                break
-                            else:
-                                msg = traceback.format_exc()
-                                logger.error(
-                                    "fail to get audit file [{file}] last "
-                                    "modified time".format(
-                                        file=current_file_name
-                                    )
-                                )
-                                logger.error(msg)
-                                raise e
-                        # parse file
-                        line = f.readline()
-                        if not line:
-                            logger.info("audit file [{file}] is empty".format(
-                                file=current_file_name))
-                            finish_parse_file_list = True
-                            break
-                        elements = line.split(",")
-                        first_line_time = DateUtils.strtime_to_timestamp(
-                            elements[0], "%Y%m%d %H:%M:%S")
-                        first_line_thread_id = long(elements[4])
-                        first_line_seq = long(elements[5])
-
-                        if stat_mgr.get_file_last_mod_time() == 0:
-                            stat_mgr.set_last_parse_row(0)
-                            stat_mgr.set_file_first_line_time(first_line_time)
-                            stat_mgr.set_file_first_line_thread_id(
-                                first_line_thread_id)
-                            stat_mgr.set_file_first_line_seq(first_line_seq)
-                            stat_mgr.set_file_last_mod_time(current_file_mtime)
-
-                            logger.info(
-                                "parse audit log file: {}, it's last "
-                                "modified time is {}"
-                                .format(current_file_name,
-                                        DateUtils.timestamp_to_strtime(
-                                            stat_mgr.get_file_last_mod_time(),
-                                            "%Y-%m-%d-%H:%M:%S.%f")
-                                        )
-                            )
-                            f.seek(0)
-                            actual_parse_count = self.parse_audit_log_file(f)
-                            logger.info(
-                                "file row count: {}, parse count: {}"
-                                .format(stat_mgr.get_last_parse_row(),
-                                        actual_parse_count)
-                            )
-                        elif first_line_time == \
-                                stat_mgr.get_file_first_line_time() \
-                                and first_line_thread_id == \
-                                stat_mgr.get_file_first_line_thread_id() \
-                                and first_line_seq == \
-                                stat_mgr.get_file_first_line_seq():
-                            stat_mgr.set_file_last_mod_time(current_file_mtime)
-                            logger.info(
-                                "parse audit log file: {}, it's last modified "
-                                "time is {}".format(
-                                    current_file_name,
-                                    DateUtils.timestamp_to_strtime(
-                                        stat_mgr.get_file_last_mod_time(),
-                                        "%Y-%m-%d-%H:%M:%S.%f")
-                                )
-                            )
-                            f.seek(0)
-                            actual_parse_count = self.parse_audit_log_file(f)
-                            logger.info(
-                                "file row count: {}, parse count: {}".format(
-                                    stat_mgr.get_last_parse_row(),
-                                    actual_parse_count
-                                )
-                            )
-                        elif parse_next_file:  # 扫描文件列表的下一个文件
-                            stat_mgr.set_file_last_mod_time(current_file_mtime)
-                            stat_mgr.set_last_parse_row(0)
-                            stat_mgr.set_file_first_line_time(first_line_time)
-                            stat_mgr.set_file_first_line_thread_id(
-                                first_line_thread_id)
-                            stat_mgr.set_file_first_line_seq(first_line_seq)
-                            logger.info(
-                                "parse audit log file: {}, it's last "
-                                "modified time is {}".format(
-                                    current_file_name,
-                                    DateUtils.timestamp_to_strtime(
-                                        stat_mgr.get_file_last_mod_time(),
-                                        "%Y-%m-%d-%H:%M:%S.%f")
-                                )
-                            )
-                            f.seek(0)
-                            actual_parse_count = self.parse_audit_log_file(f)
-                            logger.info(
-                                "file row count : {}, parse count: {}"
-                                .format(stat_mgr.get_last_parse_row(),
-                                        actual_parse_count)
-                            )
-                        else:
-                            logger.error(
-                                "Information(file_last_modified_time, "
-                                "file_first_line_time, "
-                                "file_first_line_thread_id, "
-                                "file_first_line_seq) of file {} "
-                                "is not as expected. "
-                                "Expect: [{}, {}, {}, {}]. "
-                                "Actual: [{}, {}, {}, {}]"
-                                .format(current_file_name,
-                                        current_file_mtime,
-                                        first_line_time,
-                                        first_line_thread_id,
-                                        first_line_seq,
-                                        stat_mgr.get_file_last_mod_time(),
-                                        stat_mgr.get_file_first_line_time(),
-                                        stat_mgr.get_file_first_line_thread_id(),
-                                        stat_mgr.get_file_first_line_seq()
-                                        )
-                            )
-                            sys.exit(-1)
-                    file_index = file_index + 1
-                    if file_index < file_count:
-                        parse_next_file = True
-                    else:
-                        parse_next_file = False
-                    stat_mgr.update_stat()
-                if finish_parse_file_list:  # 解析完文件列表,退出循环
-                    logger.info("finish to parse audit log file list.")
-                    break
-        except BaseException as e:
-            msg = traceback.format_exc()
-            logger.error("run parse task failed: {error}".format(error=msg))
-            raise e
+                self.parse_audit_log_file(inode, fd)
+                if fd is not None and not fd.closed:
+                    fd.close()
         finally:
-            stat_mgr.update_stat()
-            logger.info("finish to sync")
+            if fd is not None and not fd.closed:
+                fd.close()
 
 
 def init_log(log_config_file):
