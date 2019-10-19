@@ -2770,7 +2770,7 @@ int ha_sdb::get_sharding_key(TABLE *form, bson::BSONObj &options,
     goto error;
   }
 
-  if (sharding_key.isEmpty() && sdb_use_partition) {
+  if (sharding_key.isEmpty() && sdb_auto_partition) {
     return get_default_sharding_key(form, sharding_key);
   }
 
@@ -2901,13 +2901,13 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   int rc = 0;
   bson::BSONObj sharding_key;
   bson::BSONObj table_options;
-  bool explicit_not_use_partition = false;
+  bool explicit_not_auto_partition = false;
   bson::BSONObjBuilder build;
 
   if (create_info && create_info->comment.str) {
     char *sdb_cmt_pos = NULL;
     bson::BSONElement options_ele;
-    bson::BSONElement use_partition;
+    bson::BSONElement auto_partition;
     bson::BSONObj comments;
     if ((sdb_cmt_pos = strstr(const_cast<char *>(create_info->comment.str),
                               SDB_COMMENT)) == NULL) {
@@ -2938,23 +2938,27 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
       goto error;
     }
 
-    use_partition = comments.getField("use_partition");
-    if (use_partition.type() == bson::Bool) {
-      if (false == use_partition.Bool()) {
-        explicit_not_use_partition = true;
+    auto_partition = comments.getField("auto_partition");
+    /*for compatibility with old configuration parameter */
+    if (auto_partition.type() == bson::EOO) {
+      auto_partition = comments.getField("use_partition");
+    }
+    if (auto_partition.type() == bson::Bool) {
+      if (false == auto_partition.Bool()) {
+        explicit_not_auto_partition = true;
       }
-    } else if (use_partition.type() != bson::EOO) {
+    } else if (auto_partition.type() != bson::EOO) {
       rc = SDB_ERR_INVALID_ARG;
       my_printf_error(rc,
                       "Failed to parse cl_options! Invalid type[%d] for "
-                      "use_partition",
-                      MYF(0), use_partition.type());
+                      "auto_partition",
+                      MYF(0), auto_partition.type());
       goto error;
     }
 
     options_ele = comments.getField("table_options");
     if (options_ele.type() == bson::Object) {
-      if (explicit_not_use_partition) {
+      if (explicit_not_auto_partition) {
         filter_partition_options(options_ele.embeddedObject().copy(),
                                  table_options);
       } else {
@@ -2970,7 +2974,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
     }
   }
 comment_done:
-  if (!explicit_not_use_partition) {
+  if (!explicit_not_auto_partition) {
     rc = get_sharding_key(form, table_options, sharding_key);
     if (rc) {
       goto error;

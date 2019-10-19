@@ -41,7 +41,7 @@ my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
 char *sdb_conn_str = NULL;
 char *sdb_user = NULL;
 char *sdb_password = NULL;
-my_bool sdb_use_partition = SDB_USE_PARTITION_DFT;
+my_bool sdb_auto_partition = SDB_USE_PARTITION_DFT;
 my_bool sdb_use_bulk_insert = SDB_DEFAULT_USE_BULK_INSERT;
 int sdb_bulk_insert_size = SDB_DEFAULT_BULK_INSERT_SIZE;
 int sdb_replica_size = SDB_DEFAULT_REPLICA_SIZE;
@@ -113,8 +113,17 @@ static MYSQL_SYSVAR_STR(password, sdb_password,
                         "(Default: \"\")"
                         /*SequoiaDB 鉴权密码。*/,
                         NULL, sdb_password_update, SDB_PASSWORD_DFT);
-static MYSQL_SYSVAR_BOOL(use_partition, sdb_use_partition, PLUGIN_VAR_OPCMDARG,
+// SDB_DOC_OPT = IGNORE
+static MYSQL_SYSVAR_BOOL(use_partition, sdb_auto_partition,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
                          "Create partition table on SequoiaDB. "
+                         "(Default: ON). This option is abandoned, please use "
+                         "sequoiadb_auto_partition instead."
+                         /*是否启用自动分区(已弃用)。*/,
+                         NULL, NULL, SDB_USE_PARTITION_DFT);
+static MYSQL_SYSVAR_BOOL(auto_partition, sdb_auto_partition,
+                         PLUGIN_VAR_OPCMDARG,
+                         "Automatically create partition table on SequoiaDB. "
                          "(Default: ON)"
                          /*是否启用自动分区。*/,
                          NULL, NULL, SDB_USE_PARTITION_DFT);
@@ -195,6 +204,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(user),
     MYSQL_SYSVAR(password),
     MYSQL_SYSVAR(use_partition),
+    MYSQL_SYSVAR(auto_partition),
     MYSQL_SYSVAR(use_bulk_insert),
     MYSQL_SYSVAR(bulk_insert_size),
     MYSQL_SYSVAR(replica_size),
