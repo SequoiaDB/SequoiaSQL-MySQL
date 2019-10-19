@@ -65,6 +65,9 @@
 
 #define SDB_FIELD_UNIQUE "Unique"
 #define SDB_FIELD_NOT_NULL "NotNull"
+#define SDB_FIELD_IDX_DEF "IndexDef"
+#define SDB_FIELD_UNIQUE2 "unique"
+#define SDB_FIELD_KEY "key"
 
 #define SDB_GET_LAST_ERROR_FAILED "Get last error object failed."
 

@@ -298,13 +298,58 @@ error:
   goto done;
 }
 
+/*
+   Test if index is created by v3.2.2 or earlier.
+*/
+bool Sdb_cl::is_old_version_index(const bson::BSONObj &index_def,
+                                  const CHAR *name,
+                                  const bson::BSONObj &options) {
+  bool rs = false;
+  bson::BSONObj info;
+  try {
+    do {
+      int rc = SDB_ERR_OK;
+      rc = m_cl.getIndex(name, info);
+      if (rc != SDB_ERR_OK) {
+        break;
+      }
+
+      bson::BSONObj def_obj = info.getField(SDB_FIELD_IDX_DEF).Obj();
+      bson::BSONObj key_obj = def_obj.getField(SDB_FIELD_KEY).Obj();
+      if (!key_obj.equal(index_def)) {
+        break;
+      }
+
+      bool opt_unique = options.getField(SDB_FIELD_UNIQUE).booleanSafe();
+      bool def_unique = def_obj.getField(SDB_FIELD_UNIQUE2).booleanSafe();
+      if (opt_unique != def_unique) {
+        break;
+      }
+
+      bool opt_not_null = options.getField(SDB_FIELD_NOT_NULL).booleanSafe();
+      bool def_not_null = def_obj.getField(SDB_FIELD_NOT_NULL).booleanSafe();
+      if (!(opt_not_null && !def_not_null)) {
+        break;
+      }
+
+      rs = true;
+
+    } while (0);
+  } catch (bson::assertion e) {
+    DBUG_ASSERT(false);
+  }
+
+  return rs;
+}
+
 int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
                          const bson::BSONObj &options) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
   rc = m_cl.createIndex(index_def, name, options);
-  if (SDB_IXM_REDEF == rc) {
+  if (SDB_IXM_REDEF == rc ||
+      (SDB_IXM_EXIST == rc && is_old_version_index(index_def, name, options))) {
     rc = SDB_ERR_OK;
   }
   if (rc != SDB_ERR_OK) {

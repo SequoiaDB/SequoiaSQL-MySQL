@@ -97,6 +97,10 @@ class Sdb_cl {
                 const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
  private:
+  bool is_old_version_index(const bson::BSONObj &index_def, const CHAR *name,
+                            const bson::BSONObj &options);
+
+ private:
   Sdb_conn *m_conn;
   my_thread_id m_thread_id;
   sdbclient::sdbCollection m_cl;
