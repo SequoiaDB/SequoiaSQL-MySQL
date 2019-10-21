@@ -376,6 +376,8 @@ class ha_sdb : public handler {
 
   void print_error(int error, myf errflag);
 
+  void handle_sdb_error(int error, myf errflag);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;

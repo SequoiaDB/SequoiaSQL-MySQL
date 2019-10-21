@@ -291,6 +291,10 @@ void sdb_string_free(String *str) {
   str->mem_free();
 }
 
+void push_warning(THD *thd, uint code, const char *message_text) {
+  push_warning(thd, Sql_condition::SL_WARNING, code, message_text);
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -520,6 +524,10 @@ my_bool sdb_hash_init(HASH *hash, CHARSET_INFO *charset,
 
 void sdb_string_free(String *str) {
   str->free();
+}
+
+void push_warning(THD *thd, uint code, const char *message_text) {
+  push_warning(thd, Sql_condition::WARN_LEVEL_WARN, code, message_text);
 }
 
 #endif

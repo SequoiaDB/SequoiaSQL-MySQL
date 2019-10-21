@@ -70,6 +70,7 @@
 #define SDB_FIELD_KEY "key"
 
 #define SDB_GET_LAST_ERROR_FAILED "Get last error object failed."
+#define SDB_NO_ERROR_MSG_DESCRIPTION "No error message description"
 
 const static bson::BSONObj SDB_EMPTY_BSON;
 

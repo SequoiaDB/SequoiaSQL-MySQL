@@ -273,5 +273,6 @@ List_iterator<Item> sdb_lex_all_fields(LEX *const lex);
 
 uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
                                bool stay_quiet);
+void push_warning(THD *thd, uint code, const char *message_text);
 
 #endif
