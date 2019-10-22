@@ -501,3 +501,25 @@ error:
   convert_sdb_code(rc);
   goto done;
 }
+
+int Sdb_conn::interrupt_operation() {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+
+retry:
+  rc = m_connection.interruptOperation();
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}

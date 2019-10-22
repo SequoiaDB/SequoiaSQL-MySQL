@@ -3284,6 +3284,7 @@ static void init_sdb_psi_keys(void) {
 
 // Commit a transaction started in SequoiaDB.
 static int sdb_commit(handlerton *hton, THD *thd, bool all) {
+  DBUG_ENTER("sdb_commit");
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   Sdb_conn *connection;
@@ -3323,13 +3324,14 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
 
 // Rollback a transaction started in SequoiaDB.
 static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
+  DBUG_ENTER("sdb_rollback");
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   Sdb_conn *connection;
@@ -3367,7 +3369,7 @@ static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -3408,12 +3410,49 @@ error:
 }
 
 static int sdb_close_connection(handlerton *hton, THD *thd) {
+  DBUG_ENTER("sdb_close_connection");
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   if (NULL != thd_sdb) {
     Thd_sdb::release(thd_sdb);
     thd_set_thd_sdb(thd, NULL);
   }
-  return 0;
+  DBUG_RETURN(0);
+}
+
+#ifdef IS_MARIADB
+static void sdb_kill_query(handlerton *, THD *thd, enum thd_kill_levels) {
+#else
+static void sdb_kill_connection(handlerton *hton, THD *thd) {
+#endif
+  DBUG_ENTER("sdb_kill_connection");
+  THD *curr_thd = current_thd;
+  int rc = 0;
+  uint64 tid = 0;
+  Sdb_conn *connection;
+  connection = check_sdb_in_thd(thd, true);
+  if (NULL == connection) {
+    rc = HA_ERR_NO_CONNECTION;
+    goto error;
+  }
+  DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
+  tid = connection->thread_id();
+  rc = connection->interrupt_operation();
+  if (SDB_ERR_OK != rc) {
+    SDB_PRINT_ERROR(rc,
+                    "Failed to interrupt sdb connection, mysql connection "
+                    "id: %llu. rc: %d",
+                    tid, rc);
+    goto error;
+  }
+  DBUG_PRINT("ha_sdb:info",
+             ("Interrupt sdb session, mysql connection id:%llu", tid));
+done:
+  if (curr_thd->is_error()) {
+    curr_thd->clear_error();
+  }
+  DBUG_VOID_RETURN;
+error:
+  goto done;
 }
 
 static int sdb_init_func(void *p) {
@@ -3434,6 +3473,11 @@ static int sdb_init_func(void *p) {
   sdb_hton->rollback = sdb_rollback;
   sdb_hton->drop_database = sdb_drop_database;
   sdb_hton->close_connection = sdb_close_connection;
+#ifdef IS_MARIADB
+  sdb_hton->kill_query = sdb_kill_query;
+#else
+  sdb_hton->kill_connection = sdb_kill_connection;
+#endif
   if (conn_addrs.parse_conn_addrs(sdb_conn_str)) {
     SDB_LOG_ERROR("Invalid value sequoiadb_conn_addr=%s", sdb_conn_str);
     return 1;
