@@ -347,6 +347,11 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   memset(table_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
   sdb_init_alloc_root(&blobroot, sdb_key_memory_blobroot, "init_ha_sdb",
                       8 * 1024, 0);
+  m_table_flags =
+      (HA_REC_NOT_IN_SEQ | HA_NO_READ_LOCAL_LOCK | HA_BINLOG_ROW_CAPABLE |
+       HA_BINLOG_STMT_CAPABLE | HA_TABLE_SCAN_ON_INDEX | HA_NULL_IN_KEY |
+       HA_CAN_INDEX_BLOBS | HA_AUTO_PART_KEY);
+  m_table_flags |= (sdb_use_transaction ? 0 : HA_NO_TRANSACTIONS);
 }
 
 ha_sdb::~ha_sdb() {
@@ -375,9 +380,7 @@ const char **ha_sdb::bas_ext() const {
 }
 
 ulonglong ha_sdb::table_flags() const {
-  return (HA_REC_NOT_IN_SEQ | HA_NO_READ_LOCAL_LOCK | HA_BINLOG_ROW_CAPABLE |
-          HA_BINLOG_STMT_CAPABLE | HA_TABLE_SCAN_ON_INDEX | HA_NULL_IN_KEY |
-          HA_CAN_INDEX_BLOBS | HA_AUTO_PART_KEY);
+  return m_table_flags;
 }
 
 ulong ha_sdb::index_flags(uint inx, uint part, bool all_parts) const {
@@ -668,7 +671,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
     }
     case MYSQL_TYPE_BIT:
     case MYSQL_TYPE_LONG: {
-      long long value = field->val_int();
+      longlong value = field->val_int();
       bool overflow = value > INT_MAX32 || value < INT_MIN32;
       if (strict && MYSQL_TYPE_LONG == field->type()) {
         field_to_strict_obj(field, obj_builder, (void *)&value);
@@ -696,7 +699,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
         if (strict) {
           field_to_strict_obj(field, obj_builder, (void *)&value);
         } else {
-          obj_builder.append(sdb_field_name(field), (long long)value);
+          obj_builder.append(sdb_field_name(field), (longlong)value);
         }
       }
       break;
@@ -2540,6 +2543,11 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
       goto error;
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+
+    if (!sdb_use_transaction) {
+      auto_commit = false;
+      goto done;
+    }
 
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
       auto_commit = false;

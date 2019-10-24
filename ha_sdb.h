@@ -404,8 +404,9 @@ class ha_sdb : public handler {
   std::vector<bson::BSONObj> m_bulk_insert_rows;
   Sdb_obj_cache<bson::BSONElement> m_bson_element_cache;
   bool m_has_update_insert_id;
-  long long total_count;
+  longlong total_count;
   bool count_query;
   bool auto_commit;
   Sdb_cond_ctx *sdb_condition;
+  ulonglong m_table_flags;
 };

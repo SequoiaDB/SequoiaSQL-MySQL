@@ -34,6 +34,7 @@ static const int SDB_DEFAULT_BULK_INSERT_SIZE = 2000;
 static const int SDB_DEFAULT_REPLICA_SIZE = 1;
 static const uint SDB_DEFAULT_SELECTOR_PUSHDOWN_THRESHOLD = 30;
 static const longlong SDB_DEFAULT_ALTER_TABLE_OVERHEAD_THRESHOLD = 10000000;
+static const my_bool SDB_DEFAULT_USE_TRANSACTION = TRUE;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
@@ -48,6 +49,7 @@ int sdb_replica_size = SDB_DEFAULT_REPLICA_SIZE;
 my_bool sdb_use_autocommit = SDB_DEFAULT_USE_AUTOCOMMIT;
 my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
 ulong sdb_error_level = SDB_ERROR;
+my_bool sdb_use_transaction = SDB_DEFAULT_USE_TRANSACTION;
 
 static const char *sdb_optimizer_options_names[] = {
     "direct_count", "direct_delete", "direct_update", NullS};
@@ -160,6 +162,11 @@ static MYSQL_SYSVAR_ENUM(
     "(Default: error), available choices: error, warning"
     /* 错误级别控制，为error输出错误信息，为warning输出告警信息。*/,
     NULL, NULL, SDB_ERROR, &sdb_error_level_typelib);
+static MYSQL_SYSVAR_BOOL(use_transaction, sdb_use_transaction,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
+                         "Enable transaction of SequoiaDB. (Default: ON)"
+                         /*是否开启事务功能。*/,
+                         NULL, NULL, SDB_DEFAULT_USE_TRANSACTION);
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
@@ -216,6 +223,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(selector_pushdown_threshold),
     MYSQL_SYSVAR(execute_only_in_mysql),
     MYSQL_SYSVAR(optimizer_options),
+    MYSQL_SYSVAR(use_transaction),
     NULL};
 
 Sdb_conn_addrs::Sdb_conn_addrs() : conn_num(0) {

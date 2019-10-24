@@ -56,8 +56,8 @@ int Sdb_conn::connect() {
   String password;
   bson::BSONObj option;
   const char *hostname = NULL;
-  char source_str[32 + PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + sizeof(int)] = {
-      0};
+  char source_str[PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + 64] = {0};
+  // 64 bytes is for string of proc_id and thread_id.
 
   int hostname_len = (int)strlen(glob_hostname);
 
@@ -93,8 +93,9 @@ int Sdb_conn::connect() {
     sprintf(source_str, "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
             strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
             (ulonglong)thread_id());
+    bool auto_commit = sdb_use_transaction ? true : false;
     option = BSON(SOURCE_THREAD_ID << source_str << TRANSAUTOROLLBACK << false
-                                   << TRANSAUTOCOMMIT << true);
+                                   << TRANSAUTOCOMMIT << auto_commit);
     rc = set_session_attr(option);
     if (SDB_ERR_OK != rc) {
       SDB_LOG_ERROR("Failed to set session attr, rc=%d", rc);
@@ -113,6 +114,11 @@ int Sdb_conn::begin_transaction() {
   DBUG_ENTER("Sdb_conn::begin_transaction");
   int rc = SDB_ERR_OK;
   int retry_times = 2;
+
+  if (!sdb_use_transaction) {
+    goto done;
+  }
+
   while (!m_transaction_on) {
     if (pushed_autocommit) {
       m_transaction_on = true;
