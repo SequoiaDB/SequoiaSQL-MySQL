@@ -414,7 +414,8 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
         if (MYSQL_TYPE_DECIMAL != type && MYSQL_TYPE_TINY != type &&
             MYSQL_TYPE_SHORT != type && MYSQL_TYPE_LONG != type &&
             MYSQL_TYPE_FLOAT != type && MYSQL_TYPE_DOUBLE != type &&
-            MYSQL_TYPE_LONGLONG != type && MYSQL_TYPE_INT24 != type) {
+            MYSQL_TYPE_LONGLONG != type && MYSQL_TYPE_INT24 != type &&
+            MYSQL_TYPE_NEWDECIMAL != type) {
           *upd_arg->optimizer_update = false;
           break;
         }

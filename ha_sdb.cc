@@ -289,6 +289,31 @@ bool sdb_is_ror_scan(THD *thd, uint tablenr) {
 }
 #endif
 
+longlong sdb_get_min_int_value(Field *field) {
+  longlong nr = 0;
+  Field_num *nf = (Field_num *)field;
+  switch (field->type()) {
+    case MYSQL_TYPE_TINY:
+      nr = nf->unsigned_flag ? 0 : INT_MIN8;
+      break;
+    case MYSQL_TYPE_SHORT:
+      nr = nf->unsigned_flag ? 0 : INT_MIN16;
+      break;
+    case MYSQL_TYPE_INT24:
+      nr = nf->unsigned_flag ? 0 : INT_MIN24;
+      break;
+    case MYSQL_TYPE_LONG:
+      nr = nf->unsigned_flag ? 0 : INT_MIN32;
+      break;
+    case MYSQL_TYPE_LONGLONG:
+      nr = nf->unsigned_flag ? 0 : INT_MIN64;
+      break;
+    default:
+      break;
+  }
+  return nr;
+}
+
 const char *sharding_related_fields[] = {
     SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
     SDB_FIELD_AUTO_SPLIT,   SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_ISMAINCL};
@@ -537,11 +562,86 @@ error:
   goto done;
 }
 
-int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
+/**
+  Sdb use big data type to storage small data type.
+  @like
+   MySQL                       |  SDB
+   ----------------------------+--------------
+   TINYINTSMALLINT/MEDIUMINT   | INT32
+   INT                         | INT/LONG
+   BIGINT                      | LONG/DECIMAL
+   FLOAT                       | DOUBLE
+   in the mode of direct_update, need to use strict mode to $inc.
+   field type supported in direct_update is in sdb_traverse_update.
+*/
+void ha_sdb::field_to_strict_obj(Field *field,
+                                 bson::BSONObjBuilder &obj_builder,
+                                 void *value) {
+  DBUG_ASSERT(NULL != value);
+  bson::BSONObjBuilder field_builder(
+      obj_builder.subobjStart(sdb_field_name(field)));
+  longlong max_value = field->get_max_int_value();
+  longlong min_value = sdb_get_min_int_value(field);
+  switch (field->type()) {
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24: {
+      field_builder.append("Value", *(int *)value);
+      break;
+    }
+    case MYSQL_TYPE_LONG: {
+      longlong temp = *(longlong *)value;
+      bool overflow = (temp > INT_MAX32 || temp < INT_MIN32);
+      field_builder.append("Value",
+                           overflow ? *(longlong *)value : *(int *)value);
+      break;
+    }
+    case MYSQL_TYPE_LONGLONG: {
+      longlong temp = *(longlong *)value;
+      if (temp < 0 && ((Field_num *)field)->unsigned_flag) {
+        field_builder.appendDecimal("Value", (const char *)value);
+      } else {
+        field_builder.append("Value", *(longlong *)value);
+      }
+      break;
+    }
+    case MYSQL_TYPE_FLOAT: {
+      Field_real *real = (Field_real *)field;
+      double max_flt_value = 1.0;
+      if (!real->not_fixed) {
+        uint order = real->field_length - real->dec;
+        uint step = array_elements(log_10) - 1;
+        max_flt_value = 1.0;
+        for (; order > step; order -= step)
+          max_flt_value *= log_10[step];
+        max_flt_value *= log_10[order];
+        max_flt_value -= 1.0 / log_10[real->dec];
+      } else {
+        max_flt_value = FLT_MAX;
+      }
+      field_builder.append("Value", *(double *)value);
+      field_builder.append("Min", -max_flt_value);
+      field_builder.append("Max", max_flt_value);
+
+      break;
+    }
+    default:
+      /*should not call here for the type of field.*/
+      DBUG_ASSERT(false);
+      break;
+  }
+  if (MYSQL_TYPE_FLOAT != field->type()) {
+    field_builder.append("Min", min_value);
+    field_builder.append("Max", max_value);
+  }
+  field_builder.appendNull("Default");
+  field_builder.done();
+}
+
+int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
+                         bool strict) {
   int rc = 0;
-
   DBUG_ASSERT(NULL != field);
-
   switch (field->type()) {
     case MYSQL_TYPE_TINY:
     case MYSQL_TYPE_SHORT:
@@ -550,17 +650,24 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
       // overflow is impossible, store as INT32
       DBUG_ASSERT(field->val_int() <= INT_MAX32 &&
                   field->val_int() >= INT_MIN32);
-      obj_builder.append(sdb_field_name(field), (int)field->val_int());
+      if (strict && MYSQL_TYPE_YEAR != field->type()) {
+        /* sdb store tiny,short and int24 with int, need strict $inc */
+        longlong value = field->val_int();
+        field_to_strict_obj(field, obj_builder, (void *)&value);
+      } else {
+        obj_builder.append(sdb_field_name(field), (int)field->val_int());
+      }
       break;
     }
     case MYSQL_TYPE_BIT:
     case MYSQL_TYPE_LONG: {
-      longlong value = field->val_int();
-      if (value > INT_MAX32 || value < INT_MIN32) {
-        // overflow, so store as INT64
-        obj_builder.append(sdb_field_name(field), (long long)value);
+      long long value = field->val_int();
+      bool overflow = value > INT_MAX32 || value < INT_MIN32;
+      if (strict && MYSQL_TYPE_LONG == field->type()) {
+        field_to_strict_obj(field, obj_builder, (void *)&value);
       } else {
-        obj_builder.append(sdb_field_name(field), (int)value);
+        obj_builder.append(sdb_field_name(field),
+                           overflow ? value : (int)value);
       }
       break;
     }
@@ -573,16 +680,30 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
         String str(buff, sizeof(buff), field->charset());
         ((Field_num *)field)->val_decimal(&tmp_val);
         my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
-        obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
+        if (strict) {
+          field_to_strict_obj(field, obj_builder, (void *)str.c_ptr());
+        } else {
+          obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
+        }
       } else {
-        obj_builder.append(sdb_field_name(field), (long long)value);
+        if (strict) {
+          field_to_strict_obj(field, obj_builder, (void *)&value);
+        } else {
+          obj_builder.append(sdb_field_name(field), (long long)value);
+        }
       }
       break;
     }
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
     case MYSQL_TYPE_TIME: {
-      obj_builder.append(sdb_field_name(field), field->val_real());
+      double real = field->val_real();
+      /* sdb double to store float, need strict $inc */
+      if (MYSQL_TYPE_FLOAT == field->type() && strict) {
+        field_to_strict_obj(field, obj_builder, (void *)&real);
+      } else {
+        obj_builder.append(sdb_field_name(field), real);
+      }
       break;
     }
     case MYSQL_TYPE_VARCHAR:
@@ -1189,7 +1310,7 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
 
     bitmap_set_bit(table->read_set, rfield->field_index);
     if (field_count) {
-      rc = field_to_obj(rfield, inc_builder);
+      rc = field_to_obj(rfield, inc_builder, true);
     } else {
       /* set a = -100 (FUNC_ITEM:'-', INT_ITEM:100) */
       rc = field_to_obj(rfield, set_builder);
@@ -2868,6 +2989,11 @@ int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
     build.append(options.getField(SDB_FIELD_REPLSIZE));
   }
 
+  if (!options.hasField(SDB_FIELD_STRICT_DATA_MODE)) {
+    build.appendBool(SDB_FIELD_STRICT_DATA_MODE, true);
+  } else {
+    build.append(options.getField(SDB_FIELD_STRICT_DATA_MODE));
+  }
 done:
   return rc;
 error:
@@ -3193,27 +3319,52 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
 }
 
 void ha_sdb::print_error(int error, myf errflag) {
+  int rc = SDB_ERR_OK;
   DBUG_ENTER("ha_sdb::print_error");
   DBUG_PRINT("enter", ("error: %d", error));
 
-  if (SDB_INVALIDARG == get_sdb_code(error)) {
-    my_error(ER_WRONG_ARGUMENTS, MYF(0), "sdb sql statement");
-  } else if (SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY == get_sdb_code(error)) {
-    my_error(ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF, MYF(0), "UNIQUE INDEX");
-  } else if (SDB_IXM_DUP_KEY == get_sdb_code(error)) {
-    // TODO: report which unique key has dup entry
-    my_error(ER_DUP_ENTRY, MYF(0), "sdb error: 40038");
-  } else if (SDB_IXM_KEY_NOTNULL == get_sdb_code(error)) {
-    my_error(ER_INVALID_USE_OF_NULL, MYF(0), "SDB_IXM_KEY_NOTNULL");
-  } else if (get_sdb_code(error) < 0) {
-    // TODO: call function 'handle_sdb_error(error, MYF(0));' adjust test cases
-    // and get rid of ER_GET_ERRNO
-    my_error(ER_GET_ERRNO, MYF(0), error);
-  } else {
-    handler::print_error(error, errflag);
+  rc = get_sdb_code(error);
+  switch (rc) {
+    case SDB_INVALIDARG: {
+      my_error(ER_WRONG_ARGUMENTS, MYF(0), "sdb sql statement");
+      break;
+    }
+    case SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY: {
+      my_error(ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF, MYF(0), "UNIQUE INDEX");
+      break;
+    }
+    case SDB_IXM_DUP_KEY: {
+      // TODO: report which unique key has dup entry
+      my_error(ER_DUP_ENTRY, MYF(0), "sdb error: 40038");
+      break;
+    }
+    case SDB_IXM_KEY_NOTNULL: {
+      my_error(ER_INVALID_USE_OF_NULL, MYF(0), "SDB_IXM_KEY_NOTNULL");
+      break;
+    }
+    case SDB_VALUE_OVERFLOW: {
+      handle_sdb_error(error, errflag);
+      // my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), "SDB_IXM_KEY_NOTNULL");
+      break;
+    }
+    default: {
+      if (rc < SDB_ERR_OK) {
+        // TODO: call function 'handle_sdb_error(error, MYF(0));' adjust test
+        // cases and get rid of ER_GET_ERRNO Rm the 'case SDB_VALUE_OVERFLOW' if
+        // you finish TODO here.
+        my_error(ER_GET_ERRNO, MYF(0), error);
+        goto error;
+      } else {
+        handler::print_error(error, errflag);
+      }
+      break;
+    }
   }
 
+done:
   DBUG_VOID_RETURN;
+error:
+  goto done;
 }
 
 void ha_sdb::handle_sdb_error(int error, myf errflag) {

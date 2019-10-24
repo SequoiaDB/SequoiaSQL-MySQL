@@ -318,7 +318,11 @@ class ha_sdb : public handler {
   int row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid, bool output_null,
                  bson::BSONObj &null_obj, bool auto_inc_explicit_used);
 
-  int field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder);
+  void field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
+                           void *value);
+
+  int field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
+                   bool strict = false);
 
   int get_update_obj(const uchar *old_data, const uchar *new_data,
                      bson::BSONObj &obj, bson::BSONObj &null_obj);
