@@ -2218,7 +2218,7 @@ int ha_sdb::info(uint flag) {
   int rc = 0;
   Sdb_conn *conn = NULL;
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
+  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
   if (flag & HA_STATUS_VARIABLE) {
     if (!(flag & HA_STATUS_NO_LOCK)) {
       rc = update_stats(ha_thd(), true);
