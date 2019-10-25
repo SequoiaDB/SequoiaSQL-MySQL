@@ -2917,7 +2917,8 @@ int ha_sdb::filter_partition_options(const bson::BSONObj &options,
   bson::BSONObj filter_obj = filter_build.obj();
   if (!filter_obj.isEmpty()) {
     SDB_LOG_WARNING(
-        "Explicit not use partition, filter options: %-.192s on table: %s.%s",
+        "Explicit not use  auto_partition, filter options: %-.192s on table: "
+        "%s.%s",
         filter_obj.toString(false, false).c_str(), db_name, table_name);
   }
   table_options = build.obj();
@@ -2931,6 +2932,9 @@ int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
   int rc = 0;
   int filter_num = 0;
   bool explicit_sharding_key = false;
+  bool explicit_is_mainCL = false;
+  bool explicit_range_sharding_type = false;
+  bool explicit_group = false;
   bool explicit_compressed_type = false;
   bson::BSONElement tmp_ele;
   bool compressed = false;
@@ -2939,14 +2943,25 @@ int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
   filter_options(options, auto_fill_fields, filter_num, build);
 
   explicit_sharding_key = options.hasField(SDB_FIELD_SHARDING_KEY);
+  explicit_is_mainCL =
+      options.hasField(SDB_FIELD_ISMAINCL) &&
+      (options.getField(SDB_FIELD_ISMAINCL).type() == bson::Bool) &&
+      (options.getField(SDB_FIELD_ISMAINCL).Bool() == true);
+  explicit_range_sharding_type =
+      options.hasField(SDB_FIELD_SHARDING_TYPE) &&
+      (options.getField(SDB_FIELD_SHARDING_TYPE).type() == bson::String) &&
+      (options.getField(SDB_FIELD_SHARDING_TYPE).String() == "range");
+  explicit_group = options.hasField(SDB_FIELD_GROUP);
+
   if (!sharding_key.isEmpty()) {
     build.append(SDB_FIELD_SHARDING_KEY, sharding_key);
-    if (!explicit_sharding_key && !options.hasField(SDB_FIELD_AUTO_SPLIT)) {
-      build.appendBool(SDB_FIELD_AUTO_SPLIT, true);
-    }
     if (!explicit_sharding_key &&
         !options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
       build.appendBool(SDB_FIELD_ENSURE_SHARDING_IDX, false);
+    }
+    if (!(explicit_is_mainCL || explicit_range_sharding_type ||
+          explicit_group || options.hasField(SDB_FIELD_AUTO_SPLIT))) {
+      build.appendBool(SDB_FIELD_AUTO_SPLIT, true);
     }
   }
 
