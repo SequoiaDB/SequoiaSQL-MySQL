@@ -680,7 +680,7 @@ void ha_sdb::field_to_strict_obj(Field *field,
       break;
     }
     case MYSQL_TYPE_LONGLONG: {
-      longlong temp = *(longlong *)value;
+      longlong temp = field->val_int();
       if (temp < 0 && ((Field_num *)field)->unsigned_flag) {
         field_builder.appendDecimal("Value", (const char *)value);
       } else {
@@ -715,7 +715,17 @@ void ha_sdb::field_to_strict_obj(Field *field,
   }
   if (MYSQL_TYPE_FLOAT != field->type()) {
     field_builder.append("Min", min_value);
-    field_builder.append("Max", max_value);
+    if (max_value < 0 && ((Field_num *)field)->unsigned_flag) {
+      // overflow, so store as DECIMAL
+      my_decimal tmp_val;
+      char buff[MAX_FIELD_WIDTH];
+      String str(buff, sizeof(buff), field->charset());
+      ((Field_num *)field)->val_decimal(&tmp_val);
+      my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
+      field_builder.appendDecimal("Max", str.c_ptr());
+    } else {
+      field_builder.append("Max", max_value);
+    }
   }
   field_builder.appendNull("Default");
   field_builder.done();
