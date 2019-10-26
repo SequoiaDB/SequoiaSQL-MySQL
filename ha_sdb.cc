@@ -446,6 +446,13 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
 
   // Get collection to check if the collection is available.
   rc = connection->get_cl(db_name, table_name, cl);
+  if ((SDB_DMS_CS_NOTEXIST == (SDB_ERR_INNER_CODE_BEGIN - rc) ||
+       SDB_DMS_NOTEXIST == (SDB_ERR_INNER_CODE_BEGIN - rc)) &&
+      thd_sql_command(ha_thd()) == SQLCOM_CREATE_TABLE) {
+    rc = SDB_ERR_OK;
+    goto error;
+  }
+
   if (0 != rc) {
     SDB_LOG_ERROR("Collection[%s.%s] is not available. rc: %d", db_name,
                   table_name, rc);
