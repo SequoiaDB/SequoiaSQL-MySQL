@@ -291,7 +291,7 @@ void sdb_string_free(String *str) {
   str->mem_free();
 }
 
-void *trans_alloc(THD *thd, size_t size) {
+void *sdb_trans_alloc(THD *thd, size_t size) {
   return thd->get_transaction()->allocate_memory(size);
 }
 
@@ -526,7 +526,7 @@ void sdb_string_free(String *str) {
   str->free();
 }
 
-void *trans_alloc(THD *thd, size_t size) {
+void *sdb_trans_alloc(THD *thd, size_t size) {
   return thd->trans_alloc(size);
 }
 

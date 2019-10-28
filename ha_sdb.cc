@@ -2664,7 +2664,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -2959,7 +2959,7 @@ int ha_sdb::add_share_to_open_table_shares(THD *thd) {
   }
 
   if (thd_sdb_share == 0) {
-    thd_sdb_share = (THD_SDB_SHARE *)trans_alloc(thd, sizeof(THD_SDB_SHARE));
+    thd_sdb_share = (THD_SDB_SHARE *)sdb_trans_alloc(thd, sizeof(THD_SDB_SHARE));
     if (!thd_sdb_share) {
       my_error(ER_OUTOFMEMORY, MYF(ME_FATALERROR),
                static_cast<int>(sizeof(THD_SDB_SHARE)));

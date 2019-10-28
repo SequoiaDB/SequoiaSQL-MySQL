@@ -277,6 +277,6 @@ List_iterator<Item> sdb_lex_all_fields(LEX *const lex);
 uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
                                bool stay_quiet);
 
-void *trans_alloc(THD *thd, size_t size);
+void *sdb_trans_alloc(THD *thd, size_t size);
 
 #endif
