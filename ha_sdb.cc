@@ -2110,7 +2110,8 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
         field->set_null();
       } else {
         if (is_select) {
-          thd->raise_warning_printf(ER_WARN_NULL_TO_NOTNULL, field->field_name,
+          thd->raise_warning_printf(ER_WARN_NULL_TO_NOTNULL,
+                                    sdb_field_name(field),
                                     sdb_thd_current_row(thd));
         }
         field->set_default();

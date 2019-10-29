@@ -850,6 +850,11 @@ struct Sdb_alter_ctx : public inplace_alter_handler_ctx {
   List<Col_alter_info> changed_columns;
 };
 
+bool is_strict_mode(sql_mode_t sql_mode) {
+  return (sql_mode & MODE_STRICT_ALL_TABLES) ||
+         (sdb_use_transaction && (sql_mode & MODE_STRICT_TRANS_TABLES));
+}
+
 int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
   int rc = 0;
 
@@ -1104,6 +1109,31 @@ done:
   return rs;
 }
 
+int update_null_to_notnull(Sdb_cl &cl, Field *field, longlong &modified_num) {
+  int rc = 0;
+  bson::BSONObj result;
+  bson::BSONElement be_modified_num;
+
+  bson::BSONObjBuilder rule_builder;
+  bson::BSONObjBuilder sub_rule(rule_builder.subobjStart("$set"));
+  append_zero_value(sub_rule, field);
+  sub_rule.done();
+
+  bson::BSONObjBuilder cond_builder;
+  bson::BSONObjBuilder sub_cond(
+      cond_builder.subobjStart(sdb_field_name(field)));
+  sub_cond.append("$isnull", 1);
+  sub_cond.done();
+
+  rc = cl.update(rule_builder.obj(), cond_builder.obj(), SDB_EMPTY_BSON,
+                 UPDATE_KEEP_SHARDINGKEY | UPDATE_RETURNNUM, &result);
+  be_modified_num = result.getField(SDB_FIELD_MODIFIED_NUM);
+  if (be_modified_num.isNumber()) {
+    modified_num = be_modified_num.numberLong();
+  }
+  return rc;
+}
+
 int ha_sdb::alter_column(TABLE *altered_table,
                          Alter_inplace_info *ha_alter_info, Sdb_conn *conn,
                          Sdb_cl &cl) {
@@ -1180,17 +1210,8 @@ int ha_sdb::alter_column(TABLE *altered_table,
     }
 
     if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL) {
-      bson::BSONObjBuilder rule_builder;
-      bson::BSONObjBuilder sub_rule(rule_builder.subobjStart("$set"));
-      append_zero_value(sub_rule, info->after);
-      sub_rule.done();
-
-      bson::BSONObjBuilder cond_builder;
-      bson::BSONObjBuilder sub_cond(
-          cond_builder.subobjStart(sdb_field_name(info->after)));
-      sub_cond.append("$isnull", 1);
-      sub_cond.done();
-
+      const char *field_name = sdb_field_name(info->after);
+      longlong modified_num = 0;
       if (count > sdb_alter_table_overhead_threshold(thd)) {
         rc = HA_ERR_WRONG_COMMAND;
         my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);
@@ -1202,12 +1223,24 @@ int ha_sdb::alter_column(TABLE *altered_table,
           my_printf_error(rc, "Failed to begin transaction", MYF(0));
         }
       }
-      rc = cl.update(rule_builder.obj(), cond_builder.obj(), SDB_EMPTY_BSON,
-                     UPDATE_KEEP_SHARDINGKEY);
+      rc = update_null_to_notnull(cl, info->before, modified_num);
       if (rc != 0) {
         my_printf_error(rc, "Failed to update column[%s] on cl[%s.%s]", MYF(0),
-                        sdb_field_name(info->before), db_name, table_name);
+                        field_name, db_name, table_name);
         goto error;
+      }
+      if (modified_num > 0) {
+        if (is_strict_mode(ha_thd()->variables.sql_mode)) {
+          my_error(ER_INVALID_USE_OF_NULL, MYF(0));
+          rc = ER_INVALID_USE_OF_NULL;
+          goto error;
+        } else {
+          for (longlong i = 1; i <= modified_num; ++i) {
+            push_warning_printf(thd, Sql_condition::SL_WARNING,
+                                ER_WARN_NULL_TO_NOTNULL,
+                                ER(ER_WARN_NULL_TO_NOTNULL), field_name, i);
+          }
+        }
       }
     }
   }
@@ -1263,7 +1296,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
       goto error;
     }
     if (has_warnings) {
-      if (ha_thd()->variables.sql_mode & MODE_ANSI) {
+      if (is_strict_mode(ha_thd()->variables.sql_mode)) {
         //push_warnings...
       } else {
         //print and return error
