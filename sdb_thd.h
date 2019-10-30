@@ -49,6 +49,7 @@ class Thd_sdb {
   uint lock_count;
   uint start_stmt_count;
   uint save_point_count;
+  bson::BSONObj result;
 
   // store stats info for each open table share
   // update stats of m_share after transaction commit

@@ -171,11 +171,11 @@ error:
   goto done;
 }
 
-int Sdb_cl::insert(bson::BSONObj &obj) {
+int Sdb_cl::insert(bson::BSONObj &obj, int flag, bson::BSONObj *result) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.insert(obj);
+  rc = m_cl.insert(obj, flag, result);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -209,11 +209,12 @@ error:
 
 int Sdb_cl::upsert(const bson::BSONObj &rule, const bson::BSONObj &condition,
                    const bson::BSONObj &hint,
-                   const bson::BSONObj &set_on_insert, int flag) {
+                   const bson::BSONObj &set_on_insert, int flag,
+                   bson::BSONObj *result) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.upsert(rule, condition, hint, set_on_insert, flag);
+  rc = m_cl.upsert(rule, condition, hint, set_on_insert, flag, result);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -231,11 +232,11 @@ error:
 }
 
 int Sdb_cl::update(const bson::BSONObj &rule, const bson::BSONObj &condition,
-                   const bson::BSONObj &hint, int flag) {
+                   const bson::BSONObj &hint, int flag, bson::BSONObj *result) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.update(rule, condition, hint, flag);
+  rc = m_cl.update(rule, condition, hint, flag, result);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -252,11 +253,12 @@ error:
   goto done;
 }
 
-int Sdb_cl::del(const bson::BSONObj &condition, const bson::BSONObj &hint) {
+int Sdb_cl::del(const bson::BSONObj &condition, const bson::BSONObj &hint,
+                int flag, bson::BSONObj *result) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
 retry:
-  rc = m_cl.del(condition, hint);
+  rc = m_cl.del(condition, hint, flag, result);
   if (rc != SDB_ERR_OK) {
     goto error;
   }

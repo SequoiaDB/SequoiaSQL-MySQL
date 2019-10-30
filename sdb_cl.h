@@ -54,21 +54,24 @@ class Sdb_cl {
 
   int next(bson::BSONObj &obj, my_bool get_owned = true);
 
-  int insert(bson::BSONObj &obj);
+  int insert(bson::BSONObj &obj, int flag = 0, bson::BSONObj *result = NULL);
 
   int bulk_insert(int flag, std::vector<bson::BSONObj> &objs);
 
   int update(const bson::BSONObj &rule,
              const bson::BSONObj &condition = SDB_EMPTY_BSON,
-             const bson::BSONObj &hint = SDB_EMPTY_BSON, int flag = 0);
+             const bson::BSONObj &hint = SDB_EMPTY_BSON, int flag = 0,
+             bson::BSONObj *result = NULL);
 
   int upsert(const bson::BSONObj &rule,
              const bson::BSONObj &condition = SDB_EMPTY_BSON,
              const bson::BSONObj &hint = SDB_EMPTY_BSON,
-             const bson::BSONObj &set_on_insert = SDB_EMPTY_BSON, int flag = 0);
+             const bson::BSONObj &set_on_insert = SDB_EMPTY_BSON, int flag = 0,
+             bson::BSONObj *result = NULL);
 
   int del(const bson::BSONObj &condition = SDB_EMPTY_BSON,
-          const bson::BSONObj &hint = SDB_EMPTY_BSON);
+          const bson::BSONObj &hint = SDB_EMPTY_BSON, int flag = 0,
+          bson::BSONObj *result = NULL);
 
   int create_index(const bson::BSONObj &index_def, const CHAR *name,
                    my_bool is_unique, my_bool is_enforced);
