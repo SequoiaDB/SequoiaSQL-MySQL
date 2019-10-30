@@ -392,6 +392,13 @@ class ha_sdb : public handler {
 
   int get_deleted_rows(bson::BSONObj &result, ulonglong *deleted);
 
+  void get_dup_info(bson::BSONObj &result);
+
+  void get_dup_key_cond(bson::BSONObj &cond);
+
+  template <class T>
+  int insert_row(T &rows, uint row_count);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
@@ -408,6 +415,7 @@ class ha_sdb : public handler {
   int idx_order_direction;
   bool m_ignore_dup_key;
   bool m_write_can_replace;
+  bool m_insert_with_update;
   bool m_secondary_sort_rowid;
   bool m_use_bulk_insert;
   int m_bulk_insert_total;
@@ -421,4 +429,7 @@ class ha_sdb : public handler {
   ulonglong m_table_flags;
   /*incremental stat of current table share in current thd*/
   struct Sdb_local_table_statistics *incr_stat;
+  uint m_dup_key_nr;
+  bson::OID m_dup_oid;
+  bson::BSONObj m_dup_value;
 };

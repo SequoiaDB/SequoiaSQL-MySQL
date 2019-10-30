@@ -72,6 +72,10 @@
 #define SDB_FIELD_UPDATED_NUM "UpdatedNum"
 #define SDB_FIELD_MODIFIED_NUM "ModifiedNum"
 #define SDB_FIELD_DELETED_NUM "DeletedNum"
+#define SDB_FIELD_DUP_NUM "DuplicatedNum"
+#define SDB_FIELD_INDEX_NAME "IndexName"
+#define SDB_FIELD_INDEX_VALUE "IndexValue"
+#define SDB_FIELD_PEER_ID "PeerID"
 
 #define SDB_GET_LAST_ERROR_FAILED "Get last error object failed."
 #define SDB_NO_ERROR_MSG_DESCRIPTION "No error message description"

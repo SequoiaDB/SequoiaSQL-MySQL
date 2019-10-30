@@ -52,6 +52,8 @@ class Thd_sdb {
   ulonglong found;
   ulonglong updated;
   ulonglong deleted;
+  ulonglong duplicated;
+  bool replace_on_dup;
 
   // store stats info for each open table share
   // update stats of m_share after transaction commit

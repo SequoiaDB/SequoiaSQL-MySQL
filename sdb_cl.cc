@@ -192,6 +192,22 @@ error:
   goto done;
 }
 
+int Sdb_cl::insert(std::vector<bson::BSONObj> &objs, int flag,
+                   bson::BSONObj *result) {
+  int rc = SDB_ERR_OK;
+
+  rc = m_cl.insert(objs, flag, result);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  convert_sdb_code(rc);
+  goto done;
+}
+
 int Sdb_cl::bulk_insert(int flag, std::vector<bson::BSONObj> &objs) {
   int rc = SDB_ERR_OK;
 

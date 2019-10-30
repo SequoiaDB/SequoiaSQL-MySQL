@@ -56,6 +56,9 @@ class Sdb_cl {
 
   int insert(bson::BSONObj &obj, int flag = 0, bson::BSONObj *result = NULL);
 
+  int insert(std::vector<bson::BSONObj> &objs, int flag = 0,
+             bson::BSONObj *result = NULL);
+
   int bulk_insert(int flag, std::vector<bson::BSONObj> &objs);
 
   int update(const bson::BSONObj &rule,
