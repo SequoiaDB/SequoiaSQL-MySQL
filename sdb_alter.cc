@@ -1393,7 +1393,8 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
 
   DBUG_ASSERT(!ha_alter_info->handler_ctx);
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rs, HA_ALTER_INPLACE_NO_LOCK);
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rs,
+                                   HA_ALTER_INPLACE_NOCOPY_NO_LOCK);
 
   if (ha_alter_info->handler_flags & ~INPLACE_ONLINE_OPERATIONS) {
     rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
