@@ -38,7 +38,9 @@ Thd_sdb::Thd_sdb(THD* thd)
   lock_count = 0;
   start_stmt_count = 0;
   save_point_count = 0;
-  result = SDB_EMPTY_BSON;
+  found = 0;
+  updated = 0;
+  deleted = 0;
 
   (void)sdb_hash_init(&open_table_shares, table_alias_charset, 5, 0, 0,
                       (my_hash_get_key)thd_sdb_share_get_key, 0, 0,

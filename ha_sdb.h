@@ -387,6 +387,11 @@ class ha_sdb : public handler {
 
   void handle_sdb_error(int error, myf errflag);
 
+  int get_found_updated_rows(bson::BSONObj &result, ulonglong *found,
+                             ulonglong *updated);
+
+  int get_deleted_rows(bson::BSONObj &result, ulonglong *deleted);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;

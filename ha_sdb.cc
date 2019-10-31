@@ -316,14 +316,13 @@ longlong sdb_get_min_int_value(Field *field) {
 
 void sdb_set_affected_rows(THD *thd) {
   DBUG_ENTER("sdb_set_affected_rows");
-  bson::BSONObj *result = &thd_get_thd_sdb(thd)->result;
-  bson::BSONElement e;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   ulonglong last_insert_id = 0;
   char *message_text = NULL;
   Diagnostics_area *da = thd->get_stmt_da();
   char saved_char = '\0';
 
-  if (result->isEmpty() || !da->is_ok()) {
+  if (!da->is_ok()) {
     goto done;
   }
 
@@ -332,25 +331,12 @@ void sdb_set_affected_rows(THD *thd) {
   saved_char = message_text[0];
 
   if (thd_sql_command(thd) == SQLCOM_UPDATE) {
-    ulonglong found = 0;
-    ulonglong updated = 0;
+    ulonglong found = thd_sdb->found;
+    ulonglong updated = thd_sdb->updated;
     char buff[MYSQL_ERRMSG_SIZE];
-
-    e = result->getField(SDB_FIELD_UPDATED_NUM);
-    if (!e.isNumber()) {
-      SDB_LOG_WARNING("Invalid type: '%d' of '%s' in update result.", e.type(),
-                      SDB_FIELD_UPDATED_NUM);
+    if (0 == found && 0 == updated) {
       goto done;
     }
-    found = (ulonglong)e.numberLong();
-
-    e = result->getField(SDB_FIELD_MODIFIED_NUM);
-    if (!e.isNumber()) {
-      SDB_LOG_WARNING("Invalid type: '%d' of '%s' in update result.", e.type(),
-                      SDB_FIELD_MODIFIED_NUM);
-      goto done;
-    }
-    updated = (ulonglong)e.numberLong();
     my_snprintf(buff, sizeof(buff), ER(ER_UPDATE_INFO), (long)found,
                 (long)updated,
                 (long)thd->get_stmt_da()->current_statement_cond_count());
@@ -364,21 +350,16 @@ void sdb_set_affected_rows(THD *thd) {
   }
 
   if (thd_sql_command(thd) == SQLCOM_DELETE) {
-    ulonglong deleted = 0;
-    e = result->getField(SDB_FIELD_DELETED_NUM);
-    if (!e.isNumber()) {
-      SDB_LOG_WARNING("Invalid type: '%d' of '%s' in delete result.", e.type(),
-                      SDB_FIELD_DELETED_NUM);
+    ulonglong deleted = thd_sdb->deleted;
+    if (0 == deleted) {
       goto done;
     }
-    deleted = (ulonglong)e.numberLong();
     da->reset_diagnostics_area();
     message_text[0] = saved_char;
     my_ok(thd, deleted, last_insert_id, message_text);
     DBUG_PRINT("info", ("%llu records deleted", deleted));
   }
 
-  *result = SDB_EMPTY_BSON;
 done:
   DBUG_VOID_RETURN;
 }
@@ -1143,6 +1124,43 @@ done:
   return;
 }
 
+int ha_sdb::get_found_updated_rows(bson::BSONObj &result, ulonglong *found,
+                                   ulonglong *updated) {
+  int rc = SDB_ERR_OK;
+  bson::BSONElement e;
+  e = result.getField(SDB_FIELD_UPDATED_NUM);
+  if (!e.isNumber()) {
+    SDB_LOG_WARNING("Invalid type: '%d' of '%s' in update result.", e.type(),
+                    SDB_FIELD_UPDATED_NUM);
+    goto done;
+  }
+  *found = (ulonglong)e.numberLong();
+
+  e = result.getField(SDB_FIELD_MODIFIED_NUM);
+  if (!e.isNumber()) {
+    SDB_LOG_WARNING("Invalid type: '%d' of '%s' in update result.", e.type(),
+                    SDB_FIELD_MODIFIED_NUM);
+    goto done;
+  }
+  *updated = (ulonglong)e.numberLong();
+done:
+  return rc;
+}
+
+int ha_sdb::get_deleted_rows(bson::BSONObj &result, ulonglong *deleted) {
+  int rc = SDB_ERR_OK;
+  bson::BSONElement e;
+  e = result.getField(SDB_FIELD_DELETED_NUM);
+  if (!e.isNumber()) {
+    SDB_LOG_WARNING("Invalid type: '%d' of '%s' in delete result.", e.type(),
+                    SDB_FIELD_DELETED_NUM);
+    goto done;
+  }
+  *deleted = (ulonglong)e.numberLong();
+done:
+  return rc;
+}
+
 int ha_sdb::write_row(uchar *buf) {
   int rc = 0;
   bson::BSONObj obj;
@@ -1630,7 +1648,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                               int &num_to_return, bool &direct_op) {
   DBUG_ENTER("ha_sdb::optimize_proccess");
   int rc = 0;
-  bson::BSONObj *result = &thd_get_thd_sdb(ha_thd())->result;
+  bson::BSONObj result;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
   if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
     if ((sdb_get_optimizer_options(ha_thd()) &
@@ -1650,22 +1669,19 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   if (thd_sql_command(ha_thd()) == SQLCOM_DELETE &&
       (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_DELETE) &&
       optimize_delete(condition)) {
-    bson::BSONElement e;
-    ulonglong deleted = 0;
     first_read = false;
-    *result = SDB_EMPTY_BSON;
     rc = collection->del(condition, SDB_EMPTY_BSON, FLG_DELETE_RETURNNUM,
-                         result);
-    if (!result->isEmpty()) {
-      e = result->getField(SDB_FIELD_DELETED_NUM);
-      deleted = e.isNumber() ? (ulonglong)e.number() : 0;
-      stats.records -= deleted;
-      incr_stat->no_uncommitted_rows_count -= deleted;
-    }
-
+                         &result);
     if (!rc) {
       rc = HA_ERR_END_OF_FILE;
     }
+    thd_sdb->deleted = 0;
+    get_deleted_rows(result, &thd_sdb->deleted);
+    if (thd_sdb->deleted) {
+      stats.records -= thd_sdb->deleted;
+      incr_stat->no_uncommitted_rows_count -= thd_sdb->deleted;
+    }
+
     table->status = STATUS_NOT_FOUND;
     direct_op = true;
     goto done;
@@ -1682,10 +1698,11 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
     }
     if (optimizer_update) {
       first_read = false;
-      *result = SDB_EMPTY_BSON;
+      thd_sdb->found = thd_sdb->updated = 0;
       rc = collection->update(rule, condition, hint,
                               UPDATE_KEEP_SHARDINGKEY | UPDATE_RETURNNUM,
-                              result);
+                              &result);
+      get_found_updated_rows(result, &thd_sdb->found, &thd_sdb->updated);
       if (rc != 0) {
         if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
           my_error(ER_DUP_KEY, MYF(0), table_name);
@@ -2788,7 +2805,7 @@ int ha_sdb::delete_all_rows() {
   int rc = 0;
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-  bson::BSONObj *result = &thd_get_thd_sdb(ha_thd())->result;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
   if (auto_commit) {
     rc = autocommit_statement(true);
@@ -2798,15 +2815,17 @@ int ha_sdb::delete_all_rows() {
   }
 
   if (collection->is_transaction_on()) {
-    *result = SDB_EMPTY_BSON;
+    bson::BSONObj result;
     rc = collection->del(SDB_EMPTY_BSON, SDB_EMPTY_BSON, FLG_DELETE_RETURNNUM,
-                         result);
+                         &result);
     if (0 == rc) {
       Sdb_mutex_guard guard(share->mutex);
       incr_stat->no_uncommitted_rows_count =
           -(share->stat.total_records + incr_stat->no_uncommitted_rows_count);
       stats.records = 0;
     }
+    thd_sdb->deleted = 0;
+    get_deleted_rows(result, &thd_sdb->deleted);
     return rc;
   }
   return truncate();
