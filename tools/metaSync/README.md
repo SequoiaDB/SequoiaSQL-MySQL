@@ -19,8 +19,9 @@ MySQL 的元数据同步工具的实现原理是通过解析 MySQL 的审计日�
 + 需要使用 SequoiaSQL-MySQL 3.2.3 或以上版本
 
 ## 审计插件安装
-> 注意：为了避免增加审计插件后发生 MySQL 无法启动的情况，强烈建议在安装审计日志插件前，先完成 MySQL 环境的搭建及启动，安装完插件后再重启 MySQL 服务。
+审计插件的动态库已经包含在 SequoiaSQL-MySQL 安装目录中的 tools/lib 目录下，需要将其安装到 MySQL 中。在此之前，需要先完成 MySQL 环境的搭建及实例启动，插件安装完成后再重启 MySQL 服务。所有的 MySQL 环境都需要完成该插件的安装及配置。具体的安装步骤如下：
 
++ 切换到 SequoiaSQL-MySQL 安装用户（默认为 sdbadmin)
 + 在所有 MySQL 实例上创建用于同步元数据的 MySQL 用户，并授予所有权限，用户名与密码在所有实例上保持一致。注意：此处使用的密码 'sdbadmin' 仅为示例，请根据需要自行设置安全的密码。
 ```sql
 CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
@@ -55,7 +56,7 @@ sdb_sql_ctl restart myinst
 + 检查审计日志文件目录，确保生成了审计日志文件 server_audit.log
 
 ## 工具使用说明
-SequoiaSQL-MySQL 完成安装后，同步工具位于安装目录下的 tools/metaSync 目录下。
+在完成安装后，还需要对其进行配置，包含工具的配置及日志的配置。以下各操作步骤也都要在 SequoiaSQL-MySQL 安装用户（默认为 sdbadmin）下完成。
 ### 工具配置项
 工具使用的配置文件名为 config。如果是全新安装，开始该文件是不存在的，需要从 config.sample 进行拷贝。如果是升级，则该文件应当已经存在。配置项如下：
 ```config
@@ -143,7 +144,7 @@ python /opt/sequoiasql/mysql/tools/metaSync/meta_sync.py &
 ```
 完成环境配置后，可通过在各实例进行少量 DDL 操作，进行简单的同步验证，验证完成后清理掉验证数据。
 
-可以通过配置定时任务提供基本的同步工具监控，定期检查程序是否在运行，若进程退出了，会被自动拉起。配置命令如下：
+可以通过配置定时任务提供基本的同步工具监控，定期检查程序是否在运行，若进程退出了，会被自动拉起。配置命令如下（在 SequoiaSQL-MySQL 安装用户下配置）：
 ```bash
 crontab -e
 #每一分钟运行一次
