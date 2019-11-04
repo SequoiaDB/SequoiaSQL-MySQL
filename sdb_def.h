@@ -76,6 +76,10 @@
 #define SDB_FIELD_INDEX_NAME "IndexName"
 #define SDB_FIELD_INDEX_VALUE "IndexValue"
 #define SDB_FIELD_PEER_ID "PeerID"
+#define SDB_FIELD_CURRENT_FIELD "CurrentField"
+
+#define SDB_FIELD_DETAIL "detail"
+#define SDB_FIELD_DESCRIPTION "description"
 
 #define SDB_GET_LAST_ERROR_FAILED "Get last error object failed."
 #define SDB_NO_ERROR_MSG_DESCRIPTION "No error message description"

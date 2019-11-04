@@ -3690,7 +3690,6 @@ void ha_sdb::print_error(int error, myf errflag) {
     }
     case SDB_VALUE_OVERFLOW: {
       handle_sdb_error(error, errflag);
-      // my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), "SDB_IXM_KEY_NOTNULL");
       break;
     }
     default: {
@@ -3716,34 +3715,51 @@ error:
 void ha_sdb::handle_sdb_error(int error, myf errflag) {
   DBUG_ENTER("ha_sdb::handle_sdb_error");
   DBUG_PRINT("info", ("error code %d", error));
+  bson::BSONObj error_obj;
 
   // get error object from Sdb_conn
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   Sdb_conn *connection = check_sdb_in_thd(ha_thd(), true);
-  bson::BSONObj errObj;
-  int sdb_rc = connection->get_last_error(errObj);
+  int sdb_rc = connection->get_last_error(error_obj);
   if (sdb_rc != SDB_OK) {
     push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
                  SDB_GET_LAST_ERROR_FAILED);
   }
 
-  // get error info from errObj
-  const char *err_str = SDB_NO_ERROR_MSG_DESCRIPTION;
-  if (strlen(errObj.getStringField("detail")) != 0) {
-    err_str = errObj.getStringField("detail");
-  } else if (strlen(errObj.getStringField("description")) != 0) {
-    err_str = errObj.getStringField("description");
+  // get error info from error_msg
+  const char *error_msg = SDB_NO_ERROR_MSG_DESCRIPTION;
+  if (strlen(error_obj.getStringField(SDB_FIELD_DETAIL)) != 0) {
+    error_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
+  } else if (strlen(error_obj.getStringField(SDB_FIELD_DESCRIPTION)) != 0) {
+    error_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
   }
 
   switch (get_sdb_code(error)) {
     case SDB_UPDATE_SHARD_KEY:
       if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
-        push_warning(ha_thd(), Sql_condition::SL_WARNING, error, err_str);
+        push_warning(ha_thd(), Sql_condition::SL_WARNING, error, error_msg);
       } else {
-        my_printf_error(error, "%s", MYF(0), err_str);
+        my_printf_error(error, "%s", MYF(0), error_msg);
       }
       break;
+    case SDB_VALUE_OVERFLOW:
+      if (!error_obj.isEmpty()) {
+        bson::BSONElement elem;
+        const char *field_name = NULL;
+        elem = error_obj.getField(SDB_FIELD_CURRENT_FIELD);
+        if (bson::Object != elem.type()) {
+          SDB_LOG_WARNING("Invalid type: '%d' of '%s' in err msg.", elem.type(),
+                          SDB_FIELD_CURRENT_FIELD);
+          field_name = "Invalid";
+        } else {
+          field_name = elem.Obj().firstElementFieldName();
+        }
+        my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), field_name,
+                 thd_sdb->updated + 1);
+        thd_sdb->updated = 0;
+      }
     default:
-      my_printf_error(error, "%s", MYF(0), err_str);
+      my_printf_error(error, "%s", MYF(0), error_msg);
       break;
   }
   DBUG_VOID_RETURN;
