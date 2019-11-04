@@ -392,7 +392,7 @@ class ha_sdb : public handler {
 
   int get_deleted_rows(bson::BSONObj &result, ulonglong *deleted);
 
-  void get_dup_info(bson::BSONObj &result);
+  const char* get_dup_info(bson::BSONObj &result);
 
   void get_dup_key_cond(bson::BSONObj &cond);
 

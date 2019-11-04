@@ -93,6 +93,7 @@ static HASH sdb_open_tables;
 static PSI_memory_key key_memory_sdb_share;
 static PSI_memory_key sdb_key_memory_blobroot;
 
+static void update_shares_stats(THD *thd);
 static uchar *sdb_get_key(Sdb_share *share, size_t *length,
                           my_bool not_used MY_ATTRIBUTE((unused))) {
   *length = share->table_name_length;
@@ -1095,8 +1096,10 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   m_use_bulk_insert = true;
 }
 
-void ha_sdb::get_dup_info(bson::BSONObj &result) {
+const char* ha_sdb::get_dup_info(bson::BSONObj &result) {
   bson::BSONObjIterator it(result);
+  const char *idx_name = "";
+
   while (it.more()) {
     bson::BSONElement elem = it.next();
     if (0 == strcmp(elem.fieldName(), SDB_FIELD_INDEX_VALUE)) {
@@ -1111,7 +1114,7 @@ void ha_sdb::get_dup_info(bson::BSONObj &result) {
 
     } else if (0 == strcmp(elem.fieldName(), SDB_FIELD_INDEX_NAME)) {
       DBUG_ASSERT(bson::String == elem.type());
-      const char *idx_name = elem.valuestr();
+      idx_name = elem.valuestr();
 
       m_dup_key_nr = MAX_KEY;
       for (uint i = 0; i < table->s->keys; ++i) {
@@ -1121,13 +1124,13 @@ void ha_sdb::get_dup_info(bson::BSONObj &result) {
           break;
         }
       }
-      DBUG_ASSERT(m_dup_key_nr != MAX_KEY);
-
     } else if (0 == strcmp(elem.fieldName(), SDB_FIELD_PEER_ID)) {
       DBUG_ASSERT(bson::jstOID == elem.type());
       m_dup_oid = elem.OID();
     }
   }
+
+  return idx_name;
 }
 
 template <class T>
@@ -1367,15 +1370,12 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   rc = collection->update(rule_obj, cond, SDB_EMPTY_BSON,
                           UPDATE_KEEP_SHARDINGKEY, &result);
   if (rc != 0) {
-    if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
-      get_dup_info(result);
-    } else if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
+    if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
       handle_sdb_error(rc, MYF(0));
       if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
         rc = HA_ERR_RECORD_IS_THE_SAME;
       }
     }
-
     goto error;
   }
 
@@ -1796,7 +1796,6 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       get_found_updated_rows(result, &thd_sdb->found, &thd_sdb->updated);
       if (rc != 0) {
         if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
-          get_dup_info(result);
           goto error;
         } else if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
           handle_sdb_error(rc, MYF(0));
@@ -2881,6 +2880,12 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
         }
       }
       sdb_set_affected_rows(thd);
+
+      // update stats info if sdb_use_transaction is 'off'
+      if(!sdb_use_transaction) {
+        update_shares_stats(thd);
+        my_hash_reset(&thd_sdb->open_table_shares);
+      }
     }
   }
 
@@ -3674,9 +3679,7 @@ void ha_sdb::print_error(int error, myf errflag) {
       break;
     }
     case SDB_IXM_DUP_KEY: {
-      KEY *key = table->key_info + m_dup_key_nr;
-      my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key %s",
-                      MYF(0), m_dup_value.toString().c_str(), key->name);
+      handle_sdb_error(error, errflag);
       break;
     }
     case SDB_IXM_KEY_NOTNULL: {
@@ -3753,6 +3756,12 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
                  thd_sdb->updated + 1);
         thd_sdb->updated = 0;
       }
+    case SDB_IXM_DUP_KEY: {
+      const char* idx_name = get_dup_info(error_obj);
+      my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key %s",
+                     MYF(0), m_dup_value.toString().c_str(), idx_name);
+      break;
+    }
     default:
       my_printf_error(error, "%s", MYF(0), error_msg);
       break;
