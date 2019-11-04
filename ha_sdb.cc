@@ -1271,6 +1271,7 @@ done:
 
 int ha_sdb::write_row(uchar *buf) {
   int rc = 0;
+  THD *thd = ha_thd();
   bson::BSONObj obj;
   bson::BSONObj tmp_obj;
   ulonglong auto_inc = 0;
@@ -1279,12 +1280,12 @@ int ha_sdb::write_row(uchar *buf) {
   ha_statistic_increment(&SSV::ha_write_count);
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(thd));
 
   if (table->next_number_field && buf == table->record[0] &&
       ((auto_inc = table->next_number_field->val_int()) != 0 ||
        (table->auto_increment_field_not_null &&
-        ha_thd()->variables.sql_mode & MODE_NO_AUTO_VALUE_ON_ZERO))) {
+        thd->variables.sql_mode & MODE_NO_AUTO_VALUE_ON_ZERO))) {
     auto_inc_explicit_used = true;
   }
   rc = row_to_obj(buf, obj, TRUE, FALSE, tmp_obj, auto_inc_explicit_used);
@@ -1303,6 +1304,15 @@ int ha_sdb::write_row(uchar *buf) {
     }
   } else {
     rc = insert_row(obj, 1);
+    if (m_insert_with_update && HA_ERR_FOUND_DUPP_KEY == rc) {
+      m_last_insert_buff = (char *)sql_alloc(obj.objsize());
+      if (!m_last_insert_buff) {
+        my_error(ER_OUTOFMEMORY, MYF(ME_FATALERROR), obj.objsize());
+        rc = ER_OUTOFMEMORY;
+        goto error;
+      }
+      memcpy(m_last_insert_buff, obj.objdata(), obj.objsize());
+    }
   }
 
 done:
@@ -2388,7 +2398,8 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   }
 
   if (m_insert_with_update && 0 == memcmp(pos, dup_ref, SDB_OID_LEN)) {
-    rc = obj_to_row(m_dup_value, buf);
+    bson::BSONObj last_insert_obj(m_last_insert_buff, false);
+    rc = obj_to_row(last_insert_obj, buf);
     if (rc != 0) {
       goto error;
     }
