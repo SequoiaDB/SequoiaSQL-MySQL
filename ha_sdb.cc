@@ -331,16 +331,14 @@ void sdb_set_affected_rows(THD *thd) {
   message_text = const_cast<char *>(da->message_text());
   saved_char = message_text[0];
 
-  if (SQLCOM_INSERT == sql_command || SQLCOM_INSERT_SELECT == sql_command ||
-      SQLCOM_REPLACE == sql_command || SQLCOM_REPLACE_SELECT == sql_command) {
+  // For SQLCOM_INSERT, SQLCOM_REPLACE, SQLCOM_INSERT_SELECT...
+  if (thd_sdb->duplicated) {
     ulonglong &dup_num = thd_sdb->duplicated;
     bool replace_on_dup = thd_sdb->replace_on_dup;
     ulonglong inserted_num = da->affected_rows();
     ulonglong affected_num = 0;
     char buff[MYSQL_ERRMSG_SIZE];
-    if (0 == dup_num) {
-      goto done;
-    }
+
     if (replace_on_dup) {
       affected_num = inserted_num + dup_num;
     } else {
@@ -355,14 +353,13 @@ void sdb_set_affected_rows(THD *thd) {
     DBUG_PRINT("info", ("%llu records duplicated", dup_num));
     dup_num = 0;
 
-  } else if (sql_command == SQLCOM_UPDATE) {
+    // For SQLCOM_UPDATE...
+  } else if (thd_sdb->found || thd_sdb->updated) {
     ulonglong &found = thd_sdb->found;
     ulonglong &updated = thd_sdb->updated;
     bool has_found_rows = false;
     char buff[MYSQL_ERRMSG_SIZE];
-    if (0 == found && 0 == updated) {
-      goto done;
-    }
+
     my_snprintf(buff, sizeof(buff), ER(ER_UPDATE_INFO), (long)found,
                 (long)updated, (long)da->current_statement_cond_count());
     da->reset_diagnostics_area();
@@ -373,11 +370,9 @@ void sdb_set_affected_rows(THD *thd) {
     found = 0;
     updated = 0;
 
-  } else if (sql_command == SQLCOM_DELETE) {
+    // For SQLCOM_DELETE...
+  } else if (thd_sdb->deleted) {
     ulonglong &deleted = thd_sdb->deleted;
-    if (0 == deleted) {
-      goto done;
-    }
     da->reset_diagnostics_area();
     message_text[0] = saved_char;
     my_ok(thd, deleted, last_insert_id, message_text);
