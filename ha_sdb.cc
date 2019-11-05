@@ -318,7 +318,6 @@ longlong sdb_get_min_int_value(Field *field) {
 void sdb_set_affected_rows(THD *thd) {
   DBUG_ENTER("sdb_set_affected_rows");
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
-  int sql_command = thd_sql_command(thd);
   ulonglong last_insert_id = 0;
   char *message_text = NULL;
   Diagnostics_area *da = thd->get_stmt_da();
@@ -1140,6 +1139,7 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
 
   bson::BSONObj result;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  int sql_command = thd_sql_command(ha_thd());
   /*
     FLAG RULE:
     INSERT IGNORE ...
@@ -1149,10 +1149,16 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
     INSERT ... ON DUPLICATE KEY UPDATE ...
         => HA_EXTRA_IGNORE_DUP_KEY + HA_EXTRA_INSERT_WITH_UPDATE
   */
+  //  However, sometimes REPLACE INTO may miss HA_EXTRA_WRITE_CAN_REPLACE.
+  if (SQLCOM_REPLACE == sql_command || SQLCOM_REPLACE_SELECT == sql_command) {
+    m_write_can_replace = true;
+  }
   int flag = 0;
-  if (m_write_can_replace) {
+  if (m_insert_with_update) {
+    flag = 0;
+  } else if (m_write_can_replace) {
     flag = FLG_INSERT_REPLACEONDUP | FLG_INSERT_RETURNNUM;
-  } else if (!m_insert_with_update && m_ignore_dup_key) {
+  } else if (m_ignore_dup_key) {
     flag = FLG_INSERT_CONTONDUP | FLG_INSERT_RETURNNUM;
   }
 
@@ -1164,7 +1170,7 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
     }
   }
 
-  if (!m_insert_with_update && m_ignore_dup_key) {
+  if (flag & FLG_INSERT_RETURNNUM) {
     bson::BSONElement be_dup_num = result.getField(SDB_FIELD_DUP_NUM);
     if (be_dup_num.isNumber()) {
       thd_sdb->duplicated += be_dup_num.numberLong();
