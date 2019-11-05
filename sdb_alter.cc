@@ -1091,7 +1091,9 @@ bool is_type_diff(Field *old_field, Field *new_field) {
     case MYSQL_TYPE_TIME:
     case MYSQL_TYPE_TIME2:
     case MYSQL_TYPE_DATETIME:
-    case MYSQL_TYPE_TIMESTAMP: {
+    case MYSQL_TYPE_DATETIME2:
+    case MYSQL_TYPE_TIMESTAMP:
+    case MYSQL_TYPE_TIMESTAMP2: {
       if (old_field->decimals() != new_field->decimals()) {
         goto done;
       }
