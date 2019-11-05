@@ -1302,15 +1302,6 @@ int ha_sdb::write_row(uchar *buf) {
     }
   } else {
     rc = insert_row(obj, 1);
-    if (m_insert_with_update && HA_ERR_FOUND_DUPP_KEY == rc) {
-      m_last_insert_buff = (char *)sql_alloc(obj.objsize());
-      if (!m_last_insert_buff) {
-        my_error(ER_OUTOFMEMORY, MYF(ME_FATALERROR), obj.objsize());
-        rc = ER_OUTOFMEMORY;
-        goto error;
-      }
-      memcpy(m_last_insert_buff, obj.objdata(), obj.objsize());
-    }
   }
 
 done:
@@ -2390,15 +2381,6 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
 
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
-  }
-
-  if (m_insert_with_update && 0 == memcmp(pos, dup_ref, SDB_OID_LEN)) {
-    bson::BSONObj last_insert_obj(m_last_insert_buff, false);
-    rc = obj_to_row(last_insert_obj, buf);
-    if (rc != 0) {
-      goto error;
-    }
-    goto done;
   }
 
   obj_builder.appendOID(SDB_OID_FIELD, &oid);
