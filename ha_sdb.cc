@@ -81,8 +81,6 @@ using namespace sdbclient;
 
 #define SDB_FIELD_MAX_LEN (16 * 1024 * 1024)
 
-#define SDB_COMMENT "sequoiadb"
-
 const static char *sdb_plugin_info = SDB_ENGINE_INFO ". " SDB_VERSION_INFO ".";
 
 handlerton *sdb_hton = NULL;
@@ -3393,34 +3391,18 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
       goto comment_done;
     }
 
-    sdb_cmt_pos += strlen(SDB_COMMENT);
-    while (*sdb_cmt_pos != '\0' && my_isspace(&SDB_CHARSET, *sdb_cmt_pos)) {
-      sdb_cmt_pos++;
-    }
-
-    if (*sdb_cmt_pos != ':') {
-      rc = SDB_ERR_INVALID_ARG;
-      my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
-                      create_info->comment.str);
-      goto error;
-    }
-
-    sdb_cmt_pos += 1;
-    while (*sdb_cmt_pos != '\0' && my_isspace(&SDB_CHARSET, *sdb_cmt_pos)) {
-      sdb_cmt_pos++;
-    }
-
-    rc = bson::fromjson(sdb_cmt_pos, comments);
+    rc = sdb_convert_tab_opt_to_obj(sdb_cmt_pos, comments);
     if (0 != rc) {
+      rc = ER_WRONG_ARGUMENTS;
       my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
                       create_info->comment.str);
       goto error;
     }
 
-    auto_partition = comments.getField("auto_partition");
+    auto_partition = comments.getField(SDB_FIELD_AUTO_PARTITION);
     /*for compatibility with old configuration parameter */
     if (auto_partition.type() == bson::EOO) {
-      auto_partition = comments.getField("use_partition");
+      auto_partition = comments.getField(SDB_FIELD_USE_PARTITION);
     }
     if (auto_partition.type() == bson::Bool) {
       if (false == auto_partition.Bool()) {
@@ -3435,7 +3417,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
       goto error;
     }
 
-    options_ele = comments.getField("table_options");
+    options_ele = comments.getField(SDB_FIELD_TABLE_OPTIONS);
     if (options_ele.type() == bson::Object) {
       if (explicit_not_auto_partition) {
         filter_partition_options(options_ele.embeddedObject().copy(),

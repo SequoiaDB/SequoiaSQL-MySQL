@@ -198,6 +198,34 @@ bool sdb_field_is_date_time(enum_field_types type) {
   }
 }
 
+int sdb_convert_tab_opt_to_obj(const char *str, bson::BSONObj &obj) {
+  int rc = 0;
+  if (str == NULL) {
+    return rc;
+  }
+  const char *sdb_cmt_pos = str + strlen(SDB_COMMENT);
+  while (*sdb_cmt_pos != '\0' && my_isspace(&SDB_CHARSET, *sdb_cmt_pos)) {
+    sdb_cmt_pos++;
+  }
+
+  if (*sdb_cmt_pos != ':') {
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+
+  sdb_cmt_pos += 1;
+  while (*sdb_cmt_pos != '\0' && my_isspace(&SDB_CHARSET, *sdb_cmt_pos)) {
+    sdb_cmt_pos++;
+  }
+
+  rc = bson::fromjson(sdb_cmt_pos, obj);
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
 Sdb_encryption::Sdb_encryption() {
   my_random_bytes(m_key, KEY_LEN);
 }

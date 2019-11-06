@@ -1591,6 +1591,141 @@ bool ha_sdb::prepare_inplace_alter_table(TABLE *altered_table,
   return false;
 }
 
+int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
+                       bson::BSONObjBuilder &build) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObjIterator it_old(old_opt_obj);
+  bson::BSONObjIterator it_new(new_opt_obj);
+  bson::BSONElement old_tmp_ele, new_tmp_ele;
+  while (it_old.more()) {
+    old_tmp_ele = it_old.next();
+    new_tmp_ele = new_opt_obj.getField(old_tmp_ele.fieldName());
+    if (new_tmp_ele.type() != old_tmp_ele.type()) {
+      rc = SDB_ERR_REDUCE_TABLE_OPTION;
+      goto error;
+    }
+    if (!(new_tmp_ele == old_tmp_ele)) {
+      build.append(new_tmp_ele);
+    }
+  }
+
+  while (it_new.more()) {
+    new_tmp_ele = it_new.next();
+    old_tmp_ele = old_opt_obj.getField(new_tmp_ele.fieldName());
+    if (old_tmp_ele.type() == bson::EOO) {
+      build.append(new_tmp_ele);
+    }
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
+                              const char *sdb_new_tab_opt, Sdb_cl &cl) {
+  int rc = 0;
+  bson::BSONObj old_tab_opt, new_tab_opt;
+  bson::BSONElement old_auto_partition, new_auto_partition;
+  bson::BSONElement old_opt_ele, new_opt_ele;
+  bson::BSONObj old_opt_obj, new_opt_obj;
+  bson::BSONObjBuilder builder;
+  bson::BSONObj options;
+
+  if (sdb_old_tab_opt == sdb_new_tab_opt ||
+      (sdb_old_tab_opt && sdb_new_tab_opt &&
+       0 == strcmp(sdb_old_tab_opt, sdb_new_tab_opt))) {
+    goto done;
+  }
+  if (!sdb_new_tab_opt) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Can't support reduce table option", MYF(0));
+    goto error;
+  }
+  rc = sdb_convert_tab_opt_to_obj(sdb_old_tab_opt, old_tab_opt);
+  DBUG_ASSERT(0 == rc);
+  rc = sdb_convert_tab_opt_to_obj(sdb_new_tab_opt, new_tab_opt);
+  if (0 != rc) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
+                    sdb_new_tab_opt);
+    goto error;
+  }
+
+  /*check auto_partition.*/
+  if (old_tab_opt.hasField(SDB_FIELD_AUTO_PARTITION)) {
+    old_auto_partition = old_tab_opt.getField(SDB_FIELD_AUTO_PARTITION);
+  } else {
+    old_auto_partition = old_tab_opt.getField(SDB_FIELD_USE_PARTITION);
+  }
+  if (new_tab_opt.hasField(SDB_FIELD_AUTO_PARTITION)) {
+    new_auto_partition = new_tab_opt.getField(SDB_FIELD_AUTO_PARTITION);
+  } else {
+    new_auto_partition = new_tab_opt.getField(SDB_FIELD_USE_PARTITION);
+  }
+  if (old_auto_partition.type() != bson::EOO) {
+    DBUG_ASSERT(old_auto_partition.type() == bson::Bool);
+  }
+  if (old_auto_partition.woCompare(new_auto_partition, false)) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Can't support alter auto partition", MYF(0));
+    goto error;
+  }
+
+  /*check and append table_options.*/
+  old_opt_ele = old_tab_opt.getField(SDB_FIELD_TABLE_OPTIONS);
+  new_opt_ele = new_tab_opt.getField(SDB_FIELD_TABLE_OPTIONS);
+  if (old_opt_ele == new_opt_ele) {
+    goto done;
+  }
+  if (old_opt_ele.type() != bson::EOO) {
+    DBUG_ASSERT(old_opt_ele.type() == bson::Object);
+  }
+  if (old_opt_ele.type() != new_opt_ele.type()) {
+    if (new_opt_ele.type() == bson::EOO) {
+      rc = HA_ERR_WRONG_COMMAND;
+      my_printf_error(rc, "Can't support reduce table option", MYF(0));
+      goto error;
+    }
+    if (new_opt_ele.type() != bson::Object) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(rc,
+                      "Failed to parse cl_options! Invalid type for "
+                      "table_options",
+                      MYF(0));
+      goto error;
+    }
+    if (new_opt_ele.embeddedObject().isEmpty()) {
+      goto done;
+    }
+    builder.appendElements(new_opt_ele.embeddedObject());
+  } else if (old_opt_ele.type() != bson::EOO) {
+    old_opt_obj = old_opt_ele.embeddedObject();
+    new_opt_obj = new_opt_ele.embeddedObject();
+    rc = sdb_filter_tab_opt(old_opt_obj, new_opt_obj, builder);
+    if (SDB_ERR_REDUCE_TABLE_OPTION == rc) {
+      rc = HA_ERR_WRONG_COMMAND;
+      my_printf_error(rc, "Can't support reduce table option", MYF(0));
+      goto error;
+    }
+  }
+
+  /*pushdown table_options.*/
+  options = builder.obj();
+  rc = cl.set_attributes(options);
+  if (0 != rc) {
+    my_printf_error(rc, "Failed to alter table option:[%s]", MYF(0),
+                    options.toString().c_str());
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
 bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                                  Alter_inplace_info *ha_alter_info) {
   DBUG_ENTER("sdb_inplace_alter_table()");
@@ -1626,11 +1761,14 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   if (alter_flags & ALTER_CHANGE_CREATE_OPTION) {
     const char *old_comment = table->s->comment.str;
     const char *new_comment = create_info->comment.str;
-    bson::BSONObj option;
     if (!(old_comment == new_comment ||
           strcmp(old_comment, new_comment) == 0)) {
-      my_error(HA_ERR_WRONG_COMMAND, MYF(0));
-      goto error;
+      const char *sdb_old_tab_opt = strstr(old_comment, SDB_COMMENT);
+      const char *sdb_new_tab_opt = strstr(new_comment, SDB_COMMENT);
+      rc = sdb_check_and_set_tab_opt(sdb_old_tab_opt, sdb_new_tab_opt, cl);
+      if (0 != rc) {
+        goto error;
+      }
     }
 
     if (create_info->used_fields & HA_CREATE_USED_AUTO &&

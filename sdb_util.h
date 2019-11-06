@@ -42,6 +42,8 @@ bool sdb_field_is_floating(enum_field_types type);
 
 bool sdb_field_is_date_time(enum_field_types type);
 
+int sdb_convert_tab_opt_to_obj(const char *str, bson::BSONObj &obj);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;
