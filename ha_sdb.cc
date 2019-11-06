@@ -489,6 +489,8 @@ uint ha_sdb::max_supported_key_part_length() const {
 }
 
 int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
+  DBUG_ENTER("ha_sdb::open");
+
   int rc = 0;
   Sdb_conn *connection = NULL;
   Sdb_cl cl;
@@ -519,7 +521,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
-  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
+  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
 
   // Get collection to check if the collection is available.
   rc = connection->get_cl(db_name, table_name, cl);
@@ -555,7 +557,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   if (share) {
     free_sdb_share(share);
@@ -565,21 +567,46 @@ error:
 }
 
 int ha_sdb::close(void) {
+  DBUG_ENTER("ha_sdb::close");
+
   if (NULL != collection) {
     delete collection;
     collection = NULL;
   }
   if (share) {
+    // fix bug: SEQUOIASQLMAINSTREAM-461
+    THD *thd = ha_thd();
+    if (thd) {
+      Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+      if (thd_sdb) {
+        const void *key = share;
+        HASH_SEARCH_STATE state;
+        THD_SDB_SHARE *thd_sdb_share = (THD_SDB_SHARE *)my_hash_first(
+            &thd_sdb->open_table_shares, (const uchar *)&key, sizeof(key),
+            &state);
+
+        while (thd_sdb_share && thd_sdb_share->key != key) {
+          thd_sdb_share = (THD_SDB_SHARE *)my_hash_next(
+              &thd_sdb->open_table_shares, (const uchar *)&key, sizeof(key),
+              &state);
+        }
+        if (thd_sdb_share) {
+          my_hash_delete(&thd_sdb->open_table_shares, (uchar *)thd_sdb_share);
+        }
+      }
+    }
     free_sdb_share(share);
     share = NULL;
   }
+
   if (sdb_condition) {
     my_free(sdb_condition);
     sdb_condition = NULL;
   }
   m_bulk_insert_rows.clear();
   m_bson_element_cache.release();
-  return 0;
+
+  DBUG_RETURN(0);
 }
 
 int ha_sdb::reset() {
@@ -2855,6 +2882,19 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
       goto error;
     }
   } else {
+    // update stats info if sdb_use_transaction is 'off'
+    // note: when sdb_use_transaction is off, exec trans_commit_stmt
+    // after handle each table
+    if (!sdb_use_transaction && incr_stat &&
+        0 != incr_stat->no_uncommitted_rows_count) {
+      Sdb_mutex_guard guard(share->mutex);
+      share->stat.total_records =
+          (share->stat.total_records + incr_stat->no_uncommitted_rows_count > 0)
+              ? share->stat.total_records + incr_stat->no_uncommitted_rows_count
+              : 0;
+      incr_stat->no_uncommitted_rows_count = 0;
+    }
+
     if (!--thd_sdb->lock_count) {
       if (!(thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) &&
           thd_sdb->get_conn()->is_transaction_on()) {
@@ -2873,10 +2913,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
         }
       }
       sdb_set_affected_rows(thd);
-
-      // update stats info if sdb_use_transaction is 'off'
       if (!sdb_use_transaction) {
-        update_shares_stats(thd);
         my_hash_reset(&thd_sdb->open_table_shares);
       }
     }
