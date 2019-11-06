@@ -1095,7 +1095,7 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   m_use_bulk_insert = true;
 }
 
-const char* ha_sdb::get_dup_info(bson::BSONObj &result) {
+const char *ha_sdb::get_dup_info(bson::BSONObj &result) {
   bson::BSONObjIterator it(result);
   const char *idx_name = "";
 
@@ -2377,7 +2377,7 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   int rc = 0;
   bson::BSONObjBuilder obj_builder;
   bson::OID oid;
-  bson::BSONObj oidObj;
+  bson::BSONObj cond;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -2389,10 +2389,15 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
     repoint_field_to_record(table, table->record[0], buf);
   }
 
-  obj_builder.appendOID(SDB_OID_FIELD, &oid);
-  oidObj = obj_builder.obj();
+  if (m_dup_key_nr < MAX_KEY &&
+      0 == memcmp(pos, m_dup_oid.getData(), SDB_OID_LEN)) {
+    get_dup_key_cond(cond);
+  } else {
+    obj_builder.appendOID(SDB_OID_FIELD, &oid);
+    cond = obj_builder.obj();
+  }
 
-  rc = collection->query_one(cur_rec, oidObj);
+  rc = collection->query_one(cur_rec, cond);
   if (rc) {
     goto error;
   }
@@ -2870,7 +2875,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
       sdb_set_affected_rows(thd);
 
       // update stats info if sdb_use_transaction is 'off'
-      if(!sdb_use_transaction) {
+      if (!sdb_use_transaction) {
         update_shares_stats(thd);
         my_hash_reset(&thd_sdb->open_table_shares);
       }
@@ -3745,9 +3750,9 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
         thd_sdb->updated = 0;
       }
     case SDB_IXM_DUP_KEY: {
-      const char* idx_name = get_dup_info(error_obj);
+      const char *idx_name = get_dup_info(error_obj);
       my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key %s",
-                     MYF(0), m_dup_value.toString().c_str(), idx_name);
+                      MYF(0), m_dup_value.toString().c_str(), idx_name);
       break;
     }
     default:
