@@ -103,9 +103,9 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
   for (; key_part != key_end; ++key_part) {
     if (!is_field_indexable(key_part->field)) {
       rc = HA_ERR_UNSUPPORTED;
-      SDB_PRINT_ERROR(rc,
+      my_printf_error(rc,
                       "column '%-.192s' cannot be used in key specification.",
-                      key_part->field->field_name);
+                      MYF(0), key_part->field->field_name);
       goto error;
     }
     if (key_part->null_bit) {
