@@ -313,6 +313,29 @@ longlong sdb_get_min_int_value(Field *field) {
   return nr;
 }
 
+double sdb_get_max_real_value(Field *field) {
+  double max_flt_value = 0.0;
+  Field_real *real = (Field_real *)field;
+  uint order = 0;
+  uint step = 0;
+
+  DBUG_ASSERT(MYSQL_TYPE_FLOAT == field->type() ||
+              MYSQL_TYPE_DOUBLE == field->type());
+  if (!real->not_fixed) {
+    order = real->field_length - real->dec;
+    step = array_elements(log_10) - 1;
+    max_flt_value = 1.0;
+    for (; order > step; order -= step)
+      max_flt_value *= log_10[step];
+    max_flt_value *= log_10[order];
+    max_flt_value -= 1.0 / log_10[real->dec];
+  } else {
+    max_flt_value = (field->type() == MYSQL_TYPE_FLOAT) ? FLT_MAX : DBL_MAX;
+  }
+
+  return max_flt_value;
+}
+
 void sdb_set_affected_rows(THD *thd) {
   DBUG_ENTER("sdb_set_affected_rows");
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
@@ -688,55 +711,139 @@ error:
    in the mode of direct_update, need to use strict mode to $inc.
    field type supported in direct_update is in sdb_traverse_update.
 */
-void ha_sdb::field_to_strict_obj(Field *field,
-                                 bson::BSONObjBuilder &obj_builder,
-                                 void *value) {
-  DBUG_ASSERT(NULL != value);
+int ha_sdb::field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
+                                bool default_min_value) {
+  int rc = 0;
+  longlong max_value = 0;
+  longlong min_value = 0;
+  longlong default_value = 0;
   bson::BSONObjBuilder field_builder(
       obj_builder.subobjStart(sdb_field_name(field)));
-  longlong max_value = field->get_max_int_value();
-  longlong min_value = sdb_get_min_int_value(field);
+
+  if (MYSQL_TYPE_NEWDECIMAL == field->type()) {
+    char buff[MAX_FIELD_WIDTH];
+    my_decimal tmp_decimal;
+    my_decimal decimal_value;
+    my_decimal result;
+    String str(buff, sizeof(buff), field->charset());
+    Field_new_decimal *f = (Field_new_decimal *)field;
+
+    if (default_min_value) {
+      f->set_value_on_overflow(&tmp_decimal, true);
+    } else {
+      f->set_value_on_overflow(&tmp_decimal, false);
+    }
+    f->val_decimal(&decimal_value);
+    my_decimal_sub(E_DEC_FATAL_ERROR & ~E_DEC_OVERFLOW, &result, &decimal_value,
+                   &tmp_decimal);
+    my_decimal2string(E_DEC_FATAL_ERROR, &result, 0, 0, 0, &str);
+    field_builder.appendDecimal("Value", str.c_ptr());
+
+    f->set_value_on_overflow(&tmp_decimal, true);
+    my_decimal2string(E_DEC_FATAL_ERROR, &tmp_decimal, 0, 0, 0, &str);
+    field_builder.appendDecimal("Min", str.c_ptr());
+
+    f->set_value_on_overflow(&tmp_decimal, false);
+    my_decimal2string(E_DEC_FATAL_ERROR, &tmp_decimal, 0, 0, 0, &str);
+    field_builder.appendDecimal("Max", str.c_ptr());
+    goto done;
+  }
+
+  max_value = field->get_max_int_value();
+  min_value = sdb_get_min_int_value(field);
+  default_value = default_min_value ? min_value : max_value;
   switch (field->type()) {
     case MYSQL_TYPE_TINY:
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_INT24: {
-      field_builder.append("Value", *(int *)value);
+      longlong value = field->val_int();
+      value -= default_value;
+      // overflow is impossible, store as INT32
+      DBUG_ASSERT(value <= INT_MAX32 && value >= INT_MIN32);
+      field_builder.append("Value", value);
+      field_builder.append("Min", min_value);
+      field_builder.append("Max", max_value);
       break;
     }
     case MYSQL_TYPE_LONG: {
-      longlong temp = *(longlong *)value;
-      bool overflow = (temp > INT_MAX32 || temp < INT_MIN32);
-      field_builder.append("Value",
-                           overflow ? *(longlong *)value : *(int *)value);
+      longlong value = field->val_int();
+      value -= default_value;
+      bool overflow = value > INT_MAX32 || value < INT_MIN32;
+      field_builder.append("Value", (overflow ? value : (int)value));
+      field_builder.append("Min", min_value);
+      field_builder.append("Max", max_value);
       break;
     }
     case MYSQL_TYPE_LONGLONG: {
-      longlong temp = field->val_int();
-      if (temp < 0 && ((Field_num *)field)->unsigned_flag) {
-        field_builder.appendDecimal("Value", (const char *)value);
+      // orginal_negative is true where field minus a number.
+      bool unsigned_flag = false;
+      bool int2decimal_flag = false;
+      bool decimal2str_falg = false;
+      bool original_negative = !default_min_value;
+      longlong value = field->val_int();
+
+      unsigned_flag = ((Field_num *)field)->unsigned_flag;
+      if (unsigned_flag) {
+        if (original_negative) {
+          value = default_value - value;
+        } else {
+          value -= default_value;
+          if (value > 0) {
+            obj_builder.append("Value", value);
+            goto MIN_MAX;
+          }
+        }
+        int2decimal_flag = unsigned_flag;
+        decimal2str_falg = original_negative;
       } else {
-        field_builder.append("Value", *(longlong *)value);
+        if ((default_min_value && value < 0) ||
+            (!default_min_value && value > 0)) {
+          value -= default_value;
+          obj_builder.append("Value", value);
+          goto MIN_MAX;
+        }
+        value -= default_value;
+        int2decimal_flag = default_min_value;
+        decimal2str_falg = !default_min_value;
       }
+
+      {
+        my_decimal tmp_val;
+        char buff[MAX_FIELD_WIDTH];
+        String str(buff, sizeof(buff), field->charset());
+        int2my_decimal(E_DEC_FATAL_ERROR, value, int2decimal_flag, &tmp_val);
+        tmp_val.sign(decimal2str_falg);
+        my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
+        field_builder.appendDecimal("Value", str.c_ptr());
+      }
+    MIN_MAX:
+      if (max_value < 0 && ((Field_num *)field)->unsigned_flag) {
+        // overflow, so store as DECIMAL
+        my_decimal tmp_val;
+        char buff[MAX_FIELD_WIDTH];
+        String str(buff, sizeof(buff), field->charset());
+        int2my_decimal(E_DEC_FATAL_ERROR, max_value,
+                       ((Field_num *)field)->unsigned_flag, &tmp_val);
+        my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
+        field_builder.appendDecimal("Max", str.c_ptr());
+      } else {
+        field_builder.append("Max", max_value);
+      }
+
+      field_builder.append("Min", min_value);
       break;
     }
-    case MYSQL_TYPE_FLOAT: {
-      Field_real *real = (Field_real *)field;
+    case MYSQL_TYPE_FLOAT:
+    case MYSQL_TYPE_DOUBLE: {
+      double default_value = 0.0;
+      double real_value = field->val_real();
       double max_flt_value = 1.0;
-      if (!real->not_fixed) {
-        uint order = real->field_length - real->dec;
-        uint step = array_elements(log_10) - 1;
-        max_flt_value = 1.0;
-        for (; order > step; order -= step)
-          max_flt_value *= log_10[step];
-        max_flt_value *= log_10[order];
-        max_flt_value -= 1.0 / log_10[real->dec];
-      } else {
-        max_flt_value = FLT_MAX;
-      }
-      field_builder.append("Value", *(double *)value);
+      max_flt_value = sdb_get_max_real_value(field);
+      default_value = default_min_value ? -max_flt_value : max_flt_value;
+      real_value -= default_value;
+      field_builder.append("Value", real_value);
       field_builder.append("Min", -max_flt_value);
       field_builder.append("Max", max_flt_value);
-
       break;
     }
     default:
@@ -744,26 +851,14 @@ void ha_sdb::field_to_strict_obj(Field *field,
       DBUG_ASSERT(false);
       break;
   }
-  if (MYSQL_TYPE_FLOAT != field->type()) {
-    field_builder.append("Min", min_value);
-    if (max_value < 0 && ((Field_num *)field)->unsigned_flag) {
-      // overflow, so store as DECIMAL
-      my_decimal tmp_val;
-      char buff[MAX_FIELD_WIDTH];
-      String str(buff, sizeof(buff), field->charset());
-      ((Field_num *)field)->val_decimal(&tmp_val);
-      my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
-      field_builder.appendDecimal("Max", str.c_ptr());
-    } else {
-      field_builder.append("Max", max_value);
-    }
-  }
+
+done:
   field_builder.appendNull("Default");
   field_builder.done();
+  return rc;
 }
 
-int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
-                         bool strict) {
+int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
   int rc = 0;
   DBUG_ASSERT(NULL != field);
   switch (field->type()) {
@@ -774,24 +869,17 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       // overflow is impossible, store as INT32
       DBUG_ASSERT(field->val_int() <= INT_MAX32 &&
                   field->val_int() >= INT_MIN32);
-      if (strict && MYSQL_TYPE_YEAR != field->type()) {
-        /* sdb store tiny,short and int24 with int, need strict $inc */
-        longlong value = field->val_int();
-        field_to_strict_obj(field, obj_builder, (void *)&value);
-      } else {
-        obj_builder.append(sdb_field_name(field), (int)field->val_int());
-      }
+      obj_builder.append(sdb_field_name(field), (int)field->val_int());
       break;
     }
     case MYSQL_TYPE_BIT:
     case MYSQL_TYPE_LONG: {
       longlong value = field->val_int();
-      bool overflow = value > INT_MAX32 || value < INT_MIN32;
-      if (strict && MYSQL_TYPE_LONG == field->type()) {
-        field_to_strict_obj(field, obj_builder, (void *)&value);
+      if (value > INT_MAX32 || value < INT_MIN32) {
+        // overflow, so store as INT64
+        obj_builder.append(sdb_field_name(field), (long long)value);
       } else {
-        obj_builder.append(sdb_field_name(field),
-                           overflow ? value : (int)value);
+        obj_builder.append(sdb_field_name(field), (int)value);
       }
       break;
     }
@@ -804,30 +892,16 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
         String str(buff, sizeof(buff), field->charset());
         ((Field_num *)field)->val_decimal(&tmp_val);
         my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
-        if (strict) {
-          field_to_strict_obj(field, obj_builder, (void *)str.c_ptr());
-        } else {
-          obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
-        }
+        obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
       } else {
-        if (strict) {
-          field_to_strict_obj(field, obj_builder, (void *)&value);
-        } else {
-          obj_builder.append(sdb_field_name(field), (longlong)value);
-        }
+        obj_builder.append(sdb_field_name(field), (longlong)value);
       }
       break;
     }
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
     case MYSQL_TYPE_TIME: {
-      double real = field->val_real();
-      /* sdb double to store float, need strict $inc */
-      if (MYSQL_TYPE_FLOAT == field->type() && strict) {
-        field_to_strict_obj(field, obj_builder, (void *)&real);
-      } else {
-        obj_builder.append(sdb_field_name(field), real);
-      }
+      obj_builder.append(sdb_field_name(field), field->val_real());
       break;
     }
     case MYSQL_TYPE_VARCHAR:
@@ -1470,6 +1544,117 @@ int ha_sdb::index_last(uchar *buf) {
   return index_read_one(pushed_condition, -1, buf);
 }
 
+int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
+                            bson::BSONObjBuilder &builder) {
+  int rc = 0;
+
+  bitmap_set_bit(table->write_set, rfield->field_index);
+  bitmap_set_bit(table->read_set, rfield->field_index);
+
+  rc = value->save_in_field(rfield, false);
+  if (TYPE_OK != rc) {
+    if (rc < 0) {
+      my_message(ER_UNKNOWN_ERROR, ER(ER_UNKNOWN_ERROR), MYF(0));
+#ifdef IS_MYSQL
+    } else if (TYPE_WARN_OUT_OF_RANGE == rc || TYPE_WARN_TRUNCATED == rc ||
+               TYPE_WARN_INVALID_STRING == rc) {
+      rc = HA_ERR_END_OF_FILE;
+#endif
+    }
+    *optimizer_update = false;
+    goto error;
+  }
+  /* set a = -100 (FUNC_ITEM:'-', INT_ITEM:100) */
+  rc = field_to_obj(rfield, builder);
+  if (0 != rc) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
+                            bson::BSONObjBuilder &builder) {
+  int rc = 0;
+  bool is_real = false;
+  bool is_decimal = false;
+  bool retry = false;
+  double max_flt_value = 1.0;
+  my_decimal min_decimal;
+  my_decimal max_decimal;
+
+  is_real = (MYSQL_TYPE_FLOAT == rfield->type() ||
+             MYSQL_TYPE_DOUBLE == rfield->type());
+
+  is_decimal = (MYSQL_TYPE_NEWDECIMAL == rfield->type() ||
+                MYSQL_TYPE_DECIMAL == rfield->type());
+  bitmap_set_bit(table->write_set, rfield->field_index);
+  bitmap_set_bit(table->read_set, rfield->field_index);
+
+  if (is_real) {
+    max_flt_value = sdb_get_max_real_value(rfield);
+    rfield->store(-max_flt_value);
+  } else if (!is_decimal) {
+    rfield->store(sdb_get_min_int_value(rfield));
+  }
+
+  if (is_decimal) {
+    Field_new_decimal *f = (Field_new_decimal *)rfield;
+    is_decimal = true;
+    f->set_value_on_overflow(&min_decimal, true);
+    f->store_decimal(&min_decimal);
+  }
+
+retry:
+  rc = value->save_in_field(rfield, false);
+  if (TYPE_OK != rc) {
+    if (rc < 0) {
+      my_message(ER_UNKNOWN_ERROR, ER(ER_UNKNOWN_ERROR), MYF(0));
+#ifdef IS_MYSQL
+    } else if ((TYPE_WARN_OUT_OF_RANGE == rc || TYPE_ERR_BAD_VALUE == rc ||
+                TYPE_WARN_TRUNCATED == rc) &&
+               !retry) {
+      retry = true;
+      if (is_real) {
+        rfield->store(max_flt_value);
+      } else if (is_decimal) {
+        Field_new_decimal *f = (Field_new_decimal *)rfield;
+        is_decimal = true;
+        f->set_value_on_overflow(&max_decimal, false);
+        f->store_decimal(&max_decimal);
+      } else {
+        rfield->store(rfield->get_max_int_value());
+      }
+
+      if (rfield->table->in_use->is_error()) {
+        THD *thd = rfield->table->in_use;
+        thd->killed = THD::NOT_KILLED;
+        thd->clear_error();
+        thd->get_stmt_da()->reset_condition_info(thd);
+      }
+      goto retry;
+    } else if (TYPE_WARN_TRUNCATED == rc || TYPE_WARN_INVALID_STRING == rc ||
+               TYPE_WARN_OUT_OF_RANGE == rc) {
+      rc = HA_ERR_END_OF_FILE;
+#endif
+    }
+    *optimizer_update = false;
+    goto error;
+  }
+  rc = field_to_strict_obj(rfield, builder, !retry);
+  if (0 != rc) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
   DBUG_ENTER("ha_sdb::create_modifier_obj()");
   int rc = 0;
@@ -1517,29 +1702,13 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
       goto done;
     }
 
-    bitmap_set_bit(table->write_set, rfield->field_index);
-    rc = value->save_in_field(rfield, false);
-    if (TYPE_OK != rc) {
-      if (rc < 0) {
-        my_message(ER_UNKNOWN_ERROR, ER(ER_UNKNOWN_ERROR), MYF(0));
-#ifdef IS_MYSQL
-      } else if (TYPE_WARN_OUT_OF_RANGE == rc || TYPE_WARN_TRUNCATED == rc ||
-                 TYPE_WARN_INVALID_STRING == rc) {
-        rc = HA_ERR_END_OF_FILE;
-#endif
-      }
-      *optimizer_update = false;
-      goto error;
+    if (field_count) {
+      rc = create_inc_rule(rfield, value, optimizer_update, inc_builder);
+    } else {
+      rc = create_set_rule(rfield, value, optimizer_update, set_builder);
     }
 
-    bitmap_set_bit(table->read_set, rfield->field_index);
-    if (field_count) {
-      rc = field_to_obj(rfield, inc_builder, true);
-    } else {
-      /* set a = -100 (FUNC_ITEM:'-', INT_ITEM:100) */
-      rc = field_to_obj(rfield, set_builder);
-    }
-    if (0 != rc) {
+    if (0 != rc || !*optimizer_update) {
       goto error;
     }
   }
@@ -3362,11 +3531,6 @@ int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
     build.append(options.getField(SDB_FIELD_REPLSIZE));
   }
 
-  if (!options.hasField(SDB_FIELD_STRICT_DATA_MODE)) {
-    build.appendBool(SDB_FIELD_STRICT_DATA_MODE, true);
-  } else {
-    build.append(options.getField(SDB_FIELD_STRICT_DATA_MODE));
-  }
 done:
   return rc;
 error:

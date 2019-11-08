@@ -239,6 +239,12 @@ class ha_sdb : public handler {
   // int index_read(uchar *buf, const uchar *key_ptr, uint key_len,
   //               enum ha_rkey_function find_flage);
 
+  int create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
+                      bson::BSONObjBuilder &builder);
+
+  int create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
+                      bson::BSONObjBuilder &builder);
+
   int create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update);
 
   bool optimize_count(bson::BSONObj &condition);
@@ -318,11 +324,10 @@ class ha_sdb : public handler {
   int row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid, bool output_null,
                  bson::BSONObj &null_obj, bool auto_inc_explicit_used);
 
-  void field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
-                           void *value);
+  int field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
+                          bool default_min_value);
 
-  int field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
-                   bool strict = false);
+  int field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder);
 
   int get_update_obj(const uchar *old_data, const uchar *new_data,
                      bson::BSONObj &obj, bson::BSONObj &null_obj);
