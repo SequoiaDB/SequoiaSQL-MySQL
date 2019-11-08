@@ -613,6 +613,10 @@ int ha_sdb::close(void) {
         }
         if (thd_sdb_share) {
           my_hash_delete(&thd_sdb->open_table_shares, (uchar *)thd_sdb_share);
+          DBUG_ASSERT(share->use_count > 1);
+          mysql_mutex_lock(&sdb_mutex);
+          share->use_count--;
+          mysql_mutex_unlock(&sdb_mutex);
         }
       }
     }
@@ -3166,10 +3170,12 @@ ha_rows ha_sdb::records_in_range(uint inx, key_range *min_key,
 }
 
 int ha_sdb::delete_table(const char *from) {
+  DBUG_ENTER("ha_sdb::delete_table");
+
   int rc = 0;
   Sdb_conn *conn = NULL;
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
+  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
 
   rc = sdb_parse_table_name(from, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
@@ -3197,7 +3203,7 @@ int ha_sdb::delete_table(const char *from) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
@@ -3391,6 +3397,11 @@ int ha_sdb::add_share_to_open_table_shares(THD *thd) {
                static_cast<int>(sizeof(THD_SDB_SHARE)));
       DBUG_RETURN(1);
     }
+
+    mysql_mutex_lock(&sdb_mutex);
+    share->use_count++;
+    mysql_mutex_unlock(&sdb_mutex);
+
     thd_sdb_share->key = key;
     thd_sdb_share->stat.no_uncommitted_rows_count = 0;
     my_hash_insert(&thd_sdb->open_table_shares, (uchar *)thd_sdb_share);
@@ -3654,6 +3665,8 @@ void ha_sdb::build_auto_inc_option(const Field *field,
 }
 
 int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
+  DBUG_ENTER("ha_sdb::create");
+
   int rc = 0;
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
@@ -3663,7 +3676,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   bool created_cs = false;
   bool created_cl = false;
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
+  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
 
   for (Field **fields = form->field; *fields; fields++) {
     Field *field = *fields;
@@ -3735,7 +3748,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   convert_sdb_code(rc);
   if (created_cs) {
@@ -4004,6 +4017,7 @@ static void update_shares_stats(THD *thd) {
       }
       local_stat->no_uncommitted_rows_count = 0;
     }
+    free_sdb_share(share);
   }
 
   DBUG_VOID_RETURN;
@@ -4106,6 +4120,8 @@ done:
         (THD_SDB_SHARE *)my_hash_element(&thd_sdb->open_table_shares, i);
     struct Sdb_local_table_statistics *local_stat = &thd_share->stat;
     local_stat->no_uncommitted_rows_count = 0;
+    Sdb_share *share = (Sdb_share *)thd_share->key;
+    free_sdb_share(share);
   }
 
   my_hash_reset(&thd_sdb->open_table_shares);
