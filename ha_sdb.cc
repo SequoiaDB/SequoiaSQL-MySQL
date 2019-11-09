@@ -3891,7 +3891,7 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   // get error object from Sdb_conn
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   Sdb_conn *connection = check_sdb_in_thd(ha_thd(), true);
-  int sdb_rc = connection->get_last_error(error_obj);
+  int sdb_rc = connection->get_last_result_obj(error_obj, false);
   if (sdb_rc != SDB_OK) {
     push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
                  SDB_GET_LAST_ERROR_FAILED);
@@ -3899,10 +3899,14 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
 
   // get error info from error_msg
   const char *error_msg = SDB_NO_ERROR_MSG_DESCRIPTION;
-  if (strlen(error_obj.getStringField(SDB_FIELD_DETAIL)) != 0) {
-    error_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
-  } else if (strlen(error_obj.getStringField(SDB_FIELD_DESCRIPTION)) != 0) {
-    error_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+  const char *detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
+  if (strlen(detail_msg) != 0) {
+    error_msg = detail_msg;
+  } else {
+    const char *desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+    if (strlen(desp_msg) != 0) {
+      error_msg = desp_msg;
+    }
   }
 
   switch (get_sdb_code(error)) {
