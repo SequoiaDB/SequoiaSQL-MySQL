@@ -839,12 +839,9 @@ int ha_sdb::field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
     }
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE: {
-      double default_value = 0.0;
       double real_value = field->val_real();
       double max_flt_value = 1.0;
       max_flt_value = sdb_get_max_real_value(field);
-      default_value = default_min_value ? -max_flt_value : max_flt_value;
-      real_value -= default_value;
       field_builder.append("Value", real_value);
       field_builder.append("Min", -max_flt_value);
       field_builder.append("Max", max_flt_value);
@@ -1583,7 +1580,7 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
   bool is_real = false;
   bool is_decimal = false;
   bool retry = false;
-  double max_flt_value = 1.0;
+  double default_real = 0.0;
   my_decimal min_decimal;
   my_decimal max_decimal;
 
@@ -1595,9 +1592,14 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
   bitmap_set_bit(table->write_set, rfield->field_index);
   bitmap_set_bit(table->read_set, rfield->field_index);
 
+  /* when field type is real:float/double, item_func use double to store the
+     result of func. while field->store() will cast double result to its own
+     float type. In this processing lost the precision of double result. May
+     cause many issues. So given 0.0 to float/double to check if overflow,
+     it will not direct update if overflow.
+  */
   if (is_real) {
-    max_flt_value = sdb_get_max_real_value(rfield);
-    rfield->store(-max_flt_value);
+    rfield->store(default_real);
   } else if (!is_decimal) {
     rfield->store(sdb_get_min_int_value(rfield));
   }
@@ -1612,6 +1614,16 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
 retry:
   rc = value->save_in_field(rfield, false);
   if (TYPE_OK != rc) {
+    if (is_real) {
+      rc = TYPE_OK;
+      THD *thd = rfield->table->in_use;
+      thd->killed = THD::NOT_KILLED;
+      thd->clear_error();
+      thd->get_stmt_da()->reset_condition_info(thd);
+      *optimizer_update = false;
+      goto error;
+    }
+
     if (rc < 0) {
       my_message(ER_UNKNOWN_ERROR, ER(ER_UNKNOWN_ERROR), MYF(0));
 #ifdef IS_MYSQL
@@ -1619,9 +1631,7 @@ retry:
                 TYPE_WARN_TRUNCATED == rc) &&
                !retry) {
       retry = true;
-      if (is_real) {
-        rfield->store(max_flt_value);
-      } else if (is_decimal) {
+      if (is_decimal) {
         Field_new_decimal *f = (Field_new_decimal *)rfield;
         is_decimal = true;
         f->set_value_on_overflow(&max_decimal, false);
