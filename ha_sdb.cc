@@ -1553,15 +1553,12 @@ int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
 
   rc = value->save_in_field(rfield, false);
   if (TYPE_OK != rc) {
-    if (rc < 0) {
-      my_message(ER_UNKNOWN_ERROR, ER(ER_UNKNOWN_ERROR), MYF(0));
-#ifdef IS_MYSQL
-    } else if (TYPE_WARN_OUT_OF_RANGE == rc || TYPE_WARN_TRUNCATED == rc ||
-               TYPE_WARN_INVALID_STRING == rc) {
-      rc = HA_ERR_END_OF_FILE;
-#endif
-    }
+    rc = 0;
     *optimizer_update = false;
+    THD *thd = rfield->table->in_use;
+    thd->killed = THD::NOT_KILLED;
+    thd->clear_error();
+    thd->get_stmt_da()->reset_condition_info(thd);
     goto error;
   }
   /* set a = -100 (FUNC_ITEM:'-', INT_ITEM:100) */
