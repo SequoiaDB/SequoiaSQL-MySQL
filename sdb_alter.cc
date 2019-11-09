@@ -851,8 +851,7 @@ struct Sdb_alter_ctx : public inplace_alter_handler_ctx {
 };
 
 bool is_strict_mode(sql_mode_t sql_mode) {
-  return (sql_mode & MODE_STRICT_ALL_TABLES) ||
-         (sdb_use_transaction && (sql_mode & MODE_STRICT_TRANS_TABLES));
+  return (sql_mode & (MODE_STRICT_ALL_TABLES | MODE_STRICT_TRANS_TABLES));
 }
 
 int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {

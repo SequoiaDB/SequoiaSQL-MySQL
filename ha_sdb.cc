@@ -443,13 +443,17 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
       (HA_REC_NOT_IN_SEQ | HA_NO_READ_LOCAL_LOCK | HA_BINLOG_ROW_CAPABLE |
        HA_BINLOG_STMT_CAPABLE | HA_TABLE_SCAN_ON_INDEX | HA_NULL_IN_KEY |
        HA_CAN_INDEX_BLOBS | HA_AUTO_PART_KEY | HA_DUPLICATE_POS);
-  m_table_flags |= (sdb_use_transaction ? 0 : HA_NO_TRANSACTIONS);
+
+  // m_table_flags |= (sdb_use_transaction ? 0 : HA_NO_TRANSACTIONS);
 
   incr_stat = NULL;
   m_dup_key_nr = MAX_KEY;
 }
 
 ha_sdb::~ha_sdb() {
+  DBUG_ENTER("ha_sdb::~ha_sdb");
+
+  DBUG_PRINT("info", ("table name %s", table_name));
   free_root(&blobroot, MYF(0));
   if (NULL != collection) {
     delete collection;
@@ -459,6 +463,8 @@ ha_sdb::~ha_sdb() {
     delete sdb_condition;
     sdb_condition = NULL;
   }
+
+  DBUG_VOID_RETURN;
 }
 
 const char **ha_sdb::bas_ext() const {
@@ -635,6 +641,9 @@ int ha_sdb::close(void) {
 }
 
 int ha_sdb::reset() {
+  DBUG_ENTER("ha_sdb::reset");
+  DBUG_PRINT("info", ("table name %s, handler %p", table_name, this));
+
   if (NULL != collection) {
     delete collection;
     collection = NULL;
@@ -654,7 +663,8 @@ int ha_sdb::reset() {
   stats.records = ~(ha_rows)0;
   m_dup_key_nr = MAX_KEY;
   m_dup_value = SDB_EMPTY_BSON;
-  return 0;
+
+  DBUG_RETURN(0);
 }
 
 int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
@@ -1281,6 +1291,7 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
   update_last_insert_id();
   stats.records += row_count;
   incr_stat->no_uncommitted_rows_count += row_count;
+
   return rc;
 }
 
@@ -2896,6 +2907,7 @@ int ha_sdb::ensure_collection(THD *thd) {
   }
 
 done:
+  DBUG_PRINT("exit", ("table %s get collection %p", table_name, collection));
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -2986,10 +2998,11 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
-    if (!sdb_use_transaction) {
-      auto_commit = false;
-      goto done;
-    }
+    // in non-transaction mode, still exec commit, but do nothing
+    // if (!sdb_use_transaction) {
+    //  auto_commit = false;
+    //  goto done;
+    // }
 
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
       auto_commit = false;
@@ -3060,19 +3073,6 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
       goto error;
     }
   } else {
-    // update stats info if sdb_use_transaction is 'off'
-    // note: when sdb_use_transaction is off, exec trans_commit_stmt
-    // after handle each table
-    if (!sdb_use_transaction && incr_stat &&
-        0 != incr_stat->no_uncommitted_rows_count) {
-      Sdb_mutex_guard guard(share->mutex);
-      share->stat.total_records =
-          (share->stat.total_records + incr_stat->no_uncommitted_rows_count > 0)
-              ? share->stat.total_records + incr_stat->no_uncommitted_rows_count
-              : 0;
-      incr_stat->no_uncommitted_rows_count = 0;
-    }
-
     if (!--thd_sdb->lock_count) {
       if (!(thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) &&
           thd_sdb->get_conn()->is_transaction_on()) {
@@ -3091,9 +3091,6 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
         }
       }
       sdb_set_affected_rows(thd);
-      if (!sdb_use_transaction) {
-        my_hash_reset(&thd_sdb->open_table_shares);
-      }
     }
   }
 
