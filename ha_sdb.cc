@@ -3347,7 +3347,7 @@ inline int ha_sdb::get_sharding_key_from_options(const bson::BSONObj &options,
   if (tmp_elem.type() == bson::Object) {
     sharding_key = tmp_elem.embeddedObject();
   } else if (tmp_elem.type() != bson::EOO) {
-    rc = SDB_ERR_INVALID_ARG;
+    rc = ER_WRONG_ARGUMENTS;
     my_printf_error(rc,
                     "Failed to parse pations! Invalid type[%d] for "
                     "ShardingKey",
@@ -3525,7 +3525,7 @@ int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
     if (tmp_ele.type() == bson::Bool) {
       compressed = tmp_ele.Bool();
     } else if (tmp_ele.type() != bson::EOO) {
-      rc = SDB_ERR_INVALID_ARG;
+      rc = ER_WRONG_ARGUMENTS;
       my_printf_error(rc,
                       "Failed to parse Compressed! Invalid type[%d] for "
                       "Compressed",
@@ -3591,7 +3591,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
         explicit_not_auto_partition = true;
       }
     } else if (auto_partition.type() != bson::EOO) {
-      rc = SDB_ERR_INVALID_ARG;
+      rc = ER_WRONG_ARGUMENTS;
       my_printf_error(rc,
                       "Failed to parse cl_options! Invalid type[%d] for "
                       "auto_partition",
@@ -3608,7 +3608,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
         table_options = options_ele.embeddedObject().copy();
       }
     } else if (options_ele.type() != bson::EOO) {
-      rc = SDB_ERR_INVALID_ARG;
+      rc = ER_WRONG_ARGUMENTS;
       my_printf_error(rc,
                       "Failed to parse cl_options! Invalid type[%d] for "
                       "table_options",
