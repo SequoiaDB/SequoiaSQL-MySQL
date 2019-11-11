@@ -2378,44 +2378,49 @@ bool ha_sdb::check_element_type_compatible(bson::BSONElement &elem,
     case MYSQL_TYPE_SET:
     case MYSQL_TYPE_TIME:
     case MYSQL_TYPE_TIME2: {
-      compatible = elem.isNumber() ? true : false;
+      compatible = elem.isNumber();
+      break;
+    }
+
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_DATETIME2: {
+      compatible = (elem.type() == bson::String);
       break;
     }
 
     // is string or binary
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
-    case MYSQL_TYPE_DATETIME:
-    case MYSQL_TYPE_DATETIME2:
     case MYSQL_TYPE_VAR_STRING:
     case MYSQL_TYPE_TINY_BLOB:
     case MYSQL_TYPE_MEDIUM_BLOB:
     case MYSQL_TYPE_LONG_BLOB:
     case MYSQL_TYPE_BLOB: {
       if (((Field_str *)field)->binary()) {
-        compatible = (elem.type() == bson::BinData) ? true : false;
+        compatible = (elem.type() == bson::BinData);
       } else {
-        compatible = (elem.type() == bson::String) ? true : false;
+        compatible = (elem.type() == bson::String);
       }
       break;
     }
     // is binary
 #ifdef IS_MYSQL
     case MYSQL_TYPE_JSON: {
-      compatible = (elem.type() == bson::BinData) ? true : false;
+      compatible = (elem.type() == bson::BinData);
       break;
     }
 #endif
+
     // is date
     case MYSQL_TYPE_DATE:
     case MYSQL_TYPE_NEWDATE: {
-      compatible = (elem.type() == bson::Date) ? true : false;
+      compatible = (elem.type() == bson::Date);
       break;
     }
     // is timestamp
     case MYSQL_TYPE_TIMESTAMP2:
     case MYSQL_TYPE_TIMESTAMP: {
-      compatible = (elem.type() == bson::Timestamp) ? true : false;
+      compatible = (elem.type() == bson::Timestamp);
       break;
     }
     // TODO: fill the field with default value if the type is null, need to
