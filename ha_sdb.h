@@ -319,6 +319,8 @@ class ha_sdb : public handler {
 
   int obj_to_row(bson::BSONObj &obj, uchar *buf);
 
+  bool check_element_type_compatible(bson::BSONElement &elem, Field *field);
+
   int bson_element_to_field(const bson::BSONElement elem, Field *field);
 
   int row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid, bool output_null,

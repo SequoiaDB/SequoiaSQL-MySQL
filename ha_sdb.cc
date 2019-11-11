@@ -2326,9 +2326,23 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
       continue;
     }
 
-    rc = bson_element_to_field(elem, field);
-    if (0 != rc) {
-      goto error;
+    if (check_element_type_compatible(elem, field)) {
+      rc = bson_element_to_field(elem, field);
+      if (0 != rc) {
+        goto error;
+      }
+    } else {
+      field->set_default();
+      static char buff[100] = {'\0'};
+      SDB_LOG_WARNING(
+          "The element's type:%s is not commpatible with "
+          "field type:%s, table:%s.%s",
+          sdb_elem_type_str(elem.type()), sdb_field_type_str(field->type()),
+          db_name, table_name);
+      sprintf(buff, "field type:%s, bson::elem type:%s",
+              sdb_field_type_str(field->type()),
+              sdb_elem_type_str(elem.type()));
+      thd->raise_warning_printf(ER_DATA_OUT_OF_RANGE, field->field_name, buff);
     }
   }
 
@@ -2341,6 +2355,81 @@ done:
   return rc;
 error:
   goto done;
+}
+
+bool ha_sdb::check_element_type_compatible(bson::BSONElement &elem,
+                                           Field *field) {
+  bool compatible = false;
+  DBUG_ASSERT(NULL != field);
+  switch (field->real_type()) {
+    // is number()
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_LONG:
+    case MYSQL_TYPE_LONGLONG:
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_NEWDECIMAL:
+    case MYSQL_TYPE_FLOAT:
+    case MYSQL_TYPE_DOUBLE:
+    case MYSQL_TYPE_YEAR:
+    case MYSQL_TYPE_BIT:
+    case MYSQL_TYPE_ENUM:
+    case MYSQL_TYPE_SET:
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_TIME2: {
+      compatible = elem.isNumber() ? true : false;
+      break;
+    }
+
+    // is string or binary
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_DATETIME2:
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_TINY_BLOB:
+    case MYSQL_TYPE_MEDIUM_BLOB:
+    case MYSQL_TYPE_LONG_BLOB:
+    case MYSQL_TYPE_BLOB: {
+      if (((Field_str *)field)->binary()) {
+        compatible = (elem.type() == bson::BinData) ? true : false;
+      } else {
+        compatible = (elem.type() == bson::String) ? true : false;
+      }
+      break;
+    }
+    // is binary
+#ifdef IS_MYSQL
+    case MYSQL_TYPE_JSON: {
+      compatible = (elem.type() == bson::BinData) ? true : false;
+      break;
+    }
+#endif
+    // is date
+    case MYSQL_TYPE_DATE:
+    case MYSQL_TYPE_NEWDATE: {
+      compatible = (elem.type() == bson::Date) ? true : false;
+      break;
+    }
+    // is timestamp
+    case MYSQL_TYPE_TIMESTAMP2:
+    case MYSQL_TYPE_TIMESTAMP: {
+      compatible = (elem.type() == bson::Timestamp) ? true : false;
+      break;
+    }
+    // TODO: fill the field with default value if the type is null, need to
+    // analyze later.
+    case MYSQL_TYPE_NULL:
+      compatible = false;
+      break;
+    default: {
+      DBUG_ASSERT(false);
+      break;
+    }
+  }
+
+  return compatible;
 }
 
 int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {

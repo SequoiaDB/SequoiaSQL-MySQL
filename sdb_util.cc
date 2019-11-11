@@ -237,3 +237,117 @@ int Sdb_encryption::encrypt(const String &src, String &dst) {
 int Sdb_encryption::decrypt(const String &src, String &dst) {
   return sdb_aes_decrypt(AES_OPMODE, m_key, KEY_LEN, src, dst);
 }
+
+const char *sdb_elem_type_str(bson::BSONType type) {
+  switch (type) {
+    case bson::EOO:
+      return "EOO";
+    case bson::NumberDouble:
+      return "NumberDouble";
+    case bson::String:
+      return "String";
+    case bson::Object:
+      return "Object";
+    case bson::Array:
+      return "Array";
+    case bson::BinData:
+      return "Binary";
+    case bson::Undefined:
+      return "Undefined";
+    case bson::jstOID:
+      return "OID";
+    case bson::Bool:
+      return "Bool";
+    case bson::Date:
+      return "Date";
+    case bson::jstNULL:
+      return "NULL";
+    case bson::RegEx:
+      return "Regex";
+    case bson::DBRef:
+      return "Deprecated";
+    case bson::Code:
+      return "Code";
+    case bson::Symbol:
+      return "Symbol";
+    case bson::CodeWScope:
+      return "Codewscope";
+    case bson::NumberInt:
+      return "NumberInt";
+    case bson::Timestamp:
+      return "Timestamp";
+    case bson::NumberLong:
+      return "NumberLong";
+    case bson::NumberDecimal:
+      return "NumberDecimal";
+    default:
+      DBUG_ASSERT(false);
+  }
+}
+
+const char *sdb_field_type_str(enum enum_field_types type) {
+  switch (type) {
+    case MYSQL_TYPE_BIT:
+      return "BIT";
+    case MYSQL_TYPE_BLOB:
+      return "BLOB";
+    case MYSQL_TYPE_DATE:
+      return "DATE";
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_DATETIME2:
+      return "DATETIME";
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_NEWDECIMAL:
+      return "DECIMAL";
+    case MYSQL_TYPE_DOUBLE:
+      return "DOUBLE";
+    case MYSQL_TYPE_ENUM:
+      return "ENUM";
+    case MYSQL_TYPE_FLOAT:
+      return "FLOAT";
+    case MYSQL_TYPE_GEOMETRY:
+      return "GEOMETRY";
+    case MYSQL_TYPE_INT24:
+      return "INT24";
+#ifdef IS_MYSQL
+    case MYSQL_TYPE_JSON:
+      return "JSON";
+#endif
+    case MYSQL_TYPE_LONG:
+      return "LONG";
+    case MYSQL_TYPE_LONGLONG:
+      return "LONGLONG";
+    case MYSQL_TYPE_LONG_BLOB:
+      return "LONG_BLOB";
+    case MYSQL_TYPE_MEDIUM_BLOB:
+      return "MEDIUM_BLOB";
+    case MYSQL_TYPE_NEWDATE:
+      return "NEWDATE";
+    case MYSQL_TYPE_NULL:
+      return "NULL";
+    case MYSQL_TYPE_SET:
+      return "SET";
+    case MYSQL_TYPE_SHORT:
+      return "SHORT";
+    case MYSQL_TYPE_STRING:
+      return "STRING";
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_TIME2:
+      return "TIME";
+    case MYSQL_TYPE_TIMESTAMP:
+    case MYSQL_TYPE_TIMESTAMP2:
+      return "TIMESTAMP";
+    case MYSQL_TYPE_TINY:
+      return "TINY";
+    case MYSQL_TYPE_TINY_BLOB:
+      return "TINY_BLOB";
+    case MYSQL_TYPE_VARCHAR:
+      return "VARCHAR";
+    case MYSQL_TYPE_VAR_STRING:
+      return "VAR_STRING";
+    case MYSQL_TYPE_YEAR:
+      return "YEAR";
+    default:
+      return "unknown type";
+  }
+}

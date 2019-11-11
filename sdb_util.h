@@ -123,4 +123,7 @@ void Sdb_obj_cache<T>::release() {
   }
 }
 
+const char *sdb_elem_type_str(bson::BSONType type);
+const char *sdb_field_type_str(enum enum_field_types type);
+
 #endif
