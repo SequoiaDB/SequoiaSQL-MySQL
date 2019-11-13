@@ -343,7 +343,8 @@ class ha_sdb : public handler {
   int filter_partition_options(const bson::BSONObj &options,
                                bson::BSONObj &table_options);
 
-  int auto_fill_default_options(const bson::BSONObj &options,
+  int auto_fill_default_options(enum enum_compress_type sql_compress,
+                                const bson::BSONObj &options,
                                 const bson::BSONObj &sharding_key,
                                 bson::BSONObjBuilder &build);
 
