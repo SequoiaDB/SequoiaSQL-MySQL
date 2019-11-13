@@ -297,7 +297,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
             char buff[MAX_FIELD_WIDTH] = {0};
             String str(buff, sizeof(buff), item_val->charset_for_protocol());
             String conv_str;
-            String *pStr;
+            String *pStr = NULL;
             pStr = item_val->val_str(&str);
             if (NULL == pStr) {
               rc = SDB_ERR_INVALID_ARG;

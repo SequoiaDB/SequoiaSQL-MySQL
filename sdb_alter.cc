@@ -889,7 +889,7 @@ int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
     }
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_TIMESTAMP: {
-      struct timeval org_val;
+      struct timeval org_val = {0, 0};
       sdb_field_get_timestamp(field, &org_val);
       field->set_default();
       rc = field_to_obj(field, builder);
