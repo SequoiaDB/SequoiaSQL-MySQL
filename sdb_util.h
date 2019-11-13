@@ -25,6 +25,14 @@
 
 #define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
+enum enum_compress_type {
+  SDB_COMPRESS_TYPE_NONE = 0,
+  SDB_COMPRESS_TYPE_LZW,
+  SDB_COMPRESS_TYPE_SNAPPY,
+  SDB_COMPRESS_TYPE_INVALID,
+  SDB_COMPRESS_TYPE_DEAFULT
+};
+
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size);
 
@@ -43,6 +51,12 @@ bool sdb_field_is_floating(enum_field_types type);
 bool sdb_field_is_date_time(enum_field_types type);
 
 int sdb_convert_tab_opt_to_obj(const char *str, bson::BSONObj &obj);
+
+int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
+                               bson::BSONElement &cmt_compressed,
+                               bson::BSONElement &cmt_compress_type,
+                               bool &compress_is_set,
+                               bson::BSONObjBuilder &build);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
@@ -125,5 +139,7 @@ void Sdb_obj_cache<T>::release() {
 
 const char *sdb_elem_type_str(bson::BSONType type);
 const char *sdb_field_type_str(enum enum_field_types type);
+enum enum_compress_type sdb_str_compress_type(const char *compress_type);
+const char *sdb_compress_type_str(enum enum_compress_type type);
 
 #endif

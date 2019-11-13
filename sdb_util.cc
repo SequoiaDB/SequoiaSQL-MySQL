@@ -226,6 +226,87 @@ error:
   goto done;
 }
 
+int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
+                               bson::BSONElement &cmt_compressed,
+                               bson::BSONElement &cmt_compress_type,
+                               bool &compress_is_set,
+                               bson::BSONObjBuilder &build) {
+  int rc = 0;
+  enum enum_compress_type type;
+  if (cmt_compressed.type() != bson::Bool &&
+      cmt_compressed.type() != bson::EOO) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Invalid compression: '%-.192s'", MYF(0),
+                    cmt_compressed.valuestr());
+    goto error;
+  }
+  if (cmt_compress_type.type() != bson::String &&
+      cmt_compress_type.type() != bson::EOO) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Invalid compression: '%-.192s'", MYF(0),
+                    cmt_compress_type.valuestr());
+    goto error;
+  }
+
+  type = sdb_str_compress_type(cmt_compress_type.valuestr());
+  if (cmt_compress_type.type() == bson::String) {
+    if ((cmt_compressed.type() == bson::Bool &&
+         cmt_compressed.Bool() == false) ||
+        (sql_compress != SDB_COMPRESS_TYPE_DEAFULT && type != sql_compress)) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(rc, "Ambiguous compression!", MYF(0));
+      goto error;
+    }
+    build.append(SDB_FIELD_COMPRESSED, true);
+    build.append(cmt_compress_type);
+    goto done;
+  }
+
+  if (cmt_compress_type.type() == bson::EOO) {
+    if (cmt_compressed.type() == bson::Bool && cmt_compressed.Bool() == true) {
+      if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
+        rc = ER_WRONG_ARGUMENTS;
+        goto error;
+      }
+      if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+        build.append(SDB_FIELD_COMPRESSED, true);
+        build.append(SDB_FIELD_COMPRESSION_TYPE, SDB_FIELD_COMPRESS_LZW);
+        goto done;
+      }
+      build.append(SDB_FIELD_COMPRESSED, true);
+      build.append(SDB_FIELD_COMPRESSION_TYPE,
+                   sdb_compress_type_str(sql_compress));
+    } else if (cmt_compressed.type() == bson::Bool &&
+               cmt_compressed.Bool() == false) {
+      if (sql_compress == SDB_COMPRESS_TYPE_NONE ||
+          sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+        build.append(SDB_FIELD_COMPRESSED, false);
+        goto done;
+      }
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(rc, "Ambiguous compression!", MYF(0));
+      goto error;
+    } else {
+      if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
+        build.append(SDB_FIELD_COMPRESSED, false);
+        goto done;
+      }
+      if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+        goto done;
+      }
+      build.append(SDB_FIELD_COMPRESSED, true);
+      build.append(SDB_FIELD_COMPRESSION_TYPE,
+                   sdb_compress_type_str(sql_compress));
+    }
+  }
+
+done:
+  compress_is_set = true;
+  return rc;
+error:
+  goto done;
+}
+
 Sdb_encryption::Sdb_encryption() {
   my_random_bytes(m_key, KEY_LEN);
 }
@@ -347,6 +428,37 @@ const char *sdb_field_type_str(enum enum_field_types type) {
       return "VAR_STRING";
     case MYSQL_TYPE_YEAR:
       return "YEAR";
+    default:
+      return "unknown type";
+  }
+}
+
+enum enum_compress_type sdb_str_compress_type(const char *compress_type) {
+  if (!compress_type || strcasecmp(compress_type, "") == 0) {
+    return SDB_COMPRESS_TYPE_DEAFULT;
+  }
+  if (strcasecmp(compress_type, SDB_FIELD_COMPRESS_NONE) == 0) {
+    return SDB_COMPRESS_TYPE_NONE;
+  }
+  if (strcasecmp(compress_type, SDB_FIELD_COMPRESS_LZW) == 0) {
+    return SDB_COMPRESS_TYPE_LZW;
+  }
+  if (strcasecmp(compress_type, SDB_FIELD_COMPRESS_SNAPPY) == 0) {
+    return SDB_COMPRESS_TYPE_SNAPPY;
+  }
+  return SDB_COMPRESS_TYPE_INVALID;
+}
+
+const char *sdb_compress_type_str(enum enum_compress_type type) {
+  switch (type) {
+    case SDB_COMPRESS_TYPE_DEAFULT:
+      return "";
+    case SDB_COMPRESS_TYPE_NONE:
+      return SDB_FIELD_COMPRESS_NONE;
+    case SDB_COMPRESS_TYPE_LZW:
+      return SDB_FIELD_COMPRESS_LZW;
+    case SDB_COMPRESS_TYPE_SNAPPY:
+      return SDB_FIELD_COMPRESS_SNAPPY;
     default:
       return "unknown type";
   }

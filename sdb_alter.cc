@@ -1603,6 +1603,10 @@ int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
       rc = HA_ERR_WRONG_COMMAND;
       goto error;
     } else if (!(new_tmp_ele == old_tmp_ele)) {
+      if (strcmp(new_tmp_ele.fieldName(), SDB_FIELD_COMPRESSED) == 0 ||
+          strcmp(new_tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) == 0) {
+        continue;
+      }
       build.append(new_tmp_ele);
     }
   }
@@ -1611,6 +1615,10 @@ int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
     new_tmp_ele = it_new.next();
     old_tmp_ele = old_opt_obj.getField(new_tmp_ele.fieldName());
     if (old_tmp_ele.type() == bson::EOO) {
+      if (strcmp(new_tmp_ele.fieldName(), SDB_FIELD_COMPRESSED) == 0 ||
+          strcmp(new_tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) == 0) {
+        continue;
+      }
       build.append(new_tmp_ele);
     }
   }
@@ -1622,12 +1630,16 @@ error:
 }
 
 int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
-                              const char *sdb_new_tab_opt, Sdb_cl &cl) {
+                              const char *sdb_new_tab_opt,
+                              enum enum_compress_type sql_compress,
+                              bool has_compress, bool &compress_is_set,
+                              Sdb_cl &cl) {
   int rc = 0;
   bson::BSONObj old_tab_opt, new_tab_opt;
   bson::BSONElement old_auto_partition, new_auto_partition;
   bson::BSONElement old_opt_ele, new_opt_ele;
   bson::BSONObj old_opt_obj, new_opt_obj;
+  bson::BSONElement cmt_compressed_ele, cmt_compress_type_ele;
   bson::BSONObjBuilder builder;
   bson::BSONObj options;
 
@@ -1680,6 +1692,20 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
   if (old_opt_ele.type() != bson::EOO) {
     DBUG_ASSERT(old_opt_ele.type() == bson::Object);
   }
+
+  if (new_opt_ele.type() == bson::Object) {
+    new_opt_obj = new_opt_ele.embeddedObject();
+    cmt_compressed_ele = new_opt_obj.getField(SDB_FIELD_COMPRESSED);
+    cmt_compress_type_ele = new_opt_obj.getField(SDB_FIELD_COMPRESSION_TYPE);
+    rc = sdb_check_and_set_compress(sql_compress, cmt_compressed_ele,
+                                    cmt_compress_type_ele, compress_is_set,
+                                    builder);
+    if (rc != 0) {
+      my_printf_error(rc, "Ambiguous compression!", MYF(0));
+      goto error;
+    }
+  }
+
   if (old_opt_ele.type() != new_opt_ele.type()) {
     if (new_opt_ele.type() == bson::EOO) {
       rc = HA_ERR_WRONG_COMMAND;
@@ -1697,10 +1723,17 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
     if (new_opt_ele.embeddedObject().isEmpty()) {
       goto done;
     }
-    builder.appendElements(new_opt_ele.embeddedObject());
+    bson::BSONObjIterator it(new_opt_ele.embeddedObject());
+    while (it.more()) {
+      bson::BSONElement tmp_ele = it.next();
+      if (strcmp(tmp_ele.fieldName(), SDB_FIELD_COMPRESSED) == 0 ||
+          strcmp(tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) == 0) {
+        continue;
+      }
+      builder.append(tmp_ele);
+    }
   } else if (old_opt_ele.type() != bson::EOO) {
     old_opt_obj = old_opt_ele.embeddedObject();
-    new_opt_obj = new_opt_ele.embeddedObject();
     rc = sdb_filter_tab_opt(old_opt_obj, new_opt_obj, builder);
     if (0 != rc) {
       my_printf_error(rc, "Can't support reduce table option", MYF(0));
@@ -1758,12 +1791,73 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   if (alter_flags & ALTER_CHANGE_CREATE_OPTION) {
     const char *old_comment = table->s->comment.str;
     const char *new_comment = create_info->comment.str;
+/*Mariadb hasn't sql compress*/
+#if defined IS_MYSQL
+    enum enum_compress_type old_sql_compress =
+        sdb_str_compress_type(table->s->compress.str);
+    enum enum_compress_type new_sql_compress =
+        sdb_str_compress_type(create_info->compress.str);
+#elif defined IS_MARIADB
+    enum enum_compress_type old_sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
+    enum enum_compress_type new_sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
+#endif
+    bool has_compress = false;
+    bool compress_is_set = false;
+    if (old_sql_compress != new_sql_compress) {
+      if (new_sql_compress == SDB_COMPRESS_TYPE_INVALID) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Invalid compression type: '%-.192s'", MYF(0),
+                        sdb_compress_type_str(new_sql_compress));
+        goto error;
+      }
+      has_compress = true;
+    }
+
+    const char *sdb_old_tab_opt = strstr(old_comment, SDB_COMMENT);
+    const char *sdb_new_tab_opt = strstr(new_comment, SDB_COMMENT);
     if (!(old_comment == new_comment ||
           strcmp(old_comment, new_comment) == 0)) {
-      const char *sdb_old_tab_opt = strstr(old_comment, SDB_COMMENT);
-      const char *sdb_new_tab_opt = strstr(new_comment, SDB_COMMENT);
-      rc = sdb_check_and_set_tab_opt(sdb_old_tab_opt, sdb_new_tab_opt, cl);
+      rc = sdb_check_and_set_tab_opt(sdb_old_tab_opt, sdb_new_tab_opt,
+                                     new_sql_compress, has_compress,
+                                     compress_is_set, cl);
       if (0 != rc) {
+        goto error;
+      }
+    }
+
+    if (has_compress && !compress_is_set) {
+      bson::BSONObjBuilder builder;
+      bson::BSONObj new_tab_opt, new_opt_obj;
+      bson::BSONElement new_opt_ele, cmt_compressed_ele, cmt_compress_type_ele;
+      bool compress_is_set = false;
+      bson::BSONObj sql_compress_obj;
+      rc = sdb_convert_tab_opt_to_obj(sdb_new_tab_opt, new_tab_opt);
+      if (0 != rc) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
+                        sdb_new_tab_opt);
+        goto error;
+      }
+
+      new_opt_ele = new_tab_opt.getField(SDB_FIELD_TABLE_OPTIONS);
+      if (new_opt_ele.type() == bson::Object) {
+        new_opt_obj = new_opt_ele.embeddedObject();
+        cmt_compressed_ele = new_opt_obj.getField(SDB_FIELD_COMPRESSED);
+        cmt_compress_type_ele =
+            new_opt_obj.getField(SDB_FIELD_COMPRESSION_TYPE);
+      }
+      rc = sdb_check_and_set_compress(new_sql_compress, cmt_compressed_ele,
+                                      cmt_compress_type_ele, compress_is_set,
+                                      builder);
+      if (rc != 0) {
+        my_printf_error(rc, "Ambiguous compression!", MYF(0));
+        goto error;
+      }
+      sql_compress_obj = builder.obj();
+      rc = cl.set_attributes(sql_compress_obj);
+      if (0 != rc) {
+        my_printf_error(rc, "Failed to alter compression:[%s]", MYF(0),
+                        sql_compress_obj.toString().c_str());
         goto error;
       }
     }

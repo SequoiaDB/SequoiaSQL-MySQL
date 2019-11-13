@@ -3575,7 +3575,8 @@ int ha_sdb::filter_partition_options(const bson::BSONObj &options,
   return rc;
 }
 
-int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
+int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
+                                      const bson::BSONObj &options,
                                       const bson::BSONObj &sharding_key,
                                       bson::BSONObjBuilder &build) {
   int rc = 0;
@@ -3584,9 +3585,8 @@ int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
   bool explicit_is_mainCL = false;
   bool explicit_range_sharding_type = false;
   bool explicit_group = false;
-  bool explicit_compressed_type = false;
-  bson::BSONElement tmp_ele;
-  bool compressed = false;
+  bson::BSONElement cmt_compressed, cmt_compress_type;
+  bool compress_is_set = false;
 
   filter_num = sizeof(auto_fill_fields) / sizeof(*auto_fill_fields);
   filter_options(options, auto_fill_fields, filter_num, build);
@@ -3621,36 +3621,47 @@ int ha_sdb::auto_fill_default_options(const bson::BSONObj &options,
     build.append(options.getField(SDB_FIELD_ENSURE_SHARDING_IDX));
   }
 
-  if (!options.hasField(SDB_FIELD_COMPRESSED)) {
-    build.appendBool(SDB_FIELD_COMPRESSED, true);
-    compressed = true;
-  } else {
-    tmp_ele = options.getField(SDB_FIELD_COMPRESSED);
-    if (tmp_ele.type() == bson::Bool) {
-      compressed = tmp_ele.Bool();
-    } else if (tmp_ele.type() != bson::EOO) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc,
-                      "Failed to parse Compressed! Invalid type[%d] for "
-                      "Compressed",
-                      MYF(0), tmp_ele.type());
-      goto error;
-    }
-    build.append(options.getField(SDB_FIELD_COMPRESSED));
-  }
-
-  if (!(explicit_compressed_type =
-            options.hasField(SDB_FIELD_COMPRESSION_TYPE)) &&
-      compressed) {
-    build.append(SDB_FIELD_COMPRESSION_TYPE, "lzw");
-  } else if (explicit_compressed_type) {
-    build.append(options.getField(SDB_FIELD_COMPRESSION_TYPE));
-  }
-
   if (!options.hasField(SDB_FIELD_REPLSIZE)) {
     build.append(SDB_FIELD_REPLSIZE, sdb_replica_size);
   } else {
     build.append(options.getField(SDB_FIELD_REPLSIZE));
+  }
+
+  if (!options.hasField(SDB_FIELD_STRICT_DATA_MODE)) {
+    build.appendBool(SDB_FIELD_STRICT_DATA_MODE, true);
+  } else {
+    build.append(options.getField(SDB_FIELD_STRICT_DATA_MODE));
+  }
+
+  cmt_compressed = options.getField(SDB_FIELD_COMPRESSED);
+  cmt_compress_type = options.getField(SDB_FIELD_COMPRESSION_TYPE);
+
+  if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+    if (cmt_compress_type.type() == bson::String) {
+      if (cmt_compressed.type() == bson::Bool &&
+          cmt_compressed.Bool() == false) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Ambiguous compression!", MYF(0));
+        goto error;
+      }
+      build.appendBool(SDB_FIELD_COMPRESSED, true);
+      build.append(cmt_compress_type);
+    } else if (cmt_compress_type.type() == bson::EOO) {
+      if (cmt_compressed.type() == bson::Bool &&
+          cmt_compressed.Bool() == false) {
+        build.appendBool(SDB_FIELD_COMPRESSED, false);
+      } else {
+        build.appendBool(SDB_FIELD_COMPRESSED, true);
+        build.append(SDB_FIELD_COMPRESSION_TYPE, SDB_FIELD_COMPRESS_LZW);
+      }
+    }
+  } else {
+    rc = sdb_check_and_set_compress(sql_compress, cmt_compressed,
+                                    cmt_compress_type, compress_is_set, build);
+    if (rc != 0) {
+      my_printf_error(rc, "Ambiguous compression!", MYF(0));
+      goto error;
+    }
   }
 
 done:
@@ -3666,6 +3677,19 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   bson::BSONObj table_options;
   bool explicit_not_auto_partition = false;
   bson::BSONObjBuilder build;
+/*Mariadb hasn't sql compress*/
+#if defined IS_MYSQL
+  enum enum_compress_type sql_compress =
+      sdb_str_compress_type(create_info->compress.str);
+#elif defined IS_MARIADB
+  enum enum_compress_type sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
+#endif
+  if (sql_compress == SDB_COMPRESS_TYPE_INVALID) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Invalid compression: '%-.192s'", MYF(0),
+                    sdb_compress_type_str(sql_compress));
+    goto error;
+  }
 
   if (create_info && create_info->comment.str) {
     char *sdb_cmt_pos = NULL;
@@ -3727,8 +3751,8 @@ comment_done:
       goto error;
     }
   }
-
-  rc = auto_fill_default_options(table_options, sharding_key, build);
+  rc = auto_fill_default_options(sql_compress, table_options, sharding_key,
+                                 build);
   if (rc) {
     goto error;
   }
