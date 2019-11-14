@@ -2384,7 +2384,8 @@ bool ha_sdb::check_element_type_compatible(bson::BSONElement &elem,
 
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_DATETIME2: {
-      compatible = (elem.type() == bson::String);
+      compatible =
+          (elem.type() == bson::String) || (elem.type() == bson::Timestamp);
       break;
     }
 
