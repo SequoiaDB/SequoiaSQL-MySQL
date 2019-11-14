@@ -295,6 +295,26 @@ void *sdb_trans_alloc(THD *thd, size_t size) {
   return thd->get_transaction()->allocate_memory(size);
 }
 
+const char *sdb_da_message_text(Diagnostics_area *da) {
+  return da->message_text();
+}
+
+ulong sdb_da_current_statement_cond_count(Diagnostics_area *da) {
+  return da->current_statement_cond_count();
+}
+
+bool sdb_thd_has_client_capability(THD *thd, ulonglong flag) {
+  return thd->get_protocol()->has_client_capability(flag);
+}
+
+void sdb_thd_set_not_killed(THD *thd) {
+  thd->killed = THD::NOT_KILLED;
+}
+
+void sdb_thd_reset_condition_info(THD *thd) {
+  thd->get_stmt_da()->reset_condition_info(thd);
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -528,6 +548,26 @@ void sdb_string_free(String *str) {
 
 void *sdb_trans_alloc(THD *thd, size_t size) {
   return thd->trans_alloc(size);
+}
+
+const char *sdb_da_message_text(Diagnostics_area *da) {
+  return da->message();
+}
+
+ulong sdb_da_current_statement_cond_count(Diagnostics_area *da) {
+  return da->current_statement_warn_count();
+}
+
+bool sdb_thd_has_client_capability(THD *thd, ulonglong flag) {
+  return (thd->client_capabilities & flag);
+}
+
+void sdb_thd_set_not_killed(THD *thd) {
+  thd->killed = NOT_KILLED;
+}
+
+void sdb_thd_reset_condition_info(THD *thd) {
+  thd->get_stmt_da()->clear_warning_info(thd->query_id);
 }
 
 #endif

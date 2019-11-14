@@ -349,7 +349,7 @@ void sdb_set_affected_rows(THD *thd) {
   }
 
   last_insert_id = da->last_insert_id();
-  message_text = const_cast<char *>(da->message_text());
+  message_text = const_cast<char *>(sdb_da_message_text(da));
   saved_char = message_text[0];
 
   // For SQLCOM_INSERT, SQLCOM_REPLACE, SQLCOM_INSERT_SELECT...
@@ -368,7 +368,7 @@ void sdb_set_affected_rows(THD *thd) {
       affected_num = inserted_num - dup_num;
     }
     my_snprintf(buff, sizeof(buff), ER(ER_INSERT_INFO), (long)inserted_num,
-                (long)dup_num, (long)da->current_statement_cond_count());
+                (long)dup_num, (long)sdb_da_current_statement_cond_count(da));
     da->reset_diagnostics_area();
     my_ok(thd, affected_num, last_insert_id, buff);
     DBUG_PRINT("info", ("%llu records duplicated", dup_num));
@@ -382,10 +382,9 @@ void sdb_set_affected_rows(THD *thd) {
     char buff[MYSQL_ERRMSG_SIZE];
 
     my_snprintf(buff, sizeof(buff), ER(ER_UPDATE_INFO), (long)found,
-                (long)updated, (long)da->current_statement_cond_count());
+                (long)updated, (long)sdb_da_current_statement_cond_count(da));
     da->reset_diagnostics_area();
-    has_found_rows =
-        thd->get_protocol()->has_client_capability(CLIENT_FOUND_ROWS);
+    has_found_rows = sdb_thd_has_client_capability(thd, CLIENT_FOUND_ROWS);
     my_ok(thd, has_found_rows ? found : updated, last_insert_id, buff);
     DBUG_PRINT("info", ("%llu records updated", updated));
     found = 0;
@@ -1228,7 +1227,8 @@ const char *ha_sdb::get_dup_info(bson::BSONObj &result) {
       m_dup_key_nr = MAX_KEY;
       for (uint i = 0; i < table->s->keys; ++i) {
         KEY *key = table->key_info + i;
-        if ((key->flags & HA_NOSAME) && 0 == strcmp(key->name, idx_name)) {
+        if ((key->flags & HA_NOSAME) &&
+            0 == strcmp(sdb_key_name(key), idx_name)) {
           m_dup_key_nr = i;
           break;
         }
@@ -1568,9 +1568,9 @@ int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
     rc = 0;
     *optimizer_update = false;
     THD *thd = rfield->table->in_use;
-    thd->killed = THD::NOT_KILLED;
+    sdb_thd_set_not_killed(thd);
     thd->clear_error();
-    thd->get_stmt_da()->reset_condition_info(thd);
+    sdb_thd_reset_condition_info(thd);
     goto error;
   }
   /* set a = -100 (FUNC_ITEM:'-', INT_ITEM:100) */
@@ -1628,9 +1628,9 @@ retry:
     if (is_real) {
       rc = TYPE_OK;
       THD *thd = rfield->table->in_use;
-      thd->killed = THD::NOT_KILLED;
+      sdb_thd_set_not_killed(thd);
       thd->clear_error();
-      thd->get_stmt_da()->reset_condition_info(thd);
+      sdb_thd_reset_condition_info(thd);
       *optimizer_update = false;
       goto error;
     }

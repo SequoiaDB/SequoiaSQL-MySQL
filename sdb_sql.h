@@ -212,6 +212,12 @@ const char *sdb_item_name(const Item *cond_item);
 
 time_round_mode_t sdb_thd_time_round_mode(THD *thd);
 
+bool sdb_thd_has_client_capability(THD *thd, ulonglong flag);
+
+void sdb_thd_set_not_killed(THD *thd);
+
+void sdb_thd_reset_condition_info(THD *thd);
+
 // About Field
 const char *sdb_field_name(const Field *f);
 
@@ -278,5 +284,9 @@ uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
                                bool stay_quiet);
 
 void *sdb_trans_alloc(THD *thd, size_t size);
+
+const char *sdb_da_message_text(Diagnostics_area *da);
+
+ulong sdb_da_current_statement_cond_count(Diagnostics_area *da);
 
 #endif
