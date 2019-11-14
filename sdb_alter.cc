@@ -1599,7 +1599,10 @@ int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
   while (it_old.more()) {
     old_tmp_ele = it_old.next();
     new_tmp_ele = new_opt_obj.getField(old_tmp_ele.fieldName());
-    if (!(new_tmp_ele == old_tmp_ele)) {
+    if (new_tmp_ele.type() == bson::EOO) {
+      rc = HA_ERR_WRONG_COMMAND;
+      goto error;
+    } else if (!(new_tmp_ele == old_tmp_ele)) {
       build.append(new_tmp_ele);
     }
   }
@@ -1611,7 +1614,11 @@ int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
       build.append(new_tmp_ele);
     }
   }
+
+done:
   return rc;
+error:
+  goto done;
 }
 
 int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
@@ -1695,8 +1702,7 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
     old_opt_obj = old_opt_ele.embeddedObject();
     new_opt_obj = new_opt_ele.embeddedObject();
     rc = sdb_filter_tab_opt(old_opt_obj, new_opt_obj, builder);
-    if (SDB_ERR_REDUCE_TABLE_OPTION == rc) {
-      rc = HA_ERR_WRONG_COMMAND;
+    if (0 != rc) {
       my_printf_error(rc, "Can't support reduce table option", MYF(0));
       goto error;
     }
