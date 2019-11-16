@@ -289,4 +289,6 @@ const char *sdb_da_message_text(Diagnostics_area *da);
 
 ulong sdb_da_current_statement_cond_count(Diagnostics_area *da);
 
+Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root);
+
 #endif

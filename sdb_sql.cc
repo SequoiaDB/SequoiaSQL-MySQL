@@ -315,6 +315,14 @@ void sdb_thd_reset_condition_info(THD *thd) {
   thd->get_stmt_da()->reset_condition_info(thd);
 }
 
+Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root) {
+  field = field->clone(mem_root);
+  if (!field || ((Field_blob *)field)->copy_blob_value(mem_root)) {
+    return NULL;
+  }
+  return field;
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -568,6 +576,15 @@ void sdb_thd_set_not_killed(THD *thd) {
 
 void sdb_thd_reset_condition_info(THD *thd) {
   thd->get_stmt_da()->clear_warning_info(thd->query_id);
+}
+
+Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root) {
+  field = ((Field_blob *)field)->clone(mem_root, (my_ptrdiff_t)0);
+  if (!field) {
+    return NULL;
+  }
+  ((Field_blob *)field)->reset_fields();
+  return field;
 }
 
 #endif

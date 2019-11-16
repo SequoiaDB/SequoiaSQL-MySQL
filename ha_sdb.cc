@@ -2444,8 +2444,8 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
   DBUG_ASSERT(0 == strcmp(elem.fieldName(), sdb_field_name(field)));
 
   if (field->flags & BLOB_FLAG) {
-    field = field->clone(&blobroot);
-    if (!field || ((Field_blob *)field)->copy_blob_value(&blobroot)) {
+    field = sdb_clone_field_blob(field, &blobroot);
+    if (!field) {
       rc = HA_ERR_OUT_OF_MEM;
       goto error;
     }
