@@ -58,6 +58,19 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
                                bool &compress_is_set,
                                bson::BSONObjBuilder &build);
 
+const char *sdb_elem_type_str(bson::BSONType type);
+
+const char *sdb_field_type_str(enum enum_field_types type);
+
+enum enum_compress_type sdb_str_compress_type(const char *compress_type);
+
+const char *sdb_compress_type_str(enum enum_compress_type type);
+
+void sdb_tmp_split_cl_fullname(char *cl_fullname, char **cs_name,
+                               char **cl_name);
+
+void sdb_restore_cl_fullname(char *cl_fullname);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;
@@ -136,10 +149,5 @@ void Sdb_obj_cache<T>::release() {
     m_cache_size = 0;
   }
 }
-
-const char *sdb_elem_type_str(bson::BSONType type);
-const char *sdb_field_type_str(enum enum_field_types type);
-enum enum_compress_type sdb_str_compress_type(const char *compress_type);
-const char *sdb_compress_type_str(enum enum_compress_type type);
 
 #endif

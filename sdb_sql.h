@@ -293,4 +293,6 @@ ulong sdb_da_current_statement_cond_count(Diagnostics_area *da);
 
 Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root);
 
+bool sdb_create_table_like(THD *thd);
+
 #endif

@@ -62,6 +62,53 @@ struct Sdb_share {
   }
 };
 
+/**
+  ALTER TABLE main flow of ALGORITHM COPY:
+  1. Copy a new table wtih the same schema in a tmp name.
+  2. Copy the old data to new table by INSERT.
+  3. Rename the old table as an other tmp name.
+  4. Rename the new table as the right name.
+  5. Drop the old table.
+
+  It's complicated when the table is with sub-cl, so this class is needed.
+*/
+class Sdb_cl_copyer : public Sql_alloc {
+ public:
+  Sdb_cl_copyer(Sdb_conn *conn, const char *src_db_name,
+                const char *src_table_name, const char *dst_db_name,
+                const char *dst_table_name);
+
+  int copy();
+
+  int rename(const char *from, const char *to);
+
+  void replace_src_indexes(uint keys, const KEY *key_info);
+
+  void replace_src_auto_inc(const bson::BSONObj &auto_inc_options);
+
+ private:
+  int rename_new_cl();
+
+  int rename_old_cl();
+
+ private:
+  Sdb_conn *m_conn;
+  char *m_mcl_cs;
+  char *m_mcl_name;
+  char *m_new_cs;
+  char *m_new_mcl_tmp_name;
+  char *m_old_mcl_tmp_name;
+  bson::BSONObj m_old_scl_info;
+  List<char> m_new_scl_tmp_fullnames;
+  List<char> m_old_scl_tmp_fullnames;
+
+  bool m_replace_index;
+  uint m_keys;
+  const KEY *m_key_info;
+  bool m_replace_autoinc;
+  bson::BSONObj m_auto_inc_options;
+};
+
 class ha_sdb : public handler {
  public:
   ha_sdb(handlerton *hton, TABLE_SHARE *table_arg);
@@ -415,6 +462,10 @@ class ha_sdb : public handler {
   int insert_row(T &rows, uint row_count);
 
   void update_incr_stat(int incr);
+
+  int copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
+                             char *table_name, TABLE *form,
+                             HA_CREATE_INFO *create_info, bool *has_copy);
 
  private:
   THR_LOCK_DATA lock_data;

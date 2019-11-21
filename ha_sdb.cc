@@ -431,8 +431,9 @@ void sdb_set_affected_rows(THD *thd) {
     DBUG_PRINT("info", ("%llu records duplicated", dup_num));
     dup_num = 0;
 
-    // For SQLCOM_UPDATE...
-  } else if (thd_sdb->found || thd_sdb->updated) {
+  }
+  // For SQLCOM_UPDATE...
+  else if (thd_sdb->found || thd_sdb->updated) {
     ulonglong &found = thd_sdb->found;
     ulonglong &updated = thd_sdb->updated;
     bool has_found_rows = false;
@@ -447,8 +448,9 @@ void sdb_set_affected_rows(THD *thd) {
     found = 0;
     updated = 0;
 
-    // For SQLCOM_DELETE...
-  } else if (thd_sdb->deleted) {
+  }
+  // For SQLCOM_DELETE...
+  else if (thd_sdb->deleted) {
     ulonglong &deleted = thd_sdb->deleted;
     da->reset_diagnostics_area();
     message_text[0] = saved_char;
@@ -3433,8 +3435,10 @@ int ha_sdb::delete_table(const char *from) {
 
   int rc = 0;
   Sdb_conn *conn = NULL;
+  THD *thd = ha_thd();
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
+  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(thd, rc, 0);
 
   rc = sdb_parse_table_name(from, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
@@ -3449,16 +3453,22 @@ int ha_sdb::delete_table(const char *from) {
     }
   }
 
-  conn = check_sdb_in_thd(ha_thd(), true);
+  conn = check_sdb_in_thd(thd, true);
   if (NULL == conn) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
   rc = conn->drop_cl(db_name, table_name);
   if (0 != rc) {
     goto error;
+  }
+
+  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb->cl_copyer) {
+    // For main-cl, sdb will drop it's scl automatically
+    delete thd_sdb->cl_copyer;
+    thd_sdb->cl_copyer = NULL;
   }
 
 done:
@@ -3468,10 +3478,12 @@ error:
 }
 
 int ha_sdb::rename_table(const char *from, const char *to) {
-  Sdb_conn *conn = NULL;
   int rc = 0;
+  Sdb_conn *conn = NULL;
+  THD *thd = ha_thd();
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rc, 0);
+  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(thd, rc, 0);
 
   char old_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char old_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
@@ -3509,12 +3521,20 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto error;
   }
 
-  conn = check_sdb_in_thd(ha_thd(), true);
+  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb->cl_copyer) {
+    rc = thd_sdb->cl_copyer->rename(old_table_name, new_table_name);
+    if (rc != 0) {
+      goto error;
+    }
+    goto done;
+  }
+
+  conn = check_sdb_in_thd(thd, true);
   if (NULL == conn) {
     rc = HA_ERR_NO_CONNECTION;
     goto error;
   }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
   rc = conn->rename_cl(old_db_name, old_table_name, new_table_name);
   if (0 != rc) {
@@ -3962,19 +3982,125 @@ void ha_sdb::build_auto_inc_option(const Field *field,
   option = build.obj();
 }
 
+// Handle ALTER TABLE in ALGORITHM COPY
+int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
+                                   char *table_name, TABLE *form,
+                                   HA_CREATE_INFO *create_info,
+                                   bool *has_copy) {
+  int rc = 0;
+  *has_copy = false;
+
+  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
+    Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+    SQL_I_List<TABLE_LIST> &table_list = sdb_lex_first_select(thd)->table_list;
+    DBUG_ASSERT(table_list.elements == 1);
+    TABLE_LIST *src_table = table_list.first;
+
+    const char *src_tab_opt =
+        strstr(src_table->table->s->comment.str, SDB_COMMENT);
+    const char *dst_tab_opt = strstr(create_info->comment.str, SDB_COMMENT);
+    src_tab_opt = src_tab_opt ? src_tab_opt : "";
+    dst_tab_opt = dst_tab_opt ? dst_tab_opt : "";
+
+    // if ALTER TABLE changes ENGINE or table_options, don't copy the old.
+    if (src_table->table->s->db_type() == create_info->db_type &&
+        src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE &&
+        0 == strcmp(src_tab_opt, dst_tab_opt)) {
+      *has_copy = true;
+
+      const char *src_db_name = src_table->get_db_name();
+      const char *src_table_name = src_table->get_table_name();
+      bson::BSONObj auto_inc_options;
+
+      Sdb_cl_copyer *cl_copyer = new Sdb_cl_copyer(
+          conn, src_db_name, src_table_name, db_name, table_name);
+      if (!cl_copyer) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
+
+      // Replace auto-increment and indexes, because they may be altered.
+      if (form->found_next_number_field) {
+        build_auto_inc_option(form->found_next_number_field, create_info,
+                              auto_inc_options);
+      }
+      cl_copyer->replace_src_auto_inc(auto_inc_options);
+      cl_copyer->replace_src_indexes(form->s->keys, form->s->key_info);
+
+      rc = cl_copyer->copy();
+      if (rc != 0) {
+        delete cl_copyer;
+        goto error;
+      }
+      thd_sdb->cl_copyer = cl_copyer;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   DBUG_ENTER("ha_sdb::create");
 
   int rc = 0;
   Sdb_conn *conn = NULL;
+  THD *thd = ha_thd();
   Sdb_cl cl;
   bson::BSONObjBuilder build;
   bool create_temporary = (create_info->options & HA_LEX_CREATE_TMP_TABLE);
   bson::BSONObj options;
   bool created_cs = false;
   bool created_cl = false;
+  bool has_copy = false;
 
   SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
+
+  conn = check_sdb_in_thd(ha_thd(), true);
+  if (NULL == conn) {
+    rc = HA_ERR_NO_CONNECTION;
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
+                            SDB_CL_NAME_MAX_SIZE);
+  if (0 != rc) {
+    goto error;
+  }
+
+  if (create_temporary) {
+    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
+      rc = HA_WRONG_CREATE_OPTION;
+      goto error;
+    }
+  }
+
+  rc = copy_cl_if_alter_table(thd, conn, db_name, table_name, form, create_info,
+                              &has_copy);
+  if (has_copy) {
+    if (rc != 0) {
+      goto error;
+    }
+    goto done;
+  }
+
+  // Handle CREATE TABLE t2 LIKE t1.
+  if (sdb_create_table_like(thd)) {
+    TABLE_LIST *src_table = thd->lex->create_last_non_select_table->next_global;
+    if (src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE) {
+      const char *src_db_name = src_table->get_db_name();
+      const char *src_table_name = src_table->get_table_name();
+      Sdb_cl_copyer cl_copyer(conn, src_db_name, src_table_name, db_name,
+                              table_name);
+      rc = cl_copyer.copy();
+      if (rc != 0) {
+        goto error;
+      }
+      goto done;
+    }
+  }
 
   for (Field **fields = form->field; *fields; fields++) {
     Field *field = *fields;
@@ -3999,31 +4125,11 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     }
   }
 
-  rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
-                            SDB_CL_NAME_MAX_SIZE);
-  if (0 != rc) {
-    goto error;
-  }
-
-  if (create_temporary) {
-    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
-      rc = HA_WRONG_CREATE_OPTION;
-      goto error;
-    }
-  }
-
   rc = get_cl_options(form, create_info, options);
   if (0 != rc) {
     goto error;
   }
-
   build.appendElements(options);
-  conn = check_sdb_in_thd(ha_thd(), true);
-  if (NULL == conn) {
-    rc = HA_ERR_NO_CONNECTION;
-    goto error;
-  }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
                        &created_cl);

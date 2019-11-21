@@ -323,6 +323,10 @@ Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root) {
   return field;
 }
 
+bool sdb_create_table_like(THD *thd) {
+  return (thd->lex->create_info.options & HA_LEX_CREATE_TABLE_LIKE);
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -585,6 +589,10 @@ Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root) {
   }
   ((Field_blob *)field)->reset_fields();
   return field;
+}
+
+bool sdb_create_table_like(THD *thd) {
+  return thd->lex->create_info.like();
 }
 
 #endif

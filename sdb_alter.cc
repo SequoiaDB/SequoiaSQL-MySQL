@@ -56,6 +56,9 @@ static const enum_field_types INT_TYPES[INT_TYPE_NUM] = {
 static const uint FLOAT_EXACT_DIGIT_LEN = 5;
 static const uint DOUBLE_EXACT_DIGIT_LEN = 15;
 
+static const int SDB_COPY_WITHOUT_INDEX = 1;
+static const int SDB_COPY_WITHOUT_AUTO_INC = 2;
+
 uint get_int_bit_num(enum_field_types type) {
   static const uint INT_BIT_NUMS[INT_TYPE_NUM] = {8, 16, 24, 32, 64};
   uint i = 0;
@@ -762,73 +765,6 @@ int get_type_idx(enum enum_field_types type) {
       DBUG_ASSERT(false);
       return 0;
     }
-  }
-}
-
-const char *sdb_fieldtype2str(enum enum_field_types type) {
-  switch (type) {
-    case MYSQL_TYPE_BIT:
-      return "BIT";
-    case MYSQL_TYPE_BLOB:
-      return "BLOB";
-    case MYSQL_TYPE_DATE:
-      return "DATE";
-    case MYSQL_TYPE_DATETIME:
-    case MYSQL_TYPE_DATETIME2:
-      return "DATETIME";
-    case MYSQL_TYPE_DECIMAL:
-    case MYSQL_TYPE_NEWDECIMAL:
-      return "DECIMAL";
-    case MYSQL_TYPE_DOUBLE:
-      return "DOUBLE";
-    case MYSQL_TYPE_ENUM:
-      return "ENUM";
-    case MYSQL_TYPE_FLOAT:
-      return "FLOAT";
-    case MYSQL_TYPE_GEOMETRY:
-      return "GEOMETRY";
-    case MYSQL_TYPE_INT24:
-      return "INT24";
-#ifdef IS_MYSQL
-    case MYSQL_TYPE_JSON:
-      return "JSON";
-#endif
-    case MYSQL_TYPE_LONG:
-      return "LONG";
-    case MYSQL_TYPE_LONGLONG:
-      return "LONGLONG";
-    case MYSQL_TYPE_LONG_BLOB:
-      return "LONG_BLOB";
-    case MYSQL_TYPE_MEDIUM_BLOB:
-      return "MEDIUM_BLOB";
-    case MYSQL_TYPE_NEWDATE:
-      return "NEWDATE";
-    case MYSQL_TYPE_NULL:
-      return "NULL";
-    case MYSQL_TYPE_SET:
-      return "SET";
-    case MYSQL_TYPE_SHORT:
-      return "SHORT";
-    case MYSQL_TYPE_STRING:
-      return "STRING";
-    case MYSQL_TYPE_TIME:
-    case MYSQL_TYPE_TIME2:
-      return "TIME";
-    case MYSQL_TYPE_TIMESTAMP:
-    case MYSQL_TYPE_TIMESTAMP2:
-      return "TIMESTAMP";
-    case MYSQL_TYPE_TINY:
-      return "TINY";
-    case MYSQL_TYPE_TINY_BLOB:
-      return "TINY_BLOB";
-    case MYSQL_TYPE_VARCHAR:
-      return "VARCHAR";
-    case MYSQL_TYPE_VAR_STRING:
-      return "VAR_STRING";
-    case MYSQL_TYPE_YEAR:
-      return "YEAR";
-    default:
-      return "unknown type";
   }
 }
 
@@ -1935,5 +1871,740 @@ error:
   if (get_sdb_code(rc) < 0) {
     handle_sdb_error(rc, MYF(0));
   }
+  goto done;
+}
+
+Sdb_cl_copyer::Sdb_cl_copyer(Sdb_conn *conn, const char *src_db_name,
+                             const char *src_table_name,
+                             const char *dst_db_name,
+                             const char *dst_table_name) {
+  m_conn = conn;
+  m_mcl_cs = const_cast<char *>(src_db_name);
+  m_mcl_name = const_cast<char *>(src_table_name);
+  m_new_cs = const_cast<char *>(dst_db_name);
+  m_new_mcl_tmp_name = const_cast<char *>(dst_table_name);
+  m_old_mcl_tmp_name = NULL;
+  m_replace_index = false;
+  m_keys = -1;
+  m_key_info = NULL;
+  m_replace_autoinc = false;
+}
+
+void Sdb_cl_copyer::replace_src_indexes(uint keys, const KEY *key_info) {
+  m_replace_index = true;
+  m_keys = keys;
+  m_key_info = key_info;
+}
+
+void Sdb_cl_copyer::replace_src_auto_inc(
+    const bson::BSONObj &auto_inc_options) {
+  m_replace_autoinc = true;
+  m_auto_inc_options = auto_inc_options;
+}
+
+int sdb_extra_autoinc_option_from_snap(Sdb_conn *conn,
+                                       const bson::BSONObj &autoinc_info,
+                                       bson::BSONObjBuilder &builder) {
+  static const char *AUTOINC_SAME_FIELDS[] = {
+      SDB_FIELD_INCREMENT, SDB_FIELD_START_VALUE, SDB_FIELD_MIN_VALUE,
+      SDB_FIELD_MAX_VALUE, SDB_FIELD_CACHE_SIZE,  SDB_FIELD_ACQUIRE_SIZE,
+      SDB_FIELD_CYCLED};
+  static const int AUTOINC_SAME_FIELD_COUNT =
+      sizeof(AUTOINC_SAME_FIELDS) / sizeof(const char *);
+
+  DBUG_ENTER("sdb_extra_autoinc_option_from_snap");
+  DBUG_PRINT("info", ("autoinc_info: %s", autoinc_info.toString(true).c_str()));
+
+  int rc = 0;
+  bson::BSONObjIterator it(autoinc_info);
+  bson::BSONArrayBuilder autoinc_builder(
+      builder.subarrayStart(SDB_FIELD_AUTOINCREMENT));
+  while (it.more()) {
+    bson::BSONElement obj_ele = it.next();
+    bson::BSONObj obj;
+    bson::BSONElement ele;
+    longlong id = 0;
+    bson::BSONObj result;
+    bson::BSONObj cond;
+
+    if (obj_ele.type() != bson::Object) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    obj = obj_ele.embeddedObject();
+
+    ele = obj.getField(SDB_FIELD_SEQUENCE_ID);
+    if (!ele.isNumber()) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    id = ele.numberLong();
+
+    cond = BSON(SDB_FIELD_ID << id);
+    rc = conn->snapshot(result, SDB_SNAP_SEQUENCES, cond);
+    if (rc != 0) {
+      goto error;
+    }
+
+    bson::BSONObjBuilder def_builder(autoinc_builder.subobjStart());
+    def_builder.append(obj.getField(SDB_FIELD_NAME_FIELD));
+    def_builder.append(obj.getField(SDB_FIELD_GENERATED));
+    for (int i = 0; i < AUTOINC_SAME_FIELD_COUNT; ++i) {
+      ele = result.getField(AUTOINC_SAME_FIELDS[i]);
+      if (ele.type() != bson::EOO) {
+        def_builder.append(ele);
+      }
+    }
+    def_builder.done();
+  }
+  autoinc_builder.done();
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *cs_name,
+                                  const char *cl_name, bson::BSONObj &options,
+                                  bson::BSONObj &cata_info,
+                                  bool with_autoinc = true) {
+  static const char *OPT_SAME_FIELDS[] = {SDB_FIELD_SHARDING_KEY,
+                                          SDB_FIELD_SHARDING_TYPE,
+                                          SDB_FIELD_REPLSIZE,
+                                          SDB_FIELD_ISMAINCL,
+                                          SDB_FIELD_ENSURE_SHARDING_IDX,
+                                          SDB_FIELD_LOB_SHD_KEY_FMT,
+                                          SDB_FIELD_PARTITION,
+                                          SDB_FIELD_AUTO_SPLIT};
+  static const int OPT_SAME_FIELD_COUNT =
+      sizeof(OPT_SAME_FIELDS) / sizeof(const char *);
+  static const int ATTR_COMPRESSED = 1;
+  static const int ATTR_NOIDINDEX = 2;
+  static const int ATTR_STRICTDATAMODE = 8;
+
+  DBUG_ENTER("sdb_extra_cl_option_from_snap");
+
+  int rc = 0;
+  char fullname[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  snprintf(fullname, SDB_CL_FULL_NAME_MAX_SIZE, "%s.%s", cs_name, cl_name);
+  bson::BSONObj cond = BSON(SDB_FIELD_NAME << fullname);
+  bson::BSONObj result;
+
+  bson::BSONObjBuilder builder;
+  bson::BSONElement ele;
+  int cl_attribute = 0;
+
+  rc = conn->snapshot(result, SDB_SNAP_CATALOG, cond);
+  if (rc != 0) {
+    goto error;
+  }
+
+  for (int i = 0; i < OPT_SAME_FIELD_COUNT; ++i) {
+    ele = result.getField(OPT_SAME_FIELDS[i]);
+    if (ele.type() != bson::EOO) {
+      builder.append(ele);
+    }
+  }
+
+  // Collection attributes
+  ele = result.getField(SDB_FIELD_ATTRIBUTE);
+  if (ele.type() != bson::NumberInt) {
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+  cl_attribute = ele.numberInt();
+
+  if (cl_attribute & ATTR_COMPRESSED) {
+    builder.append(SDB_FIELD_COMPRESSED, true);
+    ele = result.getField(SDB_FIELD_COMPRESSION_TYPE_DESC);
+    if (ele.type() != bson::String) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    builder.append(SDB_FIELD_COMPRESSION_TYPE, ele.valuestr());
+  } else {
+    builder.append(SDB_FIELD_COMPRESSED, false);
+  }
+
+  if (cl_attribute & ATTR_NOIDINDEX) {
+    builder.append(SDB_FIELD_AUTOINDEXID, false);
+  }
+
+  if (cl_attribute & ATTR_STRICTDATAMODE) {
+    builder.append(SDB_FIELD_STRICT_DATA_MODE, true);
+  }
+
+  ele = result.getField(SDB_FIELD_CATAINFO);
+  if (ele.type() != bson::Array) {
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+  cata_info = ele.embeddedObject().getOwned();
+
+  // Specific the `Group` by first elements of CataInfo.
+  if (!result.getField(SDB_FIELD_AUTO_SPLIT).booleanSafe() &&
+      !result.getField(SDB_FIELD_ISMAINCL).booleanSafe()) {
+    bson::BSONObjIterator it(cata_info);
+    bson::BSONElement group_ele;
+    bson::BSONElement name_ele;
+
+    if (!it.more()) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    group_ele = it.next();
+    if (group_ele.type() != bson::Object) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    name_ele = group_ele.embeddedObject().getField(SDB_FIELD_GROUP_NAME);
+    if (name_ele.type() != bson::String) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    builder.append(SDB_FIELD_GROUP, name_ele.valuestr());
+  }
+
+  // AutoIncrement field
+  if (with_autoinc) {
+    ele = result.getField(SDB_FIELD_AUTOINCREMENT);
+    if (ele.type() != bson::EOO) {
+      bson::BSONObj autoinc_info;
+      if (ele.type() != bson::Array) {
+        rc = SDB_ERR_INVALID_ARG;
+        goto error;
+      }
+      autoinc_info = ele.embeddedObject();
+      rc = sdb_extra_autoinc_option_from_snap(conn, autoinc_info, builder);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+  }
+
+  options = builder.obj();
+  DBUG_PRINT("info", ("options: %s, cata_info: %s", options.toString().c_str(),
+                      cata_info.toString().c_str()));
+done:
+  DBUG_RETURN(rc);
+error:
+  if (SDB_ERR_INVALID_ARG == rc) {
+    SDB_LOG_ERROR("Unexpected catalog info of cl[%s]",
+                  result.toString().c_str());
+    rc = HA_ERR_INTERNAL_ERROR;
+  }
+  goto done;
+}
+
+int sdb_copy_group_distribution(Sdb_cl &cl, bson::BSONObj &cata_info) {
+  DBUG_ENTER("sdb_copy_group_distribution");
+
+  int rc = 0;
+  bson::BSONObjIterator it(cata_info);
+  DBUG_ASSERT(it.more());
+  bson::BSONElement from_ele = it.next();
+  bson::BSONElement from_name_ele;
+  const char *from_group_name = NULL;
+
+  if (from_ele.type() != bson::Object) {
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+  from_name_ele = from_ele.embeddedObject().getField(SDB_FIELD_GROUP_NAME);
+  if (from_name_ele.type() != bson::String) {
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+  from_group_name = from_name_ele.valuestr();
+
+  while (it.more()) {
+    bson::BSONElement to_ele = it.next();
+    bson::BSONObj to_group;
+    bson::BSONElement to_name_ele;
+    const char *to_group_name = NULL;
+    bson::BSONElement low_bound_ele;
+    bson::BSONObj low_bound;
+    bson::BSONElement up_bound_ele;
+    bson::BSONObj up_bound;
+
+    if (to_ele.type() != bson::Object) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    to_group = to_ele.embeddedObject();
+
+    to_name_ele = to_group.getField(SDB_FIELD_GROUP_NAME);
+    if (to_name_ele.type() != bson::String) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    to_group_name = to_name_ele.valuestr();
+
+    low_bound_ele = to_group.getField(SDB_FIELD_LOW_BOUND);
+    if (low_bound_ele.type() != bson::Object) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    low_bound = low_bound_ele.embeddedObject();
+
+    up_bound_ele = to_group.getField(SDB_FIELD_UP_BOUND);
+    if (up_bound_ele.type() != bson::Object) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    up_bound = up_bound_ele.embeddedObject();
+
+    DBUG_PRINT("info", ("split from %s to %s. low: %s, up: %s", from_group_name,
+                        to_group_name, low_bound.toString().c_str(),
+                        up_bound.toString().c_str()));
+    rc = cl.split(from_group_name, to_group_name, low_bound, up_bound);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  if (SDB_ERR_INVALID_ARG == rc) {
+    SDB_LOG_ERROR("Unexpected catalog info to split[%s]",
+                  cata_info.toString().c_str());
+    rc = HA_ERR_INTERNAL_ERROR;
+  }
+  goto done;
+}
+
+int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
+  DBUG_ENTER("sdb_copy_cl");
+  int rc = 0;
+  uint i = 0;
+  std::vector<bson::BSONObj> infos;
+
+  rc = src_cl.get_indexes(infos);
+  if (rc != 0) {
+    goto error;
+  }
+  for (i = 0; i < infos.size(); ++i) {
+    bson::BSONElement index_def_ele;
+    bson::BSONObj index_def;
+    bson::BSONElement name_ele;
+    const char *name = NULL;
+    bson::BSONObj key;
+    bson::BSONObj options;
+
+    index_def_ele = infos[i].getField(SDB_FIELD_IDX_DEF);
+    if (index_def_ele.type() != bson::Object) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    index_def = index_def_ele.embeddedObject();
+
+    name_ele = index_def.getField(SDB_FIELD_NAME2);
+    if (name_ele.type() != bson::String) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    name = name_ele.valuestr();
+
+    if ('$' == name[0]) {  // Skip system index
+      continue;
+    }
+
+    {
+      bson::BSONObjBuilder builder;
+      bson::BSONElement key_ele = index_def.getField(SDB_FIELD_KEY);
+      if (key_ele.type() != bson::Object) {
+        rc = SDB_ERR_INVALID_ARG;
+        goto error;
+      }
+      key = key_ele.embeddedObject();
+
+      builder.append(SDB_FIELD_UNIQUE,
+                     index_def.getField(SDB_FIELD_UNIQUE2).booleanSafe());
+      builder.append(SDB_FIELD_ENFORCED,
+                     index_def.getField(SDB_FIELD_ENFORCED2).booleanSafe());
+      builder.append(SDB_FIELD_NOT_NULL,
+                     index_def.getField(SDB_FIELD_NOT_NULL).booleanSafe());
+      options = builder.obj();
+    }
+
+    DBUG_PRINT("info", ("name: %s, key: %s, options: %s", name,
+                        key.toString().c_str(), options.toString().c_str()));
+    rc = dst_cl.create_index(key, name, options);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  if (SDB_ERR_INVALID_ARG == rc) {
+    SDB_LOG_ERROR("Unexpected index info to copy[%s]",
+                  infos[i].toString().c_str());
+    rc = HA_ERR_INTERNAL_ERROR;
+  }
+  goto done;
+}
+
+/**
+  Copy a collection with the same metadata, including it's options, indexes,
+  auto-increment field and so on.
+*/
+int sdb_copy_cl(Sdb_conn *conn, char *src_cs_name, char *src_cl_name,
+                char *dst_cs_name, char *dst_cl_name, int flags = 0,
+                bool *is_main_cl = NULL, bson::BSONObj *scl_info = NULL) {
+  DBUG_ENTER("sdb_copy_cl");
+  DBUG_PRINT("info", ("src: %s.%s, dst: %s.%s", src_cs_name, src_cl_name,
+                      dst_cs_name, dst_cl_name));
+
+  int rc = 0;
+  int tmp_rc = 0;
+  Sdb_cl src_cl;
+  Sdb_cl dst_cl;
+  bool created_cs = false;
+  bool created_cl = false;
+  bool cl_is_main = false;
+  bool cl_autosplit = false;
+  bson::BSONObj options;
+  bson::BSONObj cata_info;
+  bool with_autoinc = !(flags & SDB_COPY_WITHOUT_AUTO_INC);
+
+  rc = sdb_extra_cl_option_from_snap(conn, src_cs_name, src_cl_name, options,
+                                     cata_info, with_autoinc);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = conn->create_cl(dst_cs_name, dst_cl_name, options, &created_cs,
+                       &created_cl);
+  if (rc != 0) {
+    goto error;
+  }
+  if (!created_cl) {
+    SDB_LOG_WARNING("The cl[%s.%s] to be copied has already existed.",
+                    dst_cs_name, dst_cl_name);
+  }
+
+  rc = conn->get_cl(src_cs_name, src_cl_name, src_cl);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = conn->get_cl(dst_cs_name, dst_cl_name, dst_cl);
+  if (rc != 0) {
+    goto error;
+  }
+
+  cl_is_main = options.getField(SDB_FIELD_ISMAINCL).booleanSafe();
+  cl_autosplit = options.getField(SDB_FIELD_AUTO_SPLIT).booleanSafe();
+  if (!cl_autosplit && !cl_is_main) {
+    rc = sdb_copy_group_distribution(dst_cl, cata_info);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+
+  if (!(flags & SDB_COPY_WITHOUT_INDEX)) {
+    rc = sdb_copy_index(src_cl, dst_cl);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+
+  if (is_main_cl != NULL) {
+    *is_main_cl = cl_is_main;
+  }
+  if (scl_info != NULL) {
+    *scl_info = cl_is_main ? cata_info : SDB_EMPTY_BSON;
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  if (created_cl) {
+    tmp_rc = dst_cl.drop();
+    if (tmp_rc != 0) {
+      SDB_LOG_WARNING(
+          "Failed to rollback the creation of copied cl[%s.%s], rc: %d",
+          dst_cs_name, dst_cl_name, tmp_rc);
+    }
+  }
+  goto done;
+}
+
+int Sdb_cl_copyer::copy() {
+  DBUG_ENTER("Sdb_cl_copyer::copy");
+  int rc = 0;
+  int tmp_rc = 0;
+
+  bool is_main_cl = false;
+  bson::BSONObj scl_info;
+  char *cl_fullname = NULL;
+  char *cs_name = NULL;
+  char *cl_name = NULL;
+  char *new_fullname = NULL;
+  uint name_len = 0;
+  char tmp_name_buf[SDB_CL_NAME_MAX_SIZE] = {0};
+  int scl_id = 0;
+
+  Sdb_cl mcl;
+  bson::BSONObj options;
+  bson::BSONObj obj;
+  bson::BSONObjIterator bo_it;
+  List_iterator_fast<char> list_it;
+
+  /*
+    1. Copy cl without indexes.
+    2. If it's mcl, copy and attach it's scl. Else skip.
+    3. Create indexes.
+
+    Indexes must be created after attaching scl, or scl would miss indexes.
+  */
+  int flags = SDB_COPY_WITHOUT_INDEX;
+  if (m_replace_autoinc) {
+    flags |= SDB_COPY_WITHOUT_AUTO_INC;
+  }
+  rc = sdb_copy_cl(m_conn, m_mcl_cs, m_mcl_name, m_new_cs, m_new_mcl_tmp_name,
+                   flags, &is_main_cl, &scl_info);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (!is_main_cl) {
+    m_old_scl_info = SDB_EMPTY_BSON;
+  } else {
+    m_old_scl_info = scl_info.getOwned();
+  }
+
+  rc = m_conn->get_cl(m_new_cs, m_new_mcl_tmp_name, mcl);
+  if (rc != 0) {
+    goto error;
+  }
+
+  scl_id = rand();
+  bo_it = bson::BSONObjIterator(m_old_scl_info);
+  while (bo_it.more()) {
+    bson::BSONElement ele = bo_it.next();
+    bson::BSONElement scl_name_ele;
+
+    if (ele.type() != bson::Object) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    obj = ele.embeddedObject();
+
+    scl_name_ele = obj.getField(SDB_FIELD_SUBCL_NAME);
+    if (scl_name_ele.type() != bson::String) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    cl_fullname = const_cast<char *>(scl_name_ele.valuestr());
+
+    sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
+    snprintf(tmp_name_buf, SDB_CL_NAME_MAX_SIZE, "%s-%d", m_new_mcl_tmp_name,
+             scl_id++);
+    rc = sdb_copy_cl(m_conn, cs_name, cl_name, cs_name, tmp_name_buf,
+                     SDB_COPY_WITHOUT_INDEX);
+    if (rc != 0) {
+      sdb_restore_cl_fullname(cl_fullname);
+      goto error;
+    }
+
+    name_len = strlen(cs_name) + strlen(tmp_name_buf) + 2;
+    new_fullname = (char *)thd_alloc(current_thd, name_len);
+    if (!new_fullname) {
+      rc = HA_ERR_OUT_OF_MEM;
+      sdb_restore_cl_fullname(cl_fullname);
+      goto error;
+    }
+
+    snprintf(new_fullname, name_len, "%s.%s", cs_name, tmp_name_buf);
+    sdb_restore_cl_fullname(cl_fullname);
+    if (m_new_scl_tmp_fullnames.push_back(new_fullname)) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+
+    {
+      bson::BSONObjBuilder builder;
+      builder.append(obj.getField(SDB_FIELD_LOW_BOUND));
+      builder.append(obj.getField(SDB_FIELD_UP_BOUND));
+      options = builder.obj();
+    }
+    rc = mcl.attach_collection(new_fullname, options);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+
+  if (m_replace_index) {
+    for (uint i = 0; i < m_keys; ++i) {
+      rc = sdb_create_index(m_key_info + i, mcl);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+  } else {
+    Sdb_cl old_mcl;
+    rc = m_conn->get_cl(m_mcl_cs, m_mcl_name, old_mcl);
+    if (rc != 0) {
+      goto error;
+    }
+    rc = sdb_copy_index(old_mcl, mcl);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+
+  if (m_replace_autoinc && !m_auto_inc_options.isEmpty()) {
+    rc = mcl.create_auto_increment(m_auto_inc_options);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  list_it.init(m_new_scl_tmp_fullnames);
+  while ((cl_fullname = list_it++)) {
+    sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
+    tmp_rc = m_conn->drop_cl(cs_name, cl_name);
+    sdb_restore_cl_fullname(cl_fullname);
+    if (tmp_rc != 0) {
+      SDB_LOG_WARNING("Failed to rollback creation of sub cl[%s], rc: %d",
+                      cl_fullname, tmp_rc);
+    }
+  }
+  if (SDB_ERR_INVALID_ARG == rc) {
+    SDB_LOG_ERROR("Unexpected scl catalog info[%s]",
+                  scl_info.toString().c_str());
+    rc = HA_ERR_INTERNAL_ERROR;
+  }
+  goto done;
+}
+
+int Sdb_cl_copyer::rename_new_cl() {
+  DBUG_ENTER("Sdb_cl_copyer::rename_new_cl");
+  int rc = 0;
+  char *cl_fullname = NULL;
+  char *cs_name = NULL;
+  char *cl_name = NULL;
+  char *right_cl_name = NULL;
+
+  List_iterator_fast<char> list_it(m_new_scl_tmp_fullnames);
+  bson::BSONObjIterator bo_it(m_old_scl_info);
+
+  while ((cl_fullname = list_it++)) {
+    bson::BSONObj obj = bo_it.next().embeddedObject();
+    right_cl_name =
+        const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
+    right_cl_name = strchr(right_cl_name, '.') + 1;
+
+    sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
+    DBUG_PRINT("info",
+               ("cs: %s, from: %s, to: %s", cs_name, cl_name, right_cl_name));
+    rc = m_conn->rename_cl(cs_name, cl_name, right_cl_name);
+    sdb_restore_cl_fullname(cl_fullname);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  // No need to rollback. Part is better than nothing.
+  goto done;
+}
+
+int Sdb_cl_copyer::rename_old_cl() {
+  DBUG_ENTER("Sdb_cl_copyer::rename_old_cl");
+  int rc = 0;
+  int tmp_rc = 0;
+  char *cl_fullname = NULL;
+  char *cs_name = NULL;
+  char *cl_name = NULL;
+  char tmp_name_buf[SDB_CL_NAME_MAX_SIZE];
+  char *new_fullname = NULL;
+  uint name_len = 0;
+  int scl_id = rand();
+
+  bson::BSONObjIterator it(m_old_scl_info);
+  while (it.more()) {
+    bson::BSONObj obj = it.next().embeddedObject();
+    cl_fullname =
+        const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
+    sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
+
+    snprintf(tmp_name_buf, SDB_CL_NAME_MAX_SIZE, "%s-%d", m_old_mcl_tmp_name,
+             scl_id++);
+    DBUG_PRINT("info",
+               ("cs: %s, from: %s, to: %s", cs_name, cl_name, tmp_name_buf));
+    rc = m_conn->rename_cl(cs_name, cl_name, tmp_name_buf);
+    if (rc != 0) {
+      sdb_restore_cl_fullname(cl_fullname);
+      goto error;
+    }
+
+    name_len = strlen(cs_name) + strlen(tmp_name_buf) + 2;
+    new_fullname = (char *)thd_alloc(current_thd, name_len);
+    if (!new_fullname) {
+      rc = HA_ERR_OUT_OF_MEM;
+      sdb_restore_cl_fullname(cl_fullname);
+      goto error;
+    }
+
+    snprintf(new_fullname, name_len, "%s.%s", cs_name, tmp_name_buf);
+    sdb_restore_cl_fullname(cl_fullname);
+    if (m_old_scl_tmp_fullnames.push_back(new_fullname)) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  // Reverse rename
+  {
+    List_iterator_fast<char> list_it(m_old_scl_tmp_fullnames);
+    bson::BSONObjIterator bo_it(m_old_scl_info);
+    char *right_cl_name = NULL;
+    while ((cl_fullname = list_it++)) {
+      bson::BSONObj obj = bo_it.next().embeddedObject();
+      right_cl_name =
+          const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
+      right_cl_name = strchr(right_cl_name, '.') + 1;
+
+      sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
+      tmp_rc = m_conn->rename_cl(cs_name, cl_name, right_cl_name);
+      sdb_restore_cl_fullname(cl_fullname);
+      if (tmp_rc != 0) {
+        SDB_LOG_WARNING("Failed to rollback rename cl from [%s.%s] to [%s]",
+                        cs_name, right_cl_name, cl_name);
+      }
+    }
+  }
+  goto done;
+}
+
+int Sdb_cl_copyer::rename(const char *from, const char *to) {
+  DBUG_ENTER("Sdb_cl_copyer::rename");
+  int rc = 0;
+
+  if (0 == strcmp(from, m_mcl_name)) {
+    m_old_mcl_tmp_name = const_cast<char *>(to);
+    rc = rename_old_cl();
+  } else if (0 == strcmp(to, m_mcl_name)) {
+    rc = rename_new_cl();
+  }
+
+  DBUG_PRINT("info", ("cs: %s, from: %s, to: %s", m_mcl_cs, from, to));
+  rc = m_conn->rename_cl(m_mcl_cs, const_cast<char *>(from),
+                         const_cast<char *>(to));
+  if (rc != 0) {
+    goto error;
+  }
+done:
+  DBUG_RETURN(rc);
+error:
   goto done;
 }
