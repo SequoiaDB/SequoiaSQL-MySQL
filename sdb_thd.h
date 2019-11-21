@@ -22,6 +22,8 @@
 
 extern handlerton* sdb_hton;
 
+class Sdb_cl_copyer;
+
 struct Sdb_local_table_statistics {
   int no_uncommitted_rows_count;
 };
@@ -58,6 +60,9 @@ class Thd_sdb {
   // store stats info for each open table share
   // update stats of m_share after transaction commit
   HASH open_table_shares;
+
+  // For ALTER TABLE in ALGORITHM COPY
+  Sdb_cl_copyer* cl_copyer;
 
  private:
   THD* m_thd;

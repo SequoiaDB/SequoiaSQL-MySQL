@@ -279,4 +279,6 @@ uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
 
 void *sdb_trans_alloc(THD *thd, size_t size);
 
+bool sdb_create_table_like(THD *thd);
+
 #endif

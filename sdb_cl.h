@@ -104,6 +104,15 @@ class Sdb_cl {
                 const bson::BSONObj &condition = SDB_EMPTY_BSON,
                 const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
+  int get_indexes(std::vector<bson::BSONObj> &infos);
+
+  int attach_collection(const char *sub_cl_fullname,
+                        const bson::BSONObj &options);
+
+  int split(const char *source_group_name, const char *target_group_name,
+            const bson::BSONObj &split_cond,
+            const bson::BSONObj &split_end_cond = SDB_EMPTY_BSON);
+
  private:
   int retry(boost::function<int()> func);
 

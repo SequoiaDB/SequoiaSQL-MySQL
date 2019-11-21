@@ -467,3 +467,23 @@ const char *sdb_compress_type_str(enum enum_compress_type type) {
       return "unknown type";
   }
 }
+
+/**
+  Replace the '.' of '<cs_name>.<cl_name>' by '\0' to fast split the cl
+  fullname. After use, call `sdb_restore_cl_fullname()` to restore it.
+*/
+void sdb_tmp_split_cl_fullname(char *cl_fullname, char **cs_name,
+                               char **cl_name) {
+  char *c = strchr(cl_fullname, '.');
+  *c = '\0';
+  *cs_name = cl_fullname;
+  *cl_name = c + 1;
+}
+
+/**
+  Restore the cl fullname splited by `sdb_tmp_split_cl_fullname()`.
+*/
+void sdb_restore_cl_fullname(char *cl_fullname) {
+  char *c = strchr(cl_fullname, '\0');
+  *c = '.';
+}

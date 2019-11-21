@@ -421,3 +421,38 @@ int Sdb_cl::get_count(longlong &count, const bson::BSONObj &condition,
                       const bson::BSONObj &hint) {
   return retry(boost::bind(cl_get_count, &m_cl, &count, &condition, &hint));
 }
+
+int cl_get_indexes(sdbclient::sdbCollection *cl,
+                   std::vector<bson::BSONObj> *infos) {
+  return cl->getIndexes(*infos);
+}
+
+int Sdb_cl::get_indexes(std::vector<bson::BSONObj> &infos) {
+  return retry(boost::bind(cl_get_indexes, &m_cl, &infos));
+}
+
+int cl_attach_collection(sdbclient::sdbCollection *cl,
+                         const char *sub_cl_fullname,
+                         const bson::BSONObj *options) {
+  return cl->attachCollection(sub_cl_fullname, *options);
+}
+
+int Sdb_cl::attach_collection(const char *sub_cl_fullname,
+                              const bson::BSONObj &options) {
+  return retry(
+      boost::bind(cl_attach_collection, &m_cl, sub_cl_fullname, &options));
+}
+
+int cl_split(sdbclient::sdbCollection *cl, const char *source_group_name,
+             const char *target_group_name, const bson::BSONObj *split_cond,
+             const bson::BSONObj *split_end_cond) {
+  return cl->split(source_group_name, target_group_name, *split_cond,
+                   *split_end_cond);
+}
+
+int Sdb_cl::split(const char *source_group_name, const char *target_group_name,
+                  const bson::BSONObj &split_cond,
+                  const bson::BSONObj &split_end_cond) {
+  return retry(boost::bind(cl_split, &m_cl, source_group_name,
+                           target_group_name, &split_cond, &split_end_cond));
+}

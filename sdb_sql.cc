@@ -295,6 +295,10 @@ void *sdb_trans_alloc(THD *thd, size_t size) {
   return thd->get_transaction()->allocate_memory(size);
 }
 
+bool sdb_create_table_like(THD *thd) {
+  return (thd->lex->create_info.options & HA_LEX_CREATE_TABLE_LIKE);
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -528,6 +532,10 @@ void sdb_string_free(String *str) {
 
 void *sdb_trans_alloc(THD *thd, size_t size) {
   return thd->trans_alloc(size);
+}
+
+bool sdb_create_table_like(THD *thd) {
+  return thd->lex->create_info.like();
 }
 
 #endif
