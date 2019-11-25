@@ -3487,7 +3487,7 @@ inline int ha_sdb::get_sharding_key_from_options(const bson::BSONObj &options,
   } else if (tmp_elem.type() != bson::EOO) {
     rc = ER_WRONG_ARGUMENTS;
     my_printf_error(rc,
-                    "Failed to parse pations! Invalid type[%d] for "
+                    "Failed to parse options! Invalid type[%d] for "
                     "ShardingKey",
                     MYF(0), tmp_elem.type());
     goto error;
@@ -3754,7 +3754,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
     } else if (auto_partition.type() != bson::EOO) {
       rc = ER_WRONG_ARGUMENTS;
       my_printf_error(rc,
-                      "Failed to parse cl_options! Invalid type[%d] for "
+                      "Failed to parse options! Invalid type[%d] for "
                       "auto_partition",
                       MYF(0), auto_partition.type());
       goto error;
@@ -3771,7 +3771,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
     } else if (options_ele.type() != bson::EOO) {
       rc = ER_WRONG_ARGUMENTS;
       my_printf_error(rc,
-                      "Failed to parse cl_options! Invalid type[%d] for "
+                      "Failed to parse options! Invalid type[%d] for "
                       "table_options",
                       MYF(0), options_ele.type());
       goto error;
@@ -4026,41 +4026,12 @@ void ha_sdb::print_error(int error, myf errflag) {
   DBUG_PRINT("enter", ("error: %d", error));
 
   rc = get_sdb_code(error);
-  switch (rc) {
-    case SDB_INVALIDARG: {
-      my_error(ER_WRONG_ARGUMENTS, MYF(0), "sdb sql statement");
-      break;
-    }
-    case SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY: {
-      my_error(ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF, MYF(0), "UNIQUE INDEX");
-      break;
-    }
-    case SDB_IXM_DUP_KEY: {
-      handle_sdb_error(error, errflag);
-      break;
-    }
-    case SDB_IXM_KEY_NOTNULL: {
-      my_error(ER_INVALID_USE_OF_NULL, MYF(0), "SDB_IXM_KEY_NOTNULL");
-      break;
-    }
-    case SDB_VALUE_OVERFLOW: {
-      handle_sdb_error(error, errflag);
-      break;
-    }
-    default: {
-      if (rc < SDB_ERR_OK) {
-        // TODO: call function 'handle_sdb_error(error, MYF(0));' adjust test
-        // cases and get rid of ER_GET_ERRNO Rm the 'case SDB_VALUE_OVERFLOW' if
-        // you finish TODO here.
-        my_error(ER_GET_ERRNO, MYF(0), error);
-        goto error;
-      } else {
-        handler::print_error(error, errflag);
-      }
-      break;
-    }
+  if (rc < SDB_ERR_OK) {
+    handle_sdb_error(error, errflag);
+    goto error;
+  } else {
+    handler::print_error(error, errflag);
   }
-
 done:
   DBUG_VOID_RETURN;
 error:
