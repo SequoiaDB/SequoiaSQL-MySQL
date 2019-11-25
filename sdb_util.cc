@@ -236,7 +236,7 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
   if (cmt_compressed.type() != bson::Bool &&
       cmt_compressed.type() != bson::EOO) {
     rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Invalid compression: '%-.192s'", MYF(0),
+    my_printf_error(rc, "Invalid compressed: '%-.192s'", MYF(0),
                     cmt_compressed.valuestr());
     goto error;
   }
@@ -254,7 +254,7 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
          cmt_compressed.Bool() == false) ||
         (sql_compress != SDB_COMPRESS_TYPE_DEAFULT && type != sql_compress)) {
       rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous compression!", MYF(0));
+      my_printf_error(rc, "Ambiguous compression", MYF(0));
       goto error;
     }
     build.append(SDB_FIELD_COMPRESSED, true);
@@ -284,7 +284,7 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
         goto done;
       }
       rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous compression!", MYF(0));
+      my_printf_error(rc, "Ambiguous compression", MYF(0));
       goto error;
     } else {
       if (sql_compress == SDB_COMPRESS_TYPE_NONE) {

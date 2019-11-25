@@ -1701,7 +1701,7 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
                                     cmt_compress_type_ele, compress_is_set,
                                     builder);
     if (rc != 0) {
-      my_printf_error(rc, "Ambiguous compression!", MYF(0));
+      my_printf_error(rc, "Ambiguous compression", MYF(0));
       goto error;
     }
   }
@@ -1806,8 +1806,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     if (old_sql_compress != new_sql_compress) {
       if (new_sql_compress == SDB_COMPRESS_TYPE_INVALID) {
         rc = ER_WRONG_ARGUMENTS;
-        my_printf_error(rc, "Invalid compression type: '%-.192s'", MYF(0),
-                        sdb_compress_type_str(new_sql_compress));
+        my_printf_error(rc, "Invalid compression type", MYF(0));
         goto error;
       }
       has_compress = true;
@@ -1850,7 +1849,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                                       cmt_compress_type_ele, compress_is_set,
                                       builder);
       if (rc != 0) {
-        my_printf_error(rc, "Ambiguous compression!", MYF(0));
+        my_printf_error(rc, "Ambiguous compression", MYF(0));
         goto error;
       }
       sql_compress_obj = builder.obj();

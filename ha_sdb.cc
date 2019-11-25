@@ -3641,7 +3641,7 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
       if (cmt_compressed.type() == bson::Bool &&
           cmt_compressed.Bool() == false) {
         rc = ER_WRONG_ARGUMENTS;
-        my_printf_error(rc, "Ambiguous compression!", MYF(0));
+        my_printf_error(rc, "Ambiguous compression", MYF(0));
         goto error;
       }
       build.appendBool(SDB_FIELD_COMPRESSED, true);
@@ -3659,7 +3659,7 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
     rc = sdb_check_and_set_compress(sql_compress, cmt_compressed,
                                     cmt_compress_type, compress_is_set, build);
     if (rc != 0) {
-      my_printf_error(rc, "Ambiguous compression!", MYF(0));
+      my_printf_error(rc, "Ambiguous compression", MYF(0));
       goto error;
     }
   }
@@ -3686,8 +3686,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
 #endif
   if (sql_compress == SDB_COMPRESS_TYPE_INVALID) {
     rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Invalid compression: '%-.192s'", MYF(0),
-                    sdb_compress_type_str(sql_compress));
+    my_printf_error(rc, "Invalid compression type", MYF(0));
     goto error;
   }
 
