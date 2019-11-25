@@ -236,15 +236,19 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
   if (cmt_compressed.type() != bson::Bool &&
       cmt_compressed.type() != bson::EOO) {
     rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Invalid compressed: '%-.192s'", MYF(0),
-                    cmt_compressed.valuestr());
+    my_printf_error(rc,
+                    "Failed to parse options! Invalid type[%d] for"
+                    "Compressed",
+                    MYF(0), cmt_compressed.type());
     goto error;
   }
   if (cmt_compress_type.type() != bson::String &&
       cmt_compress_type.type() != bson::EOO) {
     rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Invalid compression: '%-.192s'", MYF(0),
-                    cmt_compress_type.valuestr());
+    my_printf_error(rc,
+                    "Failed to parse options! Invalid type[%d] for"
+                    "CompressionType",
+                    MYF(0), cmt_compress_type.type());
     goto error;
   }
 

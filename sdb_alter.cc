@@ -1142,10 +1142,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
   static const char *EXCEED_THRESHOLD_MSG =
       "Table is too big to be altered. The records count exceeds the "
       "sequoiadb_alter_table_overhead_threshold.";
-  static const char *DROP_AUTOINC_MSG =
-      "Failed to drop the auto-increment field of cl[%s.%s]";
-  static const char *ADD_AUTOINC_MSG =
-      "Failed to add the auto-increment field of cl[%s.%s]";
 
   int rc = 0;
   int tmp_rc = 0;
@@ -1171,7 +1167,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
   rc = cl.get_count(count);
   if (0 != rc) {
-    my_error(ER_GET_ERRNO, MYF(0), rc);
     goto error;
   }
 
@@ -1221,13 +1216,11 @@ int ha_sdb::alter_column(TABLE *altered_table,
       if (!conn->is_transaction_on()) {
         rc = conn->begin_transaction();
         if (rc != 0) {
-          my_printf_error(rc, "Failed to begin transaction", MYF(0));
+          goto error;
         }
       }
       rc = update_null_to_notnull(cl, info->before, modified_num);
       if (rc != 0) {
-        my_printf_error(rc, "Failed to update column[%s] on cl[%s.%s]", MYF(0),
-                        field_name, db_name, table_name);
         goto error;
       }
       if (modified_num > 0) {
@@ -1269,14 +1262,12 @@ int ha_sdb::alter_column(TABLE *altered_table,
     if (!conn->is_transaction_on()) {
       rc = conn->begin_transaction();
       if (rc != 0) {
-        my_printf_error(rc, "Failed to begin transaction", MYF(0));
+        goto error;
       }
     }
     rc = cl.update(builder.obj(), SDB_EMPTY_BSON, SDB_EMPTY_BSON,
                    UPDATE_KEEP_SHARDINGKEY);
     if (rc != 0) {
-      my_printf_error(rc, "Failed to update table[%s.%s]", MYF(0), db_name,
-                      table_name);
       goto error;
     }
   }
@@ -1284,7 +1275,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
   if (conn->is_transaction_on()) {
     rc = conn->commit_transaction();
     if (rc != 0) {
-      my_printf_error(rc, "Failed to commit update transaction.", MYF(0));
       goto error;
     }
   }
@@ -1311,7 +1301,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
     if (field->flags & AUTO_INCREMENT_FLAG) {
       rc = cl.drop_auto_increment(sdb_field_name(field));
       if (0 != rc) {
-        my_printf_error(rc, DROP_AUTOINC_MSG, MYF(0), db_name, table_name);
         goto error;
       }
     }
@@ -1324,7 +1313,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
       build_auto_inc_option(field, create_info, option);
       rc = cl.create_auto_increment(option);
       if (0 != rc) {
-        my_printf_error(rc, ADD_AUTOINC_MSG, MYF(0), db_name, table_name);
         goto error;
       }
     }
@@ -1335,7 +1323,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
     if (info->op_flag & Col_alter_info::DROP_AUTO_INC) {
       rc = cl.drop_auto_increment(sdb_field_name(info->before));
       if (0 != rc) {
-        my_printf_error(rc, DROP_AUTOINC_MSG, MYF(0), db_name, table_name);
         goto error;
       }
     }
@@ -1345,7 +1332,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
       build_auto_inc_option(info->after, create_info, option);
       rc = cl.create_auto_increment(option);
       if (0 != rc) {
-        my_printf_error(rc, ADD_AUTOINC_MSG, MYF(0), db_name, table_name);
         goto error;
       }
     }
@@ -1355,6 +1341,7 @@ done:
   return rc;
 error:
   if (conn->is_transaction_on()) {
+    handle_sdb_error(rc, MYF(0));
     tmp_rc = conn->rollback_transaction();
     if (tmp_rc != 0) {
       SDB_LOG_WARNING(
@@ -1715,9 +1702,9 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
     if (new_opt_ele.type() != bson::Object) {
       rc = ER_WRONG_ARGUMENTS;
       my_printf_error(rc,
-                      "Failed to parse cl_options! Invalid type for "
+                      "Failed to parse options! Invalid type[%d] for "
                       "table_options",
-                      MYF(0));
+                      MYF(0), new_opt_ele.type());
       goto error;
     }
     if (new_opt_ele.embeddedObject().isEmpty()) {
@@ -1745,8 +1732,6 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
   options = builder.obj();
   rc = cl.set_attributes(options);
   if (0 != rc) {
-    my_printf_error(rc, "Failed to alter table option:[%s]", MYF(0),
-                    options.toString().c_str());
     goto error;
   }
 
@@ -1778,6 +1763,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   conn = check_sdb_in_thd(thd, true);
   if (NULL == conn) {
     rc = HA_ERR_NO_CONNECTION;
+    my_error(rc, MYF(0));
     goto error;
   }
 
@@ -1855,8 +1841,6 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       sql_compress_obj = builder.obj();
       rc = cl.set_attributes(sql_compress_obj);
       if (0 != rc) {
-        my_printf_error(rc, "Failed to alter compression:[%s]", MYF(0),
-                        sql_compress_obj.toString().c_str());
         goto error;
       }
     }
@@ -1880,10 +1864,6 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
 
       rc = cl.set_attributes(builder.obj());
       if (0 != rc) {
-        my_printf_error(rc,
-                        "Failed to alter auto_increment option "
-                        "on cl[%s.%s]",
-                        MYF(0), db_name, table_name);
         goto error;
       }
     }
@@ -1914,7 +1894,6 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   if (alter_flags & INPLACE_ONLINE_DROPIDX) {
     rc = drop_index(cl, ha_alter_info, ignored_drop_keys);
     if (0 != rc) {
-      my_error(ER_GET_ERRNO, MYF(0), rc);
       goto error;
     }
   }
@@ -1930,7 +1909,6 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   if (alter_flags & INPLACE_ONLINE_ADDIDX) {
     rc = create_index(cl, ha_alter_info, ignored_add_keys);
     if (0 != rc) {
-      print_error(rc, MYF(0));
       goto error;
     }
   }
@@ -1945,5 +1923,8 @@ done:
   }
   DBUG_RETURN(rs);
 error:
+  if (get_sdb_code(rc) < 0) {
+    handle_sdb_error(rc, MYF(0));
+  }
   goto done;
 }
