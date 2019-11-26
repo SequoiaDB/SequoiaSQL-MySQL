@@ -268,10 +268,12 @@ bool sdb_is_ror_scan(THD *thd, uint tablenr) {
   int type = -1;
 
   if (SQLCOM_SELECT == sql_command) {
-    JOIN_TAB **map2table = thd->lex->current_select->join->map2table;
-    QUICK_SELECT_I *quick = map2table[tablenr]->select->quick;
-    if (quick) {
-      type = quick->get_type();
+    JOIN_TAB *join_tab = thd->lex->current_select->join->join_tab;
+    if (join_tab) {
+      QUICK_SELECT_I *quick = join_tab[tablenr].select->quick;
+      if (quick) {
+        type = quick->get_type();
+      }
     }
   } else if (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
              SQLCOM_UPDATE_MULTI == sql_command ||
