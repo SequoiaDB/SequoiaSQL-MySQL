@@ -13,7 +13,9 @@
   along with this program; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-#include "sdb_sql.h"
+#ifndef HA_SDB__H
+#define HA_SDB__H
+
 #include <handler.h>
 #include <mysql_version.h>
 #include <client.hpp>
@@ -366,7 +368,7 @@ class ha_sdb : public handler {
 
   Item *idx_cond_push(uint keyno, Item *idx_cond);
 
- private:
+ protected:
   int ensure_collection(THD *thd);
 
   int ensure_cond_ctx(THD *thd);
@@ -468,7 +470,12 @@ class ha_sdb : public handler {
                              char *table_name, TABLE *form,
                              HA_CREATE_INFO *create_info, bool *has_copy);
 
- private:
+  int parse_comment_options(const char *comment_str,
+                            bson::BSONObj &table_options,
+                            bool &explicit_not_auto_partition,
+                            bson::BSONObj *partition_options = NULL);
+
+ protected:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
   Sdb_cl *collection;
@@ -506,3 +513,5 @@ class ha_sdb : public handler {
   Item *updated_value;
   Field *updated_field;
 };
+
+#endif

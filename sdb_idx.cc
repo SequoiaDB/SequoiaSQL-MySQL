@@ -85,12 +85,12 @@ static my_bool is_field_indexable(const Field *field) {
   }
 }
 
-int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
+int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
   int rc = 0;
   const KEY_PART_INFO *key_part;
   const KEY_PART_INFO *key_end;
 
-  bool is_unique = false;
+  bool is_unique = key_info->flags & HA_NOSAME;
   bool all_is_not_null = true;
 
   bson::BSONObjBuilder key_obj_builder;
@@ -114,9 +114,11 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
     // TODO: ASC or DESC
     key_obj_builder.append(sdb_field_name(key_part->field), 1);
   }
+  if (is_unique && shard_by_part_id) {
+    key_obj_builder.append(SDB_FIELD_INNER_PART_ID, 1);
+  }
   key_obj = key_obj_builder.obj();
 
-  is_unique = key_info->flags & HA_NOSAME;
   options_builder.append(SDB_FIELD_UNIQUE, is_unique);
   options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
   options = options_builder.obj();

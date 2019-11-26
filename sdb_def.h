@@ -22,6 +22,7 @@
 #define SDB_CL_NAME_MAX_SIZE 127
 #define SDB_CL_FULL_NAME_MAX_SIZE (SDB_CS_NAME_MAX_SIZE + SDB_CL_NAME_MAX_SIZE)
 
+#define SDB_FIELD_MAX_LEN (16 * 1024 * 1024)
 #define SDB_IDX_FIELD_SIZE_MAX 1024
 #define SDB_MATCH_FIELD_SIZE_MAX 1024
 
@@ -55,9 +56,6 @@
 #define SDB_FIELD_INITIAL "Initial"
 #define SDB_FIELD_LAST_GEN_ID "LastGenerateID"
 
-#define SDB_FIELD_AUTO_PARTITION "auto_partition"
-#define SDB_FIELD_USE_PARTITION "use_partition"
-#define SDB_FIELD_TABLE_OPTIONS "table_options"
 #define SDB_FIELD_SHARDING_KEY "ShardingKey"
 #define SDB_FIELD_SHARDING_TYPE "ShardingType"
 #define SDB_FIELD_PARTITION "Partition"
@@ -107,6 +105,12 @@
 #define SDB_GET_CONNECT_FAILED "Get connect to the specified address failed"
 
 #define SDB_COMMENT "sequoiadb"
+#define SDB_FIELD_AUTO_PARTITION "auto_partition"
+#define SDB_FIELD_USE_PARTITION "use_partition"
+#define SDB_FIELD_TABLE_OPTIONS "table_options"
+#define SDB_FIELD_PARTITION_OPTIONS "partition_options"
+
+#define SDB_FIELD_INNER_PART_ID "_mysqlPartID"
 
 const static bson::BSONObj SDB_EMPTY_BSON;
 

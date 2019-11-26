@@ -42,6 +42,7 @@
 #ifdef IS_MYSQL
 #include <table_trigger_dispatcher.h>
 #include <json_dom.h>
+#include "ha_sdb_part.h"
 #endif
 
 #ifdef IS_MARIADB
@@ -80,8 +81,6 @@ using namespace sdbclient;
 #ifndef FLG_INSERT_REPLACEONDUP
 #define FLG_INSERT_REPLACEONDUP 0x00000004
 #endif
-
-#define SDB_FIELD_MAX_LEN (16 * 1024 * 1024)
 
 const static char *sdb_plugin_info = SDB_ENGINE_INFO ". " SDB_VERSION_INFO;
 
@@ -178,6 +177,12 @@ error:
   ssp = null_ptr;
   goto done;
 }
+
+#ifdef IS_MYSQL
+static uint sdb_partition_flags() {
+  return (HA_CANNOT_PARTITION_FK | HA_CAN_PARTITION_UNIQUE);
+}
+#endif
 
 static ulonglong sdb_default_autoinc_acquire_size(enum enum_field_types type) {
   ulonglong default_value = 0;
@@ -489,7 +494,8 @@ const char *sharding_related_fields[] = {
 const char *auto_fill_fields[] = {
     SDB_FIELD_SHARDING_KEY,        SDB_FIELD_AUTO_SPLIT,
     SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_COMPRESSED,
-    SDB_FIELD_COMPRESSION_TYPE,    SDB_FIELD_REPLSIZE};
+    SDB_FIELD_COMPRESSION_TYPE,    SDB_FIELD_REPLSIZE,
+    SDB_FIELD_STRICT_DATA_MODE};
 
 ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
@@ -3969,6 +3975,69 @@ error:
   goto done;
 }
 
+int ha_sdb::parse_comment_options(const char *comment_str,
+                                  bson::BSONObj &table_options,
+                                  bool &explicit_not_auto_partition,
+                                  bson::BSONObj *partition_options) {
+  int rc = 0;
+  bson::BSONElement options_ele;
+  bson::BSONElement auto_partition;
+  bson::BSONObj comments;
+  char *sdb_cmt_pos = strstr(const_cast<char *>(comment_str), SDB_COMMENT);
+  if (NULL == sdb_cmt_pos) {
+    goto done;
+  }
+
+  rc = sdb_convert_tab_opt_to_obj(sdb_cmt_pos, comments);
+  if (0 != rc) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
+                    comment_str);
+    goto error;
+  }
+
+  auto_partition = comments.getField(SDB_FIELD_AUTO_PARTITION);
+  /*for compatibility with old configuration parameter */
+  if (auto_partition.type() == bson::EOO) {
+    auto_partition = comments.getField(SDB_FIELD_USE_PARTITION);
+  }
+  if (auto_partition.type() == bson::Bool) {
+    if (false == auto_partition.Bool()) {
+      explicit_not_auto_partition = true;
+    }
+  } else if (auto_partition.type() != bson::EOO) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Type of option auto_partition should be 'Bool'",
+                    MYF(0));
+    goto error;
+  }
+
+  options_ele = comments.getField(SDB_FIELD_TABLE_OPTIONS);
+  if (options_ele.type() == bson::Object) {
+    table_options = options_ele.embeddedObject().copy();
+  } else if (options_ele.type() != bson::EOO) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Type of table_options should be 'Object'", MYF(0));
+    goto error;
+  }
+
+  if (partition_options) {
+    options_ele = comments.getField(SDB_FIELD_PARTITION_OPTIONS);
+    if (options_ele.type() == bson::Object) {
+      *partition_options = options_ele.embeddedObject().copy();
+    } else if (options_ele.type() != bson::EOO) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(rc, "Type of partition_options should be 'Object'",
+                      MYF(0));
+      goto error;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
                            bson::BSONObj &options) {
   int rc = 0;
@@ -3990,59 +4059,16 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   }
 
   if (create_info && create_info->comment.str) {
-    char *sdb_cmt_pos = NULL;
-    bson::BSONElement options_ele;
-    bson::BSONElement auto_partition;
-    bson::BSONObj comments;
-    if ((sdb_cmt_pos = strstr(const_cast<char *>(create_info->comment.str),
-                              SDB_COMMENT)) == NULL) {
-      goto comment_done;
+    rc = parse_comment_options(create_info->comment.str, table_options,
+                               explicit_not_auto_partition);
+    if (explicit_not_auto_partition) {
+      filter_partition_options(table_options, table_options);
     }
-
-    rc = sdb_convert_tab_opt_to_obj(sdb_cmt_pos, comments);
-    if (0 != rc) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
-                      create_info->comment.str);
-      goto error;
-    }
-
-    auto_partition = comments.getField(SDB_FIELD_AUTO_PARTITION);
-    /*for compatibility with old configuration parameter */
-    if (auto_partition.type() == bson::EOO) {
-      auto_partition = comments.getField(SDB_FIELD_USE_PARTITION);
-    }
-    if (auto_partition.type() == bson::Bool) {
-      if (false == auto_partition.Bool()) {
-        explicit_not_auto_partition = true;
-      }
-    } else if (auto_partition.type() != bson::EOO) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc,
-                      "Failed to parse options! Invalid type[%d] for "
-                      "auto_partition",
-                      MYF(0), auto_partition.type());
-      goto error;
-    }
-
-    options_ele = comments.getField(SDB_FIELD_TABLE_OPTIONS);
-    if (options_ele.type() == bson::Object) {
-      if (explicit_not_auto_partition) {
-        filter_partition_options(options_ele.embeddedObject().copy(),
-                                 table_options);
-      } else {
-        table_options = options_ele.embeddedObject().copy();
-      }
-    } else if (options_ele.type() != bson::EOO) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc,
-                      "Failed to parse options! Invalid type[%d] for "
-                      "table_options",
-                      MYF(0), options_ele.type());
+    if (rc != 0) {
       goto error;
     }
   }
-comment_done:
+
   if (!explicit_not_auto_partition) {
     rc = get_sharding_key(form, table_options, sharding_key);
     if (rc) {
@@ -4274,7 +4300,6 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
 done:
   DBUG_RETURN(rc);
 error:
-  convert_sdb_code(rc);
   handle_sdb_error(rc, MYF(0));
   if (created_cs) {
     conn->drop_cs(db_name);
@@ -4544,7 +4569,23 @@ done:
 
 static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
                                    MEM_ROOT *mem_root) {
-  return new (mem_root) ha_sdb(hton, table);
+  handler *file = NULL;
+#ifdef IS_MYSQL
+  if (table && table->db_type() == sdb_hton && table->partition_info_str &&
+      table->partition_info_str_len) {
+    ha_sdb_part *p = new (mem_root) ha_sdb_part(hton, table);
+    if (p && p->init_partitioning(mem_root)) {
+      delete p;
+      file = NULL;
+      goto done;
+    }
+    file = p;
+    goto done;
+  }
+#endif
+  file = new (mem_root) ha_sdb(hton, table);
+done:
+  return file;
 }
 
 #ifdef HAVE_PSI_INTERFACE
@@ -4795,15 +4836,17 @@ static int sdb_init_func(void *p) {
   sdb_hton->state = SHOW_OPTION_YES;
   sdb_hton->db_type = DB_TYPE_UNKNOWN;
   sdb_hton->create = sdb_create_handler;
-  sdb_hton->flags = (HTON_SUPPORT_LOG_TABLES | HTON_NO_PARTITION);
   sdb_hton->commit = sdb_commit;
   sdb_hton->rollback = sdb_rollback;
   sdb_hton->drop_database = sdb_drop_database;
   sdb_hton->close_connection = sdb_close_connection;
 #ifdef IS_MARIADB
+  sdb_hton->flags = (HTON_SUPPORT_LOG_TABLES | HTON_NO_PARTITION);
   sdb_hton->kill_query = sdb_kill_query;
 #else
+  sdb_hton->flags = HTON_SUPPORT_LOG_TABLES;
   sdb_hton->kill_connection = sdb_kill_connection;
+  sdb_hton->partition_flags = sdb_partition_flags;
 #endif
   if (conn_addrs.parse_conn_addrs(sdb_conn_str)) {
     SDB_LOG_ERROR("Invalid value sequoiadb_conn_addr=%s", sdb_conn_str);

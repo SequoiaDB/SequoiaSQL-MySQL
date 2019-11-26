@@ -54,6 +54,7 @@ endif()
    
 set(SEQUOIADB_SOURCES
     ha_sdb.cc
+    ha_sdb_part.cc
     sdb_conf.cc
     sdb_util.cc
     sdb_conn.cc
