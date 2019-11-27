@@ -19,6 +19,8 @@
 #include <mysql/psi/mysql_thread.h>
 #include <vector>
 #include <client.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include "sdb_def.h"
 #include "sdb_conn.h"
 
@@ -103,8 +105,7 @@ class Sdb_cl {
                 const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
  private:
-  bool is_old_version_index(const bson::BSONObj &index_def, const CHAR *name,
-                            const bson::BSONObj &options);
+  int retry(boost::function<int()> func);
 
  private:
   Sdb_conn *m_conn;

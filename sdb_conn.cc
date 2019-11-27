@@ -51,6 +51,26 @@ my_thread_id Sdb_conn::thread_id() {
   return m_thread_id;
 }
 
+int Sdb_conn::retry(boost::function<int()> func) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+retry:
+  rc = func();
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
 int Sdb_conn::connect() {
   int rc = SDB_ERR_OK;
   String password;
@@ -279,14 +299,12 @@ error:
   goto done;
 }
 
-int Sdb_conn::rename_cl(char *cs_name, char *old_cl_name, char *new_cl_name) {
+int conn_rename_cl(sdbclient::sdb *connection, char *cs_name, char *old_cl_name,
+                   char *new_cl_name) {
   int rc = SDB_ERR_OK;
-  int retry_times = 2;
   sdbclient::sdbCollectionSpace cs;
-  sdbclient::sdbCollection cl;
 
-retry:
-  rc = m_connection.getCollectionSpace(cs_name, cs);
+  rc = connection->getCollectionSpace(cs_name, cs);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -295,26 +313,22 @@ retry:
   if (rc != SDB_ERR_OK) {
     goto error;
   }
-
 done:
   return rc;
 error:
-  if (IS_SDB_NET_ERR(rc)) {
-    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
   goto done;
 }
 
-int Sdb_conn::drop_cl(char *cs_name, char *cl_name) {
+int Sdb_conn::rename_cl(char *cs_name, char *old_cl_name, char *new_cl_name) {
+  return retry(boost::bind(conn_rename_cl, &m_connection, cs_name, old_cl_name,
+                           new_cl_name));
+}
+
+int conn_drop_cl(sdbclient::sdb *connection, char *cs_name, char *cl_name) {
   int rc = SDB_ERR_OK;
-  int retry_times = 2;
   sdbclient::sdbCollectionSpace cs;
 
-retry:
-  rc = m_connection.getCollectionSpace(cs_name, cs);
+  rc = connection->getCollectionSpace(cs_name, cs);
   if (rc != SDB_ERR_OK) {
     if (SDB_DMS_CS_NOTEXIST == rc) {
       // There is no specified collection space, igonre the error.
@@ -333,42 +347,38 @@ retry:
     }
     goto error;
   }
-
 done:
   return rc;
 error:
-  if (IS_SDB_NET_ERR(rc)) {
-    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
   goto done;
 }
 
-int Sdb_conn::drop_cs(char *cs_name) {
-  int rc = SDB_ERR_OK;
-  rc = m_connection.dropCollectionSpace(cs_name);
-  if (rc != SDB_ERR_OK) {
-    goto error;
+int Sdb_conn::drop_cl(char *cs_name, char *cl_name) {
+  return retry(boost::bind(conn_drop_cl, &m_connection, cs_name, cl_name));
+}
+
+int conn_drop_cs(sdbclient::sdb *connection, char *cs_name) {
+  int rc = connection->dropCollectionSpace(cs_name);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    rc = SDB_ERR_OK;
   }
-done:
   return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    connect();
-  }
-  convert_sdb_code(rc);
-  goto done;
+}
+
+int Sdb_conn::drop_cs(char *cs_name) {
+  return retry(boost::bind(conn_drop_cs, &m_connection, cs_name));
+}
+
+int conn_exec(sdbclient::sdb *connection, const char *sql,
+              sdbclient::sdbCursor *cursor) {
+  return connection->exec(sql, *cursor);
 }
 
 int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
                                 Sdb_statistics &stats) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCursor cursor;
-  bson::BSONObj condition;
   bson::BSONObj obj;
-  int retry_times = 2;
   std::stringstream ss;
 
   DBUG_ASSERT(NULL != cs_name);
@@ -402,8 +412,7 @@ int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
 
   std::string sql = ss.str();
 
-retry:
-  rc = m_connection.exec(sql.c_str(), cursor);
+  rc = retry(boost::bind(conn_exec, &m_connection, sql.c_str(), &cursor));
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -422,12 +431,30 @@ retry:
 done:
   return rc;
 error:
-  if (IS_SDB_NET_ERR(rc)) {
-    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
-      goto retry;
-    }
-  }
   convert_sdb_code(rc);
+  goto done;
+}
+
+int conn_snapshot(sdbclient::sdb *connection, bson::BSONObj *obj, int snap_type,
+                  const bson::BSONObj *condition, const bson::BSONObj *selected,
+                  const bson::BSONObj *order_by, const bson::BSONObj *hint,
+                  longlong num_to_skip) {
+  int rc = SDB_ERR_OK;
+  sdbclient::sdbCursor cursor;
+
+  rc = connection->getSnapshot(cursor, snap_type, *condition, *selected,
+                               *order_by, *hint, num_to_skip, 1);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  rc = cursor.next(*obj);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+done:
+  return rc;
+error:
   goto done;
 }
 
@@ -435,97 +462,35 @@ int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type,
                        const bson::BSONObj &condition,
                        const bson::BSONObj &selected,
                        const bson::BSONObj &order_by, const bson::BSONObj &hint,
-                       INT64 num_to_skip) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-  sdbclient::sdbCursor cursor;
+                       longlong num_to_skip) {
+  return retry(boost::bind(conn_snapshot, &m_connection, &obj, snap_type,
+                           &condition, &selected, &order_by, &hint,
+                           num_to_skip));
+}
 
-retry:
-  rc = m_connection.getSnapshot(cursor, snap_type, condition, selected,
-                                order_by, hint, num_to_skip, 1);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
-  rc = cursor.next(obj);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+int conn_get_last_result_obj(sdbclient::sdb *connection, bson::BSONObj *result,
+                             bool get_owned) {
+  return connection->getLastResultObj(*result, get_owned);
 }
 
 int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
+  return retry(
+      boost::bind(conn_get_last_result_obj, &m_connection, &result, get_owned));
+}
 
-retry:
-  rc = m_connection.getLastResultObj(result, get_owned);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+int conn_set_session_attr(sdbclient::sdb *connection,
+                          const bson::BSONObj *option) {
+  return connection->setSessionAttr(*option);
 }
 
 int Sdb_conn::set_session_attr(const bson::BSONObj &option) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
+  return retry(boost::bind(conn_set_session_attr, &m_connection, &option));
+}
 
-retry:
-  rc = m_connection.setSessionAttr(option);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+int conn_interrupt(sdbclient::sdb *connection) {
+  return connection->interruptOperation();
 }
 
 int Sdb_conn::interrupt_operation() {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-
-retry:
-  rc = m_connection.interruptOperation();
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(boost::bind(conn_interrupt, &m_connection));
 }

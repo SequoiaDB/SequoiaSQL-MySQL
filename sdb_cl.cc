@@ -31,30 +31,14 @@ Sdb_cl::~Sdb_cl() {
   close();
 }
 
-int Sdb_cl::init(Sdb_conn *connection, char *cs_name, char *cl_name) {
+int Sdb_cl::retry(boost::function<int()> func) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
-  sdbCollectionSpace cs;
-
-  if (NULL == connection || NULL == cs_name || NULL == cl_name) {
-    rc = SDB_ERR_INVALID_ARG;
-    goto error;
-  }
-
-  m_conn = connection;
-  m_thread_id = connection->thread_id();
-
 retry:
-  rc = m_conn->get_sdb().getCollectionSpace(cs_name, cs);
+  rc = func();
   if (rc != SDB_ERR_OK) {
     goto error;
   }
-
-  rc = cs.getCollection(cl_name, m_cl);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
 done:
   return rc;
 error:
@@ -65,6 +49,44 @@ error:
     }
   }
   convert_sdb_code(rc);
+  goto done;
+}
+
+int cl_init(sdbclient::sdbCollection *cl, Sdb_conn *connection, char *cs_name,
+            char *cl_name) {
+  int rc = SDB_ERR_OK;
+  sdbCollectionSpace cs;
+
+  rc = connection->get_sdb().getCollectionSpace(cs_name, cs);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  rc = cs.getCollection(cl_name, *cl);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_cl::init(Sdb_conn *connection, char *cs_name, char *cl_name) {
+  int rc = SDB_ERR_OK;
+
+  if (NULL == connection || NULL == cs_name || NULL == cl_name) {
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+
+  m_conn = connection;
+  m_thread_id = connection->thread_id();
+
+  rc = retry(boost::bind(cl_init, &m_cl, connection, cs_name, cl_name));
+done:
+  return rc;
+error:
   goto done;
 }
 
@@ -80,28 +102,41 @@ const char *Sdb_cl::get_cl_name() {
   return m_cl.getCollectionName();
 }
 
+int cl_query(sdbclient::sdbCollection *cl, sdbclient::sdbCursor *cursor,
+             const bson::BSONObj *condition, const bson::BSONObj *selected,
+             const bson::BSONObj *order_by, const bson::BSONObj *hint,
+             longlong num_to_skip, longlong num_to_return, int flags) {
+  return cl->query(*cursor, *condition, *selected, *order_by, *hint,
+                   num_to_skip, num_to_return, flags);
+}
+
 int Sdb_cl::query(const bson::BSONObj &condition, const bson::BSONObj &selected,
                   const bson::BSONObj &order_by, const bson::BSONObj &hint,
                   longlong num_to_skip, longlong num_to_return, int flags) {
+  return retry(boost::bind(cl_query, &m_cl, &m_cursor, &condition, &selected,
+                           &order_by, &hint, num_to_skip, num_to_return,
+                           flags));
+}
+
+int cl_query_one(sdbclient::sdbCollection *cl, bson::BSONObj *obj,
+                 const bson::BSONObj *condition, const bson::BSONObj *selected,
+                 const bson::BSONObj *order_by, const bson::BSONObj *hint,
+                 longlong num_to_skip, int flags) {
   int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.query(m_cursor, condition, selected, order_by, hint, num_to_skip,
-                  num_to_return, flags);
-  if (SDB_ERR_OK != rc) {
+  sdbclient::sdbCursor cursor_tmp;
+  rc = cl->query(cursor_tmp, *condition, *selected, *order_by, *hint,
+                 num_to_skip, 1, flags);
+  if (rc != SDB_ERR_OK) {
     goto error;
   }
 
+  rc = cursor_tmp.next(*obj);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
 done:
   return rc;
 error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
   goto done;
 }
 
@@ -109,32 +144,8 @@ int Sdb_cl::query_one(bson::BSONObj &obj, const bson::BSONObj &condition,
                       const bson::BSONObj &selected,
                       const bson::BSONObj &order_by, const bson::BSONObj &hint,
                       longlong num_to_skip, int flags) {
-  int rc = SDB_ERR_OK;
-  sdbclient::sdbCursor cursor_tmp;
-  int retry_times = 2;
-retry:
-  rc = m_cl.query(cursor_tmp, condition, selected, order_by, hint, num_to_skip,
-                  1, flags);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
-  rc = cursor_tmp.next(obj);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(boost::bind(cl_query_one, &m_cl, &obj, &condition, &selected,
+                           &order_by, &hint, num_to_skip, flags));
 }
 
 int Sdb_cl::current(bson::BSONObj &obj, my_bool get_owned) {
@@ -171,25 +182,13 @@ error:
   goto done;
 }
 
+int cl_insert(sdbclient::sdbCollection *cl, bson::BSONObj *obj, int flag,
+              bson::BSONObj *result) {
+  return cl->insert(*obj, flag, result);
+}
+
 int Sdb_cl::insert(bson::BSONObj &obj, int flag, bson::BSONObj *result) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.insert(obj, flag, result);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (!is_transaction && retry_times-- > 0 && 0 == m_conn->connect()) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(boost::bind(cl_insert, &m_cl, &obj, flag, result));
 }
 
 int Sdb_cl::insert(std::vector<bson::BSONObj> &objs, int flag,
@@ -223,111 +222,71 @@ error:
   goto done;
 }
 
+int cl_upsert(sdbclient::sdbCollection *cl, const bson::BSONObj *rule,
+              const bson::BSONObj *condition, const bson::BSONObj *hint,
+              const bson::BSONObj *set_on_insert, int flag,
+              bson::BSONObj *result) {
+  return cl->upsert(*rule, *condition, *hint, *set_on_insert, flag, result);
+}
+
 int Sdb_cl::upsert(const bson::BSONObj &rule, const bson::BSONObj &condition,
                    const bson::BSONObj &hint,
                    const bson::BSONObj &set_on_insert, int flag,
                    bson::BSONObj *result) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.upsert(rule, condition, hint, set_on_insert, flag, result);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(boost::bind(cl_upsert, &m_cl, &rule, &condition, &hint,
+                           &set_on_insert, flag, result));
+}
+
+int cl_update(sdbclient::sdbCollection *cl, const bson::BSONObj *rule,
+              const bson::BSONObj *condition, const bson::BSONObj *hint,
+              int flag, bson::BSONObj *result) {
+  return cl->update(*rule, *condition, *hint, flag, result);
 }
 
 int Sdb_cl::update(const bson::BSONObj &rule, const bson::BSONObj &condition,
                    const bson::BSONObj &hint, int flag, bson::BSONObj *result) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.update(rule, condition, hint, flag, result);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(
+      boost::bind(cl_update, &m_cl, &rule, &condition, &hint, flag, result));
+}
+
+int cl_del(sdbclient::sdbCollection *cl, const bson::BSONObj *condition,
+           const bson::BSONObj *hint, int flag, bson::BSONObj *result) {
+  return cl->del(*condition, *hint, flag, result);
 }
 
 int Sdb_cl::del(const bson::BSONObj &condition, const bson::BSONObj &hint,
                 int flag, bson::BSONObj *result) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.del(condition, hint, flag, result);
-  if (rc != SDB_ERR_OK) {
-    goto error;
+  return retry(boost::bind(cl_del, &m_cl, &condition, &hint, flag, result));
+}
+
+int cl_create_index(sdbclient::sdbCollection *cl,
+                    const bson::BSONObj *index_def, const CHAR *name,
+                    my_bool is_unique, my_bool is_enforced) {
+  int rc = cl->createIndex(*index_def, name, is_unique, is_enforced);
+  if (SDB_IXM_REDEF == rc) {
+    rc = SDB_ERR_OK;
   }
-done:
   return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
 }
 
 int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
                          my_bool is_unique, my_bool is_enforced) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.createIndex(index_def, name, is_unique, is_enforced);
-  if (SDB_IXM_REDEF == rc) {
-    rc = SDB_ERR_OK;
-  }
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(boost::bind(cl_create_index, &m_cl, &index_def, name, is_unique,
+                           is_enforced));
 }
 
 /*
    Test if index is created by v3.2.2 or earlier.
 */
-bool Sdb_cl::is_old_version_index(const bson::BSONObj &index_def,
-                                  const CHAR *name,
-                                  const bson::BSONObj &options) {
+bool is_old_version_index(sdbclient::sdbCollection *cl,
+                          const bson::BSONObj &index_def, const CHAR *name,
+                          const bson::BSONObj &options) {
   bool rs = false;
   bson::BSONObj info;
   try {
     do {
       int rc = SDB_ERR_OK;
-      rc = m_cl.getIndex(name, info);
+      rc = cl->getIndex(name, info);
       if (rc != SDB_ERR_OK) {
         break;
       }
@@ -360,144 +319,77 @@ bool Sdb_cl::is_old_version_index(const bson::BSONObj &index_def,
   return rs;
 }
 
-int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
-                         const bson::BSONObj &options) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.createIndex(index_def, name, options);
+int cl_create_index2(sdbclient::sdbCollection *cl,
+                     const bson::BSONObj *index_def, const CHAR *name,
+                     const bson::BSONObj *options) {
+  int rc = cl->createIndex(*index_def, name, *options);
   if (SDB_IXM_REDEF == rc ||
-      (SDB_IXM_EXIST == rc && is_old_version_index(index_def, name, options))) {
+      (SDB_IXM_EXIST == rc &&
+       is_old_version_index(cl, *index_def, name, *options))) {
     rc = SDB_ERR_OK;
   }
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
   return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
 }
 
-int Sdb_cl::drop_index(const char *name) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.dropIndex(name);
+int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
+                         const bson::BSONObj &options) {
+  return retry(
+      boost::bind(cl_create_index2, &m_cl, &index_def, name, &options));
+}
+
+int cl_drop_index(sdbclient::sdbCollection *cl, const char *name) {
+  int rc = cl->dropIndex(name);
   if (SDB_IXM_NOTEXIST == rc) {
     rc = SDB_ERR_OK;
   }
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
   return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+}
+
+int Sdb_cl::drop_index(const char *name) {
+  return retry(boost::bind(cl_drop_index, &m_cl, name));
+}
+
+int cl_truncate(sdbclient::sdbCollection *cl) {
+  return cl->truncate();
 }
 
 int Sdb_cl::truncate() {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.truncate();
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(boost::bind(cl_truncate, &m_cl));
+}
+
+int cl_set_attributes(sdbclient::sdbCollection *cl,
+                      const bson::BSONObj *options) {
+  return cl->setAttributes(*options);
 }
 
 int Sdb_cl::set_attributes(const bson::BSONObj &options) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.setAttributes(options);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(boost::bind(cl_set_attributes, &m_cl, &options));
 }
 
-int Sdb_cl::drop_auto_increment(const char *field_name) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.dropAutoIncrement(field_name);
+int cl_drop_auto_increment(sdbclient::sdbCollection *cl,
+                           const char *field_name) {
+  int rc = cl->dropAutoIncrement(field_name);
   if (SDB_AUTOINCREMENT_FIELD_NOT_EXIST == rc) {
     rc = SDB_ERR_OK;
   }
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
   return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
 }
 
-int Sdb_cl::create_auto_increment(const bson::BSONObj &options) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.createAutoIncrement(options);
+int Sdb_cl::drop_auto_increment(const char *field_name) {
+  return retry(boost::bind(cl_drop_auto_increment, &m_cl, field_name));
+}
+
+int cl_create_auto_increment(sdbclient::sdbCollection *cl,
+                             const bson::BSONObj *options) {
+  int rc = cl->createAutoIncrement(*options);
   if (SDB_AUTOINCREMENT_FIELD_CONFLICT == rc) {
     rc = SDB_ERR_OK;
   }
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
   return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+}
+
+int Sdb_cl::create_auto_increment(const bson::BSONObj &options) {
+  return retry(boost::bind(cl_create_auto_increment, &m_cl, &options));
 }
 
 void Sdb_cl::close() {
@@ -508,49 +400,24 @@ my_thread_id Sdb_cl::thread_id() {
   return m_thread_id;
 }
 
-int Sdb_cl::drop() {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.drop();
-  if (rc != SDB_ERR_OK) {
-    if (SDB_DMS_NOTEXIST == rc) {
-      rc = SDB_ERR_OK;
-      goto done;
-    }
-    goto error;
+int cl_drop(sdbclient::sdbCollection *cl) {
+  int rc = cl->drop();
+  if (SDB_DMS_NOTEXIST == rc) {
+    rc = SDB_ERR_OK;
   }
-done:
   return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
 }
 
-int Sdb_cl::get_count(long long &count, const bson::BSONObj &condition,
+int Sdb_cl::drop() {
+  return retry(boost::bind(cl_drop, &m_cl));
+}
+
+int cl_get_count(sdbclient::sdbCollection *cl, longlong *count,
+                 const bson::BSONObj *condition, const bson::BSONObj *hint) {
+  return cl->getCount(*count, *condition, *hint);
+}
+
+int Sdb_cl::get_count(longlong &count, const bson::BSONObj &condition,
                       const bson::BSONObj &hint) {
-  int rc = SDB_ERR_OK;
-  int retry_times = 2;
-retry:
-  rc = m_cl.getCount(count, condition, hint);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
-  return rc;
-error:
-  if (IS_SDB_NET_ERR(rc)) {
-    bool is_transaction = m_conn->is_transaction_on();
-    if (0 == m_conn->connect() && !is_transaction && retry_times-- > 0) {
-      goto retry;
-    }
-  }
-  convert_sdb_code(rc);
-  goto done;
+  return retry(boost::bind(cl_get_count, &m_cl, &count, &condition, &hint));
 }
