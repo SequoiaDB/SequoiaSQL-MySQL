@@ -18,6 +18,8 @@
 
 #include "sdb_sql.h"
 #include <client.hpp>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include "sdb_def.h"
 
 #if defined IS_MYSQL
@@ -67,7 +69,8 @@ class Sdb_conn {
                const bson::BSONObj &condition = SDB_EMPTY_BSON,
                const bson::BSONObj &selected = SDB_EMPTY_BSON,
                const bson::BSONObj &orderBy = SDB_EMPTY_BSON,
-               const bson::BSONObj &hint = SDB_EMPTY_BSON, INT64 numToSkip = 0);
+               const bson::BSONObj &hint = SDB_EMPTY_BSON,
+               longlong numToSkip = 0);
 
   int get_last_result_obj(bson::BSONObj &result, bool get_owned = false);
 
@@ -76,11 +79,17 @@ class Sdb_conn {
   int interrupt_operation();
 
   inline bool is_valid() { return m_connection.isValid(); }
+
   inline void set_pushed_autocommit() { pushed_autocommit = true; }
+
   inline bool get_pushed_autocommit() { return pushed_autocommit; }
+
   int get_last_error(bson::BSONObj &errObj) {
     return m_connection.getLastErrorObj(errObj);
   };
+
+ private:
+  int retry(boost::function<int()> func);
 
  private:
   sdbclient::sdb m_connection;

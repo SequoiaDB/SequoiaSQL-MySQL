@@ -80,6 +80,7 @@ if(${SDB_INCLUDE_DIR} STREQUAL "SDB_INCLUDE_DIR-NOTFOUND")
 endif()
 message(STATUS "SDB_INCLUDE_DIR = ${SDB_INCLUDE_DIR}")
 include_directories(${SDB_INCLUDE_DIR})
+include_directories(SYSTEM ${BOOST_INCLUDE_DIR})
 
 set(SDB_BUILT_IN ON CACHE BOOL "Build SequoiaDB storage engine in mysqld")
 mark_as_advanced(SDB_BUILT_IN)
