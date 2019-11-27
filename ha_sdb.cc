@@ -263,27 +263,59 @@ error:
 }
 
 #ifdef IS_MARIADB
+int sdb_get_select_quick_type(SELECT_LEX *select_lex, uint tablenr) {
+  int type = -1;
+  do {
+    if (!select_lex) {
+      break;
+    }
+    JOIN *join = select_lex->join;
+    if (!join) {
+      break;
+    }
+    JOIN_TAB *join_tab = join->join_tab;
+    if (!join_tab) {
+      break;
+    }
+    SQL_SELECT *select = join_tab[tablenr].select;
+    if (!select) {
+      break;
+    }
+    QUICK_SELECT_I *quick = select->quick;
+    if (!quick) {
+      break;
+    }
+    type = quick->get_type();
+  } while (0);
+  return type;
+}
+
 bool sdb_is_ror_scan(THD *thd, uint tablenr) {
   int sql_command = thd_sql_command(thd);
   int type = -1;
 
-  if (SQLCOM_SELECT == sql_command) {
-    JOIN_TAB *join_tab = thd->lex->current_select->join->join_tab;
-    if (join_tab) {
-      QUICK_SELECT_I *quick = join_tab[tablenr].select->quick;
-      if (quick) {
-        type = quick->get_type();
+  do {
+    if (SQLCOM_SELECT == sql_command) {
+      type = sdb_get_select_quick_type(thd->lex->current_select, tablenr);
+    } else if (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command) {
+      Explain_query *explain = thd->lex->explain;
+      if (!explain) {
+        break;
       }
-    }
-  } else if (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
-             SQLCOM_UPDATE_MULTI == sql_command ||
-             SQLCOM_DELETE_MULTI == sql_command) {
-    Explain_quick_select *quick_info =
-        thd->lex->explain->get_upd_del_plan()->quick_info;
-    if (quick_info) {
+      Explain_update *upd_del_plan = explain->get_upd_del_plan();
+      if (!upd_del_plan) {
+        break;
+      }
+      Explain_quick_select *quick_info = upd_del_plan->quick_info;
+      if (!quick_info) {
+        break;
+      }
       type = quick_info->quick_type;
+    } else if (SQLCOM_UPDATE_MULTI == sql_command ||
+               SQLCOM_DELETE_MULTI == sql_command) {
+      type = sdb_get_select_quick_type(thd->lex->first_select_lex(), tablenr);
     }
-  }
+  } while (0);
 
   return QUICK_SELECT_I::QS_TYPE_ROR_UNION == type ||
          QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == type;
