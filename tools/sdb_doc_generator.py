@@ -39,9 +39,14 @@ default_character_set=utf8mb4\n\
 sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\n\
 character_set_server=utf8mb4\n\
 collation_server=utf8mb4_bin\n\
-default_storage_engine=SequoiaDB\n\n"
+default_storage_engine=SequoiaDB\n"
 
+MARIADB_CNF_APPEND = \
+"join_cache_level=8\n\
+optimizer_switch=mrr=on,mrr_cost_based=off,join_cache_incremental=on,join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=on\n"
 
+project_dir = ''
+is_mariadb = False
 
 def enum(*args):
     enums = dict(zip(args, range(len(args))))
@@ -307,6 +312,10 @@ class DocExporter:
             path = self.get_file_path(out_dir, FormatType.CNF) 
             with open(path, 'w') as f:
                 f.write(MY_CNF_DEFAULT)
+                global is_mariadb
+                if is_mariadb:
+                  f.write(MARIADB_CNF_APPEND)
+                f.write("\n")
                 for t in tuples:
                     f.write(t.toString(FormatType.CNF))
 
@@ -338,6 +347,10 @@ def main(argv):
     # Get directory of this script.
     this_path = os.path.abspath(argv[0])
     this_dir, this_file_name = os.path.split(this_path);
+    global project_dir
+    project_dir = this_dir + "/../../../"
+    global is_mariadb
+    is_mariadb = os.path.exists(project_dir + "/sql/mariadb.h")
     argv = argv[1:]
 
     try:
