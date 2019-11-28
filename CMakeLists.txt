@@ -80,7 +80,22 @@ if(${SDB_INCLUDE_DIR} STREQUAL "SDB_INCLUDE_DIR-NOTFOUND")
 endif()
 message(STATUS "SDB_INCLUDE_DIR = ${SDB_INCLUDE_DIR}")
 include_directories(${SDB_INCLUDE_DIR})
-include_directories(SYSTEM ${BOOST_INCLUDE_DIR})
+
+
+# boost configure
+set(BOOST_VERSION "1.59")
+set(BOOST_COMPONENTS "")
+# list(APPEND BOOST_COMPONENTS ...)
+if(WITH_BOOST) 
+  set(BOOST_ROOT "${WITH_BOOST}")
+endif()
+find_package(Boost ${BOOST_VERSION} REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+if(NOT Boost_FOUND)
+  message(SEND_ERROR "Boost not found in path ${BOOST_ROOT}")
+endif()
+include_directories(SYSTEM ${Boost_INCLUDE_DIR})
+                                  
+
 
 set(SDB_BUILT_IN ON CACHE BOOL "Build SequoiaDB storage engine in mysqld")
 mark_as_advanced(SDB_BUILT_IN)
