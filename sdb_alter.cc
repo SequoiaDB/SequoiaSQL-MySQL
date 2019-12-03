@@ -1430,6 +1430,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   ha_alter_info->handler_ctx = ctx;
 
   // Filter added_columns, dropped_columns and changed_columns
+  matched_map.clear_all();
   for (uint i = 0; table->field[i]; i++) {
     Field *old_field = table->field[i];
     bool found_col = false;
@@ -1871,6 +1872,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
 
   // If it's a redefinition of the secondary attributes, such as btree/hash
   // and comment, don't recreate the index.
+  ignored_drop_keys.clear_all();
+  ignored_add_keys.clear_all();
   if (alter_flags & INPLACE_ONLINE_DROPIDX &&
       alter_flags & INPLACE_ONLINE_ADDIDX) {
     for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
