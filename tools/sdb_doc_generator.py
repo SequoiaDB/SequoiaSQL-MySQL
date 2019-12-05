@@ -36,6 +36,8 @@ MY_CNF_DEFAULT = \
 default_character_set=utf8mb4\n\
 \n\
 [mysqld]\n\
+max_connections=1024\n\
+max_prepared_stmt_count=128000\n\
 sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\n\
 character_set_server=utf8mb4\n\
 collation_server=utf8mb4_bin\n\
