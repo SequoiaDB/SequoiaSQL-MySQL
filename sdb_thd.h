@@ -19,15 +19,17 @@
 #include <mysql/plugin.h>
 #include <client.hpp>
 #include "sdb_conn.h"
+#include <boost/shared_ptr.hpp>
 
 extern handlerton* sdb_hton;
+struct Sdb_share;
 
 struct Sdb_local_table_statistics {
   int no_uncommitted_rows_count;
 };
 
 typedef struct st_thd_sdb_share {
-  const void* key;
+  boost::shared_ptr<Sdb_share> share_ptr;
   struct Sdb_local_table_statistics stat;
 } THD_SDB_SHARE;
 

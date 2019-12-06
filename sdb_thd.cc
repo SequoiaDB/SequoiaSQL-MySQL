@@ -26,9 +26,11 @@
 
 uchar* thd_sdb_share_get_key(THD_SDB_SHARE* thd_sdb_share, size_t* length,
                              my_bool not_used MY_ATTRIBUTE((unused))) {
-  *length = sizeof(thd_sdb_share->key);
-  return (uchar*)&thd_sdb_share->key;
+  *length = sizeof(thd_sdb_share->share_ptr.get());
+  return (uchar*)thd_sdb_share->share_ptr.get();
 }
+
+extern void free_thd_open_shares_elem(void* share_ptr);
 
 Thd_sdb::Thd_sdb(THD* thd)
     : m_thd(thd),
@@ -44,8 +46,8 @@ Thd_sdb::Thd_sdb(THD* thd)
   duplicated = 0;
 
   (void)sdb_hash_init(&open_table_shares, table_alias_charset, 5, 0, 0,
-                      (my_hash_get_key)thd_sdb_share_get_key, 0, 0,
-                      PSI_INSTRUMENT_ME);
+                      (my_hash_get_key)thd_sdb_share_get_key,
+                      free_thd_open_shares_elem, 0, PSI_INSTRUMENT_ME);
 }
 
 Thd_sdb::~Thd_sdb() {

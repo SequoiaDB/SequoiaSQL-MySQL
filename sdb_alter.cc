@@ -1224,7 +1224,8 @@ int ha_sdb::alter_column(TABLE *altered_table,
         goto error;
       }
       if (modified_num > 0) {
-        if (is_strict_mode(ha_thd()->variables.sql_mode)) {
+        if (is_strict_mode(ha_thd()->variables.sql_mode) &&
+            sdb_use_transaction) {
           my_error(ER_INVALID_USE_OF_NULL, MYF(0));
           rc = ER_INVALID_USE_OF_NULL;
           goto error;
@@ -1233,6 +1234,11 @@ int ha_sdb::alter_column(TABLE *altered_table,
             push_warning_printf(thd, Sql_condition::SL_WARNING,
                                 ER_WARN_NULL_TO_NOTNULL,
                                 ER(ER_WARN_NULL_TO_NOTNULL), field_name, i);
+          }
+          // in strict mode, can't just print warnings, must clear error status
+          if (!sdb_use_transaction &&
+              is_strict_mode(ha_thd()->variables.sql_mode)) {
+            thd->clear_error();
           }
         }
       }

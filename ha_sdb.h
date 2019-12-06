@@ -24,6 +24,9 @@
 #include "sdb_lock.h"
 #include "sdb_conf.h"
 #include "sdb_condition.h"
+#include "sdb_thd.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 /*
   Stats that can be retrieved from SequoiaDB.
@@ -49,10 +52,14 @@ struct Sdb_statistics {
 struct Sdb_share {
   char *table_name;
   uint table_name_length;
-  uint use_count;
   THR_LOCK lock;
-  Sdb_mutex mutex;
   Sdb_statistics stat;
+  Sdb_mutex mutex;
+
+  ~Sdb_share() {
+    // shouldn't call this, use free_sdb_share release Sdb_share
+    DBUG_ASSERT(0);
+  }
 };
 
 class ha_sdb : public handler {
@@ -407,6 +414,8 @@ class ha_sdb : public handler {
   template <class T>
   int insert_row(T &rows, uint row_count);
 
+  void update_incr_stat(int incr);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
@@ -414,7 +423,6 @@ class ha_sdb : public handler {
   bool first_read;
   bson::BSONObj cur_rec;
   bson::BSONObj pushed_condition;
-  Sdb_share *share;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
   char table_name[SDB_CL_NAME_MAX_SIZE + 1];
   time_t last_count_time;
@@ -437,7 +445,10 @@ class ha_sdb : public handler {
   ulonglong m_table_flags;
   /*incremental stat of current table share in current thd*/
   struct Sdb_local_table_statistics *incr_stat;
+  struct Sdb_local_table_statistics non_tran_stat;
   uint m_dup_key_nr;
   bson::OID m_dup_oid;
   bson::BSONObj m_dup_value;
+  /*use std::shared_ptr instead of self-defined use count*/
+  boost::shared_ptr<Sdb_share> share;
 };
