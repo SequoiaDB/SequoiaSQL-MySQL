@@ -2971,6 +2971,7 @@ int ha_sdb::extra(enum ha_extra_function operation) {
       break;
     case HA_EXTRA_INSERT_WITH_UPDATE:
       m_insert_with_update = true;
+      m_use_bulk_insert = false;
 #ifdef IS_MYSQL
     case HA_EXTRA_SECONDARY_SORT_ROWID:
       m_secondary_sort_rowid = true;
