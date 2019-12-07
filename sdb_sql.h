@@ -174,9 +174,11 @@ void trans_register_ha(THD *thd, bool all, handlerton *ht_arg,
 #if defined IS_MYSQL
 #define sdb_multi_malloc(key, myFlags, ...) \
   my_multi_malloc(key, myFlags, ##__VA_ARGS__)
+#define sdb_my_malloc(key, size, myFlags) my_malloc(key, size, myFlags)
 #elif defined IS_MARIADB
 #define sdb_multi_malloc(key, myFlags, ...) \
   my_multi_malloc(myFlags, ##__VA_ARGS__)
+#define sdb_my_malloc(key, size, myFlags) my_malloc(size, myFlags)
 #endif
 
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,

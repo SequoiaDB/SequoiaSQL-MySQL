@@ -145,7 +145,7 @@ static void get_sdb_share(const char *table_name, TABLE *table,
                           NullS)) {
       goto error;
     }
-    if (!(tmp_ptr = (boost::shared_ptr<Sdb_share> *)my_malloc(
+    if (!(tmp_ptr = (boost::shared_ptr<Sdb_share> *)sdb_my_malloc(
               key_memory_sdb_share, sizeof(boost::shared_ptr<Sdb_share>),
               MYF(MY_WME | MY_ZEROFILL)))) {
       my_free(share);
