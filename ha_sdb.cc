@@ -3568,7 +3568,7 @@ int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
             SDB_LOG_WARNING(
                 "Unique index('%-.192s') not include the field: '%-.192s', "
                 "create non-partition table: %s.%s",
-                key_info->name, sdb_field_name(key_part->field), db_name,
+                sdb_key_name(key_info), sdb_field_name(key_part->field), db_name,
                 table_name);
             goto done;
           }
@@ -4049,6 +4049,7 @@ done:
   DBUG_RETURN(rc);
 error:
   convert_sdb_code(rc);
+  handle_sdb_error(rc, MYF(0));
   if (created_cs) {
     conn->drop_cs(db_name);
   } else if (created_cl) {
