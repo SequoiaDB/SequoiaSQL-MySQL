@@ -68,34 +68,33 @@ void Thd_sdb::release(Thd_sdb* thd_sdb) {
   delete thd_sdb;
 }
 
-bool Thd_sdb::recycle_conn() {
+int Thd_sdb::recycle_conn() {
   int rc = SDB_ERR_OK;
   rc = m_conn.connect();
-  if (SDB_ERR_OK != rc) {
-    return false;
-  }
-
-  return true;
+  return rc;
 }
 
 // Make sure THD has a Thd_sdb struct allocated and associated
-Sdb_conn* check_sdb_in_thd(THD* thd, bool validate_conn) {
+int check_sdb_in_thd(THD* thd, Sdb_conn** conn, bool validate_conn) {
+  int rc = 0;
   Thd_sdb* thd_sdb = thd_get_thd_sdb(thd);
   if (NULL == thd_sdb) {
     thd_sdb = Thd_sdb::seize(thd);
     if (NULL == thd_sdb) {
-      return NULL;
+      rc = HA_ERR_OUT_OF_MEM;
+      return rc;
     }
     thd_set_thd_sdb(thd, thd_sdb);
   }
 
   if (validate_conn && !thd_sdb->valid_conn()) {
-    if (!thd_sdb->recycle_conn()) {
-      return NULL;
+    rc = thd_sdb->recycle_conn();
+    if (rc != 0) {
+      return rc;
     }
   }
 
   DBUG_ASSERT(thd_sdb->is_slave_thread() == thd->slave_thread);
-
-  return thd_sdb->get_conn();
+  *conn = thd_sdb->get_conn();
+  return rc;
 }

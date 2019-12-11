@@ -620,9 +620,8 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     }
   }
 
-  connection = check_sdb_in_thd(ha_thd(), true);
-  if (NULL == connection) {
-    rc = HA_ERR_NO_CONNECTION;
+  rc = check_sdb_in_thd(ha_thd(), &connection, true);
+  if (0 != rc) {
     goto error;
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
@@ -1389,7 +1388,8 @@ int ha_sdb::end_bulk_insert() {
 void ha_sdb::update_last_insert_id() {
   int rc = SDB_ERR_OK;
   if (!m_has_update_insert_id) {
-    Sdb_conn *conn = check_sdb_in_thd(ha_thd(), true);
+    Sdb_conn *conn = NULL;
+    check_sdb_in_thd(ha_thd(), &conn, true);
     bson::BSONObj result;
     bson::BSONElement ele;
 
@@ -2953,10 +2953,8 @@ int ha_sdb::info(uint flag) {
     my_bool initial = false;
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 2] = {0};
 
-    conn = check_sdb_in_thd(thd, true);
-    if (NULL == conn) {
-      SDB_PRINT_ERROR(HA_ERR_NO_CONNECTION,
-                      "Could not connect to storage engine.");
+    rc = check_sdb_in_thd(thd, &conn, true);
+    if (0 != rc) {
       goto error;
     }
 
@@ -3028,9 +3026,9 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
     }
   } else {
     /* Request statistics from SequoiaDB */
-    Sdb_conn *conn = check_sdb_in_thd(thd, true);
-    if (NULL == conn) {
-      rc = HA_ERR_NO_CONNECTION;
+    Sdb_conn *conn = NULL;
+    rc = check_sdb_in_thd(thd, &conn, true);
+    if (0 != rc) {
       goto error;
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
@@ -3172,9 +3170,9 @@ int ha_sdb::ensure_collection(THD *thd) {
   }
 
   if (NULL == collection) {
-    Sdb_conn *conn = check_sdb_in_thd(thd, true);
-    if (NULL == conn) {
-      rc = HA_ERR_NO_CONNECTION;
+    Sdb_conn *conn = NULL;
+    rc = check_sdb_in_thd(thd, &conn, true);
+    if (0 != rc) {
       goto error;
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
@@ -3232,9 +3230,8 @@ int ha_sdb::autocommit_statement(bool direct_op) {
   int rc = 0;
   Sdb_conn *conn = NULL;
 
-  conn = check_sdb_in_thd(ha_thd(), true);
-  if (NULL == conn) {
-    rc = HA_ERR_NO_CONNECTION;
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (0 != rc) {
     goto done;
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
@@ -3280,9 +3277,9 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
   }
 
   if (0 == table_count) {
-    Sdb_conn *conn = check_sdb_in_thd(thd, true);
-    if (NULL == conn) {
-      rc = HA_ERR_NO_CONNECTION;
+    Sdb_conn *conn = NULL;
+    rc = check_sdb_in_thd(thd, &conn, true);
+    if (0 != rc) {
       goto error;
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
@@ -3344,8 +3341,9 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
 
   int rc = 0;
   Thd_sdb *thd_sdb = NULL;
-  if (NULL == check_sdb_in_thd(thd)) {
-    rc = HA_ERR_NO_CONNECTION;
+  Sdb_conn *conn = NULL;
+  rc = check_sdb_in_thd(thd, &conn, false);
+  if (0 != rc) {
     goto error;
   }
 
@@ -3547,9 +3545,8 @@ int ha_sdb::delete_table(const char *from) {
     }
   }
 
-  conn = check_sdb_in_thd(thd, true);
-  if (NULL == conn) {
-    rc = HA_ERR_NO_CONNECTION;
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
     goto error;
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
@@ -3625,9 +3622,8 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto done;
   }
 
-  conn = check_sdb_in_thd(thd, true);
-  if (NULL == conn) {
-    rc = HA_ERR_NO_CONNECTION;
+  check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
     goto error;
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
@@ -4156,9 +4152,8 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     goto done;
   }
 
-  conn = check_sdb_in_thd(ha_thd(), true);
-  if (NULL == conn) {
-    rc = HA_ERR_NO_CONNECTION;
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (0 != rc) {
     goto error;
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
@@ -4376,31 +4371,39 @@ error:
 }
 
 void ha_sdb::handle_sdb_error(int error, myf errflag) {
+  int sdb_rc = 0;
+  const char *error_msg = NULL, *detail_msg = NULL, *desp_msg = NULL;
   DBUG_ENTER("ha_sdb::handle_sdb_error");
   DBUG_PRINT("info", ("error code %d", error));
   bson::BSONObj error_obj;
 
   // get error object from Sdb_conn
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
-  Sdb_conn *connection = check_sdb_in_thd(ha_thd(), true);
-  int sdb_rc = connection->get_last_result_obj(error_obj, false);
+  Sdb_conn *connection = NULL;
+  sdb_rc = check_sdb_in_thd(ha_thd(), &connection, true);
+  if (sdb_rc != SDB_OK) {
+    push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
+                 SDB_GET_CONNECT_FAILED);
+    goto done;
+  }
+  sdb_rc = connection->get_last_result_obj(error_obj, false);
   if (sdb_rc != SDB_OK) {
     push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
                  SDB_GET_LAST_ERROR_FAILED);
   }
 
   // get error info from error_msg
-  const char *error_msg = SDB_NO_ERROR_MSG_DESCRIPTION;
-  const char *detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
+  detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
   if (strlen(detail_msg) != 0) {
     error_msg = detail_msg;
   } else {
-    const char *desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+    desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
     if (strlen(desp_msg) != 0) {
       error_msg = desp_msg;
     }
   }
 
+done:
   switch (get_sdb_code(error)) {
     case SDB_UPDATE_SHARD_KEY:
       if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
@@ -4431,8 +4434,17 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
                       MYF(0), m_dup_value.toString().c_str(), idx_name);
       break;
     }
+    case SDB_NET_CANNOT_CONNECT: {
+      my_printf_error(error, "Unable to connect to the specified address",
+                      MYF(0));
+      break;
+    }
     default:
-      my_printf_error(error, "%s", MYF(0), error_msg);
+      if (NULL == error_msg) {
+        my_error(ER_GET_ERRNO, MYF(0), error);
+      } else {
+        my_printf_error(error, "%s", MYF(0), error_msg);
+      }
       break;
   }
   DBUG_VOID_RETURN;
@@ -4510,9 +4522,8 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
 
   thd_sdb->start_stmt_count = 0;
 
-  connection = check_sdb_in_thd(thd, true);
-  if (NULL == connection) {
-    rc = HA_ERR_NO_CONNECTION;
+  rc = check_sdb_in_thd(thd, &connection, true);
+  if (0 != rc) {
     goto error;
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
@@ -4561,9 +4572,8 @@ static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
 
   thd_sdb->start_stmt_count = 0;
 
-  connection = check_sdb_in_thd(thd, true);
-  if (NULL == connection) {
-    rc = HA_ERR_NO_CONNECTION;
+  rc = check_sdb_in_thd(thd, &connection, true);
+  if (0 != rc) {
     goto error;
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
@@ -4607,9 +4617,8 @@ static void sdb_drop_database(handlerton *hton, char *path) {
     goto error;
   }
 
-  connection = check_sdb_in_thd(thd, true);
-  if (NULL == connection) {
-    rc = HA_ERR_NO_CONNECTION;
+  rc = check_sdb_in_thd(thd, &connection, true);
+  if (0 != rc) {
     goto error;
   }
 
@@ -4654,10 +4663,9 @@ static void sdb_kill_connection(handlerton *hton, THD *thd) {
   THD *curr_thd = current_thd;
   int rc = 0;
   uint64 tid = 0;
-  Sdb_conn *connection;
-  connection = check_sdb_in_thd(thd, true);
-  if (NULL == connection) {
-    rc = HA_ERR_NO_CONNECTION;
+  Sdb_conn *connection = NULL;
+  rc = check_sdb_in_thd(thd, &connection, true);
+  if (0 != rc) {
     goto error;
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));

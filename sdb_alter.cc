@@ -1707,10 +1707,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
 
   DBUG_ASSERT(ha_alter_info->handler_flags | INPLACE_ONLINE_OPERATIONS);
 
-  conn = check_sdb_in_thd(thd, true);
-  if (NULL == conn) {
-    rc = HA_ERR_NO_CONNECTION;
-    my_error(rc, MYF(0));
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
     goto error;
   }
 

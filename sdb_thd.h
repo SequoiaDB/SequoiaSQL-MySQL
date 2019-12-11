@@ -44,7 +44,7 @@ class Thd_sdb {
   static Thd_sdb* seize(THD* thd);
   static void release(Thd_sdb* thd_sdb);
 
-  bool recycle_conn();
+  int recycle_conn();
   inline my_thread_id thread_id() const { return m_thread_id; }
   inline bool is_slave_thread() const { return m_slave_thread; }
   inline Sdb_conn* get_conn() { return &m_conn; }
@@ -84,6 +84,6 @@ static inline Thd_sdb* thd_get_thd_sdb(THD* thd) {
 }
 
 // Make sure THD has a Thd_sdb struct assigned
-Sdb_conn* check_sdb_in_thd(THD* thd, bool validate_conn = false);
+int check_sdb_in_thd(THD* thd, Sdb_conn** conn, bool validate_conn = false);
 
 #endif /* SDB_THD__H */
