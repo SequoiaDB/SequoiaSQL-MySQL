@@ -104,7 +104,7 @@
 #define SDB_FIELD_DESCRIPTION "description"
 
 #define SDB_GET_LAST_ERROR_FAILED "Get last error object failed."
-#define SDB_NO_ERROR_MSG_DESCRIPTION "No error message description"
+#define SDB_GET_CONNECT_FAILED "Get connect to the specified address failed"
 
 #define SDB_COMMENT "sequoiadb"
 
