@@ -287,29 +287,31 @@ error:
 
 #ifdef IS_MARIADB
 int sdb_get_select_quick_type(SELECT_LEX *select_lex, uint tablenr) {
+  JOIN *join = NULL;
+  JOIN_TAB *join_tab = NULL;
   int type = -1;
-  do {
-    if (!select_lex) {
-      break;
+  bool join_two_phase_optimization = true;
+
+  if (!select_lex) {
+    goto done;
+  }
+
+  if (!select_lex->pushdown_select && (join = select_lex->join) &&
+      join->optimization_state == JOIN::OPTIMIZATION_PHASE_1_DONE) {
+    join_two_phase_optimization = true;
+  }
+
+  if (join && join->join_tab &&
+      (join_tab = (join_two_phase_optimization ? join->map2table[tablenr]
+                                               : &join->join_tab[tablenr]))) {
+    SQL_SELECT *select = NULL;
+    QUICK_SELECT_I *quick = NULL;
+    if ((select = join_tab->select) && (quick = select->quick)) {
+      type = quick->get_type();
     }
-    JOIN *join = select_lex->join;
-    if (!join) {
-      break;
-    }
-    JOIN_TAB *join_tab = join->join_tab;
-    if (!join_tab) {
-      break;
-    }
-    SQL_SELECT *select = join_tab[tablenr].select;
-    if (!select) {
-      break;
-    }
-    QUICK_SELECT_I *quick = select->quick;
-    if (!quick) {
-      break;
-    }
-    type = quick->get_type();
-  } while (0);
+  }
+
+done:
   return type;
 }
 
@@ -317,28 +319,26 @@ bool sdb_is_ror_scan(THD *thd, uint tablenr) {
   int sql_command = thd_sql_command(thd);
   int type = -1;
 
-  do {
-    if (SQLCOM_SELECT == sql_command) {
-      type = sdb_get_select_quick_type(thd->lex->current_select, tablenr);
-    } else if (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command) {
-      Explain_query *explain = thd->lex->explain;
-      if (!explain) {
-        break;
-      }
-      Explain_update *upd_del_plan = explain->get_upd_del_plan();
-      if (!upd_del_plan) {
-        break;
-      }
-      Explain_quick_select *quick_info = upd_del_plan->quick_info;
-      if (!quick_info) {
-        break;
-      }
+  if (SQLCOM_SELECT == sql_command) {
+    type = sdb_get_select_quick_type(thd->lex->current_select, tablenr);
+  }
+
+  if (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command) {
+    Explain_query *explain = NULL;
+    Explain_update *upd_del_plan = NULL;
+    Explain_quick_select *quick_info = NULL;
+
+    if ((explain = thd->lex->explain) &&
+        (upd_del_plan = explain->get_upd_del_plan()) &&
+        (quick_info = upd_del_plan->quick_info)) {
       type = quick_info->quick_type;
-    } else if (SQLCOM_UPDATE_MULTI == sql_command ||
-               SQLCOM_DELETE_MULTI == sql_command) {
-      type = sdb_get_select_quick_type(thd->lex->first_select_lex(), tablenr);
     }
-  } while (0);
+  }
+
+  if (SQLCOM_UPDATE_MULTI == sql_command ||
+      SQLCOM_DELETE_MULTI == sql_command) {
+    type = sdb_get_select_quick_type(thd->lex->first_select_lex(), tablenr);
+  }
 
   return QUICK_SELECT_I::QS_TYPE_ROR_UNION == type ||
          QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == type;
@@ -3588,8 +3588,8 @@ int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
             SDB_LOG_WARNING(
                 "Unique index('%-.192s') not include the field: '%-.192s', "
                 "create non-partition table: %s.%s",
-                sdb_key_name(key_info), sdb_field_name(key_part->field), db_name,
-                table_name);
+                sdb_key_name(key_info), sdb_field_name(key_part->field),
+                db_name, table_name);
             goto done;
           }
         }
