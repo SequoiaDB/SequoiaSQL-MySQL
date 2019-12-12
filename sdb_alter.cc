@@ -1356,8 +1356,10 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
 
   DBUG_ASSERT(!ha_alter_info->handler_ctx);
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(ha_thd(), rs,
-                                   HA_ALTER_INPLACE_NOCOPY_NO_LOCK);
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rs = HA_ALTER_INPLACE_NOCOPY_NO_LOCK;
+    goto done;
+  }
 
   if (ha_alter_info->handler_flags & ~INPLACE_ONLINE_OPERATIONS) {
     rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
@@ -1695,11 +1697,13 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   Bitmap<MAX_INDEXES> ignored_drop_keys;
   Bitmap<MAX_INDEXES> ignored_add_keys;
   Sdb_alter_ctx *ctx = (Sdb_alter_ctx *)ha_alter_info->handler_ctx;
-
-  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rs, false);
-
   const HA_CREATE_INFO *create_info = ha_alter_info->create_info;
   const alter_table_operations alter_flags = ha_alter_info->handler_flags;
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rs = false;
+    goto done;
+  }
 
   DBUG_ASSERT(ha_alter_info->handler_flags | INPLACE_ONLINE_OPERATIONS);
 

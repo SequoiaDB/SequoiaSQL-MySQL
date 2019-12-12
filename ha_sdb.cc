@@ -409,6 +409,16 @@ void sdb_set_affected_rows(THD *thd) {
   message_text = const_cast<char *>(sdb_da_message_text(da));
   saved_char = message_text[0];
 
+  /* Clear write records affected rows in the mode of execute_only_in_mysql */
+  if ((SQLCOM_INSERT == thd_sql_command(thd) ||
+       SQLCOM_INSERT_SELECT == thd_sql_command(thd)) &&
+      sdb_execute_only_in_mysql(thd)) {
+    da->reset_diagnostics_area();
+    char buff[MYSQL_ERRMSG_SIZE];
+    my_snprintf(buff, sizeof(buff), ER(ER_INSERT_INFO), 0, 0, 0);
+    my_ok(thd, 0, 0, buff);
+  }
+
   // For SQLCOM_INSERT, SQLCOM_REPLACE, SQLCOM_INSERT_SELECT...
   if (thd_sdb->duplicated) {
     ulonglong &dup_num = thd_sdb->duplicated;
@@ -430,10 +440,10 @@ void sdb_set_affected_rows(THD *thd) {
     my_ok(thd, affected_num, last_insert_id, buff);
     DBUG_PRINT("info", ("%llu records duplicated", dup_num));
     dup_num = 0;
-
   }
+
   // For SQLCOM_UPDATE...
-  else if (thd_sdb->found || thd_sdb->updated) {
+  if (thd_sdb->found || thd_sdb->updated) {
     ulonglong &found = thd_sdb->found;
     ulonglong &updated = thd_sdb->updated;
     bool has_found_rows = false;
@@ -447,16 +457,25 @@ void sdb_set_affected_rows(THD *thd) {
     DBUG_PRINT("info", ("%llu records updated", updated));
     found = 0;
     updated = 0;
-
   }
+
   // For SQLCOM_DELETE...
-  else if (thd_sdb->deleted) {
-    ulonglong &deleted = thd_sdb->deleted;
-    da->reset_diagnostics_area();
-    message_text[0] = saved_char;
-    my_ok(thd, deleted, last_insert_id, message_text);
-    DBUG_PRINT("info", ("%llu records deleted", deleted));
-    deleted = 0;
+  if (SQLCOM_DELETE == thd_sql_command(thd) ||
+      SQLCOM_DELETE_MULTI == thd_sql_command(thd)) {
+    if (sdb_execute_only_in_mysql(thd)) {
+      da->reset_diagnostics_area();
+      my_ok(thd, 0, 0);
+      goto done;
+    }
+
+    if (thd_sdb->deleted) {
+      ulonglong &deleted = thd_sdb->deleted;
+      da->reset_diagnostics_area();
+      message_text[0] = saved_char;
+      my_ok(thd, deleted, last_insert_id, message_text);
+      DBUG_PRINT("info", ("%llu records deleted", deleted));
+      deleted = 0;
+    }
   }
 
 done:
@@ -607,7 +626,10 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
-  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
 
   // Get collection to check if the collection is available.
   rc = connection->get_cl(db_name, table_name, cl);
@@ -1433,6 +1455,10 @@ int ha_sdb::write_row(uchar *buf) {
   ulonglong auto_inc = 0;
   bool auto_inc_explicit_used = false;
 
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
+
   ha_statistic_increment(&SSV::ha_write_count);
 
   rc = ensure_collection(ha_thd());
@@ -1599,9 +1625,20 @@ int ha_sdb::index_prev(uchar *buf) {
 }
 
 int ha_sdb::index_last(uchar *buf) {
+  int rc = 0;
   first_read = true;
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = HA_ERR_END_OF_FILE;
+    table->status = STATUS_NOT_FOUND;
+    goto done;
+  }
+
   ha_statistic_increment(&SSV::ha_read_last_count);
-  return index_read_one(pushed_condition, -1, buf);
+  rc = index_read_one(pushed_condition, -1, buf);
+
+done:
+  return rc;
 }
 
 int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
@@ -2097,6 +2134,13 @@ error:
 int ha_sdb::index_first(uchar *buf) {
   int rc = 0;
   first_read = true;
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = HA_ERR_END_OF_FILE;
+    table->status = STATUS_NOT_FOUND;
+    goto done;
+  }
+
   ha_statistic_increment(&SSV::ha_read_first_count);
 
   rc = ensure_collection(ha_thd());
@@ -2148,6 +2192,12 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   bson::BSONObj condition_idx;
   int order_direction = 1;
   first_read = true;
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = HA_ERR_END_OF_FILE;
+    table->status = STATUS_NOT_FOUND;
+    goto done;
+  }
 
   ha_statistic_increment(&SSV::ha_read_key_count);
 
@@ -2296,10 +2346,14 @@ int ha_sdb::index_init(uint idx, bool sorted) {
 }
 
 int ha_sdb::index_end() {
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   collection->close();
   active_index = MAX_KEY;
+done:
   return 0;
 }
 
@@ -2311,6 +2365,10 @@ int ha_sdb::rnd_init(bool scan) {
     pushed_condition = SDB_EMPTY_BSON;
   }
   free_root(&blobroot, MYF(0));
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
 
   rc = ensure_collection(ha_thd());
   if (rc) {
@@ -2328,9 +2386,13 @@ error:
 }
 
 int ha_sdb::rnd_end() {
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   collection->close();
+done:
   return 0;
 }
 
@@ -2741,6 +2803,12 @@ int ha_sdb::rnd_next(uchar *buf) {
   bson::BSONObj condition;
   bson::BSONObj hint = SDB_EMPTY_BSON;
 
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = HA_ERR_END_OF_FILE;
+    table->status = STATUS_NOT_FOUND;
+    goto error;
+  }
+
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
@@ -2850,7 +2918,10 @@ int ha_sdb::info(uint flag) {
   int rc = 0;
   Sdb_conn *conn = NULL;
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
+
   if (flag & HA_STATUS_VARIABLE) {
     if (!(flag & HA_STATUS_NO_LOCK)) {
       rc = update_stats(ha_thd(), true);
@@ -2963,6 +3034,11 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       goto error;
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+
+    if (sdb_execute_only_in_mysql(ha_thd())) {
+      goto done;
+    }
+
     rc = conn->get_cl_statistics(db_name, table_name, stat);
     if (0 != rc) {
       goto done;
@@ -3017,8 +3093,11 @@ int ha_sdb::ensure_stats(THD *thd) {
 
   DBUG_PRINT("info", ("stats.records: %d, share->stat.total_records: %d.",
                       int(stats.records), int(share->stat.total_records)));
-  DBUG_ASSERT((~(ha_rows)0) != stats.records);
-  DBUG_ASSERT((~(ha_rows)0) != (ha_rows)share->stat.total_records);
+  /* not update stats in the mode of execute_only_in_mysql. */
+  if (!sdb_execute_only_in_mysql(thd)) {
+    DBUG_ASSERT((~(ha_rows)0) != stats.records);
+    DBUG_ASSERT((~(ha_rows)0) != (ha_rows)share->stat.total_records);
+  }
 done:
   DBUG_RETURN(rc);
 error:
@@ -3082,6 +3161,10 @@ int ha_sdb::ensure_collection(THD *thd) {
   DBUG_ENTER("ha_sdb::ensure_collection");
   int rc = 0;
   DBUG_ASSERT(NULL != thd);
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
 
   if (NULL != collection && collection->thread_id() != sdb_thd_id(thd)) {
     delete collection;
@@ -3355,6 +3438,12 @@ error:
 
 int ha_sdb::delete_all_rows() {
   int rc = 0;
+  bson::BSONObj result;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
 
   rc = ensure_collection(ha_thd());
   if (rc) {
@@ -3366,7 +3455,6 @@ int ha_sdb::delete_all_rows() {
   }
 
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
   if (auto_commit) {
     rc = autocommit_statement(true);
@@ -3375,7 +3463,6 @@ int ha_sdb::delete_all_rows() {
     }
   }
 
-  bson::BSONObj result;
   rc = collection->del(SDB_EMPTY_BSON, SDB_EMPTY_BSON, FLG_DELETE_RETURNNUM,
                        &result);
   if (0 == rc) {
@@ -3388,12 +3475,18 @@ int ha_sdb::delete_all_rows() {
   }
   thd_sdb->deleted = 0;
   get_deleted_rows(result, &thd_sdb->deleted);
+
+done:
   return rc;
 }
 
 int ha_sdb::truncate() {
   DBUG_ENTER("ha_sdb::truncate");
   int rc = 0;
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
 
   rc = ensure_collection(ha_thd());
   if (rc) {
@@ -3405,7 +3498,6 @@ int ha_sdb::truncate() {
   }
 
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
 
   rc = collection->truncate();
   if (0 == rc) {
@@ -3438,7 +3530,9 @@ int ha_sdb::delete_table(const char *from) {
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(thd, rc, 0);
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
 
   rc = sdb_parse_table_name(from, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
@@ -3483,12 +3577,14 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_RETURN(thd, rc, 0);
-
   char old_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char old_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   char new_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char new_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
 
   rc = sdb_parse_table_name(from, old_db_name, SDB_CS_NAME_MAX_SIZE,
                             old_table_name, SDB_CL_NAME_MAX_SIZE);
@@ -4055,7 +4151,10 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   bool created_cl = false;
   bool has_copy = false;
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_DBUG_RETURN(ha_thd(), rc, 0);
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = 0;
+    goto done;
+  }
 
   conn = check_sdb_in_thd(ha_thd(), true);
   if (NULL == conn) {
@@ -4514,7 +4613,9 @@ static void sdb_drop_database(handlerton *hton, char *path) {
     goto error;
   }
 
-  SDB_EXECUTE_ONLY_IN_MYSQL_VOID_RETURN(thd);
+  if (sdb_execute_only_in_mysql(thd)) {
+    goto done;
+  }
 
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
 
