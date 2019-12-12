@@ -491,4 +491,6 @@ class ha_sdb : public handler {
   uint m_dup_key_nr;
   bson::OID m_dup_oid;
   bson::BSONObj m_dup_value;
+  Item *updated_value;
+  Field *updated_field;
 };
