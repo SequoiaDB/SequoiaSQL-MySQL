@@ -502,4 +502,6 @@ class ha_sdb : public handler {
   bson::BSONObj m_dup_value;
   /*use std::shared_ptr instead of self-defined use count*/
   boost::shared_ptr<Sdb_share> share;
+  Item *updated_value;
+  Field *updated_field;
 };

@@ -525,6 +525,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
 
   incr_stat = NULL;
   m_dup_key_nr = MAX_KEY;
+  updated_value = NULL;
+  updated_field = NULL;
 }
 
 ha_sdb::~ha_sdb() {
@@ -724,6 +726,8 @@ int ha_sdb::reset() {
   stats.records = ~(ha_rows)0;
   m_dup_key_nr = MAX_KEY;
   m_dup_value = SDB_EMPTY_BSON;
+  updated_value = NULL;
+  updated_field = NULL;
 
   DBUG_RETURN(0);
 }
@@ -1560,7 +1564,6 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
     }
     goto error;
   }
-
 done:
   DBUG_RETURN(rc);
 error:
@@ -1698,6 +1701,8 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
     rfield->store(default_real);
   } else if (!is_decimal) {
     rfield->store(sdb_get_min_int_value(rfield));
+    updated_value = updated_value ? updated_value : value;
+    updated_field = updated_field ? updated_field : rfield;
   }
 
   if (is_decimal) {
@@ -1722,10 +1727,13 @@ retry:
 
     if (rc < 0) {
       my_message(ER_UNKNOWN_ERROR, ER(ER_UNKNOWN_ERROR), MYF(0));
-#ifdef IS_MYSQL
+#if defined IS_MYSQL
     } else if ((TYPE_WARN_OUT_OF_RANGE == rc || TYPE_ERR_BAD_VALUE == rc ||
                 TYPE_WARN_TRUNCATED == rc) &&
                !retry) {
+#elif defined IS_MARIADB
+    } else if ((1 == rc || 2 == rc) && !retry) {
+#endif
       retry = true;
       if (is_decimal) {
         Field_new_decimal *f = (Field_new_decimal *)rfield;
@@ -1738,15 +1746,18 @@ retry:
 
       if (rfield->table->in_use->is_error()) {
         THD *thd = rfield->table->in_use;
-        thd->killed = THD::NOT_KILLED;
+        sdb_thd_set_not_killed(thd);
         thd->clear_error();
-        thd->get_stmt_da()->reset_condition_info(thd);
+        sdb_thd_reset_condition_info(thd);
       }
       goto retry;
+#if defined IS_MYSQL
     } else if (TYPE_WARN_TRUNCATED == rc || TYPE_WARN_INVALID_STRING == rc ||
                TYPE_WARN_OUT_OF_RANGE == rc) {
-      rc = HA_ERR_END_OF_FILE;
+#elif IS_MARIADB
+    } else if (1 == rc || 2 == rc) {
 #endif
+      rc = HA_ERR_END_OF_FILE;
     }
     *optimizer_update = false;
     goto error;
@@ -4414,7 +4425,7 @@ done:
       break;
     case SDB_VALUE_OVERFLOW:
       if (!error_obj.isEmpty()) {
-        bson::BSONElement elem;
+        bson::BSONElement elem, elem_type;
         const char *field_name = NULL;
         elem = error_obj.getField(SDB_FIELD_CURRENT_FIELD);
         if (bson::Object != elem.type()) {
@@ -4424,10 +4435,75 @@ done:
         } else {
           field_name = elem.Obj().firstElementFieldName();
         }
-        my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), field_name,
-                 thd_sdb->updated + 1);
+        if (ha_thd()->variables.sql_mode & MODE_NO_UNSIGNED_SUBTRACTION) {
+          // if MODE_NO_UNSIGNED_SUBTRACTION is set, just print warning
+          if (!ha_thd()->get_stmt_da()->is_ok()) {
+            ha_thd()->get_stmt_da()->set_ok_status(0, 0, NULL);
+          }
+          sdb_thd_reset_condition_info(ha_thd());
+          // the row that cause this warning must be accounted into found rows.
+          thd_sdb->found++;
+          push_warning_printf(
+              ha_thd(), Sql_condition::SL_WARNING, ER_WARN_DATA_OUT_OF_RANGE,
+              ER(ER_WARN_DATA_OUT_OF_RANGE), field_name, thd_sdb->found);
+        } else {
+          // fetch Field from 'error_obj'
+          elem_type = elem.Obj().getField(field_name);
+          // if value of integer expression is big than BIGINT,
+          // 'CurrentField' will become 'decimal'.
+          if (updated_field && updated_value &&
+              bson::NumberDecimal == elem_type.type() &&
+              MYSQL_TYPE_NEWDECIMAL != updated_field->type() &&
+              MYSQL_TYPE_DECIMAL != updated_field->type()) {
+            char buf[256];
+            String str(buf, sizeof(buf), system_charset_info);
+            str.length(0);
+            updated_value->print(&str, QT_NO_DATA_EXPANSION);
+            my_error(
+                ER_DATA_OUT_OF_RANGE, MYF(0),
+                updated_value->unsigned_flag ? "BIGINT UNSIGNED" : "BIGINT",
+                str.c_ptr_safe());
+          } else if (updated_field && updated_value &&
+                     (bson::NumberLong == elem_type.type() ||
+                      bson::NumberInt == elem_type.type())) {
+            // get integer value from 'error_obj' and put it into updated_field
+            if (bson::NumberInt == elem_type.type()) {
+              updated_field->store(elem_type.Int());
+            } else {
+              updated_field->store(elem_type.Long());
+            }
+            // 1. if save_in_field succeed, print overflow error msg.
+            //       actually this shouldn't happen.
+            // 2. if thd error flag is set in save_in_field, my_error
+            //       is invoked in save_in_field.
+            // 3. if save_in_field set thd warning flag, print warning msg.
+            if (!updated_value->save_in_field(updated_field, false)) {
+              my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), field_name,
+                       thd_sdb->updated + 1);
+            } else if (!ha_thd()->get_stmt_da()->is_error()) {
+              if (!ha_thd()->get_stmt_da()->is_ok()) {
+                ha_thd()->get_stmt_da()->set_ok_status(0, 0, NULL);
+              }
+              sdb_thd_reset_condition_info(ha_thd());
+              // the row that cause this error must be accounted into found rows.
+              thd_sdb->found++;
+              push_warning_printf(ha_thd(), Sql_condition::SL_WARNING,
+                                  ER_WARN_DATA_OUT_OF_RANGE,
+                                  ER(ER_WARN_DATA_OUT_OF_RANGE), field_name,
+                                  thd_sdb->found);
+            } else {
+              thd_sdb->found = 0;
+            }
+          } else {
+            my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), field_name,
+                     thd_sdb->updated + 1);
+          }
+          updated_value = NULL;
+          updated_field = NULL;
+        }
         thd_sdb->updated = 0;
       }
+      break;
     case SDB_IXM_DUP_KEY: {
       const char *idx_name = get_dup_info(error_obj);
       my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key %s",
