@@ -340,6 +340,10 @@ uint sdb_selector_pushdown_threshold(THD *thd) {
   return THDVAR(thd, selector_pushdown_threshold);
 }
 
+/*
+   will not open collection on sdb, make sure called before
+   collection's action.
+*/
 bool sdb_execute_only_in_mysql(THD *thd) {
   return THDVAR(thd, execute_only_in_mysql);
 }
