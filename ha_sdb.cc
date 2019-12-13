@@ -72,10 +72,10 @@ using namespace sdbclient;
 #endif /* SDB_ENTERPRISE */
 #endif /* DEBUG */
 
-#define SDB_ENGINE_INFO "SequoiaDB storage engine(" SDB_ENGINE_EDITION ")"
-#define SDB_VERSION_INFO                                        \
-  "Plugin: " SDB_PLUGIN_VERSION ", Driver: " SDB_DRIVER_VERSION \
-  ", BuildTime: " __DATE__ " " __TIME__
+#define SDB_ENGINE_INFO "SequoiaDB storage engine"
+#define SDB_VERSION_INFO                                               \
+  "Version: " SDB_DRIVER_VERSION "(" SDB_PLUGIN_VERSION "), " __DATE__ \
+  "(" SDB_ENGINE_EDITION ")"
 
 #ifndef FLG_INSERT_REPLACEONDUP
 #define FLG_INSERT_REPLACEONDUP 0x00000004
@@ -83,7 +83,7 @@ using namespace sdbclient;
 
 #define SDB_FIELD_MAX_LEN (16 * 1024 * 1024)
 
-const static char *sdb_plugin_info = SDB_ENGINE_INFO ". " SDB_VERSION_INFO ".";
+const static char *sdb_plugin_info = SDB_ENGINE_INFO ". " SDB_VERSION_INFO;
 
 handlerton *sdb_hton = NULL;
 
@@ -4485,7 +4485,8 @@ done:
                 ha_thd()->get_stmt_da()->set_ok_status(0, 0, NULL);
               }
               sdb_thd_reset_condition_info(ha_thd());
-              // the row that cause this error must be accounted into found rows.
+              // the row that cause this error must be accounted into found
+              // rows.
               thd_sdb->found++;
               push_warning_printf(ha_thd(), Sql_condition::SL_WARNING,
                                   ER_WARN_DATA_OUT_OF_RANGE,
