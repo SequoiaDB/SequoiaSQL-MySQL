@@ -383,7 +383,8 @@ class ha_sdb : public handler {
   int field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
                           bool default_min_value);
 
-  int field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder);
+  int field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
+                   bool auto_inc_explicit_used = false);
 
   int get_update_obj(const uchar *old_data, const uchar *new_data,
                      bson::BSONObj &obj, bson::BSONObj &null_obj);

@@ -759,7 +759,7 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
                !auto_inc_explicit_used) {
       continue;
     } else {
-      rc = field_to_obj(*field, obj_builder);
+      rc = field_to_obj(*field, obj_builder, auto_inc_explicit_used);
       if (0 != rc) {
         goto error;
       }
@@ -934,7 +934,8 @@ done:
   return rc;
 }
 
-int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
+int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
+                         bool auto_inc_explicit_used) {
   int rc = 0;
   DBUG_ASSERT(NULL != field);
   switch (field->type()) {
@@ -962,6 +963,13 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder) {
     case MYSQL_TYPE_LONGLONG: {
       longlong value = field->val_int();
       if (value < 0 && ((Field_num *)field)->unsigned_flag) {
+        /* sdb sequence max value is 2^63 -1. */
+        if (auto_inc_explicit_used) {
+          field->set_warning(Sql_condition::SL_WARNING,
+                             ER_WARN_DATA_OUT_OF_RANGE, 1);
+          rc = true;
+          break;
+        }
         // overflow, so store as DECIMAL
         my_decimal tmp_val;
         char buff[MAX_FIELD_WIDTH];
