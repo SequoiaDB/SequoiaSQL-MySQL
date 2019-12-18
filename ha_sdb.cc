@@ -1570,6 +1570,13 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
         rc = HA_ERR_RECORD_IS_THE_SAME;
       }
     }
+#ifdef IS_MARIADB
+    if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
+      if (sdb_lex_ignore(ha_thd())) {
+        rc = HA_ERR_FOUND_DUPP_KEY;
+      }
+    }
+#endif
     goto error;
   }
 done:
