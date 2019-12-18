@@ -1,0 +1,373 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import shutil
+import argparse
+import subprocess
+
+
+class OptionsMgr:
+    def __init__(self):
+        self.__parser = argparse.ArgumentParser()
+
+        # Compile and install options
+        build_opt_group = self.__parser.add_argument_group('build arguments')
+        build_opt_group.add_argument(
+            '--sdbdriver', metavar='path', type=str, required=True,
+            help='SequoiaDB driver path'
+        )
+        build_opt_group.add_argument(
+            '-t', '--type', metavar = 'projectType',
+            type=str, default='mysql-5.7.25',
+            help='Build the project, including the '
+                 'testcases. Default: mysql-5.7.25')
+        build_opt_group.add_argument(
+            '--dd',
+            help='Build debug version. Default: False',
+            action='store_true'
+        )
+        build_opt_group.add_argument(
+            '--abimode', default=1,
+            type=int,
+            help='For _GLIBCXX_USE_CXX11_ABI flag. Default: 1. Set to 0 to '
+                 'be compatible with old compiler'
+        )
+        build_opt_group.add_argument(
+            '-i', '--install', metavar = 'installPath',
+            help='Install the program to the specified path. When \'\' is '
+                 'passed, the default value will be used. Default: "install" '
+                 'directory in the project root'
+        )
+        build_opt_group.add_argument(
+            '-j', '--jobs', metavar = 'jobNum', type=int, default=2,
+            help='Compile thread number. Default: 2' )
+        build_opt_group.add_argument(
+            '-r', '--runpackage',
+            help='Make the run package. Default: False',
+            action='store_true')
+        build_opt_group.add_argument(
+            '-p', '--package',
+            help='Make the bin package. Default: False',
+            action='store_true')
+        build_opt_group.add_argument(
+            '--packtest', default=True,
+            help='Pack mysql testcases into the package'
+        )
+        build_opt_group.add_argument(
+            '-v', '--verbose',
+            help='Print verbose information during compilation. Default: False',
+            action='store_true')
+
+        # Test options
+        test_opt_group = self.__parser.add_argument_group('test arguments')
+        test_opt_group.add_argument(
+            '--test', default=False,
+            help='Run all the testcases. Default: False', action='store_true')
+        test_opt_group.add_argument(
+            '--suite', default='main,json',
+            help='Run a suite or a comma separated list of suites. Default: '
+                 'main,json'
+        )
+        test_opt_group.add_argument(
+            '--big-test', default=False,
+            help='Allow tests marked as "big" to run. Default: False',
+            action='store_true'
+        )
+        test_opt_group.add_argument(
+            '--force', default=False,
+            help='Continue execution regardless of test case failure. '
+                 'Default: False',
+            action='store_true'
+        )
+        test_opt_group.add_argument(
+            '--max-test-fail', default=0,
+            help='Stop execution after the specified number of tests have '
+                 'failed. Default: 0, which means no limit'
+        )
+        test_opt_group.add_argument(
+            '--retry', default=1,
+            help='Retry up to a maximum of N runs. Default: 1'
+        )
+        test_opt_group.add_argument(
+            '--retry-failure', default=1,
+            help='Allow a failed and retried test to fail more than the '
+                 'default times before giving it up'
+        )
+        test_opt_group.add_argument(
+            '--parallel', default=4,
+            help='Run tests using N parallel threads. Default: 4'
+        )
+        test_opt_group.add_argument(
+            '--xml-report', default='mysql_test_report.xml',
+            help='Generate an xml file containing result of the test run and '
+                 'write it to the file named as the option argument'
+        )
+
+        self.__parser.add_argument(
+            '--clean',
+            help="Clean the total project. The only option is 'force'. Note: "
+                 "Be carefull to use this option, all changes at local will be "
+                 "lost!",
+        )
+        self.__projectType = 'MYSQL'
+        self.__projectVersion = '5.7.25'
+
+    def description(self):
+        print("Run options:")
+        print("\tBuild      -- " + str(self.needBuild()))
+        print("\tBuild jobs -- " + str(self.jobNum()))
+        print("\tInstall    -- " + str(self.needInstall()))
+        print("\tTest       -- " + str(self.needTest()))
+        print("\tPackage    -- " + str(self.needPackage()))
+        print("\tRunPackage -- " + str(self.needRunPackage()))
+
+    def parseArguments(self):
+        self.args = self.__parser.parse_args()
+        # Parse build type
+        target = self.args.type.split('-')
+        if len(target) != 2:
+            print("The build target '{}' is invalid".format(self.args.build))
+            return 1
+        if 'mysql' != target[0].lower() and \
+           'mariadb' != target[0].lower():
+           print("The build target '{}' is invalid".format(self.args.build))
+        elif 'mariadb' == target[0].lower():
+            self.__projectType = 'MARIADB'
+        self.__projectVersion = target[1]
+
+        if ((not self.needInstall()) and
+           (self.needTest() or self.needPackage() or self.needRunPackage() )):
+           print("Installation should be done before testing/packing")
+           return 1
+
+        # Change to absolute path to avoid directory switch impact.
+        self.args.sdbdriver = os.path.abspath(self.args.sdbdriver)
+        if '' == self.args.install:
+            prj_dir = os.path.abspath(os.path.dirname(__file__))
+            self.args.install = os.path.join(prj_dir, 'output')
+        elif self.args.install is not None:
+            self.args.install = os.path.abspath(self.args.install)
+        return 0
+
+    def getCMakeConfArgList(self):
+        cmake_arguments = []
+        # Add project type
+        cmake_arguments.append('-D{}={}'.format(self.__projectType,
+                               self.__projectVersion))
+        cmake_arguments.append('-DWITH_SDB_DRIVER={}'
+            .format(os.path.join(os.getcwd(), self.args.sdbdriver)))
+
+        if self.args.install is not None:
+            cmake_arguments.append(
+                '-DCMAKE_INSTALL_PREFIX={}'.format(self.args.install)
+            )
+
+        if self.args.dd:
+            cmake_arguments.append('-DCMAKE_BUILD_TYPE=Debug')
+
+        if 0 == self.args.abimode:
+            cmake_arguments.append("-DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0'")
+
+        if not self.args.packtest:
+            cmake_arguments.append('-DPACK_TEST=OFF')
+
+        print("cmake configuration arguments: {}"
+              .format(' '.join(cmake_arguments)))
+        return cmake_arguments
+
+    def getTestArgList(self):
+        test_arguments = []
+        test_arguments.append("--suite={}".format(self.args.suite))
+        test_arguments.append("--max-test-fail={}"
+                              .format(self.args.max_test_fail))
+        test_arguments.append("--retry={}".format(self.args.retry))
+        test_arguments.append("--retry-failure={}"
+                              .format(self.args.retry_failure))
+        test_arguments.append("--parallel={}".format(self.args.parallel))
+        test_arguments.append("--xml-report={}".format(self.args.xml_report))
+
+        if self.args.big_test:
+            test_arguments.append("--big-test")
+
+        if self.args.force:
+            test_arguments.append("--force")
+
+        print("Test arguments: {}".format(' '.join(test_arguments)))
+        return test_arguments
+
+    def getProjectType(self):
+        return self.__projectType
+
+    def getProjectVersion(self):
+        return self.__projectVersion
+
+    def getInstallPath(self):
+        return self.args.install
+
+    def needClean(self):
+        return ('force' == self.args.clean)
+
+    def needBuild(self):
+        return self.args.type
+
+    def needInstall(self):
+        return (self.args.install is not None)
+
+    def needTest(self):
+        return self.args.test
+
+    def jobNum(self):
+        return self.args.jobs
+
+    def needPackage(self):
+        return self.args.package
+
+    def needRunPackage(self):
+        return self.args.runpackage
+
+class ProjectMgr:
+    def __init__(self, optMgr):
+        self.__prjRoot = os.path.abspath(os.path.dirname(__file__))
+        self.__buildDir = os.path.join(self.__prjRoot, 'build')
+        self.__optMgr = optMgr
+        print("Project manager created. Root: " + self.__prjRoot)
+
+    def __execute_make_cmd(self, command):
+        os.chdir(self.__buildDir)
+        print('Execute command: {}'.format(' '.join(command)))
+        process = subprocess.Popen(command, shell=False)
+        out, error = process.communicate()
+        if 0 != process.returncode:
+            print('Execute command {} failed'.format(' '.join(command)))
+            return 1
+        return 0
+
+    def clean_project(self):
+        commands = [
+            ['git', 'clean', '-fdx'],
+            ['git', 'reset', '--hard']
+        ]
+
+        for command in commands:
+            process = subprocess.Popen(command, shell=False, cwd=self.__prjRoot)
+            out, error = process.communicate()
+            if 0 != process.returncode:
+                raise Exception("Clean project by command '{}' failed: {}"
+                                .format(' '.join(command), error))
+
+    def build(self):
+        try:
+            if os.path.exists(self.__buildDir):
+                shutil.rmtree(self.__buildDir)
+            os.mkdir(self.__buildDir)
+        except IOError as err:
+            print('IO error: {}'.format(err))
+            return 1
+        except:
+            print('Unexpected error: ', sys.exc_info()[0])
+            return 1
+
+        arg_list = self.__optMgr.getCMakeConfArgList()
+        build_cmd = ['cmake', '..'] + arg_list
+
+        rc = self.__execute_make_cmd(build_cmd)
+        if 0 != rc:
+            print("Build project failed, rc: {}".format(rc))
+            return rc
+
+        build_cmd =['make', '-j', str(self.__optMgr.jobNum())]
+        rc = self.__execute_make_cmd(build_cmd)
+        if 0 != rc:
+            print("Build project failed, rc: {}".format(rc))
+            return rc
+        print("Build project successfully!")
+        return 0
+
+    def install(self):
+        #os.chdir(self.__buildDir)
+        install_cmd = ['make', 'install']
+        process = subprocess.Popen(install_cmd, shell=False)
+        out, error = process.communicate()
+        if 0 != process.returncode:
+            print("Install program failed: {}".format(error))
+            return 1
+        return 0
+
+    def package(self):
+        pack_command = ['make', 'package']
+        rc = self.__execute_make_cmd(pack_command)
+        if 0 != rc:
+            print("Build TGZ package for the project failed: {}".format(rc))
+            return 1
+        print("Build TGZ package for the project successfully!")
+        return 0
+
+    def buildRunPackage(self):
+        pack_command = ['make', 'runpackage']
+        rc = self.__execute_make_cmd(pack_command)
+        if 0 != rc:
+            print("Build .run package for the project failed: {}".format(rc))
+            return 1
+        print("Build .run package for the project successfully!")
+        return 0
+
+    def runTest(self):
+        test_args = self.__optMgr.getTestArgList()
+        test_dir = os.path.join(self.__optMgr.getInstallPath(), 'mysql-test')
+        os.chdir(test_dir)
+        exe_path = os.path.join(test_dir, 'mysql-test-run.pl')
+        test_cmd = [exe_path] + test_args
+        process = subprocess.Popen(test_cmd, shell=False)
+        out, error = process.communicate()
+        if 0 != process.returncode:
+            print("Test failed: {}".format(error))
+
+def main():
+    optMgr = OptionsMgr()
+    rc = optMgr.parseArguments()
+    if 0 != rc:
+        print("Resolve arguments failed, rc: {}".format(rc))
+        return rc
+
+    optMgr.description()
+    prjMgr = ProjectMgr(optMgr)
+
+
+    if optMgr.needClean():
+        prjMgr.clean_project()
+
+    if optMgr.needBuild():
+        rc = prjMgr.build()
+        if 0 != rc:
+            print("Failed to build the project: {}".format(rc))
+            return rc
+
+    if optMgr.needInstall():
+        rc = prjMgr.install()
+        if 0 != rc:
+            print("Install the program failed: {}".format(rc))
+            return rc
+
+    if optMgr.needPackage():
+        rc = prjMgr.package()
+        if 0 != rc:
+            print("Make TGZ package for the project failed: {}".format(rc))
+            return rc
+
+    if optMgr.needRunPackage():
+        rc = prjMgr.buildRunPackage()
+        if 0 != rc:
+            print("Make .run package for the project failed: {}".format(rc))
+            return rc
+
+    if optMgr.needTest():
+        rc = prjMgr.runTest()
+        if 0 != rc:
+            print("Run testcases failed: {}".format(rc))
+            return rc
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

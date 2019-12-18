@@ -19,142 +19,364 @@
 # [WITH_SDB_DRIVER]: the path to SequoiaDB cpp driver, which must contain
 # include/ and lib/libsdbcpp.so
 
-if(SDB_DRIVER_VERSION)
-  add_definitions(-DSDB_DRIVER_VERSION=\"${SDB_DRIVER_VERSION}\")
-endif()
-if(SDB_PLUGIN_VERSION)
-  add_definitions(-DSDB_PLUGIN_VERSION=\"${SDB_PLUGIN_VERSION}\")
-endif()
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-  add_definitions(-DDEBUG)
-endif()
-add_definitions(-Wno-error)
+cmake_minimum_required(VERSION 2.8.7)
 
-# SDB_PROJECT_TYPE: 1 = MySQL; 2 = MariaDB
-if(NOT DEFINED SDB_PROJECT_TYPE)
-  find_file(SDB_MARIA_HEADER NAMES mariadb.h HINTS ${CMAKE_SOURCE_DIR}/sql)
-  if(${SDB_MARIA_HEADER} STREQUAL "SDB_MARIA_HEADER-NOTFOUND")
-    set(SDB_PROJECT_TYPE 1)
-  else()
-    set(SDB_PROJECT_TYPE 2)
-  endif()
-endif()
+option(ENTERPRISE "Build enterprise edition" ON)
+option(SDB_BUILT_IN "Build the sequoiadb plugin into mysqld" ON)
+option(PACK_TEST "Set to true if you want to include testcases in the run
+                  package" ON)
 
-if(SDB_PROJECT_TYPE EQUAL 1)
-  message(STATUS "Building for mainstream MySQL")
-  add_definitions(-DIS_MYSQL)
-elseif(SDB_PROJECT_TYPE EQUAL 2)
-  message(STATUS "Building for MariaDB")
-  add_definitions(-DIS_MARIADB)
-  # To ignore warnings in BSON library for C++11
-  add_definitions(-Wno-deprecated-declarations)
+# Find out with target(s) to be build.
+if(MYSQL AND MARIADB)
+   message(FATAL_ERROR "Can only build one type at the same time")
+elseif(MARIADB)
+   set(SDB_PROJECT_TYPE "mariadb" CACHE STRING "Project type is MariaDB")
+   set(PROJECT_NAME "SequoiaSQL-MariaDB")
+   set(SQL_VERSION "${MARIADB}")
 else()
-  message(SEND_ERROR "Wrong value of SDB_PROJECT_TYPE")
+   set(SDB_PROJECT_TYPE "mysql" CACHE STRING "Project type is MySQL")
+   if(NOT MYSQL)
+      set(MYSQL "5.7.25")
+   endif()
+   set(PROJECT_NAME "SequoiaSQL-MySQL")
+   set(SQL_VERSION "${MYSQL}")
 endif()
-   
-set(SEQUOIADB_SOURCES
-    ha_sdb.cc
-    ha_sdb_part.cc
-    sdb_conf.cc
-    sdb_util.cc
-    sdb_conn.cc
-    sdb_thd.cc
-    sdb_condition.cc
-    sdb_item.cc
-    sdb_cl.cc
-    sdb_errcode.cc
-    sdb_log.cc
-    sdb_idx.cc
-    sdb_alter.cc
-    sdb_sql.cc)
 
-set(WITH_SDB_DRIVER "" CACHE PATH "Path to SequoiaDB C++ driver")
-set(SDB_DRIVER_PATH ${WITH_SDB_DRIVER})
+#if(NOT (${CMAKE_VERSION} VERSION_LESS "3.0"))
+#   cmake_policy(SET CMP0048 OLD)
+#endif()
 
-find_path(SDB_INCLUDE_DIR NAMES client.hpp HINTS ${SDB_DRIVER_PATH}/include)
+project(${PROJECT_NAME})
 
-if(${SDB_INCLUDE_DIR} STREQUAL "SDB_INCLUDE_DIR-NOTFOUND")
-  message(
-    SEND_ERROR
-      "Cannot find appropriate headers of SequoiaDB C++ driver from ${SDB_DRIVER_PATH}"
-    )
-endif()
-message(STATUS "SDB_INCLUDE_DIR = ${SDB_INCLUDE_DIR}")
-include_directories(${SDB_INCLUDE_DIR})
+set(VERSION_FILE ${CMAKE_SOURCE_DIR}/version)
+execute_process(
+   COMMAND bash -c "awk -F. '{print $1}' ${VERSION_FILE}"
+   OUTPUT_VARIABLE PROJECT_VERSION_MAJOR
+)
+string(STRIP ${PROJECT_VERSION_MAJOR} PROJECT_VERSION_MAJOR)
+execute_process(
+   COMMAND bash -c "awk -F. '{print $2}' ${VERSION_FILE}"
+   OUTPUT_VARIABLE PROJECT_VERSION_MINOR
+)
+string(STRIP ${PROJECT_VERSION_MINOR} PROJECT_VERSION_MINOR)
+execute_process(
+   COMMAND bash -c "grep -o '\\.' ${VERSION_FILE}"
+   COMMAND bash -c "wc -l"
+   OUTPUT_VARIABLE DOT_NUMBER
+)
 
-
-# boost configure
-set(BOOST_VERSION "1.59")
-set(BOOST_COMPONENTS "")
-# list(APPEND BOOST_COMPONENTS ...)
-if(WITH_BOOST) 
-  set(BOOST_ROOT "${WITH_BOOST}")
-endif()
-find_package(Boost ${BOOST_VERSION} REQUIRED COMPONENTS ${BOOST_COMPONENTS})
-if(NOT Boost_FOUND)
-  message(SEND_ERROR "Boost not found in path ${BOOST_ROOT}")
-endif()
-include_directories(SYSTEM ${Boost_INCLUDE_DIR})
-                                  
-
-
-set(SDB_BUILT_IN ON CACHE BOOL "Build SequoiaDB storage engine in mysqld")
-mark_as_advanced(SDB_BUILT_IN)
-message(STATUS "SDB_BUILT_IN = ${SDB_BUILT_IN}")
-
-set(SDB_LDFLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
-
-if(SDB_BUILT_IN)
-  # builtin storage engine use C++ dynamic driver
-  find_library(SDB_DYNAMIC_LIBRARY
-               NAMES libsdbcpp.so
-               HINTS ${SDB_DRIVER_PATH}/lib)
-  if(${SDB_DYNAMIC_LIBRARY} STREQUAL "SDB_DYNAMIC_LIBRARY-NOTFOUND")
-    message(SEND_ERROR "Cannot find libsdbcpp.so from ${SDB_DRIVER_PATH}/lib")
-  endif()
-  message(STATUS "Using SequoiaDB dynamic library: ${SDB_DYNAMIC_LIBRARY}")
-
-  mysql_add_plugin(sequoiadb
-                   ${SEQUOIADB_SOURCES}
-                   STORAGE_ENGINE
-                   MANDATORY
-                   RECOMPILE_FOR_EMBEDDED
-                   LINK_LIBRARIES
-                   ${SDB_DYNAMIC_LIBRARY})
-
-  string(FIND "${WITH_MYSQLD_LDFLAGS}" "${SDB_LDFLAGS}" POS)
-  if(${POS} EQUAL -1)
-    set(WITH_MYSQLD_LDFLAGS "${WITH_MYSQLD_LDFLAGS} ${SDB_LDFLAGS}"
-        CACHE STRING "Additional linker flags for mysqld"
-        FORCE)
-  endif()
-
-  install(FILES ${SDB_DYNAMIC_LIBRARY} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+# Check if the version number contains path version.
+if(DOT_NUMBER EQUAL 2)
+   execute_process(
+      COMMAND bash -c "awk -F. '{print $3}' ${VERSION_FILE}"
+      OUTPUT_VARIABLE PROJECT_VERSION_PATCH
+   )
+   string(STRIP ${PROJECT_VERSION_PATCH} PROJECT_VERSION_PATCH)
 else()
-  # use C++ static driver
-  find_library(SDB_STATIC_LIBRARY
-               NAMES libstaticsdbcpp.a
-               HINTS ${SDB_DRIVER_PATH}/lib)
-  if(${SDB_STATIC_LIBRARY} STREQUAL "SDB_STATIC_LIBRARY-NOTFOUND")
-    message(
-      SEND_ERROR "Cannot find libstaticsdbcpp.a from ${SDB_DRIVER_PATH}/lib")
-  endif()
-  message(STATUS "Using SequoiaDB static library: ${SDB_STATIC_LIBRARY}")
-
-  mysql_add_plugin(sequoiadb
-                   ${SEQUOIADB_SOURCES}
-                   STORAGE_ENGINE
-                   MODULE_ONLY
-                   LINK_LIBRARIES
-                   ${SDB_STATIC_LIBRARY})
-  set_target_properties(sequoiadb PROPERTIES LINK_FLAGS ${SDB_LDFLAGS})
+   unset(PROJECT_VERSION_PATCH)
+   set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 endif()
 
-set(SEQUOIADB_DIR "${CMAKE_SOURCE_DIR}/storage/sequoiadb")
+if(SDB_PROJECT_TYPE STREQUAL "mariadb")
+   add_definitions(-DOPENSSL_ROOT_DIR="${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
+endif()
 
-execute_process(COMMAND python ${SEQUOIADB_DIR}/tools/sdb_doc_generator.py 
-                -o ${SEQUOIADB_DIR})
-install(FILES "${SEQUOIADB_DIR}/sdb_doc.cnf" 
-        DESTINATION "${CMAKE_INSTALL_PREFIX}/conf/sample/" 
+# Trigger the sdb version tool building, and use it to get the version.
+function(get_sdb_version version git_version)
+   set(SDB_VERTOOL_DIR ${CMAKE_SOURCE_DIR}/misc/versiontool)
+   set(SDB_VERTOOL ${SDB_VERTOOL_DIR}/sdbvertool)
+
+   # Build the sdb version tool in misc.
+   if(IS_ABSOLUTE ${WITH_SDB_DRIVER})
+      set(SDB_DRIVER_DIR "${WITH_SDB_DRIVER}")
+   else()
+      set(SDB_DRIVER_DIR "${CMAKE_BINARY_DIR}/${WITH_SDB_DRIVER}")
+   endif()
+
+   execute_process(
+      COMMAND bash -c "cmake . -DSDB_DRIVER_DIR=${SDB_DRIVER_DIR}"
+      WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
+   )
+
+   execute_process(
+      COMMAND bash -c "make"
+      WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
+   )
+
+   # Execute the sdb version tool to get the version.
+   execute_process(
+      COMMAND bash -c "${SDB_VERTOOL}"
+      COMMAND bash -c "grep Version"
+      COMMAND bash -c "awk '{print $2}'"
+      OUTPUT_VARIABLE SDB_VERSION
+   )
+
+   execute_process(
+      COMMAND bash -c "${SDB_VERTOOL}"
+      COMMAND bash -c "grep Git"
+      COMMAND bash -c "awk '{print $3}'"
+      OUTPUT_VARIABLE SDB_GIT_VERSION
+   )
+
+   # The original value contains a '\n' at the end. Remove it.
+   string(STRIP ${SDB_VERSION} SDB_VERSION)
+   string(STRIP ${SDB_GIT_VERSION} SDB_GIT_VERSION)
+
+   set(${version} ${SDB_VERSION} PARENT_SCOPE)
+   set(${git_version} ${SDB_GIT_VERSION} PARENT_SCOPE)
+endfunction()
+
+function(get_my_version my_version length)
+   if(${length} EQUAL 0)
+      set(GIT_LOG_CMD "git log -1 --format=%H")
+   else()
+      set(GIT_LOG_CMD "git log -1 --format=%h --abbrev=${length}")
+   endif()
+   execute_process(
+      COMMAND bash -c "${GIT_LOG_CMD}"
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      OUTPUT_VARIABLE GIT_VERSION
+   )
+
+   string(STRIP ${GIT_VERSION} GIT_VERSION)
+   set(${my_version} ${GIT_VERSION} PARENT_SCOPE)
+endfunction()
+
+# Generate the project version file, which contains version of this project and
+# the SequoiaDB driver.
+function(gen_version_file)
+   set(SDB_PLUGIN_VERSION "")
+   get_my_version(SDB_PLUGIN_VERSION 0)
+   message(STATUS "SDB plugin version: ${SDB_PLUGIN_VERSION}")
+
+   set(SDB_VERSION "")
+   set(SDB_GIT_VERSION "")
+   get_sdb_version(SDB_VERSION SDB_GIT_VERSION)
+
+   string(TIMESTAMP BUILDDATE "%Y-%m-%d-%H.%M.%S")
+   set(BUILD_TYPE_STR "")
+   if(ENTERPRISE)
+      string(APPEND BUILD_TYPE_STR "Enterprise")
+   endif()
+   if(CMAKE_BUILD_TYPE MATCHES "Debug")
+      if(BUILD_TYPE_STR STREQUAL "Enterprise")
+         string(APPEND BUILD_TYPE_STR "-Debug")
+      else()
+         string(APPEND BUILD_TYPE_STR "Debug")
+      endif()
+   else()
+      SET(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
+          "Type of build, options are: Debug RelWithDebInfo" FORCE)
+   endif()
+   if(NOT (BUILD_TYPE_STR STREQUAL ""))
+      set(BUILD_TYPE_STR " (${BUILD_TYPE_STR})")
+   endif()
+
+   string(CONCAT FULL_VERSION "${PROJECT_NAME} version: ${PROJECT_VERSION_NUM}\n"
+                              "Git version: ${SDB_PLUGIN_VERSION}\n"
+                              "${BUILDDATE}" "${BUILD_TYPE_STR}\n\n"
+                              "SDB driver: ${SDB_VERSION}("
+                              "${SDB_GIT_VERSION})\n")
+   file(WRITE ${CMAKE_BINARY_DIR}/version.info ${FULL_VERSION})
+endfunction()
+
+function(prepare_sql_source sql_source_root sql_name)
+   if(NOT EXISTS ${sql_source_root}/CMakeLists.txt)
+      file(READ ${sql_source_root}/url.txt SOURCE_URL)
+      message(STATUS "SQL source code not exist. Download it from ${SOURCE_URL}")
+      set(PACKAGE_NAME "${sql_name}.tar.gz")
+      set(DOWNLOAD_TARGET "${sql_source_root}/${PACKAGE_NAME}")
+      file(DOWNLOAD ${SOURCE_URL} ${DOWNLOAD_TARGET})
+      execute_process(
+         COMMAND ${CMAKE_COMMAND} -E tar zxvf "${DOWNLOAD_TARGET}"
+         WORKING_DIRECTORY "${sql_source_root}"
+         RESULT_VARIABLE tar_result
+      )
+      set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}")
+      execute_process(
+         COMMAND bash -c "mv ${EXTRACT_NAME}/* ./"
+         WORKING_DIRECTORY "${sql_source_root}"
+         RESULT_VARIABLE tar_result
+      )
+   endif()
+endfunction()
+
+set(SQL_SOURCE_DIR_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}")
+set(SQL_SOURCE_ROOT "${CMAKE_SOURCE_DIR}/sql-src/${SQL_SOURCE_DIR_NAME}")
+
+if(NOT EXISTS ${SQL_SOURCE_ROOT})
+   message(FATAL_ERROR "Source code path [${SQL_SOURCE_ROOT}] dose not exist")
+endif()
+
+prepare_sql_source(${SQL_SOURCE_ROOT} ${SQL_SOURCE_DIR_NAME})
+
+if(NOT WITH_SDB_DRIVER)
+   message(FATAL_ERROR "SequoiaDB driver path not set")
+endif()
+
+# If WITH_BOOST is not set, use the default
+if(NOT WITH_BOOST)
+   set(BOOST_VERSION "1_59_0")
+   set(WITH_BOOST "${CMAKE_SOURCE_DIR}/thirdparty/boost_${BOOST_VERSION}")
+endif()
+include_directories(SYSTEM ${WITH_BOOST})
+
+if(NOT SDB_BUILT_IN)
+   set(SDB_BUILD_IN ${SDB_BUILD_IN} CACHE BOOL
+       "Build the sequoiadb plugin into mysqld")
+endif()
+
+if(NOT MYSQL_DATADIR)
+   set(MYSQL_DATADIR "/opt/sequoiasql/mysql/data")
+endif()
+
+if(ENTERPRISE)
+   set(CMAKE_CXX_FLAGS "-DSDB_ENTERPRISE=TRUE")
+endif()
+
+set(SDB_PLUGIN_VERSION "")
+get_my_version(SDB_PLUGIN_VERSION 7)
+message(STATUS "SDB plugin version: ${SDB_PLUGIN_VERSION}")
+
+set(SDB_VERSION "")
+set(SDB_GIT_VERSION "")
+get_sdb_version(SDB_VERSION SDB_GIT_VERSION)
+
+add_definitions(-DSDB_PLUGIN_VERSION="${SDB_PLUGIN_VERSION}")
+add_definitions(-DSDB_DRIVER_VERSION="${SDB_VERSION}")
+
+if(PACKET_TEST)
+   message(STATUS "Packet testcases")
+endif()
+
+# Preprocessing
+set(SQL_STORAGE_DIR "${SQL_SOURCE_ROOT}/storage")
+set(SQL_CONNECTOR_DIR "${CMAKE_SOURCE_DIR}/src")
+
+set(SQL_BUILD_DIR "${CMAKE_SOURCE_DIR}/build")
+
+# Replace the original mysql-test with the new one.
+set(MYSQL_TEST_DIR "${SQL_SOURCE_ROOT}/mysql-test")
+set(MYSQL_TEST_ORIG "${SQL_SOURCE_ROOT}/mysql-test-orig")
+
+execute_process(
+   COMMAND bash -c "file ${MYSQL_TEST_DIR}"
+   COMMAND bash -c "awk '{print $2}'"
+   OUTPUT_VARIABLE TEST_DIR_TYPE
+)
+
+# Remove the native mysql testcases, and create a symbol link pointing to ours.
+string(STRIP ${TEST_DIR_TYPE} TEST_DIR_TYPE)
+if(TEST_DIR_TYPE STREQUAL "directory")
+   file(REMOVE_RECURSE ${MYSQL_TEST_DIR})
+   execute_process(
+      COMMAND bash -c "ln -sf ${CMAKE_SOURCE_DIR}/testcase/${SQL_SOURCE_DIR_NAME} ${SQL_SOURCE_ROOT}/mysql-test"
+   )
+endif()
+
+set(updateCmd "find ${SQL_SOURCE_ROOT} -type f |
+               xargs grep -l CMAKE_SOURCE_DIR 2>/dev/null |
+               xargs sed -i 's/CMAKE_SOURCE_DIR/SQL_SOURCE_ROOT/g' 2>/dev/null")
+execute_process(COMMAND bash -c ${updateCmd})
+
+set(SDB_PLUGIN_DIR "${SQL_STORAGE_DIR}/sequoiadb")
+if(EXISTS ${SDB_PLUGIN_DIR})
+   message(STATUS "Directory ${SDB_PLUGIN_DIR} exists. Ready to remove")
+   file(REMOVE ${SDB_PLUGIN_DIR})
+else()
+   message(STATUS "Directory ${SDB_PLUGIN_DIR} dose not exist")
+endif()
+
+# Generate the version.info file
+gen_version_file()
+
+set(mapSrcCmd "ln -sf ${SQL_CONNECTOR_DIR} ${SQL_STORAGE_DIR}/sequoiadb")
+execute_process(COMMAND bash -c ${mapSrcCmd})
+
+set(SQL_OUTPUT_ROOT "${SQL_BUILD_DIR}/${SQL_SOURCE_DIR_NAME}"
+    CACHE STRING INTERNAL)
+set(updateCmd "find ${SQL_SOURCE_ROOT} -type f |
+               xargs grep -l CMAKE_BINARY_DIR 2>/dev/null |
+               xargs sed -i 's#\${CMAKE_BINARY_DIR}#${SQL_OUTPUT_ROOT}#g'
+               2>/dev/null")
+execute_process(COMMAND bash -c ${updateCmd})
+
+set(AUTOGEN_include_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
+include_directories(${AUTOGEN_include_DIR})
+
+option(WITH_DEBUG "USE DBUG/SAFEMUTEX" OFF)
+
+if(WITH_DEBUG)
+   message(STATUS "Build debug")
+else()
+   message(STATUS "Build release")
+endif()
+
+set(TARGET_SOURCE_DIR "${CMAKE_SOURCE_DIR}/sql-src/${target}")
+add_subdirectory(${SQL_SOURCE_ROOT} ${SQL_BUILD_DIR}/${SQL_SOURCE_DIR_NAME})
+
+# Generate the configuration file
+execute_process(
+   COMMAND python ${CMAKE_SOURCE_DIR}/tools/sdb_doc_generator.py ${SDB_PROJECT_TYPE}
+           -o ${CMAKE_BINARY_DIR}
+)
+
+install(FILES "${CMAKE_BINARY_DIR}/sdb_doc.cnf"
+        DESTINATION "conf/sample/"
         RENAME "sample.cnf")
 
+# Extra install options.
+set(PROJECT_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/package")
+set(PROJECT_PACKAGE_SUB_DIR "${PROJECT_PACKAGE_DIR}/${SDB_PROJECT_TYPE}")
+install(PROGRAMS "${PROJECT_PACKAGE_SUB_DIR}/sdb_sql_ctl"
+        DESTINATION "bin")
+install(PROGRAMS "${PROJECT_PACKAGE_DIR}/common/compatible.sh"
+        DESTINATION "./")
+install(PROGRAMS "${PROJECT_PACKAGE_DIR}/common/preUninstall.sh"
+        DESTINATION "./")
+install(DIRECTORY "${PROJECT_PACKAGE_SUB_DIR}/license"
+        DESTINATION "./")
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib"
+        DESTINATION "tools")
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/metaSync"
+        DESTINATION "tools")
+install(FILES "${CMAKE_BINARY_DIR}/version.info"
+        DESTINATION "./")
+
+include("${CMAKE_SOURCE_DIR}/package/cmakecpackage.cmake")
+
+
+if(PACK_TEST)
+   set(CLEAN_TEST_CMD ":" CACHE STRING "Take the mysql-test when packing")
+else()
+   set(CLEAN_TEST_CMD "rm ${CMAKE_INSTALL_PREFIX}/mysql-test" CACHE STRING "Remove the mysql-test before packing")
+endif()
+
+if(PACK_TEST)
+   add_custom_target(
+      runpackage
+      COMMAND bash -c "cp ${PROJECT_PACKAGE_SUB_DIR}/*.sys* ${CMAKE_INSTALL_PREFIX}/bin"
+      COMMAND bash -c "ln -sf ${CMAKE_INSTALL_PREFIX} ${PROJECT_PACKAGE_SUB_DIR}/${SDB_PROJECT_TYPE}"
+      COMMAND bash -c "builder build ${PROJECT_PACKAGE_SUB_DIR}/sequoiamysql_server.xml --setvars project.version=${PROJECT_VERSION} --setvars platform=linux_x86_64 --setvars edition=-enterprise --setvars project.outputDirectory=${CMAKE_BINARY_DIR}"
+      comment "Building .run package...")
+else()
+   add_custom_target(
+      runpackage
+      COMMAND bash -c "rm -rf ${CMAKE_INSTALL_PREFIX}/mysql-test"
+      COMMAND bash -c "cp ${PROJECT_PACKAGE_SUB_DIR}/*.sys* ${CMAKE_INSTALL_PREFIX}/bin"
+      COMMAND bash -c "ln -sf ${CMAKE_INSTALL_PREFIX} ${PROJECT_PACKAGE_SUB_DIR}/${SDB_PROJECT_TYPE}"
+      COMMAND bash -c "builder build ${PROJECT_PACKAGE_SUB_DIR}/sequoiamysql_server.xml --setvars project.version=${PROJECT_VERSION} --setvars platform=linux_x86_64 --setvars edition=-enterprise --setvars project.outputDirectory=${CMAKE_BINARY_DIR}"
+      comment "Building .run package...")
+endif()
+
+add_custom_target(
+   binpackage
+   COMMAND bash -c "python3 ${PROJECT_PACKAGE_DIR}/package.py"
+)
+
+add_custom_target(testcase
+   COMMAND bash -c "ln -sf ${CMAKE_INSTALL_PREFIX}/lib/libsdbcpp.so libsdbcpp.so"
+   COMMAND bash -c "./mysql-test-run.pl --suite=main,json --big-test --force --max-test-fail=0 --retry=1 --retry-failure=1 --parallel=4 --xml-report=${CMAKE_BINARY_DIR}/mysql_test_report.xml"
+   WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}/mysql-test"
+   DEPENDS ${CMAKE_INSTALL_PREFIX}
+   COMMENT "Run testcases...")

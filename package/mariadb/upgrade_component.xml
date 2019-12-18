@@ -1,0 +1,374 @@
+<component>
+    <name>upgrade_component</name>
+
+    <initializationActionList>
+        <setInstallerVariable name="stage" value="upgrade"/>
+    </initializationActionList>
+
+    <readyToInstallActionList>
+        <consoleWrite text="${msg(upgrade.normalmsg.beginupgrade)}&#xA;"/>
+        <consoleWrite text="${msg(upgrade.normalmsg.checklist)}&#xA;"/>
+        
+        <setInstallerVariable name="installdir" value="${choices}">
+           <ruleList>
+              <compareText text="${installer_command_line_arguments}" value="--prefix" logic="does_not_contain"/>
+              <compareValues value1="${installer_ui}" logic="does_not_equal" value2="unattended"/>
+              <compareValues logic="does_not_equal" value1="${choices}" value2=""/>
+           </ruleList>
+        </setInstallerVariable>
+        
+        <!--find system configure file that has the same INSTALL_DIR value-->
+        <setInstallerVariable name="i" value="0"/>
+        <while>
+            <conditionRuleList>
+                <compareValues value1="${i}" logic="less" value2="50"/>
+            </conditionRuleList>
+            <actionList>
+                <getSysConfFilename filename="tmp_sysconf"/>
+                <propertiesFileGet>
+                    <file>${tmp_sysconf}</file>
+                    <key>INSTALL_DIR</key>
+                    <variable>installdir_inconf</variable>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                </propertiesFileGet>
+                <break>
+                    <ruleList>
+                        <compareText logic="equals" text="${installdir_inconf}" value="${installdir}"/>
+                    </ruleList>
+                </break>
+                <mathExpression text="${i}+1" variable="i"/>
+            </actionList>
+        </while>
+        <setInstallerVariable name="sys_conf_file" value="${tmp_sysconf}" persist="1"/>
+        <!--get sequoiasql-mariadb user and installdir-->
+        <consoleWrite text="${msg(upgrade.normalmsg.getuser)}"/>
+        <setInstallerVariable name="username" value=""/>
+        <propertiesFileGet>
+            <file>${sys_conf_file}</file>
+            <key>USER</key>
+            <variable>username</variable>
+            <customErrorMessage>${msg(upgrade.errmsg.getuser)}</customErrorMessage>
+        </propertiesFileGet>
+        <throwError>
+            <text>${msg(upgrade.errmsg.emptyinstalldir.emptyuser)}</text>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <ruleList>
+                 <compareTextLength text="${username}" logic="equals" length="0"/>
+            </ruleList>
+        </throwError>
+        <consoleWrite text="ok&#xA;"/>
+
+        <!--check installation exist-->
+        <setInstallerVariable name="project.rollbackBackupDirectory" value="${installdir}/rollback/BackupDir_${time}"/>
+        <consoleWrite text="${msg(upgrade.normalmsg.installationexist)}"/>
+        <throwError>
+            <text>${msg(upgrade.errmsg.installationexist)}</text>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <ruleList>
+                <fileTest condition="not_exists" path="${installdir}"/>
+                <fileTest condition="is_empty" path="${installdir}"/>
+            </ruleList>
+        </throwError>
+        <consoleWrite text="ok&#xA;"/>
+
+        <setInstallerVariable name="old_version" value="0"/>
+        <propertiesFileGet>
+            <file>${sys_conf_file}</file>
+            <key>VERSION</key>
+            <variable>old_version</variable>
+        </propertiesFileGet>
+        
+        <!--check version compatibility-->
+        <upgradeCheck/>
+        
+        <!--check disk-->
+        <consoleWrite text="${msg(upgrade.normalmsg.diskspace)}"/>
+        <checkFreeDiskSpaceFunction/>
+        <consoleWrite text="ok&#xA;"/>
+
+        <!--check umask-->
+        <consoleWrite text="${msg(upgrade.normalmsg.umask)}"/>
+        <checkUmaskFunction/>
+        <consoleWrite text="ok&#xA;"/>
+
+        <!--check ${installdir}/bin/sdb_sql_ctl exist-->
+        <consoleWrite text="${msg(upgrade.normalmsg.sdbsqlctlexist)}"/>
+        <throwError>
+            <text>${msg(upgrade.errormsg.sdbsqlctlexist)}</text>
+            <ruleList>
+                <fileTest condition="not_exists" path="${installdir}/bin/sdb_sql_ctl"/>
+            </ruleList>
+        </throwError>
+        <consoleWrite text="ok&#xA;"/>
+        
+        <!--check user and get group-->
+        <consoleWrite text="${msg(upgrade.normalmsg.userexist)}"/>
+        <throwError>
+            <text>${msg(upgrade.errmsg.userexist)}</text>
+            <ruleList>
+                <userTest logic="not_exists" username="${username}"/>
+            </ruleList>
+        </throwError>
+        <setInstallerVariableFromScriptOutput>
+            <name>groupname</name>
+            <exec>id</exec>
+            <execArgs>-ng ${username}</execArgs>
+            <customErrorMessage>${msg(upgrade.errmsg.getgroup)}</customErrorMessage>
+        </setInstallerVariableFromScriptOutput>
+        <consoleWrite text="ok&#xA;"/>
+        
+        <!--before upgrade, stop service -->
+        <getServiceName svcname="tmp_svc_name" />
+        <setInstallerVariable name="service_name" value="${tmp_svc_name}" persist="1"/>
+        <consoleWrite text="${msg(upgrade.normalmsg.stopprocess)}"/>
+        <runProgram>
+            <program>service</program>
+            <programArguments> ${service_name} status</programArguments>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <setInstallerVariable name="service_origin_status" value="${program_exit_code}"/>
+        <runProgram>
+            <program>service</program>
+            <programArguments> ${service_name} stop</programArguments>
+            <abortOnError>0</abortOnError>
+        </runProgram>
+        
+        <runProgram>
+            <program>${installdir}/bin/sdb_sql_ctl</program>
+            <programArguments>stopall</programArguments>
+            <runAs>${username}</runAs>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <setInstallerVariable name="process_num" value="-1"/>
+        <setInstallerVariableFromScriptOutput>
+            <name>process_num</name>
+            <exec>${installdir}/bin/sdb_sql_ctl</exec>
+            <execArgs>status | awk 'END {print}' | awk '{print $NF}'</execArgs>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </setInstallerVariableFromScriptOutput>
+        
+        <throwError>
+            <text>${msg(upgrade.errmsg.stopprocess)}</text>
+            <ruleList>
+                <compareValues value1="${process_num}" logic="greater" value2="0"/>
+            </ruleList>
+        </throwError>
+        <consoleWrite text="ok&#xA;"/>
+    </readyToInstallActionList>
+
+    <folderList>
+        
+        <folder>
+            <name>files_except_conf</name>
+            <actionList>
+                <setInstallerVariable name="upgrade_component_done" value="begin"/>
+            </actionList>
+            <destination>${installdir}</destination>
+            <distributionFileList>
+                <distributionDirectory>
+                    <allowWildcards>1</allowWildcards>
+                    <origin>${build_project_directory}/mariadb/*</origin>
+                    <excludeFiles>*/conf</excludeFiles>
+                    </distributionDirectory>
+            </distributionFileList>
+        </folder>
+        <folder>
+            <name>sample_files</name>
+            <destination>${installdir}/conf/sample</destination>
+            <distributionFileList>
+                <distributionDirectory>
+                    <allowWildcards>1</allowWildcards>
+                    <origin>${build_project_directory}/mariadb/conf/sample/*</origin>
+                    <includeFiles>*/sample.cnf</includeFiles>
+                </distributionDirectory>
+            </distributionFileList>
+        </folder>
+    </folderList>
+
+    <postInstallationActionList>
+    
+        <deleteFile path="${installdir}/bin/sequoiasql-mariadb.systemd"/>
+        <deleteFile path="${installdir}/bin/sequoiasql-mariadb.sysv"/>
+        <changePermissionOwnerFunction/>
+        <!--write md5sum to /etc/default/sequoiasql-mariadb-->
+        <changePermissions files="${installdir}/preUninstall.sh" permissions="0755"/>
+        <setInstallerVariable name="new_md5sum" value="0000"/>
+        <setInstallerVariableFromScriptOutput>
+            <exec>md5sum</exec>
+            <execArgs>"${installer_pathname}" | cut -c 1-32 </execArgs>
+            <name>new_md5sum</name>
+        </setInstallerVariableFromScriptOutput>
+        <propertiesFileSet>
+            <file>${sys_conf_file}</file>
+            <key>MD5</key>
+            <value>${new_md5sum}</value>
+        </propertiesFileSet>
+        <propertiesFileSet>
+            <file>${sys_conf_file}</file>
+            <key>VERSION</key>
+            <value>${product_version}</value>
+        </propertiesFileSet>
+
+        <runProgram>
+            <program>echo</program>
+            <programArguments>'${new_md5sum}' &gt; ${installdir}/checksum.md5</programArguments>
+        </runProgram>
+        
+        <substitute>
+            <files>${installdir}/support-files/mysql.server</files>
+            <type>exact</type>
+            <substitutionList>
+                <substitution pattern="/opt/sequoiasql/mariadb" value="${installdir}"/>
+            </substitutionList>
+        </substitute>
+        <!--查找所有实例数据路径-->
+        <setInstallerVariableFromScriptOutput>
+            <name>inst_dir_list</name>
+            <exec>${installdir}/bin/sdb_sql_ctl</exec>
+            <execArgs>listinst | grep -v "NAME" | grep -v "Total" | awk '{print $2 }'</execArgs>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </setInstallerVariableFromScriptOutput>
+        
+        <foreach variables="inst_dir" values="${inst_dir_list}">
+            <actionList>
+                <if>
+                   <conditionRuleList>
+                      <fileTest condition="exists" path="${inst_dir}/auto.cnf"/>
+                   </conditionRuleList>
+                   <actionList>
+                      <!---替换 sequoiadb use partition 为 sequoiadb auto partition-->
+                      <substitute>
+                         <files>${inst_dir}/auto.cnf</files>
+                         <type>exact</type>
+                         <substitutionList>
+                            <substitution pattern="sequoiadb_use_partition" value="sequoiadb_auto_partition"/>
+                         </substitutionList>
+                      </substitute>
+                   </actionList>
+                </if>
+            </actionList>
+        </foreach>
+        
+        <!--write upgrade log-->
+        <runProgram>
+            <program>echo</program>
+            <programArguments>'time: ${time}' &gt;&gt; ${installdir}/upgrade.log</programArguments>
+        </runProgram>
+        <setInstallerVariable name="log" value="upgrade from version ${old_version} to ${product_version} "/>
+        <runProgram>
+            <program>echo</program>
+            <programArguments>'${log}' &gt;&gt; ${installdir}/upgrade.log</programArguments>
+        </runProgram>
+        <runProgram>
+            <program>echo</program>
+            <programArguments>' ' &gt;&gt; ${installdir}/upgrade.log</programArguments>
+        </runProgram>
+        <changeOwnerAndGroup>
+            <files>${installdir}/upgrade.log</files>
+            <group>${groupname}</group>
+            <owner>${username}</owner>
+        </changeOwnerAndGroup>
+
+        <runProgram>
+            <program>service</program>
+            <programArguments> ${service_name} start</programArguments>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <setInstallerVariableFromScriptOutput>
+            <name>start_num</name>
+            <exec>${installdir}/bin/sdb_sql_ctl</exec>
+            <execArgs>status | awk 'END {print}' | awk '{print $NF}'</execArgs>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </setInstallerVariableFromScriptOutput>
+        <setInstallerVariableFromScriptOutput>
+            <name>total_num</name>
+            <exec>${installdir}/bin/sdb_sql_ctl</exec>
+            <execArgs>listinst | awk 'END {print}' | awk '{print $NF}'</execArgs>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </setInstallerVariableFromScriptOutput>
+        <runProgram>
+            <program>${installdir}/bin/sdb_sql_ctl</program>
+            <programArguments>startall</programArguments>
+            <runAs>${username}</runAs>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <compareText logic="does_not_equal" text="${total_num}" value="${start_num}"/>
+            </ruleList>
+        </runProgram>
+    </postInstallationActionList>
+
+    <installationAbortedActionList>
+        <if>
+            <conditionRuleList>
+                <compareText logic="equals" text="${stage}" value="upgrade"/>
+            </conditionRuleList>
+            <actionList>
+                <consoleWrite text="&#xA;&#xA;${msg(upgrade.normalmsg.beginrollback)}&#xA;"/>
+
+                <!--delete unpack files-->
+                <deleteFile path="${installdir}/tmp_${time}"/>
+
+                <!--restore files-->
+                <actionGroup>
+                    <actionList>
+                        <consoleWrite text="${msg(upgrade.normalmsg.rollback.restorefile)}"/>
+                        <runProgram>
+                            <program>cp</program>
+                            <programArguments>-rfp ${project.rollbackBackupDirectory}/* /</programArguments>
+                        </runProgram>
+                        <deleteFile path="${project.rollbackBackupDirectory}"/>
+                        <consoleWrite text="ok&#xA;"/>
+                    </actionList>
+                    <ruleEvaluationLogic>and</ruleEvaluationLogic>
+                    <ruleList>
+                        <compareText logic="equals" text="${upgrade_component_done}" value="begin"/>
+                        <fileTest condition="is_not_empty" path="${project.rollbackBackupDirectory}"/>
+                    </ruleList>
+                </actionGroup>
+
+                <!--when rollback, restart service-->
+                <actionGroup>
+                    <actionList>
+                        <consoleWrite text="${msg(upgrade.normalmsg.rollbak.startprocess)}"/>
+                        <runProgram>
+                            <program>service</program>
+                            <programArguments> ${service_name} start</programArguments>
+                        </runProgram>
+                        <runProgram>
+                            <program>service</program>
+                            <programArguments> ${service_name} status</programArguments>
+                            <abortOnError>0</abortOnError>
+                            <showMessageOnError>0</showMessageOnError>
+                        </runProgram>
+                        <setInstallerVariable name="service_status" value="${program_exit_code}"/>
+                        <consoleWrite>
+                            <text>${msg(upgrade.warnmsg.startprocess)}&#xA;</text>
+                            <ruleList>
+                                <compareValues value1="${service_status}" logic="does_not_equal" value2="0"/>
+                            </ruleList>
+                        </consoleWrite>
+                        <consoleWrite>
+                            <text>ok&#xA;</text>
+                            <ruleList>
+                                <compareValues value1="${service_status}" logic="equals" value2="0"/>
+                            </ruleList>
+                        </consoleWrite>
+                    </actionList>
+                    <ruleList>
+                        <compareText logic="equals" text="${service_origin_status}" value="0"/>
+                    </ruleList>
+                </actionGroup>
+            </actionList>
+        </if>
+
+    </installationAbortedActionList>
+</component>

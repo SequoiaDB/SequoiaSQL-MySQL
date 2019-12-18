@@ -1,0 +1,190 @@
+create table t1(a int primary key)engine=sequoiadb;
+select @@autocommit;
+@@autocommit
+1
+select @@sequoiadb_use_autocommit;
+@@sequoiadb_use_autocommit
+1
+select @@autocommit;
+@@autocommit
+1
+select @@sequoiadb_use_autocommit;
+@@sequoiadb_use_autocommit
+1
+begin;
+insert into t1 values(1);
+begin;
+insert into t1 values(1);
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+select * from t1;
+a
+insert into t1 values(2);
+select * from t1;
+a
+2
+commit;
+select * from t1;
+a
+1
+commit;
+select * from t1;
+a
+1
+2
+drop table t1;
+set GLOBAL sequoiadb_use_autocommit=OFF;
+create table t1(a int primary key)engine=sequoiadb;
+select @@autocommit;
+@@autocommit
+1
+select @@sequoiadb_use_autocommit;
+@@sequoiadb_use_autocommit
+0
+select @@autocommit;
+@@autocommit
+1
+select @@sequoiadb_use_autocommit;
+@@sequoiadb_use_autocommit
+0
+begin;
+insert into t1 values(1);
+begin;
+insert into t1 values(1);
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+select * from t1;
+a
+insert into t1 values(2);
+select * from t1;
+a
+2
+commit;
+select * from t1;
+a
+1
+commit;
+select * from t1;
+a
+1
+2
+drop table t1;
+set session autocommit = 0;
+select @@autocommit;
+@@autocommit
+0
+select @@sequoiadb_use_autocommit;
+@@sequoiadb_use_autocommit
+0
+set session autocommit = 0;
+select @@sequoiadb_use_autocommit;
+@@sequoiadb_use_autocommit
+0
+select @@autocommit;
+@@autocommit
+0
+create table t1(a int primary key)engine=sequoiadb;
+begin;
+insert into t1 values(1);
+begin;
+insert into t1 values(1);
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+select * from t1;
+a
+insert into t1 values(2);
+select * from t1;
+a
+2
+commit;
+select * from t1;
+a
+1
+commit;
+commit;
+select * from t1;
+a
+1
+2
+commit;
+drop table t1;
+set GLOBAL sequoiadb_use_autocommit=ON;
+set SESSION autocommit=0;
+select @@autocommit;
+@@autocommit
+0
+select @@sequoiadb_use_autocommit;
+@@sequoiadb_use_autocommit
+1
+set SESSION autocommit=0;
+select @@autocommit;
+@@autocommit
+0
+select @@sequoiadb_use_autocommit;
+@@sequoiadb_use_autocommit
+1
+create table t1(a int primary key)engine=sequoiadb;
+begin;
+insert into t1 values(1);
+begin;
+insert into t1 values(1);
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+select * from t1;
+a
+insert into t1 values(2);
+select * from t1;
+a
+2
+commit;
+select * from t1;
+a
+1
+commit;
+commit;
+select * from t1;
+a
+1
+2
+commit;
+drop table t1;
+create table t1 (id int);
+create table t2 (id int,  s1 text);
+insert into t1 values (1),(2),(3);
+insert into t2 values (1,'test'), (2,'test'), (3,'test');
+update t1 left join t2 using(id) set s1 = 'changed';
+select * from t1 left join t2 using(id);
+id	s1
+1	changed
+2	changed
+3	changed
+begin;
+update t1 left join t2 using(id) set s1 = 'changed1';
+update t1 left join t2 using(ID) set s1 = 'changed2';
+ERROR HY000: Timeout error
+commit;
+commit;
+select * from t1 left join t2 using(id);
+id	s1
+1	changed1
+2	changed1
+3	changed1
+begin;
+update t1 left join t2 using(ID) set s1 = 'test';
+commit;
+select * from t1 left join t2 using(id);
+id	s1
+1	test
+2	test
+3	test
+begin;
+delete t1, t2 from t1 left join t2 on t1.id=t2.id where t1.id > 1;
+delete t1, t2 from t1 left join t2 on t1.id=t2.id;
+ERROR HY000: Timeout error
+commit;
+commit;
+select * from t1 left join t2 using(id);
+id	s1
+1	test
+begin;
+delete t1, t2 from t1 left join t2 on t1.id=t2.id;
+commit;
+select * from t1 left join t2 using(id);
+id	s1
+drop table t1,t2;

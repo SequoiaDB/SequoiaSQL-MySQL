@@ -1,0 +1,55 @@
+install.para.user.title=Configure user information
+install.para.user.explanation=Please insert the desired username groupname and password
+install.para.user.username.description=User Name
+install.para.user.groupname.description=Group Name
+install.para.user.password.description=Password
+install.para.user.reentrypw.description=Re-enter
+
+install.warnmsg.checkumask=Umask abnormal! Current umask = ${full_mask}, recommended value is 0022
+
+install.errmsg.checkgroup=User ${username} exists, but it does not belong to group ${groupname}.
+install.errmsg.creategroup=Failed to create group ${groupname}.
+install.errmsg.createuser=Failed to create user ${username}.
+install.errmsg.deleteuser=Failed to delete user ${username}.
+install.errmsg.checkdisk=There is not enough disk space for installation, it needs 1G.
+install.errmsg.systemctlreload=Fail to excute 'systemctl daemon-reload'.
+install.errmsg.startservice=Fail to start service ${service_name}.
+install.errmsg.addservice=Fail to add service ${service_name}.
+install.errmsg.prefix.check=Installation directory can not contains space.
+
+uninstall.errmsg.checkprocess=Relevant processes still exist after excuting 'service sequoiasql-mariadb stop'.
+uninstall.errmsg.stopinstance=Fail to stop instances.
+uninstall.errmsg.stopservice=Fail to stop service ${service_name}.
+uninstall.errmsg.excutepreninstallsh=Fail to execute preUninstall.sh.
+
+upgrade.normalmsg.beginupgrade=Begin to upgrade package ...... 
+upgrade.normalmsg.checklist=**************************  check list *************************************
+upgrade.normalmsg.getuser=Check: get user in ${sys_conf_file} ...... 
+upgrade.errmsg.getuser=Can not get SQLADMIN_USER from ${sys_conf_file}
+upgrade.errmsg.emptyinstalldir.emptyuser=Variable USER in ${sys_conf_file} is empty.
+upgrade.normalmsg.installationexist=Check: install dir ${installdir} is not empty ...... 
+upgrade.errmsg.installationexist=Install dir ${installdir} is empty or not-existed. You should install instead of upgrade.
+upgrade.normalmsg.judgecomatible=Check: compatibility between version ${old_version} and ${product_version} ...... 
+upgrade.errmsg.excutecomatiblesh=Fail to execute compatible.sh, return code isn't 0
+upgrade.errmsg.checkoldversion=You can't upgrade from version ${old_version} to ${product_version}, for the compatibility
+upgrade.normalmsg.diskspace=Check: disk space is enough ...... 
+upgrade.normalmsg.umask=Check: umask value ...... 
+upgrade.normalmsg.userexist=Check: user ${username} exists, and get group ...... 
+upgrade.errmsg.userexist=User ${username} does not exist.
+upgrade.errmsg.getgroup=pFailed to get group of user ${username}.
+upgrade.normalmsg.stopprocess=Check: relevant processes are stopped ...... 
+upgrade.errmsg.stopprocess=Relevant processes still exist.
+upgrade.normalmsg.sdbsqlctlexist=Check: ${installdir}/bin/sdb_sql_ctl exists ......
+upgrade.errormsg.sdbsqlctlexist=${installdir}/bin/sdb_sql_ctl does not exist
+
+upgrade.normalmsg.beginrollback=Upgrade aborted for error, begin to rollback ...... 
+upgrade.normalmsg.rollback.restorefile=Begin to restore files ...... 
+upgrade.normalmsg.rollbak.startprocess=Begin to restart service ...... 
+upgrade.warnmsg.startprocess=Warn: sdbcm or sdbcmd has not been started after service sdbcm start
+
+upgrade.paramers.upgrade.explanation=Do you want to upgrade or cover
+install.parameter.upgrade.description=Do you want to change to upgrade mode [upgrade/cover]?
+install.parameter.upgrade.explanation=An existing installation has been detected in ${installdir}.
+
+upgrade.errmsg.multipleinstallation=Exist old installations:\n${installdirs}\nplease specify the installation path --prefix
+upgrade.errmsg.noinstallation=Install dir ${installdir} is empty or not-existed.

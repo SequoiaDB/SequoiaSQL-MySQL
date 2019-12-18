@@ -84,7 +84,7 @@ class DocTuple:
             return None
         header += '\n|---|---|---|---|---|---|\n'
         return header
-    
+
     def toString(self, fmt = FormatType.MARKDOWN, language = Language.ENGLISH):
         if fmt == FormatType.MARKDOWN:
             if language == Language.CHINESE:
@@ -118,13 +118,13 @@ class DocExtractor:
                 ('a' <= character and character <= 'z')
 
     def get_tuple(self, declare):
-        # Declare format: 
-        # static MYSQL_XXXVAR_XXX(name, varname, opt, 
-        #     "<English Description>" 
-        #     "(Default: <Default Value>)." 
-        #     /*<Chinese Description>*/, 
-        #     check, update, def); 
-        
+        # Declare format:
+        # static MYSQL_XXXVAR_XXX(name, varname, opt,
+        #     "<English Description>"
+        #     "(Default: <Default Value>)."
+        #     /*<Chinese Description>*/,
+        #     check, update, def);
+
         # Get `scope`
         t = DocTuple()
         bgn = 0
@@ -176,7 +176,7 @@ class DocExtractor:
         bgn = end + 1
         while not self.is_alpha(declare[bgn]):
             bgn += 1
-        end = bgn 
+        end = bgn
         while declare[end] != ',':
             end += 1
         name = declare[bgn:end]
@@ -185,7 +185,7 @@ class DocExtractor:
         # Get `online`
         bgn = end + 1
         # Skip parameter varname, which is only belong to SYSVAR
-        if (scope_type == 'SYSVAR'): 
+        if (scope_type == 'SYSVAR'):
             while declare[bgn] != ',':
                 bgn += 1
         while not self.is_alpha(declare[bgn]):
@@ -271,7 +271,7 @@ class DocExtractor:
                     while not re.match(r'^.*\);$', line):
                         line = f.readline()
                         if not line:
-                            break 
+                            break
                         declare += line
                     if not skip_next:
                         t = self.get_tuple(declare)
@@ -303,15 +303,15 @@ class DocExporter:
 
     def export(self, tuples, out_dir):
         if self.fmt == FormatType.MARKDOWN or self.fmt == FormatType.ALL:
-            path = self.get_file_path(out_dir, FormatType.MARKDOWN) 
+            path = self.get_file_path(out_dir, FormatType.MARKDOWN)
             with open(path, 'w') as f:
                 tuples = sorted(tuples, key = lambda tup: tup.name)
                 f.write(DocTuple.get_md_header(self.language))
                 for t in tuples:
-                    f.write(t.toString(FormatType.MARKDOWN, self.language)) 
+                    f.write(t.toString(FormatType.MARKDOWN, self.language))
 
         if self.fmt == FormatType.CNF or self.fmt == FormatType.ALL:
-            path = self.get_file_path(out_dir, FormatType.CNF) 
+            path = self.get_file_path(out_dir, FormatType.CNF)
             with open(path, 'w') as f:
                 f.write(MY_CNF_DEFAULT)
                 global is_mariadb
@@ -320,7 +320,6 @@ class DocExporter:
                 f.write("\n")
                 for t in tuples:
                     f.write(t.toString(FormatType.CNF))
-
 
 
 def print_help():
@@ -341,19 +340,22 @@ def print_help():
 
 
 
-def main(argv):
+def main():
     arg_language = DFT_ARG_LANG
     arg_out = DFT_ARG_OUT
     arg_format = DFT_ARG_FORMAT
 
+    if len(sys.argv) < 2:
+        print("Argument number is not as expected")
+        return 1
+
     # Get directory of this script.
-    this_path = os.path.abspath(argv[0])
-    this_dir, this_file_name = os.path.split(this_path);
+    current_dir = os.path.abspath(os.path.dirname(__file__))
     global project_dir
-    project_dir = this_dir + "/../../../"
+    project_dir = os.path.join(current_dir, "../")
     global is_mariadb
-    is_mariadb = os.path.exists(project_dir + "/sql/mariadb.h")
-    argv = argv[1:]
+    is_mariadb = ("mariadb" == sys.argv[1])
+    argv = sys.argv[1:]
 
     try:
         opts, args = getopt.getopt(argv, "hl:o:f:",["help","language=","out=","format="])
@@ -394,7 +396,7 @@ def main(argv):
         print("ERROR: Invalid format option. Please use 'md', 'cnf' or 'all'")
         sys.exit(ERR_INVALID_ARG)
 
-    conf_src_path = this_dir + "/../sdb_conf.cc"
+    conf_src_path = os.path.join(project_dir, "src/sdbwrapper/sdb_conf.cc")
 
     extractor = DocExtractor(language_type)
     tuples = extractor.get_tuples(conf_src_path)
@@ -406,6 +408,5 @@ def main(argv):
     exporter.export(tuples, arg_out)
 
 
-
 if __name__ == '__main__':
-    main(sys.argv)
+    sys.exit(main())
