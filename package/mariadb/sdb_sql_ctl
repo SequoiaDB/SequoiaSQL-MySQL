@@ -1,0 +1,970 @@
+#!/bin/bash
+
+#   error code list:
+#   3     fail to initdb
+#   4     fail to execute stop
+#   5     fail to create directory or file
+#   6     instance is running
+#   7     instance is not running
+#   8     instance exists
+#   9     instance does not exist
+#   10    fail to execute mysqladmin
+#   11    svcname is already in use
+#   12    can not find system configure file
+#   13    fail to execute status
+#   14    fail to execute chconf
+#   15    fail to execute reload
+#   16    fail to execute start
+#   17    serivce isn't owned by sequoiasql-mariadb
+#   18    fail to get instance port
+#   19    fail to execute chconf
+#   20    fail to write file
+#   21    svcname isn't in range ( 0, 65536 )
+#   22    can not find configure file
+#   64    command line usage error
+#   77    permission denied
+
+export LC_TIME=C
+PORT=6101
+NEED_PRINTSCREEN=false
+NEED_BACKUPLOG=false
+SQL_USER=sdbadmin
+SYS_CONF_FILE=""
+PROCESS_WAIT_TIME=10
+
+function lack_para()
+{
+   local para_name=$1
+   echo "sdb_sql_ctl: no parameter \"$para_name\" specified" >&2
+   echo 'Try "sdb_sql_ctl --help" for more information.'
+   exit 64
+}
+
+function err_para()
+{
+   local para_name=$1
+   local para_value=$2
+   echo "sdb_sql_ctl: unrecognized $para_name \"$para_value\"" >&2
+   echo 'Try "sdb_sql_ctl --help" for more information.'
+   exit 64
+}
+
+function check_num_para()
+{
+   local para_name=$1
+   local para_value=$2
+
+   local regex='^[0-9]+$'
+   if ! [[ "$para_value" =~ $regex ]]; then
+      echo "sdb_sql_ctl: invalid value for parameter \"$para_name\": \"$para_value\"" >&2
+      echo 'Try "sdb_sql_ctl --help" for more information.'
+      exit 64
+   fi
+}
+
+function check_svcname_para()
+{
+   if [ $PORT -lt 1 -o $PORT -gt 65535 ]; then
+      echo "ERROR: svcname isn't in range ( 0, 65536 )"
+      exit 21
+   fi
+}
+
+function check_svcname_available()
+{
+   local inst_port=$1
+   local sql_log=$2
+   
+   netstat -nlp | grep -w $inst_port
+   local rc=$?
+   test $rc -eq 0 && exec_cmd_with_print "echo \"ERROR: instance port $inst_port is already in use\"" "$sql_log"
+   test $rc -eq 0 && { echo "ERROR: Fail to check svcname available, please verify log $sql_log" >&2 && return 11; }
+   return 0
+}
+
+#check instance exists in service management or not
+function check_exist_in_svc()
+{
+   local inst=$1
+   local exp_exist=$2
+
+   local act_exist=false
+   test -f $CONF_SVC_PATH/$inst.conf && act_exist=true
+
+   if [ $exp_exist == false -a $act_exist == true  ]; then
+      echo "ERROR: Instance $inst has been already added to service" >&2
+      exit 10
+   fi
+   if [ $exp_exist == true -a $act_exist == false  ]; then
+      echo "ERROR: Instance $inst is not in the management of service" >&2
+      exit 11
+   fi
+}
+
+function check_opt_para()
+{
+   local para_value=$1
+   for opt in $para_value
+   do
+      case "$opt" in
+         -V | --version | '-?' | --help )
+            echo "sdb_sql_ctl: parameter \"OPTIONS\" is forbidden to include \"$opt\"" >&2
+            echo 'Try "sdb_sql_ctl --help" for more information.'
+            exit 64
+            ;;
+      esac
+   done
+}
+
+#The function will set global variable SYS_CONF_FILE
+function get_system_conf_file()
+{
+   local cur_install_dir=$INSTALL_PATH
+   local do_find_out=false
+
+   for file in `find /etc/default -regex ".*sequoiasql-mariadb[1-4][0-9]" -o -regex ".*sequoiasql-mariadb[1-9]" -o -name "sequoiasql-mariadb"`
+   do
+      . $file
+      cd $INSTALL_DIR >> /dev/null 2>&1 && local sys_install_dir=`pwd` || sys_install_dir="$INSTALL_DIR"
+      cd $cur_path >> /dev/null >&1
+      if [ "$cur_install_dir" == "$sys_install_dir" ]
+      then
+         local do_find_out=true
+         break
+      fi
+   done
+
+   if [ $do_find_out == true ]
+   then
+      SYS_CONF_FILE=$file
+   else
+      echo "ERROR: No system configure file exist in /etc/default" >&2
+      exit 12
+   fi
+}
+
+function check_user()
+{
+   local operate_mode=$1
+
+   . $SYS_CONF_FILE
+   SQL_USER=$USER
+
+   local cur_user=`whoami`
+   if [ "$cur_user" != "$SQL_USER" -a "$cur_user" != "root" ]
+   then
+      echo "ERROR: sdb_sql_ctl $operate_mode requires SQLUSER [$SQL_USER] permission" >&2
+      exit 77
+   fi
+}
+
+# if root: change to pg user to execute command
+# if pg user: execute command
+function exec_cmd()
+{
+   local cmd="$1"
+   local cur_user=`whoami`
+
+   if [ $cur_user == "root" ]
+   then
+      su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;$cmd"
+      return $?
+   else
+      eval "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;${cmd}"
+      return $?
+   fi
+}
+
+function exec_cmd_with_print()
+{
+   
+   local cmd=$1
+   local log_file=$2
+   local start_line=0
+   local end_line=0
+   local rc=0
+   
+   local file_exist=false
+   test -f $log_file && file_exist=true
+   
+   if [ $file_exist == true -a "$NEED_PRINTSCREEN" == true ]; then
+      start_line=`cat $log_file | wc -l`
+   fi
+   
+   local cur_user=`whoami`
+
+   if [ $cur_user == "root" ]
+   then
+      su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;$cmd >> $log_file 2>&1"
+      rc=$?
+   else
+      eval "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;${cmd} >> $log_file 2>&1"
+      rc=$?
+   fi
+
+   if [ "$NEED_PRINTSCREEN" == true ]; then
+      end_line=`cat $log_file | wc -l`
+   fi
+
+   if [ "$NEED_PRINTSCREEN" == true ]; then
+      `cat $log_file | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
+   fi
+   return $rc
+}
+
+#check instance exists or not
+function check_inst_exist()
+{
+   local inst=$1
+   local exp_exist=$2
+
+   local act_exist=false
+   test -f $CONF_INST_PATH/$inst.conf && act_exist=true
+
+   if [ $exp_exist == false -a $act_exist == true ]; then
+      echo "ERROR: instance $inst already exists" >&2
+      exit 8
+   fi
+   if [ $exp_exist == true -a $act_exist == false ]; then
+      echo "ERROR: instance $inst does not exist" >&2
+      exit 9
+   fi
+}
+
+function list_inst()
+{
+   printf "%-10s %-40s %-40s\n" "NAME" "SQLDATA" "SQLLOG"
+
+   if [ ! -d $CONF_INST_PATH ]; then
+      printf "Total: 0\n"
+      return
+   fi
+
+   local i=0
+   for file in `find $CONF_INST_PATH -name "*.conf"`
+   do
+      . $file
+      printf "%-10s %-40s %-40s\n" $INSTNAME $SQLDATA $SQLLOG
+      i=$(($i+1))
+   done
+
+   printf "Total: %s\n" $i
+}
+
+function add_inst()
+{
+   #check argument
+   if [[ ${SQL_DATA:0:1} != "/" ]]; then
+      SQL_DATA=$(pwd)/$SQL_DATA    #relative path
+   fi
+   
+   test -z $SQL_LOG && SQL_LOG="${INSTALL_PATH}/${INST_NAME}.log"
+   if [[ ${SQL_LOG:0:1} != "/" ]]; then
+      SQL_LOG=$(pwd)/$SQL_LOG      #relative path
+   fi
+   
+   if [ ! -z $INST_PORT ]; then
+      PORT=$INST_PORT
+      check_svcname_para
+   fi
+   
+   test -z $PIDFILE && PIDFILE="${SQL_DATA}/mysqld.pid"
+   if [[ ${PIDFILE:0:1} != "/" ]]; then
+      PIDFILE=$(pwd)/$PIDFILE      #relative path
+   fi
+   
+   test -z $SOCKETFILE && SOCKETFILE="${SQL_DATA}/mysqld.sock"
+   if [[ ${SOCKETFILE:0:1} != "/" ]]; then
+      SOCKETFILE=$(pwd)/$SOCKETFILE      #relative path
+   fi
+   
+   check_inst_exist $INST_NAME false
+   check_svcname_available $PORT $SQL_LOG
+   local ret=$?
+   test $ret -ne 0 && { exit $ret; }
+   
+   echo "Adding instance $INST_NAME ..."
+
+   #initdb
+   test `whoami` == "root" && local user="$SQL_USER" || local user=`whoami`
+   exec_cmd_with_print "mkdir -p $SQL_DATA" "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: Fail to mkdir SQLDATA $SQL_DATA with $user" >&2 && exit 5; }
+   
+   exec_cmd_with_print "$INSTALL_PATH/scripts/mysql_install_db --no-defaults --basedir=$INSTALL_PATH --datadir=$SQL_DATA --user=$SQL_USER " "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: Fail to initdb, please verify log $SQL_LOG" >&2 && exit 3; }
+   
+   exec_cmd_with_print "test -f $INSTALL_PATH/conf/sample/sample.cnf" "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: File $INSTALL_PATH/conf/sample/sample.cnf does not exist" >&2 && exit 22; }
+   
+   #write $SQL_DATA/auto.cnf
+   exec_cmd_with_print "touch $SQL_DATA/auto.cnf" "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to touch file $SQL_DATA/auto.cnf, please verify log $SQL_LOG" >&2 && exit 5; }
+   #write default configure conf/sample/sample.cnf
+   exec_cmd_with_print "`cat $INSTALL_PATH/conf/sample/sample.cnf >> $SQL_DATA/auto.cnf`" "$SQL_LOG"
+   sed -i '$a\port='$PORT''                                    $SQL_DATA/auto.cnf
+   sed -i '$a\basedir='$INSTALL_PATH''                         $SQL_DATA/auto.cnf
+   sed -i '$a\datadir='$SQL_DATA''                             $SQL_DATA/auto.cnf
+   sed -i '$a\pid-file='$PIDFILE''                             $SQL_DATA/auto.cnf 
+   sed -i '$a\log_error='$SQL_LOG''                            $SQL_DATA/auto.cnf
+   sed -i '$a\socket='$SOCKETFILE''                            $SQL_DATA/auto.cnf
+   
+   #generate instance configure file
+   exec_cmd_with_print "mkdir -p $CONF_INST_PATH" "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to create directory $CONF_INST_PATH with $user, please verify log $SQL_LOG" >&2 && exit 5; }
+   exec_cmd_with_print "touch $CONF_INST_PATH/$INST_NAME.conf" "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to create file $CONF_INST_PATH/$INST_NAME.conf, please verify log $SQL_LOG" >&2 && exit 5; }
+   exec_cmd_with_print "`echo 'INSTNAME='$INST_NAME''  >> $CONF_INST_PATH/$INST_NAME.conf`" "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $SQL_LOG" >&2 && exit 20; }
+   exec_cmd_with_print "`echo 'SQLDATA='$SQL_DATA''      >> $CONF_INST_PATH/$INST_NAME.conf`" "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $SQL_LOG" >&2 && exit 20; }
+   exec_cmd_with_print "`echo 'SQLLOG='$SQL_LOG''        >> $CONF_INST_PATH/$INST_NAME.conf`" "$SQL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $SQL_LOG" >&2 && exit 20; }
+   
+   add_to_svc >>/dev/null
+   #start instance
+   echo "Start instance $INST_NAME ..."
+   start_inst $INST_NAME >>/dev/null
+   local start_rc=$?
+   if [ $start_rc != 0 ]; then
+      exit $start_rc
+   fi
+   if [ ! -z $PASSWORD ]; then
+      echo "Set the $SQL_USER password for instance $INST_NAME ..."
+      exec_cmd_with_print "$BIN_PATH/mysqladmin --no-defaults -u $SQL_USER password $PASSWORD -S $SOCKETFILE" "$SQL_LOG"
+      test $? -ne 0 && { echo "ERROR: Failed to change $SQL_USER password, please verify log $SQL_LOG" >&2 && exit 10; }
+   fi
+   echo "ok"
+}
+
+function add_to_svc()
+{
+   check_exist_in_svc $INST_NAME false
+   check_inst_exist $INST_NAME true
+
+   . $CONF_INST_PATH/$INST_NAME.conf
+
+   echo "Adding instance $INST_NAME to service ..."
+
+   test `whoami` == "root" && local user="$SQL_USER" || local user=`whoami`
+   exec_cmd_with_print "mkdir -p $CONF_SVC_PATH" "$SQLLOG"
+   test $? -ne 0 && { echo "ERROR: Failed to create directory $CONF_SVC_PATH with $user, please verify log $SQLLOG" >&2 && exit 5; }
+
+   exec_cmd_with_print "touch $CONF_SVC_PATH/$INST_NAME.conf" "$SQLLOG"
+   test $? -ne 0 && { echo "ERROR: Failed to create file $CONF_SVC_PATH/$INST_NAME.conf, please verify log $SQLLOG" >&2 && exit 5; }
+
+   echo "ok"
+}
+
+function delete_inst()
+{
+   check_inst_exist $INST_NAME true
+
+   echo "Deleting instance $INST_NAME ..."
+
+   #stop instance
+   stop_inst $INST_NAME 1> /dev/null || exit $? #print stderr
+
+   #delete file
+   . $CONF_INST_PATH/$INST_NAME.conf
+   exec_cmd "rm -rf $SQLDATA $CONF_INST_PATH/$INST_NAME.conf $CONF_SVC_PATH/$INST_NAME.conf"
+   if [ "$NEED_BACKUPLOG" == false ]; then
+      exec_cmd "rm -rf $SQLLOG"
+   else
+      local cur_time=`date +%F-%T`
+      exec_cmd "mv $SQLLOG '$SQLLOG'.'$cur_time'"
+   fi
+   echo "ok"
+}
+
+function get_one_status()
+{
+   local inst=$1
+   local ret=1
+   local pid
+   
+   check_inst_exist $inst true
+   . $CONF_INST_PATH/$inst.conf
+   local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
+
+   if test -s "$pid_file" ; then 
+      read pid < "$pid_file"
+      if kill -0 $pid 2>/dev/null ; then 
+         ret=0
+      else
+         ret=1
+      fi
+   else
+      ret=1
+   fi
+
+   if [ $ret == 0 ]
+   then
+      # get port
+      netstat -n >> /dev/null 2>&1
+      local has_netstat=$?
+      if [ $has_netstat != 127 ]; then
+         local port=`netstat -anp 2>/dev/null | awk '{print $4" "$6" "$7 }' | grep "LISTEN $pid/mysqld" | awk '{print $1}' | awk -F ":::" '{print $2}'`
+      else
+         ss >> /dev/null 2>&1
+         local has_ss=$?
+         test $has_ss != 127 && \
+            local port=`ss -tlnp | grep "users:((\"mysqld\"" | grep -E "pid=$pid,|,$pid," | awk '{print $4}' | awk -F ":::" '{print $2}'`
+      fi
+      test "$port" == "" && port="-"
+
+      # print
+      printf "%-10s %-10s %-10s %-40s %-40s\n" $inst $pid $port $SQLDATA $SQLLOG
+      return 0
+   elif [ $ret == 1 ]
+   then
+      printf "%-10s %-10s %-10s %-40s %-40s\n" $inst "-" "-" $SQLDATA $SQLLOG
+      return 7
+   else
+      echo "ERROR: Fail to query $inst status, please verify log $SQLLOG" >&2
+      exit 13
+   fi
+}
+
+function get_status()
+{
+   local inst_list=""
+
+   if [ -z $INST_NAME ]
+   then
+      inst_list=`list_inst | awk '{print $1}' | grep -vx NAME | grep -vx Total:`
+   else
+      inst_list=$INST_NAME
+   fi
+
+   printf "%-10s %-10s %-10s %-40s %-40s\n" "INSTANCE" "PID" "SVCNAME" "SQLDATA" "SQLLOG"
+
+   local total_cnt=0
+   local run_cnt=0
+   for inst in $inst_list
+   do
+      get_one_status $inst
+      local ret=$?
+
+      test $ret -eq 0 && run_cnt=$(($run_cnt+1))
+      total_cnt=$(($total_cnt+1))
+   done
+
+   printf "Total: %s; Run: %s\n" $total_cnt $run_cnt
+}
+
+#if verb=start: waiting for process to start,if verb=stop: waiting for process to stop
+function wait_for_process()
+{
+   local verb=$1
+   local pid=$2
+   local pid_file_path=$3
+   local pid_file_exist=false
+   local process_exist=false
+   
+   local i
+   for ((i=0; i<$PROCESS_WAIT_TIME; i++));
+   do
+       
+      if [ $verb == "start" ];then
+         if test -s $pid_file;then
+            read pid < "$pid_file"
+         else
+            sleep 1
+            continue
+         fi
+      fi
+      test -s $pid_file_path && pid_file_exist=true || pid_file_exist=false
+      if kill -0 "$pid" 2>/dev/null; then
+         process_exist=true
+      else
+         process_exist=false
+      fi
+      if [ $verb == "start" ];then
+         if [ $pid_file_exist != true -o $process_exist != true ];then
+            sleep 1
+            continue
+         else
+            break
+         fi
+      fi
+      
+      if [ $verb == "stop" ];then
+         if [ $pid_file_exist != false -o $process_exist != false ];then
+            sleep 1
+            continue
+         else
+            break
+         fi
+      fi
+   done
+   if [ $i != $PROCESS_WAIT_TIME ] ; then
+     return 0
+   else
+     return 1
+   fi
+}
+
+function start_inst()
+{
+   local inst=$1
+
+   check_inst_exist $inst true
+   . $CONF_INST_PATH/$inst.conf
+
+   #check instance start or not
+   get_one_status $inst > /dev/null
+   if [ $? == 0 ]; then
+      echo "instance $inst is already running"
+      return 0
+   fi
+   
+   echo "Check port is available ..."
+   local inst_port=`cat $SQLDATA/auto.cnf | grep "^\s*port" |awk -F'[ =]' '{print $NF }'`
+   check_svcname_available $inst_port $SQLLOG
+   local ret=$?
+   test $ret -ne 0 && { return $ret; }
+   
+   #start
+   echo "Starting instance $inst ..."
+   #exec_cmd_with_print "$BIN_PATH/mysqld_safe --defaults-file=$SQLDATA/auto.cnf --user=$SQL_USER >> $SQLLOG 2>&1 & " "$SQLLOG"
+   local start_line=0
+   local end_line=0
+   local file_exist=false
+   test -f $SQLLOG && file_exist=true
+   if [ $file_exist == true -a "$NEED_PRINTSCREEN" == true ]; then
+      start_line=`cat $SQLLOG | wc -l`
+   fi
+   exec_cmd "$BIN_PATH/mysqld_safe --defaults-file=$SQLDATA/auto.cnf --user=$SQL_USER >> $SQLLOG 2>&1 & "
+   local re=$!
+   local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
+   wait_for_process "start" "$re" "$pid_file"
+   local rc=$?
+   if [ "$NEED_PRINTSCREEN" == true ]; then
+      end_line=`cat $SQLLOG | wc -l`
+   fi
+   if [ "$NEED_PRINTSCREEN" == true ]; then
+      `cat $SQLLOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
+   fi
+   test $rc -ne 0 && { echo "ERROR: Fail to start, please verify log $SQLLOG" >&2 && return 16; }
+   
+   #check
+   get_one_status $inst >> /dev/null
+   local ret=$?
+
+   if [ $ret == 0 ]
+   then
+      local pid=`head -n 1 "$pid_file" 2>/dev/null`
+      echo "ok (PID: $pid)"
+      return 0
+   elif [ $ret == 7 ]
+   then
+      echo "ERROR: Fail to start, please verify log $SQLLOG" >&2
+      return 7
+   else
+      echo "ERROR: Fail to query status." >&2
+      return 13
+   fi
+}
+
+function start_all()
+{
+   local total_cnt=0
+   local succ_cnt=0
+   local fail_cnt=0
+
+   local inst_list=`list_inst | awk '{print $1}' | grep -vx NAME | grep -vx Total:`
+   for inst in $inst_list
+   do
+      start_inst $inst && succ_cnt=$(($succ_cnt+1)) || fail_cnt=$(($fail_cnt+1))
+      total_cnt=$(($total_cnt+1))
+   done
+
+   echo "Total: $total_cnt; Succeed: $succ_cnt; Failed: $fail_cnt"
+
+   test $total_cnt != $succ_cnt && exit 7
+}
+
+function stop_inst()
+{
+   local inst=$1
+   check_inst_exist $inst true
+
+   . $CONF_INST_PATH/$inst.conf
+
+   #check instance start or not
+   get_one_status $inst > /dev/null
+   if [ $? != 0 ]
+   then
+      echo "instance $inst is not running"
+      return 0
+   fi
+
+   #stop
+   local pid=`get_one_status $inst | grep $inst | awk '{print $2}'`
+   
+   echo "Stoping instance $inst (PID: $pid) ..."
+   local start_line=0
+   local end_line=0
+   local file_exist=false
+   test -f $SQLLOG && file_exist=true
+   if [ $file_exist == true -a "$NEED_PRINTSCREEN" == true ]; then
+      start_line=`cat $SQLLOG | wc -l`
+   fi
+   #exec_cmd_with_print "kill $pid" "$SQLLOG"
+   exec_cmd "kill $pid"
+   
+   #check
+   local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
+   wait_for_process "stop" "$pid" "$pid_file"
+   local rc=$?
+   if [ "$NEED_PRINTSCREEN" == true ]; then
+      end_line=`cat $SQLLOG | wc -l`
+   fi
+   if [ "$NEED_PRINTSCREEN" == true ]; then
+      `cat $SQLLOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
+   fi
+   test $rc -ne 0 && { echo "ERROR: Fail to stop, please verify log $SQLLOG" >&2 && return 4; }
+   return 0
+   
+}
+
+function stop_all()
+{
+   local total_cnt=0
+   local succ_cnt=0
+   local fail_cnt=0
+
+   local inst_list=`list_inst | awk '{print $1}' | grep -vx NAME | grep -vx Total:`
+   for inst in $inst_list
+   do
+      stop_inst $inst && succ_cnt=$(($succ_cnt+1)) || fail_cnt=$(($fail_cnt+1))
+      total_cnt=$(($total_cnt+1))
+   done
+
+   echo "Total: $total_cnt; Succeed: $succ_cnt; Failed: $fail_cnt"
+
+   test $total_cnt != $succ_cnt && exit 6
+}
+
+function restart_inst()
+{
+   stop_inst $INST_NAME || exit $?
+   start_inst $INST_NAME || exit $?
+}
+
+function change_configure_online()
+{
+   local inst=$1
+   local para_name=$2
+   local para_value=$3
+   
+   . $CONF_INST_PATH/$inst.conf
+   local socket_file=`cat $SQLDATA/auto.cnf | grep "^\s*socket" |awk -F'[ =]' '{print $NF }'`
+   
+   get_one_status $inst >> /dev/null
+   if [ $? == 0 ];then
+      local cmd="$BIN_PATH/mysql --no-defaults -u $SQL_USER -S $socket_file -e 'set global "$para_name=$para_value"'"
+      if [ ! -z $passwd ];then
+         cmd="$BIN_PATH/mysql --no-defaults -u $SQL_USER -p$passwd -S $socket_file -e 'set global "$para_name=$para_value"'"
+      fi
+      
+      exec_cmd_with_print "$cmd" "$SQLLOG"
+      test $? -ne 0 && { echo "ERROR: Fail to change $para_name, please verify log $SQLLOG" >&2 && exit 19; }
+   fi
+   
+   local exist_para=`sed -n -e '/'$para_name'\s*=/=' $SQLDATA/auto.cnf`
+   if [ ! -z $exist_para ];then
+      sed -i 's/.*'$para_name'\s*=.*/'$para_name'='$para_value'/' $SQLDATA/auto.cnf
+   else
+      sed -i '/\[mysqld\]/a\'$para_name'='$para_value'' $SQLDATA/auto.cnf
+   fi
+}
+
+function change_configure()
+{
+   #check instance exists or not
+   if [ ! -z $INST_NAME ];then
+      check_inst_exist $INST_NAME true
+      . $CONF_INST_PATH/$INST_NAME.conf
+   fi
+
+   echo "Changing configure of instance $INST_NAME ..."
+
+   if [ ! -z $INST_PORT ]; then
+      PORT=$INST_PORT
+      check_svcname_para
+      sed -i '/port\s*=/d' $SQLDATA/auto.cnf
+      sed -i '/\[mysqld\]/a\port='$INST_PORT'' $SQLDATA/auto.cnf
+      echo "Parameter port requires a server restart to take effect"
+   fi
+
+   get_one_status $INST_NAME >> /dev/null
+   if [ $? == 0 ];then
+      echo "Enter password:"
+      read -s passwd
+   fi
+
+   if [ ! -z $MAX_CON ]; then
+      if [ $MAX_CON -lt 1 ];then
+         MAX_CON=1
+      elif [ $MAX_CON -gt 100000 ];then
+         MAX_CON=100000
+      fi
+      change_configure_online "$INST_NAME" "max_connections" "$MAX_CON"
+   fi
+
+   if [ ! -z $SDB_CONN_ADDR ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_conn_addr" "\"$SDB_CONN_ADDR\""
+   fi
+   
+   if [ ! -z $SDB_USER ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_user" "\"$SDB_USER\""
+   fi
+   
+   if [ ! -z $SDB_PASSWD ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_password" "\"$SDB_PASSWD\""
+   fi
+   
+   if [ ! -z $SDB_AUTO_PARTITION ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_auto_partition" "$SDB_AUTO_PARTITION"
+   fi
+   
+   if [ ! -z $SDB_USE_BULK_INSERT ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_use_bulk_insert" "$SDB_USE_BULK_INSERT"
+   fi
+   
+   if [ ! -z $SDB_BULK_INSERT_SIZE ]; then
+      if [ $SDB_BULK_INSERT_SIZE -lt 1 ];then
+         SDB_BULK_INSERT_SIZE=1
+      elif [ $SDB_BULK_INSERT_SIZE -gt 100000 ];then
+         SDB_BULK_INSERT_SIZE=100000
+      fi
+      change_configure_online "$INST_NAME" "sequoiadb_bulk_insert_size" "$SDB_BULK_INSERT_SIZE"
+   fi
+   
+   if [ ! -z $SDB_USE_AUTOCOMMIT ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_use_autocommit" "$SDB_USE_AUTOCOMMIT"
+   fi
+   
+   if [ ! -z $SDB_DEBUG_LOG ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_debug_log" "$SDB_DEBUG_LOG"
+   fi
+
+   echo "ok"
+}
+
+function show_version()
+{
+   cat $INSTALL_PATH/version.info
+}
+
+function build_help()
+{
+   echo "sdb_sql_ctl is a utility to initialize, start, stop, or control a SequoiaSQL-MariaDB server."
+   echo ""
+   echo "Usage:"
+   echo "  sdb_sql_ctl listinst"
+   echo "  sdb_sql_ctl addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-p PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD]"
+   echo "  sdb_sql_ctl delinst    <INSTNAME> [--baklog]"
+   echo "  sdb_sql_ctl start      <INSTNAME>                           [--print]"
+   echo "  sdb_sql_ctl startall                                        [--print]"
+   echo "  sdb_sql_ctl stop       <INSTNAME>                           [--print]"
+   echo "  sdb_sql_ctl stopall                                         [--print]"
+   echo "  sdb_sql_ctl restart    <INSTNAME>                           [--print]"
+   echo "  sdb_sql_ctl status     [INSTNAME]"
+   echo "  sdb_sql_ctl chconf     <INSTNAME> [-p PORT]                            [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE] [--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL]"
+   echo ""
+   echo "Options:"
+   echo "  -D DATADIR                       location of the database storage area"
+   echo "  -l LOGFILE                       write server log to LOGFILE,default in the installation path"
+   echo "  -p PORT                          port number to listen on"
+   echo "  -f PIDFILE                       location of the pid file"
+   echo "  -s SOCKETFILE                    socket file between client and server"
+   echo "  -w PASSWORD                      a password for root@localhost,default: empty password"
+   echo "  -a MAX-CON                       the number of simultaneous clients allowed,default:151"
+   echo "  --print                          default: not print screen"
+   echo "  --baklog                         default: don't backup LOGFILE"
+   echo "  --sdb-conn-addr=ADDR             SequoiaDB addresses,default:'localhost:11810'"
+   echo "  --sdb-user=USER                  SequoiaDB authentication user,default:''"
+   echo "  --sdb-passwd=PASSWD              SequoiaDB authentication password,default:''"
+   echo "  --sdb-auto-partition=BOOL        enable auto partition,default:on"
+   echo "  --sdb-use-bulk-insert=BOOL       enable bulk insert to sequoiadb,default:on"
+   echo "  --sdb-bulk-insert-size=SIZE      bulk insert size,default:100"
+   echo "  --sdb-use-autocommit=BOOL        enable autocommit of sequoiadb storage engine,default:on"
+   echo "  --sdb-debug-log=BOOL             turn on debug log of sequoiadb storage engine,default:on"
+   echo "  -v, --version                    output version information, then exit"
+}
+#Parse command line parameters
+test $# -eq 0 && { build_help && exit 64; }
+
+ARGS=`getopt -o hvD:l:p:s:f:a:w: --long help,version,print,baklog,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-debug-log: -n 'sdb_sql_ctl' -- "$@"`
+ret=$?
+test $ret -ne 0 && exit $ret
+
+##################################
+#    main entry
+##################################
+
+#get path
+dir_name=`dirname $0`
+if [[ ${dir_name:0:1} != "/" ]]; then
+   BIN_PATH=$(pwd)/$dir_name  #relative path
+else
+   BIN_PATH=$dir_name         #absolute path
+fi
+
+cur_path=`pwd`
+cd $BIN_PATH/../ && INSTALL_PATH=`pwd`
+cd $cur_path >> /dev/null >&1
+
+CONF_INST_PATH="${INSTALL_PATH}/conf/instance"
+CONF_SVC_PATH="${INSTALL_PATH}/conf/service"
+
+eval set -- "${ARGS}"
+
+while true
+do
+   case "$1" in
+      -D )                        DEFINE_SQLDATA=true
+                                  SQL_DATA=$2
+                                  shift 2
+                                  ;;
+      -l )                        SQL_LOG=$2
+                                  shift 2
+                                  ;;
+      -p )                        INST_PORT=$2
+                                  check_num_para "PORT" "$INST_PORT"
+                                  shift 2
+                                  ;;
+      -f )                        PIDFILE=$2
+                                  shift 2
+                                  ;;
+      -s )                        SOCKETFILE=$2
+                                  shift 2
+                                  ;;
+      -w )                        PASSWORD=$2
+                                  shift 2
+                                  ;;
+      -a )                        MAX_CON=$2
+                                  check_num_para "MAX-CON" "$MAX_CON"
+                                  shift 2
+                                  ;;
+      --print )                   NEED_PRINTSCREEN=true
+                                  shift
+                                  ;;
+      --baklog )                  NEED_BACKUPLOG=true
+                                  shift
+                                  ;;
+      --sdb-conn-addr )           SDB_CONN_ADDR=$2
+                                  shift 2
+                                  ;;
+      --sdb-user )                SDB_USER=$2
+                                  shift 2
+                                  ;;
+      --sdb-passwd )              SDB_PASSWD=$2
+                                  shift 2
+                                  ;;
+      --sdb-use-partition )       SDB_AUTO_PARTITION=$2
+                                  test $SDB_AUTO_PARTITION == "TRUE" -o $SDB_AUTO_PARTITION == "FALSE" -o $SDB_AUTO_PARTITION == "true" -o $SDB_AUTO_PARTITION == "false" -o $SDB_AUTO_PARTITION == "ON" -o $SDB_AUTO_PARTITION == "OFF"  -o $SDB_AUTO_PARTITION == "on" -o $SDB_AUTO_PARTITION == "off" || \
+                                  err_para BOOL $SDB_AUTO_PARTITION
+                                  shift 2
+                                  ;;
+      --sdb-auto-partition )      SDB_AUTO_PARTITION=$2
+                                  test $SDB_AUTO_PARTITION == "TRUE" -o $SDB_AUTO_PARTITION == "FALSE" -o $SDB_AUTO_PARTITION == "true" -o $SDB_AUTO_PARTITION == "false" -o $SDB_AUTO_PARTITION == "ON" -o $SDB_AUTO_PARTITION == "OFF"  -o $SDB_AUTO_PARTITION == "on" -o $SDB_AUTO_PARTITION == "off" || \
+                                  err_para BOOL $SDB_AUTO_PARTITION
+                                  shift 2
+                                  ;;
+      --sdb-use-bulk-insert )     SDB_USE_BULK_INSERT=$2
+                                  test $SDB_USE_BULK_INSERT == "TRUE" -o $SDB_USE_BULK_INSERT == "FALSE" -o $SDB_USE_BULK_INSERT == "true" -o $SDB_USE_BULK_INSERT == "false" -o $SDB_USE_BULK_INSERT == "ON" -o $SDB_USE_BULK_INSERT == "OFF" -o $SDB_USE_BULK_INSERT == "on" -o $SDB_USE_BULK_INSERT == "off" || \
+                                  err_para BOOL $SDB_USE_BULK_INSERT
+                                  shift 2
+                                  ;;
+      --sdb-bulk-insert-size )    SDB_BULK_INSERT_SIZE=$2
+                                  check_num_para "SDB-BULK-INSERT-SIZE" "$SDB_BULK_INSERT_SIZE"
+                                  shift 2
+                                  ;;
+      --sdb-use-autocommit )      SDB_USE_AUTOCOMMIT=$2
+                                  test $SDB_USE_AUTOCOMMIT == "TRUE" -o $SDB_USE_AUTOCOMMIT == "FALSE" -o $SDB_USE_AUTOCOMMIT == "true" -o $SDB_USE_AUTOCOMMIT == "false" -o $SDB_USE_AUTOCOMMIT == "ON" -o $SDB_USE_AUTOCOMMIT == "OFF" -o $SDB_USE_AUTOCOMMIT == "on" -o $SDB_USE_AUTOCOMMIT == "off" || \
+                                  err_para BOOL $SDB_USE_AUTOCOMMIT
+                                  shift 2
+                                  ;;
+      --sdb-debug-log )           SDB_DEBUG_LOG=$2
+                                  test $SDB_DEBUG_LOG == "TRUE" -o $SDB_DEBUG_LOG == "FALSE" -o $SDB_DEBUG_LOG == "true" -o $SDB_DEBUG_LOG == "false" -o $SDB_DEBUG_LOG == "ON" -o $SDB_DEBUG_LOG == "OFF" -o $SDB_DEBUG_LOG == "on" -o $SDB_DEBUG_LOG == "off" || \
+                                  err_para BOOL $SDB_DEBUG_LOG
+                                  shift 2
+                                  ;;
+      -v | --version)             show_version
+                                  exit 0
+                                  ;;
+      -h | --help )               build_help
+                                  exit 0
+                                  ;;
+      --)                         shift
+                                  break
+                                  ;;
+      *)                          echo "Internal error!"
+                                  exit 64
+                                  ;;
+   esac
+done
+
+#process other argument
+case "$1" in
+   listinst)   mode=$1; shift 1;;
+   addinst)    test -z $2 && lack_para "INSTNAME" || INST_NAME=$2
+               test -z $DEFINE_SQLDATA && lack_para "DATADIR"
+               mode=$1; shift 2;;
+   delinst)    test -z $2 && lack_para "INSTNAME" || INST_NAME=$2
+               mode=$1; shift 2;;
+   status)     mode=$1
+               test -z $2 && shift 1 || { INST_NAME=$2 && shift 2; }
+               ;;
+   start)      test -z $2 && lack_para "INSTNAME" || INST_NAME=$2
+               mode=$1; shift 2;;
+   startall)   mode=$1; shift 1;;
+   stop)       test -z $2 && lack_para "INSTNAME" || INST_NAME=$2
+               mode=$1; shift 2;;
+   stopall)    mode=$1; shift 1;;
+   restart)    test -z $2 && lack_para "INSTNAME" || INST_NAME=$2
+               mode=$1; shift 2;;
+   chconf)     mode=$1
+               if [ -z "$PORT" -a -z "$MAX_CON" -a -z "$SDB_USER" -a -z "$SDB_PASSWD" -a -z "$SDB_AUTO_PARTITION" -a -z "$SDB_USE_BULK_INSERT" -a -z "$SDB_BULK_INSERT_SIZE" -a -z "$SDB_USE_AUTOCOMMIT" -a -z "$SDB_DEBUG_LOG" ]; then
+                  echo "sdb_sql_ctl: No configure specified." 
+                  exit 0
+                  shift 1
+               else
+                  test -z $2 && lack_para "INSTNAME" || INST_NAME=$2
+                  shift 2
+               fi
+               ;;
+   *)          echo "sdb_sql_ctl: unrecognized operation mode \"$1\"" >&2
+               echo 'Try "sdb_sql_ctl --help" for more information.'
+               exit 64
+               ;;
+esac
+
+if [ "$*" != "" ]; then
+   echo "sdb_sql_ctl: too many arguments: $*" >&2
+   echo 'Try "sdb_sql_ctl --help" for more information.'
+   exit 64
+fi
+
+#check user
+get_system_conf_file
+check_user $mode
+
+#enter operation mode
+case $mode in
+   listinst)      list_inst         ;;
+   addinst)       add_inst          ;;
+   delinst)       delete_inst       ;;
+   status)        get_status        ;;
+   start)         start_inst $INST_NAME || exit $?  ;;
+   startall)      start_all         ;;
+   stop)          stop_inst $INST_NAME || exit $?  ;;
+   stopall)       stop_all          ;;
+   restart)       restart_inst      ;;
+   chconf)        change_configure  ;;
+esac
+
+exit 0

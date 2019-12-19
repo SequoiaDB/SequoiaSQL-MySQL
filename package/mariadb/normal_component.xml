@@ -1,0 +1,474 @@
+<component>
+    <name>normal_component</name>
+
+    <initializationActionList>
+        <setInstallerVariable name="stage"                        value="normal"/>
+        <setInstallerVariable name="add_user_done"                value="false"/>
+        <setInstallerVariable name="add_group_done"               value="false"/>
+        <setInstallerVariable name="add_service_done"             value="false"/>
+        <setInstallerVariable name="add_sysconf_done"             value="false"/>
+        <setInstallerVariable name="exist_sameinstalldir_sysconf" value="false"/>
+    </initializationActionList>
+
+    <readyToInstallActionList>
+        <setInstallerVariable name="installdir" value="${choices}">
+           <ruleList>
+              <compareText text="${installer_command_line_arguments}" value="--prefix" logic="does_not_contain"/>
+              <compareValues value1="${installer_ui}" logic="does_not_equal" value2="unattended"/>
+              <compareText logic="equals" text="${installmode}" value="cover"/>
+              <compareValues logic="does_not_equal" value1="${choices}" value2=""/>
+           </ruleList>
+        </setInstallerVariable>
+        
+        <!--find system configure file that has the same INSTALL_DIR value-->
+        <setInstallerVariable name="i" value="0"/>
+        <while>
+            <conditionRuleList>
+                <compareValues value1="${i}" logic="less" value2="50"/>
+            </conditionRuleList>
+            <actionList>
+                <getSysConfFilename filename="tmp_sysconf"/>
+                <propertiesFileGet>
+                    <file>${tmp_sysconf}</file>
+                    <key>INSTALL_DIR</key>
+                    <variable>installdir_inconf</variable>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                </propertiesFileGet>
+                <setInstallerVariable name="exist_sameinstalldir_sysconf" value="true">
+                    <ruleList>
+                        <compareText logic="equals" text="${installdir_inconf}" value="${installdir}"/>
+                    </ruleList>
+                </setInstallerVariable>
+                <break>
+                    <ruleList>
+                        <isTrue value="${exist_sameinstalldir_sysconf}" />
+                    </ruleList>
+                </break>
+                <mathExpression text="${i}+1" variable="i"/>
+            </actionList>
+        </while>
+        
+        <setInstallerVariable name="installmode" value="">
+            <ruleList>
+                <isFalse value="${exist_sameinstalldir_sysconf}" />
+            </ruleList>
+        </setInstallerVariable>
+        
+        <!--if installation exist, get content; 
+            if not, decide which file to set configure-->
+        <if>
+            <conditionRuleList>
+                <compareText logic="does_not_equal" text="${installmode}" value="cover"/>
+            </conditionRuleList>
+            <actionList>
+                <setInstallerVariable name="i" value="0"/>
+                <while>
+                    <conditionRuleList>
+                        <compareValues value1="${i}" logic="less" value2="50"/>
+                    </conditionRuleList>
+                    <actionList>
+                        <getSysConfFilename filename="tmp_sysconf"/>
+                        <break>
+                            <ruleList>
+                                <fileExists negate="1" path="${tmp_sysconf}"/>
+                            </ruleList>
+                        </break>
+                        <mathExpression text="${i}+1" variable="i"/>
+                    </actionList>
+                </while>
+                <throwError>
+                    <text>${msg(install.errmsg.sysconfname)}</text>            
+                    <ruleList>
+                        <compareValues value1="${i}" logic="equals" value2="50"/>
+                    </ruleList>  
+                </throwError>
+            </actionList>
+        </if>
+
+       <setInstallerVariable name="sys_conf_file" value="${tmp_sysconf}" persist="1"/>
+        
+        <!--check disk-->
+        <checkFreeDiskSpaceFunction/>
+
+        <!--check umask-->
+        <checkUmaskFunction/>
+        
+        <!--check or create user group-->
+        <throwError>
+            <text>The ROOT user is not allowed to create.</text>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${username}</value1>
+                    <value2>root</value2>
+                </compareValues>
+            </ruleList>
+        </throwError>
+
+        <!--覆盖安装时使用旧的用户-->
+        <setInstallerVariable name="old_version" value="0"/>
+        <if>
+            <conditionRuleList>
+                <compareText logic="equals" text="${installmode}" value="cover"/>
+            </conditionRuleList>
+            <actionList>
+                <propertiesFileGet>
+                    <file>${sys_conf_file}</file>
+                    <key>VERSION</key>
+                    <variable>old_version</variable>
+                </propertiesFileGet>
+                <!--check ${installdir}/bin/sdb_sql_ctl exist-->
+                <throwError>
+                    <text>${msg(upgrade.errormsg.sdbsqlctlexist)}</text>
+                    <ruleList>
+                        <fileTest condition="not_exists" path="${installdir}/bin/sdb_sql_ctl"/>
+                        <compareText logic="does_not_equal" text="${old_version}" value="3.0"/>
+                        <compareText logic="does_not_equal" text="${old_version}" value="3.0.1"/>
+                        <compareText logic="does_not_equal" text="${old_version}" value="3.0.2"/>
+                    </ruleList>
+                </throwError>
+                <setInstallerVariable name="username" value=""/>
+                <propertiesFileGet>
+                    <file>${sys_conf_file}</file>
+                    <key>USER</key>
+                    <variable>username</variable>
+                    <customErrorMessage>${msg(upgrade.errmsg.getuser)}</customErrorMessage>
+                </propertiesFileGet>
+                <setInstallerVariableFromScriptOutput>
+                    <name>groupname</name>
+                    <exec>id</exec>
+                    <execArgs>-ng ${username}</execArgs>
+                    <customErrorMessage>${msg(upgrade.errmsg.getgroup)}</customErrorMessage>
+                </setInstallerVariableFromScriptOutput>
+            </actionList>
+        </if>
+
+        <setInstallerVariable name="exist_user" value="false"/>
+        <setInstallerVariable>
+            <name>exist_user</name>
+            <value>true</value>
+            <ruleList>
+                <userTest logic="exists" username="${username}"/>
+            </ruleList>
+        </setInstallerVariable>
+
+        <setInstallerVariable name="exist_group" value="false"/>
+        <runProgram>
+            <program>grep</program>
+            <programArguments>"^$groupname:" /etc/group</programArguments>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <setInstallerVariable name="exist_group" value="true">
+             <ruleList>
+                 <compareText logic="equals" text="${program_exit_code}" value="0"/>
+             </ruleList>
+        </setInstallerVariable>
+
+
+        <actionGroup>
+            <ruleList>
+                <isTrue value="${exist_user}"/>
+            </ruleList>
+            <actionList>
+                <setInstallerVariableFromScriptOutput>
+                    <name>actual_group</name>
+                    <exec>id</exec>
+                    <execArgs>-ng ${username}</execArgs>
+                </setInstallerVariableFromScriptOutput>
+                <throwError>
+                    <text>${msg(install.errmsg.checkgroup)}</text>
+                    <ruleList>
+                        <compareValues value1="${actual_group}" logic="does_not_equal" value2="${groupname}"/>
+                    </ruleList>
+                </throwError>
+                <createDirectory path="~${username}"/>
+            </actionList>
+        </actionGroup>
+
+        <actionGroup>
+            <ruleList>
+                <isFalse value="${exist_user}"/>
+            </ruleList>
+            <actionList>
+                <addGroup> <!--if group exists, <addGroup> will not throw error-->
+                    <customErrorMessage>${msg(install.errmsg.creategroup)}</customErrorMessage>
+                    <groupname>${groupname}</groupname>
+                </addGroup>
+                <setInstallerVariable name="add_group_done" value="true">
+                     <ruleEvaluationLogic>and</ruleEvaluationLogic>
+                     <ruleList>
+                         <isTrue value="${exist_group}"/>
+                         <compareText logic="equals" text="${program_exit_code}" value="0"/>
+                     </ruleList>
+                </setInstallerVariable>
+                <runProgram>
+                    <customErrorMessage>${msg(install.errmsg.createuser)}</customErrorMessage>
+                    <program>useradd</program>
+                    <programArguments>${username} -m -p ${userpasswd} -g ${groupname}  -s /bin/bash </programArguments>
+                </runProgram>
+                <setInstallerVariable name="add_user_done" value="true">
+                     <ruleList>
+                         <compareText logic="equals" text="${program_exit_code}" value="0"/>
+                     </ruleList>
+                </setInstallerVariable>
+            </actionList>
+        </actionGroup>
+
+        <runProgram>
+            <program>echo</program>
+            <programArguments> ${username}:${userpasswd} | chpasswd</programArguments>
+        </runProgram>
+        <changePermissions>
+            <files>~${username}</files>
+            <permissions>0755</permissions>
+        </changePermissions>
+        
+        <getServiceName svcname="tmp_svc_name" />
+        
+        <setInstallerVariable name="service_name" value="${tmp_svc_name}" persist="1"/>
+        
+        <!--覆盖安装前停进程-->
+        <if>
+            <conditionRuleList>
+                <compareText logic="equals" text="${installmode}" value="cover"/>
+            </conditionRuleList>
+            <actionList>
+               <runProgram>
+                   <program>service</program>
+                   <programArguments> ${service_name} stop</programArguments>
+                   <abortOnError>0</abortOnError>
+                   <ruleList>
+                       <compareText logic="does_not_equal" text="${old_version}" value="3.0"/>
+                   </ruleList>
+               </runProgram>
+               <actionGroup>
+                  <actionList>
+                     <!--当用户使用工具启动实例时service无法感知，必须使用工具才能停止实例-->
+                     <runProgram>
+                         <program>${installdir}/bin/sdb_sql_ctl</program>
+                         <programArguments>stopall</programArguments>
+                         <runAs>${username}</runAs>
+                         <abortOnError>0</abortOnError>
+                         <showMessageOnError>0</showMessageOnError>
+                     </runProgram>
+                     <setInstallerVariable name="process_num" value="-1"/>
+                     <setInstallerVariableFromScriptOutput>
+                         <name>process_num</name>
+                         <exec>${installdir}/bin/sdb_sql_ctl</exec>
+                         <execArgs>status | awk 'END {print}' | awk '{print $NF}'</execArgs>
+                         <abortOnError>0</abortOnError>
+                         <showMessageOnError>0</showMessageOnError>
+                     </setInstallerVariableFromScriptOutput>
+                     
+                     <throwError>
+                         <text>${msg(upgrade.errmsg.stopprocess)}</text>
+                         <ruleList>
+                             <compareValues value1="${process_num}" logic="greater" value2="0"/>
+                         </ruleList>
+                     </throwError>
+                  </actionList>
+               </actionGroup>
+            </actionList>
+        </if>
+        
+    </readyToInstallActionList>
+
+   <folderList>
+       <folder>
+           <name>files</name>
+           <destination>${installdir}</destination>
+           <distributionFileList>
+               <distributionDirectory>
+                   <allowWildcards>1</allowWildcards>
+                   <origin>${build_project_directory}/mariadb/*</origin>
+               </distributionDirectory>
+           </distributionFileList>
+       </folder>
+   </folderList>
+   
+    <postInstallationActionList>
+        <!--update installdir/support-files/mysql.server-->
+        <changePermissionOwnerFunction/>
+        <changePermissions files="${installdir}/preUninstall.sh" permissions="0755"/>
+        <substitute>
+            <files>${installdir}/support-files/mysql.server</files>
+            <type>exact</type>
+            <substitutionList>
+                <substitution pattern="/opt/sequoiasql/mariadb" value="${installdir}"/>
+            </substitutionList>
+        </substitute>
+        <substitute>
+            <files>${installdir}/bin/sequoiasql-mariadb.sysv</files>
+            <type>exact</type>
+            <substitutionList>
+                <substitution pattern="/opt/sequoiasql/mariadb" value="${installdir}"/>
+            </substitutionList>
+        </substitute>
+        <!--write /etc/default/sequoiasql-mariadb-->
+        <deleteFile path="${sys_conf_file}"/>
+        <touchFile path="${sys_conf_file}"/>
+        <setInstallerVariable name="md5_info_file" value="${installdir}/checksum.md5"/>
+        <deleteFile path="${md5_info_file}"/>
+        <touchFile path="${md5_info_file}"/>
+        <changeOwnerAndGroup>
+            <files>${md5_info_file}</files>
+            <group>${groupname}</group>
+            <owner>${username}</owner>
+        </changeOwnerAndGroup>
+        <setInstallerVariable name="add_sysconf_done" value="true">
+             <ruleList>
+                 <compareText logic="equals" text="${program_exit_code}" value="0"/>
+             </ruleList>
+        </setInstallerVariable>
+        <addFilesToUninstaller files="${sys_conf_file}"/>
+        <addFilesToUninstaller files="${md5_info_file}"/>
+        <changePermissions files="${sys_conf_file}" permissions="0644"/>
+        <propertiesFileSet>
+            <file>${sys_conf_file}</file>
+            <key>VERSION</key>
+            <value>${product_version}</value>
+        </propertiesFileSet>
+        <propertiesFileSet>
+            <file>${sys_conf_file}</file>
+            <key>USER</key>
+            <value>${username}</value>
+        </propertiesFileSet>
+        <propertiesFileSet>
+            <file>${sys_conf_file}</file>
+            <key>INSTALL_DIR</key>
+            <value>${installdir}</value>
+        </propertiesFileSet>
+        <setInstallerVariable name="md5sum" value="0000"/>
+        <setInstallerVariableFromScriptOutput>
+            <exec>md5sum</exec>
+            <execArgs>"${installer_pathname}" | cut -c 1-32 </execArgs>
+            <name>md5sum</name>
+        </setInstallerVariableFromScriptOutput>
+        <propertiesFileSet>
+            <file>${sys_conf_file}</file>
+            <key>MD5</key>
+            <value>${md5sum}</value>
+        </propertiesFileSet>
+        <addTextToFile>
+            <file>${md5_info_file}</file>
+            <text>${md5sum}</text>
+        </addTextToFile>
+        
+        <touchFile path="~${username}/.bashrc"/>
+        <runProgram>
+            <program>chown</program><!--<changeOwnerAndGroup> isnt effective for hidden files-->
+            <programArguments>-R ${username}:${groupname} ~${username}/.bashrc</programArguments>
+            <ruleList>
+                <fileExists path="~${username}/.bashrc"/>
+            </ruleList>
+        </runProgram>
+        <touchFile path="~${username}/.bash_profile">
+            <ruleEvaluationLogic>and</ruleEvaluationLogic>
+            <ruleList>
+                <fileExists path="~${username}/.bash_profile" negate="1"/>
+                <fileExists path="~${username}/.profile" negate="1"/>
+            </ruleList>
+        </touchFile>
+        <runProgram>
+            <program>chown</program><!--<changeOwnerAndGroup> isnt effective for hidden files-->
+            <programArguments>-R ${username}:${groupname} ~${username}/.bash_profile</programArguments>
+            <ruleList>
+                <fileExists path="~${username}/.bash_profile"/>
+            </ruleList>
+        </runProgram>
+        
+        <addEnv envFile="~${username}/.bashrc"/>
+        <addEnv envFile="~${username}/.bash_profile">
+            <ruleList>
+                <fileExists path="~${username}/.bash_profile"/>
+            </ruleList>
+        </addEnv>
+        <addEnv envFile="~${username}/.profile">
+            <ruleList>
+                <fileExists path="~${username}/.profile"/>
+            </ruleList>
+        </addEnv>
+        
+        <substitute>
+            <files>${installdir}/bin/sequoiasql-mariadb.sysv</files>
+            <type>exact</type>
+            <substitutionList>
+                <substitution pattern="PREFIX=XXXXX" value="PREFIX=${installdir}"/>
+                <substitution pattern="SQLUSER=XXXXX" value="SQLUSER=${username}"/>
+                <substitution pattern="ProvidesName" value="${service_name}"/>
+            </substitutionList>
+        </substitute>
+        
+        <!--add and start service-->
+        <getSysType type="sys_type"/>
+        <if>
+            <conditionRuleList>
+                <compareValues value1="${sys_type}" logic="equals" value2="systemd"/>
+            </conditionRuleList>
+            <actionList>
+                <addSystemdService/>
+            </actionList>
+            <elseActionList>
+                <addDefaultService/>
+            </elseActionList>
+        </if>
+        <setInstallerVariable name="add_service_done" value="true">
+             <ruleList>
+                 <compareText logic="equals" text="${program_exit_code}" value="0"/>
+             </ruleList>
+        </setInstallerVariable>
+        <startServiceFunction/>
+        <!--当用户使用工具停止实例时service无法感知，必须使用工具才能启动实例-->
+        <if>
+            <conditionRuleList>
+                <compareText logic="equals" text="${installmode}" value="cover"/>
+            </conditionRuleList>
+            <actionList>
+                <setInstallerVariableFromScriptOutput>
+                    <name>start_num</name>
+                    <exec>${installdir}/bin/sdb_sql_ctl</exec>
+                    <execArgs>status | awk 'END {print}' | awk '{print $NF}'</execArgs>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                </setInstallerVariableFromScriptOutput>
+                <setInstallerVariableFromScriptOutput>
+                    <name>total_num</name>
+                    <exec>${installdir}/bin/sdb_sql_ctl</exec>
+                    <execArgs>listinst | awk 'END {print}' | awk '{print $NF}'</execArgs>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                </setInstallerVariableFromScriptOutput>
+                <runProgram>
+                    <program>${installdir}/bin/sdb_sql_ctl</program>
+                    <programArguments>startall</programArguments>
+                    <runAs>${username}</runAs>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                    <ruleList>
+                        <compareText logic="does_not_equal" text="${total_num}" value="${start_num}"/>
+                    </ruleList>
+                </runProgram>
+            </actionList>
+        </if>
+    </postInstallationActionList>
+
+    <installationAbortedActionList>
+        <runProgram>
+            <customErrorMessage>${msg(install.errmsg.deleteuser)}</customErrorMessage>
+            <program>userdel</program>
+            <programArguments>${username}</programArguments>
+            <ruleList>
+                <isTrue value="${add_user_done}"/>
+            </ruleList>
+        </runProgram>
+        <deleteGroup>
+            <groupname>${groupname}</groupname>
+            <ruleList>
+                <isTrue value="${add_group_done}"/>
+            </ruleList>
+        </deleteGroup>
+    </installationAbortedActionList>
+
+</component>

@@ -1,0 +1,775 @@
+<project>
+    <shortName>sequoiasql</shortName>
+    <fullName>SequoiaSQL MariaDB Server</fullName>
+    <version>1.0</version>
+    <installerFilename>${product_shortname}-mariadb-${product_version}-${platform}${edition}-installer.${platform_exec_suffix}</installerFilename>
+    <allowLanguageSelection>1</allowLanguageSelection>
+    <allowedLanguages>en zh_CN</allowedLanguages>
+
+    <customLanguageFileList>
+        <language>
+            <code>en</code>
+            <encoding>utf-8</encoding>
+            <file>${build_project_directory}/sequoiamysql_en.lng</file>
+        </language>
+        <language>
+            <code>zh_CN</code>
+            <encoding>utf-8</encoding>
+            <file>${build_project_directory}/sequoiamysql_zh.lng</file>
+        </language>
+    </customLanguageFileList>
+    
+    <functionDefinitionList>
+        <actionDefinition name="getSysConfFilename">
+            <actionList>
+                <globalVariables names="${filename}"/>
+                <if>
+                   <conditionRuleList>
+                       <compareValues value1="${i}" logic="equals" value2="0"/>
+                   </conditionRuleList>
+                   <actionList>
+                       <setInstallerVariable name="${filename}" value="/etc/default/sequoiasql-mariadb"/>
+                   </actionList>
+                   <elseActionList>
+                       <setInstallerVariable name="${filename}" value="/etc/default/sequoiasql-mariadb${i}"/>
+                   </elseActionList>
+                </if>
+            </actionList>
+            <parameterList>
+                <stringParameter name="filename" value="" default=""/>
+            </parameterList>
+        </actionDefinition>
+        
+        <actionDefinition name="getServiceName">
+            <actionList>
+                <globalVariables names="${svcname}"/>
+                <if>
+                    <conditionRuleList>
+                        <compareValues value1="${i}" logic="equals" value2="0"/>
+                    </conditionRuleList>
+                    <actionList>
+                        <setInstallerVariable name="${svcname}" value="sequoiasql-mariadb"/>
+                    </actionList>
+                    <elseActionList>
+                        <setInstallerVariable name="${svcname}" value="sequoiasql-mariadb${i}"/>
+                    </elseActionList>
+                </if>
+            </actionList>
+            <parameterList>
+                <stringParameter name="svcname" value="" default=""/>
+            </parameterList>
+        </actionDefinition>
+        
+        <actionDefinition name="checkUmaskFunction">
+            <actionList>
+                <setInstallerVariableFromScriptOutput>
+                    <name>full_mask</name>
+                    <exec>umask</exec>
+                </setInstallerVariableFromScriptOutput>
+                <setInstallerVariableFromScriptOutput>
+                    <name>other_mask</name>
+                    <exec>echo</exec>
+                    <execArgs>${full_mask} | awk '{print substr($0,length($0)-0,1)}'</execArgs>
+                </setInstallerVariableFromScriptOutput>
+                <setInstallerVariableFromScriptOutput>
+                    <name>group_mask</name>
+                    <exec>echo</exec>
+                    <execArgs>${full_mask} | awk '{print substr($0,length($0)-1,1)}'</execArgs>
+                </setInstallerVariableFromScriptOutput>
+                <setInstallerVariableFromScriptOutput>
+                    <name>user_mask</name>
+                    <exec>echo</exec>
+                    <execArgs>${full_mask} | awk '{print substr($0,length($0)-2,1)}'</execArgs>
+                </setInstallerVariableFromScriptOutput>
+                <showWarning>
+                    <text>${msg(install.warnmsg.checkumask)}</text>
+                    <ruleEvaluationLogic>or</ruleEvaluationLogic>
+                    <ruleList>
+                        <compareValues value1="${other_mask}" logic="greater" value2="2"/>
+                        <compareValues value1="${group_mask}" logic="greater" value2="2"/>
+                        <compareValues value1="${user_mask}"  logic="greater" value2="0"/>
+                    </ruleList>
+                </showWarning>
+            </actionList>
+        </actionDefinition>
+   
+        <actionDefinition name="checkFreeDiskSpaceFunction">
+            <actionList>
+                <throwError>
+                    <text>${msg(install.errmsg.checkdisk)}</text>
+                    <ruleList>
+                        <checkFreeDiskSpace>
+                            <logic>less_or_equal</logic>
+                            <path>${installdir}</path>
+                            <size>1000000</size>
+                        </checkFreeDiskSpace>
+                    </ruleList>
+                </throwError>
+            </actionList>
+        </actionDefinition>
+   
+        <actionDefinition name="getSysType">
+            <actionList>
+                <getSymLinkTarget variable="pid1_fullpath">
+                    <link>/proc/1/exe</link>
+                </getSymLinkTarget>
+                <setInstallerVariableFromRegEx>
+                    <name>pid1_exe</name>
+                    <pattern>(.*)/(.*)</pattern>
+                    <substitution>\2</substitution>
+                    <text>${pid1_fullpath}</text>
+                </setInstallerVariableFromRegEx>
+                <globalVariables names="${type}"/>
+                <setInstallerVariable name="${type}" value="unknown"/>
+                <setInstallerVariable name="${type}" value="SysV">
+                    <ruleList>
+                        <compareValues value1="${pid1_exe}" logic="equals" value2="init"/>
+                    </ruleList>
+                </setInstallerVariable>
+                <setInstallerVariable name="${type}" value="systemd">
+                    <ruleList>
+                        <compareValues value1="${pid1_exe}" logic="equals" value2="systemd"/>
+                    </ruleList>
+                </setInstallerVariable>
+            </actionList>
+                <parameterList>
+                    <stringParameter name="type" value="" default=""/>
+                </parameterList>
+        </actionDefinition>
+   
+        <actionDefinition name="deleteEnv">
+            <actionList>
+                <!--delete export line-->
+                <setInstallerVariableFromScriptOutput>
+                    <exec>grep</exec>
+                    <execArgs>-n "^export PATH=\"${installdir}\/bin:\$PATH\"$" ${envFile} | awk -F ":" '{print $1}'</execArgs>
+                    <name>line_num1</name>
+                </setInstallerVariableFromScriptOutput>
+                <runProgram>
+                    <program>sed</program>
+                    <programArguments>-i '${line_num1}d' ${envFile}</programArguments>
+                    <ruleList>
+                        <compareValues value1="${line_num1}" logic="greater" value2="0"/>
+                    </ruleList>
+                </runProgram>
+                <setInstallerVariableFromScriptOutput>
+                    <exec>grep</exec>
+                    <execArgs>-n "^export LD_LIBRARY_PATH=\"${installdir}\/lib:\$LD_LIBRARY_PATH\"$" ${envFile} | awk -F ":" '{print $1}'</execArgs>
+                    <name>line_num2</name>
+                </setInstallerVariableFromScriptOutput>
+                <runProgram>
+                    <program>sed</program>
+                    <programArguments>-i '${line_num2}d' ${envFile}</programArguments>
+                    <ruleList>
+                        <compareValues value1="${line_num2}" logic="greater" value2="0"/>
+                    </ruleList>
+                </runProgram>
+                <!--delete empty file-->
+                <runProgram>
+                    <program>test</program>
+                    <programArguments>-s ${envFile}</programArguments>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                    <onErrorActionList>
+                        <deleteFile path="${envFile}"/>
+                    </onErrorActionList>
+                </runProgram>
+            </actionList>
+            <parameterList>
+                <stringParameter name="envFile" value="" default=""/>
+            </parameterList>
+        </actionDefinition>
+   
+        <actionDefinition name="addEnv">
+            <actionList>
+                <runProgram>
+                    <program>grep</program>
+                    <programArguments>-q "^export PATH=\"${installdir}\/bin:\$PATH\"$" ${envFile}</programArguments> 
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                </runProgram>
+                <runProgram>
+                    <abortOnError>0</abortOnError>
+                    <program>echo</program>
+                    <programArguments>"export PATH=\"${installdir}/bin:\$PATH\"" &gt;&gt; ${envFile}</programArguments>
+                    <ruleList>
+                        <compareText logic="does_not_equal" text="${program_exit_code}" value="0"/>
+                    </ruleList>
+                </runProgram>
+                <runProgram>
+                    <program>grep</program>
+                    <programArguments>-q "^export LD_LIBRARY_PATH=\"${installdir}\/lib:\$LD_LIBRARY_PATH\"$" ${envFile}</programArguments> 
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                </runProgram>
+                <runProgram>
+                    <abortOnError>0</abortOnError>
+                    <program>echo</program>
+                    <programArguments>"export LD_LIBRARY_PATH=\"${installdir}/lib:\$LD_LIBRARY_PATH\"" &gt;&gt; ${envFile}</programArguments>
+                    <ruleList>
+                        <compareText logic="does_not_equal" text="${program_exit_code}" value="0"/>
+                    </ruleList>
+                </runProgram>
+            </actionList>
+            <parameterList>
+                <stringParameter name="envFile" value="" default=""/>
+            </parameterList>
+        </actionDefinition>
+   
+        <actionDefinition name="delDefaultService">
+            <actionList>
+                <removeUnixService name="${service_name}"/>
+            </actionList>
+        </actionDefinition>
+        
+        <actionDefinition name="delSystemdService">
+            <actionList>
+                <runProgram>
+                    <program>systemctl</program>
+                    <programArguments>disable ${service_name}.service</programArguments>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                </runProgram>
+                <deleteFile path="${newsysconf_default}/${service_name}.service"/>
+                <deleteFile path="${newsysconf_ubuntu}/${service_name}.service"/>
+                <runProgram>
+                    <program>systemctl</program>
+                    <programArguments>daemon-reload</programArguments>
+                    <customErrorMessage>${msg(install.errmsg.systemctlreload)}</customErrorMessage>
+                </runProgram>
+            </actionList>
+        </actionDefinition>
+
+        <actionDefinition name="startServiceFunction">
+            <actionList>
+                <runProgram><!--in case did not reload /etc/init.d/${service_name} -->
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                    <program>systemctl</program>
+                    <programArguments>daemon-reload</programArguments>
+                </runProgram>
+                <runProgram>
+                    <customErrorMessage>${msg(install.errmsg.startservice)}</customErrorMessage>
+                    <program>service</program>
+                    <programArguments>${service_name} start</programArguments>
+                    <onErrorActionList>
+                        <consoleWrite text="&#xA;error message:&#xA;${program_stdout}&#xA;"/>
+                    </onErrorActionList>
+                </runProgram>
+            </actionList>
+        </actionDefinition>
+        
+        <actionDefinition name="addDefaultService">
+            <actionList>
+                <addUnixService>
+                    <customErrorMessage>${msg(install.errmsg.addservice)}</customErrorMessage>
+                    <name>${service_name}</name>
+                    <program>${installdir}/bin/sequoiasql-mariadb.sysv</program>
+                </addUnixService>
+                <deleteFile path="${installdir}/bin/sequoiasql-mariadb.systemd"/>
+                <deleteFile path="${installdir}/bin/sequoiasql-mariadb.sysv"/>
+            </actionList>
+        </actionDefinition>
+        
+        <actionDefinition name="addSystemdService">
+            <actionList>
+                <substitute>
+                    <files>${installdir}/bin/sequoiasql-mariadb.systemd</files>
+                    <type>exact</type>
+                    <substitutionList>
+                        <substitution pattern="/opt/sequoiasql/mariadb" value="${installdir}"/>
+                        <substitution pattern="XXXX" value="${username}"/>
+                    </substitutionList>
+                </substitute>
+                <copyFile origin="${installdir}/bin/sequoiasql-mariadb.systemd">
+                    <destination>${newsysconf_default}/${service_name}.service</destination>
+                    <ruleList>
+                        <fileTest condition="is_not_empty" path="${newsysconf_default}"/>
+                    </ruleList>
+                </copyFile>
+                <copyFile origin="${installdir}/bin/sequoiasql-mariadb.systemd">
+                    <destination>${newsysconf_ubuntu}/${service_name}.service</destination>
+                    <ruleList>
+                        <fileTest condition="is_not_empty" path="${newsysconf_ubuntu}"/>
+                    </ruleList>
+                </copyFile>
+                <deleteFile path="${installdir}/bin/sequoiasql-mariadb.sysv"/>
+                <deleteFile path="${installdir}/bin/sequoiasql-mariadb.systemd"/>
+                <runProgram>
+                    <program>systemctl</program>
+                    <programArguments>daemon-reload</programArguments>
+                    <customErrorMessage>${msg(install.errmsg.systemctlreload)}</customErrorMessage>
+                </runProgram>
+                <runProgram>
+                    <program>systemctl</program>
+                    <programArguments>enable ${service_name}.service</programArguments>
+                    <customErrorMessage>${msg(install.errmsg.addservice)}</customErrorMessage>
+                </runProgram>
+            </actionList>
+        </actionDefinition> 
+   
+        <actionDefinition name="changePermissionOwnerFunction">
+           <actionList>
+                <runProgram>
+                    <program>chown</program>
+                    <programArguments>-h ${username}:${groupname} ${installdir}/lib/*</programArguments>
+                </runProgram>
+                <changeOwnerAndGroup>
+                    <files>${project.rollbackBackupDirectory};${installdir}/rollback</files>
+                    <group>${groupname}</group>
+                    <owner>${username}</owner>
+                </changeOwnerAndGroup>
+           </actionList>
+        </actionDefinition>
+        
+        <actionDefinition name="upgradeCheck">
+            <actionList>
+                <createDirectory path="${installdir}/tmp_${time}"/>
+                <unpackFile>
+                    <component>normal_component</component>
+                    <folder>files</folder>
+                    <origin>compatible.sh</origin>
+                    <destination>${installdir}/tmp_${time}</destination>
+                </unpackFile>
+                <changePermissions files="${installdir}/tmp_${time}/compatible.sh" permissions="0755"/>
+                <consoleWrite text="${msg(upgrade.normalmsg.judgecomatible)}"/>     
+                <setInstallerVariableFromScriptOutput>
+                    <name>is_compatible</name>
+                    <exec>${installdir}/tmp_${time}/compatible.sh</exec>
+                    <execArgs>${old_version} ${product_version} --sql</execArgs>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                </setInstallerVariableFromScriptOutput>
+                <deleteFile path="${installdir}/tmp_${time}"/>
+                <throwError>
+                    <text>${msg(upgrade.errmsg.checkoldversion)}</text>
+                    <ruleList>
+                        <isFalse value="${is_compatible}"/>
+                    </ruleList>
+                 </throwError>
+                 <consoleWrite text="ok&#xA;"/>
+            </actionList>
+        </actionDefinition>
+        
+   </functionDefinitionList>
+
+    <initializationActionList>
+        <createTimeStamp>
+            <variable>time</variable>
+            <format>%Y-%m-%d-%H:%M:%S</format>
+        </createTimeStamp>                 
+        <setInstallerVariable name="project.rollbackBackupDirectory" value="${installdir}/rollback/BackupDir_${time}"/> 
+        <setInstallerVariable name="add_user_done"                   value="false"/>
+        <setInstallerVariable name="add_group_done"                  value="false"/>
+        <setInstallerVariable name="add_sysconf_done"                value="false"/>
+        <setInstallerVariable name="old_installation_num"            value="0"/>
+        <setInstallerVariable name="newsysconf_default"              value="/usr/lib/systemd/system" persist="1"/>
+        <setInstallerVariable name="newsysconf_ubuntu"               value="/lib/systemd/system" persist="1"/>
+       
+    </initializationActionList>
+    
+    <preInstallationActionList>
+
+        <!--parameter passed in command line, should not ask again in dialog or gui-->
+        <setInstallerVariable name="parameter(installdir).ask" value="0">
+            <ruleList>
+                <compareText text="${installer_command_line_arguments}" value="--prefix" logic="contains"/>
+            </ruleList>
+        </setInstallerVariable>
+        <throwError>
+            <text>${msg(install.errmsg.prefix.check)}</text>
+            <ruleList>
+                <compareText logic="contains" text="${installdir}" value=" "/>
+            </ruleList>
+        </throwError>
+        <!--remove last '/' in installdir-->
+        <setInstallerVariableFromRegEx>
+            <name>installdir</name>
+            <pattern>/+$</pattern>
+            <substitution></substitution>
+            <text>${installdir}</text>
+        </setInstallerVariableFromRegEx>
+        <!--remove last '\' in installdir-->
+        <setInstallerVariableFromRegEx>
+            <name>installdir</name>
+            <pattern>\\+$</pattern>
+            <substitution></substitution>
+            <text>${installdir}</text>
+        </setInstallerVariableFromRegEx>
+        <setInstallerVariable name="parameter(installdir).ask" value="0">
+            <ruleList>
+                <compareText text="${installer_command_line_arguments}" value="--installmode" logic="contains"/>
+            </ruleList>
+        </setInstallerVariable>
+        <setInstallerVariable name="parameter(user_data).parameter(username).ask" value="0">
+            <ruleList>
+                <compareText text="${installer_command_line_arguments}" value="--user" logic="contains"/>
+            </ruleList>
+        </setInstallerVariable>
+        <setInstallerVariable name="parameter(user_data).parameter(groupname).ask" value="0">
+            <ruleList>
+                <compareText text="${installer_command_line_arguments}" value="--group" logic="contains"/>
+            </ruleList>
+        </setInstallerVariable>
+        <setInstallerVariable name="parameter(user_data).parameter(userpasswd).ask" value="0">
+            <ruleList>
+                <compareText text="${installer_command_line_arguments}" value="--passwd" logic="contains"/>
+            </ruleList>
+        </setInstallerVariable>
+        <setInstallerVariable name="parameter(user_data).ask" value="0">
+            <ruleEvaluationLogic>and</ruleEvaluationLogic>
+            <ruleList>
+                <compareText text="${installer_command_line_arguments}" value="--user"   logic="contains"/>
+                <compareText text="${installer_command_line_arguments}" value="--group"  logic="contains"/>
+                <compareText text="${installer_command_line_arguments}" value="--passwd" logic="contains"/>
+            </ruleList>
+        </setInstallerVariable>
+        
+        <!--获取旧版本安装个数-->
+        <setInstallerVariableFromScriptOutput>
+            <name>old_installation_num</name>
+            <exec>find</exec>
+            <execArgs> /etc/default -regex ".*sequoiasql-mariadb[1-4][0-9]" -o -regex ".*sequoiasql-mariadb[1-9]" -o -name "sequoiasql-mariadb" | xargs cat | grep "INSTALL_DIR" | wc -l</execArgs>
+        </setInstallerVariableFromScriptOutput>
+        
+        <!--获取旧版本安装路径列表-->
+        <setInstallerVariableFromScriptOutput>
+            <name>installdirs</name>
+            <exec>find</exec>
+            <execArgs> /etc/default -regex ".*sequoiasql-mariadb[1-4][0-9]" -o -regex ".*sequoiasql-mariadb[1-9]" -o -name "sequoiasql-mariadb" | xargs cat | grep "INSTALL_DIR" | awk -F = '{print $2}'</execArgs>
+        </setInstallerVariableFromScriptOutput>
+        
+        <!--获取旧版本版本信息列表-->
+        <setInstallerVariableFromScriptOutput>
+            <name>installInfos</name>
+            <exec>find</exec>
+            <execArgs> /etc/default -regex ".*sequoiasql-mariadb[1-4][0-9]" -o -regex ".*sequoiasql-mariadb[1-9]" -o -name "sequoiasql-mariadb" | xargs grep -E "INSTALL_DIR|VERSION" | awk -F = '{print $2}'</execArgs>
+        </setInstallerVariableFromScriptOutput>
+        
+        <!--将旧版本安装路径列表添加到可选项列表中-->
+        <setInstallerVariable name="option_text" value=""/>
+        <foreach variables="fileds" values="${installInfos}">
+            <actionList>
+                <if>
+                   <conditionRuleList>
+                      <compareText text="${fileds}" logic="contains" value="/"/>
+                   </conditionRuleList>
+                   <actionList>
+                      <!---处理安装路径-->                      
+                      <setInstallerVariable name="show_text" value="${show_text}    ${fileds}"/>
+                   </actionList>
+                   <elseActionList>
+                      <!---处理版本信息-->
+                      <setInstallerVariableFromRegEx name="show_text" pattern="'" text="${fileds}"/>
+                      <continue/>
+                   </elseActionList>
+                </if>
+                <setInstallerVariable name="option_text" value="${option_text}&#xA;${fileds}=${show_text}"/>
+            </actionList>
+        </foreach>
+        
+        <!--指定installmode时不需要other选项-->
+        <if>
+            <conditionRuleList>
+                <compareText text="${installer_command_line_arguments}" value="--installmode" logic="does_not_contain"/>
+            </conditionRuleList>
+            <actionList>
+               <setInstallerVariable name="fileds" value=""/>
+               <setInstallerVariable name="show_text" value="other option"/>
+               <setInstallerVariable name="option_text" value="${option_text}&#xA;${fileds}=${show_text}"/>
+            </actionList>
+        </if>
+
+        <addChoiceOptionsFromText>
+            <name>choices</name>
+            <text>${option_text}</text>
+        </addChoiceOptionsFromText>
+        
+        <!--指定静默模式时，存在多个版本且未指定安装路径时报错-->
+        <throwError>
+            <text>${msg(upgrade.errmsg.multipleinstallation)}</text>
+            <ruleList>
+                <compareValues logic="greater" value1="${old_installation_num}" value2="1"/>
+                <compareValues logic="equals" value1="${installer_ui}" value2="unattended"/>
+                <compareText text="${installer_command_line_arguments}" value="--prefix" logic="does_not_contain"/>
+            </ruleList>
+        </throwError>
+        
+        <!--只存在一个安装且未指定prefix参数时，设置installdir为当前已存在的安装路径，以便升级或覆盖安装使用-->
+        <setInstallerVariable name="installdir" value="${installdirs}" persist="1">
+           <ruleList>
+              <compareValues logic="equals" value1="${old_installation_num}" value2="1"/>
+              <compareText text="${installer_command_line_arguments}" value="--prefix" logic="does_not_contain"/>
+           </ruleList>
+        </setInstallerVariable>
+        
+        <!--升级模式时，不存在旧的安装则报错-->
+        <throwError>
+            <text>${msg(upgrade.errmsg.noinstallation)}</text>
+            <ruleList>
+                <compareValues logic="equals" value1="${installmode}" value2="upgrade"/>
+                <regExMatch>
+                   <logic>does_not_match</logic>
+                   <pattern>^${installdir}\n|(.*)\n${installdir}\n(.*)|(.*)\n${installdir}$|^(${installdir})$</pattern>
+                   <text>${installdirs}</text>
+                </regExMatch>
+             </ruleList>
+        </throwError>
+        
+    </preInstallationActionList>
+    
+    <parameterList>
+        <!--keep variable in both running time and building time-->          
+        <stringParameter name="sql_type" ask="0" value=""/>
+        
+        <choiceParameter name="choices">
+            <insertBefore>installdir</insertBefore>
+            <explanation>Installer.Parameter.installdir.explanation</explanation>
+            <cliOptionShow>0</cliOptionShow>
+            <ruleList>
+                <compareText text="${installer_command_line_arguments}" value="--prefix" logic="does_not_contain"/>
+                <compareValues logic="greater" value1="${old_installation_num}" value2="0"/>
+            </ruleList>
+        </choiceParameter>
+        
+        <directoryParameter name="installdir">
+            <insertAfter>choices</insertAfter>
+            <description>Installer.Parameter.installdir.description</description>
+            <explanation>Installer.Parameter.installdir.explanation</explanation>
+            <value></value>
+            <default>${platform_install_prefix}/sequoiasql/mariadb</default>
+            <ask>yes</ask>
+            <cliOptionName>prefix</cliOptionName>
+            <mustBeWritable>yes</mustBeWritable>
+            <width>40</width>
+            <ruleList>
+               <compareValues logic="equals" value1="${choices}" value2=""/>
+            </ruleList>
+        </directoryParameter>
+        
+        <choiceParameter name="installmode">
+            <insertAfter>installdir</insertAfter>
+            <value></value>
+            <default></default>
+            <cliOptionText>${msg(upgrade.paramers.upgrade.explanation)}</cliOptionText>
+            <cliOptionName>installmode</cliOptionName>
+            <description>${msg(install.parameter.upgrade.description)}</description>
+            <explanation>${msg(install.parameter.upgrade.explanation)}</explanation>
+            <optionList>
+                <option>
+                    <text>upgrade</text>
+                    <value>upgrade</value>
+                </option>
+                <option>
+                    <text>cover</text>
+                    <value>cover</value>
+                </option>
+            </optionList>
+            <ruleList>
+                <compareText text="${installer_command_line_arguments}" value="--installmode" logic="does_not_contain"/>
+                <compareTextLength text="${installdirs}" logic="greater" length="0"/>
+                <regExMatch>
+                   <logic>matches</logic>
+                   <pattern>^${installdir}\n|(.*)\n${installdir}\n(.*)|(.*)\n${installdir}$|^(${installdir})$|^(${choices})$|^${choices}\n</pattern>
+                   <text>${installdirs}</text>
+                </regExMatch>
+            </ruleList>
+        </choiceParameter>
+        
+        <parameterGroup name="user_data">
+            <insertAfter>installmode</insertAfter>
+            <title>${msg(install.para.user.title)}</title>
+            <explanation>${msg(install.para.user.explanation)}</explanation>
+            <value></value>
+            <default></default>
+            <parameterList>
+                <stringParameter>
+                    <name>username</name>
+                    <cliOptionName>user</cliOptionName>
+                    <description>${msg(install.para.user.username.description)}</description>
+                    <explanation></explanation>
+                    <value>sdbadmin</value>
+                    <default>sdbadmin</default>
+                    <allowEmptyValue>0</allowEmptyValue>
+                    <width>40</width>
+                </stringParameter>
+                <stringParameter>
+                    <name>groupname</name>
+                    <cliOptionName>group</cliOptionName>
+                    <description>${msg(install.para.user.groupname.description)}</description>
+                    <explanation></explanation>
+                    <value>${username}_group</value>
+                    <default>${username}_group</default>
+                    <allowEmptyValue>0</allowEmptyValue>
+                    <width>40</width>
+                </stringParameter>
+                <passwordParameter>
+                    <name>userpasswd</name>
+                    <cliOptionName>passwd</cliOptionName>
+                    <description>${msg(install.para.user.password.description)}</description>
+                    <explanation></explanation>
+                    <value></value>
+                    <default>${username}</default>
+                    <allowEmptyValue>0</allowEmptyValue>
+                    <descriptionRetype>${msg(install.para.user.reentrypw.description)}</descriptionRetype>
+                    <width>40</width>                           
+                </passwordParameter>
+            </parameterList>
+            <ruleList>
+                <compareValues value1="${installmode}" value2="upgrade" logic="does_not_equal"/>
+                <compareValues value1="${installmode}" value2="cover" logic="does_not_equal"/>
+            </ruleList>
+        </parameterGroup>
+    
+    </parameterList>
+    
+    <readyToInstallActionList>
+        <throwError>
+            <text>${msg(install.errmsg.prefix.check)}</text>
+            <ruleList>
+                <compareText logic="contains" text="${installdir}" value=" "/>
+            </ruleList>
+        </throwError>
+        <!--remove last '/' in installdir-->
+        <setInstallerVariableFromRegEx>
+            <name>installdir</name>
+            <pattern>/+$</pattern>
+            <substitution></substitution>
+            <text>${installdir}</text>
+        </setInstallerVariableFromRegEx>
+        <!--remove last '\' in installdir-->
+        <setInstallerVariableFromRegEx>
+            <name>installdir</name>
+            <pattern>\\+$</pattern>
+            <substitution></substitution>
+            <text>${installdir}</text>
+        </setInstallerVariableFromRegEx>
+        <setInstallerVariable name="project.rollbackBackupDirectory" value="${installdir}/rollback/BackupDir_${time}"/>
+        <setInstallerVariable name="project.installationType" value="upgrade">
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <ruleList>
+                <compareValues value1="${installmode}" logic="equals" value2="upgrade"/>
+                <ruleGroup>
+                    <ruleList>
+                        <regExMatch>
+                           <logic>matches</logic>
+                           <pattern>^${installdir}\n|(.*)\n${installdir}\n(.*)|(.*)\n${installdir}$|^(${installdir})$|^(${choices})$|^${choices}\n</pattern>
+                           <text>${installdirs}</text>
+                        </regExMatch>
+                        <compareTextLength text="${installdirs}" logic="greater" length="0"/>
+                        <compareValues value1="${installmode}" logic="does_not_equal" value2="cover"/>
+                    </ruleList>
+                </ruleGroup>
+            </ruleList>
+        </setInstallerVariable>
+        
+      <!--select component-->
+        <componentSelection>
+            <select>upgrade_component</select>
+            <deselect>normal_component</deselect>
+            <ruleList>
+                <compareValues value1="${project.installationType}" value2="upgrade" logic="equals"/>
+            </ruleList>
+        </componentSelection>
+        <componentSelection>
+            <select>normal_component</select>
+            <deselect>upgrade_component</deselect>
+            <ruleList>
+                <compareValues value1="${project.installationType}" value2="normal" logic="equals"/>
+            </ruleList>
+        </componentSelection>
+    </readyToInstallActionList>
+    
+    <componentList>
+        <include file="upgrade_component.xml" />
+        <include file="normal_component.xml" />
+    </componentList>
+    
+    <preUninstallationActionList>
+        <!--预留脚本-->
+        <setInstallerVariableFromScriptOutput>
+            <name>preuninstall_value</name>
+            <exec>${installdir}/preUninstall.sh</exec>
+            <execArgs></execArgs>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </setInstallerVariableFromScriptOutput>
+        <if>
+            <conditionRuleList>
+                <isFalse value="${preuninstall_value}"/>
+            </conditionRuleList>
+            <actionList>
+                <consoleWrite text="&#xA;${msg(uninstall.errmsg.excutepreninstallsh)}&#xA;"/>
+                <exit exitCode="1"/><!--exit uninstallation-->
+            </actionList>
+        </if>
+        
+        <!--stop service-->
+        <runProgram>
+            <program>service</program>
+            <programArguments>${service_name} stop</programArguments>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <if>
+            <conditionRuleList>
+                <compareValues value1="${program_exit_code}" logic="does_not_equal" value2="0"/>
+            </conditionRuleList>
+            <actionList>
+                <consoleWrite text="&#xA;${msg(uninstall.errmsg.stopservice)}&#xA;"/>
+                <exit exitCode="1"/><!--exit uninstallation-->
+            </actionList>
+        </if>
+
+        <!--stop all instances-->
+        <runProgram>
+            <program>${installdir}/bin/sdb_sql_ctl</program>
+            <programArguments>stopall</programArguments>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <if>
+            <conditionRuleList>
+                <compareValues value1="${program_exit_code}" logic="does_not_equal" value2="0"/>
+            </conditionRuleList>
+            <actionList>
+                <consoleWrite text="&#xA;${msg(uninstall.errmsg.stopinstance)}&#xA;"/>
+                <exit exitCode="1"/><!--exit uninstallation-->
+            </actionList>
+        </if>
+        <!--remove service-->
+        <getSysType type="sys_type"/>
+        <if>
+            <conditionRuleList>
+                <compareValues value1="${sys_type}" logic="equals" value2="systemd"/>
+            </conditionRuleList>
+            <actionList>
+                <delSystemdService/>
+            </actionList>
+            <elseActionList>
+                <delDefaultService/>
+            </elseActionList>
+        </if>
+    </preUninstallationActionList>
+
+    <postUninstallationActionList>
+        <!--delete environment-->
+        <deleteEnv envFile="~${username}/.bashrc"/>
+        <deleteEnv envFile="~${username}/.profile"/>
+        <deleteEnv envFile="~${username}/.bash_profile"/>
+    </postUninstallationActionList>
+    
+    <enableDebugger>1</enableDebugger>
+    <enableRollback>1</enableRollback>
+    <enableTimestamp>1</enableTimestamp>
+    <requireInstallationByRootUser>1</requireInstallationByRootUser>
+    <saveRelativePaths>1</saveRelativePaths>
+    <singleInstanceCheck>1</singleInstanceCheck>
+    <defaultUnixGroup>${groupname}</defaultUnixGroup>
+    <defaultUnixOwner>${username}</defaultUnixOwner>
+    <vendor>SequoiaSQL-MariaDB</vendor>
+
+</project>
+
+
+
