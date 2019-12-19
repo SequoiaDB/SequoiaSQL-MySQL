@@ -23,7 +23,13 @@ class OptionsMgr:
             help='Build the project, including the '
                  'testcases. Default: mysql-5.7.25')
         build_opt_group.add_argument(
-            '--dd',
+            '-e', '--enterprise',
+            default=False,
+            help='Build enterprise edition. Default: False',
+            action='store_true'
+        )
+        build_opt_group.add_argument(
+            '--dd', default=False,
             help='Build debug version. Default: False',
             action='store_true'
         )
@@ -43,21 +49,28 @@ class OptionsMgr:
             '-j', '--jobs', metavar = 'jobNum', type=int, default=2,
             help='Compile thread number. Default: 2' )
         build_opt_group.add_argument(
-            '-r', '--runpackage',
-            help='Make the run package. Default: False',
-            action='store_true')
-        build_opt_group.add_argument(
-            '-p', '--package',
-            help='Make the bin package. Default: False',
-            action='store_true')
-        build_opt_group.add_argument(
-            '--packtest', default=True,
-            help='Pack mysql testcases into the package'
-        )
-        build_opt_group.add_argument(
             '-v', '--verbose',
             help='Print verbose information during compilation. Default: False',
             action='store_true')
+
+        pack_opt_group = self.__parser.add_argument_group('package arguments')
+        pack_opt_group.add_argument(
+            '-p', '--package',
+            help='Make the bin package. Default: False',
+            action='store_true')
+        pack_opt_group.add_argument(
+            '-r', '--runpackage',
+            help='Make the run package. Default: False',
+            action='store_true')
+        pack_opt_group.add_argument(
+            '--includetest', default=True,
+            help='Pack mysql tests into the package'
+        )
+        pack_opt_group.add_argument(
+            '--archivetest', default=False,
+            help='Archive tests into a seperated TGZ file. Default: False',
+            action='store_true'
+        )
 
         # Test options
         test_opt_group = self.__parser.add_argument_group('test arguments')
@@ -163,13 +176,18 @@ class OptionsMgr:
                 '-DCMAKE_INSTALL_PREFIX={}'.format(self.args.install)
             )
 
+        if self.args.enterprise:
+            cmake_arguments.append('-DENTERPRISE=ON')
+        else:
+            cmake_arguments.append('-DENTERPRISE=OFF')
+
         if self.args.dd:
             cmake_arguments.append('-DCMAKE_BUILD_TYPE=Debug')
 
         if 0 == self.args.abimode:
             cmake_arguments.append("-DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0'")
 
-        if not self.args.packtest:
+        if not self.args.includetest:
             cmake_arguments.append('-DPACK_TEST=OFF')
 
         print("cmake configuration arguments: {}"
@@ -219,6 +237,9 @@ class OptionsMgr:
 
     def jobNum(self):
         return self.args.jobs
+
+    def needArchiveTest(self):
+        return self.args.archivetest
 
     def needPackage(self):
         return self.args.package
@@ -294,6 +315,15 @@ class ProjectMgr:
             return 1
         return 0
 
+    def archive_test(self):
+        pack_command = ['make', 'testpackage']
+        rc = self.__execute_make_cmd(pack_command)
+        if 0 != rc:
+            print("Build test TGZ package for the project failed: {}".format(rc))
+            return 1
+        print("Build test TGZ package for the project successfully!")
+        return 0
+
     def package(self):
         pack_command = ['make', 'package']
         rc = self.__execute_make_cmd(pack_command)
@@ -347,6 +377,12 @@ def main():
         rc = prjMgr.install()
         if 0 != rc:
             print("Install the program failed: {}".format(rc))
+            return rc
+
+    if optMgr.needArchiveTest():
+        rc = prjMgr.archive_test()
+        if 0 != rc:
+            print("Make test package failed: {}".format(rc))
             return rc
 
     if optMgr.needPackage():

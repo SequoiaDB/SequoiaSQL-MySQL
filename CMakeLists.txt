@@ -21,7 +21,7 @@
 
 cmake_minimum_required(VERSION 2.8.7)
 
-option(ENTERPRISE "Build enterprise edition" ON)
+option(ENTERPRISE "Build enterprise edition" OFF)
 option(SDB_BUILT_IN "Build the sequoiadb plugin into mysqld" ON)
 option(PACK_TEST "Set to true if you want to include testcases in the run
                   package" ON)
@@ -172,7 +172,7 @@ function(gen_version_file)
       set(BUILD_TYPE_STR " (${BUILD_TYPE_STR})")
    endif()
 
-   string(CONCAT FULL_VERSION "${PROJECT_NAME} version: ${PROJECT_VERSION_NUM}\n"
+   string(CONCAT FULL_VERSION "${PROJECT_NAME} version: ${PROJECT_VERSION}\n"
                               "Git version: ${SDB_PLUGIN_VERSION}\n"
                               "${BUILDDATE}" "${BUILD_TYPE_STR}\n\n"
                               "SDB driver: ${SDB_VERSION}("
@@ -352,12 +352,19 @@ else()
    set(CLEAN_TEST_CMD "rm ${CMAKE_INSTALL_PREFIX}/mysql-test" CACHE STRING "Remove the mysql-test before packing")
 endif()
 
+if(ENTERPRISE)
+   set(EDITION_VAR "--setvars edition=-enterprise")
+else()
+   set(EDITION_VAR "")
+endif()
+set(BUILD_COMMAND "builder build ${PROJECT_PACKAGE_SUB_DIR}/sequoiamysql_server.xml --setvars project.version=${PROJECT_VERSION} --setvars platform=linux_x86_64 ${EDITION_VAR} --setvars project.outputDirectory=${CMAKE_BINARY_DIR}")
+
 if(PACK_TEST)
    add_custom_target(
       runpackage
       COMMAND bash -c "cp ${PROJECT_PACKAGE_SUB_DIR}/*.sys* ${CMAKE_INSTALL_PREFIX}/bin"
       COMMAND bash -c "ln -sf ${CMAKE_INSTALL_PREFIX} ${PROJECT_PACKAGE_SUB_DIR}/${SDB_PROJECT_TYPE}"
-      COMMAND bash -c "builder build ${PROJECT_PACKAGE_SUB_DIR}/sequoiamysql_server.xml --setvars project.version=${PROJECT_VERSION} --setvars platform=linux_x86_64 --setvars edition=-enterprise --setvars project.outputDirectory=${CMAKE_BINARY_DIR}"
+      COMMAND bash -c ${BUILD_COMMAND}
       comment "Building .run package...")
 else()
    add_custom_target(
@@ -365,14 +372,9 @@ else()
       COMMAND bash -c "rm -rf ${CMAKE_INSTALL_PREFIX}/mysql-test"
       COMMAND bash -c "cp ${PROJECT_PACKAGE_SUB_DIR}/*.sys* ${CMAKE_INSTALL_PREFIX}/bin"
       COMMAND bash -c "ln -sf ${CMAKE_INSTALL_PREFIX} ${PROJECT_PACKAGE_SUB_DIR}/${SDB_PROJECT_TYPE}"
-      COMMAND bash -c "builder build ${PROJECT_PACKAGE_SUB_DIR}/sequoiamysql_server.xml --setvars project.version=${PROJECT_VERSION} --setvars platform=linux_x86_64 --setvars edition=-enterprise --setvars project.outputDirectory=${CMAKE_BINARY_DIR}"
+      COMMAND bash -c ${BUILD_COMMAND}
       comment "Building .run package...")
 endif()
-
-add_custom_target(
-   binpackage
-   COMMAND bash -c "python3 ${PROJECT_PACKAGE_DIR}/package.py"
-)
 
 add_custom_target(testcase
    COMMAND bash -c "ln -sf ${CMAKE_INSTALL_PREFIX}/lib/libsdbcpp.so libsdbcpp.so"
@@ -380,3 +382,10 @@ add_custom_target(testcase
    WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}/mysql-test"
    DEPENDS ${CMAKE_INSTALL_PREFIX}
    COMMENT "Run testcases...")
+
+add_custom_target(testpackage
+   COMMAND bash -c "tar zcvf ${CMAKE_BINARY_DIR}/${SQL_SOURCE_DIR_NAME}-test.tar.gz *"
+   WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}/mysql-test"
+   DEPENDS ${CMAKE_INSTALL_PREFIX}
+   COMMENT "Make testcase package..."
+)
