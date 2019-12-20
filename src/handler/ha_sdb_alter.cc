@@ -844,17 +844,30 @@ int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
       field->store(org_val.ptr(), org_val.length(), org_val.charset());
       break;
     }
+    case MYSQL_TYPE_BLOB: {
+#ifdef IS_MYSQL
+      // These types never have default.
+      DBUG_ASSERT(0);
+      rc = HA_ERR_INTERNAL_ERROR;
+#elif defined IS_MARIADB
+      String org_val;
+      field->val_str(&org_val);
+      field->set_default();
+      rc = field_to_obj(field, builder);
+      field->store(org_val.ptr(), org_val.length(), org_val.charset());
+#endif
+      break;
+    }
 #ifdef IS_MYSQL
     case MYSQL_TYPE_JSON:
 #endif
-    case MYSQL_TYPE_BLOB:
     default: {
       // These types never have default.
       DBUG_ASSERT(0);
       rc = HA_ERR_INTERNAL_ERROR;
+      break;
     }
   }
-
   if (is_set) {
     bitmap_clear_bit(field->table->write_set, field->field_index);
   }

@@ -23,8 +23,8 @@
 #include "ha_sdb_errcode.h"
 
 ha_sdb_cond_ctx::ha_sdb_cond_ctx(TABLE *cur_table, THD *ha_thd,
-                           my_bitmap_map *pushed_cond_buff,
-                           my_bitmap_map *where_cond_buff) {
+                                 my_bitmap_map *pushed_cond_buff,
+                                 my_bitmap_map *where_cond_buff) {
   init(cur_table, ha_thd, pushed_cond_buff, where_cond_buff);
 }
 
@@ -33,8 +33,8 @@ ha_sdb_cond_ctx::~ha_sdb_cond_ctx() {
 }
 
 void ha_sdb_cond_ctx::init(TABLE *cur_table, THD *ha_thd,
-                        my_bitmap_map *pushed_cond_buff,
-                        my_bitmap_map *where_cond_buff) {
+                           my_bitmap_map *pushed_cond_buff,
+                           my_bitmap_map *where_cond_buff) {
   table = cur_table;
   thd = ha_thd;
   bitmap_init(&pushed_cond_set, pushed_cond_buff, table->s->fields, false);
