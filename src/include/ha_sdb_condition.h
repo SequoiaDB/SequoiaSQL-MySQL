@@ -16,7 +16,7 @@
 #ifndef SDB_CONDITION__H
 #define SDB_CONDITION__H
 
-#include "sdb_item.h"
+#include "ha_sdb_item.h"
 #include "my_bitmap.h"
 
 enum SDB_COND_STATUS {
@@ -35,16 +35,16 @@ struct update_arg {
   bool *optimizer_update;
 };
 
-class Sdb_cond_ctx : public Sql_alloc {
+class ha_sdb_cond_ctx : public Sql_alloc {
  public:
   /*PUSHED_COND: for pushed condition.
     WHERE_COND:  for where condition.
   */
   enum Ctx_type { INVALID_TYPE = 0, PUSHED_COND, WHERE_COND };
-  Sdb_cond_ctx(TABLE *cur_table, THD *ha_thd, my_bitmap_map *pushed_cond_buff,
+  ha_sdb_cond_ctx(TABLE *cur_table, THD *ha_thd, my_bitmap_map *pushed_cond_buff,
                my_bitmap_map *where_cond_buff);
 
-  ~Sdb_cond_ctx();
+  ~ha_sdb_cond_ctx();
 
   void init(TABLE *cur_table, THD *ha_thd, my_bitmap_map *pushed_cond_buff,
             my_bitmap_map *where_cond_buff);
@@ -80,7 +80,7 @@ class Sdb_cond_ctx : public Sql_alloc {
   bool sub_sel;
 };
 
-void sdb_parse_condtion(const Item *cond_item, Sdb_cond_ctx *sdb_cond);
+void sdb_parse_condtion(const Item *cond_item, ha_sdb_cond_ctx *sdb_cond);
 void sdb_traverse_update(const Item *update_item, void *arg);
 
 #endif

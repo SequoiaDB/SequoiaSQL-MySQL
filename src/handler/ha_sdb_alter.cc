@@ -17,15 +17,15 @@
 #define MYSQL_SERVER
 #endif
 
-#include "sdb_sql.h"
+#include "ha_sdb_sql.h"
 #include "ha_sdb.h"
 #include <sql_class.h>
 #include <mysql/plugin.h>
 #include <sql_time.h>
-#include "sdb_log.h"
-#include "sdb_idx.h"
-#include "sdb_thd.h"
-#include "sdb_item.h"
+#include "ha_sdb_log.h"
+#include "ha_sdb_idx.h"
+#include "ha_sdb_thd.h"
+#include "ha_sdb_item.h"
 
 #ifdef IS_MYSQL
 #include <json_dom.h>
@@ -780,7 +780,7 @@ struct Col_alter_info : public Sql_alloc {
   bson::BSONObj cast_rule;
 };
 
-struct Sdb_alter_ctx : public inplace_alter_handler_ctx {
+struct ha_sdb_alter_ctx : public inplace_alter_handler_ctx {
   List<Field> dropped_columns;
   List<Field> added_columns;
   List<Col_alter_info> changed_columns;
@@ -1083,7 +1083,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
   int tmp_rc = 0;
   THD *thd = ha_thd();
   const HA_CREATE_INFO *create_info = ha_alter_info->create_info;
-  Sdb_alter_ctx *ctx = (Sdb_alter_ctx *)ha_alter_info->handler_ctx;
+  ha_sdb_alter_ctx *ctx = (ha_sdb_alter_ctx *)ha_alter_info->handler_ctx;
   List<Col_alter_info> &changed_columns = ctx->changed_columns;
   longlong count = 0;
 
@@ -1349,7 +1349,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   enum_alter_inplace_result rs;
   List_iterator_fast<Create_field> cf_it;
   Bitmap<MAX_FIELDS> matched_map;
-  Sdb_alter_ctx *ctx = NULL;
+  ha_sdb_alter_ctx *ctx = NULL;
   KEY *new_key = NULL;
   KEY_PART_INFO *key_part = NULL;
   sql_mode_t sql_mode = ha_thd()->variables.sql_mode;
@@ -1366,7 +1366,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     goto error;
   }
 
-  ctx = new Sdb_alter_ctx();
+  ctx = new ha_sdb_alter_ctx();
   if (!ctx) {
     rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
     goto error;
@@ -1696,7 +1696,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   Sdb_cl cl;
   Bitmap<MAX_INDEXES> ignored_drop_keys;
   Bitmap<MAX_INDEXES> ignored_add_keys;
-  Sdb_alter_ctx *ctx = (Sdb_alter_ctx *)ha_alter_info->handler_ctx;
+  ha_sdb_alter_ctx *ctx = (ha_sdb_alter_ctx *)ha_alter_info->handler_ctx;
   const HA_CREATE_INFO *create_info = ha_alter_info->create_info;
   const alter_table_operations alter_flags = ha_alter_info->handler_flags;
 

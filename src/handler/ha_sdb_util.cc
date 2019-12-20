@@ -17,11 +17,11 @@
 #define MYSQL_SERVER
 #endif
 
-#include "sdb_util.h"
+#include "ha_sdb_util.h"
 #include <sql_table.h>
-#include "sdb_log.h"
-#include "sdb_errcode.h"
-#include "sdb_def.h"
+#include "ha_sdb_log.h"
+#include "ha_sdb_errcode.h"
+#include "ha_sdb_def.h"
 #include <my_rnd.h>
 
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,

@@ -15,7 +15,7 @@
 
 #ifndef SDB_LOCK__H
 #define SDB_LOCK__H
-#include "sdb_sql.h"
+#include "ha_sdb_sql.h"
 
 #if defined IS_MYSQL
 #include <thr_mutex.h>

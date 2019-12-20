@@ -17,16 +17,16 @@
 #define MYSQL_SERVER
 #endif
 
-#include "sdb_sql.h"
+#include "ha_sdb_sql.h"
 #include "ha_sdb.h"
 #include "item_sum.h"
 #include "sdb_cl.h"
 #include "sdb_conn.h"
-#include "sdb_errcode.h"
-#include "sdb_idx.h"
-#include "sdb_log.h"
-#include "sdb_thd.h"
-#include "sdb_util.h"
+#include "ha_sdb_errcode.h"
+#include "ha_sdb_idx.h"
+#include "ha_sdb_log.h"
+#include "ha_sdb_thd.h"
+#include "ha_sdb_util.h"
 #include <client.hpp>
 #include <my_bit.h>
 #include <mysql/plugin.h>
@@ -1902,7 +1902,7 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
   }
 
   if (sdb_where_condition(ha_thd())) {
-    sdb_condition->type = Sdb_cond_ctx::WHERE_COND;
+    sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
     sdb_parse_condtion(sdb_where_condition(ha_thd()), sdb_condition);
   }
 
@@ -1975,7 +1975,7 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
   }
 
   if (sdb_where_condition(ha_thd())) {
-    sdb_condition->type = Sdb_cond_ctx::WHERE_COND;
+    sdb_condition->type = ha_sdb_cond_ctx::WHERE_COND;
     sdb_parse_condtion(sdb_where_condition(ha_thd()), sdb_condition);
   }
 
@@ -3163,14 +3163,14 @@ int ha_sdb::extra(enum ha_extra_function operation) {
 int ha_sdb::ensure_cond_ctx(THD *thd) {
   DBUG_ENTER("ha_sdb::ensute_bitmap");
   int rc = 0;
-  Sdb_cond_ctx *cond_ctx = NULL;
+  ha_sdb_cond_ctx *cond_ctx = NULL;
   my_bitmap_map *where_cond_buff = NULL;
   my_bitmap_map *pushed_cond_buff = NULL;
   DBUG_ASSERT(NULL != thd);
 
   if (NULL == sdb_condition) {
     if (!sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
-                          &cond_ctx, sizeof(Sdb_cond_ctx), &where_cond_buff,
+                          &cond_ctx, sizeof(ha_sdb_cond_ctx), &where_cond_buff,
                           bitmap_buffer_size(table->s->fields),
                           &pushed_cond_buff,
                           bitmap_buffer_size(table->s->fields), NullS)) {
@@ -4363,7 +4363,7 @@ const Item *ha_sdb::cond_push(const Item *cond) {
   try {
     sdb_condition->reset();
     sdb_condition->status = SDB_COND_SUPPORTED;
-    sdb_condition->type = Sdb_cond_ctx::PUSHED_COND;
+    sdb_condition->type = ha_sdb_cond_ctx::PUSHED_COND;
     sdb_parse_condtion(cond, sdb_condition);
     sdb_condition->to_bson(pushed_condition);
     sdb_condition->clear();
@@ -4824,7 +4824,7 @@ error:
 
 static int sdb_init_func(void *p) {
   int rc = SDB_ERR_OK;
-  Sdb_conn_addrs conn_addrs;
+  ha_sdb_conn_addrs conn_addrs;
 #ifdef HAVE_PSI_INTERFACE
   init_sdb_psi_keys();
 #endif

@@ -16,11 +16,11 @@
 #ifndef SDB_ITEM__H
 #define SDB_ITEM__H
 
-#include "sdb_sql.h"
+#include "ha_sdb_sql.h"
 #include <client.hpp>
 #include <item.h>
 #include <item_cmpfunc.h>
-#include "sdb_errcode.h"
+#include "ha_sdb_errcode.h"
 
 class Sdb_item : public Sql_alloc {
  public:

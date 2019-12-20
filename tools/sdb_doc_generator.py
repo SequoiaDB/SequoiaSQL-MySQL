@@ -396,7 +396,7 @@ def main():
         print("ERROR: Invalid format option. Please use 'md', 'cnf' or 'all'")
         sys.exit(ERR_INVALID_ARG)
 
-    conf_src_path = os.path.join(project_dir, "src/sdbwrapper/sdb_conf.cc")
+    conf_src_path = os.path.join(project_dir, "src/handler/ha_sdb_conf.cc")
 
     extractor = DocExtractor(language_type)
     tuples = extractor.get_tuples(conf_src_path)

@@ -20,7 +20,7 @@
 #endif
 
 #include "ha_sdb_part.h"
-#include "sdb_idx.h"
+#include "ha_sdb_idx.h"
 #include <sql_class.h>
 #include <partition_info.h>
 

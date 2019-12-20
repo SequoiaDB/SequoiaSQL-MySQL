@@ -20,9 +20,9 @@
 #include <my_global.h>
 #include <sql_class.h>
 #include <my_base.h>
-#include "sdb_thd.h"
-#include "sdb_log.h"
-#include "sdb_errcode.h"
+#include "ha_sdb_thd.h"
+#include "ha_sdb_log.h"
+#include "ha_sdb_errcode.h"
 
 uchar* thd_sdb_share_get_key(THD_SDB_SHARE* thd_sdb_share, size_t* length,
                              my_bool not_used MY_ATTRIBUTE((unused))) {

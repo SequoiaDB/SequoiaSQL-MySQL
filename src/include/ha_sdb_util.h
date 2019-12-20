@@ -17,11 +17,11 @@
 #ifndef SDB_UTIL__H
 #define SDB_UTIL__H
 
-#include "sdb_sql.h"
+#include "ha_sdb_sql.h"
 #include <sql_class.h>
 
 #include <client.hpp>
-#include "sdb_errcode.h"
+#include "ha_sdb_errcode.h"
 
 #define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 

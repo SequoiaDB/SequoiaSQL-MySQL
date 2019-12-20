@@ -17,7 +17,7 @@
 #define SDB_CONF__H
 
 #include <my_global.h>
-#include "sdb_util.h"
+#include "ha_sdb_util.h"
 #include <mysql/plugin.h>
 #include <sql_string.h>
 
@@ -36,10 +36,10 @@
 #endif
 
 #define SDB_COORD_NUM_MAX 128
-class Sdb_conn_addrs {
+class ha_sdb_conn_addrs {
  public:
-  Sdb_conn_addrs();
-  ~Sdb_conn_addrs();
+  ha_sdb_conn_addrs();
+  ~ha_sdb_conn_addrs();
 
   int parse_conn_addrs(const char *conn_addrs);
 
@@ -48,9 +48,9 @@ class Sdb_conn_addrs {
   int get_conn_num() const;
 
  private:
-  Sdb_conn_addrs(const Sdb_conn_addrs &rh) {}
+  ha_sdb_conn_addrs(const ha_sdb_conn_addrs &rh) {}
 
-  Sdb_conn_addrs &operator=(const Sdb_conn_addrs &rh) { return *this; }
+  ha_sdb_conn_addrs &operator=(const ha_sdb_conn_addrs &rh) { return *this; }
 
   void clear_conn_addrs();
 

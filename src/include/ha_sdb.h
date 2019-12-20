@@ -20,13 +20,13 @@
 #include <mysql_version.h>
 #include <client.hpp>
 #include <vector>
-#include "sdb_def.h"
+#include "ha_sdb_def.h"
 #include "sdb_cl.h"
-#include "sdb_util.h"
-#include "sdb_lock.h"
-#include "sdb_conf.h"
-#include "sdb_condition.h"
-#include "sdb_thd.h"
+#include "ha_sdb_util.h"
+#include "ha_sdb_lock.h"
+#include "ha_sdb_conf.h"
+#include "ha_sdb_condition.h"
+#include "ha_sdb_thd.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
@@ -500,7 +500,7 @@ class ha_sdb : public handler {
   longlong total_count;
   bool count_query;
   bool auto_commit;
-  Sdb_cond_ctx *sdb_condition;
+  ha_sdb_cond_ctx *sdb_condition;
   ulonglong m_table_flags;
   /*incremental stat of current table share in current thd*/
   struct Sdb_local_table_statistics *incr_stat;

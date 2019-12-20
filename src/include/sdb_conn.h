@@ -16,11 +16,11 @@
 #ifndef SDB_CONN__H
 #define SDB_CONN__H
 
-#include "sdb_sql.h"
+#include "ha_sdb_sql.h"
 #include <client.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include "sdb_def.h"
+#include "ha_sdb_def.h"
 
 #if defined IS_MYSQL
 #include <my_thread_local.h>

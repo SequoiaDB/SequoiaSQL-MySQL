@@ -21,7 +21,7 @@
 #include <client.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include "sdb_def.h"
+#include "ha_sdb_def.h"
 #include "sdb_conn.h"
 
 class Sdb_cl {

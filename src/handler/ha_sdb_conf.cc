@@ -17,8 +17,8 @@
 #define MYSQL_SERVER
 #endif
 
-#include "sdb_conf.h"
-#include "sdb_lock.h"
+#include "ha_sdb_conf.h"
+#include "ha_sdb_lock.h"
 
 static const char *SDB_ADDR_DFT = "localhost:11810";
 static const char *SDB_USER_DFT = "";
@@ -76,7 +76,7 @@ static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
   int len = sizeof(buff);
   const char *arg_conn_addr = value->val_str(value, buff, &len);
 
-  Sdb_conn_addrs parser;
+  ha_sdb_conn_addrs parser;
   int rc = parser.parse_conn_addrs(arg_conn_addr);
   *static_cast<const char **>(save) = (0 == rc) ? arg_conn_addr : NULL;
   return rc;
@@ -226,17 +226,17 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(use_transaction),
     NULL};
 
-Sdb_conn_addrs::Sdb_conn_addrs() : conn_num(0) {
+ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
   for (int i = 0; i < SDB_COORD_NUM_MAX; i++) {
     addrs[i] = NULL;
   }
 }
 
-Sdb_conn_addrs::~Sdb_conn_addrs() {
+ha_sdb_conn_addrs::~ha_sdb_conn_addrs() {
   clear_conn_addrs();
 }
 
-void Sdb_conn_addrs::clear_conn_addrs() {
+void ha_sdb_conn_addrs::clear_conn_addrs() {
   for (int i = 0; i < conn_num; i++) {
     if (addrs[i]) {
       free(addrs[i]);
@@ -246,7 +246,7 @@ void Sdb_conn_addrs::clear_conn_addrs() {
   conn_num = 0;
 }
 
-int Sdb_conn_addrs::parse_conn_addrs(const char *conn_addr) {
+int ha_sdb_conn_addrs::parse_conn_addrs(const char *conn_addr) {
   int rc = 0;
   const char *p = conn_addr;
 
@@ -300,11 +300,11 @@ error:
   goto done;
 }
 
-const char **Sdb_conn_addrs::get_conn_addrs() const {
+const char **ha_sdb_conn_addrs::get_conn_addrs() const {
   return (const char **)addrs;
 }
 
-int Sdb_conn_addrs::get_conn_num() const {
+int ha_sdb_conn_addrs::get_conn_num() const {
   return conn_num;
 }
 

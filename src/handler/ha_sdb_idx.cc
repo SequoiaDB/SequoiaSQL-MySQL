@@ -18,14 +18,14 @@
 #endif
 
 #include <my_global.h>
-#include "sdb_idx.h"
+#include "ha_sdb_idx.h"
 #include <myisampack.h>
 #include <bson/bson.hpp>
 #include "sdb_cl.h"
-#include "sdb_errcode.h"
-#include "sdb_def.h"
-#include "sdb_log.h"
-#include "sdb_util.h"
+#include "ha_sdb_errcode.h"
+#include "ha_sdb_def.h"
+#include "ha_sdb_log.h"
+#include "ha_sdb_util.h"
 #include "sql_table.h"
 
 static inline int get_variable_key_length(const uchar *A) {

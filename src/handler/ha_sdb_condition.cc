@@ -19,20 +19,20 @@
 
 #include <my_global.h>
 #include <sql_class.h>
-#include "sdb_condition.h"
-#include "sdb_errcode.h"
+#include "ha_sdb_condition.h"
+#include "ha_sdb_errcode.h"
 
-Sdb_cond_ctx::Sdb_cond_ctx(TABLE *cur_table, THD *ha_thd,
+ha_sdb_cond_ctx::ha_sdb_cond_ctx(TABLE *cur_table, THD *ha_thd,
                            my_bitmap_map *pushed_cond_buff,
                            my_bitmap_map *where_cond_buff) {
   init(cur_table, ha_thd, pushed_cond_buff, where_cond_buff);
 }
 
-Sdb_cond_ctx::~Sdb_cond_ctx() {
+ha_sdb_cond_ctx::~ha_sdb_cond_ctx() {
   reset();
 }
 
-void Sdb_cond_ctx::init(TABLE *cur_table, THD *ha_thd,
+void ha_sdb_cond_ctx::init(TABLE *cur_table, THD *ha_thd,
                         my_bitmap_map *pushed_cond_buff,
                         my_bitmap_map *where_cond_buff) {
   table = cur_table;
@@ -42,7 +42,7 @@ void Sdb_cond_ctx::init(TABLE *cur_table, THD *ha_thd,
   reset();
 }
 
-void Sdb_cond_ctx::reset() {
+void ha_sdb_cond_ctx::reset() {
   cur_item = NULL;
   type = INVALID_TYPE;
   sub_sel = false;
@@ -52,7 +52,7 @@ void Sdb_cond_ctx::reset() {
   clear();
 }
 
-void Sdb_cond_ctx::clear() {
+void ha_sdb_cond_ctx::clear() {
   Sdb_item *item_tmp = NULL;
 
   if (cur_item != NULL) {
@@ -67,8 +67,8 @@ void Sdb_cond_ctx::clear() {
   item_list.empty();
 }
 
-void Sdb_cond_ctx::pop_all() {
-  DBUG_ENTER("Sdb_cond_ctx::pop_all()");
+void ha_sdb_cond_ctx::pop_all() {
+  DBUG_ENTER("ha_sdb_cond_ctx::pop_all()");
   Sdb_item *item_tmp = NULL;
 
   if (SDB_COND_UNSUPPORTED == status) {
@@ -105,8 +105,8 @@ done:
   DBUG_VOID_RETURN;
 }
 
-void Sdb_cond_ctx::pop() {
-  DBUG_ENTER("Sdb_cond_ctx::pop()");
+void ha_sdb_cond_ctx::pop() {
+  DBUG_ENTER("ha_sdb_cond_ctx::pop()");
   int rc = SDB_ERR_OK;
   Sdb_item *item_tmp = NULL;
 
@@ -142,8 +142,8 @@ error:
   goto done;
 }
 
-void Sdb_cond_ctx::update_stat(int rc) {
-  DBUG_ENTER("Sdb_cond_ctx::update_stat()");
+void ha_sdb_cond_ctx::update_stat(int rc) {
+  DBUG_ENTER("ha_sdb_cond_ctx::update_stat()");
   if (SDB_ERR_OK == rc) {
     goto done;
   }
@@ -168,16 +168,16 @@ done:
   DBUG_VOID_RETURN;
 }
 
-bool Sdb_cond_ctx::keep_on() {
-  DBUG_ENTER("Sdb_cond_ctx::keep_on()");
+bool ha_sdb_cond_ctx::keep_on() {
+  DBUG_ENTER("ha_sdb_cond_ctx::keep_on()");
   if (SDB_COND_UNSUPPORTED == status || SDB_COND_BEFORE_SUPPORTED == status) {
     DBUG_RETURN(FALSE);
   }
   DBUG_RETURN(true);
 }
 
-void Sdb_cond_ctx::push(Item *item) {
-  DBUG_ENTER("Sdb_cond_ctx::push()");
+void ha_sdb_cond_ctx::push(Item *item) {
+  DBUG_ENTER("ha_sdb_cond_ctx::push()");
   int rc = SDB_ERR_OK;
   Sdb_item *item_tmp = NULL;
 
@@ -248,8 +248,8 @@ error:
   goto done;
 }
 
-Sdb_item *Sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
-  DBUG_ENTER("Sdb_cond_ctx::create_sdb_item()");
+Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
+  DBUG_ENTER("ha_sdb_cond_ctx::create_sdb_item()");
   Sdb_item *item = NULL;
   switch (cond_item->functype()) {
     case Item_func::COND_AND_FUNC: {
@@ -316,8 +316,8 @@ Sdb_item *Sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
   DBUG_RETURN(item);
 }
 
-int Sdb_cond_ctx::to_bson(bson::BSONObj &obj) {
-  DBUG_ENTER("Sdb_cond_ctx::to_bson()");
+int ha_sdb_cond_ctx::to_bson(bson::BSONObj &obj) {
+  DBUG_ENTER("ha_sdb_cond_ctx::to_bson()");
   static bson::BSONObj empty_obj;
   int rc = 0;
   if (NULL != cur_item) {
@@ -336,10 +336,10 @@ done:
 
 static void sdb_traverse_cond(const Item *cond_item, void *arg) {
   DBUG_ENTER("sdb_traverse_cond()");
-  Sdb_cond_ctx *sdb_ctx = (Sdb_cond_ctx *)arg;
+  ha_sdb_cond_ctx *sdb_ctx = (ha_sdb_cond_ctx *)arg;
   Item_func::Functype type;
 
-  if (sdb_ctx->type == Sdb_cond_ctx::PUSHED_COND) {
+  if (sdb_ctx->type == ha_sdb_cond_ctx::PUSHED_COND) {
     if (SDB_COND_UNSUPPORTED == sdb_ctx->status ||
         SDB_COND_BEFORE_SUPPORTED == sdb_ctx->status) {
       // skip all while occured unsupported-condition
@@ -349,7 +349,7 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
     sdb_ctx->push((Item *)cond_item);
   }
 
-  if (sdb_ctx->type == Sdb_cond_ctx::WHERE_COND && cond_item) {
+  if (sdb_ctx->type == ha_sdb_cond_ctx::WHERE_COND && cond_item) {
     switch (cond_item->type()) {
       case Item::FIELD_ITEM:
         for (Field **field = sdb_ctx->table->field; *field; field++) {
@@ -390,11 +390,11 @@ done:
   DBUG_VOID_RETURN;
 }
 
-void sdb_parse_condtion(const Item *cond_item, Sdb_cond_ctx *sdb_ctx) {
+void sdb_parse_condtion(const Item *cond_item, ha_sdb_cond_ctx *sdb_ctx) {
   DBUG_ENTER("sdb_parse_condtion()");
   ((Item *)cond_item)
       ->traverse_cond(&sdb_traverse_cond, (void *)sdb_ctx, Item::PREFIX);
-  if (sdb_ctx->type == Sdb_cond_ctx::PUSHED_COND) {
+  if (sdb_ctx->type == ha_sdb_cond_ctx::PUSHED_COND) {
     sdb_ctx->pop_all();
   }
   DBUG_VOID_RETURN;
