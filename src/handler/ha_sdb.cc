@@ -1516,9 +1516,6 @@ int ha_sdb::write_row(uchar *buf) {
 done:
   return rc;
 error:
-  if (SDB_SEQUENCE_EXCEEDED == rc) {
-    rc = HA_ERR_AUTOINC_READ_FAILED;
-  }
   goto done;
 }
 
@@ -4554,6 +4551,10 @@ done:
     case SDB_NET_CANNOT_CONNECT: {
       my_printf_error(error, "Unable to connect to the specified address",
                       MYF(0));
+      break;
+    }
+    case SDB_SEQUENCE_EXCEEDED: {
+      my_error(HA_ERR_AUTOINC_READ_FAILED, MYF(0));
       break;
     }
     default:
