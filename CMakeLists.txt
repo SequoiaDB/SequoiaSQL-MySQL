@@ -72,6 +72,7 @@ if(DOT_NUMBER EQUAL 2)
       OUTPUT_VARIABLE PROJECT_VERSION_PATCH
    )
    string(STRIP ${PROJECT_VERSION_PATCH} PROJECT_VERSION_PATCH)
+   set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 else()
    unset(PROJECT_VERSION_PATCH)
    set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
@@ -253,8 +254,6 @@ endif()
 set(SQL_STORAGE_DIR "${SQL_SOURCE_ROOT}/storage")
 set(SQL_CONNECTOR_DIR "${CMAKE_SOURCE_DIR}/src")
 
-set(SQL_BUILD_DIR "${CMAKE_SOURCE_DIR}/build")
-
 # Replace the original mysql-test with the new one.
 set(MYSQL_TEST_DIR "${SQL_SOURCE_ROOT}/mysql-test")
 set(MYSQL_TEST_ORIG "${SQL_SOURCE_ROOT}/mysql-test-orig")
@@ -293,7 +292,7 @@ gen_version_file()
 set(mapSrcCmd "ln -sf ${SQL_CONNECTOR_DIR} ${SQL_STORAGE_DIR}/sequoiadb")
 execute_process(COMMAND bash -c ${mapSrcCmd})
 
-set(SQL_OUTPUT_ROOT "${SQL_BUILD_DIR}/${SQL_SOURCE_DIR_NAME}"
+set(SQL_OUTPUT_ROOT "${CMAKE_BINARY_DIR}/${SQL_SOURCE_DIR_NAME}"
     CACHE STRING INTERNAL)
 set(updateCmd "find ${SQL_SOURCE_ROOT} -type f |
                xargs grep -l CMAKE_BINARY_DIR 2>/dev/null |
@@ -313,7 +312,7 @@ else()
 endif()
 
 set(TARGET_SOURCE_DIR "${CMAKE_SOURCE_DIR}/sql-src/${target}")
-add_subdirectory(${SQL_SOURCE_ROOT} ${SQL_BUILD_DIR}/${SQL_SOURCE_DIR_NAME})
+add_subdirectory(${SQL_SOURCE_ROOT} ${CMAKE_BINARY_DIR}/${SQL_SOURCE_DIR_NAME})
 
 # Generate the configuration file
 execute_process(
@@ -353,11 +352,11 @@ else()
 endif()
 
 if(ENTERPRISE)
-   set(EDITION_VAR "--setvars edition=-enterprise")
+   set(EDITION_VAR "-enterprise")
 else()
    set(EDITION_VAR "")
 endif()
-set(BUILD_COMMAND "builder build ${PROJECT_PACKAGE_SUB_DIR}/sequoiamysql_server.xml --setvars project.version=${PROJECT_VERSION} --setvars platform=linux_x86_64 ${EDITION_VAR} --setvars project.outputDirectory=${CMAKE_BINARY_DIR}")
+set(BUILD_COMMAND "builder build ${PROJECT_PACKAGE_SUB_DIR}/sequoiamysql_server.xml --setvars project.version=${PROJECT_VERSION} --setvars platform=linux_x86_64 --setvars edition=${EDITION_VAR} --setvars project.outputDirectory=${CMAKE_BINARY_DIR}")
 
 if(PACK_TEST)
    add_custom_target(
