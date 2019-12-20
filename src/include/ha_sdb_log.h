@@ -17,7 +17,7 @@
 #define SDB_LOG__H
 
 #include <log.h>
-#include "sdb_conf.h"
+#include "ha_sdb_conf.h"
 
 #define SDB_LOG_BUF_SIZE 1024
 

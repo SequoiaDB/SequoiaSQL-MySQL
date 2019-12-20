@@ -19,7 +19,7 @@
 
 #include <my_global.h>
 #include <log.h>
-#include "sdb_log.h"
+#include "ha_sdb_log.h"
 
 void sdb_log(loglevel lvl, const char *format, ...) {
   va_list args;

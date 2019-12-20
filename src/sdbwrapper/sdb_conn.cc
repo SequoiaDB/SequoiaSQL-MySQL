@@ -22,13 +22,13 @@
 #include <client.hpp>
 #include <sstream>
 #include "sdb_cl.h"
-#include "sdb_conf.h"
-#include "sdb_util.h"
-#include "sdb_errcode.h"
-#include "sdb_conf.h"
-#include "sdb_log.h"
+#include "ha_sdb_conf.h"
+#include "ha_sdb_util.h"
+#include "ha_sdb_errcode.h"
+#include "ha_sdb_conf.h"
+#include "ha_sdb_log.h"
 #include "ha_sdb.h"
-#include "sdb_def.h"
+#include "ha_sdb_def.h"
 
 static int sdb_proc_id() {
 #ifdef _WIN32
@@ -90,7 +90,7 @@ int Sdb_conn::connect() {
 
   if (!m_connection.isValid()) {
     m_transaction_on = false;
-    Sdb_conn_addrs conn_addrs;
+    ha_sdb_conn_addrs conn_addrs;
     rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
     if (SDB_ERR_OK != rc) {
       SDB_LOG_ERROR("Failed to parse connection addresses, rc=%d", rc);

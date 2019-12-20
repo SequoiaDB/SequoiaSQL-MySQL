@@ -17,7 +17,7 @@
 #define MYSQL_SERVER
 #endif
 
-#include "sdb_sql.h"
+#include "ha_sdb_sql.h"
 #include <sql_class.h>
 #include <sql_select.h>
 #include <sql_time.h>

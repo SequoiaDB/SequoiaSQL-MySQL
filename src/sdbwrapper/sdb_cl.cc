@@ -21,7 +21,7 @@
 #include <my_base.h>
 #include "sdb_cl.h"
 #include "sdb_conn.h"
-#include "sdb_errcode.h"
+#include "ha_sdb_errcode.h"
 
 using namespace sdbclient;
 
