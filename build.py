@@ -34,10 +34,9 @@ class OptionsMgr:
             action='store_true'
         )
         build_opt_group.add_argument(
-            '--abimode', default=1,
-            type=int,
-            help='For _GLIBCXX_USE_CXX11_ABI flag. Default: 1. Set to 0 to '
-                 'be compatible with old compiler'
+            '-f', '--compileflags', metavar='compileFlags',
+            type=str,
+            help='Flags for the C/C++ compiler'
         )
         build_opt_group.add_argument(
             '-i', '--install', metavar = 'installPath',
@@ -61,10 +60,12 @@ class OptionsMgr:
         pack_opt_group.add_argument(
             '-r', '--runpackage',
             help='Make the run package. Default: False',
-            action='store_true')
+            action='store_true'
+        )
         pack_opt_group.add_argument(
-            '--includetest', default=True,
-            help='Pack mysql tests into the package'
+            '--excludetest', default=False,
+            help='Exclude tests from the package. Default: False',
+            action='store_true'
         )
         pack_opt_group.add_argument(
             '--archivetest', default=False,
@@ -78,7 +79,7 @@ class OptionsMgr:
             '--test', default=False,
             help='Run all the testcases. Default: False', action='store_true')
         test_opt_group.add_argument(
-            '--suite', default='main,json',
+            '--suite', metavar='names', default='main,json',
             help='Run a suite or a comma separated list of suites. Default: '
                  'main,json'
         )
@@ -94,34 +95,34 @@ class OptionsMgr:
             action='store_true'
         )
         test_opt_group.add_argument(
-            '--max-test-fail', default=0,
+            '--max-test-fail', metavar='N', default=0,
             help='Stop execution after the specified number of tests have '
                  'failed. Default: 0, which means no limit'
         )
         test_opt_group.add_argument(
-            '--retry', default=1,
+            '--retry', metavar='N', default=1,
             help='Retry up to a maximum of N runs. Default: 1'
         )
         test_opt_group.add_argument(
-            '--retry-failure', default=1,
+            '--retry-failure', metavar='N', default=1,
             help='Allow a failed and retried test to fail more than the '
                  'default times before giving it up'
         )
         test_opt_group.add_argument(
-            '--parallel', default=4,
+            '--parallel', metavar='N', default=4,
             help='Run tests using N parallel threads. Default: 4'
         )
         test_opt_group.add_argument(
-            '--xml-report', default='mysql_test_report.xml',
+            '--xml-report', metavar='report', default='mysql_test_report.xml',
             help='Generate an xml file containing result of the test run and '
                  'write it to the file named as the option argument'
         )
 
         self.__parser.add_argument(
-            '--clean',
-            help="Clean the total project. The only option is 'force'. Note: "
-                 "Be carefull to use this option, all changes at local will be "
-                 "lost!",
+            '--clean', default=False,
+            help='Clean the total project. Warning: Be carefull to use this '
+                 'option, all changes at local will be lost!',
+            action='store_true'
         )
         self.__projectType = 'MYSQL'
         self.__projectVersion = '5.7.25'
@@ -184,10 +185,10 @@ class OptionsMgr:
         if self.args.dd:
             cmake_arguments.append('-DCMAKE_BUILD_TYPE=Debug')
 
-        if 0 == self.args.abimode:
-            cmake_arguments.append("-DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0'")
+        if self.args.compileflags:
+            cmake_arguments.append(self.args.compileflags)
 
-        if not self.args.includetest:
+        if self.args.excludetest:
             cmake_arguments.append('-DPACK_TEST=OFF')
 
         print("cmake configuration arguments: {}"
@@ -224,7 +225,7 @@ class OptionsMgr:
         return self.args.install
 
     def needClean(self):
-        return ('force' == self.args.clean)
+        return self.args.clean
 
     def needBuild(self):
         return self.args.type
