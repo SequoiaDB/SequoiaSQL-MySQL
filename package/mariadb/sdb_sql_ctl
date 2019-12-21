@@ -698,12 +698,6 @@ function change_configure()
       echo "Parameter port requires a server restart to take effect"
    fi
 
-   get_one_status $INST_NAME >> /dev/null
-   if [ $? == 0 ];then
-      echo "Enter password:"
-      read -s passwd
-   fi
-
    if [ ! -z $MAX_CON ]; then
       if [ $MAX_CON -lt 1 ];then
          MAX_CON=1
