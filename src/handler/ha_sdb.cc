@@ -1884,7 +1884,7 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
      not have IGNORE keyword. */
   /* view: cannot optimize because it can not handle ER_VIEW_CHECK_FAILED */
   if (has_triggers || using_limit || order || table_list->check_option ||
-      sdb_lex_ignore(ha_thd()) ||
+      sdb_is_view(table_list) || sdb_lex_ignore(ha_thd()) ||
       !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
     optimizer_update = false;
     goto done;
@@ -1961,11 +1961,12 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
   SELECT_LEX *const select = unit->first_select();
   const bool using_limit = unit->select_limit_cnt != HA_POS_ERROR;
   ORDER *order = select->order_list.first;
+  TABLE_LIST *const table_list = select->get_table_list();
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   has_triggers = table->triggers && table->triggers->has_delete_triggers();
 
-  if (order || using_limit || has_triggers ||
+  if (order || using_limit || has_triggers || sdb_is_view(table_list) ||
       !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
     optimizer_delete = false;
     goto done;

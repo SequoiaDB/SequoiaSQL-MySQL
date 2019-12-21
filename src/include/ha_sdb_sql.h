@@ -206,6 +206,8 @@ SELECT_LEX_UNIT *sdb_lex_unit(THD *thd);
 
 bool sdb_lex_ignore(THD *thd);
 
+bool sdb_is_view(struct TABLE_LIST *table_list);
+
 Item *sdb_where_condition(THD *thd);
 
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag);

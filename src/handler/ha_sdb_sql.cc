@@ -218,6 +218,10 @@ bool sdb_lex_ignore(THD *thd) {
   return thd->lex->is_ignore();
 }
 
+bool sdb_is_view(struct TABLE_LIST *table_list) {
+  return table_list->is_view();
+}
+
 Item *sdb_where_condition(THD *thd) {
   return sdb_lex_first_select(thd)->where_cond();
 }
@@ -483,6 +487,10 @@ bool sdb_has_update_triggers(TABLE *table) {
 
 bool sdb_lex_ignore(THD *thd) {
   return thd->lex->ignore;
+}
+
+bool sdb_is_view(struct TABLE_LIST *table_list) {
+  return table_list->view == NULL ? false : true;
 }
 
 Item *sdb_where_condition(THD *thd) {
