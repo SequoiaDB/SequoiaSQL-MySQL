@@ -1586,12 +1586,12 @@ connect (con1, localhost, root);
 #--send ALTER TABLE t1 DISABLE KEYS
 
 connection default;
---echo # Waiting until ALTER TABLE is blocked.
-let $wait_condition=
-  SELECT COUNT(*) = 1 FROM information_schema.processlist
-  WHERE state = "Waiting for table metadata lock" AND
-        info = "ALTER TABLE t1 DISABLE KEYS";
---source include/wait_condition.inc
+#--echo # Waiting until ALTER TABLE is blocked.
+#let $wait_condition=
+#  SELECT COUNT(*) = 1 FROM information_schema.processlist
+#  WHERE state = "Waiting for table metadata lock" AND
+#        info = "ALTER TABLE t1 DISABLE KEYS";
+#--source include/wait_condition.inc
 UPDATE t1 SET b = 4;
 COMMIT;
 

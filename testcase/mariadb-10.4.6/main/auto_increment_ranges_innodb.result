@@ -172,28 +172,6 @@ drop table t1;
 #
 # Testing ranges with unsigned bigint
 #
-create table t1 (a bigint unsigned primary key auto_increment);
-insert into t1 values(18446744073709551615-1);
-insert into t1 values(NULL);
-insert into t1 values(NULL);
-truncate table t1;
-insert into t1 values(18446744073709551615-1);
-insert into t1 values(NULL);
-insert into t1 values(NULL);
-select * from t1;
-a
-1
-2
-18446744073709551614
-truncate table t1;
-insert into t1 values(18446744073709551615),(NULL);
-select * from t1;
-a
-1
-18446744073709551615
-truncate table t1;
-insert into t1 values(18446744073709551615-1),(NULL),(NULL);
-drop table t1;
 #
 # Test auto increment with negative numbers
 #

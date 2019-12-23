@@ -38,19 +38,7 @@ length(now())
 19
 19
 19
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	1
 drop table t1;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 set query_cache_type=demand;
 create table t1 (a int not null);
 insert into t1 values (1),(2),(3);
@@ -59,9 +47,6 @@ a
 1
 2
 3
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 select sql_cache * from t1 union select * from t1;
 a
 1
@@ -73,25 +58,13 @@ a
 1
 2
 3
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	2
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 set query_cache_type=on;
 reset query cache;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 select sql_no_cache * from t1;
 a
 1
 2
 3
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 drop table t1;
 create table t1 (a text not null);
 select CONNECTION_ID() from t1;
@@ -121,9 +94,6 @@ select CURRENT_USER() from t1;
 CURRENT_USER()
 select benchmark(1,1) from t1;
 benchmark(1,1)
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 create table t2 (a text not null);
 insert into t1 values("1111111111111111111111111111111111111111111111111111");
 insert into t2 select * from t1;
@@ -144,25 +114,10 @@ insert into t2 select * from t1;
 insert into t1 select * from t2;
 insert into t2 select * from t1;
 insert into t1 select * from t2;
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	2
-show status like "Qcache_lowmem_prunes";
-Variable_name	Value
-Qcache_lowmem_prunes	0
 select a as a1, a as a2 from t1;
 select a as a2, a as a3 from t1;
 select a as a3, a as a4 from t1;
 select a as a1, a as a2 from t1;
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	2
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
-show status like "Qcache_lowmem_prunes";
-Variable_name	Value
-Qcache_lowmem_prunes	2
 reset query cache;
 insert into t2 select * from t1;
 insert into t1 select * from t2;
@@ -175,9 +130,6 @@ insert into t1 select * from t2;
 insert into t2 select * from t1;
 insert into t1 select * from t2;
 select * from t1;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 drop table t1,t2;
 create database mysqltest;
 create table mysqltest.t1 (i int not null auto_increment, a int, primary key (i));
@@ -187,19 +139,10 @@ i	a
 create table t1(a int);
 select * from t1;
 a
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 select * from mysqltest.t1;
 i	a
 1	1
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	3
 drop database mysqltest;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 drop table t1;
 create table t1 (a char(1) not null collate koi8r_general_ci);
 insert into t1 values(_koi8r"á");
@@ -212,12 +155,6 @@ select * from t1;
 a
 À
 set CHARACTER SET DEFAULT;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	2
 drop table t1;
 create database if not exists mysqltest;
 create table mysqltest.t1 (i int not null);
@@ -238,12 +175,6 @@ use test;
 select * from t1;
 i
 2
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	4
 drop database mysqltest;
 drop table t1;
 create table t1 (i int not null);
@@ -255,24 +186,12 @@ i
 select FOUND_ROWS();
 FOUND_ROWS()
 4
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	4
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 select * from t1 where i=1;
 i
 1
 select FOUND_ROWS();
 FOUND_ROWS()
 1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	4
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 select SQL_CALC_FOUND_ROWS * from t1 limit 2;
 i
 1
@@ -280,24 +199,12 @@ i
 select FOUND_ROWS();
 FOUND_ROWS()
 4
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	5
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 select * from t1 where i=1;
 i
 1
 select FOUND_ROWS();
 FOUND_ROWS()
 1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	6
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 drop table t1;
 flush query cache;
 reset query cache;
@@ -313,9 +220,6 @@ a
 1
 2
 3
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 insert into t1 values (4);
 select a from t1;
 a
@@ -323,13 +227,7 @@ a
 2
 3
 4
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 drop table t1;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 show global variables like "query_cache_min_res_unit";
 Variable_name	Value
 query_cache_min_res_unit	4096
@@ -363,12 +261,6 @@ a
 1
 2
 3
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	9
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 drop table t1;
 select a from t2;
 a
@@ -380,12 +272,6 @@ a
 1
 2
 3
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	10
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 drop table t2;
 set GLOBAL query_cache_min_res_unit=default;
 show global variables like "query_cache_min_res_unit";
@@ -471,32 +357,17 @@ create table t1 (i int not null);
 create table t2 (i int not null);
 select * from t1;
 i
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 create temporary table t3 (i int not null);
 select * from t2;
 i
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 select * from t3;
 i
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 update t1 set i=(select distinct 1 from (select * from t2) a);
 drop table t1, t2, t3;
 use mysql;
 select * from db;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 use test;
 select * from mysql.db;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 create table t1(id int auto_increment primary key);
 insert into t1 values (NULL), (NULL), (NULL);
 select * from t1 where id=2;
@@ -511,22 +382,13 @@ ERROR 42S02: Table 'test.t1' doesn't exist
 create table t1 (word char(20) not null);
 select * from t1;
 word
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 load data infile 'MYSQLTEST_VARDIR/std_data/words.dat' into table t1;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 select count(*) from t1;
 count(*)
 70
 drop table t1;
 create table t1 (a int);
 insert into t1 values (1),(2),(3);
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 select * from t1 into outfile "query_cache.out.file";
 Warnings:
 Warning	1287	'<select expression> INTO <destination>;' is deprecated and will be removed in a future release. Please use 'SELECT <select list> INTO <destination> FROM...' instead
@@ -535,15 +397,9 @@ ERROR HY000: File 'query_cache.out.file' already exists
 select * from t1 limit 1 into dumpfile "query_cache.dump.file";
 Warnings:
 Warning	1287	'<select expression> INTO <destination>;' is deprecated and will be removed in a future release. Please use 'SELECT <select list> INTO <destination> FROM...' instead
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 drop table t1;
 create table t1 (a int);
 insert into t1 values (1),(2);
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 select * from t1;
 a
 1
@@ -552,9 +408,6 @@ SET SQL_SELECT_LIMIT=1;
 select * from t1;
 a
 1
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 SET SQL_SELECT_LIMIT=DEFAULT;
 drop table t1;
 flush query cache;
@@ -604,23 +457,11 @@ select * from t1;
 a
 select * from t2;
 a
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 lock table t1 write, t2 read;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 unlock table;
 select * from t1;
 a
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 lock table v1 write;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 unlock table;
 drop view v1;
 drop table t1,t2;
@@ -645,45 +486,21 @@ SELECT a,'Â','â'='Â' FROM t1;
 a	Â	'â'='Â'
 á	Â	1
 Á	Â	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	6
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
 set collation_connection=koi8r_bin;
 SELECT a,'Â','â'='Â' FROM t1;
 a	Â	'â'='Â'
 á	Â	0
 Á	Â	0
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	6
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	2
 set character_set_client=cp1251;
 SELECT a,'Â','â'='Â' FROM t1;
 a	÷	'×'='÷'
 á	÷	0
 Á	÷	0
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	6
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	3
 set character_set_results=cp1251;
 SELECT a,'Â','â'='Â' FROM t1;
 a	Â	'â'='Â'
 À	Â	0
 à	Â	0
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	6
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	4
 SET NAMES default;
 DROP TABLE t1;
 CREATE TABLE t1 (a int(1));
@@ -758,28 +575,10 @@ group_concat(a)
 set group_concat_max_len=default;
 drop table t1;
 create table t1 (a int);
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	19
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	6
 /**/ select * from t1;
 a
 /**/ select * from t1;
 a
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	20
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	7
 DROP TABLE t1;
 SET GLOBAL query_cache_size=0;
 SET SESSION query_cache_type = 2;
@@ -803,12 +602,6 @@ a
 select a from t1;
 a
 1
-show status like 'qcache_queries_in_cache';
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like 'qcache_queries_in_cache';
-Variable_name	Value
-Qcache_queries_in_cache	1
 drop table t1;
 set GLOBAL query_cache_size=64*1024;
 create table t1 (a text);
@@ -817,20 +610,8 @@ create table t2 (a text);
 insert into t2 values (repeat('ijklmnopqrstuvwxyzabcdefgh', 550));
 select a from t1;
 select a from t2;
-show status like 'Qcache_%_blocks';
-Variable_name	Value
-Qcache_free_blocks	1
-Qcache_total_blocks	7
 insert into t1 select reverse(a) from t1;
-show status like 'Qcache_%_blocks';
-Variable_name	Value
-Qcache_free_blocks	2
-Qcache_total_blocks	5
 select a from t1;
-show status like 'Qcache_%_blocks';
-Variable_name	Value
-Qcache_free_blocks	1
-Qcache_total_blocks	8
 select a from t1;
 a
 abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
@@ -860,15 +641,6 @@ COUNT(*)
 1
 Warnings:
 Warning	1292	Truncated incorrect date value: '20050327 invalid'
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	0
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 drop table t1;
 create table t1 (a int);
 insert into t1 values (1);
@@ -877,75 +649,21 @@ flush status;
 select * from (select * from t1) a;
 a
 1
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 select * from (select * from t1) a;
 a
 1
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	1
 insert into t1 values (2);
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	1
 select * from (select * from t1) a;
 a
 1
 2
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	2
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	1
 drop table t1;
 create table t1 (a int);
 flush status;
 (select a from t1) union (select a from t1);
 a
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 (select a from t1) union (select a from t1);
 a
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	1
 set query_cache_strip_comments=1;
 (select a from t1) union (select a from t1);
 a
@@ -954,15 +672,6 @@ a
 set query_cache_strip_comments=0;
 (select a from t1) union (select a from t1);
 a
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	4
 drop table t1;
 create table t1 (a int);
 insert into t1 values (1),(2);
@@ -1188,9 +897,6 @@ select * from t1 where a > 3;
 a
 4
 5
-show status like 'last_query_cost';
-Variable_name	Value
-Last_query_cost	0.000000
 drop table t1;
 SET GLOBAL query_cache_size=0;
 set global query_cache_size=1024*1024;
@@ -1202,35 +908,23 @@ a
 1
 2
 3
-show status like 'Qcache_hits';
-Variable_name	Value
-Qcache_hits	0
 select * from t1;
 a
 1
 2
 3
-show status like 'Qcache_hits';
-Variable_name	Value
-Qcache_hits	1
 create table t2 like t1;
 select * from t1;
 a
 1
 2
 3
-show status like 'Qcache_hits';
-Variable_name	Value
-Qcache_hits	2
 insert into t2 select * from t1;
 select * from t1;
 a
 1
 2
 3
-show status like 'Qcache_hits';
-Variable_name	Value
-Qcache_hits	3
 drop table t1, t2;
 create table t1(c1 int);
 create table t2(c1 int);
@@ -1460,9 +1154,6 @@ INSERT INTO t1 (c1) VALUES (1), (2);
 SHOW GLOBAL VARIABLES LIKE 'concurrent_insert';
 Variable_name	Value
 concurrent_insert	NEVER
-SHOW STATUS LIKE 'Qcache_hits';
-Variable_name	Value
-Qcache_hits	0
 SELECT * FROM t1;
 c1
 1
@@ -1471,9 +1162,6 @@ SELECT * FROM t1;
 c1
 1
 2
-SHOW STATUS LIKE 'Qcache_hits';
-Variable_name	Value
-Qcache_hits	0
 DROP TABLE t1;
 SET GLOBAL concurrent_insert= @save_concurrent_insert;
 SET GLOBAL query_cache_size= default;
@@ -1482,9 +1170,6 @@ FLUSH STATUS;
 SET GLOBAL query_cache_size=1048576;
 CREATE TABLE t1 (a INT);
 INSERT INTO t1 VALUES (1),(2),(3),(4),(5);
-SHOW STATUS LIKE 'Qcache_queries_in_cache';
-Variable_name	Value
-Qcache_queries_in_cache	0
 SELECT * FROM t1;
 a
 1
@@ -1501,12 +1186,6 @@ a
 4
 5
 COMMIT;
-SHOW STATUS LIKE 'Qcache_queries_in_cache';
-Variable_name	Value
-Qcache_queries_in_cache	0
-SHOW STATUS LIKE "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 SELECT * FROM t1;
 a
 1
@@ -1523,9 +1202,6 @@ a
 4
 5
 COMMIT;
-SHOW STATUS LIKE "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 DROP TABLE t1;
 SET GLOBAL query_cache_size= default;
 #------------------------------------------------------------------------
@@ -1746,9 +1422,6 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STAT
 where USER="root";
 SELECT_COMMANDS	ROWS_SENT	EMPTY_QUERIES
 2	2	0
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 select * from t1;
 a
 1
@@ -1763,9 +1436,6 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STAT
 where USER="root";
 SELECT_COMMANDS	ROWS_SENT	EMPTY_QUERIES
 6	6	0
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	2
 drop table t1;
 FLUSH USER_STATISTICS;
 FLUSH CLIENT_STATISTICS;
@@ -1781,9 +1451,6 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STAT
 where USER="root";
 SELECT_COMMANDS	ROWS_SENT	EMPTY_QUERIES
 2	1	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 select * from t1;
 a
 select * from t1;
@@ -1796,9 +1463,6 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STAT
 where USER="root";
 SELECT_COMMANDS	ROWS_SENT	EMPTY_QUERIES
 6	3	3
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	2
 FLUSH USER_STATISTICS;
 FLUSH CLIENT_STATISTICS;
 flush status;
@@ -1814,9 +1478,6 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STAT
 where USER="root";
 SELECT_COMMANDS	ROWS_SENT	EMPTY_QUERIES
 2	1	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 call p1;
 a
 call p1;
@@ -1829,9 +1490,6 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STAT
 where USER="root";
 SELECT_COMMANDS	ROWS_SENT	EMPTY_QUERIES
 6	3	3
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	2
 FLUSH USER_STATISTICS;
 FLUSH CLIENT_STATISTICS;
 flush status;
@@ -1846,9 +1504,6 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STAT
 where USER="root";
 SELECT_COMMANDS	ROWS_SENT	EMPTY_QUERIES
 2	1	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 call p1;
 a
 call p1;
@@ -1861,9 +1516,6 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STAT
 where USER="root";
 SELECT_COMMANDS	ROWS_SENT	EMPTY_QUERIES
 6	3	3
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 drop procedure p1;
 drop table t1;
 set GLOBAL query_cache_size=1355776;
@@ -1890,32 +1542,11 @@ End of 10.0 tests
 # inserted into query cache
 #
 flush status;
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	0
 create table t1 (i int);
 with cte as (select * from t1) select * from cte;
 i
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	0
 with cte as (select * from t1) select * from cte;
 i
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	1
-show status like "Qcache_inserts";
-Variable_name	Value
-Qcache_inserts	1
-show status like "Qcache_hits";
-Variable_name	Value
-Qcache_hits	1
 drop table t1;
 #
 # MDEV-15328: MariaDB 10.2.13 Crashes upon CALL PROCEDURE PARAM
@@ -1925,15 +1556,9 @@ drop table t1;
 create table t1 (a int);
 insert into t1 values (1);
 CREATE FUNCTION foo (i INT UNSIGNED ) RETURNS int deterministic  RETURN 1;
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 SELECT foo( LAST_INSERT_ID() ) from t1;
 foo( LAST_INSERT_ID() )
 1
-show status like "Qcache_queries_in_cache";
-Variable_name	Value
-Qcache_queries_in_cache	0
 DROP FUNCTION foo;
 drop table t1;
 restore defaults

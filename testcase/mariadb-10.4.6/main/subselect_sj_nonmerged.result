@@ -44,4 +44,5 @@ GROUP BY 1
 );
 f1
 DROP TABLE t1, t2;
+drop table t0;
 set optimizer_switch=@save_optimizer_switch;

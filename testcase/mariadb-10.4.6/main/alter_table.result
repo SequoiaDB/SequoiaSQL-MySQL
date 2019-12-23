@@ -1555,13 +1555,6 @@ INSERT INTO t1 VALUES (3,3);
 connect  con1, localhost, root;
 # Sending:
 connection default;
-# Waiting until ALTER TABLE is blocked.
-Timeout in wait_condition.inc for SELECT COUNT(*) = 1 FROM information_schema.processlist
-WHERE state = "Waiting for table metadata lock" AND
-info = "ALTER TABLE t1 DISABLE KEYS"
-Id	User	Host	db	Command	Time	State	Info	Progress
-4	root	localhost	test	Query	0	Init	show full processlist	0.000
-6	root	localhost	test	Sleep	30		NULL	0.000
 UPDATE t1 SET b = 4;
 COMMIT;
 connection con1;

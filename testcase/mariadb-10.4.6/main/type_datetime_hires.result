@@ -34,7 +34,7 @@ a DIV 1
 select group_concat(distinct a) from t1;
 group_concat(distinct a)
 0000-00-00 00:00:00.000,2010-12-11 00:20:03.123,2010-12-11 01:02:03.456,2010-12-11 03:04:05.789,2010-12-11 15:47:11.123
-alter table t1 engine=SequoiaDB;
+alter table t1 engine=sequoiadb;
 select * from t1 order by a;
 a
 0000-00-00 00:00:00.000
@@ -50,7 +50,7 @@ a
 2010-12-11 03:04:05.789
 2010-12-11 15:47:11.123
 drop table t1;
-create table t1 (a datetime(4)) engine=SequoiaDB;
+create table t1 (a datetime(4)) engine=sequoiadb;
 insert t1 values ('2010-12-11 01:02:03.456789');
 select * from t1;
 a

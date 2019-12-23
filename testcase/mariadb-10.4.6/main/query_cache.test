@@ -44,13 +44,13 @@ select length(now()) from t1;
 # Only check the variables that are independent of the machine and startup
 # options
 
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 
 drop table t1;
 
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 
 #
 # MERGE TABLES with INSERT/UPDATE and DELETE
@@ -99,24 +99,24 @@ set query_cache_type=demand;
 create table t1 (a int not null);
 insert into t1 values (1),(2),(3);
 select * from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 select sql_cache * from t1 union select * from t1;
 set query_cache_type=2;
 select sql_cache * from t1 union select * from t1;
 
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 set query_cache_type=on;
 #
 # RESET QUERY CACHE
 #
 reset query cache;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 #
 # SELECT SQL_NO_CACHE
 #
 select sql_no_cache * from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 drop table t1;
 #
 # Check that queries that uses NOW(), LAST_INSERT_ID()... are not cached.
@@ -139,7 +139,7 @@ select USER() from t1;
 select CURRENT_USER() from t1;
 select benchmark(1,1) from t1;
 #explain extended select benchmark(1,1) from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 #
 # Tests when the cache is filled
 #
@@ -164,8 +164,8 @@ insert into t1 select * from t2; # 1597
 insert into t2 select * from t1; # 2584
 insert into t1 select * from t2; # 4181
 
-show status like "Qcache_hits";
-show status like "Qcache_lowmem_prunes";
+#show status like "Qcache_hits";
+#show status like "Qcache_lowmem_prunes";
 disable_result_log;
 select a as a1, a as a2 from t1;
 select a as a2, a as a3 from t1;
@@ -173,9 +173,9 @@ select a as a3, a as a4 from t1;
 # next query must be out of 1Mb cache
 select a as a1, a as a2 from t1;
 enable_result_log;
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_lowmem_prunes";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_lowmem_prunes";
 reset query cache;
 #
 # Query bigger then query_cache_limit
@@ -193,7 +193,7 @@ insert into t1 select * from t2;
 disable_result_log;
 select * from t1;
 enable_result_log;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 drop table t1,t2;
 
 #
@@ -209,11 +209,11 @@ select * from mysqltest.t1 where i is null;
 #
 create table t1(a int);
 select * from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 select * from mysqltest.t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 drop database mysqltest;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 drop table t1;
 
 #
@@ -226,8 +226,8 @@ select * from t1;
 set CHARACTER SET cp1251_koi8;
 select * from t1;
 set CHARACTER SET DEFAULT;
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
 drop table t1;
 
 # The following tests can't be done as the values differen on 32 and 64 bit
@@ -250,8 +250,8 @@ select * from t1;
 select * from t1;
 use test;
 select * from t1;
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
 
 drop database mysqltest;
 drop table t1;
@@ -265,23 +265,23 @@ insert into t1 (i) values (1),(2),(3),(4);
 
 select SQL_CALC_FOUND_ROWS * from t1 limit 2;
 select FOUND_ROWS();
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 
 select * from t1 where i=1;
 select FOUND_ROWS();
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 
 select SQL_CALC_FOUND_ROWS * from t1 limit 2;
 select FOUND_ROWS();
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 
 select * from t1 where i=1;
 select FOUND_ROWS();
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 drop table t1;
 
 #
@@ -295,14 +295,14 @@ create table t1 (a int not null) ENGINE=SequoiaDB;
 insert into t1 values (1),(2),(3);
 select * from t1;
 select * from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 #insert delayed into t1 values (4);
 insert into t1 values (4);
 --sleep 5     # Wait for insert delayed to be executed.
 select a from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 drop table t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 
 #
 # Test of min result data unit size changing
@@ -318,13 +318,13 @@ select * from t1;
 select * from t1;
 select * from t2;
 select * from t2;
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 drop table t1;
 select a from t2;
 select a from t2;
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 drop table t2;
 set GLOBAL query_cache_min_res_unit=default;
 show global variables like "query_cache_min_res_unit";
@@ -378,12 +378,12 @@ set GLOBAL query_cache_size=1048576;
 create table t1 (i int not null);
 create table t2 (i int not null);
 select * from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 create temporary table t3 (i int not null);
 select * from t2;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 select * from t3;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 update t1 set i=(select distinct 1 from (select * from t2) a);
 drop table t1, t2, t3;
 
@@ -394,12 +394,12 @@ use mysql;
 disable_result_log;
 select * from db;
 enable_result_log;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 use test;
 disable_result_log;
 select * from mysql.db;
 enable_result_log;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 
 #
 # simple rename test
@@ -419,10 +419,10 @@ select * from t1 where id=2;
 #
 create table t1 (word char(20) not null);
 select * from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 --replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
 eval load data infile '$MYSQLTEST_VARDIR/std_data/words.dat' into table t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 select count(*) from t1;
 drop table t1;
 
@@ -431,12 +431,12 @@ drop table t1;
 #
 create table t1 (a int);
 insert into t1 values (1),(2),(3);
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 select * from t1 into outfile "query_cache.out.file";
 --error ER_FILE_EXISTS_ERROR
 select * from t1 into outfile "query_cache.out.file";
 select * from t1 limit 1 into dumpfile "query_cache.dump.file";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 drop table t1;
 let $datadir=`select @@datadir`;
 --remove_file $datadir/test/query_cache.dump.file
@@ -447,11 +447,11 @@ let $datadir=`select @@datadir`;
 #
 create table t1 (a int);
 insert into t1 values (1),(2);
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 select * from t1;
 SET SQL_SELECT_LIMIT=1;
 select * from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 SET SQL_SELECT_LIMIT=DEFAULT;
 drop table t1;
 
@@ -512,15 +512,15 @@ create table t2 (a int not null);
 create view v1 as select * from t1;
 select * from t1;
 select * from t2;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 lock table t1 write, t2 read;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 unlock table;
 select * from t1;
 # Implicit locking of t1 does not invalidate QC
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 lock table v1 write;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 unlock table;
 drop view v1;
 drop table t1,t2;
@@ -557,29 +557,29 @@ INSERT INTO t1 VALUES (_koi8r'á'),(_koi8r'Á');
 # Run select
 #
 SELECT a,'Â','â'='Â' FROM t1;
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 #
 # Change collation_connection and run the same query again
 #
 set collation_connection=koi8r_bin;
 SELECT a,'Â','â'='Â' FROM t1;
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 #
 # Now change character_set_client and run the same query again
 #
 set character_set_client=cp1251;
 SELECT a,'Â','â'='Â' FROM t1;
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 #
 # And finally change character_set_results and run the same query again
 #
 set character_set_results=cp1251;
 SELECT a,'Â','â'='Â' FROM t1;
-show status like "Qcache_hits";
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
 SET NAMES default;
 
 DROP TABLE t1;
@@ -638,14 +638,14 @@ drop table t1;
 # comments before command
 #
 create table t1 (a int);
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 /**/ select * from t1;
 /**/ select * from t1;
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 
 #
 # Keep things tidy
@@ -671,9 +671,9 @@ create table t1 ( a int );
 insert into t1 values (1);
 select a from t1;
 select a from t1;
-show status like 'qcache_queries_in_cache';
+#show status like 'qcache_queries_in_cache';
 #repair table t1;
-show status like 'qcache_queries_in_cache';
+#show status like 'qcache_queries_in_cache';
 drop table t1;
 
 #
@@ -695,13 +695,13 @@ insert into t2 values (repeat('ijklmnopqrstuvwxyzabcdefgh', 550));
 select a from t1; # Q1
 select a from t2; # Q2
 --enable_result_log
-show status like 'Qcache_%_blocks';
+#show status like 'Qcache_%_blocks';
 
 # Now the cache looks like (14K for Q1)(14K for Q2)(20K free)
 
 # Flush Q1 from the cache by adding an out-of-order chunk to t1
 insert into t1 select reverse(a) from t1;
-show status like 'Qcache_%_blocks';
+#show status like 'Qcache_%_blocks';
 
 # Now the cache looks like (14K free)(14K for Q2)(20K free)
 
@@ -709,7 +709,7 @@ show status like 'Qcache_%_blocks';
 --disable_result_log
 select a from t1;  # Q3
 --enable_result_log
-show status like 'Qcache_%_blocks';
+#show status like 'Qcache_%_blocks';
 
 # Now the cache should be like (14K for Q3)(14K for Q2)(14K for Q3)(6K free)
 
@@ -738,9 +738,9 @@ INSERT INTO t1 VALUES ('20050325');
 SELECT COUNT(*) FROM t1 WHERE date BETWEEN '20050326' AND '20050327 invalid';
 SELECT COUNT(*) FROM t1 WHERE date BETWEEN '20050326' AND '20050328 invalid';
 SELECT COUNT(*) FROM t1 WHERE date BETWEEN '20050326' AND '20050327 invalid';
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 drop table t1;
 
 #
@@ -751,21 +751,21 @@ insert into t1 values (1);
 reset query cache;
 flush status;
 select * from (select * from t1) a;
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 select * from (select * from t1) a;
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 insert into t1 values (2);
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 select * from (select * from t1) a;
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 drop table t1;
 
 #
@@ -774,22 +774,22 @@ drop table t1;
 create table t1 (a int);
 flush status;
 (select a from t1) union (select a from t1);
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 (select a from t1) union (select a from t1);
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 
 set query_cache_strip_comments=1;
 (select a from t1) union (select a from t1);
 (select a from t1) /* */union (select a from t1);
 set query_cache_strip_comments=0;
 (select a from t1) union (select a from t1);
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 
 drop table t1;
 
@@ -911,7 +911,7 @@ create table t1(a int);
 insert into t1 values(0), (1), (4), (5);
 select * from t1 where a > 3;
 select * from t1 where a > 3;
-show status like 'last_query_cost';
+#show status like 'last_query_cost';
 drop table t1;
 SET GLOBAL query_cache_size=0;
 
@@ -923,15 +923,15 @@ flush status;
 create table t1 (a int);
 insert into t1 (a) values (1), (2), (3);
 select * from t1;
-show status like 'Qcache_hits';
+#show status like 'Qcache_hits';
 select * from t1;
-show status like 'Qcache_hits';
+#show status like 'Qcache_hits';
 create table t2 like t1;
 select * from t1;
-show status like 'Qcache_hits';
+#show status like 'Qcache_hits';
 insert into t2 select * from t1;
 select * from t1;
-show status like 'Qcache_hits';
+#show status like 'Qcache_hits';
 drop table t1, t2;
 
 create table t1(c1 int);
@@ -1283,10 +1283,10 @@ CREATE TABLE t1 (c1 INT NOT NULL) ENGINE=SequoiaDB;
 INSERT INTO t1 (c1) VALUES (1), (2);
 #
 SHOW GLOBAL VARIABLES LIKE 'concurrent_insert';
-SHOW STATUS LIKE 'Qcache_hits';
+#SHOW STATUS LIKE 'Qcache_hits';
 SELECT * FROM t1;
 SELECT * FROM t1;
-SHOW STATUS LIKE 'Qcache_hits';
+#SHOW STATUS LIKE 'Qcache_hits';
 DROP TABLE t1;
 SET GLOBAL concurrent_insert= @save_concurrent_insert;
 SET GLOBAL query_cache_size= default;
@@ -1303,18 +1303,18 @@ FLUSH STATUS;
 SET GLOBAL query_cache_size=1048576;
 CREATE TABLE t1 (a INT);
 INSERT INTO t1 VALUES (1),(2),(3),(4),(5);
-SHOW STATUS LIKE 'Qcache_queries_in_cache';
+#SHOW STATUS LIKE 'Qcache_queries_in_cache';
 SELECT * FROM t1;
 BEGIN;
 SELECT * FROM t1;
 COMMIT;
-SHOW STATUS LIKE 'Qcache_queries_in_cache';
-SHOW STATUS LIKE "Qcache_hits";
+#SHOW STATUS LIKE 'Qcache_queries_in_cache';
+#SHOW STATUS LIKE "Qcache_hits";
 SELECT * FROM t1;
 BEGIN;
 SELECT * FROM t1;
 COMMIT;
-SHOW STATUS LIKE "Qcache_hits";
+#SHOW STATUS LIKE "Qcache_hits";
 DROP TABLE t1;
 SET GLOBAL query_cache_size= default;
 
@@ -1646,14 +1646,14 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.CLIENT_ST
 where CLIENT="localhost";
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STATISTICS
 where USER="root";
-show status like "Qcache_hits";
+#show status like "Qcache_hits";
 select * from t1;
 select * from t1;
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.CLIENT_STATISTICS
 where CLIENT="localhost";
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STATISTICS
 where USER="root";
-show status like "Qcache_hits";
+#show status like "Qcache_hits";
 
 drop table t1;
 FLUSH USER_STATISTICS;
@@ -1666,14 +1666,14 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.CLIENT_ST
 where CLIENT="localhost";
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STATISTICS
 where USER="root";
-show status like "Qcache_hits";
+#show status like "Qcache_hits";
 select * from t1;
 select * from t1;
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.CLIENT_STATISTICS
 where CLIENT="localhost";
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STATISTICS
 where USER="root";
-show status like "Qcache_hits";
+#show status like "Qcache_hits";
 
 FLUSH USER_STATISTICS;
 FLUSH CLIENT_STATISTICS;
@@ -1686,14 +1686,14 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.CLIENT_ST
 where CLIENT="localhost";
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STATISTICS
 where USER="root";
-show status like "Qcache_hits";
+#show status like "Qcache_hits";
 call p1;
 call p1;
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.CLIENT_STATISTICS
 where CLIENT="localhost";
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STATISTICS
 where USER="root";
-show status like "Qcache_hits";
+#show status like "Qcache_hits";
 
 FLUSH USER_STATISTICS;
 FLUSH CLIENT_STATISTICS;
@@ -1705,14 +1705,14 @@ select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.CLIENT_ST
 where CLIENT="localhost";
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STATISTICS
 where USER="root";
-show status like "Qcache_hits";
+#show status like "Qcache_hits";
 call p1;
 call p1;
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.CLIENT_STATISTICS
 where CLIENT="localhost";
 select SELECT_COMMANDS,ROWS_SENT,EMPTY_QUERIES from INFORMATION_SCHEMA.USER_STATISTICS
 where USER="root";
-show status like "Qcache_hits";
+#show status like "Qcache_hits";
 drop procedure p1;
 drop table t1;
 set GLOBAL query_cache_size=1355776;
@@ -1755,16 +1755,16 @@ SET GLOBAL query_cache_size= @qc;
 --echo # inserted into query cache
 --echo #
 flush status;
-show status like "Qcache_inserts";
+#show status like "Qcache_inserts";
 create table t1 (i int);
 with cte as (select * from t1) select * from cte;
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 with cte as (select * from t1) select * from cte;
-show status like "Qcache_queries_in_cache";
-show status like "Qcache_inserts";
-show status like "Qcache_hits";
+#show status like "Qcache_queries_in_cache";
+#show status like "Qcache_inserts";
+#show status like "Qcache_hits";
 drop table t1;
 
 --echo #
@@ -1776,9 +1776,9 @@ drop table t1;
 create table t1 (a int);
 insert into t1 values (1);
 CREATE FUNCTION foo (i INT UNSIGNED ) RETURNS int deterministic  RETURN 1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 SELECT foo( LAST_INSERT_ID() ) from t1;
-show status like "Qcache_queries_in_cache";
+#show status like "Qcache_queries_in_cache";
 DROP FUNCTION foo;
 drop table t1;
 

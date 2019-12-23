@@ -116,6 +116,7 @@ DROP TABLE t1, t2;
 #explain select * from t1 X join t0 Y on X.a < Y.a where X.a in (select max(a) from t0);
 #
 #drop table t0, t1;
+drop table t0;
 
 set optimizer_switch=@save_optimizer_switch;
 
