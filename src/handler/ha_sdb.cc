@@ -1496,9 +1496,6 @@ int ha_sdb::write_row(uchar *buf) {
 done:
   return rc;
 error:
-  if (SDB_SEQUENCE_EXCEEDED == rc) {
-    rc = HA_ERR_AUTOINC_READ_FAILED;
-  }
   goto done;
 }
 
@@ -4345,7 +4342,8 @@ done:
                 ha_thd()->get_stmt_da()->set_ok_status(0, 0, NULL);
               }
               ha_thd()->get_stmt_da()->reset_condition_info(ha_thd());
-              // the row that cause this error must be accounted into found rows.
+              // the row that cause this error must be accounted into found
+              // rows.
               thd_sdb->found++;
               push_warning_printf(ha_thd(), Sql_condition::SL_WARNING,
                                   ER_WARN_DATA_OUT_OF_RANGE,
@@ -4373,6 +4371,10 @@ done:
     case SDB_NET_CANNOT_CONNECT: {
       my_printf_error(error, "Unable to connect to the specified address",
                       MYF(0));
+      break;
+    }
+    case SDB_SEQUENCE_EXCEEDED: {
+      my_error(ER_AUTOINC_READ_FAILED, MYF(0));
       break;
     }
     default:
