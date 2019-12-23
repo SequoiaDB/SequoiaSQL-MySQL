@@ -773,6 +773,7 @@ struct Col_alter_info : public Sql_alloc {
   static const int ADD_AUTO_INC = 2;
   static const int DROP_AUTO_INC = 4;
   static const int TURN_TO_NOT_NULL = 8;
+  static const int TURN_TO_NULL = 16;
 
   Field *before;
   Field *after;
@@ -1308,19 +1309,12 @@ error:
   goto done;
 }
 
-int create_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
-                 Bitmap<MAX_INDEXES> &ignored_keys) {
+int create_index(Sdb_cl &cl, List<KEY> &add_keys) {
   int rc = 0;
-  const KEY *key_info = NULL;
-  uint key_nr = 0;
+  KEY *key_info = NULL;
+  List_iterator<KEY> it(add_keys);
 
-  for (uint i = 0; i < ha_alter_info->index_add_count; i++) {
-    if (ignored_keys.is_set(i)) {
-      continue;
-    }
-
-    key_nr = ha_alter_info->index_add_buffer[i];
-    key_info = &ha_alter_info->key_info_buffer[key_nr];
+  while ((key_info = it++)) {
     rc = sdb_create_index(key_info, cl);
     if (rc) {
       goto error;
@@ -1332,20 +1326,12 @@ error:
   goto done;
 }
 
-int drop_index(Sdb_cl &cl, Alter_inplace_info *ha_alter_info,
-               Bitmap<MAX_INDEXES> &ignored_keys) {
+int drop_index(Sdb_cl &cl, List<KEY> &drop_keys) {
   int rc = 0;
+  List_iterator<KEY> it(drop_keys);
+  KEY *key_info = NULL;
 
-  if (NULL == ha_alter_info->index_drop_buffer) {
-    goto done;
-  }
-
-  for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
-    if (ignored_keys.is_set(i)) {
-      continue;
-    }
-
-    KEY *key_info = ha_alter_info->index_drop_buffer[i];
+  while ((key_info = it++)) {
     rc = cl.drop_index(sdb_key_name(key_info));
     if (rc) {
       goto error;
@@ -1431,6 +1417,10 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
             goto error;
           }
           op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
+        }
+
+        if (!old_field->maybe_null() && new_field->maybe_null()) {
+          op_flag |= Col_alter_info::TURN_TO_NULL;
         }
 
         if (op_flag) {
@@ -1699,6 +1689,41 @@ error:
   goto done;
 }
 
+bool is_all_field_not_null(KEY *key) {
+  const KEY_PART_INFO *key_part;
+  const KEY_PART_INFO *key_end;
+  key_part = key->key_part;
+  key_end = key_part + key->user_defined_key_parts;
+  for (; key_part != key_end; ++key_part) {
+    if (key_part->null_bit) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void sdb_append_index_to_be_rebuild(TABLE *table, TABLE *altered_table,
+                                    List<KEY> &add_keys, List<KEY> &drop_keys) {
+  bool old_has_not_null = false, new_has_not_null = false;
+  KEY *old_key_info = NULL, *new_key_info = NULL;
+
+  for (uint i = 0; i < table->s->keys; ++i) {
+    old_key_info = table->s->key_info + i;
+    for (uint j = 0; j < altered_table->s->keys; ++j) {
+      new_key_info = altered_table->s->key_info + j;
+      if (strcmp(sdb_key_name(old_key_info), sdb_key_name(new_key_info)) == 0) {
+        old_has_not_null = is_all_field_not_null(old_key_info);
+        new_has_not_null = is_all_field_not_null(new_key_info);
+        if (old_has_not_null != new_has_not_null) {
+          drop_keys.push_back(old_key_info);
+          add_keys.push_back(new_key_info);
+        }
+        break;
+      }
+    }
+  }
+}
+
 bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                                  Alter_inplace_info *ha_alter_info) {
   DBUG_ENTER("sdb_inplace_alter_table()");
@@ -1707,11 +1732,14 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   THD *thd = current_thd;
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
-  Bitmap<MAX_INDEXES> ignored_drop_keys;
-  Bitmap<MAX_INDEXES> ignored_add_keys;
+  List<KEY> drop_keys;
+  List<KEY> add_keys;
   ha_sdb_alter_ctx *ctx = (ha_sdb_alter_ctx *)ha_alter_info->handler_ctx;
   const HA_CREATE_INFO *create_info = ha_alter_info->create_info;
   const alter_table_operations alter_flags = ha_alter_info->handler_flags;
+  List<Col_alter_info> &changed_columns = ctx->changed_columns;
+  List_iterator_fast<Col_alter_info> changed_it;
+  Col_alter_info *info = NULL;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rs = false;
@@ -1730,6 +1758,18 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     SDB_LOG_ERROR("Collection[%s.%s] is not available. rc: %d", db_name,
                   table_name, rc);
     goto error;
+  }
+
+  if (alter_flags & INPLACE_ONLINE_DROPIDX) {
+    for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
+      drop_keys.push_back(ha_alter_info->index_drop_buffer[i]);
+    }
+  }
+  if (alter_flags & INPLACE_ONLINE_ADDIDX) {
+    for (uint j = 0; j < ha_alter_info->index_add_count; j++) {
+      uint key_nr = ha_alter_info->index_add_buffer[j];
+      add_keys.push_back(&ha_alter_info->key_info_buffer[key_nr]);
+    }
   }
 
   if (alter_flags & ALTER_CHANGE_CREATE_OPTION) {
@@ -1832,20 +1872,27 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
 
   // If it's a redefinition of the secondary attributes, such as btree/hash
   // and comment, don't recreate the index.
-  ignored_drop_keys.clear_all();
-  ignored_add_keys.clear_all();
   if (alter_flags & INPLACE_ONLINE_DROPIDX &&
       alter_flags & INPLACE_ONLINE_ADDIDX) {
-    for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
-      KEY *drop_key = ha_alter_info->index_drop_buffer[i];
-      for (uint j = 0; j < ha_alter_info->index_add_count; j++) {
-        uint key_nr = ha_alter_info->index_add_buffer[j];
-        KEY *add_key = &ha_alter_info->key_info_buffer[key_nr];
+    KEY *add_key = NULL, *drop_key = NULL;
+    List_iterator<KEY> it_add(add_keys);
+    while ((add_key = it_add++)) {
+      List_iterator<KEY> it_drop(drop_keys);
+      while ((drop_key = it_drop++)) {
         if (sdb_is_same_index(drop_key, add_key)) {
-          ignored_drop_keys.set_bit(i);
-          ignored_add_keys.set_bit(j);
+          it_add.remove();
+          it_drop.remove();
+          break;
         }
       }
+    }
+  }
+
+  changed_it.init(changed_columns);
+  while ((info = changed_it++)) {
+    if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL ||
+        info->op_flag & Col_alter_info::TURN_TO_NULL) {
+      sdb_append_index_to_be_rebuild(table, altered_table, add_keys, drop_keys);
     }
   }
 
@@ -1854,8 +1901,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     goto error;
   }
 
-  if (alter_flags & INPLACE_ONLINE_DROPIDX) {
-    rc = drop_index(cl, ha_alter_info, ignored_drop_keys);
+  if (!drop_keys.is_empty()) {
+    rc = drop_index(cl, drop_keys);
     if (0 != rc) {
       goto error;
     }
@@ -1869,8 +1916,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
   }
 
-  if (alter_flags & INPLACE_ONLINE_ADDIDX) {
-    rc = create_index(cl, ha_alter_info, ignored_add_keys);
+  if (!add_keys.is_empty()) {
+    rc = create_index(cl, add_keys);
     if (0 != rc) {
       goto error;
     }
