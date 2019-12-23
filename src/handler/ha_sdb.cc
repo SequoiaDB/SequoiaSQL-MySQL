@@ -4555,7 +4555,7 @@ done:
       break;
     }
     case SDB_SEQUENCE_EXCEEDED: {
-      my_error(HA_ERR_AUTOINC_READ_FAILED, MYF(0));
+      my_error(ER_AUTOINC_READ_FAILED, MYF(0));
       break;
     }
     default:
