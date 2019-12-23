@@ -150,7 +150,7 @@ select last_insert_id();
 last_insert_id()
 255
 insert into t1 set i = null;
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select last_insert_id();
 last_insert_id()
 255
@@ -162,7 +162,7 @@ select last_insert_id();
 last_insert_id()
 255
 insert into t1 set i = null;
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select last_insert_id();
 last_insert_id()
 255
