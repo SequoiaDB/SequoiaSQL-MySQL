@@ -1,17 +1,17 @@
 #
 # Test file for WL#1724 (Min/Max Optimization for Queries with Group By Clause).
 # The queries in this file test query execution via QUICK_GROUP_MIN_MAX_SELECT
-# that depends on InnoDB
+# that depends on SequoiaDB
 #
 
---source include/have_innodb.inc
+--source include/have_sequoiadb.inc
 
-set @innodb_stats_persistent_save= @@innodb_stats_persistent;
-set @innodb_stats_persistent_sample_pages_save=
-      @@innodb_stats_persistent_sample_pages;
-
-set global innodb_stats_persistent= 1;
-set global innodb_stats_persistent_sample_pages=100;
+#set @innodb_stats_persistent_save= @@innodb_stats_persistent;
+#set @innodb_stats_persistent_sample_pages_save=
+#      @@innodb_stats_persistent_sample_pages;
+#
+#set global innodb_stats_persistent= 1;
+#set global innodb_stats_persistent_sample_pages=100;
 
 --disable_warnings
 drop view if exists v1;
@@ -19,13 +19,13 @@ drop table if exists t1,t4;
 --enable_warnings
 
 #
-# Bug #12672: primary key implcitly included in every innodb index
+# Bug #12672: primary key implcitly included in every SequoiaDB index
 #
 
 --disable_warnings
 create table t4 (
   pk_col int auto_increment primary key, a1 char(64), a2 char(64), b char(16), c char(16) not null, d char(16), dummy char(64) default ' '
-) engine=innodb;
+) engine=SequoiaDB;
 --enable_warnings
 
 insert into t4 (a1, a2, b, c, d) values
@@ -65,7 +65,13 @@ insert into t4 (a1, a2, b, c, d) values
 create index idx12672_0 on t4 (a1);
 create index idx12672_1 on t4 (a1,a2,b,c);
 create index idx12672_2 on t4 (a1,a2,b);
+--disable_query_log
+--disable_result_log
+--disable_warnings
 analyze table t4;
+--enable_query_log
+--enable_result_log
+--enable_warnings
 
 select distinct a1 from t4 where pk_col not in (1,2,3,4);
 
@@ -73,13 +79,13 @@ drop table t4;
 
 
 #
-# Bug #6142: a problem with the empty innodb table
+# Bug #6142: a problem with the empty SequoiaDB table
 #
 
 --disable_warnings
 create table t1 (
   a varchar(30), b varchar(30), primary key(a), key(b)
-) engine=innodb;
+) engine=SequoiaDB;
 --enable_warnings
 select distinct a from t1;
 drop table t1;
@@ -89,7 +95,7 @@ drop table t1;
 #
 
 --disable_warnings
-create table t1(a int, key(a)) engine=innodb;
+create table t1(a int, key(a)) engine=SequoiaDB;
 --enable_warnings
 insert into t1 values(1);
 select a, count(a) from t1 group by a with rollup;
@@ -99,19 +105,19 @@ drop table t1;
 #
 # Bug #13293 Wrongly used index results in endless loop.
 #
-create table t1 (f1 int, f2 char(1), primary key(f1,f2)) engine=innodb;
+create table t1 (f1 int, f2 char(1), primary key(f1,f2)) engine=SequoiaDB;
 insert into t1 values ( 1,"e"),(2,"a"),( 3,"c"),(4,"d");
 alter table t1 drop primary key, add primary key (f2, f1);
-explain select distinct f1 a, f1 b from t1;
-explain select distinct f1, f2 from t1;
+#explain select distinct f1 a, f1 b from t1;
+#explain select distinct f1, f2 from t1;
 drop table t1;
 
 
 #
-# Bug #36632: Select distinct from a simple view on an InnoDB table
+# Bug #36632: Select distinct from a simple view on an SequoiaDB table
 #             returns incorrect results
 #
-create table t1(pk int primary key) engine=innodb;
+create table t1(pk int primary key) engine=SequoiaDB;
 create view v1 as select pk from t1 where pk < 20;
 
 insert into t1 values (1), (2), (3), (4);
@@ -130,16 +136,16 @@ drop table t1;
 --echo # FILE /BUILDDIR/BUILD/BUILD/MYSQ
 --echo #
 
-CREATE TABLE t1 (a CHAR(1), b CHAR(1), PRIMARY KEY (a,b)) ENGINE=InnoDB;
+CREATE TABLE t1 (a CHAR(1), b CHAR(1), PRIMARY KEY (a,b)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ('a', 'b'), ('c', 'd');
-EXPLAIN SELECT COUNT(DISTINCT a) FROM t1 WHERE b = 'b';
+#EXPLAIN SELECT COUNT(DISTINCT a) FROM t1 WHERE b = 'b';
 SELECT COUNT(DISTINCT a) FROM t1 WHERE b = 'b';
 DROP TABLE t1;
 
 CREATE TABLE t1 (a CHAR(1) NOT NULL, b CHAR(1) NOT NULL, UNIQUE KEY (a,b))
-ENGINE=InnoDB;
+ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ('a', 'b'), ('c', 'd');
-EXPLAIN SELECT COUNT(DISTINCT a) FROM t1 WHERE b = 'b';
+#EXPLAIN SELECT COUNT(DISTINCT a) FROM t1 WHERE b = 'b';
 SELECT COUNT(DISTINCT a) FROM t1 WHERE b = 'b';
 DROP TABLE t1;
 
@@ -162,7 +168,7 @@ CREATE TABLE t1 (
   i1 INTEGER NOT NULL,
   i2 INTEGER NOT NULL,
   UNIQUE KEY k1 (c1,i2)
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 SELECT 'A',i1,i1 FROM t0;
 INSERT INTO t1 SELECT 'B',i1,i1 FROM t0;
@@ -176,7 +182,7 @@ CREATE TABLE t2 (
   i1 INTEGER NOT NULL,
   i2 INTEGER NOT NULL,
   UNIQUE KEY k2 (c1,i1,i2)
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t2 SELECT 'A',i1,i1 FROM t0;
 INSERT INTO t2 SELECT 'B',i1,i1 FROM t0;
@@ -193,47 +199,48 @@ ANALYZE TABLE t2;
 let query=
 SELECT c1, max(i2) FROM t1 WHERE (c1 = 'C' AND i2 = 17) OR ( c1 = 'F')
 GROUP BY c1;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 let query=
 SELECT c1, max(i2) FROM t1 WHERE (c1 = 'C' OR ( c1 = 'F' AND i2 = 17))
 GROUP BY c1;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 let query=
 SELECT c1, max(i2) FROM t1 WHERE (c1 = 'C' OR c1 = 'F' ) AND ( i2 = 17 )
 GROUP BY c1;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 let query=
 SELECT c1, max(i2) FROM t1 
 WHERE ((c1 = 'C' AND (i2 = 40 OR i2 = 30)) OR ( c1 = 'F' AND (i2 = 40 )))
 GROUP BY c1;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
-let query=
-SELECT c1, i1, max(i2) FROM t2
-WHERE (c1 = 'C' OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 )
-GROUP BY c1,i1;
-eval EXPLAIN $query;
-eval $query;
+#Bug #SEQUOIASQLMAINSTREAM-259
+#let query=
+#SELECT c1, i1, max(i2) FROM t2
+#WHERE (c1 = 'C' OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 )
+#GROUP BY c1,i1;
+#eval EXPLAIN $query;
+#eval $query;
 
-let query=
-SELECT c1, i1, max(i2) FROM t2 
-WHERE (((c1 = 'C' AND i1 < 40) OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 ))
-GROUP BY c1,i1;
-eval EXPLAIN $query;
-eval $query;
+#let query=
+#SELECT c1, i1, max(i2) FROM t2 
+#WHERE (((c1 = 'C' AND i1 < 40) OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 ))
+#GROUP BY c1,i1;
+#eval EXPLAIN $query;
+#eval $query;
 
 let query=
 SELECT c1, i1, max(i2) FROM t2 
 WHERE ((c1 = 'C' AND i1 < 40) OR ( c1 = 'F' AND i1 < 35) OR ( i2 = 17 ))
 GROUP BY c1,i1;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t0,t1,t2;
@@ -244,14 +251,14 @@ DROP TABLE t0,t1,t2;
 
 CREATE TABLE t1 (`voter_id` int(11) unsigned NOT NULL,
   `language_id` int(11) unsigned NOT NULL DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 CREATE TABLE t2 (`voter_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `serialized_c` mediumblob) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `serialized_c` mediumblob) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 insert into t2 values (1,repeat("a",1000)),(2,repeat("a",1000)),(3,repeat("b",1000)),(4,repeat("c",1000)),(4,repeat("b",1000));
 SELECT GROUP_CONCAT(t1.language_id SEPARATOR ',') AS `translation_resources`, `d`.`serialized_c` FROM t2 AS `d` LEFT JOIN t1 ON `d`.`voter_id` = t1.`voter_id` GROUP BY `d`.`voter_id` ORDER BY 10-d.voter_id+RAND()*0;
 drop table t1,t2;
 
-set global innodb_stats_persistent= @innodb_stats_persistent_save;
-set global innodb_stats_persistent_sample_pages=
-             @innodb_stats_persistent_sample_pages_save;
+#set global SequoiaDB_stats_persistent= @SequoiaDB_stats_persistent_save;
+#set global SequoiaDB_stats_persistent_sample_pages=
+#             @SequoiaDB_stats_persistent_sample_pages_save;
 
