@@ -277,9 +277,9 @@ INSERT INTO t2(b) VALUES ('aaa'),('aaa');
 INSERT INTO t1 VALUES (127, 'aaa');
 INSERT INTO t2 VALUES (127, 'aaa');
 INSERT INTO t1(b) VALUES ('bbb');
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 INSERT INTO t2(b) VALUES ('bbb');
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 DROP TABLE t1,t2;
 CREATE TABLE t1(a FLOAT NOT NULL AUTO_INCREMENT, b char(8), PRIMARY KEY(a,b));
 INSERT INTO t1(b) VALUES ('aaa');

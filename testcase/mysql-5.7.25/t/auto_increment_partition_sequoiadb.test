@@ -150,9 +150,9 @@ INSERT INTO t1(b) VALUES ('aaa'),('aaa');
 INSERT INTO t2(b) VALUES ('aaa'),('aaa');
 INSERT INTO t1 VALUES (127, 'aaa');
 INSERT INTO t2 VALUES (127, 'aaa');
---error 40325 
+--error 1467 
 INSERT INTO t1(b) VALUES ('bbb');
---error 40325 
+--error 1467 
 INSERT INTO t2(b) VALUES ('bbb');
 DROP TABLE t1,t2;
 
