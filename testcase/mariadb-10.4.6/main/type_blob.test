@@ -699,11 +699,11 @@ SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-535
-## ALTER SET DEFAULT
-#create table t1 (a int);
-#alter table t1 add column b blob, alter column b set default "foo";
-#show create table t1;
-#drop table t1;
+# ALTER SET DEFAULT
+create table t1 (a int);
+alter table t1 add column b blob, alter column b set default "foo";
+show create table t1;
+drop table t1;
 
 --echo #
 --echo # End of 10.2 test
