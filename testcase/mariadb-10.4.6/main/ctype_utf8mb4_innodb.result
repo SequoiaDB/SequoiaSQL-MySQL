@@ -283,7 +283,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `s1` varchar(64) CHARACTER SET utf8mb4 DEFAULT NULL,
   `s2` varchar(64) CHARACTER SET utf8mb4 DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 delete from t1;
 insert into t1 values('aaa','aaa');
 insert into t1 values('aaa|qqq','qqq');
@@ -579,7 +579,7 @@ drop table t1;
 SELECT @@collation_connection;
 @@collation_connection
 utf8mb4_general_ci
-CREATE TABLE t1 (i INT) ENGINE=MyISAM;
+CREATE TABLE t1 (i INT) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1),(2);
 SELECT * FROM t1 GROUP BY MID(CURRENT_USER,0) WITH ROLLUP;
 i
@@ -596,7 +596,7 @@ DROP TABLE t1;
 SELECT @@collation_connection;
 @@collation_connection
 utf8mb4_general_ci
-CREATE TABLE t1 ENGINE=MEMORY AS SELECT REPEAT('a',5) AS a LIMIT 0;
+CREATE TABLE t1 ENGINE=SequoiaDB AS SELECT REPEAT('a',5) AS a LIMIT 0;
 INSERT INTO t1 (a) VALUES ("a");
 INSERT INTO t1 (a) VALUES ("b");
 INSERT INTO t1 (a) VALUES ("c");
@@ -761,7 +761,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) CHARACTER SET utf8mb4 DEFAULT NULL,
   `b` int(1) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 INSERT INTO t1 VALUES ('s',0),(_latin1 0xDF,1);
 SELECT * FROM t1 ORDER BY a, b;
 a	b
@@ -797,7 +797,7 @@ drop table t1;
 SELECT @@collation_connection;
 @@collation_connection
 utf8mb4_bin
-CREATE TABLE t1 (i INT) ENGINE=MyISAM;
+CREATE TABLE t1 (i INT) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1),(2);
 SELECT * FROM t1 GROUP BY MID(CURRENT_USER,0) WITH ROLLUP;
 i
@@ -814,7 +814,7 @@ DROP TABLE t1;
 SELECT @@collation_connection;
 @@collation_connection
 utf8mb4_bin
-CREATE TABLE t1 ENGINE=MEMORY AS SELECT REPEAT('a',5) AS a LIMIT 0;
+CREATE TABLE t1 ENGINE=SequoiaDB AS SELECT REPEAT('a',5) AS a LIMIT 0;
 INSERT INTO t1 (a) VALUES ("a");
 INSERT INTO t1 (a) VALUES ("b");
 INSERT INTO t1 (a) VALUES ("c");
@@ -2251,9 +2251,9 @@ id	HEX(a)
 2	C280
 3	DFBF
 4	E0A080
+5	EFBFBF
 6	F0908080
 7	F48FBFBF
-5	EFBFBF
 SELECT id,HEX(a) FROM t1 ORDER BY a DESC,id DESC;
 id	HEX(a)
 5	EFBFBF
