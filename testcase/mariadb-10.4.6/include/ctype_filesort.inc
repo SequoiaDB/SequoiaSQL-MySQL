@@ -19,7 +19,7 @@ drop table t1;
 --echo # MDEV-5453 Assertion `src' fails in my_strnxfrm_unicode on GROUP BY MID(..) WITH ROLLUP
 --echo #
 SELECT @@collation_connection;
-CREATE TABLE t1 (i INT) ENGINE=MyISAM;
+CREATE TABLE t1 (i INT) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1),(2);
 SELECT * FROM t1 GROUP BY MID(CURRENT_USER,0) WITH ROLLUP;
 SELECT * FROM t1 GROUP BY MID('test',0) WITH ROLLUP; 
@@ -29,7 +29,7 @@ DROP TABLE t1;
 --echo # MDEV-6170 Incorrect ordering with utf8_bin and utf8mb4_bin collations
 --echo #
 SELECT @@collation_connection;
-CREATE TABLE t1 ENGINE=MEMORY AS SELECT REPEAT('a',5) AS a LIMIT 0;
+CREATE TABLE t1 ENGINE=SequoiaDB AS SELECT REPEAT('a',5) AS a LIMIT 0;
 INSERT INTO t1 (a) VALUES ("a");
 INSERT INTO t1 (a) VALUES ("b");
 INSERT INTO t1 (a) VALUES ("c");

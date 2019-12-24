@@ -246,7 +246,7 @@ drop table t2;
 
 #
 # Bug 4521: unique key prefix interacts poorly with utf8mb4
-# MYISAM: keys with prefix compression, case insensitive collation.
+# SequoiaDB: keys with prefix compression, case insensitive collation.
 #
 #eval create table t1 (c varchar(30) character set utf8mb4, unique(c(10))) engine $engine;
 #insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
@@ -292,7 +292,7 @@ drop table t2;
 #
 ##
 ## Bug 4521: unique key prefix interacts poorly with utf8mb4
-## MYISAM: fixed length keys, case insensitive collation
+## SequoiaDB: fixed length keys, case insensitive collation
 ##
 #eval create table t1 (c char(3) character set utf8mb4, unique (c(2))) engine $engine;
 #insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
@@ -421,7 +421,7 @@ drop table t2;
 #
 ##
 ## Bug 4521: unique key prefix interacts poorly with utf8mb4
-## MYISAM: keys with prefix compression, binary collation.
+## SequoiaDB: keys with prefix compression, binary collation.
 ##
 #eval create table t1 (c varchar(30) character set utf8mb4 collate utf8mb4_bin, unique(c(10))) engine $engine;
 #insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
@@ -443,7 +443,7 @@ drop table t2;
 #
 ##
 ## Bug 4521: unique key prefix interacts poorly with utf8mb4
-## MYISAM: fixed length keys, binary collation
+## SequoiaDB: fixed length keys, binary collation
 ##
 #eval create table t1 (c char(3) character set utf8mb4 collate utf8mb4_bin, unique (c(2))) engine $engine;
 #insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
@@ -544,7 +544,7 @@ drop table t2;
 
 
 # Bug#4594: column index make = failed for gbk, but like works
-# Check MYISAM
+# Check SequoiaDB
 #
 eval create table t1 (
   str varchar(255) character set utf8mb4 not null,
@@ -657,7 +657,7 @@ SELECT id FROM t1 WHERE (list_id = 1) AND (term = "letterd");
 DROP TABLE t1;
 
 #
-# Bug #6043 erratic searching for diacriticals in indexed MyISAM UTF-8 table
+# Bug #6043 erratic searching for diacriticals in indexed SequoiaDB UTF-8 table
 #
 SET NAMES latin1;
 eval CREATE TABLE t1 (
@@ -935,7 +935,7 @@ drop table t1;
 
 
 #
-# Bug#9557 MyISAM utf8mb4 table crash
+# Bug#9557 SequoiaDB utf8mb4 table crash
 #
 eval CREATE TABLE t1 (
   a varchar(255) NOT NULL default '',
