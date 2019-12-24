@@ -41,8 +41,9 @@ class ha_sdb_cond_ctx : public Sql_alloc {
     WHERE_COND:  for where condition.
   */
   enum Ctx_type { INVALID_TYPE = 0, PUSHED_COND, WHERE_COND };
-  ha_sdb_cond_ctx(TABLE *cur_table, THD *ha_thd, my_bitmap_map *pushed_cond_buff,
-               my_bitmap_map *where_cond_buff);
+  ha_sdb_cond_ctx(TABLE *cur_table, THD *ha_thd,
+                  my_bitmap_map *pushed_cond_buff,
+                  my_bitmap_map *where_cond_buff);
 
   ~ha_sdb_cond_ctx();
 

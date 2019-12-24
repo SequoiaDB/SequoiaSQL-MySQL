@@ -2550,6 +2550,14 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
 
   DBUG_ASSERT(0 == strcmp(elem.fieldName(), sdb_field_name(field)));
 
+  if (field->flags & BLOB_FLAG) {
+    field = field->clone(&blobroot);
+    if (!field || ((Field_blob *)field)->copy_blob_value(&blobroot)) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+  }
+
   switch (elem.type()) {
     case bson::NumberInt:
     case bson::NumberLong: {
@@ -2645,6 +2653,10 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
     memcpy(&src, blob->ptr + packlength, sizeof(char *));
     if (src) {
       dst = (uchar *)alloc_root(&blobroot, length);
+      if (!dst) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
       memmove(dst, src, length);
       memcpy(blob->ptr + packlength, &dst, sizeof(char *));
     }
