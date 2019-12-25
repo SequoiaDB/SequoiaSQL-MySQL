@@ -5,24 +5,24 @@ drop table if exists t1;
 create table t1 (a smallint primary key auto_increment);
 insert into t1 values(32767);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert into t1 values(32767-1);
 insert into t1 values(NULL);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 32766
 32767
 truncate table t1;
 insert into t1 values(32767),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 truncate table t1;
 insert into t1 values(32767-1),(NULL),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert ignore into t1 values(32767+1);
 Warnings:
@@ -31,7 +31,7 @@ select * from t1;
 a
 32767
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 drop table t1;
 #
 # Testing ranges with unsigned smallint
@@ -39,24 +39,24 @@ drop table t1;
 create table t1 (a smallint unsigned primary key auto_increment);
 insert into t1 values(65535);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert into t1 values(65535-1);
 insert into t1 values(NULL);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 65534
 65535
 truncate table t1;
 insert into t1 values(65535),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 truncate table t1;
 insert into t1 values(65535-1),(NULL),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert ignore into t1 values(65535+1);
 Warnings:
@@ -65,7 +65,7 @@ select * from t1;
 a
 65535
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 drop table t1;
 #
 # Testing ranges with integer
@@ -73,24 +73,24 @@ drop table t1;
 create table t1 (a int primary key auto_increment);
 insert into t1 values(2147483647);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert into t1 values(2147483647-1);
 insert into t1 values(NULL);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 2147483646
 2147483647
 truncate table t1;
 insert into t1 values(2147483647),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 truncate table t1;
 insert into t1 values(2147483647-1),(NULL),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert ignore into t1 values(2147483647+1);
 Warnings:
@@ -99,7 +99,7 @@ select * from t1;
 a
 2147483647
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 drop table t1;
 #
 # Testing ranges with unsigned integer
@@ -107,24 +107,24 @@ drop table t1;
 create table t1 (a int unsigned primary key auto_increment);
 insert into t1 values(4294967295);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert into t1 values(4294967295-1);
 insert into t1 values(NULL);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 4294967294
 4294967295
 truncate table t1;
 insert into t1 values(4294967295),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 truncate table t1;
 insert into t1 values(4294967295-1),(NULL),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert ignore into t1 values(4294967295+1);
 Warnings:
@@ -133,7 +133,7 @@ select * from t1;
 a
 4294967295
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 drop table t1;
 #
 # Testing ranges with bigint
@@ -141,24 +141,24 @@ drop table t1;
 create table t1 (a bigint primary key auto_increment);
 insert into t1 values(cast(9223372036854775807 as unsigned));
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert into t1 values(cast(9223372036854775807 as unsigned)-1);
 insert into t1 values(NULL);
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 9223372036854775806
 9223372036854775807
 truncate table t1;
 insert into t1 values(cast(9223372036854775807 as unsigned)),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 truncate table t1;
 insert into t1 values(cast(9223372036854775807 as unsigned)-1),(NULL),(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 truncate table t1;
 insert ignore into t1 values(cast(9223372036854775807 as unsigned)+1);
 Warnings:
@@ -167,7 +167,7 @@ select * from t1;
 a
 9223372036854775807
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 drop table t1;
 #
 # Testing ranges with unsigned bigint
@@ -201,7 +201,7 @@ INSERT IGNORE INTO t1 VALUES (32768);
 Warnings:
 Warning	1264	Out of range value for column 'a' at row 1
 INSERT INTO t1 VALUES (NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 SELECT * FROM t1;
 a
 2
@@ -214,7 +214,7 @@ create table t1 (a smallint primary key auto_increment);
 insert into t1 values(32766),(NULL);
 delete from t1 where a=32767;
 insert into t1 values(NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 drop table t1;
 create table t1 (pk int auto_increment primary key, f varchar(20));
 insert t1 (f) values ('a'), ('b'), ('c'), ('d');

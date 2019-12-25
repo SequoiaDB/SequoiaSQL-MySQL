@@ -1,4 +1,9 @@
 call mtr.add_suppression("table or database name 't-1'");
+#SEQUOIASQLMAINSTREAM-558
+--disable_query_log
+CALL mtr.add_suppression("Could not remove temporary table *");
+--enable_query_log
+
 #
 # Check some special create statements.
 #

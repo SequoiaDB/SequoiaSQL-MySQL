@@ -26,10 +26,10 @@ drop table t1;
 create table t1 (a tinyint not null auto_increment primary key, b char(20) default "default_value");
 insert into t1 values (126,"first"),(63, "middle"),(0,"last");
 #--error HA_ERR_AUTOINC_ERANGE
---error 40325
+--error 1467
 insert into t1 values (0,"error");
 #--error HA_ERR_AUTOINC_ERANGE
---error 40325
+--error 1467
 replace into t1 values (0,"error");
 replace into t1 values (126,"first updated");
 replace into t1 values (63,default);
