@@ -4543,7 +4543,7 @@ done:
       break;
     case SDB_IXM_DUP_KEY: {
       const char *idx_name = get_dup_info(error_obj);
-      my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key %s",
+      my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key '%s'",
                       MYF(0), m_dup_value.toString().c_str(), idx_name);
       break;
     }
