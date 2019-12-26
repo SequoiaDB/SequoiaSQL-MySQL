@@ -376,48 +376,67 @@ int conn_exec(sdbclient::sdb *connection, const char *sql,
 
 int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
                                 Sdb_statistics &stats) {
+  static const char NORMAL_CL_STATS_SQL[] =
+      "select T.Details.$[0].PageSize as PageSize, "
+      "T.Details.$[0].TotalDataPages as TotalDataPages,"
+      "T.Details.$[0].TotalIndexPages as TotalIndexPages, "
+      "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace, "
+      "T.Details.$[0].TotalRecords as TotalRecords "
+      "from $SNAPSHOT_CL as T "
+      "where T.NodeSelect='primary' and T.Name='%s.%s' split by T.Details";
+
+  static const char MAIN_CL_STATS_SQL[] =
+      "select CL.PageSize,"
+      "sum(CL.TotalDataPages) as TotalDataPages,"
+      "sum(CL.TotalIndexPages) as TotalIndexPages,"
+      "sum(CL.TotalDataFreeSpace) as TotalDataFreeSpace,"
+      "sum(CL.TotalRecords) as TotalRecords "
+      "from "
+      "("
+      "select Name from $SNAPSHOT_CATA "
+      "where MainCLName='%s.%s' "
+      ") as CATA "
+      "inner join "
+      "("
+      "select T.Name,"
+      "T.Details.$[0].PageSize as PageSize,"
+      "T.Details.$[0].TotalDataPages as TotalDataPages,"
+      "T.Details.$[0].TotalIndexPages as TotalIndexPages,"
+      "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace,"
+      "T.Details.$[0].TotalRecords as TotalRecords "
+      "from $SNAPSHOT_CL as T "
+      "where T.NodeSelect='primary' split by T.Details"
+      ") as CL "
+      "on CATA.Name=CL.Name";
+
   int rc = SDB_ERR_OK;
   sdbclient::sdbCursor cursor;
   bson::BSONObj obj;
-  std::stringstream ss;
+  char normal_cl_stats_sql[sizeof(NORMAL_CL_STATS_SQL) +
+                           SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  char main_cl_stats_sql[sizeof(MAIN_CL_STATS_SQL) +
+                         SDB_CL_FULL_NAME_MAX_SIZE] = {0};
 
   DBUG_ASSERT(NULL != cs_name);
   DBUG_ASSERT(strlength(cs_name) != 0);
 
-  ss << "select CL.PageSize,"
-     << "sum(CL.TotalDataPages) as TotalDataPages,"
-     << "sum(CL.TotalIndexPages) as TotalIndexPages,"
-     << "sum(CL.TotalDataFreeSpace) as TotalDataFreeSpace,"
-     << "sum(CL.TotalRecords) as TotalRecords "
-     << "from "
-     << "("
-     << "select Name from $SNAPSHOT_CATA "
-     << "where MainCLName="
-     << "'" << cs_name << "." << cl_name << "' "
-     << "or (IsMainCL is null and Name="
-     << "'" << cs_name << "." << cl_name << "')"
-     << ") as CATA "
-     << "inner join "
-     << "("
-     << "select T.Name,"
-     << "T.Details.$[0].PageSize as PageSize,"
-     << "T.Details.$[0].TotalDataPages as TotalDataPages,"
-     << "T.Details.$[0].TotalIndexPages as TotalIndexPages,"
-     << "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace,"
-     << "T.Details.$[0].TotalRecords as TotalRecords "
-     << "from $SNAPSHOT_CL as T "
-     << "where T.NodeSelect='primary' split by T.Details"
-     << ") as CL "
-     << "on CATA.Name=CL.Name";
-
-  std::string sql = ss.str();
-
-  rc = retry(boost::bind(conn_exec, &m_connection, sql.c_str(), &cursor));
+  // Try getting statistics as normal cl. If not, try main cl again.
+  sprintf(normal_cl_stats_sql, NORMAL_CL_STATS_SQL, cs_name, cl_name);
+  rc = retry(
+      boost::bind(conn_exec, &m_connection, normal_cl_stats_sql, &cursor));
   if (rc != SDB_ERR_OK) {
     goto error;
   }
-
   rc = cursor.next(obj, false);
+  if (SDB_DMS_EOC == rc) {
+    sprintf(main_cl_stats_sql, MAIN_CL_STATS_SQL, cs_name, cl_name);
+    rc = retry(
+        boost::bind(conn_exec, &m_connection, main_cl_stats_sql, &cursor));
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
+    rc = cursor.next(obj, false);
+  }
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -429,6 +448,7 @@ int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
   stats.total_records = obj.getField("TotalRecords").numberLong();
 
 done:
+  cursor.close();
   return rc;
 error:
   convert_sdb_code(rc);
