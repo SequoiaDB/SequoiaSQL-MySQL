@@ -145,10 +145,12 @@ static MYSQL_SYSVAR_INT(replica_size, sdb_replica_size, PLUGIN_VAR_OPCMDARG,
                         "(Default: 1)"
                         /*写操作需同步的副本数。取值范围为[-1, 7]。*/,
                         NULL, NULL, SDB_DEFAULT_REPLICA_SIZE, -1, 7, 0);
+// SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(use_autocommit, sdb_use_autocommit,
-                         PLUGIN_VAR_OPCMDARG,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
                          "Enable autocommit of SequoiaDB storage engine. "
-                         "(Default: ON)"
+                         "(Default: ON). This option is abandoned, please use "
+                         "autocommit instead."
                          /*是否启用自动提交模式(已弃用)。*/,
                          NULL, NULL, SDB_DEFAULT_USE_AUTOCOMMIT);
 static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
