@@ -1908,7 +1908,7 @@ SELECT * FROM t1;
 a1
 1
 INSERT INTO t1 VALUES (NULL);
-ERROR 23000: Duplicate entry '{ "a1": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a1": 1 }' for key 'PRIMARY'
 SELECT * FROM t1;
 a1
 1
@@ -1924,7 +1924,7 @@ SELECT * FROM t1;
 a1
 1
 INSERT INTO t1 VALUES (NULL);
-ERROR 23000: Duplicate entry '{ "a1": 1 }' for key a1
+ERROR 23000: Duplicate entry '{ "a1": 1 }' for key 'a1'
 SELECT * FROM t1;
 a1
 1
@@ -1970,7 +1970,7 @@ CREATE TRIGGER t1_bi BEFORE INSERT ON t1
 FOR EACH ROW
 SET NEW.a1 = 1;
 INSERT INTO t1 VALUES (NULL, 2);
-ERROR 23000: Duplicate entry '{ "a1": 1 }' for key a1
+ERROR 23000: Duplicate entry '{ "a1": 1 }' for key 'a1'
 SELECT * FROM t1;
 a1	a2
 1	1

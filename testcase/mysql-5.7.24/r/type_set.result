@@ -105,7 +105,7 @@ unique (set_unique_utf8)
 );
 INSERT INTO t1 ( set_unique_utf8 ) VALUES ( '' );
 INSERT INTO t1 ( set_unique_utf8 ) VALUES ( '' );
-ERROR 23000: Duplicate entry '{ "set_unique_utf8": 0 }' for key set_unique_utf8
+ERROR 23000: Duplicate entry '{ "set_unique_utf8": 0 }' for key 'set_unique_utf8'
 DROP TABLE t1;
 End of 5.0 tests
 CREATE TABLE bar(id
