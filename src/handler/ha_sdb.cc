@@ -971,9 +971,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       if (value < 0 && ((Field_num *)field)->unsigned_flag) {
         /* sdb sequence max value is 2^63 -1. */
         if (auto_inc_explicit_used) {
-          field->set_warning(Sql_condition::SL_WARNING,
-                             ER_WARN_DATA_OUT_OF_RANGE, 1);
-          rc = true;
+          rc = HA_ERR_AUTOINC_READ_FAILED;
           break;
         }
         // overflow, so store as DECIMAL
