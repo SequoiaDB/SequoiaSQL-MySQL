@@ -201,7 +201,7 @@ update ignore t1 set id=100 where id>2;
 affected rows: 1
 info: Rows matched: 2  Changed: 1  Warnings: 1
 Warnings:
-Warning	1062	Duplicate entry '{ "id": 100 }' for key PRIMARY
+Warning	1062	Duplicate entry '{ "id": 100 }' for key 'PRIMARY'
 update ignore t1 set id=1000 where id=2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
@@ -416,7 +416,7 @@ id	a
 2	3
 3	4
 update t1 set id=10;
-ERROR 23000: Duplicate entry '{ "id": 10 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "id": 10 }' for key 'PRIMARY'
 select * from t1 order by id;
 id	a
 1	2
@@ -444,7 +444,7 @@ id	a
 3	5
 begin;
 update t1 set id=10;
-ERROR 23000: Duplicate entry '{ "id": 10 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "id": 10 }' for key 'PRIMARY'
 rollback;
 select * from t1 order by id;
 id	a

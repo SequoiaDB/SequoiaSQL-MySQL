@@ -145,7 +145,7 @@ Warnings:
 Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
 Note	1003	/* select#1 */ select last_insert_id() AS `last_insert_id()`
 insert into t1 set i = 254;
-ERROR 23000: Duplicate entry '{ "i": 254 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "i": 254 }' for key 'PRIMARY'
 select last_insert_id();
 last_insert_id()
 255
@@ -177,7 +177,7 @@ select last_insert_id();
 last_insert_id()
 2
 insert into t1 values (NULL, 10);
-ERROR 23000: Duplicate entry '{ "b": 10 }' for key b
+ERROR 23000: Duplicate entry '{ "b": 10 }' for key 'b'
 select last_insert_id();
 last_insert_id()
 2
@@ -308,7 +308,7 @@ key (rowid), unique(val));
 replace into t1 (val) values ('1'),('2');
 replace into t1 (val) values ('1'),('2');
 insert into t1 (val) values ('1'),('2');
-ERROR 23000: Duplicate entry '{ "val": 1 }' for key val
+ERROR 23000: Duplicate entry '{ "val": 1 }' for key 'val'
 select * from t1;
 rowid	val
 3	1
@@ -318,7 +318,7 @@ CREATE TABLE t1 (t1 INT(10) PRIMARY KEY, t2 INT(10));
 INSERT INTO t1 VALUES(0, 0);
 INSERT INTO t1 VALUES(1, 1);
 ALTER TABLE t1 CHANGE t1 t1 INT(10) auto_increment;
-ERROR 23000: Duplicate entry '{ "t1": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "t1": 1 }' for key 'PRIMARY'
 DROP TABLE t1;
 create table t1 (a int primary key auto_increment, b int, c int, d timestamp default current_timestamp, unique(b),unique(c));
 insert into t1 values(null,1,1,now());
@@ -336,7 +336,7 @@ CREATE TABLE t1 ( a INT );
 INSERT INTO t1 VALUES (1), (1);
 CREATE TABLE t2 ( a INT AUTO_INCREMENT KEY );
 INSERT INTO t2 SELECT a FROM t1;
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 UPDATE t2 SET a = 2;
 SELECT a FROM t2;
 a

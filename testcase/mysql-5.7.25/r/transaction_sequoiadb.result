@@ -15,7 +15,7 @@ begin;
 insert into t1 values(1);
 begin;
 insert into t1 values(1);
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select * from t1;
 a
 insert into t1 values(2);
@@ -50,7 +50,7 @@ begin;
 insert into t1 values(1);
 begin;
 insert into t1 values(1);
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select * from t1;
 a
 insert into t1 values(2);
@@ -86,7 +86,7 @@ begin;
 insert into t1 values(1);
 begin;
 insert into t1 values(1);
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select * from t1;
 a
 insert into t1 values(2);
@@ -125,7 +125,7 @@ begin;
 insert into t1 values(1);
 begin;
 insert into t1 values(1);
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select * from t1;
 a
 insert into t1 values(2);

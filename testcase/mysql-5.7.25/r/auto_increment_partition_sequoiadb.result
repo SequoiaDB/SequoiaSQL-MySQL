@@ -85,7 +85,7 @@ a	b
 4	test10
 5	test15
 INSERT INTO t1 values (3,'test3');
-ERROR 23000: Duplicate entry '{ "a": 3, "b": "test3" }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 3, "b": "test3" }' for key 'PRIMARY'
 INSERT INTO t1(b) values ('abc');
 SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'test_auto_increment_partition' AND TABLE_NAME = 't1';
 AUTO_INCREMENT
@@ -99,7 +99,7 @@ a	b
 5	test15
 6	abc
 INSERT INTO t1 values (10,'abc'),(13,'abc'),(3,'test3'),(12,'abc');
-ERROR 23000: Duplicate entry '{ "a": 3, "b": "test3" }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 3, "b": "test3" }' for key 'PRIMARY'
 SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'test_auto_increment_partition' AND TABLE_NAME = 't1';
 AUTO_INCREMENT
 22
@@ -344,7 +344,7 @@ SELECT LAST_INSERT_ID();
 LAST_INSERT_ID()
 5
 INSERT INTO t1 VALUES (10, 'a'), (1, 'b'), (11, 'c');
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 SELECT LAST_INSERT_ID();
 LAST_INSERT_ID()
 5

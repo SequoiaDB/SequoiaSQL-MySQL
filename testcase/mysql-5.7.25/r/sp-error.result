@@ -431,7 +431,7 @@ set y = x;
 end|
 set @x = 0|
 call bug3279(@x)|
-ERROR 23000: Duplicate entry '{ "s1": 6 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "s1": 6 }' for key 'PRIMARY'
 select @x|
 @x
 0
