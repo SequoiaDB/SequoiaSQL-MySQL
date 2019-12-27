@@ -615,7 +615,7 @@ insert into t1 values (1,1),(2,2);
 insert into t2 values (1,1),(4,4);
 reset master;
 UPDATE t2,t1 SET t2.a=t1.a+2;
-ERROR 23000: Duplicate entry '{ "a": 3 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 3 }' for key 'PRIMARY'
 select * from t2;
 a	b
 1	1
@@ -626,7 +626,7 @@ insert into t1 values (1,2),(3,4),(4,4);
 insert into t2 values (1,2),(3,4),(4,4);
 reset master;
 UPDATE t2,t1  SET t2.a=t2.b where t2.a=t1.a;
-ERROR 23000: Duplicate entry '{ "a": 4 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 4 }' for key 'PRIMARY'
 drop table t1, t2;
 set @@session.binlog_format= @sav_binlog_format;
 drop table if exists t1, t2, t3;
@@ -638,7 +638,7 @@ insert into t2 values (1),(2);
 insert into t3 values (1),(2);
 reset master;
 delete t3.* from t2,t3 where t2.a=t3.a;
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 select count(*) from t1;
 count(*)
 0
@@ -778,7 +778,7 @@ UPDATE IGNORE t1, (SELECT 1 AS duplicate_id) AS t2 SET t1.id=t2.duplicate_id;
 affected rows: 0
 info: Rows matched: 2  Changed: 0  Warnings: 1
 Warnings:
-Warning	1062	Duplicate entry '{ "id": 1 }' for key PRIMARY
+Warning	1062	Duplicate entry '{ "id": 1 }' for key 'PRIMARY'
 # Check that no rows changed.
 SELECT * FROM t1;
 id
