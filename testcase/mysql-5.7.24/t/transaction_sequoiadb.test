@@ -10,47 +10,8 @@ connection default;
 create table t1(a int primary key)engine=sequoiadb; 
 connection con1;
 select @@autocommit;
-select @@sequoiadb_use_autocommit;
 connection con2;
 select @@autocommit;
-select @@sequoiadb_use_autocommit;
-#session1 insert
-connection con1;
-begin;
-insert into t1 values(1);
-
-#sesson2 insert error,then select and insert
-connection con2;
-begin;
---error 1062
-insert into t1 values(1); 
-select * from t1; 
-insert into t1 values(2);
-select * from t1;
-
-#session1 commit,then select
-connection con1;
-commit; 
-select * from t1; 
-
-#session2 commit,then select
-connection con2;
-commit; 
-select * from t1;
-
-connection default;
-drop table t1;
-
-connection default;
-set GLOBAL sequoiadb_use_autocommit=OFF;
-create table t1(a int primary key)engine=sequoiadb; 
-connection con1;
-select @@autocommit;
-select @@sequoiadb_use_autocommit;
-connection con2;
-select @@autocommit;
-select @@sequoiadb_use_autocommit;
-
 #session1 insert
 connection con1;
 begin;
@@ -81,52 +42,9 @@ drop table t1;
 connection con1;
 set session autocommit = 0;
 select @@autocommit;
-select @@sequoiadb_use_autocommit;
 connection con2;
 set session autocommit = 0;
-select @@sequoiadb_use_autocommit;
 select @@autocommit;
-connection default;
-create table t1(a int primary key)engine=sequoiadb; 
-#session1 insert
-connection con1;
-begin;
-insert into t1 values(1);
-
-#sesson2 insert error,then select and insert
-connection con2;
-begin;
---error 1062
-insert into t1 values(1); 
-select * from t1; 
-insert into t1 values(2);
-select * from t1;
-
-#session1 commit,then select
-connection con1;
-commit; 
-select * from t1; 
-commit;
-
-#session2 commit,then select
-connection con2;
-commit; 
-select * from t1;
-commit;
-
-connection default;
-drop table t1;
-
-#connection default;
-set GLOBAL sequoiadb_use_autocommit=ON;
-connection con1;
-set SESSION autocommit=0;
-select @@autocommit;
-select @@sequoiadb_use_autocommit;
-connection con2;
-set SESSION autocommit=0;
-select @@autocommit;
-select @@sequoiadb_use_autocommit;
 connection default;
 create table t1(a int primary key)engine=sequoiadb; 
 #session1 insert

@@ -2,50 +2,9 @@ create table t1(a int primary key)engine=sequoiadb;
 select @@autocommit;
 @@autocommit
 1
-select @@sequoiadb_use_autocommit;
-@@sequoiadb_use_autocommit
-1
 select @@autocommit;
 @@autocommit
 1
-select @@sequoiadb_use_autocommit;
-@@sequoiadb_use_autocommit
-1
-begin;
-insert into t1 values(1);
-begin;
-insert into t1 values(1);
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
-select * from t1;
-a
-insert into t1 values(2);
-select * from t1;
-a
-2
-commit;
-select * from t1;
-a
-1
-commit;
-select * from t1;
-a
-1
-2
-drop table t1;
-set GLOBAL sequoiadb_use_autocommit=OFF;
-create table t1(a int primary key)engine=sequoiadb;
-select @@autocommit;
-@@autocommit
-1
-select @@sequoiadb_use_autocommit;
-@@sequoiadb_use_autocommit
-0
-select @@autocommit;
-@@autocommit
-1
-select @@sequoiadb_use_autocommit;
-@@sequoiadb_use_autocommit
-0
 begin;
 insert into t1 values(1);
 begin;
@@ -71,55 +30,10 @@ set session autocommit = 0;
 select @@autocommit;
 @@autocommit
 0
-select @@sequoiadb_use_autocommit;
-@@sequoiadb_use_autocommit
-0
 set session autocommit = 0;
-select @@sequoiadb_use_autocommit;
-@@sequoiadb_use_autocommit
-0
 select @@autocommit;
 @@autocommit
 0
-create table t1(a int primary key)engine=sequoiadb;
-begin;
-insert into t1 values(1);
-begin;
-insert into t1 values(1);
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
-select * from t1;
-a
-insert into t1 values(2);
-select * from t1;
-a
-2
-commit;
-select * from t1;
-a
-1
-commit;
-commit;
-select * from t1;
-a
-1
-2
-commit;
-drop table t1;
-set GLOBAL sequoiadb_use_autocommit=ON;
-set SESSION autocommit=0;
-select @@autocommit;
-@@autocommit
-0
-select @@sequoiadb_use_autocommit;
-@@sequoiadb_use_autocommit
-1
-set SESSION autocommit=0;
-select @@autocommit;
-@@autocommit
-0
-select @@sequoiadb_use_autocommit;
-@@sequoiadb_use_autocommit
-1
 create table t1(a int primary key)engine=sequoiadb;
 begin;
 insert into t1 values(1);

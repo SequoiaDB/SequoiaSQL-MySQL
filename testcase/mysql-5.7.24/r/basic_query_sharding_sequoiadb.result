@@ -3570,10 +3570,10 @@ a	b
 3	fd
 SELECT * FROM t3 WHERE b IN (SELECT b FROM t2);
 a	b	c
-14	md	2010-12-22
 12	ope	2005-06-22
-20	erw	1997-07-21
+14	md	2010-12-22
 17	abc	1983-01-22
+20	erw	1997-07-21
 SELECT * FROM t1 WHERE a NOT IN (SELECT a FROM t2 WHERE a > 0);
 a	b
 -7	relqw
