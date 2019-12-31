@@ -174,12 +174,12 @@ drop table t1;
 #
 create table t1 (a bigint unsigned primary key auto_increment);
 insert into t1 values(18446744073709551615-1);
-ERROR 22003: Out of range value for column 'a' at row 1
+ERROR HY000: Failed to read auto-increment value from storage engine
 insert into t1 values(NULL);
 insert into t1 values(NULL);
 truncate table t1;
 insert into t1 values(18446744073709551615-1);
-ERROR 22003: Out of range value for column 'a' at row 1
+ERROR HY000: Failed to read auto-increment value from storage engine
 insert into t1 values(NULL);
 insert into t1 values(NULL);
 select * from t1;
@@ -188,12 +188,12 @@ a
 2
 truncate table t1;
 insert into t1 values(18446744073709551615),(NULL);
-ERROR 22003: Out of range value for column 'a' at row 1
+ERROR HY000: Failed to read auto-increment value from storage engine
 select * from t1;
 a
 truncate table t1;
 insert into t1 values(18446744073709551615-1),(NULL),(NULL);
-ERROR 22003: Out of range value for column 'a' at row 1
+ERROR HY000: Failed to read auto-increment value from storage engine
 drop table t1;
 #
 # Test auto increment with negative numbers

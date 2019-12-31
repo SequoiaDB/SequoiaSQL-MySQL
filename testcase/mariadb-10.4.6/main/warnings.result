@@ -322,12 +322,12 @@ RETURN x;
 END|
 
 SHOW TABLES WHERE f1(11) = 11;
-ERROR 23000: Duplicate entry '{ "a": 11 }' for key a
+ERROR 23000: Duplicate entry '{ "a": 11 }' for key 'a'
 
 SHOW WARNINGS;
 Level	Code	Message
 Note	4094	At line 4 in test.f1
-Error	1062	Duplicate entry '{ "a": 11 }' for key a
+Error	1062	Duplicate entry '{ "a": 11 }' for key 'a'
 
 DROP TABLE t1;
 DROP FUNCTION f1;

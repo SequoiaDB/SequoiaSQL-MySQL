@@ -208,11 +208,11 @@ a	b	c	d	e	f	g
 3	3	3	3	3	3	3
 #key b_c
 update t1 set b=2 ,c=2 where a=1;
-ERROR 23000: Duplicate entry '{ "b": 2 }' for key b
+ERROR 23000: Duplicate entry '{ "b": 2 }' for key 'b'
 update t1 set b=b+34, c=c+34 where e=1 and g=1 ;
 update t1 set b=35, c=35 where e=1 and g=1 ;
 update t1 set b=b+1, c=c+1 where a>0;
-ERROR 23000: Duplicate entry '{ "b": 3 }' for key b
+ERROR 23000: Duplicate entry '{ "b": 3 }' for key 'b'
 update ignore t1 set b=b+1, c=c+1 where a>0;
 select * from t1 ;
 a	b	c	d	e	f	g
@@ -230,11 +230,11 @@ insert into t1 values(1,1,1,1,1,1,1),(2,2,2,2,2,2,2),(3,3,3,3,3,3,3),(4,4,4,4,4,
 (5,5,5,5,5,5,5),(6,6,6,6,6,6,6),(7,7,7,7,7,7,7),(8,8,8,8,8,8,8),(9,9,9,9,9,9,9);
 #key b_f no hash key
 update t1 set b=2 , f=2 where a=1;
-ERROR 23000: Duplicate entry '{ "b": 2 }' for key b
+ERROR 23000: Duplicate entry '{ "b": 2 }' for key 'b'
 update  t1 set b=b+33, f=f+33 where e=1 and g=1;
 update t1 set b=34, f=34 where e=1 and g=1 ;
 update t1 set b=b+1, f=f+1 where a>0;
-ERROR 23000: Duplicate entry '{ "b": 3 }' for key b
+ERROR 23000: Duplicate entry '{ "b": 3 }' for key 'b'
 update ignore t1 set b=b+1, f=f+1 where a>0;
 select * from t1 ;
 a	b	c	d	e	f	g
@@ -252,14 +252,14 @@ insert into t1 values(1,1,1,1,1,1,1),(2,2,2,2,2,2,2),(3,3,3,3,3,3,3),(4,4,4,4,4,
 (5,5,5,5,5,5,5),(6,6,6,6,6,6,6),(7,7,7,7,7,7,7),(8,8,8,8,8,8,8),(9,9,9,9,9,9,9);
 #key e_g
 update t1 set e=2 , g=2 where a=1;
-ERROR 23000: Duplicate entry '{ "e": "2", "g": "2" }' for key e
+ERROR 23000: Duplicate entry '{ "e": "2", "g": "2" }' for key 'e'
 update  t1 set e=e+34, g=g+34 where a=1;
 update t1 set e=34, g=34 where e=1 and g=1 ;
 select * from t1 where  a=1;
 a	b	c	d	e	f	g
 1	1	1	1	35	1	35
 update t1 set e=e+1, g=g+1 where a>0;
-ERROR 23000: Duplicate entry '{ "e": "3", "g": "3" }' for key e
+ERROR 23000: Duplicate entry '{ "e": "3", "g": "3" }' for key 'e'
 update ignore t1 set e=e+1, g=g+1 where a>0;
 select * from t1 ;
 a	b	c	d	e	f	g

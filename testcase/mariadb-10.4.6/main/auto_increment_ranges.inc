@@ -193,14 +193,14 @@ let $range_max=18446744073709551615;
 
 #BUG #SEQUOIASQLMAINSTREAM-529
 eval create table t1 (a $type primary key auto_increment);
---error 1264
+--error 1467
 eval insert into t1 values($range_max-1);
 #--error ER_AUTOINC_READ_FAILED
 insert into t1 values(NULL);
 #--error ER_AUTOINC_READ_FAILED
 insert into t1 values(NULL);
 truncate table t1;
---error 1264
+--error 1467
 eval insert into t1 values($range_max-1);
 #--error ER_AUTOINC_READ_FAILED
 insert into t1 values(NULL);
@@ -208,13 +208,11 @@ insert into t1 values(NULL);
 insert into t1 values(NULL);
 select * from t1;
 truncate table t1;
-#--error ER_AUTOINC_READ_FAILED
---error 1264
+--error ER_AUTOINC_READ_FAILED
 eval insert into t1 values($range_max),(NULL);
 select * from t1;
 truncate table t1;
-#--error ER_AUTOINC_READ_FAILED
---error 1264
+--error ER_AUTOINC_READ_FAILED
 eval insert into t1 values($range_max-1),(NULL),(NULL);
 drop table t1;
 

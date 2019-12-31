@@ -3112,7 +3112,7 @@ replace into t1 values (5, 7);
 update t1 set a=6,b=ignore where a=5;
 insert into t1 values (ignore, ignore);
 insert into t1 values (ignore, ignore);
-ERROR 23000: Duplicate entry '{ "a": 0 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 0 }' for key 'PRIMARY'
 select * from t1 order by a;
 a	b
 0	3
@@ -3167,7 +3167,7 @@ execute repstmt using 5, 7;
 execute updstmt using ignore;
 execute insstmt using ignore, ignore;
 execute insstmt using ignore, ignore;
-ERROR 23000: Duplicate entry '{ "a": 0 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 0 }' for key 'PRIMARY'
 select * from t1 order by a;
 a	b
 0	3

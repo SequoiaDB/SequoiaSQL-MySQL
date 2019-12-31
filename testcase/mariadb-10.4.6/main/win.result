@@ -3094,9 +3094,9 @@ JOIN t2  ON (a.d1=t2.db_time AND a.id1=t2.au_nr))
 SELECT 1;
 END;//
 update t1 set ml_id=8884 where point_id=1;
-ERROR 23000: Duplicate entry '{ "ml_id": 8884, "point_id": 1 }' for key t1_ml_u
+ERROR 23000: Duplicate entry '{ "ml_id": 8884, "point_id": 1 }' for key 't1_ml_u'
 update t1 set ml_id=8884 where point_id=1;
-ERROR 23000: Duplicate entry '{ "ml_id": 8884, "point_id": 1 }' for key t1_ml_u
+ERROR 23000: Duplicate entry '{ "ml_id": 8884, "point_id": 1 }' for key 't1_ml_u'
 drop table t1, t2,t3;
 CREATE TABLE t1 (i INT, a char);
 INSERT INTO t1 VALUES (1, 'a'),(2, 'b');

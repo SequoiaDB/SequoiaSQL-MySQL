@@ -3613,7 +3613,7 @@ begin
 select bug12379();
 end|
 select bug12379()|
-ERROR 23000: Duplicate entry '{ "c1": "X" }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "c1": "X" }' for key 'PRIMARY'
 select 1|
 1
 1
@@ -3630,7 +3630,7 @@ select 3|
 3
 3
 call bug12379_3()|
-ERROR 23000: Duplicate entry '{ "c1": "X" }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "c1": "X" }' for key 'PRIMARY'
 select 4|
 4
 4
@@ -3685,7 +3685,7 @@ s1
 0
 1
 call bug6127()|
-ERROR 23000: Duplicate entry '{ "s1": 0 }' for key s1
+ERROR 23000: Duplicate entry '{ "s1": 0 }' for key 's1'
 select * from t3|
 s1
 0
@@ -7693,10 +7693,10 @@ declare x int;
 select id into x from t1 where id=5;
 end$$
 call p1();
-ERROR 23000: Duplicate entry '{ "id": 2 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "id": 2 }' for key 'PRIMARY'
 show warnings;
 Level	Code	Message
-Error	1062	Duplicate entry '{ "id": 2 }' for key PRIMARY
+Error	1062	Duplicate entry '{ "id": 2 }' for key 'PRIMARY'
 Note	4094	At line 5 in test.p1
 select * from t1;
 id

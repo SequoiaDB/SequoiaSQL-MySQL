@@ -2086,7 +2086,7 @@ CREATE TABLE t1 (d DATETIME DEFAULT CURRENT_TIMESTAMP, i INT) ENGINE=SequoiaDB;
 INSERT INTO t1 (i) VALUES (1),(1);
 LOCK TABLE t1 WRITE;
 ALTER TABLE t1 ADD UNIQUE(i);
-ERROR 23000: Duplicate entry '{ "i": 1 }' for key i
+ERROR 23000: Duplicate entry '{ "i": 1 }' for key 'i'
 UNLOCK TABLES;
 DROP TABLE t1;
 #

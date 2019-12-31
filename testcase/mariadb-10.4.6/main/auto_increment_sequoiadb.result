@@ -12,9 +12,9 @@ SELECT * FROM t1;
 a
 9223372036854775807
 INSERT INTO t1 VALUES (9223372036854775808);
-ERROR 22003: Out of range value for column 'a' at row 1
+ERROR HY000: Failed to read auto-increment value from storage engine
 INSERT INTO t1 VALUES (NULL);
-ERROR HY000: Sequence is exceeded
+ERROR HY000: Failed to read auto-increment value from storage engine
 SELECT * FROM t1;
 a
 9223372036854775807

@@ -77,7 +77,7 @@ l_orderkey	l_partkey	l_suppkey	l_linenumber	l_quantity	l_extendedprice	l_discoun
 1	68	9	2	36	34850.16	0.09	0.06	N	O	1996-04-12	1996-02-28	1996-04-20	TAKE BACK RETURN	MAIL	slyly bold pinto beans detect s
 1	68	9	2	36	34850.16	0.07	0.06	N	O	1996-04-12	1996-02-28	1996-04-20	TAKE BACK RETURN	MAIL	slyly bold pinto beans detect s
 alter table lineitem add primary key (l_orderkey, l_linenumber);
-ERROR 23000: Duplicate entry '{ "l_orderkey": 1, "l_linenumber": 2 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "l_orderkey": 1, "l_linenumber": 2 }' for key 'PRIMARY'
 show create table lineitem;
 Table	Create Table
 lineitem	CREATE TABLE `lineitem` (
@@ -171,7 +171,7 @@ c_custkey	c_name	c_address	c_nationkey	c_phone	c_acctbal	c_mktsegment	c_comment
 3	Customer#000000003	MG9kdTD2WBHm	1	11-719-748-3364	7498.12	AUTOMOBILE	special packages wake. slyly reg
 303	Customer#000000003	MG9kdTD2WBHm	1	11-719-748-3364	7498.12	AUTOMOBILE	special packages wake. slyly reg
 alter table customer add unique index i_c_name(c_name);
-ERROR 23000: Duplicate entry '{ "c_name": "Customer#000000003" }' for key i_c_name
+ERROR 23000: Duplicate entry '{ "c_name": "Customer#000000003" }' for key 'i_c_name'
 show create table customer;
 Table	Create Table
 customer	CREATE TABLE `customer` (
