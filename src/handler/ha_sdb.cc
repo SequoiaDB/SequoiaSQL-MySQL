@@ -3445,6 +3445,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
 done:
   DBUG_RETURN(rc);
 error:
+  handle_sdb_error(rc, MYF(0));
   goto done;
 }
 
