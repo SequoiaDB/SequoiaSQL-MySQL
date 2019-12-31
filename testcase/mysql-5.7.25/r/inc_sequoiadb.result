@@ -54,6 +54,8 @@ a	b
 -128	0
 UPDATE t1 SET a = a-1;
 ERROR 22003: Out of range value for column 'a' at row 1
+UPDATE t1 SET b = b-1;
+ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`b` - 1)'
 UPDATE t1 SET a = a+256;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET a = 256+a;
@@ -163,6 +165,8 @@ a	b
 -32767	1
 UPDATE t1 SET a = a-2;
 ERROR 22003: Out of range value for column 'a' at row 1
+UPDATE t1 SET b = b-2;
+ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`b` - 2)'
 UPDATE t1 SET a = a+65536;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET b = b+65535;
@@ -460,6 +464,8 @@ UPDATE t1 SET a = a-1;
 SELECT * FROM t1;
 a	b
 -9223372036854775808	18446744073709551615
+UPDATE t1 SET a = a-1;
+ERROR 22003: BIGINT value is out of range in '(`inc_sequoiadb`.`t1`.`a` - 1)'
 UPDATE t1 SET a = a+18446744073709551616;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET a = a+18446744073709551615;
@@ -470,6 +476,10 @@ UPDATE t1 SET a = 18446744073709551615+a;
 SELECT * FROM t1;
 a	b
 9223372036854775807	18446744073709551615
+UPDATE t1 SET a = a+1;
+ERROR 22003: BIGINT value is out of range in '(`inc_sequoiadb`.`t1`.`a` + 1)'
+UPDATE t1 SET a = 1+a;
+ERROR 22003: BIGINT value is out of range in '(1 + `inc_sequoiadb`.`t1`.`a`)'
 UPDATE t1 SET b = b-18446744073709551616;
 ERROR 22003: Out of range value for column 'b' at row 1
 UPDATE t1 SET b = b-18446744073709551615;
@@ -484,6 +494,10 @@ UPDATE t1 SET b = 18446744073709551615+b;
 SELECT * FROM t1;
 a	b
 9223372036854775807	18446744073709551615
+UPDATE t1 SET b = b+1;
+ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`b` + 1)'
+UPDATE t1 SET b = 1+b;
+ERROR 22003: BIGINT UNSIGNED value is out of range in '(1 + `inc_sequoiadb`.`t1`.`b`)'
 DELETE FROM t1;
 INSERT INTO t1 VALUES();
 UPDATE t1 SET a = a + 1;

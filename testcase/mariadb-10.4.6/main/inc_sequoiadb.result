@@ -55,7 +55,7 @@ a	b
 UPDATE t1 SET a = a-1;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET b = b-1;
-ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`b` - 1)'
+ERROR 22003: BIGINT UNSIGNED value is out of range in '`inc_sequoiadb`.`t1`.`b` - 1'
 UPDATE t1 SET a = a+256;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET a = 256+a;
@@ -166,7 +166,7 @@ a	b
 UPDATE t1 SET a = a-2;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET b = b-2;
-ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`b` - 2)'
+ERROR 22003: BIGINT UNSIGNED value is out of range in '`inc_sequoiadb`.`t1`.`b` - 2'
 UPDATE t1 SET a = a+65536;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET b = b+65535;
@@ -282,7 +282,7 @@ a	b
 UPDATE t1 SET a = a-16777216;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET b = b-16777216;
-ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`b` - 16777216)'
+ERROR 22003: BIGINT UNSIGNED value is out of range in '`inc_sequoiadb`.`t1`.`b` - 16777216'
 UPDATE t1 SET a = a+1;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET b = b+1;
@@ -393,7 +393,7 @@ a	b
 UPDATE t1 SET a = a-4294967296;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET b = b-4294967296;
-ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`b` - 4294967296)'
+ERROR 22003: BIGINT UNSIGNED value is out of range in '`inc_sequoiadb`.`t1`.`b` - 4294967296'
 UPDATE t1 SET a = a+1;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET b = b+1;
@@ -451,7 +451,7 @@ CREATE TABLE t1(a BIGINT, b BIGINT UNSIGNED);
 CREATE INDEX a ON t1(a);
 INSERT INTO t1 VALUES(9223372036854775807, 18446744073709551615);
 UPDATE t1 SET a = a-9223372036854775808;
-ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`a` - 9223372036854775808)'
+ERROR 22003: BIGINT UNSIGNED value is out of range in '`inc_sequoiadb`.`t1`.`a` - 9223372036854775808'
 UPDATE t1 SET a = a-9223372036854775807;
 SELECT * FROM t1;
 a	b
@@ -465,7 +465,7 @@ SELECT * FROM t1;
 a	b
 -9223372036854775808	18446744073709551615
 UPDATE t1 SET a = a-1;
-ERROR 22003: BIGINT value is out of range in '(`inc_sequoiadb`.`t1`.`a` - 1)'
+ERROR 22003: BIGINT value is out of range in '`inc_sequoiadb`.`t1`.`a` - 1'
 UPDATE t1 SET a = a+18446744073709551616;
 ERROR 22003: Out of range value for column 'a' at row 1
 UPDATE t1 SET a = a+18446744073709551615;
@@ -477,9 +477,9 @@ SELECT * FROM t1;
 a	b
 9223372036854775807	18446744073709551615
 UPDATE t1 SET a = a+1;
-ERROR 22003: BIGINT value is out of range in '(`inc_sequoiadb`.`t1`.`a` + 1)'
+ERROR 22003: BIGINT value is out of range in '`inc_sequoiadb`.`t1`.`a` + 1'
 UPDATE t1 SET a = 1+a;
-ERROR 22003: BIGINT value is out of range in '(1 + `inc_sequoiadb`.`t1`.`a`)'
+ERROR 22003: BIGINT value is out of range in '1 + `inc_sequoiadb`.`t1`.`a`'
 UPDATE t1 SET b = b-18446744073709551616;
 ERROR 22003: Out of range value for column 'b' at row 1
 UPDATE t1 SET b = b-18446744073709551615;
@@ -495,9 +495,9 @@ SELECT * FROM t1;
 a	b
 9223372036854775807	18446744073709551615
 UPDATE t1 SET b = b+1;
-ERROR 22003: BIGINT UNSIGNED value is out of range in '(`inc_sequoiadb`.`t1`.`b` + 1)'
+ERROR 22003: BIGINT UNSIGNED value is out of range in '`inc_sequoiadb`.`t1`.`b` + 1'
 UPDATE t1 SET b = 1+b;
-ERROR 22003: BIGINT UNSIGNED value is out of range in '(1 + `inc_sequoiadb`.`t1`.`b`)'
+ERROR 22003: BIGINT UNSIGNED value is out of range in '1 + `inc_sequoiadb`.`t1`.`b`'
 DELETE FROM t1;
 INSERT INTO t1 VALUES();
 UPDATE t1 SET a = a + 1;
@@ -777,7 +777,7 @@ insert into t1 values (1, 0, 0, 1, 1);
 insert into t1 values (123.456E+15, 123.456E+15, NULL, 123.456E+15, NULL);
 insert into t1 values (-123456E-15, -123456E-15, -12345678998765.55, 123456E-15, 12345678998765.55);
 update t1 set id = id - 8E300 where id < -0.1;
-ERROR 22003: DOUBLE value is out of range in '(`inc_sequoiadb`.`t1`.`id` - 8E300)'
+ERROR 22003: DOUBLE value is out of range in '`inc_sequoiadb`.`t1`.`id` - 8E300'
 update t1 set d2 = d2 + 11E+30 where id < 1;
 ERROR 22003: Out of range value for column 'd2' at row 1
 update t1 set d1 = d1 - 1.7976931348623157E+308 where id = 0;
