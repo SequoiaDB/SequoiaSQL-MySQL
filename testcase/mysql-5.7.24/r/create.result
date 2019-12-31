@@ -898,7 +898,7 @@ a	b
 drop table t2;
 CREATE TEMPORARY TABLE t2 (a int, b int, primary key (a)) ENGINE=SequoiaDB;
 INSERT INTO t2 SELECT * FROM t1;
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key PRIMARY
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 SELECT * from t2;
 a	b
 drop table t1,t2;
