@@ -1052,19 +1052,20 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       tm_val.tm_mday = date_val % 100;
       date_val = date_val / 100;
       mon = date_val % 100;
-      // wrong date format:'xxxx-00-00'
-      if (0 == tm_val.tm_mday || 0 == mon) {
+      date_val = date_val / 100;
+      tm_val.tm_year = date_val - 1900;
+      /* wrong date format:'xxxx-00-00'
+      if date format is '0000-00-00', it will pass */
+      if ((0 == tm_val.tm_mday || 0 == mon) && (0 != date_val)) {
         rc = ER_TRUNCATED_WRONG_VALUE;
         my_printf_error(rc,
-                        "Incorrect date value: '%04lld-%02lld-%02lld' for "
+                        "Incorrect date value: '%04lld-%02lld-%02d' for "
                         "column '%s' at row %lu",
-                        MYF(0), date_val / 100, mon, tm_val.tm_mday,
+                        MYF(0), date_val, mon, tm_val.tm_mday,
                         sdb_field_name(field), sdb_thd_current_row(ha_thd()));
         goto error;
       }
       tm_val.tm_mon = mon - 1;
-      date_val = date_val / 100;
-      tm_val.tm_year = date_val - 1900;
       tm_val.tm_wday = 0;
       tm_val.tm_yday = 0;
       tm_val.tm_isdst = 0;
