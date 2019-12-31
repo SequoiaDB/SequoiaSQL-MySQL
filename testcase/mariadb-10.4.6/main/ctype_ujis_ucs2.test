@@ -181,7 +181,7 @@ insert into t1 set ujis=0x7F, name='U+007F DELETE';
 # Fill table t1 with codes "[A1..FE][A1..FE]" using helper table t2.
 # 8836 codes total:
 #
-insert into t1 (ujis) select concat(t21.code,t22.code) from t2 t21, t2 t22 order by 1;
+#insert into t1 (ujis) select concat(t21.code,t22.code) from t2 t21, t2 t22 order by 1;
 
 update t1 set name='U+3000 IDEOGRAPHIC SPACE' where ujis=0xA1A1;
 update t1 set name='U+3001 IDEOGRAPHIC COMMA' where ujis=0xA1A2;
@@ -883,7 +883,7 @@ insert into t1 (ujis,name) values (0x8EDF,'U+FF9F HALFWIDTH KATAKANA SEMI-VOICED
 # Fill table t1 with codes [8F][A1..FE][A1..FE] using helper table t2,
 # 8836 codes total
 #
-insert into t1 (ujis) select concat(0x8F,t21.code,t22.code) from t2 t21, t2 t22 order by 1;
+#insert into t1 (ujis) select concat(0x8F,t21.code,t22.code) from t2 t21, t2 t22 order by 1;
 
 update t1 set name='U+02D8 BREVE' where ujis=0x8FA2AF;
 update t1 set name='U+02C7 CARON (Mandarin Chinese third tone)' where ujis=0x8FA2B0;
