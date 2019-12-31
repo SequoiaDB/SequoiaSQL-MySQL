@@ -1764,6 +1764,9 @@ Warning	1264	Out of range value for column 'i' at row 1
 SELECT * FROM t1;
 i
 0
+UPDATE t1 SET i = i - 1;
+Warnings:
+Warning	1264	Out of range value for column 'i' at row 1
 SELECT * FROM t1;
 i
 0
