@@ -31,7 +31,7 @@ set @@sql_mode='STRICT_ALL_TABLES';
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-INSERT INTO t1 VALUES('2004-01-03'),('2004-0-31');
+INSERT INTO t1 VALUES('2004-01-03');
 set @@sql_mode='STRICT_ALL_TABLES,NO_ZERO_IN_DATE';
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
@@ -51,7 +51,6 @@ ERROR 22007: Incorrect date value: '0000-00-00' for column 'col1' at row 1
 INSERT IGNORE INTO t1 VALUES('0000-00-00');
 Warnings:
 Warning	1264	Out of range value for column 'col1' at row 1
-INSERT INTO t1 VALUES ('2004-0-30');
 INSERT INTO t1 VALUES ('2004-2-30');
 ERROR 22007: Incorrect date value: '2004-2-30' for column 'col1' at row 1
 set @@sql_mode='STRICT_ALL_TABLES,ALLOW_INVALID_DATES';
@@ -71,11 +70,9 @@ col1
 2004-02-29
 0000-10-31
 2004-01-03
-2003-12-31
 0000-00-00
 0000-00-00
 0000-00-00
-2003-12-30
 2004-03-01
 2004-02-29
 0000-00-00
