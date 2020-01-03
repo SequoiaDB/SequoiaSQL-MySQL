@@ -435,8 +435,15 @@ void sdb_set_affected_rows(THD *thd) {
     if (replace_on_dup) {
       affected_num = inserted_num + dup_num;
     } else {
-      push_warning_printf(thd, Sql_condition::SL_WARNING, ER_DUP_ENTRY,
-                          "%lld duplicated records were ignored", dup_num);
+#ifdef IS_MARIADB
+      if (!thd->variables.old_behavior &
+          OLD_MODE_NO_DUP_KEY_WARNINGS_WITH_IGNORE) {
+#elif IS_MYSQL
+      {
+#endif
+        push_warning_printf(thd, Sql_condition::SL_WARNING, ER_DUP_ENTRY,
+                            "%lld duplicated records were ignored", dup_num);
+      }
       affected_num = inserted_num - dup_num;
     }
     my_snprintf(buff, sizeof(buff), ER(ER_INSERT_INFO), (long)inserted_num,
