@@ -142,11 +142,8 @@ class OptionsMgr:
         if len(target) != 2:
             print("The build target '{}' is invalid".format(self.args.build))
             return 1
-        if 'mysql' != target[0].lower() and \
-           'mariadb' != target[0].lower():
+        if 'mysql' != target[0].lower():
            print("The build target '{}' is invalid".format(self.args.build))
-        elif 'mariadb' == target[0].lower():
-            self.__projectType = 'MARIADB'
         self.__projectVersion = target[1]
 
         if ((not self.needInstall()) and

@@ -27,20 +27,13 @@ option(PACK_TEST "Set to true if you want to include testcases in the run
                   package" ON)
 
 # Find out with target(s) to be build.
-if(MYSQL AND MARIADB)
-   message(FATAL_ERROR "Can only build one type at the same time")
-elseif(MARIADB)
-   set(SDB_PROJECT_TYPE "mariadb" CACHE STRING "Project type is MariaDB")
-   set(PROJECT_NAME "SequoiaSQL-MariaDB")
-   set(SQL_VERSION "${MARIADB}")
-else()
-   set(SDB_PROJECT_TYPE "mysql" CACHE STRING "Project type is MySQL")
-   if(NOT MYSQL)
-      set(MYSQL "5.7.25")
-   endif()
-   set(PROJECT_NAME "SequoiaSQL-MySQL")
+if(MYSQL)
    set(SQL_VERSION "${MYSQL}")
+else()
+   set(MYSQL "5.7.25")
 endif()
+set(PROJECT_NAME "SequoiaSQL-MySQL")
+set(SDB_PROJECT_TYPE "mysql" CACHE STRING "Project type is MySQL")
 
 #if(NOT (${CMAKE_VERSION} VERSION_LESS "3.0"))
 #   cmake_policy(SET CMP0048 OLD)
@@ -76,10 +69,6 @@ if(DOT_NUMBER EQUAL 2)
 else()
    unset(PROJECT_VERSION_PATCH)
    set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
-endif()
-
-if(SDB_PROJECT_TYPE STREQUAL "mariadb")
-   add_definitions(-DOPENSSL_ROOT_DIR="${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
 endif()
 
 # Trigger the sdb version tool building, and use it to get the version.
