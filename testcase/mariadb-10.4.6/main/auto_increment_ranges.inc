@@ -217,23 +217,25 @@ eval insert into t1 values($range_max-1),(NULL),(NULL);
 drop table t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-530
-#--echo #
-#--echo # Test IGNORE and strict mode
-#--echo #
-#create table t1 (a smallint primary key auto_increment);
-#insert ignore into t1 values(32766),(NULL),(NULL),(1);
-#select * from t1;
-#truncate table t1;
-#
-#set @org_mode=@@sql_mode;
-#set @@sql_mode='ansi,traditional';
-#insert ignore into t1 values(32766),(NULL),(NULL);
-#truncate table t1;
-##--error HA_ERR_AUTOINC_ERANGE
-#--error 1467
-#insert into t1 values(32766),(NULL),(NULL);
-#set @@sql_mode=@org_mode;
-#drop table t1;
+--echo #
+--echo # Test IGNORE and strict mode
+--echo #
+create table t1 (a smallint primary key auto_increment);
+--error 1467
+insert ignore into t1 values(32766),(NULL),(NULL),(1);
+select * from t1;
+truncate table t1;
+
+set @org_mode=@@sql_mode;
+set @@sql_mode='ansi,traditional';
+--error 1467
+insert ignore into t1 values(32766),(NULL),(NULL);
+truncate table t1;
+#--error HA_ERR_AUTOINC_ERANGE
+--error 1467 
+insert into t1 values(32766),(NULL),(NULL);
+set @@sql_mode=@org_mode;
+drop table t1;
 
 --echo #
 --echo # Test auto increment with negative numbers

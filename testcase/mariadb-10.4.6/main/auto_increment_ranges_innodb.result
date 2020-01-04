@@ -196,6 +196,24 @@ insert into t1 values(18446744073709551615-1),(NULL),(NULL);
 ERROR HY000: Failed to read auto-increment value from storage engine
 drop table t1;
 #
+# Test IGNORE and strict mode
+#
+create table t1 (a smallint primary key auto_increment);
+insert ignore into t1 values(32766),(NULL),(NULL),(1);
+ERROR HY000: Failed to read auto-increment value from storage engine
+select * from t1;
+a
+truncate table t1;
+set @org_mode=@@sql_mode;
+set @@sql_mode='ansi,traditional';
+insert ignore into t1 values(32766),(NULL),(NULL);
+ERROR HY000: Failed to read auto-increment value from storage engine
+truncate table t1;
+insert into t1 values(32766),(NULL),(NULL);
+ERROR HY000: Failed to read auto-increment value from storage engine
+set @@sql_mode=@org_mode;
+drop table t1;
+#
 # Test auto increment with negative numbers
 #
 CREATE TABLE t1 (a INTEGER AUTO_INCREMENT, PRIMARY KEY (a));
