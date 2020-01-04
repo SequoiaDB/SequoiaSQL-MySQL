@@ -2189,7 +2189,7 @@ error:
 }
 
 int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
-  DBUG_ENTER("sdb_copy_cl");
+  DBUG_ENTER("sdb_copy_index");
   int rc = 0;
   uint i = 0;
   std::vector<bson::BSONObj> infos;

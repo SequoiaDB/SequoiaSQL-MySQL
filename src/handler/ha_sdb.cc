@@ -4227,6 +4227,13 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
+  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && conn->is_transaction_on()) {
+    rc = conn->commit_transaction();
+    if (rc != 0) {
+      goto error;
+    }
+  }
+
   rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
   if (0 != rc) {
