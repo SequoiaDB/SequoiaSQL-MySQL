@@ -331,6 +331,16 @@ install(FILES "${CMAKE_BINARY_DIR}/sdb_doc.cnf"
         RENAME "sample.cnf")
 
 # Extra install options.
+if(MYSQL EQUAL "5.7.28")
+execute_process(COMMAND bash -c ${updateCmd})
+   set(updateCmd "sed -ie \"s@\\(^[ ]\\{1,\\}\\)\\bREADME@\\1${SQL_SOURCE_ROOT}/README@\" ${SQL_SOURCE_ROOT}/CMakeLists.txt")
+   execute_process(COMMAND bash -c ${updateCmd})
+   set(updateCmd "sed -ie \"s@\\(^[ ]\\{1,\\}\\)\\bLICENSE@\\1${SQL_SOURCE_ROOT}/LICENSE@\" ${SQL_SOURCE_ROOT}/CMakeLists.txt")
+   execute_process(COMMAND bash -c ${updateCmd})
+   set(updateCmd "")
+   string(CONCAT updateCmd "sed -ie " "'s@\${CMAKE_SOURCE_DIR}/README@\${SQL_SOURCE_ROOT}/README@' " "${SQL_SOURCE_ROOT}/mysql-test/CMakeLists.txt")
+   execute_process(COMMAND bash -c ${updateCmd})
+endif()
 set(PROJECT_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/package")
 set(PROJECT_PACKAGE_SUB_DIR "${PROJECT_PACKAGE_DIR}/${SDB_PROJECT_TYPE}")
 install(PROGRAMS "${PROJECT_PACKAGE_SUB_DIR}/sdb_sql_ctl"
