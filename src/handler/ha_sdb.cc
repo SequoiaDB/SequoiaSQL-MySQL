@@ -4722,7 +4722,7 @@ static struct st_mysql_storage_engine sdb_storage_engine = {
 #if defined IS_MYSQL
 mysql_declare_plugin(sequoiadb) {
 #elif defined IS_MARIADB
-maria_declare_plugin(sequoiadb){
+maria_declare_plugin(sequoiadb) {
 #endif
   MYSQL_STORAGE_ENGINE_PLUGIN, &sdb_storage_engine, "SequoiaDB",
       "SequoiaDB Inc.", sdb_plugin_info, PLUGIN_LICENSE_GPL,
@@ -4732,6 +4732,10 @@ maria_declare_plugin(sequoiadb){
       NULL,          /* status variables */
       sdb_sys_vars,  /* system variables */
       NULL,          /* config options */
-      0,             /* flags */
+#if defined IS_MYSQL
+      0, /* flags */
+#elif defined IS_MARIADB
+      MariaDB_PLUGIN_MATURITY_STABLE, /* maturity */
+#endif
 }
 mysql_declare_plugin_end;
