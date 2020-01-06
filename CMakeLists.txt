@@ -335,6 +335,8 @@ set(PROJECT_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/package")
 set(PROJECT_PACKAGE_SUB_DIR "${PROJECT_PACKAGE_DIR}/${SDB_PROJECT_TYPE}")
 install(PROGRAMS "${PROJECT_PACKAGE_SUB_DIR}/sdb_sql_ctl"
         DESTINATION "bin")
+install(PROGRAMS "${PROJECT_PACKAGE_SUB_DIR}/sequoiasql-${SDB_PROJECT_TYPE}-daemon"
+        DESTINATION "bin")
 install(PROGRAMS "${PROJECT_PACKAGE_DIR}/common/compatible.sh"
         DESTINATION "./")
 install(PROGRAMS "${PROJECT_PACKAGE_DIR}/common/preUninstall.sh"
