@@ -311,13 +311,19 @@ else()
    message(STATUS "Build release")
 endif()
 
+if(SDB_BUILT_IN)
+   set(BUILT_IN 1)
+else()
+   set(BUILT_IN 0)
+endif()
+
 set(TARGET_SOURCE_DIR "${CMAKE_SOURCE_DIR}/sql-src/${target}")
 add_subdirectory(${SQL_SOURCE_ROOT} ${CMAKE_BINARY_DIR}/${SQL_SOURCE_DIR_NAME})
 
 # Generate the configuration file
 execute_process(
-   COMMAND python ${CMAKE_SOURCE_DIR}/tools/sdb_doc_generator.py ${SDB_PROJECT_TYPE}
-           -o ${CMAKE_BINARY_DIR}
+   COMMAND python ${CMAKE_SOURCE_DIR}/tools/sdb_doc_generator.py 
+           -t ${SDB_PROJECT_TYPE} -o ${CMAKE_BINARY_DIR} -b ${BUILT_IN}
 )
 
 install(FILES "${CMAKE_BINARY_DIR}/sdb_doc.cnf"
