@@ -18,8 +18,10 @@
 
 import os
 import sys
-import getopt
 import re
+import optparse
+
+
 
 ERR_OK = 0
 ERR_INVALID_ARG = 1
@@ -27,27 +29,39 @@ ERR_PARSE = 2
 
 OUT_FILE_NAME = 'sdb_doc'
 
-DFT_ARG_LANG = 'cn'
-DFT_ARG_OUT = '.'
-DFT_ARG_FORMAT = 'all'
+DESCRIPTION = '''sdb_doc_generator - generates the default configure or \
+document from the source code FILE('../src/handler/ha_sdb_conf.cc' by default).
+'''
 
-MY_CNF_DEFAULT = \
-"[client]\n\
-default_character_set=utf8mb4\n\
-\n\
-[mysqld]\n\
-max_connections=1024\n\
-max_prepared_stmt_count=128000\n\
-sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION\n\
-character_set_server=utf8mb4\n\
-collation_server=utf8mb4_bin\n\
-default_storage_engine=SequoiaDB\n"
+USAGE = "Usage: %prog [OPTIONS] [FILE]"
+EXTENDED_HELP = '''\
+Exit status:
+ 0  if OK,
+ 1  if invalid arguments,
+ 2  if failed to parse document.
+'''
 
-MARIADB_CNF_APPEND = \
-"join_cache_level=8\n\
-optimizer_switch=mrr=on,mrr_cost_based=off,join_cache_incremental=on,join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=on\n"
+MY_CNF_DEFAULT = '''\
+[client]\n
+default_character_set=utf8mb4\n
+\n
+[mysqld]\n
+max_connections=1024\n
+max_prepared_stmt_count=128000\n
+sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,\
+NO_ENGINE_SUBSTITUTION\n
+character_set_server=utf8mb4\n
+collation_server=utf8mb4_bin
+'''
 
-project_dir = ''
+MY_CNF_DEFAULT_STORAGE = "\ndefault_storage_engine=SequoiaDB\n"
+
+MARIADB_CNF_APPEND = '''
+join_cache_level=8\n
+optimizer_switch=mrr=on,mrr_cost_based=off,join_cache_incremental=on,\
+join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=on
+'''
+
 is_mariadb = False
 
 def enum(*args):
@@ -57,8 +71,12 @@ def enum(*args):
 FormatType = enum('MARKDOWN', 'CNF', 'ALL')
 Language = enum('ENGLISH', 'CHINESE')
 
-
-
+class DocParser(optparse.OptionParser):
+    def print_help(self, output=None):
+        optparse.OptionParser.print_help(self, output)
+    def format_epilog(self, formatter):
+        return self.epilog if self.epilog is not None else ''
+        
 class DocTuple:
     def __init__(self):
         self.name = ""
@@ -89,7 +107,7 @@ class DocTuple:
         if fmt == FormatType.MARKDOWN:
             if language == Language.CHINESE:
               descript = self.desp_cn
-            elif language == language.ENGLISH:
+            elif language == Language.ENGLISH:
               descript = self.desp_en
             return "|" + self.name + "|" + self.type + "|" + self.default + \
                     "|" + self.online + "|" + self.scope + "|" + descript + "|\n"
@@ -105,8 +123,6 @@ class DocTuple:
         else:
             print("ERROR: Unknown format:" + fmt)
             return None
-
-
 
 class DocExtractor:
     def __init__(self, language):
@@ -282,8 +298,6 @@ class DocExtractor:
                         skip_next = False
         return self.tuples;
 
-
-
 class DocExporter:
     def __init__(self, language, fmt):
         self.language = language
@@ -296,12 +310,13 @@ class DocExporter:
             suffix = '.cnf'
 
         if not os.path.isdir(out_dir):
-            print("WARN: Specified output directory is invalid. Using current directory.")
+            print("WARN: Specified output directory is invalid. Using "
+                  "current directory.")
             out_dir = DFT_ARG_OUT
 
         return out_dir + '/' + OUT_FILE_NAME + suffix
 
-    def export(self, tuples, out_dir):
+    def export(self, tuples, out_dir, output_contex):
         if self.fmt == FormatType.MARKDOWN or self.fmt == FormatType.ALL:
             path = self.get_file_path(out_dir, FormatType.MARKDOWN)
             with open(path, 'w') as f:
@@ -313,100 +328,136 @@ class DocExporter:
         if self.fmt == FormatType.CNF or self.fmt == FormatType.ALL:
             path = self.get_file_path(out_dir, FormatType.CNF)
             with open(path, 'w') as f:
-                f.write(MY_CNF_DEFAULT)
-                global is_mariadb
-                if is_mariadb:
-                  f.write(MARIADB_CNF_APPEND)
+                f.write(output_contex)
                 f.write("\n")
                 for t in tuples:
                     f.write(t.toString(FormatType.CNF))
-
-
-def print_help():
-    print('Usage: python sdb_doc_generator.py [OPTIONS]')
-    print('This tools generates the document from the source code')
-    print('')
-    print('Options:')
-    print('  -l, --language         Document language. Options: cn(Chinese), en(English). ')
-    print('                         Default: cn.')
-    print('  -o, --out              Output directory. Use current directory by default.')
-    print('  -f, --format           Document format. Options: md(MarkDown), cnf(my.cnf ')
-    print('                         format), all(All above). Default: all.')
-    print('')
-    print('Exit status:')
-    print(' 0  if OK,')
-    print(' 1  if invalid arguments,')
-    print(' 2  if failed to parse document,')
-
-
-
+#    pdb.set_trace()
 def main():
-    arg_language = DFT_ARG_LANG
-    arg_out = DFT_ARG_OUT
-    arg_format = DFT_ARG_FORMAT
-
-    if len(sys.argv) < 2:
-        print("Argument number is not as expected")
-        return 1
-
-    # Get directory of this script.
-    current_dir = os.path.abspath(os.path.dirname(__file__))
-    global project_dir
-    project_dir = os.path.join(current_dir, "../")
     global is_mariadb
-    is_mariadb = ("mariadb" == sys.argv[1])
-    argv = sys.argv[1:]
+    # Setup the command parser
+    program = os.path.basename(sys.argv[0]).replace(".py", "")
+    parser = DocParser(
+        description = DESCRIPTION,
+        usage = USAGE,
+        epilog = EXTENDED_HELP,
+        prog = program
+    )
+    #Add --language option
+    parser.add_option("-l", "--language", action='store', type="string",
+                      default='cn', dest="language",
+                      help="Document language. Options: cn(Chinese), "
+                           "en(English).")
+    #Add --out option
+    parser.add_option("-o", "--out", action='store', type="string",
+                      default='.', dest="output",
+                      help="Output directory. Use current directory "
+                           "by default.")
+    
+    #Add --format option
+    parser.add_option("-f", "--format", action='store', type="string",
+                      default='all', dest="format",
+                      help="Document format. Options: md(MarkDown),"
+                           "cnf(my.cnf format), all(All above). Default: all." )
+    #Add --project-type option
+    parser.add_option("-t", "--project-type", action='store', type="string",
+                      default='mysql', dest="project_type",
+                      help="Project type. Options: mysql, mariadb. "
+                           "Default: mysql")
+                           
+    #Add --built-in option
+    parser.add_option("-b", "--built-in", action='store', type=int,
+                      default=1, dest="built_in",
+                      help="Document output based on built-in storage or not. "
+                           "1: built-in sequoiadb storage. "
+                           "0: storage install manually."
+                           "Default: 1")
 
-    try:
-        opts, args = getopt.getopt(argv, "hl:o:f:",["help","language=","out=","format="])
-    except getopt.GetoptError:
-        print("ERROR: Unknown Options.")
-        print_help()
-        sys.exit(ERR_INVALID_ARG)
-
-    for opt, arg in opts:
-        if opt in ("-l", "--language"):
-            arg_language = arg
-        elif opt in ("-o", "--out"):
-            arg_out = arg
-        elif opt in ("-f", "--format"):
-            arg_format = arg
-        elif opt in ("-h", "--help"):
-            print_help()
-            sys.exit()
-        else:
-            print_help()
-            sys.exit(ERR_INVALID_ARG)
-
-    if arg_language == 'cn':
-        language_type = Language.CHINESE
-    elif arg_language == 'en':
-        language_type = Language.ENGLISH
+    opt, args = parser.parse_args()         
+    if opt.language == 'cn':
+        language = Language.CHINESE
+    elif opt.language == 'en':
+        language = Language.ENGLISH
     else:
         print("ERROR: Invalid language option. Please use 'cn' or 'en'")
         sys.exit(ERR_INVALID_ARG)
-
-    if arg_format == 'all':
-        format_type = FormatType.ALL
-    elif arg_format == 'md':
-        format_type = FormatType.MARKDOWN
-    elif arg_format == 'cnf':
-        format_type = FormatType.CNF
+    
+    if opt.format == 'all':
+        format = FormatType.ALL
+    elif opt.format == 'md':
+        format = FormatType.MARKDOWN
+    elif opt.format == 'cnf':
+        format = FormatType.CNF
     else:
         print("ERROR: Invalid format option. Please use 'md', 'cnf' or 'all'")
         sys.exit(ERR_INVALID_ARG)
+        
+    if not opt.output:
+       output_dir = default_output_dir
+    else:
+       output_dir=opt.output
+       
+    if os.path.isdir(output_dir) == 0:
+        print("ERROR: Output directory '{dir}' is not a directory."
+              .format(dir=output_dir))
+        sys.exit(ERR_INVALID_ARG)
+        
+    # Get directory of this script.
+    if len(args) > 1:
+        print("ERROR: Invalid FILE argument. Please input correct source code"
+              " FILE path.")
+        sys.exit(ERR_INVALID_ARG)
 
-    conf_src_path = os.path.join(project_dir, "src/handler/ha_sdb_conf.cc")
+    if not args:
+        print("Using source code FILE '../src/handler/ha_sdb_conf.cc' "
+              "by default.")
+        current_dir = os.path.abspath(os.path.dirname(__file__))
+        project_dir = os.path.join(current_dir, "../")
+        conf_src_path = os.path.join(project_dir, "src/handler/ha_sdb_conf.cc")
+    else:
+        conf_src_path = args[0]
 
-    extractor = DocExtractor(language_type)
+    if os.path.isfile(conf_src_path) == 0:
+        print("ERROR: Input source code file '{file}' is not a file."
+              .format(file=conf_src_path))
+        sys.exit(ERR_INVALID_ARG)
+
+    if opt.built_in == 1:
+        my_cnf = MY_CNF_DEFAULT + MY_CNF_DEFAULT_STORAGE
+    elif opt.built_in == 0:
+        my_cnf = MY_CNF_DEFAULT
+    else:
+        print("ERROR: Invalid built-in option. Please use 1 or 0")
+        sys.exit(ERR_INVALID_ARG)
+
+    if opt.project_type == 'mariadb':
+        my_cnf = my_cnf + MARIADB_CNF_APPEND
+    elif opt.project_type != 'mysql':
+        print("ERROR: Invalid project-type option. Please use 'mysql' or"
+              " 'mariadb'")
+        sys.exit(ERR_INVALID_ARG)
+
+    try:
+        open(conf_src_path, 'r')
+    except IOError as x:
+        if x.errno == os.errno.ENOENT:
+            print("ERROR: FILE '{file}' not exist".format(file=conf_src_path))
+        elif x.errno == os.errno.EACCESS:
+            print("ERROR: FILE '{file}' access permission denied"
+                  .format(file=conf_src_path))
+        else:
+            print("ERROR: Open FILE {file}' failed".format(file=conf_src_path))
+        sys.exit(ERR_INVALID_ARG)
+
+    extractor = DocExtractor(language)
     tuples = extractor.get_tuples(conf_src_path)
     if not tuples:
         print("ERROR: Failed to parse document")
         sys.exit(ERR_PARSE)
 
-    exporter = DocExporter(language_type, format_type)
-    exporter.export(tuples, arg_out)
-
-
+    exporter = DocExporter(language, format)
+    exporter.export(tuples, output_dir, my_cnf)
+        
 if __name__ == '__main__':
     sys.exit(main())
+
