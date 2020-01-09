@@ -196,6 +196,12 @@ static MYSQL_THDVAR_BOOL(execute_only_in_mysql, PLUGIN_VAR_OPCMDARG,
                          /*DDL 命令只在 MySQL 执行，不下压到 SequoiaDB 执行。*/,
                          NULL, NULL, FALSE);
 
+static MYSQL_THDVAR_BOOL(rollback_on_timeout, PLUGIN_VAR_OPCMDARG,
+                         "Roll back the complete transaction on lock wait "
+                         "timeout. (Default: OFF)"
+                         /*记录锁超时是否中断并回滚整个事务。*/,
+                         NULL, NULL, FALSE);
+
 static MYSQL_THDVAR_SET(
     optimizer_options, PLUGIN_VAR_OPCMDARG,
     "Optimizer_options[=option[,option...]], where "
@@ -226,6 +232,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(execute_only_in_mysql),
     MYSQL_SYSVAR(optimizer_options),
     MYSQL_SYSVAR(use_transaction),
+    MYSQL_SYSVAR(rollback_on_timeout),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -356,4 +363,8 @@ longlong sdb_alter_table_overhead_threshold(THD *thd) {
 
 ulonglong sdb_get_optimizer_options(THD *thd) {
   return THDVAR(thd, optimizer_options);
+}
+
+bool sdb_rollback_on_timeout(THD *thd) {
+  return THDVAR(thd, rollback_on_timeout);
 }

@@ -65,6 +65,7 @@ uint sdb_selector_pushdown_threshold(THD *thd);
 bool sdb_execute_only_in_mysql(THD *thd);
 longlong sdb_alter_table_overhead_threshold(THD *thd);
 ulonglong sdb_get_optimizer_options(THD *thd);
+bool sdb_rollback_on_timeout(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;

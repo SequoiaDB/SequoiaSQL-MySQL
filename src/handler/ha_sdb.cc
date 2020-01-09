@@ -1590,6 +1590,14 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
         rc = HA_ERR_RECORD_IS_THE_SAME;
       }
     }
+    if (SDB_TIMEOUT == get_sdb_code(rc)) {
+      if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+        thd_mark_transaction_to_rollback(ha_thd(), 1);
+      }
+      rc = HA_ERR_LOCK_WAIT_TIMEOUT;
+      goto error;
+    }
+
 #ifdef IS_MARIADB
     if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
       if (sdb_lex_ignore(ha_thd())) {
@@ -1625,6 +1633,14 @@ int ha_sdb::delete_row(const uchar *buf) {
     cond = cur_rec;
   }
   rc = collection->del(cond);
+  if (SDB_TIMEOUT == get_sdb_code(rc)) {
+    if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+      thd_mark_transaction_to_rollback(ha_thd(), 1);
+    }
+    rc = HA_ERR_LOCK_WAIT_TIMEOUT;
+    goto error;
+  }
+
   if (rc != 0) {
     goto error;
   }
@@ -2120,12 +2136,20 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_DELETE) &&
       optimize_delete(condition)) {
     first_read = false;
-    rc = collection->del(condition, SDB_EMPTY_BSON, FLG_DELETE_RETURNNUM,
-                         &result);
+    thd_sdb->deleted = 0;
+    rc = collection->del(condition, hint, FLG_DELETE_RETURNNUM, &result);
+    if (SDB_TIMEOUT == get_sdb_code(rc)) {
+      if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+        thd_mark_transaction_to_rollback(ha_thd(), 1);
+      }
+      rc = HA_ERR_LOCK_WAIT_TIMEOUT;
+      goto error;
+    }
+
     if (!rc) {
       rc = HA_ERR_END_OF_FILE;
     }
-    thd_sdb->deleted = 0;
+
     get_deleted_rows(result, &thd_sdb->deleted);
     if (thd_sdb->deleted) {
       stats.records -= thd_sdb->deleted;
@@ -2154,6 +2178,14 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                               &result);
       get_found_updated_rows(result, &thd_sdb->found, &thd_sdb->updated);
       if (rc != 0) {
+        if (SDB_TIMEOUT == get_sdb_code(rc)) {
+          if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+            thd_mark_transaction_to_rollback(ha_thd(), 1);
+          }
+          rc = HA_ERR_LOCK_WAIT_TIMEOUT;
+          goto error;
+        }
+
         if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
           goto error;
         } else if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
@@ -2341,6 +2373,14 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
 
   rc = collection->query(condition, selector, order_by, hint, 0, num_to_return,
                          flag);
+  if (SDB_TIMEOUT == get_sdb_code(rc)) {
+    if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+      thd_mark_transaction_to_rollback(ha_thd(), 1);
+    }
+    rc = HA_ERR_LOCK_WAIT_TIMEOUT;
+    goto error;
+  }
+
   if (rc) {
     SDB_LOG_ERROR(
         "Collection[%s.%s] failed to query with "
@@ -2882,6 +2922,14 @@ int ha_sdb::rnd_next(uchar *buf) {
 
     rc = collection->query(condition, selector, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
                            0, num_to_return, flag);
+    if (SDB_TIMEOUT == get_sdb_code(rc)) {
+      if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+        thd_mark_transaction_to_rollback(ha_thd(), 1);
+      }
+      rc = HA_ERR_LOCK_WAIT_TIMEOUT;
+      goto error;
+    }
+
     if (rc != 0) {
       goto error;
     }
@@ -3519,11 +3567,22 @@ int ha_sdb::delete_all_rows() {
     }
     stats.records = 0;
   }
+
+  if (SDB_TIMEOUT == get_sdb_code(rc)) {
+    if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+      thd_mark_transaction_to_rollback(ha_thd(), 1);
+    }
+    rc = HA_ERR_LOCK_WAIT_TIMEOUT;
+    goto error;
+  }
+
   thd_sdb->deleted = 0;
   get_deleted_rows(result, &thd_sdb->deleted);
 
 done:
   return rc;
+error:
+  goto done;
 }
 
 int ha_sdb::truncate() {
