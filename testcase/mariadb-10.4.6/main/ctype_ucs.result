@@ -7,8 +7,6 @@ SET @safe_character_set_client= @@character_set_client;
 SET @safe_character_set_results= @@character_set_results;
 SET character_set_server= @test_character_set;
 SET collation_server= @test_collation;
-CREATE DATABASE d1;
-USE d1;
 CREATE TABLE t1 (c CHAR(10), KEY(c));
 SHOW FULL COLUMNS FROM t1;
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
@@ -95,8 +93,6 @@ select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 concat(name,space(level))	concat(name, repeat(' ',level))
 string 	string 
 drop table t1;
-DROP DATABASE d1;
-USE test;
 SET character_set_server= @safe_character_set_server;
 SET collation_server= @safe_collation_server;
 SET character_set_client= @safe_character_set_client;
@@ -5356,7 +5352,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 SET sql_mode=DEFAULT;
 INSERT IGNORE INTO t1 VALUES (CONVERT('aaa' USING ucs2));
 Warnings:
-Warning	1366	Incorrect decimal value: 'aaa' for column `test`.`t1`.`a` at row 1
+Warning	1366	Incorrect decimal value: 'aaa' for column `X`.`t1`.`a` at row 1
 DROP TABLE t1;
 #
 # End of 5.6 tests

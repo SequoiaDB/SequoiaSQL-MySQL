@@ -1,4 +1,6 @@
 SET TIME_ZONE='+03:00';
+CREATE DATABASE test_ctype_utf16;
+USE test_ctype_utf16;
 DROP TABLE IF EXISTS t1;
 #
 # Start of 5.5 tests
@@ -1024,13 +1026,13 @@ select hex(s1) from t1;
 hex(s1)
 003F
 Warnings:
-Warning	1366	Incorrect string value: '\xED\xBE\x84' for column `test`.`t1`.`s1` at row 1
+Warning	1366	Incorrect string value: '\xED\xBE\x84' for column `test_ctype_utf16`.`t1`.`s1` at row 1
 drop table t1;
 create table t1 (s1 varchar(5) character set ucs2, s2 varchar(5) character set utf16);
 insert into t1 (s1) values (0xdf84);
 update ignore t1 set s2 = s1;
 Warnings:
-Warning	1366	Incorrect string value: '\xDF\x84' for column `test`.`t1`.`s2` at row 1
+Warning	1366	Incorrect string value: '\xDF\x84' for column `test_ctype_utf16`.`t1`.`s2` at row 1
 select hex(s2) from t1;
 hex(s2)
 003F
@@ -1505,28 +1507,28 @@ s4 LONGTEXT CHARACTER SET utf16
 SET NAMES utf8, @@character_set_results=NULL;
 SELECT *, HEX(s1) FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	s1	s1	252	255	0	Y	16	0	54
-def	test	t1	t1	s2	s2	252	65535	0	Y	16	0	54
-def	test	t1	t1	s3	s3	252	16777215	0	Y	16	0	54
-def	test	t1	t1	s4	s4	252	4294967295	0	Y	16	0	54
+def	test_ctype_utf16	t1	t1	s1	s1	252	255	0	Y	16	0	54
+def	test_ctype_utf16	t1	t1	s2	s2	252	65535	0	Y	16	0	54
+def	test_ctype_utf16	t1	t1	s3	s3	252	16777215	0	Y	16	0	54
+def	test_ctype_utf16	t1	t1	s4	s4	252	4294967295	0	Y	16	0	54
 def					HEX(s1)	253	6120	0	Y	0	0	33
 s1	s2	s3	s4	HEX(s1)
 SET NAMES latin1;
 SELECT *, HEX(s1) FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	s1	s1	252	127	0	Y	16	0	8
-def	test	t1	t1	s2	s2	252	32767	0	Y	16	0	8
-def	test	t1	t1	s3	s3	252	8388607	0	Y	16	0	8
-def	test	t1	t1	s4	s4	252	2147483647	0	Y	16	0	8
+def	test_ctype_utf16	t1	t1	s1	s1	252	127	0	Y	16	0	8
+def	test_ctype_utf16	t1	t1	s2	s2	252	32767	0	Y	16	0	8
+def	test_ctype_utf16	t1	t1	s3	s3	252	8388607	0	Y	16	0	8
+def	test_ctype_utf16	t1	t1	s4	s4	252	2147483647	0	Y	16	0	8
 def					HEX(s1)	253	2040	0	Y	0	0	8
 s1	s2	s3	s4	HEX(s1)
 SET NAMES utf8;
 SELECT *, HEX(s1) FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	s1	s1	252	381	0	Y	16	0	33
-def	test	t1	t1	s2	s2	252	98301	0	Y	16	0	33
-def	test	t1	t1	s3	s3	252	25165821	0	Y	16	0	33
-def	test	t1	t1	s4	s4	252	4294967295	0	Y	16	0	33
+def	test_ctype_utf16	t1	t1	s1	s1	252	381	0	Y	16	0	33
+def	test_ctype_utf16	t1	t1	s2	s2	252	98301	0	Y	16	0	33
+def	test_ctype_utf16	t1	t1	s3	s3	252	25165821	0	Y	16	0	33
+def	test_ctype_utf16	t1	t1	s4	s4	252	4294967295	0	Y	16	0	33
 def					HEX(s1)	253	6120	0	Y	0	0	33
 s1	s2	s3	s4	HEX(s1)
 CREATE TABLE t2 AS SELECT CONCAT(s1) FROM t1;
@@ -2527,6 +2529,7 @@ DROP TABLE t1;
 # End of ctype_pad.inc
 #
 SET STORAGE_ENGINE=Default;
+DROP DATABASE test_ctype_utf16;
 #
 # End of 10.2 tests
 #

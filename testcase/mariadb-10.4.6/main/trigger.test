@@ -1,6 +1,8 @@
 # This test uses chmod, can't be run with root permissions
 -- source include/not_as_root.inc
 
+CREATE DATABASE test_trigger;
+USE test_trigger;
 
 #
 # Basic triggers test
@@ -12,15 +14,18 @@ CALL mtr.add_suppression("Could not remove temporary table *");
 --disable_warnings
 drop table if exists t1, t2, t3, t4;
 drop view if exists v1;
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
+drop database if exists mysqltest_trigger;
 drop function if exists f1;
 drop function if exists f2;
 drop procedure if exists p1;
 --enable_warnings
 
 # Create additional connections used through test
-connect (addconroot1, localhost, root,,);
-connect (addconroot2, localhost, root,,);
+#connect (addconroot1, localhost, root,,);
+#connect (addconroot2, localhost, root,,);
+connect (addconroot1, localhost, root,, test_trigger);
+connect (addconroot2, localhost, root,, test_trigger);
 # Connection without current database set
 connect (addconwithoutdb, localhost, root,,*NO-ONE*);
 connection default;
@@ -393,25 +398,36 @@ select * from t1;
 drop table t1;
 
 # Test for bug #6559 "DROP DATABASE forgets to drop triggers". 
-create database mysqltest;
-use mysqltest;
+#create database mysqltest;
+#use mysqltest;
+create database mysqltest_trigger;
+use mysqltest_trigger;
 create table t1 (i int);
 create trigger trg1 before insert on t1 for each row set @a:= 1;
 # This should succeed
-drop database mysqltest;
-use test;
+#drop database mysqltest;
+#use test;
+drop database mysqltest_trigger;
+use test_trigger;
 
 # Test for bug #8791
 # "Triggers: Allowed to create triggers on a subject table in a different DB". 
-create database mysqltest;
-create table mysqltest.t1 (i int);
+#create database mysqltest;
+#create table mysqltest.t1 (i int);
+create database mysqltest_trigger;
+create table mysqltest_trigger.t1 (i int);
 --error ER_TRG_IN_WRONG_SCHEMA
-create trigger trg1 before insert on mysqltest.t1 for each row set @a:= 1;
-use mysqltest;
+#create trigger trg1 before insert on mysqltest.t1 for each row set @a:= 1;
+#use mysqltest;
+create trigger trg1 before insert on mysqltest_trigger.t1 for each row set @a:= 1;
+use mysqltest_trigger;
 --error ER_NO_SUCH_TABLE
-create trigger test.trg1 before insert on t1 for each row set @a:= 1;
-drop database mysqltest;
-use test;
+#create trigger test.trg1 before insert on t1 for each row set @a:= 1;
+create trigger test_trigger.trg1 before insert on t1 for each row set @a:= 1;
+#drop database mysqltest;
+#use test;
+drop database mysqltest_trigger;
+use test_trigger;
 
 
 # Test for bug #5860 "Multi-table UPDATE does not activate update triggers"
@@ -637,20 +653,21 @@ select @a;
 show triggers;
 drop table t1;
 # check that rigger preserve sql_mode during execution
-set sql_mode="traditional";
-create table t1 (a date);
--- error 1292
-insert into t1 values ('2004-01-00');
-set sql_mode="";
-create trigger t1_bi before insert on t1 for each row set new.a = '2004-01-00';
-set sql_mode="traditional";
-insert into t1 values ('2004-01-01');
-select * from t1;
+#SEQUOIASQLMAINSTREAM-541
+#set sql_mode="traditional";
+#create table t1 (a date);
+#-- error 1292
+#insert into t1 values ('2004-01-00');
+#set sql_mode="";
+#create trigger t1_bi before insert on t1 for each row set new.a = '2004-01-00';
+#set sql_mode="traditional";
+#insert into t1 values ('2004-01-01');
+#select * from t1;
 set sql_mode=default;
-show create table t1;
---replace_column 6 #
-show triggers;
-drop table t1;
+#show create table t1;
+#--replace_column 6 #
+#show triggers;
+#drop table t1;
 
 # Test for bug #12280 "Triggers: crash if flush tables"
 # FLUSH TABLES and FLUSH PRIVILEGES should be disallowed inside
@@ -1036,9 +1053,11 @@ drop table t1;
 #
 connection addconwithoutdb;
 --error ER_NO_DB_ERROR
-create trigger t1_bi before insert on test.t1 for each row set @a:=0;
+#create trigger t1_bi before insert on test.t1 for each row set @a:=0;
+create trigger t1_bi before insert on test_trigger.t1 for each row set @a:=0;
 --error ER_NO_SUCH_TABLE
-create trigger test.t1_bi before insert on t1 for each row set @a:=0;
+#create trigger test.t1_bi before insert on t1 for each row set @a:=0;
+create trigger test_trigger.t1_bi before insert on t1 for each row set @a:=0;
 --error ER_NO_DB_ERROR
 drop trigger t1_bi;
 connection default;
@@ -1050,33 +1069,46 @@ connection default;
 #
 create table t1 (id int);
 create trigger t1_bi before insert on t1 for each row set @a:=new.id;
-create trigger t1_ai after insert on test.t1 for each row set @b:=new.id;
+#create trigger t1_ai after insert on test.t1 for each row set @b:=new.id;
+create trigger t1_ai after insert on test_trigger.t1 for each row set @b:=new.id;
 insert into t1 values (101);
 select @a, @b;
+#select trigger_schema, trigger_name, event_object_schema,
+#       event_object_table, action_statement from information_schema.triggers
+#       where event_object_schema = 'test';
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
 rename table t1 to t2;
 # Trigger should work after rename
 insert into t2 values (102);
 select @a, @b;
+#select trigger_schema, trigger_name, event_object_schema,
+#       event_object_table, action_statement from information_schema.triggers
+#       where event_object_schema = 'test';
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
 # Let us check that the same works for simple ALTER TABLE ... RENAME
 alter table t2 rename to t3;
 insert into t3 values (103);
 select @a, @b;
+#select trigger_schema, trigger_name, event_object_schema,
+#       event_object_table, action_statement from information_schema.triggers
+#       where event_object_schema = 'test';
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
 # And for more complex ALTER TABLE
 alter table t3 rename to t4, add column val int default 0;
 insert into t4 values (104, 1);
 select @a, @b;
+#select trigger_schema, trigger_name, event_object_schema,
+#       event_object_table, action_statement from information_schema.triggers
+#       where event_object_schema = 'test';
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
 # .TRN file should be updated with new table name
 drop trigger t1_bi;
 drop trigger t1_ai;
@@ -1127,7 +1159,8 @@ drop table t4;
 #drop trigger t1_bi;
 #drop table t1;
 #drop database mysqltest;
-use test;
+#use test;
+use test_trigger;
 # And now let us check that the properly handle rename if there is some
 # error during it (that we rollback such renames completely).
 create table t1 (id int);
@@ -1135,15 +1168,20 @@ create trigger t1_bi before insert on t1 for each row set @a:=new.id;
 create trigger t1_ai after insert on t1 for each row set @b:=new.id;
 insert into t1 values (101);
 select @a, @b;
+#select trigger_schema, trigger_name, event_object_schema,
+#       event_object_table, action_statement from information_schema.triggers
+#       where event_object_schema = 'test';
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
 # Trick which makes update of second .TRN file impossible
 let $MYSQLD_DATADIR= `select @@datadir`;
-write_file $MYSQLD_DATADIR/test/t1_ai.TRN~;
+#write_file $MYSQLD_DATADIR/test/t1_ai.TRN~;
+write_file $MYSQLD_DATADIR/test_trigger/t1_ai.TRN~;
 dummy
 EOF
-chmod 0000 $MYSQLD_DATADIR/test/t1_ai.TRN~;
+#chmod 0000 $MYSQLD_DATADIR/test/t1_ai.TRN~;
+chmod 0000 $MYSQLD_DATADIR/test_trigger/t1_ai.TRN~;
 # Normalize the datadir path; the embedded server doesn't chdir to datadir
 --replace_result $MYSQLTEST_VARDIR . mysqld.1/data/ ''
 --error 1
@@ -1151,11 +1189,16 @@ rename table t1 to t2;
 # 't1' should be still there and triggers should work correctly
 insert into t1 values (102);
 select @a, @b;
+#select trigger_schema, trigger_name, event_object_schema,
+#       event_object_table, action_statement from information_schema.triggers
+#       where event_object_schema = 'test';
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
-chmod 0600 $MYSQLD_DATADIR/test/t1_ai.TRN~;
-remove_file $MYSQLD_DATADIR/test/t1_ai.TRN~;
+       where event_object_schema = 'test_trigger';
+#chmod 0600 $MYSQLD_DATADIR/test/t1_ai.TRN~;
+#remove_file $MYSQLD_DATADIR/test/t1_ai.TRN~;
+chmod 0600 $MYSQLD_DATADIR/test_trigger/t1_ai.TRN~;
+remove_file $MYSQLD_DATADIR/test_trigger/t1_ai.TRN~;
 # Let us check that updates to .TRN files were rolled back too
 drop trigger t1_bi;
 drop trigger t1_ai;
@@ -1243,7 +1286,8 @@ CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW
 
 INSERT INTO t1 (conn_id, trigger_conn_id) VALUES (CONNECTION_ID(), -1);
 
-connect (con1,localhost,root,,);
+#connect (con1,localhost,root,,);
+connect (con1,localhost,root,, test_trigger);
 INSERT INTO t1 (conn_id, trigger_conn_id) VALUES (CONNECTION_ID(), -1);
 connection default;
 disconnect con1;
@@ -1393,7 +1437,8 @@ create trigger wont_work after update on event for each row
 begin
  set @a:= 1;
 end|
-use test|
+#use test|
+use test_trigger|
 delimiter ;|
 
 
@@ -1793,7 +1838,8 @@ insert into t1 (id, count) values (1, 0);
 
 lock table t1 write;
 
---connect (connection_insert, localhost, root, , test, , )
+#--connect (connection_insert, localhost, root, , test, , )
+--connect (connection_insert, localhost, root, , test_trigger, , )
 connection connection_insert;
 # Is expected to pass.
 insert into t2 set id=1;
@@ -2382,13 +2428,16 @@ DROP TABLE t1, t2;
 --echo #
 
 --disable_warnings
-DROP DATABASE IF EXISTS db1;
+#DROP DATABASE IF EXISTS db1;
+DROP DATABASE IF EXISTS db1_trigger;
 DROP TRIGGER IF EXISTS trg1;
 DROP TABLE IF EXISTS t1, t2;
 --enable_warnings
 
-CREATE DATABASE db1;
-USE db1;
+#CREATE DATABASE db1;
+#USE db1;
+CREATE DATABASE db1_trigger;
+USE db1_trigger;
 
 CREATE TABLE t1 (b INT);
 CREATE TABLE t2 (a INT);
@@ -2396,18 +2445,23 @@ CREATE TABLE t2 (a INT);
 CREATE TRIGGER trg1 BEFORE INSERT ON t2 FOR EACH ROW INSERT/*!INTO*/t1 VALUES (1);
 --echo # Used to crash
 --replace_column 6 #
-SHOW TRIGGERS IN db1;
+#SHOW TRIGGERS IN db1;
+SHOW TRIGGERS IN db1_trigger;
 --error ER_PARSE_ERROR
 INSERT INTO t2 VALUES (1);
 SELECT * FROM t1;
 
 --echo # Work around Bug#45235
 let $MYSQLD_DATADIR = `select @@datadir`;
---remove_file $MYSQLD_DATADIR/db1/t2.TRG
---remove_file $MYSQLD_DATADIR/db1/trg1.TRN
+#--remove_file $MYSQLD_DATADIR/db1/t2.TRG
+#--remove_file $MYSQLD_DATADIR/db1/trg1.TRN
+--remove_file $MYSQLD_DATADIR/db1_trigger/t2.TRG
+--remove_file $MYSQLD_DATADIR/db1_trigger/trg1.TRN
 
-DROP DATABASE db1;
-USE test;
+#DROP DATABASE db1;
+#USE test;
+DROP DATABASE db1_trigger;
+USE test_trigger;
 
 --echo # End of 5.1 tests.
 
@@ -2545,8 +2599,10 @@ create trigger t1_bi before insert on t1 for each row set @a:=1;
 create temporary table t1 (j int);
 --echo # Dropping of trigger should succeed.
 drop trigger t1_bi;
+#select trigger_name from information_schema.triggers
+#  where event_object_schema = 'test' and event_object_table = 't1';
 select trigger_name from information_schema.triggers
-  where event_object_schema = 'test' and event_object_table = 't1';
+  where event_object_schema = 'test_trigger' and event_object_table = 't1';
 --echo # Clean-up.
 drop temporary table t1;
 drop table t1;
@@ -2601,7 +2657,8 @@ INSERT INTO t2
 send
   UPDATE t1 SET a = 3;
 
-connect(con1,localhost,root,,);
+#connect(con1,localhost,root,,);
+connect(con1,localhost,root,, test_trigger);
   SELECT COUNT(*) FROM t1;
 disconnect con1;
 
@@ -2712,8 +2769,10 @@ SET TIMESTAMP=UNIX_TIMESTAMP('2016-01-01 10:10:10.99');
 select now(2);
 create or replace trigger tr2 after insert on t1 for each row set @a=@a+1;
 select now(2);
+#select trigger_name, action_order, created from information_schema.triggers 
+#  where event_object_table = 't1' and trigger_schema='test';
 select trigger_name, action_order, created from information_schema.triggers 
-  where event_object_table = 't1' and trigger_schema='test';
+  where event_object_table = 't1' and trigger_schema='test_trigger';
 drop table t1;
 set time_zone= @@global.time_zone;
 
@@ -2782,6 +2841,7 @@ INSERT INTO t1 (a,b) VALUES (10, 20);
 SELECT * FROM t1;
 DROP TABLE t1;
 
+DROP DATABASE test_trigger;
 --echo #
 --echo # End of 10.3 tests
 --echo #

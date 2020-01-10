@@ -1,6 +1,8 @@
 #
 # Test timestamp
 #
+CREATE DATABASE test_type_timestamp;
+USE test_type_timestamp;
 
 --disable_warnings
 drop table if exists t1,t2;
@@ -839,6 +841,7 @@ SELECT GREATEST(a,b) AS f FROM t1 ORDER BY 1 DESC;
 DROP TABLE t1;
 SET sql_mode=DEFAULT;
 
+DROP DATABASE test_type_timestamp;
 --echo #
 --echo # End of 10.4 tests
 --echo #

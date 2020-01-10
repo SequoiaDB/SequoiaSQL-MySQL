@@ -75,12 +75,12 @@ insert into t3 select a,a, a,a,a from t0;
 insert into t3 select a,a, a+100,a+100,a+100 from t0;
 analyze table t1,t2,t3;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
-test.t3	analyze	status	Engine-independent statistics collected
-test.t3	analyze	status	OK
+X.t1	analyze	status	Engine-independent statistics collected
+X.t1	analyze	status	OK
+X.t2	analyze	status	Engine-independent statistics collected
+X.t2	analyze	status	OK
+X.t3	analyze	status	Engine-independent statistics collected
+X.t3	analyze	status	OK
 select * from t3 where b in (select a from t1);
 a	b	pk1	pk2	pk3
 1	1	1	1	1
@@ -745,10 +745,10 @@ INSERT INTO t2 VALUES
 (15,'g',6),(16,'x',7),(17,'f',8);
 analyze table t1,t2;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
+X.t1	analyze	status	Engine-independent statistics collected
+X.t1	analyze	status	OK
+X.t2	analyze	status	Engine-independent statistics collected
+X.t2	analyze	status	OK
 SELECT * FROM t1 WHERE b IN (
 SELECT d FROM t2, t1
 WHERE a = d AND ( pk < 2 OR d = 'z' )
@@ -772,8 +772,8 @@ INSERT INTO t1 VALUES
 ('q','q'),('w','w'),('d','d'),('e','e');
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+X.t1	analyze	status	Engine-independent statistics collected
+X.t1	analyze	status	OK
 CREATE ALGORITHM=TEMPTABLE VIEW v1 AS SELECT * FROM t1;
 # This query returned 6 rows instead of 19
 SELECT * FROM v1
@@ -809,8 +809,8 @@ INSERT INTO t2 SELECT * FROM t1;
 INSERT INTO t2 SELECT * FROM t1;
 ANALYZE TABLE t2;
 Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
+X.t2	analyze	status	Engine-independent statistics collected
+X.t2	analyze	status	OK
 SELECT * FROM t2 
 WHERE (a, a) IN (SELECT alias2.b, alias2.a FROM t1 AS alias1, t1 AS alias2 
 WHERE 
@@ -1010,12 +1010,12 @@ INSERT IGNORE INTO t2 (t2id, t1idref) VALUES (200011, 200001),(200012, 200001),(
 INSERT IGNORE INTO t3 VALUES (1, 200011, 1),  (1, 200012, 2), (1, 200013, 3);
 ANALYZE TABLE t1,t2,t3;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
-test.t3	analyze	status	Engine-independent statistics collected
-test.t3	analyze	status	OK
+X.t1	analyze	status	Engine-independent statistics collected
+X.t1	analyze	status	OK
+X.t2	analyze	status	Engine-independent statistics collected
+X.t2	analyze	status	OK
+X.t3	analyze	status	Engine-independent statistics collected
+X.t3	analyze	status	OK
 set @tmp7474= @@optimizer_search_depth;
 SET SESSION optimizer_search_depth = 1;
 SELECT SQL_NO_CACHE 

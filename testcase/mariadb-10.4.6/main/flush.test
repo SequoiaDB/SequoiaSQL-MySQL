@@ -1,10 +1,16 @@
-connect (con1,localhost,root,,);
-connect (con2,localhost,root,,);
+CREATE DATABASE test_flush;
+USE test_flush;
+
+#connect (con1,localhost,root,,);
+#connect (con2,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
+connect (con2,localhost,root,, test_flush);
 connection con1;
 
 --disable_warnings
 drop table if exists t1,t2;
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
+drop database if exists mysqltest_flush;
 --enable_warnings
 
 create temporary table t1(n int not null primary key);
@@ -40,14 +46,19 @@ reap;
 
 #test if drop database will wait until we release the global read lock
 connection con1;
-create database mysqltest;
-create table mysqltest.t1(n int);
-insert into mysqltest.t1 values (23);
+#create database mysqltest;
+#create table mysqltest.t1(n int);
+#insert into mysqltest.t1 values (23);
+create database mysqltest_flush;
+create table mysqltest_flush.t1(n int);
+insert into mysqltest_flush.t1 values (23);
 flush tables with read lock;
 connection con2;
-send drop database mysqltest;
+#send drop database mysqltest;
+send drop database mysqltest_flush;
 connection con1;
-select * from mysqltest.t1;
+#select * from mysqltest.t1;
+select * from mysqltest_flush.t1;
 unlock tables;
 connection con2;
 reap;
@@ -106,8 +117,10 @@ drop table t1, t2, t3;
 create table t1 (c1 int);
 create table t2 (c1 int);
 
-connect (con1,localhost,root,,);
-connect (con3,localhost,root,,);
+#connect (con1,localhost,root,,);
+#connect (con3,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
+connect (con3,localhost,root,, test_flush);
 
 connection con1;
 lock table t1 write;
@@ -172,7 +185,8 @@ set session low_priority_updates=default;
 # Bug #33334 mysqltest_embedded crashes when disconnecting before reap
 #
 
-connect (con1,localhost,root,,);
+#connect (con1,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
 send select benchmark(200, (select sin(1))) > 1000;
 disconnect con1;
 --source include/wait_until_disconnected.inc
@@ -302,7 +316,8 @@ insert into t3 (a) values (2);
 --echo # 
 --echo # III. Concurrent tests.
 --echo #
-connect (con1,localhost,root,,);
+#connect (con1,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
 --echo #
 --echo # Check that flush tables <list> with read lock
 --echo # does not affect non-locked tables.
@@ -426,8 +441,10 @@ drop table t1, v1;
 --disable_warnings
 drop table if exists t1;
 --enable_warnings
-connect (con1,localhost,root,,);
-connect (con2,localhost,root,,);
+#connect (con1,localhost,root,,);
+#connect (con2,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
+connect (con2,localhost,root,, test_flush);
 connection default;
 
 create table t1 (a int);
@@ -622,7 +639,8 @@ CREATE TRIGGER t1_au AFTER UPDATE ON t1 FOR EACH ROW SET @var = "a";
 BEGIN;
 UPDATE t1 SET value= value + 1 WHERE id = 1;
 
-connect(con1, localhost, root);
+#connect(con1, localhost, root);
+connect(con1, localhost, root,, test_flush);
 --echo # The below FLUSH TABLES WITH READ LOCK should succeed and
 --echo # should not be blocked by the transaction in default connection.
 FLUSH TABLES WITH READ LOCK;
@@ -672,3 +690,4 @@ UNLOCK TABLES;
 DROP VIEW v1;
 DROP TABLE t1;
 
+DROP DATABASE test_flush;

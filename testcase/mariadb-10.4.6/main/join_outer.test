@@ -225,7 +225,8 @@ SELECT DISTINCT fill,t3.idPla FROM t4 LEFT JOIN t3 ON t3.cod_asig=t4.fill AND t3
 INSERT INTO t3 VALUES (3,'1234',1,10360,98,1,'S');
 SELECT DISTINCT fill,t3.idPla FROM t4 LEFT JOIN t3 ON t3.cod_asig=t4.fill AND t3.estat='S' AND t3.dni_pasaporte='1234' AND t3.idPla=1 ;
 
-drop table t1,t2,t3,test.t4;
+#drop table t1,t2,t3,test.t4;
+drop table t1,t2,t3,t4;
 
 #
 # Test of IS NULL on AUTO_INCREMENT with LEFT JOIN

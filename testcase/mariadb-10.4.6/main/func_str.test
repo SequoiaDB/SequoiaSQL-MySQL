@@ -2,12 +2,16 @@
 # -----------
 # Testing string functions
 
+CREATE DATABASE test_func_str;
+USE test_func_str;
+
 --disable_warnings
 drop table if exists t1,t2;
 --enable_warnings
 
 set global max_allowed_packet=1048576;
-connect (conn1,localhost,root,,);
+#connect (conn1,localhost,root,,);
+connect (conn1,localhost,root,, test_func_str);
 connection conn1;
 
 let $mysqld_datadir= `select @@datadir`;
@@ -1590,7 +1594,8 @@ SELECT ((0xf3) * (rpad(1.0,2048,1)) << (0xcc));
 SELECT @tmp_max:= @@global.max_allowed_packet;
 SET @@global.max_allowed_packet=1024*1024*1024;
 # switching connection to allow the new max_allowed_packet take effect
---connect (newconn, localhost, root,,)
+#--connect (newconn, localhost, root,,)
+--connect (newconn, localhost, root,, test_func_str)
 
 SELECT @@global.max_allowed_packet;
 
@@ -1652,7 +1657,7 @@ create table t1 (a int);
 create table t2 (a int);
 create procedure foo (var char(100))
   select replace(var, '00000000', table_name)
-  from information_schema.tables where table_schema='test';
+  from information_schema.tables where table_schema='test_func_str';
 --sorted_result
 call foo('(( 00000000 ++ 00000000 ))');
 drop procedure foo;
@@ -1994,12 +1999,18 @@ DROP TABLE t1;
 --echo # MDEV-12685 Oracle-compatible function CHR()
 --echo #
 select chr(65);
-create database mysqltest1 CHARACTER SET = 'utf8' COLLATE = 'utf8_bin';
-use mysqltest1;
+#create database mysqltest1 CHARACTER SET = 'utf8' COLLATE = 'utf8_bin';
+#use mysqltest1;
+#select charset(chr(65)), length(chr(65)),char_length(chr(65));
+#select charset(chr(14844588)), length(chr(14844588)),char_length(chr(14844588));
+#drop database mysqltest1;
+#use test;
+create database mysqltest1_func_str CHARACTER SET = 'utf8' COLLATE = 'utf8_bin';
+use mysqltest1_func_str;
 select charset(chr(65)), length(chr(65)),char_length(chr(65));
 select charset(chr(14844588)), length(chr(14844588)),char_length(chr(14844588));
-drop database mysqltest1;
-use test;
+drop database mysqltest1_func_str;
+use test_func_str;
 
 --echo #
 --echo # MDEV-12592 Illegal mix of collations with the HEX function
@@ -2044,7 +2055,7 @@ DROP TABLE t1;
 
 SELECT GROUP_CONCAT( UpdateXML( '<a>new year</a>', '/a', '2019-01-01 00:00:00' ), ENCODE('text','pass') ) AS f;
 
-
+DROP DATABASE test_func_str;
 --echo #
 --echo # End of 10.4 tests
 --echo #

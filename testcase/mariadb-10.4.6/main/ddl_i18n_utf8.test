@@ -64,13 +64,19 @@ delimiter |;
 
 #   - Create database with fixed, pre-defined character set.
 
+CREATE DATABASE test_ddl_i18n_utf8|
+USE test_ddl_i18n_utf8|
+
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest1|
+#DROP DATABASE IF EXISTS mysqltest1|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
 --enable_warnings
 
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 CREATE TABLE t1(кол INT)|
 INSERT INTO t1 VALUES(1)|
@@ -107,7 +113,8 @@ CREATE VIEW v3 AS SELECT _koi8r'����'|
 --echo
 --echo
 
-ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
+#ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp866_general_ci|
 
 #
 # Second-round checks:
@@ -115,7 +122,8 @@ ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
 
 #   - Change connection to flush cache;
 
---connect (con2,localhost,root,,)
+#--connect (con2,localhost,root,,)
+--connect (con2,localhost,root,,test_ddl_i18n_utf8)
 
 #   - Switch environment variables and trigger loading views;
 
@@ -124,12 +132,16 @@ SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
 
 --disable_result_log
-SELECT * FROM mysqltest1.v1|
-SELECT * FROM mysqltest1.v2|
-SELECT * FROM mysqltest1.v3|
+#SELECT * FROM mysqltest1.v1|
+#SELECT * FROM mysqltest1.v2|
+#SELECT * FROM mysqltest1.v3|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v1|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v2|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v3|
 --enable_result_log
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Restore environment;
 
@@ -145,19 +157,22 @@ set names utf8|
 
 #  - Dump mysqltest1;
 
---let $views_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8views.mysqltest1.sql
+#--let $views_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8views.mysqltest1.sql
+--let $views_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8views.mysqltest1_ddl_i18n_utf8.sql
 
 --echo
 --echo ---> Dumping mysqltest1 to ddl_i18n_utf8views.mysqltest1.sql
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --databases mysqltest1 > $views_dump1
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --databases mysqltest1 > $views_dump1
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --databases mysqltest1_ddl_i18n_utf8 > $views_dump1
 
 #   - Clean mysqltest1;
 
 --echo
 --echo
 
-DROP DATABASE mysqltest1|
+#DROP DATABASE mysqltest1|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
 
 #   - Restore mysqltest1;
 
@@ -175,7 +190,8 @@ DROP DATABASE mysqltest1|
 
 #   - Change connection to flush cache;
 
---connect (con3,localhost,root,,)
+#--connect (con3,localhost,root,,)
+--connect (con3,localhost,root,,test_ddl_i18n_utf8)
 
 #   - Switch environment variables and trigger loading views;
 
@@ -184,12 +200,16 @@ SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
 
 --disable_result_log
-SELECT * FROM mysqltest1.v1|
-SELECT * FROM mysqltest1.v2|
-SELECT * FROM mysqltest1.v3|
+#SELECT * FROM mysqltest1.v1|
+#SELECT * FROM mysqltest1.v2|
+#SELECT * FROM mysqltest1.v3|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v1|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v2|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v3|
 --enable_result_log
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Restore environment;
 
@@ -208,9 +228,11 @@ set names utf8|
 --disconnect con2
 --disconnect con3
 
-use test|
+#use test|
+use test_ddl_i18n_utf8|
 
-DROP DATABASE mysqltest1|
+#DROP DATABASE mysqltest1|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
 
 ###########################################################################
 #
@@ -231,14 +253,19 @@ DROP DATABASE mysqltest1|
 #   - Create database with fixed, pre-defined character set.
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
+#DROP DATABASE IF EXISTS mysqltest1|
+#DROP DATABASE IF EXISTS mysqltest2|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest2_ddl_i18n_utf8|
 --enable_warnings
 
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest2_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Create two stored routines -- with and without explicit
 #     CHARSET-clause for SP-variable;
@@ -300,7 +327,8 @@ END|
 
 #     - Procedure p3
 
-CREATE PROCEDURE mysqltest2.p3(
+#CREATE PROCEDURE mysqltest2.p3(
+CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p3(
   INOUT парам1 CHAR(10),
   OUT парам2 CHAR(10))
 BEGIN
@@ -326,7 +354,8 @@ END|
 
 #     - Procedure p4
 
-CREATE PROCEDURE mysqltest2.p4(
+#CREATE PROCEDURE mysqltest2.p4(
+CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p4(
   INOUT парам1 CHAR(10) CHARACTER SET utf8,
   OUT парам2 CHAR(10) CHARACTER SET utf8)
 BEGIN
@@ -362,8 +391,10 @@ END|
 --echo
 --echo
 
-ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
-ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
+#ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
+#ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest2_ddl_i18n_utf8 COLLATE cp866_general_ci|
 
 #
 # Second-round checks:
@@ -371,7 +402,8 @@ ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
 
 #   - Change connection to flush SP-cache;
 
---connect (con2,localhost,root,,mysqltest1)
+#--connect (con2,localhost,root,,mysqltest1)
+--connect (con2,localhost,root,,mysqltest1_ddl_i18n_utf8)
 
 #   - Switch environment variables and trigger loading stored procedures;
 
@@ -381,8 +413,10 @@ SET @@collation_connection= cp1251_general_ci|
 
 CALL p1(@a, @b)|
 CALL p2(@a, @b)|
-CALL mysqltest2.p3(@a, @b)|
-CALL mysqltest2.p4(@a, @b)|
+#CALL mysqltest2.p3(@a, @b)|
+#CALL mysqltest2.p4(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p3(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p4(@a, @b)|
 
 #   - Restore environment;
 
@@ -398,36 +432,44 @@ set names utf8|
 
 #  - Dump mysqltest1, mysqltest2;
 
---let $sp_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8sp.mysqltest1.sql
---let $sp_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8sp.mysqltest2.sql
+#--let $sp_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8sp.mysqltest1.sql
+#--let $sp_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8sp.mysqltest2.sql
+--let $sp_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8sp.mysqltest1_ddl_i18n_utf8.sql
+--let $sp_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8sp.mysqltest2_ddl_i18n_utf8.sql
 
 --echo
 --echo ---> Dump of mysqltest1
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest1
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest1
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest1_ddl_i18n_utf8 
 
 --echo
 --echo ---> Dumping mysqltest1 to ddl_i18n_utf8sp.mysqltest1.sql
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest1 > $sp_dump1
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest1 > $sp_dump1
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest1_ddl_i18n_utf8 > $sp_dump1
 
 --echo
 --echo ---> Dump of mysqltest2
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest2
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest2
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest2_ddl_i18n_utf8 
 
 --echo
 --echo ---> Dumping mysqltest2 to ddl_i18n_utf8sp.mysqltest2.sql
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest2 > $sp_dump2
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest2 > $sp_dump2
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --routines --databases mysqltest2_ddl_i18n_utf8 > $sp_dump2
 
 #   - Clean mysqltest1, mysqltest2;
 
 --echo
 --echo
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+#DROP DATABASE mysqltest1|
+#DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 #   - Restore mysqltest1;
 
@@ -449,7 +491,8 @@ DROP DATABASE mysqltest2|
 
 #   - Change connection to flush SP-cache;
 
---connect (con3,localhost,root,,mysqltest1)
+#--connect (con3,localhost,root,,mysqltest1)
+--connect (con3,localhost,root,,mysqltest1_ddl_i18n_utf8)
 
 #   - Switch environment variables and trigger loading stored procedures;
 
@@ -459,8 +502,10 @@ SET @@collation_connection= cp1251_general_ci|
 
 CALL p1(@a, @b)|
 CALL p2(@a, @b)|
-CALL mysqltest2.p3(@a, @b)|
-CALL mysqltest2.p4(@a, @b)|
+#CALL mysqltest2.p3(@a, @b)|
+#CALL mysqltest2.p4(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p3(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p4(@a, @b)|
 
 #   - Restore environment;
 
@@ -479,10 +524,13 @@ set names utf8|
 --disconnect con2
 --disconnect con3
 
-use test|
+#use test|
+use test_ddl_i18n_utf8;
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+#DROP DATABASE mysqltest1|
+#DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 ###########################################################################
 #
@@ -503,24 +551,31 @@ DROP DATABASE mysqltest2|
 #   - Create database with fixed, pre-defined character set;
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
+#DROP DATABASE IF EXISTS mysqltest1|
+#DROP DATABASE IF EXISTS mysqltest2|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest2_ddl_i18n_utf8|
 --enable_warnings
 
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest2_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Create tables for triggers;
 
 CREATE TABLE t1(c INT)|
-CREATE TABLE mysqltest2.t1(c INT)|
+#CREATE TABLE mysqltest2.t1(c INT)|
+CREATE TABLE mysqltest2_ddl_i18n_utf8.t1(c INT)|
 
 #   - Create log tables;
 
 CREATE TABLE log(msg VARCHAR(255))|
-CREATE TABLE mysqltest2.log(msg VARCHAR(255))|
+#CREATE TABLE mysqltest2.log(msg VARCHAR(255))|
+CREATE TABLE mysqltest2_ddl_i18n_utf8.log(msg VARCHAR(255))|
 
 
 #   - Create triggers -- with and without explicit CHARSET-clause for
@@ -571,7 +626,8 @@ END|
 
 #     - Trigger trg3
 
-CREATE TRIGGER mysqltest2.trg3 BEFORE INSERT ON mysqltest2.t1 FOR EACH ROW
+#CREATE TRIGGER mysqltest2.trg3 BEFORE INSERT ON mysqltest2.t1 FOR EACH ROW
+CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg3 BEFORE INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
   DECLARE перем1 CHAR(10);
 
@@ -591,7 +647,8 @@ END|
 
 #     - Trigger trg4
 
-CREATE TRIGGER mysqltest2.trg4 AFTER INSERT ON mysqltest2.t1 FOR EACH ROW
+#CREATE TRIGGER mysqltest2.trg4 AFTER INSERT ON mysqltest2.t1 FOR EACH ROW
+CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg4 AFTER INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
   DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 
@@ -623,8 +680,10 @@ END|
 --echo
 --echo
 
-ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
-ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
+#ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
+#ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest2_ddl_i18n_utf8 COLLATE cp866_general_ci|
 
 #
 # Second-round checks:
@@ -635,29 +694,37 @@ ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
 ALTER TABLE t1 ADD COLUMN fake INT|
 ALTER TABLE t1 DROP COLUMN fake|
 
-ALTER TABLE mysqltest2.t1 ADD COLUMN fake INT|
-ALTER TABLE mysqltest2.t1 DROP COLUMN fake|
+#ALTER TABLE mysqltest2.t1 ADD COLUMN fake INT|
+#ALTER TABLE mysqltest2.t1 DROP COLUMN fake|
+ALTER TABLE mysqltest2_ddl_i18n_utf8.t1 ADD COLUMN fake INT|
+ALTER TABLE mysqltest2_ddl_i18n_utf8.t1 DROP COLUMN fake|
 
 #   - Switch environment variables and initiate loading of triggers
 #     (connect using NULL database);
 
---connect (con2,localhost,root,,)
+#--connect (con2,localhost,root,,)
+--connect (con2,localhost,root,,test_ddl_i18n_utf8)
 
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
 
-INSERT INTO mysqltest1.t1 VALUES(0)|
-INSERT INTO mysqltest2.t1 VALUES(0)|
+#INSERT INTO mysqltest1.t1 VALUES(0)|
+#INSERT INTO mysqltest2.t1 VALUES(0)|
+INSERT INTO mysqltest1_ddl_i18n_utf8.t1 VALUES(0)|
+INSERT INTO mysqltest2_ddl_i18n_utf8.t1 VALUES(0)|
 
-DELETE FROM mysqltest1.log|
-DELETE FROM mysqltest2.log|
+#DELETE FROM mysqltest1.log|
+#DELETE FROM mysqltest2.log|
+DELETE FROM mysqltest1_ddl_i18n_utf8.log|
+DELETE FROM mysqltest2_ddl_i18n_utf8.log|
 
 #   - Restore environment;
 
 set names utf8|
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Check!
 
@@ -669,36 +736,44 @@ use mysqltest1|
 
 #  - Dump mysqltest1, mysqltest2;
 
---let $triggers_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8triggers.mysqltest1.sql
---let $triggers_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8triggers.mysqltest2.sql
+#--let $triggers_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8triggers.mysqltest1.sql
+#--let $triggers_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8triggers.mysqltest2.sql
+--let $triggers_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8triggers.mysqltest1_ddl_i18n_utf8.sql
+--let $triggers_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8triggers.mysqltest2_ddl_i18n_utf8.sql
 
 --echo
 --echo ---> Dump of mysqltest1
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest1
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest1
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest1_ddl_i18n_utf8 
 
 --echo
 --echo ---> Dumping mysqltest1 to ddl_i18n_utf8triggers.mysqltest1.sql
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest1 > $triggers_dump1
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest1 > $triggers_dump1
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest1_ddl_i18n_utf8 > $triggers_dump1
 
 --echo
 --echo ---> Dump of mysqltest2
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest2
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest2
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest2_ddl_i18n_utf8 
 
 --echo
 --echo ---> Dumping mysqltest2 to ddl_i18n_utf8triggers.mysqltest2.sql
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest2 > $triggers_dump2
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest2 > $triggers_dump2
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --triggers --databases mysqltest2_ddl_i18n_utf8 > $triggers_dump2
 
 #   - Clean mysqltest1, mysqltest2;
 
 --echo
 --echo
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+#DROP DATABASE mysqltest1|
+#DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 #   - Restore mysqltest1;
 
@@ -720,32 +795,42 @@ DROP DATABASE mysqltest2|
 
 #   - Flush table cache;
 
-ALTER TABLE mysqltest1.t1 ADD COLUMN fake INT|
-ALTER TABLE mysqltest1.t1 DROP COLUMN fake|
+#ALTER TABLE mysqltest1.t1 ADD COLUMN fake INT|
+#ALTER TABLE mysqltest1.t1 DROP COLUMN fake|
+ALTER TABLE mysqltest1_ddl_i18n_utf8.t1 ADD COLUMN fake INT|
+ALTER TABLE mysqltest1_ddl_i18n_utf8.t1 DROP COLUMN fake|
 
-ALTER TABLE mysqltest2.t1 ADD COLUMN fake INT|
-ALTER TABLE mysqltest2.t1 DROP COLUMN fake|
+#ALTER TABLE mysqltest2.t1 ADD COLUMN fake INT|
+#ALTER TABLE mysqltest2.t1 DROP COLUMN fake|
+ALTER TABLE mysqltest2_ddl_i18n_utf8.t1 ADD COLUMN fake INT|
+ALTER TABLE mysqltest2_ddl_i18n_utf8.t1 DROP COLUMN fake|
 
 #   - Switch environment variables and initiate loading of triggers
 #     (connect using NULL database);
 
---connect (con3,localhost,root,,)
+#--connect (con3,localhost,root,,)
+--connect (con3,localhost,root,,test_ddl_i18n_utf8)
 
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
 
-INSERT INTO mysqltest1.t1 VALUES(0)|
-INSERT INTO mysqltest2.t1 VALUES(0)|
+#INSERT INTO mysqltest1.t1 VALUES(0)|
+#INSERT INTO mysqltest2.t1 VALUES(0)|
+INSERT INTO mysqltest1_ddl_i18n_utf8.t1 VALUES(0)|
+INSERT INTO mysqltest2_ddl_i18n_utf8.t1 VALUES(0)|
 
-DELETE FROM mysqltest1.log|
-DELETE FROM mysqltest2.log|
+#DELETE FROM mysqltest1.log|
+#DELETE FROM mysqltest2.log|
+DELETE FROM mysqltest1_ddl_i18n_utf8.log|
+DELETE FROM mysqltest2_ddl_i18n_utf8.log|
 
 #   - Restore environment;
 
 set names utf8|
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Check!
 
@@ -760,10 +845,13 @@ use mysqltest1|
 --disconnect con2
 --disconnect con3
 
-use test|
+#use test|
+use test_ddl_i18n_utf8|
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+#DROP DATABASE mysqltest1|
+#DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 ###########################################################################
 #
@@ -788,14 +876,19 @@ DROP DATABASE mysqltest2|
 #   - Create database with fixed, pre-defined character set.
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
+#DROP DATABASE IF EXISTS mysqltest1|
+#DROP DATABASE IF EXISTS mysqltest2|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest2_ddl_i18n_utf8|
 --enable_warnings
 
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest2_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Create two stored routines -- with and without explicit
 #     CHARSET-clause for SP-variable;
@@ -839,7 +932,8 @@ END|
 
 #     - Event ev3
 
-CREATE EVENT mysqltest2.ev3 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
+#CREATE EVENT mysqltest2.ev3 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
+CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
 BEGIN
   DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 
@@ -856,7 +950,8 @@ END|
 
 #     - Event ev4
 
-CREATE EVENT mysqltest2.ev4 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
+#CREATE EVENT mysqltest2.ev4 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
+CREATE EVENT mysqltest2_ddl_i18n_utf8.ev4 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
 BEGIN
   DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 
@@ -886,8 +981,10 @@ END|
 --echo
 --echo
 
-ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
-ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
+#ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
+#ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest2_ddl_i18n_utf8 COLLATE cp866_general_ci|
 
 #
 # Second-round checks:
@@ -895,7 +992,8 @@ ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
 
 #   - Change connection to flush cache;
 
---connect (con2,localhost,root,,mysqltest1)
+#--connect (con2,localhost,root,,mysqltest1)
+--connect (con2,localhost,root,,mysqltest1_ddl_i18n_utf8)
 
 #   - Switch environment variables and trigger loading stored procedures;
 
@@ -906,8 +1004,10 @@ SET @@collation_connection= cp1251_general_ci|
 --disable_result_log
 SHOW CREATE EVENT ev1|
 SHOW CREATE EVENT ev2|
-SHOW CREATE EVENT mysqltest2.ev3|
-SHOW CREATE EVENT mysqltest2.ev4|
+#SHOW CREATE EVENT mysqltest2.ev3|
+#SHOW CREATE EVENT mysqltest2.ev4|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev4|
 --enable_result_log
 
 #   - Restore environment;
@@ -924,36 +1024,44 @@ set names utf8|
 
 #  - Dump mysqltest1, mysqltest2;
 
---let $events_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8events.mysqltest1.sql
---let $events_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8events.mysqltest2.sql
+#--let $events_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8events.mysqltest1.sql
+#--let $events_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8events.mysqltest2.sql
+--let $events_dump1 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8events.mysqltest1_ddl_i18n_utf8.sql
+--let $events_dump2 = $MYSQLTEST_VARDIR/tmp/ddl_i18n_utf8events.mysqltest2_ddl_i18n_utf8.sql
 
 --echo
 --echo ---> Dump of mysqltest1
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest1
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest1
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest1_ddl_i18n_utf8 
 
 --echo
 --echo ---> Dumping mysqltest1 to ddl_i18n_utf8events.mysqltest1.sql
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest1 > $events_dump1
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest1 > $events_dump1
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest1_ddl_i18n_utf8 > $events_dump1
 
 --echo
 --echo ---> Dump of mysqltest2
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest2
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest2
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest2_ddl_i18n_utf8 
 
 --echo
 --echo ---> Dumping mysqltest2 to ddl_i18n_utf8events.mysqltest2.sql
 
---exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest2 > $events_dump2
+#--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest2 > $events_dump2
+--exec $MYSQL_DUMP --character-sets-dir=$MYSQL_SHAREDIR/charsets --compact --events --databases mysqltest2_ddl_i18n_utf8 > $events_dump2
 
 #   - Clean mysqltest1, mysqltest2;
 
 --echo
 --echo
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+#DROP DATABASE mysqltest1|
+#DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 #   - Restore mysqltest1;
 
@@ -975,7 +1083,8 @@ DROP DATABASE mysqltest2|
 
 #   - Change connection to flush cache;
 
---connect (con3,localhost,root,,mysqltest1)
+#--connect (con3,localhost,root,,mysqltest1)
+--connect (con3,localhost,root,,mysqltest1_ddl_i18n_utf8)
 
 #   - Switch environment variables and trigger loading stored procedures;
 
@@ -986,8 +1095,10 @@ SET @@collation_connection= cp1251_general_ci|
 --disable_result_log
 SHOW CREATE EVENT ev1|
 SHOW CREATE EVENT ev2|
-SHOW CREATE EVENT mysqltest2.ev3|
-SHOW CREATE EVENT mysqltest2.ev4|
+#SHOW CREATE EVENT mysqltest2.ev3|
+#SHOW CREATE EVENT mysqltest2.ev4|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev4|
 --enable_result_log
 
 #   - Restore environment;
@@ -1020,14 +1131,19 @@ set names utf8|
 #   - Create database with fixed, pre-defined character set.
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
+#DROP DATABASE IF EXISTS mysqltest1|
+#DROP DATABASE IF EXISTS mysqltest2|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest2_ddl_i18n_utf8|
 --enable_warnings
 
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+#CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest2_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Create procedures;
 
@@ -1041,7 +1157,8 @@ END|
 
 --echo
 
-CREATE PROCEDURE mysqltest2.p2()
+#CREATE PROCEDURE mysqltest2.p2()
+CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p2()
 BEGIN
   CREATE TABLE t2(col1 VARCHAR(10));
   SHOW CREATE TABLE t2;
@@ -1062,11 +1179,13 @@ SHOW CREATE TABLE t1|
 --echo
 --echo
 
-CALL mysqltest2.p2()|
+#CALL mysqltest2.p2()|
+CALL mysqltest2_ddl_i18n_utf8.p2()|
 
 --echo
 
-SHOW CREATE TABLE mysqltest2.t2|
+#SHOW CREATE TABLE mysqltest2.t2|
+SHOW CREATE TABLE mysqltest2_ddl_i18n_utf8.t2|
 
 #
 # Alter database.
@@ -1074,11 +1193,14 @@ SHOW CREATE TABLE mysqltest2.t2|
 
 --echo
 
-ALTER DATABASE mysqltest1 COLLATE cp1251_general_cs|
-ALTER DATABASE mysqltest2 COLLATE cp1251_general_cs|
+#ALTER DATABASE mysqltest1 COLLATE cp1251_general_cs|
+#ALTER DATABASE mysqltest2 COLLATE cp1251_general_cs|
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp1251_general_cs|
+ALTER DATABASE mysqltest2_ddl_i18n_utf8 COLLATE cp1251_general_cs|
 
 DROP TABLE t1|
-DROP TABLE mysqltest2.t2|
+#DROP TABLE mysqltest2.t2|
+DROP TABLE mysqltest2_ddl_i18n_utf8.t2|
 
 --echo
 
@@ -1095,11 +1217,13 @@ SHOW CREATE TABLE t1|
 --echo
 --echo
 
-CALL mysqltest2.p2()|
+#CALL mysqltest2.p2()|
+CALL mysqltest2_ddl_i18n_utf8.p2()|
 
 --echo
 
-SHOW CREATE TABLE mysqltest2.t2|
+#SHOW CREATE TABLE mysqltest2.t2|
+SHOW CREATE TABLE mysqltest2_ddl_i18n_utf8.t2|
 
 ###########################################################################
 #
@@ -1119,6 +1243,11 @@ delimiter ;|
 --disconnect con3
 --source include/wait_until_disconnected.inc
 --connection default
-USE test;
-DROP DATABASE mysqltest1;
-DROP DATABASE mysqltest2;
+#USE test;
+#DROP DATABASE mysqltest1;
+#DROP DATABASE mysqltest2;
+USE test_ddl_i18n_utf8;
+DROP DATABASE mysqltest1_ddl_i18n_utf8;
+DROP DATABASE mysqltest2_ddl_i18n_utf8;
+
+DROP DATABASE test_ddl_i18n_utf8;

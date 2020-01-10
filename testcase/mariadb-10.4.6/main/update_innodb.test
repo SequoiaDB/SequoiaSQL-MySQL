@@ -114,7 +114,9 @@ BEGIN;
 SELECT * FROM t1 UNION 
 SELECT * FROM t2 FOR UPDATE;
 
---connect(con2,localhost,root,,)
+#--connect(con2,localhost,root,,)
+--let $db= `select database()`
+--connect(con2,localhost,root,,$db)
 BEGIN;
 --send SELECT * FROM t2 FOR UPDATE;
 --connection default

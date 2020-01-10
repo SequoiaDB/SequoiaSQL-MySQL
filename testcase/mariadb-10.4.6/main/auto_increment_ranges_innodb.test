@@ -17,4 +17,6 @@ insert t1 (f) values ('<===');
 select * from t1;
 drop table t1;
 --let $datadir=`select @@datadir`
---remove_file $datadir/test/load.data
+--let $db=`select database()`
+#--remove_file $datadir/test/load.data
+--remove_file $datadir/$db/load.data

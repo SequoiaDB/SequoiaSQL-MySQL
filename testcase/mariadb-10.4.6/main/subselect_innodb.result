@@ -385,9 +385,6 @@ drop table t1;
 # MDEV-3988 crash in create_tmp_table
 #
 drop table if exists `t1`,`t2`;
-Warnings:
-Note	1051	Unknown table 'test.t1'
-Note	1051	Unknown table 'test.t2'
 create table `t1`(`a` char(1) character set utf8)engine=SequoiaDB;
 create table `t2`(`b` char(1) character set utf8)engine=SequoiaDB;
 select distinct (select 1 from `t2` where `a`) `d2` from `t1`;
@@ -481,9 +478,6 @@ alter table t2 add key2 int;
 update t2 set key2=key1;
 alter table t2 add key(key2);
 analyze table t2;
-Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
 flush tables;
 # Table tsubq must use 'ref' + Using filesort (not 'index' w/o filesort)
 drop table t1,t2;

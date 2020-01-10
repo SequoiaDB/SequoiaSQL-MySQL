@@ -5,9 +5,11 @@ set names utf8;
 Views
 -------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS mysqltest1|
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-use mysqltest1|
+CREATE DATABASE test_ddl_i18n_utf8|
+USE test_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+use mysqltest1_ddl_i18n_utf8|
 CREATE TABLE t1(кол INT)|
 INSERT INTO t1 VALUES(1)|
 
@@ -36,15 +38,15 @@ v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VI
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v1	select 'тест' AS `c1`,`mysqltest1`.`t1`.`кол` AS `c2` from `mysqltest1`.`t1`	NONE	YES	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v1	select 'тест' AS `c1`,`mysqltest1_ddl_i18n_utf8`.`t1`.`кол` AS `c2` from `mysqltest1_ddl_i18n_utf8`.`t1`	NONE	YES	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v2'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v2	select 'тест' AS `c1`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v2	select 'тест' AS `c1`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v3'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v3	select 'тест' AS `тест`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v3	select 'тест' AS `тест`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 
 SELECT COLLATION(c1), COLLATION(c2) FROM v1|
@@ -60,15 +62,15 @@ SELECT * FROM v3|
 тест
 
 
-ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
-connect  con2,localhost,root,,;
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp866_general_ci|
+connect  con2,localhost,root,,test_ddl_i18n_utf8;
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
-SELECT * FROM mysqltest1.v1|
-SELECT * FROM mysqltest1.v2|
-SELECT * FROM mysqltest1.v3|
-use mysqltest1|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v1|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v2|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v3|
+use mysqltest1_ddl_i18n_utf8|
 set names utf8|
 
 
@@ -87,15 +89,15 @@ v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VI
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v1	select 'тест' AS `c1`,`mysqltest1`.`t1`.`кол` AS `c2` from `mysqltest1`.`t1`	NONE	YES	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v1	select 'тест' AS `c1`,`mysqltest1_ddl_i18n_utf8`.`t1`.`кол` AS `c2` from `mysqltest1_ddl_i18n_utf8`.`t1`	NONE	YES	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v2'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v2	select 'тест' AS `c1`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v2	select 'тест' AS `c1`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v3'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v3	select 'тест' AS `тест`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v3	select 'тест' AS `тест`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 
 SELECT COLLATION(c1), COLLATION(c2) FROM v1|
@@ -113,18 +115,18 @@ SELECT * FROM v3|
 ---> Dumping mysqltest1 to ddl_i18n_utf8views.mysqltest1.sql
 
 
-DROP DATABASE mysqltest1|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
 
 
 ---> Restoring mysqltest1...
-connect  con3,localhost,root,,;
+connect  con3,localhost,root,,test_ddl_i18n_utf8;
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
-SELECT * FROM mysqltest1.v1|
-SELECT * FROM mysqltest1.v2|
-SELECT * FROM mysqltest1.v3|
-use mysqltest1|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v1|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v2|
+SELECT * FROM mysqltest1_ddl_i18n_utf8.v3|
+use mysqltest1_ddl_i18n_utf8|
 set names utf8|
 
 
@@ -143,15 +145,15 @@ v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VI
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v1'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v1	select 'тест' AS `c1`,`mysqltest1`.`t1`.`кол` AS `c2` from `mysqltest1`.`t1`	NONE	YES	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v1	select 'тест' AS `c1`,`mysqltest1_ddl_i18n_utf8`.`t1`.`кол` AS `c2` from `mysqltest1_ddl_i18n_utf8`.`t1`	NONE	YES	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v2'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v2	select 'тест' AS `c1`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v2	select 'тест' AS `c1`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 SELECT * FROM INFORMATION_SCHEMA.VIEWS WHERE table_name = 'v3'|
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	VIEW_DEFINITION	CHECK_OPTION	IS_UPDATABLE	DEFINER	SECURITY_TYPE	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	ALGORITHM
-def	mysqltest1	v3	select 'тест' AS `тест`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
+def	mysqltest1_ddl_i18n_utf8	v3	select 'тест' AS `тест`	NONE	NO	root@localhost	DEFINER	utf8	utf8_general_ci	UNDEFINED
 
 
 SELECT COLLATION(c1), COLLATION(c2) FROM v1|
@@ -168,18 +170,18 @@ SELECT * FROM v3|
 connection default;
 disconnect con2;
 disconnect con3;
-use test|
-DROP DATABASE mysqltest1|
+use test_ddl_i18n_utf8|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
 
 -------------------------------------------------------------------
 Stored procedures/functions
 -------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-use mysqltest1|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest2_ddl_i18n_utf8|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest2_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+use mysqltest1_ddl_i18n_utf8|
 
 CREATE PROCEDURE p1(
 INOUT парам1 CHAR(10),
@@ -219,7 +221,7 @@ SET парам1 = 'a';
 SET парам2 = 'b';
 END|
 
-CREATE PROCEDURE mysqltest2.p3(
+CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p3(
 INOUT парам1 CHAR(10),
 OUT парам2 CHAR(10))
 BEGIN
@@ -238,7 +240,7 @@ SET парам1 = 'a';
 SET парам2 = 'b';
 END|
 
-CREATE PROCEDURE mysqltest2.p4(
+CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p4(
 INOUT парам1 CHAR(10) CHARACTER SET utf8,
 OUT парам2 CHAR(10) CHARACTER SET utf8)
 BEGIN
@@ -300,7 +302,7 @@ SET парам1 = 'a';
 SET парам2 = 'b';
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE PROCEDURE mysqltest2.p3|
+SHOW CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p3|
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p3		CREATE DEFINER=`root`@`localhost` PROCEDURE `p3`(
 INOUT парам1 CHAR(10),
@@ -321,7 +323,7 @@ SET парам1 = 'a';
 SET парам2 = 'b';
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE PROCEDURE mysqltest2.p4|
+SHOW CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p4|
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p4		CREATE DEFINER=`root`@`localhost` PROCEDURE `p4`(
 INOUT парам1 CHAR(10) CHARACTER SET utf8,
@@ -345,24 +347,24 @@ END	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p1'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest1	p1	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	p1	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p2'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest1	p2	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	p2	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p3'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest2	p3	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest2_ddl_i18n_utf8	p3	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p4'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest2	p4	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest2_ddl_i18n_utf8	p4	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p1'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p1	def	mysqltest1	p1	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p1	def	mysqltest1_ddl_i18n_utf8	p1	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -380,7 +382,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p2'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p2	def	mysqltest1	p2	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p2	def	mysqltest1_ddl_i18n_utf8	p2	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -398,7 +400,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p3'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p3	def	mysqltest2	p3	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p3	def	mysqltest2_ddl_i18n_utf8	p3	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -416,7 +418,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p4'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p4	def	mysqltest2	p4	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p4	def	mysqltest2_ddl_i18n_utf8	p4	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -455,7 +457,7 @@ SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|
 ca	cb
 utf8_general_ci	utf8_general_ci
 
-CALL mysqltest2.p3(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p3(@a, @b)|
 c1	c2	c3
 utf8_unicode_ci	utf8_unicode_ci	utf8_unicode_ci
 c4	c5	c6	c7	c8
@@ -464,7 +466,7 @@ SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|
 ca	cb
 utf8_unicode_ci	utf8_unicode_ci
 
-CALL mysqltest2.p4(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p4(@a, @b)|
 c1	c2	c3
 utf8_general_ci	utf8_general_ci	utf8_general_ci
 c4	c5	c6	c7	c8
@@ -474,9 +476,9 @@ ca	cb
 utf8_general_ci	utf8_general_ci
 
 
-ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
-ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
-connect  con2,localhost,root,,mysqltest1;
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest2_ddl_i18n_utf8 COLLATE cp866_general_ci|
+connect  con2,localhost,root,,mysqltest1_ddl_i18n_utf8;
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
@@ -490,12 +492,12 @@ c1	c2	c3
 utf8_general_ci	utf8_general_ci	utf8_general_ci
 c4	c5	c6	c7	c8
 utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8
-CALL mysqltest2.p3(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p3(@a, @b)|
 c1	c2	c3
 utf8_unicode_ci	utf8_unicode_ci	utf8_unicode_ci
 c4	c5	c6	c7	c8
 utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8
-CALL mysqltest2.p4(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p4(@a, @b)|
 c1	c2	c3
 utf8_general_ci	utf8_general_ci	utf8_general_ci
 c4	c5	c6	c7	c8
@@ -545,7 +547,7 @@ SET парам1 = 'a';
 SET парам2 = 'b';
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE PROCEDURE mysqltest2.p3|
+SHOW CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p3|
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p3		CREATE DEFINER=`root`@`localhost` PROCEDURE `p3`(
 INOUT парам1 CHAR(10),
@@ -566,7 +568,7 @@ SET парам1 = 'a';
 SET парам2 = 'b';
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE PROCEDURE mysqltest2.p4|
+SHOW CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p4|
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p4		CREATE DEFINER=`root`@`localhost` PROCEDURE `p4`(
 INOUT парам1 CHAR(10) CHARACTER SET utf8,
@@ -590,24 +592,24 @@ END	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p1'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest1	p1	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	p1	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p2'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest1	p2	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	p2	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p3'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest2	p3	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest2_ddl_i18n_utf8	p3	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p4'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest2	p4	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest2_ddl_i18n_utf8	p4	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p1'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p1	def	mysqltest1	p1	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p1	def	mysqltest1_ddl_i18n_utf8	p1	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -625,7 +627,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p2'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p2	def	mysqltest1	p2	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p2	def	mysqltest1_ddl_i18n_utf8	p2	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -643,7 +645,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p3'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p3	def	mysqltest2	p3	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p3	def	mysqltest2_ddl_i18n_utf8	p3	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -661,7 +663,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p4'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p4	def	mysqltest2	p4	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p4	def	mysqltest2_ddl_i18n_utf8	p4	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -700,7 +702,7 @@ SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|
 ca	cb
 utf8_general_ci	utf8_general_ci
 
-CALL mysqltest2.p3(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p3(@a, @b)|
 c1	c2	c3
 utf8_unicode_ci	utf8_unicode_ci	utf8_unicode_ci
 c4	c5	c6	c7	c8
@@ -709,7 +711,7 @@ SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|
 ca	cb
 utf8_unicode_ci	utf8_unicode_ci
 
-CALL mysqltest2.p4(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p4(@a, @b)|
 c1	c2	c3
 utf8_general_ci	utf8_general_ci	utf8_general_ci
 c4	c5	c6	c7	c8
@@ -720,10 +722,10 @@ utf8_general_ci	utf8_general_ci
 
 ---> Dump of mysqltest1
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1` /*!40100 DEFAULT CHARACTER SET cp866 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
 
-USE `mysqltest1`;
-ALTER DATABASE `mysqltest1` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
+USE `mysqltest1_ddl_i18n_utf8`;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -756,8 +758,8 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-ALTER DATABASE `mysqltest1` CHARACTER SET cp866 COLLATE cp866_general_ci ;
-ALTER DATABASE `mysqltest1` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -790,16 +792,16 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-ALTER DATABASE `mysqltest1` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
 
 ---> Dumping mysqltest1 to ddl_i18n_utf8sp.mysqltest1.sql
 
 ---> Dump of mysqltest2
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2` /*!40100 DEFAULT CHARACTER SET cp866 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
 
-USE `mysqltest2`;
-ALTER DATABASE `mysqltest2` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
+USE `mysqltest2_ddl_i18n_utf8`;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -832,8 +834,8 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-ALTER DATABASE `mysqltest2` CHARACTER SET cp866 COLLATE cp866_general_ci ;
-ALTER DATABASE `mysqltest2` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -866,18 +868,18 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-ALTER DATABASE `mysqltest2` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
 
 ---> Dumping mysqltest2 to ddl_i18n_utf8sp.mysqltest2.sql
 
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 
 ---> Restoring mysqltest1...
 ---> Restoring mysqltest2...
-connect  con3,localhost,root,,mysqltest1;
+connect  con3,localhost,root,,mysqltest1_ddl_i18n_utf8;
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
@@ -891,12 +893,12 @@ c1	c2	c3
 utf8_general_ci	utf8_general_ci	utf8_general_ci
 c4	c5	c6	c7	c8
 utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8
-CALL mysqltest2.p3(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p3(@a, @b)|
 c1	c2	c3
 utf8_unicode_ci	utf8_unicode_ci	utf8_unicode_ci
 c4	c5	c6	c7	c8
 utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8
-CALL mysqltest2.p4(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p4(@a, @b)|
 c1	c2	c3
 utf8_general_ci	utf8_general_ci	utf8_general_ci
 c4	c5	c6	c7	c8
@@ -946,7 +948,7 @@ SET парам1 = 'a';
 SET парам2 = 'b';
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE PROCEDURE mysqltest2.p3|
+SHOW CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p3|
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p3		CREATE DEFINER=`root`@`localhost` PROCEDURE `p3`(
 INOUT парам1 CHAR(10),
@@ -967,7 +969,7 @@ SET парам1 = 'a';
 SET парам2 = 'b';
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE PROCEDURE mysqltest2.p4|
+SHOW CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p4|
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p4		CREATE DEFINER=`root`@`localhost` PROCEDURE `p4`(
 INOUT парам1 CHAR(10) CHARACTER SET utf8,
@@ -991,24 +993,24 @@ END	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p1'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest1	p1	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	p1	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p2'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest1	p2	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	p2	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p3'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest2	p3	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest2_ddl_i18n_utf8	p3	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW PROCEDURE STATUS LIKE 'p4'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest2	p4	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest2_ddl_i18n_utf8	p4	PROCEDURE	root@localhost	MODIFIED	CREATED	DEFINER		utf8	utf8_general_ci	utf8_unicode_ci
 
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p1'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p1	def	mysqltest1	p1	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p1	def	mysqltest1_ddl_i18n_utf8	p1	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -1026,7 +1028,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p2'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p2	def	mysqltest1	p2	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p2	def	mysqltest1_ddl_i18n_utf8	p2	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -1044,7 +1046,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p3'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p3	def	mysqltest2	p3	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p3	def	mysqltest2_ddl_i18n_utf8	p3	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -1062,7 +1064,7 @@ END	NULL	NULL	SQL	NO	CONTAINS SQL	NULL	DEFINER	CREATED	ALTERED			root@localhost	
 
 SELECT * FROM INFORMATION_SCHEMA.ROUTINES WHERE routine_name = 'p4'|
 SPECIFIC_NAME	ROUTINE_CATALOG	ROUTINE_SCHEMA	ROUTINE_NAME	ROUTINE_TYPE	DATA_TYPE	CHARACTER_MAXIMUM_LENGTH	CHARACTER_OCTET_LENGTH	NUMERIC_PRECISION	NUMERIC_SCALE	DATETIME_PRECISION	CHARACTER_SET_NAME	COLLATION_NAME	DTD_IDENTIFIER	ROUTINE_BODY	ROUTINE_DEFINITION	EXTERNAL_NAME	EXTERNAL_LANGUAGE	PARAMETER_STYLE	IS_DETERMINISTIC	SQL_DATA_ACCESS	SQL_PATH	SECURITY_TYPE	CREATED	LAST_ALTERED	SQL_MODE	ROUTINE_COMMENT	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-p4	def	mysqltest2	p4	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
+p4	def	mysqltest2_ddl_i18n_utf8	p4	PROCEDURE		NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -1101,7 +1103,7 @@ SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|
 ca	cb
 utf8_general_ci	utf8_general_ci
 
-CALL mysqltest2.p3(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p3(@a, @b)|
 c1	c2	c3
 utf8_unicode_ci	utf8_unicode_ci	utf8_unicode_ci
 c4	c5	c6	c7	c8
@@ -1110,7 +1112,7 @@ SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|
 ca	cb
 utf8_unicode_ci	utf8_unicode_ci
 
-CALL mysqltest2.p4(@a, @b)|
+CALL mysqltest2_ddl_i18n_utf8.p4(@a, @b)|
 c1	c2	c3
 utf8_general_ci	utf8_general_ci	utf8_general_ci
 c4	c5	c6	c7	c8
@@ -1121,23 +1123,24 @@ utf8_general_ci	utf8_general_ci
 connection default;
 disconnect con2;
 disconnect con3;
-use test|
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+use test_ddl_i18n_utf8;
+#DROP DATABASE mysqltest1|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 -------------------------------------------------------------------
 Triggers
 -------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-use mysqltest1|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest2_ddl_i18n_utf8|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest2_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+use mysqltest1_ddl_i18n_utf8|
 CREATE TABLE t1(c INT)|
-CREATE TABLE mysqltest2.t1(c INT)|
+CREATE TABLE mysqltest2_ddl_i18n_utf8.t1(c INT)|
 CREATE TABLE log(msg VARCHAR(255))|
-CREATE TABLE mysqltest2.log(msg VARCHAR(255))|
+CREATE TABLE mysqltest2_ddl_i18n_utf8.log(msg VARCHAR(255))|
 
 CREATE TRIGGER trg1 BEFORE INSERT ON t1 FOR EACH ROW
 BEGIN
@@ -1167,7 +1170,7 @@ SET @b2 = _utf8 'текст';
 SET @b3 = _koi8r    '�����';
 END|
 
-CREATE TRIGGER mysqltest2.trg3 BEFORE INSERT ON mysqltest2.t1 FOR EACH ROW
+CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg3 BEFORE INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1181,7 +1184,7 @@ SET @a2 = _utf8 'текст';
 SET @a3 = _koi8r    '�����';
 END|
 
-CREATE TRIGGER mysqltest2.trg4 AFTER INSERT ON mysqltest2.t1 FOR EACH ROW
+CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg4 AFTER INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1229,9 +1232,9 @@ SET @b2 = _utf8 'текст';
 SET @b3 = _koi8r    '�����';
 END	utf8	utf8_general_ci	utf8_unicode_ci	#
 
-SHOW CREATE TRIGGER mysqltest2.trg3|
+SHOW CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg3|
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
-trg3		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2.trg3 BEFORE INSERT ON mysqltest2.t1 FOR EACH ROW
+trg3		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2_ddl_i18n_utf8.trg3 BEFORE INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1245,9 +1248,9 @@ SET @a2 = _utf8 'текст';
 SET @a3 = _koi8r    '�����';
 END	utf8	utf8_general_ci	utf8_unicode_ci	#
 
-SHOW CREATE TRIGGER mysqltest2.trg4|
+SHOW CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg4|
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
-trg4		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2.trg4 AFTER INSERT ON mysqltest2.t1 FOR EACH ROW
+trg4		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2_ddl_i18n_utf8.trg4 AFTER INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1289,7 +1292,7 @@ SET @b2 =  'текст';
 SET @b3 =     'текст';
 END	AFTER	#		root@localhost	utf8	utf8_general_ci	utf8_unicode_ci
 
-use mysqltest2|
+use mysqltest2_ddl_i18n_utf8|
 
 SHOW TRIGGERS|
 Trigger	Event	Table	Statement	Timing	Created	sql_mode	Definer	character_set_client	collation_connection	Database Collation
@@ -1317,12 +1320,12 @@ SET @b1 = 'текст';
 SET @b2 =  'текст';
 SET @b3 =     'текст';
 END	AFTER	#		root@localhost	utf8	utf8_general_ci	utf8_unicode_ci
-use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg1'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	trg1	INSERT	def	mysqltest1	t1	1	NULL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	trg1	INSERT	def	mysqltest1_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -1337,7 +1340,7 @@ END	ROW	BEFORE	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	ut
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg2'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	trg2	INSERT	def	mysqltest1	t1	1	NULL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	trg2	INSERT	def	mysqltest1_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -1352,7 +1355,7 @@ END	ROW	AFTER	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	utf
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg3'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	trg3	INSERT	def	mysqltest2	t1	1	NULL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	trg3	INSERT	def	mysqltest2_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -1367,7 +1370,7 @@ END	ROW	BEFORE	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	ut
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg4'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	trg4	INSERT	def	mysqltest2	t1	1	NULL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	trg4	INSERT	def	mysqltest2_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -1420,10 +1423,10 @@ utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8_general_ci
 DELETE FROM log|
 
 
-INSERT INTO mysqltest2.t1 VALUES(1)|
+INSERT INTO mysqltest2_ddl_i18n_utf8.t1 VALUES(1)|
 
 ---> Log:
-SELECT msg FROM mysqltest2.log|
+SELECT msg FROM mysqltest2_ddl_i18n_utf8.log|
 msg
 koi8r_general_ci
 koi8r_general_ci
@@ -1448,25 +1451,25 @@ COLLATION(@b3) AS cb3|
 ca1	ca2	ca3	cb1	cb2	cb3
 utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8_general_ci	koi8r_general_ci
 
-DELETE FROM mysqltest2.log|
+DELETE FROM mysqltest2_ddl_i18n_utf8.log|
 
 
-ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
-ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest2_ddl_i18n_utf8 COLLATE cp866_general_ci|
 ALTER TABLE t1 ADD COLUMN fake INT|
 ALTER TABLE t1 DROP COLUMN fake|
-ALTER TABLE mysqltest2.t1 ADD COLUMN fake INT|
-ALTER TABLE mysqltest2.t1 DROP COLUMN fake|
-connect  con2,localhost,root,,;
+ALTER TABLE mysqltest2_ddl_i18n_utf8.t1 ADD COLUMN fake INT|
+ALTER TABLE mysqltest2_ddl_i18n_utf8.t1 DROP COLUMN fake|
+connect  con2,localhost,root,,test_ddl_i18n_utf8;
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
-INSERT INTO mysqltest1.t1 VALUES(0)|
-INSERT INTO mysqltest2.t1 VALUES(0)|
-DELETE FROM mysqltest1.log|
-DELETE FROM mysqltest2.log|
+INSERT INTO mysqltest1_ddl_i18n_utf8.t1 VALUES(0)|
+INSERT INTO mysqltest2_ddl_i18n_utf8.t1 VALUES(0)|
+DELETE FROM mysqltest1_ddl_i18n_utf8.log|
+DELETE FROM mysqltest2_ddl_i18n_utf8.log|
 set names utf8|
-use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 
 SHOW CREATE TRIGGER trg1|
@@ -1501,9 +1504,9 @@ SET @b2 = _utf8 'текст';
 SET @b3 = _koi8r    '�����';
 END	utf8	utf8_general_ci	utf8_unicode_ci	#
 
-SHOW CREATE TRIGGER mysqltest2.trg3|
+SHOW CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg3|
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
-trg3		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2.trg3 BEFORE INSERT ON mysqltest2.t1 FOR EACH ROW
+trg3		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2_ddl_i18n_utf8.trg3 BEFORE INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1517,9 +1520,9 @@ SET @a2 = _utf8 'текст';
 SET @a3 = _koi8r    '�����';
 END	utf8	utf8_general_ci	utf8_unicode_ci	#
 
-SHOW CREATE TRIGGER mysqltest2.trg4|
+SHOW CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg4|
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
-trg4		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2.trg4 AFTER INSERT ON mysqltest2.t1 FOR EACH ROW
+trg4		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2_ddl_i18n_utf8.trg4 AFTER INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1561,7 +1564,7 @@ SET @b2 =  'текст';
 SET @b3 =     'текст';
 END	AFTER	#		root@localhost	utf8	utf8_general_ci	utf8_unicode_ci
 
-use mysqltest2|
+use mysqltest2_ddl_i18n_utf8|
 
 SHOW TRIGGERS|
 Trigger	Event	Table	Statement	Timing	Created	sql_mode	Definer	character_set_client	collation_connection	Database Collation
@@ -1589,12 +1592,12 @@ SET @b1 = 'текст';
 SET @b2 =  'текст';
 SET @b3 =     'текст';
 END	AFTER	#		root@localhost	utf8	utf8_general_ci	utf8_unicode_ci
-use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg1'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	trg1	INSERT	def	mysqltest1	t1	1	NULL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	trg1	INSERT	def	mysqltest1_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -1609,7 +1612,7 @@ END	ROW	BEFORE	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	ut
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg2'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	trg2	INSERT	def	mysqltest1	t1	1	NULL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	trg2	INSERT	def	mysqltest1_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -1624,7 +1627,7 @@ END	ROW	AFTER	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	utf
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg3'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	trg3	INSERT	def	mysqltest2	t1	1	NULL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	trg3	INSERT	def	mysqltest2_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -1639,7 +1642,7 @@ END	ROW	BEFORE	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	ut
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg4'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	trg4	INSERT	def	mysqltest2	t1	1	NULL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	trg4	INSERT	def	mysqltest2_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -1692,10 +1695,10 @@ utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8_general_ci
 DELETE FROM log|
 
 
-INSERT INTO mysqltest2.t1 VALUES(1)|
+INSERT INTO mysqltest2_ddl_i18n_utf8.t1 VALUES(1)|
 
 ---> Log:
-SELECT msg FROM mysqltest2.log|
+SELECT msg FROM mysqltest2_ddl_i18n_utf8.log|
 msg
 koi8r_general_ci
 koi8r_general_ci
@@ -1720,13 +1723,13 @@ COLLATION(@b3) AS cb3|
 ca1	ca2	ca3	cb1	cb2	cb3
 utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8_general_ci	koi8r_general_ci
 
-DELETE FROM mysqltest2.log|
+DELETE FROM mysqltest2_ddl_i18n_utf8.log|
 
 ---> Dump of mysqltest1
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1` /*!40100 DEFAULT CHARACTER SET cp866 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
 
-USE `mysqltest1`;
+USE `mysqltest1_ddl_i18n_utf8`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `log` (
@@ -1740,7 +1743,7 @@ CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 INSERT INTO `t1` VALUES (1),(0),(1);
-ALTER DATABASE `mysqltest1` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -1768,8 +1771,8 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-ALTER DATABASE `mysqltest1` CHARACTER SET cp866 COLLATE cp866_general_ci ;
-ALTER DATABASE `mysqltest1` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -1797,15 +1800,15 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-ALTER DATABASE `mysqltest1` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
 
 ---> Dumping mysqltest1 to ddl_i18n_utf8triggers.mysqltest1.sql
 
 ---> Dump of mysqltest2
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2` /*!40100 DEFAULT CHARACTER SET cp866 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
 
-USE `mysqltest2`;
+USE `mysqltest2_ddl_i18n_utf8`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `log` (
@@ -1819,7 +1822,7 @@ CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 INSERT INTO `t1` VALUES (1),(0),(1);
-ALTER DATABASE `mysqltest2` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -1829,7 +1832,7 @@ ALTER DATABASE `mysqltest2` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = '' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER mysqltest2.trg3 BEFORE INSERT ON mysqltest2.t1 FOR EACH ROW
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER mysqltest2_ddl_i18n_utf8.trg3 BEFORE INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1847,8 +1850,8 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-ALTER DATABASE `mysqltest2` CHARACTER SET cp866 COLLATE cp866_general_ci ;
-ALTER DATABASE `mysqltest2` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -1858,7 +1861,7 @@ ALTER DATABASE `mysqltest2` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = '' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER mysqltest2.trg4 AFTER INSERT ON mysqltest2.t1 FOR EACH ROW
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER mysqltest2_ddl_i18n_utf8.trg4 AFTER INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1876,31 +1879,31 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-ALTER DATABASE `mysqltest2` CHARACTER SET cp866 COLLATE cp866_general_ci ;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;
 
 ---> Dumping mysqltest2 to ddl_i18n_utf8triggers.mysqltest2.sql
 
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 
 ---> Restoring mysqltest1...
 ---> Restoring mysqltest2...
-ALTER TABLE mysqltest1.t1 ADD COLUMN fake INT|
-ALTER TABLE mysqltest1.t1 DROP COLUMN fake|
-ALTER TABLE mysqltest2.t1 ADD COLUMN fake INT|
-ALTER TABLE mysqltest2.t1 DROP COLUMN fake|
-connect  con3,localhost,root,,;
+ALTER TABLE mysqltest1_ddl_i18n_utf8.t1 ADD COLUMN fake INT|
+ALTER TABLE mysqltest1_ddl_i18n_utf8.t1 DROP COLUMN fake|
+ALTER TABLE mysqltest2_ddl_i18n_utf8.t1 ADD COLUMN fake INT|
+ALTER TABLE mysqltest2_ddl_i18n_utf8.t1 DROP COLUMN fake|
+connect  con3,localhost,root,,test_ddl_i18n_utf8;
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
-INSERT INTO mysqltest1.t1 VALUES(0)|
-INSERT INTO mysqltest2.t1 VALUES(0)|
-DELETE FROM mysqltest1.log|
-DELETE FROM mysqltest2.log|
+INSERT INTO mysqltest1_ddl_i18n_utf8.t1 VALUES(0)|
+INSERT INTO mysqltest2_ddl_i18n_utf8.t1 VALUES(0)|
+DELETE FROM mysqltest1_ddl_i18n_utf8.log|
+DELETE FROM mysqltest2_ddl_i18n_utf8.log|
 set names utf8|
-use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 
 SHOW CREATE TRIGGER trg1|
@@ -1935,9 +1938,9 @@ SET @b2 = _utf8 'текст';
 SET @b3 = _koi8r    '�����';
 END	utf8	utf8_general_ci	utf8_unicode_ci	#
 
-SHOW CREATE TRIGGER mysqltest2.trg3|
+SHOW CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg3|
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
-trg3		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2.trg3 BEFORE INSERT ON mysqltest2.t1 FOR EACH ROW
+trg3		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2_ddl_i18n_utf8.trg3 BEFORE INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1951,9 +1954,9 @@ SET @a2 = _utf8 'текст';
 SET @a3 = _koi8r    '�����';
 END	utf8	utf8_general_ci	utf8_unicode_ci	#
 
-SHOW CREATE TRIGGER mysqltest2.trg4|
+SHOW CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg4|
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
-trg4		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2.trg4 AFTER INSERT ON mysqltest2.t1 FOR EACH ROW
+trg4		CREATE DEFINER=`root`@`localhost` TRIGGER mysqltest2_ddl_i18n_utf8.trg4 AFTER INSERT ON mysqltest2_ddl_i18n_utf8.t1 FOR EACH ROW
 BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
@@ -1995,7 +1998,7 @@ SET @b2 =  'текст';
 SET @b3 =     'текст';
 END	AFTER	#		root@localhost	utf8	utf8_general_ci	utf8_unicode_ci
 
-use mysqltest2|
+use mysqltest2_ddl_i18n_utf8|
 
 SHOW TRIGGERS|
 Trigger	Event	Table	Statement	Timing	Created	sql_mode	Definer	character_set_client	collation_connection	Database Collation
@@ -2023,12 +2026,12 @@ SET @b1 = 'текст';
 SET @b2 =  'текст';
 SET @b3 =     'текст';
 END	AFTER	#		root@localhost	utf8	utf8_general_ci	utf8_unicode_ci
-use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg1'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	trg1	INSERT	def	mysqltest1	t1	1	NULL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	trg1	INSERT	def	mysqltest1_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -2043,7 +2046,7 @@ END	ROW	BEFORE	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	ut
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg2'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	trg2	INSERT	def	mysqltest1	t1	1	NULL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	trg2	INSERT	def	mysqltest1_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -2058,7 +2061,7 @@ END	ROW	AFTER	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	utf
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg3'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	trg3	INSERT	def	mysqltest2	t1	1	NULL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	trg3	INSERT	def	mysqltest2_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10);
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -2073,7 +2076,7 @@ END	ROW	BEFORE	NULL	NULL	OLD	NEW	CREATED		root@localhost	utf8	utf8_general_ci	ut
 
 SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_name = 'trg4'|
 TRIGGER_CATALOG	TRIGGER_SCHEMA	TRIGGER_NAME	EVENT_MANIPULATION	EVENT_OBJECT_CATALOG	EVENT_OBJECT_SCHEMA	EVENT_OBJECT_TABLE	ACTION_ORDER	ACTION_CONDITION	ACTION_STATEMENT	ACTION_ORIENTATION	ACTION_TIMING	ACTION_REFERENCE_OLD_TABLE	ACTION_REFERENCE_NEW_TABLE	ACTION_REFERENCE_OLD_ROW	ACTION_REFERENCE_NEW_ROW	CREATED	SQL_MODE	DEFINER	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	trg4	INSERT	def	mysqltest2	t1	1	NULL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	trg4	INSERT	def	mysqltest2_ddl_i18n_utf8	t1	1	NULL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 INSERT INTO log VALUES(COLLATION(перем1));
 INSERT INTO log VALUES(COLLATION('текст'));
@@ -2126,10 +2129,10 @@ utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8_general_ci
 DELETE FROM log|
 
 
-INSERT INTO mysqltest2.t1 VALUES(1)|
+INSERT INTO mysqltest2_ddl_i18n_utf8.t1 VALUES(1)|
 
 ---> Log:
-SELECT msg FROM mysqltest2.log|
+SELECT msg FROM mysqltest2_ddl_i18n_utf8.log|
 msg
 koi8r_general_ci
 koi8r_general_ci
@@ -2154,23 +2157,23 @@ COLLATION(@b3) AS cb3|
 ca1	ca2	ca3	cb1	cb2	cb3
 utf8_general_ci	utf8_general_ci	koi8r_general_ci	utf8_general_ci	utf8_general_ci	koi8r_general_ci
 
-DELETE FROM mysqltest2.log|
+DELETE FROM mysqltest2_ddl_i18n_utf8.log|
 connection default;
 disconnect con2;
 disconnect con3;
-use test|
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+use test_ddl_i18n_utf8|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 -------------------------------------------------------------------
 Events
 -------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-use mysqltest1|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest2_ddl_i18n_utf8|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest2_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+use mysqltest1_ddl_i18n_utf8|
 
 CREATE EVENT ev1 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
 BEGIN
@@ -2200,7 +2203,7 @@ END|
 Warnings:
 Warning	1105	Event scheduler is switched off, use SET GLOBAL event_scheduler=ON to enable it.
 
-CREATE EVENT mysqltest2.ev3 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
+CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
 BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
@@ -2214,7 +2217,7 @@ END|
 Warnings:
 Warning	1105	Event scheduler is switched off, use SET GLOBAL event_scheduler=ON to enable it.
 
-CREATE EVENT mysqltest2.ev4 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
+CREATE EVENT mysqltest2_ddl_i18n_utf8.ev4 ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO
 BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
@@ -2256,7 +2259,7 @@ COLLATION(_koi8r    '�����') AS c4,
 @@character_set_client AS c6;
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE EVENT mysqltest2.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
 ev3		SYSTEM	CREATE DEFINER=`root`@`localhost` EVENT `ev3` ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
@@ -2269,7 +2272,7 @@ COLLATION(_koi8r    '�����') AS c4,
 @@character_set_client AS c6;
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE EVENT mysqltest2.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
 ev3		SYSTEM	CREATE DEFINER=`root`@`localhost` EVENT `ev3` ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
@@ -2285,11 +2288,11 @@ END	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev1'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
-mysqltest1	ev1	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	ev1	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev2'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
-mysqltest1	ev2	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	ev2	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev3'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
@@ -2300,7 +2303,7 @@ Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	E
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev1'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	ev1	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	ev1	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -2313,7 +2316,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev2'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	ev2	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	ev2	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2326,7 +2329,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev3'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	ev3	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	ev3	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2339,7 +2342,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev4'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	ev4	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	ev4	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2351,16 +2354,16 @@ COLLATION(    'текст') AS c4,
 END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	LAST_ALTERED	NULL		1	utf8	utf8_general_ci	utf8_unicode_ci
 
 
-ALTER DATABASE mysqltest1 COLLATE cp866_general_ci|
-ALTER DATABASE mysqltest2 COLLATE cp866_general_ci|
-connect  con2,localhost,root,,mysqltest1;
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp866_general_ci|
+ALTER DATABASE mysqltest2_ddl_i18n_utf8 COLLATE cp866_general_ci|
+connect  con2,localhost,root,,mysqltest1_ddl_i18n_utf8;
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
 SHOW CREATE EVENT ev1|
 SHOW CREATE EVENT ev2|
-SHOW CREATE EVENT mysqltest2.ev3|
-SHOW CREATE EVENT mysqltest2.ev4|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev4|
 set names utf8|
 
 
@@ -2390,7 +2393,7 @@ COLLATION(_koi8r    '�����') AS c4,
 @@character_set_client AS c6;
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE EVENT mysqltest2.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
 ev3		SYSTEM	CREATE DEFINER=`root`@`localhost` EVENT `ev3` ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
@@ -2403,7 +2406,7 @@ COLLATION(_koi8r    '�����') AS c4,
 @@character_set_client AS c6;
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE EVENT mysqltest2.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
 ev3		SYSTEM	CREATE DEFINER=`root`@`localhost` EVENT `ev3` ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
@@ -2419,11 +2422,11 @@ END	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev1'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
-mysqltest1	ev1	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	ev1	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev2'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
-mysqltest1	ev2	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	ev2	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev3'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
@@ -2434,7 +2437,7 @@ Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	E
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev1'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	ev1	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	ev1	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -2447,7 +2450,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev2'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	ev2	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	ev2	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2460,7 +2463,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev3'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	ev3	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	ev3	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2473,7 +2476,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev4'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	ev4	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	ev4	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2486,12 +2489,12 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 ---> Dump of mysqltest1
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1` /*!40100 DEFAULT CHARACTER SET cp866 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest1_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
 
-USE `mysqltest1`;
+USE `mysqltest1_ddl_i18n_utf8`;
 /*!50106 SET @save_time_zone= @@TIME_ZONE */ ;
 DELIMITER ;;
-ALTER DATABASE `mysqltest1` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;;
@@ -2517,9 +2520,9 @@ END */ ;;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;;
 /*!50003 SET character_set_results = @saved_cs_results */ ;;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;;
-ALTER DATABASE `mysqltest1` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
 DELIMITER ;;
-ALTER DATABASE `mysqltest1` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;;
@@ -2545,7 +2548,7 @@ END */ ;;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;;
 /*!50003 SET character_set_results = @saved_cs_results */ ;;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;;
-ALTER DATABASE `mysqltest1` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
+ALTER DATABASE `mysqltest1_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
 DELIMITER ;
 /*!50106 SET TIME_ZONE= @save_time_zone */ ;
 
@@ -2553,12 +2556,12 @@ DELIMITER ;
 
 ---> Dump of mysqltest2
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2` /*!40100 DEFAULT CHARACTER SET cp866 */;
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `mysqltest2_ddl_i18n_utf8` /*!40100 DEFAULT CHARACTER SET cp866 */;
 
-USE `mysqltest2`;
+USE `mysqltest2_ddl_i18n_utf8`;
 /*!50106 SET @save_time_zone= @@TIME_ZONE */ ;
 DELIMITER ;;
-ALTER DATABASE `mysqltest2` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;;
@@ -2584,9 +2587,9 @@ END */ ;;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;;
 /*!50003 SET character_set_results = @saved_cs_results */ ;;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;;
-ALTER DATABASE `mysqltest2` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
 DELIMITER ;;
-ALTER DATABASE `mysqltest2` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;;
@@ -2612,27 +2615,27 @@ END */ ;;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;;
 /*!50003 SET character_set_results = @saved_cs_results */ ;;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;;
-ALTER DATABASE `mysqltest2` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
+ALTER DATABASE `mysqltest2_ddl_i18n_utf8` CHARACTER SET cp866 COLLATE cp866_general_ci ;;
 DELIMITER ;
 /*!50106 SET TIME_ZONE= @save_time_zone */ ;
 
 ---> Dumping mysqltest2 to ddl_i18n_utf8events.mysqltest2.sql
 
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_ddl_i18n_utf8|
+DROP DATABASE mysqltest2_ddl_i18n_utf8|
 
 
 ---> Restoring mysqltest1...
 ---> Restoring mysqltest2...
-connect  con3,localhost,root,,mysqltest1;
+connect  con3,localhost,root,,mysqltest1_ddl_i18n_utf8;
 SET @@character_set_client= cp1251|
 SET @@character_set_results= cp1251|
 SET @@collation_connection= cp1251_general_ci|
 SHOW CREATE EVENT ev1|
 SHOW CREATE EVENT ev2|
-SHOW CREATE EVENT mysqltest2.ev3|
-SHOW CREATE EVENT mysqltest2.ev4|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev4|
 set names utf8|
 
 
@@ -2662,7 +2665,7 @@ COLLATION(_koi8r    '�����') AS c4,
 @@character_set_client AS c6;
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE EVENT mysqltest2.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
 ev3		SYSTEM	CREATE DEFINER=`root`@`localhost` EVENT `ev3` ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
@@ -2675,7 +2678,7 @@ COLLATION(_koi8r    '�����') AS c4,
 @@character_set_client AS c6;
 END	utf8	utf8_general_ci	utf8_unicode_ci
 
-SHOW CREATE EVENT mysqltest2.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
 ev3		SYSTEM	CREATE DEFINER=`root`@`localhost` EVENT `ev3` ON SCHEDULE AT '1970-01-02 00:00:00' ON COMPLETION PRESERVE DISABLE DO BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
@@ -2691,11 +2694,11 @@ END	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev1'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
-mysqltest1	ev1	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	ev1	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev2'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
-mysqltest1	ev2	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
+mysqltest1_ddl_i18n_utf8	ev2	root@localhost	SYSTEM	ONE TIME	1970-01-02 00:00:00	NULL	NULL	NULL	NULL	DISABLED	1	utf8	utf8_general_ci	utf8_unicode_ci
 
 SHOW EVENTS LIKE 'ev3'|
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
@@ -2706,7 +2709,7 @@ Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	E
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev1'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	ev1	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	ev1	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10);
 SELECT
 COLLATION(перем1) AS c1,
@@ -2719,7 +2722,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev2'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest1	ev2	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest1_ddl_i18n_utf8	ev2	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2732,7 +2735,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev3'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	ev3	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	ev3	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2745,7 +2748,7 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 
 SELECT * FROM INFORMATION_SCHEMA.EVENTS WHERE event_name = 'ev4'|
 EVENT_CATALOG	EVENT_SCHEMA	EVENT_NAME	DEFINER	TIME_ZONE	EVENT_BODY	EVENT_DEFINITION	EVENT_TYPE	EXECUTE_AT	INTERVAL_VALUE	INTERVAL_FIELD	SQL_MODE	STARTS	ENDS	STATUS	ON_COMPLETION	CREATED	LAST_ALTERED	LAST_EXECUTED	EVENT_COMMENT	ORIGINATOR	CHARACTER_SET_CLIENT	COLLATION_CONNECTION	DATABASE_COLLATION
-def	mysqltest2	ev4	root@localhost	SYSTEM	SQL	BEGIN
+def	mysqltest2_ddl_i18n_utf8	ev4	root@localhost	SYSTEM	SQL	BEGIN
 DECLARE перем1 CHAR(10) CHARACTER SET utf8;
 SELECT
 COLLATION(перем1) AS c1,
@@ -2760,11 +2763,11 @@ END	ONE TIME	1970-01-02 00:00:00	NULL	NULL		NULL	NULL	DISABLED	PRESERVE	CREATED	
 DDL statements within stored routine.
 -------------------------------------------------------------------
 
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
-use mysqltest1|
+DROP DATABASE IF EXISTS mysqltest1_ddl_i18n_utf8|
+DROP DATABASE IF EXISTS mysqltest2_ddl_i18n_utf8|
+CREATE DATABASE mysqltest1_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+CREATE DATABASE mysqltest2_ddl_i18n_utf8 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_unicode_ci|
+use mysqltest1_ddl_i18n_utf8|
 
 CREATE PROCEDURE p1()
 BEGIN
@@ -2772,7 +2775,7 @@ CREATE TABLE t1(col1 VARCHAR(10));
 SHOW CREATE TABLE t1;
 END|
 
-CREATE PROCEDURE mysqltest2.p2()
+CREATE PROCEDURE mysqltest2_ddl_i18n_utf8.p2()
 BEGIN
 CREATE TABLE t2(col1 VARCHAR(10));
 SHOW CREATE TABLE t2;
@@ -2791,22 +2794,22 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 
 
-CALL mysqltest2.p2()|
+CALL mysqltest2_ddl_i18n_utf8.p2()|
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `col1` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 
-SHOW CREATE TABLE mysqltest2.t2|
+SHOW CREATE TABLE mysqltest2_ddl_i18n_utf8.t2|
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `col1` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 
-ALTER DATABASE mysqltest1 COLLATE cp1251_general_cs|
-ALTER DATABASE mysqltest2 COLLATE cp1251_general_cs|
+ALTER DATABASE mysqltest1_ddl_i18n_utf8 COLLATE cp1251_general_cs|
+ALTER DATABASE mysqltest2_ddl_i18n_utf8 COLLATE cp1251_general_cs|
 DROP TABLE t1|
-DROP TABLE mysqltest2.t2|
+DROP TABLE mysqltest2_ddl_i18n_utf8.t2|
 
 CALL p1()|
 Table	Create Table
@@ -2821,13 +2824,13 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
 
 
-CALL mysqltest2.p2()|
+CALL mysqltest2_ddl_i18n_utf8.p2()|
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `col1` varchar(10) COLLATE cp1251_general_cs DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
 
-SHOW CREATE TABLE mysqltest2.t2|
+SHOW CREATE TABLE mysqltest2_ddl_i18n_utf8.t2|
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `col1` varchar(10) COLLATE cp1251_general_cs DEFAULT NULL
@@ -2837,6 +2840,7 @@ disconnect con2;
 connection con3;
 disconnect con3;
 connection default;
-USE test;
-DROP DATABASE mysqltest1;
-DROP DATABASE mysqltest2;
+USE test_ddl_i18n_utf8;
+DROP DATABASE mysqltest1_ddl_i18n_utf8;
+DROP DATABASE mysqltest2_ddl_i18n_utf8;
+DROP DATABASE test_ddl_i18n_utf8;

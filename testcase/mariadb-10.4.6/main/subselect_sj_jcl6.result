@@ -1959,11 +1959,6 @@ CREATE TABLE t2 ( c INT, d INT, KEY(c) );
 INSERT INTO t2 VALUES
 (1,2),(2,1),(3,3),(4,2),(5,5),(6,3),(7,1);
 analyze table t1,t2;
-Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
 SELECT a, b, d FROM t1, t2
 WHERE ( b, d ) IN
 ( SELECT b, d FROM t1, t2 WHERE b = c );
@@ -2010,13 +2005,6 @@ insert into t3 values (1),(2);
 insert into t2 
 select (A.a+1000*B.a)/20, 'filler_data' from t10 A, t0 B;
 analyze table t1,t2,t3;
-Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
-test.t3	analyze	status	Engine-independent statistics collected
-test.t3	analyze	status	OK
 delete from t1 where kp2 in (1,3);
 select sum(t2.a)
 from t2,t3
@@ -2298,7 +2286,7 @@ DROP TABLE t1, t2;
 # MDEV-389: Wrong result (missing row) with semijoin, join_cache_level>4, LEFT JOIN...
 #  (testcase only)
 #
-connect  con1,localhost,root,,;
+connect  con1,localhost,root,,$db;
 connection con1;
 SET join_cache_level = 5;
 SET optimizer_switch = 'semijoin=on';

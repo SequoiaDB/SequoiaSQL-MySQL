@@ -1,6 +1,8 @@
 #
 # Problem with many enums
 #
+CREATE DATABASE test_type_enum;
+USE test_type_enum;
 
 --disable_warnings
 DROP TABLE if exists t1;
@@ -519,3 +521,5 @@ DELIMITER ;$$
 CALL p1();
 DROP PROCEDURE p1;
 DROP TABLE t1;
+
+DROP DATABASE test_type_enum;

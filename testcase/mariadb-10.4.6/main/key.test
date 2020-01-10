@@ -262,7 +262,9 @@ drop table t1;
 #
 # BUG#6151 - myisam index corruption
 #
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 CREATE TABLE t1 (
   c1 int,
   c2 varbinary(240),
@@ -561,7 +563,9 @@ INSERT INTO t1 (a, b)
    VALUES
      (1,1), (1,2), (1,3), (1,4), (1,5),
      (2,2), (2,3), (2,1), (3,1), (4,1), (4,2), (4,3), (4,4), (4,5), (4,6);
+--disable_result_log
 ANALYZE table t1;
+--enable_result_log
 #EXPLAIN SELECT 1 FROM t1 AS t1_outer WHERE 
 #  (SELECT max(b) FROM t1 GROUP BY a HAVING a < 2) > 12;
 SELECT 1 as RES FROM t1 AS t1_outer WHERE 

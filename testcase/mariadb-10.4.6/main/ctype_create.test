@@ -2,6 +2,8 @@
 # Test for various CREATE statements and character sets
 #
 
+CREATE DATABASE test_ctype_create;
+USE test_ctype_create;
 
 # Check that the database charset is taken from server charset by default:
 # - Change local character_set_server variable to latin5.
@@ -12,15 +14,20 @@
 # further CREATE DATABASEs.
 
 
+#SET @@character_set_server=latin5;
+#CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET cp1251;
+#USE mysqltest1;
+#CREATE DATABASE mysqltest2;
 SET @@character_set_server=latin5;
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET cp1251;
-USE mysqltest1;
-CREATE DATABASE mysqltest2;
+CREATE DATABASE mysqltest1_ctype_create DEFAULT CHARACTER SET cp1251;
+USE mysqltest1_ctype_create;
+CREATE DATABASE mysqltest2_ctype_create;
 
 #
 # This should be cp1251
 #
-SHOW CREATE DATABASE mysqltest1;
+#SHOW CREATE DATABASE mysqltest1;
+SHOW CREATE DATABASE mysqltest1_ctype_create;
 
 #
 # Database "mysqltest2" should take the default latin5 value from
@@ -28,33 +35,46 @@ SHOW CREATE DATABASE mysqltest1;
 # Afterwards, table "d2.t1" should inherit the default latin5 value from
 # the database "mysqltest2", using database option hash.
 #
-SHOW CREATE DATABASE mysqltest2;
-CREATE TABLE mysqltest2.t1 (a char(10));
-SHOW CREATE TABLE mysqltest2.t1;
-DROP TABLE mysqltest2.t1;
+#SHOW CREATE DATABASE mysqltest2;
+#CREATE TABLE mysqltest2.t1 (a char(10));
+#SHOW CREATE TABLE mysqltest2.t1;
+#DROP TABLE mysqltest2.t1;
+SHOW CREATE DATABASE mysqltest2_ctype_create;
+CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
+SHOW CREATE TABLE mysqltest2_ctype_create.t1;
+DROP TABLE mysqltest2_ctype_create.t1;
 
 #
 # Now we check if the database charset is updated in
 # the database options hash when we ALTER DATABASE.
 #
-ALTER DATABASE mysqltest2 DEFAULT CHARACTER SET latin7;
-CREATE TABLE mysqltest2.t1 (a char(10));
-SHOW CREATE TABLE mysqltest2.t1;
-DROP DATABASE mysqltest2;
+#ALTER DATABASE mysqltest2 DEFAULT CHARACTER SET latin7;
+#CREATE TABLE mysqltest2.t1 (a char(10));
+#SHOW CREATE TABLE mysqltest2.t1;
+#DROP DATABASE mysqltest2;
+ALTER DATABASE mysqltest2_ctype_create DEFAULT CHARACTER SET latin7;
+CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
+SHOW CREATE TABLE mysqltest2_ctype_create.t1;
+DROP DATABASE mysqltest2_ctype_create;
 
 #
 # Now we check if the database charset is removed from
 # the database option hash when we DROP DATABASE.
 #
-CREATE DATABASE mysqltest2 CHARACTER SET latin2;
-CREATE TABLE mysqltest2.t1 (a char(10));
-SHOW CREATE TABLE mysqltest2.t1;
-DROP DATABASE mysqltest2;
+#CREATE DATABASE mysqltest2 CHARACTER SET latin2;
+#CREATE TABLE mysqltest2.t1 (a char(10));
+#SHOW CREATE TABLE mysqltest2.t1;
+#DROP DATABASE mysqltest2;
+CREATE DATABASE mysqltest2_ctype_create CHARACTER SET latin2;
+CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
+SHOW CREATE TABLE mysqltest2_ctype_create.t1;
+DROP DATABASE mysqltest2_ctype_create;
 
 #
 # Check that table value uses database level by default
 #
-USE mysqltest1;
+#USE mysqltest1;
+USE mysqltest1_ctype_create;
 CREATE TABLE t1 (a char(10));
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
@@ -85,17 +105,23 @@ create database d1 default character set latin1 collate latin2_bin;
 
 #
 #
-DROP DATABASE mysqltest1;
+#DROP DATABASE mysqltest1;
+DROP DATABASE mysqltest1_ctype_create;
 
 
 #
 # Synatx: 'ALTER DATABASE' without db_name
 #
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET latin7;
-use mysqltest2;
+#CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET latin7;
+#use mysqltest2;
+#ALTER DATABASE DEFAULT CHARACTER SET latin2;
+#show create database mysqltest2;
+#drop database mysqltest2;
+CREATE DATABASE mysqltest2_ctype_create DEFAULT CHARACTER SET latin7;
+use mysqltest2_ctype_create;
 ALTER DATABASE DEFAULT CHARACTER SET latin2;
-show create database mysqltest2;
-drop database mysqltest2;
+show create database mysqltest2_ctype_create;
+drop database mysqltest2_ctype_create;
 --error 1046
 ALTER DATABASE DEFAULT CHARACTER SET latin2;
 
@@ -105,7 +131,8 @@ ALTER DATABASE DEFAULT CHARACTER SET latin2;
 ALTER DATABASE aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa DEFAULT CHARACTER SET latin2;
 --error 1102
 ALTER DATABASE `` DEFAULT CHARACTER SET latin2;
-USE test;
+#USE test;
+USE test_ctype_create;
 
 --echo #
 --echo # Start of 10.0 tests
@@ -114,8 +141,10 @@ USE test;
 --echo #
 --echo # MDEV-7387 Alter table xxx CHARACTER SET utf8, CONVERT TO CHARACTER SET latin1 should fail
 --echo #
-CREATE DATABASE tmp DEFAULT CHARACTER SET latin5;
-USE tmp;
+#CREATE DATABASE tmp DEFAULT CHARACTER SET latin5;
+#USE tmp;
+CREATE DATABASE tmp_ctype_create DEFAULT CHARACTER SET latin5;
+USE tmp_ctype_create;
 --error ER_CONFLICTING_DECLARATIONS
 CREATE TABLE t1 (a VARCHAR(10)) CHARACTER SET DEFAULT, CHARACTER SET utf8;
 --error ER_CONFLICTING_DECLARATIONS
@@ -139,9 +168,12 @@ ALTER TABLE t1 CONVERT TO CHARACTER SET DEFAULT, CHARACTER SET utf8;
 --error ER_CONFLICTING_DECLARATIONS
 ALTER TABLE t1 CONVERT TO CHARACTER SET DEFAULT, CHARACTER SET latin1;
 DROP TABLE t1;
-DROP DATABASE tmp;
-USE test;
+#DROP DATABASE tmp;
+#USE test;
+DROP DATABASE tmp_ctype_create;
+USE test_ctype_create;
 
+DROP DATABASE test_ctype_create;
 --echo #
 --echo # End of 10.0 tests
 --echo #

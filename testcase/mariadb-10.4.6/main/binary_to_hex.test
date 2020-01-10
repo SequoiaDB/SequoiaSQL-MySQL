@@ -64,23 +64,29 @@ SELECT * FROM t2;
 --echo
 --echo #Print the table contents in tab format
 --echo
---exec $MYSQL test --binary-as-hex -e "SELECT * FROM t1; SELECT * FROM t2;"
+--let $db=`select database()`
+#--exec $MYSQL test --binary-as-hex -e "SELECT * FROM t1; SELECT * FROM t2;"
+--exec $MYSQL $db --binary-as-hex -e "SELECT * FROM t1; SELECT * FROM t2;"
 --echo
 --echo #Print the table contents in table format
 --echo
---exec $MYSQL test --binary-as-hex --table -e "SELECT * FROM t1; SELECT * FROM t2 WHERE col2=0x123ABC;"
+#--exec $MYSQL test --binary-as-hex --table -e "SELECT * FROM t1; SELECT * FROM t2 WHERE col2=0x123ABC;"
+--exec $MYSQL $db --binary-as-hex --table -e "SELECT * FROM t1; SELECT * FROM t2 WHERE col2=0x123ABC;"
 --echo
 --echo #Print the table contents vertically
 --echo
---exec $MYSQL test --binary-as-hex --vertical -e "SELECT * FROM t1;"
+#--exec $MYSQL test --binary-as-hex --vertical -e "SELECT * FROM t1;"
+--exec $MYSQL $db --binary-as-hex --vertical -e "SELECT * FROM t1;"
 --echo
 --echo #Print the table contents in xml format
 --echo
---exec $MYSQL test --binary-as-hex --xml -e "SELECT * FROM t1; SELECT * FROM t2;"
+#--exec $MYSQL test --binary-as-hex --xml -e "SELECT * FROM t1; SELECT * FROM t2;"
+--exec $MYSQL $db --binary-as-hex --xml -e "SELECT * FROM t1; SELECT * FROM t2;"
 --echo
 --echo #Print the table contents in html format
 --echo
---exec $MYSQL test --binary-as-hex --html -e "SELECT * FROM t1; SELECT * FROM t2;"
+#--exec $MYSQL test --binary-as-hex --html -e "SELECT * FROM t1; SELECT * FROM t2;"
+--exec $MYSQL $db --binary-as-hex --html -e "SELECT * FROM t1; SELECT * FROM t2;"
 
 #Cleanup
 DROP TABLE t1, t2;
@@ -98,7 +104,8 @@ XA PREPARE 'tr1', 'bq'/
 XA RECOVER/
 XA ROLLBACK 'tr1', 'bq'/
 EOF
---exec $MYSQL test --binary-as-hex < $MYSQLTEST_VARDIR/tmp/mdev-14593.sql 2>&1
+#--exec $MYSQL test --binary-as-hex < $MYSQLTEST_VARDIR/tmp/mdev-14593.sql 2>&1
+--exec $MYSQL $db --binary-as-hex < $MYSQLTEST_VARDIR/tmp/mdev-14593.sql 2>&1
 remove_file $MYSQLTEST_VARDIR/tmp/mdev-14593.sql;
 
 

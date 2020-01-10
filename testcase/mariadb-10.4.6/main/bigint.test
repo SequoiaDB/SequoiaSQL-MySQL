@@ -358,6 +358,7 @@ while($n) {
   --disable_result_log
   eval EXPLAIN EXTENDED SELECT 1 FROM t1 WHERE a = $x AND TRIM(a) = b;
   --enable_result_log
+  --replace_regex /test_parallel_[0-9]/X/
   SHOW WARNINGS;
 }
 

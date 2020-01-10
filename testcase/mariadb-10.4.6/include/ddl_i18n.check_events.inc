@@ -7,9 +7,11 @@ SHOW CREATE EVENT ev1|
 --echo
 SHOW CREATE EVENT ev2|
 --echo
-SHOW CREATE EVENT mysqltest2.ev3|
+#SHOW CREATE EVENT mysqltest2.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
 --echo
-SHOW CREATE EVENT mysqltest2.ev3|
+#SHOW CREATE EVENT mysqltest2.ev3|
+SHOW CREATE EVENT mysqltest2_ddl_i18n_utf8.ev3|
 
 #   - Check SHOW statement;
 

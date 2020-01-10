@@ -1,9 +1,11 @@
 call mtr.add_suppression("table or database name 'abc`def'");
+CREATE DATABASE test_drop;
+USE test_drop;
 drop table if exists t1;
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 drop database if exists client_test_db;
 drop table t1;
-ERROR 42S02: Unknown table 'test.t1'
+ERROR 42S02: Unknown table 'test_drop.t1'
 create table t1(n int);
 insert into t1 values(1);
 create temporary table t1( n int);
@@ -14,59 +16,44 @@ drop table t1;
 select * from t1;
 n
 1
-create database mysqltest;
-drop database if exists mysqltest;
-create database mysqltest;
-create table mysqltest.mysqltest (n int);
-insert into mysqltest.mysqltest values (4);
-select * from mysqltest.mysqltest;
+create database mysqltest_drop;
+drop database if exists mysqltest_drop;
+create database mysqltest_drop;
+create table mysqltest_drop.mysqltest (n int);
+insert into mysqltest_drop.mysqltest values (4);
+select * from mysqltest_drop.mysqltest;
 n
 4
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 affected rows: 1
-create database mysqltest;
-use mysqltest;
+create database mysqltest_drop;
+use mysqltest_drop;
 drop table table1, table2, table3, table4, table5, table6,
 table7, table8, table9, table10, table11, table12, table13,
 table14, table15, table16, table17, table18, table19, table20,
 table21, table22, table23, table24, table25, table26, table27,
 table28;
-ERROR 42S02: Unknown table 'mysqltest.table1,mysqltest.table2,mysqltest.table3,mysqltest.table4,mysqltest.table5,mysqltest.table'
+ERROR 42S02: Unknown table 'mysqltest_drop.table1,mysqltest_drop.table2,mysqltest_drop.table3,mysqltest_drop.table4,mysqltest_dr'
 drop table table1, table2, table3, table4, table5, table6,
 table7, table8, table9, table10, table11, table12, table13,
 table14, table15, table16, table17, table18, table19, table20,
 table21, table22, table23, table24, table25, table26, table27,
 table28, table29, table30;
-ERROR 42S02: Unknown table 'mysqltest.table1,mysqltest.table2,mysqltest.table3,mysqltest.table4,mysqltest.table5,mysqltest.table'
-use test;
-drop database mysqltest;
+ERROR 42S02: Unknown table 'mysqltest_drop.table1,mysqltest_drop.table2,mysqltest_drop.table3,mysqltest_drop.table4,mysqltest_dr'
+use test_drop;
+drop database mysqltest_drop;
 flush tables with read lock;
-create database mysqltest;
+create database mysqltest_drop;
 Got one of the listed errors
 unlock tables;
-create database mysqltest;
-show databases;
-Database
-information_schema
-mtr
-mysql
-mysqltest
-performance_schema
-test
+create database mysqltest_drop;
 flush tables with read lock;
-drop database mysqltest;
+drop database mysqltest_drop;
 Got one of the listed errors
 unlock tables;
-drop database mysqltest;
-show databases;
-Database
-information_schema
-mtr
-mysql
-performance_schema
-test
-drop database mysqltest;
-ERROR HY000: Can't drop database 'mysqltest'; database doesn't exist
+drop database mysqltest_drop;
+drop database mysqltest_drop;
+ERROR HY000: Can't drop database 'mysqltest_drop'; database doesn't exist
 drop table t1;
 flush tables with read lock;
 create table t1(n int);
@@ -74,19 +61,19 @@ ERROR HY000: Can't execute the query because you have a conflicting read lock
 unlock tables;
 create table t1(n int);
 show tables;
-Tables_in_test
+Tables_in_test_drop
 t1
 drop table t1;
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 drop table if exists t1;
 create table t1 (i int);
-create database mysqltest;
+create database mysqltest_drop;
 lock tables t1 read;
-connect  addconroot1, localhost, root,,;
+connect  addconroot1, localhost, root,, test_drop;
 drop table t1;
-connect  addconroot2, localhost, root,,;
+connect  addconroot2, localhost, root,, test_drop;
 show open tables;
-drop database mysqltest;
+drop database mysqltest_drop;
 connection default;
 select 1;
 1
@@ -108,7 +95,7 @@ drop table t1;
 ERROR HY000: Table 't1' was locked with a READ lock and can't be updated
 unlock tables;
 drop table t1,t2;
-connect  addconroot, localhost, root,,;
+connect  addconroot, localhost, root,, test_drop;
 connection default;
 create table t1 (i int);
 create table t2 (i int);
@@ -161,7 +148,7 @@ Tables_in_mysqltestbug26703
 #mysql50#abc`def
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1234
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-use test;
+use test_drop;
 drop database mysqltestbug26703;
 End of 5.1 tests
 
@@ -170,10 +157,10 @@ End of 5.1 tests
 # --
 DROP TABLE IF EXISTS t1;
 DROP TABLE t1;
-ERROR 42S02: Unknown table 'test.t1'
+ERROR 42S02: Unknown table 'test_drop.t1'
 SHOW WARNINGS;
 Level	Code	Message
-Error	1051	Unknown table 'test.t1'
+Error	1051	Unknown table 'test_drop.t1'
 
 # --
 # -- End of Bug#37431.
@@ -194,25 +181,25 @@ DROP TABLE t1;
 
 # Test error message when droping table/view
 DROP TABLE table1;
-ERROR 42S02: Unknown table 'test.table1'
+ERROR 42S02: Unknown table 'test_drop.table1'
 DROP TABLE table1,table2;
-ERROR 42S02: Unknown table 'test.table1,test.table2'
+ERROR 42S02: Unknown table 'test_drop.table1,test_drop.table2'
 DROP VIEW view1,view2,view3,view4;
-ERROR 42S02: Unknown VIEW: 'test.view1,test.view2,test.view3,test.view4'
+ERROR 42S02: Unknown VIEW: 'test_drop.view1,test_drop.view2,test_drop.view3,test_drop.view4'
 
 DROP TABLE IF EXISTS table1;
 Warnings:
-Note	1051	Unknown table 'test.table1'
+Note	1051	Unknown table 'test_drop.table1'
 DROP TABLE IF EXISTS table1,table2;
 Warnings:
-Note	1051	Unknown table 'test.table1'
-Note	1051	Unknown table 'test.table2'
+Note	1051	Unknown table 'test_drop.table1'
+Note	1051	Unknown table 'test_drop.table2'
 DROP VIEW IF EXISTS view1,view2,view3,view4;
 Warnings:
-Note	4092	Unknown VIEW: 'test.view1'
-Note	4092	Unknown VIEW: 'test.view2'
-Note	4092	Unknown VIEW: 'test.view3'
-Note	4092	Unknown VIEW: 'test.view4'
+Note	4092	Unknown VIEW: 'test_drop.view1'
+Note	4092	Unknown VIEW: 'test_drop.view2'
+Note	4092	Unknown VIEW: 'test_drop.view3'
+Note	4092	Unknown VIEW: 'test_drop.view4'
 
 # Test error message when trigger does not find table
 CREATE TABLE table1(a int);
@@ -227,6 +214,7 @@ DROP TABLE table1,table2;
 #
 # MDEV-11105 Table named 'db' has weird side effect.
 #
-CREATE DATABASE mysqltest;
-CREATE TABLE mysqltest.db(id INT);
-DROP DATABASE mysqltest;
+CREATE DATABASE mysqltest_drop;
+CREATE TABLE mysqltest_drop.db(id INT);
+DROP DATABASE mysqltest_drop;
+DROP DATABASE test_drop;

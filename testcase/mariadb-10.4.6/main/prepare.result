@@ -41,7 +41,7 @@ t1_first
 t1_second
 drop table t1;
 execute stmt2;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 create or replace table t1 (a int primary key, table_name char(40));
 insert into t1 values(1,"t1_first");
 execute stmt2;

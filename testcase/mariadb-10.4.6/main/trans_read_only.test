@@ -11,7 +11,9 @@
 SELECT @@tx_read_only;
 
 --echo # Also for new connections.
-connect (con1, localhost, root);
+#connect (con1, localhost, root);
+--let $db= `select database()`
+connect (con1, localhost, root,, $db);
 SELECT @@tx_read_only;
 SET SESSION TRANSACTION READ WRITE;
 SELECT @@tx_read_only;

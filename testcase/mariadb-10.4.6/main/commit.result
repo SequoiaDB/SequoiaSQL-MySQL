@@ -1,4 +1,4 @@
-connect  con1,localhost,root,,;
+connect  con1,localhost,root,, $db;
 #
 # Bug#20837 Apparent change of isolation level 
 #           during transaction
@@ -387,9 +387,9 @@ RENAME TABLE temp_t2 TO temp_t3;
 ERROR 25006: Cannot execute statement in a READ ONLY transaction
 TRUNCATE TABLE t1;
 ERROR 25006: Cannot execute statement in a READ ONLY transaction
-CREATE DATABASE db1;
+CREATE DATABASE db1_commit;
 ERROR 25006: Cannot execute statement in a READ ONLY transaction
-DROP DATABASE db1;
+DROP DATABASE db1_commit;
 ERROR 25006: Cannot execute statement in a READ ONLY transaction
 SET SESSION TRANSACTION READ WRITE;
 # 2: DML should be blocked on non-temporary tables.

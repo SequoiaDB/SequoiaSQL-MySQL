@@ -930,7 +930,7 @@ a + 1
 6
 7
 SELECT a + b FROM t1 GROUP BY b;
-ERROR 42000: 'test.t1.a' isn't in GROUP BY
+ERROR 42000: 'X.t1.a' isn't in GROUP BY
 SELECT (SELECT t1_outer.a FROM t1 AS t1_inner GROUP BY b LIMIT 1) 
 FROM t1 AS t1_outer;
 (SELECT t1_outer.a FROM t1 AS t1_inner GROUP BY b LIMIT 1)
@@ -951,10 +951,10 @@ HAVING (SELECT t1_outer.a FROM t1 AS t1_inner GROUP BY b LIMIT 1);
 1
 SELECT (SELECT t1_outer.a FROM t1 AS t1_inner LIMIT 1) 
 FROM t1 AS t1_outer GROUP BY t1_outer.b;
-ERROR 42000: 'test.t1_outer.a' isn't in GROUP BY
+ERROR 42000: 'X.t1_outer.a' isn't in GROUP BY
 SELECT 1 FROM t1 as t1_outer GROUP BY a 
 HAVING (SELECT t1_outer.b FROM t1 AS t1_inner LIMIT 1);
-ERROR 42S22: Unknown column 'test.t1_outer.b' in 'field list'
+ERROR 42S22: Unknown column 'X.t1_outer.b' in 'field list'
 SELECT (SELECT SUM(t1_inner.a) FROM t1 AS t1_inner LIMIT 1) 
 FROM t1 AS t1_outer GROUP BY t1_outer.b;
 (SELECT SUM(t1_inner.a) FROM t1 AS t1_inner LIMIT 1)
@@ -972,7 +972,7 @@ FROM t1 AS t1_outer;
 3
 SELECT (SELECT SUM(t1_outer.a) FROM t1 AS t1_inner LIMIT 1) 
 FROM t1 AS t1_outer GROUP BY t1_outer.b;
-ERROR 42000: 'test.t1_outer.a' isn't in GROUP BY
+ERROR 42000: 'X.t1_outer.a' isn't in GROUP BY
 SELECT 1 FROM t1 as t1_outer 
 WHERE (SELECT t1_outer.b FROM t1 AS t1_inner GROUP BY t1_inner.b LIMIT 1);
 1
@@ -1001,19 +1001,19 @@ ERROR HY000: Invalid use of group function
 SELECT b FROM t1 AS t1_outer GROUP BY a HAVING t1_outer.a IN 
 (SELECT SUM(t1_inner.b)+t1_outer.b FROM t1 AS t1_inner GROUP BY t1_inner.a
 HAVING SUM(t1_inner.b)+t1_outer.b > 5);
-ERROR 42000: 'test.t1_outer.b' isn't in GROUP BY
+ERROR 42000: 'X.t1_outer.b' isn't in GROUP BY
 DROP TABLE t1;
 SET SQL_MODE = '';
 SET SQL_MODE = 'ONLY_FULL_GROUP_BY';
 create table t1(f1 int, f2 int);
 select * from t1 group by f1;
-ERROR 42000: 'test.t1.f2' isn't in GROUP BY
+ERROR 42000: 'X.t1.f2' isn't in GROUP BY
 select * from t1 group by f2;
-ERROR 42000: 'test.t1.f1' isn't in GROUP BY
+ERROR 42000: 'X.t1.f1' isn't in GROUP BY
 select * from t1 group by f1, f2;
 f1	f2
 select t1.f1,t.* from t1, t1 t group by 1;
-ERROR 42000: 'test.t.f1' isn't in GROUP BY
+ERROR 42000: 'X.t.f1' isn't in GROUP BY
 drop table t1;
 SET SQL_MODE = '';
 CREATE TABLE t1(

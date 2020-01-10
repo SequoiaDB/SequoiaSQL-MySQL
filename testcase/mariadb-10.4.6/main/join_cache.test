@@ -1,6 +1,10 @@
+CREATE DATABASE test_join_cache;
+USE test_join_cache;
+
 --disable_warnings
 DROP TABLE IF EXISTS t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11;
-DROP DATABASE IF EXISTS world;
+#DROP DATABASE IF EXISTS world;
+DROP DATABASE IF EXISTS world_join_cache;
 --enable_warnings
 
 set @save_optimizer_switch=@@optimizer_switch;
@@ -20,9 +24,11 @@ set optimizer_switch='mrr=on,mrr_sort_keys=on,index_condition_pushdown=on';
 set @local_join_cache_test_optimizer_switch_default=@@optimizer_switch;
 set names utf8;
 
-CREATE DATABASE world;
+#CREATE DATABASE world;
+CREATE DATABASE world_join_cache;
 
-use world;
+#use world;
+use world_join_cache;
 
 --source include/world_schema1.inc
 
@@ -347,12 +353,15 @@ set join_buffer_size=default;
 show variables like 'join_buffer_size';
 show variables like 'join_cache_level';
 
-DROP DATABASE world; 
+#DROP DATABASE world; 
+DROP DATABASE world_join_cache; 
 
 
-CREATE DATABASE world;
+#CREATE DATABASE world;
+CREATE DATABASE world_join_cache;
 
-use world;
+#use world;
+use world_join_cache;
 
 --source include/world_schema.inc
 
@@ -1029,7 +1038,8 @@ set @save_use_stat_tables=@@use_stat_tables;
 set optimizer_use_condition_selectivity=4;
 set use_stat_tables='preferably';
 
-use world;
+#use world;
+use world_join_cache;
 set join_cache_level=4;
 CREATE INDEX City_Name ON City(Name);
 
@@ -1053,9 +1063,11 @@ set @@optimizer_use_condition_selectivity=@save_optimizer_use_condition_selectiv
 set @@use_stat_tables=@save_use_stat_tables;
 set join_cache_level=default;
 
-DROP DATABASE world;
+#DROP DATABASE world;
+DROP DATABASE world_join_cache;
 
-use test;
+#use test;
+use test_join_cache;
 
 #
 # Bug #35685: assertion abort when initializing a BKA cache
@@ -4082,3 +4094,5 @@ set @@optimizer_switch=@save_optimizer_switch;
 #set global innodb_stats_persistent= @innodb_stats_persistent_save;
 #set global innodb_stats_persistent_sample_pages=
 #             @innodb_stats_persistent_sample_pages_save;
+
+DROP DATABASE test_join_cache;

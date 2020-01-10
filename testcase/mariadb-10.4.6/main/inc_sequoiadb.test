@@ -544,4 +544,4 @@ drop table t1;
 
 DROP DATABASE inc_sequoiadb;
 
---source include/uninstall_sequoiadb.inc
+#--source include/uninstall_sequoiadb.inc

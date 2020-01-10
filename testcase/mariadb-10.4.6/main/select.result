@@ -1,3 +1,5 @@
+CREATE DATABASE test_select;
+USE test_select;
 drop table if exists t1,t2,t3,t4,t11;
 drop table if exists t1_1,t1_2,t9_1,t9_2,t1aa,t2aa;
 drop view if exists v1;
@@ -1870,7 +1872,7 @@ select period as "Nuvarande period" from t1 group by "Nuvarande period" limit 1;
 Nuvarande period
 9410
 show tables;
-Tables_in_test
+Tables_in_test_select
 t1
 t2
 t3
@@ -1888,14 +1890,14 @@ fld3	char(30)	latin1_swedish_ci	NO	MUL			#
 fld4	char(35)	latin1_swedish_ci	NO				#	
 fld5	char(35)	latin1_swedish_ci	NO				#	
 fld6	char(4)	latin1_swedish_ci	NO				#	
-show full columns from t2 from test like 'f%';
+show full columns from t2 from test_select like 'f%';
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
 fld1	int(6) unsigned zerofill	NULL	NO	UNI	000000		#	
 fld3	char(30)	latin1_swedish_ci	NO	MUL			#	
 fld4	char(35)	latin1_swedish_ci	NO				#	
 fld5	char(35)	latin1_swedish_ci	NO				#	
 fld6	char(4)	latin1_swedish_ci	NO				#	
-show full columns from t2 from test like 's%';
+show full columns from t2 from test_select like 's%';
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
 drop table t4, t3, t2, t1;
 DO 1;
@@ -3091,8 +3093,8 @@ create table t2 (a int, b int, c int, e int, primary key(a,b,c));
 insert into t2 select A.a, B.a, C.a, C.a from t1 A, t1 B, t1 C;
 analyze table t2;
 Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
+test_select.t2	analyze	status	Engine-independent statistics collected
+test_select.t2	analyze	status	OK
 select 'In next EXPLAIN, B.rows must be exactly 10:' Z;
 Z
 In next EXPLAIN, B.rows must be exactly 10:
@@ -3192,8 +3194,8 @@ INSERT INTO t1 SELECT * FROM t1 WHERE ID1_with_null IS NULL;
 INSERT INTO t1 SELECT * FROM t1 WHERE ID2_with_null IS NULL;
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+test_select.t1	analyze	status	Engine-independent statistics collected
+test_select.t1	analyze	status	OK
 SELECT COUNT(*) FROM t1 WHERE ID1_with_null IS NULL AND ID2_with_null=3;
 COUNT(*)
 24
@@ -3211,15 +3213,15 @@ CREATE TABLE t1 (a INT, ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDAT
 INSERT INTO t1 VALUES (30,"2006-01-03 23:00:00"), (31,"2006-01-03 23:00:00");
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+test_select.t1	analyze	status	Engine-independent statistics collected
+test_select.t1	analyze	status	OK
 CREATE TABLE t2 (a INT, dt1 DATETIME, dt2 DATETIME, PRIMARY KEY (a));
 INSERT INTO t2 VALUES (30, "2006-01-01 00:00:00", "2999-12-31 00:00:00");
 INSERT INTO t2 SELECT a+1,dt1,dt2 FROM t2;
 ANALYZE TABLE t2;
 Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
+test_select.t2	analyze	status	Engine-independent statistics collected
+test_select.t2	analyze	status	OK
 SELECT * FROM t1 LEFT JOIN t2 ON (t1.a=t2.a) WHERE t1.a=30
 AND t1.ts BETWEEN t2.dt1 AND t2.dt2
 AND t1.ts BETWEEN "2006-01-01" AND "2006-12-31";
@@ -4640,4 +4642,5 @@ select (SELECT name FROM t1 WHERE name='tom' AND pw=PASSWORD(@undefined));
 (SELECT name FROM t1 WHERE name='tom' AND pw=PASSWORD(@undefined))
 NULL
 drop table t1;
+DROP DATABASE test_select;
 End of 10.0 tests

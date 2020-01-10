@@ -303,10 +303,6 @@ drop table t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16;
 # MDEV-4270: crash in fix_semijoin_strategies_for_picked_join_order
 #
 drop table if exists t1,t2,t3;
-Warnings:
-Note	1051	Unknown table 'test.t1'
-Note	1051	Unknown table 'test.t2'
-Note	1051	Unknown table 'test.t3'
 create table t2(a int,unique key (a)) engine=SequoiaDB;
 create table t3(b int) engine=SequoiaDB;
 create table t1(a int,b int)engine=SequoiaDB;

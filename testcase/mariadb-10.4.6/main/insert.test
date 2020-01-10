@@ -2,6 +2,9 @@
 # Test of referring to old values
 #
 
+CREATE DATABASE test_insert;
+USE test_insert;
+
 --disable_warnings
 drop table if exists t1,t2,t3;
 --enable_warnings
@@ -80,15 +83,24 @@ drop table t1,t2;
 # Test of mysqld crash with fully qualified column names
 #
 
+#--disable_warnings
+#drop database if exists mysqltest;
+#--enable_warnings
+#create database mysqltest;
+#use mysqltest;
+#create table t1 (c int);
+#insert into mysqltest.t1 set mysqltest.t1.c = '1';
+#drop database mysqltest;
+#use test;
 --disable_warnings
-drop database if exists mysqltest;
+drop database if exists mysqltest_insert;
 --enable_warnings
-create database mysqltest;
-use mysqltest;
+create database mysqltest_insert;
+use mysqltest_insert;
 create table t1 (c int);
-insert into mysqltest.t1 set mysqltest.t1.c = '1';
-drop database mysqltest;
-use test;
+insert into mysqltest_insert.t1 set mysqltest_insert.t1.c = '1';
+drop database mysqltest_insert;
+use test_insert;
 
 #
 # Test of wrong values for float data (bug #2082)
@@ -600,7 +612,8 @@ CREATE ALGORITHM = MERGE VIEW v1 AS SELECT f1, f2 FROM t1 WHERE f1 = 'x' WITH CH
 LOAD DATA INFILE 't1.txt' INTO TABLE v1;
 SELECT * from t1;
 let $MYSQLD_DATADIR= `select @@datadir`;
-remove_file $MYSQLD_DATADIR/test/t1.txt;
+#remove_file $MYSQLD_DATADIR/test/t1.txt;
+remove_file $MYSQLD_DATADIR/test_insert/t1.txt;
 drop view v1;
 drop table t1;
 SET @@sql_mode= @save_mode;
@@ -614,3 +627,5 @@ CREATE VIEW v1 AS SELECT * FROM t1 WHERE f <=> 'foo' WITH CHECK OPTION;
 REPLACE INTO v1 SET f = NULL;
 DROP VIEW v1;
 DROP TABLE t1;
+
+DROP DATABASE test_insert;

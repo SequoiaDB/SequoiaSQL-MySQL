@@ -31,6 +31,7 @@ alter table t1 add column b int;
 execute stmt2;
 execute stmt2;
 drop table t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 execute stmt2;
 create or replace table t1 (a int primary key, table_name char(40));

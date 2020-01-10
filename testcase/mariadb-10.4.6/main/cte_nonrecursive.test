@@ -1,3 +1,6 @@
+CREATE DATABASE test_cte_nonrecursive;
+USE test_cte_nonrecursive;
+
 create table t1 (a int, b  varchar(32));
 insert into t1 values
   (4,'aaaa' ), (7,'bb'), (1,'ccc'), (4,'dd');  
@@ -935,16 +938,22 @@ drop table region, nation;
 --echo #
 
 --error ER_NO_SUCH_TABLE
-WITH cte AS (SELECT 1 AS a) SELECT test.cte.a FROM test.cte;
+#WITH cte AS (SELECT 1 AS a) SELECT test.cte.a FROM test.cte;
+WITH cte AS (SELECT 1 AS a) SELECT test_cte_nonrecursive.cte.a FROM test_cte_nonrecursive.cte;
 
-CREATE DATABASE db1;
-USE db1;
+#CREATE DATABASE db1;
+#USE db1;
+CREATE DATABASE db1_cte_nonrecursive;
+USE db1_cte_nonrecursive;
 
 --error ER_NO_SUCH_TABLE
-WITH cte AS (SELECT 1 AS a) SELECT db1.cte.a FROM db1.cte;
+#WITH cte AS (SELECT 1 AS a) SELECT db1.cte.a FROM db1.cte;
+WITH cte AS (SELECT 1 AS a) SELECT db1_cte_nonrecursive.cte.a FROM db1_cte_nonrecursive.cte;
 
-DROP DATABASE db1;
-USE test;
+#DROP DATABASE db1;
+#USE test;
+DROP DATABASE db1_cte_nonrecursive;
+USE test_cte_nonrecursive;
 
 --echo #
 --echo # MDEV-15119: CTE c2 specified after CTE c1 and is used in
@@ -1056,7 +1065,8 @@ select * from cte, db_mdev_16473.t1 as t where cte.a=t.a;
 
 drop database db_mdev_16473;
 
-use test;
+#use test;
+use test_cte_nonrecursive;
 
 --echo #
 --echo # MDEV-17154: using parameter markers for PS within CTEs more than once
@@ -1179,4 +1189,5 @@ use information_schema;
 with t as (select 1 as t) select * from t;
 with columns as (select 1 as t) select * from columns;
 
-use test;
+#use test;
+DROP DATABASE test_cte_nonrecursive;

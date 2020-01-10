@@ -220,7 +220,7 @@ format(123456789,2,'rm_CH')
 123'456'789,00
 SET lc_messages=rm_CH;
 SELECT * FROM non_existent;
-ERROR 42S02: Table 'test.non_existent' doesn't exist
+ERROR 42S02: Table 'X.non_existent' doesn't exist
 SET lc_time_names=@old_50915_lc_time_names;
 #
 # End of 10.0 tests

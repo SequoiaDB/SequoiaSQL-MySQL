@@ -109,9 +109,6 @@ create index idx_t1_0 on t1 (a1);
 create index idx_t1_1 on t1 (a1,a2,b,c);
 create index idx_t1_2 on t1 (a1,a2,b);
 analyze table t1;
-Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
 create table t2 (
 a1 char(64), a2 char(64) not null, b char(16), c char(16), d char(16), dummy char(64) default ' '
 );
@@ -137,9 +134,6 @@ create index idx_t2_0 on t2 (a1);
 create index idx_t2_1 on t2 (a1,a2,b,c);
 create index idx_t2_2 on t2 (a1,a2,b);
 analyze table t2;
-Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
 create table t3 (
 a1 char(1), a2 char(1), b char(1), c char(4) not null, d char(3), dummy char(1) default ' '
 );
@@ -199,9 +193,6 @@ create index idx_t3_0 on t3 (a1);
 create index idx_t3_1 on t3 (a1,a2,b,c);
 create index idx_t3_2 on t3 (a1,a2,b);
 analyze table t3;
-Table	Op	Msg_type	Msg_text
-test.t3	analyze	status	Engine-independent statistics collected
-test.t3	analyze	status	OK
 select a1,a2,b,c,min(c), max(c) from t1
 where exists ( select * from t2
 where t2.c in (select c from t3 where t3.c > t1.b) and
@@ -498,7 +489,7 @@ a
 3
 4
 6
-select `test`.`t1`.`a` AS `a` from `test`.`t1` where `test`.`t1`.`b` in (select `test`.`t2`.`c` from `test`.`t2` where 1 ) or (`test`.`t1`.`b` <> 'U') order by `test`.`t1`.`a`;
+select `t1`.`a` AS `a` from `t1` where `t1`.`b` in (select `t2`.`c` from `t2` where 1 ) or (`t1`.`b` <> 'U') order by `t1`.`a`;
 a
 3
 4

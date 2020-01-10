@@ -2,6 +2,9 @@
 # Test of unions
 #
 
+CREATE DATABASE test_union;
+USE test_union;
+
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t5,t6;
 --enable_warnings
@@ -804,7 +807,8 @@ drop table t1;
 create table t1 (a varchar(5));
 create table t2 select * from t1 union select 'abcdefghijkl';
 show create table t2;
-select row_format from information_schema.TABLES where table_schema="test" and table_name="t2";
+#select row_format from information_schema.TABLES where table_schema="test" and table_name="t2";
+select row_format from information_schema.TABLES where table_schema="test_union" and table_name="t2";
 alter table t2 ROW_FORMAT=fixed;
 show create table t2;
 drop table t1,t2;
@@ -843,7 +847,8 @@ drop tables t1,t2,t3;
 SELECT @tmp_max:= @@global.max_allowed_packet;
 SET @@global.max_allowed_packet=25000000;
 # switching connection to allow the new max_allowed_packet take effect
---connect (newconn, localhost, root,,)
+#--connect (newconn, localhost, root,,)
+--connect (newconn, localhost, root,,test_union)
 CREATE TABLE t1 (a mediumtext);
 CREATE TABLE t2 (b varchar(20));
 INSERT INTO t1 VALUES ('a');
@@ -1127,7 +1132,8 @@ SELECT ( SELECT a UNION SELECT a ) INTO OUTFILE  'union.out.file3' FROM t1;
 SELECT ( SELECT a UNION SELECT a ) INTO DUMPFILE 'union.out.file4' FROM t1;
 
 DROP TABLE t1;
-remove_files_wildcard $MYSQLTEST_VARDIR/mysqld.1/data/test union.out.fil*;
+#remove_files_wildcard $MYSQLTEST_VARDIR/mysqld.1/data/test union.out.fil*;
+remove_files_wildcard $MYSQLTEST_VARDIR/mysqld.1/data/test_union union.out.fil*;
 
 #--echo # 
 #--echo # Bug #49734: Crash on EXPLAIN EXTENDED UNION ... ORDER BY 
@@ -1853,6 +1859,7 @@ drop table t1,t2;
 #
 #drop table t1,t2,t3;
 
+DROP DATABASE test_union;
 --echo #
 --echo # End of 10.3 tests
 --echo #

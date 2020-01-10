@@ -5,6 +5,9 @@
 SET @save_optimizer_switch=@@optimizer_switch;
 SET optimizer_switch='outer_join_with_cache=off';
 
+CREATE DATABASE test_view;
+USE test_view;
+
 #
 # some basic test of views and its functionality
 #
@@ -631,12 +634,18 @@ drop view `v 1`;
 #
 # Removing database with .frm archives
 #
-create database mysqltest;
-create table mysqltest.t1 (a int, b int);
-create view mysqltest.v1 as select a from mysqltest.t1;
-alter view mysqltest.v1 as select b from mysqltest.t1;
-alter view mysqltest.v1 as select a from mysqltest.t1;
-drop database mysqltest;
+#create database mysqltest;
+#create table mysqltest.t1 (a int, b int);
+#create view mysqltest.v1 as select a from mysqltest.t1;
+#alter view mysqltest.v1 as select b from mysqltest.t1;
+#alter view mysqltest.v1 as select a from mysqltest.t1;
+#drop database mysqltest;
+create database mysqltest_view;
+create table mysqltest_view.t1 (a int, b int);
+create view mysqltest_view.v1 as select a from mysqltest_view.t1;
+alter view mysqltest_view.v1 as select b from mysqltest_view.t1;
+alter view mysqltest_view.v1 as select a from mysqltest_view.t1;
+drop database mysqltest_view;
 
 ##
 ## VIEW with full text
@@ -693,7 +702,8 @@ drop table t2, t1;
 # VIEW based on functions with  complex names
 #
 create function `f``1` () returns int return 5;
-create view v1 as select test.`f``1` ();
+#create view v1 as select test.`f``1` ();
+create view v1 as select test_view.`f``1` ();
 show create view v1;
 select * from v1;
 drop view v1;
@@ -809,15 +819,18 @@ drop view v1;
 create table t1 (a int);
 create view v1 as select a from t1;
 create view v3 as select a from t1;
-create database mysqltest;
+#create database mysqltest;
+create database mysqltest_view;
 -- error ER_FORBID_SCHEMA_CHANGE
-rename table v1 to mysqltest.v1;
+#rename table v1 to mysqltest.v1;
+rename table v1 to mysqltest_view.v1;
 rename table v1 to v2;
 --error ER_TABLE_EXISTS_ERROR
 rename table v3 to v1, v2 to t1;
 drop table t1;
 drop view v2,v3;
-drop database mysqltest;
+#drop database mysqltest;
+drop database mysqltest_view;
 
 #
 # bug handling from VIEWs
@@ -2779,7 +2792,8 @@ DROP TABLE t1;
 DROP DATABASE bug21261DB;
 
 connection default;
-USE test;
+#USE test;
+USE test_view;
 disconnect root;
 disconnect user21261;
 
@@ -3725,7 +3739,8 @@ SHOW TABLES;
 DROP TABLE `t-2`;
 DROP VIEW  `v-2`;
 DROP DATABASE `d-1`;
-USE test;
+#USE test;
+USE test_view;
 
 --echo
 --echo #
@@ -3813,7 +3828,8 @@ SELECT * FROM v1 WHERE c2 = 'text2';
 
 --echo
 
-use test;
+#use test;
+use test_view;
 SET names latin1;
 
 --echo
@@ -3897,7 +3913,8 @@ delimiter ;//
 CREATE VIEW v1 AS SELECT f1() FROM t1;
 
 let $MYSQLD_DATADIR= `SELECT @@datadir`;
-copy_file std_data/bug48449.frm $MYSQLD_DATADIR/test/v2.frm;
+#copy_file std_data/bug48449.frm $MYSQLD_DATADIR/test/v2.frm;
+copy_file std_data/bug48449.frm $MYSQLD_DATADIR/test_view/v2.frm;
 
 enable_prepare_warnings;
 SHOW CREATE VIEW v1;
@@ -4585,8 +4602,10 @@ DROP VIEW IF EXISTS v1;
 DROP PROCEDURE IF EXISTS p1;
 --enable_warnings
 
-connect (con2, localhost, root);
-connect (con3, localhost, root);
+#connect (con2, localhost, root);
+#connect (con3, localhost, root);
+connect (con2, localhost, root,, test_view);
+connect (con3, localhost, root,, test_view);
 
 connection default;
 
@@ -5226,7 +5245,8 @@ DROP TABLE t1, t2;
 create view v1 as select 1;
 
 --let $MYSQLD_DATADIR= `select @@datadir`
---let SEARCH_FILE= $MYSQLD_DATADIR/test/v1.frm
+#--let SEARCH_FILE= $MYSQLD_DATADIR/test/v1.frm
+--let SEARCH_FILE= $MYSQLD_DATADIR/test_view/v1.frm
 --let SEARCH_RANGE= 50000
 --let SEARCH_PATTERN=mariadb-version
 --source include/search_pattern_in_file.inc
@@ -5893,8 +5913,10 @@ USE temporary;
 DROP DATABASE temporary;
 SELECT DATABASE();
 
-CREATE VIEW test.v_no_db AS SELECT DATABASE() = 'temporary_two';
-SHOW CREATE VIEW test.v_no_db;
+#CREATE VIEW test.v_no_db AS SELECT DATABASE() = 'temporary_two';
+#SHOW CREATE VIEW test.v_no_db;
+CREATE VIEW test_view.v_no_db AS SELECT DATABASE() = 'temporary_two';
+SHOW CREATE VIEW test_view.v_no_db;
 PREPARE prepared_no_database FROM "SELECT DATABASE() = 'temporary_two'";
 
 --echo #
@@ -5902,19 +5924,23 @@ PREPARE prepared_no_database FROM "SELECT DATABASE() = 'temporary_two'";
 --echo #
 EXECUTE prepared_no_database;
 SELECT DATABASE() = 'temporary_two';
-SELECT * FROM test.v_no_db;
+#SELECT * FROM test.v_no_db;
+SELECT * FROM test_view.v_no_db;
 
 CREATE DATABASE temporary_two;
 USE temporary_two;
-CREATE VIEW test.v_with_db AS SELECT DATABASE() = 'temporary_two';
+#CREATE VIEW test.v_with_db AS SELECT DATABASE() = 'temporary_two';
+CREATE VIEW test_view.v_with_db AS SELECT DATABASE() = 'temporary_two';
 PREPARE prepared_with_database FROM "SELECT DATABASE() = 'temporary_two'";
 
 --echo #
 --echo # All statements should return 1;
 --echo #
 SELECT DATABASE() = 'temporary_two';
-SELECT * FROM test.v_no_db;
-SELECT * FROM test.v_with_db;
+#SELECT * FROM test.v_no_db;
+#SELECT * FROM test.v_with_db;
+SELECT * FROM test_view.v_no_db;
+SELECT * FROM test_view.v_with_db;
 EXECUTE prepared_with_database;
 
 --echo #
@@ -5925,9 +5951,12 @@ EXECUTE prepared_with_database;
 EXECUTE prepared_no_database;
 
 DROP DATABASE temporary_two;
-DROP VIEW test.v_no_db;
-DROP VIEW test.v_with_db;
-USE test;
+#DROP VIEW test.v_no_db;
+#DROP VIEW test.v_with_db;
+#USE test;
+DROP VIEW test_view.v_no_db;
+DROP VIEW test_view.v_with_db;
+USE test_view;
 
 --echo # -----------------------------------------------------------------
 --echo # -- End of 10.0 tests.
@@ -6335,24 +6364,31 @@ DROP VIEW v;
 --echo # with GROUP BY within a view
 --echo #
 
-create database test_db;
-use test_db;
+#create database test_db;
+#use test_db;
+create database test_db_view;
+use test_db_view;
 create table t (i int);
 
 create user foo@localhost;
-grant all on test_db.* to foo@localhost;
+#grant all on test_db.* to foo@localhost;
+grant all on test_db_view.* to foo@localhost;
 
---connect (con1,localhost,foo,,)
+#--connect (con1,localhost,foo,,)
+--connect (con1,localhost,foo,, test_view)
 
-use test_db;
+#use test_db;
+use test_db_view;
 create view v as select * from (select i from t group by i) sq;
 select * from v;
 
 # Cleanup
 --disconnect con1
 --connection default
-use test;
-drop database test_db;
+#use test;
+#drop database test_db;
+use test_view;
+drop database test_db_view;
 drop user foo@localhost;
 
 --echo #
@@ -6377,7 +6413,8 @@ CREATE DEFINER=`procView`@`%` VIEW `procViewSimple` AS (
   group by `innerQuery`.`id`
 );
 
---connect (con1,localhost,procView,,)
+#--connect (con1,localhost,procView,,)
+--connect (con1,localhost,procView,, test_view)
 use bugTest;
 
 prepare stmt from "SELECT * FROM procViewSimple";
@@ -6390,7 +6427,8 @@ execute stmt;
 drop user procView;
 drop view procViewSimple;
 drop table procViewTable;
-use test;
+#use test;
+use test_view;
 drop database bugTest;
 
 --echo #
@@ -6469,6 +6507,7 @@ SELECT v.id, v.foo AS bar  FROM v1 v
 Drop View v1;
 Drop table t1;
 
+DROP DATABASE test_view;
 --echo #
 --echo # End of 10.3 tests
 --echo #

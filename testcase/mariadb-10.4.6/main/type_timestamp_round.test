@@ -94,6 +94,7 @@ SET sql_mode=IF(@@version LIKE '%MariaDB%',
 SET time_zone='Europe/Moscow';
 CREATE TABLE t1 (a TIMESTAMP);
 INSERT INTO t1 VALUES ('2010-03-28 01:59:59.0' /* Winter time */); 
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_TRUNCATED_WRONG_VALUE
 INSERT INTO t1 VALUES ('2010-03-28 01:59:59.9' /* Rounds to the DST gap */);
 SELECT * FROM t1;

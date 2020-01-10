@@ -1,5 +1,7 @@
+CREATE DATABASE test_join_cache;
+USE test_join_cache;
 DROP TABLE IF EXISTS t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11;
-DROP DATABASE IF EXISTS world;
+DROP DATABASE IF EXISTS world_join_cache;
 set @save_optimizer_switch=@@optimizer_switch;
 set @@optimizer_switch='optimize_join_buffer_size=on';
 set optimizer_switch='semijoin=on,firstmatch=on,loosescan=on';
@@ -8,8 +10,8 @@ set @@optimizer_switch='outer_join_with_cache=on';
 set optimizer_switch='mrr=on,mrr_sort_keys=on,index_condition_pushdown=on';
 set @local_join_cache_test_optimizer_switch_default=@@optimizer_switch;
 set names utf8;
-CREATE DATABASE world;
-use world;
+CREATE DATABASE world_join_cache;
+use world_join_cache;
 CREATE TABLE Country (
 Code char(3) NOT NULL default '',
 Name char(52) NOT NULL default '',
@@ -609,9 +611,9 @@ join_buffer_size	262144
 show variables like 'join_cache_level';
 Variable_name	Value
 join_cache_level	2
-DROP DATABASE world;
-CREATE DATABASE world;
-use world;
+DROP DATABASE world_join_cache;
+CREATE DATABASE world_join_cache;
+use world_join_cache;
 CREATE TABLE Country (
 Code char(3) NOT NULL default '',
 Name char(52) NOT NULL default '',
@@ -2315,15 +2317,15 @@ set @save_optimizer_use_condition_selectivity=@@optimizer_use_condition_selectiv
 set @save_use_stat_tables=@@use_stat_tables;
 set optimizer_use_condition_selectivity=4;
 set use_stat_tables='preferably';
-use world;
+use world_join_cache;
 set join_cache_level=4;
 CREATE INDEX City_Name ON City(Name);
 ANALYZE TABLE City, Country;
 set @@optimizer_use_condition_selectivity=@save_optimizer_use_condition_selectivity;
 set @@use_stat_tables=@save_use_stat_tables;
 set join_cache_level=default;
-DROP DATABASE world;
-use test;
+DROP DATABASE world_join_cache;
+use test_join_cache;
 CREATE TABLE t1(
 affiliatetometaid int  NOT NULL default '0',
 uniquekey int NOT NULL default '0',
@@ -4576,10 +4578,10 @@ INSERT INTO t2 VALUES
 (228,'x'),(3,'y'),(1,'z'),(9,'z');
 ANALYZE TABLE t1,t2;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
+test_join_cache.t1	analyze	status	Engine-independent statistics collected
+test_join_cache.t1	analyze	status	OK
+test_join_cache.t2	analyze	status	Engine-independent statistics collected
+test_join_cache.t2	analyze	status	OK
 CREATE TABLE temp
 SELECT t1.i1 AS f1, t1.v1 AS f2 FROM (t2 JOIN t1 ON (t1.v1 = t2.v1));
 SELECT * FROM temp
@@ -4636,3 +4638,4 @@ f2
 drop table t1, t2;
 set join_buffer_size = default;
 set @@optimizer_switch=@save_optimizer_switch;
+DROP DATABASE test_join_cache;

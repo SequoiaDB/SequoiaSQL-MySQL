@@ -1,6 +1,9 @@
 -- source include/have_query_cache.inc
 -- source include/long_test.inc
 
+CREATE DATABASE test_query_cache;
+USE test_query_cache;
+
 #
 # Tests with query cache
 #
@@ -23,7 +26,8 @@ reset query cache;
 flush status;
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t11,t21,t1_1,t1_2,t9,t9_1,t9_2;
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
+drop database if exists mysqltest_query_cache;
 
 # Fix possible left overs from other tests
 drop table if exists ```a`;
@@ -199,20 +203,32 @@ drop table t1,t2;
 #
 # noncachable ODBC work around (and prepare cache for drop database)
 #
-create database mysqltest;
-create table mysqltest.t1 (i int not null auto_increment, a int, primary key (i));
-insert into mysqltest.t1 (a) values (1);
-select * from mysqltest.t1 where i is null;
+#create database mysqltest;
+#create table mysqltest.t1 (i int not null auto_increment, a int, primary key (i));
+#insert into mysqltest.t1 (a) values (1);
+#select * from mysqltest.t1 where i is null;
+create database mysqltest_query_cache;
+create table mysqltest_query_cache.t1 (i int not null auto_increment, a int, primary key (i));
+insert into mysqltest_query_cache.t1 (a) values (1);
+select * from mysqltest_query_cache.t1 where i is null;
 
 #
 # drop db
 #
+#create table t1(a int);
+#select * from t1;
+#show status like "Qcache_queries_in_cache";
+#select * from mysqltest.t1;
+#show status like "Qcache_queries_in_cache";
+#drop database mysqltest;
+#show status like "Qcache_queries_in_cache";
+#drop table t1;
 create table t1(a int);
 select * from t1;
 #show status like "Qcache_queries_in_cache";
-select * from mysqltest.t1;
+select * from mysqltest_query_cache.t1;
 #show status like "Qcache_queries_in_cache";
-drop database mysqltest;
+drop database mysqltest_query_cache;
 #show status like "Qcache_queries_in_cache";
 drop table t1;
 
@@ -238,22 +254,28 @@ drop table t1;
 #
 # same tables in different db
 #
-create database if not exists mysqltest;
-create table mysqltest.t1 (i int not null);
+#create database if not exists mysqltest;
+#create table mysqltest.t1 (i int not null);
+create database if not exists mysqltest_query_cache;
+create table mysqltest_query_cache.t1 (i int not null);
 create table t1 (i int not null);
-insert into mysqltest.t1 (i) values (1);
+#insert into mysqltest.t1 (i) values (1);
+insert into mysqltest_query_cache.t1 (i) values (1);
 insert into t1 (i) values (2);
 
 select * from t1;
-use mysqltest;
+#use mysqltest;
+use mysqltest_query_cache;
 select * from t1;
 select * from t1;
-use test;
+#use test;
+use test_query_cache;
 select * from t1;
 #show status like "Qcache_queries_in_cache";
 #show status like "Qcache_hits";
 
-drop database mysqltest;
+#drop database mysqltest;
+drop database mysqltest_query_cache;
 drop table t1;
 
 #
@@ -395,7 +417,8 @@ disable_result_log;
 select * from db;
 enable_result_log;
 #show status like "Qcache_queries_in_cache";
-use test;
+#use test;
+use test_query_cache;
 disable_result_log;
 select * from mysql.db;
 enable_result_log;
@@ -439,8 +462,10 @@ select * from t1 limit 1 into dumpfile "query_cache.dump.file";
 #show status like "Qcache_queries_in_cache";
 drop table t1;
 let $datadir=`select @@datadir`;
---remove_file $datadir/test/query_cache.dump.file
---remove_file $datadir/test/query_cache.out.file
+#--remove_file $datadir/test/query_cache.dump.file
+#--remove_file $datadir/test/query_cache.out.file
+--remove_file $datadir/test_query_cache/query_cache.dump.file
+--remove_file $datadir/test_query_cache/query_cache.out.file
 
 #
 # test of SQL_SELECT_LIMIT
@@ -587,12 +612,19 @@ DROP TABLE t1;
 #
 # DROP current database test
 #
+#CREATE TABLE t1 (a int(1));
+#CREATE DATABASE mysqltest;
+#USE mysqltest;
+#DROP DATABASE mysqltest;
+#SELECT * FROM test.t1;
+#USE test;
+#DROP TABLE t1;
 CREATE TABLE t1 (a int(1));
-CREATE DATABASE mysqltest;
-USE mysqltest;
-DROP DATABASE mysqltest;
-SELECT * FROM test.t1;
-USE test;
+CREATE DATABASE mysqltest_query_cache;
+USE mysqltest_query_cache;
+DROP DATABASE mysqltest_query_cache;
+SELECT * FROM test_query_cache.t1;
+USE test_query_cache;
 DROP TABLE t1;
 
 #
@@ -659,10 +691,12 @@ SET GLOBAL query_cache_size=0;
 SET SESSION query_cache_type = 2;
 create table t1(a int);
 select table_name from information_schema.tables
-where table_schema="test";
+where table_schema="test_query_cache";
+#where table_schema="test";
 drop table t1;
 select table_name from information_schema.tables
-where table_schema="test";
+where table_schema="test_query_cache";
+#where table_schema="test";
 # Bug #8480: REPAIR TABLE needs to flush the table from the query cache
 SET SESSION query_cache_type = 1;
 set global query_cache_size=1024*1024;
@@ -1786,3 +1820,5 @@ drop table t1;
 SET GLOBAL query_cache_type= default;
 SET GLOBAL query_cache_size= default;
 SET LOCAL query_cache_type= default;
+
+DROP DATABASE test_query_cache;

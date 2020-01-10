@@ -1,6 +1,8 @@
 #
 # testing of the BIT column type
 #
+CREATE DATABASE test_type_bit;
+USE test_type_bit;
 
 select 0 + b'1';
 select 0 + b'0';
@@ -510,7 +512,7 @@ DROP TABLE IF EXISTS t1;
 #EXPLAIN SELECT * FROM t1 WHERE a<=>200;
 #DROP TABLE t1;
 
-
+DROP DATABASE test_type_bit;
 --echo #
 --echo # End of 10.4 tests
 --echo #

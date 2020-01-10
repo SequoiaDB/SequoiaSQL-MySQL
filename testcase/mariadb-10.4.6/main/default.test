@@ -3,7 +3,7 @@
 #
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t5,t6;
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
 
 #
 # Bug 10838
@@ -198,7 +198,9 @@ DROP TABLE t1;
 --echo #
 
 # Note, the problem was not repeatable with a non-fresh connection.
---connect (con1,localhost,root,,test)
+#--connect (con1,localhost,root,,test)
+--let $db= `select database()`
+--connect (con1,localhost,root,,$db)
 CREATE TABLE t1 (pk INT AUTO_INCREMENT PRIMARY KEY) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ();
 INSERT INTO t1 VALUES ();
@@ -317,6 +319,7 @@ drop table t1;
 create table t1 (a int);
 --error ER_EXPRESSION_REFERS_TO_UNINIT_FIELD
 create or replace table t1 (a int default b, b int default a);
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 show create table t1;
 

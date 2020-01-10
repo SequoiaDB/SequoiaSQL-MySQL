@@ -1,3 +1,5 @@
+CREATE DATABASE test_cte_nonrecursive;
+USE test_cte_nonrecursive;
 create table t1 (a int, b  varchar(32));
 insert into t1 values
 (4,'aaaa' ), (7,'bb'), (1,'ccc'), (4,'dd');
@@ -354,7 +356,7 @@ with t(c) as (select a from t1 where b >= 'c')
 select * from t r1, t r2 where r1.c=r2.c and r2.c=4;
 show create view v4;
 View	Create View	character_set_client	collation_connection
-v4	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v4` AS with t as (select `test`.`t1`.`a` AS `c` from `test`.`t1` where `test`.`t1`.`b` >= 'c')select `r1`.`c` AS `c`,`r2`.`c` AS `d` from (`t` `r1` join (select `test`.`t1`.`a` AS `c` from `test`.`t1` where `test`.`t1`.`b` >= 'c') `r2`) where `r1`.`c` = `r2`.`c` and `r2`.`c` = 4	latin1	latin1_swedish_ci
+v4	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v4` AS with t as (select `test_cte_nonrecursive`.`t1`.`a` AS `c` from `test_cte_nonrecursive`.`t1` where `test_cte_nonrecursive`.`t1`.`b` >= 'c')select `r1`.`c` AS `c`,`r2`.`c` AS `d` from (`t` `r1` join (select `test_cte_nonrecursive`.`t1`.`a` AS `c` from `test_cte_nonrecursive`.`t1` where `test_cte_nonrecursive`.`t1`.`b` >= 'c') `r2`) where `r1`.`c` = `r2`.`c` and `r2`.`c` = 4	latin1	latin1_swedish_ci
 select * from v4;
 c	d
 4	4
@@ -440,7 +442,7 @@ ERROR HY000: Duplicate query name `t` in WITH clause
 with t as (select a from s where a<5),
 s as (select a from t1 where b>='d')
 select * from t,s where t.a=s.a;
-ERROR 42S02: Table 'test.s' doesn't exist
+ERROR 42S02: Table 'test_cte_nonrecursive.s' doesn't exist
 with recursive
 t as (select a from s where a<5),
 s as (select a from t1 where b>='d')
@@ -726,10 +728,10 @@ select a from t1;
 show table status;
 show create view v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with t as (select `s`.`a` AS `a` from (select `test`.`t1`.`a` AS `a` from `test`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test`.`t2` join `t`) where `test`.`t2`.`b` = `t`.`a`)select `r`.`a` AS `a` from `r`	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS with t as (select `s`.`a` AS `a` from (select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test_cte_nonrecursive`.`t2` join `t`) where `test_cte_nonrecursive`.`t2`.`b` = `t`.`a`)select `r`.`a` AS `a` from `r`	latin1	latin1_swedish_ci
 show create view v2;
 View	Create View	character_set_client	collation_connection
-v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS with t as (select `s`.`a` AS `a` from (select `test`.`t1`.`a` AS `a` from `test`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test`.`t2` join `t`) where `test`.`t2`.`b` = `t`.`a`)select `test`.`t1`.`a` AS `a` from `test`.`t1`	latin1	latin1_swedish_ci
+v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS with t as (select `s`.`a` AS `a` from (select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`) `s`), r as (select `t`.`a` AS `a` from (`test_cte_nonrecursive`.`t2` join `t`) where `test_cte_nonrecursive`.`t2`.`b` = `t`.`a`)select `test_cte_nonrecursive`.`t1`.`a` AS `a` from `test_cte_nonrecursive`.`t1`	latin1	latin1_swedish_ci
 select * from v1;
 a
 2
@@ -1040,14 +1042,14 @@ drop table region, nation;
 #
 # MDEV-15120: cte name used with database name
 #
-WITH cte AS (SELECT 1 AS a) SELECT test.cte.a FROM test.cte;
-ERROR 42S02: Table 'test.cte' doesn't exist
-CREATE DATABASE db1;
-USE db1;
-WITH cte AS (SELECT 1 AS a) SELECT db1.cte.a FROM db1.cte;
-ERROR 42S02: Table 'db1.cte' doesn't exist
-DROP DATABASE db1;
-USE test;
+WITH cte AS (SELECT 1 AS a) SELECT test_cte_nonrecursive.cte.a FROM test_cte_nonrecursive.cte;
+ERROR 42S02: Table 'test_cte_nonrecursive.cte' doesn't exist
+CREATE DATABASE db1_cte_nonrecursive;
+USE db1_cte_nonrecursive;
+WITH cte AS (SELECT 1 AS a) SELECT db1_cte_nonrecursive.cte.a FROM db1_cte_nonrecursive.cte;
+ERROR 42S02: Table 'db1_cte_nonrecursive.cte' doesn't exist
+DROP DATABASE db1_cte_nonrecursive;
+USE test_cte_nonrecursive;
 #
 # MDEV-15119: CTE c2 specified after CTE c1 and is used in
 #             CTE c3 that is embedded into the spec of c1
@@ -1057,7 +1059,7 @@ INSERT INTO t1 VALUES (1),(2),(3);
 WITH c1 AS (WITH c3 AS (SELECT * FROM c2) SELECT * FROM c3),
 c2 AS (SELECT * FROM t1)
 SELECT * FROM c1;
-ERROR 42S02: Table 'test.c2' doesn't exist
+ERROR 42S02: Table 'test_cte_nonrecursive.c2' doesn't exist
 WITH RECURSIVE c1 AS (WITH c3 AS (SELECT * FROM c2) SELECT * FROM c3),
 c2 AS (SELECT * FROM t1)
 SELECT * FROM c1;
@@ -1179,7 +1181,7 @@ a	a
 3	3
 1	1
 drop database db_mdev_16473;
-use test;
+use test_cte_nonrecursive;
 #
 # MDEV-17154: using parameter markers for PS within CTEs more than once
 #             using local variables in SP within CTEs more than once
@@ -1340,4 +1342,4 @@ t
 with columns as (select 1 as t) select * from columns;
 t
 1
-use test;
+DROP DATABASE test_cte_nonrecursive;

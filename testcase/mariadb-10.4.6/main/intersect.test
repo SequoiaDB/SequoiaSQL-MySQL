@@ -195,8 +195,10 @@ set SQL_MODE=ORACLE;
 #(select e,f from t3) intersect (select c,d from t2) union (select a,b from t1) union (select 4,4);
 set SQL_MODE=default;
 
+#--sorted_result
+#(/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1`) union /* select#3 */ select `__3`.`c` AS `c`,`__3`.`d` AS `d` from ((/* select#2 */ select `test`.`t2`.`c` AS `c`,`test`.`t2`.`d` AS `d` from `test`.`t2`) intersect (/* select#4 */ select `test`.`t3`.`e` AS `e`,`test`.`t3`.`f` AS `f` from `test`.`t3`)) `__3` union (/* select#5 */ select 4 AS `4`,4 AS `4`);
 --sorted_result
-(/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1`) union /* select#3 */ select `__3`.`c` AS `c`,`__3`.`d` AS `d` from ((/* select#2 */ select `test`.`t2`.`c` AS `c`,`test`.`t2`.`d` AS `d` from `test`.`t2`) intersect (/* select#4 */ select `test`.`t3`.`e` AS `e`,`test`.`t3`.`f` AS `f` from `test`.`t3`)) `__3` union (/* select#5 */ select 4 AS `4`,4 AS `4`);
+(/* select#1 */ select `t1`.`a` AS `a`,`t1`.`b` AS `b` from `t1`) union /* select#3 */ select `__3`.`c` AS `c`,`__3`.`d` AS `d` from ((/* select#2 */ select `t2`.`c` AS `c`,`t2`.`d` AS `d` from `t2`) intersect (/* select#4 */ select `t3`.`e` AS `e`,`t3`.`f` AS `f` from `t3`)) `__3` union (/* select#5 */ select 4 AS `4`,4 AS `4`);
 
 --sorted_result
 prepare stmt from "(select a,b from t1) union (select c,d from t2) intersect (select e,f from t3) union (select 4,4)";
@@ -226,6 +228,7 @@ call p1();
 call p1();
 drop procedure p1;
 
+--replace_regex /test_parallel_[0-9]/X/
 show create view v1;
 
 drop view v1;

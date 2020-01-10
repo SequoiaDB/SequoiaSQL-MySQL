@@ -1125,6 +1125,7 @@ drop table t1;
 set names utf8;
 create table t1 (f1 varchar(10));
 insert into t1 values ('2015-12-31');
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_DATA_OUT_OF_RANGE
 select power( timestamp( nullif( '2002-09-08', f1 ) ), 24 ) from t1;
 drop table t1;

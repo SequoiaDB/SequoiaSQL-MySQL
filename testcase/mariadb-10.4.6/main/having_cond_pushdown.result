@@ -168,13 +168,13 @@ a	MAX(t1.b)	MIN(t1.c)
 set statement optimizer_switch='condition_pushdown_from_having=off' for SELECT t1.a,MAX(t1.b)
 FROM t1
 GROUP BY t1.a
-HAVING (t1.a>1) AND (a=test.f1());
+HAVING (t1.a>1) AND (a=f1());
 a	MAX(t1.b)
 3	14
 SELECT t1.a,MAX(t1.b)
 FROM t1
 GROUP BY t1.a
-HAVING (t1.a>1) AND (a=test.f1());
+HAVING (t1.a>1) AND (a=f1());
 a	MAX(t1.b)
 3	14
 # conjunctive subformula : pushdown into derived table WHERE clause

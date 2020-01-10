@@ -1,6 +1,8 @@
 #
 # testing of the TIME column type
 #
+CREATE DATABASE test_type_time;
+USE test_type_time;
 
 --disable_warnings
 drop table if exists t1;
@@ -1451,6 +1453,7 @@ DROP TABLE t1;
 
 SELECT '1972-11-06 16:58:58' < TIME'20:31:05';
 
+DROP DATABASE test_type_time;
 --echo #
 --echo # End of 10.4 tests
 --echo #

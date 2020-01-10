@@ -16,6 +16,7 @@ create table t1 (sal int(10),id int(10));
 INSERT INTO t1 (sal,id) VALUES (5000,1);
 INSERT INTO t1 (sal,id) VALUES (2000,1);
 INSERT INTO t1 (sal,id) VALUES (1000,1);
+--replace_regex /test_parallel_[0-9]/X/
 select f1(sal) from t1 where id>= 1;
 select * from t2;
 drop table t2;
@@ -101,6 +102,7 @@ delimiter |;
 
 
 #WITHOUT RETURN STATEMENT IN AGGREGATE FUNCTIONS
+--replace_regex /test_parallel_[0-9]/X/
 --error 1320
 create aggregate function f1(x int) returns int
 begin
@@ -688,6 +690,7 @@ begin
 end|
 
 delimiter ;|
+--replace_regex /test_parallel_[0-9]/X/
 select f5() from t2;
 delimiter |;
 
@@ -705,6 +708,7 @@ begin
 end|
 
 delimiter ;|
+--replace_regex /test_parallel_[0-9]/X/
 select f6(sal) from t2;
 
 # GROUP BY AND ORDER BY
@@ -734,14 +738,16 @@ begin
   declare z int default 0;
   DECLARE done BOOLEAN DEFAULT FALSE;
   DECLARE a,b,c  INT;
-  DECLARE cur1 CURSOR FOR SELECT id FROM test.t2;
+#  DECLARE cur1 CURSOR FOR SELECT id FROM test.t2;
+  DECLARE cur1 CURSOR FOR SELECT id FROM t2;
   declare continue handler for not found return z;
 
     outer_loop: LOOP
        FETCH GROUP NEXT ROW;
        set z= z+x;
          inner_block: begin
-         DECLARE cur2 CURSOR FOR SELECT id FROM test.t2;
+#         DECLARE cur2 CURSOR FOR SELECT id FROM test.t2;
+         DECLARE cur2 CURSOR FOR SELECT id FROM t2;
          DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
          OPEN cur2;
 
@@ -759,6 +765,7 @@ begin
 end|
 
 delimiter ;|
+--replace_regex /test_parallel_[0-9]/X/
 select f7(sal) from t1;
 
 drop table t1;

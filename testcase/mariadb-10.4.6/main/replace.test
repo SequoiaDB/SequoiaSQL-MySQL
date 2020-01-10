@@ -43,6 +43,7 @@ drop table t1;
 #
 CREATE TABLE t1 (f1 INT);
 CREATE VIEW v1 AS SELECT f1 FROM t1 WHERE f1 = 0 WITH CHECK OPTION;
+--replace_regex /test_parallel_[0-9]/X/
 --error 1369
 REPLACE INTO v1 (f1) VALUES (1);
 DROP TABLE t1;

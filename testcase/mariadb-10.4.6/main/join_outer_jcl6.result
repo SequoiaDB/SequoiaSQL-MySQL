@@ -289,7 +289,7 @@ fill	idPla
 10360	1
 10361	NULL
 10362	NULL
-drop table t1,t2,t3,test.t4;
+drop table t1,t2,t3,t4;
 CREATE TABLE t1 (
 id smallint(5) unsigned NOT NULL auto_increment,
 name char(60) DEFAULT '' NOT NULL,

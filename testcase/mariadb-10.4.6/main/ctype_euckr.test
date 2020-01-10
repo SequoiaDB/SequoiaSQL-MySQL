@@ -46,11 +46,17 @@ insert into t1 values (0xA17A);
 insert into t1 values (0xA181);
 insert into t1 values (0xA1FE);
 # Insert some invalid characters
+--replace_regex /test_parallel_[0-9]/X/
 insert ignore into t1 values (0xA140);
+--replace_regex /test_parallel_[0-9]/X/
 insert ignore into t1 values (0xA15B);
+--replace_regex /test_parallel_[0-9]/X/
 insert ignore into t1 values (0xA160);
+--replace_regex /test_parallel_[0-9]/X/
 insert ignore into t1 values (0xA17B);
+--replace_regex /test_parallel_[0-9]/X/
 insert ignore into t1 values (0xA180);
+--replace_regex /test_parallel_[0-9]/X/
 insert ignore into t1 values (0xA1FF);
 select hex(s1), hex(convert(s1 using utf8)) from t1 order by binary s1;
 drop table t1;
@@ -146,6 +152,7 @@ WHERE (head BETWEEN '80' AND 'FF') AND (tail BETWEEN '20' AND 'FF')
 ORDER BY head, tail;
 DROP TEMPORARY TABLE head, tail;
 SHOW CREATE TABLE t1;
+--replace_regex /test_parallel_[0-9]/X/
 UPDATE IGNORE t1 SET a=unhex(code) ORDER BY code;
 SELECT COUNT(*) FROM t1 WHERE a<>'?';
 #

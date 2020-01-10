@@ -1,6 +1,8 @@
 #--source include/have_innodb.inc
 
-connect (con1,localhost,root,,);
+--let $db= `select database()`
+#connect (con1,localhost,root,,);
+connect (con1,localhost,root,, $db);
 
 --echo #
 --echo # Bug#20837 Apparent change of isolation level 
@@ -439,10 +441,15 @@ RENAME TABLE temp_t2 TO temp_t3;
 --error ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION
 TRUNCATE TABLE t1;
 
+#--error ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION
+#CREATE DATABASE db1;
+#--error ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION
+#DROP DATABASE db1;
+#SET SESSION TRANSACTION READ WRITE;
 --error ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION
-CREATE DATABASE db1;
+CREATE DATABASE db1_commit;
 --error ER_CANT_EXECUTE_IN_READ_ONLY_TRANSACTION
-DROP DATABASE db1;
+DROP DATABASE db1_commit;
 SET SESSION TRANSACTION READ WRITE;
 
 --echo # 2: DML should be blocked on non-temporary tables.

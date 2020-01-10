@@ -1,5 +1,7 @@
+CREATE DATABASE test_alter_table;
+USE test_alter_table;
 drop table if exists t1,t2;
-drop database if exists mysqltest;
+drop database if exists mysqltest_alter_table;
 create table t1 (
 col1 int not null auto_increment primary key,
 col2 varchar(30) not null,
@@ -90,7 +92,7 @@ ALTER TABLE t1 ADD Column new_col int not null;
 UNLOCK TABLES;
 OPTIMIZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	optimize	note	The storage engine for the table doesn't support optimize
+test_alter_table.t1	optimize	note	The storage engine for the table doesn't support optimize
 DROP TABLE t1;
 create table t1 (i int unsigned not null auto_increment primary key);
 insert into t1 values (null),(null),(null),(null);
@@ -104,25 +106,25 @@ i
 drop table t1;
 create table t1 (name char(15));
 insert into t1 (name) values ("current");
-create database mysqltest;
-create table mysqltest.t1 (name char(15));
-insert into mysqltest.t1 (name) values ("mysqltest");
+create database mysqltest_alter_table;
+create table mysqltest_alter_table.t1 (name char(15));
+insert into mysqltest_alter_table.t1 (name) values ("mysqltest");
 select * from t1;
 name
 current
-select * from mysqltest.t1;
+select * from mysqltest_alter_table.t1;
 name
 mysqltest
-alter table t1 rename mysqltest.t1;
+alter table t1 rename mysqltest_alter_table.t1;
 ERROR 42S01: Table 't1' already exists
 select * from t1;
 name
 current
-select * from mysqltest.t1;
+select * from mysqltest_alter_table.t1;
 name
 mysqltest
 drop table t1;
-drop database mysqltest;
+drop database mysqltest_alter_table;
 create table t1 (n1 int not null, n2 int, n3 int, n4 float,
 unique(n1),
 key (n1, n2, n3, n4),
@@ -185,8 +187,8 @@ t1	0	a	2	b	x	x	x	x	YES	BTREE
 t1	1	b	1	b	x	x	x	x	YES	BTREE		
 analyze table t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+test_alter_table.t1	analyze	status	Engine-independent statistics collected
+test_alter_table.t1	analyze	status	OK
 show keys from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	0	a	1	a	x	x	x	x	YES	BTREE		
@@ -207,7 +209,7 @@ t1	0	PRIMARY	2	User	A	NULL	NULL	NULL		BTREE
 UNLOCK TABLES;
 CHECK TABLES t1;
 Table	Op	Msg_type	Msg_text
-test.t1	check	note	The storage engine for the table doesn't support check
+test_alter_table.t1	check	note	The storage engine for the table doesn't support check
 DROP TABLE t1;
 CREATE TABLE t1 (
 Host varchar(16) binary NOT NULL default '',
@@ -235,7 +237,7 @@ t1	1	Host	1	Host	A	NULL	NULL	NULL		BTREE
 UNLOCK TABLES;
 CHECK TABLES t1;
 Table	Op	Msg_type	Msg_text
-test.t1	check	note	The storage engine for the table doesn't support check
+test_alter_table.t1	check	note	The storage engine for the table doesn't support check
 LOCK TABLES t1 WRITE;
 ALTER TABLE t1 RENAME t2;
 UNLOCK TABLES;
@@ -265,8 +267,8 @@ ERROR 42000: Incorrect table name ''
 drop table t1;
 drop table if exists t1, t2;
 Warnings:
-Note	1051	Unknown table 'test.t1'
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_alter_table.t1'
+Note	1051	Unknown table 'test_alter_table.t2'
 create table t1 ( a varchar(10) not null primary key ) engine=sequoiadb;
 flush tables;
 alter table t1 modify a varchar(10);
@@ -274,7 +276,7 @@ flush tables;
 alter table t1 modify a varchar(10) not null;
 drop table if exists t1, t2;
 Warnings:
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_alter_table.t2'
 create table t1 (a int, b int, c int, d int, e int, f int, g int, h int,i int, primary key (a,b,c,d,e,f,g,i,h)) engine=sequoiadb;
 insert ignore into t1 (a) values(1);
 Warnings:
@@ -408,7 +410,7 @@ alter table t1 drop key a;
 drop table t1;
 CREATE TABLE T12207(a int) ENGINE=SequoiaDB;
 ALTER TABLE T12207 DISCARD TABLESPACE;
-ERROR HY000: Storage engine SequoiaDB of the table `test`.`T12207` doesn't have this option
+ERROR HY000: Storage engine SequoiaDB of the table `test_alter_table`.`T12207` doesn't have this option
 DROP TABLE T12207;
 create table t1 (a text) character set koi8r;
 insert into t1 values (_koi8r'тест');
@@ -537,16 +539,16 @@ Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_par
 t1	0	a	1	a	A	NULL	NULL	NULL	YES	BTREE		
 t1	1	b	1	b	A	NULL	NULL	NULL	YES	BTREE		
 drop table t1;
-create database mysqltest;
+create database mysqltest_alter_table;
 create table t1 (c1 int);
 drop table t1;
 create table t1 (c1 int);
-use mysqltest;
-drop database mysqltest;
-alter table test.t1 rename t1;
+use mysqltest_alter_table;
+drop database mysqltest_alter_table;
+alter table test_alter_table.t1 rename t1;
 ERROR 3D000: No database selected
-alter table test.t1 rename test.t1;
-use test;
+alter table test_alter_table.t1 rename test_alter_table.t1;
+use test_alter_table;
 drop table t1;
 CREATE TABLE t1(a INT) ENGINE=SequoiaDB ROW_FORMAT=FIXED;
 CREATE INDEX i1 ON t1(a);
@@ -898,19 +900,19 @@ DROP TABLE   `tt+1`, `tt+2`;
 CREATE TABLE `#sql1` (c1 INT);
 CREATE TABLE `@0023sql2` (c1 INT);
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_alter_table
 #sql1
 @0023sql2
 RENAME TABLE `#sql1`     TO `@0023sql1`;
 RENAME TABLE `@0023sql2` TO `#sql2`;
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_alter_table
 #sql2
 @0023sql1
 ALTER TABLE `@0023sql1`  RENAME `#sql-1`;
 ALTER TABLE `#sql2`      RENAME `@0023sql-2`;
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_alter_table
 #sql-1
 @0023sql-2
 INSERT INTO `#sql-1`     VALUES (1);
@@ -919,11 +921,11 @@ DROP TABLE `#sql-1`, `@0023sql-2`;
 CREATE TEMPORARY TABLE `#sql1` (c1 INT);
 CREATE TEMPORARY TABLE `@0023sql2` (c1 INT);
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_alter_table
 ALTER TABLE `#sql1`      RENAME `@0023sql1`;
 ALTER TABLE `@0023sql2`  RENAME `#sql2`;
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_alter_table
 INSERT INTO `#sql2`      VALUES (1);
 INSERT INTO `@0023sql1`  VALUES (2);
 SHOW CREATE TABLE `#sql2`;
@@ -957,7 +959,7 @@ ALTER TABLE t1
 CHANGE int_field unsigned_int_field INTEGER UNSIGNED NOT NULL,
 RENAME t2;
 SELECT * FROM t1 ORDER BY int_field;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_alter_table.t1' doesn't exist
 SELECT * FROM t2 ORDER BY unsigned_int_field;
 unsigned_int_field	char_field
 1	edno
@@ -1234,11 +1236,11 @@ DROP TABLE t1;
 #
 # Bug#11754461 CANNOT ALTER TABLE WHEN KEY PREFIX TOO LONG
 #
-DROP DATABASE IF EXISTS db1;
-CREATE DATABASE db1 CHARACTER SET utf8;
-CREATE TABLE db1.t1 (bar TINYTEXT, KEY (bar(100)));
-ALTER TABLE db1.t1 ADD baz INT;
-DROP DATABASE db1;
+DROP DATABASE IF EXISTS db1_alter_table;
+CREATE DATABASE db1_alter_table CHARACTER SET utf8;
+CREATE TABLE db1_alter_table.t1 (bar TINYTEXT, KEY (bar(100)));
+ALTER TABLE db1_alter_table.t1 ADD baz INT;
+DROP DATABASE db1_alter_table;
 # Additional coverage for refactoring which is made as part
 # of fix for bug #27480 "Extend CREATE TEMPORARY TABLES privilege
 # to allow temp table operations".
@@ -1247,7 +1249,7 @@ DROP DATABASE db1;
 DROP TABLE IF EXISTS t1;
 CREATE TEMPORARY TABLE t1 (i int) ENGINE=SequoiaDB;
 ALTER TABLE t1 DISCARD TABLESPACE;
-ERROR HY000: Storage engine SequoiaDB of the table `test`.`t1` doesn't have this option
+ERROR HY000: Storage engine SequoiaDB of the table `test_alter_table`.`t1` doesn't have this option
 DROP TABLE t1;
 #
 # Bug#11938039 RE-EXECUTION OF FRM-ONLY ALTER TABLE WITH RENAME
@@ -1318,7 +1320,7 @@ DROP TABLE t1;
 # BUG#27788685: NO WARNING WHEN TRUNCATING A STRING WITH DATA LOSS
 #
 SET GLOBAL max_allowed_packet=17825792;
-connect con1, localhost, root,,;
+connect con1, localhost, root,, test_alter_table;
 CREATE TABLE t1 (t1_fld1 TEXT);
 CREATE TABLE t2 (t2_fld1 MEDIUMTEXT);
 CREATE TABLE t3 (t3_fld1 LONGTEXT);
@@ -1552,7 +1554,7 @@ CREATE TABLE t1(a INT PRIMARY KEY, b INT);
 INSERT INTO t1 VALUES (1,1), (2,2);
 START TRANSACTION;
 INSERT INTO t1 VALUES (3,3);
-connect  con1, localhost, root;
+connect  con1, localhost, root,, test_alter_table;
 # Sending:
 connection default;
 UPDATE t1 SET b = 4;
@@ -2103,13 +2105,14 @@ create table t1 (a int)engine=sequoiadb;
 insert into t1 values (1),(1),(2),(3);
 analyze table t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+test_alter_table.t1	analyze	status	Engine-independent statistics collected
+test_alter_table.t1	analyze	status	OK
 alter table t1 change a b int;
 analyze table t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+test_alter_table.t1	analyze	status	Engine-independent statistics collected
+test_alter_table.t1	analyze	status	OK
 set @@use_stat_tables= @save_use_stat_tables;
 set @@optimizer_use_condition_selectivity= @save_optimizer_use_condition_selectivity;
 drop table t1;
+DROP DATABASE test_alter_table;

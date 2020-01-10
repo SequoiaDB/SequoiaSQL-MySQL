@@ -970,9 +970,9 @@ select @a;
 1
 drop table t1;
 do (SELECT a from t1);
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 set @a:=(SELECT a from t1);
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 create table t1 (a int);
 create table t2 (b int);
 insert into t1 values (1),(2);
@@ -1087,7 +1087,7 @@ create table t1 (a int);
 insert into t1 values (1), (2), (3);
 drop table t1;
 select t1.Continent, t2.Name, t2.Population from t1 LEFT JOIN t2 ON t1.Code = t2.Country  where t2.Population IN (select max(t2.Population) AS Population from t2, t1 where t2.Country = t1.Code group by Continent);
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 CREATE TABLE t1 (
 ID int(11) NOT NULL auto_increment,
 name char(35) NOT NULL default '',
@@ -2199,7 +2199,7 @@ set @b:= 0;
 set @a:= (select sum(a) from t1 where b > @b);
 do @a:= (select sum(a) from t1 where b > @b);
 drop table t1;
-connect  root,localhost,root,,test,$MASTER_MYPORT,$MASTER_MYSOCK;
+connect  root,localhost,root,,$db,$MASTER_MYPORT,$MASTER_MYSOCK;
 connection root;
 set @got_val= (SELECT 1 FROM (SELECT 'A' as my_col) as T1 ) ;
 disconnect root;
@@ -4413,7 +4413,7 @@ CREATE VIEW v2 (a,b) AS
 SELECT t2.id, t2.c AS c FROM t1, t2
 WHERE t1.id=t2.id AND 1 IN (SELECT id FROM t1) WITH CHECK OPTION;
 INSERT INTO v2(a,b) VALUES (2,2);
-ERROR 44000: CHECK OPTION failed `test`.`v2`
+ERROR 44000: CHECK OPTION failed `X`.`v2`
 SELECT * FROM v1;
 c
 1
@@ -5283,8 +5283,6 @@ INSERT IGNORE INTO t1 VALUES (0),(0);
 CREATE TABLE t2 ( f3 int, f10 int, KEY (f10,f3)) ;
 INSERT IGNORE INTO t2 VALUES (NULL,NULL),(5,0);
 DROP TABLE IF EXISTS t3;
-Warnings:
-Note	1051	Unknown table 'test.t3'
 CREATE TABLE t3 ( f3 int) ;
 INSERT INTO t3 VALUES (0),(0);
 SELECT a1.f3 AS r FROM t2 AS a1 , t1 WHERE a1.f3 < ALL ( SELECT f3 FROM t3 WHERE f3 = 1 ) ;
@@ -6147,12 +6145,12 @@ NULL
 # The following shows that t2 was indeed scanned with a full scan.
 show table_statistics;
 Table_schema	Table_name	Rows_read	Rows_changed	Rows_changed_x_#indexes
-test	t1	1	0	0
-test	t2	3	0	0
+X	t1	1	0	0
+X	t2	3	0	0
 show index_statistics;
 Table_schema	Table_name	Index_name	Rows_read
-test	t1	PRIMARY	1
-test	t2	b	1
+X	t1	PRIMARY	1
+X	t2	b	1
 set global userstat=@tmp_mdev410;
 DROP TABLE t1,t2,t3,t4;
 #
@@ -6361,14 +6359,14 @@ INSERT INTO t2 VALUES (5),(1);
 CREATE TABLE t3 (c INT, KEY(c));
 INSERT INTO t3 VALUES (5),(5);
 SET optimizer_switch='semijoin=on';
-select t1.a from t1 where t1.a in (select `test`.`t2`.`b` from `test`.`t2`)
-and t1.a in (select `test`.`t3`.`c` from `test`.`t3`);
+select t1.a from t1 where t1.a in (select `t2`.`b` from `t2`)
+and t1.a in (select `t3`.`c` from `t3`);
 a
 5
 5
 SET optimizer_switch='semijoin=off';
-select t1.a from t1 where t1.a in (select `test`.`t2`.`b` from `test`.`t2`)
-and t1.a in (select `test`.`t3`.`c` from `test`.`t3`);
+select t1.a from t1 where t1.a in (select `t2`.`b` from `t2`)
+and t1.a in (select `t3`.`c` from `t3`);
 a
 5
 5

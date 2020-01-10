@@ -742,15 +742,18 @@ SELECT CEILING(MIN(a)) FROM t1 GROUP BY b;
 SELECT CASE WHEN AVG(a)>=0 THEN 'Positive' ELSE 'Negative' END FROM t1 
  GROUP BY b;
 SELECT a + 1 FROM t1 GROUP BY a;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_WRONG_FIELD_WITH_GROUP 
 SELECT a + b FROM t1 GROUP BY b;
 SELECT (SELECT t1_outer.a FROM t1 AS t1_inner GROUP BY b LIMIT 1) 
   FROM t1 AS t1_outer;
 SELECT 1 FROM t1 as t1_outer GROUP BY a 
   HAVING (SELECT t1_outer.a FROM t1 AS t1_inner GROUP BY b LIMIT 1);
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_WRONG_FIELD_WITH_GROUP 
 SELECT (SELECT t1_outer.a FROM t1 AS t1_inner LIMIT 1) 
   FROM t1 AS t1_outer GROUP BY t1_outer.b;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_BAD_FIELD_ERROR 
 SELECT 1 FROM t1 as t1_outer GROUP BY a 
   HAVING (SELECT t1_outer.b FROM t1 AS t1_inner LIMIT 1);
@@ -758,6 +761,7 @@ SELECT (SELECT SUM(t1_inner.a) FROM t1 AS t1_inner LIMIT 1)
   FROM t1 AS t1_outer GROUP BY t1_outer.b;
 SELECT (SELECT SUM(t1_inner.a) FROM t1 AS t1_inner GROUP BY t1_inner.b LIMIT 1)
   FROM t1 AS t1_outer;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_WRONG_FIELD_WITH_GROUP 
 SELECT (SELECT SUM(t1_outer.a) FROM t1 AS t1_inner LIMIT 1) 
   FROM t1 AS t1_outer GROUP BY t1_outer.b;
@@ -774,6 +778,7 @@ SELECT 1 FROM t1 GROUP BY b HAVING ROW (b,b) = ROW (1,1);
 SELECT 1 FROM t1 GROUP BY b HAVING a = 2;
 --error ER_INVALID_GROUP_FUNC_USE
 SELECT 1 FROM t1 GROUP BY SUM(b);
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_WRONG_FIELD_WITH_GROUP 
 SELECT b FROM t1 AS t1_outer GROUP BY a HAVING t1_outer.a IN 
   (SELECT SUM(t1_inner.b)+t1_outer.b FROM t1 AS t1_inner GROUP BY t1_inner.a
@@ -785,11 +790,14 @@ SET SQL_MODE = '';
 #
 SET SQL_MODE = 'ONLY_FULL_GROUP_BY';
 create table t1(f1 int, f2 int);
+--replace_regex /test_parallel_[0-9]/X/
 --error 1055
 select * from t1 group by f1;
+--replace_regex /test_parallel_[0-9]/X/
 --error 1055
 select * from t1 group by f2;
 select * from t1 group by f1, f2;
+--replace_regex /test_parallel_[0-9]/X/
 --error 1055
 select t1.f1,t.* from t1, t1 t group by 1;
 drop table t1;

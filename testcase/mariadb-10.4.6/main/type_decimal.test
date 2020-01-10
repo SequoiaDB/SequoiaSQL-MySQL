@@ -166,6 +166,7 @@ insert ignore into t1 values ("+111111111.11"),("111111111.11"),("-11111111.11")
 insert ignore into t1 values ("-111111111.11"),("+1111111111.11"),("1111111111.11");
 insert ignore into t1 values ("1e+1000"),("1e-1000"),("-1e+1000");
 insert ignore into t1 values ("1e+4294967296"),("1e-4294967296");
+--replace_regex /test_parallel_[0-9]/X/
 insert ignore into t1 values ("1e+18446744073709551615"),("1e+18446744073709551616"),("1e-9223372036854775807"),("1e-9223372036854775809");
 insert ignore into t1 values ("123.4e"),("123.4e+2"),("123.4e-2"),("123e1"),("123e+0");
 select * from t1;
@@ -601,10 +602,13 @@ DROP TABLE t1, t2;
 --echo #
 
 let $MYSQLD_DATADIR= `select @@datadir`;
-
---copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/test/t1dec102.frm
---copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/test/t1dec102.MYD
---copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/test/t1dec102.MYI
+let $db= `select database()`;
+#--copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/test/t1dec102.frm
+#--copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/test/t1dec102.MYD
+#--copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/test/t1dec102.MYI
+--copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/$db/t1dec102.frm
+--copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/$db/t1dec102.MYD
+--copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/$db/t1dec102.MYI
 
 SHOW CREATE TABLE t1dec102;
 SHOW COLUMNS FROM t1dec102;
@@ -660,9 +664,13 @@ SET sql_mode=DEFAULT;
 --echo #
 
 let $MYSQLD_DATADIR= `select @@datadir`;
---copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/test/t1dec102.frm
---copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/test/t1dec102.MYD
---copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/test/t1dec102.MYI
+let $db= `select database()`;
+#--copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/test/t1dec102.frm
+#--copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/test/t1dec102.MYD
+#--copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/test/t1dec102.MYI
+--copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/$db/t1dec102.frm
+--copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/$db/t1dec102.MYD
+--copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/$db/t1dec102.MYI
 
 SHOW CREATE TABLE t1dec102;
 
@@ -689,10 +697,13 @@ DROP TABLE t1dec102;
 --echo #
 
 let $MYSQLD_DATADIR= `select @@datadir`;
-
---copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/test/t1dec102.frm
---copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/test/t1dec102.MYD
---copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/test/t1dec102.MYI
+let $db= `select database()`;
+#--copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/test/t1dec102.frm
+#--copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/test/t1dec102.MYD
+#--copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/test/t1dec102.MYI
+--copy_file std_data/old_decimal/t1dec102.frm $MYSQLD_DATADIR/$db/t1dec102.frm
+--copy_file std_data/old_decimal/t1dec102.MYD $MYSQLD_DATADIR/$db/t1dec102.MYD
+--copy_file std_data/old_decimal/t1dec102.MYI $MYSQLD_DATADIR/$db/t1dec102.MYI
 
 --echo # This creates the old DECIMAL. Will be fixed in MDEV-12574.
 CREATE TABLE t1 AS SELECT MAX(a) FROM t1dec102;

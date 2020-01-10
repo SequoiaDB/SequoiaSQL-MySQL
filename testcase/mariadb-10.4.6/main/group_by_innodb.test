@@ -155,7 +155,9 @@ CREATE TABLE t1 (
 
 INSERT INTO t1 (a, b) SELECT t01.a, t02.a FROM t0 t01, t0 t02;
 
+--disable_result_log
 ANALYZE TABLE t1;
+--enable_result_log
 
 let $query=
 SELECT DISTINCT a, MAX(b) FROM t1 WHERE a >= 0 GROUP BY a,a;

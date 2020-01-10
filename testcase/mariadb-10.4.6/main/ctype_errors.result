@@ -1,6 +1,6 @@
 Start of 5.4 tests
 CREATE TABLE t1(f1 INT);
-connect  con1,localhost,root,,test;
+connect  con1,localhost,root,,$db;
 connection con1;
 SET lc_messages=ru_RU;
 SHOW VARIABLES LIKE 'lc_messages';
@@ -28,8 +28,8 @@ SET GLOBAL lc_messages=en_US;
 disconnect con1;
 DROP TABLE t1;
 drop table `ק`;
-ERROR 42S02: Unknown table 'test.ק'
-connect  con1,localhost,root,,test;
+ERROR 42S02: Unknown table 'X.ק'
+connect  con1,localhost,root,,$db;
 connection con1;
 SET lc_messages=cs_CZ;
 SET NAMES UTF8;
@@ -41,7 +41,7 @@ connection default;
 # Bug#12736295: Buffer overflow for variable converted_err
 #               with non-latin1 server error message
 #
-connect  con1,localhost,root,,test;
+connect  con1,localhost,root,,$db;
 SET lc_messages=ru_RU;
 SET NAMES latin1;
 SELECT '01234567890123456789012345678901234\';

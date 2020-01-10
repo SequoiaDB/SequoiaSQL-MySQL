@@ -2,6 +2,9 @@
 # testing different DATETIME ranges
 #
 
+CREATE DATABASE test_type_datetime;
+USE test_type_datetime;
+
 --disable_warnings
 drop table if exists t1;
 --enable_warnings
@@ -926,7 +929,7 @@ SELECT pk FROM v1 WHERE x1 >x2;
 DROP VIEW v1;
 DROP TABLE t1;
 
-
+DROP DATABASE test_type_datetime;
 --echo #
 --echo # End of 10.4 tests
 --echo #

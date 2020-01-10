@@ -31,7 +31,7 @@ DROP TABLE t2;
 END;
 $$
 CALL p1();
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
 CALL p1();
 Table	Create Table
@@ -48,14 +48,15 @@ DROP PROCEDURE p1;
 #
 CREATE PROCEDURE p1()
 BEGIN
-DECLARE rec ROW TYPE OF test.t1;
+#  DECLARE rec ROW TYPE OF test.t1;
+DECLARE rec ROW TYPE OF t1;
 CREATE TABLE t2 AS SELECT rec.a, rec.b, rec.c, rec.d;
 SHOW CREATE TABLE t2;
 DROP TABLE t2;
 END;
 $$
 CALL p1();
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
 CALL p1();
 Table	Create Table
@@ -79,7 +80,7 @@ DROP TABLE t2;
 END;
 $$
 CALL p1();
-ERROR 42S02: Table 'test.v1' doesn't exist
+ERROR 42S02: Table 'X.v1' doesn't exist
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
 CREATE VIEW v1 AS SELECT * FROM t1;
 CALL p1();
@@ -98,14 +99,15 @@ DROP PROCEDURE p1;
 #
 CREATE PROCEDURE p1()
 BEGIN
-DECLARE rec ROW TYPE OF test.v1;
+#  DECLARE rec ROW TYPE OF test.v1;
+DECLARE rec ROW TYPE OF v1;
 CREATE TABLE t2 AS SELECT rec.a, rec.b, rec.c, rec.d;
 SHOW CREATE TABLE t2;
 DROP TABLE t2;
 END;
 $$
 CALL p1();
-ERROR 42S02: Table 'test.v1' doesn't exist
+ERROR 42S02: Table 'X.v1' doesn't exist
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
 CREATE VIEW v1 AS SELECT * FROM t1;
 CALL p1();

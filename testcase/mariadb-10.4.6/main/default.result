@@ -1,5 +1,4 @@
 drop table if exists t1,t2,t3,t4,t5,t6;
-drop database if exists mysqltest;
 set sql_mode="";
 CREATE TABLE t1 (a varchar(30) binary NOT NULL DEFAULT ' ',
 b varchar(1) binary NOT NULL DEFAULT ' ',
@@ -253,7 +252,7 @@ DROP TABLE t1;
 #
 # MDEV-10780 Server crashes in in create_tmp_table
 #
-connect  con1,localhost,root,,test;
+connect  con1,localhost,root,,$db;
 CREATE TABLE t1 (pk INT AUTO_INCREMENT PRIMARY KEY) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ();
 INSERT INTO t1 VALUES ();
@@ -426,7 +425,7 @@ create table t1 (a int);
 create or replace table t1 (a int default b, b int default a);
 ERROR 01000: Expression for field `a` is referring to uninitialized field `b`
 show create table t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 #
 # Refering to other columns
 #

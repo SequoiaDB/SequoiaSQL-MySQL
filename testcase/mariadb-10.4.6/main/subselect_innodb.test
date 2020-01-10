@@ -432,7 +432,9 @@ drop table t1;
 --echo # MDEV-3988 crash in create_tmp_table
 --echo #
 
+--disable_warnings
 drop table if exists `t1`,`t2`;
+--enable_warnings
 create table `t1`(`a` char(1) character set utf8)engine=SequoiaDB;
 create table `t2`(`b` char(1) character set utf8)engine=SequoiaDB;
 select distinct (select 1 from `t2` where `a`) `d2` from `t1`;
@@ -565,7 +567,9 @@ from t1 A, t1 B, t1 C, t1 D;
 alter table t2 add key2 int;
 update t2 set key2=key1;
 alter table t2 add key(key2);
+--disable_result_log
 analyze table t2;
+--enable_result_log
 flush tables;
 --echo # Table tsubq must use 'ref' + Using filesort (not 'index' w/o filesort)
 --replace_column 9 #

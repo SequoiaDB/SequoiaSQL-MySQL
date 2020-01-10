@@ -6032,8 +6032,6 @@ SET @safe_character_set_client= @@character_set_client;
 SET @safe_character_set_results= @@character_set_results;
 SET character_set_server= @test_character_set;
 SET collation_server= @test_collation;
-CREATE DATABASE d1;
-USE d1;
 CREATE TABLE t1 (c CHAR(10), KEY(c));
 SHOW FULL COLUMNS FROM t1;
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
@@ -6120,8 +6118,6 @@ select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 concat(name,space(level))	concat(name, repeat(' ',level))
 string 	string 
 drop table t1;
-DROP DATABASE d1;
-USE test;
 SET character_set_server= @safe_character_set_server;
 SET collation_server= @safe_collation_server;
 SET character_set_client= @safe_character_set_client;
@@ -6738,13 +6734,13 @@ INSERT INTO t1 (ch) VALUES ('admin'),('admin1');
 SELECT ch FROM t1 WHERE ch='admin𝌆';
 ch
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch='admin𝌆';
 ch
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='admin𝌆';
 ch
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 DELETE FROM t1;
 INSERT INTO t1 (ch) VALUES ('a'), ('a?'), ('a??'), ('a???'), ('a????');
 INSERT INTO t1 (ch) VALUES ('ab'),('a?b'),('a??b'),('a???b'),('a????b');
@@ -6759,11 +6755,11 @@ ch
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='a𝌆' ORDER BY ch;
 ch
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='a𝌆b' ORDER BY ch;
 ch
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch<'a𝌆' ORDER BY ch;
 ch
 a
@@ -6822,7 +6818,7 @@ az
 aЀ
 aր
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch<'a𝌆b' ORDER BY ch;
 ch
 a
@@ -6843,7 +6839,7 @@ az
 aЀ
 aր
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 ch
 z
@@ -6854,12 +6850,12 @@ SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 ch
 z
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆b' ORDER BY ch;
 ch
 z
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `X`.`t1`.`ch` at row 1
 ALTER TABLE t1 DROP KEY ch;
 # 0xD18F would be a good 2-byte character, 0xD1 is an incomplete sequence
 SET @query=CONCAT('SELECT ch FROM t1 WHERE ch=''a', 0xD1,'''');

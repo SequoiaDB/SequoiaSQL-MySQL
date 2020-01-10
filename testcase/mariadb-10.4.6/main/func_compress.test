@@ -6,7 +6,9 @@
 # valgrind, but these warnings can be ignored
 
 set global max_allowed_packet=1048576;
-connect (conn1,localhost,root,,);
+#connect (conn1,localhost,root,,);
+--let $db= `select database()`
+connect (conn1,localhost,root,,$db);
 connection conn1;
 
 select @test_compress_string:='string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ';
@@ -51,7 +53,8 @@ set @@global.max_allowed_packet=1048576*100;
 --replace_result "''" XXX "'1'" XXX
 
 # reconnect to make the new max packet size take effect
---connect (newconn, localhost, root,,)
+#--connect (newconn, localhost, root,,)
+--connect (newconn, localhost, root,,$db)
 eval select compress(repeat('aaaaaaaaaa', IF('$LOW_MEMORY', 10, 10000000))) is null;
 disconnect newconn;
 --source include/wait_until_disconnected.inc

@@ -1,8 +1,10 @@
+CREATE DATABASE test_index_intersect;
+USE test_index_intersect;
 DROP TABLE IF EXISTS t1,t2,t3,t4;
-DROP DATABASE IF EXISTS world;
+DROP DATABASE IF EXISTS world_index_intersect;
 set names utf8;
-CREATE DATABASE world;
-use world;
+CREATE DATABASE world_index_intersect;
+use world_index_intersect;
 CREATE TABLE Country (
 Code char(3) NOT NULL default '',
 Name char(52) NOT NULL default '',
@@ -822,8 +824,8 @@ SELECT * FROM City
 WHERE Country='USA' AND Population > 1500000 AND Name LIKE 'C%';
 ID	Name	Country	Population
 3795	Chicago	USA	2896016
-DROP DATABASE world;
-use test;
+DROP DATABASE world_index_intersect;
+use test_index_intersect;
 CREATE TABLE t1 (
 f1 int,
 f4 varchar(32),
@@ -854,3 +856,4 @@ f1	f4	f5
 DROP TABLE t1;
 SET SESSION optimizer_switch='index_merge_sort_intersection=on';
 SET SESSION optimizer_switch='rowid_filter=default';
+DROP DATABASE test_index_intersect;

@@ -140,9 +140,6 @@ KEY idx3 (a, b)
 ) ENGINE = SequoiaDB;
 INSERT INTO t1 (a, b) SELECT t01.a, t02.a FROM t0 t01, t0 t02;
 ANALYZE TABLE t1;
-Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
 SELECT DISTINCT a, MAX(b) FROM t1 WHERE a >= 0 GROUP BY a,a;
 a	MAX(b)
 1	10

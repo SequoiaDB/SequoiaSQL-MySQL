@@ -1,3 +1,5 @@
+CREATE DATABASE test_insert_select;
+USE test_insert_select;
 drop table if exists t1,t2,t3;
 create table t1 (bandID MEDIUMINT UNSIGNED NOT NULL PRIMARY KEY, payoutID SMALLINT UNSIGNED NOT NULL);
 insert into t1 (bandID,payoutID) VALUES (1,6),(2,6),(3,4),(4,9),(5,10),(6,1),(7,12),(8,12);
@@ -746,7 +748,7 @@ use bug21774_1;
 INSERT INTO bug21774_2.t1 SELECT t1.* FROM t1;
 DROP DATABASE bug21774_1;
 DROP DATABASE bug21774_2;
-USE test;
+USE test_insert_select;
 create table t1(f1 int primary key, f2 int);
 insert into t1 values (1,1);
 affected rows: 1
@@ -855,4 +857,5 @@ t2	CREATE TABLE `t2` (
   `a` binary(0) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1, t2;
+DROP DATABASE test_insert_select;
 End of 5.5 tests

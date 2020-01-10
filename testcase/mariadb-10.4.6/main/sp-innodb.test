@@ -96,7 +96,9 @@ DELIMITER ;//
 --echo
 --echo # Open another connection, create and initialize a table
 --echo # to be used for provoking deadlock, put a lock on the table:
-connect (con1,localhost,root,,);
+#connect (con1,localhost,root,,);
+--let $db= `select database()`
+connect (con1,localhost,root,,$db);
 CREATE TABLE t1 (i INT) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1);
 SET AUTOCOMMIT= 0;

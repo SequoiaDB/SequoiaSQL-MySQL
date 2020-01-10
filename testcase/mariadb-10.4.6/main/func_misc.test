@@ -2,6 +2,9 @@
 # Testing of misc functions
 #
 
+CREATE DATABASE test_func_misc;
+USE test_func_misc;
+
 --disable_warnings
 DROP TABLE IF EXISTS t1, t2;
 --enable_warnings
@@ -58,7 +61,8 @@ INSERT INTO t1 VALUES ('default', CONNECTION_ID());
 
 SELECT GET_LOCK('bug16501',600);
 
-connect (con1,localhost,root,,);
+#connect (con1,localhost,root,,);
+connect (con1,localhost,root,,test_func_misc);
 INSERT INTO t1 VALUES ('con1', CONNECTION_ID());
 SELECT IS_USED_LOCK('bug16501') = connection_id
 FROM t1
@@ -637,7 +641,8 @@ select get_lock('test', 0);
 select is_free_lock('test');
 select is_used_lock('test') = connection_id();
 
-connect (con1,localhost,root,,);
+#connect (con1,localhost,root,,);
+connect (con1,localhost,root,,test_func_misc);
 connection con1;
 --echo # IS_USED_LOCK, IS_FREE_LOCK: the  lock is acquired in another
 --echo # connection
@@ -1085,7 +1090,8 @@ select is_used_lock('test') = connection_id();
 --echo # GET_LOCK returns 1 if it manages to acquire a lock
 select get_lock('test', 0);
 
-connect (con1,localhost,root,,);
+#connect (con1,localhost,root,,);
+connect (con1,localhost,root,,test_func_misc);
 connection con1;
 select is_used_lock('test') = connection_id();
 select get_lock('test', 0);
@@ -1253,6 +1259,7 @@ $$
 DELIMITER ;$$
 DROP TABLE t1;
 
+DROP DATABASE test_func_misc;
 --echo #
 --echo # End of 10.4 tests
 --echo #

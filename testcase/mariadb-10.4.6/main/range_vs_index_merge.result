@@ -1,8 +1,10 @@
+CREATE DATABASE test_range_vs_index_merge;
+USE test_range_vs_index_merge;
 DROP TABLE IF EXISTS t1,t2,t3,t4;
-DROP DATABASE IF EXISTS world;
+DROP DATABASE IF EXISTS world_range_vs_index_merge;
 set names utf8;
-CREATE DATABASE world;
-use world;
+CREATE DATABASE world_range_vs_index_merge;
+use world_range_vs_index_merge;
 CREATE TABLE Country (
 Code char(3) NOT NULL default '',
 Name char(52) NOT NULL default '',
@@ -983,8 +985,8 @@ Handler_read_rnd	0
 Handler_read_rnd_deleted	0
 Handler_read_rnd_next	0
 set optimizer_switch=@save_optimizer_switch;
-DROP DATABASE world;
-use test;
+DROP DATABASE world_range_vs_index_merge;
+use test_range_vs_index_merge;
 CREATE TABLE t1 (
 id int(10) unsigned NOT NULL auto_increment,
 account_id int(10) unsigned NOT NULL,
@@ -1317,8 +1319,8 @@ DROP TABLE t1;
 #             one index is an infix of the other index
 #
 set names utf8;
-CREATE DATABASE world;
-use world;
+CREATE DATABASE world_range_vs_index_merge;
+use world_range_vs_index_merge;
 CREATE TABLE Country (
 Code char(3) NOT NULL default '',
 Name char(52) NOT NULL default '',
@@ -1378,5 +1380,6 @@ ID	Name	Country	Population
 1474	Venezia	ITA	277305
 2928	Warszawa	POL	1615369
 2931	Wroclaw	POL	636765
-DROP DATABASE world;
+DROP DATABASE world_range_vs_index_merge;
 set session optimizer_switch='index_merge_sort_intersection=default';
+DROP DATABASE test_range_vs_index_merge;

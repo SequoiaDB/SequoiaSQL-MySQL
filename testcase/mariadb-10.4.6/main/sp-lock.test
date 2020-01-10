@@ -21,6 +21,9 @@
 --echo # then call a DDL operation on a procedure, and then check
 --echo # that the savepoint is no longer present.
 
+CREATE DATABASE test_sp_lock;
+USE test_sp_lock;
+
 --disable_warnings
 drop table if exists t1;
 drop procedure if exists p1;
@@ -143,9 +146,12 @@ drop temporary table t1;
 --echo # connection, try to use the routine.
 --echo # That should block on the pending exclusive lock.
 --echo #
-connect(con1, localhost, root,,);
-connect(con2, localhost, root,,);
-connect(con3, localhost, root,,);
+#connect(con1, localhost, root,,);
+#connect(con2, localhost, root,,);
+#connect(con3, localhost, root,,);
+connect(con1, localhost, root,, test_sp_lock);
+connect(con2, localhost, root,, test_sp_lock);
+connect(con3, localhost, root,, test_sp_lock);
 
 --echo #
 --echo # Test DROP PROCEDURE.
@@ -821,8 +827,10 @@ BEGIN
 END|
 delimiter ;|
 
-connect (con2, localhost, root);
-connect (con3, localhost, root);
+#connect (con2, localhost, root);
+#connect (con3, localhost, root);
+connect (con2, localhost, root,, test_sp_lock);
+connect (con3, localhost, root,, test_sp_lock);
 
 connection default;
 SELECT get_lock("test", 10);
@@ -864,31 +872,41 @@ DROP PROCEDURE p1;
 --echo #
 
 --disable_warnings
-DROP DATABASE IF EXISTS db1;
+#DROP DATABASE IF EXISTS db1;
+DROP DATABASE IF EXISTS db1_sp_lock;
 DROP FUNCTION IF EXISTS f1;
 --enable_warnings
 
-connect(con1, localhost, root);
-connect(con2, localhost, root);
+#connect(con1, localhost, root);
+#connect(con2, localhost, root);
+connect(con1, localhost, root,, test_sp_lock);
+connect(con2, localhost, root,, test_sp_lock);
 
 --echo # Test 1: Check that DROP DATABASE block if a function is used
 --echo #         by an active transaction.
 
+#connection default;
+#CREATE DATABASE db1;
+#CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
+#START TRANSACTION;
+#SELECT db1.f1();
 connection default;
-CREATE DATABASE db1;
-CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
+CREATE DATABASE db1_sp_lock;
+CREATE FUNCTION db1_sp_lock.f1() RETURNS INTEGER RETURN 1;
 START TRANSACTION;
-SELECT db1.f1();
+SELECT db1_sp_lock.f1();
 
 connection con1;
 --echo # Sending:
---send DROP DATABASE db1
+--send DROP DATABASE db1_sp_lock
+#--send DROP DATABASE db1
 
 connection default;
 --echo # Waiting for DROP DATABASE to be blocked by the lock on f1()
 let $wait_condition= SELECT COUNT(*)= 1 FROM information_schema.processlist
   WHERE state= 'Waiting for stored function metadata lock'
-  AND info='DROP DATABASE db1';
+  AND info='DROP DATABASE db1_sp_lock';
+#  AND info='DROP DATABASE db1';
 --source include/wait_condition.inc
 COMMIT;
 
@@ -899,13 +917,25 @@ connection con1;
 --echo # Test 2: Check that DROP DATABASE blocks if a procedure is
 --echo #         used by an active transaction.
 
+#connection default;
+#CREATE DATABASE db1;
+#CREATE PROCEDURE db1.p1() BEGIN END;
+#delimiter |;
+#CREATE FUNCTION f1() RETURNS INTEGER
+#BEGIN
+#  CALL db1.p1();
+#  RETURN 1;
+#END|
+#delimiter ;|
+#START TRANSACTION;
+#SELECT f1();
 connection default;
-CREATE DATABASE db1;
-CREATE PROCEDURE db1.p1() BEGIN END;
+CREATE DATABASE db1_sp_lock;
+CREATE PROCEDURE db1_sp_lock.p1() BEGIN END;
 delimiter |;
 CREATE FUNCTION f1() RETURNS INTEGER
 BEGIN
-  CALL db1.p1();
+  CALL db1_sp_lock.p1();
   RETURN 1;
 END|
 delimiter ;|
@@ -914,13 +944,15 @@ SELECT f1();
 
 connection con1;
 --echo # Sending:
---send DROP DATABASE db1
+--send DROP DATABASE db1_sp_lock
+#--send DROP DATABASE db1
 
 connection default;
 --echo # Waiting for DROP DATABASE to be blocked by the lock on p1()
 let $wait_condition= SELECT COUNT(*)= 1 FROM information_schema.processlist
   WHERE state= 'Waiting for stored procedure metadata lock'
-  AND info='DROP DATABASE db1';
+  AND info='DROP DATABASE db1_sp_lock';
+#  AND info='DROP DATABASE db1';
 --source include/wait_condition.inc
 COMMIT;
 
@@ -931,26 +963,36 @@ connection con1;
 --echo # Test 3: Check that DROP DATABASE is not selected as a victim if a
 --echo #         deadlock is discovered with DML statements.
 
+#connection default;
+#CREATE DATABASE db1;
+#CREATE TABLE db1.t1 (a INT);
+#CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
+#START TRANSACTION;
+## DROP DATABASE will lock tables (t1) before functions (f1)
+#SELECT db1.f1();
 connection default;
-CREATE DATABASE db1;
-CREATE TABLE db1.t1 (a INT);
-CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
+CREATE DATABASE db1_sp_lock;
+CREATE TABLE db1_sp_lock.t1 (a INT);
+CREATE FUNCTION db1_sp_lock.f1() RETURNS INTEGER RETURN 1;
 START TRANSACTION;
 # DROP DATABASE will lock tables (t1) before functions (f1)
-SELECT db1.f1();
+SELECT db1_sp_lock.f1();
 
 connection con1;
 --echo # Sending:
---send DROP DATABASE db1
+--send DROP DATABASE db1_sp_lock
+#--send DROP DATABASE db1
 
 connection default;
 --echo # Waiting for DROP DATABASE to be blocked by the lock on f1()
 let $wait_condition= SELECT COUNT(*)= 1 FROM information_schema.processlist
   WHERE state= 'Waiting for stored function metadata lock'
-  AND info='DROP DATABASE db1';
+  AND info='DROP DATABASE db1_sp_lock';
+#  AND info='DROP DATABASE db1';
 --source include/wait_condition.inc
 --error ER_LOCK_DEADLOCK
-SELECT * FROM db1.t1;
+#SELECT * FROM db1.t1;
+SELECT * FROM db1_sp_lock.t1;
 COMMIT;
 
 connection con1;
@@ -959,31 +1001,41 @@ connection con1;
 
 --echo # Test 4: Check that active DROP DATABASE blocks stored routine DDL.
 
+#connection default;
+#CREATE DATABASE db1;
+#CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
+#CREATE FUNCTION db1.f2() RETURNS INTEGER RETURN 2;
+#START TRANSACTION;
+#SELECT db1.f2();
 connection default;
-CREATE DATABASE db1;
-CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
-CREATE FUNCTION db1.f2() RETURNS INTEGER RETURN 2;
+CREATE DATABASE db1_sp_lock;
+CREATE FUNCTION db1_sp_lock.f1() RETURNS INTEGER RETURN 1;
+CREATE FUNCTION db1_sp_lock.f2() RETURNS INTEGER RETURN 2;
 START TRANSACTION;
-SELECT db1.f2();
+SELECT db1_sp_lock.f2();
 
 connection con1;
 --echo # Sending:
---send DROP DATABASE db1
+--send DROP DATABASE db1_sp_lock
+#--send DROP DATABASE db1
 
 connection con2;
 --echo # Waiting for DROP DATABASE to be blocked by the lock on f2()
 let $wait_condition= SELECT COUNT(*)= 1 FROM information_schema.processlist
   WHERE state= 'Waiting for stored function metadata lock'
-  AND info='DROP DATABASE db1';
+  AND info='DROP DATABASE db1_sp_lock';
+#  AND info='DROP DATABASE db1';
 --source include/wait_condition.inc
 --echo # Sending:
---send ALTER FUNCTION db1.f1 COMMENT "test"
+--send ALTER FUNCTION db1_sp_lock.f1 COMMENT "test"
+#--send ALTER FUNCTION db1.f1 COMMENT "test"
 
 connection default;
 --echo # Waiting for ALTER FUNCTION to be blocked by the schema lock on db1
 let $wait_condition= SELECT COUNT(*)= 1 FROM information_schema.processlist
   WHERE state= 'Waiting for schema metadata lock'
-  AND info='ALTER FUNCTION db1.f1 COMMENT "test"';
+  AND info='ALTER FUNCTION db1_sp_lock.f1 COMMENT "test"';
+#  AND info='ALTER FUNCTION db1.f1 COMMENT "test"';
 --source include/wait_condition.inc
 COMMIT;
 
@@ -1003,7 +1055,7 @@ disconnect con2;
 connection default;
 DROP FUNCTION f1;
 
-
+DROP DATABASE test_sp_lock;
 --echo #
 --echo # End of 5.5 tests
 --echo #

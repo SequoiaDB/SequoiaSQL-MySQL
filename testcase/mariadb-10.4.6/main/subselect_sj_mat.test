@@ -1354,6 +1354,7 @@ DROP TABLE t1,t2,t3,t4,t5;
 --echo #
 
 CREATE TABLE t2 (a int);
+--replace_regex /test_parallel_[0-9]/X/
 INSERT IGNORE INTO t2 VALUES ('a'),('a');
 
 CREATE TABLE t4 (a varchar(1));
@@ -1844,18 +1845,29 @@ CREATE TABLE t1 (
   PRIMARY KEY (id),
   UNIQUE KEY db (db)
 ) DEFAULT CHARSET=utf8;
-INSERT INTO t1 (db) VALUES ('mysqltest1'),('mysqltest2'),('mysqltest3'),('mysqltest4');
+#INSERT INTO t1 (db) VALUES ('mysqltest1'),('mysqltest2'),('mysqltest3'),('mysqltest4');
+INSERT INTO t1 (db) VALUES ('mysqltest1_subselect_sj_mat'),('mysqltest2_subselect_sj_mat'),('mysqltest3_subselect_sj_mat'),('mysqltest4_subselect_sj_mat');
 
+#--disable_warnings
+#drop database if exists mysqltest1;
+#drop database if exists mysqltest2;
+#drop database if exists mysqltest3;
+#drop database if exists mysqltest4;
+#--enable_warnings
+#create database mysqltest1;
+#create database mysqltest2;
+#create database mysqltest3;
+#create database mysqltest4;
 --disable_warnings
-drop database if exists mysqltest1;
-drop database if exists mysqltest2;
-drop database if exists mysqltest3;
-drop database if exists mysqltest4;
+drop database if exists mysqltest1_subselect_sj_mat;
+drop database if exists mysqltest2_subselect_sj_mat;
+drop database if exists mysqltest3_subselect_sj_mat;
+drop database if exists mysqltest4_subselect_sj_mat;
 --enable_warnings
-create database mysqltest1;
-create database mysqltest2;
-create database mysqltest3;
-create database mysqltest4;
+create database mysqltest1_subselect_sj_mat;
+create database mysqltest2_subselect_sj_mat;
+create database mysqltest3_subselect_sj_mat;
+create database mysqltest4_subselect_sj_mat;
 
 SELECT db FROM t1 WHERE db IN (SELECT SCHEMA_NAME FROM information_schema.schemata) ORDER BY db DESC;
 
@@ -1863,10 +1875,14 @@ SELECT db FROM t1 WHERE db IN (SELECT SCHEMA_NAME FROM information_schema.schema
 #SELECT db FROM t1 WHERE db IN (SELECT SCHEMA_NAME FROM information_schema.schemata) ORDER BY db DESC;
 
 drop table t1;
-drop database mysqltest1;
-drop database mysqltest2;
-drop database mysqltest3;
-drop database mysqltest4;
+#drop database mysqltest1;
+#drop database mysqltest2;
+#drop database mysqltest3;
+#drop database mysqltest4;
+drop database mysqltest1_subselect_sj_mat;
+drop database mysqltest2_subselect_sj_mat;
+drop database mysqltest3_subselect_sj_mat;
+drop database mysqltest4_subselect_sj_mat;
 
 --echo #
 --echo # MDEV-7810 Wrong result on execution of a query as a PS

@@ -337,6 +337,7 @@ insert  into t1(`id`,`local_name`) values
 (12,'AL Monthly Installment'),
 (13,'AL Semi-Monthly Installment');
 
+--replace_regex /test_parallel_[0-9]/X/
 ANALYZE TABLE t1;
 
 #explain

@@ -7,6 +7,7 @@
 #       as possible.
 #
 # Initialise
+
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t5,t6,t7,t8,t11,t12;
 drop view if exists v2;
@@ -620,8 +621,10 @@ set @a:=2;
 set @a:=(SELECT a from t1);
 select @a;
 drop table t1;
+--replace_regex /test_parallel_[0-9]/X/
 -- error ER_NO_SUCH_TABLE
 do (SELECT a from t1);
+--replace_regex /test_parallel_[0-9]/X/
 -- error ER_NO_SUCH_TABLE
 set @a:=(SELECT a from t1);
 
@@ -725,6 +728,7 @@ drop table t1;
 #
 # error in IN
 #
+--replace_regex /test_parallel_[0-9]/X/
 -- error ER_NO_SUCH_TABLE
 select t1.Continent, t2.Name, t2.Population from t1 LEFT JOIN t2 ON t1.Code = t2.Country  where t2.Population IN (select max(t2.Population) AS Population from t2, t1 where t2.Country = t1.Code group by Continent);
 
@@ -1580,7 +1584,9 @@ drop table t1;
 # Subselect in non-select command just after connection
 # Disconnect new connection and switch back when test is finished
 #
-connect (root,localhost,root,,test,$MASTER_MYPORT,$MASTER_MYSOCK);
+let $db = `select database();`;
+#connect (root,localhost,root,,test,$MASTER_MYPORT,$MASTER_MYSOCK);
+connect (root,localhost,root,,$db,$MASTER_MYPORT,$MASTER_MYSOCK);
 connection root;
 set @got_val= (SELECT 1 FROM (SELECT 'A' as my_col) as T1 ) ;
 disconnect root;
@@ -4150,6 +4156,7 @@ CREATE VIEW v2 (a,b) AS
 SELECT t2.id, t2.c AS c FROM t1, t2
 WHERE t1.id=t2.id AND 1 IN (SELECT id FROM t1) WITH CHECK OPTION;
 
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_VIEW_CHECK_FAILED
 INSERT INTO v2(a,b) VALUES (2,2);
 
@@ -4954,7 +4961,9 @@ INSERT IGNORE INTO t1 VALUES (0),(0);
 CREATE TABLE t2 ( f3 int, f10 int, KEY (f10,f3)) ;
 INSERT IGNORE INTO t2 VALUES (NULL,NULL),(5,0);
 
+--disable_warnings
 DROP TABLE IF EXISTS t3;
+--enable_warnings
 CREATE TABLE t3 ( f3 int) ;
 INSERT INTO t3 VALUES (0),(0);
 
@@ -5844,7 +5853,9 @@ SELECT MIN(b) FROM ( SELECT * FROM t1, t2, t3 WHERE d = b ) AS alias1
 WHERE SLEEP(0.1) OR c < 'p' OR b = ( SELECT MIN(b) FROM t2 );
 
 --echo # The following shows that t2 was indeed scanned with a full scan.
+--replace_regex /test_parallel_[0-9]/X/
 show table_statistics;
+--replace_regex /test_parallel_[0-9]/X/
 show index_statistics;
 set global userstat=@tmp_mdev410;
 
@@ -6095,13 +6106,17 @@ CREATE TABLE t3 (c INT, KEY(c));
 INSERT INTO t3 VALUES (5),(5);
  
 SET optimizer_switch='semijoin=on';
-select t1.a from t1 where t1.a in (select `test`.`t2`.`b` from `test`.`t2`)
-and t1.a in (select `test`.`t3`.`c` from `test`.`t3`);
- 
+#select t1.a from t1 where t1.a in (select `test`.`t2`.`b` from `test`.`t2`)
+#and t1.a in (select `test`.`t3`.`c` from `test`.`t3`);
+select t1.a from t1 where t1.a in (select `t2`.`b` from `t2`)
+and t1.a in (select `t3`.`c` from `t3`);
+
 SET optimizer_switch='semijoin=off';
-select t1.a from t1 where t1.a in (select `test`.`t2`.`b` from `test`.`t2`)
-and t1.a in (select `test`.`t3`.`c` from `test`.`t3`);
- 
+#select t1.a from t1 where t1.a in (select `test`.`t2`.`b` from `test`.`t2`)
+#and t1.a in (select `test`.`t3`.`c` from `test`.`t3`);
+select t1.a from t1 where t1.a in (select `t2`.`b` from `t2`)
+and t1.a in (select `t3`.`c` from `t3`); 
+
 SET @@optimizer_switch= @optimiser_switch_save;
 DROP TABLE t1, t2, t3;
 

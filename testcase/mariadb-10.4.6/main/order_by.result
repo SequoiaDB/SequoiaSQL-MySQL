@@ -2953,9 +2953,6 @@ set histogram_size=100, histogram_type='single_prec_hb';
 set use_stat_tables=preferably;
 set optimizer_use_condition_selectivity=4;
 analyze table t4 persistent for columns(b) indexes ();
-Table	Op	Msg_type	Msg_text
-test.t4	analyze	status	Engine-independent statistics collected
-test.t4	analyze	status	OK
 set histogram_size=@tmp_h, histogram_type=@tmp_ht, use_stat_tables=@tmp_u,
 optimizer_use_condition_selectivity=@tmp_o;
 drop table t1,t2,t3,t4;

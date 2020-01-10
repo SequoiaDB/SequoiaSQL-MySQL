@@ -110,7 +110,9 @@ insert into t1 (a1, a2, b, c, d) values
 create index idx_t1_0 on t1 (a1);
 create index idx_t1_1 on t1 (a1,a2,b,c);
 create index idx_t1_2 on t1 (a1,a2,b);
+--disable_result_log
 analyze table t1;
+--enable_result_log
 
 # t2 is the same as t1, but with some NULLs in the MIN/MAX column, and
 # one more nullable attribute
@@ -141,7 +143,9 @@ insert into t2 (a1, a2, b, c, d) values
 create index idx_t2_0 on t2 (a1);
 create index idx_t2_1 on t2 (a1,a2,b,c);
 create index idx_t2_2 on t2 (a1,a2,b);
+--disable_result_log
 analyze table t2;
+--enable_result_log
 
 # Table t3 is the same as t1, but with smaller column lenghts.
 # This allows to test different branches of the cost computation procedure
@@ -208,8 +212,9 @@ insert into t3 (a1, a2, b, c, d) values
 create index idx_t3_0 on t3 (a1);
 create index idx_t3_1 on t3 (a1,a2,b,c);
 create index idx_t3_2 on t3 (a1,a2,b);
+--disable_result_log
 analyze table t3;
-
+--enable_result_log
 
 #explain select a1,a2,b,c,min(c), max(c) from t1
 #where exists ( select * from t2
@@ -550,7 +555,8 @@ WHERE EXISTS (
 ) OR b NOT IN ('U')  
 ORDER BY a;
 
-select `test`.`t1`.`a` AS `a` from `test`.`t1` where `test`.`t1`.`b` in (select `test`.`t2`.`c` from `test`.`t2` where 1 ) or (`test`.`t1`.`b` <> 'U') order by `test`.`t1`.`a`;
+#select `test`.`t1`.`a` AS `a` from `test`.`t1` where `test`.`t1`.`b` in (select `test`.`t2`.`c` from `test`.`t2` where 1 ) or (`test`.`t1`.`b` <> 'U') order by `test`.`t1`.`a`;
+select `t1`.`a` AS `a` from `t1` where `t1`.`b` in (select `t2`.`c` from `t2` where 1 ) or (`t1`.`b` <> 'U') order by `t1`.`a`;
 
 drop table t1,t2;
 set optimizer_switch=default;

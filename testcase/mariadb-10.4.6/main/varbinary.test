@@ -44,7 +44,8 @@ DROP TABLE t1;
 
 create table t1 (ID int(8) unsigned zerofill not null auto_increment,UNIQ bigint(21) unsigned zerofill not null,primary key (ID),unique (UNIQ) );
 insert into t1 set UNIQ=0x38afba1d73e6a18a;
-insert into t1 set UNIQ=123; 
+insert into t1 set UNIQ=123;
+--replace_regex /test_parallel_[0-9]/X/ 
 explain extended select * from t1 where UNIQ=0x38afba1d73e6a18a;
 drop table t1;
 
@@ -71,12 +72,19 @@ drop table t1;
 
 # Test with a saved table from 4.1
 let $MYSQLD_DATADIR= `select @@datadir`;
-copy_file std_data/bug19371.frm $MYSQLD_DATADIR/test/t1.frm;
-chmod 0777 $MYSQLD_DATADIR/test/t1.frm;
-copy_file std_data/bug19371.MYD $MYSQLD_DATADIR/test/t1.MYD;
-chmod 0777 $MYSQLD_DATADIR/test/t1.MYD;
-copy_file std_data/bug19371.MYI $MYSQLD_DATADIR/test/t1.MYI;
-chmod 0777 $MYSQLD_DATADIR/test/t1.MYI;
+let $db= `select database()`;
+#copy_file std_data/bug19371.frm $MYSQLD_DATADIR/test/t1.frm;
+#chmod 0777 $MYSQLD_DATADIR/test/t1.frm;
+#copy_file std_data/bug19371.MYD $MYSQLD_DATADIR/test/t1.MYD;
+#chmod 0777 $MYSQLD_DATADIR/test/t1.MYD;
+#copy_file std_data/bug19371.MYI $MYSQLD_DATADIR/test/t1.MYI;
+#chmod 0777 $MYSQLD_DATADIR/test/t1.MYI;
+copy_file std_data/bug19371.frm $MYSQLD_DATADIR/$db/t1.frm;
+chmod 0777 $MYSQLD_DATADIR/$db/t1.frm;
+copy_file std_data/bug19371.MYD $MYSQLD_DATADIR/$db/t1.MYD;
+chmod 0777 $MYSQLD_DATADIR/$db/t1.MYD;
+copy_file std_data/bug19371.MYI $MYSQLD_DATADIR/$db/t1.MYI;
+chmod 0777 $MYSQLD_DATADIR/$db/t1.MYI;
 
 # Everything _looks_ fine
 show create table t1;
@@ -85,10 +93,12 @@ show create table t1;
 select length(a), length(b) from t1;
 
 # Run CHECK TABLE, it should indicate table need a REPAIR TABLE
+--replace_regex /test_parallel_[0-9]/X/
 CHECK TABLE t1 FOR UPGRADE;
 
 # Run REPAIR TABLE to alter the table and repair
 # the varbinary fields
+--replace_regex /test_parallel_[0-9]/X/
 REPAIR TABLE t1;
 
 # Now check it's back to normal

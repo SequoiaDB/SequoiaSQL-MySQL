@@ -10,10 +10,12 @@ SHOW CREATE TRIGGER trg1|
 SHOW CREATE TRIGGER trg2|
 --echo
 --replace_column 7 #
-SHOW CREATE TRIGGER mysqltest2.trg3|
+#SHOW CREATE TRIGGER mysqltest2.trg3|
+SHOW CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg3|
 --echo
 --replace_column 7 #
-SHOW CREATE TRIGGER mysqltest2.trg4|
+#SHOW CREATE TRIGGER mysqltest2.trg4|
+SHOW CREATE TRIGGER mysqltest2_ddl_i18n_utf8.trg4|
 
 #   - Check SHOW statement;
 
@@ -25,14 +27,16 @@ SHOW TRIGGERS|
 
 --echo
 
-use mysqltest2|
+#use mysqltest2|
+use mysqltest2_ddl_i18n_utf8|
 
 --echo
 
 --replace_column 6 #
 SHOW TRIGGERS|
 
-use mysqltest1|
+#use mysqltest1|
+use mysqltest1_ddl_i18n_utf8|
 
 #   - Check INFORMATION_SCHEMA;
 
@@ -94,12 +98,14 @@ DELETE FROM log|
 --echo
 --echo
 
-INSERT INTO mysqltest2.t1 VALUES(1)|
+#INSERT INTO mysqltest2.t1 VALUES(1)|
+INSERT INTO mysqltest2_ddl_i18n_utf8.t1 VALUES(1)|
 
 --echo
 --echo ---> Log:
 --sorted_result
-SELECT msg FROM mysqltest2.log|
+#SELECT msg FROM mysqltest2.log|
+SELECT msg FROM mysqltest2_ddl_i18n_utf8.log|
 
 --echo
 SELECT
@@ -111,4 +117,5 @@ SELECT
   COLLATION(@b3) AS cb3|
 
 --echo
-DELETE FROM mysqltest2.log|
+#DELETE FROM mysqltest2.log|
+DELETE FROM mysqltest2_ddl_i18n_utf8.log|

@@ -395,7 +395,9 @@ DROP TABLE t1;
 
 SET @@GLOBAL.max_allowed_packet=2048;
 # reconnect to make the new max packet size take effect
---connect (newconn, localhost, root,,)
+--let $db= `select database()`
+#--connect (newconn, localhost, root,,)
+--connect (newconn, localhost, root,, $db)
 
 SELECT CONVERT('a', BINARY(2049));  
 SELECT CONVERT('a', CHAR(2049));  

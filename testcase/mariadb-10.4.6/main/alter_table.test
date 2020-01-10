@@ -1,10 +1,15 @@
 #--source include/have_innodb.inc
+
+CREATE DATABASE test_alter_table;
+USE test_alter_table;
+
 #
 # Test of alter table
 #
 --disable_warnings
 drop table if exists t1,t2;
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
+drop database if exists mysqltest_alter_table;
 --enable_warnings
 
 create table t1 (
@@ -95,19 +100,32 @@ drop table t1;
 # Bug #2628: 'alter table t1 rename mysqltest.t1' silently drops mysqltest.t1 
 # if it exists
 #
+#create table t1 (name char(15));
+#insert into t1 (name) values ("current");
+#create database mysqltest;
+#create table mysqltest.t1 (name char(15));
+#insert into mysqltest.t1 (name) values ("mysqltest");
+#select * from t1;
+#select * from mysqltest.t1;
+#--error ER_TABLE_EXISTS_ERROR
+#alter table t1 rename mysqltest.t1;
+#select * from t1;
+#select * from mysqltest.t1;
+#drop table t1;
+#drop database mysqltest;
 create table t1 (name char(15));
 insert into t1 (name) values ("current");
-create database mysqltest;
-create table mysqltest.t1 (name char(15));
-insert into mysqltest.t1 (name) values ("mysqltest");
+create database mysqltest_alter_table;
+create table mysqltest_alter_table.t1 (name char(15));
+insert into mysqltest_alter_table.t1 (name) values ("mysqltest");
 select * from t1;
-select * from mysqltest.t1;
+select * from mysqltest_alter_table.t1;
 --error ER_TABLE_EXISTS_ERROR
-alter table t1 rename mysqltest.t1;
+alter table t1 rename mysqltest_alter_table.t1;
 select * from t1;
-select * from mysqltest.t1;
+select * from mysqltest_alter_table.t1;
 drop table t1;
-drop database mysqltest;
+drop database mysqltest_alter_table;
 
 #
 # ALTER TABLE ... ENABLE/DISABLE KEYS
@@ -493,7 +511,8 @@ drop table t1;
 # Bug#11493 - Alter table rename to default database does not work without
 #             db name qualifying
 #
-create database mysqltest;
+#create database mysqltest;
+create database mysqltest_alter_table;
 create table t1 (c1 int);
 # Move table to other database.
 #alter table t1 rename mysqltest.t1;
@@ -508,16 +527,21 @@ drop table t1;
 # Create t1 in 'test'.
 create table t1 (c1 int);
 # Change to other db.
-use mysqltest;
+#use mysqltest;
+use mysqltest_alter_table;
 # Drop the current db. This de-selects any db.
-drop database mysqltest;
+#drop database mysqltest;
+drop database mysqltest_alter_table;
 # Now test for correct message.
 --error ER_NO_DB_ERROR
-alter table test.t1 rename t1;
+#alter table test.t1 rename t1;
+alter table test_alter_table.t1 rename t1;
 # Check that explicit qualifying works even with no selected db.
-alter table test.t1 rename test.t1;
+#alter table test.t1 rename test.t1;
+alter table test_alter_table.t1 rename test_alter_table.t1;
 # Go back to standard 'test' db.
-use test;
+#use test;
+use test_alter_table;
 drop table t1;
 
 #
@@ -1220,16 +1244,24 @@ DROP TABLE t1;
 --echo # Bug#11754461 CANNOT ALTER TABLE WHEN KEY PREFIX TOO LONG
 --echo #
 
+#--disable_warnings
+#DROP DATABASE IF EXISTS db1;
+#--enable_warnings
+#
+#CREATE DATABASE db1 CHARACTER SET utf8;
+#CREATE TABLE db1.t1 (bar TINYTEXT, KEY (bar(100)));
+#ALTER TABLE db1.t1 ADD baz INT;
+#
+#DROP DATABASE db1;
 --disable_warnings
-DROP DATABASE IF EXISTS db1;
+DROP DATABASE IF EXISTS db1_alter_table;
 --enable_warnings
 
-CREATE DATABASE db1 CHARACTER SET utf8;
-CREATE TABLE db1.t1 (bar TINYTEXT, KEY (bar(100)));
-ALTER TABLE db1.t1 ADD baz INT;
+CREATE DATABASE db1_alter_table CHARACTER SET utf8;
+CREATE TABLE db1_alter_table.t1 (bar TINYTEXT, KEY (bar(100)));
+ALTER TABLE db1_alter_table.t1 ADD baz INT;
 
-DROP DATABASE db1;
-
+DROP DATABASE db1_alter_table;
 
 --echo # Additional coverage for refactoring which is made as part
 --echo # of fix for bug #27480 "Extend CREATE TEMPORARY TABLES privilege
@@ -1313,7 +1345,8 @@ DROP TABLE t1;
 
 SET GLOBAL max_allowed_packet=17825792;
 
---connect(con1, localhost, root,,)
+#--connect(con1, localhost, root,,)
+--connect(con1, localhost, root,, test_alter_table)
 CREATE TABLE t1 (t1_fld1 TEXT);
 CREATE TABLE t2 (t2_fld1 MEDIUMTEXT);
 CREATE TABLE t3 (t3_fld1 LONGTEXT);
@@ -1581,7 +1614,8 @@ INSERT INTO t1 VALUES (1,1), (2,2);
 START TRANSACTION;
 INSERT INTO t1 VALUES (3,3);
 
-connect (con1, localhost, root);
+#connect (con1, localhost, root);
+connect (con1, localhost, root,, test_alter_table);
 --echo # Sending:
 #--send ALTER TABLE t1 DISABLE KEYS
 
@@ -2076,3 +2110,5 @@ analyze table t1;
 set @@use_stat_tables= @save_use_stat_tables;
 set @@optimizer_use_condition_selectivity= @save_optimizer_use_condition_selectivity;
 drop table t1;
+
+DROP DATABASE test_alter_table;

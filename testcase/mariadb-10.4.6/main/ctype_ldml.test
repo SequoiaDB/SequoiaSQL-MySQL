@@ -3,6 +3,9 @@
 --source include/have_utf16.inc
 --source include/have_utf32.inc
 
+CREATE DATABASE test_ctype_ldml;
+USE test_ctype_ldml;
+
 --disable_warnings
 drop table if exists t1;
 --enable_warnings
@@ -599,6 +602,6 @@ SELECT 'zb' < 'ža';
 SELECT 'hž' < 'ch';
 SELECT 'chž'< 'i';
 
-
+DROP DATABASE test_ctype_ldml;
 --error ER_UNKNOWN_COLLATION
 SELECT 'a' COLLATE utf8_czech_test_bad_w2;

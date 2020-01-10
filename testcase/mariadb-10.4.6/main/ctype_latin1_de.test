@@ -184,4 +184,4 @@ select hex(weight_string('xß' as char(2)));
 --echo #
 
 drop database latin1_german2_ci;
-use test;
+#use test;

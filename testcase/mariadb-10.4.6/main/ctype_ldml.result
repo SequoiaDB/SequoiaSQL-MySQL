@@ -1,3 +1,5 @@
+CREATE DATABASE test_ctype_ldml;
+USE test_ctype_ldml;
 drop table if exists t1;
 In the following tests we change the order of letter "b"
 making it equal to letter "a", and check that it works
@@ -492,7 +494,7 @@ insert into t1 values (0x0061);
 set @@character_set_results=NULL;
 select * from t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	c1	c1	254	2	2	Y	0	0	359
+def	test_ctype_ldml	t1	t1	c1	c1	254	2	2	Y	0	0	359
 c1
  a
 drop table t1;
@@ -3013,5 +3015,6 @@ SELECT 'hž' < 'ch';
 SELECT 'chž'< 'i';
 'chž'< 'i'
 1
+DROP DATABASE test_ctype_ldml;
 SELECT 'a' COLLATE utf8_czech_test_bad_w2;
 ERROR HY000: Unknown collation: 'utf8_czech_test_bad_w2'

@@ -1,3 +1,5 @@
+CREATE DATABASE test_func_time;
+USE test_func_time;
 drop table if exists t1,t2,t3;
 set time_zone="+03:00";
 select from_days(to_days("960101")),to_days(960201)-to_days("19960101"),to_days(date_add(curdate(), interval 1 day))-to_days(curdate()),weekday("1997-11-29");
@@ -3119,7 +3121,7 @@ EXTRACT(MINUTE_MICROSECOND FROM a),
 EXTRACT(SECOND_MICROSECOND FROM a)
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	a	12	26	26	Y	128	6	63
+def	test_func_time	t1	t1	a	a	12	26	26	Y	128	6	63
 def					EXTRACT(YEAR FROM a)	3	4	4	Y	32896	0	63
 def					EXTRACT(YEAR_MONTH FROM a)	3	6	6	Y	32896	0	63
 def					EXTRACT(QUARTER FROM a)	3	2	1	Y	32896	0	63
@@ -3249,7 +3251,7 @@ CREATE TABLE t1 (d DATE) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ('1900-01-01');
 SELECT LENGTH( DATE_FORMAT( d, BINARY DATABASE() ) ) AS f FROM t1 GROUP BY d;
 f
-4
+14
 DROP TABLE t1;
 #
 # MDEV-18667 ASAN heap-use-after-free in make_date_time / Arg_comparator::compare_string / Item_func_nullif::compare
@@ -6126,3 +6128,4 @@ NULL
 SELECT CONCAT(MAKETIME('01', '01', LEAST( -100, NULL )));
 CONCAT(MAKETIME('01', '01', LEAST( -100, NULL )))
 NULL
+DROP DATABASE test_func_time;

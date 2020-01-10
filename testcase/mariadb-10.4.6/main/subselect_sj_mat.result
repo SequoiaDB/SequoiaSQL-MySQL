@@ -1088,8 +1088,8 @@ DROP TABLE t1,t2,t3,t4,t5;
 CREATE TABLE t2 (a int);
 INSERT IGNORE INTO t2 VALUES ('a'),('a');
 Warnings:
-Warning	1366	Incorrect integer value: 'a' for column `test`.`t2`.`a` at row 1
-Warning	1366	Incorrect integer value: 'a' for column `test`.`t2`.`a` at row 2
+Warning	1366	Incorrect integer value: 'a' for column `X`.`t2`.`a` at row 1
+Warning	1366	Incorrect integer value: 'a' for column `X`.`t2`.`a` at row 2
 CREATE TABLE t4 (a varchar(1));
 INSERT INTO t4 VALUES ('m'),('o');
 CREATE TABLE t3 (a varchar(1) , b varchar(1) ) ;
@@ -1502,26 +1502,26 @@ db varchar(254) NOT NULL DEFAULT '',
 PRIMARY KEY (id),
 UNIQUE KEY db (db)
 ) DEFAULT CHARSET=utf8;
-INSERT INTO t1 (db) VALUES ('mysqltest1'),('mysqltest2'),('mysqltest3'),('mysqltest4');
-drop database if exists mysqltest1;
-drop database if exists mysqltest2;
-drop database if exists mysqltest3;
-drop database if exists mysqltest4;
-create database mysqltest1;
-create database mysqltest2;
-create database mysqltest3;
-create database mysqltest4;
+INSERT INTO t1 (db) VALUES ('mysqltest1_subselect_sj_mat'),('mysqltest2_subselect_sj_mat'),('mysqltest3_subselect_sj_mat'),('mysqltest4_subselect_sj_mat');
+drop database if exists mysqltest1_subselect_sj_mat;
+drop database if exists mysqltest2_subselect_sj_mat;
+drop database if exists mysqltest3_subselect_sj_mat;
+drop database if exists mysqltest4_subselect_sj_mat;
+create database mysqltest1_subselect_sj_mat;
+create database mysqltest2_subselect_sj_mat;
+create database mysqltest3_subselect_sj_mat;
+create database mysqltest4_subselect_sj_mat;
 SELECT db FROM t1 WHERE db IN (SELECT SCHEMA_NAME FROM information_schema.schemata) ORDER BY db DESC;
 db
-mysqltest4
-mysqltest3
-mysqltest2
-mysqltest1
+mysqltest4_subselect_sj_mat
+mysqltest3_subselect_sj_mat
+mysqltest2_subselect_sj_mat
+mysqltest1_subselect_sj_mat
 drop table t1;
-drop database mysqltest1;
-drop database mysqltest2;
-drop database mysqltest3;
-drop database mysqltest4;
+drop database mysqltest1_subselect_sj_mat;
+drop database mysqltest2_subselect_sj_mat;
+drop database mysqltest3_subselect_sj_mat;
+drop database mysqltest4_subselect_sj_mat;
 #
 # MDEV-7810 Wrong result on execution of a query as a PS
 # (both 1st and further executions)

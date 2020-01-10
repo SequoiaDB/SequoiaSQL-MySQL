@@ -1,3 +1,6 @@
+CREATE DATABASE test_func_json;
+USE test_func_json;
+
 select json_valid('[1, 2]');
 select json_valid('"string"}');
 select json_valid('{"key1":1, "key2":[2,3]}');
@@ -267,7 +270,8 @@ SELECT JSON_search( '{"x": "\\""}', "one", '\\"');
 #
 set @@global.net_buffer_length=1024;
 set @@global.max_allowed_packet=2048;
---connect (newconn, localhost, root,,)
+#--connect (newconn, localhost, root,,)
+--connect (newconn, localhost, root,,test_func_json)
 
 show variables like 'net_buffer_length';
 show variables like 'max_allowed_packet';
@@ -608,6 +612,7 @@ SELECT * FROM t1 WHERE CASE WHEN JSON_OBJECT('x', (SELECT MAX(a=2) FROM t1))='{"
 
 DROP TABLE t1;
 
+DROP DATABASE test_func_json;
 --echo #
 --echo # End of 10.4 tests
 --echo #

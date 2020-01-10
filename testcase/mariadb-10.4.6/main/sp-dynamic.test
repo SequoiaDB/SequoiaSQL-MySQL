@@ -244,8 +244,10 @@ drop procedure p1|
 #
 # K. Use of continue handlers with Dynamic SQL.
 #
+--disable_warnings
 drop table if exists t1|
 drop table if exists t2|
+--enable_warnings
 create table t1 (id integer primary key auto_increment,
                  stmt_text char(35), status varchar(20))|
 insert into t1 (stmt_text) values

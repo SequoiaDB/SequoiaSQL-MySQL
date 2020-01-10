@@ -11,6 +11,9 @@ drop table if exists t1,t2;
 
 set names utf8mb4;
 
+CREATE DATABASE test_ctype_uft8mb4_inc;
+USE test_ctype_uft8mb4_inc;
+
 select left(_utf8mb4 0xD0B0D0B1D0B2,1);
 select right(_utf8mb4 0xD0B0D0B2D0B2,1);
 
@@ -1245,8 +1248,10 @@ drop table t1;
 
 SET CHARACTER SET utf8mb4;
 SHOW VARIABLES LIKE 'character\_set\_%';
-CREATE DATABASE crashtest DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
-USE crashtest;
+#CREATE DATABASE crashtest DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+#USE crashtest;
+CREATE DATABASE crashtest_ctype_uft8mb4_inc DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+USE crashtest_ctype_uft8mb4_inc;
 eval CREATE TABLE crashtest (crash char(10)) DEFAULT CHARSET=utf8mb4 ENGINE $engine;
 INSERT INTO crashtest VALUES ('35'), ('36'), ('37');
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
@@ -1254,8 +1259,10 @@ INSERT INTO crashtest VALUES ('-1000');
 #EXPLAIN SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
 DROP TABLE crashtest;
-DROP DATABASE crashtest;
-USE test;
+#DROP DATABASE crashtest;
+#USE test;
+DROP DATABASE crashtest_ctype_uft8mb4_inc;
+USE test_ctype_uft8mb4_inc;
 SET CHARACTER SET default;
 
 # End of 4.1 tests
@@ -1848,3 +1855,5 @@ DROP TABLE t1;
 --echo #
 --echo # End of ctype_utf8mb4.inc
 --echo #
+
+DROP DATABASE test_ctype_uft8mb4_inc;

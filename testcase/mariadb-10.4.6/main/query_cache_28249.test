@@ -19,9 +19,13 @@ SET @query_cache_min_res_unit= @@global.query_cache_min_res_unit;
 SET @query_cache_size=         @@global.query_cache_size;
 
 --echo # Bug#28249 Query Cache returns wrong result with concurrent insert/ certain lock
-connect (user1,localhost,root,,test,,);
-connect (user2,localhost,root,,test,,);
-connect (user3,localhost,root,,test,,);
+#connect (user1,localhost,root,,test,,);
+#connect (user2,localhost,root,,test,,);
+#connect (user3,localhost,root,,test,,);
+--let $db= `select database()`
+connect (user1,localhost,root,,$db,,);
+connect (user2,localhost,root,,$db,,);
+connect (user3,localhost,root,,$db,,);
 
 connection user1;
 

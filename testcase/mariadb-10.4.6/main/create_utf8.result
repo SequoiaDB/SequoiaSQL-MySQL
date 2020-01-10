@@ -1,10 +1,12 @@
+CREATE DATABASE test_create_utf8;
+USE test_create_utf8;
 set names utf8;
 create database имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
 use имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
 select database();
 database()
 имя_базы_в_кодировке_утф8_длиной_больше_чем_45
-use test;
+use test_create_utf8;
 select SCHEMA_NAME from information_schema.schemata
 where schema_name='имя_базы_в_кодировке_утф8_длиной_больше_чем_45';
 SCHEMA_NAME
@@ -21,21 +23,21 @@ from имя_таблицы_в_кодировке_утф8_длиной_больш
 select * from имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
 имя_поля_в_кодировке_утф8_длиной_больше_чем_45
 select TABLE_NAME from information_schema.tables where
-table_schema='test';
+table_schema='test_create_utf8';
 TABLE_NAME
 имя_вью_кодировке_утф8_длиной_больше_чем_42
 имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48
 select COLUMN_NAME from information_schema.columns where
-table_schema='test';
+table_schema='test_create_utf8';
 COLUMN_NAME
 имя_поля_в_кодировке_утф8_длиной_больше_чем_45
 имя_поля_в_кодировке_утф8_длиной_больше_чем_45
 select INDEX_NAME from information_schema.statistics where
-table_schema='test';
+table_schema='test_create_utf8';
 INDEX_NAME
 имя_индекса_в_кодировке_утф8_длиной_больше_чем_48
 select TABLE_NAME from information_schema.views where
-table_schema='test';
+table_schema='test_create_utf8';
 TABLE_NAME
 имя_вью_кодировке_утф8_длиной_больше_чем_42
 show create table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
@@ -50,7 +52,7 @@ View	Create View	character_set_client	collation_connection
 create trigger имя_триггера_в_кодировке_утф8_длиной_больше_чем_49
 before insert on имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48 for each row set @a:=1;
 select TRIGGER_NAME from information_schema.triggers where
-trigger_schema='test';
+trigger_schema='test_create_utf8';
 TRIGGER_NAME
 имя_триггера_в_кодировке_утф8_длиной_больше_чем_49
 drop trigger имя_триггера_в_кодировке_утф8_длиной_больше_чем_49;
@@ -64,7 +66,7 @@ create procedure имя_процедуры_в_кодировке_утф8_дли�
 begin
 end;
 select ROUTINE_NAME from information_schema.routines where
-routine_schema='test';
+routine_schema='test_create_utf8';
 ROUTINE_NAME
 имя_процедуры_в_кодировке_утф8_длиной_больше_чем_50
 drop procedure имя_процедуры_в_кодировке_утф8_длиной_больше_чем_50;
@@ -76,7 +78,7 @@ create function имя_функции_в_кодировке_утф8_длиной
 returns int
 return 0;
 select ROUTINE_NAME from information_schema.routines where
-routine_schema='test';
+routine_schema='test_create_utf8';
 ROUTINE_NAME
 имя_функции_в_кодировке_утф8_длиной_больше_чем_49
 drop function имя_функции_в_кодировке_утф8_длиной_больше_чем_49;
@@ -87,3 +89,4 @@ ERROR 42000: Identifier name 'очень_очень_очень_очень_оче
 drop view имя_вью_кодировке_утф8_длиной_больше_чем_42;
 drop table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
 set names default;
+DROP DATABASE test_create_utf8;

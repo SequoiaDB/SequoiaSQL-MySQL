@@ -496,7 +496,9 @@ select 0.8 = 0.7 + 0.1;
 #-- be exactly the same as the number that gets
 #-- selected.
 #
+--disable_warnings
 drop table if exists t1;
+--enable_warnings
 #
 create table t1 (col1 decimal(38));
 #
@@ -838,6 +840,7 @@ UPDATE Sow6_2f SET col1 = col1 / 0 WHERE col1 > 0;
 SELECT MOD(col1,0) FROM Sow6_2f;
 #-- should return SQLSTATE 22012 division by zero
 --replace_result sow Sow
+--replace_regex /test_parallel_[0-9]/X/
 -- error 1366
 INSERT INTO Sow6_2f VALUES ('a59b');
 #-- should return SQLSTATE 22018 invalid character value for cast

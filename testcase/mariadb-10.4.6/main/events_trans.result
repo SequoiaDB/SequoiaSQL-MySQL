@@ -1,3 +1,5 @@
+CREATE DATABASE test_events_trans;
+USE test_events_trans;
 set sql_mode="";
 drop database if exists events_test;
 drop database if exists mysqltest_no_such_database;
@@ -127,6 +129,7 @@ drop database events_test;
 #
 # Bug#54105 assert in MDL_context::release_locks_stored_before
 #
-USE test;
+USE test_events_trans;
 DROP TABLE IF EXISTS t1, t2;
 DROP EVENT IF EXISTS e1;
+DROP DATABASE test_events_trans;

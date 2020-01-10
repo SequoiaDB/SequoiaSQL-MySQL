@@ -13,8 +13,10 @@ ALTER TABLE t1
 SHOW CREATE TABLE t1;
 
 INSERT INTO t1 (ch) VALUES ('admin'),('admin1');
+--replace_regex /test_parallel_[0-9]/X/
 SELECT ch FROM t1 WHERE ch='admin𝌆';
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch='admin𝌆';
+--replace_regex /test_parallel_[0-9]/X/
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='admin𝌆';
 DELETE FROM t1;
 INSERT INTO t1 (ch) VALUES ('a'), ('a?'), ('a??'), ('a???'), ('a????');
@@ -31,10 +33,12 @@ SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch='a𝌆b' ORDER BY ch;
 #--replace_column 9 #
 #EXPLAIN
 #SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='a𝌆' ORDER BY ch;
+--replace_regex /test_parallel_[0-9]/X/
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='a𝌆' ORDER BY ch;
 #--replace_column 9 #
 #EXPLAIN
 #SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='a𝌆b' ORDER BY ch;
+--replace_regex /test_parallel_[0-9]/X/
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='a𝌆b' ORDER BY ch;
 
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch<'a𝌆' ORDER BY ch;
@@ -42,10 +46,12 @@ SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch<'a𝌆b' ORDER BY ch;
 #--replace_column 9 #
 #EXPLAIN
 #SELECT ch FROM t1 FORCE KEY (ch) WHERE ch<'a𝌆' ORDER BY ch;
+--replace_regex /test_parallel_[0-9]/X/
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch<'a𝌆' ORDER BY ch;
 #--replace_column 9 #
 #EXPLAIN
 #SELECT ch FROM t1 FORCE KEY (ch) WHERE ch<'a𝌆b' ORDER BY ch;
+--replace_regex /test_parallel_[0-9]/X/
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch<'a𝌆b' ORDER BY ch;
 
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
@@ -53,10 +59,12 @@ SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch>'a𝌆b' ORDER BY ch;
 #--replace_column 9 #
 #EXPLAIN
 #SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
+--replace_regex /test_parallel_[0-9]/X/
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 #--replace_column 9 #
 #EXPLAIN
 #SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆b' ORDER BY ch;
+--replace_regex /test_parallel_[0-9]/X/
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆b' ORDER BY ch;
 
 ALTER TABLE t1 DROP KEY ch;

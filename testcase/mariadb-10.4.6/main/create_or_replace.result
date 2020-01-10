@@ -1,3 +1,5 @@
+CREATE DATABASE test_create_or_replace;
+USE test_create_or_replace;
 drop table if exists t1,t2,t3;
 CREATE TABLE t2 (a int);
 INSERT INTO t2 VALUES(1),(2),(3);
@@ -252,47 +254,47 @@ drop table t1,t3,t4;
 #
 # Test the meta data locks are freed properly
 #
-create database mysqltest2;
-drop table if exists test.t1,mysqltest2.t2;
+create database mysqltest2_create_or_replace;
+drop table if exists test_create_or_replace.t1,mysqltest2_create_or_replace.t2;
 Warnings:
-Note	1051	Unknown table 'test.t1'
-Note	1051	Unknown table 'mysqltest2.t2'
-create table test.t1 (i int) engine= SequoiaDB;
-create table mysqltest2.t2 like test.t1;
-lock table test.t1 write, mysqltest2.t2 write;
-create or replace table test.t1;
+Note	1051	Unknown table 'test_create_or_replace.t1'
+Note	1051	Unknown table 'mysqltest2_create_or_replace.t2'
+create table test_create_or_replace.t1 (i int) engine= SequoiaDB;
+create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
+lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
+create or replace table test_create_or_replace.t1;
 ERROR 42000: A table must have at least 1 column
 show tables;
-Tables_in_test
+Tables_in_test_create_or_replace
 t2
-create or replace table mysqltest2.t2;
+create or replace table mysqltest2_create_or_replace.t2;
 ERROR 42000: A table must have at least 1 column
 create table t1 (i int);
 drop table t1;
-create table test.t1 (i int);
-create table mysqltest2.t2 like test.t1;
-lock table test.t1 write, mysqltest2.t2 write;
-create or replace table test.t1 (a int) select 1 as 'a', 2 as 'a';
+create table test_create_or_replace.t1 (i int);
+create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
+lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
+create or replace table test_create_or_replace.t1 (a int) select 1 as 'a', 2 as 'a';
 ERROR 42S21: Duplicate column name 'a'
 show tables;
-Tables_in_test
+Tables_in_test_create_or_replace
 t2
-create or replace table mysqltest2.t2 (a int) select 1 as 'a', 2 as 'a';
+create or replace table mysqltest2_create_or_replace.t2 (a int) select 1 as 'a', 2 as 'a';
 ERROR 42S21: Duplicate column name 'a'
 create table t1 (i int);
 drop table t1;
-create table test.t1 (i int) engine=SequoiaDB;
-create table mysqltest2.t2 like test.t1;
-lock table test.t1 write, mysqltest2.t2 write;
+create table test_create_or_replace.t1 (i int) engine=SequoiaDB;
+create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
+lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 unlock tables;
-drop table test.t1,mysqltest2.t2;
-create table test.t1 (i int) engine=SequoiaDB transactional=1 checksum=1;
-create table mysqltest2.t2 like test.t1;
-lock table test.t1 write, mysqltest2.t2 write;
+drop table test_create_or_replace.t1,mysqltest2_create_or_replace.t2;
+create table test_create_or_replace.t1 (i int) engine=SequoiaDB transactional=1 checksum=1;
+create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
+lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 unlock tables;
 drop table t1;
-create table test.t1 (i int);
-drop database mysqltest2;
+create table test_create_or_replace.t1 (i int);
+drop database mysqltest2_create_or_replace;
 #
 # Testing CREATE .. LIKE
 #
@@ -367,9 +369,9 @@ create table if not exists t1 (a int);
 Warnings:
 Note	1050	Table 't1' already exists
 create or replace table t1 (a int);
-ERROR 42S02: 'test.t1' is a view
+ERROR 42S02: 'test_create_or_replace.t1' is a view
 drop table t1;
-ERROR 42S02: 'test.t1' is a view
+ERROR 42S02: 'test_create_or_replace.t1' is a view
 drop view t1;
 #
 # MDEV-5602 CREATE OR REPLACE obtains stricter locks than the
@@ -389,7 +391,7 @@ unlock tables;
 CREATE TABLE t1 (col_int_nokey INT)  ENGINE=SequoiaDB;
 CREATE OR REPLACE TEMPORARY TABLE tmp LIKE t1;
 LOCK TABLE t1 WRITE;
-connect  con1,localhost,root,,test;
+connect  con1,localhost,root,,test_create_or_replace;
 CREATE OR REPLACE TABLE t1 LIKE tmp;
 connection default;
 KILL QUERY con_id;
@@ -470,3 +472,4 @@ SELECT * FROM t3;
 ERROR HY000: Table 't3' was not locked with LOCK TABLES
 UNLOCK TABLES;
 DROP TABLE t3;
+DROP DATABASE test_create_or_replace;

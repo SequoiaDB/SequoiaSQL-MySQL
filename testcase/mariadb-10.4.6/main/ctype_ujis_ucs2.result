@@ -1392,17 +1392,17 @@ insert into t1 (ucs2,name) values (0xFFE2,'U+FFE2 FULLWIDTH NOT SIGN');
 insert into t1 (ucs2,name) values (0xFFE4,'U+FFE4 FULLWIDTH BROKEN BAR');
 update ignore t1 set ujis=ucs2;
 Warnings:
-Warning	1366	Incorrect string value: '\x00\xA5' for column `test`.`t1`.`ujis` at row 1
-Warning	1366	Incorrect string value: '\x20\x14' for column `test`.`t1`.`ujis` at row 2
-Warning	1366	Incorrect string value: '\x20\x3E' for column `test`.`t1`.`ujis` at row 3
-Warning	1366	Incorrect string value: '\x22\x25' for column `test`.`t1`.`ujis` at row 4
-Warning	1366	Incorrect string value: '\xFF\x0D' for column `test`.`t1`.`ujis` at row 5
-Warning	1366	Incorrect string value: '\xFF\x3C' for column `test`.`t1`.`ujis` at row 6
-Warning	1366	Incorrect string value: '\xFF\x5E' for column `test`.`t1`.`ujis` at row 7
-Warning	1366	Incorrect string value: '\xFF\xE0' for column `test`.`t1`.`ujis` at row 8
-Warning	1366	Incorrect string value: '\xFF\xE1' for column `test`.`t1`.`ujis` at row 9
-Warning	1366	Incorrect string value: '\xFF\xE2' for column `test`.`t1`.`ujis` at row 10
-Warning	1366	Incorrect string value: '\xFF\xE4' for column `test`.`t1`.`ujis` at row 11
+Warning	1366	Incorrect string value: '\x00\xA5' for column `X`.`t1`.`ujis` at row 1
+Warning	1366	Incorrect string value: '\x20\x14' for column `X`.`t1`.`ujis` at row 2
+Warning	1366	Incorrect string value: '\x20\x3E' for column `X`.`t1`.`ujis` at row 3
+Warning	1366	Incorrect string value: '\x22\x25' for column `X`.`t1`.`ujis` at row 4
+Warning	1366	Incorrect string value: '\xFF\x0D' for column `X`.`t1`.`ujis` at row 5
+Warning	1366	Incorrect string value: '\xFF\x3C' for column `X`.`t1`.`ujis` at row 6
+Warning	1366	Incorrect string value: '\xFF\x5E' for column `X`.`t1`.`ujis` at row 7
+Warning	1366	Incorrect string value: '\xFF\xE0' for column `X`.`t1`.`ujis` at row 8
+Warning	1366	Incorrect string value: '\xFF\xE1' for column `X`.`t1`.`ujis` at row 9
+Warning	1366	Incorrect string value: '\xFF\xE2' for column `X`.`t1`.`ujis` at row 10
+Warning	1366	Incorrect string value: '\xFF\xE4' for column `X`.`t1`.`ujis` at row 11
 select hex(ucs2),hex(ujis),name from t1 order by name;
 hex(ucs2)	hex(ujis)	name
 00A5	3F	U+00A5 YEN SIGN

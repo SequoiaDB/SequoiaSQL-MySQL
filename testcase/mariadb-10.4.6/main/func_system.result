@@ -1,17 +1,19 @@
+CREATE DATABASE test_func_system;
+USE test_func_system;
 select database();
 database()
-test
+test_func_system
 select charset(database());
 charset(database())
 utf8
-select database() = "test";
-database() = "test"
+select database() = "test_func_system";
+database() = "test_func_system"
 1
-select database() = _utf8"test";
-database() = _utf8"test"
+select database() = _utf8"test_func_system";
+database() = _utf8"test_func_system"
 1
-select database() = _latin1"test";
-database() = _latin1"test"
+select database() = _latin1"test_func_system";
+database() = _latin1"test_func_system"
 1
 select user() like "%@%";
 user() like "%@%"
@@ -74,9 +76,9 @@ root@localhost--row 2
 root@localhost--row 3
 select concat(database(), '--', c1) from t1;
 concat(database(), '--', c1)
-test--row 1
-test--row 2
-test--row 3
+test_func_system--row 1
+test_func_system--row 2
+test_func_system--row 3
 drop table t1;
 create table t1 (a char(10)) character set latin1;
 select * from t1 where a=version();
@@ -90,3 +92,4 @@ select left(concat(a,version()),1) from t1;
 left(concat(a,version()),1)
 a
 drop table t1;
+DROP DATABASE test_func_system;

@@ -1,6 +1,8 @@
 SET TIME_ZONE='+03:00';
+CREATE DATABASE test_ctype_utf8;
+USE test_ctype_utf8;
 drop table if exists t1,t2,t3,t4;
-drop database if exists mysqltest;
+drop database if exists mysqltest_ctype_utf8;
 drop table if exists t1,t2;
 set names utf8;
 select left(_utf8 0xD0B0D0B1D0B2,1);
@@ -222,7 +224,7 @@ drop table t1;
 create table t1 (s1 char(10) character set utf8);
 insert ignore into t1 values (0x41FF);
 Warnings:
-Warning	1366	Incorrect string value: '\xFF' for column `test`.`t1`.`s1` at row 1
+Warning	1366	Incorrect string value: '\xFF' for column `test_ctype_utf8`.`t1`.`s1` at row 1
 select hex(s1) from t1;
 hex(s1)
 413F
@@ -230,7 +232,7 @@ drop table t1;
 create table t1 (s1 varchar(10) character set utf8);
 insert ignore into t1 values (0x41FF);
 Warnings:
-Warning	1366	Incorrect string value: '\xFF' for column `test`.`t1`.`s1` at row 1
+Warning	1366	Incorrect string value: '\xFF' for column `test_ctype_utf8`.`t1`.`s1` at row 1
 select hex(s1) from t1;
 hex(s1)
 413F
@@ -238,7 +240,7 @@ drop table t1;
 create table t1 (s1 text character set utf8);
 insert ignore into t1 values (0x41FF);
 Warnings:
-Warning	1366	Incorrect string value: '\xFF' for column `test`.`t1`.`s1` at row 1
+Warning	1366	Incorrect string value: '\xFF' for column `test_ctype_utf8`.`t1`.`s1` at row 1
 select hex(s1) from t1;
 hex(s1)
 413F
@@ -1405,7 +1407,7 @@ DROP TABLE t1;
 SET NAMES utf8;
 DROP TABLE IF EXISTS t1;
 Warnings:
-Note	1051	Unknown table 'test.t1'
+Note	1051	Unknown table 'test_ctype_utf8.t1'
 CREATE TABLE t1(a VARCHAR(255), KEY(a)) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
 INSERT INTO t1 VALUES('uu');
@@ -1683,8 +1685,8 @@ character_set_filesystem	binary
 character_set_results	utf8
 character_set_server	latin1
 character_set_system	utf8
-CREATE DATABASE crashtest DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
-USE crashtest;
+CREATE DATABASE crashtest_ctype_utf8 DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
+USE crashtest_ctype_utf8;
 CREATE TABLE crashtest (crash char(10)) DEFAULT CHARSET=utf8;
 INSERT INTO crashtest VALUES ('35'), ('36'), ('37');
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8);
@@ -1702,8 +1704,8 @@ crash
 Warnings:
 Warning	1300	Invalid utf8 character string: 'FFFFFC'
 DROP TABLE crashtest;
-DROP DATABASE crashtest;
-USE test;
+DROP DATABASE crashtest_ctype_utf8;
+USE test_ctype_utf8;
 SET CHARACTER SET default;
 CREATE TABLE t1(id varchar(20) NOT NULL) DEFAULT CHARSET=utf8;
 INSERT INTO t1 VALUES ('xxx'), ('aa'), ('yyy'), ('aa');
@@ -2294,28 +2296,28 @@ s4 LONGTEXT CHARACTER SET utf8
 SET NAMES utf8, @@character_set_results=NULL;
 SELECT *, HEX(s1) FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	s1	s1	252	255	0	Y	16	0	33
-def	test	t1	t1	s2	s2	252	65535	0	Y	16	0	33
-def	test	t1	t1	s3	s3	252	16777215	0	Y	16	0	33
-def	test	t1	t1	s4	s4	252	4294967295	0	Y	16	0	33
+def	test_ctype_utf8	t1	t1	s1	s1	252	255	0	Y	16	0	33
+def	test_ctype_utf8	t1	t1	s2	s2	252	65535	0	Y	16	0	33
+def	test_ctype_utf8	t1	t1	s3	s3	252	16777215	0	Y	16	0	33
+def	test_ctype_utf8	t1	t1	s4	s4	252	4294967295	0	Y	16	0	33
 def					HEX(s1)	253	4590	0	Y	0	0	33
 s1	s2	s3	s4	HEX(s1)
 SET NAMES latin1;
 SELECT *, HEX(s1) FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	s1	s1	252	255	0	Y	16	0	8
-def	test	t1	t1	s2	s2	252	65535	0	Y	16	0	8
-def	test	t1	t1	s3	s3	252	16777215	0	Y	16	0	8
-def	test	t1	t1	s4	s4	252	4294967295	0	Y	16	0	8
+def	test_ctype_utf8	t1	t1	s1	s1	252	255	0	Y	16	0	8
+def	test_ctype_utf8	t1	t1	s2	s2	252	65535	0	Y	16	0	8
+def	test_ctype_utf8	t1	t1	s3	s3	252	16777215	0	Y	16	0	8
+def	test_ctype_utf8	t1	t1	s4	s4	252	4294967295	0	Y	16	0	8
 def					HEX(s1)	253	1530	0	Y	0	0	8
 s1	s2	s3	s4	HEX(s1)
 SET NAMES utf8;
 SELECT *, HEX(s1) FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	s1	s1	252	765	0	Y	16	0	33
-def	test	t1	t1	s2	s2	252	196605	0	Y	16	0	33
-def	test	t1	t1	s3	s3	252	50331645	0	Y	16	0	33
-def	test	t1	t1	s4	s4	252	4294967295	0	Y	16	0	33
+def	test_ctype_utf8	t1	t1	s1	s1	252	765	0	Y	16	0	33
+def	test_ctype_utf8	t1	t1	s2	s2	252	196605	0	Y	16	0	33
+def	test_ctype_utf8	t1	t1	s3	s3	252	50331645	0	Y	16	0	33
+def	test_ctype_utf8	t1	t1	s4	s4	252	4294967295	0	Y	16	0	33
 def					HEX(s1)	253	4590	0	Y	0	0	33
 s1	s2	s3	s4	HEX(s1)
 CREATE TABLE t2 AS SELECT CONCAT(s1) FROM t1;
@@ -5288,13 +5290,13 @@ INSERT INTO t1 (ch) VALUES ('admin'),('admin1');
 SELECT ch FROM t1 WHERE ch='admin𝌆';
 ch
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test_ctype_utf8`.`t1`.`ch` at row 1
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch='admin𝌆';
 ch
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='admin𝌆';
 ch
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test_ctype_utf8`.`t1`.`ch` at row 1
 DELETE FROM t1;
 INSERT INTO t1 (ch) VALUES ('a'), ('a?'), ('a??'), ('a???'), ('a????');
 INSERT INTO t1 (ch) VALUES ('ab'),('a?b'),('a??b'),('a???b'),('a????b');
@@ -5309,11 +5311,11 @@ ch
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='a𝌆' ORDER BY ch;
 ch
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test_ctype_utf8`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch='a𝌆b' ORDER BY ch;
 ch
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test_ctype_utf8`.`t1`.`ch` at row 1
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch<'a𝌆' ORDER BY ch;
 ch
 a
@@ -5372,7 +5374,7 @@ az
 aЀ
 aր
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test_ctype_utf8`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch<'a𝌆b' ORDER BY ch;
 ch
 a
@@ -5393,7 +5395,7 @@ az
 aЀ
 aր
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test_ctype_utf8`.`t1`.`ch` at row 1
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 ch
 z
@@ -5404,12 +5406,12 @@ SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 ch
 z
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `test_ctype_utf8`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆b' ORDER BY ch;
 ch
 z
 Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test`.`t1`.`ch` at row 1
+Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `test_ctype_utf8`.`t1`.`ch` at row 1
 ALTER TABLE t1 DROP KEY ch;
 # 0xD18F would be a good 2-byte character, 0xD1 is an incomplete sequence
 SET @query=CONCAT('SELECT ch FROM t1 WHERE ch=''a', 0xD1,'''');
@@ -9634,7 +9636,7 @@ SELECT N'test\0';
 SELECT N'tëst\0';
 END$$
 SELECT ROUTINE_DEFINITION FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA='test' AND SPECIFIC_NAME ='p1';
+WHERE ROUTINE_SCHEMA='test_ctype_utf8' AND SPECIFIC_NAME ='p1';
 ROUTINE_DEFINITION
 BEGIN
 SELECT CONCAT('ABC = ''',1,''''), CONCAT('ABC = ',2);
@@ -9701,7 +9703,7 @@ SELECT N'test\0';
 SELECT N'tëst\0';
 END$$
 SELECT ROUTINE_DEFINITION FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA='test' AND SPECIFIC_NAME ='p1';
+WHERE ROUTINE_SCHEMA='test_ctype_utf8' AND SPECIFIC_NAME ='p1';
 ROUTINE_DEFINITION
 BEGIN
 SELECT CONCAT('ABC = ''',1,''''), CONCAT('ABC = ',2);
@@ -9820,11 +9822,11 @@ DROP TABLE t1;
 CREATE TABLE t1 (a TEXT CHARACTER SET utf8);
 LOAD DATA INFILE '../../std_data/loaddata/mdev9823.utf8mb4.txt' IGNORE INTO TABLE t1 CHARACTER SET utf8 IGNORE 4 LINES;
 Warnings:
-Warning	1366	Incorrect string value: '\xD0' for column `test`.`t1`.`a` at row 1
-Warning	1366	Incorrect string value: '\xE1\x80' for column `test`.`t1`.`a` at row 3
-Warning	1366	Incorrect string value: '\xF0\x9F\x98' for column `test`.`t1`.`a` at row 5
-Warning	1366	Incorrect string value: '\xF0\x9F\x98\x8E' for column `test`.`t1`.`a` at row 7
-Warning	1366	Incorrect string value: '\xF0\x9F\x98' for column `test`.`t1`.`a` at row 8
+Warning	1366	Incorrect string value: '\xD0' for column `test_ctype_utf8`.`t1`.`a` at row 1
+Warning	1366	Incorrect string value: '\xE1\x80' for column `test_ctype_utf8`.`t1`.`a` at row 3
+Warning	1366	Incorrect string value: '\xF0\x9F\x98' for column `test_ctype_utf8`.`t1`.`a` at row 5
+Warning	1366	Incorrect string value: '\xF0\x9F\x98\x8E' for column `test_ctype_utf8`.`t1`.`a` at row 7
+Warning	1366	Incorrect string value: '\xF0\x9F\x98' for column `test_ctype_utf8`.`t1`.`a` at row 8
 SELECT HEX(a) FROM t1;
 HEX(a)
 3F
@@ -9842,7 +9844,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (a TEXT CHARACTER SET utf8);
 LOAD XML INFILE '../../std_data/loaddata/mdev9874.xml' IGNORE INTO TABLE t1 CHARACTER SET utf8 ROWS IDENTIFIED BY '<row>';
 Warnings:
-Warning	1366	Incorrect string value: '\xD0' for column `test`.`t1`.`a` at row 1
+Warning	1366	Incorrect string value: '\xD0' for column `test_ctype_utf8`.`t1`.`a` at row 1
 SELECT HEX(a) FROM t1;
 HEX(a)
 613F
@@ -10292,7 +10294,7 @@ ON
 msg.老师ID=login.tid
 ORDER BY msg.消息ID,msg.发送时间,msg.老师ID,login_time) x
 GROUP BY x.消息ID,x.发送时间,x.老师ID;
-ERROR 42S02: Table 'test.ebk_message' doesn't exist
+ERROR 42S02: Table 'test_ctype_utf8.ebk_message' doesn't exist
 SET NAMES utf8;
 CREATE TABLE t1 (x INT);
 INSERT INTO t1 VALUES (1);
@@ -10300,6 +10302,7 @@ SELECT x AS 5天内最近一次登录时间 FROM t1;
 5天内最近一次登录时间
 1
 DROP TABLE t1;
+DROP DATABASE test_ctype_utf8;
 #
 # End of 10.3 tests
 #

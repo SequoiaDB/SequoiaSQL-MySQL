@@ -481,16 +481,20 @@ SELECT 18446744073709551615 DIV -1;
 CREATE TABLE t1(a BIGINT, b BIGINT UNSIGNED);
 INSERT INTO t1 VALUES(-9223372036854775808, 9223372036854775809);
 
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_DATA_OUT_OF_RANGE
 SELECT -a FROM t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_DATA_OUT_OF_RANGE
 SELECT -b FROM t1;
 
 # try with two rows now
 INSERT INTO t1 VALUES(0,0);
 
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_DATA_OUT_OF_RANGE
 SELECT -a FROM t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_DATA_OUT_OF_RANGE
 SELECT -b FROM t1;
 
@@ -704,7 +708,9 @@ SELECT CRC32(-99999999999999999999999999999999);
 
 # Test cases for using the function in aggregate functions, group-by, having
 # and order-by clauses
+--disable_warnings
 DROP TABLE IF EXISTS t;
+--enable_warnings
 CREATE TABLE t(a INT, b VARCHAR(2));
 INSERT INTO t VALUES (1,'a'), (2,'qw'), (1,'t'), (3,'t');
 SELECT crc32(SUM(a)) FROM t;
@@ -762,7 +768,9 @@ SELECT CRC32(true);
 SELECT CRC32(false);
 
 # Test cases for numeric data types
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 CREATE TABLE t1 (c1 BIT(5),
                  c2 TINYINT,
                  c3 MEDIUMINT,

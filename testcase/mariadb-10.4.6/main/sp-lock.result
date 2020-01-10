@@ -13,6 +13,8 @@
 # Start a transaction, create a savepoint, 
 # then call a DDL operation on a procedure, and then check
 # that the savepoint is no longer present.
+CREATE DATABASE test_sp_lock;
+USE test_sp_lock;
 drop table if exists t1;
 drop procedure if exists p1;
 drop procedure if exists p2;
@@ -111,9 +113,9 @@ drop temporary table t1;
 # connection, try to use the routine.
 # That should block on the pending exclusive lock.
 #
-connect con1, localhost, root,,;
-connect con2, localhost, root,,;
-connect con3, localhost, root,,;
+connect con1, localhost, root,, test_sp_lock;
+connect con2, localhost, root,, test_sp_lock;
+connect con3, localhost, root,, test_sp_lock;
 #
 # Test DROP PROCEDURE.
 #
@@ -144,7 +146,7 @@ connection con1;
 # Reaping 'drop procedure p1'...
 connection con2;
 # Reaping 'select f1()'
-ERROR 42000: PROCEDURE test.p1 does not exist
+ERROR 42000: PROCEDURE test_sp_lock.p1 does not exist
 connection default;
 #
 # Test CREATE PROCEDURE.
@@ -223,7 +225,7 @@ connection con1;
 # Reaping 'drop function f1'...
 connection con2;
 # Reaping 'select f1()'
-ERROR 42000: FUNCTION test.f1 does not exist
+ERROR 42000: FUNCTION test_sp_lock.f1 does not exist
 connection default;
 #
 # Test CREATE FUNCTION.
@@ -321,7 +323,7 @@ drop procedure p3;
 drop procedure p4;
 connection default;
 call p4();
-ERROR 42000: PROCEDURE test.p4 does not exist
+ERROR 42000: PROCEDURE test_sp_lock.p4 does not exist
 commit;
 drop table t1;
 #
@@ -468,7 +470,7 @@ connection con1;
 # Reaping 'drop function f1'...
 connection default;
 drop function f1;
-ERROR 42000: FUNCTION test.f1 does not exist
+ERROR 42000: FUNCTION test_sp_lock.f1 does not exist
 drop function f2;
 drop view v1;
 set @@session.autocommit=default;
@@ -682,8 +684,8 @@ BEGIN
 SELECT get_lock("test", 10);
 SHOW CREATE PROCEDURE p1;
 END|
-connect  con2, localhost, root;
-connect  con3, localhost, root;
+connect  con2, localhost, root,, test_sp_lock;
+connect  con3, localhost, root,, test_sp_lock;
 connection default;
 SELECT get_lock("test", 10);
 get_lock("test", 10)
@@ -721,22 +723,22 @@ DROP PROCEDURE p1;
 # Bug#57663 Concurrent statement using stored function and DROP DATABASE
 #           breaks SBR
 #
-DROP DATABASE IF EXISTS db1;
+DROP DATABASE IF EXISTS db1_sp_lock;
 DROP FUNCTION IF EXISTS f1;
-connect con1, localhost, root;
-connect con2, localhost, root;
+connect con1, localhost, root,, test_sp_lock;
+connect con2, localhost, root,, test_sp_lock;
 # Test 1: Check that DROP DATABASE block if a function is used
 #         by an active transaction.
 connection default;
-CREATE DATABASE db1;
-CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
+CREATE DATABASE db1_sp_lock;
+CREATE FUNCTION db1_sp_lock.f1() RETURNS INTEGER RETURN 1;
 START TRANSACTION;
-SELECT db1.f1();
-db1.f1()
+SELECT db1_sp_lock.f1();
+db1_sp_lock.f1()
 1
 connection con1;
 # Sending:
-DROP DATABASE db1;
+DROP DATABASE db1_sp_lock;
 connection default;
 # Waiting for DROP DATABASE to be blocked by the lock on f1()
 COMMIT;
@@ -745,11 +747,11 @@ connection con1;
 # Test 2: Check that DROP DATABASE blocks if a procedure is
 #         used by an active transaction.
 connection default;
-CREATE DATABASE db1;
-CREATE PROCEDURE db1.p1() BEGIN END;
+CREATE DATABASE db1_sp_lock;
+CREATE PROCEDURE db1_sp_lock.p1() BEGIN END;
 CREATE FUNCTION f1() RETURNS INTEGER
 BEGIN
-CALL db1.p1();
+CALL db1_sp_lock.p1();
 RETURN 1;
 END|
 START TRANSACTION;
@@ -758,7 +760,7 @@ f1()
 1
 connection con1;
 # Sending:
-DROP DATABASE db1;
+DROP DATABASE db1_sp_lock;
 connection default;
 # Waiting for DROP DATABASE to be blocked by the lock on p1()
 COMMIT;
@@ -767,39 +769,39 @@ connection con1;
 # Test 3: Check that DROP DATABASE is not selected as a victim if a
 #         deadlock is discovered with DML statements.
 connection default;
-CREATE DATABASE db1;
-CREATE TABLE db1.t1 (a INT);
-CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
+CREATE DATABASE db1_sp_lock;
+CREATE TABLE db1_sp_lock.t1 (a INT);
+CREATE FUNCTION db1_sp_lock.f1() RETURNS INTEGER RETURN 1;
 START TRANSACTION;
-SELECT db1.f1();
-db1.f1()
+SELECT db1_sp_lock.f1();
+db1_sp_lock.f1()
 1
 connection con1;
 # Sending:
-DROP DATABASE db1;
+DROP DATABASE db1_sp_lock;
 connection default;
 # Waiting for DROP DATABASE to be blocked by the lock on f1()
-SELECT * FROM db1.t1;
+SELECT * FROM db1_sp_lock.t1;
 ERROR 40001: Deadlock found when trying to get lock; try restarting transaction
 COMMIT;
 connection con1;
 # Reaping: DROP DATABASE db1
 # Test 4: Check that active DROP DATABASE blocks stored routine DDL.
 connection default;
-CREATE DATABASE db1;
-CREATE FUNCTION db1.f1() RETURNS INTEGER RETURN 1;
-CREATE FUNCTION db1.f2() RETURNS INTEGER RETURN 2;
+CREATE DATABASE db1_sp_lock;
+CREATE FUNCTION db1_sp_lock.f1() RETURNS INTEGER RETURN 1;
+CREATE FUNCTION db1_sp_lock.f2() RETURNS INTEGER RETURN 2;
 START TRANSACTION;
-SELECT db1.f2();
-db1.f2()
+SELECT db1_sp_lock.f2();
+db1_sp_lock.f2()
 2
 connection con1;
 # Sending:
-DROP DATABASE db1;
+DROP DATABASE db1_sp_lock;
 connection con2;
 # Waiting for DROP DATABASE to be blocked by the lock on f2()
 # Sending:
-ALTER FUNCTION db1.f1 COMMENT "test";
+ALTER FUNCTION db1_sp_lock.f1 COMMENT "test";
 connection default;
 # Waiting for ALTER FUNCTION to be blocked by the schema lock on db1
 COMMIT;
@@ -808,10 +810,11 @@ connection con1;
 disconnect con1;
 connection con2;
 # Reaping: ALTER FUNCTION f1 COMMENT 'test'
-ERROR 42000: FUNCTION db1.f1 does not exist
+ERROR 42000: FUNCTION db1_sp_lock.f1 does not exist
 disconnect con2;
 connection default;
 DROP FUNCTION f1;
+DROP DATABASE test_sp_lock;
 #
 # End of 5.5 tests
 #

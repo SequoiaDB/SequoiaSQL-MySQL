@@ -1,3 +1,5 @@
+CREATE DATABASE test_ctype_collate;
+USE test_ctype_collate;
 DROP TABLE IF EXISTS t1;
 DROP TABLE IF EXISTS t2;
 CREATE TABLE t1 (
@@ -624,8 +626,8 @@ abc
 # Not a bug: only adding coverage tests
 #
 SET NAMES latin1 COLLATE latin1_german2_ci;
-CREATE DATABASE test1 DEFAULT CHARACTER SET latin1 COLLATE latin1_german2_ci;
-USE test1;
+CREATE DATABASE test1_ctype_collate DEFAULT CHARACTER SET latin1 COLLATE latin1_german2_ci;
+USE test1_ctype_collate;
 #
 # Using "COLLATE latin1_swedish_ci" as the default collation for latin1
 #
@@ -675,8 +677,8 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci
 DROP TABLE t1;
 DROP FUNCTION getText;
-DROP DATABASE test1;
-USE test;
+DROP DATABASE test1_ctype_collate;
+USE test_ctype_collate;
 SET NAMES latin1;
 #
 # MDEV-11320, MySQL BUG#81810: Inconsistent sort order for blob/text between InnoDB and filesort
@@ -705,3 +707,4 @@ hex(b)
 
 61
 drop table t1;
+DROP DATABASE test_ctype_collate;

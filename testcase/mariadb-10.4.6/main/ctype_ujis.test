@@ -65,7 +65,9 @@ select @ujis4 = CONVERT(@utf84 USING ujis);
 # Testing with '%' and index (Bug #3438)
 #
 
+--disable_warnings
 drop table if exists t1;
+--enable_warnings
 create table t1 (c1 varchar(8)) default character set 'ujis';
 insert into t1 values (0xA4A2),(0xA2A2),(0xA4A2);
 select c1 as 'no index' from t1 where c1 like cast(concat(0xA4A2, '%') as char character set ujis);
@@ -122,7 +124,9 @@ SELECT t1.* FROM t1 WHERE b='eeefffggghhh' ORDER BY a;
 SELECT t1.* FROM t1 WHERE b='iiijjjkkkl'   ORDER BY a;
 DROP TABLE t1;
 
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 CREATE TABLE t1(c char(1)) character set ujis;
 #INSERT INTO t1 VALUES(0xA2AF);
 #INSERT INTO t1 VALUES(0xA2B0);
@@ -1276,6 +1280,7 @@ ORDER BY head, tail;
 DROP TEMPORARY TABLE head, tail;
 SHOW CREATE TABLE t1;
 
+--replace_regex /test_parallel_[0-9]/X/
 UPDATE IGNORE t1 SET a=unhex(code) ORDER BY code;
 SELECT COUNT(*) FROM t1;
 SELECT COUNT(*) FROM t1 WHERE a<>'?';

@@ -4,6 +4,8 @@
 #
 # MDEV-8865 Wrong field type or metadata for COALESCE(signed_int_column, unsigned_int_column)
 #
+CREATE DATABASE test_func_hybrid_type;
+USE test_func_hybrid_type;
 #
 CREATE TABLE t1 (a INT, b INT UNSIGNED);
 INSERT INTO t1 VALUES (1,1);
@@ -30,7 +32,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	3	11	11	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	3	11	11	Y	32768	0	63
 def					case_______a	3	11	11	Y	32896	0	63
 def					case_____a_a	3	11	11	Y	32896	0	63
 def					coalesce___a	3	11	11	Y	32896	0	63
@@ -39,7 +41,7 @@ def					if_______a_a	3	11	11	Y	32896	0	63
 def					ifnull___a_a	3	11	11	Y	32896	0	63
 def					least____a_a	3	11	11	Y	32896	0	63
 def					greatest_a_a	3	11	11	Y	32896	0	63
-def	test	t1	t1	b	___________b	3	10	10	Y	32800	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	3	10	10	Y	32800	0	63
 def					case_______b	3	10	10	Y	32928	0	63
 def					case_____b_b	3	10	10	Y	32928	0	63
 def					coalesce___b	3	10	10	Y	32928	0	63
@@ -268,7 +270,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	3	11	11	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	3	11	11	Y	32768	0	63
 def					case_______a	3	11	11	Y	32896	0	63
 def					case_____a_a	3	11	11	Y	32896	0	63
 def					coalesce___a	3	11	11	Y	32896	0	63
@@ -277,7 +279,7 @@ def					if_______a_a	3	11	11	Y	32896	0	63
 def					ifnull___a_a	3	11	11	Y	32896	0	63
 def					least____a_a	3	11	11	Y	32896	0	63
 def					greatest_a_a	3	11	11	Y	32896	0	63
-def	test	t1	t1	b	___________b	3	11	10	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	3	11	10	Y	32768	0	63
 def					case_______b	3	11	10	Y	32896	0	63
 def					case_____b_b	3	11	10	Y	32896	0	63
 def					coalesce___b	3	11	10	Y	32896	0	63
@@ -476,7 +478,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	8	20	20	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	8	20	20	Y	32768	0	63
 def					case_______a	8	20	20	Y	32896	0	63
 def					case_____a_a	8	20	20	Y	32896	0	63
 def					coalesce___a	8	20	20	Y	32896	0	63
@@ -485,7 +487,7 @@ def					if_______a_a	8	20	20	Y	32896	0	63
 def					ifnull___a_a	8	20	20	Y	32896	0	63
 def					least____a_a	8	20	20	Y	32896	0	63
 def					greatest_a_a	8	20	20	Y	32896	0	63
-def	test	t1	t1	b	___________b	8	20	20	Y	32800	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	8	20	20	Y	32800	0	63
 def					case_______b	8	20	20	Y	32928	0	63
 def					case_____b_b	8	20	20	Y	32928	0	63
 def					coalesce___b	8	20	20	Y	32928	0	63
@@ -684,7 +686,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	8	20	20	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	8	20	20	Y	32768	0	63
 def					case_______a	8	20	20	Y	32896	0	63
 def					case_____a_a	8	20	20	Y	32896	0	63
 def					coalesce___a	8	20	20	Y	32896	0	63
@@ -693,7 +695,7 @@ def					if_______a_a	8	20	20	Y	32896	0	63
 def					ifnull___a_a	8	20	20	Y	32896	0	63
 def					least____a_a	8	20	20	Y	32896	0	63
 def					greatest_a_a	8	20	20	Y	32896	0	63
-def	test	t1	t1	b	___________b	8	20	19	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	8	20	19	Y	32768	0	63
 def					case_______b	8	20	19	Y	32896	0	63
 def					case_____b_b	8	20	19	Y	32896	0	63
 def					coalesce___b	8	20	19	Y	32896	0	63
@@ -891,7 +893,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	3	11	11	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	3	11	11	Y	32768	0	63
 def					case_______a	3	11	11	Y	32896	0	63
 def					case_____a_a	3	11	11	Y	32896	0	63
 def					coalesce___a	3	11	11	Y	32896	0	63
@@ -900,7 +902,7 @@ def					if_______a_a	3	11	11	Y	32896	0	63
 def					ifnull___a_a	3	11	11	Y	32896	0	63
 def					least____a_a	3	11	11	Y	32896	0	63
 def					greatest_a_a	3	11	11	Y	32896	0	63
-def	test	t1	t1	b	___________b	16	8	1	Y	32	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	16	8	1	Y	32	0	63
 def					case_______b	16	8	2	Y	160	0	63
 def					case_____b_b	16	8	2	Y	160	0	63
 def					coalesce___b	16	8	2	Y	160	0	63
@@ -1068,7 +1070,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	3	10	10	Y	32800	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	3	10	10	Y	32800	0	63
 def					case_______a	3	10	10	Y	32928	0	63
 def					case_____a_a	3	10	10	Y	32928	0	63
 def					coalesce___a	3	10	10	Y	32928	0	63
@@ -1077,7 +1079,7 @@ def					if_______a_a	3	10	10	Y	32928	0	63
 def					ifnull___a_a	3	10	10	Y	32928	0	63
 def					least____a_a	3	10	10	Y	32928	0	63
 def					greatest_a_a	3	10	10	Y	32928	0	63
-def	test	t1	t1	b	___________b	16	8	1	Y	32	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	16	8	1	Y	32	0	63
 def					case_______b	16	8	2	Y	160	0	63
 def					case_____b_b	16	8	2	Y	160	0	63
 def					coalesce___b	16	8	2	Y	160	0	63
@@ -1245,7 +1247,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	16	7	1	Y	32	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	16	7	1	Y	32	0	63
 def					case_______a	16	7	2	Y	160	0	63
 def					case_____a_a	16	7	2	Y	160	0	63
 def					coalesce___a	16	7	2	Y	160	0	63
@@ -1254,7 +1256,7 @@ def					if_______a_a	16	7	2	Y	160	0	63
 def					ifnull___a_a	16	7	2	Y	160	0	63
 def					least____a_a	16	7	2	Y	160	0	63
 def					greatest_a_a	16	7	2	Y	160	0	63
-def	test	t1	t1	b	___________b	16	8	1	Y	32	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	16	8	1	Y	32	0	63
 def					case_______b	16	8	2	Y	160	0	63
 def					case_____b_b	16	8	2	Y	160	0	63
 def					coalesce___b	16	8	2	Y	160	0	63
@@ -1422,7 +1424,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	4	12	1	Y	32768	31	63
+def	test_func_hybrid_type	t1	t1	a	___________a	4	12	1	Y	32768	31	63
 def					case_______a	4	12	1	Y	32896	31	63
 def					case_____a_a	4	12	1	Y	32896	31	63
 def					coalesce___a	4	12	1	Y	32896	31	63
@@ -1431,7 +1433,7 @@ def					if_______a_a	4	12	1	Y	32896	31	63
 def					ifnull___a_a	4	12	1	Y	32896	31	63
 def					least____a_a	4	23	1	Y	32896	31	63
 def					greatest_a_a	4	23	1	Y	32896	31	63
-def	test	t1	t1	b	___________b	2	6	6	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	2	6	6	Y	32768	0	63
 def					case_______b	2	6	6	Y	32896	0	63
 def					case_____b_b	2	6	6	Y	32896	0	63
 def					coalesce___b	2	6	6	Y	32896	0	63
@@ -1599,7 +1601,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	253	10	1	Y	0	0	8
+def	test_func_hybrid_type	t1	t1	a	___________a	253	10	1	Y	0	0	8
 def					case_______a	253	10	1	Y	0	39	8
 def					case_____a_a	253	10	1	Y	0	39	8
 def					coalesce___a	253	10	1	Y	0	39	8
@@ -1608,7 +1610,7 @@ def					if_______a_a	253	10	1	Y	0	39	8
 def					ifnull___a_a	253	10	1	Y	0	39	8
 def					least____a_a	253	10	1	Y	0	39	8
 def					greatest_a_a	253	10	1	Y	0	39	8
-def	test	t1	t1	b	___________b	254	1	1	Y	256	0	8
+def	test_func_hybrid_type	t1	t1	b	___________b	254	1	1	Y	256	0	8
 def					case_______b	254	1	1	Y	0	39	8
 def					case_____b_b	254	1	1	Y	0	39	8
 def					coalesce___b	254	1	1	Y	0	39	8
@@ -1776,7 +1778,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	3	11	11	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	3	11	11	Y	32768	0	63
 def					case_______a	3	11	11	Y	32896	0	63
 def					case_____a_a	3	11	11	Y	32896	0	63
 def					coalesce___a	3	11	11	Y	32896	0	63
@@ -1785,7 +1787,7 @@ def					if_______a_a	3	11	11	Y	32896	0	63
 def					ifnull___a_a	3	11	11	Y	32896	0	63
 def					least____a_a	3	11	11	Y	32896	0	63
 def					greatest_a_a	3	11	11	Y	32896	0	63
-def	test	t1	t1	b	___________b	13	4	4	Y	32864	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	13	4	4	Y	32864	0	63
 def					case_______b	13	4	4	Y	32928	0	63
 def					case_____b_b	13	4	4	Y	32928	0	63
 def					coalesce___b	13	4	4	Y	32928	0	63
@@ -1953,7 +1955,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	3	10	10	Y	32800	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	3	10	10	Y	32800	0	63
 def					case_______a	3	10	10	Y	32928	0	63
 def					case_____a_a	3	10	10	Y	32928	0	63
 def					coalesce___a	3	10	10	Y	32928	0	63
@@ -1962,7 +1964,7 @@ def					if_______a_a	3	10	10	Y	32928	0	63
 def					ifnull___a_a	3	10	10	Y	32928	0	63
 def					least____a_a	3	10	10	Y	32928	0	63
 def					greatest_a_a	3	10	10	Y	32928	0	63
-def	test	t1	t1	b	___________b	13	4	4	Y	32864	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	13	4	4	Y	32864	0	63
 def					case_______b	13	4	4	Y	32928	0	63
 def					case_____b_b	13	4	4	Y	32928	0	63
 def					coalesce___b	13	4	4	Y	32928	0	63
@@ -2131,7 +2133,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	10	10	10	Y	128	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	10	10	10	Y	128	0	63
 def					case_______a	10	10	10	Y	128	0	63
 def					case_____a_a	10	10	10	Y	128	0	63
 def					coalesce___a	10	10	10	Y	128	0	63
@@ -2140,7 +2142,7 @@ def					if_______a_a	10	10	10	Y	128	0	63
 def					ifnull___a_a	10	10	10	Y	128	0	63
 def					least____a_a	10	10	10	Y	128	0	63
 def					greatest_a_a	10	10	10	Y	128	0	63
-def	test	t1	t1	b	___________b	11	10	8	Y	128	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	11	10	8	Y	128	0	63
 def					case_______b	11	10	8	Y	128	0	63
 def					case_____b_b	11	10	8	Y	128	0	63
 def					coalesce___b	11	10	8	Y	128	0	63
@@ -2310,7 +2312,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	7	19	19	N	9377	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	7	19	19	N	9377	0	63
 def					case_______a	7	19	19	Y	128	0	63
 def					case_____a_a	7	19	19	N	129	0	63
 def					coalesce___a	7	19	19	N	129	0	63
@@ -2319,7 +2321,7 @@ def					if_______a_a	7	19	19	N	129	0	63
 def					ifnull___a_a	7	19	19	N	129	0	63
 def					least____a_a	7	19	19	N	129	0	63
 def					greatest_a_a	7	19	19	N	129	0	63
-def	test	t1	t1	b	___________b	11	10	8	Y	128	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	11	10	8	Y	128	0	63
 def					case_______b	11	10	8	Y	128	0	63
 def					case_____b_b	11	10	8	Y	128	0	63
 def					coalesce___b	11	10	8	Y	128	0	63
@@ -2489,7 +2491,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	12	19	19	Y	128	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	12	19	19	Y	128	0	63
 def					case_______a	12	19	19	Y	128	0	63
 def					case_____a_a	12	19	19	Y	128	0	63
 def					coalesce___a	12	19	19	Y	128	0	63
@@ -2498,7 +2500,7 @@ def					if_______a_a	12	19	19	Y	128	0	63
 def					ifnull___a_a	12	19	19	Y	128	0	63
 def					least____a_a	12	19	19	Y	128	0	63
 def					greatest_a_a	12	19	19	Y	128	0	63
-def	test	t1	t1	b	___________b	11	10	8	Y	128	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	11	10	8	Y	128	0	63
 def					case_______b	11	10	8	Y	128	0	63
 def					case_____b_b	11	10	8	Y	128	0	63
 def					coalesce___b	11	10	8	Y	128	0	63
@@ -2668,7 +2670,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	12	19	19	Y	128	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	12	19	19	Y	128	0	63
 def					case_______a	12	19	19	Y	128	0	63
 def					case_____a_a	12	19	19	Y	128	0	63
 def					coalesce___a	12	19	19	Y	128	0	63
@@ -2677,7 +2679,7 @@ def					if_______a_a	12	19	19	Y	128	0	63
 def					ifnull___a_a	12	19	19	Y	128	0	63
 def					least____a_a	12	19	19	Y	128	0	63
 def					greatest_a_a	12	19	19	Y	128	0	63
-def	test	t1	t1	b	___________b	10	10	10	Y	128	0	63
+def	test_func_hybrid_type	t1	t1	b	___________b	10	10	10	Y	128	0	63
 def					case_______b	10	10	10	Y	128	0	63
 def					case_____b_b	10	10	10	Y	128	0	63
 def					coalesce___b	10	10	10	Y	128	0	63
@@ -2848,7 +2850,7 @@ LEAST(b, b)                               AS least____b_b,
 GREATEST(b, b)                            AS greatest_b_b
 FROM t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test	t1	t1	a	___________a	3	11	11	Y	32768	0	63
+def	test_func_hybrid_type	t1	t1	a	___________a	3	11	11	Y	32768	0	63
 def					case_______a	3	11	11	Y	32896	0	63
 def					case_____a_a	3	11	11	Y	32896	0	63
 def					coalesce___a	3	11	11	Y	32896	0	63
@@ -2857,7 +2859,7 @@ def					if_______a_a	3	11	11	Y	32896	0	63
 def					ifnull___a_a	3	11	11	Y	32896	0	63
 def					least____a_a	3	11	11	Y	32896	0	63
 def					greatest_a_a	3	11	11	Y	32896	0	63
-def	test	t1	t1	b	___________b	253	10	4	Y	0	0	8
+def	test_func_hybrid_type	t1	t1	b	___________b	253	10	4	Y	0	0	8
 def					case_______b	253	10	4	Y	0	39	8
 def					case_____b_b	253	10	4	Y	0	39	8
 def					coalesce___b	253	10	4	Y	0	39	8
@@ -4101,6 +4103,7 @@ SET sql_mode=DEFAULT;
 SELECT 0 + LEAST(TIME'-10:00:00',TIME'10:00:00') AS c;
 c
 -100000
+DROP DATABASE test_func_hybrid_type;
 #
 # End of 10.4 tests
 #

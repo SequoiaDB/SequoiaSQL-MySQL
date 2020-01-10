@@ -615,14 +615,14 @@ ERROR 22003: BIGINT UNSIGNED value is out of range in '18446744073709551615 DIV 
 CREATE TABLE t1(a BIGINT, b BIGINT UNSIGNED);
 INSERT INTO t1 VALUES(-9223372036854775808, 9223372036854775809);
 SELECT -a FROM t1;
-ERROR 22003: BIGINT value is out of range in '-`test`.`t1`.`a`'
+ERROR 22003: BIGINT value is out of range in '-`X`.`t1`.`a`'
 SELECT -b FROM t1;
-ERROR 22003: BIGINT value is out of range in '-`test`.`t1`.`b`'
+ERROR 22003: BIGINT value is out of range in '-`X`.`t1`.`b`'
 INSERT INTO t1 VALUES(0,0);
 SELECT -a FROM t1;
-ERROR 22003: BIGINT value is out of range in '-`test`.`t1`.`a`'
+ERROR 22003: BIGINT value is out of range in '-`X`.`t1`.`a`'
 SELECT -b FROM t1;
-ERROR 22003: BIGINT value is out of range in '-`test`.`t1`.`b`'
+ERROR 22003: BIGINT value is out of range in '-`X`.`t1`.`b`'
 DROP TABLE t1;
 SET @a:=999999999999999999999999999999999999999999999999999999999999999999999999999999999;
 SELECT @a + @a;
@@ -892,8 +892,6 @@ SELECT CRC32(-99999999999999999999999999999999);
 CRC32(-99999999999999999999999999999999)
 1052326872
 DROP TABLE IF EXISTS t;
-Warnings:
-Note	1051	Unknown table 'test.t'
 CREATE TABLE t(a INT, b VARCHAR(2));
 INSERT INTO t VALUES (1,'a'), (2,'qw'), (1,'t'), (3,'t');
 SELECT crc32(SUM(a)) FROM t;
@@ -1031,8 +1029,6 @@ SELECT CRC32(false);
 CRC32(false)
 4108050209
 DROP TABLE IF EXISTS t1;
-Warnings:
-Note	1051	Unknown table 'test.t1'
 CREATE TABLE t1 (c1 BIT(5),
 c2 TINYINT,
 c3 MEDIUMINT,

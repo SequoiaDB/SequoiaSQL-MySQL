@@ -40,6 +40,7 @@ INSERT INTO t1 VALUES
 (876494155959),
 (876494160000);
 
+--replace_regex /test_parallel_[0-9]/X/
 SELECT
   EXTRACT(DAY FROM a) AS d,
   EXTRACT(HOUR FROM a) AS h,

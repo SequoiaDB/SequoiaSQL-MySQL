@@ -696,7 +696,8 @@ eval CREATE TABLE t1 (
   f $datetime DEFAULT $current_timestamp,
   g $datetime ON UPDATE $current_timestamp
 );
-CREATE PROCEDURE p1() INSERT INTO test.t1( a ) VALUES ( 1 );
+#CREATE PROCEDURE p1() INSERT INTO test.t1( a ) VALUES ( 1 );
+CREATE PROCEDURE p1() INSERT INTO t1( a ) VALUES ( 1 );
 CREATE PROCEDURE p2() UPDATE t1 SET a = 2 WHERE a = 1;
 
 --echo # 1971-01-31 20:13:57 UTC
@@ -908,9 +909,13 @@ ROWS IDENTIFIED BY '<row>';
 DROP TABLE t1, t2;
 
 let $MYSQLD_DATADIR= `select @@datadir`;
-remove_file $MYSQLD_DATADIR/test/t3.dat;
-remove_file $MYSQLD_DATADIR/test/t4.dat;
-remove_file $MYSQLD_DATADIR/test/t5.dat;
+let $db = `select database()`;
+#remove_file $MYSQLD_DATADIR/test/t3.dat;
+#remove_file $MYSQLD_DATADIR/test/t4.dat;
+#remove_file $MYSQLD_DATADIR/test/t5.dat;
+remove_file $MYSQLD_DATADIR/$db/t3.dat;
+remove_file $MYSQLD_DATADIR/$db/t4.dat;
+remove_file $MYSQLD_DATADIR/$db/t5.dat;
 
 
 --echo #
@@ -1030,8 +1035,10 @@ delete from t1;
 --echo # TIMESTAMP NOT NULL (e) gets NOW.
 
 drop table t1;
-remove_file $MYSQLD_DATADIR/test/file1.dat;
-remove_file $MYSQLD_DATADIR/test/file2.dat;
+#remove_file $MYSQLD_DATADIR/test/file1.dat;
+#remove_file $MYSQLD_DATADIR/test/file2.dat;
+remove_file $MYSQLD_DATADIR/$db/file1.dat;
+remove_file $MYSQLD_DATADIR/$db/file2.dat;
 
 --echo #
 --echo # Test of updatable views with check options. The option can be violated
@@ -1058,6 +1065,7 @@ SELECT * FROM v1;
 --echo # 1970-01-01 03:33:20
 SET TIMESTAMP = 2000.000234;
 
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_VIEW_CHECK_FAILED
 UPDATE v1 SET a = 2;
 SELECT * FROM t1;
@@ -1083,6 +1091,7 @@ SELECT * FROM v1;
 
 SET TIMESTAMP = 1.126789;
 
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_VIEW_CHECK_FAILED
 INSERT INTO v1 ( c ) VALUES ( 1 ) ON DUPLICATE KEY UPDATE c = 2;
 

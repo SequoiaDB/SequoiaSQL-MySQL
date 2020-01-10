@@ -1,6 +1,6 @@
 drop table if exists t1;
 set global max_allowed_packet=1048576;
-connect  conn1,localhost,root,,;
+connect  conn1,localhost,root,,$db;
 connection conn1;
 set names latin1;
 select hex(weight_string(0x010203));

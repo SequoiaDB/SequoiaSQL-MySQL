@@ -13,6 +13,7 @@ drop table if exists t1;
 
 create table t1 (n int);
 create view  v1 as select * from t1;
+--replace_regex /test_parallel_[0-9]/X/
 --error 1347
 insert delayed into v1 values (1);
 drop table t1;

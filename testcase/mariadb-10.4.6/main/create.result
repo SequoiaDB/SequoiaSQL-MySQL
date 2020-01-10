@@ -1,6 +1,8 @@
 call mtr.add_suppression("table or database name 't-1'");
+CREATE DATABASE test_create;
+USE test_create;
 drop table if exists t1,t2,t3,t4,t5;
-drop database if exists mysqltest;
+drop database if exists mysqltest_create;
 drop view if exists v1;
 create table t1 (b char(0));
 insert into t1 values (""),(null);
@@ -21,20 +23,20 @@ drop table t1;
 create table t1 (a int not null auto_increment,primary key (a)) engine=SequoiaDB;
 drop table t1;
 create table t2 engine=SequoiaDB select * from t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_create.t1' doesn't exist
 create table t2 select auto+1 from t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_create.t1' doesn't exist
 drop table if exists t1,t2;
 Warnings:
-Note	1051	Unknown table 'test.t1'
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_create.t1'
+Note	1051	Unknown table 'test_create.t2'
 create table t1 (b char(0) not null, index(b));
 ERROR 42000: The storage engine SequoiaDB can't index column `b`
 create table t1 (a int not null,b text) engine=heap;
 ERROR 42000: Storage engine MEMORY doesn't support BLOB/TEXT columns
 drop table if exists t1;
 Warnings:
-Note	1051	Unknown table 'test.t1'
+Note	1051	Unknown table 'test_create.t1'
 create table not_existing_database.test (a int);
 ERROR 42000: Unknown database 'not_existing_database'
 create table `a/a` (a int);
@@ -132,27 +134,27 @@ create table t2 (a int, a float) select * from t1;
 ERROR 42S21: Duplicate column name 'a'
 drop table if exists t2;
 Warnings:
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_create.t2'
 create table t2 (a int) select a as b, a+1 as b from t1;
 ERROR 42S21: Duplicate column name 'b'
 drop table if exists t2;
 Warnings:
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_create.t2'
 create table t2 (b int) select a as b, a+1 as b from t1;
 ERROR 42S21: Duplicate column name 'b'
 drop table if exists t1,t2;
 Warnings:
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_create.t2'
 CREATE TABLE t1 (a int not null);
 INSERT INTO t1 values (1),(2),(1);
 CREATE TABLE t2 (primary key(a)) SELECT * FROM t1;
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 SELECT * from t2;
-ERROR 42S02: Table 'test.t2' doesn't exist
+ERROR 42S02: Table 'test_create.t2' doesn't exist
 DROP TABLE t1;
 DROP TABLE IF EXISTS t2;
 Warnings:
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_create.t2'
 create table t1 select if(1,'1','0'), month("2002-08-02");
 drop table t1;
 create table t1 select if('2002'='2002','Y','N');
@@ -283,9 +285,9 @@ t3	CREATE TABLE `t3` (
 select * from t3;
 id	name
 drop table t2, t3;
-create database mysqltest;
-create table mysqltest.t3 like t1;
-create temporary table t3 like mysqltest.t3;
+create database mysqltest_create;
+create table mysqltest_create.t3 like t1;
+create temporary table t3 like mysqltest_create.t3;
 show create table t3;
 Table	Create Table
 t3	CREATE TEMPORARY TABLE `t3` (
@@ -302,17 +304,17 @@ t2	CREATE TABLE `t2` (
 select * from t2;
 id	name
 create table t3 like t1;
-create table t3 like mysqltest.t3;
+create table t3 like mysqltest_create.t3;
 ERROR 42S01: Table 't3' already exists
 create table non_existing_database.t1 like t1;
 ERROR 42000: Unknown database 'non_existing_database'
 create table t4 like non_existing_table;
-ERROR 42S02: Table 'test.non_existing_table' doesn't exist
+ERROR 42S02: Table 'test_create.non_existing_table' doesn't exist
 create temporary table t3 like t1;
 ERROR 42S01: Table 't3' already exists
 drop table t1, t2, t3;
 drop table t3;
-drop database mysqltest;
+drop database mysqltest_create;
 create table t1 (i int);
 create table t2 (j int);
 lock tables t1 read;
@@ -473,25 +475,25 @@ Note	1291	Column 'cset' has duplicated value 'b' in SET
 Note	1291	Column 'cset' has duplicated value 'B' in SET
 Note	1291	Column 'cset' has duplicated value 'd' in SET
 drop table t1, t2, t3;
-create database mysqltest;
-use mysqltest;
+create database mysqltest_create;
+use mysqltest_create;
 select database();
 database()
-mysqltest
-drop database mysqltest;
+mysqltest_create
+drop database mysqltest_create;
 select database();
 database()
 NULL
-create user mysqltest_1;
-connect  user1,localhost,mysqltest_1,,*NO-ONE*;
+create user mysqltest_create_1;
+connect  user1,localhost,mysqltest_create_1,,*NO-ONE*;
 connection user1;
 select database(), user();
 database()	user()
-NULL	mysqltest_1@localhost
+NULL	mysqltest_create_1@localhost
 connection default;
 disconnect user1;
-drop user mysqltest_1;
-use test;
+drop user mysqltest_create_1;
+use test_create;
 create table t1 (a int, index `primary` (a));
 ERROR 42000: Incorrect index name 'primary'
 create table t1 (a int, index `PRIMARY` (a));
@@ -558,18 +560,18 @@ create table t1 (a int);
 create table t1 select * from t1;
 ERROR 42S01: Table 't1' already exists
 create table t2 union = (t1) select * from t1;
-ERROR HY000: 'test.t2' is not of type 'BASE TABLE'
+ERROR HY000: 'test_create.t2' is not of type 'BASE TABLE'
 flush tables with read lock;
 unlock tables;
 drop table t1;
 create table t1(column.name int);
 ERROR 42000: Incorrect table name 'column'
-create table t1(test.column.name int);
+create table t1(test_create.column.name int);
 ERROR 42000: Incorrect table name 'column'
 create table t1(xyz.t1.name int);
 ERROR 42000: Incorrect database name 'xyz'
 create table t1(t1.name int);
-create table t2(test.t2.name int);
+create table t2(test_create.t2.name int);
 drop table t1,t2;
 CREATE TABLE t1 (f1 VARCHAR(255) CHARACTER SET utf8);
 CREATE TABLE t2 AS SELECT LEFT(f1,171) AS f2 FROM t1 UNION SELECT LEFT(f1,171) AS f2 FROM t1;
@@ -582,28 +584,28 @@ SELECT * FROM t12913;
 f1
 a
 DROP TABLE t12913;
-create database mysqltest;
-use mysqltest;
-drop database mysqltest;
-create table test.t1 like x;
+create database mysqltest_create;
+use mysqltest_create;
+drop database mysqltest_create;
+create table test_create.t1 like x;
 ERROR 3D000: No database selected
-drop table if exists test.t1;
-create database mysqltest;
-use mysqltest;
+drop table if exists test_create.t1;
+create database mysqltest_create;
+use mysqltest_create;
 create view v1 as select 'foo' from dual;
 create table t1 like v1;
-ERROR HY000: 'mysqltest.v1' is not of type 'BASE TABLE'
+ERROR HY000: 'mysqltest_create.v1' is not of type 'BASE TABLE'
 drop view v1;
-drop database mysqltest;
-create database mysqltest;
-create database if not exists mysqltest character set latin2;
+drop database mysqltest_create;
+create database mysqltest_create;
+create database if not exists mysqltest_create character set latin2;
 Warnings:
-Note	1007	Can't create database 'mysqltest'; database exists
-show create database mysqltest;
+Note	1007	Can't create database 'mysqltest_create'; database exists
+show create database mysqltest_create;
 Database	Create Database
-mysqltest	CREATE DATABASE `mysqltest` /*!40100 DEFAULT CHARACTER SET latin1 */
-drop database mysqltest;
-use test;
+mysqltest_create	CREATE DATABASE `mysqltest_create` /*!40100 DEFAULT CHARACTER SET latin1 */
+drop database mysqltest_create;
+use test_create;
 create table t1 (a int);
 create table if not exists t1 (a int);
 Warnings:
@@ -748,9 +750,9 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 MAX_ROWS=4294967295
 drop table t1;
 create table t1 select * from t2;
-ERROR 42S02: Table 'test.t2' doesn't exist
+ERROR 42S02: Table 'test_create.t2' doesn't exist
 create table t1 select * from t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_create.t1' doesn't exist
 create table t1 select coalesce('a' collate latin1_swedish_ci,'b' collate latin1_bin);
 ERROR HY000: Illegal mix of collations (latin1_swedish_ci,EXPLICIT) and (latin1_bin,EXPLICIT) for operation 'coalesce'
 create table t1 (primary key(a)) select "b" as b;
@@ -872,7 +874,7 @@ SHOW INDEX FROM t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	1	c1	1	c1	A	NULL	NULL	NULL	YES	BTREE		
 DROP TABLE t1;
-create user mysqltest_1@'test@test';
+create user mysqltest_create_1@'test@test';
 ERROR HY000: Malformed hostname (illegal symbol: '@')
 CREATE TABLE t1 (a INTEGER AUTO_INCREMENT PRIMARY KEY, b INTEGER NOT NULL);
 INSERT IGNORE INTO t1 (b) VALUES (5);
@@ -903,12 +905,12 @@ CREATE TABLE t2 (primary key (a)) select * from t1;
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 drop table if exists t2;
 Warnings:
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_create.t2'
 CREATE TEMPORARY TABLE t2 (primary key (a)) select * from t1;
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
 drop table if exists t2;
 Warnings:
-Note	1051	Unknown table 'test.t2'
+Note	1051	Unknown table 'test_create.t2'
 CREATE TABLE t2 (a int, b int, primary key (a));
 INSERT INTO t2 select * from t1;
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
@@ -1062,11 +1064,11 @@ drop table t1,t2;
 create table `#mysql50#t-1` (a int) engine=SequoiaDB;
 insert into `#mysql50#t-1` values (1);
 show tables;
-Tables_in_test
+Tables_in_test_create
 #mysql50#t-1
 create table `t-1` (a int);
 show tables;
-Tables_in_test
+Tables_in_test_create
 #mysql50#t-1
 t-1
 select * from `t-1`;
@@ -1078,14 +1080,14 @@ drop table `t-1`;
 create table t1 (a int);
 alter table t1 rename `t-1`;
 show tables;
-Tables_in_test
+Tables_in_test_create
 #mysql50#t-1
 t-1
 drop table `t-1`;
 create table t1 (a int);
 rename table t1 to `t-1`;
 show tables;
-Tables_in_test
+Tables_in_test_create
 #mysql50#t-1
 t-1
 drop table `#mysql50#t-1`, `t-1`;
@@ -1118,7 +1120,7 @@ CREATE TRIGGER f BEFORE INSERT ON t1 FOR EACH ROW
 BEGIN 
 UPDATE A SET `pk`=1 WHERE `pk`=0 ; 
 END ;|
-ERROR HY000: Trigger 'test.f' already exists
+ERROR HY000: Trigger 'test_create.f' already exists
 CREATE TRIGGER f1 BEFORE INSERT ON t1 FOR EACH ROW 
 BEGIN 
 UPDATE A SET `pk`=1 WHERE `pk`=0 ; 
@@ -1528,7 +1530,7 @@ a
 1
 drop table t1;
 create table if not exists t1 (a int) select * from t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_create.t1' doesn't exist
 #
 # 7. Test of non-matching columns, REPLACE and IGNORE.
 #
@@ -1547,14 +1549,14 @@ NULL	0000-00-00	0000-00-00
 drop table t1;
 set @@session.sql_mode='STRICT_ALL_TABLES';
 create table if not exists t1 (a int, b date, c date) select 1 as b, 2 as c;
-ERROR 22007: Incorrect date value: '1' for column `test`.`t1`.`b` at row 1
+ERROR 22007: Incorrect date value: '1' for column `test_create`.`t1`.`b` at row 1
 select * from t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_create.t1' doesn't exist
 create table if not exists t1 (a int, b date, c date) 
 replace select 1 as b, 2 as c;
-ERROR 22007: Incorrect date value: '1' for column `test`.`t1`.`b` at row 1
+ERROR 22007: Incorrect date value: '1' for column `test_create`.`t1`.`b` at row 1
 select * from t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_create.t1' doesn't exist
 create table if not exists t1 (a int, b date, c date) 
 ignore select 1 as b, 2 as c;
 Warnings:
@@ -1586,7 +1588,7 @@ create table t1 (a int, b int) engine=SequoiaDB;
 create table t2 (a int, b int) engine=SequoiaDB;
 insert into t1 values (1,1);
 lock tables t1 read;
-connect  user1,localhost,root,,test;
+connect  user1,localhost,root,,test_create;
 set @@lock_wait_timeout=5;
 create table if not exists t1 (a int, b int);
 Warnings:
@@ -1632,7 +1634,7 @@ set n:= (select count(*) from t1);
 return n;
 end|
 create table t1 as select f1();
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_create.t1' doesn't exist
 drop function f1;
 #
 # MDEV-10274 Bundling insert with create statement
@@ -1784,3 +1786,4 @@ create table t1;
 ERROR 42000: A table must have at least 1 column
 create table t1 (i int, j int, key(i)) as select 1 as i, 2 as j;
 drop table t1;
+DROP DATABASE test_create;

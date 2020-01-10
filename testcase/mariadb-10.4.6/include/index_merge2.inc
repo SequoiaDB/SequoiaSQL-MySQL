@@ -123,7 +123,9 @@ insert into t1 (key1a, key1b, key2a, key2b, key3a, key3b)
   select key1a, key1b, key2a, key2b, key3a, key3b from t1;
 insert into t1 (key1a, key1b, key2a, key2b, key3a, key3b)
   select key1a, key1b, key2a, key2b, key3a, key3b from t1;
+--disable_result_log
 analyze table t1;
+--enable_result_log
 select count(*) from t1;
 
 #--replace_column 9 REF
@@ -349,7 +351,9 @@ alter table t1 add index i3(key3);
 update t1 set key2=key1,key3=key1;
 
 insert into t1 select 10000+key1, 10000+key2,10000+key3 from t1;
+--disable_result_log
 analyze table t1;
+--enable_result_log
 
 # to test the bug, the following must use "sort_union":
 #--replace_column 9 REF

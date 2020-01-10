@@ -99,7 +99,7 @@ SELECT * FROM t2 FOR UPDATE;
 a
 1
 2
-connect con2,localhost,root,,;
+connect con2,localhost,root,,$db;
 BEGIN;
 SELECT * FROM t2 FOR UPDATE;;
 connection default;

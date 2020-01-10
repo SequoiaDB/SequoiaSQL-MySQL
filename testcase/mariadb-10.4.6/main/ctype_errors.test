@@ -4,7 +4,9 @@
 # ls_messages
 #
 CREATE TABLE t1(f1 INT);
-connect (con1,localhost,root,,test);
+--let $db= `select database()`
+#connect (con1,localhost,root,,test);
+connect (con1,localhost,root,,$db);
 connection con1;
 SET lc_messages=ru_RU;
 SHOW VARIABLES LIKE 'lc_messages';
@@ -29,13 +31,15 @@ DROP TABLE t1;
 #
 # Bug#1406 Tablename in Errormessage not in default characterset
 #
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_BAD_TABLE_ERROR
 drop table `ק`;
 
 #
 # Bug#14602 Error messages not returned in character_set_results
 #
-connect (con1,localhost,root,,test);
+#connect (con1,localhost,root,,test);
+connect (con1,localhost,root,,$db);
 connection con1;
 SET lc_messages=cs_CZ;
 SET NAMES UTF8;
@@ -49,7 +53,8 @@ connection default;
 --echo #               with non-latin1 server error message
 --echo #
 
-connect (con1,localhost,root,,test);
+#connect (con1,localhost,root,,test);
+connect (con1,localhost,root,,$db);
 SET lc_messages=ru_RU;
 SET NAMES latin1;
 --error ER_PARSE_ERROR

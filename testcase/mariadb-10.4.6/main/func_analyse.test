@@ -3,6 +3,9 @@
 #
 #-- source include/have_innodb.inc
 
+CREATE DATABASE test_func_analyse;
+USE test_func_analyse;
+
 --disable_warnings
 drop table if exists t1,t2;
 --enable_warnings
@@ -227,6 +230,7 @@ DELIMITER ;$$
 --horizontal_results
 DROP TABLE t1;
 
+DROP DATABASE test_func_analyse;
 --echo #
 --echo # End of 10.4 tests
 --echo #

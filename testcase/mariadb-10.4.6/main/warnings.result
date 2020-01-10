@@ -1,3 +1,5 @@
+CREATE DATABASE test_warnings;
+USE test_warnings;
 drop table if exists t1, t2;
 SET SQL_WARNINGS=1;
 create table t1 (a int);
@@ -31,30 +33,30 @@ Error	1064	You have an error in your SQL syntax; check the manual that correspon
 insert into t1 values (1);
 insert ignore into t1 values ("hej");
 Warnings:
-Warning	1366	Incorrect integer value: 'hej' for column `test`.`t1`.`a` at row 1
+Warning	1366	Incorrect integer value: 'hej' for column `test_warnings`.`t1`.`a` at row 1
 insert ignore into t1 values ("hej"),("då");
 Warnings:
-Warning	1366	Incorrect integer value: 'hej' for column `test`.`t1`.`a` at row 1
-Warning	1366	Incorrect integer value: 'då' for column `test`.`t1`.`a` at row 2
+Warning	1366	Incorrect integer value: 'hej' for column `test_warnings`.`t1`.`a` at row 1
+Warning	1366	Incorrect integer value: 'då' for column `test_warnings`.`t1`.`a` at row 2
 set SQL_WARNINGS=1;
 insert ignore into t1 values ("hej");
 Warnings:
-Warning	1366	Incorrect integer value: 'hej' for column `test`.`t1`.`a` at row 1
+Warning	1366	Incorrect integer value: 'hej' for column `test_warnings`.`t1`.`a` at row 1
 insert ignore into t1 values ("hej"),("då");
 Warnings:
-Warning	1366	Incorrect integer value: 'hej' for column `test`.`t1`.`a` at row 1
-Warning	1366	Incorrect integer value: 'då' for column `test`.`t1`.`a` at row 2
+Warning	1366	Incorrect integer value: 'hej' for column `test_warnings`.`t1`.`a` at row 1
+Warning	1366	Incorrect integer value: 'då' for column `test_warnings`.`t1`.`a` at row 2
 drop table t1;
 set SQL_WARNINGS=0;
 drop temporary table if exists not_exists;
 Warnings:
-Note	1051	Unknown table 'test.not_exists'
+Note	1051	Unknown table 'test_warnings.not_exists'
 drop table if exists not_exists_table;
 Warnings:
-Note	1051	Unknown table 'test.not_exists_table'
+Note	1051	Unknown table 'test_warnings.not_exists_table'
 show warnings limit 1;
 Level	Code	Message
-Note	1051	Unknown table 'test.not_exists_table'
+Note	1051	Unknown table 'test_warnings.not_exists_table'
 drop database if exists not_exists_db;
 Warnings:
 Note	1008	Can't drop database 'not_exists_db'; database doesn't exist
@@ -157,44 +159,44 @@ create table t1 (a int);
 insert into t1 (a) values (1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
 update ignore t1 set a='abc';
 Warnings:
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 1
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 2
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 3
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 4
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 5
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 6
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 7
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 8
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 9
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 10
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 1
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 2
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 3
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 4
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 5
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 6
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 7
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 8
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 9
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 10
 show warnings limit 2, 1;
 Level	Code	Message
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 3
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 3
 show warnings limit 0, 10;
 Level	Code	Message
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 1
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 2
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 3
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 4
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 5
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 6
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 7
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 8
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 9
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 10
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 1
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 2
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 3
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 4
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 5
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 6
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 7
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 8
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 9
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 10
 show warnings limit 9, 1;
 Level	Code	Message
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 10
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 10
 show warnings limit 10, 1;
 Level	Code	Message
 show warnings limit 9, 2;
 Level	Code	Message
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 10
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 10
 show warnings limit 0, 0;
 Level	Code	Message
 show warnings limit 1;
 Level	Code	Message
-Warning	1366	Incorrect integer value: 'abc' for column `test`.`t1`.`a` at row 1
+Warning	1366	Incorrect integer value: 'abc' for column `test_warnings`.`t1`.`a` at row 1
 show warnings limit 0;
 Level	Code	Message
 show warnings limit 1, 0;
@@ -215,13 +217,13 @@ INSERT INTO t2 VALUES ( 'a`', 'a`' );
 INSERT INTO t3 VALUES ( 'a`', 'a`', '1000-01-1' );
 DROP PROCEDURE IF EXISTS sp1;
 Warnings:
-Note	1305	PROCEDURE test.sp1 does not exist
+Note	1305	PROCEDURE test_warnings.sp1 does not exist
 DROP PROCEDURE IF EXISTS sp2;
 Warnings:
-Note	1305	PROCEDURE test.sp2 does not exist
+Note	1305	PROCEDURE test_warnings.sp2 does not exist
 DROP PROCEDURE IF EXISTS sp3;
 Warnings:
-Note	1305	PROCEDURE test.sp3 does not exist
+Note	1305	PROCEDURE test_warnings.sp3 does not exist
 SET sql_mode = '';
 CREATE PROCEDURE sp1()
 BEGIN
@@ -302,10 +304,10 @@ insert into t2 values(@q);
 ERROR 22001: Data too long for column 'c_tinyblob' at row 1
 drop table t1, t2;
 DROP TABLE t1;
-ERROR 42S02: Unknown table 'test.t1'
+ERROR 42S02: Unknown table 'test_warnings.t1'
 SHOW ERRORS;
 Level	Code	Message
-Error	1051	Unknown table 'test.t1'
+Error	1051	Unknown table 'test_warnings.t1'
 End of 5.0 tests
 End of 5.1 tests
 
@@ -326,20 +328,21 @@ ERROR 23000: Duplicate entry '{ "a": 11 }' for key 'a'
 
 SHOW WARNINGS;
 Level	Code	Message
-Note	4094	At line 4 in test.f1
+Note	4094	At line 4 in test_warnings.f1
 Error	1062	Duplicate entry '{ "a": 11 }' for key 'a'
 
 DROP TABLE t1;
 DROP FUNCTION f1;
-connect  con1,localhost,root,,;
+connect  con1,localhost,root,,test_warnings;
 SELECT TIME('10:10:10.11111111111');
 TIME('10:10:10.11111111111')
 10:10:10.111111
 Warnings:
 Note	1292	Truncated incorrect time value: '10:10:10.11111111111'
 disconnect con1;
-connect  con2,localhost,root,,;
+connect  con2,localhost,root,,test_warnings;
 SHOW WARNINGS;
 Level	Code	Message
 disconnect con2;
 connection default;
+DROP DATABASE test_warnings;

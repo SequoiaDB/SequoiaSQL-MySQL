@@ -6,6 +6,9 @@
 
 SET TIME_ZONE='+03:00';
 
+CREATE DATABASE test_ctype_utf16le;
+USE test_ctype_utf16le;
+
 --disable_warnings
 DROP TABLE IF EXISTS t1;
 --enable_warnings
@@ -810,6 +813,7 @@ let $coll='utf16le_nopad_bin';
 let $coll_pad='utf16le_bin';
 --source include/ctype_pad_all_engines.inc
 
+DROP DATABASE test_ctype_utf16le;
 --echo #
 --echo # End of 10.2 tests
 --echo #

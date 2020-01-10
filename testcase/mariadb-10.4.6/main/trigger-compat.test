@@ -4,6 +4,9 @@
 
 -- source include/not_embedded.inc
 
+CREATE DATABASE test_trigger_compat;
+USE test_trigger_compat;
+
 ###########################################################################
 #
 # Tests for WL#2818:
@@ -19,28 +22,43 @@
 #
 # Prepare environment.
 #
-DELETE FROM mysql.user WHERE User LIKE 'mysqltest_%';
-DELETE FROM mysql.db WHERE User LIKE 'mysqltest_%';
-DELETE FROM mysql.tables_priv WHERE User LIKE 'mysqltest_%';
-DELETE FROM mysql.columns_priv WHERE User LIKE 'mysqltest_%';
+#DELETE FROM mysql.user WHERE User LIKE 'mysqltest_%';
+#DELETE FROM mysql.db WHERE User LIKE 'mysqltest_%';
+#DELETE FROM mysql.tables_priv WHERE User LIKE 'mysqltest_%';
+#DELETE FROM mysql.columns_priv WHERE User LIKE 'mysqltest_%';
+DELETE FROM mysql.user WHERE User LIKE 'mysqltest_trigger_compat_%';
+DELETE FROM mysql.db WHERE User LIKE 'mysqltest_trigger_compat_%';
+DELETE FROM mysql.tables_priv WHERE User LIKE 'mysqltest_trigger_compat_%';
+DELETE FROM mysql.columns_priv WHERE User LIKE 'mysqltest_trigger_compat_%';
 FLUSH PRIVILEGES;
 
+#--disable_warnings
+#DROP DATABASE IF EXISTS mysqltest_db1;
+#--enable_warnings
+#
+#CREATE DATABASE mysqltest_db1;
+#
+#CREATE USER mysqltest_dfn@localhost;
+#CREATE USER mysqltest_inv@localhost;
+#
+#GRANT CREATE, TRIGGER ON mysqltest_db1.* TO mysqltest_dfn@localhost;
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest_db1;
+DROP DATABASE IF EXISTS mysqltest_trigger_compat_db1;
 --enable_warnings
 
-CREATE DATABASE mysqltest_db1;
+CREATE DATABASE mysqltest_trigger_compat_db1;
 
-CREATE USER mysqltest_dfn@localhost;
-CREATE USER mysqltest_inv@localhost;
+CREATE USER mysqltest_trigger_compat_dfn@localhost;
+CREATE USER mysqltest_trigger_compat_inv@localhost;
 
-GRANT CREATE, TRIGGER ON mysqltest_db1.* TO mysqltest_dfn@localhost;
+GRANT CREATE, TRIGGER ON mysqltest_trigger_compat_db1.* TO mysqltest_trigger_compat_dfn@localhost;
 
 #
 # Create a table and the first trigger.
 #
 
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+#--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_trigger_compat_dfn,,mysqltest_trigger_compat_db1)
 --connection wl2818_definer_con
 
 CREATE TABLE t1(num_value INT);
@@ -64,11 +82,17 @@ CREATE TRIGGER wl2818_trg1 BEFORE INSERT ON t1 FOR EACH ROW INSERT INTO t2 VALUE
 --connection default
 CREATE TABLE patch (a blob);
 let $MYSQLD_DATADIR = `select @@datadir`;
-eval LOAD DATA LOCAL INFILE '$MYSQLD_DATADIR/mysqltest_db1/t1.TRG' INTO TABLE patch;
+#eval LOAD DATA LOCAL INFILE '$MYSQLD_DATADIR/mysqltest_db1/t1.TRG' INTO TABLE patch;
+## remove original t1.TRG file so SELECT INTO OUTFILE won't fail
+#--remove_file $MYSQLD_DATADIR/mysqltest_db1/t1.TRG
+#eval SELECT SUBSTRING_INDEX(a,'definers=',1) INTO OUTFILE
+# '$MYSQLD_DATADIR/mysqltest_db1/t1.TRG' 
+#FROM patch;
+eval LOAD DATA LOCAL INFILE '$MYSQLD_DATADIR/mysqltest_trigger_compat_db1/t1.TRG' INTO TABLE patch;
 # remove original t1.TRG file so SELECT INTO OUTFILE won't fail
---remove_file $MYSQLD_DATADIR/mysqltest_db1/t1.TRG
+--remove_file $MYSQLD_DATADIR/mysqltest_trigger_compat_db1/t1.TRG
 eval SELECT SUBSTRING_INDEX(a,'definers=',1) INTO OUTFILE
- '$MYSQLD_DATADIR/mysqltest_db1/t1.TRG' 
+ '$MYSQLD_DATADIR/mysqltest_trigger_compat_db1/t1.TRG' 
 FROM patch;
 DROP TABLE patch;
 --connection wl2818_definer_con
@@ -98,14 +122,18 @@ DROP TRIGGER wl2818_trg1;
 DROP TRIGGER wl2818_trg2;
 disconnect wl2818_definer_con;
 connection default;
-use mysqltest_db1;
+#use mysqltest_db1;
+use mysqltest_trigger_compat_db1;
 DROP TABLE t1;
 DROP TABLE t2;
-DROP USER mysqltest_dfn@localhost;
-DROP USER mysqltest_inv@localhost;
-DROP DATABASE mysqltest_db1;
-USE test;
-
+#DROP USER mysqltest_dfn@localhost;
+#DROP USER mysqltest_inv@localhost;
+#DROP DATABASE mysqltest_db1;
+#USE test;
+DROP USER mysqltest_trigger_compat_dfn@localhost;
+DROP USER mysqltest_trigger_compat_inv@localhost;
+DROP DATABASE mysqltest_trigger_compat_db1;
+USE test_trigger_compat;
 
 --echo #
 --echo # Bug#45235: 5.1 does not support 5.0-only syntax triggers in any way
@@ -133,39 +161,46 @@ INSERT INTO t3 VALUES (1), (2), (3);
 --echo # connection_cl_names='latin1_swedish_ci'
 --echo # db_cl_names='latin1_swedish_ci'
 
---write_file $MYSQLD_DATADIR/test/tr11.TRN
+#--write_file $MYSQLD_DATADIR/test/tr11.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr11.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr12.TRN
+#--write_file $MYSQLD_DATADIR/test/tr12.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr12.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr13.TRN
+#--write_file $MYSQLD_DATADIR/test/tr13.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr13.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr14.TRN
+#--write_file $MYSQLD_DATADIR/test/tr14.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr14.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr15.TRN
+#--write_file $MYSQLD_DATADIR/test/tr15.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr15.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/t1.TRG
+#--write_file $MYSQLD_DATADIR/test/t1.TRG
+--write_file $MYSQLD_DATADIR/test_trigger_compat/t1.TRG
 TYPE=TRIGGERS
 triggers='CREATE DEFINER=`root`@`localhost` TRIGGER tr11 BEFORE INSERT ON t1 FOR EACH ROW DELETE FROM t3' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr12 AFTER INSERT ON t1 FOR EACH ROW DELETE FROM t3' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr13 BEFORE DELETE ON t1 FOR EACH ROW DELETE FROM t1 a USING t1 a' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr14 AFTER DELETE ON t1 FOR EACH ROW DELETE FROM non_existing_table' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr15 BEFORE UPDATE ON t1 FOR EACH ROW DELETE FROM non_existing_table a USING non_existing_table a'
 sql_modes=0 0 0 0 0
 definers='root@localhost' 'root@localhost' 'root@localhost' 'root@localhost' 'root@localhost'
 EOF
 
---write_file $MYSQLD_DATADIR/test/t2.TRG
+#--write_file $MYSQLD_DATADIR/test/t2.TRG
+--write_file $MYSQLD_DATADIR/test_trigger_compat/t2.TRG
 TYPE=TRIGGERS
 triggers='Not allowed syntax here, and trigger name cant be extracted either.'
 sql_modes=0
@@ -208,35 +243,42 @@ DROP TRIGGER tr15;
 SHOW TRIGGERS;
 
 --echo # Make sure there is no trigger file left.
---list_files $MYSQLD_DATADIR/test/ tr*
+#--list_files $MYSQLD_DATADIR/test/ tr*
+--list_files $MYSQLD_DATADIR/test_trigger_compat/ tr*
 
 --echo # We write the same trigger files one more time to test DROP TABLE.
---write_file $MYSQLD_DATADIR/test/tr11.TRN
+#--write_file $MYSQLD_DATADIR/test/tr11.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr11.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr12.TRN
+#--write_file $MYSQLD_DATADIR/test/tr12.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr12.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr13.TRN
+#--write_file $MYSQLD_DATADIR/test/tr13.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr13.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr14.TRN
+#--write_file $MYSQLD_DATADIR/test/tr14.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr14.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr15.TRN
+#--write_file $MYSQLD_DATADIR/test/tr15.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr15.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/t1.TRG
+#--write_file $MYSQLD_DATADIR/test/t1.TRG
+--write_file $MYSQLD_DATADIR/test_trigger_compat/t1.TRG
 TYPE=TRIGGERS
 triggers='CREATE DEFINER=`root`@`localhost` TRIGGER tr11 BEFORE INSERT ON t1 FOR EACH ROW DELETE FROM t3' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr12 AFTER INSERT ON t1 FOR EACH ROW DELETE FROM t3' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr13 BEFORE DELETE ON t1 FOR EACH ROW DELETE FROM t1 a USING t1 a' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr14 AFTER DELETE ON t1 FOR EACH ROW DELETE FROM non_existing_table' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr15 BEFORE UPDATE ON t1 FOR EACH ROW DELETE FROM non_existing_table a USING non_existing_table a'
 sql_modes=0 0 0 0 0
@@ -252,7 +294,8 @@ DROP TABLE t3;
 
 --echo # Make sure there is no trigger file left.
 
---list_files $MYSQLD_DATADIR/test/ tr*
+#--list_files $MYSQLD_DATADIR/test/ tr*
+--list_files $MYSQLD_DATADIR/test_trigger_compat/ tr*
 
 CREATE TABLE t1 ( a INT );
 CREATE TABLE t2 ( a INT );
@@ -262,17 +305,20 @@ INSERT INTO t2 VALUES (1), (2), (3);
 --echo # We write three trigger files. First trigger is syntaxically incorrect, next trigger is correct
 --echo # and last trigger is broken.
 --echo # Next we try to execute SHOW CREATE TRIGGER command for broken trigger and then try to drop one.
---write_file $MYSQLD_DATADIR/test/tr11.TRN
+#--write_file $MYSQLD_DATADIR/test/tr11.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr11.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr12.TRN
+#--write_file $MYSQLD_DATADIR/test/tr12.TRN
+--write_file $MYSQLD_DATADIR/test_trigger_compat/tr12.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/t1.TRG
+#--write_file $MYSQLD_DATADIR/test/t1.TRG
+--write_file $MYSQLD_DATADIR/test_trigger_compat/t1.TRG
 TYPE=TRIGGERS
 triggers='CREATE the wrongest trigger_in_the_world' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr11 BEFORE DELETE ON t1 FOR EACH ROW DELETE FROM t1 a USING t1 a' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr12 BEFORE INSERT ON t1 FOR EACH ROW DELETE FROM t2'
 sql_modes=0 0 0
@@ -288,3 +334,5 @@ DROP TRIGGER tr11;
 
 DROP TABLE t1;
 DROP TABLE t2;
+
+DROP DATABASE test_trigger_compat;

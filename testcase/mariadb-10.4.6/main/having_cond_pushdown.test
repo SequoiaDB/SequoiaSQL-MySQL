@@ -224,7 +224,8 @@ let $query=
 SELECT t1.a,MAX(t1.b)
 FROM t1
 GROUP BY t1.a
-HAVING (t1.a>1) AND (a=test.f1());
+HAVING (t1.a>1) AND (a=f1());
+#HAVING (t1.a>1) AND (a=test.f1());
 eval $no_pushdown $query;
 eval $query;
 #eval explain $query;
@@ -234,7 +235,8 @@ SELECT t1.a,MAX(t1.b)
 FROM t1
 WHERE (t1.a>1)
 GROUP BY t1.a
-HAVING (a=test.f1());
+HAVING (a=f1());
+#HAVING (a=test.f1());
 #eval $no_pushdown explain format=json $query;
 
 --echo # conjunctive subformula : pushdown into derived table WHERE clause

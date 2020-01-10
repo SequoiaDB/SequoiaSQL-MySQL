@@ -1,12 +1,16 @@
 #
 # Bug#21432 Database/Table name limited to 64 bytes, not chars, problems with multi-byte
 #
+CREATE DATABASE test_create_utf8;
+USE test_create_utf8;
+
 set names utf8;
 
 create database имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
 use имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
 select database();
-use test;
+#use test;
+use test_create_utf8;
 
 select SCHEMA_NAME from information_schema.schemata
 where schema_name='имя_базы_в_кодировке_утф8_длиной_больше_чем_45';
@@ -27,16 +31,20 @@ select * from имя_таблицы_в_кодировке_утф8_длиной_�
 
 --sorted_result
 select TABLE_NAME from information_schema.tables where
-table_schema='test';
+table_schema='test_create_utf8';
+#table_schema='test';
 
 select COLUMN_NAME from information_schema.columns where
-table_schema='test';
+table_schema='test_create_utf8';
+#table_schema='test';
 
 select INDEX_NAME from information_schema.statistics where
-table_schema='test';
+table_schema='test_create_utf8';
+#table_schema='test';
 
 select TABLE_NAME from information_schema.views where
-table_schema='test';
+table_schema='test_create_utf8';
+#table_schema='test';
 
 show create table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
 show create view имя_вью_кодировке_утф8_длиной_больше_чем_42;
@@ -44,7 +52,8 @@ show create view имя_вью_кодировке_утф8_длиной_боль�
 create trigger имя_триггера_в_кодировке_утф8_длиной_больше_чем_49
 before insert on имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48 for each row set @a:=1;
 select TRIGGER_NAME from information_schema.triggers where
-trigger_schema='test';
+trigger_schema='test_create_utf8';
+#trigger_schema='test';
 drop trigger имя_триггера_в_кодировке_утф8_длиной_больше_чем_49;
 --error 1059
 create trigger
@@ -57,7 +66,8 @@ create procedure имя_процедуры_в_кодировке_утф8_дли�
 begin
 end;
 select ROUTINE_NAME from information_schema.routines where
-routine_schema='test';
+routine_schema='test_create_utf8';
+#routine_schema='test';
 drop procedure имя_процедуры_в_кодировке_утф8_длиной_больше_чем_50;
 --error 1059
 create procedure очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66()
@@ -68,7 +78,8 @@ create function имя_функции_в_кодировке_утф8_длиной
    returns int
 return 0;
 select ROUTINE_NAME from information_schema.routines where
-routine_schema='test';
+routine_schema='test_create_utf8';
+#routine_schema='test';
 drop function имя_функции_в_кодировке_утф8_длиной_больше_чем_49;
 --error 1059
 create function очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66()
@@ -78,3 +89,5 @@ return 0;
 drop view имя_вью_кодировке_утф8_длиной_больше_чем_42;
 drop table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
 set names default;
+
+DROP DATABASE test_create_utf8;

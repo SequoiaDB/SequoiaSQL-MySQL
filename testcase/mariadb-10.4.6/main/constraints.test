@@ -4,18 +4,21 @@
 create table t1 (a int check (a>0));
 show create table t1;
 insert into t1 values (1);
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_CONSTRAINT_FAILED
 insert into t1 values (0);
 drop table t1;
 create table t1 (a int, b int, check (a>b));
 show create table t1;
 insert into t1 values (1,0);
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_CONSTRAINT_FAILED
 insert into t1 values (0,1);
 drop table t1;
 create table t1 (a int ,b int, constraint abc check (a>b));
 show create table t1;
 insert into t1 values (1,0);
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_CONSTRAINT_FAILED
 insert into t1 values (0,1);
 drop table t1;
@@ -104,16 +107,22 @@ DROP TABLE long_enough_name;
 #            in the "SHOW CREATE TABLE ..." result
 #
 
-CREATE TABLE test.t(t int COMMENT 't_comment' CHECK(t>0));
-SHOW CREATE TABLE test.t;
-DROP table test.t;
+#CREATE TABLE test.t(t int COMMENT 't_comment' CHECK(t>0));
+#SHOW CREATE TABLE test.t;
+#DROP table test.t;
+CREATE TABLE t(t int COMMENT 't_comment' CHECK(t>0));
+SHOW CREATE TABLE t;
+DROP table t;
 
 SET @OLD_SQL_MODE=@@SQL_MODE;
 SET SQL_MODE='IGNORE_BAD_TABLE_OPTIONS';
 
-CREATE TABLE test.t (f int foo=bar check(f>0));
+#CREATE TABLE test.t (f int foo=bar check(f>0));
+#SHOW CREATE TABLE t;
+#DROP table test.t;
+CREATE TABLE t (f int foo=bar check(f>0));
 SHOW CREATE TABLE t;
-DROP table test.t;
+DROP table t;
 SET @@SQL_MODE=@OLD_SQL_MODE;
 
 #
@@ -131,6 +140,7 @@ drop table t1;
 create table t1 (a text default(length(now())) check (length(a) > 1));
 insert into t1 values ();
 insert into t1 values ("ccc");
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_CONSTRAINT_FAILED
 insert into t1 values ("");
 select * from t1;

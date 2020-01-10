@@ -3,6 +3,10 @@
 #
 # Tests with the big5 character set
 #
+
+CREATE DATABASE test_ctype_big5;
+USE test_ctype_big5;
+
 --disable_warnings
 drop table if exists t1;
 --enable_warnings
@@ -76,14 +80,17 @@ select hex(convert(_big5 0xC84041 using ucs2));
 set names big5;
 create table t1 (a blob);
 insert into t1 values (0xEE00);
-select * into outfile 'test/t1.txt' from t1;
+#select * into outfile 'test/t1.txt' from t1;
+select * into outfile 'test_ctype_big5/t1.txt' from t1;
 delete from t1;
 let $MYSQLD_DATADIR= `select @@datadir`;
 --replace_result $MYSQLD_DATADIR MYSQLD_DATADIR
---eval select hex(load_file('$MYSQLD_DATADIR/test/t1.txt'));
+#--eval select hex(load_file('$MYSQLD_DATADIR/test/t1.txt'));
+--eval select hex(load_file('$MYSQLD_DATADIR/test_ctype_big5/t1.txt'));
 load data infile 't1.txt' into table t1;
 select hex(a) from t1;
---remove_file $MYSQLD_DATADIR/test/t1.txt
+#--remove_file $MYSQLD_DATADIR/test/t1.txt
+--remove_file $MYSQLD_DATADIR/test_ctype_big5/t1.txt
 drop table t1;
 
 --echo End of 5.0 tests
@@ -266,6 +273,7 @@ let $coll='big5_nopad_bin';
 let $coll_pad='big5_bin';
 --source include/ctype_pad_all_engines.inc
 
+DROP DATABASE test_ctype_big5;
 --echo #
 --echo # End of 10.2 tests
 --echo #

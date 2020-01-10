@@ -64,6 +64,7 @@ create table t3 (
 insert into t3 select a,a, a,a,a from t0;
 insert into t3 select a,a, a+100,a+100,a+100 from t0;
 
+--replace_regex /test_parallel_[0-9]/X/
 analyze table t1,t2,t3;
 
 #explain select * from t3 where b in (select a from t1);
@@ -1126,6 +1127,7 @@ INSERT INTO t2 VALUES
 (11,'m',2),(12,'q',3),(13,'m',4),(14,'d',5),
 (15,'g',6),(16,'x',7),(17,'f',8);
 
+--replace_regex /test_parallel_[0-9]/X/
 analyze table t1,t2;
 
 #explain
@@ -1154,6 +1156,7 @@ INSERT INTO t1 VALUES
 ('m','m'),('b','b'),('x','x'),('g','g'),('p','p'),
 ('q','q'),('w','w'),('d','d'),('e','e');
 
+--replace_regex /test_parallel_[0-9]/X/
 ANALYZE TABLE t1;
 
 CREATE ALGORITHM=TEMPTABLE VIEW v1 AS SELECT * FROM t1;
@@ -1173,6 +1176,7 @@ CREATE TABLE t2 (a VARCHAR(1), b VARCHAR(1) NOT NULL, KEY(a)) ENGINE=SequoiaDB;
 INSERT INTO t2 SELECT * FROM t1;
 INSERT INTO t2 SELECT * FROM t1;
 
+--replace_regex /test_parallel_[0-9]/X/
 ANALYZE TABLE t2;
 
 #EXPLAIN 
@@ -1401,6 +1405,7 @@ INSERT IGNORE INTO t1 VALUES (200001, 'a');
 INSERT IGNORE INTO t2 (t2id, t1idref) VALUES (200011, 200001),(200012, 200001),(200013, 200001);
 INSERT IGNORE INTO t3 VALUES (1, 200011, 1),  (1, 200012, 2), (1, 200013, 3);
 
+--replace_regex /test_parallel_[0-9]/X/
 ANALYZE TABLE t1,t2,t3;
 
 set @tmp7474= @@optimizer_search_depth;

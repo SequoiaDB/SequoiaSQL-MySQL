@@ -2,6 +2,9 @@
 --echo # Start of 10.0 tests
 --echo #
 
+CREATE DATABASE test_type_num;
+USE test_type_num;
+
 --echo #
 --echo # MDEV-8468 CAST and INSERT work differently for DECIMAL/INT vs DOUBLE for a string with trailing spaces
 --echo #
@@ -719,3 +722,5 @@ CREATE OR REPLACE TABLE t1 (a INT ZEROFILL);
 CREATE OR REPLACE TABLE t1 (a INT UNSIGNED ZEROFILL);
 CREATE OR REPLACE TABLE t1 (a INT ZEROFILL UNSIGNED);
 DROP TABLE t1;
+
+DROP DATABASE test_type_num;

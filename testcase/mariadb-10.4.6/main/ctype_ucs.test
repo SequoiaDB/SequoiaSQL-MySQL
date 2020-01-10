@@ -84,7 +84,9 @@ SELECT * FROM t1;
 
 DROP TABLE t1;
 let $MYSQLD_DATADIR= `select @@datadir`;
-remove_file $MYSQLD_DATADIR/test/tmpp.txt;
+let $db= `select database()`;
+#remove_file $MYSQLD_DATADIR/test/tmpp.txt;
+remove_file $MYSQLD_DATADIR/$db/tmpp.txt;
 
 
 --echo # Problem # 2 : if you write and read ucs2 data to a file they're lost
@@ -97,7 +99,9 @@ SELECT * FROM t1;
 
 DROP TABLE t1;
 let $MYSQLD_DATADIR= `select @@datadir`;
-remove_file $MYSQLD_DATADIR/test/tmpp2.txt;
+let $db= `select database()`;
+#remove_file $MYSQLD_DATADIR/test/tmpp2.txt;
+remove_file $MYSQLD_DATADIR/$db//tmpp2.txt;
 
 
 
@@ -946,6 +950,7 @@ SET sql_mode='strict_all_tables';
 INSERT INTO t1 VALUES (CONVERT('9e99999999' USING ucs2));
 SET sql_mode=DEFAULT;
 
+--replace_regex /test_parallel_[0-9]/X/
 INSERT IGNORE INTO t1 VALUES (CONVERT('aaa' USING ucs2)); 
 
 DROP TABLE t1;

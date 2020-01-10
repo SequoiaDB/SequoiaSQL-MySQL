@@ -4,6 +4,9 @@
 
 -- source include/have_innodb.inc
 
+CREATE DATABASE test_update;
+USE test_update;
+
 --disable_warnings
 drop table if exists t1,t2;
 --enable_warnings
@@ -383,7 +386,8 @@ DROP TABLE t1;
 # Bug #22364: Inconsistent "matched rows" when executing UPDATE
 #
 
-connect (con1,localhost,root,,test);
+#connect (con1,localhost,root,,test);
+connect (con1,localhost,root,,test_update);
 connection con1;
 
 set tmp_table_size=1024;
@@ -673,4 +677,5 @@ UPDATE t1,t2 SET t1.i1 = -39 WHERE t2.d1 <> t1.i1 AND t2.d1 = t1.d2;
 
 DROP TABLE t1,t2;
 
+DROP DATABASE test_update;
 --echo # End of MariaDB 10.2 tests

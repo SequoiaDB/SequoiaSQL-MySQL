@@ -1,13 +1,19 @@
+CREATE DATABASE test_range_vs_index_merge;
+USE test_range_vs_index_merge;
+
 --disable_warnings
 DROP TABLE IF EXISTS t1,t2,t3,t4;
-DROP DATABASE IF EXISTS world;
+#DROP DATABASE IF EXISTS world;
+DROP DATABASE IF EXISTS world_range_vs_index_merge;
 --enable_warnings
 
 set names utf8;
 
-CREATE DATABASE world;
+#CREATE DATABASE world;
+CREATE DATABASE world_range_vs_index_merge;
 
-use world;
+#use world;
+use world_range_vs_index_merge;
 
 --source include/world_schema.inc
 
@@ -755,9 +761,11 @@ SHOW STATUS LIKE 'Handler_read_%';
 set optimizer_switch=@save_optimizer_switch;
           
 
-DROP DATABASE world;
+#DROP DATABASE world;
+DROP DATABASE world_range_vs_index_merge;
 
-use test;
+#use test;
+use test_range_vs_index_merge;
 
 #
 # Bug #17259: a bad range scan and a good index merge plan
@@ -1321,9 +1329,11 @@ DROP TABLE t1;
 
 set names utf8;
 
-CREATE DATABASE world;
+#CREATE DATABASE world;
+CREATE DATABASE world_range_vs_index_merge;
 
-use world;
+#use world;
+use world_range_vs_index_merge;
 
 --source include/world_schema.inc
 
@@ -1365,8 +1375,10 @@ eval $q;
 #eval explain $q;
 
 
-DROP DATABASE world;
+#DROP DATABASE world;
+DROP DATABASE world_range_vs_index_merge;
 
 #the following command must be the last one in the file
 set session optimizer_switch='index_merge_sort_intersection=default';
 
+DROP DATABASE test_range_vs_index_merge;

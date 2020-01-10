@@ -6,6 +6,9 @@
 # Simple select test
 #
 
+CREATE DATABASE test_select;
+USE test_select;
+
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t11;
 # The following may be left from older tests
@@ -1772,9 +1775,11 @@ show tables from test like "t?";
 --replace_column 8 #
 show full columns from t2;
 --replace_column 8 #
-show full columns from t2 from test like 'f%';
+#show full columns from t2 from test like 'f%';
+show full columns from t2 from test_select like 'f%';
 --replace_column 8 #
-show full columns from t2 from test like 's%';
+#show full columns from t2 from test like 's%';
+show full columns from t2 from test_select like 's%';
 #show keys from t2;
 
 drop table t4, t3, t2, t1;
@@ -4676,4 +4681,5 @@ select (SELECT name FROM t1 WHERE name='tom' AND pw=PASSWORD(@undefined));
 
 drop table t1;
 
+DROP DATABASE test_select;
 --echo End of 10.0 tests

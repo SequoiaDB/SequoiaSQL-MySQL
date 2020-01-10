@@ -1,8 +1,10 @@
-connect  con1,localhost,root,,;
-connect  con2,localhost,root,,;
+CREATE DATABASE test_flush;
+USE test_flush;
+connect  con1,localhost,root,, test_flush;
+connect  con2,localhost,root,, test_flush;
 connection con1;
 drop table if exists t1,t2;
-drop database if exists mysqltest;
+drop database if exists mysqltest_flush;
 create temporary table t1(n int not null primary key);
 create table t2(n int);
 insert into t2 values(3);
@@ -20,14 +22,14 @@ connection con2;
 unlock tables;
 connection con1;
 connection con1;
-create database mysqltest;
-create table mysqltest.t1(n int);
-insert into mysqltest.t1 values (23);
+create database mysqltest_flush;
+create table mysqltest_flush.t1(n int);
+insert into mysqltest_flush.t1 values (23);
 flush tables with read lock;
 connection con2;
-drop database mysqltest;
+drop database mysqltest_flush;
 connection con1;
-select * from mysqltest.t1;
+select * from mysqltest_flush.t1;
 n
 23
 unlock tables;
@@ -69,8 +71,8 @@ unlock tables;
 drop table t1, t2, t3;
 create table t1 (c1 int);
 create table t2 (c1 int);
-connect  con1,localhost,root,,;
-connect  con3,localhost,root,,;
+connect  con1,localhost,root,, test_flush;
+connect  con3,localhost,root,, test_flush;
 connection con1;
 lock table t1 write;
 connection con2;
@@ -104,7 +106,7 @@ ERROR HY000: Can't execute the given command because you have active locked tabl
 unlock tables;
 drop table t1, t2;
 set session low_priority_updates=default;
-connect  con1,localhost,root,,;
+connect  con1,localhost,root,, test_flush;
 select benchmark(200, (select sin(1))) > 1000;
 disconnect con1;
 connection default;
@@ -157,7 +159,7 @@ ERROR 42000: You have an error in your SQL syntax; check the manual that corresp
 flush tables with read lock, tables;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ' tables' at line 1
 show tables;
-Tables_in_test
+Tables_in_test_flush
 #
 # II. Check the allowed syntax.
 #
@@ -188,7 +190,7 @@ ERROR HY000: Table 't2' was locked with a READ lock and can't be updated
 insert into t3 (a) values (1);
 ERROR HY000: Table 't3' was not locked with LOCK TABLES
 lock table no_such_table read;
-ERROR 42S02: Table 'test.no_such_table' doesn't exist
+ERROR 42S02: Table 'test_flush.no_such_table' doesn't exist
 #
 # We implicitly left the locked tables
 # mode but still have the read lock.
@@ -214,12 +216,12 @@ ERROR HY000: Table 't2' was locked with a READ lock and can't be updated
 insert into t3 (a) values (2);
 ERROR HY000: Table 't3' was not locked with LOCK TABLES
 lock table no_such_table read;
-ERROR 42S02: Table 'test.no_such_table' doesn't exist
+ERROR 42S02: Table 'test_flush.no_such_table' doesn't exist
 insert into t3 (a) values (2);
 # 
 # III. Concurrent tests.
 #
-connect  con1,localhost,root,,;
+connect  con1,localhost,root,, test_flush;
 #
 # Check that flush tables <list> with read lock
 # does not affect non-locked tables.
@@ -295,16 +297,16 @@ create view v1 as select 1;
 create view v2 as select * from t1;
 create view v3 as select * from v2;
 flush table v1, v2, v3 with read lock;
-ERROR HY000: 'test.v1' is not of type 'BASE TABLE'
+ERROR HY000: 'test_flush.v1' is not of type 'BASE TABLE'
 flush table v1 with read lock;
-ERROR HY000: 'test.v1' is not of type 'BASE TABLE'
+ERROR HY000: 'test_flush.v1' is not of type 'BASE TABLE'
 flush table v2 with read lock;
-ERROR HY000: 'test.v2' is not of type 'BASE TABLE'
+ERROR HY000: 'test_flush.v2' is not of type 'BASE TABLE'
 flush table v3 with read lock;
-ERROR HY000: 'test.v3' is not of type 'BASE TABLE'
+ERROR HY000: 'test_flush.v3' is not of type 'BASE TABLE'
 create temporary table v1 (a int);
 flush table v1 with read lock;
-ERROR HY000: 'test.v1' is not of type 'BASE TABLE'
+ERROR HY000: 'test_flush.v1' is not of type 'BASE TABLE'
 drop view v1;
 create table v1 (a int);
 flush table v1 with read lock;
@@ -320,8 +322,8 @@ drop table t1, v1;
 # transactions unnecessarily.
 #
 drop table if exists t1;
-connect  con1,localhost,root,,;
-connect  con2,localhost,root,,;
+connect  con1,localhost,root,, test_flush;
+connect  con2,localhost,root,, test_flush;
 connection default;
 create table t1 (a int);
 begin;
@@ -424,7 +426,7 @@ INSERT INTO t1 VALUES (1, 1);
 CREATE TRIGGER t1_au AFTER UPDATE ON t1 FOR EACH ROW SET @var = "a";
 BEGIN;
 UPDATE t1 SET value= value + 1 WHERE id = 1;
-connect con1, localhost, root;
+connect con1, localhost, root,, test_flush;
 # The below FLUSH TABLES WITH READ LOCK should succeed and
 # should not be blocked by the transaction in default connection.
 FLUSH TABLES WITH READ LOCK;
@@ -463,3 +465,4 @@ ERROR HY000: Table 'v1' was not locked with LOCK TABLES
 UNLOCK TABLES;
 DROP VIEW v1;
 DROP TABLE t1;
+DROP DATABASE test_flush;

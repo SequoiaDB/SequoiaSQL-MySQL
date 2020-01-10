@@ -1,6 +1,4 @@
 drop table if exists t1;
-Warnings:
-Note	1051	Unknown table 'test.t1'
 create table t1 (
 f1 bigint(20) default 0,
 f2 varchar(50) default '',

@@ -1,12 +1,17 @@
 #
 # system functions
 #
+CREATE DATABASE test_func_system;
+USE test_func_system;
 
 select database();
 select charset(database());
-select database() = "test";
-select database() = _utf8"test";
-select database() = _latin1"test";
+#select database() = "test";
+#select database() = _utf8"test";
+#select database() = _latin1"test";
+select database() = "test_func_system";
+select database() = _utf8"test_func_system";
+select database() = _latin1"test_func_system";
 
 select user() like "%@%";
 select user() like _utf8"%@%";
@@ -54,4 +59,5 @@ insert into t1 values ('a');
 select left(concat(a,version()),1) from t1;
 drop table t1;
 
+DROP DATABASE test_func_system;
 # End of 4.1 tests

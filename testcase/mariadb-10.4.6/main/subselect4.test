@@ -1717,6 +1717,7 @@ CREATE TABLE t2 AS
  WHERE ( SELECT alias1.a
          FROM t1 AS alias1
        ) IS NOT NULL;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_BAD_TABLE_ERROR
 DROP TABLE t2;
 DROP TABLE t1;

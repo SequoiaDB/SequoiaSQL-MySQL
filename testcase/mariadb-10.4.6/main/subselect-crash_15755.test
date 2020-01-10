@@ -1,6 +1,8 @@
 --source include/have_sequoiadb.inc
 #set global innodb_stats_persistent= 1;
+--disable_warnings
 drop table if exists t1;
+--enable_warnings
 create table t1 (
   f1 bigint(20) default 0,
   f2 varchar(50) default '',

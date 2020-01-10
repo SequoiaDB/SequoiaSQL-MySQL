@@ -1,9 +1,13 @@
 call mtr.add_suppression("table or database name 'abc`def'");
 
+CREATE DATABASE test_drop;
+USE test_drop;
+
 # Initialise
 --disable_warnings
 drop table if exists t1;
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 # If earlier test failed
 drop database if exists client_test_db;
 --enable_warnings
@@ -22,23 +26,34 @@ select * from t1;
 # now test for a bug in drop database - it is important that the name
 # of the table is the same as the name of the database - in the original
 # code this triggered a bug
-create database mysqltest;
-drop database if exists mysqltest;
-create database mysqltest;
-create table mysqltest.mysqltest (n int);
-insert into mysqltest.mysqltest values (4);
-select * from mysqltest.mysqltest;
+#create database mysqltest;
+#drop database if exists mysqltest;
+#create database mysqltest;
+#create table mysqltest.mysqltest (n int);
+#insert into mysqltest.mysqltest values (4);
+#select * from mysqltest.mysqltest;
+#--enable_info
+#drop database if exists mysqltest;
+#--disable_info
+#create database mysqltest;
+create database mysqltest_drop;
+drop database if exists mysqltest_drop;
+create database mysqltest_drop;
+create table mysqltest_drop.mysqltest (n int);
+insert into mysqltest_drop.mysqltest values (4);
+select * from mysqltest_drop.mysqltest;
 --enable_info
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 --disable_info
-create database mysqltest;
+create database mysqltest_drop;
 
 #
 # drop many tables - bug#3891
 # we'll do it in mysqltest db, to be able to use longer table names
 # (tableN instead on tN)
 #
-use mysqltest;
+#use mysqltest;
+use mysqltest_drop;
 --error 1051
 drop table table1, table2, table3, table4, table5, table6,
 table7, table8, table9, table10, table11, table12, table13,
@@ -53,24 +68,39 @@ table14, table15, table16, table17, table18, table19, table20,
 table21, table22, table23, table24, table25, table26, table27,
 table28, table29, table30;
 
-use test;
-drop database mysqltest;
+#use test;
+#drop database mysqltest;
+use test_drop;
+drop database mysqltest_drop;
 
 # test drop/create database and FLUSH TABLES WITH READ LOCK
 flush tables with read lock;
+#--error 1209,1223
+#create database mysqltest;
+#unlock tables;
+#create database mysqltest;
+#show databases;
+#flush tables with read lock;
+#--error 1208,1223
+#drop database mysqltest;
+#unlock tables;
+#drop database mysqltest;
+#show databases;
+#--error 1008
+#drop database mysqltest;
 --error 1209,1223
-create database mysqltest;
+create database mysqltest_drop;
 unlock tables;
-create database mysqltest;
-show databases;
+create database mysqltest_drop;
+#show databases;
 flush tables with read lock;
 --error 1208,1223
-drop database mysqltest;
+drop database mysqltest_drop;
 unlock tables;
-drop database mysqltest;
-show databases;
+drop database mysqltest_drop;
+#show databases;
 --error 1008
-drop database mysqltest;
+drop database mysqltest_drop;
 
 # test create table and FLUSH TABLES WITH READ LOCK
 drop table t1;
@@ -98,20 +128,25 @@ drop table t1;
 # and one of name-locking command.
 # 
 --disable_warnings
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 drop table if exists t1;
 --enable_warnings
 create table t1 (i int);
-create database mysqltest;
+#create database mysqltest;
+create database mysqltest_drop;
 lock tables t1 read;
-connect (addconroot1, localhost, root,,);
+#connect (addconroot1, localhost, root,,);
+connect (addconroot1, localhost, root,, test_drop);
 --send drop table t1
-connect (addconroot2, localhost, root,,);
+#connect (addconroot2, localhost, root,,);
+connect (addconroot2, localhost, root,, test_drop);
 # Server should not crash in any of the following statements
 --disable_result_log
 show open tables;
 --enable_result_log
---send drop database mysqltest
+#--send drop database mysqltest
+--send drop database mysqltest_drop
 connection default;
 select 1;
 unlock tables;
@@ -142,7 +177,8 @@ drop table t2;
 drop table t1;
 unlock tables;
 drop table t1,t2;
-connect (addconroot, localhost, root,,);
+#connect (addconroot, localhost, root,,);
+connect (addconroot, localhost, root,, test_drop);
 connection default;
 create table t1 (i int);
 create table t2 (i int);
@@ -234,7 +270,8 @@ create table `#mysql50#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 --error ER_WRONG_TABLE_NAME
 create table `#mysql50#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa12345` (a int);
 show tables;
-use test;
+#use test;
+use test_drop;
 drop database mysqltestbug26703;
 
 --echo End of 5.1 tests
@@ -318,7 +355,11 @@ DROP TABLE table1,table2;
 --echo # MDEV-11105 Table named 'db' has weird side effect.
 --echo #
 
-CREATE DATABASE mysqltest;
-CREATE TABLE mysqltest.db(id INT);
-DROP DATABASE mysqltest;
+#CREATE DATABASE mysqltest;
+#CREATE TABLE mysqltest.db(id INT);
+#DROP DATABASE mysqltest;
+CREATE DATABASE mysqltest_drop;
+CREATE TABLE mysqltest_drop.db(id INT);
+DROP DATABASE mysqltest_drop;
 
+DROP DATABASE test_drop;

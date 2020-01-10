@@ -17,8 +17,8 @@ SET @safe_character_set_client= @@character_set_client;
 SET @safe_character_set_results= @@character_set_results;
 SET character_set_server= @test_character_set;
 SET collation_server= @test_collation;
-CREATE DATABASE d1;
-USE d1;
+#CREATE DATABASE d1;
+#USE d1;
 
 #
 # Bug 1883: LIKE did not work in some cases with a key.
@@ -84,9 +84,9 @@ insert into t1 values ('string',1);
 select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 drop table t1;
 
-DROP DATABASE d1;
+#DROP DATABASE d1;
 # Restore settings
-USE test;
+#USE test;
 SET character_set_server= @safe_character_set_server;
 SET collation_server= @safe_collation_server;
 SET character_set_client= @safe_character_set_client;

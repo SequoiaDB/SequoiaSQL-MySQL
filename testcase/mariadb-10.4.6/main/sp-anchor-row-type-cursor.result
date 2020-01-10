@@ -80,7 +80,7 @@ END;
 END;
 $$
 CALL p1();
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
 CALL p1();
 Table	Create Table
@@ -92,14 +92,15 @@ t2	CREATE TABLE `t2` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CALL p1();
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 DROP PROCEDURE p1;
 #
 # cursor ROW TYPE referring to a table in an explicitly specified database
 #
 CREATE PROCEDURE p1()
 BEGIN
-DECLARE cur CURSOR FOR SELECT * FROM test.t1;
+#  DECLARE cur CURSOR FOR SELECT * FROM test.t1;
+DECLARE cur CURSOR FOR SELECT * FROM t1;
 BEGIN
 DECLARE rec ROW TYPE OF cur;
 CREATE TABLE t2 AS SELECT rec.a, rec.b, rec.c, rec.d;
@@ -109,7 +110,7 @@ END;
 END;
 $$
 CALL p1();
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'X.t1' doesn't exist
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
 CALL p1();
 Table	Create Table
@@ -136,7 +137,7 @@ END;
 END;
 $$
 CALL p1();
-ERROR 42S02: Table 'test.v1' doesn't exist
+ERROR 42S02: Table 'X.v1' doesn't exist
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
 CREATE VIEW v1 AS SELECT * FROM t1;
 CALL p1();
@@ -155,7 +156,8 @@ DROP PROCEDURE p1;
 #
 CREATE PROCEDURE p1()
 BEGIN
-DECLARE cur CURSOR FOR SELECT * FROM test.v1;
+#  DECLARE cur CURSOR FOR SELECT * FROM test.v1;
+DECLARE cur CURSOR FOR SELECT * FROM v1;
 BEGIN
 DECLARE rec ROW TYPE OF cur;
 CREATE TABLE t2 AS SELECT rec.a, rec.b, rec.c, rec.d;
@@ -165,7 +167,7 @@ END;
 END;
 $$
 CALL p1();
-ERROR 42S02: Table 'test.v1' doesn't exist
+ERROR 42S02: Table 'X.v1' doesn't exist
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
 CREATE VIEW v1 AS SELECT * FROM t1;
 CALL p1();

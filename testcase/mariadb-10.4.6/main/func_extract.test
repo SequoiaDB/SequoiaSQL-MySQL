@@ -74,6 +74,7 @@ SELECT
   EXTRACT(SECOND FROM a),
   EXTRACT(MICROSECOND FROM a)
 FROM t1;
+--replace_regex /test_parallel_[0-9]/X/
 SELECT
   b,
   CAST(b AS INTERVAL DAY_SECOND(6)) AS cidm,

@@ -230,7 +230,9 @@ INSERT INTO t4 SELECT * FROM t3;
 INSERT INTO t3 SELECT * FROM t4;
 INSERT INTO t3 VALUES (2), (3);
 
+--disable_result_log
 ANALYZE table t1, t2, t3;
+--enable_result_log
 
 SELECT COUNT(*) FROM t3;
 

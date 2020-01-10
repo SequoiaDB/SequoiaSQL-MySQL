@@ -2,6 +2,9 @@
 # simple test of all group functions
 #
 
+CREATE DATABASE test_func_group;
+USE test_func_group;
+
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t5,t6;
 --enable_warnings
@@ -1504,7 +1507,8 @@ INSERT INTO `t1` (b) VALUES ('2013-07-06 23:59:59');
 --echo # The following should produce "Select tables optimized away"
 #EXPLAIN SELECT MIN(b) FROM t1 WHERE b <= '2013-11-06 23:59:59';
 
--- connect (con1,localhost,root,,)
+#-- connect (con1,localhost,root,,)
+-- connect (con1,localhost,root,,test_func_group)
 -- connection con1
 set names utf8;
 -- echo # Should be the same as above:
@@ -1732,3 +1736,5 @@ DROP TABLE t2;
 
 DROP VIEW v1;
 DROP TABLE t1;
+
+DROP DATABASE test_func_group;

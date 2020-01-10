@@ -1,6 +1,10 @@
 #
 # time functions
 #
+
+CREATE DATABASE test_func_time;
+USE test_func_time;
+
 --disable_warnings
 drop table if exists t1,t2,t3;
 --enable_warnings
@@ -3174,3 +3178,5 @@ SET time_zone=DEFAULT;
 
 SELECT MAKETIME('01', '01', LEAST( -100, NULL ));
 SELECT CONCAT(MAKETIME('01', '01', LEAST( -100, NULL )));
+
+DROP DATABASE test_func_time;

@@ -1,3 +1,5 @@
+CREATE DATABASE test_having;
+USE test_having;
 drop table if exists t1,t2,t3;
 create table t1 (a int);
 select count(a) as b from t1 where a=0 having b > 0;
@@ -400,7 +402,7 @@ HAVING HU.PROJ.CITY = HU.STAFF.CITY);
 EMPNUM	GRADE*1000
 E3	13000
 DROP SCHEMA HU;
-USE test;
+USE test_having;
 create table t1(f1 int);
 select f1 from t1 having max(f1)=f1;
 f1
@@ -807,4 +809,5 @@ x
 Warnings:
 Warning	1292	Truncated incorrect DOUBLE value: 'x'
 DROP TABLE t1,t2;
+DROP DATABASE test_having;
 # End of 10.4 tests

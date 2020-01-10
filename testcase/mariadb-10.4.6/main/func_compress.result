@@ -1,5 +1,5 @@
 set global max_allowed_packet=1048576;
-connect  conn1,localhost,root,,;
+connect  conn1,localhost,root,,$db;
 connection conn1;
 select @test_compress_string:='string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ';
 @test_compress_string:='string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa '
@@ -62,7 +62,7 @@ Warning	1259	ZLIB: Input data corrupted
 Warning	1256	Uncompressed data size too large; the maximum size is 1048576 (probably, length of uncompressed data was corrupted)
 drop table t1;
 set @@global.max_allowed_packet=1048576*100;
-connect  newconn, localhost, root,,;
+connect  newconn, localhost, root,,$db;
 select compress(repeat('aaaaaaaaaa', IF(XXX, 10, 10000000))) is null;
 compress(repeat('aaaaaaaaaa', IF(XXX, 10, 10000000))) is null
 0

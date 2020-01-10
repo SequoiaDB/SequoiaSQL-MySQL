@@ -4,6 +4,9 @@
 
 #--source include/have_innodb.inc
 --source include/have_metadata_lock_info.inc
+
+CREATE DATABASE test_create_or_replace;
+USE test_create_or_replace;
 --disable_warnings
 drop table if exists t1,t2,t3;
 --enable_warnings
@@ -207,25 +210,32 @@ drop table t1,t3,t4;
 --echo # Test the meta data locks are freed properly
 --echo #
 
-create database mysqltest2;
+#create database mysqltest2;
+create database mysqltest2_create_or_replace;
 
-drop table if exists test.t1,mysqltest2.t2;
-create table test.t1 (i int) engine= SequoiaDB;
-create table mysqltest2.t2 like test.t1;
-lock table test.t1 write, mysqltest2.t2 write;
+#drop table if exists test.t1,mysqltest2.t2;
+#create table test.t1 (i int) engine= SequoiaDB;
+#create table mysqltest2.t2 like test.t1;
+#lock table test.t1 write, mysqltest2.t2 write;
+drop table if exists test_create_or_replace.t1,mysqltest2_create_or_replace.t2;
+create table test_create_or_replace.t1 (i int) engine= SequoiaDB;
+create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
+lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 # BUG #SEQUOIASQLMAINSTREAM-528
 #--replace_column 1 #
 #--sorted_result
 #select * from information_schema.metadata_lock_info;
 --error ER_TABLE_MUST_HAVE_COLUMNS
-create or replace table test.t1;
+#create or replace table test.t1;
+create or replace table test_create_or_replace.t1;
 show tables;
 # BUG #SEQUOIASQLMAINSTREAM-528
 #--replace_column 1 #
 #--sorted_result
 #select * from information_schema.metadata_lock_info;
 --error ER_TABLE_MUST_HAVE_COLUMNS
-create or replace table mysqltest2.t2;
+#create or replace table mysqltest2.t2;
+create or replace table mysqltest2_create_or_replace.t2;
 # BUG #SEQUOIASQLMAINSTREAM-528
 #--replace_column 1 #
 #--sorted_result
@@ -233,22 +243,27 @@ create or replace table mysqltest2.t2;
 create table t1 (i int);
 drop table t1;
 
-create table test.t1 (i int);
-create table mysqltest2.t2 like test.t1;
-lock table test.t1 write, mysqltest2.t2 write;
+#create table test.t1 (i int);
+#create table mysqltest2.t2 like test.t1;
+#lock table test.t1 write, mysqltest2.t2 write;
+create table test_create_or_replace.t1 (i int);
+create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
+lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 # BUG #SEQUOIASQLMAINSTREAM-528
 #--replace_column 1 #
 #--sorted_result
 #select * from information_schema.metadata_lock_info;
 --error ER_DUP_FIELDNAME
-create or replace table test.t1 (a int) select 1 as 'a', 2 as 'a';
+#create or replace table test.t1 (a int) select 1 as 'a', 2 as 'a';
+create or replace table test_create_or_replace.t1 (a int) select 1 as 'a', 2 as 'a';
 show tables;
 # BUG #SEQUOIASQLMAINSTREAM-528
 #--replace_column 1 #
 #--sorted_result
 #select * from information_schema.metadata_lock_info;
 --error ER_DUP_FIELDNAME
-create or replace table mysqltest2.t2 (a int) select 1 as 'a', 2 as 'a';
+#create or replace table mysqltest2.t2 (a int) select 1 as 'a', 2 as 'a';
+create or replace table mysqltest2_create_or_replace.t2 (a int) select 1 as 'a', 2 as 'a';
 # BUG #SEQUOIASQLMAINSTREAM-528
 #--replace_column 1 #
 #--sorted_result
@@ -256,19 +271,26 @@ create or replace table mysqltest2.t2 (a int) select 1 as 'a', 2 as 'a';
 create table t1 (i int);
 drop table t1;
 
-create table test.t1 (i int) engine=SequoiaDB;
-create table mysqltest2.t2 like test.t1;
-lock table test.t1 write, mysqltest2.t2 write;
+#create table test.t1 (i int) engine=SequoiaDB;
+#create table mysqltest2.t2 like test.t1;
+#lock table test.t1 write, mysqltest2.t2 write;
+create table test_create_or_replace.t1 (i int) engine=SequoiaDB;
+create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
+lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 # BUG #SEQUOIASQLMAINSTREAM-528
 #--replace_column 1 #
 #--sorted_result
 #select * from information_schema.metadata_lock_info;
 unlock tables;
-drop table test.t1,mysqltest2.t2;
+#drop table test.t1,mysqltest2.t2;
+drop table test_create_or_replace.t1,mysqltest2_create_or_replace.t2;
 
-create table test.t1 (i int) engine=SequoiaDB transactional=1 checksum=1;
-create table mysqltest2.t2 like test.t1;
-lock table test.t1 write, mysqltest2.t2 write;
+#create table test.t1 (i int) engine=SequoiaDB transactional=1 checksum=1;
+#create table mysqltest2.t2 like test.t1;
+#lock table test.t1 write, mysqltest2.t2 write;
+create table test_create_or_replace.t1 (i int) engine=SequoiaDB transactional=1 checksum=1;
+create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
+lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 # BUG #SEQUOIASQLMAINSTREAM-528
 #--replace_column 1 #
 #--sorted_result
@@ -276,8 +298,10 @@ lock table test.t1 write, mysqltest2.t2 write;
 unlock tables;
 drop table t1;
 
-create table test.t1 (i int);
-drop database mysqltest2;
+#create table test.t1 (i int);
+#drop database mysqltest2;
+create table test_create_or_replace.t1 (i int);
+drop database mysqltest2_create_or_replace;
 
 --echo #
 --echo # Testing CREATE .. LIKE
@@ -382,7 +406,8 @@ CREATE TABLE t1 (col_int_nokey INT)  ENGINE=SequoiaDB;
 CREATE OR REPLACE TEMPORARY TABLE tmp LIKE t1;
 LOCK TABLE t1 WRITE;
 
---connect (con1,localhost,root,,test)
+#--connect (con1,localhost,root,,test)
+--connect (con1,localhost,root,,test_create_or_replace)
 --let $con_id = `SELECT CONNECTION_ID()`
 --send CREATE OR REPLACE TABLE t1 LIKE tmp
 --connection default
@@ -498,3 +523,5 @@ CREATE OR REPLACE TEMPORARY TABLE t2(c INT DEFAULT '');
 SELECT * FROM t3;
 UNLOCK TABLES;
 DROP TABLE t3;
+
+DROP DATABASE test_create_or_replace;

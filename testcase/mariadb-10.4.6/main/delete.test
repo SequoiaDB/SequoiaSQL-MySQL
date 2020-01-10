@@ -4,6 +4,9 @@
 
 call mtr.add_suppression("Sort aborted.*");
 
+CREATE DATABASE test_delete;
+USE test_delete;
+
 --disable_warnings
 drop table if exists t1,t2,t3,t11,t12;
 --enable_warnings
@@ -247,17 +250,49 @@ CREATE TABLE t2 (
   a INT
 );
 
-CREATE DATABASE db1;
-CREATE TABLE db1.t1 (
+#CREATE DATABASE db1;
+#CREATE TABLE db1.t1 (
+#  a INT
+#);
+#INSERT INTO db1.t1 (a) SELECT * FROM t1;
+#
+#CREATE DATABASE db2;
+#CREATE TABLE db2.t1 (
+#  a INT
+#);
+#INSERT INTO db2.t1 (a) SELECT * FROM t2;
+#
+#--error ER_PARSE_ERROR
+#DELETE FROM t1 alias USING t1, t2 alias WHERE t1.a = alias.a;
+#DELETE FROM alias USING t1, t2 alias WHERE t1.a = alias.a;
+#DELETE FROM t1, alias USING t1, t2 alias WHERE t1.a = alias.a;
+#--error ER_UNKNOWN_TABLE
+#DELETE FROM t1, t2 USING t1, t2 alias WHERE t1.a = alias.a;
+#--error ER_PARSE_ERROR
+#DELETE FROM db1.t1 alias USING db1.t1, db2.t1 alias WHERE db1.t1.a = alias.a;
+#DELETE FROM alias USING db1.t1, db2.t1 alias WHERE db1.t1.a = alias.a;
+#--error ER_UNKNOWN_TABLE
+#DELETE FROM db2.alias USING db1.t1, db2.t1 alias WHERE db1.t1.a = alias.a;
+#DELETE FROM t1 USING t1 WHERE a = 1;
+#SELECT * FROM t1;
+#--error ER_PARSE_ERROR
+#DELETE FROM t1 alias USING t1 alias WHERE a = 2;
+#SELECT * FROM t1;
+#
+#DROP TABLE t1, t2;
+#DROP DATABASE db1;
+#DROP DATABASE db2;
+CREATE DATABASE db1_delete;
+CREATE TABLE db1_delete.t1 (
   a INT
 );
-INSERT INTO db1.t1 (a) SELECT * FROM t1;
+INSERT INTO db1_delete.t1 (a) SELECT * FROM t1;
 
-CREATE DATABASE db2;
-CREATE TABLE db2.t1 (
+CREATE DATABASE db2_delete;
+CREATE TABLE db2_delete.t1 (
   a INT
 );
-INSERT INTO db2.t1 (a) SELECT * FROM t2;
+INSERT INTO db2_delete.t1 (a) SELECT * FROM t2;
 
 --error ER_PARSE_ERROR
 DELETE FROM t1 alias USING t1, t2 alias WHERE t1.a = alias.a;
@@ -266,10 +301,10 @@ DELETE FROM t1, alias USING t1, t2 alias WHERE t1.a = alias.a;
 --error ER_UNKNOWN_TABLE
 DELETE FROM t1, t2 USING t1, t2 alias WHERE t1.a = alias.a;
 --error ER_PARSE_ERROR
-DELETE FROM db1.t1 alias USING db1.t1, db2.t1 alias WHERE db1.t1.a = alias.a;
-DELETE FROM alias USING db1.t1, db2.t1 alias WHERE db1.t1.a = alias.a;
+DELETE FROM db1_delete.t1 alias USING db1_delete.t1, db2_delete.t1 alias WHERE db1_delete.t1.a = alias.a;
+DELETE FROM alias USING db1_delete.t1, db2_delete.t1 alias WHERE db1_delete.t1.a = alias.a;
 --error ER_UNKNOWN_TABLE
-DELETE FROM db2.alias USING db1.t1, db2.t1 alias WHERE db1.t1.a = alias.a;
+DELETE FROM db2_delete.alias USING db1_delete.t1, db2_delete.t1 alias WHERE db1_delete.t1.a = alias.a;
 DELETE FROM t1 USING t1 WHERE a = 1;
 SELECT * FROM t1;
 --error ER_PARSE_ERROR
@@ -277,8 +312,8 @@ DELETE FROM t1 alias USING t1 alias WHERE a = 2;
 SELECT * FROM t1;
 
 DROP TABLE t1, t2;
-DROP DATABASE db1;
-DROP DATABASE db2;
+DROP DATABASE db1_delete;
+DROP DATABASE db2_delete;
 
 #
 # Bug 31742: delete from ... order by function call that causes an error, 
@@ -318,34 +353,54 @@ DROP TABLE t1;
 #
 
 --disable_warnings
-DROP DATABASE IF EXISTS db1;
-DROP DATABASE IF EXISTS db2;
-DROP DATABASE IF EXISTS db3;
-DROP DATABASE IF EXISTS db4;
+#DROP DATABASE IF EXISTS db1;
+#DROP DATABASE IF EXISTS db2;
+#DROP DATABASE IF EXISTS db3;
+#DROP DATABASE IF EXISTS db4;
+DROP DATABASE IF EXISTS db1_delete;
+DROP DATABASE IF EXISTS db2_delete;
+DROP DATABASE IF EXISTS db3_delete;
+DROP DATABASE IF EXISTS db4_delete;
 DROP TABLE IF EXISTS t1, t2;
 DROP PROCEDURE IF EXISTS count;
 --enable_warnings
-USE test;
-CREATE DATABASE db1;
-CREATE DATABASE db2;
+#USE test;
+#CREATE DATABASE db1;
+#CREATE DATABASE db2;
+USE test_delete;
+CREATE DATABASE db1_delete;
+CREATE DATABASE db2_delete;
 
-CREATE TABLE db1.t1 (a INT, b INT);
-INSERT INTO db1.t1 VALUES (1,1),(2,2),(3,3);
-CREATE TABLE db1.t2 AS SELECT * FROM db1.t1;
-CREATE TABLE db2.t1 AS SELECT * FROM db1.t2;
-CREATE TABLE db2.t2 AS SELECT * FROM db2.t1;
-CREATE TABLE t1 AS SELECT * FROM db2.t2;
+#CREATE TABLE db1.t1 (a INT, b INT);
+#INSERT INTO db1.t1 VALUES (1,1),(2,2),(3,3);
+#CREATE TABLE db1.t2 AS SELECT * FROM db1.t1;
+#CREATE TABLE db2.t1 AS SELECT * FROM db1.t2;
+#CREATE TABLE db2.t2 AS SELECT * FROM db2.t1;
+#CREATE TABLE t1 AS SELECT * FROM db2.t2;
+#CREATE TABLE t2 AS SELECT * FROM t1;
+CREATE TABLE db1_delete.t1 (a INT, b INT);
+INSERT INTO db1_delete.t1 VALUES (1,1),(2,2),(3,3);
+CREATE TABLE db1_delete.t2 AS SELECT * FROM db1_delete.t1;
+CREATE TABLE db2_delete.t1 AS SELECT * FROM db1_delete.t2;
+CREATE TABLE db2_delete.t2 AS SELECT * FROM db2_delete.t1;
+CREATE TABLE t1 AS SELECT * FROM db2_delete.t2;
 CREATE TABLE t2 AS SELECT * FROM t1;
 
 delimiter |;
 CREATE PROCEDURE count_rows()
 BEGIN
-  SELECT COUNT(*) AS "COUNT(db1.t1)" FROM db1.t1;
-  SELECT COUNT(*) AS "COUNT(db1.t2)" FROM db1.t2;
-  SELECT COUNT(*) AS "COUNT(db2.t1)" FROM db2.t1;
-  SELECT COUNT(*) AS "COUNT(db2.t2)" FROM db2.t2;
-  SELECT COUNT(*) AS "COUNT(test.t1)" FROM test.t1;
-  SELECT COUNT(*) AS "COUNT(test.t2)" FROM test.t2;
+#  SELECT COUNT(*) AS "COUNT(db1.t1)" FROM db1.t1;
+#  SELECT COUNT(*) AS "COUNT(db1.t2)" FROM db1.t2;
+#  SELECT COUNT(*) AS "COUNT(db2.t1)" FROM db2.t1;
+#  SELECT COUNT(*) AS "COUNT(db2.t2)" FROM db2.t2;
+#  SELECT COUNT(*) AS "COUNT(test.t1)" FROM test.t1;
+#  SELECT COUNT(*) AS "COUNT(test.t2)" FROM test.t2;
+  SELECT COUNT(*) AS "COUNT(db1_delete.t1)" FROM db1_delete.t1;
+  SELECT COUNT(*) AS "COUNT(db1_delete.t2)" FROM db1_delete.t2;
+  SELECT COUNT(*) AS "COUNT(db2_delete.t1)" FROM db2_delete.t1;
+  SELECT COUNT(*) AS "COUNT(db2_delete.t2)" FROM db2_delete.t2;
+  SELECT COUNT(*) AS "COUNT(test_delete.t1)" FROM test_delete.t1;
+  SELECT COUNT(*) AS "COUNT(test_delete.t2)" FROM test_delete.t2;
 END|
 delimiter ;|
 
@@ -353,113 +408,195 @@ delimiter ;|
 # Testing without a selected database
 #
 
-CREATE DATABASE db3;
-USE db3;
-DROP DATABASE db3;
+#CREATE DATABASE db3;
+#USE db3;
+#DROP DATABASE db3;
+#--error ER_NO_DB_ERROR
+#SELECT * FROM t1;
+CREATE DATABASE db3_delete;
+USE db3_delete;
+DROP DATABASE db3_delete;
 --error ER_NO_DB_ERROR
 SELECT * FROM t1;
 
 # Detect missing table references
 
+#--error ER_NO_DB_ERROR
+#DELETE a1,a2 FROM db1.t1, db2.t2;
+#--error ER_NO_DB_ERROR
+#DELETE a1,a2 FROM db1.t1, db2.t2;
+#--error ER_NO_DB_ERROR
+#DELETE a1,a2 FROM db1.t1 AS a1, db2.t2;
+#--error ER_NO_DB_ERROR
+#DELETE a1,a2 FROM db1.t1, db2.t2 AS a2;
+#--error ER_NO_DB_ERROR
+#DELETE a1,a2 FROM db3.t1 AS a1, db4.t2 AS a2;
+#--error ER_NO_DB_ERROR
+#DELETE a1,a2 FROM db3.t1 AS a1, db4.t2 AS a2;
 --error ER_NO_DB_ERROR
-DELETE a1,a2 FROM db1.t1, db2.t2;
+DELETE a1,a2 FROM db1_delete.t1, db2_delete.t2;
 --error ER_NO_DB_ERROR
-DELETE a1,a2 FROM db1.t1, db2.t2;
+DELETE a1,a2 FROM db1_delete.t1, db2_delete.t2;
 --error ER_NO_DB_ERROR
-DELETE a1,a2 FROM db1.t1 AS a1, db2.t2;
+DELETE a1,a2 FROM db1_delete.t1 AS a1, db2_delete.t2;
 --error ER_NO_DB_ERROR
-DELETE a1,a2 FROM db1.t1, db2.t2 AS a2;
+DELETE a1,a2 FROM db1_delete.t1, db2_delete.t2 AS a2;
 --error ER_NO_DB_ERROR
-DELETE a1,a2 FROM db3.t1 AS a1, db4.t2 AS a2;
+DELETE a1,a2 FROM db3_delete.t1 AS a1, db4_delete.t2 AS a2;
 --error ER_NO_DB_ERROR
-DELETE a1,a2 FROM db3.t1 AS a1, db4.t2 AS a2;
+DELETE a1,a2 FROM db3_delete.t1 AS a1, db4_delete.t2 AS a2;
 
+#--error ER_NO_DB_ERROR
+#DELETE FROM a1,a2 USING db1.t1, db2.t2;
+#--error ER_NO_DB_ERROR
+#DELETE FROM a1,a2 USING db1.t1, db2.t2;
+#--error ER_NO_DB_ERROR
+#DELETE FROM a1,a2 USING db1.t1 AS a1, db2.t2;
+#--error ER_NO_DB_ERROR
+#DELETE FROM a1,a2 USING db1.t1, db2.t2 AS a2;
+#--error ER_NO_DB_ERROR
+#DELETE FROM a1,a2 USING db3.t1 AS a1, db4.t2 AS a2;
+#--error ER_NO_DB_ERROR
+#DELETE FROM a1,a2 USING db3.t1 AS a1, db4.t2 AS a2;
 --error ER_NO_DB_ERROR
-DELETE FROM a1,a2 USING db1.t1, db2.t2;
+DELETE FROM a1,a2 USING db1_delete.t1, db2_delete.t2;
 --error ER_NO_DB_ERROR
-DELETE FROM a1,a2 USING db1.t1, db2.t2;
+DELETE FROM a1,a2 USING db1_delete.t1, db2_delete.t2;
 --error ER_NO_DB_ERROR
-DELETE FROM a1,a2 USING db1.t1 AS a1, db2.t2;
+DELETE FROM a1,a2 USING db1_delete.t1 AS a1, db2_delete.t2;
 --error ER_NO_DB_ERROR
-DELETE FROM a1,a2 USING db1.t1, db2.t2 AS a2;
+DELETE FROM a1,a2 USING db1_delete.t1, db2_delete.t2 AS a2;
 --error ER_NO_DB_ERROR
-DELETE FROM a1,a2 USING db3.t1 AS a1, db4.t2 AS a2;
+DELETE FROM a1,a2 USING db3_delete.t1 AS a1, db4_delete.t2 AS a2;
 --error ER_NO_DB_ERROR
-DELETE FROM a1,a2 USING db3.t1 AS a1, db4.t2 AS a2;
+DELETE FROM a1,a2 USING db3_delete.t1 AS a1, db4_delete.t2 AS a2;
 
 # Ambiguous table references
 
+#--error ER_NO_DB_ERROR
+#DELETE a1 FROM db1.t1 AS a1, db2.t2 AS a1;
+#--error ER_NO_DB_ERROR
+#DELETE a1 FROM db1.a1, db2.t2 AS a1;
+#--error ER_NO_DB_ERROR
+#DELETE a1 FROM a1, db1.t1 AS a1;
+#--error ER_NO_DB_ERROR
+#DELETE t1 FROM db1.t1, db2.t1 AS a1;
+#--error ER_NO_DB_ERROR
+#DELETE t1 FROM db1.t1 AS a1, db2.t1 AS a2;
+#--error ER_NO_DB_ERROR
+#DELETE t1 FROM db1.t1, db2.t1;
 --error ER_NO_DB_ERROR
-DELETE a1 FROM db1.t1 AS a1, db2.t2 AS a1;
+DELETE a1 FROM db1_delete.t1 AS a1, db2_delete.t2 AS a1;
 --error ER_NO_DB_ERROR
-DELETE a1 FROM db1.a1, db2.t2 AS a1;
+DELETE a1 FROM db1_delete.a1, db2_delete.t2 AS a1;
 --error ER_NO_DB_ERROR
-DELETE a1 FROM a1, db1.t1 AS a1;
+DELETE a1 FROM a1, db1_delete.t1 AS a1;
 --error ER_NO_DB_ERROR
-DELETE t1 FROM db1.t1, db2.t1 AS a1;
+DELETE t1 FROM db1_delete.t1, db2_delete.t1 AS a1;
 --error ER_NO_DB_ERROR
-DELETE t1 FROM db1.t1 AS a1, db2.t1 AS a2;
+DELETE t1 FROM db1_delete.t1 AS a1, db2_delete.t1 AS a2;
 --error ER_NO_DB_ERROR
-DELETE t1 FROM db1.t1, db2.t1;
+DELETE t1 FROM db1_delete.t1, db2_delete.t1;
 
 # Test all again, now with a selected database
 
-USE test;
+#USE test;
+USE test_delete;
 
 # Detect missing table references
 
+#--error ER_UNKNOWN_TABLE
+#DELETE a1,a2 FROM db1.t1, db2.t2;
+#--error ER_UNKNOWN_TABLE
+#DELETE a1,a2 FROM db1.t1, db2.t2;
+#--error ER_UNKNOWN_TABLE
+#DELETE a1,a2 FROM db1.t1 AS a1, db2.t2;
+#--error ER_UNKNOWN_TABLE
+#DELETE a1,a2 FROM db1.t1, db2.t2 AS a2;
+#--error ER_NO_SUCH_TABLE
+#DELETE a1,a2 FROM db3.t1 AS a1, db4.t2 AS a2;
+#--error ER_NO_SUCH_TABLE
+#DELETE a1,a2 FROM db3.t1 AS a1, db4.t2 AS a2;
 --error ER_UNKNOWN_TABLE
-DELETE a1,a2 FROM db1.t1, db2.t2;
+DELETE a1,a2 FROM db1_delete.t1, db2_delete.t2;
 --error ER_UNKNOWN_TABLE
-DELETE a1,a2 FROM db1.t1, db2.t2;
+DELETE a1,a2 FROM db1_delete.t1, db2_delete.t2;
 --error ER_UNKNOWN_TABLE
-DELETE a1,a2 FROM db1.t1 AS a1, db2.t2;
+DELETE a1,a2 FROM db1_delete.t1 AS a1, db2_delete.t2;
 --error ER_UNKNOWN_TABLE
-DELETE a1,a2 FROM db1.t1, db2.t2 AS a2;
+DELETE a1,a2 FROM db1_delete.t1, db2_delete.t2 AS a2;
 --error ER_NO_SUCH_TABLE
-DELETE a1,a2 FROM db3.t1 AS a1, db4.t2 AS a2;
+DELETE a1,a2 FROM db3_delete.t1 AS a1, db4_delete.t2 AS a2;
 --error ER_NO_SUCH_TABLE
-DELETE a1,a2 FROM db3.t1 AS a1, db4.t2 AS a2;
+DELETE a1,a2 FROM db3_delete.t1 AS a1, db4_delete.t2 AS a2;
 
+#--error ER_UNKNOWN_TABLE
+#DELETE FROM a1,a2 USING db1.t1, db2.t2;
+#--error ER_UNKNOWN_TABLE
+#DELETE FROM a1,a2 USING db1.t1, db2.t2;
+#--error ER_UNKNOWN_TABLE
+#DELETE FROM a1,a2 USING db1.t1 AS a1, db2.t2;
+#--error ER_UNKNOWN_TABLE
+#DELETE FROM a1,a2 USING db1.t1, db2.t2 AS a2;
+#--error ER_NO_SUCH_TABLE
+#DELETE FROM a1,a2 USING db3.t1 AS a1, db4.t2 AS a2;
+#--error ER_NO_SUCH_TABLE
+#DELETE FROM a1,a2 USING db3.t1 AS a1, db4.t2 AS a2;
 --error ER_UNKNOWN_TABLE
-DELETE FROM a1,a2 USING db1.t1, db2.t2;
+DELETE FROM a1,a2 USING db1_delete.t1, db2_delete.t2;
 --error ER_UNKNOWN_TABLE
-DELETE FROM a1,a2 USING db1.t1, db2.t2;
+DELETE FROM a1,a2 USING db1_delete.t1, db2_delete.t2;
 --error ER_UNKNOWN_TABLE
-DELETE FROM a1,a2 USING db1.t1 AS a1, db2.t2;
+DELETE FROM a1,a2 USING db1_delete.t1 AS a1, db2_delete.t2;
 --error ER_UNKNOWN_TABLE
-DELETE FROM a1,a2 USING db1.t1, db2.t2 AS a2;
+DELETE FROM a1,a2 USING db1_delete.t1, db2_delete.t2 AS a2;
 --error ER_NO_SUCH_TABLE
-DELETE FROM a1,a2 USING db3.t1 AS a1, db4.t2 AS a2;
+DELETE FROM a1,a2 USING db3_delete.t1 AS a1, db4_delete.t2 AS a2;
 --error ER_NO_SUCH_TABLE
-DELETE FROM a1,a2 USING db3.t1 AS a1, db4.t2 AS a2;
+DELETE FROM a1,a2 USING db3_delete.t1 AS a1, db4_delete.t2 AS a2;
 
 # Ambiguous table references
 
+#--error ER_NONUNIQ_TABLE
+#DELETE a1 FROM db1.t1 AS a1, db2.t2 AS a1;
+#--error ER_NO_SUCH_TABLE
+#DELETE a1 FROM db1.a1, db2.t2 AS a1;
+#--error ER_NONUNIQ_TABLE
+#DELETE a1 FROM a1, db1.t1 AS a1;
+#--error ER_UNKNOWN_TABLE
+#DELETE t1 FROM db1.t1, db2.t1 AS a1;
+#--error ER_UNKNOWN_TABLE
+#DELETE t1 FROM db1.t1 AS a1, db2.t1 AS a2;
+#--error ER_UNKNOWN_TABLE
+#DELETE t1 FROM db1.t1, db2.t1;
 --error ER_NONUNIQ_TABLE
-DELETE a1 FROM db1.t1 AS a1, db2.t2 AS a1;
+DELETE a1 FROM db1_delete.t1 AS a1, db2_delete.t2 AS a1;
 --error ER_NO_SUCH_TABLE
-DELETE a1 FROM db1.a1, db2.t2 AS a1;
+DELETE a1 FROM db1_delete.a1, db2_delete.t2 AS a1;
 --error ER_NONUNIQ_TABLE
-DELETE a1 FROM a1, db1.t1 AS a1;
+DELETE a1 FROM a1, db1_delete.t1 AS a1;
 --error ER_UNKNOWN_TABLE
-DELETE t1 FROM db1.t1, db2.t1 AS a1;
+DELETE t1 FROM db1_delete.t1, db2_delete.t1 AS a1;
 --error ER_UNKNOWN_TABLE
-DELETE t1 FROM db1.t1 AS a1, db2.t1 AS a2;
+DELETE t1 FROM db1_delete.t1 AS a1, db2_delete.t1 AS a2;
 --error ER_UNKNOWN_TABLE
-DELETE t1 FROM db1.t1, db2.t1;
+DELETE t1 FROM db1_delete.t1, db2_delete.t1;
 
 # Test multiple-table cross database deletes
 
-DELETE t1 FROM db1.t2 AS t1, db2.t2 AS t2 WHERE t2.a = 1 AND t1.a = t2.a;
+#DELETE t1 FROM db1.t2 AS t1, db2.t2 AS t2 WHERE t2.a = 1 AND t1.a = t2.a;
+DELETE t1 FROM db1_delete.t2 AS t1, db2_delete.t2 AS t2 WHERE t2.a = 1 AND t1.a = t2.a;
 SELECT ROW_COUNT();
 CALL count_rows();
-DELETE a1, a2 FROM db2.t1 AS a1, t2 AS a2 WHERE a1.a = 2 AND a2.a = 2;
+#DELETE a1, a2 FROM db2.t1 AS a1, t2 AS a2 WHERE a1.a = 2 AND a2.a = 2;
+DELETE a1, a2 FROM db2_delete.t1 AS a1, t2 AS a2 WHERE a1.a = 2 AND a2.a = 2;
 SELECT ROW_COUNT();
 CALL count_rows();
 
-DROP DATABASE db1;
-DROP DATABASE db2;
+#DROP DATABASE db1;
+#DROP DATABASE db2;
+DROP DATABASE db1_delete;
+DROP DATABASE db2_delete;
 DROP PROCEDURE count_rows;
 DROP TABLE t1, t2;
 
@@ -551,7 +688,8 @@ CREATE TABLE t1 (id INT);
 CREATE TABLE t2 LIKE t1;
 CREATE TABLE t3 LIKE t1;
 
-DELETE FROM t1.*, test.t2.*, a.* USING t1, t2, t3 AS a;
+#DELETE FROM t1.*, test.t2.*, a.* USING t1, t2, t3 AS a;
+DELETE FROM t1.*, test_delete.t2.*, a.* USING t1, t2, t3 AS a;
 
 DROP TABLE t1, t2, t3;
 
@@ -582,3 +720,5 @@ DELETE v2 FROM v2;
 
 DROP VIEW v2, v1;
 DROP TABLE t1, t2;
+
+DROP DATABASE test_delete;

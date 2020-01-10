@@ -1,3 +1,6 @@
+CREATE DATABASE test_ctype_collate;
+USE test_ctype_collate;
+
 --disable_warnings
 DROP TABLE IF EXISTS t1;
 DROP TABLE IF EXISTS t2;
@@ -262,8 +265,10 @@ select concat(_latin1'a',_latin2'b',_latin5'c' collate latin5_turkish_ci);
 --echo # Not a bug: only adding coverage tests
 --echo #
 SET NAMES latin1 COLLATE latin1_german2_ci;
-CREATE DATABASE test1 DEFAULT CHARACTER SET latin1 COLLATE latin1_german2_ci;
-USE test1;
+#CREATE DATABASE test1 DEFAULT CHARACTER SET latin1 COLLATE latin1_german2_ci;
+#USE test1;
+CREATE DATABASE test1_ctype_collate DEFAULT CHARACTER SET latin1 COLLATE latin1_german2_ci;
+USE test1_ctype_collate;
 DELIMITER //;
 --echo #
 --echo # Using "COLLATE latin1_swedish_ci" as the default collation for latin1
@@ -305,8 +310,10 @@ CREATE TABLE t1 AS SELECT ' - ' AS a UNION SELECT getText();
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 DROP FUNCTION getText;
-DROP DATABASE test1;
-USE test;
+#DROP DATABASE test1;
+#USE test;
+DROP DATABASE test1_ctype_collate;
+USE test_ctype_collate;
 SET NAMES latin1;
 
 --echo #
@@ -339,3 +346,4 @@ select hex(b) from t1 where b<'zzz' order by b;
 
 drop table t1;
 
+DROP DATABASE test_ctype_collate;

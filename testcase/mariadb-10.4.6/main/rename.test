@@ -4,6 +4,9 @@
 
 --source include/count_sessions.inc
 
+CREATE DATABASE test_commit;
+USE test_commit;
+
 --disable_warnings
 drop table if exists t0,t1,t2,t3,t4;
 # Clear up from other tests (to ensure that SHOW TABLES below is right)
@@ -45,8 +48,10 @@ drop table if exists t1,t2,t3,t4;
 # FLUSH TABLES WITH READ LOCK
 #
 
-connect (con1,localhost,root,,);
-connect (con2,localhost,root,,);
+#connect (con1,localhost,root,,);
+#connect (con2,localhost,root,,);
+connect (con1,localhost,root,,test_commit);
+connect (con2,localhost,root,,test_commit);
 
 connection con1;
 CREATE TABLE t1 (a int);
@@ -149,3 +154,5 @@ create table t1 (a int) engine=SequoiaDB;
 --error 1235
 rename table t1 to non_existent.t2;
 drop table t1;
+
+DROP DATABASE test_commit;

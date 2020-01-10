@@ -316,8 +316,6 @@ SET @safe_character_set_client= @@character_set_client;
 SET @safe_character_set_results= @@character_set_results;
 SET character_set_server= @test_character_set;
 SET collation_server= @test_collation;
-CREATE DATABASE d1;
-USE d1;
 CREATE TABLE t1 (c CHAR(10), KEY(c));
 SHOW FULL COLUMNS FROM t1;
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
@@ -404,8 +402,6 @@ select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 concat(name,space(level))	concat(name, repeat(' ',level))
 string 	string 
 drop table t1;
-DROP DATABASE d1;
-USE test;
 SET character_set_server= @safe_character_set_server;
 SET collation_server= @safe_collation_server;
 SET character_set_client= @safe_character_set_client;
@@ -7929,12 +7925,12 @@ SET NAMES utf8;
 CREATE TABLE t1 (a VARCHAR(10) CHARACTER SET latin1);
 INSERT IGNORE INTO t1 VALUES ('Â'),('Â#');
 Warnings:
-Warning	1366	Incorrect string value: '\xC2' for column `test`.`t1`.`a` at row 1
-Warning	1366	Incorrect string value: '\xC2#' for column `test`.`t1`.`a` at row 2
+Warning	1366	Incorrect string value: '\xC2' for column `X`.`t1`.`a` at row 1
+Warning	1366	Incorrect string value: '\xC2#' for column `X`.`t1`.`a` at row 2
 SHOW WARNINGS;
 Level	Code	Message
-Warning	1366	Incorrect string value: '\xC2' for column `test`.`t1`.`a` at row 1
-Warning	1366	Incorrect string value: '\xC2#' for column `test`.`t1`.`a` at row 2
+Warning	1366	Incorrect string value: '\xC2' for column `X`.`t1`.`a` at row 1
+Warning	1366	Incorrect string value: '\xC2#' for column `X`.`t1`.`a` at row 2
 SELECT HEX(a),a FROM t1;
 HEX(a)	a
 3F	?
@@ -8027,12 +8023,12 @@ EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='10' AND IF(a='10',1,0)=1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
 Warnings:
-Note	1003	select `test`.`t1`.`a` AS `a` from `test`.`t1` where `test`.`t1`.`a` = '10'
+Note	1003	select `X`.`t1`.`a` AS `a` from `X`.`t1` where `X`.`t1`.`a` = '10'
 EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='10' AND CASE WHEN a='10' THEN 1 ELSE 0 END;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
 Warnings:
-Note	1003	select `test`.`t1`.`a` AS `a` from `test`.`t1` where `test`.`t1`.`a` = '10'
+Note	1003	select `X`.`t1`.`a` AS `a` from `X`.`t1` where `X`.`t1`.`a` = '10'
 DROP TABLE t1;
 #
 # MDEV-8680 Wrong result for SELECT..WHERE a IN ('a' COLLATE latin1_bin,'b') AND a='a'
@@ -8050,7 +8046,7 @@ EXPLAIN EXTENDED SELECT * FROM t1 WHERE a IN ('a' COLLATE latin1_bin,'b') AND a=
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
 Warnings:
-Note	1003	select `test`.`t1`.`a` AS `a` from `test`.`t1` where `test`.`t1`.`a` = 'a' and `test`.`t1`.`a` in (<cache>('a' collate latin1_bin),'b')
+Note	1003	select `X`.`t1`.`a` AS `a` from `X`.`t1` where `X`.`t1`.`a` = 'a' and `X`.`t1`.`a` in (<cache>('a' collate latin1_bin),'b')
 DROP TABLE t1;
 #
 # MDEV-8698 Wrong result for SELECT..WHERE a BETWEEN 'a' AND 'c' COLLATE latin1_bin;
@@ -8070,7 +8066,7 @@ EXPLAIN EXTENDED SELECT * FROM t1 WHERE a BETWEEN 'a' AND 'c' COLLATE latin1_bin
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	6	100.00	Using where
 Warnings:
-Note	1003	select `test`.`t1`.`a` AS `a` from `test`.`t1` where `test`.`t1`.`a` = 'a' and `test`.`t1`.`a` between 'a' and <cache>('c' collate latin1_bin)
+Note	1003	select `X`.`t1`.`a` AS `a` from `X`.`t1` where `X`.`t1`.`a` = 'a' and `X`.`t1`.`a` between 'a' and <cache>('c' collate latin1_bin)
 DROP TABLE t1;
 #
 # MDEV-8707 Wrong result for SELECT..WHERE varchar_column=DATE'2001-01-01' AND varchar_column='2001-01-01'
@@ -8152,7 +8148,7 @@ EXPLAIN EXTENDED SELECT a, LENGTH(a), CRC32(a) FROM t1 WHERE a='a' AND CRC32(a)=
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
 Warnings:
-Note	1003	select `test`.`t1`.`a` AS `a`,octet_length(`test`.`t1`.`a`) AS `LENGTH(a)`,crc32(`test`.`t1`.`a`) AS `CRC32(a)` from `test`.`t1` where `test`.`t1`.`a` = 'a' and crc32(`test`.`t1`.`a`) = 3904355907
+Note	1003	select `X`.`t1`.`a` AS `a`,octet_length(`X`.`t1`.`a`) AS `LENGTH(a)`,crc32(`X`.`t1`.`a`) AS `CRC32(a)` from `X`.`t1` where `X`.`t1`.`a` = 'a' and crc32(`X`.`t1`.`a`) = 3904355907
 SELECT a, HEX(a) FROM t1 WHERE HEX(a)='61';
 a	HEX(a)
 a	61
@@ -8164,7 +8160,7 @@ EXPLAIN EXTENDED SELECT *,HEX(a) FROM t1 WHERE a='a' AND HEX(a)='61';
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
 Warnings:
-Note	1003	select `test`.`t1`.`a` AS `a`,hex(`test`.`t1`.`a`) AS `HEX(a)` from `test`.`t1` where `test`.`t1`.`a` = 'a' and hex(`test`.`t1`.`a`) = '61'
+Note	1003	select `X`.`t1`.`a` AS `a`,hex(`X`.`t1`.`a`) AS `HEX(a)` from `X`.`t1` where `X`.`t1`.`a` = 'a' and hex(`X`.`t1`.`a`) = '61'
 SELECT * FROM t1 WHERE a='a';
 a
 a
@@ -8180,7 +8176,7 @@ EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='a' AND LENGTH(a)=2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
 Warnings:
-Note	1003	select `test`.`t1`.`a` AS `a` from `test`.`t1` where `test`.`t1`.`a` = 'a' and octet_length(`test`.`t1`.`a`) = 2
+Note	1003	select `X`.`t1`.`a` AS `a` from `X`.`t1` where `X`.`t1`.`a` = 'a' and octet_length(`X`.`t1`.`a`) = 2
 DROP TABLE t1;
 #
 # MDEV-8712 Wrong result for SELECT..WHERE latin1_bin_column=_latin1'a' AND latin1_bin_column='A'
@@ -8212,7 +8208,7 @@ SELECT * FROM t1 WHERE COALESCE(c,0)='3 ' AND COALESCE(d,0)=COALESCE(c,0);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
 Warnings:
-Note	1003	select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t1`.`c` AS `c`,`test`.`t1`.`d` AS `d` from `test`.`t1` where coalesce(`test`.`t1`.`c`,0) = '3 ' and coalesce(`test`.`t1`.`d`,0) = '3 '
+Note	1003	select `X`.`t1`.`a` AS `a`,`X`.`t1`.`b` AS `b`,`X`.`t1`.`c` AS `c`,`X`.`t1`.`d` AS `d` from `X`.`t1` where coalesce(`X`.`t1`.`c`,0) = '3 ' and coalesce(`X`.`t1`.`d`,0) = '3 '
 DROP TABLE t1;
 #
 # MDEV-15005 ASAN: stack-buffer-overflow in my_strnncollsp_simple

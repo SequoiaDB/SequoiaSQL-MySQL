@@ -4,13 +4,17 @@ call mtr.add_suppression("table or database name 't-1'");
 CALL mtr.add_suppression("Could not remove temporary table *");
 --enable_query_log
 
+CREATE DATABASE test_create;
+USE test_create;
+
 #
 # Check some special create statements.
 #
 
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t5;
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
+drop database if exists mysqltest_create;
 drop view if exists v1;
 --enable_warnings
 
@@ -318,16 +322,20 @@ drop table t3;
 show create table t3;
 select * from t3;
 drop table t2, t3;
-create database mysqltest;
-create table mysqltest.t3 like t1;
-create temporary table t3 like mysqltest.t3;
+#create database mysqltest;
+#create table mysqltest.t3 like t1;
+#create temporary table t3 like mysqltest.t3;
+create database mysqltest_create;
+create table mysqltest_create.t3 like t1;
+create temporary table t3 like mysqltest_create.t3;
 show create table t3;
 create table t2 like t3;
 show create table t2;
 select * from t2;
 create table t3 like t1;
 --error 1050
-create table t3 like mysqltest.t3;
+#create table t3 like mysqltest.t3;
+create table t3 like mysqltest_create.t3;
 --error 1049
 create table non_existing_database.t1 like t1;
 --error ER_NO_SUCH_TABLE
@@ -336,7 +344,8 @@ create table t4 like non_existing_table;
 create temporary table t3 like t1;
 drop table t1, t2, t3;
 drop table t3;
-drop database mysqltest;
+#drop database mysqltest;
+drop database mysqltest_create;
 
 #
 # CREATE TABLE LIKE under LOCK TABLES
@@ -466,21 +475,33 @@ drop table t1, t2, t3;
 # Bug #1209
 #
 
-create database mysqltest;
-use mysqltest;
+#create database mysqltest;
+#use mysqltest;
+#select database();
+#drop database mysqltest;
+create database mysqltest_create;
+use mysqltest_create;
 select database();
-drop database mysqltest;
+drop database mysqltest_create;
 select database();
 
 # Connect without a database as user mysqltest_1
-create user mysqltest_1;
-connect (user1,localhost,mysqltest_1,,*NO-ONE*);
+#create user mysqltest_1;
+#connect (user1,localhost,mysqltest_1,,*NO-ONE*);
+#connection user1;
+#select database(), user();
+#connection default;
+#disconnect user1;
+#drop user mysqltest_1;
+#use test;
+create user mysqltest_create_1;
+connect (user1,localhost,mysqltest_create_1,,*NO-ONE*);
 connection user1;
 select database(), user();
 connection default;
 disconnect user1;
-drop user mysqltest_1;
-use test;
+drop user mysqltest_create_1;
+use test_create;
 
 #
 # Test for Bug 856 'Naming a key "Primary" causes trouble'
@@ -557,11 +578,13 @@ drop table t1;
 --error 1103
 create table t1(column.name int);
 --error 1103
-create table t1(test.column.name int);
+#create table t1(test.column.name int);
+create table t1(test_create.column.name int);
 --error 1102
 create table t1(xyz.t1.name int);
 create table t1(t1.name int);
-create table t2(test.t2.name int);
+#create table t2(test.t2.name int);
+create table t2(test_create.t2.name int);
 drop table t1,t2;
 
 #
@@ -582,33 +605,53 @@ DROP TABLE t12913;
 #
 # Bug#11028: Crash on create table like
 #
-create database mysqltest;
-use mysqltest;
-drop database mysqltest;
---error ER_NO_DB_ERROR 
-create table test.t1 like x;
+#create database mysqltest;
+#use mysqltest;
+#drop database mysqltest;
+#--error ER_NO_DB_ERROR 
+#create table test.t1 like x;
+#--disable_warnings
+#drop table if exists test.t1;
+#--enable_warnings
+create database mysqltest_create;
+use mysqltest_create;
+drop database mysqltest_create;
+--error ER_NO_DB_ERROR
+create table test_create.t1 like x;
 --disable_warnings
-drop table if exists test.t1;
+drop table if exists test_create.t1;
 --enable_warnings
 
 #
 # Bug #6859: Bogus error message on attempt to CREATE TABLE t LIKE view
 #
-create database mysqltest;
-use mysqltest;
+#create database mysqltest;
+#use mysqltest;
+#create view v1 as select 'foo' from dual;
+#--error 1347
+#create table t1 like v1;
+#drop view v1;
+#drop database mysqltest;
+create database mysqltest_create;
+use mysqltest_create;
 create view v1 as select 'foo' from dual;
 --error 1347
 create table t1 like v1;
 drop view v1;
-drop database mysqltest;
+drop database mysqltest_create;
 # Bug #6008 MySQL does not create warnings when
 # creating database and using IF NOT EXISTS
 #
-create database mysqltest;
-create database if not exists mysqltest character set latin2;
-show create database mysqltest;
-drop database mysqltest;
-use test;
+#create database mysqltest;
+#create database if not exists mysqltest character set latin2;
+#show create database mysqltest;
+#drop database mysqltest;
+#use test;
+create database mysqltest_create;
+create database if not exists mysqltest_create character set latin2;
+show create database mysqltest_create;
+drop database mysqltest_create;
+use test_create;
 create table t1 (a int);
 create table if not exists t1 (a int);
 drop table t1;
@@ -910,7 +953,8 @@ DROP TABLE t1;
 # Bug#35924 DEFINER should be stored 'quoted' in I_S
 #
 --error ER_UNKNOWN_ERROR
-create user mysqltest_1@'test@test';
+#create user mysqltest_1@'test@test';
+create user mysqltest_create_1@'test@test';
 
 #
 # Bug#38821: Assert table->auto_increment_field_not_null failed in open_table()
@@ -1631,7 +1675,8 @@ create table t1 (a int, b int) engine=SequoiaDB;
 create table t2 (a int, b int) engine=SequoiaDB;
 insert into t1 values (1,1);
 lock tables t1 read;
-connect (user1,localhost,root,,test);
+#connect (user1,localhost,root,,test);
+connect (user1,localhost,root,,test_create);
 set @@lock_wait_timeout=5;
 create table if not exists t1 (a int, b int);
 create table if not exists t1 (a int, b int) select 2,2;
@@ -1876,3 +1921,5 @@ create table t1;
 #create table t1 (i int, j int, key(i), key(i)) as select 1 as i, 2 as j;
 create table t1 (i int, j int, key(i)) as select 1 as i, 2 as j;
 drop table t1;
+
+DROP DATABASE test_create;

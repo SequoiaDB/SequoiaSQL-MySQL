@@ -41,6 +41,7 @@ BEGIN
 END;
 $$
 DELIMITER ;$$
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 CALL p1();
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
@@ -56,13 +57,15 @@ DROP PROCEDURE p1;
 DELIMITER $$;
 CREATE PROCEDURE p1()
 BEGIN
-  DECLARE rec ROW TYPE OF test.t1;
+#  DECLARE rec ROW TYPE OF test.t1;
+  DECLARE rec ROW TYPE OF t1;
   CREATE TABLE t2 AS SELECT rec.a, rec.b, rec.c, rec.d;
   SHOW CREATE TABLE t2;
   DROP TABLE t2;
 END;
 $$
 DELIMITER ;$$
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 CALL p1();
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
@@ -85,6 +88,7 @@ BEGIN
 END;
 $$
 DELIMITER ;$$
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 CALL p1();
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));
@@ -102,13 +106,15 @@ DROP PROCEDURE p1;
 DELIMITER $$;
 CREATE PROCEDURE p1()
 BEGIN
-  DECLARE rec ROW TYPE OF test.v1;
+#  DECLARE rec ROW TYPE OF test.v1;
+  DECLARE rec ROW TYPE OF v1;
   CREATE TABLE t2 AS SELECT rec.a, rec.b, rec.c, rec.d;
   SHOW CREATE TABLE t2;
   DROP TABLE t2;
 END;
 $$
 DELIMITER ;$$
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 CALL p1();
 CREATE TABLE t1 (a INT, b VARCHAR(10), c DOUBLE, d DECIMAL(10));

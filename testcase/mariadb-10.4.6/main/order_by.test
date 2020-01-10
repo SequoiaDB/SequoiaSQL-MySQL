@@ -2269,7 +2269,9 @@ set @tmp_h=@@histogram_size, @tmp_ht=@@histogram_type, @tmp_u=@@use_stat_tables,
 set histogram_size=100, histogram_type='single_prec_hb';
 set use_stat_tables=preferably;
 set optimizer_use_condition_selectivity=4;
+--disable_result_log
 analyze table t4 persistent for columns(b) indexes ();
+--enable_result_log
 
 #--echo # rows must be around 1200, not 600:
 #explain extended 

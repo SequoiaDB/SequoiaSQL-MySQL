@@ -1,3 +1,5 @@
+CREATE DATABASE test_insert;
+USE test_insert;
 drop table if exists t1,t2,t3;
 create table t1 (a int not null);
 insert into t1 values (1);
@@ -77,25 +79,25 @@ id	t2
 2	hotmail.com
 3	aol.com
 drop table t1,t2;
-drop database if exists mysqltest;
-create database mysqltest;
-use mysqltest;
+drop database if exists mysqltest_insert;
+create database mysqltest_insert;
+use mysqltest_insert;
 create table t1 (c int);
-insert into mysqltest.t1 set mysqltest.t1.c = '1';
-drop database mysqltest;
-use test;
+insert into mysqltest_insert.t1 set mysqltest_insert.t1.c = '1';
+drop database mysqltest_insert;
+use test_insert;
 create table t1(number int auto_increment primary key, original_value varchar(50), f_double double, f_float float, f_double_7_2 double(7,2), f_float_4_3 float (4,3), f_double_u double unsigned, f_float_u float unsigned, f_double_15_1_u double(15,1) unsigned, f_float_3_1_u float (3,1) unsigned);
 set @value= "aa";
 insert ignore into t1 values(null,@value,@value,@value,@value,@value,@value,@value,@value,@value);
 Warnings:
-Warning	1366	Incorrect double value: 'aa' for column `test`.`t1`.`f_double` at row 1
-Warning	1366	Incorrect double value: 'aa' for column `test`.`t1`.`f_float` at row 1
-Warning	1366	Incorrect double value: 'aa' for column `test`.`t1`.`f_double_7_2` at row 1
-Warning	1366	Incorrect double value: 'aa' for column `test`.`t1`.`f_float_4_3` at row 1
-Warning	1366	Incorrect double value: 'aa' for column `test`.`t1`.`f_double_u` at row 1
-Warning	1366	Incorrect double value: 'aa' for column `test`.`t1`.`f_float_u` at row 1
-Warning	1366	Incorrect double value: 'aa' for column `test`.`t1`.`f_double_15_1_u` at row 1
-Warning	1366	Incorrect double value: 'aa' for column `test`.`t1`.`f_float_3_1_u` at row 1
+Warning	1366	Incorrect double value: 'aa' for column `test_insert`.`t1`.`f_double` at row 1
+Warning	1366	Incorrect double value: 'aa' for column `test_insert`.`t1`.`f_float` at row 1
+Warning	1366	Incorrect double value: 'aa' for column `test_insert`.`t1`.`f_double_7_2` at row 1
+Warning	1366	Incorrect double value: 'aa' for column `test_insert`.`t1`.`f_float_4_3` at row 1
+Warning	1366	Incorrect double value: 'aa' for column `test_insert`.`t1`.`f_double_u` at row 1
+Warning	1366	Incorrect double value: 'aa' for column `test_insert`.`t1`.`f_float_u` at row 1
+Warning	1366	Incorrect double value: 'aa' for column `test_insert`.`t1`.`f_double_15_1_u` at row 1
+Warning	1366	Incorrect double value: 'aa' for column `test_insert`.`t1`.`f_float_3_1_u` at row 1
 select * from t1 where number =last_insert_id();
 number	1
 original_value	aa
@@ -132,14 +134,14 @@ f_float_3_1_u	1.0
 set @value= "aa1";
 insert ignore into t1 values(null,@value,@value,@value,@value,@value,@value,@value,@value,@value);
 Warnings:
-Warning	1366	Incorrect double value: 'aa1' for column `test`.`t1`.`f_double` at row 1
-Warning	1366	Incorrect double value: 'aa1' for column `test`.`t1`.`f_float` at row 1
-Warning	1366	Incorrect double value: 'aa1' for column `test`.`t1`.`f_double_7_2` at row 1
-Warning	1366	Incorrect double value: 'aa1' for column `test`.`t1`.`f_float_4_3` at row 1
-Warning	1366	Incorrect double value: 'aa1' for column `test`.`t1`.`f_double_u` at row 1
-Warning	1366	Incorrect double value: 'aa1' for column `test`.`t1`.`f_float_u` at row 1
-Warning	1366	Incorrect double value: 'aa1' for column `test`.`t1`.`f_double_15_1_u` at row 1
-Warning	1366	Incorrect double value: 'aa1' for column `test`.`t1`.`f_float_3_1_u` at row 1
+Warning	1366	Incorrect double value: 'aa1' for column `test_insert`.`t1`.`f_double` at row 1
+Warning	1366	Incorrect double value: 'aa1' for column `test_insert`.`t1`.`f_float` at row 1
+Warning	1366	Incorrect double value: 'aa1' for column `test_insert`.`t1`.`f_double_7_2` at row 1
+Warning	1366	Incorrect double value: 'aa1' for column `test_insert`.`t1`.`f_float_4_3` at row 1
+Warning	1366	Incorrect double value: 'aa1' for column `test_insert`.`t1`.`f_double_u` at row 1
+Warning	1366	Incorrect double value: 'aa1' for column `test_insert`.`t1`.`f_float_u` at row 1
+Warning	1366	Incorrect double value: 'aa1' for column `test_insert`.`t1`.`f_double_15_1_u` at row 1
+Warning	1366	Incorrect double value: 'aa1' for column `test_insert`.`t1`.`f_float_3_1_u` at row 1
 select * from t1 where number =last_insert_id();
 number	3
 original_value	aa1
@@ -351,15 +353,15 @@ create view v1 as select * from t1, t2 where f1= f3;
 insert into t1 values (1,11), (2,22);
 insert into t2 values (1,12), (2,24);
 insert into v1 (f1) values (3) on duplicate key update f3= f3 + 10;
-ERROR HY000: Can not modify more than one base table through a join view 'test.v1'
+ERROR HY000: Can not modify more than one base table through a join view 'test_insert.v1'
 insert into v1 (f1) values (3) on duplicate key update f1= f3 + 10;
-ERROR HY000: Can not modify more than one base table through a join view 'test.v1'
+ERROR HY000: Can not modify more than one base table through a join view 'test_insert.v1'
 select * from t1;
 f1	f2
 1	11
 2	22
 insert into v1 (f1) values (3) on duplicate key update f1= f3 + 10;
-ERROR HY000: Can not modify more than one base table through a join view 'test.v1'
+ERROR HY000: Can not modify more than one base table through a join view 'test_insert.v1'
 select * from t1;
 f1	f2
 1	11
@@ -610,3 +612,4 @@ REPLACE INTO v1 SET f = NULL;
 ERROR 22007: Truncated incorrect DOUBLE value: 'foo'
 DROP VIEW v1;
 DROP TABLE t1;
+DROP DATABASE test_insert;

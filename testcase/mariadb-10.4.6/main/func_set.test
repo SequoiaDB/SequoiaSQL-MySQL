@@ -107,6 +107,7 @@ DROP TABLE t1, t2;
 --echo #
 CREATE TABLE t1 (pk INT PRIMARY KEY);
 INSERT INTO t1 VALUES (10),(11);
+--replace_regex /test_parallel_[0-9]/X/
 SELECT INTERVAL( 9, 1, DATE_ADD( pk, INTERVAL pk MINUTE_SECOND ), 9, 8, 3, 5, 2, 1 ) FROM t1;
 DROP TABLE t1;
 

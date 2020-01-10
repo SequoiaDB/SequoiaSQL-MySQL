@@ -1,3 +1,6 @@
+CREATE DATABASE test_ctype_recoding;
+USE test_ctype_recoding;
+
 SET CHARACTER SET koi8r;
 
 --disable_warnings
@@ -79,7 +82,8 @@ SELECT hex('тест');
 SET character_set_connection=cp1251;
 SELECT hex('тест');
 
-USE test;
+#USE test;
+USE test_ctype_recoding;
 
 # Bug#4417
 # Check that identifiers and strings are not converted 
@@ -251,6 +255,7 @@ SELECT * FROM v1,t1 WHERE t1.a=v1.a;
 DROP VIEW v1;
 DROP TABLE t1;
 
+DROP DATABASE test_ctype_recoding;
 --echo #
 --echo # End of 5.5 tests
 --echo #

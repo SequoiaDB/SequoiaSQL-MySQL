@@ -1,12 +1,18 @@
+CREATE DATABASE test_index_intersect;
+USE test_index_intersect;
+
 --disable_warnings
 DROP TABLE IF EXISTS t1,t2,t3,t4;
-DROP DATABASE IF EXISTS world;
+#DROP DATABASE IF EXISTS world;
+DROP DATABASE IF EXISTS world_index_intersect;
 --enable_warnings
 set names utf8;
 
-CREATE DATABASE world;
+#CREATE DATABASE world;
+CREATE DATABASE world_index_intersect;
 
-use world;
+#use world;
+use world_index_intersect;
 
 --source include/world_schema.inc
 
@@ -416,9 +422,11 @@ SELECT * FROM City
 # WHERE City.Name LIKE 'C%' AND City.Population > 1000000 AND
 #       Country.Code=City.Country;
 
-DROP DATABASE world;
+#DROP DATABASE world;
+DROP DATABASE world_index_intersect;
 
-use test;
+#use test;
+use test_index_intersect;
 
 #
 # Bug #684086: crash with EXPLAIN in InnoDB for index intersection
@@ -461,3 +469,5 @@ DROP TABLE t1;
 
 SET SESSION optimizer_switch='index_merge_sort_intersection=on';
 SET SESSION optimizer_switch='rowid_filter=default';
+
+DROP DATABASE test_index_intersect;

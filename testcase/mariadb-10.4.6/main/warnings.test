@@ -1,6 +1,10 @@
 #
 # Test some warnings
 #
+
+CREATE DATABASE test_warnings;
+USE test_warnings;
+
 --disable_warnings
 drop table if exists t1, t2;
 --enable_warnings
@@ -288,13 +292,16 @@ DROP TABLE t1;
 DROP FUNCTION f1;
 
 # MDEV-14581 Warning info not cleared when caching THD
-connect (con1,localhost,root,,);
+#connect (con1,localhost,root,,);
+connect (con1,localhost,root,,test_warnings);
 SELECT TIME('10:10:10.11111111111');
 disconnect con1;
 
-connect (con2,localhost,root,,);
+#connect (con2,localhost,root,,);
+connect (con2,localhost,root,,test_warnings);
 SHOW WARNINGS;
 disconnect con2;
 
 connection default;
 
+DROP DATABASE test_warnings;

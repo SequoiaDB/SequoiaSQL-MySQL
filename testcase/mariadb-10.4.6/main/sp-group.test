@@ -1,7 +1,9 @@
 #--source include/have_innodb.inc
 
+--disable_warnings
 drop table if exists t1;
 drop view if exists view_t1;
+--enable_warnings
 
 #
 # Test case for MDEV 7601, MDEV-7594 and MDEV-7555

@@ -1,3 +1,5 @@
+CREATE DATABASE test_func_group;
+USE test_func_group;
 drop table if exists t1,t2,t3,t4,t5,t6;
 set @sav_dpi= @@div_precision_increment;
 set div_precision_increment= 5;
@@ -1879,7 +1881,7 @@ INSERT INTO `t1` (b) VALUES ('2013-05-06 23:59:59');
 INSERT INTO `t1` (b) VALUES ('2013-06-06 23:59:59');
 INSERT INTO `t1` (b) VALUES ('2013-07-06 23:59:59');
 # The following should produce "Select tables optimized away"
-connect  con1,localhost,root,,;
+connect  con1,localhost,root,,test_func_group;
 connection con1;
 set names utf8;
 # Should be the same as above:
@@ -2124,3 +2126,4 @@ t2	CREATE TABLE `t2` (
 DROP TABLE t2;
 DROP VIEW v1;
 DROP TABLE t1;
+DROP DATABASE test_func_group;

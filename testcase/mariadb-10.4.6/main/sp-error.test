@@ -2,6 +2,9 @@
 # Stored PROCEDURE error tests
 #
 
+CREATE DATABASE test_sp_error;
+USE test_sp_error;
+
 --disable_warnings
 drop table if exists t1, t2;
 --enable_warnings
@@ -154,7 +157,8 @@ begin
   declare x int default 0;
   declare continue handler for foo set x = 1;
 
-  insert into test.t1 values (val);
+  #insert into test.t1 values (val);
+  insert into test_sp_error.t1 values (val);
   if (x) then
     set res = 0;
   else
@@ -169,7 +173,8 @@ begin
   declare foo condition for 1146;
   declare continue handler for bar set x = 1;
 
-  insert into test.t1 values (val);
+  #insert into test.t1 values (val);
+  insert into test_sp_error.t1 values (val);
   if (x) then
     set res = 0;
   else
@@ -203,7 +208,8 @@ drop function f|
 --error ER_PARSE_ERROR
 create procedure p()
 begin
-  declare c cursor for insert into test.t1 values ("foo", 42);
+  #declare c cursor for insert into test.t1 values ("foo", 42);
+  declare c cursor for insert into test_sp_error.t1 values ("foo", 42);
 
   open c;
   close c;
@@ -213,7 +219,8 @@ end|
 create procedure p()
 begin
   declare x int;
-  declare c cursor for select * into x from test.t limit 1;
+  #declare c cursor for select * into x from test.t limit 1;
+  declare c cursor for select * into x from test_sp_error.t limit 1;
 
   open c;
   close c;
@@ -222,7 +229,8 @@ end|
 --error 1324
 create procedure p()
 begin
-  declare c cursor for select * from test.t;
+  #declare c cursor for select * from test.t;
+  declare c cursor for select * from test_sp_error.t;
 
   open cc;
   close c;
@@ -235,7 +243,8 @@ create table t1 (val int)|
 
 create procedure p()
 begin
-  declare c cursor for select * from test.t1;
+  #declare c cursor for select * from test.t1;
+  declare c cursor for select * from test_sp_error.t1;
 
   open c;
   open c;
@@ -247,7 +256,8 @@ drop procedure p|
 
 create procedure p()
 begin
-  declare c cursor for select * from test.t1;
+  #declare c cursor for select * from test.t1;
+  declare c cursor for select * from test_sp_error.t1;
 
   open c;
   close c;
@@ -558,9 +568,11 @@ drop function bug3287|
 create procedure bug3287(x int)
 case x
 when 0 then
-  insert into test.t1 values (x, 0.1);
+  #insert into test.t1 values (x, 0.1);
+  insert into test_sp_error.t1 values (x, 0.1);
 when 1 then
-  insert into test.t1 values (x, 1.1);
+  #insert into test.t1 values (x, 1.1);
+  insert into test_sp_error.t1 values (x, 1.1);
 end case|
 --error 1339
 call bug3287(2)|
@@ -1370,44 +1382,60 @@ CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN LOCK TABLE t1 READ; EN
 CREATE FUNCTION bug_13627_f() returns int BEGIN LOCK TABLE t1 READ; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create database mysqltest; END |
+#CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create database mysqltest; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create database mysqltest_sp_error; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug_13627_f() returns int BEGIN create database mysqltest; return 1; END |
+#CREATE FUNCTION bug_13627_f() returns int BEGIN create database mysqltest; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN create database mysqltest_sp_error; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop database mysqltest; END |
+#CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop database mysqltest; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop database mysqltest_sp_error; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug_13627_f() returns int BEGIN drop database mysqltest; return 1; END |
+#CREATE FUNCTION bug_13627_f() returns int BEGIN drop database mysqltest; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN drop database mysqltest_sp_error; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create user 'mysqltest_1'; END |
+#CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create user 'mysqltest_1'; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create user 'mysqltest_sp_error_1'; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug_13627_f() returns int BEGIN create user 'mysqltest_1'; return 1; END |
+#CREATE FUNCTION bug_13627_f() returns int BEGIN create user 'mysqltest_1'; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN create user 'mysqltest_sp_error_1'; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN grant select on t1 to 'mysqltest_1'; END |
+#CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN grant select on t1 to 'mysqltest_1'; END |
+CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN grant select on t1 to 'mysqltest_sp_error_1'; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug21975() returns int BEGIN grant select on t1 to 'mysqltest_1'; return 1; END |
+#CREATE FUNCTION bug21975() returns int BEGIN grant select on t1 to 'mysqltest_1'; return 1; END |
+CREATE FUNCTION bug21975() returns int BEGIN grant select on t1 to 'mysqltest_sp_error_1'; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN revoke select on t1 from 'mysqltest_1'; END |
+#CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN revoke select on t1 from 'mysqltest_1'; END |
+CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN revoke select on t1 from 'mysqltest_sp_error_1'; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug21975() returns int BEGIN revoke select on t1 from 'mysqltest_1'; return 1; END |
+#CREATE FUNCTION bug21975() returns int BEGIN revoke select on t1 from 'mysqltest_1'; return 1; END |
+CREATE FUNCTION bug21975() returns int BEGIN revoke select on t1 from 'mysqltest-sp_error_1'; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN revoke all privileges on *.* from 'mysqltest_1'; END |
+#CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN revoke all privileges on *.* from 'mysqltest_1'; END |
+CREATE TRIGGER bug21975 BEFORE INSERT ON t1 FOR EACH ROW BEGIN revoke all privileges on *.* from 'mysqltest_sp_error_1'; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug21975() returns int BEGIN revoke all privileges on *.* from 'mysqltest_1'; return 1; END |
+#CREATE FUNCTION bug21975() returns int BEGIN revoke all privileges on *.* from 'mysqltest_1'; return 1; END |
+CREATE FUNCTION bug21975() returns int BEGIN revoke all privileges on *.* from 'mysqltest_sp_error_1'; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop user 'mysqltest_1'; END |
+#CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop user 'mysqltest_1'; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop user 'mysqltest_sp_error_1'; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug_13627_f() returns int BEGIN drop user 'mysqltest_1'; return 1; END |
+#CREATE FUNCTION bug_13627_f() returns int BEGIN drop user 'mysqltest_1'; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN drop user 'mysqltest_sp_error_1'; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN rename user 'mysqltest_2' to 'mysqltest_1'; END |
+#CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN rename user 'mysqltest_2' to 'mysqltest_1'; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN rename user 'mysqltest_sp_error_2' to 'mysqltest_sp_error_1'; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug_13627_f() returns int BEGIN rename user 'mysqltest_2' to 'mysqltest_1'; return 1; END |
+#CREATE FUNCTION bug_13627_f() returns int BEGIN rename user 'mysqltest_2' to 'mysqltest_1'; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN rename user 'mysqltest_sp_error_2' to 'mysqltest_sp_error_1'; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
 CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create view v1 as select 1; END |
@@ -1479,20 +1507,32 @@ drop table t1, t2;
 # Bug#13587 "Server crash when SP is created without database
 # selected"
 #
-create database mysqltest1;
-use mysqltest1;
-drop database mysqltest1;
---error ER_NO_DB_ERROR 
+#create database mysqltest1;
+#use mysqltest1;
+#drop database mysqltest1;
+#--error ER_NO_DB_ERROR 
+#create function f1() returns int return 1;
+#delimiter |;
+#--error ER_NO_DB_ERROR 
+#create procedure p1(out param1 int)
+#begin
+#  select count(*) into param1 from t3;
+#end|
+#delimiter ;|
+#use test;
+create database mysqltest1_sp_error;
+use mysqltest1_sp_error;
+drop database mysqltest1_sp_error;
+--error ER_NO_DB_ERROR
 create function f1() returns int return 1;
 delimiter |;
---error ER_NO_DB_ERROR 
+--error ER_NO_DB_ERROR
 create procedure p1(out param1 int)
 begin
   select count(*) into param1 from t3;
 end|
 delimiter ;|
-use test;
-
+use test_sp_error;
 
 #
 # BUG#13037: undefined variable in IF cause erroneous error-message
@@ -1544,18 +1584,30 @@ DROP PROCEDURE bug13037_p3;
 #
 # Bug#14569 "editing a stored procedure kills mysqld-nt"
 #
-create database mysqltest1;
-create database mysqltest2;
-use mysqltest1;
-drop database mysqltest1;
-create procedure mysqltest2.p1() select version();
---error ER_NO_DB_ERROR 
+#create database mysqltest1;
+#create database mysqltest2;
+#use mysqltest1;
+#drop database mysqltest1;
+#create procedure mysqltest2.p1() select version();
+#--error ER_NO_DB_ERROR 
+#create procedure p2() select version();
+#use mysqltest2;
+#--replace_column 5 '0000-00-00 00:00:00' 6 '0000-00-00 00:00:00'
+#show procedure status;
+#drop database mysqltest2;
+#use test;
+create database mysqltest1_sp_error;
+create database mysqltest2_sp_error;
+use mysqltest1_sp_error;
+drop database mysqltest1_sp_error;
+create procedure mysqltest2_sp_error.p1() select version();
+--error ER_NO_DB_ERROR
 create procedure p2() select version();
-use mysqltest2;
+use mysqltest2_sp_error;
 --replace_column 5 '0000-00-00 00:00:00' 6 '0000-00-00 00:00:00'
 show procedure status;
-drop database mysqltest2;
-use test;
+drop database mysqltest2_sp_error;
+use test_sp_error;
 
 #
 # Bug#13012 "SP: REPAIR/BACKUP/RESTORE TABLE crashes the server"
@@ -2171,12 +2223,18 @@ END|
 # Bug#29816 Syntactically wrong query fails with misleading error message
 #
 
+#--disable_warnings
+#DROP DATABASE IF EXISTS mysqltest;
+#--enable_warnings
+#CREATE DATABASE mysqltest;
+#USE mysqltest;
+#DROP DATABASE mysqltest;
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest;
+DROP DATABASE IF EXISTS mysqltest_sp_error;
 --enable_warnings
-CREATE DATABASE mysqltest;
-USE mysqltest;
-DROP DATABASE mysqltest;
+CREATE DATABASE mysqltest_sp_error;
+USE mysqltest_sp_error;
+DROP DATABASE mysqltest_sp_error;
 # Both ER_SP_DOES_NOT_EXIST and ER_PARSE_ERROR are valid here,
 # the result is implementation dependent:
 # See Bug#29816 for details
@@ -2188,7 +2246,8 @@ SELECT inexistent();
 SELECT .inexistent();
 --error ER_PARSE_ERROR
 SELECT ..inexistent();
-USE test;
+#USE test;
+USE test_sp_error;
 
 #
 # Bug#30904 SET PASSWORD statement is non-transactional
@@ -3844,3 +3903,5 @@ SELECT @msg;
 DROP FUNCTION f1;
 DROP FUNCTION f2;
 DROP TABLE t1;
+
+DROP DATABASE test_sp_error;

@@ -1,6 +1,9 @@
 # test of problems with having (Reported by Mark Rogers)
 #
 
+CREATE DATABASE test_having;
+USE test_having;
+
 --disable_warnings
 drop table if exists t1,t2,t3;
 --enable_warnings
@@ -419,7 +422,8 @@ SELECT EMPNUM, GRADE*1000
                            HAVING HU.PROJ.CITY = HU.STAFF.CITY);
 
 DROP SCHEMA HU;
-USE test;
+#USE test;
+USE test_having;
 #
 # Bug#18739: non-standard HAVING extension was allowed in strict ANSI sql mode.
 #
@@ -916,4 +920,5 @@ HAVING t.f != 112 AND t.f = 'x' AND t.f != 'a';
 
 DROP TABLE t1,t2;
 
+DROP DATABASE test_having;
 --echo # End of 10.4 tests

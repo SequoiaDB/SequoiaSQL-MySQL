@@ -6,6 +6,9 @@
 
 #--source include/have_innodb.inc
 
+CREATE DATABASE test_ctype_utf8mb4;
+USE test_ctype_utf8mb4;
+
 --disable_warnings
 drop table if exists t1,t2;
 --enable_warnings
@@ -1190,17 +1193,21 @@ drop table t1;
 
 SET CHARACTER SET utf8mb4;
 SHOW VARIABLES LIKE 'character\_set\_%';
-CREATE DATABASE crashtest DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
-USE crashtest;
+#CREATE DATABASE crashtest DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+#USE crashtest;
+CREATE DATABASE crashtest_ctype_utf8mb4 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+USE crashtest_ctype_utf8mb4;
 CREATE TABLE crashtest (crash char(10)) DEFAULT CHARSET=utf8mb4;
 INSERT INTO crashtest VALUES ('35'), ('36'), ('37');
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
 INSERT INTO crashtest VALUES ('-1000');
-EXPLAIN SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
+#EXPLAIN SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
 DROP TABLE crashtest;
-DROP DATABASE crashtest;
-USE test;
+#DROP DATABASE crashtest;
+#USE test;
+DROP DATABASE crashtest_ctype_utf8mb4;
+USE test_ctype_utf8mb4;
 SET CHARACTER SET default;
 
 # End of 4.1 tests
@@ -1992,7 +1999,8 @@ SET NAMES utf8mb4;
 CREATE FUNCTION f1() RETURNS TEXT CHARACTER SET utf8mb4
 RETURN CONCAT('😎','x😎','😎y','x😎y');
 SELECT ROUTINE_DEFINITION FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA='test' AND SPECIFIC_NAME ='f1';
+WHERE ROUTINE_SCHEMA='test_ctype_utf8mb4' AND SPECIFIC_NAME ='f1';
+#WHERE ROUTINE_SCHEMA='test' AND SPECIFIC_NAME ='f1';
 SELECT body_utf8 FROM mysql.proc WHERE name='f1';
 DROP FUNCTION f1;
 
@@ -2039,6 +2047,7 @@ PREPARE stmt FROM 'SELECT ''😎'' AS c';
 EXECUTE stmt;
 EXECUTE IMMEDIATE 'SELECT ''😎'' AS c';
 
+DROP DATABASE test_ctype_utf8mb4;
 --echo #
 --echo # End of 10.2 tests
 --echo #

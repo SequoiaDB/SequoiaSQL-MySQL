@@ -8,9 +8,13 @@ SET TIME_ZONE='+03:00';
 
 #--source include/have_innodb.inc
 
+CREATE DATABASE test_ctype_utf8;
+USE test_ctype_utf8;
+
 --disable_warnings
 drop table if exists t1,t2,t3,t4;
-drop database if exists mysqltest;
+#drop database if exists mysqltest;
+drop database if exists mysqltest_ctype_utf8;
 --enable_warnings
 
 --disable_warnings
@@ -1174,8 +1178,10 @@ drop table t1;
 
 SET CHARACTER SET utf8;
 SHOW VARIABLES LIKE 'character\_set\_%';
-CREATE DATABASE crashtest DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
-USE crashtest;
+#CREATE DATABASE crashtest DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
+#USE crashtest;
+CREATE DATABASE crashtest_ctype_utf8 DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;
+USE crashtest_ctype_utf8;
 CREATE TABLE crashtest (crash char(10)) DEFAULT CHARSET=utf8;
 INSERT INTO crashtest VALUES ('35'), ('36'), ('37');
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8);
@@ -1188,8 +1194,10 @@ ANALYZE TABLE crashtest;
 #EXPLAIN SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8);
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8);
 DROP TABLE crashtest;
-DROP DATABASE crashtest;
-USE test;
+#DROP DATABASE crashtest;
+#USE test;
+DROP DATABASE crashtest_ctype_utf8;
+USE test_ctype_utf8;
 SET CHARACTER SET default;
 
 # End of 4.1 tests
@@ -1981,7 +1989,8 @@ SELECT N'tëst\0';
 END$$
 DELIMITER ;$$
 SELECT ROUTINE_DEFINITION FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA='test' AND SPECIFIC_NAME ='p1';
+WHERE ROUTINE_SCHEMA='test_ctype_utf8' AND SPECIFIC_NAME ='p1';
+#WHERE ROUTINE_SCHEMA='test' AND SPECIFIC_NAME ='p1';
 SELECT body_utf8 FROM mysql.proc WHERE name='p1';
 DROP PROCEDURE p1;
 
@@ -2011,7 +2020,8 @@ SELECT N'tëst\0';
 END$$
 DELIMITER ;$$
 SELECT ROUTINE_DEFINITION FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA='test' AND SPECIFIC_NAME ='p1';
+WHERE ROUTINE_SCHEMA='test_ctype_utf8' AND SPECIFIC_NAME ='p1';
+#WHERE ROUTINE_SCHEMA='test' AND SPECIFIC_NAME ='p1';
 SELECT body_utf8 FROM mysql.proc WHERE name='p1';
 DROP PROCEDURE p1;
 SET @@SQL_MODE=default;
@@ -2255,7 +2265,7 @@ INSERT INTO t1 VALUES (1);
 SELECT x AS 5天内最近一次登录时间 FROM t1;
 DROP TABLE t1;
 
-
+DROP DATABASE test_ctype_utf8;
 --echo #
 --echo # End of 10.3 tests
 --echo #

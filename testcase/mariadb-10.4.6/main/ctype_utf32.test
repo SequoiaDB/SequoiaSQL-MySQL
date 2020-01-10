@@ -4,6 +4,9 @@
 
 SET TIME_ZONE = '+03:00';
 
+CREATE DATABASE test_ctype_utf32;
+USE test_ctype_utf32;
+
 --disable_warnings
 DROP TABLE IF EXISTS t1;
 --enable_warnings
@@ -1037,6 +1040,7 @@ let $coll='utf32_nopad_bin';
 let $coll_pad='utf32_bin';
 --source include/ctype_pad_all_engines.inc
 
+DROP DATABASE test_ctype_utf32;
 --echo #
 --echo # End of 10.2 tests
 --echo #
