@@ -436,11 +436,10 @@ void sdb_set_affected_rows(THD *thd) {
       affected_num = inserted_num + dup_num;
     } else {
 #ifdef IS_MARIADB
-      if (!thd->variables.old_behavior &
-          OLD_MODE_NO_DUP_KEY_WARNINGS_WITH_IGNORE) {
-#elif IS_MYSQL
-      {
+      if (!(thd->variables.old_behavior &
+            OLD_MODE_NO_DUP_KEY_WARNINGS_WITH_IGNORE))
 #endif
+      {
         push_warning_printf(thd, Sql_condition::SL_WARNING, ER_DUP_ENTRY,
                             "%lld duplicated records were ignored", dup_num);
       }
