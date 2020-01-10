@@ -2608,7 +2608,7 @@ int Sdb_cl_copyer::rename(const char *from, const char *to) {
   if (0 == strcmp(from, m_mcl_name)) {
     m_old_mcl_tmp_name = const_cast<char *>(to);
     rc = rename_old_cl();
-  } else if (0 == strcmp(to, m_mcl_name)) {
+  } else {
     rc = rename_new_cl();
   }
 
