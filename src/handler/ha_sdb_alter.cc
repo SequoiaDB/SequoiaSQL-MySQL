@@ -1595,7 +1595,7 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
   }
   if (!sdb_new_tab_opt) {
     rc = HA_ERR_WRONG_COMMAND;
-    my_printf_error(rc, "Can't support reduce table option", MYF(0));
+    my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
     goto error;
   }
   rc = sdb_convert_tab_opt_to_obj(sdb_old_tab_opt, old_tab_opt);
@@ -1654,7 +1654,7 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
   if (old_opt_ele.type() != new_opt_ele.type()) {
     if (new_opt_ele.type() == bson::EOO) {
       rc = HA_ERR_WRONG_COMMAND;
-      my_printf_error(rc, "Can't support reduce table option", MYF(0));
+      my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
       goto error;
     }
     if (new_opt_ele.type() != bson::Object) {
@@ -1681,7 +1681,7 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
     old_opt_obj = old_opt_ele.embeddedObject();
     rc = sdb_filter_tab_opt(old_opt_obj, new_opt_obj, builder);
     if (0 != rc) {
-      my_printf_error(rc, "Can't support reduce table option", MYF(0));
+      my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
       goto error;
     }
   }

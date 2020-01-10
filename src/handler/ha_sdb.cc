@@ -4164,8 +4164,16 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
 
     // if ALTER TABLE changes ENGINE or table_options, don't copy the old.
     if (src_table->table->s->db_type() == create_info->db_type &&
-        src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE &&
-        0 == strcmp(src_tab_opt, dst_tab_opt)) {
+        src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE) {
+      if (strcmp(src_tab_opt, dst_tab_opt) != 0) {
+        rc = HA_ERR_WRONG_COMMAND;
+        my_printf_error(rc,
+                        "Cannot change table options of comment. "
+                        "Try drop and create again.",
+                        MYF(0));
+        goto error;
+      }
+
       *has_copy = true;
 
       const char *src_db_name = src_table->get_db_name();
@@ -4248,10 +4256,10 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
 
   rc = copy_cl_if_alter_table(thd, conn, db_name, table_name, form, create_info,
                               &has_copy);
+  if (rc != 0) {
+    goto error;
+  }
   if (has_copy) {
-    if (rc != 0) {
-      goto error;
-    }
     goto done;
   }
 
