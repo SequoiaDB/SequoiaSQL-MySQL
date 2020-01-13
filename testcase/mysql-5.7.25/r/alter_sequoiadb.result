@@ -169,9 +169,9 @@ create table t2(a int, b char(16)) comment = "sequoiadb:{ table_options: { Compr
 insert into t1 values(1,'a'),(2,'b');
 insert into t2 values(1,'a'),(2,'b');
 alter table t1 comment = "sequoiadb:{ table_options: { ShardingKey: { a : 1 }, ShardingType: \"range\", ReplSize: 2, Compressed: true, AutoIndexId:false } }", ALGORITHM=inplace;
-ERROR HY000: Can't support reduce table option
+ERROR HY000: Cannot delete table options of comment
 alter table t1 comment = "sequoiadb:{ table_options: { ShardingKey: { a : 1 }, Compressed: true, CompressionType: \"lzw\" } }";
-ERROR HY000: Can't support reduce table option
+ERROR HY000: Cannot delete table options of comment
 alter table t1 comment = "sequoiadb:{ table_options: { ShardingKey: { a : 1 }, ShardingType: \"range\", ReplSize: 2, Compressed: true, CompressionType: \"snappy\" } }", ALGORITHM=inplace;
 ERROR HY000: Option is not supported yet
 alter table t2 comment = "sequoiadb:{ table_options: { Compressed: false, ShardingKey: { a: 1 }, ShardingType: \"range\", IsMainCL: true} }", ALGORITHM=inplace;

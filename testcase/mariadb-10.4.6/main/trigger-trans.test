@@ -229,7 +229,7 @@ UPDATE t1 SET val = val + 1;
 #SET SESSION innodb_lock_wait_timeout = 2;
 # Trigger lock timeout (1205)
 #--error ER_LOCK_WAIT_TIMEOUT
---error 40013
+--error 1205 
 UPDATE t1 SET val = val + 1;
 
 # This insert should go through, as the continue handler should
