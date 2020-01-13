@@ -1062,7 +1062,8 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       tm_val.tm_year = date_val - 1900;
       /* wrong date format:'xxxx-00-00'
       if date format is '0000-00-00', it will pass */
-      if ((0 == tm_val.tm_mday || 0 == mon) && (0 != date_val)) {
+      if ((0 == mon || 0 == tm_val.tm_mday) &&
+          !(0 == date_val && 0 == mon && 0 == tm_val.tm_mday)) {
         rc = ER_TRUNCATED_WRONG_VALUE;
         my_printf_error(rc,
                         "Incorrect date value: '%04lld-%02lld-%02d' for "
