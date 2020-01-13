@@ -94,6 +94,17 @@ static HASH sdb_open_tables;
 static PSI_memory_key key_memory_sdb_share;
 static PSI_memory_key sdb_key_memory_blobroot;
 
+#ifdef IS_MYSQL
+#define sdb_ha_statistic_increment(offset) \
+  { ha_statistic_increment(offset); }
+#else
+#ifdef IS_MARIADB
+#define sdb_ha_statistic_increment(offset) \
+  { /*do nothing*/                         \
+  }
+#endif
+#endif
+
 static void update_shares_stats(THD *thd);
 static uchar *sdb_get_key(boost::shared_ptr<Sdb_share> *share, size_t *length,
                           my_bool not_used MY_ATTRIBUTE((unused))) {
@@ -1494,9 +1505,7 @@ int ha_sdb::write_row(uchar *buf) {
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
   }
-
-  ha_statistic_increment(&SSV::ha_write_count);
-
+  sdb_ha_statistic_increment(&SSV::ha_write_count);
   rc = ensure_collection(ha_thd());
   if (rc) {
     goto error;
@@ -1553,8 +1562,7 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-
-  ha_statistic_increment(&SSV::ha_update_count);
+  sdb_ha_statistic_increment(&SSV::ha_update_count);
   if (auto_commit) {
     rc = autocommit_statement();
     if (rc) {
@@ -1621,8 +1629,7 @@ int ha_sdb::delete_row(const uchar *buf) {
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-
-  ha_statistic_increment(&SSV::ha_delete_count);
+  sdb_ha_statistic_increment(&SSV::ha_delete_count);
   if (auto_commit) {
     rc = autocommit_statement();
     if (rc) {
@@ -1658,8 +1665,7 @@ error:
 int ha_sdb::index_next(uchar *buf) {
   DBUG_ENTER("ha_sdb::index_next()");
   DBUG_ASSERT(idx_order_direction == 1);
-  ha_statistic_increment(&SSV::ha_read_next_count);
-
+  sdb_ha_statistic_increment(&SSV::ha_read_next_count);
   if (count_query) {
     DBUG_RETURN(cur_row(buf));
   } else {
@@ -1670,8 +1676,7 @@ int ha_sdb::index_next(uchar *buf) {
 int ha_sdb::index_prev(uchar *buf) {
   DBUG_ENTER("ha_sdb::index_prev()");
   DBUG_ASSERT(idx_order_direction == -1);
-  ha_statistic_increment(&SSV::ha_read_prev_count);
-
+  sdb_ha_statistic_increment(&SSV::ha_read_prev_count);
   if (count_query) {
     DBUG_RETURN(cur_row(buf));
   } else {
@@ -1688,8 +1693,7 @@ int ha_sdb::index_last(uchar *buf) {
     table->status = STATUS_NOT_FOUND;
     goto done;
   }
-
-  ha_statistic_increment(&SSV::ha_read_last_count);
+  sdb_ha_statistic_increment(&SSV::ha_read_last_count);
   rc = index_read_one(pushed_condition, -1, buf);
 
 done:
@@ -2220,9 +2224,7 @@ int ha_sdb::index_first(uchar *buf) {
     table->status = STATUS_NOT_FOUND;
     goto done;
   }
-
-  ha_statistic_increment(&SSV::ha_read_first_count);
-
+  sdb_ha_statistic_increment(&SSV::ha_read_first_count);
   rc = ensure_collection(ha_thd());
   if (rc) {
     goto error;
@@ -2278,9 +2280,7 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
     table->status = STATUS_NOT_FOUND;
     goto done;
   }
-
-  ha_statistic_increment(&SSV::ha_read_key_count);
-
+  sdb_ha_statistic_increment(&SSV::ha_read_key_count);
   if (NULL != key_ptr && active_index < MAX_KEY) {
     KEY *key_info = table->key_info + active_index;
     key_range start_key;
@@ -2899,7 +2899,7 @@ int ha_sdb::rnd_next(uchar *buf) {
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-
+  sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
   if (first_read) {
     if (!pushed_condition.isEmpty()) {
       condition = pushed_condition.copy();
@@ -2936,7 +2936,6 @@ int ha_sdb::rnd_next(uchar *buf) {
     }
   }
 
-  ha_statistic_increment(&SSV::ha_read_rnd_next_count);
   if (count_query) {
     rc = cur_row(buf);
   } else {
@@ -2961,8 +2960,7 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-
-  ha_statistic_increment(&SSV::ha_read_rnd_count);
+  sdb_ha_statistic_increment(&SSV::ha_read_rnd_count);
   memcpy((void *)oid.getData(), pos, SDB_OID_LEN);
 
   if (buf != table->record[0]) {
@@ -4673,7 +4671,9 @@ static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
   }
 #endif
   file = new (mem_root) ha_sdb(hton, table);
+#ifdef IS_MYSQL
 done:
+#endif
   return file;
 }
 
