@@ -171,6 +171,12 @@ class OptionsMgr:
                                self.__projectVersion))
         cmake_arguments.append('-DWITH_SDB_DRIVER={}'
             .format(os.path.join(os.getcwd(), self.args.sdbdriver)))
+        if (self.__projectType == 'MYSQL' and self.__projectVersion == '5.7.28'):
+            prjRoot = os.path.abspath(os.path.dirname(__file__))
+            opensslPath = os.path.join(prjRoot, '/thirdparty/openssl-1.0.1c/')
+            cmake_arguments.append(
+                '-DWITH_SSL={}'.format(opensslPath)
+            )
 
         if self.args.install is not None:
             cmake_arguments.append(
