@@ -222,24 +222,24 @@ create table test_create_or_replace.t1 (i int) engine= SequoiaDB;
 create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
 lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 --error ER_TABLE_MUST_HAVE_COLUMNS
 #create or replace table test.t1;
 create or replace table test_create_or_replace.t1;
 show tables;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 --error ER_TABLE_MUST_HAVE_COLUMNS
 #create or replace table mysqltest2.t2;
 create or replace table mysqltest2_create_or_replace.t2;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 create table t1 (i int);
 drop table t1;
 
@@ -250,24 +250,24 @@ create table test_create_or_replace.t1 (i int);
 create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
 lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 --error ER_DUP_FIELDNAME
 #create or replace table test.t1 (a int) select 1 as 'a', 2 as 'a';
 create or replace table test_create_or_replace.t1 (a int) select 1 as 'a', 2 as 'a';
 show tables;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 --error ER_DUP_FIELDNAME
 #create or replace table mysqltest2.t2 (a int) select 1 as 'a', 2 as 'a';
 create or replace table mysqltest2_create_or_replace.t2 (a int) select 1 as 'a', 2 as 'a';
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 create table t1 (i int);
 drop table t1;
 
@@ -278,9 +278,9 @@ create table test_create_or_replace.t1 (i int) engine=SequoiaDB;
 create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
 lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 unlock tables;
 #drop table test.t1,mysqltest2.t2;
 drop table test_create_or_replace.t1,mysqltest2_create_or_replace.t2;
@@ -292,9 +292,9 @@ create table test_create_or_replace.t1 (i int) engine=SequoiaDB transactional=1 
 create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
 lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 unlock tables;
 drop table t1;
 
@@ -375,24 +375,24 @@ drop view t1;
 create table t1 (a int);
 lock table t1 write, t2 read;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 create or replace table t1 (i int);
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 create or replace table t1 like t2;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 create or replace table t1 select 1 as f1;
 # BUG #SEQUOIASQLMAINSTREAM-528
-#--replace_column 1 #
-#--sorted_result
-#select * from information_schema.metadata_lock_info;
+--replace_column 1 #
+--sorted_result
+select * from information_schema.metadata_lock_info;
 drop table t1;
 unlock tables;
 

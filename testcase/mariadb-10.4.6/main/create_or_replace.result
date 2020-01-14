@@ -262,35 +262,85 @@ Note	1051	Unknown table 'mysqltest2_create_or_replace.t2'
 create table test_create_or_replace.t1 (i int) engine= SequoiaDB;
 create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
 lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	mysqltest2_create_or_replace	
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	mysqltest2_create_or_replace	t2
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	test_create_or_replace	t1
 create or replace table test_create_or_replace.t1;
 ERROR 42000: A table must have at least 1 column
 show tables;
 Tables_in_test_create_or_replace
 t2
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	mysqltest2_create_or_replace	
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	mysqltest2_create_or_replace	t2
 create or replace table mysqltest2_create_or_replace.t2;
 ERROR 42000: A table must have at least 1 column
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
 create table t1 (i int);
 drop table t1;
 create table test_create_or_replace.t1 (i int);
 create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
 lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	mysqltest2_create_or_replace	
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	mysqltest2_create_or_replace	t2
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	test_create_or_replace	t1
 create or replace table test_create_or_replace.t1 (a int) select 1 as 'a', 2 as 'a';
 ERROR 42S21: Duplicate column name 'a'
 show tables;
 Tables_in_test_create_or_replace
 t2
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	mysqltest2_create_or_replace	
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	mysqltest2_create_or_replace	t2
 create or replace table mysqltest2_create_or_replace.t2 (a int) select 1 as 'a', 2 as 'a';
 ERROR 42S21: Duplicate column name 'a'
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
 create table t1 (i int);
 drop table t1;
 create table test_create_or_replace.t1 (i int) engine=SequoiaDB;
 create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
 lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	mysqltest2_create_or_replace	
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	mysqltest2_create_or_replace	t2
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	test_create_or_replace	t1
 unlock tables;
 drop table test_create_or_replace.t1,mysqltest2_create_or_replace.t2;
 create table test_create_or_replace.t1 (i int) engine=SequoiaDB transactional=1 checksum=1;
 create table mysqltest2_create_or_replace.t2 like test_create_or_replace.t1;
 lock table test_create_or_replace.t1 write, mysqltest2_create_or_replace.t2 write;
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	mysqltest2_create_or_replace	
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	mysqltest2_create_or_replace	t2
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	test_create_or_replace	t1
 unlock tables;
 drop table t1;
 create table test_create_or_replace.t1 (i int);
@@ -379,9 +429,37 @@ drop view t1;
 #
 create table t1 (a int);
 lock table t1 write, t2 read;
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	test_create_or_replace	t1
+#	MDL_SHARED_READ_ONLY	NULL	Table metadata lock	test_create_or_replace	t2
 create or replace table t1 (i int);
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	test_create_or_replace	t1
+#	MDL_SHARED_READ_ONLY	NULL	Table metadata lock	test_create_or_replace	t2
 create or replace table t1 like t2;
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	test_create_or_replace	t1
+#	MDL_SHARED_READ_ONLY	NULL	Table metadata lock	test_create_or_replace	t2
 create or replace table t1 select 1 as f1;
+select * from information_schema.metadata_lock_info;
+THREAD_ID	LOCK_MODE	LOCK_DURATION	LOCK_TYPE	TABLE_SCHEMA	TABLE_NAME
+#	MDL_BACKUP_DDL	NULL	Backup lock		
+#	MDL_BACKUP_DML	NULL	Backup lock		
+#	MDL_INTENTION_EXCLUSIVE	NULL	Schema metadata lock	test_create_or_replace	
+#	MDL_SHARED_NO_READ_WRITE	NULL	Table metadata lock	test_create_or_replace	t1
+#	MDL_SHARED_READ_ONLY	NULL	Table metadata lock	test_create_or_replace	t2
 drop table t1;
 unlock tables;
 #
