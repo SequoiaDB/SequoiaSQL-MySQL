@@ -366,6 +366,7 @@ my $opt_port_group_size = $ENV{MTR_PORT_GROUP_SIZE} || 20;
 my $opt_stop_file= $ENV{MTR_STOP_FILE};
 # print messages when test suite is stopped (for buildbot)
 my $opt_stop_keep_alive= $ENV{MTR_STOP_KEEP_ALIVE};
+our $opt_xml_report;
 
 select(STDOUT);
 $| = 1; # Automatically flush STDOUT
@@ -482,6 +483,10 @@ sub main {
   if ($opt_resfile) {
     resfile_init("$opt_vardir/mtr-results.txt");
     print_global_resfile();
+  }
+
+  if ($opt_xml_report) {
+    mtr_xml_init($opt_xml_report);
   }
 
   # Create child processes
@@ -1070,6 +1075,7 @@ sub print_global_resfile {
   resfile_global("warnings", $opt_warnings ? 1 : 0);
   resfile_global("max-connections", $opt_max_connections);
   resfile_global("product", "MySQL");
+  resfile_global("xml-report", $opt_xml_report);
   # Somewhat hacky code to convert numeric version back to dot notation
   my $v1= int($mysql_version_id / 10000);
   my $v2= int(($mysql_version_id % 10000)/100);
@@ -1235,7 +1241,8 @@ sub command_line_setup {
              'help|h'                   => \$opt_usage,
 	     # list-options is internal, not listed in help
 	     'list-options'             => \$opt_list_options,
-             'skip-test-list=s'         => \@opt_skip_test_list
+             'skip-test-list=s'         => \@opt_skip_test_list,
+             'xml-report=s'             => \$opt_xml_report
            );
 
   # fix options (that take an optional argument and *only* after = sign
@@ -6454,6 +6461,7 @@ Misc options
                         mysql-stress-test.pl. Options are separated by comma.
   tail-lines=N          Number of lines of the result to include in a failure
                         report.
+  xml-report=<file>     Generate a XML report file compatible with JUnit 
 
 Some options that control enabling a feature for normal test runs,
 can be turned off by prepending 'no' to the option, e.g. --notimer.
