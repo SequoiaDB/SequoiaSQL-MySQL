@@ -4743,4 +4743,36 @@ id	a
 1	hello
 2	hello
 drop table t1;
+create table t1(a int(10)unsigned not null auto_increment primary key, b varchar(255) not null) default charset=utf8;
+insert into t1 values(1,'aaa'),(2,'bbb');
+alter table t1 auto_increment=1;
+insert into t1 values(NULL, 'ccc');
+select * from t1;
+a	b
+1	aaa
+2	bbb
+3	ccc
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `b` varchar(255) NOT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=utf8
+alter table t1 auto_increment=3;
+insert into t1 values(NULL, 'ddd');
+select * from t1;
+a	b
+1	aaa
+2	bbb
+3	ccc
+4	ddd
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `b` varchar(255) NOT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=utf8
+drop table t1;
 drop database test_alter;

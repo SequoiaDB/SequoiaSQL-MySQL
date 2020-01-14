@@ -7,7 +7,7 @@
 #Case 19393#Case 19376#Case 19408#Case 19409#Case 19410#Case 19377#Case 19378#Case 19379#Case 19380
 #Case 19381#Case 19382#Case 19395#Case 19397#Case 19398#Case 19403#Case 19407#Case 20023#Case 20024
 #Case 20028#Case 20227#Case 20230#Case 20231#Case 20232#Case 20233#Case 20234#Case 20235#Case 20236
-#Case 20254#Case 20256
+#Case 20254#Case 20256#Case 20422
 
 --source include/have_sequoiadb.inc
 create database test_alter;
@@ -1826,6 +1826,19 @@ alter table t1 change a a char(255), ALGORITHM = COPY;
 show create table t1;
 select * from t1 where a = 'hello' order by id;
 select * from t1 where a = 'hello ' order by id;
+drop table t1;
+
+#seqDB-20422
+create table t1(a int(10)unsigned not null auto_increment primary key, b varchar(255) not null) default charset=utf8;
+insert into t1 values(1,'aaa'),(2,'bbb');
+alter table t1 auto_increment=1;
+insert into t1 values(NULL, 'ccc');
+select * from t1;
+show create table t1;
+alter table t1 auto_increment=3;
+insert into t1 values(NULL, 'ddd');
+select * from t1;
+show create table t1;
 drop table t1;
 
 drop database test_alter;
