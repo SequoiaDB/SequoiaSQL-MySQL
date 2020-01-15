@@ -78,6 +78,10 @@ else()
    set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 endif()
 
+if(MYSQL STREQUAL "5.7.28")
+   set(WITH_SSL "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
+endif()
+
 if(SDB_PROJECT_TYPE STREQUAL "mariadb")
    add_definitions(-DOPENSSL_ROOT_DIR="${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
 endif()
