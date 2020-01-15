@@ -71,6 +71,9 @@ else()
    set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 endif()
 
+if(MYSQL STREQUAL "5.7.28")
+   set(WITH_SSL "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
+endif()
 # Trigger the sdb version tool building, and use it to get the version.
 function(get_sdb_version version git_version)
    set(SDB_VERTOOL_DIR ${CMAKE_SOURCE_DIR}/misc/versiontool)
