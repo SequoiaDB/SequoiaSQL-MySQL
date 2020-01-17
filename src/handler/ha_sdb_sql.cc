@@ -331,6 +331,10 @@ bool sdb_create_table_like(THD *thd) {
   return (thd->lex->create_info.options & HA_LEX_CREATE_TABLE_LIKE);
 }
 
+bool sdb_is_transaction_stmt(THD *thd) {
+  return thd->get_transaction()->is_active(Transaction_ctx::STMT);
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -588,6 +592,10 @@ void sdb_thd_set_not_killed(THD *thd) {
 
 void sdb_thd_reset_condition_info(THD *thd) {
   thd->get_stmt_da()->clear_warning_info(thd->query_id);
+}
+
+bool sdb_is_transaction_stmt(THD *thd) {
+  return thd->transaction.stmt.ha_list;
 }
 
 Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root) {

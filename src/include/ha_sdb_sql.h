@@ -222,6 +222,8 @@ void sdb_thd_set_not_killed(THD *thd);
 
 void sdb_thd_reset_condition_info(THD *thd);
 
+bool sdb_is_transaction_stmt(THD *thd);
+
 // About Field
 const char *sdb_field_name(const Field *f);
 

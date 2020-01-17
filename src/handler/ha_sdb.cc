@@ -3451,10 +3451,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
       goto error;
     }
 
-    // in trans mode Sdb_commit and Sdb_rollback will not be executed
-    // if some SQL is implicit committed. so for such table, it cann't
-    // be inserted into sdb_thd open_table_shares.
-    if (!stmt_causes_implicit_commit(thd, CF_IMPLICIT_COMMIT_END)) {
+    if (sdb_is_transaction_stmt(thd)) {
       rc = add_share_to_open_table_shares(thd);
       if (0 != rc) {
         thd_sdb->lock_count--;
@@ -3516,10 +3513,7 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
     goto error;
   }
 
-  // Sdb_commit and Sdb_rollback will not be executed if some SQL is
-  // implicit committed. so for such table, it cann't be inserted
-  // into sdb_thd open_table_shares.
-  if (!stmt_causes_implicit_commit(thd, CF_IMPLICIT_COMMIT_END)) {
+  if (sdb_is_transaction_stmt(thd)) {
     rc = add_share_to_open_table_shares(thd);
     if (0 != rc) {
       goto error;
