@@ -4775,4 +4775,202 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`a`)
 ) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=utf8
 drop table t1;
+create table t1( id int ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+alter table t1 comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true, StrictDataMode:false } }", ALGORITHM=copy;
+ERROR HY000: Cannot change table options of comment. Try drop and create again.
+drop table t1;
+create table t1( id int auto_increment primary key ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+alter table t1 rename t2, ALGORITHM=copy;
+show create table t1;
+ERROR 42S02: Table 'test_alter.t1' doesn't exist
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+alter table t2 auto_increment = 10, ALGORITHM=copy;
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+) ENGINE=SEQUOIADB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+drop table t2;
+create table t1( id int primary key, b blob, c char(16), key c(c(2)) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+create table t2( id int primary key, c char(16), key c(c(2)) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1} } }";
+alter table t1 drop index c, add index c_new(c(8)), ALGORITHM=copy;
+alter table t1 drop primary key, ALGORITHM=copy;
+alter table t2 drop index c, add index c_new(c(8)), ALGORITHM=copy;
+alter table t2 drop primary key, ALGORITHM=copy;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `b` blob,
+  `c` char(16) DEFAULT NULL,
+  KEY `c_new` (`c`(8))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `id` int(11) NOT NULL,
+  `c` char(16) DEFAULT NULL,
+  KEY `c_new` (`c`(8))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1} } }'
+alter table t1 add primary key (id), ALGORITHM=copy;
+alter table t1 drop index c_new, add unique key c_new(c(8),id), ALGORITHM=copy;
+alter table t2 add primary key (id), ALGORITHM=copy;
+alter table t2 drop index c_new, add unique key c_new(c(8),id), ALGORITHM=copy;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `b` blob,
+  `c` char(16) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `c_new` (`c`(8),`id`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `id` int(11) NOT NULL,
+  `c` char(16) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `c_new` (`c`(8),`id`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1} } }'
+alter table t1 drop primary key, add index(id) using hash, ALGORITHM=copy;
+alter table t2 drop primary key, add index(id) using hash, ALGORITHM=copy;
+drop table t1,t2;
+create table t1( c char(16) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+create table t2( c char(16) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1} } }";
+alter table t1 add column id int auto_increment primary key, ALGORITHM=copy;
+alter table t1 change c c char(16) comment 'column c', add column t text comment 'column t', add index t(t(2)), ALGORITHM=copy;
+alter table t2 add column id int auto_increment primary key, ALGORITHM=copy;
+alter table t2 change c c char(16) comment 'column c', add column t text comment 'column t', add index t(t(2)), ALGORITHM=copy;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `c` char(16) DEFAULT NULL COMMENT 'column c',
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `t` text COMMENT 'column t',
+  PRIMARY KEY (`id`),
+  KEY `t` (`t`(2))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `c` char(16) DEFAULT NULL COMMENT 'column c',
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `t` text COMMENT 'column t',
+  PRIMARY KEY (`id`),
+  KEY `t` (`t`(2))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1} } }'
+alter table t1 change id id int, ALGORITHM=copy;
+alter table t2 change id id int, ALGORITHM=copy;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `c` char(16) DEFAULT NULL COMMENT 'column c',
+  `id` int(11) NOT NULL,
+  `t` text COMMENT 'column t',
+  PRIMARY KEY (`id`),
+  KEY `t` (`t`(2))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `c` char(16) DEFAULT NULL COMMENT 'column c',
+  `id` int(11) NOT NULL,
+  `t` text COMMENT 'column t',
+  PRIMARY KEY (`id`),
+  KEY `t` (`t`(2))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1} } }'
+alter table t1 add column id1 int auto_increment, add index id1(id1), ALGORITHM=copy;
+alter table t2 add column id1 int auto_increment, add index id1(id1), ALGORITHM=copy;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `c` char(16) DEFAULT NULL COMMENT 'column c',
+  `id` int(11) NOT NULL,
+  `t` text COMMENT 'column t',
+  `id1` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`),
+  KEY `t` (`t`(2)),
+  KEY `id1` (`id1`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `c` char(16) DEFAULT NULL COMMENT 'column c',
+  `id` int(11) NOT NULL,
+  `t` text COMMENT 'column t',
+  `id1` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`),
+  KEY `t` (`t`(2)),
+  KEY `id1` (`id1`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1} } }'
+alter table t1 drop column id1, add column b blob, change c c1 char(16), ALGORITHM=copy;
+alter table t2 drop column id1, add column b blob, change c c1 char(16), ALGORITHM=copy;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `c1` char(16) DEFAULT NULL,
+  `id` int(11) NOT NULL,
+  `t` text COMMENT 'column t',
+  `b` blob,
+  PRIMARY KEY (`id`),
+  KEY `t` (`t`(2))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `c1` char(16) DEFAULT NULL,
+  `id` int(11) NOT NULL,
+  `t` text COMMENT 'column t',
+  `b` blob,
+  PRIMARY KEY (`id`),
+  KEY `t` (`t`(2))
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1} } }'
+drop table t1,t2;
+create table t1( c char(16) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true, ReplSize: 2 } }";
+create table t2( c char(16) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, AutoIndexId: false, StrictDataMode: false  } }";
+create table t1_new like t1;
+create table t2_new like t2;
+show create table t1_new;
+Table	Create Table
+t1_new	CREATE TABLE `t1_new` (
+  `c` char(16) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true, ReplSize: 2 } }'
+show create table t2_new;
+Table	Create Table
+t2_new	CREATE TABLE `t2_new` (
+  `c` char(16) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1}, AutoIndexId: false, StrictDataMode: false  } }'
+drop table t1,t2,t1_new,t2_new;
+create table t1( id int ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+alter table t1 comment = "user string, sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }", ALGORITHM=copy;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='user string, sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
+drop table t1;
+create table t1 ( id int, d date )
+PARTITION BY RANGE( YEAR(d) )
+SUBPARTITION BY HASH( TO_DAYS(d) )
+SUBPARTITIONs 2 (
+PARTITION p0 VALUES LESS THAN (1990)
+);
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) DEFAULT NULL,
+  `d` date DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+/*!50100 PARTITION BY RANGE ( YEAR(d))
+SUBPARTITION BY HASH ( TO_DAYS(d))
+SUBPARTITIONS 2
+(PARTITION p0 VALUES LESS THAN (1990) ENGINE = SequoiaDB) */
+drop table t1;
 drop database test_alter;

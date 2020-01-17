@@ -1,0 +1,89 @@
+#Check table options
+#Case 20386#Case 20388#Case 20389#Case 20390#Case 20396#Case 20397
+#Case 20398#Case 20399#Case 20473
+
+create database test_alter;
+use test_alter;
+--disable_query_log
+create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ use_partition: true }';
+--enable_query_log
+
+#seqDB-20386
+create table t1( id int ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+--error 131
+alter table t1 comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true, StrictDataMode:false } }", ALGORITHM=copy;
+drop table t1;
+
+#seqDB-20388
+create table t1( id int auto_increment primary key ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+alter table t1 rename t2, ALGORITHM=copy;
+--error 1146
+show create table t1;
+show create table t2;
+alter table t2 auto_increment = 10, ALGORITHM=copy;
+show create table t2;
+drop table t2;
+
+#seqDB-20389 #seqDB-20396
+create table t1( id int primary key, b blob, c char(16), key c(c(2)) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+create table t2( id int primary key, c char(16), key c(c(2)) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1} } }";
+alter table t1 drop index c, add index c_new(c(8)), ALGORITHM=copy;
+alter table t1 drop primary key, ALGORITHM=copy;
+alter table t2 drop index c, add index c_new(c(8)), ALGORITHM=copy;
+alter table t2 drop primary key, ALGORITHM=copy;
+show create table t1;
+show create table t2;
+alter table t1 add primary key (id), ALGORITHM=copy;
+alter table t1 drop index c_new, add unique key c_new(c(8),id), ALGORITHM=copy;
+alter table t2 add primary key (id), ALGORITHM=copy;
+alter table t2 drop index c_new, add unique key c_new(c(8),id), ALGORITHM=copy;
+show create table t1;
+show create table t2;
+alter table t1 drop primary key, add index(id) using hash, ALGORITHM=copy; 
+alter table t2 drop primary key, add index(id) using hash, ALGORITHM=copy; 
+#--error 138
+#alter table t1 add index b(b(1)), ALGORITHM=copy;
+#show create table t1;
+drop table t1,t2;
+
+#seqDB-20390 #seqDB-20397
+create table t1( c char(16) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+create table t2( c char(16) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1} } }";
+alter table t1 add column id int auto_increment primary key, ALGORITHM=copy;
+alter table t1 change c c char(16) comment 'column c', add column t text comment 'column t', add index t(t(2)), ALGORITHM=copy;
+alter table t2 add column id int auto_increment primary key, ALGORITHM=copy;
+alter table t2 change c c char(16) comment 'column c', add column t text comment 'column t', add index t(t(2)), ALGORITHM=copy;
+show create table t1;
+show create table t2;
+alter table t1 change id id int, ALGORITHM=copy;
+alter table t2 change id id int, ALGORITHM=copy;
+#--error 40177
+#alter table t1 change id id1 int, ALGORITHM=copy;
+#show create table t1;
+show create table t2;
+alter table t1 add column id1 int auto_increment, add index id1(id1), ALGORITHM=copy;
+alter table t2 add column id1 int auto_increment, add index id1(id1), ALGORITHM=copy;
+show create table t1;
+show create table t2;
+alter table t1 drop column id1, add column b blob, change c c1 char(16), ALGORITHM=copy;
+alter table t2 drop column id1, add column b blob, change c c1 char(16), ALGORITHM=copy;
+show create table t1;
+show create table t2;
+drop table t1,t2;
+
+#seqDB-20398 #seqDB-20399 
+create table t1( c char(16) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true, ReplSize: 2 } }";
+create table t2( c char(16) ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, AutoIndexId: false, StrictDataMode: false  } }";
+create table t1_new like t1;
+create table t2_new like t2;
+show create table t1_new;
+show create table t2_new;
+drop table t1,t2,t1_new,t2_new;
+
+#seqDB-20473 
+create table t1( id int ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
+alter table t1 comment = "user string, sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }", ALGORITHM=copy;
+show create table t1;
+drop table t1;
+
+drop database test_alter;
