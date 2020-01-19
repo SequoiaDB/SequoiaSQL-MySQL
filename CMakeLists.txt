@@ -277,7 +277,7 @@ if(TEST_DIR_TYPE STREQUAL "directory")
    )
 endif()
 
-set(updateCmd "find ${SQL_SOURCE_ROOT} -type f |
+set(updateCmd "find -L ${SQL_SOURCE_ROOT} -type f |
                xargs grep -l CMAKE_SOURCE_DIR 2>/dev/null |
                xargs sed -i 's/CMAKE_SOURCE_DIR/SQL_SOURCE_ROOT/g' 2>/dev/null")
 execute_process(COMMAND bash -c ${updateCmd})
@@ -336,7 +336,6 @@ install(FILES "${CMAKE_BINARY_DIR}/sdb_doc.cnf"
 
 # Extra install options.
 if(MYSQL EQUAL "5.7.28")
-execute_process(COMMAND bash -c ${updateCmd})
    set(updateCmd "sed -ie \"s@\\(^[ ]\\{1,\\}\\)\\bREADME@\\1${SQL_SOURCE_ROOT}/README@\" ${SQL_SOURCE_ROOT}/CMakeLists.txt")
    execute_process(COMMAND bash -c ${updateCmd})
    set(updateCmd "sed -ie \"s@\\(^[ ]\\{1,\\}\\)\\bLICENSE@\\1${SQL_SOURCE_ROOT}/LICENSE@\" ${SQL_SOURCE_ROOT}/CMakeLists.txt")
