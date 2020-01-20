@@ -136,12 +136,12 @@ drop table t1;
 # Test of CREATE ... SELECT with indexes
 #
 #BUG #SEQUOIASQLMAINSTREAM-556
-#create table t1 (a int auto_increment not null primary key, B CHAR(20));
-#insert into t1 (b) values ("hello"),("my"),("world");
-#create table t2 (key (b)) select * from t1;
-##explain select * from t2 where b="world";
-#select * from t2 where b="world";
-#drop table t1,t2;
+create table t1 (a int auto_increment not null primary key, B CHAR(20));
+insert into t1 (b) values ("hello"),("my"),("world");
+create table t2 (key (b)) select * from t1;
+#explain select * from t2 where b="world";
+select * from t2 where b="world";
+drop table t1,t2;
 
 #
 # Test types after CREATE ... SELECT
