@@ -105,6 +105,7 @@
 
 #define SDB_GET_LAST_ERROR_FAILED "Get last error object failed."
 #define SDB_GET_CONNECT_FAILED "Get connect to the specified address failed"
+#define SDB_ACQUIRE_TRANSACTION_LOCK "Acquire transaction lock"
 
 #define SDB_COMMENT "sequoiadb"
 
