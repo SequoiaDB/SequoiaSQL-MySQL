@@ -398,9 +398,8 @@ CREATE TABLE t4 (a int);
 INSERT INTO t4 values (1), (2);
 INSERT IGNORE INTO t4 SELECT a + 2 FROM t4 LIMIT ROWS EXAMINED 0;
 select * from t4;
-# SequoiaDB will return error
---error 1931
-INSERT INTO t4 SELECT a + 2 FROM t4 LIMIT ROWS EXAMINED 6;
+# InnoDB will crash in Debug mode
+#INSERT INTO t4 SELECT a + 2 FROM t4 LIMIT ROWS EXAMINED 6;
 select * from t4;
 drop table t4;
 
