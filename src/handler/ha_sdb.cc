@@ -1603,7 +1603,6 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
       if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
         thd_mark_transaction_to_rollback(ha_thd(), 1);
       }
-      rc = HA_ERR_LOCK_WAIT_TIMEOUT;
       goto error;
     }
 
@@ -1645,7 +1644,6 @@ int ha_sdb::delete_row(const uchar *buf) {
     if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
       thd_mark_transaction_to_rollback(ha_thd(), 1);
     }
-    rc = HA_ERR_LOCK_WAIT_TIMEOUT;
     goto error;
   }
 
@@ -2147,7 +2145,6 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
         thd_mark_transaction_to_rollback(ha_thd(), 1);
       }
-      rc = HA_ERR_LOCK_WAIT_TIMEOUT;
       goto error;
     }
 
@@ -2187,7 +2184,6 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
           if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
             thd_mark_transaction_to_rollback(ha_thd(), 1);
           }
-          rc = HA_ERR_LOCK_WAIT_TIMEOUT;
           goto error;
         }
 
@@ -2378,7 +2374,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
       thd_mark_transaction_to_rollback(ha_thd(), 1);
     }
-    rc = HA_ERR_LOCK_WAIT_TIMEOUT;
     goto error;
   }
 
@@ -2927,7 +2922,6 @@ int ha_sdb::rnd_next(uchar *buf) {
       if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
         thd_mark_transaction_to_rollback(ha_thd(), 1);
       }
-      rc = HA_ERR_LOCK_WAIT_TIMEOUT;
       goto error;
     }
 
@@ -3565,7 +3559,6 @@ int ha_sdb::delete_all_rows() {
     if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
       thd_mark_transaction_to_rollback(ha_thd(), 1);
     }
-    rc = HA_ERR_LOCK_WAIT_TIMEOUT;
     goto error;
   }
 
@@ -4641,6 +4634,15 @@ done:
     }
     case SDB_SEQUENCE_EXCEEDED: {
       my_error(ER_AUTOINC_READ_FAILED, MYF(0));
+      break;
+    }
+    case SDB_TIMEOUT: {
+      if (strncmp(error_msg, SDB_ACQUIRE_TRANSACTION_LOCK,
+                  strlen(SDB_ACQUIRE_TRANSACTION_LOCK)) == 0) {
+        my_error(ER_LOCK_WAIT_TIMEOUT, MYF(0));
+      } else {
+        my_printf_error(error, "%s", MYF(0), error_msg);
+      }
       break;
     }
     default:
