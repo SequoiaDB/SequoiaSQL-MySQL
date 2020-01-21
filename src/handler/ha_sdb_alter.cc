@@ -2530,6 +2530,11 @@ int Sdb_cl_copyer::copy() {
 done:
   DBUG_RETURN(rc);
 error:
+  tmp_rc = m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name);
+  if (tmp_rc != 0) {
+    SDB_LOG_WARNING("Failed to rollback creation of cl[%s.%s], rc: %d",
+                    m_new_cs, m_new_mcl_tmp_name, tmp_rc);
+  }
   list_it.init(m_new_scl_tmp_fullnames);
   while ((cl_fullname = list_it++)) {
     sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
