@@ -1,7 +1,8 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+#(Case #13097: Check insert/update/delete/select of NULL)
+
+--source include/have_sequoiadb.inc
 
 # Initialise
 --disable_warnings
@@ -56,7 +57,7 @@ DROP TABLE t1;
 #
 # Testing of IFNULL
 #
-create table t1 (a int, b int) engine=myisam;
+create table t1 (a int, b int) engine=sequoiadb;
 insert into t1 values(20,null);
 select t2.b, ifnull(t2.b,"this is null") from t1 as t2 left join t1 as t3 on
 t2.b=t3.a;
@@ -70,6 +71,7 @@ drop table t1;
 #
 # Test inserting and updating with NULL
 #
+#Bug #SEQUOIADBMAINSTREAM-3583
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 CREATE TABLE t1 (a varchar(16) NOT NULL default '', b smallint(6) NOT NULL default 0, c datetime NOT NULL default '0000-00-00 00:00:00', d smallint(6) NOT NULL default 0);
 INSERT INTO t1 SET a = "", d= "2003-01-14 03:54:55";
@@ -98,6 +100,7 @@ INSERT INTO t1 (d) values (null),(null);
 select * from t1;
 drop table t1;
 SET sql_mode = default;
+
 #
 # Test to check elimination of IS NULL predicate for a non-nullable attribute
 # (bug #1990)  
@@ -106,8 +109,8 @@ create table t1 (a int not null, b int not null, index idx(a));
 insert into t1 values
   (1,1), (2,2), (3,3), (4,4), (5,5), (6,6),
   (7,7), (8,8), (9,9), (10,10), (11,11), (12,12);
-explain select * from t1 where a between 2 and 3;
-explain select * from t1 where a between 2 and 3 or b is null;
+#explain select * from t1 where a between 2 and 3;
+#explain select * from t1 where a between 2 and 3 or b is null;
 drop table t1;
 select cast(NULL as signed);
 
@@ -127,12 +130,13 @@ insert into t1 select i*2 from t1;
 insert into t1 select i*2 from t1;
 insert into t1 select i*2 from t1;
 insert into t1 values(null);
-explain select * from t1 where i=2 or i is null;
+#explain select * from t1 where i=2 or i is null;
 select count(*) from t1 where i=2 or i is null;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+#BUG #SEQUOIASQLMAINSTREAM-398
 alter table t1 change i i int not null;
 SET sql_mode = default;
-explain select * from t1 where i=2 or i is null;
+#explain select * from t1 where i=2 or i is null;
 select count(*) from t1 where i=2 or i is null;
 drop table t1;
 
@@ -207,18 +211,18 @@ set names latin1;
 #
 # Bug#19145: mysqld crashes if you set the default value of an enum field to NULL
 #
-create table bug19145a (e enum('a','b','c')          default 'b' , s set('x', 'y', 'z')          default 'y' ) engine=MyISAM;
-create table bug19145b (e enum('a','b','c')          default null, s set('x', 'y', 'z')          default null) engine=MyISAM;
+create table bug19145a (e enum('a','b','c')          default 'b' , s set('x', 'y', 'z')          default 'y' ) engine=SequoiaDB;
+create table bug19145b (e enum('a','b','c')          default null, s set('x', 'y', 'z')          default null) engine=SequoiaDB;
 
-create table bug19145c (e enum('a','b','c') not null default 'b' , s set('x', 'y', 'z') not null default 'y' ) engine=MyISAM;
+create table bug19145c (e enum('a','b','c') not null default 'b' , s set('x', 'y', 'z') not null default 'y' ) engine=SequoiaDB;
 
 # Invalid default value for 's'
 --error 1067
-create table bug19145setnotnulldefaultnull (e enum('a','b','c')          default null, s set('x', 'y', 'z') not null default null) engine=MyISAM;
+create table bug19145setnotnulldefaultnull (e enum('a','b','c')          default null, s set('x', 'y', 'z') not null default null) engine=SequoiaDB;
 
 # Invalid default value for 'e'
 --error 1067
-create table bug19145enumnotnulldefaultnull (e enum('a','b','c') not null default null, s set('x', 'y', 'z')          default null) engine=MyISAM;
+create table bug19145enumnotnulldefaultnull (e enum('a','b','c') not null default null, s set('x', 'y', 'z')          default null) engine=SequoiaDB;
 
 alter table bug19145a alter column e set default null;
 alter table bug19145a alter column s set default null;
@@ -269,3 +273,5 @@ DESCRIBE t2;
 DROP TABLE t1, t2;
 
 --echo # End of 5.0 tests
+
+--source include/uninstall_sequoiadb.inc

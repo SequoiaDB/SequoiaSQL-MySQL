@@ -6,8 +6,6 @@ SET @safe_character_set_client= @@character_set_client;
 SET @safe_character_set_results= @@character_set_results;
 SET character_set_server= @test_character_set;
 SET collation_server= @test_collation;
-CREATE DATABASE d1;
-USE d1;
 CREATE TABLE t1 (c CHAR(10), KEY(c));
 SHOW FULL COLUMNS FROM t1;
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
@@ -26,13 +24,13 @@ c1	varchar(15)	gb18030_chinese_ci	YES	MUL	NULL
 INSERT INTO t1 VALUES ('location'),('loberge'),('lotre'),('boabab');
 SELECT c1 as want3results from t1 where c1 like 'l%';
 want3results
-location
 loberge
+location
 lotre
 SELECT c1 as want3results from t1 where c1 like 'lo%';
 want3results
-location
 loberge
+location
 lotre
 SELECT c1 as want1result  from t1 where c1 like 'loc%';
 want1result
@@ -79,14 +77,12 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `name` varchar(10) DEFAULT NULL,
   `level` smallint(5) unsigned DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=gb18030
+) ENGINE=SEQUOIADB DEFAULT CHARSET=gb18030
 insert into t1 values ('string',1);
 select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 concat(name,space(level))	concat(name, repeat(' ',level))
 string 	string 
 drop table t1;
-DROP DATABASE d1;
-USE test;
 SET character_set_server= @safe_character_set_server;
 SET collation_server= @safe_collation_server;
 SET character_set_client= @safe_character_set_client;
@@ -101,28 +97,6 @@ collation(a)	hex(a)
 gb18030_chinese_ci	6109
 gb18030_chinese_ci	61
 gb18030_chinese_ci	6120
-drop table t1;
-create table t1 engine=innodb select repeat('a',50) as c1;
-alter table t1 add index(c1(5));
-insert into t1 values ('abcdefg'),('abcde100'),('abcde110'),('abcde111');
-select collation(c1) from t1 limit 1;
-collation(c1)
-gb18030_chinese_ci
-select c1 from t1 where c1 like 'abcdef%' order by c1;
-c1
-abcdefg
-select c1 from t1 where c1 like 'abcde1%' order by c1;
-c1
-abcde100
-abcde110
-abcde111
-select c1 from t1 where c1 like 'abcde11%' order by c1;
-c1
-abcde110
-abcde111
-select c1 from t1 where c1 like 'abcde111%' order by c1;
-c1
-abcde111
 drop table t1;
 select @@collation_connection;
 @@collation_connection
@@ -152,7 +126,6 @@ INSERT INTO t1 (a, b) VALUES (4, repeat(0xF1F2,12));
 SELECT hex(concat(repeat(0xF1F2, 10), '%'));
 hex(concat(repeat(0xF1F2, 10), '%'))
 F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F225
-3 rows expected
 SELECT a, hex(b), c FROM t1 WHERE b LIKE concat(repeat(0xF1F2,10), '%');
 a	hex(b)	c
 2	F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2	NULL
@@ -251,28 +224,6 @@ gb18030_bin	6109
 gb18030_bin	61
 gb18030_bin	6120
 drop table t1;
-create table t1 engine=innodb select repeat('a',50) as c1;
-alter table t1 add index(c1(5));
-insert into t1 values ('abcdefg'),('abcde100'),('abcde110'),('abcde111');
-select collation(c1) from t1 limit 1;
-collation(c1)
-gb18030_bin
-select c1 from t1 where c1 like 'abcdef%' order by c1;
-c1
-abcdefg
-select c1 from t1 where c1 like 'abcde1%' order by c1;
-c1
-abcde100
-abcde110
-abcde111
-select c1 from t1 where c1 like 'abcde11%' order by c1;
-c1
-abcde110
-abcde111
-select c1 from t1 where c1 like 'abcde111%' order by c1;
-c1
-abcde111
-drop table t1;
 select @@collation_connection;
 @@collation_connection
 gb18030_bin
@@ -301,7 +252,6 @@ INSERT INTO t1 (a, b) VALUES (4, repeat(0xF1F2,12));
 SELECT hex(concat(repeat(0xF1F2, 10), '%'));
 hex(concat(repeat(0xF1F2, 10), '%'))
 F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F225
-3 rows expected
 SELECT a, hex(b), c FROM t1 WHERE b LIKE concat(repeat(0xF1F2,10), '%');
 a	hex(b)	c
 2	F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2	NULL
@@ -372,7 +322,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` mediumtext NOT NULL,
   `c2` text NOT NULL
-) ENGINE=default_engine DEFAULT CHARSET=gb18030
+) ENGINE=SEQUOIADB DEFAULT CHARSET=gb18030
 DROP TABLE t1;
 CREATE TABLE t1(a MEDIUMTEXT CHARACTER SET gb18030,
 b MEDIUMTEXT CHARACTER SET big5);
@@ -1161,7 +1111,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `c` varchar(10) CHARACTER SET gb18030 COLLATE gb18030_unicode_520_ci NOT NULL DEFAULT ''
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 INSERT INTO t1 VALUES (_utf32 0x0180),(_utf32 0x023A);
 INSERT INTO t1 VALUES (_utf32 0x023B),(_utf32 0x023C);
 INSERT INTO t1 VALUES (_utf32 0x023D),(_utf32 0x023E);
@@ -1425,30 +1375,21 @@ hex(c)	hex(weight_string(c))
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10400 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
 9030E734	30D2	𐐀
-9030EB34	30D2	𐐨
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10428 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
-9030E734	30D2	𐐀
 9030EB34	30D2	𐐨
 ALTER TABLE t1 ADD KEY(c);
-EXPLAIN SELECT hex(c) FROM t1 WHERE c LIKE 'a%' ORDER BY c;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	c	c	42	NULL	4	100.00	Using where; Using index
-Warnings:
-Note	1003	/* select#1 */ select hex(`test`.`t1`.`c`) AS `hex(c)` from `test`.`t1` where (`test`.`t1`.`c` like 'a%') order by `test`.`t1`.`c`
 SELECT hex(c), hex(weight_string(c)) FROM t1 WHERE c LIKE 'a%' ORDER BY c;
 hex(c)	hex(weight_string(c))
 61	120F
-619030E734	120F30D2
 618431A439	120FFBC1FFFF
+619030E734	120F30D2
 61E3329A35	120FFBE1FFFF
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10400 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
 9030E734	30D2	𐐀
-9030EB34	30D2	𐐨
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10428 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
-9030E734	30D2	𐐀
 9030EB34	30D2	𐐨
 DROP TABLE t1;
 SET NAMES gb18030 COLLATE gb18030_unicode_520_ci;
@@ -1499,10 +1440,6 @@ HEX(c)	CONVERT(c USING utf8mb4)
 B4F3BDADB6ABC8A5A3ACC0CBCCD4BEA1A1A2C7A7B9C5B7E7C1F7C8CBCEEFA1A3	大江东去，浪淘尽、千古风流人物。
 B9CAC0DDCEF7B1DFA3ACC8CBB5C0CAC7A1A2C8FDB9FAD6DCC0C9B3E0B1DAA1A3	故垒西边，人道是、三国周郎赤壁。
 C8CBBCE4C8E7C3CEA3ACD2BBE9D7BBB9F5AABDADD4C2A1A3	人间如梦，一樽还酹江月。
-SELECT HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c > 0xD2A3;
-HEX(c)	CONVERT(c USING utf8mb4)
-D2A3CFEBB9ABE8AAB5B1C4EAA3ACD0A1C7C7B3F5BCDEC1CBA3ACD0DBD7CBD3A2B7A2A1A3	遥想公瑾当年，小乔初嫁了，雄姿英发。
-D3F0C9C8C2DABDEDA3ACCCB8D0A6BCE4A1A2E9C9E9D6BBD2B7C9D1CCC3F0A1A3	羽扇纶巾，谈笑间、樯橹灰飞烟灭。
 TRUNCATE TABLE t1;
 INSERT INTO t1 VALUES(0x5373547483329330);
 INSERT INTO t1 VALUES(0x8239AB318239AB358239AF3583308132833087348335EB39);
@@ -1534,18 +1471,19 @@ Js  K䑸def	4A7320204B82339A35646566	Js  K䑸def
 丂丄㒙	814081418139FE30	丂丄㒙
 	81308130FEFE	
 􏿿􏿾	E3329A35E3329A34	􏿿􏿾
-??	FE39FE39FE38FE38	??
-?﹙	FE39FE38A976	?﹙
+??	3F3F	??
+?﹙	3FA976	?﹙
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c LIKE CONCAT('%', _gb18030 0x9835CE35, '%');
 c	HEX(c)	CONVERT(c USING utf8mb4)
 𪕪𪕣𪛖	9835CF329835CE359835F336	𪕪𪕣𪛖
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c = 0x8130883281308833;
 c	HEX(c)	CONVERT(c USING utf8mb4)
-ÎÏ	8130883281308833	ÎÏ
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c > 0xE040 AND c < 0x8239AB31;
 c	HEX(c)	CONVERT(c USING utf8mb4)
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1 ORDER BY c;
 c	HEX(c)	CONVERT(c USING utf8mb4)
+??	3F3F	??
+?﹙	3FA976	?﹙
 Js  K䑸def	4A7320204B82339A35646566	Js  K䑸def
 SsTt숿	5373547483329330	SsTt숿
 	81308130FEFE	
@@ -1555,12 +1493,10 @@ SsTt숿	5373547483329330	SsTt숿
 	833988318339883283398539	
 𪕪𪕣𪛖	9835CF329835CE359835F336	𪕪𪕣𪛖
 􏿿􏿾	E3329A35E3329A34	􏿿􏿾
-?﹙	FE39FE38A976	?﹙
 丂丄㒙	814081418139FE30	丂丄㒙
 䑠䑚䑻䣈	823398318233973582339A3882348A32	䑠䑚䑻䣈
 郷鄇wv䐣	E05FE06A777682339230	郷鄇wv䐣
 𦠟𦠡𦣃𩄧𩅚	97339631973396339733A6359831C0359831C536	𦠟𦠡𦣃𩄧𩅚
-??	FE39FE39FE38FE38	??
 TRUNCATE TABLE t1;
 INSERT INTO t1 VALUES(0x8139818F);
 Warnings:
@@ -1658,14 +1594,6 @@ c	HEX(c)
 袰	D143
 SELECT c, HEX(c) FROM t1 WHERE c >= 0x8483 and c < 0xE2C4 ORDER BY c;
 c	HEX(c)
-剝	8483
-剥	B0FE
-哱	865C
-盋	B143
-砵	B36A
-袚	D093
-𧙄	97368632
-钵	B2A7
 SELECT c, HEX(c) FROM t1 WHERE c LIKE 0xB0FE;
 c	HEX(c)
 剥	B0FE
@@ -1712,13 +1640,13 @@ CREATE TABLE t1 (c CHAR(1) CHARACTER SET gb18030, v VARCHAR(100) CHARACTER SET g
 INSERT INTO t1 VALUES(0x8140, 0x81308132A6C9A6A985328338);
 SELECT HEX(c), c, HEX(v), v FROM t1;
 HEX(c)	c	HEX(v)	v
-8140	丂	81308132A6C9A6A985328338	ιΙ?
+8140	丂	81308132A6C9A6A93F	ιΙ?
 ALTER TABLE t1 ADD COLUMN t TEXT CHARACTER SET gb18030;
 INSERT INTO t1 VALUES(0xBC81, 0x82358132FE39FE3940414281308135, 0x84678578);
 SELECT HEX(c), c, HEX(v), v, HEX(t), t FROM t1;
 HEX(c)	c	HEX(v)	v	HEX(t)	t
-8140	丂	81308132A6C9A6A985328338	ιΙ?	NULL	NULL
-BC81	紒	82358132FE39FE3940414281308135	䵲?@AB	84678578	刧厁
+8140	丂	81308132A6C9A6A93F	ιΙ?	NULL	NULL
+BC81	紒	823581323F40414281308135	䵲?@AB	84678578	刧厁
 DROP TABLE t1;
 CREATE TABLE t1 (c VARCHAR(10) CHARACTER SET gb18030);
 INSERT INTO t1 VALUES(0x81308A3181308A3181308A3181308A3181308732);
@@ -1801,7 +1729,7 @@ CCE7	1
 99CC	1
 8BF5819AEDC3	1
 DROP TABLE t1;
-CREATE TABLE t1 (a int) ENGINE=InnoDB;
+CREATE TABLE t1 (a int) ENGINE=SequoiaDB;
 LOAD DATA INFILE '../../std_data/bug21542698.dat' INTO TABLE t1 CHARACTER SET gb18030;
 ERROR HY000: Invalid gb18030 character string: 'MZ'
 DROP TABLE t1;

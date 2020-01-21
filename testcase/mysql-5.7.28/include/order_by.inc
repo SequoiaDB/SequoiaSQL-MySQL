@@ -1,7 +1,6 @@
 #
 # Bug with order by
 #
-
 --disable_warnings
 drop table if exists t1,t2,t3;
 --enable_warnings
@@ -51,8 +50,7 @@ INSERT INTO t2 VALUES (6,'Ajouter un service','t2_ajoute_form.phtml',51050,'link
 
 
 select t1.id,t1.idservice,t2.ordre,t2.description  from t1, t2 where t1.id = 2   and t1.idservice = t2.id  order by t2.ordre;
- 
-drop table t1,t2;
+drop table if exists t1,t2;
 
 #
 # Test of ORDER BY on concat() result
@@ -104,7 +102,6 @@ drop table t1;
 #
 # Test of order by on field()
 #
-
 CREATE TABLE t1 (id int auto_increment primary key,aika varchar(40),aikakentta  timestamp);
 insert into t1 (aika) values ('Keskiviikko');
 insert into t1 (aika) values ('Tiistai');
@@ -190,7 +187,6 @@ select t3.DateOfAction, t1.TransactionID from t1 join t2 join t3 where t2.ID = t
 drop table t1,t2,t3;
 
 #bug reported by Wouter de Jong
-
 CREATE TABLE t1 (
   member_id int(11) NOT NULL auto_increment,
   inschrijf_datum varchar(20) NOT NULL default '',
@@ -220,7 +216,7 @@ CREATE TABLE t1 (
   info text NOT NULL default '',
   ipnr varchar(30) NOT NULL default '',
   PRIMARY KEY  (member_id)
-) ENGINE=MyISAM PACK_KEYS=1;
+) ENGINE=SequoiaDB PACK_KEYS=1;
 
 insert into t1 (member_id) values (1),(2),(3);
 select member_id, nickname, voornaam FROM t1
@@ -234,55 +230,53 @@ drop table t1;
 create table t1 (a int not null, b int, c varchar(10), key (a, b, c));
 insert into t1 values (1, NULL, NULL), (1, NULL, 'b'), (1, 1, NULL), (1, 1, 'b'), (1, 1, 'b'), (2, 1, 'a'), (2, 1, 'b'), (2, 2, 'a'), (2, 2, 'b'), (2, 3, 'c'),(1,3,'b');
 
-explain select * from t1 where (a = 1 and b is null and c = 'b') or (a > 2) order by a desc;
+#explain select * from t1 where (a = 1 and b is null and c = 'b') or (a > 2) order by a desc;
 select * from t1 where (a = 1 and b is null and c = 'b') or (a > 2) order by a desc;
-explain select * from t1 where a >= 1 and a < 3 order by a desc;
+#explain select * from t1 where a >= 1 and a < 3 order by a desc;
 select * from t1 where a >= 1 and a < 3 order by a desc;
-explain select * from t1 where a = 1 order by a desc, b desc;
+#explain select * from t1 where a = 1 order by a desc, b desc;
 select * from t1 where a = 1 order by a desc, b desc;
-explain select * from t1 where a = 1 and b is null order by a desc, b desc;
+#explain select * from t1 where a = 1 and b is null order by a desc, b desc;
 select * from t1 where a = 1 and b is null order by a desc, b desc;
-explain select * from t1 where a >= 1 and a < 3 and b >0 order by a desc,b desc;
-explain select * from t1 where a = 2 and b >0 order by a desc,b desc;
-explain select * from t1 where a = 2 and b is null order by a desc,b desc;
-explain select * from t1 where a = 2 and (b is null or b > 0) order by a
-desc,b desc;
-explain select * from t1 where a = 2 and b > 0 order by a desc,b desc;
-explain select * from t1 where a = 2 and b < 2 order by a desc,b desc;
-explain select * from t1 where a = 1 order by b desc;
+#explain select * from t1 where a >= 1 and a < 3 and b >0 order by a desc,b desc;
+#explain select * from t1 where a = 2 and b >0 order by a desc,b desc;
+#explain select * from t1 where a = 2 and b is null order by a desc,b desc;
+#explain select * from t1 where a = 2 and (b is null or b > 0) order by a
+#desc,b desc;
+#explain select * from t1 where a = 2 and b > 0 order by a desc,b desc;
+#explain select * from t1 where a = 2 and b < 2 order by a desc,b desc;
+#explain select * from t1 where a = 1 order by b desc;
 select * from t1 where a = 1 order by b desc;
 #
 # Test things when we don't have NULL keys
 #
-
 alter table t1 modify b int not null, modify c varchar(10) not null;
-explain select * from t1 order by a, b, c;
+#explain select * from t1 order by a, b, c;
 select * from t1 order by a, b, c;
-explain select * from t1 order by a desc, b desc, c desc;
+#explain select * from t1 order by a desc, b desc, c desc;
 select * from t1 order by a desc, b desc, c desc;
 # test multiple ranges, NO_MAX_RANGE and EQ_RANGE
-explain select * from t1 where (a = 1 and b = 1 and c = 'b') or (a > 2) order by a desc;
+#explain select * from t1 where (a = 1 and b = 1 and c = 'b') or (a > 2) order by a desc;
 select * from t1 where (a = 1 and b = 1 and c = 'b') or (a > 2) order by a desc;
 # test NEAR_MAX, NO_MIN_RANGE
-explain select * from t1 where a < 2 and b <= 1 order by a desc, b desc;
+#explain select * from t1 where a < 2 and b <= 1 order by a desc, b desc;
 select * from t1 where a < 2 and b <= 1 order by a desc, b desc;
 select count(*) from t1 where a < 5 and b > 0;
 select * from t1 where a < 5 and b > 0 order by a desc,b desc;
 # test HA_READ_AFTER_KEY (at the end of the file), NEAR_MIN
-explain select * from t1 where a between 1 and 3 and b <= 1 order by a desc, b desc;
+#explain select * from t1 where a between 1 and 3 and b <= 1 order by a desc, b desc;
 select * from t1 where a between 1 and 3 and b <= 1 order by a desc, b desc;
 # test HA_READ_AFTER_KEY (in the middle of the file)
-explain select * from t1 where a between 0 and 1 order by a desc, b desc;
+#explain select * from t1 where a between 0 and 1 order by a desc, b desc;
 select * from t1 where a between 0 and 1 order by a desc, b desc;
 drop table t1;
-
 
 CREATE TABLE t1 (
   gid int(10) unsigned NOT NULL auto_increment,
   cid smallint(5) unsigned NOT NULL default '0',
   PRIMARY KEY  (gid),
   KEY component_id (cid)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (103853,108),(103867,108),(103962,108),(104505,108),(104619,108),(104620,108);
 ALTER TABLE t1 add skr int(10) not null;
 
@@ -293,13 +287,13 @@ CREATE TABLE t2 (
   PRIMARY KEY  (gid),
   KEY uid (uid),
   KEY status_id (sid)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES (103853,250,5),(103867,27,5),(103962,27,5),(104505,117,5),(104619,75,5),(104620,15,5);
 
 CREATE TABLE t3 (
   uid smallint(6) NOT NULL auto_increment,
   PRIMARY KEY  (uid)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t3 VALUES (1),(15),(27),(75),(117),(250);
 ALTER TABLE t3 add skr int(10) not null;
 
@@ -307,19 +301,18 @@ select t1.gid, t2.sid, t3.uid from t2, t1, t3 where t2.gid = t1.gid and t2.uid =
 select t1.gid, t2.sid, t3.uid from t3, t2, t1 where t2.gid = t1.gid and t2.uid = t3.uid order by t3.uid, t1.gid;
 
 # The following ORDER BY can be optimimized
-EXPLAIN select t1.gid, t2.sid, t3.uid from t3, t2, t1 where t2.gid = t1.gid and t2.uid = t3.uid order by t1.gid, t3.uid;
-EXPLAIN SELECT t1.gid, t3.uid from t1, t3 where t1.gid = t3.uid order by t1.gid,t3.skr;
+#EXPLAIN select t1.gid, t2.sid, t3.uid from t3, t2, t1 where t2.gid = t1.gid and t2.uid = t3.uid order by t1.gid, t3.uid;
+#EXPLAIN SELECT t1.gid, t3.uid from t1, t3 where t1.gid = t3.uid order by t1.gid,t3.skr;
 
 # The following ORDER BY can't be optimimized
-EXPLAIN SELECT t1.gid, t2.sid, t3.uid from t2, t1, t3 where t2.gid = t1.gid and t2.uid = t3.uid order by t3.uid, t1.gid;
-EXPLAIN SELECT t1.gid, t3.uid from t1, t3 where t1.gid = t3.uid order by t3.skr,t1.gid;
-EXPLAIN SELECT t1.gid, t3.uid from t1, t3 where t1.skr = t3.uid order by t1.gid,t3.skr;
+#EXPLAIN SELECT t1.gid, t2.sid, t3.uid from t2, t1, t3 where t2.gid = t1.gid and t2.uid = t3.uid order by t3.uid, t1.gid;
+#EXPLAIN SELECT t1.gid, t3.uid from t1, t3 where t1.gid = t3.uid order by t3.skr,t1.gid;
+#EXPLAIN SELECT t1.gid, t3.uid from t1, t3 where t1.skr = t3.uid order by t1.gid,t3.skr;
 drop table t1,t2,t3;
 
 #
 # Test of bug when doing an ORDER BY with const items
 #
-
 CREATE TABLE t1 (
   `titre` char(80) NOT NULL default '',
   `numeropost` mediumint(8) unsigned NOT NULL auto_increment,
@@ -372,7 +365,6 @@ DROP TABLE t1;
 #
 # Test of FORCE INDEX ... ORDER BY
 #
-
 create table t1(id int not null auto_increment primary key, t char(12));
 disable_query_log;
 let $1 = 1000;
@@ -382,8 +374,8 @@ while ($1)
   dec $1;
  }
 enable_query_log;
-explain select id,t from t1 order by id;
-explain select id,t from t1 force index (primary) order by id;
+#explain select id,t from t1 order by id;
+#explain select id,t from t1 force index (primary) order by id;
 drop table t1;
 
 #
@@ -398,11 +390,11 @@ CREATE TABLE t1 (
   KEY StringField (FieldKey,StringVal(32))
 );
 INSERT INTO t1 VALUES ('0',3,'0'),('0',2,'1'),('0',1,'2'),('1',2,'1'),('1',1,'3'), ('1',0,'2'),('2',3,'0'),('2',2,'1'),('2',1,'2'),('2',3,'0'),('2',2,'1'),('2',1,'2'),('3',2,'1'),('3',1,'2'),('3','3','3');
-EXPLAIN SELECT * FROM t1 WHERE FieldKey = '1' ORDER BY LongVal;
+#EXPLAIN SELECT * FROM t1 WHERE FieldKey = '1' ORDER BY LongVal;
 SELECT * FROM t1 WHERE FieldKey = '1' ORDER BY LongVal;
-EXPLAIN SELECT * FROM t1 ignore index (FieldKey, LongField) WHERE FieldKey > '2' ORDER BY LongVal;
+#EXPLAIN SELECT * FROM t1 ignore index (FieldKey, LongField) WHERE FieldKey > '2' ORDER BY LongVal;
 SELECT * FROM t1 WHERE FieldKey > '2' ORDER BY LongVal;
-EXPLAIN SELECT * FROM t1 WHERE FieldKey > '2' ORDER BY FieldKey, LongVal;
+#EXPLAIN SELECT * FROM t1 WHERE FieldKey > '2' ORDER BY FieldKey, LongVal;
 SELECT * FROM t1 WHERE FieldKey > '2' ORDER BY FieldKey, LongVal;
 DROP TABLE t1;
 #
@@ -417,7 +409,7 @@ DROP TABLE t1;
 # Bug when doing an order by on a 1 byte string (Bug #2147)
 #
 
-CREATE TABLE t1 (  id smallint(6) unsigned NOT NULL default '0',  menu tinyint(4) NOT NULL default '0',  KEY id (id),  KEY menu (menu)) ENGINE=MyISAM;
+CREATE TABLE t1 (  id smallint(6) unsigned NOT NULL default '0',  menu tinyint(4) NOT NULL default '0',  KEY id (id),  KEY menu (menu)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (11384, 2),(11392, 2);
 SELECT id FROM t1 WHERE id <11984 AND menu =2 ORDER BY id DESC LIMIT 1 ;
 drop table t1;
@@ -428,16 +420,15 @@ drop table t1;
 
 create table t1(a int, b int, index(b));
 insert into t1 values (2, 1), (1, 1), (4, NULL), (3, NULL), (6, 2), (5, 2);
-explain select * from t1 where b=1 or b is null order by a;
+#explain select * from t1 where b=1 or b is null order by a;
 select * from t1 where b=1 or b is null order by a;
-explain select * from t1 where b=2 or b is null order by a;
+#explain select * from t1 where b=2 or b is null order by a;
 select * from t1 where b=2 or b is null order by a;
 drop table t1;
 
 #
 # Bug #3155 - Strange results with index (x, y) ... WHERE ... ORDER BY pk
 #
-
 create table t1 (a int not null auto_increment, b int not null, c int not null, d int not null,
 key(a,b,d), key(c,b,a));
 create table t2 like t1;
@@ -452,7 +443,7 @@ insert into t2 select null, b, c, d from t1;
 insert into t1 select null, b, c, d from t2;
 insert into t2 select null, b, c, d from t1;
 insert into t1 select null, b, c, d from t2;
-optimize table t1;
+#optimize table t1;
 set @row=10;
 insert into t1 select 1, b, c + (@row:=@row - 1) * 10, d - @row from t2 limit 10;
 select * from t1 where a=1 and b in (1) order by c, b, a;
@@ -521,9 +512,9 @@ drop table t1;
 create table t1 (
   `sid` decimal(8,0) default null,
   `wnid` varchar(11) not null default '',
-  key `wnid14` (`wnid`(4)),
-  key `wnid` (`wnid`)
-) engine=myisam default charset=latin1;
+  key `wnid14` (`wnid`(4))
+#  key `wnid` (`wnid`) ## NOW SequoiaDB not support duplicate index
+) engine=sequoiadb default charset=latin1;
 
 insert into t1 (`sid`, `wnid`) values
 ('10100','01019000000'),('37986','01019000000'),('37987','01019010000'),
@@ -542,7 +533,7 @@ insert into t1 (`sid`, `wnid`) values
 ('25292','02071450000'),('25293','02071460000'),('25294','02071470000'),
 ('25295','02071491000'),('25296','02071491000'),('25297','02071499000');
 
-explain select * from t1 where wnid like '0101%' order by wnid;
+#explain select * from t1 where wnid like '0101%' order by wnid;
 
 select * from t1 where wnid like '0101%' order by wnid;
 
@@ -681,17 +672,17 @@ drop table t1;
 CREATE TABLE t1 (a int, b int, PRIMARY KEY  (a));
 INSERT INTO t1 VALUES (1,1), (2,2), (3,3);
 
-explain SELECT t1.b as a, t2.b as c FROM 
- t1 LEFT JOIN t1 t2 ON (t1.a = t2.a AND t2.a = 2) 
-ORDER BY c;
+#explain SELECT t1.b as a, t2.b as c FROM 
+# t1 LEFT JOIN t1 t2 ON (t1.a = t2.a AND t2.a = 2) 
+#ORDER BY c;
 SELECT t2.b as c FROM 
  t1 LEFT JOIN t1 t2 ON (t1.a = t2.a AND t2.a = 2) 
 ORDER BY c;
 
 # check that it still removes sort of const table
-explain SELECT t1.b as a, t2.b as c FROM 
- t1 JOIN t1 t2 ON (t1.a = t2.a AND t2.a = 2)  
-ORDER BY c;
+#explain SELECT t1.b as a, t2.b as c FROM 
+# t1 JOIN t1 t2 ON (t1.a = t2.a AND t2.a = 2)  
+#ORDER BY c;
 
 CREATE TABLE t2 LIKE t1;
 INSERT INTO t2 SELECT * from t1;
@@ -732,22 +723,22 @@ DROP TABLE t1;
 #
 # BUG#16590: Optimized does not do right "const" table pre-read
 #
-CREATE TABLE t1 (a INT, b INT, PRIMARY KEY (a), UNIQUE KEY b (b));
-INSERT INTO t1 VALUES (1,1),(2,2);
+#Sequoiadb not support explain
+#CREATE TABLE t1 (a INT, b INT, PRIMARY KEY (a), UNIQUE KEY b (b));
+#INSERT INTO t1 VALUES (1,1),(2,2);
 
-CREATE TABLE t2 (a INT, b INT, KEY a (a,b));
-INSERT INTO t2 VALUES (1,1),(1,2),(2,1),(2,2);
+#CREATE TABLE t2 (a INT, b INT, KEY a (a,b));
+#INSERT INTO t2 VALUES (1,1),(1,2),(2,1),(2,2);
 
-EXPLAIN SELECT 1 FROM t1,t2 WHERE t1.b=2 AND t1.a=t2.a ORDER BY t2.b;
+#EXPLAIN SELECT 1 FROM t1,t2 WHERE t1.b=2 AND t1.a=t2.a ORDER BY t2.b;
 
-DROP TABLE t1,t2;
+#DROP TABLE t1,t2;
 
 # End of 5.0
 
 #
 # Bug #28404: query with ORDER BY and ref access
 #
-
 CREATE TABLE t1(
   id int auto_increment PRIMARY KEY, c2 int, c3 int, INDEX k2(c2), INDEX k3(c3));
 
@@ -773,12 +764,19 @@ SELECT COUNT(*) FROM t1;
 CREATE TABLE t2 LIKE t1;
 INSERT INTO t2 SELECT * FROM t1 ORDER BY id;
 
-EXPLAIN SELECT id,c3 FROM t2 WHERE c2=11 ORDER BY c3 LIMIT 20;
-EXPLAIN SELECT id,c3 FROM t2 WHERE c2=11 ORDER BY c3 LIMIT 4000;
-EXPLAIN SELECT id,c3 FROM t2 WHERE c2 BETWEEN 10 AND 12 ORDER BY c3 LIMIT 20;
-EXPLAIN SELECT id,c3 FROM t2 WHERE c2 BETWEEN 20 AND 30 ORDER BY c3 LIMIT 4000;
+#EXPLAIN SELECT id,c3 FROM t2 WHERE c2=11 ORDER BY c3 LIMIT 20;
+#EXPLAIN SELECT id,c3 FROM t2 WHERE c2=11 ORDER BY c3 LIMIT 4000;
+#EXPLAIN SELECT id,c3 FROM t2 WHERE c2 BETWEEN 10 AND 12 ORDER BY c3 LIMIT 20;
+#EXPLAIN SELECT id,c3 FROM t2 WHERE c2 BETWEEN 20 AND 30 ORDER BY c3 LIMIT 4000;
 
-SELECT id,c3 FROM t2 WHERE c2=11 ORDER BY c3 LIMIT 20;
+#Bug #SEQUOIASQLMAINSTREAM-264
+--disable_query_log
+--disable_result_log
+ANALYZE TABLE t2;
+--enable_query_log
+--enable_result_log
+
+SELECT id,c3 FROM t2 WHERE c2=11 ORDER BY c3,id LIMIT 20;
 
 DROP TABLE t1,t2;
 
@@ -801,15 +799,15 @@ INSERT INTO t1 SELECT a +64, b +64 FROM t1;
 let $query=
 SELECT a FROM t1 IGNORE INDEX FOR GROUP BY (PRIMARY, ab) GROUP BY a;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 flush status;
 eval $query;
-show status like 'Created_tmp_tables';
+#show status like 'Created_tmp_tables';
 
 let $query=
 SELECT a FROM t1 IGNORE INDEX FOR ORDER BY (PRIMARY, ab) ORDER BY a;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 flush status;
 eval $query;
 show status like 'Created_tmp_tables';
@@ -817,12 +815,12 @@ show status like 'Created_tmp_tables';
 flush status;
 let $query=
 SELECT a FROM t1 IGNORE INDEX (PRIMARY, ab) GROUP BY a;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 let $query=
 SELECT a FROM t1 IGNORE INDEX (PRIMARY, ab) ORDER BY a;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 show status like 'Created_tmp_tables';
 
@@ -872,16 +870,16 @@ CREATE TABLE t1 (
 INSERT INTO t1 VALUES (1, 10), (2, NULL);
 
 --echo # Must use ref-or-null on the a_c index
-EXPLAIN
-SELECT 1 AS col FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c;
+#EXPLAIN
+#SELECT 1 AS col FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c;
 --echo # Must return 1 row
 SELECT 1 AS col FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c;
 
 # part 2 of the problem : DESC test cases
 --echo # Must use ref-or-null on the a_c index
 --replace_column 1 x 2 x 3 x 7 x 8 x 9 x 10 x 12 x
-EXPLAIN
-SELECT 1 AS col FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c DESC;
+#EXPLAIN
+#SELECT 1 AS col FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c DESC;
 --echo # Must return 1 row
 SELECT 1 AS col FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c DESC;
 
@@ -896,6 +894,7 @@ DROP TABLE t1;
 # Bug #35206: select query result different if the key is indexed or not
 #
 
+#Bug #SEQUOIADBMAINSTREAM-3589
 CREATE TABLE t2 (a varchar(32), b int(11), c float, d double, 
   UNIQUE KEY a (a,b,c), KEY b (b), KEY c (c));
 
@@ -1337,18 +1336,18 @@ INSERT INTO t2 (a, b, c, d) VALUES
 
 INSERT INTO t3 SELECT * FROM t1;
 
-EXPLAIN
-SELECT d FROM t1, t2
-WHERE t2.b=14 AND t2.a=t1.a AND 5.1<t2.c AND t1.b='DE'
-ORDER BY t2.c LIMIT 1;
+#EXPLAIN
+#SELECT d FROM t1, t2
+#WHERE t2.b=14 AND t2.a=t1.a AND 5.1<t2.c AND t1.b='DE'
+#ORDER BY t2.c LIMIT 1;
 SELECT d FROM t1, t2
 WHERE t2.b=14 AND t2.a=t1.a AND 5.1<t2.c AND t1.b='DE'
 ORDER BY t2.c LIMIT 1;
 
-EXPLAIN
-SELECT d FROM t3 AS t1, t2 AS t2 
-WHERE t2.b=14 AND t2.a=t1.a AND 5.1<t2.c AND t1.b='DE'
-ORDER BY t2.c LIMIT 1;
+#EXPLAIN
+#SELECT d FROM t3 AS t1, t2 AS t2 
+#WHERE t2.b=14 AND t2.a=t1.a AND 5.1<t2.c AND t1.b='DE'
+#ORDER BY t2.c LIMIT 1;
 SELECT d FROM t3 AS t1, t2 AS t2 
 WHERE t2.b=14 AND t2.a=t1.a AND 5.1<t2.c AND t1.b='DE'
 ORDER BY t2.c LIMIT 1;
@@ -1358,7 +1357,6 @@ DROP TABLE t1,t2,t3;
 --echo #
 --echo # WL#1393 - Optimizing filesort with small limit
 --echo #
-
 CREATE TABLE t1(f0 int auto_increment primary key, f1 int, f2 varchar(200));
 INSERT INTO t1(f1, f2) VALUES 
 (0,"0"),(1,"1"),(2,"2"),(3,"3"),(4,"4"),(5,"5"),
@@ -1396,7 +1394,7 @@ SELECT * FROM t1 WHERE f1>10 ORDER BY f2, f0 LIMIT 10 OFFSET 10;
 SELECT * FROM t1 WHERE f1>10 ORDER BY f2, f0 LIMIT 0 OFFSET 10;
 
 ################
-## Test sort when source data does not fit in memory
+# Test sort when source data does not fit in memory
 set sort_buffer_size= 32768;
 CREATE TEMPORARY TABLE tmp (f1 int, f2 varchar(20));
 INSERT INTO tmp SELECT f1, f2 FROM t1;
@@ -1413,8 +1411,8 @@ SELECT * FROM t1 WHERE f1>10 ORDER BY f2, f0 LIMIT 0;
 SELECT * FROM t1 WHERE f1>10 ORDER BY f2, f0 LIMIT 10 OFFSET 10;
 SELECT * FROM t1 WHERE f1>10 ORDER BY f2, f0 LIMIT 0 OFFSET 10;
 
-################
-## Test with SQL_CALC_FOUND_ROWS
+###############
+# Test with SQL_CALC_FOUND_ROWS
 set sort_buffer_size= 32768;
 SELECT SQL_CALC_FOUND_ROWS * FROM t1
 ORDER BY f1, f0 LIMIT 30;
@@ -1440,9 +1438,9 @@ SELECT SQL_CALC_FOUND_ROWS * FROM t1 WHERE f1>10
 ORDER BY f2, f0 LIMIT 0 OFFSET 10;
 SELECT FOUND_ROWS();
 
-################
-## Test sorting with join
-## These are re-written to use PQ during execution.
+###############
+# Test sorting with join
+# These are re-written to use PQ during execution.
 set sort_buffer_size= 327680;
 
 SELECT * FROM t1 JOIN tmp on t1.f2=tmp.f2
@@ -1460,8 +1458,8 @@ WHERE t1.f2>20
 ORDER BY tmp.f1, f0 LIMIT 30 OFFSET 30;
 SELECT FOUND_ROWS();
 
-################
-## Test views
+###############
+# Test views
 CREATE VIEW v1 as SELECT * FROM t1 ORDER BY f1, f0 LIMIT 30;
 SELECT * FROM v1;
 drop view v1;
@@ -1473,16 +1471,16 @@ CREATE VIEW v2 as SELECT * FROM t1 ORDER BY f2, f0 LIMIT 100;
 SELECT * FROM v1 JOIN v2 on v1.f1=v2.f1 ORDER BY v1.f2,v1.f0,v2.f0
 LIMIT 30;
 
-################
-## Test group & having
+###############
+# Test group & having
 SELECT floor(f1/10) f3, count(f2) FROM t1
 GROUP BY 1 ORDER BY 2,1 LIMIT 5;
 
 SELECT floor(f1/10) f3, count(f2) FROM t1
 GROUP BY 1 ORDER BY 2,1 LIMIT 0;
 
-################
-## Test SP
+###############
+# Test SP
 delimiter |;
 CREATE PROCEDURE wl1393_sp_test()
 BEGIN
@@ -1497,8 +1495,8 @@ CALL wl1393_sp_test()|
 DROP PROCEDURE wl1393_sp_test|
 delimiter ;|
 
-################
-## Test with subqueries
+###############
+# Test with subqueries
 SELECT d1.f1, d1.f2 FROM t1
 LEFT JOIN (SELECT * FROM t1 ORDER BY f1 LIMIT 30) d1 on t1.f1=d1.f1
 ORDER BY d1.f2 DESC LIMIT 30;
@@ -1517,7 +1515,6 @@ DROP VIEW v1, v2;
 --echo # Bug #58761
 --echo # Crash in Field::is_null in field.h on subquery in WHERE clause
 --echo #
-
 CREATE TABLE t1 (
   pk INT NOT NULL AUTO_INCREMENT,
   col_int_key INT DEFAULT NULL,
@@ -1575,7 +1572,7 @@ INSERT INTO t1 VALUES (25, 7, 1), (26, 7, 2), (27, 7, 3), (28, 7, 4);
 INSERT INTO t1 VALUES (29, 8, 1), (30, 8, 2), (31, 8, 3), (32, 8, 4);
 INSERT INTO t1 VALUES (33, 9, 1), (34, 9, 2), (35, 9, 3), (36, 9, 4);
 
-EXPLAIN SELECT id1 FROM t1 WHERE id2 = 4 ORDER BY id1;
+#EXPLAIN SELECT id1 FROM t1 WHERE id2 = 4 ORDER BY id1;
 
 SELECT id1 FROM t1 WHERE id2 = 4 ORDER BY id1;
 
@@ -1585,7 +1582,7 @@ DROP TABLE t1;
 
 #
 # Bug#46454: MySQL wrong index optimisation leads to incorrect result & crashes 
-#
+# Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1 (
   a INT,
   b INT NOT NULL,
@@ -1613,16 +1610,18 @@ INSERT INTO t1 SELECT a + 80,  b, c FROM t1;
 INSERT INTO t1 SELECT a + 160, b, c FROM t1;
 INSERT INTO t1 SELECT a + 320, b, c FROM t1;
 INSERT INTO t1 SELECT a + 640, b, c FROM t1;
-INSERT INTO t1 SELECT a + 1280, b, c FROM t1 LIMIT 80;
 
-EXPLAIN
-SELECT a FROM t1 WHERE b = 1 ORDER BY c DESC LIMIT 9;
-SELECT a FROM t1 WHERE b = 1 ORDER BY c DESC LIMIT 9;
+#Sequoiadb return record can not be guaranteed,when sorting is not used.
+INSERT INTO t1 SELECT a + 1280, b, c FROM t1 ORDER BY a LIMIT 80;
+
+#EXPLAIN
+#SELECT a FROM t1 WHERE b = 1 ORDER BY c DESC LIMIT 9;
+SELECT a FROM t1 WHERE b = 1 ORDER BY a DESC LIMIT 9;
 
 --source include/turn_off_only_full_group_by.inc
-EXPLAIN
-SELECT DISTINCT a FROM t1 WHERE b = 1 ORDER BY c DESC LIMIT 0, 9;
-SELECT DISTINCT a FROM t1 WHERE b = 1 ORDER BY c DESC LIMIT 0, 9;
+#EXPLAIN
+#SELECT DISTINCT a FROM t1 WHERE b = 1 ORDER BY c DESC LIMIT 0, 9;
+SELECT DISTINCT a FROM t1 WHERE b = 1 ORDER BY a DESC LIMIT 0, 9;
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
 
 DROP TABLE t1;
@@ -1644,16 +1643,16 @@ INSERT INTO t2 VALUES (0,NULL), (1,NULL), (2,NULL), (3,NULL), (4,NULL);
 INSERT INTO t2 SELECT a+4, b FROM t2;
 
 --echo # shouldn't have "using filesort"
-EXPLAIN 
-SELECT * FROM t1 FORCE INDEX FOR ORDER BY (a), t2 WHERE t1.a < 2 ORDER BY t1.a;
+#EXPLAIN 
+#SELECT * FROM t1 FORCE INDEX FOR ORDER BY (a), t2 WHERE t1.a < 2 ORDER BY t1.a;
 
 --echo # should have "using filesort"
-EXPLAIN 
-SELECT * FROM t1 USE INDEX FOR ORDER BY (a), t2 WHERE t1.a < 2 ORDER BY t1.a;
+#EXPLAIN 
+#SELECT * FROM t1 USE INDEX FOR ORDER BY (a), t2 WHERE t1.a < 2 ORDER BY t1.a;
 
 --echo # should have "using filesort"
-EXPLAIN 
-SELECT * FROM t1 FORCE INDEX FOR JOIN (a), t2 WHERE t1.a < 2 ORDER BY t1.a;
+#EXPLAIN 
+#SELECT * FROM t1 FORCE INDEX FOR JOIN (a), t2 WHERE t1.a < 2 ORDER BY t1.a;
 
 DROP TABLE t1, t2;
 
@@ -1671,13 +1670,13 @@ CREATE TABLE t2( a INT PRIMARY KEY, b INT );
 INSERT INTO t2 VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
 INSERT INTO t2 SELECT a + 5, b + 5 FROM t2;
 
-EXPLAIN
-SELECT count(*) AS c, t1.a
-FROM t1 JOIN t2 ON t1.b = t2.a
-WHERE t2.b = 1
-GROUP BY t1.a
-ORDER by c
-LIMIT 2;
+#EXPLAIN
+#SELECT count(*) AS c, t1.a
+#FROM t1 JOIN t2 ON t1.b = t2.a
+#WHERE t2.b = 1
+#GROUP BY t1.a
+#ORDER by c
+#LIMIT 2;
 
 DROP TABLE t1, t2;
 
@@ -1694,7 +1693,7 @@ DROP TABLE t1, t2;
 CREATE TABLE t1 (a INT,KEY (a));
 INSERT INTO t1 VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10);
 
-EXPLAIN SELECT DISTINCT a,1 FROM t1 WHERE a <> 1 ORDER BY a DESC;
+#EXPLAIN SELECT DISTINCT a,1 FROM t1 WHERE a <> 1 ORDER BY a DESC;
 SELECT DISTINCT a,1 FROM t1 WHERE a <> 1 ORDER BY a DESC;
 
 DROP TABLE t1;
@@ -1721,10 +1720,10 @@ CREATE TABLE t3 (i3 integer);
 INSERT INTO t1 VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12);
 INSERT INTO t2 SELECT * FROM t1;
 
-EXPLAIN EXTENDED
-SELECT t1.*, t2.* FROM t1 JOIN t2 ON t1.i1 = t2.i2 
-                     LEFT JOIN t3 ON t2.i2 = t3.i3
-  ORDER BY t1.i1 LIMIT 5;
+#EXPLAIN EXTENDED
+#SELECT t1.*, t2.* FROM t1 JOIN t2 ON t1.i1 = t2.i2 
+#                     LEFT JOIN t3 ON t2.i2 = t3.i3
+#  ORDER BY t1.i1 LIMIT 5;
 
 SELECT t1.*, t2.* FROM t1 JOIN t2 ON t1.i1 = t2.i2 
                      LEFT JOIN t3 ON t2.i2 = t3.i3
@@ -1755,22 +1754,23 @@ CREATE TABLE t1 (
   a INT,
   c INT,
   UNIQUE KEY a_c (a,c),
-  KEY (a)) engine=myisam;
+  KEY (a)) engine=sequoiadb;
 
 INSERT INTO t1 VALUES (1,10), (2,NULL), (2,10);
+--replace_column 1 x
 ANALYZE TABLE t1;
 
 --echo # Using 'KEY a_c' for order-by opt, would have required 
 --echo # REF_OR_NULL access which never can be order_by skipped.
 --echo # -> Keep initial REF on 'KEY a' selected by cond. optimizer
-EXPLAIN
-SELECT c FROM t1 WHERE a=2 AND (c=10 OR c IS NULL);
-EXPLAIN
-SELECT c FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c;
+#EXPLAIN
+#SELECT c FROM t1 WHERE a=2 AND (c=10 OR c IS NULL);
+#EXPLAIN
+#SELECT c FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c;
 SELECT c FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c;
 
-EXPLAIN
-SELECT c FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c DESC;
+#EXPLAIN
+#SELECT c FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c DESC;
 SELECT c FROM t1 WHERE a=2 AND (c=10 OR c IS NULL) ORDER BY c DESC;
 
 DROP TABLE t1;
@@ -1781,26 +1781,26 @@ DROP TABLE t1;
 --echo # 
 --echo #
 
-CREATE TABLE t1(a int PRIMARY KEY, b int) ENGINE=myisam;
+CREATE TABLE t1(a int PRIMARY KEY, b int) ENGINE=sequoiadb;
 INSERT INTO t1 VALUES
   (5, 10), (2, 70), (7, 80), (6, 20), (1, 50), (9, 40), (8, 30), (3, 60);
-CREATE TABLE t2 (p int, a int, INDEX i_a(a)) ENGINE=myisam;
+CREATE TABLE t2 (p int, a int, INDEX i_a(a)) ENGINE=sequoiadb;
 INSERT INTO t2 VALUES
   (103, 7), (109, 3), (102, 3), (108, 1), (106, 3),
   (107, 7), (105, 1), (101, 3), (100, 7), (110, 1);
 
 --echo # number of rows in t1 was incorrectly used as an 
 --echo # implicit limit-clause if not explicit specified
-EXPLAIN
-SELECT t1.a FROM t1 LEFT JOIN t2 ON t1.a=t2.a ORDER BY t1.a;
+#EXPLAIN
+#SELECT t1.a FROM t1 LEFT JOIN t2 ON t1.a=t2.a ORDER BY t1.a;
 
 --echo # Query above used to be explained identical to this:
-EXPLAIN
-SELECT t1.a FROM t1 LEFT JOIN t2 ON t1.a=t2.a ORDER BY t1.a LIMIT 8;
+#EXPLAIN
+#SELECT t1.a FROM t1 LEFT JOIN t2 ON t1.a=t2.a ORDER BY t1.a LIMIT 8;
 
 -- echo # A really high limit was required to give the correct explain
-EXPLAIN
-SELECT t1.a FROM t1 LEFT JOIN t2 ON t1.a=t2.a ORDER BY t1.a LIMIT 1000;
+#EXPLAIN
+#SELECT t1.a FROM t1 LEFT JOIN t2 ON t1.a=t2.a ORDER BY t1.a LIMIT 1000;
 
 DROP TABLE t1, t2;
 
@@ -1808,10 +1808,10 @@ DROP TABLE t1, t2;
 --echo # Bug #13949068 ASSERT TAB->REF.KEY == REF_KEY IN
 --echo # PLAN_CHANGE_WATCHDOG::~PLAN_CHANGE_WATCHDOG
 --echo #
-CREATE TABLE t1 (a INT, b INT, KEY(b), KEY(b,a)) ENGINE=INNODB;
+CREATE TABLE t1 (a INT, b INT, KEY(b), KEY(b,a)) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES (0,0);
 let $query=SELECT DISTINCT a FROM t1 WHERE b=1 ORDER BY 1;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 DROP TABLE t1;
 
@@ -1820,11 +1820,11 @@ DROP TABLE t1;
 --echo #              PLAN_CHANGE_WATCHDOG::~PLAN_CHANGE_WATCHDOG
 --echo #
 
-# Both tables must be created using MyISAM in order to reproduce assert
+# Both tables must be created using SequoiaDB in order to reproduce assert
 CREATE TABLE t1 (
   pk INTEGER NOT NULL,
   PRIMARY KEY (pk)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (1), (2), (3);
 
@@ -1832,7 +1832,7 @@ CREATE VIEW view_t1 AS SELECT * FROM t1;
 
 CREATE TABLE t2 (
   i1 INTEGER NOT NULL
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 let query=
 SELECT DISTINCT t2.i1, view_t1.pk
@@ -1840,9 +1840,9 @@ FROM view_t1 LEFT JOIN t2
 ON  view_t1.pk = t2.i1
 WHERE (view_t1.pk <= 204 AND t2.i1 != 3)
   OR view_t1.pk BETWEEN 1 AND 7
-ORDER BY t2.i1;
+ORDER BY t2.i1,view_t1.pk;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP VIEW view_t1;
@@ -1854,9 +1854,9 @@ SET sql_mode = default;
 --echo # Bug#20455386 INVALID WRITE IN COPY_FIELD::SET CAUSE CRASH WITH TMP TABLES
 --echo #
 
-CREATE TABLE t1(a INT) ENGINE=INNODB;
-CREATE TABLE t2(c INT) ENGINE=INNODB;
-CREATE TABLE t3(b BLOB NOT NULL) ENGINE=INNODB;
+CREATE TABLE t1(a INT) ENGINE=SEQUOIADB;
+CREATE TABLE t2(c INT) ENGINE=SEQUOIADB;
+CREATE TABLE t3(b BLOB NOT NULL) ENGINE=SEQUOIADB;
 SELECT
  (SELECT 1 FROM t1
   WHERE (SELECT c FROM t2 ORDER BY COUNT(t3.b ))

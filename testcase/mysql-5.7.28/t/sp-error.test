@@ -1,6 +1,11 @@
 #
 # Stored PROCEDURE error tests
 #
+--source include/have_sequoiadb.inc 
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_sp_error;
+use test_sp_error;
 
 --disable_warnings ONCE
 drop table if exists t1, t2;
@@ -152,7 +157,7 @@ begin
   declare x int default 0;
   declare continue handler for foo set x = 1;
 
-  insert into test.t1 values (val);
+  insert into test_sp_error.t1 values (val);
   if (x) then
     set res = 0;
   else
@@ -167,7 +172,7 @@ begin
   declare foo condition for 1146;
   declare continue handler for bar set x = 1;
 
-  insert into test.t1 values (val);
+  insert into test_sp_error.t1 values (val);
   if (x) then
     set res = 0;
   else
@@ -201,7 +206,7 @@ drop function f|
 --error ER_PARSE_ERROR
 create procedure p()
 begin
-  declare c cursor for insert into test.t1 values ("foo", 42);
+  declare c cursor for insert into test_sp_error.t1 values ("foo", 42);
 
   open c;
   close c;
@@ -211,7 +216,7 @@ end|
 create procedure p()
 begin
   declare x int;
-  declare c cursor for select * into x from test.t limit 1;
+  declare c cursor for select * into x from test_sp_error.t limit 1;
 
   open c;
   close c;
@@ -220,7 +225,7 @@ end|
 --error 1324
 create procedure p()
 begin
-  declare c cursor for select * from test.t;
+  declare c cursor for select * from test_sp_error.t;
 
   open cc;
   close c;
@@ -232,7 +237,7 @@ create table t1 (val int)|
 
 create procedure p()
 begin
-  declare c cursor for select * from test.t1;
+  declare c cursor for select * from test_sp_error.t1;
 
   open c;
   open c;
@@ -244,7 +249,7 @@ drop procedure p|
 
 create procedure p()
 begin
-  declare c cursor for select * from test.t1;
+  declare c cursor for select * from test_sp_error.t1;
 
   open c;
   close c;
@@ -551,9 +556,9 @@ drop function bug3287|
 create procedure bug3287(x int)
 case x
 when 0 then
-  insert into test.t1 values (x, 0.1);
+  insert into test_sp_error.t1 values (x, 0.1);
 when 1 then
-  insert into test.t1 values (x, 1.1);
+  insert into test_sp_error.t1 values (x, 1.1);
 end case|
 --error 1339
 call bug3287(2)|
@@ -582,7 +587,7 @@ begin
 end|
 
 set @x = 0|
---error ER_DUP_ENTRY
+--error 1062
 call bug3279(@x)|
 select @x|
 drop procedure bug3279|
@@ -1345,14 +1350,14 @@ CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN LOCK TABLE t1 READ; EN
 CREATE FUNCTION bug_13627_f() returns int BEGIN LOCK TABLE t1 READ; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create database mysqltest; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create database mysqltest_sp_error; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug_13627_f() returns int BEGIN create database mysqltest; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN create database mysqltest_sp_error; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop database mysqltest; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop database mysqltest_sp_error; END |
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
-CREATE FUNCTION bug_13627_f() returns int BEGIN drop database mysqltest; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN drop database mysqltest_sp_error; return 1; END |
 
 -- error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
 CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create user 'mysqltest_1'; END |
@@ -1454,9 +1459,10 @@ drop table t1, t2;
 # Bug#13587 "Server crash when SP is created without database
 # selected"
 #
-create database mysqltest1;
-use mysqltest1;
-drop database mysqltest1;
+# Compatible with parallel > 1, don't use mysqltest/mysqltest1_sp_error/mysqltest2_sp_error here, instead use database: mysqltest/1/2_casename
+create database mysqltest1_sp_error;
+use mysqltest1_sp_error;
+drop database mysqltest1_sp_error;
 --error ER_NO_DB_ERROR 
 create function f1() returns int return 1;
 delimiter |;
@@ -1466,7 +1472,7 @@ begin
   select count(*) into param1 from t3;
 end|
 delimiter ;|
-use test;
+use test_sp_error;
 
 
 #
@@ -1523,18 +1529,18 @@ DROP PROCEDURE bug13037_p3;
 #
 # Bug#14569 "editing a stored procedure kills mysqld-nt"
 #
-create database mysqltest1;
-create database mysqltest2;
-use mysqltest1;
-drop database mysqltest1;
-create procedure mysqltest2.p1() select version();
+create database mysqltest1_sp_error;
+create database mysqltest2_sp_error;
+use mysqltest1_sp_error;
+drop database mysqltest1_sp_error;
+create procedure mysqltest2_sp_error.p1() select version();
 --error ER_NO_DB_ERROR 
 create procedure p2() select version();
-use mysqltest2;
+use mysqltest2_sp_error;
 --replace_column 5 '0000-00-00 00:00:00' 6 '0000-00-00 00:00:00'
 show procedure status;
-drop database mysqltest2;
-use test;
+drop database mysqltest2_sp_error;
+use test_sp_error;
 
 #
 # Bug#13012 "SP: REPAIR/BACKUP/RESTORE TABLE crashes the server"
@@ -2148,7 +2154,7 @@ SELECT inexistent();
 SELECT .inexistent();
 --error ER_PARSE_ERROR
 SELECT ..inexistent();
-USE test;
+USE test_sp_error;
 
 #
 # Bug#30904 SET PASSWORD statement is non-transactional
@@ -2468,7 +2474,6 @@ DROP TABLE t1;
 --echo # Bug #47788: Crash in TABLE_LIST::hide_view_error on UPDATE + VIEW + 
 --echo #   SP + MERGE + ALTER
 --echo #
-
 CREATE TABLE t1 (pk INT, b INT, KEY (b));
 CREATE ALGORITHM = TEMPTABLE VIEW v1 AS SELECT * FROM t1;
 
@@ -2765,10 +2770,10 @@ BEGIN
 END|
 
 delimiter ;|
-
+#Bug #SEQUOIASALMAINSTREAM-160
 CALL p1();
 SHOW WARNINGS;
-
+#Bug #SEQUOIASALMAINSTREAM-160
 CALL p2();
 SHOW WARNINGS;
 
@@ -3834,10 +3839,13 @@ DROP TABLE t1;
 --error ER_TOO_LONG_IDENT
 drop function f111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjjjjjjjjkk;
 --error ER_TOO_LONG_IDENT
-drop function test.f111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjjjjjjjjkk;
+drop function test_sp_error.f111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjjjjjjjjkk;
 --error ER_WRONG_DB_NAME 
 drop function mysqltest111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjj.test;
 
+
+# DROP DATABASE
+DROP DATABASE test_sp_error;
 
 --echo #
 --echo # Bug #24357244: CANNOT CREATE A STORED FUNCTION IF A DATABASE IS NOT
@@ -3862,3 +3870,6 @@ SELECT f2();
 DROP FUNCTION IF EXISTS f2;
 DROP FUNCTION IF EXISTS f1;
 DROP DATABASE mysqltest;
+
+
+--source include/uninstall_sequoiadb.inc

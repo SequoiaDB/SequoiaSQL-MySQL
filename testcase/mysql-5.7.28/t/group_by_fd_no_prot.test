@@ -11,5 +11,6 @@ if (`SELECT $PS_PROTOCOL + $SP_PROTOCOL + $CURSOR_PROTOCOL
 {
    --skip Need normal protocol
 }
-
+--source include/have_sequoiadb.inc
 --source include/group_by_fd.inc
+--source include/uninstall_sequoiadb.inc

@@ -1,8 +1,10 @@
 drop table if exists t1;
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 drop database if exists client_test_db;
+create database test_drop;
+use test_drop;
 drop table t1;
-ERROR 42S02: Unknown table 'test.t1'
+ERROR 42S02: Unknown table 'test_drop.t1'
 create table t1(n int);
 insert into t1 values(1);
 create temporary table t1( n int);
@@ -13,59 +15,61 @@ drop table t1;
 select * from t1;
 n
 1
-create database mysqltest;
-drop database if exists mysqltest;
-create database mysqltest;
-create table mysqltest.mysqltest (n int);
-insert into mysqltest.mysqltest values (4);
-select * from mysqltest.mysqltest;
+create database mysqltest_drop;
+drop database if exists mysqltest_drop;
+create database mysqltest_drop;
+create table mysqltest_drop.mysqltest_drop (n int);
+insert into mysqltest_drop.mysqltest_drop values (4);
+select * from mysqltest_drop.mysqltest_drop;
 n
 4
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 affected rows: 1
-create database mysqltest;
-use mysqltest;
+create database mysqltest_drop;
+use mysqltest_drop;
 drop table table1, table2, table3, table4, table5, table6,
 table7, table8, table9, table10, table11, table12, table13,
 table14, table15, table16, table17, table18, table19, table20,
 table21, table22, table23, table24, table25, table26, table27,
 table28;
-ERROR 42S02: Unknown table 'mysqltest.table1,mysqltest.table2,mysqltest.table3,mysqltest.table4,mysqltest.table5,mysqltest.table'
+ERROR 42S02: Unknown table 'mysqltest_drop.table1,mysqltest_drop.table2,mysqltest_drop.table3,mysqltest_drop.table4,mysqltest_dr'
 drop table table1, table2, table3, table4, table5, table6,
 table7, table8, table9, table10, table11, table12, table13,
 table14, table15, table16, table17, table18, table19, table20,
 table21, table22, table23, table24, table25, table26, table27,
 table28, table29, table30;
-ERROR 42S02: Unknown table 'mysqltest.table1,mysqltest.table2,mysqltest.table3,mysqltest.table4,mysqltest.table5,mysqltest.table'
-use test;
-drop database mysqltest;
+ERROR 42S02: Unknown table 'mysqltest_drop.table1,mysqltest_drop.table2,mysqltest_drop.table3,mysqltest_drop.table4,mysqltest_dr'
+use test_drop;
+drop database mysqltest_drop;
 flush tables with read lock;
-create database mysqltest;
+create database mysqltest_drop;
 Got one of the listed errors
 unlock tables;
-create database mysqltest;
-select schema_name from information_schema.schemata where schema_name != 'sys';
+create database mysqltest_drop;
+select schema_name from information_schema.schemata where schema_name != 'sys' and schema_name not like 'test_parallel%';
 schema_name
 information_schema
 mtr
 mysql
-mysqltest
+mysqltest_drop
 performance_schema
 test
+test_drop
 flush tables with read lock;
-drop database mysqltest;
+drop database mysqltest_drop;
 Got one of the listed errors
 unlock tables;
-drop database mysqltest;
-select schema_name from information_schema.schemata where schema_name != 'sys';
+drop database mysqltest_drop;
+select schema_name from information_schema.schemata where schema_name != 'sys' and schema_name not like 'test_parallel%';
 schema_name
 information_schema
 mtr
 mysql
 performance_schema
 test
-drop database mysqltest;
-ERROR HY000: Can't drop database 'mysqltest'; database doesn't exist
+test_drop
+drop database mysqltest_drop;
+ERROR HY000: Can't drop database 'mysqltest_drop'; database doesn't exist
 drop table t1;
 flush tables with read lock;
 create table t1(n int);
@@ -73,22 +77,23 @@ ERROR HY000: Can't execute the query because you have a conflicting read lock
 unlock tables;
 create table t1(n int);
 show tables;
-Tables_in_test
+Tables_in_test_drop
 t1
 drop table t1;
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 drop table if exists t1;
 create table t1 (i int);
-create database mysqltest;
+create database mysqltest_drop;
 lock tables t1 read;
 drop table t1;
 show open tables;
-drop database mysqltest;
+drop database mysqltest_drop;
 select 1;
 1
 1
 unlock tables;
 drop table if exists t1,t2;
+SET default_storage_engine = SequoiaDB;
 create table t1 (a int);
 create table t2 (a int);
 lock table t1 read;
@@ -98,6 +103,7 @@ drop table t1;
 ERROR HY000: Table 't1' was locked with a READ lock and can't be updated
 unlock tables;
 drop table t1,t2;
+SET default_storage_engine = SequoiaDB;
 create table t1 (i int);
 create table t2 (i int);
 lock tables t1 read;
@@ -108,6 +114,7 @@ drop table t1,t2;
 ERROR HY000: Table 't1' was locked with a READ lock and can't be updated
 unlock tables;
 drop table t1,t2;
+SET default_storage_engine = SequoiaDB;
 End of 5.0 tests
 create database mysql_test;
 create table mysql_test.t1(f1 int);
@@ -140,7 +147,7 @@ create table `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` 
 create table `#mysql50#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` (a int);
 create table `#mysql50#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` (a int);
 ERROR 42000: Identifier name '#mysql50#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' is too long
-use test;
+use test_drop;
 drop database mysqltestbug26703;
 End of 5.1 tests
 
@@ -149,10 +156,10 @@ End of 5.1 tests
 # --
 DROP TABLE IF EXISTS t1;
 DROP TABLE t1;
-ERROR 42S02: Unknown table 'test.t1'
+ERROR 42S02: Unknown table 'test_drop.t1'
 SHOW WARNINGS;
 Level	Code	Message
-Error	1051	Unknown table 'test.t1'
+Error	1051	Unknown table 'test_drop.t1'
 
 # --
 # -- End of Bug#37431.
@@ -173,25 +180,25 @@ DROP TABLE t1;
 
 # Test error message when droping table/view
 DROP TABLE table1;
-ERROR 42S02: Unknown table 'test.table1'
+ERROR 42S02: Unknown table 'test_drop.table1'
 DROP TABLE table1,table2;
-ERROR 42S02: Unknown table 'test.table1,test.table2'
+ERROR 42S02: Unknown table 'test_drop.table1,test_drop.table2'
 DROP VIEW view1,view2,view3,view4;
-ERROR 42S02: Unknown table 'test.view1,test.view2,test.view3,test.view4'
+ERROR 42S02: Unknown table 'test_drop.view1,test_drop.view2,test_drop.view3,test_drop.view4'
 
 DROP TABLE IF EXISTS table1;
 Warnings:
-Note	1051	Unknown table 'test.table1'
+Note	1051	Unknown table 'test_drop.table1'
 DROP TABLE IF EXISTS table1,table2;
 Warnings:
-Note	1051	Unknown table 'test.table1'
-Note	1051	Unknown table 'test.table2'
+Note	1051	Unknown table 'test_drop.table1'
+Note	1051	Unknown table 'test_drop.table2'
 DROP VIEW IF EXISTS view1,view2,view3,view4;
 Warnings:
-Note	1051	Unknown table 'test.view1'
-Note	1051	Unknown table 'test.view2'
-Note	1051	Unknown table 'test.view3'
-Note	1051	Unknown table 'test.view4'
+Note	1051	Unknown table 'test_drop.view1'
+Note	1051	Unknown table 'test_drop.view2'
+Note	1051	Unknown table 'test_drop.view3'
+Note	1051	Unknown table 'test_drop.view4'
 
 # Test error message when trigger does not find table
 CREATE TABLE table1(a int);
@@ -208,9 +215,6 @@ DROP TABLE table1,table2;
 CREATE DATABASE bug19573998;
 USE bug19573998;
 CREATE TABLE t1(i int);
-# Start FLUSH TABLES command which will create .cfg files
-# and block DROP DATABASE
-FLUSH TABLES t1 FOR EXPORT;
 connect con1, localhost, root, '', bug19573998;
 # Non-blocking (--send):
 DROP DATABASE bug19573998;
@@ -228,5 +232,6 @@ CREATE DATABASE bug19573998;
 # Write a dummy file into the database directory
 # Verify that it is possible to drop the database
 DROP DATABASE bug19573998;
-USE test;
+USE test_drop;
 # End Bug#19573998
+DROP DATABASE test_drop;

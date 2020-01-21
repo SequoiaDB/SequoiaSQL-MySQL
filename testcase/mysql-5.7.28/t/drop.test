@@ -1,11 +1,23 @@
+#
+# Check drop statements.
+# (Case #13069: Drop DataBase)
+# (Case #13074: Drop common Table)
+#
+
+--source include/have_sequoiadb.inc
 
 # Initialise
 --disable_warnings
 drop table if exists t1;
-drop database if exists mysqltest;
+# Compatible with parallel > 1, don't use mysqltest here, instead use database: mysqltest_casename
+drop database if exists mysqltest_drop;
 # If earlier test failed
 drop database if exists client_test_db;
 --enable_warnings
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_drop;
+use test_drop;
 
 --error 1051
 drop table t1;
@@ -21,23 +33,23 @@ select * from t1;
 # now test for a bug in drop database - it is important that the name
 # of the table is the same as the name of the database - in the original
 # code this triggered a bug
-create database mysqltest;
-drop database if exists mysqltest;
-create database mysqltest;
-create table mysqltest.mysqltest (n int);
-insert into mysqltest.mysqltest values (4);
-select * from mysqltest.mysqltest;
+create database mysqltest_drop;
+drop database if exists mysqltest_drop;
+create database mysqltest_drop;
+create table mysqltest_drop.mysqltest_drop (n int);
+insert into mysqltest_drop.mysqltest_drop values (4);
+select * from mysqltest_drop.mysqltest_drop;
 --enable_info
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 --disable_info
-create database mysqltest;
+create database mysqltest_drop;
 
 #
 # drop many tables - bug#3891
-# we'll do it in mysqltest db, to be able to use longer table names
+# we'll do it in mysqltest_drop db, to be able to use longer table names
 # (tableN instead on tN)
 #
-use mysqltest;
+use mysqltest_drop;
 --error 1051
 drop table table1, table2, table3, table4, table5, table6,
 table7, table8, table9, table10, table11, table12, table13,
@@ -52,26 +64,30 @@ table14, table15, table16, table17, table18, table19, table20,
 table21, table22, table23, table24, table25, table26, table27,
 table28, table29, table30;
 
-use test;
-drop database mysqltest;
+use test_drop;
+drop database mysqltest_drop;
 
 # test drop/create database and FLUSH TABLES WITH READ LOCK
 flush tables with read lock;
 --error 1209,1223
-create database mysqltest;
+create database mysqltest_drop;
 unlock tables;
-create database mysqltest;
+create database mysqltest_drop;
 # Ignore sys as this are not included in embedded
-select schema_name from information_schema.schemata where schema_name != 'sys';
+# Compatible with parallel > 1, this case never use database test_parallel_*, should ignore database: test_parallel_*
+#select schema_name from information_schema.schemata where schema_name != 'sys';
+select schema_name from information_schema.schemata where schema_name != 'sys' and schema_name not like 'test_parallel%';
 flush tables with read lock;
 --error 1208,1223
-drop database mysqltest;
+drop database mysqltest_drop;
 unlock tables;
-drop database mysqltest;
+drop database mysqltest_drop;
 # Ignore sys as this are not included in embedded
-select schema_name from information_schema.schemata where schema_name != 'sys';
+# Compatible with parallel > 1, this case never use database test_parallel_*, should ignore database: test_parallel_*
+#select schema_name from information_schema.schemata where schema_name != 'sys';
+select schema_name from information_schema.schemata where schema_name != 'sys' and schema_name not like 'test_parallel%';
 --error 1008
-drop database mysqltest;
+drop database mysqltest_drop;
 
 # test create table and FLUSH TABLES WITH READ LOCK
 drop table t1;
@@ -99,20 +115,21 @@ drop table t1;
 # and one of name-locking command.
 # 
 --disable_warnings
-drop database if exists mysqltest;
+drop database if exists mysqltest_drop;
 drop table if exists t1;
 --enable_warnings
 create table t1 (i int);
-create database mysqltest;
+create database mysqltest_drop;
 lock tables t1 read;
-connect (addconroot1, localhost, root,,);
+# new connection, should identify with database name
+connect (addconroot1, localhost, root,, test_drop,,);
 --send drop table t1
-connect (addconroot2, localhost, root,,);
+connect (addconroot2, localhost, root,, test_drop,,);
 # Server should not crash in any of the following statements
 --disable_result_log
 show open tables;
 --enable_result_log
---send drop database mysqltest
+--send drop database mysqltest_drop
 connection default;
 select 1;
 unlock tables;
@@ -134,6 +151,7 @@ connection default;
 --disable_warnings
 drop table if exists t1,t2;
 --enable_warnings
+SET default_storage_engine = SequoiaDB;
 create table t1 (a int);
 create table t2 (a int);
 lock table t1 read;
@@ -143,8 +161,10 @@ drop table t2;
 drop table t1;
 unlock tables;
 drop table t1,t2;
-connect (addconroot, localhost, root,,);
+# new connection, should identify with database name
+connect (addconroot, localhost, root,, test_drop,,);
 connection default;
+SET default_storage_engine = SequoiaDB;
 create table t1 (i int);
 create table t2 (i int);
 lock tables t1 read;
@@ -159,12 +179,13 @@ disconnect addconroot;
 connection default;
 unlock tables;
 drop table t1,t2;
-
+SET default_storage_engine = SequoiaDB;
 --echo End of 5.0 tests
 
 #
 # Bug#30152 MySQLD crash duing alter table causes DROP DATABASE to FAIL due to temp file
 #
+#Bug #SEQUOIADBMAINSTREAM-3617
 create database mysql_test;
 create table mysql_test.t1(f1 int);
 create table mysql_test.`#sql-347f_7` (f1 int);
@@ -221,6 +242,7 @@ DROP DATABASE mysql_test;
 
 ###########################################################################
 
+#Bug #SEQUOIADBMAINSTREAM-3617
 --echo
 #
 # Bug#26703: DROP DATABASE fails if database contains a #mysql50# table with backticks
@@ -234,7 +256,7 @@ create table `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` 
 create table `#mysql50#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` (a int);
 --error ER_TOO_LONG_IDENT
 create table `#mysql50#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa` (a int);
-use test;
+use test_drop;
 drop database mysqltestbug26703;
 
 --echo End of 5.1 tests
@@ -321,21 +343,23 @@ CREATE DATABASE bug19573998;
 USE bug19573998;
 CREATE TABLE t1(i int);
 
---echo # Start FLUSH TABLES command which will create .cfg files
---echo # and block DROP DATABASE
-FLUSH TABLES t1 FOR EXPORT;
+#--echo # Start FLUSH TABLES command which will create .cfg files
+#--echo # and block DROP DATABASE
+# NOW Sequoiadb not support export
+#FLUSH TABLES t1 FOR EXPORT;
 
 --connect(con1, localhost, root, '', bug19573998)
 --echo # Non-blocking (--send):
 --send DROP DATABASE bug19573998
 
+# Timeout in wait_condition.inc for SELECT COUNT(*) = 1 FROM information_schema.processlist 
 --connection default
 --echo # Wait until DROP DATABASE becomes blocked on table metadata lock
-let $wait_condition=
-  SELECT COUNT(*) = 1 FROM information_schema.processlist
-  WHERE state = "Waiting for table metadata lock" AND
-        info = "DROP DATABASE bug19573998";
---source include/wait_condition.inc
+#let $wait_condition=
+#  SELECT COUNT(*) = 1 FROM information_schema.processlist
+#  WHERE state = "Waiting for table metadata lock" AND
+#        info = "DROP DATABASE bug19573998";
+#--source include/wait_condition.inc
 UNLOCK TABLES;
 
 --connection con1
@@ -357,7 +381,11 @@ EOF
 
 --echo # Verify that it is possible to drop the database
 DROP DATABASE bug19573998;
-USE test;
+USE test_drop;
 --disable_connect_log
 --echo # End Bug#19573998
 
+# DROP DATABASE
+DROP DATABASE test_drop;
+
+--source include/uninstall_sequoiadb.inc

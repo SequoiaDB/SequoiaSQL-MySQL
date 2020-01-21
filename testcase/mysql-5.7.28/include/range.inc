@@ -33,7 +33,7 @@ INSERT INTO t1 VALUES ('1999-07-10',100100,24), ('1999-07-11',100100,25),
 ('1999-09-19',100100,37), ('2000-12-18',100700,38);
 
 select event_date,type,event_id from t1 WHERE event_date >= "1999-07-01" AND event_date < "1999-07-15" AND (type=100600 OR type=100100) ORDER BY event_date;
-explain select event_date,type,event_id from t1 WHERE type = 100601 and event_date >= "1999-07-01" AND event_date < "1999-07-15" AND (type=100600 OR type=100100) ORDER BY event_date;
+#explain select event_date,type,event_id from t1 WHERE type = 100601 and event_date >= "1999-07-01" AND event_date < "1999-07-15" AND (type=100600 OR type=100100) ORDER BY event_date;
 select event_date,type,event_id from t1 WHERE event_date >= "1999-07-01" AND event_date <= "1999-07-15" AND (type=100600 OR type=100100) or event_date >= "1999-07-01" AND event_date <= "1999-07-15" AND type=100099;
 drop table t1;
 
@@ -61,8 +61,8 @@ INSERT INTO t1 VALUES (3,1999,34,0,'1999-07-12'), (1,1999,111,0,'1999-03-23'),
                       (1,1999,59,0,'1999-07-01'), (1,1999,60,0,'1999-07-01'),
                       (3,1999,35,0,'1999-07-12');
 select YEAR,ISSUE from t1 where PAPER_ID=3 and (YEAR>1999 or (YEAR=1999 and ISSUE>28))  order by YEAR,ISSUE;
-check table t1;
-repair table t1;
+#check table t1;
+#repair table t1;
 drop table t1;
 
 CREATE TABLE t1 (
@@ -125,10 +125,10 @@ CREATE TABLE t1 (
   ARTNR char(10) NOT NULL default '',
   TEX char(70) NOT NULL default '',
   PRIMARY KEY  (t1ID),
-  KEY IdxArt (art),
+  #KEY IdxArt (art),
   KEY IdxKnr (KNR),
   KEY IdxArtnr (ARTNR)
-) ENGINE=MyISAM;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 (art) VALUES ('j'),('J'),('j'),('J'),('j'),('J'),('j'),('J'),('j'),('J'),
 ('j'),('J'),('j'),('J'),('j'),('J'),('j'),('J'),('j'),('J'),('j'),('J'),('j'),('J'),('j'),('J'),
@@ -180,43 +180,46 @@ drop table t1;
 create table t1 (x int, y int, index(x), index(y));
 insert into t1 (x) values (1),(2),(3),(4),(5),(6),(7),(8),(9);
 update t1 set y=x;
+--replace_column 1 x
 analyze table t1;
 # between with only one end fixed
-explain select * from t1, t1 t2 where t1.y = 8 and t2.x between 7 and t1.y+0;
-explain select * from t1, t1 t2 where t1.y = 8 and t2.x >= 7 and t2.x <= t1.y+0;
-# between with both expressions on both ends
-explain select * from t1, t1 t2 where t1.y = 2 and t2.x between t1.y-1 and t1.y+1;
-explain select * from t1, t1 t2 where t1.y = 2 and t2.x >= t1.y-1 and t2.x <= t1.y+1;
-# equation propagation
-explain select * from t1, t1 t2 where t1.y = 2 and t2.x between 0 and t1.y;
-explain select * from t1, t1 t2 where t1.y = 2 and t2.x >= 0 and t2.x <= t1.y;
-# testing IN
-explain select count(*) from t1 where x in (1);
-explain select count(*) from t1 where x in (1,2);
+#explain select * from t1, t1 t2 where t1.y = 8 and t2.x between 7 and t1.y+0;
+#explain select * from t1, t1 t2 where t1.y = 8 and t2.x >= 7 and t2.x <= t1.y+0;
+## between with both expressions on both ends
+#explain select * from t1, t1 t2 where t1.y = 2 and t2.x between t1.y-1 and t1.y+1;
+#explain select * from t1, t1 t2 where t1.y = 2 and t2.x >= t1.y-1 and t2.x <= t1.y+1;
+## equation propagation
+#explain select * from t1, t1 t2 where t1.y = 2 and t2.x between 0 and t1.y;
+#explain select * from t1, t1 t2 where t1.y = 2 and t2.x >= 0 and t2.x <= t1.y;
+## testing IN
+#explain select count(*) from t1 where x in (1);
+#explain select count(*) from t1 where x in (1,2);
 drop table t1;
 
 #
 # bug #1172: "Force index" option caused server crash
 #
+#Sequoiadb not support explain
 CREATE TABLE t1 (key1 int(11) NOT NULL default '0', KEY i1 (key1));
 INSERT INTO t1 VALUES (0),(0),(0),(0),(0),(1),(1);
 CREATE TABLE t2 (keya int(11) NOT NULL default '0', KEY j1 (keya));
 INSERT INTO t2 VALUES (0),(0),(1),(1),(2),(2);
-explain select * from t1, t2 where (t1.key1 <t2.keya + 1) and t2.keya=3;
-explain select * from t1 force index(i1), t2 force index(j1) where 
- (t1.key1 <t2.keya + 1) and t2.keya=3;
+#explain select * from t1, t2 where (t1.key1 <t2.keya + 1) and t2.keya=3;
+#explain select * from t1 force index(i1), t2 force index(j1) where 
+# (t1.key1 <t2.keya + 1) and t2.keya=3;
 DROP TABLE t1,t2;
 
 #
 # bug #1724: use RANGE on more selective column instead of REF on less
 # selective
 
+#Sequoiadb not support explain
 CREATE TABLE t1 (
   a int(11) default NULL,
   b int(11) default NULL,
   KEY a (a),
   KEY b (b)
-) ENGINE=MyISAM;
+) ENGINE=sequoiadb;
 
 
 INSERT INTO t1 VALUES
@@ -226,7 +229,7 @@ INSERT INTO t1 VALUES
 (33,5),(33,5),(33,5),(33,5),(34,5),(35,5);
 
 # we expect that optimizer will choose index on A
-EXPLAIN SELECT * FROM t1 WHERE a IN(1,2) AND b=5;
+#EXPLAIN SELECT * FROM t1 WHERE a IN(1,2) AND b=5;
 SELECT * FROM t1 WHERE a IN(1,2) AND b=5;
 DROP TABLE t1;
 
@@ -248,6 +251,7 @@ DROP TABLE t1;
 
 CREATE TABLE t1 ( a int not null, b int not null, INDEX ab(a,b) );
 INSERT INTO t1 VALUES (47,1), (70,1), (15,1), (15, 4);
+--sorted_result
 SELECT * FROM t1
 WHERE
 (
@@ -261,7 +265,7 @@ DROP TABLE t1;
 #
 # Test of problem with IN on many different keyparts. (Bug #4157)
 #
-
+#SEQUOIASQLMAINSTREAM-283
 CREATE TABLE t1 (
 id int( 11 ) unsigned NOT NULL AUTO_INCREMENT ,
 line int( 5 ) unsigned NOT NULL default '0',
@@ -276,7 +280,7 @@ KEY menu( owner, showid, columnid ) ,
 KEY `COLUMN` ( owner, columnid, line ) ,
 KEY `LINES` ( owner, tableid, content, id ) ,
 KEY recount( owner, line ) 
-) ENGINE = MYISAM;
+) ENGINE = sequoiadb;
 
 INSERT into t1 (owner,id,columnid,line) values (11,15,15,1),(11,13,13,5);
 
@@ -378,13 +382,13 @@ insert into t2(id, uid, name) select id, uid, name from t1;
 
 select count(*) from t1;  
 select count(*) from t2;
-
+--replace_column 1 x
 analyze table t1,t2;
 
-explain select * from t1, t2  where t1.uid=t2.uid AND t1.uid > 0;
-explain select * from t1, t2  where t1.uid=t2.uid AND t2.uid > 0;
-explain select * from t1, t2  where t1.uid=t2.uid AND t1.uid != 0;
-explain select * from t1, t2  where t1.uid=t2.uid AND t2.uid != 0;
+#explain select * from t1, t2  where t1.uid=t2.uid AND t1.uid > 0;
+#explain select * from t1, t2  where t1.uid=t2.uid AND t2.uid > 0;
+#explain select * from t1, t2  where t1.uid=t2.uid AND t1.uid != 0;
+#explain select * from t1, t2  where t1.uid=t2.uid AND t2.uid != 0;
 
 select * from t1, t2  where t1.uid=t2.uid AND t1.uid > 0;
 select * from t1, t2  where t1.uid=t2.uid AND t1.uid != 0;
@@ -392,7 +396,7 @@ select * from t1, t2  where t1.uid=t2.uid AND t1.uid != 0;
 drop table t1,t2;
 
 # Fix for bug#4488 
-#
+
 create table t1 (x bigint unsigned not null);
 insert into t1(x) values (0xfffffffffffffff0);
 insert into t1(x) values (0xfffffffffffffff1);
@@ -420,7 +424,7 @@ select count(*) from t2 where x = 18446744073709551601;
 drop table t1,t2;
 
 --disable_warnings
-create table t1 (x bigint unsigned not null primary key) engine=innodb;
+create table t1 (x bigint unsigned not null primary key) engine=sequoiadb;
 --enable_warnings
 insert into t1(x) values (0xfffffffffffffff0);
 insert into t1(x) values (0xfffffffffffffff1);
@@ -431,6 +435,7 @@ select count(*) from t1 where x<0;
 select count(*) from t1 where x < -16;
 select count(*) from t1 where x = -16;
 select count(*) from t1 where x > -16;
+#Bug #SEQUOIADBMAINSTREAM-3563
 select count(*) from t1 where x = 18446744073709551601;
 
 drop table t1;
@@ -443,13 +448,16 @@ create index t1i on t1(a);
 insert into t1 select 18446744073709551615;
 insert into t1 select 18446744073709551614;
 
-explain select * from t1 where a <> -1;
+#explain select * from t1 where a <> -1;
+--sorted_result
 select * from t1 where a <> -1;
-explain select * from t1 where a > -1 or a < -1;
+#explain select * from t1 where a > -1 or a < -1;
+--sorted_result
 select * from t1 where a > -1 or a < -1;
-explain select * from t1 where a > -1;
+#explain select * from t1 where a > -1;
+--sorted_result
 select * from t1 where a > -1;
-explain select * from t1 where a < -1;
+#explain select * from t1 where a < -1;
 select * from t1 where a < -1;
 
 drop table t1;
@@ -458,17 +466,18 @@ drop table t1;
 # Bug #6045: Binary Comparison regression in MySQL 4.1
 # Binary searches didn't use a case insensitive index.
 #
-set names latin1;
-create table t1 (a char(10), b text, key (a)) character set latin1;
-INSERT INTO t1 (a) VALUES
-('111'),('222'),('222'),('222'),('222'),('444'),('aaa'),('AAA'),('bbb');
-# all these three can be optimized
-explain select * from t1 where a='aaa';
-explain select * from t1 where a=binary 'aaa';
-explain select * from t1 where a='aaa' collate latin1_bin;
-# this one cannot:
-explain select * from t1 where a='aaa' collate latin1_german1_ci;
-drop table t1;
+#Sequoiadb not support explain
+#set names latin1;
+#create table t1 (a char(10), b text, key (a)) character set latin1;
+#INSERT INTO t1 (a) VALUES
+#('111'),('222'),('222'),('222'),('222'),('444'),('aaa'),('AAA'),('bbb');
+## all these three can be optimized
+#explain select * from t1 where a='aaa';
+#explain select * from t1 where a=binary 'aaa';
+#explain select * from t1 where a='aaa' collate latin1_bin;
+## this one cannot:
+#explain select * from t1 where a='aaa' collate latin1_german1_ci;
+#drop table t1;
 
 # Test for BUG#9348 "result for WHERE A AND (B OR C) differs from WHERE a AND (C OR B)"
 --disable_warnings
@@ -479,7 +488,7 @@ CREATE TABLE t1 (
   `FUNCTION` varchar(10) character set latin1 collate latin1_bin NOT NULL default '',
   `FUNCTINT` int(11) NOT NULL default '0',
   KEY `VERI_CLNT~2` (`ARG1`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=sequoiadb DEFAULT CHARSET=latin1;
 --enable_warnings
 
 INSERT INTO t1 VALUES ('000',' 0',' 0','Text 001',0), ('000',' 0',' 1','Text 002',0),
@@ -522,14 +531,14 @@ drop table t1, t2;
 
 create table t1(a char(2), key(a(1)));
 insert into t1 values ('x'), ('xx');
-explain select a from t1 where a > 'x';
+#explain select a from t1 where a > 'x';
 select a from t1 where a > 'x';
 drop table t1;
 
 #
 # Bug #24776: assertion abort for 'range checked for each record' 
 #
-
+#Sequoiadb not support duplicate index
 CREATE TABLE t1 (
   OXID varchar(32) COLLATE latin1_german2_ci NOT NULL DEFAULT '',
   OXPARENTID varchar(32) COLLATE latin1_german2_ci NOT NULL DEFAULT 'oxrootid',
@@ -537,11 +546,11 @@ CREATE TABLE t1 (
   OXRIGHT int NOT NULL DEFAULT '0',
   OXROOTID varchar(32) COLLATE latin1_german2_ci NOT NULL DEFAULT '',
   PRIMARY KEY  (OXID),
-  KEY OXNID (OXID),
+  #KEY OXNID (OXID),
   KEY OXLEFT (OXLEFT),
   KEY OXRIGHT (OXRIGHT),
   KEY OXROOTID (OXROOTID)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci;
+) ENGINE=sequoiadb DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci;
 
 INSERT INTO t1 VALUES
 ('d8c4177d09f8b11f5.52725521','oxrootid',1,40,'d8c4177d09f8b11f5.52725521'),
@@ -556,11 +565,11 @@ INSERT INTO t1 VALUES
 ('d8c4177d24ccef970.14957924','d8c4177d09f8b11f5.52725521',10,11,
  'd8c4177d09f8b11f5.52725521');
 
-EXPLAIN
-SELECT s.oxid FROM t1 v, t1 s 
-  WHERE s.oxrootid = 'd8c4177d09f8b11f5.52725521' AND
-        v.oxrootid ='d8c4177d09f8b11f5.52725521' AND
-        s.oxleft > v.oxleft AND s.oxleft < v.oxright;
+#EXPLAIN
+#SELECT s.oxid FROM t1 v, t1 s 
+#  WHERE s.oxrootid = 'd8c4177d09f8b11f5.52725521' AND
+#        v.oxrootid ='d8c4177d09f8b11f5.52725521' AND
+#        s.oxleft > v.oxleft AND s.oxleft < v.oxright;
 
 SELECT s.oxid FROM t1 v, t1 s 
   WHERE s.oxrootid = 'd8c4177d09f8b11f5.52725521' AND
@@ -738,17 +747,17 @@ INSERT INTO t1 VALUES
 (49,'A'), (50,'A'), (51,'A'), (52,'A'), (53,'C'), (54,'C'),
 (55,'C'), (56,'C'), (57,'C'), (58,'C'), (59,'C'), (60,'C');
 
-EXPLAIN SELECT * FROM t1 WHERE status <> 'A' AND status <> 'B';
-EXPLAIN SELECT * FROM t1 WHERE status NOT IN ('A','B');
+#EXPLAIN SELECT * FROM t1 WHERE status <> 'A' AND status <> 'B';
+#EXPLAIN SELECT * FROM t1 WHERE status NOT IN ('A','B');
 
 SELECT * FROM t1 WHERE status <> 'A' AND status <> 'B';
 SELECT * FROM t1 WHERE status NOT IN ('A','B');
 
-EXPLAIN SELECT status FROM t1 WHERE status <> 'A' AND status <> 'B';
-EXPLAIN SELECT status FROM t1 WHERE status NOT IN ('A','B');
+#EXPLAIN SELECT status FROM t1 WHERE status <> 'A' AND status <> 'B';
+#EXPLAIN SELECT status FROM t1 WHERE status NOT IN ('A','B');
 
-EXPLAIN SELECT * FROM t1 WHERE status NOT BETWEEN 'A' AND 'B';
-EXPLAIN SELECT * FROM t1 WHERE status < 'A' OR status > 'B';
+#EXPLAIN SELECT * FROM t1 WHERE status NOT BETWEEN 'A' AND 'B';
+#EXPLAIN SELECT * FROM t1 WHERE status < 'A' OR status > 'B';
 
 SELECT * FROM t1 WHERE status NOT BETWEEN 'A' AND 'B';
 SELECT * FROM t1 WHERE status < 'A' OR status > 'B';
@@ -766,11 +775,11 @@ INSERT INTO  t1 VALUES
 
 CREATE VIEW v1 as SELECT a,b FROM t1 WHERE b=3;
 
-EXPLAIN SELECT a,b FROM t1 WHERE a < 2 and b=3;
-EXPLAIN SELECT a,b FROM v1 WHERE a < 2 and b=3;
+#EXPLAIN SELECT a,b FROM t1 WHERE a < 2 and b=3;
+#EXPLAIN SELECT a,b FROM v1 WHERE a < 2 and b=3;
 
-EXPLAIN SELECT a,b FROM t1 WHERE a < 2;
-EXPLAIN SELECT a,b FROM v1 WHERE a < 2;
+#EXPLAIN SELECT a,b FROM t1 WHERE a < 2;
+#EXPLAIN SELECT a,b FROM v1 WHERE a < 2;
 
 SELECT a,b FROM t1 WHERE a < 2 and b=3;
 SELECT a,b FROM v1 WHERE a < 2 and b=3; 
@@ -804,30 +813,35 @@ DROP TABLE t1;
 #
 # BUG#13317: range optimization doesn't work for IN over VIEW.
 #
-create table t1 (a int, b int, primary key(a,b));
-create view v1 as select a, b from t1;
+#Sequoiadb not support explain
+#create table t1 (a int, b int, primary key(a,b));
+#create view v1 as select a, b from t1;
+#
+#INSERT INTO `t1` VALUES
+#(0,0),(1,0),(2,0),(3,0),(4,0),(5,1),(6,1),(7,1),(8,1),(9,1),(10,2),(11,2),(12,2)
+#,(13,2),(14,2),(15,3),(16,3),(17,3),(18,3),(19,3);
+#
+#--replace_column 10 #
+#explain select * from t1 where a in (3,4)  and b in (1,2,3);
+#--replace_column 10 #
+#explain select * from v1 where a in (3,4)  and b in (1,2,3);
+#--replace_column 10 #
+#explain select * from t1 where a between 3 and 4 and b between 1 and 2;
+#--replace_column 10 #
+#explain select * from v1 where a between 3 and 4 and b between 1 and 2;
+# 
+#drop view v1;
+#drop table t1;
 
-INSERT INTO `t1` VALUES
-(0,0),(1,0),(2,0),(3,0),(4,0),(5,1),(6,1),(7,1),(8,1),(9,1),(10,2),(11,2),(12,2)
-,(13,2),(14,2),(15,3),(16,3),(17,3),(18,3),(19,3);
+# BUG#13455:
 
---replace_column 10 #
-explain select * from t1 where a in (3,4)  and b in (1,2,3);
---replace_column 10 #
-explain select * from v1 where a in (3,4)  and b in (1,2,3);
---replace_column 10 #
-explain select * from t1 where a between 3 and 4 and b between 1 and 2;
---replace_column 10 #
-explain select * from v1 where a between 3 and 4 and b between 1 and 2;
- 
-drop view v1;
-drop table t1;
-
-# BUG#13455: 
+#Bug #SEQUOIADBMAINSTREAM-3621 
 create table t3 (a int);
 insert into t3 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
 
-create table t1 (a varchar(10), filler char(200), key(a)) charset=binary;
+#Sequoiadb not support create index on binary
+#create table t1 (a varchar(10), filler char(200), key(a))charset=binary;
+create table t1 (a varchar(10), filler char(200))charset=binary;
 insert into t1 values ('a','');
 insert into t1 values ('a ','');
 insert into t1 values ('a  ', '');
@@ -837,19 +851,19 @@ insert into t1 select concat('a', 1000 + A.a + 10 * (B.a + 10 * C.a)), ''
 create table t2 (a varchar(10), filler char(200), key(a));
 insert into t2 select * from t1;
 
---replace_column 10 #
-explain select * from t1 where a between 'a' and 'a '; 
---replace_column 10 #
-explain select * from t1 where a = 'a' or a='a ';
+#--replace_column 10 #
+#explain select * from t1 where a between 'a' and 'a '; 
+#--replace_column 10 #
+#explain select * from t1 where a = 'a' or a='a ';
 
---replace_column 10 #
-explain select * from t2 where a between 'a' and 'a '; 
---replace_column 10 #
-explain select * from t2 where a = 'a' or a='a ';
+#--replace_column 10 #
+#explain select * from t2 where a between 'a' and 'a '; 
+#--replace_column 10 #
+#explain select * from t2 where a = 'a' or a='a ';
 
 update t1 set a='b' where a<>'a';
---replace_column 10 #
-explain select * from t1 where a not between 'b' and 'b'; 
+#--replace_column 10 #
+#explain select * from t1 where a not between 'b' and 'b'; 
 select a, hex(filler) from t1 where a not between 'b' and 'b'; 
 
 drop table t1,t2,t3;
@@ -870,8 +884,9 @@ insert into t2 values (11),(13),(15);
 
 set @b= concat("explain ", @a);
 
-prepare stmt1 from @b;
-execute stmt1;
+#Sequoiadb not support explain
+#prepare stmt1 from @b;
+#execute stmt1;
 
 prepare stmt1 from @a;
 execute stmt1;
@@ -892,19 +907,20 @@ INSERT INTO t1(id) VALUES (1), (2), (3), (4), (5), (6), (7), (8);
 
 INSERT INTO t1(b,c) VALUES (3,4), (3,4);
 
+--replace_column 1 x
 ANALYZE TABLE t1;
 
 SELECT * FROM t1 WHERE b<=3 AND 3<=c;
 SELECT * FROM t1 WHERE 3 BETWEEN b AND c;
 
-EXPLAIN  SELECT * FROM t1 WHERE b<=3 AND 3<=c;
-EXPLAIN  SELECT * FROM t1 WHERE 3 BETWEEN b AND c;
+#EXPLAIN  SELECT * FROM t1 WHERE b<=3 AND 3<=c;
+#EXPLAIN  SELECT * FROM t1 WHERE 3 BETWEEN b AND c;
 
 SELECT * FROM t1 WHERE 0 < b OR 0 > c;
 SELECT * FROM t1 WHERE 0 NOT BETWEEN b AND c;
 
-EXPLAIN SELECT * FROM t1 WHERE 0 < b OR 0 > c;
-EXPLAIN SELECT * FROM t1 WHERE 0 NOT BETWEEN b AND c;
+#EXPLAIN SELECT * FROM t1 WHERE 0 < b OR 0 > c;
+#EXPLAIN SELECT * FROM t1 WHERE 0 NOT BETWEEN b AND c;
 
 DROP TABLE t1;
 
@@ -912,13 +928,12 @@ DROP TABLE t1;
 # Bug #16249: different results for a range with an without index 
 #             when a range condition use an invalid datetime constant 
 #
-
 CREATE TABLE t1 (                                      
   item char(20) NOT NULL default '',                          
   started datetime NOT NULL default '0000-00-00 00:00:00', 
   price decimal(16,3) NOT NULL default '0.000',                 
-  PRIMARY KEY (item,started)                     
-) ENGINE=MyISAM;   
+  PRIMARY KEY (item,started)                   
+) ENGINE=sequoiadb;   
 
 INSERT INTO t1 VALUES
 ('A1','2005-11-01 08:00:00',1000),
@@ -926,13 +941,13 @@ INSERT INTO t1 VALUES
 ('A1','2005-12-12 08:00:00',3000),
 ('A2','2005-12-01 08:00:00',1000);
 
-EXPLAIN SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-01 24:00:00';
+#EXPLAIN SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-01 24:00:00';
 SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-01 24:00:00';
 SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-02 00:00:00';
 
 DROP INDEX `PRIMARY` ON t1;
 
-EXPLAIN SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-01 24:00:00';
+#EXPLAIN SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-01 24:00:00';
 SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-01 24:00:00';
 SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-02 00:00:00';
 
@@ -954,7 +969,7 @@ INSERT INTO t1 VALUES
 (9,'2007-01-09'),(10,'2007-01-10'),(11,'2007-01-11');
 
 --echo This must use range access:
-explain select * from t1 where dateval >= '2007-01-01 00:00:00' and dateval <= '2007-01-02 23:59:59';
+#explain select * from t1 where dateval >= '2007-01-01 00:00:00' and dateval <= '2007-01-02 23:59:59';
 
 drop table t1;
 
@@ -971,7 +986,7 @@ INSERT INTO t1 VALUES
   ('B'), ('A'), ('A'), ('C'), ('B'), ('A'), ('A');
 
 SELECT a FROM t1 WHERE a='b' OR a='B';
-EXPLAIN SELECT a FROM t1 WHERE a='b' OR a='B';
+#EXPLAIN SELECT a FROM t1 WHERE a='b' OR a='B';
 
 DROP TABLE t1;
 
@@ -983,8 +998,6 @@ DROP TABLE t1;
 CREATE TABLE t1 (f1 TINYINT(11) UNSIGNED NOT NULL, PRIMARY KEY (f1));
 
 INSERT INTO t1 VALUES (127),(254),(0),(1),(255);
-
---disable_ps_protocol
 
 # test upper bound
 # count 5
@@ -1021,8 +1034,6 @@ SELECT SQL_NO_CACHE COUNT(*) FROM t1 WHERE f1 > -129.0;
 # count 4
 SELECT SQL_NO_CACHE COUNT(*) FROM t1 WHERE f1 > -128;
 
---enable_ps_protocol
-
 DROP TABLE t1;
 
 # End of 5.0 tests
@@ -1049,7 +1060,7 @@ alter table t2 add index (a,b);
 # 500 rows, 1 row
 
 select 'In following EXPLAIN the access method should be ref or range, #rows~=500 (and not 2)' Z;
-explain select * from t2 where a=1000 and b<11;
+#explain select * from t2 where a=1000 and b<11;
 
 drop table t1, t2;
 
@@ -1092,16 +1103,17 @@ INSERT INTO t3 SELECT * FROM t3 WHERE a = 10;
 # Problem#1 Test queries. Will give missing results unless Problem#1 is fixed.
 # With one exception, they are independent of Problem#2.
 #
+#Bug #SEQUOIADBMAINSTREAM-3632
 SELECT * FROM t1 WHERE
 3 <= a AND a < 5 OR 
 5 < a AND b = 3 OR
 3 <= a;
 
-EXPLAIN
-SELECT * FROM t1 WHERE
-3 <= a AND a < 5 OR 
-5 < a AND b = 3 OR
-3 <= a;
+#EXPLAIN
+#SELECT * FROM t1 WHERE
+#3 <= a AND a < 5 OR 
+#5 < a AND b = 3 OR
+#3 <= a;
 
 # Query below: Tests both Problem#1 and Problem#2 (EXPLAIN differs as well)
 SELECT * FROM t1 WHERE
@@ -1109,31 +1121,32 @@ SELECT * FROM t1 WHERE
 5 <= a AND b = 3 OR
 3 <= a;
 
-EXPLAIN
-SELECT * FROM t1 WHERE
-3 <= a AND a < 5 OR 
-5 <= a AND b = 3 OR
-3 <= a;
+#EXPLAIN
+#SELECT * FROM t1 WHERE
+#3 <= a AND a < 5 OR 
+#5 <= a AND b = 3 OR
+#3 <= a;
 
+#Bug #SEQUOIADBMAINSTREAM-3632
 SELECT * FROM t1 WHERE
 3 <= a AND a <= 5 OR 
 5 <= a AND b = 3 OR
 3 <= a;
 
-EXPLAIN
-SELECT * FROM t1 WHERE
-3 <= a AND a <= 5 OR 
-5 <= a AND b = 3 OR
-3 <= a;
+#$EXPLAIN
+#SELECT * FROM t1 WHERE
+#3 <= a AND a <= 5 OR 
+#5 <= a AND b = 3 OR
+#3 <= a;
 
 SELECT * FROM t1 WHERE
 3 <= a AND a <= 5 OR 
 3 <= a;
 
-EXPLAIN
-SELECT * FROM t1 WHERE
-3 <= a AND a <= 5 OR 
-3 <= a;
+#EXPLAIN
+#SELECT * FROM t1 WHERE
+#3 <= a AND a <= 5 OR 
+#3 <= a;
 
 #
 # Problem#2 Test queries. 
@@ -1146,12 +1159,12 @@ SELECT * FROM t2 WHERE
 OR
 1 <= a AND b = 1;
 
-EXPLAIN
-SELECT * FROM t2 WHERE
-5 <= a AND a < 10 AND b = 1 OR
-15 <= a AND a < 20 AND b = 3
-OR
-1 <= a AND b = 1;
+#EXPLAIN
+#SELECT * FROM t2 WHERE
+#5 <= a AND a < 10 AND b = 1 OR
+#15 <= a AND a < 20 AND b = 3
+#OR
+#1 <= a AND b = 1;
 
 SELECT * FROM t2 WHERE
 5 <= a AND a < 10 AND b = 2 OR
@@ -1159,23 +1172,23 @@ SELECT * FROM t2 WHERE
 OR
 1 <= a AND b = 1;
 
-EXPLAIN
-SELECT * FROM t2 WHERE
-5 <= a AND a < 10 AND b = 2 OR
-15 <= a AND a < 20 AND b = 3
-OR
-1 <= a AND b = 1;
+#EXPLAIN
+#SELECT * FROM t2 WHERE
+#5 <= a AND a < 10 AND b = 2 OR
+#15 <= a AND a < 20 AND b = 3
+#OR
+#1 <= a AND b = 1;
 
 SELECT * FROM t3 WHERE
 5 <= a AND a < 10 AND b = 3 OR 
 a < 5 OR
 a < 10;
 
-EXPLAIN
-SELECT * FROM t3 WHERE
-5 <= a AND a < 10 AND b = 3 OR 
-a < 5 OR
-a < 10;
+#EXPLAIN
+#SELECT * FROM t3 WHERE
+#5 <= a AND a < 10 AND b = 3 OR 
+#a < 5 OR
+#a < 10;
 
 DROP TABLE t1, t2, t3;
 
@@ -1204,9 +1217,9 @@ INSERT INTO t2 VALUES ('2009-09-23 12:00:00'), ('2009-09-23 12:00:00'),
                       ('2009-09-23 12:00:00');
 
 --echo # DATE vs DATE
---replace_column 1 X 2 X 3 X 8 X 9 X 10 X 12 X
-EXPLAIN
-SELECT * FROM t1 WHERE a >= '2009/09/23';
+#--replace_column 1 X 2 X 3 X 8 X 9 X 10 X 12 X
+#EXPLAIN
+#SELECT * FROM t1 WHERE a >= '2009/09/23';
 SELECT * FROM t1 WHERE a >= '2009/09/23';
 SELECT * FROM t1 WHERE a >= '20090923';
 SELECT * FROM t1 WHERE a >=  20090923;
@@ -1215,9 +1228,9 @@ SELECT * FROM t1 WHERE a >= '2009.09.23';
 SELECT * FROM t1 WHERE a >= '2009:09:23';
 
 --echo # DATE vs DATETIME
---replace_column 1 X 2 X 3 X 8 X 9 X 10 X 12 X
-EXPLAIN
-SELECT * FROM t2 WHERE a >= '2009/09/23';
+#--replace_column 1 X 2 X 3 X 8 X 9 X 10 X 12 X
+#EXPLAIN
+#SELECT * FROM t2 WHERE a >= '2009/09/23';
 SELECT * FROM t2 WHERE a >= '2009/09/23';
 SELECT * FROM t2 WHERE a >= '2009/09/23';
 SELECT * FROM t2 WHERE a >= '20090923';
@@ -1227,9 +1240,9 @@ SELECT * FROM t2 WHERE a >= '2009.09.23';
 SELECT * FROM t2 WHERE a >= '2009:09:23';
 
 --echo # DATETIME vs DATETIME
---replace_column 1 X 2 X 3 X 8 X 9 X 10 X 12 X
-EXPLAIN
-SELECT * FROM t2 WHERE a >= '2009/09/23 12:00:00';
+#--replace_column 1 X 2 X 3 X 8 X 9 X 10 X 12 X
+#EXPLAIN
+#SELECT * FROM t2 WHERE a >= '2009/09/23 12:00:00';
 SELECT * FROM t2 WHERE a >= '2009/09/23 12:00:00';
 SELECT * FROM t2 WHERE a >= '20090923120000';
 SELECT * FROM t2 WHERE a >=  20090923120000;
@@ -1238,9 +1251,9 @@ SELECT * FROM t2 WHERE a >= '2009.09.23 12:00:00';
 SELECT * FROM t2 WHERE a >= '2009:09:23 12:00:00';
 
 --echo # DATETIME vs DATE
---replace_column 1 X 2 X 3 X 8 X 9 X 10 X 12 X
-EXPLAIN
-SELECT * FROM t1 WHERE a >= '2009/09/23 00:00:00';
+#--replace_column 1 X 2 X 3 X 8 X 9 X 10 X 12 X
+#EXPLAIN
+#SELECT * FROM t1 WHERE a >= '2009/09/23 00:00:00';
 SELECT * FROM t1 WHERE a >= '2009/09/23 00:00:00';
 SELECT * FROM t1 WHERE a >= '2009/09/23 00:00:00';
 SELECT * FROM t1 WHERE a >= '20090923000000';
@@ -1327,7 +1340,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (c_key INT, c_notkey INT, KEY(c_key));
 INSERT INTO t1 VALUES (1, 1), (2, 2), (3, 3);
 
-EXPLAIN SELECT * FROM t1 WHERE 2 NOT BETWEEN c_notkey AND c_key;
+#EXPLAIN SELECT * FROM t1 WHERE 2 NOT BETWEEN c_notkey AND c_key;
 SELECT * FROM t1 WHERE 2 NOT BETWEEN c_notkey AND c_key;
 
 DROP TABLE t1;
@@ -1344,57 +1357,57 @@ CREATE UNIQUE INDEX i4_uq ON t1(i4);
 
 INSERT INTO t1 VALUES (1,10), (2,20), (3,30);
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE i4 BETWEEN 10 AND 10;
 SELECT * FROM t1 WHERE i4 BETWEEN 10 AND 10;
-SELECT * FROM t1 WHERE i4 BETWEEN 10 AND 10;
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE 10 BETWEEN i4 AND i4;
 SELECT * FROM t1 WHERE 10 BETWEEN i4 AND i4;
-SELECT * FROM t1 WHERE 10 BETWEEN i4 AND i4;
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE 10 BETWEEN 10 AND i4;
 SELECT * FROM t1 WHERE 10 BETWEEN 10 AND i4;
-SELECT * FROM t1 WHERE 10 BETWEEN 10 AND i4;
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE 10 BETWEEN i4 AND 10;
 SELECT * FROM t1 WHERE 10 BETWEEN i4 AND 10;
-SELECT * FROM t1 WHERE 10 BETWEEN i4 AND 10;
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE 10 BETWEEN 10 AND 10;
 SELECT * FROM t1 WHERE 10 BETWEEN 10 AND 10;
-SELECT * FROM t1 WHERE 10 BETWEEN 10 AND 10;
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE 10 BETWEEN 11 AND 11;
 SELECT * FROM t1 WHERE 10 BETWEEN 11 AND 11;
-SELECT * FROM t1 WHERE 10 BETWEEN 11 AND 11;
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE 10 BETWEEN 100 AND 0;
 SELECT * FROM t1 WHERE 10 BETWEEN 100 AND 0;
-SELECT * FROM t1 WHERE 10 BETWEEN 100 AND 0;
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE i4 BETWEEN 100 AND 0;
 SELECT * FROM t1 WHERE i4 BETWEEN 100 AND 0;
-SELECT * FROM t1 WHERE i4 BETWEEN 100 AND 0;
 
-EXPLAIN
+#EXPLAIN
+#SELECT * FROM t1 WHERE i4 BETWEEN 10 AND 99999999999999999;
 SELECT * FROM t1 WHERE i4 BETWEEN 10 AND 99999999999999999;
-SELECT * FROM t1 WHERE i4 BETWEEN 10 AND 99999999999999999;
 
-EXPLAIN
-SELECT * FROM t1 WHERE i4 BETWEEN 999999999999999 AND 30;
+#EXPLAIN
+#SELECT * FROM t1 WHERE i4 BETWEEN 999999999999999 AND 30;
 SELECT * FROM t1 WHERE i4 BETWEEN 999999999999999 AND 30;
 
-EXPLAIN
-SELECT * FROM t1 WHERE i4 BETWEEN 10 AND '20';
+#EXPLAIN
+#SELECT * FROM t1 WHERE i4 BETWEEN 10 AND '20';
 SELECT * FROM t1 WHERE i4 BETWEEN 10 AND '20';
 
 #Should detect the EQ_REF 't2.pk=t1.i4'
-EXPLAIN
-SELECT * FROM t1, t1 as t2 WHERE t2.pk BETWEEN t1.i4 AND t1.i4;
+#EXPLAIN
+#SELECT * FROM t1, t1 as t2 WHERE t2.pk BETWEEN t1.i4 AND t1.i4;
 SELECT * FROM t1, t1 as t2 WHERE t2.pk BETWEEN t1.i4 AND t1.i4;
 
-EXPLAIN
-SELECT * FROM t1, t1 as t2 WHERE t1.i4 BETWEEN t2.pk AND t2.pk;
+#EXPLAIN
+#SELECT * FROM t1, t1 as t2 WHERE t1.i4 BETWEEN t2.pk AND t2.pk;
 SELECT * FROM t1, t1 as t2 WHERE t1.i4 BETWEEN t2.pk AND t2.pk;
 
 DROP TABLE t1;
@@ -1463,6 +1476,7 @@ INSERT INTO t1 VALUES
 ('A','A','A'),('AA','AA','AA'),('AAA','AAA','AAA'),
 ('AAAA','AAAA','AAAA'),('AAAAA','AAAAA','AAAAA');
 
+#Bug #SEQUOIADBMAINSTREAM-3568
 SELECT * FROM t1 WHERE F1 = 'A    ';
 SELECT * FROM t1 IGNORE INDEX(PRIMARY) WHERE F1 = 'A    ';
 SELECT * FROM t1 WHERE F1 >= 'A    ';
@@ -1480,7 +1494,6 @@ DROP TABLE t1;
 #
 # BUG#32262 fix: crash with decimal column...
 #
-
 CREATE TABLE t1 (c1 DECIMAL(10,0),INDEX(c1));
 INSERT INTO t1 VALUES (1),(2),(3);
 SELECT c1 FROM t1 WHERE c1 >= 'A' GROUP BY 1;
@@ -1517,6 +1530,7 @@ INSERT INTO t1
 VALUES (2,3),(2,3),(2,3),(2,3),(2,3),(2,3),(2,3),(2,3),(2,3),(2,3);
 INSERT INTO t1 SELECT 3, 4 FROM t1 WHERE a = 2 AND b = 3;
 INSERT INTO t1 SELECT 4, 1 FROM t1 WHERE a = 2 AND b = 3;
+--replace_column 1 x
 ANALYZE TABLE t1;
 INSERT INTO t1 VALUES (1, 2);
 INSERT INTO t1 SELECT a, b FROM t1 WHERE a=1 AND b=2; # 2
@@ -1529,7 +1543,7 @@ INSERT INTO t1 SELECT a, b FROM t1 WHERE a=1 AND b=2; # 128
 --echo # This must use range over index l, not k.
 --echo # Update: Due to patch being reverted and minor differences in 
 --echo #         range estimates k is selected.
-EXPLAIN SELECT * FROM t1 WHERE a = 1 AND b >= 2;
+#EXPLAIN SELECT * FROM t1 WHERE a = 1 AND b >= 2;
 
 CREATE TABLE t2( 
   a INT, 
@@ -1547,6 +1561,7 @@ VALUES (2,3,3),(2,3,3),(2,3,3),(2,3,3),(2,3,3),
        (2,3,3),(2,3,3),(2,3,3),(2,3,3),(2,3,3);
 INSERT INTO t2 SELECT 3, 4, 4 FROM t2 WHERE a = 2 AND b = 3;
 INSERT INTO t2 SELECT 4, 1, 1 FROM t2 WHERE a = 2 AND b = 3;
+--replace_column 1 x
 ANALYZE TABLE t2;
 INSERT INTO t2 VALUES (1, 2, 2);
 INSERT INTO t2 SELECT a, b, c FROM t2 WHERE a=1 AND b=2; # 2
@@ -1560,7 +1575,7 @@ INSERT INTO t2 VALUES (1, 1, 2);
 --echo # This must use range over index l, not n.
 --echo # Update: Due to patch being reverted and minor differences in 
 --echo #         range estimates k is selected.
-EXPLAIN SELECT * FROM t2 WHERE a = 1 AND b >= 2 AND c >= 2;
+#EXPLAIN SELECT * FROM t2 WHERE a = 1 AND b >= 2 AND c >= 2;
 
 DROP TABLE t1, t2;
 
@@ -1588,7 +1603,7 @@ let $query= SELECT * FROM t100 WHERE I <> 6 OR (I <> 8 AND J = 5);
 
 #Verify that 'range' access will be used
 --echo
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 
 # Only row 101,8,26 should be returned
 --echo
@@ -1600,7 +1615,7 @@ DROP TABLE t10,t100;
 --echo # BUG#12698916 - JOIN QUERY GIVES WRONG RESULT AT 2ND EXEC. OR
 --echo # AFTER FLUSH TABLES [-INT VS NULL]
 --echo #
-CREATE TABLE t1 (col_int INT, pk INT) ENGINE=InnoDB STATS_PERSISTENT=0;
+CREATE TABLE t1 (col_int INT, pk INT) ENGINE=sequoiadb STATS_PERSISTENT=0;
 
 INSERT INTO t1 VALUES (-100,1),(1,6);
 
@@ -1610,7 +1625,7 @@ CREATE TABLE t2 (
   pk INT NOT NULL,
   PRIMARY KEY (pk),
   KEY (col_int_key)
-) ENGINE=InnoDB STATS_PERSISTENT=0;
+) ENGINE=sequoiadb STATS_PERSISTENT=0;
 
 INSERT INTO t2 VALUES
 (1,"GOOD",1),(100,"",2),(200,"",3),(300,"",4),(400,"",5),(500,"",8);
@@ -1618,11 +1633,11 @@ INSERT INTO t2 VALUES
 let $query=SELECT t1.*,t2.* FROM t1 straight_join t2
 ON t2.col_int_key = t1.col_int WHERE t2.pk < t1.pk;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
---echo # need FLUSH so that InnoDB statistics change and thus plan changes
+--echo # need FLUSH so that sequoiadb statistics change and thus plan changes
 FLUSH TABLES;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1,t2;
@@ -1693,10 +1708,10 @@ WHERE ( table1.pk > 226 AND
       )
 ;
 
-ALTER TABLE t1 DISABLE KEYS;
+#ALTER TABLE t1 DISABLE KEYS;
 sorted_result;
 eval $query;
-ALTER TABLE t1 ENABLE KEYS;
+#ALTER TABLE t1 ENABLE KEYS;
 
 eval CREATE TABLE t2 $query;
 
@@ -1710,16 +1725,17 @@ DROP TABLE t1, t2;
 --echo # BUG#12912171 - ASSERTION FAILED: QUICK->HEAD->READ_SET ==
 --echo # SAVE_READ_SET
 --echo #
-CREATE TABLE t1 (
- a INT,
- b INT,
- c INT,
- PRIMARY KEY (c,a), KEY (a),KEY (a)
-) ENGINE=INNODB PARTITION BY KEY () PARTITIONS 2;
-INSERT INTO t1 VALUES (1,5,1),(2,4,1),(3,3,1),(4,2,1),(5,1,1);
-UPDATE t1 SET b = 0, c=1 WHERE a <=>0;
-SELECT * FROM t1;
-DROP TABLE t1;
+#Sequoiadb not support partition table
+#CREATE TABLE t1 (
+# a INT,
+# b INT,
+# c INT,
+# PRIMARY KEY (c,a), KEY (a),KEY (a)
+#) ENGINE=sequoiadb PARTITION BY KEY () PARTITIONS 2;
+#INSERT INTO t1 VALUES (1,5,1),(2,4,1),(3,3,1),(4,2,1),(5,1,1);
+#UPDATE t1 SET b = 0, c=1 WHERE a <=>0;
+#SELECT * FROM t1;
+#DROP TABLE t1;
 
 --echo #
 --echo # BUG#13256446 - ASSERTION QUICK->HEAD->READ_SET ==
@@ -1731,7 +1747,7 @@ CREATE TABLE t1 (
  f3 INT,
  f4 INT,
  PRIMARY KEY (f1),KEY(f2)
-) ENGINE=INNODB;
+) ENGINE=sequoiadb;
 CREATE ALGORITHM=MERGE VIEW v2 AS SELECT f1,f2,f3,f4 FROM t1 WHERE f2=103;
 INSERT INTO t1 VALUES (154,0,NULL,0),(0,NULL,9,0),
  (NULL,102,NULL,3),(0,3,NULL,0), (9,0,NULL,0),(0,9,NULL,157);
@@ -1747,7 +1763,7 @@ CREATE TABLE t1 (
  f3 INT,
  f4 INT,
  PRIMARY KEY (f1),KEY(f2)
-) ENGINE=INNODB;
+) ENGINE=sequoiadb;
 INSERT INTO t1 VALUES(1,NULL,NULL,0), (2,2,0,3), (9,0,107,18),
  (10,0,0,0), (231,0,0,0), (232,0,8,0), (234,0,0,NULL), (235,8,0,3);
 CREATE ALGORITHM=MERGE VIEW v3 AS SELECT f1,f2,f3,f4 FROM t1 WHERE f1<=85 ;
@@ -1784,7 +1800,8 @@ INSERT INTO t2 VALUES ('2001-01-01 11:22:33');
 --echo
 --echo # range/ref access cannot be used for this query
 --echo
-EXPLAIN SELECT * FROM t2 WHERE b=CAST('2001-01-01' AS DATE);
+#Bug #SEQUOIADBMAINSTREAM-3622
+#EXPLAIN SELECT * FROM t2 WHERE b=CAST('2001-01-01' AS DATE);
 SELECT * FROM t2 WHERE b=CAST('2001-01-01' AS DATE);
 
 let $query_ab=SELECT * FROM t1, t2 WHERE a=b ORDER BY BINARY a, BINARY b;
@@ -1794,10 +1811,10 @@ let $query_ba=SELECT * FROM t1, t2 WHERE b=a ORDER BY BINARY a, BINARY b;
 --echo # range/ref access cannot be used for any of the queries below.
 --echo # See BUG#13814468 about 'Range checked for each record'
 --echo
-eval EXPLAIN $query_ab;
+#eval EXPLAIN $query_ab;
 eval $query_ab;
 --echo
-eval EXPLAIN $query_ba;
+#eval EXPLAIN $query_ba;
 eval $query_ba;
 
 --echo
@@ -1807,197 +1824,199 @@ DROP TABLE t1,t2;
 --echo # WL#7019: Add support for row value constructors in in predicates to
 --echo # range optimizer
 --echo #
-CREATE TABLE t1 (a INT, b INT, c INT, KEY x(a, b));
 
-INSERT INTO t1 VALUES (2, 2, 2), (3, 3, 3), (4, 4, 4), (5, 5, 5), (6, 6, 6),
-  (7, 7, 7), (8, 8, 8), (9, 9, 9);
+#Sequoiadb not support explain
+#CREATE TABLE t1 (a INT, b INT, c INT, KEY x(a, b));
+#
+#INSERT INTO t1 VALUES (2, 2, 2), (3, 3, 3), (4, 4, 4), (5, 5, 5), (6, 6, 6),
+#  (7, 7, 7), (8, 8, 8), (9, 9, 9);
+#
+#INSERT INTO t1 SELECT * FROM t1;
+#INSERT INTO t1 SELECT * FROM t1;
+#INSERT INTO t1 SELECT * FROM t1;
+#INSERT INTO t1 SELECT * FROM t1;
+#INSERT INTO t1 SELECT * FROM t1;
+#INSERT INTO t1 SELECT * FROM t1;
+#INSERT INTO t1 SELECT * FROM t1;
+#INSERT INTO t1 SELECT * FROM t1;
+#INSERT INTO t1 SELECT * FROM t1;
+#
+#INSERT INTO t1 VALUES (0, 0, 0), (1, 1, 1);
+#
+##ANALYZE TABLE t1;
+#
+#CREATE TABLE t2 (a INT, b INT, c INT, d INT, KEY x(a, b));
+#
+#INSERT INTO t2 VALUES (2, 2, 2, 2), (3, 3, 3, 3), (4, 4, 4, 4), (5, 5, 5, 5),
+#  (6, 6, 6, 6), (7, 7, 7, 7), (8, 8, 8, 8), (9, 9, 9, 9);
+#
+#INSERT INTO t2 SELECT * FROM t2;
+#INSERT INTO t2 SELECT * FROM t2;
+#INSERT INTO t2 SELECT * FROM t2;
+#INSERT INTO t2 SELECT * FROM t2;
+#INSERT INTO t2 SELECT * FROM t2;
+#INSERT INTO t2 SELECT * FROM t2;
+#INSERT INTO t2 SELECT * FROM t2;
+#INSERT INTO t2 SELECT * FROM t2;
+#INSERT INTO t2 SELECT * FROM t2;
+#
+#INSERT INTO t2 VALUES (0, 0, 0, 0), (1, 1, 1, 1);
+#
+##ANALYZE TABLE t2;
+#
+#CREATE TABLE t3 (a INT, b INT, c INT, d INT, KEY x(a, b, c));
+#
+#INSERT INTO t3 VALUES (2, 2, 2, 2), (3, 3, 3, 3), (4, 4, 4, 4), (5, 5, 5, 5),
+#  (6, 6, 6, 6), (7, 7, 7, 7), (8, 8, 8, 8), (9, 9, 9, 9);
+#
+#INSERT INTO t3 SELECT * FROM t3;
+#INSERT INTO t3 SELECT * FROM t3;
+#INSERT INTO t3 SELECT * FROM t3;
+#INSERT INTO t3 SELECT * FROM t3;
+#INSERT INTO t3 SELECT * FROM t3;
+#INSERT INTO t3 SELECT * FROM t3;
+#INSERT INTO t3 SELECT * FROM t3;
+#INSERT INTO t3 SELECT * FROM t3;
+#INSERT INTO t3 SELECT * FROM t3;
+#
+#INSERT INTO t3 VALUES (0, 0, 0, 0), (1, 1, 1, 1);
 
-INSERT INTO t1 SELECT * FROM t1;
-INSERT INTO t1 SELECT * FROM t1;
-INSERT INTO t1 SELECT * FROM t1;
-INSERT INTO t1 SELECT * FROM t1;
-INSERT INTO t1 SELECT * FROM t1;
-INSERT INTO t1 SELECT * FROM t1;
-INSERT INTO t1 SELECT * FROM t1;
-INSERT INTO t1 SELECT * FROM t1;
-INSERT INTO t1 SELECT * FROM t1;
+#ANALYZE TABLE t3;
 
-INSERT INTO t1 VALUES (0, 0, 0), (1, 1, 1);
+#EXPLAIN SELECT a, b FROM t1 WHERE (a, b) IN ((NULL, NULL), (NULL, NULL));
 
-ANALYZE TABLE t1;
+#let $ERC_query=
+#SELECT a, b FROM t1 WHERE (a = 0 AND b = 0) OR (a = 1 AND b = 1);
+#source include/explain_run_count.inc;
+#
+#let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN ((0, 0));
+#source include/explain_run_count.inc;
+#
+#let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN ((0, 0), (1, 1));
+#source include/explain_run_count.inc;
+#
+#let $ERC_query=SELECT a, b, c FROM t2 WHERE (a, b, c) IN ((0, 0, 0), (1, 1, 1));
+#source include/explain_run_count.inc;
+#
+#let $ERC_query=SELECT a, b, c FROM t3 WHERE (a, b, c) IN ((0, 0, 0), (1, 1, 1));
+#source include/explain_run_count.inc;
+#
+#let $ERC_query= SELECT a, b FROM t1 WHERE a = 0 AND b = 0 OR (a, b) IN ((1, 1));
+#source include/explain_run_count.inc;
+#
+#let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN ((1, 1)) OR a = 0 AND b = 0;
+#source include/explain_run_count.inc;
+#
+#let $ERC_query=
+#SELECT a, b FROM t2 WHERE (a, b, c) IN ((1, 1, 1)) OR a = 0 AND b = 0 AND c = 0;
+#source include/explain_run_count.inc;
+#
+#let $ERC_query=
+#SELECT a, b FROM t3 WHERE (a, b, c) IN ((1, 1, 1)) OR a = 0 AND b = 0 AND c = 0;
+#source include/explain_run_count.inc;
+#
+#let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN (((SELECT 1), 1));
+#source include/explain_run_count.inc;
+#
+#let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN (('0', 0), (1, 1));
+#source include/explain_run_count.inc;
+#
+#SET @v = 0;
+#let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN ((@v, 0), (1, 1));
+#source include/explain_run_count.inc;
 
-CREATE TABLE t2 (a INT, b INT, c INT, d INT, KEY x(a, b));
-
-INSERT INTO t2 VALUES (2, 2, 2, 2), (3, 3, 3, 3), (4, 4, 4, 4), (5, 5, 5, 5),
-  (6, 6, 6, 6), (7, 7, 7, 7), (8, 8, 8, 8), (9, 9, 9, 9);
-
-INSERT INTO t2 SELECT * FROM t2;
-INSERT INTO t2 SELECT * FROM t2;
-INSERT INTO t2 SELECT * FROM t2;
-INSERT INTO t2 SELECT * FROM t2;
-INSERT INTO t2 SELECT * FROM t2;
-INSERT INTO t2 SELECT * FROM t2;
-INSERT INTO t2 SELECT * FROM t2;
-INSERT INTO t2 SELECT * FROM t2;
-INSERT INTO t2 SELECT * FROM t2;
-
-INSERT INTO t2 VALUES (0, 0, 0, 0), (1, 1, 1, 1);
-
-ANALYZE TABLE t2;
-
-CREATE TABLE t3 (a INT, b INT, c INT, d INT, KEY x(a, b, c));
-
-INSERT INTO t3 VALUES (2, 2, 2, 2), (3, 3, 3, 3), (4, 4, 4, 4), (5, 5, 5, 5),
-  (6, 6, 6, 6), (7, 7, 7, 7), (8, 8, 8, 8), (9, 9, 9, 9);
-
-INSERT INTO t3 SELECT * FROM t3;
-INSERT INTO t3 SELECT * FROM t3;
-INSERT INTO t3 SELECT * FROM t3;
-INSERT INTO t3 SELECT * FROM t3;
-INSERT INTO t3 SELECT * FROM t3;
-INSERT INTO t3 SELECT * FROM t3;
-INSERT INTO t3 SELECT * FROM t3;
-INSERT INTO t3 SELECT * FROM t3;
-INSERT INTO t3 SELECT * FROM t3;
-
-INSERT INTO t3 VALUES (0, 0, 0, 0), (1, 1, 1, 1);
-
-ANALYZE TABLE t3;
-
-EXPLAIN SELECT a, b FROM t1 WHERE (a, b) IN ((NULL, NULL), (NULL, NULL));
-
-let $ERC_query=
-SELECT a, b FROM t1 WHERE (a = 0 AND b = 0) OR (a = 1 AND b = 1);
-source include/explain_run_count.inc;
-
-let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN ((0, 0));
-source include/explain_run_count.inc;
-
-let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN ((0, 0), (1, 1));
-source include/explain_run_count.inc;
-
-let $ERC_query=SELECT a, b, c FROM t2 WHERE (a, b, c) IN ((0, 0, 0), (1, 1, 1));
-source include/explain_run_count.inc;
-
-let $ERC_query=SELECT a, b, c FROM t3 WHERE (a, b, c) IN ((0, 0, 0), (1, 1, 1));
-source include/explain_run_count.inc;
-
-let $ERC_query= SELECT a, b FROM t1 WHERE a = 0 AND b = 0 OR (a, b) IN ((1, 1));
-source include/explain_run_count.inc;
-
-let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN ((1, 1)) OR a = 0 AND b = 0;
-source include/explain_run_count.inc;
-
-let $ERC_query=
-SELECT a, b FROM t2 WHERE (a, b, c) IN ((1, 1, 1)) OR a = 0 AND b = 0 AND c = 0;
-source include/explain_run_count.inc;
-
-let $ERC_query=
-SELECT a, b FROM t3 WHERE (a, b, c) IN ((1, 1, 1)) OR a = 0 AND b = 0 AND c = 0;
-source include/explain_run_count.inc;
-
-let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN (((SELECT 1), 1));
-source include/explain_run_count.inc;
-
-let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN (('0', 0), (1, 1));
-source include/explain_run_count.inc;
-
-SET @v = 0;
-let $ERC_query= SELECT a, b FROM t1 WHERE (a, b) IN ((@v, 0), (1, 1));
-source include/explain_run_count.inc;
-
-CREATE TABLE t4 ( a INT, b INT );
-
-INSERT INTO t4 VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
-INSERT INTO t4 SELECT a + 5, b + 5 FROM t4;
-INSERT INTO t4 SELECT * FROM t4;
-INSERT INTO t4 SELECT * FROM t4;
-INSERT INTO t4 SELECT * FROM t4;
-INSERT INTO t4 SELECT * FROM t4;
-INSERT INTO t4 SELECT * FROM t4;
-INSERT INTO t4 SELECT * FROM t4;
-
---echo # Inner table in a nested-loops join
-EXPLAIN
-SELECT t4.*, t1.a, t1.b
-FROM t4 JOIN t1 USING(a, b)
-WHERE (t4.a, t4.b) IN ((1, 1), (0, 0));
-
---echo # Join on IN
-EXPLAIN
-SELECT t4.*, t1.a, t1.b
-FROM t4 JOIN t1
-WHERE (t1.a, t1.b) IN ((t4.a, t4.b), (0, 0));
-
-EXPLAIN
-SELECT t4.*, t1.a, t1.b
-FROM t4 JOIN t1
-WHERE (t1.a, t1.b) IN ((t4.a, t4.b), (1, 1));
+#CREATE TABLE t4 ( a INT, b INT );
+#
+#INSERT INTO t4 VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
+#INSERT INTO t4 SELECT a + 5, b + 5 FROM t4;
+#INSERT INTO t4 SELECT * FROM t4;
+#INSERT INTO t4 SELECT * FROM t4;
+#INSERT INTO t4 SELECT * FROM t4;
+#INSERT INTO t4 SELECT * FROM t4;
+#INSERT INTO t4 SELECT * FROM t4;
+#INSERT INTO t4 SELECT * FROM t4;
+#
+#--echo # Inner table in a nested-loops join
+#EXPLAIN
+#SELECT t4.*, t1.a, t1.b
+#FROM t4 JOIN t1 USING(a, b)
+#WHERE (t4.a, t4.b) IN ((1, 1), (0, 0));
+#
+#--echo # Join on IN
+#EXPLAIN
+#SELECT t4.*, t1.a, t1.b
+#FROM t4 JOIN t1
+#WHERE (t1.a, t1.b) IN ((t4.a, t4.b), (0, 0));
+#
+#EXPLAIN
+#SELECT t4.*, t1.a, t1.b
+#FROM t4 JOIN t1
+#WHERE (t1.a, t1.b) IN ((t4.a, t4.b), (1, 1));
 
 
---echo #
---echo # Tests for non-deterministic functions.
---echo #
-CREATE FUNCTION f1() RETURNS INT NOT DETERMINISTIC RETURN 1;
+#--echo #
+#--echo # Tests for non-deterministic functions.
+#--echo #
+#CREATE FUNCTION f1() RETURNS INT NOT DETERMINISTIC RETURN 1;
 
---echo # The statement immediately below should not use range access.
-EXPLAIN SELECT a, b FROM t1 WHERE (a, b, c) IN ((0, 0, 0), (f1(), 1, 1));
-EXPLAIN SELECT a, b FROM t1 WHERE (a, b, c) IN ((0, 0, 0), (1, f1(), 1));
-EXPLAIN SELECT a, b FROM t1 WHERE (a, b, c) IN ((0, 0, 0), (1, 1, f1()));
+#--echo # The statement immediately below should not use range access.
+#EXPLAIN SELECT a, b FROM t1 WHERE (a, b, c) IN ((0, 0, 0), (f1(), 1, 1));
+#EXPLAIN SELECT a, b FROM t1 WHERE (a, b, c) IN ((0, 0, 0), (1, f1(), 1));
+#EXPLAIN SELECT a, b FROM t1 WHERE (a, b, c) IN ((0, 0, 0), (1, 1, f1()));
 
---echo # The statement immediately below should not use range access.
-EXPLAIN SELECT a, b FROM t1 WHERE (a, b) IN ((f1(), 1));
+#--echo # The statement immediately below should not use range access.
+#EXPLAIN SELECT a, b FROM t1 WHERE (a, b) IN ((f1(), 1));
 
-DROP FUNCTION f1;
+#DROP FUNCTION f1;
 
---echo # The statement immediately below should not use range access.
-EXPLAIN
-SELECT a, b
-FROM t1 AS t1o
-WHERE EXISTS ( SELECT 1 FROM t1 WHERE (a, b) IN ((t1o.a, t1o.b)) );
-
---echo #
---echo # Tests of dynamic range access
---echo #
-CREATE TABLE t5 (a int, b int, KEY (a));
-INSERT INTO t5 VALUES (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1);
-
-CREATE TABLE t6 (a int, b int, KEY (a));
-INSERT INTO t6 VALUES (3, 2), (4, 2), (100, 100), (101, 201), (102, 102);
-
-CREATE TABLE t7 (a int, b int, KEY (a, b));
-INSERT INTO t7 VALUES (1, 1), (2, 2), (1000, 1000), (1001, 1001), (1002, 1002),
-(1003, 1003), (1004, 1004);
-
-let $ERC_query=
-SELECT *
-FROM t5 JOIN t6 ON t5.a = t6.a JOIN t7
-WHERE t7.a IN (t5.b, t6.b);
-source include/explain_run_count.inc;
-
-let $ERC_query=
-SELECT *
-FROM t5 JOIN t6 ON t5.a = t6.a JOIN t7
-WHERE (t7.a, t7.b) IN ((t5.b, 1), (t6.b, 1));
-source include/explain_run_count.inc;
-
---echo #
---echo # Regression tests of the worklog below.
---echo #
-
---echo # Make sure we process IN predicates only.
---echo # The code around this is very unclear.
-EXPLAIN SELECT a, b FROM t1 WHERE (a, b) != (1, 1);
-
---echo # This should give us a ref scan, as it always did.
-EXPLAIN SELECT a, b FROM t1 WHERE (a, b) IN ((0, 0));
-
-EXPLAIN SELECT a, b FROM t1 WHERE (a, c) IN ((0, 0));
-
---echo # ref scan on x(a).
-EXPLAIN SELECT * FROM t1 WHERE (a, c) IN ((0, 0), (1, 1));
-
-DROP TABLE t1, t2, t3, t4, t5, t6, t7;
+#--echo # The statement immediately below should not use range access.
+#EXPLAIN
+#SELECT a, b
+#FROM t1 AS t1o
+#WHERE EXISTS ( SELECT 1 FROM t1 WHERE (a, b) IN ((t1o.a, t1o.b)) );
+#
+#--echo #
+#--echo # Tests of dynamic range access
+#--echo #
+#CREATE TABLE t5 (a int, b int, KEY (a));
+#INSERT INTO t5 VALUES (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1);
+#
+#CREATE TABLE t6 (a int, b int, KEY (a));
+#INSERT INTO t6 VALUES (3, 2), (4, 2), (100, 100), (101, 201), (102, 102);
+#
+#CREATE TABLE t7 (a int, b int, KEY (a, b));
+#INSERT INTO t7 VALUES (1, 1), (2, 2), (1000, 1000), (1001, 1001), (1002, 1002),
+#(1003, 1003), (1004, 1004);
+#
+#let $ERC_query=
+#SELECT *
+#FROM t5 JOIN t6 ON t5.a = t6.a JOIN t7
+#WHERE t7.a IN (t5.b, t6.b);
+#source include/explain_run_count.inc;
+#
+#let $ERC_query=
+#SELECT *
+#FROM t5 JOIN t6 ON t5.a = t6.a JOIN t7
+#WHERE (t7.a, t7.b) IN ((t5.b, 1), (t6.b, 1));
+#source include/explain_run_count.inc;
+#
+#--echo #
+#--echo # Regression tests of the worklog below.
+#--echo #
+#
+#--echo # Make sure we process IN predicates only.
+#--echo # The code around this is very unclear.
+#EXPLAIN SELECT a, b FROM t1 WHERE (a, b) != (1, 1);
+#
+#--echo # This should give us a ref scan, as it always did.
+#EXPLAIN SELECT a, b FROM t1 WHERE (a, b) IN ((0, 0));
+#
+#EXPLAIN SELECT a, b FROM t1 WHERE (a, c) IN ((0, 0));
+#
+#--echo # ref scan on x(a).
+#EXPLAIN SELECT * FROM t1 WHERE (a, c) IN ((0, 0), (1, 1));
+#
+#DROP TABLE t1, t2, t3, t4, t5, t6, t7;
 
 --echo #
 --echo # Bug#17635476: CRASH IN GET_MM_PARTS() OR ASSERT IN
@@ -2007,38 +2026,40 @@ CREATE TABLE t1 (
   a INT,
   b INT,
   KEY (a)
-) ENGINE = INNODB;
+) ENGINE = sequoiadb;
 
 SELECT DISTINCT a FROM t1 WHERE (a, b) IN ((0, 0), (1, 1));
 
-INSERT INTO t1 VALUES (0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6),
-  (7, 7), (8, 8), (9, 9);
+#INSERT INTO t1 VALUES (0, 0), (1, 1), (2, 2), (3, 3), (4, 4), (5, 5), (6, 6),
+#  (7, 7), (8, 8), (9, 9);
+--replace_column 1 x
 ANALYZE TABLE t1;
 
-CREATE TABLE t2 (
-  a INT,
-  b INT,
-  KEY (a, b)
-);
+#CREATE TABLE t2 (
+#  a INT,
+#  b INT,
+#  KEY (a, b)
+#);
 
-INSERT INTO t2 SELECT * FROM t1;
-ANALYZE TABLE t2;
+#INSERT INTO t2 SELECT * FROM t1;
+#--replace_column 1 x
+#ANALYZE TABLE t2;
 
-let $ERC_query=
-SELECT DISTINCT a FROM t1 WHERE (a, b) IN ((0, 0), (1, 1));
-source include/explain_run_count.inc;
+#let $ERC_query=
+#SELECT DISTINCT a FROM t1 WHERE (a, b) IN ((0, 0), (1, 1));
+#source include/explain_run_count.inc;
 
-let $ERC_query=
-SELECT DISTINCT a FROM t2 WHERE (a, b) IN ((0, 0), (1, 1));
-source include/explain_run_count.inc;
-
---echo # Should not use range scan.
-EXPLAIN SELECT DISTINCT a FROM t1 WHERE (NULL, b) IN ((0, 0), (1, 1));
-
---echo # Should not use range scan.
-EXPLAIN SELECT DISTINCT a FROM t2 WHERE (NULL, b) IN ((0, 0), (1, 1));
-
-DROP TABLE t1, t2;
+#let $ERC_query=
+#SELECT DISTINCT a FROM t2 WHERE (a, b) IN ((0, 0), (1, 1));
+#source include/explain_run_count.inc;
+#
+#--echo # Should not use range scan.
+#EXPLAIN SELECT DISTINCT a FROM t1 WHERE (NULL, b) IN ((0, 0), (1, 1));
+#
+#--echo # Should not use range scan.
+#EXPLAIN SELECT DISTINCT a FROM t2 WHERE (NULL, b) IN ((0, 0), (1, 1));
+#
+DROP TABLE t1;
 
 --echo #
 --echo # Bug#17755540 VALGRIND ERROR WHEN SETTING UP ROW COMPARATORS
@@ -2053,6 +2074,7 @@ INSERT INTO t2 SELECT * FROM t2;
 
 INSERT INTO t2 VALUES (0, 0, 0, 0), (1, 1, 1, 1);
 
+--replace_column 1 x
 ANALYZE TABLE t2;
 
 SELECT a, b FROM t2 WHERE (a, b) IN ((0, 0), (1, 1));
@@ -2067,8 +2089,8 @@ CREATE TABLE t1 (a INT PRIMARY KEY, b INT);
 
 INSERT INTO t1 VALUES (1,1), (2,1), (3,1), (4,1), (5,1), (6,1);
 
-EXPLAIN SELECT * FROM t1 WHERE a IN (1, 2);
-EXPLAIN SELECT * FROM t1 WHERE a IN (1, "2");
+#EXPLAIN SELECT * FROM t1 WHERE a IN (1, 2);
+#EXPLAIN SELECT * FROM t1 WHERE a IN (1, "2");
 
 SELECT * FROM t1 WHERE a IN (1, 2);
 SELECT * FROM t1 WHERE a IN (1, "2");
@@ -2079,8 +2101,7 @@ DROP TABLE t1;
 --echo # Bug#18715670
 --echo # CRASH IN DECIMAL_ACTUAL_FRACTION COMPARING DECIMAL TO NULLS
 --echo # 
-
-CREATE TABLE t1(n DECIMAL(39,19) NOT NULL, KEY(n)) engine=innodb;
+CREATE TABLE t1(n DECIMAL(39,19) NOT NULL, KEY(n)) engine=sequoiadb;
 INSERT INTO t1 SET n=0;
 SELECT 1 FROM t1 WHERE n NOT IN(NULL, NULL);
 DROP TABLE t1;
@@ -2093,7 +2114,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (
   col_varchar_key varchar(2),
   KEY col_varchar_key (col_varchar_key)
-) ENGINE=InnoDB;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 VALUES ('n'),('xm');
 
@@ -2136,7 +2157,7 @@ CREATE TABLE t1 (
   col_varchar_nokey varchar(1),
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 VALUES
 (5,0,'2001-05-06','2001-05-06','16:21:18','16:21:18','2001-11-08 21:02:12',
@@ -2220,7 +2241,7 @@ CREATE TABLE t1 (
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key),
   KEY col_varchar_10 (col_varchar_10)
-) ENGINE=InnoDB;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 (
 pk, col_varchar_10, col_int_key) VALUES
@@ -2232,7 +2253,7 @@ CREATE TABLE t2 (
   col_varchar_10 VARCHAR(10),
   PRIMARY KEY (pk),
   KEY col_varchar_10 (col_varchar_10)
-) ENGINE=InnoDB;
+) ENGINE=sequoiadb;
 
 INSERT INTO t2 (
 pk,  col_varchar_10) VALUES
@@ -2255,22 +2276,23 @@ CREATE TABLE t1 (
   c2 INT,
   c3 INT,
   PRIMARY KEY(c1, c2, c3)
-) ENGINE=INNODB;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 VALUES (1, 1, 1), (1, 1, 2), (1, 1, 3),
                       (1, 1, 4), (1, 1, 5);
 INSERT INTO t1 SELECT c1, 2, c3 FROM t1;
 INSERT INTO t1 SELECT c1, 3, c3 FROM t1 WHERE c2 = 1;
 
+--replace_column 1 x
 ANALYZE TABLE t1;
 
 SELECT COUNT(*) FROM t1;
 
-EXPLAIN SELECT c1, c2, c3
-        FROM t1
-        WHERE (c1 = 1 AND c2 = 1 AND c3 = 1) OR
-              (c1 = 1 AND c2 = 2 AND c3 = 2) OR
-              (c1 = 1 AND c2 = 2 AND c3 = 3);
+#EXPLAIN SELECT c1, c2, c3
+#        FROM t1
+#        WHERE (c1 = 1 AND c2 = 1 AND c3 = 1) OR
+#              (c1 = 1 AND c2 = 2 AND c3 = 2) OR
+#              (c1 = 1 AND c2 = 2 AND c3 = 3);
 DROP TABLE t1;
 
 
@@ -2279,27 +2301,29 @@ DROP TABLE t1;
 --echo #               TYPE_ARG == IMPOSSIBLE
 --echo #
 
-CREATE TABLE t1 (
-  a BLOB,
-  PRIMARY KEY(a(1)),
-  KEY(a(1))
-) ENGINE=INNODB;
+#Sequoiadb not support index on blob;
+#CREATE TABLE t1 (
+#  a BLOB,
+#  PRIMARY KEY(a(1)),
+#  KEY(a(1))
+#) ENGINE=sequoiadb;
 
-SELECT 1 FROM t1 WHERE a <> 'a' OR a <> "";
+#SELECT 1 FROM t1 WHERE a <> 'a' OR a <> "";
 
-DROP TABLE t1;
+#DROP TABLE t1;
 
 --echo #
 --echo # Bug#19333852: RESULT DIFF IN QUERY HAVING DISTINCT
 --echo #               WITH GROUP BY
 --echo #
 
+#Bug #SEQUOIADBMAINSTREAM-3373
 CREATE TABLE t1 (
   v1 VARCHAR(20) CHARACTER SET utf8 NOT NULL,
   pk INTEGER NOT NULL,
   PRIMARY KEY (pk),
   KEY v1_key (v1(10))
-) ENGINE=InnoDB;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 VALUES ('ABCDE',19), ('JLVGO',14);
 
@@ -2307,9 +2331,9 @@ Let query1= SELECT * FROM t1 WHERE t1.v1 < CHAR(128);
 Let query2= SELECT * FROM t1 WHERE t1.v1 = CHAR(128);
 Let query3= SELECT * FROM t1 WHERE t1.v1 BETWEEN 'f' AND CHAR(128);
 
-eval EXPLAIN $query1;
-eval EXPLAIN $query2;
-eval EXPLAIN $query3;
+#eval EXPLAIN $query1;
+#eval EXPLAIN $query2;
+#eval EXPLAIN $query3;
 
 eval $query1;
 eval $query2;
@@ -2364,15 +2388,15 @@ CREATE TABLE t1 (
   col1 VARCHAR(5),
   col2 INT NOT NULL,
   PRIMARY KEY (col1, col2)
-) ENGINE=InnoDB;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 VALUES ('abcde', 10);
 
 let $query1= SELECT MAX(col2) FROM t1 WHERE col1 = 'abcdeaa';
 let $query2= SELECT MAX(col2) FROM t1 WHERE col1 = 'abcde  ';
 
-eval EXPLAIN $query1;
-eval EXPLAIN $query2;
+#eval EXPLAIN $query1;
+#eval EXPLAIN $query2;
 
 eval $query1;
 eval $query2;
@@ -2384,22 +2408,23 @@ DROP TABLE t1;
 --echo #                MANY OR CONDITIONS
 --echo #
 
-CREATE TABLE t1 (
- f1 INTEGER,
- KEY (f1)
-);
-
-INSERT INTO t1 VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15);
-
-SET @orig_range_optimizer_max_mem_size= @@range_optimizer_max_mem_size;
-SET range_optimizer_max_mem_size= 5000;
-
-EXPLAIN SELECT * FROM t1 WHERE f1=1 OR f1=2 OR f1=3 OR f1=4 OR f1=5
-OR f1=6 OR f1=7 OR f1=8 OR f1=9 OR f1=10 OR f1=11;
-
-SET range_optimizer_max_mem_size= @orig_range_optimizer_max_mem_size;
-
-DROP TABLE t1;
+#Sequoiadb not support explain
+#CREATE TABLE t1 (
+# f1 INTEGER,
+# KEY (f1)
+#);
+#
+#INSERT INTO t1 VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15);
+#
+#SET @orig_range_optimizer_max_mem_size= @@range_optimizer_max_mem_size;
+#SET range_optimizer_max_mem_size= 5000;
+#
+#EXPLAIN SELECT * FROM t1 WHERE f1=1 OR f1=2 OR f1=3 OR f1=4 OR f1=5
+#OR f1=6 OR f1=7 OR f1=8 OR f1=9 OR f1=10 OR f1=11;
+#
+#SET range_optimizer_max_mem_size= @orig_range_optimizer_max_mem_size;
+#
+#DROP TABLE t1;
 
 --echo #
 --echo # Bug #23259872: OPTIMIZER CHOOSES TO USE NON PRIMARY
@@ -2420,7 +2445,7 @@ CREATE TABLE `giant_table` (
   KEY `some_other_id` (`some_other_id`),
   KEY `one_other_idx` (`one_id`,`other_id`),
   KEY `other_id` (`other_id`,`time_created`)
-) ENGINE=InnoDB AUTO_INCREMENT=101651329
+) ENGINE=sequoiadb AUTO_INCREMENT=101651329
 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
 
 CREATE TABLE t1 (c1 INT);
@@ -2452,18 +2477,17 @@ INSERT INTO giant_table (id,one_id) VALUES (66136539, 0), (68983258,1),
 INSERT INTO giant_table (id,one_id, some_other_id) VALUES(84673401, 0, 1),
                                                          (61069031, 1, 1);
 
-EXPLAIN SELECT id, something, comment, time_created, one_id, other_id,
-               some_other_id, flags
-FROM giant_table
-WHERE id IN (66136539, 68983258, 89628210, 77869520, 82543198, 67538272,
-             84673401, 61069031, 68214385, 77282865, 76991297, 64569216,
-             89481638, 74534074, 70396537, 80076375, 63308530, 77908270,
-             70923271, 68066180)
-  AND (giant_table.flags & 0x01) = 0 AND giant_table.some_other_id = 0;
+#EXPLAIN SELECT id, something, comment, time_created, one_id, other_id,
+#               some_other_id, flags
+#FROM giant_table
+#WHERE id IN (66136539, 68983258, 89628210, 77869520, 82543198, 67538272,
+#             84673401, 61069031, 68214385, 77282865, 76991297, 64569216,
+#             89481638, 74534074, 70396537, 80076375, 63308530, 77908270,
+#             70923271, 68066180)
+#  AND (giant_table.flags & 0x01) = 0 AND giant_table.some_other_id = 0;
 
 DROP PROCEDURE p;
 DROP TABLE giant_table, t1;
-
 
 --echo #
 --echo # Bug #26727773: OPTIMIZER CHOSES COMPOSITE INDEX FOR REF OVER RANGE
@@ -2482,7 +2506,7 @@ CREATE TABLE transactions (
  KEY created_idx (created),
  KEY trans_type_created_idx (trans_type,created),
  KEY app_trans_id_idx (app_trans_id)
-) ENGINE=INNODB ;
+) ENGINE=SEQUOIADB ;
 
 CREATE TABLE t1 (c1 INT);
 INSERT INTO t1 VALUES (1), (1000), (2000), (3000), (4000), (5000), (6000),
@@ -2534,12 +2558,12 @@ UPDATE mysql.innodb_table_stats SET n_rows=3001 WHERE TABLE_name='transactions';
 FLUSH TABLE transactions;
 --enable_query_log
 
-eval EXPLAIN $query1;
+#eval EXPLAIN $query1;
 
 SET optimizer_trace="enabled=on";
 eval $query1;
-SELECT TRACE INTO @trace FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
-SELECT @trace RLIKE "uses_more_keyparts";
+#SELECT TRACE INTO @trace FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
+#SELECT @trace RLIKE "uses_more_keyparts";
 SET optimizer_trace="enabled=off";
 
 DROP PROCEDURE p;
@@ -2557,7 +2581,7 @@ CREATE TABLE test_ref (
    d VARCHAR(3) DEFAULT NULL,
    id INT DEFAULT NULL,
    KEY idx1 (id, c),
-   KEY idx2 (id, d)) ENGINE=INNODB ;
+   KEY idx2 (id, d)) ENGINE=SequoiaDB ;
 
 --disable_query_log
 INSERT INTO test_ref VALUES
@@ -2667,6 +2691,8 @@ INSERT INTO test_ref VALUES
 ( 4363730, 'D007', 'cheennse', 'D',    7),
 ( 4455095, 'D005', 'cheennse', 'S',    5);
 --enable_query_log
+
+--replace_column 1 x
 ANALYZE TABLE test_ref;
 
 let query1=
@@ -2684,10 +2710,11 @@ WHERE id=3 AND c LIKE 'gh%'
 ORDER BY c DESC
 LIMIT 1;
 
-eval EXPLAIN $query1;
+#eval EXPLAIN $query1;
 eval $query1;
 
-eval EXPLAIN $query2;
+#eval EXPLAIN $query2;
+#The result is not the same as innodb when engine set sequoiadb, modify the expect result
 eval $query2;
 
 DROP TABLE test_ref;

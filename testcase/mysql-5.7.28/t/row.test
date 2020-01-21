@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 # Initialise
 --disable_warnings
@@ -23,7 +22,9 @@ select (1,2,(3,4)) IN ((3,2,(3,4)), (1,2,(3,4)));
 -- error 1241
 select row(1,2,row(3,4)) IN (row(3,2,row(3,4)), row(1,2,4));
 select row(1,2,row(3,4)) IN (row(3,2,row(3,4)), row(1,2,row(3,NULL)));
-explain extended select row(1,2,row(3,4)) IN (row(3,2,row(3,4)), row(1,2,row(3,NULL)));
+
+#Sequoiadb not support explain
+#explain extended select row(1,2,row(3,4)) IN (row(3,2,row(3,4)), row(1,2,row(3,NULL)));
 select row(1,2,row(3,null)) IN (row(3,2,row(3,4)), row(1,2,row(4,5)));
 select row(1,2,row(3,null)) IN (row(3,2,row(3,4)), row(1,2,row(3,5)));
 
@@ -174,8 +175,8 @@ select row(NULL,1)=(2,0);
 CREATE TABLE t1 (a int, b int, PRIMARY KEY (a,b));
 INSERT INTO t1 VALUES (1,1), (2,1), (3,1), (1,2), (3,2), (3,3);
 
-EXPLAIN SELECT * FROM t1 WHERE a=3 AND b=2;
-EXPLAIN SELECT * FROM t1 WHERE (a,b)=(3,2);
+#EXPLAIN SELECT * FROM t1 WHERE a=3 AND b=2;
+#EXPLAIN SELECT * FROM t1 WHERE (a,b)=(3,2);
 SELECT * FROM t1 WHERE a=3 and b=2;
 SELECT * FROM t1 WHERE (a,b)=(3,2);
 
@@ -184,32 +185,37 @@ INSERT INTO t2 VALUES
   (1,1,2), (3,1,3), (1,2,2), (4,4,2),
   (1,1,1), (3,1,1), (1,2,1);
 
-EXPLAIN SELECT * FROM t1,t2 WHERE t1.a=t2.a AND t1.b=t2.b;
-EXPLAIN SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,t2.b);
+#EXPLAIN SELECT * FROM t1,t2 WHERE t1.a=t2.a AND t1.b=t2.b;
+#EXPLAIN SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,t2.b);
+--sorted_result
 SELECT * FROM t1,t2 WHERE t1.a=t2.a and t1.b=t2.b;
+--sorted_result
 SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,t2.b);
 
-EXPLAIN SELECT * FROM t1,t2 WHERE t1.a=t2.a AND t1.b=2;
-EXPLAIN SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,2);
+#EXPLAIN SELECT * FROM t1,t2 WHERE t1.a=t2.a AND t1.b=2;
+#EXPLAIN SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,2);
+--sorted_result
 SELECT * FROM t1,t2 WHERE t1.a=1 and t1.b=t2.b;
+--sorted_result
 SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,2);
 
-EXPLAIN EXTENDED SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,t2.b+1);
+#EXPLAIN EXTENDED SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,t2.b+1);
 SELECT * FROM t1,t2 WHERE (t1.a,t1.b)=(t2.a,t2.b+1);
 
-EXPLAIN EXTENDED SELECT * FROM t1,t2 WHERE (t1.a-1,t1.b)=(t2.a-1,t2.b+1);
+#EXPLAIN EXTENDED SELECT * FROM t1,t2 WHERE (t1.a-1,t1.b)=(t2.a-1,t2.b+1);
+--sorted_result
 SELECT * FROM t1,t2 WHERE (t1.a-1,t1.b)=(t2.a-1,t2.b+1);
 
-EXPLAIN SELECT * FROM t2 WHERE a=3 AND b=2;
-EXPLAIN SELECT * FROM t2 WHERE (a,b)=(3,2);
+#EXPLAIN SELECT * FROM t2 WHERE a=3 AND b=2;
+#EXPLAIN SELECT * FROM t2 WHERE (a,b)=(3,2);
 SELECT * FROM t2 WHERE a=3 and b=2;
 SELECT * FROM t2 WHERE (a,b)=(3,2);
 
-EXPLAIN SELECT * FROM t1,t2 WHERE t2.a=t1.a AND t2.b=2 AND t2.c=1;
-EXPLAIN EXTENDED SELECT * FROM t1,t2 WHERE (t2.a,(t2.b,t2.c))=(t1.a,(2,1));
+#EXPLAIN SELECT * FROM t1,t2 WHERE t2.a=t1.a AND t2.b=2 AND t2.c=1;
+#EXPLAIN EXTENDED SELECT * FROM t1,t2 WHERE (t2.a,(t2.b,t2.c))=(t1.a,(2,1));
 SELECT * FROM t1,t2 WHERE (t2.a,(t2.b,t2.c))=(t1.a,(2,1));
 
-EXPLAIN EXTENDED SELECT * FROM t1,t2 WHERE t2.a=t1.a AND (t2.b,t2.c)=(2,1);
+#EXPLAIN EXTENDED SELECT * FROM t1,t2 WHERE t2.a=t1.a AND (t2.b,t2.c)=(2,1);
 SELECT * FROM t1,t2 WHERE t2.a=t1.a AND (t2.b,t2.c)=(2,1);
 
 DROP TABLE t1,t2;
@@ -239,6 +245,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (a INT, b INT);
 INSERT INTO t1 VALUES (1,1);
 
+#Sequoiadb expect result is NULL not 1 as the same as innodb;
 SELECT ROW(a, 1) IN (SELECT SUM(b), 1) FROM t1 GROUP BY a;
 SELECT ROW(a, 1) IN (SELECT SUM(b), 3) FROM t1 GROUP BY a;
 
@@ -265,6 +272,7 @@ drop table t1,t2;
 --echo #
 --echo # Bug#52124 memory leaks like a sieve in datetime, timestamp, time, date fields + warnings
 --echo #
+#Bug #SEQUOIADBMAINSTREAM-3583
 CREATE TABLE t1 (a DATETIME NOT NULL, b TINYINT);
 INSERT IGNORE INTO t1 VALUES (0, 0),(0, 0);
 --disable_warnings
@@ -296,7 +304,7 @@ DROP TABLE t1;
 --echo # Bug#18745214: ASSERTION FAILED: FALSE, FILE SQL_TMP_TABLE.CC OR
 --echo #               MALFORMED PACKET
 --echo #
-CREATE TABLE t1 ( a INT ) ENGINE = INNODB;
+CREATE TABLE t1 ( a INT ) ENGINE = Sequoiadb;
 INSERT INTO t1 VALUES ( 1 );
 
 --error ER_OPERAND_COLUMNS
@@ -304,43 +312,43 @@ SELECT row( 1, 1, 1 ) = row( 1, 1 ) FROM t1 GROUP BY a;
 
 let $query=
 SELECT row( min(a), 1 ) = row( a, 1 ) AS al FROM t1 GROUP BY a;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --eval $query
 
 let $query=
 SELECT row( min(a), 1 ) <> row( a, 1 ) AS al FROM t1 GROUP BY a;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --eval $query
 
 let $query=
 SELECT row( min(a), 1 ) <=> row( a, 1 ) AS al FROM t1 GROUP BY a;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --eval $query
 
 let $query=
 SELECT row( min(a), 1 ) > row( a, 1 ) AS al FROM t1 GROUP BY a;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --eval $query
 
 let $query=
 SELECT row( min(a), 1 ) >= row( a, 1 ) AS al FROM t1 GROUP BY a;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --eval $query
 
 let $query=
 SELECT row( min(a), 1 ) < row( a, 1 ) AS al FROM t1 GROUP BY a;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --eval $query
 
 let $query=
 SELECT row( min(a), 1 ) <= row( a, 1 ) AS al FROM t1 GROUP BY a;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --eval $query
 
 let $query=
 SELECT row( row( min(a), 1 ), 1 ) = row( row( a, 1 ), 1 ) AS al
 FROM t1 GROUP BY a;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --eval $query
 
 --echo # Test of manually thrown error.
@@ -348,3 +356,5 @@ FROM t1 GROUP BY a;
 SELECT 1 <=>ALL (SELECT 1);
 
 DROP TABLE t1;
+
+--source include/uninstall_sequoiadb.inc

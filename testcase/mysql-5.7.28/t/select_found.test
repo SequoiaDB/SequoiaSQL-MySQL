@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 #
 # Testing of found_rows()
@@ -71,7 +70,7 @@ while ($1)
 enable_query_log;
 
 --let $query=SELECT SQL_CALC_FOUND_ROWS DISTINCT email FROM t2 LEFT JOIN t1  ON kid = t2.id WHERE t1.id IS NULL LIMIT 10
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 FLUSH STATUS;
 --disable_result_log
 --eval $query
@@ -102,7 +101,7 @@ CREATE TABLE `t1` (
   `maxnumrep` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`numeropost`),
   KEY `maxnumrep` (`maxnumrep`)
-) ENGINE=MyISAM ROW_FORMAT=FIXED;
+) ENGINE=SequoiaDB ROW_FORMAT=FIXED;
 INSERT INTO t1 (titre,maxnumrep) VALUES
 ('test1','1'),('test2','2'),('test3','3');
 SELECT SQL_CALC_FOUND_ROWS titre,numeropost,maxnumrep FROM t1 WHERE numeropost IN (1,2) ORDER BY maxnumrep DESC LIMIT 0, 1;
@@ -233,3 +232,5 @@ UNION ALL
 SELECT FOUND_ROWS();
 
 DROP TABLE t1;
+
+--source include/uninstall_sequoiadb.inc

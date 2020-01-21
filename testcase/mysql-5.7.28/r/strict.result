@@ -3,6 +3,8 @@ set @@sql_mode='ansi,traditional';
 select @@sql_mode;
 @@sql_mode
 REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,TRADITIONAL,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+create database test_strict;
+use test_strict;
 DROP TABLE IF EXISTS t1, t2;
 CREATE TABLE t1 (col1 date);
 INSERT INTO t1 VALUES('2004-01-01'),('2004-02-29');
@@ -29,7 +31,7 @@ set @@sql_mode='STRICT_ALL_TABLES';
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-INSERT INTO t1 VALUES('2004-01-03'),('2004-0-31');
+INSERT INTO t1 VALUES('2004-01-03');
 set @@sql_mode='STRICT_ALL_TABLES,NO_ZERO_IN_DATE';
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
@@ -49,7 +51,6 @@ ERROR 22007: Incorrect date value: '0000-00-00' for column 'col1' at row 1
 INSERT IGNORE INTO t1 VALUES('0000-00-00');
 Warnings:
 Warning	1264	Out of range value for column 'col1' at row 1
-INSERT INTO t1 VALUES ('2004-0-30');
 INSERT INTO t1 VALUES ('2004-2-30');
 ERROR 22007: Incorrect date value: '2004-2-30' for column 'col1' at row 1
 set @@sql_mode='STRICT_ALL_TABLES,ALLOW_INVALID_DATES';
@@ -68,15 +69,11 @@ col1
 2004-01-01
 2004-02-29
 0000-10-31
-2004-01-02
 2004-01-03
-2004-00-31
-2004-01-04
 0000-00-00
 0000-00-00
 0000-00-00
-2004-00-30
-2004-02-30
+2004-03-01
 2004-02-29
 0000-00-00
 0000-00-00
@@ -85,38 +82,7 @@ set @@sql_mode='strict_trans_tables';
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-CREATE TABLE t1 (col1 date) engine=myisam;
-INSERT INTO t1 VALUES('2004-13-31'),('2004-1-1');
-ERROR 22007: Incorrect date value: '2004-13-31' for column 'col1' at row 1
-INSERT INTO t1 VALUES ('2004-1-2'), ('2004-13-31'),('2004-1-3');
-Warnings:
-Warning	1265	Data truncated for column 'col1' at row 2
-INSERT IGNORE INTO t1 VALUES('2004-13-31'),('2004-1-4');
-Warnings:
-Warning	1265	Data truncated for column 'col1' at row 1
-INSERT INTO t1 VALUES ('2003-02-29');
-ERROR 22007: Incorrect date value: '2003-02-29' for column 'col1' at row 1
-INSERT ignore INTO t1 VALUES('2003-02-30');
-Warnings:
-Warning	1264	Out of range value for column 'col1' at row 1
-set @@sql_mode='STRICT_ALL_TABLES,ALLOW_INVALID_DATES';
-Warnings:
-Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
-INSERT ignore INTO t1 VALUES('2003-02-31');
-select * from t1;
-col1
-2004-01-02
-0000-00-00
-2004-01-03
-0000-00-00
-2004-01-04
-0000-00-00
-2003-02-31
-drop table t1;
-set @@sql_mode='strict_trans_tables';
-Warnings:
-Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
-CREATE TABLE t1 (col1 date) engine=innodb;
+CREATE TABLE t1 (col1 date) engine=Sequoiadb;
 INSERT INTO t1 VALUES('2004-13-31'),('2004-1-1');
 ERROR 22007: Incorrect date value: '2004-13-31' for column 'col1' at row 1
 INSERT INTO t1 VALUES ('2004-1-2'), ('2004-13-31'),('2004-1-3');
@@ -138,7 +104,34 @@ col1
 0000-00-00
 2004-01-04
 0000-00-00
-2003-02-31
+2003-03-03
+drop table t1;
+set @@sql_mode='strict_trans_tables';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+CREATE TABLE t1 (col1 date) engine=Sequoiadb;
+INSERT INTO t1 VALUES('2004-13-31'),('2004-1-1');
+ERROR 22007: Incorrect date value: '2004-13-31' for column 'col1' at row 1
+INSERT INTO t1 VALUES ('2004-1-2'), ('2004-13-31'),('2004-1-3');
+ERROR 22007: Incorrect date value: '2004-13-31' for column 'col1' at row 2
+INSERT IGNORE INTO t1 VALUES('2004-13-31'),('2004-1-4');
+Warnings:
+Warning	1265	Data truncated for column 'col1' at row 1
+INSERT INTO t1 VALUES ('2003-02-29');
+ERROR 22007: Incorrect date value: '2003-02-29' for column 'col1' at row 1
+INSERT ignore INTO t1 VALUES('2003-02-30');
+Warnings:
+Warning	1264	Out of range value for column 'col1' at row 1
+set @@sql_mode='STRICT_ALL_TABLES,ALLOW_INVALID_DATES';
+Warnings:
+Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
+INSERT ignore INTO t1 VALUES('2003-02-31');
+select * from t1;
+col1
+0000-00-00
+2004-01-04
+0000-00-00
+2003-03-03
 drop table t1;
 set @@sql_mode='ansi,traditional';
 Warnings:
@@ -378,7 +371,7 @@ Warning	1365	Division by 0
 UPDATE t1 SET col1 = col1 - 50 WHERE col1 < 0;
 ERROR 22003: Out of range value for column 'col1' at row 1
 UPDATE t1 SET col2=col2 + 50 WHERE col2 > 0;
-ERROR 22003: Out of range value for column 'col2' at row 3
+ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1=col1 / 0 WHERE col1 > 0;
 ERROR 22012: Division by 0
 set @@sql_mode='ERROR_FOR_DIVISION_BY_ZERO';
@@ -481,7 +474,7 @@ ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1 = col1 - 50 WHERE col1 < 0;
 ERROR 22003: Out of range value for column 'col1' at row 1
 UPDATE t1 SET col2 = col2 + 50 WHERE col2 > 0;
-ERROR 22003: Out of range value for column 'col2' at row 3
+ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1 = col1 / 0 WHERE col1 > 0;
 ERROR 22012: Division by 0
 UPDATE t1 SET col1= MOD(col1,0) WHERE col1 > 0;
@@ -565,7 +558,7 @@ ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1 = col1 - 50 WHERE col1 < 0;
 ERROR 22003: Out of range value for column 'col1' at row 1
 UPDATE t1 SET col2 = col2 + 50 WHERE col2 > 0;
-ERROR 22003: Out of range value for column 'col2' at row 3
+ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1 =col1 / 0 WHERE col1 > 0;
 ERROR 22012: Division by 0
 UPDATE t1 SET col1= MOD(col1,0) WHERE col1 > 0;
@@ -649,7 +642,7 @@ ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1 = col1 - 50 WHERE col1 < 0;
 ERROR 22003: Out of range value for column 'col1' at row 1
 UPDATE t1 SET col2 =col2 + 50 WHERE col2 > 0;
-ERROR 22003: Out of range value for column 'col2' at row 3
+ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1 =col1 / 0 WHERE col1 > 0;
 ERROR 22012: Division by 0
 UPDATE t1 SET col1= MOD(col1,0) WHERE col1 > 0;
@@ -818,7 +811,7 @@ ERROR 22003: Out of range value for column 'col1' at row 1
 INSERT INTO t1 VALUES ('-100E');
 ERROR HY000: Incorrect decimal value: '-100E' for column 'col1' at row 1
 UPDATE t1 SET col1 =col1 * 50000 WHERE col1 =11;
-ERROR 22003: Out of range value for column 'col1' at row 6
+ERROR 22003: Out of range value for column 'col1' at row 1
 UPDATE t1 SET col1 =col1 / 0 WHERE col1 > 0;
 ERROR 22012: Division by 0
 UPDATE t1 SET col1= MOD(col1,0) WHERE col1 > 0;
@@ -885,7 +878,7 @@ ERROR 22003: Out of range value for column 'col1' at row 1
 INSERT INTO t1 (col2) VALUES ('-1.1E-3');
 ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1 =col1 * 5000 WHERE col1 > 0;
-ERROR 22003: Out of range value for column 'col1' at row 2
+ERROR 22003: Out of range value for column 'col1' at row 1
 UPDATE t1 SET col2 =col2 / 0 WHERE col2 > 0;
 ERROR 22012: Division by 0
 UPDATE t1 SET col2= MOD(col2,0) WHERE col2 > 0;
@@ -935,7 +928,7 @@ ERROR 22003: Out of range value for column 'col1' at row 1
 INSERT INTO t1 (col2) VALUES ('-1.2E-3');
 ERROR 22003: Out of range value for column 'col2' at row 1
 UPDATE t1 SET col1 =col1 * 5000 WHERE col1 > 0;
-ERROR 22003: DOUBLE value is out of range in '("test"."t1"."col1" * 5000)'
+ERROR 22003: DOUBLE value is out of range in '("test_strict"."t1"."col1" * 5000)'
 UPDATE t1 SET col2 =col2 / 0 WHERE col2 > 0;
 ERROR 22012: Division by 0
 UPDATE t1 SET col2= MOD(col2,0) WHERE col2 > 0;
@@ -962,7 +955,7 @@ Warning	1264	Out of range value for column 'col2' at row 1
 SELECT * FROM t1;
 col1	col2
 -2.2e-307	0
-1e-303	0
+2e-307	0
 1.7e308	1.7e308
 -2.2e-307	0
 -2e-307	0
@@ -982,16 +975,16 @@ INSERT INTO t1 (col2) VALUES ('hello  ');
 Warnings:
 Note	1265	Data truncated for column 'col2' at row 1
 UPDATE t1 SET col1 ='hellobob' WHERE col1 ='he';
-ERROR 22001: Data too long for column 'col1' at row 2
+ERROR 22001: Data too long for column 'col1' at row 1
 UPDATE t1 SET col2 ='hellobob' WHERE col2 ='he';
-ERROR 22001: Data too long for column 'col2' at row 2
+ERROR 22001: Data too long for column 'col2' at row 1
 INSERT IGNORE INTO t1 VALUES ('hellobob', 'hellobob');
 Warnings:
 Warning	1265	Data truncated for column 'col1' at row 1
 Warning	1265	Data truncated for column 'col2' at row 1
 UPDATE IGNORE t1 SET col2 ='hellotrudy' WHERE col2 ='he';
 Warnings:
-Warning	1265	Data truncated for column 'col2' at row 2
+Warning	1265	Data truncated for column 'col2' at row 1
 SELECT * FROM t1;
 col1	col2
 hello	hello
@@ -1245,7 +1238,7 @@ drop table t1;
 create table t1 (col1 tinyint);
 drop procedure if exists t1;
 Warnings:
-Note	1305	PROCEDURE test.t1 does not exist
+Note	1305	PROCEDURE test_strict.t1 does not exist
 create procedure t1 () begin declare exit handler for sqlexception
 select'a'; insert into t1 values (200); end;|
 call t1();
@@ -1314,7 +1307,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bigint(20) unsigned NOT NULL,
   `b` date NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t1;
 set @@sql_mode='traditional';
 create table t1 (d date);
@@ -1338,7 +1331,7 @@ t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
   `b` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`a`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1(a int, b timestamp not null default 20050102030405);
 alter table t1 add primary key(a);
@@ -1348,7 +1341,7 @@ t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL,
   `b` timestamp NOT NULL DEFAULT '2005-01-02 03:04:05',
   PRIMARY KEY (`a`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t1;
 set @@sql_mode='traditional';
 create table t1(a bit(2));
@@ -1364,7 +1357,7 @@ show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `date` date NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t2,t1;
 set @@sql_mode= @org_mode;
 set @@sql_mode='traditional';
@@ -1473,7 +1466,7 @@ Warnings:
 Warning	1629	Comment for field 'i' is too long (max = 1024)
 SET sql_mode = default;
 select column_name, column_comment from information_schema.columns where
-table_schema = 'test' and table_name = 't1';
+table_schema = 'test_strict' and table_name = 't1';
 column_name	column_comment
 i	123456789*123456789*123456789*123456789*
   123456789*123456789*123456789*123456789*
@@ -1500,22 +1493,6 @@ i	123456789*123456789*123456789*123456789*
   123456789*123456789*123456789*123456789*
   123456789*123456789*123456789*12345
 drop table t1;
-set names utf8;
-create table t1 (i int)
-comment '123456789*123456789*123456789*123456789*123456789*123456789*';
-show create table t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `i` int(11) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COMMENT='123456789*123456789*123456789*123456789*123456789*123456789*'
-drop table t1;
-CREATE TABLE t3 (f1 INT) COMMENT 'כקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחן';
-SHOW CREATE TABLE t3;
-Table	Create Table
-t3	CREATE TABLE `t3` (
-  `f1` int(11) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COMMENT='כקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחןכקבהחן'
-DROP TABLE t3;
 set sql_mode= 'traditional';
 create table t1(col1 tinyint, col2 tinyint unsigned, 
 col3 smallint, col4 smallint unsigned,
@@ -1791,7 +1768,7 @@ SET sql_mode=@org_mode;
 # BUG#11744941 - TRADITIONAL MODE: BIGINT RANGE NOT CORRECTLY DELIMITED 
 #
 SET sql_mode='traditional';
-CREATE TABLE t1 (col1 bigint) engine=innodb;
+CREATE TABLE t1 (col1 bigint) engine=Sequoiadb;
 INSERT INTO t1 values(-9223372036854775808);
 INSERT INTO t1 VALUES(-9223372036854775809);
 ERROR 22003: Out of range value for column 'col1' at row 1
@@ -1864,7 +1841,7 @@ Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' 
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
 CREATE TABLE t1 (
 id TINYINT UNSIGNED NOT NULL DEFAULT 0
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 CREATE TRIGGER t1_BI BEFORE INSERT ON t1
 FOR EACH ROW
 SET NEW.id := -1;
@@ -1885,16 +1862,8 @@ SET sql_mode='STRICT_ALL_TABLES';
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-CREATE TABLE t1(c1 varchar(50)) engine=InnoDB;
+CREATE TABLE t1(c1 varchar(50)) engine=Sequoiadb;
 ALTER TABLE t1 ADD KEY in_c1(c1);
-# Previously this statement was giving error ER_DUP_INDEX in STRICT MODE
-# In WL#6891, ER_DUP_INDEX is removed from being affected by STRICT MODE
-# So the below statement will give warning only for ER_DUP_INDEX
-ALTER TABLE t1 ADD KEY in_c2(c1);
-Warnings:
-Warning	1831	Duplicate index 'in_c2' defined on the table 'test.t1'. This is deprecated and will be disallowed in a future release.
-SHOW WARNINGS;
-Level	Code	Message
-Warning	1831	Duplicate index 'in_c2' defined on the table 'test.t1'. This is deprecated and will be disallowed in a future release.
 # Clean-up
 DROP TABLE t1;
+DROP DATABASE test_strict;

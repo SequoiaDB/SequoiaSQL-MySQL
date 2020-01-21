@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb
+--source include/have_sequoiadb.inc
 --source include/no_valgrind_without_big.inc
 
 # 
@@ -28,3 +27,4 @@ if (`select locate('materialization', @@optimizer_switch) > 0`)
 
 set optimizer_switch=default;
 
+--source include/uninstall_sequoiadb.inc

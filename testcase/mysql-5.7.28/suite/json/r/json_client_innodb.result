@@ -1,5 +1,7 @@
-set default_storage_engine=innodb;
+set default_storage_engine=sequoiadb;
 # Verify that the client can show JSON data and metadata.
+CREATE DATABASE test_json_client;
+use test_json_client;
 CREATE TABLE t(i INT, j1 JSON, j2 JSON NOT NULL);
 SHOW CREATE TABLE t;
 Table	Create Table
@@ -7,7 +9,7 @@ t	CREATE TABLE `t` (
   `i` int(11) DEFAULT NULL,
   `j1` json DEFAULT NULL,
   `j2` json NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 INSERT INTO t VALUES
 (0, NULL, 'null'),
 (1, '1', '1'),
@@ -19,7 +21,7 @@ SELECT j1, j2 FROM t ORDER BY i
 
 Field   1:  `j1`
 Catalog:    `def`
-Database:   `test`
+Database:   `test_json_client`
 Table:      `t`
 Org_table:  `t`
 Type:       JSON
@@ -31,7 +33,7 @@ Flags:      BLOB BINARY
 
 Field   2:  `j2`
 Catalog:    `def`
-Database:   `test`
+Database:   `test_json_client`
 Table:      `t`
 Org_table:  `t`
 Type:       JSON
@@ -54,3 +56,4 @@ Flags:      NOT_NULL BLOB BINARY NO_DEFAULT_VALUE
 
 Bye
 DROP TABLE t;
+DROP DATABASE test_json_client;

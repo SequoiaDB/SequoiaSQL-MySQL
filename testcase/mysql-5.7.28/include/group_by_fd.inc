@@ -9,32 +9,37 @@ set optimizer_trace="enabled=on";
 SET @old_sql_mode = @@sql_mode;
 SET @@sql_mode='ONLY_FULL_GROUP_BY';
 
---echo #
---echo # Bug#16021396 ONLY_FULL_GROUP_BY REJECTS VALID QUERY USING VIEW
---echo #
-create table t1(a int, b int, c int) engine=InnoDB;
-let $count=2;
-while($count)
-{
-if ($count == 2)
-{
-let $viewtype=merge;
-}
-if ($count == 1)
-{
-let $viewtype=temptable;
-}
-dec $count;
-eval create algorithm=$viewtype view v1 as select t1.a*2 as a, t1.b*2 as b, t1.c*2 as c from t1;
-show create view v1;
-select sin(b) as z from t1 group by sin(b);
-select sin(b) as z from v1 group by sin(b);
-select sin(b) as z from t1 group by b;
-select sin(b) as z from v1 group by b;
-select sin(b) as z from v1 group by z;
-drop view v1;
-}
-drop table t1;
+# Compatible with parallel > 1, don't use test here, instead create and use database: test_casename
+create database test_group_by_fd_no_prot;
+use test_group_by_fd_no_prot;
+
+# NOW SequoiaDB not support merge
+#--echo #
+#--echo # Bug#16021396 ONLY_FULL_GROUP_BY REJECTS VALID QUERY USING VIEW
+#--echo #
+#create table t1(a int, b int, c int) engine=SequoiaDB;
+#let $count=2;
+#while($count)
+#{
+#if ($count == 2)
+#{
+#let $viewtype=merge;
+#}
+#if ($count == 1)
+#{
+#let $viewtype=temptable;
+#}
+#dec $count;
+#eval create algorithm=$viewtype view v1 as select t1.a*2 as a, t1.b*2 as b, t1.c*2 as c from t1;
+#show create view v1;
+#select sin(b) as z from t1 group by sin(b);
+#select sin(b) as z from v1 group by sin(b);
+#select sin(b) as z from t1 group by b;
+#select sin(b) as z from v1 group by b;
+#select sin(b) as z from v1 group by z;
+#drop view v1;
+#}
+#drop table t1;
 
 --echo # From testcase of Bug#16903135:
 
@@ -140,7 +145,7 @@ select sin(a) as z from t1 group by c,b;
 select sin(a+b*c) as z from t1 group by c,b;
 --echo # In PS mode, we see nothing below, because only_full_group_by
 --echo # checks are done at PREPARE, whereas trace below is from EXECUTE.
-eval $show_trace;
+#eval $show_trace;
 
 --echo # With outer references:
 --error ER_WRONG_FIELD_WITH_GROUP
@@ -153,17 +158,17 @@ select sin(a) as z from t1 group by c*2,b*2;
 --echo # FDs are recognized, like in SQL standard:
 --echo # b=2 => c->{b,c} => c->a as (b,c) is unique not null.
 select sin(a) as z from t1 where b=2 group by c;
-eval $show_trace;
+#eval $show_trace;
 
 --echo # t2.a=t1.a => {t1.b,t1.c}->t2.a
 select sin(t2.a) as z from t1, t1 as t2
  where t2.a=t1.a group by t1.b,t1.c;
-eval $show_trace;
+#eval $show_trace;
 
 --echo # t2.b=t1.b and t2.c=t1.c => {t1.b,t1.c}->{all cols of t2}
 select sin(t2.a) as z from t1, t1 as t2
  where t2.b=t1.b and t2.c=t1.c group by t1.b,t1.c;
-eval $show_trace;
+#eval $show_trace;
 
 --echo # t2.b=t1.b and t2.c=t1.c => {t1.b,t1.c}->{all cols of t2}
 --echo # Moreover, {t1.b,t1.c}->{t1.d}.
@@ -173,7 +178,7 @@ where
  t3.b=t2.b and t3.c=t1.d and
  t2.b=t1.b and t2.c=t1.c
 group by t1.b,t1.c;
-eval $show_trace;
+#eval $show_trace;
 
 --echo # 3 tables:
 --echo # {t1.b,t1.c}->{t1.*}->{t2.b,t2.c}->{t2.*}->{t3.pk}->{t3.b}
@@ -263,228 +268,231 @@ from (select * from t1 order by a desc, b desc) as d
 group by a;
 
 --echo # With view.
+# NOW SequoiaDB not support merge
+#let $count=3;
+#while($count)
+#{
+#set @optimizer_switch_saved=@@optimizer_switch;
+#let $source_query=select t1.a*2 as a, t1.b as b, t1.c as c, t1.d as d, t1.a as e from t1;
+#if ($count == 3)
+#{
+#--echo # Merged view
+#eval create algorithm=merge view v1 as $source_query;
+#show create view v1;
+#let $source=v1;
+#let $source_no_alias=v1;
+#}
+#if ($count == 2)
+#{
+#--echo # Materialized view
+#eval create algorithm=temptable view v1 as $source_query;
+#show create view v1;
+#let $source=v1;
+#let $source_no_alias=v1;
+#}
+#if ($count == 1)
+#{
+#--echo # Materialized derived table
+#set optimizer_switch='derived_merge=off';
+#let $source=($source_query) as v1;
+#let $source_no_alias=($source_query);
+#}
+#
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select sin(a) as z from $source group by b;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select sin(a) as z from $source group by d,b;
+#eval select sin(a) as z from $source group by c,b;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select (select sin(a)) as z from $source group by d,b;
+#eval select (select sin(a)) as z from $source group by c,b;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select sin(a) as z from t1 group by c*2,b*2;
+#eval select sin(a+b*c) as z from $source group by c,b;
+#eval $show_trace;
+#
+#eval select sin(a) as z from $source where b=2 group by c;
+#
+#--echo # {v1.b,v1.c}->v1.a->t2.a
+#eval select sin(t2.a) as z from $source, $source_no_alias as t2
+# where t2.a=v1.a group by v1.b,v1.c;
+#eval $show_trace;
+#
+#eval select sin(t2.a) as z from $source, $source_no_alias as t2
+# where t2.b=v1.b and t2.c=v1.c group by v1.b,v1.c;
+#
+#--echo # With materialized view we get more dependencies than needed, due to implementation.
+#eval select t3.a from $source, $source_no_alias as t2, $source_no_alias as t3
+#where
+# t3.b=t2.b and t3.c=v1.d and
+# t2.b=v1.b and t2.c=v1.c
+#group by v1.b,v1.c;
+#eval $show_trace;
+#
+#--echo # If we simply went to real_item(), we would have WHERE 2*a=b, or
+#--echo # GROUP BY 2*t1.a, so we would not find FDs. The original item
+#--echo # (direct_view_ref here) must also be considered!
+#eval select a from $source where a=b group by b;
+#eval $show_trace;
+#eval select b from $source where a=b group by a;
+#eval $show_trace;
+#
+#eval select v1.c from $source where v1.c=v1.a group by v1.a;
+#eval $show_trace;
+#eval select v1.a from $source group by v1.e;
+#eval $show_trace;
+#eval select v1.c from $source where v1.c=v1.a group by v1.e;
+#eval $show_trace;
+#--echo # View appears only in WHERE
+#eval select t2.d from $source, t1 as t2 where v1.a=t2.d and v1.e=t2.a group by t2.a;
+#eval $show_trace;
+#
+#drop view if exists v1;
+#
+#--echo # FD due to view's WHERE:
+#
+#let $source_query=select t1.a*2 as a, t1.b as b from t1;
+#if ($count == 3)
+#{
+#eval create algorithm=merge view v1 as $source_query;
+#}
+#if ($count == 2)
+#{
+#eval create algorithm=temptable view v1 as $source_query;
+#}
+#if ($count == 1)
+#{
+#let $source=($source_query) as v1;
+#let $source_no_alias=($source_query);
+#}
+#
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select a from $source group by b;
+#drop view if exists v1;
+#
+#let $source_query=select t1.a*2 as a, t1.b as b from t1 where t1.a=t1.b;
+#if ($count == 3)
+#{
+#--echo # Merged view
+#eval create algorithm=merge view v1 as $source_query;
+#}
+#if ($count == 2)
+#{
+#--echo # Materialized view
+#eval create algorithm=temptable view v1 as $source_query;
+#}
+#if ($count == 1)
+#{
+#--echo # Derived table
+#let $source=($source_query) as v1;
+#let $source_no_alias=($source_query);
+#}
+#eval select a from $source group by b;
+#eval $show_trace;
+#
+#drop view if exists v1;
+#
+#--echo # Aggregates in view
+#
+#let $source_query=select sum(t1.a) as a, sum(t1.b) as b from t1;
+#if ($count == 3)
+#{
+#--echo # Aggregates => skipping Merged view
+#}
+#if ($count == 2)
+#{
+#--echo # Materialized view
+#eval create algorithm=temptable view v1 as $source_query;
+#}
+#if ($count == 1)
+#{
+#--echo # Derived table
+#let $source=($source_query) as v1;
+#let $source_no_alias=($source_query);
+#}
+#if ($count <= 2)
+#{
+#eval select a from $source group by b;
+#eval $show_trace;
+#}
+#
+#drop view if exists v1;
+#
+#--echo # Aggregates + GROUP BY in view
+#
+#--echo # We group by b*5, to show that it works with GROUP expressions, not only fields.
+#let $source_query=select a, b*5 as b, sum(t1.c) as c, sum(t1.d) as d from t1 group by a,b*5;
+#if ($count == 3)
+#{
+#--echo # Aggregates => skipping Merged view
+#}
+#if ($count == 2)
+#{
+#--echo # Materialized view
+#eval create algorithm=temptable view v1 as $source_query;
+#}
+#if ($count == 1)
+#{
+#--echo # Derived table
+#let $source=($source_query) as v1;
+#let $source_no_alias=($source_query);
+#}
+#if ($count <= 2)
+#{
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select a from $source group by b;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select c from $source group by b;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select c from $source group by b,d;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#eval select a,c from $source group by a;
+#eval select d,c from $source group by b,a;
+#eval $show_trace;
+#}
+#
+#drop view if exists v1;
+#
+#dec $count;
+#set optimizer_switch=@optimizer_switch_saved;
+#}
 
-let $count=3;
-while($count)
-{
-set @optimizer_switch_saved=@@optimizer_switch;
-let $source_query=select t1.a*2 as a, t1.b as b, t1.c as c, t1.d as d, t1.a as e from t1;
-if ($count == 3)
-{
---echo # Merged view
-eval create algorithm=merge view v1 as $source_query;
-show create view v1;
-let $source=v1;
-let $source_no_alias=v1;
-}
-if ($count == 2)
-{
---echo # Materialized view
-eval create algorithm=temptable view v1 as $source_query;
-show create view v1;
-let $source=v1;
-let $source_no_alias=v1;
-}
-if ($count == 1)
-{
---echo # Materialized derived table
-set optimizer_switch='derived_merge=off';
-let $source=($source_query) as v1;
-let $source_no_alias=($source_query);
-}
+# NOW SequoiaDB not support merge
+#--echo # Derived table in merged view
+#create algorithm=temptable view v2
+#as select a as a, 2*a as b from t1;
+#create algorithm=merge view v1
+# as select v2.a as a, 3*v2.b as b from v2;
+#select v1.b from v1 group by v1.a;
+#eval $show_trace;
+#
+#select t2.a from t1 as t2, v1 where t2.a=v1.b group by v1.a;
+#eval $show_trace;
 
---error ER_WRONG_FIELD_WITH_GROUP
-eval select sin(a) as z from $source group by b;
---error ER_WRONG_FIELD_WITH_GROUP
-eval select sin(a) as z from $source group by d,b;
-eval select sin(a) as z from $source group by c,b;
---error ER_WRONG_FIELD_WITH_GROUP
-eval select (select sin(a)) as z from $source group by d,b;
-eval select (select sin(a)) as z from $source group by c,b;
---error ER_WRONG_FIELD_WITH_GROUP
-eval select sin(a) as z from t1 group by c*2,b*2;
-eval select sin(a+b*c) as z from $source group by c,b;
-eval $show_trace;
+# NOW SequoiaDB not support merge
+#--echo # FDs in a view are those of the underlying query expression.
+#--echo # FDs in a query expression: expressions in the SELECT list must be
+#--echo # deterministic.
+#drop view v1;
+#create algorithm=merge view v1
+# as select v2.a as a, rand()*v2.b as b from v2;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#select v1.b from v1 group by v1.a;
+#drop view v1;
+#create algorithm=temptable view v1
+# as select v2.a as a, rand()*v2.b as b from v2;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#select v1.b from v1 group by v1.a;
+#
+#drop view v1,v2;
 
-eval select sin(a) as z from $source where b=2 group by c;
-
---echo # {v1.b,v1.c}->v1.a->t2.a
-eval select sin(t2.a) as z from $source, $source_no_alias as t2
- where t2.a=v1.a group by v1.b,v1.c;
-eval $show_trace;
-
-eval select sin(t2.a) as z from $source, $source_no_alias as t2
- where t2.b=v1.b and t2.c=v1.c group by v1.b,v1.c;
-
---echo # With materialized view we get more dependencies than needed, due to implementation.
-eval select t3.a from $source, $source_no_alias as t2, $source_no_alias as t3
-where
- t3.b=t2.b and t3.c=v1.d and
- t2.b=v1.b and t2.c=v1.c
-group by v1.b,v1.c;
-eval $show_trace;
-
---echo # If we simply went to real_item(), we would have WHERE 2*a=b, or
---echo # GROUP BY 2*t1.a, so we would not find FDs. The original item
---echo # (direct_view_ref here) must also be considered!
-eval select a from $source where a=b group by b;
-eval $show_trace;
-eval select b from $source where a=b group by a;
-eval $show_trace;
-
-eval select v1.c from $source where v1.c=v1.a group by v1.a;
-eval $show_trace;
-eval select v1.a from $source group by v1.e;
-eval $show_trace;
-eval select v1.c from $source where v1.c=v1.a group by v1.e;
-eval $show_trace;
---echo # View appears only in WHERE
-eval select t2.d from $source, t1 as t2 where v1.a=t2.d and v1.e=t2.a group by t2.a;
-eval $show_trace;
-
-drop view if exists v1;
-
---echo # FD due to view's WHERE:
-
-let $source_query=select t1.a*2 as a, t1.b as b from t1;
-if ($count == 3)
-{
-eval create algorithm=merge view v1 as $source_query;
-}
-if ($count == 2)
-{
-eval create algorithm=temptable view v1 as $source_query;
-}
-if ($count == 1)
-{
-let $source=($source_query) as v1;
-let $source_no_alias=($source_query);
-}
-
---error ER_WRONG_FIELD_WITH_GROUP
-eval select a from $source group by b;
-drop view if exists v1;
-
-let $source_query=select t1.a*2 as a, t1.b as b from t1 where t1.a=t1.b;
-if ($count == 3)
-{
---echo # Merged view
-eval create algorithm=merge view v1 as $source_query;
-}
-if ($count == 2)
-{
---echo # Materialized view
-eval create algorithm=temptable view v1 as $source_query;
-}
-if ($count == 1)
-{
---echo # Derived table
-let $source=($source_query) as v1;
-let $source_no_alias=($source_query);
-}
-eval select a from $source group by b;
-eval $show_trace;
-
-drop view if exists v1;
-
---echo # Aggregates in view
-
-let $source_query=select sum(t1.a) as a, sum(t1.b) as b from t1;
-if ($count == 3)
-{
---echo # Aggregates => skipping Merged view
-}
-if ($count == 2)
-{
---echo # Materialized view
-eval create algorithm=temptable view v1 as $source_query;
-}
-if ($count == 1)
-{
---echo # Derived table
-let $source=($source_query) as v1;
-let $source_no_alias=($source_query);
-}
-if ($count <= 2)
-{
-eval select a from $source group by b;
-eval $show_trace;
-}
-
-drop view if exists v1;
-
---echo # Aggregates + GROUP BY in view
-
---echo # We group by b*5, to show that it works with GROUP expressions, not only fields.
-let $source_query=select a, b*5 as b, sum(t1.c) as c, sum(t1.d) as d from t1 group by a,b*5;
-if ($count == 3)
-{
---echo # Aggregates => skipping Merged view
-}
-if ($count == 2)
-{
---echo # Materialized view
-eval create algorithm=temptable view v1 as $source_query;
-}
-if ($count == 1)
-{
---echo # Derived table
-let $source=($source_query) as v1;
-let $source_no_alias=($source_query);
-}
-if ($count <= 2)
-{
---error ER_WRONG_FIELD_WITH_GROUP
-eval select a from $source group by b;
---error ER_WRONG_FIELD_WITH_GROUP
-eval select c from $source group by b;
---error ER_WRONG_FIELD_WITH_GROUP
-eval select c from $source group by b,d;
---error ER_WRONG_FIELD_WITH_GROUP
-eval select a,c from $source group by a;
-eval select d,c from $source group by b,a;
-eval $show_trace;
-}
-
-drop view if exists v1;
-
-dec $count;
-set optimizer_switch=@optimizer_switch_saved;
-}
-
---echo # Derived table in merged view
-create algorithm=temptable view v2
-as select a as a, 2*a as b from t1;
-create algorithm=merge view v1
- as select v2.a as a, 3*v2.b as b from v2;
-select v1.b from v1 group by v1.a;
-eval $show_trace;
-
-select t2.a from t1 as t2, v1 where t2.a=v1.b group by v1.a;
-eval $show_trace;
-
---echo # FDs in a view are those of the underlying query expression.
---echo # FDs in a query expression: expressions in the SELECT list must be
---echo # deterministic.
-drop view v1;
-create algorithm=merge view v1
- as select v2.a as a, rand()*v2.b as b from v2;
---error ER_WRONG_FIELD_WITH_GROUP
-select v1.b from v1 group by v1.a;
-drop view v1;
-create algorithm=temptable view v1
- as select v2.a as a, rand()*v2.b as b from v2;
---error ER_WRONG_FIELD_WITH_GROUP
-select v1.b from v1 group by v1.a;
-
-drop view v1,v2;
-
---echo # Item_direct_view_ref pointing to Item_direct_view_ref pointing to
---echo # Item_field (a rare case!)
-create algorithm=merge view v2 as select 2*a as a, 2*b as b from t1;
-create algorithm=merge view v1 as select a, 3*b as b from v2 where a=b;
-select 1 from (select a,b+0 from v1 group by a) as d;
-drop view v1,v2;
+# NOW SequoiaDB not support merge
+#--echo # Item_direct_view_ref pointing to Item_direct_view_ref pointing to
+#--echo # Item_field (a rare case!)
+#create algorithm=merge view v2 as select 2*a as a, 2*b as b from t1;
+#create algorithm=merge view v1 as select a, 3*b as b from v2 where a=b;
+#select 1 from (select a,b+0 from v1 group by a) as d;
+#drop view v1,v2;
 
 --echo # Some fun cases with aggregates in derived table.
 
@@ -496,14 +504,15 @@ select d.s from
  (select b, sum(1) as s from t1 where a=b group by a) as d
 group by d.b;
 
-alter table t1 add column pk int primary key auto_increment;
---echo # Inner query: t1.pk -> t1.* (pk). Outer query:
---echo # d.b,d.c -> t1.b,t1.c (their underlying columns) -> t1.pk (because
---echo # t1.b,t1.c is unique) -> sum(1) (because t1.pk is all group columns so
---echo # determines sum()) -> d.s (because sum() is underlying of d.s)
-select d.s from
- (select b, c, sum(d) as s from t1 group by pk) as d
-group by d.b,d.c;
+#BUG #SEQUOIASQLMAINSTREAM-434
+#alter table t1 add column pk int primary key auto_increment;
+#--echo # Inner query: t1.pk -> t1.* (pk). Outer query:
+#--echo # d.b,d.c -> t1.b,t1.c (their underlying columns) -> t1.pk (because
+#--echo # t1.b,t1.c is unique) -> sum(1) (because t1.pk is all group columns so
+#--echo # determines sum()) -> d.s (because sum() is underlying of d.s)
+#select d.s from
+# (select b, c, sum(d) as s from t1 group by pk) as d
+#group by d.b,d.c;
 
 --echo # Outer query:
 --echo # d.c -> t1.b*3 (underlying column of d.c) -> sum(a) (because t1.b*3
@@ -519,41 +528,43 @@ drop table t1,t2;
 
 create table customer1(pk int primary key, a int);
 create table customer2(pk int primary key, b int);
-CREATE algorithm=merge VIEW customer as SELECT pk,a,b
-FROM customer1 JOIN customer2 USING (pk);
+# NOW SequoiaDB not support merge
+#CREATE algorithm=merge VIEW customer as SELECT pk,a,b
+#FROM customer1 JOIN customer2 USING (pk);
 
 let $query=select customer.pk, customer.b
 from customer
 group by customer.pk;
 
-eval $query;
---echo # View is merged. Show FDs. Note that in --ps-protocol, the trace
---echo # is that of execution, so contains no group-by checks.
-eval $show_trace;
+#eval $query;
+#--echo # View is merged. Show FDs. Note that in --ps-protocol, the trace
+#--echo # is that of execution, so contains no group-by checks.
+#eval $show_trace;
 
-drop view customer;
+#drop view customer;
 CREATE algorithm=temptable VIEW customer as SELECT pk,a,b
 FROM customer1 JOIN customer2 USING (pk);
 eval $query;
-eval $show_trace;
+#eval $show_trace;
 
 --echo # Benefit from outer-join-to-inner conversion.
 insert into customer1 values(0,10),(1,20);
 insert into customer2 values(0,10),(1,20);
 
---echo # 1) no conversion, no FD from customer2.b to customer1.a.
---error ER_WRONG_FIELD_WITH_GROUP
-explain select customer1.a, count(*)
- from customer1 left join customer2 on customer1.a=customer2.b
- where customer1.pk in (7,9)
- group by customer2.b;
-
---echo # 2) null-complemented row can't pass WHERE => conversion
---echo # => FD from customer2.b to customer1.a.
-explain select customer1.a, count(*)
- from customer1 left join customer2 on customer1.a=customer2.b
- where customer2.pk in (7,9)
- group by customer2.b;
+# NOW not concern explain results
+#--echo # 1) no conversion, no FD from customer2.b to customer1.a.
+#--error ER_WRONG_FIELD_WITH_GROUP
+#explain select customer1.a, count(*)
+# from customer1 left join customer2 on customer1.a=customer2.b
+# where customer1.pk in (7,9)
+# group by customer2.b;
+#
+#--echo # 2) null-complemented row can't pass WHERE => conversion
+#--echo # => FD from customer2.b to customer1.a.
+#explain select customer1.a, count(*)
+# from customer1 left join customer2 on customer1.a=customer2.b
+# where customer2.pk in (7,9)
+# group by customer2.b;
 
 drop table customer1,customer2;
 drop view customer;
@@ -573,7 +584,7 @@ select t1.pk, t2.b from t1 join t2 on t1.pk=t2.pk group by t1.pk;
 select t1.pk, t2.b from t1 join t2 using(pk) group by t1.pk;
 select t1.pk, t2.b from t1 natural join t2 group by t1.pk;
 select t1.pk, t2.b from t1 left join t2 using(pk) group by t1.pk;
-eval $show_trace;
+#eval $show_trace;
 select t1.pk, t2.b from t1 natural left join t2 group by t1.pk;
 
 --echo # Equivalent queries, with RIGHT JOIN
@@ -584,7 +595,7 @@ select t1.pk, t2.b from t2 natural right join t1 group by t1.pk;
 select t1.pk, t2.b from t1 left join t2 on t1.pk>t2.pk group by t1.pk;
 --echo # Even in --ps-protocol we see the group-by checks in trace because
 --echo # there has been no execution (due to error).
-eval $show_trace;
+#eval $show_trace;
 
 --error ER_WRONG_FIELD_WITH_GROUP
 select t1.pk, t2.b from t2 right join t1 on t1.pk>t2.pk group by t1.pk;
@@ -604,7 +615,7 @@ eval $query;
 --echo # Now group it by d.a:
 --error ER_WRONG_FIELD_WITH_GROUP
 eval $query group by d.a;
-eval $show_trace;
+#eval $show_trace;
 
 let $query=
 select d.a,d.c
@@ -614,7 +625,7 @@ eval $query;
 --echo # Now group it by d.a:
 --error ER_WRONG_FIELD_WITH_GROUP
 eval $query group by d.a;
-eval $show_trace;
+#eval $show_trace;
 
 let $query=
 select d.m,d.c
@@ -624,10 +635,10 @@ eval $query;
 --echo # Now group it by d.m:
 --error ER_WRONG_FIELD_WITH_GROUP
 eval $query group by d.m;
-eval $show_trace;
+#eval $show_trace;
 --echo # Now group it by d.c which is non-nullable:
 eval $query group by d.c;
-eval $show_trace;
+#eval $show_trace;
 
 drop table t1;
 create table t1(pk int primary key, a int);
@@ -650,14 +661,14 @@ create table t1(pk int primary key, a int);
 select t3.a
  from t1 left join (t1 as t2 left join t1 as t3 on 1) on 1
  group by t3.pk;
-eval $show_trace;
+#eval $show_trace;
 
 --echo # Outer reference - why we use resolved_used_tables():
 select (select t1.a from t1 as t2 limit 1) from t1 group by pk;
 
 --echo # We don't build the FD list if not needed
 select t1.a*3 from t1 group by t1.a;
-eval $show_trace;
+#eval $show_trace;
 
 drop table t1;
 
@@ -741,16 +752,17 @@ SELECT dname, COUNT(*)
 FROM empdept
 GROUP BY deptno;
 
-eval CREATE algorithm=merge $view_rest;
-eval EXPLAIN $query;
---echo # There is pk-based FD dept.Depno->dept.dname in dept
---echo # and it propagates in the view-which-became-nest because it is
---echo # NULL-friendly.
-eval $query;
-drop view empdept;
+# NOW SequoiaDB not support merge
+#eval CREATE algorithm=merge $view_rest;
+#eval EXPLAIN $query;
+#--echo # There is pk-based FD dept.Depno->dept.dname in dept
+#--echo # and it propagates in the view-which-became-nest because it is
+#--echo # NULL-friendly.
+#eval $query;
+#drop view empdept;
 
 eval CREATE algorithm=temptable $view_rest;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 --echo # There is pk-based FD dept.Depno->dept.dname in dept
 --echo # and it propagates in the materialized view because it is
 --echo # NULL-friendly, and then in the top query because the view is not in
@@ -998,35 +1010,38 @@ SELECT v2.pk, v2.coa
 DROP VIEW v2;
 DROP TABLE t1,t2;
 
---echo #
---echo # Bug#21807579 FUNCTIONAL DEPENDENCIES ARE NOT RECOGNIZED IN GENERATED COLUMNS
---echo #
+# NOW SequoiaDB not support for generated columns
+#--echo #
+#--echo # Bug#21807579 FUNCTIONAL DEPENDENCIES ARE NOT RECOGNIZED IN GENERATED COLUMNS
+#--echo #
+#
+#CREATE TABLE t ( a INT, c INT GENERATED ALWAYS AS (a+2), d INT GENERATED ALWAYS AS (c+2) );
+#--echo # {a}->{c}, {c}->{d} and {a}->{d} hold.
+#SELECT c FROM t GROUP BY a;
+#SELECT d FROM t GROUP BY c;
+#SELECT d FROM t GROUP BY a;
+#SELECT 1+c FROM t GROUP BY a;
+#SELECT 1+d FROM t GROUP BY c;
+#SELECT 1+d FROM t GROUP BY a;
+#--echo # {t2.a}->{t2.d}->{t1.c}->{t1.d}
+#SELECT t1.d FROM t as t1, t as t2 WHERE t2.d=t1.c GROUP BY t2.a;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#SELECT t1.d FROM t as t1, t as t2 WHERE t2.d>t1.c GROUP BY t2.a;
+#DROP TABLE t;
 
-CREATE TABLE t ( a INT, c INT GENERATED ALWAYS AS (a+2), d INT GENERATED ALWAYS AS (c+2) );
---echo # {a}->{c}, {c}->{d} and {a}->{d} hold.
-SELECT c FROM t GROUP BY a;
-SELECT d FROM t GROUP BY c;
-SELECT d FROM t GROUP BY a;
-SELECT 1+c FROM t GROUP BY a;
-SELECT 1+d FROM t GROUP BY c;
-SELECT 1+d FROM t GROUP BY a;
---echo # {t2.a}->{t2.d}->{t1.c}->{t1.d}
-SELECT t1.d FROM t as t1, t as t2 WHERE t2.d=t1.c GROUP BY t2.a;
---error ER_WRONG_FIELD_WITH_GROUP
-SELECT t1.d FROM t as t1, t as t2 WHERE t2.d>t1.c GROUP BY t2.a;
-DROP TABLE t;
-
---echo # A non-NULL-friendly dependency.
-CREATE TABLE t ( a INT,
-c INT GENERATED ALWAYS AS (COALESCE(a,3)) );
-INSERT INTO t (a) VALUES(NULL);
-CREATE TABLE u ( a INT );
-INSERT INTO u VALUES(0),(1);
---echo # Even though {a}->{c} holds in 't', it doesn't propagate to the left
---echo # join's result
-SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0;
---error ER_WRONG_FIELD_WITH_GROUP
-SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0 GROUP BY t.a;
-DROP TABLE t,u;
+# NOW SequoiaDB not support for generated columns
+#--echo # A non-NULL-friendly dependency.
+#CREATE TABLE t ( a INT,
+#c INT GENERATED ALWAYS AS (COALESCE(a,3)) );
+#INSERT INTO t (a) VALUES(NULL);
+#CREATE TABLE u ( a INT );
+#INSERT INTO u VALUES(0),(1);
+#--echo # Even though {a}->{c} holds in 't', it doesn't propagate to the left
+#--echo # join's result
+#SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0 GROUP BY t.a;
+#DROP TABLE t,u;
 
 DROP FUNCTION show_json_object;
+DROP DATABASE test_group_by_fd_no_prot;

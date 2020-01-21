@@ -4084,6 +4084,20 @@ sub mysql_install_db {
   mkpath("$install_datadir/mysql");
   mkpath("$install_datadir/test");
 
+  # liuxiaoxuan: Create directories for each parallel when parallel > 1
+  mtr_tofile($bootstrap_sql_file,
+             "set global sequoiadb_auto_partition=on;\n");
+  for my $child_num (1..$opt_parallel)
+  {
+     mkpath("$install_datadir/test_parallel_$child_num");
+     #zhaoyu: Create table for sequoiadb to reserved database file
+     mtr_tofile($bootstrap_sql_file,
+             "CREATE TABLE test_parallel_$child_num.reserved(a int primary key)engine=sequoiadb;\n");
+  }
+  mtr_tofile($bootstrap_sql_file,
+             "set global sequoiadb_auto_partition=off;\n");
+
+
   if ( $opt_manual_boot_gdb )
   {
     # The configuration has been set up and user has been prompted for
@@ -6628,7 +6642,11 @@ sub start_mysqltest ($) {
   mtr_add_arg($args, "--mark-progress")
     if $opt_mark_progress;
 
-  mtr_add_arg($args, "--database=test");
+  # liuxiaoxuan: Use unique database for each parallel
+  my $parallel_thread = $tinfo->{worker};
+  $parallel_thread = 1 if $opt_parallel <= 1;
+  my $current_parallel_database = "test_parallel_$parallel_thread";
+  mtr_add_arg($args, "--database=$current_parallel_database");
 
   if ( $opt_ps_protocol )
   {

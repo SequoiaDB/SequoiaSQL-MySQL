@@ -1,7 +1,10 @@
 #
 # Test of procedure analyse
 #
--- source include/have_innodb.inc
+#-- source include/have_innodb.inc
+--source include/have_sequoiadb.inc
+create database test_func_analyse;
+use test_func_analyse;
 
 --disable_warnings
 drop table if exists t1,t2;
@@ -154,8 +157,8 @@ DROP TABLE t1;
 --echo # Bug#11756242  48137: PROCEDURE ANALYSE() LEAKS MEMORY WHEN RETURNING NULL
 --echo #
 
-CREATE TABLE t1(f1 INT) ENGINE=MYISAM;
-CREATE TABLE t2(f2 INT) ENGINE=INNODB;
+CREATE TABLE t1(f1 INT) ENGINE=SEQUOIADB;
+CREATE TABLE t2(f2 INT) ENGINE=SEQUOIADB;
 INSERT INTO t2 VALUES (1);
 SELECT DISTINCTROW f1 FROM t1 NATURAL RIGHT OUTER JOIN t2 PROCEDURE ANALYSE();
 SELECT * FROM t2 LIMIT 1 PROCEDURE ANALYSE();
@@ -171,12 +174,12 @@ DROP TABLE t1, t2;
 drop table if exists t1;
 --enable_warnings
 
-CREATE TEMPORARY TABLE t1 (f2 INT, f1 INT, PRIMARY KEY (f1)) ENGINE = MyISAM;
+CREATE TEMPORARY TABLE t1 (f2 INT, f1 INT, PRIMARY KEY (f1)) ENGINE = SEQUOIADB;
 
 INSERT t1 ( f1 ) VALUES ( 5 );
 INSERT t1 ( f1 ) VALUES ( 6 );
 
-ALTER TABLE t1 ENGINE = MyISAM;
+ALTER TABLE t1 ENGINE = SEQUOIADB;
 ANALYZE TABLE t1;
 
 # Bug #48859 nor reproducible here (was in 6.0)
@@ -347,4 +350,5 @@ SELECT * FROM t1 PROCEDURE ANALYSE(100, 200, 300);
 DROP TABLE t1, t2;
 SET sql_mode = default;
 --echo # End of 5.6 tests
-
+drop database test_func_analyse;
+--source include/uninstall_sequoiadb.inc

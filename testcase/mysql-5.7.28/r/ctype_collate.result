@@ -1,3 +1,5 @@
+create database test_ctype_collate;
+use test_ctype_collate;
 DROP TABLE IF EXISTS t1;
 DROP TABLE IF EXISTS t2;
 CREATE TABLE t1 (
@@ -485,29 +487,13 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `latin1_f` char(32) NOT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SHOW FIELDS FROM  t1;
 Field	Type	Null	Key	Default	Extra
 latin1_f	char(32)	NO		NULL	
 ALTER TABLE t1 CHANGE latin1_f 
 latin1_f CHAR(32) CHARACTER SET latin1 COLLATE latin1_bin;
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `latin1_f` char(32) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
-SHOW FIELDS FROM  t1;
-Field	Type	Null	Key	Default	Extra
-latin1_f	char(32)	YES		NULL	
 ALTER TABLE t1 CHARACTER SET latin1 COLLATE latin1_bin;
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `latin1_f` char(32) COLLATE latin1_bin DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1 COLLATE=latin1_bin
-SHOW FIELDS FROM  t1;
-Field	Type	Null	Key	Default	Extra
-latin1_f	char(32)	YES		NULL	
 SET CHARACTER SET 'latin1';
 SHOW VARIABLES LIKE 'character_set_client';
 Variable_name	Value
@@ -515,12 +501,6 @@ character_set_client	latin1
 SELECT charset('a'),collation('a'),coercibility('a'),'a'='A';
 charset('a')	collation('a')	coercibility('a')	'a'='A'
 latin1	latin1_swedish_ci	4	1
-explain extended SELECT charset('a'),collation('a'),coercibility('a'),'a'='A';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select charset('a') AS `charset('a')`,collation('a') AS `collation('a')`,coercibility('a') AS `coercibility('a')`,('a' = 'A') AS `'a'='A'`
 SET CHARACTER SET koi8r;
 SHOW VARIABLES LIKE 'collation_client';
 Variable_name	Value
@@ -567,16 +547,16 @@ c
 create index i on t1 (a);
 select * from t1 where a > 'B' collate latin1_bin;
 a
+C
 a
 b
-C
 c
 select * from t1 where a <> 'B' collate latin1_bin;
 a
 A
+C
 a
 b
-C
 c
 drop table t1;
 SET NAMES latin1;
@@ -597,79 +577,8 @@ INSERT INTO t1 VALUES ('i','i');
 INSERT INTO t1 VALUES ('j','j');
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	OK
-EXPLAIN SELECT * FROM t1 WHERE s1='a';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	s1	s1	11	const	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s1` = 'a')
-EXPLAIN SELECT * FROM t1 WHERE s2='a';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	s2	s2	11	const	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s2` = 'a')
-EXPLAIN SELECT * FROM t1 WHERE s1='a' COLLATE latin1_german1_ci;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	s1	s1	11	const	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s1` = ('a' collate latin1_german1_ci))
-EXPLAIN SELECT * FROM t1 WHERE s2='a' COLLATE latin1_german1_ci;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	s2	NULL	NULL	NULL	10	10.00	Using where
-Warnings:
-Warning	1739	Cannot use ref access on index 's2' due to type or collation conversion on field 's2'
-Warning	1739	Cannot use range access on index 's2' due to type or collation conversion on field 's2'
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s2` = <cache>(('a' collate latin1_german1_ci)))
-EXPLAIN SELECT * FROM t1 WHERE s1 BETWEEN 'a' AND 'b' COLLATE latin1_german1_ci;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	s1	s1	11	NULL	2	100.00	Using index condition
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s1` between 'a' and <cache>(('b' collate latin1_german1_ci)))
-EXPLAIN SELECT * FROM t1 WHERE s2 BETWEEN 'a' AND 'b' COLLATE latin1_german1_ci;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	s2	NULL	NULL	NULL	10	10.10	Using where
-Warnings:
-Warning	1739	Cannot use range access on index 's2' due to type or collation conversion on field 's2'
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s2` between 'a' and <cache>(('b' collate latin1_german1_ci)))
-EXPLAIN SELECT * FROM t1 WHERE s1 IN  ('a','b' COLLATE latin1_german1_ci);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	s1	s1	11	NULL	2	100.00	Using index condition
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s1` in ('a',<cache>(('b' collate latin1_german1_ci))))
-EXPLAIN SELECT * FROM t1 WHERE s2 IN  ('a','b' COLLATE latin1_german1_ci);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	s2	NULL	NULL	NULL	10	20.00	Using where
-Warnings:
-Warning	1739	Cannot use range access on index 's2' due to type or collation conversion on field 's2'
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s2` in ('a',<cache>(('b' collate latin1_german1_ci))))
-EXPLAIN SELECT * FROM t1 WHERE s1 LIKE 'a' COLLATE latin1_german1_ci;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	range	s1	s1	11	NULL	1	100.00	Using index condition
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s1` like <cache>(('a' collate latin1_german1_ci)))
-EXPLAIN SELECT * FROM t1 WHERE s2 LIKE 'a' COLLATE latin1_german1_ci;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	s2	NULL	NULL	NULL	10	10.10	Using where
-Warnings:
-Warning	1739	Cannot use range access on index 's2' due to type or collation conversion on field 's2'
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,`test`.`t1`.`s2` AS `s2` from `test`.`t1` where (`test`.`t1`.`s2` like <cache>(('a' collate latin1_german1_ci)))
+x	analyze	status	OK
 DROP TABLE t1;
-create table t1(f1 varchar(10) character set latin2 collate latin2_hungarian_ci, key(f1));
-insert into t1 set f1=0x3F3F9DC73F;
-insert into t1 set f1=0x3F3F1E563F;
-insert into t1 set f1=0x3F3F;
-check table t1 extended;
-Table	Op	Msg_type	Msg_text
-test.t1	check	status	OK
-drop table t1;
-create table t1 (a varchar(2) character set latin7 collate latin7_general_ci,key(a));
-insert into t1 set a=0x4c20;
-insert into t1 set a=0x6c;
-insert into t1 set a=0x4c98;
-check table t1 extended;
-Table	Op	Msg_type	Msg_text
-test.t1	check	status	OK
-drop table t1;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
@@ -682,7 +591,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `f1` varchar(1) CHARACTER SET latin5 NOT NULL DEFAULT ''
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t1;
 select case _latin1'a' when _latin2'b' then 1 when _latin5'c' collate
 latin5_turkish_ci then 2 else 3 end;
@@ -728,7 +637,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(20) COLLATE latin1_german2_ci DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci
 DROP TABLE t1;
 DROP FUNCTION getText;
 #
@@ -746,11 +655,11 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(20) COLLATE latin1_german2_ci DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COLLATE=latin1_german2_ci
 DROP TABLE t1;
 DROP FUNCTION getText;
 DROP DATABASE test1;
-USE test;
+USE test_ctype_collate;
 SET NAMES latin1;
 # Bug#20425399: CAN'T USE COLLATE
 CREATE TABLE t1(a TINYINT, b SMALLINT, c MEDIUMINT, d INT, e BIGINT);
@@ -856,3 +765,4 @@ a	b
 DROP TABLE t1;
 DROP TABLE t2;
 DROP TABLE t3;
+DROP DATABASE test_ctype_collate;

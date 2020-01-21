@@ -17,14 +17,14 @@ insert into t0 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9),
 create table t1 (
   a int, 
   b int
-) engine=innodb;
+) engine=Sequoiadb;
 insert into t1 values (1,1),(1,1),(2,2);
 
 create table t2 (
   a int,
   b int,
   key(b)
-) engine=innodb;
+) engine=Sequoiadb;
 insert into t2 select a, a/2 from t0;
 
 # Run analyze to ensure more correct index statistics
@@ -36,7 +36,7 @@ ANALYZE TABLE t1,t2;
 
 select * from t1;
 select * from t2;
-explain select * from t2 where b in (select a from t1);
+#explain select * from t2 where b in (select a from t1);
 select * from t2 where b in (select a from t1);
 
 truncate table t0;
@@ -49,10 +49,10 @@ create table t3 (
    key(b),
    pk1 char(200), pk2 char(200), pk3 char(200),
    primary key(pk1, pk2, pk3)
-) engine=innodb;
+) engine=Sequoiadb;
 insert into t3 select a,a, a,a,a from t0;
 
-explain select * from t3 where b in (select a from t1);
+#explain select * from t3 where b in (select a from t1);
 select * from t3 where b in (select a from t1);
 
 # Test overflow to MyISAM:
@@ -68,13 +68,13 @@ create table t3 (
    key(b),
    pk1 char(200), pk2 char(200),
    primary key(pk1, pk2)
-) engine=innodb;
+) engine=Sequoiadb;
 insert into t3 select 
   A.a + 10*B.a, A.a + 10*B.a, A.a + 10*B.a, A.a + 10*B.a 
 from t0 A, t0 B where B.a <5;
 
---replace_column 10 #
-explain select * from t3 where b in (select a from t0);
+#--replace_column 10 #
+#explain select * from t3 where b in (select a from t0);
 --sorted_result
 select * from t3 where b in (select a.a+b.a from t0 a, t0 b where b.a<5);
  
@@ -82,7 +82,7 @@ set join_buffer_size= @save_join_buffer_size;
 set max_heap_table_size= @save_max_heap_table_size;
 
 # O2I join orders, with shortcutting: 
-explain select * from t1 where a in (select b from t2);
+#explain select * from t1 where a in (select b from t2);
 select * from t1;
 select * from t1 where a in (select b from t2);
 
@@ -95,7 +95,7 @@ drop table t0, t1, t2, t3;
 create table t1 (a int);
 insert into t1 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
 
-create table t2 (a char(200), b char(200), c char(200), primary key (a,b,c)) engine=innodb;
+create table t2 (a char(200), b char(200), c char(200), primary key (a,b,c)) engine=Sequoiadb;
 insert into t2 select concat(a, repeat('X',198)),repeat('B',200),repeat('B',200) from t1;
 insert into t2 select concat(a, repeat('Y',198)),repeat('B',200),repeat('B',200) from t1;
 alter table t2 add filler1 int;
@@ -116,34 +116,34 @@ drop table t1, t2;
 --echo
 --echo BUG#42740: crash in optimize_semijoin_nests
 --echo
-create table t1 (c6 timestamp,key (c6)) engine=innodb;
-create table t2 (c2 double) engine=innodb;
-explain select 1 from t2 where c2 = any (select log10(null) from t1 where c6 <null)  ;
+create table t1 (c6 timestamp,key (c6)) engine=Sequoiadb;
+create table t2 (c2 double) engine=Sequoiadb;
+#explain select 1 from t2 where c2 = any (select log10(null) from t1 where c6 <null)  ;
 drop table t1, t2;
 
 --echo # 
 --echo # BUG#42742: crash in setup_sj_materialization, Copy_field::set
 --echo # 
-create table t3 ( c1 year) engine=innodb;
+create table t3 ( c1 year) engine=Sequoiadb;
 insert into t3 values (2135),(2142);
-create table t2 (c1 tinytext,c2 text,c6 timestamp) engine=innodb;
+create table t2 (c1 tinytext,c2 text,c6 timestamp) engine=Sequoiadb;
 -- echo # The following must not crash, EXPLAIN should show one SJ strategy, not a mix:
-explain select 1 from t2 where 
-  c2 in (select 1 from t3, t2) and
-  c1 in (select convert(c6,char(1)) from t2);
+#explain select 1 from t2 where 
+#  c2 in (select 1 from t3, t2) and
+#  c1 in (select convert(c6,char(1)) from t2);
 drop table t2, t3;
 --echo # 
 --echo # BUG#57431: subquery returns wrong result (semijoin=on) with pred AND
 --echo # 
 CREATE TABLE t1 (
    i INT
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 INSERT INTO t1 VALUES (2),(4);
 
 CREATE TABLE t2 (
    i INT,
    vc VARCHAR(1)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 INSERT INTO t2 VALUES (8,NULL);
 
 SELECT i

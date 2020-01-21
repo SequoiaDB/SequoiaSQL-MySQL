@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 #
 # Run subquery_sj.inc with semijoin and turn off all strategies, but FirstMatch
@@ -41,7 +40,7 @@ if (`select locate('mrr', @@optimizer_switch) > 0`)
 --echo #           certain query plans
 --echo #
 
-SET @@default_storage_engine='innodb';
+#SET @@default_storage_engine='Sequoiadb';
 SET @@optimizer_switch='semijoin=on,materialization=off,firstmatch=on,loosescan=off,block_nested_loop=off,batched_key_access=off';
 
 CREATE TABLE t0(a INTEGER);
@@ -68,33 +67,33 @@ ANALYZE TABLE t8;
 -- enable_result_log
 -- enable_query_log
 
-EXPLAIN
-SELECT *
-FROM t2 AS nt2
-WHERE 1 IN (SELECT it1.a
-            FROM t1 AS it1 JOIN t6 AS it3 ON it1.a=it3.a);
+#EXPLAIN
+#SELECT *
+#FROM t2 AS nt2
+#WHERE 1 IN (SELECT it1.a
+#            FROM t1 AS it1 JOIN t6 AS it3 ON it1.a=it3.a);
 
 SELECT *
 FROM t2 AS nt2
 WHERE 1 IN (SELECT it1.a
             FROM t1 AS it1 JOIN t6 AS it3 ON it1.a=it3.a);
 
-EXPLAIN
-SELECT *
-FROM t2 AS nt2, t8 AS nt4
-WHERE 1 IN (SELECT it1.a
-            FROM t1 AS it1 JOIN t6 AS it3 ON it1.a=it3.a);
+#EXPLAIN
+#SELECT *
+#FROM t2 AS nt2, t8 AS nt4
+#WHERE 1 IN (SELECT it1.a
+#            FROM t1 AS it1 JOIN t6 AS it3 ON it1.a=it3.a);
 
 SELECT *
 FROM t2 AS nt2, t8 AS nt4
 WHERE 1 IN (SELECT it1.a
             FROM t1 AS it1 JOIN t6 AS it3 ON it1.a=it3.a);
 
-EXPLAIN
-SELECT *
-FROM t0 AS ot1, t2 AS nt3
-WHERE ot1.a IN (SELECT it2.a
-                FROM t1 AS it2 JOIN t8 AS it4 ON it2.a=it4.a);
+#EXPLAIN
+#SELECT *
+#FROM t0 AS ot1, t2 AS nt3
+#WHERE ot1.a IN (SELECT it2.a
+#                FROM t1 AS it2 JOIN t8 AS it4 ON it2.a=it4.a);
 
 SELECT *
 FROM t0 as ot1, t2 AS nt3
@@ -103,10 +102,12 @@ WHERE ot1.a IN (SELECT it2.a
 
 DROP TABLE t0, t1, t2, t6, t8;
 
-SET @@default_storage_engine=default;
+#SET @@default_storage_engine=default;
 SET @@optimizer_switch=default;
 
 --echo # End of bug#51457
 
 set optimizer_switch=default;
+
+--source include/uninstall_sequoiadb.inc
 

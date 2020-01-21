@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 
 #
 # Tests that depend on the timestamp and the TZ variable
@@ -22,3 +23,5 @@ drop table t1;
 
 # Restore timezone to default
 set time_zone= @@global.time_zone;
+
+--source include/uninstall_sequoiadb.inc

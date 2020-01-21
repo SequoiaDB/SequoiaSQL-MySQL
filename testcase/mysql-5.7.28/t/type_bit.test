@@ -1,12 +1,14 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with sequoiadb
+# (#Case #16518: Check insert/update/delete/query bit)
+--source include/have_sequoiadb.inc
 
 #
 # testing of the BIT column type
 #
 
+create database test_bit;
+use test_bit;
 select 0 + b'1';
 select 0 + b'0';
 select 0 + b'000001';
@@ -40,18 +42,20 @@ insert into t1 values
 select hex(a) from t1;
 drop table t1;
 
+#Sequoiadb not support insert data out of range
 create table t1 (a bit);
-insert into t1 values (b'0'), (b'1'), (b'000'), (b'100'), (b'001');
+#insert into t1 values (b'0'), (b'1'), (b'000'), (b'100'), (b'001');
+insert into t1 values (b'0'), (b'1');
 select hex(a) from t1;
---error ER_DUP_ENTRY
-alter table t1 add unique (a);
+#alter table t1 add unique (a);
 drop table t1;
 
 create table t1 (a bit(2));
-insert into t1 values (b'00'), (b'01'), (b'10'), (b'100');
+insert into t1 values (b'00'), (b'01'), (b'10');
 select a+0 from t1;
+
 alter table t1 add key (a);
-explain select a+0 from t1;
+#explain select a+0 from t1;
 select a+0 from t1;
 drop table t1;
 
@@ -63,15 +67,18 @@ insert into t1 values
 (116, 390), (119, 368), (87, 351), (123, 411), (24, 398), (34, 202), (28, 499),
 (30, 83), (5, 178), (60, 343), (4, 245), (104, 280), (106, 446), (127, 403),   
 (44, 307), (68, 454), (57, 135);
-explain select a+0 from t1;
+#explain select a+0 from t1;
+--sorted_result
 select a+0 from t1;
-explain select b+0 from t1;
+#explain select b+0 from t1;
+--sorted_result
 select b+0 from t1;
-explain select a+0, b+0 from t1;
+#explain select a+0, b+0 from t1;
+--sorted_result
 select a+0, b+0 from t1;
-explain select a+0, b+0 from t1 where a > 40 and b > 200 order by 1;
+#explain select a+0, b+0 from t1 where a > 40 and b > 200 order by 1;
 select a+0, b+0 from t1 where a > 40 and b > 200 order by 1;
-explain select a+0, b+0 from t1 where a > 40 and a < 70 order by 2;
+#explain select a+0, b+0 from t1 where a > 40 and a < 70 order by 2;
 select a+0, b+0 from t1 where a > 40 and a < 70 order by 2;
 set @@max_length_for_sort_data=0;
 select a+0, b+0 from t1 where a > 40 and a < 70 order by 2;
@@ -84,6 +91,7 @@ create table t1 (a int not null, b bit, c bit(9), key(a, b, c));
 insert into t1 values
 (4, NULL, 1), (4, 0, 3), (2, 1, 4), (1, 1, 100), (4, 0, 23), (4, 0, 54),
 (56, 0, 22), (4, 1, 100), (23, 0, 1), (4, 0, 34);
+--sorted_result
 select a+0, b+0, c+0 from t1;
 select hex(min(b)) from t1 where a = 4;
 select hex(min(c)) from t1 where a = 4 and b = 0;
@@ -162,7 +170,7 @@ select hex(g) from t1;
 drop table t1;
 
 create table t1 (a int, b time, c tinyint, d bool, e char(10), f bit(1), 
-  h char(1) default 'a') engine=myisam;
+  h char(1) default 'a') engine=sequoiadb;
 insert into t1 set a=1;
 select h from t1;
 drop table t1;
@@ -171,7 +179,7 @@ drop table t1;
 # Bug #10539
 #
 
-create table t1 (a bit(8)) engine=heap;
+create table t1 (a bit(8)) engine=sequoiadb;
 insert ignore into t1 values ('1111100000');
 select a+0 from t1;
 drop table t1;
@@ -270,12 +278,12 @@ drop table t1;
 #
 # type was not properly initalized, which caused key_copy to fail
 #
-
 create table t1(bit_field bit(2), int_field int, key a(bit_field));
 insert into t1 values (1,2);
-handler t1 open as t1;
-handler t1 read a=(1);
-handler t1 close;
+#Sequoiadb not support handler
+#handler t1 open as t1;
+#handler t1 read a=(1);
+#handler t1 close;
 drop table t1;
 
 #
@@ -336,7 +344,7 @@ INSERT IGNORE INTO t1(a) VALUES (65535),(65525),(65535),(65535),(65535),
                                 (65535),(65535),(65535),(65535),(65535);
 --enable_warnings
 
-EXPLAIN SELECT 1 FROM t1 GROUP BY a;
+#EXPLAIN SELECT 1 FROM t1 GROUP BY a;
 SELECT 1 FROM t1 GROUP BY a;
 
 DROP TABLE t1;
@@ -366,7 +374,7 @@ DROP TABLE t1, t2;
 CREATE TABLE IF NOT EXISTS t1 (
 f1 bit(2) NOT NULL default b'10',
 f2 bit(14) NOT NULL default b'11110000111100'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+) ENGINE=sequoiadb DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 SHOW CREATE TABLE t1;
 
 # Should store the defaults
@@ -381,14 +389,14 @@ DROP TABLE t1;
 --error ER_INVALID_DEFAULT
 CREATE TABLE IF NOT EXISTS t1 (
 f1 bit(2) NOT NULL default b''
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+) ENGINE=sequoiadb DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 
 #
 # Bug#31399 Wrong query result when doing join buffering over BIT fields 
 #
-create table t1bit7 (a1 bit(7) not null) engine=MyISAM; 
-create table t2bit7 (b1 bit(7)) engine=MyISAM; 
+create table t1bit7 (a1 bit(7) not null) engine=sequoiadb; 
+create table t2bit7 (b1 bit(7)) engine=sequoiadb; 
 
 insert into t1bit7 values (b'1100000'); 
 insert into t1bit7 values (b'1100001'); 
@@ -400,8 +408,8 @@ insert into t2bit7 values (b'1100110');
 select bin(a1) from t1bit7, t2bit7 where t1bit7.a1=t2bit7.b1; 
 drop table t1bit7, t2bit7; 
 
-create table t1bit7 (a1 bit(15) not null) engine=MyISAM; 
-create table t2bit7 (b1 bit(15)) engine=MyISAM; 
+create table t1bit7 (a1 bit(15) not null) engine=sequoiadb; 
+create table t2bit7 (b1 bit(15)) engine=sequoiadb; 
 
 insert into t1bit7 values (b'110000011111111'); 
 insert into t1bit7 values (b'110000111111111'); 
@@ -420,7 +428,7 @@ drop table t1bit7, t2bit7;
 --echo #
 CREATE TABLE t1 (a BIT(7), b BIT(9), KEY(a, b));
 INSERT INTO t1 VALUES(0, 0), (5, 3), (5, 6), (6, 4), (7, 0);
-EXPLAIN SELECT a+0, b+0 FROM t1 WHERE a > 4 and b < 7 ORDER BY 2;
+#EXPLAIN SELECT a+0, b+0 FROM t1 WHERE a > 4 and b < 7 ORDER BY 2;
 DROP TABLE t1;
 
 
@@ -462,8 +470,10 @@ DROP TABLE t1;
 
 CREATE TABLE IF NOT EXISTS t1 (
 f1 bit(2) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+) ENGINE=sequoiadb DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 INSERT INTO t1 VALUES (b'');
 SELECT bin(f1) FROM t1;
 DROP TABLE t1;
+drop database test_bit;
 
+--source include/uninstall_sequoiadb.inc

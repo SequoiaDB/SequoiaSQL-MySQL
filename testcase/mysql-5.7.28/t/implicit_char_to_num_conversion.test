@@ -12,6 +12,7 @@
 # 2011-05-10 vfisrekar Implement this test as part of Bug#11766521     #
 #                                                                      #
 ########################################################################
+--source include/have_sequoiadb.inc
 
 --disable_warnings
 DROP TABLE IF EXISTS t5;
@@ -22,6 +23,7 @@ let $default_engine = `select @@SESSION.default_storage_engine`;
 # Bug#11766521 - BIT Datatype comparison in where clause return incorrect
 # result for '=' , '<=>' operators
 --replace_result $default_engine <default_engine>
+
 eval CREATE TABLE t5(c1  BIT(2) PRIMARY KEY) ENGINE = $default_engine;
 INSERT INTO t5 VALUES (0), (1), (2);
 SELECT HEX(c1) FROM t5 ORDER BY c1;
@@ -175,3 +177,5 @@ SELECT c1 FROM t5 WHERE c1 != '-908.92' ORDER BY c1;
 SELECT c1 FROM t5 WHERE c1 < '95.95' ORDER BY c1;
 SELECT c1 FROM t5 WHERE c1 > '-908.92' ORDER BY c1;
 DROP TABLE t5;
+
+--source include/uninstall_sequoiadb.inc

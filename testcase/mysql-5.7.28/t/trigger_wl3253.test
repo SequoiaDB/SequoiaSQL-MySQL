@@ -88,8 +88,9 @@ SET TIMESTAMP=UNIX_TIMESTAMP('2013-01-31 09:00:00');
 CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
 SET TIMESTAMP=UNIX_TIMESTAMP('2013-01-31 09:00:01');
 CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
-
-SELECT trigger_name, created, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+# Compatible with parallel > 1, modify query condition
+#SELECT trigger_name, created, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, created, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 DROP TABLE t1;
 SET TIMESTAMP=DEFAULT;
@@ -106,8 +107,10 @@ CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
 --replace_column 6 #
 SHOW TRIGGERS;
 
---replace_column 17 #
-SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema = 'test';
+# Compatible with parallel > 1, modify query condition
+--replace_column 2 # 6 # 17 #
+#SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema = 'test';
+SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema like "test_parallel%";
 
 --replace_column 7 #
 SHOW CREATE TRIGGER tr1_bi;
@@ -123,13 +126,17 @@ DROP TABLE t1;
 CREATE TABLE t1 (a INT);
 CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
 
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+# Compatible with parallel > 1, modify query condition
+#SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 DROP TRIGGER tr1_bi;
 
 CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
 
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+# Compatible with parallel > 1, modify query condition
+#SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 DROP TABLE t1;
 
@@ -145,7 +152,9 @@ SET TIMESTAMP=UNIX_TIMESTAMP('2013-01-31 09:00:01');
 CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
 CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
 
-SELECT trigger_name, created, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+# Compatible with parallel > 1, modify query condition
+#SELECT trigger_name, created, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, created, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 DROP TABLE t1;
 SET TIMESTAMP=DEFAULT;
@@ -178,8 +187,10 @@ SET TIMESTAMP=UNIX_TIMESTAMP('2013-01-31 09:00:01');
 CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
 
 SHOW TRIGGERS;
-
-SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema = 'test';
+# Compatible with parallel > 1, modify query condition
+--replace_column 2 # 6 #
+#SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema = 'test';
+SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema like "test_parallel%";
 
 DROP TABLE t1;
 
@@ -197,7 +208,7 @@ CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW INSERT INTO t2 (a) VALUES
 CREATE TRIGGER tr3_bi BEFORE INSERT ON t1 FOR EACH ROW INSERT INTO t2 (a) VALUES (NEW.a + 300);
 CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW FOLLOWS tr1_bi INSERT INTO t2 (a) VALUES (NEW.a + 200);
 
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 INSERT INTO t1 VALUES (1);
 SELECT * FROM t2 ORDER BY b;
@@ -217,7 +228,7 @@ CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW INSERT INTO t2 (a) VALUES
 CREATE TRIGGER tr3_bi BEFORE INSERT ON t1 FOR EACH ROW INSERT INTO t2 (a) VALUES (NEW.a + 300);
 CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW PRECEDES tr3_bi INSERT INTO t2 (a) VALUES (NEW.a + 200);
 
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 INSERT INTO t1 VALUES (1);
 SELECT * FROM t2 ORDER BY b;
@@ -236,7 +247,7 @@ CREATE TABLE t2 (a INT, b INT AUTO_INCREMENT PRIMARY KEY);
 CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW INSERT INTO t2 (a) VALUES (NEW.a + 100);
 CREATE TRIGGER tr0_bi BEFORE INSERT ON t1 FOR EACH ROW PRECEDES tr1_bi INSERT INTO t2 (a) VALUES (NEW.a);
 
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 INSERT INTO t1 VALUES (1);
 SELECT * FROM t2 ORDER BY b;
@@ -257,8 +268,9 @@ CREATE TRIGGER tr3_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=3;
 
 --error ER_REFERENCED_TRG_DOES_NOT_EXIST
 CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW FOLLOWS tr0_bi SET @a:=2;
-
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+# Compatible with parallel > 1, modify query condition
+#SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 DROP TABLE t1;
 
@@ -275,8 +287,9 @@ CREATE TRIGGER tr3_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=3;
 
 --error ER_REFERENCED_TRG_DOES_NOT_EXIST
 CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW PRECEDES tr0_bi SET @a:=2;
-
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+# Compatible with parallel > 1, modify query condition
+#SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 DROP TABLE t1;
 
@@ -291,13 +304,15 @@ CREATE TABLE t1 (a INT);
 CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
 CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
 CREATE TRIGGER tr1_bu BEFORE UPDATE ON t1 FOR EACH ROW SET @a:=3;
-
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+# Compatible with parallel > 1, modify query condition
+#SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 CREATE TRIGGER tr3_bi BEFORE INSERT ON t1 FOR EACH ROW FOLLOWS tr2_bi SET @a:=3;
 CREATE TRIGGER tr2_bu BEFORE UPDATE ON t1 FOR EACH ROW FOLLOWS tr1_bu SET @a:=3;
-
-SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+# Compatible with parallel > 1, modify query condition
+#SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema='test';
+SELECT trigger_name, action_order FROM information_schema.triggers WHERE trigger_schema like "test_parallel%";
 
 DROP TABLE t1;
 
@@ -326,59 +341,62 @@ CREATE TRIGGER tr1_ai AFTER INSERT ON t1 FOR EACH ROW FOLLOWS tr1_bi SET @a:=3;
 --replace_column 6 #
 SHOW TRIGGERS;
 
---replace_column 17 #
-SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema = 'test';
+# Compatible with parallel > 1, modify query condition
+--replace_column 2 # 6 # 17 #
+#SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema = 'test';
+SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema like "test_parallel%";
 
 DROP TABLE t1;
 
 # Binlog is required
 --source include/have_log_bin.inc
 
---echo #
---echo # Test 17. Check that table's triggers are dumped correctly.
---echo #
-CREATE TABLE t1 (a INT);
-CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
-CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
-CREATE TRIGGER tr1_bu BEFORE UPDATE ON t1 FOR EACH ROW SET @a:=3;
-
-# dump tables and triggers
---exec $MYSQL_DUMP --compact test
-
-DROP TABLE t1;
-
---echo #
---echo # Test 18. Check that table's triggers are dumped in right order
---echo #          taking into account the PRECEDES/FOLLOWS clauses.
---echo #
-
-CREATE TABLE t1 (a INT);
-CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
-CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
-CREATE TRIGGER tr0_bi BEFORE INSERT ON t1 FOR EACH ROW PRECEDES tr1_bi SET @a:=0;
-CREATE TRIGGER tr1_1_bi BEFORE INSERT ON t1 FOR EACH ROW FOLLOWS tr1_bi SET @a:=0;
-
---echo # Expected order of triggers in the dump is: tr0_bi, tr1_bi, tr1_1_bi, tr2_i.
-# dump tables and triggers
---exec $MYSQL_DUMP --compact test
-
-DROP TABLE t1;
-
---echo #
---echo # Test 19. Check that table's triggers are dumped correctly in xml.
---echo #
-
-CREATE TABLE t1 (a INT);
-SET TIMESTAMP=UNIX_TIMESTAMP('2013-01-31 09:00:00');
-CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
-CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
-CREATE TRIGGER tr1_bu BEFORE UPDATE ON t1 FOR EACH ROW SET @a:=3;
-SET TIMESTAMP=DEFAULT;
-
-# dump tables and triggers
---exec $MYSQL_DUMP --compact --no-create-info --xml test
-
-DROP TABLE t1;
+# NOW SequoiaDB not concern mysqldump
+#--echo #
+#--echo # Test 17. Check that table's triggers are dumped correctly.
+#--echo #
+#CREATE TABLE t1 (a INT);
+#CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
+#CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
+#CREATE TRIGGER tr1_bu BEFORE UPDATE ON t1 FOR EACH ROW SET @a:=3;
+#
+## dump tables and triggers
+#--exec $MYSQL_DUMP --compact test
+#
+#DROP TABLE t1;
+#
+#--echo #
+#--echo # Test 18. Check that table's triggers are dumped in right order
+#--echo #          taking into account the PRECEDES/FOLLOWS clauses.
+#--echo #
+#
+#CREATE TABLE t1 (a INT);
+#CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
+#CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
+#CREATE TRIGGER tr0_bi BEFORE INSERT ON t1 FOR EACH ROW PRECEDES tr1_bi SET @a:=0;
+#CREATE TRIGGER tr1_1_bi BEFORE INSERT ON t1 FOR EACH ROW FOLLOWS tr1_bi SET @a:=0;
+#
+#--echo # Expected order of triggers in the dump is: tr0_bi, tr1_bi, tr1_1_bi, tr2_i.
+## dump tables and triggers
+#--exec $MYSQL_DUMP --compact test
+#
+#DROP TABLE t1;
+#
+#--echo #
+#--echo # Test 19. Check that table's triggers are dumped correctly in xml.
+#--echo #
+#
+#CREATE TABLE t1 (a INT);
+#SET TIMESTAMP=UNIX_TIMESTAMP('2013-01-31 09:00:00');
+#CREATE TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1;
+#CREATE TRIGGER tr2_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=2;
+#CREATE TRIGGER tr1_bu BEFORE UPDATE ON t1 FOR EACH ROW SET @a:=3;
+#SET TIMESTAMP=DEFAULT;
+#
+## dump tables and triggers
+#--exec $MYSQL_DUMP --compact --no-create-info --xml test
+#
+#DROP TABLE t1;
 
 --echo #
 --echo # Test 20. Check that the statement CHECK TABLE FOR UPGRADE outputs
@@ -387,8 +405,10 @@ DROP TABLE t1;
 
 CREATE TABLE t1 (a INT);
 
+let $CURRENT_DATABASE = `select database()`;
+
 let $MYSQLD_DATADIR=`SELECT @@datadir`;
---write_file $MYSQLD_DATADIR/test/t1.TRG
+--write_file $MYSQLD_DATADIR/$CURRENT_DATABASE/t1.TRG
 TYPE=TRIGGERS
 triggers='CREATE DEFINER=`root`@`localhost` TRIGGER tr1_bi BEFORE INSERT ON t1 FOR EACH ROW SET @a:=1' 'CREATE DEFINER=`root`@`localhost` TRIGGER tr1_ai AFTER INSERT ON t1 FOR EACH ROW SET @a:=2'
 sql_modes=1073741824 1073741824
@@ -398,23 +418,25 @@ connection_cl_names='latin1_swedish_ci' 'latin1_swedish_ci'
 db_cl_names='latin1_swedish_ci' 'latin1_swedish_ci'
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr1_bi.TRN
+--write_file $MYSQLD_DATADIR/$CURRENT_DATABASE/tr1_bi.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
---write_file $MYSQLD_DATADIR/test/tr1_ai.TRN
+--write_file $MYSQLD_DATADIR/$CURRENT_DATABASE/tr1_ai.TRN
 TYPE=TRIGGERNAME
 trigger_table=t1
 EOF
 
 FLUSH TABLE t1;
-
+--replace_column 1 # 4 #
 CHECK TABLE t1 FOR UPGRADE;
 
 SHOW TRIGGERS;
-
-SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema = 'test';
+# Compatible with parallel > 1, modify query condition
+--replace_column 2 # 6 #
+#SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema = 'test';
+SELECT * FROM INFORMATION_SCHEMA.TRIGGERS WHERE trigger_schema like "test_parallel%";
 
 SHOW CREATE TRIGGER tr1_bi;
 SHOW CREATE TRIGGER tr1_ai;

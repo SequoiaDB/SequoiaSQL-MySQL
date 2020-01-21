@@ -1,7 +1,9 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+# (#Case #13114: Check Function Date And Time)
+# (#Case #15686: Check Function cast (.. as datetime))
+
+--source include/have_sequoiadb.inc
 
 #
 # time functions
@@ -196,7 +198,7 @@ drop table t1;
 #
 # Test bug with monthname() and NULL
 #
-
+#Bug #SEQUOIADBMAINSTREAM-3583
 create table t1 (id int);
 create table t2 (id int, date date);
 insert into t1 values (1);
@@ -210,7 +212,7 @@ drop table t1,t2;
 #
 # Test bug with month() and year() on text fields with wrong information
 
-CREATE TABLE t1 (updated text) ENGINE=MyISAM;
+CREATE TABLE t1 (updated text) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ('');
 SELECT month(updated) from t1;
 SELECT year(updated) from t1;
@@ -220,7 +222,7 @@ drop table t1;
 # Check that functions work identically on 0000-00-00 as a constant and on a
 # column
 #
-
+#Bug #SEQUOIADBMAINSTREAM-3583
 create table t1 (d date, dt datetime, t timestamp, c char(10));
 insert ignore into t1 values ("0000-00-00", "0000-00-00", "0000-00-00", "0000-00-00");
 select dayofyear("0000-00-00"),dayofyear(d),dayofyear(dt),dayofyear(t),dayofyear(c) from t1;
@@ -431,7 +433,7 @@ select strcmp(date_format(utc_timestamp(),"%T"), utc_time())=0;
 select strcmp(date_format(utc_timestamp(),"%Y-%m-%d"), utc_date())=0;
 select strcmp(concat(utc_date(),' ',utc_time()),utc_timestamp())=0;
 
-explain extended select period_add("9602",-12),period_diff(199505,"9404"),from_days(to_days("960101")),dayofmonth("1997-01-02"), month("1997-01-02"), monthname("1972-03-04"),dayofyear("0000-00-00"),HOUR("1997-03-03 23:03:22"),MINUTE("23:03:22"),SECOND(230322),QUARTER(980303),WEEK("1998-03-03"),yearweek("2000-01-01",1),week(19950101,1),year("98-02-03"),weekday(curdate())-weekday(now()),dayname("1962-03-03"),unix_timestamp(),sec_to_time(time_to_sec("0:30:47")/6.21),curtime(),utc_time(),curdate(),utc_date(),utc_timestamp(),date_format("1997-01-02 03:04:05", "%M %W %D %Y %y %m %d %h %i %s %w"),from_unixtime(unix_timestamp("1994-03-02 10:11:12")),"1997-12-31 23:59:59" + INTERVAL 1 SECOND,"1998-01-01 00:00:00" - INTERVAL 1 SECOND,INTERVAL 1 DAY + "1997-12-31", extract(YEAR FROM "1999-01-02 10:11:12"),date_add("1997-12-31 23:59:59",INTERVAL 1 SECOND);
+#explain extended select period_add("9602",-12),period_diff(199505,"9404"),from_days(to_days("960101")),dayofmonth("1997-01-02"), month("1997-01-02"), monthname("1972-03-04"),dayofyear("0000-00-00"),HOUR("1997-03-03 23:03:22"),MINUTE("23:03:22"),SECOND(230322),QUARTER(980303),WEEK("1998-03-03"),yearweek("2000-01-01",1),week(19950101,1),year("98-02-03"),weekday(curdate())-weekday(now()),dayname("1962-03-03"),unix_timestamp(),sec_to_time(time_to_sec("0:30:47")/6.21),curtime(),utc_time(),curdate(),utc_date(),utc_timestamp(),date_format("1997-01-02 03:04:05", "%M %W %D %Y %y %m %d %h %i %s %w"),from_unixtime(unix_timestamp("1994-03-02 10:11:12")),"1997-12-31 23:59:59" + INTERVAL 1 SECOND,"1998-01-01 00:00:00" - INTERVAL 1 SECOND,INTERVAL 1 DAY + "1997-12-31", extract(YEAR FROM "1999-01-02 10:11:12"),date_add("1997-12-31 23:59:59",INTERVAL 1 SECOND);
 
 SET @TMP='2007-08-01 12:22:49';
 CREATE TABLE t1 (d DATETIME);
@@ -478,6 +480,7 @@ select f1 from t1 where f1 between cast("2006-1-1" as date) and cast("2006.1.1" 
 select f1 from t1 where date(f1) between cast("2006-1-1" as date) and cast("2006.1.1" as date);
 select f2 from t1 where f2 between cast("12:1:2" as time) and cast("12:2:2" as time);
 select f2 from t1 where time(f2) between cast("12:1:2" as time) and cast("12:2:2" as time);
+#Bug #SEQUOIADBMAINSTREAM-3592
 select f3 from t1 where f3 between cast("2006-1-1 12:1:1" as datetime) and cast("2006-1-1 12:1:2" as datetime);
 select f3 from t1 where timestamp(f3) between cast("2006-1-1 12:1:1" as datetime) and cast("2006-1-1 12:1:2" as datetime);
 select f1 from t1 where cast("2006-1-1" as date) between f1 and f3;
@@ -997,13 +1000,13 @@ SET sql_mode = default;
 --echo End of 5.1 tests
 
 --echo #
---echo # BUG#43578 "MyISAM&Maria gives wrong rows with range access
+--echo # BUG#43578 "SequoiaDB&Maria gives wrong rows with range access
 --echo # ORDER BY DESC on date index"
 --echo #
-
 CREATE TABLE t1(c1 DATE NOT NULL PRIMARY KEY, c2 DATE NULL, c3 INT,
 INDEX idx2(c2));
 SET TIMESTAMP=1235553613; #'2009-02-25'
+#modify warnings result as same as innodb
 INSERT INTO t1 VALUES(NOW(),NOW(),3),
 (ADDTIME(NOW(),'1 01:01:01'),ADDTIME(NOW(),'1 01:01:01'),4),
 (ADDTIME(NOW(),'2 01:01:01'),ADDTIME(NOW(),'2 01:01:01'),5),
@@ -1090,8 +1093,10 @@ WHERE CONVERT_TZ(TIMESTAMPADD(YEAR, a, DATE('0000-00-00')),
 DROP TABLE t1;
 CREATE TABLE t1 (a TIME);
 INSERT INTO t1 VALUES ('00:00:00');
+# This DQL return no warnings in SequoiaDB, but has warnings in MySQL instead
 SELECT * FROM t1 WHERE TIMESTAMPDIFF(MONTH, a, TIMESTAMP('0000-00-01')) IS NULL;
 SELECT * FROM t1 WHERE TIMESTAMPDIFF(MONTH, a, TIMESTAMP'0000-00-01 00:00:00') IS NULL;
+# This DQL return no warnings in SequoiaDB, but has warnings in MySQL instead
 SELECT * FROM t1 WHERE TIMESTAMPDIFF(MONTH, a, DATE('0000-00-01')) IS NULL;
 SELECT * FROM t1 WHERE TIMESTAMPDIFF(MONTH, a, DATE'0000-00-01') IS NULL;
 DROP TABLE t1;
@@ -1162,3 +1167,5 @@ SELECT * FROM v2;
 --echo # Cleanup
 DROP VIEW v1, v2;
 SET @@TIMESTAMP= DEFAULT;
+
+--source include/uninstall_sequoiadb.inc

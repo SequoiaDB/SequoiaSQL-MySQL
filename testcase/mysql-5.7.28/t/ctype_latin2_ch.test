@@ -1,5 +1,5 @@
-# Test needs myisam for some myisam specific testcases
---source include/have_myisam.inc
+
+--source include/have_sequoiadb.inc
 -- source include/have_latin2_ch.inc
 
 #
@@ -21,7 +21,8 @@ create table t1 (
 ) character set latin2 collate latin2_czech_cs;
 insert into t1 values (1,'Aa');
 insert into t1 values (2,'Aas');
-alter table t1 add primary key aaa(tt); 
+alter table t1 add primary key aaa(tt);
+#Bug #SEQUOIADBMAINSTRAM-3593
 select * from t1 where tt like 'Aa%';
 select * from t1 ignore index (primary) where tt like 'Aa%';
 select * from t1 where tt like '%Aa%';
@@ -93,6 +94,7 @@ drop table t1;
 #
 # Bug#33791 Wrong ORDER BY with latin2_czech_cs
 #
+#Bug #SEQUOIADBMAINSTREAM-3568
 set names utf8;
 create table t1 (
 ch varchar(1),
@@ -136,7 +138,7 @@ drop table t1;
 # Bug #30462 Character sets: search failures with case sensitive collations
 #
 SET collation_connection=latin2_czech_cs;
-CREATE TABLE t1 ENGINE=MYISAM AS SELECT repeat('a', 5) AS s1 LIMIT 0;
+CREATE TABLE t1 ENGINE=SEQUOIADB AS SELECT repeat('a', 5) AS s1 LIMIT 0;
 INSERT INTO t1 VALUES ('x'),('y'),('z'),('X'),('Y'),('Z');
 SELECT * FROM t1 GROUP BY s1;
 SELECT * FROM t1 ORDER BY s1;
@@ -145,42 +147,43 @@ SELECT * FROM t1 GROUP BY s1;
 SELECT * FROM t1 ORDER BY s1;
 DROP TABLE t1;
 
---disable_warnings
-CREATE TABLE t1 ENGINE=INNODB AS SELECT repeat('a', 5) AS s1 LIMIT 0;
---enable_warnings
-INSERT INTO t1 VALUES ('x'),('y'),('z'),('X'),('Y'),('Z');
-SELECT * FROM t1 GROUP BY s1;
-SELECT * FROM t1 ORDER BY s1;
-CREATE INDEX i1 ON t1 (s1);
-SELECT * FROM t1 GROUP BY s1;
-SELECT * FROM t1 ORDER BY s1;
-DROP TABLE t1;
+# Just testing for SequoiaDB, don't concern other engine
+#--disable_warnings
+#CREATE TABLE t1 ENGINE=SEQUOIADB AS SELECT repeat('a', 5) AS s1 LIMIT 0;
+#--enable_warnings
+#INSERT INTO t1 VALUES ('x'),('y'),('z'),('X'),('Y'),('Z');
+#SELECT * FROM t1 GROUP BY s1;
+#SELECT * FROM t1 ORDER BY s1;
+#CREATE INDEX i1 ON t1 (s1);
+#SELECT * FROM t1 GROUP BY s1;
+#SELECT * FROM t1 ORDER BY s1;
+#DROP TABLE t1;
 
---disable_warnings
-SET sql_mode='';
-CREATE TABLE t1 ENGINE=FALCON AS SELECT repeat('a', 5) AS s1 LIMIT 0;
-SET sql_mode=DEFAULT;
---enable_warnings
-INSERT INTO t1 VALUES ('x'),('y'),('z'),('X'),('Y'),('Z');
-SELECT * FROM t1 GROUP BY s1;
-SELECT * FROM t1 ORDER BY s1;
-CREATE INDEX i1 ON t1 (s1);
-SELECT * FROM t1 GROUP BY s1;
-SELECT * FROM t1 ORDER BY s1;
-DROP TABLE t1;
+#--disable_warnings
+#SET sql_mode='';
+#CREATE TABLE t1 ENGINE=FALCON AS SELECT repeat('a', 5) AS s1 LIMIT 0;
+#SET sql_mode=DEFAULT;
+#--enable_warnings
+#INSERT INTO t1 VALUES ('x'),('y'),('z'),('X'),('Y'),('Z');
+#SELECT * FROM t1 GROUP BY s1;
+#SELECT * FROM t1 ORDER BY s1;
+#CREATE INDEX i1 ON t1 (s1);
+#SELECT * FROM t1 GROUP BY s1;
+#SELECT * FROM t1 ORDER BY s1;
+#DROP TABLE t1;
 
---disable_warnings
-SET sql_mode='';
-CREATE TABLE t1 ENGINE=MARIA AS SELECT repeat('a', 5) AS s1 LIMIT 0;
-SET sql_mode=DEFAULT;
---enable_warnings
-INSERT INTO t1 VALUES ('x'),('y'),('z'),('X'),('Y'),('Z');
-SELECT * FROM t1 GROUP BY s1;
-SELECT * FROM t1 ORDER BY s1;
-CREATE INDEX i1 ON t1 (s1);
-SELECT * FROM t1 GROUP BY s1;
-SELECT * FROM t1 ORDER BY s1;
-DROP TABLE t1;
+#--disable_warnings
+#SET sql_mode='';
+#CREATE TABLE t1 ENGINE=MARIA AS SELECT repeat('a', 5) AS s1 LIMIT 0;
+#SET sql_mode=DEFAULT;
+#--enable_warnings
+#INSERT INTO t1 VALUES ('x'),('y'),('z'),('X'),('Y'),('Z');
+#SELECT * FROM t1 GROUP BY s1;
+#SELECT * FROM t1 ORDER BY s1;
+#CREATE INDEX i1 ON t1 (s1);
+#SELECT * FROM t1 GROUP BY s1;
+#SELECT * FROM t1 ORDER BY s1;
+#DROP TABLE t1;
 
 SET NAMES latin2;
 
@@ -204,7 +207,7 @@ CREATE TABLE `t1` (
   `ID` smallint(5) unsigned zerofill NOT NULL AUTO_INCREMENT,
   `Post` enum('','B','O','Z','U') COLLATE latin2_czech_cs DEFAULT NULL,
   PRIMARY KEY (`ID`)
-) ENGINE=MyISAM AUTO_INCREMENT=135 DEFAULT CHARSET=latin2;
+) ENGINE=SEQUOIADB AUTO_INCREMENT=135 DEFAULT CHARSET=latin2;
 SHOW CREATE TABLE t1;
 INSERT INTO t1 (ID,Post) VALUES (00041,'');
 SELECT ID, Post, HEX(WEIGHT_STRING(Post)) FROM t1;
@@ -237,6 +240,7 @@ set names latin2 collate latin2_czech_cs;
 --source include/weight_string_l4.inc
 --source include/weight_string_l12.inc
 --source include/weight_string_l14.inc
+--source include/uninstall_sequoiadb.inc
 
 --echo #
 --echo # End of 5.6 tests

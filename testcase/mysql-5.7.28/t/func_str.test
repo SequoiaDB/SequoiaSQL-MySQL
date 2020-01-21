@@ -1,11 +1,16 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+# (#Case #13113: Check Function String)
+
+--source include/have_sequoiadb.inc
 
 # Description
 # -----------
 # Testing string functions
+
+# Compatible with parallel > 1, table name will be printed when check error, should create and use database: test_casename
+create database test_func_str;
+use test_func_str;
 
 --disable_warnings
 drop table if exists t1,t2;
@@ -181,7 +186,7 @@ CREATE TABLE t1 (
   modified timestamp NOT NULL,
   bugstatus int(10) unsigned default NULL,
   submitter int(10) unsigned default NULL
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (1,'Link',1,1,1,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','2001-02-28 08:40:16',20010228084016,0,4);
 SELECT CONCAT('"',CONCAT_WS('";"',title,prio,category,program,bugdesc,created,modified+0,bugstatus,submitter), '"') FROM t1;
@@ -193,8 +198,7 @@ drop table t1;
 #
 # Test bug in AES_DECRYPT() when called with wrong argument
 #
-
-CREATE TABLE t1 (id int(11) NOT NULL auto_increment, tmp text NOT NULL, KEY id (id)) ENGINE=MyISAM;
+CREATE TABLE t1 (id int(11) NOT NULL auto_increment, tmp text NOT NULL, KEY id (id)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1, 'a545f661efdd1fb66fdee3aab79945bf');
 SELECT 1 FROM t1 WHERE tmp=AES_DECRYPT(tmp,"password");
 DROP TABLE t1;
@@ -214,7 +218,7 @@ DROP TABLE t1;
 #
 # test for #739
 
-CREATE TABLE t1 (title text) ENGINE=MyISAM;
+CREATE TABLE t1 (title text) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ('Congress reconvenes in September to debate welfare and adult education');
 INSERT INTO t1 VALUES ('House passes the CAREERS bill');
 SELECT CONCAT("</a>",RPAD("",(55 - LENGTH(title)),".")) from t1;
@@ -582,27 +586,26 @@ select trim(trailing NULL from 'xyz') as "must_be_null";
 #
 # Bug #7751 - conversion for a bigint unsigned constant 
 #
-
 CREATE TABLE t1 (
   id int(11) NOT NULL auto_increment,
   a bigint(20) unsigned default NULL,
   PRIMARY KEY  (id)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES
 ('0','16307858876001849059');
 
 SELECT CONV('e251273eb74a8ee3', 16, 10);
 
-EXPLAIN 
-SELECT id
-  FROM t1
-  WHERE a = 16307858876001849059;
+#EXPLAIN 
+#SELECT id
+#  FROM t1
+#  WHERE a = 16307858876001849059;
 
-EXPLAIN 
-  SELECT id
-  FROM t1
-  WHERE a = CONV('e251273eb74a8ee3', 16, 10);
+#EXPLAIN 
+#  SELECT id
+#  FROM t1
+#  WHERE a = CONV('e251273eb74a8ee3', 16, 10);
 
 DROP TABLE t1;
 
@@ -650,7 +653,6 @@ DROP TABLE t1,t2;
 #
 # Bug #11469: NOT NULL optimization wrongly used for arguments of CONCAT_WS  
 #
-
 CREATE TABLE t1(
   id int(11) NOT NULL auto_increment,
   pc int(11) NOT NULL default '0',
@@ -662,6 +664,12 @@ INSERT INTO t1 VALUES
   (1, 0, 'Main'),
   (2, 1, 'Toys'),
   (3, 1, 'Games');
+
+--disable_query_log
+--disable_result_log
+analyze table t1;
+--enable_query_log
+--enable_result_log
 
 SELECT t1.id, CONCAT_WS('->', t3.title, t2.title, t1.title) as col1
   FROM t1 LEFT JOIN t1 AS t2 ON t1.pc=t2.id
@@ -771,11 +779,11 @@ DROP TABLE t1;
 CREATE TABLE t1 (s varchar(10));
 INSERT INTO t1 VALUES ('yadda'), ('yaddy');
 
-EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM(s) > 'ab';
-EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM('y' FROM s) > 'ab';
-EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM(LEADING 'y' FROM s) > 'ab';
-EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM(TRAILING 'y' FROM s) > 'ab';
-EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM(BOTH 'y' FROM s) > 'ab';
+#EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM(s) > 'ab';
+#EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM('y' FROM s) > 'ab';
+#EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM(LEADING 'y' FROM s) > 'ab';
+#EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM(TRAILING 'y' FROM s) > 'ab';
+#EXPLAIN EXTENDED SELECT s FROM t1 WHERE TRIM(BOTH 'y' FROM s) > 'ab';
 
 DROP TABLE t1;
  
@@ -783,21 +791,21 @@ DROP TABLE t1;
 # Bug#23409: ENCODE() and DECODE() functions aren't printed correctly
 #
 create table t1(f1 varchar(4));
-explain extended select encode(f1,'zxcv') as 'enc' from t1;
-explain extended select decode(f1,'zxcv') as 'enc' from t1;
+#explain extended select encode(f1,'zxcv') as 'enc' from t1;
+#explain extended select decode(f1,'zxcv') as 'enc' from t1;
 drop table t1;
 
 #
 # Bug #31758 inet_ntoa, oct, crashes server with null + filesort 
 #
-create table t1 (a bigint not null)engine=myisam;
+create table t1 (a bigint not null)engine=sequoiadb;
 insert into t1 set a = 1024*1024*1024*4;
 SET @orig_sql_mode = @@SQL_MODE;
 SET SQL_MODE='';
 delete from t1 order by (inet_ntoa(a)) desc limit 10;
 SET SQL_MODE=@orig_sql_mode;
 drop table t1;
-create table t1 (a char(36) not null)engine=myisam;
+create table t1 (a char(36) not null)engine=sequoiadb;
 insert ignore into t1 set a = ' ';
 insert ignore into t1 set a = ' ';
 select * from t1 order by (oct(a));
@@ -841,11 +849,13 @@ select "18383815659218730760" + 0;
 CREATE TABLE t1 (code varchar(10));
 INSERT INTO t1 VALUES ('a12'), ('A12'), ('a13');
 
+#Bug #SEQUOIADBMAINSTREAM-3373
 SELECT ASCII(code), code FROM t1 WHERE code='A12';
 SELECT ASCII(code), code FROM t1 WHERE code='A12' AND ASCII(code)=65;
 
 INSERT INTO t1 VALUES ('a12 '), ('A12  ');
 
+#Bug #SEQUOIADBMAINSTREAM-3373
 SELECT LENGTH(code), code FROM t1 WHERE code='A12';
 SELECT LENGTH(code), code FROM t1 WHERE code='A12' AND LENGTH(code)=5;
 
@@ -853,12 +863,13 @@ ALTER TABLE t1 ADD INDEX (code);
 CREATE TABLE t2 (id varchar(10) PRIMARY KEY);
 INSERT INTO t2 VALUES ('a11'), ('a12'), ('a13'), ('a14');
 
+#Bug #SEQUOIADBMAINSTREAM-3568
+#SEQUOIADBMAINSTREAM-204
 SELECT * FROM t1 INNER JOIN t2 ON t1.code=t2.id 
-  WHERE t2.id='a12' AND (LENGTH(code)=5 OR code < 'a00');
-EXPLAIN EXTENDED 
-SELECT * FROM t1 INNER JOIN t2 ON code=id 
-  WHERE id='a12' AND (LENGTH(code)=5 OR code < 'a00');
-
+WHERE t2.id='a12' AND (LENGTH(code)=5 OR code < 'a00');
+#EXPLAIN EXTENDED 
+#SELECT * FROM t1 INNER JOIN t2 ON code=id 
+#WHERE id='a12' AND (LENGTH(code)=5 OR code < 'a00');
 DROP TABLE t1,t2;
 
 #
@@ -1336,10 +1347,10 @@ DROP TABLE t1, t2;
 --disable_warnings
 drop table if exists t1;
 --enable_warnings
-create table t1(f1 tinyint default null)engine=myisam;
+create table t1(f1 tinyint default null)engine=sequoiadb;
 insert into t1 values (-1),(null);
-explain select 1 as a from t1,(select decode(f1,f1) as b from t1) a;
-explain select 1 as a from t1,(select encode(f1,f1) as b from t1) a;
+#explain select 1 as a from t1,(select decode(f1,f1) as b from t1) a;
+#explain select 1 as a from t1,(select encode(f1,f1) as b from t1) a;
 drop table t1;
 
 
@@ -1530,7 +1541,6 @@ SELECT @tmp_max:= @@global.max_allowed_packet;
 SET @@global.max_allowed_packet=1024*1024*1024;
 # switching connection to allow the new max_allowed_packet take effect
 --connect (newconn, localhost, root,,)
-
 SELECT @@global.max_allowed_packet;
 
 do
@@ -1573,6 +1583,7 @@ SET @@global.max_allowed_packet:= @tmp_max;
 --echo #
 --echo # WL#5510 Functions to_base64 and from_base64
 --echo #
+SET default_storage_engine = SequoiaDB;
 let $1=64;
 while($1)
 {
@@ -1729,7 +1740,7 @@ SELECT LOWER(SUBSTRING_INDEX(@user_at_host, '@', -1));
 --echo #
 --echo # Bug#42404: SUBSTRING_INDEX() RESULTS ARE INCONSISTENT
 --echo #
-
+SET default_storage_engine = SequoiaDB;
 CREATE TABLE t (i INT NOT NULL, c CHAR(255) NOT NULL);
 INSERT INTO t VALUES (0,'.www.mysql.com'),(1,'.wwwmysqlcom');
 SELECT i, SUBSTRING_INDEX(c, '.', -2) FROM t WHERE i = 1;
@@ -1763,7 +1774,7 @@ drop table t1,t2;
 --echo #
 --echo # Bug #19174480: INSERT STRING FUNCTIONS RECENTLY CRASHING
 --echo #
-CREATE TABLE t1(a TIMESTAMP(5)) ENGINE=INNODB;
+CREATE TABLE t1(a TIMESTAMP(5)) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES('1978-01-03 00:00:00'),('2000-001-02 00:00:00');
 SELECT 1 FROM t1 GROUP BY insert(a,'1','11','1');
 SELECT insert(a,1,1,1) FROM t1;
@@ -1813,7 +1824,7 @@ do rpad(_utf16"33",1073741826,_latin1"44");
 --echo #
 --echo # Bug#13740934 ASSERTION FAILED: ARGS[0]->FIXED ITEM_FUNC_CONV_CHARSET::ITEM_FUNC_CONV_CHARSET
 --echo #
-
+SET default_storage_engine = SequoiaDB;
 CREATE TABLE t1(a TIME);
 INSERT INTO t1 VALUES ();
 SELECT (SELECT (SELECT 1 FROM t1 a WHERE t1.a <_ucs2'a')) AS d5 FROM t1 GROUP BY 1;
@@ -1868,3 +1879,8 @@ WHERE trim(leading  'A' FROM COUNTRY) = 'ustralia'
   AND trim(trailing 'a' FROM COUNTRY) = 'Australi';
 
 DROP TABLE t1;
+
+# DROP DATABASE
+DROP DATABASE test_func_str;
+
+--source include/uninstall_sequoiadb.inc

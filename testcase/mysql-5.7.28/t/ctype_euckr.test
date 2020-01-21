@@ -1,3 +1,4 @@
+-- source include/have_sequoiadb.inc
 -- source include/have_euckr.inc
 -- source include/big_test.inc
 
@@ -15,23 +16,26 @@ SET @test_collation= 'euckr_korean_ci';
 SET NAMES euckr;
 SET collation_connection='euckr_korean_ci';
 -- source include/ctype_filesort.inc
--- source include/ctype_innodb_like.inc
+# NOW not concern the opperation of innodb, just testing for SequoiaDB
+#-- source include/ctype_innodb_like.inc
 -- source include/ctype_like_escape.inc
 -- source include/ctype_like_range_f1f2.inc
 SET collation_connection='euckr_bin';
 -- source include/ctype_filesort.inc
--- source include/ctype_innodb_like.inc
+# NOW not concern the opperation of innodb, just testing for SequoiaDB
+#-- source include/ctype_innodb_like.inc
 -- source include/ctype_like_escape.inc
 -- source include/ctype_like_range_f1f2.inc
 
+# NOW SequoiaDB will convert all character sets to utf8, so the following records is not allowed to converted into utf8
 #
 # Bug#15377 Valid multibyte sequences are truncated on INSERT
 #
-SET NAMES euckr;
-CREATE TABLE t1 (a text) character set euckr;
-INSERT INTO t1 VALUES (0xA2E6),(0xFEF7);
-SELECT hex(a) FROM t1 ORDER BY a;
-DROP TABLE t1;
+#SET NAMES euckr;
+#CREATE TABLE t1 (a text) character set euckr;
+#INSERT INTO t1 VALUES (0xA2E6),(0xFEF7);
+#SELECT hex(a) FROM t1 ORDER BY a;
+#DROP TABLE t1;
 
 # End of 4.1 tests
 
@@ -76,7 +80,10 @@ DROP TABLE t1;
 --echo # euckr valid codes are now [81..FE][41..5A,61..7A,81..FE]
 --echo #
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
-CREATE TABLE t1 (a binary(1), key(a));
+#Bug #SEQUOIADBMAINSTREAM-3571
+# NOW SequoiaDB not support index of binary and varbinary
+#CREATE TABLE t1 (a binary(1), key(a));
+CREATE TABLE t1 (a binary(1));
 --disable_query_log
 let $1=255;
 while($1)
@@ -86,28 +93,30 @@ while($1)
 }
 --enable_query_log
 
-CREATE TABLE t2 (s VARCHAR(4), a VARCHAR(1) CHARACTER SET euckr);
---disable_warnings
-INSERT INTO t2
-SELECT hex(concat(t11.a, t12.a)), concat(t11.a, t12.a)
-FROM t1 t11, t1 t12
-WHERE t11.a >= 0x81 AND t11.a <= 0xFE
-AND   t12.a >= 0x41 AND t12.a <= 0xFE
-ORDER BY t11.a, t12.a;
---enable_warnings
-SELECT s as bad_code FROM t2 WHERE a='' ORDER BY s;
-DELETE FROM t2 WHERE a='';
-ALTER TABLE t2 ADD u VARCHAR(1) CHARACTER SET utf8, ADD a2 VARCHAR(1) CHARACTER SET euckr;
---disable_warnings
-UPDATE t2 SET u=a, a2=u;
---enable_warnings
-SELECT s as unassigned_code FROM t2 WHERE u='?';
-DELETE FROM t2 WHERE u='?';
+# NOW SequoiaDB will convert all character sets to utf8, so the following records is not allowed to converted into utf8
+#CREATE TABLE t2 (s VARCHAR(4), a VARCHAR(1) CHARACTER SET euckr);
+#--disable_warnings
+#INSERT INTO t2
+#SELECT hex(concat(t11.a, t12.a)), concat(t11.a, t12.a)
+#FROM t1 t11, t1 t12
+#WHERE t11.a >= 0x81 AND t11.a <= 0xFE
+#AND   t12.a >= 0x41 AND t12.a <= 0xFE
+#ORDER BY t11.a, t12.a;
+#--enable_warnings
+#SELECT s as bad_code FROM t2 WHERE a='' ORDER BY s;
+#DELETE FROM t2 WHERE a='';
+#ALTER TABLE t2 ADD u VARCHAR(1) CHARACTER SET utf8, ADD a2 VARCHAR(1) CHARACTER SET euckr;
+#--disable_warnings
+#UPDATE t2 SET u=a, a2=u;
+#--enable_warnings
+#SELECT s as unassigned_code FROM t2 WHERE u='?';
+#DELETE FROM t2 WHERE u='?';
 # Make sure there are no euckr->utf8->euckr roundtrip problems
-SELECT count(*) as roundtrip_problem_chars FROM t2 WHERE hex(a) <> hex(a2);
-SELECT s, hex(a), hex(u), hex(a2) FROM t2 ORDER BY s;
-DROP TABLE t1, t2;
-SET sql_mode = default;
+#SELECT count(*) as roundtrip_problem_chars FROM t2 WHERE hex(a) <> hex(a2);
+#SELECT s, hex(a), hex(u), hex(a2) FROM t2 ORDER BY s;
+#DROP TABLE t1, t2;
+DROP TABLE t1;
+#SET sql_mode = default;
 --echo End of 5.4 tests
 
 
@@ -145,8 +154,9 @@ WHERE (head BETWEEN '80' AND 'FF') AND (tail BETWEEN '20' AND 'FF')
 ORDER BY head, tail;
 DROP TEMPORARY TABLE head, tail;
 SHOW CREATE TABLE t1;
-UPDATE t1 SET a=unhex(code) ORDER BY code;
-SELECT COUNT(*) FROM t1 WHERE a<>'';
+# NOW SequoiaDB will convert all character sets to utf8, so the following records is not allowed to converted into utf8
+#UPDATE t1 SET a=unhex(code) ORDER BY code;
+#SELECT COUNT(*) FROM t1 WHERE a<>'';
 #
 # Display all characters that have upper or lower case mapping.
 #
@@ -201,6 +211,7 @@ set collation_connection=euckr_bin;
 
 SET NAMES euckr;
 --source include/ctype_inet.inc
+--source include/uninstall_sequoiadb.inc
 
 --echo #
 --echo # End of 5.6 tests

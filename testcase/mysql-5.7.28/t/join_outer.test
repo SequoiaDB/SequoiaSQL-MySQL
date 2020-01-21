@@ -1,7 +1,7 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+
+--source include/have_sequoiadb.inc
 
 #
 # test of left outer join
@@ -15,7 +15,7 @@ CREATE TABLE t1 (
   grp int(11) default NULL,
   a bigint(20) unsigned default NULL,
   c char(10) NOT NULL default ''
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1,1,'a'),(2,2,'b'),(2,3,'c'),(3,4,'E'),(3,5,'C'),(3,6,'D'),(NULL,NULL,'');
 create table t2 (id int, a bigint unsigned not null, c char(10), d int, primary key (a));
 insert into t2 values (1,1,"a",1),(3,4,"A",4),(3,5,"B",5),(3,6,"C",6),(4,7,"D",7);
@@ -34,15 +34,15 @@ select t1.*,t2.* from t1 natural left outer join t2;
 select t1.*,t2.* from t1 left join t2 on (t1.a=t2.a) where t2.id=3;
 select t1.*,t2.* from t1 left join t2 on (t1.a=t2.a) where t2.id is null;
 
-explain select t1.*,t2.* from t1,t2 where t1.a=t2.a and isnull(t2.a)=1;
-explain select t1.*,t2.* from t1 left join t2 on t1.a=t2.a where isnull(t2.a)=1;
+#explain select t1.*,t2.* from t1,t2 where t1.a=t2.a and isnull(t2.a)=1;
+#explain select t1.*,t2.* from t1 left join t2 on t1.a=t2.a where isnull(t2.a)=1;
 
 --sorted_result
 select t1.*,t2.*,t3.a from t1 left join t2 on (t1.a=t2.a) left join t1 as t3 on (t2.a=t3.a);
 
 # The next query should rearange the left joins to get this to work
---error 1054
-explain select t1.*,t2.*,t3.a from t1 left join t2 on (t3.a=t2.a) left join t1 as t3 on (t1.a=t3.a);
+#--error 1054
+#explain select t1.*,t2.*,t3.a from t1 left join t2 on (t3.a=t2.a) left join t1 as t3 on (t1.a=t3.a);
 --error 1054
 select t1.*,t2.*,t3.a from t1 left join t2 on (t3.a=t2.a) left join t1 as t3 on (t1.a=t3.a);
 
@@ -60,7 +60,6 @@ drop table t1,t2;
 #
 # Test of left join bug
 #
-
 CREATE TABLE t1 (
  usr_id INT unsigned NOT NULL,
  uniq_id INT unsigned NOT NULL AUTO_INCREMENT,
@@ -104,6 +103,7 @@ WHERE t1.uniq_id = 4
 ORDER BY t2.c_amount;
 
 INSERT INTO t2 VALUES (2,3,3000,6000,0,0,746584,837484,'yes');
+#SEQUOIASQLMAINSTREAM-171
 --error ER_DUP_ENTRY
 INSERT INTO t2 VALUES (2,3,3000,6000,0,0,746584,837484,'yes');
 INSERT INTO t2 VALUES (7,3,1000,2000,0,0,746294,937484,'yes');
@@ -217,12 +217,13 @@ SELECT DISTINCT fill,t3.idPla FROM t4 LEFT JOIN t3 ON t3.cod_asig=t4.fill AND t3
 INSERT INTO t3 VALUES (3,'1234',1,10360,98,1,'S');
 SELECT DISTINCT fill,t3.idPla FROM t4 LEFT JOIN t3 ON t3.cod_asig=t4.fill AND t3.estat='S' AND t3.dni_pasaporte='1234' AND t3.idPla=1 ;
 
-drop table t1,t2,t3,test.t4;
+# Compatible with parallel > 1, don't use database "test" here, should change "test.t4" to "t4"
+#drop table t1,t2,t3,test.t4;
+drop table t1,t2,t3,t4;
 
 #
 # Test of IS NULL on AUTO_INCREMENT with LEFT JOIN
 #
-
 CREATE TABLE t1 (
   id smallint(5) unsigned NOT NULL auto_increment,
   name char(60) DEFAULT '' NOT NULL,
@@ -245,15 +246,15 @@ INSERT INTO t2 VALUES (3,3,'Happy');
 --sorted_result
 select t1.name, t2.name, t2.id from t1 left join t2 on (t1.id = t2.owner);
 select t1.name, t2.name, t2.id from t1 left join t2 on (t1.id = t2.owner) where t2.id is null;
-explain select t1.name, t2.name, t2.id from t1 left join t2 on (t1.id = t2.owner) where t2.id is null;
-explain select t1.name, t2.name, t2.id from t1 left join t2 on (t1.id = t2.owner) where t2.name is null;
+#explain select t1.name, t2.name, t2.id from t1 left join t2 on (t1.id = t2.owner) where t2.id is null;
+#explain select t1.name, t2.name, t2.id from t1 left join t2 on (t1.id = t2.owner) where t2.name is null;
 select count(*) from t1 left join t2 on (t1.id = t2.owner);
 
 --sorted_result
 select t1.name, t2.name, t2.id from t2 right join t1 on (t1.id = t2.owner);
 select t1.name, t2.name, t2.id from t2 right join t1 on (t1.id = t2.owner) where t2.id is null;
-explain select t1.name, t2.name, t2.id from t2 right join t1 on (t1.id = t2.owner) where t2.id is null;
-explain select t1.name, t2.name, t2.id from t2 right join t1 on (t1.id = t2.owner) where t2.name is null;
+#explain select t1.name, t2.name, t2.id from t2 right join t1 on (t1.id = t2.owner) where t2.id is null;
+#explain select t1.name, t2.name, t2.id from t2 right join t1 on (t1.id = t2.owner) where t2.name is null;
 select count(*) from t2 right join t1 on (t1.id = t2.owner);
 
 --sorted_result
@@ -263,6 +264,7 @@ select t1.name, t2.name, t2.id, t2.owner, t3.id from t1 left join t2 on (t1.id =
 
 drop table t1,t2;
 
+#Bug #SEQUOIADBMAINSTREAM-3568
 create table t1 (id int not null, str char(10), index(str));
 insert into t1 values (1, null), (2, null), (3, "foo"), (4, "bar");
 select * from t1 where str is not null order by id;
@@ -272,7 +274,6 @@ drop table t1;
 #
 # Test wrong LEFT JOIN query
 #
-
 CREATE TABLE t1 (
   t1_id bigint(21) NOT NULL auto_increment,
   PRIMARY KEY (t1_id)
@@ -304,8 +305,8 @@ insert into t3 values (1);
 insert into t4 values (1,1);
 insert into t5 values (1,1);
 
---error 1054
-explain select * from t3 left join t4 on t4.seq_1_id = t2.t2_id left join t1 on t1.t1_id = t4.seq_0_id left join t5 on t5.seq_0_id = t1.t1_id left join t2 on t2.t2_id = t5.seq_1_id where t3.t3_id = 23;
+#--error 1054
+#explain select * from t3 left join t4 on t4.seq_1_id = t2.t2_id left join t1 on t1.t1_id = t4.seq_0_id left join t5 on t5.seq_0_id = t1.t1_id left join t2 on t2.t2_id = t5.seq_1_id where t3.t3_id = 23;
 
 drop table t1,t2,t3,t4,t5;
 
@@ -412,7 +413,7 @@ CREATE TABLE t2 (
   UNIQUE id (id,idx)
 );
 INSERT INTO t2 VALUES (1,1);
-explain SELECT * from t1 left join t2 on t1.id=t2.id where t2.id IS NULL;
+#explain SELECT * from t1 left join t2 on t1.id=t2.id where t2.id IS NULL;
 SELECT * from t1 left join t2 on t1.id=t2.id where t2.id IS NULL;
 drop table t1,t2;
 SET sql_mode = default;
@@ -428,12 +429,11 @@ drop table t1,t2;
 
 #
 # Test problem with LEFT JOIN
-
 create table t1 (fooID smallint unsigned auto_increment, primary key (fooID));
 create table t2 (fooID smallint unsigned not null, barID smallint unsigned not null, primary key (fooID,barID));
 insert into t1 (fooID) values (10),(20),(30);
 insert into t2 values (10,1),(20,2),(30,3);
-explain select * from t2 left join t1 on t1.fooID = t2.fooID and t1.fooID = 30;
+#explain select * from t2 left join t1 on t1.fooID = t2.fooID and t1.fooID = 30;
 select * from t2 left join t1 on t1.fooID = t2.fooID and t1.fooID = 30;
 --sorted_result
 select * from t2 left join t1 ignore index(primary) on t1.fooID = t2.fooID and t1.fooID = 30;
@@ -475,7 +475,7 @@ insert into t2 values (1,3), (2,3);
 insert into t3 values (2,4),        (3,4);
 
 select * from t1 left join t2  on  b1 = a1 left join t3  on  c1 = a1  and  b1 is null;
-explain select * from t1 left join t2  on  b1 = a1 left join t3  on  c1 = a1  and  b1 is null;
+#explain select * from t1 left join t2  on  b1 = a1 left join t3  on  c1 = a1  and  b1 is null;
 
 drop table t1, t2, t3;
 
@@ -493,12 +493,11 @@ select * from t1 left join t2 on t1.a=t2.a having not (t2.a <=> t1.a);
 drop table t1,t2;
 
 # Test for BUG#5088
-
 create table t1 (
   match_id tinyint(3) unsigned not null auto_increment,
   home tinyint(3) unsigned default '0',
-  unique key match_id (match_id),
-  key match_id_2 (match_id)
+  unique key match_id (match_id)
+#  key match_id_2 (match_id) ## sequoiadb not support duplicate key
 );
 
 insert into t1 values("1", "2");
@@ -520,21 +519,21 @@ insert into t2 values("8", "12");
 insert into t2 values("9", "11");
 insert into t2 values("10", "10");
 
-explain select s.*, '*', m.*, (s.match_1_h - m.home) UUX from 
-  (t2 s left join t1 m on m.match_id = 1) 
-  order by m.match_id desc;
+#explain select s.*, '*', m.*, (s.match_1_h - m.home) UUX from 
+#  (t2 s left join t1 m on m.match_id = 1) 
+#  order by m.match_id desc;
   
-explain select s.*, '*', m.*, (s.match_1_h - m.home) UUX from 
-  (t2 s left join t1 m on m.match_id = 1) 
-  order by UUX desc;
+#explain select s.*, '*', m.*, (s.match_1_h - m.home) UUX from 
+#  (t2 s left join t1 m on m.match_id = 1) 
+#  order by UUX desc;
 
 select s.*, '*', m.*, (s.match_1_h - m.home) UUX from 
   (t2 s left join t1 m on m.match_id = 1) 
   order by UUX desc;
 
-explain select s.*, '*', m.*, (s.match_1_h - m.home) UUX from 
-  t2 s straight_join t1 m where m.match_id = 1 
-  order by UUX desc;
+#explain select s.*, '*', m.*, (s.match_1_h - m.home) UUX from 
+#  t2 s straight_join t1 m where m.match_id = 1 
+#  order by UUX desc;
 
 select s.*, '*', m.*, (s.match_1_h - m.home) UUX from 
   t2 s straight_join t1 m where m.match_id = 1 
@@ -562,7 +561,7 @@ CREATE TABLE t1 (
   flag_name varchar(64) default NULL,
   flag_value text,
   UNIQUE KEY ts_id (ts_id,inst_id,flag_name)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE t2 (
   ts_id bigint(20) default NULL,
@@ -570,7 +569,7 @@ CREATE TABLE t2 (
   flag_name varchar(64) default NULL,
   flag_value text,
   UNIQUE KEY ts_id (ts_id,inst_id,flag_name)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 
 INSERT INTO t1 VALUES
   (111056548820001, 0, 'flag1', NULL),
@@ -629,16 +628,16 @@ INSERT INTO t2 VALUES (1), (2);
 INSERT INTO t3 VALUES (1), (2);
 
 SELECT * FROM t1 LEFT JOIN t2 ON a1=0;
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON a1=0;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON a1=0;
 SELECT * FROM t1 LEFT JOIN (t2,t3) ON a1=0;
-EXPLAIN SELECT * FROM t1 LEFT JOIN (t2,t3) ON a1=0;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN (t2,t3) ON a1=0;
 SELECT * FROM t0, t1 LEFT JOIN (t2,t3) ON a1=0 WHERE a0=a1;
-EXPLAIN SELECT * FROM t0, t1 LEFT JOIN (t2,t3) ON a1=0 WHERE a0=a1;
+#EXPLAIN SELECT * FROM t0, t1 LEFT JOIN (t2,t3) ON a1=0 WHERE a0=a1;
 
 INSERT INTO t0 VALUES (0);
 INSERT INTO t1 VALUES (0);
 SELECT * FROM t0, t1 LEFT JOIN (t2,t3) ON a1=5 WHERE a0=a1 AND a0=1;
-EXPLAIN SELECT * FROM t0, t1 LEFT JOIN (t2,t3) ON a1=5 WHERE a0=a1 AND a0=1;
+#EXPLAIN SELECT * FROM t0, t1 LEFT JOIN (t2,t3) ON a1=5 WHERE a0=a1 AND a0=1;
 
 # Test for BUG#4480
 drop table t1,t2;
@@ -694,9 +693,9 @@ create table t2 (gid smallint(5) unsigned not null, x int(11) not null, y int(11
 insert t2 values (1, -5, -8, 1), (1, 1, 1, 1), (1, 2, 2, 1);
 create table t3 ( set_id smallint(5) unsigned not null, id tinyint(4) unsigned not null, name char(12) not null, primary key  (id,set_id));
 insert t3 values (0, 1, 'a'), (1, 1, 'b'), (0, 2, 'c'), (1, 2, 'd'), (1, 3, 'e'), (1, 4, 'f'), (1, 5, 'g'), (1, 6, 'h');
-explain select name from t1 left join t2 on t1.x = t2.x and t1.y = t2.y
-left join t3 on t1.art = t3.id where t2.id =1 and t2.x = -5 and t2.y =-8
-and t1.gid =1 and t2.gid =1 and t3.set_id =1;
+#explain select name from t1 left join t2 on t1.x = t2.x and t1.y = t2.y
+#left join t3 on t1.art = t3.id where t2.id =1 and t2.x = -5 and t2.y =-8
+#and t1.gid =1 and t2.gid =1 and t3.set_id =1;
 drop tables t1,t2,t3;
 
 #
@@ -772,9 +771,9 @@ SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE NOT(t2.a = t2.b AND t1.a IN(t
 SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE t2.a != t2.b AND t1.a != t1.b AND t1.a != t2.b;
 SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE NOT(t2.a = t2.b OR t1.a IN(t1.b, t2.b));
 
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE t1.a = t2.a OR t1.a = t2.b;
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE t1.a IN(t2.a, t2.b);
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE t1.a > IF(t1.a = t2.b-2, t2.b, t2.b-1);
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE t1.a = t2.a OR t1.a = t2.b;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE t1.a IN(t2.a, t2.b);
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.a = t2.a WHERE t1.a > IF(t1.a = t2.b-2, t2.b, t2.b-1);
 
 DROP TABLE t1,t2;
 
@@ -782,7 +781,7 @@ DROP TABLE t1,t2;
 # Test for bug #17164: ORed FALSE blocked conversion of outer join into join
 #
 
-# Test case moved to join_outer_innodb
+# Test case moved to join_outer_sequoiadb
 
 #
 # Bug 19396: LEFT OUTER JOIN over views in curly braces 
@@ -869,8 +868,8 @@ INSERT INTO t1 VALUES
 INSERT INTO t2 VALUES
   (3,10), (2,20), (5,30), (3,20), (5,10), (3,40), (3,30), (2,10), (2,40);
 
-EXPLAIN
-SELECT t1.id, a FROM t1 LEFT JOIN t2 ON t1.id=t2.id WHERE t2.b IS NULL;
+#EXPLAIN
+#SELECT t1.id, a FROM t1 LEFT JOIN t2 ON t1.id=t2.id WHERE t2.b IS NULL;
 
 flush status;
 SELECT t1.id, a FROM t1 LEFT JOIN t2 ON t1.id=t2.id WHERE t2.b IS NULL;
@@ -887,7 +886,7 @@ INSERT INTO t1 VALUES (1,0), (2,1);
 CREATE TABLE t2 (d int PRIMARY KEY);
 INSERT INTO t2 VALUES (1), (2), (3);
 
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON e<>0 WHERE c=1 AND d IS NULL;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON e<>0 WHERE c=1 AND d IS NULL;
 SELECT * FROM t1 LEFT JOIN t2 ON e<>0 WHERE c=1 AND d IS NULL;
 SELECT * FROM t1 LEFT JOIN t2 ON e<>0 WHERE c=1 AND d<=>NULL;
 
@@ -903,19 +902,19 @@ INSERT INTO t1 VALUES (1);
 CREATE TABLE t2 ( a INT, b INT );
 INSERT INTO t2 VALUES (1, 1),(1, 2),(1, 3),(2, 4),(2, 5);
 
-EXPLAIN
-SELECT t1.a, COUNT( t2.b ), SUM( t2.b ), MAX( t2.b )
-FROM t1 LEFT JOIN t2 USING( a )
-GROUP BY t1.a WITH ROLLUP;
+#EXPLAIN
+#SELECT t1.a, COUNT( t2.b ), SUM( t2.b ), MAX( t2.b )
+#FROM t1 LEFT JOIN t2 USING( a )
+#GROUP BY t1.a WITH ROLLUP;
 
 SELECT t1.a, COUNT( t2.b ), SUM( t2.b ), MAX( t2.b )
 FROM t1 LEFT JOIN t2 USING( a )
 GROUP BY t1.a WITH ROLLUP;
 
-EXPLAIN
-SELECT t1.a, COUNT( t2.b ), SUM( t2.b ), MAX( t2.b )
-FROM t1 JOIN t2 USING( a )
-GROUP BY t1.a WITH ROLLUP;
+#EXPLAIN
+#SELECT t1.a, COUNT( t2.b ), SUM( t2.b ), MAX( t2.b )
+#FROM t1 JOIN t2 USING( a )
+#GROUP BY t1.a WITH ROLLUP;
 
 SELECT t1.a, COUNT( t2.b ), SUM( t2.b ), MAX( t2.b )
 FROM t1 JOIN t2 USING( a )
@@ -931,37 +930,37 @@ INSERT INTO t1 VALUES (1, NULL, 3);
 CREATE TABLE t2(f1 INT, f2 INT);
 INSERT INTO t2 VALUES (2, 1);
 
-EXPLAIN EXTENDED SELECT * FROM t1 LEFT JOIN t2 ON t1.f2 = t2.f2
-WHERE (COALESCE(t1.f1, t2.f1), f3) IN ((1, 3), (2, 2));
+#EXPLAIN EXTENDED SELECT * FROM t1 LEFT JOIN t2 ON t1.f2 = t2.f2
+#WHERE (COALESCE(t1.f1, t2.f1), f3) IN ((1, 3), (2, 2));
 
 SELECT * FROM t1 LEFT JOIN t2 ON t1.f2 = t2.f2
 WHERE (COALESCE(t1.f1, t2.f1), f3) IN ((1, 3), (2, 2));
 
 DROP TABLE t1, t2;
 
---echo #
---echo # Bug#52357: Assertion failed: join->best_read in greedy_search 
---echo # optimizer_search_depth=0
---echo #
-CREATE TABLE t1( a INT );
+#--echo #
+#--echo # Bug#52357: Assertion failed: join->best_read in greedy_search 
+#--echo # optimizer_search_depth=0
+#--echo #
+#CREATE TABLE t1( a INT );
 
-INSERT INTO t1 VALUES (1),(2);
-SET optimizer_search_depth = 0;
+#INSERT INTO t1 VALUES (1),(2);
+#SET optimizer_search_depth = 0;
 
---echo # Should not core dump on query preparation
-EXPLAIN
-SELECT 1
-FROM t1 tt3 LEFT  OUTER JOIN t1 tt4 ON 1
-            LEFT  OUTER JOIN t1 tt5 ON 1
-            LEFT  OUTER JOIN t1 tt6 ON 1
-            LEFT  OUTER JOIN t1 tt7 ON 1
-            LEFT  OUTER JOIN t1 tt8 ON 1
-            RIGHT OUTER JOIN t1 tt2 ON 1
-            RIGHT OUTER JOIN t1 tt1 ON 1
-            STRAIGHT_JOIN    t1 tt9 ON 1;
+#--echo # Should not core dump on query preparation
+#EXPLAIN
+#SELECT 1
+#FROM t1 tt3 LEFT  OUTER JOIN t1 tt4 ON 1
+#            LEFT  OUTER JOIN t1 tt5 ON 1
+#            LEFT  OUTER JOIN t1 tt6 ON 1
+#            LEFT  OUTER JOIN t1 tt7 ON 1
+#            LEFT  OUTER JOIN t1 tt8 ON 1
+#            RIGHT OUTER JOIN t1 tt2 ON 1
+#            RIGHT OUTER JOIN t1 tt1 ON 1
+#            STRAIGHT_JOIN    t1 tt9 ON 1;
 
-SET optimizer_search_depth = DEFAULT;
-DROP TABLE t1;
+#SET optimizer_search_depth = DEFAULT;
+#DROP TABLE t1;
 
 --echo #
 --echo # Bug#46091 STRAIGHT_JOIN + RIGHT JOIN returns different result
@@ -973,39 +972,40 @@ CREATE TABLE t2 (f1 INT NOT NULL);
 INSERT INTO t2 VALUES
 (5),(3),(0),(3),(1),(0),(1),(7),(1),(0),(0),(8),(4),(9),(0),(2),(0),(8),(5),(1);
 
+#Bug #SEQUOIADBMAINSTREAM-3596
 SELECT STRAIGHT_JOIN COUNT(*) FROM t1 ta1
 RIGHT JOIN t2 ta2 JOIN t2 ta3 ON ta2.f1 ON ta3.f1;
 
-EXPLAIN SELECT STRAIGHT_JOIN COUNT(*) FROM t1 ta1
-RIGHT JOIN t2 ta2 JOIN t2 ta3 ON ta2.f1 ON ta3.f1;
+#EXPLAIN SELECT STRAIGHT_JOIN COUNT(*) FROM t1 ta1
+#RIGHT JOIN t2 ta2 JOIN t2 ta3 ON ta2.f1 ON ta3.f1;
 
 DROP TABLE t1, t2;
 
---echo #
---echo # Bug#48971 Segfault in add_found_match_trig_cond () at sql_select.cc:5990
---echo #
-CREATE TABLE t1(f1 INT, PRIMARY KEY (f1));
-INSERT INTO t1 VALUES (1),(2);
-
-EXPLAIN EXTENDED SELECT STRAIGHT_JOIN jt1.f1 FROM t1 AS jt1
- LEFT JOIN t1 AS jt2
-  RIGHT JOIN t1 AS jt3
-    JOIN t1 AS jt4 ON 1
-   LEFT JOIN t1 AS jt5 ON 1
-  ON 1
-  RIGHT JOIN t1 AS jt6 ON jt6.f1
- ON 1;
-
-EXPLAIN EXTENDED SELECT STRAIGHT_JOIN jt1.f1 FROM t1 AS jt1
- RIGHT JOIN t1 AS jt2
-  RIGHT JOIN t1 AS jt3
-    JOIN t1 AS jt4 ON 1
-   LEFT JOIN t1 AS jt5 ON 1
-  ON 1
-  RIGHT JOIN t1 AS jt6 ON jt6.f1
- ON 1;
-
-DROP TABLE t1;
+#--echo #
+#--echo # Bug#48971 Segfault in add_found_match_trig_cond () at sql_select.cc:5990
+#--echo #
+#CREATE TABLE t1(f1 INT, PRIMARY KEY (f1));
+#INSERT INTO t1 VALUES (1),(2);
+#
+#EXPLAIN EXTENDED SELECT STRAIGHT_JOIN jt1.f1 FROM t1 AS jt1
+# LEFT JOIN t1 AS jt2
+#  RIGHT JOIN t1 AS jt3
+#    JOIN t1 AS jt4 ON 1
+#   LEFT JOIN t1 AS jt5 ON 1
+#  ON 1
+#  RIGHT JOIN t1 AS jt6 ON jt6.f1
+# ON 1;
+#
+#EXPLAIN EXTENDED SELECT STRAIGHT_JOIN jt1.f1 FROM t1 AS jt1
+# RIGHT JOIN t1 AS jt2
+#  RIGHT JOIN t1 AS jt3
+#    JOIN t1 AS jt4 ON 1
+#   LEFT JOIN t1 AS jt5 ON 1
+#  ON 1
+#  RIGHT JOIN t1 AS jt6 ON jt6.f1
+# ON 1;
+#
+#DROP TABLE t1;
 
 --echo #
 --echo # Bug#57688 Assertion `!table || (!table->write_set || bitmap_is_set(table->write_set, field
@@ -1018,17 +1018,17 @@ INSERT INTO t1 VALUES (4);
 INSERT INTO t2 VALUES (3, 3);
 INSERT INTO t2 VALUES (7, 7);
 
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t2.f1 = t1.f1
-WHERE t1.f1 = 4
-GROUP BY t2.f1, t2.f2;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t2.f1 = t1.f1
+#WHERE t1.f1 = 4
+#GROUP BY t2.f1, t2.f2;
 
 SELECT * FROM t1 LEFT JOIN t2 ON t2.f1 = t1.f1
 WHERE t1.f1 = 4
 GROUP BY t2.f1, t2.f2;
 
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t2.f1 = t1.f1
-WHERE t1.f1 = 4 AND t2.f1 IS NOT NULL AND t2.f2 IS NOT NULL
-GROUP BY t2.f1, t2.f2;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t2.f1 = t1.f1
+#WHERE t1.f1 = 4 AND t2.f1 IS NOT NULL AND t2.f2 IS NOT NULL
+#GROUP BY t2.f1, t2.f2;
 
 SELECT * FROM t1 LEFT JOIN t2 ON t2.f1 = t1.f1
 WHERE t1.f1 = 4 AND t2.f1 IS NOT NULL AND t2.f2 IS NOT NULL
@@ -1050,10 +1050,10 @@ CREATE TABLE t2 (pk INT PRIMARY KEY,
                  col_int_unique INT UNIQUE KEY);
 INSERT INTO t2 VALUES (1,0,1), (2,0,2);
 
-EXPLAIN
-SELECT * FROM t1 LEFT JOIN t2
-  ON t1.col_int_unique = t2.col_int_unique AND t1.col_int = t2.col_int 
-  WHERE t1.pk=1;
+#EXPLAIN
+#SELECT * FROM t1 LEFT JOIN t2
+#  ON t1.col_int_unique = t2.col_int_unique AND t1.col_int = t2.col_int 
+#  WHERE t1.pk=1;
 
 SELECT * FROM t1 LEFT JOIN t2
   ON t1.col_int_unique = t2.col_int_unique AND t1.col_int = t2.col_int 
@@ -1066,7 +1066,6 @@ DROP TABLE t1,t2;
 --echo #
 
 # bug#48046 is a duplicate of bug#57034
-
 CREATE TABLE `BB` (
   `pk` int(11) NOT NULL AUTO_INCREMENT,
   `time_key` time DEFAULT NULL,
@@ -1075,7 +1074,8 @@ CREATE TABLE `BB` (
   PRIMARY KEY (`pk`),
   KEY `time_key` (`time_key`),
   KEY `varchar_key` (`varchar_key`)
-) ENGINE=MyISAM AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
+
 
 INSERT INTO `BB` VALUES (10,'18:27:58',NULL,NULL);
 
@@ -1092,14 +1092,13 @@ DROP TABLE BB;
 --echo #
 
 # bug#49600 is a duplicate of bug#57034
-
 CREATE TABLE `BB` (
   `col_datetime_key` datetime DEFAULT NULL,
   `col_varchar_key` varchar(1) DEFAULT NULL,
   `col_varchar_nokey` varchar(1) DEFAULT NULL,
   KEY `col_datetime_key` (`col_datetime_key`),
   KEY `col_varchar_key` (`col_varchar_key`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 
 INSERT INTO `BB` VALUES ('1900-01-01 00:00:00',NULL,NULL);
 
@@ -1254,7 +1253,7 @@ DROP TABLE h,m,k;
 --echo # Bug #11765810	58813: SERVER THREAD HANGS WHEN JOIN + WHERE + GROUP BY
 --echo # IS EXECUTED TWICE FROM P
 --echo #
-CREATE TABLE t1 ( a INT ) ENGINE = MYISAM;
+CREATE TABLE t1 ( a INT ) ENGINE = SEQUOIADB;
 INSERT INTO t1 VALUES (1);
 PREPARE prep_stmt FROM '
  SELECT 1 AS f FROM t1
@@ -1287,7 +1286,7 @@ INSERT INTO t1 VALUES (null),(null);
 let $query = SELECT t1.a FROM t1 LEFT JOIN (t2 LEFT JOIN t3 ON t2.a)
 ON 0 WHERE t1.a OR t3.a;
 
-eval explain $query;
+#eval explain $query;
 
 eval $query;
 
@@ -1295,7 +1294,7 @@ let $query = SELECT t1.a FROM t1 LEFT JOIN
 (t2 LEFT JOIN (t3 LEFT JOIN t4 ON 1) ON t2.a)
 ON 0 WHERE t1.a OR t4.a;
 
-eval explain $query;
+#eval explain $query;
 
 eval $query;
 
@@ -1405,6 +1404,7 @@ INSERT INTO t2 VALUES
 (7,'f',-700055552,'mkacbwftwu'),(8,'a',9,'be'),
 (9,'d',NULL,'u'),(10,'ckiixcsxmk',NULL,'o');
 
+#Bug #SEQUOIADBMAINSTREAM-3596
 SELECT DISTINCT t2.col_int_key 
 FROM
 t1
@@ -1447,33 +1447,33 @@ drop table t1,t2,t3;
 CREATE TABLE t1 (
   pk int(11) NOT NULL,
   col_varchar_10_latin1_key varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t1 VALUES (1,'1');
 CREATE TABLE t2 (
   pk int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t2 VALUES (1);
 CREATE TABLE t3 (
   pk int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t3 VALUES (1);
 CREATE TABLE t4 (
   pk int(11) NOT NULL,
   col_int int(11) DEFAULT NULL,
   col_int_key int(11) DEFAULT NULL,
   col_varchar_10_latin1_key varchar(10) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t4 VALUES (1,1,1,'1');
 CREATE TABLE t5 (
   col_int int(11) DEFAULT NULL,
   col_varchar_10_utf8_key varchar(10) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t5 VALUES (1,'1');
 CREATE TABLE t6 (
   col_int_key int(11) DEFAULT NULL,
   col_varchar_10_latin1_key varchar(10) DEFAULT NULL,
   pk int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t6 VALUES (1,'1',1);
 
 # EXPLAIN of query above (t2 is before t5 in plan)
@@ -1514,12 +1514,12 @@ WHERE t6b.col_int_key IS TRUE
 ;
 
 eval SELECT STRAIGHT_JOIN $rest_of_query;
-eval EXPLAIN SELECT STRAIGHT_JOIN $rest_of_query;
+#eval EXPLAIN SELECT STRAIGHT_JOIN $rest_of_query;
 
 # right result (same query, just remove STRAIGHT_JOIN):
 
 eval SELECT $rest_of_query;
-eval EXPLAIN SELECT $rest_of_query;
+#eval EXPLAIN SELECT $rest_of_query;
 
 drop table t1,t2,t3,t4,t5,t6;
 
@@ -1531,7 +1531,7 @@ CREATE TABLE t2(a INT NOT NULL);
 INSERT INTO t1 VALUES(1),(2);
 INSERT INTO t2 VALUES(1),(2);
 let $query=SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.a WHERE t2.a IS NULL;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 FLUSH STATUS;
 eval $query;
 # Without the "not exists" optimization, there would be more read_rnd_next
@@ -1558,13 +1558,13 @@ DROP TABLE t1, t2;
 --echo # Bug#13980954 Missing data on left join + null value + where..in
 --echo #
 
-CREATE TABLE t1 (ik INT, vc varchar(1)) ENGINE=Innodb;
+CREATE TABLE t1 (ik INT, vc varchar(1)) ENGINE=SequoiaDB;
 
 let $query=
 SELECT straight_join t1.vc, t1.ik
 FROM t1 JOIN t1 AS t2 ON t1.vc=t2.vc LEFT JOIN t1 AS t3 ON t1.vc=t3.vc;
 
-eval explain format=json $query;
+#eval explain format=json $query;
 eval $query;
 
 DROP TABLE t1;
@@ -1573,7 +1573,7 @@ DROP TABLE t1;
 --echo # Bug #18345786 CRASH AROUND ST_JOIN_TABLE::AND_WITH_CONDITION
 --echo #
 
-CREATE TABLE t1(a INT) ENGINE=INNODB;
+CREATE TABLE t1(a INT) ENGINE=SEQUOIADB;
 SET @a:=(SELECT ROW(1, 2)=
                 ROW((SELECT 1 FROM t1 LEFT JOIN t1 t2 ON 1), 1));
 DROP TABLE t1;
@@ -1582,19 +1582,19 @@ DROP TABLE t1;
 --echo # Coverage for "unique row not found"
 --echo #
 
-create table t1(a int, unique key(a)) engine=innodb;
+create table t1(a int, unique key(a)) engine=sequoiadb;
 insert into t1 values(1);
 let $query=
 select * from t1 left join t1 as t2
               on t2.a=12
          where t1.a=1;
-eval explain $query;
+#eval explain $query;
 eval $query;
 drop table t1;
 
 --echo #
 --echo # Bug#18717059 MISSING ROWS ON NESTED JOIN WITH SUBQUERY  
---echo #              WITH MYISAM OR MEMORY    
+--echo #              WITH SEQUOIADB OR MEMORY    
 --echo #
 CREATE TABLE t1 (
   pk INT,
@@ -1602,7 +1602,7 @@ CREATE TABLE t1 (
   col_varchar_key VARCHAR(1),
   PRIMARY KEY (pk),
   KEY col_varchar_key (col_varchar_key, col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (23,4,'d');
 INSERT INTO t1 VALUES (24,8,'g');
@@ -1617,7 +1617,7 @@ CREATE TABLE t2 (
   col_int_key INT,
   col_varchar_key VARCHAR(1),
   PRIMARY KEY (pk)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 let $query=
   SELECT 9
@@ -1794,7 +1794,7 @@ FROM t2 AS table1
      ON table2.pk < table1.col_int AND
         table2.pk = table1.col_int;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 let $query=
@@ -1804,7 +1804,7 @@ FROM t2 AS table1
      ON table2.pk < table1.col_int AND
         table2.pk = table1.col_int;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -1885,7 +1885,7 @@ SELECT ta.a1, tb.b1, tb.b2
 FROM ta LEFT OUTER JOIN tb
      ON ta.a2 = tb.b1 AND tb.b3 = 0;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE ta, tb;
@@ -1987,9 +1987,9 @@ LEFT JOIN t1
   ON subq.t1_a = t1.a
 ORDER BY t1.a;
 
-eval EXPLAIN $query1;
-eval EXPLAIN $query2;
-eval EXPLAIN $query3;
+#eval EXPLAIN $query1;
+#eval EXPLAIN $query2;
+#eval EXPLAIN $query3;
 
 eval $query1;
 eval $query2;
@@ -2031,21 +2031,21 @@ FROM t1 LEFT JOIN t2 ON t2.i= t1.i
         LEFT JOIN t3 ON t3.i= t2.i
         LEFT JOIN t4 ON t3.i= t4.i;
 
-eval EXPLAIN $query1;
-eval EXPLAIN $query2;
-eval EXPLAIN $query3;
+#eval EXPLAIN $query1;
+#eval EXPLAIN $query2;
+#eval EXPLAIN $query3;
 
-flush status;
+#flush status;
 eval $query1;
-SHOW STATUS LIKE 'HANDLER_%';
+#SHOW STATUS LIKE 'HANDLER_%';
 
-flush status;
+#flush status;
 eval $query2;
-SHOW STATUS LIKE 'HANDLER_%';
+#SHOW STATUS LIKE 'HANDLER_%';
 
-flush status;
+#flush status;
 eval $query3;
-SHOW STATUS LIKE 'HANDLER_%';
+#SHOW STATUS LIKE 'HANDLER_%';
 
 DROP TABLE t1, t2, t3, t4;
 
@@ -2069,7 +2069,7 @@ FROM (SELECT id
     ON a.id = b.id
 WHERE b.tall IS NOT NULL;
 
-eval EXPLAIN $query1;
+#eval EXPLAIN $query1;
 eval $query1;
 
 DROP TABLE t1, t2;
@@ -2102,3 +2102,5 @@ FROM t2 LEFT JOIN (SELECT 1 AS je FROM t1) AS dt ON FALSE
 GROUP BY je;
 
 DROP TABLE t1, t2;
+
+--source include/uninstall_sequoiadb.inc

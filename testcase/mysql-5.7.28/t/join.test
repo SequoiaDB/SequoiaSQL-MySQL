@@ -1,7 +1,8 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+# (#case 13306: query with join)
+
+--source include/have_sequoiadb.inc
 
 #
 # Initialization
@@ -39,6 +40,7 @@ insert into t1 values (79);
 insert into t1 values (78);
 insert into t1 values (77);
 replace into t1 values (76);
+#Bug #SEQUOIADBMAINSTREAM-3573
 replace into t1 values (76);
 insert into t1 values (104);
 insert into t1 values (103);
@@ -59,8 +61,8 @@ select t1.id, count(t2.id) from t1,t2 where t2.id = t1.id group by t2.id;
 # Test problems with impossible ON or WHERE
 #
 select t1.id,t2.id from t2 left join t1 on t1.id>=74 and t1.id<=0 where t2.id=75 and t1.id is null;
-explain select t1.id,t2.id from t2 left join t1 on t1.id>=74 and t1.id<=0 where t2.id=75 and t1.id is null;
-explain select t1.id, t2.id from t1, t2 where t2.id = t1.id and t1.id <0 and t1.id > 0;
+#explain select t1.id,t2.id from t2 left join t1 on t1.id>=74 and t1.id<=0 where t2.id=75 and t1.id is null;
+#explain select t1.id, t2.id from t1, t2 where t2.id = t1.id and t1.id <0 and t1.id > 0;
 drop table t1,t2;
 
 #
@@ -136,13 +138,13 @@ CREATE TABLE t1 (
   a int(11) NOT NULL,
   b int(11) NOT NULL,
   PRIMARY KEY  (a,b)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
  
 INSERT INTO t1 VALUES (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),(2,3);
  
 CREATE TABLE t2 (
   a int(11) default NULL
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES (2),(3);
 SELECT t1.a,t2.a,b FROM t1,t2 WHERE t1.a=t2.a AND (t1.a=1 OR t1.a=2) AND b>=1 AND b<=3;
 DROP TABLE t1, t2;
@@ -150,6 +152,11 @@ DROP TABLE t1, t2;
 #
 # TEST LEFT JOIN with DATE columns
 #
+#Bug #SQUOIODBMAINSTREAM-3583
+# Insert '0000-00-00' in MyISAM will success, but InnoDB and SequoiaDB fail, so add sql_mode='' here
+--disable_query_log
+SET sql_mode = '';
+--enable_query_log
 
 CREATE TABLE t1 (d DATE NOT NULL);
 CREATE TABLE t2 (d DATE NOT NULL);
@@ -158,11 +165,15 @@ SELECT * FROM t1 LEFT JOIN t2 USING (d) WHERE t2.d IS NULL;
 SELECT * FROM t1 LEFT JOIN t2 USING (d) WHERE d IS NULL;
 SELECT * from t1 WHERE t1.d IS NULL;
 SELECT * FROM t1 WHERE 1/0 IS NULL;
+--disable_query_log
+SET sql_mode = default;
+--enable_query_log
 DROP TABLE t1,t2;
 
 #
 # Problem with reference from const tables
 #
+#Bug #SEQUOIADBMAINSTREAM-3603
 CREATE TABLE t1 (
   Document_ID varchar(50) NOT NULL default '',
   Contractor_ID varchar(6) NOT NULL default '',
@@ -236,7 +247,6 @@ drop table t1,t2,t3;
 #
 # Bug when doing full join and NULL fields.
 #
-
 CREATE TABLE t1 (
   t1_id int(11) default NULL,
   t2_id int(11) default NULL,
@@ -246,13 +256,13 @@ CREATE TABLE t1 (
   max_value double default NULL,
   t3_id int(11) default NULL,
   item_id int(11) default NULL
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (12,5,'Percent','Cost',-1,0,-1,-1),(14,4,'Percent','Cost',-1,0,-1,-1),(18,5,'Percent','Cost',-1,0,-1,-1),(19,4,'Percent','Cost',-1,0,-1,-1),(20,5,'Percent','Cost',100,-1,22,291),(21,5,'Percent','Cost',100,-1,18,291),(22,1,'Percent','Cost',100,-1,6,291),(23,1,'Percent','Cost',100,-1,21,291),(24,1,'Percent','Cost',100,-1,9,291),(25,1,'Percent','Cost',100,-1,4,291),(26,1,'Percent','Cost',100,-1,20,291),(27,4,'Percent','Cost',100,-1,7,202),(28,1,'Percent','Cost',50,-1,-1,137),(29,2,'Percent','Cost',100,-1,4,354),(30,2,'Percent','Cost',100,-1,9,137),(93,2,'Cost','Cost',-1,10000000,-1,-1);
 CREATE TABLE t2 (
   id int(10) unsigned NOT NULL auto_increment,
   name varchar(255) default NULL,
   PRIMARY KEY  (id)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES (1,'s1'),(2,'s2'),(3,'s3'),(4,'s4'),(5,'s5');
 select t1.*, t2.*  from t1, t2 where t2.id=t1.t2_id limit 2;
 drop table t1,t2;
@@ -260,28 +270,28 @@ drop table t1,t2;
 #
 # Bug in range optimiser with MAYBE_KEY
 #
-
-CREATE TABLE t1 (
-  siteid varchar(25) NOT NULL default '',
-  emp_id varchar(30) NOT NULL default '',
-  rate_code varchar(10) default NULL,
-  UNIQUE KEY site_emp (siteid,emp_id),
-  KEY siteid (siteid)
-) ENGINE=MyISAM;
-INSERT INTO t1 VALUES ('rivercats','psmith','cust'), ('rivercats','KWalker','cust');
-CREATE TABLE t2 (
-  siteid varchar(25) NOT NULL default '',
-  rate_code varchar(10) NOT NULL default '',
-  base_rate float NOT NULL default '0',
-  PRIMARY KEY  (siteid,rate_code),
-  FULLTEXT KEY rate_code (rate_code)
-) ENGINE=MyISAM;
-INSERT INTO t2 VALUES ('rivercats','cust',20);
-SELECT emp.rate_code, lr.base_rate FROM t1 AS emp LEFT JOIN t2 AS lr USING (siteid, rate_code) WHERE emp.emp_id = 'psmith' AND lr.siteid = 'rivercats';
-SELECT emp.rate_code, lr.base_rate FROM t1 AS emp LEFT JOIN t2 AS lr USING (siteid, rate_code) WHERE lr.siteid = 'rivercats' AND emp.emp_id = 'psmith';
-SELECT rate_code, lr.base_rate FROM t1 AS emp LEFT JOIN t2 AS lr USING (siteid, rate_code) WHERE emp.emp_id = 'psmith' AND siteid = 'rivercats';
-SELECT rate_code, lr.base_rate FROM t1 AS emp LEFT JOIN t2 AS lr USING (siteid, rate_code) WHERE siteid = 'rivercats' AND emp.emp_id = 'psmith';
-drop table t1,t2;
+# NOW SequoiaDB not support FULLTEXT
+#CREATE TABLE t1 (
+#  siteid varchar(25) NOT NULL default '',
+#  emp_id varchar(30) NOT NULL default '',
+#  rate_code varchar(10) default NULL,
+#  UNIQUE KEY site_emp (siteid,emp_id),
+#  KEY siteid (siteid)
+#) ENGINE=SequoiaDB;
+#INSERT INTO t1 VALUES ('rivercats','psmith','cust'), ('rivercats','KWalker','cust');
+#CREATE TABLE t2 (
+#  siteid varchar(25) NOT NULL default '',
+#  rate_code varchar(10) NOT NULL default '',
+#  base_rate float NOT NULL default '0',
+#  PRIMARY KEY  (siteid,rate_code),
+#  FULLTEXT KEY rate_code (rate_code)
+#) ENGINE=SequoiaDB;
+#INSERT INTO t2 VALUES ('rivercats','cust',20);
+#SELECT emp.rate_code, lr.base_rate FROM t1 AS emp LEFT JOIN t2 AS lr USING (siteid, rate_code) WHERE emp.emp_id = 'psmith' AND lr.siteid = 'rivercats';
+#SELECT emp.rate_code, lr.base_rate FROM t1 AS emp LEFT JOIN t2 AS lr USING (siteid, rate_code) WHERE lr.siteid = 'rivercats' AND emp.emp_id = 'psmith';
+#SELECT rate_code, lr.base_rate FROM t1 AS emp LEFT JOIN t2 AS lr USING (siteid, rate_code) WHERE emp.emp_id = 'psmith' AND siteid = 'rivercats';
+#SELECT rate_code, lr.base_rate FROM t1 AS emp LEFT JOIN t2 AS lr USING (siteid, rate_code) WHERE siteid = 'rivercats' AND emp.emp_id = 'psmith';
+#drop table t1,t2;
 
 #
 # Problem with internal list handling when reducing WHERE
@@ -361,9 +371,9 @@ INSERT INTO t2 (a, d) SELECT a+4, a+4 FROM t2;
 INSERT INTO t2 (a, d) SELECT a+8, a+8 FROM t2;
 
 # should use join cache
-EXPLAIN
-SELECT STRAIGHT_JOIN t2.e FROM t1,t2 WHERE t2.d=1 AND t1.b=t2.e
-  ORDER BY t1.b, t1.c;
+#EXPLAIN
+#SELECT STRAIGHT_JOIN t2.e FROM t1,t2 WHERE t2.d=1 AND t1.b=t2.e
+#  ORDER BY t1.b, t1.c;
 SELECT STRAIGHT_JOIN t2.e FROM t1,t2 WHERE t2.d=1 AND t1.b=t2.e
   ORDER BY t1.b, t1.c;
 
@@ -674,9 +684,10 @@ insert into t3 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
 
 flush status;
 select * from t1, t2, t3 where t3.a=t1.a and t2.a=t1.b;
-explain select * from t1, t2, t3 where t3.a=t1.a and t2.a=t1.b;
---echo We expect rnd_next=5, and read_key must be 0 because of short-cutting:
-show status like 'Handler_read%'; 
+#explain select * from t1, t2, t3 where t3.a=t1.a and t2.a=t1.b;
+# NOW SequoiaDB not concern the query cost 
+#--echo We expect rnd_next=5, and read_key must be 0 because of short-cutting:
+#show status like 'Handler_read%'; 
 drop table t1, t2, t3;
 
 #
@@ -693,7 +704,7 @@ insert into t2
 insert into t3 select * from t2 where a < 800;
 
 # The order of tables must be t2,t3:
-explain select * from t2,t3 where t2.a < 200 and t2.b=t3.b;
+#explain select * from t2,t3 where t2.a < 200 and t2.b=t3.b;
 
 drop table t1, t2, t3;
 
@@ -705,14 +716,16 @@ insert into t1 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
 create table t2 (a int, b int, primary key(a));
 insert into t2 select @v:=A.a+10*B.a, @v  from t1 A, t1 B;
 
-explain select * from t1;
-show status like '%cost%';
+#explain select * from t1;
+# NOW SequoiaDB not concern the explain cost
+#show status like '%cost%';
 select 'The cost of accessing t1 (dont care if it changes' '^';
 
 select 'vv: Following query must use ALL(t1), eq_ref(A), eq_ref(B): vv' Z;
 
-explain select * from t1, t2 a, t2 b where a.a = t1.a and b.a=a.b;
-show status like '%cost%';
+#explain select * from t1, t2 a, t2 b where a.a = t1.a and b.a=a.b;
+# NOW SequoiaDB not concern the explain cost
+#show status like '%cost%';
 select '^^: The above should be ~= 20 + cost(select * from t1). Value less than 20 is an error' Z;
 
 
@@ -736,14 +749,14 @@ INSERT INTO t1 SELECT a + 64, b FROM t1;
 INSERT INTO t2 SELECT a, b FROM t1;
 
 #expect indexed ORDER BY
-EXPLAIN SELECT * FROM t1 JOIN t2 ON b=c ORDER BY a LIMIT 2;
-EXPLAIN SELECT * FROM t1 JOIN t2 ON a=c ORDER BY a LIMIT 2;
+#EXPLAIN SELECT * FROM t1 JOIN t2 ON b=c ORDER BY a LIMIT 2;
+#EXPLAIN SELECT * FROM t1 JOIN t2 ON a=c ORDER BY a LIMIT 2;
 SELECT * FROM t1 JOIN t2 ON b=c ORDER BY a LIMIT 2;
 SELECT * FROM t1 JOIN t2 ON a=c ORDER BY a LIMIT 2;
 
 #expect filesort
-EXPLAIN SELECT * FROM t1 JOIN t2 ON b=c ORDER BY a;
-EXPLAIN SELECT * FROM t1 JOIN t2 ON a=c ORDER BY a;
+#EXPLAIN SELECT * FROM t1 JOIN t2 ON b=c ORDER BY a;
+#EXPLAIN SELECT * FROM t1 JOIN t2 ON a=c ORDER BY a;
 SELECT * FROM t1 JOIN t2 ON b=c ORDER BY a;
 SELECT * FROM t1 JOIN t2 ON a=c ORDER BY a;
 
@@ -768,22 +781,22 @@ INSERT INTO t2 VALUES
 INSERT INTO t3 VALUES
 (3), (3), (3), (3), (3), (3), (3), (3), (3), (3);
 
-EXPLAIN
-SELECT * 
-FROM 
-  t1 JOIN t2 ON t1.a = t2.a 
-  LEFT JOIN 
-  (
-   (
-    t3 LEFT JOIN t4 ON t3.a = t4.a
-   ) 
-   LEFT JOIN 
-   (
-     t5 LEFT JOIN t6 ON t5.a = t6.a
-   ) 
-   ON t4.a = t5.a
-  ) 
-  ON t1.a = t3.a;
+#EXPLAIN
+#SELECT * 
+#FROM 
+#  t1 JOIN t2 ON t1.a = t2.a 
+#  LEFT JOIN 
+#  (
+#   (
+#    t3 LEFT JOIN t4 ON t3.a = t4.a
+#   ) 
+#   LEFT JOIN 
+#   (
+#     t5 LEFT JOIN t6 ON t5.a = t6.a
+#   ) 
+#   ON t4.a = t5.a
+#  ) 
+#  ON t1.a = t3.a;
 
 SELECT * 
 FROM 
@@ -810,8 +823,8 @@ DROP TABLE t1,t2,t3,t4,t5,t6;
 CREATE TABLE t1(f1 INT);
 INSERT INTO t1 VALUES (1),(2);
 CREATE VIEW v1 AS SELECT 1 FROM t1 LEFT JOIN t1 AS t2 on 1=1;
-EXPLAIN EXTENDED
-SELECT 1 FROM v1 right join v1 AS v2 ON RAND();
+#EXPLAIN EXTENDED
+#SELECT 1 FROM v1 right join v1 AS v2 ON RAND();
 DROP VIEW v1;
 DROP TABLE t1;
 
@@ -821,9 +834,9 @@ DROP TABLE t1;
 CREATE TABLE t1 (a TINYINT, b TEXT, KEY (a));
 INSERT INTO t1 VALUES (0,''),(0,'');
 FLUSH TABLES;
-EXPLAIN SELECT 1 FROM t1 LEFT JOIN t1 a ON 1
-WHERE ROW(t1.a, 1111.11) = ROW(1111.11, 1111.11) AND
-ROW(t1.b, 1111.11) <=> ROW('','');
+#EXPLAIN SELECT 1 FROM t1 LEFT JOIN t1 a ON 1
+#WHERE ROW(t1.a, 1111.11) = ROW(1111.11, 1111.11) AND
+#ROW(t1.b, 1111.11) <=> ROW('','');
 DROP TABLE t1;
 
 --echo #
@@ -861,14 +874,15 @@ DROP TABLE t1, t2;
 #
 # Bug#45195 valgrind warnings about uninitialized values in store_record_in_cache()
 #
-CREATE TABLE t1(a CHAR(9),b INT,KEY(b),KEY(a)) ENGINE=MYISAM;
-CREATE TABLE t2(a CHAR(9),b INT,KEY(b),KEY(a)) ENGINE=MYISAM;
-INSERT INTO t1 VALUES ('1',null),(null,null);
-INSERT INTO t2 VALUES ('1',null),(null,null);
-CREATE TABLE mm1(a CHAR(9),b INT,KEY(b),KEY(a))
-ENGINE=MERGE  UNION=(t1,t2);
-SELECT t1.a FROM mm1,t1;
-DROP TABLE t1, t2, mm1;
+# non-MyISAM type not support MERGE
+#CREATE TABLE t1(a CHAR(9),b INT,KEY(b),KEY(a)) ENGINE=SEQUOIADB;
+#CREATE TABLE t2(a CHAR(9),b INT,KEY(b),KEY(a)) ENGINE=SEQUOIADB;
+#INSERT INTO t1 VALUES ('1',null),(null,null);
+#INSERT INTO t2 VALUES ('1',null),(null,null);
+#CREATE TABLE mm1(a CHAR(9),b INT,KEY(b),KEY(a))
+#ENGINE=MERGE  UNION=(t1,t2);
+#SELECT t1.a FROM mm1,t1;
+#DROP TABLE t1, t2, mm1;
 
 #--echo #
 #--echo # Bug #55568: user variable assignments crash server when used within
@@ -965,7 +979,7 @@ let $query=
 SELECT t2.pk, t2.c1 FROM t2, t1 
 WHERE t2.pk = t1.c1 AND t2.pk >= 2;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 # Create a view on one of the tables. The same query plan should
@@ -976,7 +990,7 @@ let $query=
 SELECT v_t2.pk, v_t2.c1 FROM v_t2, t1 
 WHERE v_t2.pk = t1.c1 AND v_t2.pk >= 2;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP VIEW v_t2;
@@ -1008,7 +1022,7 @@ GROUP BY t1.pk
 ORDER BY v1.i2;
 
 --source include/turn_off_only_full_group_by.inc
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
 
@@ -1018,7 +1032,7 @@ FROM v1, t1
 WHERE (v1.i2 = 211 AND v1.i2 > 7)
    OR (t1.i1 < 3 AND v1.i2 < 10);
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP VIEW v1;
@@ -1027,10 +1041,10 @@ DROP TABLE t1;
 --echo #
 --echo # BUG#11752239 - 43368: STRAIGHT_JOIN DOESN'T WORK FOR NESTED JOINS 
 --echo #
-create table t1(c1 int primary key, c2 char(10)) engine=myisam;
-create table t2(c1 int primary key, c2 char(10), ref_t1 int) engine=myisam;
-create table t3(c1 int primary key, c2 char(10), ref_t1 int) engine=myisam;
-create table t4(c1 int primary key, c2 char(10), ref_t1 int) engine=myisam;
+create table t1(c1 int primary key, c2 char(10)) engine=sequoiadb;
+create table t2(c1 int primary key, c2 char(10), ref_t1 int) engine=sequoiadb;
+create table t3(c1 int primary key, c2 char(10), ref_t1 int) engine=sequoiadb;
+create table t4(c1 int primary key, c2 char(10), ref_t1 int) engine=sequoiadb;
 insert into t1 values(1,'a');
 insert into t2 values(1,'a', 1);
 insert into t3 values(1,'a', 1);
@@ -1045,15 +1059,15 @@ insert into t1 values(3,'c');
 let $rest_of_query=(t1 join t3 on t3.ref_t1 =
 t1.c1 join t2 on t2.ref_t1 = t1.c1) on t4.ref_t1 = t1.c1;
 
-eval EXPLAIN SELECT * FROM t4 JOIN $rest_of_query;
-eval EXPLAIN SELECT STRAIGHT_JOIN * FROM t4 JOIN $rest_of_query;
-eval EXPLAIN SELECT * FROM t4 STRAIGHT_JOIN $rest_of_query;
+#eval EXPLAIN SELECT * FROM t4 JOIN $rest_of_query;
+#eval EXPLAIN SELECT STRAIGHT_JOIN * FROM t4 JOIN $rest_of_query;
+#eval EXPLAIN SELECT * FROM t4 STRAIGHT_JOIN $rest_of_query;
 
 drop table t1,t2,t3,t4;
 
 --echo # Bug#20455184: Assertion failed: join_cond in optimizer.cc
-
-CREATE TABLE t1(a INTEGER) engine=innodb;
+#Bug #SEQUOIADBMAINSTREAM-3596
+CREATE TABLE t1(a INTEGER) engine=sequoiadb;
 
 let $query=
 SELECT 1
@@ -1061,7 +1075,7 @@ FROM (SELECT 1 FROM t1 WHERE a) AS q
      NATURAL LEFT JOIN t1
      NATURAL LEFT JOIN t1 AS t2;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 let $query=
@@ -1070,7 +1084,7 @@ FROM t1
      NATURAL RIGHT JOIN t1 AS t2
      NATURAL RIGHT JOIN (SELECT 1 FROM t1 WHERE a) AS q;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1;
@@ -1082,7 +1096,7 @@ CREATE TABLE t1
  dummy VARCHAR(64),
  col_check TINYINT,
  PRIMARY KEY(pk)
-) engine=innodb;
+) engine=sequoiadb;
 
 INSERT INTO t1 VALUES (13, '13', 13);
 
@@ -1101,3 +1115,5 @@ EXECUTE st1;
 DEALLOCATE PREPARE st1;
 DROP VIEW v1;
 DROP TABLE t1;
+
+--source include/uninstall_sequoiadb.inc

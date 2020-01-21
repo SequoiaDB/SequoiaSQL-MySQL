@@ -67,12 +67,13 @@ select * from t1 where a in (b);
 select * from t1 where a in (b,c);
 --error 1271
 select * from t1 where 'a' in (a,b,c);
+#Bug #SEQUOIADBMAINSTREAM-3373
 select * from t1 where 'a' in (a);
 select * from t1 where a in ('a');
 select * from t1 where 'a' collate latin1_general_ci in (a,b,c);
 select * from t1 where 'a' collate latin1_bin in (a,b,c);
 select * from t1 where 'a' in (a,b,c collate latin1_bin);
-explain extended select * from t1 where 'a' in (a,b,c collate latin1_bin);
+#explain extended select * from t1 where 'a' in (a,b,c collate latin1_bin);
 drop table t1;
 
 set names utf8;
@@ -158,14 +159,15 @@ create table t2 (a int, filler char(200), key(a));
 insert into t2 select C.a*2,   'no'  from t1 A, t1 B, t1 C;
 insert into t2 select C.a*2+1, 'yes' from t1 C;
 
-explain 
-select * from t2 where a NOT IN (0, 2,4,6,8,10,12,14,16,18);
+#explain 
+#select * from t2 where a NOT IN (0, 2,4,6,8,10,12,14,16,18);
 select * from t2 where a NOT IN (0, 2,4,6,8,10,12,14,16,18);
 
-explain select * from t2 force index(a) where a NOT IN (2,2,2,2,2,2);
-explain select * from t2 force index(a) where a <> 2;
+#explain select * from t2 force index(a) where a NOT IN (2,2,2,2,2,2);
+#explain select * from t2 force index(a) where a <> 2;
 
 drop table t2;
+
 
 #
 # Repeat the test for DATETIME
@@ -178,10 +180,10 @@ insert into t2 select '2006-04-25 10:00:00' + interval C.a minute,
 insert into t2 select '2006-04-25 10:00:00' + interval C.a*2+1 minute,
                'yes' from t1 C;
 
-explain 
-select * from t2 where a NOT IN (
-  '2006-04-25 10:00:00','2006-04-25 10:02:00','2006-04-25 10:04:00', 
-  '2006-04-25 10:06:00', '2006-04-25 10:08:00');
+#explain 
+#select * from t2 where a NOT IN (
+#  '2006-04-25 10:00:00','2006-04-25 10:02:00','2006-04-25 10:04:00', 
+#  '2006-04-25 10:06:00', '2006-04-25 10:08:00');
 select * from t2 where a NOT IN (
   '2006-04-25 10:00:00','2006-04-25 10:02:00','2006-04-25 10:04:00', 
   '2006-04-25 10:06:00', '2006-04-25 10:08:00');
@@ -199,7 +201,7 @@ insert into t2 select 'bazbazbaz', 'no' from t1 A, t1 B;
 insert into t2 values ('fon', '1'), ('fop','1'), ('barbaq','1'), 
   ('barbas','1'), ('bazbazbay', '1'),('zz','1');
 
-explain select * from t2 where a not in('foo','barbar', 'bazbazbaz');
+#explain select * from t2 where a not in('foo','barbar', 'bazbazbaz');
 
 drop table t2;
 
@@ -207,7 +209,6 @@ drop table t2;
 # Repeat for DECIMAL
 #
 create table t2 (a decimal(10,5), filler char(200), key(a));
-
 insert into t2 select 345.67890, 'no' from t1 A, t1 B;
 insert into t2 select 43245.34, 'no' from t1 A, t1 B;
 insert into t2 select 64224.56344, 'no' from t1 A, t1 B;
@@ -215,8 +216,8 @@ insert into t2 select 64224.56344, 'no' from t1 A, t1 B;
 insert into t2 values (0, '1'), (22334.123,'1'), (33333,'1'), 
   (55555,'1'), (77777, '1');
 
-explain
-select * from t2 where a not in (345.67890, 43245.34, 64224.56344);
+#explain
+#select * from t2 where a not in (345.67890, 43245.34, 64224.56344);
 select * from t2 where a not in (345.67890, 43245.34, 64224.56344);
 
 drop table t2;
@@ -277,20 +278,20 @@ CREATE TABLE t4 (a int PRIMARY KEY,b int);
 INSERT INTO t4 VALUES (1,1),(2,2),(1000,1000),(1001,1001),(1002,1002),
        (1003,1003),(1004,1004);
 
-EXPLAIN SELECT STRAIGHT_JOIN * FROM t3 
-  JOIN t1 ON t3.a=t1.a 
-  JOIN t2 ON t3.a=t2.a
-  JOIN t4 WHERE t4.a IN (t1.b, t2.b);
+#EXPLAIN SELECT STRAIGHT_JOIN * FROM t3 
+#  JOIN t1 ON t3.a=t1.a 
+#  JOIN t2 ON t3.a=t2.a
+#  JOIN t4 WHERE t4.a IN (t1.b, t2.b);
 
 SELECT STRAIGHT_JOIN * FROM t3 
   JOIN t1 ON t3.a=t1.a 
   JOIN t2 ON t3.a=t2.a
   JOIN t4 WHERE t4.a IN (t1.b, t2.b);
 
-EXPLAIN SELECT STRAIGHT_JOIN 
-   (SELECT SUM(t4.a) FROM t4 WHERE t4.a IN (t1.b, t2.b)) 
-  FROM t3, t1, t2
-  WHERE t3.a=t1.a AND t3.a=t2.a;
+#EXPLAIN SELECT STRAIGHT_JOIN 
+#   (SELECT SUM(t4.a) FROM t4 WHERE t4.a IN (t1.b, t2.b)) 
+#  FROM t3, t1, t2
+#  WHERE t3.a=t1.a AND t3.a=t2.a;
 
 SELECT STRAIGHT_JOIN 
    (SELECT SUM(t4.a) FROM t4 WHERE t4.a IN (t1.b, t2.b)) 
@@ -393,25 +394,24 @@ select f1 from t1 where f1 in ('a',1);
 select f1, case f1 when 'a' then '+' when 1 then '-' end from t1;
 create index t1f1_idx on t1(f1);
 select f1 from t1 where f1 in ('a',1);
-explain select f1 from t1 where f1 in ('a',1);
+#explain select f1 from t1 where f1 in ('a',1);
 select f1 from t1 where f1 in ('a','b');
-explain select f1 from t1 where f1 in ('a','b');
+#explain select f1 from t1 where f1 in ('a','b');
 select f1 from t1 where f1 in (2,1);
-explain select f1 from t1 where f1 in (2,1);
+#explain select f1 from t1 where f1 in (2,1);
 create table t2(f2 int, index t2f2(f2));
 insert into t2 values(0),(1),(2);
 select f2 from t2 where f2 in ('a',2);
-explain select f2 from t2 where f2 in ('a',2);
+#explain select f2 from t2 where f2 in ('a',2);
 select f2 from t2 where f2 in ('a','b');
-explain select f2 from t2 where f2 in ('a','b');
+#explain select f2 from t2 where f2 in ('a','b');
 select f2 from t2 where f2 in (1,'b');
-explain select f2 from t2 where f2 in (1,'b');
+#explain select f2 from t2 where f2 in (1,'b');
 drop table t1, t2;
 
 #
 # Bug #31075: crash in get_func_mm_tree
 #
-
 create table t1 (a time, key(a));
 insert into t1 values (),(),(),(),(),(),(),(),(),();
 select a from t1 where a not in (a,a,a) group by a;
@@ -458,6 +458,7 @@ SELECT SUM( DISTINCT e ) FROM t1 GROUP BY b,c,d HAVING (b,c,d) IN
   ((AVG( 1 ), 1 + c, 1 + d), (AVG( 1 ), 2 + c, 2 + d));
 DROP TABLE t1;
 
+# NOW SequoiaDB not support explain
 --echo #
 --echo # Bug #44139: Table scan when NULL appears in IN clause
 --echo #
@@ -485,59 +486,59 @@ INSERT IGNORE INTO t1 (c_int) SELECT 0 FROM t1;
 
 --enable_warnings
 
-EXPLAIN SELECT * FROM t1 WHERE c_int IN (1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_int IN (NULL, 1, 2, 3);
-
-EXPLAIN SELECT * FROM t1 WHERE c_int IN (1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_int IN (1, NULL, 2, NULL, 3, NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_int IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_int IN (NULL, NULL);
-
-EXPLAIN SELECT * FROM t1 WHERE c_decimal IN (1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_decimal IN (NULL, 1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_decimal IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_decimal IN (NULL, NULL);
-
-EXPLAIN SELECT * FROM t1 WHERE c_float IN (1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_float IN (NULL, 1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_float IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_float IN (NULL, NULL);
-
-EXPLAIN SELECT * FROM t1 WHERE c_bit IN (1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_bit IN (NULL, 1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_bit IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_bit IN (NULL, NULL);
-
-EXPLAIN SELECT * FROM t1 WHERE c_date 
-  IN ('2009-09-01', '2009-09-02', '2009-09-03');
-EXPLAIN SELECT * FROM t1 WHERE c_date
-  IN (NULL, '2009-09-01', '2009-09-02', '2009-09-03');
-EXPLAIN SELECT * FROM t1 WHERE c_date IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_date IN (NULL, NULL);
-
-EXPLAIN SELECT * FROM t1 WHERE c_datetime
-  IN ('2009-09-01 00:00:01', '2009-09-02 00:00:01', '2009-09-03 00:00:01');
-EXPLAIN SELECT * FROM t1 WHERE c_datetime
-  IN (NULL, '2009-09-01 00:00:01', '2009-09-02 00:00:01', '2009-09-03 00:00:01');
-EXPLAIN SELECT * FROM t1 WHERE c_datetime IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_datetime IN (NULL, NULL);
-
-EXPLAIN SELECT * FROM t1 WHERE c_timestamp
-  IN ('2009-09-01 00:00:01', '2009-09-01 00:00:02', '2009-09-01 00:00:03');
-EXPLAIN SELECT * FROM t1 WHERE c_timestamp
-  IN (NULL, '2009-09-01 00:00:01', '2009-09-01 00:00:02', '2009-09-01 00:00:03');
-EXPLAIN SELECT * FROM t1 WHERE c_timestamp IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_timestamp IN (NULL, NULL);
-
-EXPLAIN SELECT * FROM t1 WHERE c_year IN (1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_year IN (NULL, 1, 2, 3);
-EXPLAIN SELECT * FROM t1 WHERE c_year IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_year IN (NULL, NULL);
-
-EXPLAIN SELECT * FROM t1 WHERE c_char IN ('1', '2', '3');
-EXPLAIN SELECT * FROM t1 WHERE c_char IN (NULL, '1', '2', '3');
-EXPLAIN SELECT * FROM t1 WHERE c_char IN (NULL);
-EXPLAIN SELECT * FROM t1 WHERE c_char IN (NULL, NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_int IN (1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_int IN (NULL, 1, 2, 3);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_int IN (1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_int IN (1, NULL, 2, NULL, 3, NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_int IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_int IN (NULL, NULL);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_decimal IN (1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_decimal IN (NULL, 1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_decimal IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_decimal IN (NULL, NULL);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_float IN (1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_float IN (NULL, 1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_float IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_float IN (NULL, NULL);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_bit IN (1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_bit IN (NULL, 1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_bit IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_bit IN (NULL, NULL);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_date 
+#  IN ('2009-09-01', '2009-09-02', '2009-09-03');
+#EXPLAIN SELECT * FROM t1 WHERE c_date
+#  IN (NULL, '2009-09-01', '2009-09-02', '2009-09-03');
+#EXPLAIN SELECT * FROM t1 WHERE c_date IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_date IN (NULL, NULL);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_datetime
+#  IN ('2009-09-01 00:00:01', '2009-09-02 00:00:01', '2009-09-03 00:00:01');
+#EXPLAIN SELECT * FROM t1 WHERE c_datetime
+#  IN (NULL, '2009-09-01 00:00:01', '2009-09-02 00:00:01', '2009-09-03 00:00:01');
+#EXPLAIN SELECT * FROM t1 WHERE c_datetime IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_datetime IN (NULL, NULL);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_timestamp
+#  IN ('2009-09-01 00:00:01', '2009-09-01 00:00:02', '2009-09-01 00:00:03');
+#EXPLAIN SELECT * FROM t1 WHERE c_timestamp
+#  IN (NULL, '2009-09-01 00:00:01', '2009-09-01 00:00:02', '2009-09-01 00:00:03');
+#EXPLAIN SELECT * FROM t1 WHERE c_timestamp IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_timestamp IN (NULL, NULL);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_year IN (1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_year IN (NULL, 1, 2, 3);
+#EXPLAIN SELECT * FROM t1 WHERE c_year IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_year IN (NULL, NULL);
+#
+#EXPLAIN SELECT * FROM t1 WHERE c_char IN ('1', '2', '3');
+#EXPLAIN SELECT * FROM t1 WHERE c_char IN (NULL, '1', '2', '3');
+#EXPLAIN SELECT * FROM t1 WHERE c_char IN (NULL);
+#EXPLAIN SELECT * FROM t1 WHERE c_char IN (NULL, NULL);
 
 DROP TABLE t1;
 

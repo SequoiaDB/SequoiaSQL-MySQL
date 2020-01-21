@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 #
 # Test of unions
@@ -30,7 +29,7 @@ select 't1',b,count(*) from t1 group by b UNION select 't2',b,count(*) from t2 g
 (select a,b from t1 limit 2)  union all (select a,b from t2 order by a limit 1) order by b desc;
 --error 1250
 (select a,b from t1 limit 2)  union all (select a,b from t2 order by a limit 1) order by t1.b;
-explain extended (select a,b from t1 limit 2)  union all (select a,b from t2 order by a limit 1) order by b desc;
+#explain extended (select a,b from t1 limit 2)  union all (select a,b from t2 order by a limit 1) order by b desc;
 select count(*) from (
 (select                      a,b from t1 limit 2)  union all (select a,b from t2 order by a)) q;
 (select sql_calc_found_rows  a,b from t1 limit 2)  union all (select a,b from t2 order by a) limit 2;
@@ -40,15 +39,15 @@ select                      a,b from t1  union all select a,b from t2) q;
 select sql_calc_found_rows  a,b from t1  union all select a,b from t2 limit 2;
 select found_rows();
 
-explain extended 
-  select * from t1 where a in
-    (select a from t1 union select a from t1 order by (select a))
-  union select * from t1 order by (select a);
+#explain extended 
+#  select * from t1 where a in
+#    (select a from t1 union select a from t1 order by (select a))
+#  union select * from t1 order by (select a);
 #
 # Test some error conditions with UNION
 #
 
-explain select a,b from t1 union all select a,b from t2;
+#explain select a,b from t1 union all select a,b from t2;
 
 --error  1054
 explain select xx from t1 union select 1;
@@ -114,7 +113,7 @@ CREATE TABLE t1 (
   `same` tinyint(1) unsigned NOT NULL default '1',
   PRIMARY KEY  (`pseudo1`),
   KEY `pseudo` (`pseudo`)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 INSERT INTO t1 (pseudo,pseudo1,same) VALUES ('joce', 'testtt', 1),('joce', 'tsestset', 1),('dekad', 'joce', 1);
 SELECT pseudo FROM t1 WHERE pseudo1='joce' UNION SELECT pseudo FROM t1 WHERE pseudo='joce';
 SELECT pseudo1 FROM t1 WHERE pseudo1='joce' UNION SELECT pseudo1 FROM t1 WHERE pseudo='joce';
@@ -299,7 +298,6 @@ SELECT * FROM t1 UNION SELECT * FROM t2 ORDER BY a desc LIMIT 1;
 # Wrong usage
 --error 1234
 (SELECT * FROM t1) UNION all (SELECT SQL_CALC_FOUND_ROWS * FROM t2) LIMIT 1;
-
 create temporary table t1 select a from t1 union select a from t2;
 drop temporary table t1;
 --error ER_TABLE_EXISTS_ERROR
@@ -320,14 +318,14 @@ select length(version()) > 1 as `*` UNION select 2;
 
 create table t1 (a int);
 insert into t1 values (0), (3), (1), (2);
-explain (select * from t1) union (select * from t1) order by a;
+#explain (select * from t1) union (select * from t1) order by a;
 drop table t1;
 #
 # Test for another bug with UNION and LEFT JOIN
 #
-CREATE TABLE t1 (  id int(3) unsigned default '0') ENGINE=MyISAM;
+CREATE TABLE t1 (  id int(3) unsigned default '0') ENGINE=Sequoiadb;
 INSERT INTO t1 (id) VALUES("1");
-CREATE TABLE t2 ( id int(3) unsigned default '0',  id_master int(5) default '0',  text1 varchar(5) default NULL,  text2 varchar(5) default NULL) ENGINE=MyISAM;
+CREATE TABLE t2 ( id int(3) unsigned default '0',  id_master int(5) default '0',  text1 varchar(5) default NULL,  text2 varchar(5) default NULL) ENGINE=Sequoiadb;
 INSERT INTO t2 (id, id_master, text1, text2) VALUES("1", "1",
 "foo1", "bar1");
 INSERT INTO t2 (id, id_master, text1, text2) VALUES("2", "1",
@@ -348,13 +346,13 @@ create table t2 (a int not null primary key auto_increment, b int);
 insert into t1 (b) values (1),(2),(2),(3);
 insert into t2 (b) values (10),(11),(12),(13);
 
-explain extended (select * from t1 where a=1) union (select * from t2 where a=1);
+#explain extended (select * from t1 where a=1) union (select * from t2 where a=1);
 (select * from t1 where a=5) union (select * from t2 where a=1);
 (select * from t1 where a=5 and a=6) union (select * from t2 where a=1);
 (select t1.a,t1.b from t1,t2 where t1.a=5) union (select * from t2 where a=1);
 (select * from t1 where a=1) union (select t1.a,t2.a from t1,t2 where t1.a=t2.a);
-explain (select * from t1 where a=1 and b=10) union (select straight_join t1.a,t2.a from t1,t2 where t1.a=t2.a);
-explain (select * from t1 where a=1) union (select * from t1 where b=1);
+#explain (select * from t1 where a=1 and b=10) union (select straight_join t1.a,t2.a from t1,t2 where t1.a=t2.a);
+#explain (select * from t1 where a=1) union (select * from t1 where b=1);
 drop table t1,t2;
 create table t1 (   id int not null auto_increment, primary key (id)   ,user_name text );
 create table t2 (    id int not null auto_increment, primary key (id)   ,group_name text );
@@ -369,6 +367,7 @@ drop table t1, t2, t3;
 #
 # fix_fields problem
 #
+
 create table t1 (mat_id MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, matintnum CHAR(6) NOT NULL, test MEDIUMINT UNSIGNED NULL);
 create table t2 (mat_id MEDIUMINT UNSIGNED NOT NULL, pla_id MEDIUMINT UNSIGNED NOT NULL);
 insert into t1 values (NULL, 'a', 1), (NULL, 'b', 2), (NULL, 'c', 3), (NULL, 'd', 4), (NULL, 'e', 5), (NULL, 'f', 6), (NULL, 'g', 7), (NULL, 'h', 8), (NULL, 'i', 9);
@@ -510,25 +509,26 @@ insert t1 select a+1, a+b from t1;
 insert t1 select a+1, a+b from t1;
 insert t1 select a+1, a+b from t1;
 FLUSH STATUS;
-show status like 'Slow_queries';
+
+#show status like 'Slow_queries';
 select count(*) from t1 where a=7;
-show status like 'Slow_queries';
+#show status like 'Slow_queries';
 select count(*) from t1 where b=13;
-show status like 'Slow_queries';
+#show status like 'Slow_queries';
 select count(*) from t1 where b=13 union select count(*) from t1 where a=7;
-show status like 'Slow_queries';
+#show status like 'Slow_queries';
 select count(*) from t1 where a=7 union select count(*) from t1 where b=13;
-show status like 'Slow_queries';
+#show status like 'Slow_queries';
 # additional test for examined rows
 flush status;
 select a from t1 where b not in (1,2,3) union select a from t1 where b not in (4,5,6); 
-show status like 'Slow_queries';
+#show status like 'Slow_queries';
 drop table t1;
 
 #
 # Column 'name' cannot be null (error with union and left join) (bug #2508)
 #
-create table t1 (   RID int(11) not null default '0',   IID int(11) not null default '0',    nada varchar(50)  not null,NAME varchar(50) not null,PHONE varchar(50) not null) engine=MyISAM;
+create table t1 (   RID int(11) not null default '0',   IID int(11) not null default '0',    nada varchar(50)  not null,NAME varchar(50) not null,PHONE varchar(50) not null) engine=Sequoiadb;
 insert into t1 ( RID,IID,nada,NAME,PHONE) values (1, 1, 'main', 'a', '111'), (2, 1, 'main', 'b', '222'), (3, 1, 'main', 'c', '333'), (4, 1, 'main', 'd', '444'), (5, 1, 'main', 'e', '555'), (6, 2, 'main', 'c', '333'), (7, 2, 'main', 'd', '454'), (8, 2, 'main', 'e', '555'), (9, 2, 'main', 'f', '666'), (10, 2, 'main', 'g', '777');
 --sorted_result
 select A.NAME, A.PHONE, B.NAME, B.PHONE from t1 A left join t1 B on A.NAME = B.NAME and B.IID = 2 where A.IID = 1 and (A.PHONE <> B.PHONE or B.NAME is null) union select A.NAME, A.PHONE, B.NAME, B.PHONE from t1 B left join t1 A on B.NAME = A.NAME and A.IID = 1 where B.IID = 2 and (A.PHONE <> B.PHONE or A.NAME is null);
@@ -817,7 +817,10 @@ drop table t1;
 create table t1 (a varchar(5));
 create table t2 select * from t1 union select 'abcdefghijkl';
 show create table t2;
-select row_format from information_schema.TABLES where table_schema="test" and table_name="t2";
+# Compatible with parallel > 1, modify select condition of database name with like 'test%'
+#select row_format from information_schema.TABLES where table_schema="test" and table_name="t2";
+select row_format from information_schema.TABLES where table_schema like "test%" and table_name="t2";
+
 alter table t2 ROW_FORMAT=fixed;
 show create table t2;
 drop table t1,t2;
@@ -857,12 +860,13 @@ SELECT @tmp_max:= @@global.max_allowed_packet;
 SET @@global.max_allowed_packet=25000000;
 # switching connection to allow the new max_allowed_packet take effect
 --connect (newconn, localhost, root,,)
-CREATE TABLE t1 (a mediumtext);
+#Sequoiadb not support insert record size > 16M
+#CREATE TABLE t1 (a mediumtext);
 CREATE TABLE t2 (b varchar(20));
-INSERT INTO t1 VALUES ('a');
-CREATE TABLE t3 SELECT REPEAT(a,20000000) AS a FROM t1 UNION SELECT b FROM t2;
-SHOW CREATE TABLE t3;
-DROP TABLES t1,t3;
+#INSERT INTO t1 VALUES ('a');
+#CREATE TABLE t3 SELECT REPEAT(a,20000000) AS a FROM t1 UNION SELECT b FROM t2;
+#SHOW CREATE TABLE t3;
+#DROP TABLES t1,t3;
 CREATE TABLE t1 (a tinytext);
 INSERT INTO t1 VALUES ('a');
 CREATE TABLE t3 SELECT REPEAT(a,2) AS a FROM t1 UNION SELECT b FROM t2;
@@ -1063,13 +1067,13 @@ DROP TABLE t1, t2;
 #
 # Bug#43612 crash with explain extended, union, order by
 #
-CREATE TABLE t1(a INT);
-EXPLAIN EXTENDED
-SELECT a FROM t1
-UNION
-SELECT a FROM t1
-ORDER BY a;
-DROP TABLE t1;
+#CREATE TABLE t1(a INT);
+#EXPLAIN EXTENDED
+#SELECT a FROM t1
+#UNION
+#SELECT a FROM t1
+#ORDER BY a;
+#DROP TABLE t1;
 
 
 --echo End of 5.0 tests
@@ -1122,49 +1126,49 @@ remove_files_wildcard $MYSQLTEST_VARDIR/mysqld.1/data/test union.out.fil*;
 --echo #   <any non-const-function>
 --echo # 
 
-CREATE TABLE t1 (a VARCHAR(10), FULLTEXT KEY a (a));
-INSERT INTO t1 VALUES (1),(2);
-CREATE TABLE t2 (b INT);
-INSERT INTO t2 VALUES (1),(2);
+#CREATE TABLE t1 (a VARCHAR(10), FULLTEXT KEY a (a));
+#INSERT INTO t1 VALUES (1),(2);
+#CREATE TABLE t2 (b INT);
+#INSERT INTO t2 VALUES (1),(2);
 
---echo # Should not crash
-EXPLAIN EXTENDED
-SELECT * FROM t1 UNION SELECT * FROM t1 ORDER BY a + 12;
-
---echo # Should not crash
-SELECT * FROM t1 UNION SELECT * FROM t1 ORDER BY a + 12;
-
-
---echo # Should not crash
-EXPLAIN EXTENDED
-SELECT * FROM t1 UNION SELECT * FROM t1
-  ORDER BY MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE);
-
---echo # Should not crash
-SELECT * FROM t1 UNION SELECT * FROM t1
-  ORDER BY MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE);
-
---echo # Should not crash
-(SELECT * FROM t1) UNION (SELECT * FROM t1)
-  ORDER BY MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE);
-
-
---echo # Should not crash
-EXPLAIN EXTENDED
-SELECT * FROM t1 UNION SELECT * FROM t1
-  ORDER BY (SELECT a FROM t2 WHERE b = 12);
-
---echo # Should not crash
---disable_result_log
-SELECT * FROM t1 UNION SELECT * FROM t1
-  ORDER BY (SELECT a FROM t2 WHERE b = 12);
---enable_result_log
-
---echo # Should not crash
-SELECT * FROM t2 UNION SELECT * FROM t2
-  ORDER BY (SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE));
-
-DROP TABLE t1,t2;
+#--echo # Should not crash
+#EXPLAIN EXTENDED
+#SELECT * FROM t1 UNION SELECT * FROM t1 ORDER BY a + 12;
+#
+#--echo # Should not crash
+#SELECT * FROM t1 UNION SELECT * FROM t1 ORDER BY a + 12;
+#
+#
+#--echo # Should not crash
+#EXPLAIN EXTENDED
+#SELECT * FROM t1 UNION SELECT * FROM t1
+#  ORDER BY MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE);
+#
+#--echo # Should not crash
+#SELECT * FROM t1 UNION SELECT * FROM t1
+#  ORDER BY MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE);
+#
+#--echo # Should not crash
+#(SELECT * FROM t1) UNION (SELECT * FROM t1)
+#  ORDER BY MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE);
+#
+#
+#--echo # Should not crash
+#EXPLAIN EXTENDED
+#SELECT * FROM t1 UNION SELECT * FROM t1
+#  ORDER BY (SELECT a FROM t2 WHERE b = 12);
+#
+#--echo # Should not crash
+#--disable_result_log
+#SELECT * FROM t1 UNION SELECT * FROM t1
+#  ORDER BY (SELECT a FROM t2 WHERE b = 12);
+#--enable_result_log
+#
+#--echo # Should not crash
+#SELECT * FROM t2 UNION SELECT * FROM t2
+#  ORDER BY (SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE));
+#
+#DROP TABLE t1,t2;
 
 
 --echo #
@@ -1278,7 +1282,7 @@ SELECT(SELECT 1 AS a FROM dual ORDER BY a DESC LIMIT 1) AS dev;
 --echo #
 --echo # Bug#11886060: SELECT .. UNION SELECT .. ORDER BY IS WRONGLY PARSED
 --echo #
-create table t1(b int) engine=innodb;
+create table t1(b int) engine=Sequoiadb;
 --echo All 3 should be parsed without errors.
 select b as z from t1 union select b from t1 order by z;
 select b as z from t1 union select b from t1 order by (select z);
@@ -1289,7 +1293,7 @@ drop table t1;
 --echo # WL#1763 Avoid creating temporary table in UNION ALL
 --echo #
 
-EXPLAIN SELECT 1 UNION ALL SELECT 1 LIMIT 1 OFFSET 1;
+#EXPLAIN SELECT 1 UNION ALL SELECT 1 LIMIT 1 OFFSET 1;
 
 --echo # Bug #17579498 CHANGES IN DATATYPE OF THE RESULT QUERY IN UNION.
 
@@ -1362,8 +1366,8 @@ DROP TABLE t1;
 
 --echo # Bug #17708480 FOUND_ROWS() VALUE DO NOT MATCH WITH UNION ALL QUERIES
 
-CREATE TABLE t1 (a INT) ENGINE=MEMORY;
-CREATE TABLE t2 (a INT) ENGINE=MEMORY;
+CREATE TABLE t1 (a INT) ENGINE=Sequoiadb;
+CREATE TABLE t2 (a INT) ENGINE=Sequoiadb;
 INSERT INTO t2 VALUES (1);
 
 SELECT COUNT(*) FROM (
@@ -1498,385 +1502,385 @@ DROP TABLE t1, t2;
 --echo # PROJECTING DERIVED TBL.
 --echo #
 
-SET @tmp=@@internal_tmp_disk_storage_engine;
-SET GLOBAL internal_tmp_disk_storage_engine=InnoDB;
-CREATE TABLE t1(g GEOMETRY, p POINT, l LINESTRING);
-INSERT INTO t1 (p, l) VALUES (ST_GeomFromText('POINT(1 1)'),
-                              ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'));
-
-SELECT ST_AsText(a) FROM (SELECT p AS a FROM t1 UNION SELECT l FROM t1) t;
-CREATE TABLE t2 ENGINE=InnoDB SELECT a FROM
-  (SELECT p AS a FROM t1 UNION SELECT l FROM t1) t;
-SHOW CREATE TABLE t2;
-
-DROP TABLE t1, t2;
-SET GLOBAL internal_tmp_disk_storage_engine=@tmp;
-
-CREATE TABLE geometries (
-  g GEOMETRY,
-  pt POINT,
-  ls LINESTRING,
-  py POLYGON,
-  mpt MULTIPOINT,
-  mls MULTILINESTRING,
-  mpy MULTIPOLYGON,
-  gc GEOMETRYCOLLECTION);
-INSERT INTO geometries VALUES (
-  ST_GeomFromText('POLYGON((0 0, 9 0, 9 9, 0 9, 0 0), (2 2, 4 2, 4 4, 2 2))'),
-  ST_GeomFromText('POINT(0 0)'),
-  ST_GeomFromText('LINESTRING(0 0, 10 10)'),
-  ST_GeomFromText('POLYGON((0 0, 9 0, 9 9, 0 9, 0 0), (2 2, 4 2, 4 4, 2 2))'),
-  ST_GeomFromText('MULTIPOINT(0 0, 1 1, 2 2)'),
-  ST_GeomFromText('MULTILINESTRING((0 0, 10 10), (10 0, 0 10))'),
-  ST_GeomFromText('MULTIPOLYGON(((0 0, 9 0, 9 9, 0 0)), '
-                               '((2 2, 3 2, 3 3, 2 2)))'),
-  ST_GeomFromText('GEOMETRYCOLLECTION(POINT(1 1), LINESTRING(2 2, 3 3), '
-                                     'POLYGON((0 0, 9 0, 9 9, 0 9, 0 0)))'));
-
-# Union between something and GEOMETRY
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT g AS a FROM geometries UNION SELECT g FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT pt AS a FROM geometries UNION SELECT g FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT ls AS a FROM geometries UNION SELECT g FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT py AS a FROM geometries UNION SELECT g FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpt AS a FROM geometries UNION SELECT g FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mls AS a FROM geometries UNION SELECT g FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpy AS a FROM geometries UNION SELECT g FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT gc AS a FROM geometries UNION SELECT g FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-# Union between something and POINT
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT g AS a FROM geometries UNION SELECT pt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT pt AS a FROM geometries UNION SELECT pt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT ls AS a FROM geometries UNION SELECT pt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT py AS a FROM geometries UNION SELECT pt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpt AS a FROM geometries UNION SELECT pt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mls AS a FROM geometries UNION SELECT pt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpy AS a FROM geometries UNION SELECT pt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT gc AS a FROM geometries UNION SELECT pt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-# Union between something and LINESTRING
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT g AS a FROM geometries UNION SELECT ls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT pt AS a FROM geometries UNION SELECT ls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT ls AS a FROM geometries UNION SELECT ls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT py AS a FROM geometries UNION SELECT ls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpt AS a FROM geometries UNION SELECT ls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mls AS a FROM geometries UNION SELECT ls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpy AS a FROM geometries UNION SELECT ls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT gc AS a FROM geometries UNION SELECT ls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
+#SET @tmp=@@internal_tmp_disk_storage_engine;
+#SET GLOBAL internal_tmp_disk_storage_engine=Sequoiadb;
+#CREATE TABLE t1(g GEOMETRY, p POINT, l LINESTRING);
+#INSERT INTO t1 (p, l) VALUES (ST_GeomFromText('POINT(1 1)'),
+#                              ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'));
+#
+#SELECT ST_AsText(a) FROM (SELECT p AS a FROM t1 UNION SELECT l FROM t1) t;
+#CREATE TABLE t2 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT p AS a FROM t1 UNION SELECT l FROM t1) t;
+#SHOW CREATE TABLE t2;
+#
+#DROP TABLE t1, t2;
+#SET GLOBAL internal_tmp_disk_storage_engine=@tmp;
+#
+#CREATE TABLE geometries (
+#  g GEOMETRY,
+#  pt POINT,
+#  ls LINESTRING,
+#  py POLYGON,
+#  mpt MULTIPOINT,
+#  mls MULTILINESTRING,
+#  mpy MULTIPOLYGON,
+#  gc GEOMETRYCOLLECTION);
+#INSERT INTO geometries VALUES (
+#  ST_GeomFromText('POLYGON((0 0, 9 0, 9 9, 0 9, 0 0), (2 2, 4 2, 4 4, 2 2))'),
+#  ST_GeomFromText('POINT(0 0)'),
+#  ST_GeomFromText('LINESTRING(0 0, 10 10)'),
+#  ST_GeomFromText('POLYGON((0 0, 9 0, 9 9, 0 9, 0 0), (2 2, 4 2, 4 4, 2 2))'),
+#  ST_GeomFromText('MULTIPOINT(0 0, 1 1, 2 2)'),
+#  ST_GeomFromText('MULTILINESTRING((0 0, 10 10), (10 0, 0 10))'),
+#  ST_GeomFromText('MULTIPOLYGON(((0 0, 9 0, 9 9, 0 0)), '
+#                               '((2 2, 3 2, 3 3, 2 2)))'),
+#  ST_GeomFromText('GEOMETRYCOLLECTION(POINT(1 1), LINESTRING(2 2, 3 3), '
+#                                     'POLYGON((0 0, 9 0, 9 9, 0 9, 0 0)))'));
+#
+## Union between something and GEOMETRY
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT g AS a FROM geometries UNION SELECT g FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT pt AS a FROM geometries UNION SELECT g FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT ls AS a FROM geometries UNION SELECT g FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT py AS a FROM geometries UNION SELECT g FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpt AS a FROM geometries UNION SELECT g FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mls AS a FROM geometries UNION SELECT g FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpy AS a FROM geometries UNION SELECT g FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT gc AS a FROM geometries UNION SELECT g FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+## Union between something and POINT
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT g AS a FROM geometries UNION SELECT pt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT pt AS a FROM geometries UNION SELECT pt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT ls AS a FROM geometries UNION SELECT pt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT py AS a FROM geometries UNION SELECT pt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpt AS a FROM geometries UNION SELECT pt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mls AS a FROM geometries UNION SELECT pt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpy AS a FROM geometries UNION SELECT pt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT gc AS a FROM geometries UNION SELECT pt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+## Union between something and LINESTRING
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT g AS a FROM geometries UNION SELECT ls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT pt AS a FROM geometries UNION SELECT ls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT ls AS a FROM geometries UNION SELECT ls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT py AS a FROM geometries UNION SELECT ls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpt AS a FROM geometries UNION SELECT ls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mls AS a FROM geometries UNION SELECT ls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpy AS a FROM geometries UNION SELECT ls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT gc AS a FROM geometries UNION SELECT ls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
 
 # Union between something and POLYGON
 
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT g AS a FROM geometries UNION SELECT py FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT pt AS a FROM geometries UNION SELECT py FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT ls AS a FROM geometries UNION SELECT py FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT py AS a FROM geometries UNION SELECT py FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpt AS a FROM geometries UNION SELECT py FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mls AS a FROM geometries UNION SELECT py FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpy AS a FROM geometries UNION SELECT py FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT gc AS a FROM geometries UNION SELECT py FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-# Union between something and MULTIPOINT
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT g AS a FROM geometries UNION SELECT mpt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT pt AS a FROM geometries UNION SELECT mpt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT ls AS a FROM geometries UNION SELECT mpt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT py AS a FROM geometries UNION SELECT mpt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpt AS a FROM geometries UNION SELECT mpt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mls AS a FROM geometries UNION SELECT mpt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpy AS a FROM geometries UNION SELECT mpt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT gc AS a FROM geometries UNION SELECT mpt FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-# Union between something and MULTILINESTRING
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT g AS a FROM geometries UNION SELECT mls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT pt AS a FROM geometries UNION SELECT mls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT ls AS a FROM geometries UNION SELECT mls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT py AS a FROM geometries UNION SELECT mls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpt AS a FROM geometries UNION SELECT mls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mls AS a FROM geometries UNION SELECT mls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpy AS a FROM geometries UNION SELECT mls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT gc AS a FROM geometries UNION SELECT mls FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-# Union between something and MULTIPOLYGON
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT g AS a FROM geometries UNION SELECT mpy FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT pt AS a FROM geometries UNION SELECT mpy FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT ls AS a FROM geometries UNION SELECT mpy FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT py AS a FROM geometries UNION SELECT mpy FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpt AS a FROM geometries UNION SELECT mpy FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mls AS a FROM geometries UNION SELECT mpy FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpy AS a FROM geometries UNION SELECT mpy FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT gc AS a FROM geometries UNION SELECT mpy FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-# Union between something and GEOMETRYCOLLECTION
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT g AS a FROM geometries UNION SELECT gc FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT pt AS a FROM geometries UNION SELECT gc FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT ls AS a FROM geometries UNION SELECT gc FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT py AS a FROM geometries UNION SELECT gc FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpt AS a FROM geometries UNION SELECT gc FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mls AS a FROM geometries UNION SELECT gc FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT mpy AS a FROM geometries UNION SELECT gc FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-CREATE TABLE t1 ENGINE=InnoDB SELECT a FROM
-  (SELECT gc AS a FROM geometries UNION SELECT gc FROM geometries) t;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-DROP TABLE geometries;
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT g AS a FROM geometries UNION SELECT py FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT pt AS a FROM geometries UNION SELECT py FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT ls AS a FROM geometries UNION SELECT py FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT py AS a FROM geometries UNION SELECT py FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpt AS a FROM geometries UNION SELECT py FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mls AS a FROM geometries UNION SELECT py FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpy AS a FROM geometries UNION SELECT py FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT gc AS a FROM geometries UNION SELECT py FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+## Union between something and MULTIPOINT
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT g AS a FROM geometries UNION SELECT mpt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT pt AS a FROM geometries UNION SELECT mpt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT ls AS a FROM geometries UNION SELECT mpt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT py AS a FROM geometries UNION SELECT mpt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpt AS a FROM geometries UNION SELECT mpt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mls AS a FROM geometries UNION SELECT mpt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpy AS a FROM geometries UNION SELECT mpt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT gc AS a FROM geometries UNION SELECT mpt FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+## Union between something and MULTILINESTRING
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT g AS a FROM geometries UNION SELECT mls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT pt AS a FROM geometries UNION SELECT mls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT ls AS a FROM geometries UNION SELECT mls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT py AS a FROM geometries UNION SELECT mls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpt AS a FROM geometries UNION SELECT mls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mls AS a FROM geometries UNION SELECT mls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpy AS a FROM geometries UNION SELECT mls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT gc AS a FROM geometries UNION SELECT mls FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+## Union between something and MULTIPOLYGON
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT g AS a FROM geometries UNION SELECT mpy FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT pt AS a FROM geometries UNION SELECT mpy FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT ls AS a FROM geometries UNION SELECT mpy FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT py AS a FROM geometries UNION SELECT mpy FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpt AS a FROM geometries UNION SELECT mpy FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mls AS a FROM geometries UNION SELECT mpy FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpy AS a FROM geometries UNION SELECT mpy FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT gc AS a FROM geometries UNION SELECT mpy FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+## Union between something and GEOMETRYCOLLECTION
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT g AS a FROM geometries UNION SELECT gc FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT pt AS a FROM geometries UNION SELECT gc FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT ls AS a FROM geometries UNION SELECT gc FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT py AS a FROM geometries UNION SELECT gc FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpt AS a FROM geometries UNION SELECT gc FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mls AS a FROM geometries UNION SELECT gc FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT mpy AS a FROM geometries UNION SELECT gc FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#CREATE TABLE t1 ENGINE=Sequoiadb SELECT a FROM
+#  (SELECT gc AS a FROM geometries UNION SELECT gc FROM geometries) t;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
+#
+#DROP TABLE geometries;
 
 --echo # 
 --echo # Bug#20456178 ASSERTION FAILED: 
 --echo #     (ENUM_SET_TYPELIB && GET_REAL_TYPE(ITEM) == MYSQL_TYPE_NULL)
 
-CREATE TABLE t1(a INT) engine=innodb;
-CREATE TABLE t2(a SET('a'))engine=innodb;
+CREATE TABLE t1(a INT) engine=Sequoiadb;
+CREATE TABLE t2(a SET('a'))engine=Sequoiadb;
 
 INSERT INTO t1 VALUES (1);
 INSERT INTO t2 VALUES (1);
@@ -1962,8 +1966,8 @@ CREATE TABLE t1 (
  d2 date NOT NULL DEFAULT '2018-01-25',
  d3 date,
  d4 date DEFAULT NULL,
- d5 date DEFAULT '2017-11-14',
- g1 geometry NOT NULL
+ d5 date DEFAULT '2017-11-14'
+# g1 geometry NOT NULL
 );
 
 SHOW CREATE TABLE t1;
@@ -2042,6 +2046,7 @@ eval SET NAMES $old_charset;
 SET @advertAcctId = 1000003;
 select @advertAcctId as a from dual union all select 1.0 from dual;
 
+
 --echo #
 --echo # Bug #29916900 (duplicate of #27903792) [ASSERTION `FIELD_TYPE() ==
 --echo # MYSQL_TYPE_GEOMETRY' FAILED]
@@ -2053,3 +2058,5 @@ SELECT ST_GEOMFROMTEXT('POINT(0 0)')
 UNION
 SELECT * FROM (SELECT NULL) AS a;
 --enable_result_log
+
+--source include/uninstall_sequoiadb.inc

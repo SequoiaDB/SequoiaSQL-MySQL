@@ -2,7 +2,11 @@
 # Tests with the utf8 character set
 #
 
---source include/have_innodb.inc
+--source include/have_sequoiadb.inc
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_ctype_utf8;
+use test_ctype_utf8;
 
 --disable_warnings
 drop table if exists t1,t2;
@@ -166,9 +170,10 @@ drop table t1;
 # Bug 2699
 # UTF8 breaks primary keys for cols > 333 characters
 #
---error 1071
+# SEQUOIASQLMAINSTREAM-253
+#--error 1071
 create table t1 (a text character set utf8, primary key(a(360)));
-
+drop table t1;
 
 #
 # Bug 2959
@@ -214,7 +219,6 @@ select 'zвасяz' rlike '[[:<:]]вася[[:>:]]';
 #
 # Bug #4555
 # ALTER TABLE crashes mysqld with enum column collated utf8_unicode_ci
-#
 CREATE TABLE t1 (a enum ('Y', 'N') DEFAULT 'N' COLLATE utf8_unicode_ci);
 ALTER TABLE t1 ADD COLUMN b CHAR(20);
 DROP TABLE t1;
@@ -235,15 +239,16 @@ drop table t2;
 
 #
 # Bug 4521: unique key prefix interacts poorly with utf8
-# MYISAM: keys with prefix compression, case insensitive collation.
+# SequoiaDB: keys with prefix compression, case insensitive collation.
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
 create table t1 (c varchar(30) character set utf8, unique(c(10)));
 insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
 insert into t1 values ('aaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaaa');
 insert into t1 values (repeat('b',20));
 select c c1 from t1 where c='1';
 select c c2 from t1 where c='2';
@@ -257,15 +262,16 @@ drop table t1;
 
 #
 # Bug 4521: unique key prefix interacts poorly with utf8
-# InnoDB: keys with prefix compression, case insensitive collation.
+# SequoiaDB: keys with prefix compression, case insensitive collation.
 #
-create table t1 (c varchar(30) character set utf8, unique(c(10))) engine=innodb;
+#Bug #SEQUOIADBMAINSTREAM-3607
+create table t1 (c varchar(30) character set utf8, unique(c(10))) engine=sequoiadb;
 insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
 insert into t1 values ('aaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaaa');
 insert into t1 values (repeat('b',20));
 select c c1 from t1 where c='1';
 select c c2 from t1 where c='2';
@@ -278,140 +284,152 @@ select c cb20 from t1 where c=repeat('b',20);
 drop table t1;
 #
 # Bug 4521: unique key prefix interacts poorly with utf8
-# MYISAM: fixed length keys, case insensitive collation
+# SequoiaDB: fixed length keys, case insensitive collation
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
 create table t1 (c char(3) character set utf8, unique (c(2)));
 insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
 insert into t1 values ('a');
 insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('b');
 insert into t1 values ('bb');
---error ER_DUP_ENTRY
-insert into t1 values ('bbb');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('bbb');
 insert into t1 values ('а');
 insert into t1 values ('аа');
---error ER_DUP_ENTRY
-insert into t1 values ('ааа');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ааа');
 insert into t1 values ('б');
 insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 insert into t1 values ('ꪪ');
 insert into t1 values ('ꪪꪪ');
---error ER_DUP_ENTRY
-insert into t1 values ('ꪪꪪꪪ');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ꪪꪪꪪ');
 drop table t1;
 #
 # Bug 4521: unique key prefix interacts poorly with utf8
-# InnoDB: fixed length keys, case insensitive collation
+# SequoiaDB: fixed length keys, case insensitive collation
 #
-create table t1 (c char(3) character set utf8, unique (c(2))) engine=innodb;
+#Bug #SEQUOIADBMAINSTREAM-3607
+create table t1 (c char(3) character set utf8, unique (c(2))) engine=sequoiadb;
 insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
 insert into t1 values ('a');
 insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('b');
 insert into t1 values ('bb');
---error ER_DUP_ENTRY
-insert into t1 values ('bbb');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('bbb');
 insert into t1 values ('а');
 insert into t1 values ('аа');
---error ER_DUP_ENTRY
-insert into t1 values ('ааа');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ааа');
 insert into t1 values ('б');
 insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 insert into t1 values ('ꪪ');
 insert into t1 values ('ꪪꪪ');
---error ER_DUP_ENTRY
-insert into t1 values ('ꪪꪪꪪ');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ꪪꪪꪪ');
 drop table t1;
 #
 # Bug 4531: unique key prefix interacts poorly with utf8
-# Check HEAP+HASH, case insensitive collation
+# Check SEQUOIADB+HASH, case insensitive collation
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
+#Bug #SEQUOIADBMAINSTREAM-3568
 create table t1 (
 c char(10) character set utf8,
 unique key a using hash (c(1))
-) engine=heap;
+) engine=sequoiadb;
 show create table t1;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
-insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
-select c as c_all from t1 order by c;
+#NOW SequoiaDB not support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
+#insert into t1 values ('б');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
+#select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
-select c as c_a from t1 where c='б';
+#select c as c_a from t1 where c='б';
 drop table t1;
 
 #
 # Bug 4531: unique key prefix interacts poorly with utf8
-# Check HEAP+BTREE, case insensitive collation
+# Check SEQUOIADB+BTREE, case insensitive collation
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
+#Bug #SEQUOIADBMAINSTREAM-3568
 create table t1 (
 c char(10) character set utf8,
 unique key a using btree (c(1))
-) engine=heap;
+) engine=sequoiadb;
 show create table t1;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
-insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
-select c as c_all from t1 order by c;
+#NOW SequoiaDB not support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
+#insert into t1 values ('б');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
+#select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
-select c as c_a from t1 where c='б';
+#select c as c_a from t1 where c='б';
 drop table t1;
 
 #
 # Bug 4531: unique key prefix interacts poorly with utf8
 # Check BDB, case insensitive collation
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
+#Bug #SEQUOIADBMAINSTREAM-3568
 create table t1 (
 c char(10) character set utf8,
 unique key a (c(1))
-) engine=innodb;
+) engine=sequoiadb;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
-insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
-select c as c_all from t1 order by c;
+#NOW SequoiaDB not support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
+#insert into t1 values ('б');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
+#select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
-select c as c_a from t1 where c='б';
+#select c as c_a from t1 where c='б';
 drop table t1;
 
 #
 # Bug 4521: unique key prefix interacts poorly with utf8
-# MYISAM: keys with prefix compression, binary collation.
+# SequoiaDB: keys with prefix compression, binary collation.
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
 create table t1 (c varchar(30) character set utf8 collate utf8_bin, unique(c(10)));
 insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
 insert into t1 values ('aaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaaa');
 insert into t1 values (repeat('b',20));
 select c c1 from t1 where c='1';
 select c c2 from t1 where c='2';
@@ -425,147 +443,157 @@ drop table t1;
 
 #
 # Bug 4521: unique key prefix interacts poorly with utf8
-# MYISAM: fixed length keys, binary collation
+# SequoiaDB: fixed length keys, binary collation
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
 create table t1 (c char(3) character set utf8 collate utf8_bin, unique (c(2)));
 insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
 insert into t1 values ('a');
 insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('b');
 insert into t1 values ('bb');
---error ER_DUP_ENTRY
-insert into t1 values ('bbb');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('bbb');
 insert into t1 values ('а');
 insert into t1 values ('аа');
---error ER_DUP_ENTRY
-insert into t1 values ('ааа');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ааа');
 insert into t1 values ('б');
 insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 insert into t1 values ('ꪪ');
 insert into t1 values ('ꪪꪪ');
---error ER_DUP_ENTRY
-insert into t1 values ('ꪪꪪꪪ');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ꪪꪪꪪ');
 drop table t1;
 
 #
 # Bug 4531: unique key prefix interacts poorly with utf8
-# Check HEAP+HASH, binary collation
+# Check SEQUOIADB+HASH, binary collation
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
+#Bug #SEQUOIADBMAINSTREAM-3568
 create table t1 (
 c char(10) character set utf8 collate utf8_bin,
 unique key a using hash (c(1))
-) engine=heap;
+) engine=sequoiadb;
 show create table t1;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
-insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
-select c as c_all from t1 order by c;
+#NOW SequoiaDB not support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
+#insert into t1 values ('б');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
+#select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
-select c as c_a from t1 where c='б';
+#select c as c_a from t1 where c='б';
 drop table t1;
 
 #
 # Bug 4531: unique key prefix interacts poorly with utf8
-# Check HEAP+BTREE, binary collation
+# Check SEQUOIADB+BTREE, binary collation
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
+#Bug #SEQUOIADBMAINSTREAM-3568
 create table t1 (
 c char(10) character set utf8 collate utf8_bin,
 unique key a using btree (c(1))
-) engine=heap;
+) engine=sequoiadb;
 show create table t1;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
-insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
-select c as c_all from t1 order by c;
+#NOW SequoiaDB not support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
+#insert into t1 values ('б');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
+#select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
-select c as c_a from t1 where c='б';
+#select c as c_a from t1 where c='б';
 drop table t1;
 
 #
 # Bug 4531: unique key prefix interacts poorly with utf8
 # Check BDB, binary collation
 #
+#Bug #SEQUOIADBMAINSTREAM-3607
+#Bug #SEQUOIADBMAINSTREAM-3568
 create table t1 (
 c char(10) character set utf8 collate utf8_bin,
 unique key a (c(1))
-) engine=innodb;
+) engine=sequoiadb;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
-insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
-select c as c_all from t1 order by c;
+#NOW SequoiaDB not support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
+#insert into t1 values ('б');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
+#select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
-select c as c_a from t1 where c='б';
+#select c as c_a from t1 where c='б';
 drop table t1;
 
 
 # Bug#4594: column index make = failed for gbk, but like works
-# Check MYISAM
+# Check SequoiaDB
 #
 create table t1 (
   str varchar(255) character set utf8 not null,
   key str  (str(2))
-) engine=myisam;
+) engine=sequoiadb;
 INSERT INTO t1 VALUES ('str');
 INSERT INTO t1 VALUES ('str2');
 select * from t1 where str='str';
 drop table t1;
 
 # Bug#4594: column index make = failed for gbk, but like works
-# Check InnoDB
+# Check SequoiaDB
 #
 create table t1 (
   str varchar(255) character set utf8 not null,
   key str  (str(2))
-) engine=innodb;
+) engine=sequoiadb;
 INSERT INTO t1 VALUES ('str');
 INSERT INTO t1 VALUES ('str2');
 select * from t1 where str='str';
 drop table t1;
 
-# the same for HEAP+BTREE
+# the same for SEQUOIADB+BTREE
 #
 
 create table t1 (
   str varchar(255) character set utf8 not null,
   key str using btree (str(2))
-) engine=heap;
+) engine=sequoiadb;
 INSERT INTO t1 VALUES ('str');
 INSERT INTO t1 VALUES ('str2');
 select * from t1 where str='str';
 drop table t1;
 
-# the same for HEAP+HASH
+# the same for SEQUOIADB+HASH
 #
 
 create table t1 (
   str varchar(255) character set utf8 not null,
   key str using hash (str(2))
-) engine=heap;
+) engine=sequoiadb;
 INSERT INTO t1 VALUES ('str');
 INSERT INTO t1 VALUES ('str2');
 select * from t1 where str='str';
@@ -577,7 +605,7 @@ drop table t1;
 create table t1 (
   str varchar(255) character set utf8 not null,
   key str (str(2))
-) engine=innodb;
+) engine=sequoiadb;
 INSERT INTO t1 VALUES ('str');
 INSERT INTO t1 VALUES ('str2');
 select * from t1 where str='str';
@@ -598,7 +626,7 @@ SET NAMES utf8;
 CREATE TABLE t1 (
   subject varchar(255) character set utf8 collate utf8_unicode_ci,
   p varchar(15) character set utf8
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t1 VALUES ('谷川俊二と申しますが、インターネット予約の会員登録をしましたところ、メールアドレスを間違えてしまい会員ＩＤが受け取ることが出来ませんでした。間違えアドレスはtani-shun@n.vodafone.ne.jpを書き込みました。どうすればよいですか？ その他、住所等は間違えありません。連絡ください。よろしくお願いします。m(__)m','040312-000057');
 INSERT INTO t1 VALUES ('aaa','bbb');
 SELECT length(subject) FROM t1;
@@ -614,11 +642,12 @@ CREATE TABLE t1 (
     term     TEXT NOT NULL,
     PRIMARY KEY(id),
     INDEX(list_id, term(4))
-) ENGINE=MYISAM CHARSET=utf8;
+) ENGINE=SequoiaDB CHARSET=utf8;
 INSERT INTO t1 SET list_id = 1, term = "letterc";
 INSERT INTO t1 SET list_id = 1, term = "letterb";
 INSERT INTO t1 SET list_id = 1, term = "lettera";
 INSERT INTO t1 SET list_id = 1, term = "letterd";
+# SequoiaDB convert all charsets to utf8mb4, and collate only support utf8mb4_bin, so this query result is changed
 SELECT id FROM t1 WHERE (list_id = 1) AND (term = "letterc");
 SELECT id FROM t1 WHERE (list_id = 1) AND (term = "letterb");
 SELECT id FROM t1 WHERE (list_id = 1) AND (term = "lettera");
@@ -627,7 +656,7 @@ DROP TABLE t1;
 
 
 #
-# Bug #6043 erratic searching for diacriticals in indexed MyISAM UTF-8 table
+# Bug #6043 erratic searching for diacriticals in indexed SequoiaDB UTF-8 table
 #
 SET NAMES latin1;
 CREATE TABLE t1 (
@@ -636,7 +665,7 @@ CREATE TABLE t1 (
     term text NOT NULL,
     PRIMARY KEY(id),
     INDEX(list_id, term(19))
-) ENGINE=MyISAM CHARSET=utf8;
+) ENGINE=SequoiaDB CHARSET=utf8;
 INSERT INTO t1 set list_id = 1, term = "test�test";
 INSERT INTO t1 set list_id = 1, term = "testetest";
 INSERT INTO t1 set list_id = 1, term = "test�test";
@@ -653,10 +682,10 @@ create table t1 (
   a int primary key,
   b varchar(6),
   index b3(b(3))
-) engine=innodb character set=utf8;
+) engine=sequoiadb character set=utf8;
 insert into t1 values(1,'foo'),(2,'foobar');
 select * from t1 where b like 'foob%';
-alter table t1 engine=innodb;
+alter table t1 engine=sequoiadb;
 select * from t1 where b like 'foob%';
 drop table t1;
 
@@ -716,7 +745,7 @@ SET collation_connection='utf8_bin';
 #
 CREATE TABLE t1 (
 	user varchar(255) NOT NULL default ''
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t1 VALUES ('one'),('two');
 SELECT CHARSET('a');
 SELECT user, CONCAT('<', user, '>') AS c FROM t1;
@@ -750,20 +779,23 @@ select ifnull(NULL, _utf8'string');
 #
 # Bug#9509 Optimizer: wrong result after AND with comparisons
 #
-set names utf8;
-create table t1 (s1 char(5) character set utf8 collate utf8_lithuanian_ci);
-insert into t1 values ('I'),('K'),('Y');
-select * from t1 where s1 < 'K' and s1 = 'Y';
-select * from t1 where 'K' > s1 and s1 = 'Y';
-drop table t1;
+#Bug #SEQUOIADBMAINSTREAM-3633
+#NOW SequoiaDB not support COLLATE utf8mb4_lithuanian_ci, just work for utf8mb4_bin
+#set names utf8;
+#create table t1 (s1 char(5) character set utf8 collate utf8_lithuanian_ci);
+#insert into t1 values ('I'),('K'),('Y');
+#select * from t1 where s1 < 'K' and s1 = 'Y';
+#select * from t1 where 'K' > s1 and s1 = 'Y';
+#drop table t1;
 
-create table t1 (s1 char(5) character set utf8 collate utf8_czech_ci);
-insert into t1 values ('c'),('d'),('h'),('ch'),('CH'),('cH'),('Ch'),('i');
-select * from t1 where s1 > 'd' and s1 = 'CH';
-select * from t1 where 'd' < s1 and s1 = 'CH';
-select * from t1 where s1 = 'cH' and s1 <> 'ch';
-select * from t1 where 'cH' = s1 and s1 <> 'ch';
-drop table t1;
+#NOW SequoiaDB not support COLLATE utf8mb4_lithuanian_ci, just work for utf8mb4_bin
+#create table t1 (s1 char(5) character set utf8 collate utf8_czech_ci);
+#insert into t1 values ('c'),('d'),('h'),('ch'),('CH'),('cH'),('Ch'),('i');
+#select * from t1 where s1 > 'd' and s1 = 'CH';
+#select * from t1 where 'd' < s1 and s1 = 'CH';
+#select * from t1 where s1 = 'cH' and s1 <> 'ch';
+#select * from t1 where 'cH' = s1 and s1 <> 'ch';
+#drop table t1;
 
 #
 # Bug#10714: Inserting double value into utf8 column crashes server
@@ -776,6 +808,7 @@ drop table t1;
 # Bug#10253 compound index length and utf8 char set
 # produces invalid query results
 #
+#Bug #SEQUOIADBMAINSTREAM-3568
 create table t1 (
  id int not null,
  city varchar(20) not null,
@@ -784,7 +817,7 @@ create table t1 (
 insert into t1 values (1,'Durban North');
 insert into t1 values (2,'Durban');
 select * from t1 where city = 'Durban';
-select * from t1 where city = 'Durban ';
+#select * from t1 where city = 'Durban ';
 drop table t1;
 
 #
@@ -801,7 +834,6 @@ create table t1 (x enum('A', 'B') default 0) character set utf8;
 #
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 SET NAMES UTF8;
-
 CREATE TABLE t1 (
   `id` int(20) NOT NULL auto_increment,
   `country` varchar(100) NOT NULL default '',
@@ -819,7 +851,7 @@ CREATE TABLE t1 (
   KEY `IX_mobile_originated_message_keyword` (`keyword`),
   KEY `IX_mobile_originated_message_created` (`created`),
   KEY `IX_mobile_originated_message_support` (`msisdn`,`momid`,`keyword`,`gateway_id`,`created`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 
 INSERT INTO t1 VALUES 
 (1,'blah','464','aaa','fkc1c9ilc20x0hgae7lx6j09','ERR','ERR Имри.Афимим.Аеимимримдмримрмрирор имримримримр имридм ирбднримрфмририримрфмфмим.Ад.Д имдимримрад.Адимримримрмдиримримримр м.Дадимфшьмримд им.Адимимрн имадми','ИМРИ.АФИМИМ.АЕИМИМРИМДМРИМРМРИРОР',3,'2005-06-01 17:30:43','1234567890'),
@@ -830,7 +862,7 @@ CREATE TABLE t2 (
   `operator_id` int(11) NOT NULL default '0',
   `created` datetime NOT NULL default '0000-00-00 00:00:00',
   UNIQUE KEY `PK_user` (`msisdn`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 
 INSERT INTO t2 VALUES ('1234567890',2,'2005-05-24 13:53:25');
 
@@ -863,6 +895,7 @@ set names utf8;
 select 'a\\' like 'a\\';
 select 'aa\\' like 'a%\\';
 
+#Bug #SEQUOIADBMAINSTREAM-3593
 create table t1 (a char(10), key(a)) character set utf8;
 insert into t1 values ("a"),("abc"),("abcd"),("hello"),("test");
 select * from t1 where a like "abc%";
@@ -877,12 +910,13 @@ drop table t1;
 
 
 #
-# Bug#9557 MyISAM utf8 table crash
+# Bug#9557 SequoiaDB utf8 table crash
 #
+#Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1 (
   a varchar(255) NOT NULL default '',
   KEY a (a)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE utf8_general_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE utf8_general_ci;
 insert into t1 values (_utf8 0xe880bd);
 insert into t1 values (_utf8 0x5b);
 select hex(a) from t1;
@@ -930,10 +964,9 @@ DROP TABLE t1;
 # Bug#17705: Corruption of compressed index when index length changes between
 # 254 and 256
 #
-
 SET NAMES utf8;
 DROP TABLE IF EXISTS t1;
-CREATE TABLE t1(a VARCHAR(255), KEY(a)) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+CREATE TABLE t1(a VARCHAR(255), KEY(a)) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
 INSERT INTO t1 VALUES('uu');
 check table t1;
@@ -963,6 +996,7 @@ drop table t1;
 #
 # Bug#20471 LIKE search fails with indexed utf8 char column
 #
+#Bug #SEQUOIADBMAINSTREAM-3593
 set names utf8;
 create table t1 (s1 char(5) character set utf8);
 insert into t1 values
@@ -994,10 +1028,10 @@ select s1 as after_delete_bin from t1 where s1 like 'ペテ%';
 drop table t1;
 
 # additional tests from duplicate bug#20744 MySQL return no result
-
+#Bug #SEQUOIADBMAINSTREAM-3593
 set names utf8;
 create table t1 (a varchar(30) not null primary key)
-engine=innodb  default character set utf8 collate utf8_general_ci;
+engine=sequoiadb  default character set utf8 collate utf8_general_ci;
 insert into t1 values ('あいうえおかきくけこさしすせそ');
 insert into t1 values ('さしすせそかきくけこあいうえお');
 select a as gci1 from t1 where a like 'さしすせそかきくけこあいうえお%';
@@ -1006,7 +1040,7 @@ drop table t1;
 
 set names utf8;
 create table t1 (a varchar(30) not null primary key)
-engine=innodb default character set utf8 collate utf8_unicode_ci;
+engine=sequoiadb default character set utf8 collate utf8_unicode_ci;
 insert into t1 values ('あいうえおかきくけこさしすせそ');
 insert into t1 values ('さしすせそかきくけこあいうえお');
 select a as uci1 from t1 where a like 'さしすせそかきくけこあいうえお%';
@@ -1015,7 +1049,7 @@ drop table t1;
 
 set names utf8;
 create table t1 (a varchar(30) not null primary key)
-engine=innodb default character set utf8 collate utf8_bin;
+engine=sequoiadb default character set utf8 collate utf8_bin;
 insert into t1 values ('あいうえおかきくけこさしすせそ');
 insert into t1 values ('さしすせそかきくけこあいうえお');
 select a as bin1 from t1 where a like 'さしすせそかきくけこあいうえお%';
@@ -1034,7 +1068,7 @@ CREATE TABLE t1 (id int PRIMARY KEY,
                  b int,
                  f varchar(128) default 'XXX',
                  INDEX (a(4))
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 INSERT INTO t1(id, a, b) VALUES
   (1, 'cccc', 50), (2, 'cccc', 70), (3, 'cccc', 30),
   (4, 'cccc', 30), (5, 'cccc', 20), (6, 'bbbbbb', 40),
@@ -1053,13 +1087,13 @@ DROP TABLE t1;
 #
 # Bug#16674: LIKE predicate for a utf8 character set column
 #
-
+#Bug #SEQUOIADBMAINSTREAM-3593
 SET NAMES utf8;
 
 CREATE TABLE t1 (
   a CHAR(13) DEFAULT '',
   INDEX(a)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 INSERT INTO t1 VALUES 
  ('Käli Käli 2-4'), ('Käli Käli 2-4'),
  ('Käli Käli 2+4'), ('Käli Käli 2+4'),
@@ -1069,7 +1103,7 @@ INSERT INTO t1 SELECT * FROM t1;
 CREATE TABLE t2 (
   a CHAR(13) DEFAULT '',
   INDEX(a)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 
 INSERT INTO t2 VALUES
  ('Kali Kali 2-4'), ('Kali Kali 2-4'),
@@ -1077,20 +1111,21 @@ INSERT INTO t2 VALUES
  ('Kali Kali 2-6'), ('Kali Kali 2-6');
 INSERT INTO t2 SELECT * FROM t2;
 
+#Bug #SEQUOIASQLMAINSTREAM-217
 SELECT a FROM t1 WHERE a LIKE 'Käli Käli 2+4';
 SELECT a FROM t2 WHERE a LIKE 'Kali Kali 2+4';
 
-EXPLAIN SELECT a FROM t1 WHERE a LIKE 'Käli Käli 2+4';
-EXPLAIN SELECT a FROM t1 WHERE a = 'Käli Käli 2+4';
-EXPLAIN SELECT a FROM t2 WHERE a LIKE 'Kali Kali 2+4';
-EXPLAIN SELECT a FROM t2 WHERE a = 'Kali Kali 2+4';
+#EXPLAIN SELECT a FROM t1 WHERE a LIKE 'Käli Käli 2+4';
+#EXPLAIN SELECT a FROM t1 WHERE a = 'Käli Käli 2+4';
+#EXPLAIN SELECT a FROM t2 WHERE a LIKE 'Kali Kali 2+4';
+#EXPLAIN SELECT a FROM t2 WHERE a = 'Kali Kali 2+4';
 
 DROP TABLE t1,t2;
 
 CREATE TABLE t1 (
   a char(255) DEFAULT '', 
   KEY(a(10))
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 INSERT INTO t1 VALUES ('Käli Käli 2-4');
 SELECT * FROM t1 WHERE a LIKE 'Käli Käli 2%';
 INSERT INTO t1 VALUES ('Käli Käli 2-4');
@@ -1099,7 +1134,7 @@ DROP TABLE t1;
 
 CREATE TABLE t1 (
   a char(255) DEFAULT ''
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 INSERT INTO t1 VALUES ('Käli Käli 2-4');
 INSERT INTO t1 VALUES ('Käli Käli 2-4');
 SELECT * FROM t1 WHERE a LIKE 'Käli Käli 2%';
@@ -1111,7 +1146,7 @@ DROP TABLE t1;
 # Bug#18359: LIKE predicate for a 'utf8' text column with a partial index
 #            (see bug #16674 as well)
 #
-
+#Bug #SEQUOIADBMAINSTREAM-3593
 SET NAMES latin2;
 
 CREATE TABLE t1 (
@@ -1119,7 +1154,7 @@ CREATE TABLE t1 (
   tid int(11) NOT NULL default '0',
   val text NOT NULL,
   INDEX idx(tid, val(10))
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 
 INSERT INTO t1 VALUES
   (40988,72,'VOLN� ADSL'),(41009,72,'VOLN� ADSL'),
@@ -1128,6 +1163,7 @@ INSERT INTO t1 VALUES
   (42141,72,'VOLN� ADSL'),(42565,72,'VOLN� ADSL Combi'),
   (42749,72,'VOLN� ADSL'),(44205,72,'VOLN� ADSL');
 
+#Sequoiadb Case insensitive
 SELECT * FROM t1 WHERE tid=72 and val LIKE 'VOLNY ADSL'; 
 SELECT * FROM t1 WHERE tid=72 and val LIKE 'VOLN� ADSL'; 
 SELECT * FROM t1 WHERE tid=72 and val LIKE '%VOLN� ADSL'; 
@@ -1151,9 +1187,9 @@ insert into t1 values (unhex('65')), (unhex('C3A9')), (unhex('65'));
 analyze table t1;
 -- enable_result_log
 -- enable_query_log
-explain select distinct a from t1;
+#explain select distinct a from t1;
 select distinct a from t1;
-explain select a from t1 group by a;
+#explain select a from t1 group by a;
 select a from t1 group by a;
 drop table t1;
 
@@ -1168,8 +1204,8 @@ insert into t1 values ('123'), ('456');
 analyze table t1;
 -- enable_result_log
 -- enable_query_log
-explain
-  select substr(z.a,-1), z.a from t1 as y join t1 as z on y.a=z.a order by 1;
+#explain
+#  select substr(z.a,-1), z.a from t1 as y join t1 as z on y.a=z.a order by 1;
 select substr(z.a,-1), z.a from t1 as y join t1 as z on y.a=z.a order by 1;
 drop table t1;
 
@@ -1191,11 +1227,11 @@ INSERT INTO crashtest VALUES ('-1000');
 ANALYZE TABLE crashtest;
 -- enable_result_log
 -- enable_query_log
-EXPLAIN SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8);
+#EXPLAIN SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8);
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8);
 DROP TABLE crashtest;
 DROP DATABASE crashtest;
-USE test;
+USE test_ctype_utf8;
 SET CHARACTER SET default;
 
 # End of 4.1 tests
@@ -1378,20 +1414,20 @@ drop table t1;
 
 #
 # Bug#19960: Inconsistent results when joining
-# InnoDB tables using partial UTF8 indexes
+# SequoiaDB tables using partial UTF8 indexes
 #
 
 CREATE TABLE t1 (
   colA int(11) NOT NULL,
   colB varchar(255) character set utf8 NOT NULL,
    PRIMARY KEY  (colA)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t1 (colA, colB) VALUES (1, 'foo'), (2, 'foo bar');
 CREATE TABLE t2 (
   colA int(11) NOT NULL,
   colB varchar(255) character set utf8 NOT NULL,
    KEY bad  (colA,colB(3))
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t2 (colA, colB) VALUES (1, 'foo'),(2, 'foo bar');
 SELECT * FROM t1 JOIN t2 ON t1.colA=t2.colA AND t1.colB=t2.colB
 WHERE t1.colA < 3;
@@ -1646,9 +1682,9 @@ set @@collation_connection=utf8_bin;
 --source include/weight_string_euro.inc
 --source include/weight_string_l1.inc
 
---echo #
---echo # Checking strnxfrm() with odd length
---echo #
+#--echo #
+#--echo # Checking strnxfrm() with odd length
+#--echo #
 set max_sort_length=5;
 select @@max_sort_length;
 create table t1 (a varchar(128) character set utf8 collate utf8_general_ci);
@@ -1666,6 +1702,10 @@ set max_sort_length=default;
 
 SET NAMES utf8; 
 --source include/ctype_inet.inc
+--source include/uninstall_sequoiadb.inc
+
+# DROP DATABASE
+DROP DATABASE test_ctype_utf8;
 
 --echo #
 --echo # End of 5.6 tests

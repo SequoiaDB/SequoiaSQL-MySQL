@@ -3,11 +3,12 @@ DROP TABLE IF EXISTS t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11;
 DROP DATABASE IF EXISTS world;
 --enable_warnings
 
-set names utf8;
+#set names utf8;
+set character_set_server=utf8;
 
-CREATE DATABASE world;
+#CREATE DATABASE world;
 
-use world;
+#use world;
 
 --source include/world_schema1.inc
 
@@ -26,24 +27,24 @@ SELECT COUNT(*) FROM countrylanguage;
 show variables like 'join_buffer_size';
 
 # Somewhat unstable filtering numbers
---replace_regex /88.18/87.57/
-EXPLAIN
-SELECT city.Name, country.Name FROM city,country
-  WHERE city.Country=country.Code AND 
-        country.Name LIKE 'L%' AND city.Population > 100000;
+#--replace_regex /88.18/87.57/
+#EXPLAIN
+#SELECT city.Name, country.Name FROM city,country
+#  WHERE city.Country=country.Code AND 
+#        country.Name LIKE 'L%' AND city.Population > 100000;
 
 --sorted_result
 SELECT city.Name, country.Name FROM city,country
   WHERE city.Country=country.Code AND 
         country.Name LIKE 'L%' AND city.Population > 100000;
 
-EXPLAIN
-SELECT city.Name, country.Name, countrylanguage.Language
-  FROM city,country,countrylanguage
-  WHERE city.Country=country.Code AND
-        countrylanguage.Country=country.Code AND
-        city.Name LIKE 'L%' AND country.Population > 3000000 AND
-        countrylanguage.Percentage > 50;
+#EXPLAIN
+#SELECT city.Name, country.Name, countrylanguage.Language
+#  FROM city,country,countrylanguage
+#  WHERE city.Country=country.Code AND
+#        countrylanguage.Country=country.Code AND
+#        city.Name LIKE 'L%' AND country.Population > 3000000 AND
+#        countrylanguage.Percentage > 50;
 
 --sorted_result
 SELECT city.Name, country.Name, countrylanguage.Language
@@ -56,23 +57,23 @@ SELECT city.Name, country.Name, countrylanguage.Language
 set join_buffer_size=256;
 show variables like 'join_buffer_size';
 
-EXPLAIN
-SELECT city.Name, country.Name FROM city,country
-  WHERE city.Country=country.Code AND 
-        country.Name LIKE 'L%' AND city.Population > 100000;
+#EXPLAIN
+#SELECT city.Name, country.Name FROM city,country
+#  WHERE city.Country=country.Code AND 
+#        country.Name LIKE 'L%' AND city.Population > 100000;
 
 --sorted_result
 SELECT city.Name, country.Name FROM city,country
   WHERE city.Country=country.Code AND 
         country.Name LIKE 'L%' AND city.Population > 100000;
 
-EXPLAIN
-SELECT city.Name, country.Name, countrylanguage.Language
-  FROM city,country,countrylanguage
-  WHERE city.Country=country.Code AND
-        countrylanguage.Country=country.Code AND
-        city.Name LIKE 'L%' AND country.Population > 3000000 AND
-        countrylanguage.Percentage > 50;
+#EXPLAIN
+#SELECT city.Name, country.Name, countrylanguage.Language
+#  FROM city,country,countrylanguage
+#  WHERE city.Country=country.Code AND
+#        countrylanguage.Country=country.Code AND
+#        city.Name LIKE 'L%' AND country.Population > 3000000 AND
+#        countrylanguage.Percentage > 50;
 
 --sorted_result
 SELECT city.Name, country.Name, countrylanguage.Language
@@ -85,12 +86,12 @@ SELECT city.Name, country.Name, countrylanguage.Language
 set join_buffer_size=default;
 show variables like 'join_buffer_size';
 
-DROP DATABASE world; 
+#DROP DATABASE world; 
+DROP TABLE city,country,countrylanguage;
 
+#CREATE DATABASE world;
 
-CREATE DATABASE world;
-
-use world;
+#use world;
 
 --source include/world_schema.inc
 
@@ -105,25 +106,25 @@ use world;
 show variables like 'join_buffer_size';
 
 # Somewhat unstable filtering numbers
---replace_regex /88.18/87.57/
-EXPLAIN
-SELECT city.Name, country.Name FROM city,country
-  WHERE city.country=country.Code AND 
-        country.Name LIKE 'L%' AND city.Population > 100000;
+#--replace_regex /88.18/87.57/
+#EXPLAIN
+#SELECT city.Name, country.Name FROM city,country
+#  WHERE city.country=country.Code AND 
+#        country.Name LIKE 'L%' AND city.Population > 100000;
 
 --sorted_result
 SELECT city.Name, country.Name FROM city,country
   WHERE city.country=country.Code AND 
         country.Name LIKE 'L%' AND city.Population > 100000;
 
---replace_result 185 # 188 #
-EXPLAIN
-SELECT city.Name, country.Name, countrylanguage.Language
-  FROM city,country,countrylanguage
-  WHERE city.country=country.Code AND
-        countrylanguage.country=country.Code AND
-        city.Name LIKE 'L%' AND country.Population > 3000000 AND
-        countrylanguage.Percentage > 50;
+#--replace_result 185 # 188 #
+#EXPLAIN
+#SELECT city.Name, country.Name, countrylanguage.Language
+#  FROM city,country,countrylanguage
+#  WHERE city.country=country.Code AND
+#        countrylanguage.country=country.Code AND
+#        city.Name LIKE 'L%' AND country.Population > 3000000 AND
+#        countrylanguage.Percentage > 50;
 
 --sorted_result
 SELECT city.Name, country.Name, countrylanguage.Language
@@ -134,23 +135,23 @@ SELECT city.Name, country.Name, countrylanguage.Language
         countrylanguage.Percentage > 50;
 
 # Somewhat unstable filtering numbers
---replace_regex /88.18/87.57/
-EXPLAIN
-SELECT Name FROM city
-  WHERE city.country IN (SELECT Code FROM country WHERE country.Name LIKE 'L%') AND
-        city.Population > 100000;
+#--replace_regex /88.18/87.57/
+#EXPLAIN
+#SELECT Name FROM city
+#  WHERE city.country IN (SELECT Code FROM country WHERE country.Name LIKE 'L%') AND
+#        city.Population > 100000;
 
 --sorted_result
 SELECT Name FROM city
   WHERE city.country IN (SELECT Code FROM country WHERE country.Name LIKE 'L%') AND
         city.Population > 100000;
 
-EXPLAIN
-SELECT country.Name, IF(ISNULL(countrylanguage.country), NULL, countrylanguage.Percentage)
-  FROM country LEFT JOIN countrylanguage ON
-       (countrylanguage.country=country.Code AND Language='English')
-  WHERE 
-       country.Population > 10000000;
+#EXPLAIN
+#SELECT country.Name, IF(ISNULL(countrylanguage.country), NULL, countrylanguage.Percentage)
+#  FROM country LEFT JOIN countrylanguage ON
+#       (countrylanguage.country=country.Code AND Language='English')
+#  WHERE 
+#       country.Population > 10000000;
 
 --sorted_result
 SELECT country.Name, IF(ISNULL(countrylanguage.country), NULL, countrylanguage.Percentage)
@@ -163,25 +164,25 @@ set join_buffer_size=256;
 show variables like 'join_buffer_size';
 
 # Somewhat unstable filtering numbers
---replace_regex /88.18/87.57/
-EXPLAIN
-SELECT city.Name, country.Name FROM city,country
-  WHERE city.country=country.Code AND 
-        country.Name LIKE 'L%' AND city.Population > 100000;
+#--replace_regex /88.18/87.57/
+#EXPLAIN
+#SELECT city.Name, country.Name FROM city,country
+#  WHERE city.country=country.Code AND 
+#        country.Name LIKE 'L%' AND city.Population > 100000;
 
 --sorted_result
 SELECT city.Name, country.Name FROM city,country
   WHERE city.country=country.Code AND 
         country.Name LIKE 'L%' AND city.Population > 100000;
 
---replace_result 185 # 188 #
-EXPLAIN
-SELECT city.Name, country.Name, countrylanguage.Language
-  FROM city,country,countrylanguage
-  WHERE city.country=country.Code AND
-        countrylanguage.country=country.Code AND
-        city.Name LIKE 'L%' AND country.Population > 3000000 AND
-        countrylanguage.Percentage > 50;
+#--replace_result 185 # 188 #
+#EXPLAIN
+#SELECT city.Name, country.Name, countrylanguage.Language
+#  FROM city,country,countrylanguage
+#  WHERE city.country=country.Code AND
+#        countrylanguage.country=country.Code AND
+#        city.Name LIKE 'L%' AND country.Population > 3000000 AND
+#        countrylanguage.Percentage > 50;
 
 --sorted_result
 SELECT city.Name, country.Name, countrylanguage.Language
@@ -192,11 +193,11 @@ SELECT city.Name, country.Name, countrylanguage.Language
         countrylanguage.Percentage > 50;
 
 # Somewhat unstable filtering numbers
---replace_regex /88.18/87.57/
-EXPLAIN
-SELECT Name FROM city
-  WHERE city.country IN (SELECT Code FROM country WHERE country.Name LIKE 'L%') AND
-        city.Population > 100000;
+#--replace_regex /88.18/87.57/
+#EXPLAIN
+#SELECT Name FROM city
+#  WHERE city.country IN (SELECT Code FROM country WHERE country.Name LIKE 'L%') AND
+#        city.Population > 100000;
 
 --sorted_result
 SELECT Name FROM city
@@ -212,10 +213,10 @@ SELECT city.Name, country.Name FROM city,country
 
 set join_buffer_size=256;
 
---replace_column 10 #
-EXPLAIN
-SELECT city.Name, country.Name FROM city,country
-  WHERE city.country=country.Code AND city.Population > 3000000;
+#--replace_column 10 #
+#EXPLAIN
+#SELECT city.Name, country.Name FROM city,country
+#  WHERE city.country=country.Code AND city.Population > 3000000;
 
 --sorted_result
 SELECT city.Name, country.Name FROM city,country
@@ -255,9 +256,10 @@ SELECT city.Name, country.Name, country.PopulationBar FROM city,country
 
 set join_buffer_size=default;
 
-DROP DATABASE world;
+#DROP DATABASE world;
+DROP TABLE city,country,countrylanguage;
 
-use test;
+#use test;
 
 #
 # Bug #35685: assertion abort when initializing a BKA cache
@@ -402,25 +404,25 @@ CREATE INDEX t11_masterclip ON t11( masterclip);
 INSERT INTO t11 VALUES
   (19, "Pop & Dance", 95, 'Y'), (3, "Rock & Alternative", 100, 'Y');
 
-EXPLAIN
-SELECT t1.uniquekey, t1.xml AS affiliateXml,
-       t8.name AS artistName, t8.artistid, 
-       t11.name AS genreName, t11.genreid, t11.priority AS genrePriority,
-       t10.subgenreid, t10.name AS subgenreName,
-       t2.name AS metaName, t2.metaid, t2.xml AS metaXml,
-       t4.priority + t5.priority + t6.priority AS overallPriority,
-       t3.path AS path, t3.mediaid, 
-       t4.formatid, t4.name AS formatName, 
-       t5.formatclassid, t5.name AS formatclassName, 
-       t6.formattypeid, t6.name AS formattypeName 
-FROM t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11
-WHERE t7.metaid = t2.metaid AND t7.artistid = t8.artistid AND
-      t9.metaid = t2.metaid AND t9.subgenreid = t10.subgenreid AND 
-      t10.genreid = t11.genreid AND  t3.metaid = t2.metaid AND
-      t3.formatid = t4.formatid AND t4.formatclassid = t5.formatclassid AND
-      t4.canaddtocapability =  'Y' AND t5.formattypeid = t6.formattypeid AND
-      t6.formattypeid IN (2) AND (t3.formatid IN (31, 8, 76)) AND
-      t1.metaid = t2.metaid AND t1.affiliateid = '2';
+#EXPLAIN
+#SELECT t1.uniquekey, t1.xml AS affiliateXml,
+#       t8.name AS artistName, t8.artistid, 
+#       t11.name AS genreName, t11.genreid, t11.priority AS genrePriority,
+#       t10.subgenreid, t10.name AS subgenreName,
+#       t2.name AS metaName, t2.metaid, t2.xml AS metaXml,
+#       t4.priority + t5.priority + t6.priority AS overallPriority,
+#       t3.path AS path, t3.mediaid, 
+#       t4.formatid, t4.name AS formatName, 
+#       t5.formatclassid, t5.name AS formatclassName, 
+#       t6.formattypeid, t6.name AS formattypeName 
+#FROM t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11
+#WHERE t7.metaid = t2.metaid AND t7.artistid = t8.artistid AND
+#      t9.metaid = t2.metaid AND t9.subgenreid = t10.subgenreid AND 
+#      t10.genreid = t11.genreid AND  t3.metaid = t2.metaid AND
+#      t3.formatid = t4.formatid AND t4.formatclassid = t5.formatclassid AND
+#      t4.canaddtocapability =  'Y' AND t5.formattypeid = t6.formattypeid AND
+#      t6.formattypeid IN (2) AND (t3.formatid IN (31, 8, 76)) AND
+#      t1.metaid = t2.metaid AND t1.affiliateid = '2';
 
 SELECT t1.uniquekey, t1.xml AS affiliateXml,
        t8.name AS artistName, t8.artistid, 
@@ -474,10 +476,10 @@ INSERT INTO t3 VALUES
  (93,933), (34,347), (82,829), (78,780), (63,634), 
  (32,329), (22,228), (11,114), (74,749), (23,236);
 
-EXPLAIN
-SELECT a1<>a2, a1, a2, b2, b3, c3,
-       SUBSTR(filler1,1,1) AS s1, SUBSTR(filler2,1,1) AS s2
-FROM t1,t2,t3 WHERE a1=a2 AND b2=b3 AND MOD(c3,10)>7; 
+#EXPLAIN
+#SELECT a1<>a2, a1, a2, b2, b3, c3,
+#       SUBSTR(filler1,1,1) AS s1, SUBSTR(filler2,1,1) AS s2
+#FROM t1,t2,t3 WHERE a1=a2 AND b2=b3 AND MOD(c3,10)>7; 
 
 --sorted_result
 SELECT a1<>a2, a1, a2, b2, b3, c3,
@@ -486,10 +488,10 @@ FROM t1,t2,t3 WHERE a1=a2 AND b2=b3 AND MOD(c3,10)>7;
  
 set join_buffer_size=512;
 
-EXPLAIN
-SELECT a1<>a2, a1, a2, b2, b3, c3,
-       SUBSTR(filler1,1,1) AS s1, SUBSTR(filler2,1,1) AS s2
-FROM t1,t2,t3 WHERE a1=a2 AND b2=b3 AND MOD(c3,10)>7; 
+#EXPLAIN
+#SELECT a1<>a2, a1, a2, b2, b3, c3,
+#       SUBSTR(filler1,1,1) AS s1, SUBSTR(filler2,1,1) AS s2
+#FROM t1,t2,t3 WHERE a1=a2 AND b2=b3 AND MOD(c3,10)>7; 
 
 --sorted_result
 SELECT a1<>a2, a1, a2, b2, b3, c3,
@@ -510,7 +512,7 @@ INSERT INTO t2 VALUES (1,10), (4,20), (3,20), (7,20), (7,10), (1,20);
     
 set join_buffer_size=32; 
  
-EXPLAIN SELECT * FROM t1,t2 WHERE t1.a=t2.a AND t1.b >= 30; 
+#EXPLAIN SELECT * FROM t1,t2 WHERE t1.a=t2.a AND t1.b >= 30; 
 --sorted_result  
 SELECT * FROM t1,t2 WHERE t1.a=t2.a AND t1.b >= 30;  
 
@@ -526,9 +528,9 @@ create table t2 (p int, a int, INDEX i_a(a));
 insert into t2 values
   (103, 7), (109, 3), (102, 3), (108, 1), (106, 3),
   (107, 7), (105, 1), (101, 3), (100, 7), (110, 1);
-explain
-select t1.a, count(t2.p) as count
-  from t1 left join t2 on t1.a=t2.a and t2.p % 2 = 1 group by t1.a;
+#explain
+#select t1.a, count(t2.p) as count
+#  from t1 left join t2 on t1.a=t2.a and t2.p % 2 = 1 group by t1.a;
 select t1.a, count(t2.p) as count
   from t1 left join t2 on t1.a=t2.a and t2.p % 2 = 1 group by t1.a;
 drop table t1, t2;
@@ -544,8 +546,8 @@ INSERT INTO t1 VALUES (2), (4), (3), (5), (1);
 CREATE TABLE t2 (a int NOT NULL, b int NOT NULL, INDEX i_a(a));
 INSERT INTO t2 VALUES (4,10), (2,10), (2,30), (2,20), (4,20);
 
-EXPLAIN
-SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.a WHERE t2.b IS NULL;
+#EXPLAIN
+#SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.a WHERE t2.b IS NULL;
 SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.a WHERE t2.b IS NULL;
 
 DROP TABLE t1, t2;
@@ -581,7 +583,7 @@ insert into t2 values (1, 101), (3, 102), (1, 100);
 
 --sorted_result
 select * from t1 left join t2 on t1.a=t2.a;
-explain select * from t1 left join t2 on t1.a=t2.a where t2.c=102 or t2.c is null;
+#explain select * from t1 left join t2 on t1.a=t2.a where t2.c=102 or t2.c is null;
 --sorted_result
 select * from t1 left join t2 on t1.a=t2.a where t2.c=102 or t2.c is null;
 
@@ -597,7 +599,7 @@ create table t2 (b int);
 insert into t2 values (200), (100);
 
 select * from t1 left join t2 on (1=0);
-explain select * from t1 left join t2 on (1=0) where a=40;
+#explain select * from t1 left join t2 on (1=0) where a=40;
 select * from t1 left join t2 on (1=0) where a=40;
 
 drop table t1, t2;
@@ -639,7 +641,7 @@ ANALYZE TABLE t1,t2;
 
 set join_buffer_size=1024;
 
-EXPLAIN SELECT AVG(c) FROM t1,t2 WHERE t1.a=t2.b;
+#EXPLAIN SELECT AVG(c) FROM t1,t2 WHERE t1.a=t2.b;
 SELECT AVG(c) FROM t1,t2 WHERE t1.a=t2.b;
 
 set join_buffer_size=default;
@@ -678,11 +680,11 @@ INSERT INTO t3 SELECT * FROM t1;
 
 set join_buffer_size=1024*1024;
 
-EXPLAIN
-SELECT COUNT(*) FROM t1,t2,t3
-  WHERE t1.a=t2.a AND t2.a=t3.a AND
-        t1.b IS NULL AND t2.b IS NULL AND t3.b IS NULL;
-
+#EXPLAIN
+#SELECT COUNT(*) FROM t1,t2,t3
+#  WHERE t1.a=t2.a AND t2.a=t3.a AND
+#        t1.b IS NULL AND t2.b IS NULL AND t3.b IS NULL;
+#
 SELECT COUNT(*) FROM t1,t2,t3
   WHERE t1.a=t2.a AND t2.a=t3.a AND
         t1.b IS NULL AND t2.b IS NULL AND t3.b IS NULL;
@@ -733,22 +735,22 @@ SELECT t1.a, t2.a, t3.a, t2.b, t3.b, t3.val
 
 set join_buffer_size=256;
 
-EXPLAIN
-SELECT t1.a, t2.a, t3.a, t2.b, t3.b, t3.val 
-  FROM (t1,t2) LEFT JOIN t3 ON (t1.a=t3.a AND t2.b=t3.b) 
-    WHERE t1.a=t2.a; 
+#EXPLAIN
+#SELECT t1.a, t2.a, t3.a, t2.b, t3.b, t3.val 
+#  FROM (t1,t2) LEFT JOIN t3 ON (t1.a=t3.a AND t2.b=t3.b) 
+#    WHERE t1.a=t2.a; 
 --sorted_result
 SELECT t1.a, t2.a, t3.a, t2.b, t3.b, t3.val 
   FROM (t1,t2) LEFT JOIN t3 ON (t1.a=t3.a AND t2.b=t3.b) 
     WHERE t1.a=t2.a;
 
 DROP INDEX idx ON t3;
-
-EXPLAIN
-SELECT t1.a, t2.a, t3.a, t2.b, t3.b, t3.val 
-  FROM (t1,t2) LEFT JOIN t3 ON (t1.a=t3.a AND t2.b=t3.b) 
-    WHERE t1.a=t2.a; 
-
+#
+#EXPLAIN
+#SELECT t1.a, t2.a, t3.a, t2.b, t3.b, t3.val 
+#  FROM (t1,t2) LEFT JOIN t3 ON (t1.a=t3.a AND t2.b=t3.b) 
+#    WHERE t1.a=t2.a; 
+#
 --sorted_result
 SELECT t1.a, t2.a, t3.a, t2.b, t3.b, t3.val 
   FROM (t1,t2) LEFT JOIN t3 ON (t1.a=t3.a AND t2.b=t3.b) 
@@ -780,8 +782,8 @@ insert into t2 values (4,1, 'qwerty'),(4,2, 'qwerty'),(4,3, 'qwerty'),
 select t2.f1, t2.f2, t2.f3 from t1,t2
 where t1.f1=t2.f1 and t2.f2 between t1.f1 and t1.f2 and t2.f2 + 1 >= t1.f1 + 1;
 
-explain select t2.f1, t2.f2, t2.f3 from t1,t2
-where t1.f1=t2.f1 and t2.f2 between t1.f1 and t2.f2;
+#explain select t2.f1, t2.f2, t2.f3 from t1,t2
+#where t1.f1=t2.f1 and t2.f2 between t1.f1 and t2.f2;
 
 drop table t1,t2;
 
@@ -798,16 +800,16 @@ insert into t2 values
   (20, 100), (30, 400), (20, 400), (30, 200), (10, 300), (10, 200), (40, 100),
   (40, 200), (30, 300), (10, 400), (20, 200), (20, 300);   
 
-explain
-select t1.id1, sum(t2.id2) from t1 join t2 on t1.id1=t2.id1 
-  where t1.d=3 group by t1.id1;
+#explain
+#select t1.id1, sum(t2.id2) from t1 join t2 on t1.id1=t2.id1 
+#  where t1.d=3 group by t1.id1;
 
 select t1.id1, sum(t2.id2) from t1 join t2 on t1.id1=t2.id1 
   where t1.d=3 group by t1.id1;
 
-explain
-select t1.id1  from t1 join t2 on t1.id1=t2.id1 
- where t1.d=3 and t2.id2 > 200 order by t1.id1;
+#explain
+#select t1.id1  from t1 join t2 on t1.id1=t2.id1 
+# where t1.d=3 and t2.id2 > 200 order by t1.id1;
 
 select t1.id1  from t1 join t2 on t1.id1=t2.id1 
  where t1.d=3 and t2.id2 > 200 order by t1.id1;
@@ -840,15 +842,15 @@ insert into t4 values
   (201, 'cc'), (601, 'cccccc'), (301, 'ccc'), (501, 'ccccc'),
   (202, 'cc'), (602, 'cccccc'), (302, 'ccc'), (502, 'ccccc');
 
+--disable_query_log
 --disable_result_log
---disable_warnings
 analyze table t2,t3,t4;
---enable_warnings
+--enable_query_log
 --enable_result_log
 
-explain 
-select t1.a, t1.b, t1.c, t1.d, t2.e, t3.f, t4.g from t1,t2,t3,t4
-  where t2.b=t1.b and t3.d=t1.d and t4.c=t1.c;
+#explain 
+#select t1.a, t1.b, t1.c, t1.d, t2.e, t3.f, t4.g from t1,t2,t3,t4
+#  where t2.b=t1.b and t3.d=t1.d and t4.c=t1.c;
 
 select t1.a, t1.b, t1.c, t1.d, t2.e, t3.f, t4.g from t1,t2,t3,t4
   where t2.b=t1.b and t3.d=t1.d and t4.c=t1.c;
@@ -1228,11 +1230,11 @@ INSERT INTO t5 VALUES
 
 set join_buffer_size=2048;
 
-EXPLAIN
-SELECT STRAIGHT_JOIN t1.id1, t1.num3, t3.text1, t3.id4, t2.id3, t4.dummy
-  FROM t1 JOIN  t2 JOIN  t3 JOIN  t4 JOIN  t5 
-    WHERE t1.id1=t5.id1 AND t1.id2=t5.id2 and  t4.id2=t1.id2 AND
-          t5.enum2='Active' AND t3.id4=t2.id4 AND t2.id3=t1.id3 AND t3.text1<'D';
+#EXPLAIN
+#SELECT STRAIGHT_JOIN t1.id1, t1.num3, t3.text1, t3.id4, t2.id3, t4.dummy
+#  FROM t1 JOIN  t2 JOIN  t3 JOIN  t4 JOIN  t5 
+#    WHERE t1.id1=t5.id1 AND t1.id2=t5.id2 and  t4.id2=t1.id2 AND
+#          t5.enum2='Active' AND t3.id4=t2.id4 AND t2.id3=t1.id3 AND t3.text1<'D';
 
 --sorted_result
 SELECT STRAIGHT_JOIN t1.id1, t1.num3, t3.text1, t3.id4, t2.id3, t4.dummy
@@ -1266,20 +1268,21 @@ INSERT INTO t2 VALUES (2),(3);
 
 --echo
 
---echo # The query shall return 1 record with a max value 9 and one of the 
---echo # int_key values inserted above (undefined which one). A changed 
---echo # execution plan may change the value in the second column
+#--echo # The query shall return 1 record with a max value 9 and one of the 
+#--echo # int_key values inserted above (undefined which one). A changed 
+#--echo # execution plan may change the value in the second column
 --source include/turn_off_only_full_group_by.inc
+#Bug #SEQUOIADBMAINSTREAM-3596
 SELECT  MAX(t1.int_key), t1.int_key
 FROM t1 STRAIGHT_JOIN t2  
 ORDER BY t1.int_key;
 
 --echo
 
-explain 
-SELECT  MAX(t1.int_key), t1.int_key
-FROM t1 STRAIGHT_JOIN t2  
-ORDER BY t1.int_key;
+#explain 
+#SELECT  MAX(t1.int_key), t1.int_key
+#FROM t1 STRAIGHT_JOIN t2  
+#ORDER BY t1.int_key;
 
 --echo
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
@@ -1298,9 +1301,11 @@ CREATE TABLE t2 (c1 text, c2 text);
 INSERT INTO t2 VALUES('tt', 'uu');
 INSERT INTO t2 VALUES('zzzz', 'xxxxxxxxx');
 
---disable_result_log
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1,t2;
---enable_result_log
+-- enable_query_log
+-- enable_result_log
 
 SELECT t1.*, t2.*, LENGTH(t2.c1), LENGTH(t2.c2) FROM t1,t2
   WHERE t1.c2=LENGTH(t2.c2) and t1.c1=LENGTH(t2.c1);
@@ -1327,20 +1332,21 @@ CREATE TABLE t2 (
 
 INSERT INTO t2 VALUES (1,'x'),(2,'y');
 
+#Bug #SEQUOIADBMAINSTREAM-3553
 --echo
 
 SELECT MAX(t1.i) 
 FROM t1 JOIN t2 ON t2.v
 ORDER BY t2.v;
 
---echo
-
-EXPLAIN
-SELECT MAX(t1.i) 
-FROM t1 JOIN t2 ON t2.v
-ORDER BY t2.v;
-
---echo
+#--echo
+#
+#EXPLAIN
+#SELECT MAX(t1.i) 
+#FROM t1 JOIN t2 ON t2.v
+#ORDER BY t2.v;
+#
+#--echo
 
 DROP TABLE t1,t2;
 
@@ -1358,7 +1364,7 @@ INSERT INTO t2 VALUES (1,1),(2,2);
 CREATE TABLE t3 (a INT, b INT);
 INSERT INTO t3 VALUES (1,1),(2,2);
 
-EXPLAIN SELECT t1.* FROM t1,t2,t3;
+#EXPLAIN SELECT t1.* FROM t1,t2,t3;
 SELECT t1.* FROM t1,t2,t3;
 
 DROP TABLE t1,t2,t3;
@@ -1392,11 +1398,11 @@ CREATE TABLE t3 (pk int(11) PRIMARY KEY);
 INSERT INTO t3 VALUES (2);
 CREATE TABLE t4 (a varchar(10));
 
-EXPLAIN SELECT 1
-FROM t2 LEFT JOIN
-       ((t1 JOIN t3 ON t1.a = t3.pk)
-        LEFT JOIN t4 ON 1 )
-     ON 1 ;
+#EXPLAIN SELECT 1
+#FROM t2 LEFT JOIN
+#       ((t1 JOIN t3 ON t1.a = t3.pk)
+#        LEFT JOIN t4 ON 1 )
+#     ON 1 ;
 
 SELECT 1
 FROM t2 LEFT JOIN
@@ -1440,11 +1446,11 @@ SELECT COUNT(*)
   FROM (t2 JOIN t1) LEFT JOIN (t3 JOIN t4 ON t3.id = t4.carrier_id)
        ON t3.carrier = t1.carrier;
 
---echo
-EXPLAIN
-SELECT COUNT(*)
-  FROM (t2 JOIN t1) LEFT JOIN (t3 JOIN t4 ON t3.id = t4.carrier_id)
-       ON t3.carrier = t1.carrier;
+#--echo
+#EXPLAIN
+#SELECT COUNT(*)
+#  FROM (t2 JOIN t1) LEFT JOIN (t3 JOIN t4 ON t3.id = t4.carrier_id)
+#       ON t3.carrier = t1.carrier;
 --echo
 DROP TABLE t1,t2,t3,t4;
 
@@ -1452,7 +1458,7 @@ DROP TABLE t1,t2,t3,t4;
 --echo # Bug#45267: Incomplete check caused wrong result.
 --echo #
 CREATE TABLE t1 (
-  `pk` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY
+ `pk` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY
 );
 CREATE TABLE t3 (
   `pk` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY
@@ -1469,6 +1475,7 @@ CREATE TABLE t2 (
 );
 INSERT INTO t2 VALUES (10,9,'22:36:46'),(11,0,'08:46:46');
 
+#Bug #SEQUOIADBMAINSTREAM-3596
 SELECT DISTINCT t1.`pk`
 FROM t1 RIGHT JOIN t2 STRAIGHT_JOIN t3 ON t2.`int_nokey`  ON t2.`time_key`
 GROUP BY 1;
@@ -1486,7 +1493,7 @@ CREATE TABLE t2 (a int, b int, KEY (b));
 INSERT INTO t2 VALUES (100,NULL),(150,200);
 
 let $query= SELECT t2.a FROM t1 LEFT JOIN t2 FORCE INDEX (b) ON t2.b  = t1.b;
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --sorted_result
 --eval $query
 
@@ -1494,7 +1501,7 @@ let $query= SELECT t2.a FROM t1 LEFT JOIN t2 FORCE INDEX (b) ON t2.b  = t1.b;
 delete from t1;
 INSERT INTO t1 VALUES (NULL),(NULL);
 
---eval EXPLAIN $query
+#--eval EXPLAIN $query
 --sorted_result
 --eval $query
 
@@ -1507,7 +1514,7 @@ INSERT INTO t1 VALUES (NULL),("some varchar");
 CREATE TABLE t2 (a int, b varchar(100), KEY (b));
 INSERT INTO t2 VALUES (100,NULL),(150,"varchar"),(200,NULL),(250,"long long varchar");
 
-explain SELECT t2.a FROM t1 LEFT JOIN t2 ON t2.b  = t1.b;
+#explain SELECT t2.a FROM t1 LEFT JOIN t2 ON t2.b  = t1.b;
 --sorted_result
 SELECT t2.a FROM t1 LEFT JOIN t2 ON t2.b  = t1.b;
 
@@ -1529,12 +1536,13 @@ CREATE TABLE t1 (
 INSERT INTO t1 VALUES (4,9,'k','k');
 INSERT INTO t1 VALUES (12,5,'k','k');
 
+#Bug #SEQUOIADBMAINSTREAM-3596
 let $query_i= SELECT table2 .`col_int_key` FROM t1 table2,
 t1 table3 force index (`col_varchar_key`)
 where table3 .`pk` and table3 .`col_int_key`  >= table2 .`pk`  
- and table3 .`col_varchar_key`  = table2 .`col_varchar_nokey`;
+and table3 .`col_varchar_key`  = table2 .`col_varchar_nokey`;
 
-eval explain $query_i;
+#eval explain $query_i;
 eval $query_i;
 
 drop table t1;
@@ -1575,7 +1583,7 @@ GROUP BY t1.col_int_key
 ORDER BY t1.col_int_key, t1.col_datetime
 LIMIT 2;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 # by disabling one index and forcing another, we hit 
@@ -1587,7 +1595,7 @@ GROUP BY t1.col_int_key
 ORDER BY t1.col_int_key, t1.col_datetime
 LIMIT 2;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 drop table t1,t2;
@@ -1679,10 +1687,12 @@ let $query2= SELECT * FROM t1 LEFT JOIN t2 force index (idx) ON t2.t2b <=> t1.t1
 --echo
 --echo # t2b is NULL-able
 --echo
---eval EXPLAIN $query1
+#--eval EXPLAIN $query1
+--sorted_result
 --eval $query1
 --echo
---eval EXPLAIN $query2
+#--eval EXPLAIN $query2
+--sorted_result
 --eval $query2
 --echo
 
@@ -1694,10 +1704,12 @@ INSERT INTO t2 VALUES (100,0),(150,200),(999, 0);
 --echo
 --echo # t2b is NOT NULL
 --echo
---eval EXPLAIN $query1
+#--eval EXPLAIN $query1
+--sorted_result
 --eval $query1
 --echo
---eval EXPLAIN $query2
+#--eval EXPLAIN $query2
+--sorted_result
 --eval $query2
 --echo
 
@@ -1711,21 +1723,21 @@ CREATE TABLE t1 (
   c1 INTEGER NOT NULL,
   c2_key INTEGER NOT NULL,
   KEY col_int_key (c2_key)
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (24,204);
 
 CREATE TABLE t2 (  
   pk INTEGER NOT NULL,
   PRIMARY KEY (pk)
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t2 VALUES (10);
 
 CREATE TABLE t3 (
   c1 INTEGER,
   KEY k1 (c1)
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t3 VALUES (NULL), (NULL);
 
@@ -1764,11 +1776,11 @@ SELECT t3.c1 FROM t3
 WHERE t3.c1 = SOME (SELECT t1.c2_key FROM t2 JOIN t1 ON t2.pk < t1.c1)
 XOR TRUE;
 
-eval explain $query_some;
-eval explain $query_any;
-eval explain $query_in;
-eval explain $query_notin;
-eval explain $query_in_toplevel;
+#eval explain $query_some;
+#eval explain $query_any;
+#eval explain $query_in;
+#eval explain $query_notin;
+#eval explain $query_in_toplevel;
 eval $query_some;
 eval $query_any;
 eval $query_in;
@@ -1791,7 +1803,7 @@ CREATE TABLE t1 (  col_int_key int(11) NOT NULL,
    col_varchar_key varchar(1) NOT NULL,    
    KEY col_int_key (col_int_key),
    KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=innodb;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 VALUES (0,'j'),(4,'b'),(4,'d');
 
@@ -1799,7 +1811,7 @@ CREATE TABLE t2 (
    col_datetime_key datetime NOT NULL,
    col_varchar_key varchar(1) NOT NULL,
    KEY col_varchar_key (col_varchar_key)
-) ENGINE=innodb;
+) ENGINE=sequoiadb;
 
 INSERT INTO t2 VALUES ('2003-08-21 00:00:00','b');
 
@@ -1821,7 +1833,7 @@ FROM t1
 GROUP BY field2
 ORDER BY field1;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1,t2;
@@ -1875,7 +1887,7 @@ GROUP BY field1 , field4
 ORDER BY t1.col_datetime_key ;
 
 --source include/turn_off_only_full_group_by.inc
-eval explain $query;
+#eval explain $query;
 # even though there is ORDER BY, it does not cover all columns, so
 # there is still randomness, so we have to sort client-side:
 --sorted_result
@@ -1913,6 +1925,7 @@ INSERT INTO t2 VALUES (18,6,9);
 INSERT INTO t2 VALUES (19,2,4);
 INSERT INTO t2 VALUES (20,9,8);
 
+#Bug #SEQUOIADBMAINSTREAM-3596
 let $query=SELECT t1.col_varchar_key AS field1, alias2.col_int_key AS field4 
 FROM t2 AS alias2 STRAIGHT_JOIN t2 AS alias3 ON alias3.pk =
 alias2.col_int_nokey 
@@ -1921,7 +1934,7 @@ ON alias3.col_int_nokey
 GROUP BY field1, field4
 LIMIT 15;
 
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1948,7 +1961,8 @@ let $query=SELECT t2.pk as t2_pk, t4.pk as t4_pk, t4.k as t4_k, t4.i
   LEFT JOIN t3 ON t3.i
   LEFT JOIN t4 ON t4.pk = t2.pk;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
+--sorted_result
 eval $query;
 
 DROP TABLE t1, t2, t3, t4; 
@@ -1992,7 +2006,8 @@ SELECT t4.col_int
     LEFT JOIN t4 ON t4.pk = t2.pk
   WHERE t1.col_int OR t3.col_int;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
+--sorted_result
 eval $query;
 
 DROP TABLE t1, t2, t3, t4;
@@ -2005,14 +2020,14 @@ DROP TABLE t1, t2, t3, t4;
 CREATE TABLE t1 (
   col1 varchar(10),
   col2 varchar(1024)
-) ENGINE=innodb;
+) ENGINE=sequoiadb;
 
 INSERT INTO t1 VALUES ('a','a');
 
-CREATE TABLE t2 (i varchar(10)) ENGINE=innodb;
+CREATE TABLE t2 (i varchar(10)) ENGINE=sequoiadb;
 INSERT INTO t2 VALUES ('a');
 --source include/turn_off_only_full_group_by.inc
-
+--sorted_result
 SELECT t1.col1
 FROM t1 JOIN t2 ON t1.col1 = t2.i 
 GROUP BY t1.col2;
@@ -2052,9 +2067,11 @@ WHERE parent1.col_varchar_key IN
         WHERE parent1.col_datetime_nokey IS NULL
               AND t1.col_int_nokey IS NULL )
 ;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
+--sorted_result
 eval $query;
 
 set @@session.optimizer_switch=@optimizer_switch_saved;
 
 DROP TABLE t1,t2;
+set character_set_server=latin1;

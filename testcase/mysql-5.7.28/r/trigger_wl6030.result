@@ -1,6 +1,8 @@
 #
 # WL#6030: Triggers are not processed for NOT NULL columns.
 #
+create database test_trigger_wl6030;
+use test_trigger_wl6030;
 CREATE TABLE t2(a INT, b INT, c INT);
 
 ###################################################################
@@ -317,7 +319,7 @@ a	b	c
 
 SELECT * FROM t3;
 a	b
--10	-10
+10	-10
 
 DELETE FROM t1;
 DELETE FROM t2;
@@ -684,13 +686,13 @@ INSERT INTO t1(a) VALUES (-3), (NULL), (NULL);
 SELECT * FROM t1;
 a	b	c	a_new_is_null
 99	2	3	0
-99	20	30	1
-99	200	300	1
 99	2	3	0
-99	20	30	1
-99	200	300	1
 99	2	3	1
 99	20	30	1
+99	20	30	1
+99	20	30	1
+99	200	300	1
+99	200	300	1
 99	200	300	1
 99	NULL	NULL	0
 99	NULL	NULL	1
@@ -708,13 +710,13 @@ REPLACE INTO t1(a) VALUES (-3), (NULL), (NULL);
 SELECT * FROM t1;
 a	b	c	a_new_is_null
 99	2	3	0
-99	20	30	1
-99	200	300	1
 99	2	3	0
-99	20	30	1
-99	200	300	1
 99	2	3	1
 99	20	30	1
+99	20	30	1
+99	20	30	1
+99	200	300	1
+99	200	300	1
 99	200	300	1
 99	NULL	NULL	0
 99	NULL	NULL	1
@@ -731,13 +733,13 @@ INSERT INTO t1(a) SELECT a FROM t2;
 SELECT * FROM t1;
 a	b	c	a_new_is_null
 99	2	3	0
-99	20	30	1
-99	200	300	1
 99	2	3	0
-99	20	30	1
-99	200	300	1
 99	2	3	1
 99	20	30	1
+99	20	30	1
+99	20	30	1
+99	200	300	1
+99	200	300	1
 99	200	300	1
 99	NULL	NULL	0
 99	NULL	NULL	1
@@ -754,13 +756,13 @@ REPLACE INTO t1(a) SELECT a FROM t2;
 SELECT * FROM t1;
 a	b	c	a_new_is_null
 99	2	3	0
-99	20	30	1
-99	200	300	1
 99	2	3	0
-99	20	30	1
-99	200	300	1
 99	2	3	1
 99	20	30	1
+99	20	30	1
+99	20	30	1
+99	200	300	1
+99	200	300	1
 99	200	300	1
 99	NULL	NULL	0
 99	NULL	NULL	1
@@ -1072,10 +1074,10 @@ Warnings:
 Warning	1364	Field 'b' doesn't have a default value
 INSERT INTO v1(a) VALUES (5);
 Warnings:
-Warning	1423	Field of view 'test.v1' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 INSERT INTO v1(a) VALUES (6), (7), (8);
 Warnings:
-Warning	1423	Field of view 'test.v1' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 
 SELECT * FROM t1;
 a	b
@@ -1097,10 +1099,10 @@ Warnings:
 Warning	1364	Field 'b' doesn't have a default value
 REPLACE INTO v1(a) VALUES (5);
 Warnings:
-Warning	1423	Field of view 'test.v1' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 REPLACE INTO v1(a) VALUES (6), (7), (8);
 Warnings:
-Warning	1423	Field of view 'test.v1' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 
 SELECT * FROM t1;
 a	b
@@ -1126,14 +1128,14 @@ Warning	1364	Field 'c' doesn't have a default value
 Warning	1364	Field 'd' doesn't have a default value
 INSERT INTO v2(a) VALUES (5);
 Warnings:
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 INSERT INTO v2(a) VALUES (6), (7), (8);
 Warnings:
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 
 SELECT * FROM t2;
 a	b	c	d
@@ -1159,14 +1161,14 @@ Warning	1364	Field 'c' doesn't have a default value
 Warning	1364	Field 'd' doesn't have a default value
 REPLACE INTO v2(a) VALUES (5);
 Warnings:
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 REPLACE INTO v2(a) VALUES (6), (7), (8);
 Warnings:
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 
 SELECT * FROM t2;
 a	b	c	d
@@ -1385,7 +1387,7 @@ Warnings:
 Warning	1364	Field 'b' doesn't have a default value
 INSERT INTO v1(a) SELECT a * 100 FROM t1_data;
 Warnings:
-Warning	1423	Field of view 'test.v1' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 
 SELECT * FROM t1;
 a	b
@@ -1404,7 +1406,7 @@ Warnings:
 Warning	1364	Field 'b' doesn't have a default value
 REPLACE INTO v1(a) SELECT a * 100 FROM t1_data;
 Warnings:
-Warning	1423	Field of view 'test.v1' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 
 SELECT * FROM t1;
 a	b
@@ -1425,9 +1427,9 @@ Warning	1364	Field 'c' doesn't have a default value
 Warning	1364	Field 'd' doesn't have a default value
 INSERT INTO v2(a) SELECT a * 100 FROM t2_data;
 Warnings:
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 
 SELECT * FROM t2;
 a	b	c	d
@@ -1452,9 +1454,9 @@ Warning	1364	Field 'c' doesn't have a default value
 Warning	1364	Field 'd' doesn't have a default value
 REPLACE INTO v2(a) SELECT a * 100 FROM t2_data;
 Warnings:
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
-Warning	1423	Field of view 'test.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 
 SELECT * FROM t2;
 a	b	c	d
@@ -1616,9 +1618,9 @@ ERROR HY000: Field 'b' doesn't have a default value
 INSERT INTO t1(a) VALUES (2), (3), (4);
 ERROR HY000: Field 'b' doesn't have a default value
 INSERT INTO v1(a) VALUES (5);
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 INSERT INTO v1(a) VALUES (6), (7), (8);
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 
 SELECT * FROM t1;
 a	b
@@ -1629,9 +1631,9 @@ ERROR HY000: Field 'b' doesn't have a default value
 REPLACE INTO t1(a) VALUES (2), (3), (4);
 ERROR HY000: Field 'b' doesn't have a default value
 REPLACE INTO v1(a) VALUES (5);
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 REPLACE INTO v1(a) VALUES (6), (7), (8);
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 
 SELECT * FROM t1;
 a	b
@@ -1642,9 +1644,9 @@ ERROR HY000: Field 'b' doesn't have a default value
 INSERT INTO t2(a) VALUES (2), (3), (4);
 ERROR HY000: Field 'b' doesn't have a default value
 INSERT INTO v2(a) VALUES (5);
-ERROR HY000: Field of view 'test.v2' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 INSERT INTO v2(a) VALUES (6), (7), (8);
-ERROR HY000: Field of view 'test.v2' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 
 SELECT * FROM t2;
 a	b	c	d
@@ -1655,9 +1657,9 @@ ERROR HY000: Field 'b' doesn't have a default value
 REPLACE INTO t2(a) VALUES (2), (3), (4);
 ERROR HY000: Field 'b' doesn't have a default value
 REPLACE INTO v2(a) VALUES (5);
-ERROR HY000: Field of view 'test.v2' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 REPLACE INTO v2(a) VALUES (6), (7), (8);
-ERROR HY000: Field of view 'test.v2' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 
 SELECT * FROM t2;
 a	b	c	d
@@ -1678,10 +1680,6 @@ ERROR 23000: Column 'b' cannot be null
 # t1's engine is MyISAM, so the transaction can not be fully rolled back.
 SELECT * FROM t1;
 a	b
-11	12
-NULL	22
-110	120
-NULL	220
 DELETE FROM t1;
 
 REPLACE INTO t1 SELECT * FROM t1_data;
@@ -1693,10 +1691,6 @@ ERROR 23000: Column 'b' cannot be null
 # t1's engine is MyISAM, so the transaction can not be fully rolled back.
 SELECT * FROM t1;
 a	b
-11	12
-NULL	22
-110	120
-NULL	220
 DELETE FROM t1;
 
 #   - No column list (all columns) + NULL-value for NOT NULL column.
@@ -1709,10 +1703,6 @@ ERROR 23000: Column 'b' cannot be null
 # t2's engine is MyISAM, so the transaction can not be fully rolled back.
 SELECT * FROM t2;
 a	b	c	d
-11	12	13	14
-NULL	22	23	24
-110	120	130	140
-NULL	220	230	240
 DELETE FROM t2;
 
 #   - No column list (all columns) + NULL-value for NOT NULL column.
@@ -1725,10 +1715,6 @@ ERROR 23000: Column 'b' cannot be null
 # t2's engine is MyISAM, so the transaction can not be fully rolled back.
 SELECT * FROM t2;
 a	b	c	d
-11	12	13	14
-NULL	22	23	24
-110	120	130	140
-NULL	220	230	240
 DELETE FROM t2;
 
 #   - All columns + NULL-value for NOT NULL column.
@@ -1742,10 +1728,6 @@ ERROR 23000: Column 'b' cannot be null
 # t1's engine is MyISAM, so the transaction can not be fully rolled back.
 SELECT * FROM t1;
 a	b
-11	12
-NULL	22
-110	120
-NULL	220
 DELETE FROM t1;
 
 REPLACE INTO t1(a, b) SELECT * FROM t1_data;
@@ -1757,10 +1739,6 @@ ERROR 23000: Column 'b' cannot be null
 # t1's engine is MyISAM, so the transaction can not be fully rolled back.
 SELECT * FROM t1;
 a	b
-11	12
-NULL	22
-110	120
-NULL	220
 DELETE FROM t1;
 
 INSERT INTO t2(a, b, c, d) SELECT * FROM t2_data;
@@ -1772,10 +1750,6 @@ ERROR 23000: Column 'b' cannot be null
 # t2's engine is MyISAM, so the transaction can not be fully rolled back.
 SELECT * FROM t2;
 a	b	c	d
-11	12	13	14
-NULL	22	23	24
-110	120	130	140
-NULL	220	230	240
 DELETE FROM t2;
 
 REPLACE INTO t2(a, b, c, d) SELECT * FROM t2_data;
@@ -1787,10 +1761,6 @@ ERROR 23000: Column 'b' cannot be null
 # t2's engine is MyISAM, so the transaction can not be fully rolled back.
 SELECT * FROM t2;
 a	b	c	d
-11	12	13	14
-NULL	22	23	24
-110	120	130	140
-NULL	220	230	240
 DELETE FROM t2;
 
 #   - Single nullable column, no values for NOT NULL columns.
@@ -1798,7 +1768,7 @@ DELETE FROM t2;
 INSERT INTO t1(a) SELECT a FROM t1_data;
 ERROR HY000: Field 'b' doesn't have a default value
 INSERT INTO v1(a) SELECT a * 100 FROM t1_data;
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 
 # The following SELECT output should have 0 rows.
 SELECT * FROM t1;
@@ -1808,7 +1778,7 @@ DELETE FROM t1;
 REPLACE INTO t1(a) SELECT a FROM t1_data;
 ERROR HY000: Field 'b' doesn't have a default value
 REPLACE INTO v1(a) SELECT a * 100 FROM t1_data;
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v1' underlying table doesn't have a default value
 
 # The following SELECT output should have 0 rows.
 SELECT * FROM t1;
@@ -1818,7 +1788,7 @@ DELETE FROM t1;
 INSERT INTO t2(a) SELECT a FROM t2_data;
 ERROR HY000: Field 'b' doesn't have a default value
 INSERT INTO v2(a) SELECT a * 100 FROM t2_data;
-ERROR HY000: Field of view 'test.v2' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 
 # The following SELECT output should have 0 rows.
 SELECT * FROM t2;
@@ -1828,7 +1798,7 @@ DELETE FROM t2;
 REPLACE INTO t2(a) SELECT a FROM t2_data;
 ERROR HY000: Field 'b' doesn't have a default value
 REPLACE INTO v2(a) SELECT a * 100 FROM t2_data;
-ERROR HY000: Field of view 'test.v2' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_trigger_wl6030.v2' underlying table doesn't have a default value
 
 # The following SELECT output should have 0 rows.
 SELECT * FROM t2;
@@ -1844,8 +1814,6 @@ ERROR 22004: Column set to default value; NULL supplied to NOT NULL column 'b' a
 
 SELECT * FROM t2;
 a	b	c	d
-11	12	13	14
-NULL	22	23	24
 
 DELETE FROM t2;
 LOAD DATA INFILE '../../std_data/wl6030_2.dat' INTO TABLE v2 FIELDS
@@ -1854,8 +1822,6 @@ ERROR 22004: Column set to default value; NULL supplied to NOT NULL column 'b' a
 
 SELECT * FROM t2;
 a	b	c	d
-11	12	13	14
-NULL	22	23	24
 
 SET sql_mode = @sql_mode_saved;
 DROP TABLE t1;
@@ -1942,7 +1908,7 @@ SELECT * FROM t1;
 a1
 1
 INSERT INTO t1 VALUES (NULL);
-ERROR 23000: Duplicate entry '1' for key 'PRIMARY'
+ERROR 23000: Duplicate entry '{ "a1": 1 }' for key 'PRIMARY'
 SELECT * FROM t1;
 a1
 1
@@ -1958,7 +1924,7 @@ SELECT * FROM t1;
 a1
 1
 INSERT INTO t1 VALUES (NULL);
-ERROR 23000: Duplicate entry '1' for key 'a1'
+ERROR 23000: Duplicate entry '{ "a1": 1 }' for key 'a1'
 SELECT * FROM t1;
 a1
 1
@@ -2004,7 +1970,7 @@ CREATE TRIGGER t1_bi BEFORE INSERT ON t1
 FOR EACH ROW
 SET NEW.a1 = 1;
 INSERT INTO t1 VALUES (NULL, 2);
-ERROR 23000: Duplicate entry '1' for key 'a1'
+ERROR 23000: Duplicate entry '{ "a1": 1 }' for key 'a1'
 SELECT * FROM t1;
 a1	a2
 1	1
@@ -2025,7 +1991,7 @@ a1	a2
 DROP TRIGGER t1_bu;
 DROP TABLE t1, t2;
 "Test for multi table update (across engines)"
-CREATE TABLE t1(a1 INT NOT NULL, a2 INT) ENGINE = INNODB;
+CREATE TABLE t1(a1 INT NOT NULL, a2 INT) ENGINE = Sequoiadb;
 CREATE TABLE t2(a1 INT NOT NULL, a2 INT) ENGINE = MyISAM;
 INSERT INTO t1 VALUES (1, NULL),(2, 2);
 INSERT INTO t2 VALUES (1, NULL),(2876543, 2098);
@@ -2151,7 +2117,7 @@ a1	a2
 DROP TRIGGER t1_bu;
 DROP TABLE t1, t2;
 "Test for multi table update (across engines)"
-CREATE TABLE t1(a1 INT NOT NULL, a2 INT) ENGINE = INNODB;
+CREATE TABLE t1(a1 INT NOT NULL, a2 INT) ENGINE = Sequoiadb;
 CREATE TABLE t2(a1 INT NOT NULL, a2 INT) ENGINE = MyISAM;
 INSERT INTO t1 VALUES (1, NULL),(2, 2);
 INSERT INTO t2 VALUES (1, NULL),(2876543, 20111098);
@@ -2237,3 +2203,4 @@ Level	Code	Message
 Warning	1364	Field 'b' doesn't have a default value
 SET sql_mode = @sql_mode_saved;
 DROP TABLE t1;
+DROP DATABASE test_trigger_wl6030;

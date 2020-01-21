@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 delimiter |;
 
 --disable_warnings
@@ -244,8 +245,10 @@ drop procedure p1|
 #
 # K. Use of continue handlers with Dynamic SQL.
 #
+--disable_warnings
 drop table if exists t1|
 drop table if exists t2|
+--enable_warnings
 create table t1 (id integer primary key auto_increment,
                  stmt_text char(35), status varchar(20))|
 insert into t1 (stmt_text) values
@@ -289,7 +292,7 @@ call p1()|
 select * from t1|
 drop procedure p1|
 drop table t1|
-#
+
 # Bug#7115 "Prepared Statements: packet error if execution within stored
 # procedure".
 #
@@ -360,3 +363,5 @@ drop procedure if exists p1|
 
 # End of the test
 delimiter ;|
+
+--source include/uninstall_sequoiadb.inc

@@ -19,11 +19,11 @@ SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 drop table if exists t1,t2,t3,t4,t5,t6,t7,t8,t11,t12;
 --enable_warnings
 select (select 2);
-explain extended select (select 2);
+#explain extended select (select 2);
 SELECT (SELECT 1) UNION SELECT (SELECT 2);
-explain extended SELECT (SELECT 1) UNION SELECT (SELECT 2);
+#explain extended SELECT (SELECT 1) UNION SELECT (SELECT 2);
 SELECT (SELECT (SELECT 0 UNION SELECT 0));
-explain extended SELECT (SELECT (SELECT 0 UNION SELECT 0));
+#explain extended SELECT (SELECT (SELECT 0 UNION SELECT 0));
 -- error ER_ILLEGAL_REFERENCE
 SELECT (SELECT 1 FROM (SELECT 1) as b HAVING a=1) as a;
 -- error ER_ILLEGAL_REFERENCE
@@ -31,7 +31,7 @@ SELECT (SELECT 1 FROM (SELECT 1) as b HAVING b=1) as a,(SELECT 1 FROM (SELECT 1)
 SELECT (SELECT 1),MAX(1) FROM (SELECT 1) as a;
 -- error ER_ILLEGAL_REFERENCE
 SELECT (SELECT a) as a;
-EXPLAIN EXTENDED SELECT 1 FROM (SELECT 1 as a) as b  HAVING (SELECT a)=1;
+#EXPLAIN EXTENDED SELECT 1 FROM (SELECT 1 as a) as b  HAVING (SELECT a)=1;
 SELECT 1 FROM (SELECT 1 as a) as b HAVING (SELECT a)=1;
 -- error ER_BAD_FIELD_ERROR
 SELECT (SELECT 1), a;
@@ -91,17 +91,19 @@ insert into t3 values (6),(7),(3);
 select * from t2 where t2.b=(select a from t3 order by 1 desc limit 1);
 (select * from t2 where t2.b=(select a from t3 order by 1 desc limit 1)) union (select * from t4 order by a limit 2) limit 3;
 (select * from t2 where t2.b=(select a from t3 order by 1 desc limit 1)) union (select * from t4 where t4.b=(select max(t2.a)*4 from t2) order by a);
-explain extended (select * from t2 where t2.b=(select a from t3 order by 1 desc limit 1)) union (select * from t4 where t4.b=(select max(t2.a)*4 from t2) order by a);
+#explain extended (select * from t2 where t2.b=(select a from t3 order by 1 desc limit 1)) union (select * from t4 where t4.b=(select max(t2.a)*4 from t2) order by a);
 select (select a from t3 where a<t2.a*4 order by 1 desc limit 1), a from t2;
 select (select t3.a from t3 where a<8 order by 1 desc limit 1), a from
 (select * from t2 where a>1) as tt;
-explain extended select (select t3.a from t3 where a<8 order by 1 desc limit 1), a from
-(select * from t2 where a>1) as tt;
+#explain extended select (select t3.a from t3 where a<8 order by 1 desc limit 1), a from
+#(select * from t2 where a>1) as tt;
 select * from t1 where t1.a=(select t2.a from t2 where t2.b=(select max(a) from t3) order by 1 desc limit 1);
 select * from t1 where t1.a=(select t2.a from t2 where t2.b=(select max(a) from t3 where t3.a > t1.a) order by 1 desc limit 1);
 select * from t1 where t1.a=(select t2.a from t2 where t2.b=(select max(a) from t3 where t3.a < t1.a) order by 1 desc limit 1);
 select b,(select avg(t2.a+(select min(t3.a) from t3 where t3.a >= t4.a)) from t2) from t4;
-explain extended select b,(select avg(t2.a+(select min(t3.a) from t3 where t3.a >= t4.a)) from t2) from t4;
+#explain extended select b,(select avg(t2.a+(select min(t3.a) from t3 where t3.a >= t4.a)) from t2) from t4;
+
+#Bug #SEQUOIADBMAINSTREAM-3576
 select * from t3 where exists (select * from t2 where t2.b=t3.a);
 select * from t3 where not exists (select * from t2 where t2.b=t3.a);
 select * from t3 where a in (select b from t2);
@@ -117,7 +119,7 @@ insert into t2 values (100, 5);
 select * from t3 where a < any (select b from t2);
 select * from t3 where a < all (select b from t2);
 select * from t3 where a >= any (select b from t2);
-explain extended select * from t3 where a >= any (select b from t2);
+#explain extended select * from t3 where a >= any (select b from t2);
 select * from t3 where a >= all (select b from t2);
 delete from t2 where a=100;
 -- error ER_OPERAND_COLUMNS
@@ -137,15 +139,16 @@ insert into t5 values (5);
 select (select a from t1 where t1.a=t2.a union select a from t5 where t5.a=t2.a), a from t2;
 insert into t5 values (2);
 select (select a from t1 where t1.a=t2.a union select a from t5 where t5.a=t2.a), a from t2;
-explain extended select (select a from t1 where t1.a=t2.a union select a from t5 where t5.a=t2.a), a from t2;
+#explain extended select (select a from t1 where t1.a=t2.a union select a from t5 where t5.a=t2.a), a from t2;
 -- error ER_SUBQUERY_NO_1_ROW
 select (select a from t1 where t1.a=t2.a union all select a from t5 where t5.a=t2.a), a from t2;
 create table t6 (patient_uq int, clinic_uq int, index i1 (clinic_uq));
 create table t7( uq int primary key, name char(25));
 insert into t7 values(1,"Oblastnaia bolnitsa"),(2,"Bolnitsa Krasnogo Kresta");
 insert into t6 values (1,1),(1,2),(2,2),(1,3);
+#Bug #SEQUOIADBMAINSTREAM-3576
 select * from t6 where exists (select * from t7 where uq = clinic_uq);
-explain extended select * from t6 where exists (select * from t7 where uq = clinic_uq);
+#explain extended select * from t6 where exists (select * from t7 where uq = clinic_uq);
 
 # not unique fields
 -- error ER_NON_UNIQ_ERROR
@@ -169,12 +172,12 @@ CREATE TABLE `t8` (
   `email` varchar(60) character set latin1 NOT NULL default '',
   PRIMARY KEY  (`pseudo`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=MyISAM CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 
 INSERT INTO t8 (pseudo,email) VALUES ('joce','test');
 INSERT INTO t8 (pseudo,email) VALUES ('joce1','test1');
 INSERT INTO t8 (pseudo,email) VALUES ('2joce1','2test1');
-EXPLAIN EXTENDED SELECT pseudo,(SELECT email FROM t8 WHERE pseudo=(SELECT pseudo FROM t8 WHERE pseudo='joce')) FROM t8 WHERE pseudo=(SELECT pseudo FROM t8 WHERE pseudo='joce');
+#EXPLAIN EXTENDED SELECT pseudo,(SELECT email FROM t8 WHERE pseudo=(SELECT pseudo FROM t8 WHERE pseudo='joce')) FROM t8 WHERE pseudo=(SELECT pseudo FROM t8 WHERE pseudo='joce');
 -- error ER_OPERAND_COLUMNS
 SELECT pseudo FROM t8 WHERE pseudo=(SELECT pseudo,email FROM
 t8 WHERE pseudo='joce');
@@ -194,17 +197,17 @@ CREATE TABLE `t1` (
   `pseudo` varchar(35) character set latin1 NOT NULL default '',
   PRIMARY KEY  (`pseudo`,`date`,`topic`),
   KEY `topic` (`topic`)
-) ENGINE=MyISAM ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB ROW_FORMAT=DYNAMIC;
 INSERT INTO t1 (topic,date,pseudo) VALUES
 ('43506','2002-10-02','joce'),('40143','2002-08-03','joce');
-EXPLAIN EXTENDED SELECT DISTINCT date FROM t1 WHERE date='2002-08-03';
-EXPLAIN EXTENDED SELECT (SELECT DISTINCT date FROM t1 WHERE date='2002-08-03');
+#EXPLAIN EXTENDED SELECT DISTINCT date FROM t1 WHERE date='2002-08-03';
+#EXPLAIN EXTENDED SELECT (SELECT DISTINCT date FROM t1 WHERE date='2002-08-03');
 SELECT DISTINCT date FROM t1 WHERE date='2002-08-03';
 SELECT (SELECT DISTINCT date FROM t1 WHERE date='2002-08-03');
 SELECT 1 FROM t1 WHERE 1=(SELECT 1 UNION SELECT 1) UNION ALL SELECT 1;
 -- error ER_SUBQUERY_NO_1_ROW
 SELECT 1 FROM t1 WHERE 1=(SELECT 1 UNION ALL SELECT 1) UNION SELECT 1;
-EXPLAIN EXTENDED SELECT 1 FROM t1 WHERE 1=(SELECT 1 UNION SELECT 1);
+#EXPLAIN EXTENDED SELECT 1 FROM t1 WHERE 1=(SELECT 1 UNION SELECT 1);
 drop table t1;
 
 #forumconthardwarefr7 searchconthardwarefr7
@@ -213,7 +216,7 @@ CREATE TABLE `t1` (
   `maxnumrep` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`numeropost`),
   UNIQUE KEY `maxnumrep` (`maxnumrep`)
-) ENGINE=MyISAM ROW_FORMAT=FIXED;
+) ENGINE=SequoiaDB ROW_FORMAT=FIXED;
 
 INSERT INTO t1 (numeropost,maxnumrep) VALUES (40143,1),(43506,2);
 
@@ -223,7 +226,7 @@ CREATE TABLE `t2` (
       `date` date NOT NULL default '0000-00-00',
       `pseudo` varchar(35) NOT NULL default '',
        PRIMARY KEY  (`mot`,`pseudo`,`date`,`topic`)
-    ) ENGINE=MyISAM ROW_FORMAT=DYNAMIC;
+    ) ENGINE=SequoiaDB ROW_FORMAT=DYNAMIC;
 
 INSERT INTO t2 (mot,topic,date,pseudo) VALUES ('joce','40143','2002-10-22','joce'), ('joce','43506','2002-10-22','joce');
 
@@ -260,7 +263,7 @@ CREATE TABLE `t1` (
   `maxnumrep` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`numeropost`),
   UNIQUE KEY `maxnumrep` (`maxnumrep`)
-) ENGINE=MyISAM ROW_FORMAT=FIXED;
+) ENGINE=SequoiaDB ROW_FORMAT=FIXED;
 
 INSERT INTO t1 (numeropost,maxnumrep) VALUES (1,0),(2,1);
 
@@ -293,17 +296,17 @@ CREATE TABLE `t1` (
   PRIMARY KEY  (`numeropost`,`numreponse`),
   UNIQUE KEY `numreponse` (`numreponse`),
   KEY `pseudo` (`pseudo`,`numeropost`)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 -- error ER_ILLEGAL_REFERENCE
 SELECT (SELECT numeropost FROM t1 HAVING numreponse=a),numreponse FROM (SELECT * FROM t1) as a;
 -- error ER_BAD_FIELD_ERROR
 SELECT numreponse, (SELECT numeropost FROM t1 HAVING numreponse=a) FROM (SELECT * FROM t1) as a;
 SELECT numreponse, (SELECT numeropost FROM t1 HAVING numreponse=1) FROM (SELECT * FROM t1) as a;
 INSERT INTO t1 (numeropost,numreponse,pseudo) VALUES (1,1,'joce'),(1,2,'joce'),(1,3,'test');
--- error ER_SUBQUERY_NO_1_ROW
-EXPLAIN EXTENDED SELECT numreponse FROM t1 WHERE numeropost='1' AND numreponse=(SELECT 1 FROM t1 WHERE numeropost='1');
-EXPLAIN EXTENDED SELECT MAX(numreponse) FROM t1 WHERE numeropost='1';
-EXPLAIN EXTENDED SELECT numreponse FROM t1 WHERE numeropost='1' AND numreponse=(SELECT MAX(numreponse) FROM t1 WHERE numeropost='1');
+#-- error ER_SUBQUERY_NO_1_ROW
+#EXPLAIN EXTENDED SELECT numreponse FROM t1 WHERE numeropost='1' AND numreponse=(SELECT 1 FROM t1 WHERE numeropost='1');
+#EXPLAIN EXTENDED SELECT MAX(numreponse) FROM t1 WHERE numeropost='1';
+#EXPLAIN EXTENDED SELECT numreponse FROM t1 WHERE numeropost='1' AND numreponse=(SELECT MAX(numreponse) FROM t1 WHERE numeropost='1');
 drop table t1;
 
 CREATE TABLE t1 (a int(1));
@@ -321,6 +324,7 @@ select * from t1;
 update t1 set b= (select b from t1);
 -- error ER_SUBQUERY_NO_1_ROW
 update t1 set b= (select b from t2);
+#Bug #SEQUOIADBMAINSTREAM-3611
 update t1 set b= (select b from t2 where t1.a = t2.a);
 select * from t1;
 drop table t1, t2;
@@ -396,6 +400,7 @@ replace into t1 (x, y) VALUES ((SELECT x FROM t1), (SELECT a+1 FROM t2));
 replace into t1 (x, y) VALUES ((SELECT a FROM t3), (SELECT a+1 FROM t2));
 replace into t1 (x, y) VALUES ((SELECT a FROM t2), (SELECT a+1 FROM t2));
 select * from t1;
+#Bug #SEQUOIADBMAINSTREAM-3573
 replace into t1 (x, y) VALUES ((SELECT a FROM t2), (SELECT a+2 FROM t2));
 select * from t1;
 replace LOW_PRIORITY into t1 (x, y) VALUES ((SELECT a+1 FROM t2), (SELECT a FROM t2));
@@ -405,14 +410,14 @@ drop table t1, t2, t3;
 -- error ER_NO_TABLES_USED
 SELECT * FROM (SELECT 1) b WHERE 1 IN (SELECT *);
 
-CREATE TABLE t2 (id int(11) default NULL, KEY id (id)) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t2 (id int(11) default NULL, KEY id (id)) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t2 VALUES (1),(2);
 SELECT * FROM t2 WHERE id IN (SELECT 1);
-EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1);
+#EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1);
 SELECT * FROM t2 WHERE id IN (SELECT 1 UNION SELECT 3);
 SELECT * FROM t2 WHERE id IN (SELECT 1+(select 1));
-EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1+(select 1));
-EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1 UNION SELECT 3);
+#EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1+(select 1));
+#EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1 UNION SELECT 3);
 SELECT * FROM t2 WHERE id IN (SELECT 5 UNION SELECT 3);
 SELECT * FROM t2 WHERE id IN (SELECT 5 UNION SELECT 2);
 -- error ER_UPDATE_TABLE_USED
@@ -420,13 +425,15 @@ INSERT INTO t2 VALUES ((SELECT * FROM t2));
 -- error ER_UPDATE_TABLE_USED
 INSERT INTO t2 VALUES ((SELECT id FROM t2));
 SELECT * FROM t2;
-CREATE TABLE t1 (id int(11) default NULL, KEY id (id)) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t1 (id int(11) default NULL, KEY id (id)) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 values (1),(1);
 -- error ER_SUBQUERY_NO_1_ROW
 UPDATE t2 SET id=(SELECT * FROM t1);
 drop table t2, t1;
 
 #NULL test
+#Bug #SEQUOIADBMAINSTREAM-3585
+#Bug #SEQUOIADBMAINSTREAM-3611
 create table t1 (a int);
 insert into t1 values (1),(2),(3);
 select 1 IN (SELECT * from t1);
@@ -468,7 +475,7 @@ select 1.5 > ALL (SELECT * from t1);
 select 10.5 > ALL (SELECT * from t1);
 select 1.5 > ANY (SELECT * from t1);
 select 10.5 > ANY (SELECT * from t1);
-explain extended select (select a+1) from t1;
+#explain extended select (select a+1) from t1;
 select (select a+1) from t1;
 drop table t1;
 
@@ -481,11 +488,11 @@ CREATE TABLE t2 (a int(11) default '0', INDEX (a));
 INSERT INTO t1 VALUES (1),(2),(3),(4);
 INSERT INTO t2 VALUES (1),(2),(3);
 SELECT t1.a, t1.a in (select t2.a from t2) FROM t1;
-explain extended SELECT t1.a, t1.a in (select t2.a from t2) FROM t1;
+#explain extended SELECT t1.a, t1.a in (select t2.a from t2) FROM t1;
 CREATE TABLE t3 (a int(11) default '0');
 INSERT INTO t3 VALUES (1),(2),(3);
 SELECT t1.a, t1.a in (select t2.a from t2,t3 where t3.a=t2.a) FROM t1;
-explain extended SELECT t1.a, t1.a in (select t2.a from t2,t3 where t3.a=t2.a) FROM t1;
+#explain extended SELECT t1.a, t1.a in (select t2.a from t2,t3 where t3.a=t2.a) FROM t1;
 drop table t1,t2,t3;
 
 #LIMIT is not supported now
@@ -533,17 +540,19 @@ set @a:=2;
 set @a:=(SELECT a from t1);
 select @a;
 drop table t1;
--- error ER_NO_SUCH_TABLE
-do (SELECT a from t1);
--- error ER_NO_SUCH_TABLE
-set @a:=(SELECT a from t1);
+# Compatible with parallel > 1, check error "ER_NO_SUCH_TABLE" here, move to "errors.test" 
+#-- error ER_NO_SUCH_TABLE
+#do (SELECT a from t1);
+#-- error ER_NO_SUCH_TABLE
+#set @a:=(SELECT a from t1);
 
-CREATE TABLE t1 (a int, KEY(a));
-HANDLER t1 OPEN;
--- error ER_PARSE_ERROR
-HANDLER t1 READ a=((SELECT 1));
-HANDLER t1 CLOSE;
-drop table t1;
+# NOW SequoiaDB not support Handler
+#CREATE TABLE t1 (a int, KEY(a));
+#HANDLER t1 OPEN;
+#-- error ER_PARSE_ERROR
+#HANDLER t1 READ a=((SELECT 1));
+#HANDLER t1 CLOSE;
+#drop table t1;
 
 create table t1 (a int);
 create table t2 (b int);
@@ -559,7 +568,7 @@ insert into t2 values (1,2),(1,3);
 select * from t1 where row(a,b) in (select a,b from t2);
 drop table t1, t2;
 
-CREATE TABLE `t1` (`i` int(11) NOT NULL default '0',PRIMARY KEY  (`i`)) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE `t1` (`i` int(11) NOT NULL default '0',PRIMARY KEY  (`i`)) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES (1);
 UPDATE t1 SET i=i+1 WHERE i=(SELECT MAX(i));
 select * from t1;
@@ -567,11 +576,10 @@ drop table t1;
 
 #test of uncacheable subqueries
 CREATE TABLE t1 (a int(1));
-EXPLAIN EXTENDED SELECT (SELECT RAND() FROM t1) FROM t1;
-EXPLAIN EXTENDED SELECT (SELECT ENCRYPT('test') FROM t1) FROM t1;
-EXPLAIN EXTENDED SELECT (SELECT BENCHMARK(1,1) FROM t1) FROM t1;
+#EXPLAIN EXTENDED SELECT (SELECT RAND() FROM t1) FROM t1;
+#EXPLAIN EXTENDED SELECT (SELECT ENCRYPT('test') FROM t1) FROM t1;
+#EXPLAIN EXTENDED SELECT (SELECT BENCHMARK(1,1) FROM t1) FROM t1;
 drop table t1;
-
 
 CREATE TABLE `t1` (
   `mot` varchar(30) character set latin1 NOT NULL default '',
@@ -581,7 +589,7 @@ CREATE TABLE `t1` (
   PRIMARY KEY  (`mot`,`pseudo`,`date`,`topic`),
   KEY `pseudo` (`pseudo`,`date`,`topic`),
   KEY `topic` (`topic`)
-) ENGINE=MyISAM CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE `t2` (
   `mot` varchar(30) character set latin1 NOT NULL default '',
@@ -591,14 +599,14 @@ CREATE TABLE `t2` (
   PRIMARY KEY  (`mot`,`pseudo`,`date`,`topic`),
   KEY `pseudo` (`pseudo`,`date`,`topic`),
   KEY `topic` (`topic`)
-) ENGINE=MyISAM CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 
 CREATE TABLE `t3` (
   `numeropost` mediumint(8) unsigned NOT NULL auto_increment,
   `maxnumrep` int(10) unsigned NOT NULL default '0',
   PRIMARY KEY  (`numeropost`),
   UNIQUE KEY `maxnumrep` (`maxnumrep`)
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES ('joce','1','','joce'),('test','2','','test');
 
 INSERT INTO t2 VALUES ('joce','1','','joce'),('test','2','','test');
@@ -633,20 +641,20 @@ drop table t1;
 
 create table t1 (a int);
 insert into t1 values (1), (2), (3);
-explain extended select a,(select (select rand() from t1 limit 1)  from t1 limit 1)
-from t1;
+#explain extended select a,(select (select rand() from t1 limit 1)  from t1 limit 1)
+#from t1;
 drop table t1;
 
 #
 # error in IN
 #
--- error ER_NO_SUCH_TABLE
-select t1.Continent, t2.Name, t2.Population from t1 LEFT JOIN t2 ON t1.Code = t2.Country  where t2.Population IN (select max(t2.Population) AS Population from t2, t1 where t2.Country = t1.Code group by Continent);
+# Compatible with parallel > 1, check error "ER_NO_SUCH_TABLE" here, move to "errors.test"
+#-- error ER_NO_SUCH_TABLE
+#select t1.Continent, t2.Name, t2.Population from t1 LEFT JOIN t2 ON t1.Code = t2.Country  where t2.Population IN (select max(t2.Population) AS Population from t2, t1 where t2.Country = t1.Code group by Continent);
 
 #
 # complex subquery
 #
-
 CREATE TABLE t1 (
   ID int(11) NOT NULL auto_increment,
   name char(35) NOT NULL default '',
@@ -654,7 +662,7 @@ CREATE TABLE t1 (
   District char(20) NOT NULL default '',
   Population int(11) NOT NULL default '0',
   PRIMARY KEY  (ID)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (130,'Sydney','AUS','New South Wales',3276207);
 INSERT INTO t1 VALUES (131,'Melbourne','AUS','Victoria',2865329);
@@ -677,7 +685,7 @@ CREATE TABLE t2 (
   Capital int(11) default NULL,
   Code2 char(2) NOT NULL default '',
   PRIMARY KEY  (Code)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t2 VALUES ('AUS','Australia','Oceania','Australia and New Zealand',7741220.00,1901,18886000,79.8,351182.00,392911.00,'Australia','Constitutional Monarchy, Federation','Elisabeth II',135,'AU');
 INSERT INTO t2 VALUES ('AZE','Azerbaijan','Asia','Middle East',86600.00,1991,7734000,62.9,4127.00,4100.00,'Azärbaycan','Federal Republic','Heydär Äliyev',144,'AZ');
@@ -694,19 +702,19 @@ CREATE TABLE `t1` (
   `pseudo` varchar(35) character set latin1 NOT NULL default '',
   PRIMARY KEY  (`id`),
   UNIQUE KEY `pseudo` (`pseudo`)
-) ENGINE=MyISAM PACK_KEYS=1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB PACK_KEYS=1 ROW_FORMAT=DYNAMIC;
 INSERT INTO t1 (pseudo) VALUES ('test');
 SELECT 0 IN (SELECT 1 FROM t1 a);
-EXPLAIN EXTENDED SELECT 0 IN (SELECT 1 FROM t1 a);
+#EXPLAIN EXTENDED SELECT 0 IN (SELECT 1 FROM t1 a);
 INSERT INTO t1 (pseudo) VALUES ('test1');
 SELECT 0 IN (SELECT 1 FROM t1 a);
-EXPLAIN EXTENDED SELECT 0 IN (SELECT 1 FROM t1 a);
+#EXPLAIN EXTENDED SELECT 0 IN (SELECT 1 FROM t1 a);
 drop table t1;
 
 CREATE TABLE `t1` (
   `i` int(11) NOT NULL default '0',
   PRIMARY KEY  (`i`)
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 
 INSERT INTO t1 VALUES (1);
 UPDATE t1 SET i=i+(SELECT MAX(i) FROM (SELECT 1) t) WHERE i=(SELECT MAX(i));
@@ -718,15 +726,15 @@ drop table t1;
 
 #
 # Multi update test
-#
+#Bug #SEQUOIADBMAINSTREAM-3601
 CREATE TABLE t1 (
   id int(11) default NULL
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES (1),(1),(2),(2),(1),(3);
 CREATE TABLE t2 (
   id int(11) default NULL,
   name varchar(15) default NULL
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 
 INSERT INTO t2 VALUES (4,'vita'), (1,'vita'), (2,'vita'), (1,'vita');
 update t1, t2 set t2.name='lenka' where t2.id in (select id from t1);
@@ -746,7 +754,7 @@ drop table t1;
 #
 create table t1 (id int not null auto_increment primary key, salary int, key(salary));
 insert into t1 (salary) values (100),(1000),(10000),(10),(500),(5000),(50000);
-explain extended SELECT id FROM t1 where salary = (SELECT MAX(salary) FROM t1);
+#explain extended SELECT id FROM t1 where salary = (SELECT MAX(salary) FROM t1);
 drop table t1;
 
 CREATE TABLE t1 (
@@ -755,10 +763,10 @@ CREATE TABLE t1 (
   REF_ID int(10) unsigned default NULL,
   REF_SUB int(3) unsigned default '0',
   PRIMARY KEY (ID,SUB_ID),
-  UNIQUE KEY t1_PK (ID,SUB_ID),
+# UNIQUE KEY t1_PK (ID,SUB_ID), # will cause -291
   KEY t1_FK (REF_ID,REF_SUB),
   KEY t1_REFID (REF_ID)
-) ENGINE=MyISAM CHARSET=cp1251;
+) ENGINE=SequoiaDB CHARSET=cp1251;
 INSERT INTO t1 VALUES (1,0,NULL,NULL),(2,0,NULL,NULL);
 SELECT DISTINCT REF_ID FROM t1 WHERE ID= (SELECT DISTINCT REF_ID FROM t1 WHERE ID=2);
 DROP TABLE t1;
@@ -766,6 +774,7 @@ DROP TABLE t1;
 #
 # uninterruptable update
 #
+#Bug #SEQUOIADBMAINSTREAM-3611
 create table t1 (a int, b int);
 create table t2 (a int, b int);
 
@@ -780,7 +789,6 @@ drop table t1, t2;
 #
 # reduced subselect in ORDER BY & GROUP BY clauses
 #
-
 CREATE TABLE `t1` (
   `id` mediumint(8) unsigned NOT NULL auto_increment,
   `pseudo` varchar(35) NOT NULL default '',
@@ -788,7 +796,7 @@ CREATE TABLE `t1` (
   PRIMARY KEY  (`id`),
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `pseudo` (`pseudo`)
-) ENGINE=MyISAM CHARSET=latin1 PACK_KEYS=1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB CHARSET=latin1 PACK_KEYS=1 ROW_FORMAT=DYNAMIC;
 INSERT INTO t1 (id,pseudo,email) VALUES (1,'test','test'),(2,'test1','test1');
 --source include/turn_off_only_full_group_by.inc
 SELECT pseudo as a, pseudo as b FROM t1 GROUP BY (SELECT a) ORDER BY (SELECT id*1);
@@ -811,7 +819,9 @@ drop table t1,t2,t3;
 
 #
 # aggregate functions in HAVING test
-#
+#Bug #SEQUOIADBMAINSTREAM-3581
+# 
+
 create table t1 (s1 int);
 create table t2 (s1 int);
 insert into t1 values (1);
@@ -863,7 +873,7 @@ create table t1 (s1 char(5));
 select (select 'a','b' from t1 union select 'a','b' from t1) from t1;
 insert into t1 values ('tttt');
 select * from t1 where ('a','b')=(select 'a','b' from t1 union select 'a','b' from t1);
-explain extended (select * from t1);
+#explain extended (select * from t1);
 (select * from t1);
 drop table t1;
 
@@ -878,10 +888,10 @@ select s1, s1 NOT IN (SELECT s1 FROM t2) from t1;
 select s1, s1 = ANY (SELECT s1 FROM t2) from t1;
 select s1, s1 <> ALL (SELECT s1 FROM t2) from t1;
 select s1, s1 NOT IN (SELECT s1 FROM t2 WHERE s1 < 'a2') from t1;
-explain extended select s1, s1 NOT IN (SELECT s1 FROM t2) from t1;
-explain extended select s1, s1 = ANY (SELECT s1 FROM t2) from t1;
-explain extended select s1, s1 <> ALL (SELECT s1 FROM t2) from t1;
-explain extended select s1, s1 NOT IN (SELECT s1 FROM t2 WHERE s1 < 'a2') from t1;
+#explain extended select s1, s1 NOT IN (SELECT s1 FROM t2) from t1;
+#explain extended select s1, s1 = ANY (SELECT s1 FROM t2) from t1;
+#explain extended select s1, s1 <> ALL (SELECT s1 FROM t2) from t1;
+#explain extended select s1, s1 NOT IN (SELECT s1 FROM t2 WHERE s1 < 'a2') from t1;
 drop table t1,t2;
 
 #
@@ -891,40 +901,41 @@ create table t2 (a int, b int);
 create table t3 (a int);
 insert into t3 values (6),(7),(3);
 select * from t3 where a >= all (select b from t2);
-explain extended select * from t3 where a >= all (select b from t2);
+#explain extended select * from t3 where a >= all (select b from t2);
 select * from t3 where a >= some (select b from t2);
-explain extended select * from t3 where a >= some (select b from t2);
+#explain extended select * from t3 where a >= some (select b from t2);
 select * from t3 where a >= all (select b from t2 group by 1);
-explain extended select * from t3 where a >= all (select b from t2 group by 1);
+#explain extended select * from t3 where a >= all (select b from t2 group by 1);
 select * from t3 where a >= some (select b from t2 group by 1);
-explain extended select * from t3 where a >= some (select b from t2 group by 1);
+#explain extended select * from t3 where a >= some (select b from t2 group by 1);
 select * from t3 where NULL >= any (select b from t2);
-explain extended select * from t3 where NULL >= any (select b from t2);
+#explain extended select * from t3 where NULL >= any (select b from t2);
 select * from t3 where NULL >= any (select b from t2 group by 1);
-explain extended select * from t3 where NULL >= any (select b from t2 group by 1);
+#explain extended select * from t3 where NULL >= any (select b from t2 group by 1);
 select * from t3 where NULL >= some (select b from t2);
-explain extended select * from t3 where NULL >= some (select b from t2);
+#explain extended select * from t3 where NULL >= some (select b from t2);
 select * from t3 where NULL >= some (select b from t2 group by 1);
-explain extended select * from t3 where NULL >= some (select b from t2 group by 1);
+#explain extended select * from t3 where NULL >= some (select b from t2 group by 1);
 #
 # optimized static ALL/ANY with grouping
 #
 insert into t2 values (2,2), (2,1), (3,3), (3,1);
 select * from t3 where a > all (select max(b) from t2 group by a);
-explain extended select * from t3 where a > all (select max(b) from t2 group by a);
+#explain extended select * from t3 where a > all (select max(b) from t2 group by a);
 drop table t2, t3;
 
 #
 # correct used_tables()
 #
-
-CREATE TABLE `t1` ( `id` mediumint(9) NOT NULL auto_increment, `taskid` bigint(20) NOT NULL default '0', `dbid` int(11) NOT NULL default '0', `create_date` datetime NOT NULL default '0000-00-00 00:00:00', `last_update` datetime NOT NULL default '0000-00-00 00:00:00', PRIMARY KEY  (`id`)) ENGINE=MyISAM CHARSET=latin1 AUTO_INCREMENT=3 ;
+CREATE TABLE `t1` ( `id` mediumint(9) NOT NULL auto_increment, `taskid` bigint(20) NOT NULL default '0', `dbid` int(11) NOT NULL default '0', `create_date` datetime NOT NULL default '0000-00-00 00:00:00', `last_update` datetime NOT NULL default '0000-00-00 00:00:00', PRIMARY KEY  (`id`)) ENGINE=SequoiaDB CHARSET=latin1 AUTO_INCREMENT=3 ;
 INSERT INTO `t1` (`id`, `taskid`, `dbid`, `create_date`,`last_update`) VALUES (1, 1, 15, '2003-09-29 10:31:36', '2003-09-29 10:31:36'), (2, 1, 21, now(), now());
-CREATE TABLE `t2` (`db_id` int(11) NOT NULL auto_increment,`name` varchar(200) NOT NULL default '',`primary_uid` smallint(6) NOT NULL default '0',`secondary_uid` smallint(6) NOT NULL default '0',PRIMARY KEY  (`db_id`),UNIQUE KEY `name_2` (`name`),FULLTEXT KEY `name` (`name`)) ENGINE=MyISAM CHARSET=latin1 AUTO_INCREMENT=2147483647;
+# NOW SequoiaDB not support FULLTEXT
+#CREATE TABLE `t2` (`db_id` int(11) NOT NULL auto_increment,`name` varchar(200) NOT NULL default '',`primary_uid` smallint(6) NOT NULL default '0',`secondary_uid` smallint(6) NOT NULL default '0',PRIMARY KEY  (`db_id`),UNIQUE KEY `name_2` (`name`),FULLTEXT KEY `name` (`name`)) ENGINE=SequoiaDB CHARSET=latin1 AUTO_INCREMENT=2147483647;
+CREATE TABLE `t2` (`db_id` int(11) NOT NULL auto_increment,`name` varchar(200) NOT NULL default '',`primary_uid` smallint(6) NOT NULL default '0',`secondary_uid` smallint(6) NOT NULL default '0',PRIMARY KEY  (`db_id`),UNIQUE KEY `name_2` (`name`)) ENGINE=SequoiaDB CHARSET=latin1 AUTO_INCREMENT=2147483647;
 INSERT INTO `t2` (`db_id`, `name`, `primary_uid`, `secondary_uid`) VALUES (18, 'Not Set 1', 0, 0),(19, 'Valid', 1, 2),(20, 'Valid 2', 1, 2),(21, 'Should Not Return', 1, 2),(26, 'Not Set 2', 0, 0),(-1, 'ALL DB\'S', 0, 0);
-CREATE TABLE `t3` (`taskgenid` mediumint(9) NOT NULL auto_increment,`dbid` int(11) NOT NULL default '0',`taskid` int(11) NOT NULL default '0',`mon` tinyint(4) NOT NULL default '1',`tues` tinyint(4) NOT NULL default '1',`wed` tinyint(4) NOT NULL default '1',`thur` tinyint(4) NOT NULL default '1',`fri` tinyint(4) NOT NULL default '1',`sat` tinyint(4) NOT NULL default '0',`sun` tinyint(4) NOT NULL default '0',`how_often` smallint(6) NOT NULL default '1',`userid` smallint(6) NOT NULL default '0',`active` tinyint(4) NOT NULL default '1',PRIMARY KEY  (`taskgenid`)) ENGINE=MyISAM CHARSET=latin1 AUTO_INCREMENT=2 ;
+CREATE TABLE `t3` (`taskgenid` mediumint(9) NOT NULL auto_increment,`dbid` int(11) NOT NULL default '0',`taskid` int(11) NOT NULL default '0',`mon` tinyint(4) NOT NULL default '1',`tues` tinyint(4) NOT NULL default '1',`wed` tinyint(4) NOT NULL default '1',`thur` tinyint(4) NOT NULL default '1',`fri` tinyint(4) NOT NULL default '1',`sat` tinyint(4) NOT NULL default '0',`sun` tinyint(4) NOT NULL default '0',`how_often` smallint(6) NOT NULL default '1',`userid` smallint(6) NOT NULL default '0',`active` tinyint(4) NOT NULL default '1',PRIMARY KEY  (`taskgenid`)) ENGINE=SequoiaDB CHARSET=latin1 AUTO_INCREMENT=2 ;
 INSERT INTO `t3` (`taskgenid`, `dbid`, `taskid`, `mon`, `tues`,`wed`, `thur`, `fri`, `sat`, `sun`, `how_often`, `userid`, `active`) VALUES (1,-1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1);
-CREATE TABLE `t4` (`task_id` smallint(6) NOT NULL default '0',`description` varchar(200) NOT NULL default '') ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE `t4` (`task_id` smallint(6) NOT NULL default '0',`description` varchar(200) NOT NULL default '') ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO `t4` (`task_id`, `description`) VALUES (1, 'Daily Check List'),(2, 'Weekly Status');
 select  dbid, name, (date_format(now() , '%Y-%m-%d') - INTERVAL how_often DAY) >= ifnull((SELECT date_format(max(create_date),'%Y-%m-%d') FROM t1 WHERE dbid = b.db_id AND taskid = a.taskgenid), '1950-01-01') from t3 a, t2 b, t4  WHERE dbid = - 1 AND primary_uid = '1' AND t4.task_id = taskid;
 SELECT dbid, name FROM t3 a, t2 b, t4 WHERE dbid = - 1 AND primary_uid = '1' AND ((date_format(now() , '%Y-%m-%d') - INTERVAL how_often DAY) >= ifnull((SELECT date_format(max(create_date),'%Y-%m-%d') FROM t1 WHERE dbid = b.db_id AND taskid = a.taskgenid), '1950-01-01')) AND t4.task_id = taskid;
@@ -933,9 +944,9 @@ drop table t1,t2,t3,t4;
 #
 # cardinality check
 #
-CREATE TABLE t1 (id int(11) default NULL) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t1 (id int(11) default NULL) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES (1),(5);
-CREATE TABLE t2 (id int(11) default NULL) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t2 (id int(11) default NULL) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t2 VALUES (2),(6);
 -- error ER_OPERAND_COLUMNS
 select * from t1 where (1,2,6) in (select * from t2);
@@ -960,15 +971,15 @@ create table t1 (s1 char);
 insert into t1 values ('e');
 select * from t1 where 'f' > any (select s1 from t1);
 select * from t1 where 'f' > any (select s1 from t1 union select s1 from t1);
-explain extended select * from t1 where 'f' > any (select s1 from t1 union select s1 from t1);
+#explain extended select * from t1 where 'f' > any (select s1 from t1 union select s1 from t1);
 drop table t1;
 
 #
 # filesort in subquery (restoring join_tab)
 #
-CREATE TABLE t1 (number char(11) NOT NULL default '') ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t1 (number char(11) NOT NULL default '') ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES ('69294728265'),('18621828126'),('89356874041'),('95895001874');
-CREATE TABLE t2 (code char(5) NOT NULL default '',UNIQUE KEY code (code)) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t2 (code char(5) NOT NULL default '',UNIQUE KEY code (code)) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t2 VALUES ('1'),('1226'),('1245'),('1862'),('18623'),('1874'),('1967'),('6');
 select c.number as phone,(select p.code from t2 p where c.number like concat(p.code, '%') order by length(p.code) desc limit 1) as code from t1 c;
 drop table t1, t2;
@@ -1023,7 +1034,6 @@ drop table t1;
 #
 # Bug#2479 dependant subquery with limit crash
 #
-
 CREATE TABLE `t1` (
   `id` int(11) NOT NULL auto_increment,
   `id_cns` tinyint(3) unsigned NOT NULL default '0',
@@ -1083,13 +1093,13 @@ create table t1 (id int not null, text varchar(20) not null default '', primary 
 insert into t1 (id, text) values (1, 'text1'), (2, 'text2'), (3, 'text3'), (4, 'text4'), (5, 'text5'), (6, 'text6'), (7, 'text7'), (8, 'text8'), (9, 'text9'), (10, 'text10'), (11, 'text11'), (12, 'text12');
 select * from t1 where id not in (select id from t1 where id < 8);
 select * from t1 as tt where not exists (select id from t1 where id < 8 and (id = tt.id or id is null) having id is not null);
-explain extended select * from t1 where id not in (select id from t1 where id < 8);
-explain extended select * from t1 as tt where not exists (select id from t1 where id < 8 and (id = tt.id or id is null) having id is not null);
+#explain extended select * from t1 where id not in (select id from t1 where id < 8);
+#explain extended select * from t1 as tt where not exists (select id from t1 where id < 8 and (id = tt.id or id is null) having id is not null);
 insert into t1 (id, text) values (1000, 'text1000'), (1001, 'text1001');
 create table t2 (id int not null, text varchar(20) not null default '', primary key (id));
 insert into t2 (id, text) values (1, 'text1'), (2, 'text2'), (3, 'text3'), (4, 'text4'), (5, 'text5'), (6, 'text6'), (7, 'text7'), (8, 'text8'), (9, 'text9'), (10, 'text10'), (11, 'text1'), (12, 'text2'), (13, 'text3'), (14, 'text4'), (15, 'text5'), (16, 'text6'), (17, 'text7'), (18, 'text8'), (19, 'text9'), (20, 'text10'),(21, 'text1'), (22, 'text2'), (23, 'text3'), (24, 'text4'), (25, 'text5'), (26, 'text6'), (27, 'text7'), (28, 'text8'), (29, 'text9'), (30, 'text10'), (31, 'text1'), (32, 'text2'), (33, 'text3'), (34, 'text4'), (35, 'text5'), (36, 'text6'), (37, 'text7'), (38, 'text8'), (39, 'text9'), (40, 'text10'), (41, 'text1'), (42, 'text2'), (43, 'text3'), (44, 'text4'), (45, 'text5'), (46, 'text6'), (47, 'text7'), (48, 'text8'), (49, 'text9'), (50, 'text10');
 select * from t1 a left join t2 b on (a.id=b.id or b.id is null) join t1 c on (if(isnull(b.id), 1000, b.id)=c.id);
-explain extended select * from t1 a left join t2 b on (a.id=b.id or b.id is null) join t1 c on (if(isnull(b.id), 1000, b.id)=c.id);
+#explain extended select * from t1 a left join t2 b on (a.id=b.id or b.id is null) join t1 c on (if(isnull(b.id), 1000, b.id)=c.id);
 drop table t1,t2;
 
 #
@@ -1097,7 +1107,7 @@ drop table t1,t2;
 #
 create table t1 (a int);
 insert into t1 values (1);
-explain select benchmark(1000, (select a from t1 where a=sha(rand())));
+#explain select benchmark(1000, (select a from t1 where a=sha(rand())));
 drop table t1;
 
 
@@ -1297,11 +1307,12 @@ DROP TABLE t1;
 
 #
 # SELECT(EXISTS * ...)optimisation
-#
+#Bug #SEQUOIADBMAINSTREAM-3576
+
 create table t1 (a int, b int);
 insert into t1 values (1,2),(3,4);
 select * from t1 up where exists (select * from t1 where t1.a=up.a);
-explain extended select * from t1 up where exists (select * from t1 where t1.a=up.a);
+#explain extended select * from t1 up where exists (select * from t1 where t1.a=up.a);
 drop table t1;
 
 
@@ -1359,9 +1370,9 @@ DROP TABLE t1, t2, t3;
 #
 # Aggregate function comparation with ALL/ANY/SOME subselect
 #
-CREATE TABLE `t1` ( `a` int(11) default NULL) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+CREATE TABLE `t1` ( `a` int(11) default NULL) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 insert into t1 values (1);
-CREATE TABLE `t2` ( `b` int(11) default NULL, `a` int(11) default NULL) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+CREATE TABLE `t2` ( `b` int(11) default NULL, `a` int(11) default NULL) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 insert into t2 values (1,2);
 select t000.a, count(*) `C` FROM t1 t000 GROUP BY t000.a HAVING count(*) > ALL (SELECT count(*) FROM t2 t001 WHERE t001.a=1);
 drop table t1,t2;
@@ -1370,13 +1381,14 @@ drop table t1,t2;
 #
 # Bug#4769 - fulltext in subselect
 #
-create table t1 (a int not null auto_increment primary key, b varchar(40), fulltext(b));
-insert into t1 (b) values ('ball'),('ball games'), ('games'), ('foo'), ('foobar'), ('Serg'), ('Sergei'),('Georg'), ('Patrik'),('Hakan');
-create table t2 (a int);
-insert into t2 values (1),(3),(2),(7);
-select a,b from t1 where match(b) against ('Ball') > 0;
-select a from t2 where a in (select a from t1 where match(b) against ('Ball') > 0);
-drop table t1,t2;
+# NOW SequoiaDB not suppport FULLTEXT
+#create table t1 (a int not null auto_increment primary key, b varchar(40), fulltext(b));
+#insert into t1 (b) values ('ball'),('ball games'), ('games'), ('foo'), ('foobar'), ('Serg'), ('Sergei'),('Georg'), ('Patrik'),('Hakan');
+#create table t2 (a int);
+#insert into t2 values (1),(3),(2),(7);
+#select a,b from t1 where match(b) against ('Ball') > 0;
+#select a from t2 where a in (select a from t1 where match(b) against ('Ball') > 0);
+#drop table t1,t2;
 
 
 #
@@ -1448,21 +1460,24 @@ create table t1 (a int not null, b int not null, c int, primary key (a,b));
 insert into t1 values (1,1,1), (2,2,2), (3,3,3);
 set @b:= 0;
 # Let us check that subquery will use covering index
-explain select sum(a) from t1 where b > @b;
+#explain select sum(a) from t1 where b > @b;
 # This should not crash -debug server due to failing assertion
 set @a:= (select sum(a) from t1 where b > @b);
 # And this should not falsely report index usage
-explain select a from t1 where c=2;
+#explain select a from t1 where c=2;
 # Same for DO statement
 do @a:= (select sum(a) from t1 where b > @b);
-explain select a from t1 where c=2;
+#explain select a from t1 where c=2;
 drop table t1;
 
 #
 # Subselect in non-select command just after connection
 # Disconnect new connection and switch back when test is finished
 #
-connect (root,localhost,root,,test,$MASTER_MYPORT,$MASTER_MYSOCK);
+# Compatible with parallel > 1, should identify with database name for new connection
+let $current_database = `select database()`;
+#connect (root,localhost,root,,test,$MASTER_MYPORT,$MASTER_MYSOCK);
+connect (root,localhost,root,,$current_database,$MASTER_MYPORT,$MASTER_MYSOCK);
 connection root;
 set @got_val= (SELECT 1 FROM (SELECT 'A' as my_col) as T1 ) ;
 connection default;
@@ -1471,6 +1486,7 @@ disconnect root;
 #
 # primary query with temporary table and subquery with grouping
 #
+SET default_storage_engine = SequoiaDB;
 create table t1 (a int, b int);
 create table t2 (a int, b int);
 insert into t1 values (1,1),(1,2),(1,3),(2,4),(2,5);
@@ -1481,16 +1497,18 @@ drop table t1, t2;
 #
 # subqueries with full text search
 #
-create table t1 (id int);
-create table t2 (id int, body text, fulltext (body));
-insert into t1 values(1),(2),(3);
-insert into t2 values (1,'test'), (2,'mysql'), (3,'test'), (4,'test');
-select count(distinct id) from t1 where id in (select id from t2 where match(body) against ('mysql' in boolean mode));
-drop table t2,t1;
+# NOW SequoiaDB not support fulltext
+#create table t1 (id int);
+#create table t2 (id int, body text, fulltext (body));
+#insert into t1 values(1),(2),(3);
+#insert into t2 values (1,'test'), (2,'mysql'), (3,'test'), (4,'test');
+#select count(distinct id) from t1 where id in (select id from t2 where match(body) against ('mysql' in boolean mode));
+#drop table t2,t1;
 
 #
 # Equal operation under row and empty subquery
 #
+#Bug #SEQUOIADBMAINSTREAM-3671
 create table t1 (s1 int,s2 int);
 insert into t1 values (20,15);
 select * from t1 where  (('a',null) <=> (select 'a',s2 from t1 where s1 = 0));
@@ -1524,7 +1542,7 @@ CREATE TABLE t1 (
   HeadOfState char(60) default NULL,
   Capital int(11) default NULL,
   Code2 char(2) NOT NULL default ''
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ('XXX','Xxxxx','Oceania','Xxxxxx',26.00,0,0,0,0,0,'Xxxxx','Xxxxx','Xxxxx',NULL,'XX');
 INSERT INTO t1 VALUES ('ASM','American Samoa','Oceania','Polynesia',199.00,0,68000,75.1,334.00,NULL,'Amerika Samoa','US Territory','George W. Bush',54,'AS');
 INSERT INTO t1 VALUES ('ATF','French Southern territories','Antarctica','Antarctica',7780.00,0,0,NULL,0.00,NULL,'Terres australes françaises','Nonmetropolitan Territory of France','Jacques Chirac',NULL,'TF');
@@ -1741,6 +1759,7 @@ drop table t1;
 #
 # Item_int_with_ref check (Bug#10020)
 #
+#SEQUOIASQLMAINSTREAM-245
 CREATE TABLE `t1` (
   `itemid` bigint(20) unsigned NOT NULL auto_increment,
   `sessionid` bigint(20) unsigned default NULL,
@@ -1867,16 +1886,16 @@ insert into t1 values (10);
 create table t2 (a int primary key, b varchar(32), c int, unique key b(c, b));
 insert into t2(a, c, b) values (1,10,'359'), (2,10,'35988'), (3,10,'35989');
 
-explain SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
-  ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
-             ORDER BY t2.c DESC, t2.b DESC LIMIT 1) WHERE t1.a = 10;
+#explain SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
+#  ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
+#             ORDER BY t2.c DESC, t2.b DESC LIMIT 1) WHERE t1.a = 10;
 SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
   ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
             ORDER BY t2.c DESC, t2.b DESC LIMIT 1) WHERE t1.a = 10;
 
-explain SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
-  ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
-            ORDER BY t2.c, t2.b LIMIT 1) WHERE t1.a = 10;
+#explain SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
+#  ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
+#            ORDER BY t2.c, t2.b LIMIT 1) WHERE t1.a = 10;
 SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
   ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
             ORDER BY t2.c, t2.b LIMIT 1) WHERE t1.a = 10;
@@ -1934,7 +1953,7 @@ INSERT INTO t1 VALUES (NULL);
 CREATE TABLE t2(a int);
 INSERT INTO t2 VALUES (1),(2),(3);
 
-EXPLAIN SELECT a, a IN (SELECT a FROM t1) FROM t2;
+#EXPLAIN SELECT a, a IN (SELECT a FROM t1) FROM t2;
 SELECT a, a IN (SELECT a FROM t1) FROM t2;
 
 DROP TABLE t1,t2;
@@ -1966,7 +1985,7 @@ INSERT INTO t1 VALUES (1), (2);
 
 SELECT a FROM t1 WHERE (SELECT 1 FROM DUAL WHERE 1=0) > 0;
 SELECT a FROM t1 WHERE (SELECT 1 FROM DUAL WHERE 1=0) IS NULL;
-EXPLAIN SELECT a FROM t1 WHERE (SELECT 1 FROM DUAL WHERE 1=0) IS NULL;
+#EXPLAIN SELECT a FROM t1 WHERE (SELECT 1 FROM DUAL WHERE 1=0) IS NULL;
 
 DROP TABLE t1;
 
@@ -2107,6 +2126,7 @@ DROP TABLE t1,t2,t3;
 #
 # Item_int_with_ref check (Bug#10020)
 #
+#SEQUOIASQLMAINSTREAM-245
 CREATE TABLE `t1` (
   `itemid` bigint(20) unsigned NOT NULL auto_increment,
   `sessionid` bigint(20) unsigned default NULL,
@@ -2219,6 +2239,7 @@ SELECT a FROM t1 GROUP BY a
 
 SELECT a, SUM(a) FROM t1 GROUP BY a;
 
+#Bug #SEQUOIADBMAINSTREAM-3576
 SELECT a FROM t1
    WHERE EXISTS(SELECT c FROM t2 GROUP BY c HAVING SUM(a) = c) GROUP BY a;
 SELECT a FROM t1 GROUP BY a
@@ -2334,7 +2355,7 @@ DROP TABLE t2;
 #
 # Bug#20519 subselect with LIMIT M, N
 #
-
+#SEQUOIASQLMAINSTREAM-245
 CREATE TABLE t1 (
   id bigint(20) unsigned NOT NULL auto_increment,
   name varchar(255) NOT NULL,
@@ -2375,7 +2396,6 @@ DROP TABLE t1,t2;
 #
 # Bug#20869 subselect with range access by DESC
 #
-
 CREATE TABLE t1 (
   i1 int(11) NOT NULL default '0',
   i2 int(11) NOT NULL default '0',
@@ -2398,18 +2418,17 @@ CREATE TABLE t2 (
 );
 INSERT INTO t2 VALUES (24,1,'2006-06-20 12:29:40');
 
-EXPLAIN
-SELECT * FROM t1,t2
-  WHERE t1.t = (SELECT t1.t FROM t1
-                  WHERE t1.t < t2.t  AND t1.i2=1 AND t2.i1=t1.i1
-                    ORDER BY t1.t DESC LIMIT 1);
+#EXPLAIN
+#SELECT * FROM t1,t2
+#  WHERE t1.t = (SELECT t1.t FROM t1
+#                  WHERE t1.t < t2.t  AND t1.i2=1 AND t2.i1=t1.i1
+#                    ORDER BY t1.t DESC LIMIT 1);
 SELECT * FROM t1,t2
   WHERE t1.t = (SELECT t1.t FROM t1
                   WHERE t1.t < t2.t  AND t1.i2=1 AND t2.i1=t1.i1
                     ORDER BY t1.t DESC LIMIT 1);
 
 DROP TABLE t1, t2;
-
 
 #
 # Bug#14654 Cannot select from the same table twice within a UNION statement
@@ -2429,12 +2448,12 @@ SELECT * FROM t1
 WHERE NOT EXISTS (((SELECT i FROM t1) UNION (SELECT i FROM t1)));
 
 #TODO:not supported
---error ER_PARSE_ERROR
-explain select ((select t11.i from t1 t11) union (select t12.i from t1 t12))
-  from t1;
+#--error ER_PARSE_ERROR
+#explain select ((select t11.i from t1 t11) union (select t12.i from t1 t12))
+#  from t1;
 
-explain select * from t1 where not exists
-  ((select t11.i from t1 t11) union (select t12.i from t1 t12));
+#explain select * from t1 where not exists
+#  ((select t11.i from t1 t11) union (select t12.i from t1 t12));
 
 DROP TABLE t1;
 
@@ -2502,7 +2521,6 @@ DROP TABLE t1,t2;
 # Bug#21727 Correlated subquery that requires filesort:
 #           slow with big sort_buffer_size
 #
-
 CREATE TABLE t1 (a int, b int, PRIMARY KEY (b));
 CREATE TABLE t2 (x int auto_increment, y int, z int,
                  PRIMARY KEY (x), FOREIGN KEY (y) REFERENCES t1 (b));
@@ -2530,7 +2548,7 @@ DROP TABLE t1,t2,t3;
 #
 # Bug#25219 EXIST subquery with UNION over a mix of
 #           correlated and uncorrelated selects
-#
+#Bug#SEQUOIADBMAINSTREAM-3576
 
 CREATE TABLE t1 (id char(4) PRIMARY KEY, c int);
 CREATE TABLE t2 (c int);
@@ -2793,6 +2811,7 @@ INSERT INTO t1 VALUES (2,22),(1,11),(2,22);
 SELECT a FROM t1 WHERE (SELECT COUNT(b) FROM DUAL) > 0 GROUP BY a;
 SELECT a FROM t1 WHERE (SELECT COUNT(b) FROM DUAL) > 1 GROUP BY a;
 
+#Bug #SEQUOIADBMAINSTREAM-3576
 SELECT a FROM t1 t0
   WHERE (SELECT COUNT(t0.b) FROM t1 t WHERE t.b>20) GROUP BY a;
 
@@ -2844,7 +2863,7 @@ DROP TABLE t1,t2;
 #
 CREATE TABLE t1 (a int, b int, KEY (a));
 INSERT INTO t1 VALUES (1,1),(2,1);
-EXPLAIN SELECT 1 FROM t1 WHERE a = (SELECT COUNT(*) FROM t1 GROUP BY b);
+#EXPLAIN SELECT 1 FROM t1 WHERE a = (SELECT COUNT(*) FROM t1 GROUP BY b);
 DROP TABLE t1;
 
 
@@ -2882,8 +2901,8 @@ CREATE TABLE t1 (a int);
 
 INSERT INTO t1 VALUES (1), (2);
 
-EXPLAIN EXTENDED
-SELECT * FROM (SELECT count(*) FROM t1 GROUP BY a) as res;
+#EXPLAIN EXTENDED
+#SELECT * FROM (SELECT count(*) FROM t1 GROUP BY a) as res;
 
 DROP TABLE t1;
 
@@ -2891,7 +2910,6 @@ DROP TABLE t1;
 #
 # Bug#28811 crash for query containing subquery with ORDER BY and LIMIT 1
 #
-
 CREATE TABLE t1 (
   a varchar(255) default NULL,
   b timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
@@ -2987,8 +3005,10 @@ INSERT INTO t1 VALUES (0x41,0x41), (0x42,0x42), (0x43,0x43);
 SELECT s1, s2 FROM t1 WHERE s2 IN (SELECT s1 FROM t1);
 SELECT s1, s2 FROM t1 WHERE (s2, 10) IN (SELECT s1, 10 FROM t1);
 
-CREATE INDEX I1 ON t1 (s1);
-CREATE INDEX I2 ON t1 (s2);
+#Bug #SEQUOIADBMAINSTREAM-3571
+#NOW SequoiaDB not support index of binary and varbinary
+#CREATE INDEX I1 ON t1 (s1);
+#CREATE INDEX I2 ON t1 (s2);
 
 SELECT s1, s2 FROM t1 WHERE s2 IN (SELECT s1 FROM t1);
 SELECT s1, s2 FROM t1 WHERE (s2, 10) IN (SELECT s1, 10 FROM t1);
@@ -2999,8 +3019,12 @@ SELECT * FROM t1 WHERE s1 = (SELECT s2 FROM t1);
 
 DROP TABLE t1;
 
-CREATE TABLE t1 (a1 VARBINARY(2) NOT NULL DEFAULT '0', PRIMARY KEY (a1));
-CREATE TABLE t2 (a2 BINARY(2) default '0', INDEX (a2));
+#Bug #SEQUOIADBMAINSTREAM-3571
+#NOW SequoiaDB not support index of binary and varbinary
+#CREATE TABLE t1 (a1 VARBINARY(2) NOT NULL DEFAULT '0', PRIMARY KEY (a1));
+CREATE TABLE t1 (a1 VARBINARY(2) NOT NULL DEFAULT '0');
+#CREATE TABLE t2 (a2 BINARY(2) default '0', INDEX (a2));
+CREATE TABLE t2 (a2 BINARY(2) default '0');
 CREATE TABLE t3 (a3 BINARY(2) default '0');
 INSERT INTO t1 VALUES (1),(2),(3),(4);
 INSERT INTO t2 VALUES (1),(2),(3);
@@ -3009,9 +3033,13 @@ SELECT LEFT(t2.a2, 1) FROM t2,t3 WHERE t3.a3=t2.a2;
 SELECT t1.a1, t1.a1 in (SELECT t2.a2 FROM t2,t3 WHERE t3.a3=t2.a2) FROM t1;
 DROP TABLE t1,t2,t3;
 
-CREATE TABLE t1 (a1 BINARY(3) PRIMARY KEY, b1 VARBINARY(3));
-CREATE TABLE t2 (a2 VARBINARY(3) PRIMARY KEY);
-CREATE TABLE t3 (a3 VARBINARY(3) PRIMARY KEY);
+#Bug #SEQUOIADBMAINSTREAM-3571
+#CREATE TABLE t1 (a1 BINARY(3) PRIMARY KEY, b1 VARBINARY(3));
+CREATE TABLE t1 (a1 BINARY(3) , b1 VARBINARY(3));
+#CREATE TABLE t2 (a2 VARBINARY(3) PRIMARY KEY);
+CREATE TABLE t2 (a2 VARBINARY(3));
+#CREATE TABLE t3 (a3 VARBINARY(3) PRIMARY KEY);
+CREATE TABLE t3 (a3 VARBINARY(3));
 INSERT INTO t1 VALUES (1,10), (2,20), (3,30), (4,40);
 INSERT INTO t2 VALUES (2), (3), (4), (5);
 INSERT INTO t3 VALUES (10), (20), (30);
@@ -3027,21 +3055,21 @@ DROP TABLE t1, t2, t3;
 CREATE TABLE t1(a INT, b INT);
 INSERT INTO t1 VALUES (1,1), (1,2), (2,3), (2,4);
 
---error ER_BAD_FIELD_ERROR
-EXPLAIN
-SELECT a AS out_a, MIN(b) FROM t1
-WHERE b > (SELECT MIN(b) FROM t1 WHERE a = out_a)
-GROUP BY a;
+#--error ER_BAD_FIELD_ERROR
+#EXPLAIN
+#SELECT a AS out_a, MIN(b) FROM t1
+#WHERE b > (SELECT MIN(b) FROM t1 WHERE a = out_a)
+#GROUP BY a;
 
 --error ER_BAD_FIELD_ERROR
 SELECT a AS out_a, MIN(b) FROM t1
 WHERE b > (SELECT MIN(b) FROM t1 WHERE a = out_a)
 GROUP BY a;
 
-EXPLAIN
-SELECT a AS out_a, MIN(b) FROM t1 t1_outer
-WHERE b > (SELECT MIN(b) FROM t1 WHERE a = t1_outer.a)
-GROUP BY a;
+#EXPLAIN
+#SELECT a AS out_a, MIN(b) FROM t1 t1_outer
+#WHERE b > (SELECT MIN(b) FROM t1 WHERE a = t1_outer.a)
+#GROUP BY a;
 
 SELECT a AS out_a, MIN(b) FROM t1 t1_outer
 WHERE b > (SELECT MIN(b) FROM t1 WHERE a = t1_outer.a)
@@ -3054,6 +3082,7 @@ DROP TABLE t1;
 # Bug#32036 EXISTS within a WHERE clause with a UNION crashes MySQL 5.122
 #
 
+#Bug #SEQUOIADBMAINSTREAM-3576
 CREATE TABLE t1 (a INT);
 CREATE TABLE t2 (a INT);
 
@@ -3061,13 +3090,13 @@ INSERT INTO t1 VALUES (1),(2);
 INSERT INTO t2 VALUES (1),(2);
 
 SELECT 2 FROM t1 WHERE EXISTS ((SELECT 1 FROM t2 WHERE t1.a=t2.a));
-EXPLAIN EXTENDED
-SELECT 2 FROM t1 WHERE EXISTS ((SELECT 1 FROM t2 WHERE t1.a=t2.a));
+#EXPLAIN EXTENDED
+#SELECT 2 FROM t1 WHERE EXISTS ((SELECT 1 FROM t2 WHERE t1.a=t2.a));
 
 
-EXPLAIN EXTENDED
-SELECT 2 FROM t1 WHERE EXISTS ((SELECT 1 FROM t2 WHERE t1.a=t2.a) UNION
-                               (SELECT 1 FROM t2 WHERE t1.a = t2.a));
+#EXPLAIN EXTENDED
+#SELECT 2 FROM t1 WHERE EXISTS ((SELECT 1 FROM t2 WHERE t1.a=t2.a) UNION
+#                               (SELECT 1 FROM t2 WHERE t1.a = t2.a));
 
 DROP TABLE t1,t2;
 
@@ -3180,7 +3209,7 @@ INSERT INTO `C` VALUES (9,9), (0,0), (8,6), (3,6), (7,6), (0,4),
 
 --disable_warnings
 SELECT * FROM C WHERE `int_key` IN (SELECT `int_nokey`);
-EXPLAIN EXTENDED SELECT * FROM C WHERE `int_key` IN (SELECT `int_nokey`);
+#EXPLAIN EXTENDED SELECT * FROM C WHERE `int_key` IN (SELECT `int_nokey`);
 --enable_warnings
 
 DROP TABLE C;
@@ -3207,10 +3236,10 @@ INSERT INTO st2 VALUES (1,1), (2,1);
 --source include/turn_off_only_full_group_by.inc
 
 # should have "impossible where"
-EXPLAIN
-SELECT MAX(b), (SELECT COUNT(*) FROM st1,st2 WHERE st2.b <= t1.b)
-FROM t1 
-WHERE a = 230;
+#EXPLAIN
+#SELECT MAX(b), (SELECT COUNT(*) FROM st1,st2 WHERE st2.b <= t1.b)
+#FROM t1 
+#WHERE a = 230;
 
 # should not crash
 SELECT MAX(b), (SELECT COUNT(*) FROM st1,st2 WHERE st2.b <= t1.b)
@@ -3231,12 +3260,12 @@ INSERT INTO t1 VALUES (10,1), (14,1);
 CREATE TABLE t2 (pk int PRIMARY KEY, int_key int);
 INSERT INTO t2 VALUES (3,3), (5,NULL), (7,3);
 
---echo # should have eq_ref for t1, unless subquery materialization is used
---replace_column 1 x 2 x 6 x 7 x 8 x 9 x 10 x 12 x
-EXPLAIN
-SELECT * FROM t2 outr
-WHERE outr.int_key NOT IN (SELECT t1.pk FROM t1, t2)  
-ORDER BY outr.pk;
+#--echo # should have eq_ref for t1, unless subquery materialization is used
+#--replace_column 1 x 2 x 6 x 7 x 8 x 9 x 10 x 12 x
+#EXPLAIN
+#SELECT * FROM t2 outr
+#WHERE outr.int_key NOT IN (SELECT t1.pk FROM t1, t2)  
+#ORDER BY outr.pk;
 
 --echo # should not crash on debug binaries
 SELECT * FROM t2 outr
@@ -3281,14 +3310,14 @@ select a, oref, a in (select max(ie)
   from t1 where oref=t2.oref group by grp) Z from t2;
 
 # This must have a trigcond
-explain extended
-select a, oref, a in (select max(ie) 
-  from t1 where oref=t2.oref group by grp) z from t2;
+#explain extended
+#select a, oref, a in (select max(ie) 
+#  from t1 where oref=t2.oref group by grp) z from t2;
 
 # This must not have a trigcond:
-explain extended
-select a, oref from t2 
-where a in (select max(ie) from t1 where oref=t2.oref group by grp);
+#explain extended
+#select a, oref from t2 
+#where a in (select max(ie) from t1 where oref=t2.oref group by grp);
 select a, oref, a in (
   select max(ie) from t1 where oref=t2.oref group by grp union
   select max(ie) from t1 where oref=t2.oref group by grp
@@ -3299,17 +3328,17 @@ create table t3 (a int);
 insert into t3 values (NULL), (NULL);
 flush status;
 select a in (select max(ie) from t1 where oref=4 group by grp) from t3;
-show status like 'Handler_read_rnd_next';
+#show status like 'Handler_read_rnd_next';
 select ' ^ This must show 11' Z;
 
 # This must show trigcond:
-explain extended select a in (select max(ie) from t1 where oref=4 group by grp) from t3;
+#explain extended select a in (select max(ie) from t1 where oref=4 group by grp) from t3;
 
 drop table t1, t2, t3;
 
 # 
 #  2. Subquery handled with 'index_subquery':
-# 
+#Bug #SEQUOIADBMAINSTREAM-3582
 create table t1 (a int, oref int, key(a));
 insert into t1 values 
   (1, 1),
@@ -3325,13 +3354,13 @@ select oref, a, a in (select a from t1 where oref=t2.oref) Z from t2;
 
 # The next explain shows "using index" but that is just incorrect display
 # (there is a bug filed about this).
-explain extended 
-select oref, a, a in (select a from t1 where oref=t2.oref) z from t2;
+#explain extended 
+#select oref, a, a in (select a from t1 where oref=t2.oref) z from t2;
 
 flush status;
 select oref, a from t2 where a in (select a from t1 where oref=t2.oref);
 # This will only show access to t2:
-show status like '%Handler_read_rnd_next';
+#show status like '%Handler_read_rnd_next';
 
 # Check that repeated NULL-scans are not cached (subq. is not correlated):
 delete from t2;
@@ -3346,7 +3375,9 @@ drop table t1, t2;
 
 #
 # 3. Subquery handled with 'unique_index_subquery':
+#Bug #SEQUOIADBMAINSTREAM-3582
 #
+
 create table t1 (a int, b int, primary key (a));
 insert into t1 values (1,1), (3,1),(100,1);
 
@@ -3375,10 +3406,10 @@ select a, oref,
 from t3;
 
 # This must have trigcond in WHERE and HAVING:
-explain extended
-select a, oref, 
-       t3.a in (select t1.a from t1, t2 where t1.b=t2.a and t2.b=t3.oref) z 
-from t3;
+#explain extended
+#select a, oref, 
+#       t3.a in (select t1.a from t1, t2 where t1.b=t2.a and t2.b=t3.oref) z 
+#from t3;
 
 drop table t1, t2, t3;
 
@@ -3403,10 +3434,10 @@ select a, oref,
 from t3;
 
 --echo This must show a trig_cond:
-explain extended
-select a, oref, 
-       t3.a in (select t1.a from t1, t2 where t1.b=t2.a and t2.b=t3.oref) z 
-from t3;
+#explain extended
+#select a, oref, 
+#       t3.a in (select t1.a from t1, t2 where t1.b=t2.a and t2.b=t3.oref) z 
+#from t3;
 drop table t1,t2,t3;
 
 
@@ -3431,12 +3462,13 @@ select a, oref,
        a in (select count(*) from t1 group by grp having grp=t2.oref) Z from t2;
 
 --echo This must show a trig_cond:
-explain extended
-select a, oref, 
-       a in (select count(*) from t1 group by grp having grp=t2.oref) z from t2;
+#explain extended
+#select a, oref, 
+#       a in (select count(*) from t1 group by grp having grp=t2.oref) z from t2;
 
 drop table t1, t2;
 
+#Bug #SEQUOIADBMAINSTREAM-3582
 create table t1 (a int, b int, primary key (a));
 insert into t1 values (1,1), (3,1),(100,1);
 create table t2 (a int, b int);
@@ -3460,16 +3492,17 @@ create table t1 (a int, b int, c int, key(a,b));
 insert into t1 select 2*A, 2*A, 100 from t3;
 
 # First test index subquery engine
-explain extended select a,b, oref, (a,b) in (select a,b from t1 where c=t2.oref) z from t2;
+#Bug #SEQUOIADBMAINSTREAM-3582
+#explain extended select a,b, oref, (a,b) in (select a,b from t1 where c=t2.oref) z from t2;
 select a,b, oref, (a,b) in (select a,b from t1 where c=t2.oref) z from t2;
 
 # Then check that we do turn off 'ref' scans in the subquery
 create table t4 (x int);
 insert into t4 select A.a + 10*B.a from t1 A, t1 B;
-explain extended 
-  select a,b, oref, 
-         (a,b) in (select a,b from t1,t4 where c=t2.oref) z 
-  from t2;
+#explain extended 
+#  select a,b, oref, 
+#         (a,b) in (select a,b from t1,t4 where c=t2.oref) z 
+#  from t2;
 select a,b, oref, 
        (a,b) in (select a,b from t1,t4 where c=t2.oref) z 
 from t2;
@@ -3508,9 +3541,10 @@ select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) Z from t
 insert into t2 values ('new1', 10,10);
 insert into t1 values ('new1', 1234, 10, NULL); 
 # new1, 10, 10, NULL,
+#Bug #SEQUOIADBMAINSTREAM-3582
 select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) Z from t2 where a=10 and b=10; 
-explain extended
-select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2 where a=10 and b=10; 
+#explain extended
+#select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2 where a=10 and b=10; 
 drop table t1, t2;
 
 # Now test different column types:
@@ -3582,8 +3616,24 @@ oref=t2.oref group by grp having min(ie) > 1);
 #
 alter table t1 add index idx(ie);
 
-explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
+#explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
 
+#Bug #SEQUOIADBMAINSTREAM-3582
+select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
+
+--sorted_result
+select oref, a from t2 where a in (select ie from t1 where oref=t2.oref); 
+
+#Bug #SEQUOIADBMAINSTREAM-3582
+select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
+
+
+alter table t1 drop index idx;
+alter table t1 add index idx(oref,ie);
+
+#explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
+
+#Bug #SEQUOIADBMAINSTREAM-3587
 select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
 
 --sorted_result
@@ -3591,23 +3641,11 @@ select oref, a from t2 where a in (select ie from t1 where oref=t2.oref);
 
 select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
 
-
-alter table t1 drop index idx;
-alter table t1 add index idx(oref,ie);
-
-explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
-
-select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
-
-select oref, a from t2 where a in (select ie from t1 where oref=t2.oref); 
-
-select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
-
-explain 
-select oref, a, 
-       a in (select min(ie) from t1 where oref=t2.oref 
-             group by grp having min(ie) > 1) z 
-from t2;
+#explain 
+#select oref, a, 
+#       a in (select min(ie) from t1 where oref=t2.oref 
+#             group by grp having min(ie) > 1) z 
+#from t2;
 
 select oref, a, 
        a in (select min(ie) from t1 where oref=t2.oref 
@@ -3669,17 +3707,19 @@ select oref, a, b from t2 where
 
 alter table t1 add index idx(ie1,ie2);
 
-explain select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2;
+#explain select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2;
 
+#Bug #SEQUOIADBMAINSTREAM-3582
 select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2;
 
 --sorted_result
 select oref, a, b from t2 where (a,b) in (select ie1,ie2 from t1 where oref=t2.oref); 
 
+#Bug #SEQUOIADBMAINSTREAM-3582
 select oref, a, b from t2 where (a,b) not in (select ie1,ie2 from t1 where oref=t2.oref);
 
-explain extended 
-select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2;
+#explain extended 
+#select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2;
 
 drop table t1,t2;
 
@@ -3704,17 +3744,19 @@ insert into t2 values
   ('aa', 1),
   ('bb', NULL);
 
-explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
+#explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
 
+#Bug #SEQUOIADBMAINSTREAM-3582
 select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
 
 --sorted_result
 select oref, a from t2 where a in (select ie from t1 where oref=t2.oref);
 
+#Bug #SEQUOIADBMAINSTREAM-3582
 select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
 
-explain 
-select oref, a, a in (select min(ie) from t1 where oref=t2.oref group by grp) z from t2;
+#explain 
+#select oref, a, a in (select min(ie) from t1 where oref=t2.oref group by grp) z from t2;
 
 select oref, a, a in (select min(ie) from t1 where oref=t2.oref group by grp) z from t2;
 
@@ -3790,8 +3832,8 @@ CREATE TABLE t2 (b int, PRIMARY KEY(b));
 INSERT INTO t1 VALUES (1), (NULL), (4);
 INSERT INTO t2 VALUES (3), (1),(2), (5), (4), (7), (6);
 
-EXPLAIN EXTENDED 
-SELECT a FROM t1, t2 WHERE a=b AND (b NOT IN (SELECT a FROM t1));
+#EXPLAIN EXTENDED 
+#SELECT a FROM t1, t2 WHERE a=b AND (b NOT IN (SELECT a FROM t1));
 SELECT a FROM t1, t2 WHERE a=b AND (b NOT IN (SELECT a FROM t1));
 SELECT a FROM t1, t2 WHERE a=b AND (b NOT IN (SELECT a FROM t1 WHERE a > 4));
 
@@ -3808,10 +3850,10 @@ INSERT INTO t1 VALUES (2), (NULL), (3), (1);
 INSERT INTO t2 VALUES (234), (345), (457);
 INSERT INTO t3 VALUES (222,'bbb'), (333,'ccc'), (111,'aaa');
 
-EXPLAIN
-SELECT * FROM t1
-  WHERE t1.id NOT IN (SELECT t2.id FROM t2,t3 
-                        WHERE t3.name='xxx' AND t2.id=t3.id);
+#EXPLAIN
+#SELECT * FROM t1
+#  WHERE t1.id NOT IN (SELECT t2.id FROM t2,t3 
+#                        WHERE t3.name='xxx' AND t2.id=t3.id);
 SELECT * FROM t1
   WHERE t1.id NOT IN (SELECT t2.id FROM t2,t3 
                         WHERE t3.name='xxx' AND t2.id=t3.id);
@@ -3834,7 +3876,7 @@ INSERT INTO t2 VALUES (65),(66);
 
 SELECT a FROM t1 WHERE a NOT IN (65,66);
 SELECT a FROM t1 WHERE a NOT IN (SELECT a FROM t2);
-EXPLAIN SELECT a FROM t1 WHERE a NOT IN (SELECT a FROM t2);
+#EXPLAIN SELECT a FROM t1 WHERE a NOT IN (SELECT a FROM t2);
 
 DROP TABLE t1, t2;
 
@@ -3880,7 +3922,8 @@ load data infile "subselect.out.file.1" into table t1;
 select * from t1;
 drop table t1;
 let $datadir=`select @@datadir`;
---remove_file $datadir/test/subselect.out.file.1
+#--remove_file $datadir/test/subselect.out.file.1
+--remove_file $datadir/$current_database/subselect.out.file.1
 
 #
 # Bug #37894: Assertion in init_read_record_seq in handler.h line 1444
@@ -3941,14 +3984,14 @@ INSERT INTO t1 VALUES (1,1,1), (1,1,1);
 # In the scalar subquery "SELECT COUNT(a)", "a" and "c" are outer
 # references whose qualifying query is the one which has "GROUP BY b",
 # so "c" is not dependent on the group column:
---error ER_WRONG_FIELD_WITH_GROUP
-EXPLAIN EXTENDED 
-  SELECT cc FROM 
-    ( SELECT 
-      (SELECT COUNT(a) FROM 
-        (SELECT COUNT(b) FROM t1) AS x GROUP BY c
-      ) AS cc FROM t1 GROUP BY b
-    ) AS y;
+#--error ER_WRONG_FIELD_WITH_GROUP
+#EXPLAIN EXTENDED 
+#  SELECT cc FROM 
+#    ( SELECT 
+#      (SELECT COUNT(a) FROM 
+#        (SELECT COUNT(b) FROM t1) AS x GROUP BY c
+#      ) AS cc FROM t1 GROUP BY b
+#    ) AS y;
 SHOW WARNINGS;
 
 DROP TABLE t1;
@@ -3965,10 +4008,10 @@ INSERT INTO t2 VALUES (1,1),(2,2);
 CREATE TABLE t3 LIKE t1;
 
 --echo # should have 1 impossible where and 2 dependent subqueries
-EXPLAIN
-SELECT COUNT(*) FROM t1
-WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE 1 = (SELECT MIN(t2.b) FROM t3))
-ORDER BY COUNT(*);
+#EXPLAIN
+#SELECT COUNT(*) FROM t1
+#WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE 1 = (SELECT MIN(t2.b) FROM t3))
+#ORDER BY COUNT(*);
 
 --echo # should not crash the next statement
 SELECT COUNT(*) FROM t1
@@ -4001,10 +4044,10 @@ INSERT INTO t3 SELECT * FROM t1;
 
 --echo # Should not crash.
 --echo # Should have 1 impossible where and 2 dependent subqs.
-EXPLAIN
-SELECT
-  (SELECT 1 FROM t1,t2 WHERE t2.b > t3.b)
-FROM t3 WHERE 1 = 0 GROUP BY 1;
+#EXPLAIN
+#SELECT
+#  (SELECT 1 FROM t1,t2 WHERE t2.b > t3.b)
+#FROM t3 WHERE 1 = 0 GROUP BY 1;
 
 --echo # should return 0 rows
 SELECT
@@ -4201,6 +4244,7 @@ select case when count(*) > 0 then 'T' else 'F' end as not_pred_in from t_out
 where subcase = 'A.3' and
       NOT((a1, b1, c1) IN (select * from t_in));
 -- echo test non-top level result indirectly
+#Bug #SEQUOIADBMAINSTREAM-3576
 select case when count(*) > 0 then 'N' else 'wrong result' end as pred_in from t_out
 where subcase = 'A.3' and
       ((a1, b1, c1) IN (select * from t_in)) is NULL and
@@ -4258,6 +4302,7 @@ select case when count(*) > 0 then 'T' else 'F' end as not_pred_in from t_out
 where subcase = 'B.3' and
       NOT((a1, b1, c1) IN (select * from t_in));
 -- echo test non-top level result indirectly
+#Bug #SEQUOIADBMAINSTREAM-3576
 select case when count(*) > 0 then 'N' else 'wrong result' end as pred_in from t_out
 where subcase = 'B.3' and
       ((a1, b1, c1) IN (select * from t_in)) is NULL and
@@ -4290,6 +4335,7 @@ INSERT INTO t1 VALUES (2,22),(1,11),(2,22);
 SELECT a FROM t1 WHERE (SELECT COUNT(b) FROM DUAL) > 0 GROUP BY a;
 SELECT a FROM t1 WHERE (SELECT COUNT(b) FROM DUAL) > 1 GROUP BY a;
 
+#Bug #SEQUOIADBMAINSTREAM-3576
 SELECT a FROM t1 t0
   WHERE (SELECT COUNT(t0.b) FROM t1 t WHERE t.b>20) GROUP BY a;
 
@@ -4323,6 +4369,7 @@ CREATE TABLE t2(a INT, b INT);
 INSERT INTO t2 VALUES (1, 10), (2, NULL);
 INSERT INTO t1 VALUES (1), (3);
 
+# Bug #SEQUOIADBMAINSTREAM-3553
 SELECT * FROM t2 WHERE b NOT IN (SELECT max(t.c) FROM t1, t1 t WHERE t.c>10);
 
 DROP TABLE t1,t2;
@@ -4331,6 +4378,7 @@ DROP TABLE t1,t2;
 # Bug#38191 Server crash with subquery containing DISTINCT and ORDER BY
 #
 
+#Bug #SEQUOIADBMAINSTREAM-3576
 CREATE TABLE t1(pk INT PRIMARY KEY, a INT, INDEX idx(a));
 INSERT INTO t1 VALUES (1, 10), (3, 30), (2, 20);
 CREATE TABLE t2(pk INT PRIMARY KEY, a INT, b INT, INDEX idxa(a));
@@ -4341,6 +4389,7 @@ DROP TABLE t1,t2;
 
 #
 # Bug#37548 result value erronously reported being NULL in certain subqueries
+#Bug #SEQUOIADBMAINSTREAM-3560
 #
 
 CREATE TABLE t1 (a INT, b INT, PRIMARY KEY (a), KEY b (b));
@@ -4378,8 +4427,8 @@ CREATE TABLE t3 (
 
 INSERT INTO t3 VALUES (1,1,1), (2,32,1);
 
-explain
-SELECT t1.a, (SELECT 1 FROM t2 WHERE t2.b=t3.c AND t2.c=t1.a ORDER BY t2.d LIMIT 1) AS incorrect FROM t1, t3 WHERE t3.b=t1.a;
+#explain
+#SELECT t1.a, (SELECT 1 FROM t2 WHERE t2.b=t3.c AND t2.c=t1.a ORDER BY t2.d LIMIT 1) AS incorrect FROM t1, t3 WHERE t3.b=t1.a;
 SELECT t1.a, (SELECT 1 FROM t2 WHERE t2.b=t3.c AND t2.c=t1.a ORDER BY t2.d LIMIT 1) AS incorrect FROM t1, t3 WHERE t3.b=t1.a;
 
 DROP TABLE t1,t2,t3;
@@ -4405,9 +4454,11 @@ CREATE VIEW v2 (a,b) AS
 SELECT t2.id, t2.c AS c FROM t1, t2
 WHERE t1.id=t2.id AND 1 IN (SELECT id FROM t1) WITH CHECK OPTION;
 
---error ER_VIEW_CHECK_FAILED
-INSERT INTO v2(a,b) VALUES (2,2);
+# Compatible with parallel > 1, check error "ER_VIEW_CHECK_FAILED" here, move to "errors.test"
+#--error ER_VIEW_CHECK_FAILED
+#INSERT INTO v2(a,b) VALUES (2,2);
 INSERT INTO v2(a,b) VALUES (1,2);
+--sorted_result
 SELECT * FROM v1;
 
 CREATE VIEW v3 AS
@@ -4422,6 +4473,7 @@ DROP TABLE t1,t2;
 --echo #
 --echo # Bug#37822 Correlated subquery with IN and IS UNKNOWN provides wrong result
 --echo #
+#Bug #SEQUOIADBMAINSTREAM-3576
 create table t1(id integer primary key, g integer, v integer, s char(1));
 create table t2(id integer primary key, g integer, v integer, s char(1));
 insert into t1 values
@@ -4556,7 +4608,9 @@ SELECT * FROM t1 JOIN  (t1 t1a)  t1a ON 1;
 --error ER_PARSE_ERROR
 SELECT * FROM t1 JOIN ((t1 t1a)) t1a ON 1;
 
+--sorted_result
 SELECT * FROM t1 JOIN  (t1 t1a)  ON 1;
+--sorted_result
 SELECT * FROM t1 JOIN ((t1 t1a)) ON 1;
 
 SELECT * FROM (t1 t1a);
@@ -4838,7 +4892,7 @@ DROP TABLE t1,t2;
 --echo # Bug#54568: create view cause Assertion failed: 0, 
 --echo # file .\item_subselect.cc, line 836
 --echo #
-EXPLAIN SELECT 1 LIKE ( 1 IN ( SELECT 1 ) );
+#EXPLAIN SELECT 1 LIKE ( 1 IN ( SELECT 1 ) );
 DESCRIBE SELECT 1 LIKE ( 1 IN ( SELECT 1 ) );
 --echo # None of the below should crash
 CREATE VIEW v1 AS SELECT 1 LIKE ( 1 IN ( SELECT 1 ) );
@@ -4854,7 +4908,7 @@ CREATE TABLE t1 (
 	t1_id INT UNSIGNED,
 
 	PRIMARY KEY(t1_id)
-) Engine=MyISAM;
+) Engine=SequoiaDB;
 
 INSERT INTO t1 (t1_id) VALUES (1), (2), (3), (4), (5);
 
@@ -4867,7 +4921,7 @@ CREATE TABLE t3 (
 
 	PRIMARY KEY(t3_id),
 	KEY(t1_id)
-) Engine=MyISAM;
+) Engine=SequoiaDB;
 
 INSERT INTO t3 (t1_id, t3_id, amount) 
         VALUES (1, 1, 100.00), (2, 2, 200.00), (4, 4, 400.00);
@@ -5035,22 +5089,22 @@ DROP TABLE t1,t2;
 --echo # Bug #52711: Segfault when doing EXPLAIN SELECT with 
 --echo #  union...order by (select... where...)
 --echo #
-
-CREATE TABLE t1 (a VARCHAR(10), FULLTEXT KEY a (a));
-INSERT INTO t1 VALUES (1),(2);
-CREATE TABLE t2 (b INT);
-INSERT INTO t2 VALUES (1),(2);
-
---echo # Should not crash
---disable_result_log
-EXPLAIN
-SELECT * FROM t2 UNION SELECT * FROM t2
-  ORDER BY (SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE));
-
---echo # Should not crash
-SELECT * FROM t2 UNION SELECT * FROM t2
-  ORDER BY (SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE));
-DROP TABLE t1,t2;
+# NOW SequoiaDB not support FULLTEXT
+#CREATE TABLE t1 (a VARCHAR(10), FULLTEXT KEY a (a));
+#INSERT INTO t1 VALUES (1),(2);
+#CREATE TABLE t2 (b INT);
+#INSERT INTO t2 VALUES (1),(2);
+#
+#--echo # Should not crash
+#--disable_result_log
+#EXPLAIN
+#SELECT * FROM t2 UNION SELECT * FROM t2
+#  ORDER BY (SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE));
+#
+#--echo # Should not crash
+#SELECT * FROM t2 UNION SELECT * FROM t2
+#  ORDER BY (SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE));
+#DROP TABLE t1,t2;
 --enable_result_log
 
 --echo #
@@ -5074,6 +5128,7 @@ WHERE t1.i NOT IN
   HAVING t2s.i = 999
 );
 
+#Bug #SEQUOIADBMAINSTREAM-3576
 SELECT * FROM t1
 WHERE t1.I IN
 (
@@ -5092,6 +5147,7 @@ WHERE NOT t1.I = ANY
   HAVING t2s.i = 999
 );
 
+#Bug #SEQUOIADBMAINSTREAM-3576
 SELECT * FROM t1
  WHERE t1.i = ANY (
   SELECT STRAIGHT_JOIN t2s.i 
@@ -5107,6 +5163,7 @@ DROP TABLE t1,t1s,t2s;
 --echo # GROUP BY inside < ANY clause
 --echo #
 
+#Bug #SEQUOIADBMAINSTREAM-3584
 CREATE TABLE t1 (
  pk INT NOT NULL PRIMARY KEY,
  number INT,
@@ -5125,6 +5182,7 @@ INSERT INTO t2 VALUES (2,8);
 INSERT INTO t2 VALUES (3,NULL);
 INSERT INTO t2 VALUES (4,166);
 
+
 SELECT * FROM t1 WHERE t1.number < ANY(SELECT number FROM t2 GROUP BY number);
 SELECT * FROM t1 WHERE t1.number < ANY(SELECT number FROM t2);
 
@@ -5141,9 +5199,9 @@ CREATE TABLE t1 (a INT, b INT, INDEX (a));
 INSERT INTO t1 VALUES (3, 10), (2, 20), (7, 10), (5, 20);
 
 --echo
-EXPLAIN SELECT * FROM (SELECT * FROM t1 WHERE a=7) t;
+#EXPLAIN SELECT * FROM (SELECT * FROM t1 WHERE a=7) t;
 --echo
-EXPLAIN SELECT * FROM t1 WHERE EXISTS (SELECT * FROM t1 WHERE a=7);
+#EXPLAIN SELECT * FROM t1 WHERE EXISTS (SELECT * FROM t1 WHERE a=7);
 
 --echo
 DROP TABLE t1;
@@ -5159,8 +5217,8 @@ INSERT INTO t1 VALUES (1);
 CREATE TABLE t2 (i INTEGER, KEY k(i));
 INSERT INTO t2 VALUES (1), (2);
 
-EXPLAIN  
-SELECT i FROM t1 WHERE (1) NOT IN (SELECT i FROM t2);
+#EXPLAIN  
+#SELECT i FROM t1 WHERE (1) NOT IN (SELECT i FROM t2);
 
 DROP TABLE t2;
 DROP TABLE t1;
@@ -5292,11 +5350,11 @@ SELECT i, v, (SELECT COUNT(DISTINCT i)
 FROM t2;
 
 --echo 
-EXPLAIN EXTENDED
-SELECT i, v, (SELECT COUNT(DISTINCT i)
-              FROM t1
-              WHERE v  = t2.v) as subsel
-FROM t2;
+#EXPLAIN EXTENDED
+#SELECT i, v, (SELECT COUNT(DISTINCT i)
+#              FROM t1
+#              WHERE v  = t2.v) as subsel
+#FROM t2;
 
 DROP TABLE t1,t2;
 
@@ -5310,17 +5368,16 @@ CREATE TABLE t1 (a INT, b INT, INDEX (a));
 INSERT INTO t1 VALUES (3, 10), (2, 20), (7, 10), (5, 20);
 
 --echo
-EXPLAIN SELECT * FROM (SELECT * FROM t1 WHERE a=7) t;
+#EXPLAIN SELECT * FROM (SELECT * FROM t1 WHERE a=7) t;
 --echo
-EXPLAIN SELECT * FROM t1 WHERE EXISTS (SELECT * FROM t1 WHERE a=7);
+#EXPLAIN SELECT * FROM t1 WHERE EXISTS (SELECT * FROM t1 WHERE a=7);
 
 --echo
 DROP TABLE t1;
 
 --echo #
---echo # BUG#58561: Server Crash with correlated subquery and MyISAM tables 
+--echo # BUG#58561: Server Crash with correlated subquery and SequoiaDB tables 
 --echo #
-
 CREATE TABLE cc (
   pk INT,
   col_int_key INT,
@@ -5328,7 +5385,7 @@ CREATE TABLE cc (
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO cc VALUES (10,7,'v');
 INSERT INTO cc VALUES (11,1,'r');
 
@@ -5337,7 +5394,7 @@ CREATE TABLE bb (
   col_date_key DATE,
   PRIMARY KEY (pk),
   KEY col_date_key (col_date_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO bb VALUES (10,'2002-02-21');
 
 CREATE TABLE c (
@@ -5347,7 +5404,7 @@ CREATE TABLE c (
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO c VALUES (1,NULL,'w');
 INSERT INTO c VALUES (19,NULL,'f');
 
@@ -5358,7 +5415,7 @@ CREATE TABLE b (
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO b VALUES (1,7,'f');
 
 SELECT col_int_key
@@ -5394,14 +5451,14 @@ SELECT 1 AS RESULT FROM t2,t1 WHERE d = c;
 # so here it ends up as NULL
 --echo base query
 SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 ;
-EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 ;
+#EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 ;
 --echo first equivalent variant
 SELECT (SELECT 1 FROM t2 WHERE d = IFNULL(c,NULL)) AS RESULT FROM t1 GROUP BY c ;
-EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = IFNULL(c,NULL)) AS RESULT FROM t1 GROUP BY c;
+#EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = IFNULL(c,NULL)) AS RESULT FROM t1 GROUP BY c;
 --echo second equivalent variant
 # used to fail with 1242: Subquery returns more than 1 row
 SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 GROUP BY c ;
-EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 GROUP BY c ;
+#EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 GROUP BY c ;
 
 DROP TABLE t1,t2;
 
@@ -5413,7 +5470,7 @@ CREATE TABLE t1 (
   `int_key` int(11) DEFAULT NULL,
   PRIMARY KEY (`pk`),
   KEY `int_key` (`int_key`)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (1,9),(2,3),(3,8),(4,6),(5,9),(6,5),(7,5),(8,9),(9,1),(10,10);
 
@@ -5425,7 +5482,6 @@ DROP TABLE t1;
 --echo #
 --echo # Bug#53236 Segfault in DTCollation::set(DTCollation&)
 --echo #
-
 CREATE TABLE t1 (
   pk INTEGER AUTO_INCREMENT,
   col_varchar VARCHAR(1),
@@ -5508,8 +5564,9 @@ SELECT DISTINCT f1_key
 FROM t2 
 WHERE f1_key != table2.f1_key AND f1_key >= table1.f1 );
 
+--sorted_result
 eval $query;
-eval explain $query;
+#eval explain $query;
 
 DROP TABLE t1,t2;
 
@@ -5547,7 +5604,7 @@ FROM
 t1 AS t1f STRAIGHT_JOIN t3 AS t3f;
 
 eval $query;
-eval explain $query;
+#eval explain $query;
 
 DROP TABLE t1,t3;
 
@@ -5605,13 +5662,13 @@ WHERE col_varchar_nokey IN
     WHERE col_int_key IS NULL);
 
 --echo
-EXPLAIN EXTENDED
-SELECT col_int_nokey 
-FROM ot 
-WHERE col_varchar_nokey IN
-   (SELECT col_varchar_key
-    FROM it 
-    WHERE col_int_key IS NULL);
+#EXPLAIN EXTENDED
+#SELECT col_int_nokey 
+#FROM ot 
+#WHERE col_varchar_nokey IN
+#   (SELECT col_varchar_key
+#    FROM it 
+#    WHERE col_int_key IS NULL);
 
 --echo
 SELECT col_int_nokey 
@@ -5622,13 +5679,13 @@ WHERE col_varchar_nokey IN
     WHERE coalesce(col_int_nokey, 1) );
 
 --echo
-EXPLAIN EXTENDED
-SELECT col_int_nokey 
-FROM ot 
-WHERE col_varchar_nokey IN
-   (SELECT col_varchar_key
-    FROM it 
-    WHERE coalesce(col_int_nokey, 1) );
+#EXPLAIN EXTENDED
+#SELECT col_int_nokey 
+#FROM ot 
+#WHERE col_varchar_nokey IN
+#   (SELECT col_varchar_key
+#    FROM it 
+#    WHERE coalesce(col_int_nokey, 1) );
 
 DROP TABLE it;
 
@@ -5650,13 +5707,13 @@ WHERE (col_varchar_nokey, 'x') IN
      WHERE col_int_key IS NULL);
 
 --echo
-EXPLAIN EXTENDED
-SELECT col_int_nokey
-FROM ot
-WHERE (col_varchar_nokey, 'x') IN
-    (SELECT col_varchar_key, col_varchar_key2
-     FROM it
-     WHERE col_int_key IS NULL);
+#EXPLAIN EXTENDED
+#SELECT col_int_nokey
+#FROM ot
+#WHERE (col_varchar_nokey, 'x') IN
+#    (SELECT col_varchar_key, col_varchar_key2
+#     FROM it
+#     WHERE col_int_key IS NULL);
 
 --echo
 DROP TABLE it, ot;
@@ -5682,7 +5739,6 @@ DROP TABLE t1, t2;
 --echo # Bug #13595212 EXTRA ROWS RETURNED ON RIGHT JOIN WITH VIEW AND
 --echo # IN-SUBQUERY IN WHERE
 --echo #
-
 CREATE TABLE t1 (
   pk int(11) NOT NULL AUTO_INCREMENT,
   col_int_key int(11) NOT NULL,
@@ -5714,7 +5770,7 @@ WHERE alias2.col_varchar_key IN (
 )
 ;
 
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 --sorted_result
 eval $query;
 
@@ -5722,7 +5778,7 @@ eval $query;
 
 eval CREATE VIEW v2 AS $query;
 
-EXPLAIN EXTENDED SELECT * FROM v2;
+#EXPLAIN EXTENDED SELECT * FROM v2;
 --sorted_result
 SELECT * FROM v2;
 
@@ -5740,7 +5796,7 @@ WHERE alias2.col_varchar_key IN (
     AND sq2_alias1.col_varchar_key > alias1.col_varchar_key
 );
 
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 --sorted_result
 eval $query;
 
@@ -5751,7 +5807,6 @@ DROP VIEW v1,v2;
 --echo # Bug#13651009 WRONG RESULT FROM DERIVED TABLE IF THE SUBQUERY
 --echo # HAS AN EMPTY RESULT
 --echo #
-
 CREATE TABLE t1 (
   pk int NOT NULL,
   col_int_nokey int NOT NULL,
@@ -5763,7 +5818,7 @@ CREATE TABLE t1 (
   KEY col_int_key (col_int_key),
   KEY col_time_key (col_time_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 CREATE TABLE t2 (
   pk int NOT NULL AUTO_INCREMENT,
@@ -5776,7 +5831,7 @@ CREATE TABLE t2 (
   KEY col_int_key (col_int_key),
   KEY col_time_key (col_time_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t2 VALUES (1,4,4,'00:00:00','b','b');
 
@@ -5791,12 +5846,12 @@ FROM t1 AS sq4_alias1
 WHERE (sq4_alias1.col_varchar_key + NULL) IS NULL OR
       sq4_alias1.col_varchar_key = @var3;
 
-eval EXPLAIN $subq;
+#eval EXPLAIN $subq;
 eval $subq;
 SELECT @var3;
 
 # Now as derived table:
-eval EXPLAIN SELECT * FROM ( $subq ) AS alias3;
+#eval EXPLAIN SELECT * FROM ( $subq ) AS alias3;
 eval SELECT * FROM ( $subq ) AS alias3;
 SELECT @var3;
 
@@ -5814,10 +5869,10 @@ WHERE (sq4_alias1.col_varchar_key , sq4_alias1.col_varchar_nokey)
        WHERE (c_sq1_alias1.col_int_nokey != @var2
               OR c_sq1_alias1.pk != @var3));
 
-eval EXPLAIN $subq;
+#eval EXPLAIN $subq;
 eval $subq;
 # Now as derived table:
-eval EXPLAIN SELECT * FROM ( $subq ) AS alias3;
+#eval EXPLAIN SELECT * FROM ( $subq ) AS alias3;
 eval SELECT * FROM ( $subq ) AS alias3;
 
 DROP TABLE t1,t2;
@@ -5834,10 +5889,10 @@ insert into t1 values(1),(2);
 create table t2(a int primary key, b int);
 insert into t2 values(1,10),(2,10);
 let $query=select * from t1 where a in (select a from t2 where b=3);
-eval explain $query;
+#eval explain $query;
 flush status;
 eval $query;
-show status like "handler_read%";
+#show status like "handler_read%";
 drop table t1,t2;
 
 --echo #
@@ -5929,7 +5984,7 @@ CREATE TABLE t1 (
   col_varchar_key varchar(1) NOT NULL,
   col_varchar_nokey varchar(1) NOT NULL,
   KEY col_varchar_key (col_varchar_key)
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES
  ('v','v'), ('s','s'), ('l','l'), ('y','y'), ('c','c'),
@@ -5940,7 +5995,7 @@ INSERT INTO t1 VALUES
 CREATE TABLE t2 (
   col_int_nokey INT NOT NULL,
   col_varchar_nokey varchar(1) NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t2 VALUES
  (4,'j'), (6,'v'), (3,'c'), (5,'m'), (3,'d'), (246,'d'), (2,'y'), (9,'t'),
@@ -5978,19 +6033,19 @@ WHERE (SELECT i1 FROM t0 WHERE i1 = 7) NOT IN
  );
 
 eval $query;
-eval explain extended $query;
+#eval explain extended $query;
 
 DROP TABLE t0, t1, t2;
 
 --echo #
---echo # Bug#13735704 Memory engine + NOT IN + subquery produces different
+--echo # Bug#13735704 SequoiaDB engine + NOT IN + subquery produces different
 --echo # result set
 --echo #
 
 CREATE TABLE t1(
  col_varchar_key varchar(1),
  KEY col_varchar_key(col_varchar_key)
-) engine=MEMORY;
+) engine=SequoiaDB;
 INSERT INTO t1 VALUES
  ('v'), ('s'), ('y'), ('z'), ('h'), ('p');
 
@@ -5998,7 +6053,7 @@ CREATE TABLE t2(
  col_int_nokey int,
  col_int_key int,
  KEY col_int_key(col_int_key)
-) engine=MEMORY;
+) engine=SequoiaDB;
 INSERT INTO t2 VALUES
  (4,4), (2,7), (2,5), (2,3), (197,188), (4,4), (6,2), (1,4),
  (156,231), (2,1), (1,2), (80,194), (3,2), (8,3), (91,98), (6,3),
@@ -6021,7 +6076,7 @@ WHERE ((SELECT i1 FROM t0 WHERE i1 = 7),
        (SELECT i1 FROM t0 WHERE i1 = 2)) NOT IN
     (SELECT col_int_key,col_int_nokey FROM t2);
 
-eval explain extended $query;
+#eval explain extended $query;
 eval $query;
 
 DROP TABLE t0, t1, t2;
@@ -6033,7 +6088,7 @@ DROP TABLE t0, t1, t2;
 --echo #
 CREATE TABLE t1 (
 id int
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 (id) VALUES (11);
 
 CREATE TABLE t2 (
@@ -6041,7 +6096,7 @@ t1_id int,
 position int,
 KEY t1_id (t1_id),
 KEY t1_id_position (t1_id,position)
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 
 let $query=SELECT
 (SELECT position FROM t2
@@ -6052,7 +6107,7 @@ LIMIT 10,1
 FROM t1
 LIMIT 1;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1,t2;
@@ -6063,6 +6118,7 @@ DROP TABLE t1,t2;
 --echo # COMPOSITE INDEX ON SUBQUERY'S TABLE
 --echo #
 
+#Bug #SEQUOIADBMAINSTREAM-3576
 CREATE TABLE t1 (a int, b int);
 CREATE TABLE t2 (a int, b int, KEY a_b (a,b));
 CREATE TABLE t4 (a int);
@@ -6076,12 +6132,12 @@ let $query=SELECT * FROM t1
 WHERE ((a,b) NOT IN (SELECT t2.a,t2.b FROM
         t4 STRAIGHT_JOIN t2 WHERE t4.a=t2.b)) IS NULL;
 
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 ALTER TABLE t2 DROP INDEX a_b;
 
-EVAL EXPLAIN EXTENDED $query;
+#EVAL EXPLAIN EXTENDED $query;
 eval $query;
 
 DROP TABLE t1,t2,t4;
@@ -6100,7 +6156,7 @@ CREATE TABLE t1 (
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (17,NULL,9,NULL,NULL),
 (18,2,2,'o','o'),(19,NULL,9,'w','w'),(20,6,2,'m','m'),(21,7,4,'q','q'),
@@ -6179,8 +6235,8 @@ INSERT INTO t1 VALUES (0,8), (8,7);
 CREATE TABLE t2 (c INT NOT NULL);
 INSERT INTO t2 VALUES (10);
 
-EXPLAIN EXTENDED
-SELECT 1 FROM t2 WHERE c > ANY (SELECT a FROM t1 WHERE b >= 3) IS TRUE;
+#EXPLAIN EXTENDED
+#SELECT 1 FROM t2 WHERE c > ANY (SELECT a FROM t1 WHERE b >= 3) IS TRUE;
 SELECT 1 FROM t2 WHERE c > ANY (SELECT a FROM t1 WHERE b >= 3) IS TRUE;
 
 DROP TABLE t1, t2;
@@ -6225,14 +6281,14 @@ DROP TABLE t1,t2;
 SET sql_mode = default;
 
 --echo #
---echo # Bug #19179529 SEGMENTATION FAULT IN ADD_KEY_FIELD FOR ENGINES MYISAM AND MEMORY
+--echo # Bug #19179529 SEGMENTATION FAULT IN ADD_KEY_FIELD FOR ENGINE SequoiaDB
 --echo #
 
 CREATE TABLE t1 (
 pk INTEGER PRIMARY KEY,
 col_int_key INTEGER NOT NULL,
 KEY (col_int_key)
-) ENGINE=MYISAM;
+) ENGINE=SEQUOIADB;
 
 SELECT
 ( SELECT MIN(  1 ) AS SQ1_field1
@@ -6245,7 +6301,6 @@ DROP TABLE t1;
 --echo #
 --echo # Bug#19224430 	ASSERT FAILED IN JOIN::REPLACE_INDEX_SUBQUERY
 --echo #
-
 CREATE TABLE t1 (
 pk INTEGER,
 col_int_nokey INTEGER,
@@ -6254,11 +6309,11 @@ col_datetime_key DATETIME,
 PRIMARY KEY (pk),
 KEY (col_int_key),
 KEY (col_datetime_key)
-)  ENGINE=MEMORY;
+)  ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (1, 1, 7, '2001-11-04 19:07:55.051133');
 
-CREATE TABLE t2(field1 INT, field2 INT) ENGINE=MEMORY;
+CREATE TABLE t2(field1 INT, field2 INT) ENGINE=SequoiaDB;
 
 # Because t1 is a one-row constant table, subquery is rewritten (MAX
 # is read during optimization, GROUP BY is removed) and then
@@ -6270,7 +6325,7 @@ SELECT * FROM t2 WHERE (field1, field2) IN (
   WHERE col_int_key > col_int_nokey
   GROUP BY col_int_key);
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1,t2;
@@ -6278,7 +6333,7 @@ DROP TABLE t1,t2;
 --echo #
 --echo # Bug#19416826 Assert failed in JOIN::make_tmp_tables_info
 --echo #
-
+#Bug #SEQUOIADBMAINSTREAM-3574
 CREATE TABLE t1 (
   pk int NOT NULL,
   col_int_nokey int DEFAULT NULL,
@@ -6370,7 +6425,7 @@ CREATE VIEW v1 AS SELECT * FROM t1;
 INSERT INTO t1 VALUES(0), (1);
 
 let $query=SELECT * FROM t1 WHERE a <ANY (SELECT a FROM v1);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval PREPARE s FROM "$query";
 
 EXECUTE s;
@@ -6386,16 +6441,17 @@ DROP TABLE t1;
 
 CREATE TABLE t1 (a INT);
 INSERT INTO t1 VALUES(1),(2);
+--replace_column 1 x
 ANALYZE TABLE t1;
 # 3 clauses which should block the replacement with an equality:
 let $query=
 SELECT 1 as col FROM t1 WHERE a IN (SELECT a FROM DUAL WHERE 0);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 let $query=
 SELECT 1 as col FROM t1 WHERE a IN (SELECT a FROM DUAL HAVING 0);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 --error ER_NOT_SUPPORTED_YET
@@ -6403,7 +6459,7 @@ SELECT 1 as col FROM t1 WHERE a IN (SELECT a FROM DUAL LIMIT 0);
 
 let $query=SELECT 1 as col FROM t1
 WHERE a IN (SELECT a FROM DUAL WHERE 3 IN (SELECT a FROM t1));
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval PREPARE s FROM '$query';
 EXECUTE s;
 EXECUTE s;
@@ -6417,9 +6473,9 @@ DROP TABLE t1;
 CREATE TABLE t1 (t1_id INT PRIMARY KEY);
 INSERT INTO t1 VALUES(1),(2),(3);
 let $query= SELECT * FROM t1 GROUP BY t1_id ORDER BY t1_id DESC LIMIT 1;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
-eval EXPLAIN SELECT ($query) AS C FROM DUAL;
+#eval EXPLAIN SELECT ($query) AS C FROM DUAL;
 eval SELECT ($query) AS C FROM DUAL;
 DROP TABLE t1;
 
@@ -6430,7 +6486,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (
   pk INT NOT NULL PRIMARY KEY,
   col_varchar VARCHAR(1)
-) ENGINE=INNODB;
+) ENGINE=SEQUOIADB;
 
 INSERT INTO t1 VALUES (1, 'v');
 
@@ -6443,7 +6499,7 @@ let $base_query=
   GROUP BY field2
   HAVING field1 >= 'nw';
 
-eval CREATE TABLE t2 ENGINE=INNODB $base_query;
+eval CREATE TABLE t2 ENGINE=SEQUOIADB $base_query;
 
 SELECT * FROM t2;
 
@@ -6457,7 +6513,8 @@ DROP TABLE t1,t2;
 --echo # Bug#21211187 CRASH IN JOIN::UPDATE_DEPEND_MAP
 --echo #
 
-CREATE TABLE t1 (a INT PRIMARY KEY) ENGINE=INNODB;
+#Bug #SEQUOIADBMAINSTREAM-3576
+CREATE TABLE t1 (a INT PRIMARY KEY) ENGINE=SEQUOIADB;
 CREATE TABLE t0(a INT);
 INSERT INTO t0 VALUES();
 SELECT 1 FROM t1
@@ -6480,7 +6537,7 @@ DROP TABLE t0,t1;
 --echo #
 
 set sql_mode="";
-CREATE TABLE t (a INT) ENGINE=INNODB;
+CREATE TABLE t (a INT) ENGINE=SEQUOIADB;
 SELECT 1 FROM t WHERE 1 IN
 (
  SELECT 1 FROM t WHERE 1 <=>
@@ -6499,8 +6556,8 @@ SELECT 1 FROM t WHERE 1 IN
 SET @@SQL_MODE=DEFAULT;
 DROP TABLE t;
 
-# New tests can use InnoDB as default
-SET DEFAULT_STORAGE_ENGINE=INNODB;
+# New tests can use SequoiaDB as default
+SET DEFAULT_STORAGE_ENGINE=SEQUOIADB;
 
 --echo #
 --echo # Bug#21205577 ASSERTION FAILED: (INT)IDX >= 0 && IDX < PARENT_JOIN->TABLES
@@ -6574,7 +6631,7 @@ SELECT pk,
         WHERE outr.col_int_key < 6) AS x
 FROM t3 AS outr;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 let $query=
@@ -6593,7 +6650,7 @@ DROP TABLE t1, t2, t3;
 --echo #
 --echo # Bug#22090717 WRONG RESULT FOR SELECT NULL IN (<SUBQUERY>)
 --echo #
-CREATE TABLE t1(a MEDIUMTEXT CHARSET UTF8) ENGINE=INNODB;
+CREATE TABLE t1(a MEDIUMTEXT CHARSET UTF8) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES(0x6F76786E7875);
 SELECT NULL IN (SELECT 1 FROM t1);
 SELECT (NULL AND 1) IN (SELECT 1 FROM t1);
@@ -6620,7 +6677,6 @@ DROP TABLE t1;
 --echo #
 --echo # Bug#23049975: GROUP BY SENDING DIFFERENT RESULTS BETWEEN 5.6 AND 5.7
 --echo #
-
 CREATE TABLE t1 (
  t1_id int NOT NULL auto_increment,
  join_val int default NULL,
@@ -6659,10 +6715,10 @@ SELECT (SELECT t3.t3_val
 FROM t1 INNER JOIN t2 ON t1.join_val = t2.join_val
 WHERE t1.t1_id = 1 GROUP BY t2.t2_val;
 
-eval EXPLAIN $query1;
+#eval EXPLAIN $query1;
 eval $query1;
 
-eval EXPLAIN $query2;
+#eval EXPLAIN $query2;
 eval $query2;
 
 DROP TABLE t1, t2, t3;

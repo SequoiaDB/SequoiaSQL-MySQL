@@ -1,5 +1,7 @@
 set @old_concurrent_insert= @@global.concurrent_insert;
 set @@global.concurrent_insert= 0;
+create database test_sp_notembedded;
+use test_sp_notembedded;
 drop table if exists t1,t3;
 drop procedure if exists bug4902|
 create procedure bug4902()
@@ -218,7 +220,7 @@ set @orig_sql_mode= @@sql_mode;
 set sql_mode= (select replace(@@sql_mode,'NO_AUTO_CREATE_USER',''));
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-grant all privileges on test.* to 'mysqltest_1'@'localhost';
+grant all privileges on test_sp_notembedded.* to 'mysqltest_1'@'localhost';
 Warnings:
 Warning	1287	Using GRANT for creating new user is deprecated and will be removed in future release. Create new user with CREATE USER statement.
 set sql_mode= @orig_sql_mode;
@@ -237,29 +239,6 @@ GRANT PROXY ON ''@'' TO 'root'@'localhost' WITH GRANT OPTION
 drop user mysqltest_1@localhost;
 drop procedure 15298_1;
 drop procedure 15298_2;
-drop table if exists t1;
-drop procedure if exists p1;
-create table t1 (value varchar(15));
-create procedure p1() update t1 set value='updated' where value='old';
-call p1();
-insert into t1 (value) values ("old");
-select get_lock('b26162',120);
-get_lock('b26162',120)
-1
-select 'rl_acquirer', value from t1 where get_lock('b26162',120);;
-set session low_priority_updates=on;
-call p1();;
-select 'rl_contender', value from t1;
-rl_contender	value
-rl_contender	old
-select release_lock('b26162');
-release_lock('b26162')
-1
-rl_acquirer	value
-rl_acquirer	old
-drop procedure p1;
-drop table t1;
-set session low_priority_updates=default;
 INSERT INTO mysql.user (Host, User, Select_priv, Insert_priv, Update_priv,
 Delete_priv, Create_priv, Drop_priv, Reload_priv, Shutdown_priv, Process_priv, File_priv,
 Grant_priv, References_priv, Index_priv, Alter_priv, Show_db_priv, Super_priv,
@@ -331,7 +310,7 @@ SELECT `my.db`.f1(2);
 2
 # Switching to default connection.
 DROP DATABASE `my.db`;
-USE test;
+USE test_sp_notembedded;
 #
 # Bug#11763507 - 56224: FUNCTION NAME IS CASE-SENSITIVE
 #
@@ -342,10 +321,10 @@ CREATE EVENT teste_bug11763507 ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 HOU
 DO SELECT 1 $
 SHOW EVENTS LIKE 'teste_bug11763507';
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
-test	teste_bug11763507	root@localhost	SYSTEM	ONE TIME	#	#	#	#	NULL	ENABLED	1	latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_notembedded	teste_bug11763507	root@localhost	SYSTEM	ONE TIME	#	#	#	#	NULL	ENABLED	1	latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW EVENTS LIKE 'TESTE_bug11763507';
 Db	Name	Definer	Time zone	Type	Execute at	Interval value	Interval field	Starts	Ends	Status	Originator	character_set_client	collation_connection	Database Collation
-test	teste_bug11763507	root@localhost	SYSTEM	ONE TIME	#	#	#	#	NULL	ENABLED	1	latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_notembedded	teste_bug11763507	root@localhost	SYSTEM	ONE TIME	#	#	#	#	NULL	ENABLED	1	latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW CREATE EVENT teste_bug11763507;
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
 teste_bug11763507		SYSTEM	#	latin1	latin1_swedish_ci	latin1_swedish_ci
@@ -443,7 +422,7 @@ test1.f1_len32()
 0
 # Recreate test1.p1_len22, this time with Security Context set to INVOKER
 DROP PROCEDURE test1.p1_len22;
-# Make sure user_name_len_22_01234 has SELECT privileges on test.t1
+# Make sure user_name_len_22_01234 has SELECT privileges on test_sp_notembedded.t1
 SELECT * FROM test1.t1;
 int_field	char_field
 CREATE DEFINER=user_name_len_22_01234@localhost PROCEDURE test1.p1_len22()
@@ -460,6 +439,7 @@ CREATE DEFINER=user_name_len_33_0123456789012345@localhost FUNCTION test1.f1_len
 RETURN (SELECT COUNT(*) FROM test1.t1);
 ERROR HY000: String 'user_name_len_33_0123456789012345' is too long for user name (should be no longer than 32)
 DROP DATABASE test1;
+DROP DATABASE test_sp_notembedded;
 DROP USER user_name_len_16@localhost;
 DROP USER user_name_len_22_01234@localhost;
 DROP USER user_name_len_32_012345678901234@localhost;

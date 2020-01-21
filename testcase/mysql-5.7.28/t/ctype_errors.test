@@ -1,11 +1,18 @@
 
 --echo Start of 5.4 tests
 
+-- source include/have_sequoiadb.inc
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_ctype_errors;
+use test_ctype_errors;
+
 #
 # ls_messages
 #
 CREATE TABLE t1(f1 INT);
-connect (con1,localhost,root,,test);
+#connect (con1,localhost,root,,test);
+connect (con1,localhost,root,,test_ctype_errors);
 connection con1;
 SET lc_messages=ru_RU;
 SHOW VARIABLES LIKE 'lc_messages';
@@ -50,7 +57,8 @@ connection default;
 --echo #               with non-latin1 server error message
 --echo #
 
-connect (con1,localhost,root,,test);
+#connect (con1,localhost,root,,test);
+connect (con1,localhost,root,,test_ctype_errors);
 --echo # Connection con1
 SET lc_messages=ru_RU;
 SET NAMES latin1;
@@ -60,4 +68,8 @@ disconnect con1;
 --echo # Connection default
 connection default;
 
+# DROP DATABASE
+DROP DATABASE test_ctype_errors;
+
+-- source include/uninstall_sequoiadb.inc
 --echo End of 5.5 tests

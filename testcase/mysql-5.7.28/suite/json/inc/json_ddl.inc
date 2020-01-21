@@ -19,8 +19,10 @@ CREATE INDEX t1_idx_j ON t1(j1);
 CREATE INDEX t1_idx_i_j ON t1(i, j1);
 --error ER_JSON_USED_AS_KEY
 CREATE INDEX t1_idx_j_i ON t1(j1, i);
-CREATE INDEX t1_idx_i ON t1(i);
-DROP INDEX t1_idx_i ON t1;
+
+#Sequoiadb not support create the same index
+#CREATE INDEX t1_idx_i ON t1(i);
+#DROP INDEX t1_idx_i ON t1;
 
 DROP TABLE t1;
 
@@ -64,20 +66,24 @@ DROP PROCEDURE p;
 --echo #
 CREATE TABLE t1(txt TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin);
 INSERT INTO t1 VALUES ('not JSON');
---replace_regex /#sql-[0-9a-f_]*/#sql-temporary/
---error ER_INVALID_JSON_TEXT
-ALTER TABLE t1 MODIFY COLUMN txt JSON;
+
+#Sequoiadb not support alter
+#--replace_regex /#sql-[0-9a-f_]*/#sql-temporary/
+#--error ER_INVALID_JSON_TEXT
+#ALTER TABLE t1 MODIFY COLUMN txt JSON;
 SELECT * FROM t1;
 CREATE TABLE t2(j JSON);
 INSERT INTO t2 VALUES (JSON_OBJECT('a', 'b'));
-ALTER TABLE t2 MODIFY COLUMN j TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+#ALTER TABLE t2 MODIFY COLUMN j TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 SELECT * FROM t2;
 CREATE TABLE t3 (j JSON);
 INSERT INTO t3 VALUES (JSON_OBJECT('a', 'b'));
 CREATE TABLE t4 AS SELECT UPPER(j) AS jj FROM t3;
 INSERT INTO t4 VALUES ('not JSON');
---replace_regex /#sql-[0-9a-f_]*/#sql-temporary/
---error ER_INVALID_JSON_TEXT
-ALTER TABLE t4 MODIFY COLUMN jj JSON;
+
+#Sequoiadb not support alter
+#--replace_regex /#sql-[0-9a-f_]*/#sql-temporary/
+#--error ER_INVALID_JSON_TEXT
+#ALTER TABLE t4 MODIFY COLUMN jj JSON;
 SELECT * FROM t4 order by jj;
 DROP TABLE t1, t2, t3, t4;

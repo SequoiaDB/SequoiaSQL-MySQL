@@ -2,7 +2,7 @@
 # Run subquery_sj_innodb.inc with all of the so-called 6.0 features.
 #
 
---source include/have_innodb.inc
+--source include/have_sequoiadb.inc
 
 --source include/have_semijoin.inc
 --source include/have_materialization.inc
@@ -17,3 +17,4 @@ set optimizer_switch='semijoin=on,materialization=on,firstmatch=on,loosescan=on,
 
 set optimizer_switch=default;
 
+--source include/uninstall_sequoiadb.inc

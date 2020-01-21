@@ -1,10 +1,10 @@
--- source include/have_innodb.inc
+-- source include/have_sequoiadb.inc
 
 --echo #
 --echo # Bug#46760: Fast ALTER TABLE no longer works for InnoDB
 --echo #
 
-CREATE TABLE t1 (a INT) ENGINE=InnoDB;
+CREATE TABLE t1 (a INT) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES (1);
 
 --echo # By using --enable_info and verifying that number of affected
@@ -29,10 +29,11 @@ DROP TABLE t1;
 --echo # ROW_FORMAT=COMPRESSED
 --echo #
 
-CREATE TABLE t1 (a INT) ROW_FORMAT=compressed, ENGINE=MyISAM;
+CREATE TABLE t1 (a INT) ROW_FORMAT=compressed, ENGINE=SEQUOIADB;
 SHOW CREATE TABLE t1;
-OPTIMIZE TABLE t1;
+#OPTIMIZE TABLE t1;
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
 --echo End of 5.1 tests
+--source include/uninstall_sequoiadb.inc
