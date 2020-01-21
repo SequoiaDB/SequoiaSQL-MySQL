@@ -5,9 +5,9 @@
 
 --source include/have_log_bin.inc
 
-# And it requires InnoDB
+# And it requires SequoiaDB
 --source include/have_log_bin.inc
---source include/have_innodb.inc
+--source include/have_sequoiadb.inc
 
 --echo # Save the initial number of concurrent sessions
 --source include/count_sessions.inc
@@ -21,7 +21,7 @@ connect (con2,localhost,root,,);
 # FLUSH TABLES WITH READ LOCK should block writes to binlog too
 --echo # Switch to connection con1
 connection con1;
-CREATE TABLE t1 (a INT) ENGINE=innodb;
+CREATE TABLE t1 (a INT) ENGINE=sequoiadb;
 RESET MASTER;
 SET AUTOCOMMIT=0;
 SELECT 1;
@@ -44,7 +44,7 @@ DROP TABLE t1;
 SET AUTOCOMMIT=1;
 
 # GLR blocks new transactions
-create table t1 (a int) engine=innodb;
+create table t1 (a int) engine=sequoiadb;
 connection con1;
 flush tables with read lock;
 connection con2;
@@ -69,4 +69,4 @@ disconnect con2;
 
 --echo # Wait till all disconnects are completed
 --source include/wait_until_count_sessions.inc
-
+--source include/uninstall_sequoiadb.inc

@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc 
 -- source include/have_ucs2.inc
 
 delimiter |;
@@ -175,3 +176,5 @@ SELECT DTD_IDENTIFIER FROM INFORMATION_SCHEMA.ROUTINES
 WHERE ROUTINE_NAME='bug48766';
 
 DROP FUNCTION bug48766;
+
+--source include/uninstall_sequoiadb.inc

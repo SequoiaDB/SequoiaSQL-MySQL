@@ -1,7 +1,4 @@
-# The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+--source include/have_sequoiadb.inc
 
 #
 # WL#1393 - ORDER BY with LIMIT tests
@@ -75,3 +72,5 @@ SELECT * FROM t2 where f1 =
 SHOW SESSION STATUS LIKE 'Sort%';
 
 DROP TABLE t1, t2, tmp;
+
+--source include/uninstall_sequoiadb.inc

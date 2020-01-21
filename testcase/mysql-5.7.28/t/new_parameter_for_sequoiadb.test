@@ -1,0 +1,21 @@
+#Case 20109
+--source include/have_sequoiadb.inc
+--disable_warnings
+drop table if exists t1;
+--enable_warnings
+
+CREATE TABLE t1 ( a INT PRIMARY KEY); 
+set session sequoiadb_execute_only_in_mysql=on; 
+drop table t1; 
+CREATE TABLE t1 ( a INT PRIMARY KEY); 
+SELECT * FROM t1; 
+INSERT INTO t1 VALUES(1),(2),(3),(4);
+UPDATE t1 SET a = a+10;
+DELETE FROM t1 WHERE a = 11;
+#SEQUOIASQLMAINSTREAM-377
+SELECT * FROM t1 ORDER BY a; 
+
+set session sequoiadb_execute_only_in_mysql=off; 
+DROP TABLE t1;
+
+--source include/uninstall_sequoiadb.inc

@@ -1,5 +1,6 @@
 # This tests bitwise operations focusing mostly on cases where
 # one of the parameters is binary/varbinary
+-- source include/have_sequoiadb.inc
 
 CREATE TABLE t(id int, vbin1 varbinary(32), vbin2 varbinary(32));
 INSERT INTO t VALUES
@@ -57,21 +58,20 @@ EXECUTE s2;
 EXECUTE s2;
 
 DROP TABLE t;
-
 CREATE TABLE networks (
   id int(10) unsigned NOT NULL AUTO_INCREMENT,
   start varbinary(16) NOT NULL,
   end varbinary(16) NOT NULL,
   country_code varchar(2) NOT NULL,
   country varchar(255) NOT NULL,
-  PRIMARY KEY (id),
-  KEY start (start),
-  KEY end (end)
+  PRIMARY KEY (id)
+#  KEY start (start), # not support index
+#  KEY end (end)
 );
 
---echo #
---echo # Testing bitiwise operations on a real-life test case
---echo #
+#--echo #
+#--echo # Testing bitiwise operations on a real-life test case
+#--echo #
 
 INSERT INTO networks(start, end, country_code, country) VALUES
 (INET6_ATON('2c0f:fff0::'),INET6_ATON('2c0f:fff0:ffff:ffff:ffff:ffff:ffff:ffff'),'NG','Nigeria'),
@@ -104,6 +104,7 @@ WHERE INET6_ATON('2c0f:ffe8::') ^ start = INET6_ATON('::');
 
 DROP TABLE networks;
 
+# NOW SequoiaDB not support GEOMETRY
 --echo #
 --echo # Table containing columns of MySQL types
 --echo #
@@ -136,7 +137,7 @@ CREATE TABLE at(_bit bit(64),
                 _mtx mediumtext,
                 _lbb longblob,
                 _ltx longtext,
-                _pnt point,
+                #_pnt point,
                 _dat date default '1988-12-15',
                 _dtt datetime default '2015-10-24 12:00:00',
                 _smp timestamp default '2015-10-24 14:00:00',
@@ -173,7 +174,6 @@ INSERT INTO at (
     _mtx,
     _lbb,
     _ltx,
-    _pnt,
     _enu,
     _set
 ) VALUES (
@@ -205,7 +205,6 @@ INSERT INTO at (
     "abcdefg",
     x'cafebabe',
     "abcdefg",
-    st_geomfromtext('point(1 1)'),
     1,
     1
 );
@@ -244,7 +243,7 @@ SELECT _mbb | 2147483647 FROM at;
 SELECT _mtx | 2147483647 FROM at;
 SELECT _lbb | 2147483647 FROM at;
 SELECT _ltx | 2147483647 FROM at;
-SELECT _pnt | 2147483647 FROM at;
+#SELECT _pnt | 2147483647 FROM at;
 SELECT _dat | 2147483647 FROM at;
 SELECT _dtt | 2147483647 FROM at;
 SELECT _smp | 2147483647 FROM at;
@@ -280,7 +279,7 @@ SELECT _mbb & 2147483647 FROM at;
 SELECT _mtx & 2147483647 FROM at;
 SELECT _lbb & 2147483647 FROM at;
 SELECT _ltx & 2147483647 FROM at;
-SELECT _pnt & 2147483647 FROM at;
+#SELECT _pnt & 2147483647 FROM at;
 SELECT _dat & 2147483647 FROM at;
 SELECT _dtt & 2147483647 FROM at;
 SELECT _smp & 2147483647 FROM at;
@@ -316,7 +315,7 @@ SELECT _mbb ^ 2147483647 FROM at;
 SELECT _mtx ^ 2147483647 FROM at;
 SELECT _lbb ^ 2147483647 FROM at;
 SELECT _ltx ^ 2147483647 FROM at;
-SELECT _pnt ^ 2147483647 FROM at;
+#SELECT _pnt ^ 2147483647 FROM at;
 SELECT _dat ^ 2147483647 FROM at;
 SELECT _dtt ^ 2147483647 FROM at;
 SELECT _smp ^ 2147483647 FROM at;
@@ -356,7 +355,7 @@ SELECT _mbb | x'cafebabe' FROM at;
 SELECT _mtx | x'cafebabe' FROM at;
 SELECT _lbb | x'cafebabe' FROM at;
 SELECT _ltx | x'cafebabe' FROM at;
-SELECT _pnt | x'cafebabe' FROM at;
+#SELECT _pnt | x'cafebabe' FROM at;
 SELECT _dat | x'cafebabe' FROM at;
 SELECT _dtt | x'cafebabe' FROM at;
 SELECT _smp | x'cafebabe' FROM at;
@@ -392,7 +391,7 @@ SELECT _mbb & x'cafebabe' FROM at;
 SELECT _mtx & x'cafebabe' FROM at;
 SELECT _lbb & x'cafebabe' FROM at;
 SELECT _ltx & x'cafebabe' FROM at;
-SELECT _pnt & x'cafebabe' FROM at;
+#SELECT _pnt & x'cafebabe' FROM at;
 SELECT _dat & x'cafebabe' FROM at;
 SELECT _dtt & x'cafebabe' FROM at;
 SELECT _smp & x'cafebabe' FROM at;
@@ -428,7 +427,7 @@ SELECT _mbb ^ x'cafebabe' FROM at;
 SELECT _mtx ^ x'cafebabe' FROM at;
 SELECT _lbb ^ x'cafebabe' FROM at;
 SELECT _ltx ^ x'cafebabe' FROM at;
-SELECT _pnt ^ x'cafebabe' FROM at;
+#SELECT _pnt ^ x'cafebabe' FROM at;
 SELECT _dat ^ x'cafebabe' FROM at;
 SELECT _dtt ^ x'cafebabe' FROM at;
 SELECT _smp ^ x'cafebabe' FROM at;
@@ -595,3 +594,4 @@ FROM "SELECT group_id, HEX(BIT_AND(a)), HEX(BIT_OR(a)), HEX (BIT_XOR(a)) FROM t 
 EXECUTE s2;
 EXECUTE s2;
 DROP TABLE t;
+-- source include/uninstall_sequoiadb.inc

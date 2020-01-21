@@ -72,7 +72,7 @@ options	enum('one','two','tree')	latin1_swedish_ci	NO	MUL	NULL		#
 flags	set('one','two','tree')	latin1_swedish_ci	NO				#	
 show keys from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
-t1	0	PRIMARY	1	auto	A	0	NULL	NULL		BTREE		
+t1	0	PRIMARY	1	auto	A	NULL	NULL	NULL		BTREE		
 t1	1	utiny	1	utiny	A	NULL	NULL	NULL		BTREE		
 t1	1	tiny	1	tiny	A	NULL	NULL	NULL		BTREE		
 t1	1	short	1	short	A	NULL	NULL	NULL		BTREE		
@@ -86,14 +86,6 @@ t1	1	ulonglong	1	ulonglong	A	NULL	NULL	NULL		BTREE
 t1	1	ulonglong	2	ulong	A	NULL	NULL	NULL		BTREE		
 t1	1	options	1	options	A	NULL	NULL	NULL		BTREE		
 t1	1	options	2	flags	A	NULL	NULL	NULL		BTREE		
-CREATE UNIQUE INDEX test on t1 ( auto ) ;
-CREATE INDEX test2 on t1 ( ulonglong,ulong) ;
-Warnings:
-Warning	1831	Duplicate index 'test2' defined on the table 'test.t1'. This is deprecated and will be disallowed in a future release.
-CREATE INDEX test3 on t1 ( medium ) ;
-Warnings:
-Warning	1831	Duplicate index 'test3' defined on the table 'test.t1'. This is deprecated and will be disallowed in a future release.
-DROP INDEX test ON t1;
 insert into t1 values (10, 1,1,1,1,1,1,1,1,1,1,1,1,1,NULL,0,0,0,1,1,1,1,'one','one');
 insert into t1 values (NULL,2,2,2,2,2,2,2,2,2,2,2,2,2,NULL,NULL,NULL,NULL,NULL,NULL,2,2,'two','two,one');
 insert into t1 values (0,1/3,3,3,3,3,3,3,3,3,3,3,3,3,NULL,'19970303','10:10:10','19970303101010','','','','3',3,3);
@@ -179,12 +171,12 @@ PRIMARY KEY (auto)
 );
 INSERT INTO t2 (string,mediumblob_col,new_field) SELECT string,mediumblob_col,new_field from t1 where auto > 10;
 Warnings:
+Warning	1265	Data truncated for column 'new_field' at row 1
 Warning	1265	Data truncated for column 'new_field' at row 2
 Warning	1265	Data truncated for column 'new_field' at row 3
 Warning	1265	Data truncated for column 'new_field' at row 4
 Warning	1265	Data truncated for column 'new_field' at row 5
 Warning	1265	Data truncated for column 'new_field' at row 6
-Warning	1265	Data truncated for column 'new_field' at row 7
 select * from t2;
 auto	string	mediumblob_col	new_field
 1	2	2	ne
@@ -309,10 +301,6 @@ c1	int(11)	NULL	YES		NULL		#
 c2	int(11)	NULL	YES		NULL		#	
 const	int(1)	NULL	NO		0		#	
 drop table t1,t2,t3;
-create table t1 ( myfield INT NOT NULL, UNIQUE INDEX (myfield), unique (myfield), index(myfield));
-Warnings:
-Warning	1831	Duplicate index 'myfield_2' defined on the table 'test.t1'. This is deprecated and will be disallowed in a future release.
-drop table t1;
 create table t1 ( id integer unsigned not null primary key );
 create table t2 ( id integer unsigned not null primary key );
 insert into t1 values (1), (2);

@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 #
 # Test ranges for all types and some other basic tests
@@ -12,6 +11,7 @@ drop table if exists t1,t2,t3;
 --enable_warnings
 SET SQL_WARNINGS=1;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
+
 CREATE TABLE t1 (
   auto int(5) unsigned NOT NULL auto_increment,
   string char(10) default "hello",
@@ -56,10 +56,11 @@ CREATE TABLE t1 (
 show full fields from t1;
 show keys from t1;
 
-CREATE UNIQUE INDEX test on t1 ( auto ) ;
-CREATE INDEX test2 on t1 ( ulonglong,ulong) ;
-CREATE INDEX test3 on t1 ( medium ) ;
-DROP INDEX test ON t1;
+#Sequoiadb not support create index on the same key
+#CREATE UNIQUE INDEX test on t1 ( auto ) ;
+#CREATE INDEX test2 on t1 ( ulonglong,ulong) ;
+#CREATE INDEX test3 on t1 ( medium ) ;
+#DROP INDEX test ON t1;
 
 insert into t1 values (10, 1,1,1,1,1,1,1,1,1,1,1,1,1,NULL,0,0,0,1,1,1,1,'one','one');
 insert into t1 values (NULL,2,2,2,2,2,2,2,2,2,2,2,2,2,NULL,NULL,NULL,NULL,NULL,NULL,2,2,'two','two,one');
@@ -155,8 +156,9 @@ create table t3 select t1.c AS c1, t2.c AS c2,1 as "const" from t1, t2;
 show full columns from t3;
 drop table t1,t2,t3;
 
-create table t1 ( myfield INT NOT NULL, UNIQUE INDEX (myfield), unique (myfield), index(myfield));
-drop table t1;
+#Sequoiadb not support duplicated index
+#create table t1 ( myfield INT NOT NULL, UNIQUE INDEX (myfield), unique (myfield), index(myfield));
+#drop table t1;
 
 create table t1 ( id integer unsigned not null primary key );
 create table t2 ( id integer unsigned not null primary key );
@@ -178,4 +180,7 @@ create table t3 select t1.id as id_A,  t2.id as id_B from t1 left join t2 on (t1
 select * from t3;
 drop table t1,t2,t3;
 SET sql_mode = default;
+
+--source include/uninstall_sequoiadb.inc
+
 # End of 4.1 tests

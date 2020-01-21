@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb
+--source include/have_sequoiadb.inc
 
 # 
 # Run range.inc with index_condition_pushdown
@@ -29,4 +28,6 @@ if (`select locate('mrr', @@optimizer_switch) > 0`)
 --source include/range.inc
 
 set optimizer_switch=default;
+
+--source include/uninstall_sequoiadb.inc
 

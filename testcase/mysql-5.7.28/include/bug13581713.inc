@@ -3,17 +3,19 @@
 --source include/turn_off_only_full_group_by.inc
 
 insert into t1 values(100,1,2),(200,1,1),(300,2,1),(400,2,2);
+--replace_column 1 x
 analyze table t1;
 
 eval select distinct b from $source order by c;
 eval select distinct min(b) from $source group by a order by min(c);
 # just to see that if source is a view, it is merged
---replace_column 9 #
-eval explain select distinct min(b) from $source group by a order by min(c);
+#--replace_column 9 #
+#eval explain select distinct min(b) from $source group by a order by min(c);
 
 --echo Insert rows in different order:
 delete from t1;
 insert into t1 values(200,1,1),(100,1,2),(400,2,2),(300,2,1);
+--replace_column 1 x
 analyze table t1;
 
 --echo And get a different order. Query is executed like this:
@@ -129,10 +131,10 @@ SELECT distinct sum(a) FROM t1 order by count(*)-count(b);
 
 --echo Verify that DISTINCT is optimized away even if the aggregate
 --echo function is hidden in a subquery
-EXPLAIN SELECT DISTINCT MAX(b) FROM t1;
-EXPLAIN SELECT DISTINCT (SELECT MAX(t1.b) FROM t1 AS t2 LIMIT 1) FROM t1;
+#EXPLAIN SELECT DISTINCT MAX(b) FROM t1;
+#EXPLAIN SELECT DISTINCT (SELECT MAX(t1.b) FROM t1 AS t2 LIMIT 1) FROM t1;
 --echo but if the subquery is the aggregation query, DISTINCT must stay:
-EXPLAIN SELECT DISTINCT (SELECT MAX(t1.b+0*t2.a) FROM t1 AS t2 LIMIT 1) FROM t1;
+#EXPLAIN SELECT DISTINCT (SELECT MAX(t1.b+0*t2.a) FROM t1 AS t2 LIMIT 1) FROM t1;
 --echo QA's query is properly rejected:
 --error ER_FIELD_IN_ORDER_NOT_SELECT
 eval SELECT DISTINCT GP1.a AS g1 FROM $source_no_alias AS GP1

@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 --source include/no_valgrind_without_big.inc
 
 -- source include/have_gb2312.inc
@@ -16,24 +17,27 @@ SET @test_collation= 'gb2312_chinese_ci';
 SET NAMES gb2312;
 SET collation_connection='gb2312_chinese_ci';
 -- source include/ctype_filesort.inc
--- source include/ctype_innodb_like.inc
+# NOW not concern opperation of innodb, just testing for SequoiaDB
+#-- source include/ctype_innodb_like.inc
 -- source include/ctype_like_escape.inc
 -- source include/ctype_like_range_f1f2.inc
 -- source include/ctype_ascii_order.inc
 SET collation_connection='gb2312_bin';
 -- source include/ctype_filesort.inc
--- source include/ctype_innodb_like.inc
+# NOW not concern opperation of innodb, just testing for SequoiaDB
+#-- source include/ctype_innodb_like.inc
 -- source include/ctype_like_escape.inc
 -- source include/ctype_like_range_f1f2.inc
 
+# NOW SequoiaDB will convert all character sets to utf8, so the following records is not allowed to converted into utf8
 #
 # Bug#15377 Valid multibyte sequences are truncated on INSERT
 #
-SET NAMES gb2312;
-CREATE TABLE t1 (a text) character set gb2312;
-INSERT INTO t1 VALUES (0xA2A1),(0xD7FE);
-SELECT hex(a) FROM t1 ORDER BY a;
-DROP TABLE t1;
+#SET NAMES gb2312;
+#CREATE TABLE t1 (a text) character set gb2312;
+#INSERT INTO t1 VALUES (0xA2A1),(0xD7FE);
+#SELECT hex(a) FROM t1 ORDER BY a;
+#DROP TABLE t1;
 
 # End of 4.1 tests
 
@@ -72,8 +76,10 @@ DROP TEMPORARY TABLE head, tail;
 --disable_query_log
 let $default_engine = `select @@SESSION.default_storage_engine`;
 --enable_query_log
---replace_result $default_engine default_engine
+# not concern replace engine, just testing for SequoiaDB
+#--replace_result $default_engine default_engine
 SHOW CREATE TABLE t1;
+# Bug #SEQUOIASQLMAINSTREAM-146
 UPDATE IGNORE t1 SET a=unhex(code) ORDER BY code;
 SELECT COUNT(*) FROM t1 WHERE a<>'';
 #
@@ -159,6 +165,7 @@ set collation_connection=gb2312_bin;
 
 SET NAMES gb2312;
 --source include/ctype_inet.inc
+--source include/uninstall_sequoiadb.inc
 
 --echo #
 --echo # End of 5.6 tests

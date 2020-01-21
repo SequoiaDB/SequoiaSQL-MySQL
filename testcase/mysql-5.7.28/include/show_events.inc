@@ -17,7 +17,10 @@
 if ($is_relay_log)
 {
   --let $statement= SHOW RELAYLOG EVENTS
-  --let $_se_for_channel= FOR CHANNEL '$rpl_channel_name'
+  if ($rpl_channel_name != '')
+  {
+    --let $_se_for_channel= FOR CHANNEL  '$rpl_channel_name'
+  }
 }
 --let $statement_masked= $statement
 

@@ -38,7 +38,6 @@ INSERT INTO t1(i, j) VALUES (29, CAST('[]' AS CHAR CHARACTER SET 'ascii'));
 INSERT INTO t1(i, j) VALUES (30, CAST(x'cafe' AS JSON));
 INSERT INTO t1(i, j) VALUES (31, CAST(x'cafebabe' AS JSON));
 
-
 --echo #
 --echo # Test of JSON comparator.
 --echo #
@@ -87,9 +86,15 @@ CREATE TABLE t2(i int, j json);
 CREATE INDEX t2_i ON t2(i);
 INSERT INTO t2 values (1, CAST(1 AS JSON));
 INSERT INTO t2 values (1, CAST('"1"' AS JSON));
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t2;
+-- enable_query_log
+-- enable_result_log
 let $query=SELECT * FROM t2 where i = j;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
+
+#Bug #SEQUOIASQLMAINSTREAM-197
 eval $query;
 DROP TABLE t2;
 
@@ -103,6 +108,7 @@ DROP TABLE t2;
 # expected to say that the JSON values on the two rows are equal. If a
 # row has a lower rank than another, the JSON value in that row is
 # expected to be smaller than the JSON value in the other row.
+
 CREATE TABLE numbers(id INT NOT NULL AUTO_INCREMENT,
                      rank INT,
                      j JSON,
@@ -155,6 +161,7 @@ INSERT INTO numbers(rank, j) VALUES
 (31, CAST(99999999999999999999999999999999999999999999999999999999999999999 AS JSON)),
 (32, CAST('1e65' AS JSON)),
 (33, CAST('1e100' AS JSON));
+
 SELECT *, JSON_TYPE(j) FROM numbers ORDER BY id;
 
 # Now compare every combination of scalars in the table using <, =, >,
@@ -273,6 +280,7 @@ INSERT INTO doubles VALUES
 SELECT * FROM doubles ORDER BY CAST(d AS JSON);
 
 # Now convert all of the above values to JSON.
+
 CREATE TABLE t(id INT PRIMARY KEY AUTO_INCREMENT, j JSON);
 INSERT INTO t(j) SELECT CAST(ts AS JSON) FROM timestamps ORDER BY ts;
 INSERT INTO t(j) SELECT CAST(dt AS JSON) FROM datetimes ORDER BY dt;
@@ -329,9 +337,9 @@ SET @@max_sort_length=default;
 
 # GROUP BY uses a temporary for grouping, GROUP BY WITH ROLLUP uses filesort to
 # do the grouping.
-ANALYZE TABLE t;
-EXPLAIN SELECT j, COUNT(*) FROM t GROUP BY j ORDER BY j;
-EXPLAIN SELECT j, COUNT(*) FROM t GROUP BY j WITH ROLLUP;
+#ANALYZE TABLE t;
+#EXPLAIN SELECT j, COUNT(*) FROM t GROUP BY j ORDER BY j;
+#EXPLAIN SELECT j, COUNT(*) FROM t GROUP BY j WITH ROLLUP;
 
 # Grouping produces indeterminate results based on the order of evaluation. For example,
 # either '2' or '2.0' could be the name of the group
@@ -611,6 +619,7 @@ select charset(json_type('{}'));
 --echo # ----------------------------------------------------------------------
 --echo # Test of CAST(<column> AS JSON)
 --echo # ----------------------------------------------------------------------
+#Sequoiadb not support geometry
 create table t1(dati datetime, da date,
                 tim time, ts timestamp,
                 y year,
@@ -632,10 +641,10 @@ create table t1(dati datetime, da date,
                 en enum('a','b','c'),
                 se set('a','b','c'),
                 --
-                ge geometry,
-                po point,
-                ls linestring,
-                py polygon,
+                #ge geometry,
+                #po point,
+                #ls linestring,
+                #py polygon,
                 js json
                 );
 
@@ -661,11 +670,6 @@ insert into t1 values('2014-11-25 18:00', '2014-11-25',
                       'b',
                       'a,c',
                       --
-                      ST_GeomFromText('POINT(1 1)'),
-                      ST_GeomFromText('POINT(1 1)'),
-                      ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-                      ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-                                            (5 5,7 5,7 7,5 7, 5 5))'),
                       '[123]'
                       );
 
@@ -700,10 +704,10 @@ select json_type(cast(bin as json)) from t1;
 select json_type(cast(en as json)) from t1;
 select json_type(cast(se as json)) from t1;
 
-select json_type(cast(ge as json)) from t1;
-select json_type(cast(po as json)) from t1;
-select json_type(cast(ls as json)) from t1;
-select json_type(cast(py as json)) from t1;
+#select json_type(cast(ge as json)) from t1;
+#select json_type(cast(po as json)) from t1;
+#select json_type(cast(ls as json)) from t1;
+#select json_type(cast(py as json)) from t1;
 
 select json_type(cast(js as json)) from t1;
 
@@ -741,10 +745,10 @@ select cast(bin as json) from t1;
 select cast(en as json) from t1;
 select cast(se as json) from t1;
 
-select cast(ge as json) from t1;
-select cast(po as json) from t1;
-select cast(ls as json) from t1;
-select cast(py as json) from t1;
+#select cast(ge as json) from t1;
+#select cast(po as json) from t1;
+#select cast(ls as json) from t1;
+#select cast(py as json) from t1;
 
 select cast(js as json) from t1;
 
@@ -818,7 +822,7 @@ drop table t;
 --echo # Test of JSON_KEYS function.
 --echo # ----------------------------------------------------------------------
 
-select i, json_keys(j) from keys1 order by i;
+#select i, json_keys(j) from keys1 order by i;
 
 delete from keys1;
 insert into keys1 values (0, NULL),
@@ -915,23 +919,24 @@ drop table json_table;
 
 drop table department;
 
-create table misc_dt
-(
-  id int, py polygon
-);
-
-insert into misc_dt values
-(
-  1, ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-),
-(
-  2, null
-);
-
-select id, json_array( true, py, false ) from misc_dt order by id;
-
-drop table misc_dt;
+#Sequoiadb not support GEOMETRY
+#create table misc_dt
+#(
+#  id int, py polygon
+#);
+#
+#insert into misc_dt values
+#(
+#  1, ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
+#    (5 5,7 5,7 7,5 7, 5 5))')
+#),
+#(
+#  2, null
+#);
+#
+#select id, json_array( true, py, false ) from misc_dt order by id;
+#
+#drop table misc_dt;
 
 # construct from data in a table
 create table jro
@@ -978,21 +983,22 @@ drop table department;
 
 # key names which aren't strings
 
-create table misc_dt
-(
-  py polygon
-);
-
-insert into misc_dt values
-(
-  ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-);
-
---error ER_INVALID_JSON_CHARSET
-select json_object( py, 'def' ) from misc_dt;
-
-drop table misc_dt;
+#Sequoiadb not support GEOMETRY
+#create table misc_dt
+#(
+#  py polygon
+#);
+#
+#insert into misc_dt values
+#(
+#  ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
+#    (5 5,7 5,7 7,5 7, 5 5))')
+#);
+#
+#--error ER_INVALID_JSON_CHARSET
+#select json_object( py, 'def' ) from misc_dt;
+#
+#drop table misc_dt;
 
 
 create table json_search_table( id_col int, json_col json );
@@ -1230,6 +1236,7 @@ select json_type
 ) received_type
 ;
 
+#Bug #SEQUOIASQLMAINSTREAM-186
 select id, extract_date( raw_message ) extracted_date
 from messages order by id;
 
@@ -1265,6 +1272,7 @@ select show_received_type
 ) received_type;
 
 # should be DATETIME
+#Bug #SEQUOIASQLMAINSTREAM-189
 select id, show_received_type( raw_message ) received_type
 from messages order by id;
 
@@ -1535,6 +1543,7 @@ select bucket, count( distinct doc ) from t_doc group by bucket;
 
 delete from t_doc;
 
+#Sequoiadb not support GEOMETRY
 create table dt(dati datetime, da date,
                 tim time, ts timestamp,
                 y year,
@@ -1556,10 +1565,10 @@ create table dt(dati datetime, da date,
                 en enum('a','b','c'),
                 se set('a','b','c'),
                 --
-                ge geometry,
-                po point,
-                ls linestring,
-                py polygon,
+                #ge geometry,
+                #po point,
+                #ls linestring,
+                #py polygon,
                 jso json,
                 jsa json,
                 id int
@@ -1587,11 +1596,11 @@ insert into dt values('2014-11-25 18:00', '2014-11-25',
                       'b',
                       'a,c',
                       --
-                      ST_GeomFromText('POINT(1 1)'),
-                      ST_GeomFromText('POINT(1 2)'),
-                      ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-                      ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-                                            (5 5,7 5,7 7,5 7, 5 5))'),
+                      #ST_GeomFromText('POINT(1 1)'),
+                      #ST_GeomFromText('POINT(1 2)'),
+                      #ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
+                      #ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
+                      #                      (5 5,7 5,7 7,5 7, 5 5))'),
                       '{"a": 1, "b": 2 }',
                       '[1, 2]',
                       1
@@ -1618,11 +1627,11 @@ insert into dt values('2014-11-25 18:00', '2014-11-25',
                       'a',
                       'a,b',
                       --
-                      ST_GeomFromText('POINT(1 3)'),
-                      ST_GeomFromText('POINT(1 4)'),
-                      ST_GeomFromText('LINESTRING(0 0,1 1,2 3)'),
-                      ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 9,0 0),
-                                            (5 5,7 5,7 7,5 7, 5 5))'),
+                      #ST_GeomFromText('POINT(1 3)'),
+                      #ST_GeomFromText('POINT(1 4)'),
+                      #ST_GeomFromText('LINESTRING(0 0,1 1,2 3)'),
+                      #ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 9,0 0),
+                      #                      (5 5,7 5,7 7,5 7, 5 5))'),
                       '{"a": 1, "b": 3 }',
                       '[1, 3]',
                       2
@@ -1670,16 +1679,19 @@ insert into t_doc select id, cast(bin as json) from dt;
 insert into t_doc select id, cast(en as json) from dt;
 insert into t_doc select id, cast(se as json) from dt;
 
-insert into t_doc select id, cast(ge as json) from dt;
-insert into t_doc select id, cast(po as json) from dt;
-insert into t_doc select id, cast(ls as json) from dt;
-insert into t_doc select id, cast(py as json) from dt;
+#Sequoiadb not support GEOMETRY
+#insert into t_doc select id, cast(ge as json) from dt;
+#insert into t_doc select id, cast(po as json) from dt;
+#insert into t_doc select id, cast(ls as json) from dt;
+#insert into t_doc select id, cast(py as json) from dt;
 insert into t_doc select id, jso from dt;
 insert into t_doc select id, jsa from dt;
 
 insert into t_doc select * from t_doc;
 
 #The results depend on the order of evaluation of rows
+
+#Bug #SEQUOIASQLMAINSTREAM-196
 select distinct( doc ) a from t_doc order by a;
 select count( distinct doc ) from t_doc;
 select bucket, count( distinct doc ) from t_doc group by bucket;
@@ -1760,7 +1772,7 @@ insert into t_doc select id, cast(d as json) from ndt;
 insert into t_doc select * from t_doc;
 
 # The results depend on the order of evaluation of rows
-#select distinct( doc ) a from t_doc order by a;
+select distinct( doc ) a from t_doc order by a;
 select count( distinct doc ) from t_doc;
 select bucket, count( distinct doc ) from t_doc group by bucket;
 
@@ -1771,125 +1783,126 @@ drop table ndt;
 --echo # ----------------------------------------------------------------------
 --echo # Special CASTing behavior of geometry types
 --echo # ----------------------------------------------------------------------
-
-create table jtable( id int, descr varchar(20), doc json );
-
-create table misc_dt
-(
-  ge geometry,
-  po point,
-  ls linestring,
-  py polygon
-);
-
-insert into misc_dt values
-(
-  ST_GeomFromText('POINT(1 1)'),
-  ST_GeomFromText('POINT(1 1)'),
-  ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-  ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-);
-
-insert into jtable select 1, 'geometry', cast(ge as json) from misc_dt;
-insert into jtable select 2, 'point', cast(po as json) from misc_dt;
-insert into jtable select 3, 'linestring', cast(ls as json) from misc_dt;
-insert into jtable select 4, 'polygon', cast(py as json) from misc_dt;
+#Sequoiadb not support GEOMETRY
+#create table jtable( id int, descr varchar(20), doc json );
 #
-select id, descr, json_type( doc ), doc from jtable order by id;
-
-select json_object
-(
-  'geometry', ST_GeomFromText('POINT(1 1)'),
-  'point', ST_GeomFromText('POINT(1 1)'),
-  'linestring', ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-  'polygon', ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-);
-
-# verify the workaround for CASTing JSON values to GEOMETRY
-delete from misc_dt;
-select * from misc_dt;
-insert into misc_dt values
-(
-  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 1),
-  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 2),
-  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 3),
-  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 4)
-);
-select ST_AsGeoJSON( ge ),
-       ST_AsGeoJSON( po ),
-       ST_AsGeoJSON( ls ),
-       ST_AsGeoJSON( py )
-from misc_dt;
-
-drop table misc_dt;
-drop table jtable;
-
-create table jtable( id int, descr varchar(20), doc json );
-
-create table misc_dt
-(
-  ge geometrycollection,
-  po multipoint,
-  ls multilinestring,
-  py multipolygon
-);
-
-insert into misc_dt values
-(
-  geometrycollection(point(1, 1), point(2, 2)),
-  multipoint(point(1, 1), point(2, 2)),
-  multilinestring
-  (
-    linestring(point(0, 0), point(1, 1), point(2, 2)),
-    linestring(point(0, 0), point(11, 11), point(12, 12))
-  ),
-  multipolygon
-  (
-      polygon
-      (
-        linestring(point(0, 0), point(10, 0), point(10, 10), point(0, 10), point(0, 0)),
-        linestring(point(5, 5), point(7, 5), point(7, 7), point(5, 7), point(5, 5))
-      ),
-      polygon
-      (
-        linestring(point(0, 0), point(10, 0), point(10, 10), point(0, 10), point(0, 0)),
-        linestring(point(5, 5), point(7, 5), point(7, 7), point(5, 7), point(5, 5))
-      )
-  )
-);
-
-insert into jtable select 1, 'geometrycollection', cast(ge as json) from misc_dt;
-insert into jtable select 2, 'multipoint', cast(po as json) from misc_dt;
-insert into jtable select 3, 'multilinestring', cast(ls as json) from misc_dt;
-insert into jtable select 4, 'multipolygon', cast(py as json) from misc_dt;
 #
-select id, descr, json_type( doc ), doc from jtable order by id;
-
-select ST_AsGeoJSON( ge ),
-       ST_AsGeoJSON( po ),
-       ST_AsGeoJSON( ls ),
-       ST_AsGeoJSON( py )
-from misc_dt;
-
-delete from misc_dt;
-select * from misc_dt;
-insert into misc_dt values
-(
-  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 1),
-  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 2),
-  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 3),
-  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 4)
-);
-select ST_AsGeoJSON( ge ),
-       ST_AsGeoJSON( po ),
-       ST_AsGeoJSON( ls ),
-       ST_AsGeoJSON( py )
-from misc_dt;
-
-drop table misc_dt;
-drop table jtable;
+#create table misc_dt
+#(
+#  ge geometry,
+#  po point,
+#  ls linestring,
+#  py polygon
+#);
+#
+#insert into misc_dt values
+#(
+#  ST_GeomFromText('POINT(1 1)'),
+#  ST_GeomFromText('POINT(1 1)'),
+#  ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
+#  ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
+#    (5 5,7 5,7 7,5 7, 5 5))')
+#);
+#
+#insert into jtable select 1, 'geometry', cast(ge as json) from misc_dt;
+#insert into jtable select 2, 'point', cast(po as json) from misc_dt;
+#insert into jtable select 3, 'linestring', cast(ls as json) from misc_dt;
+#insert into jtable select 4, 'polygon', cast(py as json) from misc_dt;
+##
+#select id, descr, json_type( doc ), doc from jtable order by id;
+#
+#select json_object
+#(
+#  'geometry', ST_GeomFromText('POINT(1 1)'),
+#  'point', ST_GeomFromText('POINT(1 1)'),
+#  'linestring', ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
+#  'polygon', ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
+#    (5 5,7 5,7 7,5 7, 5 5))')
+#);
+#
+## verify the workaround for CASTing JSON values to GEOMETRY
+#delete from misc_dt;
+#select * from misc_dt;
+#insert into misc_dt values
+#(
+#  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 1),
+#  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 2),
+#  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 3),
+#  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 4)
+#);
+#select ST_AsGeoJSON( ge ),
+#       ST_AsGeoJSON( po ),
+#       ST_AsGeoJSON( ls ),
+#       ST_AsGeoJSON( py )
+#from misc_dt;
+#
+#drop table misc_dt;
+#drop table jtable;
+#
+#create table jtable( id int, descr varchar(20), doc json );
+#
+#create table misc_dt
+#(
+#  ge geometrycollection,
+#  po multipoint,
+#  ls multilinestring,
+#  py multipolygon
+#);
+#
+#insert into misc_dt values
+#(
+#  geometrycollection(point(1, 1), point(2, 2)),
+#  multipoint(point(1, 1), point(2, 2)),
+#  multilinestring
+#  (
+#    linestring(point(0, 0), point(1, 1), point(2, 2)),
+#    linestring(point(0, 0), point(11, 11), point(12, 12))
+#  ),
+#  multipolygon
+#  (
+#      polygon
+#      (
+#        linestring(point(0, 0), point(10, 0), point(10, 10), point(0, 10), point(0, 0)),
+#        linestring(point(5, 5), point(7, 5), point(7, 7), point(5, 7), point(5, 5))
+#      ),
+#      polygon
+#      (
+#        linestring(point(0, 0), point(10, 0), point(10, 10), point(0, 10), point(0, 0)),
+#        linestring(point(5, 5), point(7, 5), point(7, 7), point(5, 7), point(5, 5))
+#      )
+#  )
+#);
+#
+#insert into jtable select 1, 'geometrycollection', cast(ge as json) from misc_dt;
+#insert into jtable select 2, 'multipoint', cast(po as json) from misc_dt;
+#insert into jtable select 3, 'multilinestring', cast(ls as json) from misc_dt;
+#insert into jtable select 4, 'multipolygon', cast(py as json) from misc_dt;
+##
+#select id, descr, json_type( doc ), doc from jtable order by id;
+#
+#select ST_AsGeoJSON( ge ),
+#       ST_AsGeoJSON( po ),
+#       ST_AsGeoJSON( ls ),
+#       ST_AsGeoJSON( py )
+#from misc_dt;
+#
+#delete from misc_dt;
+#select * from misc_dt;
+#insert into misc_dt values
+#(
+#  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 1),
+#  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 2),
+#  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 3),
+#  (select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 4)
+#);
+#select ST_AsGeoJSON( ge ),
+#       ST_AsGeoJSON( po ),
+#       ST_AsGeoJSON( ls ),
+#       ST_AsGeoJSON( py )
+#from misc_dt;
+#
+#drop table misc_dt;
+#drop table jtable;
 
 --echo # ----------------------------------------------------------------------
 --echo # Test of COALESCE
@@ -1925,9 +1938,11 @@ select j from t order by j;
 update t set j=json_set(j, '$.user', md5('bingle'))  where id=8;
 select j from t order by j;
 update t set j=json_set(j, '$.user', database())  where id=8;
-select j from t order by j;
+
+#Sequoiadb can not get specific database
+#select j from t order by j;
 update t set j=json_set(j, '$.user', schema()) where id=8;
-select j from t order by j;
+#select j from t order by j;
 #
 # The hex of some UTF-8 from supplementary plane: U+2070E
 update t set j=json_set(j, '$.user',
@@ -1976,8 +1991,9 @@ FROM T_WITH_NULLS
 ORDER BY i;
 eval $query;
 # It should work the same way with a TEXT column as with a JSON column.
-ALTER TABLE T_WITH_NULLS MODIFY COLUMN j TEXT;
-eval $query;
+#Sequoiadb not support alter
+#ALTER TABLE T_WITH_NULLS MODIFY COLUMN j TEXT;
+#eval $query;
 DROP TABLE T_WITH_NULLS;
 
 # Make sure that every JSON function accepts latin1 text arguments. The JSON
@@ -1996,6 +2012,7 @@ INSERT INTO t_latin1 (json_text, json_atom_text, json_path) VALUES
                                   # {"\u00e6\u00f8\u00e5":"\u00e6\u00f8\u00e5"}
  CONVERT(X'E5F8E6' USING latin1),                     # \u00e5\u00f8\u00e6
  CONVERT(X'242E22E6F8E522' USING latin1));            # $."\u00e6\u00f8\u00e5"
+
 SELECT * FROM t_latin1 ORDER BY id;
 SELECT CAST(json_text AS JSON) FROM t_latin1 ORDER BY id;
 SELECT JSON_VALID(json_text) FROM t_latin1 ORDER BY id;
@@ -2410,10 +2427,14 @@ CREATE TABLE t1(j JSON);
 CREATE TABLE t2(j JSON);
 INSERT INTO t1 VALUES ('[1]'), ('[2]'), ('[3]'), ('[4]');
 INSERT INTO t2 VALUES ('[1]');
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1, t2;
+-- enable_query_log
+-- enable_result_log
 let $query=
 UPDATE t1, t2 SET t1.j = JSON_INSERT(t2.j, '\$[1]', t2.j) WHERE t1.j=t2.j;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 SELECT * FROM t1 ORDER BY (CAST(j AS CHAR));
 DROP TABLE t1, t2;
@@ -2423,8 +2444,12 @@ DROP TABLE t1, t2;
 --echo #               ON EXPLAIN SELECT JSON
 --echo #
 create table t (pk int primary key, col_json json);
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t;
-explain SELECT col_json FROM t WHERE pk = 1;
+-- enable_query_log
+-- enable_result_log
+#explain SELECT col_json FROM t WHERE pk = 1;
 drop table t;
 
 --echo # ----------------------------------------------------------------------
@@ -2464,8 +2489,9 @@ SELECT CAST(j AS DECIMAL(5,2)), COUNT(*) FROM tt GROUP BY j, i WITH ROLLUP;
 
 # Exercise Item_copy_json::get_time
 UPDATE tt SET j = CAST(CAST('12:13:14' AS TIME) AS JSON) WHERE j IS NOT NULL;
-SELECT CAST(j AS TIME), COUNT(*) FROM tt GROUP BY j, i WITH ROLLUP;
 
+#bug #SEQUOIASQLMAINSTREAM-190
+SELECT CAST(j AS TIME), COUNT(*) FROM tt GROUP BY j, i WITH ROLLUP;
 # Exercise Item_copy_json::get_date
 SELECT CAST(j AS DATE) = CURRENT_DATE, COUNT(*) FROM tt
 GROUP BY j, i WITH ROLLUP;
@@ -2480,6 +2506,8 @@ SET GLOBAL net_buffer_length = 1024;
 SET GLOBAL max_allowed_packet = 1024;
 CONNECT (con1,localhost,root,,);
 CONNECTION con1;
+
+#Bug #SEQUOIASQLMAINSTREAM-192
 SELECT REPEAT(j, 2), COUNT(*) FROM tt GROUP BY j, i WITH ROLLUP;
 CONNECTION default;
 DISCONNECT con1;
@@ -2842,10 +2870,10 @@ DROP TABLE F, H;
 --echo # Bug#21110783 WL8132:DEBUG CRASH AT WRAPPER_TO_STRING | SQL/JSON_DOM.CC
 --echo #
 
-CREATE TABLE t1 (i1 INT) ENGINE=MyISAM;
+CREATE TABLE t1 (i1 INT) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1);
-CREATE TABLE t2 (i2 INT, j JSON) ENGINE=MyISAM;
-CREATE TABLE t3(v VARCHAR(100), j JSON) ENGINE=MyISAM;
+CREATE TABLE t2 (i2 INT, j JSON) ENGINE=SequoiaDB;
+CREATE TABLE t3(v VARCHAR(100), j JSON) ENGINE=SequoiaDB;
 INSERT INTO t3(v) SELECT j FROM t1 LEFT JOIN t2 ON i1 = i2 GROUP BY j;
 INSERT INTO t3(j) SELECT j FROM t1 LEFT JOIN t2 ON i1 = i2 GROUP BY j;
 SELECT * FROM t3;
@@ -2912,39 +2940,69 @@ SELECT JSON_CONTAINS('[1, 2, [4,5] ]', '[111111111111111111]');
 CREATE TABLE t1(j JSON, i INT);
 INSERT INTO t1 VALUES
 ('0', 0), ('1', 1), ('1.0', 2), ('[1,2,3]', 3), ('{}', 4), ('"abc"', 5);
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1;
+-- enable_query_log
+-- enable_result_log
 let $query1=SELECT * FROM t1 WHERE j > i ORDER BY i;
 let $query2=SELECT * FROM t1 AS a, t1 AS b WHERE a.j > b.i ORDER BY b.i, a.i;
-eval EXPLAIN $query1;
-eval EXPLAIN $query2;
+#eval EXPLAIN $query1;
+#eval EXPLAIN $query2;
+
+#Bug #SEQUOIASQLMAINSTREAM-195
 eval $query1;
 eval $query2;
 --echo # Create an index on the INT column and verify that it is not used.
 CREATE INDEX t1_idx ON t1(i);
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1;
-eval EXPLAIN $query1;
-eval EXPLAIN $query2;
+-- enable_query_log
+-- enable_result_log
+#eval EXPLAIN $query1;
+#eval EXPLAIN $query2;
+
+#Bug #SEQUOIASQLMAINSTREAM-195
 eval $query1;
 eval $query2;
 CREATE TABLE t2(i INT, vc VARCHAR(10))
-ENGINE=InnoDB CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_bin';
+ENGINE=SequoiaDB CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_bin';
 INSERT INTO t2 VALUES (1, 'abc'), (2, '"abc"');
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t2;
+-- enable_query_log
+-- enable_result_log
 let $query= SELECT i FROM t2 WHERE vc = CAST('"abc"' AS JSON);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
+
+#Bug #SEQUOIASQLMAINSTREAM-194
 eval $query;
 --echo # Create an index on the VARCHAR column and verify that it is not used.
 --echo # Used to return 2 instead of 1.
 CREATE INDEX t2_idx ON t2(vc);
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t2;
-eval EXPLAIN $query;
+-- enable_query_log
+-- enable_result_log
+#eval EXPLAIN $query;
+
+#Bug #SEQUOIASQLMAINSTREAM-194
 eval $query;
 DROP INDEX t2_idx ON t2;
 --echo # Create a unique index on the VARCHAR column and verify that it is not
 --echo # used. Used to return an empty result.
 CREATE UNIQUE INDEX t2_idx ON t2(vc);
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t2;
-eval EXPLAIN $query;
+-- enable_query_log
+-- enable_result_log
+#eval EXPLAIN $query;
+
+#Bug #SEQUOIASQLMAINSTREAM-194
 eval $query;
 DROP TABLE t1, t2;
 
@@ -3005,6 +3063,9 @@ DROP TABLE t;
 --echo #
 --echo # JSON should work with INSERT .. ON DUPLICATE KEY UPDATE
 --echo #
+
+#Bug #SEQUOIASQLMAINSTREAM-112
+#Bug #SEQUOIASQLMAINSTREAM-472
 CREATE TABLE t(id INT PRIMARY KEY, j JSON);
 INSERT INTO t VALUES (1, '[1]')
 ON DUPLICATE KEY UPDATE j = JSON_OBJECT("a", VALUES(j));
@@ -3124,7 +3185,7 @@ DROP TABLE t;
 --echo #               VAL_JSON_FUNC_FIELD_SUBSELECT
 --echo #
 --echo # This comparison gave valgrind leakage before the fix
-create table t(a json not null) engine=innodb;
+create table t(a json not null) engine=SequoiaDB;
 insert into t values('{}');
 select row(uuid(), a) < row(a, str_to_date(1,1)) from t;
 drop table t;
@@ -3134,6 +3195,7 @@ drop table t;
 SET NAMES latin1;
 CREATE TABLE t (j JSON);
 INSERT INTO t VALUES ('{}');
+#Bug #SEQUOIASQLMAINSTREAM-430
 --error ER_INVALID_JSON_TEXT
 UPDATE t SET j='1', j='1111-11-11', j=('1' NOT BETWEEN j AND '1');
 SELECT * FROM t;
@@ -3152,6 +3214,8 @@ select json_length('{}',@uninitialized_21602361)
 from t group by b into @uninitialized_21602361;
 
 # second time around the path is invalid
+
+#Bug #SEQUOIASQLMAINSTREAM-193
 set @initialized_21602361 = '$';
 --error ER_INVALID_JSON_PATH
 select json_length('{}',@initialized_21602361)
@@ -3202,35 +3266,36 @@ INSERT INTO t1(f1) VALUES
   ('{"a":11, "b":3}'),
   ('{"a":33, "b":1}'),
   ('{"a":22,"b":2}');
-ANALYZE TABLE t1;
+#ANALYZE TABLE t1;
 
 SELECT f1->"$.a" FROM t1 order by autopk;
-EXPLAIN SELECT f1->"$.a" FROM t1 order by autopk;
+#EXPLAIN SELECT f1->"$.a" FROM t1 order by autopk;
 
 SELECT f1->"$.a" FROM t1 WHERE f1->"$.b" > 1 order by autopk;
-EXPLAIN SELECT f1->"$.a" FROM t1 WHERE f1->"$.b" > 1 order by autopk;
+#EXPLAIN SELECT f1->"$.a" FROM t1 WHERE f1->"$.b" > 1 order by autopk;
 
 SELECT f1->"$.a", f1->"$.b" FROM t1 ORDER BY autopk;
-EXPLAIN SELECT f1->"$.a", f1->"$.b" FROM t1 ORDER BY autopk;
+#EXPLAIN SELECT f1->"$.a", f1->"$.b" FROM t1 ORDER BY autopk;
 
 SELECT MAX(f1->"$.a"), f1->"$.b" FROM t1 GROUP BY f1->"$.b";
-EXPLAIN SELECT MAX(f1->"$.a"), f1->"$.b" FROM t1 GROUP BY f1->"$.b";
+#EXPLAIN SELECT MAX(f1->"$.a"), f1->"$.b" FROM t1 GROUP BY f1->"$.b";
 
 SELECT JSON_OBJECT("c",f1->"$.b") AS f2
   FROM t1 HAVING JSON_TYPE(f2->"$.c") <> 'NULL' ORDER BY autopk;
-EXPLAIN
-  SELECT JSON_OBJECT("c",f1->"$.b") AS f2 FROM t1 HAVING JSON_TYPE(f2->"$.c") <> 'NULL' order by autopk;
+#EXPLAIN
+#  SELECT JSON_OBJECT("c",f1->"$.b") AS f2 FROM t1 HAVING JSON_TYPE(f2->"$.c") <> 'NULL' order by autopk;
 
 --echo Test unquoting operator
 INSERT INTO t1(f1) VALUES
   ('{"t":"a"}'),
   ('{"t":"b"}'),
   ('{"t":"c"}');
+
 --echo Returned values should be quoted
 SELECT f1->"$.t" FROM t1 WHERE f1->"$.t" <> 'NULL' order by autopk;
 --echo Returned values should be unquoted
 SELECT f1->>"$.t" FROM t1 WHERE f1->>"$.t" <> 'NULL' order by autopk;
-EXPLAIN SELECT f1->>"$.t" FROM t1 WHERE f1->>"$.t" <> 'NULL';
+#EXPLAIN SELECT f1->>"$.t" FROM t1 WHERE f1->>"$.t" <> 'NULL';
 
 --error ER_PARSE_ERROR
 SELECT f1->>NULL FROM t1;
@@ -3489,77 +3554,78 @@ UPDATE t SET j1 = JSON_SET(j1, '$.x', 'abc', '$.b', 'Z');
 --eval $dump_table
 DROP TABLE t;
 
-CREATE TABLE t(j JSON,
-               i INT DEFAULT 42,
-               db DOUBLE DEFAULT 2.34e-10,
-               dc DECIMAL(5, 3) DEFAULT 98.765,
-               ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-               gc JSON GENERATED ALWAYS AS (JSON_ARRAY(i, db, dc, ts)))
-ENGINE=InnoDB;  # Generated columns are not supported in NDB.
-INSERT INTO t(j, ts) VALUES
-('[null, "abc", true, "def", false]', '2017-01-02 14:15:16');
---let $dump_table= SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t
---eval $dump_table
-# The update of $[3] to a longer value should be able to reuse the space freed
-# by the update of $[1] to a shorter value.
-UPDATE t SET j = JSON_SET(j, '$[1]', 'xy', '$[3]', 'xyzw');
---eval $dump_table
-# Again, increasing the size of $[3] is OK as long as $[1] shrinks first, also
-# when done in two separate operations.
-UPDATE t SET j = JSON_SET(j, '$[1]', 'a');
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[3]', 'abcde');
---eval $dump_table
-# Test update to some other data types.
-UPDATE t SET j = JSON_ARRAY('abcdefghijklmnopqrstuvwxyz');
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', 3.14e0);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST(10000000000 AS UNSIGNED));
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST(4000000000 AS SIGNED));
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST(123 AS UNSIGNED));
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST(456 AS SIGNED));
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', -123);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', -4000000000);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', TRUE);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', NULL);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST('abc' AS BINARY));
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST('2016-12-23 13:16:40' AS DATETIME));
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST('2016-12-24' AS DATE));
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST('14:17:41' AS TIME));
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', 1.23);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', i);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', db);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', dc);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', ts);
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[0]');
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[1]');
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[2]');
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[3]');
---eval $dump_table
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[4]');
---eval $dump_table
-DROP TABLE t;
+#Sequoiadb not support GENERATED
+#CREATE TABLE t(j JSON,
+#               i INT DEFAULT 42,
+#               db DOUBLE DEFAULT 2.34e-10,
+#               dc DECIMAL(5, 3) DEFAULT 98.765,
+#               ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+#               gc JSON GENERATED ALWAYS AS (JSON_ARRAY(i, db, dc, ts)))
+#ENGINE=Sequoiadb;  # Generated columns are not supported in NDB.
+#INSERT INTO t(j, ts) VALUES
+#('[null, "abc", true, "def", false]', '2017-01-02 14:15:16');
+#--let $dump_table= SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t
+#--eval $dump_table
+## The update of $[3] to a longer value should be able to reuse the space freed
+## by the update of $[1] to a shorter value.
+#UPDATE t SET j = JSON_SET(j, '$[1]', 'xy', '$[3]', 'xyzw');
+#--eval $dump_table
+## Again, increasing the size of $[3] is OK as long as $[1] shrinks first, also
+## when done in two separate operations.
+#UPDATE t SET j = JSON_SET(j, '$[1]', 'a');
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[3]', 'abcde');
+#--eval $dump_table
+## Test update to some other data types.
+#UPDATE t SET j = JSON_ARRAY('abcdefghijklmnopqrstuvwxyz');
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', 3.14e0);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', CAST(10000000000 AS UNSIGNED));
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', CAST(4000000000 AS SIGNED));
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', CAST(123 AS UNSIGNED));
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', CAST(456 AS SIGNED));
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', -123);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', -4000000000);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', TRUE);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', NULL);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', CAST('abc' AS BINARY));
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', CAST('2016-12-23 13:16:40' AS DATETIME));
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', CAST('2016-12-24' AS DATE));
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', CAST('14:17:41' AS TIME));
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', 1.23);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', i);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', db);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', dc);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', ts);
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[0]');
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[1]');
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[2]');
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[3]');
+#--eval $dump_table
+#UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[4]');
+#--eval $dump_table
+#DROP TABLE t;
 
 # Some multi-table updates which perform partial updates.
 CREATE TABLE t1(id INT PRIMARY KEY, j JSON, x INT);
@@ -3627,11 +3693,3 @@ SELECT JSON_MERGE_PATCH('{}');
 SELECT JSON_MERGE_PATCH('{', '[1,2,3]');
 --error ER_INVALID_JSON_TEXT_IN_PARAM
 SELECT JSON_MERGE_PATCH('{"a":"b"}', '[1,');
-
-# Local Variables:
-# mode: sql
-# sql-product: mysql
-# comment-column: 48
-# comment-start: "# "
-# fill-column: 80
-# End:

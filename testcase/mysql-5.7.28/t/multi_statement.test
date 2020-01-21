@@ -1,7 +1,7 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+
+--source include/have_sequoiadb.inc
 
 # PS doesn't support multi-statements
 --disable_ps_protocol
@@ -39,4 +39,5 @@ drop table t1||||
 
 delimiter ;||||
 
+--source include/uninstall_sequoiadb.inc
 # End of 4.1 tests

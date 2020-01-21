@@ -4,7 +4,7 @@
 -- source include/no_valgrind_without_big.inc
 
 -- source include/have_big5.inc
-
+-- source include/have_sequoiadb.inc
 #
 # Tests with the big5 character set
 #
@@ -41,10 +41,11 @@ DROP TABLE t1;
 #
 # BUG#12075 - FULLTEXT non-functional for big5 strings
 #
-CREATE TABLE t1 (a CHAR(50) CHARACTER SET big5 NOT NULL, FULLTEXT(a));
-INSERT INTO t1 VALUES(0xA741ADCCA66EB6DC20A7DAADCCABDCA66E);
-SELECT HEX(a) FROM t1 WHERE MATCH(a) AGAINST (0xA741ADCCA66EB6DC IN BOOLEAN MODE);
-DROP TABLE t1;
+# NOW SequoiaDB not support FULLTEXT
+#CREATE TABLE t1 (a CHAR(50) CHARACTER SET big5 NOT NULL, FULLTEXT(a));
+#INSERT INTO t1 VALUES(0xA741ADCCA66EB6DC20A7DAADCCABDCA66E);
+#SELECT HEX(a) FROM t1 WHERE MATCH(a) AGAINST (0xA741ADCCA66EB6DC IN BOOLEAN MODE);
+#DROP TABLE t1;
 
 #
 # Bug#12476 Some big5 codes are still missing.
@@ -76,21 +77,22 @@ select hex(convert(_big5 0xC84041 using ucs2));
 #
 # Bug#26711 "binary content 0x00 sometimes becomes 0x5C 0x00 after dump/load"
 #
-set names big5;
-create table t1 (a blob);
-insert into t1 values (0xEE00);
-select * into outfile 'test/t1.txt' from t1;
-delete from t1;
-let $MYSQLD_DATADIR= `select @@datadir`;
---replace_result $MYSQLD_DATADIR MYSQLD_DATADIR
---eval select hex(load_file('$MYSQLD_DATADIR/test/t1.txt'));
-load data infile 't1.txt' into table t1;
-select hex(a) from t1;
---remove_file $MYSQLD_DATADIR/test/t1.txt
-
-drop table t1;
-
---echo End of 5.0 tests
+# NOW SequoiaDB not concern load data
+#set names big5;
+#create table t1 (a blob);
+#insert into t1 values (0xEE00);
+#select * into outfile 'test/t1.txt' from t1;
+#delete from t1;
+#let $MYSQLD_DATADIR= `select @@datadir`;
+#--replace_result $MYSQLD_DATADIR MYSQLD_DATADIR
+#--eval select hex(load_file('$MYSQLD_DATADIR/test/t1.txt'));
+#load data infile 't1.txt' into table t1;
+#select hex(a) from t1;
+#--remove_file $MYSQLD_DATADIR/test/t1.txt
+#
+#drop table t1;
+#
+#--echo End of 5.0 tests
 
 
 --echo #
@@ -130,6 +132,7 @@ let $default_engine = `select @@SESSION.default_storage_engine`;
 --replace_result $default_engine default_engine
 SHOW CREATE TABLE t1;
 SELECT COUNT(*) FROM t1;
+# Bug #SEQUOIASQLMAINSTREAM-146
 UPDATE IGNORE t1 SET a=unhex(code) ORDER BY code;
 SELECT COUNT(*) FROM t1 WHERE a<>'';
 #
@@ -183,6 +186,7 @@ set collation_connection=big5_bin;
 
 SET NAMES big5;
 --source include/ctype_inet.inc
+--source include/uninstall_sequoiadb.inc
 
 --echo #
 --echo # End of 5.6 tests

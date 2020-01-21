@@ -1,5 +1,5 @@
-# Test needs myisam for some myisam specific testcases
---source include/have_myisam.inc
+# Test needs sequoiadb for some specific testcases
+--source include/have_sequoiadb.inc
 #
 # Test of DATE_ADD
 #
@@ -15,7 +15,7 @@ CREATE TABLE t1 (
   sessions int(10) unsigned DEFAULT '0' NOT NULL,
   ts timestamp,
   PRIMARY KEY (visitor_id,group_id)
-)/*! engine=MyISAM */;
+)/*! engine=SequoiaDB */;
 INSERT INTO t1 VALUES (465931136,7,2,2,20000318160952);
 INSERT INTO t1 VALUES (173865424,2,2,2,20000318233615);
 INSERT INTO t1 VALUES (173865424,8,2,2,20000318233615);
@@ -88,5 +88,7 @@ insert into t1 values (1, '2001-01-01'),(2, '2002-02-02');
 select '2007-01-01' + interval a day from t1;
 select b + interval a day from t1;
 drop table t1;
+
+--source include/uninstall_sequoiadb.inc
 
 --echo End of 5.0 tests

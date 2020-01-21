@@ -1,3 +1,5 @@
+create database test_func_math;
+use test_func_math;
 drop table if exists t1;
 select floor(5.5),floor(-5.5);
 floor(5.5)	floor(-5.5)
@@ -192,7 +194,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `round(1, 6)` int(1) NOT NULL DEFAULT '0'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 select * from t1;
 round(1, 6)
 1
@@ -241,7 +243,7 @@ CAST(RAND(2) * 1000 AS UNSIGNED)	CAST(RAND(?) * 1000 AS UNSIGNED)
 645	645
 DROP TABLE t1;
 SET timestamp=UNIX_TIMESTAMP('2001-01-01 00:00:00');
-create table t1 (a varchar(90), ts datetime not null, index (a)) engine=innodb default charset=utf8;
+create table t1 (a varchar(90), ts datetime not null, index (a)) engine=sequoiadb default charset=utf8;
 insert into t1 values ('http://www.foo.com/', now());
 select a from t1 where a='http://www.foo.com/' order by abs(timediff(ts, 0));
 a
@@ -299,13 +301,13 @@ create table t1
 (f1 varchar(32) not null,
 f2 smallint(5) unsigned not null,
 f3 int(10) unsigned not null default '0')
-engine=myisam default charset=utf8;
+engine=sequoiadb default charset=utf8;
 insert into t1 values ('zombie',0,0),('gold',1,10000),('silver',2,10000);
 create table t2
 (f1 int(10) unsigned not null,
 f2 int(10) unsigned not null,
 f3 smallint(5) unsigned not null)
-engine=myisam default charset=utf8;
+engine=sequoiadb default charset=utf8;
 insert into t2 values (16777216,16787215,1),(33554432,33564431,2);
 select format(t2.f2-t2.f1+1,0) from t1,t2
 where t1.f2 = t2.f3 order by t1.f1;
@@ -474,7 +476,7 @@ a	ROUND(a)
 -1.0000000000000002e16	-10000000000000002
 1.0000000000000002e16	10000000000000002
 DROP TABLE t1;
-CREATE TABLE t1(f1 LONGTEXT) engine=myisam;
+CREATE TABLE t1(f1 LONGTEXT) engine=sequoiadb;
 INSERT INTO t1 VALUES ('a');
 SELECT 1 FROM (SELECT ROUND(f1) AS a FROM t1) AS s WHERE a LIKE 'a';
 1
@@ -544,7 +546,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `C` varchar(23) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Bug#11764994  57900: CREATE TABLE .. SELECT ASSERTS SCALE >= 0 && PRECISION > 0 && SCALE <= PR
@@ -664,9 +666,9 @@ ERROR 22003: BIGINT UNSIGNED value is out of range in '(18446744073709551615 DIV
 CREATE TABLE t1(a BIGINT, b BIGINT UNSIGNED);
 INSERT INTO t1 VALUES(-9223372036854775808, 9223372036854775809);
 SELECT -a FROM t1;
-ERROR 22003: BIGINT value is out of range in '-(`test`.`t1`.`a`)'
+ERROR 22003: BIGINT value is out of range in '-(`test_func_math`.`t1`.`a`)'
 SELECT -b FROM t1;
-ERROR 22003: BIGINT value is out of range in '-(`test`.`t1`.`b`)'
+ERROR 22003: BIGINT value is out of range in '-(`test_func_math`.`t1`.`b`)'
 DROP TABLE t1;
 SET @a:=999999999999999999999999999999999999999999999999999999999999999999999999999999999;
 SELECT @a + @a;
@@ -973,7 +975,7 @@ CRC32(-99999999999999999999999999999999)
 1052326872
 DROP TABLE IF EXISTS t;
 Warnings:
-Note	1051	Unknown table 'test.t'
+Note	1051	Unknown table 'test_func_math.t'
 CREATE TABLE t(a INT, b VARCHAR(2));
 INSERT INTO t VALUES (1,'a'), (2,'qw'), (1,'t'), (3,'t');
 SELECT crc32(SUM(a)) FROM t;
@@ -1112,7 +1114,7 @@ CRC32(false)
 4108050209
 DROP TABLE IF EXISTS t1;
 Warnings:
-Note	1051	Unknown table 'test.t1'
+Note	1051	Unknown table 'test_func_math.t1'
 CREATE TABLE t1 (c1 BIT(5),
 c2 TINYINT,
 c3 MEDIUMINT,
@@ -1225,35 +1227,6 @@ CRC32(c12)
 SELECT CRC32(ST_GeomFromText('POINT(1 1)'));
 CRC32(ST_GeomFromText('POINT(1 1)'))
 1349318989
-CREATE TABLE geom_data(id INT,
-pt POINT NOT NULL,
-lnstr LINESTRING NOT NULL,
-mlnstr MULTILINESTRING NOT NULL,
-poly POLYGON NOT NULL,
-mpoly MULTIPOLYGON NOT NULL);
-INSERT INTO geom_data VALUES (10,
-ST_GEOMFROMTEXT('POINT(10 20)'),
-ST_GEOMFROMTEXT('LINESTRING(0 0,5 5,6 6)'),
-ST_GEOMFROMTEXT('MULTILINESTRING((0 0,2 3,4 5),(6 6,8 8,9 9,10 10))'),
-ST_GEOMFROMTEXT('POLYGON((0 0,6 7,8 8,3 9,0 0),(3 6,4 6,4 7,3 6))'),
-ST_GEOMFROMTEXT('MULTIPOLYGON(((0 0,0 5,5 5,5 0,0 0)),
-                                ((2 2,4 5,6 2,2 2)))'));
-SELECT CRC32(ST_X(pt)) FROM geom_data;
-CRC32(ST_X(pt))
-2707236321
-SELECT CRC32(ST_NumPoints((lnstr))) FROM geom_data;
-CRC32(ST_NumPoints((lnstr)))
-1842515611
-SELECT CRC32(ST_Length((mlnstr))) FROM geom_data;
-CRC32(ST_Length((mlnstr)))
-2090153432
-SELECT CRC32(ST_Area((poly))) FROM geom_data;
-CRC32(ST_Area((poly)))
-534598600
-SELECT CRC32(ST_Area((mpoly))) FROM geom_data;
-CRC32(ST_Area((mpoly)))
-3832313845
-DROP TABLE geom_data;
 DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (e1 ENUM ('a','b'), s1 SET('a','b'));
 INSERT INTO t1 VALUES(2,'a,b'),('a','b,a');
@@ -1342,3 +1315,4 @@ E59B9BE4BA94E585AD	2914501801
 E4B883E585ABE4B99D0A	1546750244
 DROP TABLE t1;
 SET NAMES default;
+DROP DATABASE test_func_math;

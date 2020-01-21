@@ -1,6 +1,6 @@
 --source include/no_valgrind_without_big.inc
---source include/have_myisam.inc
-# Some bugs in this test have MyISAM specific tests
+--source include/have_sequoiadb.inc
+# Some bugs in this test have specific tests
 
 -- source include/have_ucs2.inc
 -- source include/have_utf8mb4.inc
@@ -38,9 +38,10 @@ select 'c' like '\_' as want0;
 # Bug #5679 utf8_unicode_ci LIKE--trailing % doesn't equal zero characters
 #
 CREATE TABLE t (
-  c char(20) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+c char(20) NOT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 INSERT INTO t VALUES ('a'),('ab'),('aba');
+#Bug #SEQUOIADBMAINSTREAM-3568
 ALTER TABLE t ADD INDEX (c);
 SELECT c FROM t WHERE c LIKE 'a%';
 #should find 3 rows but only found 2
@@ -105,6 +106,7 @@ drop table t1;
 #
 SET NAMES utf8;
 #test1
+#Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1 (c varchar(255) NOT NULL COLLATE utf8_general_ci, INDEX (c));
 INSERT INTO t1 VALUES (CONVERT(_ucs2 0x039C03C903B403B11F770308 USING utf8));
 #Check one row
@@ -116,6 +118,7 @@ SELECT * FROM t1 WHERE c LIKE CONVERT(_ucs2 0x039C0025 USING utf8)
 COLLATE utf8_general_ci ORDER BY c;
 DROP TABLE t1;
 #test2
+#Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1 (c varchar(255) NOT NULL COLLATE ucs2_unicode_ci, INDEX (c));
 INSERT INTO t1 VALUES (_ucs2 0x039C03C903B403B11F770308);
 #Check one row
@@ -126,6 +129,7 @@ SELECT * FROM t1 WHERE c LIKE _ucs2 0x039C0025
 COLLATE ucs2_unicode_ci ORDER BY c;
 DROP TABLE t1;
 #test 3
+#Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1 (c varchar(255) NOT NULL COLLATE utf8_unicode_ci, INDEX (c));
 INSERT INTO t1 VALUES (CONVERT(_ucs2 0x039C03C903B403B11F770308 USING utf8));
 #Check one row row
@@ -414,8 +418,8 @@ DROP TABLE t1;
 # Bug #27079 Crash while grouping empty ucs2 strings
 #
 CREATE TABLE t1 (
- c1 text character set ucs2 collate ucs2_polish_ci NOT NULL
-) ENGINE=MyISAM;
+c1 text character set ucs2 collate ucs2_polish_ci NOT NULL
+) ENGINE=SequoiaDB;
 insert into t1 values (''),('a');
 SELECT COUNT(*), c1 FROM t1 GROUP BY c1;
 DROP TABLE IF EXISTS t1;
@@ -423,6 +427,7 @@ DROP TABLE IF EXISTS t1;
 #
 # Bug#27345 Incorrect data returned when range-read from utf8_danish_ci indexes
 #
+#Bug #SEQUOIADBMAINSTREAM-3564
 set names utf8;
 create table t1 (
   a varchar(255),
@@ -442,9 +447,10 @@ select a as like_aaaa from t1 where a like 'aaaa%';
 select a as like_aaaaa from t1 where a like 'aaaaa%';
 drop table t1;
 
+# Bug #SEQUOIADBMAINSTREAM-3564
 create table t1 (
   a varchar(255),
-  key(a)
+  key (a)
 ) character set utf8 collate utf8_spanish2_ci;
 insert into t1 values ('aaaaa'),('lllll'),('zzzzz');
 select a as like_l from t1 where a like 'l%';
@@ -460,6 +466,7 @@ select a as like_llll from t1 where a like 'llll%';
 select a as like_lllll from t1 where a like 'lllll%';
 drop table t1;
 
+#Bug #SEQUOIADBMAINSTREAM-3564
 create table t1 (
   a varchar(255),
   key a(a)
@@ -488,6 +495,7 @@ set names utf8;
 #
 SET collation_connection=utf8_czech_ci;
 --source include/ctype_czech.inc
+#Bug #SEQUOIADBMAINSTREAM-3593
 --source include/ctype_like_ignorable.inc
 SET collation_connection=ucs2_czech_ci;
 --source include/ctype_czech.inc
@@ -564,7 +572,7 @@ SHOW COLLATION LIKE 'utf8_test';
 
 --echo # Create a table with the unknown collation.
 --error ER_UNKNOWN_COLLATION
-CREATE TABLE t1(id INT PRIMARY KEY, c CHAR(1) COLLATE utf8_test);
+CREATE TABLE t1(id INT PRIMARY KEY, c CHAR(1) COLLATE utf8_test) engine = SequoiaDB;
 
 --echo # Below error is caused as a result of this test. The error message
 --echo # contains collation name which is added as a part of the fix.
@@ -580,3 +588,5 @@ call mtr.add_suppression("Shift expected at '' for COLLATION : utf8_test");
 --echo #
 --echo # End of 5.6 tests
 --echo #
+
+--source include/uninstall_sequoiadb.inc

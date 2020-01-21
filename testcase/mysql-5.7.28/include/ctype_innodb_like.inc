@@ -8,7 +8,7 @@
 # character_set_connection and
 # collation_connection.
 #
-create table t1 engine=innodb select repeat('a',50) as c1;
+create table t1 engine=SequoiaDB select repeat('a',50) as c1;
 --enable_warnings
 alter table t1 add index(c1(5));
 

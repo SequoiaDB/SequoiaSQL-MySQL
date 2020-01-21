@@ -1,4 +1,4 @@
-
+-- source include/have_sequoiadb.inc
  #Get deafult engine value
 --let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
 
@@ -54,3 +54,4 @@ disconnect con2;
 
 # Wait till we reached the initial number of concurrent sessions
 --source include/wait_until_count_sessions.inc
+--source include/uninstall_sequoiadb.inc

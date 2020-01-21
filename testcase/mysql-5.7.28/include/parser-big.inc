@@ -17,7 +17,7 @@ SET @@global.max_allowed_packet=16999424;
 --connect (newconn, localhost, root,,)
 
 CREATE TABLE t1 (a INT UNSIGNED, b INT UNSIGNED, PRIMARY KEY (a, b))
-ENGINE=INNODB;
+ENGINE=Sequoiadb;
 
 DELIMITER |;
 

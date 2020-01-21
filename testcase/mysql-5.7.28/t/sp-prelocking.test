@@ -6,8 +6,11 @@
 #  - The same procedure can be called in prelocking-free mode and 
 #    in prelocked mode (from within a function).
 
+--source include/have_sequoiadb.inc 
+
 --disable_warnings
-drop database if exists mysqltest;
+# Compatible with parallel > 1, don't use mysqltest_sp_prelocking here, instead use database: mysqltest_sp_prelocking_casename
+drop database if exists mysqltest_sp_prelocking;
 drop table if exists t1, t2, t3, t4;
 drop procedure if exists sp1;
 drop procedure if exists sp2;
@@ -20,9 +23,9 @@ drop function if exists f3;
 
 # BUG#8072 
 
-create database mysqltest;
+create database mysqltest_sp_prelocking;
 delimiter //;
-use mysqltest//
+use mysqltest_sp_prelocking//
 create procedure sp1 () 
 begin
   drop table if exists t1;
@@ -35,13 +38,16 @@ select database();
 call sp1();
 select database();
 
-use test;
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_sp_prelocking;
+use test_sp_prelocking;
+#use test;
 select database();
-call mysqltest.sp1();
+call mysqltest_sp_prelocking.sp1();
 select database();
 
-drop procedure mysqltest.sp1;
-drop database mysqltest;
+drop procedure mysqltest_sp_prelocking.sp1;
+drop database mysqltest_sp_prelocking;
 
 # BUG#8766
 
@@ -426,3 +432,7 @@ EXECUTE stmt1;
 DROP TEMPORARY TABLES tmp1, tmp2;
 DEALLOCATE PREPARE stmt1;
 DROP FUNCTION f1;
+
+# DROP DATABASE 
+DROP DATABASE test_sp_prelocking;
+--source include/uninstall_sequoiadb.inc

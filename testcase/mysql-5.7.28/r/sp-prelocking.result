@@ -1,4 +1,4 @@
-drop database if exists mysqltest;
+drop database if exists mysqltest_sp_prelocking;
 drop table if exists t1, t2, t3, t4;
 drop procedure if exists sp1;
 drop procedure if exists sp2;
@@ -7,8 +7,8 @@ drop procedure if exists sp4;
 drop function if exists f1;
 drop function if exists f2;
 drop function if exists f3;
-create database mysqltest;
-use mysqltest//
+create database mysqltest_sp_prelocking;
+use mysqltest_sp_prelocking//
 create procedure sp1 () 
 begin
 drop table if exists t1;
@@ -17,25 +17,26 @@ end;
 //
 select database();
 database()
-mysqltest
+mysqltest_sp_prelocking
 call sp1();
 my-col
 1
 select database();
 database()
-mysqltest
-use test;
+mysqltest_sp_prelocking
+create database test_sp_prelocking;
+use test_sp_prelocking;
 select database();
 database()
-test
-call mysqltest.sp1();
+test_sp_prelocking
+call mysqltest_sp_prelocking.sp1();
 my-col
 1
 select database();
 database()
-test
-drop procedure mysqltest.sp1;
-drop database mysqltest;
+test_sp_prelocking
+drop procedure mysqltest_sp_prelocking.sp1;
+drop database mysqltest_sp_prelocking;
 create procedure sp1() 
 begin 
 create table t1 (a int); 
@@ -261,7 +262,7 @@ insert into bug_27907_logs (a) values (1);
 end|
 drop table bug_27907_logs;
 insert into bug_27907_t1(a) values (1);
-ERROR 42S02: Table 'test.bug_27907_logs' doesn't exist
+ERROR 42S02: Table 'test_sp_prelocking.bug_27907_logs' doesn't exist
 drop table bug_27907_t1;
 
 Bug#22427 create table if not exists + stored function results in
@@ -347,3 +348,4 @@ EXECUTE stmt1;
 DROP TEMPORARY TABLES tmp1, tmp2;
 DEALLOCATE PREPARE stmt1;
 DROP FUNCTION f1;
+DROP DATABASE test_sp_prelocking;

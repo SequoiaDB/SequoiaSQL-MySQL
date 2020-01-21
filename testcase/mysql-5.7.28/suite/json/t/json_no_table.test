@@ -7,6 +7,9 @@
 
 # Some extra checks for comparisons between positive and negative zero.
 # All should be equal.
+
+--source include/have_sequoiadb.inc
+
 SELECT CAST(0.0e0 AS JSON) = -0.0e0;
 SELECT CAST(CAST(0 AS DECIMAL) AS JSON) = CAST(-0.0e0 AS DECIMAL);
 SELECT CAST(0.0e0 AS JSON) = CAST(-0.0e0 AS DECIMAL);
@@ -2312,3 +2315,5 @@ CREATE VIEW v AS SELECT JSON_MERGE('{}', '{}') AS col;
 SHOW CREATE VIEW v;
 SELECT * FROM v;
 DROP VIEW v;
+
+--source include/uninstall_sequoiadb.inc

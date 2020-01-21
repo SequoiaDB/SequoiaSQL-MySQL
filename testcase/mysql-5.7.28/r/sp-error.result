@@ -1,3 +1,5 @@
+create database test_sp_error;
+use test_sp_error;
 drop table if exists t1, t2;
 SELECT * FROM mysql.proc INTO OUTFILE 'MYSQLTEST_VARDIR/tmp/proc.txt';
 delete from mysql.proc;
@@ -35,18 +37,18 @@ ERROR 42000: FUNCTION func1 already exists
 drop procedure proc1|
 drop function func1|
 alter procedure foo|
-ERROR 42000: PROCEDURE test.foo does not exist
+ERROR 42000: PROCEDURE test_sp_error.foo does not exist
 alter function foo|
-ERROR 42000: FUNCTION test.foo does not exist
+ERROR 42000: FUNCTION test_sp_error.foo does not exist
 drop procedure foo|
-ERROR 42000: PROCEDURE test.foo does not exist
+ERROR 42000: PROCEDURE test_sp_error.foo does not exist
 drop function foo|
-ERROR 42000: FUNCTION test.foo does not exist
+ERROR 42000: FUNCTION test_sp_error.foo does not exist
 call foo()|
-ERROR 42000: PROCEDURE test.foo does not exist
+ERROR 42000: PROCEDURE test_sp_error.foo does not exist
 drop procedure if exists foo|
 Warnings:
-Note	1305	PROCEDURE test.foo does not exist
+Note	1305	PROCEDURE test_sp_error.foo does not exist
 show create procedure foo|
 ERROR 42000: PROCEDURE foo does not exist
 show create function foo|
@@ -86,20 +88,20 @@ set @x = x|
 create function f(x int) returns int
 return x+42|
 call p()|
-ERROR 42000: Incorrect number of arguments for PROCEDURE test.p; expected 1, got 0
+ERROR 42000: Incorrect number of arguments for PROCEDURE test_sp_error.p; expected 1, got 0
 call p(1, 2)|
-ERROR 42000: Incorrect number of arguments for PROCEDURE test.p; expected 1, got 2
+ERROR 42000: Incorrect number of arguments for PROCEDURE test_sp_error.p; expected 1, got 2
 select f()|
-ERROR 42000: Incorrect number of arguments for FUNCTION test.f; expected 1, got 0
+ERROR 42000: Incorrect number of arguments for FUNCTION test_sp_error.f; expected 1, got 0
 select f(1, 2)|
-ERROR 42000: Incorrect number of arguments for FUNCTION test.f; expected 1, got 2
+ERROR 42000: Incorrect number of arguments for FUNCTION test_sp_error.f; expected 1, got 2
 drop procedure p|
 drop function f|
 create procedure p(val int, out res int)
 begin
 declare x int default 0;
 declare continue handler for foo set x = 1;
-insert into test.t1 values (val);
+insert into test_sp_error.t1 values (val);
 if (x) then
 set res = 0;
 else
@@ -112,7 +114,7 @@ begin
 declare x int default 0;
 declare foo condition for 1146;
 declare continue handler for bar set x = 1;
-insert into test.t1 values (val);
+insert into test_sp_error.t1 values (val);
 if (x) then
 set res = 0;
 else
@@ -125,7 +127,7 @@ begin
 declare x int;
 set x = val+3;
 end|
-ERROR 42000: No RETURN found in FUNCTION test.f
+ERROR 42000: No RETURN found in FUNCTION test_sp_error.f
 create function f(val int) returns int
 begin
 declare x int;
@@ -139,25 +141,25 @@ ERROR 2F005: FUNCTION f ended without RETURN
 drop function f|
 create procedure p()
 begin
-declare c cursor for insert into test.t1 values ("foo", 42);
+declare c cursor for insert into test_sp_error.t1 values ("foo", 42);
 open c;
 close c;
 end|
-ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'insert into test.t1 values ("foo", 42);
+ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'insert into test_sp_error.t1 values ("foo", 42);
 open c;
 close c;
 end' at line 3
 create procedure p()
 begin
 declare x int;
-declare c cursor for select * into x from test.t limit 1;
+declare c cursor for select * into x from test_sp_error.t limit 1;
 open c;
 close c;
 end|
 ERROR 42000: Cursor SELECT must not have INTO
 create procedure p()
 begin
-declare c cursor for select * from test.t;
+declare c cursor for select * from test_sp_error.t;
 open cc;
 close c;
 end|
@@ -166,7 +168,7 @@ drop table if exists t1|
 create table t1 (val int)|
 create procedure p()
 begin
-declare c cursor for select * from test.t1;
+declare c cursor for select * from test_sp_error.t1;
 open c;
 open c;
 close c;
@@ -176,7 +178,7 @@ ERROR 24000: Cursor is already open
 drop procedure p|
 create procedure p()
 begin
-declare c cursor for select * from test.t1;
+declare c cursor for select * from test_sp_error.t1;
 open c;
 close c;
 close c;
@@ -185,7 +187,7 @@ call p()|
 ERROR 24000: Cursor is not open
 drop procedure p|
 alter procedure bar3 sql security invoker|
-ERROR 42000: PROCEDURE test.bar3 does not exist
+ERROR 42000: PROCEDURE test_sp_error.bar3 does not exist
 drop table t1|
 drop table if exists t1|
 create table t1 (val int, x float)|
@@ -286,9 +288,9 @@ select @tmp_x, @tmp_y, @tmp_z|
 @tmp_x	@tmp_y	@tmp_z
 42	45	87
 call p(42, 43, @tmp_z)|
-ERROR 42000: OUT or INOUT argument 2 for routine test.p is not a variable or NEW pseudo-variable in BEFORE trigger
+ERROR 42000: OUT or INOUT argument 2 for routine test_sp_error.p is not a variable or NEW pseudo-variable in BEFORE trigger
 call p(42, @tmp_y, 43)|
-ERROR 42000: OUT or INOUT argument 3 for routine test.p is not a variable or NEW pseudo-variable in BEFORE trigger
+ERROR 42000: OUT or INOUT argument 3 for routine test_sp_error.p is not a variable or NEW pseudo-variable in BEFORE trigger
 drop procedure p|
 create procedure p() begin end|
 lock table t1 read|
@@ -404,9 +406,9 @@ drop function bug3287|
 create procedure bug3287(x int)
 case x
 when 0 then
-insert into test.t1 values (x, 0.1);
+insert into test_sp_error.t1 values (x, 0.1);
 when 1 then
-insert into test.t1 values (x, 1.1);
+insert into test_sp_error.t1 values (x, 1.1);
 end case|
 call bug3287(2)|
 ERROR 20000: Case not found for CASE statement
@@ -429,7 +431,7 @@ set y = x;
 end|
 set @x = 0|
 call bug3279(@x)|
-ERROR 23000: Duplicate entry '6' for key 'PRIMARY'
+ERROR 23000: Duplicate entry '{ "s1": 6 }' for key 'PRIMARY'
 select @x|
 @x
 0
@@ -466,7 +468,7 @@ drop table t5;
 end|
 create table t5 (x int)|
 call bug3294()|
-ERROR 42S02: Unknown table 'test.t5'
+ERROR 42S02: Unknown table 'test_sp_error.t5'
 drop procedure bug3294|
 drop procedure if exists bug8776_1|
 drop procedure if exists bug8776_2|
@@ -681,7 +683,7 @@ begin
 end|
 show procedure status like 'bug17015%'|
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	bug17015_0123456789012345678901234567890123456789012345678901234	PROCEDURE	root@localhost	0000-00-00 00:00:00	0000-00-00 00:00:00	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_error	bug17015_0123456789012345678901234567890123456789012345678901234	PROCEDURE	root@localhost	0000-00-00 00:00:00	0000-00-00 00:00:00	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 drop procedure bug17015_0123456789012345678901234567890123456789012345678901234|
 drop procedure if exists bug10969|
 create procedure bug10969()
@@ -791,7 +793,7 @@ bug11834_2()
 10
 drop function bug11834_1;
 execute stmt;
-ERROR 42000: FUNCTION test.bug11834_1 does not exist
+ERROR 42000: FUNCTION test_sp_error.bug11834_1 does not exist
 deallocate prepare stmt;
 drop function bug11834_2;
 DROP FUNCTION IF EXISTS bug12953|
@@ -821,7 +823,7 @@ RETURN 1;
 END|
 ERROR 0A000: HANDLER is not allowed in stored procedures
 SELECT bug12995()|
-ERROR 42000: FUNCTION test.bug12995 does not exist
+ERROR 42000: FUNCTION test_sp_error.bug12995 does not exist
 drop procedure if exists bug12712;
 drop function if exists bug12712;
 create procedure bug12712()
@@ -951,13 +953,13 @@ CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN LOCK TABLE t1 READ; EN
 ERROR 0A000: LOCK is not allowed in stored procedures
 CREATE FUNCTION bug_13627_f() returns int BEGIN LOCK TABLE t1 READ; return 1; END |
 ERROR 0A000: LOCK is not allowed in stored procedures
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create database mysqltest; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create database mysqltest_sp_error; END |
 ERROR HY000: Explicit or implicit commit is not allowed in stored function or trigger.
-CREATE FUNCTION bug_13627_f() returns int BEGIN create database mysqltest; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN create database mysqltest_sp_error; return 1; END |
 ERROR HY000: Explicit or implicit commit is not allowed in stored function or trigger.
-CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop database mysqltest; END |
+CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN drop database mysqltest_sp_error; END |
 ERROR HY000: Explicit or implicit commit is not allowed in stored function or trigger.
-CREATE FUNCTION bug_13627_f() returns int BEGIN drop database mysqltest; return 1; END |
+CREATE FUNCTION bug_13627_f() returns int BEGIN drop database mysqltest_sp_error; return 1; END |
 ERROR HY000: Explicit or implicit commit is not allowed in stored function or trigger.
 CREATE TRIGGER tr1 BEFORE INSERT ON t1 FOR EACH ROW BEGIN create user 'mysqltest_1'; END |
 ERROR HY000: Explicit or implicit commit is not allowed in stored function or trigger.
@@ -1022,7 +1024,7 @@ drop table t1|
 drop function bug_13627_f|
 drop function if exists bug12329;
 Warnings:
-Note	1305	FUNCTION test.bug12329 does not exist
+Note	1305	FUNCTION test_sp_error.bug12329 does not exist
 create table t1 as select 1 a;
 create table t2 as select 1 a;
 create function bug12329() returns int return (select a from t1);
@@ -1041,9 +1043,9 @@ bug12329()
 deallocate prepare stmt1;
 drop function bug12329;
 drop table t1, t2;
-create database mysqltest1;
-use mysqltest1;
-drop database mysqltest1;
+create database mysqltest1_sp_error;
+use mysqltest1_sp_error;
+drop database mysqltest1_sp_error;
 create function f1() returns int return 1;
 ERROR 3D000: No database selected
 create procedure p1(out param1 int)
@@ -1051,7 +1053,7 @@ begin
 select count(*) into param1 from t3;
 end|
 ERROR 3D000: No database selected
-use test;
+use test_sp_error;
 DROP PROCEDURE IF EXISTS bug13037_p1;
 DROP PROCEDURE IF EXISTS bug13037_p2;
 DROP PROCEDURE IF EXISTS bug13037_p3;
@@ -1085,19 +1087,19 @@ ERROR 42S22: Unknown column 'bug13037_foo' in 'field list'
 DROP PROCEDURE bug13037_p1;
 DROP PROCEDURE bug13037_p2;
 DROP PROCEDURE bug13037_p3;
-create database mysqltest1;
-create database mysqltest2;
-use mysqltest1;
-drop database mysqltest1;
-create procedure mysqltest2.p1() select version();
+create database mysqltest1_sp_error;
+create database mysqltest2_sp_error;
+use mysqltest1_sp_error;
+drop database mysqltest1_sp_error;
+create procedure mysqltest2_sp_error.p1() select version();
 create procedure p2() select version();
 ERROR 3D000: No database selected
-use mysqltest2;
+use mysqltest2_sp_error;
 show procedure status;
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-mysqltest2	p1	PROCEDURE	root@localhost	0000-00-00 00:00:00	0000-00-00 00:00:00	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
-drop database mysqltest2;
-use test;
+mysqltest2_sp_error	p1	PROCEDURE	root@localhost	0000-00-00 00:00:00	0000-00-00 00:00:00	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+drop database mysqltest2_sp_error;
+use test_sp_error;
 DROP FUNCTION IF EXISTS bug13012|
 CREATE FUNCTION bug13012() RETURNS INT
 BEGIN
@@ -1132,11 +1134,11 @@ create view v2 as select bug11555_2();
 create view v3 as select * from v1;
 drop table t1;
 select * from v1;
-ERROR HY000: View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_sp_error.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 select * from v2;
-ERROR HY000: View 'test.v2' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_sp_error.v2' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 select * from v3;
-ERROR HY000: View 'test.v3' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_sp_error.v3' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 create view v4 as select * from v1;
 drop view v1, v2, v3, v4;
 drop function bug11555_1;
@@ -1147,12 +1149,12 @@ create trigger t1_ai after insert on t1 for each row insert into t2 values (new.
 create view v1 as select * from t1;
 drop table t2;
 insert into v1 values (1);
-ERROR 42S02: Table 'test.t2' doesn't exist
+ERROR 42S02: Table 'test_sp_error.t2' doesn't exist
 drop trigger t1_ai;
 create function bug11555_1() returns int return (select max(i) from t2);
 create trigger t1_ai after insert on t1 for each row set @a:=bug11555_1();
 insert into v1 values (2);
-ERROR 42S02: Table 'test.t2' doesn't exist
+ERROR 42S02: Table 'test_sp_error.t2' doesn't exist
 drop function bug11555_1;
 drop table t1;
 drop view v1;
@@ -1173,7 +1175,7 @@ call ` bug15658`();
 1
 show procedure status;
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	 bug15658	PROCEDURE	root@localhost	0000-00-00 00:00:00	0000-00-00 00:00:00	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_error	 bug15658	PROCEDURE	root@localhost	0000-00-00 00:00:00	0000-00-00 00:00:00	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 drop procedure ` bug15658`;
 drop function if exists bug14270;
 drop table if exists t1;
@@ -1290,7 +1292,7 @@ ERROR HY000: Explicit or implicit commit is not allowed in stored function or tr
 SELECT bug18914_f2();
 ERROR HY000: Explicit or implicit commit is not allowed in stored function or trigger.
 SELECT * FROM t2;
-ERROR 42S02: Table 'test.t2' doesn't exist
+ERROR 42S02: Table 'test_sp_error.t2' doesn't exist
 DROP FUNCTION bug18914_f1;
 DROP FUNCTION bug18914_f2;
 DROP PROCEDURE bug18914_p1;
@@ -1494,7 +1496,7 @@ SELECT .inexistent();
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '()' at line 1
 SELECT ..inexistent();
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '.inexistent()' at line 1
-USE test;
+USE test_sp_error;
 create function f1() returns int
 begin
 set password = 'foo';
@@ -1550,7 +1552,7 @@ f2()
 1
 drop function f2;
 drop table t2;
-ERROR 42S02: Unknown table 'test.t2'
+ERROR 42S02: Unknown table 'test_sp_error.t2'
 End of 5.1 tests
 drop procedure if exists proc_33983_a;
 drop procedure if exists proc_33983_b;
@@ -1667,12 +1669,12 @@ LOAD DATA INFILE '../../tmp/proc.txt' INTO TABLE mysql.proc;
 CREATE TABLE t1 (a INT, b INT);
 INSERT INTO t1 VALUES (1,1), (2,2);
 SELECT MAX (a) FROM t1 WHERE b = 999999;
-ERROR 42000: FUNCTION test.MAX does not exist. Check the 'Function Name Parsing and Resolution' section in the Reference Manual
+ERROR 42000: FUNCTION test_sp_error.MAX does not exist. Check the 'Function Name Parsing and Resolution' section in the Reference Manual
 SELECT AVG (a) FROM t1 WHERE b = 999999;
 AVG (a)
 NULL
 SELECT non_existent (a) FROM t1 WHERE b = 999999;
-ERROR 42000: FUNCTION test.non_existent does not exist
+ERROR 42000: FUNCTION test_sp_error.non_existent does not exist
 DROP TABLE t1;
 CREATE TABLE t1 ( f2 INTEGER, f3 INTEGER );
 INSERT INTO t1 VALUES  ( 1, 1 );
@@ -1696,7 +1698,7 @@ CALL p1(5);
 ERROR HY000: The target table v1 of the UPDATE is not updatable
 ALTER TABLE t1 CHANGE COLUMN b b2 INT;
 CALL p1(7);
-ERROR HY000: View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_sp_error.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 DROP PROCEDURE p1;
 DROP VIEW v1;
 DROP TABLE t1;
@@ -1947,10 +1949,10 @@ SHOW WARNINGS;
 Level	Code	Message
 CALL p2();
 Warnings:
-Warning	1062	Duplicate entry '1' for key 'PRIMARY'
+Warning	1062	1 duplicated records were ignored
 SHOW WARNINGS;
 Level	Code	Message
-Warning	1062	Duplicate entry '1' for key 'PRIMARY'
+Warning	1062	1 duplicated records were ignored
 DROP PROCEDURE p1;
 DROP PROCEDURE p2;
 DROP TABLE t1;
@@ -2906,10 +2908,11 @@ DROP TABLE t1;
 #
 drop function f111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjjjjjjjjkk;
 ERROR 42000: Identifier name 'f111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaa' is too long
-drop function test.f111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjjjjjjjjkk;
+drop function test_sp_error.f111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjjjjjjjjkk;
 ERROR 42000: Identifier name 'f111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaa' is too long
 drop function mysqltest111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhhiiiiiiiiiijjjj.test;
 ERROR 42000: Incorrect database name 'mysqltest111111111122222222223333333333444444444455555555556666666666777777777788888888889999999999a'
+DROP DATABASE test_sp_error;
 #
 # Bug #24357244: CANNOT CREATE A STORED FUNCTION IF A DATABASE IS NOT
 #                SELECTED

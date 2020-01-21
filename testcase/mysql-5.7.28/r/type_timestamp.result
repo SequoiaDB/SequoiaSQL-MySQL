@@ -167,7 +167,7 @@ t1	CREATE TABLE `t1` (
   `t1` timestamp NOT NULL DEFAULT '2003-01-01 00:00:00',
   `t2` datetime DEFAULT NULL,
   `t3` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show columns from t1;
 Field	Type	Null	Key	Default	Extra
 t1	timestamp	NO		2003-01-01 00:00:00	
@@ -191,7 +191,7 @@ t1	CREATE TABLE `t1` (
   `t1` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `t2` datetime DEFAULT NULL,
   `t3` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show columns from t1;
 Field	Type	Null	Key	Default	Extra
 t1	timestamp	NO		CURRENT_TIMESTAMP	
@@ -217,7 +217,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `t1` timestamp NOT NULL DEFAULT '2003-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
   `t2` datetime DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show columns from t1;
 Field	Type	Null	Key	Default	Extra
 t1	timestamp	NO		2003-01-01 00:00:00	on update CURRENT_TIMESTAMP
@@ -242,7 +242,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `t1` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `t2` datetime DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show columns from t1;
 Field	Type	Null	Key	Default	Extra
 t1	timestamp	NO		CURRENT_TIMESTAMP	on update CURRENT_TIMESTAMP
@@ -268,7 +268,7 @@ t1	CREATE TABLE `t1` (
   `t1` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `t2` datetime DEFAULT NULL,
   `t3` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00'
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show columns from t1;
 Field	Type	Null	Key	Default	Extra
 t1	timestamp	NO		CURRENT_TIMESTAMP	on update CURRENT_TIMESTAMP
@@ -294,7 +294,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `t1` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `t2` datetime DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show columns from t1;
 Field	Type	Null	Key	Default	Extra
 t1	timestamp	NO		CURRENT_TIMESTAMP	on update CURRENT_TIMESTAMP
@@ -349,7 +349,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp NULL DEFAULT NULL,
   `b` timestamp NULL DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 insert into t1 values (NULL, NULL);
 SET TIMESTAMP=1000000017;
 insert into t1 values ();
@@ -364,7 +364,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `b` timestamp NULL DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 insert into t1 values (NULL, NULL);
 SET TIMESTAMP=1000000018;
 insert into t1 values ();
@@ -379,7 +379,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp NULL DEFAULT NULL,
   `b` timestamp NULL DEFAULT '2003-01-01 00:00:00'
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 insert into t1 values (NULL, NULL);
 insert into t1 values (DEFAULT, DEFAULT);
 select * from t1;
@@ -476,7 +476,7 @@ CREATE TABLE t1 (
 `username` varchar(80) NOT NULL default '',
 `posted_on` timestamp NOT NULL default '0000-00-00 00:00:00',
 PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 show fields from t1;
 Field	Type	Null	Key	Default	Extra
 id	int(11)	NO	PRI	NULL	auto_increment
@@ -551,12 +551,6 @@ SELECT * FROM t1 WHERE '2010-02-01 09:31:02.0' >= a;
 a
 2010-02-01 09:31:01
 2010-02-01 09:31:02
-EXPLAIN
-SELECT * FROM t1 WHERE a >= '2010-02-01 09:31:02.0';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-x	x	x	NULL	range	x	x	x	x	x	100.00	x
-Warnings:
-x	x	x
 SELECT * FROM t1 WHERE a >= '2010-02-01 09:31:02.0';
 a
 2010-02-01 09:31:02
@@ -577,19 +571,9 @@ INSERT INTO t2 VALUES( '2010-02-01 09:31:11' );
 # The bug would cause the range optimizer's comparison to use an open
 # interval here. This reveals itself only in the number of reads 
 # performed.
-FLUSH STATUS;
-EXPLAIN
-SELECT * FROM t2 WHERE a < '2010-02-01 09:31:02.0';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-x	x	x	NULL	range	x	x	x	x	x	100.00	x
-Warnings:
-x	x	x
 SELECT * FROM t2 WHERE a < '2010-02-01 09:31:02.0';
 a
 2010-02-01 09:31:01
-SHOW STATUS LIKE 'Handler_read_next';
-Variable_name	Value
-Handler_read_next	1
 DROP TABLE t1, t2;
 End of 5.1 tests
 
@@ -717,7 +701,6 @@ Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 ALTER TABLE t1 ADD c2 TIMESTAMP DEFAULT '2012-02-00';
 ERROR 42000: Invalid default value for 'c2'
-#Alter table with out any SQL modes
 SET @@sql_mode='';
 ALTER TABLE t1 ADD c2 TIMESTAMP DEFAULT 0;
 ALTER TABLE t1 ADD c3 TIMESTAMP DEFAULT '0000-00-00';

@@ -1,4 +1,4 @@
-
+-- source include/have_sequoiadb.inc
 -- source include/have_cp1250_ch.inc
 --disable_warnings
 drop table if exists t1;
@@ -32,6 +32,7 @@ DROP TABLE t1;
 #
 # Bug#9759 Empty result with 'LIKE' and cp1250_czech_cs
 #
+#Bug #SEQUOIADBMAINSTREAM-3593
 CREATE TABLE t1 (
   popisek varchar(30) collate cp1250_general_ci NOT NULL default '',
  PRIMARY KEY  (`popisek`)
@@ -65,10 +66,12 @@ drop table t1;
 #
 # Bug#19741 segfault with cp1250 charset + like + primary key + 64bit os
 #
+#Bug #SEQUOIADBMAINSTREAM-3568
 set names cp1250;
 create table t1 (a varchar(15) collate cp1250_czech_cs NOT NULL, primary key(a));
 insert into t1 values("abcdefgh·");
 insert into t1 values("··ËË");
+#Bug #SEQUOIADBMAINSTREAM-210
 select a from t1 where a like "abcdefgh·";
 drop table t1;
 
@@ -122,3 +125,4 @@ SET NAMES cp1250;
 --echo # End of 5.6 tests
 --echo #
 
+-- source include/uninstall_sequoiadb.inc

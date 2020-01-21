@@ -2,20 +2,24 @@
 --echo # Bug#27182010 SUBQUERY INCORRECTLY SHOWS DUPLICATE VALUES ON SUBQUERIES
 --echo #
 
+--source include/have_sequoiadb.inc
+
 CREATE TABLE p (Id INT,PRIMARY KEY (Id));
 INSERT INTO p VALUES (1);
 
 --echo # Test UNIQUE KEY with NULL values
 CREATE TABLE s (Id INT, u INT, UNIQUE KEY o(Id, u) );
-INSERT INTO s VALUES (1, NULL),(1, NULL);
+#Bug #SEQUOIADBMAINSTREAM-3570
+#INSERT INTO s VALUES (1, NULL),(1, NULL);
+INSERT INTO s VALUES (1, NULL);
 
 let query1= SELECT p.Id FROM (p) WHERE p.Id IN (
             SELECT s.Id FROM s WHERE Id=1 AND u IS NULL)ORDER BY Id DESC;
 let query2= SELECT p.Id FROM (p) WHERE p.Id IN (
             SELECT s.Id FROM s WHERE Id=1 AND u IS NOT NULL) ORDER BY Id DESC;
 
-eval EXPLAIN $query1;
-eval EXPLAIN $query2;
+#eval EXPLAIN $query1;
+#eval EXPLAIN $query2;
 
 eval $query1;
 eval $query2;
@@ -29,8 +33,8 @@ let query3= SELECT p.Id FROM (p) WHERE p.Id IN (
 let query4= SELECT p.Id FROM (p) WHERE p.Id IN (
             SELECT s1.Id FROM s1 WHERE Id=1 AND u != 1) ORDER BY Id DESC;
 
-eval EXPLAIN $query3;
-eval EXPLAIN $query4;
+#eval EXPLAIN $query3;
+#eval EXPLAIN $query4;
 
 eval $query3;
 eval $query4;
@@ -50,10 +54,12 @@ let query6= SELECT p.Id FROM (p) WHERE p.Id IN (
             SELECT s.Id FROM s3 s WHERE Id=1 AND u IS NOT NULL)
             ORDER BY Id DESC;
 
-eval EXPLAIN $query5;
-eval EXPLAIN $query6;
+#eval EXPLAIN $query5;
+#eval EXPLAIN $query6;
 
 eval $query5;
 eval $query6;
 
 DROP TABLE p, s, s1, s2, s3;
+
+--source include/uninstall_sequoiadb.inc

@@ -1,3 +1,4 @@
+-- source include/have_sequoiadb.inc
 
  #Get deafult engine value
 --let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
@@ -17,61 +18,66 @@
 
 
 SET @@character_set_server=latin5;
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET cp1251;
-USE mysqltest1;
-CREATE DATABASE mysqltest2;
+# Compatible with parallel > 1, don't use mysqltest1_ctype_create/2 here, instead use database: mysqltest1_ctype_create/2_casename
+CREATE DATABASE mysqltest1_ctype_create DEFAULT CHARACTER SET cp1251;
+USE mysqltest1_ctype_create;
+CREATE DATABASE mysqltest2_ctype_create;
 
 #
 # This should be cp1251
 #
-SHOW CREATE DATABASE mysqltest1;
+SHOW CREATE DATABASE mysqltest1_ctype_create;
 
 #
-# Database "mysqltest2" should take the default latin5 value from
+# Database "mysqltest2_ctype_create" should take the default latin5 value from
 # the server level.
 # Afterwards, table "d2.t1" should inherit the default latin5 value from
-# the database "mysqltest2", using database option hash.
+# the database "mysqltest2_ctype_create", using database option hash.
 #
-SHOW CREATE DATABASE mysqltest2;
-CREATE TABLE mysqltest2.t1 (a char(10));
+SHOW CREATE DATABASE mysqltest2_ctype_create;
+CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
 
+# NOW not concern other engine, just test for SequoiaDB
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
-SHOW CREATE TABLE mysqltest2.t1;
-DROP TABLE mysqltest2.t1;
+#--replace_result $DEFAULT_ENGINE ENGINE
+SHOW CREATE TABLE mysqltest2_ctype_create.t1;
+DROP TABLE mysqltest2_ctype_create.t1;
 
 #
 # Now we check if the database charset is updated in
 # the database options hash when we ALTER DATABASE.
 #
-ALTER DATABASE mysqltest2 DEFAULT CHARACTER SET latin7;
-CREATE TABLE mysqltest2.t1 (a char(10));
+ALTER DATABASE mysqltest2_ctype_create DEFAULT CHARACTER SET latin7;
+CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
 
+# NOW not concern other engine, just test for SequoiaDB
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
-SHOW CREATE TABLE mysqltest2.t1;
-DROP DATABASE mysqltest2;
+#--replace_result $DEFAULT_ENGINE ENGINE
+SHOW CREATE TABLE mysqltest2_ctype_create.t1;
+DROP DATABASE mysqltest2_ctype_create;
 
 #
 # Now we check if the database charset is removed from
 # the database option hash when we DROP DATABASE.
 #
-CREATE DATABASE mysqltest2 CHARACTER SET latin2;
-CREATE TABLE mysqltest2.t1 (a char(10));
+CREATE DATABASE mysqltest2_ctype_create CHARACTER SET latin2;
+CREATE TABLE mysqltest2_ctype_create.t1 (a char(10));
 
+# NOW not concern other engine, just test for SequoiaDB
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
-SHOW CREATE TABLE mysqltest2.t1;
-DROP DATABASE mysqltest2;
+#--replace_result $DEFAULT_ENGINE ENGINE
+SHOW CREATE TABLE mysqltest2_ctype_create.t1;
+DROP DATABASE mysqltest2_ctype_create;
 
 #
 # Check that table value uses database level by default
 #
-USE mysqltest1;
+USE mysqltest1_ctype_create;
 CREATE TABLE t1 (a char(10));
 
+# NOW not concern other engine, just test for SequoiaDB
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
@@ -80,15 +86,17 @@ DROP TABLE t1;
 #
 CREATE TABLE t1 (a char(10)) DEFAULT CHARACTER SET latin1;
 
+# NOW not concern other engine, just test for SequoiaDB
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 CREATE TABLE t1 (a char(10)) 
 DEFAULT CHARACTER SET latin1 COLLATE latin1_german1_ci;
 
+# NOW not concern other engine, just test for SequoiaDB
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
@@ -107,17 +115,17 @@ create database d1 default character set latin1 collate latin2_bin;
 
 #
 #
-DROP DATABASE mysqltest1;
+DROP DATABASE mysqltest1_ctype_create;
 
 
 #
 # Synatx: 'ALTER DATABASE' without db_name
 #
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET latin7;
-use mysqltest2;
+CREATE DATABASE mysqltest2_ctype_create DEFAULT CHARACTER SET latin7;
+use mysqltest2_ctype_create;
 ALTER DATABASE DEFAULT CHARACTER SET latin2;
-show create database mysqltest2;
-drop database mysqltest2;
+show create database mysqltest2_ctype_create;
+drop database mysqltest2_ctype_create;
 --error 1046
 ALTER DATABASE DEFAULT CHARACTER SET latin2;
 
@@ -127,3 +135,5 @@ ALTER DATABASE DEFAULT CHARACTER SET latin2;
 ALTER DATABASE aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa DEFAULT CHARACTER SET latin2;
 --error 1102
 ALTER DATABASE `` DEFAULT CHARACTER SET latin2;
+
+-- source include/uninstall_sequoiadb.inc

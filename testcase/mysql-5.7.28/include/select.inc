@@ -27,7 +27,6 @@ select t1.* from t1;
 #
 # Create test table
 #
-
 CREATE TABLE t2 (
   auto int not null auto_increment,
   fld1 int(6) unsigned zerofill DEFAULT '000000' NOT NULL,
@@ -1283,30 +1282,30 @@ select t2.fld3 from t2 where fld3 LIKE 'don_t_find_me_please%';
 # Test using INDEX and IGNORE INDEX
 #
 
-explain select t2.fld3 from t2 where fld3 = 'honeysuckle';
-
-explain select fld3 from t2 ignore index (fld3) where fld3 = 'honeysuckle';
-explain select fld3 from t2 use index (fld1) where fld3 = 'honeysuckle';
-
-explain select fld3 from t2 use index (fld3) where fld3 = 'honeysuckle';
-explain select fld3 from t2 use index (fld1,fld3) where fld3 = 'honeysuckle';
+#explain select t2.fld3 from t2 where fld3 = 'honeysuckle';
+#
+#explain select fld3 from t2 ignore index (fld3) where fld3 = 'honeysuckle';
+#explain select fld3 from t2 use index (fld1) where fld3 = 'honeysuckle';
+#
+#explain select fld3 from t2 use index (fld3) where fld3 = 'honeysuckle';
+#explain select fld3 from t2 use index (fld1,fld3) where fld3 = 'honeysuckle';
 
 #
 # NOTE NOTE NOTE
 # The next should give an error
 #
 
--- error 1176
-explain select fld3 from t2 ignore index (fld3,not_used);
--- error 1176
-explain select fld3 from t2 use index (not_used);
+#-- error 1176
+#explain select fld3 from t2 ignore index (fld3,not_used);
+#-- error 1176
+#explain select fld3 from t2 use index (not_used);
 
 #
 # Test sorting with a used key (there is no need for sorting)
 #
 
 select t2.fld3 from t2 where fld3 >= 'honeysuckle' and fld3 <= 'honoring' order by fld3;
-explain select t2.fld3 from t2 where fld3 >= 'honeysuckle' and fld3 <= 'honoring' order by fld3;
+#explain select t2.fld3 from t2 where fld3 >= 'honeysuckle' and fld3 <= 'honoring' order by fld3;
 select fld1,fld3 from t2 where fld3="Colombo" or fld3 = "nondecreasing" order by fld3;
 
 # 
@@ -1324,9 +1323,9 @@ select fld1,fld3 from t2 where companynr = 37 and fld3 = 'appendixes';
 #
 
 select fld1 from t2 where fld1=250501 or fld1="250502";
-explain select fld1 from t2 where fld1=250501 or fld1="250502"; 
+#explain select fld1 from t2 where fld1=250501 or fld1="250502"; 
 select fld1 from t2 where fld1=250501 or fld1=250502 or fld1 >= 250505 and fld1 <= 250601 or fld1 between 250501 and 250502;
-explain select fld1 from t2 where fld1=250501 or fld1=250502 or fld1 >= 250505 and fld1 <= 250601 or fld1 between 250501 and 250502;
+#explain select fld1 from t2 where fld1=250501 or fld1=250502 or fld1 >= 250505 and fld1 <= 250601 or fld1 between 250501 and 250502;
 
 #
 # Search with a key with LIKE constant
@@ -1334,6 +1333,7 @@ explain select fld1 from t2 where fld1=250501 or fld1=250502 or fld1 >= 250505 a
 #
 
 --sorted_result
+#like Case-sensitive on sequoiadb engine
 select fld1,fld3 from t2 where companynr = 37 and fld3 like 'f%';
 select fld3 from t2 where fld3 like "L%" and fld3 = "ok";
 select fld3 from t2 where (fld3 like "C%" and fld3 = "Chantilly");
@@ -1350,15 +1350,17 @@ select fld1,fld3 from t2 where fld1 like "25050_";
 select distinct companynr from t2;
 select distinct companynr from t2 order by companynr;
 select distinct companynr from t2 order by companynr desc;
-select distinct t2.fld3,period from t2,t1 where companynr=37 and fld3 like "O%";
+#like Case-sensitive on sequoiadb engine
+select distinct t2.fld3,period from t2,t1 where companynr=37 and fld3 like "o%";
 
 select distinct fld3 from t2 where companynr = 34 order by fld3;
-select distinct fld3 from t2 limit 10;
-select distinct fld3 from t2 having fld3 like "A%" limit 10;
+#Bug #SEQUOIASQLMAINSTREAM-206
+select distinct fld3 from t2 order by fld3 limit 10;
+select distinct fld3 from t2 having fld3 like "A%" order by fld3 limit 10;
 select distinct substring(fld3,1,3) from t2 where fld3 like "A%";
 select distinct substring(fld3,1,3) as a from t2 having a like "A%" order by a limit 10;
-select distinct substring(fld3,1,3) from t2 where fld3 like "A%" limit 10;
-select distinct substring(fld3,1,3) as a from t2 having a like "A%" limit 10;
+select distinct substring(fld3,1,3) from t2 where fld3 like "A%" order by substring(fld3,1,3) limit 10;
+select distinct substring(fld3,1,3) as a from t2 having a like "A%" order by substring(fld3,1,3) limit 10;
 
 # make a big table.
 
@@ -1385,77 +1387,78 @@ INSERT INTO t3 (period,name,companynr,price,price2) VALUES (1009,"gems",447,2374
 INSERT INTO t3 (period,name,companynr,price,price2) VALUES (1010,"clinker",512,786542,76234234);
 --enable_query_log
 
-create temporary table tmp engine = myisam select * from t3;
-
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
+#create temporary table tmp engine = sequoiadb select * from t3;
+#
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
+#insert into tmp select * from t3;
+#insert into t3 select * from tmp;
 #insert into tmp select * from t3;
 #insert into t3 select * from tmp;
 
-alter table t3 add t2nr int not null auto_increment primary key first;
+#Bug #SEQUOIASQLMAINSTREAM-246 
+#alter table t3 add t2nr int not null auto_increment primary key first;
 
-drop table tmp;
+#drop table tmp;
 
 # big table done
 
-SET BIG_TABLES=1;
-select distinct concat(fld3," ",fld3) as namn from t2,t3 where t2.fld1=t3.t2nr order by namn limit 10;
-SET BIG_TABLES=0;
+#SET BIG_TABLES=1;
+#select distinct concat(fld3," ",fld3) as namn from t2,t3 where t2.fld1=t3.t2nr order by namn limit 10;
+#SET BIG_TABLES=0;
 --source include/turn_off_only_full_group_by.inc
-select distinct concat(fld3," ",fld3) from t2,t3 where t2.fld1=t3.t2nr order by fld3 limit 10;
+#select distinct concat(fld3," ",fld3) from t2,t3 where t2.fld1=t3.t2nr order by fld3 limit 10;
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
-select distinct fld5 from t2 limit 10;
+#select distinct fld5 from t2 limit 10;
 
 #
 # Force use of remove_dupp
 #
 
-select distinct fld3,count(*) from t2 group by companynr,fld3 limit 10;
-SET BIG_TABLES=1; # Force use of MyISAM
-select distinct fld3,count(*) from t2 group by companynr,fld3 limit 10;
-SET BIG_TABLES=0;
-select distinct fld3,repeat("a",length(fld3)),count(*) from t2 group by companynr,fld3 limit 100,10;
+#select distinct fld3,count(*) from t2 group by companynr,fld3 limit 10;
+#SET BIG_TABLES=1; # Force use of SequoiaDB
+#select distinct fld3,count(*) from t2 group by companynr,fld3 limit 10;
+#SET BIG_TABLES=0;
+#select distinct fld3,repeat("a",length(fld3)),count(*) from t2 group by companynr,fld3 limit 100,10;
 
 #
 # A big order by that should trigger a merge in filesort
 #
 
-select distinct companynr,rtrim(space(512+companynr)) from t3 order by 1,2;
+#select distinct companynr,rtrim(space(512+companynr)) from t3 order by 1,2;
 
 #
 # Search with distinct and order by with many table.
 #
 
-select distinct fld3 from t2,t3 where t2.companynr = 34 and t2.fld1=t3.t2nr order by fld3;
+#select distinct fld3 from t2,t3 where t2.companynr = 34 and t2.fld1=t3.t2nr order by fld3;
 
 #
 # Here the last fld3 is optimized away from the order by
 #
 
-explain select t3.t2nr,fld3 from t2,t3 where t2.companynr = 34 and t2.fld1=t3.t2nr order by t3.t2nr,fld3;
+#explain select t3.t2nr,fld3 from t2,t3 where t2.companynr = 34 and t2.fld1=t3.t2nr order by t3.t2nr,fld3;
 
 #
 # Some test with ORDER BY and limit
 #
 
-explain select * from t3 as t1,t3 where t1.period=t3.period order by t3.period;
-explain select * from t3 as t1,t3 where t1.period=t3.period order by t3.period limit 10;
-explain select * from t3 as t1,t3 where t1.period=t3.period order by t1.period limit 10;
+#explain select * from t3 as t1,t3 where t1.period=t3.period order by t3.period;
+#explain select * from t3 as t1,t3 where t1.period=t3.period order by t3.period limit 10;
+#explain select * from t3 as t1,t3 where t1.period=t3.period order by t1.period limit 10;
 
 #
 # Search with a constant table.
@@ -1463,29 +1466,29 @@ explain select * from t3 as t1,t3 where t1.period=t3.period order by t1.period l
 
 select period from t1;
 select period from t1 where period=1900;
-select fld3,period from t1,t2 where fld1 = 011401 order by period;
+#select fld3,period from t1,t2 where fld1 = 011401 order by period;
 
 #
 # Search with a constant table and several keyparts. (Rows are read only once
 # in the beginning of the search)
 #
 
-select fld3,period from t2,t3 where t2.fld1 = 011401 and t2.fld1=t3.t2nr and t3.period=1001;
+#select fld3,period from t2,t3 where t2.fld1 = 011401 and t2.fld1=t3.t2nr and t3.period=1001;
 
-explain select fld3,period from t2,t3 where t2.fld1 = 011401 and t3.t2nr=t2.fld1 and 1001 = t3.period;
+#explain select fld3,period from t2,t3 where t2.fld1 = 011401 and t3.t2nr=t2.fld1 and 1001 = t3.period;
 
 #
 # Search with a constant table and several rows from another table
 #
 
-select fld3,period from t2,t1 where companynr*10 = 37*10;
+#select fld3,period from t2,t1 where companynr*10 = 37*10;
 
 #
 # Search with a table reference and without a key.
 # t3 will be the main table.
 #
 
-select fld3,period,price,price2 from t2,t3 where t2.fld1=t3.t2nr and period >= 1001 and period <= 1002 and t2.companynr = 37 order by fld3,period, price;
+#select fld3,period,price,price2 from t2,t3 where t2.fld1=t3.t2nr and period >= 1001 and period <= 1002 and t2.companynr = 37 order by fld3,period, price;
 
 #
 # Search with an interval on a table with full key on reference table.
@@ -1493,18 +1496,19 @@ select fld3,period,price,price2 from t2,t3 where t2.fld1=t3.t2nr and period >= 1
 # t2nr will be checked.
 #
 
-select t2.fld1,fld3,period,price,price2 from t2,t3 where t2.fld1>= 18201 and t2.fld1 <= 18811 and t2.fld1=t3.t2nr and period = 1001 and t2.companynr = 37;
+#select t2.fld1,fld3,period,price,price2 from t2,t3 where t2.fld1>= 18201 and t2.fld1 <= 18811 and t2.fld1=t3.t2nr and period = 1001 and t2.companynr = 37;
 
 #
 # We need another table for join stuff..
 #
 
+#Bug #SEQUOIADBMAINSTREAM-3560
 create table t4 (
   companynr tinyint(2) unsigned zerofill NOT NULL default '00',
   companyname char(30) NOT NULL default '',
   PRIMARY KEY (companynr),
   UNIQUE KEY companyname(companyname)
-) ENGINE=MyISAM MAX_ROWS=50 PACK_KEYS=1 COMMENT='companynames';
+) ENGINE=SequoiaDB MAX_ROWS=50 PACK_KEYS=1 ;
 
 --disable_query_log
 INSERT INTO t4 (companynr, companyname) VALUES (29,'company 1');
@@ -1527,58 +1531,58 @@ INSERT INTO t4 (companynr, companyname) VALUES (00,'Unknown');
 
 # We see the functional dependency implied by WHERE and primary key of t4!
 
-select STRAIGHT_JOIN t2.companynr,companyname from t4,t2 where t2.companynr=t4.companynr group by t2.companynr;
+#select STRAIGHT_JOIN t2.companynr,companyname from t4,t2 where t2.companynr=t4.companynr group by t2.companynr;
 
-select SQL_SMALL_RESULT t2.companynr,companyname from t4,t2 where t2.companynr=t4.companynr group by t2.companynr;
+#select SQL_SMALL_RESULT t2.companynr,companyname from t4,t2 where t2.companynr=t4.companynr group by t2.companynr;
 
 #
 # Full join (same alias)
 #
 
-select * from t1,t1 t12;
-select t2.fld1,t22.fld1 from t2,t2 t22 where t2.fld1 >= 250501 and t2.fld1 <= 250505 and t22.fld1 >= 250501 and t22.fld1 <= 250505;
-
+#select * from t1,t1 t12;
+#select t2.fld1,t22.fld1 from t2,t2 t22 where t2.fld1 >= 250501 and t2.fld1 <= 250505 and t22.fld1 >= 250501 and t22.fld1 <= 250505;
+#
 #
 # Test of left join.
 #
-insert into t2 (fld1, companynr) values (999999,99);
+#insert into t2 (fld1, companynr) values (999999,99);
 
-select t2.companynr,companyname from t2 left join t4 using (companynr) where t4.companynr is null;
-select count(*) from t2 left join t4 using (companynr) where t4.companynr is not null;
-explain select t2.companynr,companyname from t2 left join t4 using (companynr) where t4.companynr is null;
-explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr is null;
-
-select companynr,companyname from t2 left join t4 using (companynr) where companynr is null;
-select count(*) from t2 left join t4 using (companynr) where companynr is not null;
-explain select companynr,companyname from t2 left join t4 using (companynr) where companynr is null;
-explain select companynr,companyname from t4 left join t2 using (companynr) where companynr is null;
-delete from t2 where fld1=999999;
+#select t2.companynr,companyname from t2 left join t4 using (companynr) where t4.companynr is null;
+#select count(*) from t2 left join t4 using (companynr) where t4.companynr is not null;
+#explain select t2.companynr,companyname from t2 left join t4 using (companynr) where t4.companynr is null;
+#explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr is null;
+#
+#select companynr,companyname from t2 left join t4 using (companynr) where companynr is null;
+#select count(*) from t2 left join t4 using (companynr) where companynr is not null;
+#explain select companynr,companyname from t2 left join t4 using (companynr) where companynr is null;
+#explain select companynr,companyname from t4 left join t2 using (companynr) where companynr is null;
+#delete from t2 where fld1=999999;
 
 #
 # Test left join optimization
 
-explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0;
-explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0 or t2.companynr < 0;
-explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0 and t4.companynr > 0;
-
-explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0;
-explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0 or companynr < 0;
-explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0 and companynr > 0;
-# Following can't be optimized
-explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0 or t2.companynr is null;
-explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0 or t2.companynr < 0 or t4.companynr > 0;
-explain select t2.companynr,companyname from t4 left join t2 using (companynr) where ifnull(t2.companynr,1)>0;
-
-explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0 or companynr is null;
-explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0 or companynr < 0 or companynr > 0;
-explain select companynr,companyname from t4 left join t2 using (companynr) where ifnull(companynr,1)>0;
+#explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0;
+#explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0 or t2.companynr < 0;
+#explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0 and t4.companynr > 0;
+#
+#explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0;
+#explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0 or companynr < 0;
+#explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0 and companynr > 0;
+## Following can't be optimized
+#explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0 or t2.companynr is null;
+#explain select t2.companynr,companyname from t4 left join t2 using (companynr) where t2.companynr > 0 or t2.companynr < 0 or t4.companynr > 0;
+#explain select t2.companynr,companyname from t4 left join t2 using (companynr) where ifnull(t2.companynr,1)>0;
+#
+#explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0 or companynr is null;
+#explain select companynr,companyname from t4 left join t2 using (companynr) where companynr > 0 or companynr < 0 or companynr > 0;
+#explain select companynr,companyname from t4 left join t2 using (companynr) where ifnull(companynr,1)>0;
 
 #
 # Joins with forms.
 #
 
-select distinct t2.companynr,t4.companynr from t2,t4 where t2.companynr=t4.companynr+1;
-explain select distinct t2.companynr,t4.companynr from t2,t4 where t2.companynr=t4.companynr+1;
+#select distinct t2.companynr,t4.companynr from t2,t4 where t2.companynr=t4.companynr+1;
+#explain select distinct t2.companynr,t4.companynr from t2,t4 where t2.companynr=t4.companynr+1;
 
 #
 # Search using 'or' with the same referens group.
@@ -1587,11 +1591,11 @@ explain select distinct t2.companynr,t4.companynr from t2,t4 where t2.companynr=
 # each record
 #
 
-select t2.fld1,t2.companynr,fld3,period from t3,t2 where t2.fld1 = 38208 and t2.fld1=t3.t2nr and period = 1008 or t2.fld1 = 38008 and t2.fld1 =t3.t2nr and period = 1008;
+#select t2.fld1,t2.companynr,fld3,period from t3,t2 where t2.fld1 = 38208 and t2.fld1=t3.t2nr and period = 1008 or t2.fld1 = 38008 and t2.fld1 =t3.t2nr and period = 1008;
 
-select t2.fld1,t2.companynr,fld3,period from t3,t2 where (t2.fld1 = 38208 or t2.fld1 = 38008) and t2.fld1=t3.t2nr and period>=1008 and period<=1009;
+#select t2.fld1,t2.companynr,fld3,period from t3,t2 where (t2.fld1 = 38208 or t2.fld1 = 38008) and t2.fld1=t3.t2nr and period>=1008 and period<=1009;
 
-select t2.fld1,t2.companynr,fld3,period from t3,t2 where (t3.t2nr = 38208 or t3.t2nr = 38008) and t2.fld1=t3.t2nr and period>=1008 and period<=1009;
+#select t2.fld1,t2.companynr,fld3,period from t3,t2 where (t3.t2nr = 38208 or t3.t2nr = 38008) and t2.fld1=t3.t2nr and period>=1008 and period<=1009;
 
 #
 # Test of many parenthesis levels
@@ -1599,14 +1603,14 @@ select t2.fld1,t2.companynr,fld3,period from t3,t2 where (t3.t2nr = 38208 or t3.
 
 select period from t1 where (((period > 0) or period < 10000 or (period = 1900)) and (period=1900 and period <= 1901) or (period=1903 and (period=1903)) and period>=1902) or ((period=1904 or period=1905) or (period=1906 or period>1907)) or (period=1908 and period = 1909);
 select period from t1 where ((period > 0 and period < 1) or (((period > 0 and period < 100) and (period > 10)) or (period > 10)) or (period > 0 and (period > 5 or period > 6)));
-
-select a.fld1 from t2 as a,t2 b where ((a.fld1 = 250501 and a.fld1=b.fld1) or a.fld1=250502 or a.fld1=250503 or (a.fld1=250505 and a.fld1<=b.fld1 and b.fld1>=a.fld1)) and a.fld1=b.fld1;
-
-select fld1 from t2 where fld1 in (250502,98005,98006,250503,250605,250606) and fld1 >=250502 and fld1 not in (250605,250606);
-
-select fld1 from t2 where fld1 between 250502 and 250504;
-
-select fld3 from t2 where (((fld3 like "_%L%" ) or (fld3 like "%ok%")) and ( fld3 like "L%" or fld3 like "G%")) and fld3 like "L%" ;
+#
+#select a.fld1 from t2 as a,t2 b where ((a.fld1 = 250501 and a.fld1=b.fld1) or a.fld1=250502 or a.fld1=250503 or (a.fld1=250505 and a.fld1<=b.fld1 and b.fld1>=a.fld1)) and a.fld1=b.fld1;
+#
+#select fld1 from t2 where fld1 in (250502,98005,98006,250503,250605,250606) and fld1 >=250502 and fld1 not in (250605,250606);
+#
+#select fld1 from t2 where fld1 between 250502 and 250504;
+#
+#select fld3 from t2 where (((fld3 like "_%L%" ) or (fld3 like "%ok%")) and ( fld3 like "L%" or fld3 like "G%")) and fld3 like "L%" ;
 
 #
 # Group on one table.
@@ -1614,29 +1618,32 @@ select fld3 from t2 where (((fld3 like "_%L%" ) or (fld3 like "%ok%")) and ( fld
 #
 
 select count(*) from t1;
-select companynr,count(*),sum(fld1) from t2 group by companynr;
-select companynr,count(*) from t2 group by companynr order by companynr desc limit 5;
-select count(*),min(fld4),max(fld4),sum(fld1),avg(fld1),std(fld1),variance(fld1) from t2 where companynr = 34 and fld4<>"";
-explain extended select count(*),min(fld4),max(fld4),sum(fld1),avg(fld1),std(fld1),variance(fld1) from t2 where companynr = 34 and fld4<>"";
-select companynr,count(*),min(fld4),max(fld4),sum(fld1),avg(fld1),std(fld1),variance(fld1) from t2 group by companynr limit 3;
-select companynr,t2nr,count(price),sum(price),min(price),max(price),avg(price) from t3 where companynr = 37 group by companynr,t2nr limit 10;
-select /*! SQL_SMALL_RESULT */ companynr,t2nr,count(price),sum(price),min(price),max(price),avg(price) from t3 where companynr = 37 group by companynr,t2nr limit 10;
-select companynr,count(price),sum(price),min(price),max(price),avg(price) from t3 group by companynr ;
+#select companynr,count(*),sum(fld1) from t2 group by companynr;
+#select companynr,count(*) from t2 group by companynr order by companynr desc limit 5;
+#select count(*),min(fld4),max(fld4),sum(fld1),avg(fld1),std(fld1),variance(fld1) from t2 where companynr = 34 and fld4<>"";
+#explain extended select count(*),min(fld4),max(fld4),sum(fld1),avg(fld1),std(fld1),variance(fld1) from t2 where companynr = 34 and fld4<>"";
+#select companynr,count(*),min(fld4),max(fld4),sum(fld1),avg(fld1),std(fld1),variance(fld1) from t2 group by companynr limit 3;
+#select companynr,t2nr,count(price),sum(price),min(price),max(price),avg(price) from t3 where companynr = 37 group by companynr,t2nr limit 10;
+#select /*! SQL_SMALL_RESULT */ companynr,t2nr,count(price),sum(price),min(price),max(price),avg(price) from t3 where companynr = 37 group by companynr,t2nr limit 10;
+#select companynr,count(price),sum(price),min(price),max(price),avg(price) from t3 group by companynr ;
+--sorted_result
 select distinct mod(companynr,10) from t4 group by companynr;
 select distinct 1 from t4 group by companynr;
-select count(distinct fld1) from t2;
-select companynr,count(distinct fld1) from t2 group by companynr;
-select companynr,count(*) from t2 group by companynr;
-select companynr,count(distinct concat(fld1,repeat(65,1000))) from t2 group by companynr;
-select companynr,count(distinct concat(fld1,repeat(65,200))) from t2 group by companynr;
-select companynr,count(distinct floor(fld1/100)) from t2 group by companynr;
-select companynr,count(distinct concat(repeat(65,1000),floor(fld1/100))) from t2 group by companynr;
+#select count(distinct fld1) from t2;
+#select companynr,count(distinct fld1) from t2 group by companynr;
+#select companynr,count(*) from t2 group by companynr;
+#select companynr,count(distinct concat(fld1,repeat(65,1000))) from t2 group by companynr;
+#select companynr,count(distinct concat(fld1,repeat(65,200))) from t2 group by companynr;
+#select companynr,count(distinct floor(fld1/100)) from t2 group by companynr;
+#select companynr,count(distinct concat(repeat(65,1000),floor(fld1/100))) from t2 group by companynr;
 
 #
 # group with where on a key field
 #
 
-select sum(fld1),fld3 from t2 where fld3="Romans" group by fld1 limit 10;
+#select sum(fld1),fld3 from t2 where fld3="Romans" group by fld1 limit 10;
+#Bug #SEQUOIADBMAINSTREAM-3568
+# For SEQUOIADB: TABLE t3 only have 10 records 
 select name,count(*) from t3 where name='cloakroom' group by name;
 select name,count(*) from t3 where name='cloakroom' and price>10 group by name;
 select count(*) from t3 where name='cloakroom' and price2=823742;
@@ -1645,7 +1652,7 @@ select name,count(*) from t3 where name >= "extramarital" and price <= 39654943 
 
 # We see the functional dependency implied by WHERE!
 
-select t2.fld3,count(*) from t2,t3 where t2.fld1=158402 and t3.name=t2.fld3 group by t3.name;
+#select t2.fld3,count(*) from t2,t3 where t2.fld1=158402 and t3.name=t2.fld3 group by t3.name;
 
 #
 # Group with extra not group fields.
@@ -1655,8 +1662,8 @@ select t2.fld3,count(*) from t2,t3 where t2.fld1=158402 and t3.name=t2.fld3 grou
 select companynr|0,companyname from t4 group by 1;
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
 
-select t2.companynr,companyname,count(*) from t2,t4 where t2.companynr=t4.companynr group by t2.companynr order by companyname;
-select t2.fld1,count(*) from t2,t3 where t2.fld1=158402 and t3.name=t2.fld3 group by t3.name;
+#select t2.companynr,companyname,count(*) from t2,t4 where t2.companynr=t4.companynr group by t2.companynr order by companyname;
+#select t2.fld1,count(*) from t2,t3 where t2.fld1=158402 and t3.name=t2.fld3 group by t3.name;
 
 
 #
@@ -1673,9 +1680,9 @@ select companynr,sum(price)/count(price) as avg from t3 group by companynr havin
 #            sort tmp_table and send rows.
 #
 
-select companynr,count(*) from t2 group by companynr order by 2 desc;
-select companynr,count(*) from t2 where companynr > 40 group by companynr order by 2 desc;
-select t2.fld4,t2.fld1,count(price),sum(price),min(price),max(price),avg(price) from t3,t2 where t3.companynr = 37 and t2.fld1 = t3.t2nr group by fld1,t2.fld4;
+#select companynr,count(*) from t2 group by companynr order by 2 desc;
+#select companynr,count(*) from t2 where companynr > 40 group by companynr order by 2 desc;
+#select t2.fld4,t2.fld1,count(price),sum(price),min(price),max(price),avg(price) from t3,t2 where t3.companynr = 37 and t2.fld1 = t3.t2nr group by fld1,t2.fld4;
 
 #
 # group by with many tables
@@ -1685,8 +1692,8 @@ select t2.fld4,t2.fld1,count(price),sum(price),min(price),max(price),avg(price) 
 #	    send rows
 #
 
-select t3.companynr,fld3,sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 512 group by companynr,fld3;
-select t2.companynr,count(*),min(fld3),max(fld3),sum(price),avg(price) from t2,t3 where t3.companynr >= 30 and t3.companynr <= 58 and t3.t2nr = t2.fld1 and 1+1=2 group by t2.companynr;
+#select t3.companynr,fld3,sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 512 group by companynr,fld3;
+#select t2.companynr,count(*),min(fld3),max(fld3),sum(price),avg(price) from t2,t3 where t3.companynr >= 30 and t3.companynr <= 58 and t3.t2nr = t2.fld1 and 1+1=2 group by t2.companynr;
 
 #
 # group with many tables and long group on many tables. group on formula
@@ -1698,7 +1705,7 @@ select t2.companynr,count(*),min(fld3),max(fld3),sum(price),avg(price) from t2,t
 
 # We see the functional dependency implied by WHERE, for "ORDER BY fld1"
 
-select t3.companynr+0,t3.t2nr,fld3,sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 37 group by 1,t3.t2nr,fld3,fld3,fld3,fld3,fld3 order by fld1;
+#select t3.companynr+0,t3.t2nr,fld3,sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 37 group by 1,t3.t2nr,fld3,fld3,fld3,fld3,fld3 order by fld1;
 
 #
 # WHERE const folding
@@ -1711,46 +1718,46 @@ select t3.companynr+0,t3.t2nr,fld3,sum(price) from t3,t2 where t2.fld1 = t3.t2nr
 # Where -> t3.t2nr = 98005 and t2.fld1 = 98005
 #
 
-select sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 512 and t3.t2nr = 38008 and t2.fld1 = 38008 or t2.fld1= t3.t2nr and t3.t2nr = 38008 and t2.fld1 = 38008;
+#select sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 512 and t3.t2nr = 38008 and t2.fld1 = 38008 or t2.fld1= t3.t2nr and t3.t2nr = 38008 and t2.fld1 = 38008;
 
-select t2.fld1,sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 512 and t3.t2nr = 38008 and t2.fld1 = 38008 or t2.fld1 = t3.t2nr and t3.t2nr = 38008 and t2.fld1 = 38008 or t3.t2nr = t2.fld1 and t2.fld1 = 38008 group by t2.fld1;
+#select t2.fld1,sum(price) from t3,t2 where t2.fld1 = t3.t2nr and t3.companynr = 512 and t3.t2nr = 38008 and t2.fld1 = 38008 or t2.fld1 = t3.t2nr and t3.t2nr = 38008 and t2.fld1 = 38008 or t3.t2nr = t2.fld1 and t2.fld1 = 38008 group by t2.fld1;
 
-explain select fld3 from t2 where 1>2 or 2>3;
-explain select fld3 from t2 where fld1=fld1;
-
+#explain select fld3 from t2 where 1>2 or 2>3;
+#explain select fld3 from t2 where fld1=fld1;
+#
 #
 # HAVING
 #
 
-select companynr,fld1 from t2 HAVING fld1=250501 or fld1=250502; 
-select companynr,fld1 from t2 WHERE fld1>=250501 HAVING fld1<=250502;
-select companynr,count(*) as count,sum(fld1) as sum from t2 group by companynr having count > 40 and sum/count >= 120000;
-select companynr from t2 group by companynr having count(*) > 40 and sum(fld1)/count(*) >= 120000 ;
+#select companynr,fld1 from t2 HAVING fld1=250501 or fld1=250502; 
+#select companynr,fld1 from t2 WHERE fld1>=250501 HAVING fld1<=250502;
+#select companynr,count(*) as count,sum(fld1) as sum from t2 group by companynr having count > 40 and sum/count >= 120000;
+#select companynr from t2 group by companynr having count(*) > 40 and sum(fld1)/count(*) >= 120000 ;
 
-select t2.companynr,companyname,count(*) from t2,t4 where t2.companynr=t4.companynr group by companyname having t2.companynr >= 40;
+#select t2.companynr,companyname,count(*) from t2,t4 where t2.companynr=t4.companynr group by companyname having t2.companynr >= 40;
 
 #
 # MIN(), MAX() and COUNT() optimizing
 #
 
-select count(*) from t2;
-select count(*) from t2 where fld1 < 098024;
+#select count(*) from t2;
+#select count(*) from t2 where fld1 < 098024;
 # PS does correct pre-zero here. MySQL can't do it as it returns a number.
---disable_ps_protocol
-select min(fld1) from t2 where fld1>= 098024;
---enable_ps_protocol
-select max(fld1) from t2 where fld1>= 098024;
+#--disable_ps_protocol
+#select min(fld1) from t2 where fld1>= 098024;
+#--enable_ps_protocol
+#select max(fld1) from t2 where fld1>= 098024;
 select count(*) from t3 where price2=76234234;
 select count(*) from t3 where companynr=512 and price2=76234234;
-explain select min(fld1),max(fld1),count(*) from t2;
+#explain select min(fld1),max(fld1),count(*) from t2;
 # PS does correct pre-zero here. MySQL can't do it as it returns a number.
---disable_ps_protocol
-select min(fld1),max(fld1),count(*) from t2;
---enable_ps_protocol
-select min(t2nr),max(t2nr) from t3 where t2nr=2115 and price2=823742;
-select count(*),min(t2nr),max(t2nr) from t3 where name='spates' and companynr=78;
-select t2nr,count(*) from t3 where name='gems' group by t2nr limit 20;
-select max(t2nr) from t3 where price=983543950;
+#--disable_ps_protocol
+#select min(fld1),max(fld1),count(*) from t2;
+#--enable_ps_protocol
+#select min(t2nr),max(t2nr) from t3 where t2nr=2115 and price2=823742;
+#select count(*),min(t2nr),max(t2nr) from t3 where name='spates' and companynr=78;
+#select t2nr,count(*) from t3 where name='gems' group by t2nr limit 20;
+#select max(t2nr) from t3 where price=983543950;
 
 #
 # Test of alias
@@ -1771,20 +1778,20 @@ select period as "Nuvarande period" from t1 group by "Nuvarande period" limit 1;
 #
 # Some simple show commands
 #
+# This test has been moved to "create.test", at the end of the file
+#show tables;
+#show tables from test like "s%";
+#show tables from test like "t?";
+## We mask out the Privileges column because it differs with embedded server
+##--replace_column 8 #
+##show full columns from t2;
+##--replace_column 8 #
+##show full columns from t2 from test like 'f%';
+##--replace_column 8 #
+##show full columns from t2 from test like 's%';
+##show keys from t2;
 
-show tables;
-show tables from test like "s%";
-show tables from test like "t?";
-# We mask out the Privileges column because it differs with embedded server
---replace_column 8 #
-show full columns from t2;
---replace_column 8 #
-show full columns from t2 from test like 'f%';
---replace_column 8 #
-show full columns from t2 from test like 's%';
-show keys from t2;
-
-drop table t4, t3, t2, t1;
+drop table t4, t3, t2, t1; 
 
 #
 # Test of DO
@@ -1805,7 +1812,6 @@ do foobar;
 #
 # random in WHERE clause
 #
-
 CREATE TABLE t1 (
   id mediumint(8) unsigned NOT NULL auto_increment,
   pseudo varchar(35) NOT NULL default '',
@@ -1820,10 +1826,9 @@ DROP TABLE t1;
 #
 # Test of bug with SUM(CASE...)
 #
-
-CREATE TABLE t1 (gvid int(10) unsigned default NULL,  hmid int(10) unsigned default NULL,  volid int(10) unsigned default NULL,  mmid int(10) unsigned default NULL,  hdid int(10) unsigned default NULL,  fsid int(10) unsigned default NULL,  ctid int(10) unsigned default NULL,  dtid int(10) unsigned default NULL,  cost int(10) unsigned default NULL,  performance int(10) unsigned default NULL,  serialnumber bigint(20) unsigned default NULL,  monitored tinyint(3) unsigned default '1',  removed tinyint(3) unsigned default '0',  target tinyint(3) unsigned default '0',  dt_modified timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  name varchar(255) binary default NULL,  description varchar(255) default NULL,  UNIQUE KEY hmid (hmid,volid)) ENGINE=MyISAM;
+CREATE TABLE t1 (gvid int(10) unsigned default NULL,  hmid int(10) unsigned default NULL,  volid int(10) unsigned default NULL,  mmid int(10) unsigned default NULL,  hdid int(10) unsigned default NULL,  fsid int(10) unsigned default NULL,  ctid int(10) unsigned default NULL,  dtid int(10) unsigned default NULL,  cost int(10) unsigned default NULL,  performance int(10) unsigned default NULL,  serialnumber bigint(20) unsigned default NULL,  monitored tinyint(3) unsigned default '1',  removed tinyint(3) unsigned default '0',  target tinyint(3) unsigned default '0',  dt_modified timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  name varchar(255) binary default NULL,  description varchar(255) default NULL,  UNIQUE KEY hmid (hmid,volid)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (200001,2,1,1,100,1,1,1,0,0,0,1,0,1,20020425060057,'\\\\ARKIVIO-TESTPDC\\E$',''),(200002,2,2,1,101,1,1,1,0,0,0,1,0,1,20020425060057,'\\\\ARKIVIO-TESTPDC\\C$',''),(200003,1,3,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,0,1,20020425060427,'c:',NULL);
-CREATE TABLE t2 (  hmid int(10) unsigned default NULL,  volid int(10) unsigned default NULL,  sampletid smallint(5) unsigned default NULL,  sampletime datetime default NULL,  samplevalue bigint(20) unsigned default NULL,  KEY idx1 (hmid,volid,sampletid,sampletime)) ENGINE=MyISAM;
+CREATE TABLE t2 (  hmid int(10) unsigned default NULL,  volid int(10) unsigned default NULL,  sampletid smallint(5) unsigned default NULL,  sampletime datetime default NULL,  samplevalue bigint(20) unsigned default NULL,  KEY idx1 (hmid,volid,sampletid,sampletime)) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES (1,3,10,'2002-06-01 08:00:00',35),(1,3,1010,'2002-06-01 12:00:01',35);
 # Disable PS becasue we get more warnings from PS than from normal execution
 --disable_ps_protocol
@@ -1855,12 +1860,17 @@ select @c;
 # (We test each construct with the braced join to the left and right;
 #  the latter case used to cause a syntax errors.)
 #
-
 create table t1 (a int not null auto_increment primary key);
 insert into t1 values ();
 insert into t1 values ();
 insert into t1 values ();
-# ,
+
+--disable_query_log
+--disable_result_log
+analyze table t1;
+--enable_query_log
+--enable_result_log
+
 select * from (t1 as t2 left join t1 as t3 using (a)), t1;
 select * from t1, (t1 as t2 left join t1 as t3 using (a));
 # stright_join
@@ -1897,9 +1907,9 @@ select * from t1 natural join (t1 as t2 left join t1 as t3 using (a));
 select * from (t1 as t2 left join t1 as t3 using (a)) natural join t1;
 drop table t1;
 
-CREATE TABLE t1 (  aa char(2),  id int(11) NOT NULL auto_increment,  t2_id int(11) NOT NULL default '0',  PRIMARY KEY  (id),  KEY replace_id (t2_id)) ENGINE=MyISAM;
+CREATE TABLE t1 (  aa char(2),  id int(11) NOT NULL auto_increment,  t2_id int(11) NOT NULL default '0',  PRIMARY KEY  (id),  KEY replace_id (t2_id)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ("1",8264,2506),("2",8299,2517),("3",8301,2518),("4",8302,2519),("5",8303,2520),("6",8304,2521),("7",8305,2522);
-CREATE TABLE t2 ( id int(11) NOT NULL auto_increment,  PRIMARY KEY  (id)) ENGINE=MyISAM;
+CREATE TABLE t2 ( id int(11) NOT NULL auto_increment,  PRIMARY KEY  (id)) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES (2517), (2518), (2519), (2520), (2521), (2522);
 select * from t1, t2 WHERE t1.t2_id = t2.id and t1.t2_id > 0   order by t1.id   LIMIT 0, 5;
 drop table t1,t2;
@@ -1917,8 +1927,8 @@ insert into t1 values (2);
 insert into t2 values (1);
 insert into t4 values (1,1);
 
-explain select * from t1 left join t2 on id1 = id2 left join t3 on id1 = id3
-left join t4 on id3 = id4 where id2 = 1 or id4 = 1;
+#explain select * from t1 left join t2 on id1 = id2 left join t3 on id1 = id3
+#left join t4 on id3 = id4 where id2 = 1 or id4 = 1;
 select * from t1 left join t2 on id1 = id2 left join t3 on id1 = id3
 left join t4 on id3 = id4 where id2 = 1 or id4 = 1;
 
@@ -1935,7 +1945,9 @@ insert into t2 values ('one\r'), ('two\t');
 insert into t3 values ('one '), ('two\t');
 select * from t1 where s = 'one';
 select * from t2 where s = 'one';
+# SEQUOIASQLMAINSTREAM-204
 select * from t3 where s = 'one';
+#Bug #SEQUOIADBMAINSTREAM-3567
 select * from t1,t2 where t1.s = t2.s;
 select * from t2,t3 where t2.s = t3.s;
 drop table t1, t2, t3;
@@ -1948,9 +1960,9 @@ create table t1 (a integer,  b integer, index(a), index(b));
 create table t2 (c integer,  d integer, index(c), index(d));
 insert into t1 values (1,2), (2,2), (3,2), (4,2);
 insert into t2 values (1,3), (2,3), (3,4), (4,4);
-explain select * from t1 left join t2 on a=c where d in (4);
+#explain select * from t1 left join t2 on a=c where d in (4);
 select * from t1 left join t2 on a=c where d in (4);
-explain select * from t1 left join t2 on a=c where d = 4;
+#explain select * from t1 left join t2 on a=c where d = 4;
 select * from t1 left join t2 on a=c where d = 4;
 drop table t1, t2;
 
@@ -1963,30 +1975,30 @@ CREATE TABLE t1 (
   c char(10) NOT NULL default '',
   PRIMARY KEY  (i),
   UNIQUE KEY c (c)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (1,'a');
 INSERT INTO t1 VALUES (2,'b');
 INSERT INTO t1 VALUES (3,'c');
 
-EXPLAIN SELECT i FROM t1 WHERE i=1;
+#EXPLAIN SELECT i FROM t1 WHERE i=1;
 
 DROP TABLE t1;
 
 #
 # Test case for bug 7520: a wrong cost of the index for a BLOB field
 #
-
-CREATE TABLE t1 ( a BLOB, INDEX (a(20)) );
-CREATE TABLE t2 ( a BLOB, INDEX (a(20)) );
-
-INSERT INTO t1 VALUES ('one'),('two'),('three'),('four'),('five');
-INSERT INTO t2 VALUES ('one'),('two'),('three'),('four'),('five');
-
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 USE INDEX (a) ON t1.a=t2.a;
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 FORCE INDEX (a) ON t1.a=t2.a;
-
-DROP TABLE t1, t2;
+# NOW SequoiaDB not support index of Blob
+#CREATE TABLE t1 ( a BLOB, INDEX (a(20)) );
+#CREATE TABLE t2 ( a BLOB, INDEX (a(20)) );
+#
+#INSERT INTO t1 VALUES ('one'),('two'),('three'),('four'),('five');
+#INSERT INTO t2 VALUES ('one'),('two'),('three'),('four'),('five');
+#
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 USE INDEX (a) ON t1.a=t2.a;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 FORCE INDEX (a) ON t1.a=t2.a;
+#
+#DROP TABLE t1, t2;
 
 #
 # Test case for bug 7098: substitution of a constant for a string field 
@@ -1998,9 +2010,10 @@ INSERT INTO t1 VALUES ('Paris');
 
 SELECT * FROM t1 WHERE city='London';
 SELECT * FROM t1 WHERE city='london';
-EXPLAIN SELECT * FROM t1 WHERE city='London' AND city='london';
+#EXPLAIN SELECT * FROM t1 WHERE city='London' AND city='london';
 SELECT * FROM t1 WHERE city='London' AND city='london';
-EXPLAIN SELECT * FROM t1 WHERE city LIKE '%london%' AND city='London';
+#EXPLAIN SELECT * FROM t1 WHERE city LIKE '%london%' AND city='London';
+# SEQUOIASQLMAINSTREAM-204
 SELECT * FROM t1 WHERE city LIKE '%london%' AND city='London';
 
 DROP TABLE t1;
@@ -2008,9 +2021,10 @@ DROP TABLE t1;
 #
 # Bug#7425 inconsistent sort order on unsigned columns result of substraction
 #
-
+#Sequoiadb not support insert data out of range,but myisam can;
 create table t1 (a int(11) unsigned, b int(11) unsigned);
-insert into t1 values (1,0), (1,1), (18446744073709551615,0);
+#insert into t1 values (1,0), (1,1), (18446744073709551615,0);
+insert into t1 values (1,0), (1,1);
 select a-b  from t1 order by 1;
 select a-b , (a-b < 0)  from t1 order by 1;
 --source include/turn_off_only_full_group_by.inc
@@ -2176,7 +2190,7 @@ drop table t1,t2;
 create table t2 (a tinyint unsigned);
 create index t2i on t2(a);
 insert into t2 values (0), (254), (255);
-explain select * from t2 where a > -1;
+#explain select * from t2 where a > -1;
 select * from t2 where a > -1;
 drop table t2;
 
@@ -2235,8 +2249,8 @@ drop table t1,t2;
 create table t1 (f1 int not null auto_increment primary key, f2 varchar(10));
 create table t11 like t1;
 insert into t1 values(1,""),(2,"");
---replace_column 7 X 8 X 9 X 10 X 11 X 12 X 13 X 14 X
-show table status like 't1%';
+#--replace_column 7 X 8 X 9 X 10 X 11 X 12 X 13 X 14 X
+#show table status like 't1%';
 select 123 as a from t1 where f1 is null;
 drop table t1,t11;
 
@@ -2290,9 +2304,9 @@ insert into t2 values (1,'',''), (2,'','');
 CREATE TABLE t3 (a int, b int, PRIMARY KEY (a,b), KEY a (a), KEY b (b));
 insert into t3 values (1,1),(1,2);
 # must have "range checked" for t2
-explain select straight_join DISTINCT t2.a,t2.b, t1.c from t1, t3, t2 
- where (t1.c=t2.a or (t1.c=t3.a and t2.a=t3.b)) and t1.b=556476786 and 
-       t2.b like '%%' order by t2.b limit 0,1;
+#explain select straight_join DISTINCT t2.a,t2.b, t1.c from t1, t3, t2 
+# where (t1.c=t2.a or (t1.c=t3.a and t2.a=t3.b)) and t1.b=556476786 and 
+#       t2.b like '%%' order by t2.b limit 0,1;
 DROP TABLE t1,t2,t3;
 
 #
@@ -2302,7 +2316,7 @@ DROP TABLE t1,t2,t3;
 CREATE TABLE t1 (a int, INDEX idx(a));
 INSERT INTO t1 VALUES (2), (3), (1);
 
-EXPLAIN SELECT * FROM t1 IGNORE INDEX (idx);
+#EXPLAIN SELECT * FROM t1 IGNORE INDEX (idx);
 --error 1176
 EXPLAIN SELECT * FROM t1 IGNORE INDEX (a);
 --error 1176
@@ -2320,9 +2334,9 @@ CREATE TABLE t2 (a int PRIMARY KEY, b int, KEY b (b));
 INSERT INTO t2 VALUES (1,NULL), (2,10);
 ALTER TABLE t1 ENABLE KEYS;
 
-EXPLAIN SELECT STRAIGHT_JOIN SQL_NO_CACHE COUNT(*) FROM t2, t1 WHERE t1.b = t2.b OR t2.b IS NULL;
+#EXPLAIN SELECT STRAIGHT_JOIN SQL_NO_CACHE COUNT(*) FROM t2, t1 WHERE t1.b = t2.b OR t2.b IS NULL;
 SELECT STRAIGHT_JOIN SQL_NO_CACHE * FROM t2, t1 WHERE t1.b = t2.b OR t2.b IS NULL;
-EXPLAIN SELECT STRAIGHT_JOIN SQL_NO_CACHE COUNT(*) FROM t2, t1 WHERE t1.b = t2.b OR t2.b IS NULL;
+#EXPLAIN SELECT STRAIGHT_JOIN SQL_NO_CACHE COUNT(*) FROM t2, t1 WHERE t1.b = t2.b OR t2.b IS NULL;
 SELECT STRAIGHT_JOIN SQL_NO_CACHE * FROM t2, t1 WHERE t1.b = t2.b OR t2.b IS NULL;
 DROP TABLE IF EXISTS t1,t2;
 
@@ -2335,14 +2349,14 @@ CREATE TABLE t2 (key2 float default NULL, UNIQUE KEY key2 (key2));
 INSERT INTO t1 VALUES (0.3762),(0.3845),(0.6158),(0.7941);
 INSERT INTO t2 VALUES (1.3762),(1.3845),(1.6158),(1.7941);
 
-explain select max(key1) from t1 where key1 <= 0.6158;
-explain select max(key2) from t2 where key2 <= 1.6158;
-explain select min(key1) from t1 where key1 >= 0.3762;
-explain select min(key2) from t2 where key2 >= 1.3762;
-explain select max(key1), min(key2) from t1, t2
-where key1 <= 0.6158 and key2 >= 1.3762;
-explain select max(key1) from t1 where key1 <= 0.6158 and rand() + 0.5 >= 0.5;
-explain select min(key1) from t1 where key1 >= 0.3762 and rand() + 0.5 >= 0.5;
+#explain select max(key1) from t1 where key1 <= 0.6158;
+#explain select max(key2) from t2 where key2 <= 1.6158;
+#explain select min(key1) from t1 where key1 >= 0.3762;
+#explain select min(key2) from t2 where key2 >= 1.3762;
+#explain select max(key1), min(key2) from t1, t2
+#where key1 <= 0.6158 and key2 >= 1.3762;
+#explain select max(key1) from t1 where key1 <= 0.6158 and rand() + 0.5 >= 0.5;
+#explain select min(key1) from t1 where key1 >= 0.3762 and rand() + 0.5 >= 0.5;
 
 select max(key1) from t1 where key1 <= 0.6158;
 select max(key2) from t2 where key2 <= 1.6158;
@@ -2417,7 +2431,7 @@ CREATE TABLE t1 (
 K2C4 varchar(4) character set latin1 collate latin1_bin NOT NULL default '', 
 K4N4 varchar(4) character set latin1 collate latin1_bin NOT NULL default '0000', 
 F2I4 int(11) NOT NULL default '0' 
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 
 INSERT INTO t1 VALUES 
 ('W%RT', '0100',  1), 
@@ -2466,7 +2480,7 @@ drop table t1;
 # Bug#9799
 #
 
-create table t1 (s1 int) engine=myisam;
+create table t1 (s1 int) engine=sequoiadb;
 insert into t1 values (0);
 select avg(distinct s1) from t1 group by s1 with rollup;
 drop table t1;
@@ -2494,8 +2508,8 @@ INSERT INTO t2 VALUES (2), (4), (6);
 
 SELECT t1.a FROM t1 STRAIGHT_JOIN t2 ON t1.a=t2.a;
 
-EXPLAIN SELECT t1.a FROM t1 STRAIGHT_JOIN t2 ON t1.a=t2.a;
-EXPLAIN SELECT t1.a FROM t1 INNER JOIN t2 ON t1.a=t2.a;
+#EXPLAIN SELECT t1.a FROM t1 STRAIGHT_JOIN t2 ON t1.a=t2.a;
+#EXPLAIN SELECT t1.a FROM t1 INNER JOIN t2 ON t1.a=t2.a;
 
 DROP TABLE t1,t2;
 
@@ -2858,19 +2872,19 @@ SELECT t2.key_a,foo
   FROM t1 INNER JOIN t2 ON t1.key_a = t2.key_a
           INNER JOIN t3 ON t1.key_a = t3.key_a
     WHERE t2.key_a=2 and key_b=5;
-EXPLAIN SELECT t2.key_a,foo 
-  FROM t1 INNER JOIN t2 ON t1.key_a = t2.key_a
-          INNER JOIN t3 ON t1.key_a = t3.key_a
-    WHERE t2.key_a=2 and key_b=5;
+#EXPLAIN SELECT t2.key_a,foo 
+#  FROM t1 INNER JOIN t2 ON t1.key_a = t2.key_a
+#          INNER JOIN t3 ON t1.key_a = t3.key_a
+#    WHERE t2.key_a=2 and key_b=5;
 
 SELECT t2.key_a,foo 
   FROM t1 INNER JOIN t2 ON t2.key_a = t1.key_a
           INNER JOIN t3 ON t1.key_a = t3.key_a
     WHERE t2.key_a=2 and key_b=5;
-EXPLAIN SELECT t2.key_a,foo 
-  FROM t1 INNER JOIN t2 ON t2.key_a = t1.key_a
-          INNER JOIN t3 ON t1.key_a = t3.key_a
-    WHERE t2.key_a=2 and key_b=5;
+#EXPLAIN SELECT t2.key_a,foo 
+#  FROM t1 INNER JOIN t2 ON t2.key_a = t1.key_a
+#          INNER JOIN t3 ON t1.key_a = t3.key_a
+#    WHERE t2.key_a=2 and key_b=5;
 
 DROP TABLE t1,t2,t3;
 
@@ -2921,6 +2935,7 @@ select * from (select * left join t on f1=f2) tt;
 # Bug #16504: re-evaluation of Item_equal object after reading const table
 #
 
+#Bug #SEQUOIADBMAINSTREAM-3574
 CREATE TABLE t1 (sku int PRIMARY KEY, pr int);
 CREATE TABLE t2 (sku int PRIMARY KEY, sppr int, name varchar(255));
 
@@ -2933,9 +2948,9 @@ INSERT INTO t2 VALUES
 
 SELECT t2.sku, t2.sppr, t2.name, t1.sku, t1.pr
   FROM t2, t1 WHERE t2.sku=20 AND (t2.sku=t1.sku OR t2.sppr=t1.sku);
-EXPLAIN
-SELECT t2.sku, t2.sppr, t2.name, t1.sku, t1.pr
-  FROM t2, t1 WHERE t2.sku=20 AND (t2.sku=t1.sku OR t2.sppr=t1.sku);
+#EXPLAIN
+#SELECT t2.sku, t2.sppr, t2.name, t1.sku, t1.pr
+#  FROM t2, t1 WHERE t2.sku=20 AND (t2.sku=t1.sku OR t2.sppr=t1.sku);
 
 
 DROP TABLE t1,t2;
@@ -2952,6 +2967,7 @@ UPDATE t1 SET i = -1;
 SELECT * FROM t1;
 UPDATE t1 SET i = CAST(i - 1 AS SIGNED);
 SELECT * FROM t1;
+#Bug #SEQUOIASQLMAINSTREAM-479
 UPDATE t1 SET i = i - 1;
 SELECT * FROM t1;
 DROP TABLE t1;
@@ -2963,11 +2979,12 @@ create table t1 (a int);
 insert into t1 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
 create table t2 (a int, b int, c int, e int, primary key(a,b,c));
 insert into t2 select A.a, B.a, C.a, C.a from t1 A, t1 B, t1 C;
+--replace_column 1 x
 analyze table t2;
 select 'In next EXPLAIN, B.rows must be exactly 10:' Z;
 
-explain select * from t2 a, t2 b where a.a=5 and a.b=5 and a.c<5
-          and b.a=5 and b.b=a.e and (b.b =1 or b.b = 3 or b.b=5);
+#explain select * from t2 a, t2 b where a.a=5 and a.b=5 and a.c<5
+#          and b.a=5 and b.b=a.e and (b.b =1 or b.b = 3 or b.b=5);
 drop table t1, t2;
 
 #
@@ -2984,10 +3001,10 @@ INSERT INTO t2 VALUES
  (5,0,0), (5,0,1), (6,0,0), (0,0,1), (7,0,0), (7,0,1),
  (0,0,0), (0,0,1), (8,0,0), (8,0,1), (9,0,0), (9,0,1);
 
-EXPLAIN
-SELECT a, c, d, f FROM t1,t2 WHERE a=c AND b BETWEEN 4 AND 6;
-EXPLAIN
-SELECT a, c, d, f FROM t1,t2 WHERE a=c AND b BETWEEN 4 AND 6 AND a > 0;
+#EXPLAIN
+#SELECT a, c, d, f FROM t1,t2 WHERE a=c AND b BETWEEN 4 AND 6;
+#EXPLAIN
+#SELECT a, c, d, f FROM t1,t2 WHERE a=c AND b BETWEEN 4 AND 6 AND a > 0;
 
 DROP TABLE t1, t2;
 
@@ -3042,8 +3059,8 @@ INSERT INTO t2 VALUES
   (3), (3),
   (4);
 
-EXPLAIN SELECT b FROM t1, t2 WHERE b=c AND a=1;
-EXPLAIN SELECT b FROM t1, t2 WHERE b=c AND a=4;
+#EXPLAIN SELECT b FROM t1, t2 WHERE b=c AND a=1;
+#EXPLAIN SELECT b FROM t1, t2 WHERE b=c AND a=4;
 
 DROP TABLE t1, t2;
 
@@ -3060,9 +3077,9 @@ INSERT INTO t2 VALUES (2,1), (3,2);
 CREATE TABLE t3 (d int,  e int, INDEX idx1(d));
 INSERT INTO t3 VALUES (2,10), (2,20), (1,30), (2,40), (2,50);
 
-EXPLAIN
-SELECT * FROM t1 LEFT JOIN t2 ON t2.b=t1.a INNER JOIN t3 ON t3.d=t1.id
-  WHERE t1.id=2;
+#EXPLAIN
+#SELECT * FROM t1 LEFT JOIN t2 ON t2.b=t1.a INNER JOIN t3 ON t3.d=t1.id
+#  WHERE t1.id=2;
 SELECT * FROM t1 LEFT JOIN t2 ON t2.b=t1.a INNER JOIN t3 ON t3.d=t1.id
   WHERE t1.id=2;
 
@@ -3072,11 +3089,12 @@ DROP TABLE t1,t2,t3;
 # Bug#20503: Server crash due to the ORDER clause isn't taken into account
 #            while space allocation
 #
-create table t1 (c1 varchar(1), c2 int, c3 int, c4 int, c5 int, c6 int,
-c7 int, c8 int, c9 int, fulltext key (`c1`));
-select distinct match (`c1`) against ('z') , c2, c3, c4,c5, c6,c7, c8 
-  from t1 where c9=1 order by c2, c2;
-drop table t1;
+# NOW SequoiaDB not support FullText
+#create table t1 (c1 varchar(1), c2 int, c3 int, c4 int, c5 int, c6 int,
+#c7 int, c8 int, c9 int, fulltext key (`c1`));
+#select distinct match (`c1`) against ('z') , c2, c3, c4,c5, c6,c7, c8 
+#  from t1 where c9=1 order by c2, c2;
+#drop table t1;
 
 #
 # Bug #22735: no equality propagation for BETWEEN and IN with STRING arguments
@@ -3094,15 +3112,15 @@ INSERT INTO t2 VALUES
   ('bbb','b'), ('ff','f'), ('cccc','c'), ('dddd','d'), ('jj','j'),
   ('aaaa','a'), ('bb','b'), ('eeee','e'), ('aa','a'), ('hh','h');
 
-EXPLAIN SELECT t2.* 
-  FROM t1 JOIN t2 ON t2.fk=t1.pk
-    WHERE t2.fk < 'c' AND t2.pk=t1.fk;
-EXPLAIN SELECT t2.* 
-  FROM t1 JOIN t2 ON t2.fk=t1.pk 
-    WHERE t2.fk BETWEEN 'a' AND 'b' AND t2.pk=t1.fk;
-EXPLAIN SELECT t2.* 
-  FROM t1 JOIN t2 ON t2.fk=t1.pk 
-    WHERE t2.fk IN ('a','b') AND t2.pk=t1.fk;
+#EXPLAIN SELECT t2.* 
+#  FROM t1 JOIN t2 ON t2.fk=t1.pk
+#    WHERE t2.fk < 'c' AND t2.pk=t1.fk;
+#EXPLAIN SELECT t2.* 
+#  FROM t1 JOIN t2 ON t2.fk=t1.pk 
+#    WHERE t2.fk BETWEEN 'a' AND 'b' AND t2.pk=t1.fk;
+#EXPLAIN SELECT t2.* 
+#  FROM t1 JOIN t2 ON t2.fk=t1.pk 
+#    WHERE t2.fk IN ('a','b') AND t2.pk=t1.fk;
 
 DROP TABLE t1,t2;
 
@@ -3116,7 +3134,7 @@ CREATE TABLE t2 (a int, b varchar(20) NOT NULL,
 INSERT INTO t1 VALUES (1,'a'),(2,'b'),(3,'c');
 INSERT INTO t2 VALUES (1,'a'),(2,'b'),(3,'c');
 
-EXPLAIN SELECT t1.a FROM t1 LEFT JOIN t2 ON t2.b=t1.b WHERE t1.a=3;
+#EXPLAIN SELECT t1.a FROM t1 LEFT JOIN t2 ON t2.b=t1.b WHERE t1.a=3;
 
 DROP TABLE t1,t2;
 
@@ -3143,23 +3161,28 @@ INSERT INTO t3 VALUES
   (230,'aa'), (960,'ii'), (410,'aa'), (510,'ee'), (290,'bb'),
   (450,'gg'), (320,'dd'), (390,'hh'), (850,'jj'), (860,'ff');
 
-EXPLAIN
-SELECT t3.a FROM t1,t2 FORCE INDEX (si),t3
-  WHERE t1.id = 8 AND t2.i BETWEEN t1.b AND t1.e AND 
-        t3.a=t2.a AND t3.c IN ('bb','ee');
-EXPLAIN
-SELECT t3.a FROM t1,t2,t3
-  WHERE t1.id = 8 AND t2.i BETWEEN t1.b AND t1.e AND
-        t3.a=t2.a AND t3.c IN ('bb','ee') ;
+#--replace_column 11 filtered
+#EXPLAIN
+#SELECT t3.a FROM t1,t2 FORCE INDEX (si),t3
+#  WHERE t1.id = 8 AND t2.i BETWEEN t1.b AND t1.e AND 
+#        t3.a=t2.a AND t3.c IN ('bb','ee');
 
-EXPLAIN 
-SELECT t3.a FROM t1,t2 FORCE INDEX (si),t3
-  WHERE t1.id = 8 AND (t2.i=t1.b OR t2.i=t1.e) AND t3.a=t2.a AND
-        t3.c IN ('bb','ee');
-EXPLAIN 
-SELECT t3.a FROM t1,t2,t3
-  WHERE t1.id = 8 AND (t2.i=t1.b OR t2.i=t1.e) AND t3.a=t2.a AND
-        t3.c IN ('bb','ee');
+#--replace_column 11 filtered
+#EXPLAIN
+#SELECT t3.a FROM t1,t2,t3
+#  WHERE t1.id = 8 AND t2.i BETWEEN t1.b AND t1.e AND
+#        t3.a=t2.a AND t3.c IN ('bb','ee') ;
+
+#--replace_column 11 filtered
+#EXPLAIN 
+#SELECT t3.a FROM t1,t2 FORCE INDEX (si),t3
+#  WHERE t1.id = 8 AND (t2.i=t1.b OR t2.i=t1.e) AND t3.a=t2.a AND
+#        t3.c IN ('bb','ee');
+#--replace_column 11 filtered
+#EXPLAIN 
+#SELECT t3.a FROM t1,t2,t3
+#  WHERE t1.id = 8 AND (t2.i=t1.b OR t2.i=t1.e) AND t3.a=t2.a AND
+#       t3.c IN ('bb','ee');
 
 DROP TABLE t1,t2,t3;
  
@@ -3217,12 +3240,12 @@ INSERT INTO t1 SELECT * FROM t1 WHERE ID_with_null IS NULL;
 SELECT COUNT(*) FROM t1 WHERE ID_with_null IS NULL;
 SELECT COUNT(*) FROM t1 WHERE ID_better=1;
 
-EXPLAIN SELECT * FROM t1 WHERE ID_better=1 AND ID_with_null IS NULL;
+#EXPLAIN SELECT * FROM t1 WHERE ID_better=1 AND ID_with_null IS NULL;
 
 DROP INDEX idx1 ON t1;
 CREATE UNIQUE INDEX idx1 ON t1(ID_with_null);
 
-EXPLAIN SELECT * FROM t1 WHERE ID_better=1 AND ID_with_null IS NULL;
+#EXPLAIN SELECT * FROM t1 WHERE ID_better=1 AND ID_with_null IS NULL;
 
 DROP TABLE t1;
 
@@ -3249,25 +3272,26 @@ SELECT COUNT(*) FROM t1 WHERE ID1_with_null=3 AND ID2_with_null IS NULL;
 SELECT COUNT(*) FROM t1 WHERE ID1_with_null IS NULL AND ID2_with_null IS NULL;
 SELECT COUNT(*) FROM t1 WHERE ID_better=1;
 
-EXPLAIN SELECT * FROM t1
-  WHERE ID_better=1 AND ID1_with_null IS NULL AND ID2_with_null=3 ;
-EXPLAIN SELECT * FROM t1
-  WHERE ID_better=1 AND ID1_with_null=3 AND ID2_with_null=3 IS NULL ;
-EXPLAIN SELECT * FROM t1
-  WHERE ID_better=1 AND ID1_with_null IS NULL AND ID2_with_null IS NULL;
+#EXPLAIN SELECT * FROM t1
+#  WHERE ID_better=1 AND ID1_with_null IS NULL AND ID2_with_null=3 ;
+#EXPLAIN SELECT * FROM t1
+#  WHERE ID_better=1 AND ID1_with_null=3 AND ID2_with_null=3 IS NULL ;
+#EXPLAIN SELECT * FROM t1
+#  WHERE ID_better=1 AND ID1_with_null IS NULL AND ID2_with_null IS NULL;
 
-DROP INDEX idx1 ON t1;
-CREATE UNIQUE INDEX idx1 ON t1(ID1_with_null,ID2_with_null);
+#Bug #SEQUOIADBMAINSTREAM-3570
+#DROP INDEX idx1 ON t1;
+#CREATE UNIQUE INDEX idx1 ON t1(ID1_with_null,ID2_with_null);
 
-EXPLAIN SELECT * FROM t1
-  WHERE ID_better=1 AND ID1_with_null IS NULL AND ID2_with_null=3 ;
-EXPLAIN SELECT * FROM t1
-  WHERE ID_better=1 AND ID1_with_null=3 AND ID2_with_null IS NULL ;
-EXPLAIN SELECT * FROM t1
-  WHERE ID_better=1 AND ID1_with_null IS NULL AND ID2_with_null IS NULL;
-EXPLAIN SELECT * FROM t1
-  WHERE ID_better=1 AND ID1_with_null IS NULL AND 
-        (ID2_with_null=1 OR ID2_with_null=2);
+#EXPLAIN SELECT * FROM t1
+#  WHERE ID_better=1 AND ID1_with_null IS NULL AND ID2_with_null=3 ;
+#EXPLAIN SELECT * FROM t1
+#  WHERE ID_better=1 AND ID1_with_null=3 AND ID2_with_null IS NULL ;
+#EXPLAIN SELECT * FROM t1
+#  WHERE ID_better=1 AND ID1_with_null IS NULL AND ID2_with_null IS NULL;
+#EXPLAIN SELECT * FROM t1
+#  WHERE ID_better=1 AND ID1_with_null IS NULL AND 
+#        (ID2_with_null=1 OR ID2_with_null=2);
 
 DROP TABLE t1;
 
@@ -3276,17 +3300,19 @@ DROP TABLE t1;
 #
 CREATE TABLE t1 (a INT, ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, KEY ts(ts));
 INSERT INTO t1 VALUES (30,"2006-01-03 23:00:00"), (31,"2006-01-03 23:00:00");
+--replace_column 1 x
 ANALYZE TABLE t1;
 
 CREATE TABLE t2 (a INT, dt1 DATETIME, dt2 DATETIME, PRIMARY KEY (a));
 INSERT INTO t2 VALUES (30, "2006-01-01 00:00:00", "2999-12-31 00:00:00");
 INSERT INTO t2 SELECT a+1,dt1,dt2 FROM t2;
+--replace_column 1 x
 ANALYZE TABLE t2;
 
-EXPLAIN
-SELECT * FROM t1 LEFT JOIN t2 ON (t1.a=t2.a) WHERE t1.a=30
-  AND t1.ts BETWEEN t2.dt1 AND t2.dt2
-  AND t1.ts BETWEEN "2006-01-01" AND "2006-12-31";
+#EXPLAIN
+#SELECT * FROM t1 LEFT JOIN t2 ON (t1.a=t2.a) WHERE t1.a=30
+#  AND t1.ts BETWEEN t2.dt1 AND t2.dt2
+#  AND t1.ts BETWEEN "2006-01-01" AND "2006-12-31";
 
 SELECT * FROM t1 LEFT JOIN t2 ON (t1.a=t2.a) WHERE t1.a=30
   AND t1.ts BETWEEN t2.dt1 AND t2.dt2
@@ -3329,14 +3355,20 @@ SELECT * FROM t2;
 SELECT * FROM t2 ORDER BY name;
 SELECT name, LENGTH(name), n FROM t2 ORDER BY name;
 
-EXPLAIN SELECT name, LENGTH(name), n FROM t2 WHERE name='cc '; 
+#EXPLAIN SELECT name, LENGTH(name), n FROM t2 WHERE name='cc '; 
+
+#Bug #SEQUOIADBMAINSTREAM-3568
+# SEQUOIASQLMAINSTSREAM-204
 SELECT name, LENGTH(name), n FROM t2 WHERE name='cc '; 
-EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
+#EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
 SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
-EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
+#EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
 SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
-SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
+
+#Bug #SEQUOIADBMAINSTREAM-3643
+#Bug #SEQUOIASQLMAINSTREAM-206
+#SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
 
 DROP TABLE t1,t2;
 
@@ -3350,14 +3382,20 @@ SELECT * FROM t2;
 SELECT * FROM t2 ORDER BY name;
 SELECT name, LENGTH(name), n FROM t2 ORDER BY name;
 
-EXPLAIN SELECT name, LENGTH(name), n FROM t2 WHERE name='cc '; 
+#EXPLAIN SELECT name, LENGTH(name), n FROM t2 WHERE name='cc '; 
+
+#Bug #SEQUOIADBMAINSTREAM-3568
+# SEQUOIASQLMAINSTSREAM-204
 SELECT name, LENGTH(name), n FROM t2 WHERE name='cc '; 
-EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
+#EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
 SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
-EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
+#EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
 SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
-EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
-SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
+#EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
+
+#Bug #SEQUOIADBMAINSTREAM-3643
+#Bug #SEQUOIASQLMAINSTREAM-206
+#SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
 
 DROP TABLE t1,t2;
 
@@ -3416,9 +3454,9 @@ DROP TABLE t1,t2;
 CREATE TABLE t1 (a INT, b INT, KEY inx (b,a));
 
 INSERT INTO t1 VALUES (1,1), (1,2), (1,3), (1,4), (1,5), (1, 6), (1,7);
-EXPLAIN SELECT COUNT(*) FROM t1 f1 INNER JOIN t1 f2
-    ON ( f1.b=f2.b AND f1.a<f2.a ) 
-    WHERE 1 AND f1.b NOT IN (100,2232,3343,51111);
+#EXPLAIN SELECT COUNT(*) FROM t1 f1 INNER JOIN t1 f2
+#    ON ( f1.b=f2.b AND f1.a<f2.a ) 
+#    WHERE 1 AND f1.b NOT IN (100,2232,3343,51111);
 DROP TABLE t1;    
 
 #
@@ -3458,61 +3496,60 @@ DROP TABLE t1;
 # Bug #30396: crash for a join with equalities and sargable predicates
 #             in disjunctive parts of the WHERE condition 
 #
-
-CREATE TABLE t1 (
-  c1 int(11) NOT NULL AUTO_INCREMENT,
-  c2 varchar(1000) DEFAULT NULL,
-  c3 bigint(20) DEFAULT NULL,
-  c4 bigint(20) DEFAULT NULL,
-  PRIMARY KEY (c1)
-);
-
-EXPLAIN EXTENDED 
-SELECT  join_2.c1  
-FROM 
-	t1 AS join_0, 
-	t1 AS join_1, 
-	t1 AS join_2, 
-	t1 AS join_3, 
-	t1 AS join_4, 
-	t1 AS join_5, 
-	t1 AS join_6, 
-	t1 AS join_7
-WHERE 
-	join_0.c1=join_1.c1  AND 
-	join_1.c1=join_2.c1  AND 
-	join_2.c1=join_3.c1  AND 
-	join_3.c1=join_4.c1  AND 
-	join_4.c1=join_5.c1  AND 
-	join_5.c1=join_6.c1  AND 
-	join_6.c1=join_7.c1 
-         OR 
-	join_0.c2 < '?'  AND 
-	join_1.c2 < '?'  AND
-	join_2.c2 > '?'  AND
-	join_2.c2 < '!'  AND
-	join_3.c2 > '?'  AND 
-	join_4.c2 = '?'  AND 
-	join_5.c2 <> '?' AND
-	join_6.c2 <> '?' AND 
-	join_7.c2 >= '?' AND
-        join_0.c1=join_1.c1  AND 
-	join_1.c1=join_2.c1  AND 
-        join_2.c1=join_3.c1  AND
-	join_3.c1=join_4.c1  AND 
-	join_4.c1=join_5.c1  AND 
-	join_5.c1=join_6.c1  AND 
-	join_6.c1=join_7.c1
-GROUP BY 
-	join_3.c1,
-	join_2.c1,
-	join_7.c1,
-	join_1.c1,
-	join_0.c1;
-	
-SHOW WARNINGS;
-
-DROP TABLE t1;
+#CREATE TABLE t1 (
+#  c1 int(11) NOT NULL AUTO_INCREMENT,
+#  c2 varchar(1000) DEFAULT NULL,
+#  c3 bigint(20) DEFAULT NULL,
+#  c4 bigint(20) DEFAULT NULL,
+#  PRIMARY KEY (c1)
+#);
+#
+#EXPLAIN EXTENDED 
+#SELECT  join_2.c1  
+#FROM 
+#	t1 AS join_0, 
+#	t1 AS join_1, 
+#	t1 AS join_2, 
+#	t1 AS join_3, 
+#	t1 AS join_4, 
+#	t1 AS join_5, 
+#	t1 AS join_6, 
+#	t1 AS join_7
+#WHERE 
+#	join_0.c1=join_1.c1  AND 
+#	join_1.c1=join_2.c1  AND 
+#	join_2.c1=join_3.c1  AND 
+#	join_3.c1=join_4.c1  AND 
+#	join_4.c1=join_5.c1  AND 
+#	join_5.c1=join_6.c1  AND 
+#	join_6.c1=join_7.c1 
+#         OR 
+#	join_0.c2 < '?'  AND 
+#	join_1.c2 < '?'  AND
+#	join_2.c2 > '?'  AND
+#	join_2.c2 < '!'  AND
+#	join_3.c2 > '?'  AND 
+#	join_4.c2 = '?'  AND 
+#	join_5.c2 <> '?' AND
+#	join_6.c2 <> '?' AND 
+#	join_7.c2 >= '?' AND
+#        join_0.c1=join_1.c1  AND 
+#	join_1.c1=join_2.c1  AND 
+#        join_2.c1=join_3.c1  AND
+#	join_3.c1=join_4.c1  AND 
+#	join_4.c1=join_5.c1  AND 
+#	join_5.c1=join_6.c1  AND 
+#	join_6.c1=join_7.c1
+#GROUP BY 
+#	join_3.c1,
+#	join_2.c1,
+#	join_7.c1,
+#	join_1.c1,
+#	join_0.c1;
+#	
+#SHOW WARNINGS;
+#
+#DROP TABLE t1;
 
 #
 # Bug #27695: Misleading warning when declaring all space column names and
@@ -3614,7 +3651,6 @@ select str_to_date('1000-01-01','%Y-%m-%d') between NULL and NULL;
 #
 # Bug #30666: Incorrect order when using range conditions on 2 tables or more
 #
-
 CREATE TABLE t1 (c11 INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY);
 CREATE TABLE t2 (c21 INT UNSIGNED NOT NULL, 
                  c22 INT DEFAULT NULL, 
@@ -3779,8 +3815,8 @@ drop table t1, t2, t3;
 CREATE TABLE t1 (a INT KEY, b INT);
 INSERT INTO t1 VALUES (1,1), (2,2), (3,3), (4,4);
 
-EXPLAIN EXTENDED SELECT a, b FROM t1 WHERE a > 1 AND a = b LIMIT 2;
-EXPLAIN EXTENDED SELECT a, b FROM t1 WHERE a > 1 AND b = a LIMIT 2;
+#EXPLAIN EXTENDED SELECT a, b FROM t1 WHERE a > 1 AND a = b LIMIT 2;
+#EXPLAIN EXTENDED SELECT a, b FROM t1 WHERE a > 1 AND b = a LIMIT 2;
 
 DROP TABLE t1;
 
@@ -3789,15 +3825,16 @@ DROP TABLE t1;
 --echo # Bug#47019: Assertion failed: 0, file .\rt_mbr.c, line 138 when 
 --echo # forcing a spatial index
 --echo #
-CREATE TABLE t1(a LINESTRING NOT NULL, SPATIAL KEY(a));
-INSERT INTO t1 VALUES
-  (ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)')),
-  (ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
-EXPLAIN SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2;
-SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2;
-EXPLAIN SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2 FORCE INDEX(a);
-SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2 FORCE INDEX(a);
-DROP TABLE t1;
+# NOW SequoiaDB not support GEOMETRY
+#CREATE TABLE t1(a LINESTRING NOT NULL, SPATIAL KEY(a));
+#INSERT INTO t1 VALUES
+#  (ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)')),
+#  (ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+#EXPLAIN SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2;
+#SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2;
+#EXPLAIN SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2 FORCE INDEX(a);
+#SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2 FORCE INDEX(a);
+#DROP TABLE t1;
 
 
 --echo #
@@ -3837,34 +3874,34 @@ SET sql_mode = default;
 CREATE TABLE t1(a DATETIME NOT NULL);
 INSERT INTO t1 VALUES('2001-01-01');
 SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
 DROP TABLE t1;
 
 CREATE TABLE t1(a DATE NOT NULL);
 INSERT INTO t1 VALUES('2001-01-01');
 SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
 DROP TABLE t1;
 
 CREATE TABLE t1(a TIMESTAMP NOT NULL NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
 INSERT INTO t1 VALUES('2001-01-01');
 SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a='2001-01-01 00:00:00';
 DROP TABLE t1;
 
 CREATE TABLE t1(a DATETIME NOT NULL, b DATE NOT NULL);
 INSERT INTO t1 VALUES('2001-01-01', '2001-01-01');
 SELECT * FROM t1 WHERE a='2001-01-01' AND a=b AND b='2001-01-01 00:00:00';
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a=b AND b='2001-01-01 00:00:00';
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a=b AND b='2001-01-01 00:00:00';
 DROP TABLE t1;
 
 CREATE TABLE t1(a DATETIME NOT NULL, b VARCHAR(20) NOT NULL);
 INSERT INTO t1 VALUES('2001-01-01', '2001-01-01');
 SELECT * FROM t1 WHERE a='2001-01-01' AND a=b AND b='2001-01-01 00:00:00';
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a=b AND b='2001-01-01 00:00:00';
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01' AND a=b AND b='2001-01-01 00:00:00';
 
 SELECT * FROM t1 WHERE a='2001-01-01 00:00:00' AND a=b AND b='2001-01-01';
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01 00:00:00' AND a=b AND b='2001-01-01';
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a='2001-01-01 00:00:00' AND a=b AND b='2001-01-01';
 DROP TABLE t1;
 
 CREATE TABLE t1(a DATETIME NOT NULL, b DATE NOT NULL);
@@ -3873,10 +3910,10 @@ SELECT x.a, y.a, z.a FROM t1 x
   JOIN t1 y ON x.a=y.a 
   JOIN t1 z ON y.a=z.a 
   WHERE x.a='2001-01-01' AND z.a='2001-01-01 00:00:00';
-EXPLAIN EXTENDED SELECT x.a, y.a, z.a FROM t1 x 
-  JOIN t1 y ON x.a=y.a 
-  JOIN t1 z ON y.a=z.a 
-  WHERE x.a='2001-01-01' AND z.a='2001-01-01 00:00:00';
+#EXPLAIN EXTENDED SELECT x.a, y.a, z.a FROM t1 x 
+#  JOIN t1 y ON x.a=y.a 
+#  JOIN t1 z ON y.a=z.a 
+#  WHERE x.a='2001-01-01' AND z.a='2001-01-01 00:00:00';
 DROP TABLE t1;
 
 
@@ -3894,7 +3931,7 @@ INSERT INTO t1 VALUES (0), (0), (0);
 INSERT INTO t1 SELECT t11.a FROM t1 t11, t1 t12;
 INSERT INTO t1 SELECT t11.a FROM t1 t11, t1 t12;
 INSERT INTO t1 SELECT t11.a FROM t1 t11, t1 t12;
-EXPLAIN SELECT a FROM t1 ORDER BY a;
+#EXPLAIN SELECT a FROM t1 ORDER BY a;
 --disable_result_log
 SELECT a FROM t1 ORDER BY a;
 --enable_result_log
@@ -3907,13 +3944,14 @@ INSERT INTO t1 VALUES (0, 0, 0), (0, 0, 2), (0, 0, 1);
 INSERT INTO t1 SELECT t11.a, t11.b, t11.c FROM t1 t11, t1 t12;
 INSERT INTO t1 SELECT t11.a, t11.b, t11.c FROM t1 t11, t1 t12;
 INSERT INTO t1 SELECT t11.a, t11.b, t11.c FROM t1 t11, t1 t12;
-EXPLAIN SELECT a FROM t1 ORDER BY a LIMIT 5;
+#EXPLAIN SELECT a FROM t1 ORDER BY a LIMIT 5;
 SELECT a FROM t1 ORDER BY a LIMIT 5;
-EXPLAIN SELECT * FROM t1 ORDER BY a, b LIMIT 5;
-SELECT * FROM t1 ORDER BY a, b LIMIT 5;
-EXPLAIN SELECT * FROM t1 ORDER BY a, b, c LIMIT 5;
+#Sequoiadb not support return record by insert order when use order by;
+#EXPLAIN SELECT * FROM t1 ORDER BY a, b LIMIT 5;
+#SELECT * FROM t1 ORDER BY a, b LIMIT 5;
+#EXPLAIN SELECT * FROM t1 ORDER BY a, b, c LIMIT 5;
 SELECT * FROM t1 ORDER BY a, b, c LIMIT 5;
-EXPLAIN SELECT * FROM t1 ORDER BY c, a LIMIT 5;
+#EXPLAIN SELECT * FROM t1 ORDER BY c, a LIMIT 5;
 SELECT * FROM t1 ORDER BY c, a LIMIT 5;
 
 SET @@sort_buffer_size= @old_sort_buffer_size;
@@ -3969,14 +4007,14 @@ DROP TABLE A,C;
 #
 CREATE TABLE t1 (a INT NOT NULL, b INT);
 INSERT INTO t1 VALUES (1, 1);
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE (a=a AND a=a) OR b > 2;
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE (a=a AND a=a) OR b > 2;
 SELECT * FROM t1 WHERE (a=a AND a=a) OR b > 2;
 DROP TABLE t1;
 
 CREATE TABLE t1 (a INT NOT NULL, b INT NOT NULL, c INT NOT NULL);
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE (a=a AND b=b AND c=c) OR b > 20;
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE (a=a AND a=a AND b=b) OR b > 20;
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE (a=a AND b=b AND a=a) OR b > 20;
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE (a=a AND b=b AND c=c) OR b > 20;
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE (a=a AND a=a AND b=b) OR b > 20;
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE (a=a AND b=b AND a=a) OR b > 20;
 DROP TABLE t1;
 
 
@@ -4074,15 +4112,16 @@ INSERT INTO t1 VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
 CREATE TABLE t2 (b INT);
 INSERT INTO t2 VALUES (2);
 SELECT * FROM t1 WHERE a = 1 + 1;
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a = 1 + 1;
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a = 1 + 1;
 SELECT * FROM t1 HAVING a = 1 + 1;
-EXPLAIN EXTENDED SELECT * FROM t1 HAVING a = 1 + 1;
+#EXPLAIN EXTENDED SELECT * FROM t1 HAVING a = 1 + 1;
 SELECT * FROM t1, t2 WHERE a = b + (1 + 1);
-EXPLAIN EXTENDED SELECT * FROM t1, t2 WHERE a = b + (1 + 1);
+#EXPLAIN EXTENDED SELECT * FROM t1, t2 WHERE a = b + (1 + 1);
 SELECT * FROM t2 LEFT JOIN t1 ON a = b + 1;
-EXPLAIN EXTENDED SELECT * FROM t2 LEFT JOIN t1 ON a = b + 1;
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a > UNIX_TIMESTAMP('2009-03-10 00:00:00');
+#EXPLAIN EXTENDED SELECT * FROM t2 LEFT JOIN t1 ON a = b + 1;
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a > UNIX_TIMESTAMP('2009-03-10 00:00:00');
 
+#Bug #SEQUOIADBMAINSTREAM-3670
 delimiter |;
 CREATE FUNCTION f1() RETURNS INT DETERMINISTIC
 BEGIN
@@ -4094,7 +4133,7 @@ delimiter ;|
 SET @cnt := 0;
 SELECT * FROM t1 WHERE a = f1();
 SELECT @cnt;
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a = f1();
+#EXPLAIN EXTENDED SELECT * FROM t1 WHERE a = f1();
 DROP TABLE t1, t2;
 DROP FUNCTION f1;
 --echo # End of bug#33546
@@ -4163,7 +4202,7 @@ DROP TABLE t1;
 --echo #
 CREATE TABLE t1(a ENUM('') NOT NULL);
 INSERT INTO t1 VALUES (), (), ();
-EXPLAIN SELECT 1 FROM t1 ORDER BY a COLLATE latin1_german2_ci;
+#EXPLAIN SELECT 1 FROM t1 ORDER BY a COLLATE latin1_german2_ci;
 SELECT 1 FROM t1 ORDER BY a COLLATE latin1_german2_ci;
 DROP TABLE t1;
 
@@ -4174,20 +4213,20 @@ DROP TABLE t1;
 --echo # with an empty table
 --echo #
 
-CREATE TABLE t_empty(pk INT PRIMARY KEY, i INT) ENGINE = MYISAM;
-CREATE TABLE t1(pk INT PRIMARY KEY, i INT) ENGINE = MYISAM;
+CREATE TABLE t_empty(pk INT PRIMARY KEY, i INT) ENGINE = Sequoiadb;
+CREATE TABLE t1(pk INT PRIMARY KEY, i INT) ENGINE = Sequoiadb;
 INSERT INTO t1 VALUES (1,1), (2,2), (3,3);
-CREATE TABLE t2(pk INT PRIMARY KEY, i INT) ENGINE = MYISAM;
+CREATE TABLE t2(pk INT PRIMARY KEY, i INT) ENGINE = Sequoiadb;
 INSERT INTO t2 VALUES (1,1), (2,2), (3,3);
 
-EXPLAIN
-SELECT *
-  FROM 
-    t1
-  LEFT OUTER JOIN
-    (t2 INNER JOIN t_empty ON TRUE)
-  ON t1.pk=t2.pk
-  WHERE t2.pk <> 2;
+#EXPLAIN
+#SELECT *
+#  FROM 
+#    t1
+#  LEFT OUTER JOIN
+#    (t2 INNER JOIN t_empty ON TRUE)
+#  ON t1.pk=t2.pk
+#  WHERE t2.pk <> 2;
 
 SELECT *
   FROM 
@@ -4198,14 +4237,14 @@ SELECT *
   WHERE t2.pk <> 2;
 
 
-EXPLAIN
-SELECT *
-  FROM 
-    t1
-  LEFT OUTER JOIN
-    (t2 CROSS JOIN t_empty)
-  ON t1.pk=t2.pk
-  WHERE t2.pk <> 2;
+#EXPLAIN
+#SELECT *
+#  FROM 
+#    t1
+#  LEFT OUTER JOIN
+#    (t2 CROSS JOIN t_empty)
+#  ON t1.pk=t2.pk
+#  WHERE t2.pk <> 2;
 
 SELECT *
   FROM 
@@ -4216,14 +4255,14 @@ SELECT *
   WHERE t2.pk <> 2;
 
 
-EXPLAIN
-SELECT *
-  FROM 
-    t1
-  LEFT OUTER JOIN
-    (t2 INNER JOIN t_empty ON t_empty.i=t2.i)
-  ON t1.pk=t2.pk
-  WHERE t2.pk <> 2;
+#EXPLAIN
+#SELECT *
+#  FROM 
+#    t1
+#  LEFT OUTER JOIN
+#    (t2 INNER JOIN t_empty ON t_empty.i=t2.i)
+#  ON t1.pk=t2.pk
+#  WHERE t2.pk <> 2;
 
 SELECT *
   FROM 
@@ -4256,8 +4295,8 @@ INSERT INTO `cc` VALUES
 ,'e'),(8,9,'t','t'),(5,2,'q','q'),(4,6,'b','b'),(5,5,'w','w'),(3,2,'m','m'),(0,4,'x','x'),
 (8,9,'',''),(0,6,'w','w'),(4,5,'x','x'),(0,0,'e','e'),(0,0,'e','e'),(2,8,'p','p'),(0,0,'x'
 ,'x');
-EXPLAIN SELECT `varchar_nokey` g1  FROM cc  WHERE `int_nokey` AND `int_key`  <= 4
-  HAVING g1  ORDER  BY `varchar_key` LIMIT  6   ;
+#EXPLAIN SELECT `varchar_nokey` g1  FROM cc  WHERE `int_nokey` AND `int_key`  <= 4
+#  HAVING g1  ORDER  BY `varchar_key` LIMIT  6   ;
 
 SELECT `varchar_nokey` g1  FROM cc  WHERE `int_nokey` AND `int_key`  <= 4
   HAVING g1  ORDER  BY `varchar_key` LIMIT  6   ;

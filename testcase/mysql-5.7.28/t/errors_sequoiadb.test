@@ -1,0 +1,33 @@
+--source include/have_sequoiadb.inc
+create table t1 (a int, primary key(a))engine=sequoiadb COMMENT='sequoiadb:{ table_options: { ShardingKey: { a: 1 }, AutoSplit:true } }';
+insert into t1 values (1); 
+--error 1062
+insert into t1 values (1);
+--error 40178
+update ignore t1 set a = 2;
+set global sequoiadb_error_level=warning;
+--error 1062
+insert into t1 values (1);
+--enable_warnings
+update ignore t1 set a = 2;
+--disable_warnings
+set global sequoiadb_error_level=error;
+drop table t1;
+
+#BUG #SEQUOIASQLMAINSTREAM-399
+--error 40006 
+create table t1 ( a char(10) ) COMMENT="sequoiadb:{ table_options: { a : 1 } }"; 
+create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}}, ShardingType : 'hash' }";
+--error 40177
+create unique index a on t1(a); 
+drop table t1; 
+create table t1 (a char(10)); 
+insert into t1 values ('abc'),('bcd'),('abc'); 
+#BUG #SEQUOIASQLMAINSTREAM-203
+--error 1062
+create unique index a on t1 (a); 
+--error 1062
+alter table t1 add unique a(a); 
+drop table t1;
+
+--source include/uninstall_sequoiadb.inc

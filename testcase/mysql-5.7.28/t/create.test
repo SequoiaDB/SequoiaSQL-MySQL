@@ -1,10 +1,25 @@
 #
 # Check some special create statements.
-#
+# (Case #13068: Create DataBase)
+# (Case #13070: Create common Table)
+# (Case #15395: Create index)
+# (Case #15393: Create index)
+
+--source include/have_sequoiadb.inc
+
+--disable_query_log
+CALL mtr.add_suppression("Could not remove temporary table *");
+--enable_query_log
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_create;
+use test_create;
+
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t5;
-drop database if exists mysqltest;
+# Compatible with parallel > 1, don't use mysqltest here, instead use database: mysqltest_casename
+drop database if exists mysqltest_create;
 drop view if exists v1;
 --enable_warnings
 
@@ -19,7 +34,7 @@ insert into t1 values (""),(null);
 select * from t1;
 drop table t1;
 
-create table t1 (a int not null auto_increment,primary key (a)) engine=heap;
+create table t1 (a int not null auto_increment,primary key (a)) engine=sequoiadb;
 drop table t1;
 
 #
@@ -27,21 +42,25 @@ drop table t1;
 #
 
 --error 1146
-create table t2 engine=heap select * from t1;
+create table t2 engine=sequoiadb select * from t1;
 --error 1146
 create table t2 select auto+1 from t1;
 drop table if exists t1,t2;
 --error 1167
 create table t1 (b char(0) not null, index(b));
---error 1163
-create table t1 (a int not null,b text) engine=heap;
+# engine heap will return error, but sequoiadb not
+#--error 1163
+#create table t1 (a int not null,b text) engine=sequoiadb;
 drop table if exists t1;
 
---error 1075
-create table t1 (ordid int(8) not null auto_increment, ord  varchar(50) not null, primary key (ord,ordid)) engine=heap;
+#--error 1075
+#SEQUOIASQLMAINSTREAM-283
+create table t1 (ordid int(8) not null auto_increment, ord  varchar(50) not null, primary key (ord,ordid)) engine=sequoiadb;
+drop table if exists t1;
 
 -- error 1049
 create table not_existing_database.test (a int);
+#Bug #SEQUOIADBMAINSTREAM-3617
 create table `a/a` (a int);
 show create table `a/a`;
 create table t1 like `a/a`;
@@ -80,14 +99,15 @@ drop table 1ea10;
 create table t1 (t1.index int);
 drop table t1;
 # Test that we get warning for this
-drop database if exists mysqltest;
-create database mysqltest;
-create table mysqltest.$test1 (a$1 int, $b int, c$ int);
-insert into mysqltest.$test1 values (1,2,3);
-select a$1, $b, c$ from mysqltest.$test1;
-create table mysqltest.test2$ (a int);
-drop table mysqltest.test2$;
-drop database mysqltest;
+drop database if exists mysqltest_create;
+create database mysqltest_create;
+# NOW SequoiaDB not support special table name
+#create table mysqltest_create.$test1 (a$1 int, $b int, c$ int);
+#insert into mysqltest_create.$test1 values (1,2,3);
+#select a$1, $b, c$ from mysqltest_create.$test1;
+create table mysqltest_create.test2$ (a int);
+drop table mysqltest_create.test2$;
+drop database mysqltest_create;
 
 --error 1103
 create table `` (a int);
@@ -117,11 +137,11 @@ drop table t1;
 #
 # Test of CREATE ... SELECT with indexes
 #
-
+# Bug #SEQUOIASQLMAINSTREAM-113
 create table t1 (a int auto_increment not null primary key, B CHAR(20));
 insert into t1 (b) values ("hello"),("my"),("world");
 create table t2 (key (b)) select * from t1;
-explain select * from t2 where b="world";
+#explain select * from t2 where b="world";
 select * from t2 where b="world";
 drop table t1,t2;
 
@@ -166,7 +186,7 @@ drop table if exists t1,t2;
 
 CREATE TABLE t1 (a int not null);
 INSERT INTO t1 values (1),(2),(1);
---error ER_DUP_ENTRY
+--error 1062
 CREATE TABLE t2 (primary key(a)) SELECT * FROM t1;
 --error 1146
 SELECT * from t2;
@@ -176,20 +196,20 @@ DROP TABLE IF EXISTS t2;
 #
 # Test of primary key with 32 index
 #
-
-create table t1 (a int not null, b int, primary key(a), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b));
-show create table t1;
-drop table t1;
-create table t1 select if(1,'1','0'), month("2002-08-02");
-drop table t1;
-create table t1 select if('2002'='2002','Y','N');
-select * from t1;
-drop table if exists t1;
+# NOW Sequoiadb Not support Duplicate index
+#create table t1 (a int not null, b int, primary key(a), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b), key (b));
+#show create table t1;
+#drop table t1;
+#create table t1 select if(1,'1','0'), month("2002-08-02");
+#drop table t1;
+#create table t1 select if('2002'='2002','Y','N');
+#select * from t1;
+#drop table if exists t1;
 
 #
 # Test default table type
 #
-SET SESSION default_storage_engine="heap";
+SET SESSION default_storage_engine="sequoiadb";
 SELECT @@default_storage_engine;
 CREATE TABLE t1 (a int not null);
 show create table t1;
@@ -199,7 +219,7 @@ SET SESSION default_storage_engine="gemini";
 SELECT @@default_storage_engine;
 CREATE TABLE t1 (a int not null);
 show create table t1;
-SET SESSION default_storage_engine=default;
+SET SESSION default_storage_engine=SequoiaDB;
 drop table t1;
 
 
@@ -276,7 +296,6 @@ create table t1 (,b int);
 #
 # Test create with foreign keys
 #
-
 create table t1 (a int, key(a));
 create table t2 (b int, foreign key(b) references t1(a), key(b));
 drop table if exists t2,t1;
@@ -298,33 +317,33 @@ create table if not exists t3 like t1;
 select @@warning_count;
 --enable_ps_protocol
 create temporary table t3 like t2;
---replace_result InnoDB TMP_TABLE_ENGINE MyISAM TMP_TABLE_ENGINE 
+--replace_result InnoDB TMP_TABLE_ENGINE SequoiaDB TMP_TABLE_ENGINE 
 show create table t3;
 select * from t3;
 drop table t3;
 show create table t3;
 select * from t3;
 drop table t2, t3;
-create database mysqltest;
-create table mysqltest.t3 like t1;
-create temporary table t3 like mysqltest.t3;
---replace_result InnoDB TMP_TABLE_ENGINE MyISAM TMP_TABLE_ENGINE 
+create database mysqltest_create;
+create table mysqltest_create.t3 like t1;
+create temporary table t3 like mysqltest_create.t3;
+--replace_result InnoDB TMP_TABLE_ENGINE SequoiaDB TMP_TABLE_ENGINE 
 show create table t3;
 create table t2 like t3;
 show create table t2;
 select * from t2;
 create table t3 like t1;
 --error 1050
-create table t3 like mysqltest.t3;
+create table t3 like mysqltest_create.t3;
 --error 1049
 create table non_existing_database.t1 like t1;
 --error ER_NO_SUCH_TABLE
 create table t3 like non_existing_table;
 --error 1050
 create temporary table t3 like t1;
-drop table t1, t2, t3;
+drop table if exists t1, t2, t3;
 drop table t3;
-drop database mysqltest;
+drop database mysqltest_create;
 
 #
 # CREATE TABLE LIKE under LOCK TABLES
@@ -349,7 +368,7 @@ drop tables t1, t2;
 #
 # Test default table type
 #
-SET SESSION default_storage_engine="heap";
+SET SESSION default_storage_engine="sequoiadb";
 SELECT @@default_storage_engine;
 CREATE TABLE t1 (a int not null);
 show create table t1;
@@ -436,10 +455,10 @@ drop table t1, t2, t3;
 # Bug #1209
 #
 
-create database mysqltest;
-use mysqltest;
+create database mysqltest_create;
+use mysqltest_create;
 select database();
-drop database mysqltest;
+drop database mysqltest_create;
 select database();
 
 # Connect without a database as user mysqltest_1
@@ -450,12 +469,12 @@ select database(), user();
 connection default;
 disconnect user1;
 drop user mysqltest_1;
-use test;
+use test_create;
 
 #
 # Test for Bug 856 'Naming a key "Primary" causes trouble'
 #
-
+SET default_storage_engine = SequoiaDB;
 --error 1280
 create table t1 (a int, index `primary` (a));
 --error 1280
@@ -484,14 +503,14 @@ drop table t1, t2, t3, t4, t5;
 #
 # bug #3266 TEXT in CREATE TABLE SELECT
 #
-
+#Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1(id varchar(10) NOT NULL PRIMARY KEY, dsc longtext);
 INSERT INTO t1 VALUES ('5000000001', NULL),('5000000003', 'Test'),('5000000004', NULL);
 CREATE TABLE t2(id varchar(15) NOT NULL, proc varchar(100) NOT NULL, runID varchar(16) NOT NULL, start datetime NOT NULL, PRIMARY KEY  (id,proc,runID,start));
-
 INSERT INTO t2 VALUES ('5000000001', 'proc01', '20031029090650', '2003-10-29 13:38:40'),('5000000001', 'proc02', '20031029090650', '2003-10-29 13:38:51'),('5000000001', 'proc03', '20031029090650', '2003-10-29 13:38:11'),('5000000002', 'proc09', '20031024013310', '2003-10-24 01:33:11'),('5000000002', 'proc09', '20031024153537', '2003-10-24 15:36:04'),('5000000004', 'proc01', '20031024013641', '2003-10-24 01:37:29'),('5000000004', 'proc02', '20031024013641', '2003-10-24 01:37:39');
 
 CREATE TABLE t3  SELECT t1.dsc,COUNT(DISTINCT t2.id) AS countOfRuns  FROM t1 LEFT JOIN t2 ON (t1.id=t2.id) GROUP BY t1.id;
+--sorted_result
 SELECT * FROM t3;
 drop table t1, t2, t3;
 
@@ -527,11 +546,11 @@ drop table t1;
 --error 1103
 create table t1(column.name int);
 --error 1103
-create table t1(test.column.name int);
+create table t1(test_create.column.name int);
 --error 1102
 create table t1(xyz.t1.name int);
 create table t1(t1.name int);
-create table t2(test.t2.name int);
+create table t2(test_create.t2.name int);
 drop table t1,t2;
 
 #
@@ -552,33 +571,33 @@ DROP TABLE t12913;
 #
 # Bug#11028: Crash on create table like
 #
-create database mysqltest;
-use mysqltest;
-drop database mysqltest;
+create database mysqltest_create;
+use mysqltest_create;
+drop database mysqltest_create;
 --error ER_NO_DB_ERROR 
-create table test.t1 like x;
+create table test_create.t1 like x;
 --disable_warnings
-drop table if exists test.t1;
+drop table if exists test_create.t1;
 --enable_warnings
 
 #
 # Bug #6859: Bogus error message on attempt to CREATE TABLE t LIKE view
 #
-create database mysqltest;
-use mysqltest;
+create database mysqltest_create;
+use mysqltest_create;
 create view v1 as select 'foo' from dual;
 --error 1347
 create table t1 like v1;
 drop view v1;
-drop database mysqltest;
+drop database mysqltest_create;
 # Bug #6008 MySQL does not create warnings when
 # creating database and using IF NOT EXISTS
 #
-create database mysqltest;
-create database if not exists mysqltest character set latin2;
-show create database mysqltest;
-drop database mysqltest;
-use test;
+create database mysqltest_create;
+create database if not exists mysqltest_create character set latin2;
+show create database mysqltest_create;
+drop database mysqltest_create;
+use test_create;
 create table t1 (a int);
 create table if not exists t1 (a int);
 drop table t1;
@@ -697,7 +716,7 @@ create table t1(a set("a,b","c,d") not null);
 # Bug #14155: Maximum value of MAX_ROWS handled incorrectly on 64-bit
 # platforms
 #
-create table t1 (i int) engine=myisam max_rows=100000000000;
+create table t1 (i int) engine=sequoiadb max_rows=100000000000;
 show create table t1;
 alter table t1 max_rows=100;
 show create table t1;
@@ -713,6 +732,7 @@ drop table t1;
 #  of error it is automatically dropped if it has not existed before.)
 #
 # Error during open_and_lock_tables() of tables
+SET default_storage_engine = SequoiaDB;
 --error ER_NO_SUCH_TABLE
 create table t1 select * from t2;
 # A special case which is also caught during open tables pahse
@@ -729,7 +749,7 @@ create table t1 (a int);
 create table if not exists t1 select 1 as a, 2 as b;
 drop table t1;
 # Finally error which happens during insert
---error ER_DUP_ENTRY
+--error 1062
 create table t1 (primary key (a)) (select 1 as a) union all (select 1 as a);
 # What happens if table already exists ?
 create table t1 (i int);
@@ -840,12 +860,13 @@ drop table t1;
 #
 # Bug#15130:CREATE .. SELECT was denied to use advantages of the SQL_BIG_RESULT.
 #
-create table t1(f1 int,f2 int);
-insert into t1 value(1,1),(1,2),(1,3),(2,1),(2,2),(2,3);
-flush status;
-create table t2 select sql_big_result f1,count(f2) from t1 group by f1;
-show status like 'handler_read%';
-drop table t1,t2;
+# NOW SequoiaDB not concern handler_read
+#create table t1(f1 int,f2 int);
+#insert into t1 value(1,1),(1,2),(1,3),(2,1),(2,2),(2,3);
+#flush status;
+#create table t2 select sql_big_result f1,count(f2) from t1 group by f1;
+#show status like 'handler_read%';
+#drop table t1,t2;
 
 #
 # Bug #25162: Backing up DB from 5.1 adds 'USING BTREE' to KEYs on table creates
@@ -861,14 +882,14 @@ DROP TABLE t1;
 
 # Show that in case of multiple index type definitions, the last one takes 
 # precedence
+# SequoiaDB not support hash algorithm
+#CREATE TABLE t1(c1 VARCHAR(33), KEY USING BTREE (c1) USING HASH) ENGINE=SEQUOIADB;
+#SHOW INDEX FROM t1;
+#DROP TABLE t1;
 
-CREATE TABLE t1(c1 VARCHAR(33), KEY USING BTREE (c1) USING HASH) ENGINE=MEMORY;
-SHOW INDEX FROM t1;
-DROP TABLE t1;
-
-CREATE TABLE t1(c1 VARCHAR(33), KEY USING HASH (c1) USING BTREE) ENGINE=MEMORY;
-SHOW INDEX FROM t1;
-DROP TABLE t1;
+#CREATE TABLE t1(c1 VARCHAR(33), KEY USING HASH (c1) USING BTREE) ENGINE=SEQUOIADB;
+#SHOW INDEX FROM t1;
+#DROP TABLE t1;
 
 #
 # Bug#35924 DEFINER should be stored 'quoted' in I_S
@@ -884,6 +905,7 @@ INSERT IGNORE INTO t1 (b) VALUES (5);
 
 CREATE TABLE IF NOT EXISTS t2 (a INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY)
   SELECT a FROM t1;
+#SEQUOIASQLMAINSTREAM-171
 --error 1062
 INSERT INTO t2 SELECT a FROM t1;
 --error 1062
@@ -914,29 +936,31 @@ DROP TABLE t1,t2;
 #
 # Test of behaviour with CREATE ... SELECT
 #
-
+SET default_storage_engine = SequoiaDB;
 CREATE TABLE t1 (a int, b int);
 insert into t1 values (1,1),(1,2);
---error ER_DUP_ENTRY
+--error 1062
 CREATE TABLE t2 (primary key (a)) select * from t1;
 # This should give warning
 drop table if exists t2;
---error ER_DUP_ENTRY
+--error 1062
 CREATE TEMPORARY TABLE t2 (primary key (a)) select * from t1;
 # This should give warning
 drop table if exists t2;
 CREATE TABLE t2 (a int, b int, primary key (a));
---error ER_DUP_ENTRY
+--error 1062
 INSERT INTO t2 select * from t1;
+#Bug #SEQUOIADBMAINSTREAM-3578
 SELECT * from t2;
 TRUNCATE table t2;
---error ER_DUP_ENTRY
+--error 1062
 INSERT INTO t2 select * from t1;
+#Bug #SEQUOIADBMAINSTREAM-3578
 SELECT * from t2;
 drop table t2;
 
-CREATE TEMPORARY TABLE t2 (a int, b int, primary key (a)) ENGINE=InnoDB;
---error ER_DUP_ENTRY
+CREATE TEMPORARY TABLE t2 (a int, b int, primary key (a)) ENGINE=SequoiaDB;
+--error 1062
 INSERT INTO t2 SELECT * FROM t1;
 SELECT * from t2;
 drop table t1,t2;
@@ -955,11 +979,11 @@ DROP DATABASE aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 # --error 1049
 # RENAME DATABASE aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa TO a;
 # --error 1102
-# RENAME DATABASE mysqltest TO aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
-# create database mysqltest;
+# RENAME DATABASE mysqltest_create TO aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
+# create database mysqltest_create;
 # --error 1102
-# RENAME DATABASE mysqltest TO aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
-# drop database mysqltest;
+# RENAME DATABASE mysqltest_create TO aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
+# drop database mysqltest_create;
 
 --error ER_TOO_LONG_IDENT
 USE aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
@@ -969,87 +993,88 @@ SHOW CREATE DATABASE aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 #
 # Bug#21432 Database/Table name limited to 64 bytes, not chars, problems with multi-byte
 #
-set names utf8;
+# NOW Sequoiadb not support special table name
+#set names utf8;
 
-create database имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
-use имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
-select database();
-use test;
-
-select SCHEMA_NAME from information_schema.schemata
-where schema_name='имя_базы_в_кодировке_утф8_длиной_больше_чем_45';
-
-drop database имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
-create table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48
-(
-  имя_поля_в_кодировке_утф8_длиной_больше_чем_45 int,
-  index имя_индекса_в_кодировке_утф8_длиной_больше_чем_48 (имя_поля_в_кодировке_утф8_длиной_больше_чем_45)
-);
-
-create view имя_вью_кодировке_утф8_длиной_больше_чем_42 as
-select имя_поля_в_кодировке_утф8_длиной_больше_чем_45
-from имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
+#create database имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
+#use имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
+#select database();
+#use test_create;
+#
+#select SCHEMA_NAME from information_schema.schemata
+#where schema_name='имя_базы_в_кодировке_утф8_длиной_больше_чем_45';
+#
+#drop database имя_базы_в_кодировке_утф8_длиной_больше_чем_45;
+#create table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48
+#(
+#  имя_поля_в_кодировке_утф8_длиной_больше_чем_45 int,
+#  index имя_индекса_в_кодировке_утф8_длиной_больше_чем_48 (имя_поля_в_кодировке_утф8_длиной_больше_чем_45)
+#);
+#
+#create view имя_вью_кодировке_утф8_длиной_больше_чем_42 as
+#select имя_поля_в_кодировке_утф8_длиной_больше_чем_45
+#from имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
 
 # database, table, field, key, view
-select * from имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
-
-select TABLE_NAME from information_schema.tables where
-table_schema='test';
-
-select COLUMN_NAME from information_schema.columns where
-table_schema='test';
-
-select INDEX_NAME from information_schema.statistics where
-table_schema='test';
-
-select TABLE_NAME from information_schema.views where
-table_schema='test';
-
-show create table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
-show create view имя_вью_кодировке_утф8_длиной_больше_чем_42;
-
-create trigger имя_триггера_в_кодировке_утф8_длиной_больше_чем_49
-before insert on имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48 for each row set @a:=1;
-select TRIGGER_NAME from information_schema.triggers where
-trigger_schema='test';
-drop trigger имя_триггера_в_кодировке_утф8_длиной_больше_чем_49;
---error 1059
-create trigger
-очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66
-before insert on имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48 for each row set @a:=1;
---error 1059
-drop trigger очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66;
-
-create procedure имя_процедуры_в_кодировке_утф8_длиной_больше_чем_50()
-begin
-end;
-select ROUTINE_NAME from information_schema.routines where
-routine_schema='test';
-drop procedure имя_процедуры_в_кодировке_утф8_длиной_больше_чем_50;
---error 1059
-create procedure очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66()
-begin
-end;
-
-create function имя_функции_в_кодировке_утф8_длиной_больше_чем_49()
-   returns int
-return 0;
-select ROUTINE_NAME from information_schema.routines where
-routine_schema='test';
-drop function имя_функции_в_кодировке_утф8_длиной_больше_чем_49;
---error 1059
-create function очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66()
-   returns int
-return 0;
-
-drop view имя_вью_кодировке_утф8_длиной_больше_чем_42;
-drop table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
-set names default;
+#select * from имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
+#
+#select TABLE_NAME from information_schema.tables where
+#table_schema='test';
+#
+#select COLUMN_NAME from information_schema.columns where
+#table_schema='test';
+#
+#select INDEX_NAME from information_schema.statistics where
+#table_schema='test';
+#
+#select TABLE_NAME from information_schema.views where
+#table_schema='test';
+#
+#show create table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
+#show create view имя_вью_кодировке_утф8_длиной_больше_чем_42;
+#
+#create trigger имя_триггера_в_кодировке_утф8_длиной_больше_чем_49
+#before insert on имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48 for each row set @a:=1;
+#select TRIGGER_NAME from information_schema.triggers where
+#trigger_schema='test';
+#drop trigger имя_триггера_в_кодировке_утф8_длиной_больше_чем_49;
+#--error 1059
+#create trigger
+#очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66
+#before insert on имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48 for each row set @a:=1;
+#--error 1059
+#drop trigger очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66;
+#
+#create procedure имя_процедуры_в_кодировке_утф8_длиной_больше_чем_50()
+#begin
+#end;
+#select ROUTINE_NAME from information_schema.routines where
+#routine_schema='test';
+#drop procedure имя_процедуры_в_кодировке_утф8_длиной_больше_чем_50;
+#--error 1059
+#create procedure очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66()
+#begin
+#end;
+#
+#create function имя_функции_в_кодировке_утф8_длиной_больше_чем_49()
+#   returns int
+#return 0;
+#select ROUTINE_NAME from information_schema.routines where
+#routine_schema='test';
+#drop function имя_функции_в_кодировке_утф8_длиной_больше_чем_49;
+#--error 1059
+#create function очень_очень_очень_очень_очень_очень_очень_очень_длинная_строка_66()
+#   returns int
+#return 0;
+#
+#drop view имя_вью_кодировке_утф8_длиной_больше_чем_42;
+#drop table имя_таблицы_в_кодировке_утф8_длиной_больше_чем_48;
+#set names default;
 
 #
 # Bug#21136 CREATE TABLE SELECT within CREATE TABLE SELECT causes server crash
 #
-
+#Bug #SEQUOIASQLMAINSTREAM-216
 --disable_warnings
 drop table if exists t1,t2,t3;
 drop function if exists f1;
@@ -1073,12 +1098,13 @@ drop function f1;
 #
 # Bug#25629 CREATE TABLE LIKE does not work with INFORMATION_SCHEMA
 #
+
 create table t1 like information_schema.processlist;
---replace_result InnoDB TMP_TABLE_ENGINE MyISAM TMP_TABLE_ENGINE 
+--replace_result InnoDB TMP_TABLE_ENGINE SequoiaDB TMP_TABLE_ENGINE 
 show create table t1;
 drop table t1;
 create temporary table t1 like information_schema.processlist;
---replace_result InnoDB TMP_TABLE_ENGINE MyISAM TMP_TABLE_ENGINE 
+--replace_result InnoDB TMP_TABLE_ENGINE SequoiaDB TMP_TABLE_ENGINE 
 show create table t1;
 drop table t1;
 create table t1 like information_schema.character_sets;
@@ -1157,7 +1183,6 @@ SET sql_mode = 'NO_ZERO_DATE';
 CREATE TABLE t2(c1 TIMESTAMP, c2 TIMESTAMP DEFAULT 0);
 DROP TABLE t2;
 
-
 --echo
 --error ER_INVALID_DEFAULT
 CREATE TABLE t2(c1 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, c2 TIMESTAMP NOT NULL);
@@ -1176,14 +1201,15 @@ SET sql_mode = '';
 
 --echo
 
-CREATE TABLE t3(c1 DATETIME NOT NULL) ENGINE=MYISAM;
+CREATE TABLE t3(c1 DATETIME NOT NULL) ENGINE=SEQUOIADB;
 INSERT INTO t3 VALUES (0);
 
 --echo
 SET sql_mode = TRADITIONAL;
 
 --echo
---error ER_TRUNCATED_WRONG_VALUE
+# INNODB will not fail, MyISAM will fail
+#--error ER_TRUNCATED_WRONG_VALUE
 ALTER TABLE t3 ADD INDEX(c1);
 
 --echo
@@ -1191,7 +1217,7 @@ ALTER TABLE t3 ADD INDEX(c1);
 
 SET sql_mode = '';
 DROP TABLE t1;
-DROP TABLE t2;
+#DROP TABLE t2;
 DROP TABLE t3;
 
 --echo
@@ -1284,7 +1310,6 @@ create table t3 (a int) row_format=page;
 --echo
 
 #--disable_abort_on_error
-
 CREATE TABLE B (
   pk INTEGER AUTO_INCREMENT,
   int_key INTEGER NOT NULL,
@@ -1331,26 +1356,26 @@ DROP TABLE B;
 --disable_warnings
 DROP TABLE IF EXISTS t1;
 --enable_warnings
-
-CREATE TABLE t1(f1 integer);
-
---echo # The following CREATE TABLEs before gave an assert.
-
-HANDLER t1 OPEN AS A;
---error ER_TABLE_EXISTS_ERROR
-CREATE TABLE t1 SELECT 1 AS f2;
-
-HANDLER t1 OPEN AS A;
---error ER_TABLE_EXISTS_ERROR
-CREATE TABLE t1(f1 integer);
-
-CREATE TABLE t2(f1 integer);
-HANDLER t1 OPEN AS A;
---error ER_TABLE_EXISTS_ERROR
-CREATE TABLE t1 LIKE t2;
-
-DROP TABLE t2;
-DROP TABLE t1;
+# NOW Sequoiadb not support handler
+#CREATE TABLE t1(f1 integer);
+#
+#--echo # The following CREATE TABLEs before gave an assert.
+#
+#HANDLER t1 OPEN AS A;
+#--error ER_TABLE_EXISTS_ERROR
+#CREATE TABLE t1 SELECT 1 AS f2;
+#
+#HANDLER t1 OPEN AS A;
+#--error ER_TABLE_EXISTS_ERROR
+#CREATE TABLE t1(f1 integer);
+#
+#CREATE TABLE t2(f1 integer);
+#HANDLER t1 OPEN AS A;
+#--error ER_TABLE_EXISTS_ERROR
+#CREATE TABLE t1 LIKE t2;
+#
+#DROP TABLE t2;
+#DROP TABLE t1;
 
 --echo #
 --echo # Bug #48800 CREATE TABLE t...SELECT fails if t is a 
@@ -1392,7 +1417,7 @@ SELECT * FROM t1;
 DROP TABLE t1;
 
 # Case 2 -- The DROP TABLE t1 failed with 
-#  Table 'test.t1' doesn't exist in the SELECT *
+#  Table 'test_create.t1' doesn't exist in the SELECT *
 # as the (permanent) table was not created
 CREATE TEMPORARY TABLE t1 (ID INT);
 CREATE TABLE IF NOT EXISTS t1 SELECT * FROM t2;
@@ -1657,6 +1682,7 @@ create table t1 (a int) select 1 as b, 2 as c;
 select * from t1;
 drop table t1;
 create table if not exists t1 (a int, b date, c date) select 1 as b, 2 as c;
+#Bug #SEQUOIADBMAINSTREAM-3583
 select * from t1;
 drop table t1;
 set @@session.sql_mode=default;
@@ -1672,9 +1698,11 @@ select * from t1;
 
 create table if not exists t1 (a int, b date, c date) 
   ignore select 1 as b, 2 as c;
+#Bug #SEQUOIADBMAINSTREAM-3583
 select * from t1;
 drop table t1;
 
+#BUG #SEQUOIASQLMAINSTREAM-263
 create table if not exists t1 (a int unique, b int)
   replace select 1 as a, 1 as b union select 1 as a, 2 as b;
 select * from t1;
@@ -1813,7 +1841,6 @@ DROP DATABASE db_created_with_mkdir_and_an_unrelated_file_in_data_directory;
 --remove_file $MYSQLD_DATADIR/db_created_with_mkdir_and_an_unrelated_file_in_data_directory/intruder.txt
 DROP DATABASE db_created_with_mkdir_and_an_unrelated_file_in_data_directory;
 
-
 --echo #
 --echo # BUG 27516741 - MYSQL SERVER DOES NOT WRITE INNODB ROW_TYPE
 --echo #                TO .FRM FILE WHEN DEFAULT USED
@@ -1827,11 +1854,11 @@ SET @saved_show_create_table_verbosity= @@session.show_create_table_verbosity;
 SELECT @@global.innodb_default_row_format;
 SELECT @@session.show_create_table_verbosity;
 
-CREATE TABLE t1(fld1 INT) ENGINE= InnoDB;
-CREATE TABLE t2(fld1 INT) ENGINE= InnoDB, ROW_FORMAT= DEFAULT;
+CREATE TABLE t1(fld1 INT) ENGINE= SequoiaDB;
+CREATE TABLE t2(fld1 INT) ENGINE= SequoiaDB, ROW_FORMAT= DEFAULT;
 SET GLOBAL innodb_default_row_format= 'COMPACT';
-CREATE TABLE t3(fld1 INT) ENGINE= InnoDB;
-CREATE TABLE t4(fl1 INT) ENGINE= InnoDB, ROW_FORMAT= COMPRESSED;
+CREATE TABLE t3(fld1 INT) ENGINE= SequoiaDB;
+CREATE TABLE t4(fl1 INT) ENGINE= SequoiaDB, ROW_FORMAT= COMPRESSED;
 
 --echo # Test without show_create_table_verbosity enabled.
 --echo # Row format used is not displayed for all tables
@@ -1853,11 +1880,11 @@ SET GLOBAL innodb_default_row_format= 'DYNAMIC';
 SET SESSION show_create_table_verbosity= OFF;
 
 --echo # Test with corresponding temporary tables.
-CREATE TEMPORARY TABLE t1(fld1 INT) ENGINE= InnoDB;
-CREATE TEMPORARY TABLE t2(fld1 INT) ENGINE= InnoDB, ROW_FORMAT= DEFAULT;
+CREATE TEMPORARY TABLE t1(fld1 INT) ENGINE= SequoiaDB;
+CREATE TEMPORARY TABLE t2(fld1 INT) ENGINE= SequoiaDB, ROW_FORMAT= DEFAULT;
 SET GLOBAL innodb_default_row_format= 'COMPACT';
-CREATE TEMPORARY TABLE t3(fld1 INT) ENGINE= InnoDB;
-CREATE TEMPORARY TABLE t4(fl1 INT) ENGINE= InnoDB, ROW_FORMAT= COMPRESSED;
+CREATE TEMPORARY TABLE t3(fld1 INT) ENGINE= SequoiaDB;
+CREATE TEMPORARY TABLE t4(fl1 INT) ENGINE= SequoiaDB, ROW_FORMAT= COMPRESSED;
 
 --echo # Test without show_create_table_verbosity enabled.
 --echo # Row format used is not displayed for all tables
@@ -1936,9 +1963,55 @@ END
 |
 DELIMITER ;|
 
+#SEQUOIASQLMAINSTREAM-464
 INSERT INTO t1 VALUES (1, '1111:11:11');
 SHOW CREATE TABLE t2;
 
 DROP TABLE t1;
 DROP TEMPORARY TABLE t2;
 SET SQL_MODE= @saved_mode;
+
+#
+# Compatible with parallel > 1 
+# Annotated test in "select.inc", check show tables, move to this place
+# Some simple show commands
+#
+show tables;
+show tables from test_create like "s%";
+show tables from test_create like "t?";
+# We mask out the Privileges column because it differs with embedded server
+#--replace_column 8 #
+#show full columns from t2;
+#--replace_column 8 #
+#show full columns from t2 from test like 'f%';
+#--replace_column 8 #
+#show full columns from t2 from test like 's%';
+#show keys from t2;
+
+#
+# Compatible with parallel > 1
+# Annotated test in "ctype_utf16le.test", check metadata, move to this place
+--echo #
+--echo # Bug#52520 Difference in tinytext utf column metadata
+--echo #
+CREATE TABLE t1 (
+  s1 TINYTEXT CHARACTER SET utf16le,
+  s2 TEXT CHARACTER SET utf16le,
+  s3 MEDIUMTEXT CHARACTER SET utf16le,
+  s4 LONGTEXT CHARACTER SET utf16le
+);
+--enable_metadata
+SET NAMES utf8, @@character_set_results=NULL;
+SELECT *, HEX(s1) FROM t1;
+SET NAMES latin1;
+SELECT *, HEX(s1) FROM t1;
+SET NAMES utf8;
+SELECT *, HEX(s1) FROM t1;
+--disable_metadata
+CREATE TABLE t2 AS SELECT CONCAT(s1) FROM t1;
+SHOW CREATE TABLE t2;
+DROP TABLE t1, t2;
+
+DROP DATABASE test_create;
+
+--source include/uninstall_sequoiadb.inc

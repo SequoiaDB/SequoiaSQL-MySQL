@@ -33,6 +33,8 @@
 # WL#4030 (Deprecate RENAME DATABASE: replace with ALTER DATABASE <name> UPGRADE)
 #
 
+--source include/have_sequoiadb.inc
+
 --error ER_PARSE_ERROR
 rename database testdb1 to testdb2;
 
@@ -51,4 +53,4 @@ ALTER DATABASE `#mysql50#` UPGRADE DATA DIRECTORY NAME;
 --error ER_BAD_DB_ERROR
 ALTER DATABASE `#mysql50#upgrade-me` UPGRADE DATA DIRECTORY NAME;
 
-
+--source include/uninstall_sequoiadb.inc

@@ -1,5 +1,5 @@
 drop table if exists t1;
-create table t1 (t datetime) ENGINE=InnoDB;
+create table t1 (t datetime) ENGINE=SequoiaDB;
 insert ignore into t1 values (101),(691231),(700101),(991231),(10000101),(99991231),(101000000),(691231000000),(700101000000),(991231235959),(10000101000000),(99991231235959),(20030100000000),(20030000000000);
 Warnings:
 Warning	1265	Data truncated for column 't' at row 13
@@ -21,13 +21,6 @@ t
 0000-00-00 00:00:00
 0000-00-00 00:00:00
 delete from t1 where t > 0;
-optimize table t1;
-Table	Op	Msg_type	Msg_text
-test.t1	optimize	note	Table does not support optimize, doing recreate + analyze instead
-test.t1	optimize	status	OK
-check table t1;
-Table	Op	Msg_type	Msg_text
-test.t1	check	status	OK
 delete from t1;
 insert ignore into t1 values("000101"),("691231"),("700101"),("991231"),("00000101"),("00010101"),("99991231"),("00101000000"),("691231000000"),("700101000000"),("991231235959"),("10000101000000"),("99991231235959"),("20030100000000"),("20030000000000");
 Warnings:
@@ -105,9 +98,9 @@ CREATE TABLE `t1` (
 `numfacture` int(6) unsigned NOT NULL default '0',
 `expedition` datetime NOT NULL default '0000-00-00 00:00:00',
 PRIMARY KEY  (`numfacture`),
-KEY `date` (`date`),
+KEY `date` (`date`),  
 KEY `expedition` (`expedition`)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 (expedition) VALUES ('0001-00-00 00:00:00');
 SELECT * FROM t1 WHERE expedition='0001-00-00 00:00:00';
 date	numfacture	expedition
@@ -117,11 +110,6 @@ SELECT * FROM t1 WHERE expedition='0001-00-00 00:00:00';
 date	numfacture	expedition
 0000-00-00 00:00:00	0	0001-00-00 00:00:00
 0000-00-00 00:00:00	1212	0001-00-00 00:00:00
-EXPLAIN SELECT * FROM t1 WHERE expedition='0001-00-00 00:00:00';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	expedition	expedition	5	const	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`date` AS `date`,`test`.`t1`.`numfacture` AS `numfacture`,`test`.`t1`.`expedition` AS `expedition` from `test`.`t1` where (`test`.`t1`.`expedition` = '0001-00-00 00:00:00')
 drop table t1;
 create table t1 (a datetime not null, b datetime not null);
 insert into t1 values (now(), now());
@@ -222,7 +210,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `da` date DEFAULT '1962-03-03',
   `dt` datetime DEFAULT '1962-03-03 00:00:00'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 insert into t1 values ();
 insert into t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
 Warnings:
@@ -527,57 +515,17 @@ create table t1 (id int(10) not null, cur_date datetime not null);
 create table t2 (id int(10) not null, cur_date date not null);
 insert into t1 (id, cur_date) values (1, '2007-04-25 18:30:22');
 insert into t2 (id, cur_date) values (1, '2007-04-25');
-explain extended
-select * from t1
-where id in (select id from t1 as x1 where (t1.cur_date is null));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE noticed after reading const tables
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.cur_date' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select '1' AS `id`,'2007-04-25 18:30:22' AS `cur_date` from dual where <in_optimizer>('1',<exists>(/* select#2 */ select `test`.`x1`.`id` from `test`.`t1` `x1` where 0))
 select * from t1
 where id in (select id from t1 as x1 where (t1.cur_date is null));
 id	cur_date
-explain extended
-select * from t2
-where id in (select id from t2 as x1 where (t2.cur_date is null));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE noticed after reading const tables
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.cur_date' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select '1' AS `id`,'2007-04-25' AS `cur_date` from dual where <in_optimizer>('1',<exists>(/* select#2 */ select `test`.`x1`.`id` from `test`.`t2` `x1` where 0))
 select * from t2
 where id in (select id from t2 as x1 where (t2.cur_date is null));
 id	cur_date
 insert into t1 (id, cur_date) values (2, '2007-04-26 18:30:22');
 insert into t2 (id, cur_date) values (2, '2007-04-26');
-explain extended
-select * from t1
-where id in (select id from t1 as x1 where (t1.cur_date is null));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	x1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.cur_date' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`id` AS `id`,`test`.`t1`.`cur_date` AS `cur_date` from `test`.`t1` where <in_optimizer>(`test`.`t1`.`id`,<exists>(/* select#2 */ select 1 from `test`.`t1` `x1` where ((`test`.`t1`.`cur_date` = '0000-00-00 00:00:00') and (<cache>(`test`.`t1`.`id`) = `test`.`x1`.`id`))))
 select * from t1
 where id in (select id from t1 as x1 where (t1.cur_date is null));
 id	cur_date
-explain extended
-select * from t2
-where id in (select id from t2 as x1 where (t2.cur_date is null));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	x1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.cur_date' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`id` AS `id`,`test`.`t2`.`cur_date` AS `cur_date` from `test`.`t2` where <in_optimizer>(`test`.`t2`.`id`,<exists>(/* select#2 */ select 1 from `test`.`t2` `x1` where ((`test`.`t2`.`cur_date` = '0000-00-00') and (<cache>(`test`.`t2`.`id`) = `test`.`x1`.`id`))))
 select * from t2
 where id in (select id from t2 as x1 where (t2.cur_date is null));
 id	cur_date
@@ -616,7 +564,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `da` date DEFAULT '1962-03-03',
   `dt` datetime DEFAULT '1962-03-03 00:00:00'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 insert into t1 values ();
 insert into t1 values ('2007-03-23 13:49:38','2007-03-23 13:49:38');
 Warnings:
@@ -681,12 +629,6 @@ End of 5.1 tests
 CREATE TABLE t1 (Id INT, AtTime DATETIME, KEY AtTime (AtTime));
 SET NAMES CP850;
 INSERT INTO t1 VALUES (1,'2010-04-12 22:30:12'), (2,'2010-04-12 22:30:12'), (3,'2010-04-12 22:30:12');
-EXPLAIN EXTENDED SELECT * FROM t1 FORCE INDEX(attime) WHERE AtTime = '2010-02-22 18:40:07';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	AtTime	AtTime	6	const	1	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`Id` AS `Id`,`test`.`t1`.`AtTime` AS `AtTime` from `test`.`t1` FORCE INDEX (`attime`) where (`test`.`t1`.`AtTime` = '2010-02-22 18:40:07')
 DROP TABLE t1;
 SET NAMES latin1;
 #
@@ -709,12 +651,6 @@ insert into t2 select STR_TO_DATE(CONCAT_WS('/01/',`month`,`year`), '%m/%d/%Y') 
 select * from t2 where f1=STR_TO_DATE('4/1/2010', '%m/%d/%Y');
 f1
 2010-04-01 00:00:00
-t2 should be const
-explain select * from t2 where f1=STR_TO_DATE('4/1/2010', '%m/%d/%Y');
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	const	PRIMARY	PRIMARY	5	const	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select '2010-04-01 00:00:00' AS `f1` from `test`.`t2` where 1
 DROP TABLE t1,t2;
 #
 # Bug#57095: Wrongly chosen expression cache type led to a wrong

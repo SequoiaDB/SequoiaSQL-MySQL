@@ -2,6 +2,7 @@
 #
 # Some special cases with empty tables
 #
+--source include/have_sequoiadb.inc
 
 --disable_warnings
 drop table if exists t1;
@@ -12,5 +13,7 @@ select count(*) from t1;
 select * from t1;
 select * from t1 limit 0;
 drop table t1;
+
+--source include/uninstall_sequoiadb.inc
 
 # End of 4.1 tests

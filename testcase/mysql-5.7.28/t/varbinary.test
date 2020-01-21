@@ -1,10 +1,9 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 # This test uses chmod, can't be run with root permissions
--- source include/not_as_root.inc
+#-- source include/not_as_root.inc
 
 
 # Initialise
@@ -27,7 +26,7 @@ select x'31',X'ffff'+0;
 create table t1 (ID int(8) unsigned zerofill not null auto_increment,UNIQ bigint(21) unsigned zerofill not null,primary key (ID),unique (UNIQ) );
 insert into t1 set UNIQ=0x38afba1d73e6a18a;
 insert into t1 set UNIQ=123; 
-explain extended select * from t1 where UNIQ=0x38afba1d73e6a18a;
+#explain extended select * from t1 where UNIQ=0x38afba1d73e6a18a;
 drop table t1;
 
 #
@@ -52,36 +51,37 @@ drop table t1;
 #
 
 # Test with a saved table from 4.1
-let $MYSQLD_DATADIR= `select @@datadir`;
-copy_file std_data/bug19371.frm $MYSQLD_DATADIR/test/t1.frm;
-chmod 0777 $MYSQLD_DATADIR/test/t1.frm;
-copy_file std_data/bug19371.MYD $MYSQLD_DATADIR/test/t1.MYD;
-chmod 0777 $MYSQLD_DATADIR/test/t1.MYD;
-copy_file std_data/bug19371.MYI $MYSQLD_DATADIR/test/t1.MYI;
-chmod 0777 $MYSQLD_DATADIR/test/t1.MYI;
-
-# Everything _looks_ fine
-show create table t1;
-
-# But the length of the varbinary columns are too long
-select length(a), length(b) from t1;
-
-# Run CHECK TABLE, it should indicate table need a REPAIR TABLE
-CHECK TABLE t1 FOR UPGRADE;
-
-# Run REPAIR TABLE to alter the table and repair
-# the varbinary fields
-REPAIR TABLE t1;
-
-# Now check it's back to normal
-show create table t1;
-select length(a), length(b) from t1;
-insert into t1 values("ccc", "ddd");
-select length(a), length(b) from t1;
-select hex(a), hex(b) from t1;
-select concat("'", a, "'"), concat("'", b, "'") from t1;
-
-drop table t1;
+#Sequoiadb not support
+#let $MYSQLD_DATADIR= `select @@datadir`;
+#copy_file std_data/bug19371.frm $MYSQLD_DATADIR/test/t1.frm;
+#chmod 0777 $MYSQLD_DATADIR/test/t1.frm;
+#copy_file std_data/bug19371.MYD $MYSQLD_DATADIR/test/t1.MYD;
+#chmod 0777 $MYSQLD_DATADIR/test/t1.MYD;
+#copy_file std_data/bug19371.MYI $MYSQLD_DATADIR/test/t1.MYI;
+#chmod 0777 $MYSQLD_DATADIR/test/t1.MYI;
+#
+## Everything _looks_ fine
+#show create table t1;
+#
+## But the length of the varbinary columns are too long
+#select length(a), length(b) from t1;
+#
+## Run CHECK TABLE, it should indicate table need a REPAIR TABLE
+#CHECK TABLE t1 FOR UPGRADE;
+#
+## Run REPAIR TABLE to alter the table and repair
+## the varbinary fields
+#REPAIR TABLE t1;
+#
+## Now check it's back to normal
+#show create table t1;
+#select length(a), length(b) from t1;
+#insert into t1 values("ccc", "ddd");
+#select length(a), length(b) from t1;
+#select hex(a), hex(b) from t1;
+#select concat("'", a, "'"), concat("'", b, "'") from t1;
+#
+#drop table t1;
 
 # Check that the fix does not affect table created with current version
 create table t1(a varbinary(255));
@@ -328,3 +328,5 @@ SELECT CAST(b AS unsigned) | 0x31393838 FROM t1 LIMIT 1;
 SELECT CAST(b AS unsigned) | CAST(c AS unsigned) FROM t1 LIMIT 1;
 
 DROP TABLE t1;
+
+--source include/have_sequoiadb.inc

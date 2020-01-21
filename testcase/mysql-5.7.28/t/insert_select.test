@@ -2,6 +2,11 @@
 #
 # Problem with INSERT ... SELECT
 #
+--source include/have_sequoiadb.inc
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_insert_select;
+use test_insert_select;
 
 --disable_warnings
 drop table if exists t1,t2,t3;
@@ -11,9 +16,12 @@ create table t1 (bandID MEDIUMINT UNSIGNED NOT NULL PRIMARY KEY, payoutID SMALLI
 insert into t1 (bandID,payoutID) VALUES (1,6),(2,6),(3,4),(4,9),(5,10),(6,1),(7,12),(8,12);
 create table t2 (payoutID SMALLINT UNSIGNED NOT NULL PRIMARY KEY);
 insert into t2 (payoutID) SELECT DISTINCT payoutID FROM t1;
---error ER_DUP_ENTRY
+#--error ER_DUP_ENTRY
+--error 1062
 insert into t2 (payoutID) SELECT payoutID+10 FROM t1;
+#Bug #SEQUOIASQLMAINSTREAM-160
 insert ignore into t2 (payoutID) SELECT payoutID+10 FROM t1;
+--sorted_result
 select * from t2;
 drop table t1,t2;
 
@@ -21,7 +29,7 @@ drop table t1,t2;
 # bug in bulk insert optimization
 # test case by Fournier Jocelyn <joc@presence-pc.com>
 #
-
+# BUG#SEQUOIASQLMAINSTREM-245
 CREATE TABLE `t1` (
   `numeropost` bigint(20) unsigned NOT NULL default '0',
   `icone` tinyint(4) unsigned NOT NULL default '0',
@@ -36,7 +44,7 @@ CREATE TABLE `t1` (
   KEY `date` (`date`),
   KEY `pseudo` (`pseudo`),
   KEY `numreponse` (`numreponse`)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 CREATE TABLE `t2` (
   `numeropost` bigint(20) unsigned NOT NULL default '0',
@@ -52,7 +60,7 @@ CREATE TABLE `t2` (
   KEY `date` (`date`),
   KEY `pseudo` (`pseudo`),
   KEY `numreponse` (`numreponse`)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t2
 (numeropost,icone,numreponse,contenu,pseudo,date,ip,signature) VALUES
@@ -106,10 +114,12 @@ create table t1 (a int not null primary key, b char(10));
 create table t2 (a int not null, b char(10));
 insert into t1 values (1,"t1:1"),(3,"t1:3");
 insert into t2 values (2,"t2:2"), (3,"t2:3");
---error ER_DUP_ENTRY
+#--error ER_DUP_ENTRY
+--error 1062
 insert into t1 select * from t2;
 select * from t1;
 # REPLACE .. SELECT is not yet supported by PS
+# Bug #SEQUOIASQLMAINSTREAM-90
 replace into t1 select * from t2;
 select * from t1;
 drop table t1,t2;
@@ -117,7 +127,6 @@ drop table t1,t2;
 #
 # Test that caused uninitialized memory access in auto_increment_key update
 #
-
 CREATE TABLE t1 ( USID INTEGER UNSIGNED, ServerID TINYINT UNSIGNED, State ENUM ('unknown', 'Access-Granted', 'Session-Active', 'Session-Closed' ) NOT NULL DEFAULT 'unknown', SessionID CHAR(32), User CHAR(32) NOT NULL DEFAULT '<UNKNOWN>', NASAddr INTEGER UNSIGNED, NASPort INTEGER UNSIGNED, NASPortType INTEGER UNSIGNED, ConnectSpeed INTEGER UNSIGNED, CarrierType CHAR(32), CallingStationID CHAR(32), CalledStationID CHAR(32), AssignedAddr INTEGER UNSIGNED, SessionTime INTEGER UNSIGNED, PacketsIn INTEGER UNSIGNED, OctetsIn INTEGER UNSIGNED, PacketsOut INTEGER UNSIGNED, OctetsOut INTEGER UNSIGNED, TerminateCause INTEGER UNSIGNED, UnauthTime TINYINT UNSIGNED, AccessRequestTime DATETIME, AcctStartTime DATETIME, AcctLastTime DATETIME, LastModification TIMESTAMP NOT NULL);
 CREATE TABLE t2 ( USID INTEGER UNSIGNED AUTO_INCREMENT, ServerID TINYINT UNSIGNED, State ENUM ('unknown', 'Access-Granted', 'Session-Active', 'Session-Closed' ) NOT NULL DEFAULT 'unknown', SessionID CHAR(32), User TEXT NOT NULL, NASAddr INTEGER UNSIGNED, NASPort INTEGER UNSIGNED, NASPortType INTEGER UNSIGNED, ConnectSpeed INTEGER UNSIGNED, CarrierType CHAR(32), CallingStationID CHAR(32), CalledStationID CHAR(32), AssignedAddr INTEGER UNSIGNED, SessionTime INTEGER UNSIGNED, PacketsIn INTEGER UNSIGNED, OctetsIn INTEGER UNSIGNED, PacketsOut INTEGER UNSIGNED, OctetsOut INTEGER UNSIGNED, TerminateCause INTEGER UNSIGNED, UnauthTime TINYINT UNSIGNED, AccessRequestTime DATETIME, AcctStartTime DATETIME, AcctLastTime DATETIME, LastModification TIMESTAMP NOT NULL, INDEX(USID,ServerID,NASAddr,SessionID), INDEX(AssignedAddr));
 INSERT INTO t1 VALUES (39,42,'Access-Granted','46','491721000045',2130706433,17690,NULL,NULL,'Localnet','491721000045','49172200000',754974766,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2003-07-18 00:11:21',NULL,NULL,20030718001121);
@@ -127,14 +136,14 @@ drop table t1,t2;
 #
 # Another problem from Bug #2012
 #
-
+#SEQUOIASQLMAINSTREAM-283
 CREATE TABLE t1(
  Month date NOT NULL,
  Type tinyint(3) unsigned NOT NULL auto_increment,
  Field int(10) unsigned NOT NULL,
  Count int(10) unsigned NOT NULL,
  UNIQUE KEY Month (Month,Type,Field)
-)engine=myisam;
+)engine=sequoiadb;
 	  
 insert into t1 Values
 (20030901, 1, 1, 100),
@@ -164,7 +173,7 @@ CREATE TABLE t1 (
   SEQ          int(11) NOT NULL default '0',
   PRIMARY KEY  (ID),
   KEY t1$NO    (SEQ,NO)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 (SEQ, NO) SELECT "1" AS SEQ, IF(MAX(NO) IS NULL, 0, MAX(NO)) + 1 AS NO FROM t1 WHERE (SEQ = 1);
 select SQL_BUFFER_RESULT * from t1 WHERE (SEQ = 1);
 drop table t1;
@@ -172,17 +181,20 @@ drop table t1;
 #
 # Bug#10886 - Have to restore default values after update ON DUPLICATE KEY
 #
+# Bug #SEQUOIADBMAINSTREAM-3640
 create table t1 (f1 int);
 create table t2 (ff1 int unique, ff2 int default 1);
 insert into t1 values (1),(1),(2);
 insert into t2(ff1) select f1 from t1 on duplicate key update ff2=ff2+1;
 select * from t2;
 drop table t1, t2;
+
 #
 # BUGS #9728 - 'Decreased functionality in "on duplicate key update"' 
 #      #8147 - 'a column proclaimed ambigous in INSERT ... SELECT .. ON
 #      DUPLICATE'
 #
+# Bug #SEQUOIADBMAINSTREAM-3640
 create table t1 (a int unique);
 create table t2 (a int, b int);
 create table t3 (c int, d int);
@@ -223,6 +235,7 @@ drop table t1;
 #
 # Bug #13392 values() fails with 'ambiguous' or returns NULL 
 #            with ON DUPLICATE and SELECT
+# Bug #SEQUOIADBMAINSTREAM-3640
 create table t1(x int, y int);
 create table t2(x int, z int);
 insert into t1(x,y) select x,z from t2 on duplicate key update x=values(x);
@@ -238,19 +251,19 @@ drop table t1,t2;
 #
 
 #Note: not an exsaustive test : just a check of the code path.
-CREATE TABLE t1 (a int PRIMARY KEY);
-INSERT INTO t1 values (1), (2);
-
-flush status;
-INSERT INTO t1 SELECT a + 2 FROM t1 LIMIT 1;
-show status like 'Handler_read%';
-
-DROP TABLE t1;
+# NOW SequoiaDB not support Handler_read
+#CREATE TABLE t1 (a int PRIMARY KEY);
+#INSERT INTO t1 values (1), (2);
+#
+#flush status;
+#INSERT INTO t1 SELECT a + 2 FROM t1 LIMIT 1;
+#show status like 'Handler_read%';
+#
+#DROP TABLE t1;
 
 #
 # Bug #29717 INSERT INTO SELECT inserts values even if SELECT statement itself returns empty
 #
-
 CREATE TABLE t1 (
     f1 int(10) unsigned NOT NULL auto_increment PRIMARY KEY,
     f2 varchar(100) NOT NULL default ''
@@ -303,12 +316,13 @@ INSERT INTO bug21774_2.t1 SELECT t1.* FROM t1;
 
 DROP DATABASE bug21774_1;
 DROP DATABASE bug21774_2;
-USE test;
+USE test_insert_select;
 
 #
 # Bug#19978: INSERT .. ON DUPLICATE erroneously reports some records were
 #            updated.
 #
+# Bug #SEQUOIADBMAINSTREAM-3640
 create table t1(f1 int primary key, f2 int);
 --enable_info
 insert into t1 values (1,1);
@@ -321,6 +335,7 @@ drop table t1;
 #
 # Bug#16630: wrong result, when INSERT t1 SELECT ... FROM t1 ON DUPLICATE
 #
+# Bug #SEQUOIADBMAINSTREAM-3640
 CREATE TABLE t1 (f1 INT, f2 INT );
 CREATE TABLE t2  (f1 INT PRIMARY KEY, f2 INT);
 INSERT INTO t1 VALUES (1,1),(2,2),(10,10);
@@ -328,7 +343,7 @@ INSERT INTO t2 (f1, f2) SELECT f1, f2 FROM t1;
 INSERT INTO t2 (f1, f2)
   SELECT f1, f1 FROM t2 src WHERE f1 < 2
   ON DUPLICATE KEY UPDATE f1 = 100 + src.f1;
-SELECT * FROM t2;
+SELECT * FROM t2 order by f1;
 DROP TABLE t1, t2;
 
 #
@@ -337,7 +352,8 @@ DROP TABLE t1, t2;
 #
 CREATE TABLE t1 ( a INT KEY, b INT );
 INSERT INTO t1 VALUES ( 0, 1 );
---error ER_DUP_ENTRY
+#--error ER_DUP_ENTRY
+--error 1062
 INSERT INTO t1 ( b ) SELECT MAX( b ) FROM t1 WHERE b = 2;
 DROP TABLE t1;
 
@@ -350,8 +366,8 @@ CREATE TABLE t1 (c VARCHAR(30), INDEX ix_c (c(10)));
 CREATE TABLE t2 (d VARCHAR(10)); 
 INSERT INTO t1 (c) VALUES ('7_chars'), ('13_characters'); 
 
-EXPLAIN
-  SELECT (SELECT SUM(LENGTH(c)) FROM t1 WHERE c='13_characters') FROM t1;
+#EXPLAIN
+#  SELECT (SELECT SUM(LENGTH(c)) FROM t1 WHERE c='13_characters') FROM t1;
 
 SELECT (SELECT SUM(LENGTH(c)) FROM t1 WHERE c='13_characters') FROM t1;
 
@@ -372,7 +388,6 @@ DROP TABLE t1,t2;
 # Bug #29095: incorrect pushing of LIMIT into the temporary
 # table ignoring ORDER BY clause
 #
-
 CREATE TABLE t1 (
   id INT AUTO_INCREMENT PRIMARY KEY,
   prev_id INT,
@@ -397,34 +412,35 @@ DROP TABLE t1,t2;
 --echo #
 create table t1(f1 int);
 insert into t1 values(1),(2),(3);
-create table t2 (key(f1)) engine=myisam select sql_buffer_result f1 from t1;
-check table t2 extended;
+create table t2 (key(f1)) engine=sequoiadb select sql_buffer_result f1 from t1;
+#check table t2 extended;
 drop table t1,t2;
 --echo ##################################################################
 
---echo #
---echo # Bug #46075: Assertion failed: 0, file .\protocol.cc, line 416
---echo #
-let $default_internal_tmp_se = `select @@internal_tmp_disk_storage_engine`;
-set global internal_tmp_disk_storage_engine = 'myisam';
-
-CREATE TABLE t1(a INT);
-# To force MyISAM temp. table in the following INSERT ... SELECT.
-SET max_heap_table_size = 16384;
-# To overflow the temp. table.
-SET @old_myisam_data_pointer_size = @@myisam_data_pointer_size;
-SET GLOBAL myisam_data_pointer_size = 2;
-
-INSERT INTO t1 VALUES (1), (2), (3), (4), (5);
-
-call mtr.add_suppression("mysqld.*: The table '.*#sql.*' is full");
---error ER_RECORD_FILE_FULL,ER_RECORD_FILE_FULL
-INSERT IGNORE INTO t1 SELECT t1.a FROM t1,t1 t2,t1 t3,t1 t4,t1 t5,t1 t6,t1 t7;
-eval set global internal_tmp_disk_storage_engine = $default_internal_tmp_se;
-
-# Cleanup
-SET GLOBAL myisam_data_pointer_size = @old_myisam_data_pointer_size;
-DROP TABLE t1;
+# NOW SequoiaDB not support to be set internal_tmp_disk_storage_engine
+#--echo #
+#--echo # Bug #46075: Assertion failed: 0, file .\protocol.cc, line 416
+#--echo #
+#let $default_internal_tmp_se = `select @@internal_tmp_disk_storage_engine`;
+#set global internal_tmp_disk_storage_engine = 'sequoiadb';
+#
+#CREATE TABLE t1(a INT);
+## To force SequoiaDB temp. table in the following INSERT ... SELECT.
+#SET max_heap_table_size = 16384;
+## To overflow the temp. table.
+#SET @old_sequoiadb_data_pointer_size = @@sequoiadb_data_pointer_size;
+#SET GLOBAL sequoiadb_data_pointer_size = 2;
+#
+#INSERT INTO t1 VALUES (1), (2), (3), (4), (5);
+#
+#call mtr.add_suppression("mysqld.*: The table '.*#sql.*' is full");
+#--error ER_RECORD_FILE_FULL,ER_RECORD_FILE_FULL
+#INSERT IGNORE INTO t1 SELECT t1.a FROM t1,t1 t2,t1 t3,t1 t4,t1 t5,t1 t6,t1 t7;
+#eval set global internal_tmp_disk_storage_engine = $default_internal_tmp_se;
+#
+## Cleanup
+#SET GLOBAL sequoiadb_data_pointer_size = @old_sequoiadb_data_pointer_size;
+#DROP TABLE t1;
 --echo End of 5.0 tests
 
 --echo #
@@ -439,9 +455,15 @@ INSERT INTO t1 (a) VALUES('abc-def');
 INSERT INTO t1 (a) VALUES(x'616263AC646566');
 INSERT INTO t1 (a) VALUES('\'(),-.');
 INSERT INTO t1 (a) VALUES(x'FFA5A4ABACA9');
+# NOW SequoiaDB will convert all character sets to utf8, so hex result is changed
 SELECT *, HEX(a) FROM t1;
 SELECT *, HEX(a) FROM t1 WHERE a = 'abc-def';
 SELECT *, HEX(a) FROM t1 WHERE a = x'616263AC646566';
 SELECT *, HEX(a) FROM t1 WHERE a = '\'(),-.';
 SELECT *, HEX(a) FROM t1 WHERE a = x'FFA5A4ABACA9';
 DROP TABLE t1;
+
+# DROP DATABASE 
+DROP DATABASE test_insert_select;
+
+--source include/uninstall_sequoiadb.inc

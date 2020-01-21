@@ -1,7 +1,7 @@
 --source include/have_gb18030.inc
 # This test takes long time, so only run it with the --big-test mtr-flag.
 --source include/big_test.inc
-
+--source include/have_sequoiadb.inc
 
 SET @test_character_set= 'gb18030';
 SET @test_collation= 'gb18030_chinese_ci';
@@ -20,7 +20,7 @@ CREATE TEMPORARY TABLE head AS SELECT concat(b1.b, b2.b) AS head FROM t1 b1, t1 
 CREATE TEMPORARY TABLE tail AS SELECT concat(b1.b, b2.b) AS tail FROM t1 b1, t1 b2;
 DROP TABLE t1;
 
-CREATE TABLE t1 (code char(1)) CHARACTER SET UCS2 ENGINE=INNODB;
+CREATE TABLE t1 (code char(1)) CHARACTER SET UCS2 ENGINE=SEQUOIADB;
 INSERT INTO t1 SELECT UNHEX(CONCAT(head, tail)) FROM head, tail ORDER BY
 head, tail;
 
@@ -37,7 +37,7 @@ CREATE TEMPORARY TABLE ch2 AS SELECT concat(b1.b, b2.b) AS ch FROM t2 b1, t2 b2;
 CREATE TEMPORARY TABLE ch3 AS SELECT concat(b1.b, b2.b) AS ch FROM t2 b1, t2 b2;
 DROP TABLE t2;
 
-CREATE TABLE t2 (code char(1)) CHARACTER SET UTF32 ENGINE=INNODB;
+CREATE TABLE t2 (code char(1)) CHARACTER SET UTF32 ENGINE=SEQUOIADB;
 INSERT INTO t2 SELECT UNHEX(CONCAT(ch1.ch, ch2.ch, ch3.ch)) FROM ch1, ch2, ch3
 WHERE (ch1.ch BETWEEN '01' AND '02') AND (ch2.ch BETWEEN '00' AND 'FF')
 AND (ch3.ch BETWEEN '00' AND 'FF')
@@ -137,3 +137,4 @@ SELECT COUNT(*) FROM t3 WHERE c <= 0xC981 AND c >= 0xB0A2 ORDER BY c;
 SELECT HEX(CONVERT(c USING utf32)) FROM t3 WHERE c <= 0xC981 AND c >= 0xB0A2 ORDER BY c;
 
 DROP TABLE t1, t2, t3;
+--source include/uninstall_sequoiadb.inc

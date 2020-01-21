@@ -2,6 +2,7 @@
 # Bug#19194 (Right recursion in parser for CASE causes excessive stack
 #   usage, limitation)
 #
+--source include/have_sequoiadb.inc 
 
 --disable_warnings
 DROP PROCEDURE IF EXISTS proc_19194_codegen;
@@ -87,3 +88,4 @@ DROP PROCEDURE proc_19194_codegen;
 DROP PROCEDURE bug_19194_simple;
 DROP PROCEDURE bug_19194_searched;
 
+--source include/uninstall_sequoiadb.inc

@@ -1,7 +1,7 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+# (#Case #13119: Check query with limit)
+--source include/have_sequoiadb.inc
 
 # Test query expressions with LIMIT and/or OFFSET:
 
@@ -208,14 +208,15 @@ select 0 limit 0;
 #
 # Test with DELETE, ORDER BY and limit (bug #1024)
 #
-
 CREATE TABLE t1(id int auto_increment primary key, id2 int, index(id2)); 
 INSERT INTO t1 (id2) values (0),(0),(0);
 DELETE FROM t1 WHERE id=1;
 INSERT INTO t1 SET id2=0;
+--sorted_result
 SELECT * FROM t1; 
 DELETE FROM t1 WHERE id2 = 0 ORDER BY id LIMIT 1; 
 # should have deleted WHERE id=2 
+--sorted_result
 SELECT * FROM t1; 
 DELETE FROM t1 WHERE id2 = 0 ORDER BY id desc LIMIT 1; 
 SELECT * FROM t1;
@@ -236,9 +237,9 @@ drop table t1;
 #
 create table t1 (a int);
 insert into t1 values (1),(2),(3),(4),(5),(6),(7);
-explain select count(*) c FROM t1 WHERE a > 0 ORDER BY c LIMIT 3;
+#explain select count(*) c FROM t1 WHERE a > 0 ORDER BY c LIMIT 3;
 select count(*) c FROM t1 WHERE a > 0 ORDER BY c LIMIT 3;
-explain select sum(a) c FROM t1 WHERE a > 0 ORDER BY c LIMIT 3;
+#explain select sum(a) c FROM t1 WHERE a > 0 ORDER BY c LIMIT 3;
 select sum(a) c FROM t1 WHERE a > 0 ORDER BY c LIMIT 3;
 drop table t1;
 # End of 4.1 tests
@@ -275,14 +276,16 @@ select 1 as a limit 4294967296,10;
 
 --echo End of 5.1 tests
 
---echo #
---echo # Bug #11747810: EXPLAIN EXTENDED SHOWS BOGUS VALUE FOR
---echo #                'FILTERED' COLUMN FOR LIMIT QUERY
---echo #
+#--echo #
+#--echo # Bug #11747810: EXPLAIN EXTENDED SHOWS BOGUS VALUE FOR
+#--echo #                'FILTERED' COLUMN FOR LIMIT QUERY
+#--echo #
 
-CREATE TABLE t1 (a INT, KEY (a)) ENGINE=Myisam;
-INSERT INTO t1 VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
-EXPLAIN SELECT * FROM t1 ORDER BY a LIMIT 1;
-DROP TABLE t1;
+#CREATE TABLE t1 (a INT, KEY (a)) ENGINE=SequoiaDB;
+#INSERT INTO t1 VALUES (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
+#EXPLAIN SELECT * FROM t1 ORDER BY a LIMIT 1;
+#DROP TABLE t1;
 
---echo #End of test for Bug#11747810
+#--echo #End of test for Bug#11747810
+
+--source include/uninstall_sequoiadb.inc

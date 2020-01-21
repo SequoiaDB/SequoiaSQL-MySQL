@@ -1,0 +1,27 @@
+create table t1 (a int, primary key(a))engine=sequoiadb COMMENT='sequoiadb:{ table_options: { ShardingKey: { a: 1 }, AutoSplit:true } }';
+insert into t1 values (1);
+insert into t1 values (1);
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
+update ignore t1 set a = 2;
+ERROR HY000: Sharding key cannot be updated
+set global sequoiadb_error_level=warning;
+insert into t1 values (1);
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
+update ignore t1 set a = 2;
+Warnings:
+Warning	40178	Sharding key cannot be updated
+set global sequoiadb_error_level=error;
+drop table t1;
+create table t1 ( a char(10) ) COMMENT="sequoiadb:{ table_options: { a : 1 } }";
+ERROR HY000: Invalid Argument
+create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}}, ShardingType : 'hash' }";
+create unique index a on t1(a);
+ERROR HY000: The unique index must include all fields in sharding key
+drop table t1;
+create table t1 (a char(10));
+insert into t1 values ('abc'),('bcd'),('abc');
+create unique index a on t1 (a);
+ERROR 23000: Duplicate entry '{ "a": "abc" }' for key 'a'
+alter table t1 add unique a(a);
+ERROR 23000: Duplicate entry '{ "a": "abc" }' for key 'a'
+drop table t1;

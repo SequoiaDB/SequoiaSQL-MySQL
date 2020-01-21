@@ -401,13 +401,10 @@ start varbinary(16) NOT NULL,
 end varbinary(16) NOT NULL,
 country_code varchar(2) NOT NULL,
 country varchar(255) NOT NULL,
-PRIMARY KEY (id),
-KEY start (start),
-KEY end (end)
+PRIMARY KEY (id)
+#  KEY start (start), # not support index
+#  KEY end (end)
 );
-#
-# Testing bitiwise operations on a real-life test case
-#
 INSERT INTO networks(start, end, country_code, country) VALUES
 (INET6_ATON('2c0f:fff0::'),INET6_ATON('2c0f:fff0:ffff:ffff:ffff:ffff:ffff:ffff'),'NG','Nigeria'),
 (INET6_ATON('2405:1d00::'),INET6_ATON('2405:1d00:ffff:ffff:ffff:ffff:ffff:ffff'),'GR','Greenland'),
@@ -516,7 +513,7 @@ _mbb mediumblob,
 _mtx mediumtext,
 _lbb longblob,
 _ltx longtext,
-_pnt point,
+#_pnt point,
 _dat date default '1988-12-15',
 _dtt datetime default '2015-10-24 12:00:00',
 _smp timestamp default '2015-10-24 14:00:00',
@@ -553,7 +550,6 @@ _mbb,
 _mtx,
 _lbb,
 _ltx,
-_pnt,
 _enu,
 _set
 ) VALUES (
@@ -585,13 +581,12 @@ x'cafebabe',
 "abcdefg",
 x'cafebabe',
 "abcdefg",
-st_geomfromtext('point(1 1)'),
 1,
 1
 );
 SELECT * FROM at;
-_bit	_tin	_boo	_sms	_smu	_mes	_meu	_ins	_inu	_bis	_biu	_dec	_flo	_dou	_yea	_jsn	_chr	_vch	_bin	_vbn	_tbl	_ttx	_blb	_txt	_mbb	_mtx	_lbb	_ltx	_pnt	_dat	_dtt	_smp	_tim	_enu	_set
-       @	64	1	64	64	64	64	64	64	64	64	64.00	64	64	2005	{"a": 3}	abcdefghijkl	abcdefghijkl	Êþº¾                                                                                                                                                                                                                                                   Êþº¾	Êþº¾                                                                                                                                                                                                                                                   Êþº¾	Êþº¾                                                                                                                                                                                                                                                   ÊþÊþ	abcdefg	Êþº¾	abcdefg	Êþº¾	abcdefg	Êþº¾	abcdefg	             ð?      ð?	1988-12-15	2015-10-24 12:00:00	2015-10-24 14:00:00	07:08:09	a	a
+_bit	_tin	_boo	_sms	_smu	_mes	_meu	_ins	_inu	_bis	_biu	_dec	_flo	_dou	_yea	_jsn	_chr	_vch	_bin	_vbn	_tbl	_ttx	_blb	_txt	_mbb	_mtx	_lbb	_ltx	_dat	_dtt	_smp	_tim	_enu	_set
+       @	64	1	64	64	64	64	64	64	64	64	64.00	64	64	2005	{"a": 3}	abcdefghijkl	abcdefghijkl	Êþº¾                                                                                                                                                                                                                                                   Êþº¾	Êþº¾                                                                                                                                                                                                                                                   Êþº¾	Êþº¾                                                                                                                                                                                                                                                   ÊþÊþ	abcdefg	Êþº¾	abcdefg	Êþº¾	abcdefg	Êþº¾	abcdefg	1988-12-15	2015-10-24 12:00:00	2015-10-24 14:00:00	07:08:09	a	a
 #
 # bitwise operations with an integer argument and mysql data-types
 #
@@ -688,9 +683,6 @@ _lbb | 2147483647
 2147483647
 SELECT _ltx | 2147483647 FROM at;
 _ltx | 2147483647
-2147483647
-SELECT _pnt | 2147483647 FROM at;
-_pnt | 2147483647
 2147483647
 SELECT _dat | 2147483647 FROM at;
 _dat | 2147483647
@@ -804,9 +796,6 @@ _lbb & 2147483647
 SELECT _ltx & 2147483647 FROM at;
 _ltx & 2147483647
 0
-SELECT _pnt & 2147483647 FROM at;
-_pnt & 2147483647
-0
 SELECT _dat & 2147483647 FROM at;
 _dat & 2147483647
 19881215
@@ -918,9 +907,6 @@ _lbb ^ 2147483647
 2147483647
 SELECT _ltx ^ 2147483647 FROM at;
 _ltx ^ 2147483647
-2147483647
-SELECT _pnt ^ 2147483647 FROM at;
-_pnt ^ 2147483647
 2147483647
 SELECT _dat ^ 2147483647 FROM at;
 _dat ^ 2147483647
@@ -1047,11 +1033,6 @@ Warning	1287	Bitwise operations on BINARY will change behavior in a future versi
 SELECT _ltx | x'cafebabe' FROM at;
 _ltx | x'cafebabe'
 3405691582
-SELECT _pnt | x'cafebabe' FROM at;
-_pnt | x'cafebabe'
-3405691582
-Warnings:
-Warning	1287	Bitwise operations on BINARY will change behavior in a future version, check the 'Bit functions' section in the manual.
 SELECT _dat | x'cafebabe' FROM at;
 _dat | x'cafebabe'
 3422551807
@@ -1174,11 +1155,6 @@ Warning	1287	Bitwise operations on BINARY will change behavior in a future versi
 SELECT _ltx & x'cafebabe' FROM at;
 _ltx & x'cafebabe'
 0
-SELECT _pnt & x'cafebabe' FROM at;
-_pnt & x'cafebabe'
-0
-Warnings:
-Warning	1287	Bitwise operations on BINARY will change behavior in a future version, check the 'Bit functions' section in the manual.
 SELECT _dat & x'cafebabe' FROM at;
 _dat & x'cafebabe'
 3020990
@@ -1301,11 +1277,6 @@ Warning	1287	Bitwise operations on BINARY will change behavior in a future versi
 SELECT _ltx ^ x'cafebabe' FROM at;
 _ltx ^ x'cafebabe'
 3405691582
-SELECT _pnt ^ x'cafebabe' FROM at;
-_pnt ^ x'cafebabe'
-3405691582
-Warnings:
-Warning	1287	Bitwise operations on BINARY will change behavior in a future version, check the 'Bit functions' section in the manual.
 SELECT _dat ^ x'cafebabe' FROM at;
 _dat ^ x'cafebabe'
 3419530817

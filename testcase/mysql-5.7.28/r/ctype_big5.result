@@ -7,8 +7,6 @@ SET @safe_character_set_client= @@character_set_client;
 SET @safe_character_set_results= @@character_set_results;
 SET character_set_server= @test_character_set;
 SET collation_server= @test_collation;
-CREATE DATABASE d1;
-USE d1;
 CREATE TABLE t1 (c CHAR(10), KEY(c));
 SHOW FULL COLUMNS FROM t1;
 Field	Type	Collation	Null	Key	Default	Extra	Privileges	Comment
@@ -27,13 +25,13 @@ c1	varchar(15)	big5_chinese_ci	YES	MUL	NULL
 INSERT INTO t1 VALUES ('location'),('loberge'),('lotre'),('boabab');
 SELECT c1 as want3results from t1 where c1 like 'l%';
 want3results
-location
 loberge
+location
 lotre
 SELECT c1 as want3results from t1 where c1 like 'lo%';
 want3results
-location
 loberge
+location
 lotre
 SELECT c1 as want1result  from t1 where c1 like 'loc%';
 want1result
@@ -80,14 +78,12 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `name` varchar(10) DEFAULT NULL,
   `level` smallint(5) unsigned DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=big5
+) ENGINE=SEQUOIADB DEFAULT CHARSET=big5
 insert into t1 values ('string',1);
 select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 concat(name,space(level))	concat(name, repeat(' ',level))
 string 	string 
 drop table t1;
-DROP DATABASE d1;
-USE test;
 SET character_set_server= @safe_character_set_server;
 SET collation_server= @safe_collation_server;
 SET character_set_client= @safe_character_set_client;
@@ -103,7 +99,7 @@ big5_chinese_ci	6109
 big5_chinese_ci	61
 big5_chinese_ci	6120
 drop table t1;
-create table t1 engine=innodb select repeat('a',50) as c1;
+create table t1 engine=SequoiaDB select repeat('a',50) as c1;
 alter table t1 add index(c1(5));
 insert into t1 values ('abcdefg'),('abcde100'),('abcde110'),('abcde111');
 select collation(c1) from t1 limit 1;
@@ -153,7 +149,6 @@ INSERT INTO t1 (a, b) VALUES (4, repeat(0xF1F2,12));
 SELECT hex(concat(repeat(0xF1F2, 10), '%'));
 hex(concat(repeat(0xF1F2, 10), '%'))
 F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F225
-3 rows expected
 SELECT a, hex(b), c FROM t1 WHERE b LIKE concat(repeat(0xF1F2,10), '%');
 a	hex(b)	c
 2	F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2	NULL
@@ -250,7 +245,7 @@ big5_bin	6109
 big5_bin	61
 big5_bin	6120
 drop table t1;
-create table t1 engine=innodb select repeat('a',50) as c1;
+create table t1 engine=SequoiaDB select repeat('a',50) as c1;
 alter table t1 add index(c1(5));
 insert into t1 values ('abcdefg'),('abcde100'),('abcde110'),('abcde111');
 select collation(c1) from t1 limit 1;
@@ -300,7 +295,6 @@ INSERT INTO t1 (a, b) VALUES (4, repeat(0xF1F2,12));
 SELECT hex(concat(repeat(0xF1F2, 10), '%'));
 hex(concat(repeat(0xF1F2, 10), '%'))
 F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F225
-3 rows expected
 SELECT a, hex(b), c FROM t1 WHERE b LIKE concat(repeat(0xF1F2,10), '%');
 a	hex(b)	c
 2	F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2F1F2	NULL
@@ -313,12 +307,6 @@ INSERT INTO t1 VALUES ('˘ÿ');
 SELECT * FROM t1;
 a
 ˘ÿ
-DROP TABLE t1;
-CREATE TABLE t1 (a CHAR(50) CHARACTER SET big5 NOT NULL, FULLTEXT(a));
-INSERT INTO t1 VALUES(0xA741ADCCA66EB6DC20A7DAADCCABDCA66E);
-SELECT HEX(a) FROM t1 WHERE MATCH(a) AGAINST (0xA741ADCCA66EB6DC IN BOOLEAN MODE);
-HEX(a)
-A741ADCCA66EB6DC20A7DAADCCABDCA66E
 DROP TABLE t1;
 set names big5;
 create table t1 (a char character set big5);
@@ -343,20 +331,6 @@ select hex(convert(_big5 0xC84041 using ucs2));
 hex(convert(_big5 0xC84041 using ucs2))
 003F0041
 End of 4.1 tests
-set names big5;
-create table t1 (a blob);
-insert into t1 values (0xEE00);
-select * into outfile 'test/t1.txt' from t1;
-delete from t1;
-select hex(load_file('MYSQLD_DATADIR/test/t1.txt'));;
-hex(load_file('MYSQLD_DATADIR/test/t1.txt'))
-5CEE5C300A
-load data infile 't1.txt' into table t1;
-select hex(a) from t1;
-hex(a)
-EE00
-drop table t1;
-End of 5.0 tests
 #
 # Start of 5.5 tests
 #
@@ -382,7 +356,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `code` varchar(8) DEFAULT NULL,
   `a` varchar(1) CHARACTER SET big5 NOT NULL DEFAULT ''
-) ENGINE=default_engine DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT COUNT(*) FROM t1;
 COUNT(*)
 28672
@@ -454,7 +428,7 @@ Warning	1366	Incorrect string value: '\x80^' for column 'a' at row 63
 Warning	1366	Incorrect string value: '\x80_' for column 'a' at row 64
 SELECT COUNT(*) FROM t1 WHERE a<>'';
 COUNT(*)
-13973
+13717
 SELECT code, hex(upper(a)), hex(lower(a)),a, upper(a), lower(a) FROM t1 WHERE hex(a)<>hex(upper(a)) OR hex(a)<>hex(lower(a));
 code	hex(upper(a))	hex(lower(a))	a	upper(a)	lower(a)
 A2CF	A2CF	A2E9	Ôº°	Ôº°	ÔΩÅ

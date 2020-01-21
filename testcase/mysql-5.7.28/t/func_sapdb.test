@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 
 --disable_warnings
 drop table if exists t1, test;
@@ -192,4 +193,5 @@ SELECT maketime(-1,0,1)=CAST('-01:00:01' AS TIME);
 SELECT maketime(1,0,1)=CAST('01:00:01' AS TIME);
 SELECT maketime(1,0,1)=CAST('01:00:02' AS TIME);
 
+--source include/uninstall_sequoiadb.inc
 # End of 5.0 tests

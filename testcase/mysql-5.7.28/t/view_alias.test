@@ -1,4 +1,5 @@
 
+--source include/have_sequoiadb.inc
 --echo #
 --echo # Bug#40277 SHOW CREATE VIEW returns invalid SQL
 --echo # Bug#41999 SHOW CREATE VIEW returns invalid SQL if subquery is used in SELECT list
@@ -38,30 +39,44 @@ DROP TABLE IF EXISTS t1,t2;
 
 --echo # Column name exceeds the maximum length.
 CREATE VIEW v1 AS SELECT '0000000000 1111111111 2222222222 3333333333 4444444444 5555555555';
-let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+# Compatible with parallel > 1, modify query condition "TABLE_SCHEMA = 'test'" to "TABLE_SCHEMA like 'test_parallel_*'"
+#let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA like 'test_parallel%' AND TABLE_NAME = 'v1'`;
 DROP VIEW v1;
+# Compatible with parallel > 1, disable output for "CREATE VIEW ... $query"
+--disable_query_log
 eval CREATE VIEW v1 AS $query;
+--enable_query_log
 DROP VIEW v1;
 
 --echo # Column names with leading trailing spaces.
 CREATE VIEW v1 AS SELECT 'c1', 'c2 ', ' c3', ' c4 ';
-let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+#let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA like 'test_parallel%' AND TABLE_NAME = 'v1'`;
 DROP VIEW v1;
+--disable_query_log
 eval CREATE VIEW v1 AS $query;
+--enable_query_log
 DROP VIEW v1;
 
 --echo # Column name conflicts with a auto-generated one.
 CREATE VIEW v1 AS SELECT 'c1', 'c2 ', ' c3', ' c4 ', 'Name_exp_2';
-let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+#let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA like 'test_parallel%' AND TABLE_NAME = 'v1'`;
 DROP VIEW v1;
+--disable_query_log
 eval CREATE VIEW v1 AS $query;
+--enable_query_log
 DROP VIEW v1;
 
 --echo # Invalid conlumn name in subquery.
 CREATE VIEW v1 AS SELECT (SELECT ' c1 ');
-let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+#let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA like 'test_parallel%' AND TABLE_NAME = 'v1'`;
 DROP VIEW v1;
+--disable_query_log
 eval CREATE VIEW v1 AS $query;
+--enable_query_log
 DROP VIEW v1;
 
 CREATE TABLE t1(a INT);
@@ -69,25 +84,36 @@ CREATE TABLE t2 LIKE t1;
 
 --echo # Test alias in subquery
 CREATE VIEW v1 AS SELECT a FROM t1 WHERE EXISTS (SELECT 1 FROM t2 AS b WHERE b.a = 0);
-let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+#let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA like 'test_parallel%' AND TABLE_NAME = 'v1'`;
 DROP VIEW v1;
+--disable_query_log
 eval CREATE VIEW v1 AS $query;
+--enable_query_log
 DROP VIEW v1;
 
 --echo # Test column alias in subquery
 CREATE VIEW v1 AS SELECT a FROM t1 WHERE EXISTS (SELECT a AS alias FROM t1 GROUP BY alias);
 SHOW CREATE VIEW v1;
-let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+#let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA like 'test_parallel%' AND TABLE_NAME = 'v1'`;
 DROP VIEW v1;
+--disable_query_log
 eval CREATE VIEW v1 AS $query;
+--enable_query_log
 DROP VIEW v1;
 
 --echo # Alias as the expression column name.
 CREATE VIEW v1 AS SELECT a FROM t1 WHERE EXISTS (SELECT '  a   ' AS alias FROM t1 GROUP BY alias);
 SHOW CREATE VIEW v1;
-let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+#let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+let $query = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA like 'test_parallel%' AND TABLE_NAME = 'v1'`;
 DROP VIEW v1;
+--disable_query_log
 eval CREATE VIEW v1 AS $query;
+--enable_query_log
 DROP VIEW v1;
 
 DROP TABLE t1, t2;
+
+--source include/uninstall_sequoiadb.inc

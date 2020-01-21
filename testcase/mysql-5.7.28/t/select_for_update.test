@@ -2,10 +2,12 @@
 --echo # Bug#19142753 ASSERT: MODE !=LOCK_X || LOCK_TABLE_HAS(THR_GET_TRX(THR),
 --echo #              INDEX->TABLE, LOCK_IX)
 --echo #
+--source include/have_sequoiadb.inc
 
-create table t1(a int, key(a)) engine=innodb;
+create table t1(a int, key(a)) engine=Sequoiadb;
 insert into t1 values (0);
 
+#Bug #SEQUOIASQLMAINSTREAM-260
 delimiter $;
 create procedure p1()
 begin
@@ -15,13 +17,16 @@ begin
    if rand()>0.5 then start transaction; end if;
    if rand()>0.5 then select count(*) from t1 for update; end if;
    update t1 set a = 1 where a >= 0;
+   commit;
    set counter = counter + 1;
   until counter >= 50 end repeat;
 end $
 delimiter ;$
 
 --enable_connect_log
---connect(con1, localhost, root)
+# Compatible with parallel > 1,  new connection should identify with database name
+let $current_db = `select database()`;
+--connect(con1, localhost, root,, $current_db,,)
 --disable_result_log
 --send call p1();   # run this in two connections!
 --connection default
@@ -38,3 +43,5 @@ call p1();
 
 drop procedure p1;
 drop table t1;
+
+--source include/uninstall_sequoiadb.inc

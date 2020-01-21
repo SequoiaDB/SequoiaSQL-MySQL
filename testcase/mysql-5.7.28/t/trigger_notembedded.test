@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 # Test case(s) in this file contain(s) GRANT/REVOKE statements, which are not
 # supported in embedded server. So, this test should not be run on embedded
@@ -33,6 +32,9 @@
 #
 # Prepare environment.
 #
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_trigger_notembedded;
+use test_trigger_notembedded;
 
 DELETE FROM mysql.user WHERE User LIKE 'mysqltest_%';
 DELETE FROM mysql.db WHERE User LIKE 'mysqltest_%';
@@ -41,21 +43,21 @@ DELETE FROM mysql.columns_priv WHERE User LIKE 'mysqltest_%';
 FLUSH PRIVILEGES;
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest_db1;
+# Compatible with parallel > 1, don't use mysqltest_db1 here, instead use database: mysqltest_db1_casename
+DROP DATABASE IF EXISTS mysqltest_db1_trigger_notembedded;
 --enable_warnings
 
-CREATE DATABASE mysqltest_db1;
+CREATE DATABASE mysqltest_db1_trigger_notembedded;
 
 CREATE USER mysqltest_dfn@localhost;
 CREATE USER mysqltest_inv@localhost;
 
-GRANT CREATE ON mysqltest_db1.* TO mysqltest_dfn@localhost;
+GRANT CREATE ON mysqltest_db1_trigger_notembedded.* TO mysqltest_dfn@localhost;
 
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
-
 CREATE TABLE t1(num_value INT);
 CREATE TABLE t2(user_str TEXT);
 
@@ -65,8 +67,8 @@ CREATE TABLE t2(user_str TEXT);
 --echo
 --echo ---> connection: default
 
-GRANT INSERT, DROP ON mysqltest_db1.t1 TO mysqltest_dfn@localhost;
-GRANT INSERT, DROP ON mysqltest_db1.t2 TO mysqltest_dfn@localhost;
+GRANT INSERT, DROP ON mysqltest_db1_trigger_notembedded.t1 TO mysqltest_dfn@localhost;
+GRANT INSERT, DROP ON mysqltest_db1_trigger_notembedded.t2 TO mysqltest_dfn@localhost;
 
 #
 # Check that the user must have TRIGGER privilege to create a trigger.
@@ -78,7 +80,7 @@ GRANT INSERT, DROP ON mysqltest_db1.t2 TO mysqltest_dfn@localhost;
 
 GRANT SUPER ON *.* TO mysqltest_dfn@localhost;
 
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
@@ -98,9 +100,9 @@ CREATE TRIGGER trg1 AFTER INSERT ON t1
 --echo
 --echo ---> connection: default
 
-GRANT TRIGGER ON mysqltest_db1.t1 TO mysqltest_dfn@localhost;
+GRANT TRIGGER ON mysqltest_db1_trigger_notembedded.t1 TO mysqltest_dfn@localhost;
 
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
@@ -115,9 +117,9 @@ CREATE TRIGGER trg1 AFTER INSERT ON t1
 --echo
 --echo ---> connection: default
 
-REVOKE TRIGGER ON mysqltest_db1.t1 FROM mysqltest_dfn@localhost;
+REVOKE TRIGGER ON mysqltest_db1_trigger_notembedded.t1 FROM mysqltest_dfn@localhost;
 
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
@@ -131,7 +133,7 @@ DROP TRIGGER trg1;
 # Check that the definer must have TRIGGER privilege to activate a trigger.
 #
 
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
@@ -145,9 +147,9 @@ INSERT INTO t1 VALUES(0);
 --echo
 --echo ---> connection: default
 
-GRANT TRIGGER ON mysqltest_db1.t1 TO mysqltest_dfn@localhost;
+GRANT TRIGGER ON mysqltest_db1_trigger_notembedded.t1 TO mysqltest_dfn@localhost;
 
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
@@ -179,7 +181,7 @@ REVOKE SUPER ON *.* FROM mysqltest_dfn@localhost;
 #     inserted into the second table.
 #
 
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
@@ -194,34 +196,34 @@ CREATE TRIGGER trg1 AFTER INSERT ON t1
 
 # Setup definer's privileges.
 
-GRANT ALL PRIVILEGES ON mysqltest_db1.t1 TO mysqltest_dfn@localhost;
-GRANT ALL PRIVILEGES ON mysqltest_db1.t2 TO mysqltest_dfn@localhost;
+GRANT ALL PRIVILEGES ON mysqltest_db1_trigger_notembedded.t1 TO mysqltest_dfn@localhost;
+GRANT ALL PRIVILEGES ON mysqltest_db1_trigger_notembedded.t2 TO mysqltest_dfn@localhost;
 
 # Setup invoker's privileges.
 
-GRANT ALL PRIVILEGES ON mysqltest_db1.t1
+GRANT ALL PRIVILEGES ON mysqltest_db1_trigger_notembedded.t1
   TO 'mysqltest_inv'@localhost;
   
-GRANT SELECT ON mysqltest_db1.t2
+GRANT SELECT ON mysqltest_db1_trigger_notembedded.t2
   TO 'mysqltest_inv'@localhost;
 
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 INSERT INTO t1 VALUES(1);
 
 SELECT * FROM t1;
 SELECT * FROM t2;
 
---connect (wl2818_invoker_con,localhost,mysqltest_inv,,mysqltest_db1)
+--connect (wl2818_invoker_con,localhost,mysqltest_inv,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_invoker_con
 --echo
 --echo ---> connection: wl2818_invoker_con
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 INSERT INTO t1 VALUES(2);
 
@@ -243,15 +245,15 @@ SELECT * FROM t2;
 --echo
 --echo ---> connection: default
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
-REVOKE INSERT ON mysqltest_db1.t2 FROM mysqltest_dfn@localhost;
+REVOKE INSERT ON mysqltest_db1_trigger_notembedded.t2 FROM mysqltest_dfn@localhost;
 
 --connection wl2818_invoker_con
 --echo
 --echo ---> connection: wl2818_invoker_con
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 --error ER_TABLEACCESS_DENIED_ERROR
 INSERT INTO t1 VALUES(3);
@@ -282,7 +284,7 @@ SELECT * FROM t2;
 --echo
 --echo ---> connection: wl2818_definer_con
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 DROP TRIGGER trg1;
 
@@ -298,12 +300,12 @@ CREATE DEFINER='mysqltest_inv'@'localhost'
 --echo
 --echo ---> connection: default
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 GRANT SUPER ON *.* TO mysqltest_dfn@localhost;
 
 --disconnect wl2818_definer_con
---connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1)
+--connect (wl2818_definer_con,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded)
 --connection wl2818_definer_con
 --echo
 --echo ---> connection: wl2818_definer_con
@@ -370,7 +372,7 @@ let MYSQLD_DATADIR= `select @@datadir`;
 perl;
 use strict;
 use warnings;
-my $fname= "$ENV{'MYSQLD_DATADIR'}/mysqltest_db1/t1.TRG";
+my $fname= "$ENV{'MYSQLD_DATADIR'}/mysqltest_db1_trigger_notembedded/t1.TRG";
 open(FILE, "<", $fname) or die;
 my @content= grep($_ !~ /^definers=/, <FILE>);
 close FILE;
@@ -402,7 +404,7 @@ SELECT * FROM INFORMATION_SCHEMA.TRIGGERS ORDER BY trigger_name;
 DROP USER mysqltest_dfn@localhost;
 DROP USER mysqltest_inv@localhost;
 
-DROP DATABASE mysqltest_db1;
+DROP DATABASE mysqltest_db1_trigger_notembedded;
 
 
 ###########################################################################
@@ -425,12 +427,12 @@ DELETE FROM mysql.columns_priv WHERE User LIKE 'mysqltest_%';
 FLUSH PRIVILEGES;
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest_db1;
+DROP DATABASE IF EXISTS mysqltest_db1_trigger_notembedded;
 --enable_warnings
 
-CREATE DATABASE mysqltest_db1;
+CREATE DATABASE mysqltest_db1_trigger_notembedded;
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 # Tables for tesing table-level privileges:
 CREATE TABLE t1(col CHAR(20)); # table for "read-value" trigger
@@ -442,11 +444,11 @@ CREATE TABLE t4(col CHAR(20)); # table for "write-value" trigger
 
 CREATE USER mysqltest_u1@localhost;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM mysqltest_u1@localhost;
-GRANT TRIGGER ON mysqltest_db1.* TO mysqltest_u1@localhost;
+GRANT TRIGGER ON mysqltest_db1_trigger_notembedded.* TO mysqltest_u1@localhost;
 
 SET @mysqltest_var = NULL;
 
---connect (bug15166_u1_con,localhost,mysqltest_u1,,mysqltest_db1)
+--connect (bug15166_u1_con,localhost,mysqltest_u1,,mysqltest_db1_trigger_notembedded)
 
 # parsing (CREATE TRIGGER) time:
 #   - check that nor SELECT either UPDATE is required to execute triggger w/o
@@ -456,16 +458,16 @@ SET @mysqltest_var = NULL;
 --echo
 --echo ---> connection: default
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
-GRANT DELETE ON mysqltest_db1.* TO mysqltest_u1@localhost;
+GRANT DELETE ON mysqltest_db1_trigger_notembedded.* TO mysqltest_u1@localhost;
 SHOW GRANTS FOR mysqltest_u1@localhost;
 
 --connection bug15166_u1_con
 --echo
 --echo ---> connection: bug15166_u1_con
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 CREATE TRIGGER t1_trg_after_delete AFTER DELETE ON t1
   FOR EACH ROW
@@ -479,19 +481,19 @@ CREATE TRIGGER t1_trg_after_delete AFTER DELETE ON t1
 --echo
 --echo ---> connection: default
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
-GRANT UPDATE ON mysqltest_db1.t1 TO mysqltest_u1@localhost;
-GRANT UPDATE ON mysqltest_db1.t2 TO mysqltest_u1@localhost;
+GRANT UPDATE ON mysqltest_db1_trigger_notembedded.t1 TO mysqltest_u1@localhost;
+GRANT UPDATE ON mysqltest_db1_trigger_notembedded.t2 TO mysqltest_u1@localhost;
 
-GRANT UPDATE(col) ON mysqltest_db1.t3 TO mysqltest_u1@localhost;
-GRANT UPDATE(col) ON mysqltest_db1.t4 TO mysqltest_u1@localhost;
+GRANT UPDATE(col) ON mysqltest_db1_trigger_notembedded.t3 TO mysqltest_u1@localhost;
+GRANT UPDATE(col) ON mysqltest_db1_trigger_notembedded.t4 TO mysqltest_u1@localhost;
 
 --connection bug15166_u1_con
 --echo
 --echo ---> connection: bug15166_u1_con
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 # - table-level privileges
 
@@ -541,23 +543,23 @@ CREATE TRIGGER t4_trg_before_insert BEFORE INSERT ON t4
 --echo
 --echo ---> connection: default
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
-REVOKE UPDATE ON mysqltest_db1.t1 FROM mysqltest_u1@localhost;
-REVOKE UPDATE ON mysqltest_db1.t2 FROM mysqltest_u1@localhost;
-GRANT SELECT ON mysqltest_db1.t1 TO mysqltest_u1@localhost;
-GRANT SELECT ON mysqltest_db1.t2 TO mysqltest_u1@localhost;
+REVOKE UPDATE ON mysqltest_db1_trigger_notembedded.t1 FROM mysqltest_u1@localhost;
+REVOKE UPDATE ON mysqltest_db1_trigger_notembedded.t2 FROM mysqltest_u1@localhost;
+GRANT SELECT ON mysqltest_db1_trigger_notembedded.t1 TO mysqltest_u1@localhost;
+GRANT SELECT ON mysqltest_db1_trigger_notembedded.t2 TO mysqltest_u1@localhost;
 
-REVOKE UPDATE(col) ON mysqltest_db1.t3 FROM mysqltest_u1@localhost;
-REVOKE UPDATE(col) ON mysqltest_db1.t4 FROM mysqltest_u1@localhost;
-GRANT SELECT(col) on mysqltest_db1.t3 TO mysqltest_u1@localhost;
-GRANT SELECT(col) on mysqltest_db1.t4 TO mysqltest_u1@localhost;
+REVOKE UPDATE(col) ON mysqltest_db1_trigger_notembedded.t3 FROM mysqltest_u1@localhost;
+REVOKE UPDATE(col) ON mysqltest_db1_trigger_notembedded.t4 FROM mysqltest_u1@localhost;
+GRANT SELECT(col) on mysqltest_db1_trigger_notembedded.t3 TO mysqltest_u1@localhost;
+GRANT SELECT(col) on mysqltest_db1_trigger_notembedded.t4 TO mysqltest_u1@localhost;
 
 --connection bug15166_u1_con
 --echo
 --echo ---> connection: bug15166_u1_con
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
 # - table-level privileges
 
@@ -615,23 +617,24 @@ DROP TRIGGER t4_trg_err_2;
 --echo
 --echo ---> connection: default
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
-REVOKE SELECT ON mysqltest_db1.t1 FROM mysqltest_u1@localhost;
-REVOKE SELECT ON mysqltest_db1.t2 FROM mysqltest_u1@localhost;
-GRANT UPDATE ON mysqltest_db1.t1 TO mysqltest_u1@localhost;
-GRANT UPDATE ON mysqltest_db1.t2 TO mysqltest_u1@localhost;
+REVOKE SELECT ON mysqltest_db1_trigger_notembedded.t1 FROM mysqltest_u1@localhost;
+REVOKE SELECT ON mysqltest_db1_trigger_notembedded.t2 FROM mysqltest_u1@localhost;
+GRANT UPDATE ON mysqltest_db1_trigger_notembedded.t1 TO mysqltest_u1@localhost;
+GRANT UPDATE ON mysqltest_db1_trigger_notembedded.t2 TO mysqltest_u1@localhost;
 
-REVOKE SELECT(col) ON mysqltest_db1.t3 FROM mysqltest_u1@localhost;
-REVOKE SELECT(col) ON mysqltest_db1.t4 FROM mysqltest_u1@localhost;
-GRANT UPDATE(col) ON mysqltest_db1.t3 TO mysqltest_u1@localhost;
-GRANT UPDATE(col) ON mysqltest_db1.t4 TO mysqltest_u1@localhost;
+REVOKE SELECT(col) ON mysqltest_db1_trigger_notembedded.t3 FROM mysqltest_u1@localhost;
+REVOKE SELECT(col) ON mysqltest_db1_trigger_notembedded.t4 FROM mysqltest_u1@localhost;
+GRANT UPDATE(col) ON mysqltest_db1_trigger_notembedded.t3 TO mysqltest_u1@localhost;
+GRANT UPDATE(col) ON mysqltest_db1_trigger_notembedded.t4 TO mysqltest_u1@localhost;
 
 # - table-level privileges
 
 --error ER_COLUMNACCESS_DENIED_ERROR
 INSERT INTO t1 VALUES('line1');
 
+#engine sequoiadb modify test result as same as the innodb
 SELECT * FROM t1;
 SELECT @mysqltest_var;
 
@@ -644,6 +647,7 @@ SELECT * FROM t2;
 --error ER_COLUMNACCESS_DENIED_ERROR
 INSERT INTO t3 VALUES('t3_line1');
 
+#engine sequoiadb modify test result as same as the innodb
 SELECT * FROM t3;
 SELECT @mysqltest_var;
 
@@ -659,22 +663,23 @@ SELECT * FROM t4;
 --echo
 --echo ---> connection: default
 
-use mysqltest_db1;
+use mysqltest_db1_trigger_notembedded;
 
-REVOKE UPDATE ON mysqltest_db1.t1 FROM mysqltest_u1@localhost;
-REVOKE UPDATE ON mysqltest_db1.t2 FROM mysqltest_u1@localhost;
-GRANT SELECT ON mysqltest_db1.t1 TO mysqltest_u1@localhost;
-GRANT SELECT ON mysqltest_db1.t2 TO mysqltest_u1@localhost;
+REVOKE UPDATE ON mysqltest_db1_trigger_notembedded.t1 FROM mysqltest_u1@localhost;
+REVOKE UPDATE ON mysqltest_db1_trigger_notembedded.t2 FROM mysqltest_u1@localhost;
+GRANT SELECT ON mysqltest_db1_trigger_notembedded.t1 TO mysqltest_u1@localhost;
+GRANT SELECT ON mysqltest_db1_trigger_notembedded.t2 TO mysqltest_u1@localhost;
 
-REVOKE UPDATE(col) ON mysqltest_db1.t3 FROM mysqltest_u1@localhost;
-REVOKE UPDATE(col) ON mysqltest_db1.t4 FROM mysqltest_u1@localhost;
-GRANT SELECT(col) ON mysqltest_db1.t3 TO mysqltest_u1@localhost;
-GRANT SELECT(col) ON mysqltest_db1.t4 TO mysqltest_u1@localhost;
+REVOKE UPDATE(col) ON mysqltest_db1_trigger_notembedded.t3 FROM mysqltest_u1@localhost;
+REVOKE UPDATE(col) ON mysqltest_db1_trigger_notembedded.t4 FROM mysqltest_u1@localhost;
+GRANT SELECT(col) ON mysqltest_db1_trigger_notembedded.t3 TO mysqltest_u1@localhost;
+GRANT SELECT(col) ON mysqltest_db1_trigger_notembedded.t4 TO mysqltest_u1@localhost;
 
 # - table-level privileges
 
 INSERT INTO t1 VALUES('line3');
 
+#engine sequoiadb modify test result as same as the innodb
 SELECT * FROM t1;
 SELECT @mysqltest_var;
 
@@ -687,6 +692,7 @@ SELECT * FROM t2;
 
 INSERT INTO t3 VALUES('t3_line2');
 
+#engine sequoiadb modify test result as same as the innodb
 SELECT * FROM t3;
 SELECT @mysqltest_var;
 
@@ -709,7 +715,7 @@ SELECT @mysqltest_var;
 
 DROP USER mysqltest_u1@localhost;
 
-DROP DATABASE mysqltest_db1;
+DROP DATABASE mysqltest_db1_trigger_notembedded;
 
 
 #
@@ -726,11 +732,11 @@ DELETE FROM mysql.columns_priv WHERE User LIKE 'mysqltest_%';
 FLUSH PRIVILEGES;
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest_db1;
+DROP DATABASE IF EXISTS mysqltest_db1_trigger_notembedded;
 --enable_warnings
 
-CREATE DATABASE mysqltest_db1;
-USE mysqltest_db1;
+CREATE DATABASE mysqltest_db1_trigger_notembedded;
+USE mysqltest_db1_trigger_notembedded;
 
 CREATE TABLE t1 (i1 INT);
 CREATE TABLE t2 (i1 INT);
@@ -739,10 +745,10 @@ CREATE USER mysqltest_dfn@localhost;
 CREATE USER mysqltest_inv@localhost;
 
 GRANT EXECUTE, CREATE ROUTINE, TRIGGER ON *.* TO mysqltest_dfn@localhost;
-GRANT INSERT ON mysqltest_db1.* TO mysqltest_inv@localhost;
+GRANT INSERT ON mysqltest_db1_trigger_notembedded.* TO mysqltest_inv@localhost;
 
-connect (definer,localhost,mysqltest_dfn,,mysqltest_db1);
-connect (invoker,localhost,mysqltest_inv,,mysqltest_db1);
+connect (definer,localhost,mysqltest_dfn,,mysqltest_db1_trigger_notembedded);
+connect (invoker,localhost,mysqltest_inv,,mysqltest_db1_trigger_notembedded);
 
 connection definer;
 CREATE PROCEDURE p1(OUT i INT) DETERMINISTIC NO SQL SET i = 3;
@@ -767,7 +773,7 @@ DROP TRIGGER t1_bi;
 
 # Check that having only SELECT privilege is not enough.
 connection default;
-GRANT SELECT ON mysqltest_db1.* TO mysqltest_dfn@localhost;
+GRANT SELECT ON mysqltest_db1_trigger_notembedded.* TO mysqltest_dfn@localhost;
 
 connection definer;
 CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW
@@ -782,7 +788,7 @@ INSERT INTO t1 VALUES (13);
 INSERT INTO t2 VALUES (17);
 
 connection default;
-REVOKE SELECT ON mysqltest_db1.* FROM mysqltest_dfn@localhost;
+REVOKE SELECT ON mysqltest_db1_trigger_notembedded.* FROM mysqltest_dfn@localhost;
 
 connection definer;
 DROP TRIGGER t2_bi;
@@ -791,7 +797,7 @@ DROP TRIGGER t1_bi;
 # Check that having only UPDATE privilege is enough for OUT parameter,
 # but not for INOUT parameter.
 connection default;
-GRANT UPDATE ON mysqltest_db1.* TO mysqltest_dfn@localhost;
+GRANT UPDATE ON mysqltest_db1_trigger_notembedded.* TO mysqltest_dfn@localhost;
 
 connection definer;
 CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW
@@ -805,7 +811,7 @@ INSERT INTO t1 VALUES (19);
 INSERT INTO t2 VALUES (23);
 
 connection default;
-REVOKE UPDATE ON mysqltest_db1.* FROM mysqltest_dfn@localhost;
+REVOKE UPDATE ON mysqltest_db1_trigger_notembedded.* FROM mysqltest_dfn@localhost;
 
 connection definer;
 DROP TRIGGER t2_bi;
@@ -813,7 +819,7 @@ DROP TRIGGER t1_bi;
 
 # Check that having SELECT and UPDATE privileges is enough.
 connection default;
-GRANT SELECT, UPDATE ON mysqltest_db1.* TO mysqltest_dfn@localhost;
+GRANT SELECT, UPDATE ON mysqltest_db1_trigger_notembedded.* TO mysqltest_dfn@localhost;
 
 connection definer;
 CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW
@@ -826,7 +832,7 @@ INSERT INTO t1 VALUES (29);
 INSERT INTO t2 VALUES (31);
 
 connection default;
-REVOKE SELECT, UPDATE ON mysqltest_db1.* FROM mysqltest_dfn@localhost;
+REVOKE SELECT, UPDATE ON mysqltest_db1_trigger_notembedded.* FROM mysqltest_dfn@localhost;
 
 connection definer;
 DROP TRIGGER t2_bi;
@@ -838,7 +844,7 @@ DROP PROCEDURE p1;
 
 # Check that late procedure redefining won't open a security hole.
 connection default;
-GRANT UPDATE ON mysqltest_db1.* TO mysqltest_dfn@localhost;
+GRANT UPDATE ON mysqltest_db1_trigger_notembedded.* TO mysqltest_dfn@localhost;
 
 connection definer;
 CREATE PROCEDURE p1(OUT i INT) DETERMINISTIC NO SQL SET i = 37;
@@ -866,7 +872,7 @@ INSERT INTO t1 VALUES (53);
 
 connection default;
 DROP PROCEDURE p1;
-REVOKE UPDATE ON mysqltest_db1.* FROM mysqltest_dfn@localhost;
+REVOKE UPDATE ON mysqltest_db1_trigger_notembedded.* FROM mysqltest_dfn@localhost;
 
 connection definer;
 DROP TRIGGER t1_bi;
@@ -879,8 +885,8 @@ DROP USER mysqltest_inv@localhost;
 DROP USER mysqltest_dfn@localhost;
 DROP TABLE t2;
 DROP TABLE t1;
-DROP DATABASE mysqltest_db1;
-USE test;
+DROP DATABASE mysqltest_db1_trigger_notembedded;
+USE test_trigger_notembedded;
 
 --echo End of 5.0 tests.
 
@@ -892,7 +898,7 @@ USE test;
 drop table if exists t1;
 --enable_warnings
 create table t1 (i int);
-connect (flush,localhost,root,,test,,);
+connect (flush,localhost,root,,test_trigger_notembedded,,);
 connection default;
 --echo connection: default
 lock tables t1 write;
@@ -920,7 +926,7 @@ disconnect flush;
 # Bug#45412 SHOW CREATE TRIGGER does not require privileges to disclose trigger data
 #
 CREATE DATABASE db1;
-CREATE TABLE db1.t1 (a char(30)) ENGINE=MEMORY;
+CREATE TABLE db1.t1 (a char(30)) ENGINE=Sequoiadb;
 CREATE TRIGGER db1.trg AFTER INSERT ON db1.t1 FOR EACH ROW
  INSERT INTO db1.t1 VALUES('Some very sensitive data goes here');
 
@@ -947,18 +953,18 @@ DROP DATABASE db1;
 #    (i.e. LEX::current_select != NULL);
 #   - IGNORE option (i.e. LEX::current_select->no_error == TRUE);
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest_db1;
+DROP DATABASE IF EXISTS mysqltest_db1_trigger_notembedded;
 --enable_warnings
 
-CREATE DATABASE mysqltest_db1;
-USE mysqltest_db1;
+CREATE DATABASE mysqltest_db1_trigger_notembedded;
+USE mysqltest_db1_trigger_notembedded;
 
 set @orig_sql_mode= @@sql_mode;
 set sql_mode= (select replace(@@sql_mode,'NO_AUTO_CREATE_USER',''));
-GRANT ALL ON mysqltest_db1.* TO mysqltest_u1@localhost;
+GRANT ALL ON mysqltest_db1_trigger_notembedded.* TO mysqltest_u1@localhost;
 set sql_mode= @orig_sql_mode;
 
---connect(con1,localhost,mysqltest_u1,,mysqltest_db1)
+--connect(con1,localhost,mysqltest_u1,,mysqltest_db1_trigger_notembedded)
 
 CREATE TABLE t1 (
   a1 int,
@@ -966,7 +972,7 @@ CREATE TABLE t1 (
 );
 INSERT INTO t1 VALUES (1, 20);
 
-CREATE TRIGGER mysqltest_db1.upd_t1
+CREATE TRIGGER mysqltest_db1_trigger_notembedded.upd_t1
 BEFORE UPDATE ON t1 FOR EACH ROW SET new.a2 = 200;
 
 CREATE TABLE t2 (
@@ -983,12 +989,12 @@ REVOKE ALL PRIVILEGES, GRANT OPTION FROM mysqltest_u1@localhost;
 UPDATE IGNORE t1, t2 SET t1.a1 = 2, t2.a1 = 3 WHERE t1.a1 = 1 AND t2.a1 = 2;
 # Cleanup
 
-DROP DATABASE mysqltest_db1;
+DROP DATABASE mysqltest_db1_trigger_notembedded;
 DROP USER mysqltest_u1@localhost;
 
 --disconnect con1
 --connection default
-USE test;
+USE test_trigger_notembedded;
 
 --echo End of 5.1 tests.
 
@@ -1003,7 +1009,7 @@ CREATE TABLE test1.t1 (
   INDEX(`int_field`)
 );
 
-use test;
+use test_trigger_notembedded;
 
 CREATE USER user_name_len_22_01234@localhost;
 CREATE USER user_name_len_32_012345678901234@localhost;
@@ -1012,12 +1018,12 @@ REVOKE ALL PRIVILEGES, GRANT OPTION FROM user_name_len_22_01234@localhost;
 REVOKE ALL PRIVILEGES, GRANT OPTION FROM user_name_len_32_012345678901234@localhost;
 
 --echo # Check that user_name_len_22_01234 has no SELECT permission ON t1
-connect (con_user_22,localhost,user_name_len_22_01234,,test);
+connect (con_user_22,localhost,user_name_len_22_01234,,test_trigger_notembedded);
 --error ER_TABLEACCESS_DENIED_ERROR
 SELECT * FROM test1.t1;
 
 --echo # Check that user_name_len_32_012345678901234 has no SELECT permission ON t1
-connect (con_user_32,localhost,user_name_len_32_012345678901234,,test);
+connect (con_user_32,localhost,user_name_len_32_012345678901234,,test_trigger_notembedded);
 --error ER_TABLEACCESS_DENIED_ERROR
 SELECT * FROM test1.t1;
 
@@ -1046,7 +1052,9 @@ CREATE DEFINER=user_name_len_33_0123456789012345@localhost
 
 #Cleanup
 DROP DATABASE test1;
+DROP DATABASE test_trigger_notembedded;
 
 DROP USER user_name_len_22_01234@localhost;
 DROP USER user_name_len_32_012345678901234@localhost;
 
+--source include/uninstall_sequoiadb.inc
