@@ -508,6 +508,29 @@ error:
   goto done;
 }
 
+bool ha_sdb_part::check_if_alter_table_options(THD *thd,
+                                               HA_CREATE_INFO *create_info) {
+  bool rs = false;
+  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
+    SQL_I_List<TABLE_LIST> &table_list = sdb_lex_first_select(thd)->table_list;
+    DBUG_ASSERT(table_list.elements == 1);
+    TABLE_LIST *src_table = table_list.first;
+
+    if (src_table->table->s->db_type() == create_info->db_type &&
+        src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE) {
+      const char *src_tab_opt =
+          strstr(src_table->table->s->comment.str, SDB_COMMENT);
+      const char *dst_tab_opt = strstr(create_info->comment.str, SDB_COMMENT);
+      src_tab_opt = src_tab_opt ? src_tab_opt : "";
+      dst_tab_opt = dst_tab_opt ? dst_tab_opt : "";
+      if (strcmp(src_tab_opt, dst_tab_opt) != 0) {
+        rs = true;
+      }
+    }
+  }
+  return rs;
+}
+
 int ha_sdb_part::create(const char *name, TABLE *form,
                         HA_CREATE_INFO *create_info) {
   DBUG_ENTER("ha_sdb_part::create");
@@ -526,6 +549,15 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
     goto done;
+  }
+
+  if (check_if_alter_table_options(ha_thd(), create_info)) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc,
+                    "Cannot change table options of comment. "
+                    "Try drop and create again.",
+                    MYF(0));
+    goto error;
   }
 
   /* Not allowed to create temporary partitioned tables. */

@@ -326,6 +326,8 @@ class ha_sdb_part : public ha_sdb,
                             const bson::BSONObj& mcl_options,
                             const bson::BSONObj& partition_options,
                             bool explicit_not_auto_partition);
+
+  bool check_if_alter_table_options(THD* thd, HA_CREATE_INFO* create_info);
 };
 
 #endif  // IS_MYSQL
