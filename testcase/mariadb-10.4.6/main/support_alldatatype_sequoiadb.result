@@ -1,3 +1,5 @@
+create database sequoiadb_support_alldatatype;
+use sequoiadb_support_alldatatype;
 drop table if exists t1;
 create table t1(y1 time);
 insert into t1 values('-838:59:59.000000');
@@ -69,11 +71,11 @@ delete from t1;
 select * from t1;
 y1
 insert into t1 values ('-839:00:00.000000');
-ERROR 22007: Incorrect time value: '-839:00:00.000000' for column 'y1' at row 1
+ERROR 22007: Incorrect time value: '-839:00:00.000000' for column `sequoiadb_support_alldatatype`.`t1`.`y1` at row 1
 insert into t1 values ('839:00:00.000000');
-ERROR 22007: Incorrect time value: '839:00:00.000000' for column 'y1' at row 1
+ERROR 22007: Incorrect time value: '839:00:00.000000' for column `sequoiadb_support_alldatatype`.`t1`.`y1` at row 1
 insert into t1 values ('a');
-ERROR 22007: Incorrect time value: 'a' for column 'y1' at row 1
+ERROR 22007: Incorrect time value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`y1` at row 1
 drop table t1;
 create table t1(y1 year, y2 year(4));
 insert into t1 values(1901,2155);
@@ -98,7 +100,7 @@ ERROR 22003: Out of range value for column 'y1' at row 1
 insert into t1(y2) values (2156);
 ERROR 22003: Out of range value for column 'y2' at row 1
 insert into t1(y2) values ('a');
-ERROR HY000: Incorrect integer value: 'a' for column 'y2' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`y2` at row 1
 drop table t1;
 create table t1(d date);
 insert into t1 values('1000-01-01'),('9999-12-31');
@@ -115,18 +117,16 @@ delete from t1;
 select * from t1;
 d
 INSERT INTO t1 VALUES ('1000-00-00'),('1000-00-00');
-ERROR 22007: Incorrect date value: '1000-00-00' for column 'd' at row 1
+ERROR 22007: Incorrect date value: '1000-00-00' for column `sequoiadb_support_alldatatype`.`t1`.`d` at row 1
 INSERT INTO t1 VALUES ('0000-00-00');
-ERROR 22007: Incorrect date value: '0000-00-00' for column 'd' at row 1
+ERROR 22007: Incorrect date value: '0000-00-00' for column `sequoiadb_support_alldatatype`.`t1`.`d` at row 1
 insert into t1 values ('10000-01-01');
-ERROR 22007: Incorrect date value: '10000-01-01' for column 'd' at row 1
+ERROR 22007: Incorrect date value: '10000-01-01' for column `sequoiadb_support_alldatatype`.`t1`.`d` at row 1
 insert into t1 values ('a');
-ERROR 22007: Incorrect date value: 'a' for column 'd' at row 1
+ERROR 22007: Incorrect date value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`d` at row 1
 select * from t1;
 d
 set sql_mode = "";
-Warnings:
-Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
 insert into t1 values ('1000-00-00'),('1000-00-00');
 ERROR 22007: Incorrect date value: '1000-00-00' for column 'd' at row 1
 insert into t1 values ('0000-00-00');
@@ -134,8 +134,6 @@ select * from t1;
 d
 0000-00-00
 set sql_mode = "STRICT_TRANS_TABLES";
-Warnings:
-Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 insert into t1 values ('1000-00-00'),('1000-00-00');
 ERROR 22007: Incorrect date value: '1000-00-00' for column 'd' at row 1
 insert into t1 values ('0000-00-00');
@@ -144,8 +142,6 @@ d
 0000-00-00
 0000-00-00
 set sql_mode = "NO_ZERO_DATE";
-Warnings:
-Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 insert into t1 values ('1000-00-00'),('1000-00-00');
 ERROR 22007: Incorrect date value: '1000-00-00' for column 'd' at row 1
 insert into t1 values ('0000-00-00');
@@ -157,12 +153,10 @@ d
 0000-00-00
 0000-00-00
 set sql_mode = "NO_ZERO_DATE,STRICT_TRANS_TABLES";
-Warnings:
-Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 insert into t1 values ('1000-00-00'),('1000-00-00');
 ERROR 22007: Incorrect date value: '1000-00-00' for column 'd' at row 1
 insert into t1 values ('0000-00-00');
-ERROR 22007: Incorrect date value: '0000-00-00' for column 'd' at row 1
+ERROR 22007: Incorrect date value: '0000-00-00' for column `sequoiadb_support_alldatatype`.`t1`.`d` at row 1
 select * from t1;
 d
 0000-00-00
@@ -174,8 +168,6 @@ insert ignore into t1 values ('1000-00-00'),('1000-00-00');
 ERROR 22007: Incorrect date value: '1000-00-00' for column 'd' at row 1
 insert ignore into t1 values ('0000-00-00');
 set sql_mode = "STRICT_TRANS_TABLES";
-Warnings:
-Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 insert ignore into t1 values ('1000-00-00'),('1000-00-00');
 ERROR 22007: Incorrect date value: '1000-00-00' for column 'd' at row 1
 insert ignore into t1 values ('0000-00-00');
@@ -184,12 +176,10 @@ d
 0000-00-00
 0000-00-00
 set sql_mode = "NO_ZERO_IN_DATE";
-Warnings:
-Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 insert into t1 values ('1000-00-00'),('1000-00-00');
 Warnings:
-Warning	1264	Out of range value for column 'd' at row 1
-Warning	1264	Out of range value for column 'd' at row 2
+Warning	1265	Data truncated for column 'd' at row 1
+Warning	1265	Data truncated for column 'd' at row 2
 insert into t1 values ('0000-00-00');
 select * from t1;
 d
@@ -200,8 +190,8 @@ d
 0000-00-00
 insert ignore into t1 values ('1000-00-00'),('1000-00-00');
 Warnings:
-Warning	1264	Out of range value for column 'd' at row 1
-Warning	1264	Out of range value for column 'd' at row 2
+Warning	1265	Data truncated for column 'd' at row 1
+Warning	1265	Data truncated for column 'd' at row 2
 insert ignore into t1 values ('0000-00-00');
 select * from t1;
 d
@@ -214,10 +204,8 @@ d
 0000-00-00
 0000-00-00
 set sql_mode = "NO_ZERO_IN_DATE,STRICT_TRANS_TABLES";
-Warnings:
-Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 insert into t1 values ('1000-00-00'),('1000-00-00');
-ERROR 22007: Incorrect date value: '1000-00-00' for column 'd' at row 1
+ERROR 22007: Incorrect date value: '1000-00-00' for column `sequoiadb_support_alldatatype`.`t1`.`d` at row 1
 insert into t1 values ('0000-00-00');
 select * from t1;
 d
@@ -232,8 +220,8 @@ d
 0000-00-00
 insert ignore into t1 values ('1000-00-00'),('1000-00-00');
 Warnings:
-Warning	1264	Out of range value for column 'd' at row 1
-Warning	1264	Out of range value for column 'd' at row 2
+Warning	1265	Data truncated for column 'd' at row 1
+Warning	1265	Data truncated for column 'd' at row 2
 insert ignore into t1 values ('0000-00-00');
 select * from t1;
 d
@@ -260,22 +248,22 @@ select * from t1;
 t
 1970-01-01 00:00:01
 2038-01-19 03:14:07
-2012-01-19 03:14:08
+2012-01-19 03:14:07
 update t1 set t='2012-01-19 03:14:07.999999' where t='2013-01-19 03:14:07.999999';
 select * from t1;
 t
 1970-01-01 00:00:01
 2038-01-19 03:14:07
-2012-01-19 03:14:08
+2012-01-19 03:14:07
 delete from t1;
 select * from t1;
 t
 insert into t1 values ('1969-12-31 00:00:00');
-ERROR 22007: Incorrect datetime value: '1969-12-31 00:00:00' for column 't' at row 1
+ERROR 22007: Incorrect datetime value: '1969-12-31 00:00:00' for column `sequoiadb_support_alldatatype`.`t1`.`t` at row 1
 insert into t1 values ('2038-01-19 03:14:08.999999');
-ERROR 22007: Incorrect datetime value: '2038-01-19 03:14:08.999999' for column 't' at row 1
+ERROR 22007: Incorrect datetime value: '2038-01-19 03:14:08.999999' for column `sequoiadb_support_alldatatype`.`t1`.`t` at row 1
 insert into t1 values ('a');
-ERROR 22007: Incorrect datetime value: 'a' for column 't' at row 1
+ERROR 22007: Incorrect datetime value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`t` at row 1
 drop table t1;
 SET time_zone=default;
 create table t1(t datetime);
@@ -286,22 +274,22 @@ select * from t1;
 t
 1000-01-01 00:00:00
 9999-12-31 23:59:59
-2012-01-19 03:14:08
+2012-01-19 03:14:07
 update t1 set t='2012-01-19 03:14:07.999999' where t='2013-01-19 03:14:07.999999';
 select * from t1;
 t
 1000-01-01 00:00:00
 9999-12-31 23:59:59
-2012-01-19 03:14:08
+2012-01-19 03:14:07
 delete from t1;
 select * from t1;
 t
 insert into t1 values ('1000-01-00 00:00:00.999999');
-ERROR 22007: Incorrect datetime value: '1000-01-00 00:00:00.999999' for column 't' at row 1
+ERROR 22007: Incorrect datetime value: '1000-01-00 00:00:00.999999' for column `sequoiadb_support_alldatatype`.`t1`.`t` at row 1
 insert into t1 values ('10000-01-01 00:00:00.000000');
-ERROR 22007: Incorrect datetime value: '10000-01-01 00:00:00.000000' for column 't' at row 1
+ERROR 22007: Incorrect datetime value: '10000-01-01 00:00:00.000000' for column `sequoiadb_support_alldatatype`.`t1`.`t` at row 1
 insert into t1 values ('a');
-ERROR 22007: Incorrect datetime value: 'a' for column 't' at row 1
+ERROR 22007: Incorrect datetime value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`t` at row 1
 drop table t1;
 set time_zone='+00:00';
 create table t1(a date);
@@ -375,7 +363,7 @@ insert into t1 values (2,2);
 insert into t1 values (true,true);
 insert into t1 values (false,false);
 insert into t1 values ('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'c1' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`c1` at row 1
 select * from t1;
 c1	c2
 0	0
@@ -421,7 +409,7 @@ insert into t1 values(repeat('a',256));
 ERROR 22001: Data too long for column 'a' at row 1
 drop table t1;
 create table t1 (a varchar(65533));
-ERROR 42000: Row size too large. The maximum row size for the used table type, not counting BLOBs, is 65535. This includes storage overhead, check the manual. You have to change some columns to TEXT or BLOBs
+ERROR 42000: Column length too big for column 'a' (max = 65532); use BLOB or TEXT instead
 create table t1 (a varchar(65532));
 insert into t1 values('a'),('Œ“');
 select * from t1;
@@ -628,7 +616,7 @@ insert into t1 values(repeat('a',256));
 ERROR 22001: Data too long for column 'a' at row 1
 drop table t1;
 create table t1 (a varbinary(65533));
-ERROR 42000: Row size too large. The maximum row size for the used table type, not counting BLOBs, is 65535. This includes storage overhead, check the manual. You have to change some columns to TEXT or BLOBs
+ERROR 42000: Column length too big for column 'a' (max = 65532); use BLOB or TEXT instead
 create table t1 (a varbinary(65532));
 insert into t1 values('a'),('Œ“');
 select * from t1;
@@ -673,7 +661,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values(128,128);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a tinyint unsigned, b tinyint(2) unsigned zerofill);
 insert into t1 values('0', '0'),(255,255),(1,1);
@@ -696,7 +684,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values(256,256);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a smallint, b smallint(3));
 insert into t1 values('-32768', '-32768'),(32767,32767),(1,1),(0,0);
@@ -721,7 +709,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values(32768,32768);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a smallint unsigned, b smallint(3) unsigned zerofill);
 insert into t1 values('0', '0'),(65535,65535),(1,1);
@@ -744,7 +732,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values(65536,65536);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a mediumint, b mediumint(4));
 insert into t1 values('-8388608', '-8388608'),(8388607,8388607),(1,1),(0,0);
@@ -769,7 +757,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values(8388608,8388608);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a mediumint unsigned, b mediumint(4) unsigned zerofill);
 insert into t1 values('0', '0'),(16777215,16777215),(1,1);
@@ -792,7 +780,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values(16777216,16777216);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a int, b integer(4));
 insert into t1 values('-2147483648', '-2147483648'),(2147483647,2147483647),(1,1),(0,0);
@@ -817,7 +805,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values(2147483648,2147483648);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a int unsigned, b int(4) unsigned zerofill);
 insert into t1 values('0', '0'),(4294967295,4294967295),(1,1);
@@ -840,7 +828,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values(4294967296,4294967296);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a bigint, b bigint(10));
 insert into t1 values (9223372036854775807, 9223372036854775807),(-9223372036854775808, -9223372036854775808),(-9223372036854775807, 9223372036854775806),('9223372036854775807', '9223372036854775807'),('-9223372036854775808', '-9223372036854775808'),('-9223372036854775807', '9223372036854775806');
@@ -869,7 +857,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values (-9223372036854775809, -9223372036854775809);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values ('a', 'a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a bigint);
 insert into t1 values(9),(99),('999'),(9999),('99999'),(999999),('9999999'),(99999999),('999999999'),(9999999999),('99999999999'),(999999999999),('9999999999999'),(99999999999999),('999999999999999'),(9999999999999999),('99999999999999999'),(999999999999999999),('8888888888888888888');
@@ -970,7 +958,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values (-1, -1);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values ('a', 'a');
-ERROR HY000: Incorrect integer value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect integer value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a decimal, b NUMERIC(60,30), c dec(1));
 insert into t1 values('9999999999', '999999999999999999999999999999.999999999999999999999999999999',9),(-9999999999, -999999999999999999999999999999.999999999999999999999999999999,-9),(1,1,1),(0,0,0);
@@ -998,12 +986,12 @@ a	b	c
 insert into t1(b) values(1000000000000000000000000000000);
 ERROR 22003: Out of range value for column 'b' at row 1
 insert into t1(b) values('a');
-ERROR HY000: Incorrect decimal value: 'a' for column 'b' at row 1
+ERROR 22007: Incorrect decimal value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`b` at row 1
 drop table t1;
 create table t1 (a decimal(66,0));
-ERROR 42000: Too-big precision 66 specified for 'a'. Maximum is 65.
-create table t1 (a decimal(65,31));
-ERROR 42000: Too big scale 31 specified for column 'a'. Maximum is 30.
+ERROR 42000: Too big precision 66 specified for 'a'. Maximum is 65
+create table t1 (a decimal(65,39));
+ERROR 42000: Too big scale 39 specified for 'a'. Maximum is 38
 create table t1 (a decimal unsigned, b NUMERIC(60,30) unsigned zerofill);
 insert into t1 values('0', '0'),(9999999999,999999999999999999999999999999.999999999999999999999999999999),(1,1);
 select * from t1;
@@ -1027,12 +1015,12 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1(a) values(99999999999999999999999999999.9999999999999999999999999999999);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1(a) values('a');
-ERROR HY000: Incorrect decimal value: 'a' for column 'a' at row 1
+ERROR 22007: Incorrect decimal value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a decimal(66,0) unsigned);
-ERROR 42000: Too-big precision 66 specified for 'a'. Maximum is 65.
-create table t1 (a decimal(65,31) unsigned);
-ERROR 42000: Too big scale 31 specified for column 'a'. Maximum is 30.
+ERROR 42000: Too big precision 66 specified for 'a'. Maximum is 65
+create table t1 (a decimal(65,39) unsigned);
+ERROR 42000: Too big scale 39 specified for 'a'. Maximum is 38
 create table t1 (a float);
 insert into t1 values('-3.402823466E+38');
 insert into t1 values(-1.175494351E-38);
@@ -1065,7 +1053,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1(a) values(3.402823466E+39);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a');
-ERROR 01000: Data truncated for column 'a' at row 1
+ERROR 22007: Incorrect double value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a float unsigned, b float(60,1) unsigned zerofill);
 insert into t1 values(1.175494351E-38,1.175494351E-38),(1,1),(0,0),(3.402823466E+38,3.402823466E+38);
@@ -1093,7 +1081,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1(a) values(3.402823466E+39);
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a','a');
-ERROR 01000: Data truncated for column 'a' at row 1
+ERROR 22007: Incorrect double value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a double);
 insert into t1 values('-1.7976931348623157E+308'),(-2.2250738585072014E-308),(1),(0),(2.2250738585072014E-308),(1.7976931348623157E+308);
@@ -1122,7 +1110,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('1.7976931348623157E+309');
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1 values('a');
-ERROR 01000: Data truncated for column 'a' at row 1
+ERROR 22007: Incorrect double value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1 (a double unsigned, b double(60,1) unsigned zerofill);
 insert into t1 values(2.2250738585072014E-308,2.2250738585072014E-308),(1,1),(0,0);
@@ -1151,7 +1139,7 @@ ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1(a) values('1.7976931348623157E+309');
 ERROR 22003: Out of range value for column 'a' at row 1
 insert into t1(a) values('a');
-ERROR 01000: Data truncated for column 'a' at row 1
+ERROR 22007: Incorrect double value: 'a' for column `sequoiadb_support_alldatatype`.`t1`.`a` at row 1
 drop table t1;
 create table t1(a set('1','2','3','a','b','c','d'));
 insert into t1 values ('1'),('3'),('a');
@@ -1187,3 +1175,4 @@ a
 1
 b
 drop table t1;
+drop database sequoiadb_support_alldatatype;

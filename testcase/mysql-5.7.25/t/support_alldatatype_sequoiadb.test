@@ -3,7 +3,7 @@
 #Case 13082#Case 16523#Case 13083#Case 13084#Case 13085#Case 13086#Case 13087#Case 13088#Case 13089#Case 13090
 #Case 13091#Case 13092#Case 13093#Case 13094#Case 13095#Case 13096#Case 13097#Case 13307#Case 14430#Case 15437
 #Case 15439#Case 15440#Case 15441#Case 15442#Case 15443#Case 15444#Case 15445#Case 15648#Case 15649#Case 16813
-#Case 20410
+#Case 20410#Case 20519
 
 --source include/have_sequoiadb.inc
 
@@ -82,12 +82,54 @@ insert into t1 values ('10000-01-01');
 insert into t1 values ('a');
 select * from t1;
 #BUG #SEQUOIASQLMAINSTREAM-541
-set sql_mode="";
+set sql_mode = "";
 --error 1292
 insert into t1 values ('1000-00-00'),('1000-00-00');
 insert into t1 values ('0000-00-00');
 select * from t1;
-set sql_mode=default;
+set sql_mode = "STRICT_TRANS_TABLES";
+--error 1292
+insert into t1 values ('1000-00-00'),('1000-00-00');
+insert into t1 values ('0000-00-00');
+select * from t1;
+set sql_mode = "NO_ZERO_DATE";
+--error 1292
+insert into t1 values ('1000-00-00'),('1000-00-00');
+insert into t1 values ('0000-00-00');
+select * from t1;
+set sql_mode = "NO_ZERO_DATE,STRICT_TRANS_TABLES";
+--error 1292
+insert into t1 values ('1000-00-00'),('1000-00-00');
+--error 1292
+insert into t1 values ('0000-00-00');
+select * from t1;
+truncate t1;
+#BUG #SEQUOIASQLMAINSTREAM-571
+set sql_mode = '';
+--error 1292
+insert ignore into t1 values ('1000-00-00'),('1000-00-00'); 
+insert ignore into t1 values ('0000-00-00');
+set sql_mode = "STRICT_TRANS_TABLES";
+--error 1292
+insert ignore into t1 values ('1000-00-00'),('1000-00-00');
+insert ignore into t1 values ('0000-00-00');
+select * from t1;
+set sql_mode = "NO_ZERO_IN_DATE";
+insert into t1 values ('1000-00-00'),('1000-00-00'); 
+insert into t1 values ('0000-00-00');
+select * from t1;
+insert ignore into t1 values ('1000-00-00'),('1000-00-00'); 
+insert ignore into t1 values ('0000-00-00');
+select * from t1;
+set sql_mode = "NO_ZERO_IN_DATE,STRICT_TRANS_TABLES";
+--error 1292
+insert into t1 values ('1000-00-00'),('1000-00-00');
+insert into t1 values ('0000-00-00');
+select * from t1;
+insert ignore into t1 values ('1000-00-00'),('1000-00-00');
+insert ignore into t1 values ('0000-00-00');
+select * from t1;
+set sql_mode = default;
 drop table t1;
 
 #timestamp
