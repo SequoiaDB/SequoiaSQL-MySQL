@@ -1150,6 +1150,14 @@ int ha_sdb::alter_column(TABLE *altered_table,
   // 3.Handle the changed_columns
   changed_it.init(changed_columns);
   while ((info = changed_it++)) {
+    if (strcmp(sdb_field_name(info->before), sdb_field_name(info->after))) {
+      rc = HA_ERR_WRONG_COMMAND;
+      my_printf_error(
+          rc, "Cannot change column name case. Try '%s' instead of '%s'.",
+          MYF(0), sdb_field_name(info->before), sdb_field_name(info->after));
+      goto error;
+    }
+
     if (info->op_flag & Col_alter_info::CHANGE_DATA_TYPE &&
         !info->cast_rule.isEmpty()) {
       cast_builder.appendElements(info->cast_rule);
@@ -1381,7 +1389,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
       bson::BSONObjBuilder cast_builder;
       Field *new_field = altered_table->field[j];
       if (!matched_map.is_set(j) &&
-          strcmp(sdb_field_name(old_field), sdb_field_name(new_field)) == 0) {
+          !strcasecmp(sdb_field_name(old_field), sdb_field_name(new_field))) {
         matched_map.set_bit(j);
         found_col = true;
 
