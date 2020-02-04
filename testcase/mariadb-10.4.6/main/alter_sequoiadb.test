@@ -1,6 +1,6 @@
 #Check table options
 #Case 20386#Case 20388#Case 20389#Case 20390#Case 20396#Case 20397
-#Case 20398#Case 20399#Case 20473
+#Case 20398#Case 20399#Case 20473#Case 20524
 
 create database test_alter;
 use test_alter;
@@ -90,6 +90,16 @@ drop table t1,t2,t1_new,t2_new;
 #seqDB-20473 
 create table t1( id int ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
 alter table t1 comment = "user string, sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }", ALGORITHM=copy;
+show create table t1;
+drop table t1;
+
+#seqDB-20524
+create table t1 ( POPulation int(11) not null default '0', index (POPulation));
+insert into t1 values (1);
+--error 131
+alter table t1 change population population int(11) null;
+# alter with copy is allowed
+alter table t1 change population population int(11) null, ALGORITHM=COPY;
 show create table t1;
 drop table t1;
 

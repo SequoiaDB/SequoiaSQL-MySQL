@@ -209,4 +209,16 @@ t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='user string, sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }'
 drop table t1;
+create table t1 ( POPulation int(11) not null default '0', index (POPulation));
+insert into t1 values (1);
+alter table t1 change population population int(11) null;
+ERROR 0A000: Cannot change column name case. Try 'POPulation' instead of 'population'.
+alter table t1 change population population int(11) null, ALGORITHM=COPY;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `population` int(11) DEFAULT NULL,
+  KEY `POPulation` (`population`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+drop table t1;
 drop database test_alter;
