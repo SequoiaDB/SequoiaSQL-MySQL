@@ -83,7 +83,7 @@ int sdb_get_bound(partition_info *part_info, uint curr_part_id,
 
   int rc = 0;
   part_column_list_val *range_col_array = part_info->range_col_array;
-  uint field_num = part_info->part_field_list.elements;
+  uint field_num = part_info->num_part_fields;
   Sdb_func_isnull item_convertor;  // convert Item to BSONObj
 
   const char *bound_field =
@@ -169,7 +169,7 @@ void ha_sdb_part::get_sharding_key(partition_info *part_info,
     case HASH_PARTITION: {
       // (LINEAR) KEY(<column_list>)
       if (part_info->list_of_part_fields) {
-        uint field_num = part_info->part_field_list.elements;
+        uint field_num = part_info->num_part_fields;
         for (uint i = 0; i < field_num; ++i) {
           Field *field = part_info->part_field_array[i];
           builder.append(sdb_field_name(field), 1);
@@ -400,7 +400,7 @@ int ha_sdb_part::get_attach_options(partition_info *part_info,
     if (0 == curr_part_id) {
       bson::BSONObjBuilder low_builder(
           builder.subobjStart(SDB_FIELD_LOW_BOUND));
-      uint field_num = part_info->part_field_list.elements;
+      uint field_num = part_info->num_part_fields;
       for (uint i = 0; i < field_num; ++i) {
         Field *field = part_info->part_field_array[i];
         low_builder.appendMinKey(sdb_field_name(field));
