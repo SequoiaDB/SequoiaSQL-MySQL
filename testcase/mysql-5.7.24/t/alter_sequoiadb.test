@@ -1930,8 +1930,9 @@ create table t1 ( id int, d date )
    );
 show create table t1;
 #BUG #SEQUOIASQLMAINSTREAM-576
-#alter table t1 comment = 'sequoiadb: { partition_options:  { Partition : 1024 } }',  ALGORITHM=COPY; 
-#show create table t1;
+--error 131
+alter table t1 comment = 'sequoiadb: { partition_options:  { Partition : 1024 } }',  ALGORITHM=COPY; 
+show create table t1;
 drop table t1;
 
 drop database test_alter;

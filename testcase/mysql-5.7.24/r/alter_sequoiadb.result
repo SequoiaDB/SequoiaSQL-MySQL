@@ -4972,5 +4972,17 @@ t1	CREATE TABLE `t1` (
 SUBPARTITION BY HASH ( TO_DAYS(d))
 SUBPARTITIONS 2
 (PARTITION p0 VALUES LESS THAN (1990) ENGINE = SequoiaDB) */
+alter table t1 comment = 'sequoiadb: { partition_options:  { Partition : 1024 } }',  ALGORITHM=COPY;
+ERROR HY000: Cannot change table options of comment. Try drop and create again.
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) DEFAULT NULL,
+  `d` date DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+/*!50100 PARTITION BY RANGE ( YEAR(d))
+SUBPARTITION BY HASH ( TO_DAYS(d))
+SUBPARTITIONS 2
+(PARTITION p0 VALUES LESS THAN (1990) ENGINE = SequoiaDB) */
 drop table t1;
 drop database test_alter;
