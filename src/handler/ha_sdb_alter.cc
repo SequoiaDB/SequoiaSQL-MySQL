@@ -1389,7 +1389,8 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
       bson::BSONObjBuilder cast_builder;
       Field *new_field = altered_table->field[j];
       if (!matched_map.is_set(j) &&
-          !strcasecmp(sdb_field_name(old_field), sdb_field_name(new_field))) {
+          my_strcasecmp(system_charset_info, sdb_field_name(old_field),
+                        sdb_field_name(new_field)) == 0) {
         matched_map.set_bit(j);
         found_col = true;
 
