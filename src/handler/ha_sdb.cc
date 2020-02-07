@@ -1004,9 +1004,17 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       break;
     }
     case MYSQL_TYPE_FLOAT:
-    case MYSQL_TYPE_DOUBLE:
-    case MYSQL_TYPE_TIME: {
+    case MYSQL_TYPE_DOUBLE: {
       obj_builder.append(sdb_field_name(field), field->val_real());
+      break;
+    }
+    case MYSQL_TYPE_TIME: {
+      my_decimal tmp_val;
+      char buff[MAX_FIELD_WIDTH];
+      String str(buff, sizeof(buff), field->charset());
+      ((Field_num *)field)->val_decimal(&tmp_val);
+      my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
+      obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
       break;
     }
     case MYSQL_TYPE_VARCHAR:
