@@ -788,7 +788,15 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
       }
     }
   }
-  obj = obj_builder.obj();
+
+  try {
+    obj = obj_builder.obj();
+  } catch (bson::assertion e) {
+    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
+    rc = ER_TOO_BIG_FIELDLENGTH;
+    my_printf_error(rc, "Column length too big at row %lu", MYF(0),
+                    sdb_thd_current_row(ha_thd()));
+  }
   null_obj = null_obj_builder.obj();
 
 done:
