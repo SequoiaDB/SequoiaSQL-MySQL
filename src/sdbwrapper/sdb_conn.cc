@@ -376,76 +376,65 @@ int conn_exec(sdbclient::sdb *connection, const char *sql,
 
 int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
                                 Sdb_statistics &stats) {
-  static const char NORMAL_CL_STATS_SQL[] =
+  static const char STATS_SQL[] =
       "select T.Details.$[0].PageSize as PageSize, "
       "T.Details.$[0].TotalDataPages as TotalDataPages,"
       "T.Details.$[0].TotalIndexPages as TotalIndexPages, "
       "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace, "
       "T.Details.$[0].TotalRecords as TotalRecords "
       "from $SNAPSHOT_CL as T "
-      "where T.NodeSelect='primary' and T.Name='%s.%s' split by T.Details";
+      "where T.NodeSelect='primary' and T.Name='%s.%s' split by T.Details "
+      "/*+use_option(ShowMainCLMode, both)*/";
 
-  static const char MAIN_CL_STATS_SQL[] =
-      "select CL.PageSize,"
-      "sum(CL.TotalDataPages) as TotalDataPages,"
-      "sum(CL.TotalIndexPages) as TotalIndexPages,"
-      "sum(CL.TotalDataFreeSpace) as TotalDataFreeSpace,"
-      "sum(CL.TotalRecords) as TotalRecords "
-      "from "
-      "("
-      "select Name from $SNAPSHOT_CATA "
-      "where MainCLName='%s.%s' "
-      ") as CATA "
-      "inner join "
-      "("
-      "select T.Name,"
-      "T.Details.$[0].PageSize as PageSize,"
-      "T.Details.$[0].TotalDataPages as TotalDataPages,"
-      "T.Details.$[0].TotalIndexPages as TotalIndexPages,"
-      "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace,"
-      "T.Details.$[0].TotalRecords as TotalRecords "
-      "from $SNAPSHOT_CL as T "
-      "where T.NodeSelect='primary' split by T.Details"
-      ") as CL "
-      "on CATA.Name=CL.Name";
+  static const int PAGE_SIZE_MIN = 4096;
+  static const int PAGE_SIZE_MAX = 65536;
 
   int rc = SDB_ERR_OK;
   sdbclient::sdbCursor cursor;
   bson::BSONObj obj;
-  char normal_cl_stats_sql[sizeof(NORMAL_CL_STATS_SQL) +
-                           SDB_CL_FULL_NAME_MAX_SIZE] = {0};
-  char main_cl_stats_sql[sizeof(MAIN_CL_STATS_SQL) +
-                         SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  char stats_sql[sizeof(STATS_SQL) + SDB_CL_FULL_NAME_MAX_SIZE] = {0};
 
   DBUG_ASSERT(NULL != cs_name);
   DBUG_ASSERT(strlength(cs_name) != 0);
 
-  // Try getting statistics as normal cl. If not, try main cl again.
-  sprintf(normal_cl_stats_sql, NORMAL_CL_STATS_SQL, cs_name, cl_name);
-  rc = retry(
-      boost::bind(conn_exec, &m_connection, normal_cl_stats_sql, &cursor));
+  sprintf(stats_sql, STATS_SQL, cs_name, cl_name);
+  rc = retry(boost::bind(conn_exec, &m_connection, stats_sql, &cursor));
   if (rc != SDB_ERR_OK) {
     goto error;
   }
-  rc = cursor.next(obj, false);
-  if (SDB_DMS_EOC == rc) {
-    sprintf(main_cl_stats_sql, MAIN_CL_STATS_SQL, cs_name, cl_name);
-    rc = retry(
-        boost::bind(conn_exec, &m_connection, main_cl_stats_sql, &cursor));
-    if (rc != SDB_ERR_OK) {
-      goto error;
+
+  stats.page_size = PAGE_SIZE_MAX;
+  stats.total_data_pages = 0;
+  stats.total_index_pages = 0;
+  stats.total_data_free_space = 0;
+  stats.total_records = 0;
+
+  while (!(rc = cursor.next(obj, false))) {
+    // For main cl, each data node may have different page size,
+    // so calculate pages base on the min page size.
+    int page_size = obj.getField("PageSize").numberInt();
+    if (page_size < stats.page_size) {
+      stats.page_size = page_size;
     }
-    rc = cursor.next(obj, false);
+    int total_data_pages = obj.getField("TotalDataPages").numberInt();
+    stats.total_data_pages += (total_data_pages * (page_size / PAGE_SIZE_MIN));
+    int total_index_pages = obj.getField("TotalIndexPages").numberInt();
+    stats.total_index_pages +=
+        (total_index_pages * (page_size / PAGE_SIZE_MIN));
+
+    stats.total_data_free_space +=
+        obj.getField("TotalDataFreeSpace").numberLong();
+    stats.total_records += obj.getField("TotalRecords").numberLong();
+  }
+  if (SDB_DMS_EOC == rc) {
+    rc = SDB_ERR_OK;
   }
   if (rc != SDB_ERR_OK) {
     goto error;
   }
 
-  stats.page_size = obj.getField("PageSize").numberInt();
-  stats.total_data_pages = obj.getField("TotalDataPages").numberInt();
-  stats.total_index_pages = obj.getField("TotalIndexPages").numberInt();
-  stats.total_data_free_space = obj.getField("TotalDataFreeSpace").numberLong();
-  stats.total_records = obj.getField("TotalRecords").numberLong();
+  stats.total_data_pages /= (stats.page_size / PAGE_SIZE_MIN);
+  stats.total_index_pages /= (stats.page_size / PAGE_SIZE_MIN);
 
 done:
   cursor.close();
