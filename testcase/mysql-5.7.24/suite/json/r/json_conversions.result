@@ -4359,16 +4359,16 @@ _tbl: opaque_mysql_type_time	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIM
 _tbl: opaque_mysql_type_datetime	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	"--EXPECTED_TIME--"	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_bit	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	"base64:type16:yv4="	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_year	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	"base64:type13:MTk5Mg=="	N	N	N	N	N	N	N	N	N
+_tbl: opaque_mysql_type_varbinary	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_blob	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	"base64:type252:yv66vg=="	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_longblob	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	"base64:type251:yv66vg=="	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_mediumblob	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	"base64:type250:yv66vg=="	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_tinyblob	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	"base64:type249:yv66vg=="	N	N	N	N	N	N	N	N	N
-_tbl: opaque_mysql_type_varbinary	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_binary	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_varchar	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	"base64:type15:Zm9v"	N	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_string	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
-_ttx: null	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	null	N	N	N	N	N	N	N	N
 _tbl: opaque_mysql_type_var_string	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
+_ttx: null	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	null	N	N	N	N	N	N	N	N
 _ttx: bool	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	true	N	N	N	N	N	N	N	N
 _ttx: uint	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	12	N	N	N	N	N	N	N	N
 _ttx: int	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	12	N	N	N	N	N	N	N	N
@@ -5397,11 +5397,11 @@ _bin: opaque_mysql_type_datetime	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	-
 _bin: opaque_mysql_type_bit	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	"base64:type16:yv4="	N	N	N	N	N	N	N	N	N	N	N
 _bin: opaque_mysql_type_year	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	"base64:type13:MTk5Mg=="	N	N	N	N	N	N	N	N	N	N	N
 _bin: opaque_mysql_type_blob	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	"base64:type252:yv66vg=="	N	N	N	N	N	N	N	N	N	N	N
+_bin: opaque_mysql_type_varbinary	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
+_bin: opaque_mysql_type_binary	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
 _bin: opaque_mysql_type_longblob	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	"base64:type251:yv66vg=="	N	N	N	N	N	N	N	N	N	N	N
 _bin: opaque_mysql_type_mediumblob	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	"base64:type250:yv66vg=="	N	N	N	N	N	N	N	N	N	N	N
 _bin: opaque_mysql_type_tinyblob	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	"base64:type249:yv66vg=="	N	N	N	N	N	N	N	N	N	N	N
-_bin: opaque_mysql_type_varbinary	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
-_bin: opaque_mysql_type_binary	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
 _bin: opaque_mysql_type_varchar	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	"base64:type15:Zm9v"	N	N	N	N	N	N	N	N	N	N	N
 _bin: opaque_mysql_type_string	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
 _bin: opaque_mysql_type_var_string	N	N	N	N	N	N	N	N	N	N	N	N	N	N	--DATE--	--TIME--	--TIME--	--TIME--	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N	N
@@ -6600,11 +6600,11 @@ _bin: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
 _bin: opaque_mysql_type_bit	"base64:type16:yv4="
 _bin: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
 _bin: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_bin: opaque_mysql_type_varbinary	NULL
+_bin: opaque_mysql_type_binary	NULL
 _bin: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _bin: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
 _bin: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_bin: opaque_mysql_type_varbinary	NULL
-_bin: opaque_mysql_type_binary	NULL
 _bin: opaque_mysql_type_varchar	"base64:type15:Zm9v"
 _bin: opaque_mysql_type_string	NULL
 _bin: opaque_mysql_type_var_string	NULL
@@ -6713,11 +6713,11 @@ _tbl: opaque_mysql_type_time	"23:24:25.000000"
 _tbl: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
 _tbl: opaque_mysql_type_bit	"base64:type16:yv4="
 _tbl: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_tbl: opaque_mysql_type_varbinary	NULL
 _tbl: opaque_mysql_type_blob	"base64:type252:yv66vg=="
 _tbl: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _tbl: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
 _tbl: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_tbl: opaque_mysql_type_varbinary	NULL
 _tbl: opaque_mysql_type_binary	NULL
 _tbl: opaque_mysql_type_varchar	"base64:type15:Zm9v"
 _tbl: opaque_mysql_type_string	NULL
