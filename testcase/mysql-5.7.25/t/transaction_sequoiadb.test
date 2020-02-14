@@ -1,7 +1,12 @@
-#Case 18635
+#Case 18635#Case 20547#Case 20548#Case 20549#Case 20550#Case 20551#Case 20552#Case 20555
 
 --source include/have_sequoiadb.inc
 
+--disable_query_log
+CALL mtr.add_suppression(".*failed to query with condition.*rc: 40013");
+--enable_query_log
+
+#seqDB-18635
 #create sessions
 connect (con1, localhost, root);
 connect (con2, localhost, root);
@@ -144,9 +149,249 @@ connection default;
 --sorted_result
 select * from t1 left join t2 using(id);
 
+drop table t1,t2;
+
+#seqDB-20547
+#default sequoiadb_rollback_on_timeout=OFF
+create table t1 ( id int, id1 int, c char(16), index (id) );
+insert into t1 values (1,1,'a'), (2,2,'b'), (3,3,'c');
+#session1 update
+connection con1;
+begin;
+update t1 set c = 'updateC' where id = 3;
+#session2 select timeout
+connection con2;
+begin;
+insert into t1 values (4,4,'d');
+--error 1205
+select * from t1 where id = 3 for update;
+select * from t1;
+#session2 commit
+insert into t1 values (5,5,'e'),(6,6,'f');
+delete from t1 where id = 1;
+update t1 set c = 'updateE' where id = 5;
+commit;
+connection default;
+select * from t1;
+#session2 select timeout
+connection con2;
+begin;
+--error 1205
+select * from t1 where id = 3 for update;
+#session2 rollback
+insert into t1 values (7,7,'h');
+delete from t1 where id = 4;
+update t1 set c = 'updateF' where id = 6;
+rollback;
+#session1 commit
+connection con1;
+commit;
+connection default;
+select * from t1;
+delete from t1;
+
+#seqDB-20548
+insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+#session1 update
+connection con1;
+begin;
+update t1 set c = 'updateC' where id = 3;
+#session2 update timeout, condition not pushdown
+connection con2;
+begin;
+delete from t1 where id = 2;
+--error 1205
+update t1 set c = 'otherC' where not id = id1 - 1;
+select * from t1;
+#session2 commit
+insert into t1 values (4,4,'d'),(5,5,'e');
+delete from t1 where id = 1;
+update t1 set c = 'updateD' where id = 4;
+commit;
+connection default;
+select * from t1;
+#session2 update timeout, condition pushdown
+connection con2;
+begin;
+--error 1205
+update t1 set c = 'updateAll' where id > 0;
+select * from t1;
+#session2 rollback
+insert into t1 values (6,6,'f');
+delete from t1 where id = 4;
+update t1 set c = 'updateE' where id = 5;
+rollback;
+#session1
+connection con1;
+commit;
+connection default;
+select * from t1;
+delete from t1;
+
+#seqDB-20549
+insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+#session1 delete
+connection con1;
+begin;
+delete from t1 where id = 3;
+#session2 delete timeout, condition not pushdown
+connection con2;
+begin;
+update t1 set c = 'updateB' where id = 2;
+--error 1205
+delete from t1 where not id = id1 - 1;
+select * from t1;
+#session2 commit
+insert into t1 values (4,4,'d'),(5,5,'e');
+delete from t1 where id = 1;
+update t1 set c = 'updateD' where id = 4;
+commit;
+connection default;
+select * from t1;
+#session2 delete timeout, condition pushdown
+connection con2;
+begin;
+--error 1205
+delete from t1 where id > 0;
+select * from t1;
+#session2 rollback
+insert into t1 values (6,6,'f'),(7,7,'g');
+rollback;
+#session1
+connection con1;
+commit;
+connection default;
+select * from t1;
+delete from t1;
 disconnect con1;
 disconnect con2;
 
-drop table t1,t2;
+connect (con1, localhost, root);
+connect (con2, localhost, root);
 
---source include/uninstall_sequoiadb.inc
+#SeqDB-20550
+insert into t1 values (1,1,'a'), (2,2,'b'), (3,3,'c');
+#session1 update
+connection con1;
+set sequoiadb_rollback_on_timeout = on;
+begin;
+update t1 set c = 'updateC' where id = 3;
+#session2 select timeout
+connection con2;
+set sequoiadb_rollback_on_timeout = on;
+begin;
+insert into t1 values (4,4,'d');
+--error 1205
+select * from t1 where id = 3 for update;
+select * from t1;
+#session2 commit
+insert into t1 values (5,5,'e'),(6,6,'f');
+delete from t1 where id = 1;
+update t1 set c = 'updateE' where id = 5;
+commit;
+connection default;
+set sequoiadb_rollback_on_timeout = on;
+select * from t1;
+#session2 select timeout
+connection con2;
+set sequoiadb_rollback_on_timeout = on;
+begin;
+--error 1205
+select * from t1 where id = 3 for update;
+#session2 rollback
+insert into t1 values (7,7,'h');
+delete from t1 where id = 4;
+update t1 set c = 'updateF' where id = 6;
+rollback;
+#session1 commit
+connection con1;
+set sequoiadb_rollback_on_timeout = on;
+commit;
+connection default;
+set sequoiadb_rollback_on_timeout = on;
+select * from t1;
+delete from t1;
+disconnect con1;
+disconnect con2;
+
+set global sequoiadb_rollback_on_timeout = on;
+connect (con1, localhost, root);
+connect (con2, localhost, root);
+
+#SeqDB-20551
+insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+#session1 update
+connection con1;
+begin;
+update t1 set c = 'updateC' where id = 3;
+#session2 update timeout, condition not pushdown
+connection con2;
+begin;
+delete from t1 where id = 2;
+--error 1205
+update t1 set c = 'otherC' where not id = id1 - 1;
+select * from t1;
+#session2 commit
+insert into t1 values (4,4,'d'),(5,5,'e');
+delete from t1 where id = 1;
+update t1 set c = 'updateD' where id = 4;
+commit;
+connection default;
+select * from t1;
+#session2 update timeout, condition pushdown
+connection con2;
+begin;
+--error 1205
+update t1 set c = 'updateAll' where id > 0;
+select * from t1;
+#session2 rollback
+insert into t1 values (6,6,'f');
+delete from t1 where id = 4;
+update t1 set c = 'updateE' where id = 5;
+rollback;
+#session1
+connection con1;
+commit;
+connection default;
+select * from t1;
+delete from t1;
+
+#seqDB-20552
+insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+#session1 delete
+connection con1;
+begin;
+delete from t1 where id = 3;
+#session2 delete timeout, condition not pushdown
+connection con2;
+begin;
+update t1 set c = 'updateB' where id = 2;
+--error 1205
+delete from t1 where not id = id1 - 1;
+select * from t1;
+#session2 commit
+insert into t1 values (4,4,'d'),(5,5,'e');
+delete from t1 where id = 1;
+update t1 set c = 'updateD' where id = 4;
+commit;
+connection default;
+select * from t1;
+#session2 delete timeout, condition pushdown
+connection con2;
+begin;
+--error 1205
+delete from t1 where id > 0;
+select * from t1;
+#session2 rollback
+insert into t1 values (6,6,'f'),(7,7,'g');
+rollback;
+#session1
+connection con1;
+commit;
+connection default;
+select * from t1;
+set global sequoiadb_rollback_on_timeout = off;
+drop table t1;
+
+disconnect con1;
+disconnect con2;
