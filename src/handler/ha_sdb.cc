@@ -4013,8 +4013,6 @@ int ha_sdb::parse_comment_options(const char *comment_str,
                                   bool &explicit_not_auto_partition,
                                   bson::BSONObj *partition_options) {
   int rc = 0;
-  bson::BSONElement options_ele;
-  bson::BSONElement auto_partition;
   bson::BSONObj comments;
   char *sdb_cmt_pos = strstr(const_cast<char *>(comment_str), SDB_COMMENT);
   if (NULL == sdb_cmt_pos) {
@@ -4029,40 +4027,52 @@ int ha_sdb::parse_comment_options(const char *comment_str,
     goto error;
   }
 
-  auto_partition = comments.getField(SDB_FIELD_AUTO_PARTITION);
-  /*for compatibility with old configuration parameter */
-  if (auto_partition.type() == bson::EOO) {
-    auto_partition = comments.getField(SDB_FIELD_USE_PARTITION);
-  }
-  if (auto_partition.type() == bson::Bool) {
-    if (false == auto_partition.Bool()) {
-      explicit_not_auto_partition = true;
-    }
-  } else if (auto_partition.type() != bson::EOO) {
-    rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Type of option auto_partition should be 'Bool'",
-                    MYF(0));
-    goto error;
-  }
+  {
+    bson::BSONObjIterator iter(comments);
+    bson::BSONElement elem;
+    while (iter.more()) {
+      elem = iter.next();
+      // auto_partition
+      if (0 == strcmp(elem.fieldName(), SDB_FIELD_AUTO_PARTITION) ||
+          0 == strcmp(elem.fieldName(), SDB_FIELD_USE_PARTITION)) {
+        if (elem.type() != bson::Bool) {
+          rc = ER_WRONG_ARGUMENTS;
+          my_printf_error(rc, "Type of option auto_partition should be 'Bool'",
+                          MYF(0));
+          goto error;
+        }
+        if (false == elem.Bool()) {
+          explicit_not_auto_partition = true;
+        }
+      }
+      // table_options
+      else if (0 == strcmp(elem.fieldName(), SDB_FIELD_TABLE_OPTIONS)) {
+        if (elem.type() != bson::Object) {
+          rc = ER_WRONG_ARGUMENTS;
+          my_printf_error(rc, "Type of table_options should be 'Object'",
+                          MYF(0));
+          goto error;
+        }
+        table_options = elem.embeddedObject().copy();
+      }
+      // partition_options
+      else if (0 == strcmp(elem.fieldName(), SDB_FIELD_PARTITION_OPTIONS)) {
+        if (partition_options) {
+          if (elem.type() != bson::Object) {
+            rc = ER_WRONG_ARGUMENTS;
+            my_printf_error(rc, "Type of partition_options should be 'Object'",
+                            MYF(0));
+            goto error;
+          }
+          *partition_options = elem.embeddedObject().copy();
+        }
 
-  options_ele = comments.getField(SDB_FIELD_TABLE_OPTIONS);
-  if (options_ele.type() == bson::Object) {
-    table_options = options_ele.embeddedObject().copy();
-  } else if (options_ele.type() != bson::EOO) {
-    rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Type of table_options should be 'Object'", MYF(0));
-    goto error;
-  }
-
-  if (partition_options) {
-    options_ele = comments.getField(SDB_FIELD_PARTITION_OPTIONS);
-    if (options_ele.type() == bson::Object) {
-      *partition_options = options_ele.embeddedObject().copy();
-    } else if (options_ele.type() != bson::EOO) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Type of partition_options should be 'Object'",
-                      MYF(0));
-      goto error;
+      } else {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Invalid comment option '%s'.", MYF(0),
+                        elem.fieldName());
+        goto error;
+      }
     }
   }
 done:
