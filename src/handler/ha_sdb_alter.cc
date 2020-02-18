@@ -1373,6 +1373,16 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     goto error;
   }
 
+  // Mariadb support for altering ignore table ... syntax.
+#ifdef IS_MARIADB
+  if (ha_alter_info->ignore &&
+      (ha_alter_info->handler_flags &
+       (ALTER_ADD_PK_INDEX | ALTER_ADD_UNIQUE_INDEX))) {
+    rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+    goto error;
+  }
+#endif
+
   ctx = new ha_sdb_alter_ctx();
   if (!ctx) {
     rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
