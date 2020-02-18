@@ -1,36 +1,25 @@
-# SequoiaSQL - MySQL Storage Engine
+# SequoiaSQL-MySQL Storage Engine
 
-SequoiaSQL - MySQL Storage Engine is a distributed MySQL storage engine.
+SequoiaSQL-MySQL Storage Engine is a distributed MySQL storage engine.
 
 It currently supports SequoiaDB 3.x as the backend database, and it will be extended to multiple databases such like MongoDB/Redis and etc...
 
-In order to take advantages of scalability and performance, SequoiaSQL - MySQL Storage Engine can be used to replace InnoDB and store user data/index/lob in the backend distributed database.
+In order to take advantages of scalability and performance, SequoiaSQL-MySQL Storage Engine can be used to replace InnoDB and store user data/index/lob in the backend distributed database.
 
 
 ## Building
-
-1. Get boost-1.59.0, the source code of mysql-5.7.24 and SequoiaDB C++ driver 3.0.1.
-2. Clone the plugin code to the storage directory.
- ```bash
-cd mysql-5.7.24/storage
-git clone https://github.com/SequoiaDB/sequoiasql-mysql.git sequoiadb
- ```
-3. Build the plugin
- ```bash
-cd mysql-5.7.24
-cmake . -DWITH_BOOST=</path/to/boost_1_59_0/> -DCMAKE_INSTALL_PREFIX=/opt/mysql -DMYSQL_DATADIR=/opt/mysql/data -DWITH_SDB_DRIVER=</path/to/sequoiadb/driver> -DCMAKE_BUILD_TYPE=Release
-make install -j 4
- ```
-
-By default, the sequoiadb storage engine is built into MySQL. You can add `-DSDB_BUILT_IN=OFF` to build it as a dynamic library.
-
-Additional, we use two options to give plugin version and SequoiaDB C++ driver version:
+1. Get the source code of SequoiaSQL-MySQL and SequoiaDB C++ driver 3.4.
+```bash
+git clone http://gitlab.sequoiadb.com/sequoiadb/sequoiasql-mysql.git sequoiasql-mysql
 ```
--DSDB_PLUGIN_VERSION=<git commit short hash>
--DSDB_DRIVER_VERSION=<driver version>
+2. Build the SequoiaSQL-MySQL.
+```bash
+python3 build.py --sdbdriver </path/to/sequoiadb/cpp/driver> -t mysql-5.7.25 -i </path/to/install/mysql/> --clean --archivetest --dd
 ```
-
-For example: `-DSDB_PLUGIN_VERSION=4811624 -DSDB_DRIVER_VERSION=3.0.1`.
+SequoiaSQL-MySQL Storage Engine also supports the MySQL(5.7.24/5.7.28) and MariaDB(10.4.6). Build different version of MySQL or MariaDB with argument `-t projectType`. For example:
+```bash
+python3 build.py --sdbdriver </path/to/sequoiadb/cpp/driver> -t mariadb-10.4.6 -i </path/to/install/mysql/> --clean --archivetest --dd
+```
 
 ## Coding Guidelines
 
