@@ -14,7 +14,7 @@ set global sequoiadb_error_level=error;
 drop table t1;
 create table t1 ( a char(10) ) COMMENT="sequoiadb:{ table_options: { a : 1 } }";
 ERROR HY000: Invalid Argument
-create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}}, ShardingType : 'hash' }";
+create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}, ShardingType : 'hash' }}";
 create unique index a on t1(a);
 ERROR HY000: The unique index must include all fields in sharding key
 drop table t1;
