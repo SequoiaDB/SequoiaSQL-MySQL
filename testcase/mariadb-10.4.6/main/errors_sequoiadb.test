@@ -16,7 +16,7 @@ drop table t1;
 #BUG #SEQUOIASQLMAINSTREAM-399
 --error 40006 
 create table t1 ( a char(10) ) COMMENT="sequoiadb:{ table_options: { a : 1 } }"; 
-create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}}, ShardingType : 'hash' }";
+create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}, ShardingType : 'hash' }}";
 --error 40177
 create unique index a on t1(a); 
 drop table t1; 
