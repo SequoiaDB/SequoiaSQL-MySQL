@@ -1873,11 +1873,14 @@ alter table t2 add primary key (id), ALGORITHM=copy;
 alter table t2 drop index c_new, add unique key c_new(c(8),id), ALGORITHM=copy;
 show create table t1;
 show create table t2;
-alter table t1 drop primary key, add index(id) using hash, ALGORITHM=copy; 
-alter table t2 drop primary key, add index(id) using hash, ALGORITHM=copy; 
-#--error 138
-#alter table t1 add index b(b(1)), ALGORITHM=copy;
-#show create table t1;
+#BUG SEQUOIASQLMAINSTREAM-572 
+--error 138
+alter table t1 add index b(b(1)), ALGORITHM=copy;
+show create table t1;
+alter table t1 drop primary key, add index(id) using hash, ALGORITHM=copy;
+alter table t2 drop primary key, add index(id) using hash, ALGORITHM=copy;
+show create table t1;
+show create table t2;
 drop table t1,t2;
 
 #seqDB-20390 #seqDB-20397
@@ -1889,9 +1892,13 @@ alter table t2 add column id int auto_increment primary key, ALGORITHM=copy;
 alter table t2 change c c char(16) comment 'column c', add column t text comment 'column t', add index t(t(2)), ALGORITHM=copy;
 show create table t1;
 show create table t2;
+#BUG SEQUOIASQLMAINSTREAM-572
+#BUG SEQUOIASQLMAINSTREAM-589
 #--error 40177
 #alter table t1 change id id1 int, ALGORITHM=copy;
-#show create table t1;
+#--error 40177
+#alter table t1 add unique index c(c), ALGORITHM=copy;
+show create table t1;
 alter table t1 change id id int, ALGORITHM=copy;
 alter table t2 change id id int, ALGORITHM=copy;
 show create table t1;
