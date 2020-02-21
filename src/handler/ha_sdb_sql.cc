@@ -319,14 +319,6 @@ void sdb_thd_reset_condition_info(THD *thd) {
   thd->get_stmt_da()->reset_condition_info(thd);
 }
 
-Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root) {
-  field = field->clone(mem_root);
-  if (!field || ((Field_blob *)field)->copy_blob_value(mem_root)) {
-    return NULL;
-  }
-  return field;
-}
-
 bool sdb_create_table_like(THD *thd) {
   return (thd->lex->create_info.options & HA_LEX_CREATE_TABLE_LIKE);
 }
@@ -596,15 +588,6 @@ void sdb_thd_reset_condition_info(THD *thd) {
 
 bool sdb_is_transaction_stmt(THD *thd) {
   return thd->transaction.stmt.ha_list;
-}
-
-Field *sdb_clone_field_blob(Field *field, MEM_ROOT *mem_root) {
-  field = ((Field_blob *)field)->clone(mem_root, (my_ptrdiff_t)0);
-  if (!field) {
-    return NULL;
-  }
-  ((Field_blob *)field)->reset_fields();
-  return field;
 }
 
 bool sdb_create_table_like(THD *thd) {

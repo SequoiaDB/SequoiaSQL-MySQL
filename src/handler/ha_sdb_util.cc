@@ -487,3 +487,30 @@ void sdb_restore_cl_fullname(char *cl_fullname) {
   char *c = strchr(cl_fullname, '\0');
   *c = '.';
 }
+
+void sdb_store_packlength(uchar *ptr, uint packlength, uint number,
+                          bool low_byte_first) {
+  switch (packlength) {
+    case 1:
+      ptr[0] = (uchar)number;
+      break;
+    case 2:
+#ifdef WORDS_BIGENDIAN
+      if (low_byte_first) {
+        int2store(ptr, (unsigned short)number);
+      } else
+#endif
+        shortstore(ptr, (unsigned short)number);
+      break;
+    case 3:
+      int3store(ptr, number);
+      break;
+    case 4:
+#ifdef WORDS_BIGENDIAN
+      if (low_byte_first) {
+        int4store(ptr, number);
+      } else
+#endif
+        longstore(ptr, number);
+  }
+}

@@ -475,6 +475,8 @@ class ha_sdb : public handler {
                             bool &explicit_not_auto_partition,
                             bson::BSONObj *partition_options = NULL);
 
+  void raw_store_blob(Field_blob *blob, const char *data, uint len);
+
  protected:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
