@@ -356,8 +356,36 @@ install(PROGRAMS "${PROJECT_PACKAGE_DIR}/common/preUninstall.sh"
         DESTINATION "./")
 install(DIRECTORY "${PROJECT_PACKAGE_SUB_DIR}/license"
         DESTINATION "./")
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib"
-        DESTINATION "tools")
+execute_process( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
+message( STATUS "Architecture: ${ARCHITECTURE}" )
+if(MYSQL)
+   if( ${ARCHITECTURE} STREQUAL "x86_64" )
+      if(WITH_DEBUG)
+         install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/x86_64/debug"
+                 DESTINATION "tools/lib")
+      else()
+         install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/x86_64/release"
+                 DESTINATION "tools/lib")
+      endif()
+      install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/metaSync"
+              DESTINATION "tools/metaSync")
+   elseif( ${ARCHITECTURE} STREQUAL "aarch64" )
+      if(WITH_DEBUG)
+         install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/aarch64/debug"
+                 DESTINATION "tools/lib")
+      else()
+         install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/aarch64/release"
+                 DESTINATION "tools/lib")
+      endif()
+      install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/metaSync"
+              DESTINATION "tools/metaSync")
+   else()
+      install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib"
+              DESTINATION "tools")
+   endif()
+elseif(MariaDB)
+# do nothing
+endif()
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/metaSync"
         DESTINATION "tools")
 install(FILES "${CMAKE_BINARY_DIR}/version.info"
