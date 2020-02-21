@@ -71,6 +71,9 @@ void sdb_tmp_split_cl_fullname(char *cl_fullname, char **cs_name,
 
 void sdb_restore_cl_fullname(char *cl_fullname);
 
+void sdb_store_packlength(uchar *ptr, uint packlength, uint number,
+                          bool low_byte_first);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

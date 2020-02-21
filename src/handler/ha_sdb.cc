@@ -2341,7 +2341,6 @@ int ha_sdb::index_init(uint idx, bool sorted) {
 #ifdef IS_MARIADB
   m_secondary_sort_rowid = sdb_is_ror_scan(ha_thd(), table->tablenr);
 #endif
-  free_root(&blobroot, MYF(0));
   DBUG_RETURN(0);
 }
 
@@ -2363,7 +2362,6 @@ int ha_sdb::rnd_init(bool scan) {
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }
-  free_root(&blobroot, MYF(0));
   DBUG_RETURN(0);
 }
 
@@ -2410,6 +2408,8 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   if (SDB_ERR_OK != rc) {
     goto error;
   }
+
+  free_root(&blobroot, MYF(0));
 
   for (Field **fields = table->field; *fields; fields++) {
     Field *field = *fields;
@@ -2574,18 +2574,16 @@ bool ha_sdb::check_element_type_compatible(bson::BSONElement &elem,
   return compatible;
 }
 
+void ha_sdb::raw_store_blob(Field_blob *blob, const char *data, uint len) {
+  uint packlength = blob->pack_length_no_ptr();
+  sdb_store_packlength(blob->ptr, packlength, len, table->s->db_low_byte_first);
+  memcpy(blob->ptr + packlength, &data, sizeof(char *));
+}
+
 int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
   int rc = SDB_ERR_OK;
 
   DBUG_ASSERT(0 == strcmp(elem.fieldName(), sdb_field_name(field)));
-
-  if (field->flags & BLOB_FLAG) {
-    field = field->clone(&blobroot);
-    if (!field || ((Field_blob *)field)->copy_blob_value(&blobroot)) {
-      rc = HA_ERR_OUT_OF_MEM;
-      goto error;
-    }
-  }
 
   switch (elem.type()) {
     case bson::NumberInt:
@@ -2600,23 +2598,47 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
       break;
     }
     case bson::BinData: {
-      int lenTmp = 0;
-      const char *dataTmp = elem.binData(lenTmp);
-#ifdef IS_MYSQL
-      if (MYSQL_TYPE_JSON == field->type()) {
-        Field_json *field_json = dynamic_cast<Field_json *>(field);
-        json_binary::Value v = json_binary::parse_binary(dataTmp, lenTmp);
-        Json_wrapper wr(v);
-        field_json->store_json(&wr);
-        break;
+      int len = 0;
+      const char *data = elem.binData(len);
+      if (field->flags & BLOB_FLAG) {
+        raw_store_blob((Field_blob *)field, data, len);
+      } else {
+        field->store(data, len, &my_charset_bin);
       }
-#endif
-      field->store(dataTmp, lenTmp, &my_charset_bin);
       break;
     }
     case bson::String: {
-      // datetime is stored as string
-      field->store(elem.valuestr(), elem.valuestrsize() - 1, &SDB_CHARSET);
+      if (field->flags & BLOB_FLAG) {
+        // TEXT is a kind of blob
+        const char *data = elem.valuestr();
+        uint len = elem.valuestrsize() - 1;
+        const CHARSET_INFO *field_charset = ((Field_str *)field)->charset();
+
+        if (!my_charset_same(field_charset, &SDB_CHARSET)) {
+          String org_str(data, len, &SDB_CHARSET);
+          String conv_str;
+          uchar *new_data = NULL;
+          rc = sdb_convert_charset(org_str, conv_str, field_charset);
+          if (rc) {
+            goto error;
+          }
+
+          new_data = (uchar *)alloc_root(&blobroot, conv_str.length());
+          if (!new_data) {
+            rc = HA_ERR_OUT_OF_MEM;
+            goto error;
+          }
+
+          memcpy(new_data, conv_str.ptr(), conv_str.length());
+          memcpy(&data, &new_data, sizeof(uchar *));
+          len = conv_str.length();
+        }
+
+        raw_store_blob((Field_blob *)field, data, len);
+      } else {
+        // DATETIME is stored as string, too.
+        field->store(elem.valuestr(), elem.valuestrsize() - 1, &SDB_CHARSET);
+      }
       break;
     }
     case bson::NumberDecimal: {
@@ -2671,24 +2693,6 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
     default:
       rc = SDB_ERR_TYPE_UNSUPPORTED;
       goto error;
-  }
-  if (field->flags & BLOB_FLAG) {
-    Field_blob *blob = (Field_blob *)field;
-    uchar *src, *dst;
-    uint length, packlength;
-
-    packlength = blob->pack_length_no_ptr();
-    length = blob->get_length(blob->ptr);
-    memcpy(&src, blob->ptr + packlength, sizeof(char *));
-    if (src) {
-      dst = (uchar *)alloc_root(&blobroot, length);
-      if (!dst) {
-        rc = HA_ERR_OUT_OF_MEM;
-        goto error;
-      }
-      memmove(dst, src, length);
-      memcpy(blob->ptr + packlength, &dst, sizeof(char *));
-    }
   }
 
 done:

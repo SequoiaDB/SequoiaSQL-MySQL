@@ -458,6 +458,8 @@ class ha_sdb : public handler {
                              char *table_name, TABLE *form,
                              HA_CREATE_INFO *create_info, bool *has_copy);
 
+  void raw_store_blob(Field_blob *blob, const char *data, uint len);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
