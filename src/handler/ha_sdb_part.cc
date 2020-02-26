@@ -216,8 +216,9 @@ int ha_sdb_part::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   }
 
   if (create_info && create_info->comment.str) {
-    rc = parse_comment_options(create_info->comment.str, table_options,
-                               explicit_not_auto_partition, &partition_options);
+    rc = sdb_parse_comment_options(create_info->comment.str, table_options,
+                                   explicit_not_auto_partition,
+                                   &partition_options);
     if (rc != 0) {
       goto error;
     }
@@ -297,8 +298,8 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
   bson::BSONObjBuilder builder;
 
   if (part_elem->part_comment) {
-    rc = parse_comment_options(part_elem->part_comment, table_options,
-                               explicit_not_auto_partition);
+    rc = sdb_parse_comment_options(part_elem->part_comment, table_options,
+                                   explicit_not_auto_partition);
     if (rc != 0) {
       goto error;
     }

@@ -470,11 +470,6 @@ class ha_sdb : public handler {
                              char *table_name, TABLE *form,
                              HA_CREATE_INFO *create_info, bool *has_copy);
 
-  int parse_comment_options(const char *comment_str,
-                            bson::BSONObj &table_options,
-                            bool &explicit_not_auto_partition,
-                            bson::BSONObj *partition_options = NULL);
-
   void raw_store_blob(Field_blob *blob, const char *data, uint len);
 
  protected:

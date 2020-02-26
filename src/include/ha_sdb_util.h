@@ -74,6 +74,11 @@ void sdb_restore_cl_fullname(char *cl_fullname);
 void sdb_store_packlength(uchar *ptr, uint packlength, uint number,
                           bool low_byte_first);
 
+int sdb_parse_comment_options(const char *comment_str,
+                              bson::BSONObj &table_options,
+                              bool &explicit_not_auto_partition,
+                              bson::BSONObj *partition_options = NULL);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

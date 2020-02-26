@@ -4018,79 +4018,6 @@ error:
   goto done;
 }
 
-int ha_sdb::parse_comment_options(const char *comment_str,
-                                  bson::BSONObj &table_options,
-                                  bool &explicit_not_auto_partition,
-                                  bson::BSONObj *partition_options) {
-  int rc = 0;
-  bson::BSONObj comments;
-  char *sdb_cmt_pos = strstr(const_cast<char *>(comment_str), SDB_COMMENT);
-  if (NULL == sdb_cmt_pos) {
-    goto done;
-  }
-
-  rc = sdb_convert_tab_opt_to_obj(sdb_cmt_pos, comments);
-  if (0 != rc) {
-    rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
-                    comment_str);
-    goto error;
-  }
-
-  {
-    bson::BSONObjIterator iter(comments);
-    bson::BSONElement elem;
-    while (iter.more()) {
-      elem = iter.next();
-      // auto_partition
-      if (0 == strcmp(elem.fieldName(), SDB_FIELD_AUTO_PARTITION) ||
-          0 == strcmp(elem.fieldName(), SDB_FIELD_USE_PARTITION)) {
-        if (elem.type() != bson::Bool) {
-          rc = ER_WRONG_ARGUMENTS;
-          my_printf_error(rc, "Type of option auto_partition should be 'Bool'",
-                          MYF(0));
-          goto error;
-        }
-        if (false == elem.Bool()) {
-          explicit_not_auto_partition = true;
-        }
-      }
-      // table_options
-      else if (0 == strcmp(elem.fieldName(), SDB_FIELD_TABLE_OPTIONS)) {
-        if (elem.type() != bson::Object) {
-          rc = ER_WRONG_ARGUMENTS;
-          my_printf_error(rc, "Type of table_options should be 'Object'",
-                          MYF(0));
-          goto error;
-        }
-        table_options = elem.embeddedObject().copy();
-      }
-      // partition_options
-      else if (0 == strcmp(elem.fieldName(), SDB_FIELD_PARTITION_OPTIONS)) {
-        if (partition_options) {
-          if (elem.type() != bson::Object) {
-            rc = ER_WRONG_ARGUMENTS;
-            my_printf_error(rc, "Type of partition_options should be 'Object'",
-                            MYF(0));
-            goto error;
-          }
-          *partition_options = elem.embeddedObject().copy();
-        }
-
-      } else {
-        rc = ER_WRONG_ARGUMENTS;
-        my_printf_error(rc, "Invalid comment option '%s'.", MYF(0),
-                        elem.fieldName());
-        goto error;
-      }
-    }
-  }
-done:
-  return rc;
-error:
-  goto done;
-}
-
 int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
                            bson::BSONObj &options) {
   int rc = 0;
@@ -4112,8 +4039,8 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   }
 
   if (create_info && create_info->comment.str) {
-    rc = parse_comment_options(create_info->comment.str, table_options,
-                               explicit_not_auto_partition);
+    rc = sdb_parse_comment_options(create_info->comment.str, table_options,
+                                   explicit_not_auto_partition);
     if (explicit_not_auto_partition) {
       filter_partition_options(table_options, table_options);
     }

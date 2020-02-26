@@ -1590,9 +1590,9 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
                               Sdb_cl &cl) {
   int rc = 0;
   bson::BSONObj old_tab_opt, new_tab_opt;
-  bson::BSONElement old_auto_partition, new_auto_partition;
-  bson::BSONElement old_opt_ele, new_opt_ele;
-  bson::BSONObj old_opt_obj, new_opt_obj;
+  bool old_explicit_not_auto_part = false;
+  bool new_explicit_not_auto_part = false;
+  // bson::BSONObj old_part_opt, new_part_opt;
   bson::BSONElement cmt_compressed_ele, cmt_compress_type_ele;
   bson::BSONObjBuilder builder;
   bson::BSONObj options;
@@ -1607,77 +1607,41 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
     my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
     goto error;
   }
-  rc = sdb_convert_tab_opt_to_obj(sdb_old_tab_opt, old_tab_opt);
+
+  rc = sdb_parse_comment_options(sdb_old_tab_opt, old_tab_opt,
+                                 old_explicit_not_auto_part);
   DBUG_ASSERT(0 == rc);
-  rc = sdb_convert_tab_opt_to_obj(sdb_new_tab_opt, new_tab_opt);
+  rc = sdb_parse_comment_options(sdb_new_tab_opt, new_tab_opt,
+                                 new_explicit_not_auto_part);
   if (0 != rc) {
-    rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
-                    sdb_new_tab_opt);
     goto error;
   }
 
   /*check auto_partition.*/
-  if (old_tab_opt.hasField(SDB_FIELD_AUTO_PARTITION)) {
-    old_auto_partition = old_tab_opt.getField(SDB_FIELD_AUTO_PARTITION);
-  } else {
-    old_auto_partition = old_tab_opt.getField(SDB_FIELD_USE_PARTITION);
-  }
-  if (new_tab_opt.hasField(SDB_FIELD_AUTO_PARTITION)) {
-    new_auto_partition = new_tab_opt.getField(SDB_FIELD_AUTO_PARTITION);
-  } else {
-    new_auto_partition = new_tab_opt.getField(SDB_FIELD_USE_PARTITION);
-  }
-  if (old_auto_partition.type() != bson::EOO) {
-    DBUG_ASSERT(old_auto_partition.type() == bson::Bool);
-  }
-  if (old_auto_partition.woCompare(new_auto_partition, false)) {
+  if (new_explicit_not_auto_part != old_explicit_not_auto_part) {
     rc = HA_ERR_WRONG_COMMAND;
     my_printf_error(rc, "Can't support alter auto partition", MYF(0));
     goto error;
   }
 
   /*check and append table_options.*/
-  old_opt_ele = old_tab_opt.getField(SDB_FIELD_TABLE_OPTIONS);
-  new_opt_ele = new_tab_opt.getField(SDB_FIELD_TABLE_OPTIONS);
-  if (old_opt_ele == new_opt_ele) {
-    goto done;
-  }
-  if (old_opt_ele.type() != bson::EOO) {
-    DBUG_ASSERT(old_opt_ele.type() == bson::Object);
-  }
-
-  if (new_opt_ele.type() == bson::Object) {
-    new_opt_obj = new_opt_ele.embeddedObject();
-    cmt_compressed_ele = new_opt_obj.getField(SDB_FIELD_COMPRESSED);
-    cmt_compress_type_ele = new_opt_obj.getField(SDB_FIELD_COMPRESSION_TYPE);
-    rc = sdb_check_and_set_compress(sql_compress, cmt_compressed_ele,
-                                    cmt_compress_type_ele, compress_is_set,
-                                    builder);
-    if (rc != 0) {
-      my_printf_error(rc, "Ambiguous compression", MYF(0));
-      goto error;
-    }
+  cmt_compressed_ele = new_tab_opt.getField(SDB_FIELD_COMPRESSED);
+  cmt_compress_type_ele = new_tab_opt.getField(SDB_FIELD_COMPRESSION_TYPE);
+  rc = sdb_check_and_set_compress(sql_compress, cmt_compressed_ele,
+                                  cmt_compress_type_ele, compress_is_set,
+                                  builder);
+  if (rc != 0) {
+    my_printf_error(rc, "Ambiguous compression", MYF(0));
+    goto error;
   }
 
-  if (old_opt_ele.type() != new_opt_ele.type()) {
-    if (new_opt_ele.type() == bson::EOO) {
-      rc = HA_ERR_WRONG_COMMAND;
-      my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
-      goto error;
-    }
-    if (new_opt_ele.type() != bson::Object) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc,
-                      "Failed to parse options! Invalid type[%d] for "
-                      "table_options",
-                      MYF(0), new_opt_ele.type());
-      goto error;
-    }
-    if (new_opt_ele.embeddedObject().isEmpty()) {
-      goto done;
-    }
-    bson::BSONObjIterator it(new_opt_ele.embeddedObject());
+  if (!old_tab_opt.isEmpty() && new_tab_opt.isEmpty()) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
+    goto error;
+
+  } else if (old_tab_opt.isEmpty() && !new_tab_opt.isEmpty()) {
+    bson::BSONObjIterator it(new_tab_opt);
     while (it.more()) {
       bson::BSONElement tmp_ele = it.next();
       if (strcmp(tmp_ele.fieldName(), SDB_FIELD_COMPRESSED) == 0 ||
@@ -1686,14 +1650,20 @@ int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
       }
       builder.append(tmp_ele);
     }
-  } else if (old_opt_ele.type() != bson::EOO) {
-    old_opt_obj = old_opt_ele.embeddedObject();
-    rc = sdb_filter_tab_opt(old_opt_obj, new_opt_obj, builder);
+
+  } else {
+    if (new_tab_opt.equal(old_tab_opt)) {
+      goto done;
+    }
+    rc = sdb_filter_tab_opt(old_tab_opt, new_tab_opt, builder);
     if (0 != rc) {
       my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
       goto error;
     }
   }
+
+  /*handle partition options*/
+  // TODO
 
   /*pushdown table_options.*/
   options = builder.obj();
