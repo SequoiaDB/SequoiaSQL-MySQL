@@ -3891,63 +3891,17 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   }
 
   if (create_info && create_info->comment.str) {
-    char *sdb_cmt_pos = NULL;
-    bson::BSONObj comments;
-    if ((sdb_cmt_pos = strstr(const_cast<char *>(create_info->comment.str),
-                              SDB_COMMENT)) == NULL) {
-      goto comment_done;
-    }
-
-    rc = sdb_convert_tab_opt_to_obj(sdb_cmt_pos, comments);
+    rc = sdb_parse_comment_options(create_info->comment.str, table_options,
+                                   explicit_not_auto_partition);
     if (0 != rc) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
-                      create_info->comment.str);
       goto error;
-    }
-
-    {
-      bson::BSONObjIterator iter(comments);
-      bson::BSONElement elem;
-      while (iter.more()) {
-        elem = iter.next();
-        // auto_partition
-        if (0 == strcmp(elem.fieldName(), SDB_FIELD_AUTO_PARTITION) ||
-            0 == strcmp(elem.fieldName(), SDB_FIELD_USE_PARTITION)) {
-          if (elem.type() != bson::Bool) {
-            rc = ER_WRONG_ARGUMENTS;
-            my_printf_error(
-                rc, "Type of option auto_partition should be 'Bool'", MYF(0));
-            goto error;
-          }
-          if (false == elem.Bool()) {
-            explicit_not_auto_partition = true;
-          }
-        }
-        // table_options
-        else if (0 == strcmp(elem.fieldName(), SDB_FIELD_TABLE_OPTIONS)) {
-          if (elem.type() != bson::Object) {
-            rc = ER_WRONG_ARGUMENTS;
-            my_printf_error(rc, "Type of table_options should be 'Object'",
-                            MYF(0));
-            goto error;
-          }
-          table_options = elem.embeddedObject().copy();
-
-        } else {
-          rc = ER_WRONG_ARGUMENTS;
-          my_printf_error(rc, "Invalid comment option '%s'.", MYF(0),
-                          elem.fieldName());
-          goto error;
-        }
-      }
     }
 
     if (explicit_not_auto_partition) {
       filter_partition_options(table_options, table_options);
     }
   }
-comment_done:
+
   if (!explicit_not_auto_partition) {
     rc = get_sharding_key(form, table_options, sharding_key);
     if (rc) {
