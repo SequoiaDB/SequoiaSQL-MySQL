@@ -221,4 +221,16 @@ t1	CREATE TABLE `t1` (
   KEY `POPulation` (`population`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
+create table t1 ( a int ) comment = 'sequoiadb:{ table_options: { Compressed: false }, ShardingKey: { wk: 1 }, EnsureShardingIndex: false } }';
+ERROR HY000: Invalid comment option 'ShardingKey'.
+create table t1 ( a int ) comment = 'sequoiadb:{ table_options: { ReplSize: 2 }, shardType: \"range\" }';
+ERROR HY000: Invalid comment option 'shardType'.
+create table t1 ( a int ) comment = 'sequoiadb:{ partition_options: { Partition: 1024 }, Compressed: false }';
+ERROR HY000: Invalid comment option 'Compressed'.
+create table t1 ( a int ) comment = 'sequoiadb:{ partition_option: { Partition: 1024 } }';
+ERROR HY000: Invalid comment option 'partition_option'.
+create table t1 ( a int ) comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }';
+ERROR HY000: Invalid comment option 'table_option'.
+create table t1 ( a int ) comment = 'sequoiadb:{ auto_partion: true }';
+ERROR HY000: Invalid comment option 'auto_partion'.
 drop database test_alter;

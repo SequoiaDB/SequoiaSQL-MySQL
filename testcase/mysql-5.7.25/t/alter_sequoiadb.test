@@ -8,7 +8,7 @@
 #Case 19381#Case 19382#Case 19395#Case 19397#Case 19398#Case 19403#Case 19407#Case 20023#Case 20024
 #Case 20028#Case 20227#Case 20230#Case 20231#Case 20232#Case 20233#Case 20234#Case 20235#Case 20236
 #Case 20254#Case 20256#Case 20422#Case 20386#Case 20388#Case 20389#Case 20390#Case 20396#Case 20397
-#Case 20398#Case 20399#Case 20473#Case 20474#Case 20524
+#Case 20398#Case 20399#Case 20473#Case 20474#Case 20524#Case 21866 
 
 --source include/have_sequoiadb.inc
 create database test_alter;
@@ -1951,6 +1951,33 @@ alter table t1 change population population int(11) null;
 alter table t1 change population population int(11) null, ALGORITHM=COPY;
 show create table t1;
 drop table t1;
+
+#BUG SEQUOIASQLMAINSTREAM-585
+#seqDB-21866
+--error 1210
+create table t1 ( a int ) comment = 'sequoiadb:{ table_options: { Compressed: false }, ShardingKey: { wk: 1 }, EnsureShardingIndex: false } }';
+--error 1210
+create table t1 ( a int ) comment = 'sequoiadb:{ table_options: { ReplSize: 2 }, shardType: \"range\" }';
+--error 1210
+create table t1 ( a int ) comment = 'sequoiadb:{ partition_options: { Partition: 1024 }, Compressed: false }';
+--error 1210
+create table t1 ( a int ) comment = 'sequoiadb:{ partition_option: { Partition: 1024 } }';
+--error 1210
+create table t1 ( a int ) comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }';
+--error 1210
+create table t1 ( a int ) comment = 'sequoiadb:{ auto_partion: true }';
+#BUG #SEQUOIASQLMAINSTREAM-591
+#create table t1 ( a int );
+#--error 1210
+#alter table t1 comment = 'sequoiadb:{ table_options: { Compressed: false }, ShardingKey: { wk: 1 }, EnsureShardingIndex: false } }';
+#--error 1210
+#alter table t1 comment = 'sequoiadb:{ partition_options: { Partition: 1024 }, Compressed: false }';
+#--error 1210
+#alter table t1 comment = 'sequoiadb:{ partition_option: { Partition: 1024 } }';
+#--error 1210
+#alter table t1 comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }';
+#show create table t1;
+#drop table t1;
 
 drop database test_alter;
 --source include/uninstall_sequoiadb.inc
