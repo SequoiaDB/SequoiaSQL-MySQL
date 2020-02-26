@@ -2660,7 +2660,12 @@ bool ha_sdb::check_element_type_compatible(bson::BSONElement &elem,
 
 void ha_sdb::raw_store_blob(Field_blob *blob, const char *data, uint len) {
   uint packlength = blob->pack_length_no_ptr();
-  sdb_store_packlength(blob->ptr, packlength, len, table->s->db_low_byte_first);
+#if defined IS_MYSQL
+  bool low_byte_first = table->s->db_low_byte_first;
+#elif defined IS_MARIADB
+  bool low_byte_first = true;
+#endif
+  sdb_store_packlength(blob->ptr, packlength, len, low_byte_first);
   memcpy(blob->ptr + packlength, &data, sizeof(char *));
 }
 
