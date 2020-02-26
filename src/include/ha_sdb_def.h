@@ -109,6 +109,8 @@
 
 #define SDB_COMMENT "sequoiadb"
 
+#define SDB_DEFAULT_FILL_MESSAGE ""
+
 const static bson::BSONObj SDB_EMPTY_BSON;
 
 #endif
