@@ -2385,7 +2385,7 @@ error:
   goto done;
 }
 
-int Sdb_cl_copyer::copy() {
+int Sdb_cl_copyer::copy(ha_sdb *ha) {
   DBUG_ENTER("Sdb_cl_copyer::copy");
   int rc = 0;
   int tmp_rc = 0;
@@ -2519,6 +2519,7 @@ int Sdb_cl_copyer::copy() {
 done:
   DBUG_RETURN(rc);
 error:
+  ha->handle_sdb_error(rc, MYF(0));
   tmp_rc = m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name);
   if (tmp_rc != 0) {
     SDB_LOG_WARNING("Failed to rollback creation of cl[%s.%s], rc: %d",

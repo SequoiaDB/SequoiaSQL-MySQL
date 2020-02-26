@@ -113,6 +113,8 @@
 
 #define SDB_FIELD_INNER_PART_ID "_mysqlPartID"
 
+#define SDB_DEFAULT_FILL_MESSAGE ""
+
 const static bson::BSONObj SDB_EMPTY_BSON;
 
 #endif

@@ -4159,7 +4159,7 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
       cl_copyer->replace_src_auto_inc(auto_inc_options);
       cl_copyer->replace_src_indexes(form->s->keys, form->s->key_info);
 
-      rc = cl_copyer->copy();
+      rc = cl_copyer->copy(this);
       if (rc != 0) {
         delete cl_copyer;
         goto error;
@@ -4235,7 +4235,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       const char *src_table_name = src_table->get_table_name();
       Sdb_cl_copyer cl_copyer(conn, src_db_name, src_table_name, db_name,
                               table_name);
-      rc = cl_copyer.copy();
+      rc = cl_copyer.copy(this);
       if (rc != 0) {
         goto error;
       }
@@ -4569,7 +4569,7 @@ done:
     }
     default:
       if (NULL == error_msg) {
-        my_error(ER_GET_ERRNO, MYF(0), error);
+        my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
       } else {
         my_printf_error(error, "%s", MYF(0), error_msg);
       }

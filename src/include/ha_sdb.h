@@ -64,6 +64,8 @@ struct Sdb_share {
   }
 };
 
+class ha_sdb;
+
 /**
   ALTER TABLE main flow of ALGORITHM COPY:
   1. Copy a new table wtih the same schema in a tmp name.
@@ -80,7 +82,7 @@ class Sdb_cl_copyer : public Sql_alloc {
                 const char *src_table_name, const char *dst_db_name,
                 const char *dst_table_name);
 
-  int copy();
+  int copy(ha_sdb *ha);
 
   int rename(const char *from, const char *to);
 
@@ -368,6 +370,8 @@ class ha_sdb : public handler {
 
   Item *idx_cond_push(uint keyno, Item *idx_cond);
 
+  void handle_sdb_error(int error, myf errflag);
+
  protected:
   int ensure_collection(THD *thd);
 
@@ -449,8 +453,6 @@ class ha_sdb : public handler {
 
   /*add current table share to open_table_share */
   int add_share_to_open_table_shares(THD *thd);
-
-  void handle_sdb_error(int error, myf errflag);
 
   int get_found_updated_rows(bson::BSONObj &result, ulonglong *found,
                              ulonglong *updated);
