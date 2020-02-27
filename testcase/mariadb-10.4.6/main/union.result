@@ -1312,6 +1312,8 @@ connect  newconn, localhost, root,,test_union;
 CREATE TABLE t1 (a mediumtext);
 CREATE TABLE t2 (b varchar(20));
 INSERT INTO t1 VALUES ('a');
+CREATE TABLE t3 SELECT REPEAT(a,20000000) AS a FROM t1 UNION SELECT b FROM t2;
+ERROR 42000: Column length too big at row 1
 DROP TABLES t1;
 CREATE TABLE t1 (a tinytext);
 INSERT INTO t1 VALUES ('a');
