@@ -48,6 +48,7 @@ use subselect_exists2in_world;
 create index SurfaceArea on Country(SurfaceArea);
 create index Language on CountryLanguage(Language);
 create index CityName on City(Name);
+#BUG #SEQUOIASQLMAINSTREAM-517
 #BUG #SEQUOIASQLMAINSTREAM-578
 #alter table City change population population int(11) null default 0;
 alter table City change population Population int(11) null default 0;

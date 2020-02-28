@@ -233,4 +233,91 @@ create table t1 ( a int ) comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }
 ERROR HY000: Invalid comment option 'table_option'.
 create table t1 ( a int ) comment = 'sequoiadb:{ auto_partion: true }';
 ERROR HY000: Invalid comment option 'auto_partion'.
+create table t1 ( a int not null, index(a) ) ;
+insert into t1 values (1);
+alter table t1 modify a int null;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL,
+  KEY `a` (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+insert into t1 values (null);
+select * from t1;
+a
+NULL
+1
+drop table t1;
+create table t1 ( a int not null, b int not null, c char(16) not null, index(a,b,c) );
+create table t2 ( a int not null, b int not null, c char(16) not null, index(a,b,c) );
+insert into t1 values (1,1,'a');
+insert into t2 values (1,1,'a');
+alter table t1 change a a int null, change b b int null;
+alter table t2 change a a int null, change b b int null, change c c char(16) null;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` char(16) NOT NULL,
+  KEY `a` (`a`,`b`,`c`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` char(16) DEFAULT NULL,
+  KEY `a` (`a`,`b`,`c`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+insert into t1 values (null,null,'b');
+insert into t2 values (null,null,null);
+select * from t1;
+a	b	c
+NULL	NULL	b
+1	1	a
+select * from t2;
+a	b	c
+NULL	NULL	NULL
+1	1	a
+drop table t1,t2;
+create table t1 ( a int, b int, c char(16) not null, index(a,b,c) );
+create table t2 ( a int, b int, c char(16), index(a,b,c) );
+insert into t1 values (1,1,'a'),(null,null,'b');
+insert into t2 values (1,1,'a'),(null,null,null);
+alter table t1 change a a int not null, change b b int not null;
+ERROR 22004: Invalid use of NULL value
+alter table t2 change a a int not null, change b b int not null, change c c char(16) not null;
+ERROR 22004: Invalid use of NULL value
+delete from t1 where a is null;
+delete from t2 where a is null;
+alter table t1 change a a int not null, change b b int not null;
+alter table t2 change a a int not null, change b b int not null, change c c char(16) not null;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) NOT NULL,
+  `b` int(11) NOT NULL,
+  `c` char(16) NOT NULL,
+  KEY `a` (`a`,`b`,`c`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `a` int(11) NOT NULL,
+  `b` int(11) NOT NULL,
+  `c` char(16) NOT NULL,
+  KEY `a` (`a`,`b`,`c`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+insert into t1 values (2,2,'b');
+insert into t2 values (2,2,'b');
+select * from t1;
+a	b	c
+1	1	a
+2	2	b
+select * from t2;
+a	b	c
+1	1	a
+2	2	b
+drop table t1,t2;
 drop database test_alter;
