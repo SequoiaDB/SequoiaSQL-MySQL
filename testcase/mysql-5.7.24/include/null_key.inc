@@ -6,9 +6,9 @@ drop table if exists t1,t2;
 --enable_warnings
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 
-#Sequoiadb not support insert ... ignore,and unique key is not the same as innodb 
 #create table t1 (a int, b int not null,unique key (a,b),index(b)) engine=sequoiadb;
-#insert ignore into t1 values (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(null,7),(9,9),(8,8),(7,7),(null,9),(null,9),(6,6);
+create table t1 (a int, b int not null,index(b)) engine=sequoiadb;
+insert ignore into t1 values (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(null,7),(9,9),(8,8),(7,7),(null,9),(null,9),(6,6);
 #explain select * from t1 where a is null;
 #explain select * from t1 where a is null and b = 2;
 #explain select * from t1 where a is null and b = 7;
@@ -21,17 +21,18 @@ SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 #explain select * from t1 where a is null and b=9 or a is null and b=7 limit 3;
 #explain select * from t1 where a > 1 and a < 3 limit 1;
 #explain select * from t1 where a > 8 and a < 9;
-#select * from t1 where a is null;
-#select * from t1 where a is null and b = 7;
-#select * from t1 where a<=>b limit 2;
-#select * from t1 where (a is null or a > 0 and a < 3) and b < 5 limit 3;
-#select * from t1 where (a is null or a > 0 and a < 3) and b > 7 limit 3;
-#select * from t1 where (a is null or a = 7) and b=7;
-#select * from t1 where a is null and b=9 or a is null and b=7 limit 3;
-#select * from t1 where a > 1 and a < 3 limit 1;
-#select * from t1 where a > 8 and a < 9;
-#create table t2 like t1;
-#insert into t2 select * from t1;
+select * from t1 where a is null;
+select * from t1 where a is null and b = 7;
+select * from t1 where a<=>b limit 2;
+select * from t1 where (a is null or a > 0 and a < 3) and b < 5 limit 3;
+select * from t1 where (a is null or a > 0 and a < 3) and b > 7 limit 3;
+select * from t1 where (a is null or a = 7) and b=7;
+select * from t1 where a is null and b=9 or a is null and b=7 limit 3;
+select * from t1 where a > 1 and a < 3 limit 1;
+select * from t1 where a > 8 and a < 9;
+create table t2 like t1;
+insert into t2 select * from t1;
+alter table t1 modify b text not null, add c int not null, drop key b, add key (b(10));
 #alter table t1 modify b blob not null, add c int not null, drop key a, add unique key (a,b(20),c), drop key b, add key (b(10));
 #explain select * from t1 where a is null and b = 2;
 #explain select * from t1 where a is null and b = 2 and c=0;
@@ -46,46 +47,47 @@ SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 #explain select * from t1 where a is null and b=7 or a > 1 and a < 3 limit 1;
 #explain select * from t1 where a > 8 and a < 9;
 #explain select * from t1 where b like "6%";
-#select * from t1 where a is null;
-#select * from t1 where a is null and b = 7 and c=0;
+select * from t1 where a is null;
+select * from t1 where a is null and b = 7 and c=0;
+#BUG #SEQUOIASQLMAINSTREAM-580
 #select * from t1 where a<=>b limit 2;
-#select * from t1 where (a is null or a > 0 and a < 3) and b < 5 limit 3;
-#select * from t1 where (a is null or a > 0 and a < 3) and b > 7 limit 3;
-#select * from t1 where (a is null or a = 7) and b=7 and c=0;
-#select * from t1 where a is null and b=9 or a is null and b=7 limit 3;
-#select * from t1 where b like "6%";
+select * from t1 where (a is null or a > 0 and a < 3) and b < 5 limit 3;
+select * from t1 where (a is null or a > 0 and a < 3) and b > 7 limit 3;
+select * from t1 where (a is null or a = 7) and b=7 and c=0;
+select * from t1 where a is null and b=9 or a is null and b=7 limit 3;
+select * from t1 where b like "6%";
+
 #
-##
-## Test ref_or_null optimization
-##
-#drop table t1;
-#rename table t2 to t1;
-#alter table t1 modify b int null;
-#insert into t1 values (7,null), (8,null), (8,7);
-##explain select * from t1 where a = 7 and (b=7 or b is null);
-#select * from t1 where a = 7 and (b=7 or b is null);
-##explain select * from t1 where (a = 7 or a is null) and (b=7 or b is null);
-#select * from t1 where (a = 7 or a is null) and (b=7 or b is null);
-##explain select * from t1 where (a = 7 or a is null) and (a = 7 or a is null);
-#select * from t1 where (a = 7 or a is null) and (a = 7 or a is null);
-#create table t2 (a int);
-#insert into t2 values (7),(8);
-##explain select * from t2 straight_join t1 where t1.a=t2.a and b is null;
-#drop index b on t1;
-##explain select * from t2,t1 where t1.a=t2.a and b is null;
-#select * from t2,t1 where t1.a=t2.a and b is null;
-##explain select * from t2,t1 where t1.a=t2.a and (b= 7 or b is null);
-#select * from t2,t1 where t1.a=t2.a and (b= 7 or b is null);
-##explain select * from t2,t1 where (t1.a=t2.a or t1.a is null) and b= 7;
-#select * from t2,t1 where (t1.a=t2.a or t1.a is null) and b= 7;
-##explain select * from t2,t1 where (t1.a=t2.a or t1.a is null) and (b= 7 or b is null);
-#select * from t2,t1 where (t1.a=t2.a or t1.a is null) and (b= 7 or b is null);
-#insert into t2 values (null),(6);
-#delete from t1 where a=8;
-##explain select * from t2,t1 where t1.a=t2.a or t1.a is null;
-##explain select * from t2,t1 where t1.a<=>t2.a or (t1.a is null and t1.b <> 9);
-#select * from t2,t1 where t1.a<=>t2.a or (t1.a is null and t1.b <> 9);
-#drop table t1,t2;
+# Test ref_or_null optimization
+#
+drop table t1;
+rename table t2 to t1;
+alter table t1 modify b int null;
+insert into t1 values (7,null), (8,null), (8,7);
+#explain select * from t1 where a = 7 and (b=7 or b is null);
+select * from t1 where a = 7 and (b=7 or b is null);
+#explain select * from t1 where (a = 7 or a is null) and (b=7 or b is null);
+select * from t1 where (a = 7 or a is null) and (b=7 or b is null);
+#explain select * from t1 where (a = 7 or a is null) and (a = 7 or a is null);
+select * from t1 where (a = 7 or a is null) and (a = 7 or a is null);
+create table t2 (a int);
+insert into t2 values (7),(8);
+#explain select * from t2 straight_join t1 where t1.a=t2.a and b is null;
+drop index b on t1;
+#explain select * from t2,t1 where t1.a=t2.a and b is null;
+select * from t2,t1 where t1.a=t2.a and b is null;
+#explain select * from t2,t1 where t1.a=t2.a and (b= 7 or b is null);
+select * from t2,t1 where t1.a=t2.a and (b= 7 or b is null);
+#explain select * from t2,t1 where (t1.a=t2.a or t1.a is null) and b= 7;
+select * from t2,t1 where (t1.a=t2.a or t1.a is null) and b= 7;
+#explain select * from t2,t1 where (t1.a=t2.a or t1.a is null) and (b= 7 or b is null);
+select * from t2,t1 where (t1.a=t2.a or t1.a is null) and (b= 7 or b is null);
+insert into t2 values (null),(6);
+delete from t1 where a=8;
+#explain select * from t2,t1 where t1.a=t2.a or t1.a is null;
+#explain select * from t2,t1 where t1.a<=>t2.a or (t1.a is null and t1.b <> 9);
+select * from t2,t1 where t1.a<=>t2.a or (t1.a is null and t1.b <> 9);
+drop table t1,t2;
 
 #
 # The following failed for Matt Loschert
