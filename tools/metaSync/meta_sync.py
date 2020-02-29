@@ -887,7 +887,14 @@ class MysqlMetaSync:
 
             # filter select,insert,update sql
             sql = row["sql"]
-            low_sql = sql.lower()
+            if sql.startswith("/*"):
+                pattern = r'(?:/\*(?:(?!\*/).)*\*/)'
+                comment = re.search(pattern, sql).group()
+                low_sql = sql[len(comment):].strip()
+                low_sql = low_sql.lower()
+            else:
+                low_sql = sql.lower()
+
             if low_sql.startswith("alter") \
                     or low_sql.startswith("create") \
                     or low_sql.startswith("drop") \
