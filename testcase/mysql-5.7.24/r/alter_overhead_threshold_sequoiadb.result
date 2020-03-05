@@ -1399,7 +1399,7 @@ id	a
 11	"scalar string"
 12	NULL
 drop table t1;
-create table t1 ( a bigint primary key, b float unique key storage disk, c char(16) column_format dynamic, d text charset gbk, e binary comment "I am binary")COMMENT='sequoiadb:{ use_partition: false }';
+create table t1 ( a bigint primary key, b float unique key storage disk, c char(16) column_format dynamic, d text charset gbk, e binary comment "I am binary")COMMENT='sequoiadb:{ auto_partition: false }';
 create table t2 ( id int primary key, a bigint, b float, foreign key(a) references t1(a) match full on delete RESTRICT );
 show create table t1;
 Table	Create Table
@@ -1411,7 +1411,7 @@ t1	CREATE TABLE `t1` (
   `e` binary(1) DEFAULT NULL COMMENT 'I am binary',
   PRIMARY KEY (`a`),
   UNIQUE KEY `b` (`b`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ use_partition: false }'
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -1456,7 +1456,7 @@ t1	CREATE TABLE `t1` (
   `e` binary(1) DEFAULT NULL,
   PRIMARY KEY (`a`),
   UNIQUE KEY `b` (`b`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ use_partition: false }'
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (

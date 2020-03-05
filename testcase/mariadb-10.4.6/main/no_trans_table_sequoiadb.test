@@ -1,4 +1,5 @@
 #Case seqDB-20212
+--source include/have_sequoiadb.inc
 
 --disable_warnings
 drop table if exists t1, t2;
@@ -56,3 +57,4 @@ SELECT * FROM t3 ORDER BY a;
 DROP TABLE t1,t2,t3;
 
 set sql_mode = default;
+--source include/uninstall_sequoiadb.inc

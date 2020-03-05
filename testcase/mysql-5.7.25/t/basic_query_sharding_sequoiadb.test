@@ -50,39 +50,40 @@ SELECT * FROM t1;
 UPDATE t1 SET b = "updateb2" WHERE b <=> "abcd2e";
 --sorted_result
 SELECT * FROM t1;
-UPDATE t1 SET b = "updateb3" WHERE b < "abcd" ORDER BY b DESC;
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb4" WHERE b <= "ccccc";
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb5" WHERE b > "word";
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb6" WHERE b >= "updateb4" ORDER BY b LIMIT 2;
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb7" WHERE b BETWEEN "updateb1" AND "updateb4" ORDER BY a DESC LIMIT 4;
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb8" WHERE b IN ("word", "updateb5", "updateb6", "string");
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb9" WHERE b NOT IN ("updateb7", "helloworld");
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb10" WHERE b LIKE "updateb7%";
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb11" WHERE b REGEXP "updateb1";
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb12" WHERE b != "updateb11";
---sorted_result
-SELECT * FROM t1;
-UPDATE t1 SET b = "updateb13" WHERE b IS NULL;
---sorted_result
-SELECT * FROM t1;
+#BUG #SEQUOIASQLMAINSTREAM-600
+#UPDATE t1 SET b = "updateb3" WHERE b < "abcd" ORDER BY b DESC;
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb4" WHERE b <= "ccccc";
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb5" WHERE b > "word";
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb6" WHERE b >= "updateb4" ORDER BY b LIMIT 2;
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb7" WHERE b BETWEEN "updateb1" AND "updateb4" ORDER BY a DESC LIMIT 4;
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb8" WHERE b IN ("word", "updateb5", "updateb6", "string");
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb9" WHERE b NOT IN ("updateb7", "helloworld");
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb10" WHERE b LIKE "updateb7%";
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb11" WHERE b REGEXP "updateb1";
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb12" WHERE b != "updateb11";
+#--sorted_result
+#SELECT * FROM t1;
+#UPDATE t1 SET b = "updateb13" WHERE b IS NULL;
+#--sorted_result
+#SELECT * FROM t1;
 UPDATE t1 SET b = "updateb14" WHERE b IS NOT NULL;
 --sorted_result
 SELECT * FROM t1;
@@ -95,36 +96,37 @@ SELECT * FROM t1;
 DELETE FROM t1 WHERE b <=> "abcd2e";
 --sorted_result
 SELECT * FROM t1;
-DELETE FROM t1 WHERE b < "ABCD1e";
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1 WHERE b <= "abcd" ORDER BY b DESC LIMIT 2;
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1 WHERE b > "word";
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1 WHERE b >= "word";
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1 WHERE b BETWEEN "ccccc" AND "helloworld" ORDER BY b LIMIT 2;
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1 WHERE b LIKE "abcde%" ORDER BY a DESC LIMIT 1;
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1 WHERE b REGEXP "str";
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1 WHERE b IN ("bcd", "acdef");
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1  WHERE b != "test1";
---sorted_result
-SELECT * FROM t1;
-DELETE FROM t1 WHERE b IS NOT NULL;
---sorted_result
-SELECT * FROM t1;
+#BUG #SEQUOIASQLMAINSTREAM-600
+#DELETE FROM t1 WHERE b < "ABCD1e";
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE b <= "abcd" ORDER BY b DESC LIMIT 2;
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE b > "word";
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE b >= "word";
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE b BETWEEN "ccccc" AND "helloworld" ORDER BY b LIMIT 2;
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE b LIKE "abcde%" ORDER BY a DESC LIMIT 1;
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE b REGEXP "str";
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE b IN ("bcd", "acdef");
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1  WHERE b != "test1";
+#--sorted_result
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE b IS NOT NULL;
+#--sorted_result
+#SELECT * FROM t1;
 DROP TABLE t1;
 
 #
@@ -234,31 +236,32 @@ CREATE TABLE t1 (a INT, b TEXT, c char(16),unique index b(b(32)));
 INSERT INTO t1 VALUES (2,'abcd1e', 'testc1'),(5,'abcd2e','testc2'),(11,'helloworld','helloworld'),(3,'1234567','1234567'),(10,'ccccc','testc3'),(12,'string','string'),(9,'word','testc4'),(8,'xxyyzz','xxyyzz'),(1,'ABCD','ABCD'),(6,'abcd','testc5'),(15,'ABCD1e','testc6'),(4,'ABCD2e','ABCD2e'),(14,"11111","11111"),(7,"22222","22222"),(21,NULL,NULL);
 SELECT * FROM t1 WHERE b = "abcd1e";
 SELECT a,b FROM t1 WHERE b <=> "abcd2e";
-SELECT a,b,c FROM t1 WHERE b < "abcd" ORDER BY b DESC;
-SELECT * FROM t1 WHERE b <= "ccccc";
-SELECT * FROM t1 WHERE b > "abcde";
-SELECT * FROM t1 WHERE b >= "ABCD1e" ORDER BY b LIMIT 7;
-SELECT a FROM t1 WHERE b BETWEEN "abcd1e" AND "xxyyzz" ORDER BY a DESC LIMIT 7;
---sorted_result
-SELECT b FROM t1 WHERE b IN ("word", "ABCD", "ABCD2e", "string", "helloworld", "11111", "1234567");
-SELECT c FROM t1 WHERE b NOT IN ("abcd", "22222", "11111");
-SELECT * FROM t1 WHERE b LIKE "abc%";
---sorted_result
-SELECT * FROM t1 WHERE b REGEXP "1";
-SELECT * FROM t1 WHERE b != "abcd2e";
-SELECT * FROM t1 WHERE b <> "ABCD";
---sorted_result
-SELECT b,c FROM t1 WHERE b = c;
-SELECT a FROM t1 WHERE b IS NULL;
-SELECT * FROM t1 WHERE b > "abcd1e" AND c <= "testc4";
-SELECT * FROM t1 WHERE b < "string" AND c >= "testc1";
---sorted_result
-SELECT * FROM t1 WHERE b <= "string" OR c > "testc5";
---sorted_result
-SELECT * FROM t1 WHERE b > "abcdefg" OR c < "testc11";
-SELECT * FROM t1 WHERE NOT b <= "abcd"; 
---sorted_result
-SELECT * FROM t1 WHERE NOT b > "11111" OR c < "testc3";
+#BUG #SEQUOIASQLMAINSTREAM-600
+#SELECT a,b,c FROM t1 WHERE b < "abcd" ORDER BY b DESC;
+#SELECT * FROM t1 WHERE b <= "ccccc";
+#SELECT * FROM t1 WHERE b > "abcde";
+#SELECT * FROM t1 WHERE b >= "ABCD1e" ORDER BY b LIMIT 7;
+#SELECT a FROM t1 WHERE b BETWEEN "abcd1e" AND "xxyyzz" ORDER BY a DESC LIMIT 7;
+#--sorted_result
+#SELECT b FROM t1 WHERE b IN ("word", "ABCD", "ABCD2e", "string", "helloworld", "11111", "1234567");
+#SELECT c FROM t1 WHERE b NOT IN ("abcd", "22222", "11111");
+#SELECT * FROM t1 WHERE b LIKE "abc%";
+#--sorted_result
+#SELECT * FROM t1 WHERE b REGEXP "1";
+#SELECT * FROM t1 WHERE b != "abcd2e";
+#SELECT * FROM t1 WHERE b <> "ABCD";
+#--sorted_result
+#SELECT b,c FROM t1 WHERE b = c;
+#SELECT a FROM t1 WHERE b IS NULL;
+#SELECT * FROM t1 WHERE b > "abcd1e" AND c <= "testc4";
+#SELECT * FROM t1 WHERE b < "string" AND c >= "testc1";
+#--sorted_result
+#SELECT * FROM t1 WHERE b <= "string" OR c > "testc5";
+#--sorted_result
+#SELECT * FROM t1 WHERE b > "abcdefg" OR c < "testc11";
+#SELECT * FROM t1 WHERE NOT b <= "abcd"; 
+#--sorted_result
+#SELECT * FROM t1 WHERE NOT b > "11111" OR c < "testc3";
 DROP TABLE t1;
 
 #

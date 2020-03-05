@@ -14,7 +14,7 @@
 create database test_alter;
 use test_alter;
 --disable_query_log
-create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ use_partition: true }';
+create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ auto_partition: true }';
 --enable_query_log
 
 #alter comment
@@ -560,7 +560,7 @@ drop table t1;
 
 
 #Case #19390
-create table t1(id int, col1 int AUTO_INCREMENT key)comment="sequoiadb:{ use_partition: false }";
+create table t1(id int, col1 int AUTO_INCREMENT key)comment="sequoiadb:{ auto_partition: false }";
 insert into t1(id) values(1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
 show create table t1;
 select * from t1 order by id;
@@ -581,7 +581,7 @@ select * from t1 order by id;
 drop table t1;
 
 #Case #19391
-create table t1(id int, col1 int AUTO_INCREMENT unique key)COMMENT='sequoiadb:{ use_partition: false }';
+create table t1(id int, col1 int AUTO_INCREMENT unique key)COMMENT='sequoiadb:{ auto_partition: false }';
 insert into t1(id) values(1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
 show create table t1;
 select * from t1 order by id;
@@ -1014,7 +1014,7 @@ drop table t1;
 #drop table t1; 
 
 #Case 19381
-create table t1 ( a bigint primary key, b float unique key storage disk, c char(16) column_format dynamic, d text charset gbk, e binary comment "I am binary")COMMENT='sequoiadb:{ use_partition: false }';
+create table t1 ( a bigint primary key, b float unique key storage disk, c char(16) column_format dynamic, d text charset gbk, e binary comment "I am binary")COMMENT='sequoiadb:{ auto_partition: false }';
 create table t2 ( id int primary key, a bigint, b float, foreign key(a) references t1(a) match full on delete RESTRICT );
 show create table t1; 
 show create table t2; 
@@ -1092,7 +1092,7 @@ select * from t1 order by id;
 drop table t1; 
 
 #Case 19407
-create table t1 ( id smallint auto_increment primary key , a int unique key, b char(16) ) auto_increment=11 COMMENT='sequoiadb:{ use_partition: false }';
+create table t1 ( id smallint auto_increment primary key , a int unique key, b char(16) ) auto_increment=11 COMMENT='sequoiadb:{ auto_partition: false }';
 insert into t1(a,b) values (18,'rejow'),(5,'rjle'),(1,'fj39'),(20,'gt'),(99,'uitreo'), (30,'1234');
 show create table t1;                                                                  
 select * from t1 order by id; 
