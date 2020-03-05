@@ -2,7 +2,7 @@
 create database update_test_sequoiadb;
 use update_test_sequoiadb;
 --disable_query_log
-create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ use_partition: true }';
+create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ auto_partition: true }';
 --enable_query_log
 
 #Case 19487
@@ -35,7 +35,7 @@ select * from t1 order by id;
 drop table t1;
 
 #Case 19488
-create table t1(a int auto_increment key, b varchar(255), c varbinary(255))comment="sequoiadb:{ use_partition: false }";
+create table t1(a int auto_increment key, b varchar(255), c varbinary(255))comment="sequoiadb:{ auto_partition: false }";
 insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 --enable_info
 update t1 set a =100 where a =2;
@@ -46,7 +46,7 @@ select * from t1 order by a;
 drop table t1;
 
 #Case 19489
-create table t1(a int auto_increment unique key, b varchar(255), c varbinary(255))comment="sequoiadb:{ use_partition: false }";
+create table t1(a int auto_increment unique key, b varchar(255), c varbinary(255))comment="sequoiadb:{ auto_partition: false }";
 insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 --enable_info
 update t1 set a =100 where a =2;
@@ -57,7 +57,7 @@ select * from t1 order by a;
 drop table t1;
 
 #Case 19490
-create table t1(a int auto_increment, b varchar(255), c varbinary(255), index(a))comment="sequoiadb:{ use_partition: false }";
+create table t1(a int auto_increment, b varchar(255), c varbinary(255), index(a))comment="sequoiadb:{ auto_partition: false }";
 insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 --enable_info
 update t1 set a =100 where a =2;
@@ -78,7 +78,7 @@ select * from t1 order by id;
 drop table t1;
 
 #Case 19493#Case 19494#Case 19495#Case 19496
-create table t1(id int auto_increment key, a int, b varchar(255) not null default 'test', c varbinary(255))comment="sequoiadb:{ use_partition: false }";
+create table t1(id int auto_increment key, a int, b varchar(255) not null default 'test', c varbinary(255))comment="sequoiadb:{ auto_partition: false }";
 insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'),(1, 'sz', 'sz');
 --enable_info
 update t1 set b='update' where id=1 order by id;
@@ -110,7 +110,7 @@ select * from t1 order by id;
 drop table t1;
 
 #Case 19497#Case 19498
-create table t1(id int auto_increment key)comment="sequoiadb:{ use_partition: false }";
+create table t1(id int auto_increment key)comment="sequoiadb:{ auto_partition: false }";
 insert into t1 values(),(),(),();
 --enable_info
 update ignore t1 set id=100 where id>2;
@@ -243,7 +243,7 @@ select * from t1;
 drop table t1;
 
 #Case 19507
-create table t1(id int auto_increment key, a int)comment="sequoiadb:{ use_partition: false }";
+create table t1(id int auto_increment key, a int)comment="sequoiadb:{ auto_partition: false }";
 insert into t1(a) values (1),(2),(3);
 --enable_info
 update t1 set a=a+1;

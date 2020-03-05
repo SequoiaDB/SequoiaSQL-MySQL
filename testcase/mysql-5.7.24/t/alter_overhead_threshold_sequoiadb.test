@@ -7,7 +7,7 @@
 create database test_alter_overhead_threshlod;
 use test_alter_overhead_threshlod;
 --disable_query_log
-create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ use_partition: true }';
+create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ auto_partition: true }';
 --enable_query_log
 
 #Case 19411#Case 19412
@@ -453,7 +453,7 @@ drop table t1;
 #drop table t1; 
 
 #Case 19424 
-create table t1 ( a bigint primary key, b float unique key storage disk, c char(16) column_format dynamic, d text charset gbk, e binary comment "I am binary")COMMENT='sequoiadb:{ use_partition: false }';
+create table t1 ( a bigint primary key, b float unique key storage disk, c char(16) column_format dynamic, d text charset gbk, e binary comment "I am binary")COMMENT='sequoiadb:{ auto_partition: false }';
 create table t2 ( id int primary key, a bigint, b float, foreign key(a) references t1(a) match full on delete RESTRICT );
 show create table t1; 
 show create table t2; 
