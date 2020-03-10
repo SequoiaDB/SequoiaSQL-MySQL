@@ -136,7 +136,6 @@ create table t1(a int, b char(16));
 create table t2(a int primary key, b char(16));
 insert into t1 values(1,'a'),(2,'b');
 insert into t2 values(1,'a'),(2,'b');
---error 131
 alter table t1 comment = "sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: true }", ALGORITHM=inplace;
 --error 131
 alter table t2 comment = "sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: false }", ALGORITHM=inplace;
