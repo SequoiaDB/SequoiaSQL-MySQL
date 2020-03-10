@@ -245,7 +245,6 @@ create table t2(a int primary key, b char(16));
 insert into t1 values(1,'a'),(2,'b');
 insert into t2 values(1,'a'),(2,'b');
 alter table t1 comment = "sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: true }", ALGORITHM=inplace;
-ERROR 0A000: Can't support alter auto partition
 alter table t2 comment = "sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: false }", ALGORITHM=inplace;
 ERROR 0A000: Can't support alter auto partition
 show create table t1;
@@ -253,7 +252,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` char(16) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: true }'
 show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
