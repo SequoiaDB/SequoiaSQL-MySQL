@@ -826,11 +826,13 @@ int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
     }
     case MYSQL_TYPE_DATETIME:
     case MYSQL_TYPE_TIMESTAMP: {
-      struct timeval org_val = {0, 0};
-      sdb_field_get_timestamp(field, &org_val);
+      MYSQL_TIME org_val;
+      date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES |
+                          sdb_thd_time_round_mode(ha_thd());
+      field->get_date(&org_val, flags);
       field->set_default();
       rc = field_to_obj(field, builder);
-      sdb_field_store_timestamp(field, &org_val);
+      sdb_field_store_time(field, &org_val);
       break;
     }
     case MYSQL_TYPE_DECIMAL:
@@ -1473,8 +1475,11 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
           !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
         MYSQL_TIME ltime;
         int warnings = 0;
-        date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES |
-                            sdb_thd_time_round_mode(ha_thd());
+#ifdef IS_MYSQL
+        date_mode_t flags(TIME_FUZZY_DATES | TIME_INVALID_DATES);
+#elif IS_MARIADB
+        date_mode_t flags(date_conv_mode_t::INVALID_DATES);
+#endif
         if (sql_mode & MODE_NO_ZERO_DATE) {
           flags |= TIME_NO_ZERO_DATE;
         }
