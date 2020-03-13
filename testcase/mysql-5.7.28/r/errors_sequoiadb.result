@@ -14,7 +14,7 @@ set global sequoiadb_error_level=error;
 drop table t1;
 create table t1 ( a char(10) ) COMMENT="sequoiadb:{ table_options: { a : 1 } }";
 ERROR HY000: Invalid Argument
-create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}}, ShardingType : 'hash' }";
+create table t1 ( id int primary key, a char(8)) COMMENT="sequoiadb:{ table_options : {ShardingKey:{id:1}, ShardingType : 'hash' }}";
 create unique index a on t1(a);
 ERROR HY000: The unique index must include all fields in sharding key
 drop table t1;
@@ -25,3 +25,24 @@ ERROR 23000: Duplicate entry '{ "a": "abc" }' for key 'a'
 alter table t1 add unique a(a);
 ERROR 23000: Duplicate entry '{ "a": "abc" }' for key 'a'
 drop table t1;
+create table t1 ( id int, t longtext, index (`id`) ) ;
+create index id1 on t1(id);
+ERROR HY000: Exist one index which can cover this scene
+insert into t1 values(1, repeat('a',16773075));
+ERROR HY000: User record is too large
+create index t_idx on t1(t(255));
+insert into t1 values(2, repeat('a', 4084));
+ERROR HY000: Index key is too large
+create table t2 (id int) comment "sequoiadb: {table_options: {ShardingKey:{id:1},IsMainCL:true}}";
+insert into t2 values(1);
+ERROR HY000: Unable to find the matched catalog information
+alter table t1 comment 'sequoiadb: {table_options: {AutoSplit: true}}';
+ERROR HY000: There is no valid sharding-key defined
+alter table t1 comment 'sequoiadb: {table_options: {AutoIndexId: false}}';
+update t1 set t = 'update';
+ERROR HY000: can not update/delete records when $id index does not exist
+insert into t1 values (NULL, 'text');
+drop index id on t1;
+alter table t1 add primary key(id);
+ERROR HY000: Any field of index key should exist and cannot be null
+drop table t1,t2;

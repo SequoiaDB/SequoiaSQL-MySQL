@@ -102,3 +102,253 @@ commit;
 select * from t1 left join t2 using(id);
 id	s1
 drop table t1,t2;
+create table t1 ( id int, id1 int, c char(16), index (id) );
+insert into t1 values (1,1,'a'), (2,2,'b'), (3,3,'c');
+begin;
+update t1 set c = 'updateC' where id = 3;
+begin;
+insert into t1 values (4,4,'d');
+select * from t1 where id = 3 for update;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+1	1	a
+2	2	b
+3	3	c
+4	4	d
+insert into t1 values (5,5,'e'),(6,6,'f');
+delete from t1 where id = 1;
+update t1 set c = 'updateE' where id = 5;
+commit;
+select * from t1;
+id	id1	c
+2	2	b
+3	3	c
+4	4	d
+5	5	updateE
+6	6	f
+begin;
+select * from t1 where id = 3 for update;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+insert into t1 values (7,7,'h');
+delete from t1 where id = 4;
+update t1 set c = 'updateF' where id = 6;
+rollback;
+commit;
+select * from t1;
+id	id1	c
+2	2	b
+3	3	updateC
+4	4	d
+5	5	updateE
+6	6	f
+delete from t1;
+insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+begin;
+update t1 set c = 'updateC' where id = 3;
+begin;
+delete from t1 where id = 2;
+update t1 set c = 'otherC' where not id = id1 - 1;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+1	2	a
+3	3	c
+insert into t1 values (4,4,'d'),(5,5,'e');
+delete from t1 where id = 1;
+update t1 set c = 'updateD' where id = 4;
+commit;
+select * from t1;
+id	id1	c
+3	3	c
+4	4	updateD
+5	5	e
+begin;
+update t1 set c = 'updateAll' where id > 0;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+3	3	c
+4	4	updateD
+5	5	e
+insert into t1 values (6,6,'f');
+delete from t1 where id = 4;
+update t1 set c = 'updateE' where id = 5;
+rollback;
+commit;
+select * from t1;
+id	id1	c
+3	3	updateC
+4	4	updateD
+5	5	e
+delete from t1;
+insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+begin;
+delete from t1 where id = 3;
+begin;
+update t1 set c = 'updateB' where id = 2;
+delete from t1 where not id = id1 - 1;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+1	2	a
+2	3	updateB
+3	3	c
+insert into t1 values (4,4,'d'),(5,5,'e');
+delete from t1 where id = 1;
+update t1 set c = 'updateD' where id = 4;
+commit;
+select * from t1;
+id	id1	c
+2	3	updateB
+3	3	c
+4	4	updateD
+5	5	e
+begin;
+delete from t1 where id > 0;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+3	3	c
+4	4	updateD
+5	5	e
+insert into t1 values (6,6,'f'),(7,7,'g');
+rollback;
+commit;
+select * from t1;
+id	id1	c
+2	3	updateB
+4	4	updateD
+5	5	e
+delete from t1;
+insert into t1 values (1,1,'a'), (2,2,'b'), (3,3,'c');
+set sequoiadb_rollback_on_timeout = on;
+begin;
+update t1 set c = 'updateC' where id = 3;
+set sequoiadb_rollback_on_timeout = on;
+begin;
+insert into t1 values (4,4,'d');
+select * from t1 where id = 3 for update;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+1	1	a
+2	2	b
+3	3	c
+insert into t1 values (5,5,'e'),(6,6,'f');
+delete from t1 where id = 1;
+update t1 set c = 'updateE' where id = 5;
+commit;
+set sequoiadb_rollback_on_timeout = on;
+select * from t1;
+id	id1	c
+2	2	b
+3	3	c
+5	5	updateE
+6	6	f
+set sequoiadb_rollback_on_timeout = on;
+begin;
+select * from t1 where id = 3 for update;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+insert into t1 values (7,7,'h');
+delete from t1 where id = 4;
+update t1 set c = 'updateF' where id = 6;
+rollback;
+set sequoiadb_rollback_on_timeout = on;
+commit;
+set sequoiadb_rollback_on_timeout = on;
+select * from t1;
+id	id1	c
+2	2	b
+3	3	updateC
+5	5	updateE
+6	6	updateF
+7	7	h
+delete from t1;
+set global sequoiadb_rollback_on_timeout = on;
+insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+begin;
+update t1 set c = 'updateC' where id = 3;
+begin;
+delete from t1 where id = 2;
+update t1 set c = 'otherC' where not id = id1 - 1;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+1	2	a
+2	3	b
+3	3	c
+insert into t1 values (4,4,'d'),(5,5,'e');
+delete from t1 where id = 1;
+update t1 set c = 'updateD' where id = 4;
+commit;
+select * from t1;
+id	id1	c
+2	3	b
+3	3	c
+4	4	updateD
+5	5	e
+begin;
+update t1 set c = 'updateAll' where id > 0;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+2	3	b
+3	3	c
+4	4	updateD
+5	5	e
+insert into t1 values (6,6,'f');
+delete from t1 where id = 4;
+update t1 set c = 'updateE' where id = 5;
+rollback;
+commit;
+select * from t1;
+id	id1	c
+2	3	b
+3	3	updateC
+5	5	updateE
+6	6	f
+delete from t1;
+insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+begin;
+delete from t1 where id = 3;
+begin;
+update t1 set c = 'updateB' where id = 2;
+delete from t1 where not id = id1 - 1;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+1	2	a
+2	3	b
+3	3	c
+insert into t1 values (4,4,'d'),(5,5,'e');
+delete from t1 where id = 1;
+update t1 set c = 'updateD' where id = 4;
+commit;
+select * from t1;
+id	id1	c
+2	3	b
+3	3	c
+4	4	updateD
+5	5	e
+begin;
+delete from t1 where id > 0;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+select * from t1;
+id	id1	c
+2	3	b
+3	3	c
+4	4	updateD
+5	5	e
+insert into t1 values (6,6,'f'),(7,7,'g');
+rollback;
+commit;
+select * from t1;
+id	id1	c
+2	3	b
+4	4	updateD
+5	5	e
+6	6	f
+7	7	g
+set global sequoiadb_rollback_on_timeout = off;
+drop table t1;

@@ -11,7 +11,7 @@ affected rows: 2
 select * from t1 order by id;
 id	a	b	c
 drop table t1;
-create table t1(id int auto_increment key, a int, b varchar(255) not null default 'test', c varbinary(255))comment="sequoiadb:{ use_partition: false }";
+create table t1(id int auto_increment key, a int, b varchar(255) not null default 'test', c varbinary(255))comment="sequoiadb:{ auto_partition: false }";
 insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'),(1, 'sz', 'sz');
 insert into t1(a,b,c) values(11, 'sb', 'sb'), (1001, 'st', 'st'),(102, 'sr', 'r'),(2, 'sy', 'sy');
 delete from t1 where id=1 order by id;
@@ -49,7 +49,7 @@ id	a	b	c
 15	102	sr	r
 16	2	sy	sy
 drop table t1;
-create table t1(id int auto_increment key)comment="sequoiadb:{ use_partition: false }";
+create table t1(id int auto_increment key)comment="sequoiadb:{ auto_partition: false }";
 insert into t1 values(),(),(),();
 delete ignore from t1 where id>2;
 affected rows: 2

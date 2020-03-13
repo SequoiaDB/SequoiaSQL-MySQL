@@ -1833,11 +1833,11 @@ create table t1(a int(10)unsigned not null auto_increment primary key, b varchar
 insert into t1 values(1,'aaa'),(2,'bbb');
 alter table t1 auto_increment=1;
 insert into t1 values(NULL, 'ccc');
-select * from t1;
+select * from t1 order by a;
 show create table t1;
 alter table t1 auto_increment=3;
 insert into t1 values(NULL, 'ddd');
-select * from t1;
+select * from t1 order by a;
 show create table t1;
 drop table t1;
 
@@ -1980,11 +1980,11 @@ create table t1 ( a int ) comment = 'sequoiadb:{ auto_partion: true }';
 
 #BUG #SEQUOIASQLMAINSTREAM-517
 #SeqDB-21871
-create table t1 ( a int not null, index(a) ) ;
+create table t1 ( a int not null, index(a) ) ; 
 insert into t1 values (1);
-alter table t1 modify a int null;
+alter table t1 modify a int null; 
 show create table t1;
-insert into t1 values (null);
+insert into t1 values (null); 
 select * from t1;
 drop table t1;
 
@@ -2008,7 +2008,7 @@ create table t1 ( a int, b int, c char(16) not null, index(a,b,c) );
 create table t2 ( a int, b int, c char(16), index(a,b,c) );
 insert into t1 values (1,1,'a'),(null,null,'b');
 insert into t2 values (1,1,'a'),(null,null,null);
---error 1138
+--error 1138 
 alter table t1 change a a int not null, change b b int not null;
 --error 1138
 alter table t2 change a a int not null, change b b int not null, change c c char(16) not null;
