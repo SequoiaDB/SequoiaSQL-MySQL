@@ -1,0 +1,182 @@
+#Case 20412#Case 20413#Case 20414#Case 20415#Case 20416#Case 20417#Case 20418
+#Case 20419#Case 20420#Case 20421#Case 20540
+
+--source include/have_sequoiadb.inc
+
+#seqDB-20412
+CREATE TABLE t1 ( a INT, b INT, c CHAR(3), d INT )
+PARTITION BY RANGE COLUMNS(a,d,c) (
+    PARTITION p0 VALUES LESS THAN (5,10,'ggg'),
+    PARTITION p1 VALUES LESS THAN (10,20,'mmm'),
+    PARTITION p2 VALUES LESS THAN (15,30,'sss'),
+    PARTITION p3 VALUES LESS THAN (MAXVALUE,MAXVALUE,MAXVALUE)
+);
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20413 
+CREATE TABLE t1 (
+    id INT NOT NULL,
+    fname VARCHAR(30),
+    lname VARCHAR(30),
+    hired DATE NOT NULL DEFAULT '1970-01-01',
+    separated DATE NOT NULL DEFAULT '9999-12-31',
+    job_code INT NOT NULL,
+    store_id INT NOT NULL
+)
+PARTITION BY RANGE (store_id) (
+    PARTITION p0 VALUES LESS THAN (6),
+    PARTITION p1 VALUES LESS THAN (11),
+    PARTITION p2 VALUES LESS THAN (16),
+    PARTITION p3 VALUES LESS THAN (21)
+);
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20414
+CREATE TABLE t1 (
+    id INT NOT NULL,
+    fname VARCHAR(30),
+    lname VARCHAR(30),
+    hired DATE NOT NULL DEFAULT '1970-01-01',
+    separated DATE NOT NULL DEFAULT '9999-12-31',
+    job_code INT,
+    store_id INT
+)
+PARTITION BY RANGE ( YEAR(separated) ) (
+    PARTITION p0 VALUES LESS THAN (1991),
+    PARTITION p1 VALUES LESS THAN (1996),
+    PARTITION p2 VALUES LESS THAN (2001),
+    PARTITION p3 VALUES LESS THAN MAXVALUE
+);
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20415
+CREATE TABLE t1 (
+    first_name VARCHAR(25),
+    last_name VARCHAR(25),
+    street_1 VARCHAR(30),
+    street_2 VARCHAR(30),
+    city VARCHAR(15),
+    renewal DATE
+)
+PARTITION BY LIST COLUMNS(city) (
+    PARTITION pRegion_1 VALUES IN('Oskarshamn', 'Högsby', 'Mönsterås'),
+    PARTITION pRegion_2 VALUES IN('Vimmerby', 'Hultsfred', 'Västervik'),
+    PARTITION pRegion_3 VALUES IN('Nässjö', 'Eksjö', 'Vetlanda'),
+    PARTITION pRegion_4 VALUES IN('Uppvidinge', 'Alvesta', 'Växjo')
+);
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20416
+CREATE TABLE t1 (
+    id INT NOT NULL,
+    hired DATETIME NOT NULL
+)
+PARTITION BY LIST( YEAR(hired) ) 
+(
+    PARTITION a VALUES IN (1990),
+    PARTITION b VALUES IN (1991),
+    PARTITION c VALUES IN (1992),
+    PARTITION d VALUES IN (1993)
+);
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20417
+CREATE TABLE t1 (col1 INT, col2 CHAR(5), col3 DATE)
+    PARTITION BY LINEAR HASH( YEAR(col3) )
+    PARTITIONS 6;
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20418
+CREATE TABLE t1 (
+    col1 INT NOT NULL,
+    col2 CHAR(5),
+    col3 DATE
+)
+PARTITION BY LINEAR KEY (col1)
+PARTITIONS 3;
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20419
+CREATE TABLE t1 ( id INT, purchased DATE )
+    PARTITION BY RANGE( YEAR(purchased) )
+    SUBPARTITION BY LINEAR HASH( TO_DAYS(purchased) )
+    SUBPARTITIONS 2 (
+        PARTITION p0 VALUES LESS THAN (1990),
+        PARTITION p1 VALUES LESS THAN (2000),
+        PARTITION p2 VALUES LESS THAN MAXVALUE
+    );
+
+CREATE TABLE t2 (id INT, purchased DATE)
+    PARTITION BY RANGE( YEAR(purchased) )
+    SUBPARTITION BY HASH( TO_DAYS(purchased) ) (
+        PARTITION p0 VALUES LESS THAN (1990) (
+            SUBPARTITION s0,
+            SUBPARTITION s1
+        ),
+        PARTITION p1 VALUES LESS THAN (2000) (
+            SUBPARTITION s2,
+            SUBPARTITION s3
+        ),
+        PARTITION p2 VALUES LESS THAN MAXVALUE (
+            SUBPARTITION s4,
+            SUBPARTITION s5
+        )
+);
+SHOW CREATE TABLE t1;
+SHOW CREATE TABLE t2;
+DROP TABLE t1,t2;
+
+#seqDB-20420
+CREATE TABLE t1 ( id INT, purchased DATE )
+    PARTITION BY LIST( id )
+    SUBPARTITION BY LINEAR KEY ( id )
+    SUBPARTITIONS 2 (
+        PARTITION p0 VALUES IN (10),
+        PARTITION p1 VALUES IN (20),
+        PARTITION p2 VALUES IN (30)
+    ); 
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20421
+CREATE TABLE t1 ( id INT, purchased DATE )
+    COMMENT 'sequoiadb: { table_options: { ReplSize: -1, Compressed: false, StrictDataMode: false }, partition_options: { Partition: 1024, AutoIndexId: true, AutoSplit: true }}'
+    PARTITION BY RANGE( YEAR(purchased) )
+    SUBPARTITION BY HASH( TO_DAYS(purchased) )
+    SUBPARTITIONS 2 (
+        PARTITION p0 VALUES LESS THAN(1990)
+            COMMENT 'sequoiadb: { table_options: { Partition: 1024, ReplSize: 2, AutoIndexId: false } }',
+        PARTITION p1 VALUES LESS THAN(2000)
+            COMMENT 'sequoiadb: { table_options: { Partition: 2048, Compressed: true } }',   
+        PARTITION p2 VALUES LESS THAN MAXVALUE
+            COMMENT 'sequoiadb: { table_options: { Partition: 8192, ReplSize: 3, StrictDataMode: true } }'  
+    );		       
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+#seqDB-20540
+CREATE TABLE t1 (
+    id INT NOT NULL PRIMARY KEY,
+    name VARCHAR(20)
+)
+PARTITION BY KEY()
+PARTITIONS 2;
+
+CREATE TABLE t2 (
+    id INT NOT NULL UNIQUE KEY,
+    name VARCHAR(20)
+)
+PARTITION BY KEY()
+PARTITIONS 2;
+SHOW CREATE TABLE t1;
+SHOW CREATE TABLE t2;
+DROP TABLE t1,t2;
+
+--source include/uninstall_sequoiadb.inc

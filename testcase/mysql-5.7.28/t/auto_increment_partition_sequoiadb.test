@@ -6,7 +6,7 @@
 CREATE DATABASE test_auto_increment_partition;
 use test_auto_increment_partition;
 --disable_query_log
-create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ use_partition: true }';
+create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ auto_partition: true }';
 --enable_query_log
 
 --disable_warnings
