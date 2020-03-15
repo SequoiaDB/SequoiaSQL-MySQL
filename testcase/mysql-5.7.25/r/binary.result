@@ -66,10 +66,6 @@ select concat("-",a,"-",b,"-") from t1;
 concat("-",a,"-",b,"-")
 -hello-hello-
 -hello2-hello2-
-select concat("-",a,"-",b,"-") from t1 where b="hello ";
-concat("-",a,"-",b,"-")
-select concat("-",a,"-",b,"-") from t1 ignore index (b) where b="hello ";
-concat("-",a,"-",b,"-")
 drop table t1;
 create table t1 (b char(8));
 insert into t1 values(NULL);

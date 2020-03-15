@@ -51,10 +51,9 @@ select concat("-",a,"-",b,"-") from t1 ignore index (b) where b="hello ";
 alter table t1 modify b tinytext not null, drop key b, add key (b(100));
 #BUG #SEQUOIASQLMAINSTREAM-204
 select concat("-",a,"-",b,"-") from t1;
-#BUG #SEQUOIASQLMAINSTREAM-204
-select concat("-",a,"-",b,"-") from t1 where b="hello ";
-#Bug #SEQUOIADBMAINSTREAM-3568
-select concat("-",a,"-",b,"-") from t1 ignore index (b) where b="hello ";
+#BUG #SEQUOIASQLMAINSTREAM-616
+#select concat("-",a,"-",b,"-") from t1 where b="hello ";
+#select concat("-",a,"-",b,"-") from t1 ignore index (b) where b="hello ";
 drop table t1;
 
 #
