@@ -90,8 +90,6 @@ update ignore t1 set a=NULL where a=10;
 Warnings:
 Warning	1048	Column 'a' cannot be null
 update ignore t1 set c='mysql ab' where c='test';
-Warnings:
-Warning	1265	Data truncated for column 'c' at row 4
 update ignore t1 set d=c;
 Warnings:
 Warning	1265	Data truncated for column 'd' at row 1

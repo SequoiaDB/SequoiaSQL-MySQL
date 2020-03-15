@@ -406,22 +406,6 @@ if(@bug28261 = f1, '', @bug28261:= f1)
 2001-01-01
 2002-02-02
 drop table t1;
-create table t1(f1 datetime);
-insert into t1 values('2001-01-01'),('2002-02-02');
-select * from t1 where f1 between 20020101 and 20070101000000;
-f1
-2002-02-02 00:00:00
-select * from t1 where f1 between 2002010 and 20070101000000;
-f1
-2001-01-01 00:00:00
-2002-02-02 00:00:00
-Warnings:
-Warning	1292	Truncated incorrect datetime value: '2002010'
-select * from t1 where f1 between 20020101 and 2007010100000;
-f1
-Warnings:
-Warning	1292	Truncated incorrect datetime value: '2007010100000'
-drop table t1;
 #
 # Bug#27216: functions with parameters of different date types may
 #            return wrong type of the result.
@@ -899,34 +883,10 @@ SET sql_mode=DEFAULT;
 #
 CREATE TABLE t1 (a DATETIME);;
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00'),('2001-01-01 00:00:01');
-SELECT * FROM t1 WHERE a='2001-01-01 00:00:00x';
-a
-2001-01-01 00:00:00
-Warnings:
-Warning	1292	Truncated incorrect datetime value: '2001-01-01 00:00:00x'
 SELECT * FROM t1 WHERE LENGTH(a) != 20;
 a
 2001-01-01 00:00:00
 2001-01-01 00:00:01
-SELECT * FROM t1 WHERE LENGTH(a) != 20 AND a='2001-01-01 00:00:00x';
-a
-2001-01-01 00:00:00
-Warnings:
-Warning	1292	Truncated incorrect datetime value: '2001-01-01 00:00:00x'
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a) != 20 AND a='2001-01-01 00:00:00x';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Warning	1292	Truncated incorrect datetime value: '2001-01-01 00:00:00x'
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00'
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)!=30+RAND() AND a='2001-01-01 00:00:00x';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Warning	1292	Truncated incorrect datetime value: '2001-01-01 00:00:00x'
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00' and <cache>(octet_length(TIMESTAMP'2001-01-01 00:00:00')) <> 30 + rand()
 DROP TABLE t1;
 CREATE TABLE t1 (a DATETIME);;
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00'),('2001-01-01 00:00:01');
@@ -934,104 +894,28 @@ SELECT * FROM t1 WHERE LENGTH(a)=19;
 a
 2001-01-01 00:00:00
 2001-01-01 00:00:01
-SELECT * FROM t1 WHERE LENGTH(a)=19 AND a=' 2001-01-01 00:00:00';
-a
-2001-01-01 00:00:00
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=19 AND a=' 2001-01-01 00:00:00';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00'
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=19+RAND() AND a=' 2001-01-01 00:00:00';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00' and <cache>(octet_length(TIMESTAMP'2001-01-01 00:00:00')) = 19 + rand()
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=30+RAND() AND a=' garbage ';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Warning	1292	Truncated incorrect datetime value: ' garbage '
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'0000-00-00 00:00:00' and <cache>(octet_length(TIMESTAMP'0000-00-00 00:00:00')) = 30 + rand()
 DROP TABLE t1;
 CREATE TABLE t1 (a DATETIME);;
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00'),('2001-01-01 00:00:01');
-SELECT * FROM t1 WHERE a=TIMESTAMP'2001-01-01 00:00:00.000000';
-a
-2001-01-01 00:00:00
 SELECT * FROM t1 WHERE LENGTH(a)=19;
 a
 2001-01-01 00:00:00
 2001-01-01 00:00:01
-SELECT * FROM t1 WHERE LENGTH(a)=19 AND a=TIMESTAMP'2001-01-01 00:00:00.000000';
-a
-2001-01-01 00:00:00
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=19 AND a=TIMESTAMP'2001-01-01 00:00:00.000000';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00.000000'
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=30+RAND() AND a=TIMESTAMP'2001-01-01 00:00:00.000000';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00.000000' and <cache>(octet_length(TIMESTAMP'2001-01-01 00:00:00')) = 30 + rand()
 DROP TABLE t1;
 CREATE TABLE t1 (a DATETIME(6));;
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000000'),('2001-01-01 00:00:01.000000');
-SELECT * FROM t1 WHERE a=TIMESTAMP'2001-01-01 00:00:00.000000';
-a
-2001-01-01 00:00:00.000000
 SELECT * FROM t1 WHERE LENGTH(a)=26;
 a
 2001-01-01 00:00:00.000000
 2001-01-01 00:00:01.000000
-SELECT * FROM t1 WHERE LENGTH(a)=26 AND a=TIMESTAMP'2001-01-01 00:00:00.000000';
-a
-2001-01-01 00:00:00.000000
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=26 AND a=TIMESTAMP'2001-01-01 00:00:00.000000';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00.000000'
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=40+RAND() AND a=TIMESTAMP'2001-01-01 00:00:00.000000';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00.000000' and <cache>(octet_length(TIMESTAMP'2001-01-01 00:00:00.000000')) = 40 + rand()
 DROP TABLE t1;
 SET timestamp=UNIX_TIMESTAMP('2001-01-01 10:20:30');
 CREATE TABLE t1 (a DATETIME);;
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00'),('2001-01-01 00:00:01');
-SELECT * FROM t1 WHERE a=TIME'00:00:00';
-a
-2001-01-01 00:00:00
 SELECT * FROM t1 WHERE LENGTH(a)=19;
 a
 2001-01-01 00:00:00
 2001-01-01 00:00:01
-SELECT * FROM t1 WHERE LENGTH(a)=19 AND a=TIME'00:00:00';
-a
-2001-01-01 00:00:00
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=19 AND a=TIME'00:00:00';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00'
-EXPLAIN EXTENDED
-SELECT * FROM t1 WHERE LENGTH(a)=40+RAND() AND a=TIME'00:00:00';
-id	select_type	table	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-Warnings:
-Note	1003	select `test_type_datetime`.`t1`.`a` AS `a` from `test_type_datetime`.`t1` where `test_type_datetime`.`t1`.`a` = TIMESTAMP'2001-01-01 00:00:00' and <cache>(octet_length(TIMESTAMP'2001-01-01 00:00:00')) = 40 + rand()
 DROP TABLE t1;
 #
 # MDEV-8875 Wrong metadata for MAX(CAST(time_column AS DATETIME))

@@ -119,10 +119,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'dec8_swedish_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'dec8_swedish_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'dec8_swedish_nopad_ci';
 COUNT(*)
 1
@@ -132,7 +132,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'dec8_swedish_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'dec8_swedish_nopad_ci';
 COUNT(*)
 1
@@ -258,10 +258,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'dec8_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'dec8_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'dec8_nopad_bin';
 COUNT(*)
 1
@@ -271,7 +271,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'dec8_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'dec8_nopad_bin';
 COUNT(*)
 1
@@ -398,10 +398,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp850_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp850_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp850_general_nopad_ci';
 COUNT(*)
 1
@@ -411,7 +411,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp850_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp850_general_nopad_ci';
 COUNT(*)
 1
@@ -537,10 +537,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp850_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp850_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp850_nopad_bin';
 COUNT(*)
 1
@@ -550,7 +550,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp850_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp850_nopad_bin';
 COUNT(*)
 1
@@ -677,10 +677,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'hp8_english_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hp8_english_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hp8_english_nopad_ci';
 COUNT(*)
 1
@@ -690,7 +690,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hp8_english_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hp8_english_nopad_ci';
 COUNT(*)
 1
@@ -816,10 +816,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'hp8_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hp8_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hp8_nopad_bin';
 COUNT(*)
 1
@@ -829,7 +829,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hp8_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hp8_nopad_bin';
 COUNT(*)
 1
@@ -956,10 +956,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'koi8r_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8r_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8r_general_nopad_ci';
 COUNT(*)
 1
@@ -969,7 +969,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8r_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8r_general_nopad_ci';
 COUNT(*)
 1
@@ -1095,10 +1095,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'koi8r_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8r_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8r_nopad_bin';
 COUNT(*)
 1
@@ -1108,7 +1108,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8r_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8r_nopad_bin';
 COUNT(*)
 1
@@ -1235,10 +1235,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'latin2_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin2_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin2_general_nopad_ci';
 COUNT(*)
 1
@@ -1248,7 +1248,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin2_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin2_general_nopad_ci';
 COUNT(*)
 1
@@ -1374,10 +1374,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'latin2_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin2_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin2_nopad_bin';
 COUNT(*)
 1
@@ -1387,7 +1387,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin2_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin2_nopad_bin';
 COUNT(*)
 1
@@ -1514,10 +1514,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'swe7_swedish_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'swe7_swedish_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'swe7_swedish_nopad_ci';
 COUNT(*)
 1
@@ -1527,7 +1527,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'swe7_swedish_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'swe7_swedish_nopad_ci';
 COUNT(*)
 1
@@ -1653,10 +1653,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'swe7_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'swe7_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'swe7_nopad_bin';
 COUNT(*)
 1
@@ -1666,7 +1666,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'swe7_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'swe7_nopad_bin';
 COUNT(*)
 1
@@ -1793,10 +1793,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'ascii_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ascii_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ascii_general_nopad_ci';
 COUNT(*)
 1
@@ -1806,7 +1806,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ascii_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ascii_general_nopad_ci';
 COUNT(*)
 1
@@ -1932,10 +1932,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'ascii_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ascii_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ascii_nopad_bin';
 COUNT(*)
 1
@@ -1945,7 +1945,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ascii_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ascii_nopad_bin';
 COUNT(*)
 1
@@ -2072,10 +2072,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'hebrew_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hebrew_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hebrew_general_nopad_ci';
 COUNT(*)
 1
@@ -2085,7 +2085,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hebrew_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hebrew_general_nopad_ci';
 COUNT(*)
 1
@@ -2211,10 +2211,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'hebrew_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hebrew_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hebrew_nopad_bin';
 COUNT(*)
 1
@@ -2224,7 +2224,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hebrew_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'hebrew_nopad_bin';
 COUNT(*)
 1
@@ -2351,10 +2351,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'koi8u_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8u_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8u_general_nopad_ci';
 COUNT(*)
 1
@@ -2364,7 +2364,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8u_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8u_general_nopad_ci';
 COUNT(*)
 1
@@ -2490,10 +2490,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'koi8u_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8u_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8u_nopad_bin';
 COUNT(*)
 1
@@ -2503,7 +2503,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8u_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'koi8u_nopad_bin';
 COUNT(*)
 1
@@ -2630,10 +2630,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'greek_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'greek_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'greek_general_nopad_ci';
 COUNT(*)
 1
@@ -2643,7 +2643,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'greek_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'greek_general_nopad_ci';
 COUNT(*)
 1
@@ -2769,10 +2769,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'greek_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'greek_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'greek_nopad_bin';
 COUNT(*)
 1
@@ -2782,7 +2782,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'greek_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'greek_nopad_bin';
 COUNT(*)
 1
@@ -2909,10 +2909,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp1250_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1250_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1250_general_nopad_ci';
 COUNT(*)
 1
@@ -2922,7 +2922,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1250_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1250_general_nopad_ci';
 COUNT(*)
 1
@@ -3048,10 +3048,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp1250_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1250_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1250_nopad_bin';
 COUNT(*)
 1
@@ -3061,7 +3061,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1250_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1250_nopad_bin';
 COUNT(*)
 1
@@ -3188,10 +3188,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp1257_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1257_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1257_general_nopad_ci';
 COUNT(*)
 1
@@ -3201,7 +3201,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1257_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1257_general_nopad_ci';
 COUNT(*)
 1
@@ -3327,10 +3327,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp1257_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1257_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1257_nopad_bin';
 COUNT(*)
 1
@@ -3340,7 +3340,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1257_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1257_nopad_bin';
 COUNT(*)
 1
@@ -3467,10 +3467,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'latin5_turkish_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin5_turkish_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin5_turkish_nopad_ci';
 COUNT(*)
 1
@@ -3480,7 +3480,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin5_turkish_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin5_turkish_nopad_ci';
 COUNT(*)
 1
@@ -3606,10 +3606,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'latin5_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin5_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin5_nopad_bin';
 COUNT(*)
 1
@@ -3619,7 +3619,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin5_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin5_nopad_bin';
 COUNT(*)
 1
@@ -3746,10 +3746,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'armscii8_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'armscii8_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'armscii8_general_nopad_ci';
 COUNT(*)
 1
@@ -3759,7 +3759,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'armscii8_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'armscii8_general_nopad_ci';
 COUNT(*)
 1
@@ -3885,10 +3885,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'armscii8_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'armscii8_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'armscii8_nopad_bin';
 COUNT(*)
 1
@@ -3898,7 +3898,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'armscii8_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'armscii8_nopad_bin';
 COUNT(*)
 1
@@ -4025,10 +4025,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp866_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp866_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp866_general_nopad_ci';
 COUNT(*)
 1
@@ -4038,7 +4038,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp866_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp866_general_nopad_ci';
 COUNT(*)
 1
@@ -4164,10 +4164,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp866_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp866_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp866_nopad_bin';
 COUNT(*)
 1
@@ -4177,7 +4177,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp866_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp866_nopad_bin';
 COUNT(*)
 1
@@ -4304,10 +4304,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'keybcs2_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'keybcs2_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'keybcs2_general_nopad_ci';
 COUNT(*)
 1
@@ -4317,7 +4317,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'keybcs2_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'keybcs2_general_nopad_ci';
 COUNT(*)
 1
@@ -4443,10 +4443,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'keybcs2_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'keybcs2_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'keybcs2_nopad_bin';
 COUNT(*)
 1
@@ -4456,7 +4456,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'keybcs2_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'keybcs2_nopad_bin';
 COUNT(*)
 1
@@ -4583,10 +4583,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'macce_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macce_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macce_general_nopad_ci';
 COUNT(*)
 1
@@ -4596,7 +4596,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macce_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macce_general_nopad_ci';
 COUNT(*)
 1
@@ -4722,10 +4722,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'macce_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macce_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macce_nopad_bin';
 COUNT(*)
 1
@@ -4735,7 +4735,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macce_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macce_nopad_bin';
 COUNT(*)
 1
@@ -4862,10 +4862,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'macroman_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macroman_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macroman_general_nopad_ci';
 COUNT(*)
 1
@@ -4875,7 +4875,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macroman_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macroman_general_nopad_ci';
 COUNT(*)
 1
@@ -5001,10 +5001,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'macroman_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macroman_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macroman_nopad_bin';
 COUNT(*)
 1
@@ -5014,7 +5014,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macroman_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'macroman_nopad_bin';
 COUNT(*)
 1
@@ -5141,10 +5141,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp852_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp852_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp852_general_nopad_ci';
 COUNT(*)
 1
@@ -5154,7 +5154,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp852_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp852_general_nopad_ci';
 COUNT(*)
 1
@@ -5280,10 +5280,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp852_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp852_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp852_nopad_bin';
 COUNT(*)
 1
@@ -5293,7 +5293,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp852_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp852_nopad_bin';
 COUNT(*)
 1
@@ -5420,10 +5420,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'latin7_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin7_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin7_general_nopad_ci';
 COUNT(*)
 1
@@ -5433,7 +5433,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin7_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin7_general_nopad_ci';
 COUNT(*)
 1
@@ -5559,10 +5559,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'latin7_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin7_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin7_nopad_bin';
 COUNT(*)
 1
@@ -5572,7 +5572,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin7_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'latin7_nopad_bin';
 COUNT(*)
 1
@@ -5699,10 +5699,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp1251_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1251_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1251_general_nopad_ci';
 COUNT(*)
 1
@@ -5712,7 +5712,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1251_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1251_general_nopad_ci';
 COUNT(*)
 1
@@ -5838,10 +5838,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp1251_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1251_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1251_nopad_bin';
 COUNT(*)
 1
@@ -5851,7 +5851,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1251_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1251_nopad_bin';
 COUNT(*)
 1
@@ -5978,10 +5978,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp1256_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1256_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1256_general_nopad_ci';
 COUNT(*)
 1
@@ -5991,7 +5991,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1256_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1256_general_nopad_ci';
 COUNT(*)
 1
@@ -6117,10 +6117,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'cp1256_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1256_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1256_nopad_bin';
 COUNT(*)
 1
@@ -6130,7 +6130,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1256_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'cp1256_nopad_bin';
 COUNT(*)
 1
@@ -6257,10 +6257,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'geostd8_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'geostd8_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'geostd8_general_nopad_ci';
 COUNT(*)
 1
@@ -6270,7 +6270,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'geostd8_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'geostd8_general_nopad_ci';
 COUNT(*)
 1
@@ -6396,10 +6396,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'geostd8_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'geostd8_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'geostd8_nopad_bin';
 COUNT(*)
 1
@@ -6409,7 +6409,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'geostd8_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'geostd8_nopad_bin';
 COUNT(*)
 1

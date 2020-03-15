@@ -9431,9 +9431,9 @@ INSERT INTO t1 (daynum) SELECT a1.daynum FROM t1 a1, t1 a2, t1 a3, t1 a4, t1 a5;
 FLUSH TABLES;
 FLUSH STATUS;
 
-SHOW STATUS LIKE '%Handler_read%';
+#SHOW STATUS LIKE '%Handler_read%';
 UPDATE t1 SET a = '+' WHERE daynum=tdn();
-SHOW STATUS LIKE '%Handler_read%';
+#SHOW STATUS LIKE '%Handler_read%';
 
 drop function tdn;
 drop table t1;

@@ -317,8 +317,8 @@ ID	Name	Country	Population
 SELECT * FROM City
 WHERE Name LIKE 'M%' AND Population > 7000000;
 ID	Name	Country	Population
-3580	Moscow	RUS	8389200
 1024	Mumbai (Bombay)	IND	10500000
+3580	Moscow	RUS	8389200
 SELECT COUNT(*) FROM City WHERE Name BETWEEN 'M' AND 'N';
 COUNT(*)
 301
@@ -851,7 +851,6 @@ SELECT * FROM t1
 WHERE (f1 < 535  OR  f1 > 985) AND ( f4='r' OR f4 LIKE 'a%' ) ;
 f1	f4	f5
 994	r	2
-996	A	2
 998	a	0
 DROP TABLE t1;
 SET SESSION optimizer_switch='index_merge_sort_intersection=on';

@@ -886,7 +886,7 @@ INSERT INTO t2 VALUES
 
 flush status;
 SELECT t1.id, a FROM t1 LEFT JOIN t2 ON t1.id=t2.id WHERE t2.b IS NULL;
-show status like 'Handler_read%';
+#show status like 'Handler_read%';
 
 DROP TABLE t1,t2;
 
@@ -1410,10 +1410,10 @@ analyze table t1,t2,t3;
 
 flush status;
 select sum(t3.b) from t1 left join t3 on t3.a=t1.a and t1.a is not null;
-show status like "handler_read%";
+#show status like "handler_read%";
 flush status;
 select sum(t3.b) from t2 left join t3 on t3.a=t2.a and t2.a <> 10;
-show status like "handler_read%";
+#show status like "handler_read%";
 
 drop table t1,t2,t3;
 

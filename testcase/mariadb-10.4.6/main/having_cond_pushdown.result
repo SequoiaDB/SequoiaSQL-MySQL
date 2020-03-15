@@ -1092,14 +1092,6 @@ having d1 between (inet_aton('1978-04-27')) and '2018-08-26';
 d1
 delete from t1;
 insert into t1 values ('2018-01-15'),('2018-02-20');
-select d1 from t1
-group by d1
-having d1 not between 0 AND exp(0);
-d1
-2018-01-15
-2018-02-20
-Warnings:
-Warning	1292	Truncated incorrect datetime value: '1'
 drop table t1;
 #
 # MDEV-19245: Impossible WHERE should be noticed earlier

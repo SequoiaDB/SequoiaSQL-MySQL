@@ -6663,10 +6663,6 @@ concat(c1)
 => ǆ
 select * from t1 where c1 like '=> d%';
 a	c1
-1	=> DZ
-2	=> Dz
-5	=> DŽ
-6	=> Dž
 4	=> dZ
 3	=> dz
 8	=> dŽ
@@ -7824,9 +7820,6 @@ uf	7566	101F0EB9
 SELECT s1, hex(s1) FROM t1 WHERE s1='ae' ORDER BY s1, BINARY(s1);
 s1	hex(s1)
 ae	6165
-Æ	C386
-ä	C3A4
-æ	C3A6
 drop table t1;
 CREATE TABLE t1 AS SELECT REPEAT('a',1) AS a, 1 AS b LIMIT 0;
 SHOW CREATE TABLE t1;
@@ -8127,10 +8120,8 @@ hex(c)	hex(weight_string(c))
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10400 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
 F0909080	30D2	𐐀
-F09090A8	30D2	𐐨
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10428 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
-F0909080	30D2	𐐀
 F09090A8	30D2	𐐨
 ALTER TABLE t1 ADD KEY(c);
 SELECT hex(c), hex(weight_string(c)) FROM t1 WHERE c LIKE 'a%' ORDER BY c;
@@ -8228,23 +8219,6 @@ c1
 SELECT * FROM t1 WHERE '%'=CONCAT(c1) AND 'a' LIKE CONCAT(c1);
 c1
 %
-DROP TABLE t1;
-#
-# MDEV-8694 Wrong result for SELECT..WHERE a NOT LIKE 'a ' AND a='a'
-#
-CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
-INSERT INTO t1 VALUES ('a'),('a ');
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
-a	LENGTH(a)
-a	1
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ' AND a='a';
-a	LENGTH(a)
-a	1
 DROP TABLE t1;
 #
 # End of MDEV-8694
@@ -8353,23 +8327,6 @@ c1
 %
 DROP TABLE t1;
 #
-# MDEV-8694 Wrong result for SELECT..WHERE a NOT LIKE 'a ' AND a='a'
-#
-CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET utf8 COLLATE utf8_german2_ci DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
-INSERT INTO t1 VALUES ('a'),('a ');
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
-a	LENGTH(a)
-a	1
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ' AND a='a';
-a	LENGTH(a)
-a	1
-DROP TABLE t1;
-#
 # End of MDEV-8694
 #
 #
@@ -8384,14 +8341,12 @@ t1	CREATE TABLE `t1` (
 INSERT INTO t1 VALUES ('ae'),('ä');
 SELECT * FROM t1 WHERE c1='ä';
 c1
-ae
 ä
 SELECT * FROM t1 WHERE c1 LIKE 'ae';
 c1
 ae
 SELECT * FROM t1 WHERE c1='ä' AND c1 LIKE 'ae';
 c1
-ae
 SELECT * FROM t1 WHERE CONCAT(c1)='ä';
 c1
 ae

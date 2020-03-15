@@ -805,8 +805,6 @@ Note	1265	Data truncated for column 'col1' at row 1
 INSERT INTO Sow6_2f VALUES (11);
 INSERT INTO Sow6_2f VALUES (101.55);
 ERROR 22003: Out of range value for column 'col1' at row 1
-UPDATE Sow6_2f SET col1 = col1 * 50 WHERE col1 = 11;
-ERROR 22003: Out of range value for column 'col1' at row 5
 UPDATE Sow6_2f SET col1 = col1 / 0 WHERE col1 > 0;
 ERROR 22012: Division by 0
 SELECT MOD(col1,0) FROM Sow6_2f;

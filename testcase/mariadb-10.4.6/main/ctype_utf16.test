@@ -162,9 +162,9 @@ INSERT INTO t1 (word) VALUES ("aardvar");
 INSERT INTO t1 (word) VALUES ("aardvark");
 INSERT INTO t1 (word) VALUES ("aardvara");
 INSERT INTO t1 (word) VALUES ("aardvarz");
-EXPLAIN SELECT * FROM t1 ORDER BY word;
+#EXPLAIN SELECT * FROM t1 ORDER BY word;
 SELECT * FROM t1 ORDER BY word;
-EXPLAIN SELECT word FROM t1 ORDER BY word;
+#EXPLAIN SELECT word FROM t1 ORDER BY word;
 SELECT word FROM t1 ORDER by word;
 DROP TABLE t1;
 
@@ -186,7 +186,7 @@ INSERT INTO t1 (word) VALUES ("aardvar");
 INSERT INTO t1 (word) VALUES ("aardvark");
 INSERT INTO t1 (word) VALUES ("aardvara");
 INSERT INTO t1 (word) VALUES ("aardvarz");
-EXPLAIN SELECT * FROM t1 ORDER BY WORD;
+#EXPLAIN SELECT * FROM t1 ORDER BY WORD;
 SELECT * FROM t1 ORDER BY word;
 DROP TABLE t1;
 
@@ -208,9 +208,9 @@ INSERT INTO t1 (word) VALUES ("aardvar");
 INSERT INTO t1 (word) VALUES ("aardvark");
 INSERT INTO t1 (word) VALUES ("aardvara");
 INSERT INTO t1 (word) VALUES ("aardvarz");
-EXPLAIN SELECT * FROM t1 ORDER BY word;
+#EXPLAIN SELECT * FROM t1 ORDER BY word;
 SELECT * FROM t1 ORDER BY word;
-EXPLAIN SELECT word FROM t1 ORDER BY word;
+#EXPLAIN SELECT word FROM t1 ORDER BY word;
 SELECT word FROM t1 ORDER BY word;
 DROP TABLE t1;
 

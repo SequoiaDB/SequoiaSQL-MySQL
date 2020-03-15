@@ -746,8 +746,6 @@ insert into t1 values (0, 0, 0, 0, 0);
 insert into t1 values (1, 0, 0, 1, 1);
 insert into t1 values (123.456E+15, 123.456E+15, NULL, 123.456E+15, NULL);
 insert into t1 values (-123456E-15, -123456E-15, -12345678998765.55, 123456E-15, 12345678998765.55);
-update t1 set id = id - 8E300 where id < -0.1;
-ERROR 22003: DOUBLE value is out of range in '`inc_sequoiadb`.`t1`.`id` - 8E300'
 update t1 set d2 = d2 + 11E+30 where id < 1;
 ERROR 22003: Out of range value for column 'd2' at row 1
 update t1 set d1 = d1 - 1.7976931348623157E+308 where id = 0;

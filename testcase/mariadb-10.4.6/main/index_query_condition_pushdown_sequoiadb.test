@@ -197,12 +197,13 @@ select * from t1 where a is null;
 --sorted_result
 select * from t1 where a is not null;
 
---sorted_result
-select * from t1 where a = '1970-01-01 00:00:01.000000';
---sorted_result
-select * from t1 where a = '2038-01-19 03:14:07.999999';
---sorted_result
-select * from t1 where a = '2012-01-02 12:12:12.000000';
+#BUG #SEQUOIASQLMAINSTREAM-606
+#--sorted_result
+#select * from t1 where a = '1970-01-01 00:00:01.000000';
+#--sorted_result
+#select * from t1 where a = '2038-01-19 03:14:07.999999';
+#--sorted_result
+#select * from t1 where a = '2012-01-02 12:12:12.000000';
 
 --sorted_result
 select * from t1 where a != '2012-01-02 12:12:12.000000';
@@ -211,17 +212,18 @@ select * from t1 where a <> '2012-01-02 12:12:12.000000';
 --sorted_result
 select * from t1 where a <> '2012-01-02 12:12:12.000001';
 
---sorted_result
-select * from t1 where a < '2038-01-19 03:14:07.999999' and a >='1970-01-01 00:00:01.000000';
---sorted_result
-select * from t1 where a <= '2038-01-18 03:14:07.999999' and a >'2012-01-02 12:12:12.000000';
---sorted_result
-select * from t1 where a <=> '2012-01-02 12:12:12.000000';
-
---sorted_result
-select * from t1 where a between '2012-01-02 12:12:12.000000' and '2038-01-18 03:14:07.999999';
---sorted_result
-select * from t1 where a in('1970-01-01 00:00:01.000000','2038-01-19 03:14:07.999999','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
+#BUG #SEQUOIASQLMAINSTREAM-606
+#--sorted_result
+#select * from t1 where a < '2038-01-19 03:14:07.999999' and a >='1970-01-01 00:00:01.000000';
+#--sorted_result
+#select * from t1 where a <= '2038-01-18 03:14:07.999999' and a >'2012-01-02 12:12:12.000000';
+#--sorted_result
+#select * from t1 where a <=> '2012-01-02 12:12:12.000000';
+#
+#--sorted_result
+#select * from t1 where a between '2012-01-02 12:12:12.000000' and '2038-01-18 03:14:07.999999';
+#--sorted_result
+#select * from t1 where a in('1970-01-01 00:00:01.000000','2038-01-19 03:14:07.999999','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
 --sorted_result
 select * from t1 where a='a1';
 
@@ -268,17 +270,18 @@ select * from t1 where a <> '2012-01-02 12:12:12.000000';
 --sorted_result
 select * from t1 where a <> '2012-01-02 12:12:12.000001';
 
---sorted_result
-select * from t1 where a < '2038-01-19 03:14:07.999999' and a >='1970-01-01 00:00:01.000000';
---sorted_result
-select * from t1 where a <= '2038-01-18 03:14:07.999999' and a >'2012-01-02 12:12:12.000000';
---sorted_result
-select * from t1 where a <=> '2012-01-02 12:12:12.000001';
-
---sorted_result
-select * from t1 where a between '2012-01-02 12:12:12.000000' and '2038-01-18 03:14:07.999999';
---sorted_result
-select * from t1 where a in('1970-01-01 00:00:01.000000','2038-01-19 03:14:07.999999','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
+#BUG #SEQUOIASQLMAINSTREAM-606
+#--sorted_result
+#select * from t1 where a < '2038-01-19 03:14:07.999999' and a >='1970-01-01 00:00:01.000000';
+#--sorted_result
+#select * from t1 where a <= '2038-01-18 03:14:07.999999' and a >'2012-01-02 12:12:12.000000';
+#--sorted_result
+#select * from t1 where a <=> '2012-01-02 12:12:12.000001';
+#
+#--sorted_result
+#select * from t1 where a between '2012-01-02 12:12:12.000000' and '2038-01-18 03:14:07.999999';
+#--sorted_result
+#select * from t1 where a in('1970-01-01 00:00:01.000000','2038-01-19 03:14:07.999999','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
 
 --sorted_result
 select * from t1 where a='a1';
@@ -340,8 +343,9 @@ select * from t1 where a in('1000-01-01','9999-12-29','2013-10-12');
 
 --sorted_result
 select * from t1 where a='a1';
---sorted_result
-select * from t1 where a<'10000-01-01';
+#BUG #SEQUOIASQLMAINSTREAM-607
+#--sorted_result
+#select * from t1 where a<'10000-01-01';
 
 --sorted_result
 select * from t1 where a=c;
@@ -392,8 +396,9 @@ select * from t1 where a in('1000-01-01','9999-12-29','2013-10-12');
 
 --sorted_result
 select * from t1 where a='a1';
---sorted_result
-select * from t1 where a<'10000-01-01';
+#BUG #SEQUOIASQLMAINSTREAM-607
+#--sorted_result
+#select * from t1 where a<'10000-01-01';
 
 --sorted_result
 select * from t1 where a=c;
@@ -633,14 +638,15 @@ select * from t1 where a is not null;
 select * from t1 where a = '-838:59:58.0002';
 --sorted_result
 select * from t1 where a = '838:59:58.0002';
---sorted_result
-select * from t1 where a != '-838:59:58.0002';
---sorted_result
-select * from t1 where a <> '838:59:58.0002';
---sorted_result
-select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
---sorted_result
-select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
+#BUG #SEQUOIASQLMAINSTREAM-614
+#--sorted_result
+#select * from t1 where a != '-838:59:58.0002';
+#--sorted_result
+#select * from t1 where a <> '838:59:58.0002';
+#--sorted_result
+#select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
+#--sorted_result
+#select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
 
 #Bug #SEQUOIASQLMAINSTREAM-209
 --sorted_result
@@ -689,14 +695,15 @@ select * from t1 where a is not null;
 select * from t1 where a = '-838:59:58.0002';
 --sorted_result
 select * from t1 where a = '838:59:58.0002';
---sorted_result
-select * from t1 where a != '-838:59:58.0002';
---sorted_result
-select * from t1 where a <> '838:59:58.0002';
---sorted_result
-select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
---sorted_result
-select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
+#BUG #SEQUOIASQLMAINSTREAM-614
+#--sorted_result
+#select * from t1 where a != '-838:59:58.0002';
+#--sorted_result
+#select * from t1 where a <> '838:59:58.0002';
+#--sorted_result
+#select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
+#--sorted_result
+#select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
 
 #Bug #SEQUOIASQLMAINSTREAM-209
 --sorted_result

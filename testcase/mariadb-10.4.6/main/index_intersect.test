@@ -105,10 +105,11 @@ SELECT * FROM City USE INDEX ()
 SELECT * FROM City 
   WHERE Name LIKE 'M%' AND Population > 300000;
 
-
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE Name LIKE 'M%' AND Population > 7000000;
 
+--sorted_result
 SELECT * FROM City
   WHERE Name LIKE 'M%' AND Population > 7000000;
 
@@ -155,13 +156,15 @@ SELECT COUNT(*) FROM City WHERE Country LIKE 'J%';
 # the correct results when executed
 
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE Name BETWEEN 'M' AND 'N' AND Population > 1000000 AND Country LIKE 'C%';
 
+--sorted_result
 SELECT * FROM City
   WHERE Name BETWEEN 'M' AND 'N' AND Population > 1000000 AND Country LIKE 'C%';
 
-
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE Name BETWEEN 'G' AND 'J' AND Population > 1000000 AND Country LIKE 'J%';
 
@@ -169,7 +172,7 @@ SELECT * FROM City USE INDEX ()
 SELECT * FROM City 
   WHERE Name BETWEEN 'G' AND 'J' AND Population > 1000000 AND Country LIKE 'J%';
 
-
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE Name BETWEEN 'G' AND 'K' AND Population > 500000 AND Country LIKE 'C%';
 

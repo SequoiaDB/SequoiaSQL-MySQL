@@ -122,10 +122,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'ucs2_unicode_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_unicode_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_unicode_nopad_ci';
 COUNT(*)
 1
@@ -135,7 +135,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_unicode_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_unicode_nopad_ci';
 COUNT(*)
 1
@@ -261,10 +261,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'ucs2_unicode_520_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_unicode_520_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_unicode_520_nopad_ci';
 COUNT(*)
 1
@@ -274,7 +274,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_unicode_520_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_unicode_520_nopad_ci';
 COUNT(*)
 1

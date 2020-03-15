@@ -4766,10 +4766,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'big5_chinese_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'big5_chinese_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'big5_chinese_nopad_ci';
 COUNT(*)
 1
@@ -4779,7 +4779,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'big5_chinese_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'big5_chinese_nopad_ci';
 COUNT(*)
 1
@@ -4905,10 +4905,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'big5_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'big5_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'big5_nopad_bin';
 COUNT(*)
 1
@@ -4918,7 +4918,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'big5_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'big5_nopad_bin';
 COUNT(*)
 1

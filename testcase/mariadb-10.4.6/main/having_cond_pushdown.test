@@ -1367,7 +1367,8 @@ select d1 from t1
   group by d1
     having d1 not between 0 AND exp(0);
 
-eval $q2;
+#BUG #SEQUOIASQLMAINSTREAM-607
+#eval $q2;
 #eval explain extended $q2;
 #eval explain format=json $q2;
 

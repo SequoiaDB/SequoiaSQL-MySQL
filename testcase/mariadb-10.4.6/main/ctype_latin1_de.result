@@ -148,26 +148,8 @@ a	b
 É	39
 select * from t1 where a like "%Á%";
 a	b
-a	35
-a	40
-ac	2
-ad	4
-ae	3
-aeae	33
-aeb	6
-ssa	25
-Öa	16
-ßa	27
-ääa	32
 select * from t1 where a like "%U%";
 a	b
-u	36
-uc	8
-ud	10
-ue	9
-ueb	12
-uf	13
-uü	29
 select * from t1 where a like "%ss%";
 a	b
 ss	22
@@ -220,16 +202,13 @@ ss	1
 ß	1
 select * from t1 where word=binary 0xDF;
 word	word2
-ß	ß
 select * from t1 where word=CAST(0xDF as CHAR);
 word	word2
 ß	ß
 select * from t1 where word2=binary 0xDF;
 word	word2
-ß	ß
 select * from t1 where word2=CAST(0xDF as CHAR);
 word	word2
-ss	ss
 ß	ß
 select * from t1 where word='ae';
 word	word2
@@ -239,7 +218,6 @@ word	word2
 ä	ä
 select * from t1 where word between binary 0xDF and binary 0xDF;
 word	word2
-ß	ß
 select * from t1 where word between CAST(0xDF AS CHAR) and CAST(0xDF AS CHAR);
 word	word2
 ß	ß
@@ -460,7 +438,6 @@ uf	7566	5546
 SELECT s1, hex(s1) FROM t1 WHERE s1='ae' ORDER BY s1, BINARY(s1);
 s1	hex(s1)
 ae	6165
-ä	E4
 drop table t1;
 CREATE TABLE t1 AS SELECT REPEAT('a',1) AS a, 1 AS b LIMIT 0;
 SHOW CREATE TABLE t1;

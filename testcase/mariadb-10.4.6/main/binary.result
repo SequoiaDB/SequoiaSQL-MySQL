@@ -33,8 +33,6 @@ min(name)	min(concat("*",name,"*"))	max(name)	max(concat("*",name,"*"))
 ä	*ä*	ö	*ö*
 select name from t1 where name between 'Ä' and 'Ö';
 name
-ä
-ö
 select name from t2 where name between 'ä' and 'ö';
 name
 ä
@@ -68,12 +66,6 @@ select concat("-",a,"-",b,"-") from t1;
 concat("-",a,"-",b,"-")
 -hello-hello-
 -hello2-hello2-
-select concat("-",a,"-",b,"-") from t1 where b="hello ";
-concat("-",a,"-",b,"-")
--hello-hello-
-select concat("-",a,"-",b,"-") from t1 ignore index (b) where b="hello ";
-concat("-",a,"-",b,"-")
--hello-hello-
 drop table t1;
 create table t1 (b char(8));
 insert into t1 values(NULL);

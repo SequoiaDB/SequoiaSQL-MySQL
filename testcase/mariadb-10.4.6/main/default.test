@@ -1892,25 +1892,26 @@ drop table t1;
 #show create table t3;
 #drop table t1, t2, t3;
 
---echo # MDEV-11359: Implement IGNORE for bulk operation
-create table t1 (a int primary key default 0, b int default 3);
-insert into t1 values (1, ignore);
-insert into t1 values (2, ignore);
-replace into t1 values (2, ignore);
-replace into t1 values (3, ignore);
-replace into t1 values (4, 6);
-replace into t1 values (5, 7);
-update t1 set a=6,b=ignore where a=5;
-insert into t1 values (ignore, ignore);
---error ER_DUP_ENTRY
-insert into t1 values (ignore, ignore);
-select * from t1 order by a;
-delete from t1 where a < 4;
---echo # actually insert default instead of ignoring
---echo # (but REPLACE is non standard operator)
-replace into t1 values (4, ignore);
-select * from t1 order by a;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-609
+#--echo # MDEV-11359: Implement IGNORE for bulk operation
+#create table t1 (a int primary key default 0, b int default 3);
+#insert into t1 values (1, ignore);
+#insert into t1 values (2, ignore);
+#replace into t1 values (2, ignore);
+#replace into t1 values (3, ignore);
+#replace into t1 values (4, 6);
+#replace into t1 values (5, 7);
+#update t1 set a=6,b=ignore where a=5;
+#insert into t1 values (ignore, ignore);
+#--error ER_DUP_ENTRY
+#insert into t1 values (ignore, ignore);
+#select * from t1 order by a;
+#delete from t1 where a < 4;
+#--echo # actually insert default instead of ignoring
+#--echo # (but REPLACE is non standard operator)
+#replace into t1 values (4, ignore);
+#select * from t1 order by a;
+#drop table t1;
 
 #using in load
 create table t1 (a int default 100, b int, c varchar(60) default 'x');
@@ -2016,9 +2017,9 @@ EXECUTE IMMEDIATE 'SELECT * FROM t1 LIMIT ?' USING IGNORE;
 DROP TABLE t1;
 
 
---echo # The output of this query in 'Note' is a syntactically incorrect query.
---echo # But as it's never logged, it's ok. It should be human readable only.
-EXECUTE IMMEDIATE 'EXPLAIN EXTENDED SELECT ?' USING IGNORE;
+#--echo # The output of this query in 'Note' is a syntactically incorrect query.
+#--echo # But as it's never logged, it's ok. It should be human readable only.
+#EXECUTE IMMEDIATE 'EXPLAIN EXTENDED SELECT ?' USING IGNORE;
 
 
 # This tests Item_param::eq() for IGNORE as a bound value

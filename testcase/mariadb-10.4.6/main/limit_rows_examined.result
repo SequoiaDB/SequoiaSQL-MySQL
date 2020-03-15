@@ -369,10 +369,6 @@ select max(c2) from t3 LIMIT ROWS EXAMINED 0;
 max(c2)
 Warnings:
 Warning	1931	Query execution was interrupted. The query examined at least 1 rows, which exceeds LIMIT ROWS EXAMINED (0). The query result may be incomplete
-select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 5;
-max(c2)
-Warnings:
-Warning	1931	Query execution was interrupted. The query examined at least 6 rows, which exceeds LIMIT ROWS EXAMINED (5). The query result may be incomplete
 select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 6;
 max(c2)
 NULL
@@ -390,10 +386,6 @@ select count(c2) from t3 LIMIT ROWS EXAMINED 0;
 count(c2)
 Warnings:
 Warning	1931	Query execution was interrupted. The query examined at least 1 rows, which exceeds LIMIT ROWS EXAMINED (0). The query result may be incomplete
-select count(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 5;
-count(c2)
-Warnings:
-Warning	1931	Query execution was interrupted. The query examined at least 6 rows, which exceeds LIMIT ROWS EXAMINED (5). The query result may be incomplete
 select count(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 6;
 count(c2)
 0
@@ -590,15 +582,5 @@ INSERT INTO t2 VALUES (2),(17),(3),(6);
 CREATE VIEW v AS
 SELECT DISTINCT * FROM t1 WHERE a > (SELECT COUNT(*) FROM t1, t2 WHERE a = b);
 PREPARE ps FROM 'SELECT * FROM v LIMIT ROWS EXAMINED 21';
-EXECUTE ps;
-a
-3
-Warnings:
-Warning	1931	Query execution was interrupted. The query examined at least 22 rows, which exceeds LIMIT ROWS EXAMINED (21). The query result may be incomplete
-EXECUTE ps;
-a
-3
-Warnings:
-Warning	1931	Query execution was interrupted. The query examined at least 22 rows, which exceeds LIMIT ROWS EXAMINED (21). The query result may be incomplete
 drop view v;
 drop table t1, t2;

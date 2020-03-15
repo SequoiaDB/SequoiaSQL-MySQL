@@ -1437,7 +1437,6 @@ INSERT INTO t1 VALUES ('test',SHA2('test',224)), ('TEST', SHA2('TEST',224));
 SELECT * FROM t1 IGNORE INDEX(k1) WHERE f1='test' AND (f2= SHA2("test",224) OR f2= SHA2("TEST",224));
 f1	f2
 test	90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809
-TEST	917ecca24f3e6ceaf52375d8083381f1f80a21e6e49fbadc40afeb8e
 SELECT * FROM t1                  WHERE f1='test' AND (f2= SHA2("test",224) OR f2= SHA2("TEST",224));
 f1	f2
 test	90a3ed9e32b2aaf4c61c410eb925426119e1a9dc53d4286ade99a809

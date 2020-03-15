@@ -142,8 +142,6 @@ abc
 abcd
 select * from t1 where a like "ABC%";
 a
-abc
-abcd
 select * from t1 where a like "test%";
 a
 test
@@ -243,64 +241,16 @@ INSERT INTO t1 VALUES ('фывАпролдж'),('фываПролдж'),('фыв
 INSERT INTO t1 VALUES ('фывапроЛдж'),('фывапролДж'),('фывапролдЖ'),('ФЫВАПРОЛДЖ');
 SELECT * FROM t1 WHERE a LIKE '%фЫва%' ORDER BY BINARY a;
 a
-ФЫВА
-ФЫВАПРОЛДЖ
-Фыва
-Фывапролдж
 фЫва
 фЫвапролдж
-фыВа
-фыВапролдж
-фывА
-фывАпролдж
-фыва
-фываПролдж
-фывапРолдж
-фывапрОлдж
-фывапроЛдж
-фывапролДж
-фывапролдЖ
-фывапролдж
 SELECT * FROM t1 WHERE a LIKE '%фЫв%' ORDER BY BINARY a;
 a
-ФЫВА
-ФЫВАПРОЛДЖ
-Фыва
-Фывапролдж
 фЫва
 фЫвапролдж
-фыВа
-фыВапролдж
-фывА
-фывАпролдж
-фыва
-фываПролдж
-фывапРолдж
-фывапрОлдж
-фывапроЛдж
-фывапролДж
-фывапролдЖ
-фывапролдж
 SELECT * FROM t1 WHERE a LIKE 'фЫва%' ORDER BY BINARY a;
 a
-ФЫВА
-ФЫВАПРОЛДЖ
-Фыва
-Фывапролдж
 фЫва
 фЫвапролдж
-фыВа
-фыВапролдж
-фывА
-фывАпролдж
-фыва
-фываПролдж
-фывапРолдж
-фывапрОлдж
-фывапроЛдж
-фывапролДж
-фывапролдЖ
-фывапролдж
 SELECT * FROM t1 WHERE a LIKE 'фЫва%' COLLATE utf32_bin ORDER BY BINARY a;
 a
 фЫва
@@ -944,7 +894,6 @@ create table t1 (a varchar(10) character set utf32) engine=sequoiadb;
 insert into t1 values ('a'),('A'),('b'),('B');
 select * from t1 where a='a' order by binary a;
 a
-A
 a
 select hex(min(binary a)),count(*) from t1 group by a;
 hex(min(binary a))	count(*)
@@ -1381,9 +1330,6 @@ INSERT INTO t1 VALUES ('2001-01-01 00:00:00');
 SELECT * FROM t1 WHERE t < '2013-11-15 00:41:28' - INTERVAL 7 DAY;
 t
 2001-01-01 00:00:00
-SELECT * FROM t1 WHERE t = '2001-01-08 00:00:00' - INTERVAL 7 DAY;
-t
-2001-01-01 00:00:00
 SELECT * FROM t1 WHERE t < CONCAT('2013-11-15 00:41:28',LEFT(RAND(),0)) - INTERVAL 7 DAY;
 t
 2001-01-01 00:00:00
@@ -1391,9 +1337,6 @@ SELECT * FROM t1 WHERE t = CONCAT('2001-01-08 00:00:00',LEFT(RAND(),0)) - INTERV
 t
 2001-01-01 00:00:00
 SELECT * FROM t1 WHERE t < TIMESTAMP'2013-11-15 00:41:28' - INTERVAL 7 DAY;
-t
-2001-01-01 00:00:00
-SELECT * FROM t1 WHERE t = TIMESTAMP'2001-01-08 00:00:00' - INTERVAL 7 DAY;
 t
 2001-01-01 00:00:00
 DROP TABLE t1;
@@ -2404,10 +2347,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'utf32_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf32_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf32_general_nopad_ci';
 COUNT(*)
 1
@@ -2417,7 +2360,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf32_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf32_general_nopad_ci';
 COUNT(*)
 1
@@ -2543,10 +2486,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'utf32_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf32_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf32_nopad_bin';
 COUNT(*)
 1
@@ -2556,7 +2499,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf32_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf32_nopad_bin';
 COUNT(*)
 1

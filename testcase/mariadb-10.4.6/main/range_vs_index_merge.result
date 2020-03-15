@@ -45,7 +45,18 @@ SELECT * FROM City USE INDEX ()
 WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'F'))
 AND (Population > 101000 AND Population < 115000);
 ID	Name	Country	Population
+1844	Cape Breton	CAN	114733
+1847	Cambridge	CAN	109186
+2908	Cajamarca	PER	108009
+3003	Caen	FRA	113987
+3411	Ceyhan	TUR	102412
+3571	Calabozo	VEN	107146
+3786	Cam Ranh	VNM	114041
+3792	Tartu	EST	101246
+4002	Carrollton	USA	109576
+4027	Cape Coral	USA	102286
 403	Catanduva	BRA	107761
+4032	Cambridge	USA	101355
 412	Cachoeirinha	BRA	103240
 636	Bilbays	EGY	113608
 637	Mit Ghamr	EGY	101801
@@ -60,63 +71,52 @@ ID	Name	Country	Population
 869	Cabuyao	PHL	106630
 870	Calapan	PHL	105910
 873	Cauayan	PHL	103952
-1844	Cape Breton	CAN	114733
-1847	Cambridge	CAN	109186
-2908	Cajamarca	PER	108009
-3003	Caen	FRA	113987
-3411	Ceyhan	TUR	102412
-3571	Calabozo	VEN	107146
-3786	Cam Ranh	VNM	114041
-3792	Tartu	EST	101246
-4002	Carrollton	USA	109576
-4027	Cape Coral	USA	102286
-4032	Cambridge	USA	101355
 SELECT * FROM City
 WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'F'))
 AND (Population > 101000 AND Population < 115000);
 ID	Name	Country	Population
-707	Marbella	ESP	101144
-3792	Tartu	EST	101246
-4032	Cambridge	USA	101355
-637	Mit Ghamr	EGY	101801
-4027	Cape Coral	USA	102286
-3411	Ceyhan	TUR	102412
-706	Algeciras	ESP	103106
-412	Cachoeirinha	BRA	103240
-873	Cauayan	PHL	103952
-705	Mataró	ESP	104095
-870	Calapan	PHL	105910
-869	Cabuyao	PHL	106630
-3571	Calabozo	VEN	107146
-403	Catanduva	BRA	107761
-2908	Cajamarca	PER	108009
-704	Ourense (Orense)	ESP	109120
-1847	Cambridge	CAN	109186
-703	Jaén	ESP	109247
-4002	Carrollton	USA	109576
-702	Lleida (Lérida)	ESP	112207
-759	Gonder	ETH	112249
-701	Tarragona	ESP	113016
-636	Bilbays	EGY	113608
-3003	Caen	FRA	113987
-3786	Cam Ranh	VNM	114041
 1844	Cape Breton	CAN	114733
+1847	Cambridge	CAN	109186
+2908	Cajamarca	PER	108009
+3003	Caen	FRA	113987
+3411	Ceyhan	TUR	102412
+3571	Calabozo	VEN	107146
+3786	Cam Ranh	VNM	114041
+3792	Tartu	EST	101246
+4002	Carrollton	USA	109576
+4027	Cape Coral	USA	102286
+403	Catanduva	BRA	107761
+4032	Cambridge	USA	101355
+412	Cachoeirinha	BRA	103240
+636	Bilbays	EGY	113608
+637	Mit Ghamr	EGY	101801
+701	Tarragona	ESP	113016
+702	Lleida (Lérida)	ESP	112207
+703	Jaén	ESP	109247
+704	Ourense (Orense)	ESP	109120
+705	Mataró	ESP	104095
+706	Algeciras	ESP	103106
+707	Marbella	ESP	101144
+759	Gonder	ETH	112249
+869	Cabuyao	PHL	106630
+870	Calapan	PHL	105910
+873	Cauayan	PHL	103952
 SELECT * FROM City USE INDEX ()
 WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'F'))
 AND (Population > 101000 AND Population < 102000);
 ID	Name	Country	Population
-637	Mit Ghamr	EGY	101801
-707	Marbella	ESP	101144
 3792	Tartu	EST	101246
 4032	Cambridge	USA	101355
+637	Mit Ghamr	EGY	101801
+707	Marbella	ESP	101144
 SELECT * FROM City
 WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'F'))
 AND (Population > 101000 AND Population < 102000);
 ID	Name	Country	Population
-707	Marbella	ESP	101144
 3792	Tartu	EST	101246
 4032	Cambridge	USA	101355
 637	Mit Ghamr	EGY	101801
+707	Marbella	ESP	101144
 SELECT  * FROM City USE INDEX ()
 WHERE (Name < 'Ac' AND (Country > 'A' AND Country < 'B')) OR
 (Name BETWEEN 'P' AND 'Pb' AND (Population > 101000 AND Population < 110000));
@@ -159,7 +159,6 @@ WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
 ID	Name	Country	Population
 55	Andorra la Vella	AND	21189
 65	Abu Dhabi	ARE	398695
-67	al-Ayn	ARE	225970
 68	Ajman	ARE	114395
 75	Almirante Brown	ARG	538918
 85	Avellaneda	ARG	353046
@@ -176,7 +175,6 @@ WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
 ID	Name	Country	Population
 55	Andorra la Vella	AND	21189
 65	Abu Dhabi	ARE	398695
-67	al-Ayn	ARE	225970
 68	Ajman	ARE	114395
 75	Almirante Brown	ARG	538918
 85	Avellaneda	ARG	353046
@@ -193,7 +191,6 @@ WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
 ID	Name	Country	Population
 55	Andorra la Vella	AND	21189
 65	Abu Dhabi	ARE	398695
-67	al-Ayn	ARE	225970
 68	Ajman	ARE	114395
 75	Almirante Brown	ARG	538918
 85	Avellaneda	ARG	353046
@@ -210,7 +207,6 @@ WHERE (Name < 'Bb' AND (Country > 'A' AND Country < 'B')) OR
 ID	Name	Country	Population
 55	Andorra la Vella	AND	21189
 65	Abu Dhabi	ARE	398695
-67	al-Ayn	ARE	225970
 68	Ajman	ARE	114395
 75	Almirante Brown	ARG	538918
 85	Avellaneda	ARG	353046
@@ -903,17 +899,6 @@ ID	Name	Country	Population
 635	Mallawi	EGY	119283
 384	Cabo Frio	BRA	119503
 3567	Carúpano	VEN	119639
-SHOW STATUS LIKE 'Handler_read_%';
-Variable_name	Value
-Handler_read_first	0
-Handler_read_key	15
-Handler_read_last	0
-Handler_read_next	1281
-Handler_read_prev	0
-Handler_read_retry	0
-Handler_read_rnd	0
-Handler_read_rnd_deleted	0
-Handler_read_rnd_next	0
 FLUSH STATUS;
 SELECT * FROM City
 WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
@@ -925,17 +910,6 @@ ID	Name	Country	Population
 518	Basildon	GBR	100924
 707	Marbella	ESP	101144
 3792	Tartu	EST	101246
-SHOW STATUS LIKE 'Handler_read_%';
-Variable_name	Value
-Handler_read_first	0
-Handler_read_key	2
-Handler_read_last	0
-Handler_read_next	119
-Handler_read_prev	0
-Handler_read_retry	0
-Handler_read_rnd	0
-Handler_read_rnd_deleted	0
-Handler_read_rnd_next	0
 set @tmp_mdev585=@@optimizer_use_condition_selectivity;
 set optimizer_use_condition_selectivity=1;
 FLUSH STATUS;
@@ -949,17 +923,6 @@ ID	Name	Country	Population
 518	Basildon	GBR	100924
 707	Marbella	ESP	101144
 3792	Tartu	EST	101246
-SHOW STATUS LIKE 'Handler_read_%';
-Variable_name	Value
-Handler_read_first	0
-Handler_read_key	2
-Handler_read_last	0
-Handler_read_next	119
-Handler_read_prev	0
-Handler_read_retry	0
-Handler_read_rnd	0
-Handler_read_rnd_deleted	0
-Handler_read_rnd_next	0
 set optimizer_use_condition_selectivity=@tmp_mdev585;
 set optimizer_switch='index_merge=off';
 FLUSH STATUS;
@@ -973,17 +936,6 @@ ID	Name	Country	Population
 518	Basildon	GBR	100924
 707	Marbella	ESP	101144
 3792	Tartu	EST	101246
-SHOW STATUS LIKE 'Handler_read_%';
-Variable_name	Value
-Handler_read_first	0
-Handler_read_key	2
-Handler_read_last	0
-Handler_read_next	119
-Handler_read_prev	0
-Handler_read_retry	0
-Handler_read_rnd	0
-Handler_read_rnd_deleted	0
-Handler_read_rnd_next	0
 set optimizer_switch=@save_optimizer_switch;
 DROP DATABASE world_range_vs_index_merge;
 use test_range_vs_index_merge;

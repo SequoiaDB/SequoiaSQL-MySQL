@@ -79,7 +79,7 @@ UPDATE t1 SET i=1 WHERE i=1;
 connection default;
 SET AUTOCOMMIT= 0;
 UPDATE t1 SET i=1 WHERE i=1;
-ERROR HY000: Timeout error
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 SELECT f1() AS 'f1():';
 f1():
 No such table
@@ -88,7 +88,7 @@ No such table
 # handler indirectly. This case fails without the patch
 # (with error ER_NO_SUCH_TABLE):
 UPDATE t1 SET i= 1 WHERE i= 1;
-ERROR HY000: Timeout error
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 SELECT f2() AS 'f2():';
 f2():
 No such table
@@ -99,7 +99,7 @@ No such table
 # in restore_sub_stmt after the failing function has been
 # executed. The test case is included anyway for better coverage:
 SELECT f3() AS 'f3():';
-ERROR HY000: Timeout error
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 SELECT f1() AS 'f1():';
 f1():
 No such table
@@ -110,7 +110,7 @@ No such table
 # the failing function has been executed. The test case is
 # included anyway for better coverage:
 SELECT f4() AS 'f4():';
-ERROR HY000: Timeout error
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 SELECT f1() AS 'f1():';
 f1():
 No such table

@@ -3689,9 +3689,6 @@ uf	00750066	101F0EB9
 SELECT s1, hex(s1) FROM t1 WHERE s1='ae' ORDER BY s1, BINARY(s1);
 s1	hex(s1)
 ae	00610065
-Æ	00C6
-ä	00E4
-æ	00E6
 drop table t1;
 CREATE TABLE t1 AS SELECT REPEAT('a',1) AS a, 1 AS b LIMIT 0;
 SHOW CREATE TABLE t1;
@@ -3993,10 +3990,8 @@ hex(c)	hex(weight_string(c))
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10400 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
 D801DC00	30D2	𐐀
-D801DC28	30D2	𐐨
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10428 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
-D801DC00	30D2	𐐀
 D801DC28	30D2	𐐨
 ALTER TABLE t1 ADD KEY(c);
 SELECT hex(c), hex(weight_string(c)) FROM t1 WHERE c LIKE 'a%' ORDER BY c;
@@ -7414,10 +7409,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'utf16_unicode_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf16_unicode_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf16_unicode_nopad_ci';
 COUNT(*)
 1
@@ -7427,7 +7422,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf16_unicode_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf16_unicode_nopad_ci';
 COUNT(*)
 1
@@ -7553,10 +7548,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'utf16_unicode_520_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf16_unicode_520_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf16_unicode_520_nopad_ci';
 COUNT(*)
 1
@@ -7566,7 +7561,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf16_unicode_520_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'utf16_unicode_520_nopad_ci';
 COUNT(*)
 1

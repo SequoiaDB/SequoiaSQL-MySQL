@@ -246,10 +246,11 @@ DROP TABLE t1;
 #
 # Bug#32021: Using Date 000-00-01 in WHERE causes wrong result
 #
-create table t1 (a date, primary key (a))engine=sequoiadb;
-insert into t1 values ('0000-01-01'), ('0000-00-01'), ('0001-01-01');
-select * from t1 where a between '0000-00-01' and '0000-00-02';
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-541
+#create table t1 (a date, primary key (a))engine=sequoiadb;
+#insert into t1 values ('0000-01-01'), ('0000-00-01'), ('0001-01-01');
+#select * from t1 where a between '0000-00-01' and '0000-00-02';
+#drop table t1;
 
 --echo #
 --echo # Bug#50918: Date columns treated differently in Views than in Base

@@ -33,8 +33,6 @@ aa
 aaa
 select if(u=1,st,binary st) s from t1 where st like "%a%" order by s;
 s
-A
-AA
 a
 a
 aa

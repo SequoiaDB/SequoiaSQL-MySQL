@@ -993,42 +993,6 @@ COUNT(*)
 2
 Warnings:
 Warning	1292	Truncated incorrect DECIMAL value: '1e+x'
-SELECT COUNT(*) FROM t1 WHERE f4='1e1000';
-COUNT(*)
-0
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '1e1000'
-SELECT COUNT(*) FROM t1 WHERE f8='1e1000';
-COUNT(*)
-0
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '1e1000'
-SELECT COUNT(*) FROM t1 WHERE i1='1e1000';
-COUNT(*)
-0
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '1e1000'
-SELECT COUNT(*) FROM t1 WHERE i2='1e1000';
-COUNT(*)
-0
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '1e1000'
-SELECT COUNT(*) FROM t1 WHERE i4='1e1000';
-COUNT(*)
-0
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '1e1000'
-SELECT COUNT(*) FROM t1 WHERE i8='1e1000';
-COUNT(*)
-0
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '1e1000'
-SELECT COUNT(*) FROM t1 WHERE d='1e1000';
-COUNT(*)
-0
-Warnings:
-Warning	1916	Got overflow when converting '' to DECIMAL. Value truncated
-Warning	1292	Truncated incorrect DECIMAL value: '1e1000'
 ALTER TABLE t1
 ADD KEY f4(f4),
 ADD KEY f8(f8),

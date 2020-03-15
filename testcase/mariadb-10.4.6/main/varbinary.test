@@ -38,16 +38,15 @@ INSERT INTO t1 VALUES (X'312E39'),(0x312E39);
 SELECT * FROM t1;
 DROP TABLE t1;
 
+##
+## Test of hex constants in WHERE:
+##
 #
-# Test of hex constants in WHERE:
-#
-
-create table t1 (ID int(8) unsigned zerofill not null auto_increment,UNIQ bigint(21) unsigned zerofill not null,primary key (ID),unique (UNIQ) );
-insert into t1 set UNIQ=0x38afba1d73e6a18a;
-insert into t1 set UNIQ=123;
---replace_regex /test_parallel_[0-9]/X/ 
-explain extended select * from t1 where UNIQ=0x38afba1d73e6a18a;
-drop table t1;
+#create table t1 (ID int(8) unsigned zerofill not null auto_increment,UNIQ bigint(21) unsigned zerofill not null,primary key (ID),unique (UNIQ) );
+#insert into t1 set UNIQ=0x38afba1d73e6a18a;
+#insert into t1 set UNIQ=123;
+#explain extended select * from t1 where UNIQ=0x38afba1d73e6a18a;
+#drop table t1;
 
 #
 # Test error conditions

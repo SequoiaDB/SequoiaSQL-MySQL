@@ -10,6 +10,8 @@ let $MYSQLD_DATADIR= `select @@datadir`;
 #copy_file $MYSQL_TEST_DIR/std_data/vchar.frm $MYSQLD_DATADIR/test/vchar.frm;
 copy_file $MYSQL_TEST_DIR/std_data/vchar.frm $MYSQLD_DATADIR/test_type_varchar/vchar.frm;
 truncate table vchar;
+# should transfer engine myisam to sequoiadb
+alter table vchar engine sequoiadb;
 show create table t1;
 show create table vchar;
 insert into t1 values ('abc', 'de', 'ghi', 'jkl');

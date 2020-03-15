@@ -1112,7 +1112,6 @@ CREATE TABLE t1 (code varchar(10));
 INSERT INTO t1 VALUES ('a12'), ('A12'), ('a13');
 SELECT ASCII(code), code FROM t1 WHERE code='A12';
 ASCII(code)	code
-97	a12
 65	A12
 SELECT ASCII(code), code FROM t1 WHERE code='A12' AND ASCII(code)=65;
 ASCII(code)	code
@@ -1120,10 +1119,7 @@ ASCII(code)	code
 INSERT INTO t1 VALUES ('a12 '), ('A12  ');
 SELECT LENGTH(code), code FROM t1 WHERE code='A12';
 LENGTH(code)	code
-3	a12
 3	A12
-4	a12 
-5	A12  
 SELECT LENGTH(code), code FROM t1 WHERE code='A12' AND LENGTH(code)=5;
 LENGTH(code)	code
 5	A12  
@@ -4575,7 +4571,6 @@ INSERT INTO t1 VALUES ('test',hex('test')), ('TEST', hex('TEST'));
 SELECT * FROM t1 IGNORE INDEX(k1) WHERE f1='test' AND (f2= hex("test") OR f2= hex("TEST"));
 f1	f2
 test	74657374
-TEST	54455354
 SELECT * FROM t1                  WHERE f1='test' AND (f2= hex("test") OR f2= hex("TEST"));
 f1	f2
 test	74657374
@@ -4601,7 +4596,6 @@ INSERT INTO t1 VALUES ('test',to_base64('test')), ('TEST', to_base64('TEST'));
 SELECT * FROM t1 IGNORE INDEX(k1) WHERE f1='test' AND (f2= to_base64("test") OR f2= to_base64("TEST"));
 f1	f2
 test	dGVzdA==
-TEST	VEVTVA==
 SELECT * FROM t1                  WHERE f1='test' AND (f2= to_base64("test") OR f2= to_base64("TEST"));
 f1	f2
 test	dGVzdA==
@@ -4626,7 +4620,6 @@ INSERT INTO t1 VALUES ('YQ==',from_base64('YQ==')), ('Yq==', from_base64('Yq==')
 SELECT f1,HEX(f2) FROM t1 ignore index(k1) WHERE f1='YQ==' AND (f2= from_base64("YQ==") OR f2= from_base64("Yq=="));
 f1	HEX(f2)
 YQ==	61
-Yq==	62
 SELECT f1,HEX(f2) FROM t1                  WHERE f1='YQ==' AND (f2= from_base64("YQ==") OR f2= from_base64("Yq=="));
 f1	HEX(f2)
 YQ==	61

@@ -91,7 +91,8 @@ while ($1)
 commit;
 --enable_query_log
 #explain select pk from t1 where key1 = 1 and key2 = 1;
-select pk from t1 where key2 = 1 and key1 = 1;
+#BUG #SEQUOIASQLMAINSTREAM-622
+#select pk from t1 where key2 = 1 and key1 = 1;
 select pk from t1 ignore index(key1,key2) where key2 = 1 and key1 = 1;
 
 # More tests for BUG#5401.

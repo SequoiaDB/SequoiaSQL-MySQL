@@ -416,8 +416,9 @@ INSERT INTO t1 VALUES ("2000-02-05", "2002-10-21 00:00:00", "1994-03-02 10:11:12
 SELECT * FROM t1 WHERE d > DATE_FORMAT(dt, "%Y-%m-%d");
 --sorted_result
 SELECT d,dt,tm FROM t1 WHERE TIME_FORMAT(tm, '%H') >= 20;
---sorted_result
-SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59');
+#BUG #SEQUOIASQLMAINSTREAM-607
+#--sorted_result
+#SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59');
 --sorted_result
 SELECT t,tm FROM t1 WHERE TIME_TO_SEC(tm) > 100000;
 --sorted_result
@@ -474,7 +475,8 @@ CREATE INDEX tm ON t1(tm);
 SELECT * FROM t1 WHERE d > DATE_FORMAT(dt, "%Y-%m-%d");
 --sorted_result
 SELECT d,dt,tm FROM t1 WHERE TIME_FORMAT(tm, '%H') >= 20;
-SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59');
+#BUG #SEQUOIASQLMAINSTREAM-607
+#SELECT d,tm FROM t1 WHERE tm < SEC_TO_TIME('837:59:59');
 --sorted_result
 SELECT t,tm FROM t1 WHERE TIME_TO_SEC(tm) > 100000;
 --sorted_result

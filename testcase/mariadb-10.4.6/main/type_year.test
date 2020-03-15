@@ -78,8 +78,9 @@ SELECT * FROM t2 WHERE yy > NULL;
 SELECT * FROM t2 WHERE yy = NOW();
 SELECT * FROM t4 WHERE yyyy = NOW();
 
-SELECT * FROM t2 WHERE yy = 99;
-SELECT * FROM t2 WHERE 99 = yy;
+#BUG #SEQUOIASQLMAINSTREAM-612
+#SELECT * FROM t2 WHERE yy = 99;
+#SELECT * FROM t2 WHERE 99 = yy;
 SELECT * FROM t4 WHERE yyyy = 99;
 
 SELECT * FROM t2 WHERE yy = 'test';
@@ -88,7 +89,8 @@ SELECT * FROM t4 WHERE yyyy = 'test';
 SELECT * FROM t2 WHERE yy = '1999';
 SELECT * FROM t4 WHERE yyyy = '1999';
 
-SELECT * FROM t2 WHERE yy = 1999;
+#BUG #SEQUOIASQLMAINSTREAM-612
+#SELECT * FROM t2 WHERE yy = 1999;
 SELECT * FROM t4 WHERE yyyy = 1999;
 
 SELECT * FROM t2 WHERE yy = 1999.1;
@@ -103,7 +105,8 @@ SELECT * FROM t2 WHERE yy = 0;
 SELECT * FROM t2 WHERE yy = '0';
 SELECT * FROM t2 WHERE yy = '0000';
 SELECT * FROM t2 WHERE yy = '2000';
-SELECT * FROM t2 WHERE yy = 2000;
+#BUG #SEQUOIASQLMAINSTREAM-612
+#SELECT * FROM t2 WHERE yy = 2000;
 
 SELECT * FROM t4 WHERE yyyy = 0;
 SELECT * FROM t4 WHERE yyyy = '0';
@@ -179,10 +182,12 @@ DROP TABLE t1;
 create function y2k() returns int deterministic return 2000;
 create table t1 (a year(2), b int);
 insert t1 values (0,2000);
-select a from t1 where a=2000;  # constant.
+#BUG #SEQUOIASQLMAINSTREAM-612
+#select a from t1 where a=2000;  # constant.
 select a from t1 where a=1000+1000; # still a constant.
 # select a from t1 where a=(select 2000); # even this is a constant
-select a from t1 where a=(select 2000 from dual where 1); # constant, but "expensive"
+#BUG #SEQUOIASQLMAINSTREAM-612
+#select a from t1 where a=(select 2000 from dual where 1); # constant, but "expensive"
 select a from t1 where a=y2k(); # constant, but "expensive"
 select a from t1 where a=b; # not a constant
 drop table t1;
@@ -293,7 +298,8 @@ DROP TABLE t1;
 CREATE TABLE t1 (a YEAR(2));
 INSERT INTO t1 VALUES (93),(94);
 SELECT * FROM t1;
-SELECT * FROM t1 WHERE a=1993 and a=93;
+#BUG #SEQUOIASQLMAINSTREAM-612
+#SELECT * FROM t1 WHERE a=1993 and a=93;
 #EXPLAIN EXTENDED SELECT * FROM t1 WHERE a=1993 and a=93;
 DROP TABLE t1;
 

@@ -101,18 +101,22 @@ set session optimizer_switch='index_merge_sort_intersection=off';
 # The following 4 queries check that the plans
 # for the previous 2 plans are valid
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'F'))
         AND (Population > 101000 AND Population < 115000);
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'F'))
         AND (Population > 101000 AND Population < 115000);
 
+--sorted_result
 SELECT * FROM City USE INDEX ()
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'F'))
         AND (Population > 101000 AND Population < 102000);
 
+--sorted_result
 SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'F'))
         AND (Population > 101000 AND Population < 102000);
@@ -707,7 +711,7 @@ FLUSH STATUS;
 SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
         AND (Population >= 100000 AND Population < 120000);
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 
 
 #--replace_column 9 #
@@ -722,7 +726,7 @@ SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
         AND (Population >= 100000 AND Population < 120000)
 ORDER BY Population LIMIT 5;
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 
 set @tmp_mdev585=@@optimizer_use_condition_selectivity;
 set optimizer_use_condition_selectivity=1;
@@ -738,7 +742,7 @@ SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
         AND (Population >= 100000 AND Population < 120000)
 ORDER BY Population LIMIT 5;
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 
 set optimizer_use_condition_selectivity=@tmp_mdev585;
 
@@ -756,7 +760,7 @@ SELECT * FROM City
   WHERE ((Name > 'Ca' AND Name < 'Cf') OR (Country > 'E' AND Country < 'H'))
         AND (Population >= 100000 AND Population < 120000)
 ORDER BY Population LIMIT 5;
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 
 set optimizer_switch=@save_optimizer_switch;
           

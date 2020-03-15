@@ -159,7 +159,6 @@ INSERT INTO t1 VALUES ('test',compress('test')), ('TEST', compress('TEST'));
 SELECT f1,HEX(f2) FROM t1 ignore index(k1) WHERE f1='test' AND (f2= compress("test") OR f2= compress("TEST"));
 f1	HEX(f2)
 test	04000000789C2B492D2E0100045D01C1
-TEST	04000000789C0B710D0E0100031D0141
 SELECT f1,HEX(f2) FROM t1                  WHERE f1='test' AND (f2= compress("test") OR f2= compress("TEST"));
 f1	HEX(f2)
 test	04000000789C2B492D2E0100045D01C1

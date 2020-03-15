@@ -9,10 +9,6 @@ NULL	9
 select * from t1 where a is null and b = 7;
 a	b
 NULL	7
-select * from t1 where a<=>b limit 2;
-a	b
-1	1
-2	2
 select * from t1 where (a is null or a > 0 and a < 3) and b < 5 limit 3;
 a	b
 1	1
@@ -46,10 +42,6 @@ NULL	9	0
 select * from t1 where a is null and b = 7 and c=0;
 a	b	c
 NULL	7	0
-select * from t1 where a<=>b limit 2;
-a	b	c
-1	1	0
-2	2	0
 select * from t1 where (a is null or a > 0 and a < 3) and b < 5 limit 3;
 a	b	c
 1	1	0

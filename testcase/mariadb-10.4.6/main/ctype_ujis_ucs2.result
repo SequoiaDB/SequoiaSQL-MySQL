@@ -1333,7 +1333,6 @@ hex(ujis)	hex(ucs2)	hex(ujis2)	name
 Characters with unsafe Unicode round trip
 select hex(ujis), hex(ucs2), hex(ujis2), name from t1 where ujis<>ujis2 order by ujis;
 hex(ujis)	hex(ucs2)	hex(ujis2)	name
-00			U+0000 NULL
 drop table t1;
 drop table t2;
 create table t1 (

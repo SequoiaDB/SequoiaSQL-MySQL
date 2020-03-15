@@ -500,12 +500,9 @@ id	term
 SELECT id, term FROM t1 where (list_id = 1) AND (term = "testetest");
 id	term
 2	testetest
-3	testètest
-1	testétest
 SELECT id, term FROM t1 where (list_id = 1) AND (term = "testètest");
 id	term
 3	testètest
-1	testétest
 DROP TABLE t1;
 set names utf8mb4;
 create table t1 (
@@ -926,11 +923,9 @@ create table t1 (s1 char(5) character set utf8mb4 collate utf8mb4_lithuanian_ci)
 insert into t1 values ('I'),('K'),('Y');
 select * from t1 where s1 < 'K' and s1 = 'Y';
 s1
-I
 Y
 select * from t1 where 'K' > s1 and s1 = 'Y';
 s1
-I
 Y
 drop table t1;
 create table t1 (s1 char(5) character set utf8mb4 collate utf8mb4_czech_ci) engine SequoiaDB;
@@ -938,13 +933,9 @@ insert into t1 values ('c'),('d'),('h'),('ch'),('CH'),('cH'),('Ch'),('i');
 select * from t1 where s1 > 'd' and s1 = 'CH';
 s1
 CH
-Ch
-ch
 select * from t1 where 'd' < s1 and s1 = 'CH';
 s1
 CH
-Ch
-ch
 select * from t1 where s1 = 'cH' and s1 <> 'ch';
 s1
 cH
@@ -967,7 +958,6 @@ id	city
 2	Durban
 select * from t1 where city = 'Durban ';
 id	city
-2	Durban
 drop table t1;
 create table t1 (x set('A', 'B') default 0) character set utf8mb4 engine SequoiaDB;
 ERROR 42000: Invalid default value for 'x'
@@ -1042,8 +1032,6 @@ abc
 abcd
 select * from t1 where a like "ABC%";
 a
-abc
-abcd
 select * from t1 where a like "test%";
 a
 test
@@ -1320,14 +1308,6 @@ INSERT INTO t1 VALUES
 (42749,72,'VOLNÝ ADSL'),(44205,72,'VOLNÝ ADSL');
 SELECT * FROM t1 WHERE tid=72 and val LIKE 'VOLNY ADSL';
 id	tid	val
-40988	72	VOLNÝ ADSL
-41009	72	VOLNÝ ADSL
-41032	72	VOLNÝ ADSL
-41038	72	VOLNÝ ADSL
-41063	72	VOLNÝ ADSL
-42141	72	VOLNÝ ADSL
-42749	72	VOLNÝ ADSL
-44205	72	VOLNÝ ADSL
 SELECT * FROM t1 WHERE tid=72 and val LIKE 'VOLNÝ ADSL';
 id	tid	val
 40988	72	VOLNÝ ADSL

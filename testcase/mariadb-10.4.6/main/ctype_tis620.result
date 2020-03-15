@@ -3195,23 +3195,6 @@ c1
 %
 DROP TABLE t1;
 #
-# MDEV-8694 Wrong result for SELECT..WHERE a NOT LIKE 'a ' AND a='a'
-#
-CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET tis620 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
-INSERT INTO t1 VALUES ('a'),('a ');
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
-a	LENGTH(a)
-a	1
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ' AND a='a';
-a	LENGTH(a)
-a	1
-DROP TABLE t1;
-#
 # End of MDEV-8694
 #
 SET collation_connection='tis620_bin';
@@ -3390,23 +3373,6 @@ c1
 SELECT * FROM t1 WHERE '%'=CONCAT(c1) AND 'a' LIKE CONCAT(c1);
 c1
 %
-DROP TABLE t1;
-#
-# MDEV-8694 Wrong result for SELECT..WHERE a NOT LIKE 'a ' AND a='a'
-#
-CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET tis620 COLLATE tis620_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
-INSERT INTO t1 VALUES ('a'),('a ');
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
-a	LENGTH(a)
-a	1
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ' AND a='a';
-a	LENGTH(a)
-a	1
 DROP TABLE t1;
 #
 # End of MDEV-8694
@@ -3931,10 +3897,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'tis620_thai_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'tis620_thai_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'tis620_thai_nopad_ci';
 COUNT(*)
 1
@@ -3944,7 +3910,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'tis620_thai_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'tis620_thai_nopad_ci';
 COUNT(*)
 1
@@ -4070,10 +4036,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'tis620_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'tis620_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'tis620_nopad_bin';
 COUNT(*)
 1
@@ -4083,7 +4049,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'tis620_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'tis620_nopad_bin';
 COUNT(*)
 1

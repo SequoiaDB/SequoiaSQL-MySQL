@@ -126,11 +126,9 @@ select * from t1 where 'a' in (a,b,c);
 ERROR HY000: Illegal mix of collations for operation 'in'
 select * from t1 where 'a' in (a);
 a	b	c
-A	B	C
 a	c	c
 select * from t1 where a in ('a');
 a	b	c
-A	B	C
 a	c	c
 select * from t1 where 'a' collate latin1_general_ci in (a,b,c);
 a	b	c

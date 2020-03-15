@@ -185,12 +185,6 @@ SELECT * FROM t2 WHERE yy = NOW();
 yy	c2
 SELECT * FROM t4 WHERE yyyy = NOW();
 yyyy	c4
-SELECT * FROM t2 WHERE yy = 99;
-yy	c2
-99	1999
-SELECT * FROM t2 WHERE 99 = yy;
-yy	c2
-99	1999
 SELECT * FROM t4 WHERE yyyy = 99;
 yyyy	c4
 1999	1999
@@ -209,9 +203,6 @@ yy	c2
 SELECT * FROM t4 WHERE yyyy = '1999';
 yyyy	c4
 1999	1999
-SELECT * FROM t2 WHERE yy = 1999;
-yy	c2
-99	1999
 SELECT * FROM t4 WHERE yyyy = 1999;
 yyyy	c4
 1999	1999
@@ -238,9 +229,6 @@ SELECT * FROM t2 WHERE yy = '0000';
 yy	c2
 00	2000
 SELECT * FROM t2 WHERE yy = '2000';
-yy	c2
-00	2000
-SELECT * FROM t2 WHERE yy = 2000;
 yy	c2
 00	2000
 SELECT * FROM t4 WHERE yyyy = 0;
@@ -374,13 +362,7 @@ create table t1 (a year(2), b int);
 Warnings:
 Note	1287	'YEAR(2)' is deprecated and will be removed in a future release. Please use YEAR(4) instead
 insert t1 values (0,2000);
-select a from t1 where a=2000;
-a
-00
 select a from t1 where a=1000+1000;
-a
-00
-select a from t1 where a=(select 2000 from dual where 1);
 a
 00
 select a from t1 where a=y2k();
@@ -501,9 +483,6 @@ SELECT * FROM t1;
 a
 93
 94
-SELECT * FROM t1 WHERE a=1993 and a=93;
-a
-93
 DROP TABLE t1;
 #
 # MDEV-16926 CAST(COALESCE(year_field)) returns wrong value

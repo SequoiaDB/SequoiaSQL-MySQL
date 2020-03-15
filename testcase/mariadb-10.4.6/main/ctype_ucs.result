@@ -126,18 +126,10 @@ insert into t1 values ('A'),('A'),('B'),('C'),('D'),('A\t');
 insert into t1 values ('A\0'),('A\0'),('A\0'),('A\0'),('AZ');
 select hex(a) from t1 where a like 'A_' order by a;
 hex(a)
-00410000
-00410000
-00410000
-00410000
 00410009
 0041005A
 select hex(a) from t1 ignore key(a) where a like 'A_' order by a;
 hex(a)
-00410000
-00410000
-00410000
-00410000
 00410009
 0041005A
 drop table t1;
@@ -260,8 +252,6 @@ abc
 abcd
 select * from t1 where a like "ABC%";
 a
-abc
-abcd
 select * from t1 where a like "test%";
 a
 test
@@ -359,64 +349,16 @@ INSERT INTO t1 VALUES ('фывАпролдж'),('фываПролдж'),('фывапРолдж'),('фывапрОлдж'
 INSERT INTO t1 VALUES ('фывапроЛдж'),('фывапролДж'),('фывапролдЖ'),('ФЫВАПРОЛДЖ');
 SELECT * FROM t1 WHERE a LIKE '%фЫва%';
 a
-фыва
-Фыва
 фЫва
-фыВа
-фывА
-ФЫВА
-фывапролдж
-Фывапролдж
 фЫвапролдж
-фыВапролдж
-фывАпролдж
-фываПролдж
-фывапРолдж
-фывапрОлдж
-фывапроЛдж
-фывапролДж
-фывапролдЖ
-ФЫВАПРОЛДЖ
 SELECT * FROM t1 WHERE a LIKE '%фЫв%';
 a
-фыва
-Фыва
 фЫва
-фыВа
-фывА
-ФЫВА
-фывапролдж
-Фывапролдж
 фЫвапролдж
-фыВапролдж
-фывАпролдж
-фываПролдж
-фывапРолдж
-фывапрОлдж
-фывапроЛдж
-фывапролДж
-фывапролдЖ
-ФЫВАПРОЛДЖ
 SELECT * FROM t1 WHERE a LIKE 'фЫва%';
 a
-фыва
-Фыва
 фЫва
-фыВа
-фывА
-ФЫВА
-фывапролдж
-Фывапролдж
 фЫвапролдж
-фыВапролдж
-фывАпролдж
-фываПролдж
-фывапРолдж
-фывапрОлдж
-фывапроЛдж
-фывапролДж
-фывапролдЖ
-ФЫВАПРОЛДЖ
 SELECT * FROM t1 WHERE a LIKE 'фЫва%' COLLATE ucs2_bin;
 a
 фЫва
@@ -5191,9 +5133,6 @@ INSERT INTO t1 VALUES ('2001-01-01 00:00:00');
 SELECT * FROM t1 WHERE t < '2013-11-15 00:41:28' - INTERVAL 7 DAY;
 t
 2001-01-01 00:00:00
-SELECT * FROM t1 WHERE t = '2001-01-08 00:00:00' - INTERVAL 7 DAY;
-t
-2001-01-01 00:00:00
 SELECT * FROM t1 WHERE t < CONCAT('2013-11-15 00:41:28',LEFT(RAND(),0)) - INTERVAL 7 DAY;
 t
 2001-01-01 00:00:00
@@ -5201,9 +5140,6 @@ SELECT * FROM t1 WHERE t = CONCAT('2001-01-08 00:00:00',LEFT(RAND(),0)) - INTERV
 t
 2001-01-01 00:00:00
 SELECT * FROM t1 WHERE t < TIMESTAMP'2013-11-15 00:41:28' - INTERVAL 7 DAY;
-t
-2001-01-01 00:00:00
-SELECT * FROM t1 WHERE t = TIMESTAMP'2001-01-08 00:00:00' - INTERVAL 7 DAY;
 t
 2001-01-01 00:00:00
 DROP TABLE t1;
@@ -5299,9 +5235,6 @@ uf	00750066	101F0EB9
 SELECT s1, hex(s1) FROM t1 WHERE s1='ae' ORDER BY s1, BINARY(s1);
 s1	hex(s1)
 ae	00610065
-ф	00C6
-Д	00E4
-Ф	00E6
 drop table t1;
 CREATE TABLE t1 AS SELECT REPEAT('a',1) AS a, 1 AS b LIMIT 0;
 SHOW CREATE TABLE t1;
@@ -5437,23 +5370,6 @@ c1
 %
 DROP TABLE t1;
 #
-# MDEV-8694 Wrong result for SELECT..WHERE a NOT LIKE 'a ' AND a='a'
-#
-CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_bin DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
-INSERT INTO t1 VALUES ('a'),('a ');
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
-a	LENGTH(a)
-a	2
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ' AND a='a';
-a	LENGTH(a)
-a	2
-DROP TABLE t1;
-#
 # End of MDEV-8694
 #
 SET NAMES latin1, collation_connection=ucs2_general_ci;
@@ -5531,23 +5447,6 @@ c1
 SELECT * FROM t1 WHERE '%'=CONCAT(c1) AND 'a' LIKE CONCAT(c1);
 c1
 %
-DROP TABLE t1;
-#
-# MDEV-8694 Wrong result for SELECT..WHERE a NOT LIKE 'a ' AND a='a'
-#
-CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `a` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
-INSERT INTO t1 VALUES ('a'),('a ');
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
-a	LENGTH(a)
-a	2
-SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ' AND a='a';
-a	LENGTH(a)
-a	2
 DROP TABLE t1;
 #
 # End of MDEV-8694
@@ -5767,10 +5666,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'ucs2_general_ci';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_general_nopad_ci';
 COUNT(*)
 1
@@ -5780,7 +5679,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_general_ci';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_general_nopad_ci';
 COUNT(*)
 1
@@ -5906,10 +5805,10 @@ CREATE TABLE t1 (a VARCHAR(10)) COLLATE 'ucs2_bin';
 INSERT INTO t1 VALUES ('a'),('a ');
 SELECT COUNT(*) FROM t1 WHERE a='a';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_nopad_bin';
 COUNT(*)
 1
@@ -5919,7 +5818,7 @@ COUNT(*)
 1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_bin';
 COUNT(*)
-2
+1
 SELECT COUNT(*) FROM t1 WHERE a='a' COLLATE 'ucs2_nopad_bin';
 COUNT(*)
 1

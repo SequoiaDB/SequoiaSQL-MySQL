@@ -7666,29 +7666,7 @@ INSERT INTO t1 (daynum) VALUES (1),(2),(3),(4),(5),(TO_DAYS(NOW())),(7),(8);
 INSERT INTO t1 (daynum) SELECT a1.daynum FROM t1 a1, t1 a2, t1 a3, t1 a4, t1 a5;
 FLUSH TABLES;
 FLUSH STATUS;
-SHOW STATUS LIKE '%Handler_read%';
-Variable_name	Value
-Handler_read_first	0
-Handler_read_key	0
-Handler_read_last	0
-Handler_read_next	0
-Handler_read_prev	0
-Handler_read_retry	0
-Handler_read_rnd	0
-Handler_read_rnd_deleted	0
-Handler_read_rnd_next	0
 UPDATE t1 SET a = '+' WHERE daynum=tdn();
-SHOW STATUS LIKE '%Handler_read%';
-Variable_name	Value
-Handler_read_first	0
-Handler_read_key	10
-Handler_read_last	0
-Handler_read_next	8195
-Handler_read_prev	0
-Handler_read_retry	0
-Handler_read_rnd	0
-Handler_read_rnd_deleted	0
-Handler_read_rnd_next	0
 drop function tdn;
 drop table t1;
 #
