@@ -25,6 +25,8 @@
 #define SDB_FIELD_MAX_LEN (16 * 1024 * 1024)
 #define SDB_IDX_FIELD_SIZE_MAX 1024
 #define SDB_MATCH_FIELD_SIZE_MAX 1024
+#define SDB_PFS_META_LEN \
+  59  // longest lli(19 digits+ 1 sign) + llu(20 digits) + 19 chars
 
 #define SDB_CHARSET my_charset_utf8mb4_bin
 
@@ -55,6 +57,9 @@
 #define SDB_FIELD_GENERATED "Generated"
 #define SDB_FIELD_INITIAL "Initial"
 #define SDB_FIELD_LAST_GEN_ID "LastGenerateID"
+#define SDB_FIELD_INFO "$ClientInfo"
+#define SDB_FIELD_PORT "ClientPort"
+#define SDB_FIELD_QID "ClientQID"
 
 #define SDB_FIELD_SHARDING_KEY "ShardingKey"
 #define SDB_FIELD_SHARDING_TYPE "ShardingType"

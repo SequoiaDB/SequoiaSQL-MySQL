@@ -1576,6 +1576,8 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   bson::BSONObj null_obj;
   bson::BSONObj rule_obj;
   bson::BSONObj result;
+  bson::BSONObj hint;
+  bson::BSONObjBuilder builder;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -1607,8 +1609,11 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   } else if (get_unique_key_cond(old_data, cond)) {
     cond = cur_rec;
   }
-  rc = collection->update(rule_obj, cond, SDB_EMPTY_BSON,
-                          UPDATE_KEEP_SHARDINGKEY, &result);
+
+  sdb_build_clientinfo(ha_thd(), builder);
+  hint = builder.obj();
+  rc = collection->update(rule_obj, cond, hint, UPDATE_KEEP_SHARDINGKEY,
+                          &result);
   if (rc != 0) {
     if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
       handle_sdb_error(rc, MYF(0));
@@ -1636,6 +1641,8 @@ int ha_sdb::delete_row(const uchar *buf) {
   DBUG_ENTER("ha_sdb::delete_row()");
   int rc = 0;
   bson::BSONObj cond;
+  bson::BSONObj hint;
+  bson::BSONObjBuilder builder;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -1650,7 +1657,10 @@ int ha_sdb::delete_row(const uchar *buf) {
   if (get_unique_key_cond(buf, cond)) {
     cond = cur_rec;
   }
-  rc = collection->del(cond);
+
+  sdb_build_clientinfo(ha_thd(), builder);
+  hint = builder.obj();
+  rc = collection->del(cond, hint);
   if (rc != 0) {
     goto error;
   }
@@ -2323,6 +2333,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   bson::BSONObj rule;
   bson::BSONObj order_by;
   bson::BSONObj selector;
+  bson::BSONObjBuilder builder;
   int num_to_return = -1;
   bool direct_op = false;
   int flag = 0;
@@ -2333,7 +2344,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   DBUG_ASSERT(NULL != key_info);
   DBUG_ASSERT(NULL != sdb_key_name(key_info));
 
-  hint = BSON("" << sdb_key_name(key_info));
   idx_order_direction = order_direction;
   rc = sdb_get_idx_order(key_info, order_by, order_direction,
                          m_secondary_sort_rowid);
@@ -2343,6 +2353,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   }
 
   flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+
+  builder.append("", sdb_key_name(key_info));
+  sdb_build_clientinfo(ha_thd(), builder);
+  hint = builder.obj();
+
   rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                          direct_op);
   if (rc) {
@@ -2877,7 +2892,7 @@ int ha_sdb::rnd_next(uchar *buf) {
   bson::BSONObj selector;
   bson::BSONObj condition;
   bson::BSONObj hint = SDB_EMPTY_BSON;
-
+  bson::BSONObjBuilder builder;
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
     table->status = STATUS_NOT_FOUND;
@@ -2893,6 +2908,8 @@ int ha_sdb::rnd_next(uchar *buf) {
     }
 
     int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+    sdb_build_clientinfo(ha_thd(), builder);
+    hint = builder.obj();
     rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                            direct_op);
     if (rc) {
@@ -2908,8 +2925,8 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
     }
 
-    rc = collection->query(condition, selector, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
-                           0, num_to_return, flag);
+    rc = collection->query(condition, selector, SDB_EMPTY_BSON, hint, 0,
+                           num_to_return, flag);
     if (rc != 0) {
       goto error;
     }
@@ -2936,6 +2953,8 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   bson::BSONObjBuilder obj_builder;
   bson::OID oid;
   bson::BSONObj cond;
+  bson::BSONObj hint;
+  bson::BSONObjBuilder builder;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -2954,7 +2973,11 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
     cond = obj_builder.obj();
   }
 
-  rc = collection->query_one(cur_rec, cond);
+  sdb_build_clientinfo(ha_thd(), builder);
+  hint = builder.obj();
+
+  rc = collection->query_one(cur_rec, cond, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
+                             hint);
   if (rc) {
     goto error;
   }
@@ -3334,6 +3357,8 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
   DBUG_ENTER("ha_sdb::start_statement()");
   int rc = 0;
 
+  sdb_add_pfs_clientinfo(thd);
+
   rc = ensure_stats(thd);
   if (0 != rc) {
     goto error;
@@ -3505,6 +3530,8 @@ error:
 int ha_sdb::delete_all_rows() {
   int rc = 0;
   bson::BSONObj result;
+  bson::BSONObj hint;
+  bson::BSONObjBuilder builder;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
@@ -3529,8 +3556,9 @@ int ha_sdb::delete_all_rows() {
     }
   }
 
-  rc = collection->del(SDB_EMPTY_BSON, SDB_EMPTY_BSON, FLG_DELETE_RETURNNUM,
-                       &result);
+  sdb_build_clientinfo(ha_thd(), builder);
+  hint = builder.obj();
+  rc = collection->del(SDB_EMPTY_BSON, hint, FLG_DELETE_RETURNNUM, &result);
   if (0 == rc) {
     Sdb_mutex_guard guard(share->mutex);
     if (incr_stat) {
@@ -4667,6 +4695,8 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   Sdb_conn *connection;
 
   thd_sdb->start_stmt_count = 0;
+
+  sdb_add_pfs_clientinfo(thd);
 
   rc = check_sdb_in_thd(thd, &connection, true);
   if (0 != rc) {

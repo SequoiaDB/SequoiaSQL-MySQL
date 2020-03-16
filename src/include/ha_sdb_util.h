@@ -79,6 +79,10 @@ int sdb_parse_comment_options(const char *comment_str,
                               bool &explicit_not_auto_partition,
                               bson::BSONObj *partition_options = NULL);
 
+int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hintBuilder);
+
+int sdb_add_pfs_clientinfo(THD *thd);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

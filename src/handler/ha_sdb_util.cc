@@ -24,6 +24,10 @@
 #include "ha_sdb_def.h"
 #include <my_rnd.h>
 
+#ifdef IS_MYSQL
+#include <my_thread_os_id.h>
+#endif
+
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size) {
   int rc = 0;
@@ -590,4 +594,47 @@ done:
   return rc;
 error:
   goto done;
+}
+
+int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hintBuilder) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObj info;
+  info = BSON(SDB_FIELD_PORT << mysqld_port << SDB_FIELD_QID << thd->query_id);
+
+  hintBuilder.append(SDB_FIELD_INFO, info);
+  return rc;
+}
+
+int sdb_add_pfs_clientinfo(THD *thd) {
+  int rc = SDB_ERR_OK;
+#ifdef HAVE_PSI_STATEMENT_INTERFACE
+  char *query_text = NULL;
+  int new_statement_size = 0;
+
+#ifdef IS_MYSQL
+  if (thd->rewritten_query.length()) {
+    query_text = static_cast<char *>(
+        thd->alloc(thd->rewritten_query.length() + SDB_PFS_META_LEN));
+    new_statement_size =
+        sprintf(query_text, "/* qid=%lli, ostid=%llu */ %s", thd->query_id,
+                my_thread_os_id(), thd->rewritten_query.c_ptr_safe());
+  } else {
+    query_text =
+        static_cast<char *>(thd->alloc(thd->query().length + SDB_PFS_META_LEN));
+    new_statement_size =
+        sprintf(query_text, "/* qid=%lli, ostid=%llu */ %s", thd->query_id,
+                my_thread_os_id(), thd->query().str);
+  }
+#else
+#ifdef IS_MARIADB
+  query_text =
+      static_cast<char *>(thd->alloc(thd->query_length() + SDB_PFS_META_LEN));
+  new_statement_size = sprintf(query_text, "/* qid=%lli, ostid=%u */ %s",
+                               thd->query_id, thd->os_thread_id, thd->query());
+#endif
+#endif
+  MYSQL_SET_STATEMENT_TEXT(thd->m_statement_psi, query_text,
+                           new_statement_size);
+#endif
+  return rc;
 }

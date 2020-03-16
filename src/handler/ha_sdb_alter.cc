@@ -1062,7 +1062,8 @@ done:
   return rs;
 }
 
-int update_null_to_notnull(Sdb_cl &cl, Field *field, longlong &modified_num) {
+int update_null_to_notnull(Sdb_cl &cl, Field *field, longlong &modified_num,
+                           bson::BSONObj &hint) {
   int rc = 0;
   bson::BSONObj result;
   bson::BSONElement be_modified_num;
@@ -1078,7 +1079,7 @@ int update_null_to_notnull(Sdb_cl &cl, Field *field, longlong &modified_num) {
   sub_cond.append("$isnull", 1);
   sub_cond.done();
 
-  rc = cl.update(rule_builder.obj(), cond_builder.obj(), SDB_EMPTY_BSON,
+  rc = cl.update(rule_builder.obj(), cond_builder.obj(), hint,
                  UPDATE_KEEP_SHARDINGKEY | UPDATE_RETURNNUM, &result);
   be_modified_num = result.getField(SDB_FIELD_MODIFIED_NUM);
   if (be_modified_num.isNumber()) {
@@ -1116,8 +1117,11 @@ int ha_sdb::alter_column(TABLE *altered_table,
   Col_alter_info *info = NULL;
 
   bson::BSONObjBuilder builder;
+  bson::BSONObj hint;
+  sdb_build_clientinfo(ha_thd(), builder);
+  hint = builder.obj();
 
-  rc = cl.get_count(count);
+  rc = cl.get_count(count, SDB_EMPTY_BSON, hint);
   if (0 != rc) {
     goto error;
   }
@@ -1179,7 +1183,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
           goto error;
         }
       }
-      rc = update_null_to_notnull(cl, info->before, modified_num);
+      rc = update_null_to_notnull(cl, info->before, modified_num, hint);
       if (rc != 0) {
         goto error;
       }
@@ -1231,8 +1235,8 @@ int ha_sdb::alter_column(TABLE *altered_table,
         goto error;
       }
     }
-    rc = cl.update(builder.obj(), SDB_EMPTY_BSON, SDB_EMPTY_BSON,
-                   UPDATE_KEEP_SHARDINGKEY);
+    rc =
+        cl.update(builder.obj(), SDB_EMPTY_BSON, hint, UPDATE_KEEP_SHARDINGKEY);
     if (rc != 0) {
       goto error;
     }
