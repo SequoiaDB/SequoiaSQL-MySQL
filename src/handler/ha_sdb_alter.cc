@@ -1117,9 +1117,10 @@ int ha_sdb::alter_column(TABLE *altered_table,
   Col_alter_info *info = NULL;
 
   bson::BSONObjBuilder builder;
+  bson::BSONObjBuilder clientinfo_builder;
   bson::BSONObj hint;
-  sdb_build_clientinfo(ha_thd(), builder);
-  hint = builder.obj();
+  sdb_build_clientinfo(ha_thd(), clientinfo_builder);
+  hint = clientinfo_builder.obj();
 
   rc = cl.get_count(count, SDB_EMPTY_BSON, hint);
   if (0 != rc) {
