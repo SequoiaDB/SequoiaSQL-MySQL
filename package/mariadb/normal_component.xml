@@ -291,6 +291,7 @@
     <postInstallationActionList>
         <!--update installdir/support-files/mysql.server-->
         <changePermissionOwnerFunction/>
+        <createSdbSqlCtlLink/>
         <changePermissions files="${installdir}/preUninstall.sh" permissions="0755"/>
         <substitute>
             <files>${installdir}/support-files/mysql.server</files>

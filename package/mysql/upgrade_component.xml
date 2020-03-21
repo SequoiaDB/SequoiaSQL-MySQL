@@ -190,7 +190,7 @@
     </folderList>
 
     <postInstallationActionList>
-    
+        <createSdbSqlCtlLink/>
         <deleteFile path="${installdir}/bin/sequoiasql-mysql.systemd"/>
         <deleteFile path="${installdir}/bin/sequoiasql-mysql.sysv"/>
         <changePermissionOwnerFunction/>
