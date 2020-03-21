@@ -333,7 +333,19 @@
                 </changeOwnerAndGroup>
            </actionList>
         </actionDefinition>
-
+    
+        <actionDefinition name="createSdbSqlCtlLink">
+            <actionList>
+                <createSymLink linkName="${installdir}/bin/sdb_mysql_ctl">
+                    <target>${installdir}/bin/sdb_sql_ctl</target>
+                </createSymLink>
+                <runProgram>
+                    <program>chown</program>
+                    <programArguments>-h ${username}:${groupname} ${installdir}/bin/sdb_mysql_ctl</programArguments>
+                </runProgram>
+            </actionList>
+        </actionDefinition>
+    
         <actionDefinition name="upgradeCheck">
             <actionList>
                 <createDirectory path="${installdir}/tmp_${time}"/>

@@ -190,7 +190,7 @@
     </folderList>
 
     <postInstallationActionList>
-    
+        <createSdbSqlCtlLink/>
         <deleteFile path="${installdir}/bin/sequoiasql-mariadb.systemd"/>
         <deleteFile path="${installdir}/bin/sequoiasql-mariadb.sysv"/>
         <changePermissionOwnerFunction/>
