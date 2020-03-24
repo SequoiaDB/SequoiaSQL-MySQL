@@ -609,30 +609,50 @@ int sdb_add_pfs_clientinfo(THD *thd) {
   int rc = SDB_ERR_OK;
 #ifdef HAVE_PSI_STATEMENT_INTERFACE
   char *query_text = NULL;
+  char *pos = NULL;
   int new_statement_size = 0;
+  int length = 0;
 
 #ifdef IS_MYSQL
   if (thd->rewritten_query.length()) {
-    query_text = static_cast<char *>(
-        thd->alloc(thd->rewritten_query.length() + SDB_PFS_META_LEN));
-    new_statement_size =
-        sprintf(query_text, "/* qid=%lli, ostid=%llu */ %s", thd->query_id,
-                my_thread_os_id(), thd->rewritten_query.c_ptr_safe());
+    length = thd->rewritten_query.length();
+    query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));
+    if (!query_text) {
+      return HA_ERR_OUT_OF_MEM;
+    }
+    pos = query_text;
+    snprintf(pos, SDB_PFS_META_LEN, "/* qid=%lli, ostid=%llu */ ",
+             thd->query_id, my_thread_os_id());
+    pos += strlen(query_text);
+    snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s",
+             thd->rewritten_query.c_ptr_safe());
   } else {
-    query_text =
-        static_cast<char *>(thd->alloc(thd->query().length + SDB_PFS_META_LEN));
-    new_statement_size =
-        sprintf(query_text, "/* qid=%lli, ostid=%llu */ %s", thd->query_id,
-                my_thread_os_id(), thd->query().str);
+    length = thd->query().length;
+    query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));
+    if (!query_text) {
+      return HA_ERR_OUT_OF_MEM;
+    }
+    pos = query_text;
+    snprintf(pos, SDB_PFS_META_LEN, "/* qid=%lli, ostid=%llu */ ",
+             thd->query_id, my_thread_os_id());
+    pos += strlen(query_text);
+    snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s", thd->query().str);
   }
 #else
 #ifdef IS_MARIADB
-  query_text =
-      static_cast<char *>(thd->alloc(thd->query_length() + SDB_PFS_META_LEN));
-  new_statement_size = sprintf(query_text, "/* qid=%lli, ostid=%u */ %s",
-                               thd->query_id, thd->os_thread_id, thd->query());
+  length = thd->query_length();
+  query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));
+  if (!query_text) {
+    return HA_ERR_OUT_OF_MEM;
+  }
+  pos = query_text;
+  snprintf(pos, SDB_PFS_META_LEN, "/* qid=%lli, ostid=%u */ ", thd->query_id,
+           thd->os_thread_id);
+  pos += strlen(query_text);
+  snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s", thd->query());
 #endif
 #endif
+  new_statement_size = strlen(query_text);
   MYSQL_SET_STATEMENT_TEXT(thd->m_statement_psi, query_text,
                            new_statement_size);
 #endif

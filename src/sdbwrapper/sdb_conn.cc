@@ -110,9 +110,9 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    sprintf(source_str, "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
-            strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
-            (ulonglong)thread_id());
+    snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
+             strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
+             (ulonglong)thread_id());
     bool auto_commit = sdb_use_transaction ? true : false;
     option = BSON(SOURCE_THREAD_ID << source_str << TRANSAUTOROLLBACK << false
                                    << TRANSAUTOCOMMIT << auto_commit);
