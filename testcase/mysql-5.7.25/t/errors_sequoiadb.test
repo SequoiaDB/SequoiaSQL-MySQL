@@ -53,4 +53,17 @@ drop index id on t1;
 alter table t1 add primary key(id);
 drop table t1,t2;
 
+#BUG #SEQUOIASQLMAINSTREAM-589
+create table t1 ( id int, c char(2) ) comment 'sequoiadb: {table_options: { ShardingKey: {id: 1}}}';
+--error 40177
+alter table t1 add unique index c(c), algorithm=inplace; 
+--error 40177
+alter table t1 add unique index c(c), algorithm=copy; 
+insert into t1 values (NULL, 'a');
+--error 40339
+alter table t1 add primary key(id), algorithm=inplace; 
+--error 1265
+alter table t1 add primary key(id), algorithm=copy;
+drop table t1;
+
 --source include/uninstall_sequoiadb.inc

@@ -4893,6 +4893,10 @@ t2	CREATE TABLE `t2` (
   PRIMARY KEY (`id`),
   KEY `t` (`t`(2))
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb : { table_options: { ShardingKey: {id : 1} } }'
+alter table t1 change id id1 int, ALGORITHM=copy;
+ERROR HY000: The unique index must include all fields in sharding key
+alter table t1 add unique index c(c), ALGORITHM=copy;
+ERROR HY000: The unique index must include all fields in sharding key
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
