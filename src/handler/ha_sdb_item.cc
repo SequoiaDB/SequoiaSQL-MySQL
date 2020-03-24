@@ -20,6 +20,7 @@
 #include <my_global.h>
 #include <sql_time.h>
 #include <my_dbug.h>
+#include <tzfile.h>
 #include "ha_sdb_item.h"
 #include "ha_sdb_errcode.h"
 #include "ha_sdb_util.h"
@@ -510,10 +511,16 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
       MYSQL_TIME ltime;
       if (STRING_RESULT == item_val->result_type() &&
           !sdb_get_item_time(item_val, current_thd, &ltime)) {
-        uint dec = field->decimals();
+        // Convert 1 day to 24 hours if in range of TIME.
+        if (ltime.year == 0 && ltime.month == 0 && ltime.day > 0 &&
+            (ltime.hour + ltime.day * HOURS_PER_DAY) <= TIME_MAX_HOUR) {
+          ltime.hour += (ltime.day * HOURS_PER_DAY);
+          ltime.day = 0;
+        }
         double time = ltime.hour;
         time = time * 100 + ltime.minute;
         time = time * 100 + ltime.second;
+        uint dec = field->decimals();
         if (ltime.second_part && dec > 0) {
           ulong second_part = ltime.second_part;
           if (dec < DATETIME_MAX_DECIMALS) {
