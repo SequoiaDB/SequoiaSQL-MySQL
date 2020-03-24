@@ -8,7 +8,7 @@
 #Case 19381#Case 19382#Case 19395#Case 19397#Case 19398#Case 19403#Case 19407#Case 20023#Case 20024
 #Case 20028#Case 20227#Case 20230#Case 20231#Case 20232#Case 20233#Case 20234#Case 20235#Case 20236
 #Case 20254#Case 20256#Case 20422#Case 20386#Case 20388#Case 20389#Case 20390#Case 20396#Case 20397
-#Case 20398#Case 20399#Case 20473#Case 20524#Case 21866#Case 21871#Case 21872#Case 21873 
+#Case 20398#Case 20399#Case 20473#Case 20524#Case 21866#Case 21871#Case 21872#Case 21873#Case 21982 
 
 --source include/have_sequoiadb.inc
 create database test_alter;
@@ -572,16 +572,18 @@ insert into t1 values(11);
 select * from t1 order by id;
 drop table t1;
 
+#Case #21982
 #BUG #SEQUOIASQLMAINSTREAM-597
-#create table t1(id int, col1 int AUTO_INCREMENT, col2 varchar(255), primary key(col2, id, col1))comment="sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: 'hash', AutoSplit:true } }";
-#insert into t1(id, col2) values(1, 'var1'), (2, 'var2'), (3, 'var3'), (4, 'var4'), (5, 'var5'), (6, 'var6'), (7, 'var7'), (8, 'var8'), (9, 'var9'), (10, 'var10');
-#show create table t1;
-#select * from t1 order by col1;
-#ALTER TABLE t1 DROP col1, algorithm = inplace;
-#show create table t1;
-#insert into t1(id, col2) values(11, 'var11');
-#select * from t1 order by id;
-#drop table t1;
+create table t1(id int, col1 int AUTO_INCREMENT, col2 varchar(255), primary key(col2, id, col1))comment="sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: 'hash', AutoSplit:true } }";
+insert into t1(id, col2) values(1, 'var1'), (2, 'var2'), (3, 'var3'), (4, 'var4'), (5, 'var5'), (6, 'var6'), (7, 'var7'), (8, 'var8'), (9, 'var9'), (10, 'var10');
+show create table t1;
+select * from t1 order by col1;
+--error 1072
+ALTER TABLE t1 DROP col1, algorithm = inplace;
+show create table t1;
+insert into t1(id, col2) values(11, 'var11');
+select * from t1 order by id;
+drop table t1;
 
 #Case #19391
 create table t1(id int, col1 int AUTO_INCREMENT unique key)COMMENT='sequoiadb:{ auto_partition: false }';
@@ -594,16 +596,18 @@ insert into t1 values(11);
 select * from t1 order by id;
 drop table t1;
 
+#Case #21982
 #BUG #SEQUOIASQLMAINSTREAM-597
-#create table t1(id int not null, col1 int AUTO_INCREMENT, col2 varchar(255) not null, unique key(col2, id, col1))comment="sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: 'hash', AutoSplit:true } }";
-#insert into t1(id, col2) values(1, 'var1'), (2, 'var2'), (3, 'var3'), (4, 'var4'), (5, 'var5'), (6, 'var6'), (7, 'var7'), (8, 'var8'), (9, 'var9'), (10, 'var10');
-#show create table t1;
-#select * from t1 order by col1;
-#ALTER TABLE t1 DROP col1, algorithm = inplace;
-#show create table t1;
-#insert into t1(id, col2) values(11, 'var11');
-#select * from t1 order by id;
-#drop table t1;
+create table t1(id int not null, col1 int AUTO_INCREMENT, col2 varchar(255) not null, unique key(col2, id, col1))comment="sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: 'hash', AutoSplit:true } }";
+insert into t1(id, col2) values(1, 'var1'), (2, 'var2'), (3, 'var3'), (4, 'var4'), (5, 'var5'), (6, 'var6'), (7, 'var7'), (8, 'var8'), (9, 'var9'), (10, 'var10');
+show create table t1;
+select * from t1 order by col1;
+--error 1072
+ALTER TABLE t1 DROP col1, algorithm = inplace;
+show create table t1;
+insert into t1(id, col2) values(11, 'var11');
+select * from t1 order by id;
+drop table t1;
 
 #Case #19392
 create table t1(id int, col1 int AUTO_INCREMENT ,index(col1));

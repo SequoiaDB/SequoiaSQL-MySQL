@@ -1130,6 +1130,53 @@ id
 10
 11
 drop table t1;
+create table t1(id int, col1 int AUTO_INCREMENT, col2 varchar(255), primary key(col2, id, col1))comment="sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: 'hash', AutoSplit:true } }";
+insert into t1(id, col2) values(1, 'var1'), (2, 'var2'), (3, 'var3'), (4, 'var4'), (5, 'var5'), (6, 'var6'), (7, 'var7'), (8, 'var8'), (9, 'var9'), (10, 'var10');
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `col1` int(11) NOT NULL AUTO_INCREMENT,
+  `col2` varchar(255) NOT NULL,
+  PRIMARY KEY (`col2`,`id`,`col1`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
+select * from t1 order by col1;
+id	col1	col2
+1	1	var1
+2	2	var2
+3	3	var3
+4	4	var4
+5	5	var5
+6	6	var6
+7	7	var7
+8	8	var8
+9	9	var9
+10	10	var10
+ALTER TABLE t1 DROP col1, algorithm = inplace;
+ERROR 42000: Key column 'col1' doesn't exist in table
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `col1` int(11) NOT NULL AUTO_INCREMENT,
+  `col2` varchar(255) NOT NULL,
+  PRIMARY KEY (`col2`,`id`,`col1`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
+insert into t1(id, col2) values(11, 'var11');
+select * from t1 order by id;
+id	col1	col2
+1	1	var1
+2	2	var2
+3	3	var3
+4	4	var4
+5	5	var5
+6	6	var6
+7	7	var7
+8	8	var8
+9	9	var9
+10	10	var10
+11	11	var11
+drop table t1;
 create table t1(id int, col1 int AUTO_INCREMENT unique key)COMMENT='sequoiadb:{ auto_partition: false }';
 insert into t1(id) values(1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
 show create table t1;
@@ -1171,6 +1218,53 @@ id
 9
 10
 11
+drop table t1;
+create table t1(id int not null, col1 int AUTO_INCREMENT, col2 varchar(255) not null, unique key(col2, id, col1))comment="sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: 'hash', AutoSplit:true } }";
+insert into t1(id, col2) values(1, 'var1'), (2, 'var2'), (3, 'var3'), (4, 'var4'), (5, 'var5'), (6, 'var6'), (7, 'var7'), (8, 'var8'), (9, 'var9'), (10, 'var10');
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `col1` int(11) NOT NULL AUTO_INCREMENT,
+  `col2` varchar(255) NOT NULL,
+  UNIQUE KEY `col2` (`col2`,`id`,`col1`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
+select * from t1 order by col1;
+id	col1	col2
+1	1	var1
+2	2	var2
+3	3	var3
+4	4	var4
+5	5	var5
+6	6	var6
+7	7	var7
+8	8	var8
+9	9	var9
+10	10	var10
+ALTER TABLE t1 DROP col1, algorithm = inplace;
+ERROR 42000: Key column 'col1' doesn't exist in table
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `col1` int(11) NOT NULL AUTO_INCREMENT,
+  `col2` varchar(255) NOT NULL,
+  UNIQUE KEY `col2` (`col2`,`id`,`col1`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
+insert into t1(id, col2) values(11, 'var11');
+select * from t1 order by id;
+id	col1	col2
+1	1	var1
+2	2	var2
+3	3	var3
+4	4	var4
+5	5	var5
+6	6	var6
+7	7	var7
+8	8	var8
+9	9	var9
+10	10	var10
+11	11	var11
 drop table t1;
 create table t1(id int, col1 int AUTO_INCREMENT ,index(col1));
 insert into t1(id) values(1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
