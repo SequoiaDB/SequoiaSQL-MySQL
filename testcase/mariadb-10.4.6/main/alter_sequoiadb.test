@@ -459,38 +459,40 @@ select * from t1 order by id;
 
 #Case #19371
 #BUG #SEQUOIASQLMAINSTREAM-595
-#ALTER TABLE t1 ADD (col1 int NOT NULL default 100, col2 float NOT NULL default 100.2, col3 decimal(10,2) NOT NULL default 30.23, col4 bit(2) NOT NULL default 2, col5 date NOT NULL default '2019-09-21', col6 datetime NOT NULL default '2019-09-21 11:06:31', col7 timestamp NOT NULL default '2019-09-21 11:06:31', col8 time NOT NULL default '11:04:31', col9 year NOT NULL default 2019, col10 char(255) NOT NULL default 'char', col11 varchar(255) NOT NULL default 'varchar', col12 binary(255) NOT NULL default 'binary', col13 varbinary(255) NOT NULL default 'varbinary', col16 enum('one', 'two', 'three') NOT NULL default 'three', col17 set('one', 'two', 'three') NOT NULL default 'two'), algorithm = inplace;
-#show create table t1;
-#insert into t1 values();
-#insert into t1(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col16, col17) values(100, 12.12, 15.15, 3, '2019-09-20', '2019-09-21 17:39:30', '2019-09-20 17:39:30', '10:10:10', '2019', 'a', 'abc', 'a', 'abc', 'two', 'three');
-#select * from t1 order by id;
-#
-#alter table t1 drop column col1,algorithm = inplace;
-#alter table t1 drop column col2,algorithm = inplace;
-#alter table t1 drop column col3,algorithm = inplace;
-#alter table t1 drop column col4,algorithm = inplace;
-#alter table t1 drop column col5,algorithm = inplace;
-#alter table t1 drop column col6,algorithm = inplace;
-#alter table t1 drop column col7,algorithm = inplace;
-#alter table t1 drop column col8,algorithm = inplace;
-#alter table t1 drop column col9,algorithm = inplace;
-#alter table t1 drop column col10,algorithm = inplace;
-#alter table t1 drop column col11,algorithm = inplace;
-#alter table t1 drop column col12,algorithm = inplace;
-#alter table t1 drop column col13,algorithm = inplace;
-#alter table t1 drop column col16,algorithm = inplace;
-#alter table t1 drop column col17,algorithm = inplace;
-#
-#ALTER TABLE t1 ADD (col1 int default 100, col2 float default 100.2, col3 decimal(10,2) default 30.23, col4 bit(2) default 2, col5 date default '2019-09-21', col6 datetime default '2019-09-21 11:06:31', col7 timestamp default '2019-09-21 11:06:31', col8 time default '11:04:31', col9 year default 2019, col10 char(255) default 'char', col11 varchar(255) default 'varchar', col12 binary(255) default 'binary', col13 varbinary(255) default 'varbinary', col16 enum('one', 'two', 'three') default 'three', col17 set('one', 'two', 'three') default 'two'), algorithm = inplace;
-#show create table t1;
-#insert into t1 values();
-##insert into t1(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col16, col17) values(100, 12.12, 15.15, 3, '2019-09-20', '2019-09-21 17:39:30', '2019-09-20 17:39:30', '10:10:10', '2019', 'a', 'abc', 'a', 'abc', 'two', 'three');
-#select * from t1 order by id;
-#delete from t1;
-##insert into t1(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col16, col17) values(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-#--replace_column 8 x
-#select * from t1;
+set sql_mode = "NO_ZERO_DATE,NO_ZERO_IN_DATE";
+ALTER TABLE t1 ADD (col1 int NOT NULL default 100, col2 float NOT NULL default 100.2, col3 decimal(10,2) NOT NULL default 30.23, col4 bit(2) NOT NULL default 2, col5 date NOT NULL default '2019-09-21', col6 datetime NOT NULL default '2019-09-21 11:06:31', col7 timestamp NOT NULL default '2019-09-21 11:06:31', col8 time NOT NULL default '11:04:31', col9 year NOT NULL default 2019, col10 char(255) NOT NULL default 'char', col11 varchar(255) NOT NULL default 'varchar', col12 binary(255) NOT NULL default 'binary', col13 varbinary(255) NOT NULL default 'varbinary', col16 enum('one', 'two', 'three') NOT NULL default 'three', col17 set('one', 'two', 'three') NOT NULL default 'two'), algorithm = inplace;
+show create table t1;
+insert into t1 values();
+insert into t1(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col16, col17) values(100, 12.12, 15.15, 3, '2019-09-20', '2019-09-21 17:39:30', '2019-09-20 17:39:30', '10:10:10', '2019', 'a', 'abc', 'a', 'abc', 'two', 'three');
+select * from t1 order by id;
+
+alter table t1 drop column col1,algorithm = inplace;
+alter table t1 drop column col2,algorithm = inplace;
+alter table t1 drop column col3,algorithm = inplace;
+alter table t1 drop column col4,algorithm = inplace;
+alter table t1 drop column col5,algorithm = inplace;
+alter table t1 drop column col6,algorithm = inplace;
+alter table t1 drop column col7,algorithm = inplace;
+alter table t1 drop column col8,algorithm = inplace;
+alter table t1 drop column col9,algorithm = inplace;
+alter table t1 drop column col10,algorithm = inplace;
+alter table t1 drop column col11,algorithm = inplace;
+alter table t1 drop column col12,algorithm = inplace;
+alter table t1 drop column col13,algorithm = inplace;
+alter table t1 drop column col16,algorithm = inplace;
+alter table t1 drop column col17,algorithm = inplace;
+
+ALTER TABLE t1 ADD (col1 int default 100, col2 float default 100.2, col3 decimal(10,2) default 30.23, col4 bit(2) default 2, col5 date default '2019-09-21', col6 datetime default '2019-09-21 11:06:31', col7 timestamp default '2019-09-21 11:06:31', col8 time default '11:04:31', col9 year default 2019, col10 char(255) default 'char', col11 varchar(255) default 'varchar', col12 binary(255) default 'binary', col13 varbinary(255) default 'varbinary', col16 enum('one', 'two', 'three') default 'three', col17 set('one', 'two', 'three') default 'two'), algorithm = inplace;
+show create table t1;
+insert into t1 values();
+insert into t1(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col16, col17) values(100, 12.12, 15.15, 3, '2019-09-20', '2019-09-21 17:39:30', '2019-09-20 17:39:30', '10:10:10', '2019', 'a', 'abc', 'a', 'abc', 'two', 'three');
+select * from t1 order by id;
+delete from t1;
+insert into t1(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col16, col17) values(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+--replace_column 8 x
+select * from t1;
 drop table t1;
+set sql_mode = default;
 
 #Case #19372
 #SEQUOIASQLMAINSTREAM-434
@@ -667,23 +669,26 @@ drop table t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-595
 #Case 19409 #Case 19410
-#create table t1(id int AUTO_INCREMENT KEY);
-#insert into t1() values(), (), (), (), (), (), (), (), (), ();
-#--error 1067
-#ALTER TABLE t1 ADD(col1 DATETIME DEFAULT 0), algorithm = inplace;
-#--error 1067
-#ALTER TABLE t1 ADD(col2 DATE DEFAULT 0), algorithm = inplace;
-#--error 1067
-#ALTER TABLE t1 ADD(col3 TIMESTAMP DEFAULT 0), algorithm = inplace;
+set sql_mode = "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION";
+create table t1(id int AUTO_INCREMENT KEY);
+insert into t1() values(), (), (), (), (), (), (), (), (), ();
+--error 1067
+ALTER TABLE t1 ADD(col1 DATETIME DEFAULT 0), algorithm = inplace;
+--error 1067
+ALTER TABLE t1 ADD(col2 DATE DEFAULT 0), algorithm = inplace;
+--error 1067
+ALTER TABLE t1 ADD(col3 TIMESTAMP DEFAULT 0), algorithm = inplace;
+# InnoDB will return success
 #--error 1292
-#ALTER TABLE t1 ADD(col1 DATETIME NOT NULL), algorithm = inplace;
+ALTER TABLE t1 ADD(col1 DATETIME NOT NULL), algorithm = inplace;
 #--error 1292
-#ALTER TABLE t1 ADD(col2 DATETIME NOT NULL), algorithm = inplace;
+ALTER TABLE t1 ADD(col2 DATETIME NOT NULL), algorithm = inplace;
 #--error 1292
-#ALTER TABLE t1 ADD(col3 DATETIME NOT NULL), algorithm = inplace;
-#show create table t1;
-#select * from t1 order by id;
-#drop table t1;
+ALTER TABLE t1 ADD(col3 DATETIME NOT NULL), algorithm = inplace;
+show create table t1;
+select * from t1 order by id;
+drop table t1;
+set sql_mode = default;
 
 #Case #19394
 create table t1(id int KEY, col1 int);

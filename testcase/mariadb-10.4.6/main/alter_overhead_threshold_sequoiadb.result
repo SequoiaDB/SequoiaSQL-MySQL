@@ -96,6 +96,31 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
 set sql_mode = default;
 drop table t1;
+create table t1(id int auto_increment key);
+insert into t1 values(),(),(),(),(),(),(),(),(),();
+ALTER TABLE t1 ADD (col1 int NOT NULL default 100, col2 float NOT NULL default 100.2, col3 decimal(10,2) NOT NULL default 30.23, col4 bit(2) NOT NULL default 2, col5 date NOT NULL default '2019-09-21', col6 datetime NOT NULL default '2019-09-21 11:06:31', col7 timestamp NOT NULL default '2019-09-21 11:06:31', col8 time NOT NULL default '11:04:31', col9 year NOT NULL default 2019, col10 char(255) NOT NULL default 'char', col11 varchar(255) NOT NULL default 'varchar', col12 binary(255) NOT NULL default 'binary', col13 varbinary(255) NOT NULL default 'varbinary', col16 enum('one', 'two', 'three') NOT NULL default 'three', col17 set('one', 'two', 'three') NOT NULL default 'two'), algorithm = inplace;
+ERROR 0A000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
+ALTER TABLE t1 ADD (col1 int default 100, col2 float default 100.2, col3 decimal(10,2) default 30.23, col4 bit(2) default 2, col5 date default '2019-09-21', col6 datetime default '2019-09-21 11:06:31', col7 timestamp default '2019-09-21 11:06:31', col8 time default '11:04:31', col9 year default 2019, col10 char(255) default 'char', col11 varchar(255) default 'varchar', col12 binary(255) default 'binary', col13 varbinary(255) default 'varbinary', col16 enum('one', 'two', 'three') default 'three', col17 set('one', 'two', 'three') default 'two'), algorithm = inplace;
+ERROR 0A000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+select * from t1 order by id;
+id
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+drop table t1;
 create table t1(id int);
 insert into t1 values(1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
 ALTER TABLE t1 ADD (col1 int AUTO_INCREMENT KEY), algorithm = inplace;

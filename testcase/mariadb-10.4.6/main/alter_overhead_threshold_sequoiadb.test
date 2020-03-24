@@ -48,15 +48,15 @@ drop table t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-595
 #Case 19414
-#create table t1(id int auto_increment key);
-#insert into t1 values(),(),(),(),(),(),(),(),(),();
-#--error 131
-#ALTER TABLE t1 ADD (col1 int NOT NULL default 100, col2 float NOT NULL default 100.2, col3 decimal(10,2) NOT NULL default 30.23, col4 bit(2) NOT NULL default 2, col5 date NOT NULL default '2019-09-21', col6 datetime NOT NULL default '2019-09-21 11:06:31', col7 timestamp NOT NULL default '2019-09-21 11:06:31', col8 time NOT NULL default '11:04:31', col9 year NOT NULL default 2019, col10 char(255) NOT NULL default 'char', col11 varchar(255) NOT NULL default 'varchar', col12 binary(255) NOT NULL default 'binary', col13 varbinary(255) NOT NULL default 'varbinary', col16 enum('one', 'two', 'three') NOT NULL default 'three', col17 set('one', 'two', 'three') NOT NULL default 'two'), algorithm = inplace;
-#--error 131
-#ALTER TABLE t1 ADD (col1 int default 100, col2 float default 100.2, col3 decimal(10,2) default 30.23, col4 bit(2) default 2, col5 date default '2019-09-21', col6 datetime default '2019-09-21 11:06:31', col7 timestamp default '2019-09-21 11:06:31', col8 time default '11:04:31', col9 year default 2019, col10 char(255) default 'char', col11 varchar(255) default 'varchar', col12 binary(255) default 'binary', col13 varbinary(255) default 'varbinary', col16 enum('one', 'two', 'three') default 'three', col17 set('one', 'two', 'three') default 'two'), algorithm = inplace;
-#show create table t1;
-#select * from t1 order by id;
-#drop table t1;
+create table t1(id int auto_increment key);
+insert into t1 values(),(),(),(),(),(),(),(),(),();
+--error 131
+ALTER TABLE t1 ADD (col1 int NOT NULL default 100, col2 float NOT NULL default 100.2, col3 decimal(10,2) NOT NULL default 30.23, col4 bit(2) NOT NULL default 2, col5 date NOT NULL default '2019-09-21', col6 datetime NOT NULL default '2019-09-21 11:06:31', col7 timestamp NOT NULL default '2019-09-21 11:06:31', col8 time NOT NULL default '11:04:31', col9 year NOT NULL default 2019, col10 char(255) NOT NULL default 'char', col11 varchar(255) NOT NULL default 'varchar', col12 binary(255) NOT NULL default 'binary', col13 varbinary(255) NOT NULL default 'varbinary', col16 enum('one', 'two', 'three') NOT NULL default 'three', col17 set('one', 'two', 'three') NOT NULL default 'two'), algorithm = inplace;
+--error 131
+ALTER TABLE t1 ADD (col1 int default 100, col2 float default 100.2, col3 decimal(10,2) default 30.23, col4 bit(2) default 2, col5 date default '2019-09-21', col6 datetime default '2019-09-21 11:06:31', col7 timestamp default '2019-09-21 11:06:31', col8 time default '11:04:31', col9 year default 2019, col10 char(255) default 'char', col11 varchar(255) default 'varchar', col12 binary(255) default 'binary', col13 varbinary(255) default 'varbinary', col16 enum('one', 'two', 'three') default 'three', col17 set('one', 'two', 'three') default 'two'), algorithm = inplace;
+show create table t1;
+select * from t1 order by id;
+drop table t1;
 
 #Case 19415#Case 19416#Case 19417
 create table t1(id int);
