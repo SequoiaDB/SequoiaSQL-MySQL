@@ -60,9 +60,9 @@ show create table customer;
 insert into customer values
 (3,'Customer#000000303','MG9kdTD2WBHm',1,'11-719-748-3364',7498.12,'AUTOMOBILE','special packages wake. slyly reg');
 #Bug #SEQUOIASQLMAINSTREAM-552
-#alter ignore table customer add primary key (c_custkey);
-#show create table customer;
-#select * from customer where c_custkey=3; 
+alter ignore table customer add primary key (c_custkey);
+show create table customer;
+select * from customer where c_custkey=3; 
 
 DROP DATABASE dbt3_s001;
  
