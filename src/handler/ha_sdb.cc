@@ -631,6 +631,19 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
 
+  thr_lock_data_init(&share->lock, &lock_data, (void *)this);
+
+  ref_length = SDB_OID_LEN;  // length of _id
+  stats.mrr_length_per_rec = ref_length + sizeof(void *);
+  /* max_data_file_length and max_index_file_length are actually not used in
+   * cost estimate.
+   */
+  stats.max_data_file_length = 8LL * 1024 * 1024 * 1024 * 1024;   // 8TB
+  stats.max_index_file_length = 8LL * 1024 * 1024 * 1024 * 1024;  // 8TB
+#ifdef IS_MYSQL
+  stats.table_in_mem_estimate = 0;
+#endif
+
   rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
   if (rc != 0) {
@@ -670,19 +683,6 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
                   table_name, rc);
     goto error;
   }
-
-  thr_lock_data_init(&share->lock, &lock_data, (void *)this);
-
-  ref_length = SDB_OID_LEN;  // length of _id
-  stats.mrr_length_per_rec = ref_length + sizeof(void *);
-  /* max_data_file_length and max_index_file_length are actually not used in
-   * cost estimate.
-   */
-  stats.max_data_file_length = 8LL * 1024 * 1024 * 1024 * 1024;   // 8TB
-  stats.max_index_file_length = 8LL * 1024 * 1024 * 1024 * 1024;  // 8TB
-#ifdef IS_MYSQL
-  stats.table_in_mem_estimate = 0;
-#endif
 
   rc = update_stats(ha_thd(), false);
   if (0 != rc) {
