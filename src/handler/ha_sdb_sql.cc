@@ -439,6 +439,7 @@ bool sdb_datetime_to_timeval(THD *thd, const MYSQL_TIME *ltime,
       thd, ltime,
       TIME_FUZZY_DATES | TIME_INVALID_DATES | thd->temporal_round_mode(),
       MYSQL_TIMESTAMP_ERROR);
+  tm->tv_usec = ltime->second_part;
   return !(tm->tv_sec = TIME_to_timestamp(thd, ltime, (uint *)error_code));
 }
 
