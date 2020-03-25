@@ -134,16 +134,24 @@ drop table t1;
 #Case 20236
 create table t1(a int, b char(16));
 create table t2(a int primary key, b char(16));
+create table t3(a int primary key, b char(16)) comment = "sequoiadb:{ auto_partition : false }";
 insert into t1 values(1,'a'),(2,'b');
 insert into t2 values(1,'a'),(2,'b');
+insert into t3 values(1,'a'),(2,'b');
 alter table t1 comment = "sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: true }", ALGORITHM=inplace;
 --error 131
 alter table t2 comment = "sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: false }", ALGORITHM=inplace;
+--error 131
+alter table t3 comment = "sequoiadb:{ auto_partition : true }", ALGORITHM=inplace;
+show create table t3;
+alter table t3 comment = "sequoiadb:{ auto_partition : false }", ALGORITHM=inplace;
 show create table t1;
 show create table t2;
+show create table t3;
 select * from t1 order by a;
 select * from t2 order by a;
-drop table t1,t2;
+select * from t3 order by a;
+drop table t1,t2,t3;
 
 #Case 20254
 create table t1(a int, b char(16)) comment = "sequoiadb:{ table_options: { ShardingKey: { a : 1 }, ShardingType:\"hash\" } }"; 
@@ -1966,17 +1974,17 @@ create table t1 ( a int ) comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }
 --error 1210
 create table t1 ( a int ) comment = 'sequoiadb:{ auto_partion: true }';
 #BUG #SEQUOIASQLMAINSTREAM-591
-#create table t1 ( a int );
-#--error 1210
-#alter table t1 comment = 'sequoiadb:{ table_options: { Compressed: false }, ShardingKey: { wk: 1 }, EnsureShardingIndex: false } }';
-#--error 1210
-#alter table t1 comment = 'sequoiadb:{ partition_options: { Partition: 1024 }, Compressed: false }';
-#--error 1210
-#alter table t1 comment = 'sequoiadb:{ partition_option: { Partition: 1024 } }';
-#--error 1210
-#alter table t1 comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }';
-#show create table t1;
-#drop table t1;
+create table t1 ( a int );
+--error 1210
+alter table t1 comment = 'sequoiadb:{ table_options: { Compressed: false }, ShardingKey: { wk: 1 }, EnsureShardingIndex: false } }';
+--error 1210
+alter table t1 comment = 'sequoiadb:{ partition_options: { Partition: 1024 }, Compressed: false }';
+--error 1210
+alter table t1 comment = 'sequoiadb:{ partition_option: { Partition: 1024 } }';
+--error 1210
+alter table t1 comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }';
+show create table t1;
+drop table t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-517
 #SeqDB-21871

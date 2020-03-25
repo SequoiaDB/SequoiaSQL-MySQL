@@ -242,11 +242,23 @@ t1	CREATE TABLE `t1` (
 drop table t1;
 create table t1(a int, b char(16));
 create table t2(a int primary key, b char(16));
+create table t3(a int primary key, b char(16)) comment = "sequoiadb:{ auto_partition : false }";
 insert into t1 values(1,'a'),(2,'b');
 insert into t2 values(1,'a'),(2,'b');
+insert into t3 values(1,'a'),(2,'b');
 alter table t1 comment = "sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: true }", ALGORITHM=inplace;
 alter table t2 comment = "sequoiadb:{ table_options: { Compressed: false, StrictDataMode: true, AutoIndexId: false, ReplSize: 4 }, auto_partition: false }", ALGORITHM=inplace;
 ERROR HY000: Can't support alter auto partition
+alter table t3 comment = "sequoiadb:{ auto_partition : true }", ALGORITHM=inplace;
+ERROR HY000: Can't support alter auto partition
+show create table t3;
+Table	Create Table
+t3	CREATE TABLE `t3` (
+  `a` int(11) NOT NULL,
+  `b` char(16) DEFAULT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition : false }'
+alter table t3 comment = "sequoiadb:{ auto_partition : false }", ALGORITHM=inplace;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -260,6 +272,13 @@ t2	CREATE TABLE `t2` (
   `b` char(16) DEFAULT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+show create table t3;
+Table	Create Table
+t3	CREATE TABLE `t3` (
+  `a` int(11) NOT NULL,
+  `b` char(16) DEFAULT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition : false }'
 select * from t1 order by a;
 a	b
 1	a
@@ -268,7 +287,11 @@ select * from t2 order by a;
 a	b
 1	a
 2	b
-drop table t1,t2;
+select * from t3 order by a;
+a	b
+1	a
+2	b
+drop table t1,t2,t3;
 create table t1(a int, b char(16)) comment = "sequoiadb:{ table_options: { ShardingKey: { a : 1 }, ShardingType:\"hash\" } }";
 insert into t1 values(1,'a'),(2,'b');
 alter table t1 comment = "sequoiadb:{ table_options: { ShardingKey: \"123\", ShardingType:\"hash\"} }";
@@ -5049,6 +5072,21 @@ create table t1 ( a int ) comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }
 ERROR HY000: Invalid comment option 'table_option'.
 create table t1 ( a int ) comment = 'sequoiadb:{ auto_partion: true }';
 ERROR HY000: Invalid comment option 'auto_partion'.
+create table t1 ( a int );
+alter table t1 comment = 'sequoiadb:{ table_options: { Compressed: false }, ShardingKey: { wk: 1 }, EnsureShardingIndex: false } }';
+ERROR HY000: Invalid comment option 'ShardingKey'.
+alter table t1 comment = 'sequoiadb:{ partition_options: { Partition: 1024 }, Compressed: false }';
+ERROR HY000: Invalid comment option 'Compressed'.
+alter table t1 comment = 'sequoiadb:{ partition_option: { Partition: 1024 } }';
+ERROR HY000: Invalid comment option 'partition_option'.
+alter table t1 comment = 'sequoiadb:{ table_option: { ReplSize: 2 } }';
+ERROR HY000: Invalid comment option 'table_option'.
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+drop table t1;
 create table t1 ( a int not null, index(a) ) ;
 insert into t1 values (1);
 alter table t1 modify a int null;
