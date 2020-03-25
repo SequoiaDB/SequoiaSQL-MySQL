@@ -243,8 +243,7 @@ create table t1 select str_to_date("2003-01-02 10:11:12.0012", "%Y-%m-%d %H:%i:%
 			str_to_date("2003-01-02", "%Y-%m-%d") as f3,
 			str_to_date("02", "%d") as f4, str_to_date("02 10", "%d %H") as f5;
 #describe t1;
-##Bug #SEQUOIASQLMAINSTREAM-550
-##select * from t1;
+#select * from t1;
 #drop table t1;
 
 create table t1 select "02 10" as a, "%d %H" as b;

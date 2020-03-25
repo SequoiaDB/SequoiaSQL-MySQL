@@ -50,6 +50,20 @@ t1	CREATE TABLE `t1` (
   `time_to_sec(123456)` bigint(17) DEFAULT NULL,
   `time_to_sec('12:34:56.789')` decimal(19,3) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+select * from t1;
+sec_to_time(12345)	03:25:45
+sec_to_time(12345.6789)	03:25:45.6789
+sec_to_time(1234567e-2)	03:25:45.670000
+now()	2011-01-01 01:01:01
+curtime(0)	01:01:01
+utc_timestamp(1)	2010-12-31 22:01:01.1
+utc_time(2)	22:01:01.12
+current_time(3)	01:01:01.123
+current_timestamp(4)	2011-01-01 01:01:01.1234
+localtime(5)	2011-01-01 01:01:01.12345
+localtimestamp(6)	2011-01-01 01:01:01.123456
+time_to_sec(123456)	45296
+time_to_sec('12:34:56.789')	45296.789
 drop table t1;
 select unix_timestamp('2011-01-01 01:01:01'), unix_timestamp('2011-01-01 01:01:01.123456'), unix_timestamp(cast('2011-01-01 01:01:01.123456' as datetime(0))), unix_timestamp(cast('2011-01-01 01:01:01.123456' as datetime(4)));;
 unix_timestamp('2011-01-01 01:01:01')	1293832861
@@ -120,6 +134,23 @@ t1	CREATE TABLE `t1` (
   `t5` time(5) DEFAULT NULL,
   `t6` time(6) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+select * from t1;
+dauto	2011-01-02 12:13:14
+d0	2011-01-02 12:13:14
+d1	2011-01-02 12:13:14.1
+d2	2011-01-02 12:13:14.12
+d3	2011-01-02 12:13:14.123
+d4	2011-01-02 12:13:14.1234
+d5	2011-01-02 12:13:14.12345
+d6	2011-01-02 12:13:14.123456
+tauto	12:13:14
+t0	12:13:14
+t1	12:13:14.1
+t2	12:13:14.12
+t3	12:13:14.123
+t4	12:13:14.1234
+t5	12:13:14.12345
+t6	12:13:14.123456
 drop table t1;
 select cast(cast(@a as time(2)) as time(6));
 cast(cast(@a as time(2)) as time(6))

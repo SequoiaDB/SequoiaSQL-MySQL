@@ -103,7 +103,7 @@ describe t1;
 # PS doesn't support fractional seconds
 --disable_ps_protocol
 #Bug #SEQUOIASQLMAINSTREAM-550
-#select * from t1;
+select * from t1;
 --enable_ps_protocol
 
 create table test(t1 datetime, t2 time, t3 time, t4 datetime);
