@@ -12,3 +12,17 @@ SELECT * FROM t1 ORDER BY a;
 a
 set session sequoiadb_execute_only_in_mysql=off;
 DROP TABLE t1;
+CREATE TABLE t1( a int, b char(255), c char(255), d char(255), e char(255), f char(255) );
+INSERT INTO t1 VALUES( 1, 'b', 'c', 'd', 'e', 'f' );
+SELECT * FROM t1 ORDER BY a DESC;
+a	b	c	d	e	f
+1	b	c	d	e	f
+FLUSH TABLE t1;
+set session sequoiadb_execute_only_in_mysql=on;
+SELECT * FROM t1 ORDER BY a DESC;
+a	b	c	d	e	f
+set session sequoiadb_execute_only_in_mysql=off;
+SELECT * FROM t1 ORDER BY a DESC;
+a	b	c	d	e	f
+1	b	c	d	e	f
+DROP TABLE t1;
