@@ -1,4 +1,4 @@
-#Case 20109
+#Case 20109#Case 21988
 --source include/have_sequoiadb.inc
 --disable_warnings
 drop table if exists t1;
@@ -16,6 +16,17 @@ DELETE FROM t1 WHERE a = 11;
 SELECT * FROM t1 ORDER BY a; 
 
 set session sequoiadb_execute_only_in_mysql=off; 
+DROP TABLE t1;
+
+#SEQUOIASQLMAINSTREAM-627
+CREATE TABLE t1( a int, b char(255), c char(255), d char(255), e char(255), f char(255) ); 
+INSERT INTO t1 VALUES( 1, 'b', 'c', 'd', 'e', 'f' ); 
+SELECT * FROM t1 ORDER BY a DESC; 
+FLUSH TABLE t1; 
+set session sequoiadb_execute_only_in_mysql=on; 
+SELECT * FROM t1 ORDER BY a DESC; 
+set session sequoiadb_execute_only_in_mysql=off; 
+SELECT * FROM t1 ORDER BY a DESC;
 DROP TABLE t1;
 
 --source include/uninstall_sequoiadb.inc
