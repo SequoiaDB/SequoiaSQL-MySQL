@@ -768,38 +768,41 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
     repoint_field_to_record(table, table->record[0], buf);
   }
 
-  if (gen_oid) {
-    // Generate and assign an OID for the _id field.
-    // _id should be the first element for good performance.
-    obj_builder.genOID();
-  }
+  try {
+    if (gen_oid) {
+      // Generate and assign an OID for the _id field.
+      // _id should be the first element for good performance.
+      obj_builder.genOID();
+    }
 
-  for (Field **field = table->field; *field; field++) {
-    if ((*field)->is_null()) {
-      if (output_null) {
-        null_obj_builder.append(sdb_field_name(*field), "");
-      }
-    } else if (Field::NEXT_NUMBER == (*field)->unireg_check &&
-               !auto_inc_explicit_used) {
-      continue;
-    } else {
-      rc = field_to_obj(*field, obj_builder, auto_inc_explicit_used);
-      if (0 != rc) {
-        goto error;
+    for (Field **field = table->field; *field; field++) {
+      if ((*field)->is_null()) {
+        if (output_null) {
+          null_obj_builder.append(sdb_field_name(*field), "");
+        }
+      } else if (Field::NEXT_NUMBER == (*field)->unireg_check &&
+                 !auto_inc_explicit_used) {
+        continue;
+      } else {
+        rc = field_to_obj(*field, obj_builder, auto_inc_explicit_used);
+        if (0 != rc) {
+          goto error;
+        }
       }
     }
-  }
-
-  try {
     obj = obj_builder.obj();
+    null_obj = null_obj_builder.obj();
   } catch (bson::assertion e) {
-    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
-    rc = ER_TOO_BIG_FIELDLENGTH;
-    my_printf_error(rc, "Column length too big at row %lu", MYF(0),
-                    sdb_thd_current_row(ha_thd()));
+    if (SDB_INVALID_BSONOBJ_SIZE_ASSERT_ID == e.id ||
+        SDB_BUF_BUILDER_MAX_SIZE_ASSERT_ID == e.id) {
+      rc = ER_TOO_BIG_FIELDLENGTH;
+      my_printf_error(rc, "Column length too big at row %lu", MYF(0),
+                      sdb_thd_current_row(ha_thd()));
+    } else {
+      rc = HA_ERR_INTERNAL_ERROR;
+      SDB_LOG_ERROR("Exception[%s] occurs when build bson obj.", e.what());
+    }
   }
-  null_obj = null_obj_builder.obj();
-
 done:
   if (buf != table->record[0]) {
     repoint_field_to_record(table, buf, table->record[0]);
