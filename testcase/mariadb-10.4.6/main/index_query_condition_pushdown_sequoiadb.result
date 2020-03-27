@@ -4922,6 +4922,425 @@ id	a	b
 8	abc 	abc 
 2	ABCD	ABCD
 DROP TABLE t1;
+CREATE TABLE t1(id int auto_increment key, a char(127), b char(127));
+INSERT INTO t1(a, b) VALUES ("hello", "hello");
+INSERT INTO t1(a, b) VALUES ("HELLO", "HELLO");
+INSERT INTO t1(a, b) VALUES ("hello ", "hello ");
+INSERT INTO t1(a, b) VALUES ("HELLO ", "HELLO ");
+INSERT INTO t1(a, b) VALUES (" hello", " hello");
+INSERT INTO t1(a, b) VALUES (" HELLO", " HELLO");
+INSERT INTO t1(a, b) VALUES (" hello ", " hello ");
+INSERT INTO t1(a, b) VALUES (" HELLO ", " HELLO ");
+INSERT INTO t1(a, b) VALUES ("hello1", "hello1");
+INSERT INTO t1(a, b) VALUES ("HELLO1", "HELLO1");
+INSERT INTO t1(a, b) VALUES ("hello1 ", "hello1 ");
+INSERT INTO t1(a, b) VALUES ("HELLO1 ", "HELLO1 ");
+INSERT INTO t1(a, b) VALUES (" hello1", " hello1");
+INSERT INTO t1(a, b) VALUES (" HELLO1", " HELLO1");
+INSERT INTO t1(a, b) VALUES (" hello1 ", " hello1 ");
+INSERT INTO t1(a, b) VALUES (" HELLO1 ", " HELLO1 ");
+INSERT INTO t1(a, b) VALUES ("hello2 ", "hello2 ");
+INSERT INTO t1(a, b) VALUES (REPEAT('a', 127), REPEAT('a', 127));
+INSERT INTO t1(a, b) VALUES (REPEAT('A', 127), REPEAT('A', 127));
+SELECT * FROM t1 WHERE a IS NULL;
+id	a	b
+SELECT * FROM t1 WHERE a IS NOT NULL;
+id	a	b
+1	hello	hello
+10	HELLO1	HELLO1
+11	hello1	hello1
+12	HELLO1	HELLO1
+13	 hello1	 hello1
+14	 HELLO1	 HELLO1
+15	 hello1	 hello1
+16	 HELLO1	 HELLO1
+17	hello2	hello2
+18	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+19	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2	HELLO	HELLO
+3	hello	hello
+4	HELLO	HELLO
+5	 hello	 hello
+6	 HELLO	 HELLO
+7	 hello	 hello
+8	 HELLO	 HELLO
+9	hello1	hello1
+SELECT * FROM t1 WHERE a = "hello";
+id	a	b
+1	hello	hello
+3	hello	hello
+SELECT * FROM t1 WHERE a = "hello ";
+id	a	b
+1	hello	hello
+3	hello	hello
+SELECT * FROM t1 WHERE a = " hello";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a = " hello ";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a = " HELLO ";
+id	a	b
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a = b;
+id	a	b
+1	hello	hello
+10	HELLO1	HELLO1
+11	hello1	hello1
+12	HELLO1	HELLO1
+13	 hello1	 hello1
+14	 HELLO1	 HELLO1
+15	 hello1	 hello1
+16	 HELLO1	 HELLO1
+17	hello2	hello2
+18	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+19	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2	HELLO	HELLO
+3	hello	hello
+4	HELLO	HELLO
+5	 hello	 hello
+6	 HELLO	 HELLO
+7	 hello	 hello
+8	 HELLO	 HELLO
+9	hello1	hello1
+SELECT * FROM t1 WHERE a <=> "hello";
+id	a	b
+1	hello	hello
+3	hello	hello
+SELECT * FROM t1 WHERE a <=> "hello ";
+id	a	b
+1	hello	hello
+3	hello	hello
+SELECT * FROM t1 WHERE a <=> " hello";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a <=> " hello ";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a <=> " HELLO ";
+id	a	b
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a <=> REPEAT('A', 127);
+id	a	b
+19	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+SELECT * FROM t1 WHERE a <=> REPEAT('a', 256);
+id	a	b
+SELECT * FROM t1 WHERE a <=> b;
+id	a	b
+1	hello	hello
+10	HELLO1	HELLO1
+11	hello1	hello1
+12	HELLO1	HELLO1
+13	 hello1	 hello1
+14	 HELLO1	 HELLO1
+15	 hello1	 hello1
+16	 HELLO1	 HELLO1
+17	hello2	hello2
+18	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+19	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2	HELLO	HELLO
+3	hello	hello
+4	HELLO	HELLO
+5	 hello	 hello
+6	 HELLO	 HELLO
+7	 hello	 hello
+8	 HELLO	 HELLO
+9	hello1	hello1
+SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
+id	a	b
+1	hello	hello
+11	hello1	hello1
+3	hello	hello
+9	hello1	hello1
+SELECT * FROM t1 WHERE a BETWEEN "HELLO " AND "HELLO1 ";
+id	a	b
+10	HELLO1	HELLO1
+12	HELLO1	HELLO1
+2	HELLO	HELLO
+4	HELLO	HELLO
+SELECT * FROM t1 WHERE a BETWEEN " hello " AND " hello1 ";
+id	a	b
+13	 hello1	 hello1
+15	 hello1	 hello1
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a BETWEEN " HELLO1 " AND " HELLO1 ";
+id	a	b
+14	 HELLO1	 HELLO1
+16	 HELLO1	 HELLO1
+SELECT * FROM t1 WHERE a IN ("hello", "hello1");
+id	a	b
+1	hello	hello
+11	hello1	hello1
+3	hello	hello
+9	hello1	hello1
+SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
+id	a	b
+10	HELLO1	HELLO1
+12	HELLO1	HELLO1
+2	HELLO	HELLO
+4	HELLO	HELLO
+SELECT * FROM t1 WHERE a IN (" hello", " hello1");
+id	a	b
+13	 hello1	 hello1
+15	 hello1	 hello1
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
+id	a	b
+14	 HELLO1	 HELLO1
+16	 HELLO1	 HELLO1
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a LIKE "%hello";
+id	a	b
+1	hello	hello
+3	hello	hello
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a LIKE "%HELLO";
+id	a	b
+2	HELLO	HELLO
+4	HELLO	HELLO
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a LIKE "hello%";
+id	a	b
+1	hello	hello
+11	hello1	hello1
+17	hello2	hello2
+3	hello	hello
+9	hello1	hello1
+SELECT * FROM t1 WHERE a LIKE "HELLO%";
+id	a	b
+10	HELLO1	HELLO1
+12	HELLO1	HELLO1
+2	HELLO	HELLO
+4	HELLO	HELLO
+SELECT * FROM t1 WHERE a LIKE "_hello";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a LIKE "_HELLO";
+id	a	b
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a LIKE "hello_";
+id	a	b
+11	hello1	hello1
+17	hello2	hello2
+9	hello1	hello1
+SELECT * FROM t1 WHERE a LIKE "HELLO_";
+id	a	b
+10	HELLO1	HELLO1
+12	HELLO1	HELLO1
+CREATE INDEX a ON t1(a(16));
+CREATE INDEX b ON t1(b(16));
+SELECT * FROM t1 WHERE a IS NULL;
+id	a	b
+SELECT * FROM t1 WHERE a IS NOT NULL;
+id	a	b
+1	hello	hello
+10	HELLO1	HELLO1
+11	hello1	hello1
+12	HELLO1	HELLO1
+13	 hello1	 hello1
+14	 HELLO1	 HELLO1
+15	 hello1	 hello1
+16	 HELLO1	 HELLO1
+17	hello2	hello2
+18	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+19	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2	HELLO	HELLO
+3	hello	hello
+4	HELLO	HELLO
+5	 hello	 hello
+6	 HELLO	 HELLO
+7	 hello	 hello
+8	 HELLO	 HELLO
+9	hello1	hello1
+SELECT * FROM t1 WHERE a = "hello";
+id	a	b
+1	hello	hello
+3	hello	hello
+SELECT * FROM t1 WHERE a = "hello ";
+id	a	b
+1	hello	hello
+3	hello	hello
+SELECT * FROM t1 WHERE a = " hello";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a = " hello ";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a = " HELLO ";
+id	a	b
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a = b;
+id	a	b
+1	hello	hello
+10	HELLO1	HELLO1
+11	hello1	hello1
+12	HELLO1	HELLO1
+13	 hello1	 hello1
+14	 HELLO1	 HELLO1
+15	 hello1	 hello1
+16	 HELLO1	 HELLO1
+17	hello2	hello2
+18	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+19	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2	HELLO	HELLO
+3	hello	hello
+4	HELLO	HELLO
+5	 hello	 hello
+6	 HELLO	 HELLO
+7	 hello	 hello
+8	 HELLO	 HELLO
+9	hello1	hello1
+SELECT * FROM t1 WHERE a <=> "hello";
+id	a	b
+1	hello	hello
+3	hello	hello
+SELECT * FROM t1 WHERE a <=> "hello ";
+id	a	b
+1	hello	hello
+3	hello	hello
+SELECT * FROM t1 WHERE a <=> " hello";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a <=> " hello ";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a <=> " HELLO ";
+id	a	b
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a <=> REPEAT('A', 127);
+id	a	b
+19	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+SELECT * FROM t1 WHERE a <=> REPEAT('a', 256);
+id	a	b
+SELECT * FROM t1 WHERE a <=> b;
+id	a	b
+1	hello	hello
+10	HELLO1	HELLO1
+11	hello1	hello1
+12	HELLO1	HELLO1
+13	 hello1	 hello1
+14	 HELLO1	 HELLO1
+15	 hello1	 hello1
+16	 HELLO1	 HELLO1
+17	hello2	hello2
+18	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+19	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2	HELLO	HELLO
+3	hello	hello
+4	HELLO	HELLO
+5	 hello	 hello
+6	 HELLO	 HELLO
+7	 hello	 hello
+8	 HELLO	 HELLO
+9	hello1	hello1
+SELECT * FROM t1 WHERE a BETWEEN "hello " AND "hello1 ";
+id	a	b
+1	hello	hello
+11	hello1	hello1
+3	hello	hello
+9	hello1	hello1
+SELECT * FROM t1 WHERE a BETWEEN "HELLO " AND "HELLO1 ";
+id	a	b
+10	HELLO1	HELLO1
+12	HELLO1	HELLO1
+2	HELLO	HELLO
+4	HELLO	HELLO
+SELECT * FROM t1 WHERE a BETWEEN " hello " AND " hello1 ";
+id	a	b
+13	 hello1	 hello1
+15	 hello1	 hello1
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a BETWEEN " HELLO1 " AND " HELLO1 ";
+id	a	b
+14	 HELLO1	 HELLO1
+16	 HELLO1	 HELLO1
+SELECT * FROM t1 WHERE a IN ("hello", "hello1");
+id	a	b
+1	hello	hello
+11	hello1	hello1
+3	hello	hello
+9	hello1	hello1
+SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
+id	a	b
+10	HELLO1	HELLO1
+12	HELLO1	HELLO1
+2	HELLO	HELLO
+4	HELLO	HELLO
+SELECT * FROM t1 WHERE a IN (" hello", " hello1");
+id	a	b
+13	 hello1	 hello1
+15	 hello1	 hello1
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
+id	a	b
+14	 HELLO1	 HELLO1
+16	 HELLO1	 HELLO1
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a LIKE "%hello";
+id	a	b
+1	hello	hello
+3	hello	hello
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a LIKE "%HELLO";
+id	a	b
+2	HELLO	HELLO
+4	HELLO	HELLO
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a LIKE "hello%";
+id	a	b
+1	hello	hello
+11	hello1	hello1
+17	hello2	hello2
+3	hello	hello
+9	hello1	hello1
+SELECT * FROM t1 WHERE a LIKE "HELLO%";
+id	a	b
+10	HELLO1	HELLO1
+12	HELLO1	HELLO1
+2	HELLO	HELLO
+4	HELLO	HELLO
+SELECT * FROM t1 WHERE a LIKE "_hello";
+id	a	b
+5	 hello	 hello
+7	 hello	 hello
+SELECT * FROM t1 WHERE a LIKE "_HELLO";
+id	a	b
+6	 HELLO	 HELLO
+8	 HELLO	 HELLO
+SELECT * FROM t1 WHERE a LIKE "hello_";
+id	a	b
+11	hello1	hello1
+17	hello2	hello2
+9	hello1	hello1
+SELECT * FROM t1 WHERE a LIKE "HELLO_";
+id	a	b
+10	HELLO1	HELLO1
+12	HELLO1	HELLO1
+DROP TABLE t1;
 CREATE TABLE t1(id int auto_increment key, a char(255), b char(255));
 CREATE INDEX a ON t1(a(3));
 INSERT INTO t1(a, b) VALUES ("abcd", "abcd");
