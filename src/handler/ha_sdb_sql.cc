@@ -240,6 +240,12 @@ time_round_mode_t sdb_thd_time_round_mode(THD *thd) {
 }
 
 bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
+  // For datetime/timestamp, get_time() will truncate the date info.
+  // But the day may be useful. So get_date() instead.
+  if (MYSQL_TYPE_DATETIME == item_val->field_type() ||
+      MYSQL_TYPE_TIMESTAMP == item_val->field_type()) {
+    return item_val->get_date(ltime, TIME_FUZZY_DATE);
+  }
   return item_val->get_time(ltime);
 }
 
