@@ -413,6 +413,10 @@ int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
     // For main cl, each data node may have different page size,
     // so calculate pages base on the min page size.
     int page_size = obj.getField("PageSize").numberInt();
+    // when exception occurs, page size may be 0, but it should never be.
+    if (0 == page_size) {
+      page_size = PAGE_SIZE_MAX;
+    }
     if (page_size < stats.page_size) {
       stats.page_size = page_size;
     }
