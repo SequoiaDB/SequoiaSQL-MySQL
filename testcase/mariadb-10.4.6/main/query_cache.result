@@ -1296,7 +1296,7 @@ DROP TABLE t1;
 DROP TEMPORARY TABLE t_history;
 SET @@global.query_cache_size = default;
 End of 5.0 tests
-SET GLOBAL query_cache_size=1024*1024*512;
+SET GLOBAL query_cache_size=1024*1024*64;
 CREATE TABLE t1 (a ENUM('rainbow'));
 INSERT INTO t1 VALUES (),(),(),(),();
 SELECT 1 FROM t1 GROUP BY (SELECT 1 FROM t1 ORDER BY AVG(LAST_INSERT_ID()));

@@ -496,6 +496,7 @@ connection wl_acquirer;
 connection rl_contender;
 rl_contender	id
 rl_contender	2
+rl_contender	5
 connection default;
 disconnect rl_acquirer;
 disconnect wl_acquirer;

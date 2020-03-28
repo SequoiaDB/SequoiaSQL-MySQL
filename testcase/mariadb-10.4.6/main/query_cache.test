@@ -1550,7 +1550,9 @@ SET @@global.query_cache_size = default;
 # Bug #31157: Crash when select+order by the avg of some field within the
 # group by
 #
-SET GLOBAL query_cache_size=1024*1024*512;
+# Low Memory will cause warnings, decrease query_cache_size to 64M
+#SET GLOBAL query_cache_size=1024*1024*512;
+SET GLOBAL query_cache_size=1024*1024*64;
 CREATE TABLE t1 (a ENUM('rainbow'));
 INSERT INTO t1 VALUES (),(),(),(),();
 SELECT 1 FROM t1 GROUP BY (SELECT 1 FROM t1 ORDER BY AVG(LAST_INSERT_ID()));
