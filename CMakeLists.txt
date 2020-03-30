@@ -367,8 +367,6 @@ if(MYSQL)
          install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/x86_64/release"
                  DESTINATION "tools/lib")
       endif()
-      install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/metaSync"
-              DESTINATION "tools/metaSync")
    elseif( ${ARCHITECTURE} STREQUAL "aarch64" )
       if(WITH_DEBUG)
          install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/aarch64/debug"
@@ -377,8 +375,6 @@ if(MYSQL)
          install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/aarch64/release"
                  DESTINATION "tools/lib")
       endif()
-      install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/metaSync"
-              DESTINATION "tools/metaSync")
    else()
       install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib"
               DESTINATION "tools")
