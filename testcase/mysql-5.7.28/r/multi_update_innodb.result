@@ -9,18 +9,20 @@ b INT,
 PRIMARY KEY (pk)
 ) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES (0,0,0);
+UPDATE t1 AS A, t1 AS B SET A.pk = 1, B.a = 2;
 SELECT * FROM t1;
 pk	a	b
-0	0	0
+1	2	0
 CREATE VIEW v1 AS SELECT * FROM t1;
+UPDATE v1 AS A, t1 AS B SET A.pk = 1, B.a = 2;
 SELECT * FROM t1;
 pk	a	b
-0	0	0
+1	2	0
 UPDATE t1 AS A, t1 AS B SET A.a = 1, B.b = 2;
 # Should be (0,1,2)
 SELECT * FROM t1;
 pk	a	b
-0	1	2
+1	1	2
 DROP VIEW v1;
 DROP TABLE t1;
 #
@@ -46,16 +48,19 @@ primary key (pk_1,pk_2)
 ) ENGINE=SEQUOIADB;
 INSERT INTO t2 VALUES (1,2,3,4);
 
+UPDATE t1 AS A NATURAL JOIN t1 B SET A.pk=5,B.pk=7;
 
 SELECT * FROM t1;
 col_int_key	pk	col_int
-1	2	3
+1	7	3
 
+UPDATE t2 AS A NATURAL JOIN t2 B SET A.pk_1=5,B.pk_1=7;
 
+UPDATE t2 AS A NATURAL JOIN t2 B SET A.pk_2=10,B.pk_2=11;
 
 SELECT * FROM t2;
 col_int_key	pk_1	pk_2	col_int
-1	2	3	4
+1	7	11	4
 DROP TABLE t1,t2;
 #
 #Bug 11757486 - 49539: NON-DESCRIPTIVE ERR (ERROR 0 FROM STORAGE ENGINE)
