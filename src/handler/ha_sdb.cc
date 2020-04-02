@@ -2403,6 +2403,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     case HA_ERR_END_OF_FILE: {
 #ifdef IS_MYSQL
       rc = HA_ERR_KEY_NOT_FOUND;
+#elif IS_MARIADB
+      SELECT_LEX *current_select = sdb_lex_current_select(ha_thd());
+      if (current_select->join && current_select->join->implicit_grouping) {
+        rc = HA_ERR_KEY_NOT_FOUND;
+      }
 #endif
       table->status = STATUS_NOT_FOUND;
       break;
