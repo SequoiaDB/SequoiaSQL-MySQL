@@ -6,19 +6,55 @@ It currently supports SequoiaDB 3.x as the backend database, and it will be exte
 
 In order to take advantages of scalability and performance, SequoiaSQL-MySQL Storage Engine can be used to replace InnoDB and store user data/index/lob in the backend distributed database.
 
+## Building.
+1. Get the source code of SequoiaSQL-MySQL from github.  
+```bash
+git clone https://github.com/SequoiaDB/sequoiasql-mysql.git sequoiasql-mysql
+```  
+2. Get the source code of [mysql-5.7.25](https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.25.tar.gz). Decompress the MySQL source code to the directory of `sequoiasql-mysql/sql-src/mysql-5.7.25`.
+```bash
+tar -xzvf mysql-5.7.25.tar.gz -C sequoiasql-mysql/sql-src/mysql-5.7.25
+```  
+3. Get the [SequoiaDB C++ driver 3.2.4](http://cnd.sequoiadb.com/images/sequoiadb-3.2.4/x86_64/driver/C%26CPP-3.2.4-linux_x86_64.tar.gz).
+4. Configure the build.
+```bash
+cd sequoiasql-mysql
+mkdir build
+cd build
+cmake .. -DMYSQL=5.7.25 -DWITH_SSL=</absolute/path/of/sequoiasql-mysql/thirdparty/openssl-1.0.1c> -DWITH_SDB_DRIVER=</path/to/sequoiadb/cpp/driver> -DCMAKE_INSTALL_PREFIX=</path/to/install/mysql/> -DCMAKE_BUILD_TYPE=Debug
+```
+SequoiaSQL-MySQL Storage Engine also supports the MySQL(5.7.24/5.7.28). Build different version of MySQL with argument `-DProjectType=version`. For example:
+```bash
+tar -xzvf mysql-5.7.24.tar.gz -C sequoiasql-mysql-src/sql-src/mysql-5.7.24/
+cd sequoiasql-mysql
+mkdir build
+cd build
+cmake .. -DMYSQL=5.7.24 -DWITH_SSL=</absolute/path/of/sequoiasql-mysql/thirdparty/openssl-1.0.1c> -DWITH_SDB_DRIVER=</path/to/sequoiadb/cpp/driver> -DCMAKE_INSTALL_PREFIX=</path/to/install/mysql/> -DCMAKE_BUILD_TYPE=Debug
+```
+5. Compile and install.
+```bash
+make -j 4
+make install
+```
+> Note:  
+> To simplify the compile, you can build with build script `build.py` instead of step 3~5.
+> ```bash
+> python3 build.py --sdbdriver </path/to/sequoiadb/cpp/driver> -t mysql-5.7.25 -i </path/to/install/mysql/> --clean --archivetest --dd
+> ```
 
-## Building
-1. Get the source code of SequoiaSQL-MySQL and SequoiaDB C++ driver 3.2.4.
-```bash
-git clone http://gitlab.sequoiadb.com/sequoiadb/sequoiasql-mysql.git sequoiasql-mysql
+## Testing the SequoiaSQL-MySQL server.
+> Prerequisites:  
+> SequoiaSQL-MySQL server can acess a SequoiaDB Cluster.   
+
+SequoiaSQL-MySQL using the MySQL testing framework defined in `mysql-test` folder. To run all tests:
 ```
-2. Build the SequoiaSQL-MySQL.
-```bash
-python3 build.py --sdbdriver </path/to/sequoiadb/cpp/driver> -t mysql-5.7.25 -i </path/to/install/mysql/> --clean --archivetest --dd
+cd mysql-test
+./mtr --suite=main,json --big-test --force --max-test-fail=0 --parallel=4
 ```
-SequoiaSQL-MySQL Storage Engine also supports the MySQL(5.7.24/5.7.28). Build different version of MySQL with argument `-t projectType`. For example:
-```bash
-python3 build.py --sdbdriver </path/to/sequoiadb/cpp/driver> -t mysql-5.7.24 -i </path/to/install/mysql/> --clean --archivetest --dd
+To run only one test:
+```
+cd mysql-test
+./mtr --suite=<main_or_json> <test_case_name>
 ```
 
 ## Coding Guidelines
