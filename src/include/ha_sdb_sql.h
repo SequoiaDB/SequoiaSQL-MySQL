@@ -214,6 +214,8 @@ const char *sdb_item_name(const Item *cond_item);
 
 time_round_mode_t sdb_thd_time_round_mode(THD *thd);
 
+bool sdb_is_transaction_stmt(THD *thd);
+
 // About Field
 const char *sdb_field_name(const Field *f);
 
@@ -282,5 +284,7 @@ uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
 void *sdb_trans_alloc(THD *thd, size_t size);
 
 bool sdb_create_table_like(THD *thd);
+
+void sdb_query_cache_invalidate(THD *thd);
 
 #endif

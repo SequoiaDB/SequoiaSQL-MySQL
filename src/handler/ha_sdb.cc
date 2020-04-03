@@ -417,6 +417,7 @@ void sdb_set_affected_rows(THD *thd) {
     my_ok(thd, affected_num, last_insert_id, buff);
     DBUG_PRINT("info", ("%llu records duplicated", dup_num));
     dup_num = 0;
+    sdb_query_cache_invalidate(thd);
   }
   // For SQLCOM_UPDATE...
   if (thd_sdb->found || thd_sdb->updated) {
@@ -434,6 +435,7 @@ void sdb_set_affected_rows(THD *thd) {
     DBUG_PRINT("info", ("%llu records updated", updated));
     found = 0;
     updated = 0;
+    sdb_query_cache_invalidate(thd);
   }
   // For SQLCOM_DELETE...
   if (SQLCOM_DELETE == thd_sql_command(thd) ||
@@ -451,6 +453,7 @@ void sdb_set_affected_rows(THD *thd) {
       my_ok(thd, deleted, last_insert_id, message_text);
       DBUG_PRINT("info", ("%llu records deleted", deleted));
       deleted = 0;
+      sdb_query_cache_invalidate(thd);
     }
   }
 
