@@ -297,4 +297,6 @@ ulong sdb_da_current_statement_cond_count(Diagnostics_area *da);
 
 bool sdb_create_table_like(THD *thd);
 
+void sdb_query_cache_invalidate(THD *thd);
+
 #endif

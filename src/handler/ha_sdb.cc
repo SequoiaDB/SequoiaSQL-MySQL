@@ -462,6 +462,7 @@ void sdb_set_affected_rows(THD *thd) {
     my_ok(thd, affected_num, last_insert_id, buff);
     DBUG_PRINT("info", ("%llu records duplicated", dup_num));
     dup_num = 0;
+    sdb_query_cache_invalidate(thd);
   }
 
   // For SQLCOM_UPDATE...
@@ -479,6 +480,7 @@ void sdb_set_affected_rows(THD *thd) {
     DBUG_PRINT("info", ("%llu records updated", updated));
     found = 0;
     updated = 0;
+    sdb_query_cache_invalidate(thd);
   }
 
   // For SQLCOM_DELETE...
@@ -497,6 +499,7 @@ void sdb_set_affected_rows(THD *thd) {
       my_ok(thd, deleted, last_insert_id, message_text);
       DBUG_PRINT("info", ("%llu records deleted", deleted));
       deleted = 0;
+      sdb_query_cache_invalidate(thd);
     }
   }
 
@@ -1826,7 +1829,7 @@ retry:
                TYPE_WARN_OUT_OF_RANGE == rc) {
 #elif IS_MARIADB
     } else if (1 == rc || 2 == rc) {
-      thd->killed= KILL_BAD_DATA;
+      thd->killed = KILL_BAD_DATA;
 #endif
       rc = HA_ERR_END_OF_FILE;
     }

@@ -372,6 +372,8 @@ const char *sdb_elem_type_str(bson::BSONType type) {
     default:
       DBUG_ASSERT(false);
   }
+  // avoid compile warning. Never come here
+  return "";
 }
 
 const char *sdb_field_type_str(enum enum_field_types type) {
