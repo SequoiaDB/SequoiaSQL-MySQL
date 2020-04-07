@@ -4868,7 +4868,7 @@ static void sdb_kill_connection(handlerton *hton, THD *thd) {
   DBUG_PRINT("ha_sdb:info",
              ("Interrupt sdb session, mysql connection id:%llu", tid));
 done:
-  if (curr_thd->is_error()) {
+  if (curr_thd && curr_thd->is_error()) {
     curr_thd->clear_error();
   }
   DBUG_VOID_RETURN;
