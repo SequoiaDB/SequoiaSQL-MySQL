@@ -303,6 +303,13 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
       break;
     }
     case Item_func::LIKE_FUNC: {
+#ifdef IS_MARIADB
+      // "not like" not supported.
+      if (((Item_func_like *)cond_item)->get_negated()) {
+        item = new Sdb_func_unkown(cond_item);
+        break;
+      }
+#endif
       item = new Sdb_func_like((Item_func_like *)cond_item);
       break;
     }
