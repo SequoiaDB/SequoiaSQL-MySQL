@@ -1695,7 +1695,7 @@ int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
   bitmap_set_bit(table->read_set, rfield->field_index);
 
   rc = value->save_in_field(rfield, false);
-  if (TYPE_OK != rc) {
+  if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc) {
     rc = 0;
     *optimizer_update = false;
     THD *thd = rfield->table->in_use;
@@ -1757,7 +1757,7 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
 
 retry:
   rc = value->save_in_field(rfield, false);
-  if (TYPE_OK != rc) {
+  if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc) {
     if (is_real) {
       rc = TYPE_OK;
       THD *thd = rfield->table->in_use;
@@ -1795,12 +1795,17 @@ retry:
       }
       goto retry;
 #if defined IS_MYSQL
-    } else if (TYPE_WARN_TRUNCATED == rc || TYPE_WARN_INVALID_STRING == rc ||
+    } else if (TYPE_WARN_INVALID_STRING == rc ||
                TYPE_WARN_OUT_OF_RANGE == rc) {
 #elif IS_MARIADB
     } else if (1 == rc || 2 == rc) {
 #endif
       rc = HA_ERR_END_OF_FILE;
+    } else {
+      rc = 0;
+      sdb_thd_set_not_killed(thd);
+      thd->clear_error();
+      sdb_thd_reset_condition_info(thd);
     }
     *optimizer_update = false;
     goto error;
