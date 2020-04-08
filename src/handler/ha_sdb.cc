@@ -1751,7 +1751,11 @@ int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
   bitmap_set_bit(table->read_set, rfield->field_index);
 
   rc = value->save_in_field(rfield, false);
+#ifdef IS_MYSQL
+  if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc) {
+#elif IS_MARIADB
   if (TYPE_OK != rc) {
+#endif
     rc = 0;
     *optimizer_update = false;
     THD *thd = rfield->table->in_use;
@@ -1814,7 +1818,11 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
 
 retry:
   rc = value->save_in_field(rfield, false);
+#ifdef IS_MYSQL
+  if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc) {
+#elif IS_MARIADB
   if (TYPE_OK != rc) {
+#endif
     if (is_real) {
       rc = TYPE_OK;
       sdb_thd_set_not_killed(thd);
@@ -1850,13 +1858,17 @@ retry:
       }
       goto retry;
 #if defined IS_MYSQL
-    } else if (TYPE_WARN_TRUNCATED == rc || TYPE_WARN_INVALID_STRING == rc ||
-               TYPE_WARN_OUT_OF_RANGE == rc) {
+    } else if (TYPE_WARN_INVALID_STRING == rc || TYPE_WARN_OUT_OF_RANGE == rc) {
 #elif IS_MARIADB
     } else if (1 == rc || 2 == rc) {
       thd->killed = KILL_BAD_DATA;
 #endif
       rc = HA_ERR_END_OF_FILE;
+    } else {
+      rc = 0;
+      sdb_thd_set_not_killed(thd);
+      thd->clear_error();
+      sdb_thd_reset_condition_info(thd);
     }
     *optimizer_update = false;
     goto error;
