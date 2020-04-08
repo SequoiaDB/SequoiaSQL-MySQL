@@ -163,13 +163,13 @@ error:
   goto done;
 }
 
-int Sdb_conn::commit_transaction() {
+int Sdb_conn::commit_transaction(const bson::BSONObj &hint) {
   DBUG_ENTER("Sdb_conn::commit_transaction");
   int rc = SDB_ERR_OK;
   if (m_transaction_on) {
     m_transaction_on = false;
     if (!pushed_autocommit) {
-      rc = m_connection.transactionCommit();
+      rc = m_connection.transactionCommit(hint);
       if (rc != SDB_ERR_OK) {
         goto error;
       }

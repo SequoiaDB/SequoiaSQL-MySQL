@@ -182,20 +182,21 @@ error:
   goto done;
 }
 
-int cl_insert(sdbclient::sdbCollection *cl, bson::BSONObj *obj, int flag,
-              bson::BSONObj *result) {
-  return cl->insert(*obj, flag, result);
+int cl_insert(sdbclient::sdbCollection *cl, bson::BSONObj *obj,
+              bson::BSONObj &hint, int flag, bson::BSONObj *result) {
+  return cl->insert(*obj, hint, flag, result);
 }
 
-int Sdb_cl::insert(bson::BSONObj &obj, int flag, bson::BSONObj *result) {
-  return retry(boost::bind(cl_insert, &m_cl, &obj, flag, result));
-}
-
-int Sdb_cl::insert(std::vector<bson::BSONObj> &objs, int flag,
+int Sdb_cl::insert(bson::BSONObj &obj, bson::BSONObj &hint, int flag,
                    bson::BSONObj *result) {
+  return retry(boost::bind(cl_insert, &m_cl, &obj, hint, flag, result));
+}
+
+int Sdb_cl::insert(std::vector<bson::BSONObj> &objs, bson::BSONObj &hint,
+                   int flag, bson::BSONObj *result) {
   int rc = SDB_ERR_OK;
 
-  rc = m_cl.insert(objs, flag, result);
+  rc = m_cl.insert(objs, hint, flag, result);
   if (rc != SDB_ERR_OK) {
     goto error;
   }

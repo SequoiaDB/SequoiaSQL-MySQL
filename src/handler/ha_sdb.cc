@@ -1404,7 +1404,12 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
     flag = FLG_INSERT_CONTONDUP | FLG_INSERT_RETURNNUM;
   }
 
-  int rc = collection->insert(rows, flag, &result);
+  bson::BSONObj hint;
+  bson::BSONObjBuilder builder;
+  sdb_build_clientinfo(ha_thd(), builder);
+  hint = builder.obj();
+
+  int rc = collection->insert(rows, hint, flag, &result);
   if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
     get_dup_info(result);
     if (m_insert_with_update) {
@@ -4704,6 +4709,8 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   Sdb_conn *connection;
+  bson::BSONObj hint;
+  bson::BSONObjBuilder builder;
 
   thd_sdb->start_stmt_count = 0;
 
@@ -4736,7 +4743,10 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   }
   thd_sdb->save_point_count = 0;
 
-  rc = connection->commit_transaction();
+  sdb_build_clientinfo(thd, builder);
+  hint = builder.obj();
+
+  rc = connection->commit_transaction(hint);
   if (0 != rc) {
     goto error;
   }

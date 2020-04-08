@@ -45,7 +45,7 @@ class Sdb_conn {
 
   int begin_transaction();
 
-  int commit_transaction();
+  int commit_transaction(const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
   int rollback_transaction();
 

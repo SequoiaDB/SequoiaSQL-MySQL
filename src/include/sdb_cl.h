@@ -56,10 +56,11 @@ class Sdb_cl {
 
   int next(bson::BSONObj &obj, my_bool get_owned = true);
 
-  int insert(bson::BSONObj &obj, int flag = 0, bson::BSONObj *result = NULL);
-
-  int insert(std::vector<bson::BSONObj> &objs, int flag = 0,
+  int insert(bson::BSONObj &obj, bson::BSONObj &hint, int flag = 0,
              bson::BSONObj *result = NULL);
+
+  int insert(std::vector<bson::BSONObj> &objs, bson::BSONObj &hint,
+             int flag = 0, bson::BSONObj *result = NULL);
 
   int bulk_insert(int flag, std::vector<bson::BSONObj> &objs);
 
