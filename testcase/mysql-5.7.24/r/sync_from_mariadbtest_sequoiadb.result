@@ -19,3 +19,18 @@ SELECT * FROM t1 WHERE t = TIMESTAMP'2001-01-08 00:00:00' - INTERVAL 7 DAY;
 t
 2001-01-01 00:00:00
 DROP TABLE t1;
+CREATE TABLE t1 (tm TIME);
+INSERT INTO t1 VALUES ('0000-00-00 10:20:30'),('0000-00-00 10:20:31');
+INSERT INTO t1 VALUES ('0000-00-01 10:20:30'),('0000-00-01 10:20:31');
+Warnings:
+Note	1292	Incorrect time value: '0000-00-01 10:20:30' for column 'tm' at row 1
+Note	1292	Incorrect time value: '0000-00-01 10:20:31' for column 'tm' at row 2
+INSERT INTO t1 VALUES ('31 10:20:30'),('32 10:20:30'),('33 10:20:30'),('34 10:20:30');
+SET sql_mode = '';
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+SELECT * FROM t1 WHERE tm = TIMESTAMP'0000-00-01 10:20:30';
+tm
+34:20:30
+DROP TABLE t1;
+SET sql_mode = default;
