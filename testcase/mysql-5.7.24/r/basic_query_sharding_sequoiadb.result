@@ -14168,3 +14168,62 @@ id	loc_id	gw_id	com_id	meter_id	zxygz	dya	dyb	dyc	dla	dlb	dlc	glysz	ygglz	date_t
 45629000	111	2	2	499	1189.2000	229.8000	229.8000	230.2000	0.0000	0.0000	0.0000	NULL	0.0000	2018-04-19 23:50:30	2018-04-19 23:51:00
 45629008	111	2	2	500	1162.8000	229.8000	229.9000	229.9000	0.0000	0.0000	0.0000	NULL	0.0000	2018-04-19 23:50:30	2018-04-19 23:51:00
 DROP TABLE elec_meter_data;
+CREATE TABLE t1 ( c CHAR(16), vc VARCHAR(16) );
+CREATE TABLE t2 ( tx1 TINYTEXT, tx2 TEXT, tx3 MEDIUMTEXT, tx4 LONGTEXT );
+INSERT INTO t1 VALUES ('hello','hello'), ('hello ','hello '), ('holo','holo'), ('holo ','holo '), ('abc','abc');
+INSERT INTO t2 VALUES ('hello','hello','hello','hello'), ('hello ','hello ','hello ','hello ');
+INSERT INTO t2 VALUES ('holo','holo','holo','holo'), ('holo ','holo ','holo ','holo '), ('abc','abc','abc','abc');
+SELECT * FROM t1 WHERE c NOT LIKE 'h%l%';
+c	vc
+abc	abc
+SELECT * FROM t1 WHERE vc NOT LIKE 'h%l%';
+c	vc
+abc	abc
+SELECT * FROM t2 WHERE tx1 NOT LIKE 'h%l%';
+tx1	tx2	tx3	tx4
+abc	abc	abc	abc
+SELECT * FROM t2 WHERE tx2 NOT LIKE 'h%l%';
+tx1	tx2	tx3	tx4
+abc	abc	abc	abc
+SELECT * FROM t2 WHERE tx3 NOT LIKE 'h%l%';
+tx1	tx2	tx3	tx4
+abc	abc	abc	abc
+SELECT * FROM t2 WHERE tx4 NOT LIKE 'h%l%';
+tx1	tx2	tx3	tx4
+abc	abc	abc	abc
+SELECT * FROM t1 WHERE c NOT LIKE 'h_l_';
+c	vc
+hello	hello
+hello	hello 
+abc	abc
+SELECT * FROM t1 WHERE vc NOT LIKE 'h_l_';
+c	vc
+hello	hello
+hello	hello 
+holo	holo 
+abc	abc
+SELECT * FROM t2 WHERE tx1 NOT LIKE 'h_l_';
+tx1	tx2	tx3	tx4
+hello	hello	hello	hello
+hello 	hello 	hello 	hello 
+holo 	holo 	holo 	holo 
+abc	abc	abc	abc
+SELECT * FROM t2 WHERE tx2 NOT LIKE 'h_l_';
+tx1	tx2	tx3	tx4
+hello	hello	hello	hello
+hello 	hello 	hello 	hello 
+holo 	holo 	holo 	holo 
+abc	abc	abc	abc
+SELECT * FROM t2 WHERE tx3 NOT LIKE 'h_l_';
+tx1	tx2	tx3	tx4
+hello	hello	hello	hello
+hello 	hello 	hello 	hello 
+holo 	holo 	holo 	holo 
+abc	abc	abc	abc
+SELECT * FROM t2 WHERE tx4 NOT LIKE 'h_l_';
+tx1	tx2	tx3	tx4
+hello	hello	hello	hello
+hello 	hello 	hello 	hello 
+holo 	holo 	holo 	holo 
+abc	abc	abc	abc
+DROP TABLE t1,t2;

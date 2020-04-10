@@ -2,7 +2,7 @@
 #Case 13098#Case 13099#Case 13100#Case 13101#Case 13102#Case 13103#Case 13104#Case 13105
 #Case 13106#Case 13107#Case 13108#Case 13109#Case 13110#Case 13111#Case 13112#Case 13113
 #Case 13114#Case 13115#Case 13116#Case 13117#Case 13118#Case 13119#Case 13120#Case 13121
-#Case 13305#Case 13306#Case 15436#Case 15438
+#Case 13305#Case 13306#Case 15436#Case 15438#Case 22080
 --source include/have_sequoiadb.inc
 
 --disable_warnings
@@ -1161,5 +1161,28 @@ ANALYZE TABLE elec_meter_data;
 SELECT COUNT(*) FROM elec_meter_data WHERE meter_id IN (497, 498, 499, 500) AND date_time >= "2018-04-03 00:00:00" AND date_time < "2018-04-20 00:00:00" ORDER BY id, date_time ASC;
 SELECT * FROM elec_meter_data WHERE meter_id IN (497, 498, 499, 500) AND date_time >= "2018-04-03 00:00:00" AND date_time < "2018-04-20 00:00:00" ORDER BY id, date_time ASC;
 DROP TABLE elec_meter_data;
+
+#
+# QUERY NOT LIKE
+#
+#BUG #SEQUOIASQLMAINSTREAM-608
+CREATE TABLE t1 ( c CHAR(16), vc VARCHAR(16) );
+CREATE TABLE t2 ( tx1 TINYTEXT, tx2 TEXT, tx3 MEDIUMTEXT, tx4 LONGTEXT );
+INSERT INTO t1 VALUES ('hello','hello'), ('hello ','hello '), ('holo','holo'), ('holo ','holo '), ('abc','abc');
+INSERT INTO t2 VALUES ('hello','hello','hello','hello'), ('hello ','hello ','hello ','hello ');
+INSERT INTO t2 VALUES ('holo','holo','holo','holo'), ('holo ','holo ','holo ','holo '), ('abc','abc','abc','abc');
+SELECT * FROM t1 WHERE c NOT LIKE 'h%l%';
+SELECT * FROM t1 WHERE vc NOT LIKE 'h%l%';
+SELECT * FROM t2 WHERE tx1 NOT LIKE 'h%l%';
+SELECT * FROM t2 WHERE tx2 NOT LIKE 'h%l%';
+SELECT * FROM t2 WHERE tx3 NOT LIKE 'h%l%';
+SELECT * FROM t2 WHERE tx4 NOT LIKE 'h%l%';
+SELECT * FROM t1 WHERE c NOT LIKE 'h_l_';
+SELECT * FROM t1 WHERE vc NOT LIKE 'h_l_';
+SELECT * FROM t2 WHERE tx1 NOT LIKE 'h_l_';
+SELECT * FROM t2 WHERE tx2 NOT LIKE 'h_l_';
+SELECT * FROM t2 WHERE tx3 NOT LIKE 'h_l_';
+SELECT * FROM t2 WHERE tx4 NOT LIKE 'h_l_';
+DROP TABLE t1,t2;
 
 --source include/uninstall_sequoiadb.inc

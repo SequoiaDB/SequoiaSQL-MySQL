@@ -5376,6 +5376,23 @@ c1
 %
 DROP TABLE t1;
 #
+# MDEV-8694 Wrong result for SELECT..WHERE a NOT LIKE 'a ' AND a='a'
+#
+CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` varchar(10) CHARACTER SET ucs2 COLLATE ucs2_bin DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+INSERT INTO t1 VALUES ('a'),('a ');
+SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
+a	LENGTH(a)
+a	2
+SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ' AND a='a';
+a	LENGTH(a)
+a	2
+DROP TABLE t1;
+#
 # End of MDEV-8694
 #
 SET NAMES latin1, collation_connection=ucs2_general_ci;
@@ -5453,6 +5470,23 @@ c1
 SELECT * FROM t1 WHERE '%'=CONCAT(c1) AND 'a' LIKE CONCAT(c1);
 c1
 %
+DROP TABLE t1;
+#
+# MDEV-8694 Wrong result for SELECT..WHERE a NOT LIKE 'a ' AND a='a'
+#
+CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` varchar(10) CHARACTER SET ucs2 DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+INSERT INTO t1 VALUES ('a'),('a ');
+SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ';
+a	LENGTH(a)
+a	2
+SELECT a, LENGTH(a) FROM t1 WHERE a NOT LIKE 'a ' AND a='a';
+a	LENGTH(a)
+a	2
 DROP TABLE t1;
 #
 # End of MDEV-8694

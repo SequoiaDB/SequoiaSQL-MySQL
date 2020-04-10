@@ -803,14 +803,14 @@ DROP TABLE t1;
 #             for an indexed attribute              
 #             
 #BUG #SEQUOIASQLMAINSTREAM-608
-#CREATE TABLE t1 (name varchar(15) NOT NULL, KEY idx(name));
-#INSERT INTO t1 VALUES ('Betty'), ('Anna');
-#
-#SELECT * FROM t1;
-#DELETE FROM t1 WHERE name NOT LIKE 'A%a';
-#SELECT * FROM t1;
-#
-#DROP TABLE t1;
+CREATE TABLE t1 (name varchar(15) NOT NULL, KEY idx(name));
+INSERT INTO t1 VALUES ('Betty'), ('Anna');
+
+SELECT * FROM t1;
+DELETE FROM t1 WHERE name NOT LIKE 'A%a';
+SELECT * FROM t1;
+
+DROP TABLE t1;
 
 CREATE TABLE t1 (a int, KEY idx(a));
 INSERT INTO t1 VALUES (NULL), (1), (2), (3);
