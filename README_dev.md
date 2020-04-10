@@ -11,7 +11,7 @@ In order to take advantages of scalability and performance, SequoiaSQL-MySQL Sto
 ```bash
 git clone http://gitlab.sequoiadb.com/sequoiadb/sequoiasql-mysql.git sequoiasql-mysql
 ```
-2. Get the [SequoiaDB C++ driver 3.4](http://cnd.sequoiadb.com/images/sequoiadb-3.4/x86_64/driver/C%26CPP-3.4-linux_x86_64.tar.gz).
+2. Get the [SequoiaDB C++ driver 3.4](http://cdn.sequoiadb.com/images/sequoiadb-3.4/x86_64/driver/C%26CPP-3.4-linux_x86_64.tar.gz).
 3. Configure the build.
 ```bash
 cd sequoiasql-mysql

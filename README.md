@@ -13,9 +13,11 @@ git clone https://github.com/SequoiaDB/sequoiasql-mysql.git sequoiasql-mysql
 ```  
 2. Get the source code of [mysql-5.7.25](https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.25.tar.gz). Decompress the MySQL source code to the directory of `sequoiasql-mysql/sql-src/mysql-5.7.25`.
 ```bash
+cd sequoiasql-mysql
+mkdir -p sequoiasql-mysql/sql-src/mysql-5.7.25
 tar -xzvf mysql-5.7.25.tar.gz -C sequoiasql-mysql/sql-src/mysql-5.7.25
 ```  
-3. Get the [SequoiaDB C++ driver 3.4](http://cnd.sequoiadb.com/images/sequoiadb-3.4/x86_64/driver/C%26CPP-3.4-linux_x86_64.tar.gz).
+3. Get the [SequoiaDB C++ driver 3.4](http://cdn.sequoiadb.com/images/sequoiadb-3.4/x86_64/driver/C%26CPP-3.4-linux_x86_64.tar.gz).
 4. Configure the build.
 ```bash
 cd sequoiasql-mysql
@@ -26,6 +28,8 @@ cmake .. -DMYSQL=5.7.25 -DWITH_SSL=</absolute/path/of/sequoiasql-mysql/thirdpart
 SequoiaSQL-MySQL Storage Engine also supports the MySQL(5.7.24/5.7.28) and MariaDB(10.4.6). Build different version of MySQL or MariaDB w
 ith argument `-DProjectType=version`. For example:
 ```bash
+cd sequoiasql-mysql
+mkdir -p sequoiasql-mysql-src/sql-src/
 tar -xzvf mariadb-v10.4.6.tar.gz -C sequoiasql-mysql-src/sql-src/mariadb-10.4.6/
 cd sequoiasql-mysql
 mkdir build
