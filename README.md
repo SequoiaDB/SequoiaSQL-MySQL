@@ -15,7 +15,7 @@ git clone https://github.com/SequoiaDB/sequoiasql-mysql.git sequoiasql-mysql
 ```bash
 tar -xzvf mysql-5.7.25.tar.gz -C sequoiasql-mysql/sql-src/mysql-5.7.25
 ```  
-3. Get the [SequoiaDB C++ driver 3.2.4](http://cnd.sequoiadb.com/images/sequoiadb-3.2.4/x86_64/driver/C%26CPP-3.2.4-linux_x86_64.tar.gz).
+3. Get the [SequoiaDB C++ driver 3.2.4](http://cdn.sequoiadb.com/images/sequoiadb-3.2.4/x86_64/driver/C%26CPP-3.2.4-linux_x86_64.tar.gz).
 4. Configure the build.
 ```bash
 cd sequoiasql-mysql
