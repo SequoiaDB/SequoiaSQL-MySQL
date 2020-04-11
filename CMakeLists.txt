@@ -177,11 +177,7 @@ function(gen_version_file)
       set(BUILD_TYPE_STR " (${BUILD_TYPE_STR})")
    endif()
 
-   string(CONCAT FULL_VERSION "${PROJECT_NAME} version: ${PROJECT_VERSION}\n"
-                              "Git version: ${SDB_PLUGIN_VERSION}\n"
-                              "${BUILDDATE}" "${BUILD_TYPE_STR}\n\n"
-                              "SDB driver: ${SDB_VERSION}("
-                              "${SDB_GIT_VERSION})\n")
+   set(FULL_VERSION "${PROJECT_NAME} version: ${PROJECT_VERSION}\nGit version: ${SDB_PLUGIN_VERSION}\n${BUILDDATE}${BUILD_TYPE_STR}\n\nSDB driver: ${SDB_VERSION}(${SDB_GIT_VERSION})\n")
    file(WRITE ${CMAKE_BINARY_DIR}/version.info ${FULL_VERSION})
 endfunction()
 
@@ -290,6 +286,35 @@ else()
    message(STATUS "Directory ${SDB_PLUGIN_DIR} dose not exist")
 endif()
 
+# Fix compilation problem of innodb with gcc 4.8.5 in ARM64
+# Refer SEQUOIADBMAINSTREAM-5417
+if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND
+   SDB_PROJECT_TYPE STREQUAL "mysql")
+   execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpversion
+                   OUTPUT_VARIABLE GCC_VERSION)
+   if(GCC_VERSION VERSION_LESS 4.9)
+      set(INNO_CMAKE_LIST "${SQL_SOURCE_ROOT}/storage/innobase/CMakeLists.txt")
+      message(STATUS "Updating ${INNO_CMAKE_LIST} for ARM64 with gcc < 4.9")
+
+      set(sedCmd "sed -n '/A GCC bug causes crash when compiling these files on ARM64 with -O1+/=' ${INNO_CMAKE_LIST}")
+      execute_process(COMMAND bash -c ${sedCmd} OUTPUT_VARIABLE LINE_NUM)
+      string(STRIP ${LINE_NUM} LINE_NUM)
+
+      set(sedCmd "sed -n '/ADD_COMPILE_FLAGS/{${LINE_NUM},$=}' ${INNO_CMAKE_LIST}")
+      execute_process(COMMAND bash -c ${sedCmd} OUTPUT_VARIABLE LINE_NUM)
+      string(STRIP ${LINE_NUM} LINE_NUM)
+
+      set(sedCmd "sed -n '${LINE_NUM},+1p' ${INNO_CMAKE_LIST} | grep 'fts/fts0fts.cc' | wc -l")
+      execute_process(COMMAND bash -c ${sedCmd} OUTPUT_VARIABLE IS_UPDATED)
+      string(STRIP ${IS_UPDATED} IS_UPDATED)
+
+      if(IS_UPDATED STREQUAL "0")
+         set(sedCmd "sed -i '${LINE_NUM}a\\      fts/fts0fts.cc\\n      handler/handler0alter.cc\\n      row/row0mysql.cc\\n      srv/srv0srv.cc' ${INNO_CMAKE_LIST}")
+         execute_process(COMMAND bash -c ${sedCmd})
+      endif()
+   endif()
+endif()
+
 # Generate the version.info file
 gen_version_file()
 
@@ -341,7 +366,7 @@ if(MYSQL EQUAL "5.7.28")
    set(updateCmd "sed -ie \"s@\\(^[ ]\\{1,\\}\\)\\bLICENSE@\\1${SQL_SOURCE_ROOT}/LICENSE@\" ${SQL_SOURCE_ROOT}/CMakeLists.txt")
    execute_process(COMMAND bash -c ${updateCmd})
    set(updateCmd "")
-   string(CONCAT updateCmd "sed -ie " "'s@\${CMAKE_SOURCE_DIR}/README@\${SQL_SOURCE_ROOT}/README@' " "${SQL_SOURCE_ROOT}/mysql-test/CMakeLists.txt")
+   set(updateCmd "sed -ie 's@\${CMAKE_SOURCE_DIR}/README@\${SQL_SOURCE_ROOT}/README@' ${SQL_SOURCE_ROOT}/mysql-test/CMakeLists.txt")
    execute_process(COMMAND bash -c ${updateCmd})
 endif()
 set(PROJECT_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/package")
