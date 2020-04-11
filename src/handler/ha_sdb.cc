@@ -417,7 +417,7 @@ void sdb_set_affected_rows(THD *thd) {
     my_ok(thd, affected_num, last_insert_id, buff);
     DBUG_PRINT("info", ("%llu records duplicated", dup_num));
     dup_num = 0;
-    sdb_query_cache_invalidate(thd);
+    sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
   }
   // For SQLCOM_UPDATE...
   if (thd_sdb->found || thd_sdb->updated) {
@@ -435,7 +435,7 @@ void sdb_set_affected_rows(THD *thd) {
     DBUG_PRINT("info", ("%llu records updated", updated));
     found = 0;
     updated = 0;
-    sdb_query_cache_invalidate(thd);
+    sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
   }
   // For SQLCOM_DELETE...
   if (SQLCOM_DELETE == thd_sql_command(thd) ||
@@ -453,7 +453,7 @@ void sdb_set_affected_rows(THD *thd) {
       my_ok(thd, deleted, last_insert_id, message_text);
       DBUG_PRINT("info", ("%llu records deleted", deleted));
       deleted = 0;
-      sdb_query_cache_invalidate(thd);
+      sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
     }
   }
 
@@ -488,7 +488,6 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_has_update_insert_id = false;
   total_count = 0;
   count_query = false;
-  auto_commit = false;
   sdb_condition = NULL;
   stats.records = ~(ha_rows)0;
   memset(db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
@@ -1551,7 +1550,7 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   ha_statistic_increment(&SSV::ha_update_count);
-  if (auto_commit) {
+  if (thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
     rc = autocommit_statement();
     if (rc) {
       goto error;
@@ -1604,7 +1603,7 @@ int ha_sdb::delete_row(const uchar *buf) {
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   ha_statistic_increment(&SSV::ha_delete_count);
-  if (auto_commit) {
+  if (thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
     rc = autocommit_statement();
     if (rc) {
       goto error;
@@ -2314,7 +2313,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
 
   if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
        thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
-      auto_commit) {
+      thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
     rc = autocommit_statement(direct_op);
     if (rc) {
       goto error;
@@ -2840,7 +2839,7 @@ int ha_sdb::rnd_next(uchar *buf) {
 
     if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
          thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
-        auto_commit) {
+        thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
       rc = autocommit_statement(direct_op);
       if (rc) {
         goto error;
@@ -3299,7 +3298,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     // }
 
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
-      auto_commit = false;
+      thd_get_thd_sdb(thd)->set_auto_commit(false);
       if (!conn->is_transaction_on()) {
         rc = conn->begin_transaction();
         if (rc != 0) {
@@ -3309,7 +3308,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
       }
     } else {
       // autocommit
-      auto_commit = true;
+      thd_get_thd_sdb(thd)->set_auto_commit(true);
       /* In order to pushdown autocommit when do UPDATE/DELETE ops, we do not
          start the autocommit transaction until to the first query. Because we
          can only know whether should pushdown autocommit or not until to the
@@ -3429,7 +3428,7 @@ int ha_sdb::delete_all_rows() {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
-  if (auto_commit) {
+  if (thd_sdb->get_auto_commit()) {
     rc = autocommit_statement(true);
     if (rc) {
       goto done;

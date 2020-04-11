@@ -498,7 +498,6 @@ class ha_sdb : public handler {
   bool m_has_update_insert_id;
   longlong total_count;
   bool count_query;
-  bool auto_commit;
   ha_sdb_cond_ctx *sdb_condition;
   ulonglong m_table_flags;
   /*incremental stat of current table share in current thd*/
