@@ -592,7 +592,7 @@ ulonglong ha_sdb::table_flags() const {
 
 ulong ha_sdb::index_flags(uint inx, uint part, bool all_parts) const {
   return (HA_READ_RANGE | HA_DO_INDEX_COND_PUSHDOWN | HA_READ_NEXT |
-          HA_READ_ORDER | HA_KEYREAD_ONLY);
+          HA_READ_PREV | HA_READ_ORDER | HA_KEYREAD_ONLY);
 }
 
 uint ha_sdb::max_supported_record_length() const {
@@ -1687,24 +1687,44 @@ error:
 
 int ha_sdb::index_next(uchar *buf) {
   DBUG_ENTER("ha_sdb::index_next()");
-  DBUG_ASSERT(idx_order_direction == 1);
+
+  int rc = 0;
+  if (idx_order_direction != 1) {
+    DBUG_ASSERT(false);
+    SDB_LOG_DEBUG("Cannot reverse order when reading index");
+    rc = HA_ERR_WRONG_COMMAND;
+    goto done;
+  }
+
   sdb_ha_statistic_increment(&SSV::ha_read_next_count);
   if (count_query) {
-    DBUG_RETURN(cur_row(buf));
+    rc = cur_row(buf);
   } else {
-    DBUG_RETURN(next_row(cur_rec, buf));
+    rc = next_row(cur_rec, buf);
   }
+done:
+  DBUG_RETURN(rc);
 }
 
 int ha_sdb::index_prev(uchar *buf) {
   DBUG_ENTER("ha_sdb::index_prev()");
-  DBUG_ASSERT(idx_order_direction == -1);
+
+  int rc = 0;
+  if (idx_order_direction != -1) {
+    DBUG_ASSERT(false);
+    SDB_LOG_DEBUG("Cannot reverse order when reading index");
+    rc = HA_ERR_WRONG_COMMAND;
+    goto done;
+  }
+
   sdb_ha_statistic_increment(&SSV::ha_read_prev_count);
   if (count_query) {
-    DBUG_RETURN(cur_row(buf));
+    rc = cur_row(buf);
   } else {
-    DBUG_RETURN(next_row(cur_rec, buf));
+    rc = next_row(cur_rec, buf);
   }
+done:
+  DBUG_RETURN(rc);
 }
 
 int ha_sdb::index_last(uchar *buf) {

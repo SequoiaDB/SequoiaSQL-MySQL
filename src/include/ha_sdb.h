@@ -270,6 +270,17 @@ class ha_sdb : public handler {
   int index_read_map(uchar *buf, const uchar *key_ptr, key_part_map keypart_map,
                      enum ha_rkey_function find_flag);
 
+  /**
+     @brief
+     The following functions works like index_read, but it find the last
+     row with the current key value or prefix.
+     @returns @see index_read_map().
+  */
+  int index_read_last_map(uchar *buf, const uchar *key,
+                          key_part_map keypart_map) {
+    return index_read_map(buf, key, keypart_map, HA_READ_PREFIX_LAST);
+  }
+
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
     skip it and and MySQL will treat it as not implemented.
