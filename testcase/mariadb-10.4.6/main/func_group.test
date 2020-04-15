@@ -850,7 +850,7 @@ CREATE TABLE t1 ( a INT, b INT, KEY(a) );
 INSERT INTO t1 VALUES (NULL, 1), (NULL, 2);
 #EXPLAIN SELECT MIN(a), MIN(b) FROM t1;
 #Bug #SEQUOIASQLMAINSTREAM-560
-#SELECT MIN(a), MIN(b) FROM t1;
+SELECT MIN(a), MIN(b) FROM t1;
 
 CREATE TABLE t2( a INT, b INT, c INT, KEY(a, b) );
 INSERT INTO t2 ( a, b, c ) VALUES
@@ -862,7 +862,7 @@ CREATE TABLE t3 (a INT, b INT, c int, KEY(a, b));
 INSERT INTO t3 VALUES (1, NULL, 1), (2, NULL, 2),  (2, NULL, 2),  (3, NULL, 3);
 #EXPLAIN SELECT MIN(a), MIN(b) FROM t3 where a = 2;
 #Bug #SEQUOIASQLMAINSTREAM-560
-#SELECT MIN(a), MIN(b) FROM t3 where a = 2;
+SELECT MIN(a), MIN(b) FROM t3 where a = 2;
 
 CREATE TABLE t4 (a INT, b INT, c int, KEY(a, b));
 INSERT INTO t4 VALUES (1, 1, 1), (2, NULL, 2),  (2, NULL, 2),  (3, 1, 3);
