@@ -42,7 +42,10 @@ alter table t1 comment 'sequoiadb: {table_options: {AutoIndexId: false}}';
 update t1 set t = 'update';
 ERROR HY000: can not update/delete records when $id index does not exist
 insert into t1 values (NULL, 'text');
-drop index id on t1;
+ERROR HY000: can not update/delete records when $id index does not exist
+drop table t1;
+create table t1 ( id int ) ;
+insert into t1 values (NULL);
 alter table t1 add primary key(id);
 ERROR HY000: Any field of index key should exist and cannot be null
 drop table t1,t2;

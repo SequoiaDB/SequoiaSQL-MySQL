@@ -121,7 +121,6 @@ CREATE TABLE t4 ( id int ) COMPRESSION 'snappy' COMMENT "sequoiadb: {table_optio
 INSERT INTO t1 VALUES (1);
 INSERT INTO t2 VALUES (1);
 INSERT INTO t3 VALUES (1);
-INSERT INTO t4 VALUES (1);
 ALTER TABLE t1 COMPRESSION 'NONE' ;
 ALTER TABLE t2 COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw', StrictDataMode: false}}";
 ALTER TABLE t3 COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {ReplSize: 2, Compressed: true, CompressionType: 'lzw'}}";

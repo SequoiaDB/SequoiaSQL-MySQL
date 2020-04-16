@@ -96,7 +96,6 @@ drop table t1,t2;
 create table t1(a int, b char(16)) comment = "sequoiadb:{ table_options: { ReplSize:2, Compressed: true, CompressionType: \"snappy\" } }";
 create table t2(a int, b char(16)) comment = "sequoiadb:{ table_options: { Group: \"group1\", AutoIndexId: false, StrictDataMode:true, ReplSize:2, Compressed: true, CompressionType: \"snappy\" } }";
 insert into t1 values(1,'a'),(2,'b');
-insert into t2 values(1,'a'),(2,'b');
 alter table t1 comment = "sequoiadb:{ table_options: { ShardingKey: { a: 1 }, ReplSize:2, Compressed: true, CompressionType: \"snappy\", IsMainCL: true } }", ALGORITHM=inplace;
 ERROR HY000: Invalid Argument
 alter table t2 comment = "sequoiadb:{ table_options: { Group: \"group4\", AutoIndexId: false, StrictDataMode:true, ReplSize:2, Compressed: true, CompressionType: \"snappy\" } }", ALGORITHM=inplace;
@@ -133,8 +132,6 @@ a	b
 2	b
 select * from t2 order by a;
 a	b
-1	a
-2	b
 drop table t1,t2;
 create table t1(a int primary key, b char(16));
 insert into t1 values(1,'a'),(2,'b');
