@@ -47,8 +47,11 @@ alter table t1 comment 'sequoiadb: {table_options: {AutoSplit: true}}';
 alter table t1 comment 'sequoiadb: {table_options: {AutoIndexId: false}}';
 --error 40279
 update t1 set t = 'update';
+--error 40279
 insert into t1 values (NULL, 'text');
-drop index id on t1;
+drop table t1;
+create table t1 ( id int ) ;
+insert into t1 values (NULL);
 --error 40339
 alter table t1 add primary key(id);
 drop table t1,t2;
