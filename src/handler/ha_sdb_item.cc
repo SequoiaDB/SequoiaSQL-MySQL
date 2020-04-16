@@ -530,6 +530,12 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
           double ms = second_part / (double)1000000;
           time += ms;
         }
+#ifdef IS_MARIADB
+        if (ltime.second_part && dec == 0) {
+          double ms = ltime.second_part / (double)1000000;
+          time += ms;
+        }
+#endif
         if (ltime.neg) {
           time = -time;
         }
