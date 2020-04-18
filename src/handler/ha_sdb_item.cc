@@ -460,7 +460,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
     }
 
     case MYSQL_TYPE_TIMESTAMP: {
-      struct timeval tm;
+      struct timeval tm = {0, 0};
       if (item_val->result_type() != STRING_RESULT ||
           get_timeval(item_val, &tm)) {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;

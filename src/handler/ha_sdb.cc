@@ -462,7 +462,7 @@ void sdb_set_affected_rows(THD *thd) {
     my_ok(thd, affected_num, last_insert_id, buff);
     DBUG_PRINT("info", ("%llu records duplicated", dup_num));
     dup_num = 0;
-    sdb_query_cache_invalidate(thd);
+    sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
   }
 
   // For SQLCOM_UPDATE...
@@ -480,7 +480,7 @@ void sdb_set_affected_rows(THD *thd) {
     DBUG_PRINT("info", ("%llu records updated", updated));
     found = 0;
     updated = 0;
-    sdb_query_cache_invalidate(thd);
+    sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
   }
 
   // For SQLCOM_DELETE...
@@ -499,7 +499,7 @@ void sdb_set_affected_rows(THD *thd) {
       my_ok(thd, deleted, last_insert_id, message_text);
       DBUG_PRINT("info", ("%llu records deleted", deleted));
       deleted = 0;
-      sdb_query_cache_invalidate(thd);
+      sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
     }
   }
 
@@ -1593,7 +1593,7 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   sdb_ha_statistic_increment(&SSV::ha_update_count);
-  if (auto_commit) {
+  if (thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
     rc = autocommit_statement();
     if (rc) {
       goto error;
@@ -1658,7 +1658,7 @@ int ha_sdb::delete_row(const uchar *buf) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   sdb_ha_statistic_increment(&SSV::ha_delete_count);
-  if (auto_commit) {
+  if (thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
     rc = autocommit_statement();
     if (rc) {
       goto error;
@@ -2409,7 +2409,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
 
   if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
        thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
-      auto_commit) {
+      thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
     rc = autocommit_statement(direct_op);
     if (rc) {
       goto error;
@@ -2966,7 +2966,7 @@ int ha_sdb::rnd_next(uchar *buf) {
 
     if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
          thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
-        auto_commit) {
+        thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
       rc = autocommit_statement(direct_op);
       if (rc) {
         goto error;
@@ -3432,12 +3432,12 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
 
     // in non-transaction mode, do not exec commit or rollback.
     if (!sdb_use_transaction) {
-      auto_commit = false;
+      thd_get_thd_sdb(thd)->set_auto_commit(false);
       goto done;
     }
 
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
-      auto_commit = false;
+      thd_get_thd_sdb(thd)->set_auto_commit(false);
       if (!conn->is_transaction_on()) {
         rc = conn->begin_transaction();
         if (rc != 0) {
@@ -3447,7 +3447,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
       }
     } else {
       // autocommit
-      auto_commit = true;
+      thd_get_thd_sdb(thd)->set_auto_commit(true);
       /* In order to pushdown autocommit when do UPDATE/DELETE ops, we do not
          start the autocommit transaction until to the first query. Because we
          can only know whether should pushdown autocommit or not until to the
@@ -3500,8 +3500,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
       thd_sdb->lock_count--;
       goto error;
     }
-
-    if (sdb_is_transaction_stmt(thd)) {
+    if (sdb_is_transaction_stmt(thd, !thd_sdb->get_auto_commit())) {
       rc = add_share_to_open_table_shares(thd);
       if (0 != rc) {
         thd_sdb->lock_count--;
@@ -3558,20 +3557,20 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
   DBUG_ENTER("ha_sdb::start_stmt");
 
   m_lock_type = lock_type;
-  rc = start_statement(thd, thd_sdb->start_stmt_count++);
+  rc = start_statement(thd, thd_sdb->start_stmt_count);
   if (0 != rc) {
     goto error;
   }
 
-  if (sdb_is_transaction_stmt(thd)) {
+  if (sdb_is_transaction_stmt(thd, !thd_sdb->get_auto_commit())) {
     rc = add_share_to_open_table_shares(thd);
     if (0 != rc) {
       goto error;
     }
   }
+  thd_sdb->start_stmt_count++;
   DBUG_RETURN(rc);
 error:
-  thd_sdb->start_stmt_count--;
   DBUG_RETURN(rc);
 }
 
@@ -3597,7 +3596,7 @@ int ha_sdb::delete_all_rows() {
 
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
-  if (auto_commit) {
+  if (thd_sdb->get_auto_commit()) {
     rc = autocommit_statement(true);
     if (rc) {
       return rc;

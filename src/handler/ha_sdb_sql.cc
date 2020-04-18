@@ -329,11 +329,15 @@ bool sdb_create_table_like(THD *thd) {
   return (thd->lex->create_info.options & HA_LEX_CREATE_TABLE_LIKE);
 }
 
-bool sdb_is_transaction_stmt(THD *thd) {
-  return thd->get_transaction()->is_active(Transaction_ctx::STMT);
+bool sdb_is_transaction_stmt(THD *thd, bool all) {
+  if (all) {
+    return thd->get_transaction()->is_active(Transaction_ctx::SESSION);
+  } else {
+    return thd->get_transaction()->is_active(Transaction_ctx::STMT);
+  }
 }
 
-void sdb_query_cache_invalidate(THD *thd) {
+void sdb_query_cache_invalidate(THD *thd, bool all) {
   TABLE_LIST *table_list = NULL;
   if (thd_sql_command(thd) == SQLCOM_UPDATE ||
       thd_sql_command(thd) == SQLCOM_DELETE) {
@@ -341,7 +345,8 @@ void sdb_query_cache_invalidate(THD *thd) {
   } else {
     table_list = thd->lex->insert_table_leaf;
   }
-  query_cache.invalidate_single(thd, table_list, sdb_is_transaction_stmt(thd));
+  query_cache.invalidate_single(thd, table_list,
+                                sdb_is_transaction_stmt(thd, all));
 }
 
 #elif defined IS_MARIADB
@@ -604,17 +609,17 @@ void sdb_thd_reset_condition_info(THD *thd) {
   thd->get_stmt_da()->clear_warning_info(thd->query_id);
 }
 
-bool sdb_is_transaction_stmt(THD *thd) {
-  return thd->transaction.stmt.ha_list;
+bool sdb_is_transaction_stmt(THD *thd, bool all) {
+  return all ? thd->transaction.all.ha_list : thd->transaction.stmt.ha_list;
 }
 
 bool sdb_create_table_like(THD *thd) {
   return thd->lex->create_info.like();
 }
 
-void sdb_query_cache_invalidate(THD *thd) {
+void sdb_query_cache_invalidate(THD *thd, bool all) {
   query_cache_invalidate3(thd, thd->lex->query_tables,
-                          sdb_is_transaction_stmt(thd));
+                          sdb_is_transaction_stmt(thd, all));
 }
 
 #endif

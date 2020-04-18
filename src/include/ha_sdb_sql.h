@@ -222,7 +222,7 @@ void sdb_thd_set_not_killed(THD *thd);
 
 void sdb_thd_reset_condition_info(THD *thd);
 
-bool sdb_is_transaction_stmt(THD *thd);
+bool sdb_is_transaction_stmt(THD *thd, bool all);
 
 // About Field
 const char *sdb_field_name(const Field *f);
@@ -297,6 +297,6 @@ ulong sdb_da_current_statement_cond_count(Diagnostics_area *da);
 
 bool sdb_create_table_like(THD *thd);
 
-void sdb_query_cache_invalidate(THD *thd);
+void sdb_query_cache_invalidate(THD *thd, bool all);
 
 #endif

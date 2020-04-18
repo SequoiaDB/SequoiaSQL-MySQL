@@ -38,6 +38,7 @@ Thd_sdb::Thd_sdb(THD* thd)
       m_conn(thd_get_thread_id(thd)) {
   m_thread_id = thd_get_thread_id(thd);
   lock_count = 0;
+  auto_commit = false;
   start_stmt_count = 0;
   save_point_count = 0;
   found = 0;
