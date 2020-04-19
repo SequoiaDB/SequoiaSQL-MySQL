@@ -120,6 +120,7 @@
 #define SDB_FIELD_INNER_PART_ID "_mysqlPartID"
 
 #define SDB_DEFAULT_FILL_MESSAGE ""
+#define SDB_ITEM_IGNORE_TYPE "ignore"
 
 const static bson::BSONObj SDB_EMPTY_BSON;
 

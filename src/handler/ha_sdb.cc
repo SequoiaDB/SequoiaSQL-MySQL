@@ -1916,6 +1916,20 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
 
     rfield = field->field;
     value = v++;
+#ifdef IS_MARIADB
+    // support for mariadb syntax like "update ... set a=ignore".
+    // if field is set to ignore, it will not be cond push.
+    if (value->type() == Item::DEFAULT_VALUE_ITEM &&
+        !((Item_default_value *)value)->arg) {
+      char buf[STRING_BUFFER_USUAL_SIZE];
+      String str(buf, sizeof(buf), system_charset_info);
+      str.length(0);
+      value->print(&str, QT_NO_DATA_EXPANSION);
+      if (0 == strcmp(str.c_ptr_safe(), SDB_ITEM_IGNORE_TYPE)) {
+        continue;
+      }
+    }
+#endif
     upd_arg.field = rfield;
     upd_arg.optimizer_update = optimizer_update;
     upd_arg.field_count = &field_count;
@@ -2222,7 +2236,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       rc = rc < 0 ? HA_ERR_END_OF_FILE : rc;
       goto error;
     }
-    if (optimizer_update) {
+    if (optimizer_update && !rule.isEmpty()) {
       first_read = false;
       thd_sdb->found = thd_sdb->updated = 0;
       rc = collection->update(rule, condition, hint,
