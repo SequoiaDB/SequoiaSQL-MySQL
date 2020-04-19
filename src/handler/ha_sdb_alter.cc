@@ -1137,6 +1137,11 @@ int ha_sdb::alter_column(TABLE *altered_table,
   added_it.init(ctx->added_columns);
   while ((field = added_it++)) {
     my_ptrdiff_t offset = field->table->default_values_offset();
+    if (field->type() == MYSQL_TYPE_YEAR && field->field_length != 4) {
+      rc = ER_INVALID_YEAR_COLUMN_LENGTH;
+      my_printf_error(rc, "Supports only YEAR or YEAR(4) column", MYF(0));
+      goto error;
+    }
     if (!field->is_real_null(offset) &&
         !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
       rc = append_default_value(set_builder, field);

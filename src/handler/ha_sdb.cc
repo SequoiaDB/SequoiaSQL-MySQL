@@ -4321,6 +4321,11 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   for (Field **fields = form->field; *fields; fields++) {
     Field *field = *fields;
 
+    if (field->type() == MYSQL_TYPE_YEAR && field->field_length != 4) {
+      rc = ER_INVALID_YEAR_COLUMN_LENGTH;
+      my_printf_error(rc, "Supports only YEAR or YEAR(4) column", MYF(0));
+      goto error;
+    }
     if (field->key_length() >= SDB_FIELD_MAX_LEN) {
       my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), sdb_field_name(field),
                static_cast<ulong>(SDB_FIELD_MAX_LEN));
