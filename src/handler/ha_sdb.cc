@@ -1724,6 +1724,7 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
   double default_real = 0.0;
   my_decimal min_decimal;
   my_decimal max_decimal;
+  THD *thd = rfield->table->in_use;
 
   is_real = (MYSQL_TYPE_FLOAT == rfield->type() ||
              MYSQL_TYPE_DOUBLE == rfield->type());
@@ -1759,7 +1760,6 @@ retry:
   if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc) {
     if (is_real) {
       rc = TYPE_OK;
-      THD *thd = rfield->table->in_use;
       thd->killed = THD::NOT_KILLED;
       thd->clear_error();
       thd->get_stmt_da()->reset_condition_info(thd);
@@ -1787,7 +1787,6 @@ retry:
       }
 
       if (rfield->table->in_use->is_error()) {
-        THD *thd = rfield->table->in_use;
         thd->killed = THD::NOT_KILLED;
         thd->clear_error();
         thd->get_stmt_da()->reset_condition_info(thd);
@@ -1802,9 +1801,9 @@ retry:
       rc = HA_ERR_END_OF_FILE;
     } else {
       rc = 0;
-      sdb_thd_set_not_killed(thd);
+      thd->killed = THD::NOT_KILLED;
       thd->clear_error();
-      sdb_thd_reset_condition_info(thd);
+      thd->get_stmt_da()->reset_condition_info(thd);
     }
     *optimizer_update = false;
     goto error;
