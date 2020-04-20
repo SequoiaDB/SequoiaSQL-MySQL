@@ -71,12 +71,14 @@ commit;
 #explain select * from t1 where pk1 = 1 and pk2 < 80  and key1=0;
 # CPK scan + 1 ROR range scan is a special case
 #BUG #SEQUOIASQLMAINSTREAM-622
-#select * from t1 where pk1 = 1 and pk2 < 80  and key1=0;
+--sorted_result
+select * from t1 where pk1 = 1 and pk2 < 80  and key1=0;
 
 # Verify that CPK fields are considered to be covered by index scans
 #explain select pk1,pk2 from t1 where key1 = 10 and key2=10 and 2*pk1+1 < 2*96+1;
 #BUG #SEQUOIASQLMAINSTREAM-622
-#select pk1,pk2 from t1 where key1 = 10 and key2=10 and 2*pk1+1 < 2*96+1;
+--sorted_result
+select pk1,pk2 from t1 where key1 = 10 and key2=10 and 2*pk1+1 < 2*96+1;
 
 # Verify that CPK is always used for index intersection scans
 # (this is because it is used as a filter, not for retrieval)
@@ -105,7 +107,7 @@ set optimizer_switch=@tmp_index_merge_ror_cpk;
 #explain select pk1,pk2,key1,key2 from t1 where key1 = 10 and key2=10 limit 10;
 #select pk1,pk2,key1,key2 from t1 where key1 = 10 and key2=10 limit 10;
 #BUG #SEQUOIASQLMAINSTREAM-622
-#select pk1,pk2,key1,key2 from t1 where key1 = 10 and key2=10 order by pk1,pk2 limit 10;
+select pk1,pk2,key1,key2 from t1 where key1 = 10 and key2=10 order by pk1,pk2 limit 10;
 
 drop table t1;
 # Testcase for BUG#4984
