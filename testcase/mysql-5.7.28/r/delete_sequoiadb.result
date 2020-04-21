@@ -1,5 +1,5 @@
-create database update_test_sequoiadb;
-use update_test_sequoiadb;
+create database delete_test_sequoiadb;
+use delete_test_sequoiadb;
 create table t1(id int auto_increment key, a int, b varchar(255), c varbinary(255));
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
 delete from t1 where a=10;
@@ -145,4 +145,4 @@ commit;
 select *from t1;
 id	a
 drop table t1;
-drop database update_test_sequoiadb;
+drop database delete_test_sequoiadb;
