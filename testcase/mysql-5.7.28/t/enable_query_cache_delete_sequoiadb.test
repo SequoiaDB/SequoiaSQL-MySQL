@@ -1,9 +1,14 @@
 --source include/have_sequoiadb.inc
-create database delete_test_sequoiadb;
-use delete_test_sequoiadb;
+
+create database enable_query_cache_delete_sequoiadb;
+use enable_query_cache_delete_sequoiadb;
+
 --disable_query_log
 create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ auto_partition: true }';
 --enable_query_log
+
+# check if query_cache_type is on
+show variables like "query_cache_type";
 
 #Case 19508
 create table t1(id int auto_increment key, a int, b varchar(255), c varbinary(255));
@@ -140,5 +145,5 @@ commit;
 select *from t1;
 drop table t1;
 
-drop database delete_test_sequoiadb;
+drop database enable_query_cache_delete_sequoiadb;
 --source include/uninstall_sequoiadb.inc

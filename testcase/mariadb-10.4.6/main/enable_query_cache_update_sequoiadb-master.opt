@@ -1,0 +1,2 @@
+--sequoiadb_auto_partition=ON
+--query_cache_type=1

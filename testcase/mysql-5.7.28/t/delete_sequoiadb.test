@@ -1,6 +1,6 @@
 --source include/have_sequoiadb.inc
-create database update_test_sequoiadb;
-use update_test_sequoiadb;
+create database delete_test_sequoiadb;
+use delete_test_sequoiadb;
 --disable_query_log
 create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ auto_partition: true }';
 --enable_query_log
@@ -140,5 +140,5 @@ commit;
 select *from t1;
 drop table t1;
 
-drop database update_test_sequoiadb;
+drop database delete_test_sequoiadb;
 --source include/uninstall_sequoiadb.inc
