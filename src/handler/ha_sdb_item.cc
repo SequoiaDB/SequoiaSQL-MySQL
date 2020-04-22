@@ -375,6 +375,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
 #endif
                  ) &&
             (MYSQL_TYPE_DATE == item_val->field_type() ||
+             MYSQL_TYPE_TIME == item_val->field_type() ||
              MYSQL_TYPE_DATETIME == item_val->field_type())) {
           rc = SDB_ERR_COND_UNEXPECTED_ITEM;
           goto error;
