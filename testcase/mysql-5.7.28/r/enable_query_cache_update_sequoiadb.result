@@ -811,12 +811,6 @@ Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' 
 update t1 set a = -111.111111111111111111111 ;
 Warnings:
 Note	1265	Data truncated for column 'a' at row 1
-Note	1265	Data truncated for column 'a' at row 2
-Note	1265	Data truncated for column 'a' at row 3
-Note	1265	Data truncated for column 'a' at row 4
-Note	1265	Data truncated for column 'a' at row 5
-Note	1265	Data truncated for column 'a' at row 6
-Note	1265	Data truncated for column 'a' at row 7
 select * from t1 order by a;
 a	b
 -111.11	99999999.99
@@ -829,12 +823,6 @@ a	b
 update t1 set b = 111.111111111111111111111 ;
 Warnings:
 Note	1265	Data truncated for column 'b' at row 1
-Note	1265	Data truncated for column 'b' at row 2
-Note	1265	Data truncated for column 'b' at row 3
-Note	1265	Data truncated for column 'b' at row 4
-Note	1265	Data truncated for column 'b' at row 5
-Note	1265	Data truncated for column 'b' at row 6
-Note	1265	Data truncated for column 'b' at row 7
 select * from t1 order by b;
 a	b
 -111.11	111.11
@@ -848,12 +836,6 @@ set sql_mode = "";
 update t1 set a = -9.99999 ;
 Warnings:
 Note	1265	Data truncated for column 'a' at row 1
-Note	1265	Data truncated for column 'a' at row 2
-Note	1265	Data truncated for column 'a' at row 3
-Note	1265	Data truncated for column 'a' at row 4
-Note	1265	Data truncated for column 'a' at row 5
-Note	1265	Data truncated for column 'a' at row 6
-Note	1265	Data truncated for column 'a' at row 7
 select * from t1 order by a;
 a	b
 -10.00	111.11
@@ -866,12 +848,6 @@ a	b
 update t1 set b = 9.99999 ;
 Warnings:
 Note	1265	Data truncated for column 'b' at row 1
-Note	1265	Data truncated for column 'b' at row 2
-Note	1265	Data truncated for column 'b' at row 3
-Note	1265	Data truncated for column 'b' at row 4
-Note	1265	Data truncated for column 'b' at row 5
-Note	1265	Data truncated for column 'b' at row 6
-Note	1265	Data truncated for column 'b' at row 7
 select * from t1 order by b;
 a	b
 -10.00	10.00
