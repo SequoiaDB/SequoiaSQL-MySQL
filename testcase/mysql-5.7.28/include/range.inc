@@ -2714,6 +2714,7 @@ LIMIT 1;
 eval $query1;
 
 #eval EXPLAIN $query2;
+#SEQUOIASQLMAINSTREAM-644
 #The result is not the same as innodb when engine set sequoiadb, modify the expect result
 eval $query2;
 

@@ -7202,19 +7202,29 @@ vice-versa
 #
 SELECT a FROM t1 ORDER BY a DESC, id DESC;
 a
+๑๐ ลิตร {10 litre}
+๑๐ ลิตร [10 litre]
+๑๐ ลิตร (10 litre)
+๑๐ ลิตร
+แป้ง
+แข้งขวา
+แข้ง
+แข่งขัน
+แข่ง
+แข็งขัน
+แข็ง
 ฯพณฯ
 ม้า
 พณิชย์
-แป้ง
 ป๋าน
-ป๊าน
-ป้าน
-ป่าน
-ปาน
 ป๋า
+ป๊าน
 ป๊า
+ป้าน
 ป้า
+ป่าน
 ป่า
+ปาน
 ปา
 บุญหลง
 บุญญา
@@ -7222,20 +7232,14 @@ a
 ทูลเกล้าฯ
 ทูลเกล้าทูลกระหม่อม
 ทูลเกล้า
-แข่งขัน
-แข็งขัน
-แข้งขวา
-แข้ง
-แข่ง
-แข็ง
-ข้างออก
+ข้างๆ คูๆ
+ข้างๆ
 ข้างแรม
 ข้างเงิน
+ข้างออก
 ข้างควาย
 ข้างขึ้น
 ข้างกระดาน
-ข้างๆ คูๆ
-ข้างๆ
 ข้าง
 ข่าง
 ขาง
@@ -7244,29 +7248,33 @@ a
 vice-versa
 vice-president
 vice versa
+coop
+co-op
+air@@@
+air
+aide
+aah
+aa
+a.a.
+a.
+a-
+a'
+a
 McArthur
 Mc Mahon
 Mc Arthur
 Copenhegen
-coop
-COOP
-co-op
-CO-OP
 Canon
+COOP
+CO-OP
 C.A.F
-air@@@
-air
-aide
 Aalborg
-aah
+Aachen
 AAF
 AAES
-Aachen
 AAAA
 AAA
-aa
 AA
-a'
 A.Agr
 A.Ae.E.
 A.A.E.E.
@@ -7274,28 +7282,20 @@ A.A.E.
 A.A.A.S.
 A.A.A.L.
 A.A.A.
-a.a.
 A.A.
-a.
 A.
 A-1
-a-
 A-
-a
 A
+@@@air
+@@@@@
 9999
-๑๐ ลิตร {10 litre}
-๑๐ ลิตร [10 litre]
-๑๐ ลิตร (10 litre)
 10 ลิตร (10 litre)
-๑๐ ลิตร
 10 ลิตร
 10 litre (๑๐ ลิตร)
 10 litre (10 ลิตร)
 10 litre
 0000
-@@@air
-@@@@@
 -กระแย่ง
 -a
 DROP TABLE t1;

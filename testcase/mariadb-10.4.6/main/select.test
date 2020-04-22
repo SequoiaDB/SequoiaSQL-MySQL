@@ -1275,8 +1275,11 @@ select fld3 from t2 where fld3 like "%cultivation" ;
 select t2.fld3,companynr from t2 where companynr = 57+1 order by fld3;
 select fld3,companynr from t2 where companynr = 58 order by fld3;
 
+#SEQUOIASQLMAINSTREAM-644
 select fld3 from t2 order by fld3 desc limit 10;
+#SEQUOIASQLMAINSTREAM-644
 select fld3 from t2 order by fld3 desc limit 5;
+#SEQUOIASQLMAINSTREAM-644
 select fld3 from t2 order by fld3 desc limit 5,5;
 
 #
