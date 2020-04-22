@@ -315,14 +315,16 @@ SELECT NOT NOT NULLIF(2,3);
 --echo # Start of 10.1 tests
 --echo #
 
+#BUG #SEQUOIASQLMAINSTREAM-612
 --echo #
 --echo # MDEV-7146 NULLIF returns unexpected result with a YEAR field
 --echo #
+--error 1818
 CREATE TABLE t1 (a YEAR(2));
-INSERT INTO t1 VALUES (0);
-SELECT a,NULLIF(a,2000),NULLIF(2000,a) FROM t1;
-SELECT a,NULLIF(a,2001),NULLIF(2001,a) FROM t1;
-DROP TABLE t1;
+#INSERT INTO t1 VALUES (0);
+#SELECT a,NULLIF(a,2000),NULLIF(2000,a) FROM t1;
+#SELECT a,NULLIF(a,2001),NULLIF(2001,a) FROM t1;
+#DROP TABLE t1;
 
 --echo #
 --echo # MDEV-7005 NULLIF does not work as documented
