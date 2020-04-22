@@ -250,6 +250,12 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
     case MYSQL_TYPE_DOUBLE:
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_NEWDECIMAL: {
+#ifdef IS_MARIADB
+      if (TIME_RESULT == item_val->type_handler()->cmp_type()) {
+        rc = SDB_ERR_TYPE_UNSUPPORTED;
+        goto error;
+      }
+#endif
       switch (item_val->result_type()) {
         case INT_RESULT: {
           longlong val_tmp = item_val->val_int();
@@ -375,6 +381,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
 #endif
                  ) &&
             (MYSQL_TYPE_DATE == item_val->field_type() ||
+             MYSQL_TYPE_TIME == item_val->field_type() ||
              MYSQL_TYPE_DATETIME == item_val->field_type())) {
           rc = SDB_ERR_COND_UNEXPECTED_ITEM;
           goto error;
