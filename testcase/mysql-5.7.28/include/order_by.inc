@@ -233,8 +233,10 @@ insert into t1 values (1, NULL, NULL), (1, NULL, 'b'), (1, 1, NULL), (1, 1, 'b')
 #explain select * from t1 where (a = 1 and b is null and c = 'b') or (a > 2) order by a desc;
 select * from t1 where (a = 1 and b is null and c = 'b') or (a > 2) order by a desc;
 #explain select * from t1 where a >= 1 and a < 3 order by a desc;
+#SEQUOIASQLMAINSTREAM-644
 select * from t1 where a >= 1 and a < 3 order by a desc;
 #explain select * from t1 where a = 1 order by a desc, b desc;
+#SEQUOIASQLMAINSTREAM-644
 select * from t1 where a = 1 order by a desc, b desc;
 #explain select * from t1 where a = 1 and b is null order by a desc, b desc;
 select * from t1 where a = 1 and b is null order by a desc, b desc;
@@ -246,6 +248,7 @@ select * from t1 where a = 1 and b is null order by a desc, b desc;
 #explain select * from t1 where a = 2 and b > 0 order by a desc,b desc;
 #explain select * from t1 where a = 2 and b < 2 order by a desc,b desc;
 #explain select * from t1 where a = 1 order by b desc;
+#SEQUOIASQLMAINSTREAM-644
 select * from t1 where a = 1 order by b desc;
 #
 # Test things when we don't have NULL keys
@@ -260,14 +263,18 @@ select * from t1 order by a desc, b desc, c desc;
 select * from t1 where (a = 1 and b = 1 and c = 'b') or (a > 2) order by a desc;
 # test NEAR_MAX, NO_MIN_RANGE
 #explain select * from t1 where a < 2 and b <= 1 order by a desc, b desc;
+#SEQUOIASQLMAINSTREAM-644
 select * from t1 where a < 2 and b <= 1 order by a desc, b desc;
 select count(*) from t1 where a < 5 and b > 0;
+#SEQUOIASQLMAINSTREAM-644
 select * from t1 where a < 5 and b > 0 order by a desc,b desc;
 # test HA_READ_AFTER_KEY (at the end of the file), NEAR_MIN
 #explain select * from t1 where a between 1 and 3 and b <= 1 order by a desc, b desc;
+#SEQUOIASQLMAINSTREAM-644
 select * from t1 where a between 1 and 3 and b <= 1 order by a desc, b desc;
 # test HA_READ_AFTER_KEY (in the middle of the file)
 #explain select * from t1 where a between 0 and 1 order by a desc, b desc;
+#SEQUOIASQLMAINSTREAM-644
 select * from t1 where a between 0 and 1 order by a desc, b desc;
 drop table t1;
 

@@ -88,28 +88,28 @@ select fld3 from t2 order by fld3 desc limit 10;
 fld3
 youthfulness
 yelped
-Wotan
 workers
-Witt
 witchcraft
-Winsett
-Willy
 willed
 wildcats
+widens
+whiteness
+whiteners
+whistled
 select fld3 from t2 order by fld3 desc limit 5;
 fld3
 youthfulness
 yelped
-Wotan
 workers
-Witt
+witchcraft
+willed
 select fld3 from t2 order by fld3 desc limit 5,5;
 fld3
-witchcraft
-Winsett
-Willy
-willed
 wildcats
+widens
+whiteness
+whiteners
+whistled
 select t2.fld3 from t2 where fld3 = 'honeysuckle';
 fld3
 honeysuckle
