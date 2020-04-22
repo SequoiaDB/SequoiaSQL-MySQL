@@ -3442,7 +3442,7 @@ int ha_sdb::autocommit_statement(bool direct_op) {
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   if (!conn->is_transaction_on()) {
-    if (1 == ha_thd()->lex->table_count && !table->triggers &&
+    if (sdb_is_single_table(ha_thd()) && !table->triggers &&
         (direct_op || pushdown_autocommit())) {
       conn->set_pushed_autocommit();
       SDB_LOG_DEBUG("optimizer pushdown autocommit: %d",

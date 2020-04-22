@@ -337,6 +337,10 @@ bool sdb_is_transaction_stmt(THD *thd, bool all) {
   }
 }
 
+bool sdb_is_single_table(THD *thd) {
+  return (1 == thd->lex->table_count);
+}
+
 void sdb_query_cache_invalidate(THD *thd, bool all) {
   TABLE_LIST *table_list = NULL;
   if (thd_sql_command(thd) == SQLCOM_UPDATE ||
@@ -611,6 +615,10 @@ void sdb_thd_reset_condition_info(THD *thd) {
 
 bool sdb_is_transaction_stmt(THD *thd, bool all) {
   return all ? thd->transaction.all.ha_list : thd->transaction.stmt.ha_list;
+}
+
+bool sdb_is_single_table(THD *thd) {
+  return thd->lex->query_tables && !thd->lex->query_tables->next_global;
 }
 
 bool sdb_create_table_like(THD *thd) {
