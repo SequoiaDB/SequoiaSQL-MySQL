@@ -339,7 +339,7 @@ select max(c2) from t3 LIMIT ROWS EXAMINED 0;
 #explain
 #select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 5;
 #BUG #SEQUOIASQLMAINSTREAM-620
-#select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 5;
+select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 5;
 select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 6;
 select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 0;
 
@@ -352,7 +352,7 @@ select count(c2) from t3 LIMIT ROWS EXAMINED 0;
 #explain
 #select count(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 5;
 #BUG #SEQUOIASQLMAINSTREAM-620
-#select count(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 5;
+select count(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 5;
 select count(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 6;
 
 #explain
@@ -576,8 +576,8 @@ SELECT DISTINCT * FROM t1 WHERE a > (SELECT COUNT(*) FROM t1, t2 WHERE a = b);
 PREPARE ps FROM 'SELECT * FROM v LIMIT ROWS EXAMINED 21';
 
 #BUG #SEQUOIASQLMAINSTREAM-620
-#EXECUTE ps;
-#EXECUTE ps;
+EXECUTE ps;
+EXECUTE ps;
 
 drop view v;
 drop table t1, t2;
