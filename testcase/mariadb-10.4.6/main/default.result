@@ -3100,6 +3100,35 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT (-`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
+# MDEV-11359: Implement IGNORE for bulk operation
+create table t1 (a int primary key default 0, b int default 3);
+insert into t1 values (1, ignore);
+insert into t1 values (2, ignore);
+replace into t1 values (2, ignore);
+replace into t1 values (3, ignore);
+replace into t1 values (4, 6);
+replace into t1 values (5, 7);
+update t1 set a=6,b=ignore where a=5;
+insert into t1 values (ignore, ignore);
+insert into t1 values (ignore, ignore);
+ERROR 23000: Duplicate entry '{ "a": 0 }' for key 'PRIMARY'
+select * from t1 order by a;
+a	b
+0	3
+1	3
+2	3
+3	3
+4	6
+6	7
+delete from t1 where a < 4;
+# actually insert default instead of ignoring
+# (but REPLACE is non standard operator)
+replace into t1 values (4, ignore);
+select * from t1 order by a;
+a	b
+4	3
+6	7
+drop table t1;
 create table t1 (a int default 100, b int, c varchar(60) default 'x');
 load data infile '../../std_data/rpl_loaddata.dat' into table t1 (a, @b) set b=@b+10, c=ignore;
 select * from t1;
