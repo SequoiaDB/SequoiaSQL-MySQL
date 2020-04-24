@@ -1,7 +1,7 @@
-#Case 21804
 CREATE DATABASE test_explain_sequoiadb;
 USE test_explain_sequoiadb;
 
+#seqDB-21804
 CREATE TABLE `acct_business_account` (
   `serialno` int(11) NOT NULL,
   `objectno` int(11) NOT NULL,
@@ -84,5 +84,14 @@ explain select ACL.lockflag from acct_loan ACL where ACL.loanstatus in('0','1')
            and ABA.accounttype='5'
            and ABA.accountindicator='01'
        );
+
+DROP TABLE acct_business_account, acct_loan, acct_payment_schedule; 
+
+#seqDB-22106
+CREATE TABLE t1 ( id INT , c CHAR(16), INDEX(id,c) ) ;
+INSERT INTO t1 VALUES (5,'oe'),(9,'st'),(1,'tr'),(-1,'uoos'),(-9,'12'),(12,'hl'),(8,'ie'),(10,'now'),(1,'p7'),(18,'oe'),(-1,'tr'),(0,'tx');
+EXPLAIN SELECT * FROM t1 ORDER BY id DESC, c DESC;
+SELECT * FROM t1 ORDER BY id DESC, c DESC;
+DROP TABLE t1;
 
 DROP DATABASE test_explain_sequoiadb;
