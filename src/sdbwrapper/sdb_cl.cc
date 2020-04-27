@@ -148,6 +148,27 @@ int Sdb_cl::query_one(bson::BSONObj &obj, const bson::BSONObj &condition,
                            &order_by, &hint, num_to_skip, flags));
 }
 
+int cl_query_and_remove(sdbclient::sdbCollection *cl,
+                        sdbclient::sdbCursor *cursor,
+                        const bson::BSONObj *condition,
+                        const bson::BSONObj *selected,
+                        const bson::BSONObj *order_by,
+                        const bson::BSONObj *hint, longlong num_to_skip,
+                        longlong num_to_return, int flags) {
+  return cl->queryAndRemove(*cursor, *condition, *selected, *order_by, *hint,
+                            num_to_skip, num_to_return, flags);
+}
+
+int Sdb_cl::query_and_remove(const bson::BSONObj &condition,
+                             const bson::BSONObj &selected,
+                             const bson::BSONObj &order_by,
+                             const bson::BSONObj &hint, longlong num_to_skip,
+                             longlong num_to_return, int flags) {
+  return retry(boost::bind(cl_query_and_remove, &m_cl, &m_cursor, &condition,
+                           &selected, &order_by, &hint, num_to_skip,
+                           num_to_return, flags));
+}
+
 int Sdb_cl::current(bson::BSONObj &obj, my_bool get_owned) {
   int rc = SDB_ERR_OK;
   rc = m_cursor.current(obj, get_owned);

@@ -526,6 +526,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_lock_type = TL_IGNORE;
   collection = NULL;
   first_read = true;
+  delete_with_select = false;
   count_times = 0;
   last_count_time = time(NULL);
   m_ignore_dup_key = false;
@@ -742,6 +743,7 @@ int ha_sdb::reset() {
   free_root(&blobroot, MYF(0));
   m_lock_type = TL_IGNORE;
   pushed_condition = SDB_EMPTY_BSON;
+  delete_with_select = false;
   m_ignore_dup_key = false;
   m_write_can_replace = false;
   m_insert_with_update = false;
@@ -1682,15 +1684,16 @@ int ha_sdb::delete_row(const uchar *buf) {
     }
   }
 
-  if (get_unique_key_cond(buf, cond)) {
-    cond = cur_rec;
-  }
-
-  sdb_build_clientinfo(ha_thd(), builder);
-  hint = builder.obj();
-  rc = collection->del(cond, hint);
-  if (rc != 0) {
-    goto error;
+  if (!delete_with_select) {
+    if (get_unique_key_cond(buf, cond)) {
+      cond = cur_rec;
+    }
+    sdb_build_clientinfo(ha_thd(), builder);
+    hint = builder.obj();
+    rc = collection->del(cond, hint);
+    if (rc != 0) {
+      goto error;
+    }
   }
 
   stats.records--;
@@ -2242,6 +2245,14 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   if (thd_sql_command(ha_thd()) == SQLCOM_DELETE &&
       (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_DELETE) &&
       optimize_delete(condition)) {
+#ifdef IS_MARIADB
+    SELECT_LEX *select_lex = ha_thd()->lex->first_select_lex();
+    bool with_select = !select_lex->item_list.is_empty();
+    if (with_select) {
+      delete_with_select = true;
+      goto done;
+    }
+#endif
     first_read = false;
     thd_sdb->deleted = 0;
     rc = collection->del(condition, hint, FLG_DELETE_RETURNNUM, &result);
@@ -3017,8 +3028,14 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
     }
 
-    rc = collection->query(condition, selector, SDB_EMPTY_BSON, hint, 0,
-                           num_to_return, flag);
+    if (delete_with_select) {
+      rc = collection->query_and_remove(condition, selector, SDB_EMPTY_BSON,
+                                        hint, 0, num_to_return, flag);
+    } else {
+      rc = collection->query(condition, selector, SDB_EMPTY_BSON, hint, 0,
+                             num_to_return, flag);
+    }
+
     if (rc != 0) {
       goto error;
     }

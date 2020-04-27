@@ -493,6 +493,7 @@ class ha_sdb : public handler {
   enum thr_lock_type m_lock_type;
   Sdb_cl *collection;
   bool first_read;
+  bool delete_with_select;
   bson::BSONObj cur_rec;
   bson::BSONObj pushed_condition;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
