@@ -660,3 +660,90 @@ int sdb_add_pfs_clientinfo(THD *thd) {
 #endif
   return rc;
 }
+
+bool sdb_is_type_diff(Field *old_field, Field *new_field) {
+  bool rs = true;
+  if (old_field->real_type() != new_field->real_type()) {
+    goto done;
+  }
+  /*
+    Check the definition difference.
+    Some types are not suitable to be checked by Field::eq_def.
+    Reasons:
+    1. No need to check ZEROFILL for Field_num.
+    2. No need to check CHARACTER SET and COLLATE for Field_str.
+    3. It doesn't check Field::binary().
+    3. It doesn't check the M for Field_bit.
+    4. It doesn't check the fsp for time-like types.
+   */
+  switch (old_field->real_type()) {
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_LONG:
+    case MYSQL_TYPE_LONGLONG: {
+      if (((Field_num *)old_field)->unsigned_flag !=
+          ((Field_num *)new_field)->unsigned_flag) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_FLOAT:
+    case MYSQL_TYPE_DOUBLE: {
+      Field_real *old_float = (Field_real *)old_field;
+      Field_real *new_float = (Field_real *)new_field;
+      if (old_float->unsigned_flag != new_float->unsigned_flag ||
+          old_float->field_length != new_float->field_length ||
+          old_float->decimals() != new_float->decimals()) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_NEWDECIMAL: {
+      Field_new_decimal *old_dec = (Field_new_decimal *)old_field;
+      Field_new_decimal *new_dec = (Field_new_decimal *)new_field;
+      if (old_dec->unsigned_flag != new_dec->unsigned_flag ||
+          old_dec->precision != new_dec->precision ||
+          old_dec->decimals() != new_dec->decimals()) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VAR_STRING: {
+      if (old_field->char_length() != new_field->char_length() ||
+          old_field->binary() != new_field->binary()) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_BIT: {
+      if (old_field->field_length != new_field->field_length) {
+        goto done;
+      }
+      break;
+    }
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_TIME2:
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_DATETIME2:
+    case MYSQL_TYPE_TIMESTAMP:
+    case MYSQL_TYPE_TIMESTAMP2: {
+      if (old_field->decimals() != new_field->decimals()) {
+        goto done;
+      }
+      break;
+    }
+    default: {
+      if (!old_field->eq_def(new_field)) {
+        goto done;
+      }
+      break;
+    }
+  }
+  rs = false;
+done:
+  return rs;
+}

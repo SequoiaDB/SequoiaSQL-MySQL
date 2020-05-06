@@ -308,6 +308,9 @@ class ha_sdb : public handler {
   // int index_read(uchar *buf, const uchar *key_ptr, uint key_len,
   //               enum ha_rkey_function find_flage);
 
+  void create_field_rule(Field *rfield, Item_field *value,
+                         bson::BSONObjBuilder &builder);
+
   int create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
                       bson::BSONObjBuilder &builder);
 

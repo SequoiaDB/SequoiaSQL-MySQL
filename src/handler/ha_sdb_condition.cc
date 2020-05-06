@@ -21,6 +21,7 @@
 #include <sql_class.h>
 #include "ha_sdb_condition.h"
 #include "ha_sdb_errcode.h"
+#include "ha_sdb_util.h"
 
 ha_sdb_cond_ctx::ha_sdb_cond_ctx(TABLE *cur_table, THD *ha_thd,
                                  my_bitmap_map *pushed_cond_buff,
@@ -410,102 +411,140 @@ void sdb_parse_condtion(const Item *cond_item, ha_sdb_cond_ctx *sdb_ctx) {
 
 void sdb_traverse_update(const Item *update_item, void *arg) {
   DBUG_ENTER("traverse_update()");
-  update_arg *upd_arg = (struct update_arg *)arg;
+  ha_sdb_update_arg *upd_arg = (ha_sdb_update_arg *)arg;
   Item_func *item_func = NULL;
   enum_field_types type;
+  Item_field *item_fld = NULL;
   Item *args = NULL;
   bool minus = false;
-  if (update_item) {
-    switch (update_item->type()) {
-      case Item::FIELD_ITEM:
-        type = update_item->field_type();
-        if (MYSQL_TYPE_DECIMAL != type && MYSQL_TYPE_TINY != type &&
-            MYSQL_TYPE_SHORT != type && MYSQL_TYPE_LONG != type &&
-            MYSQL_TYPE_FLOAT != type && MYSQL_TYPE_DOUBLE != type &&
-            MYSQL_TYPE_LONGLONG != type && MYSQL_TYPE_INT24 != type &&
-            MYSQL_TYPE_NEWDECIMAL != type) {
-          *upd_arg->optimizer_update = false;
-          break;
-        }
+  uint &my_field_cnt = upd_arg->my_field_count;
+  uint &other_field_cnt = upd_arg->other_field_count;
 
-        /* item_name is not same as field_name. */
-        if (strcmp(sdb_item_name(update_item),
-                   sdb_field_name(upd_arg->field))) {
-          *upd_arg->optimizer_update = false;
-          break;
-        }
+  if (!*upd_arg->optimizer_update || !update_item) {
+    goto done;
+  }
 
-        /* set a = a + a + 10*/
-        if (*upd_arg->field_count) {
-          *upd_arg->optimizer_update = false;
-          break;
-        }
+  switch (update_item->type()) {
+    case Item::FIELD_ITEM:
+      type = update_item->field_type();
+      item_fld = (Item_field *)update_item;
 
-        *upd_arg->field_count = true;
-        ((Item_field *)(update_item))->field->store(0);
-        if (((Item_field *)(update_item))->field->is_null()) {
-          ((Item_field *)(update_item))->field->set_notnull();
-        }
-        DBUG_PRINT("ha_sdb:info",
-                   ("Item: %s, type: %d is in update items",
-                    sdb_item_name(update_item), update_item->type()));
-        break;
-      case Item::FUNC_ITEM:
-        item_func = (Item_func *)update_item;
-        minus = !strcmp(item_func->func_name(), "-") ? true : false;
-        /* TODO: supported bit op like bitand, bitor, bitxor*/
-        if (strcmp(item_func->func_name(), "+") && !minus) {
-          *upd_arg->optimizer_update = false;
-          break;
-        }
-
-        if (minus) {
-          if (item_func->argument_count() == 1) {
-            args = *(item_func->arguments());
-          }
-
-          if (item_func->argument_count() == 2) {
-            args = *(item_func->arguments() + 1);
-          }
-
-          /* set a = 10 - a; set a = a + a + 10*/
-          if (args->type() == Item::FIELD_ITEM) {
+      if (0 == strcmp(sdb_item_name(update_item),
+                      sdb_field_name(upd_arg->my_field))) {
+        if (0 == my_field_cnt) {
+          if (MYSQL_TYPE_DECIMAL != type && MYSQL_TYPE_TINY != type &&
+              MYSQL_TYPE_SHORT != type && MYSQL_TYPE_LONG != type &&
+              MYSQL_TYPE_FLOAT != type && MYSQL_TYPE_DOUBLE != type &&
+              MYSQL_TYPE_LONGLONG != type && MYSQL_TYPE_INT24 != type &&
+              MYSQL_TYPE_NEWDECIMAL != type) {
             *upd_arg->optimizer_update = false;
             break;
           }
+
+          item_fld->field->store(0);
+          if (item_fld->field->is_null()) {
+            item_fld->field->set_notnull();
+          }
+        } else {
+          upd_arg->value_field = item_fld;
+        }
+        ++my_field_cnt;
+
+      } else {
+        if (sdb_is_type_diff(upd_arg->my_field, item_fld->field) ||
+            !my_charset_same(upd_arg->my_field->charset(),
+                             item_fld->field->charset())) {
+          *upd_arg->optimizer_update = false;
+          break;
+        }
+        upd_arg->value_field = (Item_field *)update_item;
+        ++other_field_cnt;
+      }
+
+      DBUG_PRINT("ha_sdb:info",
+                 ("Item: %s, type: %d is in update items",
+                  sdb_item_name(update_item), update_item->type()));
+      break;
+    case Item::FUNC_ITEM:
+      item_func = (Item_func *)update_item;
+      minus = !strcmp(item_func->func_name(), "-") ? true : false;
+      /* TODO: supported bit op like bitand, bitor, bitxor*/
+      if (strcmp(item_func->func_name(), "+") && !minus) {
+        *upd_arg->optimizer_update = false;
+        break;
+      }
+
+      if (minus) {
+        if (item_func->argument_count() == 1) {
+          args = *(item_func->arguments());
         }
 
-        DBUG_PRINT("ha_sdb:info",
-                   ("Item: %s, type: %d is in update items",
-                    item_func->func_name(), update_item->type()));
-        break;
-#if defined IS_MYSQL
-      case Item::INT_ITEM:
-      case Item::REAL_ITEM:
-      case Item::DECIMAL_ITEM:
-      case Item::STRING_ITEM:
-#elif defined IS_MARIADB
-      case Item::CONST_ITEM:
-#endif
-      case Item::DEFAULT_VALUE_ITEM:
-        DBUG_PRINT("ha_sdb:info",
-                   ("Item: %s, type: %d is in update items",
-                    sdb_item_name(update_item), update_item->type()));
-        break;
+        if (item_func->argument_count() == 2) {
+          args = *(item_func->arguments() + 1);
+        }
 
-      case Item::COND_ITEM:
-        *upd_arg->optimizer_update = false;
-        DBUG_PRINT("ha_sdb:info", ("Item: %s, type: %d is in update items",
-                                   ((Item_func *)update_item)->func_name(),
-                                   update_item->type()));
-        break;
-      default:
-        *upd_arg->optimizer_update = false;
-        DBUG_PRINT("ha_sdb:info",
-                   ("Item: %s, type: %d is in update items",
-                    sdb_item_name(update_item), update_item->type()));
-        break;
-    }
+        /* set a = 10 - a; set a = - a */
+        if (args->type() == Item::FIELD_ITEM) {
+          *upd_arg->optimizer_update = false;
+          break;
+        }
+      }
+
+      DBUG_PRINT("ha_sdb:info", ("Item: %s, type: %d is in update items",
+                                 item_func->func_name(), update_item->type()));
+      break;
+#if defined IS_MYSQL
+    case Item::INT_ITEM:
+    case Item::REAL_ITEM:
+    case Item::DECIMAL_ITEM:
+    case Item::STRING_ITEM:
+#elif defined IS_MARIADB
+    case Item::CONST_ITEM:
+#endif
+    case Item::DEFAULT_VALUE_ITEM:
+      DBUG_PRINT("ha_sdb:info",
+                 ("Item: %s, type: %d is in update items",
+                  sdb_item_name(update_item), update_item->type()));
+      ++upd_arg->const_value_count;
+      break;
+
+    case Item::COND_ITEM:
+      *upd_arg->optimizer_update = false;
+      DBUG_PRINT("ha_sdb:info", ("Item: %s, type: %d is in update items",
+                                 ((Item_func *)update_item)->func_name(),
+                                 update_item->type()));
+      break;
+    default:
+      *upd_arg->optimizer_update = false;
+      DBUG_PRINT("ha_sdb:info",
+                 ("Item: %s, type: %d is in update items",
+                  sdb_item_name(update_item), update_item->type()));
+      break;
   }
+
+  if ((0 == my_field_cnt && 0 == other_field_cnt) ||
+      (1 == my_field_cnt && 0 == other_field_cnt)) {
+    // set a = 1 + ...          Y
+    // set a = a                Y
+    // set a = a + 1 + ...      Y
+    // Ok. Nothing to do.
+  } else if ((2 == my_field_cnt && 0 == other_field_cnt) ||
+             (0 == my_field_cnt && 1 == other_field_cnt) ||
+             (1 == my_field_cnt && 1 == other_field_cnt)) {
+    // set a = a + a            Y
+    // set a = a + a + ...      N
+    // set a = b                Y
+    // set a = b + 1 + ...      N
+    // set a = a + b            Y
+    // set a = a + b + 1 + ...  N
+    if (upd_arg->const_value_count > 0) {
+      *upd_arg->optimizer_update = false;
+    }
+  } else {
+    // Too many fields in expression
+    *upd_arg->optimizer_update = false;
+  }
+
+done:
   DBUG_VOID_RETURN;
 }

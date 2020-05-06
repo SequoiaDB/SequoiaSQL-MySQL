@@ -29,10 +29,30 @@ enum SDB_COND_STATUS {
   SDB_COND_UNKNOWN = 65535
 };
 
-struct update_arg {
-  Field *field;
-  bool *field_count;
+struct ha_sdb_update_arg {
+  /*
+    Variables description:
+    For example `set a = b + 1`.
+    my_field: `a`, which is to be updated;
+    other_field: `b`, which is any field except my_field;
+    const_value: 1, like "abc", 100 ...;
+    value_field: it is the field to be pushed down as { $field: "xxx" }
+    optimizer_update: can this update operation be optimized or not.
+  */
+  Field *my_field;
+  Item_field *value_field;
+  uint my_field_count;
+  uint other_field_count;
+  uint const_value_count;
   bool *optimizer_update;
+
+  ha_sdb_update_arg()
+      : my_field(NULL),
+        value_field(NULL),
+        my_field_count(0),
+        other_field_count(0),
+        const_value_count(0),
+        optimizer_update(NULL) {}
 };
 
 class ha_sdb_cond_ctx : public Sql_alloc {

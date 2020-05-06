@@ -1745,6 +1745,14 @@ done:
   return rc;
 }
 
+void ha_sdb::create_field_rule(Field *rfield, Item_field *value,
+                               bson::BSONObjBuilder &builder) {
+  bson::BSONObjBuilder field_builder(
+      builder.subobjStart(sdb_field_name(rfield)));
+  field_builder.append("$field", sdb_field_name(value->field));
+  field_builder.done();
+}
+
 int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
                             bson::BSONObjBuilder &builder) {
   int rc = 0;
@@ -1798,8 +1806,8 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
   bitmap_set_bit(table->write_set, rfield->field_index);
   bitmap_set_bit(table->read_set, rfield->field_index);
 
-  /* when field type is real:float/double, item_func use double to store the
-     result of func. while field->store() will cast double result to its own
+  /* When field type is real:float/double, item_func use double to store the
+     result of func. While field->store() will cast double result to its own
      float type. In this processing lost the precision of double result. May
      cause many issues. So given 0.0 to float/double to check if overflow,
      it will not direct update if overflow.
@@ -1906,8 +1914,7 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
   List_iterator_fast<Item> f(*item_list), v(*update_value_list);
 
   while (*optimizer_update && (fld = f++)) {
-    bool field_count = false;
-    update_arg upd_arg;
+    ha_sdb_update_arg upd_arg;
     field = fld->field_for_view_update();
     DBUG_ASSERT(field != NULL);
     /*set field's table is not the current table*/
@@ -1934,9 +1941,8 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
       }
     }
 #endif
-    upd_arg.field = rfield;
+    upd_arg.my_field = rfield;
     upd_arg.optimizer_update = optimizer_update;
-    upd_arg.field_count = &field_count;
 
     /* generated column cannot be optimized. */
     if (sdb_field_is_gcol(rfield)) {
@@ -1949,10 +1955,18 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
       goto done;
     }
 
-    if (field_count) {
-      rc = create_inc_rule(rfield, value, optimizer_update, inc_builder);
+    if (upd_arg.my_field_count > 0) {
+      if (upd_arg.value_field) {
+        create_field_rule(rfield, upd_arg.value_field, inc_builder);
+      } else {
+        rc = create_inc_rule(rfield, value, optimizer_update, inc_builder);
+      }
     } else {
-      rc = create_set_rule(rfield, value, optimizer_update, set_builder);
+      if (upd_arg.value_field) {
+        create_field_rule(rfield, upd_arg.value_field, set_builder);
+      } else {
+        rc = create_set_rule(rfield, value, optimizer_update, set_builder);
+      }
     }
 
     if (0 != rc || !*optimizer_update) {
