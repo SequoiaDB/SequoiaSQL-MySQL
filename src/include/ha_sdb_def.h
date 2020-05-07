@@ -109,6 +109,13 @@
 
 #define SDB_COMMENT "sequoiadb"
 
+#define SDB_FIELD_DETAILS "Details"
+#define SDB_FIELD_PAGE_SIZE "PageSize"
+#define SDB_FIELD_TOTAL_DATA_PAGES "TotalDataPages"
+#define SDB_FIELD_TOTAL_INDEX_PAGES "TotalIndexPages"
+#define SDB_FIELD_TOTAL_DATA_FREE_SPACE "TotalDataFreeSpace"
+#define SDB_FIELD_TOTAL_RECORDS "TotalRecords"
+
 #define SDB_DEFAULT_FILL_MESSAGE ""
 
 const static bson::BSONObj SDB_EMPTY_BSON;
