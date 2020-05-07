@@ -117,6 +117,13 @@
 #define SDB_FIELD_TABLE_OPTIONS "table_options"
 #define SDB_FIELD_PARTITION_OPTIONS "partition_options"
 
+#define SDB_FIELD_DETAILS "Details"
+#define SDB_FIELD_PAGE_SIZE "PageSize"
+#define SDB_FIELD_TOTAL_DATA_PAGES "TotalDataPages"
+#define SDB_FIELD_TOTAL_INDEX_PAGES "TotalIndexPages"
+#define SDB_FIELD_TOTAL_DATA_FREE_SPACE "TotalDataFreeSpace"
+#define SDB_FIELD_TOTAL_RECORDS "TotalRecords"
+
 #define SDB_FIELD_INNER_PART_ID "_mysqlPartID"
 
 #define SDB_DEFAULT_FILL_MESSAGE ""

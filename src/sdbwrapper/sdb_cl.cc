@@ -457,3 +457,11 @@ int Sdb_cl::split(const char *source_group_name, const char *target_group_name,
   return retry(boost::bind(cl_split, &m_cl, source_group_name,
                            target_group_name, &split_cond, &split_end_cond));
 }
+
+int cl_get_detail(sdbclient::sdbCollection *cl, sdbclient::sdbCursor *cursor) {
+  return cl->getDetail(*cursor);
+}
+
+int Sdb_cl::get_detail(sdbclient::sdbCursor &cursor) {
+  return retry(boost::bind(cl_get_detail, &m_cl, &cursor));
+}

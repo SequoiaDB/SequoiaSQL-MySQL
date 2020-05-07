@@ -376,29 +376,23 @@ int conn_exec(sdbclient::sdb *connection, const char *sql,
 
 int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
                                 Sdb_statistics &stats) {
-  static const char STATS_SQL[] =
-      "select T.Details.$[0].PageSize as PageSize, "
-      "T.Details.$[0].TotalDataPages as TotalDataPages,"
-      "T.Details.$[0].TotalIndexPages as TotalIndexPages, "
-      "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace, "
-      "T.Details.$[0].TotalRecords as TotalRecords "
-      "from $SNAPSHOT_CL as T "
-      "where T.NodeSelect='primary' and T.Name='%s.%s' split by T.Details "
-      "/*+use_option(ShowMainCLMode, both)*/";
-
   static const int PAGE_SIZE_MIN = 4096;
   static const int PAGE_SIZE_MAX = 65536;
 
   int rc = SDB_ERR_OK;
   sdbclient::sdbCursor cursor;
   bson::BSONObj obj;
-  char stats_sql[sizeof(STATS_SQL) + SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  Sdb_cl cl;
 
   DBUG_ASSERT(NULL != cs_name);
   DBUG_ASSERT(strlength(cs_name) != 0);
 
-  sprintf(stats_sql, STATS_SQL, cs_name, cl_name);
-  rc = retry(boost::bind(conn_exec, &m_connection, stats_sql, &cursor));
+  rc = get_cl(cs_name, cl_name, cl);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  rc = cl.get_detail(cursor);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -410,25 +404,58 @@ int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
   stats.total_records = 0;
 
   while (!(rc = cursor.next(obj, false))) {
-    // For main cl, each data node may have different page size,
-    // so calculate pages base on the min page size.
-    int page_size = obj.getField("PageSize").numberInt();
-    // when exception occurs, page size may be 0, but it should never be.
-    if (0 == page_size) {
-      page_size = PAGE_SIZE_MAX;
-    }
-    if (page_size < stats.page_size) {
-      stats.page_size = page_size;
-    }
-    int total_data_pages = obj.getField("TotalDataPages").numberInt();
-    stats.total_data_pages += (total_data_pages * (page_size / PAGE_SIZE_MIN));
-    int total_index_pages = obj.getField("TotalIndexPages").numberInt();
-    stats.total_index_pages +=
-        (total_index_pages * (page_size / PAGE_SIZE_MIN));
+    try {
+      bson::BSONObjIterator it(obj.getField(SDB_FIELD_DETAILS).Obj());
+      if (!it.more()) {
+        continue;
+      }
+      bson::BSONObj detail = it.next().Obj();
+      bson::BSONObjIterator iter(detail);
 
-    stats.total_data_free_space +=
-        obj.getField("TotalDataFreeSpace").numberLong();
-    stats.total_records += obj.getField("TotalRecords").numberLong();
+      int page_size = 0;
+      int total_data_pages = 0;
+      int total_index_pages = 0;
+      longlong total_data_free_space = 0;
+      longlong total_records = 0;
+
+      while (iter.more()) {
+        bson::BSONElement ele = iter.next();
+        if (!strcmp(ele.fieldName(), SDB_FIELD_PAGE_SIZE)) {
+          page_size = ele.numberInt();
+        } else if (!strcmp(ele.fieldName(), SDB_FIELD_TOTAL_DATA_PAGES)) {
+          total_data_pages = ele.numberInt();
+        } else if (!strcmp(ele.fieldName(), SDB_FIELD_TOTAL_INDEX_PAGES)) {
+          total_index_pages = ele.numberInt();
+        } else if (!strcmp(ele.fieldName(), SDB_FIELD_TOTAL_DATA_FREE_SPACE)) {
+          total_data_free_space = ele.numberLong();
+        } else if (!strcmp(ele.fieldName(), SDB_FIELD_TOTAL_RECORDS)) {
+          total_records = ele.numberLong();
+        }
+      }
+
+      // When exception occurs, page size may be 0. Fix it to default.
+      if (0 == page_size) {
+        page_size = PAGE_SIZE_MAX;
+      }
+      // For main cl, each data node may have different page size,
+      // so calculate pages base on the min page size.
+      if (page_size < stats.page_size) {
+        stats.page_size = page_size;
+      }
+      stats.total_data_pages +=
+          (total_data_pages * (page_size / PAGE_SIZE_MIN));
+      stats.total_index_pages +=
+          (total_index_pages * (page_size / PAGE_SIZE_MIN));
+
+      stats.total_data_free_space += total_data_free_space;
+      stats.total_records += total_records;
+
+    } catch (bson::assertion &e) {
+      DBUG_ASSERT(false);
+      SDB_LOG_ERROR("Cannot parse collection detail info. %s", e.what());
+      rc = SDB_SYS;
+      goto error;
+    }
   }
   if (SDB_DMS_EOC == rc) {
     rc = SDB_ERR_OK;

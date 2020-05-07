@@ -114,6 +114,8 @@ class Sdb_cl {
             const bson::BSONObj &split_cond,
             const bson::BSONObj &split_end_cond = SDB_EMPTY_BSON);
 
+  int get_detail(sdbclient::sdbCursor &cursor);
+
  private:
   int retry(boost::function<int()> func);
 

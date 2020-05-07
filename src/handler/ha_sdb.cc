@@ -2640,7 +2640,8 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
       sprintf(buff, "field type:%s, bson::elem type:%s",
               sdb_field_type_str(field->type()),
               sdb_elem_type_str(elem.type()));
-      thd->raise_warning_printf(ER_DATA_OUT_OF_RANGE, sdb_field_name(field), buff);
+      thd->raise_warning_printf(ER_DATA_OUT_OF_RANGE, sdb_field_name(field),
+                                buff);
     }
   }
 
