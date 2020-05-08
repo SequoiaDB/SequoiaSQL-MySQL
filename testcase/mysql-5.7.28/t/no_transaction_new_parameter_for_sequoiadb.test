@@ -1,10 +1,10 @@
-#Case 21988#Case 22124#Case 22126#Case 22128
+#Case 22125#Case 22127#Case 22129
 --source include/have_sequoiadb.inc
 --disable_warnings
 drop table if exists t1;
 --enable_warnings
 
-#Case 22124
+#Case 22125
 CREATE TABLE t1 ( a INT ); 
 set session sequoiadb_execute_only_in_mysql=on; 
 drop table t1; 
@@ -33,7 +33,7 @@ set session sequoiadb_execute_only_in_mysql=off;
 SELECT * FROM t1 ORDER BY a;
 DROP TABLE t1;
 
-#Case 22126
+#Case 22127
 set session sequoiadb_execute_only_in_mysql=on;
 CREATE TABLE t1 ( a INT PRIMARY KEY);
 INSERT INTO t1 VALUES (1),(2);
@@ -53,7 +53,7 @@ SHOW CREATE TABLE t1;
 set session sequoiadb_execute_only_in_mysql=off;
 DROP TABLE t1;
 
-#Case 22128
+#Case 22129
 set session sequoiadb_execute_only_in_mysql=on;
 CREATE TABLE t1 ( a INT PRIMARY KEY);
 INSERT INTO t1 VALUES (1),(2);
@@ -68,18 +68,6 @@ TRUNCATE TABLE t1;
 SELECT * FROM t1 ORDER BY a;
 set session sequoiadb_execute_only_in_mysql=off;
 SELECT * FROM t1 ORDER BY a;
-DROP TABLE t1;
-
-#Case 21988
-#SEQUOIASQLMAINSTREAM-627
-CREATE TABLE t1( a int, b char(255), c char(255), d char(255), e char(255), f char(255) ); 
-INSERT INTO t1 VALUES( 1, 'b', 'c', 'd', 'e', 'f' ); 
-SELECT * FROM t1 ORDER BY a DESC; 
-FLUSH TABLE t1; 
-set session sequoiadb_execute_only_in_mysql=on; 
-SELECT * FROM t1 ORDER BY a DESC; 
-set session sequoiadb_execute_only_in_mysql=off; 
-SELECT * FROM t1 ORDER BY a DESC;
 DROP TABLE t1;
 
 --source include/uninstall_sequoiadb.inc
