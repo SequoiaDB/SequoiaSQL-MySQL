@@ -47,6 +47,8 @@
 
 #ifdef IS_MARIADB
 #include <sql_select.h>
+#elif IS_MYSQL
+#include <sql_optimizer.h>
 #endif
 
 using namespace sdbclient;
@@ -1752,10 +1754,11 @@ int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
 
   rc = value->save_in_field(rfield, false);
 #ifdef IS_MYSQL
-  if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc) {
+  if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc)
 #elif IS_MARIADB
-  if (TYPE_OK != rc) {
+  if (TYPE_OK != rc)
 #endif
+  {
     rc = 0;
     *optimizer_update = false;
     THD *thd = rfield->table->in_use;
@@ -1819,10 +1822,11 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
 retry:
   rc = value->save_in_field(rfield, false);
 #ifdef IS_MYSQL
-  if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc) {
+  if (TYPE_OK != rc && TYPE_NOTE_TRUNCATED != rc)
 #elif IS_MARIADB
-  if (TYPE_OK != rc) {
+  if (TYPE_OK != rc)
 #endif
+  {
     if (is_real) {
       rc = TYPE_OK;
       sdb_thd_set_not_killed(thd);
@@ -2452,14 +2456,10 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     case SDB_DMS_EOC:
     // mysql add a flag of end of file
     case HA_ERR_END_OF_FILE: {
-#ifdef IS_MYSQL
-      rc = HA_ERR_KEY_NOT_FOUND;
-#elif IS_MARIADB
       SELECT_LEX *current_select = sdb_lex_current_select(ha_thd());
       if (current_select->join && current_select->join->implicit_grouping) {
         rc = HA_ERR_KEY_NOT_FOUND;
       }
-#endif
       table->status = STATUS_NOT_FOUND;
       break;
     }
