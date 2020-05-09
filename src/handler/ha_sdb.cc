@@ -44,6 +44,8 @@
 
 #ifdef IS_MARIADB
 #include <sql_select.h>
+#elif IS_MYSQL
+#include <sql_optimizer.h>
 #endif
 
 using namespace sdbclient;
@@ -1793,8 +1795,7 @@ retry:
       }
       goto retry;
 #if defined IS_MYSQL
-    } else if (TYPE_WARN_INVALID_STRING == rc ||
-               TYPE_WARN_OUT_OF_RANGE == rc) {
+    } else if (TYPE_WARN_INVALID_STRING == rc || TYPE_WARN_OUT_OF_RANGE == rc) {
 #elif IS_MARIADB
     } else if (1 == rc || 2 == rc) {
 #endif
@@ -2341,9 +2342,10 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     case SDB_DMS_EOC:
     // mysql add a flag of end of file
     case HA_ERR_END_OF_FILE: {
-#ifdef IS_MYSQL
-      rc = HA_ERR_KEY_NOT_FOUND;
-#endif
+      SELECT_LEX *current_select = sdb_lex_current_select(ha_thd());
+      if (current_select->join && current_select->join->implicit_grouping) {
+        rc = HA_ERR_KEY_NOT_FOUND;
+      }
       table->status = STATUS_NOT_FOUND;
       break;
     }
