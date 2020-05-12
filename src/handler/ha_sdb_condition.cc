@@ -385,7 +385,8 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
             Item_func::BETWEEN != type && Item_func::IN_FUNC != type &&
             Item_func::MULT_EQUAL_FUNC != type &&
             Item_func::INTERVAL_FUNC != type &&
-            Item_func::ISNOTNULLTEST_FUNC != type) {
+            Item_func::ISNOTNULLTEST_FUNC != type &&
+            Item_func::NEG_FUNC != type) {
           sdb_ctx->status = SDB_COND_UNSUPPORTED;
         }
         break;
