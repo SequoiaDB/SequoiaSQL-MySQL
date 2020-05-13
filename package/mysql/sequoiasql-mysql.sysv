@@ -46,23 +46,6 @@ function check_root_user()
    fi
 }
 
-#
-# Set ulimit 
-#
-function set_ulimits() 
-{
-    local type="$1"
-    local value="$2"
-    if [ "$value" = -1 ]; then
-       ulimit $type unlimited
-    else
-       ulimit $type "$value"
-    fi
-    
-    if [ $? != 0 ]; then
-       echo "please check ${PREFIX}/conf/limits.conf!"
-    fi
-}
 
 function exec_cmd()
 {
@@ -74,14 +57,6 @@ function exec_cmd()
 
 function start_svc()
 {
-   if [ -f "${PREFIX}/conf/limits.conf" ]; then
-     . ${PREFIX}/conf/limits.conf
-     #max stack size
-     if [ $stack_size != -1 ]; then
-         stack_size=`expr $stack_size / 1024`
-     fi
-     set_ulimits "-s" "$stack_size"
-   fi
    
    # Return
    #   0 if start service succeed (will set global variable $PROCESSID)
