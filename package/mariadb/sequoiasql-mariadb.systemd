@@ -13,5 +13,3 @@ User=XXXX
 Environment="LD_LIBRARY_PATH=/opt/sequoiasql/mariadb/lib"
 ExecStart=/opt/sequoiasql/mariadb/bin/sequoiasql-mariadb-daemon
 ExecStop=/opt/sequoiasql/mariadb/bin/sequoiasql-mariadb-daemon --stop --with-inst
-# set ulimit
-LimitSTACK=2097152
