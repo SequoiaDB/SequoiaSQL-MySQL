@@ -443,7 +443,7 @@ insert into t1 values (0, 0, 0, 0, 0);
 insert into t1 values (1, 0, 0, 1, 1);
 insert into t1 values (123.456E+15, 123.456E+15, NULL, 123.456E+15, NULL);
 insert into t1 values (-123456E-15, -123456E-15, -12345678998765.55, 123456E-15, 12345678998765.55);
---error 1690
+--error 1264
 update t1 set id = id - 8E300 where id < -0.1;
 #BUG #SEQUOIASQLMAINSTREAM-618
 #--error 1690
