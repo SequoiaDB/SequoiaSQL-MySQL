@@ -596,9 +596,20 @@
             <insertBefore>installdir</insertBefore>
             <explanation>Installer.Parameter.installdir.explanation</explanation>
             <cliOptionShow>0</cliOptionShow>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
             <ruleList>
-                <compareText text="${installer_command_line_arguments}" value="--prefix" logic="does_not_contain"/>
-                <compareValues logic="greater" value1="${old_installation_num}" value2="0"/>
+                <ruleGroup>
+                    <ruleList>
+                        <compareText text="${installer_command_line_arguments}" value="--prefix" logic="does_not_contain"/>
+                        <compareValues logic="greater" value1="${old_installation_num}" value2="1"/>
+                    </ruleList>
+                </ruleGroup>
+                <ruleGroup>
+                    <ruleList>
+                        <compareValues logic="equals" value1="${old_installation_num}" value2="1"/>
+                        <compareValues value1="${installmode}" value2="upgrade" logic="does_not_equal"/>
+                   </ruleList>
+                </ruleGroup>
             </ruleList>
         </choiceParameter>
 
