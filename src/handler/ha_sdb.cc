@@ -3707,7 +3707,8 @@ int ha_sdb::delete_table(const char *from) {
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
-  if (sdb_execute_only_in_mysql(ha_thd())) {
+  if (sdb_execute_only_in_mysql(ha_thd()) ||
+      SQLCOM_DROP_DB == thd_sql_command(thd)) {
     goto done;
   }
 
