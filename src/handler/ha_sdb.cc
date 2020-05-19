@@ -1531,6 +1531,7 @@ int ha_sdb::write_row(uchar *buf) {
   bson::BSONObj tmp_obj;
   ulonglong auto_inc = 0;
   bool auto_inc_explicit_used = false;
+  const Discrete_interval *forced = NULL;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
@@ -1546,6 +1547,20 @@ int ha_sdb::write_row(uchar *buf) {
   }
 
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(thd));
+
+  // Handle statement `SET INSERT_ID = <number>;`
+  forced = thd->auto_inc_intervals_forced.get_next();
+  if (forced != NULL) {
+    ulonglong nr = forced->minimum();
+    if (table->next_number_field->store((longlong)nr, TRUE)) {
+      // check if aborted for strict mode constraints
+      if (thd->killed == THD::KILL_BAD_DATA) {
+        rc = HA_ERR_AUTOINC_ERANGE;
+        goto error;
+      }
+    }
+  }
+
   if (table->next_number_field && buf == table->record[0] &&
       ((auto_inc = table->next_number_field->val_int()) != 0 ||
        (table->auto_increment_field_not_null &&
