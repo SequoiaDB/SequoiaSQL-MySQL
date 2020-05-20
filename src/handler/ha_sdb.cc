@@ -1556,7 +1556,12 @@ int ha_sdb::write_row(uchar *buf) {
     ulonglong nr = forced->minimum();
     if (table->next_number_field->store((longlong)nr, TRUE)) {
       // check if aborted for strict mode constraints
-      if (thd->killed == THD::KILL_BAD_DATA) {
+#ifdef IS_MYSQL
+      if (thd->killed == THD::KILL_BAD_DATA)
+#elif IS_MARIADB
+      if (thd->killed == KILL_BAD_DATA)
+#endif
+      {
         rc = HA_ERR_AUTOINC_ERANGE;
         goto error;
       }
