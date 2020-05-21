@@ -210,6 +210,7 @@ class OptionMgr:
             }
         }
         self.parser = None
+        self.filter_addresses = []
 
     def __update_conf(self):
         self.parser.write(open(config_file, 'w'))
@@ -265,6 +266,13 @@ class OptionMgr:
 
         return 0
 
+    def __init_filter_addresses(self):
+        hosts = self.get_hosts()
+        for hostname in hosts:
+            self.filter_addresses.append(hostname)
+            self.filter_addresses.append(socket.gethostbyname(hostname))
+        logger.debug("Filter addresses: " + str(self.filter_addresses))
+
     def __post_load(self):
         refresh_config = False
 
@@ -303,6 +311,8 @@ class OptionMgr:
                 refresh_config = True
         if refresh_config:
             self.__update_conf()
+
+        self.__init_filter_addresses()
 
         return 0
 
@@ -362,6 +372,15 @@ class OptionMgr:
 
     def get_audit_log_name(self):
         return self.get_option(KW_MYSQL, KW_AUDIT_FILE)
+
+    def should_filter(self, row):
+        # If the command is from another instance of the instance group, it's
+        # sync operation, and should sync again. Use two fields in the audit log
+        # to specified if it's such a log: the remote host and user name.
+        # So neither the user nor the application should use the account for
+        # metadata synchronization.
+        return row['remote_host'] in self.filter_addresses and \
+            row['user'] == self.get_mysql_user()
 
 
 class StatMgr:
@@ -878,10 +897,9 @@ class MysqlMetaSync:
                 raise e
 
             # filter other mysql host log
-            remote_host = row["remote_host"]
-            if remote_host in option_mgr.get_hosts():
-                logger.debug("filter other mysql host opr: {host}".format(
-                    host=remote_host))
+            if option_mgr.should_filter(row):
+                logger.debug("filter other mysql host opr: {log_record}".format(
+                    log_record=row))
                 stat_mgr.set_last_parse_row(row_number)
                 continue
 
