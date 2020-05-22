@@ -908,13 +908,17 @@ error:
    field type supported in direct_update is in sdb_traverse_update.
 */
 int ha_sdb::field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
-                                bool default_min_value) {
+                                bool default_min_value, Item_field *val_field) {
   int rc = 0;
   longlong max_value = 0;
   longlong min_value = 0;
   longlong default_value = 0;
   bson::BSONObjBuilder field_builder(
       obj_builder.subobjStart(sdb_field_name(field)));
+
+  if (val_field) {
+    create_field_rule("Value", val_field, field_builder);
+  }
 
   if (MYSQL_TYPE_NEWDECIMAL == field->type()) {
     char buff[MAX_FIELD_WIDTH];
@@ -933,7 +937,9 @@ int ha_sdb::field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
     my_decimal_sub(E_DEC_FATAL_ERROR & ~E_DEC_OVERFLOW, &result, &decimal_value,
                    &tmp_decimal);
     my_decimal2string(E_DEC_FATAL_ERROR, &result, 0, 0, 0, &str);
-    field_builder.appendDecimal("Value", str.c_ptr());
+    if (!val_field) {
+      field_builder.appendDecimal("Value", str.c_ptr());
+    }
 
     f->set_value_on_overflow(&tmp_decimal, true);
     my_decimal2string(E_DEC_FATAL_ERROR, &tmp_decimal, 0, 0, 0, &str);
@@ -952,20 +958,24 @@ int ha_sdb::field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
     case MYSQL_TYPE_TINY:
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_INT24: {
-      longlong value = field->val_int();
-      value -= default_value;
-      // overflow is impossible, store as INT32
-      DBUG_ASSERT(value <= INT_MAX32 && value >= INT_MIN32);
-      field_builder.append("Value", value);
+      if (!val_field) {
+        longlong value = field->val_int();
+        value -= default_value;
+        // overflow is impossible, store as INT32
+        DBUG_ASSERT(value <= INT_MAX32 && value >= INT_MIN32);
+        field_builder.append("Value", value);
+      }
       field_builder.append("Min", min_value);
       field_builder.append("Max", max_value);
       break;
     }
     case MYSQL_TYPE_LONG: {
-      longlong value = field->val_int();
-      value -= default_value;
-      bool overflow = value > INT_MAX32 || value < INT_MIN32;
-      field_builder.append("Value", (overflow ? value : (int)value));
+      if (!val_field) {
+        longlong value = field->val_int();
+        value -= default_value;
+        bool overflow = value > INT_MAX32 || value < INT_MIN32;
+        field_builder.append("Value", (overflow ? value : (int)value));
+      }
       field_builder.append("Min", min_value);
       field_builder.append("Max", max_value);
       break;
@@ -977,8 +987,12 @@ int ha_sdb::field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       bool decimal2str_falg = false;
       bool original_negative = !default_min_value;
       longlong value = field->val_int();
-
       unsigned_flag = ((Field_num *)field)->unsigned_flag;
+
+      if (val_field) {
+        goto MIN_MAX;
+      }
+
       if (unsigned_flag) {
         if (original_negative) {
           value = default_value - value;
@@ -1031,10 +1045,12 @@ int ha_sdb::field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
     }
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE: {
-      double real_value = field->val_real();
+      if (!val_field) {
+        double real_value = field->val_real();
+        field_builder.append("Value", real_value);
+      }
       double max_flt_value = 1.0;
       max_flt_value = sdb_get_max_real_value(field);
-      field_builder.append("Value", real_value);
       field_builder.append("Min", -max_flt_value);
       field_builder.append("Max", max_flt_value);
       break;
@@ -1848,10 +1864,9 @@ done:
   return rc;
 }
 
-void ha_sdb::create_field_rule(Field *rfield, Item_field *value,
+void ha_sdb::create_field_rule(const char *field_name, Item_field *value,
                                bson::BSONObjBuilder &builder) {
-  bson::BSONObjBuilder field_builder(
-      builder.subobjStart(sdb_field_name(rfield)));
+  bson::BSONObjBuilder field_builder(builder.subobjStart(field_name));
   field_builder.append("$field", sdb_field_name(value->field));
   field_builder.done();
 }
@@ -2060,13 +2075,15 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
 
     if (upd_arg.my_field_count > 0) {
       if (upd_arg.value_field) {
-        create_field_rule(rfield, upd_arg.value_field, inc_builder);
+        rc = field_to_strict_obj(rfield, inc_builder, false,
+                                 upd_arg.value_field);
       } else {
         rc = create_inc_rule(rfield, value, optimizer_update, inc_builder);
       }
     } else {
       if (upd_arg.value_field) {
-        create_field_rule(rfield, upd_arg.value_field, set_builder);
+        create_field_rule(sdb_field_name(rfield), upd_arg.value_field,
+                          set_builder);
       } else {
         rc = create_set_rule(rfield, value, optimizer_update, set_builder);
       }
