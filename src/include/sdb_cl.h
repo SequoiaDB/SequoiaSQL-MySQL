@@ -117,6 +117,8 @@ class Sdb_cl {
   int attach_collection(const char *sub_cl_fullname,
                         const bson::BSONObj &options);
 
+  int detach_collection(const char *sub_cl_fullname);
+
   int split(const char *source_group_name, const char *target_group_name,
             const bson::BSONObj &split_cond,
             const bson::BSONObj &split_end_cond = SDB_EMPTY_BSON);

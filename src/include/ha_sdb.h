@@ -386,6 +386,12 @@ class ha_sdb : public handler {
 
   void handle_sdb_error(int error, myf errflag);
 
+  int check(THD *thd, HA_CHECK_OPT *check_opt) { return 0; }
+
+  int repair(THD *thd, HA_CHECK_OPT *repair_opt) { return 0; }
+
+  int optimize(THD *thd, HA_CHECK_OPT *check_opt) { return 0; }
+
  protected:
   int ensure_collection(THD *thd);
 
@@ -487,6 +493,29 @@ class ha_sdb : public handler {
                              HA_CREATE_INFO *create_info, bool *has_copy);
 
   void raw_store_blob(Field_blob *blob, const char *data, uint len);
+
+  /* Additional processes provided to derived classes*/
+  virtual int pre_row_to_obj(bson::BSONObjBuilder &builder) { return 0; }
+
+  virtual int pre_get_update_obj(const uchar *old_data, const uchar *new_data,
+                                 bson::BSONObjBuilder &obj_builder) {
+    return 0;
+  }
+
+  virtual int pre_first_rnd_next(bson::BSONObj &condition) { return 0; }
+
+  virtual int pre_index_read_one(bson::BSONObj &condition) { return 0; }
+
+  virtual bool need_update_part_hash_id() { return false; }
+
+  virtual int pre_start_statement() { return 0; }
+
+  virtual bool having_part_hash_id() { return false; }
+  /* end */
+
+#ifdef IS_MYSQL
+  int drop_partition(THD *thd, char *db_name, char *part_name);
+#endif
 
  protected:
   THR_LOCK_DATA lock_data;

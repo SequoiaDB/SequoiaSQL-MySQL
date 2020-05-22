@@ -1242,13 +1242,14 @@ error:
   goto done;
 }
 
-int create_index(Sdb_cl &cl, List<KEY> &add_keys) {
+int create_index(Sdb_cl &cl, List<KEY> &add_keys,
+                 bool shard_by_part_hash_id = false) {
   int rc = 0;
   KEY *key_info = NULL;
   List_iterator<KEY> it(add_keys);
 
   while ((key_info = it++)) {
-    rc = sdb_create_index(key_info, cl);
+    rc = sdb_create_index(key_info, cl, shard_by_part_hash_id);
     if (rc) {
       goto error;
     }
@@ -1643,7 +1644,7 @@ void sdb_append_index_to_be_rebuild(TABLE *table, TABLE *altered_table,
 
 bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                                  Alter_inplace_info *ha_alter_info) {
-  DBUG_ENTER("sdb_inplace_alter_table()");
+  DBUG_ENTER("ha_sdb::inplace_alter_table");
   bool rs = true;
   int rc = 0;
   THD *thd = current_thd;
@@ -1834,7 +1835,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   }
 
   if (!add_keys.is_empty()) {
-    rc = create_index(cl, add_keys);
+    rc = create_index(cl, add_keys, having_part_hash_id());
     if (0 != rc) {
       goto error;
     }

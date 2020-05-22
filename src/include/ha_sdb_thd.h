@@ -18,6 +18,7 @@
 
 #include <mysql/plugin.h>
 #include <client.hpp>
+#include <partition_element.h>
 #include "sdb_conn.h"
 #include <boost/shared_ptr.hpp>
 
@@ -25,6 +26,9 @@ extern handlerton* sdb_hton;
 struct Sdb_share;
 
 class Sdb_cl_copyer;
+#ifdef IS_MYSQL
+class Sdb_part_alter_ctx;
+#endif
 
 struct Sdb_local_table_statistics {
   int no_uncommitted_rows_count;
@@ -67,6 +71,10 @@ class Thd_sdb {
 
   // For ALTER TABLE in ALGORITHM COPY
   Sdb_cl_copyer* cl_copyer;
+
+#ifdef IS_MYSQL
+  Sdb_part_alter_ctx* part_alter_ctx;
+#endif
 
  private:
   THD* m_thd;

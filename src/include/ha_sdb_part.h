@@ -20,8 +20,44 @@
 
 #include "ha_sdb.h"
 #include <partitioning/partition_handler.h>
+#include <list>
 
-class Ha_sdb_share : public Partition_share {};
+class Sdb_part_alter_ctx {
+ public:
+  Sdb_part_alter_ctx() {}
+
+  ~Sdb_part_alter_ctx();
+
+  int init(partition_info* part_info);
+
+  bool skip_delete_table(const char* table_name);
+
+  bool skip_rename_table(const char* new_table_name);
+
+  bool empty();
+
+ private:
+  int push_table_name2list(std::list<char*>& list, const char* org_table_name,
+                           const char* part_name,
+                           const char* sub_part_name = NULL);
+
+  std::list<char*> m_skip_list4delete;
+  std::list<char*> m_skip_list4rename;
+};
+
+class ha_sdb_part_share : public Partition_share {
+ public:
+  ha_sdb_part_share();
+
+  ~ha_sdb_part_share();
+
+  bool populate_main_part_name(partition_info* part_info);
+
+  longlong get_main_part_hash_id(uint part_id) const;
+
+ private:
+  longlong* m_main_part_name_hashs;
+};
 
 class ha_sdb_part : public ha_sdb,
                     public Partition_helper,
@@ -29,7 +65,32 @@ class ha_sdb_part : public ha_sdb,
  public:
   ha_sdb_part(handlerton* hton, TABLE_SHARE* table_arg);
 
+  // ulonglong table_flags() const {
+  //   return (ha_sdb::table_flags() | HA_CAN_REPAIR);
+  // }
+
   int create(const char* name, TABLE* form, HA_CREATE_INFO* create_info);
+
+  int open(const char* name, int mode, uint test_if_locked);
+
+  int close(void);
+
+  int reset();
+
+  enum_alter_inplace_result check_if_supported_inplace_alter(
+      TABLE* altered_table, Alter_inplace_info* ha_alter_info);
+
+  int info(uint flag);
+
+  void print_error(int error, myf errflag);
+
+  uint32 calculate_key_hash_value(Field** field_array) {
+    return (Partition_helper::ph_calculate_key_hash_value(field_array));
+  }
+
+  uint alter_flags(uint flags) const {
+    return (HA_PARTITION_FUNCTION_SUPPORTED | HA_FAST_CHANGE_PARTITION);
+  }
 
   /** Access methods to protected areas in handler to avoid adding
   friend class Partition_helper in class handler.
@@ -50,10 +111,7 @@ class ha_sdb_part : public ha_sdb,
   /** write row to new partition.
   @param[in]	new_part	New partition to write to.
   @return 0 for success else error code. */
-  int write_row_in_new_part(uint new_part) {
-    // TODO
-    return 0;
-  }
+  int write_row_in_new_part(uint new_part);
 
   /** Write a row in specific partition.
   Stores a row in an InnoDB database, to the table specified in this
@@ -61,10 +119,7 @@ class ha_sdb_part : public ha_sdb,
   @param[in]	part_id	Partition to write to.
   @param[in]	row	A row in MySQL format.
   @return error code. */
-  int write_row_in_part(uint part_id, uchar* row) {
-    // TODO
-    return 0;
-  }
+  int write_row_in_part(uint part_id, uchar* row) { return 0; }
 
   /** Update a row in partition.
   Updates a row given as a parameter to a new value.
@@ -73,7 +128,6 @@ class ha_sdb_part : public ha_sdb,
   @param[in]	new_row	New row in MySQL format.
   @return error number or 0. */
   int update_row_in_part(uint part_id, const uchar* old_row, uchar* new_row) {
-    // TODO
     return 0;
   }
 
@@ -81,91 +135,62 @@ class ha_sdb_part : public ha_sdb,
   @param[in]	part_id	Partition to delete from.
   @param[in]	row	Row to delete in MySQL format.
   @return error number or 0. */
-  int delete_row_in_part(uint part_id, const uchar* row) {
-    // TODO
-    return 0;
-  }
+  int delete_row_in_part(uint part_id, const uchar* row) { return 0; }
 
   /** Set the autoinc column max value.
   This should only be called once from ha_innobase::open().
   Therefore there's no need for a covering lock.
   @param[in]	no_lock	If locking should be skipped. Not used!
   @return 0 on success else error code. */
-  int initialize_auto_increment(bool /* no_lock */) {
-    // TODO
-    return 0;
-  }
+  int initialize_auto_increment(bool /* no_lock */) { return 0; }
 
   /** Initialize random read/scan of a specific partition.
   @param[in]	part_id		Partition to initialize.
   @param[in]	table_scan	True for scan else random access.
   @return error number or 0. */
-  int rnd_init_in_part(uint part_id, bool table_scan) {
-    // TODO
-    return 0;
-  }
+  int rnd_init_in_part(uint part_id, bool table_scan) { return 0; }
 
   /** Get next row during scan of a specific partition.
   @param[in]	part_id	Partition to read from.
   @param[out]	record	Next row.
   @return error number or 0. */
-  int rnd_next_in_part(uint part_id, uchar* record) {
-    // TODO
-    return 0;
-  }
+  int rnd_next_in_part(uint part_id, uchar* record) { return 0; }
 
   /** End random read/scan of a specific partition.
   @param[in]	part_id		Partition to end random read/scan.
   @param[in]	table_scan	True for scan else random access.
   @return error number or 0. */
-  int rnd_end_in_part(uint part_id, bool table_scan) {
-    // TODO
-    return 0;
-  }
+  int rnd_end_in_part(uint part_id, bool table_scan) { return 0; }
 
   /** Get a reference to the current cursor position in the last used
   partition.
   @param[out]	ref	Reference (PK if exists else row_id).
   @param[in]	record	Record to position. */
-  void position_in_last_part(uchar* ref, const uchar* record) {
-    // TODO
-  }
+  void position_in_last_part(uchar* ref, const uchar* record) {}
 
   /** Return first record in index from a partition.
   @param[in]	part	Partition to read from.
   @param[out]	record	First record in index in the partition.
   @return error number or 0. */
-  int index_first_in_part(uint part, uchar* record) {
-    // TODO
-    return 0;
-  }
+  int index_first_in_part(uint part, uchar* record) { return 0; }
 
   /** Return last record in index from a partition.
   @param[in]	part	Partition to read from.
   @param[out]	record	Last record in index in the partition.
   @return error number or 0. */
-  int index_last_in_part(uint part, uchar* record) {
-    // TODO
-    return 0;
-  }
+  int index_last_in_part(uint part, uchar* record) { return 0; }
 
   /** Return previous record in index from a partition.
   @param[in]	part	Partition to read from.
   @param[out]	record	Last record in index in the partition.
   @return error number or 0. */
-  int index_prev_in_part(uint part, uchar* record) {
-    // TODO
-    return 0;
-  }
+  int index_prev_in_part(uint part, uchar* record) { return 0; }
 
   /** Return next record in index from a partition.
   @param[in]	part	Partition to read from.
   @param[out]	record	Last record in index in the partition.
   @return error number or 0. */
-  int index_next_in_part(uint part, uchar* record) {
-    // TODO
-    return 0;
-  }
+  int index_next_in_part(uint part, uchar* record) { return 0; }
 
   /** Return next same record in index from a partition.
   This routine is used to read the next record, but only if the key is
@@ -177,7 +202,6 @@ class ha_sdb_part : public ha_sdb,
   @return error number or 0. */
   int index_next_same_in_part(uint part, uchar* record, const uchar* key,
                               uint length) {
-    // TODO
     return 0;
   }
 
@@ -193,7 +217,6 @@ class ha_sdb_part : public ha_sdb,
   int index_read_map_in_part(uint part, uchar* record, const uchar* key,
                              key_part_map keypart_map,
                              enum ha_rkey_function find_flag) {
-    // TODO
     return 0;
   }
 
@@ -205,7 +228,6 @@ class ha_sdb_part : public ha_sdb,
   @return error number or 0. */
   int index_read_last_map_in_part(uint part, uchar* record, const uchar* key,
                                   key_part_map keypart_map) {
-    // TODO
     return 0;
   }
 
@@ -223,7 +245,6 @@ class ha_sdb_part : public ha_sdb,
                                const key_range* start_key,
                                const key_range* end_key, bool eq_range,
                                bool sorted) {
-    // TODO
     return 0;
   }
 
@@ -232,10 +253,7 @@ class ha_sdb_part : public ha_sdb,
   @param[out]	record	First matching record in index in the partition.
   if NULL use table->record[0] as return buffer.
   @return error number or 0. */
-  int read_range_next_in_part(uint part, uchar* record) {
-    // TODO
-    return 0;
-  }
+  int read_range_next_in_part(uint part, uchar* record) { return 0; }
 
   /** Start index scan and return first record from a partition.
   This routine starts an index scan using a start key. The calling
@@ -250,7 +268,6 @@ class ha_sdb_part : public ha_sdb,
   int index_read_idx_map_in_part(uint part, uchar* record, uint index,
                                  const uchar* key, key_part_map keypart_map,
                                  enum ha_rkey_function find_flag) {
-    // TODO
     return 0;
   }
 
@@ -260,10 +277,7 @@ class ha_sdb_part : public ha_sdb,
   @param[in]	only_create	True if only creating the partition
   (no open/lock is needed).
   @return 0 for success else error code. */
-  int prepare_for_new_partitions(uint num_partitions, bool only_create) {
-    // TODO
-    return 0;
-  }
+  int prepare_for_new_partitions(uint num_partitions, bool only_create);
 
   /** Create a new partition to be filled during ALTER TABLE ...
   PARTITION.
@@ -275,15 +289,22 @@ class ha_sdb_part : public ha_sdb,
   @return 0 for success else error code. */
   int create_new_partition(TABLE* table, HA_CREATE_INFO* create_info,
                            const char* part_name, uint new_part_id,
-                           partition_element* part_elem) {
-    // TODO
-    return 0;
-  }
+                           partition_element* part_elem);
 
   /** Close and finalize new partitions. */
-  void close_new_partitions() {
-    // TODO
-  }
+  void close_new_partitions();
+
+  /** Change partitions according to ALTER TABLE ... PARTITION ...
+    Called from Partition_handler::change_partitions().
+    @param[in]  create_info Table create info.
+    @param[in]  path    Path including db/table_name.
+    @param[out] copied    Number of copied rows.
+    @param[out] deleted   Number of deleted rows.
+    @return 0 for success or error code. */
+  int change_partitions_low(HA_CREATE_INFO* create_info, const char* path,
+                            ulonglong* const copied, ulonglong* const deleted);
+
+  int truncate_partition_low();
 
   /** Implementing Partition_handler interface @see partition_handler.h
   @{ */
@@ -303,8 +324,16 @@ class ha_sdb_part : public ha_sdb,
     return (static_cast<Partition_handler*>(this));
   }
 
+  handler* get_handler() { return (static_cast<handler*>(this)); }
+
+  // int check(THD* thd, HA_CHECK_OPT* check_opt);
+
+  // int repair(THD* thd, HA_CHECK_OPT* repair_opt);
+
  private:
-  bool is_sharded_by_part_id(partition_info* part_info);
+  longlong calculate_name_hash(const char* part_name);
+
+  bool is_sharded_by_part_hash_id(partition_info* part_info);
 
   void get_sharding_key(partition_info* part_info, bson::BSONObj& sharding_key);
 
@@ -321,6 +350,9 @@ class ha_sdb_part : public ha_sdb,
   int get_attach_options(partition_info* part_info, uint curr_part_id,
                          bson::BSONObj& attach_options);
 
+  int build_scl_name(const char* mcl_name, const char* partition_name,
+                     char scl_name[SDB_CL_NAME_MAX_SIZE + 1]);
+
   int create_and_attach_scl(Sdb_conn* conn, Sdb_cl& mcl,
                             partition_info* part_info,
                             const bson::BSONObj& mcl_options,
@@ -328,6 +360,41 @@ class ha_sdb_part : public ha_sdb,
                             bool explicit_not_auto_partition);
 
   bool check_if_alter_table_options(THD* thd, HA_CREATE_INFO* create_info);
+
+  /* ha_sdb additional process */
+  int pre_row_to_obj(bson::BSONObjBuilder& builder);
+
+  int pre_get_update_obj(const uchar* old_data, const uchar* new_data,
+                         bson::BSONObjBuilder& obj_builder);
+
+  int pre_first_rnd_next(bson::BSONObj& condition);
+
+  int pre_index_read_one(bson::BSONObj& condition);
+
+  bool need_update_part_hash_id();
+
+  int pre_start_statement();
+
+  bool having_part_hash_id();
+  /* end */
+
+  void convert_sub2main_part_id(uint& part_id);
+
+  int append_shard_cond(bson::BSONObj& condition);
+
+  int append_range_cond(bson::BSONArrayBuilder& builder);
+
+  int inner_append_range_cond(bson::BSONArrayBuilder& builder);
+
+  ulonglong get_used_stats(ulonglong total);
+
+  int detach_and_attach_scl();
+
+  int test_if_explicit_partition(bool& explicit_partition);
+
+ private:
+  bool m_sharded_by_part_hash_id;
+  std::map<uint, char*> m_new_part_id2cl_name;
 };
 
 #endif  // IS_MYSQL

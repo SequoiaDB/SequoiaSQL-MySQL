@@ -53,6 +53,16 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
   sdb_filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1, true);
+  // The partition name has special separator "#P#". So it was treated as
+  // non-encoded filename(file system doesn't allow '#'), and marked by
+  // "#mysql50#" prefix. Just ignore it.
+  if (0 == strncmp(table_name, MYSQL50_TABLE_NAME_PREFIX,
+                   MYSQL50_TABLE_NAME_PREFIX_LENGTH)) {
+    int i = MYSQL50_TABLE_NAME_PREFIX_LENGTH;
+    do {
+      table_name[i - MYSQL50_TABLE_NAME_PREFIX_LENGTH] = table_name[i];
+    } while (table_name[i++] != 0);
+  }
 
   // scan db_name
   ptr--;
@@ -747,3 +757,42 @@ bool sdb_is_type_diff(Field *old_field, Field *new_field) {
 done:
   return rs;
 }
+
+bool str_end_with(const char *str, const char *sub_str) {
+  const char *p = str + strlen(str) - strlen(sub_str);
+  return (0 == strcmp(p, sub_str));
+}
+
+#ifdef IS_MYSQL
+/**
+  If it's a sub partition name, convert it to the main partition name.
+  @Return false: converted; true: not a sub partition.
+*/
+bool sdb_convert_sub2main_partition_name(char *table_name) {
+  /*
+    sub partition name =
+        <table_name> + "#P#" +
+        <main_part_name> + "#SP#" +
+        <sub_part_name> [ + { "#TMP#' | "#REN#" }]
+    e.g: t1#P#p3#SP#p3sp0#TMP#
+  */
+  static const char *TMP_SUFFIX = "#TMP#";
+  static const char *REN_SUFFIX = "#REN#";
+
+  bool rs = true;
+  char *pos = strstr(table_name, SDB_SUB_PART_SEP);
+  if (!pos) {
+    goto done;
+  }
+
+  *pos = 0;
+  if (str_end_with(pos + 1, TMP_SUFFIX)) {
+    strcat(table_name, TMP_SUFFIX);
+  } else if (str_end_with(pos + 1, REN_SUFFIX)) {
+    strcat(table_name, REN_SUFFIX);
+  }
+  rs = false;
+done:
+  return rs;
+}
+#endif

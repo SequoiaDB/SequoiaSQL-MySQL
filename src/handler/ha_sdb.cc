@@ -509,6 +509,76 @@ done:
   DBUG_VOID_RETURN;
 }
 
+int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
+                                 char *old_table_name, char *new_table_name) {
+  DBUG_ENTER("sdb_rename_sub_cl4part_table");
+  int rc = 0;
+  char part_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  uint prefix_len = 0;
+  char new_sub_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+  sprintf(full_name, "%s.%s", db_name, old_table_name);
+
+  try {
+    bson::BSONObj obj;
+    bson::BSONObj condition = BSON(SDB_FIELD_NAME << full_name);
+    rc = conn->snapshot(obj, SDB_SNAP_CATALOG, condition);
+    if (SDB_DMS_EOC == get_sdb_code(rc)) {
+      rc = 0;
+      goto done;
+    }
+    if (rc != 0) {
+      goto error;
+    }
+
+    if (obj.getField(SDB_FIELD_ISMAINCL).booleanSafe()) {
+      snprintf(part_prefix, SDB_CL_NAME_MAX_SIZE, "%s%s", old_table_name,
+               SDB_PART_SEP);
+      prefix_len = strlen(part_prefix);
+
+      bson::BSONObj sub_cl_arr = obj.getField(SDB_FIELD_CATAINFO).Obj();
+      bson::BSONObjIterator it(sub_cl_arr);
+      while (it.more()) {
+        bson::BSONObj ele = it.next().Obj();
+        char *sub_cl_name = const_cast<char *>(
+            ele.getField(SDB_FIELD_SUBCL_NAME).valuestrsafe());
+        if (strncmp(sub_cl_name, db_name, strlen(db_name) != 0)) {
+          continue;
+        }
+        sub_cl_name = sub_cl_name + strlen(db_name) + 1;
+
+        if (strncmp(sub_cl_name, part_prefix, prefix_len) != 0) {
+          continue;
+        }
+
+        const char *part_name = sub_cl_name + prefix_len;
+        uint name_len =
+            strlen(new_table_name) + strlen(SDB_PART_SEP) + strlen(part_name);
+        if (name_len > SDB_CL_NAME_MAX_SIZE) {
+          rc = ER_WRONG_ARGUMENTS;
+          my_printf_error(rc, "Too long table name", MYF(0));
+          goto done;
+        }
+        sprintf(new_sub_cl_name, "%s%s%s", new_table_name, SDB_PART_SEP,
+                part_name);
+
+        rc = conn->rename_cl(db_name, sub_cl_name, new_sub_cl_name);
+        if (rc != 0) {
+          goto error;
+        }
+      }
+    }
+  } catch (bson::assertion e) {
+    SDB_LOG_DEBUG("Exception[%s] occurs when parse bson obj.", e.full.c_str());
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
 const char *sharding_related_fields[] = {
     SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
     SDB_FIELD_AUTO_SPLIT,   SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_ISMAINCL};
@@ -549,7 +619,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
       (HA_REC_NOT_IN_SEQ | HA_NO_READ_LOCAL_LOCK | HA_BINLOG_ROW_CAPABLE |
        HA_BINLOG_STMT_CAPABLE | HA_TABLE_SCAN_ON_INDEX | HA_NULL_IN_KEY |
        HA_CAN_INDEX_BLOBS | HA_AUTO_PART_KEY | HA_DUPLICATE_POS |
-       HA_CAN_TABLE_CONDITION_PUSHDOWN);
+       HA_CAN_TABLE_CONDITION_PUSHDOWN | HA_CAN_REPAIR);
 
   m_table_flags |= (sdb_use_transaction ? 0 : HA_NO_TRANSACTIONS);
 
@@ -780,6 +850,11 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
       // Generate and assign an OID for the _id field.
       // _id should be the first element for good performance.
       obj_builder.genOID();
+    }
+
+    rc = pre_row_to_obj(obj_builder);
+    if (rc != 0) {
+      goto error;
     }
 
     for (Field **field = table->field; *field; field++) {
@@ -1274,8 +1349,13 @@ int ha_sdb::get_update_obj(const uchar *old_data, const uchar *new_data,
   uint row_offset = (uint)(old_data - new_data);
   bson::BSONObjBuilder obj_builder;
   bson::BSONObjBuilder null_obj_builder;
-
   my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
+
+  rc = pre_get_update_obj(old_data, new_data, obj_builder);
+  if (rc != 0) {
+    goto error;
+  }
+
   if (new_data != table->record[0]) {
     repoint_field_to_record(table, table->record[0],
                             const_cast<uchar *>(new_data));
@@ -2081,6 +2161,12 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
       goto done;
     }
   }
+
+  if (need_update_part_hash_id()) {
+    optimizer_update = false;
+    goto done;
+  }
+
   optimizer_update = true;
   rc = create_modifier_obj(rule, &optimizer_update);
   if (rc) {
@@ -2449,6 +2535,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   DBUG_ASSERT(NULL != key_info);
   DBUG_ASSERT(NULL != sdb_key_name(key_info));
+
+  rc = pre_index_read_one(condition);
+  if (rc) {
+    goto error;
+  }
 
   idx_order_direction = order_direction;
   rc = sdb_get_idx_order(key_info, order_by, order_direction,
@@ -3015,6 +3106,11 @@ int ha_sdb::rnd_next(uchar *buf) {
       condition = pushed_condition.copy();
     }
 
+    rc = pre_first_rnd_next(condition);
+    if (rc != 0) {
+      goto error;
+    }
+
     int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
     sdb_build_clientinfo(ha_thd(), builder);
     hint = builder.obj();
@@ -3139,11 +3235,17 @@ int ha_sdb::info(uint flag) {
         goto error;
       }
     } else if ((~(ha_rows)0) != ha_rows(share->stat.total_records)) {
+      Sdb_statistics stat = share->stat;
+      stats.data_file_length =
+          (ulonglong)stat.total_data_pages * stat.page_size;
+      stats.index_file_length =
+          (ulonglong)stat.total_index_pages * stat.page_size;
+      stats.delete_length = (ulonglong)stat.total_data_free_space;
       if (incr_stat) {
         stats.records =
-            share->stat.total_records + incr_stat->no_uncommitted_rows_count;
+            stat.total_records + incr_stat->no_uncommitted_rows_count;
       } else {
-        stats.records = share->stat.total_records;
+        stats.records = stat.total_records;
       }
       DBUG_PRINT("info", ("read info from share, table name: %s, records: %d, ",
                           table_name, (int)stats.records));
@@ -3473,6 +3575,11 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
 
   sdb_add_pfs_clientinfo(thd);
 
+  rc = pre_start_statement();
+  if (0 != rc) {
+    goto error;
+  }
+
   rc = ensure_stats(thd);
   if (0 != rc) {
     goto error;
@@ -3755,6 +3862,27 @@ int ha_sdb::delete_table(const char *from) {
     goto error;
   }
 
+#ifdef IS_MYSQL
+  if (thd_sdb && thd_sdb->part_alter_ctx &&
+      thd_sdb->part_alter_ctx->skip_delete_table(table_name)) {
+    if (thd_sdb->part_alter_ctx->empty()) {
+      delete thd_sdb->part_alter_ctx;
+      thd_sdb->part_alter_ctx = NULL;
+    }
+    goto done;
+  }
+  sdb_convert_sub2main_partition_name(table_name);
+
+  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
+      thd->lex->alter_info.flags & Alter_info::ALTER_DROP_PARTITION) {
+    rc = drop_partition(thd, db_name, table_name);
+    if (rc != 0) {
+      goto error;
+    }
+    goto done;
+  }
+#endif
+
   if (sdb_is_tmp_table(from, table_name)) {
     if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
       rc = HA_ERR_GENERIC;
@@ -3786,6 +3914,8 @@ error:
 }
 
 int ha_sdb::rename_table(const char *from, const char *to) {
+  DBUG_ENTER("ha_sdb::rename_table");
+
   int rc = 0;
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
@@ -3811,6 +3941,19 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   if (0 != rc) {
     goto error;
   }
+
+#ifdef IS_MYSQL
+  if (thd_sdb && thd_sdb->part_alter_ctx &&
+      thd_sdb->part_alter_ctx->skip_rename_table(new_table_name)) {
+    if (thd_sdb->part_alter_ctx->empty()) {
+      delete thd_sdb->part_alter_ctx;
+      thd_sdb->part_alter_ctx = NULL;
+    }
+    goto done;
+  }
+  sdb_convert_sub2main_partition_name(old_table_name);
+  sdb_convert_sub2main_partition_name(new_table_name);
+#endif
 
   if (sdb_is_tmp_table(from, old_table_name)) {
     rc = sdb_rebuild_db_name_of_temp_table(old_db_name, SDB_CS_NAME_MAX_SIZE);
@@ -3845,16 +3988,176 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
+#ifdef IS_MYSQL
+  rc = sdb_rename_sub_cl4part_table(conn, old_db_name, old_table_name,
+                                    new_table_name);
+  if (0 != rc) {
+    goto error;
+  }
+#endif
+
   rc = conn->rename_cl(old_db_name, old_table_name, new_table_name);
   if (0 != rc) {
     goto error;
   }
 
 done:
-  return rc;
+  DBUG_RETURN(rc);
 error:
   goto done;
 }
+
+#ifdef IS_MYSQL
+int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
+  DBUG_ENTER("ha_sdb::rename_table");
+
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+  bson::BSONObj obj;
+  bson::BSONObj cond;
+  bson::BSONObj cata_info;
+  bson::BSONObj low_bound;
+  bson::BSONObj up_bound;
+  bson::BSONObj attach_options;
+  const char *upper_scl_name = NULL;
+  char upper_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+
+  char mcl_name[SDB_CL_NAME_MAX_SIZE] = {0};
+  char mcl_full_name[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  Sdb_cl main_cl;
+
+  char *sep = strstr(part_name, SDB_PART_SEP);
+  uint sep_len = strlen(SDB_PART_SEP);
+  uint i = strlen(part_name) - sep_len;
+  for (; i > 0; --i) {
+    if (0 == strncmp(part_name + i, SDB_PART_SEP, sep_len)) {
+      sep = part_name + i;
+      break;
+    }
+  }
+
+  memcpy(mcl_name, part_name, sep - part_name);
+  sprintf(mcl_full_name, "%s.%s", db_name, mcl_name);
+
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+
+  try {
+    cond = BSON(SDB_FIELD_NAME << mcl_full_name);
+  } catch (std::bad_alloc &e) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  rc = conn->snapshot(obj, SDB_SNAP_CATALOG, cond);
+  if (get_sdb_code(rc) == SDB_DMS_EOC) {  // cl don't exist.
+    rc = 0;
+    goto done;
+  }
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = conn->drop_cl(db_name, part_name);
+  if (rc != 0) {
+    goto error;
+  }
+
+  /*
+    Merge the range of sub cl that was dropped into the upper one.
+  */
+  if (!obj.getField(SDB_FIELD_ISMAINCL).booleanSafe()) {
+    SDB_LOG_WARNING(
+        "Collection of RANGE/LIST partition table should be main-cl.");
+    goto done;
+  }
+
+  try {
+    // Get the low bound and up bound of the sub cl dropped.
+    bson::BSONObj dropped_low_bound;
+    bson::BSONObj dropped_up_bound;
+    cata_info = obj.getField(SDB_FIELD_CATAINFO).Obj();
+    bson::BSONObjIterator iter(cata_info);
+    while (iter.more()) {
+      bson::BSONObj item = iter.next().Obj();
+      const char *name = item.getField(SDB_FIELD_SUBCL_NAME).valuestrsafe();
+      if (strcmp(name, part_name) != 0) {
+        continue;
+      }
+      dropped_low_bound = item.getField(SDB_FIELD_LOW_BOUND).Obj();
+      dropped_up_bound = item.getField(SDB_FIELD_UP_BOUND).Obj();
+
+      // If sharded by __phid__, no need to merge anything.
+      bson::BSONObjIterator sub_iter(dropped_low_bound);
+      while (sub_iter.more()) {
+        const char *field_name = sub_iter.next().fieldName();
+        if (0 == strcmp(field_name, SDB_FIELD_PART_HASH_ID)) {
+          goto done;
+        }
+      }
+      break;
+    }
+
+    // Find the upper sub cl.
+    bson::BSONObjIterator iter2(cata_info);
+    while (iter.more()) {
+      bson::BSONObj item = iter.next().Obj();
+      low_bound = item.getField(SDB_FIELD_LOW_BOUND).Obj();
+      if (low_bound.equal(dropped_up_bound)) {
+        upper_scl_name = item.getField(SDB_FIELD_SUBCL_NAME).valuestrsafe();
+        low_bound = dropped_low_bound;
+        up_bound = item.getField(SDB_FIELD_UP_BOUND).Obj();
+        break;
+      }
+    }
+
+  } catch (bson::assertion &e) {
+    SDB_LOG_ERROR("Wrong format of catalog object[%s]",
+                  cata_info.toString().c_str());
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
+  // Update the upper sub cl attach range.
+  if (!upper_scl_name) {
+    goto done;
+  }
+
+  rc = conn->get_cl(db_name, mcl_name, main_cl);
+  if (rc != 0) {
+    goto error;
+  }
+
+  sprintf(upper_scl_full_name, "%s.%s", db_name, upper_scl_name);
+  rc = main_cl.detach_collection(upper_scl_full_name);
+  if (rc != 0) {
+    goto error;
+  }
+
+  try {
+    bson::BSONObjBuilder builder;
+    builder.append(SDB_FIELD_LOW_BOUND, low_bound);
+    builder.append(SDB_FIELD_UP_BOUND, up_bound);
+    attach_options = builder.obj();
+  } catch (std::bad_alloc &e) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  rc = main_cl.attach_collection(upper_scl_full_name, attach_options);
+  if (rc != 0) {
+    goto error;
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+#endif
 
 int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
   int rc = 0;
@@ -4268,9 +4571,16 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
     src_tab_opt = src_tab_opt ? src_tab_opt : "";
     dst_tab_opt = dst_tab_opt ? dst_tab_opt : "";
 
-    // if ALTER TABLE changes ENGINE or table_options, don't copy the old.
-    if (src_table->table->s->db_type() == create_info->db_type &&
-        src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE) {
+    /*
+      Don't copy when
+      * source table ENGINE is not SEQUOIADB;
+      * source table was created by PARTITION BY;
+      * table_options has been changed;
+    */
+    TABLE_SHARE *s = src_table->table->s;
+    if (s->db_type() == create_info->db_type &&
+        s->get_table_ref_type() != TABLE_REF_TMP_TABLE &&
+        !(s->partition_info_str && s->partition_info_str_len)) {
       if (strcmp(src_tab_opt, dst_tab_opt) != 0) {
         rc = HA_ERR_WRONG_COMMAND;
         my_printf_error(rc,
@@ -4519,22 +4829,14 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     // TODO: build unanalysable condition
     remain_cond = NULL;
   } else {
-    if (NULL != ha_thd()) {
-      SDB_LOG_DEBUG(
-          "Condition can't be pushed down. db=[%s], table[%s], sql=[%s]",
-          db_name, table_name, sdb_thd_query(ha_thd()));
-      DBUG_PRINT(
-          "ha_sdb:info",
-          ("Condition can't be pushed down. db=[%s], table[%s], sql=[%s]",
-           db_name, table_name, sdb_thd_query(ha_thd())));
-    } else {
-      SDB_LOG_DEBUG(
-          "Condition can't be pushed down. "
-          "db=[unknown], table[unknown], sql=[unknown]");
-      DBUG_PRINT("ha_sdb:info",
-                 ("Condition can't be pushed down. "
-                  "db=[unknown], table[unknown], sql=[unknown]"));
+    const char *info_msg =
+        "Condition can't be pushed down. db=[%s], table[%s], sql=[%s]";
+    const char *sql_str = "unknown";
+    if (ha_thd()) {
+      sql_str = sdb_thd_query(ha_thd());
     }
+    SDB_LOG_DEBUG(info_msg, db_name, table_name, sql_str);
+    DBUG_PRINT("ha_sdb:info", (info_msg, db_name, table_name, sql_str));
     pushed_condition = SDB_EMPTY_BSON;
   }
 done:

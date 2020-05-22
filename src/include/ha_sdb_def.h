@@ -124,7 +124,9 @@
 #define SDB_FIELD_TOTAL_DATA_FREE_SPACE "TotalDataFreeSpace"
 #define SDB_FIELD_TOTAL_RECORDS "TotalRecords"
 
-#define SDB_FIELD_INNER_PART_ID "_mysqlPartID"
+#define SDB_PART_SEP "#P#"
+#define SDB_SUB_PART_SEP "#SP#"
+#define SDB_FIELD_PART_HASH_ID "_phid_"
 
 #define SDB_DEFAULT_FILL_MESSAGE ""
 #define SDB_ITEM_IGNORE_TYPE "ignore"

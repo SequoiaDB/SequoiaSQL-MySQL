@@ -85,6 +85,10 @@ int sdb_add_pfs_clientinfo(THD *thd);
 
 bool sdb_is_type_diff(Field *old_field, Field *new_field);
 
+#ifdef IS_MYSQL
+bool sdb_convert_sub2main_partition_name(char *table_name);
+#endif
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

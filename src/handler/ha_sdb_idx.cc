@@ -115,7 +115,7 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
     key_obj_builder.append(sdb_field_name(key_part->field), 1);
   }
   if (is_unique && shard_by_part_id) {
-    key_obj_builder.append(SDB_FIELD_INNER_PART_ID, 1);
+    key_obj_builder.append(SDB_FIELD_PART_HASH_ID, 1);
   }
   key_obj = key_obj_builder.obj();
 
