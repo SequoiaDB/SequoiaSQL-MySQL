@@ -778,6 +778,8 @@ insert into t1 values (123.456E+15, 123.456E+15, NULL, 123.456E+15, NULL);
 insert into t1 values (-123456E-15, -123456E-15, -12345678998765.55, 123456E-15, 12345678998765.55);
 update t1 set id = id - 8E300 where id < -0.1;
 ERROR 22003: Out of range value for column 'id' at row 1
+update t1 set id = id + 8E+300 where id > 3.40282e35;
+ERROR 22003: Out of range value for column 'id' at row 1
 update t1 set d2 = d2 + 11E+30 where id < 1;
 ERROR 22003: Out of range value for column 'd2' at row 1
 update t1 set d1 = d1 - 1.7976931348623157E+308 where id = 0;
