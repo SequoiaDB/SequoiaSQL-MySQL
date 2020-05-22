@@ -532,7 +532,7 @@ void ha_sdb_part::get_sharding_key(partition_info *part_info,
           builder.append(sdb_field_name(field), 1);
         }
       }
-      // RANGE (<func>)
+      // RANGE(<expr>)
       else {
         builder.append(SDB_FIELD_PART_HASH_ID, 1);
       }
@@ -762,7 +762,7 @@ int ha_sdb_part::get_attach_options(partition_info *part_info,
 
   int rc = 0;
   bson::BSONObjBuilder builder;
-  // LIST or RANGE(<func>)
+  // LIST or RANGE(<expr>)
   if (is_sharded_by_part_hash_id(part_info)) {
     const char *part_name = sdb_get_partition_name(part_info, curr_part_id);
     longlong hash = sdb_calculate_part_hash_id(part_name);
@@ -930,8 +930,6 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   bool created_cs = false;
   bool created_cl = false;
   partition_info *part_info = form->part_info;
-  Key *key = NULL;
-  List_iterator_fast<Key> key_it(ha_thd()->lex->alter_info.key_list);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -971,15 +969,6 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       bson::BSONObj auto_inc_options;
       build_auto_inc_option(field, create_info, auto_inc_options);
       build.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_options);
-    }
-  }
-
-  // Partition table cannot support foreign key yet.
-  while ((key = key_it++)) {
-    if (key->type == KEYTYPE_FOREIGN) {
-      my_error(ER_FOREIGN_KEY_ON_PARTITIONED, MYF(0));
-      rc = ER_FOREIGN_KEY_ON_PARTITIONED;
-      goto error;
     }
   }
 
@@ -1137,22 +1126,6 @@ int ha_sdb_part::reset() {
   m_new_part_id2cl_name.clear();
 
   DBUG_RETURN(ha_sdb::reset());
-}
-
-enum_alter_inplace_result ha_sdb_part::check_if_supported_inplace_alter(
-    TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
-  enum_alter_inplace_result rs;
-  /* FK not yet supported. */
-  if (ha_alter_info->handler_flags &
-      (ALTER_ADD_FOREIGN_KEY | ALTER_DROP_FOREIGN_KEY)) {
-    ha_alter_info->unsupported_reason =
-        my_get_err_msg(ER_FOREIGN_KEY_ON_PARTITIONED);
-    rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-    goto done;
-  }
-  rs = ha_sdb::check_if_supported_inplace_alter(altered_table, ha_alter_info);
-done:
-  return rs;
 }
 
 ulonglong ha_sdb_part::get_used_stats(ulonglong total_stats) {

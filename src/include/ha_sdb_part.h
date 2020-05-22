@@ -77,9 +77,6 @@ class ha_sdb_part : public ha_sdb,
 
   int reset();
 
-  enum_alter_inplace_result check_if_supported_inplace_alter(
-      TABLE* altered_table, Alter_inplace_info* ha_alter_info);
-
   int info(uint flag);
 
   void print_error(int error, myf errflag);
