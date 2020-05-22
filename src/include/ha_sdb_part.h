@@ -368,6 +368,8 @@ class ha_sdb_part : public ha_sdb,
 
   int pre_index_read_one(bson::BSONObj& condition);
 
+  int pre_delete_all_rows(bson::BSONObj& condition);
+
   bool need_update_part_hash_id();
 
   int pre_start_statement();
@@ -387,7 +389,7 @@ class ha_sdb_part : public ha_sdb,
 
   int detach_and_attach_scl();
 
-  int test_if_explicit_partition(bool& explicit_partition);
+  int test_if_explicit_partition(bool* explicit_partition = NULL);
 
  private:
   bool m_sharded_by_part_hash_id;

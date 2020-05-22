@@ -3767,6 +3767,7 @@ error:
 int ha_sdb::delete_all_rows() {
   int rc = 0;
   bson::BSONObj result;
+  bson::BSONObj cond = SDB_EMPTY_BSON;
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
@@ -3777,11 +3778,11 @@ int ha_sdb::delete_all_rows() {
 
   rc = ensure_collection(ha_thd());
   if (rc) {
-    return rc;
+    goto error;
   }
   rc = ensure_stats(ha_thd());
   if (rc) {
-    return rc;
+    goto error;
   }
 
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -3789,13 +3790,18 @@ int ha_sdb::delete_all_rows() {
   if (thd_sdb->get_auto_commit()) {
     rc = autocommit_statement(true);
     if (rc) {
-      return rc;
+      goto error;
     }
+  }
+
+  rc = pre_delete_all_rows(cond);
+  if (rc) {
+    goto error;
   }
 
   sdb_build_clientinfo(ha_thd(), builder);
   hint = builder.obj();
-  rc = collection->del(SDB_EMPTY_BSON, hint, FLG_DELETE_RETURNNUM, &result);
+  rc = collection->del(cond, hint, FLG_DELETE_RETURNNUM, &result);
   if (0 == rc) {
     Sdb_mutex_guard guard(share->mutex);
     if (incr_stat) {

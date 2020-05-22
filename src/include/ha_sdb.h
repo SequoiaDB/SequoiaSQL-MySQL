@@ -506,6 +506,8 @@ class ha_sdb : public handler {
 
   virtual int pre_index_read_one(bson::BSONObj &condition) { return 0; }
 
+  virtual int pre_delete_all_rows(bson::BSONObj &condition) { return 0; }
+
   virtual bool need_update_part_hash_id() { return false; }
 
   virtual int pre_start_statement() { return 0; }

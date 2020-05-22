@@ -1253,12 +1253,11 @@ void ha_sdb_part::convert_sub2main_part_id(uint &part_id) {
 int ha_sdb_part::pre_row_to_obj(bson::BSONObjBuilder &builder) {
   int rc = 0;
   THD *thd = ha_thd();
-  bool unused = false;
   uint part_id = -1;
   longlong func_value = 0;
   ha_sdb_part_share *share = (ha_sdb_part_share *)m_part_share;
 
-  rc = test_if_explicit_partition(unused);
+  rc = test_if_explicit_partition();
   if (rc != 0) {
     goto error;
   }
@@ -1327,6 +1326,20 @@ int ha_sdb_part::pre_get_update_obj(const uchar *old_data,
       obj_builder.append(SDB_FIELD_PART_HASH_ID, hash);
     }
   }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb_part::pre_delete_all_rows(bson::BSONObj &condition) {
+  int rc = 0;
+  rc = test_if_explicit_partition();
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = append_shard_cond(condition);
 done:
   return rc;
 error:
@@ -1466,8 +1479,7 @@ error:
 }
 
 int ha_sdb_part::pre_start_statement() {
-  bool explicit_partition = false;
-  int rc = test_if_explicit_partition(explicit_partition);
+  int rc = test_if_explicit_partition();
   if (rc != 0) {
     my_printf_error(rc, "Cannot specify HASH or KEY partitions", MYF(0));
     goto error;
@@ -1483,11 +1495,14 @@ bool ha_sdb_part::having_part_hash_id() {
 }
 
 // Test if explicit PARTITION() clause. Reject the HASH and KEY partitions.
-int ha_sdb_part::test_if_explicit_partition(bool &explicit_partition) {
+int ha_sdb_part::test_if_explicit_partition(bool *explicit_partition) {
   int rc = 0;
   SELECT_LEX *select_lex = NULL;
   TABLE_LIST *table_list = NULL;
-  explicit_partition = false;
+
+  if (explicit_partition) {
+    *explicit_partition = false;
+  }
 
   if ((select_lex = sdb_lex_current_select(ha_thd())) &&
       (table_list = select_lex->get_table_list()) &&
@@ -1526,7 +1541,9 @@ int ha_sdb_part::test_if_explicit_partition(bool &explicit_partition) {
       }
     }
 
-    explicit_partition = true;
+    if (explicit_partition) {
+      *explicit_partition = true;
+    }
   }
 done:
   return rc;
@@ -1539,7 +1556,7 @@ int ha_sdb_part::append_shard_cond(bson::BSONObj &condition) {
 
   int rc = 0;
   bool explicit_partition = false;
-  test_if_explicit_partition(explicit_partition);
+  test_if_explicit_partition(&explicit_partition);
 
   if (bitmap_is_set_all(&(m_part_info->read_partitions))) {
     goto done;
@@ -1591,9 +1608,8 @@ int ha_sdb_part::pre_first_rnd_next(bson::BSONObj &condition) {
 
   int rc = 0;
   THD *thd = ha_thd();
-  bool unused = false;
 
-  rc = test_if_explicit_partition(unused);
+  rc = test_if_explicit_partition();
   if (rc != 0) {
     goto error;
   }
@@ -1615,9 +1631,7 @@ error:
 
 int ha_sdb_part::pre_index_read_one(bson::BSONObj &condition) {
   int rc = 0;
-  bool unused = false;
-
-  rc = test_if_explicit_partition(unused);
+  rc = test_if_explicit_partition();
   if (rc != 0) {
     goto error;
   }
