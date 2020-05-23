@@ -53,6 +53,7 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
   sdb_filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1, true);
+#ifdef IS_MYSQL
   // The partition name has special separator "#P#". So it was treated as
   // non-encoded filename(file system doesn't allow '#'), and marked by
   // "#mysql50#" prefix. Just ignore it.
@@ -63,7 +64,7 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
       table_name[i - MYSQL50_TABLE_NAME_PREFIX_LENGTH] = table_name[i];
     } while (table_name[i++] != 0);
   }
-
+#endif
   // scan db_name
   ptr--;
   end = ptr;
