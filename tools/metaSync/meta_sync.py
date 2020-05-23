@@ -658,9 +658,36 @@ class MysqlMetaSync:
             datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + " " + stmt + "\n")
         ignore_file.close()
 
+    def check_rewrite_sql(self, sql):
+        # Check if the sql is create procedure/function by searching
+        # some keywords in the statement.
+        # There is no delimiter in the audit log. We need to set that before
+        # executing on remote server. Just choose one which dose not exist in
+        # the SQL statement.
+        delimiters = [ "//", "$$", ";;", "**" ] ;
+        result = False
+        low_sql = sql.lower()
+
+        regex = r'create(\s+)(.*)procedure|create(\s+)(.*)function'
+        if not re.match(regex, low_sql):
+            return sql
+
+        # Find a delimiter which dose not exist in the SQL statement.
+        for delimiter in delimiters:
+            if delimiter not in low_sql:
+                break
+
+        # Each statement is executed on remote server by seperated connection.
+        # So no need to restore the delimiter.
+        return "DELIMITER " + delimiter + ";" + sql + delimiter
+
     def execute_sql(self, exec_sql_info, db_required, session_attr=None):
         database = exec_sql_info["database"]
         sql = exec_sql_info["sql"]
+        # Need to check if it's procedure/function. If yes, need to add
+        # dilimeter.
+        sql = self.check_rewrite_sql(sql)
+
         if session_attr is not None:
             sql = session_attr + sql
         mysql_exec = option_mgr.get_mysql_home() + '/bin/mysql'
@@ -865,11 +892,24 @@ class MysqlMetaSync:
         row_number = 0
         stat_mgr.set_file_inode(inode)
         lines = f.readlines()
-        for line in lines:
+        for origline in lines:
             row_number += 1
             # start from last parse row
             if int(stat_mgr.get_last_parse_row()) >= row_number:
                 continue
+
+            # Remove commets starts with '-- '. This could only be in the SQL
+            # statement.
+            logger.debug("Original line: " + origline)
+
+            while True:
+                line = re.sub(r"-- (.*?)\\n", "", origline)
+                if line == origline:
+                    break
+                else:
+                    origline = line
+
+            logger.debug("After removing comments: " + line)
             # The statement may contain '\n' or '\t'. They will impact the
             # action of the DictReader. So remove them before parse.
             line = line.replace('\\r\\n', ' ').replace('\\n', ' ').replace(
