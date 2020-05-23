@@ -454,7 +454,7 @@ a
 2
 optimize table t1;
 Table	Op	Msg_type	Msg_text
-test_alter.t1	optimize	note	The storage engine for the table doesn't support optimize
+test_alter.t1	optimize	status	OK
 alter table t1 MIN_ROWS 10 MAX_ROWS 100 AVG_ROW_LENGTH 50 PACK_KEYS 1 CHECKSUM 1 ROW_FORMAT COMPRESSED DELAY_KEY_WRITE 1 INSERT_METHOD first UNION (t3) DATA DIRECTORY "/tmp" INDEX DIRECTORY "/tmp" PASSWORD "12345" CONNECTION "12345" STATS_PERSISTENT 1 STATS_AUTO_RECALC 1 STATS_SAMPLE_PAGES 1 TABLESPACE ts STORAGE disk;
 Warnings:
 Warning	1618	<DATA DIRECTORY> option ignored
