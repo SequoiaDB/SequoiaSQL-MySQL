@@ -3329,6 +3329,12 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     //  goto done;
     // }
 
+    // if altering table, do not start transaction.
+    if (SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
+      thd_get_thd_sdb(thd)->set_auto_commit(false);
+      goto done;
+    }
+
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
       thd_get_thd_sdb(thd)->set_auto_commit(false);
       if (!conn->is_transaction_on()) {
