@@ -1092,27 +1092,27 @@ INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbb
 INSERT INTO t1 VALUES('uu');
 check table t1;
 Table	Op	Msg_type	Msg_text
-test_ctype_utf8.t1	check	note	The storage engine for the table doesn't support check
+test_ctype_utf8.t1	check	status	OK
 INSERT INTO t1 VALUES('uU');
 check table t1;
 Table	Op	Msg_type	Msg_text
-test_ctype_utf8.t1	check	note	The storage engine for the table doesn't support check
+test_ctype_utf8.t1	check	status	OK
 INSERT INTO t1 VALUES('uu');
 check table t1;
 Table	Op	Msg_type	Msg_text
-test_ctype_utf8.t1	check	note	The storage engine for the table doesn't support check
+test_ctype_utf8.t1	check	status	OK
 INSERT INTO t1 VALUES('uuABC');
 check table t1;
 Table	Op	Msg_type	Msg_text
-test_ctype_utf8.t1	check	note	The storage engine for the table doesn't support check
+test_ctype_utf8.t1	check	status	OK
 INSERT INTO t1 VALUES('UuABC');
 check table t1;
 Table	Op	Msg_type	Msg_text
-test_ctype_utf8.t1	check	note	The storage engine for the table doesn't support check
+test_ctype_utf8.t1	check	status	OK
 INSERT INTO t1 VALUES('uuABC');
 check table t1;
 Table	Op	Msg_type	Msg_text
-test_ctype_utf8.t1	check	note	The storage engine for the table doesn't support check
+test_ctype_utf8.t1	check	status	OK
 alter table t1 add b int;
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',1);
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',2);
@@ -1120,14 +1120,14 @@ delete from t1 where b=1;
 INSERT INTO t1 VALUES('UUABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',1);
 check table t1;
 Table	Op	Msg_type	Msg_text
-test_ctype_utf8.t1	check	note	The storage engine for the table doesn't support check
+test_ctype_utf8.t1	check	status	OK
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',3);
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',4);
 delete from t1 where b=3;
 INSERT INTO t1 VALUES('uUABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',3);
 check table t1;
 Table	Op	Msg_type	Msg_text
-test_ctype_utf8.t1	check	note	The storage engine for the table doesn't support check
+test_ctype_utf8.t1	check	status	OK
 drop table t1;
 set names utf8;
 create table t1 (s1 char(5) character set utf8);
