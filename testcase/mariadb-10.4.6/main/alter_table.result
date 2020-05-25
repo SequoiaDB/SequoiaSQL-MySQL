@@ -92,7 +92,7 @@ ALTER TABLE t1 ADD Column new_col int not null;
 UNLOCK TABLES;
 OPTIMIZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test_alter_table.t1	optimize	note	The storage engine for the table doesn't support optimize
+test_alter_table.t1	optimize	status	OK
 DROP TABLE t1;
 create table t1 (i int unsigned not null auto_increment primary key);
 insert into t1 values (null),(null),(null),(null);
@@ -209,7 +209,7 @@ t1	0	PRIMARY	2	User	A	NULL	NULL	NULL		BTREE
 UNLOCK TABLES;
 CHECK TABLES t1;
 Table	Op	Msg_type	Msg_text
-test_alter_table.t1	check	note	The storage engine for the table doesn't support check
+test_alter_table.t1	check	status	OK
 DROP TABLE t1;
 CREATE TABLE t1 (
 Host varchar(16) binary NOT NULL default '',
@@ -237,7 +237,7 @@ t1	1	Host	1	Host	A	NULL	NULL	NULL		BTREE
 UNLOCK TABLES;
 CHECK TABLES t1;
 Table	Op	Msg_type	Msg_text
-test_alter_table.t1	check	note	The storage engine for the table doesn't support check
+test_alter_table.t1	check	status	OK
 LOCK TABLES t1 WRITE;
 ALTER TABLE t1 RENAME t2;
 UNLOCK TABLES;
