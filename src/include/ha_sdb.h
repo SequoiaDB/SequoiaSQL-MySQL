@@ -376,6 +376,12 @@ class ha_sdb : public handler {
 
   void handle_sdb_error(int error, myf errflag);
 
+  int check(THD *thd, HA_CHECK_OPT *check_opt) { return 0; }
+
+  int repair(THD *thd, HA_CHECK_OPT *repair_opt) { return 0; }
+
+  int optimize(THD *thd, HA_CHECK_OPT *check_opt) { return 0; }
+
  private:
   int ensure_collection(THD *thd);
 
