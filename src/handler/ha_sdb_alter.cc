@@ -1370,6 +1370,10 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
 
         if (op_flag) {
           Col_alter_info *info = new Col_alter_info();
+          if (!info) {
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          }
           info->before = old_field;
           info->after = new_field;
           info->op_flag = op_flag;

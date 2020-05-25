@@ -3620,8 +3620,9 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
-    // in non-transaction mode, do not exec commit or rollback.
-    if (!sdb_use_transaction) {
+    // in non-transaction mode or altering table,
+    // do not exec commit or rollback.
+    if (!sdb_use_transaction || SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
       thd_get_thd_sdb(thd)->set_auto_commit(false);
       goto done;
     }
