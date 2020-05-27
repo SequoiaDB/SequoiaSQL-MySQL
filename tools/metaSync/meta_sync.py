@@ -713,13 +713,13 @@ class MysqlMetaSync:
 
             retry_times = 0
             while True:
-                logger.info(
+                logger.debug(
                     "begin to connect [{host}]'s mysql server to execute sql"
                     .format(host=host))
                 retry_times += 1
                 result = self.__execute_command(command)
                 if MYSQL_OK == result:
-                    logger.info("finish to execute sql")
+                    logger.debug("finish to execute sql")
                     break
                 elif CONN_ERR != result and option_mgr.ignore_error() and \
                         retry_times > option_mgr.get_retry_limit():
@@ -944,7 +944,7 @@ class MysqlMetaSync:
                 continue
 
             # filter select,insert,update sql
-            sql = row["sql"]
+            sql = row["sql"].strip()
             if sql.startswith("/*"):
                 pattern = r'(?:/\*(?:(?!\*/).)*\*/)'
                 comment = re.search(pattern, sql).group()
