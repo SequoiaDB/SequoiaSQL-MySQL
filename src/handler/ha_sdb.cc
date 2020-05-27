@@ -1097,7 +1097,8 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       longlong value = field->val_int();
       if (value < 0 && ((Field_num *)field)->unsigned_flag) {
         /* sdb sequence max value is 2^63 -1. */
-        if (auto_inc_explicit_used) {
+        if (auto_inc_explicit_used &&
+            Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
           rc = HA_ERR_AUTOINC_READ_FAILED;
           break;
         }
