@@ -1,4 +1,5 @@
 #Case 18635#Case 20547#Case 20548#Case 20549#Case 20550#Case 20551#Case 20552#Case 20555
+#Case 13167
 
 --source include/have_sequoiadb.inc
 
@@ -391,6 +392,19 @@ commit;
 connection default;
 select * from t1;
 set global sequoiadb_rollback_on_timeout = off;
+drop table t1;
+
+#BUG #SEQUOIASQLMAINSTREAM-670
+#seqDB-13167
+connection con1;
+create table t1( id int );
+insert into t1 values (1),(0),(2);
+begin;
+insert into t1 values (10),(11);
+delete from t1 where id = 0;
+alter table t1 add index id(id);
+rollback;
+select * from t1 order by id;
 drop table t1;
 
 disconnect con1;
