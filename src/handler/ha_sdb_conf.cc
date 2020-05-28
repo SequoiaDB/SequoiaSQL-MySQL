@@ -23,6 +23,8 @@
 static const char *SDB_ADDR_DFT = "localhost:11810";
 static const char *SDB_USER_DFT = "";
 static const char *SDB_PASSWORD_DFT = "";
+static const char *SDB_DEFAULT_TOKEN = "";
+static const char *SDB_DEFAULT_CIPHERFILE = "~/sequoiadb/passwd";
 static const my_bool SDB_USE_PARTITION_DFT = TRUE;
 static const my_bool SDB_DEBUG_LOG_DFT = FALSE;
 static const my_bool SDB_DEFAULT_USE_BULK_INSERT = TRUE;
@@ -42,6 +44,8 @@ my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
 char *sdb_conn_str = NULL;
 char *sdb_user = NULL;
 char *sdb_password = NULL;
+char *sdb_password_token = NULL;
+char *sdb_password_cipherfile = NULL;
 my_bool sdb_auto_partition = SDB_USE_PARTITION_DFT;
 my_bool sdb_use_bulk_insert = SDB_DEFAULT_USE_BULK_INSERT;
 int sdb_bulk_insert_size = SDB_DEFAULT_BULK_INSERT_SIZE;
@@ -115,6 +119,18 @@ static MYSQL_SYSVAR_STR(password, sdb_password,
                         "(Default: \"\")"
                         /*SequoiaDB 鉴权密码。*/,
                         NULL, sdb_password_update, SDB_PASSWORD_DFT);
+static MYSQL_SYSVAR_STR(token, sdb_password_token,
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
+                        "SequoiaDB authentication password token. "
+                        "(Default: \"\")"
+                        /*SequoiaDB 鉴权加密口令。*/,
+                        NULL, NULL, SDB_DEFAULT_TOKEN);
+static MYSQL_SYSVAR_STR(cipherfile, sdb_password_cipherfile,
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
+                        "SequoiaDB authentication cipherfile. "
+                        "(Default: \"/opt/sequoiadb/passwd\")"
+                        /*SequoiaDB 鉴权密码文件路径。*/,
+                        NULL, NULL, SDB_DEFAULT_CIPHERFILE);
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(use_partition, sdb_auto_partition,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
@@ -218,6 +234,8 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
     MYSQL_SYSVAR(password),
+    MYSQL_SYSVAR(token),
+    MYSQL_SYSVAR(cipherfile),
     MYSQL_SYSVAR(use_partition),
     MYSQL_SYSVAR(auto_partition),
     MYSQL_SYSVAR(use_bulk_insert),
