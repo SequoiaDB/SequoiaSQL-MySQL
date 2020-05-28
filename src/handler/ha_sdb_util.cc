@@ -52,18 +52,50 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   }
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
+#if defined IS_MYSQL
+  do {
+    /*
+      If it's a partitioned table name, parse each part one by one
+      Format: <tb_name> #P# <part_name> #SP# <sub_part_name>
+    */
+    // <tb_name>
+    char *sep = strstr(tmp_name, SDB_PART_SEP);
+    if (sep) {
+      *sep = 0;
+    }
+    sdb_filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1, true);
+
+    // <part_name>
+    if (!sep) {
+      break;
+    }
+    *sep = '#';
+    strcat(table_name, SDB_PART_SEP);
+
+    char part_buff[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+    char *part_name = sep + strlen(SDB_PART_SEP);
+    char *sub_sep = strstr(part_name, SDB_SUB_PART_SEP);
+    if (sub_sep) {
+      *sub_sep = 0;
+    }
+    sdb_filename_to_tablename(part_name, part_buff, sizeof(part_buff) - 1,
+                              true);
+    strcat(table_name, part_buff);
+
+    // <sub_part_name>
+    if (!sub_sep) {
+      break;
+    }
+    *sub_sep = '#';
+    strcat(table_name, SDB_SUB_PART_SEP);
+
+    char *sub_part_name = sub_sep + strlen(SDB_SUB_PART_SEP);
+    sdb_filename_to_tablename(sub_part_name, part_buff, sizeof(part_buff) - 1,
+                              true);
+    strcat(table_name, part_buff);
+  } while (0);
+#elif defined IS_MARIADB
   sdb_filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1, true);
-#ifdef IS_MYSQL
-  // The partition name has special separator "#P#". So it was treated as
-  // non-encoded filename(file system doesn't allow '#'), and marked by
-  // "#mysql50#" prefix. Just ignore it.
-  if (0 == strncmp(table_name, MYSQL50_TABLE_NAME_PREFIX,
-                   MYSQL50_TABLE_NAME_PREFIX_LENGTH)) {
-    int i = MYSQL50_TABLE_NAME_PREFIX_LENGTH;
-    do {
-      table_name[i - MYSQL50_TABLE_NAME_PREFIX_LENGTH] = table_name[i];
-    } while (table_name[i++] != 0);
-  }
 #endif
   // scan db_name
   ptr--;
