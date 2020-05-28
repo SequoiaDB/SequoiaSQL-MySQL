@@ -69,6 +69,8 @@ bool sdb_rollback_on_timeout(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;
+extern char *sdb_password_token;
+extern char *sdb_password_cipherfile;
 extern my_bool sdb_auto_partition;
 extern my_bool sdb_use_bulk_insert;
 extern int sdb_bulk_insert_size;

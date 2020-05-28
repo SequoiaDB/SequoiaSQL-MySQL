@@ -102,10 +102,28 @@ int Sdb_conn::connect() {
       SDB_LOG_ERROR("Failed to decrypt password, rc=%d", rc);
       goto error;
     }
-    rc = m_connection.connect(conn_addrs.get_conn_addrs(),
-                              conn_addrs.get_conn_num(), sdb_user,
-                              password.ptr());
+    if(password.length()) {
+      rc = m_connection.connect(conn_addrs.get_conn_addrs(),
+                                conn_addrs.get_conn_num(), sdb_user,
+                                password.ptr());
+    } else {
+      rc = m_connection.connect(conn_addrs.get_conn_addrs(),
+                                conn_addrs.get_conn_num(), sdb_user,
+                                sdb_password_token, sdb_password_cipherfile);
+    }
     if (SDB_ERR_OK != rc) {
+        switch (rc) {
+          case SDB_FNE:
+            SDB_LOG_ERROR("Cipherfile not exist, rc=%d", rc);
+            rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
+            break; 
+          case SDB_AUTH_USER_NOT_EXIST:
+            SDB_LOG_ERROR("User specified is not exist, you can add the user by sdbpasswd tool, rc=%d", rc);
+            rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
+            break; 
+          default:
+            break;
+      }
       SDB_LOG_ERROR("Failed to connect to sequoiadb, rc=%d", rc);
       goto error;
     }
