@@ -1725,17 +1725,20 @@ DROP TABLE t1, t2;
 --echo # BUG#12912171 - ASSERTION FAILED: QUICK->HEAD->READ_SET ==
 --echo # SAVE_READ_SET
 --echo #
-#Sequoiadb not support partition table
-#CREATE TABLE t1 (
-# a INT,
-# b INT,
-# c INT,
+CREATE TABLE t1 (
+ a INT,
+ b INT,
+ c INT,
+ PRIMARY KEY (c,a), KEY (a)
+) ENGINE=sequoiadb PARTITION BY KEY () PARTITIONS 2;
 # PRIMARY KEY (c,a), KEY (a),KEY (a)
 #) ENGINE=sequoiadb PARTITION BY KEY () PARTITIONS 2;
-#INSERT INTO t1 VALUES (1,5,1),(2,4,1),(3,3,1),(4,2,1),(5,1,1);
-#UPDATE t1 SET b = 0, c=1 WHERE a <=>0;
-#SELECT * FROM t1;
-#DROP TABLE t1;
+INSERT INTO t1 VALUES (1,5,1),(2,4,1),(3,3,1),(4,2,1),(5,1,1);
+#SequoiaDB sharding key cannot be updated
+--error 40178
+UPDATE t1 SET b = 0, c=1 WHERE a <=>0;
+SELECT * FROM t1;
+DROP TABLE t1;
 
 --echo #
 --echo # BUG#13256446 - ASSERTION QUICK->HEAD->READ_SET ==
@@ -2714,7 +2717,6 @@ LIMIT 1;
 eval $query1;
 
 #eval EXPLAIN $query2;
-#SEQUOIASQLMAINSTREAM-644
 #The result is not the same as innodb when engine set sequoiadb, modify the expect result
 eval $query2;
 
