@@ -3,7 +3,6 @@
 # @Author Yang Shangde
 import ConfigParser
 import base64
-import csv
 import logging.config
 import random
 import sched
@@ -17,7 +16,6 @@ import time
 import os
 import sys
 import re
-import io
 from keywords import *
 
 reload(sys)
@@ -74,6 +72,19 @@ class CryptoUtil:
             source_arr.append(chr(ord(char) - 3))
         source_str = "".join(source_arr)
         return source_str
+
+
+class Utils:
+    @classmethod
+    def dos2unix(cls, file_path):
+        try:
+            with open(file_path, 'rb') as fin:
+                content = fin.read()
+            content = re.sub(r'\r\n', r'\n', content)
+            with open(file_path, 'wb') as fout:
+                fout.write(content)
+        except:
+            raise
 
 
 class DateUtils:
@@ -373,14 +384,14 @@ class OptionMgr:
     def get_audit_log_name(self):
         return self.get_option(KW_MYSQL, KW_AUDIT_FILE)
 
-    def should_filter(self, row):
+    def should_filter(self, remote_host, user):
         # If the command is from another instance of the instance group, it's
         # sync operation, and should sync again. Use two fields in the audit log
         # to specified if it's such a log: the remote host and user name.
         # So neither the user nor the application should use the account for
         # metadata synchronization.
-        return row['remote_host'] in self.filter_addresses and \
-            row['user'] == self.get_mysql_user()
+        return remote_host in self.filter_addresses and \
+               user == self.get_mysql_user()
 
 
 class StatMgr:
@@ -578,6 +589,100 @@ class PreProcessor:
         return 0
 
 
+class AuditLogAnalyer:
+    """Analyzer for analyze one line in the audit log file. Log example:
+    20200522 05:15:44,c74-t03,sdbadmin,c74-t02,2551,32497,QUERY,nfdw,'DROP TABLE IF EXISTS `ms_project_type`',0
+    """
+
+    def __init__(self, log):
+        self.log = log
+        self.remote_host = ""
+        self.database = ""
+        self.user = ""
+        self.full_stmt = ""
+        self.stmt = ""
+        self.return_code = 0
+
+    @staticmethod
+    def commentRemover(text):
+        def replacer(match):
+            s = match.group(0)
+            if s.startswith('/'):
+                return " "  # note: a space and not an empty string
+            else:
+                return s
+
+        pattern = re.compile(
+            r'^//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+            re.DOTALL | re.MULTILINE
+        )
+        return re.sub(pattern, replacer, text)
+
+    def __get_pure_stmt(self):
+        """Rmove all comments at the beginning of the statemnt and try to get
+          the fir keyword.
+        """
+        stmt = self.full_stmt
+        while True:
+            stmt = stmt.strip()
+            if stmt.startswith('-- '):
+                stmt = re.sub(r"^-- (.*?)\n", "", stmt)
+            elif stmt.startswith('#'):
+                stmt = re.sub(r"^#(.*?)\n", "", stmt)
+            elif stmt.startswith('/*'):
+                stmt = self.commentRemover(stmt)
+            elif stmt.startswith('\r\n'):
+                stmt = stmt.lstrip('\r\n')
+            elif stmt.startswith('\n'):
+                stmt = stmt.lstrip('\n')
+            else:
+                # No more comments at the beginning
+                break
+
+        if len(stmt) > 0:
+            return stmt
+        else:
+            return ""
+
+    def analyze(self):
+        try:
+            # 1. Get the return code
+            self.return_code = int(self.log.rsplit(',', 1)[1])
+            # 2. Get the SQL statement
+            stmt = self.log.split(",", 8)[8].rsplit(",", 1)[0]
+            if 0 == self.return_code and len(stmt) > 0:
+                # The statement in the audit file is in single quotes. By eval
+                # they can be removed, and all escape characters are removed.
+                self.full_stmt = eval(stmt)
+                self.stmt = self.__get_pure_stmt()
+            # 3. Parse other parts before the statement.
+            items = self.log.split(',', 8)[0:8]
+            self.user = items[2]
+            self.remote_host = items[3]
+            self.database = items[7]
+        except:
+            logger.error("Analyze audit log failed: " + self.log)
+            raise
+
+    def get_return_code(self):
+        return int(self.log.rsplit(',', 1)[1])
+
+    def get_remote_host(self):
+        return self.remote_host
+
+    def get_database(self):
+        return self.database
+
+    def get_user(self):
+        return self.user
+
+    def get_full_stmt(self):
+        return self.full_stmt
+
+    def get_stmt(self):
+        return self.stmt
+
+
 class MysqlMetaSync:
     """ parsing DDL operation in the audit log at a specified time interval and
         execute on other SSQL servers
@@ -599,15 +704,21 @@ class MysqlMetaSync:
         else:
             return False
 
-    def __execute_command(self, command):
-        cmd_str = " ".join(command)
+    def __execute_command(self, command, sync_file):
+        cmd_str = " ".join(command) + ' '
         # Remove the password from the command, for logging.
         safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
+        safe_cmd_str.strip()
         try:
             process = subprocess.Popen(command, shell=False,
+                                       stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
-            out, error = process.communicate()
+            if sync_file is None:
+                out, error = process.communicate()
+            else:
+                # Note there is a blank after 'source'
+                out, error = process.communicate("source " + sync_file)
             if "" != error and MYSQL_ERRORS[CONN_ERR] in error:
                 logger.error("Not able to connect to remote instance. "
                              "Command: " + safe_cmd_str)
@@ -627,7 +738,11 @@ class MysqlMetaSync:
                 process = subprocess.Popen(command, shell=False,
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
-                out, error = process.communicate()
+                if sync_file is None:
+                    out, error = process.communicate()
+                else:
+                    # Note there is a blank after 'source'
+                    out, error = process.communicate("source " + sync_file)
                 if "" != error and MYSQL_ERRORS[CONN_ERR] in error:
                     logger.error("Not able to connect to remote instance. "
                                  "Command: " + safe_cmd_str)
@@ -643,8 +758,10 @@ class MysqlMetaSync:
                              ", error: " + error.strip() + ". Command: " +
                              safe_cmd_str)
                 return UNHANDLED_ERR
-            logger.info("Execute command succeed. Command detail: " +
-                        safe_cmd_str)
+            msg = "Execute command succeed. Command detail: " + safe_cmd_str
+            if sync_file is not None:
+                msg += "(source " + sync_file + ")"
+            logger.info(msg)
             return MYSQL_OK
         except subprocess.CalledProcessError:
             msg = traceback.format_exc()
@@ -679,7 +796,8 @@ class MysqlMetaSync:
 
         # Each statement is executed on remote server by seperated connection.
         # So no need to restore the delimiter.
-        return "DELIMITER " + delimiter + ";" + sql + delimiter
+        return "DELIMITER " + delimiter + "\n" + sql + delimiter + "\n" + \
+               "DELIMITER ;"
 
     def execute_sql(self, exec_sql_info, db_required, session_attr=None):
         database = exec_sql_info["database"]
@@ -689,27 +807,32 @@ class MysqlMetaSync:
         sql = self.check_rewrite_sql(sql)
 
         if session_attr is not None:
-            sql = session_attr + sql
+            sql = session_attr + "\n" + sql
+
+        sync_file = None
+        # If the SQL command is longer than 32KB, use a sql file to execute.
+        if len(sql) > 32768:
+            sync_file = os.path.join(my_home, 'sync.sql')
+            sql_file = open(sync_file, 'w')
+            sql_file.writelines(sql)
+            sql_file.close()
+            Utils.dos2unix(sync_file)
+        else:
+            sql = sql.replace('\r\n', '\n')
+
         mysql_exec = option_mgr.get_mysql_home() + '/bin/mysql'
         for host in option_mgr.get_hosts():
             # On other instances, the operation should only be done on MySQL.
+            command = [ mysql_exec,
+                        '-h', host,
+                        '-P', option_mgr.get_port(),
+                        '-u', option_mgr.get_mysql_user(),
+                        '-c',
+                        '-p' + option_mgr.get_mysql_passwd()]
             if db_required:
-                command = [mysql_exec,
-                           '-h', host,
-                           '-P', option_mgr.get_port(),
-                           '-D', database,
-                           '-u', option_mgr.get_mysql_user(),
-                           '-p' + option_mgr.get_mysql_passwd(),
-                           '-e', sql
-                           ]
-            else:
-                command = [mysql_exec,
-                           '-h', host,
-                           '-P', option_mgr.get_port(),
-                           '-u', option_mgr.get_mysql_user(),
-                           '-p' + option_mgr.get_mysql_passwd(),
-                           '-e', sql
-                           ]
+                command.extend(['-D', database])
+            if sync_file is None:
+                command.extend(['-e', sql])
 
             retry_times = 0
             while True:
@@ -717,7 +840,7 @@ class MysqlMetaSync:
                     "begin to connect [{host}]'s mysql server to execute sql"
                     .format(host=host))
                 retry_times += 1
-                result = self.__execute_command(command)
+                result = self.__execute_command(command, sync_file)
                 if MYSQL_OK == result:
                     logger.debug("finish to execute sql")
                     break
@@ -829,30 +952,30 @@ class MysqlMetaSync:
                         # Found the file with the expected inode id. Check if
                         # all records in the file have been processed.
                         found_file = True
-                        fd = open(file_path, 'r')
-                        index = -1
-                        for index, line in enumerate(fd):
-                            pass
-                        fd.seek(0)
-                        line_num = index + 1
-                        last_parse_row = stat_mgr.get_last_parse_row()
-                        if line_num > last_parse_row:
-                            # Check if file list is changed.
-                            base_inode_after = os.stat(base_file).st_ino
-                            if base_inode_after != base_inode_before:
-                                fd.close()
-                                break
-                            else:
-                                # Found!
-                                return curr_file_inode, fd
-                        elif line_num == last_parse_row:
+                        try:
+                            fd = open(file_path, 'r')
                             # All records in the file have been processed.
                             base_inode_after = os.stat(base_file).st_ino
                             if base_inode_after != base_inode_before:
                                 # File list changed. Need to check again.
                                 fd.close()
                                 break
-                            elif 0 == pre_file_inode:
+
+                            index = -1
+                            for index, line in enumerate(fd):
+                                pass
+                            fd.seek(0)
+                        except IOError as err:
+                            logging.error("File error: " + str(err))
+                            return 0, None
+
+                        line_num = index + 1
+                        last_parse_row = stat_mgr.get_last_parse_row()
+                        if line_num > last_parse_row:
+                            return curr_file_inode, fd
+                        elif line_num == last_parse_row:
+                            # All records in the file have been processed.
+                            if 0 == pre_file_inode:
                                 # It's the base audit file server_audit.log.
                                 fd.close()
                                 return curr_file_inode, None
@@ -874,20 +997,23 @@ class MysqlMetaSync:
                     else:
                         pre_file_inode = curr_file_inode
                 if not found_file:
-                    logging.error('Audit file with inode {} not found'.format(
-                        stat_mgr.get_file_inode()
-                    ))
-                    return 0, None
+                    # If we can not find the file with the target inode, and the
+                    # audit file list is not changed, the target file is really
+                    # gone, and incremental synchronization is not possible any
+                    # longer. If the file list is changed, let's try to find
+                    # again.
+                    base_inode_after = os.stat(base_file).st_ino
+                    if base_inode_after == base_inode_before:
+                        logging.error(
+                            'Audit file with inode {} not found'.format(
+                                stat_mgr.get_file_inode()))
+                        return 0, None
 
     def parse_audit_log_file(self, inode, f):
         """ parse log file
 
         :param f: file descriptor of the audit log file
         """
-        audit_log_field = ["log_time", "server_host", "user", "remote_host",
-                           "thread_id", "seq", "operation",
-                           "database",
-                           "sql", "exec_state"]
         actual_parse_count = 0
         row_number = 0
         stat_mgr.set_file_inode(inode)
@@ -898,61 +1024,32 @@ class MysqlMetaSync:
             if int(stat_mgr.get_last_parse_row()) >= row_number:
                 continue
 
-            # Remove commets starts with '-- '. This could only be in the SQL
-            # statement.
-            logger.debug("Original line: " + origline)
-
-            while True:
-                line = re.sub(r"-- (.*?)\\n", "", origline)
-                if line == origline:
-                    break
-                else:
-                    origline = line
-
-            logger.debug("After removing comments: " + line)
-            # The statement may contain '\n' or '\t'. They will impact the
-            # action of the DictReader. So remove them before parse.
-            line = line.replace('\\r\\n', ' ').replace('\\n', ' ').replace(
-                '\\t', ' ').strip()
-            reader_list = csv.DictReader(io.StringIO(unicode(line, "utf-8")),
-                                         fieldnames=audit_log_field,
-                                         delimiter=',',
-                                         quotechar="'", quoting=csv.QUOTE_ALL,
-                                         escapechar='\\')
-            row = next(reader_list)
-
+            log_analyzer = AuditLogAnalyer(origline)
             actual_parse_count = actual_parse_count + 1
-            # filter error log
-            exec_state = row["exec_state"]
             try:
-                if int(exec_state) != self.SUCCESS_STATE:
-                    logger.debug("filter error log: {row}".format(row=row))
-                    stat_mgr.last_parse_row = row_number
+                log_analyzer.analyze()
+                if self.SUCCESS_STATE != log_analyzer.get_return_code():
+                    logger.debug("Return code is not success, go to next line: "
+                                 + origline)
+                    stat_mgr.set_last_parse_row(row_number)
                     continue
-            except BaseException as e:
-                msg = traceback.format_exc()
-                logger.error(
-                    "filter error audit log failed, err:{error}".format(
-                        error=msg))
-                raise e
-
-            # filter other mysql host log
-            if option_mgr.should_filter(row):
-                logger.debug("filter other mysql host opr: {log_record}".format(
-                    log_record=row))
-                stat_mgr.set_last_parse_row(row_number)
-                continue
+                if 0 == len(log_analyzer.get_stmt()) or \
+                        option_mgr.should_filter(log_analyzer.get_remote_host(),
+                                                 log_analyzer.get_user()):
+                    stat_mgr.set_last_parse_row(row_number)
+                    continue
+            except Exception, err:
+                logger.error("Analyze audit log failed: " + origline)
+                if option_mgr.ignore_error():
+                    self.__log_ignore_stmt(
+                        "Parse exception: {}. Statement: {}".format(str(err),
+                                                                    origline))
+                    stat_mgr.set_last_parse_row(row_number)
+                else:
+                    raise
 
             # filter select,insert,update sql
-            sql = row["sql"].strip()
-            if sql.startswith("/*"):
-                pattern = r'(?:/\*(?:(?!\*/).)*\*/)'
-                comment = re.search(pattern, sql).group()
-                low_sql = sql[len(comment):].strip()
-                low_sql = low_sql.lower()
-            else:
-                low_sql = sql.lower()
-
+            low_sql = log_analyzer.get_stmt().strip().lower()
             if low_sql.startswith("alter") \
                     or low_sql.startswith("create") \
                     or low_sql.startswith("drop") \
@@ -960,12 +1057,13 @@ class MysqlMetaSync:
                     or low_sql.startswith("grant") \
                     or low_sql.startswith("revoke") \
                     or low_sql.startswith("flush") \
-                    or low_sql.startswith("rename"):
-
-                database = row["database"]
+                    or low_sql.startswith("rename") \
+                    or (len(low_sql) == 0
+                        and len(log_analyzer.get_full_stmt()) > 0):
+                database = log_analyzer.get_database()
                 if not database.strip():
                     logger.warn("database is empty, exec sql [{sql}] in "
-                                "mysql database".format(sql=sql))
+                                "mysql database".format(sql=low_sql))
                     database = "mysql"
                 # mysql command指定库名时，数据库名不能含有`
                 elif database.startswith("`"):
@@ -974,9 +1072,10 @@ class MysqlMetaSync:
                 db_required = True
                 # Replace 'ALGORITHM=COPY' with one blank, as on other
                 # instances, the operation should never be done in copy mode.
-                sql = re.sub(r'[,]*(\s*)ALGORITHM(\s*)=(\s*)COPY(\s*)[,]*', ' ',
-                             sql, flags=re.IGNORECASE)
-                exec_sql_info = {"database": database, "sql": str(sql)}
+                orig_sql_stmt = re.sub(r'[,]*(\s*)ALGORITHM(\s*)=(\s*)COPY(\s*)[,]*', ' ',
+                                       log_analyzer.get_full_stmt(),
+                                       flags=re.IGNORECASE)
+                exec_sql_info = {"database": database, "sql": str(orig_sql_stmt)}
 
                 # If it's create/drop database operation, ignore the database
                 # argument.
