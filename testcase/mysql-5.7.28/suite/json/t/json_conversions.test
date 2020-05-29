@@ -5835,8 +5835,10 @@ insert into at(c,_set) select concat('_set: ',c), (select j from t where c='opaq
 --echo # ----------------------------------------------------------------------
 
 --replace_regex /NULL/N/ /2015-01-15 23:24:25.000000/--EXPECTED_TIME--/ /[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}/--TIME--/ /2015-01-15/--EXPECTED_DATE--/ /23:24:25/--EXPECTED_TIME--/ /[0-9]{4}-[0-9]{2}-[0-9]{2}/--DATE--/ /[0-9]{2}:[0-9]{2}:[0-9]{2}/--TIME--/
+--sorted_result
 select * from at;
 
+--sorted_result
 select c, _bit from at
 where c like '_bit%';
 select c, _tin from at

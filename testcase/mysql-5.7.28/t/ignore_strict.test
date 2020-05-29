@@ -506,6 +506,7 @@ INSERT INTO t1 VALUES (2), (3),(5);
 --error ER_NO_PARTITION_FOR_GIVEN_VALUE
 INSERT INTO t1 VALUES (2),(4);
 INSERT IGNORE INTO t1 VALUES (2),(4);
+--sorted_result
 SELECT * FROM t1;
 #BUG #SEQUOIASQLMAINSTREAM-661
 #--error ER_NO_PARTITION_FOR_GIVEN_VALUE
@@ -514,6 +515,7 @@ UPDATE t1 SET a=a+1 order by a;
 #SequoiaDB sharding key cannot be updated
 --error 40178
 UPDATE IGNORE t1 SET a=a+1; 
+--sorted_result
 SELECT * FROM t1;
 DROP TABLE t1;
 

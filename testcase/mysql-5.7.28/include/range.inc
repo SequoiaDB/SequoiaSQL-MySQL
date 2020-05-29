@@ -1737,6 +1737,7 @@ INSERT INTO t1 VALUES (1,5,1),(2,4,1),(3,3,1),(4,2,1),(5,1,1);
 #SequoiaDB sharding key cannot be updated
 --error 40178
 UPDATE t1 SET b = 0, c=1 WHERE a <=>0;
+--sorted_result
 SELECT * FROM t1;
 DROP TABLE t1;
 
@@ -2706,18 +2707,23 @@ ORDER BY c
 LIMIT 1;
 
 # test with descending order
+#let query2=
+#SELECT *
+#FROM test_ref
+#WHERE id=3 AND c LIKE 'gh%'
+#ORDER BY c DESC
+#LIMIT 1;
 let query2=
 SELECT *
 FROM test_ref
 WHERE id=3 AND c LIKE 'gh%'
-ORDER BY c DESC
+ORDER BY c DESC, a DESC
 LIMIT 1;
 
 #eval EXPLAIN $query1;
 eval $query1;
 
 #eval EXPLAIN $query2;
-#SEQUOIASQLMAINSTREAM-644
 #The result is not the same as innodb when engine set sequoiadb, modify the expect result
 eval $query2;
 

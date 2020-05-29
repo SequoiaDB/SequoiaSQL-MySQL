@@ -127,8 +127,10 @@ SELECT TRACE FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
 # Fetching whole row for (0x205) c = 17 (2,2,17)
 # Fetching whole row for (0x206) c = 20 (2,2,20)
 
+--sorted_result
 SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
 SET SESSION optimizer_switch="index_merge_union=off";
+--sorted_result
 SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
 #EXPLAIN SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
 

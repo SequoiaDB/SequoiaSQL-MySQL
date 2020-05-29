@@ -659,26 +659,26 @@ INSERT INTO `t5` VALUES (19, 'ttttttt', '1999-08-02 00:00:00');
 INSERT INTO `t5` VALUES (20, 'uuuuuuu', '1994-05-28 00:00:00');
 SELECT * FROM `t5`;
 id	name	purchased
-2	bbbbbbb	2005-08-05
-4	ddddddd	2000-01-01
-6	fffffff	2003-11-12
 1	aaaaaaa	2006-01-05
-5	eeeeeee	1999-12-01
-12	mmmmmmm	1994-01-05
-19	ttttttt	1999-08-02
-7	ggggggg	1990-01-05
 10	jjjjjjj	1992-01-05
 11	kkkkkkk	1993-01-05
-20	uuuuuuu	1994-05-28
-3	ccccccc	1985-08-07
-8	hhhhhhh	1978-01-05
+12	mmmmmmm	1994-01-05
 13	nnnnnnn	1989-01-05
 14	ooooooo	1983-12-05
-18	sssssss	1950-09-23
-9	iiiiiii	1979-01-05
 15	ppppppp	1986-06-05
 16	qqqqqqq	1974-04-11
 17	qqqqqqq	1960-03-15
+18	sssssss	1950-09-23
+19	ttttttt	1999-08-02
+2	bbbbbbb	2005-08-05
+20	uuuuuuu	1994-05-28
+3	ccccccc	1985-08-07
+4	ddddddd	2000-01-01
+5	eeeeeee	1999-12-01
+6	fffffff	2003-11-12
+7	ggggggg	1990-01-05
+8	hhhhhhh	1978-01-05
+9	iiiiiii	1979-01-05
 SELECT * FROM `t5` PARTITION(p0) ORDER BY id;
 id	name	purchased
 3	ccccccc	1985-08-07

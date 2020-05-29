@@ -6,9 +6,6 @@ CREATE TABLE t1
 (a INT)
 PARTITION BY KEY(a) PARTITIONS 3;
 ALTER TABLE t1 REPAIR PARTITION p2,p3,p1;
-Table	Op	Msg_type	Msg_text
-test_parallel_1.t1	repair	Error	Error in list of partitions to test_parallel_1.t1
-test_parallel_1.t1	repair	status	Operation failed
 ALTER TABLE t1 ORDER BY a;
 DROP TABLE t1;
 #

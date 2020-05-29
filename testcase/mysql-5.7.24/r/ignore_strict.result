@@ -508,20 +508,20 @@ Warnings:
 Warning	1526	Table has no partition for value 4
 SELECT * FROM t1;
 a
+2
+2
 3
-2
 5
-2
 UPDATE t1 SET a=a+1 order by a;
 ERROR HY000: Sharding key cannot be updated
 UPDATE IGNORE t1 SET a=a+1;
 ERROR HY000: Sharding key cannot be updated
 SELECT * FROM t1;
 a
+2
+2
 3
-2
 5
-2
 DROP TABLE t1;
 CREATE TABLE t1 (a INT) ENGINE = SEQUOIADB;
 INSERT INTO t1 VALUES (1),(NULL),(2);

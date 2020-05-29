@@ -50,36 +50,36 @@ SET SESSION optimizer_switch="index_merge_union=on";
 SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
 a	b	c
 1	2	13
-2	2	17
-2	2	20
 1	2	24
-2	2	25
+1	2	99
+1	2	99
+1	2	99
+1	2	99
 2	1	28
 2	1	98
 2	1	98
 2	1	98
 2	1	98
-1	2	99
-1	2	99
-1	2	99
-1	2	99
+2	2	17
+2	2	20
+2	2	25
 SET SESSION optimizer_switch="index_merge_union=off";
 SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
 a	b	c
-2	2	25
-2	1	28
-2	1	98
-2	1	98
-2	1	98
-2	1	98
 1	2	13
-2	2	17
-2	2	20
 1	2	24
 1	2	99
 1	2	99
 1	2	99
 1	2	99
+2	1	28
+2	1	98
+2	1	98
+2	1	98
+2	1	98
+2	2	17
+2	2	20
+2	2	25
 Insert a few more rows to trigger sort_union
 INSERT INTO t1 SELECT 1, 1, 97 FROM t2, t2 t3 LIMIT 48;
 ANALYZE TABLE t1;

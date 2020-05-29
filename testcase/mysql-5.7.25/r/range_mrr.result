@@ -2025,9 +2025,9 @@ SELECT * FROM t1;
 a	b	c
 1	5	1
 2	4	1
-5	1	1
 3	3	1
 4	2	1
+5	1	1
 DROP TABLE t1;
 #
 # BUG#13256446 - ASSERTION QUICK->HEAD->READ_SET ==
@@ -2560,9 +2560,9 @@ a	b	c	d	id
 SELECT *
 FROM test_ref
 WHERE id=3 AND c LIKE 'gh%'
-ORDER BY c DESC
+ORDER BY c DESC, a DESC
 LIMIT 1;
 a	b	c	d	id
-1770399	D003	gheennse	S	3
+1770649	D003	gheennse	S	3
 DROP TABLE test_ref;
 set optimizer_switch=default;

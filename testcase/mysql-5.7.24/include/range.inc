@@ -1737,6 +1737,7 @@ INSERT INTO t1 VALUES (1,5,1),(2,4,1),(3,3,1),(4,2,1),(5,1,1);
 #SequoiaDB sharding key cannot be updated
 --error 40178
 UPDATE t1 SET b = 0, c=1 WHERE a <=>0;
+--sorted_result
 SELECT * FROM t1;
 DROP TABLE t1;
 

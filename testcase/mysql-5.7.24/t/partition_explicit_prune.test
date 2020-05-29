@@ -762,6 +762,7 @@ INSERT INTO `t5` VALUES (18, 'sssssss', '1950-09-23 00:00:00');
 INSERT INTO `t5` VALUES (19, 'ttttttt', '1999-08-02 00:00:00');
 INSERT INTO `t5` VALUES (20, 'uuuuuuu', '1994-05-28 00:00:00');
 
+--sorted_result
 SELECT * FROM `t5`;
 SELECT * FROM `t5` PARTITION(p0) ORDER BY id;
 #cannot specify HASH or KEY partitions
