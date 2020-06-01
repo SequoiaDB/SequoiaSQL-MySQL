@@ -493,10 +493,10 @@ c
 delete from t1;
 select * from t1;
 a
-insert into t1 values(repeat('a',16773074));
+insert into t1 values(repeat('a',16773062));
 select length(a) from t1;
 length(a)
-16773074
+16773062
 insert into t1 values(repeat('a',16773075));
 ERROR HY000: User record is too large
 drop table t1;
@@ -514,10 +514,10 @@ c
 delete from t1;
 select * from t1;
 a
-insert into t1 values(repeat('a',16773074));
+insert into t1 values(repeat('a',16773062));
 select length(a) from t1;
 length(a)
-16773074
+16773062
 insert into t1 values(repeat('a',16773075));
 ERROR HY000: User record is too large
 drop table t1;
@@ -575,10 +575,10 @@ c
 delete from t1;
 select * from t1;
 a
-insert into t1 values(repeat('a',16773074));
+insert into t1 values(repeat('a',16773062));
 select length(a) from t1;
 length(a)
-16773074
+16773062
 insert into t1 values(repeat('a',16773075));
 ERROR HY000: User record is too large
 drop table t1;
@@ -596,10 +596,10 @@ c
 delete from t1;
 select * from t1;
 a
-insert into t1 values(repeat('a',16773074));
+insert into t1 values(repeat('a',16773062));
 select length(a) from t1;
 length(a)
-16773074
+16773062
 insert into t1 values(repeat('a',16773075));
 ERROR HY000: User record is too large
 drop table t1;

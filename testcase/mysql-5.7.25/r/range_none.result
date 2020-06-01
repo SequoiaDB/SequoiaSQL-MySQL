@@ -2542,9 +2542,9 @@ a	b	c	d	id
 SELECT *
 FROM test_ref
 WHERE id=3 AND c LIKE 'gh%'
-ORDER BY c DESC
+ORDER BY c DESC, a DESC
 LIMIT 1;
 a	b	c	d	id
-1770399	D003	gheennse	S	3
+1770649	D003	gheennse	S	3
 DROP TABLE test_ref;
 set optimizer_switch=default;

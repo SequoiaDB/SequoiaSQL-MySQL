@@ -2703,11 +2703,17 @@ ORDER BY c
 LIMIT 1;
 
 # test with descending order
+#let query2=
+#SELECT *
+#FROM test_ref
+#WHERE id=3 AND c LIKE 'gh%'
+#ORDER BY c DESC
+#LIMIT 1;
 let query2=
 SELECT *
 FROM test_ref
 WHERE id=3 AND c LIKE 'gh%'
-ORDER BY c DESC
+ORDER BY c DESC, a DESC
 LIMIT 1;
 
 #eval EXPLAIN $query1;
