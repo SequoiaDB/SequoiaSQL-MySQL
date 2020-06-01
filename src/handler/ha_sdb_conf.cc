@@ -128,7 +128,7 @@ static MYSQL_SYSVAR_STR(token, sdb_password_token,
 static MYSQL_SYSVAR_STR(cipherfile, sdb_password_cipherfile,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
                         "SequoiaDB authentication cipherfile. "
-                        "(Default: \"/opt/sequoiadb/passwd\")"
+                        "(Default: \"~/sequoiadb/passwd\")"
                         /*SequoiaDB 鉴权密码文件路径。*/,
                         NULL, NULL, SDB_DEFAULT_CIPHERFILE);
 // SDB_DOC_OPT = IGNORE
