@@ -48,36 +48,6 @@ endif()
 
 project(${PROJECT_NAME})
 
-set(VERSION_FILE ${CMAKE_SOURCE_DIR}/version)
-execute_process(
-   COMMAND bash -c "awk -F. '{print $1}' ${VERSION_FILE}"
-   OUTPUT_VARIABLE PROJECT_VERSION_MAJOR
-)
-string(STRIP ${PROJECT_VERSION_MAJOR} PROJECT_VERSION_MAJOR)
-execute_process(
-   COMMAND bash -c "awk -F. '{print $2}' ${VERSION_FILE}"
-   OUTPUT_VARIABLE PROJECT_VERSION_MINOR
-)
-string(STRIP ${PROJECT_VERSION_MINOR} PROJECT_VERSION_MINOR)
-execute_process(
-   COMMAND bash -c "grep -o '\\.' ${VERSION_FILE}"
-   COMMAND bash -c "wc -l"
-   OUTPUT_VARIABLE DOT_NUMBER
-)
-
-# Check if the version number contains path version.
-if(DOT_NUMBER EQUAL 2)
-   execute_process(
-      COMMAND bash -c "awk -F. '{print $3}' ${VERSION_FILE}"
-      OUTPUT_VARIABLE PROJECT_VERSION_PATCH
-   )
-   string(STRIP ${PROJECT_VERSION_PATCH} PROJECT_VERSION_PATCH)
-   set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
-else()
-   unset(PROJECT_VERSION_PATCH)
-   set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
-endif()
-
 if(MYSQL STREQUAL "5.7.28")
    set(WITH_SSL "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
 endif()
@@ -177,8 +147,9 @@ function(gen_version_file)
       set(BUILD_TYPE_STR " (${BUILD_TYPE_STR})")
    endif()
 
-   set(FULL_VERSION "${PROJECT_NAME} version: ${PROJECT_VERSION}\nGit version: ${SDB_PLUGIN_VERSION}\n${BUILDDATE}${BUILD_TYPE_STR}\n\nSDB driver: ${SDB_VERSION}(${SDB_GIT_VERSION})\n")
+   set(FULL_VERSION "${PROJECT_NAME} version: ${SDB_VERSION}\nGit version: ${SDB_PLUGIN_VERSION}\n${BUILDDATE}${BUILD_TYPE_STR}\n\nSDB driver: ${SDB_VERSION}(${SDB_GIT_VERSION})\n")
    file(WRITE ${CMAKE_BINARY_DIR}/version.info ${FULL_VERSION})
+   file(WRITE ${CMAKE_SOURCE_DIR}/version ${SDB_VERSION})
 endfunction()
 
 function(prepare_sql_source sql_source_root sql_name)
@@ -201,6 +172,38 @@ function(prepare_sql_source sql_source_root sql_name)
       )
    endif()
 endfunction()
+
+# Generate the version.info file
+gen_version_file()
+set(VERSION_FILE ${CMAKE_SOURCE_DIR}/version)
+execute_process(
+   COMMAND bash -c "awk -F. '{print $1}' ${VERSION_FILE}"
+   OUTPUT_VARIABLE PROJECT_VERSION_MAJOR
+)
+string(STRIP ${PROJECT_VERSION_MAJOR} PROJECT_VERSION_MAJOR)
+execute_process(
+   COMMAND bash -c "awk -F. '{print $2}' ${VERSION_FILE}"
+   OUTPUT_VARIABLE PROJECT_VERSION_MINOR
+)
+string(STRIP ${PROJECT_VERSION_MINOR} PROJECT_VERSION_MINOR)
+execute_process(
+   COMMAND bash -c "grep -o '\\.' ${VERSION_FILE}"
+   COMMAND bash -c "wc -l"
+   OUTPUT_VARIABLE DOT_NUMBER
+)
+
+# Check if the version number contains path version.
+if(DOT_NUMBER EQUAL 2)
+   execute_process(
+      COMMAND bash -c "awk -F. '{print $3}' ${VERSION_FILE}"
+      OUTPUT_VARIABLE PROJECT_VERSION_PATCH
+   )
+   string(STRIP ${PROJECT_VERSION_PATCH} PROJECT_VERSION_PATCH)
+   set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+else()
+   unset(PROJECT_VERSION_PATCH)
+   set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+endif()
 
 set(SQL_SOURCE_DIR_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}")
 set(SQL_SOURCE_ROOT "${CMAKE_SOURCE_DIR}/sql-src/${SQL_SOURCE_DIR_NAME}")
@@ -314,9 +317,6 @@ if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND
       endif()
    endif()
 endif()
-
-# Generate the version.info file
-gen_version_file()
 
 set(mapSrcCmd "ln -sf ${SQL_CONNECTOR_DIR} ${SQL_STORAGE_DIR}/sequoiadb")
 execute_process(COMMAND bash -c ${mapSrcCmd})
