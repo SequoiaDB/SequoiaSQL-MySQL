@@ -5871,44 +5871,63 @@ where c like '_dou%';
 select c, _dat from at
 where c like '_dat%';
 --replace_regex /2015-01-15 23:24:25/--EXPECTED_DATETIME--/ /[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}/--DATETIME--/
+--sorted_result
 select c, _dtt from at
 where c like '_dtt%';
 --replace_regex /2015-01-15 23:24:25/--EXPECTED_TIMESTAMP--/ /[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}/--TIMESTAMP--/
+--sorted_result
 select c, _smp from at
 where c like '_smp%';
 --replace_regex /23:24:25/--EXPECTED_TIME--/ /[0-9]{2}:[0-9]{2}:[0-9]{2}/--TIME--/
+--sorted_result
 select c, _tim from at
 where c like '_tim%';
+--sorted_result
 select c, _yea from at
 where c like '_yea%';
+--sorted_result
 select c, _jsn from at
 where c like '_jsn%';
+--sorted_result
 select c, _chr from at
 where c like '_chr%';
+--sorted_result
 select c, _vch from at
 where c like '_vch%';
+--sorted_result
 select c, replace(_bin, '\0', '') from at
 where c like '_bin%';
+--sorted_result
 select c, _vbn from at
 where c like '_vbn%';
+--sorted_result
 select c, _tbl from at
 where c like '_tbl%';
+--sorted_result
 select c, _ttx from at
 where c like '_ttx%';
+--sorted_result
 select c, _blb from at
 where c like '_blb%';
+--sorted_result
 select c, _txt from at
 where c like '_txt%';
+--sorted_result
 select c, _mbb from at
 where c like '_mbb%';
+--sorted_result
 select c, _mtx from at
 where c like '_mtx%';
+--sorted_result
 select c, _lbb from at
 where c like '_lbb%';
+--sorted_result
 select c, _ltx from at
 where c like '_ltx%';
+--sorted_result
 select c, _enu from at
 where c like '_enu%';
+--sorted_result
 select c, _set from at
 where c like '_set%';
 

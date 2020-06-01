@@ -6129,1221 +6129,1221 @@ _dat: opaque_mysql_type_var_string	NULL
 select c, _dtt from at
 where c like '_dtt%';
 c	_dtt
-_dtt: opaque_mysql_type_date	--DATETIME--
-_dtt: opaque_mysql_type_time	--DATETIME--
-_dtt: opaque_mysql_type_datetime	--EXPECTED_DATETIME--
-_dtt: opaque_mysql_type_varbinary	NULL
 _dtt: opaque_mysql_type_binary	NULL
-_dtt: opaque_mysql_type_string	NULL
+_dtt: opaque_mysql_type_binary	NULL
 _dtt: opaque_mysql_type_binary	NULL
 _dtt: opaque_mysql_type_date	--DATETIME--
-_dtt: opaque_mysql_type_time	--DATETIME--
-_dtt: opaque_mysql_type_datetime	--EXPECTED_DATETIME--
-_dtt: opaque_mysql_type_varbinary	NULL
-_dtt: opaque_mysql_type_string	NULL
 _dtt: opaque_mysql_type_date	--DATETIME--
-_dtt: opaque_mysql_type_time	--DATETIME--
+_dtt: opaque_mysql_type_date	--DATETIME--
 _dtt: opaque_mysql_type_datetime	--EXPECTED_DATETIME--
-_dtt: opaque_mysql_type_varbinary	NULL
-_dtt: opaque_mysql_type_binary	NULL
+_dtt: opaque_mysql_type_datetime	--EXPECTED_DATETIME--
+_dtt: opaque_mysql_type_datetime	--EXPECTED_DATETIME--
 _dtt: opaque_mysql_type_string	NULL
+_dtt: opaque_mysql_type_string	NULL
+_dtt: opaque_mysql_type_string	NULL
+_dtt: opaque_mysql_type_time	--DATETIME--
+_dtt: opaque_mysql_type_time	--DATETIME--
+_dtt: opaque_mysql_type_time	--DATETIME--
+_dtt: opaque_mysql_type_varbinary	NULL
+_dtt: opaque_mysql_type_varbinary	NULL
+_dtt: opaque_mysql_type_varbinary	NULL
 select c, _smp from at
 where c like '_smp%';
 c	_smp
-_smp: opaque_mysql_type_date	--TIMESTAMP--
-_smp: opaque_mysql_type_time	--TIMESTAMP--
-_smp: opaque_mysql_type_datetime	--EXPECTED_TIMESTAMP--
-_smp: opaque_mysql_type_varbinary	--TIMESTAMP--
 _smp: opaque_mysql_type_binary	--TIMESTAMP--
-_smp: opaque_mysql_type_string	--TIMESTAMP--
-_smp: opaque_mysql_type_var_string	--TIMESTAMP--
-_smp: opaque_mysql_type_date	--TIMESTAMP--
-_smp: opaque_mysql_type_time	--TIMESTAMP--
-_smp: opaque_mysql_type_datetime	--EXPECTED_TIMESTAMP--
-_smp: opaque_mysql_type_varbinary	--TIMESTAMP--
 _smp: opaque_mysql_type_binary	--TIMESTAMP--
-_smp: opaque_mysql_type_string	--TIMESTAMP--
-_smp: opaque_mysql_type_var_string	--TIMESTAMP--
-_smp: opaque_mysql_type_date	--TIMESTAMP--
-_smp: opaque_mysql_type_time	--TIMESTAMP--
-_smp: opaque_mysql_type_datetime	--EXPECTED_TIMESTAMP--
-_smp: opaque_mysql_type_varbinary	--TIMESTAMP--
 _smp: opaque_mysql_type_binary	--TIMESTAMP--
+_smp: opaque_mysql_type_date	--TIMESTAMP--
+_smp: opaque_mysql_type_date	--TIMESTAMP--
+_smp: opaque_mysql_type_date	--TIMESTAMP--
+_smp: opaque_mysql_type_datetime	--EXPECTED_TIMESTAMP--
+_smp: opaque_mysql_type_datetime	--EXPECTED_TIMESTAMP--
+_smp: opaque_mysql_type_datetime	--EXPECTED_TIMESTAMP--
 _smp: opaque_mysql_type_string	--TIMESTAMP--
+_smp: opaque_mysql_type_string	--TIMESTAMP--
+_smp: opaque_mysql_type_string	--TIMESTAMP--
+_smp: opaque_mysql_type_time	--TIMESTAMP--
+_smp: opaque_mysql_type_time	--TIMESTAMP--
+_smp: opaque_mysql_type_time	--TIMESTAMP--
 _smp: opaque_mysql_type_var_string	--TIMESTAMP--
+_smp: opaque_mysql_type_var_string	--TIMESTAMP--
+_smp: opaque_mysql_type_var_string	--TIMESTAMP--
+_smp: opaque_mysql_type_varbinary	--TIMESTAMP--
+_smp: opaque_mysql_type_varbinary	--TIMESTAMP--
+_smp: opaque_mysql_type_varbinary	--TIMESTAMP--
 select c, _tim from at
 where c like '_tim%';
 c	_tim
-_tim: opaque_mysql_type_date	--TIME--
-_tim: opaque_mysql_type_time	--EXPECTED_TIME--
-_tim: opaque_mysql_type_datetime	--EXPECTED_TIME--
-_tim: opaque_mysql_type_varbinary	NULL
 _tim: opaque_mysql_type_binary	NULL
-_tim: opaque_mysql_type_string	NULL
-_tim: opaque_mysql_type_var_string	NULL
-_tim: opaque_mysql_type_date	--TIME--
-_tim: opaque_mysql_type_time	--EXPECTED_TIME--
-_tim: opaque_mysql_type_datetime	--EXPECTED_TIME--
-_tim: opaque_mysql_type_varbinary	NULL
 _tim: opaque_mysql_type_binary	NULL
-_tim: opaque_mysql_type_string	NULL
-_tim: opaque_mysql_type_var_string	NULL
-_tim: opaque_mysql_type_date	--TIME--
-_tim: opaque_mysql_type_time	--EXPECTED_TIME--
-_tim: opaque_mysql_type_datetime	--EXPECTED_TIME--
-_tim: opaque_mysql_type_varbinary	NULL
 _tim: opaque_mysql_type_binary	NULL
+_tim: opaque_mysql_type_date	--TIME--
+_tim: opaque_mysql_type_date	--TIME--
+_tim: opaque_mysql_type_date	--TIME--
+_tim: opaque_mysql_type_datetime	--EXPECTED_TIME--
+_tim: opaque_mysql_type_datetime	--EXPECTED_TIME--
+_tim: opaque_mysql_type_datetime	--EXPECTED_TIME--
 _tim: opaque_mysql_type_string	NULL
+_tim: opaque_mysql_type_string	NULL
+_tim: opaque_mysql_type_string	NULL
+_tim: opaque_mysql_type_time	--EXPECTED_TIME--
+_tim: opaque_mysql_type_time	--EXPECTED_TIME--
+_tim: opaque_mysql_type_time	--EXPECTED_TIME--
 _tim: opaque_mysql_type_var_string	NULL
+_tim: opaque_mysql_type_var_string	NULL
+_tim: opaque_mysql_type_var_string	NULL
+_tim: opaque_mysql_type_varbinary	NULL
+_tim: opaque_mysql_type_varbinary	NULL
+_tim: opaque_mysql_type_varbinary	NULL
 select c, _yea from at
 where c like '_yea%';
 c	_yea
-_yea: uint	2012
-_yea: int	2012
 _yea: double	2003
-_yea: opaque_mysql_type_decimal	2003
-_yea: opaque_mysql_type_varbinary	NULL
+_yea: double	2003
+_yea: double	2003
+_yea: int	2012
+_yea: int	2012
+_yea: int	2012
 _yea: opaque_mysql_type_binary	NULL
+_yea: opaque_mysql_type_binary	NULL
+_yea: opaque_mysql_type_binary	NULL
+_yea: opaque_mysql_type_decimal	2003
+_yea: opaque_mysql_type_decimal	2003
+_yea: opaque_mysql_type_decimal	2003
+_yea: opaque_mysql_type_string	NULL
+_yea: opaque_mysql_type_string	NULL
 _yea: opaque_mysql_type_string	NULL
 _yea: opaque_mysql_type_var_string	NULL
-_yea: uint	2012
-_yea: int	2012
-_yea: double	2003
-_yea: opaque_mysql_type_decimal	2003
-_yea: opaque_mysql_type_varbinary	NULL
-_yea: opaque_mysql_type_binary	NULL
-_yea: opaque_mysql_type_string	NULL
 _yea: opaque_mysql_type_var_string	NULL
-_yea: uint	2012
-_yea: int	2012
-_yea: double	2003
-_yea: opaque_mysql_type_decimal	2003
-_yea: opaque_mysql_type_varbinary	NULL
-_yea: opaque_mysql_type_binary	NULL
-_yea: opaque_mysql_type_string	NULL
 _yea: opaque_mysql_type_var_string	NULL
+_yea: opaque_mysql_type_varbinary	NULL
+_yea: opaque_mysql_type_varbinary	NULL
+_yea: opaque_mysql_type_varbinary	NULL
+_yea: uint	2012
+_yea: uint	2012
+_yea: uint	2012
 select c, _jsn from at
 where c like '_jsn%';
 c	_jsn
-_jsn: null	null
-_jsn: bool	true
-_jsn: uint	12
-_jsn: int	12
-_jsn: double	3.14
-_jsn: stringany	"a"
-_jsn: stringint	"1"
-_jsn: stringdecimal	"3.14"
-_jsn: object	{"a": 3}
 _jsn: array	[1, 2]
-_jsn: opaque_mysql_type_decimal	3.14
-_jsn: opaque_mysql_type_set	"b,c"
-_jsn: opaque_mysql_type_enum	"b"
-_jsn: opaque_mysql_type_date	"2015-01-15"
-_jsn: opaque_mysql_type_time	"23:24:25.000000"
-_jsn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_jsn: array	[1, 2]
+_jsn: array	[1, 2]
+_jsn: bool	true
+_jsn: bool	true
+_jsn: bool	true
+_jsn: double	3.14
+_jsn: double	3.14
+_jsn: double	3.14
+_jsn: int	12
+_jsn: int	12
+_jsn: int	12
+_jsn: null	null
+_jsn: null	null
+_jsn: null	null
+_jsn: object	{"a": 3}
+_jsn: object	{"a": 3}
+_jsn: object	{"a": 3}
+_jsn: opaque_mysql_type_binary	NULL
+_jsn: opaque_mysql_type_binary	NULL
+_jsn: opaque_mysql_type_binary	NULL
 _jsn: opaque_mysql_type_bit	"base64:type16:yv4="
-_jsn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_jsn: opaque_mysql_type_bit	"base64:type16:yv4="
+_jsn: opaque_mysql_type_bit	"base64:type16:yv4="
 _jsn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_jsn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_jsn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_jsn: opaque_mysql_type_date	"2015-01-15"
+_jsn: opaque_mysql_type_date	"2015-01-15"
+_jsn: opaque_mysql_type_date	"2015-01-15"
+_jsn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_jsn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_jsn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_jsn: opaque_mysql_type_decimal	3.14
+_jsn: opaque_mysql_type_decimal	3.14
+_jsn: opaque_mysql_type_decimal	3.14
+_jsn: opaque_mysql_type_enum	"b"
+_jsn: opaque_mysql_type_enum	"b"
+_jsn: opaque_mysql_type_enum	"b"
+_jsn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_jsn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _jsn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _jsn: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_jsn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_jsn: opaque_mysql_type_varbinary	NULL
-_jsn: opaque_mysql_type_binary	NULL
-_jsn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_jsn: opaque_mysql_type_string	NULL
-_jsn: opaque_mysql_type_var_string	NULL
-_jsn: null	null
-_jsn: bool	true
-_jsn: uint	12
-_jsn: int	12
-_jsn: double	3.14
-_jsn: stringany	"a"
-_jsn: stringint	"1"
-_jsn: stringdecimal	"3.14"
-_jsn: object	{"a": 3}
-_jsn: array	[1, 2]
-_jsn: opaque_mysql_type_decimal	3.14
-_jsn: opaque_mysql_type_set	"b,c"
-_jsn: opaque_mysql_type_enum	"b"
-_jsn: opaque_mysql_type_date	"2015-01-15"
-_jsn: opaque_mysql_type_time	"23:24:25.000000"
-_jsn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_jsn: opaque_mysql_type_bit	"base64:type16:yv4="
-_jsn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_jsn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_jsn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _jsn: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_jsn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_jsn: opaque_mysql_type_varbinary	NULL
-_jsn: opaque_mysql_type_binary	NULL
-_jsn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_jsn: opaque_mysql_type_string	NULL
-_jsn: opaque_mysql_type_var_string	NULL
-_jsn: null	null
-_jsn: bool	true
-_jsn: uint	12
-_jsn: int	12
-_jsn: double	3.14
-_jsn: stringany	"a"
-_jsn: stringint	"1"
-_jsn: stringdecimal	"3.14"
-_jsn: object	{"a": 3}
-_jsn: array	[1, 2]
-_jsn: opaque_mysql_type_decimal	3.14
-_jsn: opaque_mysql_type_set	"b,c"
-_jsn: opaque_mysql_type_enum	"b"
-_jsn: opaque_mysql_type_date	"2015-01-15"
-_jsn: opaque_mysql_type_time	"23:24:25.000000"
-_jsn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_jsn: opaque_mysql_type_bit	"base64:type16:yv4="
-_jsn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_jsn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_jsn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _jsn: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_jsn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_jsn: opaque_mysql_type_varbinary	NULL
-_jsn: opaque_mysql_type_binary	NULL
-_jsn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_jsn: opaque_mysql_type_set	"b,c"
+_jsn: opaque_mysql_type_set	"b,c"
+_jsn: opaque_mysql_type_set	"b,c"
 _jsn: opaque_mysql_type_string	NULL
+_jsn: opaque_mysql_type_string	NULL
+_jsn: opaque_mysql_type_string	NULL
+_jsn: opaque_mysql_type_time	"23:24:25.000000"
+_jsn: opaque_mysql_type_time	"23:24:25.000000"
+_jsn: opaque_mysql_type_time	"23:24:25.000000"
+_jsn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_jsn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_jsn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _jsn: opaque_mysql_type_var_string	NULL
+_jsn: opaque_mysql_type_var_string	NULL
+_jsn: opaque_mysql_type_var_string	NULL
+_jsn: opaque_mysql_type_varbinary	NULL
+_jsn: opaque_mysql_type_varbinary	NULL
+_jsn: opaque_mysql_type_varbinary	NULL
+_jsn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_jsn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_jsn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_jsn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_jsn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_jsn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_jsn: stringany	"a"
+_jsn: stringany	"a"
+_jsn: stringany	"a"
+_jsn: stringdecimal	"3.14"
+_jsn: stringdecimal	"3.14"
+_jsn: stringdecimal	"3.14"
+_jsn: stringint	"1"
+_jsn: stringint	"1"
+_jsn: stringint	"1"
+_jsn: uint	12
+_jsn: uint	12
+_jsn: uint	12
 select c, _chr from at
 where c like '_chr%';
 c	_chr
-_chr: null	null
-_chr: bool	true
-_chr: uint	12
-_chr: int	12
-_chr: double	3.14
-_chr: stringany	"a"
-_chr: stringint	"1"
-_chr: stringdecimal	"3.14"
-_chr: object	{"a": 3}
 _chr: array	[1, 2]
-_chr: opaque_mysql_type_decimal	3.14
-_chr: opaque_mysql_type_set	"b,c"
-_chr: opaque_mysql_type_enum	"b"
-_chr: opaque_mysql_type_date	"2015-01-15"
-_chr: opaque_mysql_type_time	"23:24:25.000000"
-_chr: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_chr: array	[1, 2]
+_chr: array	[1, 2]
+_chr: bool	true
+_chr: bool	true
+_chr: bool	true
+_chr: double	3.14
+_chr: double	3.14
+_chr: double	3.14
+_chr: int	12
+_chr: int	12
+_chr: int	12
+_chr: null	null
+_chr: null	null
+_chr: null	null
+_chr: object	{"a": 3}
+_chr: object	{"a": 3}
+_chr: object	{"a": 3}
+_chr: opaque_mysql_type_binary	NULL
+_chr: opaque_mysql_type_binary	NULL
+_chr: opaque_mysql_type_binary	NULL
 _chr: opaque_mysql_type_bit	"base64:type16:yv4="
-_chr: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_chr: opaque_mysql_type_bit	"base64:type16:yv4="
+_chr: opaque_mysql_type_bit	"base64:type16:yv4="
 _chr: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_chr: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_chr: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_chr: opaque_mysql_type_date	"2015-01-15"
+_chr: opaque_mysql_type_date	"2015-01-15"
+_chr: opaque_mysql_type_date	"2015-01-15"
+_chr: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_chr: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_chr: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_chr: opaque_mysql_type_decimal	3.14
+_chr: opaque_mysql_type_decimal	3.14
+_chr: opaque_mysql_type_decimal	3.14
+_chr: opaque_mysql_type_enum	"b"
+_chr: opaque_mysql_type_enum	"b"
+_chr: opaque_mysql_type_enum	"b"
+_chr: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_chr: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _chr: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _chr: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_chr: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_chr: opaque_mysql_type_varbinary	NULL
-_chr: opaque_mysql_type_binary	NULL
-_chr: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_chr: opaque_mysql_type_string	NULL
-_chr: opaque_mysql_type_var_string	NULL
-_chr: null	null
-_chr: bool	true
-_chr: uint	12
-_chr: int	12
-_chr: double	3.14
-_chr: stringany	"a"
-_chr: stringint	"1"
-_chr: stringdecimal	"3.14"
-_chr: object	{"a": 3}
-_chr: array	[1, 2]
-_chr: opaque_mysql_type_decimal	3.14
-_chr: opaque_mysql_type_set	"b,c"
-_chr: opaque_mysql_type_enum	"b"
-_chr: opaque_mysql_type_date	"2015-01-15"
-_chr: opaque_mysql_type_time	"23:24:25.000000"
-_chr: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_chr: opaque_mysql_type_bit	"base64:type16:yv4="
-_chr: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_chr: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_chr: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _chr: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_chr: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_chr: opaque_mysql_type_varbinary	NULL
-_chr: opaque_mysql_type_binary	NULL
-_chr: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_chr: opaque_mysql_type_string	NULL
-_chr: opaque_mysql_type_var_string	NULL
-_chr: null	null
-_chr: bool	true
-_chr: uint	12
-_chr: int	12
-_chr: double	3.14
-_chr: stringany	"a"
-_chr: stringint	"1"
-_chr: stringdecimal	"3.14"
-_chr: object	{"a": 3}
-_chr: array	[1, 2]
-_chr: opaque_mysql_type_decimal	3.14
-_chr: opaque_mysql_type_set	"b,c"
-_chr: opaque_mysql_type_enum	"b"
-_chr: opaque_mysql_type_date	"2015-01-15"
-_chr: opaque_mysql_type_time	"23:24:25.000000"
-_chr: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_chr: opaque_mysql_type_bit	"base64:type16:yv4="
-_chr: opaque_mysql_type_varbinary	NULL
-_chr: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_chr: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_chr: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _chr: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_chr: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_chr: opaque_mysql_type_binary	NULL
-_chr: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_chr: opaque_mysql_type_set	"b,c"
+_chr: opaque_mysql_type_set	"b,c"
+_chr: opaque_mysql_type_set	"b,c"
 _chr: opaque_mysql_type_string	NULL
+_chr: opaque_mysql_type_string	NULL
+_chr: opaque_mysql_type_string	NULL
+_chr: opaque_mysql_type_time	"23:24:25.000000"
+_chr: opaque_mysql_type_time	"23:24:25.000000"
+_chr: opaque_mysql_type_time	"23:24:25.000000"
+_chr: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_chr: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_chr: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _chr: opaque_mysql_type_var_string	NULL
+_chr: opaque_mysql_type_var_string	NULL
+_chr: opaque_mysql_type_var_string	NULL
+_chr: opaque_mysql_type_varbinary	NULL
+_chr: opaque_mysql_type_varbinary	NULL
+_chr: opaque_mysql_type_varbinary	NULL
+_chr: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_chr: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_chr: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_chr: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_chr: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_chr: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_chr: stringany	"a"
+_chr: stringany	"a"
+_chr: stringany	"a"
+_chr: stringdecimal	"3.14"
+_chr: stringdecimal	"3.14"
+_chr: stringdecimal	"3.14"
+_chr: stringint	"1"
+_chr: stringint	"1"
+_chr: stringint	"1"
+_chr: uint	12
+_chr: uint	12
+_chr: uint	12
 select c, _vch from at
 where c like '_vch%';
 c	_vch
-_vch: null	null
-_vch: bool	true
-_vch: uint	12
-_vch: int	12
-_vch: double	3.14
-_vch: stringany	"a"
-_vch: stringint	"1"
-_vch: stringdecimal	"3.14"
-_vch: object	{"a": 3}
 _vch: array	[1, 2]
-_vch: opaque_mysql_type_decimal	3.14
-_vch: opaque_mysql_type_set	"b,c"
-_vch: opaque_mysql_type_enum	"b"
-_vch: opaque_mysql_type_date	"2015-01-15"
-_vch: opaque_mysql_type_time	"23:24:25.000000"
-_vch: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_vch: array	[1, 2]
+_vch: array	[1, 2]
+_vch: bool	true
+_vch: bool	true
+_vch: bool	true
+_vch: double	3.14
+_vch: double	3.14
+_vch: double	3.14
+_vch: int	12
+_vch: int	12
+_vch: int	12
+_vch: null	null
+_vch: null	null
+_vch: null	null
+_vch: object	{"a": 3}
+_vch: object	{"a": 3}
+_vch: object	{"a": 3}
+_vch: opaque_mysql_type_binary	NULL
+_vch: opaque_mysql_type_binary	NULL
+_vch: opaque_mysql_type_binary	NULL
 _vch: opaque_mysql_type_bit	"base64:type16:yv4="
-_vch: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_vch: opaque_mysql_type_bit	"base64:type16:yv4="
+_vch: opaque_mysql_type_bit	"base64:type16:yv4="
 _vch: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_vch: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_vch: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_vch: opaque_mysql_type_date	"2015-01-15"
+_vch: opaque_mysql_type_date	"2015-01-15"
+_vch: opaque_mysql_type_date	"2015-01-15"
+_vch: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_vch: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_vch: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_vch: opaque_mysql_type_decimal	3.14
+_vch: opaque_mysql_type_decimal	3.14
+_vch: opaque_mysql_type_decimal	3.14
+_vch: opaque_mysql_type_enum	"b"
+_vch: opaque_mysql_type_enum	"b"
+_vch: opaque_mysql_type_enum	"b"
+_vch: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_vch: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _vch: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _vch: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_vch: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_vch: opaque_mysql_type_varbinary	NULL
-_vch: opaque_mysql_type_binary	NULL
-_vch: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_vch: opaque_mysql_type_string	NULL
-_vch: opaque_mysql_type_var_string	NULL
-_vch: null	null
-_vch: bool	true
-_vch: uint	12
-_vch: int	12
-_vch: double	3.14
-_vch: stringany	"a"
-_vch: stringint	"1"
-_vch: stringdecimal	"3.14"
-_vch: object	{"a": 3}
-_vch: array	[1, 2]
-_vch: opaque_mysql_type_decimal	3.14
-_vch: opaque_mysql_type_set	"b,c"
-_vch: opaque_mysql_type_enum	"b"
-_vch: opaque_mysql_type_date	"2015-01-15"
-_vch: opaque_mysql_type_time	"23:24:25.000000"
-_vch: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_vch: opaque_mysql_type_bit	"base64:type16:yv4="
-_vch: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_vch: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_vch: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _vch: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_vch: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_vch: opaque_mysql_type_varbinary	NULL
-_vch: opaque_mysql_type_binary	NULL
-_vch: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_vch: opaque_mysql_type_string	NULL
-_vch: opaque_mysql_type_var_string	NULL
-_vch: null	null
-_vch: bool	true
-_vch: uint	12
-_vch: int	12
-_vch: double	3.14
-_vch: stringany	"a"
-_vch: stringint	"1"
-_vch: stringdecimal	"3.14"
-_vch: object	{"a": 3}
-_vch: array	[1, 2]
-_vch: opaque_mysql_type_decimal	3.14
-_vch: opaque_mysql_type_set	"b,c"
-_vch: opaque_mysql_type_enum	"b"
-_vch: opaque_mysql_type_date	"2015-01-15"
-_vch: opaque_mysql_type_time	"23:24:25.000000"
-_vch: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_vch: opaque_mysql_type_bit	"base64:type16:yv4="
-_vch: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_vch: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_vch: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _vch: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_vch: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_vch: opaque_mysql_type_varbinary	NULL
-_vch: opaque_mysql_type_binary	NULL
-_vch: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_vch: opaque_mysql_type_set	"b,c"
+_vch: opaque_mysql_type_set	"b,c"
+_vch: opaque_mysql_type_set	"b,c"
 _vch: opaque_mysql_type_string	NULL
+_vch: opaque_mysql_type_string	NULL
+_vch: opaque_mysql_type_string	NULL
+_vch: opaque_mysql_type_time	"23:24:25.000000"
+_vch: opaque_mysql_type_time	"23:24:25.000000"
+_vch: opaque_mysql_type_time	"23:24:25.000000"
+_vch: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_vch: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_vch: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _vch: opaque_mysql_type_var_string	NULL
+_vch: opaque_mysql_type_var_string	NULL
+_vch: opaque_mysql_type_var_string	NULL
+_vch: opaque_mysql_type_varbinary	NULL
+_vch: opaque_mysql_type_varbinary	NULL
+_vch: opaque_mysql_type_varbinary	NULL
+_vch: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_vch: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_vch: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_vch: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_vch: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_vch: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_vch: stringany	"a"
+_vch: stringany	"a"
+_vch: stringany	"a"
+_vch: stringdecimal	"3.14"
+_vch: stringdecimal	"3.14"
+_vch: stringdecimal	"3.14"
+_vch: stringint	"1"
+_vch: stringint	"1"
+_vch: stringint	"1"
+_vch: uint	12
+_vch: uint	12
+_vch: uint	12
 select c, replace(_bin, '\0', '') from at
 where c like '_bin%';
 c	replace(_bin, '\0', '')
-_bin: null	null
-_bin: bool	true
-_bin: uint	12
-_bin: int	12
-_bin: double	3.14
-_bin: stringany	"a"
-_bin: stringint	"1"
-_bin: stringdecimal	"3.14"
-_bin: object	{"a": 3}
 _bin: array	[1, 2]
-_bin: opaque_mysql_type_decimal	3.14
-_bin: opaque_mysql_type_set	"b,c"
-_bin: opaque_mysql_type_enum	"b"
-_bin: opaque_mysql_type_date	"2015-01-15"
-_bin: opaque_mysql_type_time	"23:24:25.000000"
-_bin: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_bin: array	[1, 2]
+_bin: array	[1, 2]
+_bin: bool	true
+_bin: bool	true
+_bin: bool	true
+_bin: double	3.14
+_bin: double	3.14
+_bin: double	3.14
+_bin: int	12
+_bin: int	12
+_bin: int	12
+_bin: null	null
+_bin: null	null
+_bin: null	null
+_bin: object	{"a": 3}
+_bin: object	{"a": 3}
+_bin: object	{"a": 3}
+_bin: opaque_mysql_type_binary	NULL
+_bin: opaque_mysql_type_binary	NULL
+_bin: opaque_mysql_type_binary	NULL
 _bin: opaque_mysql_type_bit	"base64:type16:yv4="
-_bin: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_bin: opaque_mysql_type_bit	"base64:type16:yv4="
+_bin: opaque_mysql_type_bit	"base64:type16:yv4="
 _bin: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_bin: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_bin: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_bin: opaque_mysql_type_date	"2015-01-15"
+_bin: opaque_mysql_type_date	"2015-01-15"
+_bin: opaque_mysql_type_date	"2015-01-15"
+_bin: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_bin: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_bin: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_bin: opaque_mysql_type_decimal	3.14
+_bin: opaque_mysql_type_decimal	3.14
+_bin: opaque_mysql_type_decimal	3.14
+_bin: opaque_mysql_type_enum	"b"
+_bin: opaque_mysql_type_enum	"b"
+_bin: opaque_mysql_type_enum	"b"
+_bin: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_bin: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _bin: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _bin: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_bin: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_bin: opaque_mysql_type_varbinary	NULL
-_bin: opaque_mysql_type_binary	NULL
-_bin: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_bin: opaque_mysql_type_string	NULL
-_bin: opaque_mysql_type_var_string	NULL
-_bin: null	null
-_bin: bool	true
-_bin: uint	12
-_bin: int	12
-_bin: double	3.14
-_bin: stringany	"a"
-_bin: stringint	"1"
-_bin: stringdecimal	"3.14"
-_bin: object	{"a": 3}
-_bin: array	[1, 2]
-_bin: opaque_mysql_type_decimal	3.14
-_bin: opaque_mysql_type_set	"b,c"
-_bin: opaque_mysql_type_enum	"b"
-_bin: opaque_mysql_type_date	"2015-01-15"
-_bin: opaque_mysql_type_time	"23:24:25.000000"
-_bin: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_bin: opaque_mysql_type_bit	"base64:type16:yv4="
-_bin: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_bin: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_bin: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _bin: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_bin: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_bin: opaque_mysql_type_varbinary	NULL
-_bin: opaque_mysql_type_binary	NULL
-_bin: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_bin: opaque_mysql_type_string	NULL
-_bin: opaque_mysql_type_var_string	NULL
-_bin: null	null
-_bin: bool	true
-_bin: uint	12
-_bin: int	12
-_bin: double	3.14
-_bin: stringany	"a"
-_bin: stringint	"1"
-_bin: stringdecimal	"3.14"
-_bin: object	{"a": 3}
-_bin: array	[1, 2]
-_bin: opaque_mysql_type_decimal	3.14
-_bin: opaque_mysql_type_set	"b,c"
-_bin: opaque_mysql_type_enum	"b"
-_bin: opaque_mysql_type_date	"2015-01-15"
-_bin: opaque_mysql_type_time	"23:24:25.000000"
-_bin: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_bin: opaque_mysql_type_bit	"base64:type16:yv4="
-_bin: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_bin: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_bin: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _bin: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_bin: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_bin: opaque_mysql_type_varbinary	NULL
-_bin: opaque_mysql_type_binary	NULL
-_bin: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_bin: opaque_mysql_type_set	"b,c"
+_bin: opaque_mysql_type_set	"b,c"
+_bin: opaque_mysql_type_set	"b,c"
 _bin: opaque_mysql_type_string	NULL
+_bin: opaque_mysql_type_string	NULL
+_bin: opaque_mysql_type_string	NULL
+_bin: opaque_mysql_type_time	"23:24:25.000000"
+_bin: opaque_mysql_type_time	"23:24:25.000000"
+_bin: opaque_mysql_type_time	"23:24:25.000000"
+_bin: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_bin: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_bin: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _bin: opaque_mysql_type_var_string	NULL
+_bin: opaque_mysql_type_var_string	NULL
+_bin: opaque_mysql_type_var_string	NULL
+_bin: opaque_mysql_type_varbinary	NULL
+_bin: opaque_mysql_type_varbinary	NULL
+_bin: opaque_mysql_type_varbinary	NULL
+_bin: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_bin: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_bin: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_bin: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_bin: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_bin: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_bin: stringany	"a"
+_bin: stringany	"a"
+_bin: stringany	"a"
+_bin: stringdecimal	"3.14"
+_bin: stringdecimal	"3.14"
+_bin: stringdecimal	"3.14"
+_bin: stringint	"1"
+_bin: stringint	"1"
+_bin: stringint	"1"
+_bin: uint	12
+_bin: uint	12
+_bin: uint	12
 select c, _vbn from at
 where c like '_vbn%';
 c	_vbn
-_vbn: null	null
-_vbn: bool	true
-_vbn: uint	12
-_vbn: int	12
-_vbn: double	3.14
-_vbn: stringany	"a"
-_vbn: stringint	"1"
-_vbn: stringdecimal	"3.14"
-_vbn: object	{"a": 3}
 _vbn: array	[1, 2]
-_vbn: opaque_mysql_type_decimal	3.14
-_vbn: opaque_mysql_type_set	"b,c"
-_vbn: opaque_mysql_type_enum	"b"
-_vbn: opaque_mysql_type_date	"2015-01-15"
-_vbn: opaque_mysql_type_time	"23:24:25.000000"
-_vbn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_vbn: array	[1, 2]
+_vbn: array	[1, 2]
+_vbn: bool	true
+_vbn: bool	true
+_vbn: bool	true
+_vbn: double	3.14
+_vbn: double	3.14
+_vbn: double	3.14
+_vbn: int	12
+_vbn: int	12
+_vbn: int	12
+_vbn: null	null
+_vbn: null	null
+_vbn: null	null
+_vbn: object	{"a": 3}
+_vbn: object	{"a": 3}
+_vbn: object	{"a": 3}
+_vbn: opaque_mysql_type_binary	NULL
+_vbn: opaque_mysql_type_binary	NULL
+_vbn: opaque_mysql_type_binary	NULL
 _vbn: opaque_mysql_type_bit	"base64:type16:yv4="
-_vbn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_vbn: opaque_mysql_type_bit	"base64:type16:yv4="
+_vbn: opaque_mysql_type_bit	"base64:type16:yv4="
 _vbn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_vbn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_vbn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_vbn: opaque_mysql_type_date	"2015-01-15"
+_vbn: opaque_mysql_type_date	"2015-01-15"
+_vbn: opaque_mysql_type_date	"2015-01-15"
+_vbn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_vbn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_vbn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_vbn: opaque_mysql_type_decimal	3.14
+_vbn: opaque_mysql_type_decimal	3.14
+_vbn: opaque_mysql_type_decimal	3.14
+_vbn: opaque_mysql_type_enum	"b"
+_vbn: opaque_mysql_type_enum	"b"
+_vbn: opaque_mysql_type_enum	"b"
+_vbn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_vbn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _vbn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _vbn: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_vbn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_vbn: opaque_mysql_type_varbinary	NULL
-_vbn: opaque_mysql_type_binary	NULL
-_vbn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_vbn: opaque_mysql_type_string	NULL
-_vbn: opaque_mysql_type_var_string	NULL
-_vbn: null	null
-_vbn: bool	true
-_vbn: uint	12
-_vbn: int	12
-_vbn: double	3.14
-_vbn: stringany	"a"
-_vbn: stringint	"1"
-_vbn: stringdecimal	"3.14"
-_vbn: object	{"a": 3}
-_vbn: array	[1, 2]
-_vbn: opaque_mysql_type_decimal	3.14
-_vbn: opaque_mysql_type_set	"b,c"
-_vbn: opaque_mysql_type_enum	"b"
-_vbn: opaque_mysql_type_date	"2015-01-15"
-_vbn: opaque_mysql_type_time	"23:24:25.000000"
-_vbn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_vbn: opaque_mysql_type_bit	"base64:type16:yv4="
-_vbn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_vbn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_vbn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _vbn: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_vbn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_vbn: opaque_mysql_type_varbinary	NULL
-_vbn: opaque_mysql_type_binary	NULL
-_vbn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_vbn: opaque_mysql_type_string	NULL
-_vbn: opaque_mysql_type_var_string	NULL
-_vbn: null	null
-_vbn: bool	true
-_vbn: uint	12
-_vbn: int	12
-_vbn: double	3.14
-_vbn: stringany	"a"
-_vbn: stringint	"1"
-_vbn: stringdecimal	"3.14"
-_vbn: object	{"a": 3}
-_vbn: array	[1, 2]
-_vbn: opaque_mysql_type_decimal	3.14
-_vbn: opaque_mysql_type_set	"b,c"
-_vbn: opaque_mysql_type_enum	"b"
-_vbn: opaque_mysql_type_date	"2015-01-15"
-_vbn: opaque_mysql_type_time	"23:24:25.000000"
-_vbn: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_vbn: opaque_mysql_type_bit	"base64:type16:yv4="
-_vbn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_vbn: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_vbn: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _vbn: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_vbn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_vbn: opaque_mysql_type_varbinary	NULL
-_vbn: opaque_mysql_type_binary	NULL
-_vbn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_vbn: opaque_mysql_type_set	"b,c"
+_vbn: opaque_mysql_type_set	"b,c"
+_vbn: opaque_mysql_type_set	"b,c"
 _vbn: opaque_mysql_type_string	NULL
+_vbn: opaque_mysql_type_string	NULL
+_vbn: opaque_mysql_type_string	NULL
+_vbn: opaque_mysql_type_time	"23:24:25.000000"
+_vbn: opaque_mysql_type_time	"23:24:25.000000"
+_vbn: opaque_mysql_type_time	"23:24:25.000000"
+_vbn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_vbn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_vbn: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _vbn: opaque_mysql_type_var_string	NULL
+_vbn: opaque_mysql_type_var_string	NULL
+_vbn: opaque_mysql_type_var_string	NULL
+_vbn: opaque_mysql_type_varbinary	NULL
+_vbn: opaque_mysql_type_varbinary	NULL
+_vbn: opaque_mysql_type_varbinary	NULL
+_vbn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_vbn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_vbn: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_vbn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_vbn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_vbn: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_vbn: stringany	"a"
+_vbn: stringany	"a"
+_vbn: stringany	"a"
+_vbn: stringdecimal	"3.14"
+_vbn: stringdecimal	"3.14"
+_vbn: stringdecimal	"3.14"
+_vbn: stringint	"1"
+_vbn: stringint	"1"
+_vbn: stringint	"1"
+_vbn: uint	12
+_vbn: uint	12
+_vbn: uint	12
 select c, _tbl from at
 where c like '_tbl%';
 c	_tbl
-_tbl: null	null
-_tbl: bool	true
-_tbl: uint	12
-_tbl: int	12
-_tbl: double	3.14
-_tbl: stringany	"a"
-_tbl: stringint	"1"
-_tbl: stringdecimal	"3.14"
-_tbl: object	{"a": 3}
 _tbl: array	[1, 2]
-_tbl: opaque_mysql_type_decimal	3.14
-_tbl: opaque_mysql_type_set	"b,c"
-_tbl: opaque_mysql_type_enum	"b"
-_tbl: opaque_mysql_type_date	"2015-01-15"
-_tbl: opaque_mysql_type_time	"23:24:25.000000"
-_tbl: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_tbl: array	[1, 2]
+_tbl: array	[1, 2]
+_tbl: bool	true
+_tbl: bool	true
+_tbl: bool	true
+_tbl: double	3.14
+_tbl: double	3.14
+_tbl: double	3.14
+_tbl: int	12
+_tbl: int	12
+_tbl: int	12
+_tbl: null	null
+_tbl: null	null
+_tbl: null	null
+_tbl: object	{"a": 3}
+_tbl: object	{"a": 3}
+_tbl: object	{"a": 3}
+_tbl: opaque_mysql_type_binary	NULL
+_tbl: opaque_mysql_type_binary	NULL
+_tbl: opaque_mysql_type_binary	NULL
 _tbl: opaque_mysql_type_bit	"base64:type16:yv4="
-_tbl: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_tbl: opaque_mysql_type_bit	"base64:type16:yv4="
+_tbl: opaque_mysql_type_bit	"base64:type16:yv4="
 _tbl: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_tbl: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_tbl: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_tbl: opaque_mysql_type_date	"2015-01-15"
+_tbl: opaque_mysql_type_date	"2015-01-15"
+_tbl: opaque_mysql_type_date	"2015-01-15"
+_tbl: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_tbl: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_tbl: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_tbl: opaque_mysql_type_decimal	3.14
+_tbl: opaque_mysql_type_decimal	3.14
+_tbl: opaque_mysql_type_decimal	3.14
+_tbl: opaque_mysql_type_enum	"b"
+_tbl: opaque_mysql_type_enum	"b"
+_tbl: opaque_mysql_type_enum	"b"
+_tbl: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_tbl: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _tbl: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _tbl: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_tbl: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_tbl: opaque_mysql_type_varbinary	NULL
-_tbl: opaque_mysql_type_binary	NULL
-_tbl: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_tbl: opaque_mysql_type_string	NULL
-_tbl: opaque_mysql_type_var_string	NULL
-_tbl: null	null
-_tbl: bool	true
-_tbl: uint	12
-_tbl: int	12
-_tbl: double	3.14
-_tbl: stringany	"a"
-_tbl: stringint	"1"
-_tbl: stringdecimal	"3.14"
-_tbl: object	{"a": 3}
-_tbl: array	[1, 2]
-_tbl: opaque_mysql_type_decimal	3.14
-_tbl: opaque_mysql_type_set	"b,c"
-_tbl: opaque_mysql_type_enum	"b"
-_tbl: opaque_mysql_type_date	"2015-01-15"
-_tbl: opaque_mysql_type_time	"23:24:25.000000"
-_tbl: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_tbl: opaque_mysql_type_bit	"base64:type16:yv4="
-_tbl: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_tbl: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_tbl: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _tbl: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_tbl: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_tbl: opaque_mysql_type_varbinary	NULL
-_tbl: opaque_mysql_type_binary	NULL
-_tbl: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_tbl: opaque_mysql_type_string	NULL
-_tbl: opaque_mysql_type_var_string	NULL
-_tbl: null	null
-_tbl: bool	true
-_tbl: uint	12
-_tbl: int	12
-_tbl: double	3.14
-_tbl: stringany	"a"
-_tbl: stringint	"1"
-_tbl: stringdecimal	"3.14"
-_tbl: object	{"a": 3}
-_tbl: array	[1, 2]
-_tbl: opaque_mysql_type_decimal	3.14
-_tbl: opaque_mysql_type_set	"b,c"
-_tbl: opaque_mysql_type_enum	"b"
-_tbl: opaque_mysql_type_date	"2015-01-15"
-_tbl: opaque_mysql_type_time	"23:24:25.000000"
-_tbl: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_tbl: opaque_mysql_type_bit	"base64:type16:yv4="
-_tbl: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_tbl: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_tbl: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _tbl: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_tbl: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_tbl: opaque_mysql_type_varbinary	NULL
-_tbl: opaque_mysql_type_binary	NULL
-_tbl: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_tbl: opaque_mysql_type_set	"b,c"
+_tbl: opaque_mysql_type_set	"b,c"
+_tbl: opaque_mysql_type_set	"b,c"
 _tbl: opaque_mysql_type_string	NULL
+_tbl: opaque_mysql_type_string	NULL
+_tbl: opaque_mysql_type_string	NULL
+_tbl: opaque_mysql_type_time	"23:24:25.000000"
+_tbl: opaque_mysql_type_time	"23:24:25.000000"
+_tbl: opaque_mysql_type_time	"23:24:25.000000"
+_tbl: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_tbl: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_tbl: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _tbl: opaque_mysql_type_var_string	NULL
+_tbl: opaque_mysql_type_var_string	NULL
+_tbl: opaque_mysql_type_var_string	NULL
+_tbl: opaque_mysql_type_varbinary	NULL
+_tbl: opaque_mysql_type_varbinary	NULL
+_tbl: opaque_mysql_type_varbinary	NULL
+_tbl: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_tbl: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_tbl: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_tbl: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_tbl: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_tbl: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_tbl: stringany	"a"
+_tbl: stringany	"a"
+_tbl: stringany	"a"
+_tbl: stringdecimal	"3.14"
+_tbl: stringdecimal	"3.14"
+_tbl: stringdecimal	"3.14"
+_tbl: stringint	"1"
+_tbl: stringint	"1"
+_tbl: stringint	"1"
+_tbl: uint	12
+_tbl: uint	12
+_tbl: uint	12
 select c, _ttx from at
 where c like '_ttx%';
 c	_ttx
-_ttx: null	null
-_ttx: bool	true
-_ttx: uint	12
-_ttx: int	12
-_ttx: double	3.14
-_ttx: stringany	"a"
-_ttx: stringint	"1"
-_ttx: stringdecimal	"3.14"
-_ttx: object	{"a": 3}
 _ttx: array	[1, 2]
-_ttx: opaque_mysql_type_decimal	3.14
-_ttx: opaque_mysql_type_set	"b,c"
-_ttx: opaque_mysql_type_enum	"b"
-_ttx: opaque_mysql_type_date	"2015-01-15"
-_ttx: opaque_mysql_type_time	"23:24:25.000000"
-_ttx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_ttx: array	[1, 2]
+_ttx: array	[1, 2]
+_ttx: bool	true
+_ttx: bool	true
+_ttx: bool	true
+_ttx: double	3.14
+_ttx: double	3.14
+_ttx: double	3.14
+_ttx: int	12
+_ttx: int	12
+_ttx: int	12
+_ttx: null	null
+_ttx: null	null
+_ttx: null	null
+_ttx: object	{"a": 3}
+_ttx: object	{"a": 3}
+_ttx: object	{"a": 3}
+_ttx: opaque_mysql_type_binary	NULL
+_ttx: opaque_mysql_type_binary	NULL
+_ttx: opaque_mysql_type_binary	NULL
 _ttx: opaque_mysql_type_bit	"base64:type16:yv4="
-_ttx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_ttx: opaque_mysql_type_bit	"base64:type16:yv4="
+_ttx: opaque_mysql_type_bit	"base64:type16:yv4="
 _ttx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_ttx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_ttx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_ttx: opaque_mysql_type_date	"2015-01-15"
+_ttx: opaque_mysql_type_date	"2015-01-15"
+_ttx: opaque_mysql_type_date	"2015-01-15"
+_ttx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_ttx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_ttx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_ttx: opaque_mysql_type_decimal	3.14
+_ttx: opaque_mysql_type_decimal	3.14
+_ttx: opaque_mysql_type_decimal	3.14
+_ttx: opaque_mysql_type_enum	"b"
+_ttx: opaque_mysql_type_enum	"b"
+_ttx: opaque_mysql_type_enum	"b"
+_ttx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_ttx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _ttx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _ttx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_ttx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_ttx: opaque_mysql_type_varbinary	NULL
-_ttx: opaque_mysql_type_binary	NULL
-_ttx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_ttx: opaque_mysql_type_string	NULL
-_ttx: opaque_mysql_type_var_string	NULL
-_ttx: null	null
-_ttx: bool	true
-_ttx: uint	12
-_ttx: int	12
-_ttx: double	3.14
-_ttx: stringany	"a"
-_ttx: stringint	"1"
-_ttx: stringdecimal	"3.14"
-_ttx: object	{"a": 3}
-_ttx: array	[1, 2]
-_ttx: opaque_mysql_type_decimal	3.14
-_ttx: opaque_mysql_type_set	"b,c"
-_ttx: opaque_mysql_type_enum	"b"
-_ttx: opaque_mysql_type_date	"2015-01-15"
-_ttx: opaque_mysql_type_time	"23:24:25.000000"
-_ttx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_ttx: opaque_mysql_type_bit	"base64:type16:yv4="
-_ttx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_ttx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_ttx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _ttx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_ttx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_ttx: opaque_mysql_type_varbinary	NULL
-_ttx: opaque_mysql_type_binary	NULL
-_ttx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_ttx: opaque_mysql_type_string	NULL
-_ttx: opaque_mysql_type_var_string	NULL
-_ttx: null	null
-_ttx: bool	true
-_ttx: uint	12
-_ttx: int	12
-_ttx: double	3.14
-_ttx: stringany	"a"
-_ttx: stringint	"1"
-_ttx: stringdecimal	"3.14"
-_ttx: object	{"a": 3}
-_ttx: array	[1, 2]
-_ttx: opaque_mysql_type_decimal	3.14
-_ttx: opaque_mysql_type_set	"b,c"
-_ttx: opaque_mysql_type_enum	"b"
-_ttx: opaque_mysql_type_date	"2015-01-15"
-_ttx: opaque_mysql_type_time	"23:24:25.000000"
-_ttx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_ttx: opaque_mysql_type_bit	"base64:type16:yv4="
-_ttx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_ttx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_ttx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _ttx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_ttx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_ttx: opaque_mysql_type_varbinary	NULL
-_ttx: opaque_mysql_type_binary	NULL
-_ttx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_ttx: opaque_mysql_type_set	"b,c"
+_ttx: opaque_mysql_type_set	"b,c"
+_ttx: opaque_mysql_type_set	"b,c"
 _ttx: opaque_mysql_type_string	NULL
+_ttx: opaque_mysql_type_string	NULL
+_ttx: opaque_mysql_type_string	NULL
+_ttx: opaque_mysql_type_time	"23:24:25.000000"
+_ttx: opaque_mysql_type_time	"23:24:25.000000"
+_ttx: opaque_mysql_type_time	"23:24:25.000000"
+_ttx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_ttx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_ttx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _ttx: opaque_mysql_type_var_string	NULL
+_ttx: opaque_mysql_type_var_string	NULL
+_ttx: opaque_mysql_type_var_string	NULL
+_ttx: opaque_mysql_type_varbinary	NULL
+_ttx: opaque_mysql_type_varbinary	NULL
+_ttx: opaque_mysql_type_varbinary	NULL
+_ttx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_ttx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_ttx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_ttx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_ttx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_ttx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_ttx: stringany	"a"
+_ttx: stringany	"a"
+_ttx: stringany	"a"
+_ttx: stringdecimal	"3.14"
+_ttx: stringdecimal	"3.14"
+_ttx: stringdecimal	"3.14"
+_ttx: stringint	"1"
+_ttx: stringint	"1"
+_ttx: stringint	"1"
+_ttx: uint	12
+_ttx: uint	12
+_ttx: uint	12
 select c, _blb from at
 where c like '_blb%';
 c	_blb
-_blb: null	null
-_blb: bool	true
-_blb: uint	12
-_blb: int	12
-_blb: double	3.14
-_blb: stringany	"a"
-_blb: stringint	"1"
-_blb: stringdecimal	"3.14"
-_blb: object	{"a": 3}
 _blb: array	[1, 2]
-_blb: opaque_mysql_type_decimal	3.14
-_blb: opaque_mysql_type_set	"b,c"
-_blb: opaque_mysql_type_enum	"b"
-_blb: opaque_mysql_type_date	"2015-01-15"
-_blb: opaque_mysql_type_time	"23:24:25.000000"
-_blb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_blb: array	[1, 2]
+_blb: array	[1, 2]
+_blb: bool	true
+_blb: bool	true
+_blb: bool	true
+_blb: double	3.14
+_blb: double	3.14
+_blb: double	3.14
+_blb: int	12
+_blb: int	12
+_blb: int	12
+_blb: null	null
+_blb: null	null
+_blb: null	null
+_blb: object	{"a": 3}
+_blb: object	{"a": 3}
+_blb: object	{"a": 3}
+_blb: opaque_mysql_type_binary	NULL
+_blb: opaque_mysql_type_binary	NULL
+_blb: opaque_mysql_type_binary	NULL
 _blb: opaque_mysql_type_bit	"base64:type16:yv4="
-_blb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_blb: opaque_mysql_type_bit	"base64:type16:yv4="
+_blb: opaque_mysql_type_bit	"base64:type16:yv4="
 _blb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_blb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_blb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_blb: opaque_mysql_type_date	"2015-01-15"
+_blb: opaque_mysql_type_date	"2015-01-15"
+_blb: opaque_mysql_type_date	"2015-01-15"
+_blb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_blb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_blb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_blb: opaque_mysql_type_decimal	3.14
+_blb: opaque_mysql_type_decimal	3.14
+_blb: opaque_mysql_type_decimal	3.14
+_blb: opaque_mysql_type_enum	"b"
+_blb: opaque_mysql_type_enum	"b"
+_blb: opaque_mysql_type_enum	"b"
+_blb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_blb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _blb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _blb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_blb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_blb: opaque_mysql_type_varbinary	NULL
-_blb: opaque_mysql_type_binary	NULL
-_blb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_blb: opaque_mysql_type_string	NULL
-_blb: opaque_mysql_type_var_string	NULL
-_blb: null	null
-_blb: bool	true
-_blb: uint	12
-_blb: int	12
-_blb: double	3.14
-_blb: stringany	"a"
-_blb: stringint	"1"
-_blb: stringdecimal	"3.14"
-_blb: object	{"a": 3}
-_blb: array	[1, 2]
-_blb: opaque_mysql_type_decimal	3.14
-_blb: opaque_mysql_type_set	"b,c"
-_blb: opaque_mysql_type_enum	"b"
-_blb: opaque_mysql_type_date	"2015-01-15"
-_blb: opaque_mysql_type_time	"23:24:25.000000"
-_blb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_blb: opaque_mysql_type_bit	"base64:type16:yv4="
-_blb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_blb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_blb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _blb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_blb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_blb: opaque_mysql_type_varbinary	NULL
-_blb: opaque_mysql_type_binary	NULL
-_blb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_blb: opaque_mysql_type_string	NULL
-_blb: opaque_mysql_type_var_string	NULL
-_blb: null	null
-_blb: bool	true
-_blb: uint	12
-_blb: int	12
-_blb: double	3.14
-_blb: stringany	"a"
-_blb: stringint	"1"
-_blb: stringdecimal	"3.14"
-_blb: object	{"a": 3}
-_blb: array	[1, 2]
-_blb: opaque_mysql_type_decimal	3.14
-_blb: opaque_mysql_type_set	"b,c"
-_blb: opaque_mysql_type_enum	"b"
-_blb: opaque_mysql_type_date	"2015-01-15"
-_blb: opaque_mysql_type_time	"23:24:25.000000"
-_blb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_blb: opaque_mysql_type_bit	"base64:type16:yv4="
-_blb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_blb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_blb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _blb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_blb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_blb: opaque_mysql_type_varbinary	NULL
-_blb: opaque_mysql_type_binary	NULL
-_blb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_blb: opaque_mysql_type_set	"b,c"
+_blb: opaque_mysql_type_set	"b,c"
+_blb: opaque_mysql_type_set	"b,c"
 _blb: opaque_mysql_type_string	NULL
+_blb: opaque_mysql_type_string	NULL
+_blb: opaque_mysql_type_string	NULL
+_blb: opaque_mysql_type_time	"23:24:25.000000"
+_blb: opaque_mysql_type_time	"23:24:25.000000"
+_blb: opaque_mysql_type_time	"23:24:25.000000"
+_blb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_blb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_blb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _blb: opaque_mysql_type_var_string	NULL
+_blb: opaque_mysql_type_var_string	NULL
+_blb: opaque_mysql_type_var_string	NULL
+_blb: opaque_mysql_type_varbinary	NULL
+_blb: opaque_mysql_type_varbinary	NULL
+_blb: opaque_mysql_type_varbinary	NULL
+_blb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_blb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_blb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_blb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_blb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_blb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_blb: stringany	"a"
+_blb: stringany	"a"
+_blb: stringany	"a"
+_blb: stringdecimal	"3.14"
+_blb: stringdecimal	"3.14"
+_blb: stringdecimal	"3.14"
+_blb: stringint	"1"
+_blb: stringint	"1"
+_blb: stringint	"1"
+_blb: uint	12
+_blb: uint	12
+_blb: uint	12
 select c, _txt from at
 where c like '_txt%';
 c	_txt
-_txt: null	null
-_txt: bool	true
-_txt: uint	12
-_txt: int	12
-_txt: double	3.14
-_txt: stringany	"a"
-_txt: stringint	"1"
-_txt: stringdecimal	"3.14"
-_txt: object	{"a": 3}
 _txt: array	[1, 2]
-_txt: opaque_mysql_type_decimal	3.14
-_txt: opaque_mysql_type_set	"b,c"
-_txt: opaque_mysql_type_enum	"b"
-_txt: opaque_mysql_type_date	"2015-01-15"
-_txt: opaque_mysql_type_time	"23:24:25.000000"
-_txt: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_txt: array	[1, 2]
+_txt: array	[1, 2]
+_txt: bool	true
+_txt: bool	true
+_txt: bool	true
+_txt: double	3.14
+_txt: double	3.14
+_txt: double	3.14
+_txt: int	12
+_txt: int	12
+_txt: int	12
+_txt: null	null
+_txt: null	null
+_txt: null	null
+_txt: object	{"a": 3}
+_txt: object	{"a": 3}
+_txt: object	{"a": 3}
+_txt: opaque_mysql_type_binary	NULL
+_txt: opaque_mysql_type_binary	NULL
+_txt: opaque_mysql_type_binary	NULL
 _txt: opaque_mysql_type_bit	"base64:type16:yv4="
-_txt: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_txt: opaque_mysql_type_bit	"base64:type16:yv4="
+_txt: opaque_mysql_type_bit	"base64:type16:yv4="
 _txt: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_txt: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_txt: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_txt: opaque_mysql_type_date	"2015-01-15"
+_txt: opaque_mysql_type_date	"2015-01-15"
+_txt: opaque_mysql_type_date	"2015-01-15"
+_txt: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_txt: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_txt: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_txt: opaque_mysql_type_decimal	3.14
+_txt: opaque_mysql_type_decimal	3.14
+_txt: opaque_mysql_type_decimal	3.14
+_txt: opaque_mysql_type_enum	"b"
+_txt: opaque_mysql_type_enum	"b"
+_txt: opaque_mysql_type_enum	"b"
+_txt: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_txt: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _txt: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _txt: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_txt: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_txt: opaque_mysql_type_varbinary	NULL
-_txt: opaque_mysql_type_binary	NULL
-_txt: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_txt: opaque_mysql_type_string	NULL
-_txt: opaque_mysql_type_var_string	NULL
-_txt: null	null
-_txt: bool	true
-_txt: uint	12
-_txt: int	12
-_txt: double	3.14
-_txt: stringany	"a"
-_txt: stringint	"1"
-_txt: stringdecimal	"3.14"
-_txt: object	{"a": 3}
-_txt: array	[1, 2]
-_txt: opaque_mysql_type_decimal	3.14
-_txt: opaque_mysql_type_set	"b,c"
-_txt: opaque_mysql_type_enum	"b"
-_txt: opaque_mysql_type_date	"2015-01-15"
-_txt: opaque_mysql_type_time	"23:24:25.000000"
-_txt: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_txt: opaque_mysql_type_bit	"base64:type16:yv4="
-_txt: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_txt: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_txt: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _txt: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_txt: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_txt: opaque_mysql_type_varbinary	NULL
-_txt: opaque_mysql_type_binary	NULL
-_txt: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_txt: opaque_mysql_type_string	NULL
-_txt: opaque_mysql_type_var_string	NULL
-_txt: null	null
-_txt: bool	true
-_txt: uint	12
-_txt: int	12
-_txt: double	3.14
-_txt: stringany	"a"
-_txt: stringint	"1"
-_txt: stringdecimal	"3.14"
-_txt: object	{"a": 3}
-_txt: array	[1, 2]
-_txt: opaque_mysql_type_decimal	3.14
-_txt: opaque_mysql_type_set	"b,c"
-_txt: opaque_mysql_type_enum	"b"
-_txt: opaque_mysql_type_date	"2015-01-15"
-_txt: opaque_mysql_type_time	"23:24:25.000000"
-_txt: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_txt: opaque_mysql_type_bit	"base64:type16:yv4="
-_txt: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_txt: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_txt: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _txt: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_txt: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_txt: opaque_mysql_type_varbinary	NULL
-_txt: opaque_mysql_type_binary	NULL
-_txt: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_txt: opaque_mysql_type_set	"b,c"
+_txt: opaque_mysql_type_set	"b,c"
+_txt: opaque_mysql_type_set	"b,c"
 _txt: opaque_mysql_type_string	NULL
+_txt: opaque_mysql_type_string	NULL
+_txt: opaque_mysql_type_string	NULL
+_txt: opaque_mysql_type_time	"23:24:25.000000"
+_txt: opaque_mysql_type_time	"23:24:25.000000"
+_txt: opaque_mysql_type_time	"23:24:25.000000"
+_txt: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_txt: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_txt: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _txt: opaque_mysql_type_var_string	NULL
+_txt: opaque_mysql_type_var_string	NULL
+_txt: opaque_mysql_type_var_string	NULL
+_txt: opaque_mysql_type_varbinary	NULL
+_txt: opaque_mysql_type_varbinary	NULL
+_txt: opaque_mysql_type_varbinary	NULL
+_txt: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_txt: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_txt: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_txt: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_txt: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_txt: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_txt: stringany	"a"
+_txt: stringany	"a"
+_txt: stringany	"a"
+_txt: stringdecimal	"3.14"
+_txt: stringdecimal	"3.14"
+_txt: stringdecimal	"3.14"
+_txt: stringint	"1"
+_txt: stringint	"1"
+_txt: stringint	"1"
+_txt: uint	12
+_txt: uint	12
+_txt: uint	12
 select c, _mbb from at
 where c like '_mbb%';
 c	_mbb
-_mbb: null	null
-_mbb: bool	true
-_mbb: uint	12
-_mbb: int	12
-_mbb: double	3.14
-_mbb: stringany	"a"
-_mbb: stringint	"1"
-_mbb: stringdecimal	"3.14"
-_mbb: object	{"a": 3}
 _mbb: array	[1, 2]
-_mbb: opaque_mysql_type_decimal	3.14
-_mbb: opaque_mysql_type_set	"b,c"
-_mbb: opaque_mysql_type_enum	"b"
-_mbb: opaque_mysql_type_date	"2015-01-15"
-_mbb: opaque_mysql_type_time	"23:24:25.000000"
-_mbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_mbb: array	[1, 2]
+_mbb: array	[1, 2]
+_mbb: bool	true
+_mbb: bool	true
+_mbb: bool	true
+_mbb: double	3.14
+_mbb: double	3.14
+_mbb: double	3.14
+_mbb: int	12
+_mbb: int	12
+_mbb: int	12
+_mbb: null	null
+_mbb: null	null
+_mbb: null	null
+_mbb: object	{"a": 3}
+_mbb: object	{"a": 3}
+_mbb: object	{"a": 3}
+_mbb: opaque_mysql_type_binary	NULL
+_mbb: opaque_mysql_type_binary	NULL
+_mbb: opaque_mysql_type_binary	NULL
 _mbb: opaque_mysql_type_bit	"base64:type16:yv4="
-_mbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_mbb: opaque_mysql_type_bit	"base64:type16:yv4="
+_mbb: opaque_mysql_type_bit	"base64:type16:yv4="
 _mbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_mbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_mbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_mbb: opaque_mysql_type_date	"2015-01-15"
+_mbb: opaque_mysql_type_date	"2015-01-15"
+_mbb: opaque_mysql_type_date	"2015-01-15"
+_mbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_mbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_mbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_mbb: opaque_mysql_type_decimal	3.14
+_mbb: opaque_mysql_type_decimal	3.14
+_mbb: opaque_mysql_type_decimal	3.14
+_mbb: opaque_mysql_type_enum	"b"
+_mbb: opaque_mysql_type_enum	"b"
+_mbb: opaque_mysql_type_enum	"b"
+_mbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_mbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _mbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _mbb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_mbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_mbb: opaque_mysql_type_varbinary	NULL
-_mbb: opaque_mysql_type_binary	NULL
-_mbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_mbb: opaque_mysql_type_string	NULL
-_mbb: opaque_mysql_type_var_string	NULL
-_mbb: null	null
-_mbb: bool	true
-_mbb: uint	12
-_mbb: int	12
-_mbb: double	3.14
-_mbb: stringany	"a"
-_mbb: stringint	"1"
-_mbb: stringdecimal	"3.14"
-_mbb: object	{"a": 3}
-_mbb: array	[1, 2]
-_mbb: opaque_mysql_type_decimal	3.14
-_mbb: opaque_mysql_type_set	"b,c"
-_mbb: opaque_mysql_type_enum	"b"
-_mbb: opaque_mysql_type_date	"2015-01-15"
-_mbb: opaque_mysql_type_time	"23:24:25.000000"
-_mbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_mbb: opaque_mysql_type_bit	"base64:type16:yv4="
-_mbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_mbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_mbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _mbb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_mbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_mbb: opaque_mysql_type_varbinary	NULL
-_mbb: opaque_mysql_type_binary	NULL
-_mbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_mbb: opaque_mysql_type_string	NULL
-_mbb: opaque_mysql_type_var_string	NULL
-_mbb: null	null
-_mbb: bool	true
-_mbb: uint	12
-_mbb: int	12
-_mbb: double	3.14
-_mbb: stringany	"a"
-_mbb: stringint	"1"
-_mbb: stringdecimal	"3.14"
-_mbb: object	{"a": 3}
-_mbb: array	[1, 2]
-_mbb: opaque_mysql_type_decimal	3.14
-_mbb: opaque_mysql_type_set	"b,c"
-_mbb: opaque_mysql_type_enum	"b"
-_mbb: opaque_mysql_type_date	"2015-01-15"
-_mbb: opaque_mysql_type_time	"23:24:25.000000"
-_mbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_mbb: opaque_mysql_type_bit	"base64:type16:yv4="
-_mbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_mbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_mbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _mbb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_mbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_mbb: opaque_mysql_type_varbinary	NULL
-_mbb: opaque_mysql_type_binary	NULL
-_mbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_mbb: opaque_mysql_type_set	"b,c"
+_mbb: opaque_mysql_type_set	"b,c"
+_mbb: opaque_mysql_type_set	"b,c"
 _mbb: opaque_mysql_type_string	NULL
+_mbb: opaque_mysql_type_string	NULL
+_mbb: opaque_mysql_type_string	NULL
+_mbb: opaque_mysql_type_time	"23:24:25.000000"
+_mbb: opaque_mysql_type_time	"23:24:25.000000"
+_mbb: opaque_mysql_type_time	"23:24:25.000000"
+_mbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_mbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_mbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _mbb: opaque_mysql_type_var_string	NULL
+_mbb: opaque_mysql_type_var_string	NULL
+_mbb: opaque_mysql_type_var_string	NULL
+_mbb: opaque_mysql_type_varbinary	NULL
+_mbb: opaque_mysql_type_varbinary	NULL
+_mbb: opaque_mysql_type_varbinary	NULL
+_mbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_mbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_mbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_mbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_mbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_mbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_mbb: stringany	"a"
+_mbb: stringany	"a"
+_mbb: stringany	"a"
+_mbb: stringdecimal	"3.14"
+_mbb: stringdecimal	"3.14"
+_mbb: stringdecimal	"3.14"
+_mbb: stringint	"1"
+_mbb: stringint	"1"
+_mbb: stringint	"1"
+_mbb: uint	12
+_mbb: uint	12
+_mbb: uint	12
 select c, _mtx from at
 where c like '_mtx%';
 c	_mtx
-_mtx: null	null
-_mtx: bool	true
-_mtx: uint	12
-_mtx: int	12
-_mtx: double	3.14
-_mtx: stringany	"a"
-_mtx: stringint	"1"
-_mtx: stringdecimal	"3.14"
-_mtx: object	{"a": 3}
 _mtx: array	[1, 2]
-_mtx: opaque_mysql_type_decimal	3.14
-_mtx: opaque_mysql_type_set	"b,c"
-_mtx: opaque_mysql_type_enum	"b"
-_mtx: opaque_mysql_type_date	"2015-01-15"
-_mtx: opaque_mysql_type_time	"23:24:25.000000"
-_mtx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_mtx: array	[1, 2]
+_mtx: array	[1, 2]
+_mtx: bool	true
+_mtx: bool	true
+_mtx: bool	true
+_mtx: double	3.14
+_mtx: double	3.14
+_mtx: double	3.14
+_mtx: int	12
+_mtx: int	12
+_mtx: int	12
+_mtx: null	null
+_mtx: null	null
+_mtx: null	null
+_mtx: object	{"a": 3}
+_mtx: object	{"a": 3}
+_mtx: object	{"a": 3}
+_mtx: opaque_mysql_type_binary	NULL
+_mtx: opaque_mysql_type_binary	NULL
+_mtx: opaque_mysql_type_binary	NULL
 _mtx: opaque_mysql_type_bit	"base64:type16:yv4="
-_mtx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_mtx: opaque_mysql_type_bit	"base64:type16:yv4="
+_mtx: opaque_mysql_type_bit	"base64:type16:yv4="
 _mtx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_mtx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_mtx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_mtx: opaque_mysql_type_date	"2015-01-15"
+_mtx: opaque_mysql_type_date	"2015-01-15"
+_mtx: opaque_mysql_type_date	"2015-01-15"
+_mtx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_mtx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_mtx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_mtx: opaque_mysql_type_decimal	3.14
+_mtx: opaque_mysql_type_decimal	3.14
+_mtx: opaque_mysql_type_decimal	3.14
+_mtx: opaque_mysql_type_enum	"b"
+_mtx: opaque_mysql_type_enum	"b"
+_mtx: opaque_mysql_type_enum	"b"
+_mtx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_mtx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _mtx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _mtx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_mtx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_mtx: opaque_mysql_type_varbinary	NULL
-_mtx: opaque_mysql_type_binary	NULL
-_mtx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_mtx: opaque_mysql_type_string	NULL
-_mtx: opaque_mysql_type_var_string	NULL
-_mtx: null	null
-_mtx: bool	true
-_mtx: uint	12
-_mtx: int	12
-_mtx: double	3.14
-_mtx: stringany	"a"
-_mtx: stringint	"1"
-_mtx: stringdecimal	"3.14"
-_mtx: object	{"a": 3}
-_mtx: array	[1, 2]
-_mtx: opaque_mysql_type_decimal	3.14
-_mtx: opaque_mysql_type_set	"b,c"
-_mtx: opaque_mysql_type_enum	"b"
-_mtx: opaque_mysql_type_date	"2015-01-15"
-_mtx: opaque_mysql_type_time	"23:24:25.000000"
-_mtx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_mtx: opaque_mysql_type_bit	"base64:type16:yv4="
-_mtx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_mtx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_mtx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _mtx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_mtx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_mtx: opaque_mysql_type_varbinary	NULL
-_mtx: opaque_mysql_type_binary	NULL
-_mtx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_mtx: opaque_mysql_type_string	NULL
-_mtx: opaque_mysql_type_var_string	NULL
-_mtx: null	null
-_mtx: bool	true
-_mtx: uint	12
-_mtx: int	12
-_mtx: double	3.14
-_mtx: stringany	"a"
-_mtx: stringint	"1"
-_mtx: stringdecimal	"3.14"
-_mtx: object	{"a": 3}
-_mtx: array	[1, 2]
-_mtx: opaque_mysql_type_decimal	3.14
-_mtx: opaque_mysql_type_set	"b,c"
-_mtx: opaque_mysql_type_enum	"b"
-_mtx: opaque_mysql_type_date	"2015-01-15"
-_mtx: opaque_mysql_type_time	"23:24:25.000000"
-_mtx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_mtx: opaque_mysql_type_bit	"base64:type16:yv4="
-_mtx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_mtx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_mtx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _mtx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_mtx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_mtx: opaque_mysql_type_varbinary	NULL
-_mtx: opaque_mysql_type_binary	NULL
-_mtx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_mtx: opaque_mysql_type_set	"b,c"
+_mtx: opaque_mysql_type_set	"b,c"
+_mtx: opaque_mysql_type_set	"b,c"
 _mtx: opaque_mysql_type_string	NULL
+_mtx: opaque_mysql_type_string	NULL
+_mtx: opaque_mysql_type_string	NULL
+_mtx: opaque_mysql_type_time	"23:24:25.000000"
+_mtx: opaque_mysql_type_time	"23:24:25.000000"
+_mtx: opaque_mysql_type_time	"23:24:25.000000"
+_mtx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_mtx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_mtx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _mtx: opaque_mysql_type_var_string	NULL
+_mtx: opaque_mysql_type_var_string	NULL
+_mtx: opaque_mysql_type_var_string	NULL
+_mtx: opaque_mysql_type_varbinary	NULL
+_mtx: opaque_mysql_type_varbinary	NULL
+_mtx: opaque_mysql_type_varbinary	NULL
+_mtx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_mtx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_mtx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_mtx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_mtx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_mtx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_mtx: stringany	"a"
+_mtx: stringany	"a"
+_mtx: stringany	"a"
+_mtx: stringdecimal	"3.14"
+_mtx: stringdecimal	"3.14"
+_mtx: stringdecimal	"3.14"
+_mtx: stringint	"1"
+_mtx: stringint	"1"
+_mtx: stringint	"1"
+_mtx: uint	12
+_mtx: uint	12
+_mtx: uint	12
 select c, _lbb from at
 where c like '_lbb%';
 c	_lbb
-_lbb: null	null
-_lbb: bool	true
-_lbb: uint	12
-_lbb: int	12
-_lbb: double	3.14
-_lbb: stringany	"a"
-_lbb: stringint	"1"
-_lbb: stringdecimal	"3.14"
-_lbb: object	{"a": 3}
 _lbb: array	[1, 2]
-_lbb: opaque_mysql_type_decimal	3.14
-_lbb: opaque_mysql_type_set	"b,c"
-_lbb: opaque_mysql_type_enum	"b"
-_lbb: opaque_mysql_type_date	"2015-01-15"
-_lbb: opaque_mysql_type_time	"23:24:25.000000"
-_lbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_lbb: array	[1, 2]
+_lbb: array	[1, 2]
+_lbb: bool	true
+_lbb: bool	true
+_lbb: bool	true
+_lbb: double	3.14
+_lbb: double	3.14
+_lbb: double	3.14
+_lbb: int	12
+_lbb: int	12
+_lbb: int	12
+_lbb: null	null
+_lbb: null	null
+_lbb: null	null
+_lbb: object	{"a": 3}
+_lbb: object	{"a": 3}
+_lbb: object	{"a": 3}
+_lbb: opaque_mysql_type_binary	NULL
+_lbb: opaque_mysql_type_binary	NULL
+_lbb: opaque_mysql_type_binary	NULL
 _lbb: opaque_mysql_type_bit	"base64:type16:yv4="
-_lbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_lbb: opaque_mysql_type_bit	"base64:type16:yv4="
+_lbb: opaque_mysql_type_bit	"base64:type16:yv4="
 _lbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_lbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_lbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_lbb: opaque_mysql_type_date	"2015-01-15"
+_lbb: opaque_mysql_type_date	"2015-01-15"
+_lbb: opaque_mysql_type_date	"2015-01-15"
+_lbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_lbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_lbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_lbb: opaque_mysql_type_decimal	3.14
+_lbb: opaque_mysql_type_decimal	3.14
+_lbb: opaque_mysql_type_decimal	3.14
+_lbb: opaque_mysql_type_enum	"b"
+_lbb: opaque_mysql_type_enum	"b"
+_lbb: opaque_mysql_type_enum	"b"
+_lbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_lbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _lbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _lbb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_lbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_lbb: opaque_mysql_type_varbinary	NULL
-_lbb: opaque_mysql_type_binary	NULL
-_lbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_lbb: opaque_mysql_type_string	NULL
-_lbb: opaque_mysql_type_var_string	NULL
-_lbb: null	null
-_lbb: bool	true
-_lbb: uint	12
-_lbb: int	12
-_lbb: double	3.14
-_lbb: stringany	"a"
-_lbb: stringint	"1"
-_lbb: stringdecimal	"3.14"
-_lbb: object	{"a": 3}
-_lbb: array	[1, 2]
-_lbb: opaque_mysql_type_decimal	3.14
-_lbb: opaque_mysql_type_set	"b,c"
-_lbb: opaque_mysql_type_enum	"b"
-_lbb: opaque_mysql_type_date	"2015-01-15"
-_lbb: opaque_mysql_type_time	"23:24:25.000000"
-_lbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_lbb: opaque_mysql_type_bit	"base64:type16:yv4="
-_lbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_lbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_lbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _lbb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_lbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_lbb: opaque_mysql_type_varbinary	NULL
-_lbb: opaque_mysql_type_binary	NULL
-_lbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_lbb: opaque_mysql_type_string	NULL
-_lbb: opaque_mysql_type_var_string	NULL
-_lbb: null	null
-_lbb: bool	true
-_lbb: uint	12
-_lbb: int	12
-_lbb: double	3.14
-_lbb: stringany	"a"
-_lbb: stringint	"1"
-_lbb: stringdecimal	"3.14"
-_lbb: object	{"a": 3}
-_lbb: array	[1, 2]
-_lbb: opaque_mysql_type_decimal	3.14
-_lbb: opaque_mysql_type_set	"b,c"
-_lbb: opaque_mysql_type_enum	"b"
-_lbb: opaque_mysql_type_date	"2015-01-15"
-_lbb: opaque_mysql_type_time	"23:24:25.000000"
-_lbb: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_lbb: opaque_mysql_type_bit	"base64:type16:yv4="
-_lbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_lbb: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_lbb: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _lbb: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_lbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_lbb: opaque_mysql_type_varbinary	NULL
-_lbb: opaque_mysql_type_binary	NULL
-_lbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_lbb: opaque_mysql_type_set	"b,c"
+_lbb: opaque_mysql_type_set	"b,c"
+_lbb: opaque_mysql_type_set	"b,c"
 _lbb: opaque_mysql_type_string	NULL
+_lbb: opaque_mysql_type_string	NULL
+_lbb: opaque_mysql_type_string	NULL
+_lbb: opaque_mysql_type_time	"23:24:25.000000"
+_lbb: opaque_mysql_type_time	"23:24:25.000000"
+_lbb: opaque_mysql_type_time	"23:24:25.000000"
+_lbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_lbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_lbb: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _lbb: opaque_mysql_type_var_string	NULL
+_lbb: opaque_mysql_type_var_string	NULL
+_lbb: opaque_mysql_type_var_string	NULL
+_lbb: opaque_mysql_type_varbinary	NULL
+_lbb: opaque_mysql_type_varbinary	NULL
+_lbb: opaque_mysql_type_varbinary	NULL
+_lbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_lbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_lbb: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_lbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_lbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_lbb: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_lbb: stringany	"a"
+_lbb: stringany	"a"
+_lbb: stringany	"a"
+_lbb: stringdecimal	"3.14"
+_lbb: stringdecimal	"3.14"
+_lbb: stringdecimal	"3.14"
+_lbb: stringint	"1"
+_lbb: stringint	"1"
+_lbb: stringint	"1"
+_lbb: uint	12
+_lbb: uint	12
+_lbb: uint	12
 select c, _ltx from at
 where c like '_ltx%';
 c	_ltx
-_ltx: null	null
-_ltx: bool	true
-_ltx: uint	12
-_ltx: int	12
-_ltx: double	3.14
-_ltx: stringany	"a"
-_ltx: stringint	"1"
-_ltx: stringdecimal	"3.14"
-_ltx: object	{"a": 3}
 _ltx: array	[1, 2]
-_ltx: opaque_mysql_type_decimal	3.14
-_ltx: opaque_mysql_type_set	"b,c"
-_ltx: opaque_mysql_type_enum	"b"
-_ltx: opaque_mysql_type_date	"2015-01-15"
-_ltx: opaque_mysql_type_time	"23:24:25.000000"
-_ltx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_ltx: array	[1, 2]
+_ltx: array	[1, 2]
+_ltx: bool	true
+_ltx: bool	true
+_ltx: bool	true
+_ltx: double	3.14
+_ltx: double	3.14
+_ltx: double	3.14
+_ltx: int	12
+_ltx: int	12
+_ltx: int	12
+_ltx: null	null
+_ltx: null	null
+_ltx: null	null
+_ltx: object	{"a": 3}
+_ltx: object	{"a": 3}
+_ltx: object	{"a": 3}
+_ltx: opaque_mysql_type_binary	NULL
+_ltx: opaque_mysql_type_binary	NULL
+_ltx: opaque_mysql_type_binary	NULL
 _ltx: opaque_mysql_type_bit	"base64:type16:yv4="
-_ltx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_ltx: opaque_mysql_type_bit	"base64:type16:yv4="
+_ltx: opaque_mysql_type_bit	"base64:type16:yv4="
 _ltx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_ltx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_ltx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
+_ltx: opaque_mysql_type_date	"2015-01-15"
+_ltx: opaque_mysql_type_date	"2015-01-15"
+_ltx: opaque_mysql_type_date	"2015-01-15"
+_ltx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_ltx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_ltx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
+_ltx: opaque_mysql_type_decimal	3.14
+_ltx: opaque_mysql_type_decimal	3.14
+_ltx: opaque_mysql_type_decimal	3.14
+_ltx: opaque_mysql_type_enum	"b"
+_ltx: opaque_mysql_type_enum	"b"
+_ltx: opaque_mysql_type_enum	"b"
+_ltx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
+_ltx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _ltx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _ltx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_ltx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_ltx: opaque_mysql_type_varbinary	NULL
-_ltx: opaque_mysql_type_binary	NULL
-_ltx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_ltx: opaque_mysql_type_string	NULL
-_ltx: opaque_mysql_type_var_string	NULL
-_ltx: null	null
-_ltx: bool	true
-_ltx: uint	12
-_ltx: int	12
-_ltx: double	3.14
-_ltx: stringany	"a"
-_ltx: stringint	"1"
-_ltx: stringdecimal	"3.14"
-_ltx: object	{"a": 3}
-_ltx: array	[1, 2]
-_ltx: opaque_mysql_type_decimal	3.14
-_ltx: opaque_mysql_type_set	"b,c"
-_ltx: opaque_mysql_type_enum	"b"
-_ltx: opaque_mysql_type_date	"2015-01-15"
-_ltx: opaque_mysql_type_time	"23:24:25.000000"
-_ltx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_ltx: opaque_mysql_type_bit	"base64:type16:yv4="
-_ltx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_ltx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_ltx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _ltx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_ltx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_ltx: opaque_mysql_type_varbinary	NULL
-_ltx: opaque_mysql_type_binary	NULL
-_ltx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
-_ltx: opaque_mysql_type_string	NULL
-_ltx: opaque_mysql_type_var_string	NULL
-_ltx: null	null
-_ltx: bool	true
-_ltx: uint	12
-_ltx: int	12
-_ltx: double	3.14
-_ltx: stringany	"a"
-_ltx: stringint	"1"
-_ltx: stringdecimal	"3.14"
-_ltx: object	{"a": 3}
-_ltx: array	[1, 2]
-_ltx: opaque_mysql_type_decimal	3.14
-_ltx: opaque_mysql_type_set	"b,c"
-_ltx: opaque_mysql_type_enum	"b"
-_ltx: opaque_mysql_type_date	"2015-01-15"
-_ltx: opaque_mysql_type_time	"23:24:25.000000"
-_ltx: opaque_mysql_type_datetime	"2015-01-15 23:24:25.000000"
-_ltx: opaque_mysql_type_bit	"base64:type16:yv4="
-_ltx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
-_ltx: opaque_mysql_type_blob	"base64:type252:yv66vg=="
-_ltx: opaque_mysql_type_longblob	"base64:type251:yv66vg=="
 _ltx: opaque_mysql_type_mediumblob	"base64:type250:yv66vg=="
-_ltx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
-_ltx: opaque_mysql_type_varbinary	NULL
-_ltx: opaque_mysql_type_binary	NULL
-_ltx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_ltx: opaque_mysql_type_set	"b,c"
+_ltx: opaque_mysql_type_set	"b,c"
+_ltx: opaque_mysql_type_set	"b,c"
 _ltx: opaque_mysql_type_string	NULL
+_ltx: opaque_mysql_type_string	NULL
+_ltx: opaque_mysql_type_string	NULL
+_ltx: opaque_mysql_type_time	"23:24:25.000000"
+_ltx: opaque_mysql_type_time	"23:24:25.000000"
+_ltx: opaque_mysql_type_time	"23:24:25.000000"
+_ltx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_ltx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
+_ltx: opaque_mysql_type_tinyblob	"base64:type249:yv66vg=="
 _ltx: opaque_mysql_type_var_string	NULL
+_ltx: opaque_mysql_type_var_string	NULL
+_ltx: opaque_mysql_type_var_string	NULL
+_ltx: opaque_mysql_type_varbinary	NULL
+_ltx: opaque_mysql_type_varbinary	NULL
+_ltx: opaque_mysql_type_varbinary	NULL
+_ltx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_ltx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_ltx: opaque_mysql_type_varchar	"base64:type15:Zm9v"
+_ltx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_ltx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_ltx: opaque_mysql_type_year	"base64:type13:MTk5Mg=="
+_ltx: stringany	"a"
+_ltx: stringany	"a"
+_ltx: stringany	"a"
+_ltx: stringdecimal	"3.14"
+_ltx: stringdecimal	"3.14"
+_ltx: stringdecimal	"3.14"
+_ltx: stringint	"1"
+_ltx: stringint	"1"
+_ltx: stringint	"1"
+_ltx: uint	12
+_ltx: uint	12
+_ltx: uint	12
 select c, _enu from at
 where c like '_enu%';
 c	_enu
-_enu: opaque_mysql_type_varbinary	NULL
+_enu: opaque_mysql_type_binary	NULL
+_enu: opaque_mysql_type_binary	NULL
 _enu: opaque_mysql_type_binary	NULL
 _enu: opaque_mysql_type_string	NULL
-_enu: opaque_mysql_type_var_string	NULL
-_enu: opaque_mysql_type_varbinary	NULL
-_enu: opaque_mysql_type_binary	NULL
+_enu: opaque_mysql_type_string	NULL
 _enu: opaque_mysql_type_string	NULL
 _enu: opaque_mysql_type_var_string	NULL
-_enu: opaque_mysql_type_varbinary	NULL
-_enu: opaque_mysql_type_binary	NULL
-_enu: opaque_mysql_type_string	NULL
 _enu: opaque_mysql_type_var_string	NULL
+_enu: opaque_mysql_type_var_string	NULL
+_enu: opaque_mysql_type_varbinary	NULL
+_enu: opaque_mysql_type_varbinary	NULL
+_enu: opaque_mysql_type_varbinary	NULL
 select c, _set from at
 where c like '_set%';
 c	_set
-_set: opaque_mysql_type_varbinary	NULL
+_set: opaque_mysql_type_binary	NULL
+_set: opaque_mysql_type_binary	NULL
 _set: opaque_mysql_type_binary	NULL
 _set: opaque_mysql_type_string	NULL
-_set: opaque_mysql_type_var_string	NULL
-_set: opaque_mysql_type_varbinary	NULL
-_set: opaque_mysql_type_binary	NULL
+_set: opaque_mysql_type_string	NULL
 _set: opaque_mysql_type_string	NULL
 _set: opaque_mysql_type_var_string	NULL
-_set: opaque_mysql_type_varbinary	NULL
-_set: opaque_mysql_type_binary	NULL
-_set: opaque_mysql_type_string	NULL
 _set: opaque_mysql_type_var_string	NULL
+_set: opaque_mysql_type_var_string	NULL
+_set: opaque_mysql_type_varbinary	NULL
+_set: opaque_mysql_type_varbinary	NULL
+_set: opaque_mysql_type_varbinary	NULL
 # Explicit coercions (CAST)
 # ----------------------------------------------------------------------
 # CAST to BINARY[(N)]
