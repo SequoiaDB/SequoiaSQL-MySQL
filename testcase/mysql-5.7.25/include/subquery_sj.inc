@@ -3518,6 +3518,8 @@ insert into t3 select @a:=@a+1, t2.a from t2, t0;
 insert into t3 select @a:=@a+1, t2.a from t2, t0;
 
 alter table t3 add primary key(id), add key(a);
+#Bug #SEQUOIADBMAINSTREAM-5919
+--real_sleep 1
 --echo The following must use loose index scan over t3, key a:
 #explain select count(a) from t2 where a in ( SELECT  a FROM t3);
 select count(a) from t2 where a in ( SELECT  a FROM t3);

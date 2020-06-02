@@ -1250,7 +1250,8 @@ COLUMNS(PARTITION_ID)
  insert into test12 values('Tom1',20,1,'2017-08-25
 12:12:12',1),('Tom2',21,1,'2017-08-25 12:12:12',1),('Tom3',23,1,'2017-08-25
 12:12:12',1);
-
+#Bug #SEQUOIADBMAINSTREAM-5919
+--real_sleep 1
 begin;update test12 set grade=3,date=now()  where age=23 and
 partition_id=1;
 
