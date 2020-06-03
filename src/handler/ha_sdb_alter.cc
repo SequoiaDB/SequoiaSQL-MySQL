@@ -1477,138 +1477,34 @@ bool ha_sdb::prepare_inplace_alter_table(TABLE *altered_table,
   return false;
 }
 
-int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
-                       bson::BSONObjBuilder &build) {
-  int rc = SDB_ERR_OK;
-  bson::BSONObjIterator it_old(old_opt_obj);
-  bson::BSONObjIterator it_new(new_opt_obj);
-  bson::BSONElement old_tmp_ele, new_tmp_ele;
-  while (it_old.more()) {
-    old_tmp_ele = it_old.next();
-    new_tmp_ele = new_opt_obj.getField(old_tmp_ele.fieldName());
-    if (new_tmp_ele.type() == bson::EOO) {
-      rc = HA_ERR_WRONG_COMMAND;
-      goto error;
-    } else if (!(new_tmp_ele == old_tmp_ele)) {
-      if (strcmp(new_tmp_ele.fieldName(), SDB_FIELD_COMPRESSED) == 0 ||
-          strcmp(new_tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) == 0) {
-        continue;
-      }
-      build.append(new_tmp_ele);
-    }
-  }
-
-  while (it_new.more()) {
-    new_tmp_ele = it_new.next();
-    old_tmp_ele = old_opt_obj.getField(new_tmp_ele.fieldName());
-    if (old_tmp_ele.type() == bson::EOO) {
-      if (strcmp(new_tmp_ele.fieldName(), SDB_FIELD_COMPRESSED) == 0 ||
-          strcmp(new_tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) == 0) {
-        continue;
-      }
-      build.append(new_tmp_ele);
-    }
-  }
-
-done:
-  return rc;
-error:
-  goto done;
-}
-
-int sdb_check_and_set_tab_opt(const char *sdb_old_tab_opt,
-                              const char *sdb_new_tab_opt,
-                              enum enum_compress_type sql_compress,
-                              bool has_compress, bool &compress_is_set,
-                              Sdb_cl &cl) {
+/**
+  Convert value of clause COMPRESSION into sdb attribute format, and append
+  it to table options.
+  e.g: `COMPRESSION = "LZW"`  =>  `{Compressed: true, CompressionType: 'lzw }`
+*/
+int sdb_append_compress2tab_opt(enum enum_compress_type sql_compress,
+                                bson::BSONObj &table_options) {
   int rc = 0;
-  bson::BSONObj old_tab_opt, new_tab_opt;
-  bool old_explicit_not_auto_part = false;
-  bool new_explicit_not_auto_part = false;
-  // bson::BSONObj old_part_opt, new_part_opt;
-  bson::BSONElement cmt_compressed_ele, cmt_compress_type_ele;
   bson::BSONObjBuilder builder;
-  bson::BSONObj options;
+  bson::BSONElement compressed_ele;
+  bson::BSONElement compress_type_ele;
+  bson::BSONObjIterator iter(table_options);
 
-  if (sdb_old_tab_opt == sdb_new_tab_opt ||
-      (sdb_old_tab_opt && sdb_new_tab_opt &&
-       0 == strcmp(sdb_old_tab_opt, sdb_new_tab_opt))) {
-    goto done;
-  }
-  if (!sdb_new_tab_opt) {
-    rc = HA_ERR_WRONG_COMMAND;
-    my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
-    goto error;
-  }
-
-  rc = sdb_parse_comment_options(sdb_old_tab_opt, old_tab_opt,
-                                 old_explicit_not_auto_part);
-  DBUG_ASSERT(0 == rc);
-  rc = sdb_parse_comment_options(sdb_new_tab_opt, new_tab_opt,
-                                 new_explicit_not_auto_part);
-  if (0 != rc) {
-    goto error;
-  }
-
-  /*check auto_partition.*/
-  if (new_explicit_not_auto_part != old_explicit_not_auto_part) {
-    rc = HA_ERR_WRONG_COMMAND;
-    my_printf_error(rc, "Can't support alter auto partition", MYF(0));
-    goto error;
-  }
-
-  /*check and append table_options.*/
-  cmt_compressed_ele = new_tab_opt.getField(SDB_FIELD_COMPRESSED);
-  cmt_compress_type_ele = new_tab_opt.getField(SDB_FIELD_COMPRESSION_TYPE);
-  rc = sdb_check_and_set_compress(sql_compress, cmt_compressed_ele,
-                                  cmt_compress_type_ele, compress_is_set,
-                                  builder);
-  if (rc != 0) {
-    my_printf_error(rc, "Ambiguous compression", MYF(0));
-    goto error;
-  }
-
-  if (!old_tab_opt.isEmpty() && new_tab_opt.isEmpty()) {
-    rc = HA_ERR_WRONG_COMMAND;
-    my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
-    goto error;
-
-  } else if (old_tab_opt.isEmpty() && !new_tab_opt.isEmpty()) {
-    bson::BSONObjIterator it(new_tab_opt);
-    while (it.more()) {
-      bson::BSONElement tmp_ele = it.next();
-      if (strcmp(tmp_ele.fieldName(), SDB_FIELD_COMPRESSED) == 0 ||
-          strcmp(tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) == 0) {
-        continue;
-      }
-      builder.append(tmp_ele);
-    }
-
-  } else {
-    if (new_tab_opt.equal(old_tab_opt)) {
-      goto done;
-    }
-    rc = sdb_filter_tab_opt(old_tab_opt, new_tab_opt, builder);
-    if (0 != rc) {
-      my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
-      goto error;
+  while (iter.more()) {
+    bson::BSONElement ele = iter.next();
+    if (0 == strcmp(ele.fieldName(), SDB_FIELD_COMPRESSED)) {
+      compressed_ele = ele;
+    } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
+      compress_type_ele = ele;
+    } else {
+      builder.append(ele);
     }
   }
 
-  /*handle partition options*/
-  // TODO
-
-  /*pushdown table_options.*/
-  options = builder.obj();
-  rc = cl.set_attributes(options);
-  if (0 != rc) {
-    goto error;
-  }
-
-done:
+  rc = sdb_check_and_set_compress(sql_compress, compressed_ele,
+                                  compress_type_ele, builder);
+  table_options = builder.obj();
   return rc;
-error:
-  goto done;
 }
 
 bool is_all_field_not_null(KEY *key) {
@@ -1624,26 +1520,136 @@ bool is_all_field_not_null(KEY *key) {
   return true;
 }
 
-void sdb_append_index_to_be_rebuild(TABLE *table, TABLE *altered_table,
-                                    List<KEY> &add_keys, List<KEY> &drop_keys) {
+/**
+  Filter the indexes which need to update the NotNull attribute, and push them
+  into add_keys(to be added list) and drop_keys(to be dropped list) to rebuild
+  them later.
+*/
+int sdb_append_index_to_be_rebuild(TABLE *table, TABLE *altered_table,
+                                   List<KEY> &add_keys, List<KEY> &drop_keys) {
+  int rc = 0;
   bool old_has_not_null = false, new_has_not_null = false;
   KEY *old_key_info = NULL, *new_key_info = NULL;
 
   for (uint i = 0; i < table->s->keys; ++i) {
     old_key_info = table->s->key_info + i;
+
     for (uint j = 0; j < altered_table->s->keys; ++j) {
       new_key_info = altered_table->s->key_info + j;
+
       if (strcmp(sdb_key_name(old_key_info), sdb_key_name(new_key_info)) == 0) {
         old_has_not_null = is_all_field_not_null(old_key_info);
         new_has_not_null = is_all_field_not_null(new_key_info);
+
         if (old_has_not_null != new_has_not_null) {
-          drop_keys.push_back(old_key_info);
-          add_keys.push_back(new_key_info);
+          if (drop_keys.push_back(old_key_info)) {
+            rc = HA_ERR_OUT_OF_MEM;
+            my_error(rc, MYF(0));
+            goto error;
+          }
+
+          if (add_keys.push_back(new_key_info)) {
+            rc = HA_ERR_OUT_OF_MEM;
+            my_error(rc, MYF(0));
+            goto error;
+          }
         }
         break;
       }
     }
   }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+/**
+  Check whether table options were changed. If changed, push down
+  cl.setAttributes() to update them on sdb.
+*/
+int ha_sdb::check_and_set_options(const char *old_options_str,
+                                  const char *new_options_str,
+                                  enum enum_compress_type old_sql_compress,
+                                  enum enum_compress_type new_sql_compress,
+                                  Sdb_cl &cl) {
+  DBUG_ENTER("ha_sdb::check_and_set_options");
+
+  int rc = 0;
+  bson::BSONObj old_tab_opt, new_tab_opt;
+  bool old_explicit_not_auto_part = false;
+  bool new_explicit_not_auto_part = false;
+  bson::BSONObj old_part_opt, new_part_opt;
+  bson::BSONObjBuilder builder;
+  bson::BSONObj diff_options;
+
+  /*
+    Parse options of COMMENT, and compare their different elements. Then set the
+    different attributes on sdb. COMMENT has some parts of options in format
+    like this:
+    {
+      auto_partition: {true|false}
+      table_options: {...},
+      partition_options: {...},
+    }
+    We'll handle each part one by one.
+  */
+  old_options_str = old_options_str ? old_options_str : "";
+  new_options_str = new_options_str ? new_options_str : "";
+  if (0 == strcmp(old_options_str, new_options_str) &&
+      old_sql_compress == new_sql_compress) {
+    goto done;
+  }
+
+  rc = sdb_parse_comment_options(old_options_str, old_tab_opt,
+                                 old_explicit_not_auto_part, &old_part_opt);
+  DBUG_ASSERT(0 == rc);
+  rc = sdb_parse_comment_options(new_options_str, new_tab_opt,
+                                 new_explicit_not_auto_part, &new_part_opt);
+  if (0 != rc) {
+    goto error;
+  }
+
+  /* 1. auto_partition */
+  // not allowed to modify it.
+  if (new_explicit_not_auto_part != old_explicit_not_auto_part) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Can't support alter auto partition", MYF(0));
+    goto error;
+  }
+
+  /* 2. table_options */
+  rc = sdb_append_compress2tab_opt(old_sql_compress, old_tab_opt);
+  DBUG_ASSERT(0 == rc);
+  rc = sdb_append_compress2tab_opt(new_sql_compress, new_tab_opt);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = sdb_filter_tab_opt(old_tab_opt, new_tab_opt, builder);
+  if (0 != rc) {
+    goto error;
+  }
+
+  diff_options = builder.obj();
+  if (!diff_options.isEmpty()) {
+    rc = cl.set_attributes(diff_options);
+    if (0 != rc) {
+      goto error;
+    }
+  }
+
+  /* 3. partition_options */
+  rc = alter_partition_options(old_tab_opt, new_tab_opt, old_part_opt,
+                               new_part_opt);
+  if (rc != 0) {
+    goto error;
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 bool ha_sdb::inplace_alter_table(TABLE *altered_table,
@@ -1703,69 +1709,29 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   if (alter_flags & ALTER_CHANGE_CREATE_OPTION) {
     const char *old_comment = table->s->comment.str;
     const char *new_comment = create_info->comment.str;
-/*Mariadb hasn't sql compress*/
 #if defined IS_MYSQL
     enum enum_compress_type old_sql_compress =
         sdb_str_compress_type(table->s->compress.str);
     enum enum_compress_type new_sql_compress =
         sdb_str_compress_type(create_info->compress.str);
 #elif defined IS_MARIADB
+    /*Mariadb hasn't sql compress*/
     enum enum_compress_type old_sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
     enum enum_compress_type new_sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
 #endif
-    bool has_compress = false;
-    bool compress_is_set = false;
-    if (old_sql_compress != new_sql_compress) {
-      if (new_sql_compress == SDB_COMPRESS_TYPE_INVALID) {
-        rc = ER_WRONG_ARGUMENTS;
-        my_printf_error(rc, "Invalid compression type", MYF(0));
-        goto error;
-      }
-      has_compress = true;
+    if (new_sql_compress == SDB_COMPRESS_TYPE_INVALID) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(rc, "Invalid compression type", MYF(0));
+      goto error;
     }
 
-    const char *sdb_old_tab_opt = strstr(old_comment, SDB_COMMENT);
-    const char *sdb_new_tab_opt = strstr(new_comment, SDB_COMMENT);
+    const char *old_options_str = strstr(old_comment, SDB_COMMENT);
+    const char *new_options_str = strstr(new_comment, SDB_COMMENT);
     if (!(old_comment == new_comment ||
-          strcmp(old_comment, new_comment) == 0)) {
-      rc = sdb_check_and_set_tab_opt(sdb_old_tab_opt, sdb_new_tab_opt,
-                                     new_sql_compress, has_compress,
-                                     compress_is_set, cl);
-      if (0 != rc) {
-        goto error;
-      }
-    }
-
-    if (has_compress && !compress_is_set) {
-      bson::BSONObjBuilder builder;
-      bson::BSONObj new_tab_opt, new_opt_obj;
-      bson::BSONElement new_opt_ele, cmt_compressed_ele, cmt_compress_type_ele;
-      bool compress_is_set = false;
-      bson::BSONObj sql_compress_obj;
-      rc = sdb_convert_tab_opt_to_obj(sdb_new_tab_opt, new_tab_opt);
-      if (0 != rc) {
-        rc = ER_WRONG_ARGUMENTS;
-        my_printf_error(rc, "Failed to parse comment: '%-.192s'", MYF(0),
-                        sdb_new_tab_opt);
-        goto error;
-      }
-
-      new_opt_ele = new_tab_opt.getField(SDB_FIELD_TABLE_OPTIONS);
-      if (new_opt_ele.type() == bson::Object) {
-        new_opt_obj = new_opt_ele.embeddedObject();
-        cmt_compressed_ele = new_opt_obj.getField(SDB_FIELD_COMPRESSED);
-        cmt_compress_type_ele =
-            new_opt_obj.getField(SDB_FIELD_COMPRESSION_TYPE);
-      }
-      rc = sdb_check_and_set_compress(new_sql_compress, cmt_compressed_ele,
-                                      cmt_compress_type_ele, compress_is_set,
-                                      builder);
-      if (rc != 0) {
-        my_printf_error(rc, "Ambiguous compression", MYF(0));
-        goto error;
-      }
-      sql_compress_obj = builder.obj();
-      rc = cl.set_attributes(sql_compress_obj);
+          strcmp(old_comment, new_comment) == 0) ||
+        old_sql_compress != new_sql_compress) {
+      rc = check_and_set_options(old_options_str, new_options_str,
+                                 old_sql_compress, new_sql_compress, cl);
       if (0 != rc) {
         goto error;
       }
@@ -1820,7 +1786,11 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   while ((info = changed_it++)) {
     if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL ||
         info->op_flag & Col_alter_info::TURN_TO_NULL) {
-      sdb_append_index_to_be_rebuild(table, altered_table, add_keys, drop_keys);
+      rc = sdb_append_index_to_be_rebuild(table, altered_table, add_keys,
+                                          drop_keys);
+      if (rc != 0) {
+        goto error;
+      }
     }
   }
 

@@ -377,6 +377,11 @@ class ha_sdb_part : public ha_sdb,
   bool having_part_hash_id();
 
   int pre_alter_table_add_idx(const KEY* key);
+
+  int alter_partition_options(bson::BSONObj& old_tab_opt,
+                              bson::BSONObj& new_tab_opt,
+                              bson::BSONObj& old_part_opt,
+                              bson::BSONObj& new_part_opt);
   /* end */
 
   void convert_sub2main_part_id(uint& part_id);

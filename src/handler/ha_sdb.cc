@@ -19,7 +19,6 @@
 
 #include "ha_sdb_sql.h"
 #include "ha_sdb.h"
-#include "item_sum.h"
 #include "sdb_cl.h"
 #include "sdb_conn.h"
 #include "ha_sdb_errcode.h"
@@ -27,6 +26,7 @@
 #include "ha_sdb_log.h"
 #include "ha_sdb_thd.h"
 #include "ha_sdb_util.h"
+#include <item_sum.h>
 #include <client.hpp>
 #include <my_bit.h>
 #include <mysql/plugin.h>
@@ -4412,7 +4412,6 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
   bool explicit_range_sharding_type = false;
   bool explicit_group = false;
   bson::BSONElement cmt_compressed, cmt_compress_type;
-  bool compress_is_set = false;
 
   filter_num = sizeof(auto_fill_fields) / sizeof(*auto_fill_fields);
   filter_options(options, auto_fill_fields, filter_num, build);
@@ -4462,32 +4461,10 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
   cmt_compressed = options.getField(SDB_FIELD_COMPRESSED);
   cmt_compress_type = options.getField(SDB_FIELD_COMPRESSION_TYPE);
 
-  if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
-    if (cmt_compress_type.type() == bson::String) {
-      if (cmt_compressed.type() == bson::Bool &&
-          cmt_compressed.Bool() == false) {
-        rc = ER_WRONG_ARGUMENTS;
-        my_printf_error(rc, "Ambiguous compression", MYF(0));
-        goto error;
-      }
-      build.appendBool(SDB_FIELD_COMPRESSED, true);
-      build.append(cmt_compress_type);
-    } else if (cmt_compress_type.type() == bson::EOO) {
-      if (cmt_compressed.type() == bson::Bool &&
-          cmt_compressed.Bool() == false) {
-        build.appendBool(SDB_FIELD_COMPRESSED, false);
-      } else {
-        build.appendBool(SDB_FIELD_COMPRESSED, true);
-        build.append(SDB_FIELD_COMPRESSION_TYPE, SDB_FIELD_COMPRESS_LZW);
-      }
-    }
-  } else {
-    rc = sdb_check_and_set_compress(sql_compress, cmt_compressed,
-                                    cmt_compress_type, compress_is_set, build);
-    if (rc != 0) {
-      my_printf_error(rc, "Ambiguous compression", MYF(0));
-      goto error;
-    }
+  rc = sdb_check_and_set_compress(sql_compress, cmt_compressed,
+                                  cmt_compress_type, build);
+  if (rc != 0) {
+    goto error;
   }
 
 done:

@@ -1947,6 +1947,91 @@ error:
   goto done;
 }
 
+/**
+  Handle the change of partition_options. Once it's changed, all the sub cl
+  should call setAttributes() to update them on sdb.
+*/
+int ha_sdb_part::alter_partition_options(bson::BSONObj &old_tab_opt,
+                                         bson::BSONObj &new_tab_opt,
+                                         bson::BSONObj &old_part_opt,
+                                         bson::BSONObj &new_part_opt) {
+  DBUG_ENTER("ha_sdb_part::alter_partition_options");
+
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+  List_iterator_fast<partition_element> part_it(m_part_info->partitions);
+  partition_element *part_elem;
+
+  // HASH table has no sub cl. partition_options is meanless.
+  if (HASH_PARTITION == m_part_info->part_type) {
+    goto done;
+  }
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  while ((part_elem = part_it++)) {
+    bson::BSONObj old_options;
+    bson::BSONObj new_options;
+    bool explicit_not_auto_partition = false;
+    bson::BSONObjBuilder builder;
+    bson::BSONObj diff_options;
+    char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+    Sdb_cl scl;
+
+    /*
+      Find out which option was different
+    */
+    rc = get_scl_options(m_part_info, part_elem, old_tab_opt, old_part_opt,
+                         explicit_not_auto_partition, old_options);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = get_scl_options(m_part_info, part_elem, new_tab_opt, new_part_opt,
+                         explicit_not_auto_partition, new_options);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = sdb_filter_tab_opt(old_options, new_options, builder);
+    if (rc != 0) {
+      goto error;
+    }
+
+    diff_options = builder.obj();
+    if (diff_options.isEmpty()) {
+      continue;
+    }
+
+    /*
+      Push down cl.setAttributes() for this sub cl.
+    */
+    rc = build_scl_name(table_name, part_elem->partition_name, scl_name);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = conn->get_cl(db_name, scl_name, scl);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = scl.set_attributes(diff_options);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
 // For sub partition, Partition_helper::check_misplaced_rows is
 // hard to check. Besides, ha_sdb::check is not implemented.
 

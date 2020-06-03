@@ -501,6 +501,12 @@ class ha_sdb : public handler {
 
   void raw_store_blob(Field_blob *blob, const char *data, uint len);
 
+  int check_and_set_tab_opt(const char *sdb_old_tab_opt,
+                            const char *sdb_new_tab_opt,
+                            enum enum_compress_type sql_compress,
+                            bool has_compress, bool &compress_is_set,
+                            Sdb_cl &cl);
+
   /* Additional processes provided to derived classes*/
   virtual int pre_row_to_obj(bson::BSONObjBuilder &builder) { return 0; }
 
@@ -522,11 +528,24 @@ class ha_sdb : public handler {
   virtual bool having_part_hash_id() { return false; }
 
   virtual int pre_alter_table_add_idx(const KEY *key) { return 0; }
+
+  virtual int alter_partition_options(bson::BSONObj &old_tab_opt,
+                                      bson::BSONObj &new_tab_opt,
+                                      bson::BSONObj &old_part_opt,
+                                      bson::BSONObj &new_part_opt) {
+    return 0;
+  }
   /* end */
 
 #ifdef IS_MYSQL
   int drop_partition(THD *thd, char *db_name, char *part_name);
 #endif
+
+  int check_and_set_options(const char *old_options_str,
+                            const char *new_options_str,
+                            enum enum_compress_type old_sql_compress,
+                            enum enum_compress_type new_sql_compress,
+                            Sdb_cl &cl);
 
  protected:
   THR_LOCK_DATA lock_data;

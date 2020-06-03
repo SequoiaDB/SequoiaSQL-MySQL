@@ -55,7 +55,6 @@ int sdb_convert_tab_opt_to_obj(const char *str, bson::BSONObj &obj);
 int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
                                bson::BSONElement &cmt_compressed,
                                bson::BSONElement &cmt_compress_type,
-                               bool &compress_is_set,
                                bson::BSONObjBuilder &build);
 
 const char *sdb_elem_type_str(bson::BSONType type);
@@ -88,6 +87,9 @@ bool sdb_is_type_diff(Field *old_field, Field *new_field);
 #ifdef IS_MYSQL
 bool sdb_convert_sub2main_partition_name(char *table_name);
 #endif
+
+int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
+                       bson::BSONObjBuilder &build);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
