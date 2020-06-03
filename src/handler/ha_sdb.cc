@@ -2130,11 +2130,11 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   DBUG_ENTER("ha_sdb::optimize_proccess");
   int rc = 0;
   bson::BSONObj result;
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  THD *thd = ha_thd();
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
-  if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
-    if ((sdb_get_optimizer_options(ha_thd()) &
-         SDB_OPTIMIZER_OPTION_SELECT_COUNT) &&
+  if (thd_sql_command(thd) == SQLCOM_SELECT) {
+    if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT) &&
         optimize_count(condition)) {
       rc = collection->get_count(total_count, condition, hint);
       if (rc) {
@@ -2147,8 +2147,18 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
     build_selector(selector);
   }
 
-  if (thd_sql_command(ha_thd()) == SQLCOM_DELETE &&
-      (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_DELETE) &&
+  /*
+    Don't do direct_update/direct_delete if binlog is using format ROW,
+    because it'll break the logic of log replication.
+  */
+  if ((!thd->is_current_stmt_binlog_disabled() && thd_binlog_filter_ok(thd) &&
+       thd->is_current_stmt_binlog_format_row()) ||
+      (thd_slave_thread(thd) && thd->is_current_stmt_binlog_format_row())) {
+    goto done;
+  }
+
+  if (thd_sql_command(thd) == SQLCOM_DELETE &&
+      (sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_DELETE) &&
       optimize_delete(condition)) {
     first_read = false;
     thd_sdb->deleted = 0;
@@ -2168,8 +2178,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
     goto done;
   }
 
-  if (thd_sql_command(ha_thd()) == SQLCOM_UPDATE &&
-      (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_UPDATE)) {
+  if (thd_sql_command(thd) == SQLCOM_UPDATE &&
+      (sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_UPDATE)) {
     bool optimizer_update = false;
     rc = optimize_update(rule, condition, optimizer_update);
     if (rc) {
@@ -2189,7 +2199,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
           goto error;
         } else if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
           handle_sdb_error(rc, MYF(0));
-          if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
+          if (sdb_lex_ignore(thd) && SDB_WARNING == sdb_error_level) {
             rc = HA_ERR_RECORD_IS_THE_SAME;
           }
         }

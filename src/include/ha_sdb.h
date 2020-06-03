@@ -24,6 +24,14 @@
 #include "ha_sdb_lock.h"
 #include "ha_sdb_conf.h"
 #include "ha_sdb_condition.h"
+
+/* Make entry to sql_class method. */
+extern "C" {
+bool thd_binlog_filter_ok(const MYSQL_THD thd);
+
+int thd_slave_thread(const MYSQL_THD thd);
+}
+
 /*
   Stats that can be retrieved from SequoiaDB.
 */
