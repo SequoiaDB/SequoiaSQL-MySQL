@@ -30,6 +30,13 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
+/* Make entry to sql_class method. */
+extern "C" {
+bool thd_binlog_filter_ok(const MYSQL_THD thd);
+
+int thd_slave_thread(const MYSQL_THD thd);
+}
+
 /*
   Stats that can be retrieved from SequoiaDB.
 */
