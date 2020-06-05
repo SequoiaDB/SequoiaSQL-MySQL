@@ -87,9 +87,6 @@ static my_bool is_field_indexable(const Field *field) {
 
 int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
   int rc = 0;
-  const KEY_PART_INFO *key_part;
-  const KEY_PART_INFO *key_end;
-
   bool is_unique = key_info->flags & HA_NOSAME;
   bool all_is_not_null = true;
 
@@ -98,8 +95,8 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
   bson::BSONObjBuilder options_builder;
   bson::BSONObj options;
 
-  key_part = key_info->key_part;
-  key_end = key_part + key_info->user_defined_key_parts;
+  const KEY_PART_INFO *key_part = key_info->key_part;
+  const KEY_PART_INFO *key_end = key_part + key_info->user_defined_key_parts;
   for (; key_part != key_end; ++key_part) {
     if (!is_field_indexable(key_part->field)) {
       rc = HA_ERR_UNSUPPORTED;

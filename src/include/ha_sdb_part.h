@@ -375,6 +375,8 @@ class ha_sdb_part : public ha_sdb,
   int pre_start_statement();
 
   bool having_part_hash_id();
+
+  int pre_alter_table_add_idx(const KEY* key);
   /* end */
 
   void convert_sub2main_part_id(uint& part_id);

@@ -228,6 +228,35 @@ error:
   goto done;
 }
 
+bool sdb_is_key_include_part_func_column(TABLE *table, const KEY *key_info) {
+  bool rs = false;
+
+  for (Field **fields = table->field; *fields; fields++) {
+    bool found = false;
+    Field *field = *fields;
+    if (!(field->flags & FIELD_IN_PART_FUNC_FLAG)) {
+      continue;
+    }
+
+    const KEY_PART_INFO *key_part = key_info->key_part;
+    const KEY_PART_INFO *key_end = key_part + key_info->user_defined_key_parts;
+    for (; key_part != key_end; ++key_part) {
+      if (0 == strcmp(sdb_field_name(key_part->field), sdb_field_name(field))) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      goto done;
+    }
+  }
+
+  rs = true;
+done:
+  return rs;
+}
+
 Sdb_part_alter_ctx::~Sdb_part_alter_ctx() {
   std::list<char *>::iterator it;
 
@@ -1029,8 +1058,20 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   }
 
   for (uint i = 0; i < form->s->keys; i++) {
-    rc = sdb_create_index(form->s->key_info + i, cl,
-                          is_sharded_by_part_hash_id(part_info));
+    bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
+    const KEY *key_info = form->s->key_info + i;
+
+    if ((key_info->flags & HA_NOSAME) && sharded_by_phid &&
+        !sdb_is_key_include_part_func_column(form, key_info)) {
+      rc = SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY;
+      convert_sdb_code(rc);
+      my_printf_error(
+          rc, "The unique index must include all fields in sharding key",
+          MYF(0));
+      goto error;
+    }
+
+    rc = sdb_create_index(key_info, cl, sharded_by_phid);
     if (rc != 0) {
       // we disabled sharding index,
       // so do not ignore SDB_IXM_EXIST_COVERD_ONE
@@ -1344,6 +1385,19 @@ done:
   return rc;
 error:
   goto done;
+}
+
+int ha_sdb_part::pre_alter_table_add_idx(const KEY *key_info) {
+  int rc = 0;
+  if ((key_info->flags & HA_NOSAME) &&
+      is_sharded_by_part_hash_id(m_part_info) &&
+      !sdb_is_key_include_part_func_column(table, key_info)) {
+    rc = SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY;
+    convert_sdb_code(rc);
+    my_printf_error(
+        rc, "The unique index must include all fields in sharding key", MYF(0));
+  }
+  return rc;
 }
 
 int ha_sdb_part::inner_append_range_cond(bson::BSONArrayBuilder &builder) {

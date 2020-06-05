@@ -513,6 +513,8 @@ class ha_sdb : public handler {
   virtual int pre_start_statement() { return 0; }
 
   virtual bool having_part_hash_id() { return false; }
+
+  virtual int pre_alter_table_add_idx(const KEY *key) { return 0; }
   /* end */
 
 #ifdef IS_MYSQL

@@ -1687,10 +1687,16 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       drop_keys.push_back(ha_alter_info->index_drop_buffer[i]);
     }
   }
+
   if (alter_flags & INPLACE_ONLINE_ADDIDX) {
     for (uint j = 0; j < ha_alter_info->index_add_count; j++) {
       uint key_nr = ha_alter_info->index_add_buffer[j];
-      add_keys.push_back(&ha_alter_info->key_info_buffer[key_nr]);
+      KEY *k = &ha_alter_info->key_info_buffer[key_nr];
+      rc = pre_alter_table_add_idx(k);
+      if (rc != 0) {
+        goto done;
+      }
+      add_keys.push_back(k);
     }
   }
 
