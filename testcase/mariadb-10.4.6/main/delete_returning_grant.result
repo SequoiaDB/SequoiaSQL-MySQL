@@ -34,16 +34,19 @@ a	b
 INSERT INTO mysqltest_delete_returning_grant.t1 SELECT * FROM t1;
 GRANT SELECT(a) ON mysqltest_delete_returning_grant.t1 TO mysqltest_1_delete_returning_grant@localhost;
 DELETE FROM mysqltest_delete_returning_grant.t1 WHERE a=2 RETURNING b;
+b
+BB
+bb
 SELECT * FROM mysqltest_delete_returning_grant.t1;
 a	b
-7	ggggggg
+1	A
 1	a
 3	ccc
-4	dddd
-1	A
 4	DDDD
+4	dddd
 5	EEEEE
 7	GGGGGGG
+7	ggggggg
 INSERT INTO mysqltest_delete_returning_grant.t1 SELECT * FROM t1;
 connection root;
 CREATE VIEW mysqltest_delete_returning_grant.v1(a) AS SELECT a FROM mysqltest_delete_returning_grant.t1;

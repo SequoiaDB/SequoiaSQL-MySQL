@@ -55,12 +55,11 @@ GRANT SELECT(a) ON mysqltest_delete_returning_grant.t1 TO mysqltest_1_delete_ret
 
 #DELETE FROM mysqltest.t1 WHERE a=2 RETURNING b;
 #BUG #SEQUOIASQLMAINSTREAM-617, disable result log for temporary
---disable_result_log
 DELETE FROM mysqltest_delete_returning_grant.t1 WHERE a=2 RETURNING b;
---enable_result_log
 
 #SELECT * FROM mysqltest.t1;
 #INSERT INTO mysqltest.t1 SELECT * FROM t1;
+--sorted_result
 SELECT * FROM mysqltest_delete_returning_grant.t1;
 INSERT INTO mysqltest_delete_returning_grant.t1 SELECT * FROM t1;
 
