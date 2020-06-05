@@ -1066,10 +1066,10 @@ SELECT * FROM v1;
 SET TIMESTAMP = 2000.000234;
 
 #BUG #SEQUOIASQLMAINSTREAM-615
-#--replace_regex /test_parallel_[0-9]/X/
-#--error ER_VIEW_CHECK_FAILED
-#UPDATE v1 SET a = 2;
-#SELECT * FROM t1;
+--replace_regex /test_parallel_[0-9]/X/
+--error ER_VIEW_CHECK_FAILED
+UPDATE v1 SET a = 2;
+SELECT * FROM t1;
 
 DROP VIEW v1;
 DROP TABLE t1;
