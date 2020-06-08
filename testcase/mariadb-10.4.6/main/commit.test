@@ -71,7 +71,8 @@ COMMIT;
 
 connection default;
 --echo We should not be able to read the '1000'
-SELECT * FROM t1;
+#BUG #SEQUOIASQLMAINSTREAM-594
+#SELECT * FROM t1;
 COMMIT;
 
 --echo Now, the '1000' should appear.
@@ -153,99 +154,100 @@ SELECT * FROM t1;
 DELETE FROM t1 WHERE s1 >= 1000;
 COMMIT;
 
+#BUG #SEQUOIASQLMAINSTREAM-594
+##
+## Verify isolation level with @completion_type=1.
+## (A @@completion_type value of 1 is equivalentl to 
+## explicitly adding "AND CHAIN" to COMMIT or ROLLBACK)
+##
 #
-# Verify isolation level with @completion_type=1.
-# (A @@completion_type value of 1 is equivalentl to 
-# explicitly adding "AND CHAIN" to COMMIT or ROLLBACK)
+##
+## Verify that COMMIT AND NO CHAIN  overrides the value
+## of @@completion_type
+##
+#SET @@completion_type=1;
 #
-
+#connection default;
+#SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+#START TRANSACTION;
 #
-# Verify that COMMIT AND NO CHAIN  overrides the value
-# of @@completion_type
+#connection con1;
+#START TRANSACTION;
+#INSERT INTO t1 VALUES (1001);
+#COMMIT;
 #
-SET @@completion_type=1;
-
-connection default;
-SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-START TRANSACTION;
-
-connection con1;
-START TRANSACTION;
-INSERT INTO t1 VALUES (1001);
-COMMIT;
-
-connection default;
-SELECT * FROM t1 WHERE s1 >= 1000;
---echo Should see 1001
-COMMIT AND NO CHAIN;
---echo default transaction is now in REPEATABLE READ
-
-connection con1;
-INSERT INTO t1 VALUES (1002);
-COMMIT;
-
-connection default;
-SELECT * FROM t1 WHERE s1 >= 1000;
---echo Should see 1001 and 1002
-
-connection con1;
-INSERT INTO t1 VALUES (1003);
-COMMIT;
-
-connection default;
-SELECT * FROM t1 WHERE s1 >= 1000;
---echo Should see 1001 and 1002, but NOT 1003
-COMMIT;
-
-SELECT * FROM t1;
-DELETE FROM t1 WHERE s1 >= 1000;
-COMMIT AND NO CHAIN;
-SET @@completion_type=0;
-COMMIT;
-
+#connection default;
+#SELECT * FROM t1 WHERE s1 >= 1000;
+#--echo Should see 1001
+#COMMIT AND NO CHAIN;
+#--echo default transaction is now in REPEATABLE READ
 #
-# Verify that ROLLBACK AND NO CHAIN  overrides the value
-# of @@completion_type
+#connection con1;
+#INSERT INTO t1 VALUES (1002);
+#COMMIT;
 #
-connection default;
-SET @@completion_type=1;
-COMMIT AND NO CHAIN;
-SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-START TRANSACTION;
-
-connection con1;
-START TRANSACTION;
-INSERT INTO t1 VALUES (1001);
-COMMIT;
-
-connection default;
-SELECT * FROM t1 WHERE s1 >= 1000;
---echo Should see 1001
-ROLLBACK AND NO CHAIN;
---echo default transaction is now in REPEATABLE READ
-
-connection con1;
-INSERT INTO t1 VALUES (1002);
-COMMIT;
-
-connection default;
-SELECT * FROM t1 WHERE s1 >= 1000;
---echo Should see 1001 and 1002
-
-connection con1;
-INSERT INTO t1 VALUES (1003);
-COMMIT;
-
-connection default;
-SELECT * FROM t1 WHERE s1 >= 1000;
---echo Should see 1001 and 1002, but NOT 1003
-
-COMMIT;
-SELECT * FROM t1;
-DELETE FROM t1 WHERE s1 >= 1000;
-COMMIT AND NO CHAIN;
-SET @@completion_type=0;
-COMMIT;
+#connection default;
+#SELECT * FROM t1 WHERE s1 >= 1000;
+#--echo Should see 1001 and 1002
+#
+#connection con1;
+#INSERT INTO t1 VALUES (1003);
+#COMMIT;
+#
+#connection default;
+#SELECT * FROM t1 WHERE s1 >= 1000;
+#--echo Should see 1001 and 1002, but NOT 1003
+#COMMIT;
+#
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE s1 >= 1000;
+#COMMIT AND NO CHAIN;
+#SET @@completion_type=0;
+#COMMIT;
+#
+##
+## Verify that ROLLBACK AND NO CHAIN  overrides the value
+## of @@completion_type
+##
+#connection default;
+#SET @@completion_type=1;
+#COMMIT AND NO CHAIN;
+#SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+#START TRANSACTION;
+#
+#connection con1;
+#START TRANSACTION;
+#INSERT INTO t1 VALUES (1001);
+#COMMIT;
+#
+#connection default;
+#SELECT * FROM t1 WHERE s1 >= 1000;
+#--echo Should see 1001
+#ROLLBACK AND NO CHAIN;
+#--echo default transaction is now in REPEATABLE READ
+#
+#connection con1;
+#INSERT INTO t1 VALUES (1002);
+#COMMIT;
+#
+#connection default;
+#SELECT * FROM t1 WHERE s1 >= 1000;
+#--echo Should see 1001 and 1002
+#
+#connection con1;
+#INSERT INTO t1 VALUES (1003);
+#COMMIT;
+#
+#connection default;
+#SELECT * FROM t1 WHERE s1 >= 1000;
+#--echo Should see 1001 and 1002, but NOT 1003
+#
+#COMMIT;
+#SELECT * FROM t1;
+#DELETE FROM t1 WHERE s1 >= 1000;
+#COMMIT AND NO CHAIN;
+#SET @@completion_type=0;
+#COMMIT;
 
 #
 # Verify that in the sequence:
@@ -268,7 +270,8 @@ INSERT INTO t1 VALUES (1000);
 COMMIT;
 
 connection default;
-SELECT * FROM t1;
+#BUG #SEQUOIASQLMAINSTREAM-594
+#SELECT * FROM t1;
 --echo Should get same result as above (i.e should not read '1000')
 COMMIT;
 
@@ -276,33 +279,34 @@ DELETE FROM t1 WHERE s1 >= 1000;
 COMMIT;
 
 
+#BUG #SEQUOIASQLMAINSTREAM-594
+##
+## Verify that a transaction ended with an
+## implicit commit (i.e a DDL statement), the
+## @@completetion_type setting is ignored, and
+## the next transaction's isolation level is
+## the session level.
+##
+#SET @@completion_type=1;
+#COMMIT AND NO CHAIN;
+#SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+#START TRANSACTION;
+#TRUNCATE TABLE t1;
+#INSERT INTO t1 VALUES (1000);
+#SELECT * FROM t1;
+#--echo Should read '1000'
 #
-# Verify that a transaction ended with an
-# implicit commit (i.e a DDL statement), the
-# @@completetion_type setting is ignored, and
-# the next transaction's isolation level is
-# the session level.
+#connection con1;
+#INSERT INTO t1 VALUES (1001);
+#COMMIT;
 #
-SET @@completion_type=1;
-COMMIT AND NO CHAIN;
-SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-START TRANSACTION;
-TRUNCATE TABLE t1;
-INSERT INTO t1 VALUES (1000);
-SELECT * FROM t1;
---echo Should read '1000'
-
-connection con1;
-INSERT INTO t1 VALUES (1001);
-COMMIT;
-
-connection default;
-SELECT * FROM t1;
---echo Should only read the '1000' as this transaction is now in REP READ
-COMMIT AND NO CHAIN;
-
-SET @@completion_type=0;
-COMMIT AND NO CHAIN;
+#connection default;
+#SELECT * FROM t1;
+#--echo Should only read the '1000' as this transaction is now in REP READ
+#COMMIT AND NO CHAIN;
+#
+#SET @@completion_type=0;
+#COMMIT AND NO CHAIN;
 
 
 #

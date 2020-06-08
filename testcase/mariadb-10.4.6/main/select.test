@@ -1493,6 +1493,7 @@ select fld3,period from t2,t3 where t2.fld1 = 011401 and t2.fld1=t3.t2nr and t3.
 # Search with a constant table and several rows from another table
 #
 
+--sorted_result
 select fld3,period from t2,t1 where companynr*10 = 37*10;
 
 #

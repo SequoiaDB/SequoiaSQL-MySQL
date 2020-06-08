@@ -315,7 +315,7 @@ update t1 set a='c' where a='a';
 select * from t1;
 delete from t1;
 select * from t1;
-insert into t1 values(repeat('a',16773074));
+insert into t1 values(repeat('a',16773062));
 select length(a) from t1;
 --error 40024 
 insert into t1 values(repeat('a',16773075));
@@ -329,7 +329,7 @@ update t1 set a='c' where a='a';
 select * from t1;
 delete from t1;
 select * from t1;
-insert into t1 values(repeat('a',16773074));
+insert into t1 values(repeat('a',16773062));
 select length(a) from t1;
 --error 40024 
 insert into t1 values(repeat('a',16773075));
@@ -369,7 +369,7 @@ update t1 set a='c' where a='a';
 select * from t1;
 delete from t1;
 select * from t1;
-insert into t1 values(repeat('a',16773074));
+insert into t1 values(repeat('a',16773062));
 select length(a) from t1;
 --error 40024
 insert into t1 values(repeat('a',16773075));
@@ -383,7 +383,7 @@ update t1 set a='c' where a='a';
 select * from t1;
 delete from t1;
 select * from t1;
-insert into t1 values(repeat('a',16773074));
+insert into t1 values(repeat('a',16773062));
 select length(a) from t1;
 --error 40024
 insert into t1 values(repeat('a',16773075));

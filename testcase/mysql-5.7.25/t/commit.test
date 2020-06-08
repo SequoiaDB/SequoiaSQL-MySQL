@@ -73,6 +73,7 @@ COMMIT;
 --echo connection default
 connection default;
 --echo We should not be able to read the '1000'
+#BUG #SEQUOIASQLMAINSTREAM-594
 #SequoiaDB not support rep read
 #SELECT * FROM t1;
 COMMIT;
@@ -166,6 +167,7 @@ SELECT * FROM t1;
 DELETE FROM t1 WHERE s1 >= 1000;
 COMMIT;
 
+#BUG #SEQUOIASQLMAINSTREAM-594
 #
 # Verify isolation level with @completion_type=1.
 # (A @@completion_type value of 1 is equivalentl to 
@@ -307,6 +309,7 @@ DELETE FROM t1 WHERE s1 >= 1000;
 COMMIT;
 
 
+#BUG #SEQUOIASQLMAINSTREAM-594
 #
 # Verify that a transaction ended with an
 # implicit commit (i.e a DDL statement), the
