@@ -40,13 +40,16 @@ static const alter_table_operations INPLACE_ONLINE_DROPIDX =
     ALTER_DROP_PK_INDEX | ALTER_COLUMN_NULLABLE;
 
 static const alter_table_operations INPLACE_ONLINE_OPERATIONS =
-    INPLACE_ONLINE_ADDIDX | INPLACE_ONLINE_DROPIDX | ALTER_ADD_COLUMN |
-    ALTER_DROP_COLUMN | ALTER_STORED_COLUMN_ORDER | ALTER_STORED_COLUMN_TYPE |
-    ALTER_COLUMN_DEFAULT | ALTER_COLUMN_EQUAL_PACK_LENGTH |
-    ALTER_CHANGE_CREATE_OPTION | ALTER_RENAME_INDEX | ALTER_RENAME |
-    ALTER_COLUMN_INDEX_LENGTH | ALTER_ADD_FOREIGN_KEY | ALTER_DROP_FOREIGN_KEY |
-    ALTER_INDEX_COMMENT | ALTER_COLUMN_STORAGE_TYPE |
-    ALTER_COLUMN_COLUMN_FORMAT | ALTER_RECREATE_TABLE;
+    INPLACE_ONLINE_ADDIDX | INPLACE_ONLINE_DROPIDX | ALTER_ADD_VIRTUAL_COLUMN |
+    ALTER_ADD_STORED_BASE_COLUMN | ALTER_DROP_COLUMN | ALTER_COLUMN_DEFAULT |
+    ALTER_STORED_COLUMN_TYPE | ALTER_STORED_COLUMN_ORDER |
+    ALTER_STORED_GCOL_EXPR | ALTER_VIRTUAL_COLUMN_TYPE |
+    ALTER_VIRTUAL_COLUMN_ORDER | ALTER_VIRTUAL_GCOL_EXPR |
+    ALTER_COLUMN_EQUAL_PACK_LENGTH | ALTER_CHANGE_CREATE_OPTION |
+    ALTER_RENAME_INDEX | ALTER_RENAME | ALTER_COLUMN_INDEX_LENGTH |
+    ALTER_ADD_FOREIGN_KEY | ALTER_DROP_FOREIGN_KEY | ALTER_INDEX_COMMENT |
+    ALTER_COLUMN_STORAGE_TYPE | ALTER_COLUMN_COLUMN_FORMAT |
+    ALTER_RECREATE_TABLE;
 
 static const int SDB_TYPE_NUM = 23;
 static const uint INT_TYPE_NUM = 5;
@@ -1329,6 +1332,14 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
                         sdb_field_name(new_field)) == 0) {
         matched_map.set_bit(j);
         found_col = true;
+
+        // True if stored generated column's expression is equal.
+        if (sdb_field_is_stored_gcol(old_field) &&
+            sdb_field_is_stored_gcol(new_field) &&
+            !sdb_gcol_expr_is_equal(old_field, new_field)) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
 
         int op_flag = 0;
         if (sdb_is_type_diff(old_field, new_field)) {

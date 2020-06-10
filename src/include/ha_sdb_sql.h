@@ -69,13 +69,18 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define ALTER_INDEX_COMMENT Alter_inplace_info::ALTER_INDEX_COMMENT
 
 // Column flags
-#define ALTER_ADD_COLUMN Alter_inplace_info::ADD_COLUMN
 #define ALTER_ADD_STORED_BASE_COLUMN Alter_inplace_info::ADD_STORED_BASE_COLUMN
+#define ALTER_ADD_VIRTUAL_COLUMN Alter_inplace_info::ADD_VIRTUAL_COLUMN
 #define ALTER_DROP_COLUMN Alter_inplace_info::DROP_COLUMN
 #define ALTER_DROP_STORED_COLUMN Alter_inplace_info::DROP_STORED_COLUMN
-#define ALTER_STORED_COLUMN_ORDER Alter_inplace_info::ALTER_STORED_COLUMN_ORDER
-#define ALTER_STORED_COLUMN_TYPE Alter_inplace_info::ALTER_STORED_COLUMN_TYPE
 #define ALTER_COLUMN_DEFAULT Alter_inplace_info::ALTER_COLUMN_DEFAULT
+#define ALTER_STORED_COLUMN_TYPE Alter_inplace_info::ALTER_STORED_COLUMN_TYPE
+#define ALTER_STORED_COLUMN_ORDER Alter_inplace_info::ALTER_STORED_COLUMN_ORDER
+#define ALTER_STORED_GCOL_EXPR Alter_inplace_info::ALTER_STORED_GCOL_EXPR
+#define ALTER_VIRTUAL_COLUMN_TYPE Alter_inplace_info::ALTER_VIRTUAL_COLUMN_TYPE
+#define ALTER_VIRTUAL_COLUMN_ORDER \
+  Alter_inplace_info::ALTER_VIRTUAL_COLUMN_ORDER
+#define ALTER_VIRTUAL_GCOL_EXPR Alter_inplace_info::ALTER_VIRTUAL_GCOL_EXPR
 #define ALTER_COLUMN_EQUAL_PACK_LENGTH \
   Alter_inplace_info::ALTER_COLUMN_EQUAL_PACK_LENGTH
 #define ALTER_COLUMN_NOT_NULLABLE Alter_inplace_info::ALTER_COLUMN_NOT_NULLABLE
@@ -116,6 +121,7 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #ifdef IS_MARIADB
 // About table flags
 #define HA_NO_READ_LOCAL_LOCK 0
+#define HA_GENERATED_COLUMNS HA_CAN_VIRTUAL_COLUMNS
 
 // About alter flags
 #define ALTER_INDEX_COMMENT 0
@@ -152,6 +158,7 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define DATETIME_MAX_DECIMALS MAX_DATETIME_PRECISION
 #define ha_statistic_increment(A) increment_statistics(A)
 #define PLUGIN_VAR_INVISIBLE 0
+#define PARSE_GCOL_KEYWORD "PARSE_VCOL_EXPR "
 
 // Functions similar as MySQL
 void repoint_field_to_record(TABLE *table, uchar *old_rec, uchar *new_rec);
@@ -241,9 +248,17 @@ bool sdb_field_is_gcol(const Field *field);
 
 bool sdb_field_is_virtual_gcol(const Field *field);
 
+bool sdb_field_is_stored_gcol(const Field *field);
+
 bool sdb_field_has_insert_def_func(const Field *field);
 
 bool sdb_field_has_update_def_func(const Field *field);
+
+Item *sdb_get_gcol_item(const Field *field);
+
+MY_BITMAP *sdb_get_base_columns_map(const Field *field);
+
+bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field);
 
 // About Item
 const char *sdb_item_field_name(const Item_field *f);
@@ -301,4 +316,5 @@ bool sdb_create_table_like(THD *thd);
 
 void sdb_query_cache_invalidate(THD *thd, bool all);
 
+bool sdb_table_has_gcol(TABLE *table);
 #endif

@@ -262,12 +262,32 @@ bool sdb_field_is_virtual_gcol(const Field *field) {
   return field->is_virtual_gcol();
 }
 
+bool sdb_field_is_stored_gcol(const Field *field) {
+  return field->is_gcol() && field->stored_in_db;
+}
+
 bool sdb_field_has_insert_def_func(const Field *field) {
   return field->has_insert_default_function();
 }
 
 bool sdb_field_has_update_def_func(const Field *field) {
   return field->has_update_default_function();
+}
+
+Item *sdb_get_gcol_item(const Field *field) {
+  DBUG_ASSERT(field->gcol_info && field->gcol_info->expr_item);
+  return field->gcol_info->expr_item;
+}
+
+MY_BITMAP *sdb_get_base_columns_map(const Field *field) {
+  return &field->gcol_info->base_columns_map;
+}
+
+bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field) {
+  LEX_STRING old_expr = old_field->gcol_info->expr_str;
+  LEX_STRING new_expr = new_field->gcol_info->expr_str;
+  return (old_expr.length == new_expr.length) &&
+         0 == strncmp(old_expr.str, new_expr.str, old_expr.length);
 }
 
 bool sdb_item_like_escape_is_evaluated(Item *item) {
@@ -351,6 +371,10 @@ void sdb_query_cache_invalidate(THD *thd, bool all) {
   }
   query_cache.invalidate_single(thd, table_list,
                                 sdb_is_transaction_stmt(thd, all));
+}
+
+bool sdb_table_has_gcol(TABLE *table) {
+  return table->has_gcol();
 }
 
 #elif defined IS_MARIADB
@@ -550,6 +574,10 @@ bool sdb_field_is_virtual_gcol(const Field *field) {
   return !field->stored_in_db();
 }
 
+bool sdb_field_is_stored_gcol(const Field *field) {
+  return field->vcol_info && field->stored_in_db();
+}
+
 bool sdb_field_has_insert_def_func(const Field *field) {
   return field->has_default_now_unireg_check();
 }
@@ -557,6 +585,46 @@ bool sdb_field_has_insert_def_func(const Field *field) {
 bool sdb_field_has_update_def_func(const Field *field) {
   return field->unireg_check == Field::TIMESTAMP_UN_FIELD ||
          field->unireg_check == Field::TIMESTAMP_DNUN_FIELD;
+}
+
+Item *sdb_get_gcol_item(const Field *field) {
+  DBUG_ASSERT(field->vcol_info && field->vcol_info->expr);
+  return field->vcol_info->expr;
+}
+
+MY_BITMAP *sdb_get_base_columns_map(const Field *field) {
+  MY_BITMAP *old_read_set = field->table->read_set;
+  field->table->read_set = &field->table->tmp_set;
+  bitmap_clear_all(&field->table->tmp_set);
+  field->vcol_info->expr->walk(&Item::register_field_in_read_map, 1,
+                               field->table);
+  field->table->read_set = old_read_set;
+  return &field->table->tmp_set;
+}
+
+StringBuffer<MAX_FIELD_WIDTH> sdb_parse_gcol_expr(const TABLE *table) {
+  const uchar *pos = table->s->vcol_defs.str;
+  const uchar *end = pos + table->s->vcol_defs.length;
+  StringBuffer<MAX_FIELD_WIDTH> expr_str;
+  expr_str.append(PARSE_GCOL_KEYWORD);
+  uint expr_length = 0;
+  while (pos < end) {
+    if (table->s->frm_version >= FRM_VER_EXPRESSSIONS) {
+      uint name_length;
+      expr_length = uint2korr(pos + 3);
+      name_length = pos[5];
+      pos += FRM_VCOL_NEW_HEADER_SIZE + name_length;
+    }
+    expr_str.length(strlen(PARSE_GCOL_KEYWORD));
+    expr_str.append((char *)pos, expr_length);
+    pos += expr_length;
+  }
+  return expr_str;
+}
+
+bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field) {
+  return 0 == strcmp(sdb_parse_gcol_expr(old_field->table).c_ptr_safe(),
+                     sdb_parse_gcol_expr(new_field->table).c_ptr_safe());
 }
 
 bool sdb_item_like_escape_is_evaluated(Item *item) {
@@ -628,6 +696,10 @@ bool sdb_create_table_like(THD *thd) {
 void sdb_query_cache_invalidate(THD *thd, bool all) {
   query_cache_invalidate3(thd, thd->lex->query_tables,
                           sdb_is_transaction_stmt(thd, all));
+}
+
+bool sdb_table_has_gcol(TABLE *table) {
+  return table->vfield;
 }
 
 #endif

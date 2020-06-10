@@ -619,7 +619,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
       (HA_REC_NOT_IN_SEQ | HA_NO_READ_LOCAL_LOCK | HA_BINLOG_ROW_CAPABLE |
        HA_BINLOG_STMT_CAPABLE | HA_TABLE_SCAN_ON_INDEX | HA_NULL_IN_KEY |
        HA_CAN_INDEX_BLOBS | HA_AUTO_PART_KEY | HA_DUPLICATE_POS |
-       HA_CAN_TABLE_CONDITION_PUSHDOWN | HA_CAN_REPAIR);
+       HA_CAN_TABLE_CONDITION_PUSHDOWN | HA_CAN_REPAIR | HA_GENERATED_COLUMNS);
 
   m_table_flags |= (sdb_use_transaction ? 0 : HA_NO_TRANSACTIONS);
 
@@ -1071,6 +1071,9 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
                          bool auto_inc_explicit_used) {
   int rc = 0;
   DBUG_ASSERT(NULL != field);
+  if (sdb_field_is_virtual_gcol(field)) {
+    goto done;
+  }
   switch (field->type()) {
     case MYSQL_TYPE_TINY:
     case MYSQL_TYPE_SHORT:
@@ -2019,6 +2022,8 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
   DBUG_ENTER("ha_sdb::create_modifier_obj()");
   int rc = 0;
   Field *rfield = NULL;
+  Field **gfield_ptr = NULL;
+  Field *gfield = NULL;
   Item *value = NULL;
   Item_field *field = NULL;
   bson::BSONObj set_obj;
@@ -2026,6 +2031,16 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
   bson::BSONObjBuilder set_builder;
   bson::BSONObjBuilder inc_builder;
   Item *fld = NULL;
+#ifdef IS_MYSQL
+  MY_BITMAP *bitmap = table->write_set;
+#elif defined IS_MARIADB
+  MY_BITMAP *bitmap = table->read_set;
+#endif
+  // Bitmap records base columns which were set to a constant.
+  MY_BITMAP const_col_map;
+  my_bitmap_map *bitbuf = static_cast<my_bitmap_map *>(
+      alloc_root(&table->mem_root, bitmap_buffer_size(table->s->fields)));
+  bitmap_init(&const_col_map, bitbuf, table->s->fields, 0);
 
   SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
   List<Item> *const item_list = &select_lex->item_list;
@@ -2036,7 +2051,7 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     ha_sdb_update_arg upd_arg;
     field = fld->field_for_view_update();
     DBUG_ASSERT(field != NULL);
-    /*set field's table is not the current table*/
+    /*Set field's table is not the current table*/
     if (field->used_tables() & ~sdb_table_map(table)) {
       *optimizer_update = false;
       SDB_LOG_DEBUG("optimizer update: %d table not table ref",
@@ -2047,8 +2062,8 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     rfield = field->field;
     value = v++;
 #ifdef IS_MARIADB
-    // support for mariadb syntax like "update ... set a=ignore".
-    // if field is set to ignore, it will not be cond push.
+    // Support for mariadb syntax like "update ... set a=ignore".
+    // If field is set to ignore, it will not be cond push.
     if (value->type() == Item::DEFAULT_VALUE_ITEM &&
         !((Item_default_value *)value)->arg) {
       char buf[STRING_BUFFER_USUAL_SIZE];
@@ -2063,7 +2078,7 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     upd_arg.my_field = rfield;
     upd_arg.optimizer_update = optimizer_update;
 
-    /* generated column cannot be optimized. */
+    /* Generated column cannot be optimized. */
     if (sdb_field_is_gcol(rfield)) {
       *optimizer_update = false;
       goto done;
@@ -2087,11 +2102,50 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
                           set_builder);
       } else {
         rc = create_set_rule(rfield, value, optimizer_update, set_builder);
+        bitmap_set_bit(&const_col_map, rfield->field_index);
       }
     }
 
     if (0 != rc || !*optimizer_update) {
       goto error;
+    }
+  }
+
+  // Stored generated columns can be optimized which can be calculated by base
+  // columns, example:
+  // CREATE TABLE t1(a INT, b INT, c INT GENERATED ALWAYS AS (a+b+1) STORED.
+  // SET a=3                   N
+  // SET a=3, b=10             Y
+  // SET a=a+1, b=10           N
+  if (sdb_table_has_gcol(table)) {
+    for (gfield_ptr = table->vfield; *gfield_ptr; gfield_ptr++) {
+      gfield = *gfield_ptr;
+      value = sdb_get_gcol_item(gfield);
+      if (sdb_field_is_stored_gcol(gfield) &&
+          bitmap_is_set(bitmap, gfield->field_index)) {
+        Field *tmp_field = NULL;
+        MY_BITMAP *base_columns_map = sdb_get_base_columns_map(gfield);
+        for (uint i = 0; i < table->s->fields; i++) {
+          tmp_field = table->field[i];
+          if (bitmap_is_set(base_columns_map, tmp_field->field_index) &&
+              !bitmap_is_set(&const_col_map, tmp_field->field_index)) {
+            *optimizer_update = false;
+            goto done;
+          }
+        }
+        rc = create_set_rule(gfield, value, optimizer_update, set_builder);
+        bitmap_set_bit(&const_col_map, gfield->field_index);
+      }
+#ifdef IS_MYSQL
+      /* Set bitmap of table fields (columns), which are explicitly set to avoid
+         memory allocation on MEM_ROOT.*/
+      if (table->fields_set_during_insert) {
+        bitmap_set_bit(table->fields_set_during_insert, rfield->field_index);
+      }
+#endif
+      if (0 != rc || !*optimizer_update) {
+        goto error;
+      }
     }
   }
   set_obj = set_builder.obj();
@@ -2620,10 +2674,19 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
 
     case SDB_DMS_EOC:
-    // mysql add a flag of end of file
+    // MySQL add a flag of end of file
     case HA_ERR_END_OF_FILE: {
       SELECT_LEX *current_select = sdb_lex_current_select(ha_thd());
-      if (current_select->join && current_select->join->implicit_grouping) {
+#ifdef IS_MYSQL
+      if (current_select->join && current_select->join->implicit_grouping)
+#elif defined IS_MARIADB
+      // In both cases need to return HA_ERR_KEY_NOT_FOUND:
+      // 1. the query contains an aggregate function but has no GROUP BY clause.
+      // 2. unique index using the hash algorithm.
+      if ((current_select->join && current_select->join->implicit_grouping) ||
+          table->s->long_unique_table)
+#endif
+      {
         rc = HA_ERR_KEY_NOT_FOUND;
       }
       table->status = STATUS_NOT_FOUND;

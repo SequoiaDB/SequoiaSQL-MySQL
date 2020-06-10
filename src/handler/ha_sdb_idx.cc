@@ -105,6 +105,14 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
                       MYF(0), key_part->field->field_name);
       goto error;
     }
+#ifdef IS_MARIADB
+    if (sdb_field_is_virtual_gcol(key_part->field)) {
+      rc = ER_ILLEGAL_HA_CREATE_OPTION;
+      my_error(rc, MYF(0), "SequoiaDB", "Index on virtual generated column");
+      goto error;
+    }
+#endif
+
     if (key_part->null_bit) {
       all_is_not_null = false;
     }

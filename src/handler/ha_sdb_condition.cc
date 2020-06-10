@@ -342,10 +342,13 @@ done:
   DBUG_RETURN(rc);
 }
 
+// Traverse item of condition.
+// If the item can be pushed down, then push it into our context.
 static void sdb_traverse_cond(const Item *cond_item, void *arg) {
   DBUG_ENTER("sdb_traverse_cond()");
   ha_sdb_cond_ctx *sdb_ctx = (ha_sdb_cond_ctx *)arg;
   Item_func::Functype type;
+  Item_field *item_field = NULL;
 
   if (sdb_ctx->type == ha_sdb_cond_ctx::PUSHED_COND) {
     if (SDB_COND_UNSUPPORTED == sdb_ctx->status ||
@@ -353,7 +356,15 @@ static void sdb_traverse_cond(const Item *cond_item, void *arg) {
       // skip all while occured unsupported-condition
       goto done;
     }
-
+    // Virtual generated columns cannot be pushed down, skip all when contains
+    // them.
+    if (cond_item && Item::FIELD_ITEM == cond_item->type()) {
+      item_field = (Item_field *)cond_item;
+      if (sdb_field_is_virtual_gcol(item_field->field)) {
+        sdb_ctx->status = SDB_COND_UNSUPPORTED;
+        goto done;
+      }
+    }
     sdb_ctx->push((Item *)cond_item);
   }
 
