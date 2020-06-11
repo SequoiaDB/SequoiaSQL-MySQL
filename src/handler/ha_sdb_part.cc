@@ -680,7 +680,7 @@ error:
 int ha_sdb_part::get_scl_options(partition_info *part_info,
                                  partition_element *part_elem,
                                  const bson::BSONObj &mcl_options,
-                                 const bson::BSONObj &partition_options,
+                                 const bson::BSONObj &mcl_part_options,
                                  bool explicit_not_auto_partition,
                                  bson::BSONObj &scl_options) {
   DBUG_ENTER("ha_sdb_part::get_scl_options");
@@ -691,23 +691,33 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
   static const uint INHERITABLE_OPT_NUM =
       sizeof(INHERITABLE_OPT) / sizeof(const char *);
   /*
-    There are 3 level cl options:
-    1. mcl_options      : table_options of top level COMMENT
-    2. partition_options: partition_options of top level COMMENT
-    3. table_options    : table_options of partition COMMENT
+    There are 3 levels of cl options:
+    1. mcl_options      : table_options of table COMMENT
+    2. mcl_part_options : partition_options of table COMMENT
+    3. scl_part_options : partition_options of partition COMMENT
     The lower the level, the higher the priority.
   */
   int rc = 0;
   bson::BSONObj table_options;
+  bson::BSONObj scl_part_options;
   bson::BSONObj sharding_key;
   bson::BSONObjBuilder builder;
 
   if (part_elem->part_comment) {
     rc = sdb_parse_comment_options(part_elem->part_comment, table_options,
-                                   explicit_not_auto_partition);
+                                   explicit_not_auto_partition,
+                                   &scl_part_options);
     if (rc != 0) {
       goto error;
     }
+  }
+
+  if (!table_options.isEmpty()) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(
+        rc, "table_options is not for partition comment. Try partition_options",
+        MYF(0));
+    goto error;
   }
 
   // Generate scl sharding key;
@@ -729,26 +739,26 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
     sharding_key = key_builder.obj();
 
   } else if (!explicit_not_auto_partition) {
-    rc =
-        ha_sdb::get_sharding_key(part_info->table, table_options, sharding_key);
+    rc = ha_sdb::get_sharding_key(part_info->table, scl_part_options,
+                                  sharding_key);
     if (rc != 0) {
       goto error;
     }
   }
 
   // Check the options about shard, which may be conflicted with COMMENT;
-  rc = sdb_check_shard_info(table_options, sharding_key, "hash");
+  rc = sdb_check_shard_info(scl_part_options, sharding_key, "hash");
   if (rc != 0) {
     goto error;
   }
-  rc = sdb_check_shard_info(partition_options, sharding_key, "hash");
+  rc = sdb_check_shard_info(mcl_part_options, sharding_key, "hash");
   if (rc != 0) {
     goto error;
   }
 
-  // Merge mcl_options & partition_options into table_options.
+  // Merge mcl_options & mcl_part_options into scl_part_options.
   {
-    bson::BSONObjIterator it(partition_options);
+    bson::BSONObjIterator it(mcl_part_options);
     while (it.more()) {
       bson::BSONElement part_opt = it.next();
       if (!table_options.hasField(part_opt.fieldName())) {
@@ -761,16 +771,16 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
     const char *curr_opt = INHERITABLE_OPT[i];
     bson::BSONElement mcl_opt = mcl_options.getField(curr_opt);
     if (mcl_opt.type() != bson::EOO && !table_options.hasField(curr_opt) &&
-        !partition_options.hasField(curr_opt)) {
+        !mcl_part_options.hasField(curr_opt)) {
       builder.append(mcl_opt);
     }
   }
   builder.appendElements(table_options);
-  table_options = builder.obj();
+  scl_part_options = builder.obj();
 
   {
     bson::BSONObjBuilder tmp_builder;
-    rc = auto_fill_default_options(SDB_COMPRESS_TYPE_DEAFULT, table_options,
+    rc = auto_fill_default_options(SDB_COMPRESS_TYPE_DEAFULT, scl_part_options,
                                    sharding_key, tmp_builder);
     if (rc) {
       goto error;
@@ -1054,6 +1064,14 @@ int ha_sdb_part::create(const char *name, TABLE *form,
                                explicit_not_auto_partition);
     if (rc != 0) {
       goto error;
+    }
+
+  } else {
+    if (!partition_options.isEmpty()) {
+      rc = HA_WRONG_CREATE_OPTION;
+      my_printf_error(
+          rc, "partition_options requires partition type of RANGE or LIST",
+          MYF(0));
     }
   }
 
@@ -1964,6 +1982,13 @@ int ha_sdb_part::alter_partition_options(bson::BSONObj &old_tab_opt,
 
   // HASH table has no sub cl. partition_options is meanless.
   if (HASH_PARTITION == m_part_info->part_type) {
+    if (!new_part_opt.isEmpty()) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(
+          rc, "partition_options requires partition type of RANGE or LIST",
+          MYF(0));
+      goto error;
+    }
     goto done;
   }
 

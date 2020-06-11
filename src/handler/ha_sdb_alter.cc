@@ -1837,6 +1837,19 @@ error:
   goto done;
 }
 
+int ha_sdb::alter_partition_options(bson::BSONObj &old_tab_opt,
+                                    bson::BSONObj &new_tab_opt,
+                                    bson::BSONObj &old_part_opt,
+                                    bson::BSONObj &new_part_opt) {
+  int rc = 0;
+  if (!new_part_opt.isEmpty()) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "partition_options is only for partitioned table",
+                    MYF(0));
+  }
+  return rc;
+}
+
 Sdb_cl_copyer::Sdb_cl_copyer(Sdb_conn *conn, const char *src_db_name,
                              const char *src_table_name,
                              const char *dst_db_name,

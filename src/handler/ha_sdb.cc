@@ -4478,13 +4478,14 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   int rc = 0;
   bson::BSONObj sharding_key;
   bson::BSONObj table_options;
+  bson::BSONObj partition_options;
   bool explicit_not_auto_partition = false;
   bson::BSONObjBuilder build;
-/*Mariadb hasn't sql compress*/
 #if defined IS_MYSQL
   enum enum_compress_type sql_compress =
       sdb_str_compress_type(create_info->compress.str);
 #elif defined IS_MARIADB
+  /*Mariadb hasn't sql compress*/
   enum enum_compress_type sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
 #endif
   if (sql_compress == SDB_COMPRESS_TYPE_INVALID) {
@@ -4495,11 +4496,18 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
 
   if (create_info && create_info->comment.str) {
     rc = sdb_parse_comment_options(create_info->comment.str, table_options,
-                                   explicit_not_auto_partition);
+                                   explicit_not_auto_partition,
+                                   &partition_options);
     if (explicit_not_auto_partition) {
       filter_partition_options(table_options, table_options);
     }
     if (rc != 0) {
+      goto error;
+    }
+    if (!partition_options.isEmpty()) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(rc, "partition_options is only for partitioned table",
+                      MYF(0));
       goto error;
     }
   }
