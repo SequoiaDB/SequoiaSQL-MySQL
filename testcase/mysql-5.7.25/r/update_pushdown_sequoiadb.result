@@ -66,7 +66,7 @@ id	a	b	c
 2	2	2	2
 3	3	3	3
 4	4	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + b;
 select * from t1 order by id;
 id	a	b	c
@@ -74,7 +74,7 @@ id	a	b	c
 2	4	2	2
 3	6	3	3
 4	8	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = b + a;
 select * from t1 order by id;
 id	a	b	c
@@ -82,7 +82,7 @@ id	a	b	c
 2	6	2	2
 3	9	3	3
 4	12	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -a;
 select * from t1 order by id;
 id	a	b	c
@@ -90,7 +90,7 @@ id	a	b	c
 2	-6	2	2
 3	-9	3	3
 4	-12	4	4
-5	-16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
 select * from t1 order by id;
 id	a	b	c
@@ -98,7 +98,7 @@ id	a	b	c
 2	-11	2	2
 3	-17	3	3
 4	-23	4	4
-5	-31	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -b;
 select * from t1 order by id;
 id	a	b	c
@@ -343,7 +343,7 @@ id	a	b	c
 2	2	2	2
 3	3	3	3
 4	4	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + b;
 select * from t1 order by id;
 id	a	b	c
@@ -351,7 +351,7 @@ id	a	b	c
 2	4	2	2
 3	6	3	3
 4	8	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = b + a;
 select * from t1 order by id;
 id	a	b	c
@@ -359,7 +359,7 @@ id	a	b	c
 2	6	2	2
 3	9	3	3
 4	12	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -a;
 select * from t1 order by id;
 id	a	b	c
@@ -367,7 +367,7 @@ id	a	b	c
 2	-6	2	2
 3	-9	3	3
 4	-12	4	4
-5	-16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
 select * from t1 order by id;
 id	a	b	c
@@ -375,7 +375,7 @@ id	a	b	c
 2	-11	2	2
 3	-17	3	3
 4	-23	4	4
-5	-31	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -b;
 select * from t1 order by id;
 id	a	b	c
@@ -620,7 +620,7 @@ id	a	b	c
 2	2	2	2
 3	3	3	3
 4	4	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + b;
 select * from t1 order by id;
 id	a	b	c
@@ -628,7 +628,7 @@ id	a	b	c
 2	4	2	2
 3	6	3	3
 4	8	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = b + a;
 select * from t1 order by id;
 id	a	b	c
@@ -636,7 +636,7 @@ id	a	b	c
 2	6	2	2
 3	9	3	3
 4	12	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -a;
 select * from t1 order by id;
 id	a	b	c
@@ -644,7 +644,7 @@ id	a	b	c
 2	-6	2	2
 3	-9	3	3
 4	-12	4	4
-5	-16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
 select * from t1 order by id;
 id	a	b	c
@@ -652,7 +652,7 @@ id	a	b	c
 2	-11	2	2
 3	-17	3	3
 4	-23	4	4
-5	-31	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -b;
 select * from t1 order by id;
 id	a	b	c
@@ -897,7 +897,7 @@ id	a	b	c
 2	2	2	2
 3	3	3	3
 4	4	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + b;
 select * from t1 order by id;
 id	a	b	c
@@ -905,7 +905,7 @@ id	a	b	c
 2	4	2	2
 3	6	3	3
 4	8	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = b + a;
 select * from t1 order by id;
 id	a	b	c
@@ -913,7 +913,7 @@ id	a	b	c
 2	6	2	2
 3	9	3	3
 4	12	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -a;
 select * from t1 order by id;
 id	a	b	c
@@ -921,7 +921,7 @@ id	a	b	c
 2	-6	2	2
 3	-9	3	3
 4	-12	4	4
-5	-16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
 select * from t1 order by id;
 id	a	b	c
@@ -929,7 +929,7 @@ id	a	b	c
 2	-11	2	2
 3	-17	3	3
 4	-23	4	4
-5	-31	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -b;
 select * from t1 order by id;
 id	a	b	c
@@ -1174,7 +1174,7 @@ id	a	b	c
 2	2	2	2
 3	3	3	3
 4	4	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + b;
 select * from t1 order by id;
 id	a	b	c
@@ -1182,7 +1182,7 @@ id	a	b	c
 2	4	2	2
 3	6	3	3
 4	8	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = b + a;
 select * from t1 order by id;
 id	a	b	c
@@ -1190,7 +1190,7 @@ id	a	b	c
 2	6	2	2
 3	9	3	3
 4	12	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -a;
 select * from t1 order by id;
 id	a	b	c
@@ -1198,7 +1198,7 @@ id	a	b	c
 2	-6	2	2
 3	-9	3	3
 4	-12	4	4
-5	-16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
 select * from t1 order by id;
 id	a	b	c
@@ -1206,7 +1206,7 @@ id	a	b	c
 2	-11	2	2
 3	-17	3	3
 4	-23	4	4
-5	-31	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -b;
 select * from t1 order by id;
 id	a	b	c
@@ -1443,7 +1443,7 @@ id	a	b	c
 2	2.3333	2.3333	2.3333
 3	3.25	3.25	3.25
 4	4.3333	4.3333	4.3333
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + b;
 select * from t1 order by id;
 id	a	b	c
@@ -1451,7 +1451,7 @@ id	a	b	c
 2	4.6666	2.3333	2.3333
 3	6.5	3.25	3.25
 4	8.6666	4.3333	4.3333
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = b + a;
 select * from t1 order by id;
 id	a	b	c
@@ -1459,7 +1459,7 @@ id	a	b	c
 2	6.9999	2.3333	2.3333
 3	9.75	3.25	3.25
 4	12.9999	4.3333	4.3333
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -a;
 select * from t1 order by id;
 id	a	b	c
@@ -1467,7 +1467,7 @@ id	a	b	c
 2	-6.9999	2.3333	2.3333
 3	-9.75	3.25	3.25
 4	-12.9999	4.3333	4.3333
-5	-16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
 select * from t1 order by id;
 id	a	b	c
@@ -1475,7 +1475,7 @@ id	a	b	c
 2	-12.9998	2.3333	2.3333
 3	-18.5	3.25	3.25
 4	-24.9998	4.3333	4.3333
-5	-31	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -b;
 select * from t1 order by id;
 id	a	b	c
@@ -1721,7 +1721,7 @@ id	a	b	c
 2	2.3333	2.3333	2.3333
 3	3.25	3.25	3.25
 4	4.3333	4.3333	4.3333
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + b;
 select * from t1 order by id;
 id	a	b	c
@@ -1729,7 +1729,7 @@ id	a	b	c
 2	4.6666	2.3333	2.3333
 3	6.5	3.25	3.25
 4	8.6666	4.3333	4.3333
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = b + a;
 select * from t1 order by id;
 id	a	b	c
@@ -1737,7 +1737,7 @@ id	a	b	c
 2	6.9999	2.3333	2.3333
 3	9.75	3.25	3.25
 4	12.9999	4.3333	4.3333
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -a;
 select * from t1 order by id;
 id	a	b	c
@@ -1745,7 +1745,7 @@ id	a	b	c
 2	-6.9999	2.3333	2.3333
 3	-9.75	3.25	3.25
 4	-12.9999	4.3333	4.3333
-5	-16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
 select * from t1 order by id;
 id	a	b	c
@@ -1753,7 +1753,7 @@ id	a	b	c
 2	-12.9998	2.3333	2.3333
 3	-18.5	3.25	3.25
 4	-24.9998	4.3333	4.3333
-5	-31	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -b;
 select * from t1 order by id;
 id	a	b	c
@@ -2012,7 +2012,7 @@ id	a	b	c
 2	2	2	2
 3	3	3	3
 4	4	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + b;
 select * from t1 order by id;
 id	a	b	c
@@ -2020,7 +2020,7 @@ id	a	b	c
 2	4	2	2
 3	6	3	3
 4	8	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = b + a;
 select * from t1 order by id;
 id	a	b	c
@@ -2028,7 +2028,7 @@ id	a	b	c
 2	6	2	2
 3	9	3	3
 4	12	4	4
-5	16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -a;
 select * from t1 order by id;
 id	a	b	c
@@ -2036,7 +2036,7 @@ id	a	b	c
 2	-6	2	2
 3	-9	3	3
 4	-12	4	4
-5	-16	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = a + a + 1;
 select * from t1 order by id;
 id	a	b	c
@@ -2044,7 +2044,7 @@ id	a	b	c
 2	-11	2	2
 3	-17	3	3
 4	-23	4	4
-5	-31	NULL	NULL
+5	NULL	NULL	NULL
 update t1 set a = -b;
 select * from t1 order by id;
 id	a	b	c
