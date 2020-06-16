@@ -9,6 +9,6 @@ audit_log_directory = /opt/sequoiasql/mysql/database/auditlog
 audit_log_file_name = server_audit.log
 
 [execute]
-interval_time = 5
+interval_time = 1
 ignore_error = true
 max_retry_times = 5

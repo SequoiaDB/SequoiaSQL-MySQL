@@ -6,8 +6,10 @@ import base64
 import logging.config
 import random
 import sched
+import shutil
 import socket
 import traceback
+import signal
 
 from datetime import datetime
 
@@ -16,6 +18,7 @@ import time
 import os
 import sys
 import re
+import threading
 from keywords import *
 
 reload(sys)
@@ -75,15 +78,15 @@ class CryptoUtil:
 
 
 class Utils:
-    @classmethod
-    def dos2unix(cls, file_path):
+    @staticmethod
+    def dos2unix(file_path):
         try:
             with open(file_path, 'rb') as fin:
                 content = fin.read()
             content = re.sub(r'\r\n', r'\n', content)
             with open(file_path, 'wb') as fout:
                 fout.write(content)
-        except:
+        except Exception:
             raise
 
 
@@ -331,7 +334,7 @@ class OptionMgr:
         config_file = os.path.join(my_home, config_file)
         if not os.path.exists(config_file):
             logger.error('Configuration file {} dose not exist'.format(
-                self.config_file))
+                          self.config_file))
             return 1
         self.parser = ConfigParser.ConfigParser()
         self.parser.read(config_file)
@@ -395,8 +398,12 @@ class OptionMgr:
 
 
 class StatMgr:
-    def __init__(self):
+    """ Status manager is responsible for loading, reading and updating the
+        status file of the sync worker
+    """
+    def __init__(self, stat_file):
         self.parser = None
+        self.stat_file = stat_file
         self.file_inode = 0
         self.last_parse_row = 0
 
@@ -405,20 +412,34 @@ class StatMgr:
         self.set_last_parse_row(0)
         self.update_stat()
 
-    def load_stat(self, stat_file):
+    def load_stat(self):
         self.parser = ConfigParser.ConfigParser()
-        if not os.path.exists(stat_file):
-            logger.warn('Status file {} dose not exist. Init it with default '
-                        'values'.format(stat_file))
-            self.__init_stat_file()
+        old_stat_file = 'sync.stat'
+        try:
+            if not os.path.exists(self.stat_file):
+                old_file = os.path.join(my_home, old_stat_file)
+                if os.path.exists(old_file):
+                    # Upgrade from old version.
+                    logger.info('Status file {} dose not exist. Old version '
+                                'file {} found. Upgrade status file '
+                                'from it'.format(self.stat_file, old_stat_file))
+                    # Create new status file by copying the content in the file
+                    # of old version. The old file will be removed at last.
+                    shutil.copy(old_file, self.stat_file)
+                else:
+                    # No status file at all. Treat as fresh start.
+                    logger.warn('Status file {} dose not exist. Init it with '
+                                'default values'.format(self.stat_file))
+                    self.__init_stat_file()
 
-        self.parser.read(stat_file)
-        stat_sec_name = 'status'
-        self.file_inode = int(self.parser.get(stat_sec_name, 'file_inode'))
-        self.last_parse_row = int(self.parser.get(stat_sec_name,
-                                                  'last_parse_row'))
-
-        return 0
+            self.parser.read(self.stat_file)
+            stat_sec_name = 'status'
+            self.file_inode = int(self.parser.get(stat_sec_name, 'file_inode'))
+            self.last_parse_row = int(self.parser.get(stat_sec_name,
+                                                      'last_parse_row'))
+        except Exception as error:
+            logger.error('Load status failed: ' + str(error))
+            raise
 
     def get_file_inode(self):
         return self.file_inode
@@ -439,14 +460,15 @@ class StatMgr:
 
         self.parser.set(stat_sec_name, 'file_inode', str(self.file_inode))
         self.parser.set(stat_sec_name, "last_parse_row", self.last_parse_row)
-        self.parser.write(open(stat_file, 'w'))
+        self.parser.write(open(self.stat_file, 'w'))
 
 
 class PreProcessor:
     def __init__(self):
         pass
 
-    def __get_conf_ver(self):
+    @staticmethod
+    def __get_conf_ver():
         version = 2
         parser = ConfigParser.ConfigParser()
         parser.read(config_file)
@@ -454,7 +476,8 @@ class PreProcessor:
             version = 1
         return version
 
-    def __find_last_file_inode(self, conf_parser_old):
+    @staticmethod
+    def __find_last_file_inode(conf_parser_old):
         audit_log_path = conf_parser_old.get(
             'parse', 'parse_log_directory'
         )
@@ -509,10 +532,10 @@ class PreProcessor:
                 real_first_line_thread_id = long(elements[4])
                 real_first_line_seq = long(elements[5])
                 if real_mod_time >= mtime and \
-                    real_first_line_time == first_line_time and \
-                    real_first_line_thread_id == first_line_thread_id and \
-                    real_first_line_seq == first_line_seq and \
-                    real_line_num >= last_parse_row:
+                   real_first_line_time == first_line_time and \
+                   real_first_line_thread_id == first_line_thread_id and \
+                   real_first_line_seq == first_line_seq and \
+                   real_line_num >= last_parse_row:
                     file_inode_after = os.stat(file_path).st_ino
                     if file_inode_after != file_inode_before:
                         # File list changed during the checking. Break the inner
@@ -529,7 +552,6 @@ class PreProcessor:
             else:
                 logging.error('File with expect information not found')
                 return -1
-
 
     def __upgrade(self):
         logging.info('Upgrade from old version...')
@@ -562,13 +584,13 @@ class PreProcessor:
                 elif 'last_parse_row' == key:
                     stat_parser.set(stat_sec_name, key, value)
 
-            stat_parser.write(open(stat_file, 'w'))
+            stat_parser.write(open(self.stat_file, 'w'))
             conf_parser.remove_section(parse_sec_name)
             conf_parser.write(open(config_file, 'w'))
         except BaseException:
-            msg = traceback.format_exc()
             logger.error(
-                'Exception occurred when preprocessing: {}'.format(msg)
+                'Exception occurred when preprocessing: {}'.format(
+                    traceback.format_exc())
             )
             return 1
         return 0
@@ -591,7 +613,8 @@ class PreProcessor:
 
 class AuditLogAnalyer:
     """Analyzer for analyze one line in the audit log file. Log example:
-    20200522 05:15:44,c74-t03,sdbadmin,c74-t02,2551,32497,QUERY,nfdw,'DROP TABLE IF EXISTS `ms_project_type`',0
+    20200522 05:15:44,c74-t03,sdbadmin,c74-t02,2551,32497,QUERY,nfdw,'DROP TABLE
+    IF EXISTS `ms_project_type`',0
     """
 
     def __init__(self, log):
@@ -604,7 +627,7 @@ class AuditLogAnalyer:
         self.return_code = 0
 
     @staticmethod
-    def commentRemover(text):
+    def comment_remover(text):
         def replacer(match):
             s = match.group(0)
             if s.startswith('/'):
@@ -630,7 +653,7 @@ class AuditLogAnalyer:
             elif stmt.startswith('#'):
                 stmt = re.sub(r"^#(.*?)\n", "", stmt)
             elif stmt.startswith('/*'):
-                stmt = self.commentRemover(stmt)
+                stmt = self.comment_remover(stmt)
             elif stmt.startswith('\r\n'):
                 stmt = stmt.lstrip('\r\n')
             elif stmt.startswith('\n'):
@@ -660,7 +683,7 @@ class AuditLogAnalyer:
             self.user = items[2]
             self.remote_host = items[3]
             self.database = items[7]
-        except:
+        except Exception:
             logger.error("Analyze audit log failed: " + self.log)
             raise
 
@@ -689,11 +712,14 @@ class MysqlMetaSync:
 
     """
 
-    def __init__(self):
+    def __init__(self, hostname, port, stat_mgr):
         self.sleep_time = 1
         self.SUCCESS_STATE = 0
         self.ignore_file = "ignore.info"
         self.audit_file_suffix_len = 0
+        self.hostname = hostname
+        self.port = port
+        self.stat_mgr = stat_mgr
 
     @staticmethod
     def __is_database_opr(sql):
@@ -704,7 +730,8 @@ class MysqlMetaSync:
         else:
             return False
 
-    def __execute_command(self, command, sync_file):
+    @staticmethod
+    def __execute_command(command, sync_file):
         cmd_str = " ".join(command) + ' '
         # Remove the password from the command, for logging.
         safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
@@ -775,7 +802,8 @@ class MysqlMetaSync:
             datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f") + " " + stmt + "\n")
         ignore_file.close()
 
-    def check_rewrite_sql(self, sql):
+    @staticmethod
+    def check_rewrite_sql(sql):
         # Check if the sql is create procedure/function by searching
         # some keywords in the statement.
         # There is no delimiter in the audit log. We need to set that before
@@ -803,7 +831,7 @@ class MysqlMetaSync:
         database = exec_sql_info["database"]
         sql = exec_sql_info["sql"]
         # Need to check if it's procedure/function. If yes, need to add
-        # dilimeter.
+        # delimiter.
         sql = self.check_rewrite_sql(sql)
 
         if session_attr is not None:
@@ -821,42 +849,41 @@ class MysqlMetaSync:
             sql = sql.replace('\r\n', '\n')
 
         mysql_exec = option_mgr.get_mysql_home() + '/bin/mysql'
-        for host in option_mgr.get_hosts():
-            # On other instances, the operation should only be done on MySQL.
-            command = [ mysql_exec,
-                        '-h', host,
-                        '-P', option_mgr.get_port(),
-                        '-u', option_mgr.get_mysql_user(),
-                        '-c',
-                        '-p' + option_mgr.get_mysql_passwd()]
-            if db_required:
-                command.extend(['-D', database])
-            if sync_file is None:
-                command.extend(['-e', sql])
 
-            retry_times = 0
-            while True:
-                logger.debug(
-                    "begin to connect [{host}]'s mysql server to execute sql"
-                    .format(host=host))
-                retry_times += 1
-                result = self.__execute_command(command, sync_file)
-                if MYSQL_OK == result:
-                    logger.debug("finish to execute sql")
-                    break
-                elif CONN_ERR != result and option_mgr.ignore_error() and \
-                        retry_times > option_mgr.get_retry_limit():
-                    cmd_str = " ".join(command)
-                    # Remove the password from the command, for logging.
-                    safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
-                    logger.error("Failed to execute command. Write command "
-                                 "into ignore file... Command: " +
-                                 safe_cmd_str)
-                    self.__log_ignore_stmt(safe_cmd_str)
-                    break
-                logger.error("Execute command failed. Sleep for 3 seconds "
-                             "and try again...")
-                time.sleep(3)
+        command = [mysql_exec,
+                   '-h', self.hostname,
+                   '-P', self.port,
+                   '-u', option_mgr.get_mysql_user(),
+                   '-c',
+                   '-p' + option_mgr.get_mysql_passwd()]
+        if db_required:
+            command.extend(['-D', database])
+        if sync_file is None:
+            command.extend(['-e', sql])
+
+        retry_times = 0
+        while True:
+            logger.debug(
+                "Connect to sql instance[{host}:{port}] to execute sql"
+                .format(host=self.hostname, port=self.port))
+            retry_times += 1
+            result = self.__execute_command(command, sync_file)
+            if MYSQL_OK == result:
+                logger.debug("finish to execute sql")
+                break
+            elif CONN_ERR != result and option_mgr.ignore_error() and \
+                    retry_times > option_mgr.get_retry_limit():
+                cmd_str = " ".join(command)
+                # Remove the password from the command, for logging.
+                safe_cmd_str = re.sub('-p[^\s]+\s', '', cmd_str)
+                logger.error("Failed to execute command. Write command "
+                             "into ignore file... Command: " +
+                             safe_cmd_str)
+                self.__log_ignore_stmt(safe_cmd_str)
+                break
+            logger.error("Execute command failed. Sleep for 3 seconds "
+                         "and try again...")
+            time.sleep(3)
 
     def __get_audit_file_list(self, sort=True, reverse_order=False):
         audit_list = []
@@ -885,7 +912,8 @@ class MysqlMetaSync:
                     audit_list.append(f)
         return audit_list
 
-    def __get_eldest_audit_file(self):
+    @staticmethod
+    def __get_eldest_audit_file():
         audit_path = option_mgr.get_audit_log_path()
         audit_file_name = option_mgr.get_audit_log_name()
         audit_file = os.path.join(audit_path, audit_file_name)
@@ -919,7 +947,7 @@ class MysqlMetaSync:
                 return 0, None
 
     def get_next_file(self):
-        if 0 == stat_mgr.get_file_inode():
+        if 0 == self.stat_mgr.get_file_inode():
             return self.__get_eldest_audit_file()
         else:
             audit_dir = option_mgr.get_audit_log_path()
@@ -948,7 +976,7 @@ class MysqlMetaSync:
                                           'empty'.format(file, curr_file_inode))
                             return 0, None
 
-                    if curr_file_inode == stat_mgr.get_file_inode():
+                    if curr_file_inode == self.stat_mgr.get_file_inode():
                         # Found the file with the expected inode id. Check if
                         # all records in the file have been processed.
                         found_file = True
@@ -970,7 +998,7 @@ class MysqlMetaSync:
                             return 0, None
 
                         line_num = index + 1
-                        last_parse_row = stat_mgr.get_last_parse_row()
+                        last_parse_row = self.stat_mgr.get_last_parse_row()
                         if line_num > last_parse_row:
                             return curr_file_inode, fd
                         elif line_num == last_parse_row:
@@ -983,9 +1011,9 @@ class MysqlMetaSync:
                                 # All Records in the last file have been
                                 # processed, and it's not the base audit file.
                                 # So go to the previous one.
-                                stat_mgr.set_file_inode(pre_file_inode)
-                                stat_mgr.set_last_parse_row(0)
-                                stat_mgr.update_stat()
+                                self.stat_mgr.set_file_inode(pre_file_inode)
+                                self.stat_mgr.set_last_parse_row(0)
+                                self.stat_mgr.update_stat()
                                 break
                         else:
                             logging.error('Line number {} in file {} with '
@@ -1006,22 +1034,22 @@ class MysqlMetaSync:
                     if base_inode_after == base_inode_before:
                         logging.error(
                             'Audit file with inode {} not found'.format(
-                                stat_mgr.get_file_inode()))
+                                self.stat_mgr.get_file_inode()))
                         return 0, None
 
     def parse_audit_log_file(self, inode, f):
         """ parse log file
-
+        :param inode: Inode value of the file in the file system.
         :param f: file descriptor of the audit log file
         """
         actual_parse_count = 0
         row_number = 0
-        stat_mgr.set_file_inode(inode)
+        self.stat_mgr.set_file_inode(inode)
         lines = f.readlines()
         for origline in lines:
             row_number += 1
             # start from last parse row
-            if int(stat_mgr.get_last_parse_row()) >= row_number:
+            if int(self.stat_mgr.get_last_parse_row()) >= row_number:
                 continue
 
             log_analyzer = AuditLogAnalyer(origline)
@@ -1031,12 +1059,12 @@ class MysqlMetaSync:
                 if self.SUCCESS_STATE != log_analyzer.get_return_code():
                     logger.debug("Return code is not success, go to next line: "
                                  + origline)
-                    stat_mgr.set_last_parse_row(row_number)
+                    self.stat_mgr.set_last_parse_row(row_number)
                     continue
                 if 0 == len(log_analyzer.get_stmt()) or \
                         option_mgr.should_filter(log_analyzer.get_remote_host(),
                                                  log_analyzer.get_user()):
-                    stat_mgr.set_last_parse_row(row_number)
+                    self.stat_mgr.set_last_parse_row(row_number)
                     continue
             except Exception, err:
                 logger.error("Analyze audit log failed: " + origline)
@@ -1044,7 +1072,7 @@ class MysqlMetaSync:
                     self.__log_ignore_stmt(
                         "Parse exception: {}. Statement: {}".format(str(err),
                                                                     origline))
-                    stat_mgr.set_last_parse_row(row_number)
+                    self.stat_mgr.set_last_parse_row(row_number)
                 else:
                     raise
 
@@ -1062,7 +1090,7 @@ class MysqlMetaSync:
                         and len(log_analyzer.get_full_stmt()) > 0):
                 database = log_analyzer.get_database()
                 if not database.strip():
-                    logger.warn("database is empty, exec sql [{sql}] in "
+                    logger.info("database is empty, exec sql [{sql}] in "
                                 "mysql database".format(sql=low_sql))
                     database = "mysql"
                 # mysql command指定库名时，数据库名不能含有`
@@ -1072,9 +1100,9 @@ class MysqlMetaSync:
                 db_required = True
                 # Replace 'ALGORITHM=COPY' with one blank, as on other
                 # instances, the operation should never be done in copy mode.
-                orig_sql_stmt = re.sub(r'[,]*(\s*)ALGORITHM(\s*)=(\s*)COPY(\s*)[,]*', ' ',
-                                       log_analyzer.get_full_stmt(),
-                                       flags=re.IGNORECASE)
+                orig_sql_stmt = re.sub(
+                    r'[,]*(\s*)ALGORITHM(\s*)=(\s*)COPY(\s*)[,]*', ' ',
+                    log_analyzer.get_full_stmt(), flags=re.IGNORECASE)
                 exec_sql_info = {"database": database, "sql": str(orig_sql_stmt)}
 
                 # If it's create/drop database operation, ignore the database
@@ -1083,8 +1111,8 @@ class MysqlMetaSync:
                     db_required = False
                 session_attr = "set session sequoiadb_execute_only_in_mysql=on;"
                 self.execute_sql(exec_sql_info, db_required, session_attr)
-            stat_mgr.set_last_parse_row(row_number)
-            stat_mgr.update_stat()
+            self.stat_mgr.set_last_parse_row(row_number)
+            self.stat_mgr.update_stat()
         return actual_parse_count
 
     def run_parse_task(self):
@@ -1109,57 +1137,94 @@ class MysqlMetaSync:
                 fd.close()
 
 
-def init_log(log_config_file):
+class SyncWorker(threading.Thread):
+    """ Sync worker for syncing DDL/DCL operations to one remote instance"""
+    def __init__(self, thread_id, hostname, port):
+        threading.Thread.__init__(self)
+        self.threadID = thread_id
+        self.hostname = hostname
+        self.port = port
+        self.meta_sync = None
+
+    def init(self):
+        stat_file = os.path.join(my_home, 'sync-' + self.hostname + '-' +
+                                 self.port + '.stat')
+        stat_mgr = StatMgr(stat_file)
+        try:
+            stat_mgr.load_stat()
+            logger.info("Start sync worker for instance " + self.hostname + ":"
+                        + self.port)
+            self.meta_sync = MysqlMetaSync(self.hostname, self.port, stat_mgr)
+        except Exception, err:
+            logger.error('Load status failed: {}'.format(err))
+            raise
+
+    def run(self):
+        scheduler = sched.scheduler(time.time, time.sleep)
+        while True:
+            scheduler.enter(option_mgr.get_scan_interval(), 1,
+                            self.meta_sync.run_parse_task, ())
+            scheduler.run()
+
+
+def __post_start():
+    """ Post actions after starting all sync workers. Currently the only action
+        is to remove the status file of old version, if any
+    """
+    old_stat_file = os.path.join(my_home, 'sync.stat')
     try:
-        # Get the log file path from the log configuration file, and create the
-        # directory if it dose not exist.
-        config_parser = ConfigParser.ConfigParser()
-        files = config_parser.read(log_config_file)
-        if len(files) != 1:
-            print("Error: Read log configuration file failed")
-            return None
-        log_file = config_parser.get("handler_rotatingFileHandler", "args")\
-                   .split('\'')[1]
-        curr_path = os.path.abspath(os.path.dirname(log_config_file))
-        log_file_full_path = os.path.join(curr_path, log_file)
-        log_file_parent_dir = os.path.abspath(
-            os.path.join(log_file_full_path, ".."))
-        if not os.path.exists(log_file_parent_dir):
-            os.makedirs(log_file_parent_dir)
-
-        logging.config.fileConfig(log_config_file)
-        log = logging.getLogger("ddlLogger")
-        return log
-    except BaseException as e:
-        print("Error: Initialize logging failed. Error Message: " + e.message)
-        return None
+        if os.path.exists(old_stat_file):
+            os.remove(old_stat_file)
+            logger.info('Remove status file of old version successfully')
+    except IOError as error:
+        logger.error('Remove status file of old version failed: ' + str(error))
+        raise
 
 
-def run_task():
-    ssql_mysql = MysqlMetaSync()
-    scheduler = sched.scheduler(time.time, time.sleep)
+def run_tasks():
+    """ Start all sync workers """
+    host_list = option_mgr.get_hosts()
+    sync_workers = []
+    thread_id = 1
+
+    try:
+        for host in host_list:
+            worker = SyncWorker(thread_id, host, option_mgr.get_port())
+            worker.init()
+            sync_workers.append(worker)
+            thread_id += 1
+
+        # Signal handler, make it possible to quit when ctrl + c is pressed.
+        # Threads need to be set ad daemons.
+        signal.signal(signal.SIGINT, quit)
+        signal.signal(signal.SIGTERM, quit)
+
+        for worker in sync_workers:
+            worker.setDaemon(True)
+            worker.start()
+        __post_start()
+    except Exception as error:
+        logger.error('Run task failed:' + str(error))
+        raise
+
+    # Check if threads are alive manually to make sure we can stop the program
+    # by pressing ctrl + c.
     while True:
-        scheduler.enter(option_mgr.get_scan_interval(), 1,
-                        ssql_mysql.run_parse_task, ())
-        scheduler.run()
+        alive = False
+        for worker in sync_workers:
+            alive = alive or worker.isAlive()
+        if not alive:
+            break
+        time.sleep(1)
 
 
 def main():
-    global my_home
     global logger
     global option_mgr
     global config_file
-    global stat_mgr
-    global stat_file
 
-    config_file = 'config'
-    stat_file = 'sync.stat'
-
-    my_home = os.path.abspath(os.path.dirname(__file__))
     os.chdir(my_home)
-
-    config_file = os.path.join(my_home, config_file)
-    stat_file = os.path.join(my_home, stat_file)
+    config_file = os.path.join(my_home, 'config')
 
     pid_file = os.path.join(my_home, "APP_ID")
     if os.path.exists(pid_file):
@@ -1188,7 +1253,7 @@ def main():
     preprocessor = PreProcessor()
     rc = preprocessor.run()
     if 0 != rc:
-        logger.error("Preprocessing failed: {}".format(rc))
+        logger.error("Pre-processing failed: {}".format(rc))
         return rc
 
     option_mgr = OptionMgr()
@@ -1197,18 +1262,25 @@ def main():
         logger.error('Load configurations failed: {}'.format(rc))
         return rc
 
-    stat_mgr = StatMgr()
-    rc = stat_mgr.load_stat(stat_file)
-    if 0 != rc:
-        logger.error('Load status failed: {}'.format(rc))
-        return rc
+    return run_tasks()
 
-    return run_task()
 
+def quit(signum, frame):
+    sys.exit()
+
+
+my_home = os.path.abspath(os.path.dirname(__file__))
+logger = None
+option_mgr = None
+config_file = None
 
 if __name__ == '__main__':
-    rc = main()
-    if 0 != rc:
-        print('[ERROR] Start MySQL metadata sync tool failed. Please refer to '
-              'the log for more detail')
-    sys.exit(rc)
+    try:
+        rc = main()
+        if 0 != rc:
+            print('[ERROR] Start MySQL metadata sync tool failed. Please refer '
+                  'to the log for more detail')
+        sys.exit(rc)
+    except Exception, err:
+        print('[ERROR] Exit abnormally: ' + str(err))
+        raise
