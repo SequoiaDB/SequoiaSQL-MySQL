@@ -698,7 +698,13 @@ function change_configure()
       sed -i '/\[mysqld\]/a\port='$INST_PORT'' $SQLDATA/auto.cnf
       echo "Parameter port requires a server restart to take effect"
    fi
-
+   
+   if [ ! -z $SDB_USE_TRANSACTION ]; then
+      sed -i '/sequoiadb_use_transaction\s*=/d' $SQLDATA/auto.cnf
+      sed -i '/\[mysqld\]/a\sequoiadb_use_transaction='$SDB_USE_TRANSACTION'' $SQLDATA/auto.cnf
+      echo "Parameter sequoiadb_use_transaction requires a server restart to take effect"
+   fi
+   
    if [ ! -z $MAX_CON ]; then
       if [ $MAX_CON -lt 1 ];then
          MAX_CON=1
@@ -738,13 +744,49 @@ function change_configure()
    fi
    
    if [ ! -z $SDB_USE_AUTOCOMMIT ]; then
-      change_configure_online "$INST_NAME" "sequoiadb_use_autocommit" "$SDB_USE_AUTOCOMMIT"
+      change_configure_online "$INST_NAME" "autocommit" "$SDB_USE_AUTOCOMMIT"
    fi
    
    if [ ! -z $SDB_DEBUG_LOG ]; then
       change_configure_online "$INST_NAME" "sequoiadb_debug_log" "$SDB_DEBUG_LOG"
    fi
-
+   
+   if [ ! -z $SDB_TOKEN ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_token" "\"$SDB_TOKEN\""
+   fi
+   
+   if [ ! -z $SDB_CIPHERFILE ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_cipherfile" "\"$SDB_CIPHERFILE\""
+   fi
+   
+   if [ ! -z $SDB_ERROR_LEVEL ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_error_level" "$SDB_ERROR_LEVEL"
+   fi
+   
+   if [ ! -z $SDB_REPLICA_SIZE ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_replica_size" "$SDB_REPLICA_SIZE"
+   fi
+   
+   if [ ! -z $SDB_OPTIMIZER_OPTIONS ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_optimizer_options" "\"$SDB_OPTIMIZER_OPTIONS\""
+   fi
+   
+   if [ ! -z $SDB_ROLLBACK_ON_TIMEOUT ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_rollback_on_timeout" "$SDB_ROLLBACK_ON_TIMEOUT"
+   fi
+   
+   if [ ! -z $SDB_EXECUTE_ONLY_IN_MYSQL ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_execute_only_in_mysql" "$SDB_EXECUTE_ONLY_IN_MYSQL"
+   fi
+   
+   if [ ! -z $SDB_SELECTOR_PUSHDOWN_THRESHOLD ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_selector_pushdown_threshold" "$SDB_SELECTOR_PUSHDOWN_THRESHOLD"
+   fi
+   
+   if [ ! -z $SDB_ALTER_TABLE_OVERHEAD_THRESHOLD ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_alter_table_overhead_threshold" "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD"
+   fi
+   
    echo "ok"
 }
 
@@ -767,32 +809,44 @@ function build_help()
    echo "  ${ME} stopall                                         [--print]"
    echo "  ${ME} restart    <INSTNAME>                           [--print]"
    echo "  ${ME} status     [INSTNAME]"
-   echo "  ${ME} chconf     <INSTNAME> [-p PORT]                            [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE] [--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL]"
+   echo "  ${ME} chconf     <INSTNAME> [-p PORT]                            [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE]
+[--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL] [--sdb-token=TOKEN] [--sdb-cipherfile=PATH] [--sdb-error-level=ENUM] [--sdb-replica-size=SIZE] [--sdb-use-transaction=BOOL] [--sdb-optimizer-options=SET]
+[--sdb-rollback-on-timeout=BOOL] [--sdb-execute-only-in-mysql=BOOL] [--sdb-selector-pushdown-threshold=THRESHOLD] [--sdb-alter-table-overhead-threshold=THRESHOLD]"
    echo ""
    echo "Options:"
-   echo "  -D DATADIR                       location of the database storage area"
-   echo "  -l LOGFILE                       write server log to LOGFILE,default in the installation path"
-   echo "  -p PORT                          port number to listen on"
-   echo "  -f PIDFILE                       location of the pid file"
-   echo "  -s SOCKETFILE                    socket file between client and server"
-   echo "  -w PASSWORD                      a password for root@localhost,default: empty password"
-   echo "  -a MAX-CON                       the number of simultaneous clients allowed,default:151"
-   echo "  --print                          default: not print screen"
-   echo "  --baklog                         default: don't backup LOGFILE"
-   echo "  --sdb-conn-addr=ADDR             SequoiaDB addresses,default:'localhost:11810'"
-   echo "  --sdb-user=USER                  SequoiaDB authentication user,default:''"
-   echo "  --sdb-passwd=PASSWD              SequoiaDB authentication password,default:''"
-   echo "  --sdb-auto-partition=BOOL        enable auto partition,default:on"
-   echo "  --sdb-use-bulk-insert=BOOL       enable bulk insert to sequoiadb,default:on"
-   echo "  --sdb-bulk-insert-size=SIZE      bulk insert size,default:100"
-   echo "  --sdb-use-autocommit=BOOL        enable autocommit of sequoiadb storage engine,default:on"
-   echo "  --sdb-debug-log=BOOL             turn on debug log of sequoiadb storage engine,default:on"
-   echo "  -v, --version                    output version information, then exit"
+   echo "  -D DATADIR                                      location of the database storage area"
+   echo "  -l LOGFILE                                      write server log to LOGFILE,default in the installation path"
+   echo "  -p PORT                                         port number to listen on"
+   echo "  -f PIDFILE                                      location of the pid file"
+   echo "  -s SOCKETFILE                                   socket file between client and server"
+   echo "  -w PASSWORD                                     a password for root@localhost,default: empty password"
+   echo "  -a MAX-CON                                      the number of simultaneous clients allowed,default:151"
+   echo "  --print                                         default: not print screen"
+   echo "  --baklog                                        default: don't backup LOGFILE"
+   echo "  --sdb-conn-addr=ADDR                            SequoiaDB addresses,default:'localhost:11810'"
+   echo "  --sdb-user=USER                                 SequoiaDB authentication user,default:''"
+   echo "  --sdb-passwd=PASSWD                             SequoiaDB authentication password,default:''"
+   echo "  --sdb-auto-partition=BOOL                       enable auto partition,default:on"
+   echo "  --sdb-use-bulk-insert=BOOL                      enable bulk insert to sequoiadb,default:on"
+   echo "  --sdb-bulk-insert-size=SIZE                     bulk insert size,default:100"
+   echo "  --sdb-use-autocommit=BOOL                       enable autocommit of sequoiadb storage engine,default:on"
+   echo "  --sdb-debug-log=BOOL                            turn on debug log of sequoiadb storage engine,default:on"
+   echo "  --sdb-token=TOKEN                               SequoiaDB authentication password token"
+   echo "  --sdb-cipherfile=PATH                           SequoiaDB authentication cipherfile"
+   echo "  --sdb-error-level=ENUM                          Sequoiadb error level for updating sharding key error"
+   echo "  --sdb-replica-size=SIZE                         Replica size of write operations"
+   echo "  --sdb-use-transaction=BOOL                      Enable transaction of SequoiaDB"
+   echo "  --sdb-optimizer-options=SET                     Optimizer_options[=option[,option...]], where option can be 'direct_count', 'direct_delete', 'direct_update'"
+   echo "  --sdb-rollback-on-timeout=BOOL                  Roll back the complete transaction on lock wait timeout"
+   echo "  --sdb-execute-only-in-mysql=BOOL                Commands execute only in mysql"
+   echo "  --sdb-selector-pushdown-threshold=THRESHOLD     The threshold of selector push down to SequoiaDB"
+   echo "  --sdb-alter-table-overhead-threshold=THRESHOLD  Overhead threshold of table alteration. When count of records exceeds it, the alteration that needs to update the full table will be prohibited"
+   echo "  -v, --version                                   output version information, then exit"
 }
 #Parse command line parameters
 test $# -eq 0 && { build_help && exit 64; }
 
-ARGS=`getopt -o hvD:l:p:s:f:a:w: --long help,version,print,baklog,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-debug-log: -n "${ME}" -- "$@"`
+ARGS=`getopt -o hvD:l:p:s:f:a:w: --long help,version,print,baklog,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-debug-log:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold: -n "${ME}" -- "$@"`
 ret=$?
 test $ret -ne 0 && exit $ret
 
@@ -820,86 +874,124 @@ eval set -- "${ARGS}"
 while true
 do
    case "$1" in
-      -D )                        DEFINE_SQLDATA=true
-                                  SQL_DATA=$2
-                                  shift 2
-                                  ;;
-      -l )                        SQL_LOG=$2
-                                  shift 2
-                                  ;;
-      -p )                        INST_PORT=$2
-                                  check_num_para "PORT" "$INST_PORT"
-                                  shift 2
-                                  ;;
-      -f )                        PIDFILE=$2
-                                  shift 2
-                                  ;;
-      -s )                        SOCKETFILE=$2
-                                  shift 2
-                                  ;;
-      -w )                        PASSWORD=$2
-                                  shift 2
-                                  ;;
-      -a )                        MAX_CON=$2
-                                  check_num_para "MAX-CON" "$MAX_CON"
-                                  shift 2
-                                  ;;
-      --print )                   NEED_PRINTSCREEN=true
-                                  shift
-                                  ;;
-      --baklog )                  NEED_BACKUPLOG=true
-                                  shift
-                                  ;;
-      --sdb-conn-addr )           SDB_CONN_ADDR=$2
-                                  shift 2
-                                  ;;
-      --sdb-user )                SDB_USER=$2
-                                  shift 2
-                                  ;;
-      --sdb-passwd )              SDB_PASSWD=$2
-                                  shift 2
-                                  ;;
-      --sdb-use-partition )       SDB_AUTO_PARTITION=$2
-                                  test $SDB_AUTO_PARTITION == "TRUE" -o $SDB_AUTO_PARTITION == "FALSE" -o $SDB_AUTO_PARTITION == "true" -o $SDB_AUTO_PARTITION == "false" -o $SDB_AUTO_PARTITION == "ON" -o $SDB_AUTO_PARTITION == "OFF"  -o $SDB_AUTO_PARTITION == "on" -o $SDB_AUTO_PARTITION == "off" || \
-                                  err_para BOOL $SDB_AUTO_PARTITION
-                                  shift 2
-                                  ;;
-      --sdb-auto-partition )      SDB_AUTO_PARTITION=$2
-                                  test $SDB_AUTO_PARTITION == "TRUE" -o $SDB_AUTO_PARTITION == "FALSE" -o $SDB_AUTO_PARTITION == "true" -o $SDB_AUTO_PARTITION == "false" -o $SDB_AUTO_PARTITION == "ON" -o $SDB_AUTO_PARTITION == "OFF"  -o $SDB_AUTO_PARTITION == "on" -o $SDB_AUTO_PARTITION == "off" || \
-                                  err_para BOOL $SDB_AUTO_PARTITION
-                                  shift 2
-                                  ;;
-      --sdb-use-bulk-insert )     SDB_USE_BULK_INSERT=$2
-                                  test $SDB_USE_BULK_INSERT == "TRUE" -o $SDB_USE_BULK_INSERT == "FALSE" -o $SDB_USE_BULK_INSERT == "true" -o $SDB_USE_BULK_INSERT == "false" -o $SDB_USE_BULK_INSERT == "ON" -o $SDB_USE_BULK_INSERT == "OFF" -o $SDB_USE_BULK_INSERT == "on" -o $SDB_USE_BULK_INSERT == "off" || \
-                                  err_para BOOL $SDB_USE_BULK_INSERT
-                                  shift 2
-                                  ;;
-      --sdb-bulk-insert-size )    SDB_BULK_INSERT_SIZE=$2
-                                  check_num_para "SDB-BULK-INSERT-SIZE" "$SDB_BULK_INSERT_SIZE"
-                                  shift 2
-                                  ;;
-      --sdb-use-autocommit )      SDB_USE_AUTOCOMMIT=$2
-                                  test $SDB_USE_AUTOCOMMIT == "TRUE" -o $SDB_USE_AUTOCOMMIT == "FALSE" -o $SDB_USE_AUTOCOMMIT == "true" -o $SDB_USE_AUTOCOMMIT == "false" -o $SDB_USE_AUTOCOMMIT == "ON" -o $SDB_USE_AUTOCOMMIT == "OFF" -o $SDB_USE_AUTOCOMMIT == "on" -o $SDB_USE_AUTOCOMMIT == "off" || \
-                                  err_para BOOL $SDB_USE_AUTOCOMMIT
-                                  shift 2
-                                  ;;
-      --sdb-debug-log )           SDB_DEBUG_LOG=$2
-                                  test $SDB_DEBUG_LOG == "TRUE" -o $SDB_DEBUG_LOG == "FALSE" -o $SDB_DEBUG_LOG == "true" -o $SDB_DEBUG_LOG == "false" -o $SDB_DEBUG_LOG == "ON" -o $SDB_DEBUG_LOG == "OFF" -o $SDB_DEBUG_LOG == "on" -o $SDB_DEBUG_LOG == "off" || \
-                                  err_para BOOL $SDB_DEBUG_LOG
-                                  shift 2
-                                  ;;
-      -v | --version)             show_version
-                                  exit 0
-                                  ;;
-      -h | --help )               build_help
-                                  exit 0
-                                  ;;
-      --)                         shift
-                                  break
-                                  ;;
-      *)                          echo "Internal error!"
-                                  exit 64
-                                  ;;
+      -D )                                    DEFINE_SQLDATA=true
+                                              SQL_DATA=$2
+                                              shift 2
+                                              ;;
+      -l )                                    SQL_LOG=$2
+                                              shift 2
+                                              ;;
+      -p )                                    INST_PORT=$2
+                                              check_num_para "PORT" "$INST_PORT"
+                                              shift 2
+                                              ;;
+      -f )                                    PIDFILE=$2
+                                              shift 2
+                                              ;;
+      -s )                                    SOCKETFILE=$2
+                                              shift 2
+                                              ;;
+      -w )                                    PASSWORD=$2
+                                              shift 2
+                                              ;;
+      -a )                                    MAX_CON=$2
+                                              check_num_para "MAX-CON" "$MAX_CON"
+                                              shift 2
+                                              ;;
+      --print )                               NEED_PRINTSCREEN=true
+                                              shift
+                                              ;;
+      --baklog )                              NEED_BACKUPLOG=true
+                                              shift
+                                              ;;
+      --sdb-conn-addr )                       SDB_CONN_ADDR=$2
+                                              shift 2
+                                              ;;
+      --sdb-user )                            SDB_USER=$2
+                                              shift 2
+                                              ;;
+      --sdb-passwd )                          SDB_PASSWD=$2
+                                              shift 2
+                                              ;;
+      --sdb-use-partition )                   SDB_AUTO_PARTITION=$2
+                                              test $SDB_AUTO_PARTITION == "TRUE" -o $SDB_AUTO_PARTITION == "FALSE" -o $SDB_AUTO_PARTITION == "true" -o $SDB_AUTO_PARTITION == "false" -o $SDB_AUTO_PARTITION == "ON" -o $SDB_AUTO_PARTITION == "OFF"  -o $SDB_AUTO_PARTITION == "on" -o $SDB_AUTO_PARTITION == "off" || \
+                                              err_para BOOL $SDB_AUTO_PARTITION
+                                              shift 2
+                                              ;;
+      --sdb-auto-partition )                  SDB_AUTO_PARTITION=$2
+                                              test $SDB_AUTO_PARTITION == "TRUE" -o $SDB_AUTO_PARTITION == "FALSE" -o $SDB_AUTO_PARTITION == "true" -o $SDB_AUTO_PARTITION == "false" -o $SDB_AUTO_PARTITION == "ON" -o $SDB_AUTO_PARTITION == "OFF"  -o $SDB_AUTO_PARTITION == "on" -o $SDB_AUTO_PARTITION == "off" || \
+                                              err_para BOOL $SDB_AUTO_PARTITION
+                                              shift 2
+                                              ;;
+      --sdb-use-bulk-insert )                 SDB_USE_BULK_INSERT=$2
+                                              test $SDB_USE_BULK_INSERT == "TRUE" -o $SDB_USE_BULK_INSERT == "FALSE" -o $SDB_USE_BULK_INSERT == "true" -o $SDB_USE_BULK_INSERT == "false" -o $SDB_USE_BULK_INSERT == "ON" -o $SDB_USE_BULK_INSERT == "OFF" -o $SDB_USE_BULK_INSERT == "on" -o $SDB_USE_BULK_INSERT == "off" || \
+                                              err_para BOOL $SDB_USE_BULK_INSERT
+                                              shift 2
+                                              ;;
+      --sdb-bulk-insert-size )                SDB_BULK_INSERT_SIZE=$2
+                                              check_num_para "SDB-BULK-INSERT-SIZE" "$SDB_BULK_INSERT_SIZE"
+                                              shift 2
+                                              ;;
+      --sdb-use-autocommit )                  SDB_USE_AUTOCOMMIT=$2
+                                              test $SDB_USE_AUTOCOMMIT == "TRUE" -o $SDB_USE_AUTOCOMMIT == "FALSE" -o $SDB_USE_AUTOCOMMIT == "true" -o $SDB_USE_AUTOCOMMIT == "false" -o $SDB_USE_AUTOCOMMIT == "ON" -o $SDB_USE_AUTOCOMMIT == "OFF" -o $SDB_USE_AUTOCOMMIT == "on" -o $SDB_USE_AUTOCOMMIT == "off" || \
+                                              err_para BOOL $SDB_USE_AUTOCOMMIT
+                                              shift 2
+                                              ;;
+      --sdb-token )                           SDB_TOKEN=$2
+                                              shift 2
+                                              ;;
+      --sdb-cipherfile )                      SDB_CIPHERFILE=$2
+                                              shift 2
+                                              ;;
+      --sdb-error-level )                     SDB_ERROR_LEVEL=$2
+                                              shift 2
+                                              ;;
+      --sdb-replica-size )                    SDB_REPLICA_SIZE=$2
+                                              check_num_para "SDB-REPLICA-SIZE" "$SDB_REPLICA_SIZE"
+                                              shift 2
+                                              ;;
+      --sdb-use-transaction )                 SDB_USE_TRANSACTION=$2
+                                              test $SDB_USE_TRANSACTION == "TRUE" -o $SDB_USE_TRANSACTION == "FALSE" -o $SDB_USE_TRANSACTION == "true" -o $SDB_USE_TRANSACTION == "false" -o $SDB_USE_TRANSACTION == "ON" -o $SDB_USE_TRANSACTION == "OFF" -o $SDB_USE_TRANSACTION == "on" -o $SDB_USE_TRANSACTION == "off" || \
+                                              err_para BOOL $SDB_USE_TRANSACTION
+                                              shift 2
+                                              ;;
+      --sdb-optimizer-options )               SDB_OPTIMIZER_OPTIONS=$2
+                                              shift 2
+                                              ;;
+      --sdb-rollback-on-timeout )             SDB_ROLLBACK_ON_TIMEOUT=$2
+                                              test $SDB_ROLLBACK_ON_TIMEOUT == "TRUE" -o $SDB_ROLLBACK_ON_TIMEOUT == "FALSE" -o $SDB_ROLLBACK_ON_TIMEOUT == "true" -o $SDB_ROLLBACK_ON_TIMEOUT == "false" -o $SDB_ROLLBACK_ON_TIMEOUT == "ON" -o $SDB_ROLLBACK_ON_TIMEOUT == "OFF" -o $SDB_ROLLBACK_ON_TIMEOUT == "on" -o $SDB_ROLLBACK_ON_TIMEOUT == "off" || \
+                                              err_para BOOL $SDB_ROLLBACK_ON_TIMEOUT
+                                              shift 2
+                                              ;;
+      --sdb-execute-only-in-mysql )           SDB_EXECUTE_ONLY_IN_MYSQL=$2
+                                              test $SDB_EXECUTE_ONLY_IN_MYSQL == "TRUE" -o $SDB_EXECUTE_ONLY_IN_MYSQL == "FALSE" -o $SDB_EXECUTE_ONLY_IN_MYSQL == "true" -o $SDB_EXECUTE_ONLY_IN_MYSQL == "false" -o $SDB_EXECUTE_ONLY_IN_MYSQL == "ON" -o $SDB_EXECUTE_ONLY_IN_MYSQL == "OFF" -o $SDB_EXECUTE_ONLY_IN_MYSQL == "on" -o $SDB_EXECUTE_ONLY_IN_MYSQL == "off" || \
+                                              err_para BOOL $SDB_EXECUTE_ONLY_IN_MYSQL
+                                              shift 2
+                                              ;;
+      --sdb-selector-pushdown-threshold )     SDB_SELECTOR_PUSHDOWN_THRESHOLD=$2
+                                              shift 2
+                                              ;;
+      --sdb-alter-table-overhead-threshold )  SDB_ALTER_TABLE_OVERHEAD_THRESHOLD=$2
+                                              check_num_para "SDB-ALTER-TABLE-OVERHEAD-THRESHOLD" "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD"
+                                              shift 2
+                                              ;;
+      --sdb-debug-log )                       SDB_DEBUG_LOG=$2
+                                              test $SDB_DEBUG_LOG == "TRUE" -o $SDB_DEBUG_LOG == "FALSE" -o $SDB_DEBUG_LOG == "true" -o $SDB_DEBUG_LOG == "false" -o $SDB_DEBUG_LOG == "ON" -o $SDB_DEBUG_LOG == "OFF" -o $SDB_DEBUG_LOG == "on" -o $SDB_DEBUG_LOG == "off" || \
+                                              err_para BOOL $SDB_DEBUG_LOG
+                                              shift 2
+                                              ;;
+      -v | --version)                         show_version
+                                              exit 0
+                                              ;;
+      -h | --help )                           build_help
+                                              exit 0
+                                              ;;
+      --)                                     shift
+                                              break
+                                              ;;
+      *)                                      echo "Internal error!"
+                                              exit 64
+                                              ;;
    esac
 done
 
@@ -923,7 +1015,11 @@ case "$1" in
    restart)    test -z $2 && lack_para "INSTNAME" || INST_NAME=$2
                mode=$1; shift 2;;
    chconf)     mode=$1
-               if [ -z "$PORT" -a -z "$MAX_CON" -a -z "$SDB_USER" -a -z "$SDB_PASSWD" -a -z "$SDB_AUTO_PARTITION" -a -z "$SDB_USE_BULK_INSERT" -a -z "$SDB_BULK_INSERT_SIZE" -a -z "$SDB_USE_AUTOCOMMIT" -a -z "$SDB_DEBUG_LOG" ]; then
+               if [ -z "$PORT" -a -z "$MAX_CON" -a -z "$SDB_USER" -a -z "$SDB_PASSWD" -a -z "$SDB_AUTO_PARTITION" \
+                    -a -z "$SDB_USE_BULK_INSERT" -a -z "$SDB_BULK_INSERT_SIZE" -a -z "$SDB_USE_AUTOCOMMIT" \
+                    -a -z "$SDB_DEBUG_LOG"  -a -z "$SDB_TOKEN" -a -z "$SDB_CIPHERFILE" -a -z "$SDB_ERROR_LEVEL" \
+                    -a -z "$SDB_REPLICA_SIZE" -a -z "$SDB_USE_TRANSACTION" -a -z "$SDB_OPTIMIZER_OPTIONS" -a -z "$SDB_ROLLBACK_ON_TIMEOUT" \
+                    -a -z "$SDB_EXECUTE_ONLY_IN_MYSQL" -a -z "$SDB_SELECTOR_PUSHDOWN_THRESHOLD" -a -z "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD" ]; then
                   echo "${ME}: No configure specified." 
                   exit 0
                   shift 1
