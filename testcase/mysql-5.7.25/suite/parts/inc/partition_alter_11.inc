@@ -88,8 +88,7 @@ $unique
 )
 $partitioning;
 #BUG #SEQUOIASQLMAINSTREAM-683
-#--source suite/parts/inc/partition_alter_1.inc
-DROP TABLE IF EXISTS t1;
+--source suite/parts/inc/partition_alter_1.inc
 
 #----------- PARTITION BY RANGE
 if ($with_partitioning)
@@ -108,8 +107,7 @@ $unique
 )
 $partitioning;
 #BUG #SEQUOIASQLMAINSTREAM-683
-#--source suite/parts/inc/partition_alter_1.inc
-DROP TABLE IF EXISTS t1;
+--source suite/parts/inc/partition_alter_1.inc
 
 #----------- PARTITION BY RANGE -- SUBPARTITION BY HASH
 if ($with_partitioning)

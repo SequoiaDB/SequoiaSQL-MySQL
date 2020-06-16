@@ -100,7 +100,14 @@ PARTITION part0 VALUES IN (0),
 PARTITION part1 VALUES IN (1),
 PARTITION part2 VALUES IN (2),
 PARTITION part3 VALUES IN (3));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -116,7 +123,14 @@ PARTITION partc VALUES LESS THAN (10),
 PARTITION partd VALUES LESS THAN (10 + 5),
 PARTITION parte VALUES LESS THAN (20),
 PARTITION partf VALUES LESS THAN (2147483646));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -262,7 +276,14 @@ PARTITION part0 VALUES IN (0),
 PARTITION part1 VALUES IN (1),
 PARTITION part2 VALUES IN (2),
 PARTITION part3 VALUES IN (3));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -278,7 +299,14 @@ PARTITION partc VALUES LESS THAN (10),
 PARTITION partd VALUES LESS THAN (10 + 5),
 PARTITION parte VALUES LESS THAN (20),
 PARTITION partf VALUES LESS THAN (2147483646));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -423,7 +451,14 @@ PARTITION part0 VALUES IN (0),
 PARTITION part1 VALUES IN (1),
 PARTITION part2 VALUES IN (2),
 PARTITION part3 VALUES IN (3));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -439,7 +474,14 @@ PARTITION partc VALUES LESS THAN (10),
 PARTITION partd VALUES LESS THAN (10 + 5),
 PARTITION parte VALUES LESS THAN (20),
 PARTITION partf VALUES LESS THAN (2147483646));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -585,7 +627,14 @@ PARTITION part0 VALUES IN (0),
 PARTITION part1 VALUES IN (1),
 PARTITION part2 VALUES IN (2),
 PARTITION part3 VALUES IN (3));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -601,7 +650,14 @@ PARTITION partc VALUES LESS THAN (10),
 PARTITION partd VALUES LESS THAN (10 + 5),
 PARTITION parte VALUES LESS THAN (20),
 PARTITION partf VALUES LESS THAN (2147483646));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -746,7 +802,14 @@ PARTITION part0 VALUES IN (0),
 PARTITION part1 VALUES IN (1),
 PARTITION part2 VALUES IN (2),
 PARTITION part3 VALUES IN (3));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
@@ -762,7 +825,14 @@ PARTITION partc VALUES LESS THAN (10),
 PARTITION partd VALUES LESS THAN (10 + 5),
 PARTITION parte VALUES LESS THAN (20),
 PARTITION partf VALUES LESS THAN (2147483646));
-DROP TABLE IF EXISTS t1;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN 1 AND @max_row_div2 - 1;
+ALTER TABLE t1 MODIFY f_int2 BIGINT;
+INSERT INTO t1(f_int1,f_int2,f_char1,f_char2,f_charbig)
+SELECT f_int1,f_int2,f_char1,f_char2,f_charbig FROM t0_template
+WHERE f_int1 BETWEEN @max_row_div2 AND @max_row;
+DROP TABLE t1;
 CREATE TABLE t1 (
 f_int1 INTEGER,
 f_int2 INTEGER,
