@@ -30,5 +30,5 @@ formatter=loggerFormatter
 args=('logs/run.log', 'a+', 104857600, 10)
 
 [formatter_loggerFormatter]
-format=%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)s] %(message)s
+format=%(asctime)s [%(levelname)s] [%(threadName)s] [%(filename)s:%(lineno)s] %(message)s
 datefmt=
