@@ -1377,6 +1377,14 @@ select * from t1;
 id	a	b	c
 1	9223372036854775806	9223372036854775807	1
 drop table t1;
+create table t1(id int auto_increment key, a bigint unsigned, b bigint unsigned, c bigint unsigned);
+insert into t1 values(1,1,18446744073709551615,1);
+update t1 set a = a + b;
+ERROR 22003: Out of range value for column 'a' at row 1
+select * from t1;
+id	a	b	c
+1	1	18446744073709551615	1
+drop table t1;
 create table t1(id int auto_increment key, a float, b float, c float);
 insert into t1 values(1.25,1.25,1.25,1.25),(2.33,2.333,2.3333,2.3333),(3.25,3.25,3.25,3.25),(4.3333,4.3333,4.3333,4.3333);
 insert into t1 values();

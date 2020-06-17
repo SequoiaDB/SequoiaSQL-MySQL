@@ -451,12 +451,12 @@ drop table t1;
 
 #unsigned
 #Bug #SEQUOIASQLMAINSTREAM-672
-#create table t1(id int auto_increment key, a bigint unsigned, b bigint unsigned, c bigint unsigned);
-#insert into t1 values(1,1,18446744073709551615,1);
-#--error 1264
-#update t1 set a = a + b;
-#select * from t1;
-#drop table t1;
+create table t1(id int auto_increment key, a bigint unsigned, b bigint unsigned, c bigint unsigned);
+insert into t1 values(1,1,18446744073709551615,1);
+--error 1264
+update t1 set a = a + b;
+select * from t1;
+drop table t1;
 
 #float
 create table t1(id int auto_increment key, a float, b float, c float);
