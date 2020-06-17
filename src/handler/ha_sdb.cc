@@ -2596,8 +2596,14 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
   }
 
-  rc = collection->query(condition, selector, order_by, hint, 0, num_to_return,
-                         flag);
+  if (delete_with_select) {
+    rc = collection->query_and_remove(condition, selector, order_by, hint, 0,
+                                      num_to_return, flag);
+  } else {
+    rc = collection->query(condition, selector, order_by, hint, 0,
+                           num_to_return, flag);
+  }
+
   if (rc) {
     SDB_LOG_ERROR(
         "Collection[%s.%s] failed to query with "
