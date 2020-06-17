@@ -247,11 +247,11 @@ COMMENT 'sequoiadb: { table_options: { ReplSize: -1, Compressed: false, StrictDa
 SUBPARTITION BY HASH( TO_DAYS(purchased) )
 SUBPARTITIONS 2 (
 PARTITION p0 VALUES LESS THAN(1990)
-COMMENT 'sequoiadb: { table_options: { Partition: 1024, ReplSize: 2, AutoIndexId: false } }',
+COMMENT 'sequoiadb: { partition_options : { Partition: 1024, ReplSize: 2, AutoIndexId: false } }',
 PARTITION p1 VALUES LESS THAN(2000)
-COMMENT 'sequoiadb: { table_options: { Partition: 2048, Compressed: true } }',   
+COMMENT 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true } }',   
 PARTITION p2 VALUES LESS THAN MAXVALUE
-COMMENT 'sequoiadb: { table_options: { Partition: 8192, ReplSize: 3, StrictDataMode: true } }'  
+COMMENT 'sequoiadb: { partition_options : { Partition: 8192, ReplSize: 3, StrictDataMode: true } }'  
 );
 SHOW CREATE TABLE t1;
 Table	Create Table
@@ -262,9 +262,9 @@ t1	CREATE TABLE `t1` (
 /*!50100 PARTITION BY RANGE ( YEAR(purchased))
 SUBPARTITION BY HASH ( TO_DAYS(purchased))
 SUBPARTITIONS 2
-(PARTITION p0 VALUES LESS THAN (1990) COMMENT = 'sequoiadb: { table_options: { Partition: 1024, ReplSize: 2, AutoIndexId: false } }' ENGINE = SequoiaDB,
- PARTITION p1 VALUES LESS THAN (2000) COMMENT = 'sequoiadb: { table_options: { Partition: 2048, Compressed: true } }' ENGINE = SequoiaDB,
- PARTITION p2 VALUES LESS THAN MAXVALUE COMMENT = 'sequoiadb: { table_options: { Partition: 8192, ReplSize: 3, StrictDataMode: true } }' ENGINE = SequoiaDB) */
+(PARTITION p0 VALUES LESS THAN (1990) COMMENT = 'sequoiadb: { partition_options : { Partition: 1024, ReplSize: 2, AutoIndexId: false } }' ENGINE = SequoiaDB,
+ PARTITION p1 VALUES LESS THAN (2000) COMMENT = 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true } }' ENGINE = SequoiaDB,
+ PARTITION p2 VALUES LESS THAN MAXVALUE COMMENT = 'sequoiadb: { partition_options : { Partition: 8192, ReplSize: 3, StrictDataMode: true } }' ENGINE = SequoiaDB) */
 DROP TABLE t1;
 CREATE TABLE t1 (
 id INT NOT NULL PRIMARY KEY,
