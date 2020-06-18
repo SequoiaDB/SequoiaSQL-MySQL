@@ -335,7 +335,7 @@ class ha_sdb : public handler {
 
   int optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                         bson::BSONObj &selector, bson::BSONObj &hint,
-                        int &num_to_return, bool &direct_op);
+                        ha_rows &num_to_return, bool &direct_op);
 
   int index_init(uint idx, bool sorted);
 

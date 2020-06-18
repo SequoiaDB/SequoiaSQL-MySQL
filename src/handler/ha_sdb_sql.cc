@@ -226,6 +226,32 @@ Item *sdb_where_condition(THD *thd) {
   return sdb_lex_first_select(thd)->where_cond();
 }
 
+Item *sdb_having_condition(THD *thd) {
+  return sdb_lex_first_select(thd)->having_cond();
+}
+
+bool sdb_use_distinct(THD *thd) {
+  return sdb_lex_first_select(thd)->is_distinct();
+}
+
+bool sdb_calc_found_rows(THD *thd) {
+  return sdb_lex_first_select(thd)->join->calc_found_rows;
+}
+
+bool sdb_use_filesort(THD *thd) {
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  if (!join->qep_tab) {
+    return false;
+  }
+  QEP_TAB *tab = NULL;
+  if (join->need_tmp) {
+    tab = &join->qep_tab[join->primary_tables];
+  } else {
+    tab = join->qep_tab + join->const_tables;
+  }
+  return tab->filesort;
+}
+
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag) {
   return thd->optimizer_switch_flag(flag);
 }
@@ -542,6 +568,30 @@ bool sdb_is_view(struct TABLE_LIST *table_list) {
 
 Item *sdb_where_condition(THD *thd) {
   return sdb_lex_first_select(thd)->where;
+}
+
+Item *sdb_having_condition(THD *thd) {
+  return sdb_lex_first_select(thd)->having;
+}
+
+bool sdb_use_distinct(THD *thd) {
+  return sdb_lex_first_select(thd)->options & SELECT_DISTINCT;
+}
+
+bool sdb_calc_found_rows(THD *thd) {
+  return sdb_lex_first_select(thd)->join->select_options & OPTION_FOUND_ROWS;
+}
+
+bool sdb_use_filesort(THD *thd) {
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  if (!join->join_tab) {
+    return false;
+  }
+  JOIN_TAB *tab = join->join_tab + (join->tables_list ? join->const_tables : 0);
+  if (join->need_tmp) {
+    tab = tab + 1;
+  }
+  return tab->filesort;
 }
 
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag) {

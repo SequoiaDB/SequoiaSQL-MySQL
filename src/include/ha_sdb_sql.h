@@ -34,8 +34,10 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #if defined IS_MYSQL
 #include <my_aes.h>
 #include <item_cmpfunc.h>
+#include <sql_optimizer.h>
 #elif defined IS_MARIADB
 #include <mysql/service_my_crypt.h>
+#include <sql_select.h>
 #endif
 
 #ifndef MY_ATTRIBUTE
@@ -216,6 +218,14 @@ bool sdb_lex_ignore(THD *thd);
 bool sdb_is_view(struct TABLE_LIST *table_list);
 
 Item *sdb_where_condition(THD *thd);
+
+Item *sdb_having_condition(THD *thd);
+
+bool sdb_use_distinct(THD *thd);
+
+bool sdb_calc_found_rows(THD *thd);
+
+bool sdb_use_filesort(THD *thd);
 
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag);
 
