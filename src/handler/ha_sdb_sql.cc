@@ -226,6 +226,32 @@ Item *sdb_where_condition(THD *thd) {
   return sdb_lex_first_select(thd)->where_cond();
 }
 
+Item *sdb_having_condition(THD *thd) {
+  return sdb_lex_first_select(thd)->having_cond();
+}
+
+bool sdb_use_distinct(THD *thd) {
+  return sdb_lex_first_select(thd)->is_distinct();
+}
+
+bool sdb_calc_found_rows(THD *thd) {
+  return sdb_lex_first_select(thd)->join->calc_found_rows;
+}
+
+bool sdb_use_filesort(THD *thd) {
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  if (!join->qep_tab) {
+    return false;
+  }
+  QEP_TAB *tab = NULL;
+  if (join->need_tmp) {
+    tab = &join->qep_tab[join->primary_tables];
+  } else {
+    tab = join->qep_tab + join->const_tables;
+  }
+  return tab->filesort;
+}
+
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag) {
   return thd->optimizer_switch_flag(flag);
 }
@@ -335,6 +361,10 @@ bool sdb_is_transaction_stmt(THD *thd, bool all) {
   } else {
     return thd->get_transaction()->is_active(Transaction_ctx::STMT);
   }
+}
+
+bool sdb_is_single_table(THD *thd) {
+    return (1 == thd->lex->table_count);
 }
 
 void sdb_query_cache_invalidate(THD *thd, bool all) {
@@ -520,6 +550,30 @@ Item *sdb_where_condition(THD *thd) {
   return sdb_lex_first_select(thd)->where;
 }
 
+Item *sdb_having_condition(THD *thd) {
+  return sdb_lex_first_select(thd)->having;
+}
+
+bool sdb_use_distinct(THD *thd) {
+  return sdb_lex_first_select(thd)->options & SELECT_DISTINCT;
+}
+
+bool sdb_calc_found_rows(THD *thd) {
+  return sdb_lex_first_select(thd)->join->select_options & OPTION_FOUND_ROWS;
+}
+
+bool sdb_use_filesort(THD *thd) {
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  if (!join->join_tab) {
+    return false;
+  }
+  JOIN_TAB *tab = join->join_tab + (join->tables_list ? join->const_tables : 0);
+  if (join->need_tmp) {
+    tab = tab + 1;
+  }
+  return tab->filesort;
+}
+
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag) {
   return optimizer_flag(thd, flag);
 }
@@ -639,6 +693,10 @@ void *sdb_trans_alloc(THD *thd, size_t size) {
 
 bool sdb_is_transaction_stmt(THD *thd, bool all) {
   return all ? thd->transaction.all.ha_list : thd->transaction.stmt.ha_list;
+}
+
+bool sdb_is_single_table(THD *thd) {
+    return thd->lex->query_tables && !thd->lex->query_tables->next_global;
 }
 
 bool sdb_create_table_like(THD *thd) {

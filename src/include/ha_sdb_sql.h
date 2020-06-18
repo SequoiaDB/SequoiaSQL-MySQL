@@ -34,8 +34,10 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #if defined IS_MYSQL
 #include <my_aes.h>
 #include <item_cmpfunc.h>
+#include <sql_optimizer.h>
 #elif defined IS_MARIADB
 #include <mysql/service_my_crypt.h>
+#include <sql_select.h>
 #endif
 
 #ifndef MY_ATTRIBUTE
@@ -215,6 +217,14 @@ bool sdb_is_view(struct TABLE_LIST *table_list);
 
 Item *sdb_where_condition(THD *thd);
 
+Item *sdb_having_condition(THD *thd);
+
+bool sdb_use_distinct(THD *thd);
+
+bool sdb_calc_found_rows(THD *thd);
+
+bool sdb_use_filesort(THD *thd);
+
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag);
 
 const char *sdb_item_name(const Item *cond_item);
@@ -222,6 +232,8 @@ const char *sdb_item_name(const Item *cond_item);
 time_round_mode_t sdb_thd_time_round_mode(THD *thd);
 
 bool sdb_is_transaction_stmt(THD *thd, bool all);
+
+bool sdb_is_single_table(THD *thd);
 
 // About Field
 const char *sdb_field_name(const Field *f);

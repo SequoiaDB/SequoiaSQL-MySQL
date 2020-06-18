@@ -42,12 +42,6 @@
 #include <json_dom.h>
 #endif
 
-#ifdef IS_MARIADB
-#include <sql_select.h>
-#elif IS_MYSQL
-#include <sql_optimizer.h>
-#endif
-
 using namespace sdbclient;
 
 #ifndef SDB_DRIVER_VERSION
@@ -2178,7 +2172,7 @@ done:
 
 int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                               bson::BSONObj &selector, bson::BSONObj &hint,
-                              int &num_to_return, bool &direct_op) {
+                              ha_rows &num_to_return, bool &direct_op) {
   DBUG_ENTER("ha_sdb::optimize_proccess");
   int rc = 0;
   bson::BSONObj result;
@@ -2373,6 +2367,39 @@ error:
   goto done;
 }
 
+bool sdb_can_push_down_limit(THD *thd, bson::BSONObj &condition) {
+  SELECT_LEX *const select_lex = sdb_lex_first_select(thd);
+  JOIN *const join = select_lex->join;
+  /* if the following conditions are included, cannot pushdown limit:
+     1. HAVING condition.
+     2. WHERE condition but not pushdowned.
+     3. GROUP BY lists.
+     4. ORDER BY lists with filesort.
+     5. contains DISTINCT.
+     6. contains calculate found rows, like 'SELECT SQL_CALC_FOUND_ROWS * FROM
+        t1'.
+     7. has a GROUP BY clause and/or one or more aggregate functions.
+  */
+  const bool use_where_condition = sdb_where_condition(thd);
+  const bool use_having_condition = sdb_having_condition(thd);
+  const bool where_cond_push = use_where_condition && !condition.isEmpty();
+  const bool use_group = join->group_list ? true : false;
+  const bool use_filesort = sdb_use_filesort(thd);
+  const bool use_distinct = sdb_use_distinct(thd);
+  const bool calc_found_rows = sdb_calc_found_rows(thd);
+  bool use_group_and_agg_func = false;
+  if (join->sort_and_group && !join->tmp_table_param.precomputed_group_by) {
+    use_group_and_agg_func = true;
+  }
+
+  if (use_having_condition || (use_where_condition && !where_cond_push) ||
+      use_group || use_distinct || calc_found_rows || use_group_and_agg_func ||
+      use_filesort) {
+    return false;
+  }
+  return true;
+}
+
 int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                            uchar *buf) {
   int rc = 0;
@@ -2380,10 +2407,14 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   bson::BSONObj rule;
   bson::BSONObj order_by;
   bson::BSONObj selector;
-  int num_to_return = -1;
+  ha_rows num_to_skip = 0;
+  ha_rows num_to_return = -1;
   bool direct_op = false;
   int flag = 0;
   KEY *key_info = table->key_info + active_index;
+  SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
+  SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
+  const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -2415,8 +2446,19 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
   }
 
-  rc = collection->query(condition, selector, order_by, hint, 0, num_to_return,
-                         flag);
+  if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
+      sdb_is_single_table(ha_thd())) {
+    if (sdb_can_push_down_limit(ha_thd(), condition)) {
+      num_to_return = select_lex->get_limit();
+      if (select_lex->offset_limit) {
+        num_to_skip = select_lex->get_offset();
+        unit->offset_limit_cnt = 0;
+      }
+    }
+  }
+  rc = collection->query(condition, selector, order_by, hint, num_to_skip,
+                         num_to_return, flag);
+
   if (rc) {
     SDB_LOG_ERROR(
         "Collection[%s.%s] failed to query with "
@@ -2914,7 +2956,8 @@ error:
 int ha_sdb::rnd_next(uchar *buf) {
   DBUG_ENTER("ha_sdb::rnd_next()");
   int rc = 0;
-  int num_to_return = -1;
+  ha_rows num_to_skip = 0;
+  ha_rows num_to_return = -1;
   bool direct_op = false;
   bson::BSONObj rule;
   bson::BSONObj selector;
@@ -2951,8 +2994,22 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
     }
 
-    rc = collection->query(condition, selector, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
-                           0, num_to_return, flag);
+    SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
+    SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
+    const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+    if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
+        sdb_is_single_table(ha_thd())) {
+      if (sdb_can_push_down_limit(ha_thd(), condition)) {
+        num_to_return = select_lex->get_limit();
+        if (select_lex->offset_limit) {
+          num_to_skip = select_lex->get_offset();
+          unit->offset_limit_cnt = 0;
+        }
+      }
+    }
+    rc = collection->query(condition, selector, SDB_EMPTY_BSON, hint,
+                           num_to_skip, num_to_return, flag);
+
     if (rc != 0) {
       goto error;
     }
