@@ -731,6 +731,7 @@ ALTER TABLE t1 ADD COLUMN (f6 TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
 # The new behavior affects CREATE SELECT with column definitions
 # before SELECT keyword. The columns f1,f2 in t2 do not get promoted
 # with the new behavior.
+DROP TABLE t1;
 # With --explicit_defaults_for_timestamp,
 # inserting NULL in TIMESTAMP NOT NULL gives error, not NOW().
 # INT serves as model.

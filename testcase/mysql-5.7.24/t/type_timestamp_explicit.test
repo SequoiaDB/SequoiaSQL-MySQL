@@ -43,7 +43,7 @@ ALTER TABLE t1 ADD COLUMN (f6 TIMESTAMP ON UPDATE CURRENT_TIMESTAMP);
 #--replace_result $DEFAULT_ENGINE ENGINE
 #SHOW CREATE TABLE t2;
 
-#DROP TABLE t1;
+DROP TABLE t1;
 #DROP TABLE t2;
 
 --echo # With --explicit_defaults_for_timestamp,
