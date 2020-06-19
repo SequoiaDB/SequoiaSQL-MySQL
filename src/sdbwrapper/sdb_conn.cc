@@ -39,7 +39,10 @@ static int sdb_proc_id() {
 }
 
 Sdb_conn::Sdb_conn(my_thread_id _tid)
-    : m_transaction_on(false), m_thread_id(_tid), pushed_autocommit(false) {}
+    : m_transaction_on(false), m_thread_id(_tid), pushed_autocommit(false) {
+  // default is RR.
+  last_tx_isolation = SDB_TRANS_ISO_RR;
+}
 
 Sdb_conn::~Sdb_conn() {}
 
@@ -151,13 +154,46 @@ error:
   goto done;
 }
 
-int Sdb_conn::begin_transaction() {
+int Sdb_conn::begin_transaction(THD *thd) {
   DBUG_ENTER("Sdb_conn::begin_transaction");
   int rc = SDB_ERR_OK;
   int retry_times = 2;
+  ulong tx_iso = SDB_TRANS_ISO_RU;
+  bson::BSONObj option;
+  bson::BSONObjBuilder builder(32);
 
   if (!sdb_use_transaction) {
     goto done;
+  }
+
+  if (ISO_SERIALIZABLE == thd->tx_isolation) {
+    rc = HA_ERR_NOT_ALLOWED_COMMAND;
+    SDB_PRINT_ERROR(rc,
+                    "SequoiaDB engine not support transaction "
+                    "serializable isolation, please set transaction_isolation "
+                    "to other level and restart transaction");
+    goto error;
+  }
+
+  if (thd->tx_isolation != get_last_tx_isolation()) {
+    tx_iso = convert_to_sdb_isolation(thd->tx_isolation);
+    try {
+      /* 0: RU; 1: RC; 2:RS; 3:RR */
+      builder.append(SDB_FIELD_TRANS_ISO, (int)tx_iso);
+      option = builder.obj();
+      rc = set_session_attr(option);
+      if (SDB_ERR_OK != rc) {
+        SDB_LOG_ERROR("Failed to set transaction isolation: %s, rc=%d",
+                      option.toString(false, false).c_str(), rc);
+        goto error;
+      }
+    } catch (bson::assertion e) {
+      SDB_LOG_ERROR("Exception[%s] occurs during set transaction isolation ",
+                    e.full.c_str());
+      rc = HA_ERR_INTERNAL_ERROR;
+      goto error;
+    }
+    set_last_tx_isolation(thd->tx_isolation);
   }
 
   while (!m_transaction_on) {

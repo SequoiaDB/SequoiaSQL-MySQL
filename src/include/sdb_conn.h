@@ -43,7 +43,7 @@ class Sdb_conn {
 
   my_thread_id thread_id();
 
-  int begin_transaction();
+  int begin_transaction(THD *thd);
 
   int commit_transaction(const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
@@ -86,7 +86,34 @@ class Sdb_conn {
 
   int get_last_error(bson::BSONObj &errObj) {
     return m_connection.getLastErrorObj(errObj);
-  };
+  }
+
+  inline void set_last_tx_isolation(ulong tx_isolation) {
+    last_tx_isolation = tx_isolation;
+  }
+
+  inline ulong get_last_tx_isolation() { return last_tx_isolation; }
+
+  inline ulong convert_to_sdb_isolation(ulong tx_isolation) {
+    switch (tx_isolation) {
+      case ISO_READ_UNCOMMITTED:
+        return SDB_TRANS_ISO_RU;
+        break;
+      case ISO_READ_COMMITTED:
+        return SDB_TRANS_ISO_RC;
+        break;
+      case ISO_REPEATABLE_READ:
+        return SDB_TRANS_ISO_RR;
+        break;
+      case ISO_SERIALIZABLE:
+        // not supported current now.
+        DBUG_ASSERT(0);
+        break;
+      default:
+        // never come to here.
+        DBUG_ASSERT(0);
+    }
+  }
 
  private:
   int retry(boost::function<int()> func);
@@ -96,6 +123,7 @@ class Sdb_conn {
   bool m_transaction_on;
   my_thread_id m_thread_id;
   bool pushed_autocommit;
+  ulong last_tx_isolation;
 };
 
 #endif

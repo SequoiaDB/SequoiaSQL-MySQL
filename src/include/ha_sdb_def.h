@@ -40,6 +40,12 @@
 #define TRANSAUTOROLLBACK "TransAutoRollback"
 #define TRANSAUTOCOMMIT "TransAutoCommit"
 
+#define SDB_FIELD_TRANS_ISO "TransIsolation"
+#define SDB_TRANS_ISO_RU 0
+#define SDB_TRANS_ISO_RC 1
+#define SDB_TRANS_ISO_RS 2
+#define SDB_TRANS_ISO_RR 3
+
 #define SDB_FIELD_NAME_AUTOINCREMENT "AutoIncrement"
 #define SDB_FIELD_NAME_FIELD "Field"
 #define SDB_FIELD_NAME "Name"

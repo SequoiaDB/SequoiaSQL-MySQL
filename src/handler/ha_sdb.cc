@@ -2311,14 +2311,12 @@ bool ha_sdb::optimize_count(bson::BSONObj &condition) {
     if (count_query) {
       count_cond_blder.appendElements(condition);
       condition = count_cond_blder.obj();
+      SDB_LOG_DEBUG("optimizer count: %d, condition: %s", count_query,
+                    condition.toString(false, false).c_str());
     }
   }
 
 done:
-  DBUG_PRINT("ha_sdb:info", ("optimizer count: %d, condition: %s", count_query,
-                             condition.toString(false, false).c_str()));
-  SDB_LOG_DEBUG("optimizer count: %d, condition: %s", count_query,
-                condition.toString(false, false).c_str());
   DBUG_RETURN(count_query);
 }
 
@@ -3588,7 +3586,7 @@ int ha_sdb::autocommit_statement(bool direct_op) {
                     conn->get_pushed_autocommit());
     }
 
-    rc = conn->begin_transaction();
+    rc = conn->begin_transaction(ha_thd());
     if (rc != 0) {
       goto done;
     }
@@ -3645,7 +3643,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
       thd_get_thd_sdb(thd)->set_auto_commit(false);
       if (!conn->is_transaction_on()) {
-        rc = conn->begin_transaction();
+        rc = conn->begin_transaction(thd);
         if (rc != 0) {
           goto error;
         }
