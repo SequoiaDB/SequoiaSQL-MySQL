@@ -1747,6 +1747,11 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
   partition_info *part_info = table->part_info;
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
 
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = 0;
+    goto done;
+  }
+
   if (HASH_PARTITION == part_info->part_type) {
     goto done;
   }
@@ -1874,6 +1879,15 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
     goto error;
   }
 
+  /*
+    When sequoiadb_execute_only_in_mysql = ON, don't skip
+    Partition_helper::change_partitions() to update partitions status.
+  */
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = 0;
+    goto done;
+  }
+
   if (RANGE_PARTITION == m_part_info->part_type ||
       LIST_PARTITION == m_part_info->part_type) {
     rc = detach_and_attach_scl();
@@ -1913,6 +1927,11 @@ int ha_sdb_part::truncate_partition_low() {
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
   uint last_part_id = -1;
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = 0;
+    goto done;
+  }
 
   for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
        i = m_part_info->get_next_used_partition(i)) {
