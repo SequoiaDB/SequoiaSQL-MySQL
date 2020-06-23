@@ -136,8 +136,8 @@ t1	CREATE TABLE `t1` (
  PARTITION c VALUES IN (1992) ENGINE = SequoiaDB,
  PARTITION d VALUES IN (1993) ENGINE = SequoiaDB) */
 DROP TABLE t1;
-CREATE TABLE t1 (col1 INT, col2 CHAR(5), col3 DATE)
-PARTITION BY LINEAR HASH( YEAR(col3) )
+CREATE TABLE t1 (col1 INT, col2 CHAR(5), col3 DATE) COMMENT 'sequoiadb:{ table_options: { ReplSize: 2 } }'
+    PARTITION BY LINEAR HASH( YEAR(col3) ) 
 PARTITIONS 6;
 SHOW CREATE TABLE t1;
 Table	Create Table
@@ -145,15 +145,40 @@ t1	CREATE TABLE `t1` (
   `col1` int(11) DEFAULT NULL,
   `col2` char(5) DEFAULT NULL,
   `col3` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: 2 } }'
+/*!50100 PARTITION BY LINEAR HASH ( YEAR(col3))
+PARTITIONS 6 */
+ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: -1 } }';
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `col1` int(11) DEFAULT NULL,
+  `col2` char(5) DEFAULT NULL,
+  `col3` date DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: -1 } }'
+/*!50100 PARTITION BY LINEAR HASH ( YEAR(col3))
+PARTITIONS 6 */
+ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }';
+ERROR HY000: partition_options is only for partitioned table
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `col1` int(11) DEFAULT NULL,
+  `col2` char(5) DEFAULT NULL,
+  `col3` date DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: -1 } }'
 /*!50100 PARTITION BY LINEAR HASH ( YEAR(col3))
 PARTITIONS 6 */
 DROP TABLE t1;
+CREATE TABLE t1 (col1 INT, col2 CHAR(5), col3 DATE) COMMENT 'sequoiadb:{ partition_options: { Partition: 8192} }'
+    PARTITION BY LINEAR HASH( YEAR(col3) )
+PARTITIONS 6;
+ERROR HY000: partition_options requires partition type of RANGE or LIST
 CREATE TABLE t1 (
 col1 INT NOT NULL,
 col2 CHAR(5),
 col3 DATE
-)
+) COMMENT 'sequoiadb:{ table_options: { ReplSize: 2 } }'
 PARTITION BY LINEAR KEY (col1)
 PARTITIONS 3;
 SHOW CREATE TABLE t1;
@@ -162,12 +187,33 @@ t1	CREATE TABLE `t1` (
   `col1` int(11) NOT NULL,
   `col2` char(5) DEFAULT NULL,
   `col3` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: 2 } }'
+/*!50100 PARTITION BY LINEAR KEY (col1)
+PARTITIONS 3 */
+ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: -1 } }';
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `col1` int(11) NOT NULL,
+  `col2` char(5) DEFAULT NULL,
+  `col3` date DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: -1 } }'
+/*!50100 PARTITION BY LINEAR KEY (col1)
+PARTITIONS 3 */
+ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }';
+ERROR HY000: partition_options is only for partitioned table
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `col1` int(11) NOT NULL,
+  `col2` char(5) DEFAULT NULL,
+  `col3` date DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: -1 } }'
 /*!50100 PARTITION BY LINEAR KEY (col1)
 PARTITIONS 3 */
 DROP TABLE t1;
-CREATE TABLE t1 ( id INT, purchased DATE )
-PARTITION BY RANGE( YEAR(purchased) )
+CREATE TABLE t1 ( id INT, purchased DATE ) COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }'
+    PARTITION BY RANGE( YEAR(purchased) )
 SUBPARTITION BY LINEAR HASH( TO_DAYS(purchased) )
 SUBPARTITIONS 2 (
 PARTITION p0 VALUES LESS THAN (1990),
@@ -195,7 +241,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `purchased` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }'
 /*!50100 PARTITION BY RANGE ( YEAR(purchased))
 SUBPARTITION BY LINEAR HASH ( TO_DAYS(purchased))
 SUBPARTITIONS 2
@@ -220,8 +266,8 @@ SUBPARTITION BY HASH ( TO_DAYS(purchased))
  (SUBPARTITION s4 ENGINE = SequoiaDB,
   SUBPARTITION s5 ENGINE = SequoiaDB)) */
 DROP TABLE t1,t2;
-CREATE TABLE t1 ( id INT, purchased DATE )
-PARTITION BY LIST( id )
+CREATE TABLE t1 ( id INT, purchased DATE ) COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }'
+    PARTITION BY LIST( id )
 SUBPARTITION BY LINEAR KEY ( id )
 SUBPARTITIONS 2 (
 PARTITION p0 VALUES IN (10),
@@ -233,7 +279,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `purchased` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }'
 /*!50100 PARTITION BY LIST ( id)
 SUBPARTITION BY LINEAR KEY (id)
 SUBPARTITIONS 2
@@ -419,3 +465,20 @@ t1	CREATE TABLE `t1` (
  PARTITION d2 VALUES LESS THAN ('2000-02-02') ENGINE = SequoiaDB,
  PARTITION d3 VALUES LESS THAN ('2020-03-03') ENGINE = SequoiaDB) */
 DROP TABLE t1;
+CREATE TABLE t1(a INT) COMMENT 'sequoiadb:{ table_options: { ReplSize: 2 } }';
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: 2 } }'
+ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: 1 } }';
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ReplSize: 1 } }'
+ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: { Partition: 8192 } }';
+ERROR HY000: partition_options is only for partitioned table
+DROP TABLE t1;
+CREATE TABLE t1(a INT) COMMENT 'sequoiadb:{ partition_options: { Partition: 8192 } }';
+ERROR HY000: partition_options is only for partitioned table
