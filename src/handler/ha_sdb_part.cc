@@ -761,7 +761,7 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
     bson::BSONObjIterator it(mcl_part_options);
     while (it.more()) {
       bson::BSONElement part_opt = it.next();
-      if (!table_options.hasField(part_opt.fieldName())) {
+      if (!scl_part_options.hasField(part_opt.fieldName())) {
         builder.append(part_opt);
       }
     }
@@ -770,12 +770,12 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
   for (uint i = 0; i < INHERITABLE_OPT_NUM; ++i) {
     const char *curr_opt = INHERITABLE_OPT[i];
     bson::BSONElement mcl_opt = mcl_options.getField(curr_opt);
-    if (mcl_opt.type() != bson::EOO && !table_options.hasField(curr_opt) &&
+    if (mcl_opt.type() != bson::EOO && !scl_part_options.hasField(curr_opt) &&
         !mcl_part_options.hasField(curr_opt)) {
       builder.append(mcl_opt);
     }
   }
-  builder.appendElements(table_options);
+  builder.appendElements(scl_part_options);
   scl_part_options = builder.obj();
 
   {
