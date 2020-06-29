@@ -131,14 +131,6 @@ static MYSQL_SYSVAR_STR(cipherfile, sdb_password_cipherfile,
                         "(Default: \"~/sequoiadb/passwd\")"
                         /*SequoiaDB 鉴权密码文件路径。*/,
                         NULL, NULL, SDB_DEFAULT_CIPHERFILE);
-// SDB_DOC_OPT = IGNORE
-static MYSQL_SYSVAR_BOOL(use_partition, sdb_auto_partition,
-                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
-                         "Create partition table on SequoiaDB. "
-                         "(Default: ON). This option is abandoned, please use "
-                         "sequoiadb_auto_partition instead."
-                         /*是否启用自动分区(已弃用)。*/,
-                         NULL, NULL, SDB_USE_PARTITION_DFT);
 static MYSQL_SYSVAR_BOOL(auto_partition, sdb_auto_partition,
                          PLUGIN_VAR_OPCMDARG,
                          "Automatically create partition table on SequoiaDB. "
@@ -161,6 +153,15 @@ static MYSQL_SYSVAR_INT(replica_size, sdb_replica_size, PLUGIN_VAR_OPCMDARG,
                         "(Default: 1)"
                         /*写操作需同步的副本数。取值范围为[-1, 7]。*/,
                         NULL, NULL, SDB_DEFAULT_REPLICA_SIZE, -1, 7, 0);
+#ifdef IS_MYSQL
+// SDB_DOC_OPT = IGNORE
+static MYSQL_SYSVAR_BOOL(use_partition, sdb_auto_partition,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
+                         "Create partition table on SequoiaDB. "
+                         "(Default: ON). This option is abandoned, please use "
+                         "sequoiadb_auto_partition instead."
+                         /*是否启用自动分区(已弃用)。*/,
+                         NULL, NULL, SDB_USE_PARTITION_DFT);
 // SDB_DOC_OPT = IGNORE
 static MYSQL_SYSVAR_BOOL(use_autocommit, sdb_use_autocommit,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
@@ -169,6 +170,15 @@ static MYSQL_SYSVAR_BOOL(use_autocommit, sdb_use_autocommit,
                          "autocommit instead."
                          /*是否启用自动提交模式(已弃用)。*/,
                          NULL, NULL, SDB_DEFAULT_USE_AUTOCOMMIT);
+// SDB_DOC_OPT = IGNORE
+static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
+                         "Optimizer switch for simple select count. "
+                         "(Default: ON). This option is abandoned, please use "
+                         "sequoiadb-optimizer-options='direct_count' instead."
+                         /*是否开启优化select count(*)行为(已弃用)。*/,
+                         NULL, NULL, TRUE);
+#endif
 static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
                          "Turn on debug log of SequoiaDB storage engine. "
                          "(Default: OFF)"
@@ -185,14 +195,6 @@ static MYSQL_SYSVAR_BOOL(use_transaction, sdb_use_transaction,
                          "Enable transaction of SequoiaDB. (Default: ON)"
                          /*是否开启事务功能。*/,
                          NULL, NULL, SDB_DEFAULT_USE_TRANSACTION);
-// SDB_DOC_OPT = IGNORE
-static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
-                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_INVISIBLE,
-                         "Optimizer switch for simple select count. "
-                         "(Default: ON). This option is abandoned, please use "
-                         "sequoiadb-optimizer-options='direct_count' instead."
-                         /*是否开启优化select count(*)行为。*/,
-                         NULL, NULL, TRUE);
 static MYSQL_THDVAR_LONGLONG(
     alter_table_overhead_threshold, PLUGIN_VAR_OPCMDARG,
     "Overhead threshold of table alteration. When count of records exceeds it, "
@@ -236,15 +238,17 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(password),
     MYSQL_SYSVAR(token),
     MYSQL_SYSVAR(cipherfile),
-    MYSQL_SYSVAR(use_partition),
     MYSQL_SYSVAR(auto_partition),
     MYSQL_SYSVAR(use_bulk_insert),
     MYSQL_SYSVAR(bulk_insert_size),
     MYSQL_SYSVAR(replica_size),
+#ifdef IS_MYSQL
+    MYSQL_SYSVAR(use_partition),
     MYSQL_SYSVAR(use_autocommit),
+    MYSQL_SYSVAR(optimizer_select_count),
+#endif
     MYSQL_SYSVAR(debug_log),
     MYSQL_SYSVAR(error_level),
-    MYSQL_SYSVAR(optimizer_select_count),
     MYSQL_SYSVAR(alter_table_overhead_threshold),
     MYSQL_SYSVAR(selector_pushdown_threshold),
     MYSQL_SYSVAR(execute_only_in_mysql),
