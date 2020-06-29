@@ -1622,14 +1622,14 @@ int ha_sdb::check_and_set_options(const char *old_options_str,
   }
 
   /* 1. auto_partition */
-  // not allowed to modify it.
   if (new_explicit_not_auto_part != old_explicit_not_auto_part) {
+    // Not allowed to modify yet.
     rc = HA_ERR_WRONG_COMMAND;
     my_printf_error(rc, "Can't support alter auto partition", MYF(0));
     goto error;
   }
 
-  /* 2. table_options */
+  /* 2. partition_options */
   rc = sdb_append_compress2tab_opt(old_sql_compress, old_tab_opt);
   DBUG_ASSERT(0 == rc);
   rc = sdb_append_compress2tab_opt(new_sql_compress, new_tab_opt);
@@ -1637,6 +1637,13 @@ int ha_sdb::check_and_set_options(const char *old_options_str,
     goto error;
   }
 
+  rc = alter_partition_options(old_tab_opt, new_tab_opt, old_part_opt,
+                               new_part_opt);
+  if (rc != 0) {
+    goto error;
+  }
+
+  /* 3. table_options */
   rc = sdb_filter_tab_opt(old_tab_opt, new_tab_opt, builder);
   if (0 != rc) {
     goto error;
@@ -1648,13 +1655,6 @@ int ha_sdb::check_and_set_options(const char *old_options_str,
     if (0 != rc) {
       goto error;
     }
-  }
-
-  /* 3. partition_options */
-  rc = alter_partition_options(old_tab_opt, new_tab_opt, old_part_opt,
-                               new_part_opt);
-  if (rc != 0) {
-    goto error;
   }
 
 done:

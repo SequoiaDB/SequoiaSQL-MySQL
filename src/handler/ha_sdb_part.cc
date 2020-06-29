@@ -1040,6 +1040,14 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     goto error;
   }
 
+  if (HASH_PARTITION == part_info->part_type && !partition_options.isEmpty()) {
+    rc = HA_WRONG_CREATE_OPTION;
+    my_printf_error(
+        rc, "partition_options requires partition type of RANGE or LIST",
+        MYF(0));
+    goto error;
+  }
+
   build.appendElements(options);
   rc = check_sdb_in_thd(ha_thd(), &conn, true);
   if (rc != 0) {
@@ -1064,14 +1072,6 @@ int ha_sdb_part::create(const char *name, TABLE *form,
                                explicit_not_auto_partition);
     if (rc != 0) {
       goto error;
-    }
-
-  } else {
-    if (!partition_options.isEmpty()) {
-      rc = HA_WRONG_CREATE_OPTION;
-      my_printf_error(
-          rc, "partition_options requires partition type of RANGE or LIST",
-          MYF(0));
     }
   }
 
