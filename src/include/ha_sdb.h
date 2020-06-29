@@ -528,6 +528,11 @@ class ha_sdb : public handler {
   virtual bool having_part_hash_id() { return false; }
 
   virtual int pre_alter_table_add_idx(const KEY *key) { return 0; }
+
+  virtual int alter_partition_options(bson::BSONObj &old_tab_opt,
+                                      bson::BSONObj &new_tab_opt,
+                                      bson::BSONObj &old_part_opt,
+                                      bson::BSONObj &new_part_opt);
   /* end */
 
 #ifdef IS_MYSQL
@@ -539,11 +544,6 @@ class ha_sdb : public handler {
                             enum enum_compress_type old_sql_compress,
                             enum enum_compress_type new_sql_compress,
                             Sdb_cl &cl);
-
-  int alter_partition_options(bson::BSONObj &old_tab_opt,
-                              bson::BSONObj &new_tab_opt,
-                              bson::BSONObj &old_part_opt,
-                              bson::BSONObj &new_part_opt);
 
  protected:
   THR_LOCK_DATA lock_data;
