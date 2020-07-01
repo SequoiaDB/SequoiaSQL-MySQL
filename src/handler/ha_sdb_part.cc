@@ -1831,6 +1831,10 @@ int ha_sdb_part::write_row_in_new_part(uint new_part) {
   sdb_build_clientinfo(ha_thd(), builder);
   hint = builder.obj();
 
+  if (m_part_info->is_sub_partitioned()) {
+    convert_sub2main_part_id(new_part);
+  }
+
   it = m_new_part_id2cl_name.find(new_part);
   if (m_new_part_id2cl_name.end() == it) {
     goto done;
