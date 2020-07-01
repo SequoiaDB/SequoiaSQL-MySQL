@@ -1251,7 +1251,8 @@ int ha_sdb_part::detach_and_attach_scl() {
 
   part_it.init(m_part_info->partitions);
   while ((part_elem = part_it++)) {
-    if (part_elem->part_state == PART_TO_BE_DROPPED) {
+    if (part_elem->part_state == PART_TO_BE_DROPPED ||
+        part_elem->part_state == PART_IS_CHANGED) {
       build_scl_name(mcl.get_cl_name(), part_elem->partition_name, scl_name);
       sprintf(scl_fullname, "%s.%s", db_name, scl_name);
 
@@ -1265,7 +1266,8 @@ int ha_sdb_part::detach_and_attach_scl() {
   part_it.rewind();
   curr_part_id = 0;
   while ((part_elem = part_it++)) {
-    if (part_elem->part_state == PART_IS_ADDED) {
+    if (part_elem->part_state == PART_IS_ADDED ||
+        part_elem->part_state == PART_IS_CHANGED) {
       std::map<uint, char *>::iterator it;
       it = m_new_part_id2cl_name.find(curr_part_id);
       sprintf(scl_fullname, "%s.%s", db_name, it->second);
