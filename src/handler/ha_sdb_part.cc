@@ -1854,7 +1854,7 @@ int ha_sdb_part::write_row_in_new_part(uint new_part) {
   }
 
   // record auto_increment field always has value.
-  rc = row_to_obj(table->record[0], obj, true, false, tmp_obj, false);
+  rc = row_to_obj(table->record[0], obj, true, false, tmp_obj, true);
   if (rc != 0) {
     goto error;
   }
