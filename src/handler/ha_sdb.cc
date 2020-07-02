@@ -2697,6 +2697,13 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                            num_to_return, flag);
   }
 
+  SDB_LOG_DEBUG(
+      "Query message: condition[%s], selector[%s], order_by[%s], limt[%d], "
+      "offset[%d]",
+      condition.toString(false, false).c_str(),
+      selector.toString(false, false).c_str(),
+      order_by.toString(false, false).c_str(), num_to_return, num_to_skip);
+
   if (rc) {
     SDB_LOG_ERROR(
         "Collection[%s.%s] failed to query with "
@@ -3284,6 +3291,14 @@ int ha_sdb::rnd_next(uchar *buf) {
       rc = collection->query(condition, selector, SDB_EMPTY_BSON, hint,
                              num_to_skip, num_to_return, flag);
     }
+
+    SDB_LOG_DEBUG(
+        "Query message: condition[%s], selector[%s], order_by[%s], limt[%d], "
+        "offset[%d]",
+        condition.toString(false, false).c_str(),
+        selector.toString(false, false).c_str(),
+        SDB_EMPTY_BSON.toString(false, false).c_str(), num_to_return,
+        num_to_skip);
 
     if (rc != 0) {
       goto error;
