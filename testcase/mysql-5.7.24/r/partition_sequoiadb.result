@@ -1001,6 +1001,14 @@ t1	CREATE TABLE `t1` (
 /*!50100 PARTITION BY LINEAR KEY (col1)
 PARTITIONS 3 */
 DROP TABLE t1;
+CREATE TABLE t1 (
+col1 INT NOT NULL,
+col2 CHAR(5),
+col3 DATE
+) COMMENT 'sequoiadb:{ partition_options: {Partition: 8192} }'
+PARTITION BY LINEAR KEY (col1)
+PARTITIONS 3;
+ERROR HY000: partition_options requires partition type of RANGE or LIST
 CREATE TABLE t1 ( id INT, purchased DATE ) COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }'
     PARTITION BY RANGE( YEAR(purchased) )
 SUBPARTITION BY LINEAR HASH( TO_DAYS(purchased) )

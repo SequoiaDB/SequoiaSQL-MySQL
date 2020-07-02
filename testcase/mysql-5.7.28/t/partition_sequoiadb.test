@@ -338,14 +338,14 @@ ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_op
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 #Bug #SEQUOIASQLMAINSTREAM-699
-#--error 140
-#CREATE TABLE t1 (
-#    col1 INT NOT NULL,
-#    col2 CHAR(5),
-#    col3 DATE
-#) COMMENT 'sequoiadb:{ partition_options: {Partition: 8192} }'
-#PARTITION BY LINEAR KEY (col1)
-#PARTITIONS 3;
+--error 140
+CREATE TABLE t1 (
+    col1 INT NOT NULL,
+    col2 CHAR(5),
+    col3 DATE
+) COMMENT 'sequoiadb:{ partition_options: {Partition: 8192} }'
+PARTITION BY LINEAR KEY (col1)
+PARTITIONS 3;
 
 #seqDB-20419
 CREATE TABLE t1 ( id INT, purchased DATE ) COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }'
