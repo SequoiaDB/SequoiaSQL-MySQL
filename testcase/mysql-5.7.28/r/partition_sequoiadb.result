@@ -159,7 +159,7 @@ t1	CREATE TABLE `t1` (
 /*!50100 PARTITION BY LINEAR HASH ( YEAR(col3))
 PARTITIONS 6 */
 ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }';
-ERROR HY000: partition_options is only for partitioned table
+ERROR HY000: partition_options requires partition type of RANGE or LIST
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -201,7 +201,7 @@ t1	CREATE TABLE `t1` (
 /*!50100 PARTITION BY LINEAR KEY (col1)
 PARTITIONS 3 */
 ALTER TABLE t1 COMMENT 'sequoiadb:{ table_options: { ReplSize: 0 }, partition_options: {Partition: 8192} }';
-ERROR HY000: partition_options is only for partitioned table
+ERROR HY000: partition_options requires partition type of RANGE or LIST
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -288,14 +288,14 @@ SUBPARTITIONS 2
  PARTITION p2 VALUES IN (30) ENGINE = SequoiaDB) */
 DROP TABLE t1;
 CREATE TABLE t1 ( id INT, purchased DATE )
-COMMENT 'sequoiadb: { table_options: { ReplSize: -1, Compressed: false, StrictDataMode: false }, partition_options: { Partition: 1024, AutoIndexId: true, AutoSplit: true }}'
+COMMENT 'sequoiadb: { table_options: { ReplSize: -1}, partition_options: { Partition: 1024 }}'
     PARTITION BY RANGE( YEAR(purchased) )
 SUBPARTITION BY HASH( TO_DAYS(purchased) )
 SUBPARTITIONS 2 (
 PARTITION p0 VALUES LESS THAN(1990)
-COMMENT 'sequoiadb: { partition_options : { Partition: 1024, ReplSize: 2, AutoIndexId: false } }',
+COMMENT 'sequoiadb: { partition_options : { Partition: 1024, ReplSize: 2 } }',
 PARTITION p1 VALUES LESS THAN(2000)
-COMMENT 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true } }',   
+COMMENT 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true, CompressionType:"snappy" } }',   
 PARTITION p2 VALUES LESS THAN MAXVALUE
 COMMENT 'sequoiadb: { partition_options : { Partition: 8192, ReplSize: 3, StrictDataMode: true } }'  
 );
@@ -304,13 +304,19 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `purchased` date DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: { table_options: { ReplSize: -1, Compressed: false, StrictDataMode: false }, partition_options: { Partition: 1024, AutoIndexId: true, AutoSplit: true }}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: { table_options: { ReplSize: -1}, partition_options: { Partition: 1024 }}'
 /*!50100 PARTITION BY RANGE ( YEAR(purchased))
 SUBPARTITION BY HASH ( TO_DAYS(purchased))
 SUBPARTITIONS 2
-(PARTITION p0 VALUES LESS THAN (1990) COMMENT = 'sequoiadb: { partition_options : { Partition: 1024, ReplSize: 2, AutoIndexId: false } }' ENGINE = SequoiaDB,
- PARTITION p1 VALUES LESS THAN (2000) COMMENT = 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true } }' ENGINE = SequoiaDB,
+(PARTITION p0 VALUES LESS THAN (1990) COMMENT = 'sequoiadb: { partition_options : { Partition: 1024, ReplSize: 2 } }' ENGINE = SequoiaDB,
+ PARTITION p1 VALUES LESS THAN (2000) COMMENT = 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true, CompressionType:"snappy" } }' ENGINE = SequoiaDB,
  PARTITION p2 VALUES LESS THAN MAXVALUE COMMENT = 'sequoiadb: { partition_options : { Partition: 8192, ReplSize: 3, StrictDataMode: true } }' ENGINE = SequoiaDB) */
+ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 1, StrictDataMode: true, AutoIndexId: true, AutoSplit: false}}';
+ERROR HY000: Option is not supported yet
+ALTER TABLE t1 COMMENT 'sequoiadb: { partition_options: {ReplSize: 1, StrictDataMode: true, AutoIndexId: true, AutoSplit: false}}';
+ERROR HY000: Option is not supported yet
+ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 1}}';
+ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 2}, partition_options: {ReplSize: 1, AutoIndexId: true, AutoSplit: true, Compressed:true, StrictDataMode: true, Partition: 8192}}';
 DROP TABLE t1;
 CREATE TABLE t1 (
 id INT NOT NULL PRIMARY KEY,
@@ -482,3 +488,47 @@ ERROR HY000: partition_options is only for partitioned table
 DROP TABLE t1;
 CREATE TABLE t1(a INT) COMMENT 'sequoiadb:{ partition_options: { Partition: 8192 } }';
 ERROR HY000: partition_options is only for partitioned table
+CREATE TABLE t1 (
+id INT NOT NULL,
+produced_date DATE,
+name VARCHAR(100),
+company VARCHAR(100)
+)COMPRESSION "None"
+COMMENT 'sequoiadb:{ partition_options: { Compressed : true, CompressionType: "snappy" } }'
+PARTITION BY RANGE COLUMNS (produced_date)
+SUBPARTITION BY KEY (id)
+SUBPARTITIONS 2 (
+PARTITION p0 VALUES LESS THAN ('1990-01-01') COMMENT 'sequoiadb:{ partition_options: { Compressed: true, CompressionType: "lzw" } }',
+PARTITION p1 VALUES LESS THAN ('2000-01-01'),
+PARTITION p2 VALUES LESS THAN ('2010-01-01')
+);
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `produced_date` date DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `company` varchar(100) DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='None' COMMENT='sequoiadb:{ partition_options: { Compressed : true, CompressionType: "snappy" } }'
+/*!50500 PARTITION BY RANGE  COLUMNS(produced_date)
+SUBPARTITION BY KEY (id)
+SUBPARTITIONS 2
+(PARTITION p0 VALUES LESS THAN ('1990-01-01') COMMENT = 'sequoiadb:{ partition_options: { Compressed: true, CompressionType: "lzw" } }' ENGINE = SequoiaDB,
+ PARTITION p1 VALUES LESS THAN ('2000-01-01') ENGINE = SequoiaDB,
+ PARTITION p2 VALUES LESS THAN ('2010-01-01') ENGINE = SequoiaDB) */
+ALTER TABLE t1 COMPRESSION "None" COMMENT 'sequoiadb:{ partition_options: { Compressed : true, CompressionType: "lzw" } }';
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `produced_date` date DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `company` varchar(100) DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='None' COMMENT='sequoiadb:{ partition_options: { Compressed : true, CompressionType: "lzw" } }'
+/*!50500 PARTITION BY RANGE  COLUMNS(produced_date)
+SUBPARTITION BY KEY (id)
+SUBPARTITIONS 2
+(PARTITION p0 VALUES LESS THAN ('1990-01-01') COMMENT = 'sequoiadb:{ partition_options: { Compressed: true, CompressionType: "lzw" } }' ENGINE = SequoiaDB,
+ PARTITION p1 VALUES LESS THAN ('2000-01-01') ENGINE = SequoiaDB,
+ PARTITION p2 VALUES LESS THAN ('2010-01-01') ENGINE = SequoiaDB) */
+DROP TABLE t1;

@@ -169,18 +169,26 @@ DROP TABLE t1;
 
 #seqDB-20421
 CREATE TABLE t1 ( id INT, purchased DATE )
-    COMMENT 'sequoiadb: { table_options: { ReplSize: -1, Compressed: false, StrictDataMode: false }, partition_options: { Partition: 1024, AutoIndexId: true, AutoSplit: true }}'
+    COMMENT 'sequoiadb: { table_options: { ReplSize: -1}, partition_options: { Partition: 1024 }}'
     PARTITION BY RANGE( YEAR(purchased) )
     SUBPARTITION BY HASH( TO_DAYS(purchased) )
     SUBPARTITIONS 2 (
         PARTITION p0 VALUES LESS THAN(1990)
-            COMMENT 'sequoiadb: { partition_options : { Partition: 1024, ReplSize: 2, AutoIndexId: false } }',
+            COMMENT 'sequoiadb: { partition_options : { Partition: 1024, ReplSize: 2 } }',
         PARTITION p1 VALUES LESS THAN(2000)
-            COMMENT 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true } }',   
+            COMMENT 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true, CompressionType:"snappy" } }',   
         PARTITION p2 VALUES LESS THAN MAXVALUE
             COMMENT 'sequoiadb: { partition_options : { Partition: 8192, ReplSize: 3, StrictDataMode: true } }'  
     );		       
 SHOW CREATE TABLE t1;
+--error 40032
+ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 1, StrictDataMode: true, AutoIndexId: true, AutoSplit: false}}';
+--error 40032
+ALTER TABLE t1 COMMENT 'sequoiadb: { partition_options: {ReplSize: 1, StrictDataMode: true, AutoIndexId: true, AutoSplit: false}}';
+
+ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 1}}';
+ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 2}, partition_options: {ReplSize: 1, AutoIndexId: true, AutoSplit: true, Compressed:true, StrictDataMode: true, Partition: 8192}}';
+
 DROP TABLE t1;
 
 #seqDB-20540
@@ -272,5 +280,55 @@ DROP TABLE t1;
 --error 1210
 CREATE TABLE t1(a INT) COMMENT 'sequoiadb:{ partition_options: { Partition: 8192 } }';
 
+#seqDB-22393
+CREATE TABLE t1 (
+    id INT NOT NULL,
+    produced_date DATE,
+    name VARCHAR(100),
+    company VARCHAR(100)
+)COMPRESSION "None"
+COMMENT 'sequoiadb:{ partition_options: { Compressed : true, CompressionType: "snappy" } }'
+PARTITION BY RANGE COLUMNS (produced_date)
+SUBPARTITION BY KEY (id)
+SUBPARTITIONS 2 (
+    PARTITION p0 VALUES LESS THAN ('1990-01-01') COMMENT 'sequoiadb:{ partition_options: { Compressed: true, CompressionType: "lzw" } }',
+    PARTITION p1 VALUES LESS THAN ('2000-01-01'),
+    PARTITION p2 VALUES LESS THAN ('2010-01-01')
+);
+SHOW CREATE TABLE t1; 
+ALTER TABLE t1 COMPRESSION "None" COMMENT 'sequoiadb:{ partition_options: { Compressed : true, CompressionType: "lzw" } }';
+SHOW CREATE TABLE t1; 
+DROP TABLE t1;
+
+#Bug #SEQUOIASQLMAINSTREAM-715
+#CREATE TABLE t1 (
+#    id INT NOT NULL,
+#    produced_date DATE,
+#    name VARCHAR(100),
+#    company VARCHAR(100)
+#)COMPRESSION "lzw"
+#COMMENT 'sequoiadb:{ partition_options: { Compressed: false } }'
+#PARTITION BY RANGE COLUMNS (produced_date)
+#SUBPARTITION BY KEY (id)
+#SUBPARTITIONS 2 (
+#    PARTITION p0 VALUES LESS THAN ('1990-01-01'),
+#    PARTITION p1 VALUES LESS THAN ('2000-01-01'),
+#    PARTITION p2 VALUES LESS THAN ('2010-01-01')
+#); 
+
+#Bug #SEQUOIASQLMAINSTREAM-715
+#CREATE TABLE t1 (
+#    id INT NOT NULL,
+#    produced_date DATE,
+#    name VARCHAR(100),
+#    company VARCHAR(100)
+#)COMPRESSION "lzw"
+#PARTITION BY RANGE COLUMNS (produced_date)
+#SUBPARTITION BY KEY (id)
+#SUBPARTITIONS 2 (
+#    PARTITION p0 VALUES LESS THAN ('1990-01-01') COMMENT 'sequoiadb:{ partition_options: { Compressed: false } }',
+#    PARTITION p1 VALUES LESS THAN ('2000-01-01'),
+#    PARTITION p2 VALUES LESS THAN ('2010-01-01')
+#); 
 
 --source include/uninstall_sequoiadb.inc
