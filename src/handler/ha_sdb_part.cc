@@ -1206,7 +1206,9 @@ int ha_sdb_part::info(uint flag) {
     stats.data_file_length = get_used_stats(stats.data_file_length);
     stats.index_file_length = get_used_stats(stats.index_file_length);
     stats.delete_length = get_used_stats(stats.delete_length);
-    stats.records = get_used_stats(stats.records);
+    if (stats.records != (~(ha_rows)0)) {
+      stats.records = get_used_stats(stats.records);
+    }
   }
   DBUG_RETURN(rc);
 }

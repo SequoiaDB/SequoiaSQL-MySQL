@@ -3373,6 +3373,12 @@ int ha_sdb::info(uint flag) {
   Sdb_conn *conn = NULL;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
+    if (flag & HA_STATUS_VARIABLE) {
+      rc = update_stats(ha_thd(), false);
+      if (0 != rc) {
+        goto error;
+      }
+    }
     goto done;
   }
 
