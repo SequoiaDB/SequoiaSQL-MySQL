@@ -1933,9 +1933,31 @@ int ha_sdb_part::truncate_partition_low() {
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
   uint last_part_id = -1;
+  bool truncate_all = bitmap_is_set_all(&m_part_info->read_partitions);
+  DBUG_ASSERT(HASH_PARTITION == m_part_info->part_type ? truncate_all : true);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
+    goto done;
+  }
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  // Quickly handle `ALTER TABLE tb TRUNCATE PARTITION ALL`
+  if (truncate_all) {
+    rc = conn->get_cl(db_name, table_name, cl);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = cl.truncate();
+    if (rc != 0) {
+      goto error;
+    }
     goto done;
   }
 
@@ -1966,25 +1988,23 @@ int ha_sdb_part::truncate_partition_low() {
       goto error;
     }
 
-    rc = check_sdb_in_thd(ha_thd(), &conn, true);
-    if (rc != 0) {
-      goto error;
-    }
-    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
-
     rc = conn->get_cl(db_name, scl_name, cl);
     if (rc != 0) {
       goto error;
     }
 
     rc = cl.truncate();
-    if (0 == rc) {
-      Sdb_mutex_guard guard(share->mutex);
-      update_incr_stat(-share->stat.total_records);
-      stats.records = 0;
+    if (rc != 0) {
+      goto error;
     }
   }
 done:
+  if (0 == rc) {
+    Sdb_mutex_guard guard(share->mutex);
+    ulonglong truncated_records = get_used_stats(share->stat.total_records);
+    update_incr_stat(-truncated_records);
+    stats.records -= SDB_MIN(truncated_records, stats.records);
+  }
   DBUG_RETURN(rc);
 error:
   goto done;
