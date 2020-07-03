@@ -407,5 +407,96 @@ rollback;
 select * from t1 order by id;
 drop table t1;
 
+#seqDB-22401
+connection default;
+create table t1(id int);
+connection con1;
+SET GLOBAL TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+BEGIN;
+SELECT * FROM t1;
+
+connection con2;
+BEGIN;
+INSERT INTO t1 VALUES(1);
+
+connection con1;
+SELECT * FROM t1;
+
+connection con2;
+COMMIT;
+
+connection con1;
+SELECT * FROM t1;
+disconnect con1;
+
+connect (con1, localhost, root);
+connection con1;
+BEGIN;
+SELECT * FROM t1;
+
+connection con2;
+BEGIN;
+INSERT INTO t1 VALUES(2);
+
+connection con1;
+SELECT * FROM t1;
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+SELECT * FROM t1;
+COMMIT;
+BEGIN;
+SELECT * FROM t1;
+--error 1568
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SELECT * FROM t1;
+ROLLBACK;
+
+connection con2;
+ROLLBACK;
+
+connection con1;
+SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+BEGIN;
+SELECT * FROM t1;
+
+connection con2;
+BEGIN;
+INSERT INTO t1 VALUES(2);
+COMMIT;
+
+connection con1;
+SELECT * FROM t1;
+COMMIT;
+
+BEGIN;
+SELECT * FROM t1;
+COMMIT;
+SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+#SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+#disconnect con1;
+#
+#Bug #SEQUOIASQLMAINSTREAM-721
+#connect (con1, localhost, root);
+#connection con1;
+#BEGIN;
+#--error 200
+#SELECT * FROM t1;
+#ROLLBACK;
+#
+#SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+#BEGIN;
+#--error 200
+#SELECT * FROM t1;
+#ROLLBACK;
+#
+#SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+#BEGIN;
+#--error 200
+#SELECT * FROM t1;
+#ROLLBACK;
+
+connection default;
+DROP TABLE t1;
+
 disconnect con1;
 disconnect con2;
