@@ -78,7 +78,7 @@ class Sdb_conn {
 
   int interrupt_operation();
 
-  inline bool is_valid() { return m_connection.isValid(); }
+  bool is_valid();
 
   inline void set_pushed_autocommit() { pushed_autocommit = true; }
 

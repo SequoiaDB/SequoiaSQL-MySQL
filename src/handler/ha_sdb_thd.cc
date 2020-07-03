@@ -86,19 +86,28 @@ int check_sdb_in_thd(THD* thd, Sdb_conn** conn, bool validate_conn) {
     thd_sdb = Thd_sdb::seize(thd);
     if (NULL == thd_sdb) {
       rc = HA_ERR_OUT_OF_MEM;
-      return rc;
+      goto error;
     }
     thd_set_thd_sdb(thd, thd_sdb);
   }
 
   if (validate_conn && !thd_sdb->valid_conn()) {
     rc = thd_sdb->recycle_conn();
-    if (rc != 0) {
-      return rc;
+    if(0 != rc) {
+      goto error;
     }
   }
 
   DBUG_ASSERT(thd_sdb->is_slave_thread() == thd->slave_thread);
   *conn = thd_sdb->get_conn();
+
+done:
   return rc;
+error:
+  if(thd_sdb) {
+    *conn = thd_sdb->get_conn();
+  } else {
+    *conn = NULL;
+  }
+  goto done;
 }

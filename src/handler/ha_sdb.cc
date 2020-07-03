@@ -5040,7 +5040,9 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   if (sdb_rc != SDB_OK) {
     push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
                  SDB_GET_CONNECT_FAILED);
-    goto done;
+    if (SDB_NET_CANNOT_CONNECT == get_sdb_code(sdb_rc) || !connection) {
+      goto done;
+    }
   }
   sdb_rc = connection->get_last_result_obj(error_obj, false);
   if (sdb_rc != SDB_OK) {

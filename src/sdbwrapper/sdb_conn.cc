@@ -91,7 +91,7 @@ int Sdb_conn::connect() {
     hostname = glob_hostname;
   }
 
-  if (!m_connection.isValid()) {
+  if (!is_valid()) {
     m_transaction_on = false;
     ha_sdb_conn_addrs conn_addrs;
     rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
@@ -115,22 +115,28 @@ int Sdb_conn::connect() {
                                 sdb_password_token, sdb_password_cipherfile);
     }
     if (SDB_ERR_OK != rc) {
-      switch (rc) {
-        case SDB_FNE:
-          SDB_LOG_ERROR("Cipherfile not exist, rc=%d", rc);
-          rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
-          break;
-        case SDB_AUTH_USER_NOT_EXIST:
-          SDB_LOG_ERROR(
-              "User specified is not exist, you can add the user by sdbpasswd "
-              "tool, rc=%d",
-              rc);
-          rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
-          break;
-        default:
-          break;
+      if(SDB_NET_CANNOT_CONNECT != rc) {
+        switch (rc) {
+          case SDB_FNE:
+            SDB_LOG_ERROR("Cipherfile not exist, rc=%d", rc);
+            break;
+          case SDB_AUTH_USER_NOT_EXIST:
+            SDB_LOG_ERROR(
+                "User specified is not exist, you can add the user by sdbpasswd "
+                "tool, rc=%d",
+                rc);
+            break;
+          case SDB_PERM:
+            SDB_LOG_ERROR(
+                "Permission error, you can check if you have permission to access cipherfile, rc=%d",
+                rc);
+            break;
+          default:
+            SDB_LOG_ERROR("Failed to connect to sequoiadb, rc=%d", rc);
+            break;
+        }
+        rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
       }
-      SDB_LOG_ERROR("Failed to connect to sequoiadb, rc=%d", rc);
       goto error;
     }
 
@@ -590,4 +596,17 @@ int conn_interrupt(sdbclient::sdb *connection) {
 
 int Sdb_conn::interrupt_operation() {
   return retry(boost::bind(conn_interrupt, &m_connection));
+}
+
+bool Sdb_conn::is_valid() {
+  bson::BSONObj error_obj;
+  int error_number = 0;
+  if(m_connection.isValid()) {
+    get_last_error(error_obj);
+    error_number = error_obj.getIntField(SDB_FIELD_ERRNO);
+    if(SDB_AUTH_AUTHORITY_FORBIDDEN != error_number) {
+      return true;
+    }
+  }
+  return false;
 }
