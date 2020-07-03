@@ -1543,6 +1543,16 @@ t1	CREATE TABLE `t1` (
 /*!50100 PARTITION BY KEY (id)
 PARTITIONS 2 */
 INSERT INTO t1 VALUES(1,'a'),(2,'b'),(3,'c'),(4,'b'),(5,'f');
+SELECT * FROM t1 ORDER BY id;
+id	name
+1	a
+2	b
+3	c
+4	b
+5	f
 ALTER TABLE t1 TRUNCATE PARTITION p0;
 ERROR HY000: Cannot specify HASH or KEY partitions
+ALTER TABLE t1 TRUNCATE PARTITION all;
+SELECT * FROM t1 ORDER BY id;
+id	name
 DROP TABLE t1;
