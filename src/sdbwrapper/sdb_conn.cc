@@ -39,7 +39,10 @@ static int sdb_proc_id() {
 }
 
 Sdb_conn::Sdb_conn(my_thread_id _tid)
-    : m_transaction_on(false), m_thread_id(_tid), pushed_autocommit(false) {
+    : m_transaction_on(false),
+      m_thread_id(_tid),
+      pushed_autocommit(false),
+      m_is_authenticated(false) {
   // default is RR.
   last_tx_isolation = SDB_TRANS_ISO_RR;
 }
@@ -91,7 +94,7 @@ int Sdb_conn::connect() {
     hostname = glob_hostname;
   }
 
-  if (!is_valid()) {
+  if (!(is_valid() && is_authenticated())) {
     m_transaction_on = false;
     ha_sdb_conn_addrs conn_addrs;
     rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
@@ -115,20 +118,22 @@ int Sdb_conn::connect() {
                                 sdb_password_token, sdb_password_cipherfile);
     }
     if (SDB_ERR_OK != rc) {
-      if(SDB_NET_CANNOT_CONNECT != rc) {
+      if (SDB_NET_CANNOT_CONNECT != rc) {
         switch (rc) {
           case SDB_FNE:
             SDB_LOG_ERROR("Cipherfile not exist, rc=%d", rc);
             break;
           case SDB_AUTH_USER_NOT_EXIST:
             SDB_LOG_ERROR(
-                "User specified is not exist, you can add the user by sdbpasswd "
+                "User specified is not exist, you can add the user by "
+                "sdbpasswd "
                 "tool, rc=%d",
                 rc);
             break;
           case SDB_PERM:
             SDB_LOG_ERROR(
-                "Permission error, you can check if you have permission to access cipherfile, rc=%d",
+                "Permission error, you can check if you have permission to "
+                "access cipherfile, rc=%d",
                 rc);
             break;
           default:
@@ -151,12 +156,14 @@ int Sdb_conn::connect() {
       SDB_LOG_ERROR("Failed to set session attr, rc=%d", rc);
       goto error;
     }
+    m_is_authenticated = true;
   }
 
 done:
   return rc;
 error:
   convert_sdb_code(rc);
+  m_connection.disconnect();
   goto done;
 }
 
@@ -596,17 +603,4 @@ int conn_interrupt(sdbclient::sdb *connection) {
 
 int Sdb_conn::interrupt_operation() {
   return retry(boost::bind(conn_interrupt, &m_connection));
-}
-
-bool Sdb_conn::is_valid() {
-  bson::BSONObj error_obj;
-  int error_number = 0;
-  if(m_connection.isValid()) {
-    get_last_error(error_obj);
-    error_number = error_obj.getIntField(SDB_FIELD_ERRNO);
-    if(SDB_AUTH_AUTHORITY_FORBIDDEN != error_number) {
-      return true;
-    }
-  }
-  return false;
 }

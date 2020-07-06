@@ -110,7 +110,6 @@
 #define SDB_FIELD_PEER_ID "PeerID"
 #define SDB_FIELD_CURRENT_FIELD "CurrentField"
 
-#define SDB_FIELD_ERRNO "errno"
 #define SDB_FIELD_DETAIL "detail"
 #define SDB_FIELD_DESCRIPTION "description"
 

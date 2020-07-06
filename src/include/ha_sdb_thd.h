@@ -53,6 +53,7 @@ class Thd_sdb {
   inline bool is_slave_thread() const { return m_slave_thread; }
   inline Sdb_conn* get_conn() { return &m_conn; }
   inline bool valid_conn() { return m_conn.is_valid(); }
+  inline bool conn_is_authenticated() { return m_conn.is_authenticated(); }
   bool get_auto_commit() { return auto_commit; }
   void set_auto_commit(bool all) { auto_commit = all; }
 

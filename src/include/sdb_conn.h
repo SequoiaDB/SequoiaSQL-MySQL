@@ -78,7 +78,9 @@ class Sdb_conn {
 
   int interrupt_operation();
 
-  bool is_valid();
+  bool is_valid() { return m_connection.isValid(); }
+
+  bool is_authenticated() { return m_is_authenticated; }
 
   inline void set_pushed_autocommit() { pushed_autocommit = true; }
 
@@ -124,6 +126,7 @@ class Sdb_conn {
   my_thread_id m_thread_id;
   bool pushed_autocommit;
   ulong last_tx_isolation;
+  bool m_is_authenticated;
 };
 
 #endif
