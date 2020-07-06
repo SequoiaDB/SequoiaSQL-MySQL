@@ -85,9 +85,10 @@ int check_sdb_in_thd(THD* thd, Sdb_conn** conn, bool validate_conn) {
     thd_set_thd_sdb(thd, thd_sdb);
   }
 
-  if (validate_conn && !thd_sdb->valid_conn()) {
+  if (validate_conn &&
+      !(thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated())) {
     rc = thd_sdb->recycle_conn();
-    if(0 != rc) {
+    if (0 != rc) {
       goto error;
     }
   }
@@ -98,7 +99,7 @@ int check_sdb_in_thd(THD* thd, Sdb_conn** conn, bool validate_conn) {
 done:
   return rc;
 error:
-  if(thd_sdb) {
+  if (thd_sdb) {
     *conn = thd_sdb->get_conn();
   } else {
     *conn = NULL;
