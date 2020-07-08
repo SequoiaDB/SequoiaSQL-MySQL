@@ -728,6 +728,8 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
   bson::BSONObj scl_part_options;
   bson::BSONObj sharding_key;
   bson::BSONObjBuilder builder;
+  bool compress_set_in_scl = false;
+  bool compress_set_in_mcl = false;
 
   if (part_elem->part_comment) {
     rc = sdb_parse_comment_options(part_elem->part_comment, table_options,
@@ -784,10 +786,34 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
 
   // Merge mcl_options & mcl_part_options into scl_part_options.
   {
+    bson::BSONObjIterator it(scl_part_options);
+    while (it.more()) {
+      bson::BSONElement part_opt = it.next();
+      if (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE) ||
+          (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSED) &&
+           part_opt.type() == bson::Bool && part_opt.Bool() == false)) {
+        compress_set_in_scl = true;
+      }
+      builder.append(part_opt);
+    }
+  }
+
+  {
     bson::BSONObjIterator it(mcl_part_options);
     while (it.more()) {
       bson::BSONElement part_opt = it.next();
+      if (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSED) ||
+          0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
+        if (compress_set_in_scl) {
+          continue;
+        }
+      }
       if (!scl_part_options.hasField(part_opt.fieldName())) {
+        if (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE) ||
+            (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSED) &&
+             part_opt.type() == bson::Bool && part_opt.Bool() == false)) {
+          compress_set_in_mcl = true;
+        }
         builder.append(part_opt);
       }
     }
@@ -796,12 +822,17 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
   for (uint i = 0; i < INHERITABLE_OPT_NUM; ++i) {
     const char *curr_opt = INHERITABLE_OPT[i];
     bson::BSONElement mcl_opt = mcl_options.getField(curr_opt);
+    if (0 == strcmp(mcl_opt.fieldName(), SDB_FIELD_COMPRESSED) ||
+        0 == strcmp(mcl_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
+      if (compress_set_in_scl || compress_set_in_mcl) {
+        continue;
+      }
+    }
     if (mcl_opt.type() != bson::EOO && !scl_part_options.hasField(curr_opt) &&
         !mcl_part_options.hasField(curr_opt)) {
       builder.append(mcl_opt);
     }
   }
-  builder.appendElements(scl_part_options);
   scl_part_options = builder.obj();
 
   {
