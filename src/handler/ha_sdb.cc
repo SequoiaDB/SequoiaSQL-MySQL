@@ -2027,13 +2027,6 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
       optimizer_update = false;
       goto done;
     }
-
-    if (sdb_field_is_virtual_gcol(field) &&
-        (bitmap_is_set(table->read_set, field->field_index) ||
-         bitmap_is_set(table->write_set, field->field_index))) {
-      optimizer_update = false;
-      goto done;
-    }
   }
   optimizer_update = true;
   rc = create_modifier_obj(rule, &optimizer_update);
