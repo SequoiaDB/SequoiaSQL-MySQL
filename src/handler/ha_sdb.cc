@@ -3843,7 +3843,16 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
       thd_sdb->lock_count--;
       goto error;
     }
-    if (sdb_is_transaction_stmt(thd, !thd_sdb->get_auto_commit())) {
+    /*
+      When sdb_use_transaction = ON, we update shared statistics at commit.
+      But if the statement is not transaction(like DDL), there is no commit,
+      and we need to do nothing.
+
+      When sdb_use_transaction = OFF, we update shared statistics at each
+      external_lock(). We can always keep up the statistics.
+    */
+    if (sdb_is_transaction_stmt(thd, !thd_sdb->get_auto_commit()) ||
+        !sdb_use_transaction) {
       rc = add_share_to_open_table_shares(thd);
       if (0 != rc) {
         thd_sdb->lock_count--;
@@ -3857,13 +3866,11 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
     if (!sdb_use_transaction && incr_stat &&
         0 != incr_stat->no_uncommitted_rows_count) {
       Sdb_mutex_guard guard(share->mutex);
-      share->stat.total_records =
-          (share->stat.total_records + incr_stat->no_uncommitted_rows_count > 0)
-              ? share->stat.total_records + incr_stat->no_uncommitted_rows_count
-              : 0;
-      incr_stat->no_uncommitted_rows_count = 0;
-      DBUG_PRINT("info",
-                 ("share total records: %lld", share->stat.total_records));
+      int64 &share_rows = share->stat.total_records;
+      int &incr_rows = incr_stat->no_uncommitted_rows_count;
+      share_rows = (share_rows + incr_rows > 0) ? share_rows + incr_rows : 0;
+      incr_rows = 0;
+      DBUG_PRINT("info", ("share total records: %lld", share_rows));
     }
 
     if (!--thd_sdb->lock_count) {
@@ -3958,8 +3965,8 @@ int ha_sdb::delete_all_rows() {
   if (0 == rc) {
     Sdb_mutex_guard guard(share->mutex);
     if (incr_stat) {
-      incr_stat->no_uncommitted_rows_count =
-          -(share->stat.total_records + incr_stat->no_uncommitted_rows_count);
+      int &incr_rows = incr_stat->no_uncommitted_rows_count;
+      incr_rows = -(share->stat.total_records + incr_rows);
     }
     stats.records = 0;
   }
@@ -5251,20 +5258,16 @@ static void update_shares_stats(THD *thd) {
 
     if (local_stat->no_uncommitted_rows_count) {
       Sdb_mutex_guard guard(share->mutex);
-      DBUG_ASSERT(int64(~(ha_rows)0) !=
-                  share->stat.total_records);  // should never be invalid
-      if (int64(~(ha_rows)0) != share->stat.total_records) {
-        DBUG_PRINT("info", ("Update row_count for %s, row_count: %lu, with:%d",
-                            share->table_name, (ulong)share->stat.total_records,
-                            local_stat->no_uncommitted_rows_count));
-        share->stat.total_records =
-            (share->stat.total_records + local_stat->no_uncommitted_rows_count >
-             0)
-                ? share->stat.total_records +
-                      local_stat->no_uncommitted_rows_count
-                : 0;
+      int64 &share_rows = share->stat.total_records;
+      int &incr_rows = local_stat->no_uncommitted_rows_count;
+      DBUG_ASSERT(int64(~(ha_rows)0) != share_rows);  // should never be invalid
+
+      if (int64(~(ha_rows)0) != share_rows) {
+        DBUG_PRINT("info", ("Update row_count for %s, row_count: %lld, with:%d",
+                            share->table_name, share_rows, incr_rows));
+        share_rows = (share_rows + incr_rows > 0) ? share_rows + incr_rows : 0;
       }
-      local_stat->no_uncommitted_rows_count = 0;
+      incr_rows = 0;
     }
   }
 
