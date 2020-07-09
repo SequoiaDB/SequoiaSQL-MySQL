@@ -3856,10 +3856,13 @@ done:
   return rc;
 }
 
-inline int ha_sdb::get_sharding_key_from_options(const bson::BSONObj &options,
+inline int ha_sdb::get_sharding_key_from_options(TABLE *table,
+                                                 const bson::BSONObj &options,
                                                  bson::BSONObj &sharding_key) {
   int rc = 0;
   bson::BSONElement tmp_elem;
+  Field **gfield_ptr = NULL;
+  Field *gfield = NULL;
   tmp_elem = options.getField(SDB_FIELD_SHARDING_KEY);
   if (tmp_elem.type() == bson::Object) {
     sharding_key = tmp_elem.embeddedObject();
@@ -3871,6 +3874,26 @@ inline int ha_sdb::get_sharding_key_from_options(const bson::BSONObj &options,
                     MYF(0), tmp_elem.type());
     goto error;
   }
+
+  if (!sharding_key.isEmpty() && sdb_table_has_gcol(table)) {
+    bson::BSONObjIterator it(sharding_key);
+    while (it.more()) {
+      bson::BSONElement tmp_elem = it.next();
+      for (gfield_ptr = table->vfield; *gfield_ptr; gfield_ptr++) {
+        gfield = *gfield_ptr;
+        if (sdb_field_is_virtual_gcol(gfield) &&
+            0 == strcmp(sdb_field_name(gfield), tmp_elem.fieldName())) {
+          rc = HA_ERR_UNSUPPORTED;
+          my_printf_error(rc,
+                          "Virtual generated column '%-.192s' cannot be used "
+                          "for ShardingKey",
+                          MYF(0), sdb_field_name(gfield));
+          goto error;
+        }
+      }
+    }
+  }
+
 done:
   return rc;
 error:
@@ -3880,7 +3903,7 @@ error:
 int ha_sdb::get_sharding_key(TABLE *form, bson::BSONObj &options,
                              bson::BSONObj &sharding_key) {
   int rc = 0;
-  rc = get_sharding_key_from_options(options, sharding_key);
+  rc = get_sharding_key_from_options(form, options, sharding_key);
   if (0 != rc) {
     goto error;
   }
