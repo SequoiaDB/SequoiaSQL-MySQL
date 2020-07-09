@@ -268,7 +268,8 @@ Item *sdb_get_gcol_item(const Field *field);
 
 MY_BITMAP *sdb_get_base_columns_map(const Field *field);
 
-bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field);
+bool sdb_stored_gcol_expr_is_equal(const Field *old_field,
+                                   const Field *new_field);
 
 // About Item
 const char *sdb_item_field_name(const Item_field *f);

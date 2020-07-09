@@ -309,7 +309,8 @@ MY_BITMAP *sdb_get_base_columns_map(const Field *field) {
   return &field->gcol_info->base_columns_map;
 }
 
-bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field) {
+bool sdb_stored_gcol_expr_is_equal(const Field *old_field,
+                                   const Field *new_field) {
   LEX_STRING old_expr = old_field->gcol_info->expr_str;
   LEX_STRING new_expr = new_field->gcol_info->expr_str;
   return (old_expr.length == new_expr.length) &&
@@ -652,29 +653,40 @@ MY_BITMAP *sdb_get_base_columns_map(const Field *field) {
   return &field->table->tmp_set;
 }
 
-StringBuffer<MAX_FIELD_WIDTH> sdb_parse_gcol_expr(const TABLE *table) {
+StringBuffer<MAX_FIELD_WIDTH> sdb_parse_stored_gcol_expr(const Field *field) {
+  const TABLE *table = field->table;
   const uchar *pos = table->s->vcol_defs.str;
   const uchar *end = pos + table->s->vcol_defs.length;
+  Field **field_ptr = table->field - 1;
   StringBuffer<MAX_FIELD_WIDTH> expr_str;
   expr_str.append(PARSE_GCOL_KEYWORD);
   uint expr_length = 0;
+  uint field_nr = 0;
+  uint name_length = 0;
   while (pos < end) {
     if (table->s->frm_version >= FRM_VER_EXPRESSSIONS) {
-      uint name_length;
+      field_nr = uint2korr(pos + 1);
       expr_length = uint2korr(pos + 3);
       name_length = pos[5];
       pos += FRM_VCOL_NEW_HEADER_SIZE + name_length;
+      field_ptr = table->field + field_nr;
     }
     expr_str.length(strlen(PARSE_GCOL_KEYWORD));
     expr_str.append((char *)pos, expr_length);
+    if (0 == strcmp(sdb_field_name(field), sdb_field_name(*field_ptr))) {
+      goto done;
+    }
     pos += expr_length;
   }
+
+done:
   return expr_str;
 }
 
-bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field) {
-  return 0 == strcmp(sdb_parse_gcol_expr(old_field->table).c_ptr_safe(),
-                     sdb_parse_gcol_expr(new_field->table).c_ptr_safe());
+bool sdb_stored_gcol_expr_is_equal(const Field *old_field,
+                                   const Field *new_field) {
+  return 0 == strcmp(sdb_parse_stored_gcol_expr(old_field).c_ptr_safe(),
+                     sdb_parse_stored_gcol_expr(new_field).c_ptr_safe());
 }
 
 bool sdb_item_like_escape_is_evaluated(Item *item) {

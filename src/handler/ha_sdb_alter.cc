@@ -1336,7 +1336,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
         // True if stored generated column's expression is equal.
         if (sdb_field_is_stored_gcol(old_field) &&
             sdb_field_is_stored_gcol(new_field) &&
-            !sdb_gcol_expr_is_equal(old_field, new_field)) {
+            !sdb_stored_gcol_expr_is_equal(old_field, new_field)) {
           rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
           goto error;
         }
