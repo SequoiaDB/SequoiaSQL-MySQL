@@ -1,12 +1,19 @@
+connect  con1, localhost, root;
+connect  con2, localhost, root;
+connection default;
 create table t1(a int primary key)engine=sequoiadb;
+connection con1;
 select @@autocommit;
 @@autocommit
 1
+connection con2;
 select @@autocommit;
 @@autocommit
 1
+connection con1;
 begin;
 insert into t1 values(1);
+connection con2;
 begin;
 insert into t1 values(1);
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
@@ -16,27 +23,35 @@ insert into t1 values(2);
 select * from t1;
 a
 2
+connection con1;
 commit;
 select * from t1;
 a
 1
+connection con2;
 commit;
 select * from t1;
 a
 1
 2
+connection default;
 drop table t1;
+connection con1;
 set session autocommit = 0;
 select @@autocommit;
 @@autocommit
 0
+connection con2;
 set session autocommit = 0;
 select @@autocommit;
 @@autocommit
 0
+connection default;
 create table t1(a int primary key)engine=sequoiadb;
+connection con1;
 begin;
 insert into t1 values(1);
+connection con2;
 begin;
 insert into t1 values(1);
 ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'PRIMARY'
@@ -46,18 +61,22 @@ insert into t1 values(2);
 select * from t1;
 a
 2
+connection con1;
 commit;
 select * from t1;
 a
 1
 commit;
+connection con2;
 commit;
 select * from t1;
 a
 1
 2
 commit;
+connection default;
 drop table t1;
+connection default;
 create table t1 (id int);
 create table t2 (id int,  s1 text);
 insert into t1 values (1),(2),(3);
@@ -68,44 +87,58 @@ id	s1
 1	changed
 2	changed
 3	changed
+connection con1;
 begin;
 update t1 left join t2 using(id) set s1 = 'changed1';
+connection con2;
 update t1 left join t2 using(ID) set s1 = 'changed2';
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 commit;
+connection con1;
 commit;
+connection default;
 select * from t1 left join t2 using(id);
 id	s1
 1	changed1
 2	changed1
 3	changed1
+connection con2;
 begin;
 update t1 left join t2 using(ID) set s1 = 'test';
 commit;
+connection default;
 select * from t1 left join t2 using(id);
 id	s1
 1	test
 2	test
 3	test
+connection con1;
 begin;
 delete t1, t2 from t1 left join t2 on t1.id=t2.id where t1.id > 1;
+connection con2;
 delete t1, t2 from t1 left join t2 on t1.id=t2.id;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 commit;
+connection con1;
 commit;
+connection default;
 select * from t1 left join t2 using(id);
 id	s1
 1	test
+connection con2;
 begin;
 delete t1, t2 from t1 left join t2 on t1.id=t2.id;
 commit;
+connection default;
 select * from t1 left join t2 using(id);
 id	s1
 drop table t1,t2;
 create table t1 ( id int, id1 int, c char(16), index (id) );
 insert into t1 values (1,1,'a'), (2,2,'b'), (3,3,'c');
+connection con1;
 begin;
 update t1 set c = 'updateC' where id = 3;
+connection con2;
 begin;
 insert into t1 values (4,4,'d');
 select * from t1 where id = 3 for update;
@@ -120,6 +153,7 @@ insert into t1 values (5,5,'e'),(6,6,'f');
 delete from t1 where id = 1;
 update t1 set c = 'updateE' where id = 5;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 2	2	b
@@ -127,6 +161,7 @@ id	id1	c
 4	4	d
 5	5	updateE
 6	6	f
+connection con2;
 begin;
 select * from t1 where id = 3 for update;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
@@ -134,7 +169,9 @@ insert into t1 values (7,7,'h');
 delete from t1 where id = 4;
 update t1 set c = 'updateF' where id = 6;
 rollback;
+connection con1;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 2	2	b
@@ -144,8 +181,10 @@ id	id1	c
 6	6	f
 delete from t1;
 insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+connection con1;
 begin;
 update t1 set c = 'updateC' where id = 3;
+connection con2;
 begin;
 delete from t1 where id = 2;
 update t1 set c = 'otherC' where not id = id1 - 1;
@@ -158,11 +197,13 @@ insert into t1 values (4,4,'d'),(5,5,'e');
 delete from t1 where id = 1;
 update t1 set c = 'updateD' where id = 4;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 3	3	c
 4	4	updateD
 5	5	e
+connection con2;
 begin;
 update t1 set c = 'updateAll' where id > 0;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
@@ -175,7 +216,9 @@ insert into t1 values (6,6,'f');
 delete from t1 where id = 4;
 update t1 set c = 'updateE' where id = 5;
 rollback;
+connection con1;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 3	3	updateC
@@ -183,8 +226,10 @@ id	id1	c
 5	5	e
 delete from t1;
 insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+connection con1;
 begin;
 delete from t1 where id = 3;
+connection con2;
 begin;
 update t1 set c = 'updateB' where id = 2;
 delete from t1 where not id = id1 - 1;
@@ -198,12 +243,14 @@ insert into t1 values (4,4,'d'),(5,5,'e');
 delete from t1 where id = 1;
 update t1 set c = 'updateD' where id = 4;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 2	3	updateB
 3	3	c
 4	4	updateD
 5	5	e
+connection con2;
 begin;
 delete from t1 where id > 0;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
@@ -214,17 +261,25 @@ id	id1	c
 5	5	e
 insert into t1 values (6,6,'f'),(7,7,'g');
 rollback;
+connection con1;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 2	3	updateB
 4	4	updateD
 5	5	e
 delete from t1;
+disconnect con1;
+disconnect con2;
+connect  con1, localhost, root;
+connect  con2, localhost, root;
 insert into t1 values (1,1,'a'), (2,2,'b'), (3,3,'c');
+connection con1;
 set sequoiadb_rollback_on_timeout = on;
 begin;
 update t1 set c = 'updateC' where id = 3;
+connection con2;
 set sequoiadb_rollback_on_timeout = on;
 begin;
 insert into t1 values (4,4,'d');
@@ -239,6 +294,7 @@ insert into t1 values (5,5,'e'),(6,6,'f');
 delete from t1 where id = 1;
 update t1 set c = 'updateE' where id = 5;
 commit;
+connection default;
 set sequoiadb_rollback_on_timeout = on;
 select * from t1;
 id	id1	c
@@ -246,6 +302,7 @@ id	id1	c
 3	3	c
 5	5	updateE
 6	6	f
+connection con2;
 set sequoiadb_rollback_on_timeout = on;
 begin;
 select * from t1 where id = 3 for update;
@@ -254,21 +311,28 @@ insert into t1 values (7,7,'h');
 delete from t1 where id = 4;
 update t1 set c = 'updateF' where id = 6;
 rollback;
+connection con1;
 set sequoiadb_rollback_on_timeout = on;
 commit;
+connection default;
 set sequoiadb_rollback_on_timeout = on;
 select * from t1;
 id	id1	c
 2	2	b
 3	3	updateC
 5	5	updateE
-6	6	updateF
-7	7	h
+6	6	f
 delete from t1;
+disconnect con1;
+disconnect con2;
 set global sequoiadb_rollback_on_timeout = on;
+connect  con1, localhost, root;
+connect  con2, localhost, root;
 insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+connection con1;
 begin;
 update t1 set c = 'updateC' where id = 3;
+connection con2;
 begin;
 delete from t1 where id = 2;
 update t1 set c = 'otherC' where not id = id1 - 1;
@@ -282,12 +346,14 @@ insert into t1 values (4,4,'d'),(5,5,'e');
 delete from t1 where id = 1;
 update t1 set c = 'updateD' where id = 4;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 2	3	b
 3	3	c
 4	4	updateD
 5	5	e
+connection con2;
 begin;
 update t1 set c = 'updateAll' where id > 0;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
@@ -301,17 +367,21 @@ insert into t1 values (6,6,'f');
 delete from t1 where id = 4;
 update t1 set c = 'updateE' where id = 5;
 rollback;
+connection con1;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 2	3	b
 3	3	updateC
-5	5	updateE
-6	6	f
+4	4	updateD
+5	5	e
 delete from t1;
 insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
+connection con1;
 begin;
 delete from t1 where id = 3;
+connection con2;
 begin;
 update t1 set c = 'updateB' where id = 2;
 delete from t1 where not id = id1 - 1;
@@ -325,12 +395,14 @@ insert into t1 values (4,4,'d'),(5,5,'e');
 delete from t1 where id = 1;
 update t1 set c = 'updateD' where id = 4;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 2	3	b
 3	3	c
 4	4	updateD
 5	5	e
+connection con2;
 begin;
 delete from t1 where id > 0;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
@@ -342,16 +414,17 @@ id	id1	c
 5	5	e
 insert into t1 values (6,6,'f'),(7,7,'g');
 rollback;
+connection con1;
 commit;
+connection default;
 select * from t1;
 id	id1	c
 2	3	b
 4	4	updateD
 5	5	e
-6	6	f
-7	7	g
 set global sequoiadb_rollback_on_timeout = off;
 drop table t1;
+connection con1;
 create table t1( id int );
 insert into t1 values (1),(0),(2);
 begin;
@@ -366,25 +439,36 @@ id
 10
 11
 drop table t1;
+connection default;
 create table t1(id int);
+connection con1;
 SET GLOBAL TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 BEGIN;
 SELECT * FROM t1;
 id
+connection con2;
 BEGIN;
 INSERT INTO t1 VALUES(1);
+connection con1;
 SELECT * FROM t1;
 id
+connection con2;
 COMMIT;
+connection con1;
 SELECT * FROM t1;
 id
 1
+disconnect con1;
+connect  con1, localhost, root;
+connection con1;
 BEGIN;
 SELECT * FROM t1;
 id
 1
+connection con2;
 BEGIN;
 INSERT INTO t1 VALUES(2);
+connection con1;
 SELECT * FROM t1;
 id
 1
@@ -405,15 +489,19 @@ SELECT * FROM t1;
 id
 1
 ROLLBACK;
+connection con2;
 ROLLBACK;
+connection con1;
 SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 BEGIN;
 SELECT * FROM t1;
 id
 1
+connection con2;
 BEGIN;
 INSERT INTO t1 VALUES(2);
 COMMIT;
+connection con1;
 SELECT * FROM t1;
 id
 1
@@ -426,4 +514,7 @@ id
 2
 COMMIT;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+connection default;
 DROP TABLE t1;
+disconnect con1;
+disconnect con2;
