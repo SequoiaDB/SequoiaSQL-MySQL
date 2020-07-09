@@ -542,22 +542,40 @@ bool ha_sdb_part::is_sharded_by_part_hash_id(partition_info *part_info) {
   return (is_range_part_with_func || is_list_part);
 }
 
-void ha_sdb_part::get_sharding_key(partition_info *part_info,
-                                   bson::BSONObj &sharding_key) {
+int ha_sdb_part::get_sharding_key(partition_info *part_info,
+                                  bson::BSONObj &sharding_key) {
   DBUG_ENTER("ha_sdb_part::get_sharding_key");
+  int rc = 0;
+  uint field_num = 0;
+  Field *field = NULL;
+  bson::BSONObjBuilder builder;
+  
+  // Check if the shardingkey contains virtual generated column.
+  field_num = part_info->num_part_fields;
+  for (uint i = 0; i < field_num; ++i) {
+    field = part_info->part_field_array[i];
+    if (sdb_field_is_virtual_gcol(field)) {
+      rc = HA_ERR_UNSUPPORTED;
+      my_printf_error(rc,
+                      "Virtual generated column '%-.192s' cannot be used "
+                      "for ShardingKey",
+                      MYF(0), sdb_field_name(field));
+      goto error;
+    }
+  }
+
   /*
     For RANGE/LIST, When partition expression cannot be pushed down, we shard
     the cl by mysql part id. One partition responses one sub cl. For HASH, We
     don't care what the expression is like, just shard by the fields in it.
   */
-  bson::BSONObjBuilder builder;
   switch (part_info->part_type) {
     case RANGE_PARTITION: {
       // RANGE COLUMNS(<column_list>)
       if (part_info->column_list) {
-        uint field_num = part_info->part_field_list.elements;
+        field_num = part_info->part_field_list.elements;
         for (uint i = 0; i < field_num; ++i) {
-          Field *field = part_info->part_field_array[i];
+          field = part_info->part_field_array[i];
           builder.append(sdb_field_name(field), 1);
         }
       }
@@ -574,9 +592,9 @@ void ha_sdb_part::get_sharding_key(partition_info *part_info,
     case HASH_PARTITION: {
       // (LINEAR) KEY(<column_list>)
       if (part_info->list_of_part_fields) {
-        uint field_num = part_info->num_part_fields;
+        field_num = part_info->num_part_fields;
         for (uint i = 0; i < field_num; ++i) {
-          Field *field = part_info->part_field_array[i];
+          field = part_info->part_field_array[i];
           builder.append(sdb_field_name(field), 1);
         }
       }
@@ -590,7 +608,11 @@ void ha_sdb_part::get_sharding_key(partition_info *part_info,
     default: { DBUG_ASSERT(0); }
   }
   sharding_key = builder.obj();
-  DBUG_VOID_RETURN;
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 int ha_sdb_part::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
@@ -633,7 +655,11 @@ int ha_sdb_part::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
     ShardingKey, ShardingType, IsMainCL. It's permitted to repeatly specify the
     same option.
   */
-  get_sharding_key(form->part_info, sharding_key);
+  rc = get_sharding_key(form->part_info, sharding_key);
+  if (rc != 0) {
+    goto error;
+  }
+
   shard_type = (HASH_PARTITION == part_type ? "hash" : "range");
   rc = sdb_check_shard_info(table_options, sharding_key, shard_type);
   if (rc != 0) {

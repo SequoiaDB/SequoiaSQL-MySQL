@@ -441,7 +441,8 @@ class ha_sdb : public handler {
 
   int get_default_sharding_key(TABLE *form, bson::BSONObj &options);
 
-  inline int get_sharding_key_from_options(const bson::BSONObj &options,
+  inline int get_sharding_key_from_options(TABLE *table,
+                                           const bson::BSONObj &options,
                                            bson::BSONObj &sharding_key);
 
   int get_sharding_key(TABLE *form, bson::BSONObj &options,

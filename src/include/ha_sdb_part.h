@@ -332,7 +332,7 @@ class ha_sdb_part : public ha_sdb,
 
   bool is_sharded_by_part_hash_id(partition_info* part_info);
 
-  void get_sharding_key(partition_info* part_info, bson::BSONObj& sharding_key);
+  int get_sharding_key(partition_info* part_info, bson::BSONObj& sharding_key);
 
   int get_cl_options(TABLE* form, HA_CREATE_INFO* create_info,
                      bson::BSONObj& options, bson::BSONObj& partition_options,
