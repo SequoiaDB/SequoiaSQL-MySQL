@@ -2,7 +2,8 @@
 #Case 13098#Case 13099#Case 13100#Case 13101#Case 13102#Case 13103#Case 13104#Case 13105
 #Case 13106#Case 13107#Case 13108#Case 13109#Case 13110#Case 13111#Case 13112#Case 13113
 #Case 13114#Case 13115#Case 13116#Case 13117#Case 13118#Case 13119#Case 13120#Case 13121
-#Case 13305#Case 13306#Case 15436#Case 15438#Case 22080
+#Case 13305#Case 13306#Case 15436#Case 15438#Case 22080#Case 22379#Case 22380#Case 22381
+#Case 22382#Case 22383#Case 22384#Case 22385#Case 22386#Case 22387#Case 22388#Case 22389
 --source include/have_sequoiadb.inc
 
 --disable_warnings
@@ -1184,5 +1185,64 @@ SELECT * FROM t2 WHERE tx2 NOT LIKE 'h_l_';
 SELECT * FROM t2 WHERE tx3 NOT LIKE 'h_l_';
 SELECT * FROM t2 WHERE tx4 NOT LIKE 'h_l_';
 DROP TABLE t1,t2;
+
+#
+# LIMIT PUSH DOWN TESTING
+#
+#SEQUOIASQLMAINSTREAM-291
+CREATE TABLE t1 ( id INT AUTO_INCREMENT, a BIGINT, c CHAR(64), key(id, c), key(c) );
+INSERT INTO t1(a,c) VALUES (1,'op'),(-1,'bc'),(10,'123'),(1,'tf'),(-9,'001'),(15,'9a'),(0,'abc'),(5,'jk'),(19,'123'),(9,'hello'),(1,'bc');
+#seqDB-22379
+--sorted_result
+SELECT * FROM t1 LIMIT 3;
+--sorted_result
+SELECT * FROM t1 LIMIT 2 OFFSET 4;
+#seqDB-22380
+--sorted_result
+SELECT * FROM t1 WHERE NOT a > 3 LIMIT 2;
+--sorted_result
+SELECT * FROM t1 WHERE id >= 5 AND a < 10 OR c = 'abc' LIMIT 2 OFFSET 1;
+#seqDB-22381
+SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 1;
+SELECT * FROM t1 WHERE c > 'a' ORDER BY c LIMIT 3 OFFSET 2;
+#seqDB-22382
+--sorted_result
+SELECT * FROM t1 WHERE id > LENGTH(c) LIMIT 3;
+--sorted_result
+SELECT * FROM t1 WHERE 10 > ABS(a) LIMIT 3 OFFSET 2;
+#seqDB-22383
+--sorted_result
+SELECT * FROM t1 WHERE id <= 10 ORDER BY a LIMIT 4 OFFSET 2;
+--sorted_result
+SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 GROUP BY id,c ORDER BY c;
+#seqDB-22384
+--sorted_result
+SELECT a FROM t1 GROUP BY a LIMIT 5;
+--sorted_result
+SELECT id FROM t1 HAVING id > 2 LIMIT 5 OFFSET 1;
+--sorted_result
+SELECT a,id FROM t1 WHERE a > 3 GROUP BY a,id HAVING id > 3 LIMIT 3 OFFSET 1;
+#seqDB-22385
+--sorted_result
+SELECT DISTINCT a FROM t1 LIMIT 3 OFFSET 2;
+SELECT DISTINCT c FROM t1 ORDER BY c LIMIT 3;
+#seqDB-22386
+--sorted_result
+SELECT SQL_CALC_FOUND_ROWS * FROM t1 LIMIT 2 OFFSET 3;
+SELECT FOUND_ROWS();
+#seqDB-22387
+CREATE TABLE t2 ( id INT, vc VARCHAR(16));
+INSERT INTO t2 VALUES (1,'op'),(-1,'bc'),(10,'123'),(7,'ui'),(18,'123'),(10,'hello'),(0,'bc');
+--sorted_result
+SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id LIMIT 3 OFFSET 1;
+--sorted_result
+SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 LIMIT 2 OFFSET 1;
+#seqDB-22388
+CREATE TABLE t3 SELECT * FROM t1 WHERE id > 5 LIMIT 5;
+INSERT INTO t3 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 2;
+#seqDB-22389
+UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
+DELETE FROM t2 LIMIT 2;
+DROP TABLE t1,t2,t3;
 
 --source include/uninstall_sequoiadb.inc

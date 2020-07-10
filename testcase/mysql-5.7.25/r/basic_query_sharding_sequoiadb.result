@@ -14227,3 +14227,115 @@ hello 	hello 	hello 	hello
 holo 	holo 	holo 	holo 
 abc	abc	abc	abc
 DROP TABLE t1,t2;
+CREATE TABLE t1 ( id INT AUTO_INCREMENT, a BIGINT, c CHAR(64), key(id, c), key(c) );
+INSERT INTO t1(a,c) VALUES (1,'op'),(-1,'bc'),(10,'123'),(1,'tf'),(-9,'001'),(15,'9a'),(0,'abc'),(5,'jk'),(19,'123'),(9,'hello'),(1,'bc');
+SELECT * FROM t1 LIMIT 3;
+id	a	c
+1	1	op
+2	-1	bc
+3	10	123
+SELECT * FROM t1 LIMIT 2 OFFSET 4;
+id	a	c
+5	-9	001
+6	15	9a
+SELECT * FROM t1 WHERE NOT a > 3 LIMIT 2;
+id	a	c
+1	1	op
+2	-1	bc
+SELECT * FROM t1 WHERE id >= 5 AND a < 10 OR c = 'abc' LIMIT 2 OFFSET 1;
+id	a	c
+7	0	abc
+8	5	jk
+SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 1;
+id	a	c
+2	-1	bc
+3	10	123
+4	1	tf
+SELECT * FROM t1 WHERE c > 'a' ORDER BY c LIMIT 3 OFFSET 2;
+id	a	c
+11	1	bc
+10	9	hello
+8	5	jk
+SELECT * FROM t1 WHERE id > LENGTH(c) LIMIT 3;
+id	a	c
+4	1	tf
+5	-9	001
+6	15	9a
+SELECT * FROM t1 WHERE 10 > ABS(a) LIMIT 3 OFFSET 2;
+id	a	c
+4	1	tf
+5	-9	001
+7	0	abc
+SELECT * FROM t1 WHERE id <= 10 ORDER BY a LIMIT 4 OFFSET 2;
+id	a	c
+1	1	op
+4	1	tf
+7	0	abc
+8	5	jk
+SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 GROUP BY id,c ORDER BY c;
+id	s	c
+1	0	1
+10	5	1
+11	5	1
+2	1	1
+3	1	1
+4	2	1
+5	2	1
+6	3	1
+7	3	1
+8	4	1
+9	4	1
+Warning	1052	Column 'c' in group statement is ambiguous
+Warnings:
+SELECT a FROM t1 GROUP BY a LIMIT 5;
+a
+-1
+-9
+0
+1
+5
+SELECT id FROM t1 HAVING id > 2 LIMIT 5 OFFSET 1;
+id
+4
+5
+6
+7
+8
+SELECT a,id FROM t1 WHERE a > 3 GROUP BY a,id HAVING id > 3 LIMIT 3 OFFSET 1;
+a	id
+15	6
+19	9
+9	10
+SELECT DISTINCT a FROM t1 LIMIT 3 OFFSET 2;
+a
+-9
+10
+15
+SELECT DISTINCT c FROM t1 ORDER BY c LIMIT 3;
+c
+001
+123
+9a
+SELECT SQL_CALC_FOUND_ROWS * FROM t1 LIMIT 2 OFFSET 3;
+id	a	c
+4	1	tf
+5	-9	001
+SELECT FOUND_ROWS();
+FOUND_ROWS()
+11
+CREATE TABLE t2 ( id INT, vc VARCHAR(16));
+INSERT INTO t2 VALUES (1,'op'),(-1,'bc'),(10,'123'),(7,'ui'),(18,'123'),(10,'hello'),(0,'bc');
+SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id LIMIT 3 OFFSET 1;
+id	vc	id	a	c
+-1	bc	NULL	NULL	NULL
+10	123	10	9	hello
+7	ui	7	0	abc
+SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 LIMIT 2 OFFSET 1;
+(SELECT a FROM t1 WHERE t1.a=t2.vc)	vc
+0	bc
+NULL	123
+CREATE TABLE t3 SELECT * FROM t1 WHERE id > 5 LIMIT 5;
+INSERT INTO t3 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 2;
+UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
+DELETE FROM t2 LIMIT 2;
+DROP TABLE t1,t2,t3;
