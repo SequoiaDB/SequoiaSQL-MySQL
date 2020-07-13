@@ -1107,6 +1107,19 @@ ERROR HY000: Option is not supported yet
 ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 1}}';
 ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 2}, partition_options: {ReplSize: 1, AutoIndexId: true, AutoSplit: true, Compressed:true, StrictDataMode: true, Partition: 8192}}';
 DROP TABLE t1;
+CREATE TABLE t1 ( id INT, purchased DATE )
+COMMENT 'sequoiadb: { table_options: { ReplSize: -1}, partition_options: { Partition: 1024 }}'
+    PARTITION BY RANGE( YEAR(purchased) )
+SUBPARTITION BY HASH( TO_DAYS(purchased) )
+SUBPARTITIONS 2 (
+PARTITION p0 VALUES LESS THAN(1990)
+COMMENT 'sequoiadb: { table_options : { Partition: 1024, ReplSize: 2 } }',
+PARTITION p1 VALUES LESS THAN(2000)
+COMMENT 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true, CompressionType:"snappy" } }',   
+PARTITION p2 VALUES LESS THAN MAXVALUE
+COMMENT 'sequoiadb: { partition_options : { Partition: 8192, ReplSize: 3, StrictDataMode: true } }'  
+);
+ERROR HY000: table_options is not for partition comment. Try partition_options
 CREATE TABLE t1 (
 id INT NOT NULL PRIMARY KEY,
 name VARCHAR(20)

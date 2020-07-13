@@ -412,6 +412,20 @@ ALTER TABLE t1 COMMENT 'sequoiadb: { table_options: {ReplSize: 2}, partition_opt
 
 DROP TABLE t1;
 
+--error 1210
+CREATE TABLE t1 ( id INT, purchased DATE )
+    COMMENT 'sequoiadb: { table_options: { ReplSize: -1}, partition_options: { Partition: 1024 }}'
+    PARTITION BY RANGE( YEAR(purchased) )
+    SUBPARTITION BY HASH( TO_DAYS(purchased) )
+    SUBPARTITIONS 2 (
+        PARTITION p0 VALUES LESS THAN(1990)
+            COMMENT 'sequoiadb: { table_options : { Partition: 1024, ReplSize: 2 } }',
+        PARTITION p1 VALUES LESS THAN(2000)
+            COMMENT 'sequoiadb: { partition_options : { Partition: 2048, Compressed: true, CompressionType:"snappy" } }',   
+        PARTITION p2 VALUES LESS THAN MAXVALUE
+            COMMENT 'sequoiadb: { partition_options : { Partition: 8192, ReplSize: 3, StrictDataMode: true } }'  
+    );
+
 #seqDB-20540
 CREATE TABLE t1 (
     id INT NOT NULL PRIMARY KEY,
