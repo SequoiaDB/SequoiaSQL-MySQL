@@ -1,26 +1,87 @@
-#Case 20525#Case 20526#Case 20527#Case 20528#Case 20529#Case 20530#Case 20531
-#Case 20532#Case 20533#Case 20534#Case 20535#Case 20536#Case 20537#Case 20538
-#Case 20539
+#Case 20525#Case 20527#Case 20539
 
 #seqDB-20525
 CREATE TABLE t1 ( id int ) COMPRESSION "";
 INSERT INTO t1 VALUES (1);
 SHOW CREATE TABLE t1;
+ALTER TABLE t1 COMPRESSION 'snappy';
+SHOW CREATE TABLE t1;
+--error 131
+ALTER TABLE t1 COMPRESSION 'NONE';
+SHOW CREATE TABLE t1;
+--error 1210
+ALTER TABLE t1 COMPRESSION 'ZLIB';
+SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
-#seqDB-20526 
-CREATE TABLE t1 ( id int ) COMPRESSION 'NONE';
-CREATE TABLE t2 ( id int ) COMPRESSION "" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
-CREATE TABLE t3 ( id int ) COMPRESSION "NONE" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
+CREATE TABLE t1 ( id int ) COMPRESSION "none";
 INSERT INTO t1 VALUES (1);
-INSERT INTO t2 VALUES (1);
-INSERT INTO t3 VALUES (1);
 SHOW CREATE TABLE t1;
-SHOW CREATE TABLE t2;
-SHOW CREATE TABLE t3;
-DROP TABLE t1,t2,t3;
+ALTER TABLE t1 COMPRESSION 'snappy';
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+CREATE TABLE t1 ( id int ) COMPRESSION "snappy";
+INSERT INTO t1 VALUES (1);
+SHOW CREATE TABLE t1;
+ALTER TABLE t1 COMPRESSION 'lzw';
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+CREATE TABLE t1 ( id int ) COMPRESSION "LZW";
+INSERT INTO t1 VALUES (1);
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
 
 #seqDB-20527
+CREATE TABLE t1 ( id int ) COMPRESSION "" COMMENT 'sequoiadb: {table_options: {Compressed: true}}'; 
+SHOW CREATE TABLE t1;
+INSERT INTO t1 VALUES (1);
+ALTER TABLE t1 COMPRESSION '' COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
+SHOW CREATE TABLE t1;
+--error 1210
+ALTER TABLE t1 COMPRESSION 'lzw' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
+ALTER TABLE t1 COMPRESSION 'snappy' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
+--error 131
+ALTER TABLE t1 COMPRESSION '' COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+CREATE TABLE t1 ( id int ) COMPRESSION "" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
+INSERT INTO t1 VALUES (1);
+SHOW CREATE TABLE t1;
+--error 1210
+ALTER TABLE t1 COMPRESSION 'None' COMMENT 'sequoiadb: {table_options: {Compressed:true}}';
+--error 1210
+ALTER TABLE t1 COMPRESSION 'lzw' COMMENT 'sequoiadb: {table_options: {Compressed:false}}';
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+CREATE TABLE t1 ( id int ) COMPRESSION "NONE" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+--error 1210
+CREATE TABLE t1 ( id int ) COMPRESSION "NONE" COMMENT 'sequoiadb: {table_options: {Compressed: true}}';
+--error 1210
+CREATE TABLE t1 ( id int ) COMPRESSION "lzw" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
+--error 1210
+CREATE TABLE t1 ( id int ) COMPRESSION "snappy" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
+
+CREATE TABLE t1 ( id int ) COMPRESSION "lzw" COMMENT 'sequoiadb: {table_options: {CompressionType: "lzw"}}';
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+CREATE TABLE t1 ( id int ) COMPRESSION "snappy" COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
+
+--error 1210
+CREATE TABLE t1 ( id int ) COMPRESSION "lzw" COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
+--error 1210
+CREATE TABLE t1 ( id int ) COMPRESSION "snappy" COMMENT 'sequoiadb: {table_options: {CompressionType: "lzw"}}';
+
 CREATE TABLE t1 ( id int ) COMPRESSION 'lzw';
 CREATE TABLE t2 ( id int ) COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw'}}";
 CREATE TABLE t3 ( id int ) COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {ReplSize: 3}}";
@@ -31,143 +92,6 @@ SHOW CREATE TABLE t1;
 SHOW CREATE TABLE t2;
 SHOW CREATE TABLE t3;
 DROP TABLE t1,t2,t3;
-
-#seqDB-20528
-CREATE TABLE t1 ( id int ) COMPRESSION 'snappy';
-CREATE TABLE t2 ( id int ) COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'snappy'}}";
-CREATE TABLE t3 ( id int ) COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {ReplSize: 3}}";
-INSERT INTO t1 VALUES (1);
-INSERT INTO t2 VALUES (1);
-INSERT INTO t3 VALUES (1);
-SHOW CREATE TABLE t1;
-SHOW CREATE TABLE t2;
-SHOW CREATE TABLE t3;
-DROP TABLE t1,t2,t3;
-
-#seqDB-20529
---error 1210
-CREATE TABLE t1 ( id int ) COMPRESSION 'none' COMMENT "sequoiadb: {table_options: {Compressed: true}}";
---error 1210
-CREATE TABLE t2 ( id int ) COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw'}}";
---error 1210
-CREATE TABLE t3 ( id int ) COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'snappy'}}";
---error 1210
-CREATE TABLE t4 ( id int ) COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {Compressed: false}}";
-
-#seqDB-20530
-CREATE TABLE t1 ( id int );
---error 1210
-ALTER TABLE t1 COMPRESSION 'none' COMMENT "sequoiadb: {table_options: {Compressed: true}}";
-SHOW CREATE TABLE t1;
---error 1210
-ALTER TABLE t1 COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw'}}";
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
-
-#seqDB-20531
-CREATE TABLE t1 ( id int );
-CREATE TABLE t2 ( id int );
-CREATE TABLE t3 ( id int );
-INSERT INTO t1 VALUES (1);
-INSERT INTO t2 VALUES (1);
-INSERT INTO t3 VALUES (1);
-ALTER TABLE t1 COMPRESSION 'lzw' ;
-ALTER TABLE t2 COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw'}}";
-ALTER TABLE t3 COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {ReplSize:3}}";
-SHOW CREATE TABLE t1;
-SHOW CREATE TABLE t2;
-SHOW CREATE TABLE t3;
-DROP TABLE t1,t2,t3;
-
-#seqDB-20532
-CREATE TABLE t1 ( id int ) COMPRESSION "NONE";
-CREATE TABLE t2 ( id int ) COMPRESSION "snappy";
-CREATE TABLE t3 ( id int ) COMPRESSION "lzw";
-CREATE TABLE t4 ( id int ) COMPRESSION "lzw";
-INSERT INTO t1 VALUES (1);
-INSERT INTO t2 VALUES (1);
-INSERT INTO t3 VALUES (1);
-INSERT INTO t4 VALUES (1);
-ALTER TABLE t1 COMPRESSION 'lzw' ;
-ALTER TABLE t2 COMMENT "sequoiadb: {table_options: {Compressed:true, CompressionType:'snappy'}}";
-ALTER TABLE t3 COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw'}}";
-ALTER TABLE t4 COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {ReplSize:3}}";
-SHOW CREATE TABLE t1;
-SHOW CREATE TABLE t2;
-SHOW CREATE TABLE t3;
-SHOW CREATE TABLE t4;
-DROP TABLE t1,t2,t3,t4;
-
-#seqDB-20533
-CREATE TABLE t1 ( id int ) COMMENT "sequoiadb: {table_options: {Compressed: false}}";
-CREATE TABLE t2 ( id int ) COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw'}}";
-CREATE TABLE t3 ( id int ) COMMENT "sequoiadb: {table_options: {ReplSize: 2}}";
-INSERT INTO t1 VALUES (1);
-INSERT INTO t2 VALUES (1);
-INSERT INTO t3 VALUES (1);
-ALTER TABLE t1 COMPRESSION 'NONE' ;
-ALTER TABLE t2 COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {ReplSize: 2, Compressed: true, CompressionType: 'lzw'}}";
-ALTER TABLE t3 COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {Compressed: true, ReplSize:3}}";
-SHOW CREATE TABLE t1;
-SHOW CREATE TABLE t2;
-SHOW CREATE TABLE t3;
-DROP TABLE t1,t2,t3;
-
-#seqDB-20534
-CREATE TABLE t1 ( id int ) COMPRESSION 'NONE' COMMENT "sequoiadb: {table_options: {Compressed: false}}";
-CREATE TABLE t2 ( id int ) COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw'}}";
-CREATE TABLE t3 ( id int ) COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {ReplSize: 2}}";
-CREATE TABLE t4 ( id int ) COMPRESSION 'snappy' COMMENT "sequoiadb: {table_options: {Compressed: true, AutoIndexId: false}}";
-INSERT INTO t1 VALUES (1);
-INSERT INTO t2 VALUES (1);
-INSERT INTO t3 VALUES (1);
-ALTER TABLE t1 COMPRESSION 'NONE' ;
-ALTER TABLE t2 COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'lzw', StrictDataMode: false}}";
-ALTER TABLE t3 COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {ReplSize: 2, Compressed: true, CompressionType: 'lzw'}}";
-ALTER TABLE t4 COMPRESSION 'lzw' COMMENT "sequoiadb: {table_options: {Compressed: true, AutoIndexId: false, ReplSize:3}}";
-SHOW CREATE TABLE t1;
-SHOW CREATE TABLE t2;
-SHOW CREATE TABLE t3;
-SHOW CREATE TABLE t4;
-DROP TABLE t1,t2,t3,t4;
-
-#seqDB-20535 #seqDB-20536
-CREATE TABLE t1 ( id int ) COMMENT "sequoiadb: {table_options: {Compressed: false}}";
-CREATE TABLE t2 ( id int ) COMPRESSION 'lzw';
-INSERT INTO t1 VALUES (1);
-INSERT INTO t2 VALUES (1);
---error 1210
-ALTER TABLE t1 COMPRESSION 'lzw';
---error 1210
-ALTER TABLE t2 COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'snappy'}}";
-SHOW CREATE TABLE t1; 
-SHOW CREATE TABLE t2;
-DROP TABLE t1,t2;
-
-#seqDB-20537 #seqDB-20538
-CREATE TABLE t1 ( id int ) COMMENT "sequoiadb: {table_options: {Compressed: true, CompressionType: 'snappy'}}";
-CREATE TABLE t2 ( id int ) COMMENT "sequoiadb: {table_options: {CompressionType: 'snappy'}}";
-CREATE TABLE t3 ( id int );
-CREATE TABLE t4 ( id int ) COMMENT "sequoiadb: {table_options: {Compressed: true}}";
-INSERT INTO t1 VALUES (1),(2),(3),(4),(5);
-INSERT INTO t2 VALUES (1),(2),(3),(4),(5);
-INSERT INTO t3 VALUES (1),(2),(3),(4),(5);
-INSERT INTO t4 VALUES (1),(2),(3),(4),(5);
---error 131
-ALTER TABLE t1 COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
---error 1210
-ALTER TABLE t1 COMMENT "sequoiadb: {table_options: {Compressed: false, CompressionType: 'snappy'}}";
---error 1210
-ALTER TABLE t2 COMMENT "sequoiadb: {table_options: {Compressed: false, CompressionType: 'snappy'}}";
---error 131
-ALTER TABLE t2 COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
-ALTER TABLE t3 COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
-ALTER TABLE t4 COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
-SHOW CREATE TABLE t1;
-SHOW CREATE TABLE t2;
-SHOW CREATE TABLE t3;
-SHOW CREATE TABLE t4;
-DROP TABLE t1,t2,t3,t4;
 
 #seqDB-20539
 --error 1210
