@@ -11,20 +11,8 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
-ALTER TABLE t1 COMPRESSION 'NONE';
-ERROR HY000: Cannot delete table options of comment
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
 ALTER TABLE t1 COMPRESSION 'ZLIB';
 ERROR HY000: Invalid compression type
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "none";
 INSERT INTO t1 VALUES (1);
@@ -77,14 +65,6 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
 ALTER TABLE t1 COMPRESSION 'lzw' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
 ERROR HY000: Ambiguous compression
-ALTER TABLE t1 COMPRESSION 'snappy' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
-ALTER TABLE t1 COMPRESSION '' COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
-ERROR HY000: Cannot delete table options of comment
-SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='snappy' COMMENT='sequoiadb: {table_options: {CompressionType: "snappy"}}'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
 INSERT INTO t1 VALUES (1);
