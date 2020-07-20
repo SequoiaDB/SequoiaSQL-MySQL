@@ -549,7 +549,7 @@ int ha_sdb_part::get_sharding_key(partition_info *part_info,
   uint field_num = 0;
   Field *field = NULL;
   bson::BSONObjBuilder builder;
-  
+
   // Check if the shardingkey contains virtual generated column.
   field_num = part_info->num_part_fields;
   for (uint i = 0; i < field_num; ++i) {
