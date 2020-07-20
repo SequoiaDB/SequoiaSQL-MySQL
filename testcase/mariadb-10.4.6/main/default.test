@@ -328,14 +328,14 @@ show create table t1;
 --echo #
 
 create or replace table t1 (a int default 1, b int default a);
-#create or replace table t1 (a int default 1, b int as (a));
+create or replace table t1 (a int default 1, b int as (a));
 create or replace table t1 (a int default b, b int default 1);
-#create or replace table t1 (a int as (b), b int default 1);
-#create or replace table t1 (a int as (b), b int default (1+1));
-#create or replace table t1 (a int default 1, b int as (c), c int default (a+1));
-#create or replace table t1 (a int default (1+1), b int as (c), c int default (a+1));
+create or replace table t1 (a int as (b), b int default 1);
+create or replace table t1 (a int as (b), b int default (1+1));
+create or replace table t1 (a int default 1, b int as (c), c int default (a+1));
+create or replace table t1 (a int default (1+1), b int as (c), c int default (a+1));
 create or replace table t1 (a varchar(128) default @@version);
-#create or replace table t1 (a int not null, b int as (a));
+create or replace table t1 (a int not null, b int as (a));
 create or replace table t1 (a int not null, b int default (a+1));
 
 
@@ -1882,15 +1882,15 @@ alter table t1 alter a set default 1+2;
 show create table t1;
 drop table t1;
 
-##
-## CREATE ... SELECT
-##
-#create table t1 (a int default 5 check (a>10), b int default (5+5), c int as (a+b));
-#create table t2 as select a, b, c from t1;
-#create table t3 as select max(a), max(b), max(c) from t1;
-#show create table t2;
-#show create table t3;
-#drop table t1, t2, t3;
+#
+# CREATE ... SELECT
+#
+create table t1 (a int default 5 check (a>10), b int default (5+5), c int as (a+b));
+create table t2 as select a, b, c from t1;
+create table t3 as select max(a), max(b), max(c) from t1;
+show create table t2;
+show create table t3;
+drop table t1, t2, t3;
 
 #BUG #SEQUOIASQLMAINSTREAM-609
 --echo # MDEV-11359: Implement IGNORE for bulk operation

@@ -1,3 +1,5 @@
+create database check_constraint_test;
+use check_constraint_test;
 set @save_check_constraint=@@check_constraint_checks;
 create table t1 (a int check(a>10), b int check (b > 20), constraint `min` check (a+b > 100), constraint `max` check (a+b <500)) engine=sequoiadb;
 show create table t1;
@@ -10,22 +12,22 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values (100,100);
 insert into t1 values (1,1);
-ERROR 23000: CONSTRAINT `t1.a` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `t1.a` failed for `check_constraint_test`.`t1`
 insert into t1 values (20,1);
-ERROR 23000: CONSTRAINT `t1.b` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `t1.b` failed for `check_constraint_test`.`t1`
 insert into t1 values (20,30);
-ERROR 23000: CONSTRAINT `min` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `min` failed for `check_constraint_test`.`t1`
 insert into t1 values (500,500);
-ERROR 23000: CONSTRAINT `max` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `max` failed for `check_constraint_test`.`t1`
 insert into t1 values (101,101),(102,102),(600,600),(103,103);
-ERROR 23000: CONSTRAINT `max` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `max` failed for `check_constraint_test`.`t1`
 select * from t1;
 a	b
 100	100
 truncate table t1;
 insert ignore into t1 values (101,101),(102,102),(600,600),(103,103);
 Warnings:
-Warning	4025	CONSTRAINT `max` failed for `X`.`t1`
+Warning	4025	CONSTRAINT `max` failed for `check_constraint_test`.`t1`
 select * from t1;
 a	b
 101	101
@@ -56,9 +58,9 @@ t1	CREATE TABLE `t1` (
   CONSTRAINT `CONSTRAINT_1` CHECK (`a` + `b` + `c` < 500)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values(105,105,105);
-ERROR 23000: CONSTRAINT `t1.c` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `t1.c` failed for `check_constraint_test`.`t1`
 insert into t1 values(249,249,9);
-ERROR 23000: CONSTRAINT `CONSTRAINT_1` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `CONSTRAINT_1` failed for `check_constraint_test`.`t1`
 insert into t1 values(105,105,9);
 select * from t1;
 a	b	c
@@ -127,6 +129,11 @@ t1	CREATE TABLE `t1` (
   CONSTRAINT `CONSTRAINT_2` CHECK (`a` > `b`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
+create table t1(c1 int, c2 int as (c1 + 1), check (c2 > 2));
+insert into t1(c1) values(1);
+ERROR 23000: CONSTRAINT `CONSTRAINT_1` failed for `check_constraint_test`.`t1`
+insert into t1(c1) values(2);
+drop table t1;
 create or replace table t1( c1 int auto_increment primary key, check( c1 > 0 or c1 is null ) );
 ERROR HY000: Function or expression 'AUTO_INCREMENT' cannot be used in the CHECK clause of `c1`
 create table t1 (a int check (@b in (select user from mysql.user)));
@@ -136,7 +143,7 @@ ERROR HY000: Function or expression '@b' cannot be used in the CHECK clause of `
 create table t1 (a int check (a = 1));
 insert t1 values (1);
 insert t1 values (2);
-ERROR 23000: CONSTRAINT `t1.a` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `t1.a` failed for `check_constraint_test`.`t1`
 insert t1 values (NULL);
 select * from t1;
 a
@@ -156,13 +163,13 @@ ERROR 22007: Truncated incorrect DOUBLE value: 'Ken'
 SHOW WARNINGS;
 Level	Code	Message
 Error	1292	Truncated incorrect DOUBLE value: 'Ken'
-Error	4025	CONSTRAINT `t1.FirstName` failed for `X`.`t1`
+Error	4025	CONSTRAINT `t1.FirstName` failed for `check_constraint_test`.`t1`
 INSERT INTO t1 VALUES (NULL, 'Ken'),(NULL, 'Brian');
 ERROR 22007: Truncated incorrect DOUBLE value: 'Ken'
 SHOW WARNINGS;
 Level	Code	Message
 Error	1292	Truncated incorrect DOUBLE value: 'Ken'
-Error	4025	CONSTRAINT `t1.FirstName` failed for `X`.`t1`
+Error	4025	CONSTRAINT `t1.FirstName` failed for `check_constraint_test`.`t1`
 INSERT IGNORE INTO t1 VALUES (NULL, 'Ken');
 Warnings:
 Warning	1292	Truncated incorrect DOUBLE value: 'Ken'
@@ -207,14 +214,14 @@ t	CREATE TABLE `t` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # Field constraint 'b' will fail
 insert into t values (-1, 0);
-ERROR 23000: CONSTRAINT `t.b` failed for `X`.`t`
+ERROR 23000: CONSTRAINT `t.b` failed for `check_constraint_test`.`t`
 # Table constraint 'b' will fail
 insert into t values (1,1);
-ERROR 23000: CONSTRAINT `b` failed for `X`.`t`
+ERROR 23000: CONSTRAINT `b` failed for `check_constraint_test`.`t`
 drop table t;
 create table t1 (a int auto_increment primary key, b int, check (b > 5));
 insert t1 (b) values (1);
-ERROR 23000: CONSTRAINT `CONSTRAINT_1` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `CONSTRAINT_1` failed for `check_constraint_test`.`t1`
 insert t1 (b) values (10);
 select * from t1 where a is null;
 a	b
@@ -223,5 +230,6 @@ select * from t1 where a is null;
 a	b
 1	10
 insert t1 (b) values (1);
-ERROR 23000: CONSTRAINT `CONSTRAINT_1` failed for `X`.`t1`
+ERROR 23000: CONSTRAINT `CONSTRAINT_1` failed for `check_constraint_test`.`t1`
 drop table t1;
+drop database check_constraint_test;

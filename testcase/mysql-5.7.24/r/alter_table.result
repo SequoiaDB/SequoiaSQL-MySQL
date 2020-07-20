@@ -2603,6 +2603,14 @@ DROP TABLE t1;
 # primary keys
 #
 # Base line with normal column - should be promoted
+CREATE TABLE t0(a INT NOT NULL) ENGINE=SEQUOIADB;
+ALTER TABLE t0 ADD UNIQUE INDEX (a);
+# Case d: Add unique index on virtual blob column
+CREATE TABLE t4 (a BLOB, b BLOB GENERATED ALWAYS AS (a) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
+SELECT * FROM t4;
+a	b
+DROP TABLE t0;
+DROP TABLE t4;
 #
 # Bug#21345391: ALTER TABLE ... CONVERT TO CHARACTER SET NOT EFFECT
 #               AND REMAIN A TEMP TABLE

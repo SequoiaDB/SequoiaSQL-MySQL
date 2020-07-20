@@ -703,5 +703,43 @@ GROUP BY v2.pk;
 pk	coa
 DROP VIEW v2;
 DROP TABLE t1,t2;
+#
+# Bug#21807579 FUNCTIONAL DEPENDENCIES ARE NOT RECOGNIZED IN GENERATED COLUMNS
+#
+CREATE TABLE t ( a INT, c INT GENERATED ALWAYS AS (a+2), d INT GENERATED ALWAYS AS (c+2) );
+# {a}->{c}, {c}->{d} and {a}->{d} hold.
+SELECT c FROM t GROUP BY a;
+c
+SELECT d FROM t GROUP BY c;
+d
+SELECT d FROM t GROUP BY a;
+d
+SELECT 1+c FROM t GROUP BY a;
+1+c
+SELECT 1+d FROM t GROUP BY c;
+1+d
+SELECT 1+d FROM t GROUP BY a;
+1+d
+# {t2.a}->{t2.d}->{t1.c}->{t1.d}
+SELECT t1.d FROM t as t1, t as t2 WHERE t2.d=t1.c GROUP BY t2.a;
+d
+SELECT t1.d FROM t as t1, t as t2 WHERE t2.d>t1.c GROUP BY t2.a;
+ERROR 42000: Expression #1 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'test_group_by_fd_no_prot.t1.d' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+DROP TABLE t;
+# A non-NULL-friendly dependency.
+CREATE TABLE t ( a INT,
+c INT GENERATED ALWAYS AS (COALESCE(a,3)) );
+INSERT INTO t (a) VALUES(NULL);
+CREATE TABLE u ( a INT );
+INSERT INTO u VALUES(0),(1);
+# Even though {a}->{c} holds in 't', it doesn't propagate to the left
+# join's result
+SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0;
+a	c
+NULL	3
+NULL	NULL
+SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0 GROUP BY t.a;
+ERROR 42000: Expression #2 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'test_group_by_fd_no_prot.t.c' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
+DROP TABLE t,u;
 DROP FUNCTION show_json_object;
 DROP DATABASE test_group_by_fd_no_prot;

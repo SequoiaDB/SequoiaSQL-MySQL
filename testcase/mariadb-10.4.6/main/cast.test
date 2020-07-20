@@ -464,9 +464,9 @@ SELECT DATE("foo");
 #
 # CAST and field definition using same fields in LEX
 #
-#create table t1 (a int, b char(5) as (cast("a" as char(10) binary) + a) );
-#show create table t1;
-#drop table t1;
+create table t1 (a int, b char(5) as (cast("a" as char(10) binary) + a) );
+show create table t1;
+drop table t1;
 
 #
 # CAST (... BINARY)

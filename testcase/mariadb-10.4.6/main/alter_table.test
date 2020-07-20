@@ -1851,31 +1851,31 @@ CREATE TABLE t1 (
 ALTER TABLE t1 ADD PRIMARY KEY IF NOT EXISTS event_id (event_id,market_id);
 DROP TABLE t1;
 
-#--echo #
-#--echo # MDEV-11126 Crash while altering persistent virtual column
-#--echo #
-#
-#CREATE TABLE `tab1` (
-#  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-#  `field2` set('option1','option2','option3','option4') NOT NULL,
-#  `field3` set('option1','option2','option3','option4','option5') NOT NULL,
-#  `field4` set('option1','option2','option3','option4') NOT NULL,
-#  `field5` varchar(32) NOT NULL,
-#  `field6` varchar(32) NOT NULL,
-#  `field7` varchar(32) NOT NULL,
-#  `field8` varchar(32) NOT NULL,
-#  `field9` int(11) NOT NULL DEFAULT '1',
-#  `field10` varchar(16) NOT NULL,
-#  `field11` enum('option1','option2','option3') NOT NULL DEFAULT 'option1',
-#  `v_col` varchar(128) AS (IF(field11='option1',CONCAT_WS(":","field1",field2,field3,field4,field5,field6,field7,field8,field9,field10), CONCAT_WS(":","field1",field11,field2,field3,field4,field5,field6,field7,field8,field9,field10))) PERSISTENT,
-#  PRIMARY KEY (`id`)
-#) DEFAULT CHARSET=latin1;
-#
-#ALTER TABLE `tab1` CHANGE COLUMN v_col `v_col` varchar(128);
-#SHOW CREATE TABLE `tab1`;
-#ALTER TABLE `tab1` CHANGE COLUMN v_col `v_col` varchar(128) AS (IF(field11='option1',CONCAT_WS(":","field1",field2,field3,field4,field5,field6,field7,field8,field9,field10), CONCAT_WS(":","field1",field11,field2,field3,field4,field5,field6,field7,field8,field9,field10))) PERSISTENT;
-#SHOW CREATE TABLE `tab1`;
-#DROP TABLE `tab1`;
+--echo #
+--echo # MDEV-11126 Crash while altering persistent virtual column
+--echo #
+
+CREATE TABLE `tab1` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `field2` set('option1','option2','option3','option4') NOT NULL,
+  `field3` set('option1','option2','option3','option4','option5') NOT NULL,
+  `field4` set('option1','option2','option3','option4') NOT NULL,
+  `field5` varchar(32) NOT NULL,
+  `field6` varchar(32) NOT NULL,
+  `field7` varchar(32) NOT NULL,
+  `field8` varchar(32) NOT NULL,
+  `field9` int(11) NOT NULL DEFAULT '1',
+  `field10` varchar(16) NOT NULL,
+  `field11` enum('option1','option2','option3') NOT NULL DEFAULT 'option1',
+  `v_col` varchar(128) AS (IF(field11='option1',CONCAT_WS(":","field1",field2,field3,field4,field5,field6,field7,field8,field9,field10), CONCAT_WS(":","field1",field11,field2,field3,field4,field5,field6,field7,field8,field9,field10))) PERSISTENT,
+  PRIMARY KEY (`id`)
+) DEFAULT CHARSET=latin1;
+
+ALTER TABLE `tab1` CHANGE COLUMN v_col `v_col` varchar(128);
+SHOW CREATE TABLE `tab1`;
+ALTER TABLE `tab1` CHANGE COLUMN v_col `v_col` varchar(128) AS (IF(field11='option1',CONCAT_WS(":","field1",field2,field3,field4,field5,field6,field7,field8,field9,field10), CONCAT_WS(":","field1",field11,field2,field3,field4,field5,field6,field7,field8,field9,field10))) PERSISTENT;
+SHOW CREATE TABLE `tab1`;
+DROP TABLE `tab1`;
 
 --echo #
 --echo # MDEV-11548 Reproducible server crash after the 2nd ALTER TABLE ADD FOREIGN KEY IF NOT EXISTS
@@ -2047,13 +2047,13 @@ alter table t1 change column a b int, change column b a int;
 show create table t1;
 drop table t1;
 
-#create table t1 (a int primary key, b int, c int default (a+b) check (a+b>0),
-#                d int as (a+b),
-#	        key (b),
-#	        constraint test check (a+b > 1));
-#alter table t1 change b new_b int not null, add column b char(1), add constraint new check (length(b) > 0);
-#show create table t1;
-#drop table t1;
+create table t1 (a int primary key, b int, c int default (a+b) check (a+b>0),
+                d int as (a+b),
+	        key (b),
+	        constraint test check (a+b > 1));
+alter table t1 change b new_b int not null, add column b char(1), add constraint new check (length(b) > 0);
+show create table t1;
+drop table t1;
 
 --echo #
 --echo # MDEV-11071: Assertion `thd->transaction.stmt.is_empty()' failed
