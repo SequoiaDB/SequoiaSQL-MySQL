@@ -1850,11 +1850,11 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
   Field *gfield = NULL;
   Item *value = NULL;
   Item_field *field = NULL;
+  Item *fld = NULL;
   bson::BSONObj set_obj;
   bson::BSONObj inc_obj;
   bson::BSONObjBuilder set_builder;
   bson::BSONObjBuilder inc_builder;
-  Item *fld = NULL;
 #ifdef IS_MYSQL
   MY_BITMAP *bitmap = table->write_set;
 #elif defined IS_MARIADB
@@ -1931,30 +1931,28 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     for (gfield_ptr = table->vfield; *gfield_ptr; gfield_ptr++) {
       gfield = *gfield_ptr;
       value = sdb_get_gcol_item(gfield);
-      if (sdb_field_is_stored_gcol(gfield) &&
-          bitmap_is_set(bitmap, gfield->field_index)) {
+      if (bitmap_is_set(bitmap, gfield->field_index)) {
         Field *tmp_field = NULL;
         MY_BITMAP *base_columns_map = sdb_get_base_columns_map(gfield);
-        for (uint i = 0; i < table->s->fields; i++) {
+        for (uint i = bitmap_get_first_set(base_columns_map); i != MY_BIT_NONE;
+             i = bitmap_get_next_set(base_columns_map, i)) {
           tmp_field = table->field[i];
-          if (bitmap_is_set(base_columns_map, tmp_field->field_index) &&
-              !bitmap_is_set(&const_col_map, tmp_field->field_index)) {
+          if (!bitmap_is_set(&const_col_map, tmp_field->field_index)) {
             *optimizer_update = false;
             goto done;
           }
         }
+
         rc = create_set_rule(gfield, value, optimizer_update, set_builder);
+        if (0 != rc) {
+          goto error;
+        }
         bitmap_set_bit(&const_col_map, gfield->field_index);
       }
-#ifdef IS_MYSQL
       /* Set bitmap of table fields (columns), which are explicitly set to avoid
          memory allocation on MEM_ROOT.*/
       if (table->fields_set_during_insert) {
         bitmap_set_bit(table->fields_set_during_insert, rfield->field_index);
-      }
-#endif
-      if (0 != rc || !*optimizer_update) {
-        goto error;
       }
     }
   }
