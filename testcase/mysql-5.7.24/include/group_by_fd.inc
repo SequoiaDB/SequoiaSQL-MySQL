@@ -1010,38 +1010,36 @@ SELECT v2.pk, v2.coa
 DROP VIEW v2;
 DROP TABLE t1,t2;
 
-# NOW SequoiaDB not support for generated columns
-#--echo #
-#--echo # Bug#21807579 FUNCTIONAL DEPENDENCIES ARE NOT RECOGNIZED IN GENERATED COLUMNS
-#--echo #
-#
-#CREATE TABLE t ( a INT, c INT GENERATED ALWAYS AS (a+2), d INT GENERATED ALWAYS AS (c+2) );
-#--echo # {a}->{c}, {c}->{d} and {a}->{d} hold.
-#SELECT c FROM t GROUP BY a;
-#SELECT d FROM t GROUP BY c;
-#SELECT d FROM t GROUP BY a;
-#SELECT 1+c FROM t GROUP BY a;
-#SELECT 1+d FROM t GROUP BY c;
-#SELECT 1+d FROM t GROUP BY a;
-#--echo # {t2.a}->{t2.d}->{t1.c}->{t1.d}
-#SELECT t1.d FROM t as t1, t as t2 WHERE t2.d=t1.c GROUP BY t2.a;
-#--error ER_WRONG_FIELD_WITH_GROUP
-#SELECT t1.d FROM t as t1, t as t2 WHERE t2.d>t1.c GROUP BY t2.a;
-#DROP TABLE t;
+--echo #
+--echo # Bug#21807579 FUNCTIONAL DEPENDENCIES ARE NOT RECOGNIZED IN GENERATED COLUMNS
+--echo #
 
-# NOW SequoiaDB not support for generated columns
-#--echo # A non-NULL-friendly dependency.
-#CREATE TABLE t ( a INT,
-#c INT GENERATED ALWAYS AS (COALESCE(a,3)) );
-#INSERT INTO t (a) VALUES(NULL);
-#CREATE TABLE u ( a INT );
-#INSERT INTO u VALUES(0),(1);
-#--echo # Even though {a}->{c} holds in 't', it doesn't propagate to the left
-#--echo # join's result
-#SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0;
-#--error ER_WRONG_FIELD_WITH_GROUP
-#SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0 GROUP BY t.a;
-#DROP TABLE t,u;
+CREATE TABLE t ( a INT, c INT GENERATED ALWAYS AS (a+2), d INT GENERATED ALWAYS AS (c+2) );
+--echo # {a}->{c}, {c}->{d} and {a}->{d} hold.
+SELECT c FROM t GROUP BY a;
+SELECT d FROM t GROUP BY c;
+SELECT d FROM t GROUP BY a;
+SELECT 1+c FROM t GROUP BY a;
+SELECT 1+d FROM t GROUP BY c;
+SELECT 1+d FROM t GROUP BY a;
+--echo # {t2.a}->{t2.d}->{t1.c}->{t1.d}
+SELECT t1.d FROM t as t1, t as t2 WHERE t2.d=t1.c GROUP BY t2.a;
+--error ER_WRONG_FIELD_WITH_GROUP
+SELECT t1.d FROM t as t1, t as t2 WHERE t2.d>t1.c GROUP BY t2.a;
+DROP TABLE t;
+
+--echo # A non-NULL-friendly dependency.
+CREATE TABLE t ( a INT,
+c INT GENERATED ALWAYS AS (COALESCE(a,3)) );
+INSERT INTO t (a) VALUES(NULL);
+CREATE TABLE u ( a INT );
+INSERT INTO u VALUES(0),(1);
+--echo # Even though {a}->{c} holds in 't', it doesn't propagate to the left
+--echo # join's result
+SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0;
+--error ER_WRONG_FIELD_WITH_GROUP
+SELECT t.a,t.c FROM u LEFT JOIN t ON u.a>0 GROUP BY t.a;
+DROP TABLE t,u;
 
 DROP FUNCTION show_json_object;
 DROP DATABASE test_group_by_fd_no_prot;
