@@ -145,6 +145,8 @@ error:
 
 void ha_sdb_cond_ctx::update_stat(int rc) {
   DBUG_ENTER("ha_sdb_cond_ctx::update_stat()");
+  List<Sdb_item> tmp_list = item_list;
+  Sdb_item *item_tmp = NULL;
   if (SDB_ERR_OK == rc) {
     goto done;
   }
@@ -153,7 +155,7 @@ void ha_sdb_cond_ctx::update_stat(int rc) {
     goto done;
   }
 
-  if (NULL == cur_item || Item_func::COND_OR_FUNC == cur_item->type()) {
+  if (NULL == cur_item) {
     status = SDB_COND_UNSUPPORTED;
     goto done;
   }
@@ -161,9 +163,19 @@ void ha_sdb_cond_ctx::update_stat(int rc) {
   if (Item_func::COND_AND_FUNC == cur_item->type() &&
       SDB_ERR_COND_PART_UNSUPPORTED == rc) {
     status = SDB_COND_PART_SUPPORTED;
-  } else {
-    status = SDB_COND_BEFORE_SUPPORTED;
+    goto done;
   }
+
+  while (tmp_list.elements) {
+    item_tmp = tmp_list.pop();
+    if (Item_func::COND_AND_FUNC == item_tmp->type() &&
+        SDB_ERR_COND_PART_UNSUPPORTED == rc) {
+      status = SDB_COND_PART_SUPPORTED;
+      goto done;
+    }
+  }
+
+  status = SDB_COND_UNSUPPORTED;
 
 done:
   DBUG_VOID_RETURN;
