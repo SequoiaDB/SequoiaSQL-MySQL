@@ -55,7 +55,6 @@ int sdb_convert_tab_opt_to_obj(const char *str, bson::BSONObj &obj);
 int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
                                bson::BSONElement &cmt_compressed,
                                bson::BSONElement &cmt_compress_type,
-                               bool &compress_is_set,
                                bson::BSONObjBuilder &build);
 
 const char *sdb_elem_type_str(bson::BSONType type);

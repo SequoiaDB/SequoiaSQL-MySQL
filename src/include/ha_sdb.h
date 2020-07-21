@@ -491,6 +491,12 @@ class ha_sdb : public handler {
 
   void raw_store_blob(Field_blob *blob, const char *data, uint len);
 
+  int check_and_set_options(const char *old_options_str,
+                            const char *new_options_str,
+                            enum enum_compress_type old_sql_compress,
+                            enum enum_compress_type new_sql_compress,
+                            Sdb_cl &cl);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;

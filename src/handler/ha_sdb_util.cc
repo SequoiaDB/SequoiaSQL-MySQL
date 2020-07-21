@@ -226,29 +226,29 @@ error:
   goto done;
 }
 
+/**
+  Compression attribute can both specified by COMMENT and COMPRESSION.
+  Check if they are ambiguous, and push the final compression type to `build`.
+*/
 int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
                                bson::BSONElement &cmt_compressed,
                                bson::BSONElement &cmt_compress_type,
-                               bool &compress_is_set,
                                bson::BSONObjBuilder &build) {
   int rc = 0;
   enum enum_compress_type type;
   if (cmt_compressed.type() != bson::Bool &&
       cmt_compressed.type() != bson::EOO) {
     rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc,
-                    "Failed to parse options! Invalid type[%d] for"
-                    "Compressed",
-                    MYF(0), cmt_compressed.type());
+    my_printf_error(rc, "Invalid options. Type of Compressed should be 'Bool'",
+                    MYF(0));
     goto error;
   }
   if (cmt_compress_type.type() != bson::String &&
       cmt_compress_type.type() != bson::EOO) {
     rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc,
-                    "Failed to parse options! Invalid type[%d] for"
-                    "CompressionType",
-                    MYF(0), cmt_compress_type.type());
+    my_printf_error(
+        rc, "Invalid options. Type of CompressionType should be 'String'",
+        MYF(0));
     goto error;
   }
 
@@ -270,11 +270,11 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
     if (cmt_compressed.type() == bson::Bool && cmt_compressed.Bool() == true) {
       if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
         rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Ambiguous compression", MYF(0));
         goto error;
       }
       if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
         build.append(SDB_FIELD_COMPRESSED, true);
-        build.append(SDB_FIELD_COMPRESSION_TYPE, SDB_FIELD_COMPRESS_LZW);
         goto done;
       }
       build.append(SDB_FIELD_COMPRESSED, true);
@@ -305,7 +305,6 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
   }
 
 done:
-  compress_is_set = true;
   return rc;
 error:
   goto done;
