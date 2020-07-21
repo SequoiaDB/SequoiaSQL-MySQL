@@ -848,6 +848,12 @@ int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
     old_tmp_ele = it_old.next();
     new_tmp_ele = new_opt_obj.getField(old_tmp_ele.fieldName());
     if (new_tmp_ele.type() == bson::EOO) {
+      // We don't allow delete table options. But it's exceptional that
+      // { Compressed: true, CompressionType: "xxx" } => { Compressed: false }
+      if (!strcmp(old_tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) &&
+          !new_opt_obj.getField(SDB_FIELD_COMPRESSED).booleanSafe()) {
+        continue;
+      }
       rc = HA_ERR_WRONG_COMMAND;
       my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
       goto error;

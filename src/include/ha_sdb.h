@@ -502,12 +502,6 @@ class ha_sdb : public handler {
 
   void raw_store_blob(Field_blob *blob, const char *data, uint len);
 
-  int check_and_set_tab_opt(const char *sdb_old_tab_opt,
-                            const char *sdb_new_tab_opt,
-                            enum enum_compress_type sql_compress,
-                            bool has_compress, bool &compress_is_set,
-                            Sdb_cl &cl);
-
   /* Additional processes provided to derived classes*/
   virtual int pre_row_to_obj(bson::BSONObjBuilder &builder) { return 0; }
 
