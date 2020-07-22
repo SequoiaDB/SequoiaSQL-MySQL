@@ -426,7 +426,23 @@ id
 2
 COMMIT;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ROLLBACK;
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ROLLBACK;
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ROLLBACK;
 DROP TABLE t1;
+SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 create table t1(a int, b int, c int);
 create index a on t1(a);
 insert into t1 values(1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7),(8,8,8),(9,9,9),(10,10,10);
