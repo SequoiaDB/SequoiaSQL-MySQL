@@ -5,6 +5,7 @@
 
 --disable_query_log
 CALL mtr.add_suppression(".*failed to query with condition.*rc: 40013");
+CALL mtr.add_suppression(".*not support transaction serializable isolation*");
 --enable_query_log
 
 #seqDB-18621
@@ -473,31 +474,32 @@ SELECT * FROM t1;
 COMMIT;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
-#SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-#disconnect con1;
-#
+SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+disconnect con1;
+
 #Bug #SEQUOIASQLMAINSTREAM-721
-#connect (con1, localhost, root);
-#connection con1;
-#BEGIN;
-#--error 200
-#SELECT * FROM t1;
-#ROLLBACK;
-#
-#SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-#BEGIN;
-#--error 200
-#SELECT * FROM t1;
-#ROLLBACK;
-#
-#SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-#BEGIN;
-#--error 200
-#SELECT * FROM t1;
-#ROLLBACK;
+connect (con1, localhost, root);
+connection con1;
+BEGIN;
+--error 131
+SELECT * FROM t1;
+ROLLBACK;
+
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+--error 131
+SELECT * FROM t1;
+ROLLBACK;
+
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+--error 131
+SELECT * FROM t1;
+ROLLBACK;
 
 connection default;
 DROP TABLE t1;
+SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 disconnect con1;
 disconnect con2;
@@ -506,6 +508,7 @@ connect (con1, localhost, root);
 connect (con2, localhost, root);
 
 #seqDB-22432
+connection default;
 create table t1(a int, b int, c int);
 create index a on t1(a);
 insert into t1 values(1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7),(8,8,8),(9,9,9),(10,10,10);
