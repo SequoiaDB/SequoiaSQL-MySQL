@@ -125,6 +125,27 @@ void get_int_range(Field_num *field, longlong &low_bound, ulonglong &up_bound) {
   }
 }
 
+// VARCHAR, CHAR, TEXT, TINYTEXT...
+bool is_string_type(Field *field) {
+  enum_field_types type = field->real_type();
+  bool is_string = false;
+  switch (type) {
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_TINY_BLOB:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_MEDIUM_BLOB:
+    case MYSQL_TYPE_LONG_BLOB: {
+      is_string = !field->binary();
+      break;
+    }
+    default:
+      break;
+  }
+  return is_string;
+}
+
 /*
   Interface to build the cast rule.
   @return false if success.
@@ -777,11 +798,13 @@ struct Col_alter_info : public Sql_alloc {
   static const int DROP_AUTO_INC = 4;
   static const int TURN_TO_NOT_NULL = 8;
   static const int TURN_TO_NULL = 16;
+  static const int FAST_SHORTEN = 32;
 
   Field *before;
   Field *after;
   int op_flag;
   bson::BSONObj cast_rule;
+  bson::BSONObj check_bound_cond;
 };
 
 struct ha_sdb_alter_ctx : public inplace_alter_handler_ctx {
@@ -791,7 +814,11 @@ struct ha_sdb_alter_ctx : public inplace_alter_handler_ctx {
 };
 
 bool is_strict_mode(sql_mode_t sql_mode) {
-  return (sql_mode & (MODE_STRICT_ALL_TABLES | MODE_STRICT_TRANS_TABLES));
+  if (sdb_use_transaction) {
+    return (sql_mode & (MODE_STRICT_ALL_TABLES | MODE_STRICT_TRANS_TABLES));
+  } else {
+    return (sql_mode & MODE_STRICT_ALL_TABLES);
+  }
 }
 
 int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
@@ -978,17 +1005,122 @@ bool get_cast_rule(bson::BSONObjBuilder &builder, Field *old_field,
   return func(builder, old_field, new_field);
 }
 
+/*
+  Get query condition for checking whether any old record is out of the bound of
+  new data type.
+  @return false if success. true if no such condition.
+*/
+bool get_check_bound_cond(Field *old_field, Field *new_field,
+                          bson::BSONObjBuilder &builder) {
+  bool rs = true;
+  const char *field_name = sdb_field_name(old_field);
+
+  try {
+    // Check integer range for INT, TINYINT, BIGINT...
+    Field_num *old_num = NULL;
+    Field_num *new_num = NULL;
+    longlong old_low_bound = 0;
+    ulonglong old_up_bound = 0;
+    longlong new_low_bound = 0;
+    ulonglong new_up_bound = 0;
+
+    enum enum_field_types old_type = old_field->real_type();
+    if (MYSQL_TYPE_TINY == old_type || MYSQL_TYPE_SHORT == old_type ||
+        MYSQL_TYPE_INT24 == old_type || MYSQL_TYPE_LONG == old_type ||
+        MYSQL_TYPE_LONGLONG == old_type) {
+      old_num = (Field_num *)old_field;
+    }
+
+    enum enum_field_types new_type = new_field->real_type();
+    if (MYSQL_TYPE_TINY == new_type || MYSQL_TYPE_SHORT == new_type ||
+        MYSQL_TYPE_INT24 == new_type || MYSQL_TYPE_LONG == new_type ||
+        MYSQL_TYPE_LONGLONG == new_type) {
+      new_num = (Field_num *)new_field;
+    }
+
+    if (!old_num || !new_num) {
+      goto int_done;
+    }
+
+    get_int_range(old_num, old_low_bound, old_up_bound);
+    get_int_range(new_num, new_low_bound, new_up_bound);
+
+    if (new_low_bound > old_low_bound && new_up_bound < old_up_bound) {
+      // { $or: [ { a: { $lt: <low bound> } }, { a: { $gt: <up bound> } }] }
+      bson::BSONArrayBuilder or_builder(builder.subarrayStart("$or"));
+      bson::BSONObjBuilder lt_builder(or_builder.subobjStart());
+      bson::BSONObjBuilder lt_sub_builder(lt_builder.subobjStart(field_name));
+      lt_sub_builder.append("$lt", new_low_bound);
+      lt_sub_builder.done();
+      lt_builder.done();
+
+      bson::BSONObjBuilder gt_builder(or_builder.subobjStart());
+      bson::BSONObjBuilder gt_sub_builder(gt_builder.subobjStart(field_name));
+      gt_sub_builder.append("$gt", (longlong)new_up_bound);
+      gt_sub_builder.done();
+      gt_builder.done();
+      or_builder.done();
+      rs = false;
+      goto done;
+
+    } else if (new_up_bound < old_up_bound) {
+      // { a: { $gt: <up bound> } }
+      bson::BSONObjBuilder gt_builder(builder.subobjStart(field_name));
+      gt_builder.append("$gt", (longlong)new_up_bound);
+      gt_builder.done();
+      rs = false;
+      goto done;
+
+    } else {
+      goto done;
+    }
+
+  int_done:
+
+    // Check string length for CHAR(N), VARCHAR(N), TEXT...
+    if (!is_string_type(old_field) || !is_string_type(new_field)) {
+      goto done;
+    }
+
+    if (old_field->char_length() <= new_field->char_length()) {
+      goto done;
+    }
+    // CHAR(N) cannot be handled with others. It's the unique string type that
+    // ignore spaces.
+    if ((old_field->real_type() == MYSQL_TYPE_STRING ||
+         new_field->real_type() == MYSQL_TYPE_STRING) &&
+        old_field->real_type() != new_field->real_type()) {
+      goto done;
+    }
+    {
+      // { a: { $strlen: 1, $gt: <char length> } }
+      bson::BSONObjBuilder sub_builder(builder.subobjStart(field_name));
+      sub_builder.append("$strlen", 1);
+      sub_builder.append("$gt", new_field->char_length());
+      sub_builder.done();
+      rs = false;
+      goto done;
+    }
+  } catch (std::bad_alloc) {
+    goto done;
+  }
+done:
+  return rs;
+}
+
 int update_null_to_notnull(Sdb_cl &cl, Field *field, longlong &modified_num,
                            bson::BSONObj &hint) {
   int rc = 0;
   bson::BSONObj result;
   bson::BSONElement be_modified_num;
 
+  // { $set: { a: 0 } }
   bson::BSONObjBuilder rule_builder;
   bson::BSONObjBuilder sub_rule(rule_builder.subobjStart("$set"));
   append_zero_value(sub_rule, field);
   sub_rule.done();
 
+  // { a: { $isnull: 1 } }
   bson::BSONObjBuilder cond_builder;
   bson::BSONObjBuilder sub_cond(
       cond_builder.subobjStart(sdb_field_name(field)));
@@ -1020,80 +1152,172 @@ int ha_sdb::alter_column(TABLE *altered_table,
   List<Col_alter_info> &changed_columns = ctx->changed_columns;
   longlong count = 0;
 
-  bson::BSONObjBuilder unset_builder;
-  List_iterator_fast<Field> dropped_it;
-  Field *field = NULL;
+  try {
+    bson::BSONObjBuilder unset_builder;
+    List_iterator_fast<Field> dropped_it;
+    Field *field = NULL;
 
-  bson::BSONObjBuilder set_builder;
-  // bson::BSONObjBuilder inc_builder;
-  List_iterator_fast<Field> added_it;
+    bson::BSONObjBuilder set_builder;
+    // bson::BSONObjBuilder inc_builder;
+    List_iterator_fast<Field> added_it;
 
-  bson::BSONObjBuilder cast_builder;
-  List_iterator_fast<Col_alter_info> changed_it;
-  Col_alter_info *info = NULL;
+    bson::BSONObjBuilder cast_builder;
+    List_iterator_fast<Col_alter_info> changed_it;
+    Col_alter_info *info = NULL;
+    sql_mode_t sql_mode = ha_thd()->variables.sql_mode;
 
-  bson::BSONObjBuilder builder;
-  bson::BSONObjBuilder clientinfo_builder;
-  bson::BSONObj hint;
-  sdb_build_clientinfo(ha_thd(), clientinfo_builder);
-  hint = clientinfo_builder.obj();
+    bson::BSONObjBuilder builder;
+    bson::BSONObjBuilder clientinfo_builder;
+    bson::BSONObj hint;
+    sdb_build_clientinfo(ha_thd(), clientinfo_builder);
+    hint = clientinfo_builder.obj();
 
-  rc = cl.get_count(count, SDB_EMPTY_BSON, hint);
-  if (0 != rc) {
-    goto error;
-  }
-
-  // 1.Handle the dropped_columns
-  dropped_it.init(ctx->dropped_columns);
-  while ((field = dropped_it++)) {
-    unset_builder.append(sdb_field_name(field), "");
-  }
-
-  // 2.Handle the added_columns
-  added_it.init(ctx->added_columns);
-  while ((field = added_it++)) {
-    my_ptrdiff_t offset = field->table->default_values_offset();
-    if (field->type() == MYSQL_TYPE_YEAR && field->field_length != 4) {
-      rc = ER_INVALID_YEAR_COLUMN_LENGTH;
-      my_printf_error(rc, "Supports only YEAR or YEAR(4) column", MYF(0));
+    rc = cl.get_count(count, SDB_EMPTY_BSON, hint);
+    if (0 != rc) {
       goto error;
     }
-    if (!field->is_real_null(offset) &&
-        !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
-      rc = append_default_value(set_builder, field);
-      if (rc != 0) {
-        rc = ER_WRONG_ARGUMENTS;
-        my_printf_error(rc, ER(rc), MYF(0), sdb_field_name(field));
+
+    // 1.Handle the dropped_columns
+    dropped_it.init(ctx->dropped_columns);
+    while ((field = dropped_it++)) {
+      unset_builder.append(sdb_field_name(field), "");
+    }
+
+    // 2.Handle the added_columns
+    added_it.init(ctx->added_columns);
+    while ((field = added_it++)) {
+      my_ptrdiff_t offset = field->table->default_values_offset();
+      if (field->type() == MYSQL_TYPE_YEAR && field->field_length != 4) {
+        rc = ER_INVALID_YEAR_COLUMN_LENGTH;
+        my_printf_error(rc, "Supports only YEAR or YEAR(4) column", MYF(0));
         goto error;
       }
-    } else if (!field->maybe_null()) {
-      if (!(field->flags & AUTO_INCREMENT_FLAG)) {
-        append_zero_value(set_builder, field);
-      } else {
-        // inc_builder.append(sdb_field_name(field), get_inc_option(option));
+      if (!field->is_real_null(offset) &&
+          !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
+        rc = append_default_value(set_builder, field);
+        if (rc != 0) {
+          rc = ER_WRONG_ARGUMENTS;
+          my_printf_error(rc, ER(rc), MYF(0), sdb_field_name(field));
+          goto error;
+        }
+      } else if (!field->maybe_null()) {
+        if (!(field->flags & AUTO_INCREMENT_FLAG)) {
+          append_zero_value(set_builder, field);
+        } else {
+          // inc_builder.append(sdb_field_name(field), get_inc_option(option));
+        }
       }
     }
-  }
 
-  // 3.Handle the changed_columns
-  changed_it.init(changed_columns);
-  while ((info = changed_it++)) {
-    if (strcmp(sdb_field_name(info->before), sdb_field_name(info->after))) {
-      rc = HA_ERR_WRONG_COMMAND;
-      my_printf_error(
-          rc, "Cannot change column name case. Try '%s' instead of '%s'.",
-          MYF(0), sdb_field_name(info->before), sdb_field_name(info->after));
-      goto error;
+    // 3.Handle the changed_columns
+    changed_it.init(changed_columns);
+    while ((info = changed_it++)) {
+      if (strcmp(sdb_field_name(info->before), sdb_field_name(info->after))) {
+        rc = HA_ERR_WRONG_COMMAND;
+        my_printf_error(
+            rc, "Cannot change column name case. Try '%s' instead of '%s'.",
+            MYF(0), sdb_field_name(info->before), sdb_field_name(info->after));
+        goto error;
+      }
+
+      if (info->op_flag & Col_alter_info::CHANGE_DATA_TYPE &&
+          !info->cast_rule.isEmpty()) {
+        cast_builder.appendElements(info->cast_rule);
+      }
+
+      if (info->op_flag & Col_alter_info::FAST_SHORTEN) {
+        // In strict mode, some type can fastly shortened by checking bound.
+        // Because data is always the same after alteration.
+        DBUG_ASSERT(is_strict_mode(sql_mode));
+
+        bson::BSONObj result;
+        rc = cl.query_one(result, info->check_bound_cond, SDB_EMPTY_BSON,
+                          SDB_EMPTY_BSON, hint);
+        if (0 == rc) {
+          rc = ER_WARN_DATA_OUT_OF_RANGE;
+          my_printf_error(rc, ER(ER_WARN_DATA_OUT_OF_RANGE), MYF(0),
+                          sdb_field_name(info->before), 1);
+          goto error;
+        } else if (SDB_DMS_EOC == get_sdb_code(rc)) {
+          rc = 0;
+        } else {
+          goto error;
+        }
+      }
+
+      if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL) {
+        const char *field_name = sdb_field_name(info->after);
+
+        if (count > sdb_alter_table_overhead_threshold(thd)) {
+          rc = HA_ERR_WRONG_COMMAND;
+          my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);
+          goto error;
+        }
+
+        if (is_strict_mode(sql_mode)) {
+          // As data cannot be changed in strict mode, we can just check
+          // whether NULL data exists.
+          // { a: { $isnull: 1 } }
+          bson::BSONObjBuilder cond_builder;
+          bson::BSONObjBuilder sub_cond(cond_builder.subobjStart(field_name));
+          sub_cond.append("$isnull", 1);
+          sub_cond.done();
+          bson::BSONObj result;
+          rc = cl.query_one(result, cond_builder.obj(), SDB_EMPTY_BSON,
+                            SDB_EMPTY_BSON, hint);
+          if (0 == rc) {
+            my_error(ER_INVALID_USE_OF_NULL, MYF(0));
+            rc = ER_INVALID_USE_OF_NULL;
+            goto error;
+          } else if (SDB_DMS_EOC == get_sdb_code(rc)) {
+            rc = 0;
+          } else {
+            goto error;
+          }
+
+        } else {
+          longlong modified_num = 0;
+          if (!conn->is_transaction_on()) {
+            rc = conn->begin_transaction(thd);
+            if (rc != 0) {
+              goto error;
+            }
+          }
+          rc = update_null_to_notnull(cl, info->before, modified_num, hint);
+          if (rc != 0) {
+            goto error;
+          }
+          for (longlong i = 1; i <= modified_num; ++i) {
+            push_warning_printf(thd, Sql_condition::SL_WARNING,
+                                ER_WARN_NULL_TO_NOTNULL,
+                                ER(ER_WARN_NULL_TO_NOTNULL), field_name, i);
+          }
+#ifndef DBUG_OFF
+          // In this case, SQL layer asserts no error status if rc == 0.
+          // So clear the error status.
+          if (!sdb_use_transaction) {
+            thd->clear_error();
+          }
+#endif
+        }
+      }
     }
 
-    if (info->op_flag & Col_alter_info::CHANGE_DATA_TYPE &&
-        !info->cast_rule.isEmpty()) {
-      cast_builder.appendElements(info->cast_rule);
+    // 4.Full table update
+    if (unset_builder.len() > EMPTY_BUILDER_LEN) {
+      builder.append("$unset", unset_builder.obj());
     }
+    if (set_builder.len() > EMPTY_BUILDER_LEN) {
+      builder.append("$set", set_builder.obj());
+    }
+    /*if (inc_builder.len() > EMPTY_BUILDER_LEN) {
+      builder.append("$inc", inc_builder.obj());
+    }
+    if (cast_builder.len() > EMPTY_BUILDER_LEN) {
+      builder.append("$cast", cast_builder.obj());
+    }*/
 
-    if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL) {
-      const char *field_name = sdb_field_name(info->after);
-      longlong modified_num = 0;
+    if (builder.len() > EMPTY_BUILDER_LEN) {
       if (count > sdb_alter_table_overhead_threshold(thd)) {
         rc = HA_ERR_WRONG_COMMAND;
         my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);
@@ -1105,130 +1329,83 @@ int ha_sdb::alter_column(TABLE *altered_table,
           goto error;
         }
       }
-      rc = update_null_to_notnull(cl, info->before, modified_num, hint);
+      rc = cl.update(builder.obj(), SDB_EMPTY_BSON, hint,
+                     UPDATE_KEEP_SHARDINGKEY);
       if (rc != 0) {
         goto error;
       }
-      if (modified_num > 0) {
-        if (is_strict_mode(ha_thd()->variables.sql_mode) &&
-            sdb_use_transaction) {
-          my_error(ER_INVALID_USE_OF_NULL, MYF(0));
-          rc = ER_INVALID_USE_OF_NULL;
-          goto error;
+    }
+
+    if (conn->is_transaction_on()) {
+      rc = conn->commit_transaction();
+      if (rc != 0) {
+        goto error;
+      }
+    }
+
+    /*if (ha_alter_info->handler_flags &
+         ALTER_STORED_COLUMN_TYPE) {
+      bson::BSONObj result;
+      rc = conn->get_last_result_obj(result);
+      if (rc != 0) {
+        goto error;
+      }
+      if (has_warnings) {
+        if (is_strict_mode(ha_thd()->variables.sql_mode)) {
+          //push_warnings...
         } else {
-          for (longlong i = 1; i <= modified_num; ++i) {
-            push_warning_printf(thd, Sql_condition::SL_WARNING,
-                                ER_WARN_NULL_TO_NOTNULL,
-                                ER(ER_WARN_NULL_TO_NOTNULL), field_name, i);
-          }
-          // in strict mode, can't just print warnings, must clear error status
-          if (!sdb_use_transaction &&
-              is_strict_mode(ha_thd()->variables.sql_mode)) {
-            thd->clear_error();
-          }
+          //print and return error
+        }
+      }
+    }*/
+
+    // 5.Create and drop auto-increment.
+    dropped_it.rewind();
+    while ((field = dropped_it++)) {
+      if (field->flags & AUTO_INCREMENT_FLAG) {
+        rc = cl.drop_auto_increment(sdb_field_name(field));
+        if (0 != rc) {
+          goto error;
         }
       }
     }
-  }
 
-  // 4.Full table update
-  if (unset_builder.len() > EMPTY_BUILDER_LEN) {
-    builder.append("$unset", unset_builder.obj());
-  }
-  if (set_builder.len() > EMPTY_BUILDER_LEN) {
-    builder.append("$set", set_builder.obj());
-  }
-  /*if (inc_builder.len() > EMPTY_BUILDER_LEN) {
-    builder.append("$inc", inc_builder.obj());
-  }
-  if (cast_builder.len() > EMPTY_BUILDER_LEN) {
-    builder.append("$cast", cast_builder.obj());
-  }*/
-
-  if (builder.len() > EMPTY_BUILDER_LEN) {
-    if (count > sdb_alter_table_overhead_threshold(thd)) {
-      rc = HA_ERR_WRONG_COMMAND;
-      my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);
-      goto error;
-    }
-    if (!conn->is_transaction_on()) {
-      rc = conn->begin_transaction(thd);
-      if (rc != 0) {
-        goto error;
-      }
-    }
-    rc =
-        cl.update(builder.obj(), SDB_EMPTY_BSON, hint, UPDATE_KEEP_SHARDINGKEY);
-    if (rc != 0) {
-      goto error;
-    }
-  }
-
-  if (conn->is_transaction_on()) {
-    rc = conn->commit_transaction();
-    if (rc != 0) {
-      goto error;
-    }
-  }
-
-  /*if (ha_alter_info->handler_flags &
-       ALTER_STORED_COLUMN_TYPE) {
-    bson::BSONObj result;
-    rc = conn->get_last_result_obj(result);
-    if (rc != 0) {
-      goto error;
-    }
-    if (has_warnings) {
-      if (is_strict_mode(ha_thd()->variables.sql_mode)) {
-        //push_warnings...
-      } else {
-        //print and return error
-      }
-    }
-  }*/
-
-  // 5.Create and drop auto-increment.
-  dropped_it.rewind();
-  while ((field = dropped_it++)) {
-    if (field->flags & AUTO_INCREMENT_FLAG) {
-      rc = cl.drop_auto_increment(sdb_field_name(field));
-      if (0 != rc) {
-        goto error;
-      }
-    }
-  }
-
-  added_it.rewind();
-  while ((field = added_it++)) {
-    if (field->flags & AUTO_INCREMENT_FLAG) {
-      bson::BSONObj option;
-      build_auto_inc_option(field, create_info, option);
-      rc = cl.create_auto_increment(option);
-      if (0 != rc) {
-        goto error;
-      }
-    }
-  }
-
-  changed_it.rewind();
-  while ((info = changed_it++)) {
-    if (info->op_flag & Col_alter_info::DROP_AUTO_INC) {
-      rc = cl.drop_auto_increment(sdb_field_name(info->before));
-      if (0 != rc) {
-        goto error;
+    added_it.rewind();
+    while ((field = added_it++)) {
+      if (field->flags & AUTO_INCREMENT_FLAG) {
+        bson::BSONObj option;
+        build_auto_inc_option(field, create_info, option);
+        rc = cl.create_auto_increment(option);
+        if (0 != rc) {
+          goto error;
+        }
       }
     }
 
-    if (info->op_flag & Col_alter_info::ADD_AUTO_INC) {
-      bson::BSONObj option;
-      build_auto_inc_option(info->after, create_info, option);
-      rc = cl.create_auto_increment(option);
-      if (0 != rc) {
-        goto error;
+    changed_it.rewind();
+    while ((info = changed_it++)) {
+      if (info->op_flag & Col_alter_info::DROP_AUTO_INC) {
+        rc = cl.drop_auto_increment(sdb_field_name(info->before));
+        if (0 != rc) {
+          goto error;
+        }
+      }
+
+      if (info->op_flag & Col_alter_info::ADD_AUTO_INC) {
+        bson::BSONObj option;
+        build_auto_inc_option(info->after, create_info, option);
+        rc = cl.create_auto_increment(option);
+        if (0 != rc) {
+          goto error;
+        }
       }
     }
-  }
 
+  } catch (std::bad_alloc) {
+    rc = HA_ERR_OUT_OF_MEM;
+    my_error(HA_ERR_OUT_OF_MEM, MYF(0));
+    goto error;
+  }
 done:
   return rc;
 error:
@@ -1326,6 +1503,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     bool found_col = false;
     for (uint j = 0; altered_table->field[j]; j++) {
       bson::BSONObjBuilder cast_builder;
+      bson::BSONObjBuilder cond_builder;
       Field *new_field = altered_table->field[j];
       if (!matched_map.is_set(j) &&
           my_strcasecmp(system_charset_info, sdb_field_name(old_field),
@@ -1343,13 +1521,18 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
 
         int op_flag = 0;
         if (sdb_is_type_diff(old_field, new_field)) {
-          if (get_cast_rule(cast_builder, old_field, new_field)) {
+          if (0 == get_cast_rule(cast_builder, old_field, new_field)) {
+            op_flag |= Col_alter_info::CHANGE_DATA_TYPE;
+          } else if (is_strict_mode(sql_mode) &&
+                     !get_check_bound_cond(old_field, new_field,
+                                           cond_builder)) {
+            op_flag |= Col_alter_info::FAST_SHORTEN;
+          } else {
             ha_alter_info->unsupported_reason =
                 "Can't do such type conversion.";
             rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
             goto error;
           }
-          op_flag |= Col_alter_info::CHANGE_DATA_TYPE;
         }
 
         bool old_is_auto_inc = (old_field->flags & AUTO_INCREMENT_FLAG);
@@ -1389,6 +1572,7 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
           info->after = new_field;
           info->op_flag = op_flag;
           info->cast_rule = cast_builder.obj();
+          info->check_bound_cond = cond_builder.obj();
           ctx->changed_columns.push_back(info);
         }
         break;
