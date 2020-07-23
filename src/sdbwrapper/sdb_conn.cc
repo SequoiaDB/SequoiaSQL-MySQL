@@ -126,8 +126,7 @@ int Sdb_conn::connect() {
           case SDB_AUTH_USER_NOT_EXIST:
             SDB_LOG_ERROR(
                 "User specified is not exist, you can add the user by "
-                "sdbpasswd "
-                "tool, rc=%d",
+                "sdbpasswd tool, rc=%d",
                 rc);
             break;
           case SDB_PERM:

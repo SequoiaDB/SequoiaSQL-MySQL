@@ -364,7 +364,7 @@ bool sdb_is_transaction_stmt(THD *thd, bool all) {
 }
 
 bool sdb_is_single_table(THD *thd) {
-    return (1 == thd->lex->table_count);
+  return (1 == thd->lex->table_count);
 }
 
 void sdb_query_cache_invalidate(THD *thd, bool all) {
@@ -696,7 +696,7 @@ bool sdb_is_transaction_stmt(THD *thd, bool all) {
 }
 
 bool sdb_is_single_table(THD *thd) {
-    return thd->lex->query_tables && !thd->lex->query_tables->next_global;
+  return thd->lex->query_tables && !thd->lex->query_tables->next_global;
 }
 
 bool sdb_create_table_like(THD *thd) {
