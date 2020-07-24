@@ -72,13 +72,16 @@ a
 10
 SET sql_mode = "STRICT_ALL_TABLES";
 ALTER TABLE t2 change a a INT NOT NULL;
-SHOW WARNINGS;
-Level	Code	Message
-Error	1263	Column set to default value; NULL supplied to NOT NULL column 'a' at row 1
+ERROR 22004: Invalid use of NULL value
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `a` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY a;
 a
+NULL
 -1
-0
 0
 1
 10
