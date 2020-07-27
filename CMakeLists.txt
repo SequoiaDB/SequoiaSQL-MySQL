@@ -147,7 +147,7 @@ function(gen_version_file)
       set(BUILD_TYPE_STR " (${BUILD_TYPE_STR})")
    endif()
 
-   set(FULL_VERSION "${PROJECT_NAME} version: ${SDB_VERSION}\nGit version: ${SDB_PLUGIN_VERSION}\n${BUILDDATE}${BUILD_TYPE_STR}\n\nSDB driver: ${SDB_VERSION}(${SDB_GIT_VERSION})\n")
+   set(FULL_VERSION "${PROJECT_NAME} version: ${SDB_VERSION}\nGit version: ${SDB_PLUGIN_VERSION}\nSDB driver: ${SDB_VERSION}(${SDB_GIT_VERSION})\n${BUILDDATE}${BUILD_TYPE_STR}\n")
    file(WRITE ${CMAKE_BINARY_DIR}/version.info ${FULL_VERSION})
    file(WRITE ${CMAKE_SOURCE_DIR}/version ${SDB_VERSION})
 endfunction()
