@@ -91,6 +91,7 @@ class ha_sdb_cond_ctx : public Sql_alloc {
   Sdb_item *cur_item;
   List<Sdb_item> item_list;
   SDB_COND_STATUS status;
+  bool has_null_func;
 
  public:
   THD *thd;
