@@ -2329,6 +2329,32 @@ done:
   DBUG_RETURN(optimizer_delete);
 }
 
+/*
+  Using direct_count to improve the efficiency of select count() from xxx.
+
+  SYNOPSIS
+    ha_sdb::optimize_count()
+      condition    the condition of select count.
+
+  DESCRIPTION
+    The function will detect the select count SQL and use direct_count as much
+    as possible to improve the count efficiency.
+
+  NOTES
+    Only support the following cases:
+    1 tables <= 1.
+    2 without subqueries.
+    3 without order by.
+    4 without group by.
+    5 do not use multi range read.
+    6 without is null or not null.
+    7 count not support expresion.
+    8 not enable optimize_with_materialization.
+      
+
+  RETURN
+    return TRUE if do direct_count.
+*/
 bool ha_sdb::optimize_count(bson::BSONObj &condition) {
   DBUG_ENTER("ha_sdb::optimize_count()");
   bson::BSONObjBuilder count_cond_blder;
@@ -2341,10 +2367,13 @@ bool ha_sdb::optimize_count(bson::BSONObj &condition) {
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   count_query = false;
-  if (select->table_list.elements == 1 && lex->all_selects_list &&
-      !lex->all_selects_list->next_select_in_list() &&
-      !sdb_where_condition(ha_thd()) && !order && !group &&
-      optimize_with_materialization) {
+  if (select->table_list.elements == 1 && lex->all_selects_list && !order &&
+      sdb_tables_in_join(select->join) <= 1 && !group &&
+      optimize_with_materialization &&
+      !lex->all_selects_list->next_select_in_list() && !mrr_have_range &&
+      (SDB_COND_UNCALLED == sdb_condition->status ||
+       SDB_COND_SUPPORTED == sdb_condition->status) &&
+      !sdb_condition->has_null_func) {
     List_iterator<Item> li(select->item_list);
     Item *item;
     while ((item = li++)) {
@@ -2364,14 +2393,14 @@ bool ha_sdb::optimize_count(bson::BSONObj &condition) {
           }
         }
         /* support count(const) and count(field), not support count(func) */
-        if (type == Item::FIELD_ITEM || sum_item->const_item()) {
+        if (type == Item::FIELD_ITEM) {
           count_query = true;
           count_cond_blder.append(sdb_item_name(sum_item->get_arg(0)),
                                   BSON("$isnull" << 0));
 #if defined IS_MYSQL
-        } else if (type == Item::INT_ITEM) {
+        } else if (type == Item::INT_ITEM || sum_item->const_item()) {
 #elif defined IS_MARIADB
-        } else if (type == Item::CONST_ITEM) {
+        } else if (type == Item::CONST_ITEM || sum_item->const_item()) {
 #endif
           // count(*)
           count_query = true;
@@ -2806,6 +2835,7 @@ int ha_sdb::rnd_init(bool scan) {
   DBUG_ENTER("ha_sdb::rnd_init()");
   int rc = SDB_ERR_OK;
   first_read = true;
+  count_query = false;
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }

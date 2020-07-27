@@ -404,6 +404,10 @@ bool sdb_table_has_gcol(TABLE *table) {
   return table->has_gcol();
 }
 
+uint sdb_tables_in_join(JOIN *join) {
+  return join->tables;
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -762,6 +766,10 @@ void sdb_query_cache_invalidate(THD *thd, bool all) {
 
 bool sdb_table_has_gcol(TABLE *table) {
   return table->vfield;
+}
+
+uint sdb_tables_in_join(JOIN *join) {
+  return join->table_count;
 }
 
 #endif
