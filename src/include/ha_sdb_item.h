@@ -48,7 +48,13 @@ class Sdb_item : public Sql_alloc {
 
 class Sdb_logic_item : public Sdb_item {
  public:
-  Sdb_logic_item() { is_ok = TRUE; }
+  Sdb_logic_item() {
+    is_ok = TRUE;
+    obj_num_cur = 0;
+    obj_num_min = 1;
+  }
+
+  int rebuild_bson(bson::BSONObj &obj); 
   virtual int push_sdb_item(Sdb_item *cond_item);
   virtual int push_item(Item *cond_item);
   virtual int to_bson(bson::BSONObj &obj);
@@ -58,6 +64,8 @@ class Sdb_logic_item : public Sdb_item {
  protected:
   bson::BSONArrayBuilder children;
   bool is_ok;
+  int obj_num_cur;
+  int obj_num_min;
 };
 
 class Sdb_and_item : public Sdb_logic_item {

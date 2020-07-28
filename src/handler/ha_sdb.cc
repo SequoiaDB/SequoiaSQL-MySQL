@@ -2645,7 +2645,7 @@ error:
   goto done;
 }
 
-bool sdb_can_push_down_limit(THD *thd, bson::BSONObj &condition) {
+bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition) {
   SELECT_LEX *const select_lex = sdb_lex_first_select(thd);
   JOIN *const join = select_lex->join;
   /* if the following conditions are included, cannot pushdown limit:
@@ -2660,7 +2660,8 @@ bool sdb_can_push_down_limit(THD *thd, bson::BSONObj &condition) {
   */
   const bool use_where_condition = sdb_where_condition(thd);
   const bool use_having_condition = sdb_having_condition(thd);
-  const bool where_cond_push = use_where_condition && !condition.isEmpty();
+  const bool where_cond_push =
+      use_where_condition && SDB_COND_SUPPORTED == sdb_condition->status;
   const bool use_group = join->group_list ? true : false;
   const bool use_filesort = sdb_use_filesort(thd);
   const bool use_distinct = sdb_use_distinct(thd);
@@ -2740,7 +2741,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
         sdb_is_single_table(ha_thd())) {
-      if (sdb_can_push_down_limit(ha_thd(), condition)) {
+      if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
         num_to_return = select_lex->get_limit();
         if (select_lex->offset_limit) {
           num_to_skip = select_lex->get_offset();
@@ -3336,7 +3337,7 @@ int ha_sdb::rnd_next(uchar *buf) {
       const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
       if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
           sdb_is_single_table(ha_thd())) {
-        if (sdb_can_push_down_limit(ha_thd(), condition)) {
+        if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
           num_to_return = select_lex->get_limit();
           if (select_lex->offset_limit) {
             num_to_skip = select_lex->get_offset();
@@ -5072,7 +5073,8 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     sdb_condition->status = SDB_COND_UNSUPPORTED;
   }
 
-  if (SDB_COND_SUPPORTED == sdb_condition->status) {
+  if (SDB_COND_SUPPORTED == sdb_condition->status ||
+      SDB_COND_PART_SUPPORTED == sdb_condition->status) {
     // TODO: build unanalysable condition
     remain_cond = NULL;
   } else {

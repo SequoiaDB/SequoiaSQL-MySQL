@@ -25,6 +25,7 @@
 #include "ha_sdb_errcode.h"
 #include "ha_sdb_util.h"
 #include "ha_sdb_def.h"
+#include "ha_sdb_log.h"
 
 #ifdef IS_MYSQL
 #include <json_dom.h>
@@ -63,6 +64,38 @@ error:
   return true;
 }
 
+int Sdb_logic_item::rebuild_bson(bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObj tmp_obj;
+  bson::BSONElement elem;
+  elem = obj.getField(this->name());
+  try {
+    tmp_obj = elem.embeddedObject().copy();
+    if (tmp_obj.isEmpty()) {
+      obj = SDB_EMPTY_BSON;
+      goto done;
+    }
+    bson::BSONObjIterator it(tmp_obj);
+    while (it.more()) {
+      elem = it.next();
+      if (elem.type() == bson::Object) {
+        obj = elem.embeddedObject().copy();
+        break;
+      }
+    }
+  } catch (bson::assertion e) {
+    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
+    DBUG_ASSERT(0);
+    rc = SDB_ERR_BUILD_BSON;
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int Sdb_logic_item::push_sdb_item(Sdb_item *cond_item) {
   DBUG_ENTER("Sdb_logic_item::push_sdb_item()");
   int rc = 0;
@@ -85,7 +118,17 @@ int Sdb_logic_item::push_sdb_item(Sdb_item *cond_item) {
     goto error;
   }
   delete cond_item;
-  children.append(obj_tmp.copy());
+  if (!obj_tmp.isEmpty()) {
+    obj_num_cur++;
+    try {
+      children.append(obj_tmp.copy());
+    } catch (bson::assertion e) {
+      SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
+      DBUG_ASSERT(0);
+      rc = SDB_ERR_BUILD_BSON;
+      goto error;
+    }
+  }
 
 done:
   DBUG_RETURN(rc);
@@ -105,19 +148,63 @@ int Sdb_logic_item::push_item(Item *cond_item) {
 int Sdb_logic_item::to_bson(bson::BSONObj &obj) {
   DBUG_ENTER("Sdb_logic_item::to_bson()");
   int rc = SDB_ERR_OK;
-  if (is_ok) {
-    obj = BSON(this->name() << children.arr());
-  } else {
+  if (!is_ok) {
     rc = SDB_ERR_COND_INCOMPLETED;
+    goto error;
   }
+  if (0 == obj_num_cur) {
+    goto done;
+  }
+  try {
+    obj = BSON(this->name() << children.arr());
+  } catch (bson::assertion e) {
+    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
+    DBUG_ASSERT(0);
+    rc = SDB_ERR_BUILD_BSON;
+    goto error;
+  }
+  if (obj_num_cur <= obj_num_min) {
+    rc = rebuild_bson(obj);
+    if(rc) {
+      goto error;
+    }
+  }
+
+done:
   DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 int Sdb_and_item::to_bson(bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
   DBUG_ENTER("Sdb_and_item::to_bson()");
-  obj = BSON(this->name() << children.arr());
+
+  if (0 == obj_num_cur) {
+    goto done;
+  }
+  try {
+    obj = BSON(this->name() << children.arr());
+  } catch (bson::assertion e) {
+    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.",
+        e.full.c_str());
+    DBUG_ASSERT(0);
+    rc = SDB_ERR_BUILD_BSON;
+    goto error;
+  }
+  if (obj_num_cur <= obj_num_min) {
+    rc = rebuild_bson(obj);
+    if(rc) {
+      goto error;
+    }
+  }
+
   DBUG_PRINT("ha_sdb:info", ("sdb and item to bson, name:%s", this->name()));
-  DBUG_RETURN(SDB_ERR_OK);
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 Sdb_func_item::Sdb_func_item() : para_num_cur(0), para_num_max(1) {
