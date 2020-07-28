@@ -613,7 +613,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
       (HA_REC_NOT_IN_SEQ | HA_NO_READ_LOCAL_LOCK | HA_BINLOG_ROW_CAPABLE |
        HA_BINLOG_STMT_CAPABLE | HA_TABLE_SCAN_ON_INDEX | HA_NULL_IN_KEY |
        HA_CAN_INDEX_BLOBS | HA_AUTO_PART_KEY | HA_DUPLICATE_POS |
-       HA_CAN_TABLE_CONDITION_PUSHDOWN | HA_CAN_REPAIR | HA_GENERATED_COLUMNS);
+       HA_CAN_TABLE_CONDITION_PUSHDOWN | HA_CAN_REPAIR | HA_GENERATED_COLUMNS |
+       HA_CAN_GEOMETRY);
 
   m_table_flags |= (sdb_use_transaction ? 0 : HA_NO_TRANSACTIONS);
 
@@ -1131,7 +1132,8 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
     case MYSQL_TYPE_TINY_BLOB:
     case MYSQL_TYPE_MEDIUM_BLOB:
     case MYSQL_TYPE_LONG_BLOB:
-    case MYSQL_TYPE_BLOB: {
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_GEOMETRY: {
       String val_tmp;
       if (MYSQL_TYPE_SET == field->real_type() ||
           MYSQL_TYPE_ENUM == field->real_type()) {
@@ -3063,7 +3065,8 @@ bool ha_sdb::check_element_type_compatible(bson::BSONElement &elem,
     case MYSQL_TYPE_TINY_BLOB:
     case MYSQL_TYPE_MEDIUM_BLOB:
     case MYSQL_TYPE_LONG_BLOB:
-    case MYSQL_TYPE_BLOB: {
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_GEOMETRY: {
       if (((Field_str *)field)->binary()) {
         compatible = (elem.type() == bson::BinData);
       } else {

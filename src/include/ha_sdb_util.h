@@ -82,6 +82,8 @@ int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hintBuilder);
 
 int sdb_add_pfs_clientinfo(THD *thd);
 
+bool sdb_is_geom_type_diff(Field *old_field, Field *new_field);
+
 bool sdb_is_type_diff(Field *old_field, Field *new_field);
 
 #ifdef IS_MYSQL

@@ -70,7 +70,8 @@ static my_bool is_field_indexable(const Field *field) {
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_VAR_STRING:
-    case MYSQL_TYPE_BLOB: {
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_GEOMETRY: {
       if (!field->binary()) {
         return true;
       } else {

@@ -703,6 +703,26 @@ int sdb_add_pfs_clientinfo(THD *thd) {
   return rc;
 }
 
+/*
+ * check if two MYSQL_TYPE_GEOMETRY fiels's geom type same or not.
+ * @return, FALSE if same, do inplace alter. TRUE if diff, do copy alter.
+ */
+bool sdb_is_geom_type_diff(Field *old_field, Field *new_field) {
+  bool rs = FALSE;
+  if (MYSQL_TYPE_GEOMETRY == old_field->real_type() &&
+      MYSQL_TYPE_GEOMETRY == new_field->real_type()) {
+    Field_geom *old_geom_field = (Field_geom *)old_field;
+    Field_geom *new_geom_field = (Field_geom *)new_field;
+    if (old_geom_field->get_geometry_type() !=
+        new_geom_field->get_geometry_type()) {
+      rs = TRUE;
+      goto done;
+    }
+  }
+done:
+  return rs;
+}
+
 bool sdb_is_type_diff(Field *old_field, Field *new_field) {
   bool rs = true;
   if (old_field->real_type() != new_field->real_type()) {
@@ -778,6 +798,10 @@ bool sdb_is_type_diff(Field *old_field, Field *new_field) {
       }
       break;
     }
+    case MYSQL_TYPE_GEOMETRY:
+      if (sdb_is_geom_type_diff(old_field, new_field)) {
+        goto done;
+      }
     default: {
       if (!old_field->eq_def(new_field)) {
         goto done;

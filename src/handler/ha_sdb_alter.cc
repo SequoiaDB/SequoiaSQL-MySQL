@@ -51,7 +51,7 @@ static const alter_table_operations INPLACE_ONLINE_OPERATIONS =
     ALTER_COLUMN_STORAGE_TYPE | ALTER_COLUMN_COLUMN_FORMAT |
     ALTER_RECREATE_TABLE;
 
-static const int SDB_TYPE_NUM = 23;
+static const int SDB_TYPE_NUM = 24;
 static const uint INT_TYPE_NUM = 5;
 static const enum_field_types INT_TYPES[INT_TYPE_NUM] = {
     MYSQL_TYPE_TINY, MYSQL_TYPE_SHORT, MYSQL_TYPE_INT24, MYSQL_TYPE_LONG,
@@ -655,78 +655,91 @@ class Cast_enum2enum : public I_build_cast_rule {
 
 Cast_enum2enum e2e;
 
+class Cast_geom2geom : public I_build_cast_rule {
+ public:
+  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
+                  Field *new_field) {
+    return sdb_is_geom_type_diff(old_field, new_field);
+  }
+};
+
+Cast_geom2geom g2g;
+
 I_build_cast_rule *build_cast_funcs[SDB_TYPE_NUM][SDB_TYPE_NUM] = {
     /* 00,   01,   02,   03,   04,   05,   06,   07,   08,   09,   10,   11,
-       12,   13,   14,   15,   16,   17,   18,   19,   20,   21,   22 */
+       12,   13,   14,   15,   16,   17,   18,   19,   20,   21,   22,   23 */
     /*00 TINY*/
     {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
-     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai, &fai},
     /*01 SHORT*/
     {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
-     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai, &fai},
     /*02 INT24*/
     {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
-     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai, &fai},
     /*03 LONG*/
     {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
-     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai, &fai},
     /*04 LONGLONG*/
     {&i2i, &i2i, &i2i, &i2i, &i2i, &i2f, &i2f, &i2d, &fai, &fai, &fai, &fai,
-     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai},
+     &fai, &fai, &i2b, &fai, &fai, &fai, &fai, &fai, &i2s, &i2e, &fai, &fai},
     /*05 FLOAT*/
     {&f2i, &f2i, &f2i, &f2i, &f2i, &f2f, &f2f, &f2d, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*06 DOUBLE*/
     {&f2i, &f2i, &f2i, &f2i, &f2i, &f2f, &f2f, &f2d, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*07 DECIMAL*/
     {&d2i, &d2i, &d2i, &d2i, &d2i, &fai, &fai, &d2d, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*08 STRING*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c, &c2c,
-     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c},
     /*09 VAR_STRING*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c,
-     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c},
     /*10 TINY_BLOB*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c,
-     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c},
     /*11 BLOB*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c,
-     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c},
     /*12 MEDIUM_BLOB*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c,
-     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c},
     /*13 LONG_BLOB*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c,
-     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c},
     /*14 BIT*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &b2b, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &fai, &fai, &b2b, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*15 YEAR*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &suc, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
+     &fai, &fai, &fai, &suc, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*16 TIME*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &t2t, &fai, &fai, &fai, &fai, &fai, &fai},
+     &fai, &fai, &fai, &fai, &t2t, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*17 DATE*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &suc, &fai, &fai, &fai, &fai, &fai},
+     &fai, &fai, &fai, &fai, &fai, &suc, &fai, &fai, &fai, &fai, &fai, &fai},
     /*18 DATETIME*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &m2m, &fai, &fai, &fai, &fai},
+     &fai, &fai, &fai, &fai, &fai, &fai, &m2m, &fai, &fai, &fai, &fai, &fai},
     /*19 TIMESTAMP*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &p2p, &fai, &fai, &fai},
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &p2p, &fai, &fai, &fai, &fai},
     /*20 SET*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &s2s, &fai, &fai},
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &s2s, &fai, &fai, &fai},
     /*21 ENUM*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &e2e, &fai},
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &e2e, &fai, &fai},
     /*22 JSON*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &suc}};
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &suc, &fai},
+    /*23 GEOMETRY*/
+    {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &c2c, &c2c, &c2c,
+     &c2c, &c2c, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &g2g}};
 
 int get_type_idx(enum enum_field_types type) {
   switch (type) {
@@ -784,6 +797,8 @@ int get_type_idx(enum enum_field_types type) {
     case MYSQL_TYPE_JSON:
       return 22;
 #endif
+    case MYSQL_TYPE_GEOMETRY:
+      return 23;
     default: {
       // impossible types
       DBUG_ASSERT(false);
@@ -877,7 +892,8 @@ int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
       field->store(org_val.ptr(), org_val.length(), org_val.charset());
       break;
     }
-    case MYSQL_TYPE_BLOB: {
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_GEOMETRY: {
 #ifdef IS_MYSQL
       // These types never have default.
       DBUG_ASSERT(0);
@@ -933,7 +949,8 @@ void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
     case MYSQL_TYPE_TINY_BLOB:
     case MYSQL_TYPE_MEDIUM_BLOB:
     case MYSQL_TYPE_LONG_BLOB:
-    case MYSQL_TYPE_BLOB: {
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_GEOMETRY: {
       if (!field->binary()) {
         builder.append(sdb_field_name(field), "");
       } else {
