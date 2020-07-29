@@ -379,9 +379,6 @@ select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 0;
 max(c2)
 Warnings:
 Warning	1931	Query execution was interrupted. The query examined at least 1 rows, which exceeds LIMIT ROWS EXAMINED (0). The query result may be incomplete
-select count(c2) from t3 LIMIT ROWS EXAMINED 5;
-count(c2)
-5
 select count(c2) from t3 LIMIT ROWS EXAMINED 6;
 count(c2)
 5
