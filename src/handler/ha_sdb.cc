@@ -3833,7 +3833,7 @@ int ha_sdb::autocommit_statement(bool direct_op) {
                     conn->get_pushed_autocommit());
     }
 
-    rc = conn->begin_transaction(ha_thd());
+    rc = conn->begin_transaction(ha_thd()->tx_isolation);
     if (rc != 0) {
       goto done;
     }
@@ -3890,7 +3890,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
       thd_get_thd_sdb(thd)->set_auto_commit(false);
       if (!conn->is_transaction_on()) {
-        rc = conn->begin_transaction(thd);
+        rc = conn->begin_transaction(thd->tx_isolation);
         if (rc != 0) {
           goto error;
         }

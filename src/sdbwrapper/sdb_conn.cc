@@ -42,7 +42,8 @@ Sdb_conn::Sdb_conn(my_thread_id _tid)
     : m_transaction_on(false),
       m_thread_id(_tid),
       pushed_autocommit(false),
-      m_is_authenticated(false) {
+      m_is_authenticated(false),
+      m_use_transaction(sdb_use_transaction){
   // default is RR.
   last_tx_isolation = SDB_TRANS_ISO_RR;
 }
@@ -147,7 +148,7 @@ int Sdb_conn::connect() {
     snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
              strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
              (ulonglong)thread_id());
-    bool auto_commit = sdb_use_transaction ? true : false;
+    bool auto_commit = m_use_transaction ? true : false;
     option = BSON(SOURCE_THREAD_ID << source_str << TRANSAUTOROLLBACK << false
                                    << TRANSAUTOCOMMIT << auto_commit);
     rc = set_session_attr(option);
@@ -166,7 +167,7 @@ error:
   goto done;
 }
 
-int Sdb_conn::begin_transaction(THD *thd) {
+int Sdb_conn::begin_transaction(uint tx_isolation) {
   DBUG_ENTER("Sdb_conn::begin_transaction");
   int rc = SDB_ERR_OK;
   int retry_times = 2;
@@ -174,11 +175,11 @@ int Sdb_conn::begin_transaction(THD *thd) {
   bson::BSONObj option;
   bson::BSONObjBuilder builder(32);
 
-  if (!sdb_use_transaction) {
+  if (!m_use_transaction) {
     goto done;
   }
 
-  if (ISO_SERIALIZABLE == thd->tx_isolation) {
+  if (ISO_SERIALIZABLE == tx_isolation) {
     rc = HA_ERR_NOT_ALLOWED_COMMAND;
     SDB_PRINT_ERROR(rc,
                     "SequoiaDB engine not support transaction "
@@ -187,8 +188,8 @@ int Sdb_conn::begin_transaction(THD *thd) {
     goto error;
   }
 
-  if (thd->tx_isolation != get_last_tx_isolation()) {
-    tx_iso = convert_to_sdb_isolation(thd->tx_isolation);
+  if (tx_isolation != get_last_tx_isolation()) {
+    tx_iso = convert_to_sdb_isolation(tx_isolation);
     try {
       /* 0: RU; 1: RC; 2:RS; 3:RR */
       builder.append(SDB_FIELD_TRANS_ISO, (int)tx_iso);
@@ -205,7 +206,7 @@ int Sdb_conn::begin_transaction(THD *thd) {
       rc = HA_ERR_INTERNAL_ERROR;
       goto error;
     }
-    set_last_tx_isolation(thd->tx_isolation);
+    set_last_tx_isolation(tx_isolation);
   }
 
   while (!m_transaction_on) {

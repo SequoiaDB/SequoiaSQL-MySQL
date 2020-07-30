@@ -1277,7 +1277,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
             goto error;
           }
           if (!conn->is_transaction_on()) {
-            rc = conn->begin_transaction(thd);
+            rc = conn->begin_transaction(thd->tx_isolation);
             if (rc != 0) {
               goto error;
             }
@@ -1321,7 +1321,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
         goto error;
       }
       if (!conn->is_transaction_on()) {
-        rc = conn->begin_transaction(thd);
+        rc = conn->begin_transaction(thd->tx_isolation);
         if (rc != 0) {
           goto error;
         }

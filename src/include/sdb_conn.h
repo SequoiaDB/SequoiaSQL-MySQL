@@ -43,7 +43,7 @@ class Sdb_conn {
 
   my_thread_id thread_id();
 
-  int begin_transaction(THD *thd);
+  int begin_transaction(uint tx_isolation = ISO_REPEATABLE_READ);
 
   int commit_transaction(const bson::BSONObj &hint = SDB_EMPTY_BSON);
 
@@ -97,13 +97,17 @@ class Sdb_conn {
   inline ulong get_last_tx_isolation() { return last_tx_isolation; }
 
   inline ulong convert_to_sdb_isolation(ulong tx_isolation) {
-    switch (tx_isolation) {
+    static const int HA_TRANS_ISO_RS = 4;
+	switch (tx_isolation) {
       case ISO_READ_UNCOMMITTED:
         return SDB_TRANS_ISO_RU;
         break;
       case ISO_READ_COMMITTED:
         return SDB_TRANS_ISO_RC;
         break;
+	  case HA_TRANS_ISO_RS:
+	  	return SDB_TRANS_ISO_RS;
+		break;
       case ISO_REPEATABLE_READ:
         return SDB_TRANS_ISO_RR;
         break;
@@ -116,6 +120,10 @@ class Sdb_conn {
         DBUG_ASSERT(0);
     }
   }
+  
+  void set_use_transaction(int use_transaction) {
+    m_use_transaction = use_transaction;
+  }
 
  private:
   int retry(boost::function<int()> func);
@@ -127,6 +135,7 @@ class Sdb_conn {
   bool pushed_autocommit;
   ulong last_tx_isolation;
   bool m_is_authenticated;
+  bool m_use_transaction;
 };
 
 #endif

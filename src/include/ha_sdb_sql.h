@@ -196,6 +196,13 @@ void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
 
 void sdb_string_free(String *str);
 
+// About condition variable
+#if defined IS_MYSQL
+#define sdb_mysql_cond_init(K, C, A) mysql_cond_init(K, C)
+#elif defined IS_MARIADB
+#define sdb_mysql_cond_init(K, C, A) mysql_cond_init(K, C, A)
+#endif
+
 // About THD
 my_thread_id sdb_thd_id(THD *thd);
 
@@ -299,10 +306,12 @@ table_map sdb_table_map(TABLE *table);
 bool sdb_has_update_triggers(TABLE *table);
 
 int sdb_aes_encrypt(enum my_aes_mode mode, const uchar *key, uint klen,
-                    const String &src, String &dst);
+                    const String &src, String &dst, const uchar *iv = NULL,
+                    uint ivlen = 0);
 
 int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
-                    const String &src, String &dst);
+                    const String &src, String &dst, const uchar *iv = NULL,
+                    uint ivlen = 0);
 
 uint sdb_aes_get_size(enum my_aes_mode mode, uint slen);
 
@@ -330,4 +339,11 @@ void sdb_query_cache_invalidate(THD *thd, bool all);
 bool sdb_table_has_gcol(TABLE *table);
 
 uint sdb_tables_in_join(JOIN *join);
+
+// About interface
+void sdb_set_timespec(struct timespec &abstime, ulonglong sec);
+
+bool sdb_has_sql_condition(THD * thd, uint sql_errno);
+
+const char *sdb_thd_db(THD *thd);
 #endif

@@ -1,0 +1,29 @@
+--- sql_parse.cc	2020-06-29 10:01:03.282270498 +0800
++++ sql_parse_modified.cc	2020-06-29 10:05:03.190264034 +0800
+@@ -3716,6 +3716,14 @@
+     DEBUG_SYNC(thd,"before_execute_sql_command");
+ #endif
+ 
++  mysql_audit_general(thd, 4,
++                      thd->get_stmt_da()->is_error() ?
++                      thd->get_stmt_da()->sql_errno() : 0,
++                      command_name[COM_QUERY].str);
++  if (thd->check_killed()) {
++  	goto error;
++  }
++
+   /*
+     Check if we are in a read-only transaction and we're trying to
+     execute a statement which should always be disallowed in such cases.
+@@ -6101,6 +6109,11 @@
+   DBUG_ASSERT(!thd->in_active_multi_stmt_transaction() ||
+                thd->in_multi_stmt_transaction_mode());
+ 
++  mysql_audit_general(thd, MYSQL_AUDIT_GENERAL_STATUS,
++                      thd->get_stmt_da()->is_error() ?
++                      thd->get_stmt_da()->sql_errno() : 0,
++                      command_name[COM_QUERY].str);
++
+   lex->unit.cleanup();
+ 
+   /* close/reopen tables that were marked to need reopen under LOCK TABLES */

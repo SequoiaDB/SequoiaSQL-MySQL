@@ -34,6 +34,7 @@ endif()
 include_directories(include)
 aux_source_directory(handler HANDLER_FILES)
 aux_source_directory(sdbwrapper SDB_FILES)
+aux_source_directory(server_ha SERVER_HA_FILES)
 set(SEQUOIADB_SOURCES ${HANDLER_FILES} ${SDB_FILES})
 
 set(WITH_SDB_DRIVER "" CACHE PATH "Path to SequoiaDB C++ driver")
@@ -69,7 +70,14 @@ if(SDB_BUILT_IN)
                    RECOMPILE_FOR_EMBEDDED
                    LINK_LIBRARIES
                    ${SDB_DYNAMIC_LIBRARY})
-
+                   
+  add_compile_options(-Wno-unused-variable -Wno-unused-function -Wno-write-strings -Wno-return-type)
+  mysql_add_plugin(server_ha
+                   ${SERVER_HA_FILES}
+                   MANDATORY
+                   LINK_LIBRARIES
+                   ${SDB_DYNAMIC_LIBRARY}
+                   RECOMPILE_FOR_EMBEDDED)  
   string(FIND "${WITH_MYSQLD_LDFLAGS}" "${SDB_LDFLAGS}" POS)
   if(${POS} EQUAL -1)
     set(WITH_MYSQLD_LDFLAGS "${WITH_MYSQLD_LDFLAGS} ${SDB_LDFLAGS}"
@@ -97,3 +105,63 @@ else()
                    ${SDB_STATIC_LIBRARY})
   set_target_properties(sequoiadb PROPERTIES LINK_FLAGS ${SDB_LDFLAGS})
 endif()
+
+if(WITH_BOOST)
+  # build ha_inst_group_init
+  set(HA_TOOLS_FLAGS "-Wno-unused-value -Wno-missing-field-initializers -Wno-deprecated-declarations -std=c++11")
+  set(HA_TOOLS_INCLUDE "${WITH_BOOST};${SDB_DRIVER_PATH}/include;${CMAKE_CURRENT_SOURCE_DIR}/include")
+  link_directories(${SDB_DRIVER_PATH}/lib)
+  add_executable(ha_inst_group_init tools/ha_inst_group_init.cc tools/ha_tool_utils.cc)
+  set_target_properties(ha_inst_group_init PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
+  set_target_properties(ha_inst_group_init PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
+  target_link_libraries(ha_inst_group_init staticsdbcpp dl pthread ssl crypto)
+  
+  # build ha_inst_group_clear
+  add_executable(ha_inst_group_clear tools/ha_inst_group_clear.cc tools/ha_tool_utils.cc)
+  set_target_properties(ha_inst_group_clear PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
+  set_target_properties(ha_inst_group_clear PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
+  target_link_libraries(ha_inst_group_clear staticsdbcpp dl pthread ssl crypto)
+  
+  # build ha_inst_clear
+  add_executable(ha_inst_clear tools/ha_inst_clear.cc tools/ha_tool_utils.cc)
+  set_target_properties(ha_inst_clear PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
+  set_target_properties(ha_inst_clear PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
+  target_link_libraries(ha_inst_clear staticsdbcpp dl pthread ssl crypto)
+  
+  install(TARGETS ha_inst_group_init ha_inst_group_clear ha_inst_clear
+          RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+endif()
+
+# apply patches for server_ha module
+set(SERVER_HA_PATCHES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/patches")
+if(EXISTS "${SERVER_HA_PATCHES_DIR}")
+  if(SDB_PROJECT_TYPE STREQUAL "mariadb")
+    set(PATCH_FILE "${SERVER_HA_PATCHES_DIR}/ha_mariadb_${MARIADB}.patch")
+    set(DUMP_PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mariadb_mysqldump_${MARIADB}.patch")
+  else()
+    set(PATCH_FILE "${SERVER_HA_PATCHES_DIR}/ha_mysql_${MYSQL}.patch")
+    set(DUMP_PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mysql_mysqldump_${MYSQL}.patch")
+  endif()
+  
+  # apply HA patch file for 'sql_parse.cc'
+  if (EXISTS "${PATCH_FILE}")
+    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/sql/sql_parse.cc")
+    message(STATUS "Apply patch ${PATCH_FILE} on ${APPLY_PATCH_TARGET} for 'server_ha' module")
+    execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/sql" patch -s -N -i ${PATCH_FILE})
+  else()
+    message(FATAL_ERROR "Patch file ${PATCH_FILE} doesn't exist")
+  endif()
+  
+  # apply mysqldump patch file
+  if (EXISTS "${DUMP_PATCH_FILE}")
+    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/client/mysqldump.c")
+    message(STATUS "Apply patch ${DUMP_PATCH_FILE} on ${APPLY_PATCH_TARGET} for 'server_ha' module")
+    execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/client" patch -s -N -i ${DUMP_PATCH_FILE})
+  else()
+    message(FATAL_ERROR "Patch file ${DUMP_PATCH_FILE} doesn't exist")
+  endif()
+else()
+  message(FATAL_ERROR "Can't apply 'server_ha' patch, patch directory 'patches' doesn't exist")
+endif()
+
+

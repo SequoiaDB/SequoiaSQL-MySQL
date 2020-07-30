@@ -1,0 +1,171 @@
+/* Copyright (c) 2018, SequoiaDB and/or its affiliates. All rights reserved.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+
+#ifndef SERVER_HA__H
+#define SERVER_HA__H
+
+#include <my_global.h>
+#include <my_base.h>
+#include <mysql/plugin.h>
+#include <mysql/plugin_audit.h>
+#include <string.h>
+#include <mysql/psi/mysql_thread.h>
+#include "client.hpp"
+#include "server_ha_def.h"
+
+// 'sql_class.h' can be inclued if 'MYSQL_SERVER' is defined
+#ifndef MYSQL_SERVER
+#define MYSQL_SERVER
+#endif
+
+#include "sdb_conn.h"
+
+#ifndef RTLD_DEFAULT
+#define RTLD_DEFAULT NULL
+#endif
+
+#define PLUGIN_VERSION 0x104
+#define PLUGIN_STR_VERSION "0.0.1"
+#define HA_PLUGIN_VAR_OPTIONS \
+  (PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_READONLY)
+
+#ifndef DBUG_OFF
+#define PLUGIN_DEBUG_VERSION "-debug"
+#else
+#define PLUGIN_DEBUG_VERSION ""
+#endif /*DBUG_OFF*/
+
+/* Disable __attribute__() on non-gcc compilers.*/
+#if !defined(__attribute__) && !defined(__GNUC__)
+#define __attribute__(A)
+#endif
+
+#ifdef IS_MARIADB
+#define my_thread_attr_init pthread_attr_init
+#define my_thread_attr_destroy pthread_attr_destroy
+#define my_thread_once pthread_once
+#define my_create_thread_local_key pthread_key_create
+#define my_get_thread_local pthread_getspecific
+#define my_set_thread_local pthread_setspecific
+
+typedef pthread_t my_thread_handle;
+typedef pthread_attr_t my_thread_attr_t;
+typedef pthread_key_t thread_local_key_t;
+typedef pthread_once_t my_thread_once_t;
+
+#define MY_THREAD_ONCE_INIT MY_PTHREAD_ONCE_INIT
+
+typedef unsigned int ha_event_class_t;
+// extract C-style string from LEX_STRING
+#define C_STR(lex_str) lex_str.str
+#define C_STR_LEN(lex_str) lex_str.length
+
+#define MYSQL_AUDIT_QUERY_ENTRY MYSQL_AUDIT_GENERAL_CLASS
+#else
+typedef mysql_event_class_t ha_event_class_t;
+#define C_STR(lex_str) lex_str
+#define C_STR_LEN(lex_str) lex_str##_length
+
+#define MYSQL_AUDIT_QUERY_ENTRY MYSQL_AUDIT_QUERY_CLASS
+#include "mysqld_thd_manager.h"
+#endif /*IS_MARIADB*/
+
+// Table reference about current SQL statement
+// Initialized before execution of current SQL statement
+typedef struct st_table_list {
+  const char *db_name;
+  const char *table_name;
+  // operation type, defined in 'server_ha_def.h'
+  const char *op_type;
+  // set to 'HA_IS_TEMPORARY_TABLE' for a temporary table
+  // when sql command is 'drop/rename/alter/truncate table'
+  bool is_temporary_table;
+  struct st_table_list *next;
+} ha_table_list;
+
+// store information about the SQL statement currently being executed
+typedef struct st_sql_stmt_info {
+  // indicate whether it's initialized
+  bool inited;
+  // useless for now
+  unsigned long thread_id;
+  // operation type, its defined in 'server_ha_def.h'
+  const char *op_type;
+  // before SQL persistence(write_sql_log_and_states), sphead(including sp db
+  // name and sp name) is destroy, so database's name and sp name must be cached
+  // first. sp_db_name used to cache db name and sp_name used to cache sp name
+  char sp_db_name[NAME_LEN + 1];
+  char sp_name[NAME_LEN + 1];
+  Sdb_conn *sdb_conn;
+  // objects involved in the current SQL statement
+  ha_table_list *tables;
+  char err_message[HA_BUF_LEN];
+} ha_sql_stmt_info;
+
+// use to cache current instance state of all objects(table, view and sp)
+typedef struct st_cache_record {
+  // key format 'db_name-table_name-op_type'
+  char *key;
+  int sql_id;
+} ha_cached_record;
+
+// use to store audit events from mysql or mariadb
+typedef struct ha_event_general {
+  unsigned int event_subclass;
+  int general_error_code;
+  unsigned long general_thread_id;
+  unsigned int general_command_length;
+  const char *general_query;
+  unsigned int general_query_length;
+} ha_event_general;
+
+// HA thread(recover and replay thread) data
+typedef struct st_recover_replay_thread {
+  // current instance ID
+  int instance_id;
+  // instance group name
+  const char *group_name;
+  // instance group collection space name
+  char sdb_group_name[HA_MAX_INST_GROUP_NAME_LEN];
+  // instance group key
+  char group_key[HA_MAX_KEY_LEN + 1];
+  // set true if HA is turned on
+  bool is_open;
+  // set this flag before HA thread exit
+  bool stopped;
+
+  // set true if current instance finish recovery
+  bool recover_finished;
+
+  // use to cache HAInstanceState records for current instance
+  HASH inst_state_cache;
+
+  // use to notify main thread(maybe blocked in server_ha_deinit)
+  // that replay thread exit, then destroy ha_recover_replay_thread
+  mysql_cond_t replay_stopped_cond;
+  mysql_mutex_t replay_stopped_mutex;
+
+  // after mysqld started but recover process is not finished, block
+  // mysql client command in 'persist_sql_stmt' with recover_finished_cond
+  // then wake up blocked workers after completion of recover process
+  mysql_cond_t recover_finished_cond;
+  mysql_mutex_t recover_finished_mutex;
+
+  THD *thd;
+  my_thread_handle thread;
+  my_thread_attr_t thread_attr;
+} ha_recover_replay_thread;
+
+#endif

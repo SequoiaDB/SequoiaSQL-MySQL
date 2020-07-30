@@ -109,7 +109,8 @@ bool sdb_item_get_date(THD *thd, Item *item, MYSQL_TIME *ltime,
 }
 
 int sdb_aes_encrypt(enum my_aes_mode mode, const uchar *key, uint klen,
-                    const String &src, String &dst) {
+                    const String &src, String &dst, const uchar *iv,
+                    uint ivlen) {
   int rc = 0;
   int real_enc_len = 0;
   int dst_len = sdb_aes_get_size(mode, src.length());
@@ -121,7 +122,7 @@ int sdb_aes_encrypt(enum my_aes_mode mode, const uchar *key, uint klen,
 
   dst.set_charset(&my_charset_bin);
   real_enc_len = my_aes_encrypt((uchar *)src.ptr(), src.length(),
-                                (uchar *)dst.c_ptr(), key, klen, mode, NULL);
+                                (uchar *)dst.c_ptr(), key, klen, mode, iv);
   dst.length(real_enc_len);
 
   if (real_enc_len != dst_len) {
@@ -137,7 +138,8 @@ error:
 }
 
 int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
-                    const String &src, String &dst) {
+                    const String &src, String &dst, const uchar *iv,
+                    uint ivlen) {
   int rc = 0;
   int real_dec_len = 0;
 
@@ -148,7 +150,7 @@ int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
 
   dst.set_charset(&my_charset_bin);
   real_dec_len = my_aes_decrypt((uchar *)src.ptr(), src.length(),
-                                (uchar *)dst.c_ptr(), key, klen, mode, NULL);
+                                (uchar *)dst.c_ptr(), key, klen, mode, iv);
   if (real_dec_len < 0) {
     // Bad parameters.
     rc = ER_WRONG_ARGUMENTS;
@@ -408,6 +410,17 @@ uint sdb_tables_in_join(JOIN *join) {
   return join->tables;
 }
 
+void sdb_set_timespec(struct timespec &abstime, ulonglong sec) {
+  set_timespec(&abstime, sec);
+}
+
+bool sdb_has_sql_condition(THD *thd, uint sql_errno) {
+  return thd->get_stmt_da()->has_sql_condition(sql_errno);
+}
+
+const char *sdb_thd_db(THD *thd) {
+  return thd->db().str;
+}
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -465,7 +478,8 @@ bool sdb_item_get_date(THD *thd, Item *item, MYSQL_TIME *ltime,
 }
 
 int sdb_aes_encrypt(enum my_aes_mode mode, const uchar *key, uint klen,
-                    const String &src, String &dst) {
+                    const String &src, String &dst, const uchar *iv,
+                    uint ivlen) {
   int rc = 0;
   uint real_enc_len = 0;
   int dst_len = sdb_aes_get_size(mode, src.length());
@@ -478,7 +492,7 @@ int sdb_aes_encrypt(enum my_aes_mode mode, const uchar *key, uint klen,
 
   rc = my_aes_crypt(mode, ENCRYPTION_FLAG_ENCRYPT, (uchar *)src.ptr(),
                     (uint)src.length(), (uchar *)dst.c_ptr(), &real_enc_len,
-                    key, klen, NULL, 0);
+                    key, klen, iv, ivlen);
   dst.length(real_enc_len);
 
 done:
@@ -488,7 +502,8 @@ error:
 }
 
 int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
-                    const String &src, String &dst) {
+                    const String &src, String &dst, const uchar *iv,
+                    uint ivlen) {
   int rc = 0;
   uint real_dec_len = 0;
 
@@ -500,7 +515,7 @@ int sdb_aes_decrypt(enum my_aes_mode mode, const uchar *key, uint klen,
 
   rc = my_aes_crypt(mode, ENCRYPTION_FLAG_DECRYPT, (uchar *)src.ptr(),
                     (uint)src.length(), (uchar *)dst.c_ptr(), &real_dec_len,
-                    key, klen, NULL, 0);
+                    key, klen, iv, ivlen);
   dst.length(real_dec_len);
   dst[real_dec_len] = 0;
 
@@ -772,4 +787,23 @@ uint sdb_tables_in_join(JOIN *join) {
   return join->table_count;
 }
 
+void sdb_set_timespec(struct timespec &abstime, ulonglong sec) {
+  set_timespec(abstime, sec);
+}
+
+bool sdb_has_sql_condition(THD *thd, uint sql_errno) {
+  Diagnostics_area::Sql_condition_iterator it(
+      thd->get_stmt_da()->sql_conditions());
+  const Sql_condition *err = NULL;
+
+  while ((err = it++)) {
+    if (err->get_sql_errno() == sql_errno)
+      return true;
+  }
+  return false;
+}
+
+const char *sdb_thd_db(THD *thd) {
+  return thd->db.str;
+}
 #endif
