@@ -911,7 +911,7 @@ update t1 set a = a + 1 where a >5;
 delete from t1 where a <5;
 
 connection con1;
-select * from t1 order by c;
+select * from t1 order by a,b,c;
 commit;
 
 connection default;

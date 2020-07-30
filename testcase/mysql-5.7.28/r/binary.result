@@ -121,10 +121,8 @@ firstname	lastname
 john	doe
 select * from t1 where firstname='John' and firstname like binary 'john';
 firstname	lastname
-john	doe
 select * from t1 where firstname='john' and firstname like binary 'John';
 firstname	lastname
-John	Doe
 drop table t1;
 create table t1 (a binary);
 show create table t1;
