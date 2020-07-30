@@ -3317,13 +3317,9 @@ Warning	1292	Truncated incorrect DOUBLE value: '`1'
 SELECT * FROM t1 WHERE a IN (1,2,3) AND a=' 1';
 a
  1
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '`1'
 SELECT * FROM t1 WHERE a IN (1,2,3,'4') AND a=' 1';
 a
  1
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '`1'
 DROP TABLE t1;
 #
 # MDEV-8671 Wrong result for SELECT..WHERE varchar_column=' 1' AND (varchar_column XOR '1')
@@ -3341,8 +3337,6 @@ Warning	1292	Truncated incorrect INTEGER value: '`1'
 SELECT * FROM t1 WHERE a=' 1' AND (a XOR '0');
 a
  1
-Warnings:
-Warning	1292	Truncated incorrect INTEGER value: '`1'
 # ' 1' should not be propagated into (a XIR '0')
 DROP TABLE t1;
 #

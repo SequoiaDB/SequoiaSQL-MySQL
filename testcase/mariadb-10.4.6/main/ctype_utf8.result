@@ -9523,13 +9523,9 @@ a
 SELECT * FROM t1 WHERE a=10 AND a='1e1';
 a
 1e1
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '1é1'
 SELECT * FROM t1 WHERE (a,a)=(10,'1e1');
 a
 1e1
-Warnings:
-Warning	1292	Truncated incorrect DOUBLE value: '1é1'
 DROP TABLE t1;
 #
 # MDEV-8688 Wrong result for SELECT..WHERE varchar_column IN (1,2,3) AND varchar_column=' 1';

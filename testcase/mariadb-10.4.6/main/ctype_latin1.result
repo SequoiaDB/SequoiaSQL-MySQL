@@ -8095,7 +8095,6 @@ a
 a 
 SELECT * FROM t1 WHERE a='a' AND LENGTH(a)=2;
 a
-a 
 # 'a' should not be propagated into LENGTH(a)
 DROP TABLE t1;
 #

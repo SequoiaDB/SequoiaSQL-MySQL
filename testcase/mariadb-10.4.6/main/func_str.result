@@ -1122,7 +1122,6 @@ LENGTH(code)	code
 3	A12
 SELECT LENGTH(code), code FROM t1 WHERE code='A12' AND LENGTH(code)=5;
 LENGTH(code)	code
-5	A12  
 ALTER TABLE t1 ADD INDEX (code);
 CREATE TABLE t2 (id varchar(10) PRIMARY KEY);
 INSERT INTO t2 VALUES ('a11'), ('a12'), ('a13'), ('a14');
