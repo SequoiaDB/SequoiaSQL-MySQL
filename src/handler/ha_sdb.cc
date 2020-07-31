@@ -2117,7 +2117,7 @@ done:
     6 without is null or not null.
     7 count not support expresion.
     8 not enable optimize_with_materialization.
-      
+
 
   RETURN
     return TRUE if do direct_count.

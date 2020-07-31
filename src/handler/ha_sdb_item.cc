@@ -159,7 +159,7 @@ int Sdb_logic_item::to_bson(bson::BSONObj &obj) {
   }
   if (obj_num_cur <= obj_num_min) {
     rc = rebuild_bson(obj);
-    if(rc) {
+    if (rc) {
       goto error;
     }
   }
@@ -180,15 +180,14 @@ int Sdb_and_item::to_bson(bson::BSONObj &obj) {
   try {
     obj = BSON(this->name() << children.arr());
   } catch (bson::assertion e) {
-    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.",
-        e.full.c_str());
+    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
     DBUG_ASSERT(0);
     rc = SDB_ERR_BUILD_BSON;
     goto error;
   }
   if (obj_num_cur <= obj_num_min) {
     rc = rebuild_bson(obj);
-    if(rc) {
+    if (rc) {
       goto error;
     }
   }
