@@ -54,7 +54,7 @@ class Sdb_logic_item : public Sdb_item {
     obj_num_min = 1;
   }
 
-  int rebuild_bson(bson::BSONObj &obj); 
+  int rebuild_bson(bson::BSONObj &obj);
   virtual int push_sdb_item(Sdb_item *cond_item);
   virtual int push_item(Item *cond_item);
   virtual int to_bson(bson::BSONObj &obj);

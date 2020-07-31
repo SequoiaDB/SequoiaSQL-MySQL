@@ -1248,12 +1248,6 @@ int ha_sdb::alter_column(TABLE *altered_table,
       if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL) {
         const char *field_name = sdb_field_name(info->after);
 
-        if (count > sdb_alter_table_overhead_threshold(thd)) {
-          rc = HA_ERR_WRONG_COMMAND;
-          my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);
-          goto error;
-        }
-
         if (is_strict_mode(sql_mode)) {
           // As data cannot be changed in strict mode, we can just check
           // whether NULL data exists.
@@ -1277,6 +1271,11 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
         } else {
           longlong modified_num = 0;
+          if (count > sdb_alter_table_overhead_threshold(thd)) {
+            rc = HA_ERR_WRONG_COMMAND;
+            my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);
+            goto error;
+          }
           if (!conn->is_transaction_on()) {
             rc = conn->begin_transaction(thd);
             if (rc != 0) {
