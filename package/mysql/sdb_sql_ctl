@@ -605,7 +605,7 @@ function stop_inst()
    #stop
    local pid=`get_one_status $inst | grep $inst | awk '{print $2}'`
    
-   echo "Stoping instance $inst (PID: $pid) ..."
+   echo "Stopping instance $inst (PID: $pid) ..."
    local start_line=0
    local end_line=0
    local file_exist=false
@@ -626,9 +626,14 @@ function stop_inst()
    if [ "$NEED_PRINTSCREEN" == true ]; then
       `cat $SQLLOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
    fi
-   test $rc -ne 0 && { echo "ERROR: Fail to stop, please verify log $SQLLOG" >&2 && return 4; }
-   return 0
-   
+   if [ $rc == 0 ]
+   then 
+      echo "ok"
+      return 0
+   else 
+      echo "ERROR: Failed to stop instance. The log files in $SQLLOG may give you some hint of what went wrong." >&2
+      return 4;
+   fi
 }
 
 function stop_all()
