@@ -59,7 +59,7 @@ INSERT INTO t1 VALUES (1),(-1),(0),(NULL),(10);
 INSERT INTO t2 VALUES (1),(-1),(0),(NULL),(10);
 INSERT INTO t3 VALUES (1),(-1),(0),(NULL),(10);
 SET sql_mode = "STRICT_ALL_TABLES";
-ALTER TABLE t2 change a a INT NOT NULL;
+ALTER TABLE t2 change a a INT NOT NULL,algorithm=inplace;
 ERROR 22004: Invalid use of NULL value
 show create table t2;
 Table	Create Table
@@ -74,7 +74,7 @@ NULL
 1
 10
 SET sql_mode = "";
-ALTER TABLE t3 change a a INT NOT NULL;
+ALTER TABLE t3 change a a INT NOT NULL,algorithm=inplace;
 INSERT INTO t3 VALUES (NULL);
 ERROR 23000: Column 'a' cannot be null
 SELECT * FROM t3 ORDER BY a;
@@ -85,4 +85,18 @@ a
 1
 10
 DROP TABLE t1,t2,t3;
+CREATE TABLE t1 ( a VARCHAR(255) );
+SET sql_mode = "STRICT_TRANS_TABLES";
+ALTER TABLE t1 MODIFY a VARCHAR(100),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
+SET sql_mode = "STRICT_ALL_TABLES";
+ALTER TABLE t1 MODIFY a VARCHAR(100),algorithm=inplace;
+DROP TABLE t1;
+CREATE TABLE t1 ( a INT );
+SET sql_mode = "STRICT_TRANS_TABLES";
+ALTER TABLE t1 MODIFY a TINYINT,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
+SET sql_mode = "STRICT_ALL_TABLES";
+ALTER TABLE t1 MODIFY a TINYINT,algorithm=inplace;
+DROP TABLE t1;
 set sql_mode = default;

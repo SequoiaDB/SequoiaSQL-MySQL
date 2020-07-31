@@ -9,7 +9,7 @@
 #Case 20028#Case 20227#Case 20230#Case 20231#Case 20232#Case 20233#Case 20234#Case 20235#Case 20236
 #Case 20254#Case 20256#Case 20422#Case 20386#Case 20388#Case 20389#Case 20390#Case 20396#Case 20397
 #Case 20398#Case 20399#Case 20473#Case 20524#Case 21866#Case 21871#Case 21872#Case 21873#Case 21982
-#Case 22221
+#Case 22221#Case 22487#Case 22488#Case 22490#Case 22490#Case 22494#Case 22495
  
 
 --source include/have_sequoiadb.inc
@@ -875,6 +875,31 @@ alter table t1 change a a tinyint not null;
 select * from t1 order by id;
 set sql_mode = default;
 drop table t1;
+
+#Case 20207
+--disable_warnings
+set sql_mode = "STRICT_ALL_TABLES";
+--enable_warnings
+create table t1(id int auto_increment primary key, a bigint, b char(255), c varchar(255));
+alter table t1 modify a mediumint not null,algorithm=inplace;
+insert into t1(a,b,c) values(1,'a','a');
+alter table t1 modify b char(100) not null,algorithm=inplace;
+insert into t1(a,b,c) values(1,'a','aaaaa'),(1,'a',null);
+--error 1138
+alter table t1 modify c varchar(5) not null,algorithm=inplace;
+select * from t1 order by id;
+
+#Case 20208
+--disable_warnings
+set sql_mode= "";
+--enable_warnings
+alter table t1 modify c varchar(255) not null,algorithm=inplace;
+select * from t1 order by id;
+
+drop table t1;
+--disable_warnings
+set sql_mode = default;
+--enable_warnings
 
 create table t1 ( id int auto_increment primary key, a char(10), b varchar(10), c binary(8), d varbinary(8) );
 insert into t1(a,b,c,d) values ('bcdef','bcdef','bcdef','bcdef'),('opqrst','opqrst','opqrst','opqrst'), ('xyo', 'xyo', 'xyo', 'xyo'), ('bibubibu', 'bibubibu','bibubibu', 'bibubibu'), ('aaa', 'aaa', 'aaa', 'aaa'), ('ccc', 'ccc', 'ccc', 'ccc');
@@ -1860,11 +1885,11 @@ create table t1(a int(10)unsigned not null auto_increment primary key, b varchar
 insert into t1 values(1,'aaa'),(2,'bbb');
 alter table t1 auto_increment=1;
 insert into t1 values(NULL, 'ccc');
-select * from t1;
+select * from t1 order by a;
 show create table t1;
 alter table t1 auto_increment=3;
 insert into t1 values(NULL, 'ddd');
-select * from t1;
+select * from t1 order by a;
 show create table t1;
 drop table t1;
 
@@ -2048,6 +2073,137 @@ alter table t1 drop foreign key t1_ibfk_1;
 show create table t1;
 drop table t1,t2;
 
+#seqDB-22487
+create table t1 (id int auto_increment primary key, a char(10));
+alter table t1 modify a char(9),algorithm=inplace;
+insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
+--error 1264
+alter table t1 modify a char(7),algorithm=inplace;
+alter table t1 modify a char(8),algorithm=inplace;
+--error 1846
+alter table t1 modify a varchar(7),algorithm=inplace;
+alter table t1 modify a varchar(8),algorithm=inplace;
+alter table t1 modify a char(255);
+alter table t1 modify a tinytext,algorithm=inplace;
+alter table t1 modify a char(255);
+--error 1846
+alter table t1 modify a binary(100),algorithm=inplace;
+
+--disable_warnings
+set sql_mode='';
+--enable_warnings
+--error 1846
+alter table t1 modify a char(100),algorithm=inplace;
+--disable_warnings
+set sql_mode=default;
+--enable_warnings
+
+select * from t1 order by id;
+drop table t1;
+
+#seqDB-22488
+create table t1 (id int auto_increment primary key, a varchar(10));
+alter table t1 modify a varchar(9),algorithm=inplace;
+insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
+--error 1264
+alter table t1 modify a varchar(7),algorithm=inplace;
+alter table t1 modify a varchar(8),algorithm=inplace;
+--error 1846
+alter table t1 modify a char(8),algorithm=inplace;
+alter table t1 modify a varchar(255),algorithm=inplace;
+alter table t1 modify a tinytext,algorithm=inplace;
+alter table t1 modify a varchar(255);
+--error 1846
+alter table t1 modify a varbinary(100),algorithm=inplace;
+
+--disable_warnings
+set sql_mode='';
+--enable_warnings
+--error 1846
+alter table t1 modify a varchar(100),algorithm=inplace;
+--disable_warnings
+set sql_mode=default;
+--enable_warnings
+
+select * from t1 order by id;
+drop table t1;
+
+#seqDB-22490
+create table t1 (id int auto_increment primary key, a longtext);
+alter table t1 modify a mediumtext,algorithm=inplace;
+insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
+insert into t1(a) values(repeat('a', 256));
+--error 1264
+alter table t1 modify a tinytext,algorithm=inplace;
+alter table t1 modify a text,algorithm=inplace;
+delete from t1 where length(a)>254;
+--error 1846
+alter table t1 modify a char(255),algorithm=inplace;
+alter table t1 modify a varchar(255),algorithm=inplace;
+alter table t1 modify a text,algorithm=inplace;
+--error 1846
+alter table t1 modify a tinyblob,algorithm=inplace;
+
+--disable_warnings
+set sql_mode='';
+--enable_warnings
+--error 1846
+alter table t1 modify a tinytext,algorithm=inplace;
+--disable_warnings
+set sql_mode=default;
+--enable_warnings
+
+select * from t1 order by id;
+drop table t1;
+
+#seqDB-22495
+create table t1 (id int auto_increment primary key, a binary(255), b varbinary(255), c blob, d set('a','b','c'), e enum('a','b','c'));
+--error 1846
+alter table t1 modify a binary(100),algorithm=inplace;
+--error 1846
+alter table t1 modify b varbinary(100),algorithm=inplace;
+--error 1846
+alter table t1 modify c tinyblob,algorithm=inplace;
+--error 1846
+alter table t1 modify d set('a','b'),algorithm=inplace;
+--error 1846
+alter table t1 modify e enum('a','b'),algorithm=inplace;
+drop table t1;
+
+#seqDB-22492
+create table t1 (id int auto_increment primary key, a bigint, b bigint unsigned);
+alter table t1 modify a int, modify b int unsigned,algorithm=inplace;
+insert into t1(a, b) values(-32769,0),(-32768,1),(0,2),(32767,65535),(32768,65536);
+alter table t1 modify a mediumint, modify b mediumint unsigned,algorithm=inplace;
+--error 1264
+alter table t1 modify a smallint, modify b smallint unsigned,algorithm=inplace;
+--error 1846
+alter table t1 modify a float, modify b smallint unsigned,algorithm=inplace;
+--error 1846
+alter table t1 modify a int unsigned, modify b smallint unsigned,algorithm=inplace;
+delete from t1 where a not between -128 and 127;
+
+--disable_warnings
+set sql_mode='';
+--enable_warnings
+--error 1846
+alter table t1 modify a tinyint,algorithm=inplace;
+--disable_warnings
+set sql_mode=default;
+--enable_warnings
+
+select * from t1 order by id;
+drop table t1;
+
+#seqDB-22494
+create table t1 (id int auto_increment primary key, a float, b double, c decimal);
+--error 1846
+alter table t1 modify a float(2,0),algorithm=inplace;
+--error 1846
+alter table t1 modify b double(2,0),algorithm=inplace;
+--error 1846
+alter table t1 modify c decimal(2,0),algorithm=inplace;
+drop table t1;
 
 drop database test_alter;
 --source include/uninstall_sequoiadb.inc

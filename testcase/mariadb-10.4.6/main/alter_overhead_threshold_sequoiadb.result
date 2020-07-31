@@ -3216,4 +3216,64 @@ id	j
 7	true
 8	false
 drop table t1;
+create table t1(id int auto_increment primary key, a bigint);
+insert into t1(a) values(1),(2),(3),(4),(5),(6);
+select * from t1 order by id;
+id	a
+1	1
+2	2
+3	3
+4	4
+5	5
+6	6
+drop table t1;
+create table t1 (id int auto_increment primary key, a char(10));
+insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
+alter table t1 modify a char(8),algorithm=inplace;
+select * from t1 order by id;
+id	a
+1	aaaaaaaa
+2	aaaaaaaa
+3	aaaaaaaa
+4	aaaaaaaa
+5	aaaaaaa
+6	aaaaaa
+drop table t1;
+create table t1 (id int auto_increment primary key, a varchar(10));
+insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
+alter table t1 modify a varchar(8),algorithm=inplace;
+select * from t1 order by id;
+id	a
+1	aaaaaaaa
+2	aaaaaaaa
+3	aaaaaaaa
+4	aaaaaaaa
+5	aaaaaaa 
+6	aaaaaa 
+drop table t1;
+create table t1 (id int auto_increment primary key, a longtext);
+insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa ');
+insert into t1(a) values(repeat('a', 256));
+alter table t1 modify a text,algorithm=inplace;
+select * from t1 order by id;
+id	a
+1	aaaaaaaa
+2	aaaaaaaa
+3	aaaaaaaa
+4	aaaaaaaa
+5	aaaaaaa 
+6	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+drop table t1;
+create table t1 (id int auto_increment primary key, a bigint, b bigint unsigned);
+insert into t1(a, b) values(-32769,0),(-32768,1),(0,2),(1,3),(32767,65535),(32768,65536);
+alter table t1 modify a mediumint, modify b mediumint unsigned,algorithm=inplace;
+select * from t1 order by id;
+id	a	b
+1	-32769	0
+2	-32768	1
+3	0	2
+4	1	3
+5	32767	65535
+6	32768	65536
+drop table t1;
 drop database test_alter_overhead_threshlod;
