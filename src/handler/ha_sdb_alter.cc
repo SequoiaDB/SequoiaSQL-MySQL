@@ -1292,13 +1292,11 @@ int ha_sdb::alter_column(TABLE *altered_table,
                                 ER_WARN_NULL_TO_NOTNULL,
                                 ER(ER_WARN_NULL_TO_NOTNULL), field_name, i);
           }
-#ifndef DBUG_OFF
           // In this case, SQL layer asserts no error status if rc == 0.
           // So clear the error status.
           if (!sdb_use_transaction) {
             thd->clear_error();
           }
-#endif
         }
       }
     }
