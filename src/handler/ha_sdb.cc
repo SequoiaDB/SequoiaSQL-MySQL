@@ -2350,7 +2350,7 @@ done:
     6 without is null or not null.
     7 count not support expresion.
     8 not enable optimize_with_materialization.
-      
+
 
   RETURN
     return TRUE if do direct_count.
@@ -4946,6 +4946,20 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   for (Field **fields = form->field; *fields; fields++) {
     Field *field = *fields;
 
+#ifdef IS_MARIADB
+    if (field->type() == MYSQL_TYPE_NULL) {
+      push_warning_printf(thd, Sql_condition::WARN_LEVEL_WARN,
+                          ER_CANT_CREATE_TABLE,
+                          "Error creating table '%s' with"
+                          " column '%s'. Please check its"
+                          " column type and try to re-create"
+                          " the table with an appropriate"
+                          " column type.",
+                          table_name, sdb_field_name(field));
+      rc = HA_ERR_GENERIC;
+      goto error;
+    }
+#endif
     if (field->type() == MYSQL_TYPE_YEAR && field->field_length != 4) {
       rc = ER_INVALID_YEAR_COLUMN_LENGTH;
       my_printf_error(rc, "Supports only YEAR or YEAR(4) column", MYF(0));
@@ -5120,16 +5134,20 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   DBUG_ENTER("ha_sdb::handle_sdb_error");
   DBUG_PRINT("info", ("error code %d", error));
   bson::BSONObj error_obj;
-
-  // get error object from Sdb_conn
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   Sdb_conn *connection = NULL;
+  sdb_rc = get_sdb_code(error);
+  if (sdb_rc >= SDB_ERR_OK) {
+    goto done;
+  }
+
+  // get error object from Sdb_conn
   sdb_rc = check_sdb_in_thd(ha_thd(), &connection, true);
   if (sdb_rc != SDB_OK) {
     push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
                  SDB_GET_CONNECT_FAILED);
     if (SDB_NET_CANNOT_CONNECT == get_sdb_code(sdb_rc) || !connection) {
-      goto done;
+      goto get_message_done;
     }
   }
   sdb_rc = connection->get_last_result_obj(error_obj, false);
@@ -5149,7 +5167,7 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
     }
   }
 
-done:
+get_message_done:
   switch (get_sdb_code(error)) {
     case SDB_UPDATE_SHARD_KEY:
       if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
@@ -5275,6 +5293,8 @@ done:
       }
       break;
   }
+
+done:
   DBUG_VOID_RETURN;
 }
 
