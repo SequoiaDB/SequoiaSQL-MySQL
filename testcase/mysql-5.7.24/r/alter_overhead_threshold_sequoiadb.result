@@ -864,21 +864,17 @@ id	a	b	c	d
 8	17	17	17	17
 9	21	21	21	21
 alter table t1 change a a tinyint not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change b b smallint not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change c c int not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change d d bigint not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` tinyint(4) DEFAULT NULL,
-  `b` smallint(6) DEFAULT NULL,
-  `c` int(11) DEFAULT NULL,
-  `d` bigint(20) DEFAULT NULL,
+  `a` tinyint(4) NOT NULL,
+  `b` smallint(6) NOT NULL,
+  `c` int(11) NOT NULL,
+  `d` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1);
@@ -941,21 +937,17 @@ id	a	b	c	d
 5	aaa	aaa	aaa     	aaa
 6	ccc	ccc	ccc     	ccc
 alter table t1 change a a char(10) not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change b b varchar(10) not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change c c binary(8) not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change d d varbinary(8) not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` char(10) DEFAULT NULL,
-  `b` varchar(10) DEFAULT NULL,
-  `c` binary(8) DEFAULT NULL,
-  `d` varbinary(8) DEFAULT NULL,
+  `a` char(10) NOT NULL,
+  `b` varchar(10) NOT NULL,
+  `c` binary(8) NOT NULL,
+  `d` varbinary(8) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
@@ -1015,21 +1007,17 @@ id	a	b	c	d
 5	aaa	aaa	aaa	aaa
 6	ccc	ccc	ccc	ccc
 alter table t1 change a a tinytext not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change b b mediumtext not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change c c text not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change d d longtext not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` tinytext,
-  `b` mediumtext,
-  `c` text,
-  `d` longtext,
+  `a` tinytext NOT NULL,
+  `b` mediumtext NOT NULL,
+  `c` text NOT NULL,
+  `d` longtext NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
@@ -1089,21 +1077,17 @@ id	a	b	c	d
 5	aaa	aaa	aaa	aaa
 6	ccc	ccc	ccc	ccc
 alter table t1 change a a tinyblob not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change b b mediumblob not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change c c blob not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change d d longblob not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` tinyblob,
-  `b` mediumblob,
-  `c` blob,
-  `d` longblob,
+  `a` tinyblob NOT NULL,
+  `b` mediumblob NOT NULL,
+  `c` blob NOT NULL,
+  `d` longblob NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
@@ -1166,18 +1150,15 @@ id	a	b	c
 5	80	80	80
 6	0.00005	0.00005	0
 alter table t1 change a a float not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change b b double not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change c c decimal not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` float DEFAULT NULL,
-  `b` double DEFAULT NULL,
-  `c` decimal(10,0) DEFAULT NULL,
+  `a` float NOT NULL,
+  `b` double NOT NULL,
+  `c` decimal(10,0) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (1.0001, 1.0001, 1.0001);
@@ -1229,11 +1210,9 @@ drop table t1;
 create table t1 ( id int auto_increment primary key, a year, b date, c time, d datetime, e timestamp);
 insert into t1(a,b,c,d,e) values (2000, "2002-03-04",'09:00:00','2003-03-01 00:00:00', "19990102030405"), (2001, "2002-03-05",'10:11:00','2004-04-01 00:00:00', "2004-12-31 23:59:59"), (2002, current_date, current_time, current_timestamp, current_timestamp) ,(1999, "2019-01-10",'10:10:10','2019-01-11 00:00:00', "19990102030407"),(1998, "2012-05-10",'11:11:11','2012-04-01 00:00:00',"2012-04-01 00:00:00"), (2020, "2020-12-10",'11:11:11','2030-11-01 00:00:00',"2020-04-01 23:59:59");
 alter table t1 change a a year not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change b b date not null, algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
 alter table t1 change c c time not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change d d datetime not null, algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
 alter table t1 change e e timestamp not null, algorithm=inplace;
@@ -1241,9 +1220,9 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` year(4) DEFAULT NULL,
+  `a` year(4) NOT NULL,
   `b` date DEFAULT NULL,
-  `c` time DEFAULT NULL,
+  `c` time NOT NULL,
   `d` datetime DEFAULT NULL,
   `e` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
@@ -1284,21 +1263,17 @@ id	a	b	c	d
 5		0	a	b,c
 6		1	c	d
 alter table t1 change a a bit(8) not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change b b bool not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change c c enum('a','c','d') not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change d d set('a','b','c','d','e') not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` bit(8) DEFAULT NULL,
-  `b` tinyint(1) DEFAULT NULL,
-  `c` enum('a','c','d') DEFAULT NULL,
-  `d` set('a','b','c','d','e') DEFAULT NULL,
+  `a` bit(8) NOT NULL,
+  `b` tinyint(1) NOT NULL,
+  `c` enum('a','c','d') NOT NULL,
+  `d` set('a','b','c','d','e') NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
@@ -1354,12 +1329,11 @@ id	a
 5	"scalar string"
 6	123456
 alter table t1 change a a json not null, algorithm=inplace;
-ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `a` json DEFAULT NULL,
+  `a` json NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
 insert into t1(a) values ('-32768'),('2147483647'),('18446744073709551616');
@@ -3249,6 +3223,7 @@ id	j
 drop table t1;
 create table t1(id int auto_increment primary key, a bigint);
 insert into t1(a) values(1),(2),(3),(4),(5),(6);
+alter table t1 modify a mediumint not null,algorithm=inplace;
 select * from t1 order by id;
 id	a
 1	1
