@@ -1539,15 +1539,13 @@ DESC t4;
 Field	Type	Null	Key	Default	Extra
 NULL	binary(0)	YES		NULL	
 CREATE TABLE t5 SELECT NULL UNION SELECT NULL;
-DESC t5;
-Field	Type	Null	Key	Default	Extra
-NULL	null	YES		NULL	
+ERROR HY000: Can't create table `test_union`.`t5` (errno: 168 "Unknown (generic) error from engine")
 CREATE TABLE t6 
 SELECT * FROM (SELECT * FROM (SELECT NULL)a) b UNION SELECT a FROM t1;
 DESC t6;
 Field	Type	Null	Key	Default	Extra
 NULL	int(11)	YES		NULL	
-DROP TABLE t1, t2, t3, t4, t5, t6;
+DROP TABLE t1, t2, t3, t4, t6;
 CREATE TABLE t1 (f FLOAT(9,6));
 CREATE TABLE t2 AS SELECT f FROM t1 UNION SELECT f FROM t1;
 SHOW FIELDS FROM t2;
