@@ -2054,8 +2054,6 @@ alter table t1 drop foreign key t1_ibfk_1;
 show create table t1;
 drop table t1,t2;
 
-<<<<<<< HEAD
-=======
 #seqDB-22487
 create table t1 (id int auto_increment primary key, a char(10));
 alter table t1 modify a char(9),algorithm=inplace;
