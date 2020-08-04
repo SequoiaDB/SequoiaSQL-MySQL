@@ -7,8 +7,8 @@ SHOW CREATE TABLE t1;
 ALTER TABLE t1 COMPRESSION 'snappy';
 SHOW CREATE TABLE t1;
 #Bug #SEQUOIASQLMAINSTREAM-731
-#ALTER TABLE t1 COMPRESSION 'NONE';
-#SHOW CREATE TABLE t1;
+ALTER TABLE t1 COMPRESSION 'NONE';
+SHOW CREATE TABLE t1;
 --error 1210
 ALTER TABLE t1 COMPRESSION 'ZLIB';
 #SHOW CREATE TABLE t1;
@@ -43,10 +43,9 @@ SHOW CREATE TABLE t1;
 --error 1210
 ALTER TABLE t1 COMPRESSION 'lzw' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
 #Bug #SEQUOIASQLMAINSTREAM-731
-#ALTER TABLE t1 COMPRESSION 'snappy' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
-#--error 131
-#ALTER TABLE t1 COMPRESSION '' COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
-#SHOW CREATE TABLE t1;
+ALTER TABLE t1 COMPRESSION 'snappy' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
+ALTER TABLE t1 COMPRESSION '' COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
+SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
 CREATE TABLE t1 ( id int ) COMPRESSION "" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
