@@ -1182,8 +1182,12 @@ drop table t1;
 create table t1 ( id int auto_increment primary key, a year, b date, c time, d datetime, e timestamp);
 insert into t1(a,b,c,d,e) values (2000, "2002-03-04",'09:00:00','2003-03-01 00:00:00', "19990102030405"), (2001, "2002-03-05",'10:11:00','2004-04-01 00:00:00', "2004-12-31 23:59:59"), (2002, current_date, current_time, current_timestamp, current_timestamp) ,(1999, "2019-01-10",'10:10:10','2019-01-11 00:00:00', "19990102030407"),(1998, "2012-05-10",'11:11:11','2012-04-01 00:00:00',"2012-04-01 00:00:00"), (2020, "2020-12-10",'11:11:11','2030-11-01 00:00:00',"2020-04-01 23:59:59");
 set sql_mode='NO_ZERO_DATE,NO_ZERO_IN_DATE';
+alter table t1 change a a year not null, algorithm=inplace;
+ERROR 0A000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change b b date not null, algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY
+alter table t1 change c c time not null, algorithm=inplace;
+ERROR 0A000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change d d datetime not null, algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY
 alter table t1 change e e timestamp not null, algorithm=inplace;
