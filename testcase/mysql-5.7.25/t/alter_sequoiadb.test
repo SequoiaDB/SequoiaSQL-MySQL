@@ -2185,7 +2185,6 @@ alter table t1 modify b double(2,0),algorithm=inplace;
 --error 1846
 alter table t1 modify c decimal(2,0),algorithm=inplace;
 drop table t1;
->>>>>>> 1d1c7f4... SEQUOIASQLMAINSTREAM-717新增自动化用例
 
 drop database test_alter;
 --source include/uninstall_sequoiadb.inc
