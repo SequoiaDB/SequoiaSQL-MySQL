@@ -79,6 +79,10 @@ int sdb_parse_comment_options(const char *comment_str,
 
 bool sdb_is_type_diff(Field *old_field, Field *new_field);
 
+bool sdb_is_single_table(THD *thd);
+
+bool sdb_is_field_sortable(const Field *field);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

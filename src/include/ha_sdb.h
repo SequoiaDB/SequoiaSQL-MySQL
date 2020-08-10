@@ -504,9 +504,13 @@ class ha_sdb : public handler {
   enum thr_lock_type m_lock_type;
   Sdb_cl *collection;
   bool first_read;
+  Sdb_share *share;
+  bool first_info;
+  bool direct_sort;
   bson::BSONObj cur_rec;
   bson::BSONObj pushed_condition;
-  Sdb_share *share;
+  bson::BSONObj field_order_condition;
+  bson::BSONObj group_list_condition;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
   char table_name[SDB_CL_NAME_MAX_SIZE + 1];
   time_t last_count_time;
@@ -533,4 +537,6 @@ class ha_sdb : public handler {
   bson::BSONObj m_dup_value;
   Item *updated_value;
   Field *updated_field;
+  st_order *sdb_order;
+  st_order *sdb_group_list;
 };

@@ -225,6 +225,18 @@ bool sdb_calc_found_rows(THD *thd);
 
 bool sdb_use_filesort(THD *thd);
 
+bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table);
+
+void sdb_clear_const_keys(THD *thd);
+
+st_order *sdb_get_join_order(THD *thd);
+
+void sdb_set_join_order(THD *thd, st_order *order);
+
+st_order *sdb_get_join_group_list(THD *thd);
+
+void sdb_set_join_group_list(THD *thd, st_order *group_list, bool grouped);
+
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag);
 
 const char *sdb_item_name(const Item *cond_item);
@@ -232,8 +244,6 @@ const char *sdb_item_name(const Item *cond_item);
 time_round_mode_t sdb_thd_time_round_mode(THD *thd);
 
 bool sdb_is_transaction_stmt(THD *thd, bool all);
-
-bool sdb_is_single_table(THD *thd);
 
 // About Field
 const char *sdb_field_name(const Field *f);
