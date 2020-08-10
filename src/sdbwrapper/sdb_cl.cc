@@ -172,6 +172,15 @@ int Sdb_cl::query_and_remove(const bson::BSONObj &condition,
                            num_to_return, flags));
 }
 
+int cl_aggregate(sdbclient::sdbCollection *cl, sdbclient::sdbCursor *cursor,
+                 std::vector<bson::BSONObj> &obj) {
+  return cl->aggregate(*cursor, obj);
+}
+
+int Sdb_cl::aggregate(std::vector<bson::BSONObj> &obj) {
+  return retry(boost::bind(cl_aggregate, &m_cl, &m_cursor, obj));
+}
+
 int Sdb_cl::current(bson::BSONObj &obj, my_bool get_owned) {
   int rc = SDB_ERR_OK;
   rc = m_cursor.current(obj, get_owned);

@@ -86,12 +86,16 @@ bool sdb_is_geom_type_diff(Field *old_field, Field *new_field);
 
 bool sdb_is_type_diff(Field *old_field, Field *new_field);
 
+bool sdb_is_single_table(THD *thd);
+
 #ifdef IS_MYSQL
 bool sdb_convert_sub2main_partition_name(char *table_name);
 #endif
 
 int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
                        bson::BSONObjBuilder &build);
+
+my_bool sdb_is_field_sortable(const Field *field);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

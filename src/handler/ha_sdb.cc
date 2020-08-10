@@ -601,6 +601,266 @@ error:
   goto done;
 }
 
+bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition) {
+  SELECT_LEX *const select_lex = sdb_lex_first_select(thd);
+  JOIN *const join = select_lex->join;
+  /* if the following conditions are included, cannot pushdown limit:
+     1. HAVING condition.
+     2. WHERE condition but not pushdowned.
+     3. GROUP BY lists.
+     4. ORDER BY lists with filesort.
+     5. contains DISTINCT.
+     6. contains calculate found rows, like 'SELECT SQL_CALC_FOUND_ROWS * FROM
+        t1'.
+     7. has a GROUP BY clause and/or one or more aggregate functions.
+  */
+  const bool use_where_condition = sdb_where_condition(thd);
+  const bool use_having_condition = sdb_having_condition(thd);
+  const bool where_cond_push =
+      use_where_condition && (SDB_COND_SUPPORTED == sdb_condition->status ||
+                              SDB_COND_UNCALLED == sdb_condition->status);
+  const bool use_filesort = sdb_use_filesort(thd);
+  const bool use_distinct = sdb_use_distinct(thd);
+  const bool calc_found_rows = sdb_calc_found_rows(thd);
+  bool use_group_and_agg_func = false;
+  if (join->sort_and_group && !join->tmp_table_param.precomputed_group_by) {
+    use_group_and_agg_func = true;
+  }
+
+  if (use_having_condition || (use_where_condition && !where_cond_push) ||
+      use_distinct || calc_found_rows || use_group_and_agg_func ||
+      use_filesort) {
+    return false;
+  }
+  return true;
+}
+
+int sdb_handle_sort_condition(THD *thd, TABLE *table,
+                              ha_sdb_cond_ctx **sdb_condition,
+                              st_order **sdb_order, st_order **sdb_group_list,
+                              bool &direct_sort,
+                              bson::BSONObj &field_order_condition,
+                              bson::BSONObj &group_list_condition) {
+  DBUG_ENTER("sdb_handle_sort_condition");
+  int rc = SDB_OK;
+  Field *field = NULL;
+  bson::BSONObj tmp_obj;
+  st_order *order = NULL;
+  st_order *group_list = NULL;
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  bson::BSONObjBuilder builder_order(96);
+  bson::BSONObjBuilder builder_id(96);
+  bson::BSONObjBuilder builder_id_field(builder_id.subobjStart("_id"));
+  bson::BSONObjBuilder builder_group_list(96);
+  bson::BSONObjBuilder builder_selector_field(96);
+  const bool use_having_condition = sdb_having_condition(thd);
+  const bool use_distinct = sdb_use_distinct(thd);
+  if (!join || use_having_condition || use_distinct) {
+    goto done;
+  }
+  if (sdb_where_condition(thd)) {
+    (*sdb_condition)->type = ha_sdb_cond_ctx::WHERE_COND;
+    sdb_parse_condtion(sdb_where_condition(thd), *sdb_condition);
+    if ((*sdb_condition)->sub_sel) {
+      goto done;
+    }
+  }
+#ifdef IS_MARIADB
+  if (join->select_lex->window_specs.elements > 0) {
+    goto done;
+  }
+#endif
+  order = sdb_get_join_order(thd);
+  group_list = sdb_get_join_group_list(thd);
+
+  try {
+    if (order) {
+      while (order) {
+        if (Item::FIELD_ITEM != order->item[0]->type()) {
+          goto error;
+        }
+        field = order->item[0]->field_for_view_update()->field;
+        if (!sdb_is_field_sortable(field)) {
+          goto error;
+        }
+        if (st_order::ORDER_ASC == order->direction) {
+          builder_order.append(sdb_field_name(field), 1);
+        } else if (st_order::ORDER_DESC == order->direction) {
+          builder_order.append(sdb_field_name(field), -1);
+        }
+        order = order->next;
+      }
+      field_order_condition = builder_order.obj();
+      *sdb_order = sdb_get_join_order(thd);
+      sdb_set_join_order(thd, NULL);
+      direct_sort = true;
+    }
+
+    if (group_list) {
+      if (join->tmp_table_param.sum_func_count ||
+          st_rollup::STATE_NONE != join->rollup.state) {
+        goto error;
+      }
+      while (group_list) {
+        if (Item::FIELD_ITEM != group_list->item[0]->type()) {
+          goto error;
+        }
+        field = group_list->item[0]->field_for_view_update()->field;
+        if (!sdb_is_field_sortable(field)) {
+          goto error;
+        }
+        char val[MAX_FIELD_NAME + 1] = {'\0'};
+        val[0] = '$';
+        strcat(val, sdb_field_name(field));
+        // Build '$_id' of group.
+        builder_id_field.append(sdb_field_name(field), val);
+        if (field_order_condition.isEmpty()) {
+          if (st_order::ORDER_ASC == group_list->direction) {
+            builder_order.append(sdb_field_name(field), 1);
+          } else if (st_order::ORDER_DESC == group_list->direction) {
+            builder_order.append(sdb_field_name(field), -1);
+          }
+        }
+        // Build '$first' of group.
+        bson::BSONObjBuilder builder_first;
+        bson::BSONObjBuilder builder_first_field(
+            builder_first.subobjStart(sdb_field_name(field)));
+        builder_first_field.append("$first", val);
+        builder_first_field.done();
+        builder_group_list.appendElements(builder_first.obj());
+
+        group_list = group_list->next;
+      }
+      builder_id_field.done();
+      builder_group_list.appendElements(builder_id.obj());
+      group_list_condition = builder_group_list.obj();
+      if (field_order_condition.isEmpty()) {
+        field_order_condition = builder_order.obj();
+      }
+      // Build selector condition in group.
+      builder_selector_field.appendElements(group_list_condition);
+      for (Field **fields = table->field; *fields; fields++) {
+        Field *field = *fields;
+        const char *field_name = sdb_field_name(field);
+        char val[MAX_FIELD_NAME + 1] = {'\0'};
+        val[0] = '$';
+        strcat(val, field_name);
+        if (bitmap_is_set(table->read_set, field->field_index) &&
+            !group_list_condition.hasField(field_name)) {
+          tmp_obj = BSON(field_name << BSON("$first" << val));
+          builder_selector_field.appendElements(tmp_obj);
+        }
+      }
+      group_list_condition = builder_selector_field.obj();
+
+      *sdb_group_list = sdb_get_join_group_list(thd);
+      sdb_set_join_group_list(thd, NULL, false);
+      direct_sort = true;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to build bson obj when sdb handler sort condition, exception:%s",
+      e.what());
+
+done:
+  DBUG_RETURN(rc);
+error:
+  if (direct_sort) {
+    sdb_set_join_order(thd, *sdb_order);
+    sdb_order = NULL;
+    field_order_condition = SDB_EMPTY_BSON;
+    direct_sort = false;
+  }
+  goto done;
+}
+
+int sdb_build_aggregate_obj(bson::BSONObj &condition,
+                            bson::BSONObj &group_list_condition,
+                            bson::BSONObj &order_by, ha_rows &num_to_skip,
+                            ha_rows &num_to_return,
+                            std::vector<bson::BSONObj> &aggregate_obj) {
+  int rc = SDB_OK;
+  bson::BSONObj match_obj;
+  bson::BSONObj group_obj;
+  bson::BSONObj sort_obj;
+  bson::BSONObj skip_obj;
+  bson::BSONObj limit_obj;
+  bson::BSONObj project_obj;
+
+  try {
+    bson::BSONObjBuilder match_builder(96);
+    bson::BSONObjBuilder match_field_builder(
+        match_builder.subobjStart("$match"));
+    match_field_builder.appendElements(condition);
+    match_field_builder.done();
+    match_obj = match_builder.obj();
+    aggregate_obj.push_back(match_obj);
+
+    bson::BSONObjBuilder group_builder(96);
+    bson::BSONObjBuilder group_field_builder(
+        group_builder.subobjStart("$group"));
+    group_field_builder.appendElements(group_list_condition);
+    group_field_builder.done();
+    group_obj = group_builder.obj();
+    aggregate_obj.push_back(group_obj);
+
+    bson::BSONObjBuilder sort_builder(96);
+    bson::BSONObjBuilder sort_field_builder(sort_builder.subobjStart("$sort"));
+    sort_field_builder.appendElements(order_by);
+    sort_field_builder.done();
+    sort_obj = sort_builder.obj();
+    aggregate_obj.push_back(sort_obj);
+
+    bson::BSONObjBuilder skip_builder(96);
+    skip_builder.append("$skip", (longlong)num_to_skip);
+    skip_obj = skip_builder.obj();
+    aggregate_obj.push_back(skip_obj);
+
+    bson::BSONObjBuilder limit_builder(96);
+    limit_builder.append("$limit", (longlong)num_to_return);
+    limit_obj = limit_builder.obj();
+    aggregate_obj.push_back(limit_obj);
+  } catch (std::bad_alloc &e) {
+    rc = HA_ERR_OUT_OF_MEM;
+    SDB_LOG_DEBUG(
+        "Failed to build bson obj when sdb build aggregate obj, exception:%s",
+        e.what());
+    goto done;
+  } catch (std::exception &e) {
+    rc = HA_ERR_INTERNAL_ERROR;
+    SDB_LOG_DEBUG(
+        "Failed to build bson obj when sdb build aggregate obj, exception:%s",
+        e.what());
+    goto done;
+  }
+  SDB_LOG_DEBUG(
+      "Query message: match[%s], group[%s], sort[%s], skip[%s], "
+      "limit[%s]",
+      match_obj.toString(false, false).c_str(),
+      group_obj.toString(false, false).c_str(),
+      sort_obj.toString(false, false).c_str(),
+      skip_obj.toString(false, false).c_str(),
+      limit_obj.toString(false, false).c_str());
+
+done:
+  return rc;
+}
+
+#ifdef IS_MYSQL
+void sdb_add_tmp_join_tab(THD *thd) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  JOIN_TAB *t = new (thd->mem_root) JOIN_TAB();
+  QEP_shared *qs = new (thd->mem_root) QEP_shared();
+  t->set_qs(qs);
+  join->tables++;
+  t->set_join(join);
+  t->set_idx(1);
+  DBUG_ASSERT(join->best_ref[join->primary_tables] == NULL);
+  join->best_ref[join->primary_tables] = t;
+}
+#endif
+
 const char *sharding_related_fields[] = {
     SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
     SDB_FIELD_AUTO_SPLIT,   SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_ISMAINCL};
@@ -618,7 +878,11 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_lock_type = TL_IGNORE;
   collection = NULL;
   first_read = true;
+  first_info = true;
   delete_with_select = false;
+  direct_sort = false;
+  field_order_condition = SDB_EMPTY_BSON;
+  group_list_condition = SDB_EMPTY_BSON;
   count_times = 0;
   last_count_time = time(NULL);
   m_ignore_dup_key = false;
@@ -650,6 +914,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_dup_key_nr = MAX_KEY;
   updated_value = NULL;
   updated_field = NULL;
+  sdb_order = NULL;
+  sdb_group_list = NULL;
 }
 
 ha_sdb::~ha_sdb() {
@@ -836,6 +1102,9 @@ int ha_sdb::reset() {
   free_root(&blobroot, MYF(0));
   m_lock_type = TL_IGNORE;
   pushed_condition = SDB_EMPTY_BSON;
+  field_order_condition = SDB_EMPTY_BSON;
+  group_list_condition = SDB_EMPTY_BSON;
+  first_info = true;
   delete_with_select = false;
   m_ignore_dup_key = false;
   m_write_can_replace = false;
@@ -852,6 +1121,9 @@ int ha_sdb::reset() {
   m_dup_value = SDB_EMPTY_BSON;
   updated_value = NULL;
   updated_field = NULL;
+  direct_sort = false;
+  sdb_order = NULL;
+  sdb_group_list = NULL;
 
   DBUG_RETURN(0);
 }
@@ -2854,40 +3126,6 @@ error:
   goto done;
 }
 
-bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition) {
-  SELECT_LEX *const select_lex = sdb_lex_first_select(thd);
-  JOIN *const join = select_lex->join;
-  /* if the following conditions are included, cannot pushdown limit:
-     1. HAVING condition.
-     2. WHERE condition but not pushdowned.
-     3. GROUP BY lists.
-     4. ORDER BY lists with filesort.
-     5. contains DISTINCT.
-     6. contains calculate found rows, like 'SELECT SQL_CALC_FOUND_ROWS * FROM
-        t1'.
-     7. has a GROUP BY clause and/or one or more aggregate functions.
-  */
-  const bool use_where_condition = sdb_where_condition(thd);
-  const bool use_having_condition = sdb_having_condition(thd);
-  const bool where_cond_push =
-      use_where_condition && SDB_COND_SUPPORTED == sdb_condition->status;
-  const bool use_group = join->group_list ? true : false;
-  const bool use_filesort = sdb_use_filesort(thd);
-  const bool use_distinct = sdb_use_distinct(thd);
-  const bool calc_found_rows = sdb_calc_found_rows(thd);
-  bool use_group_and_agg_func = false;
-  if (join->sort_and_group && !join->tmp_table_param.precomputed_group_by) {
-    use_group_and_agg_func = true;
-  }
-
-  if (use_having_condition || (use_where_condition && !where_cond_push) ||
-      use_group || use_distinct || calc_found_rows || use_group_and_agg_func ||
-      use_filesort) {
-    return false;
-  }
-  return true;
-}
-
 int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                            uchar *buf) {
   int rc = 0;
@@ -2913,11 +3151,15 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   }
 
   idx_order_direction = order_direction;
-  rc = sdb_get_idx_order(key_info, order_by, order_direction,
-                         m_secondary_sort_rowid);
-  if (rc) {
-    SDB_LOG_ERROR("Failed to get index order. rc: %d", rc);
-    goto error;
+  if (!field_order_condition.isEmpty()) {
+    order_by = field_order_condition;
+  } else {
+    rc = sdb_get_idx_order(key_info, order_by, order_direction,
+                           m_secondary_sort_rowid);
+    if (rc) {
+      SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
+      goto error;
+    }
   }
 
   flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
@@ -2962,11 +3204,21 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
         }
       }
     }
-    rc = collection->query(condition, selector, order_by, hint, num_to_skip,
-                           num_to_return, flag);
+    if (sdb_group_list) {
+      std::vector<bson::BSONObj> aggregate_obj;
+      rc = sdb_build_aggregate_obj(condition, group_list_condition, order_by,
+                                   num_to_skip, num_to_return, aggregate_obj);
+      if (rc) {
+        goto error;
+      }
+      rc = collection->aggregate(aggregate_obj);
+    } else {
+      rc = collection->query(condition, selector, order_by, hint, num_to_skip,
+                             num_to_return, flag);
+    }
   }
 
-  if (sdb_debug_log) {
+  if (sdb_debug_log && !sdb_group_list) {
     try {
       bson::BSONObjBuilder builder(96);
       bson::BSONObjIterator it(hint);
@@ -2981,7 +3233,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
     SDB_EXCEPTION_CATCHER(
         rc,
-        "Failed to debug log when index read one, table:%s.%s, "
+        "Failed to rebuild hint when index read one, table:%s.%s, "
         "exception:%s",
         db_name, table_name, e.what());
 
@@ -3525,6 +3777,7 @@ int ha_sdb::rnd_next(uchar *buf) {
   bson::BSONObj rule;
   bson::BSONObj selector;
   bson::BSONObj condition;
+  bson::BSONObj order_by = SDB_EMPTY_BSON;
   bson::BSONObj hint = SDB_EMPTY_BSON;
   bson::BSONObjBuilder builder;
   if (sdb_execute_only_in_mysql(ha_thd())) {
@@ -3550,6 +3803,11 @@ int ha_sdb::rnd_next(uchar *buf) {
     if (rc != 0) {
       goto error;
     }
+
+    if (!field_order_condition.isEmpty()) {
+      order_by = field_order_condition;
+    }
+
     {
       int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
       sdb_build_clientinfo(ha_thd(), builder);
@@ -3570,8 +3828,8 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
 
       if (delete_with_select) {
-        rc = collection->query_and_remove(condition, selector, SDB_EMPTY_BSON,
-                                          hint, 0, num_to_return, flag);
+        rc = collection->query_and_remove(condition, selector, order_by, hint,
+                                          0, num_to_return, flag);
       } else {
         SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
         SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
@@ -3586,12 +3844,23 @@ int ha_sdb::rnd_next(uchar *buf) {
             }
           }
         }
-        rc = collection->query(condition, selector, SDB_EMPTY_BSON, hint,
-                               num_to_skip, num_to_return, flag);
+        if (sdb_group_list) {
+          std::vector<bson::BSONObj> aggregate_obj;
+          rc = sdb_build_aggregate_obj(condition, group_list_condition,
+                                       order_by, num_to_skip, num_to_return,
+                                       aggregate_obj);
+          if (rc) {
+            goto error;
+          }
+          rc = collection->aggregate(aggregate_obj);
+        } else {
+          rc = collection->query(condition, selector, order_by, hint,
+                                 num_to_skip, num_to_return, flag);
+        }
       }
     }
 
-    if (sdb_debug_log) {
+    if (sdb_debug_log && !sdb_group_list) {
       try {
         bson::BSONObjBuilder builder(96);
         bson::BSONObjIterator it(hint);
@@ -3604,10 +3873,11 @@ int ha_sdb::rnd_next(uchar *buf) {
         }
         hint = builder.obj();
       }
-      SDB_EXCEPTION_CATCHER(rc,
-                            "Failed to debug log when rnd next, table:%s.%s, "
-                            "exception:%s",
-                            db_name, table_name, e.what());
+      SDB_EXCEPTION_CATCHER(
+          rc,
+          "Failed to rebuild hint when rnd next, table:%s.%s, "
+          "exception:%s",
+          db_name, table_name, e.what());
 
       SDB_LOG_DEBUG(
           "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
@@ -3722,6 +3992,20 @@ int ha_sdb::info(uint flag) {
       }
     }
     goto done;
+  }
+
+  if (first_info) {
+    if (thd_sql_command(ha_thd()) == SQLCOM_SELECT &&
+        sdb_is_single_table(ha_thd()) &&
+        (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_ORDER_BY)) {
+      rc = sdb_handle_sort_condition(
+          ha_thd(), table, &sdb_condition, &sdb_order, &sdb_group_list,
+          direct_sort, field_order_condition, group_list_condition);
+      if (rc) {
+        goto error;
+      }
+    }
+    first_info = false;
   }
 
   if (flag & HA_STATUS_VARIABLE) {
@@ -4822,6 +5106,9 @@ error:
 
 double ha_sdb::scan_time() {
   DBUG_ENTER("ha_sdb::scan_time");
+  if (direct_sort) {
+    sdb_clear_const_keys(ha_thd());
+  }
   double res = rows2double(share->stat.total_index_pages);
   DBUG_PRINT("exit", ("table: %s total_index_pages: %f", table_name, res));
   DBUG_RETURN(res);
@@ -5442,9 +5729,31 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     sdb_condition->status = SDB_COND_UNSUPPORTED;
   }
 
+  if (direct_sort && (SDB_COND_SUPPORTED != sdb_condition->status ||
+                      sdb_use_JT_REF_OR_NULL(ha_thd(), table))) {
+    if (sdb_order) {
+      sdb_set_join_order(ha_thd(), sdb_order);
+      sdb_order = NULL;
+    }
+    if (sdb_group_list) {
+#ifdef IS_MYSQL
+      // Since we removed the group list in 'ha_sdb::info', sql layer does't
+      // create join_tab for grouping. So we need to manually create join_tab.
+      sdb_add_tmp_join_tab(ha_thd());
+#endif
+      sdb_set_join_group_list(ha_thd(), sdb_group_list, true);
+      sdb_group_list = NULL;
+    }
+    direct_sort = false;
+    field_order_condition = SDB_EMPTY_BSON;
+    group_list_condition = SDB_EMPTY_BSON;
+  }
+
   if (SDB_COND_SUPPORTED == sdb_condition->status ||
       SDB_COND_PART_SUPPORTED == sdb_condition->status) {
-    // TODO: build unanalysable condition
+    // The SQL layer will not recieve any condition.
+    // If condition be pushed down, The SQL layer can only by notified by
+    // returning NULL.
     remain_cond = NULL;
   } else {
     const char *info_msg =

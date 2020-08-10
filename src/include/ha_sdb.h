@@ -547,9 +547,13 @@ class ha_sdb : public handler {
   enum thr_lock_type m_lock_type;
   Sdb_cl *collection;
   bool first_read;
+  bool first_info;
   bool delete_with_select;
+  bool direct_sort;
   bson::BSONObj cur_rec;
   bson::BSONObj pushed_condition;
+  bson::BSONObj field_order_condition;
+  bson::BSONObj group_list_condition;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
   char table_name[SDB_CL_NAME_MAX_SIZE + 1];
   time_t last_count_time;
@@ -580,6 +584,8 @@ class ha_sdb : public handler {
   boost::shared_ptr<Sdb_share> share;
   Item *updated_value;
   Field *updated_field;
+  st_order *sdb_order;
+  st_order *sdb_group_list;
 };
 
 #endif

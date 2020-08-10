@@ -49,43 +49,6 @@ int sdb_get_key_direction(ha_rkey_function find_flag) {
   }
 }
 
-static my_bool is_field_indexable(const Field *field) {
-  switch (field->type()) {
-    case MYSQL_TYPE_TINY:
-    case MYSQL_TYPE_SHORT:
-    case MYSQL_TYPE_INT24:
-    case MYSQL_TYPE_LONG:
-    case MYSQL_TYPE_LONGLONG:
-    case MYSQL_TYPE_BIT:
-    case MYSQL_TYPE_FLOAT:
-    case MYSQL_TYPE_DOUBLE:
-    case MYSQL_TYPE_DECIMAL:
-    case MYSQL_TYPE_NEWDECIMAL:
-    case MYSQL_TYPE_YEAR:
-    case MYSQL_TYPE_DATE:
-    case MYSQL_TYPE_TIME:
-    case MYSQL_TYPE_DATETIME:
-    case MYSQL_TYPE_TIMESTAMP:
-      return true;
-    case MYSQL_TYPE_VARCHAR:
-    case MYSQL_TYPE_STRING:
-    case MYSQL_TYPE_VAR_STRING:
-    case MYSQL_TYPE_BLOB:
-    case MYSQL_TYPE_GEOMETRY: {
-      if (!field->binary()) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-#ifdef IS_MYSQL
-    case MYSQL_TYPE_JSON:
-#endif
-    default:
-      return false;
-  }
-}
-
 int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
   int rc = 0;
   bool is_unique = key_info->flags & HA_NOSAME;
@@ -102,7 +65,7 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
     const KEY_PART_INFO *key_part = key_info->key_part;
     const KEY_PART_INFO *key_end = key_part + key_info->user_defined_key_parts;
     for (; key_part != key_end; ++key_part) {
-      if (!is_field_indexable(key_part->field)) {
+      if (!sdb_is_field_sortable(key_part->field)) {
         rc = HA_ERR_UNSUPPORTED;
         my_printf_error(rc,
                         "column '%-.192s' cannot be used in key specification.",

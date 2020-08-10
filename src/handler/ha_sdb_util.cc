@@ -836,6 +836,10 @@ done:
   return rs;
 }
 
+bool sdb_is_single_table(THD *thd) {
+  return thd->lex->query_tables && !thd->lex->query_tables->next_global;
+}
+
 bool str_end_with(const char *str, const char *sub_str) {
   const char *p = str + strlen(str) - strlen(sub_str);
   return (0 == strcmp(p, sub_str));
@@ -922,4 +926,41 @@ done:
   return rc;
 error:
   goto done;
+}
+
+my_bool sdb_is_field_sortable(const Field *field) {
+  switch (field->type()) {
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_LONG:
+    case MYSQL_TYPE_LONGLONG:
+    case MYSQL_TYPE_BIT:
+    case MYSQL_TYPE_FLOAT:
+    case MYSQL_TYPE_DOUBLE:
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_NEWDECIMAL:
+    case MYSQL_TYPE_YEAR:
+    case MYSQL_TYPE_DATE:
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_TIMESTAMP:
+      return true;
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_GEOMETRY: {
+      if (!field->binary()) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+#ifdef IS_MYSQL
+    case MYSQL_TYPE_JSON:
+#endif
+    default:
+      return false;
+  }
 }

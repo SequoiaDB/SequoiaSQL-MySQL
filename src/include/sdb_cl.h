@@ -59,6 +59,8 @@ class Sdb_cl {
                        longlong num_to_skip = 0, longlong num_to_return = -1,
                        int flags = QUERY_WITH_RETURNDATA);
 
+  int aggregate(std::vector<bson::BSONObj> &obj);
+
   int current(bson::BSONObj &obj, my_bool get_owned = true);
 
   int next(bson::BSONObj &obj, my_bool get_owned = true);

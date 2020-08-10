@@ -242,16 +242,67 @@ bool sdb_calc_found_rows(THD *thd) {
 
 bool sdb_use_filesort(THD *thd) {
   JOIN *const join = sdb_lex_first_select(thd)->join;
+  QEP_TAB *tab = NULL;
   if (!join->qep_tab) {
     return false;
   }
-  QEP_TAB *tab = NULL;
   if (join->need_tmp) {
     tab = &join->qep_tab[join->primary_tables];
   } else {
     tab = join->qep_tab + join->const_tables;
   }
   return tab->filesort;
+}
+
+bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return false;
+  }
+  JOIN_TAB *tab = join->map2table
+                      ? join->map2table[table->pos_in_table_list->tableno()]
+                      : NULL;
+  return JT_REF_OR_NULL == tab->type();
+}
+
+void sdb_clear_const_keys(THD *thd) {
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  if (join && join->join_tab) {
+    join->join_tab->const_keys.clear_all();
+  }
+}
+
+st_order *sdb_get_join_order(THD *thd) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return NULL;
+  }
+  return join->order.order;
+}
+
+void sdb_set_join_order(THD *thd, st_order *order) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return;
+  }
+  join->order.order = order;
+}
+
+st_order *sdb_get_join_group_list(THD *thd) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return NULL;
+  }
+  return join->group_list;
+}
+
+void sdb_set_join_group_list(THD *thd, st_order *group_list, bool grouped) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return;
+  }
+  join->group_list.order = group_list;
+  join->grouped = grouped;
 }
 
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag) {
@@ -384,10 +435,6 @@ bool sdb_is_transaction_stmt(THD *thd, bool all) {
   } else {
     return thd->get_transaction()->is_active(Transaction_ctx::STMT);
   }
-}
-
-bool sdb_is_single_table(THD *thd) {
-  return (1 == thd->lex->table_count);
 }
 
 void sdb_query_cache_invalidate(THD *thd, bool all) {
@@ -614,6 +661,63 @@ bool sdb_use_filesort(THD *thd) {
   return tab->filesort;
 }
 
+bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
+  JOIN_TAB *tab = NULL;
+  const JOIN *join = sdb_lex_first_select(thd)->join;
+  bool join_two_phase_optimization = true;
+  if (!join) {
+    return false;
+  }
+  if (!sdb_lex_first_select(thd)->pushdown_select &&
+      join->optimization_state == JOIN::OPTIMIZATION_PHASE_1_DONE) {
+    join_two_phase_optimization = true;
+  }
+
+  tab = (join_two_phase_optimization ? join->map2table[table->tablenr]
+                                     : &join->join_tab[table->tablenr]);
+  return JT_REF_OR_NULL == tab->type;
+}
+
+void sdb_clear_const_keys(THD *thd) {
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  if (join && join->best_ref[0]) {
+    join->best_ref[0]->const_keys.clear_all();
+  }
+}
+
+st_order *sdb_get_join_order(THD *thd) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return NULL;
+  }
+  return join->order;
+}
+
+void sdb_set_join_order(THD *thd, st_order *order) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return;
+  }
+  join->order = order;
+}
+
+st_order *sdb_get_join_group_list(THD *thd) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return NULL;
+  }
+  return join->group_list;
+}
+
+void sdb_set_join_group_list(THD *thd, st_order *group_list, bool grouped) {
+  JOIN *join = sdb_lex_first_select(thd)->join;
+  if (!join) {
+    return;
+  }
+  join->group_list = group_list;
+  join->group = grouped;
+}
+
 bool sdb_optimizer_switch_flag(THD *thd, ulonglong flag) {
   return optimizer_flag(thd, flag);
 }
@@ -764,10 +868,6 @@ void sdb_thd_reset_condition_info(THD *thd) {
 
 bool sdb_is_transaction_stmt(THD *thd, bool all) {
   return all ? thd->transaction.all.ha_list : thd->transaction.stmt.ha_list;
-}
-
-bool sdb_is_single_table(THD *thd) {
-  return thd->lex->query_tables && !thd->lex->query_tables->next_global;
 }
 
 bool sdb_create_table_like(THD *thd) {
