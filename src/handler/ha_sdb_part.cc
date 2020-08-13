@@ -25,6 +25,7 @@
 #include <partition_info.h>
 #include <my_check_opt.h>
 #include "bson/lib/md5.hpp"
+#include "ha_sdb_log.h"
 
 static const uint PARTITION_ALTER_FLAG =
     Alter_info::ALTER_ADD_PARTITION | Alter_info::ALTER_DROP_PARTITION |
@@ -41,6 +42,11 @@ static void sdb_traverse_and_append_field(const Item *item, void *arg) {
   }
 }
 
+/*
+  When table is subpartitioned, Partition_share::get_partition_name() will
+  return the name of sub partition, but this method will return the main
+  partition.
+*/
 const char *sdb_get_partition_name(partition_info *part_info, uint part_id) {
   List_iterator<partition_element> part_it(part_info->partitions);
   partition_element *part_elem = NULL;
@@ -2161,66 +2167,368 @@ error:
   goto done;
 }
 
-// For sub partition, Partition_helper::check_misplaced_rows is
-// hard to check. Besides, ha_sdb::check is not implemented.
+int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
+                                    Sdb_cl &src_scl, bson::BSONObj &record_obj,
+                                    bson::BSONObj &hint, uint src_part_id,
+                                    const char *src_part_name, uint dst_part_id,
+                                    const char *dst_part_name) {
+  static const char *INSERT_FAIL_MSG =
+      "Failed to move/insert a row from part %s into part %s:\n%s";
+
+  DBUG_ENTER("ha_sdb_part::move_misplaced_row");
+
+  int rc = 0;
+  Sdb_cl dst_cl;
+  bson::BSONObj new_obj;
+  bson::BSONObj tmp_obj;
+
+  if (UINT_MAX32 == dst_part_id) {
+    char buf[MAX_KEY_LENGTH] = {0};
+    String str(buf, sizeof(buf), system_charset_info);
+    str.length(0);
+    str.append("No matched partition, please update or delete the record:\n");
+    append_row_to_str(str, m_err_rec, m_table);
+
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                    m_table->alias, "repair", INSERT_FAIL_MSG, src_part_name,
+                    dst_part_name, str.c_ptr_safe());
+    rc = HA_ADMIN_CORRUPT;
+    goto error;
+  }
+
+  /*
+    Insert row into correct partition. Notice that there are no commit
+    for every N row, so the repair will be one large transaction!
+  */
+  // record auto_increment field always has value.
+  rc = row_to_obj(m_table->record[0], new_obj, true, false, tmp_obj, true);
+  if (0 == rc) {
+    rc = mcl.insert(new_obj, hint);
+  }
+  if (rc != 0) {
+    char buf[MAX_KEY_LENGTH] = {0};
+    String str(buf, sizeof(buf), system_charset_info);
+    str.length(0);
+    // We have failed to insert a row, it might have been a duplicate!
+    if (get_sdb_code(rc) == SDB_IXM_DUP_KEY) {
+      str.append("Duplicate key found, please update or delete the record:\n");
+    }
+    append_row_to_str(str, m_err_rec, m_table);
+
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                    m_table->alias, "repair", INSERT_FAIL_MSG, src_part_name,
+                    dst_part_name, str.c_ptr_safe());
+
+    // If the engine supports transactions, the failure will be rollbacked.
+    // Log this error, so the DBA can notice it and fix it!
+    if (!sdb_use_transaction) {
+      char msg[MYSQL_ERRMSG_SIZE] = {0};
+      snprintf(msg, sizeof(msg), INSERT_FAIL_MSG, src_part_name, dst_part_name,
+               str.c_ptr_safe());
+      sql_print_error("Table '%-192s': %s", m_table->s->table_name.str, msg);
+    }
+    rc = HA_ADMIN_CORRUPT;
+    goto error;
+  }
+
+  /* Delete row from wrong partition. */
+  rc = src_scl.del(record_obj, hint);
+  if (rc != 0) {
+    char buf[MAX_KEY_LENGTH] = {0};
+    String str(buf, sizeof(buf), system_charset_info);
+
+    if (sdb_use_transaction) {
+      goto error;
+    }
+    /*
+      We have introduced a duplicate, since we failed to remove it
+      from the wrong partition.
+    */
+    str.length(0);
+    append_row_to_str(str, m_err_rec, m_table);
+
+    /* Log this error, so the DBA can notice it and fix it! */
+    sql_print_error(
+        "Table '%-192s': Delete from part %d failed with"
+        " error %d. But it was already inserted into"
+        " part %d, when moving the misplaced row!"
+        "\nPlease manually fix the duplicate row:\n%s",
+        m_table->s->table_name.str, src_part_id, rc, dst_part_id,
+        str.c_ptr_safe());
+    rc = HA_ADMIN_CORRUPT;
+    goto error;
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
 
 /*
-int ha_sdb_part::check(THD *thd, HA_CHECK_OPT *check_opt) {
-  int rc = 0;
-  uint i = 0;
+  Check the partition id correctness row by row.
+  When repair = false, we do only check. The misplaced rows will be printed.
+  When repair = true, we move the misplaced rows to the correct partition.
+*/
+int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
+                                      bool repair) {
+  DBUG_ENTER("ha_sdb_part::check_misplaced_rows");
 
-  if (HASH_PARTITION == m_part_info->part_type) {
-    goto done;
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+  Sdb_cl mcl;
+  Sdb_cl scl;
+  bson::BSONObj selector;
+  bson::BSONObj obj;
+  uint correct_part_id = 0;
+  longlong func_value = 0;
+  ha_rows num_misplaced_rows = 0;
+  bson::BSONObj hint;
+  const char *op_name = repair ? "repair" : "check";
+  char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  const char *read_part_name = NULL;
+
+  m_err_rec = table->record[0];
+
+  /*
+    Here connect to the sub collection, because main collection may not find
+    the misplaced rows out.
+  */
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (rc != 0) {
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                    m_table->alias, op_name,
+                    "Failed to get SequoiaDB connection, error: %d", rc);
+    rc = HA_ADMIN_FAILED;
+    goto error;
   }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  read_part_name = sdb_get_partition_name(m_part_info, read_part_id);
+  build_scl_name(table_name, read_part_name, scl_name);
+  rc = conn->get_cl(db_name, scl_name, scl);
+  if (rc != 0) {
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                    m_table->alias, op_name,
+                    "Failed to get sub collection %s, error: %d", scl_name, rc);
+    rc = HA_ADMIN_FAILED;
+    goto error;
+  }
+
+  if (repair) {
+    // We must read the full row, if we need to move it!
+    bitmap_set_all(m_table->read_set);
+    bitmap_set_all(m_table->write_set);
+
+    bson::BSONObjBuilder builder;
+    sdb_build_clientinfo(thd, builder);
+    hint = builder.obj();
+
+    rc = conn->get_cl(db_name, table_name, mcl);
+    if (rc != 0) {
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                      m_table->alias, "repair",
+                      "Failed to get collection, error: %d", rc);
+      rc = HA_ADMIN_FAILED;
+      goto error;
+    }
+
+    rc = conn->begin_transaction(thd);
+    if (rc != 0) {
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                      m_table->alias, op_name,
+                      "Failed to start transaction, error: %d", rc);
+      rc = HA_ADMIN_FAILED;
+      goto error;
+    }
+
+  } else {
+    // Only need to read the partitioning fields.
+    bitmap_union(m_table->read_set, &m_part_info->full_part_field_set);
+    build_selector(selector);
+  }
+
+  rc = scl.query(SDB_EMPTY_BSON, selector);
+  if (rc != 0) {
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                    m_table->alias, op_name,
+                    "Failed to query from partition %s, error: %d",
+                    read_part_name, rc);
+    rc = HA_ADMIN_FAILED;
+    goto error;
+  }
+
+  while (0 == (rc = scl.next(obj, false))) {
+    const char *correct_part_name = NULL;
+
+    rc = obj_to_row(obj, m_table->record[0]);
+    if (rc != 0) {
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                      m_table->alias, op_name,
+                      "Failed to convert BSON to mysql row, error: %d", rc);
+      rc = HA_ADMIN_FAILED;
+      goto error;
+    }
+
+    rc = m_part_info->get_partition_id(m_part_info, &correct_part_id,
+                                       &func_value);
+    if (rc != 0) {
+      correct_part_id = UINT_MAX32;
+    } else {
+      convert_sub2main_part_id(correct_part_id);
+    }
+
+    if (read_part_id == correct_part_id) {
+      continue;
+    }
+
+    num_misplaced_rows++;
+
+    if (correct_part_id != UINT_MAX32) {
+      correct_part_name = sdb_get_partition_name(m_part_info, correct_part_id);
+    } else {
+      correct_part_name = "unknown";
+    }
+
+    if (!repair) {
+      char buf[MAX_KEY_LENGTH] = {0};
+      String str(buf, sizeof(buf), system_charset_info);
+      str.length(0);
+      append_row_to_str(str, m_err_rec, m_table);
+
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                      m_table->alias, op_name,
+                      "Found a misplaced row"
+                      " in part %s should be in part %s:\n%s",
+                      read_part_name, correct_part_name, str.c_ptr_safe());
+
+      rc = HA_ADMIN_NEEDS_UPGRADE;
+      goto error;
+
+    } else {
+      DBUG_PRINT("info", ("Moving row from partition %d to %d", read_part_id,
+                          correct_part_id));
+      rc = move_misplaced_row(thd, conn, mcl, scl, obj, hint, read_part_id,
+                              read_part_name, correct_part_id,
+                              correct_part_name);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+  }
+  rc = (HA_ERR_END_OF_FILE == rc) ? 0 : rc;
+  if (rc != 0) {
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                    m_table->alias, op_name,
+                    "Failed to get next record from part %s, error: %d",
+                    read_part_name, rc);
+    rc = HA_ADMIN_FAILED;
+    goto error;
+  }
+
+  if (repair) {
+    rc = conn->commit_transaction();
+    if (rc != 0) {
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
+                      m_table->alias, op_name,
+                      "Failed to commit transaction, error: %d", rc);
+      rc = HA_ADMIN_FAILED;
+      goto error;
+    }
+
+    if (num_misplaced_rows > 0) {
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "warning", m_table->s->db.str,
+                      m_table->alias, op_name, "Moved %lld misplaced rows",
+                      num_misplaced_rows);
+    }
+  }
+done:
+  m_err_rec = NULL;
+  DBUG_RETURN(rc);
+error:
+  if (conn->is_transaction_on()) {
+    conn->rollback_transaction();
+  }
+  goto done;
+}
+
+int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
+                                      bool repair) {
+  int rc = HA_ADMIN_OK;
+  uint i = 0;
+  uint last_part_id = -1;
+  const char *op_name = repair ? "repair" : "check";
 
   // Only repair partitions for MEDIUM or EXTENDED options.
   if ((check_opt->flags & (T_MEDIUM | T_EXTEND)) == 0) {
     goto done;
   }
 
-  for (i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-       i = m_part_info->get_next_used_partition(i)) {
-    ha_sdb::check(thd, check_opt) is not implemented.
-    rc = Partition_helper::check_misplaced_rows(i, false);
-    if (rc != 0) {
-      break;
-    }
-  }
-
-  if (rc != 0) {
-    print_admin_msg(thd, 256, "error", table_share->db.str, table->alias,
-                    "check Partition %s returned error",
-                    m_part_share->get_partition_name(i));
-  }
-done:
-  return rc;
-}
-
-int ha_sdb_part::repair(THD *thd, HA_CHECK_OPT *repair_opt) {
-  int rc = 0;
+  // Nothing to check for hash partition.
   if (HASH_PARTITION == m_part_info->part_type) {
     goto done;
   }
 
-  // Only repair partitions for MEDIUM or EXTENDED options.
-  if ((repair_opt->flags & (T_MEDIUM | T_EXTEND)) == 0) {
-    goto done;
+  // Can't explicitly specify sub partition.
+  if (m_part_info->is_sub_partitioned()) {
+    List_iterator<String> names_it(thd->lex->alter_info.partition_names);
+    String *name = NULL;
+
+    while ((name = names_it++)) {
+      List_iterator<partition_element> part_it(m_part_info->partitions);
+      partition_element *part_elem = NULL;
+
+      while ((part_elem = part_it++)) {
+        List_iterator<partition_element> sub_it(part_elem->subpartitions);
+        partition_element *sub_elem = NULL;
+
+        while ((sub_elem = sub_it++)) {
+          if (0 == my_strcasecmp(system_charset_info, name->c_ptr(),
+                                 sub_elem->partition_name)) {
+            rc = HA_ADMIN_INVALID;
+            print_admin_msg(thd, 256, "error", table_share->db.str,
+                            table->alias, op_name,
+                            "Specifying subpartitions is not supported");
+            goto error;
+          }
+        }
+      }
+    }
   }
 
-  for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
+  if (set_altered_partitions()) {
+    rc = HA_ADMIN_INVALID;
+    goto error;
+  }
+
+  for (i = m_part_info->get_first_used_partition(); i < m_tot_parts;
        i = m_part_info->get_next_used_partition(i)) {
-    ha_sdb::repair(thd, check_opt) is not implemented.
-    rc = Partition_helper::check_misplaced_rows(i, true);
+    uint part_id = i;
+    convert_sub2main_part_id(part_id);
+    if (part_id == last_part_id) {
+      continue;
+    }
+    last_part_id = part_id;
+
+    rc = check_misplaced_rows(thd, part_id, repair);
     if (rc != 0) {
       print_admin_msg(thd, 256, "error", table_share->db.str, table->alias,
-                      "repair Partition %s returned error",
-                      m_part_share->get_partition_name(i));
+                      op_name, "Partition %s returned error",
+                      sdb_get_partition_name(m_part_info, i));
       break;
     }
   }
 done:
   return rc;
+error:
+  goto done;
 }
-*/
+
+int ha_sdb_part::check(THD *thd, HA_CHECK_OPT *check_opt) {
+  return check_misplaced_rows(thd, check_opt, false);
+}
+
+int ha_sdb_part::repair(THD *thd, HA_CHECK_OPT *repair_opt) {
+  return check_misplaced_rows(thd, repair_opt, true);
+}
 
 #endif  // IS_MYSQL

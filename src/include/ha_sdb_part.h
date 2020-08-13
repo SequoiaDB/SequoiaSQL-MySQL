@@ -323,9 +323,9 @@ class ha_sdb_part : public ha_sdb,
 
   handler* get_handler() { return (static_cast<handler*>(this)); }
 
-  // int check(THD* thd, HA_CHECK_OPT* check_opt);
+  int check(THD* thd, HA_CHECK_OPT* check_opt);
 
-  // int repair(THD* thd, HA_CHECK_OPT* repair_opt);
+  int repair(THD* thd, HA_CHECK_OPT* repair_opt);
 
  private:
   longlong calculate_name_hash(const char* part_name);
@@ -397,6 +397,15 @@ class ha_sdb_part : public ha_sdb,
   int detach_and_attach_scl();
 
   int test_if_explicit_partition(bool* explicit_partition = NULL);
+
+  int move_misplaced_row(THD* thd, Sdb_conn* conn, Sdb_cl& mcl, Sdb_cl& src_scl,
+                         bson::BSONObj& record_obj, bson::BSONObj& hint,
+                         uint src_part_id, const char* src_part_name,
+                         uint dst_part_id, const char* dst_part_name);
+
+  int check_misplaced_rows(THD* thd, HA_CHECK_OPT* check_opt, bool repair);
+
+  int check_misplaced_rows(THD* thd, uint read_part_id, bool repair);
 
  private:
   bool m_sharded_by_part_hash_id;
