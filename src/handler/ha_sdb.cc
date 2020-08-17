@@ -2754,11 +2754,13 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   }
 
   SDB_LOG_DEBUG(
-      "Query message: condition[%s], selector[%s], order_by[%s], limt[%d], "
+      "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+      "limit[%d], "
       "offset[%d]",
       condition.toString(false, false).c_str(),
       selector.toString(false, false).c_str(),
-      order_by.toString(false, false).c_str(), num_to_return, num_to_skip);
+      order_by.toString(false, false).c_str(),
+      hint.toString(false, false).c_str(), num_to_return, num_to_skip);
 
   if (rc) {
     SDB_LOG_ERROR(
@@ -3350,12 +3352,13 @@ int ha_sdb::rnd_next(uchar *buf) {
     }
 
     SDB_LOG_DEBUG(
-        "Query message: condition[%s], selector[%s], order_by[%s], limt[%d], "
+        "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+        "limit[%d], "
         "offset[%d]",
         condition.toString(false, false).c_str(),
         selector.toString(false, false).c_str(),
-        SDB_EMPTY_BSON.toString(false, false).c_str(), num_to_return,
-        num_to_skip);
+        SDB_EMPTY_BSON.toString(false, false).c_str(),
+        hint.toString(false, false).c_str(), num_to_return, num_to_skip);
 
     if (rc != 0) {
       goto error;
