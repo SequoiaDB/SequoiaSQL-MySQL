@@ -268,7 +268,7 @@ class ha_sdb : public handler {
   */
   int delete_row(const uchar *buf);
 
-  void build_selector(bson::BSONObj &selector);
+  int build_selector(bson::BSONObj &selector);
 
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
@@ -315,8 +315,8 @@ class ha_sdb : public handler {
   // int index_read(uchar *buf, const uchar *key_ptr, uint key_len,
   //               enum ha_rkey_function find_flage);
 
-  void create_field_rule(const char *field_name, Item_field *value,
-                         bson::BSONObjBuilder &builder);
+  int create_field_rule(const char *field_name, Item_field *value,
+                        bson::BSONObjBuilder &builder);
 
   int create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
                       bson::BSONObjBuilder &builder);
@@ -326,7 +326,7 @@ class ha_sdb : public handler {
 
   int create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update);
 
-  bool optimize_count(bson::BSONObj &condition);
+  int optimize_count(bson::BSONObj &condition, bool &can_direct);
 
   bool optimize_delete(bson::BSONObj &condition);
 
@@ -464,9 +464,9 @@ class ha_sdb : public handler {
 
   int ensure_stats(THD *thd);
 
-  void build_auto_inc_option(const Field *field,
-                             const HA_CREATE_INFO *create_info,
-                             bson::BSONObj &option);
+  int build_auto_inc_option(const Field *field,
+                            const HA_CREATE_INFO *create_info,
+                            bson::BSONObj &option);
 
   void update_last_insert_id();
 
@@ -474,6 +474,8 @@ class ha_sdb : public handler {
 
   int alter_column(TABLE *altered_table, Alter_inplace_info *ha_alter_info,
                    Sdb_conn *conn, Sdb_cl &cl);
+
+  bool get_error_message(int error, String *buf);
 
   void print_error(int error, myf errflag);
 
@@ -487,9 +489,9 @@ class ha_sdb : public handler {
 
   int get_deleted_rows(bson::BSONObj &result, ulonglong *deleted);
 
-  const char *get_dup_info(bson::BSONObj &result);
+  int get_dup_info(bson::BSONObj &result, const char **idx_name);
 
-  void get_dup_key_cond(bson::BSONObj &cond);
+  int get_dup_key_cond(bson::BSONObj &cond);
 
   template <class T>
   int insert_row(T &rows, uint row_count);

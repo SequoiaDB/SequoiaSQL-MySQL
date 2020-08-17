@@ -274,9 +274,9 @@ error:
 }
 
 /**
-  Compression attribute can both specified by COMMENT and COMPRESSION.
-  Check if they are ambiguous, and push the final compression type to `build`.
-*/
+ * Compression attribute can both specified by COMMENT and COMPRESSION.
+ * Check if they are ambiguous, and push the final compression type to `build`.
+ */
 int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
                                bson::BSONElement &cmt_compressed,
                                bson::BSONElement &cmt_compress_type,
@@ -299,57 +299,64 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
     goto error;
   }
 
-  type = sdb_str_compress_type(cmt_compress_type.valuestr());
-  if (cmt_compress_type.type() == bson::String) {
-    if ((cmt_compressed.type() == bson::Bool &&
-         cmt_compressed.Bool() == false) ||
-        (sql_compress != SDB_COMPRESS_TYPE_DEAFULT && type != sql_compress)) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous compression", MYF(0));
-      goto error;
-    }
-    build.append(SDB_FIELD_COMPRESSED, true);
-    build.append(cmt_compress_type);
-    goto done;
-  }
-
-  if (cmt_compress_type.type() == bson::EOO) {
-    if (cmt_compressed.type() == bson::Bool && cmt_compressed.Bool() == true) {
-      if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
+  try {
+    type = sdb_str_compress_type(cmt_compress_type.valuestr());
+    if (cmt_compress_type.type() == bson::String) {
+      if ((cmt_compressed.type() == bson::Bool &&
+           cmt_compressed.Bool() == false) ||
+          (sql_compress != SDB_COMPRESS_TYPE_DEAFULT && type != sql_compress)) {
         rc = ER_WRONG_ARGUMENTS;
         my_printf_error(rc, "Ambiguous compression", MYF(0));
         goto error;
       }
-      if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+      build.append(SDB_FIELD_COMPRESSED, true);
+      build.append(cmt_compress_type);
+      goto done;
+    }
+
+    if (cmt_compress_type.type() == bson::EOO) {
+      if (cmt_compressed.type() == bson::Bool &&
+          cmt_compressed.Bool() == true) {
+        if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
+          rc = ER_WRONG_ARGUMENTS;
+          my_printf_error(rc, "Ambiguous compression", MYF(0));
+          goto error;
+        }
+        if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+          build.append(SDB_FIELD_COMPRESSED, true);
+          goto done;
+        }
         build.append(SDB_FIELD_COMPRESSED, true);
-        goto done;
+        build.append(SDB_FIELD_COMPRESSION_TYPE,
+                     sdb_compress_type_str(sql_compress));
+      } else if (cmt_compressed.type() == bson::Bool &&
+                 cmt_compressed.Bool() == false) {
+        if (sql_compress == SDB_COMPRESS_TYPE_NONE ||
+            sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+          build.append(SDB_FIELD_COMPRESSED, false);
+          goto done;
+        }
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Ambiguous compression", MYF(0));
+        goto error;
+      } else {
+        if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
+          build.append(SDB_FIELD_COMPRESSED, false);
+          goto done;
+        }
+        if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+          goto done;
+        }
+        build.append(SDB_FIELD_COMPRESSED, true);
+        build.append(SDB_FIELD_COMPRESSION_TYPE,
+                     sdb_compress_type_str(sql_compress));
       }
-      build.append(SDB_FIELD_COMPRESSED, true);
-      build.append(SDB_FIELD_COMPRESSION_TYPE,
-                   sdb_compress_type_str(sql_compress));
-    } else if (cmt_compressed.type() == bson::Bool &&
-               cmt_compressed.Bool() == false) {
-      if (sql_compress == SDB_COMPRESS_TYPE_NONE ||
-          sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
-        build.append(SDB_FIELD_COMPRESSED, false);
-        goto done;
-      }
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous compression", MYF(0));
-      goto error;
-    } else {
-      if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
-        build.append(SDB_FIELD_COMPRESSED, false);
-        goto done;
-      }
-      if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
-        goto done;
-      }
-      build.append(SDB_FIELD_COMPRESSED, true);
-      build.append(SDB_FIELD_COMPRESSION_TYPE,
-                   sdb_compress_type_str(sql_compress));
     }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to check if compress options are ambiguous or not, exception:%s",
+      e.what());
 
 done:
   return rc;
@@ -585,8 +592,7 @@ int sdb_parse_comment_options(const char *comment_str,
                     comment_str);
     goto error;
   }
-
-  {
+  try {
     bson::BSONObjIterator iter(comments);
     bson::BSONElement elem;
     while (iter.more()) {
@@ -634,6 +640,10 @@ int sdb_parse_comment_options(const char *comment_str,
       }
     }
   }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to parse comment options:%s, "
+                        "exception=%s",
+                        comment_str, e.what());
 done:
   return rc;
 error:
@@ -643,10 +653,22 @@ error:
 int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hintBuilder) {
   int rc = SDB_ERR_OK;
   bson::BSONObj info;
-  info = BSON(SDB_FIELD_PORT << mysqld_port << SDB_FIELD_QID << thd->query_id);
+  bson::BSONObjBuilder build(64);
+  try {
+    build.append(SDB_FIELD_PORT, mysqld_port);
+    build.append(SDB_FIELD_QID, thd->query_id);
+    info = build.obj();
+    hintBuilder.append(SDB_FIELD_INFO, info);
+  }
 
-  hintBuilder.append(SDB_FIELD_INFO, info);
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to build client info, query id:%d, "
+                        "exception=%s",
+                        thd->query_id, e.what());
+done:
   return rc;
+error:
+  goto done;
 }
 
 int sdb_add_pfs_clientinfo(THD *thd) {
@@ -865,35 +887,37 @@ done:
 int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
                        bson::BSONObjBuilder &build) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjIterator it_old(old_opt_obj);
-  bson::BSONObjIterator it_new(new_opt_obj);
-  bson::BSONElement old_tmp_ele, new_tmp_ele;
-  while (it_old.more()) {
-    old_tmp_ele = it_old.next();
-    new_tmp_ele = new_opt_obj.getField(old_tmp_ele.fieldName());
-    if (new_tmp_ele.type() == bson::EOO) {
-      // We don't allow delete table options. But it's exceptional that
-      // { Compressed: true, CompressionType: "xxx" } => { Compressed: false }
-      if (!strcmp(old_tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) &&
-          !new_opt_obj.getField(SDB_FIELD_COMPRESSED).booleanSafe()) {
-        continue;
+  try {
+    bson::BSONObjIterator it_old(old_opt_obj);
+    bson::BSONObjIterator it_new(new_opt_obj);
+    bson::BSONElement old_tmp_ele, new_tmp_ele;
+    while (it_old.more()) {
+      old_tmp_ele = it_old.next();
+      new_tmp_ele = new_opt_obj.getField(old_tmp_ele.fieldName());
+      if (new_tmp_ele.type() == bson::EOO) {
+        // We don't allow delete table options. But it's exceptional that
+        // { Compressed: true, CompressionType: "xxx" } => { Compressed: false }
+        if (!strcmp(old_tmp_ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE) &&
+            !new_opt_obj.getField(SDB_FIELD_COMPRESSED).booleanSafe()) {
+          continue;
+        }
+        rc = HA_ERR_WRONG_COMMAND;
+        my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
+        goto error;
+      } else if (!(new_tmp_ele == old_tmp_ele)) {
+        build.append(new_tmp_ele);
       }
-      rc = HA_ERR_WRONG_COMMAND;
-      my_printf_error(rc, "Cannot delete table options of comment", MYF(0));
-      goto error;
-    } else if (!(new_tmp_ele == old_tmp_ele)) {
-      build.append(new_tmp_ele);
+    }
+
+    while (it_new.more()) {
+      new_tmp_ele = it_new.next();
+      old_tmp_ele = old_opt_obj.getField(new_tmp_ele.fieldName());
+      if (old_tmp_ele.type() == bson::EOO) {
+        build.append(new_tmp_ele);
+      }
     }
   }
-
-  while (it_new.more()) {
-    new_tmp_ele = it_new.next();
-    old_tmp_ele = old_opt_obj.getField(new_tmp_ele.fieldName());
-    if (old_tmp_ele.type() == bson::EOO) {
-      build.append(new_tmp_ele);
-    }
-  }
-
+  SDB_EXCEPTION_CATCHER(rc, "Failed to filter options, exception:%s", e.what())
 done:
   return rc;
 error:

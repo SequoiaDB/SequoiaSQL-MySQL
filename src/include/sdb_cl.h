@@ -124,6 +124,9 @@ class Sdb_cl {
             const bson::BSONObj &split_end_cond = SDB_EMPTY_BSON);
 
   int get_detail(sdbclient::sdbCursor &cursor);
+  char *get_errmsg() { return errmsg; }
+  void clear_errmsg() { errmsg[0] = '\0'; }
+  bool is_error() { return (errmsg[0] == '\0') ? FALSE : TRUE; }
 
  private:
   int retry(boost::function<int()> func);
@@ -133,5 +136,6 @@ class Sdb_cl {
   my_thread_id m_thread_id;
   sdbclient::sdbCollection m_cl;
   sdbclient::sdbCursor m_cursor;
+  char errmsg[SDB_ERR_BUFF_SIZE];
 };
 #endif

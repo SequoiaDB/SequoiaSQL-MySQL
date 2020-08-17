@@ -125,6 +125,8 @@ class Sdb_conn {
   void set_use_transaction(int use_transaction) {
     m_use_transaction = use_transaction;
   }
+  char *get_err_msg() { return errmsg; }
+  void clear_err_msg() { errmsg[0] = '\0'; }
 
  private:
   int retry(boost::function<int()> func);
@@ -137,6 +139,7 @@ class Sdb_conn {
   ulong last_tx_isolation;
   bool m_is_authenticated;
   bool m_use_transaction;
+  char errmsg[SDB_ERR_BUFF_SIZE];
 };
 
 #endif

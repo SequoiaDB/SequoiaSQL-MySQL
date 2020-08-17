@@ -836,6 +836,9 @@ bool is_strict_mode(sql_mode_t sql_mode) {
   }
 }
 
+/*
+ * Exception catcher need to be added when call this function.
+ */
 int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
   int rc = 0;
 
@@ -923,7 +926,11 @@ int ha_sdb::append_default_value(bson::BSONObjBuilder &builder, Field *field) {
   return rc;
 }
 
-void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
+/*
+ * Exception catcher need to be added when call this function.
+ */
+int append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
+  int rc = SDB_ERR_OK;
   switch (field->real_type()) {
     case MYSQL_TYPE_TINY:
     case MYSQL_TYPE_SHORT:
@@ -1012,6 +1019,7 @@ void append_zero_value(bson::BSONObjBuilder &builder, Field *field) {
 #endif
     default: { DBUG_ASSERT(false); }
   }
+  return rc;
 }
 
 bool get_cast_rule(bson::BSONObjBuilder &builder, Field *old_field,
@@ -1028,8 +1036,9 @@ bool get_cast_rule(bson::BSONObjBuilder &builder, Field *old_field,
   @return false if success. true if no such condition.
 */
 bool get_check_bound_cond(Field *old_field, Field *new_field,
-                          bson::BSONObjBuilder &builder) {
+                          bson::BSONObjBuilder &builder, bool &out_of_bound) {
   bool rs = true;
+  int rc = SDB_ERR_OK;
   const char *field_name = sdb_field_name(old_field);
 
   try {
@@ -1118,39 +1127,59 @@ bool get_check_bound_cond(Field *old_field, Field *new_field,
       rs = false;
       goto done;
     }
-  } catch (std::bad_alloc) {
-    goto done;
   }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to check bound condition, old field:%s, new "
+                        "field:%s, exception:%s",
+                        sdb_field_name(old_field), sdb_field_name(new_field),
+                        e.what());
 done:
-  return rs;
+  out_of_bound = rs;
+  return rc;
+error:
+  goto done;
 }
 
+/*
+ * Exception catcher need to be added when call this function.
+ */
 int update_null_to_notnull(Sdb_cl &cl, Field *field, longlong &modified_num,
                            bson::BSONObj &hint) {
   int rc = 0;
   bson::BSONObj result;
   bson::BSONElement be_modified_num;
 
-  // { $set: { a: 0 } }
-  bson::BSONObjBuilder rule_builder;
-  bson::BSONObjBuilder sub_rule(rule_builder.subobjStart("$set"));
-  append_zero_value(sub_rule, field);
-  sub_rule.done();
+  try {
+    // { $set: { a: 0 } }
+    bson::BSONObjBuilder rule_builder;
+    bson::BSONObjBuilder sub_rule(rule_builder.subobjStart("$set"));
+    rc = append_zero_value(sub_rule, field);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
+    sub_rule.done();
 
-  // { a: { $isnull: 1 } }
-  bson::BSONObjBuilder cond_builder;
-  bson::BSONObjBuilder sub_cond(
-      cond_builder.subobjStart(sdb_field_name(field)));
-  sub_cond.append("$isnull", 1);
-  sub_cond.done();
+    // { a: { $isnull: 1 } }
+    bson::BSONObjBuilder cond_builder;
+    bson::BSONObjBuilder sub_cond(
+        cond_builder.subobjStart(sdb_field_name(field)));
+    sub_cond.append("$isnull", 1);
+    sub_cond.done();
 
-  rc = cl.update(rule_builder.obj(), cond_builder.obj(), hint,
-                 UPDATE_KEEP_SHARDINGKEY | UPDATE_RETURNNUM, &result);
-  be_modified_num = result.getField(SDB_FIELD_MODIFIED_NUM);
-  if (be_modified_num.isNumber()) {
-    modified_num = be_modified_num.numberLong();
+    rc = cl.update(rule_builder.obj(), cond_builder.obj(), hint,
+                   UPDATE_KEEP_SHARDINGKEY | UPDATE_RETURNNUM, &result);
+    be_modified_num = result.getField(SDB_FIELD_MODIFIED_NUM);
+    if (be_modified_num.isNumber()) {
+      modified_num = be_modified_num.numberLong();
+    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to update null field to not null, field:%s, exception:%s",
+      sdb_field_name(field), e.what());
+done:
   return rc;
+error:
+  goto done;
 }
 
 int ha_sdb::alter_column(TABLE *altered_table,
@@ -1168,8 +1197,19 @@ int ha_sdb::alter_column(TABLE *altered_table,
   ha_sdb_alter_ctx *ctx = (ha_sdb_alter_ctx *)ha_alter_info->handler_ctx;
   List<Col_alter_info> &changed_columns = ctx->changed_columns;
   longlong count = 0;
-
+  enum alter_column_steps {
+    init = 0,
+    build_upset_and_set_obj,
+    build_cast_obj,
+    full_table_update,
+    alter_auto_increment
+  } step;
+  static char step_names[][50] = {
+      "initialization_step", "buiding_upset_and_set_obj",
+      "buiding_cast_rule_obj", "full_table_updating",
+      "altering_auto_increment_column"};
   try {
+    step = init;
     bson::BSONObjBuilder unset_builder;
     List_iterator_fast<Field> dropped_it;
     Field *field = NULL;
@@ -1195,6 +1235,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
     }
 
     // 1.Handle the dropped_columns
+    step = build_upset_and_set_obj;
     dropped_it.init(ctx->dropped_columns);
     while ((field = dropped_it++)) {
       unset_builder.append(sdb_field_name(field), "");
@@ -1219,7 +1260,10 @@ int ha_sdb::alter_column(TABLE *altered_table,
         }
       } else if (!field->maybe_null()) {
         if (!(field->flags & AUTO_INCREMENT_FLAG)) {
-          append_zero_value(set_builder, field);
+          rc = append_zero_value(set_builder, field);
+          if (SDB_ERR_OK != rc) {
+            goto error;
+          }
         } else {
           // inc_builder.append(sdb_field_name(field), get_inc_option(option));
         }
@@ -1227,6 +1271,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
     }
 
     // 3.Handle the changed_columns
+    step = build_cast_obj;
     changed_it.init(changed_columns);
     while ((info = changed_it++)) {
       if (strcmp(sdb_field_name(info->before), sdb_field_name(info->after))) {
@@ -1296,7 +1341,9 @@ int ha_sdb::alter_column(TABLE *altered_table,
           if (!conn->is_transaction_on()) {
             rc = conn->begin_transaction(thd->tx_isolation);
             if (rc != 0) {
-              goto error;
+              SDB_LOG_ERROR("%s", conn->get_err_msg());
+              conn->clear_err_msg();
+              goto done;
             }
           }
           rc = update_null_to_notnull(cl, info->before, modified_num, hint);
@@ -1318,6 +1365,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
     }
 
     // 4.Full table update
+    step = full_table_update;
     if (unset_builder.len() > EMPTY_BUILDER_LEN) {
       builder.append("$unset", unset_builder.obj());
     }
@@ -1340,7 +1388,9 @@ int ha_sdb::alter_column(TABLE *altered_table,
       if (!conn->is_transaction_on()) {
         rc = conn->begin_transaction(thd->tx_isolation);
         if (rc != 0) {
-          goto error;
+          SDB_LOG_ERROR("%s", conn->get_err_msg());
+          conn->clear_err_msg();
+          goto done;
         }
       }
       rc = cl.update(builder.obj(), SDB_EMPTY_BSON, hint,
@@ -1374,6 +1424,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
     }*/
 
     // 5.Create and drop auto-increment.
+    step = alter_auto_increment;
     dropped_it.rewind();
     while ((field = dropped_it++)) {
       if (field->flags & AUTO_INCREMENT_FLAG) {
@@ -1388,7 +1439,15 @@ int ha_sdb::alter_column(TABLE *altered_table,
     while ((field = added_it++)) {
       if (field->flags & AUTO_INCREMENT_FLAG) {
         bson::BSONObj option;
-        build_auto_inc_option(field, create_info, option);
+        rc = build_auto_inc_option(field, create_info, option);
+        if (SDB_ERR_OK != rc) {
+          SDB_LOG_ERROR(
+              "Failed to build auto_increment option object when alater "
+              "column, "
+              "field:%s, table:%s.%s, rc:%d",
+              sdb_field_name(field), db_name, table_name, rc);
+          goto error;
+        }
         rc = cl.create_auto_increment(option);
         if (0 != rc) {
           goto error;
@@ -1407,19 +1466,26 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
       if (info->op_flag & Col_alter_info::ADD_AUTO_INC) {
         bson::BSONObj option;
-        build_auto_inc_option(info->after, create_info, option);
+        rc = build_auto_inc_option(info->after, create_info, option);
+        if (SDB_ERR_OK != rc) {
+          SDB_LOG_ERROR(
+              "Failed to build auto_increment option object when alter column, "
+              "field:%s, table:%s.%s, rc:%d",
+              sdb_field_name(info->after), db_name, table_name, rc);
+          goto error;
+        }
         rc = cl.create_auto_increment(option);
         if (0 != rc) {
           goto error;
         }
       }
     }
-
-  } catch (std::bad_alloc) {
-    rc = HA_ERR_OUT_OF_MEM;
-    my_error(HA_ERR_OUT_OF_MEM, MYF(0));
-    goto error;
   }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to alter column, step:%s, table:%s.%s, temp "
+                        "table:%s, exception:%s",
+                        step_names[step], db_name, table_name,
+                        altered_table->s->table_name.str, e.what());
 done:
   return rc;
 error:
@@ -1474,6 +1540,7 @@ error:
 enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
   enum_alter_inplace_result rs;
+  int rc = SDB_ERR_OK;
   List_iterator_fast<Create_field> cf_it;
   Bitmap<MAX_FIELDS> matched_map;
   ha_sdb_alter_ctx *ctx = NULL;
@@ -1510,92 +1577,110 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   }
   ha_alter_info->handler_ctx = ctx;
 
-  // Filter added_columns, dropped_columns and changed_columns
-  matched_map.clear_all();
-  for (uint i = 0; table->field[i]; i++) {
-    Field *old_field = table->field[i];
-    bool found_col = false;
-    for (uint j = 0; altered_table->field[j]; j++) {
-      bson::BSONObjBuilder cast_builder;
-      bson::BSONObjBuilder cond_builder;
-      Field *new_field = altered_table->field[j];
-      if (!matched_map.is_set(j) &&
-          my_strcasecmp(system_charset_info, sdb_field_name(old_field),
-                        sdb_field_name(new_field)) == 0) {
-        matched_map.set_bit(j);
-        found_col = true;
+  try {
+    // Filter added_columns, dropped_columns and changed_columns
+    matched_map.clear_all();
+    for (uint i = 0; table->field[i]; i++) {
+      Field *old_field = table->field[i];
+      bool found_col = false;
+      for (uint j = 0; altered_table->field[j]; j++) {
+        bson::BSONObjBuilder cast_builder;
+        bson::BSONObjBuilder cond_builder;
+        Field *new_field = altered_table->field[j];
+        if (!matched_map.is_set(j) &&
+            my_strcasecmp(system_charset_info, sdb_field_name(old_field),
+                          sdb_field_name(new_field)) == 0) {
+          matched_map.set_bit(j);
+          found_col = true;
 
-        // True if stored generated column's expression is equal.
-        if (sdb_field_is_stored_gcol(old_field) &&
-            sdb_field_is_stored_gcol(new_field) &&
-            !sdb_stored_gcol_expr_is_equal(old_field, new_field)) {
-          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-          goto error;
-        }
-
-        int op_flag = 0;
-        if (sdb_is_type_diff(old_field, new_field)) {
-          if (0 == get_cast_rule(cast_builder, old_field, new_field)) {
-            op_flag |= Col_alter_info::CHANGE_DATA_TYPE;
-          } else if (is_strict_mode(sql_mode) &&
-                     !get_check_bound_cond(old_field, new_field,
-                                           cond_builder)) {
-            op_flag |= Col_alter_info::FAST_SHORTEN;
-          } else {
-            ha_alter_info->unsupported_reason =
-                "Can't do such type conversion.";
+          // True if stored generated column's expression is equal.
+          if (sdb_field_is_stored_gcol(old_field) &&
+              sdb_field_is_stored_gcol(new_field) &&
+              !sdb_stored_gcol_expr_is_equal(old_field, new_field)) {
             rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
             goto error;
           }
-        }
 
-        bool old_is_auto_inc = (old_field->flags & AUTO_INCREMENT_FLAG);
-        bool new_is_auto_inc = (new_field->flags & AUTO_INCREMENT_FLAG);
-        if (!old_is_auto_inc && new_is_auto_inc) {
-          op_flag |= Col_alter_info::ADD_AUTO_INC;
-        } else if (old_is_auto_inc && !new_is_auto_inc) {
-          op_flag |= Col_alter_info::DROP_AUTO_INC;
-        }
-        // Temporarily unsupported for SEQUOIADBMAINSTREAM-4889.
-        if (op_flag & Col_alter_info::ADD_AUTO_INC) {
-          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-          goto error;
-        }
+          int op_flag = 0;
+          if (sdb_is_type_diff(old_field, new_field)) {
+            if (0 == get_cast_rule(cast_builder, old_field, new_field)) {
+              op_flag |= Col_alter_info::CHANGE_DATA_TYPE;
+            } else if (!is_strict_mode(sql_mode)) {
+              ha_alter_info->unsupported_reason =
+                  "Can't do such type conversion.";
+              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+              goto error;
+            } else {
+              bool out_of_bound;
+              rc = get_check_bound_cond(old_field, new_field, cond_builder,
+                                        out_of_bound);
+              if (SDB_ERR_OK != rc) {
+                rs = HA_ALTER_ERROR;
+                goto error;
+              }
+              if (out_of_bound) {
+                ha_alter_info->unsupported_reason =
+                    "Can't do such type conversion.";
+                rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+                goto error;
+              }
+              op_flag |= Col_alter_info::FAST_SHORTEN;
+            }
+          }
 
-        if (!new_field->maybe_null() && old_field->maybe_null()) {
-          // Avoid ZERO DATE when sql_mode doesn't allow
-          if (is_temporal_type_with_date(new_field->type()) &&
-              sql_mode & MODE_NO_ZERO_DATE) {
+          bool old_is_auto_inc = (old_field->flags & AUTO_INCREMENT_FLAG);
+          bool new_is_auto_inc = (new_field->flags & AUTO_INCREMENT_FLAG);
+          if (!old_is_auto_inc && new_is_auto_inc) {
+            op_flag |= Col_alter_info::ADD_AUTO_INC;
+          } else if (old_is_auto_inc && !new_is_auto_inc) {
+            op_flag |= Col_alter_info::DROP_AUTO_INC;
+          }
+          // Temporarily unsupported for SEQUOIADBMAINSTREAM-4889.
+          if (op_flag & Col_alter_info::ADD_AUTO_INC) {
             rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
             goto error;
           }
-          op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
-        }
 
-        if (!old_field->maybe_null() && new_field->maybe_null()) {
-          op_flag |= Col_alter_info::TURN_TO_NULL;
-        }
-
-        if (op_flag) {
-          Col_alter_info *info = new Col_alter_info();
-          if (!info) {
-            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-            goto error;
+          if (!new_field->maybe_null() && old_field->maybe_null()) {
+            // Avoid ZERO DATE when sql_mode doesn't allow
+            if (is_temporal_type_with_date(new_field->type()) &&
+                sql_mode & MODE_NO_ZERO_DATE) {
+              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+              goto error;
+            }
+            op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
           }
-          info->before = old_field;
-          info->after = new_field;
-          info->op_flag = op_flag;
-          info->cast_rule = cast_builder.obj();
-          info->check_bound_cond = cond_builder.obj();
-          ctx->changed_columns.push_back(info);
+
+          if (!old_field->maybe_null() && new_field->maybe_null()) {
+            op_flag |= Col_alter_info::TURN_TO_NULL;
+          }
+
+          if (op_flag) {
+            Col_alter_info *info = new Col_alter_info();
+            if (!info) {
+              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+              goto error;
+            }
+            info->before = old_field;
+            info->after = new_field;
+            info->op_flag = op_flag;
+            info->cast_rule = cast_builder.obj();
+            info->check_bound_cond = cond_builder.obj();
+            ctx->changed_columns.push_back(info);
+          }
+          break;
         }
-        break;
+      }
+      if (!found_col) {
+        ctx->dropped_columns.push_back(old_field);
       }
     }
-    if (!found_col) {
-      ctx->dropped_columns.push_back(old_field);
-    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to check if support inplace alter, table:%s.%s, "
+      "temp table:%s, exception:%s",
+      db_name, table_name, altered_table->s->table_name.str, e.what());
 
   for (uint i = 0; altered_table->field[i]; i++) {
     if (!matched_map.is_set(i)) {
@@ -1673,6 +1758,10 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
 done:
   return rs;
 error:
+  if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
+    rs = HA_ALTER_ERROR;
+    print_error(rc, 0);
+  }
   if (ctx) {
     ctx->changed_columns.delete_elements();
     delete ctx;
@@ -1877,7 +1966,18 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   List<Col_alter_info> &changed_columns = ctx->changed_columns;
   List_iterator_fast<Col_alter_info> changed_it;
   Col_alter_info *info = NULL;
+  enum inplace_alter_steps {
+    init = 0,
+    check_compress_option,
+    alter_auto_increment,
+    alter_null_attr,
+    alter_column_step
+  } step;
+  static char step_names[][50] = {
+      "initialization_phase", "check_compression_option",
+      "alter_auto_increment", "alter_null_attr", "alter_column"};
 
+  step = init;
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rs = false;
     goto done;
@@ -1914,121 +2014,130 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       add_keys.push_back(k);
     }
   }
-
-  if (alter_flags & ALTER_CHANGE_CREATE_OPTION) {
-    const char *old_comment = table->s->comment.str;
-    const char *new_comment = create_info->comment.str;
+  try {
+    step = check_compress_option;
+    if (alter_flags & ALTER_CHANGE_CREATE_OPTION) {
+      const char *old_comment = table->s->comment.str;
+      const char *new_comment = create_info->comment.str;
 #if defined IS_MYSQL
-    enum enum_compress_type old_sql_compress =
-        sdb_str_compress_type(table->s->compress.str);
-    enum enum_compress_type new_sql_compress =
-        sdb_str_compress_type(create_info->compress.str);
+      enum enum_compress_type old_sql_compress =
+          sdb_str_compress_type(table->s->compress.str);
+      enum enum_compress_type new_sql_compress =
+          sdb_str_compress_type(create_info->compress.str);
 #elif defined IS_MARIADB
-    /*Mariadb hasn't sql compress*/
-    enum enum_compress_type old_sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
-    enum enum_compress_type new_sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
+      /*Mariadb hasn't sql compress*/
+      enum enum_compress_type old_sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
+      enum enum_compress_type new_sql_compress = SDB_COMPRESS_TYPE_DEAFULT;
 #endif
-    if (new_sql_compress == SDB_COMPRESS_TYPE_INVALID) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Invalid compression type", MYF(0));
+      if (new_sql_compress == SDB_COMPRESS_TYPE_INVALID) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Invalid compression type", MYF(0));
+        goto error;
+      }
+
+      const char *old_options_str = strstr(old_comment, SDB_COMMENT);
+      const char *new_options_str = strstr(new_comment, SDB_COMMENT);
+      if (!(old_comment == new_comment ||
+            strcmp(old_comment, new_comment) == 0) ||
+          old_sql_compress != new_sql_compress) {
+        rc = check_and_set_options(old_options_str, new_options_str,
+                                   old_sql_compress, new_sql_compress, cl);
+        if (0 != rc) {
+          goto error;
+        }
+      }
+
+      step = alter_auto_increment;
+      if (create_info->used_fields & HA_CREATE_USED_AUTO &&
+          table->found_next_number_field) {
+        // update auto_increment info.
+        table->file->info(HA_STATUS_AUTO);
+        if (create_info->auto_increment_value >
+            table->file->stats.auto_increment_value) {
+          bson::BSONObjBuilder builder;
+          bson::BSONObjBuilder sub_builder(
+              builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+          sub_builder.append(SDB_FIELD_NAME_FIELD,
+                             sdb_field_name(table->found_next_number_field));
+          longlong current_value = create_info->auto_increment_value -
+                                   thd->variables.auto_increment_increment;
+          if (current_value < 1) {
+            current_value = 1;
+          }
+          sub_builder.append(SDB_FIELD_CURRENT_VALUE, current_value);
+          sub_builder.done();
+
+          rc = cl.set_attributes(builder.obj());
+          if (0 != rc) {
+            goto error;
+          }
+        }
+      }
+    }
+
+    // If it's a redefinition of the secondary attributes, such as btree/hash
+    // and comment, don't recreate the index.
+    if (alter_flags & INPLACE_ONLINE_DROPIDX &&
+        alter_flags & INPLACE_ONLINE_ADDIDX) {
+      KEY *add_key = NULL, *drop_key = NULL;
+      List_iterator<KEY> it_add(add_keys);
+      while ((add_key = it_add++)) {
+        List_iterator<KEY> it_drop(drop_keys);
+        while ((drop_key = it_drop++)) {
+          if (sdb_is_same_index(drop_key, add_key)) {
+            it_add.remove();
+            it_drop.remove();
+            break;
+          }
+        }
+      }
+    }
+
+    step = alter_null_attr;
+    changed_it.init(changed_columns);
+    while ((info = changed_it++)) {
+      if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL ||
+          info->op_flag & Col_alter_info::TURN_TO_NULL) {
+        rc = sdb_append_index_to_be_rebuild(table, altered_table, add_keys,
+                                            drop_keys);
+        if (rc != 0) {
+          goto error;
+        }
+      }
+    }
+
+    if (alter_flags & ALTER_RENAME_INDEX) {
+      my_error(HA_ERR_UNSUPPORTED, MYF(0), cl.get_cl_name());
       goto error;
     }
 
-    const char *old_options_str = strstr(old_comment, SDB_COMMENT);
-    const char *new_options_str = strstr(new_comment, SDB_COMMENT);
-    if (!(old_comment == new_comment ||
-          strcmp(old_comment, new_comment) == 0) ||
-        old_sql_compress != new_sql_compress) {
-      rc = check_and_set_options(old_options_str, new_options_str,
-                                 old_sql_compress, new_sql_compress, cl);
+    if (!drop_keys.is_empty()) {
+      rc = drop_index(cl, drop_keys);
+      if (0 != rc) {
+        goto error;
+      }
+    }
+    step = alter_column_step;
+    if (alter_flags & (ALTER_DROP_STORED_COLUMN | ALTER_ADD_STORED_BASE_COLUMN |
+                       ALTER_STORED_COLUMN_TYPE | ALTER_COLUMN_DEFAULT)) {
+      rc = alter_column(altered_table, ha_alter_info, conn, cl);
       if (0 != rc) {
         goto error;
       }
     }
 
-    if (create_info->used_fields & HA_CREATE_USED_AUTO &&
-        table->found_next_number_field) {
-      // update auto_increment info.
-      table->file->info(HA_STATUS_AUTO);
-      if (create_info->auto_increment_value >
-          table->file->stats.auto_increment_value) {
-        bson::BSONObjBuilder builder;
-        bson::BSONObjBuilder sub_builder(
-            builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
-        sub_builder.append(SDB_FIELD_NAME_FIELD,
-                           sdb_field_name(table->found_next_number_field));
-        longlong current_value = create_info->auto_increment_value -
-                                 thd->variables.auto_increment_increment;
-        if (current_value < 1) {
-          current_value = 1;
-        }
-        sub_builder.append(SDB_FIELD_CURRENT_VALUE, current_value);
-        sub_builder.done();
-
-        rc = cl.set_attributes(builder.obj());
-        if (0 != rc) {
-          goto error;
-        }
-      }
-    }
-  }
-
-  // If it's a redefinition of the secondary attributes, such as btree/hash
-  // and comment, don't recreate the index.
-  if (alter_flags & INPLACE_ONLINE_DROPIDX &&
-      alter_flags & INPLACE_ONLINE_ADDIDX) {
-    KEY *add_key = NULL, *drop_key = NULL;
-    List_iterator<KEY> it_add(add_keys);
-    while ((add_key = it_add++)) {
-      List_iterator<KEY> it_drop(drop_keys);
-      while ((drop_key = it_drop++)) {
-        if (sdb_is_same_index(drop_key, add_key)) {
-          it_add.remove();
-          it_drop.remove();
-          break;
-        }
-      }
-    }
-  }
-
-  changed_it.init(changed_columns);
-  while ((info = changed_it++)) {
-    if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL ||
-        info->op_flag & Col_alter_info::TURN_TO_NULL) {
-      rc = sdb_append_index_to_be_rebuild(table, altered_table, add_keys,
-                                          drop_keys);
-      if (rc != 0) {
+    if (!add_keys.is_empty()) {
+      rc = create_index(cl, add_keys, having_part_hash_id());
+      if (0 != rc) {
         goto error;
       }
     }
   }
-
-  if (alter_flags & ALTER_RENAME_INDEX) {
-    my_error(HA_ERR_UNSUPPORTED, MYF(0), cl.get_cl_name());
-    goto error;
-  }
-
-  if (!drop_keys.is_empty()) {
-    rc = drop_index(cl, drop_keys);
-    if (0 != rc) {
-      goto error;
-    }
-  }
-
-  if (alter_flags & (ALTER_DROP_STORED_COLUMN | ALTER_ADD_STORED_BASE_COLUMN |
-                     ALTER_STORED_COLUMN_TYPE | ALTER_COLUMN_DEFAULT)) {
-    rc = alter_column(altered_table, ha_alter_info, conn, cl);
-    if (0 != rc) {
-      goto error;
-    }
-  }
-
-  if (!add_keys.is_empty()) {
-    rc = create_index(cl, add_keys, having_part_hash_id());
-    if (0 != rc) {
-      goto error;
-    }
-  }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to inplace alter table, step:%s, table:%s.%s, "
+                        "temp table:%s, exception:%s",
+                        step_names[step], db_name, table_name,
+                        altered_table->s->table_name.str, e.what());
 
   rs = false;
 
@@ -2042,6 +2151,8 @@ done:
 error:
   if (get_sdb_code(rc) < 0) {
     handle_sdb_error(rc, MYF(0));
+  } else {
+    print_error(rc, MYF(0));
   }
   goto done;
 }
@@ -2087,6 +2198,9 @@ void Sdb_cl_copyer::replace_src_auto_inc(
   m_auto_inc_options = auto_inc_options;
 }
 
+/*
+ *Exception catcher need to be added when call this function.
+ */
 int sdb_extra_autoinc_option_from_snap(Sdb_conn *conn,
                                        const bson::BSONObj &autoinc_info,
                                        bson::BSONObjBuilder &builder) {
@@ -2128,6 +2242,8 @@ int sdb_extra_autoinc_option_from_snap(Sdb_conn *conn,
     cond = BSON(SDB_FIELD_ID << id);
     rc = conn->snapshot(result, SDB_SNAP_SEQUENCES, cond);
     if (rc != 0) {
+      SDB_LOG_ERROR("%s", conn->get_err_msg());
+      conn->clear_err_msg();
       goto error;
     }
 
@@ -2149,6 +2265,9 @@ error:
   goto done;
 }
 
+/*
+ *Exception catcher need to be added when call this function.
+ */
 int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *cs_name,
                                   const char *cl_name, bson::BSONObj &options,
                                   bson::BSONObj &cata_info,
@@ -2172,12 +2291,18 @@ int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *cs_name,
   int rc = 0;
   char fullname[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
   snprintf(fullname, SDB_CL_FULL_NAME_MAX_SIZE, "%s.%s", cs_name, cl_name);
-  bson::BSONObj cond = BSON(SDB_FIELD_NAME << fullname);
+  // It is assumed that in most cases the len of fullname will be less than 64.
+  // And maybe extra 15 bytes here, but nerver mind the exactly correct size,
+  // just for saving mem.
+  bson::BSONObjBuilder cond_builder(96);
+  bson::BSONObj cond;
   bson::BSONObj result;
-
   bson::BSONObjBuilder builder;
   bson::BSONElement ele;
   int cl_attribute = 0;
+
+  cond_builder.append(SDB_FIELD_NAME, fullname);
+  cond = cond_builder.obj();
 
   rc = conn->snapshot(result, SDB_SNAP_CATALOG, cond);
   if (rc != 0) {
@@ -2281,6 +2406,9 @@ error:
   goto done;
 }
 
+/*
+ *Exception catcher need to be added when call this function.
+ */
 int sdb_copy_group_distribution(Sdb_cl &cl, bson::BSONObj &cata_info) {
   DBUG_ENTER("sdb_copy_group_distribution");
 
@@ -2358,6 +2486,9 @@ error:
   goto done;
 }
 
+/*
+ *Exception catcher need to be added when call this function.
+ */
 int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
   DBUG_ENTER("sdb_copy_index");
   int rc = 0;
@@ -2368,6 +2499,7 @@ int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
   if (rc != 0) {
     goto error;
   }
+
   for (i = 0; i < infos.size(); ++i) {
     bson::BSONElement index_def_ele;
     bson::BSONObj index_def;
@@ -2451,57 +2583,77 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_cs_name, char *src_cl_name,
   bool cl_autosplit = false;
   bson::BSONObj options;
   bson::BSONObj cata_info;
+  enum copy_cl_steps {
+    init = 0,
+    extra_cl_option,
+    copy_group_info,
+    copy_index
+  } step;
+  static char step_names[][50] = {
+      "initialization_phase", "getting_collection_options_from_snapshot",
+      "copying_group_info", "copying_collection_index"};
   bool with_autoinc = !(flags & SDB_COPY_WITHOUT_AUTO_INC);
 
-  rc = sdb_extra_cl_option_from_snap(conn, src_cs_name, src_cl_name, options,
-                                     cata_info, with_autoinc);
-  if (rc != 0) {
-    goto error;
-  }
-
-  rc = conn->create_cl(dst_cs_name, dst_cl_name, options, &created_cs,
-                       &created_cl);
-  if (rc != 0) {
-    goto error;
-  }
-  if (!created_cl) {
-    SDB_LOG_WARNING("The cl[%s.%s] to be copied has already existed.",
-                    dst_cs_name, dst_cl_name);
-  }
-
-  rc = conn->get_cl(src_cs_name, src_cl_name, src_cl);
-  if (rc != 0) {
-    goto error;
-  }
-
-  rc = conn->get_cl(dst_cs_name, dst_cl_name, dst_cl);
-  if (rc != 0) {
-    goto error;
-  }
-
-  cl_is_main = options.getField(SDB_FIELD_ISMAINCL).booleanSafe();
-  cl_autosplit = options.getField(SDB_FIELD_AUTO_SPLIT).booleanSafe();
-  if (!cl_autosplit && !cl_is_main) {
-    rc = sdb_copy_group_distribution(dst_cl, cata_info);
+  try {
+    step = extra_cl_option;
+    rc = sdb_extra_cl_option_from_snap(conn, src_cs_name, src_cl_name, options,
+                                       cata_info, with_autoinc);
     if (rc != 0) {
       goto error;
     }
-  }
 
-  if (!(flags & SDB_COPY_WITHOUT_INDEX)) {
-    rc = sdb_copy_index(src_cl, dst_cl);
+    rc = conn->create_cl(dst_cs_name, dst_cl_name, options, &created_cs,
+                         &created_cl);
     if (rc != 0) {
       goto error;
     }
+    if (!created_cl) {
+      SDB_LOG_WARNING("The cl[%s.%s] to be copied has already existed.",
+                      dst_cs_name, dst_cl_name);
+    }
+
+    rc = conn->get_cl(src_cs_name, src_cl_name, src_cl);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = conn->get_cl(dst_cs_name, dst_cl_name, dst_cl);
+    if (rc != 0) {
+      goto error;
+    }
+
+    step = copy_group_info;
+    cl_is_main = options.getField(SDB_FIELD_ISMAINCL).booleanSafe();
+    cl_autosplit = options.getField(SDB_FIELD_AUTO_SPLIT).booleanSafe();
+    if (!cl_autosplit && !cl_is_main) {
+      rc = sdb_copy_group_distribution(dst_cl, cata_info);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+
+    step = copy_index;
+
+    if (!(flags & SDB_COPY_WITHOUT_INDEX)) {
+      rc = sdb_copy_index(src_cl, dst_cl);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+
+    if (is_main_cl != NULL) {
+      *is_main_cl = cl_is_main;
+    }
+    if (scl_info != NULL) {
+      *scl_info = cl_is_main ? cata_info : SDB_EMPTY_BSON;
+    }
   }
 
-  if (is_main_cl != NULL) {
-    *is_main_cl = cl_is_main;
-  }
-  if (scl_info != NULL) {
-    *scl_info = cl_is_main ? cata_info : SDB_EMPTY_BSON;
-  }
-
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to copy collection, step:%s, old cl:%s.%s, new "
+                        "cl:%s.%s, exception:%s",
+                        step_names[step], src_cs_name, src_cl_name, dst_cs_name,
+                        dst_cl_name, e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -2548,78 +2700,82 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
   if (m_replace_autoinc) {
     flags |= SDB_COPY_WITHOUT_AUTO_INC;
   }
-  rc = sdb_copy_cl(m_conn, m_mcl_cs, m_mcl_name, m_new_cs, m_new_mcl_tmp_name,
-                   flags, &is_main_cl, &scl_info);
-  if (rc != 0) {
-    goto error;
-  }
-
-  if (!is_main_cl) {
-    m_old_scl_info = SDB_EMPTY_BSON;
-  } else {
-    m_old_scl_info = scl_info.getOwned();
-  }
-
-  rc = m_conn->get_cl(m_new_cs, m_new_mcl_tmp_name, mcl);
-  if (rc != 0) {
-    goto error;
-  }
-
-  scl_id = rand();
-  bo_it = bson::BSONObjIterator(m_old_scl_info);
-  while (bo_it.more()) {
-    bson::BSONElement ele = bo_it.next();
-    bson::BSONElement scl_name_ele;
-
-    if (ele.type() != bson::Object) {
-      rc = SDB_ERR_INVALID_ARG;
-      goto error;
-    }
-    obj = ele.embeddedObject();
-
-    scl_name_ele = obj.getField(SDB_FIELD_SUBCL_NAME);
-    if (scl_name_ele.type() != bson::String) {
-      rc = SDB_ERR_INVALID_ARG;
-      goto error;
-    }
-    cl_fullname = const_cast<char *>(scl_name_ele.valuestr());
-
-    sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
-    snprintf(tmp_name_buf, SDB_CL_NAME_MAX_SIZE, "%s-%d", m_new_mcl_tmp_name,
-             scl_id++);
-    rc = sdb_copy_cl(m_conn, cs_name, cl_name, cs_name, tmp_name_buf,
-                     SDB_COPY_WITHOUT_INDEX);
-    if (rc != 0) {
-      sdb_restore_cl_fullname(cl_fullname);
-      goto error;
-    }
-
-    name_len = strlen(cs_name) + strlen(tmp_name_buf) + 2;
-    new_fullname = (char *)thd_alloc(current_thd, name_len);
-    if (!new_fullname) {
-      rc = HA_ERR_OUT_OF_MEM;
-      sdb_restore_cl_fullname(cl_fullname);
-      goto error;
-    }
-
-    snprintf(new_fullname, name_len, "%s.%s", cs_name, tmp_name_buf);
-    sdb_restore_cl_fullname(cl_fullname);
-    if (m_new_scl_tmp_fullnames.push_back(new_fullname)) {
-      rc = HA_ERR_OUT_OF_MEM;
-      goto error;
-    }
-
-    {
-      bson::BSONObjBuilder builder;
-      builder.append(obj.getField(SDB_FIELD_LOW_BOUND));
-      builder.append(obj.getField(SDB_FIELD_UP_BOUND));
-      options = builder.obj();
-    }
-    rc = mcl.attach_collection(new_fullname, options);
+  try {
+    rc = sdb_copy_cl(m_conn, m_mcl_cs, m_mcl_name, m_new_cs, m_new_mcl_tmp_name,
+                     flags, &is_main_cl, &scl_info);
     if (rc != 0) {
       goto error;
     }
+
+    if (!is_main_cl) {
+      m_old_scl_info = SDB_EMPTY_BSON;
+    } else {
+      m_old_scl_info = scl_info.getOwned();
+    }
+
+    rc = m_conn->get_cl(m_new_cs, m_new_mcl_tmp_name, mcl);
+    if (rc != 0) {
+      goto error;
+    }
+
+    scl_id = rand();
+    bo_it = bson::BSONObjIterator(m_old_scl_info);
+    while (bo_it.more()) {
+      bson::BSONElement ele = bo_it.next();
+      bson::BSONElement scl_name_ele;
+
+      if (ele.type() != bson::Object) {
+        rc = SDB_ERR_INVALID_ARG;
+        goto error;
+      }
+      obj = ele.embeddedObject();
+
+      scl_name_ele = obj.getField(SDB_FIELD_SUBCL_NAME);
+      if (scl_name_ele.type() != bson::String) {
+        rc = SDB_ERR_INVALID_ARG;
+        goto error;
+      }
+      cl_fullname = const_cast<char *>(scl_name_ele.valuestr());
+
+      sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
+      snprintf(tmp_name_buf, SDB_CL_NAME_MAX_SIZE, "%s-%d", m_new_mcl_tmp_name,
+               scl_id++);
+      rc = sdb_copy_cl(m_conn, cs_name, cl_name, cs_name, tmp_name_buf,
+                       SDB_COPY_WITHOUT_INDEX);
+      if (rc != 0) {
+        sdb_restore_cl_fullname(cl_fullname);
+        goto error;
+      }
+
+      name_len = strlen(cs_name) + strlen(tmp_name_buf) + 2;
+      new_fullname = (char *)thd_alloc(current_thd, name_len);
+      if (!new_fullname) {
+        rc = HA_ERR_OUT_OF_MEM;
+        sdb_restore_cl_fullname(cl_fullname);
+        goto error;
+      }
+
+      snprintf(new_fullname, name_len, "%s.%s", cs_name, tmp_name_buf);
+      sdb_restore_cl_fullname(cl_fullname);
+      if (m_new_scl_tmp_fullnames.push_back(new_fullname)) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
+
+      {
+        bson::BSONObjBuilder builder;
+        builder.append(obj.getField(SDB_FIELD_LOW_BOUND));
+        builder.append(obj.getField(SDB_FIELD_UP_BOUND));
+        options = builder.obj();
+      }
+      rc = mcl.attach_collection(new_fullname, options);
+      if (rc != 0) {
+        goto error;
+      }
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to copy collection, exception:%s",
+                        e.what());
 
   if (m_replace_index) {
     for (uint i = 0; i < m_keys; ++i) {
@@ -2650,7 +2806,9 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
 done:
   DBUG_RETURN(rc);
 error:
-  ha->handle_sdb_error(rc, MYF(0));
+  if (HA_ERR_OUT_OF_MEM != rc && HA_ERR_INTERNAL_ERROR != rc) {
+    ha->handle_sdb_error(rc, MYF(0));
+  }
   tmp_rc = m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name);
   if (tmp_rc != 0) {
     SDB_LOG_WARNING("Failed to rollback creation of cl[%s.%s], rc: %d",
@@ -2674,6 +2832,9 @@ error:
   goto done;
 }
 
+/*
+ *Exception catcher need to be added when call this function.
+ */
 int Sdb_cl_copyer::rename_new_cl() {
   DBUG_ENTER("Sdb_cl_copyer::rename_new_cl");
   int rc = 0;
@@ -2684,7 +2845,6 @@ int Sdb_cl_copyer::rename_new_cl() {
 
   List_iterator_fast<char> list_it(m_new_scl_tmp_fullnames);
   bson::BSONObjIterator bo_it(m_old_scl_info);
-
   while ((cl_fullname = list_it++)) {
     bson::BSONObj obj = bo_it.next().embeddedObject();
     right_cl_name =
@@ -2707,6 +2867,9 @@ error:
   goto done;
 }
 
+/*
+ *Exception catcher need to be added when call this function.
+ */
 int Sdb_cl_copyer::rename_old_cl() {
   DBUG_ENTER("Sdb_cl_copyer::rename_old_cl");
   int rc = 0;
@@ -2780,13 +2943,17 @@ error:
 int Sdb_cl_copyer::rename(const char *from, const char *to) {
   DBUG_ENTER("Sdb_cl_copyer::rename");
   int rc = 0;
-
-  if (0 == strcmp(from, m_mcl_name)) {
-    m_old_mcl_tmp_name = const_cast<char *>(to);
-    rc = rename_old_cl();
-  } else {
-    rc = rename_new_cl();
+  try {
+    if (0 == strcmp(from, m_mcl_name)) {
+      m_old_mcl_tmp_name = const_cast<char *>(to);
+      rc = rename_old_cl();
+    } else {
+      rc = rename_new_cl();
+    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to rename collection, old cl:%s, new cl:%s, exception:%s",
+      from, to, e.what());
 
   DBUG_PRINT("info", ("cs: %s, from: %s, to: %s", m_mcl_cs, from, to));
   rc = m_conn->rename_cl(m_mcl_cs, const_cast<char *>(from),
@@ -2797,5 +2964,6 @@ int Sdb_cl_copyer::rename(const char *from, const char *to) {
 done:
   DBUG_RETURN(rc);
 error:
+  convert_sdb_code(rc);
   goto done;
 }

@@ -35,6 +35,9 @@ static const uint PARTITION_ALTER_FLAG =
     Alter_info::ALTER_REBUILD_PARTITION | Alter_info::ALTER_ALL_PARTITION |
     Alter_info::ALTER_REMOVE_PARTITIONING;
 
+/*
+ * Exception catcher need to be added when call this function.
+ */
 static void sdb_traverse_and_append_field(const Item *item, void *arg) {
   if (item && Item::FIELD_ITEM == item->type()) {
     bson::BSONObjBuilder *builder = (bson::BSONObjBuilder *)arg;
@@ -94,37 +97,40 @@ int sdb_check_shard_info(const bson::BSONObj &table_options,
                          const char *shard_type) {
   int rc = 0;
   bson::BSONElement opt_ele;
-
-  opt_ele = table_options.getField(SDB_FIELD_SHARDING_KEY);
-  if (opt_ele.type() != bson::EOO) {
-    if (opt_ele.type() != bson::Object) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Type of option ShardingKey should be 'Object'",
-                      MYF(0));
-      goto error;
+  try {
+    opt_ele = table_options.getField(SDB_FIELD_SHARDING_KEY);
+    if (opt_ele.type() != bson::EOO) {
+      if (opt_ele.type() != bson::Object) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Type of option ShardingKey should be 'Object'",
+                        MYF(0));
+        goto error;
+      }
+      if (!sharding_key.isEmpty() &&
+          !opt_ele.embeddedObject().equal(sharding_key)) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Ambiguous option ShardingKey", MYF(0));
+        goto error;
+      }
     }
-    if (!sharding_key.isEmpty() &&
-        !opt_ele.embeddedObject().equal(sharding_key)) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous option ShardingKey", MYF(0));
-      goto error;
+
+    opt_ele = table_options.getField(SDB_FIELD_SHARDING_TYPE);
+    if (opt_ele.type() != bson::EOO) {
+      if (opt_ele.type() != bson::String) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Type of option ShardingType should be 'String'",
+                        MYF(0));
+        goto error;
+      }
+      if (strcmp(opt_ele.valuestr(), shard_type) != 0) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Ambiguous option ShardingType", MYF(0));
+        goto error;
+      }
     }
   }
-
-  opt_ele = table_options.getField(SDB_FIELD_SHARDING_TYPE);
-  if (opt_ele.type() != bson::EOO) {
-    if (opt_ele.type() != bson::String) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Type of option ShardingType should be 'String'",
-                      MYF(0));
-      goto error;
-    }
-    if (strcmp(opt_ele.valuestr(), shard_type) != 0) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous option ShardingType", MYF(0));
-      goto error;
-    }
-  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to check shard info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -143,43 +149,47 @@ int sdb_get_bound(enum_sdb_bound_type type, partition_info *part_info,
   Sdb_func_isnull item_convertor;  // convert Item to BSONObj
   const char *bound_field =
       (SDB_LOW_BOUND == type) ? SDB_FIELD_LOW_BOUND : SDB_FIELD_UP_BOUND;
-  bson::BSONObjBuilder sub_builder(builder.subobjStart(bound_field));
-  uint start = 0;
 
-  if (0 == curr_part_id && SDB_LOW_BOUND == type) {
-    uint field_num = part_info->part_field_list.elements;
+  try {
+    bson::BSONObjBuilder sub_builder(builder.subobjStart(bound_field));
+    uint start = 0;
+
+    if (0 == curr_part_id && SDB_LOW_BOUND == type) {
+      uint field_num = part_info->part_field_list.elements;
+      for (uint i = 0; i < field_num; ++i) {
+        Field *field = part_info->part_field_array[i];
+        sub_builder.appendMinKey(sdb_field_name(field));
+      }
+      goto done;
+    }
+
+    if (SDB_LOW_BOUND == type) {
+      start = (curr_part_id - 1) * field_num;
+    } else {
+      start = curr_part_id * field_num;
+    }
+
     for (uint i = 0; i < field_num; ++i) {
       Field *field = part_info->part_field_array[i];
-      sub_builder.appendMinKey(sdb_field_name(field));
-    }
-    goto done;
-  }
-
-  if (SDB_LOW_BOUND == type) {
-    start = (curr_part_id - 1) * field_num;
-  } else {
-    start = curr_part_id * field_num;
-  }
-
-  for (uint i = 0; i < field_num; ++i) {
-    Field *field = part_info->part_field_array[i];
-    const char *field_name = sdb_field_name(field);
-    part_column_list_val &col_val = range_col_array[start + i];
-    if (col_val.max_value) {
-      sub_builder.appendMaxKey(field_name);
-    } else if (col_val.null_value) {
-      // Do nothing to append $Undefined
-    } else {
-      bson::BSONObj obj;
-      rc = item_convertor.get_item_val(field_name, col_val.item_expression,
-                                       field, obj);
-      if (rc != 0) {
-        goto error;
+      const char *field_name = sdb_field_name(field);
+      part_column_list_val &col_val = range_col_array[start + i];
+      if (col_val.max_value) {
+        sub_builder.appendMaxKey(field_name);
+      } else if (col_val.null_value) {
+        // Do nothing to append $Undefined
+      } else {
+        bson::BSONObj obj;
+        rc = item_convertor.get_item_val(field_name, col_val.item_expression,
+                                         field, obj);
+        if (rc != 0) {
+          goto error;
+        }
+        sub_builder.appendElements(obj);
       }
-      sub_builder.appendElements(obj);
     }
+    sub_builder.done();
   }
-  sub_builder.done();
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get bound, exception:%s", e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -198,7 +208,7 @@ int sdb_append_bound_cond(enum_sdb_bound_type type, partition_info *part_info,
     // First low bound { $gte: MinKey() } is meanless.
     goto done;
   }
-  {
+  try {
     bson::BSONObjBuilder sub_builder(builder.subobjStart());
     // RANGE COLUMNS(<column_list>)
     if (part_info->column_list) {
@@ -228,6 +238,8 @@ int sdb_append_bound_cond(enum_sdb_bound_type type, partition_info *part_info,
     }
     sub_builder.done();
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to append bound condition, exception:%s",
+                        e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -442,6 +454,7 @@ int Sdb_part_alter_ctx::push_table_name2list(std::list<char *> &lst,
   try {
     lst.push_back(table_name);
   } catch (std::bad_alloc &e) {
+    SDB_LOG_ERROR("Failed to push table name to list, exception:%s", e.what());
     rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
@@ -569,52 +582,53 @@ int ha_sdb_part::get_sharding_key(partition_info *part_info,
       goto error;
     }
   }
-
-  /*
-    For RANGE/LIST, When partition expression cannot be pushed down, we shard
-    the cl by mysql part id. One partition responses one sub cl. For HASH, We
-    don't care what the expression is like, just shard by the fields in it.
-  */
-  switch (part_info->part_type) {
-    case RANGE_PARTITION: {
-      // RANGE COLUMNS(<column_list>)
-      if (part_info->column_list) {
-        field_num = part_info->part_field_list.elements;
-        for (uint i = 0; i < field_num; ++i) {
-          field = part_info->part_field_array[i];
-          builder.append(sdb_field_name(field), 1);
+  try {
+    /*
+      For RANGE/LIST, When partition expression cannot be pushed down, we shard
+      the cl by mysql part id. One partition responses one sub cl. For HASH, We
+      don't care what the expression is like, just shard by the fields in it.
+    */
+    switch (part_info->part_type) {
+      case RANGE_PARTITION: {
+        // RANGE COLUMNS(<column_list>)
+        if (part_info->column_list) {
+          field_num = part_info->part_field_list.elements;
+          for (uint i = 0; i < field_num; ++i) {
+            field = part_info->part_field_array[i];
+            builder.append(sdb_field_name(field), 1);
+          }
         }
+        // RANGE(<expr>)
+        else {
+          builder.append(SDB_FIELD_PART_HASH_ID, 1);
+        }
+        break;
       }
-      // RANGE(<expr>)
-      else {
+      case LIST_PARTITION: {
         builder.append(SDB_FIELD_PART_HASH_ID, 1);
+        break;
       }
-      break;
-    }
-    case LIST_PARTITION: {
-      builder.append(SDB_FIELD_PART_HASH_ID, 1);
-      break;
-    }
-    case HASH_PARTITION: {
-      // (LINEAR) KEY(<column_list>)
-      if (part_info->list_of_part_fields) {
-        field_num = part_info->num_part_fields;
-        for (uint i = 0; i < field_num; ++i) {
-          field = part_info->part_field_array[i];
-          builder.append(sdb_field_name(field), 1);
+      case HASH_PARTITION: {
+        // (LINEAR) KEY(<column_list>)
+        if (part_info->list_of_part_fields) {
+          field_num = part_info->num_part_fields;
+          for (uint i = 0; i < field_num; ++i) {
+            field = part_info->part_field_array[i];
+            builder.append(sdb_field_name(field), 1);
+          }
         }
+        // (LINEAR) HASH(<expr>)
+        else {
+          part_info->part_expr->traverse_cond(&sdb_traverse_and_append_field,
+                                              (void *)&builder, Item::PREFIX);
+        }
+        break;
       }
-      // (LINEAR) HASH(<expr>)
-      else {
-        part_info->part_expr->traverse_cond(&sdb_traverse_and_append_field,
-                                            (void *)&builder, Item::PREFIX);
-      }
-      break;
+      default: { DBUG_ASSERT(0); }
     }
-    default: { DBUG_ASSERT(0); }
+    sharding_key = builder.obj();
   }
-  sharding_key = builder.obj();
-
+  SDB_EXCEPTION_CATCHER(rc, "Failed get sharding key, exception:%s", e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -672,37 +686,39 @@ int ha_sdb_part::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
     goto error;
   }
 
-  opt_ele = table_options.getField(SDB_FIELD_ISMAINCL);
-  is_main_cl = RANGE_PARTITION == part_type || LIST_PARTITION == part_type;
-  if (bson::EOO == opt_ele.type()) {
-    if (is_main_cl) {
-      builder.append(SDB_FIELD_ISMAINCL, true);
+  try {
+    opt_ele = table_options.getField(SDB_FIELD_ISMAINCL);
+    is_main_cl = RANGE_PARTITION == part_type || LIST_PARTITION == part_type;
+    if (bson::EOO == opt_ele.type()) {
+      if (is_main_cl) {
+        builder.append(SDB_FIELD_ISMAINCL, true);
+      }
+    } else {
+      if (opt_ele.type() != bson::Bool) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Type of option IsMainCL should be 'Bool'", MYF(0));
+        goto error;
+      }
+      if (opt_ele.boolean() != is_main_cl) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Ambiguous option IsMainCL", MYF(0));
+        goto error;
+      }
     }
-  } else {
-    if (opt_ele.type() != bson::Bool) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Type of option IsMainCL should be 'Bool'", MYF(0));
-      goto error;
-    }
-    if (opt_ele.boolean() != is_main_cl) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous option IsMainCL", MYF(0));
-      goto error;
+    builder.appendElements(table_options);
+    table_options = builder.obj();
+
+    {
+      bson::BSONObjBuilder tmp_builder;
+      rc = auto_fill_default_options(sql_compress, table_options, sharding_key,
+                                     tmp_builder);
+      if (rc) {
+        goto error;
+      }
+      options = tmp_builder.obj();
     }
   }
-  builder.appendElements(table_options);
-  table_options = builder.obj();
-
-  {
-    bson::BSONObjBuilder tmp_builder;
-    rc = auto_fill_default_options(sql_compress, table_options, sharding_key,
-                                   tmp_builder);
-    if (rc) {
-      goto error;
-    }
-    options = tmp_builder.obj();
-  }
-
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get cl options, exception:%s", e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -737,119 +753,125 @@ int ha_sdb_part::get_scl_options(partition_info *part_info,
   bool compress_set_in_scl = false;
   bool compress_set_in_mcl = false;
 
-  if (part_elem->part_comment) {
-    rc = sdb_parse_comment_options(part_elem->part_comment, table_options,
-                                   explicit_not_auto_partition,
-                                   &scl_part_options);
-    if (rc != 0) {
-      goto error;
-    }
-  }
-
-  if (!table_options.isEmpty()) {
-    rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(
-        rc, "table_options is not for partition comment. Try partition_options",
-        MYF(0));
-    goto error;
-  }
-
-  // Generate scl sharding key;
-  if (part_info->is_sub_partitioned()) {
-    bson::BSONObjBuilder key_builder;
-    // KEY SUBPARTITION
-    if (part_info->list_of_subpart_fields) {
-      uint field_num = part_info->subpart_field_list.elements;
-      for (uint i = 0; i < field_num; ++i) {
-        Field *field = part_info->subpart_field_array[i];
-        key_builder.append(sdb_field_name(field), 1);
+  try {
+    if (part_elem->part_comment) {
+      rc = sdb_parse_comment_options(part_elem->part_comment, table_options,
+                                     explicit_not_auto_partition,
+                                     &scl_part_options);
+      if (rc != 0) {
+        goto error;
       }
     }
-    // HASH SUBPARTITION
-    else {
-      part_info->subpart_expr->traverse_cond(
-          &sdb_traverse_and_append_field, (void *)&key_builder, Item::PREFIX);
-    }
-    sharding_key = key_builder.obj();
 
-  } else if (!explicit_not_auto_partition) {
-    rc = ha_sdb::get_sharding_key(part_info->table, scl_part_options,
-                                  sharding_key);
-    if (rc != 0) {
+    if (!table_options.isEmpty()) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(
+          rc,
+          "table_options is not for partition comment. Try partition_options",
+          MYF(0));
       goto error;
     }
-  }
 
-  // Check the options about shard, which may be conflicted with COMMENT;
-  rc = sdb_check_shard_info(scl_part_options, sharding_key, "hash");
-  if (rc != 0) {
-    goto error;
-  }
-  rc = sdb_check_shard_info(mcl_part_options, sharding_key, "hash");
-  if (rc != 0) {
-    goto error;
-  }
-
-  // Merge mcl_options & mcl_part_options into scl_part_options.
-  {
-    bson::BSONObjIterator it(scl_part_options);
-    while (it.more()) {
-      bson::BSONElement part_opt = it.next();
-      if (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE) ||
-          (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSED) &&
-           part_opt.type() == bson::Bool && part_opt.Bool() == false)) {
-        compress_set_in_scl = true;
-      }
-      builder.append(part_opt);
-    }
-  }
-
-  {
-    bson::BSONObjIterator it(mcl_part_options);
-    while (it.more()) {
-      bson::BSONElement part_opt = it.next();
-      if (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSED) ||
-          0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
-        if (compress_set_in_scl) {
-          continue;
+    // Generate scl sharding key;
+    if (part_info->is_sub_partitioned()) {
+      bson::BSONObjBuilder key_builder;
+      // KEY SUBPARTITION
+      if (part_info->list_of_subpart_fields) {
+        uint field_num = part_info->subpart_field_list.elements;
+        for (uint i = 0; i < field_num; ++i) {
+          Field *field = part_info->subpart_field_array[i];
+          key_builder.append(sdb_field_name(field), 1);
         }
       }
-      if (!scl_part_options.hasField(part_opt.fieldName())) {
+      // HASH SUBPARTITION
+      else {
+        part_info->subpart_expr->traverse_cond(
+            &sdb_traverse_and_append_field, (void *)&key_builder, Item::PREFIX);
+      }
+      sharding_key = key_builder.obj();
+
+    } else if (!explicit_not_auto_partition) {
+      rc = ha_sdb::get_sharding_key(part_info->table, scl_part_options,
+                                    sharding_key);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+
+    // Check the options about shard, which may be conflicted with COMMENT;
+    rc = sdb_check_shard_info(scl_part_options, sharding_key, "hash");
+    if (rc != 0) {
+      goto error;
+    }
+    rc = sdb_check_shard_info(mcl_part_options, sharding_key, "hash");
+    if (rc != 0) {
+      goto error;
+    }
+
+    // Merge mcl_options & mcl_part_options into scl_part_options.
+    {
+      bson::BSONObjIterator it(scl_part_options);
+      while (it.more()) {
+        bson::BSONElement part_opt = it.next();
         if (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE) ||
             (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSED) &&
              part_opt.type() == bson::Bool && part_opt.Bool() == false)) {
-          compress_set_in_mcl = true;
+          compress_set_in_scl = true;
         }
         builder.append(part_opt);
       }
     }
-  }
 
-  for (uint i = 0; i < INHERITABLE_OPT_NUM; ++i) {
-    const char *curr_opt = INHERITABLE_OPT[i];
-    bson::BSONElement mcl_opt = mcl_options.getField(curr_opt);
-    if (0 == strcmp(mcl_opt.fieldName(), SDB_FIELD_COMPRESSED) ||
-        0 == strcmp(mcl_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
-      if (compress_set_in_scl || compress_set_in_mcl) {
-        continue;
+    {
+      bson::BSONObjIterator it(mcl_part_options);
+      while (it.more()) {
+        bson::BSONElement part_opt = it.next();
+        if (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSED) ||
+            0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
+          if (compress_set_in_scl) {
+            continue;
+          }
+        }
+        if (!scl_part_options.hasField(part_opt.fieldName())) {
+          if (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE) ||
+              (0 == strcmp(part_opt.fieldName(), SDB_FIELD_COMPRESSED) &&
+               part_opt.type() == bson::Bool && part_opt.Bool() == false)) {
+            compress_set_in_mcl = true;
+          }
+          builder.append(part_opt);
+        }
       }
     }
-    if (mcl_opt.type() != bson::EOO && !scl_part_options.hasField(curr_opt) &&
-        !mcl_part_options.hasField(curr_opt)) {
-      builder.append(mcl_opt);
-    }
-  }
-  scl_part_options = builder.obj();
 
-  {
-    bson::BSONObjBuilder tmp_builder;
-    rc = auto_fill_default_options(SDB_COMPRESS_TYPE_DEAFULT, scl_part_options,
-                                   sharding_key, tmp_builder);
-    if (rc) {
-      goto error;
+    for (uint i = 0; i < INHERITABLE_OPT_NUM; ++i) {
+      const char *curr_opt = INHERITABLE_OPT[i];
+      bson::BSONElement mcl_opt = mcl_options.getField(curr_opt);
+      if (0 == strcmp(mcl_opt.fieldName(), SDB_FIELD_COMPRESSED) ||
+          0 == strcmp(mcl_opt.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
+        if (compress_set_in_scl || compress_set_in_mcl) {
+          continue;
+        }
+      }
+      if (mcl_opt.type() != bson::EOO && !scl_part_options.hasField(curr_opt) &&
+          !mcl_part_options.hasField(curr_opt)) {
+        builder.append(mcl_opt);
+      }
     }
-    scl_options = tmp_builder.obj();
+    scl_part_options = builder.obj();
+
+    {
+      bson::BSONObjBuilder tmp_builder;
+      rc =
+          auto_fill_default_options(SDB_COMPRESS_TYPE_DEAFULT, scl_part_options,
+                                    sharding_key, tmp_builder);
+      if (rc) {
+        goto error;
+      }
+      scl_options = tmp_builder.obj();
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get sub cl options, exception:%s",
+                        e.what());
 
 done:
   DBUG_RETURN(rc);
@@ -863,41 +885,46 @@ int ha_sdb_part::get_attach_options(partition_info *part_info,
   DBUG_ENTER("ha_sdb_part::get_attach_options");
 
   int rc = 0;
-  bson::BSONObjBuilder builder;
-  // LIST or RANGE(<expr>)
-  if (is_sharded_by_part_hash_id(part_info)) {
-    const char *part_name = sdb_get_partition_name(part_info, curr_part_id);
-    longlong hash = sdb_calculate_part_hash_id(part_name);
-    bson::BSONObjBuilder low_builder(builder.subobjStart(SDB_FIELD_LOW_BOUND));
-    low_builder.append(SDB_FIELD_PART_HASH_ID, hash);
-    low_builder.done();
+  try {
+    bson::BSONObjBuilder builder;
+    // LIST or RANGE(<expr>)
+    if (is_sharded_by_part_hash_id(part_info)) {
+      const char *part_name = sdb_get_partition_name(part_info, curr_part_id);
+      longlong hash = sdb_calculate_part_hash_id(part_name);
+      bson::BSONObjBuilder low_builder(
+          builder.subobjStart(SDB_FIELD_LOW_BOUND));
+      low_builder.append(SDB_FIELD_PART_HASH_ID, hash);
+      low_builder.done();
 
-    bson::BSONObjBuilder up_builder(builder.subobjStart(SDB_FIELD_UP_BOUND));
-    if (hash != INT_MAX64) {
-      up_builder.append(SDB_FIELD_PART_HASH_ID, hash + 1);
-    } else {
-      up_builder.appendMaxKey(SDB_FIELD_PART_HASH_ID);
+      bson::BSONObjBuilder up_builder(builder.subobjStart(SDB_FIELD_UP_BOUND));
+      if (hash != INT_MAX64) {
+        up_builder.append(SDB_FIELD_PART_HASH_ID, hash + 1);
+      } else {
+        up_builder.appendMaxKey(SDB_FIELD_PART_HASH_ID);
+      }
+      up_builder.done();
     }
-    up_builder.done();
-  }
-  // RANGE COLUMNS(<column_list>)
-  else if (part_info->column_list) {
-    rc = sdb_get_bound(SDB_LOW_BOUND, part_info, curr_part_id, builder);
-    if (rc != 0) {
-      goto error;
+    // RANGE COLUMNS(<column_list>)
+    else if (part_info->column_list) {
+      rc = sdb_get_bound(SDB_LOW_BOUND, part_info, curr_part_id, builder);
+      if (rc != 0) {
+        goto error;
+      }
+      rc = sdb_get_bound(SDB_UP_BOUND, part_info, curr_part_id, builder);
+      if (rc != 0) {
+        goto error;
+      }
     }
-    rc = sdb_get_bound(SDB_UP_BOUND, part_info, curr_part_id, builder);
-    if (rc != 0) {
-      goto error;
+    // impossible branch
+    else {
+      DBUG_ASSERT(0);
+      rc = HA_ERR_INTERNAL_ERROR;
     }
-  }
-  // impossible branch
-  else {
-    DBUG_ASSERT(0);
-    rc = HA_ERR_INTERNAL_ERROR;
-  }
 
-  attach_options = builder.obj();
+    attach_options = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get attach options, exception:%s",
+                        e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -1050,115 +1077,130 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   /* Not allowed to create temporary partitioned tables. */
   DBUG_ASSERT(create_info && !(create_info->options & HA_LEX_CREATE_TMP_TABLE));
 
-  for (Field **fields = form->field; *fields; fields++) {
-    Field *field = *fields;
+  try {
+    for (Field **fields = form->field; *fields; fields++) {
+      Field *field = *fields;
 
-    if (field->key_length() >= SDB_FIELD_MAX_LEN) {
-      my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), sdb_field_name(field),
-               static_cast<ulong>(SDB_FIELD_MAX_LEN));
-      rc = HA_WRONG_CREATE_OPTION;
-      goto error;
-    }
-
-    if (strcasecmp(sdb_field_name(field), SDB_OID_FIELD) == 0 ||
-        strcasecmp(sdb_field_name(field), SDB_FIELD_PART_HASH_ID) == 0) {
-      my_error(ER_WRONG_COLUMN_NAME, MYF(0), sdb_field_name(field));
-      rc = HA_WRONG_CREATE_OPTION;
-      goto error;
-    }
-
-    if (Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
-      bson::BSONObj auto_inc_options;
-      build_auto_inc_option(field, create_info, auto_inc_options);
-      build.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_options);
-    }
-  }
-
-  // Auto-increment field cannot be used for RANGE / LIST partition.
-  if (RANGE_PARTITION == m_part_info->part_type ||
-      LIST_PARTITION == m_part_info->part_type) {
-    uint field_num = m_part_info->num_part_fields;
-    for (uint i = 0; i < field_num; ++i) {
-      Field *fld = m_part_info->part_field_array[i];
-      if (Field::NEXT_NUMBER == MTYP_TYPENR(fld->unireg_check)) {
+      if (field->key_length() >= SDB_FIELD_MAX_LEN) {
+        my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), sdb_field_name(field),
+                 static_cast<ulong>(SDB_FIELD_MAX_LEN));
         rc = HA_WRONG_CREATE_OPTION;
-        my_printf_error(rc,
-                        "Auto-increment field cannot be used for "
-                        "RANGE or LIST partition",
-                        MYF(0));
         goto error;
       }
+
+      if (strcasecmp(sdb_field_name(field), SDB_OID_FIELD) == 0 ||
+          strcasecmp(sdb_field_name(field), SDB_FIELD_PART_HASH_ID) == 0) {
+        my_error(ER_WRONG_COLUMN_NAME, MYF(0), sdb_field_name(field));
+        rc = HA_WRONG_CREATE_OPTION;
+        goto error;
+      }
+
+      if (Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
+        bson::BSONObj auto_inc_options;
+        rc = build_auto_inc_option(field, create_info, auto_inc_options);
+        if (SDB_ERR_OK != rc) {
+          SDB_LOG_ERROR(
+              "Failed to build auto_increment option object when create "
+              "partition "
+              "table, field:%s, table:%s.%s, rc:%d",
+              sdb_field_name(field), db_name, table_name, rc);
+          goto error;
+        }
+        build.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_options);
+      }
     }
-  }
 
-  rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
-                            SDB_CL_NAME_MAX_SIZE);
-  if (rc != 0) {
-    goto error;
-  }
+    // Auto-increment field cannot be used for RANGE / LIST partition.
+    if (RANGE_PARTITION == m_part_info->part_type ||
+        LIST_PARTITION == m_part_info->part_type) {
+      uint field_num = m_part_info->num_part_fields;
+      for (uint i = 0; i < field_num; ++i) {
+        Field *fld = m_part_info->part_field_array[i];
+        if (Field::NEXT_NUMBER == MTYP_TYPENR(fld->unireg_check)) {
+          rc = HA_WRONG_CREATE_OPTION;
+          my_printf_error(rc,
+                          "Auto-increment field cannot be used for "
+                          "RANGE or LIST partition",
+                          MYF(0));
+          goto error;
+        }
+      }
+    }
 
-  rc = get_cl_options(form, create_info, options, partition_options,
-                      explicit_not_auto_partition);
-  if (rc != 0) {
-    goto error;
-  }
-
-  if (HASH_PARTITION == part_info->part_type && !partition_options.isEmpty()) {
-    rc = HA_WRONG_CREATE_OPTION;
-    my_printf_error(
-        rc, "partition_options requires partition type of RANGE or LIST",
-        MYF(0));
-    goto error;
-  }
-
-  build.appendElements(options);
-  rc = check_sdb_in_thd(ha_thd(), &conn, true);
-  if (rc != 0) {
-    goto error;
-  }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
-
-  rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
-                       &created_cl);
-  if (rc != 0) {
-    goto error;
-  }
-
-  rc = conn->get_cl(db_name, table_name, cl);
-  if (rc != 0) {
-    goto error;
-  }
-
-  if (RANGE_PARTITION == part_info->part_type ||
-      LIST_PARTITION == part_info->part_type) {
-    rc = create_and_attach_scl(conn, cl, part_info, options, partition_options,
-                               explicit_not_auto_partition);
+    rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
+                              SDB_CL_NAME_MAX_SIZE);
     if (rc != 0) {
       goto error;
     }
-  }
 
-  for (uint i = 0; i < form->s->keys; i++) {
-    bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
-    const KEY *key_info = form->s->key_info + i;
+    rc = get_cl_options(form, create_info, options, partition_options,
+                        explicit_not_auto_partition);
+    if (rc != 0) {
+      goto error;
+    }
 
-    if ((key_info->flags & HA_NOSAME) && sharded_by_phid &&
-        !sdb_is_key_include_part_func_column(form, key_info)) {
-      rc = SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY;
-      convert_sdb_code(rc);
+    if (HASH_PARTITION == part_info->part_type &&
+        !partition_options.isEmpty()) {
+      rc = HA_WRONG_CREATE_OPTION;
       my_printf_error(
-          rc, "The unique index must include all fields in sharding key",
+          rc, "partition_options requires partition type of RANGE or LIST",
           MYF(0));
       goto error;
     }
 
-    rc = sdb_create_index(key_info, cl, sharded_by_phid);
+    build.appendElements(options);
+    rc = check_sdb_in_thd(ha_thd(), &conn, true);
     if (rc != 0) {
-      // we disabled sharding index,
-      // so do not ignore SDB_IXM_EXIST_COVERD_ONE
       goto error;
     }
+    DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+    rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
+                         &created_cl);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = conn->get_cl(db_name, table_name, cl);
+    if (rc != 0) {
+      goto error;
+    }
+
+    if (RANGE_PARTITION == part_info->part_type ||
+        LIST_PARTITION == part_info->part_type) {
+      rc =
+          create_and_attach_scl(conn, cl, part_info, options, partition_options,
+                                explicit_not_auto_partition);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+
+    for (uint i = 0; i < form->s->keys; i++) {
+      bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
+      const KEY *key_info = form->s->key_info + i;
+
+      if ((key_info->flags & HA_NOSAME) && sharded_by_phid &&
+          !sdb_is_key_include_part_func_column(form, key_info)) {
+        rc = SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY;
+        convert_sdb_code(rc);
+        my_printf_error(
+            rc, "The unique index must include all fields in sharding key",
+            MYF(0));
+        goto error;
+      }
+
+      rc = sdb_create_index(key_info, cl, sharded_by_phid);
+      if (rc != 0) {
+        // we disabled sharding index,
+        // so do not ignore SDB_IXM_EXIST_COVERD_ONE
+        goto error;
+      }
+    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to create partition table, table:%s, exception:%s", name,
+      e.what());
 
 done:
   DBUG_RETURN(rc);
@@ -1407,12 +1449,17 @@ int ha_sdb_part::pre_row_to_obj(bson::BSONObjBuilder &builder) {
     }
   }
 
-  // Append _phid_ to record.
-  if (m_sharded_by_part_hash_id) {
-    convert_sub2main_part_id(part_id);
-    builder.append(SDB_FIELD_PART_HASH_ID,
-                   share->get_main_part_hash_id(part_id));
+  try {
+    // Append _phid_ to record.
+    if (m_sharded_by_part_hash_id) {
+      convert_sub2main_part_id(part_id);
+      builder.append(SDB_FIELD_PART_HASH_ID,
+                     share->get_main_part_hash_id(part_id));
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to apend hash id to row, exception:%s",
+                        e.what());
+
 done:
   return rc;
 error:
@@ -1446,11 +1493,15 @@ int ha_sdb_part::pre_get_update_obj(const uchar *old_data,
     }
     convert_sub2main_part_id(old_part_id);
     convert_sub2main_part_id(new_part_id);
-    if (old_part_id != new_part_id) {
-      ha_sdb_part_share *share = (ha_sdb_part_share *)m_part_share;
-      longlong hash = share->get_main_part_hash_id(new_part_id);
-      obj_builder.append(SDB_FIELD_PART_HASH_ID, hash);
+    try {
+      if (old_part_id != new_part_id) {
+        ha_sdb_part_share *share = (ha_sdb_part_share *)m_part_share;
+        longlong hash = share->get_main_part_hash_id(new_part_id);
+        obj_builder.append(SDB_FIELD_PART_HASH_ID, hash);
+      }
     }
+    SDB_EXCEPTION_CATCHER(rc, "Failed to get update object, exception:%s",
+                          e.what());
   }
 done:
   return rc;
@@ -1491,55 +1542,60 @@ int ha_sdb_part::inner_append_range_cond(bson::BSONArrayBuilder &builder) {
   int rc = 0;
   uint last_part_id = UINT_MAX32;
 
-  for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-       i = m_part_info->get_next_used_partition(i)) {
-    uint part_id = i;
-    convert_sub2main_part_id(part_id);
-    if (part_id == last_part_id) {
-      continue;
-    }
-
-    bson::BSONObjBuilder and_obj_builder(builder.subobjStart());
-    bson::BSONArrayBuilder and_arr_builder(
-        and_obj_builder.subarrayStart("$and"));
-
-    rc = sdb_append_bound_cond(SDB_LOW_BOUND, m_part_info, part_id,
-                               and_arr_builder);
-    if (rc != 0) {
-      goto error;
-    }
-
-    // Skip continuous adjacent partitions.
-    uint j = i;
-    uint pre_part_id = part_id;
-    uint next_part_id = 0;
-    do {
-      next_part_id = m_part_info->get_next_used_partition(j++);
-      convert_sub2main_part_id(next_part_id);
-      uint diff = next_part_id - pre_part_id;
-      if (0 == diff) {
-        i = j;
+  try {
+    for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
+         i = m_part_info->get_next_used_partition(i)) {
+      uint part_id = i;
+      convert_sub2main_part_id(part_id);
+      if (part_id == last_part_id) {
         continue;
-      } else if (1 == diff) {
-        i = j;
-        pre_part_id = next_part_id;
-        continue;
-      } else {
-        next_part_id = pre_part_id;
-        break;
       }
-    } while (true);
 
-    rc = sdb_append_bound_cond(SDB_UP_BOUND, m_part_info, next_part_id,
-                               and_arr_builder);
-    if (rc != 0) {
-      goto error;
+      bson::BSONObjBuilder and_obj_builder(builder.subobjStart());
+      bson::BSONArrayBuilder and_arr_builder(
+          and_obj_builder.subarrayStart("$and"));
+
+      rc = sdb_append_bound_cond(SDB_LOW_BOUND, m_part_info, part_id,
+                                 and_arr_builder);
+      if (rc != 0) {
+        goto error;
+      }
+
+      // Skip continuous adjacent partitions.
+      uint j = i;
+      uint pre_part_id = part_id;
+      uint next_part_id = 0;
+      do {
+        next_part_id = m_part_info->get_next_used_partition(j++);
+        convert_sub2main_part_id(next_part_id);
+        uint diff = next_part_id - pre_part_id;
+        if (0 == diff) {
+          i = j;
+          continue;
+        } else if (1 == diff) {
+          i = j;
+          pre_part_id = next_part_id;
+          continue;
+        } else {
+          next_part_id = pre_part_id;
+          break;
+        }
+      } while (true);
+
+      rc = sdb_append_bound_cond(SDB_UP_BOUND, m_part_info, next_part_id,
+                                 and_arr_builder);
+      if (rc != 0) {
+        goto error;
+      }
+
+      and_arr_builder.done();
+      and_obj_builder.done();
+      last_part_id = next_part_id;
     }
-
-    and_arr_builder.done();
-    and_obj_builder.done();
-    last_part_id = next_part_id;
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to inner append range condition, exception:%s", e.what());
+
 done:
   DBUG_RETURN(rc);
 error:
@@ -1601,14 +1657,19 @@ int ha_sdb_part::append_range_cond(bson::BSONArrayBuilder &builder) {
     }
 
   } else {
-    bson::BSONObjBuilder or_obj_builder(builder.subobjStart());
-    bson::BSONArrayBuilder or_arr_builder(or_obj_builder.subarrayStart("$or"));
-    rc = inner_append_range_cond(or_arr_builder);
-    if (rc != 0) {
-      goto error;
+    try {
+      bson::BSONObjBuilder or_obj_builder(builder.subobjStart());
+      bson::BSONArrayBuilder or_arr_builder(
+          or_obj_builder.subarrayStart("$or"));
+      rc = inner_append_range_cond(or_arr_builder);
+      if (rc != 0) {
+        goto error;
+      }
+      or_arr_builder.done();
+      or_obj_builder.done();
     }
-    or_arr_builder.done();
-    or_obj_builder.done();
+    SDB_EXCEPTION_CATCHER(rc, "Failed to append range condition, exception:%s",
+                          e.what());
   }
 
 done:
@@ -1701,38 +1762,42 @@ int ha_sdb_part::append_shard_cond(bson::BSONObj &condition) {
     goto done;
   }
 
-  if (m_sharded_by_part_hash_id) {
-    bson::BSONObjBuilder builder;
-    bson::BSONObjBuilder sub_obj(builder.subobjStart(SDB_FIELD_PART_HASH_ID));
-    bson::BSONArrayBuilder sub_array(sub_obj.subarrayStart("$in"));
-    uint last_part_id = -1;
-    for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-         i = m_part_info->get_next_used_partition(i)) {
-      uint part_id = i;
-      convert_sub2main_part_id(part_id);
-      if (part_id != last_part_id) {
-        ha_sdb_part_share *share = (ha_sdb_part_share *)m_part_share;
-        longlong hash = share->get_main_part_hash_id(part_id);
-        sub_array.append(hash);
+  try {
+    if (m_sharded_by_part_hash_id) {
+      bson::BSONObjBuilder builder;
+      bson::BSONObjBuilder sub_obj(builder.subobjStart(SDB_FIELD_PART_HASH_ID));
+      bson::BSONArrayBuilder sub_array(sub_obj.subarrayStart("$in"));
+      uint last_part_id = -1;
+      for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
+           i = m_part_info->get_next_used_partition(i)) {
+        uint part_id = i;
+        convert_sub2main_part_id(part_id);
+        if (part_id != last_part_id) {
+          ha_sdb_part_share *share = (ha_sdb_part_share *)m_part_share;
+          longlong hash = share->get_main_part_hash_id(part_id);
+          sub_array.append(hash);
+        }
+        last_part_id = part_id;
       }
-      last_part_id = part_id;
-    }
-    sub_array.done();
-    sub_obj.done();
-    builder.appendElements(condition);
-    condition = builder.obj();
+      sub_array.done();
+      sub_obj.done();
+      builder.appendElements(condition);
+      condition = builder.obj();
 
-  } else if (explicit_partition) {
-    bson::BSONObjBuilder builder;
-    bson::BSONArrayBuilder sub_array(builder.subarrayStart("$and"));
-    rc = append_range_cond(sub_array);
-    if (rc != 0) {
-      goto error;
+    } else if (explicit_partition) {
+      bson::BSONObjBuilder builder;
+      bson::BSONArrayBuilder sub_array(builder.subarrayStart("$and"));
+      rc = append_range_cond(sub_array);
+      if (rc != 0) {
+        goto error;
+      }
+      sub_array.append(condition);
+      sub_array.done();
+      condition = builder.obj();
     }
-    sub_array.append(condition);
-    sub_array.done();
-    condition = builder.obj();
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to append shard condition, exception:%s",
+                        e.what());
 
 done:
   DBUG_RETURN(rc);
@@ -1873,6 +1938,7 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
     m_new_part_id2cl_name.insert(
         std::pair<uint, char *>(new_part_id, new_name));
   } catch (std::exception e) {
+    SDB_LOG_ERROR("Failed to create new partition, exception:%s", e.what());
     rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
@@ -1895,8 +1961,12 @@ int ha_sdb_part::write_row_in_new_part(uint new_part) {
 
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
-  sdb_build_clientinfo(ha_thd(), builder);
-  hint = builder.obj();
+  try {
+    sdb_build_clientinfo(ha_thd(), builder);
+    hint = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to write row in new partition, exception:%s", e.what());
 
   if (m_part_info->is_sub_partitioned()) {
     convert_sub2main_part_id(new_part);
@@ -2108,58 +2178,62 @@ int ha_sdb_part::alter_partition_options(bson::BSONObj &old_tab_opt,
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  while ((part_elem = part_it++)) {
-    bson::BSONObj old_options;
-    bson::BSONObj new_options;
-    bool explicit_not_auto_partition = false;
-    bson::BSONObjBuilder builder;
-    bson::BSONObj diff_options;
-    char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-    Sdb_cl scl;
+  try {
+    while ((part_elem = part_it++)) {
+      bson::BSONObj old_options;
+      bson::BSONObj new_options;
+      bool explicit_not_auto_partition = false;
+      bson::BSONObjBuilder builder;
+      bson::BSONObj diff_options;
+      char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+      Sdb_cl scl;
 
-    /*
-      Find out which option was different
-    */
-    rc = get_scl_options(m_part_info, part_elem, old_tab_opt, old_part_opt,
-                         explicit_not_auto_partition, old_options);
-    if (rc != 0) {
-      goto error;
-    }
+      /*
+        Find out which option was different
+      */
+      rc = get_scl_options(m_part_info, part_elem, old_tab_opt, old_part_opt,
+                           explicit_not_auto_partition, old_options);
+      if (rc != 0) {
+        goto error;
+      }
 
-    rc = get_scl_options(m_part_info, part_elem, new_tab_opt, new_part_opt,
-                         explicit_not_auto_partition, new_options);
-    if (rc != 0) {
-      goto error;
-    }
+      rc = get_scl_options(m_part_info, part_elem, new_tab_opt, new_part_opt,
+                           explicit_not_auto_partition, new_options);
+      if (rc != 0) {
+        goto error;
+      }
 
-    rc = sdb_filter_tab_opt(old_options, new_options, builder);
-    if (rc != 0) {
-      goto error;
-    }
+      rc = sdb_filter_tab_opt(old_options, new_options, builder);
+      if (rc != 0) {
+        goto error;
+      }
 
-    diff_options = builder.obj();
-    if (diff_options.isEmpty()) {
-      continue;
-    }
+      diff_options = builder.obj();
+      if (diff_options.isEmpty()) {
+        continue;
+      }
 
-    /*
-      Push down cl.setAttributes() for this sub cl.
-    */
-    rc = build_scl_name(table_name, part_elem->partition_name, scl_name);
-    if (rc != 0) {
-      goto error;
-    }
+      /*
+        Push down cl.setAttributes() for this sub cl.
+      */
+      rc = build_scl_name(table_name, part_elem->partition_name, scl_name);
+      if (rc != 0) {
+        goto error;
+      }
 
-    rc = conn->get_cl(db_name, scl_name, scl);
-    if (rc != 0) {
-      goto error;
-    }
+      rc = conn->get_cl(db_name, scl_name, scl);
+      if (rc != 0) {
+        goto error;
+      }
 
-    rc = scl.set_attributes(diff_options);
-    if (rc != 0) {
-      goto error;
+      rc = scl.set_attributes(diff_options);
+      if (rc != 0) {
+        goto error;
+      }
     }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to alter partition options, exception:%s",
+                        e.what());
 
 done:
   DBUG_RETURN(rc);

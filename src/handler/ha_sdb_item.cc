@@ -83,12 +83,10 @@ int Sdb_logic_item::rebuild_bson(bson::BSONObj &obj) {
         break;
       }
     }
-  } catch (bson::assertion e) {
-    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
-    DBUG_ASSERT(0);
-    rc = SDB_ERR_BUILD_BSON;
-    goto error;
   }
+
+  SDB_EXCEPTION_CATCHER(rc, "Exception[%s] occurs when build bson obj.",
+                        e.what());
 
 done:
   return rc;
@@ -122,13 +120,10 @@ int Sdb_logic_item::push_sdb_item(Sdb_item *cond_item) {
     obj_num_cur++;
     try {
       children.append(obj_tmp.copy());
-    } catch (bson::assertion e) {
-      SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.",
-                    e.full.c_str());
-      DBUG_ASSERT(0);
-      rc = SDB_ERR_BUILD_BSON;
-      goto error;
     }
+
+    SDB_EXCEPTION_CATCHER(rc, "Exception[%s] occurs when build bson obj.",
+                          e.what());
   }
 
 done:
@@ -158,19 +153,15 @@ int Sdb_logic_item::to_bson(bson::BSONObj &obj) {
   }
   try {
     obj = BSON(this->name() << children.arr());
-  } catch (bson::assertion e) {
-    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
-    DBUG_ASSERT(0);
-    rc = SDB_ERR_BUILD_BSON;
-    goto error;
-  }
-  if (obj_num_cur <= obj_num_min) {
-    rc = rebuild_bson(obj);
-    if (rc) {
-      goto error;
+    if (obj_num_cur <= obj_num_min) {
+      rc = rebuild_bson(obj);
+      if (rc) {
+        goto error;
+      }
     }
   }
-
+  SDB_EXCEPTION_CATCHER(rc, "Item fail to bson, name:%s, exception:%s",
+                        this->name(), e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -186,19 +177,15 @@ int Sdb_and_item::to_bson(bson::BSONObj &obj) {
   }
   try {
     obj = BSON(this->name() << children.arr());
-  } catch (bson::assertion e) {
-    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
-    DBUG_ASSERT(0);
-    rc = SDB_ERR_BUILD_BSON;
-    goto error;
-  }
-  if (obj_num_cur <= obj_num_min) {
-    rc = rebuild_bson(obj);
-    if (rc) {
-      goto error;
+    if (obj_num_cur <= obj_num_min) {
+      rc = rebuild_bson(obj);
+      if (rc) {
+        goto error;
+      }
     }
   }
-
+  SDB_EXCEPTION_CATCHER(rc, "Item fail to bson, name:%s, exception:%s",
+                        this->name(), e.what());
   DBUG_PRINT("ha_sdb:info", ("sdb and item to bson, name:%s", this->name()));
 
 done:
@@ -747,14 +734,19 @@ int Sdb_func_isnull::to_bson(bson::BSONObj &obj) {
     goto error;
   }
 
-  item_tmp = para_list.pop();
-  if (Item::FIELD_ITEM != item_tmp->type()) {
-    rc = SDB_ERR_COND_UNKOWN_ITEM;
-    goto error;
+  try {
+    item_tmp = para_list.pop();
+    if (Item::FIELD_ITEM != item_tmp->type()) {
+      rc = SDB_ERR_COND_UNKOWN_ITEM;
+      goto error;
+    }
+    item_field = (Item_field *)item_tmp;
+    obj = BSON(sdb_item_field_name(item_field) << BSON(this->name() << 1));
+    bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
   }
-  item_field = (Item_field *)item_tmp;
-  obj = BSON(sdb_item_field_name(item_field) << BSON(this->name() << 1));
-  bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
+  SDB_EXCEPTION_CATCHER(rc, "Item fail to bson, name:%s, exception:%s",
+                        this->name(), e.what());
+
   DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
                              *(item_field->field->table_name),
                              sdb_item_field_name(item_field)));
@@ -780,14 +772,19 @@ int Sdb_func_isnotnull::to_bson(bson::BSONObj &obj) {
     goto error;
   }
 
-  item_tmp = para_list.pop();
-  if (Item::FIELD_ITEM != item_tmp->type()) {
-    rc = SDB_ERR_COND_UNKOWN_ITEM;
-    goto error;
+  try {
+    item_tmp = para_list.pop();
+    if (Item::FIELD_ITEM != item_tmp->type()) {
+      rc = SDB_ERR_COND_UNKOWN_ITEM;
+      goto error;
+    }
+    item_field = (Item_field *)item_tmp;
+    obj = BSON(sdb_item_field_name(item_field) << BSON(this->name() << 0));
+    bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
   }
-  item_field = (Item_field *)item_tmp;
-  obj = BSON(sdb_item_field_name(item_field) << BSON(this->name() << 0));
-  bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
+  SDB_EXCEPTION_CATCHER(rc, "Item fail to bson, name:%s, exception:%s",
+                        this->name(), e.what());
+
   DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
                              *(item_field->field->table_name),
                              sdb_item_field_name(item_field)));
@@ -1046,97 +1043,102 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
     goto error;
   }
 
-  if (l_child != NULL || r_child != NULL) {
-    rc = to_bson_with_child(obj);
-    if (rc != SDB_ERR_OK) {
-      goto error;
-    }
-    goto done;
-  }
-
-  while (!para_list.is_empty()) {
-    item_tmp = para_list.pop();
-    if (Item::FIELD_ITEM != item_tmp->type() || item_tmp->const_item()) {
-      if (NULL == item_field) {
-        inverse = TRUE;
-      }
-      if (item_val != NULL) {
-        rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+  try {
+    if (l_child != NULL || r_child != NULL) {
+      rc = to_bson_with_child(obj);
+      if (rc != SDB_ERR_OK) {
         goto error;
       }
-      item_val = item_tmp;
-    } else {
-      if (item_field != NULL) {
-        if (item_val != NULL) {
-          rc = SDB_ERR_COND_PART_UNSUPPORTED;
-          goto error;
-        }
+      goto done;
+    }
 
-        if (NULL == item_field->db_name ||
-            NULL == ((Item_field *)item_tmp)->db_name ||
-            NULL == item_field->table_name ||
-            NULL == ((Item_field *)item_tmp)->table_name ||
-            0 != strcmp(item_field->db_name,
-                        ((Item_field *)item_tmp)->db_name) ||
-            0 != strcmp(item_field->table_name,
-                        ((Item_field *)item_tmp)->table_name)) {
-          rc = SDB_ERR_COND_PART_UNSUPPORTED;
+    while (!para_list.is_empty()) {
+      item_tmp = para_list.pop();
+      if (Item::FIELD_ITEM != item_tmp->type() || item_tmp->const_item()) {
+        if (NULL == item_field) {
+          inverse = TRUE;
+        }
+        if (item_val != NULL) {
+          rc = SDB_ERR_COND_UNEXPECTED_ITEM;
           goto error;
         }
         item_val = item_tmp;
-        cmp_with_field = TRUE;
       } else {
-        item_field = (Item_field *)item_tmp;
+        if (item_field != NULL) {
+          if (item_val != NULL) {
+            rc = SDB_ERR_COND_PART_UNSUPPORTED;
+            goto error;
+          }
+
+          if (NULL == item_field->db_name ||
+              NULL == ((Item_field *)item_tmp)->db_name ||
+              NULL == item_field->table_name ||
+              NULL == ((Item_field *)item_tmp)->table_name ||
+              0 != strcmp(item_field->db_name,
+                          ((Item_field *)item_tmp)->db_name) ||
+              0 != strcmp(item_field->table_name,
+                          ((Item_field *)item_tmp)->table_name)) {
+            rc = SDB_ERR_COND_PART_UNSUPPORTED;
+            goto error;
+          }
+          item_val = item_tmp;
+          cmp_with_field = TRUE;
+        } else {
+          item_field = (Item_field *)item_tmp;
+        }
       }
     }
-  }
 
-  if (inverse) {
-    name_tmp = this->inverse_name();
-  } else {
-    name_tmp = this->name();
-  }
+    if (inverse) {
+      name_tmp = this->inverse_name();
+    } else {
+      name_tmp = this->name();
+    }
 
-  if (cmp_with_field) {
-    enum_field_types l_type = item_field->field->type();
-    enum_field_types r_type = ((Item_field *)item_val)->field->type();
-    enum_field_types l_real_type = item_field->field->real_type();
-    enum_field_types r_real_type = ((Item_field *)item_val)->field->real_type();
-    if ((MYSQL_TYPE_SET == l_real_type && MYSQL_TYPE_ENUM == r_real_type) ||
-        (MYSQL_TYPE_SET == r_real_type && MYSQL_TYPE_ENUM == l_real_type)
+    if (cmp_with_field) {
+      enum_field_types l_type = item_field->field->type();
+      enum_field_types r_type = ((Item_field *)item_val)->field->type();
+      enum_field_types l_real_type = item_field->field->real_type();
+      enum_field_types r_real_type =
+          ((Item_field *)item_val)->field->real_type();
+      if ((MYSQL_TYPE_SET == l_real_type && MYSQL_TYPE_ENUM == r_real_type) ||
+          (MYSQL_TYPE_SET == r_real_type && MYSQL_TYPE_ENUM == l_real_type)
 #if defined IS_MYSQL
-        || (MYSQL_TYPE_JSON == l_type || MYSQL_TYPE_JSON == r_type)
+          || (MYSQL_TYPE_JSON == l_type || MYSQL_TYPE_JSON == r_type)
 #endif
-    ) {
-      rc = SDB_ERR_COND_PART_UNSUPPORTED;
+      ) {
+        rc = SDB_ERR_COND_PART_UNSUPPORTED;
+        goto error;
+      }
+
+      if (l_type != r_type) {
+        // floating-point values in different types can't compare
+        if (sdb_field_is_floating(l_type) && sdb_field_is_floating(r_type)) {
+          rc = SDB_ERR_COND_PART_UNSUPPORTED;
+          goto error;
+        }
+
+        // date and time types can't compare
+        if (sdb_field_is_date_time(l_type) || sdb_field_is_date_time(r_type)) {
+          rc = SDB_ERR_COND_PART_UNSUPPORTED;
+          goto error;
+        }
+      }
+
+      obj = BSON(sdb_item_field_name(item_field)
+                 << BSON(name_tmp << BSON("$field" << sdb_item_field_name(
+                                              (Item_field *)item_val))));
+      goto done;
+    }
+
+    rc = get_item_val(name_tmp, item_val, item_field->field, obj_tmp);
+    if (rc) {
       goto error;
     }
-
-    if (l_type != r_type) {
-      // floating-point values in different types can't compare
-      if (sdb_field_is_floating(l_type) && sdb_field_is_floating(r_type)) {
-        rc = SDB_ERR_COND_PART_UNSUPPORTED;
-        goto error;
-      }
-
-      // date and time types can't compare
-      if (sdb_field_is_date_time(l_type) || sdb_field_is_date_time(r_type)) {
-        rc = SDB_ERR_COND_PART_UNSUPPORTED;
-        goto error;
-      }
-    }
-
-    obj = BSON(sdb_item_field_name(item_field)
-               << BSON(name_tmp << BSON("$field" << sdb_item_field_name(
-                                            (Item_field *)item_val))));
-    goto done;
+    obj = BSON(sdb_item_field_name(item_field) << obj_tmp);
   }
-
-  rc = get_item_val(name_tmp, item_val, item_field->field, obj_tmp);
-  if (rc) {
-    goto error;
-  }
-  obj = BSON(sdb_item_field_name(item_field) << obj_tmp);
+  SDB_EXCEPTION_CATCHER(rc, "Item fail to bson, name:%s, exception:%s",
+                        this->name(), e.what());
 
 done:
   DBUG_RETURN(rc);
@@ -1182,39 +1184,43 @@ int Sdb_func_between::to_bson(bson::BSONObj &obj) {
 
   item_end = para_list.pop();
 
-  if (negated) {
-    rc = get_item_val("$lt", item_start, item_field->field, obj_tmp);
-    if (rc) {
-      goto error;
-    }
-    obj_start = BSON(sdb_item_field_name(item_field) << obj_tmp);
+  try {
+    if (negated) {
+      rc = get_item_val("$lt", item_start, item_field->field, obj_tmp);
+      if (rc) {
+        goto error;
+      }
+      obj_start = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
-    rc = get_item_val("$gt", item_end, item_field->field, obj_tmp);
-    if (rc) {
-      goto error;
-    }
-    obj_end = BSON(sdb_item_field_name(item_field) << obj_tmp);
+      rc = get_item_val("$gt", item_end, item_field->field, obj_tmp);
+      if (rc) {
+        goto error;
+      }
+      obj_end = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
-    arr_builder.append(obj_start);
-    arr_builder.append(obj_end);
-    obj = BSON("$or" << arr_builder.arr());
-  } else {
-    rc = get_item_val("$gte", item_start, item_field->field, obj_tmp);
-    if (rc) {
-      goto error;
-    }
-    obj_start = BSON(sdb_item_field_name(item_field) << obj_tmp);
+      arr_builder.append(obj_start);
+      arr_builder.append(obj_end);
+      obj = BSON("$or" << arr_builder.arr());
+    } else {
+      rc = get_item_val("$gte", item_start, item_field->field, obj_tmp);
+      if (rc) {
+        goto error;
+      }
+      obj_start = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
-    rc = get_item_val("$lte", item_end, item_field->field, obj_tmp);
-    if (rc) {
-      goto error;
-    }
-    obj_end = BSON(sdb_item_field_name(item_field) << obj_tmp);
+      rc = get_item_val("$lte", item_end, item_field->field, obj_tmp);
+      if (rc) {
+        goto error;
+      }
+      obj_end = BSON(sdb_item_field_name(item_field) << obj_tmp);
 
-    arr_builder.append(obj_start);
-    arr_builder.append(obj_end);
-    obj = BSON("$and" << arr_builder.arr());
+      arr_builder.append(obj_start);
+      arr_builder.append(obj_end);
+      obj = BSON("$and" << arr_builder.arr());
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Item fail to bson, name:%s, exception:%s",
+                        this->name(), e.what());
 
 done:
   DBUG_RETURN(rc);
@@ -1256,21 +1262,25 @@ int Sdb_func_in::to_bson(bson::BSONObj &obj) {
   }
   item_field = (Item_field *)item_tmp;
 
-  while (!para_list.is_empty()) {
-    item_tmp = para_list.pop();
-    rc = get_item_val("", item_tmp, item_field->field, obj_tmp, &arr_builder);
-    if (rc) {
-      goto error;
+  try {
+    while (!para_list.is_empty()) {
+      item_tmp = para_list.pop();
+      rc = get_item_val("", item_tmp, item_field->field, obj_tmp, &arr_builder);
+      if (rc) {
+        goto error;
+      }
+    }
+
+    if (negated) {
+      obj = BSON(sdb_item_field_name(item_field)
+                 << BSON("$nin" << arr_builder.arr()));
+    } else {
+      obj = BSON(sdb_item_field_name(item_field)
+                 << BSON("$in" << arr_builder.arr()));
     }
   }
-
-  if (negated) {
-    obj = BSON(sdb_item_field_name(item_field)
-               << BSON("$nin" << arr_builder.arr()));
-  } else {
-    obj = BSON(sdb_item_field_name(item_field)
-               << BSON("$in" << arr_builder.arr()));
-  }
+  SDB_EXCEPTION_CATCHER(rc, "Item fail to bson, name:%s, exception:%s",
+                        this->name(), e.what());
 
 done:
   DBUG_RETURN(rc);
@@ -1311,61 +1321,67 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
     goto error;
   }
 
-  while (!para_list.is_empty()) {
-    item_tmp = para_list.pop();
-    if (Item::FIELD_ITEM != item_tmp->type()) {
-      if (!sdb_is_string_item(item_tmp)  // only support string
-          || item_val != NULL) {
-        rc = SDB_ERR_COND_UNEXPECTED_ITEM;
-        goto error;
-      }
+  try {
+    while (!para_list.is_empty()) {
+      item_tmp = para_list.pop();
+      if (Item::FIELD_ITEM != item_tmp->type()) {
+        if (!sdb_is_string_item(item_tmp)  // only support string
+            || item_val != NULL) {
+          rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+          goto error;
+        }
 
-      item_val = (Item_string *)item_tmp;
-    } else {
-      if (item_field != NULL) {
-        // not support: field1 like field2
-        rc = SDB_ERR_COND_UNEXPECTED_ITEM;
-        goto error;
-      }
-      item_field = (Item_field *)item_tmp;
+        item_val = (Item_string *)item_tmp;
+      } else {
+        if (item_field != NULL) {
+          // not support: field1 like field2
+          rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+          goto error;
+        }
+        item_field = (Item_field *)item_tmp;
 
-      // only support the string-field
-      if ((item_field->field_type() != MYSQL_TYPE_VARCHAR &&
-           item_field->field_type() != MYSQL_TYPE_VAR_STRING &&
-           item_field->field_type() != MYSQL_TYPE_STRING &&
-           item_field->field_type() != MYSQL_TYPE_TINY_BLOB &&
-           item_field->field_type() != MYSQL_TYPE_MEDIUM_BLOB &&
-           item_field->field_type() != MYSQL_TYPE_LONG_BLOB &&
-           item_field->field_type() != MYSQL_TYPE_BLOB) ||
-          item_field->field->binary() ||
-          item_field->field->real_type() == MYSQL_TYPE_SET ||
-          item_field->field->real_type() == MYSQL_TYPE_ENUM) {
-        rc = SDB_ERR_COND_UNEXPECTED_ITEM;
-        goto error;
+        // only support the string-field
+        if ((item_field->field_type() != MYSQL_TYPE_VARCHAR &&
+             item_field->field_type() != MYSQL_TYPE_VAR_STRING &&
+             item_field->field_type() != MYSQL_TYPE_STRING &&
+             item_field->field_type() != MYSQL_TYPE_TINY_BLOB &&
+             item_field->field_type() != MYSQL_TYPE_MEDIUM_BLOB &&
+             item_field->field_type() != MYSQL_TYPE_LONG_BLOB &&
+             item_field->field_type() != MYSQL_TYPE_BLOB) ||
+            item_field->field->binary() ||
+            item_field->field->real_type() == MYSQL_TYPE_SET ||
+            item_field->field->real_type() == MYSQL_TYPE_ENUM) {
+          rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+          goto error;
+        }
       }
     }
+
+    str_val_org = item_val->val_str(NULL);
+    rc = sdb_convert_charset(*str_val_org, str_val_conv, &SDB_CHARSET);
+    if (rc) {
+      goto error;
+    }
+    rc = get_regex_str(str_val_conv.ptr(), str_val_conv.length(), regex_val);
+    if (rc) {
+      goto error;
+    }
+
+    if (regex_val.empty()) {
+      // select * from t1 where a like "";
+      // => {a:""}
+      obj = BSON(sdb_item_field_name(item_field) << regex_val);
+    } else {
+      regex_builder.appendRegex(sdb_item_field_name(item_field), regex_val,
+                                "s");
+      obj = regex_builder.obj();
+    }
+
+    bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
   }
 
-  str_val_org = item_val->val_str(NULL);
-  rc = sdb_convert_charset(*str_val_org, str_val_conv, &SDB_CHARSET);
-  if (rc) {
-    goto error;
-  }
-  rc = get_regex_str(str_val_conv.ptr(), str_val_conv.length(), regex_val);
-  if (rc) {
-    goto error;
-  }
-
-  if (regex_val.empty()) {
-    // select * from t1 where a like "";
-    // => {a:""}
-    obj = BSON(sdb_item_field_name(item_field) << regex_val);
-  } else {
-    regex_builder.appendRegex(sdb_item_field_name(item_field), regex_val, "s");
-    obj = regex_builder.obj();
-  }
-
-  bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
+  SDB_EXCEPTION_CATCHER(rc, "Item fail to bson, name:%s, exception:%s",
+                        this->name(), e.what());
   DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
                              *(item_field->field->table_name),
                              sdb_item_field_name(item_field)));

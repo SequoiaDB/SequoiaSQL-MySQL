@@ -224,72 +224,97 @@ static int sdb_autoinc_current_value(Sdb_conn &conn, const char *full_name,
   bson::BSONObj info;
   bson::BSONElement elem;
   bson::BSONElement e;
+  bson::BufBuilder condition_buf(96);
   const char *autoinc_name = NULL;
+  bson::BSONObjBuilder cond_builder(condition_buf);
+  bson::BSONObjBuilder sel_builder(96);
 
-  condition = BSON(SDB_FIELD_NAME << full_name);
-  selected =
-      BSON(SDB_FIELD_NAME_AUTOINCREMENT
-           << BSON("$elemMatch" << BSON(SDB_FIELD_NAME_FIELD << field_name)));
-  rc = conn.snapshot(obj, SDB_SNAP_CATALOG, condition, selected);
-  if (0 != rc) {
-    SDB_PRINT_ERROR(rc, "Could not get snapshot.");
-    return rc;
-  }
-  elem = obj.getField(SDB_FIELD_NAME_AUTOINCREMENT);
-  if (bson::Array != elem.type()) {
-    SDB_LOG_WARNING(
-        "Invalid type: '%d' of 'AutoIncrement': '%s' in "
-        "obj: '%s'.",
-        elem.type(), field_name, obj.toString(false, false).c_str());
-    rc = SDB_ERR_COND_UNEXPECTED_ITEM;
-    return rc;
-  }
-
-  bson::BSONObjIterator it(elem.embeddedObject());
-  if (it.more()) {
-    info = it.next().Obj();
-    e = info.getField(SDB_FIELD_SEQUENCE_NAME);
-    if (bson::String != e.type()) {
-      SDB_LOG_WARNING(
-          "Invalid type: '%d' of 'SequenceName': '%s' in "
-          "obj: '%s'.",
-          e.type(), field_name, info.toString(false, false).c_str());
-      rc = SDB_ERR_COND_UNEXPECTED_ITEM;
-      goto error;
-    }
-
-    autoinc_name = e.valuestr();
-    condition = BSON(SDB_FIELD_NAME << autoinc_name);
-    selected = BSON(SDB_FIELD_CURRENT_VALUE << "" << SDB_FIELD_INITIAL << "");
-    rc = conn.snapshot(obj, SDB_SNAP_SEQUENCES, condition, selected);
+  try {
+    cond_builder.append(SDB_FIELD_NAME, full_name);
+    condition = cond_builder.done();
+    bson::BSONObjBuilder builder(
+        sel_builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+    bson::BSONObjBuilder builder1(builder.subobjStart("$elemMatch"));
+    builder1.append(SDB_FIELD_NAME_FIELD, field_name);
+    builder1.done();
+    builder.done();
+    selected = sel_builder.done();
+    rc = conn.snapshot(obj, SDB_SNAP_CATALOG, condition, selected);
     if (0 != rc) {
+      SDB_LOG_ERROR("%s", conn.get_err_msg());
+      conn.clear_err_msg();
       SDB_PRINT_ERROR(rc, "Could not get snapshot.");
-      goto error;
+      return rc;
+    }
+    elem = obj.getField(SDB_FIELD_NAME_AUTOINCREMENT);
+    if (bson::Array != elem.type()) {
+      SDB_LOG_WARNING(
+          "Invalid type: '%d' of 'AutoIncrement': '%s' in "
+          "obj: '%s'.",
+          elem.type(), field_name, obj.toString(false, false).c_str());
+      rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+      return rc;
     }
 
-    elem = obj.getField(SDB_FIELD_CURRENT_VALUE);
-    if (bson::NumberInt != elem.type() && bson::NumberLong != elem.type()) {
-      SDB_LOG_WARNING("Invalid type: '%d' of 'CurrentValue' in field: '%s'.",
-                      elem.type(), field_name);
+    bson::BSONObjIterator it(elem.embeddedObject());
+    if (it.more()) {
+      info = it.next().Obj();
+      e = info.getField(SDB_FIELD_SEQUENCE_NAME);
+      if (bson::String != e.type()) {
+        SDB_LOG_WARNING(
+            "Invalid type: '%d' of 'SequenceName': '%s' in "
+            "obj: '%s'.",
+            e.type(), field_name, info.toString(false, false).c_str());
+        rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+        goto error;
+      }
+
+      autoinc_name = e.valuestr();
+
+      condition_buf.reset();
+      bson::BSONObjBuilder cond_builder1(condition_buf);
+      cond_builder1.append(SDB_FIELD_NAME, autoinc_name);
+      condition = cond_builder1.done();
+
+      sel_builder.append(SDB_FIELD_CURRENT_VALUE, "");
+      sel_builder.append(SDB_FIELD_INITIAL, "");
+      selected = sel_builder.obj();
+      rc = conn.snapshot(obj, SDB_SNAP_SEQUENCES, condition, selected);
+      if (0 != rc) {
+        SDB_LOG_ERROR("%s", conn.get_err_msg());
+        conn.clear_err_msg();
+        SDB_PRINT_ERROR(rc, "Could not get snapshot.");
+        goto error;
+      }
+
+      elem = obj.getField(SDB_FIELD_CURRENT_VALUE);
+      if (bson::NumberInt != elem.type() && bson::NumberLong != elem.type()) {
+        SDB_LOG_WARNING("Invalid type: '%d' of 'CurrentValue' in field: '%s'.",
+                        elem.type(), field_name);
+        rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+        goto error;
+      }
+      *cur_value = elem.numberLong();
+
+      elem = obj.getField(SDB_FIELD_INITIAL);
+      if (bson::Bool != elem.type()) {
+        SDB_LOG_WARNING("Invalid type: '%d' of 'Initial' in field: '%s'.",
+                        elem.type(), field_name);
+        rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+        goto error;
+      }
+      *initial = elem.boolean();
+    } else {
+      SDB_LOG_WARNING("Invalid auto_increment catalog obj '%s'",
+                      obj.toString(false, false).c_str());
       rc = SDB_ERR_COND_UNEXPECTED_ITEM;
       goto error;
     }
-    *cur_value = elem.numberLong();
-
-    elem = obj.getField(SDB_FIELD_INITIAL);
-    if (bson::Bool != elem.type()) {
-      SDB_LOG_WARNING("Invalid type: '%d' of 'Initial' in field: '%s'.",
-                      elem.type(), field_name);
-      rc = SDB_ERR_COND_UNEXPECTED_ITEM;
-      goto error;
-    }
-    *initial = elem.boolean();
-  } else {
-    SDB_LOG_WARNING("Invalid auto_increment catalog obj '%s'",
-                    obj.toString(false, false).c_str());
-    rc = SDB_ERR_COND_UNEXPECTED_ITEM;
-    goto error;
   }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to set auto_increment current value, "
+                        "field:%s, table:%s, exception:%s",
+                        field_name, full_name, e.what())
 done:
   convert_sdb_code(rc);
   return rc;
@@ -522,6 +547,8 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
       goto done;
     }
     if (rc != 0) {
+      SDB_LOG_ERROR("%s", conn->get_err_msg());
+      conn->clear_err_msg();
       goto error;
     }
 
@@ -562,11 +589,12 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
         }
       }
     }
-  } catch (bson::assertion e) {
-    SDB_LOG_DEBUG("Exception[%s] occurs when parse bson obj.", e.full.c_str());
-    rc = HA_ERR_INTERNAL_ERROR;
-    goto error;
   }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to rename sub collection for partition "
+      "tables, db:%s, old table:%s, new table:%s, exception:%s",
+      db_name, old_table_name, new_table_name, e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -869,7 +897,9 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
     }
     obj = obj_builder.obj();
     null_obj = null_obj_builder.obj();
-  } catch (bson::assertion e) {
+  }
+
+  catch (bson::assertion &e) {
     if (SDB_INVALID_BSONOBJ_SIZE_ASSERT_ID == e.id ||
         SDB_BUF_BUILDER_MAX_SIZE_ASSERT_ID == e.id) {
       rc = ER_TOO_BIG_FIELDLENGTH;
@@ -877,9 +907,17 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
                       sdb_thd_current_row(ha_thd()));
     } else {
       rc = HA_ERR_INTERNAL_ERROR;
-      SDB_LOG_ERROR("Exception[%s] occurs when build bson obj.", e.what());
+      SDB_LOG_ERROR(
+          "Failed to turn row to sdb obj, table:%s.%s,"
+          "exception:%s",
+          db_name, table_name, e.what());
     }
   }
+
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to turn row to sdb obj, table:%s.%s,"
+                        "exception:%s",
+                        db_name, table_name, e.what());
 done:
   if (buf != table->record[0]) {
     repoint_field_to_record(table, buf, table->record[0]);
@@ -912,154 +950,184 @@ int ha_sdb::field_to_strict_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       obj_builder.subobjStart(sdb_field_name(field)));
 
   if (val_field) {
-    create_field_rule("Value", val_field, field_builder);
+    rc = create_field_rule("Value", val_field, field_builder);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
   }
+  try {
+    if (MYSQL_TYPE_NEWDECIMAL == field->type()) {
+      char buff[MAX_FIELD_WIDTH];
+      my_decimal tmp_decimal;
+      my_decimal decimal_value;
+      my_decimal result;
+      String str(buff, sizeof(buff), field->charset());
+      Field_new_decimal *f = (Field_new_decimal *)field;
 
-  if (MYSQL_TYPE_NEWDECIMAL == field->type()) {
-    char buff[MAX_FIELD_WIDTH];
-    my_decimal tmp_decimal;
-    my_decimal decimal_value;
-    my_decimal result;
-    String str(buff, sizeof(buff), field->charset());
-    Field_new_decimal *f = (Field_new_decimal *)field;
+      if (default_min_value) {
+        f->set_value_on_overflow(&tmp_decimal, true);
+      } else {
+        f->set_value_on_overflow(&tmp_decimal, false);
+      }
+      f->val_decimal(&decimal_value);
+      my_decimal_sub(E_DEC_FATAL_ERROR & ~E_DEC_OVERFLOW, &result,
+                     &decimal_value, &tmp_decimal);
+      my_decimal2string(E_DEC_FATAL_ERROR, &result, 0, 0, 0, &str);
+      if (!val_field) {
+        field_builder.appendDecimal("Value", str.c_ptr());
+      }
 
-    if (default_min_value) {
       f->set_value_on_overflow(&tmp_decimal, true);
-    } else {
+      my_decimal2string(E_DEC_FATAL_ERROR, &tmp_decimal, 0, 0, 0, &str);
+      field_builder.appendDecimal("Min", str.c_ptr());
+
       f->set_value_on_overflow(&tmp_decimal, false);
+      my_decimal2string(E_DEC_FATAL_ERROR, &tmp_decimal, 0, 0, 0, &str);
+      field_builder.appendDecimal("Max", str.c_ptr());
+
+      field_builder.appendNull("Default");
+      field_builder.done();
+      goto done;
     }
-    f->val_decimal(&decimal_value);
-    my_decimal_sub(E_DEC_FATAL_ERROR & ~E_DEC_OVERFLOW, &result, &decimal_value,
-                   &tmp_decimal);
-    my_decimal2string(E_DEC_FATAL_ERROR, &result, 0, 0, 0, &str);
-    if (!val_field) {
-      field_builder.appendDecimal("Value", str.c_ptr());
-    }
 
-    f->set_value_on_overflow(&tmp_decimal, true);
-    my_decimal2string(E_DEC_FATAL_ERROR, &tmp_decimal, 0, 0, 0, &str);
-    field_builder.appendDecimal("Min", str.c_ptr());
-
-    f->set_value_on_overflow(&tmp_decimal, false);
-    my_decimal2string(E_DEC_FATAL_ERROR, &tmp_decimal, 0, 0, 0, &str);
-    field_builder.appendDecimal("Max", str.c_ptr());
-    goto done;
-  }
-
-  max_value = field->get_max_int_value();
-  min_value = sdb_get_min_int_value(field);
-  default_value = default_min_value ? min_value : max_value;
-  switch (field->type()) {
-    case MYSQL_TYPE_TINY:
-    case MYSQL_TYPE_SHORT:
-    case MYSQL_TYPE_INT24: {
-      if (!val_field) {
-        longlong value = field->val_int();
-        value -= default_value;
-        // overflow is impossible, store as INT32
-        DBUG_ASSERT(value <= INT_MAX32 && value >= INT_MIN32);
-        field_builder.append("Value", value);
-      }
-      field_builder.append("Min", min_value);
-      field_builder.append("Max", max_value);
-      break;
-    }
-    case MYSQL_TYPE_LONG: {
-      if (!val_field) {
-        longlong value = field->val_int();
-        value -= default_value;
-        bool overflow = value > INT_MAX32 || value < INT_MIN32;
-        field_builder.append("Value", (overflow ? value : (int)value));
-      }
-      field_builder.append("Min", min_value);
-      field_builder.append("Max", max_value);
-      break;
-    }
-    case MYSQL_TYPE_LONGLONG: {
-      // orginal_negative is true where field minus a number.
-      bool unsigned_flag = false;
-      bool int2decimal_flag = false;
-      bool decimal2str_falg = false;
-      bool original_negative = !default_min_value;
-      longlong value = field->val_int();
-      unsigned_flag = ((Field_num *)field)->unsigned_flag;
-
-      if (val_field) {
-        goto MIN_MAX;
-      }
-
-      if (unsigned_flag) {
-        if (original_negative) {
-          value = default_value - value;
-        } else {
+    max_value = field->get_max_int_value();
+    min_value = sdb_get_min_int_value(field);
+    default_value = default_min_value ? min_value : max_value;
+    switch (field->type()) {
+      case MYSQL_TYPE_TINY:
+      case MYSQL_TYPE_SHORT:
+      case MYSQL_TYPE_INT24: {
+        if (!val_field) {
+          longlong value = field->val_int();
           value -= default_value;
-          if (value > 0) {
+          // overflow is impossible, store as INT32
+          DBUG_ASSERT(value <= INT_MAX32 && value >= INT_MIN32);
+          field_builder.append("Value", value);
+        }
+        field_builder.append("Min", min_value);
+        field_builder.append("Max", max_value);
+        break;
+      }
+      case MYSQL_TYPE_LONG: {
+        if (!val_field) {
+          longlong value = field->val_int();
+          value -= default_value;
+          bool overflow = value > INT_MAX32 || value < INT_MIN32;
+          field_builder.append("Value", (overflow ? value : (int)value));
+        }
+        field_builder.append("Min", min_value);
+        field_builder.append("Max", max_value);
+        break;
+      }
+      case MYSQL_TYPE_LONGLONG: {
+        // orginal_negative is true where field minus a number.
+        bool unsigned_flag = false;
+        bool int2decimal_flag = false;
+        bool decimal2str_falg = false;
+        bool original_negative = !default_min_value;
+        longlong value = field->val_int();
+        unsigned_flag = ((Field_num *)field)->unsigned_flag;
+
+        if (val_field) {
+          goto MIN_MAX;
+        }
+
+        if (unsigned_flag) {
+          if (original_negative) {
+            value = default_value - value;
+          } else {
+            value -= default_value;
+            if (value > 0) {
+              obj_builder.append("Value", value);
+              goto MIN_MAX;
+            }
+          }
+          int2decimal_flag = unsigned_flag;
+          decimal2str_falg = original_negative;
+        } else {
+          if ((default_min_value && value < 0) ||
+              (!default_min_value && value > 0)) {
+            value -= default_value;
             obj_builder.append("Value", value);
             goto MIN_MAX;
           }
-        }
-        int2decimal_flag = unsigned_flag;
-        decimal2str_falg = original_negative;
-      } else {
-        if ((default_min_value && value < 0) ||
-            (!default_min_value && value > 0)) {
           value -= default_value;
-          obj_builder.append("Value", value);
-          goto MIN_MAX;
+          int2decimal_flag = default_min_value;
+          decimal2str_falg = !default_min_value;
         }
-        value -= default_value;
-        int2decimal_flag = default_min_value;
-        decimal2str_falg = !default_min_value;
-      }
 
-      {
-        my_decimal tmp_val;
-        char buff[MAX_FIELD_WIDTH];
-        String str(buff, sizeof(buff), field->charset());
-        int2my_decimal(E_DEC_FATAL_ERROR, value, int2decimal_flag, &tmp_val);
-        tmp_val.sign(decimal2str_falg);
-        my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
-        field_builder.appendDecimal("Value", str.c_ptr());
-      }
-    MIN_MAX:
-      if (max_value < 0 && ((Field_num *)field)->unsigned_flag) {
-        // overflow, so store as DECIMAL
-        my_decimal tmp_val;
-        char buff[MAX_FIELD_WIDTH];
-        String str(buff, sizeof(buff), field->charset());
-        int2my_decimal(E_DEC_FATAL_ERROR, max_value,
-                       ((Field_num *)field)->unsigned_flag, &tmp_val);
-        my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
-        field_builder.appendDecimal("Max", str.c_ptr());
-      } else {
-        field_builder.append("Max", max_value);
-      }
+        {
+          my_decimal tmp_val;
+          char buff[MAX_FIELD_WIDTH];
+          String str(buff, sizeof(buff), field->charset());
+          int2my_decimal(E_DEC_FATAL_ERROR, value, int2decimal_flag, &tmp_val);
+          tmp_val.sign(decimal2str_falg);
+          my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
+          field_builder.appendDecimal("Value", str.c_ptr());
+        }
+      MIN_MAX:
+        if (max_value < 0 && ((Field_num *)field)->unsigned_flag) {
+          // overflow, so store as DECIMAL
+          my_decimal tmp_val;
+          char buff[MAX_FIELD_WIDTH];
+          String str(buff, sizeof(buff), field->charset());
+          int2my_decimal(E_DEC_FATAL_ERROR, max_value,
+                         ((Field_num *)field)->unsigned_flag, &tmp_val);
+          my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
+          field_builder.appendDecimal("Max", str.c_ptr());
+        } else {
+          field_builder.append("Max", max_value);
+        }
 
-      field_builder.append("Min", min_value);
-      break;
-    }
-    case MYSQL_TYPE_FLOAT:
-    case MYSQL_TYPE_DOUBLE: {
-      if (!val_field) {
-        double real_value = field->val_real();
-        field_builder.append("Value", real_value);
+        field_builder.append("Min", min_value);
+        break;
       }
-      double max_flt_value = 1.0;
-      max_flt_value = sdb_get_max_real_value(field);
-      field_builder.append("Min", -max_flt_value);
-      field_builder.append("Max", max_flt_value);
-      break;
+      case MYSQL_TYPE_FLOAT:
+      case MYSQL_TYPE_DOUBLE: {
+        if (!val_field) {
+          double real_value = field->val_real();
+          field_builder.append("Value", real_value);
+        }
+        double max_flt_value = 1.0;
+        max_flt_value = sdb_get_max_real_value(field);
+        field_builder.append("Min", -max_flt_value);
+        field_builder.append("Max", max_flt_value);
+        break;
+      }
+      default:
+        /*should not call here for the type of field.*/
+        DBUG_ASSERT(false);
+        break;
     }
-    default:
-      /*should not call here for the type of field.*/
-      DBUG_ASSERT(false);
-      break;
+    field_builder.appendNull("Default");
+    field_builder.done();
   }
 
+  catch (bson::assertion &e) {
+    if (SDB_INVALID_BSONOBJ_SIZE_ASSERT_ID == e.id ||
+        SDB_BUF_BUILDER_MAX_SIZE_ASSERT_ID == e.id) {
+      rc = ER_TOO_BIG_FIELDLENGTH;
+      my_printf_error(rc, "Column length too big at row %lu", MYF(0),
+                      sdb_thd_current_row(ha_thd()));
+    } else {
+      rc = HA_ERR_INTERNAL_ERROR;
+      SDB_LOG_ERROR(
+          "Failed to turn field to sdb strict obj, field:%s, table:%s.%s,"
+          "exception:%s",
+          sdb_field_name(field), db_name, table_name, e.what());
+    }
+  }
+
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to turn field to sdb strict obj, field:%s, table:%s.%s,"
+      "exception:%s",
+      sdb_field_name(field), db_name, table_name, e.what());
+
 done:
-  field_builder.appendNull("Default");
-  field_builder.done();
   return rc;
+error:
+  goto done;
 }
 
 int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
@@ -1069,189 +1137,213 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
   if (sdb_field_is_virtual_gcol(field)) {
     goto done;
   }
-  switch (field->type()) {
-    case MYSQL_TYPE_TINY:
-    case MYSQL_TYPE_SHORT:
-    case MYSQL_TYPE_INT24:
-    case MYSQL_TYPE_YEAR: {
-      // overflow is impossible, store as INT32
-      DBUG_ASSERT(field->val_int() <= INT_MAX32 &&
-                  field->val_int() >= INT_MIN32);
-      obj_builder.append(sdb_field_name(field), (int)field->val_int());
-      break;
-    }
-    case MYSQL_TYPE_BIT:
-    case MYSQL_TYPE_LONG: {
-      longlong value = field->val_int();
-      if (value > INT_MAX32 || value < INT_MIN32) {
-        // overflow, so store as INT64
-        obj_builder.append(sdb_field_name(field), (long long)value);
-      } else {
-        obj_builder.append(sdb_field_name(field), (int)value);
+
+  try {
+    switch (field->type()) {
+      case MYSQL_TYPE_TINY:
+      case MYSQL_TYPE_SHORT:
+      case MYSQL_TYPE_INT24:
+      case MYSQL_TYPE_YEAR: {
+        // overflow is impossible, store as INT32
+        DBUG_ASSERT(field->val_int() <= INT_MAX32 &&
+                    field->val_int() >= INT_MIN32);
+        obj_builder.append(sdb_field_name(field), (int)field->val_int());
+        break;
       }
-      break;
-    }
-    case MYSQL_TYPE_LONGLONG: {
-      longlong value = field->val_int();
-      if (value < 0 && ((Field_num *)field)->unsigned_flag) {
-        /* sdb sequence max value is 2^63 -1. */
-        if (auto_inc_explicit_used &&
-            Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
-          rc = HA_ERR_AUTOINC_READ_FAILED;
-          break;
+      case MYSQL_TYPE_BIT:
+      case MYSQL_TYPE_LONG: {
+        longlong value = field->val_int();
+        if (value > INT_MAX32 || value < INT_MIN32) {
+          // overflow, so store as INT64
+          obj_builder.append(sdb_field_name(field), (long long)value);
+        } else {
+          obj_builder.append(sdb_field_name(field), (int)value);
         }
-        // overflow, so store as DECIMAL
+        break;
+      }
+      case MYSQL_TYPE_LONGLONG: {
+        longlong value = field->val_int();
+        if (value < 0 && ((Field_num *)field)->unsigned_flag) {
+          /* sdb sequence max value is 2^63 -1. */
+          if (auto_inc_explicit_used &&
+              Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
+            rc = HA_ERR_AUTOINC_READ_FAILED;
+            break;
+          }
+          // overflow, so store as DECIMAL
+          my_decimal tmp_val;
+          char buff[MAX_FIELD_WIDTH];
+          String str(buff, sizeof(buff), field->charset());
+          ((Field_num *)field)->val_decimal(&tmp_val);
+          my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
+          obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
+        } else {
+          obj_builder.append(sdb_field_name(field), (longlong)value);
+        }
+        break;
+      }
+      case MYSQL_TYPE_FLOAT:
+      case MYSQL_TYPE_DOUBLE: {
+        obj_builder.append(sdb_field_name(field), field->val_real());
+        break;
+      }
+      case MYSQL_TYPE_TIME: {
         my_decimal tmp_val;
         char buff[MAX_FIELD_WIDTH];
         String str(buff, sizeof(buff), field->charset());
         ((Field_num *)field)->val_decimal(&tmp_val);
         my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
         obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
-      } else {
-        obj_builder.append(sdb_field_name(field), (longlong)value);
-      }
-      break;
-    }
-    case MYSQL_TYPE_FLOAT:
-    case MYSQL_TYPE_DOUBLE: {
-      obj_builder.append(sdb_field_name(field), field->val_real());
-      break;
-    }
-    case MYSQL_TYPE_TIME: {
-      my_decimal tmp_val;
-      char buff[MAX_FIELD_WIDTH];
-      String str(buff, sizeof(buff), field->charset());
-      ((Field_num *)field)->val_decimal(&tmp_val);
-      my_decimal2string(E_DEC_FATAL_ERROR, &tmp_val, 0, 0, 0, &str);
-      obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
-      break;
-    }
-    case MYSQL_TYPE_VARCHAR:
-    case MYSQL_TYPE_STRING:
-    case MYSQL_TYPE_VAR_STRING:
-    case MYSQL_TYPE_TINY_BLOB:
-    case MYSQL_TYPE_MEDIUM_BLOB:
-    case MYSQL_TYPE_LONG_BLOB:
-    case MYSQL_TYPE_BLOB:
-    case MYSQL_TYPE_GEOMETRY: {
-      String val_tmp;
-      if (MYSQL_TYPE_SET == field->real_type() ||
-          MYSQL_TYPE_ENUM == field->real_type()) {
-        obj_builder.append(sdb_field_name(field), field->val_int());
         break;
       }
-      field->val_str(&val_tmp);
-      if (((Field_str *)field)->binary()) {
-        obj_builder.appendBinData(sdb_field_name(field), val_tmp.length(),
-                                  bson::BinDataGeneral, val_tmp.ptr());
-      } else {
-        String conv_str;
-        String *str = &val_tmp;
-        if (!my_charset_same(str->charset(), &SDB_CHARSET)) {
-          rc = sdb_convert_charset(*str, conv_str, &SDB_CHARSET);
-          if (rc) {
-            goto error;
+      case MYSQL_TYPE_VARCHAR:
+      case MYSQL_TYPE_STRING:
+      case MYSQL_TYPE_VAR_STRING:
+      case MYSQL_TYPE_TINY_BLOB:
+      case MYSQL_TYPE_MEDIUM_BLOB:
+      case MYSQL_TYPE_LONG_BLOB:
+	  case MYSQL_TYPE_BLOB:
+      case MYSQL_TYPE_GEOMETRY: {
+        String val_tmp;
+        if (MYSQL_TYPE_SET == field->real_type() ||
+            MYSQL_TYPE_ENUM == field->real_type()) {
+          obj_builder.append(sdb_field_name(field), field->val_int());
+          break;
+        }
+        field->val_str(&val_tmp);
+        if (((Field_str *)field)->binary()) {
+          obj_builder.appendBinData(sdb_field_name(field), val_tmp.length(),
+                                    bson::BinDataGeneral, val_tmp.ptr());
+        } else {
+          String conv_str;
+          String *str = &val_tmp;
+          if (!my_charset_same(str->charset(), &SDB_CHARSET)) {
+            rc = sdb_convert_charset(*str, conv_str, &SDB_CHARSET);
+            if (rc) {
+              goto error;
+            }
+            str = &conv_str;
           }
-          str = &conv_str;
+
+          obj_builder.appendStrWithNoTerminating(sdb_field_name(field),
+                                                 str->ptr(), str->length());
+        }
+        break;
+      }
+      case MYSQL_TYPE_NEWDECIMAL:
+      case MYSQL_TYPE_DECIMAL: {
+        Field_decimal *f = (Field_decimal *)field;
+        int precision = (int)(f->pack_length());
+        int scale = (int)(f->decimals());
+        if (precision < 0 || scale < 0) {
+          rc = -1;
+          goto error;
+        }
+        char buff[MAX_FIELD_WIDTH];
+        String str(buff, sizeof(buff), field->charset());
+        String unused;
+        f->val_str(&str, &unused);
+        obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
+        break;
+      }
+      case MYSQL_TYPE_DATE: {
+        longlong mon = 0;
+        longlong date_val = 0;
+        date_val = ((Field_newdate *)field)->val_int();
+        struct tm tm_val;
+        tm_val.tm_sec = 0;
+        tm_val.tm_min = 0;
+        tm_val.tm_hour = 0;
+        tm_val.tm_mday = date_val % 100;
+        date_val = date_val / 100;
+        mon = date_val % 100;
+        date_val = date_val / 100;
+        tm_val.tm_year = date_val - 1900;
+        /* wrong date format:'xxxx-00-00'
+        if date format is '0000-00-00', it will pass */
+        if ((0 == mon || 0 == tm_val.tm_mday) &&
+            !(0 == date_val && 0 == mon && 0 == tm_val.tm_mday)) {
+          rc = ER_TRUNCATED_WRONG_VALUE;
+          my_printf_error(rc,
+                          "Incorrect date value: '%04lld-%02lld-%02d' for "
+                          "column '%s' at row %lu",
+                          MYF(0), date_val, mon, tm_val.tm_mday,
+                          sdb_field_name(field), sdb_thd_current_row(ha_thd()));
+          goto error;
+        }
+        tm_val.tm_mon = mon - 1;
+        tm_val.tm_wday = 0;
+        tm_val.tm_yday = 0;
+        tm_val.tm_isdst = 0;
+        time_t time_tmp = mktime(&tm_val);
+        bson::Date_t dt((longlong)(time_tmp * 1000));
+        obj_builder.appendDate(sdb_field_name(field), dt);
+        break;
+      }
+      case MYSQL_TYPE_TIMESTAMP2:
+      case MYSQL_TYPE_TIMESTAMP: {
+        struct timeval tv;
+        sdb_field_get_timestamp(field, &tv);
+        obj_builder.appendTimestamp(sdb_field_name(field), tv.tv_sec * 1000,
+                                    tv.tv_usec);
+        break;
+      }
+      case MYSQL_TYPE_NULL:
+        // skip the null value
+        break;
+      case MYSQL_TYPE_DATETIME: {
+        char buff[MAX_FIELD_WIDTH];
+        String str(buff, sizeof(buff), field->charset());
+        field->val_str(&str);
+        obj_builder.append(sdb_field_name(field), str.c_ptr());
+        break;
+      }
+#ifdef IS_MYSQL
+      case MYSQL_TYPE_JSON: {
+        Json_wrapper wr;
+        String buf;
+        Field_json *field_json = dynamic_cast<Field_json *>(field);
+
+        if (field_json->val_json(&wr) || wr.to_binary(&buf)) {
+          my_error(ER_INVALID_JSON_BINARY_DATA, MYF(0));
+          rc = ER_INVALID_JSON_BINARY_DATA;
+          goto error;
         }
 
-        obj_builder.appendStrWithNoTerminating(sdb_field_name(field),
-                                               str->ptr(), str->length());
+        obj_builder.appendBinData(sdb_field_name(field), buf.length(),
+                                  bson::BinDataGeneral, buf.ptr());
+        break;
       }
-      break;
-    }
-    case MYSQL_TYPE_NEWDECIMAL:
-    case MYSQL_TYPE_DECIMAL: {
-      Field_decimal *f = (Field_decimal *)field;
-      int precision = (int)(f->pack_length());
-      int scale = (int)(f->decimals());
-      if (precision < 0 || scale < 0) {
-        rc = -1;
-        goto error;
-      }
-      char buff[MAX_FIELD_WIDTH];
-      String str(buff, sizeof(buff), field->charset());
-      String unused;
-      f->val_str(&str, &unused);
-      obj_builder.appendDecimal(sdb_field_name(field), str.c_ptr());
-      break;
-    }
-    case MYSQL_TYPE_DATE: {
-      longlong mon = 0;
-      longlong date_val = 0;
-      date_val = ((Field_newdate *)field)->val_int();
-      struct tm tm_val;
-      tm_val.tm_sec = 0;
-      tm_val.tm_min = 0;
-      tm_val.tm_hour = 0;
-      tm_val.tm_mday = date_val % 100;
-      date_val = date_val / 100;
-      mon = date_val % 100;
-      date_val = date_val / 100;
-      tm_val.tm_year = date_val - 1900;
-      /* wrong date format:'xxxx-00-00'
-      if date format is '0000-00-00', it will pass */
-      if ((0 == mon || 0 == tm_val.tm_mday) &&
-          !(0 == date_val && 0 == mon && 0 == tm_val.tm_mday)) {
-        rc = ER_TRUNCATED_WRONG_VALUE;
-        my_printf_error(rc,
-                        "Incorrect date value: '%04lld-%02lld-%02d' for "
-                        "column '%s' at row %lu",
-                        MYF(0), date_val, mon, tm_val.tm_mday,
-                        sdb_field_name(field), sdb_thd_current_row(ha_thd()));
-        goto error;
-      }
-      tm_val.tm_mon = mon - 1;
-      tm_val.tm_wday = 0;
-      tm_val.tm_yday = 0;
-      tm_val.tm_isdst = 0;
-      time_t time_tmp = mktime(&tm_val);
-      bson::Date_t dt((longlong)(time_tmp * 1000));
-      obj_builder.appendDate(sdb_field_name(field), dt);
-      break;
-    }
-    case MYSQL_TYPE_TIMESTAMP2:
-    case MYSQL_TYPE_TIMESTAMP: {
-      struct timeval tv;
-      sdb_field_get_timestamp(field, &tv);
-      obj_builder.appendTimestamp(sdb_field_name(field), tv.tv_sec * 1000,
-                                  tv.tv_usec);
-      break;
-    }
-    case MYSQL_TYPE_NULL:
-      // skip the null value
-      break;
-    case MYSQL_TYPE_DATETIME: {
-      char buff[MAX_FIELD_WIDTH];
-      String str(buff, sizeof(buff), field->charset());
-      field->val_str(&str);
-      obj_builder.append(sdb_field_name(field), str.c_ptr());
-      break;
-    }
-#ifdef IS_MYSQL
-    case MYSQL_TYPE_JSON: {
-      Json_wrapper wr;
-      String buf;
-      Field_json *field_json = dynamic_cast<Field_json *>(field);
-
-      if (field_json->val_json(&wr) || wr.to_binary(&buf)) {
-        my_error(ER_INVALID_JSON_BINARY_DATA, MYF(0));
-        rc = ER_INVALID_JSON_BINARY_DATA;
-        goto error;
-      }
-
-      obj_builder.appendBinData(sdb_field_name(field), buf.length(),
-                                bson::BinDataGeneral, buf.ptr());
-      break;
-    }
 #endif
-    default: {
-      SDB_PRINT_ERROR(ER_BAD_FIELD_ERROR, ER(ER_BAD_FIELD_ERROR),
-                      sdb_field_name(field), table_name);
-      rc = ER_BAD_FIELD_ERROR;
-      goto error;
+      default: {
+        SDB_PRINT_ERROR(ER_BAD_FIELD_ERROR, ER(ER_BAD_FIELD_ERROR),
+                        sdb_field_name(field), table_name);
+        rc = ER_BAD_FIELD_ERROR;
+        goto error;
+      }
     }
   }
+
+  catch (bson::assertion &e) {
+    if (SDB_INVALID_BSONOBJ_SIZE_ASSERT_ID == e.id ||
+        SDB_BUF_BUILDER_MAX_SIZE_ASSERT_ID == e.id) {
+      rc = ER_TOO_BIG_FIELDLENGTH;
+      my_printf_error(rc, "Column length too big at row %lu", MYF(0),
+                      sdb_thd_current_row(ha_thd()));
+    } else {
+      rc = HA_ERR_INTERNAL_ERROR;
+      SDB_LOG_ERROR(
+          "Failed to turn field to sdb obj, field:%s, table:%s.%s,"
+          "exception:%s",
+          sdb_field_name(field), db_name, table_name, e.what());
+    }
+  }
+
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to turn field to sdb obj, field:%s, table:%s.%s,"
+      "exception:%s",
+      sdb_field_name(field), db_name, table_name, e.what());
 
 done:
   return rc;
@@ -1308,55 +1400,74 @@ done:
 */
 my_bool ha_sdb::get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond) {
   my_bool rc = true;
+  int rs = SDB_ERR_OK;
   const KEY_PART_INFO *key_part = unique_key->key_part;
   const KEY_PART_INFO *key_end = key_part + unique_key->user_defined_key_parts;
   my_bool all_field_null = true;
   bson::BSONObjBuilder builder;
 
-  for (; key_part != key_end; ++key_part) {
-    Field *field = table->field[key_part->fieldnr - 1];
-
-    if (!field->is_null()) {
-      if (SDB_ERR_OK != field_to_obj(field, builder)) {
-        rc = true;
-        goto error;
+  try {
+    for (; key_part != key_end; ++key_part) {
+      Field *field = table->field[key_part->fieldnr - 1];
+      if (!field->is_null()) {
+        if (SDB_ERR_OK != field_to_obj(field, builder)) {
+          rc = true;
+          goto error;
+        }
+        all_field_null = false;
+      } else {
+        bson::BSONObjBuilder sub_builder(
+            builder.subobjStart(sdb_field_name(field)));
+        sub_builder.append("$isnull", 1);
+        sub_builder.doneFast();
       }
-      all_field_null = false;
-    } else {
-      bson::BSONObjBuilder sub_builder(
-          builder.subobjStart(sdb_field_name(field)));
-      sub_builder.append("$isnull", 1);
-      sub_builder.doneFast();
     }
+    // If all fields are NULL, more than one record may be matched!
+    if (all_field_null) {
+      rc = true;
+      goto error;
+    }
+    cond = builder.obj();
+    rc = false;
   }
-  // If all fields are NULL, more than one record may be matched!
-  if (all_field_null) {
-    rc = true;
-    goto error;
-  }
-  cond = builder.obj();
-  rc = false;
+  SDB_EXCEPTION_CATCHER(
+      rs,
+      "Failed to get condition from key, key:%s, table:%s.%s, "
+      "exception:%s",
+      unique_key->name, db_name, table_name, e.what());
 
 done:
   return rc;
 error:
+  if (SDB_ERR_OK != rs) {
+    rc = true;
+  }
   goto done;
 }
 
-void ha_sdb::get_dup_key_cond(bson::BSONObj &cond) {
-  static const bson::BSONObj ISNULL_OBJ = BSON("$isnull" << 1);
-
-  bson::BSONObjBuilder builder;
-  bson::BSONObjIterator it(m_dup_value);
-  while (it.more()) {
-    bson::BSONElement elem = it.next();
-    if (bson::Undefined == elem.type()) {
-      builder.append(elem.fieldName(), ISNULL_OBJ);
-    } else {
-      builder.append(elem);
+int ha_sdb::get_dup_key_cond(bson::BSONObj &cond) {
+  int rc = SDB_ERR_OK;
+  try {
+    static const bson::BSONObj ISNULL_OBJ = BSON("$isnull" << 1);
+    bson::BSONObjBuilder builder;
+    bson::BSONObjIterator it(m_dup_value);
+    while (it.more()) {
+      bson::BSONElement elem = it.next();
+      if (bson::Undefined == elem.type()) {
+        builder.append(elem.fieldName(), ISNULL_OBJ);
+      } else {
+        builder.append(elem);
+      }
     }
+    cond = builder.obj();
   }
-  cond = builder.obj();
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get duplicate key condition for table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int ha_sdb::get_update_obj(const uchar *old_data, const uchar *new_data,
@@ -1367,40 +1478,44 @@ int ha_sdb::get_update_obj(const uchar *old_data, const uchar *new_data,
   bson::BSONObjBuilder null_obj_builder;
   my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
 
-  rc = pre_get_update_obj(old_data, new_data, obj_builder);
-  if (rc != 0) {
-    goto error;
-  }
+  try {
+    rc = pre_get_update_obj(old_data, new_data, obj_builder);
+    if (rc != 0) {
+      goto error;
+    }
 
-  if (new_data != table->record[0]) {
-    repoint_field_to_record(table, table->record[0],
-                            const_cast<uchar *>(new_data));
-  }
+    if (new_data != table->record[0]) {
+      repoint_field_to_record(table, table->record[0],
+                              const_cast<uchar *>(new_data));
+    }
 
-  for (Field **fields = table->field; *fields; fields++) {
-    Field *field = *fields;
-    bool is_null = field->is_null();
-    if (is_null != field->is_null_in_record(old_data)) {
-      if (is_null) {
-        null_obj_builder.append(sdb_field_name(field), "");
-      } else {
-        rc = field_to_obj(field, obj_builder);
-        if (0 != rc) {
-          goto error;
+    for (Field **fields = table->field; *fields; fields++) {
+      Field *field = *fields;
+      bool is_null = field->is_null();
+      if (is_null != field->is_null_in_record(old_data)) {
+        if (is_null) {
+          null_obj_builder.append(sdb_field_name(field), "");
+        } else {
+          rc = field_to_obj(field, obj_builder);
+          if (0 != rc) {
+            goto error;
+          }
         }
-      }
-    } else if (!is_null) {
-      if (field->cmp_binary_offset(row_offset) != 0) {
-        rc = field_to_obj(field, obj_builder);
-        if (0 != rc) {
-          goto error;
+      } else if (!is_null) {
+        if (field->cmp_binary_offset(row_offset) != 0) {
+          rc = field_to_obj(field, obj_builder);
+          if (0 != rc) {
+            goto error;
+          }
         }
       }
     }
+    obj = obj_builder.obj();
+    null_obj = null_obj_builder.obj();
   }
-  obj = obj_builder.obj();
-  null_obj = null_obj_builder.obj();
-
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get update object for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 done:
   if (new_data != table->record[0]) {
     repoint_field_to_record(table, const_cast<uchar *>(new_data),
@@ -1436,42 +1551,48 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   m_use_bulk_insert = true;
 }
 
-const char *ha_sdb::get_dup_info(bson::BSONObj &result) {
+int ha_sdb::get_dup_info(bson::BSONObj &result, const char **idx_name) {
+  int rc = SDB_ERR_OK;
   bson::BSONObjIterator it(result);
-  const char *idx_name = "";
+  try {
+    while (it.more()) {
+      bson::BSONElement elem = it.next();
+      if (0 == strcmp(elem.fieldName(), SDB_FIELD_INDEX_VALUE)) {
+        /*
+          In case of INSERT ... ON DUPLICATE KEY UPDATE,
+          if we can't get info here, wrong update command may be pushed down.
+          So assert is necessary.
+        */
+        DBUG_ASSERT(bson::Object == elem.type());
+        // No BSONObj::getOwned() here, because it will be used right soon.
+        m_dup_value = elem.embeddedObject();
 
-  while (it.more()) {
-    bson::BSONElement elem = it.next();
-    if (0 == strcmp(elem.fieldName(), SDB_FIELD_INDEX_VALUE)) {
-      /*
-        In case of INSERT ... ON DUPLICATE KEY UPDATE,
-        if we can't get info here, wrong update command may be pushed down.
-        So assert is necessary.
-      */
-      DBUG_ASSERT(bson::Object == elem.type());
-      // No BSONObj::getOwned() here, because it will be used right soon.
-      m_dup_value = elem.embeddedObject();
+      } else if (0 == strcmp(elem.fieldName(), SDB_FIELD_INDEX_NAME)) {
+        DBUG_ASSERT(bson::String == elem.type());
+        *idx_name = elem.valuestr();
 
-    } else if (0 == strcmp(elem.fieldName(), SDB_FIELD_INDEX_NAME)) {
-      DBUG_ASSERT(bson::String == elem.type());
-      idx_name = elem.valuestr();
-
-      m_dup_key_nr = MAX_KEY;
-      for (uint i = 0; i < table->s->keys; ++i) {
-        KEY *key = table->key_info + i;
-        if ((key->flags & HA_NOSAME) &&
-            0 == strcmp(sdb_key_name(key), idx_name)) {
-          m_dup_key_nr = i;
-          break;
+        m_dup_key_nr = MAX_KEY;
+        for (uint i = 0; i < table->s->keys; ++i) {
+          KEY *key = table->key_info + i;
+          if ((key->flags & HA_NOSAME) &&
+              0 == strcmp(sdb_key_name(key), *idx_name)) {
+            m_dup_key_nr = i;
+            break;
+          }
         }
+      } else if (0 == strcmp(elem.fieldName(), SDB_FIELD_PEER_ID)) {
+        DBUG_ASSERT(bson::jstOID == elem.type());
+        m_dup_oid = elem.OID();
       }
-    } else if (0 == strcmp(elem.fieldName(), SDB_FIELD_PEER_ID)) {
-      DBUG_ASSERT(bson::jstOID == elem.type());
-      m_dup_oid = elem.OID();
     }
   }
-
-  return idx_name;
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get duplicate info for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 template <class T>
@@ -1479,6 +1600,7 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
+  int rc = SDB_ERR_OK;
   bson::BSONObj result;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   int sql_command = thd_sql_command(ha_thd());
@@ -1505,13 +1627,27 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
   }
 
   bson::BSONObj hint;
-  bson::BSONObjBuilder builder;
-  sdb_build_clientinfo(ha_thd(), builder);
-  hint = builder.obj();
+  try {
+    bson::BSONObjBuilder builder(96);
+    sdb_build_clientinfo(ha_thd(), builder);
+    hint = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to build client info when insert row, table:%s.%s, "
+      "exception=%s",
+      db_name, table_name, e.what());
 
-  int rc = collection->insert(rows, hint, flag, &result);
+  rc = collection->insert(rows, hint, flag, &result);
   if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
-    get_dup_info(result);
+    int rs = SDB_ERR_OK;
+    const char *idx_name = "";
+    rs = get_dup_info(result, &idx_name);
+    if (SDB_ERR_OK != rs) {
+      rc = rs;
+      goto error;
+    }
+
     if (m_insert_with_update) {
       rc = HA_ERR_FOUND_DUPP_KEY;
     }
@@ -1528,8 +1664,10 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
   update_last_insert_id();
   stats.records += row_count;
   update_incr_stat(row_count);
-
+done:
   return rc;
+error:
+  goto done;
 }
 
 void ha_sdb::start_bulk_insert(ha_rows rows, uint flags) {
@@ -1728,40 +1866,46 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
       goto error;
     }
   }
-
-  if (null_obj.isEmpty()) {
-    rule_obj = BSON("$set" << new_obj);
-  } else {
-    rule_obj = BSON("$set" << new_obj << "$unset" << null_obj);
-  }
-
-  if (m_insert_with_update) {
-    get_dup_key_cond(cond);
-  } else if (get_unique_key_cond(old_data, cond)) {
-    cond = cur_rec;
-  }
-
-  sdb_build_clientinfo(ha_thd(), builder);
-  hint = builder.obj();
-  rc = collection->update(rule_obj, cond, hint, UPDATE_KEEP_SHARDINGKEY,
-                          &result);
-  if (rc != 0) {
-    if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
-      handle_sdb_error(rc, MYF(0));
-      if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
-        rc = HA_ERR_RECORD_IS_THE_SAME;
-      }
+  try {
+    if (null_obj.isEmpty()) {
+      rule_obj = BSON("$set" << new_obj);
+    } else {
+      rule_obj = BSON("$set" << new_obj << "$unset" << null_obj);
     }
+
+    if (m_insert_with_update) {
+      rc = get_dup_key_cond(cond);
+      if (SDB_ERR_OK != rc) {
+        goto error;
+      }
+    } else if (get_unique_key_cond(old_data, cond)) {
+      cond = cur_rec;
+    }
+
+    sdb_build_clientinfo(ha_thd(), builder);
+    hint = builder.obj();
+    rc = collection->update(rule_obj, cond, hint, UPDATE_KEEP_SHARDINGKEY,
+                            &result);
+    if (rc != 0) {
+      if (SDB_UPDATE_SHARD_KEY == get_sdb_code(rc)) {
+        handle_sdb_error(rc, MYF(0));
+        if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
+          rc = HA_ERR_RECORD_IS_THE_SAME;
+        }
+      }
 
 #ifdef IS_MARIADB
-    if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
-      if (sdb_lex_ignore(ha_thd())) {
-        rc = HA_ERR_FOUND_DUPP_KEY;
+      if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
+        if (sdb_lex_ignore(ha_thd())) {
+          rc = HA_ERR_FOUND_DUPP_KEY;
+        }
       }
-    }
 #endif
-    goto error;
+      goto error;
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to update row, table:%s.%s, exception:%s",
+                        db_name, table_name, e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -1789,8 +1933,12 @@ int ha_sdb::delete_row(const uchar *buf) {
     if (get_unique_key_cond(buf, cond)) {
       cond = cur_rec;
     }
-    sdb_build_clientinfo(ha_thd(), builder);
-    hint = builder.obj();
+    try {
+      sdb_build_clientinfo(ha_thd(), builder);
+      hint = builder.obj();
+    }
+    SDB_EXCEPTION_CATCHER(rc, "Failed to delete row, table:%s.%s, exception:%s",
+                          db_name, table_name, e.what());
     rc = collection->del(cond, hint);
     if (rc != 0) {
       goto error;
@@ -1864,11 +2012,21 @@ done:
   return rc;
 }
 
-void ha_sdb::create_field_rule(const char *field_name, Item_field *value,
-                               bson::BSONObjBuilder &builder) {
-  bson::BSONObjBuilder field_builder(builder.subobjStart(field_name));
-  field_builder.append("$field", sdb_field_name(value->field));
-  field_builder.done();
+int ha_sdb::create_field_rule(const char *field_name, Item_field *value,
+                              bson::BSONObjBuilder &builder) {
+  int rc = SDB_ERR_OK;
+  try {
+    bson::BSONObjBuilder field_builder(builder.subobjStart(field_name));
+    field_builder.append("$field", sdb_field_name(value->field));
+    field_builder.done();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to create field:%s rule for table:%s.%s, exception:%s",
+      field_name, db_name, table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
@@ -2043,158 +2201,166 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
   List<Item> *const update_value_list = sdb_update_values_list(ha_thd());
   List_iterator_fast<Item> f(*item_list), v(*update_value_list);
 
-  while (*optimizer_update && (fld = f++)) {
-    ha_sdb_update_arg upd_arg;
-    field = fld->field_for_view_update();
-    DBUG_ASSERT(field != NULL);
-    /*Set field's table is not the current table*/
-    if (field->used_tables() & ~sdb_table_map(table)) {
-      *optimizer_update = false;
-      SDB_LOG_DEBUG("optimizer update: %d table not table ref",
-                    *optimizer_update);
-      goto done;
-    }
+  try {
+    while (*optimizer_update && (fld = f++)) {
+      ha_sdb_update_arg upd_arg;
+      field = fld->field_for_view_update();
+      DBUG_ASSERT(field != NULL);
+      /*Set field's table is not the current table*/
+      if (field->used_tables() & ~sdb_table_map(table)) {
+        *optimizer_update = false;
+        SDB_LOG_DEBUG("optimizer update: %d table not table ref",
+                      *optimizer_update);
+        goto done;
+      }
 
-    rfield = field->field;
-    value = v++;
+      rfield = field->field;
+      value = v++;
 #ifdef IS_MARIADB
-    // Support for mariadb syntax like "update ... set a=ignore".
-    // If field is set to ignore, it will not be cond push.
-    if (value->type() == Item::DEFAULT_VALUE_ITEM &&
-        !((Item_default_value *)value)->arg) {
-      char buf[STRING_BUFFER_USUAL_SIZE];
-      String str(buf, sizeof(buf), system_charset_info);
-      str.length(0);
-      value->print(&str, QT_NO_DATA_EXPANSION);
-      if (0 == strcmp(str.c_ptr_safe(), SDB_ITEM_IGNORE_TYPE)) {
-        continue;
+      // Support for mariadb syntax like "update ... set a=ignore".
+      // If field is set to ignore, it will not be cond push.
+      if (value->type() == Item::DEFAULT_VALUE_ITEM &&
+          !((Item_default_value *)value)->arg) {
+        char buf[STRING_BUFFER_USUAL_SIZE];
+        String str(buf, sizeof(buf), system_charset_info);
+        str.length(0);
+        value->print(&str, QT_NO_DATA_EXPANSION);
+        if (0 == strcmp(str.c_ptr_safe(), SDB_ITEM_IGNORE_TYPE)) {
+          continue;
+        }
       }
-    }
 #endif
-    upd_arg.my_field = rfield;
-    upd_arg.optimizer_update = optimizer_update;
+      upd_arg.my_field = rfield;
+      upd_arg.optimizer_update = optimizer_update;
 
-    /* Generated column cannot be optimized. */
-    if (sdb_field_is_gcol(rfield)) {
-      *optimizer_update = false;
-      goto done;
-    }
-
-    value->traverse_cond(&sdb_traverse_update, &upd_arg, Item::PREFIX);
-    if (!*optimizer_update) {
-      goto done;
-    }
-
-    if (upd_arg.my_field_count > 0) {
-      if (upd_arg.value_field) {
-        rc = field_to_strict_obj(rfield, inc_builder, false,
-                                 upd_arg.value_field);
-      } else {
-        rc = create_inc_rule(rfield, value, optimizer_update, inc_builder);
+      /* Generated column cannot be optimized. */
+      if (sdb_field_is_gcol(rfield)) {
+        *optimizer_update = false;
+        goto done;
       }
-    } else {
-      if (upd_arg.value_field) {
-        create_field_rule(sdb_field_name(rfield), upd_arg.value_field,
-                          set_builder);
+
+      value->traverse_cond(&sdb_traverse_update, &upd_arg, Item::PREFIX);
+      if (!*optimizer_update) {
+        goto done;
+      }
+
+      if (upd_arg.my_field_count > 0) {
+        if (upd_arg.value_field) {
+          rc = field_to_strict_obj(rfield, inc_builder, false,
+                                   upd_arg.value_field);
+        } else {
+          rc = create_inc_rule(rfield, value, optimizer_update, inc_builder);
+        }
       } else {
-        rc = create_set_rule(rfield, value, optimizer_update, set_builder);
-        bitmap_set_bit(&const_col_map, rfield->field_index);
+        if (upd_arg.value_field) {
+          rc = create_field_rule(sdb_field_name(rfield), upd_arg.value_field,
+                                 set_builder);
+          if (SDB_ERR_OK != rc) {
+            goto error;
+          }
+        } else {
+          rc = create_set_rule(rfield, value, optimizer_update, set_builder);
+          bitmap_set_bit(&const_col_map, rfield->field_index);
+        }
+      }
+
+      if (0 != rc || !*optimizer_update) {
+        goto error;
       }
     }
 
-    if (0 != rc || !*optimizer_update) {
-      goto error;
-    }
-  }
-
-  // Stored generated columns can be optimized which can be calculated by base
-  // columns, example:
-  // CREATE TABLE t1(a INT, b INT, c INT GENERATED ALWAYS AS (a+b+1) STORED.
-  // SET a=3                   N
-  // SET a=3, b=10             Y
-  // SET a=a+1, b=10           N
-  if (sdb_table_has_gcol(table)) {
-    for (gfield_ptr = table->vfield; *gfield_ptr; gfield_ptr++) {
-      gfield = *gfield_ptr;
-      value = sdb_get_gcol_item(gfield);
+    // Stored generated columns can be optimized which can be calculated by base
+    // columns, example:
+    // CREATE TABLE t1(a INT, b INT, c INT GENERATED ALWAYS AS (a+b+1) STORED.
+    // SET a=3                   N
+    // SET a=3, b=10             Y
+    // SET a=a+1, b=10           N
+    if (sdb_table_has_gcol(table)) {
+      for (gfield_ptr = table->vfield; *gfield_ptr; gfield_ptr++) {
+        gfield = *gfield_ptr;
+        value = sdb_get_gcol_item(gfield);
 #ifdef IS_MYSQL
-      if (bitmap_is_set(bitmap, gfield->field_index)) {
-        bool set_value = true;
-        Field *tmp_field = NULL;
-        MY_BITMAP *base_columns_map = sdb_get_base_columns_map(gfield);
-        for (uint i = bitmap_get_first_set(base_columns_map); i != MY_BIT_NONE;
-             i = bitmap_get_next_set(base_columns_map, i)) {
-          tmp_field = table->field[i];
-          if (!bitmap_is_set(&const_col_map, tmp_field->field_index)) {
-            if (sdb_field_is_virtual_gcol(gfield)) {
-              set_value = false;
-              break;
-            } else {
+        if (bitmap_is_set(bitmap, gfield->field_index)) {
+          bool set_value = true;
+          Field *tmp_field = NULL;
+          MY_BITMAP *base_columns_map = sdb_get_base_columns_map(gfield);
+          for (uint i = bitmap_get_first_set(base_columns_map);
+               i != MY_BIT_NONE; i = bitmap_get_next_set(base_columns_map, i)) {
+            tmp_field = table->field[i];
+            if (!bitmap_is_set(&const_col_map, tmp_field->field_index)) {
+              if (sdb_field_is_virtual_gcol(gfield)) {
+                set_value = false;
+                break;
+              } else {
+                *optimizer_update = false;
+                goto done;
+              }
+            }
+          }
+
+          if (set_value) {
+            rc = create_set_rule(gfield, value, optimizer_update, set_builder);
+            if (0 != rc) {
+              goto error;
+            }
+            bitmap_set_bit(&const_col_map, gfield->field_index);
+          }
+        }
+        /* Set bitmap of table fields (columns), which are explicitly set to
+           avoid memory allocation on MEM_ROOT.*/
+        if (table->fields_set_during_insert) {
+          bitmap_set_bit(table->fields_set_during_insert, rfield->field_index);
+        }
+#elif defined IS_MARIADB
+        if (bitmap_is_set(bitmap, gfield->field_index)) {
+          Field *tmp_field = NULL;
+          MY_BITMAP *base_columns_map = sdb_get_base_columns_map(gfield);
+          bool stored_gcol_is_set = false;
+          for (uint i = bitmap_get_first_set(base_columns_map);
+               i != MY_BIT_NONE; i = bitmap_get_next_set(base_columns_map, i)) {
+            tmp_field = table->field[i];
+            if (sdb_field_is_gcol(tmp_field)) {
+              continue;
+            }
+            if (bitmap_is_set(table->write_set, tmp_field->field_index)) {
+              stored_gcol_is_set = true;
+            }
+          }
+          for (uint i = bitmap_get_first_set(base_columns_map);
+               i != MY_BIT_NONE; i = bitmap_get_next_set(base_columns_map, i)) {
+            tmp_field = table->field[i];
+            if (stored_gcol_is_set &&
+                !bitmap_is_set(&const_col_map, tmp_field->field_index)) {
               *optimizer_update = false;
               goto done;
             }
           }
-        }
 
-        if (set_value) {
-          rc = create_set_rule(gfield, value, optimizer_update, set_builder);
-          if (0 != rc) {
-            goto error;
-          }
-          bitmap_set_bit(&const_col_map, gfield->field_index);
-        }
-      }
-      /* Set bitmap of table fields (columns), which are explicitly set to avoid
-         memory allocation on MEM_ROOT.*/
-      if (table->fields_set_during_insert) {
-        bitmap_set_bit(table->fields_set_during_insert, rfield->field_index);
-      }
-#elif defined IS_MARIADB
-      if (bitmap_is_set(bitmap, gfield->field_index)) {
-        Field *tmp_field = NULL;
-        MY_BITMAP *base_columns_map = sdb_get_base_columns_map(gfield);
-        bool stored_gcol_is_set = false;
-        for (uint i = bitmap_get_first_set(base_columns_map); i != MY_BIT_NONE;
-             i = bitmap_get_next_set(base_columns_map, i)) {
-          tmp_field = table->field[i];
-          if (sdb_field_is_gcol(tmp_field)) {
-            continue;
-          }
-          if (bitmap_is_set(table->write_set, tmp_field->field_index)) {
-            stored_gcol_is_set = true;
+          if (stored_gcol_is_set) {
+            rc = create_set_rule(gfield, value, optimizer_update, set_builder);
+            if (0 != rc) {
+              goto error;
+            }
+            bitmap_set_bit(&const_col_map, gfield->field_index);
           }
         }
-        for (uint i = bitmap_get_first_set(base_columns_map); i != MY_BIT_NONE;
-             i = bitmap_get_next_set(base_columns_map, i)) {
-          tmp_field = table->field[i];
-          if (stored_gcol_is_set &&
-              !bitmap_is_set(&const_col_map, tmp_field->field_index)) {
-            *optimizer_update = false;
-            goto done;
-          }
-        }
-
-        if (stored_gcol_is_set) {
-          rc = create_set_rule(gfield, value, optimizer_update, set_builder);
-          if (0 != rc) {
-            goto error;
-          }
-          bitmap_set_bit(&const_col_map, gfield->field_index);
-        }
-      }
 #endif
+      }
+    }
+    set_obj = set_builder.obj();
+    inc_obj = inc_builder.obj();
+
+    if (!set_obj.isEmpty() && !inc_obj.isEmpty()) {
+      rule = BSON("$set" << set_obj << "$inc" << inc_obj);
+    } else if (!set_obj.isEmpty()) {
+      rule = BSON("$set" << set_obj);
+    } else if (!inc_obj.isEmpty()) {
+      rule = BSON("$inc" << inc_obj);
     }
   }
-  set_obj = set_builder.obj();
-  inc_obj = inc_builder.obj();
-
-  if (!set_obj.isEmpty() && !inc_obj.isEmpty()) {
-    rule = BSON("$set" << set_obj << "$inc" << inc_obj);
-  } else if (!set_obj.isEmpty()) {
-    rule = BSON("$set" << set_obj);
-  } else if (!inc_obj.isEmpty()) {
-    rule = BSON("$inc" << inc_obj);
-  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to create modify object, table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -2365,8 +2531,9 @@ done:
   RETURN
     return TRUE if do direct_count.
 */
-bool ha_sdb::optimize_count(bson::BSONObj &condition) {
+int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
   DBUG_ENTER("ha_sdb::optimize_count()");
+  int rc = SDB_ERR_OK;
   bson::BSONObjBuilder count_cond_blder;
   LEX *const lex = ha_thd()->lex;
   SELECT_LEX *const select = sdb_lex_first_select(ha_thd());
@@ -2377,60 +2544,68 @@ bool ha_sdb::optimize_count(bson::BSONObj &condition) {
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   count_query = false;
-  if (select->table_list.elements == 1 && lex->all_selects_list && !order &&
-      sdb_tables_in_join(select->join) <= 1 && !group &&
-      optimize_with_materialization &&
-      !lex->all_selects_list->next_select_in_list() && !mrr_have_range &&
-      (SDB_COND_UNCALLED == sdb_condition->status ||
-       SDB_COND_SUPPORTED == sdb_condition->status) &&
-      !sdb_condition->has_null_func) {
-    List_iterator<Item> li(select->item_list);
-    Item *item;
-    while ((item = li++)) {
-      if (item->type() == Item::SUM_FUNC_ITEM) {
-        Item_sum *sum_item = (Item_sum *)item;
-        /* arg_count = 2: 'select count(distinct a,b)' */
-        if (sum_item->has_with_distinct() || sum_item->get_arg_count() > 1 ||
-            sum_item->sum_func() != Item_sum::COUNT_FUNC) {
-          count_query = false;
-          goto done;
-        }
-        Item::Type type = sum_item->get_arg(0)->type();
-        if (type == Item::FIELD_ITEM) {
-          if (select->group_list.elements >= 1) {
+  try {
+    if (select->table_list.elements == 1 && lex->all_selects_list && !order &&
+        sdb_tables_in_join(select->join) <= 1 && !group &&
+        optimize_with_materialization &&
+        !lex->all_selects_list->next_select_in_list() && !mrr_have_range &&
+        (SDB_COND_UNCALLED == sdb_condition->status ||
+         SDB_COND_SUPPORTED == sdb_condition->status) &&
+        !sdb_condition->has_null_func) {
+      List_iterator<Item> li(select->item_list);
+      Item *item;
+      while ((item = li++)) {
+        if (item->type() == Item::SUM_FUNC_ITEM) {
+          Item_sum *sum_item = (Item_sum *)item;
+          /* arg_count = 2: 'select count(distinct a,b)' */
+          if (sum_item->has_with_distinct() || sum_item->get_arg_count() > 1 ||
+              sum_item->sum_func() != Item_sum::COUNT_FUNC) {
+            count_query = false;
+            goto done;
+          }
+          Item::Type type = sum_item->get_arg(0)->type();
+          if (type == Item::FIELD_ITEM) {
+            if (select->group_list.elements >= 1) {
+              count_query = false;
+              goto done;
+            }
+          }
+          /* support count(const) and count(field), not support count(func) */
+          if (type == Item::FIELD_ITEM) {
+            count_query = true;
+            count_cond_blder.append(sdb_item_name(sum_item->get_arg(0)),
+                                    BSON("$isnull" << 0));
+#if defined IS_MYSQL
+          } else if (type == Item::INT_ITEM || sum_item->const_item()) {
+#elif defined IS_MARIADB
+          } else if (type == Item::CONST_ITEM || sum_item->const_item()) {
+#endif
+            // count(*)
+            count_query = true;
+          } else {
             count_query = false;
             goto done;
           }
         }
-        /* support count(const) and count(field), not support count(func) */
-        if (type == Item::FIELD_ITEM) {
-          count_query = true;
-          count_cond_blder.append(sdb_item_name(sum_item->get_arg(0)),
-                                  BSON("$isnull" << 0));
-#if defined IS_MYSQL
-        } else if (type == Item::INT_ITEM || sum_item->const_item()) {
-#elif defined IS_MARIADB
-        } else if (type == Item::CONST_ITEM || sum_item->const_item()) {
-#endif
-          // count(*)
-          count_query = true;
-        } else {
-          count_query = false;
-          goto done;
-        }
+      }
+
+      if (count_query) {
+        count_cond_blder.appendElements(condition);
+        condition = count_cond_blder.obj();
+        SDB_LOG_DEBUG("optimizer count: %d, condition: %s", count_query,
+                      condition.toString(false, false).c_str());
       }
     }
-
-    if (count_query) {
-      count_cond_blder.appendElements(condition);
-      condition = count_cond_blder.obj();
-      SDB_LOG_DEBUG("optimizer count: %d, condition: %s", count_query,
-                    condition.toString(false, false).c_str());
-    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to optimize count for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 
 done:
-  DBUG_RETURN(count_query);
+  can_direct = count_query;
+  DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
@@ -2438,22 +2613,30 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                               ha_rows &num_to_return, bool &direct_op) {
   DBUG_ENTER("ha_sdb::optimize_proccess");
   int rc = 0;
+  bool can_direct = false;
   bson::BSONObj result;
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
   if (thd_sql_command(thd) == SQLCOM_SELECT) {
-    if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT) &&
-        optimize_count(condition)) {
-      rc = collection->get_count(total_count, condition, hint);
-      if (rc) {
-        SDB_LOG_ERROR("Fail to get count on table:%s.%s. rc: %d", db_name,
-                      table_name, rc);
+    if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT)) {
+      rc = optimize_count(condition, can_direct);
+      if (SDB_ERR_OK == rc && can_direct) {
+        rc = collection->get_count(total_count, condition, hint);
+        if (rc) {
+          SDB_LOG_ERROR("Failed to get count on table:%s.%s. rc: %d", db_name,
+                        table_name, rc);
+          goto error;
+        }
+        num_to_return = 1;
+      } else {
         goto error;
       }
-      num_to_return = 1;
     }
-    build_selector(selector);
+    rc = build_selector(selector);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
   }
 
   /*
@@ -2568,25 +2751,35 @@ error:
   goto done;
 }
 
-void ha_sdb::build_selector(bson::BSONObj &selector) {
+int ha_sdb::build_selector(bson::BSONObj &selector) {
   int select_num = 0;
+  int rc = SDB_ERR_OK;
   bson::BSONObjBuilder selector_builder;
-  uint threshold = sdb_selector_pushdown_threshold(ha_thd());
-  selector_builder.appendNull(SDB_OID_FIELD);
-  for (Field **fields = table->field; *fields; fields++) {
-    Field *field = *fields;
-    if (bitmap_is_set(table->read_set, field->field_index)) {
-      selector_builder.appendNull(sdb_field_name(field));
-      select_num++;
+  try {
+    uint threshold = sdb_selector_pushdown_threshold(ha_thd());
+    selector_builder.appendNull(SDB_OID_FIELD);
+    for (Field **fields = table->field; *fields; fields++) {
+      Field *field = *fields;
+      if (bitmap_is_set(table->read_set, field->field_index)) {
+        selector_builder.appendNull(sdb_field_name(field));
+        select_num++;
+      }
+    }
+    if (((double)select_num * 100 / table_share->fields) <= (double)threshold) {
+      selector = selector_builder.obj();
+      SDB_LOG_DEBUG("optimizer selector object: %s",
+                    selector.toString(false, false).c_str());
+    } else {
+      selector = SDB_EMPTY_BSON;
     }
   }
-  if (((double)select_num * 100 / table_share->fields) <= (double)threshold) {
-    selector = selector_builder.obj();
-    SDB_LOG_DEBUG("optimizer selector object: %s",
-                  selector.toString(false, false).c_str());
-  } else {
-    selector = SDB_EMPTY_BSON;
-  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to build selector for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
@@ -2618,23 +2811,28 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
                                        0, (NULL != end_range) ? eq_range : 0,
                                        condition_idx);
     if (0 != rc) {
-      SDB_LOG_ERROR("Fail to build index match object. rc: %d", rc);
+      SDB_LOG_ERROR("Failed to build index match object. rc: %d", rc);
       goto error;
     }
 
     order_direction = sdb_get_key_direction(find_flag);
   }
 
-  if (!condition.isEmpty()) {
-    if (!condition_idx.isEmpty()) {
-      bson::BSONArrayBuilder arr_builder;
-      arr_builder.append(condition);
-      arr_builder.append(condition_idx);
-      condition = BSON("$and" << arr_builder.arr());
+  try {
+    if (!condition.isEmpty()) {
+      if (!condition_idx.isEmpty()) {
+        bson::BSONArrayBuilder arr_builder;
+        arr_builder.append(condition);
+        arr_builder.append(condition_idx);
+        condition = BSON("$and" << arr_builder.arr());
+      }
+    } else {
+      condition = condition_idx;
     }
-  } else {
-    condition = condition_idx;
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to index read map for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 
   rc = ensure_collection(ha_thd());
   if (rc) {
@@ -2717,16 +2915,20 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   rc = sdb_get_idx_order(key_info, order_by, order_direction,
                          m_secondary_sort_rowid);
   if (rc) {
-    SDB_LOG_ERROR("Fail to get index order. rc: %d", rc);
+    SDB_LOG_ERROR("Failed to get index order. rc: %d", rc);
     goto error;
   }
 
   flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
 
-  builder.append("", sdb_key_name(key_info));
-  sdb_build_clientinfo(ha_thd(), builder);
-  hint = builder.obj();
-
+  try {
+    builder.append("", sdb_key_name(key_info));
+    sdb_build_clientinfo(ha_thd(), builder);
+    hint = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to index read one for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
   rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                          direct_op);
   if (rc) {
@@ -2775,17 +2977,13 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
         builder.append(elem);
       }
       hint = builder.obj();
-    } catch (std::bad_alloc &e) {
-      rc = HA_ERR_OUT_OF_MEM;
-      SDB_LOG_DEBUG("Failed to build bson obj, table:%s, exception:%s", table,
-                    e.what());
-      goto error;
-    } catch (std::exception &e) {
-      rc = HA_ERR_INTERNAL_ERROR;
-      SDB_LOG_DEBUG("Failed to build bson obj, table:%s, exception:%s", table,
-                    e.what());
-      goto error;
     }
+    SDB_EXCEPTION_CATCHER(
+        rc,
+        "Failed to debug log when index read one, table:%s.%s, "
+        "exception:%s",
+        db_name, table_name, e.what());
+
     SDB_LOG_DEBUG(
         "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
         "limit[%d], "
@@ -3338,52 +3536,58 @@ int ha_sdb::rnd_next(uchar *buf) {
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
   if (first_read) {
-    if (!pushed_condition.isEmpty()) {
-      condition = pushed_condition.copy();
+    try {
+      if (!pushed_condition.isEmpty()) {
+        condition = pushed_condition.copy();
+      }
     }
+    SDB_EXCEPTION_CATCHER(rc,
+                          "Failed to read next for table:%s.%s, exception:%s",
+                          db_name, table_name, e.what());
 
     rc = pre_first_rnd_next(condition);
     if (rc != 0) {
       goto error;
     }
-
-    int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-    sdb_build_clientinfo(ha_thd(), builder);
-    hint = builder.obj();
-    rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
-                           direct_op);
-    if (rc) {
-      goto error;
-    }
-
-    if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
-         thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
-        thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
-      rc = autocommit_statement(direct_op);
+    {
+      int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+      sdb_build_clientinfo(ha_thd(), builder);
+      hint = builder.obj();
+      rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
+                             direct_op);
       if (rc) {
         goto error;
       }
-    }
 
-    if (delete_with_select) {
-      rc = collection->query_and_remove(condition, selector, SDB_EMPTY_BSON,
-                                        hint, 0, num_to_return, flag);
-    } else {
-      SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
-      SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
-      const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
-      if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
-          sdb_is_single_table(ha_thd())) {
-        if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
-          num_to_return = select_lex->get_limit();
-          if (select_lex->offset_limit) {
-            num_to_skip = select_lex->get_offset();
-            unit->offset_limit_cnt = 0;
-          }
+      if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
+           thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
+          thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
+        rc = autocommit_statement(direct_op);
+        if (rc) {
+          goto error;
         }
       }
-      rc = collection->query(condition, selector, SDB_EMPTY_BSON, hint,
-                             num_to_skip, num_to_return, flag);
+
+      if (delete_with_select) {
+        rc = collection->query_and_remove(condition, selector, SDB_EMPTY_BSON,
+                                          hint, 0, num_to_return, flag);
+      } else {
+        SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
+        SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
+        const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+        if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
+            sdb_is_single_table(ha_thd())) {
+          if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
+            num_to_return = select_lex->get_limit();
+            if (select_lex->offset_limit) {
+              num_to_skip = select_lex->get_offset();
+              unit->offset_limit_cnt = 0;
+            }
+          }
+        }
+        rc = collection->query(condition, selector, SDB_EMPTY_BSON, hint,
+                               num_to_skip, num_to_return, flag);
+      }
     }
 
     if (sdb_debug_log) {
@@ -3398,17 +3602,12 @@ int ha_sdb::rnd_next(uchar *buf) {
           builder.append(elem);
         }
         hint = builder.obj();
-      } catch (std::bad_alloc &e) {
-        rc = HA_ERR_OUT_OF_MEM;
-        SDB_LOG_DEBUG("Failed to build bson obj, table:%s, exception:%s", table,
-                      e.what());
-        goto error;
-      } catch (std::exception &e) {
-        rc = HA_ERR_INTERNAL_ERROR;
-        SDB_LOG_DEBUG("Failed to build bson obj, table:%s, exception:%s", table,
-                      e.what());
-        goto error;
       }
+      SDB_EXCEPTION_CATCHER(rc,
+                            "Failed to debug log when rnd next, table:%s.%s, "
+                            "exception:%s",
+                            db_name, table_name, e.what());
+
       SDB_LOG_DEBUG(
           "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
           "limit[%d], "
@@ -3457,27 +3656,35 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
     repoint_field_to_record(table, table->record[0], buf);
   }
 
-  if (m_dup_key_nr < MAX_KEY &&
-      0 == memcmp(pos, m_dup_oid.getData(), SDB_OID_LEN)) {
-    get_dup_key_cond(cond);
-  } else {
-    obj_builder.appendOID(SDB_OID_FIELD, &oid);
-    cond = obj_builder.obj();
-  }
+  try {
+    if (m_dup_key_nr < MAX_KEY &&
+        0 == memcmp(pos, m_dup_oid.getData(), SDB_OID_LEN)) {
+      rc = get_dup_key_cond(cond);
+      if (SDB_ERR_OK != rc) {
+        goto error;
+      }
+    } else {
+      obj_builder.appendOID(SDB_OID_FIELD, &oid);
+      cond = obj_builder.obj();
+    }
 
-  sdb_build_clientinfo(ha_thd(), builder);
-  hint = builder.obj();
+    sdb_build_clientinfo(ha_thd(), builder);
+    hint = builder.obj();
 
-  rc = collection->query_one(cur_rec, cond, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
-                             hint);
-  if (rc) {
-    goto error;
-  }
+    rc = collection->query_one(cur_rec, cond, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
+                               hint);
+    if (rc) {
+      goto error;
+    }
 
-  rc = obj_to_row(cur_rec, buf);
-  if (rc != 0) {
-    goto error;
+    rc = obj_to_row(cur_rec, buf);
+    if (rc != 0) {
+      goto error;
+    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to read position:%s for table:%s.%s, exception:%s", pos,
+      db_name, table_name, e.what());
 
 done:
   if (buf != table->record[0]) {
@@ -3639,6 +3846,8 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
 
     rc = conn->get_cl_statistics(db_name, table_name, stat);
     if (0 != rc) {
+      SDB_LOG_ERROR("%s", conn->get_err_msg());
+      conn->clear_err_msg();
       goto done;
     }
 
@@ -3846,6 +4055,8 @@ int ha_sdb::autocommit_statement(bool direct_op) {
 
     rc = conn->begin_transaction(ha_thd()->tx_isolation);
     if (rc != 0) {
+      SDB_PRINT_ERROR(rc, "%s", conn->get_err_msg());
+      conn->clear_err_msg();
       goto done;
     }
   }
@@ -3903,7 +4114,9 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
       if (!conn->is_transaction_on()) {
         rc = conn->begin_transaction(thd->tx_isolation);
         if (rc != 0) {
-          goto error;
+          SDB_PRINT_ERROR(rc, "%s", conn->get_err_msg());
+          conn->clear_err_msg();
+          goto done;
         }
         trans_register_ha(thd, TRUE, ht, NULL);
       }
@@ -4081,9 +4294,14 @@ int ha_sdb::delete_all_rows() {
   if (rc) {
     goto error;
   }
+  try {
+    sdb_build_clientinfo(ha_thd(), builder);
+    hint = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to delete all rows for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 
-  sdb_build_clientinfo(ha_thd(), builder);
-  hint = builder.obj();
   rc = collection->del(cond, hint, FLG_DELETE_RETURNNUM, &result);
   if (0 == rc) {
     Sdb_mutex_guard guard(share->mutex);
@@ -4353,10 +4571,10 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
 
   try {
     cond = BSON(SDB_FIELD_NAME << mcl_full_name);
-  } catch (std::bad_alloc &e) {
-    rc = HA_ERR_OUT_OF_MEM;
-    goto error;
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to drop partition for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 
   rc = conn->snapshot(obj, SDB_SNAP_CATALOG, cond);
   if (get_sdb_code(rc) == SDB_DMS_EOC) {  // cl don't exist.
@@ -4364,6 +4582,8 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto done;
   }
   if (rc != 0) {
+    SDB_LOG_ERROR("%s", conn->get_err_msg());
+    conn->clear_err_msg();
     goto error;
   }
 
@@ -4419,13 +4639,10 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
         break;
       }
     }
-
-  } catch (bson::assertion &e) {
-    SDB_LOG_ERROR("Wrong format of catalog object[%s]",
-                  cata_info.toString().c_str());
-    rc = HA_ERR_INTERNAL_ERROR;
-    goto error;
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to drop partition for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 
   // Update the upper sub cl attach range.
   if (!upper_scl_name) {
@@ -4444,14 +4661,14 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   }
 
   try {
-    bson::BSONObjBuilder builder;
+    bson::BSONObjBuilder builder(64);
     builder.append(SDB_FIELD_LOW_BOUND, low_bound);
     builder.append(SDB_FIELD_UP_BOUND, up_bound);
     attach_options = builder.obj();
-  } catch (std::bad_alloc &e) {
-    rc = HA_ERR_OUT_OF_MEM;
-    goto error;
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to drop partition for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 
   rc = main_cl.attach_collection(upper_scl_full_name, attach_options);
   if (rc != 0) {
@@ -4479,51 +4696,58 @@ int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
       shard_idx = key_info;
     }
   }
-  if (NULL != shard_idx) {
-    bson::BSONObjBuilder sharding_key_builder;
-    const KEY_PART_INFO *key_part;
-    const KEY_PART_INFO *key_end;
+  try {
+    if (NULL != shard_idx) {
+      bson::BSONObjBuilder sharding_key_builder;
+      const KEY_PART_INFO *key_part;
+      const KEY_PART_INFO *key_end;
 
-    // check unique-idx if include sharding-key
-    for (uint i = 0; i < form->s->keys; i++) {
-      const KEY *key_info = form->s->key_info + i;
-      if ((key_info->flags & HA_NOSAME) && key_info != shard_idx) {
-        key_part = shard_idx->key_part;
-        key_end = key_part + shard_idx->user_defined_key_parts;
-        for (; key_part != key_end; ++key_part) {
-          const KEY_PART_INFO *key_part_tmp = key_info->key_part;
-          const KEY_PART_INFO *key_end_tmp =
-              key_part_tmp + key_info->user_defined_key_parts;
-          for (; key_part_tmp != key_end_tmp; ++key_part_tmp) {
-            if (0 == strcmp(sdb_field_name(key_part->field),
-                            sdb_field_name(key_part_tmp->field))) {
-              break;
+      // check unique-idx if include sharding-key
+      for (uint i = 0; i < form->s->keys; i++) {
+        const KEY *key_info = form->s->key_info + i;
+        if ((key_info->flags & HA_NOSAME) && key_info != shard_idx) {
+          key_part = shard_idx->key_part;
+          key_end = key_part + shard_idx->user_defined_key_parts;
+          for (; key_part != key_end; ++key_part) {
+            const KEY_PART_INFO *key_part_tmp = key_info->key_part;
+            const KEY_PART_INFO *key_end_tmp =
+                key_part_tmp + key_info->user_defined_key_parts;
+            for (; key_part_tmp != key_end_tmp; ++key_part_tmp) {
+              if (0 == strcmp(sdb_field_name(key_part->field),
+                              sdb_field_name(key_part_tmp->field))) {
+                break;
+              }
             }
-          }
 
-          if (key_part_tmp == key_end_tmp) {
-            shard_idx = NULL;
-            SDB_LOG_WARNING(
-                "Unique index('%-.192s') not include the field: '%-.192s', "
-                "create non-partition table: %s.%s",
-                sdb_key_name(key_info), sdb_field_name(key_part->field),
-                db_name, table_name);
-            goto done;
+            if (key_part_tmp == key_end_tmp) {
+              shard_idx = NULL;
+              SDB_LOG_WARNING(
+                  "Unique index('%-.192s') not include the field: '%-.192s', "
+                  "create non-partition table: %s.%s",
+                  sdb_key_name(key_info), sdb_field_name(key_part->field),
+                  db_name, table_name);
+              goto done;
+            }
           }
         }
       }
-    }
 
-    key_part = shard_idx->key_part;
-    key_end = key_part + shard_idx->user_defined_key_parts;
-    for (; key_part != key_end; ++key_part) {
-      sharding_key_builder.append(sdb_field_name(key_part->field), 1);
+      key_part = shard_idx->key_part;
+      key_end = key_part + shard_idx->user_defined_key_parts;
+      for (; key_part != key_end; ++key_part) {
+        sharding_key_builder.append(sdb_field_name(key_part->field), 1);
+      }
+      sharding_key = sharding_key_builder.obj();
     }
-    sharding_key = sharding_key_builder.obj();
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get default sharding key for table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
 
 done:
   return rc;
+error:
+  goto done;
 }
 
 inline int ha_sdb::get_sharding_key_from_options(TABLE *table,
@@ -4545,24 +4769,30 @@ inline int ha_sdb::get_sharding_key_from_options(TABLE *table,
     goto error;
   }
 
-  if (!sharding_key.isEmpty() && sdb_table_has_gcol(table)) {
-    bson::BSONObjIterator it(sharding_key);
-    while (it.more()) {
-      bson::BSONElement tmp_elem = it.next();
-      for (gfield_ptr = table->vfield; *gfield_ptr; gfield_ptr++) {
-        gfield = *gfield_ptr;
-        if (sdb_field_is_virtual_gcol(gfield) &&
-            0 == strcmp(sdb_field_name(gfield), tmp_elem.fieldName())) {
-          rc = HA_ERR_UNSUPPORTED;
-          my_printf_error(rc,
-                          "Virtual generated column '%-.192s' cannot be used "
-                          "for ShardingKey",
-                          MYF(0), sdb_field_name(gfield));
-          goto error;
+  try {
+    if (!sharding_key.isEmpty() && sdb_table_has_gcol(table)) {
+      bson::BSONObjIterator it(sharding_key);
+      while (it.more()) {
+        bson::BSONElement tmp_elem = it.next();
+        for (gfield_ptr = table->vfield; *gfield_ptr; gfield_ptr++) {
+          gfield = *gfield_ptr;
+          if (sdb_field_is_virtual_gcol(gfield) &&
+              0 == strcmp(sdb_field_name(gfield), tmp_elem.fieldName())) {
+            rc = HA_ERR_UNSUPPORTED;
+            my_printf_error(rc,
+                            "Virtual generated column '%-.192s' cannot be used "
+                            "for ShardingKey",
+                            MYF(0), sdb_field_name(gfield));
+            goto error;
+          }
         }
       }
     }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to get sharding key from options for table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
 
 done:
   return rc;
@@ -4712,56 +4942,61 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
   filter_num = sizeof(auto_fill_fields) / sizeof(*auto_fill_fields);
   filter_options(options, auto_fill_fields, filter_num, build);
 
-  explicit_sharding_key = options.hasField(SDB_FIELD_SHARDING_KEY);
-  explicit_is_mainCL =
-      options.hasField(SDB_FIELD_ISMAINCL) &&
-      (options.getField(SDB_FIELD_ISMAINCL).type() == bson::Bool) &&
-      (options.getField(SDB_FIELD_ISMAINCL).Bool() == true);
-  explicit_range_sharding_type =
-      options.hasField(SDB_FIELD_SHARDING_TYPE) &&
-      (options.getField(SDB_FIELD_SHARDING_TYPE).type() == bson::String) &&
-      (options.getField(SDB_FIELD_SHARDING_TYPE).String() == "range");
-  explicit_group = options.hasField(SDB_FIELD_GROUP);
+  try {
+    explicit_sharding_key = options.hasField(SDB_FIELD_SHARDING_KEY);
+    explicit_is_mainCL =
+        options.hasField(SDB_FIELD_ISMAINCL) &&
+        (options.getField(SDB_FIELD_ISMAINCL).type() == bson::Bool) &&
+        (options.getField(SDB_FIELD_ISMAINCL).Bool() == true);
+    explicit_range_sharding_type =
+        options.hasField(SDB_FIELD_SHARDING_TYPE) &&
+        (options.getField(SDB_FIELD_SHARDING_TYPE).type() == bson::String) &&
+        (options.getField(SDB_FIELD_SHARDING_TYPE).String() == "range");
+    explicit_group = options.hasField(SDB_FIELD_GROUP);
 
-  if (!sharding_key.isEmpty()) {
-    build.append(SDB_FIELD_SHARDING_KEY, sharding_key);
-    if (!explicit_sharding_key &&
-        !options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
-      build.appendBool(SDB_FIELD_ENSURE_SHARDING_IDX, false);
+    if (!sharding_key.isEmpty()) {
+      build.append(SDB_FIELD_SHARDING_KEY, sharding_key);
+      if (!explicit_sharding_key &&
+          !options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
+        build.appendBool(SDB_FIELD_ENSURE_SHARDING_IDX, false);
+      }
+      if (!(explicit_is_mainCL || explicit_range_sharding_type ||
+            explicit_group || options.hasField(SDB_FIELD_AUTO_SPLIT))) {
+        build.appendBool(SDB_FIELD_AUTO_SPLIT, true);
+      }
     }
-    if (!(explicit_is_mainCL || explicit_range_sharding_type ||
-          explicit_group || options.hasField(SDB_FIELD_AUTO_SPLIT))) {
-      build.appendBool(SDB_FIELD_AUTO_SPLIT, true);
+
+    if (options.hasField(SDB_FIELD_AUTO_SPLIT)) {
+      build.append(options.getField(SDB_FIELD_AUTO_SPLIT));
+    }
+    if (options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
+      build.append(options.getField(SDB_FIELD_ENSURE_SHARDING_IDX));
+    }
+
+    if (!options.hasField(SDB_FIELD_REPLSIZE)) {
+      build.append(SDB_FIELD_REPLSIZE, sdb_replica_size);
+    } else {
+      build.append(options.getField(SDB_FIELD_REPLSIZE));
+    }
+
+    if (!options.hasField(SDB_FIELD_STRICT_DATA_MODE)) {
+      build.appendBool(SDB_FIELD_STRICT_DATA_MODE, true);
+    } else {
+      build.append(options.getField(SDB_FIELD_STRICT_DATA_MODE));
+    }
+
+    cmt_compressed = options.getField(SDB_FIELD_COMPRESSED);
+    cmt_compress_type = options.getField(SDB_FIELD_COMPRESSION_TYPE);
+
+    rc = sdb_check_and_set_compress(sql_compress, cmt_compressed,
+                                    cmt_compress_type, build);
+    if (rc != 0) {
+      goto error;
     }
   }
-
-  if (options.hasField(SDB_FIELD_AUTO_SPLIT)) {
-    build.append(options.getField(SDB_FIELD_AUTO_SPLIT));
-  }
-  if (options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
-    build.append(options.getField(SDB_FIELD_ENSURE_SHARDING_IDX));
-  }
-
-  if (!options.hasField(SDB_FIELD_REPLSIZE)) {
-    build.append(SDB_FIELD_REPLSIZE, sdb_replica_size);
-  } else {
-    build.append(options.getField(SDB_FIELD_REPLSIZE));
-  }
-
-  if (!options.hasField(SDB_FIELD_STRICT_DATA_MODE)) {
-    build.appendBool(SDB_FIELD_STRICT_DATA_MODE, true);
-  } else {
-    build.append(options.getField(SDB_FIELD_STRICT_DATA_MODE));
-  }
-
-  cmt_compressed = options.getField(SDB_FIELD_COMPRESSED);
-  cmt_compress_type = options.getField(SDB_FIELD_COMPRESSION_TYPE);
-
-  rc = sdb_check_and_set_compress(sql_compress, cmt_compressed,
-                                  cmt_compress_type, build);
-  if (rc != 0) {
-    goto error;
-  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to auto fill default options for table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
 
 done:
   return rc;
@@ -4819,7 +5054,12 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   if (rc) {
     goto error;
   }
-  options = build.obj();
+  try {
+    options = build.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get collection options, table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
 
 done:
   return rc;
@@ -4836,9 +5076,10 @@ void ha_sdb::update_create_info(HA_CREATE_INFO *create_info) {
   }
 }
 
-void ha_sdb::build_auto_inc_option(const Field *field,
-                                   const HA_CREATE_INFO *create_info,
-                                   bson::BSONObj &option) {
+int ha_sdb::build_auto_inc_option(const Field *field,
+                                  const HA_CREATE_INFO *create_info,
+                                  bson::BSONObj &option) {
+  int rc = SDB_ERR_OK;
   bson::BSONObjBuilder build;
   ulonglong default_value = 0;
   longlong start_value = 1;
@@ -4847,22 +5088,32 @@ void ha_sdb::build_auto_inc_option(const Field *field,
   if (max_value < 0 && ((Field_num *)field)->unsigned_flag) {
     max_value = 0x7FFFFFFFFFFFFFFFULL;
   }
+  try {
+    if (create_info->auto_increment_value > 0) {
+      start_value = create_info->auto_increment_value;
+    }
+    if (start_value > max_value) {
+      start_value = max_value;
+    }
+    default_value = sdb_default_autoinc_acquire_size(field->type());
+    build.append(SDB_FIELD_NAME_FIELD, sdb_field_name(field));
+    build.append(SDB_FIELD_INCREMENT, (int)variables->auto_increment_increment);
+    build.append(SDB_FIELD_START_VALUE, start_value);
+    build.append(SDB_FIELD_ACQUIRE_SIZE, (int)default_value);
+    build.append(SDB_FIELD_CACHE_SIZE, (int)default_value);
+    build.append(SDB_FIELD_MAX_VALUE, max_value);
 
-  if (create_info->auto_increment_value > 0) {
-    start_value = create_info->auto_increment_value;
+    option = build.obj();
   }
-  if (start_value > max_value) {
-    start_value = max_value;
-  }
-  default_value = sdb_default_autoinc_acquire_size(field->type());
-  build.append(SDB_FIELD_NAME_FIELD, sdb_field_name(field));
-  build.append(SDB_FIELD_INCREMENT, (int)variables->auto_increment_increment);
-  build.append(SDB_FIELD_START_VALUE, start_value);
-  build.append(SDB_FIELD_ACQUIRE_SIZE, (int)default_value);
-  build.append(SDB_FIELD_CACHE_SIZE, (int)default_value);
-  build.append(SDB_FIELD_MAX_VALUE, max_value);
-
-  option = build.obj();
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to build auto_increment option object, field:%s, "
+      "table:%s.%s, exception:%s",
+      sdb_field_name(field), db_name, table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 // Handle ALTER TABLE in ALGORITHM COPY
@@ -4919,14 +5170,25 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
 
       // Replace auto-increment and indexes, because they may be altered.
       if (form->found_next_number_field) {
-        build_auto_inc_option(form->found_next_number_field, create_info,
-                              auto_inc_options);
+        rc = build_auto_inc_option(form->found_next_number_field, create_info,
+                                   auto_inc_options);
+        if (SDB_ERR_OK != rc) {
+          SDB_LOG_ERROR(
+              "Failed to copy collection during altering table, field:%s, "
+              "table:%s.%s, rc:%d",
+              sdb_field_name(form->found_next_number_field), db_name,
+              table_name, rc);
+          goto done;
+        }
       }
       cl_copyer->replace_src_auto_inc(auto_inc_options);
       cl_copyer->replace_src_indexes(form->s->keys, form->s->key_info);
 
       rc = cl_copyer->copy(this);
       if (rc != 0) {
+        if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
+          print_error(rc, 0);
+        }
         delete cl_copyer;
         goto error;
       }
@@ -5003,65 +5265,79 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
                               table_name);
       rc = cl_copyer.copy(this);
       if (rc != 0) {
+        if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
+          print_error(rc, 0);
+        }
         goto error;
       }
       goto done;
     }
   }
-
-  for (Field **fields = form->field; *fields; fields++) {
-    Field *field = *fields;
+  try {
+    for (Field **fields = form->field; *fields; fields++) {
+      Field *field = *fields;
 
 #ifdef IS_MARIADB
-    if (field->type() == MYSQL_TYPE_NULL) {
-      push_warning_printf(thd, Sql_condition::WARN_LEVEL_WARN,
-                          ER_CANT_CREATE_TABLE,
-                          "Error creating table '%s' with"
-                          " column '%s'. Please check its"
-                          " column type and try to re-create"
-                          " the table with an appropriate"
-                          " column type.",
-                          table_name, sdb_field_name(field));
-      rc = HA_ERR_GENERIC;
-      goto error;
-    }
+      if (field->type() == MYSQL_TYPE_NULL) {
+        push_warning_printf(thd, Sql_condition::WARN_LEVEL_WARN,
+                            ER_CANT_CREATE_TABLE,
+                            "Error creating table '%s' with"
+                            " column '%s'. Please check its"
+                            " column type and try to re-create"
+                            " the table with an appropriate"
+                            " column type.",
+                            table_name, sdb_field_name(field));
+        rc = HA_ERR_GENERIC;
+        goto error;
+      }
 #endif
-    if (field->type() == MYSQL_TYPE_YEAR && field->field_length != 4) {
-      rc = ER_INVALID_YEAR_COLUMN_LENGTH;
-      my_printf_error(rc, "Supports only YEAR or YEAR(4) column", MYF(0));
+      if (field->type() == MYSQL_TYPE_YEAR && field->field_length != 4) {
+        rc = ER_INVALID_YEAR_COLUMN_LENGTH;
+        my_printf_error(rc, "Supports only YEAR or YEAR(4) column", MYF(0));
+        goto error;
+      }
+      if (field->key_length() >= SDB_FIELD_MAX_LEN) {
+        my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), sdb_field_name(field),
+                 static_cast<ulong>(SDB_FIELD_MAX_LEN));
+        rc = HA_WRONG_CREATE_OPTION;
+        goto error;
+      }
+
+      if (strcasecmp(sdb_field_name(field), SDB_OID_FIELD) == 0) {
+        my_error(ER_WRONG_COLUMN_NAME, MYF(0), sdb_field_name(field));
+        rc = HA_WRONG_CREATE_OPTION;
+        goto error;
+      }
+
+      if (Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
+        bson::BSONObj auto_inc_options;
+        rc = build_auto_inc_option(field, create_info, auto_inc_options);
+        if (SDB_ERR_OK != rc) {
+          SDB_LOG_ERROR(
+              "Failed to build auto_increment option object during creating "
+              "table, "
+              "field:%s, table:%s.%s, rc:%d",
+              sdb_field_name(field), db_name, table_name, rc);
+          goto error;
+        }
+        build.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_options);
+      }
+    }
+
+    rc = get_cl_options(form, create_info, options);
+    if (0 != rc) {
       goto error;
     }
-    if (field->key_length() >= SDB_FIELD_MAX_LEN) {
-      my_error(ER_TOO_BIG_FIELDLENGTH, MYF(0), sdb_field_name(field),
-               static_cast<ulong>(SDB_FIELD_MAX_LEN));
-      rc = HA_WRONG_CREATE_OPTION;
+    build.appendElements(options);
+
+    rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
+                         &created_cl);
+    if (0 != rc) {
       goto error;
     }
-
-    if (strcasecmp(sdb_field_name(field), SDB_OID_FIELD) == 0) {
-      my_error(ER_WRONG_COLUMN_NAME, MYF(0), sdb_field_name(field));
-      rc = HA_WRONG_CREATE_OPTION;
-      goto error;
-    }
-
-    if (Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
-      bson::BSONObj auto_inc_options;
-      build_auto_inc_option(field, create_info, auto_inc_options);
-      build.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_options);
-    }
   }
-
-  rc = get_cl_options(form, create_info, options);
-  if (0 != rc) {
-    goto error;
-  }
-  build.appendElements(options);
-
-  rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
-                       &created_cl);
-  if (0 != rc) {
-    goto error;
-  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to create table:%s.%s, exception:%s",
+                        db_name, table_name, e.what());
 
   rc = conn->get_cl(db_name, table_name, cl);
   if (0 != rc) {
@@ -5145,10 +5421,21 @@ const Item *ha_sdb::cond_push(const Item *cond) {
     sdb_condition->status = SDB_COND_SUPPORTED;
     sdb_condition->type = ha_sdb_cond_ctx::PUSHED_COND;
     sdb_parse_condtion(cond, sdb_condition);
+    // ignore the return code.
     sdb_condition->to_bson(pushed_condition);
     sdb_condition->clear();
-  } catch (bson::assertion e) {
-    SDB_LOG_DEBUG("Exception[%s] occurs when build bson obj.", e.full.c_str());
+  } catch (std::bad_alloc &e) {
+    SDB_PRINT_ERROR(
+        HA_ERR_OUT_OF_MEM,
+        "Failed to build pushdown condition object, table:%s.%s, exception:%s",
+        db_name, table_name, e.what());
+    sdb_condition->status = SDB_COND_UNSUPPORTED;
+    DBUG_ASSERT(0);
+  } catch (std::exception &e) {
+    SDB_PRINT_ERROR(
+        HA_ERR_INTERNAL_ERROR,
+        "Failed to build pushdown condition object, table:%s.%s, exception:%s",
+        db_name, table_name, e.what());
     DBUG_ASSERT(0);
     sdb_condition->status = SDB_COND_UNSUPPORTED;
   }
@@ -5176,6 +5463,16 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
   return idx_cond;
 }
 
+/*Get the error message during connecting.*/
+bool ha_sdb::get_error_message(int error, String *buf) {
+  Thd_sdb *thd_sdb = NULL;
+  Sdb_conn *conn = NULL;
+  thd_sdb = thd_get_thd_sdb(ha_thd());
+  conn = thd_sdb->get_conn();
+  buf->append(conn->get_err_msg());
+  return FALSE;
+}
+
 void ha_sdb::print_error(int error, myf errflag) {
   int rc = SDB_ERR_OK;
   DBUG_ENTER("ha_sdb::print_error");
@@ -5185,9 +5482,16 @@ void ha_sdb::print_error(int error, myf errflag) {
   if (rc < SDB_ERR_OK) {
     handle_sdb_error(error, errflag);
     goto error;
-  } else {
-    handler::print_error(error, errflag);
   }
+
+  switch (error) {
+    case SDB_ERR_BUILD_BSON: {
+      handle_sdb_error(error, errflag);
+      break;
+    }
+    default: { break; }
+  }
+  handler::print_error(error, errflag);
 done:
   DBUG_VOID_RETURN;
 error:
@@ -5325,7 +5629,9 @@ get_message_done:
       }
       break;
     case SDB_IXM_DUP_KEY: {
-      const char *idx_name = get_dup_info(error_obj);
+      const char *idx_name = "";
+      // ignore the return error.
+      get_dup_info(error_obj, &idx_name);
       my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key '%s'",
                       MYF(0), m_dup_value.toString().c_str(), idx_name);
       break;
@@ -5480,10 +5786,12 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
     goto done;
   }
   thd_sdb->save_point_count = 0;
-
-  sdb_build_clientinfo(thd, builder);
-  hint = builder.obj();
-
+  try {
+    sdb_build_clientinfo(thd, builder);
+    hint = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to build client info for sdb, exception:%s",
+                        e.what());
   rc = connection->commit_transaction(hint);
   if (0 != rc) {
     goto error;

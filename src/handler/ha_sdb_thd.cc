@@ -75,6 +75,10 @@ void Thd_sdb::release(Thd_sdb* thd_sdb) {
 int Thd_sdb::recycle_conn() {
   int rc = SDB_ERR_OK;
   rc = m_conn.connect();
+  if (SDB_ERR_OK != rc) {
+    SDB_LOG_ERROR("%s", m_conn.get_err_msg());
+    m_conn.clear_err_msg();
+  }
   return rc;
 }
 

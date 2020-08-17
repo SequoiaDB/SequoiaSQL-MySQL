@@ -25,7 +25,10 @@
 
 using namespace sdbclient;
 
-Sdb_cl::Sdb_cl() : m_conn(NULL), m_thread_id(0) {}
+Sdb_cl::Sdb_cl() : m_conn(NULL), m_thread_id(0) {
+  // Only init the first bit to save cpu.
+  errmsg[0] = '\0';
+}
 
 Sdb_cl::~Sdb_cl() {
   close();
@@ -300,17 +303,18 @@ int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
 /*
    Test if index is created by v3.2.2 or earlier.
 */
-bool is_old_version_index(sdbclient::sdbCollection *cl,
-                          const bson::BSONObj &index_def, const CHAR *name,
-                          const bson::BSONObj &options) {
-  bool rs = false;
+int is_old_version_index(sdbclient::sdbCollection *cl,
+                         const bson::BSONObj &index_def, const CHAR *name,
+                         const bson::BSONObj &options, bool &is_old,
+                         char *errmsg) {
+  int rc = SDB_ERR_OK;
+  is_old = false;
   bson::BSONObj info;
   try {
     do {
-      int rc = SDB_ERR_OK;
       rc = cl->getIndex(name, info);
       if (rc != SDB_ERR_OK) {
-        break;
+        goto error;
       }
 
       bson::BSONObj def_obj = info.getField(SDB_FIELD_IDX_DEF).Obj();
@@ -331,32 +335,60 @@ bool is_old_version_index(sdbclient::sdbCollection *cl,
         break;
       }
 
-      rs = true;
+      is_old = true;
 
     } while (0);
-  } catch (bson::assertion e) {
-    DBUG_ASSERT(false);
+    // sdbwrapper will be the lowest level, cannot call SDB_LOG_ERROR.
+    // And also cannot get the name of table, so just only return exception
+    // back.
+  } catch (std::bad_alloc &e) {
+    snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Exception:%s", e.what());
+    rc = SDB_ERR_OOM;
+    goto error;
+  } catch (std::exception &e) {
+    snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Exception:%s", e.what());
+    rc = SDB_ERR_BUILD_BSON;
+    goto error;
   }
-
-  return rs;
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int cl_create_index2(sdbclient::sdbCollection *cl,
                      const bson::BSONObj *index_def, const CHAR *name,
-                     const bson::BSONObj *options) {
-  int rc = cl->createIndex(*index_def, name, *options);
-  if (SDB_IXM_REDEF == rc ||
-      (SDB_IXM_EXIST == rc &&
-       is_old_version_index(cl, *index_def, name, *options))) {
+                     const bson::BSONObj *options, char *errmsg) {
+  int rc = SDB_ERR_OK;
+  int rs = SDB_ERR_OK;
+  bool is_old = false;
+  rc = cl->createIndex(*index_def, name, *options);
+  if (SDB_IXM_REDEF == rc) {
     rc = SDB_ERR_OK;
+    goto done;
   }
+
+  if (SDB_IXM_EXIST == rc) {
+    rs = is_old_version_index(cl, *index_def, name, *options, is_old, errmsg);
+    if (SDB_OK != rs) {
+      goto error;
+    }
+    if (is_old) {
+      rc = SDB_ERR_OK;
+      goto done;
+    }
+  }
+done:
   return rc;
+error:
+  rc = rs ? rs : rc;
+  goto done;
 }
 
 int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
                          const bson::BSONObj &options) {
-  return retry(
-      boost::bind(cl_create_index2, &m_cl, &index_def, name, &options));
+  return retry(boost::bind(cl_create_index2, &m_cl, &index_def, name, &options,
+                           get_errmsg()));
 }
 
 int cl_drop_index(sdbclient::sdbCollection *cl, const char *name) {

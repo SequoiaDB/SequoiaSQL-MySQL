@@ -28,6 +28,7 @@
 #define SDB_NUL_BIT_SIZE 1
 #define SDB_PFS_META_LEN \
   60  // longest lli(19 digits+ 1 sign) + llu(20 digits) + 19 chars + 1 '\0'
+#define SDB_ERR_BUFF_SIZE 200
 
 #define SDB_CHARSET my_charset_utf8mb4_bin
 

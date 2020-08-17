@@ -25,8 +25,6 @@
 #include "ha_sdb_conf.h"
 #include "ha_sdb_util.h"
 #include "ha_sdb_errcode.h"
-#include "ha_sdb_conf.h"
-#include "ha_sdb_log.h"
 #include "ha_sdb.h"
 #include "ha_sdb_def.h"
 
@@ -46,6 +44,8 @@ Sdb_conn::Sdb_conn(my_thread_id _tid)
       m_use_transaction(sdb_use_transaction) {
   // default is RR.
   last_tx_isolation = SDB_TRANS_ISO_RR;
+  // Only init the first bit to save cpu.
+  errmsg[0] = '\0';
 }
 
 Sdb_conn::~Sdb_conn() {}
@@ -100,13 +100,14 @@ int Sdb_conn::connect() {
     ha_sdb_conn_addrs conn_addrs;
     rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
     if (SDB_ERR_OK != rc) {
-      SDB_LOG_ERROR("Failed to parse connection addresses, rc=%d", rc);
+      snprintf(errmsg, sizeof(errmsg),
+               "Failed to parse connection addresses, rc=%d", rc);
       goto error;
     }
 
     rc = sdb_get_password(password);
     if (SDB_ERR_OK != rc) {
-      SDB_LOG_ERROR("Failed to decrypt password, rc=%d", rc);
+      snprintf(errmsg, sizeof(errmsg), "Failed to decrypt password, rc=%d", rc);
       goto error;
     }
     if (password.length()) {
@@ -122,22 +123,24 @@ int Sdb_conn::connect() {
       if (SDB_NET_CANNOT_CONNECT != rc) {
         switch (rc) {
           case SDB_FNE:
-            SDB_LOG_ERROR("Cipherfile not exist, rc=%d", rc);
+            snprintf(errmsg, sizeof(errmsg), "Cipherfile not exist, rc=%d", rc);
             break;
           case SDB_AUTH_USER_NOT_EXIST:
-            SDB_LOG_ERROR(
-                "User specified is not exist, you can add the user by "
-                "sdbpasswd tool, rc=%d",
-                rc);
+            snprintf(errmsg, sizeof(errmsg),
+                     "User specified is not exist, you can add the user by "
+                     "sdbpasswd tool, rc=%d",
+                     rc);
             break;
           case SDB_PERM:
-            SDB_LOG_ERROR(
+            snprintf(
+                errmsg, sizeof(errmsg),
                 "Permission error, you can check if you have permission to "
                 "access cipherfile, rc=%d",
                 rc);
             break;
           default:
-            SDB_LOG_ERROR("Failed to connect to sequoiadb, rc=%d", rc);
+            snprintf(errmsg, sizeof(errmsg),
+                     "Failed to connect to sequoiadb, rc=%d", rc);
             break;
         }
         rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
@@ -148,12 +151,29 @@ int Sdb_conn::connect() {
     snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
              strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
              (ulonglong)thread_id());
-    bool auto_commit = m_use_transaction ? true : false;
-    option = BSON(SOURCE_THREAD_ID << source_str << TRANSAUTOROLLBACK << false
-                                   << TRANSAUTOCOMMIT << auto_commit);
+    bool auto_commit = sdb_use_transaction ? true : false;
+    try {
+      option = BSON(SOURCE_THREAD_ID << source_str << TRANSAUTOROLLBACK << false
+                                     << TRANSAUTOCOMMIT << auto_commit);
+    } catch (std::bad_alloc &e) {
+      rc = SDB_ERR_OOM;
+
+      snprintf(errmsg, sizeof(errmsg),
+               "Failed to build setSessionAttr option "
+               "obj during connecting to sequoiadb, exception=%s",
+               e.what());
+      goto error;
+    } catch (std::exception &e) {
+      snprintf(errmsg, sizeof(errmsg),
+               "Failed to build setSessionAttr option "
+               "obj during connecting to sequoiadb, exception=%s",
+               e.what());
+      rc = SDB_ERR_BUILD_BSON;
+      goto error;
+    }
     rc = set_session_attr(option);
     if (SDB_ERR_OK != rc) {
-      SDB_LOG_ERROR("Failed to set session attr, rc=%d", rc);
+      snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d", rc);
       goto error;
     }
     m_is_authenticated = true;
@@ -180,11 +200,11 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
   }
 
   if (ISO_SERIALIZABLE == tx_isolation) {
-    rc = HA_ERR_NOT_ALLOWED_COMMAND;
-    SDB_PRINT_ERROR(rc,
-                    "SequoiaDB engine not support transaction "
-                    "serializable isolation, please set transaction_isolation "
-                    "to other level and restart transaction");
+    rc = SDB_ERR_NOT_ALLOWED;
+    snprintf(errmsg, sizeof(errmsg),
+             "SequoiaDB engine not support transaction "
+             "serializable isolation, please set transaction_isolation "
+             "to other level and restart transaction");
     goto error;
   }
 
@@ -196,14 +216,24 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
       option = builder.obj();
       rc = set_session_attr(option);
       if (SDB_ERR_OK != rc) {
-        SDB_LOG_ERROR("Failed to set transaction isolation: %s, rc=%d",
-                      option.toString(false, false).c_str(), rc);
+        snprintf(errmsg, sizeof(errmsg),
+                 "Failed to set transaction isolation: %s, rc=%d",
+                 option.toString(false, false).c_str(), rc);
         goto error;
       }
-    } catch (bson::assertion e) {
-      SDB_LOG_ERROR("Exception[%s] occurs during set transaction isolation ",
-                    e.full.c_str());
-      rc = HA_ERR_INTERNAL_ERROR;
+    } catch (std::bad_alloc &e) {
+      rc = SDB_ERR_OOM;
+      snprintf(errmsg, sizeof(errmsg),
+               "Failed to set "
+               "transaction isolation, exception:%s",
+               e.what());
+      goto error;
+    } catch (std::exception &e) {
+      snprintf(errmsg, sizeof(errmsg),
+               "Failed to set "
+               "transaction isolation, exception:%s",
+               e.what());
+      rc = SDB_ERR_BUILD_BSON;
       goto error;
     }
     set_last_tx_isolation(tx_isolation);
@@ -473,8 +503,8 @@ int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
   stats.total_data_free_space = 0;
   stats.total_records = 0;
 
-  while (!(rc = cursor.next(obj, false))) {
-    try {
+  try {
+    while (!(rc = cursor.next(obj, false))) {
       bson::BSONObjIterator it(obj.getField(SDB_FIELD_DETAILS).Obj());
       if (!it.more()) {
         continue;
@@ -519,14 +549,23 @@ int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
 
       stats.total_data_free_space += total_data_free_space;
       stats.total_records += total_records;
-
-    } catch (bson::assertion &e) {
-      DBUG_ASSERT(false);
-      SDB_LOG_ERROR("Cannot parse collection detail info. %s", e.what());
-      rc = SDB_SYS;
-      goto error;
     }
+  } catch (std::bad_alloc &e) {
+    rc = SDB_ERR_OOM;
+    snprintf(errmsg, sizeof(errmsg),
+             "Failed to get "
+             "statistics of collection, exception:%s.",
+             e.what());
+    goto error;
+  } catch (std::exception &e) {
+    snprintf(errmsg, sizeof(errmsg),
+             "Failed to get "
+             "statistics of collection, exception:%s.",
+             e.what());
+    rc = SDB_ERR_BUILD_BSON;
+    goto error;
   }
+
   if (SDB_DMS_EOC == rc) {
     rc = SDB_ERR_OK;
   }
@@ -548,7 +587,7 @@ error:
 int conn_snapshot(sdbclient::sdb *connection, bson::BSONObj *obj, int snap_type,
                   const bson::BSONObj *condition, const bson::BSONObj *selected,
                   const bson::BSONObj *order_by, const bson::BSONObj *hint,
-                  longlong num_to_skip) {
+                  longlong num_to_skip, char *errmsg) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCursor cursor;
 
@@ -557,9 +596,20 @@ int conn_snapshot(sdbclient::sdb *connection, bson::BSONObj *obj, int snap_type,
   if (rc != SDB_ERR_OK) {
     goto error;
   }
-
-  rc = cursor.next(*obj);
-  if (rc != SDB_ERR_OK) {
+  try {
+    rc = cursor.next(*obj);
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
+  } catch (std::bad_alloc &e) {
+    rc = SDB_ERR_OOM;
+    snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Failed to get snapshot, exception:%s",
+             e.what());
+    goto error;
+  } catch (std::exception &e) {
+    snprintf(errmsg, SDB_ERR_BUFF_SIZE, "Failed to get snapshot, exception:%s",
+             e.what());
+    rc = SDB_ERR_BUILD_BSON;
     goto error;
   }
 done:
@@ -574,8 +624,8 @@ int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type,
                        const bson::BSONObj &order_by, const bson::BSONObj &hint,
                        longlong num_to_skip) {
   return retry(boost::bind(conn_snapshot, &m_connection, &obj, snap_type,
-                           &condition, &selected, &order_by, &hint,
-                           num_to_skip));
+                           &condition, &selected, &order_by, &hint, num_to_skip,
+                           get_err_msg()));
 }
 
 int conn_get_last_result_obj(sdbclient::sdb *connection, bson::BSONObj *result,

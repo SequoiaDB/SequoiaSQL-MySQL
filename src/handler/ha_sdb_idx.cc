@@ -91,51 +91,64 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
   bool is_unique = key_info->flags & HA_NOSAME;
   bool all_is_not_null = true;
 
-  bson::BSONObjBuilder key_obj_builder;
-  bson::BSONObj key_obj;
-  bson::BSONObjBuilder options_builder;
-  bson::BSONObj options;
+  try {
+    // It is assumed that in most common cases, the length of field name will
+    // be less than 64.
+    bson::BSONObjBuilder key_obj_builder(96);
+    bson::BSONObj key_obj;
+    bson::BSONObjBuilder options_builder(32);
+    bson::BSONObj options;
 
-  const KEY_PART_INFO *key_part = key_info->key_part;
-  const KEY_PART_INFO *key_end = key_part + key_info->user_defined_key_parts;
-  for (; key_part != key_end; ++key_part) {
-    if (!is_field_indexable(key_part->field)) {
-      rc = HA_ERR_UNSUPPORTED;
-      my_printf_error(rc,
-                      "column '%-.192s' cannot be used in key specification.",
-                      MYF(0), key_part->field->field_name);
-      goto error;
-    }
+    const KEY_PART_INFO *key_part = key_info->key_part;
+    const KEY_PART_INFO *key_end = key_part + key_info->user_defined_key_parts;
+    for (; key_part != key_end; ++key_part) {
+      if (!is_field_indexable(key_part->field)) {
+        rc = HA_ERR_UNSUPPORTED;
+        my_printf_error(rc,
+                        "column '%-.192s' cannot be used in key specification.",
+                        MYF(0), sdb_field_name(key_part->field));
+        goto error;
+      }
 #ifdef IS_MARIADB
-    if (sdb_field_is_virtual_gcol(key_part->field)) {
-      rc = ER_ILLEGAL_HA_CREATE_OPTION;
-      my_error(rc, MYF(0), "SequoiaDB", "Index on virtual generated column");
-      goto error;
-    }
+      if (sdb_field_is_virtual_gcol(key_part->field)) {
+        rc = ER_ILLEGAL_HA_CREATE_OPTION;
+        my_error(rc, MYF(0), "SequoiaDB", "Index on virtual generated column");
+        goto error;
+      }
 #endif
 
-    if (key_part->null_bit) {
-      all_is_not_null = false;
+      if (key_part->null_bit) {
+        all_is_not_null = false;
+      }
+      // TODO: ASC or DESC
+      key_obj_builder.append(sdb_field_name(key_part->field), 1);
     }
-    // TODO: ASC or DESC
-    key_obj_builder.append(sdb_field_name(key_part->field), 1);
-  }
-  if (is_unique && shard_by_part_id) {
-    key_obj_builder.append(SDB_FIELD_PART_HASH_ID, 1);
-  }
-  key_obj = key_obj_builder.obj();
+    if (is_unique && shard_by_part_id) {
+      key_obj_builder.append(SDB_FIELD_PART_HASH_ID, 1);
+    }
+    key_obj = key_obj_builder.obj();
 
-  options_builder.append(SDB_FIELD_UNIQUE, is_unique);
-  options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
-  options = options_builder.obj();
+    options_builder.append(SDB_FIELD_UNIQUE, is_unique);
+    options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
+    options = options_builder.obj();
 
-  rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
-  if (rc) {
-    goto error;
+    rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
+    if (rc) {
+      goto error;
+    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to create index:%s, table:%s.%s, exception:%s",
+      sdb_key_name(key_info), cl.get_cs_name(), cl.get_cl_name(), e.what());
 done:
   return rc;
 error:
+  if (cl.is_error()) {
+    SDB_LOG_ERROR("Failed to create index:%s, table:%s, errmsg:'%s'",
+                  sdb_key_name(key_info), cl.get_cs_name(), cl.get_cl_name(),
+                  cl.get_errmsg());
+    cl.clear_errmsg();
+  }
   goto done;
 }
 
@@ -144,20 +157,104 @@ int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,
   int rc = SDB_ERR_OK;
   const KEY_PART_INFO *key_part;
   const KEY_PART_INFO *key_end;
-  bson::BSONObjBuilder obj_builder;
+  bson::BSONObjBuilder obj_builder(96);
   if (!key_info) {
     rc = SDB_ERR_INVALID_ARG;
     goto error;
   }
   key_part = key_info->key_part;
   key_end = key_part + key_info->user_defined_key_parts;
-  for (; key_part != key_end; ++key_part) {
-    obj_builder.append(sdb_field_name(key_part->field), order_direction);
+  try {
+    for (; key_part != key_end; ++key_part) {
+      obj_builder.append(sdb_field_name(key_part->field), order_direction);
+    }
+    if (secondary_sort_oid) {
+      obj_builder.append(SDB_OID_FIELD, 1);
+    }
+    order = obj_builder.obj();
   }
-  if (secondary_sort_oid) {
-    obj_builder.append(SDB_OID_FIELD, 1);
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get index order, index:%s, table:%s, exception:%s",
+      sdb_key_name(key_info), *key_info->key_part->field->table_name, e.what());
+done:
+  return rc;
+error:
+  convert_sdb_code(rc);
+  goto done;
+}
+
+static int get_int_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
+                           const char *op_str, bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObjBuilder obj_builder(32);
+  Field *field = key_part->field;
+  const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
+  longlong value = field->val_int(new_ptr);
+  try {
+    if (value < 0 && ((Field_num *)field)->unsigned_flag) {
+      // overflow UINT64, so store as DECIMAL
+      bson::bsonDecimal decimal_val;
+      char buf[24] = {0};
+      sprintf(buf, "%llu", (uint64)value);
+      decimal_val.fromString(buf);
+      obj_builder.append(op_str, decimal_val);
+    } else if (value > INT_MAX32 || value < INT_MIN32) {
+      // overflow INT32, so store as INT64
+      obj_builder.append(op_str, (long long)value);
+    } else {
+      obj_builder.append(op_str, (int)value);
+    }
+    obj = obj_builder.obj();
   }
-  order = obj_builder.obj();
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_part->field), *key_part->field->table_name, e.what());
+done:
+  return rc;
+error:
+  convert_sdb_code(rc);
+  goto done;
+}
+
+static int get_float_key_obj(const uchar *key_ptr,
+                             const KEY_PART_INFO *key_part, const char *op_str,
+                             bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObjBuilder obj_builder(32);
+  Field *field = key_part->field;
+  const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
+  const uchar *old_ptr = field->ptr;
+  field->ptr = (uchar *)new_ptr;
+  double value = field->val_real();
+  field->ptr = (uchar *)old_ptr;
+  try {
+    obj_builder.append(op_str, value);
+    obj = obj_builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_part->field), *key_part->field->table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+static int get_decimal_key_obj(const uchar *key_ptr,
+                               const KEY_PART_INFO *key_part,
+                               const char *op_str, bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObjBuilder obj_builder(32);
+  String str_val;
+  const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
+  key_part->field->val_str(&str_val, new_ptr);
+  try {
+    obj_builder.appendDecimal(op_str, str_val.c_ptr());
+    obj = obj_builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_part->field), *key_part->field->table_name, e.what());
 
 done:
   return rc;
@@ -165,57 +262,10 @@ error:
   goto done;
 }
 
-static void get_int_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
-                            const char *op_str, bson::BSONObj &obj) {
-  bson::BSONObjBuilder obj_builder;
-  Field *field = key_part->field;
-  const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
-  longlong value = field->val_int(new_ptr);
-  if (value < 0 && ((Field_num *)field)->unsigned_flag) {
-    // overflow UINT64, so store as DECIMAL
-    bson::bsonDecimal decimal_val;
-    char buf[24] = {0};
-    sprintf(buf, "%llu", (uint64)value);
-    decimal_val.fromString(buf);
-    obj_builder.append(op_str, decimal_val);
-  } else if (value > INT_MAX32 || value < INT_MIN32) {
-    // overflow INT32, so store as INT64
-    obj_builder.append(op_str, (long long)value);
-  } else {
-    obj_builder.append(op_str, (int)value);
-  }
-  obj = obj_builder.obj();
-}
-
-static void get_float_key_obj(const uchar *key_ptr,
-                              const KEY_PART_INFO *key_part, const char *op_str,
-                              bson::BSONObj &obj) {
-  bson::BSONObjBuilder obj_builder;
-  Field *field = key_part->field;
-  const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
-  const uchar *old_ptr = field->ptr;
-  field->ptr = (uchar *)new_ptr;
-  double value = field->val_real();
-  field->ptr = (uchar *)old_ptr;
-  obj_builder.append(op_str, value);
-  obj = obj_builder.obj();
-}
-
-static void get_decimal_key_obj(const uchar *key_ptr,
-                                const KEY_PART_INFO *key_part,
-                                const char *op_str, bson::BSONObj &obj) {
-  bson::BSONObjBuilder obj_builder;
-  String str_val;
-  const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
-  key_part->field->val_str(&str_val, new_ptr);
-  obj_builder.appendDecimal(op_str, str_val.c_ptr());
-  obj = obj_builder.obj();
-}
-
 static int get_text_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
                             const char *op_str, bson::BSONObj &obj) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder;
+  bson::BSONObjBuilder obj_builder(96);
 
   String *str = NULL;
   String org_str;
@@ -256,11 +306,14 @@ static int get_text_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   if (0 == strcmp("$gte", op_str)) {
     str->strip_sp();
   }
-
-  obj_builder.appendStrWithNoTerminating(op_str, (const char *)(str->ptr()),
-                                         str->length());
-  obj = obj_builder.obj();
-
+  try {
+    obj_builder.appendStrWithNoTerminating(op_str, (const char *)(str->ptr()),
+                                           str->length());
+    obj = obj_builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_part->field), *key_part->field->table_name, e.what());
 done:
   return rc;
 error:
@@ -270,7 +323,7 @@ error:
 static int get_char_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
                             const char *op_str, bson::BSONObj &obj) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder;
+  bson::BSONObjBuilder obj_builder(96);
   String str_val, conv_str;
   String *str;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
@@ -301,21 +354,24 @@ static int get_char_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
       0 == strcmp("$et", op_str)) {
     op_str = "$gte";
   }
-
-  obj_builder.appendStrWithNoTerminating(op_str, (const char *)(str->ptr()),
-                                         str->length());
-  obj = obj_builder.obj();
-
+  try {
+    obj_builder.appendStrWithNoTerminating(op_str, (const char *)(str->ptr()),
+                                           str->length());
+    obj = obj_builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_part->field), *key_part->field->table_name, e.what());
 done:
   return rc;
 error:
   goto done;
 }
 
-static void get_date_key_obj(const uchar *key_ptr,
-                             const KEY_PART_INFO *key_part, const char *op_str,
-                             bson::BSONObj &obj) {
-  bson::BSONObjBuilder obj_builder;
+static int get_date_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
+                            const char *op_str, bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObjBuilder obj_builder(32);
   struct tm tm_val;
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
@@ -336,27 +392,47 @@ static void get_date_key_obj(const uchar *key_ptr,
   tm_val.tm_isdst = 0;
   time_t time_tmp = mktime(&tm_val);
   bson::Date_t dt((longlong)(time_tmp * 1000));
-  obj_builder.appendDate(op_str, dt);
-  obj = obj_builder.obj();
+  try {
+    obj_builder.appendDate(op_str, dt);
+    obj = obj_builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_part->field), *key_part->field->table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
-static void get_datetime_key_obj(const uchar *key_ptr,
-                                 const KEY_PART_INFO *key_part,
-                                 const char *op_str, bson::BSONObj &obj) {
-  bson::BSONObjBuilder obj_builder;
+static int get_datetime_key_obj(const uchar *key_ptr,
+                                const KEY_PART_INFO *key_part,
+                                const char *op_str, bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObjBuilder obj_builder(32);
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   String org_str, str_val;
   key_part->field->val_str(&org_str, new_ptr);
   sdb_convert_charset(org_str, str_val, &SDB_CHARSET);
-  obj_builder.appendStrWithNoTerminating(op_str, str_val.ptr(),
-                                         str_val.length());
-  obj = obj_builder.obj();
+  try {
+    obj_builder.appendStrWithNoTerminating(op_str, str_val.ptr(),
+                                           str_val.length());
+    obj = obj_builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_part->field), *key_part->field->table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
-static void get_timestamp_key_obj(const uchar *key_ptr,
-                                  const KEY_PART_INFO *key_part,
-                                  const char *op_str, bson::BSONObj &obj) {
-  bson::BSONObjBuilder obj_builder;
+static int get_timestamp_key_obj(const uchar *key_ptr,
+                                 const KEY_PART_INFO *key_part,
+                                 const char *op_str, bson::BSONObj &obj) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObjBuilder obj_builder(32);
   struct timeval tv;
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
@@ -371,8 +447,17 @@ static void get_timestamp_key_obj(const uchar *key_ptr,
   if (is_null) {
     field->set_null();
   }
-  obj_builder.appendTimestamp(op_str, tv.tv_sec * 1000, tv.tv_usec);
-  obj = obj_builder.obj();
+  try {
+    obj_builder.appendTimestamp(op_str, tv.tv_sec * 1000, tv.tv_usec);
+    obj = obj_builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_part->field), *key_part->field->table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 static int get_key_part_value(const KEY_PART_INFO *key_part,
@@ -388,37 +473,58 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
     case MYSQL_TYPE_LONGLONG:
     case MYSQL_TYPE_BIT:
     case MYSQL_TYPE_YEAR: {
-      get_int_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_int_key_obj(key_ptr, key_part, op_str, obj);
+      if (SDB_ERR_OK != rc) {
+        goto error;
+      }
       break;
     }
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
     case MYSQL_TYPE_TIME: {
-      get_float_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_float_key_obj(key_ptr, key_part, op_str, obj);
+      if (SDB_ERR_OK != rc) {
+        goto error;
+      }
       break;
     }
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_NEWDECIMAL: {
-      get_decimal_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_decimal_key_obj(key_ptr, key_part, op_str, obj);
+      if (SDB_ERR_OK != rc) {
+        goto error;
+      }
       break;
     }
     case MYSQL_TYPE_DATE: {
-      get_date_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_date_key_obj(key_ptr, key_part, op_str, obj);
+      if (SDB_ERR_OK != rc) {
+        goto error;
+      }
       break;
     }
     case MYSQL_TYPE_DATETIME: {
-      get_datetime_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_datetime_key_obj(key_ptr, key_part, op_str, obj);
+      if (SDB_ERR_OK != rc) {
+        goto error;
+      }
       break;
     }
     case MYSQL_TYPE_TIMESTAMP: {
-      get_timestamp_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_timestamp_key_obj(key_ptr, key_part, op_str, obj);
+      if (SDB_ERR_OK != rc) {
+        goto error;
+      }
       break;
     }
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_VAR_STRING: {
       if (MYSQL_TYPE_SET == key_part->field->real_type() ||
           MYSQL_TYPE_ENUM == key_part->field->real_type()) {
-        get_int_key_obj(key_ptr, key_part, op_str, obj);
+        rc = get_int_key_obj(key_ptr, key_part, op_str, obj);
+        if (SDB_ERR_OK != rc) {
+          goto error;
+        }
         break;
       }
       if (!key_part->field->binary()) {
@@ -475,12 +581,20 @@ static inline int create_condition(Field *field, const KEY_PART_INFO *key_part,
   rc = get_key_part_value(key_part, key_ptr, op_str, ignore_text_key, op_obj);
   if (SDB_ERR_OK == rc) {
     if (!op_obj.isEmpty()) {
-      bson::BSONObj cond = BSON(sdb_field_name(field) << op_obj);
-      builder.append(cond);
+      try {
+        bson::BSONObj cond = BSON(sdb_field_name(field) << op_obj);
+        builder.append(cond);
+      }
+      SDB_EXCEPTION_CATCHER(
+          rc, "Failed to create key obj, field:%s, table:%s, exception:%s",
+          sdb_field_name(key_part->field), *key_part->field->table_name,
+          e.what());
     }
   }
-
+done:
   return rc;
+error:
+  goto done;
 }
 
 // This function is modified from ha_federated::create_where_from_key.
@@ -502,155 +616,178 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
   }
 
   old_map = dbug_tmp_use_all_columns(table, table->read_set);
-  for (uint i = 0; i <= 1; i++) {
-    const KEY_PART_INFO *key_part;
-    bool ignore_text_key = false;
+  try {
+    for (uint i = 0; i <= 1; i++) {
+      const KEY_PART_INFO *key_part;
+      bool ignore_text_key = false;
 
-    if (ranges[i] == NULL) {
-      continue;
-    }
-
-    // ignore end key of prefix index and like
-    if (i > 0 && HA_READ_BEFORE_KEY != ranges[i]->flag) {
-      ignore_text_key = true;
-    }
-
-    for (key_part = key_info->key_part,
-        remainder = key_info->user_defined_key_parts,
-        length = ranges[i]->length, key_ptr = ranges[i]->key;
-         ; remainder--, key_part++) {
-      Field *field = key_part->field;
-      uint store_length = key_part->store_length;
-
-      if (key_part->null_bit) {
-        if (*key_ptr) {
-          /*
-            We got "IS [NOT] NULL" condition against nullable column. We
-            distinguish between "IS NOT NULL" and "IS NULL" by flag. For
-            "IS NULL", flag is set to HA_READ_KEY_EXACT.
-          */
-          int is_null;
-          switch (ranges[i]->flag) {
-            case HA_READ_KEY_EXACT:
-            case HA_READ_BEFORE_KEY:
-            case HA_READ_KEY_OR_PREV:
-            case HA_READ_PREFIX_LAST:
-            case HA_READ_PREFIX_LAST_OR_PREV:
-              is_null = 1;
-              break;
-            case HA_READ_AFTER_KEY:
-              is_null = i > 0 ? 1 : 0;
-              break;
-            case HA_READ_KEY_OR_NEXT:
-              // >= null means read all records
-            default:
-              goto prepare_for_next_key_part;
-          }
-          bson::BSONObj is_null_obj = BSON("$isnull" << is_null);
-          bson::BSONObj is_null_cond =
-              BSON(sdb_field_name(field) << is_null_obj);
-          builder.append(is_null_cond);
-
-          /*
-            We need to adjust pointer and length to be prepared for next
-            key part. As well as check if this was last key part.
-          */
-          goto prepare_for_next_key_part;
-        }
+      if (ranges[i] == NULL) {
+        continue;
       }
 
-      switch (ranges[i]->flag) {
-        case HA_READ_KEY_EXACT: {
-          DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_EXACT %d", i));
-          const char *op_str = from_records_in_range ? "$gte" : "$et";
-          rc = create_condition(field, key_part, key_ptr, op_str,
-                                ignore_text_key, builder);
-          if (0 != rc) {
-            goto error;
+      // ignore end key of prefix index and like
+      if (i > 0 && HA_READ_BEFORE_KEY != ranges[i]->flag) {
+        ignore_text_key = true;
+      }
+
+      for (key_part = key_info->key_part,
+          remainder = key_info->user_defined_key_parts,
+          length = ranges[i]->length, key_ptr = ranges[i]->key;
+           ; remainder--, key_part++) {
+        Field *field = key_part->field;
+        uint store_length = key_part->store_length;
+
+        if (key_part->null_bit) {
+          if (*key_ptr) {
+            /*
+              We got "IS [NOT] NULL" condition against nullable column. We
+              distinguish between "IS NOT NULL" and "IS NULL" by flag. For
+              "IS NULL", flag is set to HA_READ_KEY_EXACT.
+            */
+            int is_null;
+            switch (ranges[i]->flag) {
+              case HA_READ_KEY_EXACT:
+              case HA_READ_BEFORE_KEY:
+              case HA_READ_KEY_OR_PREV:
+              case HA_READ_PREFIX_LAST:
+              case HA_READ_PREFIX_LAST_OR_PREV:
+                is_null = 1;
+                break;
+              case HA_READ_AFTER_KEY:
+                is_null = i > 0 ? 1 : 0;
+                break;
+              case HA_READ_KEY_OR_NEXT:
+                // >= null means read all records
+              default:
+                goto prepare_for_next_key_part;
+            }
+            bson::BSONObj is_null_obj = BSON("$isnull" << is_null);
+            bson::BSONObj is_null_cond =
+                BSON(sdb_field_name(field) << is_null_obj);
+            builder.append(is_null_cond);
+
+            /*
+              We need to adjust pointer and length to be prepared for next
+              key part. As well as check if this was last key part.
+            */
+            goto prepare_for_next_key_part;
           }
-          break;
         }
-        case HA_READ_AFTER_KEY: {
-          if (eq_range_arg) {
-            break;
-          }
-          DBUG_PRINT("info", ("sequoiadb HA_READ_AFTER_KEY %d", i));
-          if ((store_length >= length) || (i > 0)) /* for all parts of end key*/
-          {
-            // end_key : start_key
-            const char *op_str = i > 0 ? "$lte" : "$gt";
+
+        switch (ranges[i]->flag) {
+          case HA_READ_KEY_EXACT: {
+            DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_EXACT %d", i));
+            const char *op_str = from_records_in_range ? "$gte" : "$et";
             rc = create_condition(field, key_part, key_ptr, op_str,
                                   ignore_text_key, builder);
             if (0 != rc) {
+              SDB_LOG_ERROR(
+                  "Failed to create condition for key:%s, table:%s, rc:%d",
+                  key_info->name, *key_part->field->table_name, rc);
               goto error;
             }
             break;
           }
-        }
-        case HA_READ_KEY_OR_NEXT: {
-          DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_OR_NEXT %d", i));
-          const char *op_str = "$gte";
-          rc = create_condition(field, key_part, key_ptr, op_str,
-                                ignore_text_key, builder);
-          if (0 != rc) {
-            goto error;
+          case HA_READ_AFTER_KEY: {
+            if (eq_range_arg) {
+              break;
+            }
+            DBUG_PRINT("info", ("sequoiadb HA_READ_AFTER_KEY %d", i));
+            if ((store_length >= length) ||
+                (i > 0)) /* for all parts of end key*/
+            {
+              // end_key : start_key
+              const char *op_str = i > 0 ? "$lte" : "$gt";
+              rc = create_condition(field, key_part, key_ptr, op_str,
+                                    ignore_text_key, builder);
+              if (0 != rc) {
+                SDB_LOG_ERROR(
+                    "Failed to create condition for key:%s, table:%s, rc:%d",
+                    key_info->name, *key_part->field->table_name, rc);
+                goto error;
+              }
+              break;
+            }
           }
-          break;
-        }
-        case HA_READ_BEFORE_KEY: {
-          DBUG_PRINT("info", ("sequoiadb HA_READ_BEFORE_KEY %d", i));
-          if (store_length >= length) {
-            const char *op_str = "$lt";
+          case HA_READ_KEY_OR_NEXT: {
+            DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_OR_NEXT %d", i));
+            const char *op_str = "$gte";
             rc = create_condition(field, key_part, key_ptr, op_str,
                                   ignore_text_key, builder);
             if (0 != rc) {
+              SDB_LOG_ERROR(
+                  "Failed to create condition for key:%s, table:%s, rc:%d",
+                  key_info->name, *key_part->field->table_name, rc);
               goto error;
             }
             break;
           }
-        }
-        case HA_READ_KEY_OR_PREV:
-        case HA_READ_PREFIX_LAST:
-        case HA_READ_PREFIX_LAST_OR_PREV: {
-          DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_OR_PREV %d", i));
-          const char *op_str = "$lte";
-          rc = create_condition(field, key_part, key_ptr, op_str,
-                                ignore_text_key, builder);
-          if (0 != rc) {
-            goto error;
+          case HA_READ_BEFORE_KEY: {
+            DBUG_PRINT("info", ("sequoiadb HA_READ_BEFORE_KEY %d", i));
+            if (store_length >= length) {
+              const char *op_str = "$lt";
+              rc = create_condition(field, key_part, key_ptr, op_str,
+                                    ignore_text_key, builder);
+              if (0 != rc) {
+                SDB_LOG_ERROR(
+                    "Failed to create condition for key:%s, table:%s, rc:%d",
+                    key_info->name, *key_part->field->table_name, rc);
+                goto error;
+              }
+              break;
+            }
           }
+          case HA_READ_KEY_OR_PREV:
+          case HA_READ_PREFIX_LAST:
+          case HA_READ_PREFIX_LAST_OR_PREV: {
+            DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_OR_PREV %d", i));
+            const char *op_str = "$lte";
+            rc = create_condition(field, key_part, key_ptr, op_str,
+                                  ignore_text_key, builder);
+            if (0 != rc) {
+              SDB_LOG_ERROR(
+                  "Failed to create condition for key:%s, table:%s, rc:%d",
+                  key_info->name, *key_part->field->table_name, rc);
+              goto error;
+            }
+            break;
+          }
+          default:
+            DBUG_PRINT("info", ("cannot handle flag %d", ranges[i]->flag));
+            rc = HA_ERR_UNSUPPORTED;
+            goto error;
+        }
+
+      prepare_for_next_key_part:
+        if (store_length >= length) {
           break;
         }
-        default:
-          DBUG_PRINT("info", ("cannot handle flag %d", ranges[i]->flag));
-          rc = HA_ERR_UNSUPPORTED;
-          goto error;
+        DBUG_PRINT("info", ("remainder %d", remainder));
+        DBUG_ASSERT(remainder > 1);
+        length -= store_length;
+        key_ptr += store_length;
       }
+    }
+    dbug_tmp_restore_column_map(table->read_set, old_map);
 
-    prepare_for_next_key_part:
-      if (store_length >= length) {
-        break;
-      }
-      DBUG_PRINT("info", ("remainder %d", remainder));
-      DBUG_ASSERT(remainder > 1);
-      length -= store_length;
-      key_ptr += store_length;
+    array = builder.arr();
+    if (array.nFields() > 1) {
+      condition = BSON("$and" << array);
+    } else if (!array.isEmpty()) {
+      condition = array.firstElement().embeddedObject().getOwned();
     }
   }
-  dbug_tmp_restore_column_map(table->read_set, old_map);
-
-  array = builder.arr();
-  if (array.nFields() > 1) {
-    condition = BSON("$and" << array);
-  } else if (!array.isEmpty()) {
-    condition = array.firstElement().embeddedObject().getOwned();
-  }
-
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to create field key obj, field:%s, table:%s, exception:%s",
+      sdb_field_name(key_info->key_part->field),
+      *key_info->key_part->field->table_name, e.what());
+done:
   return rc;
 
 error:
   dbug_tmp_restore_column_map(table->read_set, old_map);
-  return rc;
+  convert_sdb_code(rc);
+  goto done;
 }
 
 my_bool sdb_is_same_index(const KEY *a, const KEY *b) {
