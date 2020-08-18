@@ -2753,14 +2753,38 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                            num_to_return, flag);
   }
 
-  SDB_LOG_DEBUG(
-      "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
-      "limit[%d], "
-      "offset[%d]",
-      condition.toString(false, false).c_str(),
-      selector.toString(false, false).c_str(),
-      order_by.toString(false, false).c_str(),
-      hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+  if (sdb_debug_log) {
+    try {
+      bson::BSONObjBuilder builder(96);
+      bson::BSONObjIterator it(hint);
+      while (it.more()) {
+        bson::BSONElement elem = it.next();
+        if (0 == strcmp(elem.fieldName(), SDB_FIELD_INFO)) {
+          continue;
+        }
+        builder.append(elem);
+      }
+      hint = builder.obj();
+    } catch (std::bad_alloc &e) {
+      rc = HA_ERR_OUT_OF_MEM;
+      SDB_LOG_DEBUG("Failed to build bson obj, table:%s, exception:%s", table,
+                    e.what());
+      goto error;
+    } catch (std::exception &e) {
+      rc = HA_ERR_INTERNAL_ERROR;
+      SDB_LOG_DEBUG("Failed to build bson obj, table:%s, exception:%s", table,
+                    e.what());
+      goto error;
+    }
+    SDB_LOG_DEBUG(
+        "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+        "limit[%d], "
+        "offset[%d]",
+        condition.toString(false, false).c_str(),
+        selector.toString(false, false).c_str(),
+        order_by.toString(false, false).c_str(),
+        hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+  }
 
   if (rc) {
     SDB_LOG_ERROR(
@@ -3351,14 +3375,38 @@ int ha_sdb::rnd_next(uchar *buf) {
                              num_to_skip, num_to_return, flag);
     }
 
-    SDB_LOG_DEBUG(
-        "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
-        "limit[%d], "
-        "offset[%d]",
-        condition.toString(false, false).c_str(),
-        selector.toString(false, false).c_str(),
-        SDB_EMPTY_BSON.toString(false, false).c_str(),
-        hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+    if (sdb_debug_log) {
+      try {
+        bson::BSONObjBuilder builder(96);
+        bson::BSONObjIterator it(hint);
+        while (it.more()) {
+          bson::BSONElement elem = it.next();
+          if (0 == strcmp(elem.fieldName(), SDB_FIELD_INFO)) {
+            continue;
+          }
+          builder.append(elem);
+        }
+        hint = builder.obj();
+      } catch (std::bad_alloc &e) {
+        rc = HA_ERR_OUT_OF_MEM;
+        SDB_LOG_DEBUG("Failed to build bson obj, table:%s, exception:%s", table,
+                      e.what());
+        goto error;
+      } catch (std::exception &e) {
+        rc = HA_ERR_INTERNAL_ERROR;
+        SDB_LOG_DEBUG("Failed to build bson obj, table:%s, exception:%s", table,
+                      e.what());
+        goto error;
+      }
+      SDB_LOG_DEBUG(
+          "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+          "limit[%d], "
+          "offset[%d]",
+          condition.toString(false, false).c_str(),
+          selector.toString(false, false).c_str(),
+          SDB_EMPTY_BSON.toString(false, false).c_str(),
+          hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+    }
 
     if (rc != 0) {
       goto error;
