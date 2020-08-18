@@ -53,7 +53,7 @@ if(MYSQL STREQUAL "5.7.28")
 endif()
 
 if(SDB_PROJECT_TYPE STREQUAL "mariadb")
-   add_definitions(-DOPENSSL_ROOT_DIR="${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
+   set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
 endif()
 
 # Trigger the sdb version tool building, and use it to get the version.
