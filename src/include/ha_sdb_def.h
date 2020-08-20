@@ -43,6 +43,9 @@
 #define SDB_FIELD_TRANS_ISO "TransIsolation"
 #define SDB_TRANS_ISO_RU 0
 #define SDB_TRANS_ISO_RC 1
+// the number of trans isolation RS is occupied by MySQL,
+// use number 4 instead for external use in 'HA'
+#define ISO_READ_STABILITY 4
 #define SDB_TRANS_ISO_RS 2
 #define SDB_TRANS_ISO_RR 3
 

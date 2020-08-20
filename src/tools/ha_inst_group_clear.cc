@@ -1,3 +1,18 @@
+/* Copyright (c) 2018, SequoiaDB and/or its affiliates. All rights reserved.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+
 #include <argp.h>
 #include <fstream>
 #include <string>
@@ -14,24 +29,20 @@
 #include "ha_tool_utils.h"
 
 using namespace std;
-static char doc[] = "Clear instance group information from sequoiadb.\v";
+static char doc[] = HA_TOOL_HELP_DOC_CLEAR_INST_GROUP;
 const char *argp_program_bug_address = 0;
 const char *argp_program_version = 0;
-static char args_doc[] = "inst_group_name";
+static char args_doc[] = HA_TOOL_HELP_DOC_INST_GROUP_NAME;
 
+// the last parameter indicates the order of the help information
 static struct argp_option my_argp_options[] = {
-    {"host", HA_KEY_HOST, "HOST", 0,
-     "Sequoiadb coord address(hostname:port), default: localhost:11810", 0},
-    {"user", 'u', "USER", 0, "User for logging sequoiadb, default: \"\"", 1},
-    {"password", 'p', "PASSWORD", OPTION_ARG_OPTIONAL,
-     "Password used to connect to sequoiadb, default: \"\"", 2},
-    {"force", HA_KEY_FORCE, 0, 0,
-     "Force to delete instance group info without confirm", 3},
-    {"token", 't', "TOKEN", OPTION_ARG_OPTIONAL,
-     "Token used to decrypt password in cipherfile, default: \"\"", 4},
-    {"file", HA_KEY_FILE, "FILE", 0,
-     "Cipherfile path, default: ~/sequoiadb/passwd", 5},
-    {"verbose", HA_KEY_VERBOSE, 0, 0, "Print more information", 6},
+    {"host", HA_KEY_HOST, "HOST", 0, HA_TOOL_HELP_HOST, 0},
+    {"user", 'u', "USER", 0, HA_TOOL_HELP_USER, 1},
+    {"password", 'p', "PASSWORD", OPTION_ARG_OPTIONAL, HA_TOOL_HELP_PASSWD, 2},
+    {"force", HA_KEY_FORCE, 0, 0, HA_TOOL_HELP_FORCE, 3},
+    {"token", 't', "TOKEN", OPTION_ARG_OPTIONAL, HA_TOOL_HELP_TOKEN, 4},
+    {"file", HA_KEY_FILE, "FILE", 0, HA_TOOL_HELP_FILE, 5},
+    {"verbose", HA_KEY_VERBOSE, 0, 0, HA_TOOL_HELP_VERBOSE, 6},
     {NULL}};
 
 static char *help_filter(int key, const char *text, void *input) {
@@ -145,6 +156,11 @@ int main(int argc, char *argv[]) {
     // delete instance group global configuration from 'HAConfig'
     rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
+    if (SDB_DMS_CS_NOTEXIST == rc) {
+      cout << "Warning: the global configuration database doesn't exist"
+           << endl;
+      return SDB_HA_OK;
+    }
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to get global configuration database '%s', "
                      "sequoiadb error: %s",
@@ -153,7 +169,7 @@ int main(int argc, char *argv[]) {
     // if 'HAConfig' does not exist, do not report error
     rc = global_info_cs.getCollection(HA_CONFIG_CL, config_cl);
     if (SDB_DMS_NOTEXIST == rc) {
-      return HA_ERR_OK;
+      return SDB_HA_OK;
     }
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
@@ -170,7 +186,7 @@ int main(int argc, char *argv[]) {
                      HA_GLOBAL_INFO, HA_CONFIG_CL, sdb_err);
   } catch (std::exception &e) {
     cerr << "Error: unexpected error: " << e.what() << endl;
-    return HA_ERR_EXCEPTION;
+    return SDB_HA_EXCEPTION;
   }
   return 0;
 }

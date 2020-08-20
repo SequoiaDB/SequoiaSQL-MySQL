@@ -74,6 +74,8 @@ class Sdb_conn {
 
   int get_last_result_obj(bson::BSONObj &result, bool get_owned = false);
 
+  int get_session_attr(bson::BSONObj &option);
+
   int set_session_attr(const bson::BSONObj &option);
 
   int interrupt_operation();
@@ -97,17 +99,16 @@ class Sdb_conn {
   inline ulong get_last_tx_isolation() { return last_tx_isolation; }
 
   inline ulong convert_to_sdb_isolation(ulong tx_isolation) {
-    static const int HA_TRANS_ISO_RS = 4;
-	switch (tx_isolation) {
+    switch (tx_isolation) {
       case ISO_READ_UNCOMMITTED:
         return SDB_TRANS_ISO_RU;
         break;
       case ISO_READ_COMMITTED:
         return SDB_TRANS_ISO_RC;
         break;
-	  case HA_TRANS_ISO_RS:
-	  	return SDB_TRANS_ISO_RS;
-		break;
+      case ISO_READ_STABILITY:
+        return SDB_TRANS_ISO_RS;
+        break;
       case ISO_REPEATABLE_READ:
         return SDB_TRANS_ISO_RR;
         break;
@@ -120,7 +121,7 @@ class Sdb_conn {
         DBUG_ASSERT(0);
     }
   }
-  
+
   void set_use_transaction(int use_transaction) {
     m_use_transaction = use_transaction;
   }

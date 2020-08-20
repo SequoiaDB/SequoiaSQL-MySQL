@@ -30,17 +30,6 @@ void ha_kill_mysqld(THD *thd);
 int ha_update_cached_record(HASH &cache, PSI_memory_key mem_key,
                             const char *cached_record_key, int sql_id);
 
-// SQL statements
-#define HA_STMT_EXEC_ONLY_IN_MYSQL "set sequoiadb_execute_only_in_mysql = 1"
-#define HA_STMT_SHOW_DATABASES "show databases"
-#define HA_STMT_DROP_DATABASE "drop database "
-#define HA_STMT_FLUSH_PRIVILEGES "flush privileges"
-#define HA_STMT_SET_CLIENT_CHARSET "set character_set_client = utf8mb4"
-#define HA_STMT_USELESS_SQL "SET @useless_sql='drop instance group user'"
-#define HA_STMT_DELETE_USER "delete from mysql.user where User != 'root'"
-#define HA_STMT_DELETE_ROUTINES "delete from mysql.proc where db != 'sys'"
-#define HA_STMT_SET_NAMES "set names 'utf8mb4'"
-
 #define HA_DUMP_FILE_NUM 2
 #define HA_MAX_USE_DB_CMD_LEN (NAME_LEN * 2 + 8)
 

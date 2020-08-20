@@ -38,8 +38,6 @@
 
 #define PLUGIN_VERSION 0x104
 #define PLUGIN_STR_VERSION "0.0.1"
-#define HA_PLUGIN_VAR_OPTIONS \
-  (PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC | PLUGIN_VAR_READONLY)
 
 #ifndef DBUG_OFF
 #define PLUGIN_DEBUG_VERSION "-debug"
@@ -66,7 +64,6 @@ typedef pthread_key_t thread_local_key_t;
 typedef pthread_once_t my_thread_once_t;
 
 #define MY_THREAD_ONCE_INIT MY_PTHREAD_ONCE_INIT
-
 typedef unsigned int ha_event_class_t;
 // extract C-style string from LEX_STRING
 #define C_STR(lex_str) lex_str.str
@@ -100,7 +97,7 @@ typedef struct st_sql_stmt_info {
   // indicate whether it's initialized
   bool inited;
   // useless for now
-  unsigned long thread_id;
+  ulong thread_id;
   // operation type, its defined in 'server_ha_def.h'
   const char *op_type;
   // before SQL persistence(write_sql_log_and_states), sphead(including sp db
@@ -122,13 +119,14 @@ typedef struct st_cache_record {
 } ha_cached_record;
 
 // use to store audit events from mysql or mariadb
+// thoses parameters are passed by upper level call
 typedef struct ha_event_general {
-  unsigned int event_subclass;
+  uint event_subclass;
   int general_error_code;
-  unsigned long general_thread_id;
-  unsigned int general_command_length;
+  ulong general_thread_id;
+  uint general_command_length;
   const char *general_query;
-  unsigned int general_query_length;
+  uint general_query_length;
 } ha_event_general;
 
 // HA thread(recover and replay thread) data
@@ -168,4 +166,5 @@ typedef struct st_recover_replay_thread {
   my_thread_attr_t thread_attr;
 } ha_recover_replay_thread;
 
+ha_cached_record *get_cached_record(HASH &cache, const char *cached_record_key);
 #endif

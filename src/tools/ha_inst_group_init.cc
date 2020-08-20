@@ -1,3 +1,18 @@
+/* Copyright (c) 2018, SequoiaDB and/or its affiliates. All rights reserved.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+
 #include <argp.h>
 #include <string>
 #include <memory>
@@ -14,24 +29,20 @@
 #include "ha_tool_utils.h"
 
 using namespace std;
-static char doc[] = "Init instance group information.\v";
+static char doc[] = HA_TOOL_HELP_DOC_INIT_INST_GROUP;
 const char *argp_program_bug_address = 0;
 const char *argp_program_version = 0;
-static char args_doc[] = "inst_group_name";
+static char args_doc[] = HA_TOOL_HELP_DOC_INST_GROUP_NAME;
 
+// the last parameter indicates the order of the help information
 static struct argp_option my_argp_options[] = {
-    {"host", HA_KEY_HOST, "HOST", 0,
-     "Sequoiadb coord address(hostname:port), default: localhost:11810", 0},
-    {"user", 'u', "USER", 0, "User for logging sequoiadb, default: \"\"", 1},
-    {"password", 'p', "PASSWORD", OPTION_ARG_OPTIONAL,
-     "Password used to connect to sequoiadb, default: \"\"", 2},
-    {"key", HA_KEY_KEY, "KEY", 0,
-     "Key used to encrypt random password, default: \"\"", 3},
-    {"token", 't', "TOKEN", OPTION_ARG_OPTIONAL,
-     "Token used to decrypt password in cipherfile, default: \"\"", 4},
-    {"file", HA_KEY_FILE, "FILE", 0,
-     "Cipherfile path, default: ~/sequoiadb/passwd", 5},
-    {"verbose", HA_KEY_VERBOSE, 0, 0, "Print more information", 6},
+    {"host", HA_KEY_HOST, "HOST", 0, HA_TOOL_HELP_HOST, 0},
+    {"user", 'u', "USER", 0, HA_TOOL_HELP_USER, 1},
+    {"password", 'p', "PASSWORD", OPTION_ARG_OPTIONAL, HA_TOOL_HELP_PASSWD, 2},
+    {"key", HA_KEY_KEY, "KEY", 0, HA_TOOL_HELP_KEY, 3},
+    {"token", 't', "TOKEN", OPTION_ARG_OPTIONAL, HA_TOOL_HELP_TOKEN, 4},
+    {"file", HA_KEY_FILE, "FILE", 0, HA_TOOL_HELP_FILE, 5},
+    {"verbose", HA_KEY_VERBOSE, 0, 0, HA_TOOL_HELP_VERBOSE, 6},
     {NULL}};
 
 static char *help_filter(int key, const char *text, void *input) {
@@ -151,7 +162,7 @@ static int init_config(const string &name, ha_inst_group_config_cl &st_config,
     cout << "User: " << st_config.user << endl;
     cout << "Password: " << password << endl;
   }
-  return HA_ERR_OK;
+  return SDB_HA_OK;
 }
 
 int main(int argc, char *argv[]) {
@@ -285,7 +296,7 @@ int main(int argc, char *argv[]) {
                      cmd_args.inst_group_name.c_str(), HA_SQL_LOG_CL, sdb_err);
   } catch (std::exception &e) {
     cerr << "Error: unexpected error: " << e.what() << endl;
-    return HA_ERR_EXCEPTION;
+    return SDB_HA_EXCEPTION;
   }
 
   return 0;

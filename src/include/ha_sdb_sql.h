@@ -343,7 +343,7 @@ uint sdb_tables_in_join(JOIN *join);
 // About interface
 void sdb_set_timespec(struct timespec &abstime, ulonglong sec);
 
-bool sdb_has_sql_condition(THD * thd, uint sql_errno);
+bool sdb_has_sql_condition(THD *thd, uint sql_errno);
 
 const char *sdb_thd_db(THD *thd);
 #endif

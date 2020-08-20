@@ -43,22 +43,33 @@ static ha_recover_replay_thread ha_thread;
 // in 'server_ha_init', so it's invisible to mysql user
 static char *ha_inst_group_name = NULL;
 static char *ha_inst_group_key = NULL;
+static uint ha_wait_replay_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
 
 static MYSQL_SYSVAR_STR(inst_group_name, ha_inst_group_name,
-                        HA_PLUGIN_VAR_OPTIONS,
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC |
+                            PLUGIN_VAR_READONLY,
                         "SQL instance group name. (Default: \"\")"
-                        /* 实例组名 */,
+                        /*实例组名。*/,
                         NULL, NULL, "");
 
 static MYSQL_SYSVAR_STR(inst_group_key, ha_inst_group_key,
-                        HA_PLUGIN_VAR_OPTIONS,
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC |
+                            PLUGIN_VAR_READONLY,
                         "Instance group key used to decrypt instance "
                         "group password. (Default: \"\")"
-                        /* 实例组秘钥 */,
+                        /*实例组秘钥, 用于解密实例组用户密码。*/,
                         NULL, NULL, "");
 
-static struct st_mysql_sys_var *ha_sys_vars[] = {
-    MYSQL_SYSVAR(inst_group_name), MYSQL_SYSVAR(inst_group_key), NULL};
+static MYSQL_SYSVAR_UINT(wait_replay_timeout, ha_wait_replay_timeout,
+                         PLUGIN_VAR_OPCMDARG,
+                         "Timeout waiting for playback thread. (Default: 30)"
+                         /*等待回放线程超时时间[0, 3600]，单位：sec。*/,
+                         NULL, NULL, HA_WAIT_REPLAY_TIMEOUT_DEFAULT, 0, 3600,
+                         0);
+
+struct st_mysql_sys_var *ha_sys_vars[] = {
+    MYSQL_SYSVAR(inst_group_name), MYSQL_SYSVAR(inst_group_key),
+    MYSQL_SYSVAR(wait_replay_timeout), NULL};
 
 static uchar *cached_record_get_key(ha_cached_record *record, size_t *length,
                                     my_bool not_used MY_ATTRIBUTE((unused))) {
@@ -84,59 +95,52 @@ static void init_sql_stmt_info_key() {
   my_create_thread_local_key(&ha_sql_stmt_info_key, destroy_sql_stmt_info);
 }
 
-static ha_sql_stmt_info *get_sql_stmt_info() {
-  ha_sql_stmt_info *sql_info = NULL;
+static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
+  int rc = 0;
   my_thread_once(&ha_sql_stmt_info_key_once, init_sql_stmt_info_key);
-  sql_info = (ha_sql_stmt_info *)my_get_thread_local(ha_sql_stmt_info_key);
-  if (0 == sql_info) {
+  *sql_info = (ha_sql_stmt_info *)my_get_thread_local(ha_sql_stmt_info_key);
+  if (NULL == *sql_info) {
     // can't use sdb_my_malloc, because mariadb will check memory
     // it use after shutdown
-    sql_info = (ha_sql_stmt_info *)malloc(sizeof(ha_sql_stmt_info));
-    if (sql_info) {
-      memset(sql_info->err_message, 0, HA_BUF_LEN);
-      memset(sql_info, '0', sizeof(ha_sql_stmt_info));
-      sql_info->inited = false;
-      my_set_thread_local(ha_sql_stmt_info_key, sql_info);
+    *sql_info = (ha_sql_stmt_info *)malloc(sizeof(ha_sql_stmt_info));
+    if (*sql_info) {
+      memset(*sql_info, 0, sizeof(ha_sql_stmt_info));
+      (*sql_info)->inited = false;
+      my_set_thread_local(ha_sql_stmt_info_key, *sql_info);
+    } else {
+      rc = SDB_HA_OOM;
     }
   }
-  return sql_info;
+  return rc;
 }
 
-static void update_sql_stmt_info(ha_sql_stmt_info *sql_info,
-                                 unsigned int event_class, const void *ev,
-                                 THD *thd) {
+static int update_sql_stmt_info(ha_sql_stmt_info *sql_info,
+                                unsigned int event_class, const void *ev,
+                                THD *thd) {
+  int rc = 0;
   const struct mysql_event_general *event =
       (const struct mysql_event_general *)ev;
   if (!sql_info->inited) {
     sql_info->inited = true;
     sql_info->tables = NULL;
-    sql_info->sdb_conn = new Sdb_conn(event->general_thread_id);
-    if (sql_info->sdb_conn) {
+    sql_info->sdb_conn = new (std::nothrow) Sdb_conn(event->general_thread_id);
+    if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
       sql_info->sdb_conn->set_use_transaction(true);
+    } else {
+      rc = SDB_HA_OOM;
     }
   } else if (NULL == sql_info->sdb_conn) {
     // if client execute some DDL statements, exit session,
     // ha_sql_stmt_info::sdb_conn will be set to NULL.
     sql_info->tables = NULL;
-    sql_info->sdb_conn = new Sdb_conn(event->general_thread_id);
-    if (sql_info->sdb_conn) {
+    sql_info->sdb_conn = new (std::nothrow) Sdb_conn(event->general_thread_id);
+    if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
       sql_info->sdb_conn->set_use_transaction(true);
+    } else {
+      rc = SDB_HA_OOM;
     }
-  }
-}
-
-// start transaction for current SQL statement being executed
-static int begin_transaction(THD *thd, ha_sql_stmt_info *sql_info) {
-  int rc = 0;
-  // set 'transisolation' to RS, the number of trans isolation RS is
-  // occupied by MySQL, use number 4 instead, refer to
-  // 'convert_to_sdb_isolation'
-  static const int HA_TRANS_ISO_RS = 4;
-  rc = sql_info->sdb_conn->begin_transaction(HA_TRANS_ISO_RS);
-  if (rc) {
-    ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
   }
   return rc;
 }
@@ -193,7 +197,6 @@ static bool is_meta_sql(THD *thd, const ha_event_general &event) {
     case SQLCOM_CREATE_TABLE:
     case SQLCOM_CREATE_INDEX:
     case SQLCOM_ALTER_TABLE:
-    case SQLCOM_TRUNCATE:
     case SQLCOM_DROP_TABLE:
     case SQLCOM_DROP_INDEX:
     case SQLCOM_CREATE_DB:
@@ -299,7 +302,7 @@ static int get_drop_db_objects(THD *thd, ha_sql_stmt_info *sql_info) {
 
     if (NULL == ha_tbl_list || NULL == ha_tbl_list->db_name ||
         NULL == ha_tbl_list->table_name || NULL == ha_tbl_list->op_type) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       goto error;
     }
     sprintf((char *)ha_tbl_list->db_name, "%s", db_name);
@@ -324,7 +327,7 @@ static int get_drop_db_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_list->op_type = HA_OPERATION_TYPE_DB;
     }
     if (NULL == ha_tbl_list || NULL == ha_tbl_list->db_name) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       goto error;
     }
     sprintf((char *)ha_tbl_list->db_name, "%s", db_name);
@@ -348,12 +351,25 @@ error:
 inline static int try_add_xlock(Sdb_conn &sdb_conn, Sdb_cl &lock_cl,
                                 const bson::BSONObj &cond, bson::BSONObj &obj) {
   static const int MAX_TRY_COUNT = 3;
-  static const int HA_TEMP_TRANS_TIMEOUT = 15;
 
   int rc = 0;
+  int save_trans_timeout = -1;
+  int tmp_trans_timeout = -1;
   bson::BSONObj attr;
-  // set 'TransTimeout' to 15, try 3 times
-  attr = BSON(HA_TRANSACTION_TIMEOUT << HA_TEMP_TRANS_TIMEOUT);
+  rc = sdb_conn.get_session_attr(attr);
+  if (rc) {
+    goto error;
+  }
+  save_trans_timeout = attr.getIntField(HA_TRANSACTION_TIMEOUT);
+  DBUG_ASSERT(save_trans_timeout >= 0);
+
+  // set 'TransTimeout', try 3 times at most
+  tmp_trans_timeout = save_trans_timeout / MAX_TRY_COUNT;
+  if (0 == tmp_trans_timeout) {
+    // set min 'TransTimeout' if tmp_trans_timeout is zero
+    tmp_trans_timeout = 1;
+  }
+  attr = BSON(HA_TRANSACTION_TIMEOUT << tmp_trans_timeout);
   rc = sdb_conn.set_session_attr(attr);
   if (0 == rc) {
     for (int i = 0; i < MAX_TRY_COUNT; i++) {
@@ -366,10 +382,13 @@ inline static int try_add_xlock(Sdb_conn &sdb_conn, Sdb_cl &lock_cl,
       }
     }
     // restore TransTimeout
-    attr = BSON(HA_TRANSACTION_TIMEOUT << 60);
+    attr = BSON(HA_TRANSACTION_TIMEOUT << save_trans_timeout);
     sdb_conn.set_session_attr(attr);
   }
+done:
   return rc;
+error:
+  goto done;
 }
 
 // add extra lock for objects involved in current SQL statement
@@ -560,27 +579,35 @@ error:
 
 ha_cached_record *get_cached_record(HASH &cache,
                                     const char *cached_record_key) {
-  DBUG_ENTER("get_inst_state_sql_id");
-  void *cached_record = NULL;
-  uchar *key = NULL;
-  key = (uchar *)cached_record_key;
-  cached_record = my_hash_search(&cache, key, strlen(cached_record_key));
-  DBUG_RETURN((ha_cached_record *)cached_record);
+  DBUG_ENTER("get_cached_record");
+  HASH_SEARCH_STATE state;
+  uchar *key = (uchar *)cached_record_key;
+  ha_cached_record *record = (ha_cached_record *)my_hash_first(
+      &cache, key, strlen(cached_record_key), &state);
+
+  while (record && 0 != strcmp(cached_record_key, record->key)) {
+    record = (ha_cached_record *)my_hash_next(
+        &cache, key, strlen(cached_record_key), &state);
+  }
+
+  if (record && 0 != strcmp(cached_record_key, record->key)) {
+    record = NULL;
+  }
+  DBUG_RETURN(record);
 }
 
 // wait instance state to be updated to lastest state by replay thread
 static int wait_object_updated_to_lastest(
     const char *db_name, const char *table_name, const char *op_type,
     Sdb_cl &log_state_cl, ha_sql_stmt_info *sql_info, THD *thd) {
-  DBUG_ENTER("wait_for_instance_state");
-  static const int WAIT_REPLAY_THREAD_TIMEOUT = 30;
+  DBUG_ENTER("wait_object_updated_to_lastest");
 
   int sql_id = HA_INVALID_SQL_ID, rc = 0;
   bson::BSONObj cond, result;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
   ha_cached_record *cached_record = NULL;
   char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
-  int sleep_secs = 0;
+  uint sleep_secs = 0;
 
   // get latest SQL id from 'HASQLLogState'
   cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
@@ -612,13 +639,13 @@ static int wait_object_updated_to_lastest(
       sleep_secs++;
     }
   } while (!abort_loop && !cached_record &&
-           sleep_secs < WAIT_REPLAY_THREAD_TIMEOUT && !thd_killed(thd));
+           sleep_secs < ha_wait_replay_timeout && !thd_killed(thd));
 
-  if (sleep_secs >= WAIT_REPLAY_THREAD_TIMEOUT) {
-    rc = HA_ERR_WAIT_TIMEOUT;
+  if (sleep_secs >= ha_wait_replay_timeout) {
+    rc = SDB_HA_WAIT_TIMEOUT;
     goto error;
   } else if (thd_killed(thd) || abort_loop) {
-    rc = HA_ERR_ABORT_BY_USER;
+    rc = SDB_HA_ABORT_BY_USER;
     goto error;
   }
 
@@ -626,17 +653,18 @@ static int wait_object_updated_to_lastest(
   sleep_secs = 0;
   SDB_LOG_DEBUG("HA: Wait for '%s' state, cached SQL ID: %d, global SQL ID: %d",
                 cached_record_key, cached_record->sql_id, sql_id);
+  DBUG_ASSERT(cached_record->sql_id <= sql_id);
   while (!abort_loop && cached_record && cached_record->sql_id < sql_id &&
-         sleep_secs < WAIT_REPLAY_THREAD_TIMEOUT && !thd_killed(thd)) {
+         sleep_secs < ha_wait_replay_timeout && !thd_killed(thd)) {
     sleep(1);
     sleep_secs++;
   }
 
-  if (sleep_secs >= WAIT_REPLAY_THREAD_TIMEOUT) {
-    rc = HA_ERR_WAIT_TIMEOUT;
+  if (sleep_secs >= ha_wait_replay_timeout) {
+    rc = SDB_HA_WAIT_TIMEOUT;
     goto error;
   } else if (thd_killed(thd) || abort_loop) {
-    rc = HA_ERR_ABORT_BY_USER;
+    rc = SDB_HA_ABORT_BY_USER;
     goto error;
   }
 done:
@@ -812,9 +840,11 @@ static bool build_full_table_name(String &full_name, const char *db_name,
 // into sequoiadb
 static bool dropping_table_exists(THD *thd, const char *db_name,
                                   const char *table_name) {
+  static const uint TABLE_BUF_LEN = NAME_LEN * 2 + 20;
+
   bool table_exists = true;
-  char unknown_table_buf[NAME_LEN * 2 + 20] = {0};
-  String wrong_table(unknown_table_buf, NAME_LEN * 4 + 20, system_charset_info);
+  char unknown_table_buf[TABLE_BUF_LEN] = {0};
+  String wrong_table(unknown_table_buf, TABLE_BUF_LEN, system_charset_info);
   wrong_table.length(0);
 
   if (!thd->is_error()) {
@@ -954,7 +984,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   oom = general_query.append(event.general_query, event.general_query_length);
   oom |= general_query.append('\0');
   if (oom) {
-    rc = HA_ERR_OUT_OF_MEM;
+    rc = SDB_HA_OOM;
     goto error;
   }
 
@@ -1058,7 +1088,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       }
     }
     if (oom) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       goto error;
     }
 
@@ -1121,26 +1151,6 @@ error:
   goto done;
 }
 
-// set ha_table_list.is_temporary_table if current
-// table is a temporary table
-void mark_temporary_tables(THD *thd, ha_table_list *tables) {
-  DBUG_ENTER("mark_temporary_tables");
-  const char *db_name = NULL, *table_name = NULL;
-  bool is_temp_table = false;
-  for (ha_table_list *table_list = tables; table_list;
-       table_list = table_list->next) {
-    db_name = table_list->db_name;
-    table_name = table_list->table_name;
-    is_temp_table = is_temporary_table(thd, db_name, table_name);
-    // mark temporary table by setting 'ha_table_list::is_temporary_table'
-    if (is_temp_table) {
-      DBUG_PRINT("info", ("found temporary table %s:%s", db_name, table_name));
-      table_list->is_temporary_table = true;
-    }
-  }
-  DBUG_VOID_RETURN;
-}
-
 // get objects involved in current SQL statement
 static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   DBUG_ENTER("get_sql_objects");
@@ -1155,7 +1165,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
              SQLCOM_ALTER_DB == sql_command) {
     sql_info->tables = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
     if (NULL == sql_info->tables) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       goto error;
     }
     sql_info->tables->db_name = thd->lex->name.str;
@@ -1184,7 +1194,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
 
     sql_info->tables = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
     if (NULL == sql_info->tables) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       goto error;
     }
 
@@ -1220,7 +1230,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     const char *db_name = sdb_thd_db(thd);
     sql_info->tables = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
     if (NULL == sql_info->tables) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       goto error;
     }
     sql_info->tables->db_name = db_name ? db_name : HA_MYSQL_DB;
@@ -1231,10 +1241,13 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   } else {
     TABLE_LIST *tables = sdb_lex_first_select(thd)->get_table_list();
     ha_table_list *ha_tbl_list = NULL, *ha_tbl_list_tail = NULL;
+    const char *db_name = NULL, *table_name = NULL;
+    bool is_temp_table = false;
+
     for (TABLE_LIST *tbl = tables; tbl; tbl = tbl->next_local) {
       ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
       if (ha_tbl_list == NULL) {
-        rc = HA_ERR_OUT_OF_MEM;
+        rc = SDB_HA_OOM;
         goto error;
       }
       ha_tbl_list->db_name = C_STR(tbl->db);
@@ -1253,11 +1266,20 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         ha_tbl_list_tail->next = ha_tbl_list;
         ha_tbl_list_tail = ha_tbl_list;
       }
-    }
-    // mark temporary table for SQL like 'rename/alter/drop/truncate table'
-    if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_ALTER_TABLE == sql_command ||
-        SQLCOM_RENAME_TABLE == sql_command || SQLCOM_TRUNCATE == sql_command) {
-      mark_temporary_tables(thd, sql_info->tables);
+
+      // mark temporary table for SQL like 'rename/alter/drop/truncate table'
+      if (SQLCOM_DROP_TABLE == sql_command ||
+          SQLCOM_ALTER_TABLE == sql_command ||
+          SQLCOM_RENAME_TABLE == sql_command) {
+        db_name = ha_tbl_list->db_name;
+        table_name = ha_tbl_list->table_name;
+        is_temp_table = is_temporary_table(thd, db_name, table_name);
+        // mark temporary table by setting 'ha_table_list::is_temporary_table'
+        if (is_temp_table) {
+          SDB_LOG_DEBUG("found temporary table %s:%s", db_name, table_name);
+          ha_tbl_list->is_temporary_table = true;
+        }
+      }
     }
     DBUG_ASSERT(sql_info->tables != NULL);
   }
@@ -1397,10 +1419,6 @@ int fix_create_table_sql(THD *thd, ha_event_class_t event_class,
           TL_READ_WITH_SHARED_LOCKS);
       rc = open_and_lock_tables(thd, &tables, MYSQL_LOCK_IGNORE_TIMEOUT);
       if (rc) {
-        ha_sql_stmt_info *sql_info = get_sql_stmt_info();
-        snprintf(sql_info->err_message, HA_BUF_LEN,
-                 "Can't open and lock table '%s:%s'", table_list->db,
-                 table_list->table_name);
         goto error;
       }
       table_list->table = tables.table;
@@ -1423,10 +1441,6 @@ int fix_create_table_sql(THD *thd, ha_event_class_t event_class,
                             TL_READ_WITH_SHARED_LOCKS);
       rc = open_and_lock_tables(thd, &tables, FALSE, MYSQL_LOCK_IGNORE_TIMEOUT);
       if (rc) {
-        ha_sql_stmt_info *sql_info = get_sql_stmt_info();
-        snprintf(sql_info->err_message, HA_BUF_LEN,
-                 "Can't open and lock table '%s:%s'", table_list->db.str,
-                 table_list->table_name.str);
         goto error;
       }
       table_list->table = tables.table;
@@ -1451,7 +1465,7 @@ int fix_create_table_sql(THD *thd, ha_event_class_t event_class,
 done:
   DBUG_RETURN(rc);
 error:
-  rc = HA_ERR_FIX_CREATE_TABLE;
+  rc = SDB_HA_FIX_CREATE_TABLE;
   goto done;
 }
 
@@ -1460,7 +1474,7 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
   int sql_command = thd_sql_command(thd);
   bool can_write_log = true;
 
-  if (SQLCOM_ALTER_TABLE == sql_command || SQLCOM_TRUNCATE == sql_command) {
+  if (SQLCOM_ALTER_TABLE == sql_command) {
     if (sql_info->tables->is_temporary_table) {
       can_write_log = false;
     }
@@ -1498,28 +1512,31 @@ inline static void set_overwrite_status(THD *thd, ha_event_general &event,
 
 static void handle_error(int error, ha_sql_stmt_info *sql_info) {
   switch (error) {
-    case HA_ERR_OUT_OF_MEM:
-      my_printf_error(HA_ERR_EXEC_SQL,
-                      "HA: Out of memory while persisting SQL log", MYF(0));
+    case SDB_HA_OOM:
+      my_printf_error(SDB_HA_OOM, "HA: Out of memory while persisting SQL log",
+                      MYF(0));
       sql_print_error("HA: Out of memory while persisting SQL log");
       break;
-    case HA_ERR_ABORT_BY_USER:
-      my_printf_error(HA_ERR_EXEC_SQL, "HA: Query has been aborted by user",
-                      MYF(0));
+    case SDB_HA_ABORT_BY_USER:
+      my_printf_error(SDB_HA_ABORT_BY_USER,
+                      "HA: Query has been aborted by user", MYF(0));
       break;
-    case HA_ERR_WAIT_TIMEOUT:
-      my_printf_error(HA_ERR_EXEC_SQL,
+    case SDB_HA_WAIT_TIMEOUT:
+      my_printf_error(SDB_HA_WAIT_TIMEOUT,
                       "HA: There are SQL statements on releated objects have "
-                      "not been executed by replay thread, please try it later",
+                      "not been executed by replay thread. Please try it later",
                       MYF(0));
       break;
-    case HA_ERR_FIX_CREATE_TABLE:
-      my_printf_error(HA_ERR_EXEC_SQL, "HA: %s, please check error log", MYF(0),
-                      sql_info->err_message);
+    case SDB_HA_FIX_CREATE_TABLE:
+      my_printf_error(SDB_HA_FIX_CREATE_TABLE,
+                      "HA: Failed to modify table creation statement. Please "
+                      "check mysql error log",
+                      MYF(0));
       break;
-    case HA_ERR_EXCEPTION:
+    case SDB_HA_EXCEPTION:
     default:
-      my_printf_error(HA_ERR_EXEC_SQL, "HA: %s", MYF(0), sql_info->err_message);
+      my_printf_error(SDB_HA_EXCEPTION, "HA: %s", MYF(0),
+                      sql_info->err_message);
       break;
   }
 }
@@ -1529,7 +1546,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                             const void *ev) {
   DBUG_ENTER("persist_sql_stmt");
   DBUG_PRINT("info", ("event: %d, subevent: %d", (int)event_class, *(int *)ev));
-  int rc = 0, sql_command = -1;
+  int rc = 0, sql_command = SQLCOM_END;
   bool is_trans_on = false, need_kill_mysqld = false;
   String create_query;
   create_query.set_charset(system_charset_info);
@@ -1550,8 +1567,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   // convert mysql or mariadb event to HA event
   init_ha_event_general(event, ev, event_class);
 
-  if (NULL == (sql_info = get_sql_stmt_info())) {
-    rc = HA_ERR_OUT_OF_MEM;
+  if ((rc = get_sql_stmt_info(&sql_info))) {
     goto error;
   }
 
@@ -1566,6 +1582,12 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     goto done;
   }
 
+  // if 'sequoiadb_execute_only_in_mysql' has been set, goto done
+  // 1. execute query from 'HA' thread
+  if (sdb_execute_only_in_mysql(thd)) {
+    goto done;
+  }
+
   // 1. do nothing if current SQL statement is not metadata operation.
   // 2. In mysql, event is executed by creating a procedure, execution of
   //    event can't be written into sequoiadb
@@ -1574,40 +1596,31 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     goto done;
   } else if (!ha_thread.recover_finished) {  // current instance is recovering
     struct timespec abstime;
-    static const int WAIT_TIMEOUT = 30;
-    sdb_set_timespec(abstime, WAIT_TIMEOUT);
-    // can't prevent statements to be executed by HA thread
-    if (sdb_execute_only_in_mysql(thd)) {
-      // if its statement executed by source command
-      goto done;
-    } else {
-      SDB_LOG_INFO("HA: Waiting for completion of recover process");
-      // other clients must wait for completion of recover process. It's not
-      // convient for automated testing if report error here.
-      mysql_mutex_lock(&ha_thread.recover_finished_mutex);
-      rc = mysql_cond_timedwait(&ha_thread.recover_finished_cond,
-                                &ha_thread.recover_finished_mutex, &abstime);
-      mysql_mutex_unlock(&ha_thread.recover_finished_mutex);
-      if (rc) {
-        rc = HA_ERR_EXCEPTION;
-        sql_print_error(
-            "HA: Instance is in recovering state. Current query "
-            "can't be executed, please try it later");
-        snprintf(sql_info->err_message, HA_BUF_LEN,
-                 "Instance is in recovering state. Current query can't "
-                 "be executed, please try it later");
-        goto error;
-      }
-      SDB_LOG_DEBUG("HA: Metadata recover finished, start execute: %s",
-                    sdb_thd_query(thd));
-      if (thd_killed(thd) || ha_thread.stopped) {
-        rc = HA_ERR_ABORT_BY_USER;
-        goto error;
-      }
+    sdb_set_timespec(abstime, ha_wait_replay_timeout);
+
+    SDB_LOG_INFO("HA: Waiting for completion of recover process");
+    // other clients must wait for completion of recover process. It's not
+    // convient for automated testing if report error here.
+    mysql_mutex_lock(&ha_thread.recover_finished_mutex);
+    rc = mysql_cond_timedwait(&ha_thread.recover_finished_cond,
+                              &ha_thread.recover_finished_mutex, &abstime);
+    mysql_mutex_unlock(&ha_thread.recover_finished_mutex);
+    if (rc) {
+      rc = SDB_HA_EXCEPTION;
+      sql_print_error(
+          "HA: Instance is in recovering state. Current query "
+          "can't be executed. Please try it later");
+      snprintf(sql_info->err_message, HA_BUF_LEN,
+               "Instance is in recovering state. Current query can't "
+               "be executed. Please try it later");
+      goto error;
     }
-  } else if (sdb_execute_only_in_mysql(thd)) {
-    // replay SQL generated by other instances
-    goto done;
+    SDB_LOG_DEBUG("HA: Metadata recover finished, start execute: %s",
+                  sdb_thd_query(thd));
+    if (thd_killed(thd) || ha_thread.stopped) {
+      rc = SDB_HA_ABORT_BY_USER;
+      goto error;
+    }
   }
 
   // in mariadb, THD::Diagnostics_area::m_can_overwrite_status must
@@ -1616,9 +1629,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   set_overwrite_status(thd, event, true);
 
   // update SQL statement info according to ev
-  update_sql_stmt_info(sql_info, event_class, ev, thd);
-  if (NULL == sql_info->sdb_conn) {
-    rc = HA_ERR_OUT_OF_MEM;
+  if ((rc = update_sql_stmt_info(sql_info, event_class, ev, thd))) {
     goto error;
   }
 
@@ -1631,8 +1642,9 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                     sdb_thd_query(thd), thd);
       SDB_LOG_DEBUG("HA: SQL command: %d, event: %d, subevent: %d, thread: %p",
                     sql_command, event_class, *((int *)ev), thd);
-      rc = begin_transaction(thd, sql_info);
+      rc = sql_info->sdb_conn->begin_transaction(ISO_READ_STABILITY);
       if (rc) {
+        ha_error_string(*(sql_info->sdb_conn), rc, sql_info->err_message);
         goto error;
       }
 
@@ -1651,10 +1663,10 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         goto error;
       }
     } catch (std::bad_alloc &e) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       goto error;
     } catch (std::exception &e) {
-      rc = HA_ERR_EXCEPTION;
+      rc = SDB_HA_EXCEPTION;
       snprintf(sql_info->err_message, HA_BUF_LEN, "HA: Unexpected error: %s",
                e.what());
       goto error;
@@ -1695,11 +1707,11 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         }
       }
     } catch (std::bad_alloc &e) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       need_kill_mysqld = true;
       goto error;
     } catch (std::exception &e) {
-      rc = HA_ERR_EXCEPTION;
+      rc = SDB_HA_EXCEPTION;
       need_kill_mysqld = true;
       snprintf(sql_info->err_message, HA_BUF_LEN, "HA: Unexpected error: %s",
                e.what());
@@ -1737,10 +1749,10 @@ static int server_ha_init(void *p) {
 
   // build instance group collection space name
   int len = strlen(HA_INST_GROUP_PREFIX) + strlen(ha_inst_group_name);
-  if (len > HA_MAX_INST_GROUP_NAME_LEN - 1) {
+  if (len > HA_MAX_INST_GROUP_NAME_LEN) {
     sql_print_error("HA: Instance group name '%s' is too long",
                     ha_inst_group_name);
-    DBUG_RETURN(HA_ERR_HA_INIT);
+    DBUG_RETURN(SDB_HA_INIT_ERR);
   }
   snprintf(ha_thread.sdb_group_name, HA_MAX_INST_GROUP_NAME_LEN, "%s%s",
            HA_INST_GROUP_PREFIX, ha_inst_group_name);
@@ -1749,7 +1761,7 @@ static int server_ha_init(void *p) {
   // then set instance group key to '*'
   if (strlen(ha_inst_group_key) > HA_MAX_KEY_LEN) {
     sql_print_error("HA: Instance group key is too long");
-    DBUG_RETURN(HA_ERR_HA_INIT);
+    DBUG_RETURN(SDB_HA_INIT_ERR);
   }
   snprintf(ha_thread.group_key, HA_MAX_KEY_LEN + 1, "%s", ha_inst_group_key);
   for (uint i = 0; i < strlen(ha_inst_group_key); i++) {
@@ -1783,13 +1795,13 @@ static int server_ha_init(void *p) {
                       HA_KEY_MEM_INST_STATE_CACHE)) {
       sql_print_error(
           "HA: Out of memory while initializing instance state cache");
-      DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+      DBUG_RETURN(SDB_HA_OOM);
     }
     if (mysql_thread_create(HA_KEY_HA_THREAD, &ha_thread.thread,
                             &ha_thread.thread_attr, ha_recover_and_replay,
                             (void *)(&ha_thread))) {
       sql_print_error("HA: Out of memory while creating 'HA' thread");
-      DBUG_RETURN(HA_ERR_OUT_OF_MEM);
+      DBUG_RETURN(SDB_HA_OOM);
     }
     ha_thread.is_open = true;
   }

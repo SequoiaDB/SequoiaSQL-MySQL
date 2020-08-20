@@ -26,6 +26,17 @@
 #include <exception>
 #include "errmsg.h"
 
+// SQL statements
+#define HA_STMT_EXEC_ONLY_IN_MYSQL "SET sequoiadb_execute_only_in_mysql = 1"
+#define HA_STMT_SHOW_DATABASES "SHOW DATABASES"
+#define HA_STMT_DROP_DATABASE "DROP DATABASE "
+#define HA_STMT_FLUSH_PRIVILEGES "FLUSH PRIVILEGES"
+#define HA_STMT_SET_CLIENT_CHARSET "SET character_set_client = utf8mb4"
+#define HA_STMT_USELESS_SQL "SET @useless_sql='drop instance group user'"
+#define HA_STMT_DELETE_USER "DELETE FROM mysql.user WHERE User != 'root'"
+#define HA_STMT_DELETE_ROUTINES "DELETE FROM mysql.proc WHERE db != 'sys'"
+#define HA_STMT_SET_NAMES "SET NAMES 'utf8mb4'"
+
 // instance group user name
 static char ha_inst_group_user[HA_MAX_MYSQL_USERNAME_LEN + 1] = {0};
 // local host IP, it's same with 'bind_address' if 'bind_address' is set,
@@ -41,21 +52,16 @@ static MYSQL *ha_mysql = NULL;
 int ha_update_cached_record(HASH &cache, PSI_memory_key mem_key,
                             const char *cached_record_key, int sql_id) {
   int rc = 0;
-  uchar *hkey = NULL;
-  void *cached_record = NULL;
-
-  hkey = (uchar *)cached_record_key;
-  cached_record = my_hash_search(&cache, hkey, strlen(cached_record_key));
+  ha_cached_record *cached_record = get_cached_record(cache, cached_record_key);
   if (cached_record) {
-    ha_cached_record *record = (ha_cached_record *)cached_record;
-    record->sql_id = sql_id;
+    cached_record->sql_id = sql_id;
   } else {
     ha_cached_record *record = NULL;
     char *key = NULL;
     int key_len = strlen(cached_record_key);
     if (!sdb_multi_malloc(mem_key, MYF(MY_WME | MY_ZEROFILL), &record,
                           sizeof(ha_cached_record), &key, key_len + 1, NullS)) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       goto error;
     }
     snprintf(key, key_len + 1, "%s", cached_record_key);
@@ -63,7 +69,7 @@ int ha_update_cached_record(HASH &cache, PSI_memory_key mem_key,
     record->key = key;
     record->sql_id = sql_id;
     if (my_hash_insert(&cache, (uchar *)record)) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
     }
   }
 done:
@@ -174,7 +180,7 @@ static int get_local_instance_id(int &instance_id) {
 done:
   return rc;
 error:
-  rc = HA_ERR_GET_INST_ID;
+  rc = SDB_HA_GET_INST_ID;
   goto done;
 }
 
@@ -203,7 +209,7 @@ static int write_local_instance_id(int instance_id) {
 done:
   return rc;
 error:
-  rc = HA_ERR_WRITE_INST_ID;
+  rc = SDB_HA_WRITE_INST_ID;
   goto done;
 }
 
@@ -345,7 +351,7 @@ static int decrypt_inst_group_password(const char *base64_cipher,
 done:
   return rc;
 error:
-  rc = oom ? HA_ERR_OUT_OF_MEM : HA_ERR_DECRYPT_PASSWORD;
+  rc = oom ? SDB_HA_OOM : SDB_HA_DECRYPT_PASSWORD;
   goto done;
 }
 
@@ -385,9 +391,9 @@ static int mysql_reconnect(MYSQL *conn) {
   mysql = mysql_init(conn);
   if (NULL == mysql) {
     sql_print_error("HA: Out of memory while initializing mysql connection");
-    rc = HA_ERR_OUT_OF_MEM;
+    rc = SDB_HA_OOM;
   } else if (!mysql_real_connect(conn, ha_local_host_ip, ha_inst_group_user,
-                                 ha_inst_group_passwd, HA_MYSQL_DB, mysqld_port,
+                                 ha_inst_group_passwd, conn->db, mysqld_port,
                                  NULL, 0)) {
     sql_print_information(
         "HA: Failed to connect current instance, mysql error: %s",
@@ -397,7 +403,8 @@ static int mysql_reconnect(MYSQL *conn) {
   return rc;
 }
 
-static inline int mysql_query(MYSQL *conn, const char *query, ulong len) {
+static inline int mysql_query(MYSQL *conn, const char *query, ulong len,
+                              bool exec_only_in_mysql = true) {
   int rc = mysql_real_query(conn, query, len);
   uint mysql_err_num = 0;
   if (0 == rc) {
@@ -419,9 +426,12 @@ static inline int mysql_query(MYSQL *conn, const char *query, ulong len) {
       "reconnect to current instance");
   rc = mysql_reconnect(conn);
   if (0 == rc) {
-    rc = mysql_real_query(conn, C_STRING_WITH_LEN(HA_STMT_EXEC_ONLY_IN_MYSQL));
-    rc = rc ? rc : mysql_real_query(conn, query, len);
-    rc = rc ? mysql_errno(conn) : 0;
+    if (exec_only_in_mysql) {
+      rc =
+          mysql_real_query(conn, C_STRING_WITH_LEN(HA_STMT_EXEC_ONLY_IN_MYSQL));
+      rc = rc ? rc : mysql_real_query(conn, query, len);
+      rc = rc ? mysql_errno(conn) : 0;
+    }
   }
 done:
   return rc;
@@ -439,7 +449,7 @@ static inline int check_explicit_defaults_timestamp(bool explicit_defaults_ts) {
         "HA: The 'explicit_defaults_for_timestamp' variable in current "
         "instance is inconsistent with the configuration in the instance "
         "group, please change one of them");
-    return HA_ERR_EXPLICIT_DEF_TIMESTAMP_INCONSIST;
+    return SDB_HA_TIMESTAMP_INCONSIST;
   }
   return 0;
 #else
@@ -454,7 +464,7 @@ static int init_ha_mysql_connection(const char *ip, uint port, const char *user,
   ha_mysql = mysql_init(&ha_mysql_conn);
   if (NULL == ha_mysql) {
     sql_print_error("HA: Out of memory while initializing mysql connection");
-    rc = HA_ERR_OUT_OF_MEM;
+    rc = SDB_HA_OOM;
     goto error;
   } else if (!mysql_real_connect(ha_mysql, ip, user, passwd, HA_MYSQL_DB, port,
                                  0, 0)) {
@@ -545,7 +555,7 @@ static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
   set_lex_user(lex_user, user, host, plugin, auth_str);
   set_lex_extra(ha_thread->thd);
   rc = mysql_create_user(ha_thread->thd, lex_user);
-  rc = rc ? HA_ERR_CREATE_INST_GROUP_USER : 0;
+  rc = rc ? SDB_HA_CREATE_INST_GROUP_USER : 0;
   HA_RC_CHECK(rc, error,
               "HA: Failed to create instance group user, "
               "please check mysql error log");
@@ -595,13 +605,13 @@ static int get_local_ip_address(char *ip_addr, int max_ip_len) {
         }
       }
     }
-    rc = strlen(ip_addr) ? 0 : HA_ERR_GET_LOCAL_IP;
+    rc = strlen(ip_addr) ? 0 : SDB_HA_GET_LOCAL_IP;
     freeifaddrs(if_addr_struct);
   }
 done:
   return rc;
 error:
-  rc = HA_ERR_GET_LOCAL_IP;
+  rc = SDB_HA_GET_LOCAL_IP;
   goto done;
 }
 
@@ -691,6 +701,8 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
       sql_print_information("HA: Set dump source to '%s:%d'", ip, port);
 
       // found available dump source, persist instance ID to local file
+      // note: 'DB_TYPE' of current instance must be the same as other
+      // instances in the instance group.
       rc = write_local_instance_id(local_instance_id);
       HA_RC_CHECK(rc, error, "HA: Failed to persist instance ID: %d",
                   local_instance_id);
@@ -704,7 +716,7 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
   } while (!rc);
 
   if (HA_INVALID_INST_ID == instance_id) {
-    rc = HA_ERR_NO_AVAILABLE_DUMP_SRC;
+    rc = SDB_HA_NO_AVAILABLE_DUMP_SRC;
     sql_print_information("HA: There is no available dump source");
     goto error;
   }
@@ -716,7 +728,7 @@ error:
 
 static int set_mysql_read_only(MYSQL *conn, bool read_only) {
   int rc = 0;
-  const int MAX_QUERY_LEN = 30;
+  static const int MAX_QUERY_LEN = 30;
   char query_buf[MAX_QUERY_LEN] = {0};
   snprintf(query_buf, MAX_QUERY_LEN, "set global read_only = %d", read_only);
   rc = mysql_real_query(conn, query_buf, strlen(query_buf));
@@ -766,12 +778,12 @@ static int dump_meta_data(ha_recover_replay_thread *ha_thread,
     file = popen(dump_cmd, "r");
     if (NULL == file && 0 == errno) {
       // if its oom error, need to report error
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       sql_print_error("HA: Out of memory while dumping databases to '%s'",
                       dump_source.dump_files[i]);
       goto error;
     } else if (NULL == file) {
-      rc = HA_ERR_DUMP_METADATA;
+      rc = SDB_HA_DUMP_METADATA;
       sql_print_information(
           "HA: Failed to dump databases to '%s', 'popen' error: %s",
           dump_source.dump_files[i], strerror(errno));
@@ -785,7 +797,7 @@ static int dump_meta_data(ha_recover_replay_thread *ha_thread,
       sql_print_information(
           "HA: Failed to dump databases to '%s', 'popen' error: %s",
           dump_source.dump_files[i], strerror(errno));
-      rc = HA_ERR_DUMP_METADATA;
+      rc = SDB_HA_DUMP_METADATA;
       goto error;
     }
   }
@@ -1068,7 +1080,7 @@ static int drop_non_system_databases(MYSQL *conn) {
   MYSQL_RES *result = NULL;
   MYSQL_ROW row;
   char quoted_db_buf[NAME_LEN * 2 + 3] = {0};
-  const int MAX_DROP_DB_LEN = NAME_LEN * 2 + 20;
+  static const int MAX_DROP_DB_LEN = NAME_LEN * 2 + 20;
   char drop_db_sql[MAX_DROP_DB_LEN] = {0};
 
   rc = mysql_query(conn, C_STRING_WITH_LEN(HA_STMT_SHOW_DATABASES));
@@ -1106,7 +1118,7 @@ error:
 
 static int clear_local_meta_data(MYSQL *conn) {
   bool rc = 0;
-  const int MAX_CLEAN_SQL_LEN = 100;
+  static const int MAX_CLEAN_SQL_LEN = 100;
   char sql_buf[MAX_CLEAN_SQL_LEN] = {0};
 
   sql_print_information("HA: Clean local metadata");
@@ -1267,7 +1279,7 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
   {
     char buff[HA_BUF_LEN] = {0};
     FILE *file = NULL;
-    const int MAX_SOURCE_CMD_LEN = FN_REFLEN * 2 + 100;
+    static const int MAX_SOURCE_CMD_LEN = FN_REFLEN * 2 + 100;
     char source_cmd[MAX_SOURCE_CMD_LEN] = {0};
 
     for (size_t i = 0; i < HA_DUMP_FILE_NUM; i++) {
@@ -1276,13 +1288,13 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
 
       file = popen(source_cmd, "r");
       if (NULL == file && 0 == errno) {
-        rc = HA_ERR_OUT_OF_MEM;
+        rc = SDB_HA_OOM;
         sql_print_error("HA: Out of memory while recovering metadata from '%s'",
                         file_name);
         goto error;
       } else if (NULL == file) {  // errno has been set
         // do not print error log , or parallel automated testing may fails
-        rc = HA_ERR_RECOVER_METADATA;
+        rc = SDB_HA_RECOVER_METADATA;
         sql_print_information(
             "HA: Failed to recover metadata from '%s' by 'source' command, "
             "'popen' error: %s",
@@ -1297,7 +1309,11 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
           buff[len - 1] = '\0';
         }
 
-        // ignore mysql errors: 1050, 1062
+        // Because the 'mysql' database was not deleted,  the following errors
+        // will be reported when using the source command to restore 'mysql'
+        // database
+        // MySQL error code 1050 (ER_TABLE_EXISTS_ERROR): Table already exists
+        // MySQL error code 1062 (ER_DUP_ENTRY): Duplicate entry
         if (0 == strncmp(buff, STRING_WITH_LEN("ERROR 1050"))) {
           continue;
         } else if (0 == strncmp(buff, STRING_WITH_LEN("ERROR 1062"))) {
@@ -1308,7 +1324,7 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
               "while executing 'source' command occurred",
               buff);
           pclose(file);
-          rc = HA_ERR_RECOVER_METADATA;
+          rc = SDB_HA_RECOVER_METADATA;
           goto error;
         }
       }
@@ -1316,7 +1332,7 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
       // check pclose return status
       rc = (-1 != status && WIFEXITED(status) && !WEXITSTATUS(status)) ? 0 : -1;
       if (rc) {
-        rc = HA_ERR_RECOVER_METADATA;
+        rc = SDB_HA_RECOVER_METADATA;
         sql_print_information(
             "HA: Failed to recover metadata from '%s' "
             "by 'source' command, 'popen' error: %s",
@@ -1388,13 +1404,14 @@ static inline bool is_ignore_error(MYSQL *conn) {
 static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                                 Sdb_conn &sdb_conn) {
   // replay limit every time
-  const int REPLAY_LIMIT = 100;
-  const int SLEEP_SECONDS = 2;
-  const int MAX_TRY_COUNT = 3;
+  static const int REPLAY_LIMIT = 100;
+  static const int SLEEP_SECONDS = 2;
+  static const int MAX_TRY_COUNT = 3;
 
   int rc = 0;
   int glob_executed_sql_id;
   Sdb_cl gstate_cl, sql_log_cl, istate_cl;
+  bson::BSONObjBuilder builder, simple_builder;
   bson::BSONObj result, cond, obj, order_by, attr;
   struct timespec abstime;
   char quoted_name_buf[NAME_LEN * 2 + 3] = {0};
@@ -1404,6 +1421,11 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
   const CHARSET_INFO *charset_info = NULL;
   String src_sql, dst_sql;
   char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
+  const char *query = NULL, *db_name = NULL, *table_name = NULL;
+  const char *op_type = NULL, *session_attrs = NULL;
+  int client_charset_num = -1;
+  int owner = HA_INVALID_INST_ID;
+  int sql_id = HA_INVALID_SQL_ID;
 
   DBUG_ENTER("replay_sql_stmt_loop");
   DBUG_ASSERT(ha_thread->instance_id > 0);
@@ -1462,7 +1484,14 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
 
   while (true) {
     curr_executed = 0;
-    cond = BSON(HA_FIELD_SQL_ID << BSON("$gt" << glob_executed_sql_id));
+    builder.reset();
+
+    {
+      bson::BSONObjBuilder sub_builder(builder.subobjStart(HA_FIELD_SQL_ID));
+      sub_builder.append("$gt", glob_executed_sql_id);
+      sub_builder.doneFast();
+    }
+    cond = builder.done();
     rc = sql_log_cl.query(cond, SDB_EMPTY_BSON, order_by, SDB_EMPTY_BSON, 0,
                           REPLAY_LIMIT);
     if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
@@ -1478,20 +1507,43 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
 
     while (0 == (rc = sql_log_cl.next(result, false))) {
       curr_executed++;
-      const char *query = result.getStringField(HA_FIELD_SQL);
-      const char *db_name = result.getStringField(HA_FIELD_DB);
-      const char *table_name = result.getStringField(HA_FIELD_TABLE);
-      const char *op_type = result.getStringField(HA_FIELD_TYPE);
-      const char *session_attrs = result.getStringField(HA_FIELD_SESSION_ATTRS);
-      int client_charset_num = result.getIntField(HA_FIELD_CLIENT_CHARSET_NUM);
-      int owner = result.getIntField(HA_FIELD_OWNER);
-      int sql_id = result.getIntField(HA_FIELD_SQL_ID);
+      bson::BSONObjIterator iter(result);
+      while (iter.more()) {
+        bson::BSONElement elem = iter.next();
+        if (0 == strcmp(elem.fieldName(), HA_FIELD_SQL)) {
+          query = elem.valuestr();
+        } else if (0 == strcmp(elem.fieldName(), HA_FIELD_DB)) {
+          db_name = elem.valuestr();
+        } else if (0 == strcmp(elem.fieldName(), HA_FIELD_TABLE)) {
+          table_name = elem.valuestr();
+        } else if (0 == strcmp(elem.fieldName(), HA_FIELD_TYPE)) {
+          op_type = elem.valuestr();
+        } else if (0 == strcmp(elem.fieldName(), HA_FIELD_SESSION_ATTRS)) {
+          session_attrs = elem.valuestr();
+        } else if (0 == strcmp(elem.fieldName(), HA_FIELD_CLIENT_CHARSET_NUM)) {
+          client_charset_num = elem.numberInt();
+        } else if (0 == strcmp(elem.fieldName(), HA_FIELD_OWNER)) {
+          owner = elem.numberInt();
+        } else if (0 == strcmp(elem.fieldName(), HA_FIELD_SQL_ID)) {
+          sql_id = elem.numberInt();
+        }
+      }
 
       DBUG_ASSERT(sql_id >= 0);
       if (owner == ha_thread->instance_id) {
         // update its own global state
-        obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
-        cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread->instance_id);
+        builder.reset();
+        {
+          bson::BSONObjBuilder sub_builder(builder.subobjStart("$set"));
+          sub_builder.append(HA_FIELD_SQL_ID, sql_id);
+          sub_builder.doneFast();
+          obj = builder.done();
+        }
+
+        simple_builder.reset();
+        simple_builder.append(HA_FIELD_INSTANCE_ID, ha_thread->instance_id);
+        cond = simple_builder.done();
+
         rc = gstate_cl.upsert(obj, cond);
         HA_RC_CHECK(rc, sleep_secs,
                     "HA: Failed to update global state for current instance, "
@@ -1540,8 +1592,11 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
 
       SDB_LOG_DEBUG("HA: Change database to: %s", use_db_cmd);
       rc = mysql_query(ha_mysql, use_db_cmd, strlen(use_db_cmd));
-      // change database failed
-      rc = (ER_BAD_DB_ERROR == mysql_errno(ha_mysql)) ? 0 : rc;
+
+      if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
+        // change database failed
+        rc = (ER_BAD_DB_ERROR == mysql_errno(ha_mysql)) ? 0 : rc;
+      }
 
       // if abort_loop become true, don't report errors, or mysql automated
       // testing will report errors if found '[ERROR]' in error log
@@ -1562,7 +1617,8 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         HA_RC_CHECK(rc, sleep_secs, "HA: Convert charset error: %d", rc);
         query = dst_sql.c_ptr_safe();
       }
-      SDB_LOG_DEBUG("HA: Replay thread replay SQL: %s", query);
+      SDB_LOG_DEBUG("HA: Replay thread replay SQL: %s with SQL ID: %d", query,
+                    sql_id);
       rc = mysql_query(ha_mysql, query, strlen(query));
       mysql_free_result(mysql_store_result(ha_mysql));
       if (rc && is_ignore_error(ha_mysql)) {
@@ -1586,19 +1642,29 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
 
       // update instance state and global state
       for (int try_count = MAX_TRY_COUNT; try_count; try_count--) {
-        cond =
-            BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
-                             << HA_FIELD_TYPE << op_type << HA_FIELD_INSTANCE_ID
-                             << ha_thread->instance_id);
-        obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
+        simple_builder.reset();
+        simple_builder.append(HA_FIELD_DB, db_name);
+        simple_builder.append(HA_FIELD_TABLE, table_name);
+        simple_builder.append(HA_FIELD_TYPE, op_type);
+        simple_builder.append(HA_FIELD_INSTANCE_ID, ha_thread->instance_id);
+        cond = simple_builder.done();
+
+        builder.reset();
+        {
+          bson::BSONObjBuilder sub_builder(builder.subobjStart("$set"));
+          sub_builder.append(HA_FIELD_SQL_ID, sql_id);
+          sub_builder.doneFast();
+        }
+        obj = builder.done();
         rc = istate_cl.upsert(obj, cond);
         if (rc) {
           sleep(1);
           continue;
         }
 
-        obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
-        cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread->instance_id);
+        simple_builder.reset();
+        simple_builder.append(HA_FIELD_INSTANCE_ID, ha_thread->instance_id);
+        cond = simple_builder.done();
         rc = gstate_cl.upsert(obj, cond);
         if (rc) {
           sleep(1);
@@ -1630,6 +1696,15 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                       ha_error_string(sdb_conn, rc, err_buf));
     }
   sleep_secs:
+    if (!sdb_conn.is_valid()) {
+      // TODO: if failed to connect, write error information into state table
+      rc = sdb_conn.connect();
+      if (rc) {
+        sql_print_error(
+            "HA: Unable to connect to sequoiadb, sequoiadb error: %s",
+            ha_error_string(sdb_conn, rc, err_buf));
+      }
+    }
     if (curr_executed < REPLAY_LIMIT) {
       sdb_set_timespec(abstime, SLEEP_SECONDS);
       rc = mysql_cond_timedwait(&ha_thread->replay_stopped_cond,
@@ -1701,7 +1776,7 @@ int load_inst_state_into_cache(ha_recover_replay_thread *ha_thread,
                                  MYF(MY_WME | MY_ZEROFILL), &record,
                                  sizeof(ha_cached_record), &key, key_len + 1,
                                  NullS)) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       sql_print_information(
           "HA: Out of memory while initializing local instance cache");
       goto error;
@@ -1712,7 +1787,7 @@ int load_inst_state_into_cache(ha_recover_replay_thread *ha_thread,
     record->key = key;
     record->sql_id = sql_id;
     if (my_hash_insert(&cache, (uchar *)record)) {
-      rc = HA_ERR_OUT_OF_MEM;
+      rc = SDB_HA_OOM;
       sql_print_information(
           "HA: Out of memory while loading instance state to cache");
       goto error;
@@ -1783,8 +1858,8 @@ void *ha_recover_and_replay(void *arg) {
     HA_RC_CHECK(rc, error,
                 "HA: Unable to connect to sequoiadb, sequoiadb error: %s",
                 ha_error_string(sdb_conn, rc, err_buf));
-    // use default default isolation level: SDB_TRANS_ISO_RR
-    rc = sdb_conn.begin_transaction();
+    // set isolation level: SDB_TRANS_ISO_RC
+    rc = sdb_conn.begin_transaction(ISO_READ_COMMITTED);
     HA_RC_CHECK(rc, error,
                 "HA: Failed to start sequoiadb transaction in 'HA' thread, "
                 "sequoiadb error: %s",

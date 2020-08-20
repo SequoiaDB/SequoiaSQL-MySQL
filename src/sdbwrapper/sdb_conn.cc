@@ -588,6 +588,15 @@ int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
       boost::bind(conn_get_last_result_obj, &m_connection, &result, get_owned));
 }
 
+int conn_get_session_attr(sdbclient::sdb *connection,
+                          bson::BSONObj *option) {
+  return connection->getSessionAttr(*option);
+}
+
+int Sdb_conn::get_session_attr(bson::BSONObj &option) {
+  return retry(boost::bind(conn_get_session_attr, &m_connection, &option));
+}
+
 int conn_set_session_attr(sdbclient::sdb *connection,
                           const bson::BSONObj *option) {
   return connection->setSessionAttr(*option);

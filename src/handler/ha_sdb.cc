@@ -3961,10 +3961,12 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
     */
     if (sdb_is_transaction_stmt(thd, !thd_sdb->get_auto_commit()) ||
         !sdb_use_transaction) {
-      rc = add_share_to_open_table_shares(thd);
-      if (0 != rc) {
-        thd_sdb->lock_count--;
-        goto error;
+      if (!sdb_execute_only_in_mysql(ha_thd())) {
+        rc = add_share_to_open_table_shares(thd);
+        if (0 != rc) {
+          thd_sdb->lock_count--;
+          goto error;
+        }
       }
     }
   } else {
@@ -4021,9 +4023,11 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
   }
 
   if (sdb_is_transaction_stmt(thd, !thd_sdb->get_auto_commit())) {
-    rc = add_share_to_open_table_shares(thd);
-    if (0 != rc) {
-      goto error;
+    if (!sdb_execute_only_in_mysql(ha_thd())) {
+      rc = add_share_to_open_table_shares(thd);
+      if (0 != rc) {
+        goto error;
+      }
     }
   }
   thd_sdb->start_stmt_count++;

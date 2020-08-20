@@ -1,3 +1,18 @@
+/* Copyright (c) 2018, SequoiaDB and/or its affiliates. All rights reserved.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <openssl/md5.h>
@@ -90,7 +105,7 @@ int ha_random_string(string &out, uint len) {
   uint half_len = (len + 1) / 2;
   int evp_rc = 0;
   if (half_len > HA_MAX_RANDOM_STR_LEN) {
-    return HA_ERR_RAND_STR_TOO_LONG;
+    return SDB_HA_RAND_STR_TOO_LONG;
   }
 
   uchar buf[HA_MAX_RANDOM_STR_LEN] = {0};
@@ -102,7 +117,7 @@ int ha_random_string(string &out, uint len) {
   boost::algorithm::hex(buf, buf + half_len, std::back_inserter(out));
   assert(out.length() >= len);
   out = out.substr(0, len);
-  return HA_ERR_OK;
+  return SDB_HA_OK;
 }
 
 // calculate digest for a string
@@ -127,7 +142,7 @@ int ha_evp_digest(const string &str, uchar digest[], HA_EVP_MD_TYPE type) {
   if (!evp_rc) {
     return ERR_get_error();
   }
-  return HA_ERR_OK;
+  return SDB_HA_OK;
 }
 
 int ha_aes_128_cbc_encrypt(const string &str, uchar *cipher, const uchar *key,
@@ -146,7 +161,7 @@ int ha_aes_128_cbc_encrypt(const string &str, uchar *cipher, const uchar *key,
   EVP_CipherFinal(evp_ctx, cipher + outlen, &outlen);
   EVP_CIPHER_CTX_free(evp_ctx);
 
-  return HA_ERR_OK;
+  return SDB_HA_OK;
 }
 
 // create 'AuthString' field value for 'HAUser'
@@ -168,7 +183,7 @@ int ha_create_mysql_auth_string(const string &passwd, string &out) {
     return evp_rc;
   }
   boost::algorithm::hex(sha2, sha2 + HA_SHA1_BYTE_LEN, std::back_inserter(out));
-  return HA_ERR_OK;
+  return SDB_HA_OK;
 }
 
 // extract cipher string for password, refer to 'sdbpasswd' source code
@@ -224,7 +239,7 @@ int ha_generate_des_key(uchar key[], const std::string &str) {
     return rc;
   }
   memcpy(key, sha256, HA_DES_KEY_BYTE_LEN);
-  return HA_ERR_OK;
+  return SDB_HA_OK;
 }
 
 // extract encrypted password and decrypt it
@@ -258,9 +273,9 @@ int ha_decrypt_password(const string &mix_hex_cipher, const string &token,
     password = password.substr(0, len + 1);
   } catch (std::exception &e) {
     cout << "Error: decrypt password error: " << e.what() << endl;
-    return HA_ERR_EXCEPTION;
+    return SDB_HA_EXCEPTION;
   }
-  return HA_ERR_OK;
+  return SDB_HA_OK;
 }
 
 // parse user's password from 'cipher file'
@@ -296,13 +311,13 @@ int ha_parse_password(const string &user, const string &token,
         break;
       }
     }
-    HA_TOOL_RC_CHECK(!found, HA_ERR_INVALID_USER,
+    HA_TOOL_RC_CHECK(!found, SDB_HA_INVALID_USER,
                      "Error: can't find user '%s' in '%s'", user.c_str(),
                      file_name.c_str());
   } else {
     cerr << "Error: open file " << file_name << " error " << strerror(errno)
          << endl;
-    return HA_ERR_SYS;
+    return SDB_HA_SYS_ERR;
   }
   return rc;
 }
@@ -326,7 +341,7 @@ void ha_init_default_args(st_args &cmd_args) {
 // translate ssl error code to human-readable string
 const std::string ha_error_string(int error_code) {
   std::string err_str;
-  if (HA_ERR_RAND_STR_TOO_LONG == error_code) {
+  if (SDB_HA_RAND_STR_TOO_LONG == error_code) {
     err_str = "request random string is too long";
   } else {
     err_str = ERR_error_string(error_code, NULL);
@@ -357,7 +372,7 @@ int ha_parse_host(const std::string &host, std::string &hostname, uint &port) {
   int rc = 0;
 
   size_t split_pos = host.find(":");
-  HA_TOOL_RC_CHECK(string::npos == split_pos, HA_ERR_INVALID_PARAMETER,
+  HA_TOOL_RC_CHECK(string::npos == split_pos, SDB_HA_INVALID_PARAMETER,
                    "Error: invalid value '%s' for 'host'", host.c_str());
 
   hostname = host.substr(0, split_pos);
@@ -366,7 +381,7 @@ int ha_parse_host(const std::string &host, std::string &hostname, uint &port) {
     port = std::stoi(port_str);
   } catch (std::exception &e) {
     cerr << "Error: invalid value for 'host', std::stoi failed" << endl;
-    rc = HA_ERR_INVALID_PARAMETER;
+    rc = SDB_HA_INVALID_PARAMETER;
   }
   return rc;
 }
@@ -378,7 +393,7 @@ int ha_init_sequoiadb_connection(sdbclient::sdb &conn, ha_tool_args &cmd_args) {
   cmd_args.inst_group_name = HA_INST_GROUP_PREFIX + cmd_args.inst_group_name;
   if (cmd_args.is_password_set) {
     // if 'password' parameter is set, parameter 'user' must be set as well
-    HA_TOOL_RC_CHECK(!cmd_args.is_user_set, HA_ERR_INVALID_PARAMETER,
+    HA_TOOL_RC_CHECK(!cmd_args.is_user_set, SDB_HA_INVALID_PARAMETER,
                      "Error: lack of argument 'user'");
 
     // if user does not enter 'password' in visible way,

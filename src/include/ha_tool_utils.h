@@ -33,6 +33,31 @@
 
 typedef unsigned char uchar;
 
+#define HA_TOOL_HELP_DOC_INIT_INST_GROUP "Init instance group information.\v"
+#define HA_TOOL_HELP_DOC_CLEAR_INST_GROUP \
+  "Clear instance group information from sequoiadb.\v"
+#define HA_TOOL_HELP_DOC_CLEAR_INST \
+  "Clear instance information from sequoiadb.\v"
+#define HA_TOOL_HELP_DOC_INST_GROUP_NAME "inst_group_name"
+
+#define HA_TOOL_HELP_HOST \
+  "Sequoiadb coord address(hostname:port), default: localhost:11810"
+#define HA_TOOL_HELP_USER "User for logging sequoiadb, default: \"\""
+#define HA_TOOL_HELP_PASSWD \
+  "Password used to connect to sequoiadb, default: \"\""
+#define HA_TOOL_HELP_KEY "Key used to encrypt random password, default: \"\""
+#define HA_TOOL_HELP_TOKEN \
+  "Token used to decrypt password in cipherfile, default: \"\""
+#define HA_TOOL_HELP_FILE "Cipherfile path, default: ~/sequoiadb/passwd"
+#define HA_TOOL_HELP_FORCE "Force to delete instance group info without confirm"
+#define HA_TOOL_HELP_INST_ID                                      \
+  "Instance unique ID, if this argument is set, delete instance " \
+  "configuration information by instance id"
+#define HA_TOOL_HELP_INST_HOST                                            \
+  "Instance address, used to delete instance configuration information, " \
+  "works when 'inst_id' is not set"
+#define HA_TOOL_HELP_VERBOSE "Print more information"
+
 // struct corresponding to 'HAInstGroupConfig' table
 typedef struct st_inst_group_config {
   // corresponding 'authentication_string' field for mysql.user table
