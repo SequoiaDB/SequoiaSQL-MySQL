@@ -125,27 +125,6 @@ void get_int_range(Field_num *field, longlong &low_bound, ulonglong &up_bound) {
   }
 }
 
-// VARCHAR, CHAR, TEXT, TINYTEXT...
-bool is_string_type(Field *field) {
-  enum_field_types type = field->real_type();
-  bool is_string = false;
-  switch (type) {
-    case MYSQL_TYPE_STRING:
-    case MYSQL_TYPE_VARCHAR:
-    case MYSQL_TYPE_VAR_STRING:
-    case MYSQL_TYPE_TINY_BLOB:
-    case MYSQL_TYPE_BLOB:
-    case MYSQL_TYPE_MEDIUM_BLOB:
-    case MYSQL_TYPE_LONG_BLOB: {
-      is_string = !field->binary();
-      break;
-    }
-    default:
-      break;
-  }
-  return is_string;
-}
-
 /*
   Interface to build the cast rule.
   @return false if success.
@@ -1104,7 +1083,7 @@ bool get_check_bound_cond(Field *old_field, Field *new_field,
   int_done:
 
     // Check string length for CHAR(N), VARCHAR(N), TEXT...
-    if (!is_string_type(old_field) || !is_string_type(new_field)) {
+    if (!sdb_is_string_type(old_field) || !sdb_is_string_type(new_field)) {
       goto done;
     }
 

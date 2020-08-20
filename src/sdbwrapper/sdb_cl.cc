@@ -536,3 +536,12 @@ int cl_get_detail(sdbclient::sdbCollection *cl, sdbclient::sdbCursor *cursor) {
 int Sdb_cl::get_detail(sdbclient::sdbCursor &cursor) {
   return retry(boost::bind(cl_get_detail, &m_cl, &cursor));
 }
+
+int cl_get_index_stat(sdbclient::sdbCollection *cl, const char *index_name,
+                      bson::BSONObj *obj) {
+  return cl->getIndexStat(index_name, *obj);
+}
+
+int Sdb_cl::get_index_stat(const char *index_name, bson::BSONObj &obj) {
+  return retry(boost::bind(cl_get_index_stat, &m_cl, index_name, &obj));
+}

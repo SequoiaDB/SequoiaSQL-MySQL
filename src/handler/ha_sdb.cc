@@ -22,7 +22,6 @@
 #include "sdb_cl.h"
 #include "sdb_conn.h"
 #include "ha_sdb_errcode.h"
-#include "ha_sdb_idx.h"
 #include "ha_sdb_log.h"
 #include "ha_sdb_thd.h"
 #include "ha_sdb_util.h"
@@ -123,6 +122,9 @@ void free_sdb_share(Sdb_share *share) {
   DBUG_ENTER("free_sdb_share");
   if (share) {
     DBUG_PRINT("info", ("table name: %s", share->table_name));
+    for (uint i = 0; i < share->idx_count; ++i) {
+      share->idx_stat_arr[i].reset();
+    }
     thr_lock_delete(&share->lock);
     my_free(share);
   }
@@ -134,11 +136,12 @@ static void get_sdb_share(const char *table_name, TABLE *table,
   DBUG_ENTER("get_sdb_share");
   Sdb_share *share = NULL;
   char *tmp_name = NULL;
-  uint length;
+  uint length = (uint)strlen(table_name);
+  Sdb_idx_stat_ptr *idx_stat_arr = NULL;
+  uint idx_count = table->s->keys;
   boost::shared_ptr<Sdb_share> *tmp_ptr;
 
   mysql_mutex_lock(&sdb_mutex);
-  length = (uint)strlen(table_name);
 
   /*
    If share is not present in the hash, create a new share and
@@ -148,6 +151,7 @@ static void get_sdb_share(const char *table_name, TABLE *table,
   if (!ptr) {
     if (!sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
                           &share, sizeof(*share), &tmp_name, length + 1,
+                          &idx_stat_arr, sizeof(*idx_stat_arr) * idx_count,
                           NullS)) {
       goto error;
     }
@@ -164,6 +168,11 @@ static void get_sdb_share(const char *table_name, TABLE *table,
     strncpy(share->table_name, table_name, length);
     share->stat.init();
     thr_lock_init(&share->lock);
+    share->idx_stat_arr = idx_stat_arr;
+    share->idx_count = idx_count;
+    for (uint i = 0; i < idx_count; ++i) {
+      idx_stat_arr[i].reset();
+    }
 
     // put Sdb_share smart ptr into sdb_open_tables
     // use my_free to free tmp_ptr after delete from sdb_open_tables
@@ -860,6 +869,55 @@ void sdb_add_tmp_join_tab(THD *thd) {
   join->best_ref[join->primary_tables] = t;
 }
 #endif
+
+bool sdb_print_admin_msg(THD *thd, uint len, const char *msg_type,
+                         const char *db_name, const char *table_name,
+                         const char *op_name, const char *fmt, ...) {
+  va_list args;
+  Protocol *protocol = thd->get_protocol();
+  uint length;
+  size_t msg_length;
+  char name[NAME_LEN * 2 + 2] = {0};
+  char *msgbuf = NULL;
+  bool rs = true;
+
+  if (!(msgbuf = (char *)thd_alloc(thd, len))) {
+    goto done;
+  }
+
+  va_start(args, fmt);
+  msg_length = my_vsnprintf(msgbuf, len, fmt, args);
+  va_end(args);
+
+  if (msg_length >= (len - 1)) {
+    goto error;
+  }
+  msgbuf[len - 1] = 0;  // healthy paranoia
+
+  if (!thd->get_protocol()->connection_alive()) {
+    sql_print_error("%s", msgbuf);
+    goto error;
+  }
+
+  length = (uint)(strxmov(name, db_name, ".", table_name, NullS) - name);
+  DBUG_PRINT("info", ("print_admin_msg:  %s, %s, %s, %s", name, op_name,
+                      msg_type, msgbuf));
+  protocol->start_row();
+  protocol->store(name, length, system_charset_info);
+  protocol->store(op_name, system_charset_info);
+  protocol->store(msg_type, system_charset_info);
+  protocol->store(msgbuf, msg_length, system_charset_info);
+  if (protocol->end_row()) {
+    sql_print_error("Failed print admin msg, writing to stderr instead: %s\n",
+                    msgbuf);
+    goto error;
+  }
+  rs = false;
+done:
+  return rs;
+error:
+  goto done;
+}
 
 const char *sharding_related_fields[] = {
     SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
@@ -4156,11 +4214,12 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
   stats.index_file_length = (ulonglong)stat.total_index_pages * stat.page_size;
   stats.delete_length = (ulonglong)stat.total_data_free_space;
   stats.records = (ha_rows)stat.total_records;
-  stats.mean_rec_length =
-      (0 == stats.records)
-          ? 0
-          : (ulong)((stats.data_file_length - stats.delete_length) /
-                    stats.records);
+  if (stats.records != 0) {
+    stats.mean_rec_length =
+        (ulong)((stats.data_file_length - stats.delete_length) / stats.records);
+  } else {
+    stats.mean_rec_length = 0;
+  }
 
   DBUG_PRINT("exit", ("stats.block_size: %u  "
                       "stats.records: %d, stat.total_index_pages: %d",
@@ -4652,13 +4711,251 @@ error:
 }
 
 int ha_sdb::analyze(THD *thd, HA_CHECK_OPT *check_opt) {
-  return update_stats(thd, true);
+  int rc = HA_ADMIN_OK;
+  Sdb_conn *conn = NULL;
+
+  if (sdb_execute_only_in_mysql(thd)) {
+    goto done;
+  }
+
+  /*
+    No need to call update_stats(). Because DDL always closes all handlers,
+    and the table share will be refreshed by reopen.
+  */
+
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+
+  try {
+    char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+    snprintf(full_name, sizeof(full_name), "%s.%s", db_name, table_name);
+
+    bson::BSONObjBuilder builder(256);
+    builder.append(SDB_FIELD_COLLECTION, full_name);
+    builder.append(SDB_FIELD_MODE, sdb_stats_mode);
+    if (sdb_stats_sample_num) {
+      builder.append(SDB_FIELD_SAMPLE_NUM, sdb_stats_sample_num);
+    }
+    if (fabs(sdb_stats_sample_percent) > SDB_EPSILON) {
+      builder.append(SDB_FIELD_SAMPLE_PERCENT, sdb_stats_sample_percent);
+    }
+
+    rc = conn->analyze(builder.obj());
+    if (0 != rc) {
+      int sdb_rc = 0;
+      bson::BSONObj error_obj;
+      const char *error_msg = NULL;
+
+      sdb_rc = conn->get_last_result_obj(error_obj, false);
+      if (sdb_rc != SDB_OK) {
+        push_warning(thd, Sql_condition::SL_WARNING, sdb_rc,
+                     SDB_GET_LAST_ERROR_FAILED);
+      }
+
+      // get error info from error_msg
+      error_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
+      if (0 == strlen(error_msg)) {
+        error_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+      }
+
+      sdb_print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                          table->alias, "analyze", "%s", error_msg);
+      rc = HA_ADMIN_FAILED;
+      goto error;
+    }
+  } catch (std::exception &e) {
+    sdb_print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                        table->alias, "analyze", "Exception occurs: %s",
+                        e.what());
+    rc = HA_ADMIN_FAILED;
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
 }
 
-ha_rows ha_sdb::records_in_range(uint inx, key_range *min_key,
+bool ha_sdb::is_idx_stat_valid(Sdb_idx_stat_ptr &ptr) {
+  /*
+    Invalid in following cases:
+    1. statistics doesn't exist;
+    2. sequoiadb_stats_cache was changed.(ON => OFF or OFF => ON)
+  */
+  // TODO: check if expired.
+  return (ptr.get() && ptr->version == sdb_stats_cache_version);
+}
+
+int ha_sdb::ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr) {
+  DBUG_ENTER("ha_sdb::ensure_index_stat");
+  int rc = 0;
+  Sdb_index_stat *new_stat = NULL;
+  uint key_part_count = key_info->user_defined_key_parts;
+
+  if (!is_idx_stat_valid(ptr)) {
+    Sdb_mutex_guard guard(share->mutex);
+
+    if (is_idx_stat_valid(ptr)) {
+      goto done;
+    }
+
+    /*
+      Refresh index statistics in table share.
+    */
+    new_stat = new (std::nothrow) Sdb_index_stat();
+    if (NULL == new_stat) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+    rc = new_stat->init(key_info, sdb_stats_cache_version);
+    if (rc != 0) {
+      goto error;
+    }
+    if (sdb_stats_cache) {
+      rc = fetch_index_stat(*new_stat);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+    ptr.reset(new_stat);
+
+    /*
+      Refresh the table key info, which can be showed by
+      INFORMATION_SCHEMA.STATISTICS, and may be used by some access plans.
+    */
+    if (!key_info->supports_records_per_key()) {
+      goto done;
+    }
+
+    if ((~(ha_rows)0) == ptr->sample_records || 0 == ptr->sample_records) {
+      for (uint field_nr = 0; field_nr < key_part_count; ++field_nr) {
+        key_info->set_records_per_key(field_nr, REC_PER_KEY_UNKNOWN);
+      }
+    } else {
+      for (uint field_nr = 0; field_nr < key_part_count; ++field_nr) {
+        double n =
+            ((double)ptr->sample_records) / ptr->distinct_val_num[field_nr];
+        key_info->set_records_per_key(field_nr, n);
+      }
+    }
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  if (new_stat) {
+    delete new_stat;
+  }
+  goto done;
+}
+
+int ha_sdb::fetch_index_stat(Sdb_index_stat &s) {
+  DBUG_ENTER("ha_sdb::fetch_index_stat");
+  static bool support_get_index_stat = true;
+
+  int rc = 0;
+  THD *thd = ha_thd();
+  Sdb_conn *conn = NULL;
+  Sdb_cl cl;
+  bson::BSONObj obj;
+
+  if (!support_get_index_stat) {
+    s.sample_records = 0;
+    goto done;
+  }
+
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  rc = conn->get_cl(db_name, table_name, cl);
+  if (rc != 0) {
+    goto error;
+  }
+  rc = cl.get_index_stat(sdb_key_name(s.key_info), obj);
+  if (SDB_INVALIDARG == get_sdb_code(rc)) {
+    support_get_index_stat = false;
+    s.sample_records = 0;
+    rc = 0;
+    goto done;
+  }
+  if (SDB_IXM_STAT_NOTEXIST == get_sdb_code(rc)) {
+    s.sample_records = 0;
+    rc = 0;
+    goto done;
+  }
+  if (rc != 0) {
+    goto error;
+  }
+  try {
+    s.null_frac = 0;
+    bson::BSONElement min_ele;
+    bson::BSONElement max_ele;
+    bson::BSONObjIterator it(obj);
+    while (it.more()) {
+      bson::BSONElement ele = it.next();
+      if (0 == strcmp(ele.fieldName(), SDB_FIELD_MIN_VALUE)) {
+        min_ele = ele;
+      } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_MAX_VALUE)) {
+        max_ele = ele;
+      } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_NULL_FRAC)) {
+        s.null_frac += ele.numberLong();
+      } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_UNDEF_FRAC)) {
+        s.null_frac += ele.numberLong();
+      } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_SAMPLE_RECORDS)) {
+        s.sample_records = ele.numberLong();
+      } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_DISTINCT_VAL_NUM)) {
+        bson::BSONObj arr = ele.Obj();
+        bson::BSONObjIterator sub_it(arr);
+        int i = 0;
+        while (sub_it.more()) {
+          s.distinct_val_num[i++] = sub_it.next().numberInt();
+        }
+      }
+    }
+    rc = sdb_get_min_max_from_bson(s.key_info, min_ele, max_ele,
+                                   s.min_value_arr, s.max_value_arr);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to parse index statistics, exception: %s",
+                        e.what());
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+ha_rows ha_sdb::records_in_range(uint keynr, key_range *min_key,
                                  key_range *max_key) {
-  // TODO*********
-  return 1;
+  DBUG_ENTER("ha_sdb::records_in_range");
+  DBUG_ASSERT(keynr < MAX_KEY);
+
+  int rc = 0;
+  ha_rows records = ~(ha_rows)0;
+  KEY *key_info = table->key_info + keynr;
+  Sdb_idx_stat_ptr &stat_ptr = share->idx_stat_arr[keynr];
+
+  // Here ignore it's errors, because it's not necessary.
+  ensure_index_stat(key_info, stat_ptr);
+
+  rc = ensure_stats(ha_thd());
+  if (rc) {
+    goto error;
+  }
+
+  records = sdb_estimate_match_count(stat_ptr, stats.records, min_key, max_key);
+
+done:
+  DBUG_RETURN(records);
+error:
+  goto done;
 }
 
 int ha_sdb::delete_table(const char *from) {

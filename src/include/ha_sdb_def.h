@@ -50,6 +50,12 @@
 #define SDB_TRANS_ISO_RS 2
 #define SDB_TRANS_ISO_RR 3
 
+#define SDB_EPSILON (1e-6)
+// SequoiaDB timestamp range: '1902-01-01 00:00:00'~'2037-12-31 23:59:59'
+#define SDB_TIMESTAMP_MAX_YEAR (2037)
+#define SDB_TIMESTAMP_MIN_YEAR (1902)
+#define SDB_VALUE_NAN (0x7ff8000000000000)
+
 #define SDB_FIELD_NAME_AUTOINCREMENT "AutoIncrement"
 #define SDB_FIELD_NAME_FIELD "Field"
 #define SDB_FIELD_NAME "Name"
@@ -133,6 +139,16 @@
 #define SDB_FIELD_TOTAL_INDEX_PAGES "TotalIndexPages"
 #define SDB_FIELD_TOTAL_DATA_FREE_SPACE "TotalDataFreeSpace"
 #define SDB_FIELD_TOTAL_RECORDS "TotalRecords"
+
+#define SDB_FIELD_COLLECTION_SPACE "CollectionSpace"
+#define SDB_FIELD_COLLECTION "Collection"
+#define SDB_FIELD_MODE "Mode"
+#define SDB_FIELD_SAMPLE_NUM "SampleNum"
+#define SDB_FIELD_SAMPLE_PERCENT "SamplePercent"
+#define SDB_FIELD_DISTINCT_VAL_NUM "DistinctValNum"
+#define SDB_FIELD_NULL_FRAC "NullFrac"
+#define SDB_FIELD_UNDEF_FRAC "UndefFrac"
+#define SDB_FIELD_SAMPLE_RECORDS "SampleRecords"
 
 #define SDB_PART_SEP "#P#"
 #define SDB_SUB_PART_SEP "#SP#"

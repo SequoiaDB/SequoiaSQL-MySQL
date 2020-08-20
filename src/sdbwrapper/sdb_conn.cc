@@ -662,3 +662,11 @@ int conn_interrupt(sdbclient::sdb *connection) {
 int Sdb_conn::interrupt_operation() {
   return retry(boost::bind(conn_interrupt, &m_connection));
 }
+
+int conn_analyze(sdbclient::sdb *connection, const bson::BSONObj *options) {
+  return connection->analyze(*options);
+}
+
+int Sdb_conn::analyze(const bson::BSONObj &options) {
+  return retry(boost::bind(conn_analyze, &m_connection, &options));
+}

@@ -27,6 +27,7 @@
 #include "ha_sdb_conf.h"
 #include "ha_sdb_condition.h"
 #include "ha_sdb_thd.h"
+#include "ha_sdb_idx.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
@@ -63,6 +64,8 @@ struct Sdb_share {
   uint table_name_length;
   THR_LOCK lock;
   Sdb_statistics stat;
+  Sdb_idx_stat_ptr *idx_stat_arr;
+  uint idx_count;
   Sdb_mutex mutex;
 
   ~Sdb_share() {
@@ -541,6 +544,12 @@ class ha_sdb : public handler {
                             enum enum_compress_type old_sql_compress,
                             enum enum_compress_type new_sql_compress,
                             Sdb_cl &cl);
+
+  bool is_idx_stat_valid(Sdb_idx_stat_ptr &ptr);
+
+  int fetch_index_stat(Sdb_index_stat &s);
+
+  int ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr);
 
  protected:
   THR_LOCK_DATA lock_data;

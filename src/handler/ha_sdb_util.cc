@@ -964,3 +964,24 @@ my_bool sdb_is_field_sortable(const Field *field) {
       return false;
   }
 }
+
+// VARCHAR, CHAR, TEXT, TINYTEXT...
+bool sdb_is_string_type(Field *field) {
+  enum_field_types type = field->real_type();
+  bool is_string = false;
+  switch (type) {
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_TINY_BLOB:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_MEDIUM_BLOB:
+    case MYSQL_TYPE_LONG_BLOB: {
+      is_string = !field->binary();
+      break;
+    }
+    default:
+      break;
+  }
+  return is_string;
+}

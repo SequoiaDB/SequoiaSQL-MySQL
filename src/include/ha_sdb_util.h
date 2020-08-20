@@ -97,6 +97,8 @@ int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
 
 my_bool sdb_is_field_sortable(const Field *field);
 
+bool sdb_is_string_type(Field *field);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

@@ -92,6 +92,8 @@ class Sdb_conn {
     return m_connection.getLastErrorObj(errObj);
   }
 
+  int analyze(const bson::BSONObj &options);
+
   inline void set_last_tx_isolation(ulong tx_isolation) {
     last_tx_isolation = tx_isolation;
   }

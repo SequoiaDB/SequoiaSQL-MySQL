@@ -18,7 +18,36 @@
 
 #include <sql_class.h>
 #include <client.hpp>
+#include <boost/shared_ptr.hpp>
 #include "sdb_cl.h"
+
+struct Sdb_index_stat {
+  KEY *key_info;
+  uint *distinct_val_num;
+  double *min_value_arr;
+  double *max_value_arr;
+  uint null_frac;
+  ha_rows sample_records;
+  uint version;
+
+  int init(KEY *arg_key, uint arg_version);
+
+  void fini();
+
+  Sdb_index_stat() {
+    key_info = NULL;
+    distinct_val_num = NULL;
+    min_value_arr = NULL;
+    max_value_arr = NULL;
+    null_frac = 0;
+    sample_records = ~(ha_rows)0;
+    version = 0;
+  }
+
+  ~Sdb_index_stat() { fini(); }
+};
+
+typedef boost::shared_ptr<Sdb_index_stat> Sdb_idx_stat_ptr;
 
 int sdb_create_index(const KEY *key_info, Sdb_cl &cl,
                      bool shard_by_part_id = false);
@@ -35,5 +64,17 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
 int sdb_get_key_direction(ha_rkey_function find_flag);
 
 my_bool sdb_is_same_index(const KEY *a, const KEY *b);
+
+void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
+                                double *max_value_arr);
+
+int sdb_get_min_max_from_bson(KEY *key_info, bson::BSONElement &min_elem,
+                              bson::BSONElement &max_elem,
+                              double *min_value_arr, double *max_value_arr);
+
+ha_rows sdb_estimate_match_count(Sdb_idx_stat_ptr stat_ptr,
+                                 ha_rows total_records,
+                                 const key_range *start_key,
+                                 const key_range *end_key);
 
 #endif

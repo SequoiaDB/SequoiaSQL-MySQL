@@ -20,6 +20,11 @@
 #include "ha_sdb_conf.h"
 #include "ha_sdb_lock.h"
 
+// Complete the struct declaration
+struct st_mysql_sys_var {
+  MYSQL_PLUGIN_VAR_HEADER;
+};
+
 static const char *SDB_ADDR_DFT = "localhost:11810";
 static const char *SDB_USER_DFT = "";
 static const char *SDB_PASSWORD_DFT = "";
@@ -37,6 +42,10 @@ static const int SDB_DEFAULT_REPLICA_SIZE = 1;
 static const uint SDB_DEFAULT_SELECTOR_PUSHDOWN_THRESHOLD = 30;
 static const longlong SDB_DEFAULT_ALTER_TABLE_OVERHEAD_THRESHOLD = 10000000;
 static const my_bool SDB_DEFAULT_USE_TRANSACTION = TRUE;
+static const my_bool SDB_DEFAULT_STATS_CACHE = TRUE;
+static const int SDB_DEFAULT_STATS_MODE = 1;
+static const int SDB_DEFAULT_STATS_SAMPLE_NUM = 200;
+static const double SDB_DEFAULT_STATS_SAMPLE_PERCENT = 0.0;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
@@ -54,6 +63,11 @@ my_bool sdb_use_autocommit = SDB_DEFAULT_USE_AUTOCOMMIT;
 my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
 ulong sdb_error_level = SDB_ERROR;
 my_bool sdb_use_transaction = SDB_DEFAULT_USE_TRANSACTION;
+my_bool sdb_stats_cache = SDB_DEFAULT_STATS_CACHE;
+uint sdb_stats_cache_version = 1;
+int sdb_stats_mode = SDB_DEFAULT_STATS_MODE;
+int sdb_stats_sample_num = SDB_DEFAULT_STATS_SAMPLE_NUM;
+double sdb_stats_sample_percent = SDB_DEFAULT_STATS_SAMPLE_PERCENT;
 
 static const char *sdb_optimizer_options_names[] = {
     "direct_count", "direct_delete", "direct_update", "direct_sort", NullS};
@@ -70,6 +84,9 @@ static const char *sdb_error_level_names[] = {"error", "warning", NullS};
 
 TYPELIB sdb_error_level_typelib = {array_elements(sdb_error_level_names) - 1,
                                    "", sdb_error_level_names, NULL};
+
+static const int SDB_SAMPLE_NUM_MIN = 100;
+static const int SDB_SAMPLE_NUM_MAX = 10000;
 
 static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
                                   void *save, struct st_mysql_value *value) {
@@ -92,6 +109,47 @@ static void sdb_password_update(THD *thd, struct st_mysql_sys_var *var,
   const char *new_password = *static_cast<const char *const *>(save);
   sdb_password = const_cast<char *>(new_password);
   sdb_encrypt_password();
+}
+
+static void sdb_stats_cache_update(THD *thd, struct st_mysql_sys_var *var,
+                                   void *var_ptr, const void *save) {
+  sdb_stats_cache_version += 1;
+  sdb_stats_cache = *static_cast<const my_bool *>(save);
+}
+
+static int sdb_stats_sample_num_valildate(THD *thd,
+                                          struct st_mysql_sys_var *var,
+                                          void *save,
+                                          struct st_mysql_value *value) {
+  bool is_valid = false;
+  longlong num = 0;
+  char buf[16] = {0};
+  value->val_int(value, &num);
+  snprintf(buf, sizeof(buf), "%d", (int)num);
+
+  if (num < SDB_SAMPLE_NUM_MIN && num != 0) {
+    num = SDB_SAMPLE_NUM_MIN;
+  } else if (num > SDB_SAMPLE_NUM_MAX) {
+    num = SDB_SAMPLE_NUM_MAX;
+  } else {
+    is_valid = true;
+  }
+
+  if (is_valid) {
+    *static_cast<int *>(save) = num;
+  } else {
+    if (thd->variables.sql_mode & MODE_STRICT_ALL_TABLES) {
+      my_error(ER_WRONG_VALUE_FOR_VAR, MYF(0), var->name, buf);
+    } else {
+      push_warning_printf(thd, Sql_condition::SL_WARNING,
+                          ER_TRUNCATED_WRONG_VALUE,
+                          ER(ER_TRUNCATED_WRONG_VALUE), var->name, buf);
+      *static_cast<int *>(save) = num;
+      is_valid = true;
+    }
+  }
+
+  return is_valid ? 0 : 1;
 }
 
 // Please declare configuration in the format below:
@@ -233,6 +291,38 @@ static MYSQL_THDVAR_SET(
     /*SequoiaDB 优化选项开关，以决定是否优化计数、更新、删除、排序操作。*/,
     NULL, NULL, SDB_OPTIMIZER_OPTIONS_DEFAULT, &sdb_optimizer_options_typelib);
 
+static MYSQL_SYSVAR_BOOL(stats_cache, sdb_stats_cache, PLUGIN_VAR_OPCMDARG,
+                         "Load statistics information into cache from "
+                         "SequoiaDB. Default: ON)"
+                         /*是否加载统计信息到缓存。*/,
+                         NULL, sdb_stats_cache_update, SDB_DEFAULT_STATS_CACHE);
+
+static MYSQL_SYSVAR_INT(stats_mode, sdb_stats_mode, PLUGIN_VAR_OPCMDARG,
+                        "Mode of analysis. 1: sampling analysis; "
+                        "2. full data analysis; "
+                        "3. generate default statistics; "
+                        "4. load statistics into the cache; "
+                        "5. clear cached statistics; "
+                        "(Default: 1)"
+                        /*进行统计信息分析的模式。*/,
+                        NULL, NULL, SDB_DEFAULT_STATS_MODE, 1, 5, 0);
+
+static MYSQL_SYSVAR_INT(stats_sample_num, sdb_stats_sample_num,
+                        PLUGIN_VAR_OPCMDARG,
+                        "Number of sample records for index statistics. "
+                        "(Default: 200)"
+                        /*索引统计信息抽样的记录个数。*/,
+                        sdb_stats_sample_num_valildate, NULL,
+                        SDB_DEFAULT_STATS_SAMPLE_NUM, 0, SDB_SAMPLE_NUM_MAX, 0);
+
+static MYSQL_SYSVAR_DOUBLE(stats_sample_percent, sdb_stats_sample_percent,
+                           PLUGIN_VAR_OPCMDARG,
+                           "Percentage of sample records for index statistics."
+                           " (Default: 0.0)"
+                           /*索引统计信息抽样的记录比例。*/,
+                           NULL, NULL, SDB_DEFAULT_STATS_SAMPLE_PERCENT, 0.0,
+                           100.0, 0);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -256,6 +346,10 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(optimizer_options),
     MYSQL_SYSVAR(use_transaction),
     MYSQL_SYSVAR(rollback_on_timeout),
+    MYSQL_SYSVAR(stats_cache),
+    MYSQL_SYSVAR(stats_mode),
+    MYSQL_SYSVAR(stats_sample_num),
+    MYSQL_SYSVAR(stats_sample_percent),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
