@@ -8,6 +8,7 @@ insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q')
 update t1 set c='update' where a=10;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "c": { "$binary": "" } } }, condition: { "a": { "$et": 10 } }
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	sa
@@ -17,6 +18,7 @@ id	a	b	c
 update t1 set a=10001 where c='ss';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	sa
@@ -26,6 +28,7 @@ id	a	b	c
 update t1 set c='update' where c='sa';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	update
@@ -35,6 +38,7 @@ id	a	b	c
 update t1 set a=10000 where a=10001 and c='ss';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 10001 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	update
@@ -44,6 +48,7 @@ id	a	b	c
 update t1 set c='zhang' where a=10000 or c='ss';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	update
@@ -53,6 +58,7 @@ id	a	b	c
 update t1 set c='zhang' where not c='q';
 affected rows: 2
 info: Rows matched: 3  Changed: 2  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	zhang
@@ -65,12 +71,15 @@ insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 update t1 set a =100 where a =2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 100 } }, condition: { "$and": [ { "a": { "$et": 2 } }, { "a": { "$et": 2 } } ] }
 update t1 set a =1000 where b='sa';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 1000 } }, condition: { "b": { "$et": "sa" } }
 update t1 set a =1 where c='sz';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by a;
 a	b	c
 1	sz	sz
@@ -83,12 +92,15 @@ insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 update t1 set a =100 where a =2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 100 } }, condition: { "$and": [ { "a": { "$et": 2 } }, { "a": { "$et": 2 } } ] }
 update t1 set a =1000 where b='sa';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 1000 } }, condition: { "b": { "$et": "sa" } }
 update t1 set a =1 where c='sz';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by a;
 a	b	c
 1	sz	sz
@@ -101,12 +113,15 @@ insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 update t1 set a =100 where a =2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 100 } }, condition: { "$and": [ { "a": { "$et": 2 } }, { "a": { "$et": 2 } } ] }
 update t1 set a =1000 where b='sa';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 1000 } }, condition: { "b": { "$et": "sa" } }
 update t1 set a =1 where c='sz';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by a;
 a	b	c
 1	sz	sz
@@ -119,9 +134,11 @@ insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 update t1 set b='ss' where b='sq';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": "ss" } }, condition: { "b": { "$et": "sq" } }
 update t1 set b='update' where c='ss';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	b	c
 1	sa	sa
@@ -134,15 +151,19 @@ insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'
 update t1 set b='update' where id=1 order by id;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$et": 1 } }, { "id": { "$et": 1 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
 update t1 set b='update123' where id=2 order by a;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$et": 2 } }, { "id": { "$et": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
 update t1 set id=101 where a=100 order by id;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set id=102 where a=1000 order by a;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1000 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	10	update	sa
@@ -152,15 +173,19 @@ id	a	b	c
 update t1 set a=10000 order by id;
 affected rows: 4
 info: Rows matched: 4  Changed: 4  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set a=1000 where c='sa' order by id;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set a=10001 order by id limit 2;
 affected rows: 2
 info: Rows matched: 2  Changed: 2  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
 update t1 set a=10002 where a=10000 order by id limit 1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	10001	update	sa
@@ -170,9 +195,11 @@ id	a	b	c
 update t1 set a=10003 where a >10001 limit 1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 10001 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set a=10004 where c>'s' limit 1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	10004	update	sa
@@ -182,6 +209,7 @@ id	a	b	c
 update t1 set a=10005,b='zhang',c='zhang';
 affected rows: 4
 info: Rows matched: 4  Changed: 4  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 10005, "b": "zhang", "c": { "$binary": "" } } }, condition: {}
 select * from t1 order by id;
 id	a	b	c
 1	10005	zhang	zhang
@@ -191,6 +219,7 @@ id	a	b	c
 update t1 set b=default where id=1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": "test" } }, condition: { "$and": [ { "id": { "$et": 1 } }, { "id": { "$et": 1 } } ] }
 select * from t1 order by id;
 id	a	b	c
 1	10005	test	zhang
@@ -203,12 +232,15 @@ insert into t1 values(),(),(),();
 update ignore t1 set id=100 where id>2;
 affected rows: 1
 info: Rows matched: 2  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 2 } }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
 update ignore t1 set id=1000 where id=2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$et": 2 } }, { "id": { "$et": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
 update low_priority t1 set id=10000 where id=4;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "id": 10000 } }, condition: { "$and": [ { "id": { "$et": 4 } }, { "id": { "$et": 4 } } ] }
 select * from t1 order by id;
 id
 1
@@ -221,27 +253,35 @@ insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4);
 update t1 set a=a-1 where b=1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": -1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: { "b": { "$et": 1 } }
 update t1 set a=a+1 where b=2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: { "b": { "$et": 2 } }
 update t1 set a=1+a where b=3;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: { "b": { "$et": 3 } }
 update t1 set a=1-a where b=4;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 4 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set c=10-c where b=1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set c=c-c+10 where b=2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set c=c+c+1 where b=3;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 3 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set c=c-c+1 where b=4;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 4 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	0	1	9
@@ -251,6 +291,7 @@ id	a	b	c
 update t1 set a=b where c=9;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": { "$field": "b" } } }, condition: { "c": { "$et": 9 } }
 select * from t1 order by id;
 id	a	b	c
 1	1	1	9
@@ -260,9 +301,11 @@ id	a	b	c
 update t1 set a=a*2 where b=1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 update t1 set a=a/2 where b=2;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 2 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	2	1	9
@@ -275,6 +318,7 @@ insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q')
 update t1 set c='update' where a=10;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "c": { "$binary": "" } } }, condition: { "a": { "$et": 10 } }
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	sa
@@ -284,6 +328,7 @@ id	a	b	c
 update t1 set a=10001 where c='ss';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	sa
@@ -293,6 +338,7 @@ id	a	b	c
 update t1 set c='update' where c='sa';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	update
@@ -302,6 +348,7 @@ id	a	b	c
 update t1 set a=10000 where a=10001 and c='ss';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 10001 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	update
@@ -311,6 +358,7 @@ id	a	b	c
 update t1 set c='zhang' where a=10000 or c='ss';
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	update
@@ -320,6 +368,7 @@ id	a	b	c
 update t1 set c='zhang' where not c='q';
 affected rows: 2
 info: Rows matched: 3  Changed: 2  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by id;
 id	a	b	c
 1	1000	sa	zhang
@@ -335,6 +384,7 @@ SET NEW.a1 = 2;
 update t1 set a2=1 where a2 is null;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "a2": { "$isnull": 1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1;
 a1	a2
 2	1
@@ -347,9 +397,11 @@ INSERT INTO t2 VALUES (1, 1);
 UPDATE t1,t2 set t1.a1=10 where t1.a2=1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 UPDATE t1,t2 set t2.a1=10 where t1.a2=1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1;
 a1	a2
 10	1
@@ -375,6 +427,7 @@ a1	c
 UPDATE v1 SET c=1 WHERE a1=1;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "a2": { "$et": 1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by a1;
 a1	c
 1	1
@@ -388,6 +441,7 @@ insert into t2 values (1);
 update t1 set c1=2 WHERE c1 IN (SELECT c2 FROM t2);
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select *from t1;
 c1
 2
@@ -402,6 +456,7 @@ insert into t1 (a) values(4);
 update t1 set a=2 where t is not null;
 affected rows: 1
 info: Rows matched: 1  Changed: 1  Warnings: 0
+[Note] SequoiaDB: Query message: condition[{ "t": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1;
 a	t
 2	x
@@ -411,6 +466,7 @@ insert into t1(a) values (1),(2),(3);
 update t1 set a=a+1;
 affected rows: 3
 info: Rows matched: 3  Changed: 3  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}
 select * from t1 order by id;
 id	a
 1	2
@@ -427,6 +483,7 @@ begin;
 update t1 set a=a+1;
 affected rows: 3
 info: Rows matched: 3  Changed: 3  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}
 commit;
 select * from t1 order by id;
 id	a
@@ -437,6 +494,7 @@ begin;
 update t1 set a=a+1;
 affected rows: 3
 info: Rows matched: 3  Changed: 3  Warnings: 0
+[Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}
 rollback;
 select * from t1 order by id;
 id	a
@@ -462,6 +520,7 @@ insert into t1 values (2.22, 2.22);
 insert into t1 values (1.79, 1.79);
 insert into t1 values (23348320.2, 23348320.2);
 update t1 set a = -11111111.22 ;
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": -11111111.0 } }, condition: {}
 select * from t1 order by a;
 a	b
 -11111111.00	17977.99
@@ -472,6 +531,7 @@ a	b
 -11111111.00	1.79
 -11111111.00	23348320.00
 update t1 set b = 11111111.22 ;
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": 11111111.0 } }, condition: {}
 select * from t1 order by b;
 a	b
 -11111111.00	11111111.00
@@ -589,6 +649,7 @@ insert into t1 values (2.22, 2.22);
 insert into t1 values (1.79, 1.79);
 insert into t1 values (23348320.2, 23348320.2);
 update t1 set a = -11111111.22 ;
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": -11111111.22 } }, condition: {}
 select * from t1 order by a;
 a	b
 -11111111.22	17977.99
@@ -599,6 +660,7 @@ a	b
 -11111111.22	1.79
 -11111111.22	23348320.20
 update t1 set b = 11111111.22 ;
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": 11111111.22 } }, condition: {}
 select * from t1 order by b;
 a	b
 -11111111.22	11111111.22
@@ -716,6 +778,7 @@ insert into t1 values (2.22, 2.22);
 insert into t1 values (1.79, 1.79);
 insert into t1 values (23348320.2, 23348320.2);
 update t1 set a = -11111111.22 ;
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": { "$decimal": "-11111111.22" } } }, condition: {}
 select * from t1 order by a;
 a	b
 -11111111.22	17977.99
@@ -726,6 +789,7 @@ a	b
 -11111111.22	1.79
 -11111111.22	23348320.20
 update t1 set b = 11111111.22 ;
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": { "$decimal": "11111111.22" } } }, condition: {}
 select * from t1 order by b;
 a	b
 -11111111.22	11111111.22
