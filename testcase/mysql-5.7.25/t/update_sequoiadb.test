@@ -10,26 +10,32 @@ create table t1(id int auto_increment key, a int, b varchar(255), c varbinary(25
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
 --enable_info
 update t1 set c='update' where a=10;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10001 where c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='update' where c='sa';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10000 where a=10001 and c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='zhang' where a=10000 or c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='zhang' where not c='q';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -39,8 +45,11 @@ create table t1(a int auto_increment key, b varchar(255), c varbinary(255))comme
 insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 --enable_info
 update t1 set a =100 where a =2;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a =1000 where b='sa';
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a =1 where c='sz';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by a;
 drop table t1;
@@ -50,8 +59,11 @@ create table t1(a int auto_increment unique key, b varchar(255), c varbinary(255
 insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 --enable_info
 update t1 set a =100 where a =2;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a =1000 where b='sa';
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a =1 where c='sz';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by a;
 drop table t1;
@@ -61,8 +73,11 @@ create table t1(a int auto_increment, b varchar(255), c varbinary(255), index(a)
 insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 --enable_info
 update t1 set a =100 where a =2;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a =1000 where b='sa';
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a =1 where c='sz';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by a;
 drop table t1;
@@ -72,7 +87,9 @@ create table t1(id int auto_increment key, b varchar(255) not null default 'test
 insert into t1(b,c) values('sa', 'sa'), ('ss', 'ss'),('sq', 'q'),('sz', 'sz');
 --enable_info
 update t1 set b='ss' where b='sq';
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set b='update' where c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -82,29 +99,41 @@ create table t1(id int auto_increment key, a int, b varchar(255) not null defaul
 insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'),(1, 'sz', 'sz');
 --enable_info
 update t1 set b='update' where id=1 order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set b='update123' where id=2 order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set id=101 where a=100 order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set id=102 where a=1000 order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10000 order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a=1000 where c='sa' order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a=10001 order by id limit 2;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a=10002 where a=10000 order by id limit 1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10003 where a >10001 limit 1;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a=10004 where c>'s' limit 1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10005,b='zhang',c='zhang';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set b=default where id=1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -114,8 +143,11 @@ create table t1(id int auto_increment key)comment="sequoiadb:{ auto_partition: f
 insert into t1 values(),(),(),();
 --enable_info
 update ignore t1 set id=100 where id>2;
+--source include/query_pushdown_condition_sequoiadb.inc
 update ignore t1 set id=1000 where id=2;
+--source include/query_pushdown_condition_sequoiadb.inc
 update low_priority t1 set id=10000 where id=4;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -125,22 +157,33 @@ create table t1(id int auto_increment key, a int, b int, c int);
 insert into t1 values(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4);
 --enable_info
 update t1 set a=a-1 where b=1;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a=a+1 where b=2;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a=1+a where b=3;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a=1-a where b=4;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set c=10-c where b=1;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set c=c-c+10 where b=2;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set c=c+c+1 where b=3;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set c=c-c+1 where b=4;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=b where c=9;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=a*2 where b=1;
+--source include/query_pushdown_condition_sequoiadb.inc
 update t1 set a=a/2 where b=2;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -150,26 +193,32 @@ create temporary table t1(id int auto_increment key, a int, b varchar(255), c va
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
 --enable_info
 update t1 set c='update' where a=10;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10001 where c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='update' where c='sa';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10000 where a=10001 and c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='zhang' where a=10000 or c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='zhang' where not c='q';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -182,6 +231,7 @@ FOR EACH ROW
 SET NEW.a1 = 2;
 --enable_info
 update t1 set a2=1 where a2 is null;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1;
 DROP TRIGGER t1_bu;
@@ -194,7 +244,9 @@ INSERT INTO t1 VALUES (1, 1);
 INSERT INTO t2 VALUES (1, 1);
 --enable_info
 UPDATE t1,t2 set t1.a1=10 where t1.a2=1;
+--source include/query_pushdown_condition_sequoiadb.inc
 UPDATE t1,t2 set t2.a1=10 where t1.a2=1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1;
 select * from t2;
@@ -215,6 +267,7 @@ CREATE VIEW v1 AS
 SELECT * FROM v1;
 --enable_info
 UPDATE v1 SET c=1 WHERE a1=1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by a1;
 drop table t1,t2,t3,t4;
@@ -227,6 +280,7 @@ insert into t1 values (1),(2),(3);
 insert into t2 values (1);
 --enable_info
 update t1 set c1=2 WHERE c1 IN (SELECT c2 FROM t2);
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select *from t1;
 select *from t2;
@@ -237,6 +291,7 @@ CREATE TABLE t1 (a int, t timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE
 insert into t1 (a) values(4);
 --enable_info
 update t1 set a=2 where t is not null;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 --replace_column 2 x
 select * from t1;
@@ -247,6 +302,7 @@ create table t1(id int auto_increment key, a int)comment="sequoiadb:{ auto_parti
 insert into t1(a) values (1),(2),(3);
 --enable_info
 update t1 set a=a+1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --error 1062
@@ -255,12 +311,14 @@ select * from t1 order by id;
 begin;
 --enable_info
 update t1 set a=a+1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 commit;
 select * from t1 order by id;
 begin;
 --enable_info
 update t1 set a=a+1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 rollback;
 select * from t1 order by id;
@@ -281,8 +339,10 @@ insert into t1 values (2.22, 2.22);
 insert into t1 values (1.79, 1.79);
 insert into t1 values (23348320.2, 23348320.2);
 update t1 set a = -11111111.22 ;
+--source include/query_pushdown_condition_sequoiadb.inc
 select * from t1 order by a;
 update t1 set b = 11111111.22 ;
+--source include/query_pushdown_condition_sequoiadb.inc
 select * from t1 order by b;
 set sql_mode = "STRICT_TRANS_TABLES";
 --error 1264
@@ -322,8 +382,10 @@ insert into t1 values (2.22, 2.22);
 insert into t1 values (1.79, 1.79);
 insert into t1 values (23348320.2, 23348320.2);
 update t1 set a = -11111111.22 ;
+--source include/query_pushdown_condition_sequoiadb.inc
 select * from t1 order by a;
 update t1 set b = 11111111.22 ;
+--source include/query_pushdown_condition_sequoiadb.inc
 select * from t1 order by b;
 set sql_mode = "STRICT_ALL_TABLES";
 --error 1264
@@ -363,8 +425,10 @@ insert into t1 values (2.22, 2.22);
 insert into t1 values (1.79, 1.79);
 insert into t1 values (23348320.2, 23348320.2);
 update t1 set a = -11111111.22 ;
+--source include/query_pushdown_condition_sequoiadb.inc
 select * from t1 order by a;
 update t1 set b = 11111111.22 ;
+--source include/query_pushdown_condition_sequoiadb.inc
 select * from t1 order by b;
 set sql_mode = "STRICT_TRANS_TABLES";
 --error 1264
