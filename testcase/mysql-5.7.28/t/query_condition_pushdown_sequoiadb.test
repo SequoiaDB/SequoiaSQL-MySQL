@@ -9,6 +9,9 @@
 #Case 14750#Case 14751#Case 14752#Case 14753#Case 14754#Case 14755#Case 14756#Case 14757#Case 22578
 --source include/have_sequoiadb.inc
 
+CREATE DATABASE query_pushdown_test_sequoiadb;
+USE query_pushdown_test_sequoiadb;
+
 --disable_warnings
 DROP TABLE IF EXISTS t1;
 --enable_warnings
@@ -4348,6 +4351,7 @@ SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id > 11) * id >= 20;
 SELECT * FROM t1 WHERE id * (SELECT id FROM t1 WHERE id > 11) != 3;
 --sorted_result
 --source include/query_pushdown_condition_sequoiadb.inc
+--sorted_result
 SELECT * FROM t1 WHERE 0.2 * (SELECT id FROM t1 WHERE id > 11) <> id;
 --sorted_result
 SELECT * FROM t1 WHERE id = (SELECT id FROM t1 WHERE id < 2) * 0.3;
@@ -4625,71 +4629,56 @@ DROP TABLE t1;
 CREATE TABLE t1 ( id INT AUTO_INCREMENT, a BIGINT, c CHAR(64), PRIMARY KEY(id, c), KEY(c) );
 INSERT INTO t1(a,c) VALUES (1,'op'),(-1,'bc'),(10,'123'),(1,'tf'),(-9,'001'),(15,'9a'),(0,'abc'),(5,'jk'),(19,'123'),(9,'hello'),(1,'bc');
 #seqDB-22379
---sorted_result
-SELECT * FROM t1 LIMIT 3;
+SELECT * FROM t1 ORDER BY id LIMIT 3;
 --source include/query_pushdown_condition_sequoiadb.inc
---sorted_result
-SELECT * FROM t1 LIMIT 2 OFFSET 4;
+SELECT * FROM t1 ORDER BY id LIMIT 2 OFFSET 4;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22380
---sorted_result
-SELECT * FROM t1 WHERE NOT a > 3 LIMIT 2;
+SELECT * FROM t1 WHERE NOT a > 3 ORDER BY id LIMIT 2;
 --source include/query_pushdown_condition_sequoiadb.inc
---sorted_result
-SELECT * FROM t1 WHERE id >= 5 AND a < 10 OR c = 'abc' LIMIT 2 OFFSET 1;
+SELECT * FROM t1 WHERE id >= 5 AND a < 10 OR c = 'abc' ORDER BY id LIMIT 2 OFFSET 1;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22381
 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 1;
 --source include/query_pushdown_condition_sequoiadb.inc
-SELECT * FROM t1 WHERE c > 'a' ORDER BY c LIMIT 3 OFFSET 2;
+SELECT * FROM t1 WHERE c > 'a' ORDER BY a,c LIMIT 3 OFFSET 2;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22382
---sorted_result
-SELECT * FROM t1 WHERE id > LENGTH(c) LIMIT 3;
+SELECT * FROM t1 WHERE id > LENGTH(c) ORDER BY id LIMIT 3;
 --source include/query_pushdown_condition_sequoiadb.inc
---sorted_result
-SELECT * FROM t1 WHERE 10 > ABS(a) LIMIT 3 OFFSET 2;
+SELECT * FROM t1 WHERE 10 > ABS(a) ORDER BY id LIMIT 3 OFFSET 2;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22383
---sorted_result
 SELECT * FROM t1 WHERE id <= 10 ORDER BY a LIMIT 4 OFFSET 2;
 --source include/query_pushdown_condition_sequoiadb.inc
---sorted_result
-SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 GROUP BY id,c ORDER BY c;
+SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 GROUP BY id,c ORDER BY id,c;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22384
---sorted_result
-SELECT a FROM t1 GROUP BY a LIMIT 5;
+SELECT a FROM t1 GROUP BY a ORDER BY a LIMIT 5;
 --source include/query_pushdown_condition_sequoiadb.inc
---sorted_result
-SELECT id FROM t1 HAVING id > 2 LIMIT 5 OFFSET 1;
+SELECT id FROM t1 HAVING id > 2 ORDER BY id LIMIT 5 OFFSET 1;
 --source include/query_pushdown_condition_sequoiadb.inc
---sorted_result
-SELECT a,id FROM t1 WHERE a > 3 GROUP BY a,id HAVING id > 3 LIMIT 3 OFFSET 1;
+SELECT a,id FROM t1 WHERE a > 3 GROUP BY a,id HAVING id > 3 ORDER BY id LIMIT 3 OFFSET 1;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22385
---sorted_result
-SELECT DISTINCT a FROM t1 LIMIT 3 OFFSET 2;
+SELECT DISTINCT a FROM t1 ORDER BY a LIMIT 3 OFFSET 2;
 --source include/query_pushdown_condition_sequoiadb.inc
 SELECT DISTINCT c FROM t1 ORDER BY c LIMIT 3;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22386
---sorted_result
-SELECT SQL_CALC_FOUND_ROWS * FROM t1 LIMIT 2 OFFSET 3;
+SELECT SQL_CALC_FOUND_ROWS * FROM t1 ORDER BY id LIMIT 2 OFFSET 3;
 SELECT FOUND_ROWS();
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22387
 CREATE TABLE t2 ( id INT, vc VARCHAR(16));
 INSERT INTO t2 VALUES (1,'op'),(-1,'bc'),(10,'123'),(7,'ui'),(18,'123'),(10,'hello'),(0,'bc');
---sorted_result
-SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id LIMIT 3 OFFSET 1;
+SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id ORDER BY t1.id LIMIT 3 OFFSET 1;
 --source include/query_pushdown_condition_sequoiadb.inc
---sorted_result
-SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 LIMIT 2 OFFSET 1;
+SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 ORDER BY t2.id LIMIT 2 OFFSET 1;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22388
 CREATE TABLE t3 SELECT * FROM t1 WHERE id > 5 LIMIT 5;
-INSERT INTO t3 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 2;
+INSERT INTO t3 SELECT * FROM t1 LIMIT 3 OFFSET 2;
 #seqDB-22389
 UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -4787,7 +4776,7 @@ SELECT * FROM t1 WHERE NOT (NOT t LIKE '%o%');
 SELECT * FROM t1 WHERE id > CEIL(5) AND t <= 'to' AND dt != '1970-01-01 01:01:01' AND t IN ('abc','ok','test','to','from','foo','bar');
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
-SELECT * FROM t1 WHERE id IN (-1,0,8,11,12,50,100) AND dt > '2000-01-01 01:01:01' AND (t < 'opt' OR (id BETWEEN 9 AND 10));
+SELECT * FROM t1 FORCE INDEX(PRIMARY) WHERE id IN (-1,0,8,11,12,50,100) AND dt > '2000-01-01 01:01:01' AND (t < 'opt' OR (id BETWEEN 9 AND 10));
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE id < 100 AND dt >= '2000-01-01 01:01:01' OR t LIKE "o_" AND id > SQRT(5);
@@ -5114,5 +5103,7 @@ DROP TABLE t1;
 # QUERY WITH 'LIKE' PUSHDOWN TESTING
 #
 --source include/query_like_pushdown_sequoiadb.inc
+
+DROP DATABASE query_pushdown_test_sequoiadb;
 
 --source include/uninstall_sequoiadb.inc
