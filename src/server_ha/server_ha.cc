@@ -31,6 +31,7 @@
 #include "sp_head.h"
 #include "sql_show.h"
 #include "sp.h"
+#include "event_parse_data.h"
 #include <exception>
 
 // thread local key for ha_sql_stmt_info
@@ -224,6 +225,10 @@ static bool is_meta_sql(THD *thd, const ha_event_general &event) {
     case SQLCOM_ALTER_EVENT:
     case SQLCOM_DROP_EVENT:
     case SQLCOM_ALTER_USER:
+    case SQLCOM_ALTER_TABLESPACE:
+    case SQLCOM_CREATE_SERVER:
+    case SQLCOM_DROP_SERVER:
+    case SQLCOM_ALTER_SERVER:
 #ifdef IS_MARIADB
     case SQLCOM_DROP_ROLE:
     case SQLCOM_GRANT_ROLE:
@@ -285,11 +290,13 @@ static int get_drop_db_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     goto error;
   }
 
-  while (log_state_cl.next(result, false) && !result.isEmpty()) {
+  while (!log_state_cl.next(result, false) && !result.isEmpty()) {
     const char *db_name = result.getStringField(HA_FIELD_DB);
     const char *table_name = result.getStringField(HA_FIELD_TABLE);
     const char *op_type = result.getStringField(HA_FIELD_TYPE);
-    if (0 == strcmp(op_type, HA_OPERATION_TYPE_DCL)) {
+    if (0 == strcmp(op_type, HA_OPERATION_TYPE_DCL) ||
+        (0 == strlen(table_name) &&
+         0 == strcmp(op_type, HA_OPERATION_TYPE_DB))) {
       continue;
     }
 
@@ -398,7 +405,8 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   Sdb_cl lock_cl;
   bson::BSONObj cond, obj, result;
   int sql_command = thd_sql_command(thd);
-  ha_table_list *ha_tables = sql_info->tables;
+  // ha_table_list *ha_tables = sql_info->tables;
+  TABLE_LIST *tables = sdb_lex_first_select(thd)->get_table_list();
   const char *db_name = NULL, *table_name = NULL;
 
   rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_LOCK_CL, lock_cl);
@@ -442,9 +450,9 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       goto error;
     }
     // add 'X' lock for table in 'CREATE TRIGGER'
-    if (ha_tables) {
-      db_name = ha_tables->db_name;
-      table_name = ha_tables->table_name;
+    if (tables) {
+      db_name = C_STR(tables->db);
+      table_name = C_STR(tables->table_name);
 
       SDB_LOG_DEBUG("HA: Add 'X' lock for '%s:%s'", db_name, table_name);
       cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
@@ -456,13 +464,13 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         goto error;
       }
     }
-  } else if (is_dcl_meta_sql(thd) && ha_tables &&
+  } else if (is_dcl_meta_sql(thd) && tables &&
              (0 == thd->lex->type || TYPE_ENUM_PROCEDURE == thd->lex->type ||
               TYPE_ENUM_FUNCTION == thd->lex->type)) {
     const char *op_type = NULL;
     // grant object can be 'TABLE/FUNCTION/PROCEDURE'
     // add 'S' lock for database include 'routine' or table
-    db_name = ha_tables->db_name;
+    db_name = C_STR(tables->db);
     table_name = HA_EMPTY_STRING;
     cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
                             << HA_FIELD_TYPE << HA_OPERATION_TYPE_DB);
@@ -480,8 +488,8 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     }
 
     // add 'X' lock for granted objects(table or 'routine')
-    db_name = ha_tables->db_name;
-    table_name = ha_tables->table_name;
+    db_name = C_STR(tables->db);
+    table_name = C_STR(tables->table_name);
     if (TYPE_ENUM_PROCEDURE == thd->lex->type) {
       op_type = HA_ROUTINE_TYPE_PROC;
     } else if (TYPE_ENUM_FUNCTION == thd->lex->type) {
@@ -501,8 +509,8 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     }
   } else {
     // add 'S' lock for databases
-    for (; ha_tables; ha_tables = ha_tables->next) {
-      const char *db_name = ha_tables->db_name;
+    for (; tables; tables = tables->next_local) {
+      const char *db_name = C_STR(tables->db);
       const char *table_name = HA_EMPTY_STRING;
       cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
                               << HA_FIELD_TYPE << HA_OPERATION_TYPE_DB);
@@ -680,7 +688,7 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
   Sdb_cl log_state_cl, inst_state_cl;
   const char *db_name = NULL, *table_name = NULL, *op_type = NULL;
-  ha_table_list *ha_tables = sql_info->tables;
+  TABLE_LIST *tables = sdb_lex_first_select(thd)->get_table_list();
 
   rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_SQL_LOG_STATE_CL,
                         log_state_cl);
@@ -712,9 +720,9 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
     rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
                                         log_state_cl, sql_info, thd);
     // if table != NULL means current operation is create trigger on table
-    if (ha_tables && 0 == rc) {
-      db_name = ha_tables->db_name;
-      table_name = ha_tables->table_name;
+    if (tables && 0 == rc) {
+      db_name = C_STR(tables->db);
+      table_name = C_STR(tables->table_name);
       op_type = HA_OPERATION_TYPE_TABLE;
       rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
                                           log_state_cl, sql_info, thd);
@@ -722,11 +730,11 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
     if (rc) {
       goto error;
     }
-  } else if (is_dcl_meta_sql(thd) && ha_tables &&
+  } else if (is_dcl_meta_sql(thd) && tables &&
              (0 == thd->lex->type || TYPE_ENUM_PROCEDURE == thd->lex->type ||
               TYPE_ENUM_FUNCTION == thd->lex->type)) {
     // lex->type == 0 means that grant object is table
-    db_name = ha_tables->db_name;
+    db_name = C_STR(tables->db);
     table_name = HA_EMPTY_STRING;
     op_type = HA_OPERATION_TYPE_DB;
     rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
@@ -735,8 +743,8 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
       goto error;
     }
 
-    db_name = ha_tables->db_name;
-    table_name = ha_tables->table_name;
+    db_name = C_STR(tables->db);
+    table_name = C_STR(tables->table_name);
     if (TYPE_ENUM_PROCEDURE == thd->lex->type) {
       op_type = HA_ROUTINE_TYPE_PROC;
     } else if (TYPE_ENUM_FUNCTION == thd->lex->type) {
@@ -749,17 +757,17 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
     if (rc) {
       goto error;
     }
-  } else if (!is_db_meta_sql(thd) && ha_tables) {
+  } else if (!is_db_meta_sql(thd) && tables) {
     do {
-      db_name = ha_tables->db_name;
+      db_name = C_STR(tables->db);
       table_name = HA_EMPTY_STRING;
       op_type = HA_OPERATION_TYPE_DB;
       if (db_name) {
         rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
                                             log_state_cl, sql_info, thd);
       }
-      ha_tables = ha_tables->next;
-    } while (ha_tables && (0 == rc));
+      tables = tables->next_local;
+    } while (tables && (0 == rc));
   }
 done:
   return rc;
@@ -777,7 +785,7 @@ static int wait_objects_updated_to_lastest(THD *thd,
   int rc = 0;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
   Sdb_cl sql_log_state_cl, inst_state_cl;
-  ha_table_list *ha_tables = sql_info->tables;
+  ha_table_list *ha_tables = NULL;
 
   // get sql log state handle
   rc = ha_get_sql_log_state_cl(*sql_info->sdb_conn, ha_thread.sdb_group_name,
@@ -799,6 +807,7 @@ static int wait_objects_updated_to_lastest(THD *thd,
     goto error;
   }
 
+  ha_tables = sql_info->tables;
   // check if operations on tables for current instance is latest
   for (; ha_tables; ha_tables = ha_tables->next) {
     const char *db_name = ha_tables->db_name;
@@ -821,17 +830,14 @@ error:
   goto done;
 }
 
-static bool build_full_table_name(String &full_name, const char *db_name,
-                                  const char *table_name) {
-  char quoted_name_buf[NAME_LEN * 2 + 3] = {0};
-  bool error = 0;
-  ha_quote_name(db_name, quoted_name_buf);
-  error |= full_name.append(quoted_name_buf);
+static bool build_full_table_name(THD *thd, String &full_name,
+                                  const char *db_name, const char *table_name) {
+  bool error = false;
+  append_identifier(thd, &full_name, db_name, strlen(db_name));
   error |= full_name.append('.');
-
-  memset(quoted_name_buf, 0, NAME_LEN * 2 + 3);
-  ha_quote_name(table_name, quoted_name_buf);
-  error |= full_name.append(quoted_name_buf);
+  append_identifier(thd, &full_name, table_name, strlen(table_name));
+  error |= full_name.append(' ');
+  return error;
 }
 
 // check if the dropping table exists, SQL like 'drop table [if exists]
@@ -975,9 +981,8 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   int sql_command = thd_sql_command(thd);
   char quoted_name_buf[NAME_LEN * 2 + 3] = {0};
   char session_attrs[HA_MAX_SESSION_ATTRS_LEN] = {0};
-  int client_charset_num = -1;
+  uint client_charset_num = thd->charset()->number;
   String general_query, query;
-  query.set_charset(thd->variables.character_set_client);
   char cached_record_key[NAME_LEN * 2 + 20] = {0};
   bool oom = false;  // out of memory while building a string
 
@@ -1007,19 +1012,18 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
 
   build_session_attributes(thd, session_attrs);
 
-  // the following commands change the original SQL statement, set
-  // 'ClientCharset' field, replay thread change SQL character code
-  // after found that this field value is greater than 0
-  if (SQLCOM_CREATE_DB == sql_command || SQLCOM_DROP_DB == sql_command ||
-      SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command ||
+  // set charset for following sql statement
+  if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command ||
       SQLCOM_RENAME_TABLE == sql_command) {
-    client_charset_num = thd->variables.character_set_client->number;
+    query.set_charset(thd->charset());
   }
 
   for (; ha_tables; ha_tables = ha_tables->next) {
     const char *db_name = ha_tables->db_name;
     const char *table_name = ha_tables->table_name;
     const char *op_type = ha_tables->op_type;
+    const char *new_db_name = NULL;
+    const char *new_tbl_name = NULL;
     query.length(0);
 
     // dropping function(with 'if exists') without setting database report no
@@ -1033,13 +1037,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
         // if it's objects in current database
         continue;
       }
-      oom = query.append("DROP DATABASE IF EXISTS ");
-      ha_quote_name(db_name, quoted_name_buf);
-      oom |= query.append(quoted_name_buf);
-    } else if (SQLCOM_CREATE_DB == sql_command) {
-      oom = query.append("CREATE DATABASE IF NOT EXISTS ");
-      ha_quote_name(db_name, quoted_name_buf);
-      oom |= query.append(quoted_name_buf);
+      oom = query.append(general_query);
     } else {
       // skip temporary tables for drop table sql
       if (SQLCOM_DROP_TABLE == sql_command) {
@@ -1062,24 +1060,31 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
         } else {
           oom |= query.append("DROP VIEW IF EXISTS ");
         }
-        oom |= build_full_table_name(query, db_name, table_name);
-      } else if (SQLCOM_RENAME_TABLE == sql_command) {
+        oom |= build_full_table_name(thd, query, db_name, table_name);
+      } else if (SQLCOM_RENAME_TABLE == sql_command ||
+                 (SQLCOM_ALTER_TABLE == sql_command &&
+                  NULL != ha_tables->next)) {
+        // if its rename table operation
         // move to the next table
         ha_tables = ha_tables->next;
 
-        // skip rename temporary table, just for mariadb, can't rename temporary
-        // table in mysql
-#ifdef IS_MARIADB
+        // skip rename temporary table:
+        // 1. rename table by 'rename table ...'
+        // 2. rename table by 'alter table rename...'
         if (is_temporary_table(thd, db_name, table_name)) {
           continue;
         }
-#endif
-        const char *new_db_name = ha_tables->db_name;
-        const char *new_tbl_name = ha_tables->table_name;
-        oom = query.append("RENAME TABLE ");
-        oom |= build_full_table_name(query, db_name, table_name);
-        oom |= query.append(" TO ");
-        oom |= build_full_table_name(query, new_db_name, new_tbl_name);
+        new_db_name = ha_tables->db_name;
+        new_tbl_name = ha_tables->table_name;
+        if (SQLCOM_RENAME_TABLE == sql_command) {
+          oom = query.append("RENAME TABLE ");
+          oom |= build_full_table_name(thd, query, db_name, table_name);
+          oom |= query.append(" TO ");
+          oom |= build_full_table_name(thd, query, new_db_name, new_tbl_name);
+        } else {
+          // handle 'alter table t1 rename to t1, add column d int default 0;'
+          oom = query.append(general_query);
+        }
       } else if (have_exist_warning(thd)) {
         // if thd have 'not exist' or 'already exist' warning
         continue;
@@ -1132,6 +1137,54 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     rc = ha_update_cached_record(ha_thread.inst_state_cache,
                                  HA_KEY_MEM_INST_STATE_CACHE, cached_record_key,
                                  sql_id);
+    // update new table state for 'alter table rename/rename table'
+    if (0 == rc && new_db_name && new_tbl_name &&
+        (0 != strcmp(db_name, new_db_name) ||
+         0 != strcmp(table_name, new_tbl_name))) {
+      // write null operation into 'HASQLLog' table for new table
+      obj = BSON(HA_FIELD_DB << new_db_name << HA_FIELD_TABLE << new_tbl_name
+                             << HA_FIELD_TYPE << op_type << HA_FIELD_SQL << ""
+                             << HA_FIELD_OWNER << ha_thread.instance_id
+                             << HA_FIELD_SESSION_ATTRS << session_attrs
+                             << HA_FIELD_CLIENT_CHARSET_NUM
+                             << client_charset_num);
+      rc = sql_log_cl.insert(obj, hint, 0, &result);
+      if (rc) {
+        goto sdb_error;
+      }
+
+      // write 'HASQLLogState'
+      sql_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
+      DBUG_ASSERT(sql_id > 0);
+
+      // write 'HASQLLogState' for new table
+      cond = BSON(HA_FIELD_DB << new_db_name << HA_FIELD_TABLE << new_tbl_name
+                              << HA_FIELD_TYPE << op_type);
+      obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
+      rc = sql_log_state_cl.upsert(obj, cond);
+      if (rc) {
+        goto sdb_error;
+      }
+
+      // write 'HAInstanceState' for new table
+      cond =
+          BSON(HA_FIELD_INSTANCE_ID
+               << ha_thread.instance_id << HA_FIELD_DB << new_db_name
+               << HA_FIELD_TABLE << new_tbl_name << HA_FIELD_TYPE << op_type);
+      obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
+      rc = inst_state_cl.upsert(obj, cond);
+      if (rc) {
+        goto sdb_error;
+      }
+
+      // update cached instance state for new table
+      snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", new_db_name,
+               new_tbl_name, op_type);
+      rc = ha_update_cached_record(ha_thread.inst_state_cache,
+                                   HA_KEY_MEM_INST_STATE_CACHE,
+                                   cached_record_key, sql_id);
+    }
+
     if (rc) {
       goto error;
     }
@@ -1188,6 +1241,14 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         sprintf(sql_info->sp_db_name, "%s", thd->lex->spname->m_db.str);
       }
       sprintf(sql_info->sp_name, "%s", thd->lex->spname->m_name.str);
+    } else if (thd->lex->event_parse_data) {
+      // fix BUG-775
+      if (thd->lex->event_parse_data->identifier->m_db.str) {
+        sprintf(sql_info->sp_db_name, "%s",
+                thd->lex->event_parse_data->identifier->m_db.str);
+      }
+      sprintf(sql_info->sp_name, "%s",
+              thd->lex->event_parse_data->identifier->m_name.str);
     }
     DBUG_ASSERT(strlen(sql_info->sp_name) != 0);
     DBUG_ASSERT(strlen(sql_info->sp_db_name) != 0);
@@ -1215,6 +1276,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       case SQLCOM_CREATE_TRIGGER:
       case SQLCOM_DROP_TRIGGER:
         sql_info->tables->op_type = HA_ROUTINE_TYPE_TRIG;
+        break;
       case SQLCOM_CREATE_EVENT:
       case SQLCOM_ALTER_EVENT:
       case SQLCOM_DROP_EVENT:
@@ -1224,6 +1286,29 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         DBUG_ASSERT(0);
         break;
     }
+    sql_info->tables->is_temporary_table = false;
+    sql_info->tables->next = NULL;
+  } else if (SQLCOM_ALTER_TABLESPACE == sql_command ||
+             SQLCOM_CREATE_SERVER == sql_command ||
+             SQLCOM_DROP_SERVER == sql_command ||
+             SQLCOM_ALTER_SERVER == sql_command) {
+    sql_info->tables = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+    if (NULL == sql_info->tables) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
+    sql_info->tables->db_name = HA_MYSQL_DB;
+    if (SQLCOM_ALTER_TABLESPACE == sql_command) {
+      sql_info->tables->table_name =
+          thd->lex->alter_tablespace_info->tablespace_name;
+    } else {
+#ifdef IS_MARIADB
+      sql_info->tables->table_name = thd->lex->server_options.server_name.str;
+#else
+      sql_info->tables->table_name = thd->lex->server_options.m_server_name.str;
+#endif
+    }
+    sql_info->tables->op_type = HA_OPERATION_TYPE_TABLE;
     sql_info->tables->is_temporary_table = false;
     sql_info->tables->next = NULL;
   } else if (is_dcl_meta_sql(thd)) {
@@ -1280,6 +1365,21 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
           ha_tbl_list->is_temporary_table = true;
         }
       }
+    }
+    // add table to sql_info->tables for 'alter table rename'
+    if (SQLCOM_ALTER_TABLE == sql_command && thd->lex->name.str &&
+        C_STR(sdb_lex_first_select(thd)->db)) {
+      ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+      if (ha_tbl_list == NULL) {
+        rc = SDB_HA_OOM;
+        goto error;
+      }
+      ha_tbl_list->db_name = C_STR(sdb_lex_first_select(thd)->db);
+      ha_tbl_list->table_name = thd->lex->name.str;
+      ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
+      ha_tbl_list->is_temporary_table = false;
+      ha_tbl_list->next = NULL;
+      sql_info->tables->next = ha_tbl_list;
     }
     DBUG_ASSERT(sql_info->tables != NULL);
   }
@@ -1390,12 +1490,12 @@ static inline bool is_event_dispatch_execution(THD *thd) {
 
 // convert sql like 'create table xxx as select xxx/like xxx' to
 // 'create table xxx(...)', no effect on other SQL statements
-int fix_create_table_sql(THD *thd, ha_event_class_t event_class,
-                         ha_event_general &event, String &query) {
+int fix_create_table_stmt(THD *thd, ha_event_class_t event_class,
+                          ha_event_general &event, String &query) {
   TABLE_LIST *table_list = sdb_lex_first_select(thd)->get_table_list();
   int sql_command = thd_sql_command(thd);
   int rc = 0;
-  query.set_charset(thd->variables.character_set_client);
+  query.set_charset(system_charset_info);
   query.length(0);
   DBUG_ENTER("fix_create_table_sql");
 
@@ -1467,6 +1567,337 @@ done:
 error:
   rc = SDB_HA_FIX_CREATE_TABLE;
   goto done;
+}
+
+static void sp_returns_type(THD *thd, String &result, sp_head *sp) {
+  TABLE table;
+  TABLE_SHARE share;
+  Field *field;
+  memset((char *)&table, 0, sizeof(table));
+  memset((char *)&share, 0, sizeof(share));
+  table.in_use = thd;
+  table.s = &share;
+  field = sp->create_result_field(0, 0, &table);
+  field->sql_type(result);
+
+  if (field->has_charset()) {
+    result.append(STRING_WITH_LEN(" CHARSET "));
+    result.append(field->charset()->csname);
+    if (!(field->charset()->state & MY_CS_PRIMARY)) {
+      result.append(STRING_WITH_LEN(" COLLATE "));
+      result.append(field->charset()->name);
+    }
+  }
+  delete field;
+}
+
+static int show_create_sp(THD *thd, const LEX_CSTRING &returns, String *buf) {
+  int sql_command = thd_sql_command(thd);
+  const sp_head *sp = thd->lex->sphead;
+  LEX_CSTRING db = {NULL, 0};
+  const LEX_CSTRING name = {sp->m_name.str, sp->m_name.length};
+  const LEX_CSTRING params = {sp->m_params.str, sp->m_params.length};
+  const LEX_CSTRING body = {sp->m_body.str, sp->m_body.length};
+  const LEX_CSTRING definer_user = thd->lex->definer->user;
+  const LEX_CSTRING definer_host = thd->lex->definer->host;
+  sql_mode_t sql_mode = thd->variables.sql_mode;
+  sql_mode_t saved_sql_mode = thd->variables.sql_mode;
+
+  if (sp->m_explicit_name) {
+    db.str = sp->m_db.str;
+    db.length = sp->m_db.length;
+  }
+#ifdef IS_MARIADB
+  const st_sp_chistics sp_chistics = sp->chistics();
+  const st_sp_chistics *chistics = &sp_chistics;
+#else
+  const st_sp_chistics *chistics = sp->m_chistics;
+#endif
+
+#ifdef IS_MARIADB
+  size_t agglen = (chistics->agg_type == GROUP_AGGREGATE) ? 10 : 0;
+  const DDL_options_st ddl_options = thd->lex->create_info;
+#endif
+  LEX_CSTRING tmp;
+
+  /* Make some room to begin with */
+  if (buf->alloc(100 + db.length + 1 + name.length + params.length +
+                 returns.length + body.length + chistics->comment.length +
+                 10 /* length of " DEFINER= "*/ + USER_HOST_BUFF_SIZE)) {
+    return SDB_HA_OOM;
+  }
+
+  thd->variables.sql_mode = sql_mode;
+  buf->append(STRING_WITH_LEN("CREATE "));
+
+#ifdef IS_MARIADB
+  if (ddl_options.or_replace())
+    buf->append(STRING_WITH_LEN("OR REPLACE "));
+#endif
+  buf->append(STRING_WITH_LEN("DEFINER="));
+  append_identifier(thd, buf, definer_user.str, definer_user.length);
+  buf->append('@');
+  append_identifier(thd, buf, definer_host.str, definer_host.length);
+  buf->append(' ');
+#ifdef IS_MARIADB
+  if (chistics->agg_type == GROUP_AGGREGATE)
+    buf->append(STRING_WITH_LEN("AGGREGATE "));
+  tmp = sp->m_handler->type_lex_cstring();
+  buf->append(&tmp);
+  buf->append(STRING_WITH_LEN(" "));
+  if (ddl_options.if_not_exists()) {
+    buf->append(STRING_WITH_LEN("IF NOT EXISTS "));
+  }
+#else
+  if (SQLCOM_CREATE_SPFUNCTION == sql_command ||
+      SQLCOM_CREATE_FUNCTION == sql_command) {
+    buf->append(STRING_WITH_LEN("FUNCTION "));
+  } else if (SQLCOM_CREATE_PROCEDURE == sql_command) {
+    buf->append(STRING_WITH_LEN("PROCEDURE "));
+  }
+#endif
+
+  if (db.length > 0) {
+    append_identifier(thd, buf, db.str, db.length);
+    buf->append('.');
+  }
+  append_identifier(thd, buf, name.str, name.length);
+  buf->append('(');
+  buf->append(params.str, params.length);
+  buf->append(')');
+
+  if (SQLCOM_CREATE_SPFUNCTION == sql_command ||
+      SQLCOM_CREATE_FUNCTION == sql_command) {
+#ifdef IS_MARIADB
+    if (sql_mode & MODE_ORACLE)
+      buf->append(STRING_WITH_LEN(" RETURN "));
+    else
+#endif
+      buf->append(STRING_WITH_LEN(" RETURNS "));
+    buf->append(returns.str, returns.length);
+  }
+  buf->append('\n');
+
+  switch (chistics->daccess) {
+    case SP_NO_SQL:
+      buf->append(STRING_WITH_LEN("    NO SQL\n"));
+      break;
+    case SP_READS_SQL_DATA:
+      buf->append(STRING_WITH_LEN("    READS SQL DATA\n"));
+      break;
+    case SP_MODIFIES_SQL_DATA:
+      buf->append(STRING_WITH_LEN("    MODIFIES SQL DATA\n"));
+      break;
+    case SP_DEFAULT_ACCESS:
+    case SP_CONTAINS_SQL:
+      /* Do nothing */
+      break;
+  }
+  if (chistics->detistic) {
+    buf->append(STRING_WITH_LEN("    DETERMINISTIC\n"));
+  }
+  if (chistics->suid == SP_IS_NOT_SUID) {
+    buf->append(STRING_WITH_LEN("    SQL SECURITY INVOKER\n"));
+  }
+  if (chistics->comment.length) {
+    buf->append(STRING_WITH_LEN("    COMMENT "));
+    append_unescaped(buf, chistics->comment.str, chistics->comment.length);
+    buf->append('\n');
+  }
+  buf->append(body.str, body.length);  // Not \0 terminated
+  thd->variables.sql_mode = saved_sql_mode;
+  return 0;
+}
+
+static int show_create_event(THD *thd, String *buf) {
+  int rc = 0;
+  const LEX_CSTRING definer_user = thd->lex->definer->user;
+  const LEX_CSTRING definer_host = thd->lex->definer->host;
+
+  // make some room for current statement
+  static const int MAX_EXTRA_LEN = 50;
+  size_t definition_len =
+      thd->lex->stmt_definition_end - thd->lex->stmt_definition_begin;
+  if (buf->alloc(MAX_EXTRA_LEN + definition_len + USER_HOST_BUFF_SIZE)) {
+    return SDB_HA_OOM;
+  }
+
+  // append the "CREATE" part of the query
+  buf->length(0);
+  buf->append(STRING_WITH_LEN("CREATE "));
+#ifdef IS_MARIADB
+  if (thd->lex->create_info.or_replace()) {
+    buf->append(STRING_WITH_LEN("OR REPLACE "));
+  }
+#endif
+
+  // append definer
+  buf->append(STRING_WITH_LEN("DEFINER="));
+  append_identifier(thd, buf, definer_user.str, definer_user.length);
+  buf->append('@');
+  append_identifier(thd, buf, definer_host.str, definer_host.length);
+  buf->append(' ');
+
+  // append the left part of thd->query after "DEFINER" part
+  buf->append(thd->lex->stmt_definition_begin, definition_len);
+  return 0;
+}
+
+static int show_create_trigger(THD *thd, String *buf) {
+  int rc = 0;
+#ifdef IS_MARIADB
+  LEX_CSTRING binlog_definition;
+#else
+  LEX_STRING binlog_definition;
+#endif
+  size_t prefix_trimmed = 0;
+
+  // make some room for current statement
+  static const int MAX_EXTRA_LEN = 50;
+  size_t definition_len =
+      thd->lex->stmt_definition_end - thd->lex->stmt_definition_begin;
+  if (buf->alloc(MAX_EXTRA_LEN + definition_len + USER_HOST_BUFF_SIZE)) {
+    return SDB_HA_OOM;
+  }
+
+  // append the "CREATE" part of the query
+  buf->append("CREATE ");
+#ifdef IS_MARIADB
+  if (thd->lex->create_info.or_replace()) {
+    buf->append(STRING_WITH_LEN("OR REPLACE "));
+  }
+#endif
+
+  // append definer
+#ifdef IS_MARIADB
+  if (thd->lex->sphead->suid() != SP_IS_NOT_SUID)
+#else
+  if (thd->lex->definer)
+#endif
+  {
+    const LEX_CSTRING *definer_user = &thd->lex->definer->user;
+    const LEX_CSTRING *definer_host = &thd->lex->definer->host;
+    buf->append(STRING_WITH_LEN("DEFINER="));
+    append_identifier(thd, buf, definer_user->str, definer_user->length);
+    buf->append('@');
+    append_identifier(thd, buf, definer_host->str, definer_host->length);
+    buf->append(' ');
+  }
+  // append the left part of thd->query after "DEFINER" part
+  binlog_definition.str = (char *)thd->lex->stmt_definition_begin;
+  binlog_definition.length = definition_len;
+  trim_whitespace(thd->charset(), &binlog_definition);
+  buf->append(binlog_definition.str, binlog_definition.length);
+  return 0;
+}
+
+// fix BUG-768
+// convert SQL like "create procedure/event/trigger/function"
+// to "create 'user@hostname' procedure/event/trigger/function"
+static int fix_create_routine_stmt(THD *thd, ha_event_general &event,
+                                   String &log_query) {
+  int sql_command = thd_sql_command(thd);
+  int rc = 0;
+
+#ifdef IS_MARIADB
+  // set character set, refer mariadb binlog format
+  log_query.set_charset(thd->charset());
+#endif
+  if (SQLCOM_CREATE_SPFUNCTION == sql_command ||
+      SQLCOM_CREATE_FUNCTION == sql_command ||
+      SQLCOM_CREATE_PROCEDURE == sql_command) {
+    LEX_CSTRING returns = {"", 0};
+    String retstr(64);
+    retstr.set_charset(system_charset_info);
+    if (SQLCOM_CREATE_SPFUNCTION == sql_command ||
+        SQLCOM_CREATE_FUNCTION == sql_command) {
+      sp_returns_type(thd, retstr, thd->lex->sphead);
+      returns = retstr.lex_cstring();
+    }
+    rc = show_create_sp(thd, returns, &log_query);
+  } else if (SQLCOM_CREATE_EVENT == sql_command) {
+    rc = show_create_event(thd, &log_query);
+  } else if (SQLCOM_CREATE_TRIGGER == sql_command) {
+    rc = show_create_trigger(thd, &log_query);
+  }
+  if (0 == rc) {
+    event.general_query = log_query.c_ptr();
+    event.general_query_length = log_query.length();
+  }
+  return rc;
+}
+
+// rebuild create view statement, append 'ALGORITHM' and 'DEFINER'
+static int fix_create_view_stmt(THD *thd, ha_event_general &event,
+                                String &log_query) {
+  int rc = 0;
+  bool oom = false;
+#ifdef IS_MARIADB
+  // set character set, refer mariadb binlog format
+  log_query.set_charset(thd->charset());
+#endif
+  LEX *lex = thd->lex;
+  TABLE_LIST *view = sdb_lex_first_select(thd)->get_table_list();
+  static const int CHANGE_VIEW_CMD_NUM = 3;
+  static const LEX_STRING command[CHANGE_VIEW_CMD_NUM] = {
+      {C_STRING_WITH_LEN("CREATE ")},
+      {C_STRING_WITH_LEN("ALTER ")},
+      {C_STRING_WITH_LEN("CREATE OR REPLACE ")}};
+#ifdef IS_MARIADB
+  oom |= log_query.append(&command[thd->lex->create_view->mode]);
+#else
+  oom |= log_query.append(command[thd->lex->create_view_mode].str,
+                          command[thd->lex->create_view_mode].length);
+#endif
+  view_store_options(thd, view, &log_query);
+  oom |= log_query.append(STRING_WITH_LEN("VIEW "));
+
+#ifdef IS_MARIADB
+  /* Appending IF NOT EXISTS if present in the query */
+  if (lex->create_info.if_not_exists()) {
+    oom |= log_query.append(STRING_WITH_LEN("IF NOT EXISTS "));
+  }
+  /* Test if user supplied a db (ie: we did not use thd->db) */
+  if (view->db.str && view->db.str[0] &&
+      (thd->db.str == NULL || cmp(&view->db, &thd->db))) {
+    append_identifier(thd, &log_query, &view->db);
+    oom |= log_query.append('.');
+  }
+#else
+  /* Test if user supplied a db (ie: we did not use thd->db) */
+  if (view->db && view->db[0] &&
+      (thd->db().str == NULL || strcmp(view->db, thd->db().str))) {
+    append_identifier(thd, &log_query, C_STR(view->db), C_STR_LEN(view->db));
+    oom |= log_query.append('.');
+  }
+#endif
+
+  append_identifier(thd, &log_query, C_STR(view->table_name),
+                    C_STR_LEN(view->table_name));
+  if (lex->view_list.elements) {
+#ifdef IS_MARIADB
+    List_iterator_fast<LEX_CSTRING> names(lex->view_list);
+    LEX_CSTRING *name;
+#else
+    List_iterator_fast<LEX_STRING> names(lex->view_list);
+    LEX_STRING *name;
+#endif
+    int i;
+
+    for (i = 0; (name = names++); i++) {
+      log_query.append(i ? ", " : "(");
+      append_identifier(thd, &log_query, name->str, name->length);
+    }
+    oom |= log_query.append(')');
+  }
+  oom |= log_query.append(STRING_WITH_LEN(" AS "));
+  oom |= log_query.append(view->source.str, view->source.length);
+  if (!oom) {
+    event.general_query = log_query.c_ptr();
+    event.general_query_length = log_query.length();
+  }
+  rc = oom ? SDB_HA_OOM : 0;
+  return rc;
 }
 
 // check if current SQL statement can be written into sequoiadb
@@ -1549,7 +1980,6 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   int rc = 0, sql_command = SQLCOM_END;
   bool is_trans_on = false, need_kill_mysqld = false;
   String create_query;
-  create_query.set_charset(system_charset_info);
   create_query.length(0);
   ha_sql_stmt_info *sql_info = NULL;
   ha_event_general event;
@@ -1642,9 +2072,12 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                     sdb_thd_query(thd), thd);
       SDB_LOG_DEBUG("HA: SQL command: %d, event: %d, subevent: %d, thread: %p",
                     sql_command, event_class, *((int *)ev), thd);
+      SDB_LOG_DEBUG("HA: Start transaction for persisting SQL log");
       rc = sql_info->sdb_conn->begin_transaction(ISO_READ_STABILITY);
       if (rc) {
         ha_error_string(*(sql_info->sdb_conn), rc, sql_info->err_message);
+        SDB_LOG_ERROR("HA: Failed to start transaction, sequoiadb error: %s",
+                      sql_info->err_message);
         goto error;
       }
 
@@ -1679,7 +2112,21 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     try {
       if (can_write_sql_log(thd, sql_info, event.general_error_code)) {
         // rebuild create table SQL statement if necessary
-        rc = fix_create_table_sql(thd, event_class, event, create_query);
+        if (SQLCOM_CREATE_TABLE == sql_command) {
+          rc = fix_create_table_stmt(thd, event_class, event, create_query);
+        }
+        // rebuild 'create function/procedure/trigger/event' statement
+        if (0 == rc && (SQLCOM_CREATE_SPFUNCTION == sql_command ||
+                        SQLCOM_CREATE_FUNCTION == sql_command ||
+                        SQLCOM_CREATE_PROCEDURE == sql_command ||
+                        SQLCOM_CREATE_EVENT == sql_command ||
+                        SQLCOM_CREATE_TRIGGER == sql_command)) {
+          rc = fix_create_routine_stmt(thd, event, create_query);
+        }
+        // rebuild 'create view' statement
+        if (0 == rc && SQLCOM_CREATE_VIEW == sql_command) {
+          rc = fix_create_view_stmt(thd, event, create_query);
+        }
         rc = rc ? rc : write_sql_log_and_states(thd, sql_info, event);
 
         // if SQL statement executes successfully but write SQL log into
@@ -1699,6 +2146,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       } else {
         // Note: 'ha_sql_stmt_info::tables' can only be set to NULL in the
         // final step(see the entry conditions).
+        SDB_LOG_DEBUG("HA: Current statement can't be persisted to SQL log");
         sql_info->tables = NULL;
         rc = sql_info->sdb_conn->rollback_transaction();
         if (rc) {
@@ -1726,6 +2174,8 @@ error:
   set_abort_query_flag(thd);
   handle_error(rc, sql_info);
   if (need_kill_mysqld) {
+    SDB_LOG_ERROR(
+        "HA: Failed to persist SQL statement, start stop current server");
     ha_kill_mysqld(thd);
   }
   goto done;

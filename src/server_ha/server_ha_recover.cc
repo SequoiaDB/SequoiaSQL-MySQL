@@ -1423,7 +1423,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
   char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
   const char *query = NULL, *db_name = NULL, *table_name = NULL;
   const char *op_type = NULL, *session_attrs = NULL;
-  int client_charset_num = -1;
+  int client_charset_num = 0;
   int owner = HA_INVALID_INST_ID;
   int sql_id = HA_INVALID_SQL_ID;
 
@@ -1564,10 +1564,8 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         }
       }
 
-      // get character by 'ClientCharset' field
-      // '`' is not in 'HA_CHARSET_NUM_SWE7', "sdb_convert_charset" for
-      // "USE `dataabase`" will fail
-      if (client_charset_num > 0 && HA_CHARSET_NUM_SWE7 != client_charset_num) {
+      // get sql stmt client charset
+      {
         charset_info = get_charset(client_charset_num, MYF(MY_WME));
         if (NULL == charset_info) {
           sql_print_error("HA: Failed to get charset by charset num");
@@ -1577,9 +1575,9 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
 
       // build change database command(use database) and execute it
       char use_db_cmd[HA_MAX_USE_DB_CMD_LEN] = {0};
-      if (client_charset_num > 0 && HA_CHARSET_NUM_SWE7 != client_charset_num) {
+      if (client_charset_num != (int)system_charset_info->number) {
         // convert database's name charset
-        src_sql.set(db_name, strlen(db_name), &SDB_CHARSET);
+        src_sql.set(db_name, strlen(db_name), system_charset_info);
         dst_sql.length(0);
         rc = sdb_convert_charset(src_sql, dst_sql, charset_info);
         HA_RC_CHECK(rc, sleep_secs, "HA: Convert charset error: %d", rc);
@@ -1609,18 +1607,13 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                   "mysql error: %s",
                   use_db_cmd, sql_id, mysql_error(ha_mysql));
 
-      // replay SQL, convert query charset if necessary
-      if (client_charset_num > 0 && HA_CHARSET_NUM_SWE7 != client_charset_num) {
-        src_sql.set(query, strlen(query), &SDB_CHARSET);
-        dst_sql.length(0);
-        rc = sdb_convert_charset(src_sql, dst_sql, charset_info);
-        HA_RC_CHECK(rc, sleep_secs, "HA: Convert charset error: %d", rc);
-        query = dst_sql.c_ptr_safe();
-      }
       SDB_LOG_DEBUG("HA: Replay thread replay SQL: %s with SQL ID: %d", query,
                     sql_id);
-      rc = mysql_query(ha_mysql, query, strlen(query));
-      mysql_free_result(mysql_store_result(ha_mysql));
+
+      if (strlen(query)) {
+        rc = mysql_query(ha_mysql, query, strlen(query));
+        mysql_free_result(mysql_store_result(ha_mysql));
+      }
       if (rc && is_ignore_error(ha_mysql)) {
         sql_print_information(
             "HA: Failed to replay sql '%s' with SQL ID: %d, "
@@ -1689,6 +1682,19 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                   "HA: Failed to update instance and global state, "
                   "sequoiadb error: %s",
                   ha_error_string(sdb_conn, rc, err_buf));
+      // flush privileges after replay DCL
+      if (0 == strcmp(op_type, HA_OPERATION_TYPE_DCL)) {
+        rc = mysql_query(ha_mysql, C_STRING_WITH_LEN(HA_STMT_FLUSH_PRIVILEGES));
+        // if the main thread is about to terminate
+        if (rc && abort_loop) {
+          rc = 0;
+          break;
+        } else if (rc) {
+          sql_print_warning(
+              "HA: Failed to flush privileges after replay DCL statement");
+          rc = 0;
+        }
+      }
     }
 
     if (rc && HA_ERR_END_OF_FILE != rc) {

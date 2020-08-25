@@ -73,7 +73,7 @@
 #define HA_FIELD_OWNER "Owner"
 #define HA_FIELD_INSTANCE_GROUP_NAME "InstGroupName"
 #define HA_FIELD_SESSION_ATTRS "SessionAttributes"
-#define HA_FIELD_CLIENT_CHARSET_NUM "ClientCharset"
+#define HA_FIELD_CLIENT_CHARSET_NUM "ClientCharsetNum"
 
 #define HA_FIELD_INSTANCE_ID "InstanceID"
 #define HA_FIELD_HOST_NAME "HostName"
