@@ -4672,9 +4672,9 @@ SELECT FOUND_ROWS();
 #seqDB-22387
 CREATE TABLE t2 ( id INT, vc VARCHAR(16));
 INSERT INTO t2 VALUES (1,'op'),(-1,'bc'),(10,'123'),(7,'ui'),(18,'123'),(10,'hello'),(0,'bc');
-SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id ORDER BY t1.id LIMIT 3 OFFSET 1;
+SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id ORDER BY t2.id LIMIT 3 OFFSET 1;
 --source include/query_pushdown_condition_sequoiadb.inc
-SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 ORDER BY t2.id LIMIT 2 OFFSET 1;
+SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 ORDER BY t2.id, t2.vc LIMIT 2 OFFSET 1;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22388
 CREATE TABLE t3 SELECT * FROM t1 WHERE id > 5 LIMIT 5;
