@@ -20,6 +20,7 @@
 #include <openssl/rand.h>
 #include <openssl/err.h>
 #include <boost/algorithm/hex.hpp>
+#include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 
 #include <termios.h>
 #include <unistd.h>
@@ -76,7 +77,7 @@ string ha_get_password(const char *prompt, bool show_asterisk = true) {
 
 // encode binary array into base64-formatted string
 std::string ha_base64_encode(const std::vector<uchar> &binary) {
-  std::unique_ptr<BIO, BIOFreeAll> b64(BIO_new(BIO_f_base64()));
+  boost::interprocess::unique_ptr<BIO, BIOFreeAll> b64(BIO_new(BIO_f_base64()));
   BIO_set_flags(b64.get(), BIO_FLAGS_BASE64_NO_NL);
   BIO *sink = BIO_new(BIO_s_mem());
   BIO_push(b64.get(), sink);
@@ -88,8 +89,8 @@ std::string ha_base64_encode(const std::vector<uchar> &binary) {
 }
 
 // Assumes no newlines or extra characters in encoded string
-std::vector<uchar> ha_base64_ecode(const char *encoded) {
-  std::unique_ptr<BIO, BIOFreeAll> b64(BIO_new(BIO_f_base64()));
+std::vector<uchar> ha_base64_ecode(char *encoded) {
+  boost::interprocess::unique_ptr<BIO, BIOFreeAll> b64(BIO_new(BIO_f_base64()));
   BIO_set_flags(b64.get(), BIO_FLAGS_BASE64_NO_NL);
   BIO *source = BIO_new_mem_buf(encoded, -1);  // read-only source
   BIO_push(b64.get(), source);
@@ -288,7 +289,7 @@ int ha_parse_password(const string &user, const string &token,
   bool found = false;
 
   password = "";
-  crypt_ifs.open(file_name, ios::in);
+  crypt_ifs.open(file_name.c_str(), std::ifstream::in);
   if (crypt_ifs.is_open()) {
     while (getline(crypt_ifs, line)) {
       split_pos = line.find(":");
@@ -377,12 +378,7 @@ int ha_parse_host(const std::string &host, std::string &hostname, uint &port) {
 
   hostname = host.substr(0, split_pos);
   std::string port_str = host.substr(split_pos + 1);
-  try {
-    port = std::stoi(port_str);
-  } catch (std::exception &e) {
-    cerr << "Error: invalid value for 'host', std::stoi failed" << endl;
-    rc = SDB_HA_INVALID_PARAMETER;
-  }
+  port = atoi(port_str.c_str());
   return rc;
 }
 

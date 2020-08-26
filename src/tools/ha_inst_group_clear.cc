@@ -17,7 +17,7 @@
 #include <fstream>
 #include <string>
 #include <memory>
-#include <unordered_set>
+#include <boost/unordered_set.hpp>
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
@@ -129,7 +129,10 @@ int main(int argc, char *argv[]) {
     // prompt user to check if they really want to delete instance group config
     if (!cmd_args.force) {
       string choose;
-      std::unordered_set<std::string> valid_words({"yes", "Y", "y"});
+      boost::unordered_set<std::string> valid_words;
+      valid_words.insert("yes");
+      valid_words.insert("Y");
+      valid_words.insert("y");
       cout << "Do you really want to clear instance group '" << orig_name
            << "' [Y/N]? ";
       getline(cin, choose);

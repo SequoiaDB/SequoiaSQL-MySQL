@@ -2332,7 +2332,7 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
       goto error;
     }
 
-    rc = conn->begin_transaction(thd);
+    rc = conn->begin_transaction(thd->tx_isolation);
     if (rc != 0) {
       print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
                       m_table->alias, op_name,

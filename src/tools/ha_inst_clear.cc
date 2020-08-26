@@ -16,8 +16,9 @@
 #include <argp.h>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <memory>
-#include <unordered_set>
+#include <boost/unordered_set.hpp>
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
@@ -89,7 +90,7 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
       break;
     case HA_KEY_INST_ID:
       try {
-        args->inst_id = std::stoi(arg);
+        args->inst_id = atoi(arg);
         args->is_inst_id_set = true;
       } catch (std::exception &e) {
         cerr << "Error: invalid argument 'inst_id' value: " << arg
@@ -291,11 +292,18 @@ int main(int argc, char *argv[]) {
       string choose;
       std::string instance;
       if (cmd_args.is_inst_id_set) {
-        instance = to_string(cmd_args.inst_id);
+        std::ostringstream os;
+        os << cmd_args.inst_id;
+        instance = os.str();
       } else {
-        instance = cmd_args.inst_hostname + ":" + to_string(cmd_args.inst_port);
+        std::ostringstream os;
+        os << cmd_args.inst_port;
+        instance = cmd_args.inst_hostname + ":" + os.str();
       }
-      std::unordered_set<std::string> valid_words({"yes", "Y", "y"});
+      boost::unordered_set<std::string> valid_words;
+      valid_words.insert("yes");
+      valid_words.insert("Y");
+      valid_words.insert("y");
       cout << "Do you really want to clear instance '" << instance
            << "' [Y/N]? ";
       getline(cin, choose);

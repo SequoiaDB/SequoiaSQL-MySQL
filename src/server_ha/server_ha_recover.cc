@@ -19,7 +19,7 @@
 #include "server_ha_util.h"
 #include "sdb_conn.h"
 #include "sdb_cl.h"
-#include <mysql/mysql.h>
+#include "mysql.h"
 #include "ha_sdb_errcode.h"
 #include "ha_sdb_util.h"
 #include "ha_sdb_log.h"
