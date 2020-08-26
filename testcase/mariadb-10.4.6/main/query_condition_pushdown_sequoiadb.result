@@ -7963,13 +7963,13 @@ FOUND_ROWS()
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 CREATE TABLE t2 ( id INT, vc VARCHAR(16));
 INSERT INTO t2 VALUES (1,'op'),(-1,'bc'),(10,'123'),(7,'ui'),(18,'123'),(10,'hello'),(0,'bc');
-SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id ORDER BY t1.id LIMIT 3 OFFSET 1;
+SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id ORDER BY t2.id LIMIT 3 OFFSET 1;
 id	vc	id	a	c
 0	bc	NULL	NULL	NULL
-18	123	NULL	NULL	NULL
 1	op	1	1	op
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 0 } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 ORDER BY t2.id LIMIT 2 OFFSET 1;
+7	ui	7	0	abc
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 7 } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 ORDER BY t2.id, t2.vc LIMIT 2 OFFSET 1;
 (SELECT a FROM t1 WHERE t1.a=t2.vc)	vc
 0	bc
 0	op
