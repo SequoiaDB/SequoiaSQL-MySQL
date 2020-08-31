@@ -2117,22 +2117,30 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
       value = sdb_get_gcol_item(gfield);
 #ifdef IS_MYSQL
       if (bitmap_is_set(bitmap, gfield->field_index)) {
+        bool set_value = true;
         Field *tmp_field = NULL;
         MY_BITMAP *base_columns_map = sdb_get_base_columns_map(gfield);
         for (uint i = bitmap_get_first_set(base_columns_map); i != MY_BIT_NONE;
              i = bitmap_get_next_set(base_columns_map, i)) {
           tmp_field = table->field[i];
           if (!bitmap_is_set(&const_col_map, tmp_field->field_index)) {
-            *optimizer_update = false;
-            goto done;
+            if (sdb_field_is_virtual_gcol(gfield)) {
+              set_value = false;
+              break;
+            } else {
+              *optimizer_update = false;
+              goto done;
+            }
           }
         }
 
-        rc = create_set_rule(gfield, value, optimizer_update, set_builder);
-        if (0 != rc) {
-          goto error;
+        if (set_value) {
+          rc = create_set_rule(gfield, value, optimizer_update, set_builder);
+          if (0 != rc) {
+            goto error;
+          }
+          bitmap_set_bit(&const_col_map, gfield->field_index);
         }
-        bitmap_set_bit(&const_col_map, gfield->field_index);
       }
       /* Set bitmap of table fields (columns), which are explicitly set to avoid
          memory allocation on MEM_ROOT.*/

@@ -43,7 +43,7 @@ Sdb_conn::Sdb_conn(my_thread_id _tid)
       m_thread_id(_tid),
       pushed_autocommit(false),
       m_is_authenticated(false),
-      m_use_transaction(sdb_use_transaction){
+      m_use_transaction(sdb_use_transaction) {
   // default is RR.
   last_tx_isolation = SDB_TRANS_ISO_RR;
 }
@@ -588,8 +588,7 @@ int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
       boost::bind(conn_get_last_result_obj, &m_connection, &result, get_owned));
 }
 
-int conn_get_session_attr(sdbclient::sdb *connection,
-                          bson::BSONObj *option) {
+int conn_get_session_attr(sdbclient::sdb *connection, bson::BSONObj *option) {
   return connection->getSessionAttr(*option);
 }
 
