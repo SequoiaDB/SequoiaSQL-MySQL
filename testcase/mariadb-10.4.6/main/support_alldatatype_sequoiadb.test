@@ -196,8 +196,10 @@ drop table t1;
 set time_zone=default;
 
 #test datatype which not support
---error 1178
+#--error 1178
 CREATE TABLE t1(g GEOMETRY);
+SHOW CREATE TABLE t1;
+DROP TABLE t1;
 
 #null
 create table t1(a int, b int);
