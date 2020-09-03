@@ -227,9 +227,9 @@ error:
 }
 
 /**
-  Compression attribute can both specified by COMMENT and COMPRESSION.
-  Check if they are ambiguous, and push the final compression type to `build`.
-*/
+ * Compression attribute can both specified by COMMENT and COMPRESSION.
+ * Check if they are ambiguous, and push the final compression type to `build`.
+ */
 int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
                                bson::BSONElement &cmt_compressed,
                                bson::BSONElement &cmt_compress_type,
@@ -252,57 +252,64 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
     goto error;
   }
 
-  type = sdb_str_compress_type(cmt_compress_type.valuestr());
-  if (cmt_compress_type.type() == bson::String) {
-    if ((cmt_compressed.type() == bson::Bool &&
-         cmt_compressed.Bool() == false) ||
-        (sql_compress != SDB_COMPRESS_TYPE_DEAFULT && type != sql_compress)) {
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous compression", MYF(0));
-      goto error;
-    }
-    build.append(SDB_FIELD_COMPRESSED, true);
-    build.append(cmt_compress_type);
-    goto done;
-  }
-
-  if (cmt_compress_type.type() == bson::EOO) {
-    if (cmt_compressed.type() == bson::Bool && cmt_compressed.Bool() == true) {
-      if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
+  try {
+    type = sdb_str_compress_type(cmt_compress_type.valuestr());
+    if (cmt_compress_type.type() == bson::String) {
+      if ((cmt_compressed.type() == bson::Bool &&
+           cmt_compressed.Bool() == false) ||
+          (sql_compress != SDB_COMPRESS_TYPE_DEAFULT && type != sql_compress)) {
         rc = ER_WRONG_ARGUMENTS;
         my_printf_error(rc, "Ambiguous compression", MYF(0));
         goto error;
       }
-      if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+      build.append(SDB_FIELD_COMPRESSED, true);
+      build.append(cmt_compress_type);
+      goto done;
+    }
+
+    if (cmt_compress_type.type() == bson::EOO) {
+      if (cmt_compressed.type() == bson::Bool &&
+          cmt_compressed.Bool() == true) {
+        if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
+          rc = ER_WRONG_ARGUMENTS;
+          my_printf_error(rc, "Ambiguous compression", MYF(0));
+          goto error;
+        }
+        if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+          build.append(SDB_FIELD_COMPRESSED, true);
+          goto done;
+        }
         build.append(SDB_FIELD_COMPRESSED, true);
-        goto done;
+        build.append(SDB_FIELD_COMPRESSION_TYPE,
+                     sdb_compress_type_str(sql_compress));
+      } else if (cmt_compressed.type() == bson::Bool &&
+                 cmt_compressed.Bool() == false) {
+        if (sql_compress == SDB_COMPRESS_TYPE_NONE ||
+            sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+          build.append(SDB_FIELD_COMPRESSED, false);
+          goto done;
+        }
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Ambiguous compression", MYF(0));
+        goto error;
+      } else {
+        if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
+          build.append(SDB_FIELD_COMPRESSED, false);
+          goto done;
+        }
+        if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
+          goto done;
+        }
+        build.append(SDB_FIELD_COMPRESSED, true);
+        build.append(SDB_FIELD_COMPRESSION_TYPE,
+                     sdb_compress_type_str(sql_compress));
       }
-      build.append(SDB_FIELD_COMPRESSED, true);
-      build.append(SDB_FIELD_COMPRESSION_TYPE,
-                   sdb_compress_type_str(sql_compress));
-    } else if (cmt_compressed.type() == bson::Bool &&
-               cmt_compressed.Bool() == false) {
-      if (sql_compress == SDB_COMPRESS_TYPE_NONE ||
-          sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
-        build.append(SDB_FIELD_COMPRESSED, false);
-        goto done;
-      }
-      rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Ambiguous compression", MYF(0));
-      goto error;
-    } else {
-      if (sql_compress == SDB_COMPRESS_TYPE_NONE) {
-        build.append(SDB_FIELD_COMPRESSED, false);
-        goto done;
-      }
-      if (sql_compress == SDB_COMPRESS_TYPE_DEAFULT) {
-        goto done;
-      }
-      build.append(SDB_FIELD_COMPRESSED, true);
-      build.append(SDB_FIELD_COMPRESSION_TYPE,
-                   sdb_compress_type_str(sql_compress));
     }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to check if compress options are ambiguous or not, exception:%s",
+      e.what());
 
 done:
   return rc;
@@ -535,8 +542,7 @@ int sdb_parse_comment_options(const char *comment_str,
                     comment_str);
     goto error;
   }
-
-  {
+  try {
     bson::BSONObjIterator iter(comments);
     bson::BSONElement elem;
     while (iter.more()) {
@@ -572,6 +578,10 @@ int sdb_parse_comment_options(const char *comment_str,
       }
     }
   }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to parse comment options:%s, "
+                        "exception=%s",
+                        comment_str, e.what());
 done:
   return rc;
 error:

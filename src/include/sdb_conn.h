@@ -117,6 +117,9 @@ class Sdb_conn {
     }
   }
 
+  char *get_err_msg() { return errmsg; }
+  void clear_err_msg() { errmsg[0] = '\0'; }
+
  private:
   int retry(boost::function<int()> func);
 
@@ -127,6 +130,7 @@ class Sdb_conn {
   bool pushed_autocommit;
   ulong last_tx_isolation;
   bool m_is_authenticated;
+  char errmsg[SDB_ERR_BUFF_SIZE];
 };
 
 #endif

@@ -51,4 +51,18 @@
 
 void sdb_log(loglevel lvl, const char *format, ...);
 
+#define SDB_EXCEPTION_CATCHER(ret, format, ...) \
+  catch (std::bad_alloc & e) {                  \
+    ret = SDB_ERR_OOM;                          \
+    SDB_LOG_ERROR(format, ##__VA_ARGS__);       \
+    convert_sdb_code(ret);                      \
+    goto error;                                 \
+  }                                             \
+  catch (std::exception & e) {                  \
+    SDB_LOG_ERROR(format, ##__VA_ARGS__);       \
+    ret = SDB_ERR_BUILD_BSON;                   \
+    convert_sdb_code(ret);                      \
+    goto error;                                 \
+  }
+
 #endif
