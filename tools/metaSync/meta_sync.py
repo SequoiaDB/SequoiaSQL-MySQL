@@ -38,6 +38,7 @@ MYSQL_ERRORS = {
     SYNTAX_ERR_2: "ERROR 1064"
 }
 
+STAT_FILE_V2_NAME = "sync.stat"
 
 class CryptoUtil:
     def __init__(self):
@@ -414,15 +415,14 @@ class StatMgr:
 
     def load_stat(self):
         self.parser = ConfigParser.ConfigParser()
-        old_stat_file = 'sync.stat'
         try:
             if not os.path.exists(self.stat_file):
-                old_file = os.path.join(my_home, old_stat_file)
+                old_file = os.path.join(my_home, STAT_FILE_V2_NAME)
                 if os.path.exists(old_file):
                     # Upgrade from old version.
                     logger.info('Status file {} dose not exist. Old version '
                                 'file {} found. Upgrade status file '
-                                'from it'.format(self.stat_file, old_stat_file))
+                                'from it'.format(self.stat_file, STAT_FILE_V2_NAME))
                     # Create new status file by copying the content in the file
                     # of old version. The old file will be removed at last.
                     shutil.copy(old_file, self.stat_file)
@@ -584,7 +584,7 @@ class PreProcessor:
                 elif 'last_parse_row' == key:
                     stat_parser.set(stat_sec_name, key, value)
 
-            stat_parser.write(open(self.stat_file, 'w'))
+            stat_parser.write(open(STAT_FILE_V2_NAME, 'w'))
             conf_parser.remove_section(parse_sec_name)
             conf_parser.write(open(config_file, 'w'))
         except BaseException:
@@ -1171,7 +1171,7 @@ def __post_start():
     """ Post actions after starting all sync workers. Currently the only action
         is to remove the status file of old version, if any
     """
-    old_stat_file = os.path.join(my_home, 'sync.stat')
+    old_stat_file = os.path.join(my_home, STAT_FILE_V2_NAME)
     try:
         if os.path.exists(old_stat_file):
             os.remove(old_stat_file)
