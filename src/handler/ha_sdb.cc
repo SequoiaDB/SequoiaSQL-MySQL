@@ -2082,8 +2082,8 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
           bool set_value = true;
           Field *tmp_field = NULL;
           MY_BITMAP *base_columns_map = sdb_get_base_columns_map(gfield);
-          for (uint i = bitmap_get_first_set(base_columns_map); i != MY_BIT_NONE;
-               i = bitmap_get_next_set(base_columns_map, i)) {
+          for (uint i = bitmap_get_first_set(base_columns_map);
+               i != MY_BIT_NONE; i = bitmap_get_next_set(base_columns_map, i)) {
             tmp_field = table->field[i];
             if (!bitmap_is_set(&const_col_map, tmp_field->field_index)) {
               if (sdb_field_is_virtual_gcol(gfield)) {
@@ -2369,6 +2369,10 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
   if (thd_sql_command(thd) == SQLCOM_SELECT) {
+    rc = build_selector(selector);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
     if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT)) {
       rc = optimize_count(condition, can_direct);
       if (SDB_ERR_OK == rc && can_direct) {
@@ -2382,10 +2386,6 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       } else {
         goto error;
       }
-    }
-    rc = build_selector(selector);
-    if (SDB_ERR_OK != rc) {
-      goto error;
     }
   }
 
