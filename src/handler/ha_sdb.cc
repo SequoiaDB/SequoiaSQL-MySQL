@@ -1202,7 +1202,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
       case MYSQL_TYPE_TINY_BLOB:
       case MYSQL_TYPE_MEDIUM_BLOB:
       case MYSQL_TYPE_LONG_BLOB:
-	  case MYSQL_TYPE_BLOB:
+      case MYSQL_TYPE_BLOB:
       case MYSQL_TYPE_GEOMETRY: {
         String val_tmp;
         if (MYSQL_TYPE_SET == field->real_type() ||
@@ -2619,6 +2619,11 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
   if (thd_sql_command(thd) == SQLCOM_SELECT) {
+    rc = build_selector(selector);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
+
     if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT)) {
       rc = optimize_count(condition, can_direct);
       if (SDB_ERR_OK == rc && can_direct) {
@@ -2632,10 +2637,6 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       } else {
         goto error;
       }
-    }
-    rc = build_selector(selector);
-    if (SDB_ERR_OK != rc) {
-      goto error;
     }
   }
 
