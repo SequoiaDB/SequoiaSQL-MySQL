@@ -81,19 +81,6 @@ error:
 int Sdb_conn::connect() {
   int rc = SDB_ERR_OK;
   String password;
-  bson::BSONObj option;
-  const char *hostname = NULL;
-  char source_str[PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + 64] = {0};
-  // 64 bytes is for string of proc_id and thread_id.
-
-  int hostname_len = (int)strlen(glob_hostname);
-
-  if (0 >= hostname_len) {
-    static char empty[] = "";
-    hostname = empty;
-  } else {
-    hostname = glob_hostname;
-  }
 
   if (!(is_valid() && is_authenticated())) {
     m_transaction_on = false;
@@ -148,34 +135,12 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
-             strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
-             (ulonglong)thread_id());
-    bool auto_commit = sdb_use_transaction ? true : false;
-    try {
-      option = BSON(SOURCE_THREAD_ID << source_str << TRANSAUTOROLLBACK << false
-                                     << TRANSAUTOCOMMIT << auto_commit);
-    } catch (std::bad_alloc &e) {
-      rc = SDB_ERR_OOM;
-
-      snprintf(errmsg, sizeof(errmsg),
-               "Failed to build setSessionAttr option "
-               "obj during connecting to sequoiadb, exception=%s",
-               e.what());
-      goto error;
-    } catch (std::exception &e) {
-      snprintf(errmsg, sizeof(errmsg),
-               "Failed to build setSessionAttr option "
-               "obj during connecting to sequoiadb, exception=%s",
-               e.what());
-      rc = SDB_ERR_BUILD_BSON;
-      goto error;
-    }
-    rc = set_session_attr(option);
+    rc = set_my_session_attr();
     if (SDB_ERR_OK != rc) {
       snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d", rc);
       goto error;
     }
+
     m_is_authenticated = true;
   }
 
@@ -184,6 +149,66 @@ done:
 error:
   convert_sdb_code(rc);
   m_connection.disconnect();
+  goto done;
+}
+
+int Sdb_conn::set_my_session_attr() {
+  static bool support_source_and_trans_attr = true;
+
+  int rc = SDB_ERR_OK;
+  if (support_source_and_trans_attr) {
+    const char *hostname = NULL;
+    char source_str[PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + 64] = {0};
+    // 64 bytes is for string of proc_id and thread_id.
+
+    int hostname_len = (int)strlen(glob_hostname);
+
+    if (0 >= hostname_len) {
+      static char empty[] = "";
+      hostname = empty;
+    } else {
+      hostname = glob_hostname;
+    }
+
+    snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
+             strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
+             (ulonglong)thread_id());
+
+    try {
+      bson::BSONObjBuilder builder(128);
+      builder.append(SOURCE_THREAD_ID, source_str);
+      builder.append(TRANSAUTOROLLBACK, false);
+      bool auto_commit = m_use_transaction ? true : false;
+      builder.append(TRANSAUTOCOMMIT, auto_commit);
+
+      rc = set_session_attr(builder.obj());
+      // No such options before sdb v3.2.4. Ignore it.
+      if (SDB_INVALIDARG == get_sdb_code(rc)) {
+        support_source_and_trans_attr = false;
+        rc = SDB_ERR_OK;
+      }
+
+    } catch (std::bad_alloc &e) {
+      snprintf(errmsg, sizeof(errmsg),
+               "Failed to build setSessionAttr option "
+               "obj during connecting to sequoiadb, exception=%s",
+               e.what());
+      rc = SDB_ERR_OOM;
+      goto error;
+
+    } catch (std::exception &e) {
+      snprintf(errmsg, sizeof(errmsg),
+               "Failed to build setSessionAttr option "
+               "obj during connecting to sequoiadb, exception=%s",
+               e.what());
+      rc = SDB_ERR_BUILD_BSON;
+      goto error;
+    }
+  }
+
+done:
+  return rc;
+error:
   goto done;
 }
 
@@ -203,7 +228,7 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
     rc = SDB_ERR_NOT_ALLOWED;
     snprintf(errmsg, sizeof(errmsg),
              "SequoiaDB engine not support transaction "
-             "serializable isolation, please set transaction_isolation "
+             "serializable isolation. Please set transaction_isolation "
              "to other level and restart transaction");
     goto error;
   }
@@ -215,6 +240,10 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
       builder.append(SDB_FIELD_TRANS_ISO, (int)tx_iso);
       option = builder.obj();
       rc = set_session_attr(option);
+      if (SDB_INVALIDARG == get_sdb_code(rc)) {
+        // No such options before sdb v3.2.4. Just ignore.
+        rc = SDB_ERR_OK;
+      }
       if (SDB_ERR_OK != rc) {
         snprintf(errmsg, sizeof(errmsg),
                  "Failed to set transaction isolation: %s, rc=%d",
@@ -476,6 +505,22 @@ int conn_exec(sdbclient::sdb *connection, const char *sql,
 
 int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
                                 Sdb_statistics &stats) {
+  static bool support_get_detail = true;
+  int rc = SDB_ERR_OK;
+  if (support_get_detail) {
+    rc = get_cl_stats_by_get_detail(cs_name, cl_name, stats);
+    if (SDB_INVALIDARG == get_sdb_code(rc)) {
+      support_get_detail = false;
+    }
+  }
+  if (!support_get_detail) {
+    rc = get_cl_stats_by_snapshot(cs_name, cl_name, stats);
+  }
+  return rc;
+}
+
+int Sdb_conn::get_cl_stats_by_get_detail(char *cs_name, char *cl_name,
+                                         Sdb_statistics &stats) {
   static const int PAGE_SIZE_MIN = 4096;
   static const int PAGE_SIZE_MAX = 65536;
 
@@ -575,6 +620,89 @@ int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
 
   stats.total_data_pages /= (stats.page_size / PAGE_SIZE_MIN);
   stats.total_index_pages /= (stats.page_size / PAGE_SIZE_MIN);
+
+done:
+  cursor.close();
+  return rc;
+error:
+  convert_sdb_code(rc);
+  goto done;
+}
+
+int Sdb_conn::get_cl_stats_by_snapshot(char *cs_name, char *cl_name,
+                                       Sdb_statistics &stats) {
+  static const char NORMAL_CL_STATS_SQL[] =
+      "select T.Details.$[0].PageSize as PageSize, "
+      "T.Details.$[0].TotalDataPages as TotalDataPages,"
+      "T.Details.$[0].TotalIndexPages as TotalIndexPages, "
+      "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace, "
+      "T.Details.$[0].TotalRecords as TotalRecords "
+      "from $SNAPSHOT_CL as T "
+      "where T.NodeSelect='primary' and T.Name='%s.%s' split by T.Details";
+
+  static const char MAIN_CL_STATS_SQL[] =
+      "select CL.PageSize,"
+      "sum(CL.TotalDataPages) as TotalDataPages,"
+      "sum(CL.TotalIndexPages) as TotalIndexPages,"
+      "sum(CL.TotalDataFreeSpace) as TotalDataFreeSpace,"
+      "sum(CL.TotalRecords) as TotalRecords "
+      "from "
+      "("
+      "select Name from $SNAPSHOT_CATA "
+      "where MainCLName='%s.%s' "
+      ") as CATA "
+      "inner join "
+      "("
+      "select T.Name,"
+      "T.Details.$[0].PageSize as PageSize,"
+      "T.Details.$[0].TotalDataPages as TotalDataPages,"
+      "T.Details.$[0].TotalIndexPages as TotalIndexPages,"
+      "T.Details.$[0].TotalDataFreeSpace as TotalDataFreeSpace,"
+      "T.Details.$[0].TotalRecords as TotalRecords "
+      "from $SNAPSHOT_CL as T "
+      "where T.NodeSelect='primary' split by T.Details"
+      ") as CL "
+      "on CATA.Name=CL.Name";
+
+  int rc = SDB_ERR_OK;
+  sdbclient::sdbCursor cursor;
+  bson::BSONObj obj;
+  char normal_cl_stats_sql[sizeof(NORMAL_CL_STATS_SQL) +
+                           SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  char main_cl_stats_sql[sizeof(MAIN_CL_STATS_SQL) +
+                         SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+
+  DBUG_ASSERT(NULL != cs_name);
+  DBUG_ASSERT(strlength(cs_name) != 0);
+
+  // Try getting statistics as normal cl. If not, try main cl again.
+  sprintf(normal_cl_stats_sql, NORMAL_CL_STATS_SQL, cs_name, cl_name);
+  rc = retry(
+      boost::bind(conn_exec, &m_connection, normal_cl_stats_sql, &cursor));
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+  rc = cursor.next(obj, false);
+  if (SDB_DMS_EOC == rc) {
+    sprintf(main_cl_stats_sql, MAIN_CL_STATS_SQL, cs_name, cl_name);
+    rc = retry(
+        boost::bind(conn_exec, &m_connection, main_cl_stats_sql, &cursor));
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
+    rc = cursor.next(obj, false);
+  }
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+  stats.page_size = obj.getField(SDB_FIELD_PAGE_SIZE).numberInt();
+  stats.total_data_pages = obj.getField(SDB_FIELD_TOTAL_DATA_PAGES).numberInt();
+  stats.total_index_pages =
+      obj.getField(SDB_FIELD_TOTAL_INDEX_PAGES).numberInt();
+  stats.total_data_free_space =
+      obj.getField(SDB_FIELD_TOTAL_DATA_FREE_SPACE).numberLong();
+  stats.total_records = obj.getField(SDB_FIELD_TOTAL_RECORDS).numberLong();
 
 done:
   cursor.close();
