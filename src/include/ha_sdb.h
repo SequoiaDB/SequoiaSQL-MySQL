@@ -499,6 +499,8 @@ class ha_sdb : public handler {
                             enum enum_compress_type new_sql_compress,
                             Sdb_cl &cl);
 
+  bool is_field_rule_supported();
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
