@@ -545,6 +545,8 @@ class ha_sdb : public handler {
                             enum enum_compress_type new_sql_compress,
                             Sdb_cl &cl);
 
+  bool is_field_rule_supported();
+
   bool is_idx_stat_valid(Sdb_idx_stat_ptr &ptr);
 
   int fetch_index_stat(Sdb_index_stat &s);

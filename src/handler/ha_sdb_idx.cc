@@ -65,7 +65,8 @@ int sdb_get_key_direction(ha_rkey_function find_flag) {
   }
 }
 
-int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
+int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id,
+                     bool support_not_null) {
   int rc = 0;
   bool is_unique = key_info->flags & HA_NOSAME;
   bool all_is_not_null = true;
@@ -107,11 +108,15 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
     }
     key_obj = key_obj_builder.obj();
 
-    options_builder.append(SDB_FIELD_UNIQUE, is_unique);
-    options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
-    options = options_builder.obj();
-
-    rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
+    if (support_not_null) {
+      options_builder.append(SDB_FIELD_UNIQUE, is_unique);
+      options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
+      options = options_builder.obj();
+      rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
+    } else {
+      rc = cl.create_index(key_obj, sdb_key_name(key_info), is_unique,
+                           /*enforced*/ all_is_not_null);
+    }
     if (rc) {
       goto error;
     }
@@ -129,6 +134,21 @@ error:
     cl.clear_errmsg();
   }
   goto done;
+}
+
+int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
+  static bool support_not_null = true;
+  int rc = SDB_ERR_OK;
+  if (support_not_null) {
+    rc = sdb_create_index(key_info, cl, shard_by_part_id, true);
+    if (SDB_INVALIDARG == get_sdb_code(rc)) {
+      support_not_null = false;
+    }
+  }
+  if (!support_not_null) {
+    rc = sdb_create_index(key_info, cl, shard_by_part_id, false);
+  }
+  return rc;
 }
 
 int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,

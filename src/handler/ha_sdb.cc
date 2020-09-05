@@ -448,6 +448,9 @@ void sdb_set_affected_rows(THD *thd) {
   char saved_char = '\0';
 
   if (!da->is_ok()) {
+    thd_sdb->deleted = 0;
+    thd_sdb->found = 0;
+    thd_sdb->updated = 0;
     goto done;
   }
 
@@ -1883,8 +1886,8 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
 
 int ha_sdb::get_dup_info(bson::BSONObj &result, const char **idx_name) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjIterator it(result);
   try {
+    bson::BSONObjIterator it(result);
     while (it.more()) {
       bson::BSONElement elem = it.next();
       if (0 == strcmp(elem.fieldName(), SDB_FIELD_INDEX_VALUE)) {
@@ -1971,14 +1974,16 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
   rc = collection->insert(rows, hint, flag, &result);
   if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
     int rs = SDB_ERR_OK;
-    const char *idx_name = "";
+    const char *idx_name = NULL;
     rs = get_dup_info(result, &idx_name);
     if (SDB_ERR_OK != rs) {
       rc = rs;
       goto error;
     }
-
-    if (m_insert_with_update) {
+    // Cannot support INSERT ... ON DUPLICATE KEY UPDATE ...
+    // when sdb doesn't return duplication info.
+    if (idx_name && m_insert_with_update) {
+      // Return this code so that mysql can call ::update_row().
       rc = HA_ERR_FOUND_DUPP_KEY;
     }
   }
@@ -2058,21 +2063,19 @@ int ha_sdb::get_found_updated_rows(bson::BSONObj &result, ulonglong *found,
   int rc = SDB_ERR_OK;
   bson::BSONElement e;
   e = result.getField(SDB_FIELD_UPDATED_NUM);
-  if (!e.isNumber()) {
-    SDB_LOG_WARNING("Invalid type: '%d' of '%s' in update result.", e.type(),
-                    SDB_FIELD_UPDATED_NUM);
-    goto done;
+  if (e.isNumber()) {
+    *found = (ulonglong)e.numberLong();
+  } else {
+    *found = (ulonglong)-1;  // unknown
   }
-  *found = (ulonglong)e.numberLong();
 
   e = result.getField(SDB_FIELD_MODIFIED_NUM);
-  if (!e.isNumber()) {
-    SDB_LOG_WARNING("Invalid type: '%d' of '%s' in update result.", e.type(),
-                    SDB_FIELD_MODIFIED_NUM);
-    goto done;
+  if (e.isNumber()) {
+    *updated = (ulonglong)e.numberLong();
+  } else {
+    *updated = (ulonglong)-1;  // unknown
   }
-  *updated = (ulonglong)e.numberLong();
-done:
+
   return rc;
 }
 
@@ -2080,13 +2083,11 @@ int ha_sdb::get_deleted_rows(bson::BSONObj &result, ulonglong *deleted) {
   int rc = SDB_ERR_OK;
   bson::BSONElement e;
   e = result.getField(SDB_FIELD_DELETED_NUM);
-  if (!e.isNumber()) {
-    SDB_LOG_WARNING("Invalid type: '%d' of '%s' in delete result.", e.type(),
-                    SDB_FIELD_DELETED_NUM);
-    goto done;
+  if (e.isNumber()) {
+    *deleted = (ulonglong)e.numberLong();
+  } else {
+    *deleted = (ulonglong)-1;  // unknown
   }
-  *deleted = (ulonglong)e.numberLong();
-done:
   return rc;
 }
 
@@ -2342,6 +2343,60 @@ done:
   return rc;
 }
 
+bool ha_sdb::is_field_rule_supported() {
+  /*
+    SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
+    Lucky that sdbCollection::getDetail() is new API in the version, too.
+    We can use getDetail() to ensure the version.
+  */
+  static bool has_cached = false;
+  static bool cached_result = true;
+
+  bool supported = false;
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+  Sdb_cl collection;
+  sdbclient::sdbCursor cursor;
+
+  if (has_cached) {
+    supported = cached_result;
+    goto done;
+  }
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = conn->get_cl(db_name, table_name, collection);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = collection.get_detail(cursor);
+  if (0 == rc) {
+    has_cached = true;
+    supported = cached_result = true;
+    cursor.close();
+    goto done;
+
+  } else if (SDB_INVALIDARG == get_sdb_code(rc)) {
+    has_cached = true;
+    supported = cached_result = false;
+    goto done;
+
+  } else {
+    goto error;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int ha_sdb::create_field_rule(const char *field_name, Item_field *value,
                               bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
@@ -2571,6 +2626,11 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
 
       value->traverse_cond(&sdb_traverse_update, &upd_arg, Item::PREFIX);
       if (!*optimizer_update) {
+        goto done;
+      }
+
+      if (upd_arg.value_field && !is_field_rule_supported()) {
+        *optimizer_update = false;
         goto done;
       }
 
@@ -6245,11 +6305,15 @@ get_message_done:
       }
       break;
     case SDB_IXM_DUP_KEY: {
-      const char *idx_name = "";
+      const char *idx_name = NULL;
       // ignore the return error.
       get_dup_info(error_obj, &idx_name);
-      my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key '%s'",
-                      MYF(0), m_dup_value.toString().c_str(), idx_name);
+      if (idx_name) {
+        my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key '%s'",
+                        MYF(0), m_dup_value.toString().c_str(), idx_name);
+      } else {
+        my_printf_error(ER_DUP_KEY, ER(ER_DUP_KEY), MYF(0), table_name);
+      }
       break;
     }
     case SDB_NET_CANNOT_CONNECT: {

@@ -133,6 +133,14 @@ class Sdb_conn {
  private:
   int retry(boost::function<int()> func);
 
+  int set_my_session_attr();
+
+  int get_cl_stats_by_get_detail(char *cs_name, char *cl_name,
+                                 Sdb_statistics &stats);
+
+  int get_cl_stats_by_snapshot(char *cs_name, char *cl_name,
+                               Sdb_statistics &stats);
+
  private:
   sdbclient::sdb m_connection;
   bool m_transaction_on;
