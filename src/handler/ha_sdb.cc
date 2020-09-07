@@ -4152,7 +4152,8 @@ done:
 error:
   if (SDB_RTN_COORD_ONLY == get_sdb_code(rc)) {
     my_printf_error(HA_ERR_UNSUPPORTED,
-                    "SequoiaDB standalone mode is not supported by plugin",
+                    "MySQL doesn't support standalone SequoiaDB. "
+                    "The cluster is required.",
                     MYF(0));
   }
   goto done;
