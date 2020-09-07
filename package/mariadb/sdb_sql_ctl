@@ -291,7 +291,7 @@ function add_inst()
    exec_cmd_with_print "mkdir -p $SQL_DATA" "$SQL_LOG"
    test $? -ne 0 && { echo "ERROR: Fail to mkdir SQLDATA $SQL_DATA with $user" >&2 && exit 5; }
    
-   exec_cmd_with_print "$INSTALL_PATH/scripts/mysql_install_db --no-defaults --basedir=$INSTALL_PATH --datadir=$SQL_DATA --user=$SQL_USER " "$SQL_LOG"
+   exec_cmd_with_print "$INSTALL_PATH/scripts/mysql_install_db --no-defaults --cross-bootstrap --basedir=$INSTALL_PATH --datadir=$SQL_DATA --user=$SQL_USER " "$SQL_LOG"
    test $? -ne 0 && { echo "ERROR: Fail to initdb, please verify log $SQL_LOG" >&2 && exit 3; }
    
    exec_cmd_with_print "test -f $INSTALL_PATH/conf/sample/sample.cnf" "$SQL_LOG"
