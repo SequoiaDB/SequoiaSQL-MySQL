@@ -3994,6 +3994,14 @@ int ha_sdb::info(uint flag) {
     goto done;
   }
 
+#ifdef IS_MARIADB
+  // For compatible MariaDB LIMIT ROWS EXAMINED syntax.
+  // Clear examined rows before rnd_next/index_read_one.
+  if (ULONGLONG_MAX == ha_thd()->lex->limit_rows_examined_cnt) {
+    ha_thd()->accessed_rows_and_keys = 0;
+  }
+#endif
+
   if (first_info) {
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT &&
         sdb_is_single_table(ha_thd()) &&
