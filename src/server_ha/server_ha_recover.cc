@@ -795,7 +795,7 @@ static int dump_meta_data(ha_recover_replay_thread *ha_thread,
     rc = (-1 != status && WIFEXITED(status) && !WEXITSTATUS(status)) ? 0 : -1;
     if (rc) {
       sql_print_information(
-          "HA: Failed to dump databases to '%s', 'popen' error: %s",
+          "HA: Failed to dump databases to '%s', 'pclose' error: %s",
           dump_source.dump_files[i], strerror(errno));
       rc = SDB_HA_DUMP_METADATA;
       goto error;
@@ -1335,7 +1335,7 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
         rc = SDB_HA_RECOVER_METADATA;
         sql_print_information(
             "HA: Failed to recover metadata from '%s' "
-            "by 'source' command, 'popen' error: %s",
+            "by 'source' command, 'pclose' error: %s",
             dump_source.dump_files[i], strerror(errno));
         goto error;
       }
@@ -1895,6 +1895,11 @@ void *ha_recover_and_replay(void *arg) {
 
       // if full recovery fails , prepare recovery from SQL log
       if (rc) {
+        rc = clear_local_meta_data(ha_mysql);
+        HA_RC_CHECK(rc, error,
+                    "HA: Failed to clear local metadata before "
+                    "recovering from SQL log");
+
         sql_print_information(
             "HA: Full recovery failed, initialize current "
             "instance global state, prepare recovery from SQL log");
