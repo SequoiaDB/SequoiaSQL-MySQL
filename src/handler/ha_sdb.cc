@@ -2905,27 +2905,26 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
         unit->offset_limit_cnt = 0;
       }
     }
-
-    if (sdb_group_list) {
-      std::vector<bson::BSONObj> aggregate_obj;
-      rc = sdb_build_aggregate_obj(condition, group_list_condition, order_by,
-                                   num_to_skip, num_to_return, aggregate_obj);
-      if (rc) {
-        goto error;
-      }
-      rc = collection->aggregate(aggregate_obj);
-    } else {
-      rc = collection->query(condition, selector, order_by, hint, num_to_skip,
-                             num_to_return, flag);
-      SDB_LOG_DEBUG(
-          "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
-          "limit[%d], "
-          "offset[%d]",
-          condition.toString(false, false).c_str(),
-          selector.toString(false, false).c_str(),
-          order_by.toString(false, false).c_str(),
-          hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+  }
+  if (sdb_group_list) {
+    std::vector<bson::BSONObj> aggregate_obj;
+    rc = sdb_build_aggregate_obj(condition, group_list_condition, order_by,
+                                 num_to_skip, num_to_return, aggregate_obj);
+    if (rc) {
+      goto error;
     }
+    rc = collection->aggregate(aggregate_obj);
+  } else {
+    rc = collection->query(condition, selector, order_by, hint, num_to_skip,
+                           num_to_return, flag);
+    SDB_LOG_DEBUG(
+        "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+        "limit[%d], "
+        "offset[%d]",
+        condition.toString(false, false).c_str(),
+        selector.toString(false, false).c_str(),
+        order_by.toString(false, false).c_str(),
+        hint.toString(false, false).c_str(), num_to_return, num_to_skip);
   }
 
   if (rc) {
