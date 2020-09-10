@@ -509,6 +509,7 @@ class ha_sdb : public handler {
   Sdb_share *share;
   bool first_info;
   bool direct_sort;
+  bool direct_limit;
   bson::BSONObj cur_rec;
   bson::BSONObj pushed_condition;
   bson::BSONObj field_order_condition;
