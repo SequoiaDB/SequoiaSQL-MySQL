@@ -56,7 +56,8 @@ ulong sdb_error_level = SDB_ERROR;
 my_bool sdb_use_transaction = SDB_DEFAULT_USE_TRANSACTION;
 
 static const char *sdb_optimizer_options_names[] = {
-    "direct_count", "direct_delete", "direct_update", "direct_sort", NullS};
+    "direct_count", "direct_delete", "direct_update",
+    "direct_sort",  "direct_limit",  NullS};
 
 TYPELIB sdb_optimizer_options_typelib = {
     array_elements(sdb_optimizer_options_names) - 1, "",
@@ -224,12 +225,9 @@ static MYSQL_THDVAR_SET(
     optimizer_options, PLUGIN_VAR_OPCMDARG,
     "Optimizer_options[=option[,option...]], where "
     "option can be 'direct_count', 'direct_delete', 'direct_update', "
-    "direct_sort."
-    "direct_count: use count() instead of reading records "
-    "direct_delete: direct delete without reading records."
-    "direct_update: direct update without reading records."
-    "direct_sort: direct sort in SequoiaDB."
-    "(Default: \"direct_count,direct_delete,direct_update,direct_sort\")"
+    "'direct_sort', 'direct_limit'. See the manual for details."
+    "(Default: \"direct_count, direct_delete, direct_update, direct_sort, "
+    "direct_limit\")"
     /*SequoiaDB 优化选项开关，以决定是否优化计数、更新、删除、排序操作。*/,
     NULL, NULL, SDB_OPTIMIZER_OPTIONS_DEFAULT, &sdb_optimizer_options_typelib);
 

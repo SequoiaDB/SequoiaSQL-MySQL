@@ -236,6 +236,10 @@ bool sdb_use_filesort(THD *thd);
 
 bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table);
 
+// Determing whether to use multi_range_read, include
+// multi_range、index_merge、jt_ref_or_null
+bool sdb_use_mrr(THD *thd, range_seq_t rseq);
+
 void sdb_clear_const_keys(THD *thd);
 
 st_order *sdb_get_join_order(THD *thd);

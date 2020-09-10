@@ -62,6 +62,8 @@ optimizer_switch=mrr=on,mrr_cost_based=off,join_cache_incremental=on,\
 join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=on
 '''
 
+MY_OPTIMIZER_OPTIONS = 'optimizer_options'
+
 is_mariadb = False
 
 def enum(*args):
@@ -252,6 +254,10 @@ class DocExtractor:
         else:
             print("WARN: No default value in " + t.name)
             t.default = '-'
+
+        if name == MY_OPTIMIZER_OPTIONS:
+            # Remove space
+            t.default = t.default.replace(' ', '')
 
         # Get `desp_en`
         if default_declare:
