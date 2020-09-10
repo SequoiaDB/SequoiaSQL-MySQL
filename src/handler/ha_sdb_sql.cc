@@ -265,6 +265,56 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
   return JT_REF_OR_NULL == tab->type();
 }
 
+// Determing whether to use multi_range_read, include
+// multi_range、index_merge、jt_ref_or_null
+bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
+  bool rs = false;
+  int count = 0;
+  QEP_TAB *tab = NULL;
+  QUICK_SELECT_I *quick = NULL;
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  if (!rseq || !join->qep_tab) {
+    goto error;
+  }
+  if (join->need_tmp) {
+    tab = &join->qep_tab[join->primary_tables];
+  } else {
+    tab = join->qep_tab + join->const_tables;
+  }
+
+  // Use JT_REF_OR_NULL.
+  if (JT_REF_OR_NULL == tab->type()) {
+    rs = true;
+    goto done;
+  }
+  quick = tab->quick();
+  if (quick) {
+    // Use INDEX_MERGE.
+    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type()) {
+      rs = true;
+      goto done;
+    }
+    // Use MULTI_RANGE.
+    if (QUICK_SELECT_I::QS_TYPE_RANGE == quick->get_type()) {
+      QUICK_RANGE_SEQ_CTX *ctx = (QUICK_RANGE_SEQ_CTX *)rseq;
+      QUICK_RANGE *const *tmp_it = ctx->first;
+      while (ctx->first != ctx->last) {
+        count++;
+        ctx->first++;
+      }
+      ctx->first = tmp_it;
+      if (count > 1) {
+        rs = true;
+      }
+    }
+  }
+
+done:
+  return rs;
+error:
+  goto done;
+}
+
 void sdb_clear_const_keys(THD *thd) {
   JOIN *const join = sdb_lex_first_select(thd)->join;
   if (join && join->join_tab) {
@@ -692,6 +742,55 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
   tab = (join_two_phase_optimization ? join->map2table[table->tablenr]
                                      : &join->join_tab[table->tablenr]);
   return JT_REF_OR_NULL == tab->type;
+}
+
+// Determing whether to use multi_range_read, include
+// multi_range、index_merge、jt_ref_or_null
+bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
+  bool rs = false;
+  int count = 0;
+  SQL_SELECT *select = NULL;
+  QUICK_SELECT_I *quick = NULL;
+  JOIN *const join = sdb_lex_first_select(thd)->join;
+  JOIN_TAB *tab = NULL;
+  if (!rseq || !join->join_tab) {
+    goto error;
+  }
+  tab = join->join_tab + (join->tables_list ? join->const_tables : 0);
+  if (join->need_tmp) {
+    tab = tab + 1;
+  }
+
+  // Use JT_REF_OR_NULL.
+  if (JT_REF_OR_NULL == tab->type) {
+    rs = true;
+    goto done;
+  }
+  if ((select = tab->select) && (quick = select->quick)) {
+    // Use INDEX_MERGE.
+    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type()) {
+      rs = true;
+      goto done;
+    }
+    // Use MULTI_RANGE.
+    if (QUICK_SELECT_I::QS_TYPE_RANGE == quick->get_type()) {
+      QUICK_RANGE_SEQ_CTX *ctx = (QUICK_RANGE_SEQ_CTX *)rseq;
+      QUICK_RANGE **tmp_it = ctx->first;
+      while (ctx->first != ctx->last) {
+        count++;
+        ctx->first++;
+      }
+      ctx->first = tmp_it;
+      if (count > 1) {
+        rs = true;
+      }
+    }
+  }
+
+done:
+  return rs;
+error:
+  goto done;
 }
 
 void sdb_clear_const_keys(THD *thd) {

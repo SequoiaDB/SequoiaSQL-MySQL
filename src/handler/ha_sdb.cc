@@ -947,6 +947,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   first_info = true;
   delete_with_select = false;
   direct_sort = false;
+  direct_limit = false;
   field_order_condition = SDB_EMPTY_BSON;
   group_list_condition = SDB_EMPTY_BSON;
   count_times = 0;
@@ -1188,6 +1189,7 @@ int ha_sdb::reset() {
   updated_value = NULL;
   updated_field = NULL;
   direct_sort = false;
+  direct_limit = false;
   sdb_order = NULL;
   sdb_group_list = NULL;
 
@@ -3257,9 +3259,12 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   bson::BSONObj order_by;
   bson::BSONObj selector;
   bson::BSONObjBuilder builder;
+  ha_rows org_num_to_skip = 0;
+  ha_rows org_num_to_return = -1;
   ha_rows num_to_skip = 0;
   ha_rows num_to_return = -1;
   bool direct_op = false;
+  bool use_mrr = false;
   int flag = 0;
   KEY *key_info = table->key_info + active_index;
 
@@ -3318,12 +3323,25 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
     const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
-        sdb_is_single_table(ha_thd())) {
+        sdb_is_single_table(ha_thd()) &&
+        (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_LIMIT)) {
       if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
-        num_to_return = select_lex->get_limit();
+        // org_num_to_return、org_num_to_skip keep the initial value for easy
+        // printing debug log.
+        org_num_to_return = num_to_return = select_lex->get_limit();
         if (select_lex->offset_limit) {
-          num_to_skip = select_lex->get_offset();
-          unit->offset_limit_cnt = 0;
+          org_num_to_skip = num_to_skip = select_lex->get_offset();
+          // Handle scenarios where conditions are batched down, like
+          // 'MULTI_RANGE、INDEX_MERGE、JT_REF_OR_NULL'.
+          if (sdb_use_mrr(ha_thd(), mrr_iter)) {
+            // If there is a direct_sort, the indexes has been removed.
+            DBUG_ASSERT(false == direct_sort);
+            use_mrr = true;
+            num_to_return += num_to_skip;
+            num_to_skip = 0;
+          } else {
+            unit->offset_limit_cnt = 0;
+          }
         }
       }
     }
@@ -3360,14 +3378,27 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
         "exception:%s",
         db_name, table_name, e.what());
 
-    SDB_LOG_DEBUG(
-        "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
-        "limit[%d], "
-        "offset[%d]",
-        condition.toString(false, false).c_str(),
-        selector.toString(false, false).c_str(),
-        order_by.toString(false, false).c_str(),
-        hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+    if (use_mrr) {
+      // If use_mrr, print 'limit+offset' for limit easy to understand.
+      SDB_LOG_DEBUG(
+          "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+          "limit[%d+%d], "
+          "offset[0], mrr[%d]",
+          condition.toString(false, false).c_str(),
+          selector.toString(false, false).c_str(),
+          order_by.toString(false, false).c_str(),
+          hint.toString(false, false).c_str(), org_num_to_return,
+          org_num_to_skip, use_mrr);
+    } else {
+      SDB_LOG_DEBUG(
+          "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+          "limit[%d], "
+          "offset[%d]",
+          condition.toString(false, false).c_str(),
+          selector.toString(false, false).c_str(),
+          order_by.toString(false, false).c_str(),
+          hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+    }
   }
 
   if (rc) {
@@ -3958,7 +3989,9 @@ int ha_sdb::rnd_next(uchar *buf) {
         SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
         const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
         if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
-            sdb_is_single_table(ha_thd())) {
+            sdb_is_single_table(ha_thd()) &&
+            (sdb_get_optimizer_options(ha_thd()) &
+             SDB_OPTIMIZER_OPTION_LIMIT)) {
           if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
             num_to_return = select_lex->get_limit();
             if (select_lex->offset_limit) {

@@ -561,6 +561,7 @@ class ha_sdb : public handler {
   bool first_info;
   bool delete_with_select;
   bool direct_sort;
+  bool direct_limit;
   bson::BSONObj cur_rec;
   bson::BSONObj pushed_condition;
   bson::BSONObj field_order_condition;
