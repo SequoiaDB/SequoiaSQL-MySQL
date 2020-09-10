@@ -77,6 +77,10 @@ typedef mysql_event_class_t ha_event_class_t;
 
 #define MYSQL_AUDIT_QUERY_ENTRY MYSQL_AUDIT_QUERY_CLASS
 #include "mysqld_thd_manager.h"
+struct st_sql_cmd_drop_server : public Sql_cmd_common_server {
+  LEX_STRING m_server_name;
+  bool m_if_exists;
+};
 #endif /*IS_MARIADB*/
 
 // Table reference about current SQL statement

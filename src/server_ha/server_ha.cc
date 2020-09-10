@@ -1306,6 +1306,14 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       sql_info->tables->table_name = thd->lex->server_options.server_name.str;
 #else
       sql_info->tables->table_name = thd->lex->server_options.m_server_name.str;
+      // if its 'drop server' statement
+      if (SQLCOM_DROP_SERVER == sql_command && !sql_info->tables->table_name) {
+        Sql_cmd_drop_server *drop_server_cmd =
+            (Sql_cmd_drop_server *)thd->lex->m_sql_cmd;
+        struct st_sql_cmd_drop_server *sql_cmd =
+            reinterpret_cast<struct st_sql_cmd_drop_server *>(drop_server_cmd);
+        sql_info->tables->table_name = sql_cmd->m_server_name.str;
+      }
 #endif
     }
     sql_info->tables->op_type = HA_OPERATION_TYPE_TABLE;
