@@ -4003,7 +4003,7 @@ int ha_sdb::rnd_next(uchar *buf) {
           "offset[%d]",
           condition.toString(false, false).c_str(),
           selector.toString(false, false).c_str(),
-          SDB_EMPTY_BSON.toString(false, false).c_str(),
+          order_by.toString(false, false).c_str(),
           hint.toString(false, false).c_str(), num_to_return, num_to_skip);
     }
 
@@ -4123,7 +4123,7 @@ int ha_sdb::info(uint flag) {
   if (first_info) {
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT &&
         sdb_is_single_table(ha_thd()) &&
-        (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_ORDER_BY)) {
+        (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_SORT)) {
       rc = sdb_handle_sort_condition(
           ha_thd(), table, &sdb_condition, &sdb_order, &sdb_group_list,
           direct_sort, field_order_condition, group_list_condition);
