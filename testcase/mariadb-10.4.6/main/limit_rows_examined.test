@@ -346,6 +346,7 @@ select max(c2) from t3 where c2 > 10 LIMIT ROWS EXAMINED 0;
 #explain
 #select count(c2) from t3 LIMIT ROWS EXAMINED 5;
 #Bug #SEQUOIASQLMAINSTREAM-746
+#Bug #SEQUOIASQLMAINSTREAM-786
 select count(c2) from t3 LIMIT ROWS EXAMINED 5;
 select count(c2) from t3 LIMIT ROWS EXAMINED 6;
 select count(c2) from t3 LIMIT ROWS EXAMINED 0;
