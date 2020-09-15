@@ -1424,6 +1424,7 @@ int ha_sdb_part::pre_row_to_obj(bson::BSONObjBuilder &builder) {
   uint part_id = -1;
   longlong func_value = 0;
   ha_sdb_part_share *share = (ha_sdb_part_share *)m_part_share;
+  longlong phid = 0;
 
   rc = test_if_explicit_partition();
   if (rc != 0) {
@@ -1440,24 +1441,29 @@ int ha_sdb_part::pre_row_to_obj(bson::BSONObjBuilder &builder) {
     goto error;
   }
 
-  // Check if record in specified partition.
   if (!(SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
         thd->lex->alter_info.flags & PARTITION_ALTER_FLAG)) {
+    // Check if record in specified partition.
     if (!m_part_info->is_partition_locked(part_id)) {
       rc = HA_ERR_NOT_IN_LOCK_PARTITIONS;
       goto error;
     }
+    convert_sub2main_part_id(part_id);
+    phid = share->get_main_part_hash_id(part_id);
+  } else {
+    // Calcuate the phid according to new part info
+    convert_sub2main_part_id(part_id);
+    phid = sdb_calculate_part_hash_id(
+        sdb_get_partition_name(m_part_info, part_id));
   }
 
   try {
     // Append _phid_ to record.
     if (m_sharded_by_part_hash_id) {
-      convert_sub2main_part_id(part_id);
-      builder.append(SDB_FIELD_PART_HASH_ID,
-                     share->get_main_part_hash_id(part_id));
+      builder.append(SDB_FIELD_PART_HASH_ID, phid);
     }
   }
-  SDB_EXCEPTION_CATCHER(rc, "Failed to apend hash id to row, exception:%s",
+  SDB_EXCEPTION_CATCHER(rc, "Failed to append hash id to row, exception:%s",
                         e.what());
 
 done:
