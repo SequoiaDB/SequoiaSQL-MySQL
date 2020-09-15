@@ -114,13 +114,11 @@ class Sdb_conn {
       case ISO_REPEATABLE_READ:
         return SDB_TRANS_ISO_RR;
         break;
-      case ISO_SERIALIZABLE:
-        // not supported current now.
-        DBUG_ASSERT(0);
-        break;
+      case ISO_SERIALIZABLE:  // not supported current now.
       default:
         // never come to here.
         DBUG_ASSERT(0);
+        return SDB_TRANS_ISO_RR;
     }
   }
 

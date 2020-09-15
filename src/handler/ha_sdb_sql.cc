@@ -453,6 +453,10 @@ bool sdb_table_has_gcol(TABLE *table) {
   return table->has_gcol();
 }
 
+const char *sdb_table_alias(TABLE *table) {
+  return table->alias;
+}
+
 uint sdb_tables_in_join(JOIN *join) {
   return join->tables;
 }
@@ -467,6 +471,18 @@ bool sdb_has_sql_condition(THD *thd, uint sql_errno) {
 
 const char *sdb_thd_db(THD *thd) {
   return thd->db().str;
+}
+
+Protocol *sdb_thd_protocal(THD *thd) {
+  return thd->get_protocol();
+}
+
+void sdb_protocal_start_row(Protocol *protocol) {
+  return protocol->start_row();
+}
+
+bool sdb_protocal_end_row(Protocol *protocol) {
+  return protocol->end_row();
 }
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
@@ -883,6 +899,10 @@ bool sdb_table_has_gcol(TABLE *table) {
   return table->vfield;
 }
 
+const char *sdb_table_alias(TABLE *table) {
+  return table->alias.ptr();
+}
+
 uint sdb_tables_in_join(JOIN *join) {
   return join->table_count;
 }
@@ -905,5 +925,17 @@ bool sdb_has_sql_condition(THD *thd, uint sql_errno) {
 
 const char *sdb_thd_db(THD *thd) {
   return thd->db.str;
+}
+
+Protocol *sdb_thd_protocal(THD *thd) {
+  return thd->protocol;
+}
+
+void sdb_protocal_start_row(Protocol *protocol) {
+  return protocol->prepare_for_resend();
+}
+
+bool sdb_protocal_end_row(Protocol *protocol) {
+  return protocol->write();
 }
 #endif

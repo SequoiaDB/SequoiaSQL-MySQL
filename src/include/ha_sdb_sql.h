@@ -348,6 +348,8 @@ void sdb_query_cache_invalidate(THD *thd, bool all);
 
 bool sdb_table_has_gcol(TABLE *table);
 
+const char *sdb_table_alias(TABLE *table);
+
 uint sdb_tables_in_join(JOIN *join);
 
 // About interface
@@ -356,4 +358,10 @@ void sdb_set_timespec(struct timespec &abstime, ulonglong sec);
 bool sdb_has_sql_condition(THD *thd, uint sql_errno);
 
 const char *sdb_thd_db(THD *thd);
+
+Protocol *sdb_thd_protocal(THD *thd);
+
+void sdb_protocal_start_row(Protocol *protocol);
+
+bool sdb_protocal_end_row(Protocol *protocol);
 #endif

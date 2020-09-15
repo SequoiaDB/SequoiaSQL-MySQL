@@ -877,7 +877,7 @@ bool sdb_print_admin_msg(THD *thd, uint len, const char *msg_type,
                          const char *db_name, const char *table_name,
                          const char *op_name, const char *fmt, ...) {
   va_list args;
-  Protocol *protocol = thd->get_protocol();
+  Protocol *protocol = sdb_thd_protocal(thd);
   uint length;
   size_t msg_length;
   char name[NAME_LEN * 2 + 2] = {0};
@@ -897,7 +897,12 @@ bool sdb_print_admin_msg(THD *thd, uint len, const char *msg_type,
   }
   msgbuf[len - 1] = 0;  // healthy paranoia
 
-  if (!thd->get_protocol()->connection_alive()) {
+#ifdef IS_MYSQL
+  if (!thd->get_protocol()->connection_alive())
+#elif IS_MARIADB
+  if (!thd->vio_ok())
+#endif
+  {
     sql_print_error("%s", msgbuf);
     goto error;
   }
@@ -905,12 +910,12 @@ bool sdb_print_admin_msg(THD *thd, uint len, const char *msg_type,
   length = (uint)(strxmov(name, db_name, ".", table_name, NullS) - name);
   DBUG_PRINT("info", ("print_admin_msg:  %s, %s, %s, %s", name, op_name,
                       msg_type, msgbuf));
-  protocol->start_row();
+  sdb_protocal_start_row(protocol);
   protocol->store(name, length, system_charset_info);
   protocol->store(op_name, system_charset_info);
   protocol->store(msg_type, system_charset_info);
   protocol->store(msgbuf, msg_length, system_charset_info);
-  if (protocol->end_row()) {
+  if (sdb_protocal_end_row(protocol)) {
     sql_print_error("Failed print admin msg, writing to stderr instead: %s\n",
                     msgbuf);
     goto error;
@@ -4822,14 +4827,14 @@ int ha_sdb::analyze(THD *thd, HA_CHECK_OPT *check_opt) {
       }
 
       sdb_print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
-                          table->alias, "analyze", "%s", error_msg);
+                          sdb_table_alias(table), "analyze", "%s", error_msg);
       rc = HA_ADMIN_FAILED;
       goto error;
     }
   } catch (std::exception &e) {
     sdb_print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
-                        table->alias, "analyze", "Exception occurs: %s",
-                        e.what());
+                        sdb_table_alias(table), "analyze",
+                        "Exception occurs: %s", e.what());
     rc = HA_ADMIN_FAILED;
     goto error;
   }
@@ -4887,19 +4892,19 @@ int ha_sdb::ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr) {
       Refresh the table key info, which can be showed by
       INFORMATION_SCHEMA.STATISTICS, and may be used by some access plans.
     */
-    if (!key_info->supports_records_per_key()) {
+    if (!key_info->rec_per_key) {
       goto done;
     }
 
     if ((~(ha_rows)0) == ptr->sample_records || 0 == ptr->sample_records) {
       for (uint field_nr = 0; field_nr < key_part_count; ++field_nr) {
-        key_info->set_records_per_key(field_nr, REC_PER_KEY_UNKNOWN);
+        key_info->rec_per_key[field_nr] = 0;
       }
     } else {
       for (uint field_nr = 0; field_nr < key_part_count; ++field_nr) {
         double n =
             ((double)ptr->sample_records) / ptr->distinct_val_num[field_nr];
-        key_info->set_records_per_key(field_nr, n);
+        key_info->rec_per_key[field_nr] = (ulong)n;
       }
     }
   }

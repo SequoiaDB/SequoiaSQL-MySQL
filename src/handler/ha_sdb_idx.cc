@@ -26,6 +26,7 @@
 #include "ha_sdb_def.h"
 #include "ha_sdb_log.h"
 #include "ha_sdb_util.h"
+#include "ha_sdb_sql.h"
 #include "sql_table.h"
 
 #ifndef MIN
@@ -38,9 +39,20 @@
 
 #define SDB_ROUND(x, min, max) (MIN(MAX((x), (min)), (max)))
 
-static const double SDB_DEF_RANGE_SIGNED_MAX = 99999999.9;
-static const double SDB_DEF_RANGE_SIGNED_MIN = -99999999.9;
-static const double SDB_DEF_RANGE_UNSIGNED_MAX = 199999999.9;
+#define SDB_DEF_RANGE_SIGNED_MAX (99999999.9)
+#define SDB_DEF_RANGE_SIGNED_MIN (-99999999.9)
+#define SDB_DEF_RANGE_UNSIGNED_MAX (199999999.9)
+
+// 2 is better than 1. It makes unique key preferred.
+#define MIN_MATCH_COUNT (2)
+#define STAT_FRACTION_SCALE (10000)
+#define DEFAULT_SELECTIVITY (0.3333333333333333)
+#define RANGE_DEFAULT_SELECTIVITY (0.05)
+#define EQ_DEFAULT_SELECTIVITY (0.005)
+// range should be larger than $eq
+#define RANGE_MIN_SELECTIVITY (EQ_DEFAULT_SELECTIVITY * 2)
+// range should be better than a single $gt or $lt
+#define GT_OR_LT_MIN_SELECTIVITY (EQ_DEFAULT_SELECTIVITY * 3)
 
 static const uint16 NULL_BITS = 1;
 
@@ -888,18 +900,6 @@ class Sdb_match_cnt_estimator {
   ha_rows eval();
 
  private:
-  // 2 is better than 1. It makes unique key preferred.
-  static const ha_rows MIN_MATCH_COUNT = 2;
-  static const uint STAT_FRACTION_SCALE = 10000;
-  static const double DEFAULT_SELECTIVITY = 0.3333333333333333;
-  static const double RANGE_DEFAULT_SELECTIVITY = 0.05;
-  static const double EQ_DEFAULT_SELECTIVITY = 0.005;
-  // range should be larger than $eq
-  static const double RANGE_MIN_SELECTIVITY = 0.005 * 2;
-  // range should be better than a single $gt or $lt
-  static const double GT_OR_LT_MIN_SELECTIVITY = 0.005 * 3;
-
- private:
   void debug_print_stat();
 
   template <typename T>
@@ -1021,6 +1021,7 @@ done:
 }
 
 void Sdb_match_cnt_estimator::debug_print_stat() {
+#ifndef DBUG_OFF
   if (!_dbug_on_) {
     return;
   }
@@ -1041,6 +1042,7 @@ void Sdb_match_cnt_estimator::debug_print_stat() {
   DBUG_PRINT("info", ("null_frac: %u", m_ptr->null_frac));
   DBUG_PRINT("info", ("sample_records: %llu", m_ptr->sample_records));
   DBUG_PRINT("info", ("total_records: %llu", m_total_records));
+#endif
 }
 
 template <typename T>
@@ -1314,7 +1316,18 @@ double Sdb_match_cnt_estimator::get_key_part_val(const KEY_PART_INFO *key_part,
     case MYSQL_TYPE_TIME:
     case MYSQL_TYPE_TIME2: {
       // Get time in mysql temporal format. Ignore the frac.
+#ifdef IS_MYSQL
       value = (double)(field->val_time_temporal() >> 24);
+#elif IS_MARIADB
+      longlong packed_time = 0;
+      MYSQL_TIME ltime;
+      date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES |
+                          sdb_thd_time_round_mode(current_thd);
+      if (!field->get_date(&ltime, flags)) {
+        packed_time = TIME_to_longlong_time_packed(&ltime);
+      }
+      value = (double)packed_time;
+#endif
       break;
     }
     case MYSQL_TYPE_DATE:
@@ -1357,7 +1370,8 @@ double Sdb_match_cnt_estimator::get_key_part_val(const KEY_PART_INFO *key_part,
     case MYSQL_TYPE_DATETIME2: {
       // Get datetime as timestamp seconds.
       MYSQL_TIME ltime;
-      date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES;
+      date_mode_t flags = TIME_FUZZY_DATES | TIME_INVALID_DATES |
+                          sdb_thd_time_round_mode(current_thd);
       field->get_date(&ltime, flags);
       ltime.year =
           SDB_ROUND(ltime.year, SDB_TIMESTAMP_MIN_YEAR, SDB_TIMESTAMP_MAX_YEAR);
@@ -1586,7 +1600,8 @@ int sdb_get_stat_value_from_bson(KEY *key_info, bson::BSONElement &stat_elem,
         * Time like types: convert to seconds;
         * Other types: set NaN as invalid, including string, null, undefined...
       */
-      enum enum_field_types type = key_info->key_part[idx].field->real_type();
+      Field *field = key_info->key_part[idx].field;
+      enum enum_field_types type = field->real_type();
       bson::BSONElement elem = iter.next();
       double &elem_val = stat_arr[idx];
       switch (elem.type()) {
@@ -1597,17 +1612,24 @@ int sdb_get_stat_value_from_bson(KEY *key_info, bson::BSONElement &stat_elem,
           if (MYSQL_TYPE_TIME == type || MYSQL_TYPE_TIME2 == type) {
             bson::bsonDecimal dec = elem.numberDecimal();
             string dec_str = dec.toString();
-            MYSQL_TIME ltime;
             MYSQL_TIME_STATUS status;
+            longlong packed_time = 0;
+#ifdef IS_MYSQL
+            MYSQL_TIME ltime;
             if (str_to_time(dec_str.c_str(), dec_str.length(), &ltime,
                             &status)) {
               DBUG_ASSERT(0);
               memcpy(&elem_val, &nan, sizeof(nan));
               break;
             }
-
+            packed_time = TIME_to_longlong_time_packed(&ltime);
+#elif IS_MARIADB
+            THD *thd = current_thd;
+            Time tm(thd, &status, dec_str.c_str(), dec_str.length(),
+                    field->charset(), Time::Options(thd), field->decimals());
+            packed_time = TIME_to_longlong_time_packed(tm.get_mysql_time());
+#endif
             // Get time in mysql temporal format. Ignore the frac.
-            longlong packed_time = TIME_to_longlong_time_packed(&ltime);
             elem_val = (double)(packed_time >> 24);
 
           } else {
@@ -1619,23 +1641,32 @@ int sdb_get_stat_value_from_bson(KEY *key_info, bson::BSONElement &stat_elem,
           if (MYSQL_TYPE_DATETIME == type || MYSQL_TYPE_DATETIME2 == type) {
             const char *data = elem.valuestr();
             uint len = elem.valuestrsize() - 1;
-            MYSQL_TIME ltime;
+            const MYSQL_TIME *ltime = NULL;
             MYSQL_TIME_STATUS status;
-            if (str_to_datetime(data, len, &ltime, 0, &status)) {
+#ifdef IS_MYSQL
+            MYSQL_TIME dt;
+            if (str_to_datetime(data, len, &dt, 0, &status)) {
               DBUG_ASSERT(0);
               memcpy(&elem_val, &nan, sizeof(nan));
               break;
             }
-            ltime.year = SDB_ROUND(ltime.year, SDB_TIMESTAMP_MIN_YEAR,
-                                   SDB_TIMESTAMP_MAX_YEAR);
-
+            ltime = &dt;
+#elif IS_MARIADB
+            THD *thd = field->get_thd();
+            Datetime dt(thd, &status, data, len, field->charset(),
+                        Datetime::Options(thd), field->decimals());
+            ltime = dt.get_mysql_time();
+#endif
             struct tm tm_val;
-            tm_val.tm_year = ltime.year - 1900;
-            tm_val.tm_mon = ltime.month - 1;
-            tm_val.tm_mday = ltime.day;
-            tm_val.tm_hour = ltime.hour;
-            tm_val.tm_min = ltime.minute;
-            tm_val.tm_sec = ltime.second;
+            tm_val.tm_year = ltime->year;
+            tm_val.tm_year = SDB_ROUND(tm_val.tm_year, SDB_TIMESTAMP_MIN_YEAR,
+                                       SDB_TIMESTAMP_MAX_YEAR);
+            tm_val.tm_year -= 1900;
+            tm_val.tm_mon = ltime->month - 1;
+            tm_val.tm_mday = ltime->day;
+            tm_val.tm_hour = ltime->hour;
+            tm_val.tm_min = ltime->minute;
+            tm_val.tm_sec = ltime->second;
             tm_val.tm_wday = 0;
             tm_val.tm_yday = 0;
             tm_val.tm_isdst = 0;

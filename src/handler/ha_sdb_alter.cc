@@ -1518,7 +1518,7 @@ error:
 
 enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
-  enum_alter_inplace_result rs;
+  enum_alter_inplace_result rs = HA_ALTER_ERROR;
   int rc = SDB_ERR_OK;
   List_iterator_fast<Create_field> cf_it;
   Bitmap<MAX_FIELDS> matched_map;
