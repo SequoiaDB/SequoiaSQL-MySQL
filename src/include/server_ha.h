@@ -109,6 +109,8 @@ typedef struct st_sql_stmt_info {
   // first. sp_db_name used to cache db name and sp_name used to cache sp name
   char sp_db_name[NAME_LEN + 1];
   char sp_name[NAME_LEN + 1];
+  //used to store body of 'alter event' statement
+  char *alter_event_body;
   Sdb_conn *sdb_conn;
   // objects involved in the current SQL statement
   ha_table_list *tables;

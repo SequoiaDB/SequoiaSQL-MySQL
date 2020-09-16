@@ -33,6 +33,9 @@
 #include "sp.h"
 #include "event_parse_data.h"
 #include <exception>
+#include "events.h"
+#include "tztime.h"
+#include "sql_time.h"
 
 // thread local key for ha_sql_stmt_info
 static thread_local_key_t ha_sql_stmt_info_key;
@@ -1231,7 +1234,19 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     memset(sql_info->sp_db_name, 0, NAME_LEN + 1);
     memset(sql_info->sp_name, 0, NAME_LEN + 1);
     // set sp database and sp_name
-    if (thd->lex->sphead) {
+    if (thd->lex->event_parse_data) {
+      // fix BUG-775
+      // 1. if alter event statement change event body, event body will be
+      //    stored in THD::LEX::sphead
+      // 2. if alter event statement change event name, new event name will
+      //    be stored in THD::LEX::spname
+      if (thd->lex->event_parse_data->identifier->m_db.str) {
+        sprintf(sql_info->sp_db_name, "%s",
+                thd->lex->event_parse_data->identifier->m_db.str);
+      }
+      sprintf(sql_info->sp_name, "%s",
+              thd->lex->event_parse_data->identifier->m_name.str);
+    } else if (thd->lex->sphead) {
       if (thd->lex->sphead->m_db.str) {
         sprintf(sql_info->sp_db_name, "%s", thd->lex->sphead->m_db.str);
       }
@@ -1241,15 +1256,17 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         sprintf(sql_info->sp_db_name, "%s", thd->lex->spname->m_db.str);
       }
       sprintf(sql_info->sp_name, "%s", thd->lex->spname->m_name.str);
-    } else if (thd->lex->event_parse_data) {
-      // fix BUG-775
-      if (thd->lex->event_parse_data->identifier->m_db.str) {
-        sprintf(sql_info->sp_db_name, "%s",
-                thd->lex->event_parse_data->identifier->m_db.str);
-      }
-      sprintf(sql_info->sp_name, "%s",
-              thd->lex->event_parse_data->identifier->m_name.str);
     }
+
+    // if it's 'alter event' statement and event body is modified
+    // store alter event body
+    sql_info->alter_event_body = NULL;
+    if (SQLCOM_ALTER_EVENT == sql_command && thd->lex->sphead) {
+      sql_info->alter_event_body =
+          (char *)thd_calloc(thd, thd->lex->sphead->m_body.length + 1);
+      sprintf(sql_info->alter_event_body, "%s", thd->lex->sphead->m_body.str);
+    }
+
     DBUG_ASSERT(strlen(sql_info->sp_name) != 0);
     DBUG_ASSERT(strlen(sql_info->sp_db_name) != 0);
 
@@ -1908,6 +1925,149 @@ static int fix_create_view_stmt(THD *thd, ha_event_general &event,
   return rc;
 }
 
+static void append_datetime(String *buf, Time_zone *time_zone, my_time_t secs,
+                            const char *name, uint len) {
+  char dtime_buff[20 * 2 + 32]; /* +32 to make my_snprintf_{8bit|ucs2} happy */
+  buf->append(STRING_WITH_LEN(" "));
+  buf->append(name, len);
+  buf->append(STRING_WITH_LEN(" '"));
+  /*
+    Pass the buffer and the second param tells fills the buffer and
+    returns the number of chars to copy.
+  */
+  MYSQL_TIME time;
+  time_zone->gmt_sec_to_TIME(&time, secs);
+  buf->append(dtime_buff, my_datetime_to_str(&time, dtime_buff, 0));
+  buf->append(STRING_WITH_LEN("'"));
+}
+
+// add definer to 'alter event' statement
+static int fix_alter_event_stmt(THD *thd, ha_event_general &event,
+                                String &log_query, ha_sql_stmt_info *sql_info) {
+#ifndef NO_EMBEDDED_ACCESS_CHECKS
+  int rc = 0;
+  bool oom = false;
+  int sql_command = thd_sql_command(thd);
+  DBUG_ASSERT(SQLCOM_ALTER_EVENT == sql_command);
+  Event_parse_data *event_parse_data = thd->lex->event_parse_data;
+  DBUG_ASSERT(NULL != event_parse_data);
+  LEX_CSTRING *definer_user = &thd->lex->definer->user;
+  LEX_CSTRING *definer_host = &thd->lex->definer->host;
+
+#ifdef IS_MARIADB
+  // set character set, refer mariadb binlog format
+  log_query.set_charset(thd->charset());
+#endif
+
+  oom = log_query.append(STRING_WITH_LEN("ALTER "));
+
+  // append definer for 'alter event' statement
+  oom |= log_query.append(STRING_WITH_LEN("DEFINER="));
+  append_identifier(thd, &log_query, definer_user->str, definer_user->length);
+  oom |= log_query.append('@');
+  append_identifier(thd, &log_query, definer_host->str, definer_host->length);
+  oom |= log_query.append(' ');
+
+  oom |= log_query.append(STRING_WITH_LEN("EVENT "));
+  append_identifier(thd, &log_query, event_parse_data->name.str,
+                    event_parse_data->name.length);
+
+  // append extra options, refer to 'show create event' statement
+  char tmp_buf[2 * STRING_BUFFER_USUAL_SIZE];
+  String expr_buf(tmp_buf, sizeof(tmp_buf), system_charset_info);
+  expr_buf.length(0);
+  longlong expression = event_parse_data->expression;
+  interval_type interval = event_parse_data->interval;
+
+  if (expression && Events::reconstruct_interval_expression(&expr_buf, interval,
+                                                            expression)) {
+    rc = SDB_HA_EXCEPTION;
+    snprintf(sql_info->err_message, HA_BUF_LEN,
+             "Failed to reconstruct interval expression for 'alter event' "
+             "statement");
+    sql_print_error(
+        "HA: Failed to reconstruct interval expression for 'alter event' "
+        "statement");
+    goto error;
+  }
+
+  if (event_parse_data->expression) {
+    oom |= log_query.append(STRING_WITH_LEN(" ON SCHEDULE EVERY "));
+    oom |= log_query.append(expr_buf);
+    oom |= log_query.append(' ');
+#ifdef IS_MYSQL
+    LEX_STRING *ival = &interval_type_to_name[interval];
+#else
+    LEX_CSTRING *ival = &interval_type_to_name[interval];
+#endif
+    oom |= log_query.append(ival->str, ival->length);
+
+    if (!event_parse_data->starts_null) {
+      append_datetime(&log_query, thd->variables.time_zone,
+                      event_parse_data->starts, STRING_WITH_LEN("STARTS"));
+    }
+
+    if (!event_parse_data->ends_null) {
+      append_datetime(&log_query, thd->variables.time_zone,
+                      event_parse_data->ends, STRING_WITH_LEN("ENDS"));
+    }
+  } else if (!event_parse_data->execute_at_null) {
+    append_datetime(&log_query, thd->variables.time_zone,
+                    event_parse_data->execute_at,
+                    STRING_WITH_LEN("ON SCHEDULE AT"));
+  }
+
+  if (event_parse_data->on_completion == Event_parse_data::ON_COMPLETION_DROP) {
+    oom |= log_query.append(STRING_WITH_LEN(" ON COMPLETION NOT PRESERVE "));
+  } else {
+    oom |= log_query.append(STRING_WITH_LEN(" ON COMPLETION PRESERVE "));
+  }
+
+  // append rename part
+  if (thd->lex->spname) {
+    oom |= log_query.append("RENAME TO ");
+    append_identifier(thd, &log_query, thd->lex->spname->m_db.str,
+                      thd->lex->spname->m_db.length);
+    oom |= log_query.append('.');
+    append_identifier(thd, &log_query, thd->lex->spname->m_name.str,
+                      thd->lex->spname->m_name.length);
+    oom |= log_query.append(" ");
+  }
+
+  if (event_parse_data->status == Event_parse_data::ENABLED) {
+    oom |= log_query.append(STRING_WITH_LEN("ENABLE"));
+  } else if (event_parse_data->status == Event_parse_data::SLAVESIDE_DISABLED) {
+    oom |= log_query.append(STRING_WITH_LEN("DISABLE ON SLAVE"));
+  } else {
+    oom |= log_query.append(STRING_WITH_LEN("DISABLE"));
+  }
+
+  if (event_parse_data->comment.length) {
+    oom |= log_query.append(STRING_WITH_LEN(" COMMENT "));
+    append_unescaped(&log_query, event_parse_data->comment.str,
+                     event_parse_data->comment.length);
+  }
+
+  // append event body
+  if (sql_info->alter_event_body) {
+    oom |= log_query.append(STRING_WITH_LEN(" DO "));
+    oom |= log_query.append(sql_info->alter_event_body);
+    sql_info->alter_event_body = NULL;
+  }
+  oom |= log_query.append(" ");
+  event.general_query = log_query.c_ptr();
+  event.general_query_length = log_query.length();
+  rc = oom ? SDB_HA_OOM : 0;
+
+done:
+  return rc;
+error:
+  goto done;
+#else
+  return 0;
+#endif
+}
+
 // check if current SQL statement can be written into sequoiadb
 bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
   int sql_command = thd_sql_command(thd);
@@ -2108,7 +2268,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       goto error;
     } catch (std::exception &e) {
       rc = SDB_HA_EXCEPTION;
-      snprintf(sql_info->err_message, HA_BUF_LEN, "HA: Unexpected error: %s",
+      snprintf(sql_info->err_message, HA_BUF_LEN, "Unexpected error: %s",
                e.what());
       goto error;
     }
@@ -2134,6 +2294,10 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         // rebuild 'create view' statement
         if (0 == rc && SQLCOM_CREATE_VIEW == sql_command) {
           rc = fix_create_view_stmt(thd, event, create_query);
+        }
+        // rebuild 'alter event' statement
+        if (0 == rc && SQLCOM_ALTER_EVENT == sql_command) {
+          rc = fix_alter_event_stmt(thd, event, create_query, sql_info);
         }
         rc = rc ? rc : write_sql_log_and_states(thd, sql_info, event);
 
@@ -2169,7 +2333,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     } catch (std::exception &e) {
       rc = SDB_HA_EXCEPTION;
       need_kill_mysqld = true;
-      snprintf(sql_info->err_message, HA_BUF_LEN, "HA: Unexpected error: %s",
+      snprintf(sql_info->err_message, HA_BUF_LEN, "Unexpected error: %s",
                e.what());
       goto error;
     }
