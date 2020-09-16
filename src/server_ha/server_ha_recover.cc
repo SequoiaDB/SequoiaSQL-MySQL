@@ -748,6 +748,7 @@ static void build_mysqldump_command(char *cmd, const ha_dump_source &src,
     end += snprintf(cmd + end, max_cmd_len, "-a mysql ");
   }
 
+  end += snprintf(cmd + end, max_cmd_len, "--events=1 ");
   end += snprintf(
       cmd + end, max_cmd_len, "-u%s -h%s -p%s -P%d --exec-only-in-mysql -f > ",
       ha_inst_group_user, src.dump_host, ha_inst_group_passwd, src.dump_port);
@@ -1341,6 +1342,14 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
       }
     }
   }
+
+  // execute flush privileges, update cache for 'mysql.user'
+  // after restoring 'mysql.user' table with 'source' command
+  rc = mysql_query(ha_mysql, C_STRING_WITH_LEN(HA_STMT_FLUSH_PRIVILEGES));
+  HA_RC_CHECK(rc, error,
+              "HA: Failed to execute 'flush privileges' command"
+              "after recovering metadata with 'source' command");
+
   rc = set_mysql_read_only(ha_mysql, false);
   if (rc) {
     sql_print_information("HA: Unable to disable 'read_only', mysql error: %s",
