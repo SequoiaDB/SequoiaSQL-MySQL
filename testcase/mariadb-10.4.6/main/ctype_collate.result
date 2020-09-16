@@ -43,32 +43,32 @@ INSERT INTO t1 (latin1_f) VALUES (_latin1'z');
 SELECT latin1_f FROM t1 ORDER BY latin1_f;
 latin1_f
 A
-a
 AD
-ad
-ae
 AE
 AF
-af
-b
 B
 SS
-ss
-u
 U
 UE
-ue
 Y
-y
-ü
-Ü
 Z
+a
+ad
+ae
+af
+b
+ss
+u
+ue
+y
 z
-å
-Å
 Ä
-ä
+Å
+Ü
 ß
+ä
+å
+ü
 SELECT latin1_f FROM t1 ORDER BY latin1_f COLLATE latin1_swedish_ci;
 latin1_f
 A
@@ -702,9 +702,9 @@ hex(b)
 61
 select hex(b) from t1 where b<'zzz' order by b;
 hex(b)
+
 00
 01
-
 61
 drop table t1;
 DROP DATABASE test_ctype_collate;

@@ -239,7 +239,7 @@ select * from t1 where a >= 1 and a < 3 order by a desc;
 #SEQUOIASQLMAINSTREAM-644
 select * from t1 where a = 1 order by a desc, b desc;
 #explain select * from t1 where a = 1 and b is null order by a desc, b desc;
-select * from t1 where a = 1 and b is null order by a desc, b desc;
+select * from t1 where a = 1 and b is null order by a desc, b desc, c desc;
 #explain select * from t1 where a >= 1 and a < 3 and b >0 order by a desc,b desc;
 #explain select * from t1 where a = 2 and b >0 order by a desc,b desc;
 #explain select * from t1 where a = 2 and b is null order by a desc,b desc;
@@ -508,6 +508,7 @@ insert into t1 set a = repeat('x', 20);
 insert into t1 set a = concat(repeat('x', 19), 'z');
 insert into t1 set a = concat(repeat('x', 19), 'ab');
 insert into t1 set a = concat(repeat('x', 19), 'aa');
+#Bug SEQUOIASQLMAINSTREAM-753
 set max_sort_length=20;
 select a from t1 order by a;
 drop table t1;
@@ -840,7 +841,8 @@ insert into t1 values (1,2),(3,2);
 set session sort_buffer_size= 30000;
 set session max_sort_length= 2180;
 CALL mtr.add_suppression("Out of sort memory");
---error ER_OUT_OF_SORTMEMORY
+#Bug SEQUOIASQLMAINSTREAM-753
+#--error ER_OUT_OF_SORTMEMORY
 select * from t1 order by b;
 drop table t1;
 call mtr.add_suppression("Out of sort memory; increase server sort buffer size");

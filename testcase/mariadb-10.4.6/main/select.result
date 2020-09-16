@@ -40,24 +40,24 @@ fld3
 cultivation
 select t2.fld3,companynr from t2 where companynr = 57+1 order by fld3;
 fld3	companynr
+Eurydice	58
+Huey	58
+Phelps	58
+Ruth	58
+Shylock	58
 concoct	58
 druggists	58
 engrossing	58
-Eurydice	58
 exclaimers	58
 ferociousness	58
 hopelessness	58
-Huey	58
 imaginable	58
 judges	58
 merging	58
 ostrich	58
 peering	58
-Phelps	58
 presumes	58
-Ruth	58
 sentences	58
-Shylock	58
 straggled	58
 synergy	58
 thanking	58
@@ -65,24 +65,24 @@ tying	58
 unlocks	58
 select fld3,companynr from t2 where companynr = 58 order by fld3;
 fld3	companynr
+Eurydice	58
+Huey	58
+Phelps	58
+Ruth	58
+Shylock	58
 concoct	58
 druggists	58
 engrossing	58
-Eurydice	58
 exclaimers	58
 ferociousness	58
 hopelessness	58
-Huey	58
 imaginable	58
 judges	58
 merging	58
 ostrich	58
 peering	58
-Phelps	58
 presumes	58
-Ruth	58
 sentences	58
-Shylock	58
 straggled	58
 synergy	58
 thanking	58
@@ -3292,31 +3292,31 @@ bb 	8
 aa	9
 aa	10
 bb	11
-SELECT * FROM t2 ORDER BY name;
+SELECT * FROM t2 ORDER BY name, n;
 name	n
 aa	2
-aa	10
 aa	9
+aa	10
 bb	1
-bb 	8
-bb 	6
 bb	11
-cc 	4
-cc 	7
+bb 	6
+bb 	8
 cc	5
+cc 	7
+cc 	4
 cc   	3
-SELECT name, LENGTH(name), n FROM t2 ORDER BY name;
+SELECT name, LENGTH(name), n FROM t2 ORDER BY name, LENGTH(name);
 name	LENGTH(name)	n
 aa	2	2
 aa	2	10
 aa	2	9
 bb	2	1
+bb	2	11
 bb 	3	8
 bb 	3	6
-bb	2	11
 cc 	4	4
-cc 	3	7
 cc	2	5
+cc 	3	7
 cc   	5	3
 SELECT name, LENGTH(name), n FROM t2 WHERE name='cc ';
 name	LENGTH(name)	n
@@ -3327,7 +3327,7 @@ cc	2	5
 cc 	3	7
 cc 	4	4
 cc   	5	3
-SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
+SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name, LENGTH(name);
 name	LENGTH(name)	n
 cc 	4	4
 cc	2	5
@@ -3370,32 +3370,32 @@ bb 	8
 aa	9
 aa	10
 bb	11
-SELECT * FROM t2 ORDER BY name;
+SELECT * FROM t2 ORDER BY name, n;
 name	n
 aa	2
 aa	9
 aa	10
 bb	1
+bb	11
 bb 	6
 bb 	8
-bb	11
-cc 	4
-cc   	3
 cc	5
 cc 	7
-SELECT name, LENGTH(name), n FROM t2 ORDER BY name;
+cc 	4
+cc   	3
+SELECT name, LENGTH(name), n FROM t2 ORDER BY name, LENGTH(name);
 name	LENGTH(name)	n
 aa	2	2
 aa	2	9
 aa	2	10
 bb	2	1
+bb	2	11
 bb 	3	6
 bb 	3	8
-bb	2	11
 cc 	4	4
-cc   	5	3
 cc	2	5
 cc 	3	7
+cc   	5	3
 SELECT name, LENGTH(name), n FROM t2 WHERE name='cc ';
 name	LENGTH(name)	n
 cc 	3	7
@@ -3405,12 +3405,12 @@ cc	2	5
 cc 	3	7
 cc 	4	4
 cc   	5	3
-SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
+SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name, LENGTH(name);
 name	LENGTH(name)	n
 cc 	4	4
-cc   	5	3
 cc	2	5
 cc 	3	7
+cc   	5	3
 SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
 name	name	n
 ccc	NULL	NULL

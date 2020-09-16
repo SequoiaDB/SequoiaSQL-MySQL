@@ -536,8 +536,8 @@ set max_sort_length=20;
 select c from t1 order by c, id;
 c
 xxxxxxxxxxxxxxxxxxxxxxxx
-xxxxxxxxxxxxxxxxxxxxxxxxx
 xxxxxxxxxxxxxxxxxxxxxxxxw
+xxxxxxxxxxxxxxxxxxxxxxxxx
 xxxxxxxxxxxxxxxxxxxxxxxxy
 set max_sort_length=200;
 select c from t1 order by c, id;

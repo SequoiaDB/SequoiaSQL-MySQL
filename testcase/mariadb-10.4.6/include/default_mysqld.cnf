@@ -22,7 +22,6 @@ open-files-limit=           1024
 local-infile
 character-set-server=      latin1
 sequoiadb_auto_partition=OFF
-sequoiadb_optimizer_options=direct_count,direct_delete,direct_update
 
 # Increase default connect_timeout to avoid intermittent
 # disconnects when test servers are put under load see BUG#28359

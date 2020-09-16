@@ -158,14 +158,12 @@ insert into t1(a) values (1),(2),(3);
 begin;
 --enable_info
 delete from t1;
---source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 rollback;
 select *from t1 order by id;
 begin;
 --enable_info
 delete from t1;
---source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 commit;
 select *from t1;

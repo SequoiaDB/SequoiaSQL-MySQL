@@ -95,8 +95,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-big5_chinese_ci	6109
 big5_chinese_ci	61
+big5_chinese_ci	6109
 big5_chinese_ci	6120
 drop table t1;
 create table t1 engine=SequoiaDB select repeat('a',50) as c1;
@@ -241,8 +241,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-big5_bin	6109
 big5_bin	61
+big5_bin	6109
 big5_bin	6120
 drop table t1;
 create table t1 engine=SequoiaDB select repeat('a',50) as c1;

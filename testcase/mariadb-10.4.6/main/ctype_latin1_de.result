@@ -276,8 +276,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-latin1_german2_ci	6109
 latin1_german2_ci	61
+latin1_german2_ci	6109
 latin1_german2_ci	6120
 drop table t1;
 #

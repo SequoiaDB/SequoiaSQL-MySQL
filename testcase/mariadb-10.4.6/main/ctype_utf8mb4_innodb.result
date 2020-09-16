@@ -568,8 +568,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-utf8mb4_general_ci	6109
 utf8mb4_general_ci	61
+utf8mb4_general_ci	6109
 utf8mb4_general_ci	6120
 drop table t1;
 #
@@ -768,8 +768,8 @@ s	0
 ß	1
 SELECT * FROM t1 ORDER BY a DESC, b;
 a	b
-s	0
 ß	1
+s	0
 SELECT * FROM t1 ORDER BY CONCAT(a), b;
 a	b
 s	0
@@ -786,8 +786,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-utf8mb4_bin	6109
 utf8mb4_bin	61
+utf8mb4_bin	6109
 utf8mb4_bin	6120
 drop table t1;
 #

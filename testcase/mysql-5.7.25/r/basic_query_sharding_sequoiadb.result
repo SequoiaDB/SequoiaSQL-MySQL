@@ -902,15 +902,14 @@ a	b	c
 12	string	string
 9	word	testc4
 8	xxyyzz	xxyyzz
-SELECT * FROM t1 WHERE b >= "ABCD1e" ORDER BY b LIMIT 7;
+SELECT * FROM t1 WHERE b >= "ABCD1e" ORDER BY b,a LIMIT 7;
 a	b	c
-2	abcd1e	testc1
 15	ABCD1e	testc6
-5	abcd2e	testc2
 4	ABCD2e	ABCD2e
+2	abcd1e	testc1
+5	abcd2e	testc2
 10	ccccc	testc3
 11	helloworld	helloworld
-12	string	string
 SELECT a FROM t1 WHERE b BETWEEN "abcd1e" AND "xxyyzz" ORDER BY a DESC LIMIT 7;
 a
 12
