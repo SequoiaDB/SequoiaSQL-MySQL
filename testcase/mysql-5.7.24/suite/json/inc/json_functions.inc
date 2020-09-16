@@ -3217,7 +3217,7 @@ from t group by b into @uninitialized_21602361;
 
 #Bug #SEQUOIASQLMAINSTREAM-193
 set @initialized_21602361 = '$';
---error ER_INVALID_JSON_PATH
+--error 1172
 select json_length('{}',@initialized_21602361)
 from t group by b into @initialized_21602361;
 

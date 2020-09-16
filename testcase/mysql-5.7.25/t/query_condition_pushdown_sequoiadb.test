@@ -2470,8 +2470,8 @@ select * from t1 where abs(a) = 999.99;
 --sorted_result
 select * from t1 where a > -10;
 
-select * from t1 order by a desc;
-select * from t1 order by a asc limit 1 offset 2;
+select * from t1 order by a desc,id;
+select * from t1 order by a asc,id limit 1 offset 2;
 
 drop table t1;
 
@@ -2576,7 +2576,7 @@ select * from t1 where abs(a) = 999.97;
 --sorted_result
 select * from t1 where a > -1;
 
-select * from t1 order by a desc;
+select * from t1 order by a desc, id;
 select * from t1 order by a limit 1 offset 2;
 
 drop table t1;
@@ -4649,7 +4649,7 @@ SELECT * FROM t1 WHERE id > LENGTH(c) ORDER BY id LIMIT 3;
 SELECT * FROM t1 WHERE 10 > ABS(a) ORDER BY id LIMIT 3 OFFSET 2;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-22383
-SELECT * FROM t1 WHERE id <= 10 ORDER BY a LIMIT 4 OFFSET 2;
+SELECT * FROM t1 WHERE id <= 10 ORDER BY a, id LIMIT 4 OFFSET 2;
 --source include/query_pushdown_condition_sequoiadb.inc
 SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 GROUP BY id,c ORDER BY id,c;
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -4696,7 +4696,7 @@ INSERT INTO t1 VALUES (-10,'hello','hello','hello'),(0,'bc','bc','bc'),(8,'test'
 --sorted_result
 SELECT id FROM t1 WHERE id > 0;
 --source include/query_pushdown_condition_sequoiadb.inc
-SELECT c, id FROM t1 ORDER BY c;
+SELECT c, id FROM t1 ORDER BY c,id;
 --source include/query_pushdown_condition_sequoiadb.inc
 DROP TABLE t1;
 

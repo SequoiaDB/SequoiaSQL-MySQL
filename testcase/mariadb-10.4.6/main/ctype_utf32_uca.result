@@ -2858,8 +2858,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-utf32_unicode_ci	0000006100000009
 utf32_unicode_ci	00000061
+utf32_unicode_ci	0000006100000009
 utf32_unicode_ci	0000006100000020
 drop table t1;
 #
@@ -4004,8 +4004,8 @@ INSERT INTO t1 VALUES (concat(_utf32 0x61, _utf32 0x10400));
 SELECT hex(c), hex(weight_string(c)) FROM t1 WHERE c LIKE 'a%' ORDER BY c;
 hex(c)	hex(weight_string(c))
 00000061	120F
-0000006100010400	120F30D2
 000000610000FFFF	120FFBC1FFFF
+0000006100010400	120F30D2
 000000610010FFFF	120FFBE1FFFF
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10400 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
@@ -6692,20 +6692,20 @@ INSERT INTO t1 VALUES ('A'),('À'),('Á'),('Â'),('Ã'),('Ä'),('Å');
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
 A	0020
-Á	00200032
 À	00200035
+Á	00200032
 Â	0020003C
-Å	00200043
-Ä	00200047
 Ã	0020004E
+Ä	00200047
+Å	00200043
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a DESC;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
-Ã	0020004E
-Ä	00200047
 Å	00200043
+Ä	00200047
+Ã	0020004E
 Â	0020003C
-À	00200035
 Á	00200032
+À	00200035
 A	0020
 SET @backup_character_set_connection=@@character_set_connection;
 SET @backup_collation_connection=@@collation_connection;
@@ -6725,20 +6725,20 @@ t1	CREATE TABLE `t1` (
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
 A	0020
-Á	00200032
 À	00200035
+Á	00200032
 Â	0020003C
-Å	00200043
-Ä	00200047
 Ã	0020004E
+Ä	00200047
+Å	00200043
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a DESC;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
-Ã	0020004E
-Ä	00200047
 Å	00200043
+Ä	00200047
+Ã	0020004E
 Â	0020003C
-À	00200035
 Á	00200032
+À	00200035
 A	0020
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
@@ -6753,20 +6753,20 @@ SELECT * FROM t1 ORDER BY a;
 a
 cota
 cote
+cotz
 coté
 cotë
 côte
 côté
 côtë
-cotz
 SELECT * FROM t1 ORDER BY a DESC;
 a
-cotz
 côtë
 côté
 côte
 cotë
 coté
+cotz
 cote
 cota
 DROP TABLE t1;

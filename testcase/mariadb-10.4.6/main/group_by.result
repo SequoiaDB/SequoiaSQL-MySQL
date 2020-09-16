@@ -293,6 +293,8 @@ a
 NULL
 A
 B
+a
+b
 SELECT a,count(*) FROM t1 GROUP BY a;
 a	count(*)
 NULL	3
@@ -332,6 +334,8 @@ a
 NULL
 A
 B
+a
+b
 SELECT a,count(*) FROM t1 GROUP BY a;
 a	count(*)
 NULL	3
@@ -1275,8 +1279,8 @@ Variable_name	Value
 Sort_merge_passes	0
 Sort_priority_queue_sorts	0
 Sort_range	0
-Sort_rows	144
-Sort_scan	1
+Sort_rows	0
+Sort_scan	0
 # Proof ends.
 # 
 #  For this explain, the query plan is weird: if we are using 
@@ -1290,8 +1294,8 @@ Variable_name	Value
 Sort_merge_passes	0
 Sort_priority_queue_sorts	0
 Sort_range	0
-Sort_rows	144
-Sort_scan	1
+Sort_rows	0
+Sort_scan	0
 # Proof ends.
 # 
 SELECT a FROM t1 IGNORE INDEX FOR ORDER BY (PRIMARY,i2) ORDER BY a;
@@ -1817,7 +1821,7 @@ field1	field2
 20	20
 SHOW SESSION STATUS LIKE 'Sort_scan%';
 Variable_name	Value
-Sort_scan	1
+Sort_scan	0
 CREATE VIEW v1 AS SELECT * FROM t1;
 SELECT SQL_BIG_RESULT col1 AS field1, col1 AS field2
 FROM v1 

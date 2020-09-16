@@ -107,8 +107,6 @@ ab
 az
 aЀ
 aր
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch<'a𝌆b' ORDER BY ch;
 ch
 a
@@ -128,8 +126,6 @@ ab
 az
 aЀ
 aր
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 ch
 z
@@ -139,13 +135,9 @@ z
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 ch
 z
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆b' ORDER BY ch;
 ch
 z
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `X`.`t1`.`ch` at row 1
 ALTER TABLE t1 DROP KEY ch;
 # 0xD18F would be a good 2-byte character, 0xD1 is an incomplete sequence
 SET @query=CONCAT('SELECT ch FROM t1 WHERE ch=''a', 0xD1,'''');

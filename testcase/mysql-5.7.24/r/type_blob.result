@@ -149,20 +149,20 @@ NULL
 NULL
 
 1
-a
-hello
 HELLO
 HELLO MY
+a
+hello
 select c from t1 order by c;
 c
 NULL
 NULL
 
 
-a
-hello
 HELLO
 HELLO MY
+a
+hello
 select b from t1 order by b;
 b
 NULL
@@ -220,9 +220,10 @@ t
 NULL
 
 1
+HELLO
+HELLO MY
 a
 hello
-HELLO MY
 select b from t1 group by b;
 b
 NULL
@@ -300,9 +301,10 @@ select c from t1 group by c;
 c
 NULL
 
+HELLO
+HELLO MY
 a
 hello
-HELLO MY
 select d from t1 group by d;
 d
 NULL

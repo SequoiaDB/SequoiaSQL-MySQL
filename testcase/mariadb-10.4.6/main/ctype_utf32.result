@@ -509,8 +509,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-utf32_general_ci	0000006100000009
 utf32_general_ci	00000061
+utf32_general_ci	0000006100000009
 utf32_general_ci	0000006100000020
 drop table t1;
 #
@@ -612,8 +612,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-utf32_bin	0000006100000009
 utf32_bin	00000061
+utf32_bin	0000006100000009
 utf32_bin	0000006100000020
 drop table t1;
 #
@@ -1423,17 +1423,17 @@ t1	CREATE TABLE `t1` (
 INSERT INTO t1 VALUES ('ab'),('AE'),('ab'),('AE');
 SELECT * FROM t1 ORDER BY s1;
 s1
-ab
-ab
 AE
 AE
+ab
+ab
 SET max_sort_length=4;
 SELECT * FROM t1 ORDER BY s1;
 s1
-ab
-ab
 AE
 AE
+ab
+ab
 DROP TABLE t1;
 SET max_sort_length=DEFAULT;
 SET NAMES latin1;

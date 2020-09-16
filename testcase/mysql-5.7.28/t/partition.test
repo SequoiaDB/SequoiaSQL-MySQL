@@ -2449,6 +2449,7 @@ CREATE VIEW v1 AS SELECT * FROM t1_part;
 
 --echo
 --echo # Should be (1,1),(10,10)
+--sorted_result
 SELECT * FROM t1_part;
 
 --echo
@@ -2469,6 +2470,7 @@ UPDATE v1 AS A NATURAL JOIN t1_part as B SET A.nokey = 2 , B.partkey = 3;
 
 --echo
 --echo # Should be (1,1),(10,10)
+--sorted_result
 SELECT * FROM t1_part;
 
 --echo
@@ -2478,6 +2480,7 @@ UPDATE t1_part AS A NATURAL JOIN t1_part B SET A.nokey = 2 , B.nokey = 3;
 
 --echo
 --echo # Should be (1,3),(10,3)
+--sorted_result
 SELECT * FROM t1_part;
 
 --echo
@@ -2579,26 +2582,5 @@ PARTITION BY LINEAR KEY(a) PARTITIONS 2;
 --error ER_DATA_OUT_OF_RANGE
 SELECT 1 FROM t1 WHERE EXP(10000);
 DROP TABLE t1;
-
-#--echo #
-#--echo # Bug#28573894 ALTER PARTITIONED TABLE ADD AUTO_INCREMENT DIFF RESULT
-#--echo #
-#CREATE TABLE t (a VARCHAR(10) NOT NULL,b INT,PRIMARY KEY (b)) ENGINE=INNODB
-#PARTITION BY RANGE (b)
-#(PARTITION pa VALUES LESS THAN (2),
-# PARTITION pb VALUES LESS THAN (20),
-# PARTITION pc VALUES LESS THAN (30),
-# PARTITION pd VALUES LESS THAN (40));
-#
-#INSERT INTO t
-#VALUES('A',0),('B',1),('C',2),('D',3),('E',4),('F',5),('G',25),('H',35);
-#
-##SequoiaDB cannot add auto_increment with ALGORITHM=INPLACE
-##ALTER TABLE t ADD COLUMN r INT UNSIGNED NOT NULL AUTO_INCREMENT, ADD UNIQUE
-##KEY (r,b), ALGORITHM=INPLACE, LOCK=SHARED;
-#ALTER TABLE t ADD COLUMN r INT UNSIGNED NOT NULL AUTO_INCREMENT, ADD UNIQUE
-#KEY (r,b), ALGORITHM=COPY, LOCK=SHARED;
-#SELECT * FROM t;
-#DROP TABLE t;
 
 DROP DATABASE test_partition;

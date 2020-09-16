@@ -6139,8 +6139,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-utf8_unicode_ci	6109
 utf8_unicode_ci	61
+utf8_unicode_ci	6109
 utf8_unicode_ci	6120
 drop table t1;
 #
@@ -6813,8 +6813,6 @@ ab
 az
 aЀ
 aր
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch<'a𝌆b' ORDER BY ch;
 ch
 a
@@ -6834,8 +6832,6 @@ ab
 az
 aЀ
 aր
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 IGNORE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 ch
 z
@@ -6845,13 +6841,9 @@ z
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆' ORDER BY ch;
 ch
 z
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86' for column `X`.`t1`.`ch` at row 1
 SELECT ch FROM t1 FORCE KEY (ch) WHERE ch>'a𝌆b' ORDER BY ch;
 ch
 z
-Warnings:
-Warning	1366	Incorrect string value: '\xF0\x9D\x8C\x86b' for column `X`.`t1`.`ch` at row 1
 ALTER TABLE t1 DROP KEY ch;
 # 0xD18F would be a good 2-byte character, 0xD1 is an incomplete sequence
 SET @query=CONCAT('SELECT ch FROM t1 WHERE ch=''a', 0xD1,'''');
@@ -8114,8 +8106,8 @@ INSERT INTO t1 VALUES (concat(_utf32 0x61, _utf32 0x10400));
 SELECT hex(c), hex(weight_string(c)) FROM t1 WHERE c LIKE 'a%' ORDER BY c;
 hex(c)	hex(weight_string(c))
 61	120F
-61F0909080	120F30D2
 61EFBFBF	120FFBC1FFFF
+61F0909080	120F30D2
 61F48FBFBF	120FFBE1FFFF
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10400 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c
@@ -13690,20 +13682,20 @@ INSERT INTO t1 VALUES ('A'),('À'),('Á'),('Â'),('Ã'),('Ä'),('Å');
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
 A	0020
-Á	00200032
 À	00200035
+Á	00200032
 Â	0020003C
-Å	00200043
-Ä	00200047
 Ã	0020004E
+Ä	00200047
+Å	00200043
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a DESC;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
-Ã	0020004E
-Ä	00200047
 Å	00200043
+Ä	00200047
+Ã	0020004E
 Â	0020003C
-À	00200035
 Á	00200032
+À	00200035
 A	0020
 SET @backup_character_set_connection=@@character_set_connection;
 SET @backup_collation_connection=@@collation_connection;
@@ -13723,20 +13715,20 @@ t1	CREATE TABLE `t1` (
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
 A	0020
-Á	00200032
 À	00200035
+Á	00200032
 Â	0020003C
-Å	00200043
-Ä	00200047
 Ã	0020004E
+Ä	00200047
+Å	00200043
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a DESC;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
-Ã	0020004E
-Ä	00200047
 Å	00200043
+Ä	00200047
+Ã	0020004E
 Â	0020003C
-À	00200035
 Á	00200032
+À	00200035
 A	0020
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
@@ -13751,20 +13743,20 @@ SELECT * FROM t1 ORDER BY a;
 a
 cota
 cote
+cotz
 coté
 cotë
 côte
 côté
 côtë
-cotz
 SELECT * FROM t1 ORDER BY a DESC;
 a
-cotz
 côtë
 côté
 côte
 cotë
 coté
+cotz
 cote
 cota
 DROP TABLE t1;
@@ -14372,20 +14364,20 @@ INSERT INTO t1 VALUES ('A'),('À'),('Á'),('Â'),('Ã'),('Ä'),('Å');
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
 A	0020
-Á	00200032
 À	00200035
+Á	00200032
 Â	0020003C
-Å	00200043
-Ä	00200047
 Ã	0020004E
+Ä	00200047
+Å	00200043
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a DESC;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
-Ã	0020004E
-Ä	00200047
 Å	00200043
+Ä	00200047
+Ã	0020004E
 Â	0020003C
-À	00200035
 Á	00200032
+À	00200035
 A	0020
 SET @backup_character_set_connection=@@character_set_connection;
 SET @backup_collation_connection=@@collation_connection;
@@ -14405,20 +14397,20 @@ t1	CREATE TABLE `t1` (
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
 A	0020
-Á	00200032
 À	00200035
+Á	00200032
 Â	0020003C
-Å	00200043
-Ä	00200047
 Ã	0020004E
+Ä	00200047
+Å	00200043
 SELECT a, HEX(WEIGHT_STRING(a LEVEL 2)) FROM t1 ORDER BY a DESC;
 a	HEX(WEIGHT_STRING(a LEVEL 2))
-Ã	0020004E
-Ä	00200047
 Å	00200043
+Ä	00200047
+Ã	0020004E
 Â	0020003C
-À	00200035
 Á	00200032
+À	00200035
 A	0020
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT SPACE(10) AS a LIMIT 0;
@@ -14433,20 +14425,20 @@ SELECT * FROM t1 ORDER BY a;
 a
 cota
 cote
+cotz
 coté
 cotë
 côte
 côté
 côtë
-cotz
 SELECT * FROM t1 ORDER BY a DESC;
 a
-cotz
 côtë
 côté
 côte
 cotë
 coté
+cotz
 cote
 cota
 DROP TABLE t1;

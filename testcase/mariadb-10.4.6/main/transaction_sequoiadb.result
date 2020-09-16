@@ -1602,10 +1602,10 @@ ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 delete from t1 where a <5;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 connection con1;
-select * from t1 order by c;
+select * from t1 order by c, a;
 a	b	c
-2	1	1
 1	1	1
+2	1	1
 2	2	2
 3	2	2
 3	3	3
@@ -1618,12 +1618,12 @@ a	b	c
 7	6	6
 7	7	7
 8	7	7
-9	8	8
 8	8	8
-10	9	9
+9	8	8
 9	9	9
-11	10	10
+10	9	9
 10	10	10
+11	10	10
 commit;
 connection default;
 drop table t1;
