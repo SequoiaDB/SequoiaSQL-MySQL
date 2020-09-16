@@ -1059,6 +1059,7 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   bool created_cs = false;
   bool created_cl = false;
   partition_info *part_info = form->part_info;
+  bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -1177,7 +1178,6 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     }
 
     for (uint i = 0; i < form->s->keys; i++) {
-      bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
       const KEY *key_info = form->s->key_info + i;
 
       if ((key_info->flags & HA_NOSAME) && sharded_by_phid &&
@@ -1878,12 +1878,14 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
   int rc = 0;
   Sdb_conn *conn = NULL;
   Sdb_cl mcl;
+  Sdb_cl scl;
   bson::BSONObj mcl_options;
   bson::BSONObj scl_options;
   bson::BSONObj partition_options;
   bool explicit_not_auto_partition = false;
   partition_info *part_info = table->part_info;
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -1936,6 +1938,26 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
   rc = conn->create_cl(db_name, scl_name, scl_options);
   if (rc != 0) {
     goto error;
+  }
+
+  rc = conn->get_cl(db_name, scl_name, scl);
+  if (rc != 0) {
+    goto error;
+  }
+
+  for (uint i = 0; i < table->s->keys; i++) {
+    const KEY *key_info = table->s->key_info + i;
+
+    if ((key_info->flags & HA_NOSAME) && sharded_by_phid) {
+      DBUG_ASSERT(sdb_is_key_include_part_func_column(table, key_info));
+    }
+
+    rc = sdb_create_index(key_info, scl, sharded_by_phid);
+    if (rc != 0) {
+      // we disabled sharding index,
+      // so do not ignore SDB_IXM_EXIST_COVERD_ONE
+      goto error;
+    }
   }
 
   try {
