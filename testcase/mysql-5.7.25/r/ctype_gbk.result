@@ -95,8 +95,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-gbk_chinese_ci	6109
 gbk_chinese_ci	61
+gbk_chinese_ci	6109
 gbk_chinese_ci	6120
 drop table t1;
 select @@collation_connection;
@@ -220,8 +220,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-gbk_bin	6109
 gbk_bin	61
+gbk_bin	6109
 gbk_bin	6120
 drop table t1;
 select @@collation_connection;

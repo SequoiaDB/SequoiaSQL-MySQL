@@ -26,8 +26,8 @@ analyze table t1;
 select * from t1 ignore key (key1) where text1='teststring' or 
 text1 like 'teststring_%' ORDER BY text1;
 text1
-teststring	
 teststring
+teststring	
 select * from t1 where text1='teststring' or text1 like 'teststring_%';
 text1
 teststring
@@ -41,8 +41,8 @@ alter table t1 modify text1 char(32) binary not null;
 select * from t1 ignore key (key1) where text1='teststring' or 
 text1 like 'teststring_%' ORDER BY text1;
 text1
-teststring	
 teststring
+teststring	
 select concat('|', text1, '|') as c from t1 where text1='teststring' or text1 like 'teststring_%' order by c;
 c
 |teststring	|
@@ -112,8 +112,8 @@ insert into t1 values ('teststring'), ('nothing'), ('teststring\t');
 select * from t1 ignore key (key1) where text1='teststring' or 
 text1 like 'teststring_%' ORDER BY text1;
 text1
-teststring	
 teststring
+teststring	
 select * from t1 where text1='teststring' or text1 like 'teststring_%';
 text1
 teststring
