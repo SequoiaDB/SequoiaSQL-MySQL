@@ -2607,7 +2607,7 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
     if (rc != 0) {
       print_admin_msg(thd, 256, "error", table_share->db.str, table->alias,
                       op_name, "Partition %s returned error",
-                      sdb_get_partition_name(m_part_info, i));
+                      sdb_get_partition_name(m_part_info, part_id));
       break;
     }
   }
