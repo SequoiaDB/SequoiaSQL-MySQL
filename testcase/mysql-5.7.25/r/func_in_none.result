@@ -487,6 +487,7 @@ f2
 Warnings:
 Warning	1292	Truncated incorrect DOUBLE value: 'a'
 Warning	1292	Truncated incorrect DOUBLE value: 'a'
+Warning	1292	Truncated incorrect DOUBLE value: 'a'
 select f2 from t2 where f2 in ('a','b');
 f2
 0
@@ -498,6 +499,7 @@ f2
 0
 1
 Warnings:
+Warning	1292	Truncated incorrect DOUBLE value: 'b'
 Warning	1292	Truncated incorrect DOUBLE value: 'b'
 drop table t1, t2;
 create table t1 (a time, key(a));
