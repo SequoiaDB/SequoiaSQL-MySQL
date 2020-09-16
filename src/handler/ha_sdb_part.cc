@@ -1343,16 +1343,17 @@ int ha_sdb_part::pre_row_to_obj(bson::BSONObjBuilder &builder) {
       rc = HA_ERR_NOT_IN_LOCK_PARTITIONS;
       goto error;
     }
+    convert_sub2main_part_id(part_id);
     phid = share->get_main_part_hash_id(part_id);
   } else {
     // Calcuate the phid according to new part info
+    convert_sub2main_part_id(part_id);
     phid = sdb_calculate_part_hash_id(
         sdb_get_partition_name(m_part_info, part_id));
   }
 
   // Append _phid_ to record.
   if (m_sharded_by_part_hash_id) {
-    convert_sub2main_part_id(part_id);
     builder.append(SDB_FIELD_PART_HASH_ID, phid);
   }
 done:
