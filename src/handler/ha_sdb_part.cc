@@ -2021,6 +2021,13 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
+  if (HASH_PARTITION == m_part_info->part_type &&
+      ha_thd()->lex->alter_info.partition_names.elements > 0) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Cannot specify HASH or KEY partitions", MYF(0));
+    goto error;
+  }
+
   rc = Partition_helper::change_partitions(create_info, path, copied, deleted);
   if (rc != 0) {
     goto error;
@@ -2543,8 +2550,14 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
     goto done;
   }
 
-  // Nothing to check for hash partition.
   if (HASH_PARTITION == m_part_info->part_type) {
+    if (thd->lex->alter_info.partition_names.elements > 0) {
+      rc = HA_ADMIN_INVALID;
+      print_admin_msg(thd, 256, "error", table_share->db.str, table->alias,
+                      op_name, "Cannot specify HASH or KEY partitions");
+      goto error;
+    }
+    // Nothing to check for hash partition.
     goto done;
   }
 
