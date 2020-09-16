@@ -2546,7 +2546,8 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
   const char *op_name = repair ? "repair" : "check";
 
   // Only repair partitions for MEDIUM or EXTENDED options.
-  if ((check_opt->flags & (T_MEDIUM | T_EXTEND)) == 0) {
+  if (0 == (check_opt->flags & (T_MEDIUM | T_EXTEND)) ||
+      sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
   }
 
