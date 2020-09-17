@@ -326,12 +326,12 @@ FROM Country LEFT JOIN City
 ON City.Country=Country.Code AND City.Population > 5000000
 WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 Name	Population	Name	Population
-Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
+China	1277558000	Shanghai	9696300
+China	1277558000	Peking	7472000
+China	1277558000	Chongqing	6351600
 China	1277558000	Tianjin	5286800
 Colombia	42321000	Santafé de Bogotá	6260862
-China	1277558000	Chongqing	6351600
-China	1277558000	Peking	7472000
-China	1277558000	Shanghai	9696300
+Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Chile	15211000	NULL	NULL
 Cambodia	11168000	NULL	NULL
 Cameroon	15085000	NULL	NULL
@@ -705,21 +705,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
+Maseru
 Beirut
 Tripoli
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
@@ -870,21 +870,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
+Maseru
 Beirut
 Tripoli
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
@@ -974,12 +974,12 @@ FROM Country LEFT JOIN City
 ON City.Country=Country.Code AND City.Population > 5000000
 WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 Name	Population	Name	Population
-Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
+China	1277558000	Shanghai	9696300
+China	1277558000	Peking	7472000
+China	1277558000	Chongqing	6351600
 China	1277558000	Tianjin	5286800
 Colombia	42321000	Santafé de Bogotá	6260862
-China	1277558000	Chongqing	6351600
-China	1277558000	Peking	7472000
-China	1277558000	Shanghai	9696300
+Congo, The Democratic Republic of the	51654000	Kinshasa	5064000
 Cambodia	11168000	NULL	NULL
 Cameroon	15085000	NULL	NULL
 Canada	31147000	NULL	NULL
@@ -1077,21 +1077,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
 Beirut
 Tripoli
+Maseru
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
@@ -1239,21 +1239,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
 Beirut
 Tripoli
+Maseru
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
@@ -1401,21 +1401,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
 Beirut
 Tripoli
+Maseru
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
@@ -1563,21 +1563,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
 Beirut
 Tripoli
+Maseru
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
 FROM Country LEFT JOIN CountryLanguage ON
 (CountryLanguage.Country=Country.Code AND Language='English')
@@ -1729,21 +1729,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
+Maseru
 Beirut
 Tripoli
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 set join_cache_level=4;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -1866,21 +1866,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
 Beirut
 Tripoli
+Maseru
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 set join_cache_level=6;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -1944,21 +1944,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
 Beirut
 Tripoli
+Maseru
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 set join_cache_level=7;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -2022,21 +2022,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
 Beirut
 Tripoli
+Maseru
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 set join_cache_level=8;
 show variables like 'join_cache_level';
 Variable_name	Value
@@ -2100,21 +2100,21 @@ SELECT Name FROM City
 WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 City.Population > 100000;
 Name
-Daugavpils
-Misrata
-Panevezys
-?iauliai
-Klaipeda
-Tripoli
-Maseru
-Kaunas
 Vientiane
-Vilnius
 Riga
-Bengasi
-Monrovia
+Daugavpils
 Beirut
 Tripoli
+Maseru
+Monrovia
+Tripoli
+Bengasi
+Misrata
+Vilnius
+Kaunas
+Klaipeda
+?iauliai
+Panevezys
 set join_cache_level=default;
 set join_buffer_size=default;
 show variables like 'join_buffer_size';
@@ -4049,12 +4049,12 @@ SET SESSION join_cache_level = 4;
 SELECT * FROM t1,t2 WHERE t1.a < 3 and t2.a IS NULL;
 a	a	b
 1	NULL	10
-2	NULL	10
 1	NULL	40
-2	NULL	40
 1	NULL	41
-2	NULL	41
 1	NULL	42
+2	NULL	10
+2	NULL	40
+2	NULL	41
 2	NULL	42
 SET SESSION join_cache_level = DEFAULT;
 DROP TABLE t1,t2;

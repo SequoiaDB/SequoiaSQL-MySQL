@@ -1228,8 +1228,8 @@ INSERT INTO t1 VALUES ('-23:00:03', 'yes');
 INSERT INTO t1 VALUES ('-23:00:04', 'yes');
 SELECT * FROM t1 WHERE a NOT IN ('-23:00:01','-23:00:02');
 a	filler
--23:00:04	yes
 -23:00:03	yes
+-23:00:04	yes
 DROP TABLE t1;
 #
 # TIME(0), positive ouside 24 hours
@@ -1300,8 +1300,8 @@ INSERT INTO t1 VALUES ('-24:00:03', 'yes');
 INSERT INTO t1 VALUES ('-24:00:04', 'yes');
 SELECT * FROM t1 WHERE a NOT IN ('-24:00:01','-24:00:02');
 a	filler
--24:00:04	yes
 -24:00:03	yes
+-24:00:04	yes
 DROP TABLE t1;
 #
 # TIME(0), positive, huge
@@ -1372,8 +1372,8 @@ INSERT INTO t1 VALUES ('-838:00:03', 'yes');
 INSERT INTO t1 VALUES ('-838:00:04', 'yes');
 SELECT * FROM t1 WHERE a NOT IN ('-838:00:01','-838:00:02');
 a	filler
--838:00:04	yes
 -838:00:03	yes
+-838:00:04	yes
 DROP TABLE t1;
 #
 # TIME(1), positive within 24 hours
@@ -1444,8 +1444,8 @@ INSERT INTO t1 VALUES ('-23:00:03.1', 'yes');
 INSERT INTO t1 VALUES ('-23:00:04.1', 'yes');
 SELECT * FROM t1 WHERE a NOT IN ('-23:00:01.1','-23:00:02.1');
 a	filler
--23:00:04.1	yes
 -23:00:03.1	yes
+-23:00:04.1	yes
 DROP TABLE t1;
 #
 # TIME(1), positive, huge
@@ -1516,8 +1516,8 @@ INSERT INTO t1 VALUES ('-838:00:03.1', 'yes');
 INSERT INTO t1 VALUES ('-838:00:04.1', 'yes');
 SELECT * FROM t1 WHERE a NOT IN ('-838:00:01.1','-838:00:02.1');
 a	filler
--838:00:04.1	yes
 -838:00:03.1	yes
+-838:00:04.1	yes
 DROP TABLE t1;
 #
 # Start of 10.4 tests
