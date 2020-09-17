@@ -221,6 +221,7 @@ t1#ExecuteOnly#Hash	CREATE TABLE `t1#ExecuteOnly#Hash` (
 /*!50100 PARTITION BY HASH ( CEILING(b))
 PARTITIONS 22 */
 ALTER TABLE `t1#ExecuteOnly#Hash` REBUILD PARTITION p15;
+ERROR HY000: Cannot specify HASH or KEY partitions
 INSERT INTO `t1#ExecuteOnly#Hash`(id) VALUES (5.56),(-9.94);
 SELECT * FROM `t1#ExecuteOnly#Hash` ORDER BY id;
 id	b

@@ -99,6 +99,8 @@ eval ALTER TABLE TableA REORGANIZE PARTITION parta,partB,Partc INTO
 eval ALTER TABLE TableA REORGANIZE PARTITION parta,Partc INTO
 (PARTITION partB $part_optA,
  PARTITION parta $part_optC);
+#SEQUOIASQLMAINSTREAM-789
+--error 131
 eval ALTER TABLE TableA REORGANIZE PARTITION parta,partB INTO
 (PARTITION partB $part_optA COMMENT="Previusly named parta",
  PARTITION parta $part_optB COMMENT="Previusly named partB");
@@ -232,6 +234,8 @@ eval ALTER TABLE TableA REORGANIZE PARTITION parta,partB,Partc INTO
 eval ALTER TABLE TableA REORGANIZE PARTITION parta,Partc INTO
 (PARTITION partB $part_optA,
  PARTITION parta $part_optC);
+#SEQUOIASQLMAINSTREAM-789
+--error 131 
 eval ALTER TABLE TableA REORGANIZE PARTITION parta,partB INTO
 (PARTITION partB $part_optA COMMENT="Previusly named parta",
  PARTITION parta $part_optB COMMENT="Previusly named partB");

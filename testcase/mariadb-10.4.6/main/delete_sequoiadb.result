@@ -155,7 +155,6 @@ insert into t1(a) values (1),(2),(3);
 begin;
 delete from t1;
 affected rows: 3
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 rollback;
 select *from t1 order by id;
 id	a
@@ -165,7 +164,6 @@ id	a
 begin;
 delete from t1;
 affected rows: 3
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 commit;
 select *from t1;
 id	a
