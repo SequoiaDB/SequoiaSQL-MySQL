@@ -533,6 +533,10 @@ class ha_sdb : public handler {
                                       bson::BSONObj &new_tab_opt,
                                       bson::BSONObj &old_part_opt,
                                       bson::BSONObj &new_part_opt);
+
+  virtual bool is_in_locked_partition() { return true; }
+
+  virtual bool has_hash_part_explicit() { return false; }
   /* end */
 
 #ifdef IS_MYSQL

@@ -2377,6 +2377,10 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
+  if (has_hash_part_explicit()) {
+    goto done;
+  }
+
   if (thd_sql_command(thd) == SQLCOM_SELECT) {
     if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT) &&
         optimize_count(condition)) {
@@ -2515,7 +2519,8 @@ void ha_sdb::build_selector(bson::BSONObj &selector) {
       select_num++;
     }
   }
-  if (((double)select_num * 100 / table_share->fields) <= (double)threshold) {
+  if (((double)select_num * 100 / table_share->fields) <= (double)threshold &&
+      !has_hash_part_explicit()) {
     selector = selector_builder.obj();
     SDB_LOG_DEBUG("optimizer selector object: %s",
                   selector.toString(false, false).c_str());
@@ -3201,6 +3206,7 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
+retry:
   rc = collection->next(obj, false);
   if (rc != 0) {
     if (HA_ERR_END_OF_FILE == rc) {
@@ -3212,6 +3218,10 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
   rc = obj_to_row(obj, buf);
   if (rc != 0) {
     goto error;
+  }
+
+  if (!is_in_locked_partition()) {
+    goto retry;
   }
 
   first_read = first_read ? false : first_read;

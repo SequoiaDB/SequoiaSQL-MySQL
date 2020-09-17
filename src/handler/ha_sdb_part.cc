@@ -1321,15 +1321,6 @@ int ha_sdb_part::pre_row_to_obj(bson::BSONObjBuilder &builder) {
   ha_sdb_part_share *share = (ha_sdb_part_share *)m_part_share;
   longlong phid = 0;
 
-  rc = test_if_explicit_partition();
-  if (rc != 0) {
-    goto error;
-  }
-
-  if (HASH_PARTITION == m_part_info->part_type) {
-    goto done;
-  }
-
   rc = m_part_info->get_partition_id(m_part_info, &part_id, &func_value);
   if (rc != 0) {
     m_part_info->err_value = func_value;
@@ -1402,17 +1393,7 @@ error:
 }
 
 int ha_sdb_part::pre_delete_all_rows(bson::BSONObj &condition) {
-  int rc = 0;
-  rc = test_if_explicit_partition();
-  if (rc != 0) {
-    goto error;
-  }
-
-  rc = append_shard_cond(condition);
-done:
-  return rc;
-error:
-  goto done;
+  return append_shard_cond(condition);
 }
 
 int ha_sdb_part::pre_alter_table_add_idx(const KEY *key_info) {
@@ -1561,15 +1542,7 @@ error:
 }
 
 int ha_sdb_part::pre_start_statement() {
-  int rc = test_if_explicit_partition();
-  if (rc != 0) {
-    my_printf_error(rc, "Cannot specify HASH or KEY partitions", MYF(0));
-    goto error;
-  }
-done:
-  return rc;
-error:
-  goto done;
+  return 0;
 }
 
 bool ha_sdb_part::having_part_hash_id() {
@@ -1640,7 +1613,8 @@ int ha_sdb_part::append_shard_cond(bson::BSONObj &condition) {
   bool explicit_partition = false;
   test_if_explicit_partition(&explicit_partition);
 
-  if (bitmap_is_set_all(&(m_part_info->read_partitions))) {
+  if (bitmap_is_set_all(&(m_part_info->read_partitions)) ||
+      HASH_PARTITION == m_part_info->part_type) {
     goto done;
   }
 
@@ -1691,9 +1665,8 @@ int ha_sdb_part::pre_first_rnd_next(bson::BSONObj &condition) {
   int rc = 0;
   THD *thd = ha_thd();
 
-  rc = test_if_explicit_partition();
-  if (rc != 0) {
-    goto error;
+  if (has_hash_part_explicit()) {
+    bitmap_set_all(table->read_set);
   }
 
   if (MY_BIT_NONE == m_part_info->get_first_used_partition() ||
@@ -1705,17 +1678,15 @@ int ha_sdb_part::pre_first_rnd_next(bson::BSONObj &condition) {
   } else {
     rc = append_shard_cond(condition);
   }
-done:
+
   return rc;
-error:
-  goto done;
 }
 
 int ha_sdb_part::pre_index_read_one(bson::BSONObj &condition) {
   int rc = 0;
-  rc = test_if_explicit_partition();
-  if (rc != 0) {
-    goto error;
+
+  if (has_hash_part_explicit()) {
+    bitmap_set_all(table->read_set);
   }
 
   if (MY_BIT_NONE == m_part_info->get_first_used_partition()) {
@@ -1727,8 +1698,6 @@ int ha_sdb_part::pre_index_read_one(bson::BSONObj &condition) {
   rc = append_shard_cond(condition);
 done:
   return rc;
-error:
-  goto done;
 }
 
 bool ha_sdb_part::need_update_part_hash_id() {
@@ -2108,6 +2077,34 @@ done:
   DBUG_RETURN(rc);
 error:
   goto done;
+}
+
+bool ha_sdb_part::has_hash_part_explicit() {
+  return (test_if_explicit_partition() != 0);
+}
+
+bool ha_sdb_part::is_in_locked_partition() {
+  bool rs = false;
+  uint part_id = -1;
+  longlong func_value = 0;
+  my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
+
+  // No need to check simple RANGE / LIST partition.
+  // Query condition can ensure that.
+  if (HASH_PARTITION != m_part_info->part_type &&
+      !m_part_info->is_sub_partitioned()) {
+    rs = true;
+    goto done;
+  }
+
+  if (0 == m_part_info->get_partition_id(m_part_info, &part_id, &func_value) &&
+      m_part_info->is_partition_locked(part_id)) {
+    rs = true;
+    goto done;
+  }
+done:
+  dbug_tmp_restore_column_map(table->read_set, org_bitmap);
+  return rs;
 }
 
 // For sub partition, Partition_helper::check_misplaced_rows is

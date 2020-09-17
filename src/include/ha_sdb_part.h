@@ -382,6 +382,10 @@ class ha_sdb_part : public ha_sdb,
                               bson::BSONObj& new_tab_opt,
                               bson::BSONObj& old_part_opt,
                               bson::BSONObj& new_part_opt);
+
+  bool is_in_locked_partition();
+
+  bool has_hash_part_explicit();
   /* end */
 
   void convert_sub2main_part_id(uint& part_id);
