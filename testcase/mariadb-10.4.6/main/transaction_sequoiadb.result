@@ -520,17 +520,17 @@ connect  con1, localhost, root;
 connection con1;
 BEGIN;
 SELECT * FROM t1;
-ERROR 0A000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ERROR 0A000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
 ROLLBACK;
 SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 BEGIN;
 SELECT * FROM t1;
-ERROR 0A000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ERROR 0A000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
 ROLLBACK;
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 BEGIN;
 SELECT * FROM t1;
-ERROR 0A000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ERROR 0A000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
 ROLLBACK;
 connection default;
 DROP TABLE t1;

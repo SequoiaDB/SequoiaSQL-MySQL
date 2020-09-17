@@ -429,17 +429,17 @@ SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 BEGIN;
 SELECT * FROM t1;
-ERROR HY000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
 ROLLBACK;
 SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 BEGIN;
 SELECT * FROM t1;
-ERROR HY000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
 ROLLBACK;
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 BEGIN;
 SELECT * FROM t1;
-ERROR HY000: SequoiaDB engine not support transaction serializable isolation, please set transaction_isolation to other level and restart transaction
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
 ROLLBACK;
 DROP TABLE t1;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
