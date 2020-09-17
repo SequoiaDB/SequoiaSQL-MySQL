@@ -1700,10 +1700,43 @@ done:
   return rc;
 }
 
-bool ha_sdb_part::need_update_part_hash_id() {
-  return (m_sharded_by_part_hash_id &&
-          bitmap_is_overlapping(&(m_part_info->full_part_field_set),
+bool ha_sdb_part::need_update_sharding_key() {
+  return (bitmap_is_overlapping(&(m_part_info->full_part_field_set),
                                 table->write_set));
+}
+
+bool ha_sdb_part::is_sharding_key_updated(const uchar *old_data,
+                                          const uchar *new_data) {
+  bool rs = true;;
+  uint row_offset = (uint)(old_data - new_data);
+
+  if (new_data != table->record[0]) {
+    repoint_field_to_record(table, table->record[0],
+        const_cast<uchar *>(new_data));
+  }
+
+  for (Field **fields = table->field; *fields; fields++) {
+    Field *field = *fields;
+    if (!bitmap_is_set(&(m_part_info->full_part_field_set), field->field_index)) {
+      continue;
+    }
+    bool is_null = field->is_null();
+    if (is_null != field->is_null_in_record(old_data)) {
+      goto done;
+    } else if (!is_null) {
+      if (field->cmp_binary_offset(row_offset) != 0) {
+        goto done;
+      }
+    }
+  }
+
+  rs = false;
+done:
+  if (new_data != table->record[0]) {
+    repoint_field_to_record(table, const_cast<uchar *>(new_data),
+        table->record[0]);
+  }
+  return rs;
 }
 
 int ha_sdb_part::prepare_for_new_partitions(uint num_partitions,

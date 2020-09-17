@@ -521,7 +521,9 @@ class ha_sdb : public handler {
 
   virtual int pre_delete_all_rows(bson::BSONObj &condition) { return 0; }
 
-  virtual bool need_update_part_hash_id() { return false; }
+  virtual bool need_update_sharding_key() { return false; }
+
+  virtual bool is_sharding_key_updated(const uchar *old_data, const uchar *new_data) { return false; }
 
   virtual int pre_start_statement() { return 0; }
 
@@ -548,6 +550,8 @@ class ha_sdb : public handler {
                             enum enum_compress_type old_sql_compress,
                             enum enum_compress_type new_sql_compress,
                             Sdb_cl &cl);
+
+  int insert_and_delete_row(const uchar *old_data, const uchar *new_data);
 
  protected:
   THR_LOCK_DATA lock_data;

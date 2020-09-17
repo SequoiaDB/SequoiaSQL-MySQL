@@ -370,7 +370,9 @@ class ha_sdb_part : public ha_sdb,
 
   int pre_delete_all_rows(bson::BSONObj& condition);
 
-  bool need_update_part_hash_id();
+  bool need_update_sharding_key();
+
+  bool is_sharding_key_updated(const uchar *old_data, const uchar *new_data);
 
   int pre_start_statement();
 

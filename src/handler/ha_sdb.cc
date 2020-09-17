@@ -1692,6 +1692,42 @@ error:
   goto done;
 }
 
+int ha_sdb::insert_and_delete_row(const uchar *old_data, const uchar *new_data) {
+  int rc = 0;
+  bson::BSONObj new_obj;
+  bson::BSONObj old_obj;
+  bson::BSONObj tmp_obj;
+  bson::BSONObj hint;
+  bson::BSONObjBuilder builder;
+
+  sdb_build_clientinfo(ha_thd(), builder);
+  hint = builder.obj();
+
+  rc = row_to_obj(const_cast<uchar *>(new_data), new_obj, false, false, tmp_obj, true);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = collection->insert(new_obj, hint, 0);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = row_to_obj(const_cast<uchar *>(old_data), old_obj, false, false, tmp_obj, true);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = collection->del(old_obj, hint);
+  if (rc != 0) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int ha_sdb::update_row(const uchar *old_data, uchar *new_data) {
   return update_row(old_data, const_cast<const uchar *>(new_data));
 }
@@ -1716,6 +1752,14 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
     if (rc) {
       goto error;
     }
+  }
+
+  if (is_sharding_key_updated(old_data, new_data)) {
+    rc = insert_and_delete_row(old_data, new_data);
+    if (rc != 0) {
+      goto error;
+    }
+    goto done;
   }
 
   rc = get_update_obj(old_data, new_data, new_obj, null_obj);
@@ -2228,7 +2272,7 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
     }
   }
 
-  if (need_update_part_hash_id()) {
+  if (need_update_sharding_key()) {
     optimizer_update = false;
     goto done;
   }
