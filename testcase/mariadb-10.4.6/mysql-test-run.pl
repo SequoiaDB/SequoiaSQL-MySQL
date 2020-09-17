@@ -96,6 +96,7 @@ use My::Find;
 use My::SysInfo;
 use My::CoreDump;
 use mtr_cases;
+use mtr_cases_from_list;
 use mtr_report;
 use mtr_match;
 use mtr_unique;
@@ -231,6 +232,7 @@ my $opt_compress;
 my $opt_ssl;
 my $opt_skip_ssl;
 my @opt_skip_test_list;
+my $opt_do_test_list= "";
 our $opt_ssl_supported;
 my $opt_ps_protocol;
 my $opt_sp_protocol;
@@ -416,6 +418,12 @@ sub main {
   }
   check_ssl_support();
   check_debug_support();
+
+  # New: collect suites and test cases from test list (file containing suite.testcase on each line)
+  #      and put suites to $opt_suites and test case to @opt_cases.
+  if ($opt_do_test_list ne "") {
+	  collect_test_cases_from_list(\$opt_suites, \@opt_cases, $opt_do_test_list);
+  }
 
   if (!$opt_suites) {
     $opt_suites= join ',', collect_default_suites(@DEFAULT_SUITES);
@@ -1242,6 +1250,7 @@ sub command_line_setup {
 	     # list-options is internal, not listed in help
 	     'list-options'             => \$opt_list_options,
              'skip-test-list=s'         => \@opt_skip_test_list,
+             'do-test-list=s'           => \$opt_do_test_list,
              'xml-report=s'             => \$opt_xml_report
            );
 
@@ -6291,6 +6300,10 @@ Options to control what test suites or cases to run
   enable-disabled       Run also tests marked as disabled
   print-testcases       Don't run the tests but print details about all the
                         selected tests, in the order they would be run.
+  do-test-list=FILE     Run the tests listed in FILE. Each line in the file
+                        is an entry and should be formatted as:
+                        <SUITE>.<TESTNAME> or <SUITE> <TESTNAME>.
+                        "#" as first character marks a comment.
   skip-test-list=FILE   Skip the tests listed in FILE. Each line in the file
                         is an entry and should be formatted as: 
                         <TESTNAME> : <COMMENT>
