@@ -1315,23 +1315,23 @@ Country='NOR' AND Name IN ('Oslo', 'Bergen') OR
 Country='ITA' AND Name IN ('Napoli', 'Venezia');
 ID	Name	Country	Population
 175	Antwerpen	BEL	446525
-2808	Bergen	NOR	230948
+176	Gent	BEL	224180
 3068	Berlin	DEU	3386667
 3087	Bonn	DEU	301048
-2918	Braga	PRT	90535
-176	Gent	BEL	224180
 3242	Lahti	FIN	96921
-3580	Moscow	RUS	8389200
-1466	Napoli	ITA	1002619
-2807	Oslo	NOR	508726
 2974	Paris	FRA	2125246
+1466	Napoli	ITA	1002619
+1474	Venezia	ITA	277305
+2808	Bergen	NOR	230948
+2807	Oslo	NOR	508726
+2928	Warszawa	POL	1615369
+2931	Wroclaw	POL	636765
+2918	Braga	PRT	90535
 2915	Porto	PRT	273060
+3580	Moscow	RUS	8389200
 3581	St Petersburg	RUS	4694000
 3048	Stockholm	SWE	750348
 3051	Uppsala	SWE	189569
-1474	Venezia	ITA	277305
-2928	Warszawa	POL	1615369
-2931	Wroclaw	POL	636765
 DROP DATABASE world_range_vs_index_merge;
 set session optimizer_switch='index_merge_sort_intersection=default';
 DROP DATABASE test_range_vs_index_merge;

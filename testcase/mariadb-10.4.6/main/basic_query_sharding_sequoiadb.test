@@ -343,8 +343,9 @@ SELECT a FROM t1 WHERE FIELD(a, "abc","abcdefg","hello") > 0;
 SELECT a,b FROM t1 WHERE FIND_IN_SET(a, 'abc') > 0;
 --sorted_result
 SELECT * FROM t1 WHERE INSTR(a, 'o') > 0;
---sorted_result
-SELECT a FROM t1 WHERE a != INSERT('axdefg',2,1,'bc');
+#BUG SEQUOIASQLMAINSTREAM-220
+#--sorted_result
+#SELECT a FROM t1 WHERE a != INSERT('axdefg',2,1,'bc');
 --sorted_result
 SELECT a,b FROM t1 WHERE a > REPLACE('hello','hel','ol');
 --sorted_result

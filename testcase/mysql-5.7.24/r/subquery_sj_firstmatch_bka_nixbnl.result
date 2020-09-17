@@ -7188,8 +7188,6 @@ WHERE t1.uid IN (SELECT t4.uid FROM t4, t3 WHERE t3.uid=1 AND t4.uid=t3.fid)
 AND t2.uid=t1.fid;
 name
 A
-A
-B
 B
 C
 D
@@ -7197,6 +7195,8 @@ E
 F
 G
 H
+A
+B
 I
 DROP TABLE t1,t2,t3,t4;
 # End of test for Bug#18194196

@@ -1272,19 +1272,6 @@ monty
 one	^
 two	=
 www.sequoiadb.com	k
-SELECT a FROM t1 WHERE a != INSERT('axdefg',2,1,'bc');
-a
-
- 01
- 123
- 789
-456
-four
-hello
-monty
-one
-two
-www.sequoiadb.com
 SELECT a,b FROM t1 WHERE a > REPLACE('hello','hel','ol');
 a	b
 one	^
