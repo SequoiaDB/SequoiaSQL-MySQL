@@ -1651,7 +1651,7 @@ a
 create table t4 (pk int primary key);
 insert into t4 select a from t3;
 select * from t3 where a in 
-(select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c);
+(select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c) order by t3.a;
 a
 0
 1

@@ -1651,10 +1651,18 @@ a
 create table t4 (pk int primary key);
 insert into t4 select a from t3;
 select * from t3 where a in 
-(select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c);
+(select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c) order by t3.a;
 a
 0
 1
+2
+3
+4
+5
+6
+7
+8
+9
 10
 11
 12
@@ -1665,14 +1673,6 @@ a
 17
 18
 19
-2
-3
-4
-5
-6
-7
-8
-9
 drop table t1, t3, t4;
 create table t1 (a int);
 insert into t1 values (0),(0),(0),(1),(1),(1),(2),(2),(2),(3),(3),(3);
