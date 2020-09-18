@@ -323,14 +323,14 @@ select * from t1 where a = 1 and b is null order by a desc, b desc, c desc;
 a	b	c
 1	NULL	b
 1	NULL	NULL
-select * from t1 where a = 1 order by b desc;
+select * from t1 where a = 1 order by b desc, a asc, c asc;
 a	b	c
 1	3	b
-1	1	b
-1	1	b
 1	1	NULL
-1	NULL	b
+1	1	b
+1	1	b
 1	NULL	NULL
+1	NULL	b
 alter table t1 modify b int not null, modify c varchar(10) not null;
 Warnings:
 Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'b' at row 1
