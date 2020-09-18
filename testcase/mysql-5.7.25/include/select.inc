@@ -1880,7 +1880,7 @@ select * from t1, (t1 as t2 left join t1 as t3 using (a));
 select * from (t1 as t2 left join t1 as t3 using (a)) straight_join t1;
 select * from t1 straight_join (t1 as t2 left join t1 as t3 using (a));
 # inner join on
-select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 on t1.a>1;
+select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 on t1.a>1 order by t1.a,t2.a,t3.a;
 select * from t1 inner join (t1 as t2 left join t1 as t3 using (a)) on t1.a>1;
 # inner join using
 select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 using ( a );
