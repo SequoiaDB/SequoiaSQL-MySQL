@@ -128,6 +128,11 @@ class Sdb_conn {
   char *get_err_msg() { return errmsg; }
   void clear_err_msg() { errmsg[0] = '\0'; }
 
+  inline void set_rollback_on_timeout(bool rollback) {
+    rollback_on_timeout = rollback;
+  }
+  inline bool get_rollback_on_timeout() const { return rollback_on_timeout; }
+
  private:
   int retry(boost::function<int()> func);
 
@@ -148,6 +153,7 @@ class Sdb_conn {
   bool m_is_authenticated;
   bool m_use_transaction;
   char errmsg[SDB_ERR_BUFF_SIZE];
+  bool rollback_on_timeout;
 };
 
 #endif
