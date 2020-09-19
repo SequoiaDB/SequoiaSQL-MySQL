@@ -6334,6 +6334,14 @@ get_message_done:
       if (strncmp(error_msg, SDB_ACQUIRE_TRANSACTION_LOCK,
                   strlen(SDB_ACQUIRE_TRANSACTION_LOCK)) == 0) {
         if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+#ifdef IS_MARIADB
+          /*
+            MariaDB not clear the option_bits OPTION_BEGIN flag after rollback
+            transaction implicitly. Cause the next transaction still be begin
+            transaction after implict transaction rollback.
+          */
+          connection->set_rollback_on_timeout(TRUE);
+#endif
           thd_mark_transaction_to_rollback(ha_thd(), 1);
         }
         my_error(ER_LOCK_WAIT_TIMEOUT, MYF(0));
@@ -6529,6 +6537,17 @@ static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
     goto error;
   }
 
+#ifdef IS_MARIADB
+  /*
+    MariaDB not clear the option_bits OPTION_BEGIN flag after rollback
+    transaction implicitly. Cause the next transaction still be begin
+    transaction after implict transaction rollback.
+  */
+  if (connection->get_rollback_on_timeout() &&
+      thd_test_options(thd, OPTION_BEGIN)) {
+    thd->variables.option_bits &= ~(OPTION_BEGIN);
+  }
+#endif
 done:
   my_hash_reset(&thd_sdb->open_table_shares);
   DBUG_RETURN(rc);

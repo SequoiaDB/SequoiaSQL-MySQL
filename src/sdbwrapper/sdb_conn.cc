@@ -46,6 +46,7 @@ Sdb_conn::Sdb_conn(my_thread_id _tid)
   last_tx_isolation = SDB_TRANS_ISO_RR;
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
+  rollback_on_timeout = false;
 }
 
 Sdb_conn::~Sdb_conn() {}
@@ -219,6 +220,8 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
   ulong tx_iso = SDB_TRANS_ISO_RU;
   bson::BSONObj option;
   bson::BSONObjBuilder builder(32);
+
+  set_rollback_on_timeout(false);
 
   if (!m_use_transaction) {
     goto done;
