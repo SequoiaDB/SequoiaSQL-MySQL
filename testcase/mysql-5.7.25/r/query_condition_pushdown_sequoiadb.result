@@ -8191,14 +8191,14 @@ abc	abc	abc	abc
 bc	bc	bc	bc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 (id int NOT NULL, a int, b int, c int, vc varchar(20) NOT NULL DEFAULT '', PRIMARY KEY (id));
+CREATE TABLE t1 (id int NOT NULL, a int, b int, c int, vc varchar(20) NOT NULL DEFAULT '');
 INSERT INTO t1 (id, a, b, c, vc) VALUES (1, 1, 1, 11, 'text1'), (2, 2, 2, 12, 'text2'), (3, 3, 3, 13, 'text3'), (4, 4, 4, 14, 'text4'), (5, 5, 5, 15, 'text5'), (6, 6, 6, 16, 'text6'), (7, 7, 7, 17, 'text7'), (8, 8, 8, 18, 'text8'), (9, 9, 9, 19, 'text9'), (10, 10, 10, 20, 'text10'), (11, 11, 11, 30, 'text11'), (12, 12, 12, 40, 'text12');
 SELECT * FROM t1 WHERE (3 + id) > (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 10	10	10	20	text10
 11	11	11	30	text11
 12	12	12	40	text12
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (id + 3) < (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8223,7 +8223,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id < 2) > (3 + id);
 id	a	b	c	vc
 SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id > 11) + 1 <= id;
@@ -8249,7 +8249,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE 3 + (SELECT id FROM t1 WHERE id > 11) <> id;
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8278,7 +8278,7 @@ id	a	b	c	vc
 6	6	6	16	text6
 7	7	7	17	text7
 8	8	8	18	text8
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id + a > (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 10	10	10	20	text10
@@ -8289,7 +8289,7 @@ id	a	b	c	vc
 9	9	9	19	text9
 SELECT * FROM t1 WHERE id + a + 10 < (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id + (SELECT id FROM t1 WHERE id < 2) <> a + (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8304,13 +8304,13 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE 3 + a + (SELECT id FROM t1 WHERE id < 2) >= 5 + id + (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (10 - id) > (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (id - 10) < (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8335,7 +8335,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id < 2) > (3 - id);
 id	a	b	c	vc
 10	10	10	20	text10
@@ -8368,7 +8368,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE 3 - (SELECT id FROM t1 WHERE id > 11) <> id;
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8399,10 +8399,10 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id - a > (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id - a - 1 < (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8417,7 +8417,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id - (SELECT id FROM t1 WHERE id < 2) <> a - (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8446,7 +8446,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (2 * id) > (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 10	10	10	20	text10
@@ -8455,7 +8455,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (id * 2) < (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8477,7 +8477,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id < 2) > (3 * id);
 id	a	b	c	vc
 SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id > 11) * 0.2 <= id;
@@ -8519,7 +8519,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE 0.2 * (SELECT id FROM t1 WHERE id > 11) <> id;
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8536,7 +8536,7 @@ id	a	b	c	vc
 9	9	9	19	text9
 SELECT * FROM t1 WHERE id = (SELECT id FROM t1 WHERE id < 2) * 0.3;
 id	a	b	c	vc
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 0 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": { "$decimal": "0.3" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE 10 > (SELECT id FROM t1 WHERE id < 2) * id;
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8559,7 +8559,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id * a * 0.1 < (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8572,7 +8572,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id * (SELECT id FROM t1 WHERE id < 2) <> a * (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8589,10 +8589,10 @@ id	a	b	c	vc
 9	9	9	19	text9
 SELECT * FROM t1 WHERE 3 * a * (SELECT id FROM t1 WHERE id < 2) >= 5 * id * (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (10 / id) > (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (id / 10) < (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8618,7 +8618,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id < 2) > (3 / id);
 id	a	b	c	vc
 10	10	10	20	text10
@@ -8630,7 +8630,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id > 11) / 2 <= id;
 id	a	b	c	vc
 10	10	10	20	text10
@@ -8657,7 +8657,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE 10 / (SELECT id FROM t1 WHERE id > 11) <> id;
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8690,7 +8690,7 @@ id	a	b	c	vc
 9	9	9	19	text9
 SELECT * FROM t1 WHERE id / a > (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id / a / 0.1 < (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8705,7 +8705,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id / (SELECT id FROM t1 WHERE id < 2) <> a / (SELECT id FROM t1 WHERE id > 11);
 id	a	b	c	vc
 1	1	1	11	text1
@@ -8734,7 +8734,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 11 } }, { "id": { "$gt": 11 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 11 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (3 + id) < 11;
 id	a	b	c	vc
 1	1	1	11	text1
@@ -9362,7 +9362,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 6 } }, { "id": { "$gt": 6 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 6 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id = 5) <= a * 4 - 20;
 id	a	b	c	vc
 10	10	10	20	text10
@@ -9371,7 +9371,7 @@ id	a	b	c	vc
 7	7	7	17	text7
 8	8	8	18	text8
 9	9	9	19	text9
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 5 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id * (SELECT id FROM t1 WHERE id < 2) + 10 - id > a / (SELECT id FROM t1 WHERE id = 8) + 9;
 id	a	b	c	vc
 1	1	1	11	text1
@@ -9381,7 +9381,7 @@ id	a	b	c	vc
 5	5	5	15	text5
 6	6	6	16	text6
 7	7	7	17	text7
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 2 } }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 8 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 INSERT INTO t1 (id, a, b, c, vc) VALUES (13, 1, 1, 11, 'text13'), (14, 2, 2, 12, 'text14'), (15, 3, 3, 13, 'text15'), (16, 4, 4, 14, 'text16'), (17, 5, 5, 15, 'text17'), (18, 6, 6, 16, 'text18'), (19, 7, 7, 17, 'text19'), (20, 8, 8, 18, 'text20'), (21, 9, 9, 19, 'text21'), (22, 10, 10, 20, 'text22'), (23, 11, 11, 30, 'text23'), (24, 12, 12, 40, 'text24');
 SELECT * FROM t1 WHERE (a + b * 5 - 3) < 20 ORDER BY id DESC;
 id	a	b	c	vc
@@ -9457,14 +9457,14 @@ id	a	c
 5	-9	001
 7	0	abc
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id <= 10 ORDER BY a, id LIMIT 4 OFFSET 2;
+SELECT * FROM t1 ignore index(primary,c)WHERE id <= 10 ORDER BY a, id LIMIT 4 OFFSET 2;
 id	a	c
 7	0	abc
 1	1	op
 4	1	tf
 8	5	jk
 [Note] SequoiaDB: Query message: condition[{ "id": { "$lte": 10 } }], selector[{}], order_by[{ "a": 1, "id": 1 }], hint[{}], limit[4], offset[2]
-SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 GROUP BY id,c ORDER BY id,c;
+SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 ignore index(primary,c) GROUP BY id,c ORDER BY id,c;
 id	s	c
 1	0	1
 2	1	1
@@ -9479,7 +9479,7 @@ id	s	c
 11	5	1
 Warnings:
 Warning	1052	Column 'c' in group statement is ambiguous
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT a FROM t1 GROUP BY a ORDER BY a LIMIT 5;
 a
 -9
@@ -9488,14 +9488,14 @@ a
 1
 5
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 5 }]
-SELECT id FROM t1 HAVING id > 2 ORDER BY id LIMIT 5 OFFSET 1;
+SELECT id FROM t1 ignore index(primary,c) HAVING id > 2 ORDER BY id LIMIT 5 OFFSET 1;
 id
 4
 5
 6
 7
 8
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT a,id FROM t1 WHERE a > 3 GROUP BY a,id HAVING id > 3 ORDER BY id LIMIT 3 OFFSET 1;
 a	id
 5	8
@@ -9524,12 +9524,12 @@ FOUND_ROWS()
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[-1], offset[0]
 CREATE TABLE t2 ( id INT, vc VARCHAR(16));
 INSERT INTO t2 VALUES (1,'op'),(-1,'bc'),(10,'123'),(7,'ui'),(18,'123'),(10,'hello'),(0,'bc');
-SELECT * FROM t2 LEFT JOIN t1 ON t2.id = t1.id ORDER BY t2.id LIMIT 3 OFFSET 1;
+SELECT * FROM t2 LEFT JOIN t1 ignore index(primary,c) ON t2.id = t1.id ORDER BY t2.id LIMIT 3 OFFSET 1;
 id	vc	id	a	c
 0	bc	NULL	NULL	NULL
 1	op	1	1	op
 7	ui	7	0	abc
-[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 7 } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 ORDER BY t2.id, t2.vc LIMIT 2 OFFSET 1;
 (SELECT a FROM t1 WHERE t1.a=t2.vc)	vc
 0	bc
@@ -9545,7 +9545,7 @@ DROP TABLE t1,t2,t3;
 CREATE TABLE t1 ( id INT PRIMARY KEY, c CHAR(16), vc VARCHAR(16), tt TEXT );
 INSERT INTO t1 VALUES (1,'op','op','op'),(-1,'bc','bc','bc'),(10,'123','123','123'),(7,'ui','ui','ui'),(18,'a1','a1','a1');
 INSERT INTO t1 VALUES (-10,'hello','hello','hello'),(0,'bc','bc','bc'),(8,'test','test','test'),(11,'foo','foo','foo');
-SELECT id FROM t1 WHERE id > 0;
+SELECT id FROM t1 ignore index(PRIMARY) WHERE id > 0;
 id
 1
 10
@@ -9553,8 +9553,8 @@ id
 18
 7
 8
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 0 } }, { "id": { "$gt": 0 } } ] }], selector[{ "_id": null, "id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT c, id FROM t1 ORDER BY c,id;
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gt": 0 } }], selector[{ "_id": null, "id": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+SELECT c, id FROM t1 ignore index(PRIMARY) ORDER BY c,id;
 c	id
 123	10
 a1	18
@@ -9567,7 +9567,7 @@ test	8
 ui	7
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "c": 1, "id": 1 }], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 ( id TINYINT PRIMARY KEY, b BLOB );
+CREATE TABLE t1 ( id TINYINT, b BLOB );
 INSERT INTO t1 VALUES (1,'test'),(0,'hello'),(2,'sz'),(-1,'op'),(10,'ok'),(8,'foo'),(100,'bar'),(9,'too'),(50,'to'),(-2,'bo');
 SELECT * FROM t1 WHERE NOT id > 10;
 id	b
@@ -9579,7 +9579,7 @@ id	b
 2	sz
 8	foo
 9	too
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lte": 10 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lte": 10 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE NOT b > 'hello';
 id	b
 -2	bo
@@ -9599,7 +9599,7 @@ id	b
 9	too
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 ( id SMALLINT PRIMARY KEY, c CHAR(16), d DATE );
+CREATE TABLE t1 ( id SMALLINT, c CHAR(16), d DATE );
 INSERT INTO t1 VALUES (1,'test','1970-01-01'),(0,'hello','2000-02-02'),(2,'sz','2001-03-03');
 INSERT INTO t1 VALUES (-1,'op','1999-04-04'),(10,'ok','2005-05-05'),(8,'foo','1995-06-06');
 INSERT INTO t1 VALUES (100,'bar','2006-07-07'),(9,'too','2010-08-08'),(50,'to','2009-09-09'),(-2,'bo','2020-10-10');
@@ -9609,7 +9609,7 @@ id	c	d
 100	bar	2006-07-07
 2	sz	2001-03-03
 8	foo	1995-06-06
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gt": 1 } }, { "c": { "$lt": "test" } } ] }, { "id": { "$gt": 1 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 1 } }, { "c": { "$lt": "test" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE c >= CONCAT('hel','lo') AND d <= '2010-01-01';
 id	c	d
 -1	op	1999-04-04
@@ -9620,7 +9620,7 @@ id	c	d
 50	to	2009-09-09
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "c": { "$gte": "hello" } }, { "d": { "$lte": {"$date": "2010-01-01"} } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 ( id INT PRIMARY KEY, vc VARCHAR(16), t TIME );
+CREATE TABLE t1 ( id INT, vc VARCHAR(16), t TIME );
 INSERT INTO t1 VALUES (1,'test','01:01:01'),(0,'hello','00:00:00'),(2,'sz','10:10:10');
 INSERT INTO t1 VALUES (-1,'op','08:08:08'),(10,'ok','-11:11:11'),(8,'foo','23:00:00');
 INSERT INTO t1 VALUES (100,'bar','123:12:12'),(9,'too','23:59:59'),(50,'to','-23:59:59'),(-2,'bo','12:13:14');
@@ -9646,22 +9646,16 @@ id	vc	t
 8	foo	23:00:00
 [Note] SequoiaDB: Query message: condition[{ "$or": [ { "vc": { "$in": [ "abc", "test", "opt", "hello", "foo", "bar" ] } }, { "t": { "$lte": 101010.0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 ( id BIGINT PRIMARY KEY, t TEXT, dt DATETIME );
+CREATE TABLE t1 ( id BIGINT, t TEXT, dt DATETIME );
 INSERT INTO t1 VALUES (1,'test','1970-01-01 01:01:01'),(0,'hello','2000-02-02 00:00:00'),(2,'sz','2001-03-03 10:10:10');
 INSERT INTO t1 VALUES (-1,'op','1999-04-04 08:08:08'),(10,'ok','2005-05-05 -11:11:11'),(8,'foo','1995-06-06 23:00:00');
 INSERT INTO t1 VALUES (100,'bar','2006-07-07 12:13:14'),(9,'too','2010-08-08 23:59:59'),(50,'to','2009-09-09 -23:59:59'),(-2,'bo','2020-10-10 23:00:00');
-SELECT * FROM t1 WHERE id > FLOOR(2) AND t <= CONCAT('te','st') AND dt <> '2020-10-10 00:00:00';
-id	t	dt
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-8	foo	1995-06-06 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$and": [ { "t": { "$lte": "test" } }, { "dt": { "$ne": "2020-10-10 00:00:00" } } ] }, { "id": { "$gt": 2 } } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 FORCE INDEX(PRIMARY) WHERE id IN (1,8,10,50,100) AND (dt >= '2000-01-01 00:00:00' OR t LIKE 'to%');
+SELECT * FROM t1 WHERE id IN (1,8,10,50,100) AND (dt >= '2000-01-01 00:00:00' OR t LIKE 'to%');
 id	t	dt
 10	ok	2005-05-05 11:11:11
 100	bar	2006-07-07 12:13:14
 50	to	2009-09-09 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$in": [ 1, 8, 10, 50, 100 ] } }, { "$or": [ { "dt": { "$gte": "2000-01-01 00:00:00" } }, { "t": { "$regex": "^to.*$", "$options": "s" } } ] } ] }, { "id": { "$et": 100 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$in": [ 1, 8, 10, 50, 100 ] } }, { "$or": [ { "dt": { "$gte": "2000-01-01 00:00:00" } }, { "t": { "$regex": "^to.*$", "$options": "s" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id <= 10 OR t IN ('abc','test','ok','pp','too') AND dt > '2001-01-01 10:10:10';
 id	t	dt
 -1	op	1999-04-04 08:08:08
@@ -9714,12 +9708,12 @@ id	t	dt
 100	bar	2006-07-07 12:13:14
 50	to	2009-09-09 23:59:59
 8	foo	1995-06-06 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$and": [ { "t": { "$lte": "to" } }, { "dt": { "$ne": "1970-01-01 01:01:01" } }, { "t": { "$in": [ "abc", "ok", "test", "to", "from", "foo", "bar" ] } } ] }, { "id": { "$gt": 5 } } ] }, { "id": { "$gt": 5 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 FORCE INDEX(PRIMARY) WHERE id IN (-1,0,8,11,12,50,100) AND dt > '2000-01-01 01:01:01' AND (t < 'opt' OR (id BETWEEN 9 AND 10));
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+SELECT * FROM t1 WHERE id IN (-1,0,8,11,12,50,100) AND dt > '2000-01-01 01:01:01' AND (t < 'opt' OR (id BETWEEN 9 AND 10));
 id	t	dt
 0	hello	2000-02-02 00:00:00
 100	bar	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$in": [ -1, 0, 8, 11, 12, 50, 100 ] } }, { "dt": { "$gt": "2000-01-01 01:01:01" } }, { "$or": [ { "t": { "$lt": "opt" } }, { "$and": [ { "id": { "$gte": 9 } }, { "id": { "$lte": 10 } } ] } ] } ] }, { "id": { "$et": 100 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$in": [ -1, 0, 8, 11, 12, 50, 100 ] } }, { "dt": { "$gt": "2000-01-01 01:01:01" } }, { "$or": [ { "t": { "$lt": "opt" } }, { "$and": [ { "id": { "$gte": 9 } }, { "id": { "$lte": 10 } } ] } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id < 100 AND dt >= '2000-01-01 01:01:01' OR t LIKE "o_" AND id > SQRT(5);
 id	t	dt
 -2	bo	2020-10-10 23:00:00
@@ -9736,7 +9730,7 @@ id	t	dt
 50	to	2009-09-09 23:59:59
 8	foo	1995-06-06 23:00:00
 9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gt": 2 } }, { "$or": [ { "t": { "$lt": "too" } }, { "t": { "$regex": "^b.*$", "$options": "s" } }, { "dt": { "$gt": "2009-09-09 23:59:59" } } ] } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 2 } }, { "$or": [ { "t": { "$lt": "too" } }, { "t": { "$regex": "^b.*$", "$options": "s" } }, { "dt": { "$gt": "2009-09-09 23:59:59" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id <= 5 OR t = 'ok' OR dt <= '1998-01-01 01:01:01' OR dt >= '2009-10-01 01:01:01';
 id	t	dt
 -1	op	1999-04-04 08:08:08
@@ -9796,14 +9790,14 @@ id	t	dt
 -1	op	1999-04-04 08:08:08
 0	hello	2000-02-02 00:00:00
 1	test	1970-01-01 01:01:01
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$lt": 2 } }, { "$or": [ { "t": { "$et": "foo" } }, { "dt": { "$lte": "2009-09-09 23:59:59" } } ] } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$lt": 2 } }, { "$or": [ { "t": { "$et": "foo" } }, { "dt": { "$lte": "2009-09-09 23:59:59" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE NOT (id > CEIL(2) OR t < 'foo' OR dt > '2010-10-10 00:00:00');
 id	t	dt
 -1	op	1999-04-04 08:08:08
 0	hello	2000-02-02 00:00:00
 1	test	1970-01-01 01:01:01
 2	sz	2001-03-03 10:10:10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "t": { "$gte": "foo" } }, { "dt": { "$lte": "2010-10-10 00:00:00" } } ] }, { "id": { "$lte": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE NOT (NOT (t > 'test' OR dt < '2000-01-01 01:01:01'));
 id	t	dt
 -1	op	1999-04-04 08:08:08
@@ -9819,181 +9813,9 @@ id	t	dt
 50	to	2009-09-09 23:59:59
 8	foo	1995-06-06 23:00:00
 9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gte": 2.23606797749979 } }, { "t": { "$lte": "too" } } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-CREATE INDEX t ON t1(t(16));
-CREATE INDEX dt ON t1(dt);
-SELECT * FROM t1 WHERE id > FLOOR(2) AND t <= CONCAT('te','st') AND dt <> '2020-10-10 00:00:00';
-id	t	dt
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-8	foo	1995-06-06 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$and": [ { "t": { "$lte": "test" } }, { "dt": { "$ne": "2020-10-10 00:00:00" } } ] }, { "id": { "$gt": 2 } } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id IN (1,8,10,50,100) AND (dt >= '2000-01-01 00:00:00' OR t LIKE 'to%');
-id	t	dt
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-50	to	2009-09-09 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$in": [ 1, 8, 10, 50, 100 ] } }, { "$or": [ { "dt": { "$gte": "2000-01-01 00:00:00" } }, { "t": { "$regex": "^to.*$", "$options": "s" } } ] } ] }, { "t": { "$gte": "to" } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id <= 10 OR t IN ('abc','test','ok','pp','too') AND dt > '2001-01-01 10:10:10';
-id	t	dt
--1	op	1999-04-04 08:08:08
--2	bo	2020-10-10 23:00:00
-0	hello	2000-02-02 00:00:00
-1	test	1970-01-01 01:01:01
-10	ok	2005-05-05 11:11:11
-2	sz	2001-03-03 10:10:10
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$lte": 10 } }, { "$and": [ { "t": { "$in": [ "abc", "test", "ok", "pp", "too" ] } }, { "dt": { "$gt": "2001-01-01 10:10:10" } } ] } ] }, { "dt": { "$gt": "2001-01-01 10:10:10" } } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 FORCE INDEX(dt) WHERE id NOT IN (-1,-2,9,10,50,100) OR t >= SUBSTRING('helloworld',5,5) OR dt <= '1970-01-01 23:59:59';
-id	t	dt
-0	hello	2000-02-02 00:00:00
-1	test	1970-01-01 01:01:01
-2	sz	2001-03-03 10:10:10
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$nin": [ -1, -2, 9, 10, 50, 100 ] } }, { "t": { "$gte": "oworl" } }, { "dt": { "$lte": "1970-01-01 23:59:59" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (id != 1 AND t >= 'hel');
-id	t	dt
--2	bo	2020-10-10 23:00:00
-1	test	1970-01-01 01:01:01
-100	bar	2006-07-07 12:13:14
-8	foo	1995-06-06 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$et": 1 } }, { "t": { "$lt": "hel" } } ] }, { "t": { "$isnull": 0 } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (t = 'to' OR dt < '2000-01-01 00:00:00');
-id	t	dt
--2	bo	2020-10-10 23:00:00
-0	hello	2000-02-02 00:00:00
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-2	sz	2001-03-03 10:10:10
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "t": { "$ne": "to" } }, { "dt": { "$gte": "2000-01-01 00:00:00" } } ] }, { "t": { "$isnull": 0 } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (NOT t LIKE '%o%');
-id	t	dt
--1	op	1999-04-04 08:08:08
--2	bo	2020-10-10 23:00:00
-0	hello	2000-02-02 00:00:00
-10	ok	2005-05-05 11:11:11
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "t": { "$regex": "^.*o.*$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id > CEIL(5) AND t <= 'to' AND dt != '1970-01-01 01:01:01' AND t IN ('abc','ok','test','to','from','foo','bar');
-id	t	dt
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$and": [ { "t": { "$lte": "to" } }, { "dt": { "$ne": "1970-01-01 01:01:01" } }, { "t": { "$in": [ "abc", "ok", "test", "to", "from", "foo", "bar" ] } } ] }, { "id": { "$gt": 5 } } ] }, { "id": { "$gt": 5 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id IN (-1,0,8,11,12,50,100) AND dt > '2000-01-01 01:01:01' AND (t < 'opt' OR (id BETWEEN 9 AND 10));
-id	t	dt
-0	hello	2000-02-02 00:00:00
-100	bar	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$in": [ -1, 0, 8, 11, 12, 50, 100 ] } }, { "dt": { "$gt": "2000-01-01 01:01:01" } }, { "$or": [ { "t": { "$lt": "opt" } }, { "$and": [ { "id": { "$gte": 9 } }, { "id": { "$lte": 10 } } ] } ] } ] }, { "dt": { "$gt": "2000-01-01 01:01:01" } } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id < 100 AND dt >= '2000-01-01 01:01:01' OR t LIKE "o_" AND id > SQRT(5);
-id	t	dt
--2	bo	2020-10-10 23:00:00
-0	hello	2000-02-02 00:00:00
-10	ok	2005-05-05 11:11:11
-2	sz	2001-03-03 10:10:10
-50	to	2009-09-09 23:59:59
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "id": { "$lt": 100 } }, { "dt": { "$gte": "2000-01-01 01:01:01" } } ] }, { "$and": [ { "t": { "$regex": "^o.$", "$options": "s" } }, { "id": { "$gt": 2.23606797749979 } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id > 2 AND (t < 'too' OR t LIKE 'b%' OR dt > '2009-09-09 -23:59:59');
-id	t	dt
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gt": 2 } }, { "$or": [ { "t": { "$lt": "too" } }, { "t": { "$regex": "^b.*$", "$options": "s" } }, { "dt": { "$gt": "2009-09-09 23:59:59" } } ] } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id <= 5 OR t = 'ok' OR dt <= '1998-01-01 01:01:01' OR dt >= '2009-10-01 01:01:01';
-id	t	dt
--1	op	1999-04-04 08:08:08
--2	bo	2020-10-10 23:00:00
-0	hello	2000-02-02 00:00:00
-1	test	1970-01-01 01:01:01
-10	ok	2005-05-05 11:11:11
-2	sz	2001-03-03 10:10:10
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$lte": 5 } }, { "t": { "$et": "ok" } }, { "dt": { "$lte": "1998-01-01 01:01:01" } }, { "dt": { "$gte": "2009-10-01 01:01:01" } } ] }, { "dt": { "$gte": "2009-10-01 01:01:01" } } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id >= 10 OR t LIKE 'to%' OR dt != '2010-08-08 23:59:59' AND t <= 'hello';
-id	t	dt
--2	bo	2020-10-10 23:00:00
-0	hello	2000-02-02 00:00:00
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$gte": 10 } }, { "t": { "$regex": "^to.*$", "$options": "s" } }, { "$and": [ { "dt": { "$ne": "2010-08-08 23:59:59" } }, { "t": { "$lte": "hello" } } ] } ] }, { "t": { "$gte": "to" } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 FORCE INDEX(dt) WHERE id NOT IN (1,2,10,50,100) OR t < 'ok' AND t = 'foo' OR dt >= '2006-01-01 00:00:00';
-id	t	dt
--1	op	1999-04-04 08:08:08
--2	bo	2020-10-10 23:00:00
-0	hello	2000-02-02 00:00:00
-100	bar	2006-07-07 12:13:14
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$nin": [ 1, 2, 10, 50, 100 ] } }, { "t": { "$et": "foo" } }, { "dt": { "$gte": "2006-01-01 00:00:00" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id > 2 OR t LIKE 'hel%' AND dt != '2009-09-09 23:59:59' AND t >= 'foo';
-id	t	dt
-0	hello	2000-02-02 00:00:00
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$gt": 2 } }, { "$and": [ { "t": { "$regex": "^hel.*$", "$options": "s" } }, { "dt": { "$ne": "2009-09-09 23:59:59" } }, { "t": { "$gte": "foo" } } ] } ] }, { "t": { "$gte": "hel" } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (id <= ABS(5) AND t >= 'foo' AND dt <> '1970-01-01 01:01:01');
-id	t	dt
--2	bo	2020-10-10 23:00:00
-1	test	1970-01-01 01:01:01
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Condition can't be pushed down. db=[query_pushdown_test_sequoiadb], table[t1], sql=[SELECT * FROM t1 WHERE NOT (id <= ABS(5) AND t >= 'foo' AND dt <> '1970-01-01 01:01:01')]
-SELECT * FROM t1 WHERE NOT (id >= 2 AND t LIKE 'to%' OR dt < '2009-09-09 23:59:59');
-id	t	dt
--2	bo	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "dt": { "$gte": "2009-09-09 23:59:59" } }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (id >= 2 OR t != 'foo' AND dt > '2009-09-09 23:59:59');
-id	t	dt
--1	op	1999-04-04 08:08:08
-0	hello	2000-02-02 00:00:00
-1	test	1970-01-01 01:01:01
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$lt": 2 } }, { "$or": [ { "t": { "$et": "foo" } }, { "dt": { "$lte": "2009-09-09 23:59:59" } } ] } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (id > CEIL(2) OR t < 'foo' OR dt > '2010-10-10 00:00:00');
-id	t	dt
--1	op	1999-04-04 08:08:08
-0	hello	2000-02-02 00:00:00
-1	test	1970-01-01 01:01:01
-2	sz	2001-03-03 10:10:10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "t": { "$gte": "foo" } }, { "dt": { "$lte": "2010-10-10 00:00:00" } } ] }, { "id": { "$lte": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (NOT (t > 'test' OR dt < '2000-01-01 01:01:01'));
-id	t	dt
--1	op	1999-04-04 08:08:08
-1	test	1970-01-01 01:01:01
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "t": { "$gt": "test" } }, { "dt": { "$lt": "2000-01-01 01:01:01" } } ] }, { "$and": [ { "dt": { "$isnull": 0 } }, { "dt": { "$lt": "2000-01-01 01:01:01" } } ] } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (NOT (id >= SQRT(5) AND t <= 'too'));
-id	t	dt
-10	ok	2005-05-05 11:11:11
-100	bar	2006-07-07 12:13:14
-50	to	2009-09-09 23:59:59
-8	foo	1995-06-06 23:00:00
-9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gte": 2.23606797749979 } }, { "t": { "$lte": "too" } } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gte": 2.23606797749979 } }, { "t": { "$lte": "too" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 ( id TINYINT UNSIGNED PRIMARY KEY, c CHAR(16), b BLOB );
+CREATE TABLE t1 ( id TINYINT UNSIGNED, c CHAR(16), b BLOB );
 INSERT INTO t1 VALUES (1,'test','test'),(0,'hello','hello'),(2,'sz','sz'),(5,'op','op'),(10,'ok','ok');
 INSERT INTO t1 VALUES (8,'foo','foo'),(100,'bar','bar'),(9,'too','too'),(50,'to','to'),(4,'bo','bo');
 SELECT * FROM t1 WHERE id > LENGTH(c) AND c < 'test';
@@ -10013,7 +9835,7 @@ id	c	b
 9	too	too
 [Note] SequoiaDB: Query message: condition[{ "c": { "$ne": "test" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 ( id SMALLINT PRIMARY KEY, vc VARCHAR(16), d DATE );
+CREATE TABLE t1 ( id SMALLINT, vc VARCHAR(16), d DATE );
 INSERT INTO t1 VALUES (1,'test','1970-01-01'),(0,'hello','2000-02-02'),(2,'sz','2001-03-03'),(-10,'success','2018-11-11');
 INSERT INTO t1 VALUES (-1,'op','1999-04-04'),(10,'ok','2005-05-05'),(8,'foo','1995-06-06'),(6,'fail','2001-12-12');
 INSERT INTO t1 VALUES (100,'bar','2006-07-07'),(9,'too','2010-08-08'),(50,'to','2009-09-09'),(-2,'bo','2020-10-10');
@@ -10039,7 +9861,7 @@ id	vc	d
 9	too	2010-08-08
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 ( id INT PRIMARY KEY, t TEXT, tm TIME, dt DATETIME );
+CREATE TABLE t1 ( id INT, t TEXT, tm TIME, dt DATETIME );
 INSERT INTO t1 VALUES (1,'test','01:01:01','1970-01-01 01:01:01'),(0,'hello','00:00:00','2000-02-02 00:00:00');
 INSERT INTO t1 VALUES (2,'sz','10:10:10','2001-03-03 10:10:10'),(-10,'success','-11:12:13','1999-04-04 08:08:08');
 INSERT INTO t1 VALUES (-1,'op','08:08:08','2005-05-05 -11:11:11'),(10,'ok','-11:11:11','1995-06-06 23:00:00');
@@ -10051,7 +9873,7 @@ id	t	tm	dt
 10	ok	-11:11:11	1995-06-06 23:00:00
 4	fail	12:13:14	2010-08-08 23:59:59
 50	to	-23:59:59	2018-11-11 09:09:09
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gt": 2 } }, { "tm": { "$lte": 121314.0 } } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 2 } }, { "tm": { "$lte": 121314.0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE REPEAT(t,3) > 'opt' AND (id IN (1,2,10,20,30,8,9,50,100) OR tm <= '10:10:10');
 id	t	tm	dt
 -10	success	-11:12:13	1999-04-04 08:08:08
@@ -10128,7 +9950,7 @@ SELECT * FROM t1 WHERE id > 2 AND SUBSTRING(t,1,2) >= 'bo' AND DATE(dt) <= '2010
 id	t	tm	dt
 4	fail	12:13:14	2010-08-08 23:59:59
 8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gt": 2 } }, { "tm": { "$gte": 101010.0 } } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 2 } }, { "tm": { "$gte": 101010.0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (REPEAT(t,3) > 'opt' OR tm <= '10:10:10') AND t LIKE 'to%' AND id IN (1,2,10,20,30,8,9,50,100);
 id	t	tm	dt
 50	to	-23:59:59	2018-11-11 09:09:09
@@ -10158,7 +9980,7 @@ id	t	tm	dt
 4	fail	12:13:14	2010-08-08 23:59:59
 8	foo	23:00:00	2006-07-07 12:13:14
 9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gte": 2 } }, { "id": { "$lte": 10 } } ] }, { "$and": [ { "id": { "$gte": 2 } }, { "id": { "$lte": 10 } } ] } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gte": 2 } }, { "id": { "$lte": 10 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE (NOT (2 > ABS(id) OR t >= 'to')) AND tm >= '10:10:10';
 id	t	tm	dt
 -2	bo	13:14:15	2001-12-12 22:22:00
@@ -10288,251 +10110,6 @@ id	t	tm	dt
 100	bar	123:12:12	2009-09-09 23:59:59
 4	fail	12:13:14	2010-08-08 23:59:59
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "tm": { "$nin": [ 0.0, 230000.0, 235959.0 ] } }, { "t": { "$lte": "foo" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-CREATE INDEX t ON t1(t(16));
-CREATE INDEX tm ON t1(tm);
-CREATE INDEX dt ON t1(dt);
-SELECT * FROM t1 WHERE id > 2 AND SUBSTRING(t,1,2) > 'bo' AND tm <= '12:13:14';
-id	t	tm	dt
-10	ok	-11:11:11	1995-06-06 23:00:00
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gt": 2 } }, { "tm": { "$lte": 121314.0 } } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 FORCE INDEX(tm) WHERE REPEAT(t,3) > 'opt' AND (id IN (1,2,10,20,30,8,9,50,100) OR tm <= '10:10:10');
-id	t	tm	dt
--10	success	-11:12:13	1999-04-04 08:08:08
-1	test	01:01:01	1970-01-01 01:01:01
-2	sz	10:10:10	2001-03-03 10:10:10
-50	to	-23:59:59	2018-11-11 09:09:09
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$in": [ 1, 2, 10, 20, 30, 8, 9, 50, 100 ] } }, { "tm": { "$lte": 101010.0 } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE tm >= '12:13:14' OR id < LENGTH(t) AND dt < '2010-10-10 00:00:00';
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--10	success	-11:12:13	1999-04-04 08:08:08
--2	bo	13:14:15	2001-12-12 22:22:00
-0	hello	00:00:00	2000-02-02 00:00:00
-1	test	01:01:01	1970-01-01 01:01:01
-100	bar	123:12:12	2009-09-09 23:59:59
-4	fail	12:13:14	2010-08-08 23:59:59
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "tm": { "$gte": 121314.0 } }, { "dt": { "$lt": "2010-10-10 00:00:00" } } ] }, { "$and": [ { "dt": { "$isnull": 0 } }, { "dt": { "$lt": "2010-10-10 00:00:00" } } ] } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id IN (1,2,3,4,5,6,8) OR DATE(dt) > '2010-10-10' OR t <= 'foo';
-id	t	tm	dt
--2	bo	13:14:15	2001-12-12 22:22:00
-1	test	01:01:01	1970-01-01 01:01:01
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT ( t > 'foo' AND MONTH(dt) > id );
-id	t	tm	dt
--2	bo	13:14:15	2001-12-12 22:22:00
-1	test	01:01:01	1970-01-01 01:01:01
-10	ok	-11:11:11	1995-06-06 23:00:00
-100	bar	123:12:12	2009-09-09 23:59:59
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT ( 2 > ABS(id) OR tm <= '10:10:10');
-id	t	tm	dt
--2	bo	13:14:15	2001-12-12 22:22:00
-100	bar	123:12:12	2009-09-09 23:59:59
-4	fail	12:13:14	2010-08-08 23:59:59
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "tm": { "$gt": 101010.0 } }, { "tm": { "$gt": 101010.0 } } ] }], selector[{}], order_by[{ "tm": 1 }], hint[{ "": "tm" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT ( NOT t LIKE '%o%');
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--2	bo	13:14:15	2001-12-12 22:22:00
-0	hello	00:00:00	2000-02-02 00:00:00
-10	ok	-11:11:11	1995-06-06 23:00:00
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "t": { "$regex": "^.*o.*$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT ( NOT t NOT LIKE 'to%');
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--10	success	-11:12:13	1999-04-04 08:08:08
--2	bo	13:14:15	2001-12-12 22:22:00
-0	hello	00:00:00	2000-02-02 00:00:00
-1	test	01:01:01	1970-01-01 01:01:01
-10	ok	-11:11:11	1995-06-06 23:00:00
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id > 2 AND SUBSTRING(t,1,2) >= 'bo' AND DATE(dt) <= '2010-10-10' AND tm >= '10:10:10';
-id	t	tm	dt
-4	fail	12:13:14	2010-08-08 23:59:59
-8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gt": 2 } }, { "tm": { "$gte": 101010.0 } } ] }, { "id": { "$gt": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE (REPEAT(t,3) > 'opt' OR tm <= '10:10:10') AND t LIKE 'to%' AND id IN (1,2,10,20,30,8,9,50,100);
-id	t	tm	dt
-50	to	-23:59:59	2018-11-11 09:09:09
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "t": { "$regex": "^to.*$", "$options": "s" } }, { "id": { "$in": [ 1, 2, 10, 20, 30, 8, 9, 50, 100 ] } } ] }, { "t": { "$gte": "to" } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE t <= 'test' AND ( 2 > ABS(id) OR tm <= '10:10:10') AND dt > '2000-01-01 00:00:00';
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
-0	hello	00:00:00	2000-02-02 00:00:00
-2	sz	10:10:10	2001-03-03 10:10:10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "t": { "$lte": "test" } }, { "dt": { "$gt": "2000-01-01 00:00:00" } } ] }, { "t": { "$isnull": 0 } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE (id > LENGTH(t) OR t <= 'foo' OR tm BETWEEN '01:01:01' AND '10:10:10') AND dt > '2000-01-01 00:00:00';
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--2	bo	13:14:15	2001-12-12 22:22:00
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "dt": { "$gt": "2000-01-01 00:00:00" } }, { "dt": { "$gt": "2000-01-01 00:00:00" } } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE (NOT (DAY(dt) > 8 AND t <= 'foo')) AND id BETWEEN 2 AND 10;
-id	t	tm	dt
-10	ok	-11:11:11	1995-06-06 23:00:00
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "id": { "$gte": 2 } }, { "id": { "$lte": 10 } } ] }, { "$and": [ { "id": { "$gte": 2 } }, { "id": { "$lte": 10 } } ] } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE (NOT (2 > ABS(id) OR t >= 'to')) AND tm >= '10:10:10';
-id	t	tm	dt
--2	bo	13:14:15	2001-12-12 22:22:00
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "t": { "$lt": "to" } }, { "tm": { "$gte": 101010.0 } } ] }, { "t": { "$isnull": 0 } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE tm >= '12:13:14' OR id < LENGTH(t) OR id > 10 OR t = 'sz';
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--10	success	-11:12:13	1999-04-04 08:08:08
--2	bo	13:14:15	2001-12-12 22:22:00
-0	hello	00:00:00	2000-02-02 00:00:00
-1	test	01:01:01	1970-01-01 01:01:01
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE t <= 'foo' OR id >= 10 OR tm = '00:00:00' AND DATE(dt) <= 2;
-id	t	tm	dt
--2	bo	13:14:15	2001-12-12 22:22:00
-10	ok	-11:11:11	1995-06-06 23:00:00
-100	bar	123:12:12	2009-09-09 23:59:59
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "t": { "$lte": "foo" } }, { "id": { "$gte": 10 } }, { "tm": { "$et": 0.0 } } ] }, { "tm": { "$et": 0.0 } } ] }], selector[{}], order_by[{ "tm": 1 }], hint[{ "": "tm" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id >= 2 OR tm <= '10:10:10' AND SUBSTRING(t,1,2) > 'te' OR dt < '2000-01-01 00:00:00';
-id	t	tm	dt
--10	success	-11:12:13	1999-04-04 08:08:08
-1	test	01:01:01	1970-01-01 01:01:01
-10	ok	-11:11:11	1995-06-06 23:00:00
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$gte": 2 } }, { "tm": { "$lte": 101010.0 } }, { "dt": { "$lt": "2000-01-01 00:00:00" } } ] }, { "$and": [ { "dt": { "$isnull": 0 } }, { "dt": { "$lt": "2000-01-01 00:00:00" } } ] } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE id > 10 OR tm > '12:13:14' AND SUBSTRING(t,1,2) > 'bo' AND t LIKE 'to_';
-id	t	tm	dt
-100	bar	123:12:12	2009-09-09 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$gt": 10 } }, { "$and": [ { "tm": { "$gt": 121314.0 } }, { "t": { "$regex": "^to.$", "$options": "s" } } ] } ] }, { "t": { "$gte": "to" } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (tm >= '12:13:14' OR id < LENGTH(t)) OR dt > '2010-01-01 00:00:00';
-id	t	tm	dt
-10	ok	-11:11:11	1995-06-06 23:00:00
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "tm": { "$lt": 121314.0 } }, { "dt": { "$gt": "2010-01-01 00:00:00" } } ] }, { "dt": { "$gt": "2010-01-01 00:00:00" } } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (tm >= '12:13:14' AND id > LENGTH(t)) OR dt = '2020-10-10 23:00:00';
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--10	success	-11:12:13	1999-04-04 08:08:08
--2	bo	13:14:15	2001-12-12 22:22:00
-0	hello	00:00:00	2000-02-02 00:00:00
-1	test	01:01:01	1970-01-01 01:01:01
-10	ok	-11:11:11	1995-06-06 23:00:00
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (id < LENGTH(t) AND t >= 'foo' AND dt <= '2000-01-01 00:00:00');
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--2	bo	13:14:15	2001-12-12 22:22:00
-0	hello	00:00:00	2000-02-02 00:00:00
-10	ok	-11:11:11	1995-06-06 23:00:00
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (id < LENGTH(t) AND t >= 'foo' OR dt > '2010-10-10 00:00:00');
-id	t	tm	dt
--2	bo	13:14:15	2001-12-12 22:22:00
-10	ok	-11:11:11	1995-06-06 23:00:00
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "dt": { "$lte": "2010-10-10 00:00:00" } }, { "$and": [ { "dt": { "$isnull": 0 } }, { "dt": { "$lte": "2010-10-10 00:00:00" } } ] } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT ((tm >= '12:13:14' OR id < LENGTH(t)) AND dt <= '2000-01-01 00:00:00');
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--2	bo	13:14:15	2001-12-12 22:22:00
-0	hello	00:00:00	2000-02-02 00:00:00
-10	ok	-11:11:11	1995-06-06 23:00:00
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-50	to	-23:59:59	2018-11-11 09:09:09
-8	foo	23:00:00	2006-07-07 12:13:14
-9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "tm": { "$lt": 121314.0 } }, { "dt": { "$gt": "2000-01-01 00:00:00" } } ] }, { "dt": { "$gt": "2000-01-01 00:00:00" } } ] }], selector[{}], order_by[{ "dt": 1 }], hint[{ "": "dt" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (tm >= '23:00:00' OR id < LENGTH(t) OR dt > '2010-01-01 00:00:00');
-id	t	tm	dt
-10	ok	-11:11:11	1995-06-06 23:00:00
-2	sz	10:10:10	2001-03-03 10:10:10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "tm": { "$lt": 230000.0 } }, { "dt": { "$lte": "2010-01-01 00:00:00" } } ] }, { "$and": [ { "tm": { "$isnull": 0 } }, { "tm": { "$lt": 230000.0 } } ] } ] }], selector[{}], order_by[{ "tm": 1 }], hint[{ "": "tm" }], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (NOT (id >= 100 OR t NOT LIKE 'to%'));
-id	t	tm	dt
--1	op	08:08:08	2005-05-05 11:11:11
--10	success	-11:12:13	1999-04-04 08:08:08
--2	bo	13:14:15	2001-12-12 22:22:00
-0	hello	00:00:00	2000-02-02 00:00:00
-1	test	01:01:01	1970-01-01 01:01:01
-10	ok	-11:11:11	1995-06-06 23:00:00
-100	bar	123:12:12	2009-09-09 23:59:59
-2	sz	10:10:10	2001-03-03 10:10:10
-4	fail	12:13:14	2010-08-08 23:59:59
-8	foo	23:00:00	2006-07-07 12:13:14
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-SELECT * FROM t1 WHERE NOT (NOT (tm NOT IN ('00:00:00','23:00:00','23:59:59') AND t <= 'foo'));
-id	t	tm	dt
--2	bo	13:14:15	2001-12-12 22:22:00
-100	bar	123:12:12	2009-09-09 23:59:59
-4	fail	12:13:14	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "tm": { "$nin": [ 0.0, 230000.0, 235959.0 ] } }, { "t": { "$lte": "foo" } } ] }, { "t": { "$isnull": 0 } } ] }], selector[{}], order_by[{ "t": 1 }], hint[{ "": "t" }], limit[-1], offset[0]
 DROP TABLE t1;
 DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d LONGTEXT) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
@@ -14903,4 +14480,415 @@ SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE "0";
 id	a	b	c	d
 48	a.bd	a.bd	a.bd	a.bd
 DROP TABLE t1;
+DROP TABLE IF EXISTS t1;
+set sql_mode=NO_ENGINE_SUBSTITUTION;
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+create table t1(a int, b int);
+insert into t1 values(3,1),(2,2),(3,3);
+insert into t1 select a+3,b+3 from t1;
+insert into t1 values();
+insert into t1 values(null, null);
+insert into t1 values(-3,-1),(-2,-2),(-3,-3);
+select * from t1 order by a;
+a	b
+NULL	NULL
+NULL	NULL
+-3	-1
+-3	-3
+-2	-2
+2	2
+3	1
+3	3
+5	5
+6	4
+6	6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0]
+select b from t1 order by a;
+b
+NULL
+NULL
+-1
+-3
+-2
+2
+1
+3
+5
+4
+6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0]
+select a*b from t1 order by a;
+a*b
+NULL
+NULL
+3
+9
+4
+4
+3
+9
+25
+24
+36
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0]
+select distinct(a) from t1 order by b;
+a
+NULL
+-2
+-3
+3
+2
+6
+5
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select mod(a,2) from t1 order by a;
+mod(a,2)
+NULL
+NULL
+-1
+-1
+0
+0
+1
+1
+1
+0
+0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0]
+select * from t1 group by a, b;
+a	b
+NULL	NULL
+-3	-3
+-3	-1
+-2	-2
+2	2
+3	1
+3	3
+5	5
+6	4
+6	6
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "b": { "$first": "$b" }, "_id": { "a": "$a", "b": "$b" } } }], sort[{ "$sort": { "a": 1, "b": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select b from t1 group by b;
+b
+NULL
+-3
+-2
+-1
+1
+2
+3
+4
+5
+6
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "b": { "$first": "$b" }, "_id": { "b": "$b" } } }], sort[{ "$sort": { "b": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select a*b from t1 group by a;
+a*b
+NULL
+3
+4
+4
+3
+25
+24
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select distinct(a) from t1 group by a;
+a
+NULL
+-3
+-2
+2
+3
+5
+6
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select distinct(a) from t1 group by b;
+a
+NULL
+-2
+-3
+3
+2
+6
+5
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select mod(a,2) from t1 group by a;
+mod(a,2)
+NULL
+-1
+0
+0
+1
+1
+0
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select avg(a) from t1 group by a;
+avg(a)
+NULL
+-3.0000
+-2.0000
+2.0000
+3.0000
+5.0000
+6.0000
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select count(a) from t1 group by a;
+count(a)
+0
+2
+1
+1
+2
+1
+2
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select max(a) from t1 group by a;
+max(a)
+NULL
+-3
+-2
+2
+3
+5
+6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select min(a) from t1 group by a;
+min(a)
+NULL
+-3
+-2
+2
+3
+5
+6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select sum(a) from t1 group by a;
+sum(a)
+NULL
+-6
+-2
+2
+6
+5
+12
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 where a <0 order by a;
+a	b
+-3	-1
+-3	-3
+-2	-2
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 0 } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0]
+select * from t1 where a>0 and a+b>0 order by a;
+a	b
+2	2
+3	1
+3	3
+5	5
+6	4
+6	6
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 where a <0 group by a;
+a	b
+-3	-1
+-2	-2
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$lt": 0 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select * from t1 where a>0 and a+b>0 group by a;
+a	b
+2	2
+3	1
+5	5
+6	4
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 having a >0 order by a;
+a	b
+2	2
+3	1
+3	3
+5	5
+6	4
+6	6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 group by a having a >0 ;
+a	b
+2	2
+3	1
+5	5
+6	4
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+create index a on t1(a);
+select * from t1 where a=3 or a is null order by a limit 1 offset 1;
+a	b
+NULL	NULL
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$et": 3 } }, { "a": { "$isnull": 1 } } ] }, { "$and": [ { "a": { "$isnull": 1 } }, { "a": { "$isnull": 1 } } ] } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0]
+select * from t1 where a=3 or a is null group by a limit 1 offset 1;
+a	b
+3	1
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$et": 3 } }, { "a": { "$isnull": 1 } } ] }, { "a": { "$isnull": 1 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0]
+create index b on t1(b);
+select * from t1 where a=3 or b>0 order by a,b limit 2 offset 2;
+a	b
+3	3
+5	5
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "a": { "$et": 3 } }, { "b": { "$gt": 0 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{}], limit[2], offset[2]
+select * from t1 where a=3 or b>0 group by a,b limit 2 offset 2;
+a	b
+3	3
+5	5
+[Note] SequoiaDB: Query message: match[{ "$match": { "$or": [ { "a": { "$et": 3 } }, { "b": { "$gt": 0 } } ] } }], group[{ "$group": { "a": { "$first": "$a" }, "b": { "$first": "$b" }, "_id": { "a": "$a", "b": "$b" } } }], sort[{ "$sort": { "a": 1, "b": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 2 }]
+select * from t1 where a in(3, 5, 6, 2) order by a desc, b limit 2 offset 2;
+a	b
+5	5
+3	1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 3, 5, 6, 2 ] } }], selector[{}], order_by[{ "a": -1, "b": 1 }], hint[{}], limit[2], offset[2]
+select * from t1 where a in(3, 5, 6, 2) group by a limit 2 offset 2;
+a	b
+5	5
+6	4
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$in": [ 3, 5, 6, 2 ] } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 2 }], limit[{ "$limit": 2 }]
+select * from t1 where a <0 order by b;
+a	b
+-3	-3
+-2	-2
+-3	-1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 0 } }], selector[{}], order_by[{ "b": 1 }], hint[{}], limit[-1], offset[0]
+select * from t1 where a <0 group by b;
+a	b
+-3	-3
+-2	-2
+-3	-1
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$lt": 0 } } }], group[{ "$group": { "b": { "$first": "$b" }, "_id": { "b": "$b" }, "a": { "$first": "$a" } } }], sort[{ "$sort": { "b": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+drop index b on t1;
+select * from t1 where a <0 order by a;
+a	b
+-3	-1
+-3	-3
+-2	-2
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 0 } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0]
+select * from t1 where a <0 group by a;
+a	b
+-3	-1
+-2	-2
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$lt": 0 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select * from t1 where a <0 order by b;
+a	b
+-3	-3
+-2	-2
+-3	-1
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 0 } }], selector[{}], order_by[{ "b": 1 }], hint[{}], limit[-1], offset[0]
+select * from t1 where a <0 group by b;
+a	b
+-3	-3
+-2	-2
+-3	-1
+[Note] SequoiaDB: Query message: match[{ "$match": { "a": { "$lt": 0 } } }], group[{ "$group": { "b": { "$first": "$b" }, "_id": { "b": "$b" }, "a": { "$first": "$a" } } }], sort[{ "$sort": { "b": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select * from t1 where b <0 order by a;
+a	b
+-3	-1
+-3	-3
+-2	-2
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 0 } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0]
+select * from t1 where b <0 group by a;
+a	b
+-3	-1
+-2	-2
+[Note] SequoiaDB: Query message: match[{ "$match": { "b": { "$lt": 0 } } }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+drop index a on t1;
+delete from t1 where a is null or a in (-3, 3, 6);
+select * from t1;
+a	b
+2	2
+5	5
+-2	-2
+alter table t1 add primary key(a);
+select * from t1 order by a;
+a	b
+-2	-2
+2	2
+5	5
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0]
+select * from t1 group by a;
+a	b
+-2	-2
+2	2
+5	5
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" }, "b": { "$first": "$b" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+alter table t1 drop primary key;
+update t1 set a=10 order by a;
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+delete from t1 where a=10 order by a;
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 10 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+drop table t1;
+create table t1(a bigint, b float, c decimal, d bit(64));
+create table t2(a char(255), b varchar(255), c text);
+create table t3(a timestamp, b date, c datetime, d year, e time);
+create table t4(a enum('a'), b set('a'));
+create table t5(a binary, b varbinary(255), c blob);
+create table t6(a json, b geometry);
+select * from t1 order by a,b,c,d;
+a	b	c	d
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1, "b": 1, "c": 1, "d": 1 }], hint[{}], limit[-1], offset[0]
+select * from t2 order by a,b,c;
+a	b	c
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1, "b": 1, "c": 1 }], hint[{}], limit[-1], offset[0]
+select * from t3 order by a,b,c,d,e;
+a	b	c	d	e
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1, "b": 1, "c": 1, "d": 1, "e": 1 }], hint[{}], limit[-1], offset[0]
+select * from t4 order by a,b;
+a	b
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{}], limit[-1], offset[0]
+select * from t5 order by a;
+a	b	c
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t5 order by b;
+a	b	c
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t5 order by c;
+a	b	c
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t6 order by a;
+a	b
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t6 order by b;
+a	b
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 group by a,b,c,d;
+a	b	c	d
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "b": { "$first": "$b" }, "c": { "$first": "$c" }, "d": { "$first": "$d" }, "_id": { "a": "$a", "b": "$b", "c": "$c", "d": "$d" } } }], sort[{ "$sort": { "a": 1, "b": 1, "c": 1, "d": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select * from t2 group by a,b,c;
+a	b	c
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "b": { "$first": "$b" }, "c": { "$first": "$c" }, "_id": { "a": "$a", "b": "$b", "c": "$c" } } }], sort[{ "$sort": { "a": 1, "b": 1, "c": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select * from t3 group by a,b,c,d,e;
+a	b	c	d	e
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "b": { "$first": "$b" }, "c": { "$first": "$c" }, "d": { "$first": "$d" }, "e": { "$first": "$e" }, "_id": { "a": "$a", "b": "$b", "c": "$c", "d": "$d", "e": "$e" } } }], sort[{ "$sort": { "a": 1, "b": 1, "c": 1, "d": 1, "e": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select * from t4 group by a,b;
+a	b
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "b": { "$first": "$b" }, "_id": { "a": "$a", "b": "$b" } } }], sort[{ "$sort": { "a": 1, "b": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+select * from t5 group by a;
+a	b	c
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t5 group by b;
+a	b	c
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t5 group by c;
+a	b	c
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t6 group by a;
+a	b
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t6 group by b;
+a	b
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+drop table t1,t2,t3,t4,t5,t6;
+create table t1(a int);
+create table t2(a int);
+select * from t1,t2 where t1.a=t2.a order by t1.a;
+a	a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1,t2 where t1.a=t2.a group by t1.a;
+a	a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 group by a with rollup;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+drop table t1,t2;
 DROP DATABASE query_pushdown_test_sequoiadb;
