@@ -1187,6 +1187,12 @@ x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p11 MEDIUM;
 Table	Op	Msg_type	Msg_text
 x	check	status	OK
+ALTER TABLE  `t1#Sub#` CHECK PARTITION p21 MEDIUM;
+Table	Op	Msg_type	Msg_text
+test_parallel_1.t1#Sub#	check	error	Found a misplaced row in part p21 should be in part p01:
+ f1:80 f2:70
+test_parallel_1.t1#Sub#	check	error	Partition p21 returned error
+test_parallel_1.t1#Sub#	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
 REPAIR TABLE `t1#Sub#` USE_FRM;
 Table	Op	Msg_type	Msg_text
 x	repair	status	OK
@@ -1194,6 +1200,12 @@ ALTER TABLE `t1#Sub#` REPAIR PARTITION p01;
 Table	Op	Msg_type	Msg_text
 x	repair	warning	Moved 2 misplaced rows
 x	repair	status	OK
+CHECK TABLE `t1#Sub#` MEDIUM;
+Table	Op	Msg_type	Msg_text
+test_parallel_1.t1#Sub#	check	error	Found a misplaced row in part p21 should be in part p01:
+ f1:80 f2:70
+test_parallel_1.t1#Sub#	check	error	Partition p21 returned error
+test_parallel_1.t1#Sub#	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
 REPAIR TABLE `t1#Sub#` EXTENDED;
 Table	Op	Msg_type	Msg_text
 x	repair	warning	Moved 1 misplaced rows
