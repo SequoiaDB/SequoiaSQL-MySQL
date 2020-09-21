@@ -1,0 +1,29 @@
+--- errmsg-utf8.txt	2020-09-19 13:42:34.320143457 +0800
++++ errmsg-utf8-modified.txt	2020-09-21 16:04:24.807258414 +0800
+@@ -1013,7 +1013,7 @@
+         cze "Přístup pro uživatele '%-.48s'@'%-.64s' k databázi '%-.192s' není povolen"
+         dan "Adgang nægtet bruger: '%-.48s'@'%-.64s' til databasen '%-.192s'"
+         nla "Toegang geweigerd voor gebruiker: '%-.48s'@'%-.64s' naar database '%-.192s'"
+-        eng "Access denied for user '%-.48s'@'%-.64s' to database '%-.192s'"
++        eng "Incorrect username '%-.48s'@'%-.64s' or password to database '%-.192s'"
+         est "Ligipääs keelatud kasutajale '%-.48s'@'%-.64s' andmebaasile '%-.192s'"
+         fre "Accès refusé pour l'utilisateur: '%-.48s'@'@%-.64s'. Base '%-.192s'"
+         ger "Benutzer '%-.48s'@'%-.64s' hat keine Zugriffsberechtigung für Datenbank '%-.192s'"
+@@ -1036,7 +1036,7 @@
+         cze "Přístup pro uživatele '%-.48s'@'%-.64s' (s heslem %s)"
+         dan "Adgang nægtet bruger: '%-.48s'@'%-.64s' (Bruger adgangskode: %s)"
+         nla "Toegang geweigerd voor gebruiker: '%-.48s'@'%-.64s' (Wachtwoord gebruikt: %s)"
+-        eng "Access denied for user '%-.48s'@'%-.64s' (using password: %s)"
++        eng "Incorrect username '%-.48s'@'%-.64s' or passord (using password: %s)"
+         est "Ligipääs keelatud kasutajale '%-.48s'@'%-.64s' (kasutab parooli: %s)"
+         fre "Accès refusé pour l'utilisateur: '%-.48s'@'@%-.64s' (mot de passe: %s)"
+         ger "Benutzer '%-.48s'@'%-.64s' hat keine Zugriffsberechtigung (verwendetes Passwort: %s)"
+@@ -6425,7 +6425,7 @@
+         cze "Přístup pro uživatele '%-.48s'@'%-.64s'"
+         dan "Adgang nægtet bruger: '%-.48s'@'%-.64s'"
+         nla "Toegang geweigerd voor gebruiker: '%-.48s'@'%-.64s'"
+-        eng "Access denied for user '%-.48s'@'%-.64s'"
++        eng "Incorrect username '%-.48s'@'%-.64s' or password"
+         est "Ligipääs keelatud kasutajale '%-.48s'@'%-.64s'"
+         fre "Accès refusé pour l'utilisateur: '%-.48s'@'@%-.64s'"
+         ger "Benutzer '%-.48s'@'%-.64s' hat keine Zugriffsberechtigung"

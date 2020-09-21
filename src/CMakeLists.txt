@@ -97,3 +97,24 @@ else()
                    ${SDB_STATIC_LIBRARY})
   set_target_properties(sequoiadb PROPERTIES LINK_FLAGS ${SDB_LDFLAGS})
 endif()
+
+# apply patches
+set(SERVER_HA_PATCHES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/patches")
+if(EXISTS "${SERVER_HA_PATCHES_DIR}")
+  if(SDB_PROJECT_TYPE STREQUAL "mariadb")
+    # No it's patches yet.
+  else()
+    set(PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mysql_errmsg_${MYSQL}.patch")
+  endif()
+
+  # apply patch for error message
+  if (EXISTS "${PATCH_FILE}")
+    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/sql/share/errmsg-utf8.txt")
+    message(STATUS "Apply patch ${PATCH_FILE} on ${APPLY_PATCH_TARGET}")
+    execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/sql/share" patch -s -N -i ${PATCH_FILE})
+  else()
+    message(FATAL_ERROR "Patch file ${PATCH_FILE} doesn't exist")
+  endif()
+else()
+  message(FATAL_ERROR "Can't apply 'server_ha' patch, patch directory 'patches' doesn't exist")
+endif()
