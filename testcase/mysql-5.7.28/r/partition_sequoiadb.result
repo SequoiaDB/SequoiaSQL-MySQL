@@ -198,7 +198,105 @@ id	b	c
 500	1000	newC
 1000	2000	newC
 1500	3000	newC
-DROP TABLE `t#P#1`;
+CREATE TABLE `t#P#1#P#p1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), PRIMARY KEY(b) );
+CREATE TABLE `t#P#1#P#pmix1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), PRIMARY KEY(b) );
+INSERT INTO `t#P#1#P#p1`(id,c) VALUES (3000,'19') ;
+SELECT * FROM `t#P#1` ORDER BY id;
+id	b	c
+0	0	3
+3	6	16
+150	300	newC
+500	1000	newC
+1000	2000	newC
+1500	3000	newC
+3000	6000	19
+CHECK TABLE `t#P#1`;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part p1 should be in part unknown:
+ b:6000
+x	check	error	Partition p1 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t#P#1`" or dump/reload to fix it!
+ALTER TABLE `t#P#1` CHECK PARTITION p1;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part p1 should be in part unknown:
+ b:6000
+x	check	error	Partition p1 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t#P#1`" or dump/reload to fix it!
+ALTER TABLE `t#P#1` CHECK PARTITION pmix1;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+REPAIR TABLE `t#P#1`;
+Table	Op	Msg_type	Msg_text
+x	repair	error	Failed to move/insert a row from part p1 into part unknown:
+No matched partition, please update or delete the record:
+ id:3000 b:6000 c:19
+x	repair	error	Partition p1 returned error
+x	repair	error	Corrupt
+ALTER TABLE `t#P#1` REPAIR PARTITION P1;
+Table	Op	Msg_type	Msg_text
+x	repair	error	Failed to move/insert a row from part p1 into part unknown:
+No matched partition, please update or delete the record:
+ id:3000 b:6000 c:19
+x	repair	error	Partition p1 returned error
+x	repair	error	Corrupt
+ALTER TABLE `t#P#1` REPAIR PARTITION pmix1;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
+ALTER TABLE `t#P#1` REBUILD PARTITION P1;
+SELECT * FROM `t#P#1` ORDER BY id;
+id	b	c
+0	0	3
+3	6	16
+150	300	newC
+500	1000	newC
+1000	2000	newC
+1500	3000	newC
+CHECK TABLE `t#P#1`;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+INSERT INTO `t#P#1#P#p1`(id,c) VALUES (600,'21') ;
+SELECT * FROM `t#P#1` ORDER BY id;
+id	b	c
+0	0	3
+3	6	16
+150	300	newC
+500	1000	newC
+600	1200	21
+1000	2000	newC
+1500	3000	newC
+CHECK TABLE `t#P#1` EXTENDED;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part p1 should be in part pmix1:
+ b:1200
+x	check	error	Partition p1 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t#P#1`" or dump/reload to fix it!
+ALTER TABLE `t#P#1` CHECK PARTITION p1 EXTENDED;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part p1 should be in part pmix1:
+ b:1200
+x	check	error	Partition p1 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t#P#1`" or dump/reload to fix it!
+ALTER TABLE `t#P#1` CHECK PARTITION pmix1;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+ALTER TABLE `t#P#1` REPAIR PARTITION ALL;
+Table	Op	Msg_type	Msg_text
+x	repair	warning	Moved 1 misplaced rows
+x	repair	status	OK
+ALTER TABLE `t#P#1` REBUILD PARTITION ALL;
+SELECT * FROM `t#P#1` ORDER BY id;
+id	b	c
+0	0	3
+3	6	16
+150	300	newC
+500	1000	newC
+600	1200	21
+1000	2000	newC
+1500	3000	newC
+CHECK TABLE `t#P#1`;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+DROP TABLE `t#P#1`,`t#P#1#P#p1`,`t#P#1#P#pmix1`;
 CREATE TABLE `t1#Range#Expr` ( id INT, d DATE NOT NULL )
 PARTITION BY RANGE ( YEAR(d) ) (
 PARTITION p0 VALUES LESS THAN (1960),
@@ -492,7 +590,107 @@ id	a	b
 SELECT * FROM `t1#List#Expr` PARTITION (pmoren3) ORDER BY id;
 id	a	b
 1	17	18
+CREATE TABLE `t1#List#Expr#P#ptest1` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
+CREATE TABLE `t1#List#Expr#P#pmoren2` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
+CREATE TABLE `t1#List#Expr#P#pmoren3` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
+INSERT INTO `t1#List#Expr#P#ptest1`(id,_phid_ ,a) VALUES (101,101,101) ;
+SELECT * FROM `t1#List#Expr` ORDER BY id;
+id	a	b
+-6	-6	-5
+1	17	18
+1	12	13
+101	101	102
+CHECK TABLE `t1#List#Expr`;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part ptest1 should be in part unknown:
+ b:102
+x	check	error	Partition ptest1 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#List#Expr`" or dump/reload to fix it!
+ALTER TABLE `t1#List#Expr` CHECK PARTITION ptest1;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part ptest1 should be in part unknown:
+ b:102
+x	check	error	Partition ptest1 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#List#Expr`" or dump/reload to fix it!
+ALTER TABLE `t1#List#Expr` CHECK PARTITION pmoren2,pmoren3;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+REPAIR TABLE `t1#List#Expr`;
+Table	Op	Msg_type	Msg_text
+x	repair	error	Failed to move/insert a row from part ptest1 into part unknown:
+No matched partition, please update or delete the record:
+ id:101 a:101 b:102
+x	repair	error	Partition ptest1 returned error
+x	repair	error	Corrupt
+ALTER TABLE `t1#List#Expr` REPAIR PARTITION ptest1;
+Table	Op	Msg_type	Msg_text
+x	repair	error	Failed to move/insert a row from part ptest1 into part unknown:
+No matched partition, please update or delete the record:
+ id:101 a:101 b:102
+x	repair	error	Partition ptest1 returned error
+x	repair	error	Corrupt
+ALTER TABLE `t1#List#Expr` REPAIR PARTITION pmoren2,pmoren3;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
+ALTER TABLE `t1#List#Expr` REBUILD PARTITION ptest1;
+SELECT * FROM `t1#List#Expr` ORDER BY id;
+id	a	b
+-6	-6	-5
+1	17	18
+1	12	13
+CHECK TABLE `t1#List#Expr`;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+INSERT INTO `t1#List#Expr#P#ptest1`(id,_phid_ ,a) VALUES (29,29,29),(-31,31,-31) ;
+INSERT INTO `t1#List#Expr#P#pmoren2`(id,_phid_ ,a) VALUES (10,10,10);
+SELECT * FROM `t1#List#Expr` ORDER BY id;
+id	a	b
+-31	-31	-30
+-6	-6	-5
+1	17	18
+1	12	13
+10	10	11
+29	29	30
+CHECK TABLE `t1#List#Expr` EXTENDED;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part ptest1 should be in part pmoren2:
+ b:30
+x	check	error	Partition ptest1 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#List#Expr`" or dump/reload to fix it!
+ALTER TABLE `t1#List#Expr` REPAIR PARTITION ptest1 EXTENDED;
+Table	Op	Msg_type	Msg_text
+x	repair	warning	Moved 2 misplaced rows
+x	repair	status	OK
+ALTER TABLE  `t1#List#Expr` CHECK PARTITION ptest1 EXTENDED;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+ALTER TABLE  `t1#List#Expr` CHECK PARTITION pmoren2 MEDIUM;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part pmoren2 should be in part ptest1:
+ b:11
+x	check	error	Partition pmoren2 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#List#Expr`" or dump/reload to fix it!
+ALTER TABLE  `t1#List#Expr` CHECK PARTITION pmoren3;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+REPAIR TABLE `t1#List#Expr`;
+Table	Op	Msg_type	Msg_text
+x	repair	warning	Moved 1 misplaced rows
+x	repair	status	OK
+ALTER TABLE `t1#List#Expr` REBUILD PARTITION ALL;
+SELECT * FROM `t1#List#Expr` ORDER BY id;
+id	a	b
+-31	-31	-30
+-6	-6	-5
+1	17	18
+1	12	13
+10	10	11
+29	29	30
+CHECK TABLE `t1#List#Expr`;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
 DROP TABLE `t1#Range#Expr`,`t1#List#Expr`,`t1#P#List#Columns`;
+DROP TABLE `t1#List#Expr#P#ptest1`,`t1#List#Expr#P#pmoren2`,`t1#List#Expr#P#pmoren3`;
 CREATE TABLE `t1#Hash` ( id FLOAT, b INT GENERATED ALWAYS AS (id+1) STORED )
 PARTITION BY HASH( CEILING(b) ) PARTITIONS 16;
 CREATE TABLE `t1#P#Key#p#` ( id INT NOT NULL AUTO_INCREMENT, tm TIME(4), PRIMARY KEY(id,tm) )
@@ -598,6 +796,32 @@ id	tm
 8	09:00:00.0000
 9	837:00:00.0000
 10	838:00:00.0000
+CHECK TABLE `t1#Hash`;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+CHECK TABLE `t1#P#Key#p#` QUICK;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+REPAIR TABLE `t1#Hash` USE_FRM;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
+REPAIR TABLE  `t1#P#Key#p#`;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
+ALTER TABLE `t1#Hash` CHECK PARTITION p1 EXTENDED;
+Table	Op	Msg_type	Msg_text
+test_parallel_1.t1#Hash	check	error	Cannot specify HASH or KEY partitions
+test_parallel_1.t1#Hash	check	error	Invalid argument
+ALTER TABLE `t1#P#Key#p#` CHECK PARTITION p1 FAST;
+Table	Op	Msg_type	Msg_text
+test_parallel_1.t1#P#Key#p#	check	status	OK
+ALTER TABLE `t1#Hash` REPAIR PARTITION p2 USE_FRM;
+Table	Op	Msg_type	Msg_text
+test_parallel_1.t1#Hash	repair	status	OK
+ALTER TABLE `t1#P#Key#p#` REPAIR PARTITION p1;
+Table	Op	Msg_type	Msg_text
+test_parallel_1.t1#P#Key#p#	repair	error	Cannot specify HASH or KEY partitions
+test_parallel_1.t1#P#Key#p#	repair	error	Invalid argument
 DROP TABLE `t1#Hash`,`t1#P#Key#p#`;
 CREATE TABLE `t1#Sub#` ( id INT(11) NOT NULL, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2) )
 PARTITION BY RANGE( ABS(f2) ) PARTITIONS 3
@@ -925,7 +1149,79 @@ a	b	c
 220	2200	350
 250	2500	300
 300	3000	300
+CREATE TABLE `t1#Sub##P#p01` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_)  );
+CREATE TABLE `t1#Sub##P#p11` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_) );
+CREATE TABLE `t1#Sub##P#p21` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_) );
+INSERT INTO `t1#Sub##P#p01`(id,f1,_phid_) VALUES (300,300,300),(120,120,120) ;
+INSERT INTO `t1#Sub##P#p21`(id,f1,_phid_) VALUES (80,80,80);
+SELECT * FROM `t1#Sub#` ORDER BY id;
+id	f1	f2
+-1	6	-11
+0	3	-10
+2	4	-8
+20	1	10
+45	10	35
+50	9	40
+80	80	70
+99	7	89
+120	120	110
+135	8	125
+175	12	165
+199	5	189
+300	300	290
+350	11	340
+1000	14	990
+1010	13	1000
+CHECK TABLE `t1#Sub#`;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part p01 should be in part p21:
+ f1:300 f2:290
+x	check	error	Partition p01 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
+ALTER TABLE  `t1#Sub#` CHECK PARTITION p01 MEDIUM;
+Table	Op	Msg_type	Msg_text
+x	check	error	Found a misplaced row in part p01 should be in part p21:
+ f1:300 f2:290
+x	check	error	Partition p01 returned error
+x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
+ALTER TABLE  `t1#Sub#` CHECK PARTITION p11 MEDIUM;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+REPAIR TABLE `t1#Sub#` USE_FRM;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
+ALTER TABLE `t1#Sub#` REPAIR PARTITION p01;
+Table	Op	Msg_type	Msg_text
+x	repair	warning	Moved 2 misplaced rows
+x	repair	status	OK
+REPAIR TABLE `t1#Sub#` EXTENDED;
+Table	Op	Msg_type	Msg_text
+x	repair	warning	Moved 1 misplaced rows
+x	repair	status	OK
+CHECK TABLE `t1#Sub#`;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+ALTER TABLE `t1#Sub#` REBUILD PARTITION ALL;
+SELECT * FROM `t1#Sub#` ORDER BY id;
+id	f1	f2
+-1	6	-11
+0	3	-10
+2	4	-8
+20	1	10
+45	10	35
+50	9	40
+80	80	70
+99	7	89
+120	120	110
+135	8	125
+175	12	165
+199	5	189
+300	300	290
+350	11	340
+1000	14	990
+1010	13	1000
 DROP TABLE `t1#Sub#`,`t1#P#Sub#`;
+DROP TABLE `t1#Sub##P#p01`,`t1#Sub##P#p11`,`t1#Sub##P#p21`;
 CREATE TABLE t1 (col1 INT, col2 CHAR(5), col3 DATE) COMMENT 'sequoiadb:{ table_options: { ReplSize: 2 } }'
     PARTITION BY LINEAR HASH( YEAR(col3) ) 
 PARTITIONS 6;
