@@ -1,7 +1,8 @@
 #Case 20412#Case 20413#Case 20414#Case 20415#Case 20416#Case 20417#Case 20418
 #Case 20419#Case 20420#Case 20421#Case 20540#Case 22271#Case 22296#Case 22332
 #Case 22333#Case 22334#Case 22370#Case 22271#Case 22335#Case 22336#Case 22337
-#Case 22338#Case 22391#Case 22420#Case 22473
+#Case 22338#Case 22391#Case 22420#Case 22473#Case 22709#Case 22710#Case 22711
+#Case 22712
 
 --source include/have_sequoiadb.inc
 
@@ -73,7 +74,62 @@ SHOW CREATE TABLE `t#P#1`;
 UPDATE `t#P#1` PARTITION (pmix1) SET c = 'newC';
 SELECT * FROM `t#P#1` PARTITION (p1) ORDER BY id;
 SELECT * FROM `t#P#1` PARTITION (pmix1) ORDER BY id;
-DROP TABLE `t#P#1`;
+# SeqDB-22709, #SeqDB-22711
+#SEQUOIASQLMAINSTREAM-761
+CREATE TABLE `t#P#1#P#p1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), PRIMARY KEY(b) );
+CREATE TABLE `t#P#1#P#pmix1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), PRIMARY KEY(b) );
+# insert a mismatched row
+INSERT INTO `t#P#1#P#p1`(id,c) VALUES (3000,'19') ;    
+SELECT * FROM `t#P#1` ORDER BY id;  
+# return error
+--replace_column 1 x
+CHECK TABLE `t#P#1`;
+--replace_column 1 x                
+ALTER TABLE `t#P#1` CHECK PARTITION p1;
+--replace_column 1 x
+ALTER TABLE `t#P#1` CHECK PARTITION pmix1;
+--replace_column 1 x
+REPAIR TABLE `t#P#1`;
+--replace_column 1 x  
+ALTER TABLE `t#P#1` REPAIR PARTITION P1;   
+--replace_column 1 x
+ALTER TABLE `t#P#1` REPAIR PARTITION pmix1;
+ALTER TABLE `t#P#1` REBUILD PARTITION P1;
+SELECT * FROM `t#P#1` ORDER BY id;     
+--replace_column 1 x
+CHECK TABLE `t#P#1`;     
+#BUG #SEQUOIASQLMAINSTREAM-794 
+## insert a duplicated row
+#INSERT INTO `t#P#1#P#pmix1`(id,c) VALUES (3,'20') ; 
+#SELECT * FROM `t#P#1` ORDER BY id;             
+## return error
+#CHECK TABLE `t#P#1` MEDIUM;   
+#ALTER TABLE `t#P#1` CHECK PARTITION P1; 
+#ALTER TABLE `t#P#1` CHECK PARTITION pmix1 MEDIUM;
+#REPAIR TABLE `t#P#1` QUICK;    
+#REPAIR TABLE `t#P#1` USE_FRM;     
+#REPAIR TABLE `t#P#1` EXTENDED;      # have a problem, db没有主键? 跟 reorganize 以后db主键消失有关
+#ALTER TABLE `t#P#1` REPAIR PARTITION P1;   
+#ALTER TABLE `t#P#1` REPAIR PARTITION pmix1 EXTENDED;
+#ALTER TABLE `t#P#1` REBUILD PARTITION P1; 
+#SELECT * FROM `t#P#1` ORDER BY id;    
+#CHECK TABLE `t#P#1`;  
+# insert a valid row, matched and not duplicated
+INSERT INTO `t#P#1#P#p1`(id,c) VALUES (600,'21') ;
+SELECT * FROM `t#P#1` ORDER BY id;  
+--replace_column 1 x
+CHECK TABLE `t#P#1` EXTENDED;
+--replace_column 1 x
+ALTER TABLE `t#P#1` CHECK PARTITION p1 EXTENDED;    
+--replace_column 1 x
+ALTER TABLE `t#P#1` CHECK PARTITION pmix1;
+--replace_column 1 x
+ALTER TABLE `t#P#1` REPAIR PARTITION ALL;
+ALTER TABLE `t#P#1` REBUILD PARTITION ALL;
+SELECT * FROM `t#P#1` ORDER BY id;
+--replace_column 1 x
+CHECK TABLE `t#P#1`;  
+DROP TABLE `t#P#1`,`t#P#1#P#p1`,`t#P#1#P#pmix1`;
 
 # seqDB-20413, seqDB-22271, seqDB-22391
 # RANGE (expr) / LIST (expr) / LIST COLUMNS (col_list) 
@@ -174,7 +230,65 @@ UPDATE `t1#List#Expr` PARTITION (pmoren2,pmoren3) SET id = 1 WHERE a > 0;
 SELECT * FROM `t1#Range#Expr` PARTITION (p0,p2,p1,p3,p4) ORDER BY id;
 SELECT * FROM `t1#List#Expr` PARTITION (ptest1,pmoren2) ORDER BY id;
 SELECT * FROM `t1#List#Expr` PARTITION (pmoren3) ORDER BY id;
+# SeqDB-22709, #SeqDB-22711
+#SEQUOIASQLMAINSTREAM-761
+CREATE TABLE `t1#List#Expr#P#ptest1` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
+CREATE TABLE `t1#List#Expr#P#pmoren2` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
+CREATE TABLE `t1#List#Expr#P#pmoren3` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
+# insert a mismatched row
+INSERT INTO `t1#List#Expr#P#ptest1`(id,_phid_ ,a) VALUES (101,101,101) ;    
+SELECT * FROM `t1#List#Expr` ORDER BY id;   
+# return error
+--replace_column 1 x
+CHECK TABLE `t1#List#Expr`; 
+--replace_column 1 x
+ALTER TABLE `t1#List#Expr` CHECK PARTITION ptest1; 
+--replace_column 1 x
+ALTER TABLE `t1#List#Expr` CHECK PARTITION pmoren2,pmoren3;
+# return error
+--replace_column 1 x
+REPAIR TABLE `t1#List#Expr`;  
+--replace_column 1 x
+ALTER TABLE `t1#List#Expr` REPAIR PARTITION ptest1; 
+--replace_column 1 x
+ALTER TABLE `t1#List#Expr` REPAIR PARTITION pmoren2,pmoren3;
+ALTER TABLE `t1#List#Expr` REBUILD PARTITION ptest1;
+SELECT * FROM `t1#List#Expr` ORDER BY id;
+--replace_column 1 x 
+CHECK TABLE `t1#List#Expr`;  
+# insert many valid rows, matched and not duplicated 
+INSERT INTO `t1#List#Expr#P#ptest1`(id,_phid_ ,a) VALUES (29,29,29),(-31,31,-31) ;
+INSERT INTO `t1#List#Expr#P#pmoren2`(id,_phid_ ,a) VALUES (10,10,10);
+SELECT * FROM `t1#List#Expr` ORDER BY id; 
+--replace_column 1 x
+CHECK TABLE `t1#List#Expr` EXTENDED; 
+--replace_column 1 x
+ALTER TABLE `t1#List#Expr` REPAIR PARTITION ptest1 EXTENDED;
+--replace_column 1 x
+ALTER TABLE  `t1#List#Expr` CHECK PARTITION ptest1 EXTENDED;
+--replace_column 1 x
+ALTER TABLE  `t1#List#Expr` CHECK PARTITION pmoren2 MEDIUM;
+--replace_column 1 x
+ALTER TABLE  `t1#List#Expr` CHECK PARTITION pmoren3;
+--replace_column 1 x
+REPAIR TABLE `t1#List#Expr`;
+ALTER TABLE `t1#List#Expr` REBUILD PARTITION ALL;
+SELECT * FROM `t1#List#Expr` ORDER BY id;              
+--replace_column 1 x
+CHECK TABLE `t1#List#Expr`;  
+#BUG #SEQUOIASQLMAINSTREAM-794
+## insert contain a duplicated row
+#INSERT INTO `t1#List#Expr#P#pmoren2`(id,_phid_ ,a) VALUES (10,10,10);
+#INSERT INTO `t1#List#Expr#P#pmoren3`(id,_phid_ ,a) VALUES (8,8,8),(99,99,99);
+#SELECT * FROM `t1#List#Expr` ORDER BY id;    
+#CHECK TABLE `t1#List#Expr`;    
+#ALTER TABLE `t1#List#Expr` REPAIR PARTITION ALL; # 由于organize将db的主键去掉了，因此这里有问题
+#ALTER TABLE `t1#List#Expr` CHECK PARTITION ALL;
+#ALTER TABLE `t1#List#Expr` REBUILD PARTITION pmoren2,pmoren3;
+#SELECT * FROM `t1#List#Expr` ORDER BY id; 
+#CHECK TABLE `t1#List#Expr`;     
 DROP TABLE `t1#Range#Expr`,`t1#List#Expr`,`t1#P#List#Columns`;
+DROP TABLE `t1#List#Expr#P#ptest1`,`t1#List#Expr#P#pmoren2`,`t1#List#Expr#P#pmoren3`;
 
 #seqDB-20414, seqDB-22335
 # HASH (expr) / KEY (col_list)
@@ -218,6 +332,21 @@ ALTER TABLE `t1#P#Key#p#` REBUILD PARTITION ALL;
 INSERT INTO `t1#P#Key#p#`(tm) VALUES ('837:00:00'),('838:00:00'); 
 SELECT * FROM `t1#Hash` ORDER BY id;
 SELECT * FROM `t1#P#Key#p#` ORDER BY id;
+# SeqDB-22710, #SeqDB-22712
+#SEQUOIASQLMAINSTREAM-761
+--replace_column 1 x
+CHECK TABLE `t1#Hash`;    
+--replace_column 1 x
+CHECK TABLE `t1#P#Key#p#` QUICK;   
+--replace_column 1 x
+REPAIR TABLE `t1#Hash` USE_FRM;  
+--replace_column 1 x
+REPAIR TABLE  `t1#P#Key#p#`;
+#BUG #SEQUOIASQLMAINSTREAM-789
+ALTER TABLE `t1#Hash` CHECK PARTITION p1 EXTENDED;
+ALTER TABLE `t1#P#Key#p#` CHECK PARTITION p1 FAST;  
+ALTER TABLE `t1#Hash` REPAIR PARTITION p2 USE_FRM; 
+ALTER TABLE `t1#P#Key#p#` REPAIR PARTITION p1; 
 DROP TABLE `t1#Hash`,`t1#P#Key#p#`;
 
 # seqDB-20415, seqDB-22271, seqDB-22391
@@ -305,8 +434,55 @@ ALTER TABLE `t1#P#Sub#` REBUILD PARTITION ALL;
 DELETE FROM `t1#P#Sub#` WHERE c > 10 AND c < 300;
 #BUG #SEQUOIASQLMAINSTREAM-714
 SELECT * FROM `t1#Sub#` PARTITION (p01,p11,p21) ORDER BY id;
-SELECT * FROM `t1#P#Sub#` ORDER BY a,c; 
+SELECT * FROM `t1#P#Sub#` ORDER BY a,c;
+# SeqDB-22709, #SeqDB-22711 
+#SEQUOIASQLMAINSTREAM-761
+CREATE TABLE `t1#Sub##P#p01` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_)  );
+CREATE TABLE `t1#Sub##P#p11` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_) );
+CREATE TABLE `t1#Sub##P#p21` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_INCREMENT, f2 INT GENERATED ALWAYS AS (id-10) STORED, PRIMARY KEY(f1,f2,_phid_) );
+# insert many valid rows, matched and not duplicated
+INSERT INTO `t1#Sub##P#p01`(id,f1,_phid_) VALUES (300,300,300),(120,120,120) ;
+INSERT INTO `t1#Sub##P#p21`(id,f1,_phid_) VALUES (80,80,80);
+SELECT * FROM `t1#Sub#` ORDER BY id;  
+--replace_column 1 x
+CHECK TABLE `t1#Sub#`;    
+--replace_column 1 x
+ALTER TABLE  `t1#Sub#` CHECK PARTITION p01 MEDIUM;  
+--replace_column 1 x
+ALTER TABLE  `t1#Sub#` CHECK PARTITION p11 MEDIUM;
+#BUG #SEQUOIASQLMAINSTREAM-793
+#ALTER TABLE  `t1#Sub#` CHECK PARTITION p21 MEDIUM;
+--replace_column 1 x
+REPAIR TABLE `t1#Sub#` USE_FRM; 
+--replace_column 1 x
+ALTER TABLE `t1#Sub#` REPAIR PARTITION p01; 
+#BUG #SEQUOIASQLMAINSTREAM-793
+#CHECK TABLE `t1#Sub#` MEDIUM;
+--replace_column 1 x
+REPAIR TABLE `t1#Sub#` EXTENDED;
+--replace_column 1 x
+CHECK TABLE `t1#Sub#`;
+ALTER TABLE `t1#Sub#` REBUILD PARTITION ALL; 
+SELECT * FROM `t1#Sub#` ORDER BY id; 
+#BUG #SEQUOIASQLMAINSTREAM-794
+## insert contain a duplicated row
+#INSERT INTO `t1#Sub##P#p01`(id,f1,_phid_) VALUES (175,12,175); 
+#INSERT INTO `t1#Sub##P#p11`(id,f1,_phid_) VALUES (2000,2000,2000);
+#SELECT * FROM `t1#Sub#` ORDER BY id;  
+#CHECK TABLE `t1#Sub#`;  
+#ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
+##BUG #SEQUOIASQLMAINSTREAM-793
+##ALTER TABLE  `t1#Sub#` CHECK PARTITION p11;
+#ALTER TABLE  `t1#Sub#` CHECK PARTITION p21;
+#REPAIR TABLE `t1#Sub#` EXTENDED; 
+#ALTER TABLE `t1#Sub#` REPAIR PARTITION p01 EXTENDED; 
+#ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
+#ALTER TABLE  `t1#Sub#` CHECK PARTITION p11;
+#ALTER TABLE `t1#Sub#` REBUILD PARTITION p01,p11;
+#CHECK TABLE `t1#Sub`;
+#SELECT * FROM `t1#Sub#` ORDER BY id;  
 DROP TABLE `t1#Sub#`,`t1#P#Sub#`;
+DROP TABLE `t1#Sub##P#p01`,`t1#Sub##P#p11`,`t1#Sub##P#p21`;
 
 #seqDB-20417
 CREATE TABLE t1 (col1 INT, col2 CHAR(5), col3 DATE) COMMENT 'sequoiadb:{ table_options: { ReplSize: 2 } }'
