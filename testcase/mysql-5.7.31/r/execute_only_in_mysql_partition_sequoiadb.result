@@ -157,6 +157,26 @@ ALTER TABLE `t1#ExecuteOnly#List#Expr` REBUILD PARTITION ALL;
 UPDATE `t1#ExecuteOnly#List#Expr` PARTITION (pmoren2,pmoren3) SET id = 1 WHERE a > 0;
 SELECT * FROM `t1#ExecuteOnly#List#Expr` PARTITION (ptest1,pmoren2,pmoren3) ORDER BY id;
 id	a	b
+CREATE TABLE `t1#ExecuteOnly#List#Expr#P#ptest1` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT );
+INSERT INTO `t1#ExecuteOnly#List#Expr#P#ptest1` VALUES (11,11,11,12),(17,17,17,18);
+CHECK TABLE `t1#ExecuteOnly#List#Expr`;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+REPAIR TABLE `t1#ExecuteOnly#List#Expr`;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
+ALTER TABLE `t1#ExecuteOnly#List#Expr` CHECK PARTITION ptest1;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+ALTER TABLE `t1#ExecuteOnly#List#Expr` CHECK PARTITION ALL QUICK;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+ALTER TABLE `t1#ExecuteOnly#List#Expr` REPAIR PARTITION ptest1;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
+ALTER TABLE `t1#ExecuteOnly#List#Expr` REPAIR PARTITION ALL EXTENDED;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
 ALTER TABLE `t1#ExecuteOnly#List#Expr` TRUNCATE PARTITION ALL;
 SELECT * FROM `t1#ExecuteOnly#List#Expr` PARTITION (ptest1,pmoren2,pmoren3) ORDER BY id;
 id	a	b
@@ -168,15 +188,15 @@ ptest1	LIST	b	18446744073709551615
 pmoren2	LIST	b	18446744073709551615
 pmoren3	LIST	b	18446744073709551615
 SET sequoiadb_execute_only_in_mysql = OFF;
-DROP TABLE `t1#ExecuteOnly#List#Expr`;
+DROP TABLE `t1#ExecuteOnly#List#Expr`,`t1#ExecuteOnly#List#Expr#P#ptest1`;
 SET sequoiadb_execute_only_in_mysql = ON;
-CREATE TABLE `t1#ExecuteOnly#Hash` ( id FLOAT, b INT GENERATED ALWAYS AS (id+1) VIRTUAL )
+CREATE TABLE `t1#ExecuteOnly#Hash` ( id FLOAT, b INT GENERATED ALWAYS AS (id+1) STORED )
 PARTITION BY HASH( CEILING(b) ) PARTITIONS 16;
 SHOW CREATE TABLE `t1#ExecuteOnly#Hash`;
 Table	Create Table
 t1#ExecuteOnly#Hash	CREATE TABLE `t1#ExecuteOnly#Hash` (
   `id` float DEFAULT NULL,
-  `b` int(11) GENERATED ALWAYS AS ((`id` + 1)) VIRTUAL
+  `b` int(11) GENERATED ALWAYS AS ((`id` + 1)) STORED
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY HASH ( CEILING(b))
 PARTITIONS 16 */
@@ -216,7 +236,7 @@ SHOW CREATE TABLE `t1#ExecuteOnly#Hash`;
 Table	Create Table
 t1#ExecuteOnly#Hash	CREATE TABLE `t1#ExecuteOnly#Hash` (
   `id` float DEFAULT NULL,
-  `b` int(11) GENERATED ALWAYS AS ((`id` + 1)) VIRTUAL
+  `b` int(11) GENERATED ALWAYS AS ((`id` + 1)) STORED
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY HASH ( CEILING(b))
 PARTITIONS 22 */
@@ -225,6 +245,12 @@ ERROR HY000: Cannot specify HASH or KEY partitions
 INSERT INTO `t1#ExecuteOnly#Hash`(id) VALUES (5.56),(-9.94);
 SELECT * FROM `t1#ExecuteOnly#Hash` ORDER BY id;
 id	b
+CHECK TABLE `t1#ExecuteOnly#Hash`;
+Table	Op	Msg_type	Msg_text
+x	check	status	OK
+REPAIR TABLE `t1#ExecuteOnly#Hash`;
+Table	Op	Msg_type	Msg_text
+x	repair	status	OK
 ALTER TABLE `t1#ExecuteOnly#Hash` TRUNCATE PARTITION ALL;
 SELECT * FROM `t1#ExecuteOnly#Hash` ORDER BY id;
 id	b

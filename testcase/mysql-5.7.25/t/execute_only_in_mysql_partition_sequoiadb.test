@@ -80,6 +80,25 @@ SHOW CREATE TABLE `t1#ExecuteOnly#List#Expr`;
 ALTER TABLE `t1#ExecuteOnly#List#Expr` REBUILD PARTITION ALL;
 UPDATE `t1#ExecuteOnly#List#Expr` PARTITION (pmoren2,pmoren3) SET id = 1 WHERE a > 0;
 SELECT * FROM `t1#ExecuteOnly#List#Expr` PARTITION (ptest1,pmoren2,pmoren3) ORDER BY id;
+# seqDB-22715
+#SEQUOIASQLMAINSTREAM-761
+# CHECK/REPAIR PARTITION
+# insert invalid row
+#CREATE TABLE `t1#ExecuteOnly#List#Expr#P#pmoren2` ( id INT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED )
+CREATE TABLE `t1#ExecuteOnly#List#Expr#P#ptest1` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT );
+INSERT INTO `t1#ExecuteOnly#List#Expr#P#ptest1` VALUES (11,11,11,12),(17,17,17,18);
+--replace_column 1 x
+CHECK TABLE `t1#ExecuteOnly#List#Expr`;
+--replace_column 1 x
+REPAIR TABLE `t1#ExecuteOnly#List#Expr`;
+--replace_column 1 x
+ALTER TABLE `t1#ExecuteOnly#List#Expr` CHECK PARTITION ptest1;
+--replace_column 1 x
+ALTER TABLE `t1#ExecuteOnly#List#Expr` CHECK PARTITION ALL QUICK;
+--replace_column 1 x
+ALTER TABLE `t1#ExecuteOnly#List#Expr` REPAIR PARTITION ptest1;
+--replace_column 1 x
+ALTER TABLE `t1#ExecuteOnly#List#Expr` REPAIR PARTITION ALL EXTENDED;
 # TRUNCATE PARTITION
 ALTER TABLE `t1#ExecuteOnly#List#Expr` TRUNCATE PARTITION ALL;
 SELECT * FROM `t1#ExecuteOnly#List#Expr` PARTITION (ptest1,pmoren2,pmoren3) ORDER BY id;
@@ -88,11 +107,11 @@ SELECT PARTITION_NAME, PARTITION_METHOD, PARTITION_EXPRESSION, TABLE_ROWS
   FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%test_parallel%' AND TABLE_NAME = 't1#ExecuteOnly#List#Expr';
 # DISABLE sequoiadb_execute_only_in_mysql, AND DROP TABLE
 SET sequoiadb_execute_only_in_mysql = OFF;
-DROP TABLE `t1#ExecuteOnly#List#Expr`;
+DROP TABLE `t1#ExecuteOnly#List#Expr`,`t1#ExecuteOnly#List#Expr#P#ptest1`;
 
 # HASH (expr) 
 SET sequoiadb_execute_only_in_mysql = ON;
-CREATE TABLE `t1#ExecuteOnly#Hash` ( id FLOAT, b INT GENERATED ALWAYS AS (id+1) VIRTUAL )
+CREATE TABLE `t1#ExecuteOnly#Hash` ( id FLOAT, b INT GENERATED ALWAYS AS (id+1) STORED )
   PARTITION BY HASH( CEILING(b) ) PARTITIONS 16;
 SHOW CREATE TABLE `t1#ExecuteOnly#Hash`;
 FLUSH TABLE `t1#ExecuteOnly#Hash`;
@@ -117,6 +136,22 @@ SHOW CREATE TABLE `t1#ExecuteOnly#Hash`;
 ALTER TABLE `t1#ExecuteOnly#Hash` REBUILD PARTITION p15;
 INSERT INTO `t1#ExecuteOnly#Hash`(id) VALUES (5.56),(-9.94);
 SELECT * FROM `t1#ExecuteOnly#Hash` ORDER BY id;
+# seqDB-22715
+#SEQUOIASQLMAINSTREAM-761
+# CHECK/REPAIR PARTITION
+--replace_column 1 x
+CHECK TABLE `t1#ExecuteOnly#Hash`;
+--replace_column 1 x
+REPAIR TABLE `t1#ExecuteOnly#Hash`;
+#BUG #SEQUOIASQLMAINSTREAM-708
+#--error 131
+#ALTER TABLE `t1#ExecuteOnly#Hash` CHECK PARTITION p1;
+#--error 131
+#ALTER TABLE `t1#ExecuteOnly#Hash` CHECK PARTITION ALL QUICK;
+#--error 131
+#ALTER TABLE `t1#ExecuteOnly#Hash` REPAIR PARTITION p1;
+#--error 131
+#ALTER TABLE `t1#ExecuteOnly#Hash` REPAIR PARTITION ALL EXTENDED;
 # TRUNCATE PARTITION
 ALTER TABLE `t1#ExecuteOnly#Hash` TRUNCATE PARTITION ALL;
 SELECT * FROM `t1#ExecuteOnly#Hash` ORDER BY id;

@@ -508,7 +508,7 @@ ALTER TABLE `t1#Sub#` REBUILD PARTITION ALL;
 SELECT * FROM `t1#Sub#` ORDER BY id; 
 #BUG #SEQUOIASQLMAINSTREAM-794
 # insert contain a duplicated row
-INSERT INTO `t1#Sub##P#p01`(id, f1, _phid_) VALUES (175,12,175); 
+INSERT INTO `t1#Sub##P#p01`(id, f1, _phid_) VALUES (200,30,200),(150,40,150),(175,12,175); 
 INSERT INTO `t1#Sub##P#p11`(id, f1, _phid_) VALUES (2000,2000,2000);
 SELECT * FROM `t1#Sub#` ORDER BY id;
 --replace_column 1 x 
@@ -533,9 +533,15 @@ ALTER TABLE `t1#Sub#` REBUILD PARTITION ALL;
 # return error
 --replace_column 1 x
 REPAIR TABLE `t1#Sub#`;
+--replace_column 1 x
+ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
+--replace_column 1 x
+ALTER TABLE  `t1#Sub#` CHECK PARTITION p11;
 DELETE FROM `t1#Sub##P#p01` WHERE f1 = 12;
 DELETE FROM `t1#Sub##P#p11` WHERE f1 = 2000;
-SELECT * FROM `t1#Sub#` ORDER BY id;  
+SELECT * FROM `t1#Sub#` ORDER BY id;
+--replace_column 1 x
+REPAIR TABLE `t1#Sub#`; 
 --replace_column 1 x
 CHECK TABLE `t1#Sub#`;
 DROP TABLE `t1#Sub#`,`t1#P#Sub#`;
