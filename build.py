@@ -190,7 +190,6 @@ class OptionsMgr:
         if self.args.excludetest:
             cmake_arguments.append('-DPACK_TEST=OFF')
 
-        cmake_arguments.append('-DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"')
         print("cmake configuration arguments: {}"
               .format(' '.join(cmake_arguments)))
         return cmake_arguments
