@@ -14,7 +14,7 @@
          dan "Adgang nægtet bruger: '%-.48s'@'%-.64s' (Bruger adgangskode: %s)"
          nla "Toegang geweigerd voor gebruiker: '%-.48s'@'%-.64s' (Wachtwoord gebruikt: %s)"
 -        eng "Access denied for user '%-.48s'@'%-.64s' (using password: %s)"
-+        eng "Incorrect username '%-.48s'@'%-.64s' or passord (using password: %s)"
++        eng "Incorrect username '%-.48s'@'%-.64s' or password (using password: %s)"
          est "Ligipääs keelatud kasutajale '%-.48s'@'%-.64s' (kasutab parooli: %s)"
          fre "Accès refusé pour l'utilisateur: '%-.48s'@'@%-.64s' (mot de passe: %s)"
          ger "Benutzer '%-.48s'@'%-.64s' hat keine Zugriffsberechtigung (verwendetes Passwort: %s)"
