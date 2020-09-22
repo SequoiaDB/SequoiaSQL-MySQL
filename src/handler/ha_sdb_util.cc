@@ -678,10 +678,20 @@ int sdb_add_pfs_clientinfo(THD *thd) {
   char *pos = NULL;
   int new_statement_size = 0;
   int length = 0;
+  String rewrite_query;
 
 #ifdef IS_MYSQL
-  if (thd->rewritten_query.length()) {
-    length = thd->rewritten_query.length();
+#ifndef MYSQL_VERSION_ID
+#error "Need MYSQL_VERSION_ID defined"
+#endif
+
+#if MYSQL_VERSION_ID >= 50731
+  rewrite_query = thd->rewritten_query();
+#else
+  rewrite_query = thd->rewritten_query;
+#endif
+  if (rewrite_query.length()) {
+    length = rewrite_query.length();
     query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));
     if (!query_text) {
       return HA_ERR_OUT_OF_MEM;
@@ -691,7 +701,7 @@ int sdb_add_pfs_clientinfo(THD *thd) {
              thd->query_id, my_thread_os_id());
     pos += strlen(query_text);
     snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s",
-             thd->rewritten_query.c_ptr_safe());
+             rewrite_query.c_ptr_safe());
   } else {
     length = thd->query().length;
     query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));

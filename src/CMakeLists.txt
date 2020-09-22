@@ -108,29 +108,37 @@ endif()
 
 if(WITH_BOOST)
   # set openssl dir
-  set(OPENSSL_DIR "${SQL_SOURCE_ROOT}/../../thirdparty/openssl-1.0.1c")
+  if (MYSQL STREQUAL "5.7.31")
+    set(OPENSSL_DIR "${SQL_SOURCE_ROOT}/../../thirdparty/openssl-1.1.1g")
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_DIR}/include")
+    set(OPENSSL_LIB_DIR "${OPENSSL_DIR}/lib/lib")
+  else()
+    set(OPENSSL_DIR "${SQL_SOURCE_ROOT}/../../thirdparty/openssl-1.0.1c")
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_DIR}/include")
+    set(OPENSSL_LIB_DIR "${OPENSSL_DIR}/lib")
+  endif()
   
   # build ha_inst_group_init
   set(HA_TOOLS_FLAGS "-Wno-unused-value -Wno-missing-field-initializers -Wno-deprecated-declarations")
   
-  set(HA_TOOLS_INCLUDE "${WITH_BOOST};${SDB_DRIVER_PATH}/include;${CMAKE_CURRENT_SOURCE_DIR}/include;${OPENSSL_DIR}/include")
-  link_directories(${SDB_DRIVER_PATH}/lib ${OPENSSL_DIR}/lib)
+  set(HA_TOOLS_INCLUDE "${WITH_BOOST};${SDB_DRIVER_PATH}/include;${CMAKE_CURRENT_SOURCE_DIR}/include;${OPENSSL_INCLUDE_DIR}")
+  link_directories(${SDB_DRIVER_PATH}/lib ${OPENSSL_LIB_DIR})
   add_executable(ha_inst_group_init tools/ha_inst_group_init.cc tools/ha_tool_utils.cc)
   set_target_properties(ha_inst_group_init PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
   set_target_properties(ha_inst_group_init PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
-  target_link_libraries(ha_inst_group_init staticsdbcpp ssl crypto dl pthread)
+  target_link_libraries(ha_inst_group_init sdbcpp ssl crypto dl pthread)
   
   # build ha_inst_group_clear
   add_executable(ha_inst_group_clear tools/ha_inst_group_clear.cc tools/ha_tool_utils.cc)
   set_target_properties(ha_inst_group_clear PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
   set_target_properties(ha_inst_group_clear PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
-  target_link_libraries(ha_inst_group_clear staticsdbcpp ssl crypto dl pthread)
+  target_link_libraries(ha_inst_group_clear sdbcpp ssl crypto dl pthread)
   
   # build ha_inst_clear
   add_executable(ha_inst_clear tools/ha_inst_clear.cc tools/ha_tool_utils.cc)
   set_target_properties(ha_inst_clear PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
   set_target_properties(ha_inst_clear PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
-  target_link_libraries(ha_inst_clear staticsdbcpp ssl crypto dl pthread)
+  target_link_libraries(ha_inst_clear sdbcpp ssl crypto dl pthread)
   
   install(TARGETS ha_inst_group_init ha_inst_group_clear ha_inst_clear
           RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
