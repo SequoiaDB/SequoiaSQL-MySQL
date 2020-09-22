@@ -222,12 +222,12 @@ int ha_evp_des_decrypt(const uchar *cipher, int len, uchar *out, uchar *key) {
   assert(cipher != NULL);
   assert(out != NULL);
 
-  EVP_CIPHER_CTX ctx;
-  EVP_CIPHER_CTX_init(&ctx);
-  EVP_DecryptInit_ex(&ctx, EVP_des_ecb(), NULL, key, NULL);
-  evp_rc = EVP_DecryptUpdate(&ctx, out, &out_len, cipher, len);
-  EVP_DecryptFinal_ex(&ctx, out, &out_len);
-  EVP_CIPHER_CTX_cleanup(&ctx);
+  EVP_CIPHER_CTX *ctx;
+  ctx = EVP_CIPHER_CTX_new();
+  EVP_DecryptInit_ex(ctx, EVP_des_ecb(), NULL, key, NULL);
+  evp_rc = EVP_DecryptUpdate(ctx, out, &out_len, cipher, len);
+  EVP_DecryptFinal_ex(ctx, out, &out_len);
+  EVP_CIPHER_CTX_free(ctx);
 
   evp_rc = evp_rc ? 0 : ERR_get_error();
   return evp_rc;

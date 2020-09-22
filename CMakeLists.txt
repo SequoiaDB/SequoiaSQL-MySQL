@@ -48,8 +48,86 @@ endif()
 
 project(${PROJECT_NAME})
 
+# Build thirdparty.
+function(build_openssl type)
+   # Build openssl
+   message(STATUS "Build OpenSSL, call ${CMAKE_SOURCE_DIR}/thirdparty/"
+           "build_thirdparty.py  --openssl=1.1.1g")
+   if(type STREQUAL "debug")
+      set(debug_opt " -d")
+   else()
+      set(debug_opt "")
+   endif()
+   execute_process(
+      COMMAND bash -c "python3 build_thirdparty.py --openssl=1.1.1g ${debug_opt}"
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
+   )
+endfunction()
+
+function(build_curl type)
+   # Build curl
+   message(STATUS "Build Curl, call ${CMAKE_SOURCE_DIR}/thirdparty/"
+            "build_thirdparty.py  --curl=7.69.0")
+   if(type STREQUAL "debug")
+      set(debug_opt " -d")
+   else()
+      set(debug_opt "")
+   endif()
+   execute_process(
+      COMMAND bash -c "python3 build_thirdparty.py --curl=7.69.0 ${debug_opt}"
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
+   )
+endfunction()
+
 if(MYSQL STREQUAL "5.7.28")
    set(WITH_SSL "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
+endif()
+
+if(MYSQL STREQUAL "5.7.31")
+   if(NOT WITH_SSL)
+      set(OPENSSL_1_1_1_g_LIB_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib/lib/")
+      set(EXEC_STR "export LD_LIBRARY_PATH=${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib/lib/;\
+                   ./openssl-1.1.1g/lib/bin/openssl version | \
+                   grep OpenSSL")
+      execute_process(
+         COMMAND bash -c "${EXEC_STR}"
+         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
+         OUTPUT_VARIABLE OUTPUT
+      )
+      if(OUTPUT)
+         message(STATUS "OpenSSL has already been built, nothing to do, "
+                        "version:" ${OUTPUT})
+      else()
+         if(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
+            build_openssl("debug")
+         else()
+            build_openssl("release")
+         endif()
+      endif()
+      set(WITH_SSL  "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib")
+   endif()
+
+   if(NOT WITH_CURL)
+      set(EXEC_STR "export LD_LIBRARY_PATH=${CMAKE_SOURCE_DIR}/thirdparty/curl-7.69.0/lib/lib/;\
+                   ./curl-7.69.0/lib/bin/curl  --version  | \
+                   grep curl")
+      execute_process(
+         COMMAND bash -c "${EXEC_STR}"
+         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
+         OUTPUT_VARIABLE OUTPUT
+      )
+      if(OUTPUT)
+         message(STATUS "Curl has already been built, nothing to do, "
+                        "version:" ${OUTPUT})
+      else()
+         if(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
+            build_curl("debug")
+         else()
+            build_curl("release")
+         endif()
+      endif()
+      set(WITH_CURL "${CMAKE_SOURCE_DIR}/thirdparty/curl-7.69.0/lib/lib")
+   endif()
 endif()
 
 if(SDB_PROJECT_TYPE STREQUAL "mariadb")
@@ -68,10 +146,18 @@ function(get_sdb_version version git_version)
       set(SDB_DRIVER_DIR "${CMAKE_BINARY_DIR}/${WITH_SDB_DRIVER}")
    endif()
 
-   execute_process(
-      COMMAND bash -c "cmake . -DSDB_DRIVER_DIR=${SDB_DRIVER_DIR}"
-      WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
-   )
+   if(OPENSSL_1_1_1_g_LIB_DIR)
+      set(OPENSSL_LIB_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib/lib/")
+      execute_process(
+         COMMAND bash -c "cmake . -DSDB_DRIVER_DIR=${SDB_DRIVER_DIR} -DOPENSSL_LIB_DIR=${OPENSSL_LIB_DIR}"
+         WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
+      )
+   else()
+      execute_process(
+         COMMAND bash -c "cmake . -DSDB_DRIVER_DIR=${SDB_DRIVER_DIR}"
+         WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
+      )
+   endif()
 
    execute_process(
       COMMAND bash -c "make"
@@ -235,7 +321,7 @@ if(NOT MYSQL_DATADIR)
 endif()
 
 if(ENTERPRISE)
-   set(CMAKE_CXX_FLAGS "-DSDB_ENTERPRISE=TRUE")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSDB_ENTERPRISE=TRUE")
 endif()
 
 set(SDB_PLUGIN_VERSION "")

@@ -1,0 +1,18 @@
+--- sql_parse.cc	2020-09-14 10:26:40.310982901 +0800
++++ sql_parse_changed.cc	2020-09-14 10:31:20.734975346 +0800
+@@ -5003,6 +5003,15 @@
+       thd->reset_query_for_display();
+     }
+   }
++#ifndef EMBEDDED_LIBRARY
++  else {
++    mysql_audit_notify(thd,
++                       first_level ? MYSQL_AUDIT_QUERY_STATUS_END :
++                                     MYSQL_AUDIT_QUERY_NESTED_STATUS_END,
++                       first_level ? "MYSQL_AUDIT_QUERY_STATUS_END" :
++                                     "MYSQL_AUDIT_QUERY_NESTED_STATUS_END");
++  }
++#endif /* !EMBEDDED_LIBRARY */
+ 
+   lex->unit->cleanup(true);
+   /* Free tables */
