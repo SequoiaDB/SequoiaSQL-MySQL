@@ -105,6 +105,7 @@ if(EXISTS "${SERVER_HA_PATCHES_DIR}")
     # No it's patches yet.
   else()
     set(PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mysql_errmsg_${MYSQL}.patch")
+    set(USER_PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mysql_sql_user_${MYSQL}.patch")
   endif()
 
   # apply patch for error message
@@ -114,6 +115,15 @@ if(EXISTS "${SERVER_HA_PATCHES_DIR}")
     execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/sql/share" patch -s -N -i ${PATCH_FILE})
   else()
     message(FATAL_ERROR "Patch file ${PATCH_FILE} doesn't exist")
+  endif()
+
+  # apply patch for error user
+  if (EXISTS "${USER_PATCH_FILE}")
+    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/sql/auth/sql_user.cc")
+    message(STATUS "Apply patch ${USER_PATCH_FILE} on ${APPLY_PATCH_TARGET}")
+    execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/sql/auth" patch -s -N -i ${USER_PATCH_FILE})
+  else()
+    message(FATAL_ERROR "Patch file ${USER_PATCH_FILE} doesn't exist")
   endif()
 else()
   message(FATAL_ERROR "Can't apply 'server_ha' patch, patch directory 'patches' doesn't exist")

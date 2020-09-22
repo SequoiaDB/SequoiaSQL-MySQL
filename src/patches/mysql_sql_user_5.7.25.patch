@@ -1,0 +1,11 @@
+--- sql_user.cc	2020-09-19 13:42:34.244143459 +0800
++++ sql_user_modified.cc	2020-09-22 21:37:31.988392027 +0800
+@@ -1477,7 +1477,7 @@
+     if (is_anonymous_user)
+       my_error(ER_CANNOT_USER, MYF(0), "CREATE USER", "anonymous user");
+     else
+-      my_error(ER_CANNOT_USER, MYF(0), "CREATE USER", wrong_users.c_ptr_safe());
++      my_error(ER_USER_ALREADY_EXISTS, MYF(0), wrong_users.c_ptr_safe());
+   }
+ 
+   if (some_users_created || (if_not_exists && !thd->is_error()))
