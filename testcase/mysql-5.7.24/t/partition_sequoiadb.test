@@ -206,17 +206,17 @@ ALTER TABLE `t1#List#Expr` ADD PARTITION (
   PARTITION pmore2 VALUES IN (32,28,15,4,-10)
 );
 SHOW CREATE TABLE `t1#List#Expr`;
-INSERT INTO `t1#List#Expr` PARTITION (pmore1,pmore2)(id,a) VALUES (-4,-4),(31,31),(-3,-3),(3,3);
+INSERT INTO `t1#List#Expr` PARTITION (pmore1,pmore2)(id,a) VALUES (-4,-4),(31,31),(20,20),(-3,-3),(3,3),(27,27); 
 ALTER TABLE `t1#List#Expr` REORGANIZE PARTITION otest2,qtest3 INTO (
-  PARTITION qtest3 VALUES IN (35,27,-22,-6,26,88)
+  PARTITION qtest3 VALUES IN (35,27,-22,-6,26,88,3,13,41)
 );
 ALTER TABLE `t1#List#Expr` REORGANIZE PARTITION pmore1 INTO (
-  PARTITION pmoren1 VALUES IN (38,5,17),
-  PARTITION pmoren2 VALUES IN (30,-5,13),
+  PARTITION pmoren1 VALUES IN (38,5,17,-3),
+  PARTITION pmoren2 VALUES IN (30,-5,21,-2),
   PARTITION pmoren3 VALUES IN (-30,29,18)
 );
 SHOW CREATE TABLE `t1#List#Expr`;
-INSERT INTO `t1#List#Expr` PARTITION (qtest3,pmoren1,pmoren2,pmoren3)(id,a) VALUES (-7,-7),(-23,-23),(-6,-6),(4,4),(17,17),(12,12),(16,16);
+INSERT INTO `t1#List#Expr` PARTITION (qtest3,pmoren1,pmoren2,pmoren3)(id,a) VALUES (-7,-7),(-23,-23),(-6,-6),(4,4),(17,17),(16,16);
 SELECT * FROM `t1#List#Expr` PARTITION (qtest3) ORDER BY id;
 SELECT * FROM `t1#List#Expr` PARTITION (pmoren1) ORDER BY id;
 SELECT * FROM `t1#List#Expr` PARTITION (pmoren2,pmoren3) ORDER BY id;

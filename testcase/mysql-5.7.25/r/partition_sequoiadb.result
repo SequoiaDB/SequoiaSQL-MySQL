@@ -520,13 +520,13 @@ t1#List#Expr	CREATE TABLE `t1#List#Expr` (
  PARTITION ytest4 VALUES IN (6,16,-7,12,-13,10,101,-99) ENGINE = SequoiaDB,
  PARTITION pmore1 VALUES IN (-3,19,21,-2,97) ENGINE = SequoiaDB,
  PARTITION pmore2 VALUES IN (32,28,15,4,-10) ENGINE = SequoiaDB) */
-INSERT INTO `t1#List#Expr` PARTITION (pmore1,pmore2)(id,a) VALUES (-4,-4),(31,31),(-3,-3),(3,3);
+INSERT INTO `t1#List#Expr` PARTITION (pmore1,pmore2)(id,a) VALUES (-4,-4),(31,31),(20,20),(-3,-3),(3,3),(27,27);
 ALTER TABLE `t1#List#Expr` REORGANIZE PARTITION otest2,qtest3 INTO (
-PARTITION qtest3 VALUES IN (35,27,-22,-6,26,88)
+PARTITION qtest3 VALUES IN (35,27,-22,-6,26,88,3,13,41)
 );
 ALTER TABLE `t1#List#Expr` REORGANIZE PARTITION pmore1 INTO (
-PARTITION pmoren1 VALUES IN (38,5,17),
-PARTITION pmoren2 VALUES IN (30,-5,13),
+PARTITION pmoren1 VALUES IN (38,5,17,-3),
+PARTITION pmoren2 VALUES IN (30,-5,21,-2),
 PARTITION pmoren3 VALUES IN (-30,29,18)
 );
 SHOW CREATE TABLE `t1#List#Expr`;
@@ -539,26 +539,31 @@ t1#List#Expr	CREATE TABLE `t1#List#Expr` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY LIST (b)
 (PARTITION ptest1 VALUES IN (-4,40,9,-1,0,100,11) ENGINE = SequoiaDB,
- PARTITION qtest3 VALUES IN (35,27,-22,-6,26,88) ENGINE = SequoiaDB,
+ PARTITION qtest3 VALUES IN (35,27,-22,-6,26,88,3,13,41) ENGINE = SequoiaDB,
  PARTITION ytest4 VALUES IN (6,16,-7,12,-13,10,101,-99) ENGINE = SequoiaDB,
- PARTITION pmoren1 VALUES IN (38,5,17) ENGINE = SequoiaDB,
- PARTITION pmoren2 VALUES IN (30,-5,13) ENGINE = SequoiaDB,
+ PARTITION pmoren1 VALUES IN (38,5,17,-3) ENGINE = SequoiaDB,
+ PARTITION pmoren2 VALUES IN (30,-5,21,-2) ENGINE = SequoiaDB,
  PARTITION pmoren3 VALUES IN (-30,29,18) ENGINE = SequoiaDB,
  PARTITION pmore2 VALUES IN (32,28,15,4,-10) ENGINE = SequoiaDB) */
-INSERT INTO `t1#List#Expr` PARTITION (qtest3,pmoren1,pmoren2,pmoren3)(id,a) VALUES (-7,-7),(-23,-23),(-6,-6),(4,4),(17,17),(12,12),(16,16);
+INSERT INTO `t1#List#Expr` PARTITION (qtest3,pmoren1,pmoren2,pmoren3)(id,a) VALUES (-7,-7),(-23,-23),(-6,-6),(4,4),(17,17),(16,16);
 SELECT * FROM `t1#List#Expr` PARTITION (qtest3) ORDER BY id;
 id	a	b
 -23	-23	-22
 -7	-7	-6
+2	2	3
+12	12	13
+40	40	41
 SELECT * FROM `t1#List#Expr` PARTITION (pmoren1) ORDER BY id;
 id	a	b
+-4	-4	-3
 4	4	5
 16	16	17
 SELECT * FROM `t1#List#Expr` PARTITION (pmoren2,pmoren3) ORDER BY id;
 id	a	b
 -6	-6	-5
-12	12	13
+-3	-3	-2
 17	17	18
+20	20	21
 ALTER TABLE `t1#List#Expr` DROP PARTITION qtest3,ytest4,pmoren1,pmore2;
 SHOW CREATE TABLE `t1#List#Expr`;
 Table	Create Table
@@ -570,7 +575,7 @@ t1#List#Expr	CREATE TABLE `t1#List#Expr` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY LIST (b)
 (PARTITION ptest1 VALUES IN (-4,40,9,-1,0,100,11) ENGINE = SequoiaDB,
- PARTITION pmoren2 VALUES IN (30,-5,13) ENGINE = SequoiaDB,
+ PARTITION pmoren2 VALUES IN (30,-5,21,-2) ENGINE = SequoiaDB,
  PARTITION pmoren3 VALUES IN (-30,29,18) ENGINE = SequoiaDB) */
 ALTER TABLE `t1#Range#Expr` REBUILD PARTITION p0;
 ALTER TABLE `t1#List#Expr` REBUILD PARTITION ALL;
@@ -586,7 +591,8 @@ id	d
 SELECT * FROM `t1#List#Expr` PARTITION (ptest1,pmoren2) ORDER BY id;
 id	a	b
 -6	-6	-5
-1	12	13
+-3	-3	-2
+1	20	21
 SELECT * FROM `t1#List#Expr` PARTITION (pmoren3) ORDER BY id;
 id	a	b
 1	17	18
@@ -597,8 +603,9 @@ INSERT INTO `t1#List#Expr#P#ptest1`(id,_phid_ ,a) VALUES (101,101,101) ;
 SELECT * FROM `t1#List#Expr` ORDER BY id;
 id	a	b
 -6	-6	-5
+-3	-3	-2
+1	20	21
 1	17	18
-1	12	13
 101	101	102
 CHECK TABLE `t1#List#Expr`;
 Table	Op	Msg_type	Msg_text
@@ -636,8 +643,9 @@ ALTER TABLE `t1#List#Expr` REBUILD PARTITION ptest1;
 SELECT * FROM `t1#List#Expr` ORDER BY id;
 id	a	b
 -6	-6	-5
+-3	-3	-2
+1	20	21
 1	17	18
-1	12	13
 CHECK TABLE `t1#List#Expr`;
 Table	Op	Msg_type	Msg_text
 x	check	status	OK
@@ -647,8 +655,9 @@ SELECT * FROM `t1#List#Expr` ORDER BY id;
 id	a	b
 -31	-31	-30
 -6	-6	-5
+-3	-3	-2
+1	20	21
 1	17	18
-1	12	13
 10	10	11
 29	29	30
 CHECK TABLE `t1#List#Expr` EXTENDED;
@@ -682,8 +691,9 @@ SELECT * FROM `t1#List#Expr` ORDER BY id;
 id	a	b
 -31	-31	-30
 -6	-6	-5
+-3	-3	-2
+1	20	21
 1	17	18
-1	12	13
 10	10	11
 29	29	30
 CHECK TABLE `t1#List#Expr`;
