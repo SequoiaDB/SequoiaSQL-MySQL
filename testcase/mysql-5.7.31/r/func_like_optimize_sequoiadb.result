@@ -1,0 +1,4316 @@
+DROP TABLE IF EXISTS t1;
+CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d LONGTEXT) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b, c, d) VALUES ('1a','1a','1a','1a'),('2a','2a','2a','2a'),('1234a','1234a','1234a','1234a'),('a','a','a','a'),('ab','ab','ab','ab'),('a0000b','a0000b','a0000b','a0000b'),('abc','abc','abc','abc'),('ac','ac','ac','ac'),('abd','abd','abd','abd'),('abcd','abcd','abcd','abcd'),('a0000b1111c2222b3333d','a0000b1111c2222b3333d','a0000b1111c2222b3333d','a0000b1111c2222b3333d'),('abce','abce','abce','abce'),('abcde','abcde','abcde','abcde'),('abcdef','abcdef','abcdef','abcdef'),('hello','hello','hello','hello'),('test','test','test','test'),('中','中','中','中'),('1中','1中','1中','1中'),('1中3','1中3','1中3','1中3'),('中文','中文','中文','中文'),('中文1','中文1','中文1','中文1'),('中文123456','中文123456','中文123456','中文123456'),('中1文','中1文','中1文','中1文'),('中12文','中12文','中12文','中12文');
+SELECT * FROM t1 WHERE a LIKE "a%";
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+4	a	a	a	a
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+7	abc	abc	abc	abc
+8	ac	ac	ac	ac
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "%a";
+id	a	b	c	d
+1	1a	1a	1a	1a
+2	2a	2a	2a	2a
+3	1234a	1234a	1234a	1234a
+4	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "a%b";
+id	a	b	c	d
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+SELECT * FROM t1 WHERE d LIKE "a%c%d";
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%");
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+5	ab	ab	ab	ab
+7	abc	abc	abc	abc
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "中%";
+id	a	b	c	d
+17	中	中	中	中
+20	中文	中文	中文	中文
+21	中文1	中文1	中文1	中文1
+22	中文123456	中文123456	中文123456	中文123456
+23	中1文	中1文	中1文	中1文
+24	中12文	中12文	中12文	中12文
+SELECT * FROM t1 WHERE c LIKE "%中";
+id	a	b	c	d
+17	中	中	中	中
+18	1中	1中	1中	1中
+SELECT * FROM t1 WHERE d LIKE "中%文";
+id	a	b	c	d
+20	中文	中文	中文	中文
+23	中1文	中1文	中1文	中1文
+24	中12文	中12文	中12文	中12文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%");
+id	a	b	c	d
+20	中文	中文	中文	中文
+21	中文1	中文1	中文1	中文1
+22	中文123456	中文123456	中文123456	中文123456
+SELECT * FROM t1 WHERE a LIKE "a_";
+id	a	b	c	d
+5	ab	ab	ab	ab
+8	ac	ac	ac	ac
+SELECT * FROM t1 WHERE b LIKE "_a";
+id	a	b	c	d
+1	1a	1a	1a	1a
+2	2a	2a	2a	2a
+SELECT * FROM t1 WHERE c LIKE "a_c";
+id	a	b	c	d
+7	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "a_c_e";
+id	a	b	c	d
+13	abcde	abcde	abcde	abcde
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
+id	a	b	c	d
+7	abc	abc	abc	abc
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "_中";
+id	a	b	c	d
+18	1中	1中	1中	1中
+SELECT * FROM t1 WHERE c LIKE "中_";
+id	a	b	c	d
+SELECT * FROM t1 WHERE d LIKE "中_文";
+id	a	b	c	d
+23	中1文	中1文	中1文	中1文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
+id	a	b	c	d
+21	中文1	中文1	中文1	中文1
+CREATE INDEX a ON t1(a(16));
+CREATE INDEX b ON t1(b(16));
+CREATE INDEX c ON t1(c(16));
+CREATE INDEX d ON t1(d(16));
+SELECT * FROM t1 WHERE a LIKE "a%";
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+4	a	a	a	a
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+7	abc	abc	abc	abc
+8	ac	ac	ac	ac
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "%a";
+id	a	b	c	d
+1	1a	1a	1a	1a
+2	2a	2a	2a	2a
+3	1234a	1234a	1234a	1234a
+4	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "a%b";
+id	a	b	c	d
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+SELECT * FROM t1 WHERE d LIKE "a%c%d";
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%");
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+5	ab	ab	ab	ab
+7	abc	abc	abc	abc
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "中%";
+id	a	b	c	d
+17	中	中	中	中
+20	中文	中文	中文	中文
+21	中文1	中文1	中文1	中文1
+22	中文123456	中文123456	中文123456	中文123456
+23	中1文	中1文	中1文	中1文
+24	中12文	中12文	中12文	中12文
+SELECT * FROM t1 WHERE c LIKE "%中";
+id	a	b	c	d
+17	中	中	中	中
+18	1中	1中	1中	1中
+SELECT * FROM t1 WHERE d LIKE "中%文";
+id	a	b	c	d
+20	中文	中文	中文	中文
+23	中1文	中1文	中1文	中1文
+24	中12文	中12文	中12文	中12文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%");
+id	a	b	c	d
+20	中文	中文	中文	中文
+21	中文1	中文1	中文1	中文1
+22	中文123456	中文123456	中文123456	中文123456
+SELECT * FROM t1 WHERE a LIKE "a_";
+id	a	b	c	d
+5	ab	ab	ab	ab
+8	ac	ac	ac	ac
+SELECT * FROM t1 WHERE b LIKE "_a";
+id	a	b	c	d
+1	1a	1a	1a	1a
+2	2a	2a	2a	2a
+SELECT * FROM t1 WHERE c LIKE "a_c";
+id	a	b	c	d
+7	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "a_c_e";
+id	a	b	c	d
+13	abcde	abcde	abcde	abcde
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
+id	a	b	c	d
+7	abc	abc	abc	abc
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "_中";
+id	a	b	c	d
+18	1中	1中	1中	1中
+SELECT * FROM t1 WHERE c LIKE "中_";
+id	a	b	c	d
+SELECT * FROM t1 WHERE d LIKE "中_文";
+id	a	b	c	d
+23	中1文	中1文	中1文	中1文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
+id	a	b	c	d
+21	中文1	中文1	中文1	中文1
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a CHAR(32), b VARCHAR(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b) VALUES ('1a','1a'),('2a','2a'),('1234a','1234a'),('a','a'),('ab','ab'),('a0000b','a0000b'),('abc','abc'),('ac','ac'),('abd','abd'),('abcd','abcd'),('a0000b1111c2222b3333d','a0000b1111c2222b3333d'),('abce','abce'),('abcde','abcde'),('abcdef','abcdef'),('hello','hello'),('test','test'),('中','中'),('1中','1中'),('1中3','1中3'),('中文','中文'),('中文1','中文1'),('中文123456','中文123456'),('中1文','中1文'),('中12文','中12文');
+SELECT * FROM t1 WHERE a LIKE "a%";
+id	a	b
+10	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce
+13	abcde	abcde
+14	abcdef	abcdef
+4	a	a
+5	ab	ab
+6	a0000b	a0000b
+7	abc	abc
+8	ac	ac
+9	abd	abd
+SELECT * FROM t1 WHERE a LIKE "%a";
+id	a	b
+1	1a	1a
+2	2a	2a
+3	1234a	1234a
+4	a	a
+SELECT * FROM t1 WHERE a LIKE "a%b";
+id	a	b
+5	ab	ab
+6	a0000b	a0000b
+SELECT * FROM t1 WHERE a LIKE "a%c%d";
+id	a	b
+10	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%");
+id	a	b
+10	abcd	abcd
+12	abce	abce
+13	abcde	abcde
+14	abcdef	abcdef
+5	ab	ab
+7	abc	abc
+9	abd	abd
+SELECT * FROM t1 WHERE a LIKE "中%";
+id	a	b
+17	中	中
+20	中文	中文
+21	中文1	中文1
+22	中文123456	中文123456
+23	中1文	中1文
+24	中12文	中12文
+SELECT * FROM t1 WHERE a LIKE "%中";
+id	a	b
+17	中	中
+18	1中	1中
+SELECT * FROM t1 WHERE a LIKE "中%文";
+id	a	b
+20	中文	中文
+23	中1文	中1文
+24	中12文	中12文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%");
+id	a	b
+20	中文	中文
+21	中文1	中文1
+22	中文123456	中文123456
+SELECT * FROM t1 WHERE a LIKE "a_";
+id	a	b
+5	ab	ab
+8	ac	ac
+SELECT * FROM t1 WHERE a LIKE "_a";
+id	a	b
+1	1a	1a
+2	2a	2a
+SELECT * FROM t1 WHERE a LIKE "a_c";
+id	a	b
+7	abc	abc
+SELECT * FROM t1 WHERE a LIKE "a_c_e";
+id	a	b
+13	abcde	abcde
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
+id	a	b
+7	abc	abc
+9	abd	abd
+SELECT * FROM t1 WHERE a LIKE "_中";
+id	a	b
+18	1中	1中
+SELECT * FROM t1 WHERE a LIKE "中_";
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中_文";
+id	a	b
+23	中1文	中1文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
+id	a	b
+21	中文1	中文1
+SELECT * FROM t1 WHERE b LIKE "a%";
+id	a	b
+10	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce
+13	abcde	abcde
+14	abcdef	abcdef
+4	a	a
+5	ab	ab
+6	a0000b	a0000b
+7	abc	abc
+8	ac	ac
+9	abd	abd
+SELECT * FROM t1 WHERE b LIKE "%a";
+id	a	b
+1	1a	1a
+2	2a	2a
+3	1234a	1234a
+4	a	a
+SELECT * FROM t1 WHERE b LIKE "a%b";
+id	a	b
+5	ab	ab
+6	a0000b	a0000b
+SELECT * FROM t1 WHERE b LIKE "a%c%d";
+id	a	b
+10	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+SELECT * FROM t1 WHERE b LIKE CONCAT("ab","%");
+id	a	b
+10	abcd	abcd
+12	abce	abce
+13	abcde	abcde
+14	abcdef	abcdef
+5	ab	ab
+7	abc	abc
+9	abd	abd
+SELECT * FROM t1 WHERE b LIKE "中%";
+id	a	b
+17	中	中
+20	中文	中文
+21	中文1	中文1
+22	中文123456	中文123456
+23	中1文	中1文
+24	中12文	中12文
+SELECT * FROM t1 WHERE b LIKE "%中";
+id	a	b
+17	中	中
+18	1中	1中
+SELECT * FROM t1 WHERE b LIKE "中%文";
+id	a	b
+20	中文	中文
+23	中1文	中1文
+24	中12文	中12文
+SELECT * FROM t1 WHERE b LIKE CONCAT("中文","%");
+id	a	b
+20	中文	中文
+21	中文1	中文1
+22	中文123456	中文123456
+SELECT * FROM t1 WHERE b LIKE "a_";
+id	a	b
+5	ab	ab
+8	ac	ac
+SELECT * FROM t1 WHERE b LIKE "_a";
+id	a	b
+1	1a	1a
+2	2a	2a
+SELECT * FROM t1 WHERE b LIKE "a_c";
+id	a	b
+7	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a_c_e";
+id	a	b
+13	abcde	abcde
+SELECT * FROM t1 WHERE b LIKE CONCAT("ab","_");
+id	a	b
+7	abc	abc
+9	abd	abd
+SELECT * FROM t1 WHERE b LIKE "_中";
+id	a	b
+18	1中	1中
+SELECT * FROM t1 WHERE b LIKE "中_";
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "中_文";
+id	a	b
+23	中1文	中1文
+SELECT * FROM t1 WHERE b LIKE CONCAT("中文","_");
+id	a	b
+21	中文1	中文1
+CREATE INDEX a ON t1(a);
+CREATE INDEX b ON t1(b);
+SELECT * FROM t1 WHERE a LIKE "a%";
+id	a	b
+10	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce
+13	abcde	abcde
+14	abcdef	abcdef
+4	a	a
+5	ab	ab
+6	a0000b	a0000b
+7	abc	abc
+8	ac	ac
+9	abd	abd
+SELECT * FROM t1 WHERE a LIKE "%a";
+id	a	b
+1	1a	1a
+2	2a	2a
+3	1234a	1234a
+4	a	a
+SELECT * FROM t1 WHERE a LIKE "a%b";
+id	a	b
+5	ab	ab
+6	a0000b	a0000b
+SELECT * FROM t1 WHERE a LIKE "a%c%d";
+id	a	b
+10	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%");
+id	a	b
+10	abcd	abcd
+12	abce	abce
+13	abcde	abcde
+14	abcdef	abcdef
+5	ab	ab
+7	abc	abc
+9	abd	abd
+SELECT * FROM t1 WHERE a LIKE "中%";
+id	a	b
+17	中	中
+20	中文	中文
+21	中文1	中文1
+22	中文123456	中文123456
+23	中1文	中1文
+24	中12文	中12文
+SELECT * FROM t1 WHERE a LIKE "%中";
+id	a	b
+17	中	中
+18	1中	1中
+SELECT * FROM t1 WHERE a LIKE "中%文";
+id	a	b
+20	中文	中文
+23	中1文	中1文
+24	中12文	中12文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%");
+id	a	b
+20	中文	中文
+21	中文1	中文1
+22	中文123456	中文123456
+SELECT * FROM t1 WHERE a LIKE "a_";
+id	a	b
+5	ab	ab
+8	ac	ac
+SELECT * FROM t1 WHERE a LIKE "_a";
+id	a	b
+1	1a	1a
+2	2a	2a
+SELECT * FROM t1 WHERE a LIKE "a_c";
+id	a	b
+7	abc	abc
+SELECT * FROM t1 WHERE a LIKE "a_c_e";
+id	a	b
+13	abcde	abcde
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
+id	a	b
+7	abc	abc
+9	abd	abd
+SELECT * FROM t1 WHERE a LIKE "_中";
+id	a	b
+18	1中	1中
+SELECT * FROM t1 WHERE a LIKE "中_";
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中_文";
+id	a	b
+23	中1文	中1文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
+id	a	b
+21	中文1	中文1
+SELECT * FROM t1 WHERE b LIKE "a%";
+id	a	b
+10	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce
+13	abcde	abcde
+14	abcdef	abcdef
+4	a	a
+5	ab	ab
+6	a0000b	a0000b
+7	abc	abc
+8	ac	ac
+9	abd	abd
+SELECT * FROM t1 WHERE b LIKE "%a";
+id	a	b
+1	1a	1a
+2	2a	2a
+3	1234a	1234a
+4	a	a
+SELECT * FROM t1 WHERE b LIKE "a%b";
+id	a	b
+5	ab	ab
+6	a0000b	a0000b
+SELECT * FROM t1 WHERE b LIKE "a%c%d";
+id	a	b
+10	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+SELECT * FROM t1 WHERE b LIKE CONCAT("ab","%");
+id	a	b
+10	abcd	abcd
+12	abce	abce
+13	abcde	abcde
+14	abcdef	abcdef
+5	ab	ab
+7	abc	abc
+9	abd	abd
+SELECT * FROM t1 WHERE b LIKE "中%";
+id	a	b
+17	中	中
+20	中文	中文
+21	中文1	中文1
+22	中文123456	中文123456
+23	中1文	中1文
+24	中12文	中12文
+SELECT * FROM t1 WHERE b LIKE "%中";
+id	a	b
+17	中	中
+18	1中	1中
+SELECT * FROM t1 WHERE b LIKE "中%文";
+id	a	b
+20	中文	中文
+23	中1文	中1文
+24	中12文	中12文
+SELECT * FROM t1 WHERE b LIKE CONCAT("中文","%");
+id	a	b
+20	中文	中文
+21	中文1	中文1
+22	中文123456	中文123456
+SELECT * FROM t1 WHERE b LIKE "a_";
+id	a	b
+5	ab	ab
+8	ac	ac
+SELECT * FROM t1 WHERE b LIKE "_a";
+id	a	b
+1	1a	1a
+2	2a	2a
+SELECT * FROM t1 WHERE b LIKE "a_c";
+id	a	b
+7	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a_c_e";
+id	a	b
+13	abcde	abcde
+SELECT * FROM t1 WHERE b LIKE CONCAT("ab","_");
+id	a	b
+7	abc	abc
+9	abd	abd
+SELECT * FROM t1 WHERE b LIKE "_中";
+id	a	b
+18	1中	1中
+SELECT * FROM t1 WHERE b LIKE "中_";
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "中_文";
+id	a	b
+23	中1文	中1文
+SELECT * FROM t1 WHERE b LIKE CONCAT("中文","_");
+id	a	b
+21	中文1	中文1
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a BINARY(32), b VARBINARY(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b) VALUES ('1a','1a'),('2a','2a'),('1234a','1234a'),('a','a'),('ab','ab'),('a0000b','a0000b'),('abc','abc'),('ac','ac'),('abd','abd'),('abcd','abcd'),('a0000b1111c2222b3333d','a0000b1111c2222b3333d'),('abce','abce'),('abcde','abcde'),('abcdef','abcdef'),('hello','hello'),('test','test'),('中','中'),('1中','1中'),('1中3','1中3'),('中文','中文'),('中文1','中文1'),('中文123456','中文123456'),('中1文','中1文'),('中12文','中12文');
+SELECT * FROM t1 WHERE a LIKE "a%" ORDER BY a;
+id	a	b
+4	a                               	a
+6	a0000b                          	a0000b
+11	a0000b1111c2222b3333d           	a0000b1111c2222b3333d
+5	ab                              	ab
+7	abc                             	abc
+10	abcd                            	abcd
+13	abcde                           	abcde
+14	abcdef                          	abcdef
+12	abce                            	abce
+9	abd                             	abd
+8	ac                              	ac
+SELECT * FROM t1 WHERE a LIKE "%a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a%b" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a%c%d" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%") ORDER BY a;
+id	a	b
+5	ab                              	ab
+7	abc                             	abc
+10	abcd                            	abcd
+13	abcde                           	abcde
+14	abcdef                          	abcdef
+12	abce                            	abce
+9	abd                             	abd
+SELECT * FROM t1 WHERE a LIKE "中%" ORDER BY a;
+id	a	b
+17	中                             	中
+24	中12文                        	中12文
+23	中1文                         	中1文
+20	中文                          	中文
+21	中文1                         	中文1
+22	中文123456                    	中文123456
+SELECT * FROM t1 WHERE a LIKE "%中" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中%文" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%") ORDER BY a;
+id	a	b
+20	中文                          	中文
+21	中文1                         	中文1
+22	中文123456                    	中文123456
+SELECT * FROM t1 WHERE a LIKE "a_" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "_a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a_c" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a_c_e" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_") ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "_中" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中_" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中_文" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_") ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a%" ORDER BY b;
+id	a	b
+4	a                               	a
+6	a0000b                          	a0000b
+11	a0000b1111c2222b3333d           	a0000b1111c2222b3333d
+5	ab                              	ab
+7	abc                             	abc
+10	abcd                            	abcd
+13	abcde                           	abcde
+14	abcdef                          	abcdef
+12	abce                            	abce
+9	abd                             	abd
+8	ac                              	ac
+SELECT * FROM t1 WHERE b LIKE "%a" ORDER BY b;
+id	a	b
+3	1234a                           	1234a
+1	1a                              	1a
+2	2a                              	2a
+4	a                               	a
+SELECT * FROM t1 WHERE b LIKE "a%b" ORDER BY b;
+id	a	b
+6	a0000b                          	a0000b
+5	ab                              	ab
+SELECT * FROM t1 WHERE b LIKE "a%c%d" ORDER BY b;
+id	a	b
+11	a0000b1111c2222b3333d           	a0000b1111c2222b3333d
+10	abcd                            	abcd
+SELECT * FROM t1 WHERE b LIKE CONCAT("ab","%") ORDER BY b;
+id	a	b
+5	ab                              	ab
+7	abc                             	abc
+10	abcd                            	abcd
+13	abcde                           	abcde
+14	abcdef                          	abcdef
+12	abce                            	abce
+9	abd                             	abd
+SELECT * FROM t1 WHERE b LIKE "中%" ORDER BY b;
+id	a	b
+17	中                             	中
+24	中12文                        	中12文
+23	中1文                         	中1文
+20	中文                          	中文
+21	中文1                         	中文1
+22	中文123456                    	中文123456
+SELECT * FROM t1 WHERE b LIKE "%中" ORDER BY b;
+id	a	b
+18	1中                            	1中
+17	中                             	中
+SELECT * FROM t1 WHERE b LIKE "中%文" ORDER BY b;
+id	a	b
+24	中12文                        	中12文
+23	中1文                         	中1文
+20	中文                          	中文
+SELECT * FROM t1 WHERE b LIKE CONCAT("中文","%") ORDER BY b;
+id	a	b
+20	中文                          	中文
+21	中文1                         	中文1
+22	中文123456                    	中文123456
+SELECT * FROM t1 WHERE b LIKE "a_" ORDER BY b;
+id	a	b
+5	ab                              	ab
+8	ac                              	ac
+SELECT * FROM t1 WHERE b LIKE "_a" ORDER BY b;
+id	a	b
+1	1a                              	1a
+2	2a                              	2a
+SELECT * FROM t1 WHERE b LIKE "a_c" ORDER BY b;
+id	a	b
+7	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "a_c_e" ORDER BY b;
+id	a	b
+13	abcde                           	abcde
+SELECT * FROM t1 WHERE b LIKE CONCAT("ab","_") ORDER BY b;
+id	a	b
+7	abc                             	abc
+9	abd                             	abd
+SELECT * FROM t1 WHERE b LIKE "_中" ORDER BY b;
+id	a	b
+18	1中                            	1中
+SELECT * FROM t1 WHERE b LIKE "中_" ORDER BY b;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "中_文" ORDER BY b;
+id	a	b
+23	中1文                         	中1文
+SELECT * FROM t1 WHERE b LIKE CONCAT("中文","_") ORDER BY b;
+id	a	b
+21	中文1                         	中文1
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a TINYBLOB, b MEDIUMBLOB, c BLOB, d LONGBLOB) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b, c, d) VALUES ('1a','1a','1a','1a'),('2a','2a','2a','2a'),('1234a','1234a','1234a','1234a'),('a','a','a','a'),('ab','ab','ab','ab'),('a0000b','a0000b','a0000b','a0000b'),('abc','abc','abc','abc'),('ac','ac','ac','ac'),('abd','abd','abd','abd'),('abcd','abcd','abcd','abcd'),('a0000b1111c2222b3333d','a0000b1111c2222b3333d','a0000b1111c2222b3333d','a0000b1111c2222b3333d'),('abce','abce','abce','abce'),('abcde','abcde','abcde','abcde'),('abcdef','abcdef','abcdef','abcdef'),('hello','hello','hello','hello'),('test','test','test','test'),('中','中','中','中'),('1中','1中','1中','1中'),('1中3','1中3','1中3','1中3'),('中文','中文','中文','中文'),('中文1','中文1','中文1','中文1'),('中文123456','中文123456','中文123456','中文123456'),('中1文','中1文','中1文','中1文'),('中12文','中12文','中12文','中12文');
+SELECT * FROM t1 WHERE a LIKE "a%";
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+4	a	a	a	a
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+7	abc	abc	abc	abc
+8	ac	ac	ac	ac
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "%a";
+id	a	b	c	d
+1	1a	1a	1a	1a
+2	2a	2a	2a	2a
+3	1234a	1234a	1234a	1234a
+4	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "a%b";
+id	a	b	c	d
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+SELECT * FROM t1 WHERE d LIKE "a%c%d";
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%");
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+5	ab	ab	ab	ab
+7	abc	abc	abc	abc
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "中%";
+id	a	b	c	d
+17	中	中	中	中
+20	中文	中文	中文	中文
+21	中文1	中文1	中文1	中文1
+22	中文123456	中文123456	中文123456	中文123456
+23	中1文	中1文	中1文	中1文
+24	中12文	中12文	中12文	中12文
+SELECT * FROM t1 WHERE c LIKE "%中";
+id	a	b	c	d
+17	中	中	中	中
+18	1中	1中	1中	1中
+SELECT * FROM t1 WHERE d LIKE "中%文";
+id	a	b	c	d
+20	中文	中文	中文	中文
+23	中1文	中1文	中1文	中1文
+24	中12文	中12文	中12文	中12文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%");
+id	a	b	c	d
+20	中文	中文	中文	中文
+21	中文1	中文1	中文1	中文1
+22	中文123456	中文123456	中文123456	中文123456
+SELECT * FROM t1 WHERE a LIKE "a_";
+id	a	b	c	d
+5	ab	ab	ab	ab
+8	ac	ac	ac	ac
+SELECT * FROM t1 WHERE b LIKE "_a";
+id	a	b	c	d
+1	1a	1a	1a	1a
+2	2a	2a	2a	2a
+SELECT * FROM t1 WHERE c LIKE "a_c";
+id	a	b	c	d
+7	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "a_c_e";
+id	a	b	c	d
+13	abcde	abcde	abcde	abcde
+SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
+id	a	b	c	d
+7	abc	abc	abc	abc
+9	abd	abd	abd	abd
+SELECT * FROM t1 WHERE b LIKE "_中";
+id	a	b	c	d
+18	1中	1中	1中	1中
+SELECT * FROM t1 WHERE c LIKE "中_";
+id	a	b	c	d
+SELECT * FROM t1 WHERE d LIKE "中_文";
+id	a	b	c	d
+23	中1文	中1文	中1文	中1文
+SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
+id	a	b	c	d
+21	中文1	中文1	中文1	中文1
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d LONGTEXT) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b, c, d) VALUES ('a','a','a','a'),('%a','%a','%a','%a'),('1a','1a','1a','1a'),('1%a','1%a','1%a','1%a'),('a%','a%','a%','a%'),('a%b','a%b','a%b','a%b'),('ab','ab','ab','ab'),('a0000b','a0000b','a0000b','a0000b'),('a%bc','a%bc','a%bc','a%bc'),('a%b%c','a%b%c','a%b%c','a%b%c'),('_a','_a','_a','_a'),('1_a','1_a','1_a','1_a'),('a_b','a_b','a_b','a_b'),('a_bc','a_bc','a_bc','a_bc'),('_a_b_c','_a_b_c','_a_b_c','_a_b_c'),('_a_cef','_a_cef','_a_cef','_a_cef'),('_a_c_ef','_a_c_ef','_a_c_ef','_a_c_ef'),('abc','abc','abc','abc'),('abcd','abcd','abcd','abcd'),('ab123c456d','ab123c456d','ab123c456d','ab123c456d'),('abcde','abcde','abcde','abcde'),('a1b1c1d1e','a1b1c1d1e','a1b1c1d1e','a1b1c1d1e'),('hello','hello','hello','hello'),('test','test','test','test'),('%中','%中','%中','%中'),('中','中','中','中'),('中%','中%','中%','中%'),('123%中456','123%中456','123%中456','123%中456'),('中文','中文','中文','中文'),('中%文','中%文','中%文','中%文'),('中文1','中文1','中文1','中文1'),('中文%','中文%','中文%','中文%'),('_中','_中','_中','_中'),('中_文','中_文','中_文','中_文'),('中_文%','中_文%','中_文%','中_文%'),('中1文','中1文','中1文','中1文'),('中1文%','中1文%','中1文%','中1文%'),('中12文','中12文','中12文','中12文');
+SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
+id	a	b	c	d
+5	a%	a%	a%	a%
+SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
+id	a	b	c	d
+2	%a	%a	%a	%a
+SELECT * FROM t1 WHERE c LIKE "a|%b" ESCAPE '|';
+id	a	b	c	d
+6	a%b	a%b	a%b	a%b
+SELECT * FROM t1 WHERE d LIKE "a|%b|%c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE d LIKE "a|%b%c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+9	a%bc	a%bc	a%bc	a%bc
+SELECT * FROM t1 WHERE d LIKE "%a0%b0%c%" ESCAPE '0';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "%a|%b_c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE d LIKE "_a|_c%f" ESCAPE '|';
+id	a	b	c	d
+16	_a_cef	_a_cef	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "中|%" ESCAPE '|';
+id	a	b	c	d
+27	中%	中%	中%	中%
+SELECT * FROM t1 WHERE c LIKE "|%中" ESCAPE '|';
+id	a	b	c	d
+25	%中	%中	%中	%中
+SELECT * FROM t1 WHERE d LIKE "中|%文" ESCAPE '|';
+id	a	b	c	d
+30	中%文	中%文	中%文	中%文
+SELECT * FROM t1 WHERE d LIKE "中文0%" ESCAPE '0';
+id	a	b	c	d
+32	中文%	中文%	中文%	中文%
+SELECT * FROM t1 WHERE a LIKE "a|__" ESCAPE '|';
+id	a	b	c	d
+13	a_b	a_b	a_b	a_b
+SELECT * FROM t1 WHERE b LIKE "|_a" ESCAPE '|';
+id	a	b	c	d
+11	_a	_a	_a	_a
+SELECT * FROM t1 WHERE c LIKE "_a|_c%" ESCAPE '|';
+id	a	b	c	d
+16	_a_cef	_a_cef	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE d LIKE "_a0_c0_e_" ESCAPE '0';
+id	a	b	c	d
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "|_中" ESCAPE '|';
+id	a	b	c	d
+33	_中	_中	_中	_中
+SELECT * FROM t1 WHERE c LIKE "中|__" ESCAPE '|';
+id	a	b	c	d
+SELECT * FROM t1 WHERE d LIKE "中|_文" ESCAPE '|';
+id	a	b	c	d
+34	中_文	中_文	中_文	中_文
+SELECT * FROM t1 WHERE a LIKE "中_文0%" ESCAPE '0';
+id	a	b	c	d
+35	中_文%	中_文%	中_文%	中_文%
+37	中1文%	中1文%	中1文%	中1文%
+CREATE INDEX a ON t1(a(16));
+CREATE INDEX b ON t1(b(16));
+CREATE INDEX c ON t1(c(16));
+CREATE INDEX d ON t1(d(16));
+SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
+id	a	b	c	d
+5	a%	a%	a%	a%
+SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
+id	a	b	c	d
+2	%a	%a	%a	%a
+SELECT * FROM t1 WHERE c LIKE "a|%b" ESCAPE '|';
+id	a	b	c	d
+6	a%b	a%b	a%b	a%b
+SELECT * FROM t1 WHERE d LIKE "a|%b|%c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE d LIKE "a|%b%c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+9	a%bc	a%bc	a%bc	a%bc
+SELECT * FROM t1 WHERE d LIKE "%a0%b0%c%" ESCAPE '0';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "%a|%b_c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE d LIKE "_a|_c%f" ESCAPE '|';
+id	a	b	c	d
+16	_a_cef	_a_cef	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "中|%" ESCAPE '|';
+id	a	b	c	d
+27	中%	中%	中%	中%
+SELECT * FROM t1 WHERE c LIKE "|%中" ESCAPE '|';
+id	a	b	c	d
+25	%中	%中	%中	%中
+SELECT * FROM t1 WHERE d LIKE "中|%文" ESCAPE '|';
+id	a	b	c	d
+30	中%文	中%文	中%文	中%文
+SELECT * FROM t1 WHERE d LIKE "中文0%" ESCAPE '0';
+id	a	b	c	d
+32	中文%	中文%	中文%	中文%
+SELECT * FROM t1 WHERE a LIKE "a|__" ESCAPE '|';
+id	a	b	c	d
+13	a_b	a_b	a_b	a_b
+SELECT * FROM t1 WHERE b LIKE "|_a" ESCAPE '|';
+id	a	b	c	d
+11	_a	_a	_a	_a
+SELECT * FROM t1 WHERE c LIKE "_a|_c%" ESCAPE '|';
+id	a	b	c	d
+16	_a_cef	_a_cef	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE d LIKE "_a0_c0_e_" ESCAPE '0';
+id	a	b	c	d
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "|_中" ESCAPE '|';
+id	a	b	c	d
+33	_中	_中	_中	_中
+SELECT * FROM t1 WHERE c LIKE "中|__" ESCAPE '|';
+id	a	b	c	d
+SELECT * FROM t1 WHERE d LIKE "中|_文" ESCAPE '|';
+id	a	b	c	d
+34	中_文	中_文	中_文	中_文
+SELECT * FROM t1 WHERE a LIKE "中_文0%" ESCAPE '0';
+id	a	b	c	d
+35	中_文%	中_文%	中_文%	中_文%
+37	中1文%	中1文%	中1文%	中1文%
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a CHAR(32), b VARCHAR(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b) VALUES ('a','a'),('%a','%a'),('1a','1a'),('1%a','1%a'),('a%','a%'),('a%b','a%b'),('ab','ab'),('a0000b','a0000b'),('a%bc','a%bc'),('a%b%c','a%b%c'),('_a','_a'),('1_a','1_a'),('a_b','a_b'),('a_bc','a_bc'),('_a_b_c','_a_b_c'),('_a_cef','_a_cef'),('_a_c_ef','_a_c_ef'),('abc','abc'),('abcd','abcd'),('ab123c456d','ab123c456d'),('abcde','abcde'),('a1b1c1d1e','a1b1c1d1e'),('hello','hello'),('test','test'),('%中','%中'),('中','中'),('中%','中%'),('123%中456','123%中456'),('中文','中文'),('中%文','中%文'),('中文1','中文1'),('中文%','中文%'),('_中','_中'),('中_文','中_文'),('中_文%','中_文%'),('中1文','中1文'),('中1文%','中1文%'),('中12文','中12>文');
+SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
+id	a	b
+5	a%	a%
+SELECT * FROM t1 WHERE a LIKE "|%a" ESCAPE '|';
+id	a	b
+2	%a	%a
+SELECT * FROM t1 WHERE a LIKE "a|%b" ESCAPE '|';
+id	a	b
+6	a%b	a%b
+SELECT * FROM t1 WHERE a LIKE "a|%b|%c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "a|%b%c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+9	a%bc	a%bc
+SELECT * FROM t1 WHERE a LIKE "%a0%b0%c%" ESCAPE '0';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "%a|%b_c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "_a|_c%f" ESCAPE '|';
+id	a	b
+16	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE a LIKE "中|%" ESCAPE '|';
+id	a	b
+27	中%	中%
+SELECT * FROM t1 WHERE a LIKE "|%中" ESCAPE '|';
+id	a	b
+25	%中	%中
+SELECT * FROM t1 WHERE a LIKE "中|%文" ESCAPE '|';
+id	a	b
+30	中%文	中%文
+SELECT * FROM t1 WHERE a LIKE "中文0%" ESCAPE '0';
+id	a	b
+32	中文%	中文%
+SELECT * FROM t1 WHERE a LIKE "a|__" ESCAPE '|';
+id	a	b
+13	a_b	a_b
+SELECT * FROM t1 WHERE a LIKE "|_a" ESCAPE '|';
+id	a	b
+11	_a	_a
+SELECT * FROM t1 WHERE a LIKE "_a|_c%" ESCAPE '|';
+id	a	b
+16	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE a LIKE "_a0_c0_e_" ESCAPE '0';
+id	a	b
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE a LIKE "|_中" ESCAPE '|';
+id	a	b
+33	_中	_中
+SELECT * FROM t1 WHERE a LIKE "中|__" ESCAPE '|';
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中|_文" ESCAPE '|';
+id	a	b
+34	中_文	中_文
+SELECT * FROM t1 WHERE a LIKE "中_文0%" ESCAPE '0';
+id	a	b
+35	中_文%	中_文%
+37	中1文%	中1文%
+SELECT * FROM t1 WHERE b LIKE "a|%" ESCAPE '|';
+id	a	b
+5	a%	a%
+SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
+id	a	b
+2	%a	%a
+SELECT * FROM t1 WHERE b LIKE "a|%b" ESCAPE '|';
+id	a	b
+6	a%b	a%b
+SELECT * FROM t1 WHERE b LIKE "a|%b|%c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE b LIKE "a|%b%c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+9	a%bc	a%bc
+SELECT * FROM t1 WHERE b LIKE "%a0%b0%c%" ESCAPE '0';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE b LIKE "%a|%b_c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE b LIKE "_a|_c%f" ESCAPE '|';
+id	a	b
+16	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "中|%" ESCAPE '|';
+id	a	b
+27	中%	中%
+SELECT * FROM t1 WHERE b LIKE "|%中" ESCAPE '|';
+id	a	b
+25	%中	%中
+SELECT * FROM t1 WHERE b LIKE "中|%文" ESCAPE '|';
+id	a	b
+30	中%文	中%文
+SELECT * FROM t1 WHERE b LIKE "中文0%" ESCAPE '0';
+id	a	b
+32	中文%	中文%
+SELECT * FROM t1 WHERE b LIKE "a|__" ESCAPE '|';
+id	a	b
+13	a_b	a_b
+SELECT * FROM t1 WHERE b LIKE "|_a" ESCAPE '|';
+id	a	b
+11	_a	_a
+SELECT * FROM t1 WHERE b LIKE "_a|_c%" ESCAPE '|';
+id	a	b
+16	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "_a0_c0_e_" ESCAPE '0';
+id	a	b
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "|_中" ESCAPE '|';
+id	a	b
+33	_中	_中
+SELECT * FROM t1 WHERE b LIKE "中|__" ESCAPE '|';
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "中|_文" ESCAPE '|';
+id	a	b
+34	中_文	中_文
+SELECT * FROM t1 WHERE b LIKE "中_文0%" ESCAPE '0';
+id	a	b
+35	中_文%	中_文%
+37	中1文%	中1文%
+CREATE INDEX a ON t1(a);
+CREATE INDEX b ON t1(b);
+SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
+id	a	b
+5	a%	a%
+SELECT * FROM t1 WHERE a LIKE "|%a" ESCAPE '|';
+id	a	b
+2	%a	%a
+SELECT * FROM t1 WHERE a LIKE "a|%b" ESCAPE '|';
+id	a	b
+6	a%b	a%b
+SELECT * FROM t1 WHERE a LIKE "a|%b|%c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "a|%b%c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+9	a%bc	a%bc
+SELECT * FROM t1 WHERE a LIKE "%a0%b0%c%" ESCAPE '0';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "%a|%b_c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "_a|_c%f" ESCAPE '|';
+id	a	b
+16	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE a LIKE "中|%" ESCAPE '|';
+id	a	b
+27	中%	中%
+SELECT * FROM t1 WHERE a LIKE "|%中" ESCAPE '|';
+id	a	b
+25	%中	%中
+SELECT * FROM t1 WHERE a LIKE "中|%文" ESCAPE '|';
+id	a	b
+30	中%文	中%文
+SELECT * FROM t1 WHERE a LIKE "中文0%" ESCAPE '0';
+id	a	b
+32	中文%	中文%
+SELECT * FROM t1 WHERE a LIKE "a|__" ESCAPE '|';
+id	a	b
+13	a_b	a_b
+SELECT * FROM t1 WHERE a LIKE "|_a" ESCAPE '|';
+id	a	b
+11	_a	_a
+SELECT * FROM t1 WHERE a LIKE "_a|_c%" ESCAPE '|';
+id	a	b
+16	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE a LIKE "_a0_c0_e_" ESCAPE '0';
+id	a	b
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE a LIKE "|_中" ESCAPE '|';
+id	a	b
+33	_中	_中
+SELECT * FROM t1 WHERE a LIKE "中|__" ESCAPE '|';
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中|_文" ESCAPE '|';
+id	a	b
+34	中_文	中_文
+SELECT * FROM t1 WHERE a LIKE "中_文0%" ESCAPE '0';
+id	a	b
+35	中_文%	中_文%
+37	中1文%	中1文%
+SELECT * FROM t1 WHERE b LIKE "a|%" ESCAPE '|';
+id	a	b
+5	a%	a%
+SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
+id	a	b
+2	%a	%a
+SELECT * FROM t1 WHERE b LIKE "a|%b" ESCAPE '|';
+id	a	b
+6	a%b	a%b
+SELECT * FROM t1 WHERE b LIKE "a|%b|%c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE b LIKE "a|%b%c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+9	a%bc	a%bc
+SELECT * FROM t1 WHERE b LIKE "%a0%b0%c%" ESCAPE '0';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE b LIKE "%a|%b_c" ESCAPE '|';
+id	a	b
+10	a%b%c	a%b%c
+SELECT * FROM t1 WHERE b LIKE "_a|_c%f" ESCAPE '|';
+id	a	b
+16	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "中|%" ESCAPE '|';
+id	a	b
+27	中%	中%
+SELECT * FROM t1 WHERE b LIKE "|%中" ESCAPE '|';
+id	a	b
+25	%中	%中
+SELECT * FROM t1 WHERE b LIKE "中|%文" ESCAPE '|';
+id	a	b
+30	中%文	中%文
+SELECT * FROM t1 WHERE b LIKE "中文0%" ESCAPE '0';
+id	a	b
+32	中文%	中文%
+SELECT * FROM t1 WHERE b LIKE "a|__" ESCAPE '|';
+id	a	b
+13	a_b	a_b
+SELECT * FROM t1 WHERE b LIKE "|_a" ESCAPE '|';
+id	a	b
+11	_a	_a
+SELECT * FROM t1 WHERE b LIKE "_a|_c%" ESCAPE '|';
+id	a	b
+16	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "_a0_c0_e_" ESCAPE '0';
+id	a	b
+17	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "|_中" ESCAPE '|';
+id	a	b
+33	_中	_中
+SELECT * FROM t1 WHERE b LIKE "中|__" ESCAPE '|';
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "中|_文" ESCAPE '|';
+id	a	b
+34	中_文	中_文
+SELECT * FROM t1 WHERE b LIKE "中_文0%" ESCAPE '0';
+id	a	b
+35	中_文%	中_文%
+37	中1文%	中1文%
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a BINARY(32), b VARBINARY(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b) VALUES ('a','a'),('%a','%a'),('1a','1a'),('1%a','1%a'),('a%','a%'),('a%b','a%b'),('ab','ab'),('a0000b','a0000b'),('a%bc','a%bc'),('a%b%c','a%b%c'),('_a','_a'),('1_a','1_a'),('a_b','a_b'),('a_bc','a_bc'),('_a_b_c','_a_b_c'),('_a_cef','_a_cef'),('_a_c_ef','_a_c_ef'),('abc','abc'),('abcd','abcd'),('ab123c456d','ab123c456d'),('abcde','abcde'),('a1b1c1d1e','a1b1c1d1e'),('hello','hello'),('test','test'),('%中','%中'),('中','中'),('中%','中%'),('123%中456','123%中456'),('中文','中文'),('中%文','中%文'),('中文1','中文1'),('中文%','中文%'),('_中','_中'),('中_文','中_文'),('中_文%','中_文%'),('中1文','中1文'),('中1文%','中1文%'),('中12文','中12>文');
+SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "|%a" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a|%b" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a|%b|%c" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a|%b%c" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "%a0%b0%c%" ESCAPE '0' ORDER BY a;
+id	a	b
+10	a%b%c                           	a%b%c
+SELECT * FROM t1 WHERE a LIKE "%a|%b_c" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "_a|_c%f" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中|%" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "|%中" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中|%文" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中文0%" ESCAPE '0' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a|__" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "|_a" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "_a|_c%" ESCAPE '|' ORDER BY a;
+id	a	b
+17	_a_c_ef                         	_a_c_ef
+16	_a_cef                          	_a_cef
+SELECT * FROM t1 WHERE a LIKE "_a0_c0_e_" ESCAPE '0' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "|_中" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中|__" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中|_文" ESCAPE '|' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "中_文0%" ESCAPE '0' ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a|%" ESCAPE '|' ORDER BY b;
+id	a	b
+5	a%                              	a%
+SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|' ORDER BY b;
+id	a	b
+2	%a                              	%a
+SELECT * FROM t1 WHERE b LIKE "a|%b" ESCAPE '|' ORDER BY b;
+id	a	b
+6	a%b                             	a%b
+SELECT * FROM t1 WHERE b LIKE "a|%b|%c" ESCAPE '|' ORDER BY b;
+id	a	b
+10	a%b%c                           	a%b%c
+SELECT * FROM t1 WHERE b LIKE "a|%b%c" ESCAPE '|' ORDER BY b;
+id	a	b
+10	a%b%c                           	a%b%c
+9	a%bc                            	a%bc
+SELECT * FROM t1 WHERE b LIKE "%a0%b0%c%" ESCAPE '0' ORDER BY b;
+id	a	b
+10	a%b%c                           	a%b%c
+SELECT * FROM t1 WHERE b LIKE "%a|%b_c" ESCAPE '|' ORDER BY b;
+id	a	b
+10	a%b%c                           	a%b%c
+SELECT * FROM t1 WHERE b LIKE "_a|_c%f" ESCAPE '|' ORDER BY b;
+id	a	b
+17	_a_c_ef                         	_a_c_ef
+16	_a_cef                          	_a_cef
+SELECT * FROM t1 WHERE b LIKE "中|%" ESCAPE '|' ORDER BY b;
+id	a	b
+27	中%                            	中%
+SELECT * FROM t1 WHERE b LIKE "|%中" ESCAPE '|' ORDER BY b;
+id	a	b
+25	%中                            	%中
+SELECT * FROM t1 WHERE b LIKE "中|%文" ESCAPE '|' ORDER BY b;
+id	a	b
+30	中%文                         	中%文
+SELECT * FROM t1 WHERE b LIKE "中文0%" ESCAPE '0' ORDER BY b;
+id	a	b
+32	中文%                         	中文%
+SELECT * FROM t1 WHERE b LIKE "a|__" ESCAPE '|' ORDER BY b;
+id	a	b
+13	a_b                             	a_b
+SELECT * FROM t1 WHERE b LIKE "|_a" ESCAPE '|' ORDER BY b;
+id	a	b
+11	_a                              	_a
+SELECT * FROM t1 WHERE b LIKE "_a|_c%" ESCAPE '|' ORDER BY b;
+id	a	b
+17	_a_c_ef                         	_a_c_ef
+16	_a_cef                          	_a_cef
+SELECT * FROM t1 WHERE b LIKE "_a0_c0_e_" ESCAPE '0' ORDER BY b;
+id	a	b
+17	_a_c_ef                         	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "|_中" ESCAPE '|' ORDER BY b;
+id	a	b
+33	_中                            	_中
+SELECT * FROM t1 WHERE b LIKE "中|__" ESCAPE '|' ORDER BY b;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "中|_文" ESCAPE '|' ORDER BY b;
+id	a	b
+34	中_文                         	中_文
+SELECT * FROM t1 WHERE b LIKE "中_文0%" ESCAPE '0' ORDER BY b;
+id	a	b
+37	中1文%                        	中1文%
+35	中_文%                        	中_文%
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a TINYBLOB, b MEDIUMBLOB, c BLOB, d LONGBLOB) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b, c, d) VALUES ('a','a','a','a'),('%a','%a','%a','%a'),('1a','1a','1a','1a'),('1%a','1%a','1%a','1%a'),('a%','a%','a%','a%'),('a%b','a%b','a%b','a%b'),('ab','ab','ab','ab'),('a0000b','a0000b','a0000b','a0000b'),('a%bc','a%bc','a%bc','a%bc'),('a%b%c','a%b%c','a%b%c','a%b%c'),('_a','_a','_a','_a'),('1_a','1_a','1_a','1_a'),('a_b','a_b','a_b','a_b'),('a_bc','a_bc','a_bc','a_bc'),('_a_b_c','_a_b_c','_a_b_c','_a_b_c'),('_a_cef','_a_cef','_a_cef','_a_cef'),('_a_c_ef','_a_c_ef','_a_c_ef','_a_c_ef'),('abc','abc','abc','abc'),('abcd','abcd','abcd','abcd'),('ab123c456d','ab123c456d','ab123c456d','ab123c456d'),('abcde','abcde','abcde','abcde'),('a1b1c1d1e','a1b1c1d1e','a1b1c1d1e','a1b1c1d1e'),('hello','hello','hello','hello'),('test','test','test','test'),('%中','%中','%中','%中'),('中','中','中','中'),('中%','中%','中%','中%'),('123%中456','123%中456','123%中456','123%中456'),('中文','中文','中文','中文'),('中%文','中%文','中%文','中%文'),('中文1','中文1','中文1','中文1'),('中文%','中文%','中文%','中文%'),('_中','_中','_中','_中'),('中_文','中_文','中_文','中_文'),('中_文%','中_文%','中_文%','中_文%'),('中1文','中1文','中1文','中1文'),('中1文%','中1文%','中1文%','中1文%'),('中12文','中12>文','中12文','中12文');
+SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
+id	a	b	c	d
+5	a%	a%	a%	a%
+SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
+id	a	b	c	d
+2	%a	%a	%a	%a
+SELECT * FROM t1 WHERE c LIKE "a|%b" ESCAPE '|';
+id	a	b	c	d
+6	a%b	a%b	a%b	a%b
+SELECT * FROM t1 WHERE d LIKE "a|%b|%c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE d LIKE "a|%b%c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+9	a%bc	a%bc	a%bc	a%bc
+SELECT * FROM t1 WHERE d LIKE "%a0%b0%c%" ESCAPE '0';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE a LIKE "%a|%b_c" ESCAPE '|';
+id	a	b	c	d
+10	a%b%c	a%b%c	a%b%c	a%b%c
+SELECT * FROM t1 WHERE d LIKE "_a|_c%f" ESCAPE '|';
+id	a	b	c	d
+16	_a_cef	_a_cef	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "中|%" ESCAPE '|';
+id	a	b	c	d
+27	中%	中%	中%	中%
+SELECT * FROM t1 WHERE c LIKE "|%中" ESCAPE '|';
+id	a	b	c	d
+25	%中	%中	%中	%中
+SELECT * FROM t1 WHERE d LIKE "中|%文" ESCAPE '|';
+id	a	b	c	d
+30	中%文	中%文	中%文	中%文
+SELECT * FROM t1 WHERE d LIKE "中文0%" ESCAPE '0';
+id	a	b	c	d
+32	中文%	中文%	中文%	中文%
+SELECT * FROM t1 WHERE a LIKE "a|__" ESCAPE '|';
+id	a	b	c	d
+13	a_b	a_b	a_b	a_b
+SELECT * FROM t1 WHERE b LIKE "|_a" ESCAPE '|';
+id	a	b	c	d
+11	_a	_a	_a	_a
+SELECT * FROM t1 WHERE c LIKE "_a|_c%" ESCAPE '|';
+id	a	b	c	d
+16	_a_cef	_a_cef	_a_cef	_a_cef
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE d LIKE "_a0_c0_e_" ESCAPE '0';
+id	a	b	c	d
+17	_a_c_ef	_a_c_ef	_a_c_ef	_a_c_ef
+SELECT * FROM t1 WHERE b LIKE "|_中" ESCAPE '|';
+id	a	b	c	d
+33	_中	_中	_中	_中
+SELECT * FROM t1 WHERE c LIKE "中|__" ESCAPE '|';
+id	a	b	c	d
+SELECT * FROM t1 WHERE d LIKE "中|_文" ESCAPE '|';
+id	a	b	c	d
+34	中_文	中_文	中_文	中_文
+SELECT * FROM t1 WHERE a LIKE "中_文0%" ESCAPE '0';
+id	a	b	c	d
+35	中_文%	中_文%	中_文%	中_文%
+37	中1文%	中1文%	中1文%	中1文%
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d LONGTEXT) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b, c, d) VALUES ('^a','^a','^a','^a'),('^abc','^abc','^abc','^abc'),('a^bc','a^bc','a^bc','a^bc'),('a^bd','a^bd','a^bd','a^bd'),('ab^c','ab^c','ab^c','ab^c'),('ab^cde','ab^cde','ab^cde','ab^cde'),('\a','\a','\a','\a'),('\\a','\\a','\\a','\\a'),('\\abc','\\abc','\\abc','\\abc'),('a\\bc','a\\bc','a\\bc','a\\bc'),('a\\bd','a\\bd','a\\bd','a\\bd'),('ab\c','ab\c','ab\c','ab\c'),('ab\\cd','ab\\cd','ab\\cd','ab\\cd'),('$a','$a','$a','$a'),('$abc','$abc','$abc','$abc'),('a$bc','a$bc','a$bc','a$bc'),('ab$d','ab$d','ab$d','ab$d'),('ab$c','ab$c','ab$c','ab$c'),('ab$cde','ab$cde','ab$cde','ab$cde'),('*a','*a','*a','*a'),('*abc','*abc','*abc','*abc'),('a*bc','a*bc','a*bc','a*bc'),('a*bd','a*bd','a*bd','a*bd'),('ab*c','ab*c','ab*c','ab*c'),('ab*cde','ab*cde','ab*cde','ab*cde'),('+a','+a','+a','+a'),('+abc','+abc','+abc','+abc'),('a+bc','a+bc','a+bc','a+bc'),('a+bd','a+bd','a+bd','a+bd'),('ab+c','ab+c','ab+c','ab+c'),('ab+cde','ab+cde','ab+cde','ab+cde'),('?a','?a','?a','?a'),('?abc','?abc','?abc','?abc'),('a?bc','a?bc','a?bc','a?bc'),('a?bd','a?bd','a?bd','a?bd'),('ab?c','ab?c','ab?c','ab?c'),('ab?cde','ab?cde','ab?cde','ab?cde'),('{1}a','{1}a','{1}a','{1}a'),('{1,}a','{1,}a','{1,}a','{1,}a'),('{1,2}ac','{1,2}ac','{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc','a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd','a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f','ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f','ab{0,1}f','ab{0,1}f'),('.a','.a','.a','.a'),('.abc','.abc','.abc','.abc'),('a.bc','a.bc','a.bc','a.bc'),('a.bd','a.bd','a.bd','a.bd'),('ab.c','ab.c','ab.c','ab.c'),('ab.cde','ab.cde','ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e','abcd[.\n]e','abcd[.\n]e'),('(a)','(a)','(a)','(a)'),('(a)bc','(a)bc','(a)bc','(a)bc'),('a(b)c','a(b)c','a(b)c','a(b)c'),('a(b)d','a(b)d','a(b)d','a(b)d'),('ab(c)d','ab(c)d','ab(c)d','ab(c)d'),('abc(de)f','abc(de)f','abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c','a|b|c','a|b|c'),('[a]','[a]','[a]','[a]'),('[^a]','[^a]','[^a]','[^a]'),('[ab]c','[ab]c','[ab]c','[ab]c'),('[^ab]c','[^ab]c','[^ab]c','[^ab]c'),('a[bc]','a[bc]','a[bc]','a[bc]'),('a[bd]','a[bd]','a[bd]','a[bd]'),('abc[edf]','abc[edf]','abc[edf]','abc[edf]'),('[a-z]','[a-z]','[a-z]','[a-z]'),('[^a-z]','[^a-z]','[^a-z]','[^a-z]'),('\b','\b','\b','\b'),('a\b','a\b','a\b','a\b'),('ab\bc','ab\bc','ab\bc','ab\bc'),('\B','\B','\B','\B'),('a\B','a\B','a\B','a\B'),('abc\Bdef','abc\Bdef','abc\Bdef','abc\Bdef'),('\c123','\c123','\c123','\c123'),('ab\c456','ab\c456','ab\c456','ab\c456'),('\d1','\d1','\d1','\d1'),('a\d123','a\d123','a\d123','a\d123'),('\D','\D','\D','\D'),('\Dabc','\Dabc','\Dabc','\Dabc'),('ab\Dcd','ab\Dcd','ab\Dcd','ab\Dcd'),('\f','\f','\f','\f'),('\fa','\fa','\fa','\fa'),('\fabcd','\fabcd','\fabcd','\fabcd'),('ab\fcd','ab\fcd','ab\fcd','ab\fcd'),('\n','\n','\n','\n'),('\na','\na','\na','\na'),('\nabc','\nabc','\nabc','\nabc'),('\r','\r','\r','\r'),('\ra','\ra','\ra','\ra'),('\rabc','\rabc','\rabc','\rabc'),('ab\rcd','ab\rcd','ab\rcd','ab\rcd'),('\s','\s','\s','\s'),('\sa','\sa','\sa','\sa'),('\sabc','\sabc','\sabc','\sabc'),('ab\scd','ab\scd','ab\scd','ab\scd'),('\S','\S','\S','\S'),('\Sa','\Sa','\Sa','\Sa'),('\Sabc','\Sabc','\Sabc','\Sabc'),('ab\Scd','ab\Scd','ab\Scd','ab\Scd'),('\t','\t','\t','\t'),('\ta','\ta','\ta','\ta'),('\tabc','\tabc','\tabc','\tabc'),('ab\tcd','ab\tcd','ab\tcd','ab\tcd'),('\v','\v','\v','\v'),('\va','\va','\va','\va'),('\vabc','\vabc','\vabc','\vabc'),('ab\vcd','ab\vcd','ab\vcd','ab\vcd'),('\w','\w','\w','\w'),('\wa','\wa','\wa','\wa'),('\wabc','\wabc','\wabc','\wabc'),('ab\wcd','ab\wcd','ab\wcd','ab\wcd'),('\W','\W','\W','\W'),('\W1','\W1','\W1','\W1'),('\W1abc','\W1abc','\W1abc','\W1abc'),('ab\W1cd','ab\W1cd','ab\W1cd','ab\W1cd'),('\x12','\x12','\x12','\x12'),('\x123','\x123','\x123','\x123'),('123\x456','123\x456','123\x456','123\x456'),('\1','\1','\1','\1'),('\1abc','\1abc','\1abc','\1abc'),('abc(.)\123','abc(.)\123','abc(.)\123','abc(.)\123'),('\u1','\u1','\u1','\u1'),('123\u111','123\u111','123\u111','123\u111'),('a','a','a','a'),('1a','1a','1a','1a'),('4a','4a','4a','4a'),('a1','a1','a1','a1'),('a3','a3','a3','a3'),('a4','a4','a4','a4'),('a6','a6','a6','a6'),('ab','ab','ab','ab'),('ab1','ab1','ab1','ab1'),('abc','abc','abc','abc'),('abc1','abc1','abc1','abc1'),('abc123','abc123','abc123','abc123'),('abc456','abc456','abc456','abc456'),('abd','abd','abd','abd'),('abd1','abd1','abd1','abd1'),('acd','acd','acd','acd'),('acd1','acd1','acd1','acd1'),('abcd','abcd','abcd','abcd'),('abcd1','abcd1','abcd1','abcd1'),('abcde','abcde','abcde','abcde'),('abcde1','abcde1','abcde1','abcde1'),('abcdef','abcdef','abcdef','abcdef'),('1','1','1','1'),('12','12','12','12'),('123','123','123','123'),('1234','1234','1234','1234'),('12345','12345','12345','12345'),('123456','123456','123456','123456');
+SELECT * FROM t1 WHERE a LIKE "^a";
+id	a	b	c	d
+1	^a	^a	^a	^a
+SELECT * FROM t1 WHERE b LIKE "a^bc";
+id	a	b	c	d
+3	a^bc	a^bc	a^bc	a^bc
+SELECT * FROM t1 WHERE c LIKE "\\a";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "a\\bc";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "$a";
+id	a	b	c	d
+14	$a	$a	$a	$a
+SELECT * FROM t1 WHERE b LIKE "a$bc";
+id	a	b	c	d
+16	a$bc	a$bc	a$bc	a$bc
+SELECT * FROM t1 WHERE c LIKE "*a";
+id	a	b	c	d
+20	*a	*a	*a	*a
+SELECT * FROM t1 WHERE d LIKE "a*bc";
+id	a	b	c	d
+22	a*bc	a*bc	a*bc	a*bc
+SELECT * FROM t1 WHERE a LIKE "+a";
+id	a	b	c	d
+26	+a	+a	+a	+a
+SELECT * FROM t1 WHERE b LIKE "a+bc";
+id	a	b	c	d
+28	a+bc	a+bc	a+bc	a+bc
+SELECT * FROM t1 WHERE c LIKE "?a";
+id	a	b	c	d
+32	?a	?a	?a	?a
+SELECT * FROM t1 WHERE d LIKE "a?bc";
+id	a	b	c	d
+34	a?bc	a?bc	a?bc	a?bc
+SELECT * FROM t1 WHERE a LIKE "{1}a";
+id	a	b	c	d
+38	{1}a	{1}a	{1}a	{1}a
+SELECT * FROM t1 WHERE b LIKE "a{1,}bc";
+id	a	b	c	d
+41	a{1,}bc	a{1,}bc	a{1,}bc	a{1,}bc
+SELECT * FROM t1 WHERE c LIKE "a{1,2}bd";
+id	a	b	c	d
+42	a{1,2}bd	a{1,2}bd	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE d LIKE ".a";
+id	a	b	c	d
+45	.a	.a	.a	.a
+SELECT * FROM t1 WHERE a LIKE "a.bc";
+id	a	b	c	d
+47	a.bc	a.bc	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "(a)";
+id	a	b	c	d
+52	(a)	(a)	(a)	(a)
+SELECT * FROM t1 WHERE c LIKE "a(b)c";
+id	a	b	c	d
+54	a(b)c	a(b)c	a(b)c	a(b)c
+SELECT * FROM t1 WHERE d LIKE "ab(?:cd|ef)";
+id	a	b	c	d
+58	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "ab(?=cd|ef|hg)";
+id	a	b	c	d
+59	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)
+SELECT * FROM t1 WHERE b LIKE "abc(?!d|e|f)";
+id	a	b	c	d
+60	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)
+SELECT * FROM t1 WHERE c LIKE "a|b|c";
+id	a	b	c	d
+61	a|b|c	a|b|c	a|b|c	a|b|c
+SELECT * FROM t1 WHERE d LIKE "[ab]c";
+id	a	b	c	d
+64	[ab]c	[ab]c	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "[^ab]c";
+id	a	b	c	d
+65	[^ab]c	[^ab]c	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE b LIKE "[a-z]";
+id	a	b	c	d
+69	[a-z]	[a-z]	[a-z]	[a-z]
+SELECT * FROM t1 WHERE c LIKE "[^a-z]";
+id	a	b	c	d
+70	[^a-z]	[^a-z]	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE d LIKE "\b";
+id	a	b	c	d
+71				
+SELECT * FROM t1 WHERE a LIKE "a\B";
+id	a	b	c	d
+75	aB	aB	aB	aB
+SELECT * FROM t1 WHERE b LIKE "ab\cd";
+id	a	b	c	d
+144	abcd	abcd	abcd	abcd
+SELECT * FROM t1 WHERE c LIKE "\d1";
+id	a	b	c	d
+79	d1	d1	d1	d1
+SELECT * FROM t1 WHERE d LIKE "\D";
+id	a	b	c	d
+81	D	D	D	D
+SELECT * FROM t1 WHERE a LIKE "\fa";
+id	a	b	c	d
+85	fa	fa	fa	fa
+SELECT * FROM t1 WHERE b LIKE "\na";
+id	a	b	c	d
+89	
+a
+a	
+a	
+a	
+SELECT * FROM t1 WHERE c LIKE "\ra";
+id	a	b	c	d
+92	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "\wa";
+id	a	b	c	d
+112	wa	wa	wa	wa
+SELECT * FROM t1 WHERE a LIKE "\W1";
+id	a	b	c	d
+116	W1	W1	W1	W1
+SELECT * FROM t1 WHERE b LIKE "\x12";
+id	a	b	c	d
+119	x12	x12	x12	x12
+SELECT * FROM t1 WHERE c LIKE "\1";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE d LIKE "\12";
+id	a	b	c	d
+150	12	12	12	12
+SELECT * FROM t1 WHERE a LIKE "\u1";
+id	a	b	c	d
+125	u1	u1	u1	u1
+SELECT * FROM t1 WHERE b LIKE "%^a_c%";
+id	a	b	c	d
+2	^abc	^abc	^abc	^abc
+SELECT * FROM t1 WHERE c LIKE "a\\\%";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
+SELECT * FROM t1 WHERE d LIKE "a_$_";
+id	a	b	c	d
+17	ab$d	ab$d	ab$d	ab$d
+18	ab$c	ab$c	ab$c	ab$c
+SELECT * FROM t1 WHERE a LIKE "a_*%";
+id	a	b	c	d
+24	ab*c	ab*c	ab*c	ab*c
+25	ab*cde	ab*cde	ab*cde	ab*cde
+SELECT * FROM t1 WHERE b LIKE "%+_";
+id	a	b	c	d
+26	+a	+a	+a	+a
+30	ab+c	ab+c	ab+c	ab+c
+SELECT * FROM t1 WHERE c LIKE "a?_c%";
+id	a	b	c	d
+34	a?bc	a?bc	a?bc	a?bc
+SELECT * FROM t1 WHERE d LIKE "a{1,%";
+id	a	b	c	d
+41	a{1,}bc	a{1,}bc	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "_._c%";
+id	a	b	c	d
+47	a.bc	a.bc	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "_(_)c%";
+id	a	b	c	d
+54	a(b)c	a(b)c	a(b)c	a(b)c
+SELECT * FROM t1 WHERE c LIKE "_^%]c%";
+id	a	b	c	d
+65	[^ab]c	[^ab]c	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE d LIKE "%a-_]";
+id	a	b	c	d
+69	[a-z]	[a-z]	[a-z]	[a-z]
+70	[^a-z]	[^a-z]	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE a LIKE "%\b";
+id	a	b	c	d
+71				
+72	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "%\d_";
+id	a	b	c	d
+141	abd1	abd1	abd1	abd1
+143	acd1	acd1	acd1	acd1
+145	abcd1	abcd1	abcd1	abcd1
+146	abcde	abcde	abcde	abcde
+19	ab$cde	ab$cde	ab$cde	ab$cde
+25	ab*cde	ab*cde	ab*cde	ab*cde
+31	ab+cde	ab+cde	ab+cde	ab+cde
+37	ab?cde	ab?cde	ab?cde	ab?cde
+50	ab.cde	ab.cde	ab.cde	ab.cde
+6	ab^cde	ab^cde	ab^cde	ab^cde
+67	a[bd]	a[bd]	a[bd]	a[bd]
+79	d1	d1	d1	d1
+SELECT * FROM t1 WHERE c LIKE "\n_";
+id	a	b	c	d
+89	
+a
+a	
+a	
+a	
+SELECT * FROM t1 WHERE d LIKE "%\t_";
+id	a	b	c	d
+104		a		a		a		a
+SELECT * FROM t1 WHERE a LIKE "\ra%";
+id	a	b	c	d
+92	a	a	a	a
+93	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "\s%a__";
+id	a	b	c	d
+97	sabc	sabc	sabc	sabc
+SELECT * FROM t1 WHERE c LIKE "\v%a__";
+id	a	b	c	d
+109	vabc	vabc	vabc	vabc
+SELECT * FROM t1 WHERE d LIKE "\w%a__";
+id	a	b	c	d
+113	wabc	wabc	wabc	wabc
+SELECT * FROM t1 WHERE a LIKE "\x1%";
+id	a	b	c	d
+119	x12	x12	x12	x12
+120	x123	x123	x123	x123
+CREATE INDEX a ON t1(a(16));
+CREATE INDEX b ON t1(b(16));
+CREATE INDEX c ON t1(c(16));
+CREATE INDEX d ON t1(d(16));
+SELECT * FROM t1 WHERE a LIKE "^a";
+id	a	b	c	d
+1	^a	^a	^a	^a
+SELECT * FROM t1 WHERE b LIKE "a^bc";
+id	a	b	c	d
+3	a^bc	a^bc	a^bc	a^bc
+SELECT * FROM t1 WHERE c LIKE "\\a";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "a\\bc";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "$a";
+id	a	b	c	d
+14	$a	$a	$a	$a
+SELECT * FROM t1 WHERE b LIKE "a$bc";
+id	a	b	c	d
+16	a$bc	a$bc	a$bc	a$bc
+SELECT * FROM t1 WHERE c LIKE "*a";
+id	a	b	c	d
+20	*a	*a	*a	*a
+SELECT * FROM t1 WHERE d LIKE "a*bc";
+id	a	b	c	d
+22	a*bc	a*bc	a*bc	a*bc
+SELECT * FROM t1 WHERE a LIKE "+a";
+id	a	b	c	d
+26	+a	+a	+a	+a
+SELECT * FROM t1 WHERE b LIKE "a+bc";
+id	a	b	c	d
+28	a+bc	a+bc	a+bc	a+bc
+SELECT * FROM t1 WHERE c LIKE "?a";
+id	a	b	c	d
+32	?a	?a	?a	?a
+SELECT * FROM t1 WHERE d LIKE "a?bc";
+id	a	b	c	d
+34	a?bc	a?bc	a?bc	a?bc
+SELECT * FROM t1 WHERE a LIKE "{1}a";
+id	a	b	c	d
+38	{1}a	{1}a	{1}a	{1}a
+SELECT * FROM t1 WHERE b LIKE "a{1,}bc";
+id	a	b	c	d
+41	a{1,}bc	a{1,}bc	a{1,}bc	a{1,}bc
+SELECT * FROM t1 WHERE c LIKE "a{1,2}bd";
+id	a	b	c	d
+42	a{1,2}bd	a{1,2}bd	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE d LIKE ".a";
+id	a	b	c	d
+45	.a	.a	.a	.a
+SELECT * FROM t1 WHERE a LIKE "a.bc";
+id	a	b	c	d
+47	a.bc	a.bc	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "(a)";
+id	a	b	c	d
+52	(a)	(a)	(a)	(a)
+SELECT * FROM t1 WHERE c LIKE "a(b)c";
+id	a	b	c	d
+54	a(b)c	a(b)c	a(b)c	a(b)c
+SELECT * FROM t1 WHERE d LIKE "ab(?:cd|ef)";
+id	a	b	c	d
+58	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "ab(?=cd|ef|hg)";
+id	a	b	c	d
+59	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)
+SELECT * FROM t1 WHERE b LIKE "abc(?!d|e|f)";
+id	a	b	c	d
+60	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)
+SELECT * FROM t1 WHERE c LIKE "a|b|c";
+id	a	b	c	d
+61	a|b|c	a|b|c	a|b|c	a|b|c
+SELECT * FROM t1 WHERE d LIKE "[ab]c";
+id	a	b	c	d
+64	[ab]c	[ab]c	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "[^ab]c";
+id	a	b	c	d
+65	[^ab]c	[^ab]c	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE b LIKE "[a-z]";
+id	a	b	c	d
+69	[a-z]	[a-z]	[a-z]	[a-z]
+SELECT * FROM t1 WHERE c LIKE "[^a-z]";
+id	a	b	c	d
+70	[^a-z]	[^a-z]	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE d LIKE "\b";
+id	a	b	c	d
+71				
+SELECT * FROM t1 WHERE a LIKE "a\B";
+id	a	b	c	d
+75	aB	aB	aB	aB
+SELECT * FROM t1 WHERE b LIKE "ab\cd";
+id	a	b	c	d
+144	abcd	abcd	abcd	abcd
+SELECT * FROM t1 WHERE c LIKE "\d1";
+id	a	b	c	d
+79	d1	d1	d1	d1
+SELECT * FROM t1 WHERE d LIKE "\D";
+id	a	b	c	d
+81	D	D	D	D
+SELECT * FROM t1 WHERE a LIKE "\fa";
+id	a	b	c	d
+85	fa	fa	fa	fa
+SELECT * FROM t1 WHERE b LIKE "\na";
+id	a	b	c	d
+89	
+a
+a	
+a	
+a	
+SELECT * FROM t1 WHERE c LIKE "\ra";
+id	a	b	c	d
+92	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "\wa";
+id	a	b	c	d
+112	wa	wa	wa	wa
+SELECT * FROM t1 WHERE a LIKE "\W1";
+id	a	b	c	d
+116	W1	W1	W1	W1
+SELECT * FROM t1 WHERE b LIKE "\x12";
+id	a	b	c	d
+119	x12	x12	x12	x12
+SELECT * FROM t1 WHERE c LIKE "\1";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE d LIKE "\12";
+id	a	b	c	d
+150	12	12	12	12
+SELECT * FROM t1 WHERE a LIKE "\u1";
+id	a	b	c	d
+125	u1	u1	u1	u1
+SELECT * FROM t1 WHERE b LIKE "%^a_c%";
+id	a	b	c	d
+2	^abc	^abc	^abc	^abc
+SELECT * FROM t1 WHERE c LIKE "a\\\%";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
+SELECT * FROM t1 WHERE d LIKE "a_$_";
+id	a	b	c	d
+17	ab$d	ab$d	ab$d	ab$d
+18	ab$c	ab$c	ab$c	ab$c
+SELECT * FROM t1 WHERE a LIKE "a_*%";
+id	a	b	c	d
+24	ab*c	ab*c	ab*c	ab*c
+25	ab*cde	ab*cde	ab*cde	ab*cde
+SELECT * FROM t1 WHERE b LIKE "%+_";
+id	a	b	c	d
+26	+a	+a	+a	+a
+30	ab+c	ab+c	ab+c	ab+c
+SELECT * FROM t1 WHERE c LIKE "a?_c%";
+id	a	b	c	d
+34	a?bc	a?bc	a?bc	a?bc
+SELECT * FROM t1 WHERE d LIKE "a{1,%";
+id	a	b	c	d
+41	a{1,}bc	a{1,}bc	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "_._c%";
+id	a	b	c	d
+47	a.bc	a.bc	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "_(_)c%";
+id	a	b	c	d
+54	a(b)c	a(b)c	a(b)c	a(b)c
+SELECT * FROM t1 WHERE c LIKE "_^%]c%";
+id	a	b	c	d
+65	[^ab]c	[^ab]c	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE d LIKE "%a-_]";
+id	a	b	c	d
+69	[a-z]	[a-z]	[a-z]	[a-z]
+70	[^a-z]	[^a-z]	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE a LIKE "%\b";
+id	a	b	c	d
+71				
+72	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "%\d_";
+id	a	b	c	d
+141	abd1	abd1	abd1	abd1
+143	acd1	acd1	acd1	acd1
+145	abcd1	abcd1	abcd1	abcd1
+146	abcde	abcde	abcde	abcde
+19	ab$cde	ab$cde	ab$cde	ab$cde
+25	ab*cde	ab*cde	ab*cde	ab*cde
+31	ab+cde	ab+cde	ab+cde	ab+cde
+37	ab?cde	ab?cde	ab?cde	ab?cde
+50	ab.cde	ab.cde	ab.cde	ab.cde
+6	ab^cde	ab^cde	ab^cde	ab^cde
+67	a[bd]	a[bd]	a[bd]	a[bd]
+79	d1	d1	d1	d1
+SELECT * FROM t1 WHERE c LIKE "\n_";
+id	a	b	c	d
+89	
+a
+a	
+a	
+a	
+SELECT * FROM t1 WHERE d LIKE "%\t_";
+id	a	b	c	d
+104		a		a		a		a
+SELECT * FROM t1 WHERE a LIKE "\ra%";
+id	a	b	c	d
+92	a	a	a	a
+93	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "\s%a__";
+id	a	b	c	d
+97	sabc	sabc	sabc	sabc
+SELECT * FROM t1 WHERE c LIKE "\v%a__";
+id	a	b	c	d
+109	vabc	vabc	vabc	vabc
+SELECT * FROM t1 WHERE d LIKE "\w%a__";
+id	a	b	c	d
+113	wabc	wabc	wabc	wabc
+SELECT * FROM t1 WHERE a LIKE "\x1%";
+id	a	b	c	d
+119	x12	x12	x12	x12
+120	x123	x123	x123	x123
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a CHAR(32), b VARCHAR(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b) VALUES ('^a','^a'),('^abc','^abc'),('a^bc','a^bc'),('a^bd','a^bd'),('ab^c','ab^c'),('ab^cde','ab^cde'),('\a','\a'),('\\a','\\a'),('\\abc','\\abc'),('a\\bc','a\\bc'),('a\\bd','a\\bd'),('ab\c','ab\c'),('ab\\cd','ab\\cd'),('$a','$a'),('$abc','$abc'),('a$bc','a$bc'),('ab$d','ab$d'),('ab$c','ab$c'),('ab$cde','ab$cde'),('*a','*a'),('*abc','*abc'),('a*bc','a*bc'),('a*bd','a*bd'),('ab*c','ab*c'),('ab*cde','ab*cde'),('+a','+a'),('+abc','+abc'),('a+bc','a+bc'),('a+bd','a+bd'),('ab+c','ab+c'),('ab+cde','ab+cde'),('?a','?a'),('?abc','?abc'),('a?bc','a?bc'),('a?bd','a?bd'),('ab?c','ab?c'),('ab?cde','ab?cde'),('{1}a','{1}a'),('{1,}a','{1,}a'),('{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f'),('.a','.a'),('.abc','.abc'),('a.bc','a.bc'),('a.bd','a.bd'),('ab.c','ab.c'),('ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e'),('(a)','(a)'),('(a)bc','(a)bc'),('a(b)c','a(b)c'),('a(b)d','a(b)d'),('ab(c)d','ab(c)d'),('abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c'),('[a]','[a]'),('[^a]','[^a]'),('[ab]c','[ab]c'),('[^ab]c','[^ab]c'),('a[bc]','a[bc]'),('a[bd]','a[bd]'),('abc[edf]','abc[edf]'),('[a-z]','[a-z]'),('[^a-z]','[^a-z]'),('\b','\b'),('a\b','a\b'),('ab\bc','ab\bc'),('\B','\B'),('a\B','a\B'),('abc\Bdef','abc\Bdef'),('\c123','\c123'),('ab\c456','ab\c456'),('\d1','\d1'),('a\d123','a\d123'),('\D','\D'),('\Dabc','\Dabc'),('ab\Dcd','ab\Dcd'),('\f','\f'),('\fa','\fa'),('\fabcd','\fabcd'),('ab\fcd','ab\fcd'),('\n','\n'),('\na','\na'),('\nabc','\nabc'),('\r','\r'),('\ra','\ra'),('\rabc','\rabc'),('ab\rcd','ab\rcd'),('\s','\s'),('\sa','\sa'),('\sabc','\sabc'),('ab\scd','ab\scd'),('\S','\S'),('\Sa','\Sa'),('\Sabc','\Sabc'),('ab\Scd','ab\Scd'),('\t','\t'),('\ta','\ta'),('\tabc','\tabc'),('ab\tcd','ab\tcd'),('\v','\v'),('\va','\va'),('\vabc','\vabc'),('ab\vcd','ab\vcd'),('\w','\w'),('\wa','\wa'),('\wabc','\wabc'),('ab\wcd','ab\wcd'),('\W','\W'),('\W1','\W1'),('\W1abc','\W1abc'),('ab\W1cd','ab\W1cd'),('\x12','\x12'),('\x123','\x123'),('123\x456','123\x456'),('\1','\1'),('\1abc','\1abc'),('abc(.)\123','abc(.)\123'),('\u1','\u1'),('123\u111','123\u111'),('a','a'),('1a','1a'),('4a','4a'),('a1','a1'),('a3','a3'),('a4','a4'),('a6','a6'),('ab','ab'),('ab1','ab1'),('abc','abc'),('abc1','abc1'),('abc123','abc123'),('abc456','abc456'),('abd','abd'),('abd1','abd1'),('acd','acd'),('acd1','acd1'),('abcd','abcd'),('abcd1','abcd1'),('abcde','abcde'),('abcde1','abcde1'),('abcdef','abcdef'),('1','1'),('12','12'),('123','123'),('1234','1234'),('12345','12345'),('123456','123456');
+SELECT * FROM t1 WHERE a LIKE "^a";
+id	a	b
+1	^a	^a
+SELECT * FROM t1 WHERE b LIKE "a^bc";
+id	a	b
+3	a^bc	a^bc
+SELECT * FROM t1 WHERE a LIKE "\\a";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "a\\bc";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "$a";
+id	a	b
+14	$a	$a
+SELECT * FROM t1 WHERE b LIKE "a$bc";
+id	a	b
+16	a$bc	a$bc
+SELECT * FROM t1 WHERE a LIKE "*a";
+id	a	b
+20	*a	*a
+SELECT * FROM t1 WHERE b LIKE "a*bc";
+id	a	b
+22	a*bc	a*bc
+SELECT * FROM t1 WHERE a LIKE "+a";
+id	a	b
+26	+a	+a
+SELECT * FROM t1 WHERE b LIKE "a+bc";
+id	a	b
+28	a+bc	a+bc
+SELECT * FROM t1 WHERE a LIKE "?a";
+id	a	b
+32	?a	?a
+SELECT * FROM t1 WHERE b LIKE "a?bc";
+id	a	b
+34	a?bc	a?bc
+SELECT * FROM t1 WHERE a LIKE "{1}a";
+id	a	b
+38	{1}a	{1}a
+SELECT * FROM t1 WHERE b LIKE "a{1,}bc";
+id	a	b
+41	a{1,}bc	a{1,}bc
+SELECT * FROM t1 WHERE a LIKE "a{1,2}bd";
+id	a	b
+42	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE b LIKE ".a";
+id	a	b
+45	.a	.a
+SELECT * FROM t1 WHERE a LIKE "a.bc";
+id	a	b
+47	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "(a)";
+id	a	b
+52	(a)	(a)
+SELECT * FROM t1 WHERE a LIKE "a(b)c";
+id	a	b
+54	a(b)c	a(b)c
+SELECT * FROM t1 WHERE b LIKE "ab(?:cd|ef)";
+id	a	b
+58	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "ab(?=cd|ef|hg)";
+id	a	b
+59	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)
+SELECT * FROM t1 WHERE b LIKE "abc(?!d|e|f)";
+id	a	b
+60	abc(?!d|e|f)	abc(?!d|e|f)
+SELECT * FROM t1 WHERE a LIKE "a|b|c";
+id	a	b
+61	a|b|c	a|b|c
+SELECT * FROM t1 WHERE b LIKE "[ab]c";
+id	a	b
+64	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "[^ab]c";
+id	a	b
+65	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE b LIKE "[a-z]";
+id	a	b
+69	[a-z]	[a-z]
+SELECT * FROM t1 WHERE a LIKE "[^a-z]";
+id	a	b
+70	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE b LIKE "\b";
+id	a	b
+71		
+SELECT * FROM t1 WHERE a LIKE "a\B";
+id	a	b
+75	aB	aB
+SELECT * FROM t1 WHERE b LIKE "ab\cd";
+id	a	b
+144	abcd	abcd
+SELECT * FROM t1 WHERE a LIKE "\d1";
+id	a	b
+79	d1	d1
+SELECT * FROM t1 WHERE b LIKE "\D";
+id	a	b
+81	D	D
+SELECT * FROM t1 WHERE a LIKE "\fa";
+id	a	b
+85	fa	fa
+SELECT * FROM t1 WHERE b LIKE "\na";
+id	a	b
+89	
+a
+a	
+SELECT * FROM t1 WHERE a LIKE "\ra";
+id	a	b
+92	a	a
+SELECT * FROM t1 WHERE b LIKE "\wa";
+id	a	b
+112	wa	wa
+SELECT * FROM t1 WHERE a LIKE "\W1";
+id	a	b
+116	W1	W1
+SELECT * FROM t1 WHERE b LIKE "\x12";
+id	a	b
+119	x12	x12
+SELECT * FROM t1 WHERE a LIKE "\1";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE b LIKE "\12";
+id	a	b
+150	12	12
+SELECT * FROM t1 WHERE a LIKE "\u1";
+id	a	b
+125	u1	u1
+SELECT * FROM t1 WHERE b LIKE "%^a_c%";
+id	a	b
+2	^abc	^abc
+SELECT * FROM t1 WHERE a LIKE "a\\\%";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
+SELECT * FROM t1 WHERE b LIKE "a_$_";
+id	a	b
+17	ab$d	ab$d
+18	ab$c	ab$c
+SELECT * FROM t1 WHERE a LIKE "a_*%";
+id	a	b
+24	ab*c	ab*c
+25	ab*cde	ab*cde
+SELECT * FROM t1 WHERE b LIKE "%+_";
+id	a	b
+26	+a	+a
+30	ab+c	ab+c
+SELECT * FROM t1 WHERE a LIKE "a?_c%";
+id	a	b
+34	a?bc	a?bc
+SELECT * FROM t1 WHERE b LIKE "a{1,%";
+id	a	b
+41	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "_._c%";
+id	a	b
+47	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "_(_)c%";
+id	a	b
+54	a(b)c	a(b)c
+SELECT * FROM t1 WHERE a LIKE "_^%]c%";
+id	a	b
+65	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE b LIKE "%a-_]";
+id	a	b
+69	[a-z]	[a-z]
+70	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE a LIKE "%\b";
+id	a	b
+71		
+72	a	a
+SELECT * FROM t1 WHERE b LIKE "%\d_";
+id	a	b
+141	abd1	abd1
+143	acd1	acd1
+145	abcd1	abcd1
+146	abcde	abcde
+19	ab$cde	ab$cde
+25	ab*cde	ab*cde
+31	ab+cde	ab+cde
+37	ab?cde	ab?cde
+50	ab.cde	ab.cde
+6	ab^cde	ab^cde
+67	a[bd]	a[bd]
+79	d1	d1
+SELECT * FROM t1 WHERE a LIKE "\n_";
+id	a	b
+89	
+a
+a	
+SELECT * FROM t1 WHERE b LIKE "%\t_";
+id	a	b
+104		a		a
+SELECT * FROM t1 WHERE a LIKE "\ra%";
+id	a	b
+92	a	a
+93	abc	abc
+SELECT * FROM t1 WHERE b LIKE "\s%a__";
+id	a	b
+97	sabc	sabc
+SELECT * FROM t1 WHERE a LIKE "\v%a__";
+id	a	b
+109	vabc	vabc
+SELECT * FROM t1 WHERE b LIKE "\w%a__";
+id	a	b
+113	wabc	wabc
+SELECT * FROM t1 WHERE a LIKE "\x1%";
+id	a	b
+119	x12	x12
+120	x123	x123
+CREATE INDEX a ON t1(a);
+CREATE INDEX b ON t1(b);
+SELECT * FROM t1 WHERE a LIKE "^a";
+id	a	b
+1	^a	^a
+SELECT * FROM t1 WHERE b LIKE "a^bc";
+id	a	b
+3	a^bc	a^bc
+SELECT * FROM t1 WHERE a LIKE "\\a";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "a\\bc";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "$a";
+id	a	b
+14	$a	$a
+SELECT * FROM t1 WHERE b LIKE "a$bc";
+id	a	b
+16	a$bc	a$bc
+SELECT * FROM t1 WHERE a LIKE "*a";
+id	a	b
+20	*a	*a
+SELECT * FROM t1 WHERE b LIKE "a*bc";
+id	a	b
+22	a*bc	a*bc
+SELECT * FROM t1 WHERE a LIKE "+a";
+id	a	b
+26	+a	+a
+SELECT * FROM t1 WHERE b LIKE "a+bc";
+id	a	b
+28	a+bc	a+bc
+SELECT * FROM t1 WHERE a LIKE "?a";
+id	a	b
+32	?a	?a
+SELECT * FROM t1 WHERE b LIKE "a?bc";
+id	a	b
+34	a?bc	a?bc
+SELECT * FROM t1 WHERE a LIKE "{1}a";
+id	a	b
+38	{1}a	{1}a
+SELECT * FROM t1 WHERE b LIKE "a{1,}bc";
+id	a	b
+41	a{1,}bc	a{1,}bc
+SELECT * FROM t1 WHERE a LIKE "a{1,2}bd";
+id	a	b
+42	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE b LIKE ".a";
+id	a	b
+45	.a	.a
+SELECT * FROM t1 WHERE a LIKE "a.bc";
+id	a	b
+47	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "(a)";
+id	a	b
+52	(a)	(a)
+SELECT * FROM t1 WHERE a LIKE "a(b)c";
+id	a	b
+54	a(b)c	a(b)c
+SELECT * FROM t1 WHERE b LIKE "ab(?:cd|ef)";
+id	a	b
+58	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "ab(?=cd|ef|hg)";
+id	a	b
+59	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)
+SELECT * FROM t1 WHERE b LIKE "abc(?!d|e|f)";
+id	a	b
+60	abc(?!d|e|f)	abc(?!d|e|f)
+SELECT * FROM t1 WHERE a LIKE "a|b|c";
+id	a	b
+61	a|b|c	a|b|c
+SELECT * FROM t1 WHERE b LIKE "[ab]c";
+id	a	b
+64	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "[^ab]c";
+id	a	b
+65	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE b LIKE "[a-z]";
+id	a	b
+69	[a-z]	[a-z]
+SELECT * FROM t1 WHERE a LIKE "[^a-z]";
+id	a	b
+70	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE b LIKE "\b";
+id	a	b
+71		
+SELECT * FROM t1 WHERE a LIKE "a\B";
+id	a	b
+75	aB	aB
+SELECT * FROM t1 WHERE b LIKE "ab\cd";
+id	a	b
+144	abcd	abcd
+SELECT * FROM t1 WHERE a LIKE "\d1";
+id	a	b
+79	d1	d1
+SELECT * FROM t1 WHERE b LIKE "\D";
+id	a	b
+81	D	D
+SELECT * FROM t1 WHERE a LIKE "\fa";
+id	a	b
+85	fa	fa
+SELECT * FROM t1 WHERE b LIKE "\na";
+id	a	b
+89	
+a
+a	
+SELECT * FROM t1 WHERE a LIKE "\ra";
+id	a	b
+92	a	a
+SELECT * FROM t1 WHERE b LIKE "\wa";
+id	a	b
+112	wa	wa
+SELECT * FROM t1 WHERE a LIKE "\W1";
+id	a	b
+116	W1	W1
+SELECT * FROM t1 WHERE b LIKE "\x12";
+id	a	b
+119	x12	x12
+SELECT * FROM t1 WHERE a LIKE "\1";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE b LIKE "\12";
+id	a	b
+150	12	12
+SELECT * FROM t1 WHERE a LIKE "\u1";
+id	a	b
+125	u1	u1
+SELECT * FROM t1 WHERE b LIKE "%^a_c%";
+id	a	b
+2	^abc	^abc
+SELECT * FROM t1 WHERE a LIKE "a\\\%";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
+SELECT * FROM t1 WHERE b LIKE "a_$_";
+id	a	b
+17	ab$d	ab$d
+18	ab$c	ab$c
+SELECT * FROM t1 WHERE a LIKE "a_*%";
+id	a	b
+24	ab*c	ab*c
+25	ab*cde	ab*cde
+SELECT * FROM t1 WHERE b LIKE "%+_";
+id	a	b
+26	+a	+a
+30	ab+c	ab+c
+SELECT * FROM t1 WHERE a LIKE "a?_c%";
+id	a	b
+34	a?bc	a?bc
+SELECT * FROM t1 WHERE b LIKE "a{1,%";
+id	a	b
+41	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "_._c%";
+id	a	b
+47	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "_(_)c%";
+id	a	b
+54	a(b)c	a(b)c
+SELECT * FROM t1 WHERE a LIKE "_^%]c%";
+id	a	b
+65	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE b LIKE "%a-_]";
+id	a	b
+69	[a-z]	[a-z]
+70	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE a LIKE "%\b";
+id	a	b
+71		
+72	a	a
+SELECT * FROM t1 WHERE b LIKE "%\d_";
+id	a	b
+141	abd1	abd1
+143	acd1	acd1
+145	abcd1	abcd1
+146	abcde	abcde
+19	ab$cde	ab$cde
+25	ab*cde	ab*cde
+31	ab+cde	ab+cde
+37	ab?cde	ab?cde
+50	ab.cde	ab.cde
+6	ab^cde	ab^cde
+67	a[bd]	a[bd]
+79	d1	d1
+SELECT * FROM t1 WHERE a LIKE "\n_";
+id	a	b
+89	
+a
+a	
+SELECT * FROM t1 WHERE b LIKE "%\t_";
+id	a	b
+104		a		a
+SELECT * FROM t1 WHERE a LIKE "\ra%";
+id	a	b
+92	a	a
+93	abc	abc
+SELECT * FROM t1 WHERE b LIKE "\s%a__";
+id	a	b
+97	sabc	sabc
+SELECT * FROM t1 WHERE a LIKE "\v%a__";
+id	a	b
+109	vabc	vabc
+SELECT * FROM t1 WHERE b LIKE "\w%a__";
+id	a	b
+113	wabc	wabc
+SELECT * FROM t1 WHERE a LIKE "\x1%";
+id	a	b
+119	x12	x12
+120	x123	x123
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a BINARY(32), b VARBINARY(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b) VALUES ('^a','^a'),('^abc','^abc'),('a^bc','a^bc'),('a^bd','a^bd'),('ab^c','ab^c'),('ab^cde','ab^cde'),('\a','\a'),('\\a','\\a'),('\\abc','\\abc'),('a\\bc','a\\bc'),('a\\bd','a\\bd'),('ab\c','ab\c'),('ab\\cd','ab\\cd'),('$a','$a'),('$abc','$abc'),('a$bc','a$bc'),('ab$d','ab$d'),('ab$c','ab$c'),('ab$cde','ab$cde'),('*a','*a'),('*abc','*abc'),('a*bc','a*bc'),('a*bd','a*bd'),('ab*c','ab*c'),('ab*cde','ab*cde'),('+a','+a'),('+abc','+abc'),('a+bc','a+bc'),('a+bd','a+bd'),('ab+c','ab+c'),('ab+cde','ab+cde'),('?a','?a'),('?abc','?abc'),('a?bc','a?bc'),('a?bd','a?bd'),('ab?c','ab?c'),('ab?cde','ab?cde'),('{1}a','{1}a'),('{1,}a','{1,}a'),('{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f'),('.a','.a'),('.abc','.abc'),('a.bc','a.bc'),('a.bd','a.bd'),('ab.c','ab.c'),('ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e'),('(a)','(a)'),('(a)bc','(a)bc'),('a(b)c','a(b)c'),('a(b)d','a(b)d'),('ab(c)d','ab(c)d'),('abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c'),('[a]','[a]'),('[^a]','[^a]'),('[ab]c','[ab]c'),('[^ab]c','[^ab]c'),('a[bc]','a[bc]'),('a[bd]','a[bd]'),('abc[edf]','abc[edf]'),('[a-z]','[a-z]'),('[^a-z]','[^a-z]'),('\b','\b'),('a\b','a\b'),('ab\bc','ab\bc'),('\B','\B'),('a\B','a\B'),('abc\Bdef','abc\Bdef'),('\c123','\c123'),('ab\c456','ab\c456'),('\d1','\d1'),('a\d123','a\d123'),('\D','\D'),('\Dabc','\Dabc'),('ab\Dcd','ab\Dcd'),('\f','\f'),('\fa','\fa'),('\fabcd','\fabcd'),('ab\fcd','ab\fcd'),('\n','\n'),('\na','\na'),('\nabc','\nabc'),('\r','\r'),('\ra','\ra'),('\rabc','\rabc'),('ab\rcd','ab\rcd'),('\s','\s'),('\sa','\sa'),('\sabc','\sabc'),('ab\scd','ab\scd'),('\S','\S'),('\Sa','\Sa'),('\Sabc','\Sabc'),('ab\Scd','ab\Scd'),('\t','\t'),('\ta','\ta'),('\tabc','\tabc'),('ab\tcd','ab\tcd'),('\v','\v'),('\va','\va'),('\vabc','\vabc'),('ab\vcd','ab\vcd'),('\w','\w'),('\wa','\wa'),('\wabc','\wabc'),('ab\wcd','ab\wcd'),('\W','\W'),('\W1','\W1'),('\W1abc','\W1abc'),('ab\W1cd','ab\W1cd'),('\x12','\x12'),('\x123','\x123'),('123\x456','123\x456'),('\1','\1'),('\1abc','\1abc'),('abc(.)\123','abc(.)\123'),('\u1','\u1'),('123\u111','123\u111'),('a','a'),('1a','1a'),('4a','4a'),('a1','a1'),('a3','a3'),('a4','a4'),('a6','a6'),('ab','ab'),('ab1','ab1'),('abc','abc'),('abc1','abc1'),('abc123','abc123'),('abc456','abc456'),('abd','abd'),('abd1','abd1'),('acd','acd'),('acd1','acd1'),('abcd','abcd'),('abcd1','abcd1'),('abcde','abcde'),('abcde1','abcde1'),('abcdef','abcdef'),('1','1'),('12','12'),('123','123'),('1234','1234'),('12345','12345'),('123456','123456');
+SELECT * FROM t1 WHERE a LIKE "^a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a^bc" ORDER BY b;
+id	a	b
+3	a^bc                            	a^bc
+SELECT * FROM t1 WHERE a LIKE "\\a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a\\bc" ORDER BY b;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE a LIKE "$a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a$bc" ORDER BY b;
+id	a	b
+16	a$bc                            	a$bc
+SELECT * FROM t1 WHERE a LIKE "*a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a*bc" ORDER BY b;
+id	a	b
+22	a*bc                            	a*bc
+SELECT * FROM t1 WHERE a LIKE "+a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a+bc" ORDER BY b;
+id	a	b
+28	a+bc                            	a+bc
+SELECT * FROM t1 WHERE a LIKE "?a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a?bc" ORDER BY b;
+id	a	b
+34	a?bc                            	a?bc
+SELECT * FROM t1 WHERE a LIKE "{1}a" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "a{1,}bc" ORDER BY b;
+id	a	b
+41	a{1,}bc                         	a{1,}bc
+SELECT * FROM t1 WHERE a LIKE "a{1,2}bd" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE ".a" ORDER BY b;
+id	a	b
+45	.a                              	.a
+SELECT * FROM t1 WHERE a LIKE "a.bc" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "(a)" ORDER BY b;
+id	a	b
+52	(a)                             	(a)
+SELECT * FROM t1 WHERE a LIKE "a(b)c" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "ab(?:cd|ef)" ORDER BY b;
+id	a	b
+58	ab(?:cd|ef)                     	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "ab(?=cd|ef|hg)" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "abc(?!d|e|f)" ORDER BY b;
+id	a	b
+60	abc(?!d|e|f)                    	abc(?!d|e|f)
+SELECT * FROM t1 WHERE a LIKE "a|b|c" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "[ab]c" ORDER BY b;
+id	a	b
+64	[ab]c                           	[ab]c
+SELECT * FROM t1 WHERE a LIKE "[^ab]c" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "[a-z]" ORDER BY b;
+id	a	b
+69	[a-z]                           	[a-z]
+SELECT * FROM t1 WHERE a LIKE "[^a-z]" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "\b" ORDER BY b;
+id	a	b
+71	                               	
+SELECT * FROM t1 WHERE a LIKE "a\B" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "ab\cd" ORDER BY b;
+id	a	b
+144	abcd                            	abcd
+SELECT * FROM t1 WHERE a LIKE "\d1" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "\D" ORDER BY b;
+id	a	b
+81	D                               	D
+SELECT * FROM t1 WHERE a LIKE "\fa" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "\na" ORDER BY b;
+id	a	b
+89	
+a                              	
+a
+SELECT * FROM t1 WHERE a LIKE "\ra" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "\wa" ORDER BY b;
+id	a	b
+112	wa                              	wa
+SELECT * FROM t1 WHERE a LIKE "\W1" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "\x12" ORDER BY b;
+id	a	b
+119	x12                             	x12
+SELECT * FROM t1 WHERE a LIKE "\1" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "\12" ORDER BY b;
+id	a	b
+150	12                              	12
+SELECT * FROM t1 WHERE a LIKE "\u1" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "%^a_c%" ORDER BY b;
+id	a	b
+2	^abc                            	^abc
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ORDER BY a;
+id	a	b
+10	a\bc                            	a\bc
+11	a\bd                            	a\bd
+SELECT * FROM t1 WHERE b LIKE "a_$_" ORDER BY b;
+id	a	b
+18	ab$c                            	ab$c
+17	ab$d                            	ab$d
+SELECT * FROM t1 WHERE a LIKE "a_*%" ORDER BY a;
+id	a	b
+24	ab*c                            	ab*c
+25	ab*cde                          	ab*cde
+SELECT * FROM t1 WHERE b LIKE "%+_" ORDER BY b;
+id	a	b
+26	+a                              	+a
+30	ab+c                            	ab+c
+SELECT * FROM t1 WHERE a LIKE "a?_c%" ORDER BY a;
+id	a	b
+34	a?bc                            	a?bc
+SELECT * FROM t1 WHERE b LIKE "a{1,%" ORDER BY b;
+id	a	b
+42	a{1,2}bd                        	a{1,2}bd
+41	a{1,}bc                         	a{1,}bc
+SELECT * FROM t1 WHERE a LIKE "_._c%" ORDER BY a;
+id	a	b
+47	a.bc                            	a.bc
+SELECT * FROM t1 WHERE b LIKE "_(_)c%" ORDER BY b;
+id	a	b
+54	a(b)c                           	a(b)c
+SELECT * FROM t1 WHERE a LIKE "_^%]c%" ORDER BY a;
+id	a	b
+65	[^ab]c                          	[^ab]c
+SELECT * FROM t1 WHERE b LIKE "%a-_]" ORDER BY b;
+id	a	b
+70	[^a-z]                          	[^a-z]
+69	[a-z]                           	[a-z]
+SELECT * FROM t1 WHERE a LIKE "%\b" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "%\d_" ORDER BY b;
+id	a	b
+67	a[bd]                           	a[bd]
+19	ab$cde                          	ab$cde
+25	ab*cde                          	ab*cde
+31	ab+cde                          	ab+cde
+50	ab.cde                          	ab.cde
+37	ab?cde                          	ab?cde
+6	ab^cde                          	ab^cde
+145	abcd1                           	abcd1
+146	abcde                           	abcde
+141	abd1                            	abd1
+143	acd1                            	acd1
+79	d1                              	d1
+SELECT * FROM t1 WHERE a LIKE "\n_" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "%\t_" ORDER BY b;
+id	a	b
+104		a                              		a
+SELECT * FROM t1 WHERE a LIKE "\ra%" ORDER BY a;
+id	a	b
+92	a                              	a
+93	abc                            	abc
+SELECT * FROM t1 WHERE b LIKE "\s%a__" ORDER BY b;
+id	a	b
+97	sabc                            	sabc
+SELECT * FROM t1 WHERE a LIKE "\v%a__" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE b LIKE "\w%a__" ORDER BY b;
+id	a	b
+113	wabc                            	wabc
+SELECT * FROM t1 WHERE a LIKE "\x1%" ORDER BY a;
+id	a	b
+119	x12                             	x12
+120	x123                            	x123
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a TINYBLOB, b MEDIUMBLOB, c BLOB, d LONGBLOB) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b, c, d) VALUES ('^a','^a','^a','^a'),('^abc','^abc','^abc','^abc'),('a^bc','a^bc','a^bc','a^bc'),('a^bd','a^bd','a^bd','a^bd'),('ab^c','ab^c','ab^c','ab^c'),('ab^cde','ab^cde','ab^cde','ab^cde'),('\a','\a','\a','\a'),('\\a','\\a','\\a','\\a'),('\\abc','\\abc','\\abc','\\abc'),('a\\bc','a\\bc','a\\bc','a\\bc'),('a\\bd','a\\bd','a\\bd','a\\bd'),('ab\c','ab\c','ab\c','ab\c'),('ab\\cd','ab\\cd','ab\\cd','ab\\cd'),('$a','$a','$a','$a'),('$abc','$abc','$abc','$abc'),('a$bc','a$bc','a$bc','a$bc'),('ab$d','ab$d','ab$d','ab$d'),('ab$c','ab$c','ab$c','ab$c'),('ab$cde','ab$cde','ab$cde','ab$cde'),('*a','*a','*a','*a'),('*abc','*abc','*abc','*abc'),('a*bc','a*bc','a*bc','a*bc'),('a*bd','a*bd','a*bd','a*bd'),('ab*c','ab*c','ab*c','ab*c'),('ab*cde','ab*cde','ab*cde','ab*cde'),('+a','+a','+a','+a'),('+abc','+abc','+abc','+abc'),('a+bc','a+bc','a+bc','a+bc'),('a+bd','a+bd','a+bd','a+bd'),('ab+c','ab+c','ab+c','ab+c'),('ab+cde','ab+cde','ab+cde','ab+cde'),('?a','?a','?a','?a'),('?abc','?abc','?abc','?abc'),('a?bc','a?bc','a?bc','a?bc'),('a?bd','a?bd','a?bd','a?bd'),('ab?c','ab?c','ab?c','ab?c'),('ab?cde','ab?cde','ab?cde','ab?cde'),('{1}a','{1}a','{1}a','{1}a'),('{1,}a','{1,}a','{1,}a','{1,}a'),('{1,2}ac','{1,2}ac','{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc','a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd','a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f','ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f','ab{0,1}f','ab{0,1}f'),('.a','.a','.a','.a'),('.abc','.abc','.abc','.abc'),('a.bc','a.bc','a.bc','a.bc'),('a.bd','a.bd','a.bd','a.bd'),('ab.c','ab.c','ab.c','ab.c'),('ab.cde','ab.cde','ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e','abcd[.\n]e','abcd[.\n]e'),('(a)','(a)','(a)','(a)'),('(a)bc','(a)bc','(a)bc','(a)bc'),('a(b)c','a(b)c','a(b)c','a(b)c'),('a(b)d','a(b)d','a(b)d','a(b)d'),('ab(c)d','ab(c)d','ab(c)d','ab(c)d'),('abc(de)f','abc(de)f','abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c','a|b|c','a|b|c'),('[a]','[a]','[a]','[a]'),('[^a]','[^a]','[^a]','[^a]'),('[ab]c','[ab]c','[ab]c','[ab]c'),('[^ab]c','[^ab]c','[^ab]c','[^ab]c'),('a[bc]','a[bc]','a[bc]','a[bc]'),('a[bd]','a[bd]','a[bd]','a[bd]'),('abc[edf]','abc[edf]','abc[edf]','abc[edf]'),('[a-z]','[a-z]','[a-z]','[a-z]'),('[^a-z]','[^a-z]','[^a-z]','[^a-z]'),('\b','\b','\b','\b'),('a\b','a\b','a\b','a\b'),('ab\bc','ab\bc','ab\bc','ab\bc'),('\B','\B','\B','\B'),('a\B','a\B','a\B','a\B'),('abc\Bdef','abc\Bdef','abc\Bdef','abc\Bdef'),('\c123','\c123','\c123','\c123'),('ab\c456','ab\c456','ab\c456','ab\c456'),('\d1','\d1','\d1','\d1'),('a\d123','a\d123','a\d123','a\d123'),('\D','\D','\D','\D'),('\Dabc','\Dabc','\Dabc','\Dabc'),('ab\Dcd','ab\Dcd','ab\Dcd','ab\Dcd'),('\f','\f','\f','\f'),('\fa','\fa','\fa','\fa'),('\fabcd','\fabcd','\fabcd','\fabcd'),('ab\fcd','ab\fcd','ab\fcd','ab\fcd'),('\n','\n','\n','\n'),('\na','\na','\na','\na'),('\nabc','\nabc','\nabc','\nabc'),('\r','\r','\r','\r'),('\ra','\ra','\ra','\ra'),('\rabc','\rabc','\rabc','\rabc'),('ab\rcd','ab\rcd','ab\rcd','ab\rcd'),('\s','\s','\s','\s'),('\sa','\sa','\sa','\sa'),('\sabc','\sabc','\sabc','\sabc'),('ab\scd','ab\scd','ab\scd','ab\scd'),('\S','\S','\S','\S'),('\Sa','\Sa','\Sa','\Sa'),('\Sabc','\Sabc','\Sabc','\Sabc'),('ab\Scd','ab\Scd','ab\Scd','ab\Scd'),('\t','\t','\t','\t'),('\ta','\ta','\ta','\ta'),('\tabc','\tabc','\tabc','\tabc'),('ab\tcd','ab\tcd','ab\tcd','ab\tcd'),('\v','\v','\v','\v'),('\va','\va','\va','\va'),('\vabc','\vabc','\vabc','\vabc'),('ab\vcd','ab\vcd','ab\vcd','ab\vcd'),('\w','\w','\w','\w'),('\wa','\wa','\wa','\wa'),('\wabc','\wabc','\wabc','\wabc'),('ab\wcd','ab\wcd','ab\wcd','ab\wcd'),('\W','\W','\W','\W'),('\W1','\W1','\W1','\W1'),('\W1abc','\W1abc','\W1abc','\W1abc'),('ab\W1cd','ab\W1cd','ab\W1cd','ab\W1cd'),('\x12','\x12','\x12','\x12'),('\x123','\x123','\x123','\x123'),('123\x456','123\x456','123\x456','123\x456'),('\1','\1','\1','\1'),('\1abc','\1abc','\1abc','\1abc'),('abc(.)\123','abc(.)\123','abc(.)\123','abc(.)\123'),('\u1','\u1','\u1','\u1'),('123\u111','123\u111','123\u111','123\u111'),('a','a','a','a'),('1a','1a','1a','1a'),('4a','4a','4a','4a'),('a1','a1','a1','a1'),('a3','a3','a3','a3'),('a4','a4','a4','a4'),('a6','a6','a6','a6'),('ab','ab','ab','ab'),('ab1','ab1','ab1','ab1'),('abc','abc','abc','abc'),('abc1','abc1','abc1','abc1'),('abc123','abc123','abc123','abc123'),('abc456','abc456','abc456','abc456'),('abd','abd','abd','abd'),('abd1','abd1','abd1','abd1'),('acd','acd','acd','acd'),('acd1','acd1','acd1','acd1'),('abcd','abcd','abcd','abcd'),('abcd1','abcd1','abcd1','abcd1'),('abcde','abcde','abcde','abcde'),('abcde1','abcde1','abcde1','abcde1'),('abcdef','abcdef','abcdef','abcdef'),('1','1','1','1'),('12','12','12','12'),('123','123','123','123'),('1234','1234','1234','1234'),('12345','12345','12345','12345'),('123456','123456','123456','123456');
+SELECT * FROM t1 WHERE a LIKE "^a";
+id	a	b	c	d
+1	^a	^a	^a	^a
+SELECT * FROM t1 WHERE b LIKE "a^bc";
+id	a	b	c	d
+3	a^bc	a^bc	a^bc	a^bc
+SELECT * FROM t1 WHERE c LIKE "\\a";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "a\\bc";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "$a";
+id	a	b	c	d
+14	$a	$a	$a	$a
+SELECT * FROM t1 WHERE b LIKE "a$bc";
+id	a	b	c	d
+16	a$bc	a$bc	a$bc	a$bc
+SELECT * FROM t1 WHERE c LIKE "*a";
+id	a	b	c	d
+20	*a	*a	*a	*a
+SELECT * FROM t1 WHERE d LIKE "a*bc";
+id	a	b	c	d
+22	a*bc	a*bc	a*bc	a*bc
+SELECT * FROM t1 WHERE a LIKE "+a";
+id	a	b	c	d
+26	+a	+a	+a	+a
+SELECT * FROM t1 WHERE b LIKE "a+bc";
+id	a	b	c	d
+28	a+bc	a+bc	a+bc	a+bc
+SELECT * FROM t1 WHERE c LIKE "?a";
+id	a	b	c	d
+32	?a	?a	?a	?a
+SELECT * FROM t1 WHERE d LIKE "a?bc";
+id	a	b	c	d
+34	a?bc	a?bc	a?bc	a?bc
+SELECT * FROM t1 WHERE a LIKE "{1}a";
+id	a	b	c	d
+38	{1}a	{1}a	{1}a	{1}a
+SELECT * FROM t1 WHERE b LIKE "a{1,}bc";
+id	a	b	c	d
+41	a{1,}bc	a{1,}bc	a{1,}bc	a{1,}bc
+SELECT * FROM t1 WHERE c LIKE "a{1,2}bd";
+id	a	b	c	d
+42	a{1,2}bd	a{1,2}bd	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE d LIKE ".a";
+id	a	b	c	d
+45	.a	.a	.a	.a
+SELECT * FROM t1 WHERE a LIKE "a.bc";
+id	a	b	c	d
+47	a.bc	a.bc	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "(a)";
+id	a	b	c	d
+52	(a)	(a)	(a)	(a)
+SELECT * FROM t1 WHERE c LIKE "a(b)c";
+id	a	b	c	d
+54	a(b)c	a(b)c	a(b)c	a(b)c
+SELECT * FROM t1 WHERE d LIKE "ab(?:cd|ef)";
+id	a	b	c	d
+58	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "ab(?=cd|ef|hg)";
+id	a	b	c	d
+59	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)	ab(?=cd|ef|hg)
+SELECT * FROM t1 WHERE b LIKE "abc(?!d|e|f)";
+id	a	b	c	d
+60	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)
+SELECT * FROM t1 WHERE c LIKE "a|b|c";
+id	a	b	c	d
+61	a|b|c	a|b|c	a|b|c	a|b|c
+SELECT * FROM t1 WHERE d LIKE "[ab]c";
+id	a	b	c	d
+64	[ab]c	[ab]c	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "[^ab]c";
+id	a	b	c	d
+65	[^ab]c	[^ab]c	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE b LIKE "[a-z]";
+id	a	b	c	d
+69	[a-z]	[a-z]	[a-z]	[a-z]
+SELECT * FROM t1 WHERE c LIKE "[^a-z]";
+id	a	b	c	d
+70	[^a-z]	[^a-z]	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE d LIKE "\b";
+id	a	b	c	d
+71				
+SELECT * FROM t1 WHERE a LIKE "a\B";
+id	a	b	c	d
+75	aB	aB	aB	aB
+SELECT * FROM t1 WHERE b LIKE "ab\cd";
+id	a	b	c	d
+144	abcd	abcd	abcd	abcd
+SELECT * FROM t1 WHERE c LIKE "\d1";
+id	a	b	c	d
+79	d1	d1	d1	d1
+SELECT * FROM t1 WHERE d LIKE "\D";
+id	a	b	c	d
+81	D	D	D	D
+SELECT * FROM t1 WHERE a LIKE "\fa";
+id	a	b	c	d
+85	fa	fa	fa	fa
+SELECT * FROM t1 WHERE b LIKE "\na";
+id	a	b	c	d
+89	
+a
+a	
+a	
+a	
+SELECT * FROM t1 WHERE c LIKE "\ra";
+id	a	b	c	d
+92	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "\wa";
+id	a	b	c	d
+112	wa	wa	wa	wa
+SELECT * FROM t1 WHERE a LIKE "\W1";
+id	a	b	c	d
+116	W1	W1	W1	W1
+SELECT * FROM t1 WHERE b LIKE "\x12";
+id	a	b	c	d
+119	x12	x12	x12	x12
+SELECT * FROM t1 WHERE c LIKE "\1";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE d LIKE "\12";
+id	a	b	c	d
+150	12	12	12	12
+SELECT * FROM t1 WHERE a LIKE "\u1";
+id	a	b	c	d
+125	u1	u1	u1	u1
+SELECT * FROM t1 WHERE b LIKE "%^a_c%";
+id	a	b	c	d
+2	^abc	^abc	^abc	^abc
+SELECT * FROM t1 WHERE c LIKE "a\\\%";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
+SELECT * FROM t1 WHERE d LIKE "a_$_";
+id	a	b	c	d
+17	ab$d	ab$d	ab$d	ab$d
+18	ab$c	ab$c	ab$c	ab$c
+SELECT * FROM t1 WHERE a LIKE "a_*%";
+id	a	b	c	d
+24	ab*c	ab*c	ab*c	ab*c
+25	ab*cde	ab*cde	ab*cde	ab*cde
+SELECT * FROM t1 WHERE b LIKE "%+_";
+id	a	b	c	d
+26	+a	+a	+a	+a
+30	ab+c	ab+c	ab+c	ab+c
+SELECT * FROM t1 WHERE c LIKE "a?_c%";
+id	a	b	c	d
+34	a?bc	a?bc	a?bc	a?bc
+SELECT * FROM t1 WHERE d LIKE "a{1,%";
+id	a	b	c	d
+41	a{1,}bc	a{1,}bc	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "_._c%";
+id	a	b	c	d
+47	a.bc	a.bc	a.bc	a.bc
+SELECT * FROM t1 WHERE b LIKE "_(_)c%";
+id	a	b	c	d
+54	a(b)c	a(b)c	a(b)c	a(b)c
+SELECT * FROM t1 WHERE c LIKE "_^%]c%";
+id	a	b	c	d
+65	[^ab]c	[^ab]c	[^ab]c	[^ab]c
+SELECT * FROM t1 WHERE d LIKE "%a-_]";
+id	a	b	c	d
+69	[a-z]	[a-z]	[a-z]	[a-z]
+70	[^a-z]	[^a-z]	[^a-z]	[^a-z]
+SELECT * FROM t1 WHERE a LIKE "%\b";
+id	a	b	c	d
+71				
+72	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "%\d_";
+id	a	b	c	d
+141	abd1	abd1	abd1	abd1
+143	acd1	acd1	acd1	acd1
+145	abcd1	abcd1	abcd1	abcd1
+146	abcde	abcde	abcde	abcde
+19	ab$cde	ab$cde	ab$cde	ab$cde
+25	ab*cde	ab*cde	ab*cde	ab*cde
+31	ab+cde	ab+cde	ab+cde	ab+cde
+37	ab?cde	ab?cde	ab?cde	ab?cde
+50	ab.cde	ab.cde	ab.cde	ab.cde
+6	ab^cde	ab^cde	ab^cde	ab^cde
+67	a[bd]	a[bd]	a[bd]	a[bd]
+79	d1	d1	d1	d1
+SELECT * FROM t1 WHERE c LIKE "\n_";
+id	a	b	c	d
+89	
+a
+a	
+a	
+a	
+SELECT * FROM t1 WHERE d LIKE "%\t_";
+id	a	b	c	d
+104		a		a		a		a
+SELECT * FROM t1 WHERE a LIKE "\ra%";
+id	a	b	c	d
+92	a	a	a	a
+93	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "\s%a__";
+id	a	b	c	d
+97	sabc	sabc	sabc	sabc
+SELECT * FROM t1 WHERE c LIKE "\v%a__";
+id	a	b	c	d
+109	vabc	vabc	vabc	vabc
+SELECT * FROM t1 WHERE d LIKE "\w%a__";
+id	a	b	c	d
+113	wabc	wabc	wabc	wabc
+SELECT * FROM t1 WHERE a LIKE "\x1%";
+id	a	b	c	d
+119	x12	x12	x12	x12
+120	x123	x123	x123	x123
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d LONGTEXT) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b, c, d) VALUES ('^a','^a','^a','^a'),('^abc','^abc','^abc','^abc'),('a^bc','a^bc','a^bc','a^bc'),('a^bd','a^bd','a^bd','a^bd'),('ab^c','ab^c','ab^c','ab^c'),('ab^cde','ab^cde','ab^cde','ab^cde'),('\a','\a','\a','\a'),('\\a','\\a','\\a','\\a'),('\\abc','\\abc','\\abc','\\abc'),('a\\bc','a\\bc','a\\bc','a\\bc'),('a\\bd','a\\bd','a\\bd','a\\bd'),('ab\c','ab\c','ab\c','ab\c'),('ab\\cd','ab\\cd','ab\\cd','ab\\cd'),('$a','$a','$a','$a'),('$abc','$abc','$abc','$abc'),('a$bc','a$bc','a$bc','a$bc'),('ab$d','ab$d','ab$d','ab$d'),('ab$c','ab$c','ab$c','ab$c'),('ab$cde','ab$cde','ab$cde','ab$cde'),('*a','*a','*a','*a'),('*abc','*abc','*abc','*abc'),('a*bc','a*bc','a*bc','a*bc'),('a*bd','a*bd','a*bd','a*bd'),('ab*c','ab*c','ab*c','ab*c'),('ab*cde','ab*cde','ab*cde','ab*cde'),('+a','+a','+a','+a'),('+abc','+abc','+abc','+abc'),('a+bc','a+bc','a+bc','a+bc'),('a+bd','a+bd','a+bd','a+bd'),('ab+c','ab+c','ab+c','ab+c'),('ab+cde','ab+cde','ab+cde','ab+cde'),('?a','?a','?a','?a'),('?abc','?abc','?abc','?abc'),('a?bc','a?bc','a?bc','a?bc'),('a?bd','a?bd','a?bd','a?bd'),('ab?c','ab?c','ab?c','ab?c'),('ab?cde','ab?cde','ab?cde','ab?cde'),('{1}a','{1}a','{1}a','{1}a'),('{1,}a','{1,}a','{1,}a','{1,}a'),('{1,2}ac','{1,2}ac','{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc','a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd','a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f','ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f','ab{0,1}f','ab{0,1}f'),('.a','.a','.a','.a'),('.abc','.abc','.abc','.abc'),('a.bc','a.bc','a.bc','a.bc'),('a.bd','a.bd','a.bd','a.bd'),('ab.c','ab.c','ab.c','ab.c'),('ab.cde','ab.cde','ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e','abcd[.\n]e','abcd[.\n]e'),('(a)','(a)','(a)','(a)'),('(a)bc','(a)bc','(a)bc','(a)bc'),('a(b)c','a(b)c','a(b)c','a(b)c'),('a(b)d','a(b)d','a(b)d','a(b)d'),('ab(c)d','ab(c)d','ab(c)d','ab(c)d'),('abc(de)f','abc(de)f','abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c','a|b|c','a|b|c'),('[a]','[a]','[a]','[a]'),('[^a]','[^a]','[^a]','[^a]'),('[ab]c','[ab]c','[ab]c','[ab]c'),('[^ab]c','[^ab]c','[^ab]c','[^ab]c'),('a[bc]','a[bc]','a[bc]','a[bc]'),('a[bd]','a[bd]','a[bd]','a[bd]'),('abc[edf]','abc[edf]','abc[edf]','abc[edf]'),('[a-z]','[a-z]','[a-z]','[a-z]'),('[^a-z]','[^a-z]','[^a-z]','[^a-z]'),('\b','\b','\b','\b'),('a\b','a\b','a\b','a\b'),('ab\bc','ab\bc','ab\bc','ab\bc'),('\B','\B','\B','\B'),('a\B','a\B','a\B','a\B'),('abc\Bdef','abc\Bdef','abc\Bdef','abc\Bdef'),('\c123','\c123','\c123','\c123'),('ab\c456','ab\c456','ab\c456','ab\c456'),('\d1','\d1','\d1','\d1'),('a\d123','a\d123','a\d123','a\d123'),('\D','\D','\D','\D'),('\Dabc','\Dabc','\Dabc','\Dabc'),('ab\Dcd','ab\Dcd','ab\Dcd','ab\Dcd'),('\f','\f','\f','\f'),('\fa','\fa','\fa','\fa'),('\fabcd','\fabcd','\fabcd','\fabcd'),('ab\fcd','ab\fcd','ab\fcd','ab\fcd'),('\n','\n','\n','\n'),('\na','\na','\na','\na'),('\nabc','\nabc','\nabc','\nabc'),('\r','\r','\r','\r'),('\ra','\ra','\ra','\ra'),('\rabc','\rabc','\rabc','\rabc'),('ab\rcd','ab\rcd','ab\rcd','ab\rcd'),('\s','\s','\s','\s'),('\sa','\sa','\sa','\sa'),('\sabc','\sabc','\sabc','\sabc'),('ab\scd','ab\scd','ab\scd','ab\scd'),('\S','\S','\S','\S'),('\Sa','\Sa','\Sa','\Sa'),('\Sabc','\Sabc','\Sabc','\Sabc'),('ab\Scd','ab\Scd','ab\Scd','ab\Scd'),('\t','\t','\t','\t'),('\ta','\ta','\ta','\ta'),('\tabc','\tabc','\tabc','\tabc'),('ab\tcd','ab\tcd','ab\tcd','ab\tcd'),('\v','\v','\v','\v'),('\va','\va','\va','\va'),('\vabc','\vabc','\vabc','\vabc'),('ab\vcd','ab\vcd','ab\vcd','ab\vcd'),('\w','\w','\w','\w'),('\wa','\wa','\wa','\wa'),('\wabc','\wabc','\wabc','\wabc'),('ab\wcd','ab\wcd','ab\wcd','ab\wcd'),('\W','\W','\W','\W'),('\W1','\W1','\W1','\W1'),('\W1abc','\W1abc','\W1abc','\W1abc'),('ab\W1cd','ab\W1cd','ab\W1cd','ab\W1cd'),('\x12','\x12','\x12','\x12'),('\x123','\x123','\x123','\x123'),('123\x456','123\x456','123\x456','123\x456'),('\1','\1','\1','\1'),('\1abc','\1abc','\1abc','\1abc'),('abc(.)\123','abc(.)\123','abc(.)\123','abc(.)\123'),('\u1','\u1','\u1','\u1'),('123\u111','123\u111','123\u111','123\u111'),('a','a','a','a'),('1a','1a','1a','1a'),('4a','4a','4a','4a'),('a1','a1','a1','a1'),('a3','a3','a3','a3'),('a4','a4','a4','a4'),('a6','a6','a6','a6'),('ab','ab','ab','ab'),('ab1','ab1','ab1','ab1'),('abc','abc','abc','abc'),('abc1','abc1','abc1','abc1'),('abc123','abc123','abc123','abc123'),('abc456','abc456','abc456','abc456'),('abd','abd','abd','abd'),('abd1','abd1','abd1','abd1'),('acd','acd','acd','acd'),('acd1','acd1','acd1','acd1'),('abcd','abcd','abcd','abcd'),('abcd1','abcd1','abcd1','abcd1'),('abcde','abcde','abcde','abcde'),('abcde1','abcde1','abcde1','abcde1'),('abcdef','abcdef','abcdef','abcdef'),('1','1','1','1'),('12','12','12','12'),('123','123','123','123'),('1234','1234','1234','1234'),('12345','12345','12345','12345'),('123456','123456','123456','123456');
+SELECT * FROM t1 WHERE a LIKE "^a" ESCAPE "^";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "a^^bc" ESCAPE "^";
+id	a	b	c	d
+3	a^bc	a^bc	a^bc	a^bc
+SELECT * FROM t1 WHERE c LIKE "a\\bc" ESCAPE "\\";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "a$bc" ESCAPE "$";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab$$c" ESCAPE "$";
+id	a	b	c	d
+18	ab$c	ab$c	ab$c	ab$c
+SELECT * FROM t1 WHERE b LIKE "a**bc" ESCAPE "*";
+id	a	b	c	d
+22	a*bc	a*bc	a*bc	a*bc
+SELECT * FROM t1 WHERE c LIKE "a+bc" ESCAPE "+";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "ab++c" ESCAPE "+";
+id	a	b	c	d
+30	ab+c	ab+c	ab+c	ab+c
+SELECT * FROM t1 WHERE a LIKE "a?bc" ESCAPE "?";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab??c" ESCAPE "?";
+id	a	b	c	d
+36	ab?c	ab?c	ab?c	ab?c
+SELECT * FROM t1 WHERE c LIKE "a{1" ESCAPE "{";
+id	a	b	c	d
+130	a1	a1	a1	a1
+SELECT * FROM t1 WHERE d LIKE "a.bc" ESCAPE ".";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab..c" ESCAPE ".";
+id	a	b	c	d
+49	ab.c	ab.c	ab.c	ab.c
+SELECT * FROM t1 WHERE b LIKE "a(bcde" ESCAPE "(";
+id	a	b	c	d
+146	abcde	abcde	abcde	abcde
+SELECT * FROM t1 WHERE c LIKE "abc)d" ESCAPE ")";
+id	a	b	c	d
+144	abcd	abcd	abcd	abcd
+SELECT * FROM t1 WHERE d LIKE "ab(?::cd|ef)" ESCAPE ":";
+id	a	b	c	d
+58	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "a|b|c" ESCAPE "|";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a||b||c" ESCAPE "|";
+id	a	b	c	d
+61	a|b|c	a|b|c	a|b|c	a|b|c
+SELECT * FROM t1 WHERE c LIKE "[abc" ESCAPE "[";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "[ab]]c" ESCAPE "]";
+id	a	b	c	d
+64	[ab]c	[ab]c	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "\ba" ESCAPE "\b";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "a\b\b" ESCAPE "\b";
+id	a	b	c	d
+72	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "ab\cd" ESCAPE "\c";
+id	a	b	c	d
+140	abd	abd	abd	abd
+SELECT * FROM t1 WHERE d LIKE "ab\c\c" ESCAPE "\c";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "\d1" ESCAPE "\d";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE b LIKE "\na" ESCAPE "\n";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "\ra" ESCAPE "\r";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "\fa" ESCAPE "\f";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE a LIKE "\wa" ESCAPE "\w";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "\x12" ESCAPE "\x";
+id	a	b	c	d
+150	12	12	12	12
+SELECT * FROM t1 WHERE c LIKE "\u1" ESCAPE "\u";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE d LIKE "%^a_c%" ESCAPE "^";
+id	a	b	c	d
+101	Sabc	Sabc	Sabc	Sabc
+105		abc		abc		abc		abc
+109	vabc	vabc	vabc	vabc
+113	wabc	wabc	wabc	wabc
+117	W1abc	W1abc	W1abc	W1abc
+12	abc	abc	abc	abc
+123	1abc	1abc	1abc	1abc
+124	abc(.)123	abc(.)123	abc(.)123	abc(.)123
+136	abc	abc	abc	abc
+137	abc1	abc1	abc1	abc1
+138	abc123	abc123	abc123	abc123
+139	abc456	abc456	abc456	abc456
+144	abcd	abcd	abcd	abcd
+145	abcd1	abcd1	abcd1	abcd1
+146	abcde	abcde	abcde	abcde
+147	abcde1	abcde1	abcde1	abcde1
+148	abcdef	abcdef	abcdef	abcdef
+15	$abc	$abc	$abc	$abc
+2	^abc	^abc	^abc	^abc
+21	*abc	*abc	*abc	*abc
+27	+abc	+abc	+abc	+abc
+33	?abc	?abc	?abc	?abc
+46	.abc	.abc	.abc	.abc
+51	abcd[.
+57	abc(de)f	abc(de)f	abc(de)f	abc(de)f
+60	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)
+68	abc[edf]	abc[edf]	abc[edf]	abc[edf]
+76	abcBdef	abcBdef	abcBdef	abcBdef
+78	abc456	abc456	abc456	abc456
+82	Dabc	Dabc	Dabc	Dabc
+86	fabcd	fabcd	fabcd	fabcd
+9	\abc	\abc	\abc	\abc
+90	
+93	abc	abc	abc	abc
+97	sabc	sabc	sabc	sabc
+]e
+]e	abcd[.
+]e	abcd[.
+]e	abcd[.
+abc
+abc	
+abc	
+abc	
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
+SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
+SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$";
+id	a	b	c	d
+135	ab1	ab1	ab1	ab1
+SELECT * FROM t1 WHERE b LIKE "ab$%" ESCAPE "0";
+id	a	b	c	d
+17	ab$d	ab$d	ab$d	ab$d
+18	ab$c	ab$c	ab$c	ab$c
+19	ab$cde	ab$cde	ab$cde	ab$cde
+SELECT * FROM t1 WHERE c LIKE "%+bc_" ESCAPE "+";
+id	a	b	c	d
+137	abc1	abc1	abc1	abc1
+144	abcd	abcd	abcd	abcd
+66	a[bc]	a[bc]	a[bc]	a[bc]
+86	fabcd	fabcd	fabcd	fabcd
+SELECT * FROM t1 WHERE c LIKE "ab+%" ESCAPE "0";
+id	a	b	c	d
+30	ab+c	ab+c	ab+c	ab+c
+31	ab+cde	ab+cde	ab+cde	ab+cde
+SELECT * FROM t1 WHERE d LIKE "a_?cd%" ESCAPE "?";
+id	a	b	c	d
+144	abcd	abcd	abcd	abcd
+145	abcd1	abcd1	abcd1	abcd1
+146	abcde	abcde	abcde	abcde
+147	abcde1	abcde1	abcde1	abcde1
+148	abcdef	abcdef	abcdef	abcdef
+51	abcd[.
+]e
+]e	abcd[.
+]e	abcd[.
+]e	abcd[.
+SELECT * FROM t1 WHERE d LIKE "a_?cd%" ESCAPE "0";
+id	a	b	c	d
+37	ab?cde	ab?cde	ab?cde	ab?cde
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "{";
+id	a	b	c	d
+41	a{1,}bc	a{1,}bc	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "0";
+id	a	b	c	d
+43	ab{1,}f	ab{1,}f	ab{1,}f	ab{1,}f
+SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE ".";
+id	a	b	c	d
+140	abd	abd	abd	abd
+141	abd1	abd1	abd1	abd1
+SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE "0";
+id	a	b	c	d
+48	a.bd	a.bd	a.bd	a.bd
+CREATE INDEX a ON t1(a(16));
+CREATE INDEX b ON t1(b(16));
+CREATE INDEX c ON t1(c(16));
+CREATE INDEX d ON t1(d(16));
+SELECT * FROM t1 WHERE a LIKE "^a" ESCAPE "^";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "a^^bc" ESCAPE "^";
+id	a	b	c	d
+3	a^bc	a^bc	a^bc	a^bc
+SELECT * FROM t1 WHERE c LIKE "a\\bc" ESCAPE "\\";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "a$bc" ESCAPE "$";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab$$c" ESCAPE "$";
+id	a	b	c	d
+18	ab$c	ab$c	ab$c	ab$c
+SELECT * FROM t1 WHERE b LIKE "a**bc" ESCAPE "*";
+id	a	b	c	d
+22	a*bc	a*bc	a*bc	a*bc
+SELECT * FROM t1 WHERE c LIKE "a+bc" ESCAPE "+";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "ab++c" ESCAPE "+";
+id	a	b	c	d
+30	ab+c	ab+c	ab+c	ab+c
+SELECT * FROM t1 WHERE a LIKE "a?bc" ESCAPE "?";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab??c" ESCAPE "?";
+id	a	b	c	d
+36	ab?c	ab?c	ab?c	ab?c
+SELECT * FROM t1 WHERE c LIKE "a{1" ESCAPE "{";
+id	a	b	c	d
+130	a1	a1	a1	a1
+SELECT * FROM t1 WHERE d LIKE "a.bc" ESCAPE ".";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab..c" ESCAPE ".";
+id	a	b	c	d
+49	ab.c	ab.c	ab.c	ab.c
+SELECT * FROM t1 WHERE b LIKE "a(bcde" ESCAPE "(";
+id	a	b	c	d
+146	abcde	abcde	abcde	abcde
+SELECT * FROM t1 WHERE c LIKE "abc)d" ESCAPE ")";
+id	a	b	c	d
+144	abcd	abcd	abcd	abcd
+SELECT * FROM t1 WHERE d LIKE "ab(?::cd|ef)" ESCAPE ":";
+id	a	b	c	d
+58	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "a|b|c" ESCAPE "|";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a||b||c" ESCAPE "|";
+id	a	b	c	d
+61	a|b|c	a|b|c	a|b|c	a|b|c
+SELECT * FROM t1 WHERE c LIKE "[abc" ESCAPE "[";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "[ab]]c" ESCAPE "]";
+id	a	b	c	d
+64	[ab]c	[ab]c	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "\ba" ESCAPE "\b";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "a\b\b" ESCAPE "\b";
+id	a	b	c	d
+72	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "ab\cd" ESCAPE "\c";
+id	a	b	c	d
+140	abd	abd	abd	abd
+SELECT * FROM t1 WHERE d LIKE "ab\c\c" ESCAPE "\c";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "\d1" ESCAPE "\d";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE b LIKE "\na" ESCAPE "\n";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "\ra" ESCAPE "\r";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "\fa" ESCAPE "\f";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE a LIKE "\wa" ESCAPE "\w";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "\x12" ESCAPE "\x";
+id	a	b	c	d
+150	12	12	12	12
+SELECT * FROM t1 WHERE c LIKE "\u1" ESCAPE "\u";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE d LIKE "%^a_c%" ESCAPE "^";
+id	a	b	c	d
+101	Sabc	Sabc	Sabc	Sabc
+105		abc		abc		abc		abc
+109	vabc	vabc	vabc	vabc
+113	wabc	wabc	wabc	wabc
+117	W1abc	W1abc	W1abc	W1abc
+12	abc	abc	abc	abc
+123	1abc	1abc	1abc	1abc
+124	abc(.)123	abc(.)123	abc(.)123	abc(.)123
+136	abc	abc	abc	abc
+137	abc1	abc1	abc1	abc1
+138	abc123	abc123	abc123	abc123
+139	abc456	abc456	abc456	abc456
+144	abcd	abcd	abcd	abcd
+145	abcd1	abcd1	abcd1	abcd1
+146	abcde	abcde	abcde	abcde
+147	abcde1	abcde1	abcde1	abcde1
+148	abcdef	abcdef	abcdef	abcdef
+15	$abc	$abc	$abc	$abc
+2	^abc	^abc	^abc	^abc
+21	*abc	*abc	*abc	*abc
+27	+abc	+abc	+abc	+abc
+33	?abc	?abc	?abc	?abc
+46	.abc	.abc	.abc	.abc
+51	abcd[.
+57	abc(de)f	abc(de)f	abc(de)f	abc(de)f
+60	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)
+68	abc[edf]	abc[edf]	abc[edf]	abc[edf]
+76	abcBdef	abcBdef	abcBdef	abcBdef
+78	abc456	abc456	abc456	abc456
+82	Dabc	Dabc	Dabc	Dabc
+86	fabcd	fabcd	fabcd	fabcd
+9	\abc	\abc	\abc	\abc
+90	
+93	abc	abc	abc	abc
+97	sabc	sabc	sabc	sabc
+]e
+]e	abcd[.
+]e	abcd[.
+]e	abcd[.
+abc
+abc	
+abc	
+abc	
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
+SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
+SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$";
+id	a	b	c	d
+135	ab1	ab1	ab1	ab1
+SELECT * FROM t1 WHERE b LIKE "ab$%" ESCAPE "0";
+id	a	b	c	d
+17	ab$d	ab$d	ab$d	ab$d
+18	ab$c	ab$c	ab$c	ab$c
+19	ab$cde	ab$cde	ab$cde	ab$cde
+SELECT * FROM t1 WHERE c LIKE "%+bc_" ESCAPE "+";
+id	a	b	c	d
+137	abc1	abc1	abc1	abc1
+144	abcd	abcd	abcd	abcd
+66	a[bc]	a[bc]	a[bc]	a[bc]
+86	fabcd	fabcd	fabcd	fabcd
+SELECT * FROM t1 WHERE c LIKE "ab+%" ESCAPE "0";
+id	a	b	c	d
+30	ab+c	ab+c	ab+c	ab+c
+31	ab+cde	ab+cde	ab+cde	ab+cde
+SELECT * FROM t1 WHERE d LIKE "a_?cd%" ESCAPE "?";
+id	a	b	c	d
+144	abcd	abcd	abcd	abcd
+145	abcd1	abcd1	abcd1	abcd1
+146	abcde	abcde	abcde	abcde
+147	abcde1	abcde1	abcde1	abcde1
+148	abcdef	abcdef	abcdef	abcdef
+51	abcd[.
+]e
+]e	abcd[.
+]e	abcd[.
+]e	abcd[.
+SELECT * FROM t1 WHERE d LIKE "a_?cd%" ESCAPE "0";
+id	a	b	c	d
+37	ab?cde	ab?cde	ab?cde	ab?cde
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "{";
+id	a	b	c	d
+41	a{1,}bc	a{1,}bc	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "0";
+id	a	b	c	d
+43	ab{1,}f	ab{1,}f	ab{1,}f	ab{1,}f
+SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE ".";
+id	a	b	c	d
+140	abd	abd	abd	abd
+141	abd1	abd1	abd1	abd1
+SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE "0";
+id	a	b	c	d
+48	a.bd	a.bd	a.bd	a.bd
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a CHAR(32), b VARCHAR(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b) VALUES ('^a','^a'),('^abc','^abc'),('a^bc','a^bc'),('a^bd','a^bd'),('ab^c','ab^c'),('ab^cde','ab^cde'),('\a','\a'),('\\a','\\a'),('\\abc','\\abc'),('a\\bc','a\\bc'),('a\\bd','a\\bd'),('ab\c','ab\c'),('ab\\cd','ab\\cd'),('$a','$a'),('$abc','$abc'),('a$bc','a$bc'),('ab$d','ab$d'),('ab$c','ab$c'),('ab$cde','ab$cde'),('*a','*a'),('*abc','*abc'),('a*bc','a*bc'),('a*bd','a*bd'),('ab*c','ab*c'),('ab*cde','ab*cde'),('+a','+a'),('+abc','+abc'),('a+bc','a+bc'),('a+bd','a+bd'),('ab+c','ab+c'),('ab+cde','ab+cde'),('?a','?a'),('?abc','?abc'),('a?bc','a?bc'),('a?bd','a?bd'),('ab?c','ab?c'),('ab?cde','ab?cde'),('{1}a','{1}a'),('{1,}a','{1,}a'),('{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f'),('.a','.a'),('.abc','.abc'),('a.bc','a.bc'),('a.bd','a.bd'),('ab.c','ab.c'),('ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e'),('(a)','(a)'),('(a)bc','(a)bc'),('a(b)c','a(b)c'),('a(b)d','a(b)d'),('ab(c)d','ab(c)d'),('abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c'),('[a]','[a]'),('[^a]','[^a]'),('[ab]c','[ab]c'),('[^ab]c','[^ab]c'),('a[bc]','a[bc]'),('a[bd]','a[bd]'),('abc[edf]','abc[edf]'),('[a-z]','[a-z]'),('[^a-z]','[^a-z]'),('\b','\b'),('a\b','a\b'),('ab\bc','ab\bc'),('\B','\B'),('a\B','a\B'),('abc\Bdef','abc\Bdef'),('\c123','\c123'),('ab\c456','ab\c456'),('\d1','\d1'),('a\d123','a\d123'),('\D','\D'),('\Dabc','\Dabc'),('ab\Dcd','ab\Dcd'),('\f','\f'),('\fa','\fa'),('\fabcd','\fabcd'),('ab\fcd','ab\fcd'),('\n','\n'),('\na','\na'),('\nabc','\nabc'),('\r','\r'),('\ra','\ra'),('\rabc','\rabc'),('ab\rcd','ab\rcd'),('\s','\s'),('\sa','\sa'),('\sabc','\sabc'),('ab\scd','ab\scd'),('\S','\S'),('\Sa','\Sa'),('\Sabc','\Sabc'),('ab\Scd','ab\Scd'),('\t','\t'),('\ta','\ta'),('\tabc','\tabc'),('ab\tcd','ab\tcd'),('\v','\v'),('\va','\va'),('\vabc','\vabc'),('ab\vcd','ab\vcd'),('\w','\w'),('\wa','\wa'),('\wabc','\wabc'),('ab\wcd','ab\wcd'),('\W','\W'),('\W1','\W1'),('\W1abc','\W1abc'),('ab\W1cd','ab\W1cd'),('\x12','\x12'),('\x123','\x123'),('123\x456','123\x456'),('\1','\1'),('\1abc','\1abc'),('abc(.)\123','abc(.)\123'),('\u1','\u1'),('123\u111','123\u111'),('a','a'),('1a','1a'),('4a','4a'),('a1','a1'),('a3','a3'),('a4','a4'),('a6','a6'),('ab','ab'),('ab1','ab1'),('abc','abc'),('abc1','abc1'),('abc123','abc123'),('abc456','abc456'),('abd','abd'),('abd1','abd1'),('acd','acd'),('acd1','acd1'),('abcd','abcd'),('abcd1','abcd1'),('abcde','abcde'),('abcde1','abcde1'),('abcdef','abcdef'),('1','1'),('12','12'),('123','123'),('1234','1234'),('12345','12345'),('123456','123456');
+SELECT * FROM t1 WHERE a LIKE "^a" ESCAPE "^";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "a^^bc" ESCAPE "^";
+id	a	b
+3	a^bc	a^bc
+SELECT * FROM t1 WHERE a LIKE "a\\bc" ESCAPE "\\";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "a$bc" ESCAPE "$";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab$$c" ESCAPE "$";
+id	a	b
+18	ab$c	ab$c
+SELECT * FROM t1 WHERE a LIKE "a**bc" ESCAPE "*";
+id	a	b
+22	a*bc	a*bc
+SELECT * FROM t1 WHERE a LIKE "a+bc" ESCAPE "+";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab++c" ESCAPE "+";
+id	a	b
+30	ab+c	ab+c
+SELECT * FROM t1 WHERE a LIKE "a?bc" ESCAPE "?";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab??c" ESCAPE "?";
+id	a	b
+36	ab?c	ab?c
+SELECT * FROM t1 WHERE a LIKE "a{1" ESCAPE "{";
+id	a	b
+130	a1	a1
+SELECT * FROM t1 WHERE a LIKE "a.bc" ESCAPE ".";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab..c" ESCAPE ".";
+id	a	b
+49	ab.c	ab.c
+SELECT * FROM t1 WHERE a LIKE "a(bcde" ESCAPE "(";
+id	a	b
+146	abcde	abcde
+SELECT * FROM t1 WHERE a LIKE "abc)d" ESCAPE ")";
+id	a	b
+144	abcd	abcd
+SELECT * FROM t1 WHERE a LIKE "ab(?::cd|ef)" ESCAPE ":";
+id	a	b
+58	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "a|b|c" ESCAPE "|";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "a||b||c" ESCAPE "|";
+id	a	b
+61	a|b|c	a|b|c
+SELECT * FROM t1 WHERE a LIKE "[abc" ESCAPE "[";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "[ab]]c" ESCAPE "]";
+id	a	b
+64	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "\ba" ESCAPE "\b";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "a\b\b" ESCAPE "\b";
+id	a	b
+72	a	a
+SELECT * FROM t1 WHERE a LIKE "ab\cd" ESCAPE "\c";
+id	a	b
+140	abd	abd
+SELECT * FROM t1 WHERE a LIKE "ab\c\c" ESCAPE "\c";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "\d1" ESCAPE "\d";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE a LIKE "\na" ESCAPE "\n";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "\ra" ESCAPE "\r";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "\fa" ESCAPE "\f";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "\wa" ESCAPE "\w";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "\x12" ESCAPE "\x";
+id	a	b
+150	12	12
+SELECT * FROM t1 WHERE a LIKE "\u1" ESCAPE "\u";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE a LIKE "%^a_c%" ESCAPE "^";
+id	a	b
+101	Sabc	Sabc
+105		abc		abc
+109	vabc	vabc
+113	wabc	wabc
+117	W1abc	W1abc
+12	abc	abc
+123	1abc	1abc
+124	abc(.)123	abc(.)123
+136	abc	abc
+137	abc1	abc1
+138	abc123	abc123
+139	abc456	abc456
+144	abcd	abcd
+145	abcd1	abcd1
+146	abcde	abcde
+147	abcde1	abcde1
+148	abcdef	abcdef
+15	$abc	$abc
+2	^abc	^abc
+21	*abc	*abc
+27	+abc	+abc
+33	?abc	?abc
+46	.abc	.abc
+51	abcd[.
+57	abc(de)f	abc(de)f
+60	abc(?!d|e|f)	abc(?!d|e|f)
+68	abc[edf]	abc[edf]
+76	abcBdef	abcBdef
+78	abc456	abc456
+82	Dabc	Dabc
+86	fabcd	fabcd
+9	\abc	\abc
+90	
+93	abc	abc
+97	sabc	sabc
+]e
+]e	abcd[.
+abc
+abc	
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
+SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
+SELECT * FROM t1 WHERE a LIKE "a_$1" ESCAPE "$";
+id	a	b
+135	ab1	ab1
+SELECT * FROM t1 WHERE a LIKE "ab$%" ESCAPE "0";
+id	a	b
+17	ab$d	ab$d
+18	ab$c	ab$c
+19	ab$cde	ab$cde
+SELECT * FROM t1 WHERE a LIKE "%+bc_" ESCAPE "+";
+id	a	b
+137	abc1	abc1
+144	abcd	abcd
+66	a[bc]	a[bc]
+86	fabcd	fabcd
+SELECT * FROM t1 WHERE a LIKE "ab+%" ESCAPE "0";
+id	a	b
+30	ab+c	ab+c
+31	ab+cde	ab+cde
+SELECT * FROM t1 WHERE a LIKE "a_?cd%" ESCAPE "?";
+id	a	b
+144	abcd	abcd
+145	abcd1	abcd1
+146	abcde	abcde
+147	abcde1	abcde1
+148	abcdef	abcdef
+51	abcd[.
+]e
+]e	abcd[.
+SELECT * FROM t1 WHERE a LIKE "a_?cd%" ESCAPE "0";
+id	a	b
+37	ab?cde	ab?cde
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "{";
+id	a	b
+41	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "0";
+id	a	b
+43	ab{1,}f	ab{1,}f
+SELECT * FROM t1 WHERE a LIKE "_.bd%" ESCAPE ".";
+id	a	b
+140	abd	abd
+141	abd1	abd1
+SELECT * FROM t1 WHERE a LIKE "_.bd%" ESCAPE "0";
+id	a	b
+48	a.bd	a.bd
+SELECT * FROM t1 WHERE b LIKE "^a" ESCAPE "^";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "a^^bc" ESCAPE "^";
+id	a	b
+3	a^bc	a^bc
+SELECT * FROM t1 WHERE b LIKE "a\\bc" ESCAPE "\\";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a$bc" ESCAPE "$";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab$$c" ESCAPE "$";
+id	a	b
+18	ab$c	ab$c
+SELECT * FROM t1 WHERE b LIKE "a**bc" ESCAPE "*";
+id	a	b
+22	a*bc	a*bc
+SELECT * FROM t1 WHERE b LIKE "a+bc" ESCAPE "+";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab++c" ESCAPE "+";
+id	a	b
+30	ab+c	ab+c
+SELECT * FROM t1 WHERE b LIKE "a?bc" ESCAPE "?";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab??c" ESCAPE "?";
+id	a	b
+36	ab?c	ab?c
+SELECT * FROM t1 WHERE b LIKE "a{1" ESCAPE "{";
+id	a	b
+130	a1	a1
+SELECT * FROM t1 WHERE b LIKE "a.bc" ESCAPE ".";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab..c" ESCAPE ".";
+id	a	b
+49	ab.c	ab.c
+SELECT * FROM t1 WHERE b LIKE "a(bcde" ESCAPE "(";
+id	a	b
+146	abcde	abcde
+SELECT * FROM t1 WHERE b LIKE "abc)d" ESCAPE ")";
+id	a	b
+144	abcd	abcd
+SELECT * FROM t1 WHERE b LIKE "ab(?::cd|ef)" ESCAPE ":";
+id	a	b
+58	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE b LIKE "a|b|c" ESCAPE "|";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a||b||c" ESCAPE "|";
+id	a	b
+61	a|b|c	a|b|c
+SELECT * FROM t1 WHERE b LIKE "[abc" ESCAPE "[";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "[ab]]c" ESCAPE "]";
+id	a	b
+64	[ab]c	[ab]c
+SELECT * FROM t1 WHERE b LIKE "\ba" ESCAPE "\b";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "a\b\b" ESCAPE "\b";
+id	a	b
+72	a	a
+SELECT * FROM t1 WHERE b LIKE "ab\cd" ESCAPE "\c";
+id	a	b
+140	abd	abd
+SELECT * FROM t1 WHERE b LIKE "ab\c\c" ESCAPE "\c";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "\d1" ESCAPE "\d";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE b LIKE "\na" ESCAPE "\n";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "\ra" ESCAPE "\r";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "\fa" ESCAPE "\f";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "\wa" ESCAPE "\w";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "\x12" ESCAPE "\x";
+id	a	b
+150	12	12
+SELECT * FROM t1 WHERE b LIKE "\u1" ESCAPE "\u";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE b LIKE "%^a_c%" ESCAPE "^";
+id	a	b
+101	Sabc	Sabc
+105		abc		abc
+109	vabc	vabc
+113	wabc	wabc
+117	W1abc	W1abc
+12	abc	abc
+123	1abc	1abc
+124	abc(.)123	abc(.)123
+136	abc	abc
+137	abc1	abc1
+138	abc123	abc123
+139	abc456	abc456
+144	abcd	abcd
+145	abcd1	abcd1
+146	abcde	abcde
+147	abcde1	abcde1
+148	abcdef	abcdef
+15	$abc	$abc
+2	^abc	^abc
+21	*abc	*abc
+27	+abc	+abc
+33	?abc	?abc
+46	.abc	.abc
+51	abcd[.
+57	abc(de)f	abc(de)f
+60	abc(?!d|e|f)	abc(?!d|e|f)
+68	abc[edf]	abc[edf]
+76	abcBdef	abcBdef
+78	abc456	abc456
+82	Dabc	Dabc
+86	fabcd	fabcd
+9	\abc	\abc
+90	
+93	abc	abc
+97	sabc	sabc
+]e
+]e	abcd[.
+abc
+abc	
+SELECT * FROM t1 WHERE b LIKE "a\\\%" ESCAPE "\\";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
+SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$";
+id	a	b
+135	ab1	ab1
+SELECT * FROM t1 WHERE b LIKE "%+bc_" ESCAPE "+";
+id	a	b
+137	abc1	abc1
+144	abcd	abcd
+66	a[bc]	a[bc]
+86	fabcd	fabcd
+SELECT * FROM t1 WHERE b LIKE "a_?cd%" ESCAPE "?";
+id	a	b
+144	abcd	abcd
+145	abcd1	abcd1
+146	abcde	abcde
+147	abcde1	abcde1
+148	abcdef	abcdef
+51	abcd[.
+]e
+]e	abcd[.
+SELECT * FROM t1 WHERE b LIKE "a_{1,%" ESCAPE "{";
+id	a	b
+41	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE ".";
+id	a	b
+140	abd	abd
+141	abd1	abd1
+CREATE INDEX a ON t1(a);
+CREATE INDEX b ON t1(b);
+SELECT * FROM t1 WHERE a LIKE "^a" ESCAPE "^";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "a^^bc" ESCAPE "^";
+id	a	b
+3	a^bc	a^bc
+SELECT * FROM t1 WHERE a LIKE "a\\bc" ESCAPE "\\";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "a$bc" ESCAPE "$";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab$$c" ESCAPE "$";
+id	a	b
+18	ab$c	ab$c
+SELECT * FROM t1 WHERE a LIKE "a**bc" ESCAPE "*";
+id	a	b
+22	a*bc	a*bc
+SELECT * FROM t1 WHERE a LIKE "a+bc" ESCAPE "+";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab++c" ESCAPE "+";
+id	a	b
+30	ab+c	ab+c
+SELECT * FROM t1 WHERE a LIKE "a?bc" ESCAPE "?";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab??c" ESCAPE "?";
+id	a	b
+36	ab?c	ab?c
+SELECT * FROM t1 WHERE a LIKE "a{1" ESCAPE "{";
+id	a	b
+130	a1	a1
+SELECT * FROM t1 WHERE a LIKE "a.bc" ESCAPE ".";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab..c" ESCAPE ".";
+id	a	b
+49	ab.c	ab.c
+SELECT * FROM t1 WHERE a LIKE "a(bcde" ESCAPE "(";
+id	a	b
+146	abcde	abcde
+SELECT * FROM t1 WHERE a LIKE "abc)d" ESCAPE ")";
+id	a	b
+144	abcd	abcd
+SELECT * FROM t1 WHERE a LIKE "ab(?::cd|ef)" ESCAPE ":";
+id	a	b
+58	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "a|b|c" ESCAPE "|";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "a||b||c" ESCAPE "|";
+id	a	b
+61	a|b|c	a|b|c
+SELECT * FROM t1 WHERE a LIKE "[abc" ESCAPE "[";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "[ab]]c" ESCAPE "]";
+id	a	b
+64	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "\ba" ESCAPE "\b";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "a\b\b" ESCAPE "\b";
+id	a	b
+72	a	a
+SELECT * FROM t1 WHERE a LIKE "ab\cd" ESCAPE "\c";
+id	a	b
+140	abd	abd
+SELECT * FROM t1 WHERE a LIKE "ab\c\c" ESCAPE "\c";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE a LIKE "\d1" ESCAPE "\d";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE a LIKE "\na" ESCAPE "\n";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "\ra" ESCAPE "\r";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "\fa" ESCAPE "\f";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "\wa" ESCAPE "\w";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE a LIKE "\x12" ESCAPE "\x";
+id	a	b
+150	12	12
+SELECT * FROM t1 WHERE a LIKE "\u1" ESCAPE "\u";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE a LIKE "%^a_c%" ESCAPE "^";
+id	a	b
+101	Sabc	Sabc
+105		abc		abc
+109	vabc	vabc
+113	wabc	wabc
+117	W1abc	W1abc
+12	abc	abc
+123	1abc	1abc
+124	abc(.)123	abc(.)123
+136	abc	abc
+137	abc1	abc1
+138	abc123	abc123
+139	abc456	abc456
+144	abcd	abcd
+145	abcd1	abcd1
+146	abcde	abcde
+147	abcde1	abcde1
+148	abcdef	abcdef
+15	$abc	$abc
+2	^abc	^abc
+21	*abc	*abc
+27	+abc	+abc
+33	?abc	?abc
+46	.abc	.abc
+51	abcd[.
+57	abc(de)f	abc(de)f
+60	abc(?!d|e|f)	abc(?!d|e|f)
+68	abc[edf]	abc[edf]
+76	abcBdef	abcBdef
+78	abc456	abc456
+82	Dabc	Dabc
+86	fabcd	fabcd
+9	\abc	\abc
+90	
+93	abc	abc
+97	sabc	sabc
+]e
+]e	abcd[.
+abc
+abc	
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
+SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
+SELECT * FROM t1 WHERE a LIKE "a_$1" ESCAPE "$";
+id	a	b
+135	ab1	ab1
+SELECT * FROM t1 WHERE a LIKE "ab$%" ESCAPE "0";
+id	a	b
+17	ab$d	ab$d
+18	ab$c	ab$c
+19	ab$cde	ab$cde
+SELECT * FROM t1 WHERE a LIKE "%+bc_" ESCAPE "+";
+id	a	b
+137	abc1	abc1
+144	abcd	abcd
+66	a[bc]	a[bc]
+86	fabcd	fabcd
+SELECT * FROM t1 WHERE a LIKE "ab+%" ESCAPE "0";
+id	a	b
+30	ab+c	ab+c
+31	ab+cde	ab+cde
+SELECT * FROM t1 WHERE a LIKE "a_?cd%" ESCAPE "?";
+id	a	b
+144	abcd	abcd
+145	abcd1	abcd1
+146	abcde	abcde
+147	abcde1	abcde1
+148	abcdef	abcdef
+51	abcd[.
+]e
+]e	abcd[.
+SELECT * FROM t1 WHERE a LIKE "a_?cd%" ESCAPE "0";
+id	a	b
+37	ab?cde	ab?cde
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "{";
+id	a	b
+41	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "0";
+id	a	b
+43	ab{1,}f	ab{1,}f
+SELECT * FROM t1 WHERE a LIKE "_.bd%" ESCAPE ".";
+id	a	b
+140	abd	abd
+141	abd1	abd1
+SELECT * FROM t1 WHERE a LIKE "_.bd%" ESCAPE "0";
+id	a	b
+48	a.bd	a.bd
+SELECT * FROM t1 WHERE b LIKE "^a" ESCAPE "^";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "a^^bc" ESCAPE "^";
+id	a	b
+3	a^bc	a^bc
+SELECT * FROM t1 WHERE b LIKE "a\\bc" ESCAPE "\\";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a$bc" ESCAPE "$";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab$$c" ESCAPE "$";
+id	a	b
+18	ab$c	ab$c
+SELECT * FROM t1 WHERE b LIKE "a**bc" ESCAPE "*";
+id	a	b
+22	a*bc	a*bc
+SELECT * FROM t1 WHERE b LIKE "a+bc" ESCAPE "+";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab++c" ESCAPE "+";
+id	a	b
+30	ab+c	ab+c
+SELECT * FROM t1 WHERE b LIKE "a?bc" ESCAPE "?";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab??c" ESCAPE "?";
+id	a	b
+36	ab?c	ab?c
+SELECT * FROM t1 WHERE b LIKE "a{1" ESCAPE "{";
+id	a	b
+130	a1	a1
+SELECT * FROM t1 WHERE b LIKE "a.bc" ESCAPE ".";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab..c" ESCAPE ".";
+id	a	b
+49	ab.c	ab.c
+SELECT * FROM t1 WHERE b LIKE "a(bcde" ESCAPE "(";
+id	a	b
+146	abcde	abcde
+SELECT * FROM t1 WHERE b LIKE "abc)d" ESCAPE ")";
+id	a	b
+144	abcd	abcd
+SELECT * FROM t1 WHERE b LIKE "ab(?::cd|ef)" ESCAPE ":";
+id	a	b
+58	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE b LIKE "a|b|c" ESCAPE "|";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a||b||c" ESCAPE "|";
+id	a	b
+61	a|b|c	a|b|c
+SELECT * FROM t1 WHERE b LIKE "[abc" ESCAPE "[";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "[ab]]c" ESCAPE "]";
+id	a	b
+64	[ab]c	[ab]c
+SELECT * FROM t1 WHERE b LIKE "\ba" ESCAPE "\b";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "a\b\b" ESCAPE "\b";
+id	a	b
+72	a	a
+SELECT * FROM t1 WHERE b LIKE "ab\cd" ESCAPE "\c";
+id	a	b
+140	abd	abd
+SELECT * FROM t1 WHERE b LIKE "ab\c\c" ESCAPE "\c";
+id	a	b
+12	abc	abc
+136	abc	abc
+SELECT * FROM t1 WHERE b LIKE "\d1" ESCAPE "\d";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE b LIKE "\na" ESCAPE "\n";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "\ra" ESCAPE "\r";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "\fa" ESCAPE "\f";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "\wa" ESCAPE "\w";
+id	a	b
+127	a	a
+7	a	a
+SELECT * FROM t1 WHERE b LIKE "\x12" ESCAPE "\x";
+id	a	b
+150	12	12
+SELECT * FROM t1 WHERE b LIKE "\u1" ESCAPE "\u";
+id	a	b
+122	1	1
+149	1	1
+SELECT * FROM t1 WHERE b LIKE "%^a_c%" ESCAPE "^";
+id	a	b
+101	Sabc	Sabc
+105		abc		abc
+109	vabc	vabc
+113	wabc	wabc
+117	W1abc	W1abc
+12	abc	abc
+123	1abc	1abc
+124	abc(.)123	abc(.)123
+136	abc	abc
+137	abc1	abc1
+138	abc123	abc123
+139	abc456	abc456
+144	abcd	abcd
+145	abcd1	abcd1
+146	abcde	abcde
+147	abcde1	abcde1
+148	abcdef	abcdef
+15	$abc	$abc
+2	^abc	^abc
+21	*abc	*abc
+27	+abc	+abc
+33	?abc	?abc
+46	.abc	.abc
+51	abcd[.
+57	abc(de)f	abc(de)f
+60	abc(?!d|e|f)	abc(?!d|e|f)
+68	abc[edf]	abc[edf]
+76	abcBdef	abcBdef
+78	abc456	abc456
+82	Dabc	Dabc
+86	fabcd	fabcd
+9	\abc	\abc
+90	
+93	abc	abc
+97	sabc	sabc
+]e
+]e	abcd[.
+abc
+abc	
+SELECT * FROM t1 WHERE b LIKE "a\\\%" ESCAPE "\\";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
+SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$";
+id	a	b
+135	ab1	ab1
+SELECT * FROM t1 WHERE b LIKE "%+bc_" ESCAPE "+";
+id	a	b
+137	abc1	abc1
+144	abcd	abcd
+66	a[bc]	a[bc]
+86	fabcd	fabcd
+SELECT * FROM t1 WHERE b LIKE "a_?cd%" ESCAPE "?";
+id	a	b
+144	abcd	abcd
+145	abcd1	abcd1
+146	abcde	abcde
+147	abcde1	abcde1
+148	abcdef	abcdef
+51	abcd[.
+]e
+]e	abcd[.
+SELECT * FROM t1 WHERE b LIKE "a_{1,%" ESCAPE "{";
+id	a	b
+41	a{1,}bc	a{1,}bc
+42	a{1,2}bd	a{1,2}bd
+SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE ".";
+id	a	b
+140	abd	abd
+141	abd1	abd1
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a BINARY(32), b VARBINARY(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b) VALUES ('^a','^a'),('^abc','^abc'),('a^bc','a^bc'),('a^bd','a^bd'),('ab^c','ab^c'),('ab^cde','ab^cde'),('\a','\a'),('\\a','\\a'),('\\abc','\\abc'),('a\\bc','a\\bc'),('a\\bd','a\\bd'),('ab\c','ab\c'),('ab\\cd','ab\\cd'),('$a','$a'),('$abc','$abc'),('a$bc','a$bc'),('ab$d','ab$d'),('ab$c','ab$c'),('ab$cde','ab$cde'),('*a','*a'),('*abc','*abc'),('a*bc','a*bc'),('a*bd','a*bd'),('ab*c','ab*c'),('ab*cde','ab*cde'),('+a','+a'),('+abc','+abc'),('a+bc','a+bc'),('a+bd','a+bd'),('ab+c','ab+c'),('ab+cde','ab+cde'),('?a','?a'),('?abc','?abc'),('a?bc','a?bc'),('a?bd','a?bd'),('ab?c','ab?c'),('ab?cde','ab?cde'),('{1}a','{1}a'),('{1,}a','{1,}a'),('{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f'),('.a','.a'),('.abc','.abc'),('a.bc','a.bc'),('a.bd','a.bd'),('ab.c','ab.c'),('ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e'),('(a)','(a)'),('(a)bc','(a)bc'),('a(b)c','a(b)c'),('a(b)d','a(b)d'),('ab(c)d','ab(c)d'),('abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c'),('[a]','[a]'),('[^a]','[^a]'),('[ab]c','[ab]c'),('[^ab]c','[^ab]c'),('a[bc]','a[bc]'),('a[bd]','a[bd]'),('abc[edf]','abc[edf]'),('[a-z]','[a-z]'),('[^a-z]','[^a-z]'),('\b','\b'),('a\b','a\b'),('ab\bc','ab\bc'),('\B','\B'),('a\B','a\B'),('abc\Bdef','abc\Bdef'),('\c123','\c123'),('ab\c456','ab\c456'),('\d1','\d1'),('a\d123','a\d123'),('\D','\D'),('\Dabc','\Dabc'),('ab\Dcd','ab\Dcd'),('\f','\f'),('\fa','\fa'),('\fabcd','\fabcd'),('ab\fcd','ab\fcd'),('\n','\n'),('\na','\na'),('\nabc','\nabc'),('\r','\r'),('\ra','\ra'),('\rabc','\rabc'),('ab\rcd','ab\rcd'),('\s','\s'),('\sa','\sa'),('\sabc','\sabc'),('ab\scd','ab\scd'),('\S','\S'),('\Sa','\Sa'),('\Sabc','\Sabc'),('ab\Scd','ab\Scd'),('\t','\t'),('\ta','\ta'),('\tabc','\tabc'),('ab\tcd','ab\tcd'),('\v','\v'),('\va','\va'),('\vabc','\vabc'),('ab\vcd','ab\vcd'),('\w','\w'),('\wa','\wa'),('\wabc','\wabc'),('ab\wcd','ab\wcd'),('\W','\W'),('\W1','\W1'),('\W1abc','\W1abc'),('ab\W1cd','ab\W1cd'),('\x12','\x12'),('\x123','\x123'),('123\x456','123\x456'),('\1','\1'),('\1abc','\1abc'),('abc(.)\123','abc(.)\123'),('\u1','\u1'),('123\u111','123\u111'),('a','a'),('1a','1a'),('4a','4a'),('a1','a1'),('a3','a3'),('a4','a4'),('a6','a6'),('ab','ab'),('ab1','ab1'),('abc','abc'),('abc1','abc1'),('abc123','abc123'),('abc456','abc456'),('abd','abd'),('abd1','abd1'),('acd','acd'),('acd1','acd1'),('abcd','abcd'),('abcd1','abcd1'),('abcde','abcde'),('abcde1','abcde1'),('abcdef','abcdef'),('1','1'),('12','12'),('123','123'),('1234','1234'),('12345','12345'),('123456','123456');
+SELECT * FROM t1 WHERE a LIKE "^a" ESCAPE "^" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a^^bc" ESCAPE "^" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a\\bc" ESCAPE "\\" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a$bc" ESCAPE "$" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab$$c" ESCAPE "$" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a**bc" ESCAPE "*" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a+bc" ESCAPE "+" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab++c" ESCAPE "+" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a?bc" ESCAPE "?" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab??c" ESCAPE "?" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a{1" ESCAPE "{" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a.bc" ESCAPE "." ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab..c" ESCAPE "." ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a(bcde" ESCAPE "(" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "abc)d" ESCAPE ")" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab(?::cd|ef)" ESCAPE ":" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a|b|c" ESCAPE "|" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a||b||c" ESCAPE "|" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "[abc" ESCAPE "[" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "[ab]]c" ESCAPE "]" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "\ba" ESCAPE "\b" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "a\b\b" ESCAPE "\b" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab\cd" ESCAPE "\c" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab\c\c" ESCAPE "\c" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "\d1" ESCAPE "\d" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "\na" ESCAPE "\n" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "\ra" ESCAPE "\r" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "\fa" ESCAPE "\f" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "\wa" ESCAPE "\w" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "\x12" ESCAPE "\x" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "\u1" ESCAPE "\u" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "%^a_c%" ESCAPE "^" ORDER BY a,id;
+id	a	b
+105		abc                            		abc
+90	
+abc                            	
+abc
+93	abc                            	abc
+15	$abc                            	$abc
+21	*abc                            	*abc
+27	+abc                            	+abc
+46	.abc                            	.abc
+123	1abc                            	1abc
+33	?abc                            	?abc
+82	Dabc                            	Dabc
+101	Sabc                            	Sabc
+117	W1abc                           	W1abc
+9	\abc                            	\abc
+2	^abc                            	^abc
+12	abc                             	abc
+136	abc                             	abc
+124	abc(.)123                       	abc(.)123
+60	abc(?!d|e|f)                    	abc(?!d|e|f)
+57	abc(de)f                        	abc(de)f
+137	abc1                            	abc1
+138	abc123                          	abc123
+78	abc456                          	abc456
+139	abc456                          	abc456
+76	abcBdef                         	abcBdef
+68	abc[edf]                        	abc[edf]
+144	abcd                            	abcd
+145	abcd1                           	abcd1
+51	abcd[.
+]e                       	abcd[.
+]e
+146	abcde                           	abcde
+147	abcde1                          	abcde1
+148	abcdef                          	abcdef
+86	fabcd                           	fabcd
+97	sabc                            	sabc
+109	vabc                            	vabc
+113	wabc                            	wabc
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\" ORDER BY a;
+id	a	b
+10	a\bc                            	a\bc
+11	a\bd                            	a\bd
+SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0" ORDER BY a;
+id	a	b
+10	a\bc                            	a\bc
+11	a\bd                            	a\bd
+SELECT * FROM t1 WHERE a LIKE "a_$1" ESCAPE "$" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab$%" ESCAPE "0" ORDER BY a;
+id	a	b
+18	ab$c                            	ab$c
+19	ab$cde                          	ab$cde
+17	ab$d                            	ab$d
+SELECT * FROM t1 WHERE a LIKE "%+bc_" ESCAPE "+" ORDER BY a;
+id	a	b
+SELECT * FROM t1 WHERE a LIKE "ab+%" ESCAPE "0" ORDER BY a;
+id	a	b
+30	ab+c                            	ab+c
+31	ab+cde                          	ab+cde
+SELECT * FROM t1 WHERE a LIKE "a_?cd%" ESCAPE "?" ORDER BY a;
+id	a	b
+144	abcd                            	abcd
+145	abcd1                           	abcd1
+51	abcd[.
+]e                       	abcd[.
+]e
+146	abcde                           	abcde
+147	abcde1                          	abcde1
+148	abcdef                          	abcdef
+SELECT * FROM t1 WHERE a LIKE "a_?cd%" ESCAPE "0" ORDER BY a;
+id	a	b
+37	ab?cde                          	ab?cde
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "{" ORDER BY a;
+id	a	b
+42	a{1,2}bd                        	a{1,2}bd
+41	a{1,}bc                         	a{1,}bc
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "0" ORDER BY a;
+id	a	b
+43	ab{1,}f                         	ab{1,}f
+SELECT * FROM t1 WHERE a LIKE "_.bd%" ESCAPE "." ORDER BY a;
+id	a	b
+140	abd                             	abd
+141	abd1                            	abd1
+SELECT * FROM t1 WHERE a LIKE "_.bd%" ESCAPE "0" ORDER BY a;
+id	a	b
+48	a.bd                            	a.bd
+SELECT * FROM t1 WHERE b LIKE "^a" ESCAPE "^" ORDER BY b,id;
+id	a	b
+7	a                               	a
+127	a                               	a
+SELECT * FROM t1 WHERE b LIKE "a^^bc" ESCAPE "^" ORDER BY b;
+id	a	b
+3	a^bc                            	a^bc
+SELECT * FROM t1 WHERE b LIKE "a\\bc" ESCAPE "\\" ORDER BY b,id;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "a$bc" ESCAPE "$" ORDER BY b,id;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "ab$$c" ESCAPE "$" ORDER BY b;
+id	a	b
+18	ab$c                            	ab$c
+SELECT * FROM t1 WHERE b LIKE "a**bc" ESCAPE "*" ORDER BY b;
+id	a	b
+22	a*bc                            	a*bc
+SELECT * FROM t1 WHERE b LIKE "a+bc" ESCAPE "+" ORDER BY b,id;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "ab++c" ESCAPE "+" ORDER BY b;
+id	a	b
+30	ab+c                            	ab+c
+SELECT * FROM t1 WHERE b LIKE "a?bc" ESCAPE "?" ORDER BY b,id;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "ab??c" ESCAPE "?" ORDER BY b;
+id	a	b
+36	ab?c                            	ab?c
+SELECT * FROM t1 WHERE b LIKE "a{1" ESCAPE "{" ORDER BY b;
+id	a	b
+130	a1                              	a1
+SELECT * FROM t1 WHERE b LIKE "a.bc" ESCAPE "." ORDER BY b,id;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "ab..c" ESCAPE "." ORDER BY b;
+id	a	b
+49	ab.c                            	ab.c
+SELECT * FROM t1 WHERE b LIKE "a(bcde" ESCAPE "(" ORDER BY b;
+id	a	b
+146	abcde                           	abcde
+SELECT * FROM t1 WHERE b LIKE "abc)d" ESCAPE ")" ORDER BY b;
+id	a	b
+144	abcd                            	abcd
+SELECT * FROM t1 WHERE b LIKE "ab(?::cd|ef)" ESCAPE ":" ORDER BY b;
+id	a	b
+58	ab(?:cd|ef)                     	ab(?:cd|ef)
+SELECT * FROM t1 WHERE b LIKE "a|b|c" ESCAPE "|" ORDER BY b,id;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "a||b||c" ESCAPE "|" ORDER BY b;
+id	a	b
+61	a|b|c                           	a|b|c
+SELECT * FROM t1 WHERE b LIKE "[abc" ESCAPE "[" ORDER BY b,id;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "[ab]]c" ESCAPE "]" ORDER BY b;
+id	a	b
+64	[ab]c                           	[ab]c
+SELECT * FROM t1 WHERE b LIKE "\ba" ESCAPE "\b" ORDER BY b,id;
+id	a	b
+7	a                               	a
+127	a                               	a
+SELECT * FROM t1 WHERE b LIKE "a\b\b" ESCAPE "\b" ORDER BY b;
+id	a	b
+72	a                              	a
+SELECT * FROM t1 WHERE b LIKE "ab\cd" ESCAPE "\c" ORDER BY b;
+id	a	b
+140	abd                             	abd
+SELECT * FROM t1 WHERE b LIKE "ab\c\c" ESCAPE "\c" ORDER BY b,id;
+id	a	b
+12	abc                             	abc
+136	abc                             	abc
+SELECT * FROM t1 WHERE b LIKE "\d1" ESCAPE "\d" ORDER BY b,id;
+id	a	b
+122	1                               	1
+149	1                               	1
+SELECT * FROM t1 WHERE b LIKE "\na" ESCAPE "\n" ORDER BY b,id;
+id	a	b
+7	a                               	a
+127	a                               	a
+SELECT * FROM t1 WHERE b LIKE "\ra" ESCAPE "\r" ORDER BY b,id;
+id	a	b
+7	a                               	a
+127	a                               	a
+SELECT * FROM t1 WHERE b LIKE "\fa" ESCAPE "\f" ORDER BY b,id;
+id	a	b
+7	a                               	a
+127	a                               	a
+SELECT * FROM t1 WHERE b LIKE "\wa" ESCAPE "\w" ORDER BY b,id;
+id	a	b
+7	a                               	a
+127	a                               	a
+SELECT * FROM t1 WHERE b LIKE "\x12" ESCAPE "\x" ORDER BY b;
+id	a	b
+150	12                              	12
+SELECT * FROM t1 WHERE b LIKE "\u1" ESCAPE "\u" ORDER BY b,id;
+id	a	b
+122	1                               	1
+149	1                               	1
+SELECT * FROM t1 WHERE b LIKE "%^a_c%" ESCAPE "^" ORDER BY b,id;
+id	a	b
+105		abc                            		abc
+90	
+abc                            	
+abc
+93	abc                            	abc
+15	$abc                            	$abc
+21	*abc                            	*abc
+27	+abc                            	+abc
+46	.abc                            	.abc
+123	1abc                            	1abc
+33	?abc                            	?abc
+82	Dabc                            	Dabc
+101	Sabc                            	Sabc
+117	W1abc                           	W1abc
+9	\abc                            	\abc
+2	^abc                            	^abc
+12	abc                             	abc
+136	abc                             	abc
+124	abc(.)123                       	abc(.)123
+60	abc(?!d|e|f)                    	abc(?!d|e|f)
+57	abc(de)f                        	abc(de)f
+137	abc1                            	abc1
+138	abc123                          	abc123
+78	abc456                          	abc456
+139	abc456                          	abc456
+76	abcBdef                         	abcBdef
+68	abc[edf]                        	abc[edf]
+144	abcd                            	abcd
+145	abcd1                           	abcd1
+51	abcd[.
+]e                       	abcd[.
+]e
+146	abcde                           	abcde
+147	abcde1                          	abcde1
+148	abcdef                          	abcdef
+86	fabcd                           	fabcd
+97	sabc                            	sabc
+109	vabc                            	vabc
+113	wabc                            	wabc
+SELECT * FROM t1 WHERE b LIKE "a\\\%" ESCAPE "\\" ORDER BY b;
+id	a	b
+10	a\bc                            	a\bc
+11	a\bd                            	a\bd
+SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$" ORDER BY b;
+id	a	b
+135	ab1                             	ab1
+SELECT * FROM t1 WHERE b LIKE "%+bc_" ESCAPE "+" ORDER BY b;
+id	a	b
+66	a[bc]                           	a[bc]
+137	abc1                            	abc1
+144	abcd                            	abcd
+86	fabcd                           	fabcd
+SELECT * FROM t1 WHERE b LIKE "a_?cd%" ESCAPE "?" ORDER BY b;
+id	a	b
+144	abcd                            	abcd
+145	abcd1                           	abcd1
+51	abcd[.
+]e                       	abcd[.
+]e
+146	abcde                           	abcde
+147	abcde1                          	abcde1
+148	abcdef                          	abcdef
+SELECT * FROM t1 WHERE b LIKE "a_{1,%" ESCAPE "{" ORDER BY b;
+id	a	b
+42	a{1,2}bd                        	a{1,2}bd
+41	a{1,}bc                         	a{1,}bc
+SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE "." ORDER BY b;
+id	a	b
+140	abd                             	abd
+141	abd1                            	abd1
+DROP TABLE t1;
+CREATE TABLE t1 (id int auto_increment key, a TINYBLOB, b MEDIUMBLOB, c BLOB, d LONGBLOB) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+INSERT INTO t1(a, b, c, d) VALUES ('^a','^a','^a','^a'),('^abc','^abc','^abc','^abc'),('a^bc','a^bc','a^bc','a^bc'),('a^bd','a^bd','a^bd','a^bd'),('ab^c','ab^c','ab^c','ab^c'),('ab^cde','ab^cde','ab^cde','ab^cde'),('\a','\a','\a','\a'),('\\a','\\a','\\a','\\a'),('\\abc','\\abc','\\abc','\\abc'),('a\\bc','a\\bc','a\\bc','a\\bc'),('a\\bd','a\\bd','a\\bd','a\\bd'),('ab\c','ab\c','ab\c','ab\c'),('ab\\cd','ab\\cd','ab\\cd','ab\\cd'),('$a','$a','$a','$a'),('$abc','$abc','$abc','$abc'),('a$bc','a$bc','a$bc','a$bc'),('ab$d','ab$d','ab$d','ab$d'),('ab$c','ab$c','ab$c','ab$c'),('ab$cde','ab$cde','ab$cde','ab$cde'),('*a','*a','*a','*a'),('*abc','*abc','*abc','*abc'),('a*bc','a*bc','a*bc','a*bc'),('a*bd','a*bd','a*bd','a*bd'),('ab*c','ab*c','ab*c','ab*c'),('ab*cde','ab*cde','ab*cde','ab*cde'),('+a','+a','+a','+a'),('+abc','+abc','+abc','+abc'),('a+bc','a+bc','a+bc','a+bc'),('a+bd','a+bd','a+bd','a+bd'),('ab+c','ab+c','ab+c','ab+c'),('ab+cde','ab+cde','ab+cde','ab+cde'),('?a','?a','?a','?a'),('?abc','?abc','?abc','?abc'),('a?bc','a?bc','a?bc','a?bc'),('a?bd','a?bd','a?bd','a?bd'),('ab?c','ab?c','ab?c','ab?c'),('ab?cde','ab?cde','ab?cde','ab?cde'),('{1}a','{1}a','{1}a','{1}a'),('{1,}a','{1,}a','{1,}a','{1,}a'),('{1,2}ac','{1,2}ac','{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc','a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd','a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f','ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f','ab{0,1}f','ab{0,1}f'),('.a','.a','.a','.a'),('.abc','.abc','.abc','.abc'),('a.bc','a.bc','a.bc','a.bc'),('a.bd','a.bd','a.bd','a.bd'),('ab.c','ab.c','ab.c','ab.c'),('ab.cde','ab.cde','ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e','abcd[.\n]e','abcd[.\n]e'),('(a)','(a)','(a)','(a)'),('(a)bc','(a)bc','(a)bc','(a)bc'),('a(b)c','a(b)c','a(b)c','a(b)c'),('a(b)d','a(b)d','a(b)d','a(b)d'),('ab(c)d','ab(c)d','ab(c)d','ab(c)d'),('abc(de)f','abc(de)f','abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c','a|b|c','a|b|c'),('[a]','[a]','[a]','[a]'),('[^a]','[^a]','[^a]','[^a]'),('[ab]c','[ab]c','[ab]c','[ab]c'),('[^ab]c','[^ab]c','[^ab]c','[^ab]c'),('a[bc]','a[bc]','a[bc]','a[bc]'),('a[bd]','a[bd]','a[bd]','a[bd]'),('abc[edf]','abc[edf]','abc[edf]','abc[edf]'),('[a-z]','[a-z]','[a-z]','[a-z]'),('[^a-z]','[^a-z]','[^a-z]','[^a-z]'),('\b','\b','\b','\b'),('a\b','a\b','a\b','a\b'),('ab\bc','ab\bc','ab\bc','ab\bc'),('\B','\B','\B','\B'),('a\B','a\B','a\B','a\B'),('abc\Bdef','abc\Bdef','abc\Bdef','abc\Bdef'),('\c123','\c123','\c123','\c123'),('ab\c456','ab\c456','ab\c456','ab\c456'),('\d1','\d1','\d1','\d1'),('a\d123','a\d123','a\d123','a\d123'),('\D','\D','\D','\D'),('\Dabc','\Dabc','\Dabc','\Dabc'),('ab\Dcd','ab\Dcd','ab\Dcd','ab\Dcd'),('\f','\f','\f','\f'),('\fa','\fa','\fa','\fa'),('\fabcd','\fabcd','\fabcd','\fabcd'),('ab\fcd','ab\fcd','ab\fcd','ab\fcd'),('\n','\n','\n','\n'),('\na','\na','\na','\na'),('\nabc','\nabc','\nabc','\nabc'),('\r','\r','\r','\r'),('\ra','\ra','\ra','\ra'),('\rabc','\rabc','\rabc','\rabc'),('ab\rcd','ab\rcd','ab\rcd','ab\rcd'),('\s','\s','\s','\s'),('\sa','\sa','\sa','\sa'),('\sabc','\sabc','\sabc','\sabc'),('ab\scd','ab\scd','ab\scd','ab\scd'),('\S','\S','\S','\S'),('\Sa','\Sa','\Sa','\Sa'),('\Sabc','\Sabc','\Sabc','\Sabc'),('ab\Scd','ab\Scd','ab\Scd','ab\Scd'),('\t','\t','\t','\t'),('\ta','\ta','\ta','\ta'),('\tabc','\tabc','\tabc','\tabc'),('ab\tcd','ab\tcd','ab\tcd','ab\tcd'),('\v','\v','\v','\v'),('\va','\va','\va','\va'),('\vabc','\vabc','\vabc','\vabc'),('ab\vcd','ab\vcd','ab\vcd','ab\vcd'),('\w','\w','\w','\w'),('\wa','\wa','\wa','\wa'),('\wabc','\wabc','\wabc','\wabc'),('ab\wcd','ab\wcd','ab\wcd','ab\wcd'),('\W','\W','\W','\W'),('\W1','\W1','\W1','\W1'),('\W1abc','\W1abc','\W1abc','\W1abc'),('ab\W1cd','ab\W1cd','ab\W1cd','ab\W1cd'),('\x12','\x12','\x12','\x12'),('\x123','\x123','\x123','\x123'),('123\x456','123\x456','123\x456','123\x456'),('\1','\1','\1','\1'),('\1abc','\1abc','\1abc','\1abc'),('abc(.)\123','abc(.)\123','abc(.)\123','abc(.)\123'),('\u1','\u1','\u1','\u1'),('123\u111','123\u111','123\u111','123\u111'),('a','a','a','a'),('1a','1a','1a','1a'),('4a','4a','4a','4a'),('a1','a1','a1','a1'),('a3','a3','a3','a3'),('a4','a4','a4','a4'),('a6','a6','a6','a6'),('ab','ab','ab','ab'),('ab1','ab1','ab1','ab1'),('abc','abc','abc','abc'),('abc1','abc1','abc1','abc1'),('abc123','abc123','abc123','abc123'),('abc456','abc456','abc456','abc456'),('abd','abd','abd','abd'),('abd1','abd1','abd1','abd1'),('acd','acd','acd','acd'),('acd1','acd1','acd1','acd1'),('abcd','abcd','abcd','abcd'),('abcd1','abcd1','abcd1','abcd1'),('abcde','abcde','abcde','abcde'),('abcde1','abcde1','abcde1','abcde1'),('abcdef','abcdef','abcdef','abcdef'),('1','1','1','1'),('12','12','12','12'),('123','123','123','123'),('1234','1234','1234','1234'),('12345','12345','12345','12345'),('123456','123456','123456','123456');
+SELECT * FROM t1 WHERE a LIKE "^a" ESCAPE "^";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "a^^bc" ESCAPE "^";
+id	a	b	c	d
+3	a^bc	a^bc	a^bc	a^bc
+SELECT * FROM t1 WHERE c LIKE "a\\bc" ESCAPE "\\";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "a$bc" ESCAPE "$";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab$$c" ESCAPE "$";
+id	a	b	c	d
+18	ab$c	ab$c	ab$c	ab$c
+SELECT * FROM t1 WHERE b LIKE "a**bc" ESCAPE "*";
+id	a	b	c	d
+22	a*bc	a*bc	a*bc	a*bc
+SELECT * FROM t1 WHERE c LIKE "a+bc" ESCAPE "+";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "ab++c" ESCAPE "+";
+id	a	b	c	d
+30	ab+c	ab+c	ab+c	ab+c
+SELECT * FROM t1 WHERE a LIKE "a?bc" ESCAPE "?";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "ab??c" ESCAPE "?";
+id	a	b	c	d
+36	ab?c	ab?c	ab?c	ab?c
+SELECT * FROM t1 WHERE c LIKE "a{1" ESCAPE "{";
+id	a	b	c	d
+130	a1	a1	a1	a1
+SELECT * FROM t1 WHERE d LIKE "a.bc" ESCAPE ".";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "ab..c" ESCAPE ".";
+id	a	b	c	d
+49	ab.c	ab.c	ab.c	ab.c
+SELECT * FROM t1 WHERE b LIKE "a(bcde" ESCAPE "(";
+id	a	b	c	d
+146	abcde	abcde	abcde	abcde
+SELECT * FROM t1 WHERE c LIKE "abc)d" ESCAPE ")";
+id	a	b	c	d
+144	abcd	abcd	abcd	abcd
+SELECT * FROM t1 WHERE d LIKE "ab(?::cd|ef)" ESCAPE ":";
+id	a	b	c	d
+58	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)	ab(?:cd|ef)
+SELECT * FROM t1 WHERE a LIKE "a|b|c" ESCAPE "|";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE b LIKE "a||b||c" ESCAPE "|";
+id	a	b	c	d
+61	a|b|c	a|b|c	a|b|c	a|b|c
+SELECT * FROM t1 WHERE c LIKE "[abc" ESCAPE "[";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE d LIKE "[ab]]c" ESCAPE "]";
+id	a	b	c	d
+64	[ab]c	[ab]c	[ab]c	[ab]c
+SELECT * FROM t1 WHERE a LIKE "\ba" ESCAPE "\b";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "a\b\b" ESCAPE "\b";
+id	a	b	c	d
+72	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "ab\cd" ESCAPE "\c";
+id	a	b	c	d
+140	abd	abd	abd	abd
+SELECT * FROM t1 WHERE d LIKE "ab\c\c" ESCAPE "\c";
+id	a	b	c	d
+12	abc	abc	abc	abc
+136	abc	abc	abc	abc
+SELECT * FROM t1 WHERE a LIKE "\d1" ESCAPE "\d";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE b LIKE "\na" ESCAPE "\n";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE c LIKE "\ra" ESCAPE "\r";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE d LIKE "\fa" ESCAPE "\f";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE a LIKE "\wa" ESCAPE "\w";
+id	a	b	c	d
+127	a	a	a	a
+7	a	a	a	a
+SELECT * FROM t1 WHERE b LIKE "\x12" ESCAPE "\x";
+id	a	b	c	d
+150	12	12	12	12
+SELECT * FROM t1 WHERE c LIKE "\u1" ESCAPE "\u";
+id	a	b	c	d
+122	1	1	1	1
+149	1	1	1	1
+SELECT * FROM t1 WHERE d LIKE "%^a_c%" ESCAPE "^";
+id	a	b	c	d
+101	Sabc	Sabc	Sabc	Sabc
+105		abc		abc		abc		abc
+109	vabc	vabc	vabc	vabc
+113	wabc	wabc	wabc	wabc
+117	W1abc	W1abc	W1abc	W1abc
+12	abc	abc	abc	abc
+123	1abc	1abc	1abc	1abc
+124	abc(.)123	abc(.)123	abc(.)123	abc(.)123
+136	abc	abc	abc	abc
+137	abc1	abc1	abc1	abc1
+138	abc123	abc123	abc123	abc123
+139	abc456	abc456	abc456	abc456
+144	abcd	abcd	abcd	abcd
+145	abcd1	abcd1	abcd1	abcd1
+146	abcde	abcde	abcde	abcde
+147	abcde1	abcde1	abcde1	abcde1
+148	abcdef	abcdef	abcdef	abcdef
+15	$abc	$abc	$abc	$abc
+2	^abc	^abc	^abc	^abc
+21	*abc	*abc	*abc	*abc
+27	+abc	+abc	+abc	+abc
+33	?abc	?abc	?abc	?abc
+46	.abc	.abc	.abc	.abc
+51	abcd[.
+57	abc(de)f	abc(de)f	abc(de)f	abc(de)f
+60	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)	abc(?!d|e|f)
+68	abc[edf]	abc[edf]	abc[edf]	abc[edf]
+76	abcBdef	abcBdef	abcBdef	abcBdef
+78	abc456	abc456	abc456	abc456
+82	Dabc	Dabc	Dabc	Dabc
+86	fabcd	fabcd	fabcd	fabcd
+9	\abc	\abc	\abc	\abc
+90	
+93	abc	abc	abc	abc
+97	sabc	sabc	sabc	sabc
+]e
+]e	abcd[.
+]e	abcd[.
+]e	abcd[.
+abc
+abc	
+abc	
+abc	
+SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
+SELECT * FROM t1 WHERE b LIKE "ab$%" ESCAPE "0";
+id	a	b	c	d
+17	ab$d	ab$d	ab$d	ab$d
+18	ab$c	ab$c	ab$c	ab$c
+19	ab$cde	ab$cde	ab$cde	ab$cde
+SELECT * FROM t1 WHERE c LIKE "ab+%" ESCAPE "0";
+id	a	b	c	d
+30	ab+c	ab+c	ab+c	ab+c
+31	ab+cde	ab+cde	ab+cde	ab+cde
+SELECT * FROM t1 WHERE d LIKE "a_?cd%" ESCAPE "0";
+id	a	b	c	d
+37	ab?cde	ab?cde	ab?cde	ab?cde
+SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "0";
+id	a	b	c	d
+43	ab{1,}f	ab{1,}f	ab{1,}f	ab{1,}f
+SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE "0";
+id	a	b	c	d
+48	a.bd	a.bd	a.bd	a.bd
+DROP TABLE t1;

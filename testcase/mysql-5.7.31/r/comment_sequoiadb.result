@@ -1,0 +1,119 @@
+CREATE TABLE t1(a INT, b TINYINT) comment="sequoiadb:{table_options:{ShardingKey:{a:1},ShardingType:\"hash\",Partition:1024,Compressed:true,CompressionType:\"lzw\",ReplSize:2,AutoSplit:true,AutoIndexId:true,EnsureShardingIndex:true,StrictDataMode:true}}";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL,
+  `b` tinyint(4) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:1},ShardingType:"hash",Partition:1024,Compressed:true,CompressionType:"lzw",ReplSize:2,AutoSplit:true,AutoIndexId:true,EnsureShardingIndex:true,StrictDataMode:true}}'
+INSERT INTO t1 VALUES (1, 1),(2, 2),(3, 3),(10, 10),(-1, -1);
+SELECT * FROM t1;
+a	b
+-1	-1
+1	1
+10	10
+2	2
+3	3
+UPDATE t1 SET b = -101 WHERE b = 2;
+SELECT * FROM t1;
+a	b
+-1	-1
+1	1
+10	10
+2	-101
+3	3
+DELETE FROM t1 WHERE a > 2;
+SELECT * FROM t1;
+a	b
+-1	-1
+1	1
+2	-101
+DROP TABLE t1;
+CREATE TABLE t1(a INT, b TINYINT) comment="sequoiadb:{table_options:{ShardingKey:{a:-1},ShardingType:\"range\"}}";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL,
+  `b` tinyint(4) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:-1},ShardingType:"range"}}'
+INSERT INTO t1 VALUES (1, 1),(2, 2),(0, 0),(-109, -109),(12, 12);
+SELECT * FROM t1;
+a	b
+-109	-109
+0	0
+1	1
+12	12
+2	2
+UPDATE t1 SET b = -101 WHERE b = 2;
+SELECT * FROM t1;
+a	b
+-109	-109
+0	0
+1	1
+12	12
+2	-101
+DELETE FROM t1 WHERE a > 2;
+SELECT * FROM t1;
+a	b
+-109	-109
+0	0
+1	1
+2	-101
+DROP TABLE t1;
+CREATE TABLE t1(a INT, b TINYINT) comment="sequoiadb:{table_options:{ShardingKey:{a:1}, IsMainCL:true}}";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL,
+  `b` tinyint(4) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:1}, IsMainCL:true}}'
+DROP TABLE t1;
+CREATE TABLE t1(a INT NOT NULL AUTO_INCREMENT, KEY(a)) comment="abc|string";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) NOT NULL AUTO_INCREMENT,
+  KEY `a` (`a`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='abc|string'
+INSERT INTO t1 VALUES ();
+SELECT * FROM t1;
+a
+1
+DROP TABLE t1;
+CREATE TABLE t1(a INT);
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+DROP TABLE t1;
+CREATE TABLE t1(a SMALLINT) comment="sequoiadb:{table_options:{Compressed:false}}";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` smallint(6) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{Compressed:false}}'
+INSERT INTO t1 VALUES (1);
+SELECT * FROM t1;
+a
+1
+DROP TABLE t1;
+CREATE TABLE t1(a SMALLINT) engine = sequoiadb comment="sequoiadb:{table_options:{Compressed:false, CompressionType:'snappy'}}";
+ERROR HY000: Ambiguous compression
+CREATE TABLE t1(a SMALLINT) engine = sequoiadb comment="sequoiadb:{table_options:{Compressed:true, CompressionType:'snappy'}}";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` smallint(6) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{Compressed:true, CompressionType:''snappy''}}'
+INSERT INTO t1 VALUES (1);
+SELECT * FROM t1;
+a
+1
+DROP TABLE t1;
+CREATE TABLE t1(ordrdt VARCHAR(8)) engine = sequoiadb comment="sequoiadb:{table_options:{ShardingKey:{ordrdt:1},ShardingType:'range',IsMainCL:true,EnsureShardingIndex:false,Compressed:true,ReplSize:-1,CompressionType:'lzw'}}";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `ordrdt` varchar(8) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{ordrdt:1},ShardingType:''range'',IsMainCL:true,EnsureShardingIndex:false,Compressed:true,ReplSize:-1,CompressionType:''lzw''}}'
+DROP TABLE t1;
