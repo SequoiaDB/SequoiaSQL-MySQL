@@ -116,6 +116,7 @@
 
 #define SDB_COMMENT "sequoiadb"
 
+#define SDB_FIELD_UNIQUEID "UniqueID"
 #define SDB_FIELD_DETAILS "Details"
 #define SDB_FIELD_PAGE_SIZE "PageSize"
 #define SDB_FIELD_TOTAL_DATA_PAGES "TotalDataPages"
