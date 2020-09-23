@@ -1173,6 +1173,7 @@ int ha_sdb::reset() {
   group_list_condition = SDB_EMPTY_BSON;
   first_info = true;
   delete_with_select = false;
+  count_query = false;
   m_ignore_dup_key = false;
   m_write_can_replace = false;
   m_insert_with_update = false;
@@ -2932,20 +2933,19 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
   DBUG_ENTER("ha_sdb::optimize_count()");
   int rc = SDB_ERR_OK;
   bson::BSONObjBuilder count_cond_blder;
-  LEX *const lex = ha_thd()->lex;
   SELECT_LEX *const select = sdb_lex_first_select(ha_thd());
+  JOIN *join = select->join;
   ORDER *order = select->order_list.first;
   ORDER *group = select->group_list.first;
+  bool use_count = join && join->tmp_table_param.sum_func_count;
   bool optimize_with_materialization =
       sdb_optimizer_switch_flag(ha_thd(), OPTIMIZER_SWITCH_MATERIALIZATION);
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   count_query = false;
   try {
-    if (select->table_list.elements == 1 && lex->all_selects_list && !order &&
-        sdb_tables_in_join(select->join) <= 1 && !group &&
-        optimize_with_materialization &&
-        !lex->all_selects_list->next_select_in_list() && !mrr_have_range &&
+    if (use_count && sdb_is_single_table(ha_thd()) && !order && !group &&
+        optimize_with_materialization && !sdb_use_mrr(ha_thd(), mrr_iter) &&
         (SDB_COND_UNCALLED == sdb_condition->status ||
          SDB_COND_SUPPORTED == sdb_condition->status) &&
         !sdb_condition->has_null_func) {
