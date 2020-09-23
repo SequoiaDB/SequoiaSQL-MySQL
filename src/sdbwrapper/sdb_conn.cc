@@ -553,6 +553,12 @@ int Sdb_conn::get_cl_stats_by_get_detail(char *cs_name, char *cl_name,
 
   try {
     while (!(rc = cursor.next(obj, false))) {
+      // Reject SequoiaDB in standalone mode. It's not supported yet.
+      if (obj.getField(SDB_FIELD_UNIQUEID).numberLong() <= 0) {
+        rc = SDB_RTN_COORD_ONLY;
+        break;
+      }
+
       bson::BSONObjIterator it(obj.getField(SDB_FIELD_DETAILS).Obj());
       if (!it.more()) {
         continue;

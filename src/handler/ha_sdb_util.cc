@@ -700,8 +700,7 @@ int sdb_add_pfs_clientinfo(THD *thd) {
     snprintf(pos, SDB_PFS_META_LEN, "/* qid=%lli, ostid=%llu */ ",
              thd->query_id, my_thread_os_id());
     pos += strlen(query_text);
-    snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s",
-             rewrite_query.c_ptr_safe());
+    snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s", rewrite_query.c_ptr_safe());
   } else {
     length = thd->query().length;
     query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));

@@ -133,6 +133,7 @@
 #define SDB_FIELD_TABLE_OPTIONS "table_options"
 #define SDB_FIELD_PARTITION_OPTIONS "partition_options"
 
+#define SDB_FIELD_UNIQUEID "UniqueID"
 #define SDB_FIELD_DETAILS "Details"
 #define SDB_FIELD_PAGE_SIZE "PageSize"
 #define SDB_FIELD_TOTAL_DATA_PAGES "TotalDataPages"
