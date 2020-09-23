@@ -288,7 +288,9 @@ bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
   quick = tab->quick();
   if (quick) {
     // Use INDEX_MERGE.
-    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type()) {
+    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type() ||
+        QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type() ||
+        QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
       rs = true;
       goto done;
     }
@@ -716,7 +718,10 @@ bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
   }
   if ((select = tab->select) && (quick = select->quick)) {
     // Use INDEX_MERGE.
-    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type()) {
+    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type() ||
+        QUICK_SELECT_I::QS_TYPE_INDEX_INTERSECT == quick->get_type() ||
+        QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type() ||
+        QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
       rs = true;
       goto done;
     }
