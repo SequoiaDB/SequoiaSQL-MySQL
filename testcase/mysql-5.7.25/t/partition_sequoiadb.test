@@ -102,7 +102,7 @@ CHECK TABLE `t#P#1`;
 #BUG #SEQUOIASQLMAINSTREAM-794 
 # insert a duplicated row
 INSERT INTO `t#P#1#P#pmix1`(id,c) VALUES (3,'20');
-SELECT * FROM `t#P#1` ORDER BY id;             
+SELECT * FROM `t#P#1` ORDER BY id, c; 
 # return error
 --replace_column 1 x
 CHECK TABLE `t#P#1` MEDIUM;
@@ -252,7 +252,7 @@ CREATE TABLE `t1#List#Expr#P#pmoren2` ( id INT, _phid_ BIGINT, a INT NOT NULL, b
 CREATE TABLE `t1#List#Expr#P#pmoren3` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
 # insert a mismatched row
 INSERT INTO `t1#List#Expr#P#ptest1`(id,_phid_ ,a) VALUES (101,101,101) ;    
-SELECT * FROM `t1#List#Expr` ORDER BY id;   
+SELECT * FROM `t1#List#Expr` ORDER BY id, a; 
 # return error
 --replace_column 1 x
 CHECK TABLE `t1#List#Expr`; 
@@ -269,13 +269,13 @@ ALTER TABLE `t1#List#Expr` REPAIR PARTITION ptest1;
 ALTER TABLE `t1#List#Expr` REPAIR PARTITION pmoren2,pmoren3;
 ALTER TABLE `t1#List#Expr` REBUILD PARTITION ptest1;
 DELETE FROM `t1#List#Expr#P#ptest1` WHERE a = 101;
-SELECT * FROM `t1#List#Expr` ORDER BY id;
+SELECT * FROM `t1#List#Expr` ORDER BY id, a;
 --replace_column 1 x 
 CHECK TABLE `t1#List#Expr`;  
 # insert many valid rows, matched and not duplicated 
 INSERT INTO `t1#List#Expr#P#ptest1`(id, _phid_, a) VALUES (29,29,29),(-31,31,-31) ;
 INSERT INTO `t1#List#Expr#P#pmoren2`(id, _phid_, a) VALUES (10,10,10);
-SELECT * FROM `t1#List#Expr` ORDER BY id; 
+SELECT * FROM `t1#List#Expr` ORDER BY id, a; 
 --replace_column 1 x
 CHECK TABLE `t1#List#Expr` EXTENDED; 
 --replace_column 1 x
@@ -289,14 +289,14 @@ ALTER TABLE  `t1#List#Expr` CHECK PARTITION pmoren3;
 --replace_column 1 x
 REPAIR TABLE `t1#List#Expr`;
 ALTER TABLE `t1#List#Expr` REBUILD PARTITION ALL;
-SELECT * FROM `t1#List#Expr` ORDER BY id;              
+SELECT * FROM `t1#List#Expr` ORDER BY id, a; 
 --replace_column 1 x
 CHECK TABLE `t1#List#Expr`;  
 #BUG #SEQUOIASQLMAINSTREAM-794
 # insert contain a duplicated row
 INSERT INTO `t1#List#Expr#P#pmoren2`(id, _phid_, a) VALUES (10,10,10);
 INSERT INTO `t1#List#Expr#P#pmoren3`(id, _phid_, a) VALUES (8,8,8),(99,99,99);
-SELECT * FROM `t1#List#Expr` ORDER BY id;
+SELECT * FROM `t1#List#Expr` ORDER BY id, a;
 --replace_column 1 x
 CHECK TABLE `t1#List#Expr`;    
 --replace_column 1 x
@@ -310,7 +310,7 @@ ALTER TABLE `t1#List#Expr` REBUILD PARTITION ALL;
 CHECK TABLE `t1#List#Expr`;
 DELETE FROM `t1#List#Expr#P#pmoren2` WHERE a = 10;
 DELETE FROM `t1#List#Expr#P#pmoren3` WHERE a = 8 OR a = 99;
-SELECT * FROM `t1#List#Expr` ORDER BY id; 
+SELECT * FROM `t1#List#Expr` ORDER BY id, a; 
 --replace_column 1 x
 CHECK TABLE `t1#List#Expr`;     
 DROP TABLE `t1#Range#Expr`,`t1#List#Expr`,`t1#P#List#Columns`;
