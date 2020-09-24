@@ -79,60 +79,55 @@ function(build_curl type)
    )
 endfunction()
 
-if(MYSQL STREQUAL "5.7.28")
-   set(WITH_SSL "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
-endif()
+IF(SDB_PROJECT_TYPE STREQUAL "mariadb" OR
+   MYSQL STREQUAL "5.7.28" OR
+   MYSQL STREQUAL "5.7.31")
+   IF(WITH_SSL)
+      SET(OPENSSL_ROOT_DIR "${WITH_SSL}")
+   ELSE()
+      SET(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib")
+   ENDIF()
 
-if(MYSQL STREQUAL "5.7.31")
-   if(NOT WITH_SSL)
-      set(OPENSSL_1_1_1_g_LIB_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib/lib/")
-      set(EXEC_STR "export LD_LIBRARY_PATH=${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib/lib/;\
-                   ./openssl-1.1.1g/lib/bin/openssl version | \
-                   grep OpenSSL")
-      execute_process(
-         COMMAND bash -c "${EXEC_STR}"
-         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
-         OUTPUT_VARIABLE OUTPUT
-      )
-      if(OUTPUT)
-         message(STATUS "OpenSSL has already been built, nothing to do, "
-                        "version:" ${OUTPUT})
-      else()
-         if(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
-            build_openssl("debug")
-         else()
-            build_openssl("release")
-         endif()
-      endif()
-      set(WITH_SSL  "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib")
-   endif()
+   SET(OPENSSL_USE_STATIC_LIBS ON)
+   SET(THREADS_PREFER_PTHREAD_FLAG ON)
+   set(_SDB_OPENSSL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+   set(CMAKE_FIND_LIBRARY_SUFFIXES .a )
+   FIND_PACKAGE(OpenSSL)
+   set(CMAKE_FIND_LIBRARY_SUFFIXES ${_SDB_OPENSSL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
+   IF(OPENSSL_FOUND AND OPENSSL_VERSION STREQUAL "1.1.1g")
+      MESSAGE(STATUS "OpenSSL is found in ${OPENSSL_ROOT_DIR}, version is ${OPENSSL_VERSION}.")
+   ELSE()
+      IF(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
+         build_openssl("debug")
+      ELSE()
+         build_openssl("release")
+      ENDIF()
+   ENDIF()
+   SET(OPENSSL_LIB_DIR "${OPENSSL_ROOT_DIR}/lib")
 
-   if(NOT WITH_CURL)
-      set(EXEC_STR "export LD_LIBRARY_PATH=${CMAKE_SOURCE_DIR}/thirdparty/curl-7.69.0/lib/lib/;\
-                   ./curl-7.69.0/lib/bin/curl  --version  | \
-                   grep curl")
-      execute_process(
-         COMMAND bash -c "${EXEC_STR}"
-         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
-         OUTPUT_VARIABLE OUTPUT
-      )
-      if(OUTPUT)
-         message(STATUS "Curl has already been built, nothing to do, "
-                        "version:" ${OUTPUT})
-      else()
-         if(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
-            build_curl("debug")
-         else()
-            build_curl("release")
-         endif()
-      endif()
-      set(WITH_CURL "${CMAKE_SOURCE_DIR}/thirdparty/curl-7.69.0/lib/lib")
-   endif()
-endif()
+   IF(NOT WITH_CURL)
+      SET(WITH_CURL "${CMAKE_SOURCE_DIR}/thirdparty/curl-7.69.0/lib/")
+   ENDIF()
 
-if(SDB_PROJECT_TYPE STREQUAL "mariadb")
-   set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.0.1c")
-endif()
+   # Find thirdparty, then system. If system curl version not required, then build thirdparty.
+   SET(CURL_ROOT_DIR "${WITH_CURL}")
+   set(_SDB_CURL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+   set(CMAKE_FIND_LIBRARY_SUFFIXES .a )
+   FIND_PACKAGE(CURL)
+   set(CMAKE_FIND_LIBRARY_SUFFIXES ${_SDB_CURL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
+
+   IF(CURL_LIBRARY STREQUAL "CURL_LIBRARY-NOTFOUND" OR
+      NOT "${CURL_VERSION_STRING}" STREQUAL "7.69.0")
+      IF(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
+         build_curl("debug")
+      ELSE()
+         build_curl("release")
+      ENDIF()
+   ELSE()
+      MESSAGE(STATUS "Curl is found in ${WITH_CURL}, version is ${CURL_VERSION_STRING}.")
+   ENDIF()
+ENDIF()
+
 
 # Trigger the sdb version tool building, and use it to get the version.
 function(get_sdb_version version git_version)
@@ -146,8 +141,7 @@ function(get_sdb_version version git_version)
       set(SDB_DRIVER_DIR "${CMAKE_BINARY_DIR}/${WITH_SDB_DRIVER}")
    endif()
 
-   if(OPENSSL_1_1_1_g_LIB_DIR)
-      set(OPENSSL_LIB_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib/lib/")
+   if(OPENSSL_LIB_DIR)
       execute_process(
          COMMAND bash -c "cmake . -DSDB_DRIVER_DIR=${SDB_DRIVER_DIR} -DOPENSSL_LIB_DIR=${OPENSSL_LIB_DIR}"
          WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
