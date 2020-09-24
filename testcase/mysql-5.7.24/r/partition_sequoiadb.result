@@ -256,11 +256,11 @@ CHECK TABLE `t#P#1`;
 Table	Op	Msg_type	Msg_text
 x	check	status	OK
 INSERT INTO `t#P#1#P#pmix1`(id,c) VALUES (3,'20');
-SELECT * FROM `t#P#1` ORDER BY id;
+SELECT * FROM `t#P#1` ORDER BY id, c;
 id	b	c
 0	0	3
-3	6	20
 3	6	16
+3	6	20
 150	300	newC
 500	1000	newC
 1000	2000	newC
@@ -669,12 +669,12 @@ CREATE TABLE `t1#List#Expr#P#ptest1` ( id INT, _phid_ BIGINT, a INT NOT NULL, b 
 CREATE TABLE `t1#List#Expr#P#pmoren2` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
 CREATE TABLE `t1#List#Expr#P#pmoren3` ( id INT, _phid_ BIGINT, a INT NOT NULL, b INT GENERATED ALWAYS AS (a+1) STORED );
 INSERT INTO `t1#List#Expr#P#ptest1`(id,_phid_ ,a) VALUES (101,101,101) ;
-SELECT * FROM `t1#List#Expr` ORDER BY id;
+SELECT * FROM `t1#List#Expr` ORDER BY id, a;
 id	a	b
 -6	-6	-5
 -3	-3	-2
-1	20	21
 1	17	18
+1	20	21
 101	101	102
 CHECK TABLE `t1#List#Expr`;
 Table	Op	Msg_type	Msg_text
@@ -710,24 +710,24 @@ Table	Op	Msg_type	Msg_text
 x	repair	status	OK
 ALTER TABLE `t1#List#Expr` REBUILD PARTITION ptest1;
 DELETE FROM `t1#List#Expr#P#ptest1` WHERE a = 101;
-SELECT * FROM `t1#List#Expr` ORDER BY id;
+SELECT * FROM `t1#List#Expr` ORDER BY id, a;
 id	a	b
 -6	-6	-5
 -3	-3	-2
-1	20	21
 1	17	18
+1	20	21
 CHECK TABLE `t1#List#Expr`;
 Table	Op	Msg_type	Msg_text
 x	check	status	OK
 INSERT INTO `t1#List#Expr#P#ptest1`(id, _phid_, a) VALUES (29,29,29),(-31,31,-31) ;
 INSERT INTO `t1#List#Expr#P#pmoren2`(id, _phid_, a) VALUES (10,10,10);
-SELECT * FROM `t1#List#Expr` ORDER BY id;
+SELECT * FROM `t1#List#Expr` ORDER BY id, a;
 id	a	b
 -31	-31	-30
 -6	-6	-5
 -3	-3	-2
-1	20	21
 1	17	18
+1	20	21
 10	10	11
 29	29	30
 CHECK TABLE `t1#List#Expr` EXTENDED;
@@ -757,13 +757,13 @@ Table	Op	Msg_type	Msg_text
 x	repair	warning	Moved 1 misplaced rows
 x	repair	status	OK
 ALTER TABLE `t1#List#Expr` REBUILD PARTITION ALL;
-SELECT * FROM `t1#List#Expr` ORDER BY id;
+SELECT * FROM `t1#List#Expr` ORDER BY id, a;
 id	a	b
 -31	-31	-30
 -6	-6	-5
 -3	-3	-2
-1	20	21
 1	17	18
+1	20	21
 10	10	11
 29	29	30
 CHECK TABLE `t1#List#Expr`;
@@ -771,12 +771,13 @@ Table	Op	Msg_type	Msg_text
 x	check	status	OK
 INSERT INTO `t1#List#Expr#P#pmoren2`(id, _phid_, a) VALUES (10,10,10);
 INSERT INTO `t1#List#Expr#P#pmoren3`(id, _phid_, a) VALUES (8,8,8),(99,99,99);
-SELECT * FROM `t1#List#Expr` ORDER BY id;
+SELECT * FROM `t1#List#Expr` ORDER BY id, a;
 id	a	b
 -31	-31	-30
 -6	-6	-5
+-3	-3	-2
 1	17	18
-1	12	13
+1	20	21
 8	8	9
 10	10	11
 10	10	11
@@ -811,12 +812,13 @@ x	check	error	Partition pmoren2 returned error
 x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#List#Expr`" or dump/reload to fix it!
 DELETE FROM `t1#List#Expr#P#pmoren2` WHERE a = 10;
 DELETE FROM `t1#List#Expr#P#pmoren3` WHERE a = 8 OR a = 99;
-SELECT * FROM `t1#List#Expr` ORDER BY id;
+SELECT * FROM `t1#List#Expr` ORDER BY id, a;
 id	a	b
 -31	-31	-30
 -6	-6	-5
+-3	-3	-2
 1	17	18
-1	12	13
+1	20	21
 10	10	11
 29	29	30
 CHECK TABLE `t1#List#Expr`;
