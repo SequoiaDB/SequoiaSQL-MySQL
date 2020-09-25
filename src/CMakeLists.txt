@@ -53,10 +53,13 @@ include_directories(${SDB_INCLUDE_DIR})
 set(SDB_LDFLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
 
 if(SDB_BUILT_IN)
+  set(_SDB_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES "")
   # builtin storage engine use C++ dynamic driver
   find_library(SDB_DYNAMIC_LIBRARY
                NAMES libsdbcpp.so
                HINTS ${SDB_DRIVER_PATH}/lib)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${_SDB_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
   if(${SDB_DYNAMIC_LIBRARY} STREQUAL "SDB_DYNAMIC_LIBRARY-NOTFOUND")
     message(SEND_ERROR "Cannot find libsdbcpp.so from ${SDB_DRIVER_PATH}/lib")
   endif()
@@ -79,10 +82,13 @@ if(SDB_BUILT_IN)
 
   install(FILES ${SDB_DYNAMIC_LIBRARY} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 else()
+  set(_SDB_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+  set(CMAKE_FIND_LIBRARY_SUFFIXES "")
   # use C++ static driver
   find_library(SDB_STATIC_LIBRARY
                NAMES libstaticsdbcpp.a
                HINTS ${SDB_DRIVER_PATH}/lib)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ${_SDB_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
   if(${SDB_STATIC_LIBRARY} STREQUAL "SDB_STATIC_LIBRARY-NOTFOUND")
     message(
       SEND_ERROR "Cannot find libstaticsdbcpp.a from ${SDB_DRIVER_PATH}/lib")
