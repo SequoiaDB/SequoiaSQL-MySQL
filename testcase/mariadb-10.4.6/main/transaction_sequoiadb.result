@@ -321,7 +321,8 @@ id	id1	c
 2	2	b
 3	3	updateC
 5	5	updateE
-6	6	f
+6	6	updateF
+7	7	h
 delete from t1;
 disconnect con1;
 disconnect con2;
@@ -374,8 +375,8 @@ select * from t1;
 id	id1	c
 2	3	b
 3	3	updateC
-4	4	updateD
-5	5	e
+5	5	updateE
+6	6	f
 delete from t1;
 insert into t1 values (1,2,'a'),(2,3,'b'), (3,3,'c');
 connection con1;
@@ -422,6 +423,8 @@ id	id1	c
 2	3	b
 4	4	updateD
 5	5	e
+6	6	f
+7	7	g
 set global sequoiadb_rollback_on_timeout = off;
 drop table t1;
 connection con1;
