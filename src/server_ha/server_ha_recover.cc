@@ -260,6 +260,8 @@ static int mysql_create_user(THD *thd, LEX_USER &lex_user) {
 
   (void)acl_reload(thd);
   (void)grant_reload(thd);
+
+  ha_close_connection(thd);
   return 0;
 #else
   List<LEX_USER> list;
