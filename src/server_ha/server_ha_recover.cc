@@ -742,13 +742,18 @@ static void build_mysqldump_command(char *cmd, const ha_dump_source &src,
                                     bool dump_sysdb) {
   int end = 0;
   int max_cmd_len = FN_REFLEN * 2 + 100;
-  end =
-      snprintf(cmd, max_cmd_len, "%s/bin/mysqldump --opt -B ", mysql_home_ptr);
+  end = snprintf(cmd, max_cmd_len, "%s/bin/mysqldump -B ", mysql_home_ptr);
   if (!dump_sysdb) {
     end += snprintf(cmd + end, max_cmd_len, "--no-data --all-databases ");
   } else {
-    end += snprintf(cmd + end, max_cmd_len, "-a mysql ");
+    end += snprintf(cmd + end, max_cmd_len, "-a mysql -t ");
   }
+
+  // ignore table 'mysql.innodb_index_stats' and 'mysql.innodb_table_stats'
+  end += snprintf(cmd + end, max_cmd_len,
+                  "--ignore-table mysql.innodb_index_stats ");
+  end += snprintf(cmd + end, max_cmd_len,
+                  "--ignore-table mysql.innodb_table_stats ");
 
   end += snprintf(cmd + end, max_cmd_len, "--events=1 ");
   end += snprintf(
@@ -1099,6 +1104,8 @@ static int drop_non_system_databases(MYSQL *conn) {
         !strcmp(HA_PERFORMANCE_DB, db)
 #ifdef IS_MYSQL
         || !strcmp(HA_SYS_DB, db)
+#else
+        || !strcmp(HA_TEST_DB, db)
 #endif
     ) {
       continue;
@@ -1904,28 +1911,13 @@ void *ha_recover_and_replay(void *arg) {
     HA_RC_CHECK(rc, error, "HA: Failed to check local metadata");
     if (local_metadata_expired) {
       ha_dump_source dump_source;
-      bool recover_from_log = false;
       // 5. choose instance and get metadata from another instance
       rc = dump_full_meta_data(ha_thread, sdb_conn, dump_source);
+      HA_RC_CHECK(rc, error, "HA: Failed to dump full metadata");
 
       // 6. recover metadata
-      if (0 == rc) {
-        rc = recover_meta_data(ha_thread, sdb_conn, dump_source);
-      }
-
-      // if full recovery fails , prepare recovery from SQL log
-      if (rc) {
-        rc = clear_local_meta_data(ha_mysql);
-        HA_RC_CHECK(rc, error,
-                    "HA: Failed to clear local metadata before "
-                    "recovering from SQL log");
-
-        sql_print_information(
-            "HA: Full recovery failed, initialize current "
-            "instance global state, prepare recovery from SQL log");
-        rc = init_global_state(ha_thread, sdb_conn);
-        HA_RC_CHECK(rc, error, "HA: Failed to initialize global state");
-      }
+      rc = recover_meta_data(ha_thread, sdb_conn, dump_source);
+      HA_RC_CHECK(rc, error, "HA: Failed to recover metadata");
     }
 
     // load current instance state into cache
