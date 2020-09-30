@@ -14,9 +14,20 @@ class OptionsMgr:
         # Compile and install options
         build_opt_group = self.__parser.add_argument_group('build arguments')
         build_opt_group.add_argument(
-            '--sdbdriver', metavar='path', type=str, required=True,
+            '--sdbdriver', metavar = 'path', type=str, required=True,
             help='SequoiaDB driver path'
         )
+
+        build_opt_group.add_argument(
+            '--commitsha', metavar = 'commitSHA', type=str,
+            help='The commit SHA hash value of sequoiasql-mysql repository'
+        )
+
+        build_opt_group.add_argument(
+            '--mysqlsrcpkgdir', metavar = 'mysqlSrcPackageDir',
+            type=str, help='The dir of mysql src package.'
+        )
+
         build_opt_group.add_argument(
             '-t', '--type', metavar = 'projectType',
             type=str, default='mysql-5.7.25',
@@ -137,7 +148,7 @@ class OptionsMgr:
         print("\tRunPackage -- " + str(self.needRunPackage()))
 
     def parseArguments(self):
-        self.args = self.__parser.parse_args()
+        self.args = self.__parser.parse_args()            
         # Parse build type
         target = self.args.type.split('-')
         if len(target) != 2:
@@ -176,6 +187,15 @@ class OptionsMgr:
                 '-DCMAKE_INSTALL_PREFIX={}'.format(self.args.install)
             )
 
+        if self.args.commitsha:
+            cmake_arguments.append('-DCOMMIT_SHA={}'
+                                   .format(self.args.commitsha)
+                                  )
+
+        if self.args.mysqlsrcpkgdir:
+            cmake_arguments.append('-DMYSQL_SRC_PACKAGE_DIR={}'
+                                   .format(self.args.mysqlsrcpkgdir))
+
         if self.args.enterprise:
             cmake_arguments.append('-DENTERPRISE=ON')
         else:
@@ -185,7 +205,8 @@ class OptionsMgr:
             cmake_arguments.append('-DCMAKE_BUILD_TYPE=Debug')
 
         if self.args.compileflags:
-            cmake_arguments.append(self.args.compileflags)
+            cmake_arguments.append('-DCMAKE_CXX_FLAGS={}'
+                                   .format(self.args.compileflags))
 
         if self.args.excludetest:
             cmake_arguments.append('-DPACK_TEST=OFF')
@@ -264,11 +285,14 @@ class ProjectMgr:
             return 1
         return 0
 
-    def clean_project(self):
-        commands = [
-            ['git', 'clean', '-fdx'],
-            ['git', 'reset', '--hard']
-        ]
+    def clean_project(self, offline):
+        if offline:
+            commands = [['rm', '-rf', 'build']]
+        else:
+            commands = [
+                ['git', 'clean', '-fdx'],
+                ['git', 'reset', '--hard']
+            ]
 
         for command in commands:
             process = subprocess.Popen(command, shell=False, cwd=self.__prjRoot)
@@ -365,7 +389,10 @@ def main():
 
 
     if optMgr.needClean():
-        prjMgr.clean_project()
+        offline = False
+        if optMgr.args.commitsha:
+            offline = True   
+        prjMgr.clean_project(offline)
 
     if optMgr.needBuild():
         rc = prjMgr.build()
