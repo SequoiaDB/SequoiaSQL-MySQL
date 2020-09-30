@@ -72,8 +72,10 @@ class BuildThirdParty(optparse.OptionParser):
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
+        rm_dynamic_libs = "rm -f lib/lib/lib*.so; rm -f lib/lib/lib*.so.*"
         os.system(make_cmd)
         os.system(make_install_cmd)
+        os.system(rm_dynamic_libs)
 
     def build_curl(self, version):
         curl_dir = "curl-"
@@ -96,8 +98,10 @@ class BuildThirdParty(optparse.OptionParser):
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
+        rm_dynamic_libs = "rm -f lib/lib/lib*.so; rm -f lib/lib/lib*.so.*"
         os.system(make_cmd)
         os.system(make_install_cmd)
+        os.system(rm_dynamic_libs)
 
 def main():
     #pdb.set_trace()

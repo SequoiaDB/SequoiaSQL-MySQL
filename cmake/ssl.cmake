@@ -1,0 +1,41 @@
+# Build thirdparty.
+function(build_openssl type)
+   # Build openssl
+   message(STATUS "Build OpenSSL, call ${CMAKE_SOURCE_DIR}/thirdparty/"
+           "build_thirdparty.py  --openssl=1.1.1g")
+   if(type STREQUAL "debug")
+      set(debug_opt " -d")
+   else()
+      set(debug_opt "")
+   endif()
+   execute_process(
+      COMMAND bash -c "python3 build_thirdparty.py --openssl=1.1.1g ${debug_opt}"
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
+   )
+endfunction()
+
+MACRO(SDB_CHECK_SSL)
+   UNSET(WITH_SSL CACHE)
+   IF(NOT WITH_SSL)
+      SET(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib")
+   ELSE()
+      SET(OPENSSL_ROOT_DIR "${WITH_SSL}")
+   ENDIF()
+
+   SET(OPENSSL_USE_STATIC_LIBS ON)
+   SET(THREADS_PREFER_PTHREAD_FLAG ON)
+   set(_SDB_OPENSSL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
+   set(CMAKE_FIND_LIBRARY_SUFFIXES .a )
+   FIND_PACKAGE(OpenSSL)
+   set(CMAKE_FIND_LIBRARY_SUFFIXES ${_SDB_OPENSSL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
+   IF(OPENSSL_FOUND AND OPENSSL_VERSION STREQUAL "1.1.1g")
+      MESSAGE(STATUS "OpenSSL is found in ${OPENSSL_ROOT_DIR}, version is ${OPENSSL_VERSION}.")
+   ELSE()
+      IF(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
+         build_openssl("debug")
+      ELSE()
+         build_openssl("release")
+      ENDIF()
+   ENDIF()
+   SET(OPENSSL_LIB_DIR "${OPENSSL_ROOT_DIR}/lib")
+ENDMACRO(SDB_CHECK_SSL)
