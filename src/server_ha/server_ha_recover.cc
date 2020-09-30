@@ -1366,6 +1366,9 @@ error:
 // before create instance group user, mysql service must been started
 static bool wait_for_mysqld_service() {
   bool mysqld_failed = false;
+#ifdef IS_MYSQL
+  extern my_thread_handle signal_thread_id;
+#endif
   mysql_mutex_lock(&LOCK_server_started);
   // end 'HA' thread as soon as possible if found mysqld failed to start
   while (!mysqld_server_started && !mysqld_failed) {
@@ -1376,6 +1379,9 @@ static bool wait_for_mysqld_service() {
 #ifdef IS_MARIADB
     // thread_scheduler will be set to NULL if found mysqld failed to start
     mysqld_failed |= (NULL == thread_scheduler);
+#else
+    // signal_thread_id.thread will be set to 0 if mysqld fails
+    mysqld_failed |= (0 == signal_thread_id.thread);
 #endif
   }
   mysql_mutex_unlock(&LOCK_server_started);
@@ -1822,7 +1828,10 @@ void ha_kill_mysqld(THD *thd) {
 #ifdef IS_MARIADB
   kill_mysql(thd);
 #else
-  kill_mysql();
+  extern my_thread_handle signal_thread_id;
+  if (0 != signal_thread_id.thread) {
+    kill_mysql();
+  }
 #endif
 #endif
 }

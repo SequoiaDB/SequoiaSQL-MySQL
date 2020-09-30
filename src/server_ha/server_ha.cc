@@ -2634,6 +2634,12 @@ static int server_ha_init(void *p) {
 static int server_ha_deinit(void *p __attribute__((unused))) {
   DBUG_ENTER("server_ha_deinit");
 
+#ifdef IS_MARIADB
+  if (NULL == ha_inst_group_name) {
+    DBUG_RETURN(0);
+  }
+#endif
+
   // wake up replay thread, there is no effect if
   // replay thread already exit
   if (strlen(ha_inst_group_name) && !opt_bootstrap) {
