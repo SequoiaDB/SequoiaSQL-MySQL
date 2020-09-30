@@ -114,15 +114,9 @@ endif()
 
 if(WITH_BOOST)
   # set openssl dir
-  if (MYSQL STREQUAL "5.7.31" OR MYSQL STREQUAL "5.7.28" OR MARIADB)
-    set(OPENSSL_DIR "${SQL_SOURCE_ROOT}/../../thirdparty/openssl-1.1.1g")
-    set(OPENSSL_INCLUDE_DIR "${OPENSSL_DIR}/include")
-    set(OPENSSL_LIB_DIR "${OPENSSL_DIR}/lib/lib")
-  else()
-    set(OPENSSL_DIR "${SQL_SOURCE_ROOT}/../../thirdparty/openssl-1.0.1c")
-    set(OPENSSL_INCLUDE_DIR "${OPENSSL_DIR}/include")
-    set(OPENSSL_LIB_DIR "${OPENSSL_DIR}/lib")
-  endif()
+  set(OPENSSL_DIR "${SQL_SOURCE_ROOT}/../../thirdparty/openssl-1.1.1g")
+  set(OPENSSL_INCLUDE_DIR "${OPENSSL_DIR}/include")
+  set(OPENSSL_LIB_DIR "${OPENSSL_DIR}/lib/lib")
   
   # build ha_inst_group_init
   set(HA_TOOLS_FLAGS "-Wno-unused-value -Wno-missing-field-initializers -Wno-deprecated-declarations")
