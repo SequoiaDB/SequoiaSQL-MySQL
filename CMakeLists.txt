@@ -21,6 +21,10 @@
 
 cmake_minimum_required(VERSION 2.8.7)
 
+INCLUDE(cmake/curl.cmake)
+INCLUDE(cmake/ssl.cmake)
+INCLUDE(cmake/gen_version.cmake)
+
 option(ENTERPRISE "Build enterprise edition" OFF)
 option(SDB_BUILT_IN "Build the sequoiadb plugin into mysqld" ON)
 option(PACK_TEST "Set to true if you want to include testcases in the run
@@ -48,208 +52,55 @@ endif()
 
 project(${PROJECT_NAME})
 
-# Build thirdparty.
-function(build_openssl type)
-   # Build openssl
-   message(STATUS "Build OpenSSL, call ${CMAKE_SOURCE_DIR}/thirdparty/"
-           "build_thirdparty.py  --openssl=1.1.1g")
-   if(type STREQUAL "debug")
-      set(debug_opt " -d")
-   else()
-      set(debug_opt "")
-   endif()
-   execute_process(
-      COMMAND bash -c "python3 build_thirdparty.py --openssl=1.1.1g ${debug_opt}"
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
-   )
-endfunction()
-
-function(build_curl type)
-   # Build curl
-   message(STATUS "Build Curl, call ${CMAKE_SOURCE_DIR}/thirdparty/"
-            "build_thirdparty.py  --curl=7.69.0")
-   if(type STREQUAL "debug")
-      set(debug_opt " -d")
-   else()
-      set(debug_opt "")
-   endif()
-   execute_process(
-      COMMAND bash -c "python3 build_thirdparty.py --curl=7.69.0 ${debug_opt}"
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
-   )
-endfunction()
-
 IF(SDB_PROJECT_TYPE STREQUAL "mariadb" OR
    MYSQL STREQUAL "5.7.28" OR
    MYSQL STREQUAL "5.7.31")
-   IF(WITH_SSL)
-      SET(OPENSSL_ROOT_DIR "${WITH_SSL}")
-   ELSE()
-      SET(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/thirdparty/openssl-1.1.1g/lib")
-   ENDIF()
-
-   SET(OPENSSL_USE_STATIC_LIBS ON)
-   SET(THREADS_PREFER_PTHREAD_FLAG ON)
-   set(_SDB_OPENSSL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-   set(CMAKE_FIND_LIBRARY_SUFFIXES .a )
-   FIND_PACKAGE(OpenSSL)
-   set(CMAKE_FIND_LIBRARY_SUFFIXES ${_SDB_OPENSSL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
-   IF(OPENSSL_FOUND AND OPENSSL_VERSION STREQUAL "1.1.1g")
-      MESSAGE(STATUS "OpenSSL is found in ${OPENSSL_ROOT_DIR}, version is ${OPENSSL_VERSION}.")
-   ELSE()
-      IF(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
-         build_openssl("debug")
-      ELSE()
-         build_openssl("release")
-      ENDIF()
-   ENDIF()
-   SET(OPENSSL_LIB_DIR "${OPENSSL_ROOT_DIR}/lib")
-
-   IF(NOT WITH_CURL)
-      SET(WITH_CURL "${CMAKE_SOURCE_DIR}/thirdparty/curl-7.69.0/lib/")
-   ENDIF()
-
-   # Find thirdparty, then system. If system curl version not required, then build thirdparty.
-   SET(CURL_ROOT_DIR "${WITH_CURL}")
-   set(_SDB_CURL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-   set(CMAKE_FIND_LIBRARY_SUFFIXES .a )
-   FIND_PACKAGE(CURL)
-   set(CMAKE_FIND_LIBRARY_SUFFIXES ${_SDB_CURL_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
-
-   IF(CURL_LIBRARY STREQUAL "CURL_LIBRARY-NOTFOUND" OR
-      NOT "${CURL_VERSION_STRING}" STREQUAL "7.69.0")
-      IF(CMAKE_BUILD_TYPE MATCHES "Debug" OR WITH_DEBUG)
-         build_curl("debug")
-      ELSE()
-         build_curl("release")
-      ENDIF()
-   ELSE()
-      MESSAGE(STATUS "Curl is found in ${WITH_CURL}, version is ${CURL_VERSION_STRING}.")
-   ENDIF()
+   SDB_CHECK_SSL()
+   SDB_CHECK_CURL()
 ENDIF()
-
-
-# Trigger the sdb version tool building, and use it to get the version.
-function(get_sdb_version version git_version)
-   set(SDB_VERTOOL_DIR ${CMAKE_SOURCE_DIR}/misc/versiontool)
-   set(SDB_VERTOOL ${SDB_VERTOOL_DIR}/sdbvertool)
-
-   # Build the sdb version tool in misc.
-   if(IS_ABSOLUTE ${WITH_SDB_DRIVER})
-      set(SDB_DRIVER_DIR "${WITH_SDB_DRIVER}")
-   else()
-      set(SDB_DRIVER_DIR "${CMAKE_BINARY_DIR}/${WITH_SDB_DRIVER}")
-   endif()
-
-   if(OPENSSL_LIB_DIR)
-      execute_process(
-         COMMAND bash -c "cmake . -DSDB_DRIVER_DIR=${SDB_DRIVER_DIR} -DOPENSSL_LIB_DIR=${OPENSSL_LIB_DIR}"
-         WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
-      )
-   else()
-      execute_process(
-         COMMAND bash -c "cmake . -DSDB_DRIVER_DIR=${SDB_DRIVER_DIR}"
-         WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
-      )
-   endif()
-
-   execute_process(
-      COMMAND bash -c "make"
-      WORKING_DIRECTORY "${SDB_VERTOOL_DIR}"
-   )
-
-   # Execute the sdb version tool to get the version.
-   execute_process(
-      COMMAND bash -c "${SDB_VERTOOL}"
-      COMMAND bash -c "grep Version"
-      COMMAND bash -c "awk '{print $2}'"
-      OUTPUT_VARIABLE SDB_VERSION
-   )
-
-   execute_process(
-      COMMAND bash -c "${SDB_VERTOOL}"
-      COMMAND bash -c "grep Git"
-      COMMAND bash -c "awk '{print $3}'"
-      OUTPUT_VARIABLE SDB_GIT_VERSION
-   )
-
-   # The original value contains a '\n' at the end. Remove it.
-   string(STRIP ${SDB_VERSION} SDB_VERSION)
-   string(STRIP ${SDB_GIT_VERSION} SDB_GIT_VERSION)
-
-   set(${version} ${SDB_VERSION} PARENT_SCOPE)
-   set(${git_version} ${SDB_GIT_VERSION} PARENT_SCOPE)
-endfunction()
-
-function(get_my_version my_version length)
-   if(${length} EQUAL 0)
-      set(GIT_LOG_CMD "git log -1 --format=%H")
-   else()
-      set(GIT_LOG_CMD "git log -1 --format=%h --abbrev=${length}")
-   endif()
-   execute_process(
-      COMMAND bash -c "${GIT_LOG_CMD}"
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      OUTPUT_VARIABLE GIT_VERSION
-   )
-
-   string(STRIP ${GIT_VERSION} GIT_VERSION)
-   set(${my_version} ${GIT_VERSION} PARENT_SCOPE)
-endfunction()
-
-# Generate the project version file, which contains version of this project and
-# the SequoiaDB driver.
-function(gen_version_file)
-   set(SDB_PLUGIN_VERSION "")
-   get_my_version(SDB_PLUGIN_VERSION 0)
-   message(STATUS "SDB plugin version: ${SDB_PLUGIN_VERSION}")
-
-   set(SDB_VERSION "")
-   set(SDB_GIT_VERSION "")
-   get_sdb_version(SDB_VERSION SDB_GIT_VERSION)
-
-   string(TIMESTAMP BUILDDATE "%Y-%m-%d-%H.%M.%S")
-   set(BUILD_TYPE_STR "")
-   if(ENTERPRISE)
-      set(BUILD_TYPE_STR "${BUILD_TYPE_STR}Enterprise")
-   endif()
-   if(CMAKE_BUILD_TYPE MATCHES "Debug")
-      if(BUILD_TYPE_STR STREQUAL "Enterprise")
-         set(BUILD_TYPE_STR "${BUILD_TYPE_STR}-Debug")
-      else()
-         set(BUILD_TYPE_STR "${BUILD_TYPE_STR}Debug")
-      endif()
-   else()
-      SET(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING
-          "Type of build, options are: Debug RelWithDebInfo" FORCE)
-   endif()
-   if(NOT (BUILD_TYPE_STR STREQUAL ""))
-      set(BUILD_TYPE_STR " (${BUILD_TYPE_STR})")
-   endif()
-
-   set(FULL_VERSION "${PROJECT_NAME} version: ${SDB_VERSION}\nGit version: ${SDB_PLUGIN_VERSION}\nSDB driver: ${SDB_VERSION}(${SDB_GIT_VERSION})\n${BUILDDATE}${BUILD_TYPE_STR}\n")
-   file(WRITE ${CMAKE_BINARY_DIR}/version.info ${FULL_VERSION})
-   file(WRITE ${CMAKE_SOURCE_DIR}/version ${SDB_VERSION})
-endfunction()
 
 function(prepare_sql_source sql_source_root sql_name)
    if(NOT EXISTS ${sql_source_root}/CMakeLists.txt)
-      file(READ ${sql_source_root}/url.txt SOURCE_URL)
-      message(STATUS "SQL source code not exist. Download it from ${SOURCE_URL}")
-      set(PACKAGE_NAME "${sql_name}.tar.gz")
-      set(DOWNLOAD_TARGET "${sql_source_root}/${PACKAGE_NAME}")
-      file(DOWNLOAD ${SOURCE_URL} ${DOWNLOAD_TARGET})
-      execute_process(
-         COMMAND ${CMAKE_COMMAND} -E tar zxvf "${DOWNLOAD_TARGET}"
-         WORKING_DIRECTORY "${sql_source_root}"
-         RESULT_VARIABLE tar_result
-      )
-      set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}")
-      execute_process(
-         COMMAND bash -c "mv ${EXTRACT_NAME}/* ./"
-         WORKING_DIRECTORY "${sql_source_root}"
-         RESULT_VARIABLE tar_result
-      )
+      IF(MYSQL_SRC_PACKAGE_DIR OR MARIADB_SRC_PACKAGE_DIR)
+         IF(MYSQL_SRC_PACKAGE_DIR)
+            SET(SRC_PACKAGE_DIR "${MYSQL_SRC_PACKAGE_DIR}")
+         ENDIF()
+         IF(MARIADB_SRC_PACKAGE_DIR)
+            SET(SRC_PACKAGE_DIR "${MARIADB_SRC_PACKAGE_DIR}")
+         ENDIF()
+         IF(NOT EXISTS "${SRC_PACKAGE_DIR}/${sql_name}.tar.gz")
+            MESSAGE(FATAL_ERROR "${sql_name}.tar.gz not exists in ${SRC_PACKAGE_DIR}.")
+         ELSE()
+            execute_process(
+               COMMAND ${CMAKE_COMMAND} -E tar zxvf "${SRC_PACKAGE_DIR}/${sql_name}.tar.gz"
+               WORKING_DIRECTORY "${sql_source_root}"
+               RESULT_VARIABLE tar_result
+            )
+            set(MYSLQ_SRC_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}")
+            execute_process(
+               COMMAND bash -c "mv -f ${MYSLQ_SRC_NAME}/* ./; rm -r ${MYSLQ_SRC_NAME}"
+               WORKING_DIRECTORY "${sql_source_root}"
+               RESULT_VARIABLE tar_result
+            )
+         ENDIF()
+      ELSE()
+         file(READ ${sql_source_root}/url.txt SOURCE_URL)
+         message(STATUS "SQL source code not exist. Download it from ${SOURCE_URL}")
+         set(PACKAGE_NAME "${sql_name}.tar.gz")
+         set(DOWNLOAD_TARGET "${sql_source_root}/${PACKAGE_NAME}")
+         file(DOWNLOAD ${SOURCE_URL} ${DOWNLOAD_TARGET})
+         execute_process(
+            COMMAND ${CMAKE_COMMAND} -E tar zxvf "${DOWNLOAD_TARGET}"
+            WORKING_DIRECTORY "${sql_source_root}"
+            RESULT_VARIABLE tar_result
+         )
+         set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}")
+         execute_process(
+            COMMAND bash -c "mv ${EXTRACT_NAME}/* ./"
+            WORKING_DIRECTORY "${sql_source_root}"
+            RESULT_VARIABLE tar_result
+         )
+      ENDIF()
    endif()
 endfunction()
 

@@ -11,35 +11,21 @@ In order to take advantages of scalability and performance, SequoiaSQL-MySQL Sto
 ```bash
 git clone https://github.com/SequoiaDB/sequoiasql-mysql.git sequoiasql-mysql
 ```  
-2. Get the source code of [mysql-5.7.25](https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.25.tar.gz). Decompress the MySQL source code to the directory of `sequoiasql-mysql/sql-src/mysql-5.7.25`.
-```bash
-tar -xzvf mysql-5.7.25.tar.gz -C sequoiasql-mysql/sql-src/mysql-5.7.25
-```  
+2. Get the source code of [mysql-5.7.25](https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.25.tar.gz). 
 3. Get the [SequoiaDB C++ driver 3.4](http://cdn.sequoiadb.com/images/sequoiadb-3.4/x86_64/driver/C%26CPP-3.4-linux_x86_64.tar.gz).
-4. Configure the build.
+4. Compile.
 ```bash
 cd sequoiasql-mysql
-mkdir build
-cd build
-cmake .. -DMYSQL=5.7.25 -DWITH_SSL=</absolute/path/of/sequoiasql-mysql/thirdparty/openssl-1.0.1c> -DWITH_SDB_DRIVER=</path/to/sequoiadb/cpp/driver> -DCMAKE_INSTALL_PREFIX=</path/to/install/mysql/> -DCMAKE_BUILD_TYPE=Debug
+python3 build.py --sdbdriver </path/to/sequoiadb/cpp/driver> --commitsha <commit SHA> --mysqlsrcpkgdir </path/to/mysql/original/src/archive/package> -t mysql-5.7.25 -i  </path/to/install/mysql/>  --archivetest --dd -j 64
+
+eg:
+python3 build.py --sdbdriver /data/temp/sequoiadb/client --commitsha 7f1105cbb78e415e5d59caf536aed50c4d6b0b67 --mysqlsrcpkgdir /data/temp/ -t mysql-5.7.25 -i  /data/temp/mysql --archivetest --dd -j 64
 ```
-SequoiaSQL-MySQL Storage Engine also supports the MySQL(5.7.24/5.7.28) and MariaDB(10.4.6). Build different version of MySQL or MariaDB w
-ith argument `-DProjectType=version`. For example:
-```bash
-tar -xzvf mariadb-v10.4.6.tar.gz -C sequoiasql-mysql-src/sql-src/mariadb-10.4.6/
-cd sequoiasql-mysql
-mkdir build
-cd build
-cmake .. -DMARIADB=10.4.6 -DWITH_SSL=</absolute/path/of/sequoiasql-mysql/thirdparty/openssl-1.0.1c> -DWITH_SDB_DRIVER=</path/to/sequoiadb/cpp/driver> -DCMAKE_INSTALL_PREFIX=</path/to/install/mariadb/> -DCMAKE_BUILD_TYPE=Debug
-```
-5. Compile and install.
-```bash
-make -j 4
-make install
-```
+
 ## Testing the SequoiaSQL-MySQL server.
 > Prerequisites:  
-> SequoiaSQL-MySQL server can acess a SequoiaDB Cluster.   
+> - SequoiaSQL-MySQL server can acess a SequoiaDB Cluster.   
+> - transisolation: The transaction isolation of SequoiaDB should be RC.
 
 SequoiaSQL-MySQL using the MySQL testing framework defined in `mysql-test` folder. To run all tests:
 ```
