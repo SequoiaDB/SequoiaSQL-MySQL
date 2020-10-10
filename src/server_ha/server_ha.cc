@@ -1448,10 +1448,6 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     const char *db_name = NULL, *table_name = NULL;
     bool is_temp_table = false;
 
-#ifdef IS_MARIADB
-    bool orig_table = true, pre_state = false;
-#endif
-
     for (TABLE_LIST *tbl = tables; tbl; tbl = tbl->next_global) {
       ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
       if (ha_tbl_list == NULL) {
@@ -1482,34 +1478,6 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         db_name = ha_tbl_list->db_name;
         table_name = ha_tbl_list->table_name;
 
-#ifdef IS_MARIADB
-        // set temporary attribute for table
-        // deal with SQL like "rename table t1 to t2, t2 to t3"
-        if (SQLCOM_RENAME_TABLE == sql_command) {
-          if (!orig_table) {
-            ha_tbl_list->is_temporary_table = pre_state;
-            orig_table = true;
-            continue;
-          }
-
-          is_temp_table = is_temporary_table(thd, db_name, table_name);
-          if (!is_temp_table) {
-            for (ha_table_list *ha_table = sql_info->tables;
-                 ha_table && ha_table != ha_tbl_list;
-                 ha_table = ha_table->next) {
-              if (0 == strcmp(ha_table->db_name, db_name) &&
-                  0 == strcmp(ha_table->table_name, table_name)) {
-                ha_tbl_list->is_temporary_table = ha_table->is_temporary_table;
-                break;
-              }
-            }
-          }
-          ha_tbl_list->is_temporary_table = is_temp_table;
-          pre_state = ha_tbl_list->is_temporary_table;
-          orig_table = false;
-          continue;
-        }
-#endif
         is_temp_table = is_temporary_table(thd, db_name, table_name);
         // mark temporary table by setting 'ha_table_list::is_temporary_table'
         if (is_temp_table) {
@@ -2499,6 +2467,18 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         if (0 == rc && SQLCOM_ALTER_EVENT == sql_command) {
           rc = fix_alter_event_stmt(thd, event, create_query, sql_info);
         }
+
+        // update temporary table flags for 'rename table' command
+        if (SQLCOM_RENAME_TABLE == sql_command) {
+          ha_table_list *ha_tables = sql_info->tables;
+          for (TABLE_LIST *tables = thd->lex->query_tables; tables;
+               tables = tables->next_global) {
+            ha_tables->is_temporary_table = is_temporary_table(tables);
+            ha_tables = ha_tables->next;
+          }
+        }
+
+        // write sql_logs
         rc = rc ? rc : write_sql_log_and_states(thd, sql_info, event);
 
         // if SQL statement executes successfully but write SQL log into
