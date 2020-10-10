@@ -370,6 +370,10 @@ my $opt_stop_file= $ENV{MTR_STOP_FILE};
 my $opt_stop_keep_alive= $ENV{MTR_STOP_KEEP_ALIVE};
 our $opt_xml_report;
 
+my $sequoiadb_meta_sync_addr;
+my $sequoiadb_meta_sync_user;
+my $sequoiadb_meta_sync_passwd;
+
 select(STDOUT);
 $| = 1; # Automatically flush STDOUT
 
@@ -1102,6 +1106,11 @@ sub command_line_setup {
   # Note: Keep list in sync with usage at end of this file
   Getopt::Long::Configure("pass_through");
   my %options=(
+             # sequoiadb_meta_sync
+             'meta-sync-addr=s'         => \$sequoiadb_meta_sync_addr,
+             'meta-sync-user=s'         => \$sequoiadb_meta_sync_user,
+             'meta-sync-passwd=s'       => \$sequoiadb_meta_sync_passwd,
+
              # Control what engine/variation to run
              'embedded-server'          => \$opt_embedded_server,
              'ps-protocol'              => \$opt_ps_protocol,
@@ -1264,6 +1273,43 @@ sub command_line_setup {
   # --------------------------------------------------------------------------
   # Setup verbosity
   # --------------------------------------------------------------------------
+
+  #sequoiadb_meta_sync
+  my @sequoiadb_meta_sync_addr;
+  if(!$sequoiadb_meta_sync_addr){
+    $sequoiadb_meta_sync_addr="127.0.0.1:3306,127.0.0.1:3316";
+    @sequoiadb_meta_sync_addr = split(/,/,$sequoiadb_meta_sync_addr);
+    if(!$sequoiadb_meta_sync_user){
+      $sequoiadb_meta_sync_user = "root";
+    }
+    if(!$sequoiadb_meta_sync_passwd){
+      $sequoiadb_meta_sync_passwd = "root";
+    }
+  }else{
+    @sequoiadb_meta_sync_addr = split(/,/,$sequoiadb_meta_sync_addr);
+    if(scalar@sequoiadb_meta_sync_addr<2){
+      print "**** ERROR **** ","\n",
+      "The address in the meta-sync-addr must be greater than or equal to 2","\n";
+      exit(1);
+    }
+    foreach my $addr(@sequoiadb_meta_sync_addr){
+      if($addr=~ /\d+\.\d+\.\d+\.\d+\:\d+/||$addr=~ /^[A-Za-z0-9]+$\:\d+/){
+	  
+      }else{
+        print "**** ERROR **** ","\n",
+        "--meta-sync-addr value is invalid value , try typing '--meta-sync-addr=host1:prot1,host2:port2' on the command line ","\n";
+        exit(1);
+      }
+    }
+  }
+  for(my $i = 0;$i<scalar@sequoiadb_meta_sync_addr;$i++){
+    my @each_addr = split(/:/,$sequoiadb_meta_sync_addr[$i]);
+    $ENV{'META_SYNC_HOST'.($i+1)} = $each_addr[0];
+    $ENV{'META_SYNC_PORT'.($i+1)} = $each_addr[1];
+  }
+  $ENV{'META_SYNC_USER'}= $sequoiadb_meta_sync_user;
+  $ENV{'META_SYNC_PASSWD'}= $sequoiadb_meta_sync_passwd;
+  
   if ($opt_verbose != 0){
     report_option('verbose', $opt_verbose);
   }
@@ -6232,6 +6278,10 @@ rpl.rpl_invoked_features,mix,innodb
 suite/rpl/t/rpl.rpl_invoked_features
 
 Options to control what engine/variation to run:
+
+  meta-sync-addr        Mariadb address used by sequoiadb_meta_sync(default: --meta-sync-addr=127.0.0.1:3306,127.0.0.1:3316)
+  meta-sync-user        Mariadb username used by sequoiadb_meta_sync(default: --meta-sync-user=root)
+  meta-sync-passwd      Mariadb password used by sequoiadb_meta_sync(default: --meta-sync-passwd=root)
 
   embedded-server       Use the embedded server, i.e. no mysqld daemons
   ps-protocol           Use the binary protocol between client and server
