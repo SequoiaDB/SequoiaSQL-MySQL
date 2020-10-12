@@ -97,41 +97,41 @@ uf	13
 uü	29
 select a from t1 order by a desc,b;
 a
+üc
+öo
+ö
+é
+ääa
+ää
+ä
+ßb
+ßa
+ß
+Ü
+Öc
+Öa
+É
+Äc
 uü
 uf
-üc
 ueb
 ue
-Ü
 ud
 uc
 u
 ssc
-ßb
 ssa
-ßa
 ss
-ß
 s
 q
-öo
-Öc
 oeb
-Öa
-ö
 oe
 od
 oc
 o
 eä
-é
-É
-Äc
 aeb
-ääa
-ää
 aeae
-ä
 ae
 ad
 ac
@@ -274,8 +274,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-latin1_german2_ci	6109
 latin1_german2_ci	61
+latin1_german2_ci	6109
 latin1_german2_ci	6120
 drop table t1;
 "BEGIN ctype_german.inc"
@@ -384,7 +384,6 @@ create table t1 (s1 char(5) character set latin1 collate latin1_german2_ci);
 insert into t1 values (0xf6) /* this is o-umlaut */;
 select * from t1 where length(s1)=1 and s1='oe';
 s1
-ö
 drop table t1;
 End of 5.1 tests
 #

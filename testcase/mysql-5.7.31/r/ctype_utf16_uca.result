@@ -2736,8 +2736,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-utf16_unicode_ci	00610009
 utf16_unicode_ci	0061
+utf16_unicode_ci	00610009
 utf16_unicode_ci	00610020
 drop table t1;
 select @@collation_connection;
@@ -3582,8 +3582,8 @@ INSERT INTO t1 VALUES (concat(_utf32 0x61, _utf32 0x10400));
 SELECT hex(c), hex(weight_string(c)) FROM t1 WHERE c LIKE 'a%' ORDER BY c;
 hex(c)	hex(weight_string(c))
 0061	120F
-0061D801DC00	120F30D2
 0061FFFF	120FFBC1FFFF
+0061D801DC00	120F30D2
 0061DBFFDFFF	120FFBE1FFFF
 SELECT hex(c), hex(weight_string(c)), c FROM t1 WHERE c LIKE _utf32 0x10400 ORDER BY c, BINARY c;
 hex(c)	hex(weight_string(c))	c

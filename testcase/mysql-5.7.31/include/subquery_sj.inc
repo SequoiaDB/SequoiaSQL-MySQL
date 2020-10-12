@@ -442,7 +442,7 @@ analyze table t4;
 #explain select * from t3 where a in 
 #          (select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c);
 select * from t3 where a in 
-  (select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c);
+  (select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c) order by t3.a;
 
 drop table t1, t3, t4;
 

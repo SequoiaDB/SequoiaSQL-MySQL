@@ -310,6 +310,8 @@ a
 NULL
 A
 B
+a
+b
 SELECT a,count(*) FROM t1 GROUP BY a;
 a	count(*)
 NULL	3
@@ -349,6 +351,8 @@ a
 NULL
 A
 B
+a
+b
 SELECT a,count(*) FROM t1 GROUP BY a;
 a	count(*)
 NULL	3
@@ -1319,12 +1323,12 @@ FLUSH STATUS;
 SELECT a FROM t1 IGNORE INDEX FOR GROUP BY (PRIMARY,i2) GROUP BY a;
 SHOW SESSION STATUS LIKE 'Sort_scan%';
 Variable_name	Value
-Sort_scan	1
+Sort_scan	0
 FLUSH STATUS;
 SELECT a FROM t1 IGNORE INDEX FOR ORDER BY (PRIMARY,i2) ORDER BY a;
 SHOW SESSION STATUS LIKE 'Sort_scan%';
 Variable_name	Value
-Sort_scan	1
+Sort_scan	0
 SELECT a FROM t1 IGNORE INDEX FOR ORDER BY (PRIMARY,i2) ORDER BY a;
 a
 1

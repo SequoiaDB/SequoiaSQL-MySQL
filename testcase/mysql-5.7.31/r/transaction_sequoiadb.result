@@ -426,7 +426,23 @@ id
 2
 COMMIT;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
+ROLLBACK;
+SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
+ROLLBACK;
+SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+BEGIN;
+SELECT * FROM t1;
+ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
+ROLLBACK;
 DROP TABLE t1;
+SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 create table t1(a int, b int, c int);
 create index a on t1(a);
 insert into t1 values(1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7),(8,8,8),(9,9,9),(10,10,10);
@@ -1410,7 +1426,7 @@ update t1 set a = a + 1 where a >5;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 delete from t1 where a <5;
 ERROR HY000: Lock wait timeout exceeded; try restarting transaction
-select * from t1 order by c;
+select * from t1 order by a,b,c;
 a	b	c
 1	1	1
 2	1	1
@@ -1420,18 +1436,18 @@ a	b	c
 4	3	3
 4	4	4
 5	4	4
-6	5	5
 5	5	5
-7	6	6
+6	5	5
 6	6	6
-8	7	7
+7	6	6
 7	7	7
-9	8	8
+8	7	7
 8	8	8
-10	9	9
+9	8	8
 9	9	9
-11	10	10
+10	9	9
 10	10	10
+11	10	10
 commit;
 drop table t1;
 create table t1(a int, b int, c int);

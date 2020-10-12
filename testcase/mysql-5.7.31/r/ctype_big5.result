@@ -95,8 +95,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-big5_chinese_ci	6109
 big5_chinese_ci	61
+big5_chinese_ci	6109
 big5_chinese_ci	6120
 drop table t1;
 create table t1 engine=SequoiaDB select repeat('a',50) as c1;
@@ -241,8 +241,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-big5_bin	6109
 big5_bin	61
+big5_bin	6109
 big5_bin	6120
 drop table t1;
 create table t1 engine=SequoiaDB select repeat('a',50) as c1;
@@ -428,7 +428,7 @@ Warning	1366	Incorrect string value: '\x80^' for column 'a' at row 63
 Warning	1366	Incorrect string value: '\x80_' for column 'a' at row 64
 SELECT COUNT(*) FROM t1 WHERE a<>'';
 COUNT(*)
-13717
+13973
 SELECT code, hex(upper(a)), hex(lower(a)),a, upper(a), lower(a) FROM t1 WHERE hex(a)<>hex(upper(a)) OR hex(a)<>hex(lower(a));
 code	hex(upper(a))	hex(lower(a))	a	upper(a)	lower(a)
 A2CF	A2CF	A2E9	Ａ	Ａ	ａ

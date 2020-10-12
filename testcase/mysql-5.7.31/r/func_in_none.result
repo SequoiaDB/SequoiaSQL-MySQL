@@ -146,8 +146,8 @@ create table t1 (a char(10) character set utf8 not null);
 insert into t1 values ('bbbb'),(_koi8r'√√√√'),(_latin1'ƒƒƒƒ');
 select a from t1 where a in ('bbbb',_koi8r'√√√√',_latin1'ƒƒƒƒ') order by a;
 a
-√Ñ√Ñ√Ñ√Ñ
 bbbb
+√Ñ√Ñ√Ñ√Ñ
 —Ü—Ü—Ü—Ü
 drop table t1;
 create table t1 (a char(10) character set latin1 not null);
@@ -487,6 +487,7 @@ f2
 Warnings:
 Warning	1292	Truncated incorrect DOUBLE value: 'a'
 Warning	1292	Truncated incorrect DOUBLE value: 'a'
+Warning	1292	Truncated incorrect DOUBLE value: 'a'
 select f2 from t2 where f2 in ('a','b');
 f2
 0
@@ -498,6 +499,7 @@ f2
 0
 1
 Warnings:
+Warning	1292	Truncated incorrect DOUBLE value: 'b'
 Warning	1292	Truncated incorrect DOUBLE value: 'b'
 drop table t1, t2;
 create table t1 (a time, key(a));
