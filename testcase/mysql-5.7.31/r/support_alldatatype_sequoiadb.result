@@ -328,7 +328,12 @@ a
 drop table t1;
 set time_zone=default;
 CREATE TABLE t1(g GEOMETRY);
-ERROR 42000: The storage engine for the table doesn't support GEOMETRY
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `g` geometry DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+DROP TABLE t1;
 create table t1(a int, b int);
 insert into t1 values(null, 1);
 update t1 set b=null;

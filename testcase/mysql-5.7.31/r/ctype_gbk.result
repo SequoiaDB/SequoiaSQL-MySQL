@@ -95,8 +95,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-gbk_chinese_ci	6109
 gbk_chinese_ci	61
+gbk_chinese_ci	6109
 gbk_chinese_ci	6120
 drop table t1;
 select @@collation_connection;
@@ -220,8 +220,8 @@ delete from t1;
 insert into t1 values ('a'), ('a '), ('a\t');
 select collation(a),hex(a) from t1 order by a;
 collation(a)	hex(a)
-gbk_bin	6109
 gbk_bin	61
+gbk_bin	6109
 gbk_bin	6120
 drop table t1;
 select @@collation_connection;
@@ -372,7 +372,7 @@ Warning	1366	Incorrect string value: '\x80^' for column 'a' at row 63
 Warning	1366	Incorrect string value: '\x80_' for column 'a' at row 64
 SELECT COUNT(*) FROM t1 WHERE a<>'';
 COUNT(*)
-21791
+23940
 SELECT code, hex(upper(a)), hex(lower(a)),a, upper(a), lower(a) FROM t1 WHERE hex(a)<>hex(upper(a)) OR hex(a)<>hex(lower(a));
 code	hex(upper(a))	hex(lower(a))	a	upper(a)	lower(a)
 A2A1	A2F1	A2A1	ⅰ	Ⅰ	ⅰ

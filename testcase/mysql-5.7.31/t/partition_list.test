@@ -251,11 +251,14 @@ INSERT into t1 VALUES (4,1,1);
 INSERT into t1 VALUES (7,1,1);
 --error 40178
 UPDATE t1 SET a=5 WHERE a=1;
+--sorted_result
 SELECT * from t1;
 --error 40178
 UPDATE t1 SET a=6 WHERE a=4;
+--sorted_result
 SELECT * from t1;
 DELETE from t1 WHERE a=6;
+--sorted_result
 SELECT * from t1;
 
 drop table t1;

@@ -10,8 +10,11 @@ create table t1(id int auto_increment key, a int, b varchar(255), c varbinary(25
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
 --enable_info
 delete from t1 where a=10;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where a=1000 or c='q';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -22,23 +25,33 @@ insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'
 insert into t1(a,b,c) values(11, 'sb', 'sb'), (1001, 'st', 'st'),(102, 'sr', 'r'),(2, 'sy', 'sy');
 --enable_info
 delete from t1 where id=1 order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where id=2 order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where a=100 order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where a=1000 order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'),(1, 'sz', 'sz');
 insert into t1(a,b,c) values(11, 'sb', 'sb'), (1001, 'st', 'st'),(102, 'sr', 'r'),(2, 'sy', 'sy');
 --enable_info
 delete from t1 where c='sa' order by id;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 order by id limit 2;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where a=1001 order by id limit 1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 delete from t1 where a>2 limit 1;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where c in('sz', 'r', 'sy') limit 1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -48,10 +61,12 @@ create table t1(id int auto_increment key)comment="sequoiadb:{ auto_partition: f
 insert into t1 values(),(),(),();
 --enable_info
 delete ignore from t1 where id>2;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 delete low_priority from t1 where id>1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 drop table t1;
 
@@ -60,7 +75,9 @@ create temporary table t1(id int auto_increment key, a int, b varchar(255), c va
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
 --enable_info
 delete from t1 where a=10;
+--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where c='ss';
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -77,6 +94,7 @@ create trigger trg6 after delete on t2 for each row set @f:= "After delete t2 fi
 set @c:= 0, @d:= 0, @e:= "", @f:= "";
 --enable_info
 delete t1, t2 from t1, t2 where t1.i = t2.i;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1;
 drop table t1,t2;
@@ -88,6 +106,7 @@ INSERT INTO t1 VALUES (1, 1);
 INSERT INTO t2 VALUES (1, 1);
 --enable_info
 delete t1,t2 from t1,t2 where t1.a2=1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1;
 select * from t2;
@@ -100,11 +119,13 @@ insert into t1 values (1),(2),(3);
 insert into t2 values (1);
 --enable_info
 delete from t1 WHERE c1 IN (SELECT c2 FROM t2);
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select *from t1;
 select *from t2;
 --enable_info
 delete quick from t1 where c1=2;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1;
 drop table t1,t2;
@@ -114,6 +135,7 @@ CREATE TABLE t1 (a int, t timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE
 insert into t1 (a) values(4);
 --enable_info
 delete from t1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1;
 drop table t1;
@@ -123,6 +145,7 @@ create table t1(id int auto_increment key, a int);
 insert into t1(a) values (1),(2),(3);
 --enable_info
 delete from t1;
+--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select *from t1;
 insert into t1(a) values (1),(2),(3);

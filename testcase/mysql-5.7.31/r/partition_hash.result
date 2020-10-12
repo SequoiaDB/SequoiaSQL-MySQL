@@ -67,7 +67,7 @@ partitions 4;
 insert into t1 values (null),(0),(1),(2),(3),(4),(5),(6),(7);
 select * from t1 where a < 0;
 a
-select * from t1 where a is null or (a >= 5 and a <= 7);
+select * from t1 where a is null or (a >= 5 and a <= 7) order by a;
 a
 NULL
 5
@@ -86,7 +86,7 @@ a
 5
 6
 7
-select * from t1 where a >= 1 and a < 3;
+select * from t1 where a >= 1 and a < 3 order by a;
 a
 1
 2
@@ -103,7 +103,7 @@ a
 4
 5
 6
-select * from t1 where a > 5;
+select * from t1 where a > 5 order by a;
 a
 6
 7

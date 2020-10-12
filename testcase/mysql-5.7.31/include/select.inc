@@ -1880,7 +1880,7 @@ select * from t1, (t1 as t2 left join t1 as t3 using (a));
 select * from (t1 as t2 left join t1 as t3 using (a)) straight_join t1;
 select * from t1 straight_join (t1 as t2 left join t1 as t3 using (a));
 # inner join on
-select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 on t1.a>1;
+select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 on t1.a>1 order by t1.a,t2.a,t3.a;
 select * from t1 inner join (t1 as t2 left join t1 as t3 using (a)) on t1.a>1;
 # inner join using
 select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 using ( a );
@@ -3355,8 +3355,8 @@ INSERT INTO t2 VALUES ('bb',1), ('aa',2), ('cc   ',3);
 INSERT INTO t2 VALUES (concat('cc ', 0x06), 4);
 INSERT INTO t2 VALUES ('cc',5), ('bb ',6), ('cc ',7);
 SELECT * FROM t2;
-SELECT * FROM t2 ORDER BY name;
-SELECT name, LENGTH(name), n FROM t2 ORDER BY name;
+SELECT * FROM t2 ORDER BY name,n;
+SELECT name, LENGTH(name), n FROM t2 ORDER BY name, LENGTH(name);
 
 #EXPLAIN SELECT name, LENGTH(name), n FROM t2 WHERE name='cc '; 
 
@@ -3366,7 +3366,7 @@ SELECT name, LENGTH(name), n FROM t2 WHERE name='cc ';
 #EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
 SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
 #EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
-SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
+SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name, LENGTH(name);
 #EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
 
 #Bug #SEQUOIADBMAINSTREAM-3643
@@ -3393,7 +3393,7 @@ SELECT name, LENGTH(name), n FROM t2 WHERE name='cc ';
 #EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
 SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%';
 #EXPLAIN SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
-SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name;
+SELECT name , LENGTH(name), n FROM t2 WHERE name LIKE 'cc%' ORDER BY name,  LENGTH(name);
 #EXPLAIN SELECT * FROM t1 LEFT JOIN t2 ON t1.name=t2.name;
 
 #Bug #SEQUOIADBMAINSTREAM-3643

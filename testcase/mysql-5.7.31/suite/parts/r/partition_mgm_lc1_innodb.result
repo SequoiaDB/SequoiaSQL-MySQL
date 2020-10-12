@@ -101,6 +101,7 @@ ERROR HY000: When reorganizing a set of partitions they must be in consecutive o
 ALTER TABLE TableA REORGANIZE PARTITION parta,partB INTO
 (PARTITION partB  COMMENT="Previusly named parta",
 PARTITION parta  COMMENT="Previusly named partB");
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM TableA;
 a
 1
@@ -121,8 +122,8 @@ TableA	CREATE TABLE `tablea` (
   `a` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY KEY (a)
-(PARTITION partB COMMENT = 'Previusly named parta' ENGINE = SequoiaDB,
- PARTITION parta COMMENT = 'Previusly named partB' ENGINE = SequoiaDB,
+(PARTITION parta ENGINE = SequoiaDB,
+ PARTITION partB ENGINE = SequoiaDB,
  PARTITION Partc ENGINE = SequoiaDB) */
 # Test of RENAME TABLE
 RENAME TABLE TableA to TableB;
@@ -193,8 +194,8 @@ tablea	CREATE TABLE `tablea` (
   `a` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY KEY (a)
-(PARTITION partB COMMENT = 'Previusly named parta' ENGINE = SequoiaDB,
- PARTITION parta COMMENT = 'Previusly named partB' ENGINE = SequoiaDB,
+(PARTITION parta ENGINE = SequoiaDB,
+ PARTITION partB ENGINE = SequoiaDB,
  PARTITION Partc ENGINE = SequoiaDB) */
 # Test of REMOVE PARTITIONING
 ALTER TABLE TableA REMOVE PARTITIONING;
@@ -328,6 +329,7 @@ ERROR HY000: When reorganizing a set of partitions they must be in consecutive o
 ALTER TABLE TableA REORGANIZE PARTITION parta,partB INTO
 (PARTITION partB  COMMENT="Previusly named parta",
 PARTITION parta  COMMENT="Previusly named partB");
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM TableA;
 a
 1
@@ -348,8 +350,8 @@ TableA	CREATE TABLE `tablea` (
   `a` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY HASH (a)
-(PARTITION partB COMMENT = 'Previusly named parta' ENGINE = SequoiaDB,
- PARTITION parta COMMENT = 'Previusly named partB' ENGINE = SequoiaDB,
+(PARTITION parta ENGINE = SequoiaDB,
+ PARTITION partB ENGINE = SequoiaDB,
  PARTITION Partc ENGINE = SequoiaDB) */
 # Test of RENAME TABLE
 RENAME TABLE TableA to TableB;
@@ -420,8 +422,8 @@ tablea	CREATE TABLE `tablea` (
   `a` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY HASH (a)
-(PARTITION partB COMMENT = 'Previusly named parta' ENGINE = SequoiaDB,
- PARTITION parta COMMENT = 'Previusly named partB' ENGINE = SequoiaDB,
+(PARTITION parta ENGINE = SequoiaDB,
+ PARTITION partB ENGINE = SequoiaDB,
  PARTITION Partc ENGINE = SequoiaDB) */
 # Test of REMOVE PARTITIONING
 ALTER TABLE TableA REMOVE PARTITIONING;
