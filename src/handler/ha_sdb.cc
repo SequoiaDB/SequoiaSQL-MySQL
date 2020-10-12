@@ -2425,7 +2425,10 @@ error:
 int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
                             bson::BSONObjBuilder &builder) {
   int rc = 0;
-
+  my_bitmap_map *old_write_map =
+      dbug_tmp_use_all_columns(table, table->write_set);
+  my_bitmap_map *old_read_map =
+      dbug_tmp_use_all_columns(table, table->read_set);
   bitmap_set_bit(table->write_set, rfield->field_index);
   bitmap_set_bit(table->read_set, rfield->field_index);
 
@@ -2451,6 +2454,8 @@ int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
   }
 
 done:
+  dbug_tmp_restore_column_map(table->write_set, old_write_map);
+  dbug_tmp_restore_column_map(table->read_set, old_read_map);
   return rc;
 error:
   goto done;
@@ -2466,12 +2471,17 @@ int ha_sdb::create_inc_rule(Field *rfield, Item *value, bool *optimizer_update,
   my_decimal min_decimal;
   my_decimal max_decimal;
   THD *thd = rfield->table->in_use;
+  my_bitmap_map *old_write_map =
+      dbug_tmp_use_all_columns(table, table->write_set);
+  my_bitmap_map *old_read_map =
+      dbug_tmp_use_all_columns(table, table->read_set);
 
   is_real = (MYSQL_TYPE_FLOAT == rfield->type() ||
              MYSQL_TYPE_DOUBLE == rfield->type());
 
   is_decimal = (MYSQL_TYPE_NEWDECIMAL == rfield->type() ||
                 MYSQL_TYPE_DECIMAL == rfield->type());
+
   bitmap_set_bit(table->write_set, rfield->field_index);
   bitmap_set_bit(table->read_set, rfield->field_index);
 
@@ -2560,6 +2570,8 @@ retry:
   }
 
 done:
+  dbug_tmp_restore_column_map(table->write_set, old_write_map);
+  dbug_tmp_restore_column_map(table->read_set, old_read_map);
   return rc;
 error:
   goto done;
