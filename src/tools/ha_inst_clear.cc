@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
       valid_words.insert("Y");
       valid_words.insert("y");
       cout << "Do you really want to clear instance '" << instance
-           << "' [Y/N]? ";
+           << "' [y/N]? ";
       getline(cin, choose);
       if (1 != valid_words.count(choose)) {
         return 0;
@@ -315,6 +315,13 @@ int main(int argc, char *argv[]) {
     // 'instance state'
     rc = clear_sql_instance(cmd_args, conn, orig_name);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to clear SQL instance");
+    if (cmd_args.is_inst_id_set) {
+      cout << "Info: completed cleanup of instance '" << cmd_args.inst_id
+           << "'" << endl;
+    } else {
+      cout << "Info: completed cleanup of instance '" << cmd_args.inst_host
+           << "'" << endl;
+    }
   } catch (std::exception &e) {
     cerr << "Error: unexpected error: " << e.what() << endl;
     return SDB_HA_EXCEPTION;

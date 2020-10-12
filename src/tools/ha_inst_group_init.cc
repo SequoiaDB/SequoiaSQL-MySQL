@@ -178,24 +178,42 @@ int main(int argc, char *argv[]) {
     HA_TOOL_RC_CHECK(rc, rc, "Error: command-line argument parsing error: %s",
                      strerror(rc));
 
+    string orig_name = cmd_args.inst_group_name;
     rc = ha_init_sequoiadb_connection(conn, cmd_args);
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to initialize sequoiadb connection");
 
+    // check if instance group already exists
+    sdbclient::sdbCollectionSpace inst_group_cs;
+    rc = conn.getCollectionSpace(cmd_args.inst_group_name.c_str(),
+                                 inst_group_cs);
+    if (0 == rc) {
+      cout << "Error: instance group '" << orig_name << "' already exists"
+           << endl;
+      rc = SDB_DMS_CS_EXIST;
+      return rc;
+    }
+
     ha_inst_group_config_cl ha_config;
     rc = init_config(cmd_args.inst_group_name, ha_config, cmd_args.key,
                      cmd_args.verbose);
-    HA_TOOL_RC_CHECK(rc, rc, "Error: init '%s' failed",
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to initialize '%s' configuration",
                      HA_INST_GROUP_CONFIG_CL);
 
-    sdbclient::sdbCollectionSpace inst_group_cs, global_info_cs;
+    sdbclient::sdbCollectionSpace global_info_cs;
     sdbclient::sdbCollection inst_group_config_cl;
     sdbclient::sdbCollection sql_log_cl;
     bson::BSONObj options, record, index_ref, key_options;
 
-    // create global info CS 'HASysGlobalInfo'
-    rc = conn.createCollectionSpace(HA_GLOBAL_INFO, SDB_PAGESIZE_64K,
-                                    global_info_cs);
+    // create global configuration database 'HASysGlobalInfo' if necessary
+    rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
+    if (SDB_DMS_CS_NOTEXIST == rc) {
+      // create global configuration database 'HASysGlobalInfo'
+      cout << "Info: creating global configuration database '" << HA_GLOBAL_INFO
+           << "'" << endl;
+      rc = conn.createCollectionSpace(HA_GLOBAL_INFO, SDB_PAGESIZE_64K,
+                                      global_info_cs);
+    }
     // reset rc if 'HASysGlobalInfo' CS already exists
     if (SDB_DMS_CS_EXIST == rc) {
       rc = 0;
@@ -214,21 +232,19 @@ int main(int argc, char *argv[]) {
                                     SDB_PAGESIZE_64K, inst_group_cs);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     if (SDB_DMS_CS_EXIST == rc) {
-      cout << "Error: instance group '" << cmd_args.inst_group_name
-           << "' already exists" << endl;
+      cout << "Error: instance group '" << orig_name << "' already exists"
+           << endl;
       return rc;
     }
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to create instance group '%s', "
                      "sequoiadb error: %s",
-                     cmd_args.inst_group_name.c_str(), sdb_err);
+                     orig_name.c_str(), sdb_err);
 
     // create 'HAInstGroupConfig' collection
     rc = inst_group_cs.createCollection(HA_INST_GROUP_CONFIG_CL, options,
                                         inst_group_config_cl);
-    if (SDB_DMS_EXIST == rc) {
-      rc = 0;
-    } else if (rc) {
+    if (rc) {
       sdb_err = ha_sdb_error_string(conn, rc);
     } else {
       sdb_err = "";
@@ -245,9 +261,7 @@ int main(int argc, char *argv[]) {
                                                 << SDB_FIELD_ACQUIRE_SIZE << 1
                                                 << SDB_FIELD_CACHE_SIZE << 1));
     rc = inst_group_cs.createCollection(HA_SQL_LOG_CL, options, sql_log_cl);
-    if (SDB_DMS_EXIST == rc) {
-      rc = 0;
-    } else if (rc) {
+    if (rc) {
       sdb_err = ha_sdb_error_string(conn, rc);
     } else {
       sdb_err = "";
@@ -279,9 +293,8 @@ int main(int argc, char *argv[]) {
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to initialize instance group "
-                     "configuration table '%s.%s' error: %s",
-                     cmd_args.inst_group_name.c_str(), HA_INST_GROUP_CONFIG_CL,
-                     sdb_err);
+                     "configuration table '%s.%s', sequoiadb error: %s",
+                     orig_name.c_str(), HA_INST_GROUP_CONFIG_CL, sdb_err);
 
     // init 'HASQLLog'
     record =
@@ -293,7 +306,9 @@ int main(int argc, char *argv[]) {
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to initialize SQL log table '%s.%s', "
                      "sequoiadb error: %s",
-                     cmd_args.inst_group_name.c_str(), HA_SQL_LOG_CL, sdb_err);
+                     orig_name.c_str(), HA_SQL_LOG_CL, sdb_err);
+    cout << "Info: completed initialization of instance group '" << orig_name
+         << "'" << endl;
   } catch (std::exception &e) {
     cerr << "Error: unexpected error: " << e.what() << endl;
     return SDB_HA_EXCEPTION;
