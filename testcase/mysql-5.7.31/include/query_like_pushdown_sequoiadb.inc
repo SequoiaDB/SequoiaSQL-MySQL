@@ -2,7 +2,6 @@
 #Case 17270#Case 17271#Case 17272#Case 17282#Case 17283#Case 17284#Case 17285
 #Case 17273#Case 17274#Case 17275#Case 17286#Case 17287#Case 17288#Case 17289
 #Case 17387#Case 17388#Case 17389#Case 17390
---source include/have_sequoiadb.inc
 
 --disable_warnings
 DROP TABLE IF EXISTS t1;
@@ -16,40 +15,58 @@ CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d 
 INSERT INTO t1(a, b, c, d) VALUES ('1a','1a','1a','1a'),('2a','2a','2a','2a'),('1234a','1234a','1234a','1234a'),('a','a','a','a'),('ab','ab','ab','ab'),('a0000b','a0000b','a0000b','a0000b'),('abc','abc','abc','abc'),('ac','ac','ac','ac'),('abd','abd','abd','abd'),('abcd','abcd','abcd','abcd'),('a0000b1111c2222b3333d','a0000b1111c2222b3333d','a0000b1111c2222b3333d','a0000b1111c2222b3333d'),('abce','abce','abce','abce'),('abcde','abcde','abcde','abcde'),('abcdef','abcdef','abcdef','abcdef'),('hello','hello','hello','hello'),('test','test','test','test'),('中','中','中','中'),('1中','1中','1中','1中'),('1中3','1中3','1中3','1中3'),('中文','中文','中文','中文'),('中文1','中文1','中文1','中文1'),('中文123456','中文123456','中文123456','中文123456'),('中1文','中1文','中1文','中1文'),('中12文','中12文','中12文','中12文');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "a%";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "%a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "a%b";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "a%c%d";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%");
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "中%";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "%中";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "中%文";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%");
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "a_";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "_a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "a_c";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "a_c_e";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "_中";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "中_";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "中_文";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
+--source include/query_pushdown_condition_sequoiadb.inc
 # CREATE INDEX
 CREATE INDEX a ON t1(a(16));
 CREATE INDEX b ON t1(b(16));
@@ -98,6 +115,7 @@ CREATE TABLE t1 (id int auto_increment key, a CHAR(32), b VARCHAR(32)) DEFAULT C
 INSERT INTO t1(a, b) VALUES ('1a','1a'),('2a','2a'),('1234a','1234a'),('a','a'),('ab','ab'),('a0000b','a0000b'),('abc','abc'),('ac','ac'),('abd','abd'),('abcd','abcd'),('a0000b1111c2222b3333d','a0000b1111c2222b3333d'),('abce','abce'),('abcde','abcde'),('abcdef','abcdef'),('hello','hello'),('test','test'),('中','中'),('1中','1中'),('1中3','1中3'),('中文','中文'),('中文1','中文1'),('中文123456','中文123456'),('中1文','中1文'),('中12文','中12文');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "a%";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%a";
 --sorted_result
@@ -108,6 +126,7 @@ SELECT * FROM t1 WHERE a LIKE "a%c%d";
 SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "中%";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%中";
 --sorted_result
@@ -116,6 +135,7 @@ SELECT * FROM t1 WHERE a LIKE "中%文";
 SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "a_";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "_a";
 --sorted_result
@@ -126,6 +146,7 @@ SELECT * FROM t1 WHERE a LIKE "a_c_e";
 SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "_中";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "中_";
 --sorted_result
@@ -136,16 +157,19 @@ SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
 SELECT * FROM t1 WHERE b LIKE "a%";
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "%a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "a%b";
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "a%c%d";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE CONCAT("ab","%");
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "中%";
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "%中";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "中%文";
 --sorted_result
@@ -154,6 +178,7 @@ SELECT * FROM t1 WHERE b LIKE CONCAT("中文","%");
 SELECT * FROM t1 WHERE b LIKE "a_";
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "_a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "a_c";
 --sorted_result
@@ -166,6 +191,7 @@ SELECT * FROM t1 WHERE b LIKE "_中";
 SELECT * FROM t1 WHERE b LIKE "中_";
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "中_文";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE CONCAT("中文","_");
 # CREATE INDEX
@@ -250,6 +276,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (id int auto_increment key, a BINARY(32), b VARBINARY(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 INSERT INTO t1(a, b) VALUES ('1a','1a'),('2a','2a'),('1234a','1234a'),('a','a'),('ab','ab'),('a0000b','a0000b'),('abc','abc'),('ac','ac'),('abd','abd'),('abcd','abcd'),('a0000b1111c2222b3333d','a0000b1111c2222b3333d'),('abce','abce'),('abcde','abcde'),('abcdef','abcdef'),('hello','hello'),('test','test'),('中','中'),('1中','1中'),('1中3','1中3'),('中文','中文'),('中文1','中文1'),('中文123456','中文123456'),('中1文','中1文'),('中12文','中12文');
 SELECT * FROM t1 WHERE a LIKE "a%" ORDER BY a;
+--source include/query_pushdown_condition_sequoiadb.inc
 SELECT * FROM t1 WHERE a LIKE "%a" ORDER BY a;
 SELECT * FROM t1 WHERE a LIKE "a%b" ORDER BY a;
 SELECT * FROM t1 WHERE a LIKE "a%c%d" ORDER BY a;
@@ -268,6 +295,7 @@ SELECT * FROM t1 WHERE a LIKE "中_" ORDER BY a;
 SELECT * FROM t1 WHERE a LIKE "中_文" ORDER BY a;
 SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_") ORDER BY a;
 SELECT * FROM t1 WHERE b LIKE "a%" ORDER BY b;
+--source include/query_pushdown_condition_sequoiadb.inc
 SELECT * FROM t1 WHERE b LIKE "%a" ORDER BY b;
 SELECT * FROM t1 WHERE b LIKE "a%b" ORDER BY b;
 SELECT * FROM t1 WHERE b LIKE "a%c%d" ORDER BY b;
@@ -292,12 +320,16 @@ CREATE TABLE t1 (id int auto_increment key, a TINYBLOB, b MEDIUMBLOB, c BLOB, d 
 INSERT INTO t1(a, b, c, d) VALUES ('1a','1a','1a','1a'),('2a','2a','2a','2a'),('1234a','1234a','1234a','1234a'),('a','a','a','a'),('ab','ab','ab','ab'),('a0000b','a0000b','a0000b','a0000b'),('abc','abc','abc','abc'),('ac','ac','ac','ac'),('abd','abd','abd','abd'),('abcd','abcd','abcd','abcd'),('a0000b1111c2222b3333d','a0000b1111c2222b3333d','a0000b1111c2222b3333d','a0000b1111c2222b3333d'),('abce','abce','abce','abce'),('abcde','abcde','abcde','abcde'),('abcdef','abcdef','abcdef','abcdef'),('hello','hello','hello','hello'),('test','test','test','test'),('中','中','中','中'),('1中','1中','1中','1中'),('1中3','1中3','1中3','1中3'),('中文','中文','中文','中文'),('中文1','中文1','中文1','中文1'),('中文123456','中文123456','中文123456','中文123456'),('中1文','中1文','中1文','中1文'),('中12文','中12文','中12文','中12文');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "a%";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "%a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "a%b";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "a%c%d";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE CONCAT("ab","%");
 --sorted_result
@@ -337,12 +369,16 @@ CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d 
 INSERT INTO t1(a, b, c, d) VALUES ('a','a','a','a'),('%a','%a','%a','%a'),('1a','1a','1a','1a'),('1%a','1%a','1%a','1%a'),('a%','a%','a%','a%'),('a%b','a%b','a%b','a%b'),('ab','ab','ab','ab'),('a0000b','a0000b','a0000b','a0000b'),('a%bc','a%bc','a%bc','a%bc'),('a%b%c','a%b%c','a%b%c','a%b%c'),('_a','_a','_a','_a'),('1_a','1_a','1_a','1_a'),('a_b','a_b','a_b','a_b'),('a_bc','a_bc','a_bc','a_bc'),('_a_b_c','_a_b_c','_a_b_c','_a_b_c'),('_a_cef','_a_cef','_a_cef','_a_cef'),('_a_c_ef','_a_c_ef','_a_c_ef','_a_c_ef'),('abc','abc','abc','abc'),('abcd','abcd','abcd','abcd'),('ab123c456d','ab123c456d','ab123c456d','ab123c456d'),('abcde','abcde','abcde','abcde'),('a1b1c1d1e','a1b1c1d1e','a1b1c1d1e','a1b1c1d1e'),('hello','hello','hello','hello'),('test','test','test','test'),('%中','%中','%中','%中'),('中','中','中','中'),('中%','中%','中%','中%'),('123%中456','123%中456','123%中456','123%中456'),('中文','中文','中文','中文'),('中%文','中%文','中%文','中%文'),('中文1','中文1','中文1','中文1'),('中文%','中文%','中文%','中文%'),('_中','_中','_中','_中'),('中_文','中_文','中_文','中_文'),('中_文%','中_文%','中_文%','中_文%'),('中1文','中1文','中1文','中1文'),('中1文%','中1文%','中1文%','中1文%'),('中12文','中12文','中12文','中12文');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "a|%b" ESCAPE '|';
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "a|%b|%c" ESCAPE '|';
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "a|%b%c" ESCAPE '|';
 --sorted_result
@@ -427,6 +463,7 @@ CREATE TABLE t1 (id int auto_increment key, a CHAR(32), b VARCHAR(32)) DEFAULT C
 INSERT INTO t1(a, b) VALUES ('a','a'),('%a','%a'),('1a','1a'),('1%a','1%a'),('a%','a%'),('a%b','a%b'),('ab','ab'),('a0000b','a0000b'),('a%bc','a%bc'),('a%b%c','a%b%c'),('_a','_a'),('1_a','1_a'),('a_b','a_b'),('a_bc','a_bc'),('_a_b_c','_a_b_c'),('_a_cef','_a_cef'),('_a_c_ef','_a_c_ef'),('abc','abc'),('abcd','abcd'),('ab123c456d','ab123c456d'),('abcde','abcde'),('a1b1c1d1e','a1b1c1d1e'),('hello','hello'),('test','test'),('%中','%中'),('中','中'),('中%','中%'),('123%中456','123%中456'),('中文','中文'),('中%文','中%文'),('中文1','中文1'),('中文%','中文%'),('_中','_中'),('中_文','中_文'),('中_文%','中_文%'),('中1文','中1文'),('中1文%','中1文%'),('中12文','中12>文');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "|%a" ESCAPE '|';
 --sorted_result
@@ -467,6 +504,7 @@ SELECT * FROM t1 WHERE a LIKE "中|_文" ESCAPE '|';
 SELECT * FROM t1 WHERE a LIKE "中_文0%" ESCAPE '0';
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "a|%" ESCAPE '|';
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
 --sorted_result
@@ -689,12 +727,16 @@ CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d 
 INSERT INTO t1(a, b, c, d) VALUES ('^a','^a','^a','^a'),('^abc','^abc','^abc','^abc'),('a^bc','a^bc','a^bc','a^bc'),('a^bd','a^bd','a^bd','a^bd'),('ab^c','ab^c','ab^c','ab^c'),('ab^cde','ab^cde','ab^cde','ab^cde'),('\a','\a','\a','\a'),('\\a','\\a','\\a','\\a'),('\\abc','\\abc','\\abc','\\abc'),('a\\bc','a\\bc','a\\bc','a\\bc'),('a\\bd','a\\bd','a\\bd','a\\bd'),('ab\c','ab\c','ab\c','ab\c'),('ab\\cd','ab\\cd','ab\\cd','ab\\cd'),('$a','$a','$a','$a'),('$abc','$abc','$abc','$abc'),('a$bc','a$bc','a$bc','a$bc'),('ab$d','ab$d','ab$d','ab$d'),('ab$c','ab$c','ab$c','ab$c'),('ab$cde','ab$cde','ab$cde','ab$cde'),('*a','*a','*a','*a'),('*abc','*abc','*abc','*abc'),('a*bc','a*bc','a*bc','a*bc'),('a*bd','a*bd','a*bd','a*bd'),('ab*c','ab*c','ab*c','ab*c'),('ab*cde','ab*cde','ab*cde','ab*cde'),('+a','+a','+a','+a'),('+abc','+abc','+abc','+abc'),('a+bc','a+bc','a+bc','a+bc'),('a+bd','a+bd','a+bd','a+bd'),('ab+c','ab+c','ab+c','ab+c'),('ab+cde','ab+cde','ab+cde','ab+cde'),('?a','?a','?a','?a'),('?abc','?abc','?abc','?abc'),('a?bc','a?bc','a?bc','a?bc'),('a?bd','a?bd','a?bd','a?bd'),('ab?c','ab?c','ab?c','ab?c'),('ab?cde','ab?cde','ab?cde','ab?cde'),('{1}a','{1}a','{1}a','{1}a'),('{1,}a','{1,}a','{1,}a','{1,}a'),('{1,2}ac','{1,2}ac','{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc','a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd','a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f','ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f','ab{0,1}f','ab{0,1}f'),('.a','.a','.a','.a'),('.abc','.abc','.abc','.abc'),('a.bc','a.bc','a.bc','a.bc'),('a.bd','a.bd','a.bd','a.bd'),('ab.c','ab.c','ab.c','ab.c'),('ab.cde','ab.cde','ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e','abcd[.\n]e','abcd[.\n]e'),('(a)','(a)','(a)','(a)'),('(a)bc','(a)bc','(a)bc','(a)bc'),('a(b)c','a(b)c','a(b)c','a(b)c'),('a(b)d','a(b)d','a(b)d','a(b)d'),('ab(c)d','ab(c)d','ab(c)d','ab(c)d'),('abc(de)f','abc(de)f','abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c','a|b|c','a|b|c'),('[a]','[a]','[a]','[a]'),('[^a]','[^a]','[^a]','[^a]'),('[ab]c','[ab]c','[ab]c','[ab]c'),('[^ab]c','[^ab]c','[^ab]c','[^ab]c'),('a[bc]','a[bc]','a[bc]','a[bc]'),('a[bd]','a[bd]','a[bd]','a[bd]'),('abc[edf]','abc[edf]','abc[edf]','abc[edf]'),('[a-z]','[a-z]','[a-z]','[a-z]'),('[^a-z]','[^a-z]','[^a-z]','[^a-z]'),('\b','\b','\b','\b'),('a\b','a\b','a\b','a\b'),('ab\bc','ab\bc','ab\bc','ab\bc'),('\B','\B','\B','\B'),('a\B','a\B','a\B','a\B'),('abc\Bdef','abc\Bdef','abc\Bdef','abc\Bdef'),('\c123','\c123','\c123','\c123'),('ab\c456','ab\c456','ab\c456','ab\c456'),('\d1','\d1','\d1','\d1'),('a\d123','a\d123','a\d123','a\d123'),('\D','\D','\D','\D'),('\Dabc','\Dabc','\Dabc','\Dabc'),('ab\Dcd','ab\Dcd','ab\Dcd','ab\Dcd'),('\f','\f','\f','\f'),('\fa','\fa','\fa','\fa'),('\fabcd','\fabcd','\fabcd','\fabcd'),('ab\fcd','ab\fcd','ab\fcd','ab\fcd'),('\n','\n','\n','\n'),('\na','\na','\na','\na'),('\nabc','\nabc','\nabc','\nabc'),('\r','\r','\r','\r'),('\ra','\ra','\ra','\ra'),('\rabc','\rabc','\rabc','\rabc'),('ab\rcd','ab\rcd','ab\rcd','ab\rcd'),('\s','\s','\s','\s'),('\sa','\sa','\sa','\sa'),('\sabc','\sabc','\sabc','\sabc'),('ab\scd','ab\scd','ab\scd','ab\scd'),('\S','\S','\S','\S'),('\Sa','\Sa','\Sa','\Sa'),('\Sabc','\Sabc','\Sabc','\Sabc'),('ab\Scd','ab\Scd','ab\Scd','ab\Scd'),('\t','\t','\t','\t'),('\ta','\ta','\ta','\ta'),('\tabc','\tabc','\tabc','\tabc'),('ab\tcd','ab\tcd','ab\tcd','ab\tcd'),('\v','\v','\v','\v'),('\va','\va','\va','\va'),('\vabc','\vabc','\vabc','\vabc'),('ab\vcd','ab\vcd','ab\vcd','ab\vcd'),('\w','\w','\w','\w'),('\wa','\wa','\wa','\wa'),('\wabc','\wabc','\wabc','\wabc'),('ab\wcd','ab\wcd','ab\wcd','ab\wcd'),('\W','\W','\W','\W'),('\W1','\W1','\W1','\W1'),('\W1abc','\W1abc','\W1abc','\W1abc'),('ab\W1cd','ab\W1cd','ab\W1cd','ab\W1cd'),('\x12','\x12','\x12','\x12'),('\x123','\x123','\x123','\x123'),('123\x456','123\x456','123\x456','123\x456'),('\1','\1','\1','\1'),('\1abc','\1abc','\1abc','\1abc'),('abc(.)\123','abc(.)\123','abc(.)\123','abc(.)\123'),('\u1','\u1','\u1','\u1'),('123\u111','123\u111','123\u111','123\u111'),('a','a','a','a'),('1a','1a','1a','1a'),('4a','4a','4a','4a'),('a1','a1','a1','a1'),('a3','a3','a3','a3'),('a4','a4','a4','a4'),('a6','a6','a6','a6'),('ab','ab','ab','ab'),('ab1','ab1','ab1','ab1'),('abc','abc','abc','abc'),('abc1','abc1','abc1','abc1'),('abc123','abc123','abc123','abc123'),('abc456','abc456','abc456','abc456'),('abd','abd','abd','abd'),('abd1','abd1','abd1','abd1'),('acd','acd','acd','acd'),('acd1','acd1','acd1','acd1'),('abcd','abcd','abcd','abcd'),('abcd1','abcd1','abcd1','abcd1'),('abcde','abcde','abcde','abcde'),('abcde1','abcde1','abcde1','abcde1'),('abcdef','abcdef','abcdef','abcdef'),('1','1','1','1'),('12','12','12','12'),('123','123','123','123'),('1234','1234','1234','1234'),('12345','12345','12345','12345'),('123456','123456','123456','123456');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "^a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "a^bc";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "\\a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "a\\bc";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "$a";
 --sorted_result
@@ -945,8 +987,10 @@ CREATE TABLE t1 (id int auto_increment key, a CHAR(32), b VARCHAR(32)) DEFAULT C
 INSERT INTO t1(a, b) VALUES ('^a','^a'),('^abc','^abc'),('a^bc','a^bc'),('a^bd','a^bd'),('ab^c','ab^c'),('ab^cde','ab^cde'),('\a','\a'),('\\a','\\a'),('\\abc','\\abc'),('a\\bc','a\\bc'),('a\\bd','a\\bd'),('ab\c','ab\c'),('ab\\cd','ab\\cd'),('$a','$a'),('$abc','$abc'),('a$bc','a$bc'),('ab$d','ab$d'),('ab$c','ab$c'),('ab$cde','ab$cde'),('*a','*a'),('*abc','*abc'),('a*bc','a*bc'),('a*bd','a*bd'),('ab*c','ab*c'),('ab*cde','ab*cde'),('+a','+a'),('+abc','+abc'),('a+bc','a+bc'),('a+bd','a+bd'),('ab+c','ab+c'),('ab+cde','ab+cde'),('?a','?a'),('?abc','?abc'),('a?bc','a?bc'),('a?bd','a?bd'),('ab?c','ab?c'),('ab?cde','ab?cde'),('{1}a','{1}a'),('{1,}a','{1,}a'),('{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f'),('.a','.a'),('.abc','.abc'),('a.bc','a.bc'),('a.bd','a.bd'),('ab.c','ab.c'),('ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e'),('(a)','(a)'),('(a)bc','(a)bc'),('a(b)c','a(b)c'),('a(b)d','a(b)d'),('ab(c)d','ab(c)d'),('abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c'),('[a]','[a]'),('[^a]','[^a]'),('[ab]c','[ab]c'),('[^ab]c','[^ab]c'),('a[bc]','a[bc]'),('a[bd]','a[bd]'),('abc[edf]','abc[edf]'),('[a-z]','[a-z]'),('[^a-z]','[^a-z]'),('\b','\b'),('a\b','a\b'),('ab\bc','ab\bc'),('\B','\B'),('a\B','a\B'),('abc\Bdef','abc\Bdef'),('\c123','\c123'),('ab\c456','ab\c456'),('\d1','\d1'),('a\d123','a\d123'),('\D','\D'),('\Dabc','\Dabc'),('ab\Dcd','ab\Dcd'),('\f','\f'),('\fa','\fa'),('\fabcd','\fabcd'),('ab\fcd','ab\fcd'),('\n','\n'),('\na','\na'),('\nabc','\nabc'),('\r','\r'),('\ra','\ra'),('\rabc','\rabc'),('ab\rcd','ab\rcd'),('\s','\s'),('\sa','\sa'),('\sabc','\sabc'),('ab\scd','ab\scd'),('\S','\S'),('\Sa','\Sa'),('\Sabc','\Sabc'),('ab\Scd','ab\Scd'),('\t','\t'),('\ta','\ta'),('\tabc','\tabc'),('ab\tcd','ab\tcd'),('\v','\v'),('\va','\va'),('\vabc','\vabc'),('ab\vcd','ab\vcd'),('\w','\w'),('\wa','\wa'),('\wabc','\wabc'),('ab\wcd','ab\wcd'),('\W','\W'),('\W1','\W1'),('\W1abc','\W1abc'),('ab\W1cd','ab\W1cd'),('\x12','\x12'),('\x123','\x123'),('123\x456','123\x456'),('\1','\1'),('\1abc','\1abc'),('abc(.)\123','abc(.)\123'),('\u1','\u1'),('123\u111','123\u111'),('a','a'),('1a','1a'),('4a','4a'),('a1','a1'),('a3','a3'),('a4','a4'),('a6','a6'),('ab','ab'),('ab1','ab1'),('abc','abc'),('abc1','abc1'),('abc123','abc123'),('abc456','abc456'),('abd','abd'),('abd1','abd1'),('acd','acd'),('acd1','acd1'),('abcd','abcd'),('abcd1','abcd1'),('abcde','abcde'),('abcde1','abcde1'),('abcdef','abcdef'),('1','1'),('12','12'),('123','123'),('1234','1234'),('12345','12345'),('123456','123456');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "^a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "a^bc";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "\\a";
 --sorted_result
@@ -1198,7 +1242,9 @@ DROP TABLE t1;
 CREATE TABLE t1 (id int auto_increment key, a BINARY(32), b VARBINARY(32)) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 INSERT INTO t1(a, b) VALUES ('^a','^a'),('^abc','^abc'),('a^bc','a^bc'),('a^bd','a^bd'),('ab^c','ab^c'),('ab^cde','ab^cde'),('\a','\a'),('\\a','\\a'),('\\abc','\\abc'),('a\\bc','a\\bc'),('a\\bd','a\\bd'),('ab\c','ab\c'),('ab\\cd','ab\\cd'),('$a','$a'),('$abc','$abc'),('a$bc','a$bc'),('ab$d','ab$d'),('ab$c','ab$c'),('ab$cde','ab$cde'),('*a','*a'),('*abc','*abc'),('a*bc','a*bc'),('a*bd','a*bd'),('ab*c','ab*c'),('ab*cde','ab*cde'),('+a','+a'),('+abc','+abc'),('a+bc','a+bc'),('a+bd','a+bd'),('ab+c','ab+c'),('ab+cde','ab+cde'),('?a','?a'),('?abc','?abc'),('a?bc','a?bc'),('a?bd','a?bd'),('ab?c','ab?c'),('ab?cde','ab?cde'),('{1}a','{1}a'),('{1,}a','{1,}a'),('{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f'),('.a','.a'),('.abc','.abc'),('a.bc','a.bc'),('a.bd','a.bd'),('ab.c','ab.c'),('ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e'),('(a)','(a)'),('(a)bc','(a)bc'),('a(b)c','a(b)c'),('a(b)d','a(b)d'),('ab(c)d','ab(c)d'),('abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c'),('[a]','[a]'),('[^a]','[^a]'),('[ab]c','[ab]c'),('[^ab]c','[^ab]c'),('a[bc]','a[bc]'),('a[bd]','a[bd]'),('abc[edf]','abc[edf]'),('[a-z]','[a-z]'),('[^a-z]','[^a-z]'),('\b','\b'),('a\b','a\b'),('ab\bc','ab\bc'),('\B','\B'),('a\B','a\B'),('abc\Bdef','abc\Bdef'),('\c123','\c123'),('ab\c456','ab\c456'),('\d1','\d1'),('a\d123','a\d123'),('\D','\D'),('\Dabc','\Dabc'),('ab\Dcd','ab\Dcd'),('\f','\f'),('\fa','\fa'),('\fabcd','\fabcd'),('ab\fcd','ab\fcd'),('\n','\n'),('\na','\na'),('\nabc','\nabc'),('\r','\r'),('\ra','\ra'),('\rabc','\rabc'),('ab\rcd','ab\rcd'),('\s','\s'),('\sa','\sa'),('\sabc','\sabc'),('ab\scd','ab\scd'),('\S','\S'),('\Sa','\Sa'),('\Sabc','\Sabc'),('ab\Scd','ab\Scd'),('\t','\t'),('\ta','\ta'),('\tabc','\tabc'),('ab\tcd','ab\tcd'),('\v','\v'),('\va','\va'),('\vabc','\vabc'),('ab\vcd','ab\vcd'),('\w','\w'),('\wa','\wa'),('\wabc','\wabc'),('ab\wcd','ab\wcd'),('\W','\W'),('\W1','\W1'),('\W1abc','\W1abc'),('ab\W1cd','ab\W1cd'),('\x12','\x12'),('\x123','\x123'),('123\x456','123\x456'),('\1','\1'),('\1abc','\1abc'),('abc(.)\123','abc(.)\123'),('\u1','\u1'),('123\u111','123\u111'),('a','a'),('1a','1a'),('4a','4a'),('a1','a1'),('a3','a3'),('a4','a4'),('a6','a6'),('ab','ab'),('ab1','ab1'),('abc','abc'),('abc1','abc1'),('abc123','abc123'),('abc456','abc456'),('abd','abd'),('abd1','abd1'),('acd','acd'),('acd1','acd1'),('abcd','abcd'),('abcd1','abcd1'),('abcde','abcde'),('abcde1','abcde1'),('abcdef','abcdef'),('1','1'),('12','12'),('123','123'),('1234','1234'),('12345','12345'),('123456','123456');
 SELECT * FROM t1 WHERE a LIKE "^a" ORDER BY a;
+--source include/query_pushdown_condition_sequoiadb.inc
 SELECT * FROM t1 WHERE b LIKE "a^bc" ORDER BY b;
+--source include/query_pushdown_condition_sequoiadb.inc
 SELECT * FROM t1 WHERE a LIKE "\\a" ORDER BY a;
 SELECT * FROM t1 WHERE b LIKE "a\\bc" ORDER BY b;
 SELECT * FROM t1 WHERE a LIKE "$a" ORDER BY a;
@@ -1266,8 +1312,10 @@ CREATE TABLE t1 (id int auto_increment key, a TINYBLOB, b MEDIUMBLOB, c BLOB, d 
 INSERT INTO t1(a, b, c, d) VALUES ('^a','^a','^a','^a'),('^abc','^abc','^abc','^abc'),('a^bc','a^bc','a^bc','a^bc'),('a^bd','a^bd','a^bd','a^bd'),('ab^c','ab^c','ab^c','ab^c'),('ab^cde','ab^cde','ab^cde','ab^cde'),('\a','\a','\a','\a'),('\\a','\\a','\\a','\\a'),('\\abc','\\abc','\\abc','\\abc'),('a\\bc','a\\bc','a\\bc','a\\bc'),('a\\bd','a\\bd','a\\bd','a\\bd'),('ab\c','ab\c','ab\c','ab\c'),('ab\\cd','ab\\cd','ab\\cd','ab\\cd'),('$a','$a','$a','$a'),('$abc','$abc','$abc','$abc'),('a$bc','a$bc','a$bc','a$bc'),('ab$d','ab$d','ab$d','ab$d'),('ab$c','ab$c','ab$c','ab$c'),('ab$cde','ab$cde','ab$cde','ab$cde'),('*a','*a','*a','*a'),('*abc','*abc','*abc','*abc'),('a*bc','a*bc','a*bc','a*bc'),('a*bd','a*bd','a*bd','a*bd'),('ab*c','ab*c','ab*c','ab*c'),('ab*cde','ab*cde','ab*cde','ab*cde'),('+a','+a','+a','+a'),('+abc','+abc','+abc','+abc'),('a+bc','a+bc','a+bc','a+bc'),('a+bd','a+bd','a+bd','a+bd'),('ab+c','ab+c','ab+c','ab+c'),('ab+cde','ab+cde','ab+cde','ab+cde'),('?a','?a','?a','?a'),('?abc','?abc','?abc','?abc'),('a?bc','a?bc','a?bc','a?bc'),('a?bd','a?bd','a?bd','a?bd'),('ab?c','ab?c','ab?c','ab?c'),('ab?cde','ab?cde','ab?cde','ab?cde'),('{1}a','{1}a','{1}a','{1}a'),('{1,}a','{1,}a','{1,}a','{1,}a'),('{1,2}ac','{1,2}ac','{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc','a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd','a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f','ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f','ab{0,1}f','ab{0,1}f'),('.a','.a','.a','.a'),('.abc','.abc','.abc','.abc'),('a.bc','a.bc','a.bc','a.bc'),('a.bd','a.bd','a.bd','a.bd'),('ab.c','ab.c','ab.c','ab.c'),('ab.cde','ab.cde','ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e','abcd[.\n]e','abcd[.\n]e'),('(a)','(a)','(a)','(a)'),('(a)bc','(a)bc','(a)bc','(a)bc'),('a(b)c','a(b)c','a(b)c','a(b)c'),('a(b)d','a(b)d','a(b)d','a(b)d'),('ab(c)d','ab(c)d','ab(c)d','ab(c)d'),('abc(de)f','abc(de)f','abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c','a|b|c','a|b|c'),('[a]','[a]','[a]','[a]'),('[^a]','[^a]','[^a]','[^a]'),('[ab]c','[ab]c','[ab]c','[ab]c'),('[^ab]c','[^ab]c','[^ab]c','[^ab]c'),('a[bc]','a[bc]','a[bc]','a[bc]'),('a[bd]','a[bd]','a[bd]','a[bd]'),('abc[edf]','abc[edf]','abc[edf]','abc[edf]'),('[a-z]','[a-z]','[a-z]','[a-z]'),('[^a-z]','[^a-z]','[^a-z]','[^a-z]'),('\b','\b','\b','\b'),('a\b','a\b','a\b','a\b'),('ab\bc','ab\bc','ab\bc','ab\bc'),('\B','\B','\B','\B'),('a\B','a\B','a\B','a\B'),('abc\Bdef','abc\Bdef','abc\Bdef','abc\Bdef'),('\c123','\c123','\c123','\c123'),('ab\c456','ab\c456','ab\c456','ab\c456'),('\d1','\d1','\d1','\d1'),('a\d123','a\d123','a\d123','a\d123'),('\D','\D','\D','\D'),('\Dabc','\Dabc','\Dabc','\Dabc'),('ab\Dcd','ab\Dcd','ab\Dcd','ab\Dcd'),('\f','\f','\f','\f'),('\fa','\fa','\fa','\fa'),('\fabcd','\fabcd','\fabcd','\fabcd'),('ab\fcd','ab\fcd','ab\fcd','ab\fcd'),('\n','\n','\n','\n'),('\na','\na','\na','\na'),('\nabc','\nabc','\nabc','\nabc'),('\r','\r','\r','\r'),('\ra','\ra','\ra','\ra'),('\rabc','\rabc','\rabc','\rabc'),('ab\rcd','ab\rcd','ab\rcd','ab\rcd'),('\s','\s','\s','\s'),('\sa','\sa','\sa','\sa'),('\sabc','\sabc','\sabc','\sabc'),('ab\scd','ab\scd','ab\scd','ab\scd'),('\S','\S','\S','\S'),('\Sa','\Sa','\Sa','\Sa'),('\Sabc','\Sabc','\Sabc','\Sabc'),('ab\Scd','ab\Scd','ab\Scd','ab\Scd'),('\t','\t','\t','\t'),('\ta','\ta','\ta','\ta'),('\tabc','\tabc','\tabc','\tabc'),('ab\tcd','ab\tcd','ab\tcd','ab\tcd'),('\v','\v','\v','\v'),('\va','\va','\va','\va'),('\vabc','\vabc','\vabc','\vabc'),('ab\vcd','ab\vcd','ab\vcd','ab\vcd'),('\w','\w','\w','\w'),('\wa','\wa','\wa','\wa'),('\wabc','\wabc','\wabc','\wabc'),('ab\wcd','ab\wcd','ab\wcd','ab\wcd'),('\W','\W','\W','\W'),('\W1','\W1','\W1','\W1'),('\W1abc','\W1abc','\W1abc','\W1abc'),('ab\W1cd','ab\W1cd','ab\W1cd','ab\W1cd'),('\x12','\x12','\x12','\x12'),('\x123','\x123','\x123','\x123'),('123\x456','123\x456','123\x456','123\x456'),('\1','\1','\1','\1'),('\1abc','\1abc','\1abc','\1abc'),('abc(.)\123','abc(.)\123','abc(.)\123','abc(.)\123'),('\u1','\u1','\u1','\u1'),('123\u111','123\u111','123\u111','123\u111'),('a','a','a','a'),('1a','1a','1a','1a'),('4a','4a','4a','4a'),('a1','a1','a1','a1'),('a3','a3','a3','a3'),('a4','a4','a4','a4'),('a6','a6','a6','a6'),('ab','ab','ab','ab'),('ab1','ab1','ab1','ab1'),('abc','abc','abc','abc'),('abc1','abc1','abc1','abc1'),('abc123','abc123','abc123','abc123'),('abc456','abc456','abc456','abc456'),('abd','abd','abd','abd'),('abd1','abd1','abd1','abd1'),('acd','acd','acd','acd'),('acd1','acd1','acd1','acd1'),('abcd','abcd','abcd','abcd'),('abcd1','abcd1','abcd1','abcd1'),('abcde','abcde','abcde','abcde'),('abcde1','abcde1','abcde1','abcde1'),('abcdef','abcdef','abcdef','abcdef'),('1','1','1','1'),('12','12','12','12'),('123','123','123','123'),('1234','1234','1234','1234'),('12345','12345','12345','12345'),('123456','123456','123456','123456');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "^a";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "a^bc";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "\\a";
 --sorted_result
@@ -1398,12 +1446,16 @@ CREATE TABLE t1 (id int auto_increment key, a TINYTEXT, b MEDIUMTEXT, c TEXT, d 
 INSERT INTO t1(a, b, c, d) VALUES ('^a','^a','^a','^a'),('^abc','^abc','^abc','^abc'),('a^bc','a^bc','a^bc','a^bc'),('a^bd','a^bd','a^bd','a^bd'),('ab^c','ab^c','ab^c','ab^c'),('ab^cde','ab^cde','ab^cde','ab^cde'),('\a','\a','\a','\a'),('\\a','\\a','\\a','\\a'),('\\abc','\\abc','\\abc','\\abc'),('a\\bc','a\\bc','a\\bc','a\\bc'),('a\\bd','a\\bd','a\\bd','a\\bd'),('ab\c','ab\c','ab\c','ab\c'),('ab\\cd','ab\\cd','ab\\cd','ab\\cd'),('$a','$a','$a','$a'),('$abc','$abc','$abc','$abc'),('a$bc','a$bc','a$bc','a$bc'),('ab$d','ab$d','ab$d','ab$d'),('ab$c','ab$c','ab$c','ab$c'),('ab$cde','ab$cde','ab$cde','ab$cde'),('*a','*a','*a','*a'),('*abc','*abc','*abc','*abc'),('a*bc','a*bc','a*bc','a*bc'),('a*bd','a*bd','a*bd','a*bd'),('ab*c','ab*c','ab*c','ab*c'),('ab*cde','ab*cde','ab*cde','ab*cde'),('+a','+a','+a','+a'),('+abc','+abc','+abc','+abc'),('a+bc','a+bc','a+bc','a+bc'),('a+bd','a+bd','a+bd','a+bd'),('ab+c','ab+c','ab+c','ab+c'),('ab+cde','ab+cde','ab+cde','ab+cde'),('?a','?a','?a','?a'),('?abc','?abc','?abc','?abc'),('a?bc','a?bc','a?bc','a?bc'),('a?bd','a?bd','a?bd','a?bd'),('ab?c','ab?c','ab?c','ab?c'),('ab?cde','ab?cde','ab?cde','ab?cde'),('{1}a','{1}a','{1}a','{1}a'),('{1,}a','{1,}a','{1,}a','{1,}a'),('{1,2}ac','{1,2}ac','{1,2}ac','{1,2}ac'),('a{1,}bc','a{1,}bc','a{1,}bc','a{1,}bc'),('a{1,2}bd','a{1,2}bd','a{1,2}bd','a{1,2}bd'),('ab{1,}f','ab{1,}f','ab{1,}f','ab{1,}f'),('ab{0,1}f','ab{0,1}f','ab{0,1}f','ab{0,1}f'),('.a','.a','.a','.a'),('.abc','.abc','.abc','.abc'),('a.bc','a.bc','a.bc','a.bc'),('a.bd','a.bd','a.bd','a.bd'),('ab.c','ab.c','ab.c','ab.c'),('ab.cde','ab.cde','ab.cde','ab.cde'),('abcd[.\n]e','abcd[.\n]e','abcd[.\n]e','abcd[.\n]e'),('(a)','(a)','(a)','(a)'),('(a)bc','(a)bc','(a)bc','(a)bc'),('a(b)c','a(b)c','a(b)c','a(b)c'),('a(b)d','a(b)d','a(b)d','a(b)d'),('ab(c)d','ab(c)d','ab(c)d','ab(c)d'),('abc(de)f','abc(de)f','abc(de)f','abc(de)f'),('ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)','ab(?:cd|ef)'),('ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)','ab(?=cd|ef|hg)'),('abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)','abc(?!d|e|f)'),('a|b|c','a|b|c','a|b|c','a|b|c'),('[a]','[a]','[a]','[a]'),('[^a]','[^a]','[^a]','[^a]'),('[ab]c','[ab]c','[ab]c','[ab]c'),('[^ab]c','[^ab]c','[^ab]c','[^ab]c'),('a[bc]','a[bc]','a[bc]','a[bc]'),('a[bd]','a[bd]','a[bd]','a[bd]'),('abc[edf]','abc[edf]','abc[edf]','abc[edf]'),('[a-z]','[a-z]','[a-z]','[a-z]'),('[^a-z]','[^a-z]','[^a-z]','[^a-z]'),('\b','\b','\b','\b'),('a\b','a\b','a\b','a\b'),('ab\bc','ab\bc','ab\bc','ab\bc'),('\B','\B','\B','\B'),('a\B','a\B','a\B','a\B'),('abc\Bdef','abc\Bdef','abc\Bdef','abc\Bdef'),('\c123','\c123','\c123','\c123'),('ab\c456','ab\c456','ab\c456','ab\c456'),('\d1','\d1','\d1','\d1'),('a\d123','a\d123','a\d123','a\d123'),('\D','\D','\D','\D'),('\Dabc','\Dabc','\Dabc','\Dabc'),('ab\Dcd','ab\Dcd','ab\Dcd','ab\Dcd'),('\f','\f','\f','\f'),('\fa','\fa','\fa','\fa'),('\fabcd','\fabcd','\fabcd','\fabcd'),('ab\fcd','ab\fcd','ab\fcd','ab\fcd'),('\n','\n','\n','\n'),('\na','\na','\na','\na'),('\nabc','\nabc','\nabc','\nabc'),('\r','\r','\r','\r'),('\ra','\ra','\ra','\ra'),('\rabc','\rabc','\rabc','\rabc'),('ab\rcd','ab\rcd','ab\rcd','ab\rcd'),('\s','\s','\s','\s'),('\sa','\sa','\sa','\sa'),('\sabc','\sabc','\sabc','\sabc'),('ab\scd','ab\scd','ab\scd','ab\scd'),('\S','\S','\S','\S'),('\Sa','\Sa','\Sa','\Sa'),('\Sabc','\Sabc','\Sabc','\Sabc'),('ab\Scd','ab\Scd','ab\Scd','ab\Scd'),('\t','\t','\t','\t'),('\ta','\ta','\ta','\ta'),('\tabc','\tabc','\tabc','\tabc'),('ab\tcd','ab\tcd','ab\tcd','ab\tcd'),('\v','\v','\v','\v'),('\va','\va','\va','\va'),('\vabc','\vabc','\vabc','\vabc'),('ab\vcd','ab\vcd','ab\vcd','ab\vcd'),('\w','\w','\w','\w'),('\wa','\wa','\wa','\wa'),('\wabc','\wabc','\wabc','\wabc'),('ab\wcd','ab\wcd','ab\wcd','ab\wcd'),('\W','\W','\W','\W'),('\W1','\W1','\W1','\W1'),('\W1abc','\W1abc','\W1abc','\W1abc'),('ab\W1cd','ab\W1cd','ab\W1cd','ab\W1cd'),('\x12','\x12','\x12','\x12'),('\x123','\x123','\x123','\x123'),('123\x456','123\x456','123\x456','123\x456'),('\1','\1','\1','\1'),('\1abc','\1abc','\1abc','\1abc'),('abc(.)\123','abc(.)\123','abc(.)\123','abc(.)\123'),('\u1','\u1','\u1','\u1'),('123\u111','123\u111','123\u111','123\u111'),('a','a','a','a'),('1a','1a','1a','1a'),('4a','4a','4a','4a'),('a1','a1','a1','a1'),('a3','a3','a3','a3'),('a4','a4','a4','a4'),('a6','a6','a6','a6'),('ab','ab','ab','ab'),('ab1','ab1','ab1','ab1'),('abc','abc','abc','abc'),('abc1','abc1','abc1','abc1'),('abc123','abc123','abc123','abc123'),('abc456','abc456','abc456','abc456'),('abd','abd','abd','abd'),('abd1','abd1','abd1','abd1'),('acd','acd','acd','acd'),('acd1','acd1','acd1','acd1'),('abcd','abcd','abcd','abcd'),('abcd1','abcd1','abcd1','abcd1'),('abcde','abcde','abcde','abcde'),('abcde1','abcde1','abcde1','abcde1'),('abcdef','abcdef','abcdef','abcdef'),('1','1','1','1'),('12','12','12','12'),('123','123','123','123'),('1234','1234','1234','1234'),('12345','12345','12345','12345'),('123456','123456','123456','123456');
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "^a" ESCAPE "^";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "a^^bc" ESCAPE "^";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "a\\bc" ESCAPE "\\";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "a$bc" ESCAPE "$";
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "ab$$c" ESCAPE "$";
 --sorted_result
@@ -2098,5 +2150,3 @@ SELECT * FROM t1 WHERE a LIKE "a_{1,%" ESCAPE "0";
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "_.bd%" ESCAPE "0";
 DROP TABLE t1;
-
---source include/uninstall_sequoiadb.inc

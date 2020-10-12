@@ -407,6 +407,7 @@ subpartition by hash (a+b)
      subpartition x22)
 );
 
+--sorted_result
 SELECT * from t1;
 show create table t1;
 
@@ -490,6 +491,7 @@ INSERT into t1 VALUES (4,1,1);
 --error ER_NO_PARTITION_FOR_GIVEN_VALUE
 INSERT into t1 VALUES (5,1,1);
 
+--sorted_result
 SELECT * from t1;
 
 ALTER TABLE t1
@@ -503,6 +505,7 @@ subpartition by hash (a+b)
      subpartition x22 engine sequoiadb nodegroup 1)
 );
 
+--sorted_result
 SELECT * from t1;
 
 drop table t1;
@@ -615,6 +618,7 @@ INSERT into t1 VALUES (4,1,1);
 --error ER_NO_PARTITION_FOR_GIVEN_VALUE
 INSERT into t1 VALUES (5,1,1);
 
+--sorted_result
 SELECT * from t1;
 
 ALTER TABLE t1
@@ -628,6 +632,7 @@ subpartition by hash (a+b)
     subpartition x22 engine sequoiadb)
 );
 
+--sorted_result
 SELECT * from t1;
 
 drop table t1;

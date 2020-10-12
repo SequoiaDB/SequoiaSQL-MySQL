@@ -1651,27 +1651,27 @@ a
 create table t4 (pk int primary key);
 insert into t4 select a from t3;
 select * from t3 where a in 
-(select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c);
+(select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c) order by t3.a;
 a
 0
-10
 1
-11
 2
-12
 3
-13
 4
-14
 5
-15
 6
-16
 7
-17
 8
-18
 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
 19
 drop table t1, t3, t4;
 create table t1 (a int);
@@ -7188,8 +7188,6 @@ WHERE t1.uid IN (SELECT t4.uid FROM t4, t3 WHERE t3.uid=1 AND t4.uid=t3.fid)
 AND t2.uid=t1.fid;
 name
 A
-A
-B
 B
 C
 D
@@ -7197,6 +7195,8 @@ E
 F
 G
 H
+A
+B
 I
 DROP TABLE t1,t2,t3,t4;
 # End of test for Bug#18194196

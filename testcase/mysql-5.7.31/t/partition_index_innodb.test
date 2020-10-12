@@ -72,10 +72,12 @@ SELECT TRACE FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
 # a reads row N+5 (0x209) from p1 c = 28
 # No more match...
 
+--sorted_result
 SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
 #EXPLAIN SELECT a,b,c FROM t1 WHERE a = 2 AND b = 2 AND c IN (13,25,28);
 SELECT a,b,c FROM t1 WHERE a = 2 AND b = 2 AND c IN (13,25,28);
 SET SESSION optimizer_switch="index_merge_intersection=off";
+--sorted_result
 SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
 #EXPLAIN SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
 

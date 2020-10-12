@@ -466,7 +466,7 @@ insert into t1 values (1,'b','c',1),(2,'b','c',2),(3,'b','c',3);
 insert into t1 values (1,'c','d',1),(2,'c','d',2),(3,'c','d',3);
 insert into t1 values (1,'d','e',1),(2,'d','e',2),(3,'d','e',3);
 select * from t1 where (a = 1 AND b < 'd' AND (c = 'b' OR (c = 'c' AND d = 1)) OR
-(a = 1 AND b >= 'a' AND (c = 'c' OR (c = 'd' AND d = 2))));
+(a = 1 AND b >= 'a' AND (c = 'c' OR (c = 'd' AND d = 2)))) order by b;
 a	b	c	d
 1	a	b	1
 1	b	c	1
