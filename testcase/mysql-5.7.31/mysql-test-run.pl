@@ -1427,7 +1427,7 @@ sub command_line_setup {
 	  
       }else{
         print "**** ERROR **** ","\n",
-        "--meta-sync-addr value is invalid value , try typing '--meta-sync-addr=host1:prot1,host2:port2' on the command line ","\n";
+        "--meta-sync-addr value is invalid value , try typing '--meta-sync-addr=host1:port1,host2:port2' on the command line ","\n";
         exit(1);
       }
     }
