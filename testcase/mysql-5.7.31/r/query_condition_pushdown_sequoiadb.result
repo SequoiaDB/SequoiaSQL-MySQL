@@ -14823,7 +14823,7 @@ create table t2(a char(255), b varchar(255), c text);
 create table t3(a timestamp, b date, c datetime, d year, e time);
 create table t4(a enum('a'), b set('a'));
 create table t5(a binary, b varbinary(255), c blob);
-create table t6(a json, b geometry);
+create table t6(a json);
 select * from t1 order by a,b,c,d;
 a	b	c	d
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1, "b": 1, "c": 1, "d": 1 }], hint[{}], limit[-1], offset[0]
@@ -14846,10 +14846,7 @@ select * from t5 order by c;
 a	b	c
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t6 order by a;
-a	b
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-select * from t6 order by b;
-a	b
+a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 group by a,b,c,d;
 a	b	c	d
@@ -14873,10 +14870,7 @@ select * from t5 group by c;
 a	b	c
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t6 group by a;
-a	b
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-select * from t6 group by b;
-a	b
+a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 drop table t1,t2,t3,t4,t5,t6;
 create table t1(a int);

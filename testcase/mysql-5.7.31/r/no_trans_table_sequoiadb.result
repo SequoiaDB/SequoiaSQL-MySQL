@@ -9,8 +9,6 @@ update t2 set a=100 where a>3;
 delete from t1 where a=2;
 delete from t2 where a=2;
 rollback;
-Warnings:
-Warning	1196	Some non-transactional changed tables couldn't be rolled back
 select * from t1 order by a,b,c;
 a	b	c
 1	1	1

@@ -137,7 +137,7 @@ create table t2(a char(255), b varchar(255), c text);
 create table t3(a timestamp, b date, c datetime, d year, e time);
 create table t4(a enum('a'), b set('a'));
 create table t5(a binary, b varbinary(255), c blob);
-create table t6(a json, b geometry);
+create table t6(a json);
 
 select * from t1 order by a,b,c,d;#pushdown
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -155,8 +155,6 @@ select * from t5 order by c;#can't pushdown
 --source include/query_pushdown_condition_sequoiadb.inc
 select * from t6 order by a;#can't pushdown
 --source include/query_pushdown_condition_sequoiadb.inc
-select * from t6 order by b;#can't pushdown
---source include/query_pushdown_condition_sequoiadb.inc
 
 select * from t1 group by a,b,c,d;#pushdown
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -173,8 +171,6 @@ select * from t5 group by b;#can't pushdown
 select * from t5 group by c;#can't pushdown
 --source include/query_pushdown_condition_sequoiadb.inc
 select * from t6 group by a;#can't pushdown
---source include/query_pushdown_condition_sequoiadb.inc
-select * from t6 group by b;#can't pushdown
 --source include/query_pushdown_condition_sequoiadb.inc
 
 drop table t1,t2,t3,t4,t5,t6;
