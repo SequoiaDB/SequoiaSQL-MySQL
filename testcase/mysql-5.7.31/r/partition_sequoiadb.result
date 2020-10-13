@@ -1415,13 +1415,13 @@ id	f1	f2
 CHECK TABLE `t1#Sub#`;
 Table	Op	Msg_type	Msg_text
 x	check	error	Found a misplaced row in part p01 should be in part p11:
- f1:30 f2:190
+ f1:x f2:x
 x	check	error	Partition p01 returned error
 x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
 Table	Op	Msg_type	Msg_text
 x	check	error	Found a misplaced row in part p01 should be in part p11:
- f1:30 f2:190
+ f1:x f2:x
 x	check	error	Partition p01 returned error
 x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p11;
@@ -1450,7 +1450,7 @@ x	repair	error	Corrupt
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
 Table	Op	Msg_type	Msg_text
 x	check	error	Found a misplaced row in part p01 should be in part p11:
- f1:30 f2:190
+ f1:x f2:x
 x	check	error	Partition p01 returned error
 x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p11;
@@ -1471,7 +1471,7 @@ x	repair	error	Corrupt
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
 Table	Op	Msg_type	Msg_text
 x	check	error	Found a misplaced row in part p01 should be in part p11:
- f1:30 f2:190
+ f1:x f2:x
 x	check	error	Partition p01 returned error
 x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p11;

@@ -515,9 +515,11 @@ SELECT * FROM `t1#Sub#` ORDER BY id;
 INSERT INTO `t1#Sub##P#p01`(id, f1, _phid_) VALUES (200,30,200),(150,40,150),(175,12,175); 
 INSERT INTO `t1#Sub##P#p11`(id, f1, _phid_) VALUES (2000,2000,2000);
 SELECT * FROM `t1#Sub#` ORDER BY id;
---replace_column 1 x 
+--replace_column 1 x
+--replace_regex /f1:[0-9]* f2:[0-9]*/f1:x f2:x/ 
 CHECK TABLE `t1#Sub#`;  
 --replace_column 1 x
+--replace_regex /f1:[0-9]* f2:[0-9]*/f1:x f2:x/
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
 #BUG #SEQUOIASQLMAINSTREAM-793
 --replace_column 1 x
@@ -529,6 +531,7 @@ REPAIR TABLE `t1#Sub#` EXTENDED;
 --replace_column 1 x
 ALTER TABLE `t1#Sub#` REPAIR PARTITION p01 EXTENDED; 
 --replace_column 1 x
+--replace_regex /f1:[0-9]* f2:[0-9]*/f1:x f2:x/
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
 --replace_column 1 x
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p11;
@@ -538,6 +541,7 @@ ALTER TABLE `t1#Sub#` REBUILD PARTITION ALL;
 --replace_column 1 x
 REPAIR TABLE `t1#Sub#`;
 --replace_column 1 x
+--replace_regex /f1:[0-9]* f2:[0-9]*/f1:x f2:x/
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p01;
 --replace_column 1 x
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p11;
