@@ -63,34 +63,34 @@ Code = Country) OR
 Name LIKE 'L%') AND
 surfacearea > 1000000;
 Name
-Algeria
-Angola
-Argentina
-Australia
-Bolivia
-Brazil
 Egypt
-South Africa
-Ethiopia
-Indonesia
-India
-Iran
-Canada
-Kazakstan
-China
-Colombia
-Congo, The Democratic Republic of the
-Libyan Arab Jamahiriya
-Mali
 Mauritania
-Mexico
-Mongolia
+Bolivia
+Ethiopia
+Colombia
+South Africa
+Mali
+Angola
 Niger
-Peru
-Saudi Arabia
-Sudan
 Chad
-Russian Federation
+Peru
+Mongolia
+Iran
+Libyan Arab Jamahiriya
+Indonesia
+Mexico
+Saudi Arabia
+Congo, The Democratic Republic of the
+Algeria
+Sudan
+Kazakstan
+Argentina
+India
+Australia
+Brazil
 United States
+China
+Canada
+Russian Federation
 drop database subselect_exists2in_world;
 set optimizer_switch=@subselect_mat_cost;
