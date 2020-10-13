@@ -484,22 +484,12 @@ affected rows: 3
 info: Rows matched: 3  Changed: 3  Warnings: 0
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}
 commit;
-select * from t1 order by id;
-id	a
-1	3
-2	4
-3	5
 begin;
 update t1 set a=a+1;
 affected rows: 3
 info: Rows matched: 3  Changed: 3  Warnings: 0
 [Note] SequoiaDB: optimizer update: 1, rule: { "$inc": { "a": { "Value": 1, "Min": -2147483648, "Max": 2147483647, "Default": null } } }, condition: {}
 rollback;
-select * from t1 order by id;
-id	a
-1	3
-2	4
-3	5
 begin;
 update t1 set id=10;
 ERROR 23000: Duplicate entry '{ "id": 10 }' for key 'PRIMARY'

@@ -60,7 +60,6 @@ s1
 1
 2
 -1
-1000
 COMMIT;
 Now, the '1000' should appear.
 START TRANSACTION;
@@ -167,7 +166,6 @@ SELECT * FROM t1 WHERE s1 >= 1000;
 s1
 1001
 1002
-1003
 Should see 1001 and 1002, but NOT 1003
 COMMIT;
 SELECT * FROM t1;
@@ -215,7 +213,6 @@ SELECT * FROM t1 WHERE s1 >= 1000;
 s1
 1001
 1002
-1003
 Should see 1001 and 1002, but NOT 1003
 COMMIT;
 SELECT * FROM t1;
@@ -248,7 +245,6 @@ s1
 1
 2
 -1
-1000
 Should get same result as above (i.e should not read '1000')
 COMMIT;
 DELETE FROM t1 WHERE s1 >= 1000;
@@ -270,7 +266,6 @@ connection default
 SELECT * FROM t1;
 s1
 1000
-1001
 Should only read the '1000' as this transaction is now in REP READ
 COMMIT AND NO CHAIN;
 SET @@completion_type=0;

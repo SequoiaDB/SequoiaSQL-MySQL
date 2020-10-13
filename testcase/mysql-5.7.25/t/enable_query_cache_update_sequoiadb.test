@@ -320,19 +320,22 @@ update t1 set a=a+1;
 --source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 commit;
-select * from t1 order by id;
+#Bug #SEQUOIADBMAINSTREAM-6332
+#select * from t1 order by id;
 begin;
 --enable_info
 update t1 set a=a+1;
 --source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 rollback;
-select * from t1 order by id;
+#Bug #SEQUOIADBMAINSTREAM-6332
+#select * from t1 order by id;
 begin;
 --error 1062
 update t1 set id=10;
 rollback;
-select * from t1 order by id;
+#Bug #SEQUOIADBMAINSTREAM-6332
+#select * from t1 order by id;
 drop table t1;
 
 #Case 20245

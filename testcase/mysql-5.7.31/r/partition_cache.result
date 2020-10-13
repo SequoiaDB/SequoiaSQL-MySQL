@@ -170,7 +170,7 @@ Qcache_queries_in_cache	0
 connection default
 SELECT sql_cache count(*) FROM t2 WHERE s2 = 'w';
 count(*)
-2
+1
 Warnings:
 Warning	1681	'SQL_CACHE' is deprecated and will be removed in a future release.
 COMMIT;
