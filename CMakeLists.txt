@@ -45,11 +45,8 @@ set(SDB_PROJECT_TYPE "mysql" CACHE STRING "Project type is MySQL")
 
 project(${PROJECT_NAME})
 
-IF(MYSQL STREQUAL "5.7.28" OR
-   MYSQL STREQUAL "5.7.31")
-   SDB_CHECK_SSL()
-   SDB_CHECK_CURL()
-ENDIF()
+SDB_CHECK_SSL()
+SDB_CHECK_CURL()
 
 function(prepare_sql_source sql_source_root sql_name)
    if(NOT EXISTS ${sql_source_root}/CMakeLists.txt)
