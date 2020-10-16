@@ -686,15 +686,15 @@ select * from t1 where a = '-838:59:58.0002';
 --sorted_result
 select * from t1 where a = '838:59:58.0002';
 #BUG #SEQUOIASQLMAINSTREAM-614
-#--sorted_result
-#select * from t1 where a != '-838:59:58.0002';
-#--sorted_result
-#select * from t1 where a <> '838:59:58.0002';
-#--source include/query_pushdown_condition_sequoiadb.inc
-#--sorted_result
-#select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
-#--sorted_result
-#select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
+--sorted_result
+select * from t1 where a != '-838:59:58.0002';
+--sorted_result
+select * from t1 where a <> '838:59:58.0002';
+--source include/query_pushdown_condition_sequoiadb.inc
+--sorted_result
+select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
+--sorted_result
+select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
 
 #Bug #SEQUOIASQLMAINSTREAM-209
 --sorted_result
@@ -750,14 +750,14 @@ select * from t1 where a = '-838:59:58.0002';
 --sorted_result
 select * from t1 where a = '838:59:58.0002';
 #BUG #SEQUOIASQLMAINSTREAM-614
-#--sorted_result
-#select * from t1 where a != '-838:59:58.0002';
-#--sorted_result
-#select * from t1 where a <> '838:59:58.0002';
-#--sorted_result
-#select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
-#--sorted_result
-#select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
+--sorted_result
+select * from t1 where a != '-838:59:58.0002';
+--sorted_result
+select * from t1 where a <> '838:59:58.0002';
+--sorted_result
+select * from t1 where a < '838:59:58.0002' and a >= '-838:59:58.0002';
+--sorted_result
+select * from t1 where a <= '838:59:58.0002' and a > '-838:59:58.0002';
 
 #Bug #SEQUOIASQLMAINSTREAM-209
 --sorted_result
