@@ -1,0 +1,6 @@
+CI 对接元数据同步工具的测试用例，准备环境如下：
+1. 同一台机器准备两个 MySQL/MariadDB 的实例，如主机名A、B，端口号分别为 p1、p2
+2. 启动 HA 同步组，使实例之间的元数据可互相同步
+
+CI 切到 /opt/sequoiasql/mysql/mysql-test，执行一下命令：
+./mysql-test-run.pl --suite=metadata_sync_sequoiadb --meta-sync-addr=A:p1,B:p2 --meta-sync-user=HAInstGroup_mysql --meta-sync-passwd=00000000 --retry=1 --retry-failure=1 --force --parallel=2

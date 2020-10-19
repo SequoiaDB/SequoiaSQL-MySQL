@@ -1,0 +1,31 @@
+DROP USER IF EXISTS "metaSync_user"@"localhost";
+DROP USER IF EXISTS "metaSync_user_new"@"localhost";
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user';
+user	host	password_expired
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user_new';
+user	host	password_expired
+CREATE USER 'metaSync_user'@'localhost' identified by '123';
+GRANT INSERT, DELETE ON *.*  TO 'metaSync_user'@'localhost';
+FLUSH PRIVILEGES;
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user';
+user	host	password_expired
+metaSync_user	localhost	N
+SHOW GRANTS FOR 'metaSync_user'@'localhost';
+Grants for metaSync_user@localhost
+GRANT INSERT, DELETE ON *.* TO 'metaSync_user'@'localhost'
+RENAME USER 'metaSync_user'@'localhost' TO 'metaSync_user_new'@'localhost';
+ALTER USER 'metaSync_user_new'@'localhost' PASSWORD EXPIRE;
+REVOKE DELETE ON *.* FROM 'metaSync_user_new'@'localhost';
+FLUSH PRIVILEGES;
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user';
+user	host	password_expired
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user_new';
+user	host	password_expired
+metaSync_user_new	localhost	Y
+SHOW GRANTS FOR 'metaSync_user_new'@'localhost';
+Grants for metaSync_user_new@localhost
+GRANT INSERT ON *.* TO 'metaSync_user_new'@'localhost'
+DROP USER 'metaSync_user_new'@'localhost';
+FLUSH PRIVILEGES;
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user_new';
+user	host	password_expired

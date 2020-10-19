@@ -1,0 +1,47 @@
+DROP DATABASE IF EXISTS metaSync_index;
+SHOW CREATE DATABASE metaSync_index;
+ERROR 42000: Unknown database 'metaSync_index'
+CREATE DATABASE metaSync_index;
+USE metaSync_index;
+CREATE TABLE t1 ( a INT, b INT, c INT );
+CREATE TABLE t2 ( a INT, b INT, INDEX(b) );
+CREATE TABLE t3 ( a INT, b INT, c INT, INDEX(a), INDEX(b) );
+CREATE INDEX a USING HASH ON t1(a);
+CREATE UNIQUE INDEX b USING HASH ON t1(b) KEY_BLOCK_SIZE = 1024 COMMENT "create index";
+ALTER TABLE t2 RENAME INDEX b TO b_new, ALGORITHM = COPY;
+DROP INDEX a ON t3 ALGORITHM = INPLACE;
+DROP INDEX b ON t3 ALGORITHM = COPY LOCK = EXCLUSIVE;
+USE metaSync_index;
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT NULL,
+  UNIQUE KEY `b` (`b`) USING HASH KEY_BLOCK_SIZE=1024 COMMENT 'create index',
+  KEY `a` (`a`) USING HASH
+) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  KEY `b_new` (`b`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SHOW CREATE TABLE t3;
+Table	Create Table
+t3	CREATE TABLE `t3` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+DROP TABLE t1,t2,t3;
+SHOW CREATE TABLE t1;
+ERROR 42S02: Table 'metaSync_index.t1' doesn't exist
+SHOW CREATE TABLE t2;
+ERROR 42S02: Table 'metaSync_index.t2' doesn't exist
+SHOW CREATE TABLE t3;
+ERROR 42S02: Table 'metaSync_index.t3' doesn't exist
+DROP DATABASE metaSync_index;
+SHOW CREATE DATABASE metaSync_index;
+ERROR 42000: Unknown database 'metaSync_index'

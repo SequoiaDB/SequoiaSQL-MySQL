@@ -1,0 +1,57 @@
+#case 18871 #Case 18865
+
+--source include/have_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
+
+# connect to conn1, clear users in the beginning
+connection conn1;
+--disable_warnings
+DROP USER IF EXISTS "metaSync_user"@"localhost";
+DROP USER IF EXISTS "metaSync_user_new"@"localhost";
+--enable_warnings
+
+# connect to conn2, check users are cleaned in the beginning
+connection conn2;
+--sleep $sleep
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user';
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user_new';
+
+# seqDB-18871
+# seqDB-18865
+# begin testing
+#
+# CREATE/ALTER/DROP USER
+# GRENT/REVOKE USER
+connection conn1;
+CREATE USER 'metaSync_user'@'localhost' identified by '123';
+# grant user 
+GRANT INSERT, DELETE ON *.*  TO 'metaSync_user'@'localhost';
+# SEQUOIASQLMAINSTREAM-340
+FLUSH PRIVILEGES;
+# check metadatas after create
+connection conn2;
+--sleep $sleep
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user';
+SHOW GRANTS FOR 'metaSync_user'@'localhost';
+# alter user
+RENAME USER 'metaSync_user'@'localhost' TO 'metaSync_user_new'@'localhost';
+ALTER USER 'metaSync_user_new'@'localhost' PASSWORD EXPIRE;
+# revoke grant
+REVOKE DELETE ON *.* FROM 'metaSync_user_new'@'localhost';
+FLUSH PRIVILEGES;
+# check metadatas after alter
+connection conn1;
+--sleep $sleep
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user';
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user_new';
+SHOW GRANTS FOR 'metaSync_user_new'@'localhost';
+# drop user
+DROP USER 'metaSync_user_new'@'localhost';
+FLUSH PRIVILEGES;
+# check metadatas after drop
+connection conn2;
+--sleep $sleep
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user_new';
+
+--source include/uninstall_sequoiadb.inc
+--source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
