@@ -36,14 +36,45 @@ static int sdb_proc_id() {
 #endif
 }
 
+/* caller should catch the exception. */
+void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
+  bson::BSONObjBuilder builder(160);
+
+  if (test_attrs_mask(SDB_SESSION_ATTR_SOURCE_MASK)) {
+    builder.append(SDB_SESSION_ATTR_SOURCE, source_str);
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_ISOLATION_MASK)) {
+    builder.append(SDB_SESSION_ATTR_TRANS_ISOLATION,
+                   (long long int)trans_isolation);
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK)) {
+    builder.append(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT, trans_auto_commit);
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK_MASK)) {
+    builder.append(SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK, trans_auto_rollback);
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK)) {
+    builder.append(SDB_SESSION_ATTR_TRANS_TIMEOUT, trans_timeout);
+  }
+
+  *attr_obj = builder.obj();
+}
+
+void Sdb_session_attrs::save_last_attrs() {
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_ISOLATION_MASK)) {
+    last_trans_isolation = trans_isolation;
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK)) {
+    last_trans_timeout = trans_timeout;
+  }
+}
+
 Sdb_conn::Sdb_conn(my_thread_id _tid)
     : m_transaction_on(false),
       m_thread_id(_tid),
       pushed_autocommit(false),
       m_is_authenticated(false),
       m_use_transaction(sdb_use_transaction) {
-  // default is RR.
-  last_tx_isolation = SDB_TRANS_ISO_RR;
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
   rollback_on_timeout = false;
@@ -82,6 +113,7 @@ error:
 int Sdb_conn::connect() {
   int rc = SDB_ERR_OK;
   String password;
+  Sdb_session_attrs *session_attrs = NULL;
 
   if (!(is_valid() && is_authenticated())) {
     m_transaction_on = false;
@@ -136,12 +168,37 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    rc = set_my_session_attr();
-    if (SDB_ERR_OK != rc) {
-      snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d", rc);
-      goto error;
-    }
+    static bool support_source_and_trans_attr = true;
 
+    if (support_source_and_trans_attr) {
+      const char *hostname = NULL;
+      int hostname_len = (int)strlen(glob_hostname);
+
+      if (0 >= hostname_len) {
+        static char empty[] = "";
+        hostname = empty;
+      } else {
+        hostname = glob_hostname;
+      }
+      session_attrs = get_session_attrs();
+      session_attrs->set_source(hostname, sdb_proc_id(),
+                                (ulonglong)thread_id());
+      session_attrs->set_trans_auto_rollback(false);
+      session_attrs->set_trans_auto_commit(m_use_transaction ? true : false);
+      session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
+      rc = set_my_session_attr();
+      // No such options before sdb v3.2.4. Ignore it.
+      if (SDB_INVALIDARG == get_sdb_code(rc)) {
+        support_source_and_trans_attr = false;
+        rc = SDB_ERR_OK;
+      }
+
+      if (SDB_ERR_OK != rc) {
+        snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d",
+                 rc);
+        goto error;
+      }
+    }
     m_is_authenticated = true;
   }
 
@@ -154,60 +211,39 @@ error:
 }
 
 int Sdb_conn::set_my_session_attr() {
-  static bool support_source_and_trans_attr = true;
-
+  bson::BSONObj attrs_obj;
   int rc = SDB_ERR_OK;
-  if (support_source_and_trans_attr) {
-    const char *hostname = NULL;
-    char source_str[PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + 64] = {0};
-    // 64 bytes is for string of proc_id and thread_id.
+  Sdb_session_attrs *session_attrs = NULL;
 
-    int hostname_len = (int)strlen(glob_hostname);
-
-    if (0 >= hostname_len) {
-      static char empty[] = "";
-      hostname = empty;
-    } else {
-      hostname = glob_hostname;
-    }
-
-    snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
-             strlen(hostname) ? ":" : "", hostname, sdb_proc_id(),
-             (ulonglong)thread_id());
-
-    try {
-      bson::BSONObjBuilder builder(128);
-      builder.append(SOURCE_THREAD_ID, source_str);
-      builder.append(TRANSAUTOROLLBACK, false);
-      bool auto_commit = m_use_transaction ? true : false;
-      builder.append(TRANSAUTOCOMMIT, auto_commit);
-
-      rc = set_session_attr(builder.obj());
-      // No such options before sdb v3.2.4. Ignore it.
-      if (SDB_INVALIDARG == get_sdb_code(rc)) {
-        support_source_and_trans_attr = false;
-        rc = SDB_ERR_OK;
+  try {
+    session_attrs = get_session_attrs();
+    if (session_attrs->get_attr_count()) {
+      session_attrs->attrs_to_obj(&attrs_obj);
+      rc = set_session_attr(attrs_obj);
+      if (SDB_OK == rc) {
+        session_attrs->save_last_attrs();
+      } else {
+        snprintf(errmsg, sizeof(errmsg),
+                 "Failed to set session attr, attr obj:%s, rc=%d",
+                 attrs_obj.toString(false, false, false).c_str(), rc);
+        goto error;
       }
-
-    } catch (std::bad_alloc &e) {
-      snprintf(errmsg, sizeof(errmsg),
-               "Failed to build setSessionAttr option "
-               "obj during connecting to sequoiadb, exception=%s",
-               e.what());
-      rc = SDB_ERR_OOM;
-      goto error;
-
-    } catch (std::exception &e) {
-      snprintf(errmsg, sizeof(errmsg),
-               "Failed to build setSessionAttr option "
-               "obj during connecting to sequoiadb, exception=%s",
-               e.what());
-      rc = SDB_ERR_BUILD_BSON;
-      goto error;
     }
+  } catch (std::bad_alloc &e) {
+    snprintf(errmsg, sizeof(errmsg),
+             "Failed to build session option obj, exception=%s", e.what());
+    rc = SDB_ERR_OOM;
+    goto error;
+
+  } catch (std::exception &e) {
+    snprintf(errmsg, sizeof(errmsg),
+             "Failed to build session option obj, exception=%s", e.what());
+    rc = SDB_ERR_BUILD_BSON;
+    goto error;
   }
 
 done:
+  session_attrs->clear_args();
   return rc;
 error:
   goto done;
@@ -220,6 +256,8 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
   ulong tx_iso = SDB_TRANS_ISO_RU;
   bson::BSONObj option;
   bson::BSONObjBuilder builder(32);
+  Sdb_session_attrs *session_attrs = NULL;
+  static bool support_trans_and_timeout_attr = true;
 
   set_rollback_on_timeout(false);
 
@@ -236,39 +274,25 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
     goto error;
   }
 
-  if (tx_isolation != get_last_tx_isolation()) {
+  if (support_trans_and_timeout_attr) {
+    /*Set the lock wait timeout when the lock_wait_timeout has changed*/
+    session_attrs = get_session_attrs();
+    session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
+    /*Set the trans isolation when the isolation has changed*/
     tx_iso = convert_to_sdb_isolation(tx_isolation);
-    try {
-      /* 0: RU; 1: RC; 2:RS; 3:RR */
-      builder.append(SDB_FIELD_TRANS_ISO, (int)tx_iso);
-      option = builder.obj();
-      rc = set_session_attr(option);
-      if (SDB_INVALIDARG == get_sdb_code(rc)) {
-        // No such options before sdb v3.2.4. Just ignore.
-        rc = SDB_ERR_OK;
-      }
-      if (SDB_ERR_OK != rc) {
-        snprintf(errmsg, sizeof(errmsg),
-                 "Failed to set transaction isolation: %s, rc=%d",
-                 option.toString(false, false).c_str(), rc);
-        goto error;
-      }
-    } catch (std::bad_alloc &e) {
-      rc = SDB_ERR_OOM;
+    session_attrs->set_trans_isolation(tx_iso);
+    rc = set_my_session_attr();
+    // No such options before sdb v3.2.4. Ignore it.
+    if (SDB_INVALIDARG == get_sdb_code(rc)) {
+      support_trans_and_timeout_attr = false;
+      rc = SDB_ERR_OK;
+    }
+
+    if (rc != SDB_OK) {
       snprintf(errmsg, sizeof(errmsg),
-               "Failed to set "
-               "transaction isolation, exception:%s",
-               e.what());
-      goto error;
-    } catch (std::exception &e) {
-      snprintf(errmsg, sizeof(errmsg),
-               "Failed to set "
-               "transaction isolation, exception:%s",
-               e.what());
-      rc = SDB_ERR_BUILD_BSON;
+               "Failed to set session attributes, rc=%d", rc);
       goto error;
     }
-    set_last_tx_isolation(tx_isolation);
   }
 
   while (!m_transaction_on) {

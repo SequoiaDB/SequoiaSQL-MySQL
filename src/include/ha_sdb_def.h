@@ -35,26 +35,38 @@
 #define SDB_OID_LEN 12
 #define SDB_OID_FIELD "_id"
 
-#define SOURCE_THREAD_ID "Source"
+#define SDB_SESSION_ATTR_SOURCE "Source"
 #define PREFIX_THREAD_ID "MySQL"
 #define PREFIX_THREAD_ID_LEN 6
-#define TRANSAUTOROLLBACK "TransAutoRollback"
-#define TRANSAUTOCOMMIT "TransAutoCommit"
-
-#define SDB_FIELD_TRANS_ISO "TransIsolation"
+#define SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK "TransAutoRollback"
+#define SDB_SESSION_ATTR_TRANS_AUTO_COMMIT "TransAutoCommit"
+#define SDB_SESSION_ATTR_TRANS_TIMEOUT "TransTimeout"
+#define SDB_SESSION_ATTR_TRANS_ISOLATION "TransIsolation"
+#define SDB_TRANS_ISO_INVALID ((ulong)(-1))
 #define SDB_TRANS_ISO_RU 0
 #define SDB_TRANS_ISO_RC 1
+#define SDB_TRANS_ISO_RS 2
+#define SDB_TRANS_ISO_RR 3
 // the number of trans isolation RS is occupied by MySQL,
 // use number 4 instead for external use in 'HA'
 #define ISO_READ_STABILITY 4
-#define SDB_TRANS_ISO_RS 2
-#define SDB_TRANS_ISO_RR 3
+
+#define SDB_SESSION_ATTR_SOURCE_MASK (0x00000001)
+#define SDB_SESSION_ATTR_TRANS_ISOLATION_MASK (0x00000002)
+#define SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK (0x00000004)
+#define SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK_MASK (0x00000008)
+#define SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK (0x00000010)
+
+#define SDB_SESSION_ATTRS_COUNT (5)
 
 #define SDB_EPSILON (1e-6)
 // SequoiaDB timestamp range: '1902-01-01 00:00:00'~'2037-12-31 23:59:59'
 #define SDB_TIMESTAMP_MAX_YEAR (2037)
 #define SDB_TIMESTAMP_MIN_YEAR (1902)
 #define SDB_VALUE_NAN (0x7ff8000000000000)
+
+#define SDB_LOCK_WAIT_TIMEOUT_INVIAD (-1)
+#define SDB_DEFAULT_LOCK_WAIT_TIMEOUT (60)
 
 #define SDB_FIELD_NAME_AUTOINCREMENT "AutoIncrement"
 #define SDB_FIELD_NAME_FIELD "Field"

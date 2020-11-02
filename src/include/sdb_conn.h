@@ -21,6 +21,7 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include "ha_sdb_def.h"
+#include <mysql/plugin.h>
 
 #if defined IS_MYSQL
 #include <my_thread_local.h>
@@ -30,6 +31,109 @@
 
 class Sdb_cl;
 class Sdb_statistics;
+
+class Sdb_session_attrs {
+ public:
+  Sdb_session_attrs() {
+    last_trans_isolation = SDB_TRANS_ISO_INVALID;
+    last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVIAD;
+    attr_count = 0;
+    source_str[0] = '\0';
+    trans_isolation = SDB_TRANS_ISO_RR;
+    trans_auto_rollback = false;
+    trans_auto_commit = true;
+    trans_timeout = SDB_DEFAULT_LOCK_WAIT_TIMEOUT;
+    session_attrs_mask = 0;
+  }
+
+  ~Sdb_session_attrs(){};
+
+  void save_last_attrs();
+
+  inline void set_attrs_mask(ulonglong attr_mask) {
+    session_attrs_mask |= attr_mask;
+  }
+
+  inline void clear_args() {
+    session_attrs_mask = 0;
+    attr_count = 0;
+  }
+
+  inline int get_attr_count() { return attr_count; }
+
+  inline ulonglong get_attrs_mask() { return session_attrs_mask; }
+
+  inline bool test_attrs_mask(ulonglong attr_mask) {
+    return (session_attrs_mask & attr_mask) ? true : false;
+  }
+
+  inline void clear_attrs_mask(ulonglong attr_mask) {
+    session_attrs_mask &= (~attr_mask);
+  }
+
+  void attrs_to_obj(bson::BSONObj *attr_obj);
+
+  inline void set_source(const char *hostname, const int proc_id,
+                         ulonglong thread_id) {
+    snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
+             strlen(hostname) ? ":" : "", hostname, proc_id, thread_id);
+    set_attrs_mask(SDB_SESSION_ATTR_SOURCE_MASK);
+    attr_count++;
+  }
+
+  inline const char *get_source() { return source_str; }
+
+  inline void set_trans_isolation(ulong tx_isolation) {
+    if (last_trans_isolation != tx_isolation) {
+      trans_isolation = tx_isolation;
+      set_attrs_mask(SDB_SESSION_ATTR_TRANS_ISOLATION_MASK);
+      attr_count++;
+    }
+  }
+
+  inline void set_last_trans_isolation() {
+    last_trans_isolation = trans_isolation;
+  }
+
+  inline void set_trans_auto_rollback(bool auto_rollback) {
+    trans_auto_rollback = auto_rollback;
+    set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK_MASK);
+    attr_count++;
+  }
+
+  inline void set_trans_auto_commit(bool auto_commit) {
+    trans_auto_commit = auto_commit;
+    set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK);
+    attr_count++;
+  }
+
+  inline void set_trans_timeout(int timeout) {
+    if (last_trans_timeout != timeout) {
+      trans_timeout = timeout;
+      set_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK);
+      attr_count++;
+    }
+  }
+
+  inline void set_last_trans_timeout() { last_trans_timeout = trans_timeout; }
+
+  inline int get_last_trans_timeout() { return last_trans_timeout; }
+
+ private:
+  ulong last_trans_isolation;
+  int last_trans_timeout;
+  int attr_count;
+
+ private:
+  /*session attributes on sequoiadb.*/
+  char source_str[PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + 64]; /*Source*/
+  // 64 bytes is for string of proc_id and thread_id.
+  ulong trans_isolation;    /*TransIsolation*/
+  bool trans_auto_rollback; /*TransAutoRollback*/
+  bool trans_auto_commit;   /*TransAutoCommit*/
+  int trans_timeout;        /*TransTimeout*/
+  ulonglong session_attrs_mask;
+};
 
 class Sdb_conn {
  public:
@@ -84,6 +188,8 @@ class Sdb_conn {
 
   bool is_authenticated() { return m_is_authenticated; }
 
+  int analyze(const bson::BSONObj &options);
+
   inline void set_pushed_autocommit() { pushed_autocommit = true; }
 
   inline bool get_pushed_autocommit() { return pushed_autocommit; }
@@ -91,14 +197,6 @@ class Sdb_conn {
   int get_last_error(bson::BSONObj &errObj) {
     return m_connection.getLastErrorObj(errObj);
   }
-
-  int analyze(const bson::BSONObj &options);
-
-  inline void set_last_tx_isolation(ulong tx_isolation) {
-    last_tx_isolation = tx_isolation;
-  }
-
-  inline ulong get_last_tx_isolation() { return last_tx_isolation; }
 
   inline ulong convert_to_sdb_isolation(ulong tx_isolation) {
     switch (tx_isolation) {
@@ -122,21 +220,24 @@ class Sdb_conn {
     }
   }
 
-  void set_use_transaction(int use_transaction) {
+  inline void set_use_transaction(int use_transaction) {
     m_use_transaction = use_transaction;
   }
-  char *get_err_msg() { return errmsg; }
-  void clear_err_msg() { errmsg[0] = '\0'; }
+  inline char *get_err_msg() { return errmsg; }
+  inline void clear_err_msg() { errmsg[0] = '\0'; }
 
   inline void set_rollback_on_timeout(bool rollback) {
     rollback_on_timeout = rollback;
   }
+
   inline bool get_rollback_on_timeout() const { return rollback_on_timeout; }
+
+  inline Sdb_session_attrs *get_session_attrs() { return &session_attrs; }
+
+  int set_my_session_attr();
 
  private:
   int retry(boost::function<int()> func);
-
-  int set_my_session_attr();
 
   int get_cl_stats_by_get_detail(char *cs_name, char *cl_name,
                                  Sdb_statistics &stats);
@@ -149,11 +250,12 @@ class Sdb_conn {
   bool m_transaction_on;
   my_thread_id m_thread_id;
   bool pushed_autocommit;
-  ulong last_tx_isolation;
   bool m_is_authenticated;
   bool m_use_transaction;
   char errmsg[SDB_ERR_BUFF_SIZE];
   bool rollback_on_timeout;
+
+  Sdb_session_attrs session_attrs;
 };
 
 #endif

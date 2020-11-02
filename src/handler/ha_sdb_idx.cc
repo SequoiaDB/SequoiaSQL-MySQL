@@ -1011,8 +1011,8 @@ ha_rows Sdb_match_cnt_estimator::eval() {
   }
 
   DBUG_PRINT("info",
-             ("Records = min(%llu, ceil(TotalRecords * Selectivity)) "
-              "= min(%llu, ceil(%llu * %f))",
+             ("Records = min(%d, ceil(TotalRecords * Selectivity)) "
+              "= min(%d, ceil(%llu * %f))",
               MIN_MATCH_COUNT, MIN_MATCH_COUNT, m_total_records, selectivity));
   records = MAX(MIN_MATCH_COUNT, selectivity * m_total_records);
 done:

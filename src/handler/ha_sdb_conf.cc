@@ -19,6 +19,7 @@
 
 #include "ha_sdb_conf.h"
 #include "ha_sdb_lock.h"
+#include "ha_sdb_def.h"
 
 // Complete the struct declaration
 struct st_mysql_sys_var {
@@ -48,6 +49,7 @@ static const int SDB_DEFAULT_STATS_SAMPLE_NUM = 200;
 static const double SDB_DEFAULT_STATS_SAMPLE_PERCENT = 0.0;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
+
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
 
 char *sdb_conn_str = NULL;
@@ -320,6 +322,11 @@ static MYSQL_SYSVAR_DOUBLE(stats_sample_percent, sdb_stats_sample_percent,
                            /*索引统计信息抽样的记录比例。*/,
                            NULL, NULL, SDB_DEFAULT_STATS_SAMPLE_PERCENT, 0.0,
                            100.0, 0);
+static MYSQL_THDVAR_INT(lock_wait_timeout, PLUGIN_VAR_OPCMDARG,
+                        "Timeout in seconds a SequoiaDB transaction may wait "
+                        "for a lock before being rolled back."
+                        /*SequoiaDB 事务锁超时时间。*/,
+                        NULL, NULL, SDB_DEFAULT_LOCK_WAIT_TIMEOUT, 0, 3600, 0);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
@@ -348,6 +355,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(stats_mode),
     MYSQL_SYSVAR(stats_sample_num),
     MYSQL_SYSVAR(stats_sample_percent),
+    MYSQL_SYSVAR(lock_wait_timeout),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -482,4 +490,8 @@ ulonglong sdb_get_optimizer_options(THD *thd) {
 
 bool sdb_rollback_on_timeout(THD *thd) {
   return THDVAR(thd, rollback_on_timeout);
+}
+
+int sdb_lock_wait_timeout(THD *thd) {
+  return THDVAR(thd, lock_wait_timeout);
 }

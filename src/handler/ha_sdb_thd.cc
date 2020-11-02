@@ -78,8 +78,12 @@ int Thd_sdb::recycle_conn() {
   if (SDB_ERR_OK != rc) {
     SDB_LOG_ERROR("%s", m_conn.get_err_msg());
     m_conn.clear_err_msg();
+    goto error;
   }
+done:
   return rc;
+error:
+  goto done;
 }
 
 // Make sure THD has a Thd_sdb struct allocated and associated
