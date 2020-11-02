@@ -19,6 +19,7 @@
 
 #include "ha_sdb_conf.h"
 #include "ha_sdb_lock.h"
+#include "ha_sdb_def.h"
 
 static const char *SDB_ADDR_DFT = "localhost:11810";
 static const char *SDB_USER_DFT = "";
@@ -229,6 +230,12 @@ static MYSQL_THDVAR_SET(
     /*SequoiaDB 优化选项开关，以决定是否优化计数、更新、删除、排序操作。*/,
     NULL, NULL, SDB_OPTIMIZER_OPTIONS_DEFAULT, &sdb_optimizer_options_typelib);
 
+static MYSQL_THDVAR_INT(lock_wait_timeout, PLUGIN_VAR_OPCMDARG,
+                        "Timeout in seconds a SequoiaDB transaction may wait "
+                        "for a lock before being rolled back."
+                        /*SequoiaDB 事务锁超时时间。*/,
+                        NULL, NULL, SDB_DEFAULT_LOCK_WAIT_TIMEOUT, 0, 3600, 0);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -250,6 +257,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(optimizer_options),
     MYSQL_SYSVAR(use_transaction),
     MYSQL_SYSVAR(rollback_on_timeout),
+    MYSQL_SYSVAR(lock_wait_timeout),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -384,4 +392,8 @@ ulonglong sdb_get_optimizer_options(THD *thd) {
 
 bool sdb_rollback_on_timeout(THD *thd) {
   return THDVAR(thd, rollback_on_timeout);
+}
+
+int sdb_lock_wait_timeout(THD *thd) {
+  return THDVAR(thd, lock_wait_timeout);
 }

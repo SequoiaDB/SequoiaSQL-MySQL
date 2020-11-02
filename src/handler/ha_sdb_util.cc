@@ -588,7 +588,6 @@ error:
   goto done;
 }
 
-
 bool sdb_is_type_diff(Field *old_field, Field *new_field) {
   bool rs = true;
   if (old_field->real_type() != new_field->real_type()) {
