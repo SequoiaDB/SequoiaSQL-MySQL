@@ -54,7 +54,6 @@ int sdb_replica_size = SDB_DEFAULT_REPLICA_SIZE;
 my_bool sdb_use_autocommit = SDB_DEFAULT_USE_AUTOCOMMIT;
 my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
 ulong sdb_error_level = SDB_ERROR;
-my_bool sdb_use_transaction = SDB_DEFAULT_USE_TRANSACTION;
 
 static const char *sdb_optimizer_options_names[] = {
     "direct_count", "direct_delete", "direct_update",
@@ -182,8 +181,7 @@ static MYSQL_SYSVAR_ENUM(
     "(Default: error), available choices: error, warning"
     /* 错误级别控制，为error输出错误信息，为warning输出告警信息。*/,
     NULL, NULL, SDB_ERROR, &sdb_error_level_typelib);
-static MYSQL_SYSVAR_BOOL(use_transaction, sdb_use_transaction,
-                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
+static MYSQL_THDVAR_BOOL(use_transaction, PLUGIN_VAR_OPCMDARG,
                          "Enable transaction of SequoiaDB. (Default: ON)"
                          /*是否开启事务功能。*/,
                          NULL, NULL, SDB_DEFAULT_USE_TRANSACTION);
@@ -236,6 +234,12 @@ static MYSQL_THDVAR_INT(lock_wait_timeout, PLUGIN_VAR_OPCMDARG,
                         /*SequoiaDB 事务锁超时时间。*/,
                         NULL, NULL, SDB_DEFAULT_LOCK_WAIT_TIMEOUT, 0, 3600, 0);
 
+static MYSQL_THDVAR_BOOL(use_rollback_segments, PLUGIN_VAR_OPCMDARG,
+                         "Whether use rollback segements in sequoiadb "
+                         "transaction or not. (Default: ON)"
+                         /*SequoiaDB 事务中是否使用 RBS。*/,
+                         NULL, NULL, TRUE);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -258,6 +262,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(use_transaction),
     MYSQL_SYSVAR(rollback_on_timeout),
     MYSQL_SYSVAR(lock_wait_timeout),
+    MYSQL_SYSVAR(use_rollback_segments),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -394,6 +399,14 @@ bool sdb_rollback_on_timeout(THD *thd) {
   return THDVAR(thd, rollback_on_timeout);
 }
 
+bool sdb_use_transaction(THD *thd) {
+  return THDVAR(thd, use_transaction);
+}
+
 int sdb_lock_wait_timeout(THD *thd) {
   return THDVAR(thd, lock_wait_timeout);
+}
+
+bool sdb_use_rollback_segments(THD *thd) {
+  return THDVAR(thd, use_rollback_segments);
 }

@@ -57,7 +57,9 @@ void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
   if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK)) {
     builder.append(SDB_SESSION_ATTR_TRANS_TIMEOUT, trans_timeout);
   }
-
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK)) {
+    builder.append(SDB_SESSION_ATTR_TRANS_USE_RBS, trans_use_rollback_segments);
+  }
   *attr_obj = builder.obj();
 }
 
@@ -67,6 +69,12 @@ void Sdb_session_attrs::save_last_attrs() {
   }
   if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK)) {
     last_trans_timeout = trans_timeout;
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK)) {
+    last_trans_auto_commit = trans_auto_commit;
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK)) {
+    last_trans_use_rollback_segments = trans_use_rollback_segments;
   }
 }
 
@@ -183,8 +191,11 @@ int Sdb_conn::connect() {
       session_attrs->set_source(hostname, sdb_proc_id(),
                                 (ulonglong)thread_id());
       session_attrs->set_trans_auto_rollback(false);
-      session_attrs->set_trans_auto_commit(sdb_use_transaction ? true : false);
+      session_attrs->set_trans_auto_commit(
+          sdb_use_transaction(current_thd) ? true : false);
       session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
+      session_attrs->set_trans_use_rollback_segments(
+          sdb_use_rollback_segments(current_thd));
       rc = set_my_session_attr();
       // No such options before sdb v3.2.4. Ignore it.
       if (SDB_INVALIDARG == get_sdb_code(rc)) {
@@ -258,11 +269,7 @@ int Sdb_conn::begin_transaction(THD *thd) {
   Sdb_session_attrs *session_attrs = NULL;
   static bool support_trans_and_timeout_attr = true;
 
-  if (!sdb_use_transaction) {
-    goto done;
-  }
-
-  if (ISO_SERIALIZABLE == thd->tx_isolation) {
+  if (sdb_use_transaction(thd) && ISO_SERIALIZABLE == thd->tx_isolation) {
     rc = SDB_ERR_NOT_ALLOWED;
     snprintf(errmsg, sizeof(errmsg),
              "SequoiaDB engine not support transaction "
@@ -272,12 +279,42 @@ int Sdb_conn::begin_transaction(THD *thd) {
   }
 
   if (support_trans_and_timeout_attr) {
-    /*Set the lock wait timeout when the lock_wait_timeout has changed*/
     session_attrs = get_session_attrs();
+    /*
+      TODO:
+      Temporary solution to set session isolation and other session attrs in
+      two phase because of SEQUOIASQLMAINSTREAM-792.
+      set all the session attrs in one phase after SEQUOIASQLMAINSTREAM-792
+      later.
+    */
+    if (sdb_use_transaction(thd)) {
+      /*Set the trans isolation when the isolation has changed*/
+      tx_iso = convert_to_sdb_isolation(thd->tx_isolation);
+      session_attrs->set_trans_isolation(tx_iso);
+      rc = set_my_session_attr();
+      // No such options before sdb v3.2.4 Ignore it.
+      if (SDB_INVALIDARG == get_sdb_code(rc)) {
+        support_trans_and_timeout_attr = false;
+        rc = SDB_ERR_OK;
+      }
+
+      if (rc != SDB_OK) {
+        snprintf(errmsg, sizeof(errmsg),
+                 "Failed to set session attributes, rc=%d", rc);
+        goto error;
+      }
+    }
+
+    /*Set the lock wait timeout when the lock_wait_timeout has changed*/
     session_attrs->set_trans_timeout(sdb_lock_wait_timeout(thd));
-    /*Set the trans isolation when the isolation has changed*/
-    tx_iso = convert_to_sdb_isolation(thd->tx_isolation);
-    session_attrs->set_trans_isolation(tx_iso);
+    if (sdb_use_transaction(thd)) {
+      /*Set the trans_auto_commit when the trans_auto_commit has changed*/
+      session_attrs->set_trans_auto_commit(true);
+      session_attrs->set_trans_use_rollback_segments(
+          sdb_use_rollback_segments(thd));
+    } else {
+      session_attrs->set_trans_auto_commit(false);
+    }
     rc = set_my_session_attr();
     // No such options before sdb v3.2.4. Ignore it.
     if (SDB_INVALIDARG == get_sdb_code(rc)) {
@@ -289,6 +326,11 @@ int Sdb_conn::begin_transaction(THD *thd) {
       snprintf(errmsg, sizeof(errmsg),
                "Failed to set session attributes, rc=%d", rc);
       goto error;
+    }
+
+    /*should return after setting session attrs in the case of non-trans.*/
+    if (!sdb_use_transaction(thd)) {
+      goto done;
     }
   }
 

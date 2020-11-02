@@ -5352,7 +5352,8 @@ done:
     case SDB_TIMEOUT: {
       if (strncmp(error_msg, SDB_ACQUIRE_TRANSACTION_LOCK,
                   strlen(SDB_ACQUIRE_TRANSACTION_LOCK)) == 0) {
-        if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+        if (sdb_use_transaction(ha_thd()) &&
+            sdb_rollback_on_timeout(ha_thd())) {
           thd_mark_transaction_to_rollback(ha_thd(), 1);
         }
         my_error(ER_LOCK_WAIT_TIMEOUT, MYF(0));

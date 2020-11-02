@@ -37,12 +37,15 @@ class Sdb_session_attrs {
   Sdb_session_attrs() {
     last_trans_isolation = SDB_TRANS_ISO_INVALID;
     last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVIAD;
+    last_trans_auto_commit = SDB_DEFAULT_TRANS_AUTO_COMMIT;
+    last_trans_use_rollback_segments = SDB_DEFAULT_TRANS_USE_RBS;
     attr_count = 0;
     source_str[0] = '\0';
     trans_isolation = SDB_TRANS_ISO_RR;
     trans_auto_rollback = false;
     trans_auto_commit = true;
     trans_timeout = SDB_DEFAULT_LOCK_WAIT_TIMEOUT;
+    trans_use_rollback_segments = true;
     session_attrs_mask = 0;
   }
 
@@ -83,7 +86,7 @@ class Sdb_session_attrs {
 
   inline const char *get_source() { return source_str; }
 
-  inline void set_trans_isolation(ulong tx_isolation) {
+  inline void set_trans_isolation(const ulong tx_isolation) {
     if (last_trans_isolation != tx_isolation) {
       trans_isolation = tx_isolation;
       set_attrs_mask(SDB_SESSION_ATTR_TRANS_ISOLATION_MASK);
@@ -91,23 +94,21 @@ class Sdb_session_attrs {
     }
   }
 
-  inline void set_last_trans_isolation() {
-    last_trans_isolation = trans_isolation;
-  }
-
-  inline void set_trans_auto_rollback(bool auto_rollback) {
+  inline void set_trans_auto_rollback(const bool auto_rollback) {
     trans_auto_rollback = auto_rollback;
     set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK_MASK);
     attr_count++;
   }
 
-  inline void set_trans_auto_commit(bool auto_commit) {
-    trans_auto_commit = auto_commit;
-    set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK);
-    attr_count++;
+  inline void set_trans_auto_commit(const bool auto_commit) {
+    if (last_trans_auto_commit != auto_commit) {
+      trans_auto_commit = auto_commit;
+      set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK);
+      attr_count++;
+    }
   }
 
-  inline void set_trans_timeout(int timeout) {
+  inline void set_trans_timeout(const int timeout) {
     if (last_trans_timeout != timeout) {
       trans_timeout = timeout;
       set_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK);
@@ -115,13 +116,19 @@ class Sdb_session_attrs {
     }
   }
 
-  inline void set_last_trans_timeout() { last_trans_timeout = trans_timeout; }
-
-  inline int get_last_trans_timeout() { return last_trans_timeout; }
+  inline void set_trans_use_rollback_segments(const bool use_rbs) {
+    if (last_trans_use_rollback_segments != use_rbs) {
+      trans_use_rollback_segments = use_rbs;
+      set_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK);
+      attr_count++;
+    }
+  }
 
  private:
   ulong last_trans_isolation;
   int last_trans_timeout;
+  bool last_trans_auto_commit;
+  bool last_trans_use_rollback_segments;
   int attr_count;
 
  private:
@@ -130,8 +137,11 @@ class Sdb_session_attrs {
   // 64 bytes is for string of proc_id and thread_id.
   ulong trans_isolation;    /*TransIsolation*/
   bool trans_auto_rollback; /*TransAutoRollback*/
-  bool trans_auto_commit;   /*TransAutoCommit*/
-  int trans_timeout;        /*TransTimeout*/
+  /*when sequoiadb_use_transaction changed, trans_auto_commit should changed
+   * too.*/
+  bool trans_auto_commit;           /*TransAutoCommit*/
+  int trans_timeout;                /*TransTimeout*/
+  bool trans_use_rollback_segments; /*TransUseRBS*/
   ulonglong session_attrs_mask;
 };
 
