@@ -88,4 +88,7 @@ extern ulong sdb_error_level;
 
 extern String sdb_encoded_password;
 
+extern mysql_var_update_func sdb_set_lock_wait_timeout;
+extern mysql_var_check_func sdb_use_rollback_segments_check;
+
 #endif

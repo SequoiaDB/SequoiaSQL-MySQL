@@ -402,10 +402,6 @@ int Sdb_conn::rollback_transaction() {
   DBUG_RETURN(0);
 }
 
-bool Sdb_conn::is_transaction_on() {
-  return m_transaction_on;
-}
-
 int Sdb_conn::get_cl(char *cs_name, char *cl_name, Sdb_cl &cl) {
   int rc = SDB_ERR_OK;
   cl.close();

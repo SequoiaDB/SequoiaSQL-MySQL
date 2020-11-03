@@ -124,6 +124,10 @@ class Sdb_session_attrs {
     }
   }
 
+  inline bool get_last_trans_use_rollback_segments() {
+    return last_trans_use_rollback_segments;
+  }
+
  private:
   ulong last_trans_isolation;
   int last_trans_timeout;
@@ -163,7 +167,7 @@ class Sdb_conn {
 
   int rollback_transaction();
 
-  bool is_transaction_on();
+  inline bool is_transaction_on() { return m_transaction_on; }
 
   int get_cl(char *cs_name, char *cl_name, Sdb_cl &cl);
 
