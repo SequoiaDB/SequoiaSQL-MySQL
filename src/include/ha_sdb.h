@@ -501,6 +501,8 @@ class ha_sdb : public handler {
 
   bool is_field_rule_supported();
 
+  bool is_inc_rule_supported();
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
