@@ -4,6 +4,7 @@
 #Case 13114#Case 13115#Case 13116#Case 13117#Case 13118#Case 13119#Case 13120#Case 13121
 #Case 13305#Case 13306#Case 15436#Case 15438#Case 22080#Case 22379#Case 22380#Case 22381
 #Case 22382#Case 22383#Case 22384#Case 22385#Case 22386#Case 22387#Case 22388#Case 22389
+#Case 22785
 --source include/have_sequoiadb.inc
 
 --disable_warnings
@@ -1248,4 +1249,372 @@ UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
 DELETE FROM t2 LIMIT 2;
 DROP TABLE t1,t2,t3;
 
+# seqDB-22785 
+CREATE TABLE `gis_search` (
+   gid int not null auto_increment primary key,
+  `poin` point default null,
+  `line` linestring default null,
+  `poly` polygon default null,
+  `mpoin` multipoint default null,
+  `mline` multilinestring default null,
+  `mploy` multipolygon default null,
+  `geoco` geometrycollection default null,
+  `geom` geometry default null,
+  `poin2` point default null,
+  `line2` linestring default null,
+  `poly2` polygon default null,
+  `mpoin2` multipoint default null,
+  `mline2` multilinestring default null,
+  `mploy2` multipolygon default null,
+  `geoco2` geometrycollection default null,
+  `geom2` geometry default null
+);
+
+SHOW CREATE TABLE gis_search;
+
+SET @point1 = ST_PointFromText('POINT(1 1)');
+SET @point2 = ST_PointFromText('POINT(10 10)');
+SET @point3 = ST_PointFromText('POINT(20 10)');
+SET @point4 = ST_PointFromText('POINT(0 0)');
+SET @point5 = ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 1)')));
+SET @point6 = ST_PointFromWKB(ST_AsBinary(ST_PointFromText('POINT(20 10)')));
+SET @point7 = ST_PointFromWKB(ST_AsBinary(ST_PointFromText('POINT(20 20)')));
+
+SET @line1 = LineFromText('LINESTRING(0 0,10 10)');
+SET @line2 = ST_LineFromText('LINESTRING(0 0,10 10,20 25,50 60)');
+SET @line3 = ST_LineStringFromText('LINESTRING(0 0,10 10,20 25,50 60)');
+SET @line4 = LineFromWKB(ST_AsWKB(LineString(Point(0, 0), Point(10, 10))));
+SET @line5 = ST_LineFromWKB(ST_AsWKB(LineString(Point(10, 10), Point(40, 10))));
+SET @line6 = ST_LineStringFromWKB(ST_AsWKB(LineString(Point(10, 10), Point(40, 10))));
+
+SET @poly1 = PolyFromText('POLYGON((10 10,20 10,20 20,10 20,10 10))');
+SET @poly2 = ST_PolyFromText('POLYGON((0 0,50 0,50 50,0 50,0 0), (10 10,20 10,20 20,10 20,10 10))');
+SET @poly3 = ST_PolygonFromText('POLYGON((10 10,20 10,20 20,10 20,10 10))');
+SET @poly4 = PolyFromWKB(ST_AsWKB(Polygon(LineString(Point(10, 10), Point(20, 10), Point(20, 20), Point(10, 20), Point(10, 10)))));
+SET @poly5 = ST_PolyFromWKB(ST_AsWKB(Polygon(LineString(Point(0, 0), Point(30, 0), Point(30, 30), Point(0, 0)))));
+SET @poly6 = ST_PolygonFromWKB(ST_AsWKB(Polygon(LineString(Point(0, 0), Point(30, 0), Point(30, 30), Point(0, 0)))));
+
+SET @mpoin1 = MPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)');
+SET @mpoin2 = ST_MPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)');
+SET @mpoin3 = ST_MultiPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)');
+SET @mpoin4 = MPointFromWKB(ST_AsWKB(MultiPoint(Point(3, 6), Point(4, 10))));
+SET @mpoin5 = ST_MPointFromWKB(ST_AsWKB(MultiPoint(Point(3, 6), Point(4, 10))));
+SET @mpoin6 = ST_MultiPointFromWKB(ST_AsWKB(MultiPoint(Point(3, 6), Point(4, 10))));
+
+SET @mline1 = MLineFromText('MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))');
+SET @mline2 = ST_MultiLineStringFromText('MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))');
+SET @mline3 = ST_MLineFromText('MULTILINESTRING((10 48,10 21,10 0))');
+SET @mline4 = MLineFromWKB(ST_AsWKB(MultiLineString(LineString(Point(1, 2), Point(3, 5)), LineString(Point(2, 5), Point(5, 8), Point(21, 7)))));
+SET @mline5 = ST_MLineFromWKB(ST_AsWKB(MultiLineString(LineString(Point(1, 2), Point(3, 5)), LineString(Point(2, 5), Point(5, 8), Point(21, 7)))));
+SET @mline6 = ST_MultiLineStringFromWKB(ST_AsWKB(MultiLineString(LineString(Point(1, 2), Point(3, 5)), LineString(Point(2, 5), Point(5, 8), Point(21, 7)))));
+
+SET @mploy1 = MPolyFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))');
+SET @mploy2 = ST_MultiPolygonFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))');
+SET @mploy3 = ST_MPolyFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))');
+SET @mploy4 = MPolyFromWKB(ST_AsWKB(MultiPolygon(Polygon(LineString(Point(0, 3), Point(3, 3), Point(3, 0), Point(0, 3))))));
+SET @mploy5 = ST_MPolyFromWKB(ST_AsWKB(MultiPolygon(Polygon(LineString(Point(0, 3), Point(3, 3), Point(3, 0), Point(0, 3))))));
+SET @mploy6 = ST_MultiPolygonFromWKB(ST_AsWKB(MultiPolygon(Polygon(LineString(Point(0, 3), Point(3, 3), Point(3, 0), Point(0, 3))))));
+
+SET @geoco1 = GeomCollFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+SET @geoco2 = ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+SET @geoco3 = ST_GeometryCollectionFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+SET @geoco4 = ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+SET @geoco5 = GeomCollFromWKB(ST_AsWKB(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9)))));
+SET @geoco6 = ST_GeomCollFromWKB(ST_AsWKB(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9)))));
+SET @geoco7 = ST_GeometryCollectionFromWKB(ST_AsWKB(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9)))));
+
+INSERT INTO gis_search VALUES
+(1001,@point1,null,null,null,null,null,null,null,@point1,null,null,null,null,null,null,null),
+(1002,@point1,null,null,null,null,null,null,null,@point2,null,null,null,null,null,null,null),
+(1003,@point1,null,null,null,null,null,null,null,@point5,null,null,null,null,null,null,null),
+(1004,@point1,null,null,null,null,null,null,null,@point4,null,null,null,null,null,null,null),
+(1005,@point2,null,null,null,null,null,null,null,@point5,null,null,null,null,null,null,null),
+(1006,@point3,null,null,null,null,null,null,null,@point5 ,null,null,null,null,null,null,null),
+(1007,@point4,null,null,null,null,null,null,null,@point4 ,null,null,null,null,null,null,null),
+(1008,@point5,null,null,null,null,null,null,null,@point4 ,null,null,null,null,null,null,null),
+(1009,@point6,null,null,null,null,null,null,null,@point7 ,null,null,null,null,null,null,null),
+(1010,@point7,null,null,null,null,null,null,null,@point4 ,null,null,null,null,null,null,null);
+
+INSERT INTO gis_search VALUES
+(1101,null,@line1,null,null,null,null,null,null,null,@line1,null,null,null,null,null,null),
+(1102,null,@line1,null,null,null,null,null,null,null,@line11,null,null,null,null,null,null),
+(1103,null,@line1,null,null,null,null,null,null,null,@line2,null,null,null,null,null,null),
+(1104,null,@line2,null,null,null,null,null,null,null,null,null,null,null,null,null,null),
+(1105,null,@line3,null,null,null,null,null,null,null,@line4,null,null,null,null,null,null),
+(1106,null,@line4,null,null,null,null,null,null,null,@line5,null,null,null,null,null,null),
+(1107,null,@line5,null,null,null,null,null,null,null,@line6,null,null,null,null,null,null),
+(1118,null,@line6,null,null,null,null,null,null,null,@line4,null,null,null,null,null,null);
+
+INSERT INTO gis_search VALUES
+(1201,null,null,@poly1,null,null,null,null,null,null,null,@poly1,null,null,null,null,null),
+(1202,null,null,@poly2,null,null,null,null,null,null,null,@poly1,null,null,null,null,null),
+(1203,null,null,@poly3,null,null,null,null,null,null,null,@poly1,null,null,null,null,null),
+(1204,null,null,@poly4,null,null,null,null,null,null,null,@poly4,null,null,null,null,null),
+(1205,null,null,@poly5,null,null,null,null,null,null,null,@poly4,null,null,null,null,null),
+(1206,null,null,@poly6,null,null,null,null,null,null,null,@poly4,null,null,null,null,null);
+
+INSERT INTO gis_search VALUES
+(1301,null,null,null,@mpoin1,null,null,null,null,null,null,null,@mpoin1,null,null,null,null),
+(1302,null,null,null,@mpoin2,null,null,null,null,null,null,null,@mpoin1,null,null,null,null),
+(1303,null,null,null,@mpoin3,null,null,null,null,null,null,null,@mpoin1,null,null,null,null),
+(1304,null,null,null,@mpoin4,null,null,null,null,null,null,null,@mpoin4,null,null,null,null),
+(1305,null,null,null,@mpoin5,null,null,null,null,null,null,null,@mpoin5,null,null,null,null),
+(1306,null,null,null,@mpoin6,null,null,null,null,null,null,null,@mpoin6,null,null,null,null);
+
+INSERT INTO gis_search VALUES
+(1401,null,null,null,null,@mline1,null,null,null,null,null,null,null,@mline1,null,null,null),
+(1402,null,null,null,null,@mline2,null,null,null,null,null,null,null,@mline1,null,null,null),
+(1403,null,null,null,null,@mline3,null,null,null,null,null,null,null,@mline1,null,null,null),
+(1404,null,null,null,null,@mline4,null,null,null,null,null,null,null,@mline4,null,null,null),
+(1405,null,null,null,null,@mline5,null,null,null,null,null,null,null,@mline4,null,null,null),
+(1406,null,null,null,null,@mline6,null,null,null,null,null,null,null,@mline4,null,null,null);
+
+INSERT INTO gis_search VALUES
+(1501,null,null,null,null,null,@mploy1,null,null,null,null,null,null,null,@mploy1,null,null),
+(1502,null,null,null,null,null,@mploy2,null,null,null,null,null,null,null,@mploy1,null,null),
+(1503,null,null,null,null,null,@mploy3,null,null,null,null,null,null,null,@mploy1,null,null),
+(1504,null,null,null,null,null,@mploy4,null,null,null,null,null,null,null,@mploy4,null,null),
+(1505,null,null,null,null,null,@mploy5,null,null,null,null,null,null,null,@mploy4,null,null),
+(1506,null,null,null,null,null,@mploy6,null,null,null,null,null,null,null,@mploy4,null,null);
+
+INSERT INTO gis_search VALUES
+(1601,null,null,null,null,null,null,@geoco1,null,null,null,null,null,null,null,@geoco1,null),
+(1602,null,null,null,null,null,null,@geoco2,null,null,null,null,null,null,null,@geoco1,null),
+(1603,null,null,null,null,null,null,@geoco3,null,null,null,null,null,null,null,@geoco1,null),
+(1604,null,null,null,null,null,null,@geoco4,null,null,null,null,null,null,null,@geoco1,null),
+(1605,null,null,null,null,null,null,@geoco5,null,null,null,null,null,null,null,@geoco4,null),
+(1606,null,null,null,null,null,null,@geoco6,null,null,null,null,null,null,null,@geoco4,null),
+(1607,null,null,null,null,null,null,@geoco7,null,null,null,null,null,null,null,@geoco4,null);
+
+INSERT INTO gis_search VALUES
+(1701,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco1,@point1,null,null,null,null,null,null,@geoco1,@point1),
+(1702,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco2,@line1,null,null,null,null,null,null,@geoco1,@line1),
+(1703,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco3,@poly1,null,null,null,null,null,null,@geoco1,@poly1),
+(1704,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco4,@mpoin1,null,null,null,null,null,null,@geoco1,@mpoin1),
+(1705,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco5,@mline1,null,null,null,null,null,null,@geoco4,@mline1),
+(1706,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco6,@mploy1,null,null,null,null,null,null,@geoco4,@mploy1),
+(1707,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco7,@geoco1,null,null,null,null,null,null,@geoco4,@geoco1);
+
+#Point(),ST_NumPoints(),ST_PointFromGeoHash()、HEX（）
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where poin is not null or poin2 is not null ;
+--sorted_result
+SELECT gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where poin2=ST_PointFromText('POINT(10 10)');
+--sorted_result
+select gid, ST_AsText(line) FROM gis_search where ST_NumPoints(line)=2;
+--sorted_result
+select gid ,HEX(poin) FROM gis_search;
+--sorted_result
+select gid ,HEX(poin) FROM gis_search where HEX(poin)="000000000101000000000000000000F03F000000000000F03F";
+
+#ST_PointFromText(),ST_PointFromWKB()
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Within(ST_PointFromText('POINT(1 1)'),poin2);
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where poin2 = ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 1)')));
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Within(ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 1)'))),poin2);
+--sorted_result
+select gid, ST_AsText(poin) FROM gis_search where poin = ST_PointFromText('POINT(10 10)');
+--sorted_result
+select gid, ST_AsText(poin) FROM gis_search where poin = ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(10 10)')));
+
+#ST_PointN(),ST_StartPoint()
+--sorted_result
+select gid, ST_AsText(line),ST_AsText(line2) FROM gis_search where ST_Within(ST_PointN(line,2),@point2);
+--sorted_result
+select gid, ST_AsText(ST_StartPoint(line)),ST_AsText(line) FROM gis_search;
+--sorted_result
+select gid, ST_AsText(ST_StartPoint(line)),ST_AsText(line) FROM gis_search where ST_StartPoint(line)=@point4;
+
+#ST_X(),ST_Y()
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_X(poin)=1;
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Y(poin)=1;
+
+#LineFromText()，ST_LineFromText()，ST_LineStringFromText()，LineFromWKB()，LineString()，ST_LineFromWKB()，ST_LineStringFromWKB()
+--sorted_result
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search;
+--sorted_result
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line1 ;
+--sorted_result
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line2 ;
+--sorted_result
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line3 ;
+--sorted_result
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line4 ;
+--sorted_result
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line5 ;
+--sorted_result
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line6;
+
+#PolyFromText(),ST_PolyFromText()， ST_PolygonFromText(),Polygon(),PolyFromWKB(),ST_PolyFromWKB()，ST_PolygonFromWKB()
+--sorted_result
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search;
+--sorted_result
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly1 ;
+--sorted_result
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly2 ;
+--sorted_result
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly3 ;
+--sorted_result
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly4 ;
+--sorted_result
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly5 ;
+--sorted_result
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly6;
+
+#MPointFromText() , ST_MPointFromText()，ST_MultiPointFromText(),MultiPoint(),MPointFromWKB(),ST_MPointFromWKB()，ST_MultiPointFromWKB()
+--sorted_result
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search;
+--sorted_result
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin1 ;
+--sorted_result
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin2 ;
+--sorted_result
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin3 ;
+--sorted_result
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin4 ;
+--sorted_result
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin5 ;
+--sorted_result
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin6;
+
+#MLineFromText(),ST_MLineFromText()，ST_MultiLineStringFromText(),MultiLineString(),MLineFromWKB(),ST_MLineFromWKB()，ST_MultiLineStringFromWKB()
+--sorted_result
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search;
+--sorted_result
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline1 ;
+--sorted_result
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline2 ;
+--sorted_result
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline3 ;
+--sorted_result
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline4 ;
+--sorted_result
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline5 ;
+--sorted_result
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline6;
+
+#MPolyFromText(),ST_MPolyFromText()，ST_MultiPolygonFromText(),MultiPolygon(),MPolyFromWKB(),ST_MPolyFromWKB()，ST_MultiPolygonFromWKB()
+--sorted_result
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search;
+--sorted_result
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy1 ;
+--sorted_result
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy2 ;
+--sorted_result
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy3 ;
+--sorted_result
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy4 ;
+--sorted_result
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy5 ;
+--sorted_result
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy6;
+
+#GeomCollFromText(),ST_GeomCollFromText()，ST_GeometryCollectionFromText()，ST_GeomCollFromTxt(),GeometryCollection(),GeomCollFromWKB(),ST_GeomCollFromWKB()，ST_GeometryCollectionFromWKB()
+--sorted_result
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search;
+--sorted_result
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco1 ;
+--sorted_result
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco2 ;
+--sorted_result
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco3 ;
+--sorted_result
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco4 ;
+--sorted_result
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco5 ;
+--sorted_result
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco6;
+--sorted_result
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco7;
+
+# MBREquals()
+--sorted_result
+select gid, ST_AsText(poin) FROM gis_search where MBREquals(@point1,poin);
+--sorted_result
+select gid, ST_AsText(line) FROM gis_search where MBREquals(@line1,line);
+
+#ST_AsGeoJSON()
+--sorted_result
+select gid, ST_AsText(poly),ST_AsGeoJSON(poly) FROM gis_search where poly is not null or poly2 is not null;
+
+# ST_Area(),ST_Buffer()
+--sorted_result
+select gid, ST_AsText(poly),ST_Area(poly) FROM gis_search where poly is not null or poly2 is not null;
+--sorted_result
+select gid, ST_AsText(poly),ST_Area(poly) FROM gis_search where ST_Area(poly) <= 450;
+--sorted_result
+select gid, ST_AsText(poly),ST_Area(poly),ST_Area(poly2) FROM gis_search where poly is not null or poly2 is not null;
+--sorted_result
+select gid, ST_AsText(poly),ST_Area(ST_Buffer(poly,2)),ST_Area(ST_Buffer(poly2,2)) FROM gis_search where ST_Area(ST_Buffer(poly,2))<651;
+
+# ST_Contains, ST_Buffer, ST_Buffer_Strategy,ST_Centroid(),ST_ConvexHull()
+set @g='MULTIPOINT(-2 -2,2 -2,2 2,-2 2,-2 -2)';
+--sorted_result
+select gid, ST_AsText(poin) FROM gis_search where ST_Contains(ST_PointFromText('POINT(10 10)'),poin);
+--sorted_result
+select gid, ST_AsText(poin) FROM gis_search where poin = @point4;
+--sorted_result
+select gid, ST_AsText(poin) FROM gis_search where ST_Contains(ST_PolyFromText(ST_AsText(ST_ConvexHull(ST_GeomFromText(@g)))),poin);
+
+# ST_Dimension(),ST_Disjoint(),ST_Distance(),ST_Distance_Sphere(),ST_EndPoint(),ST_Difference()
+--sorted_result
+select gid, ST_Dimension(poly) FROM gis_search where ST_Dimension(poly)<=2;
+--sorted_result
+select gid, ST_AsText(poly),ST_AsText(poly2) FROM gis_search where ST_Disjoint(poly,poly2)=0;
+--sorted_result
+select gid, ST_AsText(poly),ST_AsText(poly2) FROM gis_search where ST_Distance(poly,poly2)=0;
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(line),ST_AsText(ST_EndPoint(line)) FROM gis_search where poin!=ST_EndPoint(line);
+--sorted_result
+select gid, ST_AsText(poin), ST_AsText(poin2),ST_AsText(ST_Difference(poin,poin2)) FROM gis_search where poin=ST_Difference(poin,poin2);
+
+#ST_Envelope()
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(line),ST_AsText(ST_Envelope(line)) FROM gis_search where poin!=ST_EndPoint(line);
+
+#ST_Equals()
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Equals(poin,poin2);
+--sorted_result
+select gid, ST_AsText(line),ST_AsText(line2) FROM gis_search where ST_Equals(line,line2);
+--sorted_result
+select gid, ST_AsText(poly),ST_AsText(poly2) FROM gis_search where ST_Equals(poly,poly2);
+--sorted_result
+select gid, ST_AsText(mpoin),ST_AsText(mpoin2) FROM gis_search where ST_Equals(mpoin,mpoin2);
+--sorted_result
+select gid, ST_AsText(mline),ST_AsText(mline2) FROM gis_search where ST_Equals(mline,mline2);
+--sorted_result
+select gid, ST_AsText(geoco),ST_AsText(geoco2) FROM gis_search where ST_Equals(geoco,geoco2);
+
+#ST_GeometryType()
+--sorted_result
+select gid, ST_AsText(geoco),ST_AsText(geoco2),ST_GeometryType(geoco) FROM gis_search where ST_GeometryType(geoco)='GEOMETRYCOLLECTION';
+
+#ST_Intersects(),ST_IsClosed(),ST_IsEmpty(),ST_IsSimple(),ST_IsValid(),ST_Length(),ST_Overlaps()
+--sorted_result
+select gid, ST_AsText(poly),ST_AsText(poly2),ST_Intersects(poly,poly2) FROM gis_search where ST_Intersects(poly,poly2)=1;
+--sorted_result
+select gid, ST_AsText(line),ST_AsText(line2),ST_IsClosed(line) FROM gis_search where ST_IsClosed(line)=0;
+--sorted_result
+select gid, ST_AsText(line),ST_AsText(line2),ST_IsEmpty(line) FROM gis_search where ST_IsEmpty(line)=0;
+--sorted_result
+select gid, ST_AsText(line),ST_AsText(line2),ST_IsSimple(line) FROM gis_search where ST_IsSimple(line)=1;
+--sorted_result
+select gid, ST_AsText(line),ST_AsText(line2),ST_Length(line) FROM gis_search where ST_Length(line)>1;
+--sorted_result
+select gid, ST_AsText(line),ST_AsText(line2),ST_Overlaps(line,line2) FROM gis_search where ST_Overlaps(line,line2)=0;
+
+#ST_NumGeometries()
+--sorted_result
+select gid, ST_AsText(mline),ST_AsText(mline2),ST_NumGeometries(mline) FROM gis_search where ST_NumGeometries(mline)>1;
+
+# ST_Within()
+--sorted_result
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Within(ST_PointFromText('POINT(1 1)'),poin2);
+
+DROP TABLE gis_search;
 --source include/uninstall_sequoiadb.inc

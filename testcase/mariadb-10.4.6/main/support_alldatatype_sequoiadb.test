@@ -3,7 +3,7 @@
 #Case 13082#Case 16523#Case 13083#Case 13084#Case 13085#Case 13086#Case 13087#Case 13088#Case 13089#Case 13090
 #Case 13091#Case 13092#Case 13093#Case 13094#Case 13095#Case 13096#Case 13097#Case 13307#Case 14430#Case 15437
 #Case 15439#Case 15440#Case 15441#Case 15442#Case 15443#Case 15444#Case 15445#Case 15648#Case 15649#Case 16813
-#Case 20410#Case 20519
+#Case 20410#Case 20519#Case 22784
 
 --source include/have_sequoiadb.inc
 
@@ -728,6 +728,139 @@ select * from t1 where a = '2';
 delete from t1 where a = '2';
 select * from t1;
 drop table t1;
+
+#seqDB-22784:  basic data manipulation validation 
+create table gis_point (fid integer not null primary key, g point);
+create table gis_line  (fid integer not null primary key, g linestring);
+create table gis_polygon   (fid integer not null primary key, g polygon);
+create table gis_multi_point (fid integer not null primary key, g multipoint);
+create table gis_multi_line (fid integer not null primary key, g multilinestring);
+create table gis_multi_polygon  (fid integer not null primary key, g multipolygon);
+create table gis_geometrycollection  (fid integer not null primary key, g geometrycollection);
+create table gis_geometry (fid integer not null primary key, g geometry);
+
+show create table gis_point;
+show create table gis_line;
+show create table gis_polygon;
+show create table gis_multi_point;
+show create table gis_multi_line;
+show create table gis_multi_polygon;
+show create table gis_geometrycollection;
+show create table gis_geometry;
+
+insert into gis_point values
+(101, ST_PointFromText('POINT(10 10)')),
+(102, ST_PointFromText('POINT(20 10)')),
+(103, ST_PointFromText('POINT(20 20)')),
+(104, ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(10 20)'))));
+
+insert into gis_line values
+(105, ST_LineFromText('LINESTRING(0 0,0 10,10 0)')),
+(106, ST_LineStringFromText('LINESTRING(10 10,20 10,20 20,10 20,10 10)')),
+(107, ST_LineStringFromWKB(ST_AsWKB(LineString(Point(10, 10), Point(40, 10)))));
+
+insert into gis_polygon values
+(108, ST_PolygonFromText('POLYGON((10 10,20 10,20 20,10 20,10 10))')),
+(109, ST_PolyFromText('POLYGON((0 0,50 0,50 50,0 50,0 0), (10 10,20 10,20 20,10 20,10 10))')),
+(110, ST_PolyFromWKB(ST_AsWKB(Polygon(LineString(Point(0, 0), Point(30, 0), Point(30, 30), Point(0, 0))))));
+
+insert into gis_multi_point values
+(111, ST_MultiPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)')),
+(112, ST_MPointFromText('MULTIPOINT(1 1,11 11,11 21,21 21)')),
+(113, ST_MPointFromWKB(ST_AsWKB(MultiPoint(Point(3, 6), Point(4, 10)))));
+
+insert into gis_multi_line values
+(114, ST_MultiLineStringFromText('MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))')),
+(115, ST_MLineFromText('MULTILINESTRING((10 48,10 21,10 0))')),
+(116, ST_MLineFromWKB(ST_AsWKB(MultiLineString(LineString(Point(1, 2), Point(3, 5)), LineString(Point(2, 5), Point(5, 8), Point(21, 7))))));
+
+insert into gis_multi_polygon values
+(117, ST_MultiPolygonFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))')),
+(118, ST_MPolyFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))')),
+(119, ST_MPolyFromWKB(ST_AsWKB(MultiPolygon(Polygon(LineString(Point(0, 3), Point(3, 3), Point(3, 0), Point(0, 3)))))));
+
+insert into gis_geometrycollection values
+(120, ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))')),
+(121, ST_GeometryFromWKB(ST_AsWKB(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9))))));
+
+set @a1 = ST_PointFromText('POINT(1 1)');
+set @a2 = ST_LineFromText('LINESTRING(0 0,10 10,20 25,50 60)');
+set @a3 = ST_PolygonFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))');
+set @a4 = ST_MultiPointFromText('MULTIPOINT(10 10,20 20)');
+set @a5 = ST_MLineFromText('MULTILINESTRING((10 10,20 20),(15 15,30 15))');
+set @a6 = ST_MPolyFromText('MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))');
+set @a7 = ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10),LINESTRING(1 1,2 2,3 3,4 4))');
+set @a8 = ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10),POINT(30 30),LINESTRING(15 15,20 20))');
+insert into gis_geometry  values(122,@a1 ),(123,@a2 ),(124,@a3 ),(125,@a4 ),(126,@a5 ),(127,@a6 ),(128,@a7 ),(129,@a8 );
+
+select fid, ST_AsText(g) from gis_point;
+select fid, ST_AsText(g) from gis_line;
+select fid, ST_AsText(g) from gis_polygon;
+select fid, ST_AsText(g) from gis_multi_point;
+select fid, ST_AsText(g) from gis_multi_line;
+select fid, ST_AsText(g) from gis_multi_polygon;
+select fid, ST_AsText(g) from gis_geometrycollection;
+select fid, ST_AsText(g) from gis_geometry;
+
+select fid, ST_AsBinary(g) from gis_point;
+select fid, ST_AsBinary(g) from gis_line;
+select fid, ST_AsBinary(g) from gis_polygon;
+select fid, ST_AsBinary(g) from gis_multi_point;
+select fid, ST_AsBinary(g) from gis_multi_line;
+select fid, ST_AsBinary(g) from gis_multi_polygon;
+select fid, ST_AsBinary(g) from gis_geometrycollection;
+select fid, ST_AsBinary(g) from gis_geometry;
+
+# update cover WKT
+update gis_point set g =@a1 where g = ST_PointFromText('POINT(10 10)');
+update gis_line set g =@a2 where g = ST_LineFromText('LINESTRING(0 0,0 10,10 0)');
+update gis_polygon set g =@a3 where g = ST_PolygonFromText('POLYGON((10 10,20 10,20 20,10 20,10 10))');
+update gis_multi_point set g =@a4 where g = ST_MultiPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)');
+update gis_multi_line set g =@a5 where g = ST_MultiLineStringFromText('MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))');
+update gis_multi_polygon set g =@a6 where g = ST_MultiPolygonFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))');
+update gis_geometrycollection set g =@a7 where g = ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+update gis_geometry set g =@a8 where g = ST_PointFromText('POINT(1 1)');
+
+# update cover WKB
+update gis_point set g =@a1 where g = ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(10 20)')));
+update gis_line set g =@a2 where g = ST_LineStringFromWKB(ST_AsWKB(LineString(Point(10, 10), Point(40, 10))));
+update gis_polygon set g =@a3 where g = ST_PolyFromWKB(ST_AsWKB(Polygon(LineString(Point(0, 0), Point(30, 0), Point(30, 30), Point(0, 0)))));
+update gis_multi_point set g =@a4 where g = ST_MPointFromWKB(ST_AsWKB(MultiPoint(Point(3, 6), Point(4, 10))));
+update gis_multi_line set g =@a5 where g = ST_MLineFromWKB(ST_AsWKB(MultiLineString(LineString(Point(1, 2), Point(3, 5)), LineString(Point(2, 5), Point(5, 8), Point(21, 7)))));
+update gis_multi_polygon set g =@a6 where g = ST_MPolyFromWKB(ST_AsWKB(MultiPolygon(Polygon(LineString(Point(0, 3), Point(3, 3), Point(3, 0), Point(0, 3))))));
+update gis_geometrycollection set g =@a7 where g = ST_GeometryFromWKB(ST_AsWKB(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9)))));
+update gis_geometry set g =@a8 where g = ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 1)')));
+
+select fid, ST_AsText(g) from gis_point where g = @a1;
+select fid, ST_AsText(g) from gis_line where g = @a2;
+select fid, ST_AsText(g) from gis_polygon where g = @a3;
+select fid, ST_AsText(g) from gis_multi_point where g = @a4; 
+select fid, ST_AsText(g) from gis_multi_line where g = @a5;
+select fid, ST_AsText(g) from gis_multi_polygon where g = @a6;
+select fid, ST_AsText(g) from gis_geometrycollection where g = @a7;
+select fid, ST_AsText(g) from gis_geometry where g = @a8;
+
+# delete cover geometry 
+delete from gis_point where g = @a1;
+delete from gis_line where g = @a2;
+delete from gis_polygon where g = @a3;
+delete from gis_multi_point where g = @a4;
+delete from gis_multi_line where g = @a5;
+delete from gis_multi_polygon where g = @a6;
+delete from gis_geometrycollection where g = @a7;
+delete from gis_geometry where g = @a8;
+
+# delete result check and cover where condition
+select fid, ST_AsText(g) from gis_point where g = @a1;
+select fid, ST_AsText(g) from gis_line where g = @a2;
+select fid, ST_AsText(g) from gis_polygon where g = @a3;
+select fid, ST_AsText(g) from gis_multi_point where g = @a4; 
+select fid, ST_AsText(g) from gis_multi_line where g = @a5;
+select fid, ST_AsText(g) from gis_multi_polygon where g = @a6;
+select fid, ST_AsText(g) from gis_geometrycollection where g = @a7;
+select fid, ST_AsText(g) from gis_geometry where g = @a8;
+
+drop table  gis_point, gis_line, gis_polygon, gis_multi_point, gis_multi_line, gis_multi_polygon, gis_geometrycollection, gis_geometry;
 
 drop database test_support_alldatatype;
 

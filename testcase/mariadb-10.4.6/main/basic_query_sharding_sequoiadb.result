@@ -14319,3 +14319,1380 @@ INSERT INTO t3 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 2;
 UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
 DELETE FROM t2 LIMIT 2;
 DROP TABLE t1,t2,t3;
+CREATE TABLE `gis_search` (
+gid int not null auto_increment primary key,
+`poin` point default null,
+`line` linestring default null,
+`poly` polygon default null,
+`mpoin` multipoint default null,
+`mline` multilinestring default null,
+`mploy` multipolygon default null,
+`geoco` geometrycollection default null,
+`geom` geometry default null,
+`poin2` point default null,
+`line2` linestring default null,
+`poly2` polygon default null,
+`mpoin2` multipoint default null,
+`mline2` multilinestring default null,
+`mploy2` multipolygon default null,
+`geoco2` geometrycollection default null,
+`geom2` geometry default null
+);
+SHOW CREATE TABLE gis_search;
+Table	Create Table
+gis_search	CREATE TABLE `gis_search` (
+  `gid` int(11) NOT NULL AUTO_INCREMENT,
+  `poin` point DEFAULT NULL,
+  `line` linestring DEFAULT NULL,
+  `poly` polygon DEFAULT NULL,
+  `mpoin` multipoint DEFAULT NULL,
+  `mline` multilinestring DEFAULT NULL,
+  `mploy` multipolygon DEFAULT NULL,
+  `geoco` geometrycollection DEFAULT NULL,
+  `geom` geometry DEFAULT NULL,
+  `poin2` point DEFAULT NULL,
+  `line2` linestring DEFAULT NULL,
+  `poly2` polygon DEFAULT NULL,
+  `mpoin2` multipoint DEFAULT NULL,
+  `mline2` multilinestring DEFAULT NULL,
+  `mploy2` multipolygon DEFAULT NULL,
+  `geoco2` geometrycollection DEFAULT NULL,
+  `geom2` geometry DEFAULT NULL,
+  PRIMARY KEY (`gid`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+SET @point1 = ST_PointFromText('POINT(1 1)');
+SET @point2 = ST_PointFromText('POINT(10 10)');
+SET @point3 = ST_PointFromText('POINT(20 10)');
+SET @point4 = ST_PointFromText('POINT(0 0)');
+SET @point5 = ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 1)')));
+SET @point6 = ST_PointFromWKB(ST_AsBinary(ST_PointFromText('POINT(20 10)')));
+SET @point7 = ST_PointFromWKB(ST_AsBinary(ST_PointFromText('POINT(20 20)')));
+SET @line1 = LineFromText('LINESTRING(0 0,10 10)');
+SET @line2 = ST_LineFromText('LINESTRING(0 0,10 10,20 25,50 60)');
+SET @line3 = ST_LineStringFromText('LINESTRING(0 0,10 10,20 25,50 60)');
+SET @line4 = LineFromWKB(ST_AsWKB(LineString(Point(0, 0), Point(10, 10))));
+SET @line5 = ST_LineFromWKB(ST_AsWKB(LineString(Point(10, 10), Point(40, 10))));
+SET @line6 = ST_LineStringFromWKB(ST_AsWKB(LineString(Point(10, 10), Point(40, 10))));
+SET @poly1 = PolyFromText('POLYGON((10 10,20 10,20 20,10 20,10 10))');
+SET @poly2 = ST_PolyFromText('POLYGON((0 0,50 0,50 50,0 50,0 0), (10 10,20 10,20 20,10 20,10 10))');
+SET @poly3 = ST_PolygonFromText('POLYGON((10 10,20 10,20 20,10 20,10 10))');
+SET @poly4 = PolyFromWKB(ST_AsWKB(Polygon(LineString(Point(10, 10), Point(20, 10), Point(20, 20), Point(10, 20), Point(10, 10)))));
+SET @poly5 = ST_PolyFromWKB(ST_AsWKB(Polygon(LineString(Point(0, 0), Point(30, 0), Point(30, 30), Point(0, 0)))));
+SET @poly6 = ST_PolygonFromWKB(ST_AsWKB(Polygon(LineString(Point(0, 0), Point(30, 0), Point(30, 30), Point(0, 0)))));
+SET @mpoin1 = MPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)');
+SET @mpoin2 = ST_MPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)');
+SET @mpoin3 = ST_MultiPointFromText('MULTIPOINT(0 0,10 10,10 20,20 20)');
+SET @mpoin4 = MPointFromWKB(ST_AsWKB(MultiPoint(Point(3, 6), Point(4, 10))));
+SET @mpoin5 = ST_MPointFromWKB(ST_AsWKB(MultiPoint(Point(3, 6), Point(4, 10))));
+SET @mpoin6 = ST_MultiPointFromWKB(ST_AsWKB(MultiPoint(Point(3, 6), Point(4, 10))));
+SET @mline1 = MLineFromText('MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))');
+SET @mline2 = ST_MultiLineStringFromText('MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))');
+SET @mline3 = ST_MLineFromText('MULTILINESTRING((10 48,10 21,10 0))');
+SET @mline4 = MLineFromWKB(ST_AsWKB(MultiLineString(LineString(Point(1, 2), Point(3, 5)), LineString(Point(2, 5), Point(5, 8), Point(21, 7)))));
+SET @mline5 = ST_MLineFromWKB(ST_AsWKB(MultiLineString(LineString(Point(1, 2), Point(3, 5)), LineString(Point(2, 5), Point(5, 8), Point(21, 7)))));
+SET @mline6 = ST_MultiLineStringFromWKB(ST_AsWKB(MultiLineString(LineString(Point(1, 2), Point(3, 5)), LineString(Point(2, 5), Point(5, 8), Point(21, 7)))));
+SET @mploy1 = MPolyFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))');
+SET @mploy2 = ST_MultiPolygonFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))');
+SET @mploy3 = ST_MPolyFromText('MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))');
+SET @mploy4 = MPolyFromWKB(ST_AsWKB(MultiPolygon(Polygon(LineString(Point(0, 3), Point(3, 3), Point(3, 0), Point(0, 3))))));
+SET @mploy5 = ST_MPolyFromWKB(ST_AsWKB(MultiPolygon(Polygon(LineString(Point(0, 3), Point(3, 3), Point(3, 0), Point(0, 3))))));
+SET @mploy6 = ST_MultiPolygonFromWKB(ST_AsWKB(MultiPolygon(Polygon(LineString(Point(0, 3), Point(3, 3), Point(3, 0), Point(0, 3))))));
+SET @geoco1 = GeomCollFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+SET @geoco2 = ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+SET @geoco3 = ST_GeometryCollectionFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+SET @geoco4 = ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(0 0), LINESTRING(0 0,10 10))');
+SET @geoco5 = GeomCollFromWKB(ST_AsWKB(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9)))));
+SET @geoco6 = ST_GeomCollFromWKB(ST_AsWKB(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9)))));
+SET @geoco7 = ST_GeometryCollectionFromWKB(ST_AsWKB(GeometryCollection(Point(44, 6), LineString(Point(3, 6), Point(7, 9)))));
+INSERT INTO gis_search VALUES
+(1001,@point1,null,null,null,null,null,null,null,@point1,null,null,null,null,null,null,null),
+(1002,@point1,null,null,null,null,null,null,null,@point2,null,null,null,null,null,null,null),
+(1003,@point1,null,null,null,null,null,null,null,@point5,null,null,null,null,null,null,null),
+(1004,@point1,null,null,null,null,null,null,null,@point4,null,null,null,null,null,null,null),
+(1005,@point2,null,null,null,null,null,null,null,@point5,null,null,null,null,null,null,null),
+(1006,@point3,null,null,null,null,null,null,null,@point5 ,null,null,null,null,null,null,null),
+(1007,@point4,null,null,null,null,null,null,null,@point4 ,null,null,null,null,null,null,null),
+(1008,@point5,null,null,null,null,null,null,null,@point4 ,null,null,null,null,null,null,null),
+(1009,@point6,null,null,null,null,null,null,null,@point7 ,null,null,null,null,null,null,null),
+(1010,@point7,null,null,null,null,null,null,null,@point4 ,null,null,null,null,null,null,null);
+INSERT INTO gis_search VALUES
+(1101,null,@line1,null,null,null,null,null,null,null,@line1,null,null,null,null,null,null),
+(1102,null,@line1,null,null,null,null,null,null,null,@line11,null,null,null,null,null,null),
+(1103,null,@line1,null,null,null,null,null,null,null,@line2,null,null,null,null,null,null),
+(1104,null,@line2,null,null,null,null,null,null,null,null,null,null,null,null,null,null),
+(1105,null,@line3,null,null,null,null,null,null,null,@line4,null,null,null,null,null,null),
+(1106,null,@line4,null,null,null,null,null,null,null,@line5,null,null,null,null,null,null),
+(1107,null,@line5,null,null,null,null,null,null,null,@line6,null,null,null,null,null,null),
+(1118,null,@line6,null,null,null,null,null,null,null,@line4,null,null,null,null,null,null);
+INSERT INTO gis_search VALUES
+(1201,null,null,@poly1,null,null,null,null,null,null,null,@poly1,null,null,null,null,null),
+(1202,null,null,@poly2,null,null,null,null,null,null,null,@poly1,null,null,null,null,null),
+(1203,null,null,@poly3,null,null,null,null,null,null,null,@poly1,null,null,null,null,null),
+(1204,null,null,@poly4,null,null,null,null,null,null,null,@poly4,null,null,null,null,null),
+(1205,null,null,@poly5,null,null,null,null,null,null,null,@poly4,null,null,null,null,null),
+(1206,null,null,@poly6,null,null,null,null,null,null,null,@poly4,null,null,null,null,null);
+INSERT INTO gis_search VALUES
+(1301,null,null,null,@mpoin1,null,null,null,null,null,null,null,@mpoin1,null,null,null,null),
+(1302,null,null,null,@mpoin2,null,null,null,null,null,null,null,@mpoin1,null,null,null,null),
+(1303,null,null,null,@mpoin3,null,null,null,null,null,null,null,@mpoin1,null,null,null,null),
+(1304,null,null,null,@mpoin4,null,null,null,null,null,null,null,@mpoin4,null,null,null,null),
+(1305,null,null,null,@mpoin5,null,null,null,null,null,null,null,@mpoin5,null,null,null,null),
+(1306,null,null,null,@mpoin6,null,null,null,null,null,null,null,@mpoin6,null,null,null,null);
+INSERT INTO gis_search VALUES
+(1401,null,null,null,null,@mline1,null,null,null,null,null,null,null,@mline1,null,null,null),
+(1402,null,null,null,null,@mline2,null,null,null,null,null,null,null,@mline1,null,null,null),
+(1403,null,null,null,null,@mline3,null,null,null,null,null,null,null,@mline1,null,null,null),
+(1404,null,null,null,null,@mline4,null,null,null,null,null,null,null,@mline4,null,null,null),
+(1405,null,null,null,null,@mline5,null,null,null,null,null,null,null,@mline4,null,null,null),
+(1406,null,null,null,null,@mline6,null,null,null,null,null,null,null,@mline4,null,null,null);
+INSERT INTO gis_search VALUES
+(1501,null,null,null,null,null,@mploy1,null,null,null,null,null,null,null,@mploy1,null,null),
+(1502,null,null,null,null,null,@mploy2,null,null,null,null,null,null,null,@mploy1,null,null),
+(1503,null,null,null,null,null,@mploy3,null,null,null,null,null,null,null,@mploy1,null,null),
+(1504,null,null,null,null,null,@mploy4,null,null,null,null,null,null,null,@mploy4,null,null),
+(1505,null,null,null,null,null,@mploy5,null,null,null,null,null,null,null,@mploy4,null,null),
+(1506,null,null,null,null,null,@mploy6,null,null,null,null,null,null,null,@mploy4,null,null);
+INSERT INTO gis_search VALUES
+(1601,null,null,null,null,null,null,@geoco1,null,null,null,null,null,null,null,@geoco1,null),
+(1602,null,null,null,null,null,null,@geoco2,null,null,null,null,null,null,null,@geoco1,null),
+(1603,null,null,null,null,null,null,@geoco3,null,null,null,null,null,null,null,@geoco1,null),
+(1604,null,null,null,null,null,null,@geoco4,null,null,null,null,null,null,null,@geoco1,null),
+(1605,null,null,null,null,null,null,@geoco5,null,null,null,null,null,null,null,@geoco4,null),
+(1606,null,null,null,null,null,null,@geoco6,null,null,null,null,null,null,null,@geoco4,null),
+(1607,null,null,null,null,null,null,@geoco7,null,null,null,null,null,null,null,@geoco4,null);
+INSERT INTO gis_search VALUES
+(1701,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco1,@point1,null,null,null,null,null,null,@geoco1,@point1),
+(1702,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco2,@line1,null,null,null,null,null,null,@geoco1,@line1),
+(1703,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco3,@poly1,null,null,null,null,null,null,@geoco1,@poly1),
+(1704,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco4,@mpoin1,null,null,null,null,null,null,@geoco1,@mpoin1),
+(1705,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco5,@mline1,null,null,null,null,null,null,@geoco4,@mline1),
+(1706,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco6,@mploy1,null,null,null,null,null,null,@geoco4,@mploy1),
+(1707,@point1,@line1,@poly1,@mpoin1,@mline1,@mploy1,@geoco7,@geoco1,null,null,null,null,null,null,@geoco4,@geoco1);
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where poin is not null or poin2 is not null ;
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1001	POINT(1 1)	POINT(1 1)
+1002	POINT(1 1)	POINT(10 10)
+1003	POINT(1 1)	POINT(1 1)
+1004	POINT(1 1)	POINT(0 0)
+1005	POINT(10 10)	POINT(1 1)
+1006	POINT(20 10)	POINT(1 1)
+1007	POINT(0 0)	POINT(0 0)
+1008	POINT(1 1)	POINT(0 0)
+1009	POINT(20 10)	POINT(20 20)
+1010	POINT(20 20)	POINT(0 0)
+1701	POINT(1 1)	NULL
+1702	POINT(1 1)	NULL
+1703	POINT(1 1)	NULL
+1704	POINT(1 1)	NULL
+1705	POINT(1 1)	NULL
+1706	POINT(1 1)	NULL
+1707	POINT(1 1)	NULL
+SELECT gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where poin2=ST_PointFromText('POINT(10 10)');
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1002	POINT(1 1)	POINT(10 10)
+select gid, ST_AsText(line) FROM gis_search where ST_NumPoints(line)=2;
+gid	ST_AsText(line)
+1101	LINESTRING(0 0,10 10)
+1102	LINESTRING(0 0,10 10)
+1103	LINESTRING(0 0,10 10)
+1106	LINESTRING(0 0,10 10)
+1107	LINESTRING(10 10,40 10)
+1118	LINESTRING(10 10,40 10)
+1701	LINESTRING(0 0,10 10)
+1702	LINESTRING(0 0,10 10)
+1703	LINESTRING(0 0,10 10)
+1704	LINESTRING(0 0,10 10)
+1705	LINESTRING(0 0,10 10)
+1706	LINESTRING(0 0,10 10)
+1707	LINESTRING(0 0,10 10)
+select gid ,HEX(poin) FROM gis_search;
+gid	HEX(poin)
+1001	000000000101000000000000000000F03F000000000000F03F
+1002	000000000101000000000000000000F03F000000000000F03F
+1003	000000000101000000000000000000F03F000000000000F03F
+1004	000000000101000000000000000000F03F000000000000F03F
+1005	00000000010100000000000000000024400000000000002440
+1006	00000000010100000000000000000034400000000000002440
+1007	00000000010100000000000000000000000000000000000000
+1008	000000000101000000000000000000F03F000000000000F03F
+1009	00000000010100000000000000000034400000000000002440
+1010	00000000010100000000000000000034400000000000003440
+1101	NULL
+1102	NULL
+1103	NULL
+1104	NULL
+1105	NULL
+1106	NULL
+1107	NULL
+1118	NULL
+1201	NULL
+1202	NULL
+1203	NULL
+1204	NULL
+1205	NULL
+1206	NULL
+1301	NULL
+1302	NULL
+1303	NULL
+1304	NULL
+1305	NULL
+1306	NULL
+1401	NULL
+1402	NULL
+1403	NULL
+1404	NULL
+1405	NULL
+1406	NULL
+1501	NULL
+1502	NULL
+1503	NULL
+1504	NULL
+1505	NULL
+1506	NULL
+1601	NULL
+1602	NULL
+1603	NULL
+1604	NULL
+1605	NULL
+1606	NULL
+1607	NULL
+1701	000000000101000000000000000000F03F000000000000F03F
+1702	000000000101000000000000000000F03F000000000000F03F
+1703	000000000101000000000000000000F03F000000000000F03F
+1704	000000000101000000000000000000F03F000000000000F03F
+1705	000000000101000000000000000000F03F000000000000F03F
+1706	000000000101000000000000000000F03F000000000000F03F
+1707	000000000101000000000000000000F03F000000000000F03F
+select gid ,HEX(poin) FROM gis_search where HEX(poin)="000000000101000000000000000000F03F000000000000F03F";
+gid	HEX(poin)
+1001	000000000101000000000000000000F03F000000000000F03F
+1002	000000000101000000000000000000F03F000000000000F03F
+1003	000000000101000000000000000000F03F000000000000F03F
+1004	000000000101000000000000000000F03F000000000000F03F
+1008	000000000101000000000000000000F03F000000000000F03F
+1701	000000000101000000000000000000F03F000000000000F03F
+1702	000000000101000000000000000000F03F000000000000F03F
+1703	000000000101000000000000000000F03F000000000000F03F
+1704	000000000101000000000000000000F03F000000000000F03F
+1705	000000000101000000000000000000F03F000000000000F03F
+1706	000000000101000000000000000000F03F000000000000F03F
+1707	000000000101000000000000000000F03F000000000000F03F
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Within(ST_PointFromText('POINT(1 1)'),poin2);
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1001	POINT(1 1)	POINT(1 1)
+1003	POINT(1 1)	POINT(1 1)
+1005	POINT(10 10)	POINT(1 1)
+1006	POINT(20 10)	POINT(1 1)
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where poin2 = ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 1)')));
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1001	POINT(1 1)	POINT(1 1)
+1003	POINT(1 1)	POINT(1 1)
+1005	POINT(10 10)	POINT(1 1)
+1006	POINT(20 10)	POINT(1 1)
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Within(ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 1)'))),poin2);
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1001	POINT(1 1)	POINT(1 1)
+1003	POINT(1 1)	POINT(1 1)
+1005	POINT(10 10)	POINT(1 1)
+1006	POINT(20 10)	POINT(1 1)
+select gid, ST_AsText(poin) FROM gis_search where poin = ST_PointFromText('POINT(10 10)');
+gid	ST_AsText(poin)
+1005	POINT(10 10)
+select gid, ST_AsText(poin) FROM gis_search where poin = ST_PointFromWKB(ST_AsWKB(ST_PointFromText('POINT(10 10)')));
+gid	ST_AsText(poin)
+1005	POINT(10 10)
+select gid, ST_AsText(line),ST_AsText(line2) FROM gis_search where ST_Within(ST_PointN(line,2),@point2);
+gid	ST_AsText(line)	ST_AsText(line2)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)
+1102	LINESTRING(0 0,10 10)	NULL
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)
+1104	LINESTRING(0 0,10 10,20 25,50 60)	NULL
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)
+1106	LINESTRING(0 0,10 10)	LINESTRING(10 10,40 10)
+1701	LINESTRING(0 0,10 10)	NULL
+1702	LINESTRING(0 0,10 10)	NULL
+1703	LINESTRING(0 0,10 10)	NULL
+1704	LINESTRING(0 0,10 10)	NULL
+1705	LINESTRING(0 0,10 10)	NULL
+1706	LINESTRING(0 0,10 10)	NULL
+1707	LINESTRING(0 0,10 10)	NULL
+select gid, ST_AsText(ST_StartPoint(line)),ST_AsText(line) FROM gis_search;
+gid	ST_AsText(ST_StartPoint(line))	ST_AsText(line)
+1001	NULL	NULL
+1002	NULL	NULL
+1003	NULL	NULL
+1004	NULL	NULL
+1005	NULL	NULL
+1006	NULL	NULL
+1007	NULL	NULL
+1008	NULL	NULL
+1009	NULL	NULL
+1010	NULL	NULL
+1101	POINT(0 0)	LINESTRING(0 0,10 10)
+1102	POINT(0 0)	LINESTRING(0 0,10 10)
+1103	POINT(0 0)	LINESTRING(0 0,10 10)
+1104	POINT(0 0)	LINESTRING(0 0,10 10,20 25,50 60)
+1105	POINT(0 0)	LINESTRING(0 0,10 10,20 25,50 60)
+1106	POINT(0 0)	LINESTRING(0 0,10 10)
+1107	POINT(10 10)	LINESTRING(10 10,40 10)
+1118	POINT(10 10)	LINESTRING(10 10,40 10)
+1201	NULL	NULL
+1202	NULL	NULL
+1203	NULL	NULL
+1204	NULL	NULL
+1205	NULL	NULL
+1206	NULL	NULL
+1301	NULL	NULL
+1302	NULL	NULL
+1303	NULL	NULL
+1304	NULL	NULL
+1305	NULL	NULL
+1306	NULL	NULL
+1401	NULL	NULL
+1402	NULL	NULL
+1403	NULL	NULL
+1404	NULL	NULL
+1405	NULL	NULL
+1406	NULL	NULL
+1501	NULL	NULL
+1502	NULL	NULL
+1503	NULL	NULL
+1504	NULL	NULL
+1505	NULL	NULL
+1506	NULL	NULL
+1601	NULL	NULL
+1602	NULL	NULL
+1603	NULL	NULL
+1604	NULL	NULL
+1605	NULL	NULL
+1606	NULL	NULL
+1607	NULL	NULL
+1701	POINT(0 0)	LINESTRING(0 0,10 10)
+1702	POINT(0 0)	LINESTRING(0 0,10 10)
+1703	POINT(0 0)	LINESTRING(0 0,10 10)
+1704	POINT(0 0)	LINESTRING(0 0,10 10)
+1705	POINT(0 0)	LINESTRING(0 0,10 10)
+1706	POINT(0 0)	LINESTRING(0 0,10 10)
+1707	POINT(0 0)	LINESTRING(0 0,10 10)
+select gid, ST_AsText(ST_StartPoint(line)),ST_AsText(line) FROM gis_search where ST_StartPoint(line)=@point4;
+gid	ST_AsText(ST_StartPoint(line))	ST_AsText(line)
+1101	POINT(0 0)	LINESTRING(0 0,10 10)
+1102	POINT(0 0)	LINESTRING(0 0,10 10)
+1103	POINT(0 0)	LINESTRING(0 0,10 10)
+1104	POINT(0 0)	LINESTRING(0 0,10 10,20 25,50 60)
+1105	POINT(0 0)	LINESTRING(0 0,10 10,20 25,50 60)
+1106	POINT(0 0)	LINESTRING(0 0,10 10)
+1701	POINT(0 0)	LINESTRING(0 0,10 10)
+1702	POINT(0 0)	LINESTRING(0 0,10 10)
+1703	POINT(0 0)	LINESTRING(0 0,10 10)
+1704	POINT(0 0)	LINESTRING(0 0,10 10)
+1705	POINT(0 0)	LINESTRING(0 0,10 10)
+1706	POINT(0 0)	LINESTRING(0 0,10 10)
+1707	POINT(0 0)	LINESTRING(0 0,10 10)
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_X(poin)=1;
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1001	POINT(1 1)	POINT(1 1)
+1002	POINT(1 1)	POINT(10 10)
+1003	POINT(1 1)	POINT(1 1)
+1004	POINT(1 1)	POINT(0 0)
+1008	POINT(1 1)	POINT(0 0)
+1701	POINT(1 1)	NULL
+1702	POINT(1 1)	NULL
+1703	POINT(1 1)	NULL
+1704	POINT(1 1)	NULL
+1705	POINT(1 1)	NULL
+1706	POINT(1 1)	NULL
+1707	POINT(1 1)	NULL
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Y(poin)=1;
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1001	POINT(1 1)	POINT(1 1)
+1002	POINT(1 1)	POINT(10 10)
+1003	POINT(1 1)	POINT(1 1)
+1004	POINT(1 1)	POINT(0 0)
+1008	POINT(1 1)	POINT(0 0)
+1701	POINT(1 1)	NULL
+1702	POINT(1 1)	NULL
+1703	POINT(1 1)	NULL
+1704	POINT(1 1)	NULL
+1705	POINT(1 1)	NULL
+1706	POINT(1 1)	NULL
+1707	POINT(1 1)	NULL
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search;
+gid	ST_AsText(line)	ST_AsText(line2)
+1001	NULL	NULL
+1002	NULL	NULL
+1003	NULL	NULL
+1004	NULL	NULL
+1005	NULL	NULL
+1006	NULL	NULL
+1007	NULL	NULL
+1008	NULL	NULL
+1009	NULL	NULL
+1010	NULL	NULL
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)
+1102	LINESTRING(0 0,10 10)	NULL
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)
+1104	LINESTRING(0 0,10 10,20 25,50 60)	NULL
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)
+1106	LINESTRING(0 0,10 10)	LINESTRING(10 10,40 10)
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)
+1118	LINESTRING(10 10,40 10)	LINESTRING(0 0,10 10)
+1201	NULL	NULL
+1202	NULL	NULL
+1203	NULL	NULL
+1204	NULL	NULL
+1205	NULL	NULL
+1206	NULL	NULL
+1301	NULL	NULL
+1302	NULL	NULL
+1303	NULL	NULL
+1304	NULL	NULL
+1305	NULL	NULL
+1306	NULL	NULL
+1401	NULL	NULL
+1402	NULL	NULL
+1403	NULL	NULL
+1404	NULL	NULL
+1405	NULL	NULL
+1406	NULL	NULL
+1501	NULL	NULL
+1502	NULL	NULL
+1503	NULL	NULL
+1504	NULL	NULL
+1505	NULL	NULL
+1506	NULL	NULL
+1601	NULL	NULL
+1602	NULL	NULL
+1603	NULL	NULL
+1604	NULL	NULL
+1605	NULL	NULL
+1606	NULL	NULL
+1607	NULL	NULL
+1701	LINESTRING(0 0,10 10)	NULL
+1702	LINESTRING(0 0,10 10)	NULL
+1703	LINESTRING(0 0,10 10)	NULL
+1704	LINESTRING(0 0,10 10)	NULL
+1705	LINESTRING(0 0,10 10)	NULL
+1706	LINESTRING(0 0,10 10)	NULL
+1707	LINESTRING(0 0,10 10)	NULL
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line1 ;
+gid	ST_AsText(line)	ST_AsText(line2)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)
+1102	LINESTRING(0 0,10 10)	NULL
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)
+1106	LINESTRING(0 0,10 10)	LINESTRING(10 10,40 10)
+1701	LINESTRING(0 0,10 10)	NULL
+1702	LINESTRING(0 0,10 10)	NULL
+1703	LINESTRING(0 0,10 10)	NULL
+1704	LINESTRING(0 0,10 10)	NULL
+1705	LINESTRING(0 0,10 10)	NULL
+1706	LINESTRING(0 0,10 10)	NULL
+1707	LINESTRING(0 0,10 10)	NULL
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line2 ;
+gid	ST_AsText(line)	ST_AsText(line2)
+1104	LINESTRING(0 0,10 10,20 25,50 60)	NULL
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line3 ;
+gid	ST_AsText(line)	ST_AsText(line2)
+1104	LINESTRING(0 0,10 10,20 25,50 60)	NULL
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line4 ;
+gid	ST_AsText(line)	ST_AsText(line2)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)
+1102	LINESTRING(0 0,10 10)	NULL
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)
+1106	LINESTRING(0 0,10 10)	LINESTRING(10 10,40 10)
+1701	LINESTRING(0 0,10 10)	NULL
+1702	LINESTRING(0 0,10 10)	NULL
+1703	LINESTRING(0 0,10 10)	NULL
+1704	LINESTRING(0 0,10 10)	NULL
+1705	LINESTRING(0 0,10 10)	NULL
+1706	LINESTRING(0 0,10 10)	NULL
+1707	LINESTRING(0 0,10 10)	NULL
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line5 ;
+gid	ST_AsText(line)	ST_AsText(line2)
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)
+1118	LINESTRING(10 10,40 10)	LINESTRING(0 0,10 10)
+select gid, ST_AsText(line), ST_AsText(line2) FROM gis_search where line = @line6;
+gid	ST_AsText(line)	ST_AsText(line2)
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)
+1118	LINESTRING(10 10,40 10)	LINESTRING(0 0,10 10)
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1001	NULL	NULL
+1002	NULL	NULL
+1003	NULL	NULL
+1004	NULL	NULL
+1005	NULL	NULL
+1006	NULL	NULL
+1007	NULL	NULL
+1008	NULL	NULL
+1009	NULL	NULL
+1010	NULL	NULL
+1101	NULL	NULL
+1102	NULL	NULL
+1103	NULL	NULL
+1104	NULL	NULL
+1105	NULL	NULL
+1106	NULL	NULL
+1107	NULL	NULL
+1118	NULL	NULL
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1205	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1206	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1301	NULL	NULL
+1302	NULL	NULL
+1303	NULL	NULL
+1304	NULL	NULL
+1305	NULL	NULL
+1306	NULL	NULL
+1401	NULL	NULL
+1402	NULL	NULL
+1403	NULL	NULL
+1404	NULL	NULL
+1405	NULL	NULL
+1406	NULL	NULL
+1501	NULL	NULL
+1502	NULL	NULL
+1503	NULL	NULL
+1504	NULL	NULL
+1505	NULL	NULL
+1506	NULL	NULL
+1601	NULL	NULL
+1602	NULL	NULL
+1603	NULL	NULL
+1604	NULL	NULL
+1605	NULL	NULL
+1606	NULL	NULL
+1607	NULL	NULL
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly1 ;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly2 ;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly3 ;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly4 ;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	NULL
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly5 ;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1205	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1206	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+select gid, ST_AsText(poly), ST_AsText(poly2) FROM gis_search where poly = @poly6;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1205	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1206	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search;
+gid	ST_AsText(mpoin)	ST_AsText(mpoin2)
+1001	NULL	NULL
+1002	NULL	NULL
+1003	NULL	NULL
+1004	NULL	NULL
+1005	NULL	NULL
+1006	NULL	NULL
+1007	NULL	NULL
+1008	NULL	NULL
+1009	NULL	NULL
+1010	NULL	NULL
+1101	NULL	NULL
+1102	NULL	NULL
+1103	NULL	NULL
+1104	NULL	NULL
+1105	NULL	NULL
+1106	NULL	NULL
+1107	NULL	NULL
+1118	NULL	NULL
+1201	NULL	NULL
+1202	NULL	NULL
+1203	NULL	NULL
+1204	NULL	NULL
+1205	NULL	NULL
+1206	NULL	NULL
+1301	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1302	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1303	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1304	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1305	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1306	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1401	NULL	NULL
+1402	NULL	NULL
+1403	NULL	NULL
+1404	NULL	NULL
+1405	NULL	NULL
+1406	NULL	NULL
+1501	NULL	NULL
+1502	NULL	NULL
+1503	NULL	NULL
+1504	NULL	NULL
+1505	NULL	NULL
+1506	NULL	NULL
+1601	NULL	NULL
+1602	NULL	NULL
+1603	NULL	NULL
+1604	NULL	NULL
+1605	NULL	NULL
+1606	NULL	NULL
+1607	NULL	NULL
+1701	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1702	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1703	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1704	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1705	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1706	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1707	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin1 ;
+gid	ST_AsText(mpoin)	ST_AsText(mpoin2)
+1301	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1302	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1303	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1701	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1702	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1703	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1704	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1705	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1706	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1707	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin2 ;
+gid	ST_AsText(mpoin)	ST_AsText(mpoin2)
+1301	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1302	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1303	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1701	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1702	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1703	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1704	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1705	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1706	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1707	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin3 ;
+gid	ST_AsText(mpoin)	ST_AsText(mpoin2)
+1301	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1302	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1303	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1701	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1702	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1703	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1704	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1705	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1706	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+1707	MULTIPOINT(0 0,10 10,10 20,20 20)	NULL
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin4 ;
+gid	ST_AsText(mpoin)	ST_AsText(mpoin2)
+1304	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1305	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1306	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin5 ;
+gid	ST_AsText(mpoin)	ST_AsText(mpoin2)
+1304	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1305	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1306	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+select gid, ST_AsText(mpoin), ST_AsText(mpoin2) FROM gis_search where mpoin = @mpoin6;
+gid	ST_AsText(mpoin)	ST_AsText(mpoin2)
+1304	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1305	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1306	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search;
+gid	ST_AsText(mline)	ST_AsText(mline2)
+1001	NULL	NULL
+1002	NULL	NULL
+1003	NULL	NULL
+1004	NULL	NULL
+1005	NULL	NULL
+1006	NULL	NULL
+1007	NULL	NULL
+1008	NULL	NULL
+1009	NULL	NULL
+1010	NULL	NULL
+1101	NULL	NULL
+1102	NULL	NULL
+1103	NULL	NULL
+1104	NULL	NULL
+1105	NULL	NULL
+1106	NULL	NULL
+1107	NULL	NULL
+1118	NULL	NULL
+1201	NULL	NULL
+1202	NULL	NULL
+1203	NULL	NULL
+1204	NULL	NULL
+1205	NULL	NULL
+1206	NULL	NULL
+1301	NULL	NULL
+1302	NULL	NULL
+1303	NULL	NULL
+1304	NULL	NULL
+1305	NULL	NULL
+1306	NULL	NULL
+1401	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1402	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1403	MULTILINESTRING((10 48,10 21,10 0))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1404	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1405	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1406	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1501	NULL	NULL
+1502	NULL	NULL
+1503	NULL	NULL
+1504	NULL	NULL
+1505	NULL	NULL
+1506	NULL	NULL
+1601	NULL	NULL
+1602	NULL	NULL
+1603	NULL	NULL
+1604	NULL	NULL
+1605	NULL	NULL
+1606	NULL	NULL
+1607	NULL	NULL
+1701	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1702	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1703	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1704	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1705	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1706	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1707	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline1 ;
+gid	ST_AsText(mline)	ST_AsText(mline2)
+1401	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1402	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1701	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1702	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1703	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1704	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1705	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1706	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1707	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline2 ;
+gid	ST_AsText(mline)	ST_AsText(mline2)
+1401	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1402	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1701	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1702	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1703	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1704	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1705	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1706	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+1707	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline3 ;
+gid	ST_AsText(mline)	ST_AsText(mline2)
+1403	MULTILINESTRING((10 48,10 21,10 0))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline4 ;
+gid	ST_AsText(mline)	ST_AsText(mline2)
+1404	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1405	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1406	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline5 ;
+gid	ST_AsText(mline)	ST_AsText(mline2)
+1404	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1405	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1406	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+select gid, ST_AsText(mline), ST_AsText(mline2) FROM gis_search where mline = @mline6;
+gid	ST_AsText(mline)	ST_AsText(mline2)
+1404	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1405	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1406	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search;
+gid	ST_AsText(mploy)	ST_AsText(mploy2)
+1001	NULL	NULL
+1002	NULL	NULL
+1003	NULL	NULL
+1004	NULL	NULL
+1005	NULL	NULL
+1006	NULL	NULL
+1007	NULL	NULL
+1008	NULL	NULL
+1009	NULL	NULL
+1010	NULL	NULL
+1101	NULL	NULL
+1102	NULL	NULL
+1103	NULL	NULL
+1104	NULL	NULL
+1105	NULL	NULL
+1106	NULL	NULL
+1107	NULL	NULL
+1118	NULL	NULL
+1201	NULL	NULL
+1202	NULL	NULL
+1203	NULL	NULL
+1204	NULL	NULL
+1205	NULL	NULL
+1206	NULL	NULL
+1301	NULL	NULL
+1302	NULL	NULL
+1303	NULL	NULL
+1304	NULL	NULL
+1305	NULL	NULL
+1306	NULL	NULL
+1401	NULL	NULL
+1402	NULL	NULL
+1403	NULL	NULL
+1404	NULL	NULL
+1405	NULL	NULL
+1406	NULL	NULL
+1501	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1502	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1503	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1504	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1505	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1506	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1601	NULL	NULL
+1602	NULL	NULL
+1603	NULL	NULL
+1604	NULL	NULL
+1605	NULL	NULL
+1606	NULL	NULL
+1607	NULL	NULL
+1701	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1702	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1703	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1704	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1705	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1706	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1707	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy1 ;
+gid	ST_AsText(mploy)	ST_AsText(mploy2)
+1501	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1502	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1503	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1701	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1702	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1703	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1704	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1705	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1706	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1707	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy2 ;
+gid	ST_AsText(mploy)	ST_AsText(mploy2)
+1501	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1502	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1503	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1701	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1702	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1703	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1704	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1705	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1706	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1707	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy3 ;
+gid	ST_AsText(mploy)	ST_AsText(mploy2)
+1501	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1502	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1503	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))
+1701	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1702	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1703	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1704	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1705	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1706	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+1707	MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))	NULL
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy4 ;
+gid	ST_AsText(mploy)	ST_AsText(mploy2)
+1504	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1505	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1506	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy5 ;
+gid	ST_AsText(mploy)	ST_AsText(mploy2)
+1504	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1505	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1506	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+select gid, ST_AsText(mploy), ST_AsText(mploy2) FROM gis_search where mploy = @mploy6;
+gid	ST_AsText(mploy)	ST_AsText(mploy2)
+1504	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1505	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+1506	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))	MULTIPOLYGON(((0 3,3 3,3 0,0 3)))
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search;
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1001	NULL	NULL
+1002	NULL	NULL
+1003	NULL	NULL
+1004	NULL	NULL
+1005	NULL	NULL
+1006	NULL	NULL
+1007	NULL	NULL
+1008	NULL	NULL
+1009	NULL	NULL
+1010	NULL	NULL
+1101	NULL	NULL
+1102	NULL	NULL
+1103	NULL	NULL
+1104	NULL	NULL
+1105	NULL	NULL
+1106	NULL	NULL
+1107	NULL	NULL
+1118	NULL	NULL
+1201	NULL	NULL
+1202	NULL	NULL
+1203	NULL	NULL
+1204	NULL	NULL
+1205	NULL	NULL
+1206	NULL	NULL
+1301	NULL	NULL
+1302	NULL	NULL
+1303	NULL	NULL
+1304	NULL	NULL
+1305	NULL	NULL
+1306	NULL	NULL
+1401	NULL	NULL
+1402	NULL	NULL
+1403	NULL	NULL
+1404	NULL	NULL
+1405	NULL	NULL
+1406	NULL	NULL
+1501	NULL	NULL
+1502	NULL	NULL
+1503	NULL	NULL
+1504	NULL	NULL
+1505	NULL	NULL
+1506	NULL	NULL
+1601	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1602	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1603	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1604	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1605	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1606	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1607	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1701	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1702	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1703	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1704	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1705	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1706	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1707	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco1 ;
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1601	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1602	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1603	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1604	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1701	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1702	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1703	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1704	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco2 ;
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1601	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1602	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1603	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1604	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1701	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1702	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1703	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1704	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco3 ;
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1601	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1602	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1603	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1604	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1701	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1702	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1703	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1704	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco4 ;
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1601	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1602	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1603	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1604	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1701	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1702	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1703	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1704	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco5 ;
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1605	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1606	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1607	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1705	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1706	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1707	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco6;
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1605	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1606	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1607	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1705	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1706	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1707	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(geoco), ST_AsText(geoco2) FROM gis_search where geoco = @geoco7;
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1605	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1606	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1607	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1705	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1706	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1707	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(poin) FROM gis_search where MBREquals(@point1,poin);
+gid	ST_AsText(poin)
+1001	POINT(1 1)
+1002	POINT(1 1)
+1003	POINT(1 1)
+1004	POINT(1 1)
+1008	POINT(1 1)
+1701	POINT(1 1)
+1702	POINT(1 1)
+1703	POINT(1 1)
+1704	POINT(1 1)
+1705	POINT(1 1)
+1706	POINT(1 1)
+1707	POINT(1 1)
+select gid, ST_AsText(line) FROM gis_search where MBREquals(@line1,line);
+gid	ST_AsText(line)
+1101	LINESTRING(0 0,10 10)
+1102	LINESTRING(0 0,10 10)
+1103	LINESTRING(0 0,10 10)
+1106	LINESTRING(0 0,10 10)
+1701	LINESTRING(0 0,10 10)
+1702	LINESTRING(0 0,10 10)
+1703	LINESTRING(0 0,10 10)
+1704	LINESTRING(0 0,10 10)
+1705	LINESTRING(0 0,10 10)
+1706	LINESTRING(0 0,10 10)
+1707	LINESTRING(0 0,10 10)
+select gid, ST_AsText(poly),ST_AsGeoJSON(poly) FROM gis_search where poly is not null or poly2 is not null;
+gid	ST_AsText(poly)	ST_AsGeoJSON(poly)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[0, 0], [50, 0], [50, 50], [0, 50], [0, 0]], [[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1205	POLYGON((0 0,30 0,30 30,0 0))	{"type": "Polygon", "coordinates": [[[0, 0], [30, 0], [30, 30], [0, 0]]]}
+1206	POLYGON((0 0,30 0,30 30,0 0))	{"type": "Polygon", "coordinates": [[[0, 0], [30, 0], [30, 30], [0, 0]]]}
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	{"type": "Polygon", "coordinates": [[[10, 10], [20, 10], [20, 20], [10, 20], [10, 10]]]}
+select gid, ST_AsText(poly),ST_Area(poly) FROM gis_search where poly is not null or poly2 is not null;
+gid	ST_AsText(poly)	ST_Area(poly)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	2400
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1205	POLYGON((0 0,30 0,30 30,0 0))	450
+1206	POLYGON((0 0,30 0,30 30,0 0))	450
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+select gid, ST_AsText(poly),ST_Area(poly) FROM gis_search where ST_Area(poly) <= 450;
+gid	ST_AsText(poly)	ST_Area(poly)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1205	POLYGON((0 0,30 0,30 30,0 0))	450
+1206	POLYGON((0 0,30 0,30 30,0 0))	450
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	100
+select gid, ST_AsText(poly),ST_Area(poly),ST_Area(poly2) FROM gis_search where poly is not null or poly2 is not null;
+gid	ST_AsText(poly)	ST_Area(poly)	ST_Area(poly2)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	100
+1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	2400	100
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	100
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	100
+1205	POLYGON((0 0,30 0,30 30,0 0))	450	100
+1206	POLYGON((0 0,30 0,30 30,0 0))	450	100
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	NULL
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	NULL
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	NULL
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	NULL
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	NULL
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	NULL
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	100	NULL
+select gid, ST_AsText(poly),ST_Area(ST_Buffer(poly,2)),ST_Area(ST_Buffer(poly2,2)) FROM gis_search where ST_Area(ST_Buffer(poly,2))<651;
+gid	ST_AsText(poly)	ST_Area(ST_Buffer(poly,2))	ST_Area(ST_Buffer(poly2,2))
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	192.56132462781898
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	192.56132462781898
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	192.56132462781898
+1701	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	NULL
+1702	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	NULL
+1703	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	NULL
+1704	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	NULL
+1705	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	NULL
+1706	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	NULL
+1707	POLYGON((10 10,20 10,20 20,10 20,10 10))	192.56132462781898	NULL
+set @g='MULTIPOINT(-2 -2,2 -2,2 2,-2 2,-2 -2)';
+select gid, ST_AsText(poin) FROM gis_search where ST_Contains(ST_PointFromText('POINT(10 10)'),poin);
+gid	ST_AsText(poin)
+1005	POINT(10 10)
+select gid, ST_AsText(poin) FROM gis_search where poin = @point4;
+gid	ST_AsText(poin)
+1007	POINT(0 0)
+select gid, ST_AsText(poin) FROM gis_search where ST_Contains(ST_PolyFromText(ST_AsText(ST_ConvexHull(ST_GeomFromText(@g)))),poin);
+gid	ST_AsText(poin)
+1001	POINT(1 1)
+1002	POINT(1 1)
+1003	POINT(1 1)
+1004	POINT(1 1)
+1007	POINT(0 0)
+1008	POINT(1 1)
+1701	POINT(1 1)
+1702	POINT(1 1)
+1703	POINT(1 1)
+1704	POINT(1 1)
+1705	POINT(1 1)
+1706	POINT(1 1)
+1707	POINT(1 1)
+select gid, ST_Dimension(poly) FROM gis_search where ST_Dimension(poly)<=2;
+gid	ST_Dimension(poly)
+1201	2
+1202	2
+1203	2
+1204	2
+1205	2
+1206	2
+1701	2
+1702	2
+1703	2
+1704	2
+1705	2
+1706	2
+1707	2
+select gid, ST_AsText(poly),ST_AsText(poly2) FROM gis_search where ST_Disjoint(poly,poly2)=0;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1205	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1206	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+select gid, ST_AsText(poly),ST_AsText(poly2) FROM gis_search where ST_Distance(poly,poly2)=0;
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1205	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1206	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+select gid, ST_AsText(poin),ST_AsText(line),ST_AsText(ST_EndPoint(line)) FROM gis_search where poin!=ST_EndPoint(line);
+gid	ST_AsText(poin)	ST_AsText(line)	ST_AsText(ST_EndPoint(line))
+1701	POINT(1 1)	LINESTRING(0 0,10 10)	POINT(10 10)
+1702	POINT(1 1)	LINESTRING(0 0,10 10)	POINT(10 10)
+1703	POINT(1 1)	LINESTRING(0 0,10 10)	POINT(10 10)
+1704	POINT(1 1)	LINESTRING(0 0,10 10)	POINT(10 10)
+1705	POINT(1 1)	LINESTRING(0 0,10 10)	POINT(10 10)
+1706	POINT(1 1)	LINESTRING(0 0,10 10)	POINT(10 10)
+1707	POINT(1 1)	LINESTRING(0 0,10 10)	POINT(10 10)
+select gid, ST_AsText(poin), ST_AsText(poin2),ST_AsText(ST_Difference(poin,poin2)) FROM gis_search where poin=ST_Difference(poin,poin2);
+gid	ST_AsText(poin)	ST_AsText(poin2)	ST_AsText(ST_Difference(poin,poin2))
+1002	POINT(1 1)	POINT(10 10)	POINT(1 1)
+1004	POINT(1 1)	POINT(0 0)	POINT(1 1)
+1005	POINT(10 10)	POINT(1 1)	POINT(10 10)
+1006	POINT(20 10)	POINT(1 1)	POINT(20 10)
+1008	POINT(1 1)	POINT(0 0)	POINT(1 1)
+1009	POINT(20 10)	POINT(20 20)	POINT(20 10)
+1010	POINT(20 20)	POINT(0 0)	POINT(20 20)
+select gid, ST_AsText(poin),ST_AsText(line),ST_AsText(ST_Envelope(line)) FROM gis_search where poin!=ST_EndPoint(line);
+gid	ST_AsText(poin)	ST_AsText(line)	ST_AsText(ST_Envelope(line))
+1701	POINT(1 1)	LINESTRING(0 0,10 10)	POLYGON((0 0,10 0,10 10,0 10,0 0))
+1702	POINT(1 1)	LINESTRING(0 0,10 10)	POLYGON((0 0,10 0,10 10,0 10,0 0))
+1703	POINT(1 1)	LINESTRING(0 0,10 10)	POLYGON((0 0,10 0,10 10,0 10,0 0))
+1704	POINT(1 1)	LINESTRING(0 0,10 10)	POLYGON((0 0,10 0,10 10,0 10,0 0))
+1705	POINT(1 1)	LINESTRING(0 0,10 10)	POLYGON((0 0,10 0,10 10,0 10,0 0))
+1706	POINT(1 1)	LINESTRING(0 0,10 10)	POLYGON((0 0,10 0,10 10,0 10,0 0))
+1707	POINT(1 1)	LINESTRING(0 0,10 10)	POLYGON((0 0,10 0,10 10,0 10,0 0))
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Equals(poin,poin2);
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1001	POINT(1 1)	POINT(1 1)
+1003	POINT(1 1)	POINT(1 1)
+1007	POINT(0 0)	POINT(0 0)
+select gid, ST_AsText(line),ST_AsText(line2) FROM gis_search where ST_Equals(line,line2);
+gid	ST_AsText(line)	ST_AsText(line2)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)
+select gid, ST_AsText(poly),ST_AsText(poly2) FROM gis_search where ST_Equals(poly,poly2);
+gid	ST_AsText(poly)	ST_AsText(poly2)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))
+select gid, ST_AsText(mpoin),ST_AsText(mpoin2) FROM gis_search where ST_Equals(mpoin,mpoin2);
+gid	ST_AsText(mpoin)	ST_AsText(mpoin2)
+1301	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1302	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1303	MULTIPOINT(0 0,10 10,10 20,20 20)	MULTIPOINT(0 0,10 10,10 20,20 20)
+1304	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1305	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+1306	MULTIPOINT(3 6,4 10)	MULTIPOINT(3 6,4 10)
+select gid, ST_AsText(mline),ST_AsText(mline2) FROM gis_search where ST_Equals(mline,mline2);
+gid	ST_AsText(mline)	ST_AsText(mline2)
+1401	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1402	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))
+1404	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1405	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+1406	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))
+select gid, ST_AsText(geoco),ST_AsText(geoco2) FROM gis_search where ST_Equals(geoco,geoco2);
+gid	ST_AsText(geoco)	ST_AsText(geoco2)
+1601	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1602	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1603	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1604	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1701	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1702	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1703	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+1704	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
+select gid, ST_AsText(geoco),ST_AsText(geoco2),ST_GeometryType(geoco) FROM gis_search where ST_GeometryType(geoco)='GEOMETRYCOLLECTION';
+gid	ST_AsText(geoco)	ST_AsText(geoco2)	ST_GeometryType(geoco)
+1601	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1602	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1603	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1604	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1605	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1606	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1607	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1701	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1702	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1703	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1704	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1705	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1706	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+1707	GEOMETRYCOLLECTION(POINT(44 6),LINESTRING(3 6,7 9))	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))	GEOMETRYCOLLECTION
+select gid, ST_AsText(poly),ST_AsText(poly2),ST_Intersects(poly,poly2) FROM gis_search where ST_Intersects(poly,poly2)=1;
+gid	ST_AsText(poly)	ST_AsText(poly2)	ST_Intersects(poly,poly2)
+1201	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))	1
+1202	POLYGON((0 0,50 0,50 50,0 50,0 0),(10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))	1
+1203	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))	1
+1204	POLYGON((10 10,20 10,20 20,10 20,10 10))	POLYGON((10 10,20 10,20 20,10 20,10 10))	1
+1205	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))	1
+1206	POLYGON((0 0,30 0,30 30,0 0))	POLYGON((10 10,20 10,20 20,10 20,10 10))	1
+select gid, ST_AsText(line),ST_AsText(line2),ST_IsClosed(line) FROM gis_search where ST_IsClosed(line)=0;
+gid	ST_AsText(line)	ST_AsText(line2)	ST_IsClosed(line)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)	0
+1102	LINESTRING(0 0,10 10)	NULL	0
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)	0
+1104	LINESTRING(0 0,10 10,20 25,50 60)	NULL	0
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)	0
+1106	LINESTRING(0 0,10 10)	LINESTRING(10 10,40 10)	0
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)	0
+1118	LINESTRING(10 10,40 10)	LINESTRING(0 0,10 10)	0
+1701	LINESTRING(0 0,10 10)	NULL	0
+1702	LINESTRING(0 0,10 10)	NULL	0
+1703	LINESTRING(0 0,10 10)	NULL	0
+1704	LINESTRING(0 0,10 10)	NULL	0
+1705	LINESTRING(0 0,10 10)	NULL	0
+1706	LINESTRING(0 0,10 10)	NULL	0
+1707	LINESTRING(0 0,10 10)	NULL	0
+select gid, ST_AsText(line),ST_AsText(line2),ST_IsEmpty(line) FROM gis_search where ST_IsEmpty(line)=0;
+gid	ST_AsText(line)	ST_AsText(line2)	ST_IsEmpty(line)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)	0
+1102	LINESTRING(0 0,10 10)	NULL	0
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)	0
+1104	LINESTRING(0 0,10 10,20 25,50 60)	NULL	0
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)	0
+1106	LINESTRING(0 0,10 10)	LINESTRING(10 10,40 10)	0
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)	0
+1118	LINESTRING(10 10,40 10)	LINESTRING(0 0,10 10)	0
+1701	LINESTRING(0 0,10 10)	NULL	0
+1702	LINESTRING(0 0,10 10)	NULL	0
+1703	LINESTRING(0 0,10 10)	NULL	0
+1704	LINESTRING(0 0,10 10)	NULL	0
+1705	LINESTRING(0 0,10 10)	NULL	0
+1706	LINESTRING(0 0,10 10)	NULL	0
+1707	LINESTRING(0 0,10 10)	NULL	0
+select gid, ST_AsText(line),ST_AsText(line2),ST_IsSimple(line) FROM gis_search where ST_IsSimple(line)=1;
+gid	ST_AsText(line)	ST_AsText(line2)	ST_IsSimple(line)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)	1
+1102	LINESTRING(0 0,10 10)	NULL	1
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)	1
+1104	LINESTRING(0 0,10 10,20 25,50 60)	NULL	1
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)	1
+1106	LINESTRING(0 0,10 10)	LINESTRING(10 10,40 10)	1
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)	1
+1118	LINESTRING(10 10,40 10)	LINESTRING(0 0,10 10)	1
+1701	LINESTRING(0 0,10 10)	NULL	1
+1702	LINESTRING(0 0,10 10)	NULL	1
+1703	LINESTRING(0 0,10 10)	NULL	1
+1704	LINESTRING(0 0,10 10)	NULL	1
+1705	LINESTRING(0 0,10 10)	NULL	1
+1706	LINESTRING(0 0,10 10)	NULL	1
+1707	LINESTRING(0 0,10 10)	NULL	1
+select gid, ST_AsText(line),ST_AsText(line2),ST_Length(line) FROM gis_search where ST_Length(line)>1;
+gid	ST_AsText(line)	ST_AsText(line2)	ST_Length(line)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)	14.142135623730951
+1102	LINESTRING(0 0,10 10)	NULL	14.142135623730951
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)	14.142135623730951
+1104	LINESTRING(0 0,10 10,20 25,50 60)	NULL	78.26761428751533
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)	78.26761428751533
+1106	LINESTRING(0 0,10 10)	LINESTRING(10 10,40 10)	14.142135623730951
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)	30
+1118	LINESTRING(10 10,40 10)	LINESTRING(0 0,10 10)	30
+1701	LINESTRING(0 0,10 10)	NULL	14.142135623730951
+1702	LINESTRING(0 0,10 10)	NULL	14.142135623730951
+1703	LINESTRING(0 0,10 10)	NULL	14.142135623730951
+1704	LINESTRING(0 0,10 10)	NULL	14.142135623730951
+1705	LINESTRING(0 0,10 10)	NULL	14.142135623730951
+1706	LINESTRING(0 0,10 10)	NULL	14.142135623730951
+1707	LINESTRING(0 0,10 10)	NULL	14.142135623730951
+select gid, ST_AsText(line),ST_AsText(line2),ST_Overlaps(line,line2) FROM gis_search where ST_Overlaps(line,line2)=0;
+gid	ST_AsText(line)	ST_AsText(line2)	ST_Overlaps(line,line2)
+1101	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10)	0
+1103	LINESTRING(0 0,10 10)	LINESTRING(0 0,10 10,20 25,50 60)	0
+1105	LINESTRING(0 0,10 10,20 25,50 60)	LINESTRING(0 0,10 10)	0
+1107	LINESTRING(10 10,40 10)	LINESTRING(10 10,40 10)	0
+select gid, ST_AsText(mline),ST_AsText(mline2),ST_NumGeometries(mline) FROM gis_search where ST_NumGeometries(mline)>1;
+gid	ST_AsText(mline)	ST_AsText(mline2)	ST_NumGeometries(mline)
+1401	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	2
+1402	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	2
+1404	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	2
+1405	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	2
+1406	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	MULTILINESTRING((1 2,3 5),(2 5,5 8,21 7))	2
+1701	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL	2
+1702	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL	2
+1703	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL	2
+1704	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL	2
+1705	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL	2
+1706	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL	2
+1707	MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))	NULL	2
+select gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Within(ST_PointFromText('POINT(1 1)'),poin2);
+gid	ST_AsText(poin)	ST_AsText(poin2)
+1001	POINT(1 1)	POINT(1 1)
+1003	POINT(1 1)	POINT(1 1)
+1005	POINT(10 10)	POINT(1 1)
+1006	POINT(20 10)	POINT(1 1)
+DROP TABLE gis_search;

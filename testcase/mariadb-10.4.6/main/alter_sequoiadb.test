@@ -9,7 +9,8 @@
 #Case 20028#Case 20227#Case 20230#Case 20231#Case 20232#Case 20233#Case 20234#Case 20235#Case 20236
 #Case 20254#Case 20256#Case 20422#Case 20386#Case 20388#Case 20389#Case 20390#Case 20396#Case 20397
 #Case 20398#Case 20399#Case 20473#Case 20524#Case 21866#Case 21871#Case 21872#Case 21873#Case 21982
-#Case 22221#Case 22487#Case 22488#Case 22490#Case 22490#Case 22494#Case 22495
+#Case 22221#Case 22487#Case 22488#Case 22490#Case 22490#Case 22494#Case 22495#Case 22786#Case 22787
+#Case 22789
  
 
 --source include/have_sequoiadb.inc
@@ -2204,6 +2205,349 @@ alter table t1 modify b double(2,0),algorithm=inplace;
 --error 1846
 alter table t1 modify c decimal(2,0),algorithm=inplace;
 drop table t1;
+
+#  seqDB-22786:  Modity the geometry type field
+create table `t1` (
+  id int not null auto_increment primary key,
+  `geom` geometry DEFAULT NULL,
+  `poin` point DEFAULT NULL,
+  `line` linestring DEFAULT NULL,
+  `poly` polygon DEFAULT NULL,
+  `mpoin` multipoint DEFAULT NULL,
+  `mline` multilinestring DEFAULT NULL,
+  `mploy` multipolygon DEFAULT NULL,
+  `geocol` geometrycollection DEFAULT NULL,
+  `geom1` geometry not null,
+  `poin1` point not null,
+  `line1` linestring not null,
+  `poly1` polygon not null,
+  `mpoin1` multipoint not null,
+  `mline1` multilinestring not null,
+  `mploy1` multipolygon not null,
+  `geocol1` geometrycollection not null
+);
+
+show create table t1;
+
+set @a1 = ST_PointFromText('POINT(1 1)');
+set @a2 = ST_LineFromText('LINESTRING(0 0,10 10,20 25,50 60)');
+set @a3 = ST_PolygonFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))');
+set @a4 = ST_MultiPointFromText('MULTIPOINT(10 10,20 20)');
+set @a5 = ST_MLineFromText('MULTILINESTRING((10 10,20 20),(15 15,30 15))');
+set @a6 = ST_MPolyFromText('MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))');
+set @a7 = ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10),LINESTRING(1 1,2 2,3 3,4 4))');
+set @a8 = ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10),POINT(30 30),LINESTRING(15 15,20 20))');
+
+insert into t1 value(1,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+insert into t1 value(2,null,null,null,null,null,null,null,null,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+
+select id,ST_AsText(geom),ST_AsText(poin),ST_AsText(line),ST_AsText(poly),ST_AsText(mpoin),ST_AsText(mline),ST_AsText(mploy),ST_AsText(geocol) from t1 order by id;
+
+select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1 order by id;
+
+# change field name success   
+alter table t1 change geom newgeom geometry null;
+alter table t1 change poin newpoin  point null;
+alter table t1 change line newline linestring null;
+alter table t1 change poly newpoly polygon null;
+alter table t1 change mpoin newmpoin multipoint null;
+alter table t1 change mline newmline multilinestring null;
+alter table t1 change mploy newmploy multipolygon null;
+alter table t1 change geocol newgeocol geometrycollection null;
+
+show create table t1;
+
+# bug SEQUOIASQLMAINSTREAM-824
+# change null to not null and not null to null(set sql_mode = "" will change success anp print warning in MariaDB)
+#--error 1265
+#alter table t1 modify newgeom geometry not null,algorithm=inplace;
+#--error 1265
+#alter table t1 modify newpoin point not null,algorithm=inplace;
+#--error 1265
+#alter table t1 modify newline linestring not null,algorithm=inplace;
+#--error 1265
+#alter table t1 modify newpoly polygon not null,algorithm=inplace;
+#--error 1265
+#alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
+#--error 1265
+#alter table t1 modify newmline multilinestring not null,algorithm=inplace;
+#--error 1265
+#alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
+#--error 1265
+#alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
+
+#show create table t1;
+
+#set sql_mode = "";
+#alter table t1 modify newgeom geometry not null,algorithm=inplace;
+#alter table t1 modify newpoin point not null,algorithm=inplace;
+#alter table t1 modify newline linestring not null,algorithm=inplace;
+#alter table t1 modify newpoly polygon not null,algorithm=inplace;
+#alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
+#alter table t1 modify newmline multilinestring not null,algorithm=inplace;
+#alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
+#alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
+#set sql_mode = default;
+
+#show create table t1;
+
+delete from t1 where id = 2 ;
+
+select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1 order by id;
+
+alter table t1 modify newgeom geometry not null,algorithm=inplace;
+alter table t1 modify newpoin point not null,algorithm=inplace;
+alter table t1 modify newline linestring not null,algorithm=inplace;
+alter table t1 modify newpoly polygon not null,algorithm=inplace;
+alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
+alter table t1 modify newmline multilinestring not null,algorithm=inplace;
+alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
+alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
+
+alter table t1 modify geom1 geometry null,algorithm=inplace;
+alter table t1 modify poin1 point null,algorithm=inplace;
+alter table t1 modify line1 linestring null,algorithm=inplace;
+alter table t1 modify poly1 polygon null,algorithm=inplace;
+alter table t1 modify mpoin1 multipoint null,algorithm=inplace;
+alter table t1 modify mline1 multilinestring null,algorithm=inplace;
+alter table t1 modify mploy1 multipolygon null,algorithm=inplace;
+alter table t1 modify geocol1 geometrycollection null,algorithm=inplace;
+
+show create table t1;
+
+--error 1048
+insert into t1 value(2,null,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(3,@a1,null,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(4,@a1,@a1,null,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(5,@a1,@a1,@a2,null,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(6,@a1,@a1,@a2,@a3,null,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(7,@a1,@a1,@a2,@a3,@a4,null,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(8,@a1,@a1,@a2,@a3,@a4,@a5,null,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(9,@a1,@a1,@a2,@a3,@a4,@a5,@a6,null,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+
+insert into t1 value(10,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,null,null,null,null,null,null,null,null);
+insert into t1 value(11,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+
+select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1 order by id;
+
+alter table t1 drop column newgeom;
+alter table t1 drop column newpoin;
+alter table t1 drop column newline;
+alter table t1 drop column newpoly;
+alter table t1 drop column newmpoin;
+alter table t1 drop column newmline;
+alter table t1 drop column newmploy;
+alter table t1 drop column newgeocol;
+
+show create table t1;
+select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1 order by id;
+drop table t1;
+
+# seqDB-22787:  geometry type field  change basic type field 
+create table `t1` (
+  id int not null auto_increment primary key,
+  `a1` geometry DEFAULT NULL,
+  `a2` geometry DEFAULT NULL,
+  `a3` geometry DEFAULT NULL,
+  `a4` geometry DEFAULT NULL,
+  `a5` geometry DEFAULT NULL,
+  `a6` geometry DEFAULT NULL,
+  `a7` geometry DEFAULT NULL,
+  `a8` geometry DEFAULT NULL,
+  `a9` geometry DEFAULT NULL,
+  `a10` geometry DEFAULT NULL,
+  `a11` geometry DEFAULT NULL,
+  `a12` geometry DEFAULT NULL,
+  `a13` geometry DEFAULT NULL,
+  `a14` geometry DEFAULT NULL,
+  `a15` geometry DEFAULT NULL,
+  `a16` geometry DEFAULT NULL
+);
+show create table t1;
+
+set @a1 = ST_PointFromText('POINT(1 1)');
+set @a2 = ST_LineFromText('LINESTRING(0 0,10 10,20 25,50 60)');
+set @a3 = ST_PolygonFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))');
+set @a4 = ST_MultiPointFromText('MULTIPOINT(10 10,20 20)');
+set @a5 = ST_MLineFromText('MULTILINESTRING((10 10,20 20),(15 15,30 15))');
+set @a6 = ST_MPolyFromText('MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))');
+set @a7 = ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10),LINESTRING(1 1,2 2,3 3,4 4))');
+set @a8 = ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10),POINT(30 30),LINESTRING(15 15,20 20))');
+ 
+insert into t1 value(10,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+
+# cover change basic 
+--error 1846
+alter table t1 modify a1 bool null,algorithm=inplace;
+--error 1846
+alter table t1 modify a2 tinyint null,algorithm=inplace;
+--error 1846
+alter table t1 modify a3 int null,algorithm=inplace;
+--error 1846
+alter table t1 modify a4 float null,algorithm=inplace;
+--error 1846
+alter table t1 modify a5 double null,algorithm=inplace;
+--error 1846
+alter table t1 modify a6 decimal null,algorithm=inplace;
+--error 1846
+alter table t1 modify a7 char null,algorithm=inplace;
+--error 1846
+alter table t1 modify a8 tinyblob null,algorithm=inplace;
+--error 1846
+alter table t1 modify a9 bit null,algorithm=inplace;
+--error 1846
+alter table t1 modify a10 date null,algorithm=inplace;
+--error 1846
+alter table t1 modify a11 tinytext null,algorithm=inplace;
+--error 1846
+alter table t1 modify a12 text null,algorithm=inplace;
+#bug SEQUOIASQLMAINSTREAM-823
+#--error 1846
+#alter table t1 modify a13 longblob null,algorithm=inplace;
+--error 1846
+alter table t1 modify a14 timestamp null,algorithm=inplace;
+
+drop table t1;
+
+#  seqDB-22787:basic  type field  change geometry type field 
+create table `t1` (
+  id int not null auto_increment primary key,
+  `a1` bool ,
+  `a2` tinyint ,
+  `a3` smallint ,
+  `a4` int ,
+  `a5` bigint ,
+  `a6` float ,
+  `a7` double ,
+  `a8` decimal ,
+  `a9` char,
+  `a12` bit ,
+  `a13` year,
+  `a14` time ,
+  `a15` date ,
+  `a16` datetime ,
+  `a17` tinytext ,
+  `a18` text ,
+  `a19` mediumText ,
+  `a20` longtext ,
+  `a21` tinyblob ,
+  `a22` mediumblob, 
+  `a23` longblob ,
+  `a24` timestamp 
+);
+show create table t1;
+--error 1846
+alter table t1 modify a1 geometry,algorithm=inplace;
+--error 1846
+alter table t1 modify a2 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a3 geometry,algorithm=inplace;
+--error 1846
+alter table t1 modify a4 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a5 geometry,algorithm=inplace;
+--error 1846
+alter table t1 modify a6 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a7 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a8 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a9 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a12 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a13 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a14 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a15 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a16 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a17 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a18 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a19 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a20 geometry ,algorithm=inplace;
+--error 1846
+alter table t1 modify a24 geometry ,algorithm=inplace;
+
+#bug SEQUOIASQLMAINSTREAM-823
+#alter table t1 modify a21 geometry ,algorithm=inplace;
+#alter table t1 modify a22 geometry ,algorithm=inplace;
+#alter table t1 modify a23 geometry ,algorithm=inplace;
+
+show create table t1;
+drop table t1;
+
+#  seqDB-22787:geometry type field  change geometry type field 
+create table `t1` (
+  id int not null auto_increment primary key,
+  `geom` geometry DEFAULT NULL,
+  `poin` geometry DEFAULT NULL,
+  `line` geometry DEFAULT NULL,
+  `poly` geometry DEFAULT NULL,
+  `mpoin` geometry DEFAULT NULL,
+  `mline` geometry DEFAULT NULL,
+  `mploy` geometry DEFAULT NULL,
+  `geocol` geometry DEFAULT NULL,
+  `geom1` geometry DEFAULT NULL,
+  `poin1` point  DEFAULT NULL,
+  `line1` linestring DEFAULT NULL,
+  `poly1` polygon  DEFAULT NULL,
+  `mpoin1` multipoint  DEFAULT NULL,
+  `mline1` multilinestring DEFAULT NULL,
+  `mploy1` multipolygon DEFAULT NULL,
+  `geocol1` geometrycollection DEFAULT NULL
+);
+
+insert into t1 value(10,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+
+show create table t1;
+
+--error 1846
+alter table t1 modify poin point null,algorithm=inplace;
+--error 1846
+alter table t1 modify line linestring null,algorithm=inplace;
+--error 1846
+alter table t1 modify poly polygon null,algorithm=inplace;
+--error 1846
+alter table t1 modify mpoin multipoint null,algorithm=inplace;
+--error 1846
+alter table t1 modify mline multilinestring null,algorithm=inplace;
+--error 1846
+alter table t1 modify mploy multipolygon null,algorithm=inplace;
+--error 1846
+alter table t1 modify geocol geometrycollection null,algorithm=inplace;
+--error 1846
+alter table t1 modify poin1 geometry null,algorithm=inplace;
+
+show create table t1;
+
+select id,ST_AsText(geom),ST_AsText(poin),ST_AsText(line),ST_AsText(poly),ST_AsText(mpoin),ST_AsText(mline),ST_AsText(mploy),ST_AsText(geocol) from t1 order by id;
+--sorted_result
+select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1 order by id;
+drop table t1;
+
+# seqDB-22789:create index in geometry type
+--error 138
+create table t1(id int,g geometry,index(g(128)));
+create table t1(id int,g geometry);
+show create table t1;
+--error 138
+create index geoindex on t1 (g(128));
+drop table t1;
+
 
 drop database test_alter;
 --source include/uninstall_sequoiadb.inc

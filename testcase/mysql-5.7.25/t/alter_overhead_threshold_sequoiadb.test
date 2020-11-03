@@ -1,7 +1,7 @@
 #Case 18020#Case 18021#Case 18022#Case 18023#Case 18024#Case 18025#Case 18026#Case 18027#Case 18028
 #Case 18038#Case 18039#Case 18040#Case 18041#Case 18042#Case 18657#Case 18658#Case 18660#Case 19442
 #Case 19420#Case 19421#Case 19422#Case 19423#Case 19424#Case 19425#Case 19428#Case 19429#Case 19430
-#Case 19431#Case 19432#Case 19433
+#Case 19431#Case 19432#Case 19433#Case 22788
 
 --source include/have_sequoiadb.inc
 create database test_alter_overhead_threshlod;
@@ -1222,6 +1222,176 @@ create table t1 (id int auto_increment primary key, a bigint, b bigint unsigned)
 insert into t1(a, b) values(-32769,0),(-32768,1),(0,2),(1,3),(32767,65535),(32768,65536);
 alter table t1 modify a mediumint, modify b mediumint unsigned,algorithm=inplace;
 select * from t1 order by id;
+drop table t1;
+
+# seqDB-22788: alter geometry over sequoiadb_alter_table_overhead_threshold
+CREATE TABLE `t1` (
+  id int not null auto_increment primary key,
+  `geom` geometry DEFAULT NULL,
+  `poin` point DEFAULT NULL,
+  `line` linestring DEFAULT NULL,
+  `poly` polygon DEFAULT NULL,
+  `mpoin` multipoint DEFAULT NULL,
+  `mline` multilinestring DEFAULT NULL,
+  `mploy` multipolygon DEFAULT NULL,
+  `geocol` geometrycollection DEFAULT NULL,
+  `geom1` geometry not null,
+  `poin1` point not null,
+  `line1` linestring not null,
+  `poly1` polygon not null,
+  `mpoin1` multipoint not null,
+  `mline1` multilinestring not null,
+  `mploy1` multipolygon not null,
+  `geocol1` geometrycollection not null
+);
+
+show create table t1; 
+
+set @a1 = ST_PointFromText('POINT(1 1)');
+set @a2 = ST_LineFromText('LINESTRING(0 0,10 10,20 25,50 60)');
+set @a3 = ST_PolygonFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))');
+set @a4 = ST_MultiPointFromText('MULTIPOINT(10 10,20 20)');
+set @a5 = ST_MLineFromText('MULTILINESTRING((10 10,20 20),(15 15,30 15))');
+set @a6 = ST_MPolyFromText('MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))');
+set @a7 = ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10),LINESTRING(1 1,2 2,3 3,4 4))');
+set @a8 = ST_GeomFromText('GEOMETRYCOLLECTION(POINT(10 10),POINT(30 30),LINESTRING(15 15,20 20))');
+
+insert into t1 value(111,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+insert into t1 value(112,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+insert into t1 value(113,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+insert into t1 value(114,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+insert into t1 value(115,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+insert into t1 value(1,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+insert into t1 value(2,null,null,null,null,null,null,null,null,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+
+--sorted_result
+select id,ST_AsText(geom),ST_AsText(poin),ST_AsText(line),ST_AsText(poly),ST_AsText(mpoin),ST_AsText(mline),ST_AsText(mploy),ST_AsText(geocol) from t1;
+--sorted_result
+select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1;
+
+# failed to change the field name   
+--error 1845
+alter table t1 change geom newgeom geometry null,algorithm=inplace;
+--error 1845
+alter table t1 change poin newpoin  point null,algorithm=inplace;
+--error 1845
+alter table t1 change line newline linestring null,algorithm=inplace;
+--error 1845
+alter table t1 change poly newpoly polygon null,algorithm=inplace;
+--error 1845
+alter table t1 change mpoin newmpoin multipoint null,algorithm=inplace;
+--error 1845
+alter table t1 change mline newmline multilinestring null,algorithm=inplace;
+--error 1845
+alter table t1 change mploy newmploy multipolygon null,algorithm=inplace;
+--error 1845
+alter table t1 change geocol newgeocol geometrycollection null,algorithm=inplace;
+
+show create table t1;
+
+# exit null value 
+--error 1138
+alter table t1 modify geom geometry not null,algorithm=inplace;
+--error 1138
+alter table t1 modify poin point not null,algorithm=inplace;
+--error 1138
+alter table t1 modify line linestring not null,algorithm=inplace;
+--error 1138
+alter table t1 modify poly polygon not null,algorithm=inplace;
+--error 1138
+alter table t1 modify mpoin multipoint not null,algorithm=inplace;
+--error 1138
+alter table t1 modify mline multilinestring not null,algorithm=inplace;
+--error 1138
+alter table t1 modify mploy multipolygon not null,algorithm=inplace;
+--error 1138
+alter table t1 modify geocol geometrycollection not null,algorithm=inplace;
+
+delete from t1 where id = 2 ;
+--sorted_result
+select id,ST_AsText(geom),ST_AsText(poin),ST_AsText(line),ST_AsText(poly),ST_AsText(mpoin),ST_AsText(mline),ST_AsText(mploy),ST_AsText(geocol) from t1;
+--sorted_result
+select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1;
+
+alter table t1 modify geom geometry not null,algorithm=inplace;
+alter table t1 modify poin point not null,algorithm=inplace;
+alter table t1 modify line linestring not null,algorithm=inplace;
+alter table t1 modify poly polygon not null,algorithm=inplace;
+alter table t1 modify mpoin multipoint not null,algorithm=inplace;
+alter table t1 modify mline multilinestring not null,algorithm=inplace;
+alter table t1 modify mploy multipolygon not null,algorithm=inplace;
+alter table t1 modify geocol geometrycollection not null,algorithm=inplace;
+
+alter table t1 modify geom1 geometry null,algorithm=inplace;
+alter table t1 modify poin1 point null,algorithm=inplace;
+alter table t1 modify line1 linestring null,algorithm=inplace;
+alter table t1 modify poly1 polygon null,algorithm=inplace;
+alter table t1 modify mpoin1 multipoint null,algorithm=inplace;
+alter table t1 modify mline1 multilinestring null,algorithm=inplace;
+alter table t1 modify mploy1 multipolygon null,algorithm=inplace;
+alter table t1 modify geocol1 geometrycollection null,algorithm=inplace;
+
+show create table t1;
+
+--error 1048
+insert into t1 value(2,null,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(3,@a1,null,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(4,@a1,@a1,null,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(5,@a1,@a1,@a2,null,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(6,@a1,@a1,@a2,@a3,null,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(7,@a1,@a1,@a2,@a3,@a4,null,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(8,@a1,@a1,@a2,@a3,@a4,@a5,null,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+--error 1048
+insert into t1 value(9,@a1,@a1,@a2,@a3,@a4,@a5,@a6,null,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+
+insert into t1 value(10,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,null,null,null,null,null,null,null,null);
+insert into t1 value(11,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
+
+--sorted_result
+select id,ST_AsText(geom),ST_AsText(poin),ST_AsText(line),ST_AsText(poly),ST_AsText(mpoin),ST_AsText(mline),ST_AsText(mploy),ST_AsText(geocol) from t1;
+--sorted_result
+select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1;
+
+# geometry  change geometry 
+--error 1846
+alter table t1 modify poin geometry not null,algorithm=inplace;
+--error 1846
+alter table t1 modify line int not null,algorithm=inplace;
+--error 1846
+alter table t1 modify poly char not null,algorithm=inplace;
+--error 1846
+alter table t1 modify mpoin date not null,algorithm=inplace;
+--error 1846
+alter table t1 modify mline tinyblob not null,algorithm=inplace;
+--error 1846
+alter table t1 modify mploy mediumblob not null,algorithm=inplace;
+#--error 1846
+#alter table t1 modify geocol longblob not null,algorithm=inplace;
+
+--error 131
+alter table t1 drop column geom1;
+--error 131
+alter table t1 drop column poin1;
+--error 131
+alter table t1 drop column line1;
+--error 131
+alter table t1 drop column poly1;
+--error 131
+alter table t1 drop column mpoin1;
+--error 131
+alter table t1 drop column mline1;
+--error 131
+alter table t1 drop column mploy1;
+--error 131
+alter table t1 drop column geocol1;
+show create table t1;
+
 drop table t1;
 
 drop database test_alter_overhead_threshlod;
