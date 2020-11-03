@@ -126,8 +126,9 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id,
       options = options_builder.obj();
       rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
     } else {
-      rc = cl.create_index(key_obj, sdb_key_name(key_info), is_unique,
-                           /*enforced*/ all_is_not_null);
+      bool enforced = is_unique && all_is_not_null;
+      rc =
+          cl.create_index(key_obj, sdb_key_name(key_info), is_unique, enforced);
     }
     if (rc) {
       goto error;

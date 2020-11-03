@@ -2485,7 +2485,13 @@ int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
     bson::BSONElement name_ele;
     const char *name = NULL;
     bson::BSONObj key;
-    bson::BSONObj options;
+    bson::BSONObjBuilder builder;
+    bson::BSONElement ele;
+    bool unique = false;
+    bool enforced = false;
+    bool not_null = false;
+    bool support_not_null = true;
+    bson::BSONElement key_ele;
 
     index_def_ele = infos[i].getField(SDB_FIELD_IDX_DEF);
     if (index_def_ele.type() != bson::Object) {
@@ -2505,29 +2511,44 @@ int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
       continue;
     }
 
-    {
-      bson::BSONObjBuilder builder;
-      bson::BSONElement key_ele = index_def.getField(SDB_FIELD_KEY);
-      if (key_ele.type() != bson::Object) {
-        rc = SDB_ERR_INVALID_ARG;
-        goto error;
-      }
-      key = key_ele.embeddedObject();
+    key_ele = index_def.getField(SDB_FIELD_KEY);
+    if (key_ele.type() != bson::Object) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    key = key_ele.embeddedObject();
 
-      builder.append(SDB_FIELD_UNIQUE,
-                     index_def.getField(SDB_FIELD_UNIQUE2).booleanSafe());
-      builder.append(SDB_FIELD_ENFORCED,
-                     index_def.getField(SDB_FIELD_ENFORCED2).booleanSafe());
-      builder.append(SDB_FIELD_NOT_NULL,
-                     index_def.getField(SDB_FIELD_NOT_NULL).booleanSafe());
-      options = builder.obj();
+    ele = index_def.getField(SDB_FIELD_UNIQUE2);
+    if (ele.type() != bson::EOO) {
+      unique = ele.booleanSafe();
     }
 
-    DBUG_PRINT("info", ("name: %s, key: %s, options: %s", name,
-                        key.toString().c_str(), options.toString().c_str()));
-    rc = dst_cl.create_index(key, name, options);
-    if (rc != 0) {
-      goto error;
+    ele = index_def.getField(SDB_FIELD_ENFORCED2);
+    if (ele.type() != bson::EOO) {
+      enforced = ele.booleanSafe();
+    }
+
+    ele = index_def.getField(SDB_FIELD_NOT_NULL);
+    if (ele.type() != bson::EOO) {
+      not_null = ele.booleanSafe();
+      support_not_null = true;
+    } else {
+      support_not_null = false;
+    }
+
+    if (support_not_null) {
+      builder.append(SDB_FIELD_UNIQUE, unique);
+      builder.append(SDB_FIELD_ENFORCED, enforced);
+      builder.append(SDB_FIELD_NOT_NULL, not_null);
+      rc = dst_cl.create_index(key, name, builder.obj());
+      if (rc != 0) {
+        goto error;
+      }
+    } else {
+      rc = dst_cl.create_index(key, name, unique, enforced);
+      if (rc != 0) {
+        goto error;
+      }
     }
   }
 done:

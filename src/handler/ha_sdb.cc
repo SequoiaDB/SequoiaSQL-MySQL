@@ -2405,6 +2405,47 @@ error:
   goto done;
 }
 
+bool ha_sdb::is_inc_rule_supported() {
+  /*
+    SequoiaDB doesn't support "$inc" with options(Min, Max...) before v3.2.4
+    Lucky that session attribute "Source" is new in the version, too.
+    We can use the "Source" attribute to ensure the version.
+  */
+  static bool has_cached = false;
+  static bool cached_result = true;
+
+  bool supported = false;
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+  bson::BSONObj attributes;
+
+  if (has_cached) {
+    supported = cached_result;
+    goto done;
+  }
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = conn->get_session_attr(attributes);
+  if (rc != 0) {
+    goto error;
+  }
+
+  supported = attributes.hasField(SDB_SESSION_ATTR_SOURCE);
+  has_cached = true;
+  cached_result = supported;
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int ha_sdb::create_field_rule(const char *field_name, Item_field *value,
                               bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
@@ -2649,7 +2690,8 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
         goto done;
       }
 
-      if (upd_arg.value_field && !is_field_rule_supported()) {
+      if ((upd_arg.value_field && !is_field_rule_supported()) ||
+          (upd_arg.my_field_count > 0 && !is_inc_rule_supported())) {
         *optimizer_update = false;
         goto done;
       }

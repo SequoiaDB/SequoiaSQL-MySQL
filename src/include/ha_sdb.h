@@ -547,6 +547,8 @@ class ha_sdb : public handler {
 
   bool is_field_rule_supported();
 
+  bool is_inc_rule_supported();
+
   bool is_idx_stat_valid(Sdb_idx_stat_ptr &ptr);
 
   int fetch_index_stat(Sdb_index_stat &s);
