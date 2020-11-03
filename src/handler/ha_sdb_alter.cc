@@ -2097,8 +2097,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       }
     }
     step = alter_column_step;
-    if (alter_flags & (ALTER_DROP_STORED_COLUMN | ALTER_ADD_STORED_BASE_COLUMN |
-                       ALTER_STORED_COLUMN_TYPE | ALTER_COLUMN_DEFAULT)) {
+    if (ctx->dropped_columns.elements > 0 || ctx->added_columns.elements > 0 ||
+        ctx->changed_columns.elements > 0) {
       rc = alter_column(altered_table, ha_alter_info, conn, cl);
       if (0 != rc) {
         goto error;
