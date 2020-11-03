@@ -1894,6 +1894,10 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
 
 int ha_sdb::get_dup_info(bson::BSONObj &result, const char **idx_name) {
   int rc = SDB_ERR_OK;
+  // Some DDL cases have no table share
+  if (!table || !table->s) {
+    goto done;
+  }
   try {
     bson::BSONObjIterator it(result);
     while (it.more()) {
@@ -1905,8 +1909,7 @@ int ha_sdb::get_dup_info(bson::BSONObj &result, const char **idx_name) {
           So assert is necessary.
         */
         DBUG_ASSERT(bson::Object == elem.type());
-        // No BSONObj::getOwned() here, because it will be used right soon.
-        m_dup_value = elem.embeddedObject();
+        m_dup_value = elem.embeddedObject().getOwned();
 
       } else if (0 == strcmp(elem.fieldName(), SDB_FIELD_INDEX_NAME)) {
         DBUG_ASSERT(bson::String == elem.type());

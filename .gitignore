@@ -12,3 +12,4 @@ sdbvertool
 build/
 sql-src/
 CMakeFiles/
+thirdparty/
