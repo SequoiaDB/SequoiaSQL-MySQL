@@ -808,7 +808,7 @@ struct ha_sdb_alter_ctx : public inplace_alter_handler_ctx {
 };
 
 bool is_strict_mode(sql_mode_t sql_mode) {
-  if (sdb_use_transaction) {
+  if (sdb_use_transaction(current_thd)) {
     return (sql_mode & (MODE_STRICT_ALL_TABLES | MODE_STRICT_TRANS_TABLES));
   } else {
     return (sql_mode & MODE_STRICT_ALL_TABLES);
@@ -1336,7 +1336,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
           }
           // In this case, SQL layer asserts no error status if rc == 0.
           // So clear the error status.
-          if (!sdb_use_transaction) {
+          if (!sdb_use_transaction(thd)) {
             thd->clear_error();
           }
         }

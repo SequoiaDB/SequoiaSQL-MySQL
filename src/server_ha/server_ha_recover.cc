@@ -1874,8 +1874,7 @@ void *ha_recover_and_replay(void *arg) {
   }
 
   // 1. create thread local var and init sequoiadb connection
-  Sdb_conn sdb_conn(sdb_thd_id(ha_thread->thd));
-  sdb_conn.set_use_transaction(true);
+  Sdb_conn sdb_conn(sdb_thd_id(ha_thread->thd), true);
 
   sql_print_information("HA: Start 'HA' thread");
   mysql_mutex_lock(&ha_thread->replay_stopped_mutex);

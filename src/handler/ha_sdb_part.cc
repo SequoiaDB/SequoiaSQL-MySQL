@@ -2330,7 +2330,7 @@ int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
 
     // If the engine supports transactions, the failure will be rollbacked.
     // Log this error, so the DBA can notice it and fix it!
-    if (!sdb_use_transaction) {
+    if (!sdb_use_transaction(thd)) {
       char msg[MYSQL_ERRMSG_SIZE] = {0};
       snprintf(msg, sizeof(msg), INSERT_FAIL_MSG, src_part_name, dst_part_name,
                str.c_ptr_safe());
@@ -2346,7 +2346,7 @@ int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
     char buf[MAX_KEY_LENGTH] = {0};
     String str(buf, sizeof(buf), system_charset_info);
 
-    if (sdb_use_transaction) {
+    if (sdb_use_transaction(thd)) {
       goto error;
     }
     /*

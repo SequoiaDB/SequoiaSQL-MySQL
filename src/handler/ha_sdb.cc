@@ -975,7 +975,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
        HA_CAN_TABLE_CONDITION_PUSHDOWN | HA_CAN_REPAIR | HA_GENERATED_COLUMNS |
        HA_CAN_GEOMETRY);
 
-  m_table_flags |= (sdb_use_transaction ? 0 : HA_NO_TRANSACTIONS);
+  m_table_flags |= (sdb_use_transaction(current_thd) ? 0 : HA_NO_TRANSACTIONS);
 
   incr_stat = NULL;
   m_dup_key_nr = MAX_KEY;
@@ -1183,7 +1183,7 @@ int ha_sdb::reset() {
 
   // when sdb_use_transaction is off, in some situation reset will
   // be executed before external_lock, so cann't set incr_stat to null.
-  incr_stat = sdb_use_transaction ? NULL : incr_stat;
+  incr_stat = sdb_use_transaction(current_thd) ? NULL : incr_stat;
   stats.records = ~(ha_rows)0;
   m_dup_key_nr = MAX_KEY;
   m_dup_value = SDB_EMPTY_BSON;
@@ -2804,7 +2804,7 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
   }
 
   // in non-tran mode, sdb_condition maybe null,
-  if (!sdb_use_transaction && !sdb_condition) {
+  if (!sdb_use_transaction(ha_thd()) && !sdb_condition) {
     rc = ensure_cond_ctx(ha_thd());
     if (rc) {
       goto error;
@@ -3056,7 +3056,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
     Don't do direct_update/direct_delete if binlog is using format ROW,
     because it'll break the logic of log replication.
   */
-  if ((!sdb_use_transaction && is_temporary_table(table->pos_in_table_list)) ||
+  if ((!sdb_use_transaction(thd) &&
+       is_temporary_table(table->pos_in_table_list)) ||
       (!thd->is_current_stmt_binlog_disabled() && thd_binlog_filter_ok(thd) &&
        thd->is_current_stmt_binlog_format_row()) ||
       (thd_slave_thread(thd) && thd->is_current_stmt_binlog_format_row())) {
@@ -4566,7 +4567,8 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
 
     // in non-transaction mode or altering table,
     // do not exec commit or rollback.
-    if (!sdb_use_transaction || SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
+    if (!sdb_use_transaction(thd) ||
+        SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
       thd_get_thd_sdb(thd)->set_auto_commit(false);
       goto done;
     }
@@ -4647,7 +4649,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
       external_lock(). We can always keep up the statistics.
     */
     if (sdb_is_transaction_stmt(thd, !thd_sdb->get_auto_commit()) ||
-        !sdb_use_transaction) {
+        !sdb_use_transaction(thd)) {
       if (!sdb_execute_only_in_mysql(ha_thd())) {
         rc = add_share_to_open_table_shares(thd);
         if (0 != rc) {
@@ -4660,7 +4662,7 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
     // update stats info if sdb_use_transaction is 'off'
     // note: when sdb_use_transaction is off, exec trans_commit_stmt
     // after handle each table
-    if (!sdb_use_transaction && incr_stat &&
+    if (!sdb_use_transaction(thd) && incr_stat &&
         0 != incr_stat->no_uncommitted_rows_count) {
       Sdb_mutex_guard guard(share->mutex);
       int64 &share_rows = share->stat.total_records;
@@ -5531,7 +5533,7 @@ double ha_sdb::scan_time() {
 
 void ha_sdb::update_incr_stat(int incr) {
   DBUG_ENTER("ha_sdb::update_incr_stat");
-  if (!sdb_use_transaction && table->pos_in_table_list &&
+  if (!sdb_use_transaction(current_thd) && table->pos_in_table_list &&
       is_temporary_table(table->pos_in_table_list)) {
     share->stat.total_records += incr;
   } else if (incr_stat) {
@@ -5544,7 +5546,7 @@ void ha_sdb::update_incr_stat(int incr) {
 int ha_sdb::add_share_to_open_table_shares(THD *thd) {
   DBUG_ENTER("ha_sdb::add_share_to_open_table_shares");
 
-  if (!sdb_use_transaction) {
+  if (!sdb_use_transaction(thd)) {
     incr_stat = &non_tran_stat;
     non_tran_stat.no_uncommitted_rows_count = 0;
     DBUG_PRINT("info", ("in non-tran mode without open_table_shares"));
@@ -6378,7 +6380,8 @@ get_message_done:
     case SDB_TIMEOUT: {
       if (strncmp(error_msg, SDB_ACQUIRE_TRANSACTION_LOCK,
                   strlen(SDB_ACQUIRE_TRANSACTION_LOCK)) == 0) {
-        if (sdb_use_transaction && sdb_rollback_on_timeout(ha_thd())) {
+        if (sdb_use_transaction(ha_thd()) &&
+            sdb_rollback_on_timeout(ha_thd())) {
 #ifdef IS_MARIADB
           /*
             MariaDB not clear the option_bits OPTION_BEGIN flag after rollback

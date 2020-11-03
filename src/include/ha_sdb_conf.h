@@ -69,7 +69,9 @@ bool sdb_execute_only_in_mysql(THD *thd);
 longlong sdb_alter_table_overhead_threshold(THD *thd);
 ulonglong sdb_get_optimizer_options(THD *thd);
 bool sdb_rollback_on_timeout(THD *thd);
+bool sdb_use_transaction(THD *thd);
 int sdb_lock_wait_timeout(THD *thd);
+bool sdb_use_rollback_segments(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;
@@ -83,7 +85,6 @@ extern my_bool sdb_use_autocommit;
 extern my_bool sdb_debug_log;
 extern st_mysql_sys_var *sdb_sys_vars[];
 extern ulong sdb_error_level;
-extern my_bool sdb_use_transaction;
 extern my_bool sdb_stats_cache;
 extern uint sdb_stats_cache_version;
 extern int sdb_stats_mode;

@@ -127,10 +127,10 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info,
   if (!sql_info->inited) {
     sql_info->inited = true;
     sql_info->tables = NULL;
-    sql_info->sdb_conn = new (std::nothrow) Sdb_conn(event->general_thread_id);
+    sql_info->sdb_conn =
+        new (std::nothrow) Sdb_conn(event->general_thread_id, true);
     if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
-      sql_info->sdb_conn->set_use_transaction(true);
     } else {
       rc = SDB_HA_OOM;
     }
@@ -138,10 +138,10 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info,
     // if client execute some DDL statements, exit session,
     // ha_sql_stmt_info::sdb_conn will be set to NULL.
     sql_info->tables = NULL;
-    sql_info->sdb_conn = new (std::nothrow) Sdb_conn(event->general_thread_id);
+    sql_info->sdb_conn =
+        new (std::nothrow) Sdb_conn(event->general_thread_id, true);
     if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
-      sql_info->sdb_conn->set_use_transaction(true);
     } else {
       rc = SDB_HA_OOM;
     }

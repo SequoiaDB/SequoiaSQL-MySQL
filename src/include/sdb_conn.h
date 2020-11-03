@@ -37,12 +37,15 @@ class Sdb_session_attrs {
   Sdb_session_attrs() {
     last_trans_isolation = SDB_TRANS_ISO_INVALID;
     last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVIAD;
+    last_trans_auto_commit = SDB_DEFAULT_TRANS_AUTO_COMMIT;
+    last_trans_use_rollback_segments = SDB_DEFAULT_TRANS_USE_RBS;
     attr_count = 0;
     source_str[0] = '\0';
     trans_isolation = SDB_TRANS_ISO_RR;
     trans_auto_rollback = false;
     trans_auto_commit = true;
     trans_timeout = SDB_DEFAULT_LOCK_WAIT_TIMEOUT;
+    trans_use_rollback_segments = true;
     session_attrs_mask = 0;
   }
 
@@ -50,7 +53,7 @@ class Sdb_session_attrs {
 
   void save_last_attrs();
 
-  inline void set_attrs_mask(ulonglong attr_mask) {
+  inline void set_attrs_mask(const ulonglong attr_mask) {
     session_attrs_mask |= attr_mask;
   }
 
@@ -63,18 +66,18 @@ class Sdb_session_attrs {
 
   inline ulonglong get_attrs_mask() { return session_attrs_mask; }
 
-  inline bool test_attrs_mask(ulonglong attr_mask) {
+  inline bool test_attrs_mask(const ulonglong attr_mask) {
     return (session_attrs_mask & attr_mask) ? true : false;
   }
 
-  inline void clear_attrs_mask(ulonglong attr_mask) {
+  inline void clear_attrs_mask(const ulonglong attr_mask) {
     session_attrs_mask &= (~attr_mask);
   }
 
   void attrs_to_obj(bson::BSONObj *attr_obj);
 
   inline void set_source(const char *hostname, const int proc_id,
-                         ulonglong thread_id) {
+                         const ulonglong thread_id) {
     snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
              strlen(hostname) ? ":" : "", hostname, proc_id, thread_id);
     set_attrs_mask(SDB_SESSION_ATTR_SOURCE_MASK);
@@ -83,7 +86,7 @@ class Sdb_session_attrs {
 
   inline const char *get_source() { return source_str; }
 
-  inline void set_trans_isolation(ulong tx_isolation) {
+  inline void set_trans_isolation(const ulong tx_isolation) {
     if (last_trans_isolation != tx_isolation) {
       trans_isolation = tx_isolation;
       set_attrs_mask(SDB_SESSION_ATTR_TRANS_ISOLATION_MASK);
@@ -91,23 +94,21 @@ class Sdb_session_attrs {
     }
   }
 
-  inline void set_last_trans_isolation() {
-    last_trans_isolation = trans_isolation;
-  }
-
-  inline void set_trans_auto_rollback(bool auto_rollback) {
+  inline void set_trans_auto_rollback(const bool auto_rollback) {
     trans_auto_rollback = auto_rollback;
     set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK_MASK);
     attr_count++;
   }
 
-  inline void set_trans_auto_commit(bool auto_commit) {
-    trans_auto_commit = auto_commit;
-    set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK);
-    attr_count++;
+  inline void set_trans_auto_commit(const bool auto_commit) {
+    if (last_trans_auto_commit != auto_commit) {
+      trans_auto_commit = auto_commit;
+      set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK);
+      attr_count++;
+    }
   }
 
-  inline void set_trans_timeout(int timeout) {
+  inline void set_trans_timeout(const int timeout) {
     if (last_trans_timeout != timeout) {
       trans_timeout = timeout;
       set_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK);
@@ -115,13 +116,19 @@ class Sdb_session_attrs {
     }
   }
 
-  inline void set_last_trans_timeout() { last_trans_timeout = trans_timeout; }
-
-  inline int get_last_trans_timeout() { return last_trans_timeout; }
+  inline void set_trans_use_rollback_segments(const bool use_rbs) {
+    if (last_trans_use_rollback_segments != use_rbs) {
+      trans_use_rollback_segments = use_rbs;
+      set_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK);
+      attr_count++;
+    }
+  }
 
  private:
   ulong last_trans_isolation;
   int last_trans_timeout;
+  bool last_trans_auto_commit;
+  bool last_trans_use_rollback_segments;
   int attr_count;
 
  private:
@@ -130,14 +137,17 @@ class Sdb_session_attrs {
   // 64 bytes is for string of proc_id and thread_id.
   ulong trans_isolation;    /*TransIsolation*/
   bool trans_auto_rollback; /*TransAutoRollback*/
-  bool trans_auto_commit;   /*TransAutoCommit*/
-  int trans_timeout;        /*TransTimeout*/
+  /*when sequoiadb_use_transaction changed, trans_auto_commit should changed
+   * too.*/
+  bool trans_auto_commit;           /*TransAutoCommit*/
+  int trans_timeout;                /*TransTimeout*/
+  bool trans_use_rollback_segments; /*TransUseRBS*/
   ulonglong session_attrs_mask;
 };
 
 class Sdb_conn {
  public:
-  Sdb_conn(my_thread_id _tid);
+  Sdb_conn(my_thread_id _tid, bool server_ha_conn = false);
 
   ~Sdb_conn();
 
@@ -198,7 +208,7 @@ class Sdb_conn {
     return m_connection.getLastErrorObj(errObj);
   }
 
-  inline ulong convert_to_sdb_isolation(ulong tx_isolation) {
+  inline ulong convert_to_sdb_isolation(const ulong tx_isolation) {
     switch (tx_isolation) {
       case ISO_READ_UNCOMMITTED:
         return SDB_TRANS_ISO_RU;
@@ -220,13 +230,10 @@ class Sdb_conn {
     }
   }
 
-  inline void set_use_transaction(int use_transaction) {
-    m_use_transaction = use_transaction;
-  }
   inline char *get_err_msg() { return errmsg; }
   inline void clear_err_msg() { errmsg[0] = '\0'; }
 
-  inline void set_rollback_on_timeout(bool rollback) {
+  inline void set_rollback_on_timeout(const bool rollback) {
     rollback_on_timeout = rollback;
   }
 
@@ -251,7 +258,8 @@ class Sdb_conn {
   my_thread_id m_thread_id;
   bool pushed_autocommit;
   bool m_is_authenticated;
-  bool m_use_transaction;
+  bool m_is_server_ha_conn; /* Flag of server ha conn or normal conn. Server HA
+                               conn always use transaction. */
   char errmsg[SDB_ERR_BUFF_SIZE];
   bool rollback_on_timeout;
 

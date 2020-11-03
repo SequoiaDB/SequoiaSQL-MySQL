@@ -56,7 +56,9 @@ void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
   if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK)) {
     builder.append(SDB_SESSION_ATTR_TRANS_TIMEOUT, trans_timeout);
   }
-
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK)) {
+    builder.append(SDB_SESSION_ATTR_TRANS_USE_RBS, trans_use_rollback_segments);
+  }
   *attr_obj = builder.obj();
 }
 
@@ -67,14 +69,20 @@ void Sdb_session_attrs::save_last_attrs() {
   if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_TIMEOUT_MASK)) {
     last_trans_timeout = trans_timeout;
   }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK)) {
+    last_trans_auto_commit = trans_auto_commit;
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK)) {
+    last_trans_use_rollback_segments = trans_use_rollback_segments;
+  }
 }
 
-Sdb_conn::Sdb_conn(my_thread_id _tid)
+Sdb_conn::Sdb_conn(my_thread_id _tid, bool server_ha_conn)
     : m_transaction_on(false),
       m_thread_id(_tid),
       pushed_autocommit(false),
       m_is_authenticated(false),
-      m_use_transaction(sdb_use_transaction) {
+      m_is_server_ha_conn(server_ha_conn) {
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
   rollback_on_timeout = false;
@@ -184,8 +192,19 @@ int Sdb_conn::connect() {
       session_attrs->set_source(hostname, sdb_proc_id(),
                                 (ulonglong)thread_id());
       session_attrs->set_trans_auto_rollback(false);
-      session_attrs->set_trans_auto_commit(m_use_transaction ? true : false);
-      session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
+      /* Server HA conn:
+         1. use transaction.
+         2. default lock wait timeout, use rbs.
+      */
+      if (m_is_server_ha_conn) {
+        session_attrs->set_trans_auto_commit(true);
+      } else {
+        session_attrs->set_trans_auto_commit(
+            sdb_use_transaction(current_thd) ? true : false);
+        session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
+        session_attrs->set_trans_use_rollback_segments(
+            sdb_use_rollback_segments(current_thd));
+      }
       rc = set_my_session_attr();
       // No such options before sdb v3.2.4. Ignore it.
       if (SDB_INVALIDARG == get_sdb_code(rc)) {
@@ -258,14 +277,16 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
   bson::BSONObjBuilder builder(32);
   Sdb_session_attrs *session_attrs = NULL;
   static bool support_trans_and_timeout_attr = true;
+  bool use_transaction = false;
 
   set_rollback_on_timeout(false);
-
-  if (!m_use_transaction) {
-    goto done;
-  }
-
-  if (ISO_SERIALIZABLE == tx_isolation) {
+  /*
+    Use transactions in the case of:
+    1. Server HA conns always use transaction.
+    2. Normal conns with sequoiadb_use_transaction on.
+  */
+  use_transaction = m_is_server_ha_conn || sdb_use_transaction(current_thd);
+  if (use_transaction && ISO_SERIALIZABLE == tx_isolation) {
     rc = SDB_ERR_NOT_ALLOWED;
     snprintf(errmsg, sizeof(errmsg),
              "SequoiaDB engine not support transaction "
@@ -275,23 +296,68 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
   }
 
   if (support_trans_and_timeout_attr) {
-    /*Set the lock wait timeout when the lock_wait_timeout has changed*/
     session_attrs = get_session_attrs();
-    session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
-    /*Set the trans isolation when the isolation has changed*/
-    tx_iso = convert_to_sdb_isolation(tx_isolation);
-    session_attrs->set_trans_isolation(tx_iso);
-    rc = set_my_session_attr();
-    // No such options before sdb v3.2.4. Ignore it.
-    if (SDB_INVALIDARG == get_sdb_code(rc)) {
-      support_trans_and_timeout_attr = false;
-      rc = SDB_ERR_OK;
+    /*
+      TODO:
+      Temporary solution to set session isolation and other session attrs in
+      two phase because of SEQUOIASQLMAINSTREAM-792.
+      set all the session attrs in one phase after SEQUOIASQLMAINSTREAM-792
+      later.
+    */
+    if (use_transaction) {
+      /*Set the trans isolation when the isolation has changed*/
+      tx_iso = convert_to_sdb_isolation(tx_isolation);
+      session_attrs->set_trans_isolation(tx_iso);
+      rc = set_my_session_attr();
+      // No such options before sdb v3.2.4 Ignore it.
+      if (SDB_INVALIDARG == get_sdb_code(rc)) {
+        support_trans_and_timeout_attr = false;
+        rc = SDB_ERR_OK;
+      }
+
+      if (rc != SDB_OK) {
+        snprintf(errmsg, sizeof(errmsg),
+                 "Failed to set session attributes, rc=%d", rc);
+        goto error;
+      }
     }
 
-    if (rc != SDB_OK) {
-      snprintf(errmsg, sizeof(errmsg),
-               "Failed to set session attributes, rc=%d", rc);
-      goto error;
+    /* conns attrs:
+       1. Normal conns: TransTimeout/TransAutocommit/TransUseRBS,
+                        take effect here.
+       2. Server HA conns: TransAutocommit(true)
+                           TransIsolation(rc)
+                           all other attrs use default value.
+    */
+    if (!m_is_server_ha_conn) {
+      /*Set the lock wait timeout when the sequoiadb_lock_wait_timeout has
+       * changed*/
+      session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
+      if (sdb_use_transaction(current_thd)) {
+        /*Set the trans_auto_commit when the sequoiadb_use_transaction has
+         * changed*/
+        session_attrs->set_trans_auto_commit(true);
+        session_attrs->set_trans_use_rollback_segments(
+            sdb_use_rollback_segments(current_thd));
+      } else {
+        session_attrs->set_trans_auto_commit(false);
+      }
+      rc = set_my_session_attr();
+      // No such options before sdb v3.2.4. Ignore it.
+      if (SDB_INVALIDARG == get_sdb_code(rc)) {
+        support_trans_and_timeout_attr = false;
+        rc = SDB_ERR_OK;
+      }
+
+      if (rc != SDB_OK) {
+        snprintf(errmsg, sizeof(errmsg),
+                 "Failed to set session attributes, rc=%d", rc);
+        goto error;
+      }
+    }
+
+    if (!use_transaction) {
+      goto done;
     }
   }
 
