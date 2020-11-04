@@ -70,13 +70,15 @@ id	b	c
 4	8	5
 150	300	11
 ALTER TABLE `t#P#1` ADD PRIMARY KEY (b);
+ERROR HY000: Sharding key cannot be updated
+CREATE UNIQUE INDEX b ON `t#P#1`(b);
 SHOW CREATE TABLE `t#P#1`;
 Table	Create Table
 t#P#1	CREATE TABLE `t#P#1` (
   `id` int(11) DEFAULT NULL,
-  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED NOT NULL,
+  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED,
   `c` char(16) DEFAULT NULL,
-  PRIMARY KEY (`b`)
+  UNIQUE KEY `b` (`b`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50500 PARTITION BY RANGE  COLUMNS(b)
 (PARTITION p0 VALUES LESS THAN (10) ENGINE = SequoiaDB,
@@ -126,9 +128,9 @@ SHOW CREATE TABLE `t#P#1`;
 Table	Create Table
 t#P#1	CREATE TABLE `t#P#1` (
   `id` int(11) DEFAULT NULL,
-  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED NOT NULL,
+  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED,
   `c` char(16) DEFAULT NULL,
-  PRIMARY KEY (`b`)
+  UNIQUE KEY `b` (`b`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50500 PARTITION BY RANGE  COLUMNS(b)
 (PARTITION p0 VALUES LESS THAN (10) ENGINE = SequoiaDB,
@@ -151,9 +153,9 @@ SHOW CREATE TABLE `t#P#1`;
 Table	Create Table
 t#P#1	CREATE TABLE `t#P#1` (
   `id` int(11) DEFAULT NULL,
-  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED NOT NULL,
+  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED,
   `c` char(16) DEFAULT NULL,
-  PRIMARY KEY (`b`)
+  UNIQUE KEY `b` (`b`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50500 PARTITION BY RANGE  COLUMNS(b)
 (PARTITION p1 VALUES LESS THAN (10) ENGINE = SequoiaDB,
@@ -191,9 +193,9 @@ SHOW CREATE TABLE `t#P#1`;
 Table	Create Table
 t#P#1	CREATE TABLE `t#P#1` (
   `id` int(11) DEFAULT NULL,
-  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED NOT NULL,
+  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED,
   `c` char(16) DEFAULT NULL,
-  PRIMARY KEY (`b`)
+  UNIQUE KEY `b` (`b`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50500 PARTITION BY RANGE  COLUMNS(b)
 (PARTITION p1 VALUES LESS THAN (10) ENGINE = SequoiaDB,
@@ -209,8 +211,8 @@ id	b	c
 500	1000	newC
 1000	2000	newC
 1500	3000	newC
-CREATE TABLE `t#P#1#P#p1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), PRIMARY KEY(b) );
-CREATE TABLE `t#P#1#P#pmix1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), PRIMARY KEY(b) );
+CREATE TABLE `t#P#1#P#p1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), UNIQUE KEY(b) );
+CREATE TABLE `t#P#1#P#pmix1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), UNIQUE KEY(b) );
 INSERT INTO `t#P#1#P#p1`(id,c) VALUES (3000,'19') ;
 SELECT * FROM `t#P#1` ORDER BY id;
 id	b	c

@@ -498,7 +498,7 @@ Note	1051	Unknown table 'test_alter.t2'
 create table t1(a char(255) default null);
 insert into t1 values ('a'),('1'),('c'),(NULL);
 alter table t1 add primary key(a);
-ERROR HY000: Any field of index key should exist and cannot be null
+ERROR 22004: Invalid use of NULL value
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (

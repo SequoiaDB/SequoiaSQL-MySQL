@@ -45,7 +45,10 @@ UPDATE `t#P#1` PARTITION (p1) SET id = 60;
 UPDATE `t#P#1` PARTITION (p2) SET c = 'updatedC' WHERE id > 50 AND id < 100;
 SELECT * FROM `t#P#1` PARTITION (p0,p1) WHERE id >= 0 AND c <= '7' ORDER BY id;
 SELECT * FROM `t#P#1` PARTITION (p0,p2) WHERE NOT id >= 50 OR c <= '7' ORDER BY id;
+#BUG #SEQUOIASQLMAINSTREAM-813, no_trans is equal to sql_mode = '', will trigger internal update null to not null
+--error 40178
 ALTER TABLE `t#P#1` ADD PRIMARY KEY (b);
+CREATE UNIQUE INDEX b ON `t#P#1`(b);
 SHOW CREATE TABLE `t#P#1`;
 SELECT * FROM `t#P#1` PARTITION (p0,p1) WHERE id >= 0 AND c <= '7' ORDER BY id;
 SELECT * FROM `t#P#1` PARTITION (p0,p2) WHERE NOT id >= 50 OR c <= '7' ORDER BY id;
@@ -85,8 +88,8 @@ SELECT * FROM `t#P#1` PARTITION (p1) ORDER BY id;
 SELECT * FROM `t#P#1` PARTITION (pmix1) ORDER BY id;
 # SeqDB-22714
 #SEQUOIASQLMAINSTREAM-761
-CREATE TABLE `t#P#1#P#p1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), PRIMARY KEY(b) );
-CREATE TABLE `t#P#1#P#pmix1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), PRIMARY KEY(b) );
+CREATE TABLE `t#P#1#P#p1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), UNIQUE KEY(b) );
+CREATE TABLE `t#P#1#P#pmix1` ( `id` int(11) DEFAULT NULL, `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED, `c` char(16), UNIQUE KEY(b) );
 # insert a mismatched row
 INSERT INTO `t#P#1#P#p1`(id,c) VALUES (3000,'19') ;    
 SELECT * FROM `t#P#1` ORDER BY id;  

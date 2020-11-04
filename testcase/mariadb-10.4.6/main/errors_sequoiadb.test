@@ -52,8 +52,14 @@ insert into t1 values (NULL, 'text');
 drop table t1;
 create table t1 ( id int ) ;
 insert into t1 values (NULL);
---error 40339
+#BUG #SEQUOIASQLMAINSTREAM-813
+--error 1138
 alter table t1 add primary key(id);
+select * from t1;
+set sql_mode = "";
+alter table t1 add primary key(id);
+select * from t1;
+set sql_mode = default;
 drop table t1,t2;
 
 #BUG #SEQUOIASQLMAINSTREAM-589
@@ -63,7 +69,8 @@ alter table t1 add unique index c(c), algorithm=inplace;
 --error 40177
 alter table t1 add unique index c(c), algorithm=copy;
 insert into t1 values (NULL, 'a');
---error 40339
+#BUG #SEQUOIASQLMAINSTREAM-813
+--error 1138
 alter table t1 add primary key(id), algorithm=inplace;
 --error 1265
 alter table t1 add primary key(id), algorithm=copy;
