@@ -192,10 +192,10 @@ int Sdb_conn::connect() {
                                 (ulonglong)thread_id());
       session_attrs->set_trans_auto_rollback(false);
       session_attrs->set_trans_auto_commit(
-          sdb_use_transaction(current_thd) ? true : false);
+          sdb_use_transaction(current_thd) ? true : false, true);
       session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
       session_attrs->set_trans_use_rollback_segments(
-          sdb_use_rollback_segments(current_thd));
+          sdb_use_rollback_segments(current_thd), true);
       rc = set_my_session_attr();
       // No such options before sdb v3.2.4. Ignore it.
       if (SDB_INVALIDARG == get_sdb_code(rc)) {

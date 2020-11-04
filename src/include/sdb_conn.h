@@ -53,7 +53,7 @@ class Sdb_session_attrs {
 
   void save_last_attrs();
 
-  inline void set_attrs_mask(ulonglong attr_mask) {
+  inline void set_attrs_mask(const ulonglong attr_mask) {
     session_attrs_mask |= attr_mask;
   }
 
@@ -66,18 +66,18 @@ class Sdb_session_attrs {
 
   inline ulonglong get_attrs_mask() { return session_attrs_mask; }
 
-  inline bool test_attrs_mask(ulonglong attr_mask) {
+  inline bool test_attrs_mask(const ulonglong attr_mask) {
     return (session_attrs_mask & attr_mask) ? true : false;
   }
 
-  inline void clear_attrs_mask(ulonglong attr_mask) {
+  inline void clear_attrs_mask(const ulonglong attr_mask) {
     session_attrs_mask &= (~attr_mask);
   }
 
   void attrs_to_obj(bson::BSONObj *attr_obj);
 
   inline void set_source(const char *hostname, const int proc_id,
-                         ulonglong thread_id) {
+                         const ulonglong thread_id) {
     snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
              strlen(hostname) ? ":" : "", hostname, proc_id, thread_id);
     set_attrs_mask(SDB_SESSION_ATTR_SOURCE_MASK);
@@ -100,8 +100,10 @@ class Sdb_session_attrs {
     attr_count++;
   }
 
-  inline void set_trans_auto_commit(const bool auto_commit) {
-    if (last_trans_auto_commit != auto_commit) {
+  inline void set_trans_auto_commit(const bool auto_commit, bool init = false) {
+    /*bool has no invalid value, init = true means always
+      set the trans_auto_commit during the first connecting time.*/
+    if (init || last_trans_auto_commit != auto_commit) {
       trans_auto_commit = auto_commit;
       set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK);
       attr_count++;
@@ -116,8 +118,11 @@ class Sdb_session_attrs {
     }
   }
 
-  inline void set_trans_use_rollback_segments(const bool use_rbs) {
-    if (last_trans_use_rollback_segments != use_rbs) {
+  inline void set_trans_use_rollback_segments(const bool use_rbs,
+                                              bool init = false) {
+    /*bool has no invalid value, init = true means always set the
+      trans_auto_commit during the first connecting time.*/
+    if (init || last_trans_use_rollback_segments != use_rbs) {
       trans_use_rollback_segments = use_rbs;
       set_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK);
       attr_count++;
