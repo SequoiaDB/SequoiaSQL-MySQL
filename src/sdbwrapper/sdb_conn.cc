@@ -197,13 +197,13 @@ int Sdb_conn::connect() {
          2. default lock wait timeout, use rbs.
       */
       if (m_is_server_ha_conn) {
-        session_attrs->set_trans_auto_commit(true);
+        session_attrs->set_trans_auto_commit(true, true);
       } else {
         session_attrs->set_trans_auto_commit(
             sdb_use_transaction(current_thd) ? true : false);
         session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
         session_attrs->set_trans_use_rollback_segments(
-            sdb_use_rollback_segments(current_thd));
+            sdb_use_rollback_segments(current_thd), true);
       }
       rc = set_my_session_attr();
       // No such options before sdb v3.2.4. Ignore it.
@@ -427,10 +427,6 @@ int Sdb_conn::rollback_transaction() {
     pushed_autocommit = false;
   }
   DBUG_RETURN(0);
-}
-
-bool Sdb_conn::is_transaction_on() {
-  return m_transaction_on;
 }
 
 int Sdb_conn::get_cl(char *cs_name, char *cl_name, Sdb_cl &cl) {

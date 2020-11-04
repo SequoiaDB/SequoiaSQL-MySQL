@@ -90,6 +90,9 @@ TYPELIB sdb_error_level_typelib = {array_elements(sdb_error_level_names) - 1,
 static const int SDB_SAMPLE_NUM_MIN = 100;
 static const int SDB_SAMPLE_NUM_MAX = 10000;
 
+mysql_var_update_func sdb_set_lock_wait_timeout = NULL;
+mysql_var_check_func sdb_use_rollback_segments_check = NULL;
+
 static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
                                   void *save, struct st_mysql_value *value) {
   // The buffer size is not important. Because st_mysql_value::val_str
@@ -152,6 +155,22 @@ static int sdb_stats_sample_num_valildate(THD *thd,
   }
 
   return is_valid ? 0 : 1;
+}
+
+static void sdb_lock_wait_timeout_update(THD *thd, struct st_mysql_sys_var *var,
+                                         void *var_ptr, const void *save) {
+  if (sdb_set_lock_wait_timeout) {
+    sdb_set_lock_wait_timeout(thd, var, var_ptr, save);
+  }
+}
+
+static int sdb_use_rbs_validate(THD *thd, struct st_mysql_sys_var *var,
+                                void *save, struct st_mysql_value *value) {
+  int rc = SDB_OK;
+  if (sdb_use_rollback_segments_check) {
+    rc = sdb_use_rollback_segments_check(thd, var, save, value);
+  }
+  return rc;
 }
 
 // Please declare configuration in the format below:
@@ -324,13 +343,14 @@ static MYSQL_THDVAR_INT(lock_wait_timeout, PLUGIN_VAR_OPCMDARG,
                         "Timeout in seconds a SequoiaDB transaction may wait "
                         "for a lock before being rolled back."
                         /*SequoiaDB 事务锁超时时间。*/,
-                        NULL, NULL, SDB_DEFAULT_LOCK_WAIT_TIMEOUT, 0, 3600, 0);
+                        NULL, sdb_lock_wait_timeout_update,
+                        SDB_DEFAULT_LOCK_WAIT_TIMEOUT, 0, 3600, 0);
 
 static MYSQL_THDVAR_BOOL(use_rollback_segments, PLUGIN_VAR_OPCMDARG,
                          "Whether use rollback segements in sequoiadb "
                          "transaction or not. (Default: ON)"
                          /*SequoiaDB 事务中是否使用 RBS。*/,
-                         NULL, NULL, TRUE);
+                         sdb_use_rbs_validate, NULL, TRUE);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),

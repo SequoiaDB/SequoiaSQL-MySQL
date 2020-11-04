@@ -6760,6 +6760,9 @@ static int sdb_init_func(void *p) {
     return 1;
   }
 
+  /*Init the sequoiadb_lock_wait_timeout update func */
+  sdb_init_lock_wait_timeout();
+
   rc = sdb_encrypt_password();
   if (SDB_ERR_OK != rc) {
     SDB_LOG_ERROR("Failed to encrypt password, rc=%d", rc);

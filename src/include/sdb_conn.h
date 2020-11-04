@@ -100,8 +100,10 @@ class Sdb_session_attrs {
     attr_count++;
   }
 
-  inline void set_trans_auto_commit(const bool auto_commit) {
-    if (last_trans_auto_commit != auto_commit) {
+  inline void set_trans_auto_commit(const bool auto_commit, bool init = false) {
+    /*bool has no invalid value, init = true means always
+      set the trans_auto_commit during the first connecting time.*/
+    if (init || last_trans_auto_commit != auto_commit) {
       trans_auto_commit = auto_commit;
       set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_COMMIT_MASK);
       attr_count++;
@@ -116,12 +118,19 @@ class Sdb_session_attrs {
     }
   }
 
-  inline void set_trans_use_rollback_segments(const bool use_rbs) {
-    if (last_trans_use_rollback_segments != use_rbs) {
+  inline void set_trans_use_rollback_segments(const bool use_rbs,
+                                              bool init = false) {
+    /*bool has no invalid value, init = true means always set the
+      trans_auto_commit during the first connecting time.*/
+    if (init || last_trans_use_rollback_segments != use_rbs) {
       trans_use_rollback_segments = use_rbs;
       set_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK);
       attr_count++;
     }
+  }
+
+  inline bool get_last_trans_use_rollback_segments() {
+    return last_trans_use_rollback_segments;
   }
 
  private:
@@ -163,7 +172,7 @@ class Sdb_conn {
 
   int rollback_transaction();
 
-  bool is_transaction_on();
+  inline bool is_transaction_on() { return m_transaction_on; }
 
   int get_cl(char *cs_name, char *cl_name, Sdb_cl &cl);
 
