@@ -41,7 +41,8 @@ eval $insert_first_half;
 # 1030: ER_GET_ERRNO
 # 1502: ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF
 # 1506: ER_DROP_PARTITION_NON_EXISTENT
-# 40177: SEQUOIADB, UNIQUE_KEY_NEED_ALL_FIELDS
+# 40177: SEQUOIADB, ER_SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY 
+# 40178: SEQUOIADB, ER_SDB_UPDATE_SHARD_KEY   --- FOR #SEQUOIASQLMAINSTREAM-813
 --disable_abort_on_error
 eval $alter;
 --enable_abort_on_error
@@ -54,7 +55,9 @@ let $run_test= `SELECT @my_errno = 0`;
 #if (`SELECT @my_errno NOT IN (0,$ER_GET_ERRNO,
 #                              $ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF,
 #                              $ER_DROP_PARTITION_NON_EXISTENT)`);
-if (`SELECT @my_errno NOT IN (0, 40177, $ER_GET_ERRNO,
+if (`SELECT @my_errno NOT IN (0, $ER_GET_ERRNO,
+                              $ER_SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY,
+                              $ER_SDB_UPDATE_SHARD_KEY,
                               $ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF,
                               $ER_DROP_PARTITION_NON_EXISTENT)`);
 {

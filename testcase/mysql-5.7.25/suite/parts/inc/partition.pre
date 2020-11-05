@@ -71,6 +71,8 @@ let $ER_NO_PARTS_ERROR=                   1504;
 let $ER_DROP_PARTITION_NON_EXISTENT=      1507;
 let $ER_SAME_NAME_PARTITION=              1517;
 let $ER_NO_PARTITION_FOR_GIVEN_VALUE=     1526;
+let $ER_SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY=  40177;
+let $ER_SDB_UPDATE_SHARD_KEY=             40178;
 
 # Set the variable $engine_other to a storage engine <> $engine
 --disable_query_log
