@@ -185,7 +185,7 @@ CREATE TABLE t2 ( a INT KEY, CHECK ( a > 10 ) );
 CREATE TABLE t3 ( a INT NOT NULL DEFAULT 1000 );
 CREATE TABLE t4 ( a VARCHAR(255) COLLATE utf8_bin); 
 CREATE TABLE t5 ( a VARCHAR(255) COLUMN_FORMAT DYNAMIC STORAGE MEMORY);
-CREATE TABLE t6 ( a INT COMMENT 'column comment' );
+CREATE TABLE t6 ( a INT ZEROFILL COMMENT 'column comment' );
 CREATE TABLE t7 ( a INT ) COMMENT "string";
 CREATE TABLE t8 ( a INT ) COMMENT = 'sequoiadb:{"table_options":{"ShardingKey":{"a":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1,"AutoIndexId":false,"EnsureShardingIndex":false,"StrictDataMode":true,"Partition":512}}';
 # check metadatas after create
@@ -350,6 +350,7 @@ SHOW CREATE TABLE t12;
 # test:
 # create table select
 # create table like
+# truncate table
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT );
 INSERT INTO t1 VALUES ( 1, 1, 1 );
@@ -360,6 +361,9 @@ CREATE TABLE t3 ( a INT ) REPLACE SELECT a FROM t1;
 CREATE TABLE t4 ( a INT );
 CREATE TABLE t5 LIKE t4;
 CREATE TABLE t6 ( LIKE t4 );
+INSERT INTO t6 VALUES (1),(2),(3);
+SELECT * FROM t6 ORDER BY a;
+TRUNCATE TABLE t6;
 # check metadatas after create
 connection conn2;
 --sleep $sleep
@@ -371,6 +375,7 @@ SHOW CREATE TABLE t5;
 SHOW CREATE TABLE t6;
 SELECT * FROM t2 ORDER BY a;
 SELECT * FROM t3 ORDER BY a;
+SELECT * FROM t6 ORDER BY a;
 # clear tables
 connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6;

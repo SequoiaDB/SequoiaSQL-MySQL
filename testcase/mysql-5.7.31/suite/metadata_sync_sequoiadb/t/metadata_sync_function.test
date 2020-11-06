@@ -83,10 +83,11 @@ connection conn1;
 --sleep $sleep
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 SHOW CREATE FUNCTION sp_chistics;
-# drop function 
-DROP FUNCTION sp_definer;
+# drop function
+DROP FUNCTION IF EXISTS sp_definer;
 DROP FUNCTION sp_chistics;
 DROP FUNCTION sp_case;
+DROP FUNCTION IF EXISTS sp_case;
 # check metadatas after drop
 connection conn2;
 --sleep $sleep

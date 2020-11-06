@@ -226,8 +226,8 @@ connection conn2;
 --sleep $sleep
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 SHOW CREATE PROCEDURE sp_param_inout;
-# drop procedure 
-DROP PROCEDURE sp_param_inout;
+# drop procedure
+DROP PROCEDURE IF EXISTS sp_param_inout;
 DROP PROCEDURE sp_chistics;
 DROP PROCEDURE sp_repeat;
 DROP PROCEDURE sp_case;
@@ -235,6 +235,7 @@ DROP PROCEDURE sp_cursor;
 DROP PROCEDURE sp_prepare_stmt;
 DROP PROCEDURE sp_definer;
 DROP PROCEDURE sp_large170k;
+DROP PROCEDURE IF EXISTS sp_large170k; 
 # check metadatas after drop
 connection conn1;
 --sleep $sleep

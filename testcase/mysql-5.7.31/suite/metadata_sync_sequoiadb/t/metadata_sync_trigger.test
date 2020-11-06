@@ -52,7 +52,7 @@ SHOW CREATE TRIGGER ins_num;
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 SHOW CREATE TRIGGER metaSync_delimiter_trigger;
 # drop trigger
-DROP TRIGGER ins_num;
+DROP TRIGGER IF EXISTS ins_num;
 DROP TRIGGER metaSync_delimiter_trigger;
 # check metadatas after drop
 connection conn1;

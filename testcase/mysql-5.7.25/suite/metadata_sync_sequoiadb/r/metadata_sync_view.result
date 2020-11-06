@@ -34,6 +34,9 @@ SHOW CREATE VIEW v1;
 View	Create View	character_set_client	collation_connection
 v1	CREATE ALGORITHM=MERGE DEFINER=`root`@`%` SQL SECURITY INVOKER VIEW `v1` AS select `LOCAL`.`a` AS `a`,`LOCAL`.`b` AS `b`,`LOCAL`.`c` AS `c` from `t1` `LOCAL`	latin1	latin1_swedish_ci
 DROP VIEW v1,v2,v3;
+DROP VIEW IF EXISTS v4;
+Warnings:
+Note	1051	Unknown table 'metaSync_view.v4'
 SHOW CREATE VIEW v1;
 ERROR 42S02: Table 'metaSync_view.v1' doesn't exist
 SHOW CREATE VIEW v2;

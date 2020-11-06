@@ -4,6 +4,7 @@ DROP DATABASE IF EXISTS metaSync_cs3;
 DROP DATABASE IF EXISTS metaSync_cs4;
 DROP DATABASE IF EXISTS metaSync_cs5;
 DROP DATABASE IF EXISTS metaSync_cs6;
+DROP SCHEMA IF EXISTS metaSync_schem1;
 SET sql_mode='ANSI_QUOTES';
 SET character_set_client = utf8;
 SET character_set_connection = utf8;
@@ -22,6 +23,8 @@ SHOW CREATE DATABASE metaSync_cs5;
 ERROR 42000: Unknown database 'metaSync_cs5'
 SHOW CREATE DATABASE metaSync_cs6;
 ERROR 42000: Unknown database 'metaSync_cs6'
+SHOW CREATE SCHEMA metaSync_schem1;
+ERROR 42000: Unknown database 'metaSync_schem1'
 SET sql_mode='ANSI_QUOTES';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
@@ -37,6 +40,7 @@ Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' 
 CREATE DATABASE metaSync_cs1;
 CREATE DATABASE metaSync_cs2 CHARACTER SET utf8 COLLATE utf8_general_ci;
 CREATE DATABASE IF NOT EXISTS metaSync_cs3 default CHARACTER SET = gb18030 default COLLATE = gb18030_chinese_ci;
+CREATE SCHEMA metaSync_schem1 DEFAULT CHARACTER SET = big5 DEFAULT COLLATE = big5_chinese_ci;
 CREATE DATABASE metaSync_cs4;
 CREATE DATABASE metaSync_cs5;
 USE metaSync_cs4;
@@ -67,6 +71,9 @@ ERROR 42000: Unknown database 'metaSync_cs5'
 SHOW CREATE DATABASE metaSync_cs6;
 Database	Create Database
 metaSync_cs6	CREATE DATABASE `metaSync_cs6` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin */
+SHOW CREATE SCHEMA metaSync_schem1;
+Database	Create Database
+metaSync_schem1	CREATE DATABASE `metaSync_schem1` /*!40100 DEFAULT CHARACTER SET big5 */
 SET sql_mode='ANSI_QUOTES';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
@@ -81,16 +88,24 @@ Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 ALTER DATABASE metaSync_cs2 CHARACTER SET ucs2 COLLATE ucs2_general_ci;
 ALTER DATABASE metaSync_cs3 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
+ALTER SCHEMA metaSync_schem1 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
 SHOW CREATE DATABASE metaSync_cs2;
 Database	Create Database
 metaSync_cs2	CREATE DATABASE `metaSync_cs2` /*!40100 DEFAULT CHARACTER SET ucs2 */
 SHOW CREATE DATABASE metaSync_cs3;
 Database	Create Database
 metaSync_cs3	CREATE DATABASE `metaSync_cs3` /*!40100 DEFAULT CHARACTER SET ucs2 */
-DROP DATABASE metaSync_cs1;
+SHOW CREATE SCHEMA metaSync_schem1;
+Database	Create Database
+metaSync_schem1	CREATE DATABASE `metaSync_schem1` /*!40100 DEFAULT CHARACTER SET ucs2 */
+DROP DATABASE IF EXISTS metaSync_cs1;
 DROP DATABASE metaSync_cs2;
 DROP DATABASE metaSync_cs3;
 DROP DATABASE metaSync_cs6;
+DROP SCHEMA metaSync_schem1;
+DROP SCHEMA IF EXISTS metaSync_schem1;
+Warnings:
+Note	1008	Can't drop database 'metaSync_schem1'; database doesn't exist
 SET sql_mode='ANSI_QUOTES';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
@@ -111,6 +126,8 @@ SHOW CREATE DATABASE metaSync_cs5;
 ERROR 42000: Unknown database 'metaSync_cs5'
 SHOW CREATE DATABASE metaSync_cs6;
 ERROR 42000: Unknown database 'metaSync_cs6'
+SHOW CREATE SCHEMA metaSync_schem1;
+ERROR 42000: Unknown database 'metaSync_schem1'
 SET sql_mode='ANSI_QUOTES';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.

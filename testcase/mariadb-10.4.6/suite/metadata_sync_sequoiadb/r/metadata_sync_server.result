@@ -1,0 +1,34 @@
+connection conn1;
+DROP SERVER IF EXISTS metaSync_s1;
+DROP SERVER IF EXISTS metaSync_s2;
+connection conn2;
+SELECT * FROM mysql.servers;
+Server_name	Host	Db	Username	Password	Port	Socket	Wrapper	Owner
+connection conn1;
+CREATE SERVER metaSync_s1 
+FOREIGN DATA WRAPPER mysql 
+OPTIONS ( USER 'Remote', HOST '127.0.0.1', DATABASE 'test', SOCKET '/tmp/mysqld.sock', OWNER 'root', PORT 3308 );
+CREATE SERVER IF NOT EXISTS metaSync_s2
+FOREIGN DATA WRAPPER ssql
+OPTIONS ( USER 'Official', HOST '127.0.0.2' );
+CREATE OR REPLACE SERVER metaSync_s2
+FOREIGN DATA WRAPPER ssql
+OPTIONS ( USER 'Official', HOST '127.0.0.3', PORT 3309 );
+connection conn2;
+SELECT * FROM mysql.servers;
+Server_name	Host	Db	Username	Password	Port	Socket	Wrapper	Owner
+metaSync_s1	127.0.0.1	test	Remote		3308	/tmp/mysqld.sock	mysql	root
+metaSync_s2	127.0.0.3		Official		3309		ssql	
+ALTER SERVER metaSync_s1 OPTIONS (USER 'Origin', SOCKET '/root/mysqld.sock');
+connection conn1;
+SELECT * FROM mysql.servers;
+Server_name	Host	Db	Username	Password	Port	Socket	Wrapper	Owner
+metaSync_s1	127.0.0.1	test	Origin		3308	/root/mysqld.sock	mysql	root
+metaSync_s2	127.0.0.3		Official		3309		ssql	
+DROP SERVER metaSync_s1;
+DROP SERVER IF EXISTS metaSync_s2;
+connection conn2;
+SELECT * FROM mysql.servers;
+Server_name	Host	Db	Username	Password	Port	Socket	Wrapper	Owner
+disconnect conn1;
+disconnect conn2;

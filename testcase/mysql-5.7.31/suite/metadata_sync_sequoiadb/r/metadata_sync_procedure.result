@@ -4051,7 +4051,7 @@ DROP TABLE IF EXISTS t0;
 CREATE TABLE t0 SELECT @p_inout;
 SELECT * FROM t0;
 END	latin1	latin1_swedish_ci	utf8mb4_bin
-DROP PROCEDURE sp_param_inout;
+DROP PROCEDURE IF EXISTS sp_param_inout;
 DROP PROCEDURE sp_chistics;
 DROP PROCEDURE sp_repeat;
 DROP PROCEDURE sp_case;
@@ -4059,6 +4059,9 @@ DROP PROCEDURE sp_cursor;
 DROP PROCEDURE sp_prepare_stmt;
 DROP PROCEDURE sp_definer;
 DROP PROCEDURE sp_large170k;
+DROP PROCEDURE IF EXISTS sp_large170k;
+Warnings:
+Note	1305	PROCEDURE metaSync_procedure.sp_large170k does not exist
 SHOW CREATE PROCEDURE sp_param_inout;
 ERROR 42000: PROCEDURE sp_param_inout does not exist
 SHOW CREATE PROCEDURE sp_chistics;

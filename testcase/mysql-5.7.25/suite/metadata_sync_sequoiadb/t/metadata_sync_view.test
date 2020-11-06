@@ -46,6 +46,7 @@ connection conn1;
 SHOW CREATE VIEW v1;
 # drop view
 DROP VIEW v1,v2,v3;
+DROP VIEW IF EXISTS v4;
 # check metadatas after drop
 connection conn2;
 --sleep $sleep

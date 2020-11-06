@@ -254,7 +254,7 @@ CREATE TABLE t2 ( a INT KEY, CHECK ( a > 10 ) );
 CREATE TABLE t3 ( a INT NOT NULL DEFAULT 1000 );
 CREATE TABLE t4 ( a VARCHAR(255) COLLATE utf8_bin);
 CREATE TABLE t5 ( a VARCHAR(255) COLUMN_FORMAT DYNAMIC STORAGE MEMORY);
-CREATE TABLE t6 ( a INT COMMENT 'column comment' );
+CREATE TABLE t6 ( a INT ZEROFILL COMMENT 'column comment' );
 CREATE TABLE t7 ( a INT ) COMMENT "string";
 CREATE TABLE t8 ( a INT ) COMMENT = 'sequoiadb:{"table_options":{"ShardingKey":{"a":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1,"AutoIndexId":false,"EnsureShardingIndex":false,"StrictDataMode":true,"Partition":512}}';
 SHOW CREATE TABLE t1;
@@ -286,7 +286,7 @@ t5	CREATE TABLE `t5` (
 SHOW CREATE TABLE t6;
 Table	Create Table
 t6	CREATE TABLE `t6` (
-  `a` int(11) DEFAULT NULL COMMENT 'column comment'
+  `a` int(10) unsigned zerofill DEFAULT NULL COMMENT 'column comment'
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t7;
 Table	Create Table
@@ -501,6 +501,13 @@ CREATE TABLE t3 ( a INT ) REPLACE SELECT a FROM t1;
 CREATE TABLE t4 ( a INT );
 CREATE TABLE t5 LIKE t4;
 CREATE TABLE t6 ( LIKE t4 );
+INSERT INTO t6 VALUES (1),(2),(3);
+SELECT * FROM t6 ORDER BY a;
+a
+1
+2
+3
+TRUNCATE TABLE t6;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -543,6 +550,8 @@ a
 1
 2
 3
+SELECT * FROM t6 ORDER BY a;
+a
 DROP TABLE t1,t2,t3,t4,t5,t6;
 SHOW CREATE TABLE t1;
 ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist

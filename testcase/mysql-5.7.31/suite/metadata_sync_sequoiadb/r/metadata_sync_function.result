@@ -89,9 +89,12 @@ DECLARE x INT(11);
 SET x = -1;
 RETURN x;
 END	latin1	latin1_swedish_ci	utf8mb4_bin
-DROP FUNCTION sp_definer;
+DROP FUNCTION IF EXISTS sp_definer;
 DROP FUNCTION sp_chistics;
 DROP FUNCTION sp_case;
+DROP FUNCTION IF EXISTS sp_case;
+Warnings:
+Note	1305	FUNCTION metaSync_function.sp_case does not exist
 SHOW CREATE FUNCTION sp_definer;
 ERROR 42000: FUNCTION sp_definer does not exist
 SHOW CREATE FUNCTION sp_chistics;

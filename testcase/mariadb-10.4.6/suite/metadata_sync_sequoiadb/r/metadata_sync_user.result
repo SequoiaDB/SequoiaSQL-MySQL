@@ -1,0 +1,78 @@
+connection conn1;
+DROP USER IF EXISTS "metaSync_user1"@"localhost";
+DROP USER IF EXISTS "metaSync_user2"@"localhost";
+DROP USER IF EXISTS "metaSync_user3"@"localhost";
+DROP USER IF EXISTS "metaSync_user1_new"@"localhost";
+DROP USER IF EXISTS "metaSync_user2_new"@"localhost";
+FLUSH PRIVILEGES;
+connection conn2;
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1';
+User	Host	password_expired
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2';
+User	Host	password_expired
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user3';
+User	Host	password_expired
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1_new';
+User	Host	password_expired
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2_new';
+User	Host	password_expired
+connection conn1;
+CREATE USER 'metaSync_user1'@'localhost', 'metaSync_user2'@'localhost' IDENTIFIED BY '123' REQUIRE X509 WITH MAX_STATEMENT_TIME 60 PASSWORD EXPIRE INTERVAL 180 DAY;
+CREATE OR REPLACE USER 'metaSync_user2'@'localhost' REQUIRE NONE PASSWORD EXPIRE NEVER;
+CREATE USER IF NOT EXISTS 'metaSync_user3'@'localhost' IDENTIFIED BY '123' ACCOUNT LOCK;
+GRANT INSERT, DELETE, UPDATE ON *.*  TO 'metaSync_user1'@'localhost' IDENTIFIED BY '123';
+FLUSH PRIVILEGES;
+connection conn2;
+SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
+User	Host	password_expired	ssl_type	plugin
+metaSync_user1	localhost	N	X509	mysql_native_password
+SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
+User	Host	password_expired	ssl_type	plugin
+metaSync_user2	localhost	N		mysql_native_password
+SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user3';
+User	Host	password_expired	ssl_type	plugin
+metaSync_user3	localhost	N		mysql_native_password
+SHOW GRANTS FOR 'metaSync_user1'@'localhost';
+Grants for metaSync_user1@localhost
+GRANT INSERT, UPDATE, DELETE ON *.* TO 'metaSync_user1'@'localhost' IDENTIFIED BY PASSWORD '*23AE809DDACAF96AF0FD78ED04B6A265E05AA257' REQUIRE X509 WITH MAX_STATEMENT_TIME 60.000000
+SHOW GRANTS FOR 'metaSync_user2'@'localhost';
+Grants for metaSync_user2@localhost
+GRANT USAGE ON *.* TO 'metaSync_user2'@'localhost'
+SHOW GRANTS FOR 'metaSync_user3'@'localhost';
+Grants for metaSync_user3@localhost
+GRANT USAGE ON *.* TO 'metaSync_user3'@'localhost' IDENTIFIED BY PASSWORD '*23AE809DDACAF96AF0FD78ED04B6A265E05AA257'
+RENAME USER 'metaSync_user1'@'localhost' TO 'metaSync_user1_new'@'localhost', 'metaSync_user2'@'localhost' TO 'metaSync_user2_new'@'localhost';
+ALTER USER 'metaSync_user1_new'@'localhost' IDENTIFIED BY '000' REQUIRE SSL WITH MAX_CONNECTIONS_PER_HOUR 1 PASSWORD EXPIRE NEVER;
+ALTER USER 'metaSync_user3'@'localhost' ACCOUNT UNLOCK;
+REVOKE DELETE ON *.* FROM 'metaSync_user1_new'@'localhost';
+FLUSH PRIVILEGES;
+connection conn1;
+SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
+User	Host	password_expired	ssl_type	plugin
+SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
+User	Host	password_expired	ssl_type	plugin
+SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user3';
+User	Host	password_expired	ssl_type	plugin
+metaSync_user3	localhost	N		mysql_native_password
+SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1_new';
+User	Host	password_expired	ssl_type	plugin
+metaSync_user1_new	localhost	N	ANY	mysql_native_password
+SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2_new';
+User	Host	password_expired	ssl_type	plugin
+metaSync_user2_new	localhost	N		mysql_native_password
+SHOW GRANTS FOR 'metaSync_user1_new'@'localhost';
+Grants for metaSync_user1_new@localhost
+GRANT INSERT, UPDATE ON *.* TO 'metaSync_user1_new'@'localhost' IDENTIFIED BY PASSWORD '*B66FEB4CF5216D971C066EB920EC03B27A5A3F40' REQUIRE SSL WITH MAX_CONNECTIONS_PER_HOUR 1 MAX_STATEMENT_TIME 60.000000
+DROP USER IF EXISTS 'metaSync_user1_new'@'localhost';
+DROP USER 'metaSync_user2_new'@'localhost';
+DROP USER 'metaSync_user3'@'localhost';
+FLUSH PRIVILEGES;
+connection conn2;
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1_new';
+User	Host	password_expired
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2_new';
+User	Host	password_expired
+SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user3';
+User	Host	password_expired
+disconnect conn1;
+disconnect conn2;

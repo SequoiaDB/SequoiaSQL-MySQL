@@ -289,7 +289,7 @@ SHOW CREATE TABLE t9;
 # union
 connection conn1;
 CREATE TABLE t1 ( a VARCHAR(255) ) DATA DIRECTORY = "/opt/sequoiasql/mysql/";
-CREATE TABLE t2 ( a VARCHAR(255) ) DELAY_KEY_WRITE 1 ENCRYPTION "Y";
+CREATE TABLE t2 ( a VARCHAR(255) ) DELAY_KEY_WRITE 1 ENCRYPTION "N";
 CREATE TABLE t3 ( a VARCHAR(255) ) INSERT_METHOD first;
 CREATE TABLE t4 ( a VARCHAR(255) ) KEY_BLOCK_SIZE = 1024;
 CREATE TABLE t5 ( a VARCHAR(255) ) MAX_ROWS 1024 MIN_ROWS = 1;
@@ -350,6 +350,7 @@ SHOW CREATE TABLE t12;
 # test:
 # create table select
 # create table like
+# truncate table
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT );
 INSERT INTO t1 VALUES ( 1, 1, 1 );
@@ -360,6 +361,9 @@ CREATE TABLE t3 ( a INT ) REPLACE SELECT a FROM t1;
 CREATE TABLE t4 ( a INT );
 CREATE TABLE t5 LIKE t4;
 CREATE TABLE t6 ( LIKE t4 );
+INSERT INTO t6 VALUES (1), (2), (3);
+SELECT * FROM t6 ORDER BY a;
+TRUNCATE TABLE t6;
 # check metadatas after create
 connection conn2;
 --sleep $sleep
@@ -371,6 +375,7 @@ SHOW CREATE TABLE t5;
 SHOW CREATE TABLE t6;
 SELECT * FROM t2 ORDER BY a;
 SELECT * FROM t3 ORDER BY a;
+SELECT * FROM t6 ORDER BY a;
 # clear tables
 connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6;

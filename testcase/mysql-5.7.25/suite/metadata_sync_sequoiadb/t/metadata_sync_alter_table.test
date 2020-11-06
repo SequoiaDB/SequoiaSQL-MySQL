@@ -130,6 +130,7 @@ ALTER TABLE t3 DROP PRIMARY KEY;
 ALTER TABLE t4 ADD UNIQUE KEY a(b,a);
 ALTER TABLE t5 DROP INDEX a;
 ALTER TABLE t6 ADD INDEX(a,c,b);
+ALTER TABLE t6 RENAME INDEX a TO a_new, ALGORITHM = COPY;
 # check metadatas after alter 
 connection conn2;
 --sleep $sleep
@@ -291,10 +292,10 @@ SHOW CREATE TABLE t14;
 # seqDB-18959
 # test rename table
 connection conn1;
-CREATE TABLE t1 ( a int, b int, c int );
-CREATE TABLE t2 ( a int, b int, c int );
-CREATE TABLE t11 ( a int, b int, c int );
-CREATE TABLE t12 ( a int, b int, c int );
+CREATE TABLE t1 ( a INT, b INT, c INT );
+CREATE TABLE t2 ( a INT, b INT, c INT );
+CREATE TABLE t11 ( a INT, b INT, c INT );
+CREATE TABLE t12 ( a INT, b INT, c INT );
 # SEQUOIASQLMAINSTREAM-337
 ALTER TABLE t1 RENAME t3, MIN_ROWS 10 MAX_ROWS 100;
 RENAME TABLE t3 TO t1, t2 TO t4;
@@ -316,6 +317,57 @@ SHOW CREATE TABLE t11;
 SHOW CREATE TABLE t12;
 SHOW CREATE TABLE t13;
 SHOW CREATE TABLE t14;
+connection conn1;
+# clear tables
+DROP TABLE t1,t4,t13,t14;
+# check tables cleared
+connection conn2;
+--sleep $sleep
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t1;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t4;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t13;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t14;
+
+# test alter partiton
+connection conn1;
+CREATE TABLE t1 ( id INT NOT NULL, a INT, PRIMARY KEY( id ) );
+CREATE TABLE t2 ( id INT )
+PARTITION BY RANGE ( id )
+(PARTITION p0 VALUES LESS THAN (0),
+ PARTITION p1 VALUES LESS THAN (1) );
+# convert to partition table
+ALTER TABLE t1 PARTITION BY RANGE ( id )
+SUBPARTITION BY HASH ( id )
+(PARTITION p0 VALUES LESS THAN (0) ( SUBPARTITION sp0 ),
+ PARTITION p1 VALUES LESS THAN (1) ( SUBPARTITION sp1 ),
+ PARTITION p2 VALUES LESS THAN (2) ( SUBPARTITION sp2 ) );
+# add partition
+ALTER TABLE t1 ADD PARTITION ( PARTITION p3 VALUES LESS THAN (3) ( SUBPARTITION sp3 ) );
+# reorganize partition
+ALTER TABLE t1 REORGANIZE PARTITION p0,p1 INTO ( PARTITION p1 VALUES LESS THAN (1) );
+# drop partition
+ALTER TABLE t1 DROP PARTITION p2;
+# convert to non-partition table
+ALTER TABLE t2 REMOVE PARTITIONING;
+# check metadatas after alter
+connection conn2;
+--sleep $sleep
+SHOW CREATE TABLE t1;
+SHOW CREATE TABLE t2;
+# clear tables
+connection conn1;
+DROP TABLE t1,t2;
+# check tables cleared
+connection conn2;
+--sleep $sleep
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t1;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t2;
 
 # clear databases in the ending
 connection conn1;

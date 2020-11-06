@@ -1,0 +1,70 @@
+connection conn1;
+DROP DATABASE IF EXISTS metaSync_mix_seq_table;
+connection conn2;
+SHOW CREATE DATABASE metaSync_mix_seq_table;
+ERROR 42000: Unknown database 'metaSync_mix_seq_table'
+connection conn1;
+CREATE DATABASE metaSync_mix_seq_table;
+USE metaSync_mix_seq_table;
+CREATE SEQUENCE IF NOT EXISTS seq1 ENGINE InnoDB MAX_ROWS 10 MIN_ROWS 1 ROW_FORMAT = REDUNDANT SEQUENCE = 1 COMMENT 'create sequence';
+CREATE TABLE t1 ( id INT PRIMARY KEY ) ENGINE InnoDB;
+INSERT INTO t1 VALUES ( NEXTVAL( seq1 ) );
+INSERT INTO t1 VALUES ( NEXTVAL( seq1 ) );
+connection conn2;
+USE metaSync_mix_seq_table;
+SHOW CREATE TABLE seq1;
+Table	Create Table
+seq1	CREATE TABLE `seq1` (
+  `next_not_cached_value` bigint(21) NOT NULL,
+  `minimum_value` bigint(21) NOT NULL,
+  `maximum_value` bigint(21) NOT NULL,
+  `start_value` bigint(21) NOT NULL COMMENT 'start value when sequences is created or value if RESTART is used',
+  `increment` bigint(21) NOT NULL COMMENT 'increment value',
+  `cache_size` bigint(21) unsigned NOT NULL,
+  `cycle_option` tinyint(1) unsigned NOT NULL COMMENT '0 if no cycles are allowed, 1 if the sequence should begin a new cycle when maximum_value is passed',
+  `cycle_count` bigint(21) NOT NULL COMMENT 'How many cycles have been done'
+) ENGINE=InnoDB MIN_ROWS=1 MAX_ROWS=10 ROW_FORMAT=REDUNDANT SEQUENCE=1 COMMENT='create sequence'
+SELECT * FROM seq1;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+1001	1	9223372036854775806	1	1	1000	0	0
+SELECT * FROM t1 ORDER BY id;
+id
+1
+2
+SELECT PREVIOUS VALUE FOR seq1;
+PREVIOUS VALUE FOR seq1
+NULL
+SELECT NEXT VALUE FOR seq1;
+NEXT VALUE FOR seq1
+3
+ALTER SEQUENCE seq1 START = 15 RESTART MINVALUE = 10 MAXVALUE = 20 CYCLE;
+ALTER TABLE t1 CHANGE id id1 BIGINT;
+INSERT INTO t1 VALUES ( NEXTVAL( seq1 ));
+INSERT INTO t1 VALUES ( NEXTVAL( seq1 ));
+connection conn1;
+SELECT * FROM seq1;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+21	10	20	15	1	1000	1	0
+SELECT * FROM t1 ORDER BY id1;
+id1
+1
+2
+15
+16
+SELECT NEXT VALUE FOR seq1;
+NEXT VALUE FOR seq1
+17
+DROP SEQUENCE /* drop sequence */ seq1;
+DROP TABLE t1;
+connection conn2;
+SHOW CREATE TABLE seq1;
+ERROR 42S02: Table 'metaSync_mix_seq_table.seq1' doesn't exist
+SHOW CREATE TABLE t1;
+ERROR 42S02: Table 'metaSync_mix_seq_table.t1' doesn't exist
+connection conn1;
+DROP DATABASE metaSync_mix_seq_table;
+connection conn2;
+SHOW CREATE DATABASE metaSync_mix_seq_table;
+ERROR 42000: Unknown database 'metaSync_mix_seq_table'
+disconnect conn1;
+disconnect conn2;

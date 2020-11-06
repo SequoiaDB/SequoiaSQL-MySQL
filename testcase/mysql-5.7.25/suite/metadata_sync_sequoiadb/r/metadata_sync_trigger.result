@@ -40,7 +40,7 @@ SET loc_err := CONCAT( "Too big change for aid = ", NEW.acct_num );
 SET @update_failed:= IF( @update_failed, CONCAT( @a, ":", loc_err ), loc_err );
 END IF; 
 END	latin1	latin1_swedish_ci	utf8mb4_bin	x
-DROP TRIGGER ins_num;
+DROP TRIGGER IF EXISTS ins_num;
 DROP TRIGGER metaSync_delimiter_trigger;
 SHOW CREATE TRIGGER ins_num;
 ERROR HY000: Trigger does not exist
