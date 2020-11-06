@@ -205,8 +205,7 @@ class OptionsMgr:
             cmake_arguments.append('-DCMAKE_BUILD_TYPE=Debug')
 
         if self.args.compileflags:
-            cmake_arguments.append('-DCMAKE_CXX_FLAGS={}'
-                                   .format(self.args.compileflags))
+            cmake_arguments.append(self.args.compileflags)
 
         if self.args.excludetest:
             cmake_arguments.append('-DPACK_TEST=OFF')
