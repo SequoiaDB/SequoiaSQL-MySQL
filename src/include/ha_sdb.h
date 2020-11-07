@@ -503,6 +503,8 @@ class ha_sdb : public handler {
 
   bool is_inc_rule_supported();
 
+  int get_sdb_version(int &major, int &minor, int &fix);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;

@@ -139,6 +139,13 @@
 #define SDB_FIELD_TOTAL_DATA_FREE_SPACE "TotalDataFreeSpace"
 #define SDB_FIELD_TOTAL_RECORDS "TotalRecords"
 
+#define SDB_FIELD_GLOBAL "Global"
+#define SDB_FIELD_VERSION "Version"
+#define SDB_FIELD_RAWDATA "RawData"
+#define SDB_FIELD_MAJOR "Major"
+#define SDB_FIELD_MINOR "Minor"
+#define SDB_FIELD_FIX "Fix"
+
 #define SDB_DEFAULT_FILL_MESSAGE ""
 
 const static bson::BSONObj SDB_EMPTY_BSON;

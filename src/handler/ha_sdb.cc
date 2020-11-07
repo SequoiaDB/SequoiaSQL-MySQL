@@ -2110,52 +2110,45 @@ done:
   return rc;
 }
 
+// SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
 bool ha_sdb::is_field_rule_supported() {
-  /*
-    SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
-    Lucky that sdbCollection::getDetail() is new API in the version, too.
-    We can use getDetail() to ensure the version.
-  */
   static bool has_cached = false;
   static bool cached_result = true;
 
   bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
   int rc = 0;
-  Sdb_conn *conn = NULL;
-  Sdb_cl collection;
-  sdbclient::sdbCursor cursor;
 
   if (has_cached) {
     supported = cached_result;
     goto done;
   }
 
-  rc = check_sdb_in_thd(ha_thd(), &conn, true);
-  if (rc != 0) {
-    goto error;
-  }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
-
-  rc = conn->get_cl(db_name, table_name, collection);
+  rc = get_sdb_version(major, minor, fix);
   if (rc != 0) {
     goto error;
   }
 
-  rc = collection.get_detail(cursor);
-  if (0 == rc) {
-    has_cached = true;
-    supported = cached_result = true;
-    cursor.close();
-    goto done;
+  do {
+    if (major < 3) {
+      break;
+    }
+    if (3 == major && minor < 2) {
+      break;
+    }
+    if (3 == major && 2 == minor && fix < 5) {
+      break;
+    }
+    if (3 == major && 4 == minor && fix < 1) {
+      break;
+    }
+    supported = true;
+  } while (0);
 
-  } else if (SDB_INVALIDARG == get_sdb_code(rc)) {
-    has_cached = true;
-    supported = cached_result = false;
-    goto done;
-
-  } else {
-    goto error;
-  }
+  has_cached = true;
+  cached_result = supported;
 
 done:
   return supported;
@@ -2164,37 +2157,40 @@ error:
   goto done;
 }
 
+// SequoiaDB doesn't support "$inc" with options(Min, Max...) before v3.2.4
 bool ha_sdb::is_inc_rule_supported() {
-  /*
-    SequoiaDB doesn't support "$inc" with options(Min, Max...) before v3.2.4
-    Lucky that session attribute "Source" is new in the version, too.
-    We can use the "Source" attribute to ensure the version.
-  */
   static bool has_cached = false;
   static bool cached_result = true;
 
   bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
   int rc = 0;
-  Sdb_conn *conn = NULL;
-  bson::BSONObj attributes;
 
   if (has_cached) {
     supported = cached_result;
     goto done;
   }
 
-  rc = check_sdb_in_thd(ha_thd(), &conn, true);
-  if (rc != 0) {
-    goto error;
-  }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
-
-  rc = conn->get_session_attr(attributes);
+  rc = get_sdb_version(major, minor, fix);
   if (rc != 0) {
     goto error;
   }
 
-  supported = attributes.hasField(SDB_SESSION_ATTR_SOURCE);
+  do {
+    if (major < 3) {
+      break;
+    }
+    if (3 == major && minor < 2) {
+      break;
+    }
+    if (3 == major && 2 == minor && fix < 4) {
+      break;
+    }
+    supported = true;
+  } while (0);
+
   has_cached = true;
   cached_result = supported;
 
@@ -2202,6 +2198,48 @@ done:
   return supported;
 error:
   supported = false;
+  goto done;
+}
+
+int ha_sdb::get_sdb_version(int &major, int &minor, int &fix) {
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+  bson::BSONObj obj;
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  try {
+    bson::BSONObjBuilder cond_ob(64);
+    cond_ob.append(SDB_FIELD_GLOBAL, false);
+    cond_ob.append(SDB_FIELD_RAWDATA, true);
+
+    bson::BSONObjBuilder sel_ob(64);
+    sel_ob.appendNull(SDB_FIELD_VERSION);
+
+    bson::BSONObj ver_obj;
+
+    rc = conn->snapshot(obj, SDB_SNAP_DATABASE, cond_ob.obj(), sel_ob.obj(),
+                        SDB_EMPTY_BSON, SDB_EMPTY_BSON, 0);
+    if (rc != 0) {
+      goto error;
+    }
+
+    ver_obj = obj.getField(SDB_FIELD_VERSION).Obj();
+    major = ver_obj.getField(SDB_FIELD_MAJOR).numberInt();
+    minor = ver_obj.getField(SDB_FIELD_MINOR).numberInt();
+    fix = ver_obj.getField(SDB_FIELD_FIX).numberInt();
+
+  } catch (std::exception) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
   goto done;
 }
 
