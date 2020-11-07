@@ -2354,20 +2354,17 @@ done:
   return rc;
 }
 
+// SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
 bool ha_sdb::is_field_rule_supported() {
-  /*
-    SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
-    Lucky that sdbCollection::getDetail() is new API in the version, too.
-    We can use getDetail() to ensure the version.
-  */
   static bool has_cached = false;
   static bool cached_result = true;
 
   bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
   int rc = 0;
   Sdb_conn *conn = NULL;
-  Sdb_cl collection;
-  sdbclient::sdbCursor cursor;
 
   if (has_cached) {
     supported = cached_result;
@@ -2380,26 +2377,22 @@ bool ha_sdb::is_field_rule_supported() {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  rc = conn->get_cl(db_name, table_name, collection);
+  rc = sdb_get_version(*conn, major, minor, fix);
   if (rc != 0) {
     goto error;
   }
 
-  rc = collection.get_detail(cursor);
-  if (0 == rc) {
-    has_cached = true;
-    supported = cached_result = true;
-    cursor.close();
-    goto done;
-
-  } else if (SDB_INVALIDARG == get_sdb_code(rc)) {
-    has_cached = true;
-    supported = cached_result = false;
-    goto done;
-
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 2) ||              // 3.x < 3.2
+      (3 == major && 2 == minor && fix < 5) ||  // 3.2.x < 3.2.5
+      (3 == major && 4 == minor && fix < 1)) {  // 3.4.x < 3.4.1
+    supported = false;
   } else {
-    goto error;
+    supported = true;
   }
+
+  cached_result = supported;
+  has_cached = true;
 
 done:
   return supported;
@@ -2408,19 +2401,17 @@ error:
   goto done;
 }
 
+// SequoiaDB doesn't support "$inc" with options(Min, Max...) before v3.2.4
 bool ha_sdb::is_inc_rule_supported() {
-  /*
-    SequoiaDB doesn't support "$inc" with options(Min, Max...) before v3.2.4
-    Lucky that session attribute "Source" is new in the version, too.
-    We can use the "Source" attribute to ensure the version.
-  */
   static bool has_cached = false;
   static bool cached_result = true;
 
   bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
   int rc = 0;
   Sdb_conn *conn = NULL;
-  bson::BSONObj attributes;
 
   if (has_cached) {
     supported = cached_result;
@@ -2433,14 +2424,21 @@ bool ha_sdb::is_inc_rule_supported() {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  rc = conn->get_session_attr(attributes);
+  rc = sdb_get_version(*conn, major, minor, fix);
   if (rc != 0) {
     goto error;
   }
 
-  supported = attributes.hasField(SDB_SESSION_ATTR_SOURCE);
-  has_cached = true;
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 2) ||              // 3.x < 3.2
+      (3 == major && 2 == minor && fix < 4)) {  // 3.2.x < 3.2.4
+    supported = false;
+  } else {
+    supported = true;
+  }
+
   cached_result = supported;
+  has_cached = true;
 
 done:
   return supported;

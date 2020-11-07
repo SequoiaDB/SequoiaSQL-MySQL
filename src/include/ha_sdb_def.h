@@ -171,6 +171,13 @@
 #define SDB_SUB_PART_SEP "#SP#"
 #define SDB_FIELD_PART_HASH_ID "_phid_"
 
+#define SDB_FIELD_GLOBAL "Global"
+#define SDB_FIELD_VERSION "Version"
+#define SDB_FIELD_RAWDATA "RawData"
+#define SDB_FIELD_MAJOR "Major"
+#define SDB_FIELD_MINOR "Minor"
+#define SDB_FIELD_FIX "Fix"
+
 #define SDB_DEFAULT_FILL_MESSAGE ""
 #define SDB_ITEM_IGNORE_TYPE "ignore"
 

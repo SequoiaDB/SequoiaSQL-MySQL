@@ -22,6 +22,7 @@
 
 #include <client.hpp>
 #include "ha_sdb_errcode.h"
+#include "sdb_conn.h"
 
 #define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -98,6 +99,9 @@ int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
 my_bool sdb_is_field_sortable(const Field *field);
 
 bool sdb_is_string_type(Field *field);
+
+int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
+                    bool use_cached = true);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

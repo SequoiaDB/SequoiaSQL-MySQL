@@ -994,3 +994,60 @@ bool sdb_is_string_type(Field *field) {
   }
   return is_string;
 }
+
+// Get the version of remote SequoiaDB cluster.
+int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
+                    bool use_cached) {
+  static bool has_cached = false;
+  static int cached_major = 0;
+  static int cached_minor = 0;
+  static int cached_fix = 0;
+
+  int rc = 0;
+
+  if (!use_cached) {
+    has_cached = false;
+  }
+
+  if (has_cached) {
+    major = cached_major;
+    minor = cached_minor;
+    fix = cached_fix;
+    goto done;
+  }
+
+  try {
+    bson::BSONObjBuilder cond_ob(64);
+    cond_ob.append(SDB_FIELD_GLOBAL, false);
+    cond_ob.append(SDB_FIELD_RAWDATA, true);
+
+    bson::BSONObjBuilder sel_ob(64);
+    sel_ob.appendNull(SDB_FIELD_VERSION);
+
+    bson::BSONObj obj;
+    bson::BSONObj ver_obj;
+
+    rc = conn.snapshot(obj, SDB_SNAP_DATABASE, cond_ob.obj(), sel_ob.obj(),
+                       SDB_EMPTY_BSON, SDB_EMPTY_BSON, 0);
+    if (rc != 0) {
+      goto error;
+    }
+
+    ver_obj = obj.getField(SDB_FIELD_VERSION).Obj();
+    major = ver_obj.getField(SDB_FIELD_MAJOR).numberInt();
+    minor = ver_obj.getField(SDB_FIELD_MINOR).numberInt();
+    fix = ver_obj.getField(SDB_FIELD_FIX).numberInt();
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get SequoiaDB version for exception: %s",
+                        e.what());
+
+  cached_major = major;
+  cached_minor = minor;
+  cached_fix = fix;
+  has_cached = true;
+
+done:
+  return rc;
+error:
+  goto done;
+}
