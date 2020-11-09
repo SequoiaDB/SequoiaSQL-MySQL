@@ -22,6 +22,7 @@
 
 #include <client.hpp>
 #include "ha_sdb_errcode.h"
+#include "sdb_conn.h"
 
 #define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
@@ -82,6 +83,9 @@ bool sdb_is_type_diff(Field *old_field, Field *new_field);
 bool sdb_is_single_table(THD *thd);
 
 bool sdb_is_field_sortable(const Field *field);
+
+int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
+                    bool use_cached = true);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

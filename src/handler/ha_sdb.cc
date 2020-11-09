@@ -2120,35 +2120,35 @@ bool ha_sdb::is_field_rule_supported() {
   int minor = 0;
   int fix = 0;
   int rc = 0;
+  Sdb_conn *conn = NULL;
 
   if (has_cached) {
     supported = cached_result;
     goto done;
   }
 
-  rc = get_sdb_version(major, minor, fix);
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
   if (rc != 0) {
     goto error;
   }
 
-  do {
-    if (major < 3) {
-      break;
-    }
-    if (3 == major && minor < 2) {
-      break;
-    }
-    if (3 == major && 2 == minor && fix < 5) {
-      break;
-    }
-    if (3 == major && 4 == minor && fix < 1) {
-      break;
-    }
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 2) ||              // 3.x < 3.2
+      (3 == major && 2 == minor && fix < 5) ||  // 3.2.x < 3.2.5
+      (3 == major && 4 == minor && fix < 1)) {  // 3.4.x < 3.4.1
+    supported = false;
+  } else {
     supported = true;
-  } while (0);
+  }
 
-  has_cached = true;
   cached_result = supported;
+  has_cached = true;
 
 done:
   return supported;
@@ -2167,44 +2167,12 @@ bool ha_sdb::is_inc_rule_supported() {
   int minor = 0;
   int fix = 0;
   int rc = 0;
+  Sdb_conn *conn = NULL;
 
   if (has_cached) {
     supported = cached_result;
     goto done;
   }
-
-  rc = get_sdb_version(major, minor, fix);
-  if (rc != 0) {
-    goto error;
-  }
-
-  do {
-    if (major < 3) {
-      break;
-    }
-    if (3 == major && minor < 2) {
-      break;
-    }
-    if (3 == major && 2 == minor && fix < 4) {
-      break;
-    }
-    supported = true;
-  } while (0);
-
-  has_cached = true;
-  cached_result = supported;
-
-done:
-  return supported;
-error:
-  supported = false;
-  goto done;
-}
-
-int ha_sdb::get_sdb_version(int &major, int &minor, int &fix) {
-  int rc = 0;
-  Sdb_conn *conn = NULL;
-  bson::BSONObj obj;
 
   rc = check_sdb_in_thd(ha_thd(), &conn, true);
   if (rc != 0) {
@@ -2212,34 +2180,26 @@ int ha_sdb::get_sdb_version(int &major, int &minor, int &fix) {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  try {
-    bson::BSONObjBuilder cond_ob(64);
-    cond_ob.append(SDB_FIELD_GLOBAL, false);
-    cond_ob.append(SDB_FIELD_RAWDATA, true);
-
-    bson::BSONObjBuilder sel_ob(64);
-    sel_ob.appendNull(SDB_FIELD_VERSION);
-
-    bson::BSONObj ver_obj;
-
-    rc = conn->snapshot(obj, SDB_SNAP_DATABASE, cond_ob.obj(), sel_ob.obj(),
-                        SDB_EMPTY_BSON, SDB_EMPTY_BSON, 0);
-    if (rc != 0) {
-      goto error;
-    }
-
-    ver_obj = obj.getField(SDB_FIELD_VERSION).Obj();
-    major = ver_obj.getField(SDB_FIELD_MAJOR).numberInt();
-    minor = ver_obj.getField(SDB_FIELD_MINOR).numberInt();
-    fix = ver_obj.getField(SDB_FIELD_FIX).numberInt();
-
-  } catch (std::exception) {
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
     goto error;
   }
 
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 2) ||              // 3.x < 3.2
+      (3 == major && 2 == minor && fix < 4)) {  // 3.2.x < 3.2.4
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+  cached_result = supported;
+  has_cached = true;
+
 done:
-  return rc;
+  return supported;
 error:
+  supported = false;
   goto done;
 }
 
