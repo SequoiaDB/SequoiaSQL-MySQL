@@ -59,8 +59,15 @@ struct Sdb_statistics {
   }
 };
 
+enum Sdb_table_type {
+  TABLE_TYPE_UNDEFINE = 0,
+  TABLE_TYPE_GENERAL,
+  TABLE_TYPE_PART
+};
+
 struct Sdb_share {
   char *table_name;
+  enum Sdb_table_type table_type;
   uint table_name_length;
   THR_LOCK lock;
   Sdb_statistics stat;

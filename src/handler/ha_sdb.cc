@@ -139,6 +139,7 @@ static void get_sdb_share(const char *table_name, TABLE *table,
   uint length = (uint)strlen(table_name);
   Sdb_idx_stat_ptr *idx_stat_arr = NULL;
   uint idx_count = table->s->keys;
+  enum Sdb_table_type table_type = TABLE_TYPE_UNDEFINE;
   boost::shared_ptr<Sdb_share> *tmp_ptr;
 
   mysql_mutex_lock(&sdb_mutex);
@@ -170,6 +171,7 @@ static void get_sdb_share(const char *table_name, TABLE *table,
     thr_lock_init(&share->lock);
     share->idx_stat_arr = idx_stat_arr;
     share->idx_count = idx_count;
+    share->table_type = table_type;
     for (uint i = 0; i < idx_count; ++i) {
       idx_stat_arr[i].reset();
     }
@@ -871,6 +873,49 @@ void sdb_add_tmp_join_tab(THD *thd) {
   DBUG_ASSERT(join->best_ref[join->primary_tables] == NULL);
   join->best_ref[join->primary_tables] = t;
 }
+#elif IS_MARIADB
+int sdb_append_end_condition(THD *thd, TABLE *table, bson::BSONObj &condition) {
+  int rc = 0;
+  struct timeval tv;
+  bool truncate_history = false;
+  bson::BSONObj tmp_obj;
+  bson::BSONObj condition_end;
+  bson::BSONObjBuilder builder;
+  bson::BSONArrayBuilder arr_builder;
+  Field *end_field = table->vers_end_field();
+  TABLE_LIST *table_list = thd->lex->query_tables;
+
+  end_field->set_max();
+  sdb_field_get_timestamp(end_field, &tv);
+  // True if 'DELETE HISTORY FROM ...'
+  truncate_history = thd_sql_command(thd) == SQLCOM_DELETE
+                         ? (table_list->vers_conditions.is_set())
+                         : false;
+  try {
+    if (truncate_history) {
+      builder.appendTimestamp("$ne", tv.tv_sec * 1000, tv.tv_usec);
+    } else {
+      builder.appendTimestamp("$et", tv.tv_sec * 1000, tv.tv_usec);
+    }
+    tmp_obj = builder.obj();
+    condition_end = BSON(sdb_field_name(end_field) << tmp_obj);
+    if (!condition.isEmpty()) {
+      arr_builder.append(condition);
+      arr_builder.append(condition_end);
+      condition = BSON("$and" << arr_builder.arr());
+    } else {
+      condition = condition_end;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to append end condition for table:%s, exception:%s",
+      table->s->table_name.str, e.what());
+
+done:
+  return rc;
+error:
+  goto done;
+}
 #endif
 
 bool sdb_print_admin_msg(THD *thd, uint len, const char *msg_type,
@@ -1054,8 +1099,8 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   DBUG_ENTER("ha_sdb::open");
 
   int rc = 0;
-  Sdb_conn *connection = NULL;
   Sdb_cl cl;
+  Sdb_conn *connection = NULL;
 
   get_sdb_share(name, table, share);
   if (!share) {
@@ -1115,6 +1160,47 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
                   table_name, rc);
     goto error;
   }
+
+#ifdef IS_MARIADB
+  if (TABLE_TYPE_UNDEFINE == share->table_type) {
+    bson::BSONObj obj;
+    bson::BSONObj select;
+    bson::BSONObj condition;
+    bson::BSONObjBuilder con_builder(96);
+    bson::BSONObjBuilder sel_builder(96);
+    char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+
+    sprintf(full_name, "%s.%s", db_name, table_name);
+    try {
+      con_builder.append(SDB_FIELD_NAME, full_name);
+      condition = con_builder.obj();
+      sel_builder.append(SDB_FIELD_SHARDING_KEY, "");
+      select = sel_builder.obj();
+    }
+    SDB_EXCEPTION_CATCHER(rc,
+                          "Failed to build bson obj when open table, "
+                          "table:%s.%s, exception:%s",
+                          db_name, table_name, e.what())
+
+    rc = connection->snapshot(obj, SDB_SNAP_CATALOG, condition, select);
+    if (get_sdb_code(rc) == SDB_DMS_EOC) {  // cl don't exist.
+      rc = 0;
+      goto done;
+    }
+    if (rc != 0) {
+      SDB_LOG_ERROR("%s", connection->get_err_msg());
+      connection->clear_err_msg();
+      goto error;
+    }
+    share->mutex.lock();
+    if (obj.getField(SDB_FIELD_SHARDING_KEY).type() == bson::Object) {
+      share->table_type = TABLE_TYPE_PART;
+    } else {
+      share->table_type = TABLE_TYPE_GENERAL;
+    }
+    share->mutex.unlock();
+  }
+#endif
 
   rc = update_stats(ha_thd(), false);
   if (0 != rc) {
@@ -2189,6 +2275,9 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   bson::BSONObj result;
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
+#ifdef IS_MARIADB
+  const bool is_vers_sys = table->versioned();
+#endif
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -2208,6 +2297,58 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
       goto error;
     }
   }
+
+#ifdef IS_MARIADB
+  if (is_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd())) &&
+      (TABLE_TYPE_PART == share->table_type)) {
+    // TODO:  Replace after supporting update sharding key.
+    Field *end_field = table->vers_end_field();
+    bson::BSONObj obj;
+    bson::BSONObjBuilder obj_builder;
+    bson::BSONObjIterator it(cur_rec);
+
+    if (get_unique_key_cond(old_data, cond)) {
+      cond = cur_rec;
+    }
+    try {
+      sdb_build_clientinfo(ha_thd(), builder);
+      hint = builder.obj();
+    }
+    SDB_EXCEPTION_CATCHER(
+        rc, "Failed to build hint when update row, table:%s.%s, exception:%s",
+        db_name, table_name, e.what());
+    rc = collection->del(cond, hint);
+    if (rc != 0) {
+      goto error;
+    }
+
+    try {
+      while (it.more()) {
+        bson::BSONElement elem = it.next();
+        if (0 == strcmp(elem.fieldName(), sdb_field_name(end_field))) {
+          obj_builder.append(new_obj.getField(sdb_field_name(end_field)));
+          continue;
+        }
+        obj_builder.append(elem);
+      }
+      obj = obj_builder.obj();
+    }
+    SDB_EXCEPTION_CATCHER(
+        rc,
+        "Failed to build bson obj when update row, table:%s.%s, exception:%s",
+        db_name, table_name, e.what());
+
+    m_bulk_insert_rows.push_back(obj);
+    if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size) {
+      rc = flush_bulk_insert();
+      if (rc != 0) {
+        goto error;
+      }
+    }
+    goto done;
+  }
+#endif
+
   try {
     if (null_obj.isEmpty()) {
       rule_obj = BSON("$set" << new_obj);
@@ -2832,15 +2973,22 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
   const bool using_limit =
       sdb_lex_unit(ha_thd())->select_limit_cnt != HA_POS_ERROR;
   TABLE_LIST *const table_list = select_lex->get_table_list();
+  bool using_vers_sys = false;
+  bool using_period = false;
 
   has_triggers = sdb_has_update_triggers(table);
+#ifdef IS_MARIADB
+  using_vers_sys = table->versioned();
+  using_period = table->s->period.constr_name.str ? true : false;
+#endif
 
   /* Triggers: cannot optimize because IGNORE keyword in the statement should
      not affect the errors in the trigger execution if trigger statement does
      not have IGNORE keyword. */
   /* view: cannot optimize because it can not handle ER_VIEW_CHECK_FAILED */
-  if (has_triggers || using_limit || order || table_list->check_option ||
-      sdb_is_view(table_list) || sdb_lex_ignore(ha_thd()) ||
+  if (has_triggers || using_limit || using_vers_sys || using_period || order ||
+      table_list->check_option || sdb_is_view(table_list) ||
+      sdb_lex_ignore(ha_thd()) ||
       !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
     optimizer_update = false;
     goto done;
@@ -2915,13 +3063,20 @@ bool ha_sdb::optimize_delete(bson::BSONObj &condition) {
   SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
   SELECT_LEX *const select = unit->first_select();
   const bool using_limit = unit->select_limit_cnt != HA_POS_ERROR;
+  bool using_vers_sys = false;
+  bool using_period = false;
   ORDER *order = select->order_list.first;
   TABLE_LIST *const table_list = select->get_table_list();
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   has_triggers = table->triggers && table->triggers->has_delete_triggers();
+#ifdef IS_MARIADB
+  using_vers_sys = table->versioned();
+  using_period = table->s->period.constr_name.str ? true : false;
+#endif
 
-  if (order || using_limit || has_triggers || sdb_is_view(table_list) ||
+  if (order || using_limit || using_vers_sys || using_period || has_triggers ||
+      sdb_is_view(table_list) ||
       !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
     optimizer_delete = false;
     goto done;
@@ -3246,6 +3401,9 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   bson::BSONObj condition_idx;
   int order_direction = 1;
   first_read = true;
+#ifdef IS_MARIADB
+  const bool using_vers_sys = table->versioned();
+#endif
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -3271,6 +3429,16 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
 
     order_direction = sdb_get_key_direction(find_flag);
   }
+
+#ifdef IS_MARIADB
+  if (using_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
+                         SQLCOM_DELETE == thd_sql_command(ha_thd()))) {
+    rc = sdb_append_end_condition(ha_thd(), table, condition);
+    if (rc) {
+      goto error;
+    }
+  }
+#endif
 
   try {
     if (!condition.isEmpty()) {
@@ -3960,6 +4128,15 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
   if (rc != 0) {
     if (HA_ERR_END_OF_FILE == rc) {
       table->status = STATUS_NOT_FOUND;
+#ifdef IS_MARIADB
+      if (table->versioned() && (int)m_bulk_insert_rows.size() > 0) {
+        rc = flush_bulk_insert();
+        if (rc != 0) {
+          goto error;
+        }
+        rc = HA_ERR_END_OF_FILE;
+      }
+#endif
     }
     goto error;
   }
@@ -3990,6 +4167,7 @@ int ha_sdb::rnd_next(uchar *buf) {
   bson::BSONObj order_by = SDB_EMPTY_BSON;
   bson::BSONObj hint = SDB_EMPTY_BSON;
   bson::BSONObjBuilder builder;
+
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
     table->status = STATUS_NOT_FOUND;
@@ -4000,6 +4178,17 @@ int ha_sdb::rnd_next(uchar *buf) {
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
   if (first_read) {
+#ifdef IS_MARIADB
+    const bool using_vers_sys = table->versioned();
+    if (using_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
+                           SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
+      rc = sdb_append_end_condition(ha_thd(), table, pushed_condition);
+      if (rc) {
+        goto error;
+      }
+    }
+#endif
+
     try {
       if (!pushed_condition.isEmpty()) {
         condition = pushed_condition.copy();
