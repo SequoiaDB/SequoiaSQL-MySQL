@@ -14318,6 +14318,28 @@ CREATE TABLE t3 SELECT * FROM t1 WHERE id > 5 LIMIT 5;
 INSERT INTO t3 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 2;
 UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
 DELETE FROM t2 LIMIT 2;
+SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+id	a	c
+4	-99	tf
+5	-9	001
+SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
+id	a	c
+4	-99	tf
+8	5	jk
+SELECT * FROM t1 WHERE id IN (1,2,5,6,8,11) LIMIT 3,2;
+id	a	c
+6	15	9a
+8	5	jk
+SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
+id	a	c
+4	-99	tf
+5	-9	001
+6	15	9a
+INSERT INTO t1 (id,a) VALUES (12,12), (13,13);
+SELECT * FROM t1 WHERE c = 'abc' OR c IS NULL LIMIT 1,2;
+id	a	c
+12	12	NULL
+13	13	NULL
 DROP TABLE t1,t2,t3;
 CREATE TABLE `gis_search` (
 gid int not null auto_increment primary key,

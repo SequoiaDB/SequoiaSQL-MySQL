@@ -4,7 +4,7 @@
 #Case 13114#Case 13115#Case 13116#Case 13117#Case 13118#Case 13119#Case 13120#Case 13121
 #Case 13305#Case 13306#Case 15436#Case 15438#Case 22080#Case 22379#Case 22380#Case 22381
 #Case 22382#Case 22383#Case 22384#Case 22385#Case 22386#Case 22387#Case 22388#Case 22389
-#Case 22785
+#Case 22785#Case 23020#Case 23021#Case 23022
 --source include/have_sequoiadb.inc
 
 --disable_warnings
@@ -1244,6 +1244,20 @@ INSERT INTO t3 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 2;
 #seqDB-22389
 UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
 DELETE FROM t2 LIMIT 2;
+#seqDB-23020
+--sorted_result
+SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+--sorted_result
+SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
+#seqDB-23021
+--sorted_result
+SELECT * FROM t1 WHERE id IN (1,2,5,6,8,11) LIMIT 3,2; 
+--sorted_result
+SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
+#seqDB-23022
+INSERT INTO t1 (id,a) VALUES (12,12), (13,13);
+--sorted_result
+SELECT * FROM t1 WHERE c = 'abc' OR c IS NULL LIMIT 1,2; 
 DROP TABLE t1,t2,t3;
 
 # seqDB-22785 
@@ -1628,6 +1642,5 @@ SELECT gid, ST_AsText(poly),ST_AsText(poly2),ST_NumInteriorRings(poly) FROM gis_
 SELECT gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Within(ST_PointFromText('POINT(1 1)'),poin2);
 
 DROP TABLE gis_search;
-
 
 --source include/uninstall_sequoiadb.inc
