@@ -14351,9 +14351,9 @@ id	a	c
 8	5	jk
 SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
 id	a	c
-4	-99	tf
-5	-9	001
+1	-99	op
 6	15	9a
+8	5	jk
 INSERT INTO t1 (id,a) VALUES (12,12), (13,13);
 SELECT * FROM t1 WHERE c = 'abc' OR c IS NULL LIMIT 1,2;
 id	a	c
