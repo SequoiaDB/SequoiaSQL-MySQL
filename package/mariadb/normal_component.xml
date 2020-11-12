@@ -118,16 +118,6 @@
                     <key>VERSION</key>
                     <variable>old_version</variable>
                 </propertiesFileGet>
-                <!--check ${installdir}/bin/sdb_sql_ctl exist-->
-                <throwError>
-                    <text>${msg(upgrade.errormsg.sdbsqlctlexist)}</text>
-                    <ruleList>
-                        <fileTest condition="not_exists" path="${installdir}/bin/sdb_sql_ctl"/>
-                        <compareText logic="does_not_equal" text="${old_version}" value="3.0"/>
-                        <compareText logic="does_not_equal" text="${old_version}" value="3.0.1"/>
-                        <compareText logic="does_not_equal" text="${old_version}" value="3.0.2"/>
-                    </ruleList>
-                </throwError>
                 <setInstallerVariable name="username" value=""/>
                 <propertiesFileGet>
                     <file>${sys_conf_file}</file>
