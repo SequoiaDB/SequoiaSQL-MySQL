@@ -25,6 +25,7 @@ CREATE EVENT IF NOT EXISTS e_hourly
     ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 HOUR
     DO
       UPDATE myschema.mytable SET mycol = mycol + 1;
+--disable_warnings
 CREATE DEFINER='sdbadmin'@'%' EVENT e_daily
     ON SCHEDULE
       EVERY 1 DAY
@@ -33,6 +34,7 @@ CREATE DEFINER='sdbadmin'@'%' EVENT e_daily
     COMMENT 'Clears out sessions table each hour.'
     DO
       DELETE FROM site_activity.sessions;
+--enable_warnings
 DELIMITER |;
 CREATE EVENT e_yearly
     ON SCHEDULE

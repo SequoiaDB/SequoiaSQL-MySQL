@@ -20,8 +20,6 @@ END |
 CREATE DEFINER = 'sdbadmin'@'%' PACKAGE pkg_body1 IS
 PROCEDURE sp1 ( c1 IN VARCHAR2, c2 IN VARCHAR2, c3 OUT VARCHAR2 );
 END; |
-Warnings:
-Note	1449	The user specified as a definer ('sdbadmin'@'%') does not exist
 CREATE OR REPLACE DEFINER = 'sdbadmin'@'%' PACKAGE BODY pkg_body1 COMMENT 'package body comment' SQL SECURITY INVOKER IS
 PROCEDURE sp1 (
 c1 IN VARCHAR2,
@@ -44,8 +42,6 @@ SELECT SQLERRM;
 END;
 END;
 END |
-Warnings:
-Note	1449	The user specified as a definer ('sdbadmin'@'%') does not exist
 CREATE PACKAGE pkg_body2 AS
 FUNCTION f1 RETURN INT;
 FUNCTION f2 RETURN TEXT;

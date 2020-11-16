@@ -27,8 +27,10 @@ CREATE TABLE t1 ( a INT, b INT, c INT );
 CREATE VIEW v1 AS SELECT * FROM t1;
 CREATE OR REPLACE VIEW v1(a) AS SELECT "abc";
 CREATE OR REPLACE VIEW v2 AS SELECT * FROM t1 LOCAL;
+--disable_warnings
 CREATE OR REPLACE ALGORITHM = MERGE DEFINER = "root" SQL SECURITY INVOKER VIEW v3 AS SELECT * FROM t1 LOCAL;
 CREATE DEFINER = "root" VIEW IF NOT EXISTS v4 AS SELECT a FROM t1;
+--enable_warnings
 # check metadatas after create
 connection conn2;
 --sleep $sleep
@@ -38,14 +40,20 @@ SHOW CREATE TABLE t1;
 SHOW CREATE VIEW v1;
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 SHOW CREATE VIEW v2;
+--disable_warnings
 SHOW CREATE VIEW v3;
 SHOW CREATE VIEW v4;
+--enable_warnings
 # alter view
+--disable_warnings
 ALTER ALGORITHM = MERGE DEFINER = "root" SQL SECURITY INVOKER VIEW v1 AS SELECT * FROM t1 LOCAL;
+--enable_warnings
 # check metadatas after alter
 connection conn1;
+--disable_warnings
 --sleep $sleep
 SHOW CREATE VIEW v1;
+--enable_warnings
 # drop view
 DROP VIEW v1,v2,v3;
 DROP VIEW IF EXISTS v4;

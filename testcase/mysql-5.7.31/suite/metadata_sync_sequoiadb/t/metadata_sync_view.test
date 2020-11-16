@@ -27,7 +27,9 @@ CREATE TABLE t1 ( a INT, b INT, c INT );
 CREATE VIEW v1 AS SELECT * FROM t1;
 CREATE OR REPLACE VIEW v1(a) AS SELECT "abc";
 CREATE OR REPLACE VIEW v2 AS SELECT * FROM t1 LOCAL;
+--disable_warnings
 CREATE OR REPLACE ALGORITHM = MERGE DEFINER = "root" SQL SECURITY INVOKER VIEW v3 AS SELECT * FROM t1 LOCAL;
+--enable_warnings
 # check metadatas after create
 connection conn2;
 --sleep $sleep
@@ -39,7 +41,9 @@ SHOW CREATE VIEW v1;
 SHOW CREATE VIEW v2;
 SHOW CREATE VIEW v3;
 # alter view
+--disable_warnings
 ALTER ALGORITHM = MERGE DEFINER = "root" SQL SECURITY INVOKER VIEW v1 AS SELECT * FROM t1 LOCAL;
+--enable_warnings
 # check metadatas after alter
 connection conn1;
 --sleep $sleep

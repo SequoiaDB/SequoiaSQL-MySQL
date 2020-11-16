@@ -35,6 +35,7 @@
 #  FUNCTION f1 RETURN INT DETERMINISTIC;
 #  PROCEDURE sp1 ( x INT, y INT  );
 #END |
+#--disable_warnings
 #CREATE DEFINER = 'sdbadmin'@'%' PACKAGE pkg_body1 IS
 #  PROCEDURE sp1 ( c1 IN VARCHAR2, c2 IN VARCHAR2, c3 OUT VARCHAR2 );
 #END; |
@@ -60,6 +61,7 @@
 #    END;
 #  END;
 #END |
+#--enable warnings
 #CREATE PACKAGE pkg_body2 AS
 #  FUNCTION f1 RETURN INT;
 #  FUNCTION f2 RETURN TEXT;

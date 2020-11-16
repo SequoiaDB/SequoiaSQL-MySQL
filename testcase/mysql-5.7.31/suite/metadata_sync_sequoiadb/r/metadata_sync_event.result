@@ -15,8 +15,6 @@ ENABLE
 COMMENT 'Clears out sessions table each hour.'
     DO
 DELETE FROM site_activity.sessions;
-Warnings:
-Note	1449	The user specified as a definer ('sdbadmin'@'%') does not exist
 CREATE EVENT e_yearly
 ON SCHEDULE
 EVERY 1 YEAR
