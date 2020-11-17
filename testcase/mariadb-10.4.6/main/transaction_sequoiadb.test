@@ -6,6 +6,7 @@
 --disable_query_log
 CALL mtr.add_suppression(".*failed to query with condition.*rc: 40013");
 CALL mtr.add_suppression(".*not support transaction serializable isolation*");
+CALL mtr.add_suppression(".*Cannot change sequoiadb_use_rollback_segments*");
 --enable_query_log
 
 #seqDB-18621
@@ -955,6 +956,40 @@ connection con2;
 select * from t1 order by c;
 commit;
 set session autocommit=on;
+
+connection default;
+drop table t1;
+
+#seqDB-23014
+create table t1(a int, b int, c int);
+insert into t1 values(1,1,1);
+connection con1;
+set session tx_isolation='read-committed';
+set session sequoiadb_use_rollback_segments=off;
+begin;
+update t1 set a=2 where a=1;
+
+connection con2;
+begin;
+--error 1205
+select * from t1;
+
+connection con1;
+rollback;
+begin;
+set session sequoiadb_use_rollback_segments=on;
+update t1 set a=2 where a=1;
+
+connection con2;
+select * from t1;
+
+connection con1;
+--error 1231
+set session sequoiadb_use_rollback_segments=off;
+rollback;
+
+disconnect con1;
+disconnect con2;
 
 connection default;
 drop table t1;

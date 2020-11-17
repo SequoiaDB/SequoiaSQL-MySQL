@@ -1523,3 +1523,23 @@ a	b	c
 commit;
 set session autocommit=on;
 drop table t1;
+create table t1(a int, b int, c int);
+insert into t1 values(1,1,1);
+set session transaction_isolation='read-committed';
+set session sequoiadb_use_rollback_segments=off;
+begin;
+update t1 set a=2 where a=1;
+begin;
+select * from t1;
+ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+rollback;
+begin;
+set session sequoiadb_use_rollback_segments=on;
+update t1 set a=2 where a=1;
+select * from t1;
+a	b	c
+1	1	1
+set session sequoiadb_use_rollback_segments=off;
+ERROR 42000: Cannot change sequoiadb_use_rollback_segments during transaction.
+rollback;
+drop table t1;
