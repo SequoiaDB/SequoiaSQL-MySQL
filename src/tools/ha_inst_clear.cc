@@ -133,30 +133,39 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
 
   // get collection space 'HASysGlobalInfo' handle
   rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    cout << "Error: global configuration database doesn't exist" << endl;
+    return rc;
+  }
   sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   HA_TOOL_RC_CHECK(rc, rc,
-                   "Error: failed to get collection space '%s', "
+                   "Error: failed to get global configuration database '%s', "
                    "sequoiadb error: %s",
                    HA_GLOBAL_INFO, sdb_err);
 
   // get instance group collection space handle
   rc = conn.getCollectionSpace(cmd_args.inst_group_name.c_str(), inst_group_cs);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    cout << "Error: instance group '" << orig_name
+         << "' configuration database doesn't exist" << endl;
+    return rc;
+  }
   sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   HA_TOOL_RC_CHECK(rc, rc,
-                   "Error: failed to get collection space '%s', "
-                   "sequoiadb error: %s",
+                   "Error: failed to get instance group configuration "
+                   "database '%s', sequoiadb error: %s",
                    cmd_args.inst_group_name.c_str(), sdb_err);
 
   // get 'HAConfig' collection handler
   rc = global_info_cs.getCollection(HA_CONFIG_CL, config_cl);
   if (SDB_DMS_NOTEXIST == rc) {
-    cout << "Info: no SQL instances in current sequoiadb cluster" << endl;
-    return SDB_HA_OK;
+    cout << "Error: no initialized SQL instances in current cluster" << endl;
+    return rc;
   }
   sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   HA_TOOL_RC_CHECK(rc, rc,
-                   "Error: failed to get collection '%s.%s', "
-                   "sequoiadb error: %s",
+                   "Error: failed to get global configuration table "
+                   "'%s.%s', sequoiadb error: %s",
                    HA_GLOBAL_INFO, HA_CONFIG_CL, sdb_err);
 
   // get 'HAGlobalState' collection handler
@@ -198,16 +207,9 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
     rc = cursor.next(result, false);
   }
   if (SDB_DMS_EOC == rc) {
-    cout << "Info: no such instance in instance group '" << orig_name << "'"
-         << endl;
-    // if 'inst_id' is not set, can't clear global and instance state
-    if (!cmd_args.is_inst_id_set) {
-      conn.transactionRollback();
-      return 0;
-    }
-    // continue clear global state and instance state
-    rc = 0;
-    clear_config = false;
+    cout << "Error: can't find such instance in instance group '" << orig_name
+         << "'" << endl;
+    return rc;
   }
   sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   if (rc) {
@@ -316,8 +318,8 @@ int main(int argc, char *argv[]) {
     rc = clear_sql_instance(cmd_args, conn, orig_name);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to clear SQL instance");
     if (cmd_args.is_inst_id_set) {
-      cout << "Info: completed cleanup of instance '" << cmd_args.inst_id
-           << "'" << endl;
+      cout << "Info: completed cleanup of instance '" << cmd_args.inst_id << "'"
+           << endl;
     } else {
       cout << "Info: completed cleanup of instance '" << cmd_args.inst_host
            << "'" << endl;

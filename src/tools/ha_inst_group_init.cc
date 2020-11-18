@@ -230,6 +230,10 @@ int main(int argc, char *argv[]) {
     // create instance group collection spaces
     rc = conn.createCollectionSpace(cmd_args.inst_group_name.c_str(),
                                     SDB_PAGESIZE_64K, inst_group_cs);
+    if (SDB_INVALIDARG == rc) {
+      cout << "Error: invalid instance group name" << endl;
+      return rc;
+    }
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     if (SDB_DMS_CS_EXIST == rc) {
       cout << "Error: instance group '" << orig_name << "' already exists"
@@ -244,11 +248,7 @@ int main(int argc, char *argv[]) {
     // create 'HAInstGroupConfig' collection
     rc = inst_group_cs.createCollection(HA_INST_GROUP_CONFIG_CL, options,
                                         inst_group_config_cl);
-    if (rc) {
-      sdb_err = ha_sdb_error_string(conn, rc);
-    } else {
-      sdb_err = "";
-    }
+    sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to create global configuration table "
                      "'%s.%s', sequoiadb error: %s",
@@ -261,11 +261,7 @@ int main(int argc, char *argv[]) {
                                                 << SDB_FIELD_ACQUIRE_SIZE << 1
                                                 << SDB_FIELD_CACHE_SIZE << 1));
     rc = inst_group_cs.createCollection(HA_SQL_LOG_CL, options, sql_log_cl);
-    if (rc) {
-      sdb_err = ha_sdb_error_string(conn, rc);
-    } else {
-      sdb_err = "";
-    }
+    sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to create SQL log table '%s.%s', "
                      "sequoiadb error: %s",
