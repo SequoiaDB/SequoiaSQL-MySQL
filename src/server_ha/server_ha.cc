@@ -171,6 +171,22 @@ static bool is_routine_meta_sql(THD *thd) {
   return is_routine;
 }
 
+static inline bool is_package_meta_sql(THD *thd) {
+  bool is_package_op = false;
+#ifdef IS_MARIADB
+  int sql_command = thd_sql_command(thd);
+  switch (sql_command) {
+    case SQLCOM_CREATE_PACKAGE:
+    case SQLCOM_CREATE_PACKAGE_BODY:
+    case SQLCOM_DROP_PACKAGE:
+    case SQLCOM_DROP_PACKAGE_BODY:
+      is_package_op = true;
+      break;
+  }
+#endif
+  return is_package_op;
+}
+
 static bool is_dcl_meta_sql(THD *thd) {
   int sql_command = thd_sql_command(thd);
   bool is_dcl = false;
@@ -233,6 +249,10 @@ static bool is_meta_sql(THD *thd, const ha_event_general &event) {
     case SQLCOM_DROP_SERVER:
     case SQLCOM_ALTER_SERVER:
 #ifdef IS_MARIADB
+    case SQLCOM_CREATE_PACKAGE:
+    case SQLCOM_DROP_PACKAGE:
+    case SQLCOM_CREATE_PACKAGE_BODY:
+    case SQLCOM_DROP_PACKAGE_BODY:
     case SQLCOM_DROP_ROLE:
     case SQLCOM_GRANT_ROLE:
     case SQLCOM_REVOKE_ROLE:
@@ -1400,6 +1420,26 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_list->next = NULL;
       sql_info->tables->next = ha_tbl_list;
     }
+  } else if (is_package_meta_sql(thd)) {
+    memset(sql_info->sp_db_name, 0, NAME_LEN + 1);
+    memset(sql_info->sp_name, 0, NAME_LEN + 1);
+    if (thd->lex->spname) {
+      sprintf(sql_info->sp_db_name, "%s", thd->lex->spname->m_db.str);
+      sprintf(sql_info->sp_name, "%s", thd->lex->spname->m_name.str);
+    } else if (thd->lex->sphead) {
+      sprintf(sql_info->sp_db_name, "%s", thd->lex->sphead->m_db.str);
+      sprintf(sql_info->sp_name, "%s", thd->lex->sphead->m_name.str);
+    }
+    sql_info->tables = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+    if (NULL == sql_info->tables) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
+    sql_info->tables->db_name = sql_info->sp_db_name;
+    sql_info->tables->table_name = sql_info->sp_name;
+    sql_info->tables->is_temporary_table = false;
+    sql_info->tables->op_type = HA_ROUTINE_TYPE_PACKAGE;
+    sql_info->tables->next = NULL;
   } else if (SQLCOM_ALTER_TABLESPACE == sql_command ||
              SQLCOM_CREATE_SERVER == sql_command ||
              SQLCOM_DROP_SERVER == sql_command ||
@@ -1763,13 +1803,17 @@ static int show_create_sp(THD *thd, const LEX_CSTRING &returns, String *buf) {
 #ifdef IS_MARIADB
   const st_sp_chistics sp_chistics = sp->chistics();
   const st_sp_chistics *chistics = &sp_chistics;
-#else
-  const st_sp_chistics *chistics = sp->m_chistics;
-#endif
-
-#ifdef IS_MARIADB
   size_t agglen = (chistics->agg_type == GROUP_AGGREGATE) ? 10 : 0;
   const DDL_options_st ddl_options = thd->lex->create_info;
+  if (SQLCOM_CREATE_PACKAGE == sql_command ||
+      SQLCOM_CREATE_PACKAGE_BODY == sql_command) {
+    bool rc = sp->m_handler->show_create_sp(
+        thd, buf, db, name, params, returns, body, sp_chistics,
+        *thd->lex->definer, ddl_options, sql_mode);
+    return rc ? SDB_HA_OOM : 0;
+  }
+#else
+  const st_sp_chistics *chistics = sp->m_chistics;
 #endif
   LEX_CSTRING tmp;
 
@@ -2459,6 +2503,17 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                         SQLCOM_CREATE_TRIGGER == sql_command)) {
           rc = fix_create_routine_stmt(thd, event, create_query);
         }
+#ifdef IS_MARIADB
+        if (SQLCOM_CREATE_PACKAGE == sql_command ||
+            SQLCOM_CREATE_PACKAGE_BODY == sql_command) {
+          LEX_CSTRING returns = {"", 0};
+          rc = show_create_sp(thd, returns, &create_query);
+          if (0 == rc) {
+            event.general_query = create_query.c_ptr();
+            event.general_query_length = create_query.length();
+          }
+        }
+#endif
         // rebuild 'create view' statement
         if (0 == rc && SQLCOM_CREATE_VIEW == sql_command) {
           rc = fix_create_view_stmt(thd, event, create_query);
