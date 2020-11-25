@@ -3180,8 +3180,9 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
           /* support count(const) and count(field), not support count(func) */
           if (type == Item::FIELD_ITEM) {
             count_query = true;
-            count_cond_blder.append(sdb_item_name(sum_item->get_arg(0)),
-                                    BSON("$isnull" << 0));
+            count_cond_blder.append(
+                sdb_field_name(((Item_field *)sum_item->get_arg(0))->field),
+                BSON("$isnull" << 0));
 #if defined IS_MYSQL
           } else if (type == Item::INT_ITEM || sum_item->const_item()) {
 #elif defined IS_MARIADB

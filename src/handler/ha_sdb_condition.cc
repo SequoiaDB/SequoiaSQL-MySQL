@@ -454,7 +454,7 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
       type = update_item->field_type();
       item_fld = (Item_field *)update_item;
 
-      if (0 == strcmp(sdb_item_name(update_item),
+      if (0 == strcmp(sdb_field_name(item_fld->field),
                       sdb_field_name(upd_arg->my_field))) {
         if (0 == my_field_cnt) {
           if (MYSQL_TYPE_DECIMAL != type && MYSQL_TYPE_TINY != type &&
