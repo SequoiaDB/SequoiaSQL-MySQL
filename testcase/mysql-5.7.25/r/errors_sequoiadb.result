@@ -40,9 +40,9 @@ alter table t1 comment 'sequoiadb: {table_options: {AutoSplit: true}}';
 ERROR HY000: There is no valid sharding-key defined
 alter table t1 comment 'sequoiadb: {table_options: {AutoIndexId: false}}';
 update t1 set t = 'update';
-ERROR HY000: can not update/delete records when $id index does not exist
+ERROR HY000: no $id index found
 insert into t1 values (NULL, 'text');
-ERROR HY000: can not update/delete records when $id index does not exist
+ERROR HY000: no $id index found
 drop table t1;
 create table t1 ( id int ) ;
 insert into t1 values (NULL);
