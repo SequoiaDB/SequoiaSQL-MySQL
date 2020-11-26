@@ -24,6 +24,8 @@
 #include "ha_sdb_errcode.h"
 #include "sdb_conn.h"
 
+extern bool sdb_version_cached;
+
 #define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 enum enum_compress_type {
@@ -83,6 +85,10 @@ bool sdb_is_type_diff(Field *old_field, Field *new_field);
 bool sdb_is_single_table(THD *thd);
 
 bool sdb_is_field_sortable(const Field *field);
+
+inline void sdb_invalidate_version_cache() {
+  sdb_version_cached = false;
+}
 
 int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
                     bool use_cached = true);

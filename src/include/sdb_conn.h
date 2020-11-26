@@ -133,6 +133,8 @@ class Sdb_session_attrs {
     return last_trans_use_rollback_segments;
   }
 
+  inline bool get_last_trans_auto_commit() { return last_trans_auto_commit; }
+
  private:
   ulong last_trans_isolation;
   int last_trans_timeout;
@@ -215,7 +217,8 @@ class Sdb_conn {
     return m_connection.getLastErrorObj(errObj);
   }
 
-  inline ulong convert_to_sdb_isolation(ulong tx_isolation) {
+  inline ulong convert_to_sdb_isolation(const ulong tx_isolation,
+                                        const int major = 3) {
     switch (tx_isolation) {
       case ISO_READ_UNCOMMITTED:
         return SDB_TRANS_ISO_RU;
@@ -224,7 +227,12 @@ class Sdb_conn {
         return SDB_TRANS_ISO_RC;
         break;
       case ISO_REPEATABLE_READ:
-        return SDB_TRANS_ISO_RR;
+        // x < 5 not support RR. sdb use RC to mysql RR.
+        if (major < 5) {
+          return SDB_TRANS_ISO_RC;
+        } else {
+          return SDB_TRANS_ISO_RR;
+        }
         break;
       case ISO_SERIALIZABLE:
         // not supported current now.

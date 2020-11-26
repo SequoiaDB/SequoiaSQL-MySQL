@@ -175,18 +175,25 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    static bool support_source_and_trans_attr = true;
+    const char *hostname = NULL;
+    int hostname_len = (int)strlen(glob_hostname);
 
-    if (support_source_and_trans_attr) {
-      const char *hostname = NULL;
-      int hostname_len = (int)strlen(glob_hostname);
+    if (0 >= hostname_len) {
+      static char empty[] = "";
+      hostname = empty;
+    } else {
+      hostname = glob_hostname;
+    }
 
-      if (0 >= hostname_len) {
-        static char empty[] = "";
-        hostname = empty;
-      } else {
-        hostname = glob_hostname;
-      }
+    int major = 0, minor = 0, fix = 0;
+    rc = sdb_get_version(*this, major, minor, fix);
+    if (rc != 0) {
+      snprintf(errmsg, sizeof(errmsg), "Failed to begin transaction, rc:%d",
+               rc);
+      goto error;
+    }
+    /*The pre version of SequoiaDB(3.2) has no Source/Trans attrs.*/
+    if (!(major < 3 || (3 == major && minor < 2))) {
       session_attrs = get_session_attrs();
       session_attrs->set_source(hostname, sdb_proc_id(),
                                 (ulonglong)thread_id());
@@ -197,12 +204,6 @@ int Sdb_conn::connect() {
       session_attrs->set_trans_use_rollback_segments(
           sdb_use_rollback_segments(current_thd), true);
       rc = set_my_session_attr();
-      // No such options before sdb v3.2.4. Ignore it.
-      if (SDB_INVALIDARG == get_sdb_code(rc)) {
-        support_source_and_trans_attr = false;
-        rc = SDB_ERR_OK;
-      }
-
       if (SDB_ERR_OK != rc) {
         snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d",
                  rc);
@@ -267,7 +268,7 @@ int Sdb_conn::begin_transaction(THD *thd) {
   bson::BSONObj option;
   bson::BSONObjBuilder builder(32);
   Sdb_session_attrs *session_attrs = NULL;
-  static bool support_trans_and_timeout_attr = true;
+  int major = 0, minor = 0, fix = 0;
 
   if (sdb_use_transaction(thd) && ISO_SERIALIZABLE == thd->tx_isolation) {
     rc = SDB_ERR_NOT_ALLOWED;
@@ -278,7 +279,14 @@ int Sdb_conn::begin_transaction(THD *thd) {
     goto error;
   }
 
-  if (support_trans_and_timeout_attr) {
+  rc = sdb_get_version(*this, major, minor, fix);
+  if (rc != 0) {
+    snprintf(errmsg, sizeof(errmsg), "Failed to begin transaction, rc:%d", rc);
+    goto error;
+  }
+  /*The pre version of SequoiaDB(3.2) has no Source/Trans attrs.*/
+  if (!(major < 3 ||                   // x < 3
+        (3 == major && minor < 2))) {  // 3.x < 3.2
     session_attrs = get_session_attrs();
     /*
       TODO:
@@ -288,26 +296,11 @@ int Sdb_conn::begin_transaction(THD *thd) {
       later.
     */
     if (sdb_use_transaction(thd)) {
+      /*Set the lock wait timeout when the lock_wait_timeout has changed*/
+      session_attrs->set_trans_timeout(sdb_lock_wait_timeout(thd));
       /*Set the trans isolation when the isolation has changed*/
-      tx_iso = convert_to_sdb_isolation(thd->tx_isolation);
+      tx_iso = convert_to_sdb_isolation(thd->tx_isolation, major);
       session_attrs->set_trans_isolation(tx_iso);
-      rc = set_my_session_attr();
-      // No such options before sdb v3.2.4 Ignore it.
-      if (SDB_INVALIDARG == get_sdb_code(rc)) {
-        support_trans_and_timeout_attr = false;
-        rc = SDB_ERR_OK;
-      }
-
-      if (rc != SDB_OK) {
-        snprintf(errmsg, sizeof(errmsg),
-                 "Failed to set session attributes, rc=%d", rc);
-        goto error;
-      }
-    }
-
-    /*Set the lock wait timeout when the lock_wait_timeout has changed*/
-    session_attrs->set_trans_timeout(sdb_lock_wait_timeout(thd));
-    if (sdb_use_transaction(thd)) {
       /*Set the trans_auto_commit when the trans_auto_commit has changed*/
       session_attrs->set_trans_auto_commit(true);
       session_attrs->set_trans_use_rollback_segments(
@@ -316,15 +309,15 @@ int Sdb_conn::begin_transaction(THD *thd) {
       session_attrs->set_trans_auto_commit(false);
     }
     rc = set_my_session_attr();
-    // No such options before sdb v3.2.4. Ignore it.
-    if (SDB_INVALIDARG == get_sdb_code(rc)) {
-      support_trans_and_timeout_attr = false;
-      rc = SDB_ERR_OK;
-    }
-
     if (rc != SDB_OK) {
-      snprintf(errmsg, sizeof(errmsg),
-               "Failed to set session attributes, rc=%d", rc);
+      if (SDB_TRANS_ISO_RR == tx_iso) {
+        snprintf(errmsg, sizeof(errmsg),
+                 "Failed to begin transaction, may not support "
+                 "transaction isolation RR in sequoiadb, try RC isolation.");
+      } else {
+        snprintf(errmsg, sizeof(errmsg),
+                 "Failed to begin transaction during setting session attrs");
+      }
       goto error;
     }
 

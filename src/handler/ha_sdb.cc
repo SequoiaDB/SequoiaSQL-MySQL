@@ -5695,8 +5695,8 @@ static int sdb_init_func(void *p) {
     return 1;
   }
 
-  /*Init the sequoiadb_lock_wait_timeout update func */
-  sdb_init_lock_wait_timeout();
+  /*Init the sequoiadb vars check and update funcs */
+  sdb_init_vars_check_and_update_funcs();
 
   rc = sdb_encrypt_password();
   if (SDB_ERR_OK != rc) {
