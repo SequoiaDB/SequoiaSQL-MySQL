@@ -10,8 +10,8 @@ CREATE TABLE t1 ( a INT, b INT, c INT );
 CREATE VIEW v1 AS SELECT * FROM t1;
 CREATE OR REPLACE VIEW v1(a) AS SELECT "abc";
 CREATE OR REPLACE VIEW v2 AS SELECT * FROM t1 LOCAL;
-CREATE OR REPLACE ALGORITHM = MERGE DEFINER = "root" SQL SECURITY INVOKER VIEW v3 AS SELECT * FROM t1 LOCAL;
-CREATE DEFINER = "root" VIEW IF NOT EXISTS v4 AS SELECT a FROM t1;
+CREATE OR REPLACE ALGORITHM = MERGE DEFINER = "root"@"localhost" SQL SECURITY INVOKER VIEW v3 AS SELECT * FROM t1 LOCAL;
+CREATE DEFINER = "root"@"localhost" VIEW IF NOT EXISTS v4 AS SELECT a FROM t1;
 connection conn2;
 USE metaSync_view;
 SHOW CREATE TABLE t1;
@@ -29,15 +29,15 @@ View	Create View	character_set_client	collation_connection
 v2	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `v2` AS select `LOCAL`.`a` AS `a`,`LOCAL`.`b` AS `b`,`LOCAL`.`c` AS `c` from `t1` `LOCAL`	latin1	latin1_swedish_ci
 SHOW CREATE VIEW v3;
 View	Create View	character_set_client	collation_connection
-v3	CREATE ALGORITHM=MERGE DEFINER=`root`@`%` SQL SECURITY INVOKER VIEW `v3` AS select `LOCAL`.`a` AS `a`,`LOCAL`.`b` AS `b`,`LOCAL`.`c` AS `c` from `t1` `LOCAL`	latin1	latin1_swedish_ci
+v3	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v3` AS select `LOCAL`.`a` AS `a`,`LOCAL`.`b` AS `b`,`LOCAL`.`c` AS `c` from `t1` `LOCAL`	latin1	latin1_swedish_ci
 SHOW CREATE VIEW v4;
 View	Create View	character_set_client	collation_connection
-v4	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `v4` AS select `t1`.`a` AS `a` from `t1`	latin1	latin1_swedish_ci
-ALTER ALGORITHM = MERGE DEFINER = "root" SQL SECURITY INVOKER VIEW v1 AS SELECT * FROM t1 LOCAL;
+v4	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v4` AS select `t1`.`a` AS `a` from `t1`	latin1	latin1_swedish_ci
+ALTER ALGORITHM = MERGE DEFINER = "root"@"localhost" SQL SECURITY INVOKER VIEW v1 AS SELECT * FROM t1 LOCAL;
 connection conn1;
 SHOW CREATE VIEW v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=MERGE DEFINER=`root`@`%` SQL SECURITY INVOKER VIEW `v1` AS select `LOCAL`.`a` AS `a`,`LOCAL`.`b` AS `b`,`LOCAL`.`c` AS `c` from `t1` `LOCAL`	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v1` AS select `LOCAL`.`a` AS `a`,`LOCAL`.`b` AS `b`,`LOCAL`.`c` AS `c` from `t1` `LOCAL`	latin1	latin1_swedish_ci
 DROP VIEW v1,v2,v3;
 DROP VIEW IF EXISTS v4;
 connection conn2;
