@@ -195,6 +195,9 @@ int Sdb_conn::connect() {
     /*The pre version of SequoiaDB(3.2) has no Source/Trans attrs.*/
     if (!(major < 3 || (3 == major && minor < 2))) {
       session_attrs = get_session_attrs();
+      /* Sdb restart but not restart mysql client, session_attrs need to reset
+        and reset the session attrs. */
+      session_attrs->reset();
       session_attrs->set_source(hostname, sdb_proc_id(),
                                 (ulonglong)thread_id());
       session_attrs->set_trans_auto_rollback(false);

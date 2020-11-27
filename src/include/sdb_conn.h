@@ -34,7 +34,11 @@ class Sdb_statistics;
 
 class Sdb_session_attrs {
  public:
-  Sdb_session_attrs() {
+  Sdb_session_attrs() { reset(); }
+
+  ~Sdb_session_attrs(){};
+
+  void reset() {
     last_trans_isolation = SDB_TRANS_ISO_INVALID;
     last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVIAD;
     last_trans_auto_commit = SDB_DEFAULT_TRANS_AUTO_COMMIT;
@@ -48,8 +52,6 @@ class Sdb_session_attrs {
     trans_use_rollback_segments = true;
     session_attrs_mask = 0;
   }
-
-  ~Sdb_session_attrs(){};
 
   void save_last_attrs();
 
