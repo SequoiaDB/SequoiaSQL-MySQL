@@ -4546,6 +4546,17 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       goto done;
     }
 
+    /* Fix the 0 page to 1 page, to avoid the abnormal zero scan cost */
+    if (0 == stat.total_data_pages) {
+      stat.total_data_pages = 1;
+    }
+    if (0 == stat.total_index_pages) {
+      stat.total_index_pages = 1;
+    }
+    if (0 == stat.total_data_free_space) {
+      stat.total_data_free_space = stat.page_size;
+    }
+
     /* Update shared statistics with fresh data */
     if (share) {
       Sdb_mutex_guard guard(share->mutex);
