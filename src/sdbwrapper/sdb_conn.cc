@@ -176,42 +176,53 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    static bool support_source_and_trans_attr = true;
+    const char *hostname = NULL;
+    int hostname_len = (int)strlen(glob_hostname);
 
-    if (support_source_and_trans_attr) {
-      const char *hostname = NULL;
-      int hostname_len = (int)strlen(glob_hostname);
+    if (0 >= hostname_len) {
+      static char empty[] = "";
+      hostname = empty;
+    } else {
+      hostname = glob_hostname;
+    }
 
-      if (0 >= hostname_len) {
-        static char empty[] = "";
-        hostname = empty;
-      } else {
-        hostname = glob_hostname;
-      }
+    int major = 0, minor = 0, fix = 0;
+    rc = sdb_get_version(*this, major, minor, fix);
+    if (rc != 0) {
+      snprintf(errmsg, sizeof(errmsg), "Failed to begin transaction, rc:%d",
+               rc);
+      goto error;
+    }
+    /*The pre version of SequoiaDB(3.2) has no Source/Trans attrs.*/
+    if (!(major < 3 || (3 == major && minor < 2))) {
       session_attrs = get_session_attrs();
+      /* Sdb restart but not restart mysql client, session_attrs need to reset
+        and reset the session attrs. */
+      session_attrs->reset();
       session_attrs->set_source(hostname, sdb_proc_id(),
                                 (ulonglong)thread_id());
       session_attrs->set_trans_auto_rollback(false);
+
       /* Server HA conn:
          1. use transaction.
          2. default lock wait timeout, use rbs.
       */
-      if (m_is_server_ha_conn) {
-        session_attrs->set_trans_auto_commit(true, true);
+      bool use_transaction =
+          m_is_server_ha_conn || sdb_use_transaction(current_thd);
+      if (use_transaction) {
+        if (m_is_server_ha_conn) {
+          session_attrs->set_trans_auto_commit(true, true);
+        } else {
+          session_attrs->set_trans_auto_commit(true, true);
+          session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
+          session_attrs->set_trans_use_rollback_segments(
+              sdb_use_rollback_segments(current_thd), true);
+        }
       } else {
-        session_attrs->set_trans_auto_commit(
-            sdb_use_transaction(current_thd) ? true : false);
-        session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
-        session_attrs->set_trans_use_rollback_segments(
-            sdb_use_rollback_segments(current_thd), true);
-      }
-      rc = set_my_session_attr();
-      // No such options before sdb v3.2.4. Ignore it.
-      if (SDB_INVALIDARG == get_sdb_code(rc)) {
-        support_source_and_trans_attr = false;
-        rc = SDB_ERR_OK;
+        session_attrs->set_trans_auto_commit(false, true);
       }
 
+      rc = set_my_session_attr();
       if (SDB_ERR_OK != rc) {
         snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d",
                  rc);
@@ -276,9 +287,8 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
   bson::BSONObj option;
   bson::BSONObjBuilder builder(32);
   Sdb_session_attrs *session_attrs = NULL;
-  static bool support_trans_and_timeout_attr = true;
+  int major = 0, minor = 0, fix = 0;
   bool use_transaction = false;
-
   set_rollback_on_timeout(false);
   /*
     Use transactions in the case of:
@@ -295,7 +305,14 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
     goto error;
   }
 
-  if (support_trans_and_timeout_attr) {
+  rc = sdb_get_version(*this, major, minor, fix);
+  if (rc != 0) {
+    snprintf(errmsg, sizeof(errmsg), "Failed to begin transaction, rc:%d", rc);
+    goto error;
+  }
+  /*The pre version of SequoiaDB(3.2) has no Source/Trans attrs.*/
+  if (!(major < 3 ||                   // x < 3
+        (3 == major && minor < 2))) {  // 3.x < 3.2
     session_attrs = get_session_attrs();
     /*
       TODO:
@@ -306,59 +323,40 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
     */
     if (use_transaction) {
       /*Set the trans isolation when the isolation has changed*/
-      tx_iso = convert_to_sdb_isolation(tx_isolation);
+      tx_iso = convert_to_sdb_isolation(tx_isolation, major);
       session_attrs->set_trans_isolation(tx_iso);
-      rc = set_my_session_attr();
-      // No such options before sdb v3.2.4 Ignore it.
-      if (SDB_INVALIDARG == get_sdb_code(rc)) {
-        support_trans_and_timeout_attr = false;
-        rc = SDB_ERR_OK;
-      }
 
-      if (rc != SDB_OK) {
-        snprintf(errmsg, sizeof(errmsg),
-                 "Failed to set session attributes, rc=%d", rc);
-        goto error;
-      }
-    }
-
-    /* conns attrs:
-       1. Normal conns: TransTimeout/TransAutocommit/TransUseRBS,
-                        take effect here.
-       2. Server HA conns: TransAutocommit(true)
-                           TransIsolation(rc)
-                           all other attrs use default value.
-    */
-    if (!m_is_server_ha_conn) {
-      /*Set the lock wait timeout when the sequoiadb_lock_wait_timeout has
-       * changed*/
-      session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
-      if (sdb_use_transaction(current_thd)) {
+      /* conns attrs:
+         1. Normal conns: TransTimeout/TransAutocommit/TransUseRBS,
+                          take effect here.
+         2. Server HA conns: TransAutocommit(true)
+                             TransIsolation(rc)
+                             all other attrs use default value.
+      */
+      if (!m_is_server_ha_conn) {
+        /*Set the lock wait timeout when the sequoiadb_lock_wait_timeout has
+         * changed*/
+        session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
         /*Set the trans_auto_commit when the sequoiadb_use_transaction has
          * changed*/
         session_attrs->set_trans_auto_commit(true);
         session_attrs->set_trans_use_rollback_segments(
             sdb_use_rollback_segments(current_thd));
-      } else {
-        session_attrs->set_trans_auto_commit(false);
       }
-      rc = set_my_session_attr();
-      // No such options before sdb v3.2.4. Ignore it.
-      if (SDB_INVALIDARG == get_sdb_code(rc)) {
-        support_trans_and_timeout_attr = false;
-        rc = SDB_ERR_OK;
-      }
-
-      if (rc != SDB_OK) {
-        snprintf(errmsg, sizeof(errmsg),
-                 "Failed to set session attributes, rc=%d", rc);
-        goto error;
-      }
+    } else {
+      session_attrs->set_trans_auto_commit(false);
     }
 
-    if (!use_transaction) {
-      goto done;
+    rc = set_my_session_attr();
+    if (rc != SDB_OK) {
+      snprintf(errmsg, sizeof(errmsg),
+               "Failed to begin transaction during setting session attrs");
+      goto error;
     }
+  }
+
+  if (!use_transaction) {
+    goto done;
   }
 
   while (!m_transaction_on) {

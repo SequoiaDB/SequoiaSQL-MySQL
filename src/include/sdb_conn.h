@@ -34,7 +34,11 @@ class Sdb_statistics;
 
 class Sdb_session_attrs {
  public:
-  Sdb_session_attrs() {
+  Sdb_session_attrs() { reset(); }
+
+  ~Sdb_session_attrs(){};
+
+  void reset() {
     last_trans_isolation = SDB_TRANS_ISO_INVALID;
     last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVIAD;
     last_trans_auto_commit = SDB_DEFAULT_TRANS_AUTO_COMMIT;
@@ -48,8 +52,6 @@ class Sdb_session_attrs {
     trans_use_rollback_segments = true;
     session_attrs_mask = 0;
   }
-
-  ~Sdb_session_attrs(){};
 
   void save_last_attrs();
 
@@ -132,6 +134,8 @@ class Sdb_session_attrs {
   inline bool get_last_trans_use_rollback_segments() {
     return last_trans_use_rollback_segments;
   }
+
+  inline bool get_last_trans_auto_commit() { return last_trans_auto_commit; }
 
  private:
   ulong last_trans_isolation;
@@ -217,7 +221,8 @@ class Sdb_conn {
     return m_connection.getLastErrorObj(errObj);
   }
 
-  inline ulong convert_to_sdb_isolation(const ulong tx_isolation) {
+  inline ulong convert_to_sdb_isolation(const ulong tx_isolation,
+                                        const int major = 3) {
     switch (tx_isolation) {
       case ISO_READ_UNCOMMITTED:
         return SDB_TRANS_ISO_RU;
@@ -229,7 +234,12 @@ class Sdb_conn {
         return SDB_TRANS_ISO_RS;
         break;
       case ISO_REPEATABLE_READ:
-        return SDB_TRANS_ISO_RR;
+        // x < 5 not support RR. sdb use RC to mysql RR.
+        if (major < 5) {
+          return SDB_TRANS_ISO_RC;
+        } else {
+          return SDB_TRANS_ISO_RR;
+        }
         break;
       case ISO_SERIALIZABLE:  // not supported current now.
       default:

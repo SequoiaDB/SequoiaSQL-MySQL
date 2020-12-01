@@ -28,6 +28,8 @@
 #include <my_thread_os_id.h>
 #endif
 
+bool sdb_version_cached = false;
+
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size) {
   int rc = 0;
@@ -998,7 +1000,6 @@ bool sdb_is_string_type(Field *field) {
 // Get the version of remote SequoiaDB cluster.
 int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
                     bool use_cached) {
-  static bool has_cached = false;
   static int cached_major = 0;
   static int cached_minor = 0;
   static int cached_fix = 0;
@@ -1006,10 +1007,10 @@ int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
   int rc = 0;
 
   if (!use_cached) {
-    has_cached = false;
+    sdb_version_cached = false;
   }
 
-  if (has_cached) {
+  if (sdb_version_cached) {
     major = cached_major;
     minor = cached_minor;
     fix = cached_fix;
@@ -1044,7 +1045,7 @@ int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
   cached_major = major;
   cached_minor = minor;
   cached_fix = fix;
-  has_cached = true;
+  sdb_version_cached = true;
 
 done:
   return rc;

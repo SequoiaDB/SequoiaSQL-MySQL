@@ -24,6 +24,8 @@
 #include "ha_sdb_errcode.h"
 #include "sdb_conn.h"
 
+extern bool sdb_version_cached;
+
 #define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 enum enum_compress_type {
@@ -99,6 +101,10 @@ int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
 my_bool sdb_is_field_sortable(const Field *field);
 
 bool sdb_is_string_type(Field *field);
+
+inline void sdb_invalidate_version_cache() {
+  sdb_version_cached = false;
+}
 
 int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
                     bool use_cached = true);

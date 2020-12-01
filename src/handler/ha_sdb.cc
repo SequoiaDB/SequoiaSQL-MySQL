@@ -4809,10 +4809,22 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
-    // in non-transaction mode or altering table,
-    // do not exec commit or rollback.
-    if (!sdb_use_transaction(thd) ||
-        SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
+    // in non-transaction mode, do not exec commit or rollback.
+    if (!sdb_use_transaction(thd)) {
+      thd_get_thd_sdb(thd)->set_auto_commit(false);
+      // but need to set TransAutoCommit = false with begin_transaction
+      rc = conn->begin_transaction(thd->tx_isolation);
+      if (rc != 0) {
+        SDB_PRINT_ERROR(rc, "%s", conn->get_err_msg());
+        conn->clear_err_msg();
+        goto done;
+      }
+      goto done;
+    }
+
+    // in altering table, not begin trans here but later and
+    // not exec commit or rollback.
+    if (SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
       thd_get_thd_sdb(thd)->set_auto_commit(false);
       goto done;
     }
@@ -4846,7 +4858,6 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
         if (rc != 0) {
           goto error;
         }
-
         trans_register_ha(thd, FALSE, ht, NULL);
       }
     }
@@ -6959,8 +6970,8 @@ static int sdb_init_func(void *p) {
     return 1;
   }
 
-  /*Init the sequoiadb_lock_wait_timeout update func */
-  sdb_init_lock_wait_timeout();
+  /*Init the sequoiadb vars check and update funcs */
+  sdb_init_vars_check_and_update_funcs();
 
   rc = sdb_encrypt_password();
   if (SDB_ERR_OK != rc) {

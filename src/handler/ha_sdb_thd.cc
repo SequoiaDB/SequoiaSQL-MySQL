@@ -25,6 +25,82 @@
 #include "ha_sdb_errcode.h"
 #include <strfunc.h>
 
+static void sdb_set_conn_addr(THD *thd, st_mysql_sys_var *var, void *tgt,
+                              const void *save) {
+  bool addr_changed = false;
+
+  if (0 != strncmp(*(char **)tgt, *(char **)save, strlen(*(char **)save))) {
+    addr_changed = true;
+  }
+
+  *(char **)tgt = *(char **)save;
+  if (!addr_changed) {
+    goto done;
+  }
+
+  /* Invalid the version cache and refresh.*/
+  /* TODO: not consider the case of coord addrs was configured with
+     two or more different version of sdb.*/
+  sdb_invalidate_version_cache();
+
+done:
+  /* Ignore the error code. */
+  return;
+}
+
+static int sdb_use_trans_check(THD *thd, struct st_mysql_sys_var *var,
+                               void *save, struct st_mysql_value *value) {
+  int rc = SDB_OK;
+  Sdb_conn *conn = NULL;
+  Sdb_session_attrs *session_attrs = NULL;
+  char buff[STRING_BUFFER_USUAL_SIZE] = {0};
+  const char *str = NULL;
+  int result = 0, length = 0;
+  long long tmp = 0;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+
+  /* Check the validate of parameter input value. */
+  if (value->value_type(value) == MYSQL_VALUE_TYPE_STRING) {
+    length = sizeof(buff);
+    if (!(str = value->val_str(value, buff, &length)) ||
+        (result = find_type(&bool_typelib, str, length, 1) - 1) < 0) {
+      goto error;
+    }
+  } else {
+    if (value->val_int(value, &tmp) < 0) {
+      goto error;
+    }
+    if (tmp > 1) {
+      goto error;
+    }
+    result = (int)tmp;
+  }
+
+  /*
+    Check if sequoiadb_use_transaction changed or not, it is not
+    allowed to change during transaction.
+  */
+  if ((thd_sdb && thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated())) {
+    conn = thd_sdb->get_conn();
+    if (conn->is_transaction_on()) {
+      session_attrs = conn->get_session_attrs();
+      if (session_attrs->get_last_trans_auto_commit() != (bool)result) {
+        SDB_PRINT_ERROR(ER_WRONG_VALUE_FOR_VAR,
+                        "Cannot change sequoiadb_use_transaction during "
+                        "transaction.");
+        goto error;
+      }
+    }
+  }
+  *(my_bool *)save = result ? TRUE : FALSE;
+
+done:
+  return rc;
+error:
+  rc = 1;
+  goto done;
+}
+
 /*The session attribute of TransTimeout can be updated during transaction.*/
 void sdb_set_trans_timeout(MYSQL_THD thd, struct st_mysql_sys_var *var,
                            void *var_ptr, const void *save) {
@@ -84,12 +160,13 @@ static int sdb_use_rbs_check(THD *thd, struct st_mysql_sys_var *var, void *save,
   int rc = SDB_OK;
   Sdb_conn *conn = NULL;
   Sdb_session_attrs *session_attrs = NULL;
-  char buff[STRING_BUFFER_USUAL_SIZE];
-  const char *str;
-  int result, length;
-  long long tmp;
+  char buff[STRING_BUFFER_USUAL_SIZE] = {0};
+  const char *str = NULL;
+  int result = 0, length = 0;
+  long long tmp = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
+  /* Check the validate of parameter input value. */
   if (value->value_type(value) == MYSQL_VALUE_TYPE_STRING) {
     length = sizeof(buff);
     if (!(str = value->val_str(value, buff, &length)) ||
@@ -132,7 +209,9 @@ error:
   goto done;
 }
 
-void sdb_init_lock_wait_timeout() {
+void sdb_init_vars_check_and_update_funcs() {
+  sdb_set_connection_addr = &sdb_set_conn_addr;
+  sdb_use_transaction_check = &sdb_use_trans_check;
   sdb_set_lock_wait_timeout = &sdb_set_trans_timeout;
   sdb_use_rollback_segments_check = &sdb_use_rbs_check;
 }

@@ -89,7 +89,8 @@ TYPELIB sdb_error_level_typelib = {array_elements(sdb_error_level_names) - 1,
 
 static const int SDB_SAMPLE_NUM_MIN = 100;
 static const int SDB_SAMPLE_NUM_MAX = 10000;
-
+mysql_var_update_func sdb_set_connection_addr = NULL;
+mysql_var_check_func sdb_use_transaction_check = NULL;
 mysql_var_update_func sdb_set_lock_wait_timeout = NULL;
 mysql_var_check_func sdb_use_rollback_segments_check = NULL;
 
@@ -108,12 +109,29 @@ static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
   return rc;
 }
 
+static void sdb_conn_addr_update(THD *thd, struct st_mysql_sys_var *var,
+                                 void *var_ptr, const void *save) {
+  if (sdb_set_connection_addr) {
+    sdb_set_connection_addr(thd, var, var_ptr, save);
+  }
+}
+
 static void sdb_password_update(THD *thd, struct st_mysql_sys_var *var,
                                 void *var_ptr, const void *save) {
   Sdb_rwlock_write_guard guard(sdb_password_lock);
   const char *new_password = *static_cast<const char *const *>(save);
   sdb_password = const_cast<char *>(new_password);
   sdb_encrypt_password();
+}
+
+static int sdb_use_transaction_validate(THD *thd, struct st_mysql_sys_var *var,
+                                        void *save,
+                                        struct st_mysql_value *value) {
+  int rc = SDB_OK;
+  if (sdb_use_transaction_check) {
+    rc = sdb_use_transaction_check(thd, var, save, value);
+  }
+  return rc;
 }
 
 static void sdb_stats_cache_update(THD *thd, struct st_mysql_sys_var *var,
@@ -185,7 +203,8 @@ static MYSQL_SYSVAR_STR(conn_addr, sdb_conn_str,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
                         "SequoiaDB addresses. (Default: \"localhost:11810\")"
                         /*SequoiaDB 连接地址。*/,
-                        sdb_conn_addr_validate, NULL, SDB_ADDR_DFT);
+                        sdb_conn_addr_validate, sdb_conn_addr_update,
+                        SDB_ADDR_DFT);
 static MYSQL_SYSVAR_STR(user, sdb_user,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
                         "SequoiaDB authentication user. "
@@ -272,7 +291,8 @@ static MYSQL_SYSVAR_ENUM(
 static MYSQL_THDVAR_BOOL(use_transaction, PLUGIN_VAR_OPCMDARG,
                          "Enable transaction of SequoiaDB. (Default: ON)"
                          /*是否开启事务功能。*/,
-                         NULL, NULL, SDB_DEFAULT_USE_TRANSACTION);
+                         sdb_use_transaction_validate, NULL,
+                         SDB_DEFAULT_USE_TRANSACTION);
 static MYSQL_THDVAR_LONGLONG(
     alter_table_overhead_threshold, PLUGIN_VAR_OPCMDARG,
     "Overhead threshold of table alteration. When count of records exceeds it, "

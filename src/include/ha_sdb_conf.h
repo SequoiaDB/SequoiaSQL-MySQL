@@ -93,6 +93,8 @@ extern double sdb_stats_sample_percent;
 
 extern String sdb_encoded_password;
 
+extern mysql_var_update_func sdb_set_connection_addr;
+extern mysql_var_check_func sdb_use_transaction_check;
 extern mysql_var_update_func sdb_set_lock_wait_timeout;
 extern mysql_var_check_func sdb_use_rollback_segments_check;
 
