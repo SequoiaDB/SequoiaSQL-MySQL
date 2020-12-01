@@ -14320,8 +14320,8 @@ UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
 DELETE FROM t2 LIMIT 2;
 SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
 id	a	c
-4	-99	tf
 5	-9	001
+6	15	9a
 SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 id	a	c
 4	-99	tf
