@@ -669,7 +669,8 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
   bson::BSONObjBuilder builder_selector_field(96);
   const bool use_having_condition = sdb_having_condition(thd);
   const bool use_distinct = sdb_use_distinct(thd);
-  if (!join || use_having_condition || use_distinct) {
+  const bool use_force_index = table->force_index;
+  if (!join || use_having_condition || use_distinct || use_force_index) {
     goto done;
   }
   if (sdb_where_condition(thd)) {
