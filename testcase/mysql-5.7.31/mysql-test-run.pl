@@ -1441,7 +1441,17 @@ sub command_line_setup {
   }
   $ENV{'META_SYNC_USER'}= $sequoiadb_meta_sync_user;
   $ENV{'META_SYNC_PASSWD'}= $sequoiadb_meta_sync_passwd;
-  $ENV{'META_SYNC_TIMEOUT'}= $sequoiadb_meta_sync_timeout || 5;
+  if (not defined($sequoiadb_meta_sync_timeout)){
+     $ENV{'META_SYNC_TIMEOUT'} = 5;  # default 5s without specified --meta-sync-timeout 
+  } 
+  else {
+     if($sequoiadb_meta_sync_timeout > 0){
+        $ENV{'META_SYNC_TIMEOUT'} = $sequoiadb_meta_sync_timeout; # specified --meta-sync-timeout=N(>0)
+     }    
+     else{
+        $ENV{'META_SYNC_TIMEOUT'} = 0; # specified --meta-sync-timeout=0
+     }    
+  }
  
   if ($opt_verbose != 0){
     report_option('verbose', $opt_verbose);
