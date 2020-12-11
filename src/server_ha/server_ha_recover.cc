@@ -1694,9 +1694,11 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
       snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
                db_name, table_name, op_type);
       if (0 == rc) {
+        mysql_mutex_lock(&ha_thread->inst_cache_mutex);
         rc = ha_update_cached_record(ha_thread->inst_state_cache,
                                      HA_KEY_MEM_INST_STATE_CACHE,
                                      cached_record_key, sql_id);
+        mysql_mutex_unlock(&ha_thread->inst_cache_mutex);
         // if its oom, stop current instance
         if (rc) {
           goto error;

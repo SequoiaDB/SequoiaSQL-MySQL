@@ -155,6 +155,7 @@ typedef struct st_recover_replay_thread {
 
   // use to cache HAInstanceState records for current instance
   HASH inst_state_cache;
+  mysql_mutex_t inst_cache_mutex;
 
   // use to notify main thread(maybe blocked in server_ha_deinit)
   // that replay thread exit, then destroy ha_recover_replay_thread

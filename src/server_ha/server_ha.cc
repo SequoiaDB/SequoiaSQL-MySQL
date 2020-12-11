@@ -650,8 +650,10 @@ static int wait_object_updated_to_lastest(
   snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s", db_name,
            table_name, op_type);
   do {
+    mysql_mutex_lock(&ha_thread.inst_cache_mutex);
     cached_record =
         get_cached_record(ha_thread.inst_state_cache, cached_record_key);
+    mysql_mutex_unlock(&ha_thread.inst_cache_mutex);
     // if 'db_name:table_name:op_type' does not exists
     if (!abort_loop && !cached_record) {
       sleep(1);
@@ -1155,9 +1157,11 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     // update cached instance state
     snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", db_name,
              table_name, op_type);
+    mysql_mutex_lock(&ha_thread.inst_cache_mutex);
     rc = ha_update_cached_record(ha_thread.inst_state_cache,
                                  HA_KEY_MEM_INST_STATE_CACHE, cached_record_key,
                                  sql_id);
+    mysql_mutex_unlock(&ha_thread.inst_cache_mutex);
 
   write_empty_log:
     // write an empty SQL log into 'HASQLLog'
@@ -1202,9 +1206,11 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       // update cached instance state for new table
       snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", new_db_name,
                new_tbl_name, extra_op_type);
+      mysql_mutex_lock(&ha_thread.inst_cache_mutex);
       rc = ha_update_cached_record(ha_thread.inst_state_cache,
                                    HA_KEY_MEM_INST_STATE_CACHE,
                                    cached_record_key, sql_id);
+      mysql_mutex_unlock(&ha_thread.inst_cache_mutex);
     }
 
     if (rc) {
@@ -2645,6 +2651,8 @@ static int server_ha_init(void *p) {
                      &ha_thread.recover_finished_mutex, MY_MUTEX_INIT_FAST);
     mysql_mutex_init(HA_KEY_MUTEX_REPLAY_STOPPED,
                      &ha_thread.replay_stopped_mutex, MY_MUTEX_INIT_FAST);
+    mysql_mutex_init(HA_KEY_MUTEX_INST_CACHE,
+                     &ha_thread.inst_cache_mutex, MY_MUTEX_INIT_FAST);
     my_thread_attr_init(&ha_thread.thread_attr);
     if (sdb_hash_init(&ha_thread.inst_state_cache, system_charset_info, 32, 0,
                       0, (my_hash_get_key)cached_record_get_key,
@@ -2694,6 +2702,7 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
     mysql_mutex_destroy(&ha_thread.recover_finished_mutex);
     mysql_cond_destroy(&ha_thread.replay_stopped_cond);
     mysql_mutex_destroy(&ha_thread.replay_stopped_mutex);
+    mysql_mutex_destroy(&ha_thread.inst_cache_mutex);
     my_thread_attr_destroy(&ha_thread.thread_attr);
     my_hash_reset(&ha_thread.inst_state_cache);
     my_hash_free(&ha_thread.inst_state_cache);
