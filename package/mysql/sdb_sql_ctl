@@ -30,7 +30,7 @@ NEED_PRINTSCREEN=false
 NEED_BACKUPLOG=false
 SQL_USER=sdbadmin
 SYS_CONF_FILE=""
-PROCESS_WAIT_TIME=5
+PROCESS_WAIT_TIME=60
 ME=$(basename "$0")
 
 function lack_para()
