@@ -4,7 +4,7 @@
 #Case 13114#Case 13115#Case 13116#Case 13117#Case 13118#Case 13119#Case 13120#Case 13121
 #Case 13305#Case 13306#Case 15436#Case 15438#Case 22080#Case 22379#Case 22380#Case 22381
 #Case 22382#Case 22383#Case 22384#Case 22385#Case 22386#Case 22387#Case 22388#Case 22389
-#Case 22785#Case 23020#Case 23021#Case 23022
+#Case 22785#Case 23020#Case 23021#Case 23022#Case 23037
 --source include/have_sequoiadb.inc
 
 --disable_warnings
@@ -1642,5 +1642,23 @@ SELECT gid, ST_AsText(poly),ST_AsText(poly2),ST_NumInteriorRings(poly) FROM gis_
 SELECT gid, ST_AsText(poin),ST_AsText(poin2) FROM gis_search where ST_Within(ST_PointFromText('POINT(1 1)'),poin2);
 
 DROP TABLE gis_search;
+
+#
+# FIELD NAME CASE SENSITIVITY TESTING 
+#
+#seqDB-23037
+CREATE TABLE t1 ( id INT PRIMARY KEY, col1 CHAR(8), COL2 CHAR(8), col3 CHAR(8), col4 CHAR(8) );
+INSERT INTO t1 VALUES (1,'test1','test1','test1','test1'), (2,'test2','test2','test2','test2'), (3,'test3','test3','test3','test3');
+INSERT INTO t1 VALUES (4,'test4','test4','test4','test4'), (5,'test5','test5','test5','test5'), (6,'test6','test6','test6','test6');
+SELECT COUNT(id) FROM t1;
+SELECT COUNT(ID) FROM t1;
+SELECT col2 FROM t1 WHERE col2 = 'test2';
+SELECT COL2 FROM t1 WHERE col2 > 'test5';
+UPDATE t1 SET COL1 = CONCAT('update', ID), col2 = CONCAT('update', id) WHERE id > 1 AND COL1 < 'test3';
+SELECT ID,COL1,col2,COL3 FROM t1 ORDER BY ID;
+DELETE FROM t1 WHERE ID > 1 AND col2 = 'test4';
+SELECT ID,COL1,col2,COL3 FROM t1 ORDER BY COL2;
+SELECT ID,col2 FROM t1 GROUP BY ID,col2 ORDER BY id,col2;
+DROP TABLE t1;
 
 --source include/uninstall_sequoiadb.inc

@@ -13506,4 +13506,51 @@ pk	first_asc	last_asc	first_desc	last_desc
 11	1	11	11	11
 [Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null, "pk": null }], order_by[{}], hint[{}], limit[-1], offset[0]
 drop table t1;
+CREATE TABLE t1 ( id INT PRIMARY KEY, col1 CHAR(8), COL2 CHAR(8), col3 CHAR(8), col4 CHAR(8) );
+INSERT INTO t1 VALUES (1,'test1','test1','test1','test1'), (2,'test2','test2','test2','test2'), (3,'test3','test3','test3','test3');
+INSERT INTO t1 VALUES (4,'test4','test4','test4','test4'), (5,'test5','test5','test5','test5'), (6,'test6','test6','test6','test6');
+SELECT COUNT(id) FROM t1;
+COUNT(id)
+6
+SELECT COUNT(ID) FROM t1;
+COUNT(ID)
+6
+SELECT col2 FROM t1 WHERE col2 = 'test2';
+col2
+test2
+[Note] SequoiaDB: Query message: condition[{ "COL2": { "$et": "test2" } }], selector[{ "_id": null, "COL2": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+SELECT COL2 FROM t1 WHERE col2 > 'test5';
+COL2
+test6
+[Note] SequoiaDB: Query message: condition[{ "COL2": { "$gt": "test5" } }], selector[{ "_id": null, "COL2": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+UPDATE t1 SET COL1 = "update2", col2 = "update2" WHERE id > 1 AND COL1 < 'test3';
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col1": "update2", "COL2": "update2" } }, condition: { "$and": [ { "$and": [ { "id": { "$gt": 1 } }, { "col1": { "$lt": "test3" } } ] }, { "id": { "$gt": 1 } } ] }
+SELECT ID,COL1,col2,COL3 FROM t1 ORDER BY ID;
+ID	COL1	col2	COL3
+1	test1	test1	test1
+2	update2	update2	test2
+3	test3	test3	test3
+4	test4	test4	test4
+5	test5	test5	test5
+6	test6	test6	test6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[-1], offset[0]
+DELETE FROM t1 WHERE ID > 1 AND col2 = 'test4';
+[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "$and": [ { "id": { "$gt": 1 } }, { "COL2": { "$et": "test4" } } ] }, { "id": { "$gt": 1 } } ] }
+SELECT ID,COL1,col2,COL3 FROM t1 ORDER BY col2;
+ID	COL1	col2	COL3
+1	test1	test1	test1
+3	test3	test3	test3
+5	test5	test5	test5
+6	test6	test6	test6
+2	update2	update2	test2
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "COL2": 1 }], hint[{}], limit[-1], offset[0]
+SELECT ID,col2 FROM t1 GROUP BY ID,col2 ORDER BY id,col2;
+ID	col2
+1	test1
+2	update2
+3	test3
+5	test5
+6	test6
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "id": { "$first": "$id" }, "COL2": { "$first": "$COL2" }, "_id": { "id": "$id", "COL2": "$COL2" } } }], sort[{ "$sort": { "id": 1, "COL2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+DROP TABLE t1;
 DROP DATABASE query_pushdown_test_sequoiadb;
