@@ -9410,7 +9410,7 @@ a
 9
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
-CREATE TABLE t1 ( id INT AUTO_INCREMENT, a BIGINT, c CHAR(64), PRIMARY KEY(id, c), KEY(c) );
+CREATE TABLE t1 ( id INT AUTO_INCREMENT, a BIGINT, c CHAR(64), KEY(id, c), KEY(c) );
 INSERT INTO t1(a,c) VALUES (1,'op'),(-1,'bc'),(10,'123'),(1,'tf'),(-9,'001'),(15,'9a'),(0,'abc'),(5,'jk'),(19,'123'),(9,'hello'),(1,'bc');
 SELECT * FROM t1 ORDER BY id LIMIT 3;
 id	a	c
@@ -9450,21 +9450,21 @@ id	a	c
 4	1	tf
 5	-9	001
 6	15	9a
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[-1], offset[0]
 SELECT * FROM t1 WHERE 10 > ABS(a) ORDER BY id LIMIT 3 OFFSET 2;
 id	a	c
 4	1	tf
 5	-9	001
 7	0	abc
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
-SELECT * FROM t1 ignore index(primary,c)WHERE id <= 10 ORDER BY a, id LIMIT 4 OFFSET 2;
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[-1], offset[0]
+SELECT * FROM t1 ignore index(id,c)WHERE id <= 10 ORDER BY a, id LIMIT 4 OFFSET 2;
 id	a	c
 7	0	abc
 1	1	op
 4	1	tf
 8	5	jk
 [Note] SequoiaDB: Query message: condition[{ "id": { "$lte": 10 } }], selector[{}], order_by[{ "a": 1, "id": 1 }], hint[{}], limit[4], offset[2]
-SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 ignore index(primary,c) GROUP BY id,c ORDER BY id,c;
+SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 ignore index(id,c) GROUP BY id,c ORDER BY id,c;
 id	s	c
 1	0	1
 2	1	1
@@ -9488,7 +9488,7 @@ a
 1
 5
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "a": { "$first": "$a" }, "_id": { "a": "$a" } } }], sort[{ "$sort": { "a": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": 5 }]
-SELECT id FROM t1 ignore index(primary,c) HAVING id > 2 ORDER BY id LIMIT 5 OFFSET 1;
+SELECT id FROM t1 ignore index(id,c) HAVING id > 2 ORDER BY id LIMIT 5 OFFSET 1;
 id
 4
 5
@@ -9524,7 +9524,7 @@ FOUND_ROWS()
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[-1], offset[0]
 CREATE TABLE t2 ( id INT, vc VARCHAR(16));
 INSERT INTO t2 VALUES (1,'op'),(-1,'bc'),(10,'123'),(7,'ui'),(18,'123'),(10,'hello'),(0,'bc');
-SELECT * FROM t2 LEFT JOIN t1 ignore index(primary,c) ON t2.id = t1.id ORDER BY t2.id LIMIT 3 OFFSET 1;
+SELECT * FROM t2 LEFT JOIN t1 ignore index(id,c) ON t2.id = t1.id ORDER BY t2.id LIMIT 3 OFFSET 1;
 id	vc	id	a	c
 0	bc	NULL	NULL	NULL
 1	op	1	1	op
@@ -9538,9 +9538,61 @@ SELECT (SELECT a FROM t1 WHERE t1.a=t2.vc), vc FROM t2 ORDER BY t2.id, t2.vc LIM
 CREATE TABLE t3 SELECT * FROM t1 WHERE id > 5 LIMIT 5;
 INSERT INTO t3 SELECT * FROM t1 LIMIT 3 OFFSET 2;
 UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 10 } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 10 } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[-1], offset[0]
 DELETE FROM t2 LIMIT 2;
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+EXPLAIN SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index_merge	id,c	id,c	4,65	NULL	8	100.00	Using sort_union(id,c); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`id` > 4) or (`query_pushdown_test_sequoiadb`.`t1`.`c` > 'bc'))
+Warnings:
+Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`id` AS `id`,`query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`c` AS `c` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`id` > 4) or (`query_pushdown_test_sequoiadb`.`t1`.`c` > 'bc')) limit 1,2
+SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+id	a	c
+5	-9	001
+6	15	9a
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$gt": 4 } }, { "c": { "$gt": "bc" } } ] }, { "c": { "$gt": "bc" } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+1], offset[0], mrr[1]
+EXPLAIN SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index_merge	id,c	id,c	4,65	NULL	8	100.00	Using sort_union(id,c); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`id` <= 4) or (`query_pushdown_test_sequoiadb`.`t1`.`c` > 'abc'))
+Warnings:
+Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`id` AS `id`,`query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`c` AS `c` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`id` <= 4) or (`query_pushdown_test_sequoiadb`.`t1`.`c` > 'abc')) limit 3,2
+SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
+id	a	c
+4	-99	tf
+8	5	jk
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$lte": 4 } }, { "c": { "$gt": "abc" } } ] }, { "c": { "$gt": "abc" } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+3], offset[0], mrr[1]
+EXPLAIN SELECT * FROM t1 WHERE id IN (1,2,6,11) LIMIT 1,2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	range	id	id	4	NULL	8	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`id` in (1,2,6,11))
+Warnings:
+Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`id` AS `id`,`query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`c` AS `c` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`id` in (1,2,6,11)) limit 1,2
+SELECT * FROM t1 WHERE id IN (1,2,6,11) LIMIT 1,2;
+id	a	c
+2	-99	bc
+6	15	9a
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$in": [ 1, 2, 6, 11 ] } }, { "id": { "$et": 6 } } ] }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[2+1], offset[0], mrr[1]
+EXPLAIN SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	ALL	c	NULL	NULL	NULL	11	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`c` not in ('123','bc','abc','hello'))
+Warnings:
+Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`id` AS `id`,`query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`c` AS `c` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`c` not in ('123','bc','abc','hello')) limit 1,3
+SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
+id	a	c
+4	-99	tf
+5	-9	001
+6	15	9a
+[Note] SequoiaDB: Query message: condition[{ "c": { "$nin": [ "123", "bc", "abc", "hello" ] } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[1]
+INSERT INTO t1 (id,a) VALUES (12,12), (13,13);
+EXPLAIN SELECT * FROM t1 WHERE c = 'abc' OR c IS NULL LIMIT 1,2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	ref_or_null	c	c	65	const	4	100.00	Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`c` = 'abc') or isnull(`query_pushdown_test_sequoiadb`.`t1`.`c`))
+Warnings:
+Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`id` AS `id`,`query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`c` AS `c` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`c` = 'abc') or isnull(`query_pushdown_test_sequoiadb`.`t1`.`c`)) limit 1,2
+SELECT * FROM t1 WHERE c = 'abc' OR c IS NULL LIMIT 1,2;
+id	a	c
+12	12	NULL
+13	13	NULL
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "c": { "$et": "abc" } }, { "c": { "$isnull": 1 } } ] }, { "c": { "$isnull": 1 } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+1], offset[0], mrr[1]
 DROP TABLE t1,t2,t3;
 CREATE TABLE t1 ( id INT PRIMARY KEY, c CHAR(16), vc VARCHAR(16), tt TEXT );
 INSERT INTO t1 VALUES (1,'op','op','op'),(-1,'bc','bc','bc'),(10,'123','123','123'),(7,'ui','ui','ui'),(18,'a1','a1','a1');
@@ -14891,4 +14943,51 @@ select * from t1 group by a with rollup;
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 drop table t1,t2;
+CREATE TABLE t1 ( id INT PRIMARY KEY, col1 CHAR(8), COL2 CHAR(8), col3 CHAR(8), col4 CHAR(8) );
+INSERT INTO t1 VALUES (1,'test1','test1','test1','test1'), (2,'test2','test2','test2','test2'), (3,'test3','test3','test3','test3');
+INSERT INTO t1 VALUES (4,'test4','test4','test4','test4'), (5,'test5','test5','test5','test5'), (6,'test6','test6','test6','test6');
+SELECT COUNT(id) FROM t1;
+COUNT(id)
+6
+SELECT COUNT(ID) FROM t1;
+COUNT(ID)
+6
+SELECT col2 FROM t1 WHERE col2 = 'test2';
+col2
+test2
+[Note] SequoiaDB: Query message: condition[{ "COL2": { "$et": "test2" } }], selector[{ "_id": null, "COL2": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+SELECT COL2 FROM t1 WHERE col2 > 'test5';
+COL2
+test6
+[Note] SequoiaDB: Query message: condition[{ "COL2": { "$gt": "test5" } }], selector[{ "_id": null, "COL2": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+UPDATE t1 SET COL1 = "update2", col2 = "update2" WHERE id > 1 AND COL1 < 'test3';
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "col1": "update2", "COL2": "update2" } }, condition: { "$and": [ { "$and": [ { "id": { "$gt": 1 } }, { "col1": { "$lt": "test3" } } ] }, { "id": { "$gt": 1 } } ] }
+SELECT ID,COL1,col2,COL3 FROM t1 ORDER BY ID;
+ID	COL1	col2	COL3
+1	test1	test1	test1
+2	update2	update2	test2
+3	test3	test3	test3
+4	test4	test4	test4
+5	test5	test5	test5
+6	test6	test6	test6
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[-1], offset[0]
+DELETE FROM t1 WHERE ID > 1 AND col2 = 'test4';
+[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "$and": [ { "COL2": { "$et": "test4" } }, { "id": { "$gt": 1 } } ] }, { "id": { "$gt": 1 } } ] }
+SELECT ID,COL1,col2,COL3 FROM t1 ORDER BY col2;
+ID	COL1	col2	COL3
+1	test1	test1	test1
+3	test3	test3	test3
+5	test5	test5	test5
+6	test6	test6	test6
+2	update2	update2	test2
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "COL2": 1 }], hint[{}], limit[-1], offset[0]
+SELECT ID,col2 FROM t1 GROUP BY ID,col2 ORDER BY id,col2;
+ID	col2
+1	test1
+2	update2
+3	test3
+5	test5
+6	test6
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "id": { "$first": "$id" }, "COL2": { "$first": "$COL2" }, "_id": { "id": "$id", "COL2": "$COL2" } } }], sort[{ "$sort": { "id": 1, "COL2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+DROP TABLE t1;
 DROP DATABASE query_pushdown_test_sequoiadb;
