@@ -30,7 +30,7 @@ ERR_PARSE = 2
 OUT_FILE_NAME = 'sdb_doc'
 
 DESCRIPTION = '''sdb_doc_generator - generates the default configure or \
-document from the source code FILE('../src/handler/ha_sdb_conf.cc' by default).
+document from the source code FILE('../src/sequoiadb/handler/ha_sdb_conf.cc' by default).
 '''
 
 USAGE = "Usage: %prog [OPTIONS] [FILE]"
@@ -415,11 +415,11 @@ def main():
         sys.exit(ERR_INVALID_ARG)
 
     if not args:
-        print("Using source code FILE '../src/handler/ha_sdb_conf.cc' "
+        print("Using source code FILE '../src/sequoiadb/handler/ha_sdb_conf.cc' "
               "by default.")
         current_dir = os.path.abspath(os.path.dirname(__file__))
         project_dir = os.path.join(current_dir, "../")
-        conf_src_path = os.path.join(project_dir, "src/handler/ha_sdb_conf.cc")
+        conf_src_path = os.path.join(project_dir, "src/sequoiadb/handler/ha_sdb_conf.cc")
     else:
         conf_src_path = args[0]
 

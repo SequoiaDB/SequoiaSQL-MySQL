@@ -66,13 +66,13 @@ class BuildThirdParty(optparse.OptionParser):
             debug_option=" -d"
         else:
             debug_option=""
-        config_cmd = "./config --prefix=" + openssl_abs_dir + "/lib" + " -fPIC" +\
-                     debug_option
+        config_cmd = "./config --prefix=" + openssl_abs_dir + "/install_path" + \
+                     " -fPIC" + debug_option
         print(config_cmd)
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
-        rm_dynamic_libs = "rm -f lib/lib/lib*.so; rm -f lib/lib/lib*.so.*"
+        rm_dynamic_libs = "rm -f install_path/lib/lib*.so; rm -f install_path/lib/lib*.so.*"
         os.system(make_cmd)
         os.system(make_install_cmd)
         os.system(rm_dynamic_libs)
@@ -93,15 +93,39 @@ class BuildThirdParty(optparse.OptionParser):
         os.chdir(curl_abs_dir)
         st = os.stat("./configure")
         os.chmod("./configure", st.st_mode | stat.S_IEXEC)
-        config_cmd = "./configure --prefix=" + curl_abs_dir + "/lib" + " --with-pic" +\
+        config_cmd = "./configure --prefix=" + curl_abs_dir + "/install_path" + \
+                     " --with-pic" + debug_option
+        os.system(config_cmd)
+        make_cmd = "make -j " + str(self.jobs)
+        make_install_cmd = "make install"
+        rm_dynamic_libs = "rm -f install_path/lib/lib*.so; rm -f install_path/lib/lib*.so.*"
+        os.system(make_cmd)
+        os.system(make_install_cmd)
+        os.system(rm_dynamic_libs)
+
+    def build_unix_odbc(self, version):
+        unix_odbc_dir = "unixODBC-"
+        unix_odbc_dir = unix_odbc_dir + version
+        unix_odbc_abs_dir = self.current_dir + "/" +unix_odbc_dir
+        debug_option=""
+        if not os.path.exists(unix_odbc_abs_dir):
+            print("The UnixODBC version:{v}, dir:'{d}' not exists."
+            .format(v=version, d=unix_odbc_abs_dir))
+            return
+        if self.debug:
+            debug_option=" --enable-debug"
+        else:
+            debug_option=""
+        os.chdir(unix_odbc_abs_dir)
+        st = os.stat("./configure")
+        os.chmod("./configure", st.st_mode | stat.S_IEXEC)
+        config_cmd = "./configure --prefix=" + unix_odbc_abs_dir + "/install_path" + " --with-pic" +\
                      debug_option
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
-        rm_dynamic_libs = "rm -f lib/lib/lib*.so; rm -f lib/lib/lib*.so.*"
         os.system(make_cmd)
         os.system(make_install_cmd)
-        os.system(rm_dynamic_libs)
 
 def main():
     #pdb.set_trace()
@@ -124,6 +148,10 @@ def main():
     builder.add_option("-c", "--curl", action='store', type="string",
                        dest="curl", help="Build Curl. Specify the version "
                        "of Curl to be built, 7.69.0.")
+    #Add --unix-odbc option
+    builder.add_option("--odbc", action='store', type="string",
+                       dest="odbc", help="Build unixODBC. Specify the "
+                       "version of unixODBC to be built, eg: 2.3.1")
 
     #Add --debug option
     builder.add_option("-d", "--debug", action='store_true', dest="debug",
@@ -136,7 +164,7 @@ def main():
 
     opt, args = builder.parse_args()
     
-    if not opt.openssl and not opt.curl:
+    if not opt.openssl and not opt.curl and not opt.odbc:
         builder.print_help()
 
     if opt.jobs:
@@ -156,6 +184,9 @@ def main():
         curl_version = opt.curl
         builder.build_curl(curl_version);
 
+    if opt.odbc:
+        unix_odbc_version = opt.odbc
+        builder.build_unix_odbc(unix_odbc_version)
 
 if __name__ == '__main__':
     sys.exit(main())

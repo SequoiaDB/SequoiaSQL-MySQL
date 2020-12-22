@@ -24,6 +24,7 @@ cmake_minimum_required(VERSION 2.8.7)
 INCLUDE(cmake/curl.cmake)
 INCLUDE(cmake/ssl.cmake)
 INCLUDE(cmake/gen_version.cmake)
+INCLUDE(cmake/odbc.cmake)
 
 option(ENTERPRISE "Build enterprise edition" OFF)
 option(SDB_BUILT_IN "Build the sequoiadb plugin into mysqld" ON)
@@ -54,6 +55,7 @@ project(${PROJECT_NAME})
 
 SDB_CHECK_SSL()
 SDB_CHECK_CURL()
+SDB_CHECK_ODBC()
 
 function(prepare_sql_source sql_source_root sql_name)
    if(NOT EXISTS ${sql_source_root}/CMakeLists.txt)
@@ -182,7 +184,8 @@ endif()
 
 # Preprocessing
 set(SQL_STORAGE_DIR "${SQL_SOURCE_ROOT}/storage")
-set(SQL_CONNECTOR_DIR "${CMAKE_SOURCE_DIR}/src")
+set(SQL_SDB_CONNECTOR_DIR "${CMAKE_SOURCE_DIR}/src/sequoiadb")
+set(SQL_SPK_CONNECTOR_DIR "${CMAKE_SOURCE_DIR}/src/spark")
 
 # Replace the original mysql-test with the new one.
 set(MYSQL_TEST_DIR "${SQL_SOURCE_ROOT}/mysql-test")
@@ -216,6 +219,14 @@ else()
    message(STATUS "Directory ${SDB_PLUGIN_DIR} dose not exist")
 endif()
 
+set(SPK_PLUGIN_DIR "${SQL_STORAGE_DIR}/spark")
+if(EXISTS ${SPK_PLUGIN_DIR})
+   message(STATUS "Directory ${SPK_PLUGIN_DIR} exists. Ready to remove")
+   file(REMOVE ${SPK_PLUGIN_DIR})
+else()
+   message(STATUS "Directory ${SPK_PLUGIN_DIR} dose not exist")
+endif()
+
 # Fix compilation problem of innodb with gcc 4.8.5 in ARM64
 # Refer SEQUOIADBMAINSTREAM-5417
 if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND
@@ -245,7 +256,10 @@ if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND
    endif()
 endif()
 
-set(mapSrcCmd "ln -sf ${SQL_CONNECTOR_DIR} ${SQL_STORAGE_DIR}/sequoiadb")
+set(mapSrcCmd "ln -sf ${SQL_SDB_CONNECTOR_DIR} ${SQL_STORAGE_DIR}/sequoiadb")
+execute_process(COMMAND bash -c ${mapSrcCmd})
+
+set(mapSrcCmd "ln -sf ${SQL_SPK_CONNECTOR_DIR} ${SQL_STORAGE_DIR}/spark")
 execute_process(COMMAND bash -c ${mapSrcCmd})
 
 set(SQL_OUTPUT_ROOT "${CMAKE_BINARY_DIR}/${SQL_SOURCE_DIR_NAME}"

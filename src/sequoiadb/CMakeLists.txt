@@ -73,14 +73,14 @@ if(SDB_BUILT_IN)
                    RECOMPILE_FOR_EMBEDDED
                    LINK_LIBRARIES
                    ${SDB_DYNAMIC_LIBRARY})
-                   
+
   add_compile_options(-Wno-unused-variable -Wno-unused-function -Wno-write-strings -Wno-return-type)
   mysql_add_plugin(server_ha
                    ${SERVER_HA_FILES}
                    MANDATORY
                    LINK_LIBRARIES
                    ${SDB_DYNAMIC_LIBRARY}
-                   RECOMPILE_FOR_EMBEDDED)  
+                   RECOMPILE_FOR_EMBEDDED)
   string(FIND "${WITH_MYSQLD_LDFLAGS}" "${SDB_LDFLAGS}" POS)
   if(${POS} EQUAL -1)
     set(WITH_MYSQLD_LDFLAGS "${WITH_MYSQLD_LDFLAGS} ${SDB_LDFLAGS}"
@@ -116,24 +116,24 @@ if(WITH_BOOST)
   # set openssl dir
   set(OPENSSL_DIR "${SQL_SOURCE_ROOT}/../../thirdparty/openssl-1.1.1g")
   set(OPENSSL_INCLUDE_DIR "${OPENSSL_DIR}/include")
-  set(OPENSSL_LIB_DIR "${OPENSSL_DIR}/lib/lib")
-  
+  set(OPENSSL_LIB_DIR "${OPENSSL_DIR}/install_path/lib")
+
   # build ha_inst_group_init
   set(HA_TOOLS_FLAGS "-Wno-unused-value -Wno-missing-field-initializers -Wno-deprecated-declarations")
-  
+
   set(HA_TOOLS_INCLUDE "${WITH_BOOST};${SDB_DRIVER_PATH}/include;${CMAKE_CURRENT_SOURCE_DIR}/include;${OPENSSL_INCLUDE_DIR}")
   link_directories(${SDB_DRIVER_PATH}/lib ${OPENSSL_LIB_DIR})
   add_executable(ha_inst_group_init tools/ha_inst_group_init.cc tools/ha_tool_utils.cc)
   set_target_properties(ha_inst_group_init PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
   set_target_properties(ha_inst_group_init PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
   target_link_libraries(ha_inst_group_init sdbcpp ssl crypto dl pthread)
-  
+
   # build ha_inst_group_clear
   add_executable(ha_inst_group_clear tools/ha_inst_group_clear.cc tools/ha_tool_utils.cc)
   set_target_properties(ha_inst_group_clear PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
   set_target_properties(ha_inst_group_clear PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
   target_link_libraries(ha_inst_group_clear sdbcpp ssl crypto dl pthread)
-  
+
   # build ha_inst_group_list
   add_executable(ha_inst_group_list tools/ha_inst_group_list.cc tools/ha_tool_utils.cc)
   set_target_properties(ha_inst_group_list PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
@@ -156,7 +156,7 @@ if(EXISTS "${SERVER_HA_PATCHES_DIR}")
     set(PATCH_FILE "${SERVER_HA_PATCHES_DIR}/ha_mysql_${MYSQL}.patch")
     set(DUMP_PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mysql_mysqldump_${MYSQL}.patch")
   endif()
-  
+
   # apply HA patch file for 'sql/*'
   if (EXISTS "${PATCH_FILE}")
     set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/sql")
@@ -165,7 +165,7 @@ if(EXISTS "${SERVER_HA_PATCHES_DIR}")
   else()
     message(FATAL_ERROR "Patch file ${PATCH_FILE} doesn't exist")
   endif()
-  
+
   # apply mysqldump patch file
   if (EXISTS "${DUMP_PATCH_FILE}")
     set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/client/mysqldump.c")
@@ -201,3 +201,14 @@ else()
   message(FATAL_ERROR "Can't apply 'server_ha' patch, patch directory 'patches' doesn't exist")
 endif()
 
+# spark storage engine
+SET(SPARK_SOURCES sparkwrapper/ha_spark.cc
+     sparkwrapper/ha_spark_vars.cc 
+     sparkwrapper/spark_conn.cc
+     sparkwrapper/ha_spark_log.cc )
+include_directories(${ODBC_INCLUDE_DIR})
+link_directories("/usr/lib/x86_64-linux-gnu")
+MYSQL_ADD_PLUGIN(spark ${SPARK_SOURCES} 
+                 STORAGE_ENGINE MODULE_ONLY
+                 LINK_LIBRARIES
+                 ${ODBC_LIBRARY})
