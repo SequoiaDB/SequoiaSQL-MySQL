@@ -1,4 +1,5 @@
 
+-- source include/have_sequoiadb.inc
 -- source include/have_ssl_crypto_functs.inc
 
 # These test data are from the NIST SHA Test Vectors for Hashing
@@ -514,3 +515,5 @@ SELECT SHA2("hello", 1);
 SELECT SHA2("hello", 0);
 SELECT SHA2("hello", NULL);
 SELECT SHA2("hello", -4294966784); # 512 when cast to uint
+
+-- source include/uninstall_sequoiadb.inc

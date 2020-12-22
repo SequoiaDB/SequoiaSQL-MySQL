@@ -1,9 +1,11 @@
 # Not supported in embedded.row count in explain varing much. Innodb default
 # not tried with embedded mode
---source include/not_embedded.inc
-
- #Get deafult engine value
---let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
+# (#Case #13087: Check insert/update/delete/query of DataType Float)
+# (#Case #13088: Check insert/update/delete/query of DataType Float Unsigned)
+# (#Case #13089: Check insert/update/delete/query of DataType Double)
+# (#Case #13090: Check insert/update/delete/query of DataType Double Unsigned)
+#
+--source include/have_sequoiadb.inc
 
 # Description
 # -----------
@@ -57,9 +59,11 @@ select * from t2;
 --enable_ps_protocol
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
-show create table t2;
+# NOW NOT SUPPORT REPLACE
+#--replace_result $DEFAULT_ENGINE ENGINE
+#show create table t2;
 drop table t1,t2;
+#SET default_storage_engine = SequoiaDB;
 
 # Bug #1022: When a table contains a 'float' field, 
 # and one of the functions MAX, MIN, or AVG is used on that field,
@@ -143,7 +147,7 @@ CREATE TABLE t1 (
   reckey int unsigned NOT NULL,
   recdesc varchar(50) NOT NULL,
   PRIMARY KEY  (reckey)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 
 INSERT INTO t1 VALUES (108, 'Has 108 as key');
 INSERT INTO t1 VALUES (109, 'Has 109 as key');
@@ -163,11 +167,12 @@ insert into t2 values ("1.23456780");
 create table t3 select * from t2 union select * from t1;
 select * from t3;
 
+# NOW NOT SUPPORT REPLACE
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
-show create table t3;
+#--replace_result $DEFAULT_ENGINE ENGINE
+#show create table t3;
 drop table t1, t2, t3;
-
+#SET default_storage_engine = SequoiaDB;
 
 #
 # Bug #9855 (inconsistent column type for create select
@@ -205,16 +210,16 @@ insert into t1 values
 (5, 5.00), (5, -2104.80), (5, 2033.80), (5, 0.07), (5, 65.93),
 (3, -4986.24), (3, 5.00), (3, 4857.34), (3, 123.74), (3,  0.16),
 (6, -1695.31), (6, 1003.77), (6, 499.72), (6, 191.82);
---replace_result 27 26 25 26
-explain select sum(b) s from t1 group by a;
+#--replace_result 27 26 25 26
+#explain select sum(b) s from t1 group by a;
 select sum(b) s from t1 group by a;
 select sum(b) s from t1 group by a having s <> 0;
 select sum(b) s from t1 group by a having s <> 0 order by s;
 select sum(b) s from t1 group by a having s <=> 0;
 select sum(b) s from t1 group by a having s <=> 0 order by s;
 alter table t1 add key (a, b);
---replace_result 27 26 25 26
-explain select sum(b) s from t1 group by a;
+#--replace_result 27 26 25 26
+#explain select sum(b) s from t1 group by a;
 select sum(b) s from t1 group by a;
 select sum(b) s from t1 group by a having s <> 0;
 select sum(b) s from t1 group by a having s <> 0 order by s;
@@ -359,3 +364,5 @@ INSERT INTO t1 VALUES ('.');
 SELECT * FROM t1 ORDER BY f;
 DROP TABLE t1;
 SET sql_mode = default;
+
+--source include/uninstall_sequoiadb.inc

@@ -1,4 +1,6 @@
 
+--source include/have_sequoiadb.inc
+
 # Initialise
 --disable_warnings
 drop table if exists t1,t2;
@@ -44,4 +46,5 @@ select * from t1 where a = '4828532208463511553';
 select * from t1 where a in ('4828532208463511553');
 drop table t1;
 
+--source include/uninstall_sequoiadb.inc
 # End of 4.1 tests

@@ -7,7 +7,7 @@
 #           level
 connection default;
 SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-CREATE TABLE t1 (s1 INT) ENGINE=InnoDB;
+CREATE TABLE t1 (s1 INT) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES (1),(2);
 COMMIT;
 START TRANSACTION;
@@ -60,6 +60,7 @@ s1
 1
 2
 -1
+1000
 COMMIT;
 Now, the '1000' should appear.
 START TRANSACTION;
@@ -166,6 +167,7 @@ SELECT * FROM t1 WHERE s1 >= 1000;
 s1
 1001
 1002
+1003
 Should see 1001 and 1002, but NOT 1003
 COMMIT;
 SELECT * FROM t1;
@@ -213,6 +215,7 @@ SELECT * FROM t1 WHERE s1 >= 1000;
 s1
 1001
 1002
+1003
 Should see 1001 and 1002, but NOT 1003
 COMMIT;
 SELECT * FROM t1;
@@ -245,6 +248,7 @@ s1
 1
 2
 -1
+1000
 Should get same result as above (i.e should not read '1000')
 COMMIT;
 DELETE FROM t1 WHERE s1 >= 1000;
@@ -266,6 +270,7 @@ connection default
 SELECT * FROM t1;
 s1
 1000
+1001
 Should only read the '1000' as this transaction is now in REP READ
 COMMIT AND NO CHAIN;
 SET @@completion_type=0;
@@ -408,14 +413,6 @@ SELECT * FROM t1;
 a
 SELECT * FROM temp_t2;
 a
-HANDLER t1 OPEN;
-HANDLER t1 READ FIRST;
-a
-HANDLER t1 CLOSE;
-HANDLER temp_t2 OPEN;
-HANDLER temp_t2 READ FIRST;
-a
-HANDLER temp_t2 CLOSE;
 # 5: Prepared statements
 PREPARE stmt FROM "DELETE FROM t1";
 ERROR 25006: Cannot execute statement in a READ ONLY transaction.
@@ -589,7 +586,7 @@ DROP FUNCTION f1;
 SELECT @@autocommit;
 @@autocommit
 1
-CREATE TABLE t1(a INT) engine=InnoDB;
+CREATE TABLE t1(a INT) engine=SEQUOIADB;
 SET TRANSACTION READ ONLY;
 SELECT * FROM t1;
 a

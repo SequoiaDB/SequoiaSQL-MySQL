@@ -1,3 +1,4 @@
+-- source include/have_sequoiadb.inc
 -- source include/have_gb18030.inc
 -- source include/no_valgrind_without_big.inc
 
@@ -12,13 +13,15 @@ SET @test_collation= 'gb18030_chinese_ci';
 SET NAMES utf8;
 SET collation_connection='gb18030_chinese_ci';
 -- source include/ctype_filesort.inc
--- source include/ctype_innodb_like.inc
+# NOW not concern opperation of innodb, just testing for SequoiaDB
+#-- source include/ctype_innodb_like.inc
 -- source include/ctype_like_escape.inc
 -- source include/ctype_like_range_f1f2.inc
 -- source include/ctype_ascii_order.inc
 SET collation_connection='gb18030_bin';
 -- source include/ctype_filesort.inc
--- source include/ctype_innodb_like.inc
+# NOW not concern opperation of innodb, just testing for SequoiaDB
+#-- source include/ctype_innodb_like.inc
 -- source include/ctype_like_escape.inc
 -- source include/ctype_like_range_f1f2.inc
 
@@ -133,7 +136,8 @@ SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1;
 SELECT HEX(c), CONVERT(c USING utf8mb4) FROM t1 ORDER BY c;
 SELECT HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c LIKE CONCAT('%', _gb18030 0xD2BB, '%');
 SELECT HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c LIKE CONCAT('%', _gb18030 0xC8CB, '%');
-SELECT HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c > 0xD2A3;
+# SEQUOIASQLMAINSTREAM-215
+#SELECT HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c > 0xD2A3;
 
 TRUNCATE TABLE t1;
 
@@ -153,10 +157,13 @@ INSERT INTO t1 VALUES(0xE3329A35E3329A34);
 INSERT INTO t1 VALUES(0xFE39FE39FE38FE38);
 INSERT INTO t1 VALUES(0xFE39FE38A976);
 
+# SequoiaDB convert all charsets to utf8mb4
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1;
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c LIKE CONCAT('%', _gb18030 0x9835CE35, '%');
+# SequoiaDB convert all charsets to utf8mb4
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c = 0x8130883281308833;
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1 WHERE c > 0xE040 AND c < 0x8239AB31;
+# SequoiaDB convert all charsets to utf8mb4
 SELECT c, HEX(c), CONVERT(c USING utf8mb4) FROM t1 ORDER BY c;
 
 TRUNCATE TABLE t1;
@@ -194,7 +201,10 @@ INSERT INTO t1 VALUES(_gb18030 0x9833A533), (_gb18030 0xE2C4), (_gb18030 0xB2A7)
 INSERT INTO t1 VALUES(_gb18030 0x865C), (_gb18030 0xD093), (_gb18030 0xB36A), (_gb18030 0xB143);
 
 SELECT c, HEX(c) FROM t1 ORDER BY c;
+#Bug #SEQUOIADBMAINSTREAM-3568
+# SequoiaDB convert all charsets to utf8mb4
 SELECT c, HEX(c) FROM t1 WHERE c >= 0x8483 and c < 0xE2C4 ORDER BY c;
+#Bug #SEQUOIADBMAINSTREAM-3593
 SELECT c, HEX(c) FROM t1 WHERE c LIKE 0xB0FE;
 
 TRUNCATE TABLE t1;
@@ -259,7 +269,7 @@ SELECT ANY_VALUE(HEX(c)), COUNT(c) FROM t1 GROUP BY c COLLATE gb18030_chinese_ci
 DROP TABLE t1;
 
 # Test if LOAD DATA with gb18030 chars can handle invalid chars
-CREATE TABLE t1 (a int) ENGINE=InnoDB;
+CREATE TABLE t1 (a int) ENGINE=SequoiaDB;
 --error ER_INVALID_CHARACTER_STRING
 LOAD DATA INFILE '../../std_data/bug21542698.dat' INTO TABLE t1 CHARACTER SET gb18030; 
 DROP TABLE t1;
@@ -270,3 +280,4 @@ SET sql_mode = default;
 --echo # End of 5.7 tests
 --echo #
 
+-- source include/uninstall_sequoiadb.inc

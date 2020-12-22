@@ -1,7 +1,14 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+# (#Case #13104: Check query statments with where within one condition)
+# (#Case #13105: Check query statments with where use and)
+# (#Case #13106: Check query statments with where use or)
+# (#Case #13107: Check query statments with where use not)
+# (#Case #13111: Check query statments in special fields)
+# (#Case #13112: Check query statments with count(*), concat(*), and select with alias)
+# (#Case #15664: index scan when column value with \t or \r)
+--source include/have_sequoiadb.inc
+
 
 #Want to skip this test from daily Valgrind execution
 --source include/no_valgrind_without_big.inc
@@ -22,3 +29,4 @@ set optimizer_switch='semijoin=on,materialization=on,firstmatch=on,loosescan=on,
 
 set optimizer_switch=default;
 
+--source include/uninstall_sequoiadb.inc

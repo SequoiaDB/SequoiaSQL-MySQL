@@ -1,17 +1,17 @@
-drop procedure if exists test.longprocedure;
+drop procedure if exists longprocedure;
 drop table if exists t1;
 create table t1 (a int);
 insert into t1 values (1),(2),(3);
 length
 107520
-select length(routine_definition) from information_schema.routines where routine_schema = 'test' and routine_name = 'longprocedure';
+select length(routine_definition) from information_schema.routines where routine_schema like 'test_parallel%' and routine_name = 'longprocedure';
 length(routine_definition)
 107530
-call test.longprocedure(@value);
+call longprocedure(@value);
 select @value;
 @value
 3
-drop procedure test.longprocedure;
+drop procedure longprocedure;
 drop table t1;
 create table t1 (f1 char(100) , f2 mediumint , f3 int , f4 real, f5 numeric);
 insert into t1 (f1, f2, f3, f4, f5) values

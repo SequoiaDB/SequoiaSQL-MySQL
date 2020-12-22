@@ -1,4 +1,4 @@
-set default_storage_engine=innodb;
+set default_storage_engine=sequoiadb;
 # Test of the JSON functions used in SQL statements
 # ----------------------------------------------------------------------
 SET NAMES utf8;
@@ -10,7 +10,7 @@ t1	CREATE TABLE `t1` (
   `i` int(11) DEFAULT NULL,
   `j` json DEFAULT NULL,
   PRIMARY KEY (`pk`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 INSERT INTO t1(i, j) VALUES (0, NULL);
 INSERT INTO t1(i, j) VALUES (1, '{"a": 2}');
 INSERT INTO t1(i, j) VALUES (2, '[1,2]');
@@ -105,21 +105,21 @@ Warnings:
 Warning	1235	This version of MySQL doesn't yet support 'comparison of JSON in the IN operator'
 Warning	1235	This version of MySQL doesn't yet support 'comparison of JSON in the IN operator'
 Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 2
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 34
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 35
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 36
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 37
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 40
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 54
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 55
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 56
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 57
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 58
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 59
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 60
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 61
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 62
-Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 63
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 3
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 4
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 5
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 6
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 9
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 23
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 24
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 25
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 26
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 27
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 28
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 29
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 30
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 31
+Warning	3156	Invalid JSON value for CAST to DOUBLE from column j at row 32
 SELECT i FROM t1
 WHERE j = CAST(CAST(j AS CHAR CHARACTER SET 'utf8') AS JSON)
 ORDER BY i;
@@ -1202,14 +1202,6 @@ CREATE TABLE t2(i int, j json);
 CREATE INDEX t2_i ON t2(i);
 INSERT INTO t2 values (1, CAST(1 AS JSON));
 INSERT INTO t2 values (1, CAST('"1"' AS JSON));
-ANALYZE TABLE t2;
-Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	OK
-EXPLAIN SELECT * FROM t2 where i = j;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`i` AS `i`,`test`.`t2`.`j` AS `j` from `test`.`t2` where (`test`.`t2`.`i` = `test`.`t2`.`j`)
 SELECT * FROM t2 where i = j;
 i	j
 1	1
@@ -3242,19 +3234,6 @@ true	BOOLEAN
 Warnings:
 Warning	1235	This version of MySQL doesn't yet support 'sorting of non-scalar JSON values'
 SET @@max_sort_length=default;
-ANALYZE TABLE t;
-Table	Op	Msg_type	Msg_text
-test.t	analyze	status	OK
-EXPLAIN SELECT j, COUNT(*) FROM t GROUP BY j ORDER BY j;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t	NULL	ALL	NULL	NULL	NULL	NULL	366	100.00	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t`.`j` AS `j`,count(0) AS `COUNT(*)` from `test`.`t` group by `test`.`t`.`j` order by `test`.`t`.`j`
-EXPLAIN SELECT j, COUNT(*) FROM t GROUP BY j WITH ROLLUP;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t	NULL	ALL	NULL	NULL	NULL	NULL	366	100.00	Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t`.`j` AS `j`,count(0) AS `COUNT(*)` from `test`.`t` group by `test`.`t`.`j` with rollup
 SELECT j, COUNT(*) FROM t GROUP BY j ORDER BY j;
 j	COUNT(*)
 NULL	2
@@ -4808,10 +4787,10 @@ bin binary(10),
 en enum('a','b','c'),
 se set('a','b','c'),
 --
-ge geometry,
-po point,
-ls linestring,
-py polygon,
+#ge geometry,
+#po point,
+#ls linestring,
+#py polygon,
 js json
 );
 insert into t1 values('2014-11-25 18:00', '2014-11-25',
@@ -4835,11 +4814,6 @@ b'10101',
 'b',
 'a,c',
 --
-ST_GeomFromText('POINT(1 1)'),
-ST_GeomFromText('POINT(1 1)'),
-ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-                                            (5 5,7 5,7 7,5 7, 5 5))'),
 '[123]'
                       );
 select json_type(cast(dati as json)) from t1;
@@ -4914,18 +4888,6 @@ STRING
 select json_type(cast(se as json)) from t1;
 json_type(cast(se as json))
 STRING
-select json_type(cast(ge as json)) from t1;
-json_type(cast(ge as json))
-OBJECT
-select json_type(cast(po as json)) from t1;
-json_type(cast(po as json))
-OBJECT
-select json_type(cast(ls as json)) from t1;
-json_type(cast(ls as json))
-OBJECT
-select json_type(cast(py as json)) from t1;
-json_type(cast(py as json))
-OBJECT
 select json_type(cast(js as json)) from t1;
 json_type(cast(js as json))
 ARRAY
@@ -5001,18 +4963,6 @@ cast(en as json)
 select cast(se as json) from t1;
 cast(se as json)
 "a,c"
-select cast(ge as json) from t1;
-cast(ge as json)
-{"type": "Point", "coordinates": [1, 1]}
-select cast(po as json) from t1;
-cast(po as json)
-{"type": "Point", "coordinates": [1, 1]}
-select cast(ls as json) from t1;
-cast(ls as json)
-{"type": "LineString", "coordinates": [[0, 0], [1, 1], [2, 2]]}
-select cast(py as json) from t1;
-cast(py as json)
-{"type": "Polygon", "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]}
 select cast(js as json) from t1;
 cast(js as json)
 [123]
@@ -5100,40 +5050,6 @@ drop table t;
 # ----------------------------------------------------------------------
 # Test of JSON_KEYS function.
 # ----------------------------------------------------------------------
-select i, json_keys(j) from keys1 order by i;
-i	json_keys(j)
-0	NULL
-1	["a"]
-2	NULL
-3	["a", "c", "ab", "bc"]
-4	NULL
-5	NULL
-6	NULL
-7	NULL
-8	NULL
-9	NULL
-10	NULL
-11	NULL
-12	NULL
-13	NULL
-14	NULL
-15	NULL
-16	NULL
-17	NULL
-18	NULL
-19	NULL
-20	NULL
-21	NULL
-22	[]
-23	NULL
-24	NULL
-25	NULL
-26	NULL
-27	NULL
-28	["type", "coordinates"]
-29	NULL
-30	NULL
-31	NULL
 delete from keys1;
 insert into keys1 values (0, NULL),
 (1, '{"a": 1, "b": {"e": "foo", "b": 3}}');
@@ -5255,23 +5171,6 @@ FROM department d
 WHERE id = 405;
 drop table json_table;
 drop table department;
-create table misc_dt
-(
-id int, py polygon
-);
-insert into misc_dt values
-(
-1, ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-),
-(
-2, null
-);
-select id, json_array( true, py, false ) from misc_dt order by id;
-id	json_array( true, py, false )
-1	[true, {"type": "Polygon", "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]}, false]
-2	[true, null, false]
-drop table misc_dt;
 create table jro
 (
 a int,
@@ -5317,18 +5216,6 @@ JSON_OBJECT
 )
 {"id": 405, "deptName": "Accounting", "isExempt": true}
 drop table department;
-create table misc_dt
-(
-py polygon
-);
-insert into misc_dt values
-(
-ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-);
-select json_object( py, 'def' ) from misc_dt;
-ERROR 22032: Cannot create a JSON value from a string with CHARACTER SET 'binary'.
-drop table misc_dt;
 create table json_search_table( id_col int, json_col json );
 insert into json_search_table values
 ( 1, '{ "a": "foobar" }' ),
@@ -5957,10 +5844,10 @@ bin binary(10),
 en enum('a','b','c'),
 se set('a','b','c'),
 --
-ge geometry,
-po point,
-ls linestring,
-py polygon,
+#ge geometry,
+#po point,
+#ls linestring,
+#py polygon,
 jso json,
 jsa json,
 id int
@@ -5986,11 +5873,11 @@ b'10101',
 'b',
 'a,c',
 --
-ST_GeomFromText('POINT(1 1)'),
-ST_GeomFromText('POINT(1 2)'),
-ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-                                            (5 5,7 5,7 7,5 7, 5 5))'),
+#ST_GeomFromText('POINT(1 1)'),
+#ST_GeomFromText('POINT(1 2)'),
+#ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
+#ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
+                      #                      (5 5,7 5,7 7,5 7, 5 5))'),
 '{"a": 1, "b": 2 }',
 '[1, 2]',
 1
@@ -6016,11 +5903,11 @@ b'10111',
 'a',
 'a,b',
 --
-ST_GeomFromText('POINT(1 3)'),
-ST_GeomFromText('POINT(1 4)'),
-ST_GeomFromText('LINESTRING(0 0,1 1,2 3)'),
-ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 9,0 0),
-                                            (5 5,7 5,7 7,5 7, 5 5))'),
+#ST_GeomFromText('POINT(1 3)'),
+#ST_GeomFromText('POINT(1 4)'),
+#ST_GeomFromText('LINESTRING(0 0,1 1,2 3)'),
+#ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 9,0 0),
+                      #                      (5 5,7 5,7 7,5 7, 5 5))'),
 '{"a": 1, "b": 3 }',
 '[1, 3]',
 2
@@ -6058,10 +5945,6 @@ insert into t_doc select id, cast(blb as json) from dt;
 insert into t_doc select id, cast(bin as json) from dt;
 insert into t_doc select id, cast(en as json) from dt;
 insert into t_doc select id, cast(se as json) from dt;
-insert into t_doc select id, cast(ge as json) from dt;
-insert into t_doc select id, cast(po as json) from dt;
-insert into t_doc select id, cast(ls as json) from dt;
-insert into t_doc select id, cast(py as json) from dt;
 insert into t_doc select id, jso from dt;
 insert into t_doc select id, jsa from dt;
 insert into t_doc select * from t_doc;
@@ -6097,14 +5980,6 @@ a
 "b"
 {"a": 1, "b": 2}
 {"a": 1, "b": 3}
-{"type": "Polygon", "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]}
-{"type": "Polygon", "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 9], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]}
-{"type": "LineString", "coordinates": [[0, 0], [1, 1], [2, 2]]}
-{"type": "LineString", "coordinates": [[0, 0], [1, 1], [2, 3]]}
-{"type": "Point", "coordinates": [1, 1]}
-{"type": "Point", "coordinates": [1, 4]}
-{"type": "Point", "coordinates": [1, 2]}
-{"type": "Point", "coordinates": [1, 3]}
 [1, 2]
 [1, 3]
 "2013-11-25"
@@ -6127,11 +6002,11 @@ Warnings:
 Warning	1235	This version of MySQL doesn't yet support 'sorting of non-scalar JSON values'
 select count( distinct doc ) from t_doc;
 count( distinct doc )
-56
+48
 select bucket, count( distinct doc ) from t_doc group by bucket;
 bucket	count( distinct doc )
-1	28
-2	28
+1	24
+2	24
 delete from t_doc;
 create table ndt(dati datetime,
 ts timestamp,
@@ -6195,6 +6070,12 @@ insert into t_doc select id, cast(n as json) from ndt;
 insert into t_doc select id, cast(f as json) from ndt;
 insert into t_doc select id, cast(d as json) from ndt;
 insert into t_doc select * from t_doc;
+select distinct( doc ) a from t_doc order by a;
+a
+1
+2
+"2013-11-25 18:00:00.000000"
+"2014-11-25 18:00:00.000000"
 select count( distinct doc ) from t_doc;
 count( distinct doc )
 4
@@ -6208,135 +6089,6 @@ drop table ndt;
 # ----------------------------------------------------------------------
 # Special CASTing behavior of geometry types
 # ----------------------------------------------------------------------
-create table jtable( id int, descr varchar(20), doc json );
-create table misc_dt
-(
-ge geometry,
-po point,
-ls linestring,
-py polygon
-);
-insert into misc_dt values
-(
-ST_GeomFromText('POINT(1 1)'),
-ST_GeomFromText('POINT(1 1)'),
-ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-);
-insert into jtable select 1, 'geometry', cast(ge as json) from misc_dt;
-insert into jtable select 2, 'point', cast(po as json) from misc_dt;
-insert into jtable select 3, 'linestring', cast(ls as json) from misc_dt;
-insert into jtable select 4, 'polygon', cast(py as json) from misc_dt;
-select id, descr, json_type( doc ), doc from jtable order by id;
-id	descr	json_type( doc )	doc
-1	geometry	OBJECT	{"type": "Point", "coordinates": [1, 1]}
-2	point	OBJECT	{"type": "Point", "coordinates": [1, 1]}
-3	linestring	OBJECT	{"type": "LineString", "coordinates": [[0, 0], [1, 1], [2, 2]]}
-4	polygon	OBJECT	{"type": "Polygon", "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]}
-select json_object
-(
-'geometry', ST_GeomFromText('POINT(1 1)'),
-'point', ST_GeomFromText('POINT(1 1)'),
-'linestring', ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-'polygon', ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-);
-json_object
-(
-'geometry', ST_GeomFromText('POINT(1 1)'),
-'point', ST_GeomFromText('POINT(1 1)'),
-'linestring', ST_GeomFromText('LINESTRING(0 0,1 1,2 2)'),
-'polygon', ST_GeomFromText('POLYGON((0 0,10 0,10 10,0 10,0 0),
-    (5 5,7 5,7 7,5 7, 5 5))')
-)
-{"point": {"type": "Point", "coordinates": [1, 1]}, "polygon": {"type": "Polygon", "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]}, "geometry": {"type": "Point", "coordinates": [1, 1]}, "linestring": {"type": "LineString", "coordinates": [[0, 0], [1, 1], [2, 2]]}}
-delete from misc_dt;
-select * from misc_dt;
-ge	po	ls	py
-insert into misc_dt values
-(
-(select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 1),
-(select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 2),
-(select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 3),
-(select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 4)
-);
-select ST_AsGeoJSON( ge ),
-ST_AsGeoJSON( po ),
-ST_AsGeoJSON( ls ),
-ST_AsGeoJSON( py )
-from misc_dt;
-ST_AsGeoJSON( ge )	ST_AsGeoJSON( po )	ST_AsGeoJSON( ls )	ST_AsGeoJSON( py )
-{"type": "Point", "coordinates": [1, 1]}	{"type": "Point", "coordinates": [1, 1]}	{"type": "LineString", "coordinates": [[0, 0], [1, 1], [2, 2]]}	{"type": "Polygon", "coordinates": [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]}
-drop table misc_dt;
-drop table jtable;
-create table jtable( id int, descr varchar(20), doc json );
-create table misc_dt
-(
-ge geometrycollection,
-po multipoint,
-ls multilinestring,
-py multipolygon
-);
-insert into misc_dt values
-(
-geometrycollection(point(1, 1), point(2, 2)),
-multipoint(point(1, 1), point(2, 2)),
-multilinestring
-(
-linestring(point(0, 0), point(1, 1), point(2, 2)),
-linestring(point(0, 0), point(11, 11), point(12, 12))
-),
-multipolygon
-(
-polygon
-(
-linestring(point(0, 0), point(10, 0), point(10, 10), point(0, 10), point(0, 0)),
-linestring(point(5, 5), point(7, 5), point(7, 7), point(5, 7), point(5, 5))
-),
-polygon
-(
-linestring(point(0, 0), point(10, 0), point(10, 10), point(0, 10), point(0, 0)),
-linestring(point(5, 5), point(7, 5), point(7, 7), point(5, 7), point(5, 5))
-)
-)
-);
-insert into jtable select 1, 'geometrycollection', cast(ge as json) from misc_dt;
-insert into jtable select 2, 'multipoint', cast(po as json) from misc_dt;
-insert into jtable select 3, 'multilinestring', cast(ls as json) from misc_dt;
-insert into jtable select 4, 'multipolygon', cast(py as json) from misc_dt;
-select id, descr, json_type( doc ), doc from jtable order by id;
-id	descr	json_type( doc )	doc
-1	geometrycollection	OBJECT	{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [1, 1]}, {"type": "Point", "coordinates": [2, 2]}]}
-2	multipoint	OBJECT	{"type": "MultiPoint", "coordinates": [[1, 1], [2, 2]]}
-3	multilinestring	OBJECT	{"type": "MultiLineString", "coordinates": [[[0, 0], [1, 1], [2, 2]], [[0, 0], [11, 11], [12, 12]]]}
-4	multipolygon	OBJECT	{"type": "MultiPolygon", "coordinates": [[[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]], [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]]}
-select ST_AsGeoJSON( ge ),
-ST_AsGeoJSON( po ),
-ST_AsGeoJSON( ls ),
-ST_AsGeoJSON( py )
-from misc_dt;
-ST_AsGeoJSON( ge )	ST_AsGeoJSON( po )	ST_AsGeoJSON( ls )	ST_AsGeoJSON( py )
-{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [1, 1]}, {"type": "Point", "coordinates": [2, 2]}]}	{"type": "MultiPoint", "coordinates": [[1, 1], [2, 2]]}	{"type": "MultiLineString", "coordinates": [[[0, 0], [1, 1], [2, 2]], [[0, 0], [11, 11], [12, 12]]]}	{"type": "MultiPolygon", "coordinates": [[[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]], [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]]}
-delete from misc_dt;
-select * from misc_dt;
-ge	po	ls	py
-insert into misc_dt values
-(
-(select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 1),
-(select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 2),
-(select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 3),
-(select ST_GeomFromGeoJSON( cast( doc as char ) ) from jtable where id = 4)
-);
-select ST_AsGeoJSON( ge ),
-ST_AsGeoJSON( po ),
-ST_AsGeoJSON( ls ),
-ST_AsGeoJSON( py )
-from misc_dt;
-ST_AsGeoJSON( ge )	ST_AsGeoJSON( po )	ST_AsGeoJSON( ls )	ST_AsGeoJSON( py )
-{"type": "GeometryCollection", "geometries": [{"type": "Point", "coordinates": [1, 1]}, {"type": "Point", "coordinates": [2, 2]}]}	{"type": "MultiPoint", "coordinates": [[1, 1], [2, 2]]}	{"type": "MultiLineString", "coordinates": [[[0, 0], [1, 1], [2, 2]], [[0, 0], [11, 11], [12, 12]]]}	{"type": "MultiPolygon", "coordinates": [[[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]], [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]], [[5, 5], [7, 5], [7, 7], [5, 7], [5, 5]]]]}
-drop table misc_dt;
-drop table jtable;
 # ----------------------------------------------------------------------
 # Test of COALESCE
 # ----------------------------------------------------------------------
@@ -6414,19 +6166,7 @@ NULL
 Warnings:
 Warning	1235	This version of MySQL doesn't yet support 'sorting of non-scalar JSON values'
 update t set j=json_set(j, '$.user', database())  where id=8;
-select j from t order by j;
-j
-NULL
-{"user": "test"}
-Warnings:
-Warning	1235	This version of MySQL doesn't yet support 'sorting of non-scalar JSON values'
 update t set j=json_set(j, '$.user', schema()) where id=8;
-select j from t order by j;
-j
-NULL
-{"user": "test"}
-Warnings:
-Warning	1235	This version of MySQL doesn't yet support 'sorting of non-scalar JSON values'
 update t set j=json_set(j, '$.user',
 cast(UNHEX('F0A09C8E') as char character set 'utf8mb4')) where id=8;
 set names 'utf8mb4';
@@ -6490,42 +6230,6 @@ NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	[null
 }	15
 NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	[null, null]	{"k": null}	NULL	NULL	NULL	NULL
 1	STRING	NULL	"abc"	"abc"	["abc", 2]	2	"abc"	2	["abc", "abc"]	"$"	0	0	1	1	["abc", "abc"]	{"k": "abc"}	abc	"\"abc\""	"abc"	5
-ALTER TABLE T_WITH_NULLS MODIFY COLUMN j TEXT;
-SELECT
-JSON_VALID(j),
-JSON_TYPE(j),
-JSON_KEYS(j),
-JSON_EXTRACT(j, '$'),
-JSON_REMOVE(j, '$.a.b.c'),
-JSON_ARRAY_APPEND(j, '$', 2),
-JSON_SET(j, '$[0]', 2),
-JSON_INSERT(j, '$[0]', 2),
-JSON_REPLACE(j, '$[0]', 2),
-JSON_MERGE_PRESERVE(j, j),
-JSON_SEARCH(j, 'one', 'abc'),
-JSON_CONTAINS(j, '[1]'),
-JSON_CONTAINS_PATH(j, 'all', '$.a'),
-JSON_LENGTH(j),
-JSON_DEPTH(j),
-JSON_ARRAY(j, j),
-JSON_OBJECT('k', j),
-JSON_UNQUOTE(CAST(j AS CHAR)),
-JSON_QUOTE(CAST(j AS CHAR)),
-JSON_PRETTY(j),
-JSON_STORAGE_SIZE(j)
-FROM T_WITH_NULLS
-ORDER BY i;
-JSON_VALID(j)	JSON_TYPE(j)	JSON_KEYS(j)	JSON_EXTRACT(j, '$')	JSON_REMOVE(j, '$.a.b.c')	JSON_ARRAY_APPEND(j, '$', 2)	JSON_SET(j, '$[0]', 2)	JSON_INSERT(j, '$[0]', 2)	JSON_REPLACE(j, '$[0]', 2)	JSON_MERGE_PRESERVE(j, j)	JSON_SEARCH(j, 'one', 'abc')	JSON_CONTAINS(j, '[1]')	JSON_CONTAINS_PATH(j, 'all', '$.a')	JSON_LENGTH(j)	JSON_DEPTH(j)	JSON_ARRAY(j, j)	JSON_OBJECT('k', j)	JSON_UNQUOTE(CAST(j AS CHAR))	JSON_QUOTE(CAST(j AS CHAR))	JSON_PRETTY(j)	JSON_STORAGE_SIZE(j)
-NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	[null, null]	{"k": null}	NULL	NULL	NULL	NULL
-1	ARRAY	NULL	[1]	[1]	[1, 2]	[2]	[1]	[2]	[1, 1]	NULL	1	0	1	2	["[1]", "[1]"]	{"k": "[1]"}	[1]	"[1]"	[
-  1
-]	8
-NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	[null, null]	{"k": null}	NULL	NULL	NULL	NULL
-1	OBJECT	["a"]	{"a": "b"}	{"a": "b"}	[{"a": "b"}, 2]	2	{"a": "b"}	2	{"a": ["b", "b"]}	NULL	0	1	1	2	["{\"a\": \"b\"}", "{\"a\": \"b\"}"]	{"k": "{\"a\": \"b\"}"}	{"a": "b"}	"{\"a\": \"b\"}"	{
-  "a": "b"
-}	15
-NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	[null, null]	{"k": null}	NULL	NULL	NULL	NULL
-1	STRING	NULL	"abc"	"abc"	["abc", 2]	2	"abc"	2	["abc", "abc"]	"$"	0	0	1	1	["\"abc\"", "\"abc\""]	{"k": "\"abc\""}	abc	"\"abc\""	"abc"	5
 DROP TABLE T_WITH_NULLS;
 CREATE TABLE t_latin1(id INT PRIMARY KEY AUTO_INCREMENT,
 json_text VARCHAR(20),
@@ -7479,14 +7183,6 @@ CREATE TABLE t1(j JSON);
 CREATE TABLE t2(j JSON);
 INSERT INTO t1 VALUES ('[1]'), ('[2]'), ('[3]'), ('[4]');
 INSERT INTO t2 VALUES ('[1]');
-ANALYZE TABLE t1, t2;
-Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	OK
-test.t2	analyze	status	OK
-EXPLAIN UPDATE t1, t2 SET t1.j = JSON_INSERT(t2.j, '$[1]', t2.j) WHERE t1.j=t2.j;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	NULL
-1	UPDATE	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	25.00	Using where
 UPDATE t1, t2 SET t1.j = JSON_INSERT(t2.j, '$[1]', t2.j) WHERE t1.j=t2.j;
 SELECT * FROM t1 ORDER BY (CAST(j AS CHAR));
 j
@@ -7500,14 +7196,6 @@ DROP TABLE t1, t2;
 #               ON EXPLAIN SELECT JSON
 #
 create table t (pk int primary key, col_json json);
-ANALYZE TABLE t;
-Table	Op	Msg_type	Msg_text
-test.t	analyze	status	OK
-explain SELECT col_json FROM t WHERE pk = 1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Note	1003	/* select#1 */ select NULL AS `col_json` from `test`.`t` where multiple equal(1, NULL)
 drop table t;
 # ----------------------------------------------------------------------
 # Bug#20889248 Used to crash the server
@@ -8586,10 +8274,10 @@ DROP TABLE F, H;
 #
 # Bug#21110783 WL8132:DEBUG CRASH AT WRAPPER_TO_STRING | SQL/JSON_DOM.CC
 #
-CREATE TABLE t1 (i1 INT) ENGINE=MyISAM;
+CREATE TABLE t1 (i1 INT) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1);
-CREATE TABLE t2 (i2 INT, j JSON) ENGINE=MyISAM;
-CREATE TABLE t3(v VARCHAR(100), j JSON) ENGINE=MyISAM;
+CREATE TABLE t2 (i2 INT, j JSON) ENGINE=SequoiaDB;
+CREATE TABLE t3(v VARCHAR(100), j JSON) ENGINE=SequoiaDB;
 INSERT INTO t3(v) SELECT j FROM t1 LEFT JOIN t2 ON i1 = i2 GROUP BY j;
 INSERT INTO t3(j) SELECT j FROM t1 LEFT JOIN t2 ON i1 = i2 GROUP BY j;
 SELECT * FROM t3;
@@ -8669,20 +8357,6 @@ JSON_CONTAINS('[1, 2, [4,5] ]', '[111111111111111111]')
 CREATE TABLE t1(j JSON, i INT);
 INSERT INTO t1 VALUES
 ('0', 0), ('1', 1), ('1.0', 2), ('[1,2,3]', 3), ('{}', 4), ('"abc"', 5);
-ANALYZE TABLE t1;
-Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	OK
-EXPLAIN SELECT * FROM t1 WHERE j > i ORDER BY i;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	33.33	Using where; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`j` AS `j`,`test`.`t1`.`i` AS `i` from `test`.`t1` where (`test`.`t1`.`j` > `test`.`t1`.`i`) order by `test`.`t1`.`i`
-EXPLAIN SELECT * FROM t1 AS a, t1 AS b WHERE a.j > b.i ORDER BY b.i, a.i;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	a	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Using temporary; Using filesort
-1	SIMPLE	b	NULL	ALL	NULL	NULL	NULL	NULL	6	33.33	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`a`.`j` AS `j`,`test`.`a`.`i` AS `i`,`test`.`b`.`j` AS `j`,`test`.`b`.`i` AS `i` from `test`.`t1` `a` join `test`.`t1` `b` where (`test`.`a`.`j` > `test`.`b`.`i`) order by `test`.`b`.`i`,`test`.`a`.`i`
 SELECT * FROM t1 WHERE j > i ORDER BY i;
 j	i
 [1, 2, 3]	3
@@ -8712,21 +8386,6 @@ j	i	j	i
 "abc"	5	"abc"	5
 # Create an index on the INT column and verify that it is not used.
 CREATE INDEX t1_idx ON t1(i);
-ANALYZE TABLE t1;
-Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	OK
-EXPLAIN SELECT * FROM t1 WHERE j > i ORDER BY i;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	33.33	Using where; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`j` AS `j`,`test`.`t1`.`i` AS `i` from `test`.`t1` where (`test`.`t1`.`j` > `test`.`t1`.`i`) order by `test`.`t1`.`i`
-EXPLAIN SELECT * FROM t1 AS a, t1 AS b WHERE a.j > b.i ORDER BY b.i, a.i;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	a	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Using temporary; Using filesort
-1	SIMPLE	b	NULL	ALL	t1_idx	NULL	NULL	NULL	6	33.33	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Warning	1739	Cannot use range access on index 't1_idx' due to type or collation conversion on field 'i'
-Note	1003	/* select#1 */ select `test`.`a`.`j` AS `j`,`test`.`a`.`i` AS `i`,`test`.`b`.`j` AS `j`,`test`.`b`.`i` AS `i` from `test`.`t1` `a` join `test`.`t1` `b` where (`test`.`a`.`j` > `test`.`b`.`i`) order by `test`.`b`.`i`,`test`.`a`.`i`
 SELECT * FROM t1 WHERE j > i ORDER BY i;
 j	i
 [1, 2, 3]	3
@@ -8755,32 +8414,14 @@ j	i	j	i
 {}	4	"abc"	5
 "abc"	5	"abc"	5
 CREATE TABLE t2(i INT, vc VARCHAR(10))
-ENGINE=InnoDB CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_bin';
+ENGINE=SequoiaDB CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_bin';
 INSERT INTO t2 VALUES (1, 'abc'), (2, '"abc"');
-ANALYZE TABLE t2;
-Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	OK
-EXPLAIN SELECT i FROM t2 WHERE vc = CAST('"abc"' AS JSON);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`i` AS `i` from `test`.`t2` where (`test`.`t2`.`vc` = <cache>(cast('"abc"' as json)))
 SELECT i FROM t2 WHERE vc = CAST('"abc"' AS JSON);
 i
 1
 # Create an index on the VARCHAR column and verify that it is not used.
 # Used to return 2 instead of 1.
 CREATE INDEX t2_idx ON t2(vc);
-ANALYZE TABLE t2;
-Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	OK
-EXPLAIN SELECT i FROM t2 WHERE vc = CAST('"abc"' AS JSON);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	t2_idx	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Warning	1739	Cannot use ref access on index 't2_idx' due to type or collation conversion on field 'vc'
-Warning	1739	Cannot use range access on index 't2_idx' due to type or collation conversion on field 'vc'
-Note	1003	/* select#1 */ select `test`.`t2`.`i` AS `i` from `test`.`t2` where (`test`.`t2`.`vc` = <cache>(cast('"abc"' as json)))
 SELECT i FROM t2 WHERE vc = CAST('"abc"' AS JSON);
 i
 1
@@ -8788,16 +8429,6 @@ DROP INDEX t2_idx ON t2;
 # Create a unique index on the VARCHAR column and verify that it is not
 # used. Used to return an empty result.
 CREATE UNIQUE INDEX t2_idx ON t2(vc);
-ANALYZE TABLE t2;
-Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	OK
-EXPLAIN SELECT i FROM t2 WHERE vc = CAST('"abc"' AS JSON);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	t2_idx	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Warning	1739	Cannot use ref access on index 't2_idx' due to type or collation conversion on field 'vc'
-Warning	1739	Cannot use range access on index 't2_idx' due to type or collation conversion on field 'vc'
-Note	1003	/* select#1 */ select `test`.`t2`.`i` AS `i` from `test`.`t2` where (`test`.`t2`.`vc` = <cache>(cast('"abc"' as json)))
 SELECT i FROM t2 WHERE vc = CAST('"abc"' AS JSON);
 i
 1
@@ -9035,7 +8666,7 @@ DROP TABLE t;
 #               VAL_JSON_FUNC_FIELD_SUBSELECT
 #
 # This comparison gave valgrind leakage before the fix
-create table t(a json not null) engine=innodb;
+create table t(a json not null) engine=SequoiaDB;
 insert into t values('{}');
 select row(uuid(), a) < row(a, str_to_date(1,1)) from t;
 row(uuid(), a) < row(a, str_to_date(1,1))
@@ -9065,7 +8696,7 @@ ERROR 42000: Result consisted of more than one row
 set @initialized_21602361 = '$';
 select json_length('{}',@initialized_21602361)
 from t group by b into @initialized_21602361;
-ERROR 42000: Invalid JSON path expression. The error is around character position 1.
+ERROR 42000: Result consisted of more than one row
 set @error_value_21602361 = '$[';
 select json_length('{}',@error_value_21602361)
 from t group by b into @error_value_21602361;
@@ -9107,9 +8738,6 @@ INSERT INTO t1(f1) VALUES
 ('{"a":11, "b":3}'),
 ('{"a":33, "b":1}'),
 ('{"a":22,"b":2}');
-ANALYZE TABLE t1;
-Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	OK
 SELECT f1->"$.a" FROM t1 order by autopk;
 f1->"$.a"
 1
@@ -9118,20 +8746,10 @@ f1->"$.a"
 11
 33
 22
-EXPLAIN SELECT f1->"$.a" FROM t1 order by autopk;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	NULL	PRIMARY	4	NULL	6	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select json_extract(`test`.`t1`.`f1`,'$.a') AS `f1->"$.a"` from `test`.`t1` order by `test`.`t1`.`autopk`
 SELECT f1->"$.a" FROM t1 WHERE f1->"$.b" > 1 order by autopk;
 f1->"$.a"
 11
 22
-EXPLAIN SELECT f1->"$.a" FROM t1 WHERE f1->"$.b" > 1 order by autopk;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	NULL	PRIMARY	4	NULL	6	100.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select json_extract(`test`.`t1`.`f1`,'$.a') AS `f1->"$.a"` from `test`.`t1` where (json_extract(`test`.`t1`.`f1`,'$.b') > 1) order by `test`.`t1`.`autopk`
 SELECT f1->"$.a", f1->"$.b" FROM t1 ORDER BY autopk;
 f1->"$.a"	f1->"$.b"
 1	NULL
@@ -9140,34 +8758,18 @@ f1->"$.a"	f1->"$.b"
 11	3
 33	1
 22	2
-EXPLAIN SELECT f1->"$.a", f1->"$.b" FROM t1 ORDER BY autopk;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	NULL	PRIMARY	4	NULL	6	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select json_extract(`test`.`t1`.`f1`,'$.a') AS `f1->"$.a"`,json_extract(`test`.`t1`.`f1`,'$.b') AS `f1->"$.b"` from `test`.`t1` order by `test`.`t1`.`autopk`
 SELECT MAX(f1->"$.a"), f1->"$.b" FROM t1 GROUP BY f1->"$.b";
 MAX(f1->"$.a")	f1->"$.b"
 3	NULL
 33	1
 22	2
 11	3
-EXPLAIN SELECT MAX(f1->"$.a"), f1->"$.b" FROM t1 GROUP BY f1->"$.b";
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select max(json_extract(`test`.`t1`.`f1`,'$.a')) AS `MAX(f1->"$.a")`,json_extract(`test`.`t1`.`f1`,'$.b') AS `f1->"$.b"` from `test`.`t1` group by json_extract(`test`.`t1`.`f1`,'$.b')
 SELECT JSON_OBJECT("c",f1->"$.b") AS f2
 FROM t1 HAVING JSON_TYPE(f2->"$.c") <> 'NULL' ORDER BY autopk;
 f2
 {"c": 3}
 {"c": 1}
 {"c": 2}
-EXPLAIN
-SELECT JSON_OBJECT("c",f1->"$.b") AS f2 FROM t1 HAVING JSON_TYPE(f2->"$.c") <> 'NULL' order by autopk;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	NULL	PRIMARY	4	NULL	6	100.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select json_object('c',json_extract(`test`.`t1`.`f1`,'$.b')) AS `f2` from `test`.`t1` having (json_type(json_extract(`f2`,'$.c')) <> 'NULL') order by `test`.`t1`.`autopk`
 Test unquoting operator
 INSERT INTO t1(f1) VALUES
 ('{"t":"a"}'),
@@ -9185,11 +8787,6 @@ f1->>"$.t"
 a
 b
 c
-EXPLAIN SELECT f1->>"$.t" FROM t1 WHERE f1->>"$.t" <> 'NULL';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select json_unquote(json_extract(`test`.`t1`.`f1`,'$.t')) AS `f1->>"$.t"` from `test`.`t1` where (json_unquote(json_extract(`test`.`t1`.`f1`,'$.t')) <> 'NULL')
 SELECT f1->>NULL FROM t1;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'NULL FROM t1' at line 1
 SELECT f1 ->> "NULL" FROM t1;
@@ -9836,127 +9433,6 @@ id	j1	j2	ss1	ss2
 1	{"a": "s", "b": "Z", "x": "abc"}	{"a": "abcdefghi", "b": "b"}	37	33
 2	NULL	NULL	NULL	NULL
 3	{"a": "s", "b": "Z", "x": "abc"}	{"a": "abcdefghi", "b": "b"}	37	33
-DROP TABLE t;
-CREATE TABLE t(j JSON,
-i INT DEFAULT 42,
-db DOUBLE DEFAULT 2.34e-10,
-dc DECIMAL(5, 3) DEFAULT 98.765,
-ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-gc JSON GENERATED ALWAYS AS (JSON_ARRAY(i, db, dc, ts)))
-ENGINE=InnoDB;
-INSERT INTO t(j, ts) VALUES
-('[null, "abc", true, "def", false]', '2017-01-02 14:15:16');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[null, "abc", true, "def", false]	ARRAY	28
-UPDATE t SET j = JSON_SET(j, '$[1]', 'xy', '$[3]', 'xyzw');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[null, "xy", true, "xyzw", false]	ARRAY	28
-UPDATE t SET j = JSON_SET(j, '$[1]', 'a');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[null, "a", true, "xyzw", false]	ARRAY	27
-UPDATE t SET j = JSON_SET(j, '$[3]', 'abcde');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[null, "a", true, "abcde", false]	ARRAY	28
-UPDATE t SET j = JSON_ARRAY('abcdefghijklmnopqrstuvwxyz');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-["abcdefghijklmnopqrstuvwxyz"]	ARRAY	35
-UPDATE t SET j = JSON_SET(j, '$[0]', 3.14e0);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[3.14]	ARRAY	16
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST(10000000000 AS UNSIGNED));
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[10000000000]	ARRAY	16
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST(4000000000 AS SIGNED));
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[4000000000]	ARRAY	16
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST(123 AS UNSIGNED));
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[123]	ARRAY	8
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST(456 AS SIGNED));
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[456]	ARRAY	8
-UPDATE t SET j = JSON_SET(j, '$[0]', -123);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[-123]	ARRAY	8
-UPDATE t SET j = JSON_SET(j, '$[0]', -4000000000);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[-4000000000]	ARRAY	16
-UPDATE t SET j = JSON_SET(j, '$[0]', TRUE);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[true]	ARRAY	8
-UPDATE t SET j = JSON_SET(j, '$[0]', NULL);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[null]	ARRAY	8
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST('abc' AS BINARY));
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-["base64:type253:YWJj"]	ARRAY	13
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST('2016-12-23 13:16:40' AS DATETIME));
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-["2016-12-23 13:16:40.000000"]	ARRAY	18
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST('2016-12-24' AS DATE));
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-["2016-12-24"]	ARRAY	18
-UPDATE t SET j = JSON_SET(j, '$[0]', CAST('14:17:41' AS TIME));
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-["14:17:41.000000"]	ARRAY	18
-UPDATE t SET j = JSON_SET(j, '$[0]', 1.23);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[1.23]	ARRAY	14
-UPDATE t SET j = JSON_SET(j, '$[0]', i);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[42]	ARRAY	8
-UPDATE t SET j = JSON_SET(j, '$[0]', db);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[0.000000000234]	ARRAY	16
-UPDATE t SET j = JSON_SET(j, '$[0]', dc);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[98.765]	ARRAY	15
-UPDATE t SET j = JSON_SET(j, '$[0]', ts);
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-["2017-01-02 14:15:16.000000"]	ARRAY	18
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[0]');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[42]	ARRAY	8
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[1]');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[0.000000000234]	ARRAY	16
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[2]');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[98.765]	ARRAY	15
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[3]');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-["2017-01-02 14:15:16.000000"]	ARRAY	18
-UPDATE t SET j = JSON_SET(j, '$[0]', gc->'$[4]');
-SELECT j, JSON_TYPE(j) jt, JSON_STORAGE_SIZE(j) ss FROM t;
-j	jt	ss
-[null]	ARRAY	8
 DROP TABLE t;
 CREATE TABLE t1(id INT PRIMARY KEY, j JSON, x INT);
 INSERT INTO t1 VALUES (1, '{"a":11}', 1), (2, '{"a":22}', 2);

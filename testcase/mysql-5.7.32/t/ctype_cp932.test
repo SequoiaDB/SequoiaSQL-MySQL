@@ -1,4 +1,5 @@
 -- source include/have_cp932.inc
+-- source include/have_sequoiadb.inc
 --echo #
 --echo # Bug #11755818 LIKE DOESN'T MATCH WHEN CP932_BIN/SJIS_BIN COLLATIONS ARE 
 --echo #               USED.
@@ -27,3 +28,5 @@ DROP TABLE t1;
 SET @@character_set_client= @old_character_set_client;
 SET @@character_set_connection= @old_character_set_connection;
 SET @@character_set_results= @old_character_set_results;
+
+-- source include/uninstall_sequoiadb.inc

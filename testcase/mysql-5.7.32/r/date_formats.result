@@ -414,17 +414,7 @@ create table t1 select str_to_date("2003-01-02 10:11:12.0012", "%Y-%m-%d %H:%i:%
 str_to_date("10:11:12.0012", "%H:%i:%S.%f") as f2,
 str_to_date("2003-01-02", "%Y-%m-%d") as f3,
 str_to_date("02", "%d") as f4, str_to_date("02 10", "%d %H") as f5;
-describe t1;
-Field	Type	Null	Key	Default	Extra
-f1	datetime(6)	YES		NULL	
-f2	time(6)	YES		NULL	
-f3	date	YES		NULL	
-f4	date	YES		NULL	
-f5	time	YES		NULL	
-select * from t1;
-f1	f2	f3	f4	f5
-2003-01-02 10:11:12.001200	10:11:12.001200	2003-01-02	0000-00-02	58:00:00
-drop table t1;
+ERROR 22007: Incorrect date value: '0000-00-02' for column 'f4' at row 1
 create table t1 select "02 10" as a, "%d %H" as b;
 select str_to_date(a,b) from t1;
 str_to_date(a,b)
@@ -629,24 +619,6 @@ INSERT INTO t2 VALUES
 ('test1','2016-12-13'),('test1','2016-12-14'),('test1','2016-12-15');
 INSERT INTO t3 VALUES
 ('test1','11:13:14'), ('test1','12:13:14'), ('test1','10:13:14');
-EXPLAIN SELECT *
-FROM t1 LEFT JOIN t2
-ON t2.a = 'test1' AND t2.b = '20161213'
-WHERE t1.a = 'test1';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	const	PRIMARY	PRIMARY	12	const	1	100.00	Using index
-1	SIMPLE	t2	NULL	const	PRIMARY	PRIMARY	15	const,const	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select 'test1' AS `a`,'test1' AS `a`,'2016-12-13' AS `b` from `test`.`t1` left join `test`.`t2` on((multiple equal('test1', 'test1') and multiple equal('20161213', '2016-12-13'))) where 1
-EXPLAIN SELECT *
-FROM t1 LEFT JOIN t2 IGNORE INDEX(PRIMARY)
-ON t2.a = 'test1' AND t2.b = '20161213'
-WHERE t1.a = 'test1';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	const	PRIMARY	PRIMARY	12	const	1	100.00	Using index
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select 'test1' AS `a`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` left join `test`.`t2` IGNORE INDEX (PRIMARY) on(((`test`.`t2`.`b` = '20161213') and (`test`.`t2`.`a` = 'test1'))) where 1
 SELECT *
 FROM t1 LEFT JOIN t2
 ON t2.a = 'test1' AND t2.b = '20161213'

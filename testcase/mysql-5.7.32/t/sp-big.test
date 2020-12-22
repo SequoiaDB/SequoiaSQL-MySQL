@@ -1,9 +1,12 @@
 #
 # Bug #11602: SP with very large body not handled well
 #
+--source include/have_sequoiadb.inc
 
 --disable_warnings
-drop procedure if exists test.longprocedure;
+# Compatible with parallel > 1, change "test.procedure" to "procedure"
+#drop procedure if exists test.longprocedure;
+drop procedure if exists longprocedure;
 drop table if exists t1;
 --enable_warnings
 
@@ -15,7 +18,8 @@ let $body=`select repeat('select count(*) into out1 from t1;\n', 3072)`;
 delimiter //;
 --disable_query_log
 eval select length('$body') as length//
-eval create procedure test.longprocedure (out out1 int) deterministic
+#eval create procedure test.longprocedure (out out1 int) deterministic
+eval create procedure longprocedure (out out1 int) deterministic
 begin
   $body
 end//
@@ -25,11 +29,15 @@ delimiter ;//
 
 # this is larger than the length above, because it includes the 'begin' and
 # 'end' bits and some whitespace
-select length(routine_definition) from information_schema.routines where routine_schema = 'test' and routine_name = 'longprocedure';
+#
+# Compatible with parallel > 1, modify query condition "schema='test'" to "schema like 'test_parallel%'"
+#select length(routine_definition) from information_schema.routines where routine_schema = 'test' and routine_name = 'longprocedure‘;
+select length(routine_definition) from information_schema.routines where routine_schema like 'test_parallel%' and routine_name = 'longprocedure';
+#call test.longprocedure(@value); select @value;
+call longprocedure(@value); select @value;
 
-call test.longprocedure(@value); select @value;
-
-drop procedure test.longprocedure;
+#drop procedure test.longprocedure;
+drop procedure longprocedure;
 drop table t1;
 #
 # Bug #9819 "Cursors: Mysql Server Crash while fetching from table with 5
@@ -83,3 +91,5 @@ select f1 from t1 limit 1;
 select f1 from t2 limit 1;
 drop procedure p1;
 drop table t1, t2;
+
+--source include/uninstall_sequoiadb.inc

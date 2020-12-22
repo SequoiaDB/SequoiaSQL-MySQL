@@ -1,5 +1,5 @@
---source include/have_myisam.inc
-# Testcases for some bug fixes need MyISAM
+--source include/have_sequoiadb.inc
+# Testcases for some bug fixes need SequoiaDB
 
 -- source include/have_ucs2.inc
 -- source include/have_utf16.inc
@@ -97,6 +97,7 @@ SELECT * FROM t1 WHERE a LIKE 'фЫва%' ORDER BY BINARY a;
 SELECT * FROM t1 WHERE a LIKE 'фЫва%' COLLATE utf16_bin ORDER BY BINARY a;
 DROP TABLE t1;
 
+#Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1 (word varchar(64) NOT NULL, PRIMARY KEY (word))
 CHARACTER SET utf16;
 INSERT INTO t1 (word) VALUES ("cat");
@@ -141,12 +142,12 @@ SET NAMES latin1;
 #
 # Two fields, index
 #
-
+#Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1 (
    word VARCHAR(64),
    bar INT(11) default 0,
    PRIMARY KEY (word))
-   ENGINE=MyISAM
+   ENGINE=SequoiaDB
    CHARSET utf16
    COLLATE utf16_general_ci ;
 
@@ -156,9 +157,9 @@ INSERT INTO t1 (word) VALUES ("aardvar");
 INSERT INTO t1 (word) VALUES ("aardvark");
 INSERT INTO t1 (word) VALUES ("aardvara");
 INSERT INTO t1 (word) VALUES ("aardvarz");
-EXPLAIN SELECT * FROM t1 ORDER BY word;
+#EXPLAIN SELECT * FROM t1 ORDER BY word;
 SELECT * FROM t1 ORDER BY word;
-EXPLAIN SELECT word FROM t1 ORDER BY word;
+#EXPLAIN SELECT word FROM t1 ORDER BY word;
 SELECT word FROM t1 ORDER by word;
 DROP TABLE t1;
 
@@ -170,7 +171,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (
    word VARCHAR(64) ,
    PRIMARY KEY (word))
-   ENGINE=MyISAM
+   ENGINE=SequoiaDB
    CHARSET utf16
    COLLATE utf16_general_ci;
 
@@ -180,7 +181,7 @@ INSERT INTO t1 (word) VALUES ("aardvar");
 INSERT INTO t1 (word) VALUES ("aardvark");
 INSERT INTO t1 (word) VALUES ("aardvara");
 INSERT INTO t1 (word) VALUES ("aardvarz");
-EXPLAIN SELECT * FROM t1 ORDER BY WORD;
+#EXPLAIN SELECT * FROM t1 ORDER BY WORD;
 SELECT * FROM t1 ORDER BY word;
 DROP TABLE t1;
 
@@ -188,12 +189,11 @@ DROP TABLE t1;
 #
 # Two fields, no index
 #
-
 CREATE TABLE t1 (
    word TEXT,
    bar INT(11) AUTO_INCREMENT,
    PRIMARY KEY (bar))
-   ENGINE=MyISAM
+   ENGINE=SequoiaDB
    CHARSET utf16
    COLLATE utf16_general_ci ;
 INSERT INTO t1 (word) VALUES ("aar");
@@ -202,9 +202,9 @@ INSERT INTO t1 (word) VALUES ("aardvar");
 INSERT INTO t1 (word) VALUES ("aardvark");
 INSERT INTO t1 (word) VALUES ("aardvara");
 INSERT INTO t1 (word) VALUES ("aardvarz");
-EXPLAIN SELECT * FROM t1 ORDER BY word;
+#EXPLAIN SELECT * FROM t1 ORDER BY word;
 SELECT * FROM t1 ORDER BY word;
-EXPLAIN SELECT word FROM t1 ORDER BY word;
+#EXPLAIN SELECT word FROM t1 ORDER BY word;
 SELECT word FROM t1 ORDER BY word;
 DROP TABLE t1;
 
@@ -370,7 +370,7 @@ SET NAMES latin1;
 ### Bug #14583 Bug on query using a LIKE on indexed field with ucs2_bin collation
 ###
 ##--disable_warnings
-##create table t1(f1 varchar(5) CHARACTER SET utf16 COLLATE utf16_bin NOT NULL) engine=InnoDB;
+##create table t1(f1 varchar(5) CHARACTER SET utf16 COLLATE utf16_bin NOT NULL) engine=SequoiaDB;
 ##--enable_warnings
 ##insert into t1 values('a');
 ##create index t1f1 on t1(f1);
@@ -397,12 +397,13 @@ deallocate prepare stmt;
 create table t1 (
   a char(10) character set utf16 not null, 
   index a (a)
-) engine=myisam;
+) engine=sequoiadb;
 insert into t1 values (repeat(0x201f, 10));
 insert into t1 values (repeat(0x2020, 10));
 insert into t1 values (repeat(0x2021, 10));
 # make sure "index read" is used
-explain select hex(a) from t1 order by a;
+# not concern explain result
+#explain select hex(a) from t1 order by a;
 select hex(a) from t1 order by a;
 alter table t1 drop index a;
 select hex(a) from t1 order by a;
@@ -418,7 +419,7 @@ drop table t1;
 ##DROP TABLE t1;
 
 ###
-### Bug #20536: md5() with GROUP BY and UCS2 return different results on myisam/innodb
+### Bug #20536: md5() with GROUP BY and UCS2 return different results on sequoiadb/innodb
 ###
 ##
 ##--disable_warnings
@@ -438,7 +439,6 @@ drop table t1;
 #
 # Bug #20108: corrupted default enum value for a ucs2 field              
 #
-
 CREATE TABLE t1 (
   status enum('active','passive') character set utf16 collate utf16_general_ci 
     NOT NULL default 'passive'
@@ -515,7 +515,7 @@ select position('bb' in 'abba');
 #
 # Testing cs->coll->hash_sort()
 #
-create table t1 (a varchar(10) character set utf16) engine=heap;
+create table t1 (a varchar(10) character set utf16) engine=sequoiadb;
 insert into t1 values ('a'),('A'),('b'),('B');
 select * from t1 where a='a' order by binary a;
 select hex(min(binary a)),count(*) from t1 group by a;
@@ -681,24 +681,29 @@ show create table t1;
 drop table t1;
 SET sql_mode = default;
 #
-# Testing that maximim possible key length is 1000 bytes for MyISAM
+# Testing that maximim possible key length is 3072 bytes for SequoiaDB
 #
-create table t1 (a varchar(250) character set utf16 primary key) engine=MyISAM;
+#Bug #SEQUOIADBMAINSTREAM-3564
+# SEQUOIASQLMAINSTREAM-253
+create table t1 (a varchar(768) character set utf16 primary key) engine=SequoiaDB;
 show create table t1;
 drop table t1;
 --error ER_TOO_LONG_KEY
-create table t1 (a varchar(334) character set utf16 primary key) engine=MyISAM;
+create table t1 (a varchar(769) character set utf16 primary key) engine=SequoiaDB;
 
 #
-# Testing that maximim possible key length is 767 bytes for InnoDB
+# Testing that maximim possible key length is 3072 bytes for SequoiaDB
 #
-#Minimized the varchar length for InnoDB so that it does not throw max keylength exceeded error
-create table t1 (a varchar(150) character set utf16 primary key);
+#Minimized the varchar length for SequoiaDB so that it does not throw max keylength exceeded error
+#Bug #SEQUOIADBMAINSTREAM-3564
+# SEQUOIASQLMAINSTREAM-253
+create table t1 (a varchar(768) character set utf16 primary key);
 show create table t1;
 drop table t1;
+# SequoiaDB not support innodb_large_prefix
 set GLOBAL innodb_large_prefix=OFF;
 --error ER_TOO_LONG_KEY
-create table t1 (a varchar(334) character set utf16 primary key);
+create table t1 (a varchar(769) character set utf16 primary key);
 set GLOBAL innodb_large_prefix=default;
 
 #
@@ -738,26 +743,28 @@ DROP TABLE t1;
 SET max_sort_length=DEFAULT;
 SET NAMES latin1;
 
---echo #
---echo # Bug#52520 Difference in tinytext utf column metadata
---echo #
-CREATE TABLE t1 (
-  s1 TINYTEXT CHARACTER SET utf16,
-  s2 TEXT CHARACTER SET utf16,
-  s3 MEDIUMTEXT CHARACTER SET utf16,
-  s4 LONGTEXT CHARACTER SET utf16
-);
---enable_metadata
-SET NAMES utf8, @@character_set_results=NULL;
-SELECT *, HEX(s1) FROM t1;
-SET NAMES latin1;
-SELECT *, HEX(s1) FROM t1;
-SET NAMES utf8;
-SELECT *, HEX(s1) FROM t1;
---disable_metadata
-CREATE TABLE t2 AS SELECT CONCAT(s1) FROM t1;
-SHOW CREATE TABLE t2;
-DROP TABLE t1, t2;
+# This test check utf column metadata
+# Compatible with parallel > 1, has been moved to "create.test", at the end of the file
+#--echo #
+#--echo # Bug#52520 Difference in tinytext utf column metadata
+#--echo #
+#CREATE TABLE t1 (
+#  s1 TINYTEXT CHARACTER SET utf16,
+#  s2 TEXT CHARACTER SET utf16,
+#  s3 MEDIUMTEXT CHARACTER SET utf16,
+#  s4 LONGTEXT CHARACTER SET utf16
+#);
+#--enable_metadata
+#SET NAMES utf8, @@character_set_results=NULL;
+#SELECT *, HEX(s1) FROM t1;
+#SET NAMES latin1;
+#SELECT *, HEX(s1) FROM t1;
+#SET NAMES utf8;
+#SELECT *, HEX(s1) FROM t1;
+#--disable_metadata
+#CREATE TABLE t2 AS SELECT CONCAT(s1) FROM t1;
+#SHOW CREATE TABLE t2;
+#DROP TABLE t1, t2;
 
 --echo #
 --echo # Bug#11753363 (Bug#44793) Character sets: case clause, ucs2 or utf32, failure
@@ -818,6 +825,7 @@ set collation_connection=utf16_bin;
 --source include/weight_string.inc
 --source include/weight_string_euro.inc
 --source include/weight_string_l1.inc
+--source include/uninstall_sequoiadb.inc
 
 --echo #
 --echo # End of 5.6 tests

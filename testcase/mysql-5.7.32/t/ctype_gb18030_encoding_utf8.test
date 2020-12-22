@@ -1,5 +1,5 @@
+--source include/have_sequoiadb.inc
 --source include/have_gb18030.inc
---source include/have_innodb.inc
 
 SET NAMES utf8mb4;
 SET CHARACTER_SET_DATABASE = utf8mb4;
@@ -7,7 +7,9 @@ SET CHARACTER_SET_DATABASE = utf8mb4;
 CREATE DATABASE `中文`;
 CREATE DATABASE `数据库`;
 
-SELECT schema_name, HEX(schema_name) FROM information_schema.schemata WHERE schema_name NOT IN ('mtr', 'sys');
+# Compatible with parallel > 1, modify query condition, ignore database "test_parallel_*"
+#SELECT schema_name, HEX(schema_name) FROM information_schema.schemata WHERE schema_name NOT IN ('mtr', 'sys');
+SELECT schema_name, HEX(schema_name) FROM information_schema.schemata WHERE schema_name NOT IN ('mtr', 'sys') and schema_name NOT LIKE "test_parallel%";
 
 USE `数据库`;
 USE `中文`;
@@ -15,7 +17,11 @@ USE `中文`;
 DROP DATABASE `数据库`;
 DROP DATABASE `中文`;
 
-USE test;
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+CREATE DATABASE test_ctype_gb18030_encoding_utf8;
+USE test_ctype_gb18030_encoding_utf8;
+
+#USE test;
 
 --echo 'Test for CREATE TABLE'
 
@@ -44,7 +50,7 @@ SHOW CREATE TABLE `㐇㐈㐉`;
 
 DROP TABLE `表格`, `模式`, `隞嗷㐁`, `㐅㐅㐅`, `㐇㐈㐉`;
 
---echo 'Test for ALTER TABLE'
+#--echo 'Test for ALTER TABLE'
 CREATE TABLE `表格` (`字段一` CHAR(5)) DEFAULT CHARSET = utf8mb4;
 CREATE TABLE `隞嗷㐁` (`㐂㐃㐄` CHAR(5)) DEFAULT CHARSET = utf8mb4;
 
@@ -128,6 +134,7 @@ DROP TABLE `表一`, `表二`;
 --echo 'Test for ENUM'
 CREATE TABLE `表二` (e ENUM('口', '日', '目', '田', '晶'), INDEX(e)) DEFAULT CHARSET = utf8mb4;
 INSERT INTO `表二` VALUES('田'), ('日'), ('目'), ('晶'), ('口');
+
 SELECT * FROM `表二`;
 ALTER TABLE `表二` ADD c CHAR(1) NOT NULL FIRST;
 SHOW CREATE TABLE `表二`;
@@ -170,24 +177,40 @@ INSERT INTO `表一` VALUES ('齗齘齚齝齞齨齩齭齮齯齰齱齳齵齺齽�
 INSERT INTO `表一` VALUES ('龔龖龗龞龡龢龣龥・・・・・・・・・・・・');
 INSERT INTO `表一` VALUES ('龔龖龗龞龡龢龣龥𠀀𠀂𨡃𤈼𠻜𠻝𠻞𠻟𠻠𠻟𠻠');
 
+--sorted_result
 SELECT * FROM `表一`;
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE ' %';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE '% %';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE '% ';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE '仡%';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE '%乹乿%';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE '%佘';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE '鼫鼯鼱鼲鼴鼷鼹鼺鼼鼽鼿齁齃齄齅齆齇齓齕齖%';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE '%鼫鼯鼱鼲鼴鼷鼹鼺鼼鼽鼿齁齃齄齅齆齇齓齕齖%';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 LIKE '%鼫鼯鼱鼲鼴鼷鼹鼺鼼鼽鼿齁齃齄齅齆齇齓齕齖';
 
+--sorted_result
 SELECT * FROM `表一` WHERE c1 = 'ĴĶĹĽĻŃŇŅÑÓÒÖÔǑŐŌÕŔŘŖ';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 = '乚乜乣乨乩乴乵乹乿亍亖亗亝亯亹仃仐仚仛仠';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 = '齗齘齚齝齞齨齩齭齮齯齰齱齳齵齺齽龏龐龑龒';
+--sorted_result
 SELECT * FROM `表一` WHERE c1 = '龔龖龗龞龡龢龣龥𠀀𠀂𨡃𤈼𠻜𠻝𠻞𠻟𠻠𠻟𠻠';
 
 --echo 'Test for CONVERT'
+--sorted_result
 SELECT c1, CONVERT(c1 USING gb18030) FROM `表一`;
+--sorted_result
 SELECT c1, CONVERT(c1 USING utf8mb4), CONVERT(CONVERT(c1 USING utf8mb4) USING gb18030) FROM `表一`;
 
 DROP TABLE `表一`;
@@ -205,33 +228,57 @@ INSERT INTO t1b VALUES ('双');
 INSERT INTO t2a VALUES ('𠻠'), ('齳'), ('䑂');
 INSERT INTO t2b VALUES ('𠻠');
 
+--sorted_result
 SELECT c FROM t1a WHERE c IN (SELECT c FROM t1b);
+--sorted_result
 SELECT c FROM t1a WHERE EXISTS (SELECT c FROM t1b WHERE t1a.c = t1b.c);
+--sorted_result
 SELECT c FROM t1a WHERE NOT EXISTS (SELECT c FROM t1b WHERE t1a.c = t1b.c);
 
+--sorted_result
 SELECT c FROM t2a WHERE c IN (SELECT c FROM t2b);
+--sorted_result
 SELECT c FROM t2a WHERE EXISTS (SELECT c FROM t2b WHERE t2a.c = t2b.c);
+--sorted_result
 SELECT c FROM t2a WHERE NOT EXISTS (SELECT c FROM t2b WHERE t2a.c = t2b.c);
 
 --echo 'Test for JOIN'
+--sorted_result
 SELECT * FROM t1a JOIN t1b;
+--sorted_result
 SELECT * FROM t1a INNER JOIN t1b;
+--sorted_result
 SELECT * FROM t1a JOIN t1b USING (c);
+--sorted_result
 SELECT * FROM t1a INNER JOIN t1b USING (c);
+--sorted_result
 SELECT * FROM t1a CROSS JOIN t1b;
+--sorted_result
 SELECT * FROM t1a LEFT JOIN t1b USING (c);
+--sorted_result
 SELECT * FROM t1a LEFT JOIN t1b ON (t1a.c = t1b.c);
+--sorted_result
 SELECT * FROM t1b RIGHT JOIN t1a USING (c);
+--sorted_result
 SELECT * FROM t1b RIGHT JOIN t1a ON (t1a.c = t1b.c);
 
+--sorted_result
 SELECT * FROM t2a JOIN t2b;
+--sorted_result
 SELECT * FROM t2a INNER JOIN t2b;
+--sorted_result
 SELECT * FROM t2a JOIN t2b USING (c);
+--sorted_result
 SELECT * FROM t2a INNER JOIN t2b USING (c);
+--sorted_result
 SELECT * FROM t2a CROSS JOIN t2b;
+--sorted_result
 SELECT * FROM t2a LEFT JOIN t2b USING (c);
+--sorted_result
 SELECT * FROM t2a LEFT JOIN t2b ON (t2a.c = t2b.c);
+--sorted_result
 SELECT * FROM t2b RIGHT JOIN t2a USING (c);
+--sorted_result
 SELECT * FROM t2b RIGHT JOIN t2a ON (t2a.c = t2b.c);
 
 DROP TABLE t1a, t1b, t2a, t2b;
@@ -242,43 +289,72 @@ CREATE TABLE `表一` (c1 CHAR(20), INDEX(c1)) DEFAULT CHARSET = utf8mb4;
 INSERT INTO `表一` VALUES ('12345678900987654321'), ('一二三四五伍肆叁贰壹'), ('六七八'), ('九十'), ('百'), ('𠻜𠻝𠻞𠻟');
 INSERT INTO `表一` VALUES ('䑃'), ('一䑃二三四'), ('𠀂𨡃');
 
+--sorted_result
 SELECT c1, LENGTH(c1) FROM `表一`;
-
+--sorted_result
 SELECT c1, LPAD(c1, 20, '中') FROM `表一`;
+--sorted_result
 SELECT c1, RPAD(c1, 20, '𤈼') FROM `表一`;
 
 TRUNCATE `表一`;
 
 INSERT INTO `表一` VALUES ('一䑃二𤈼三𠻠四');
+--sorted_result
 SELECT INSTR(c1, '一') FROM `表一`;
+--sorted_result
 SELECT INSTR(c1, '二') FROM `表一`;
+--sorted_result
 SELECT INSTR(c1, '三') FROM `表一`;
+--sorted_result
 SELECT INSTR(c1, '四') FROM `表一`;
+--sorted_result
 SELECT INSTR(c1, '𤈼') FROM `表一`;
+--sorted_result
 SELECT INSTR(c1, '𠻠') FROM `表一`;
+--sorted_result
 SELECT INSTR(c1, '䑃') FROM `表一`;
 
+--sorted_result
 SELECT c1, LEFT(c1, 0) FROM `表一`;
+--sorted_result
 SELECT c1, LEFT(c1, 1) FROM `表一`;
+--sorted_result
 SELECT c1, LEFT(c1, 2) FROM `表一`;
+--sorted_result
 SELECT c1, LEFT(c1, 3) FROM `表一`;
+--sorted_result
 SELECT c1, LEFT(c1, 4) FROM `表一`;
+--sorted_result
 SELECT c1, LEFT(c1, 5) FROM `表一`;
+--sorted_result
 SELECT c1, LEFT(c1, 6) FROM `表一`;
+--sorted_result
 SELECT c1, LEFT(c1, 7) FROM `表一`;
 
+--sorted_result
 SELECT c1, RIGHT(c1, 0) FROM `表一`;
+--sorted_result
 SELECT c1, RIGHT(c1, 1) FROM `表一`;
+--sorted_result
 SELECT c1, RIGHT(c1, 2) FROM `表一`;
+--sorted_result
 SELECT c1, RIGHT(c1, 3) FROM `表一`;
+--sorted_result
 SELECT c1, RIGHT(c1, 4) FROM `表一`;
+--sorted_result
 SELECT c1, RIGHT(c1, 5) FROM `表一`;
+--sorted_result
 SELECT c1, RIGHT(c1, 6) FROM `表一`;
+--sorted_result
 SELECT c1, RIGHT(c1, 7) FROM `表一`;
 
+--sorted_result
 SELECT REPLACE(c1, '一', '一一') FROM `表一`;
+--sorted_result
 SELECT REPLACE(c1, '四', '四四') FROM `表一`;
+--sorted_result
 SELECT REPLACE(c1, '𠻠', '𠻠𠻠') FROM `表一`;
+--sorted_result
 SELECT REPLACE(c1, '𤈼', '𤈼𤈼') FROM `表一`;
 
 
@@ -293,11 +369,15 @@ INSERT INTO `表一` VALUES ('𠻞𠻞一䑃二𤈼三𠻟');
 INSERT INTO `表一` VALUES ('𠻞𠻞𠻞一䑃二𤈼三𠻟');
 INSERT INTO `表一` VALUES ('   一䑃二𤈼三𠻟   ');
 
+--sorted_result
 SELECT c1, TRIM(TRAILING '𠻞' FROM c1) FROM `表一`;
+--sorted_result
 SELECT c1, TRIM(LEADING '𠻞' FROM c1) FROM `表一`;
+--sorted_result
 SELECT c1, TRIM(BOTH '𠻞' FROM c1) FROM `表一`;
+--sorted_result
 SELECT c1, TRIM(c1) FROM `表一`;
-
+--sorted_result
 SELECT REVERSE(c1) FROM `表一`;
 
 TRUNCATE `表一`;
@@ -307,6 +387,7 @@ DROP TABLE `表一`;
 --echo 'Test for 'GROUP BY''
 CREATE TABLE t1 (c VARCHAR(10)) DEFAULT CHARSET = utf8mb4;
 INSERT INTO t1 VALUES ('嬽仛砻'), ('櫶'), ('怑橷'), ('獣厘濸氻'), ('嚏'), ('𠻠'), ('怑橷');
+--sorted_result
 SELECT c, COUNT(c) FROM t1 GROUP BY c;
 DROP TABLE t1;
 
@@ -418,59 +499,65 @@ DROP TABLE t2;
 DROP TABLE t3;
 DROP TABLE t4;
 
---echo 'Test for INTO OUTFILE/INFILE'
-CREATE TABLE `表格一` (id INT PRIMARY KEY, c CHAR(5), b BINARY(50), v VARBINARY(100)) DEFAULT CHARSET = utf8mb4;
-INSERT INTO `表格一` VALUES(1, 'ab䶩匼串', '123345', '字符䶩匼串'), (2, '僜𠀀𠀂刓', '乗俓僜刓5C', '㐄㐅㐈㐉㐁'), (3, '𨡃𤈼𠻜', '𠀀𠀂𨡃𤈼𠻜', '𠻝𠻞𠻟𠻠');
-SELECT * FROM `表格一`;
+# NOW SequoiaDB not concern load infile/outfile
+#--echo 'Test for INTO OUTFILE/INFILE'
+#CREATE TABLE `表格一` (id INT PRIMARY KEY, c CHAR(5), b BINARY(50), v VARBINARY(100)) DEFAULT CHARSET = utf8mb4;
+#INSERT INTO `表格一` VALUES(1, 'ab䶩匼串', '123345', '字符䶩匼串'), (2, '僜𠀀𠀂刓', '乗俓僜刓5C', '㐄㐅㐈㐉㐁'), (3, '𨡃𤈼𠻜', '𠀀𠀂𨡃𤈼𠻜', '𠻝𠻞𠻟𠻠');
+#SELECT * FROM `表格一`;
+#
+#--let $fields=*
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval SELECT $fields INTO OUTFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' FROM `表格一`;
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval SELECT LOAD_FILE('$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt');
+#--eval CREATE TABLE `表格二` LIKE `表格一`;
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval LOAD DATA INFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' INTO TABLE `表格二` CHARACTER SET utf8mb4;
+#--eval SELECT COUNT(*) AS `Expect 3` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id;
+#--eval SELECT COUNT(*) AS `Expect 0` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id AND (`表格一`.c <> `表格二`.c OR `表格一`.b <> `表格二`.b OR `表格一`.v <> `表格二`.v);
+#--remove_file $MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt
+#DROP TABLE `表格二`;
+#
+#--let $clauses=FIELDS TERMINATED BY '5C' ENCLOSED BY '"'
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval SELECT $fields INTO OUTFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' $clauses FROM `表格一`;
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval SELECT LOAD_FILE('$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt');
+#--eval CREATE TABLE `表格二` LIKE `表格一`;
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval LOAD DATA INFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' INTO TABLE `表格二` CHARACTER SET utf8mb4 $clauses;
+#--eval SELECT COUNT(*) AS `Expect 3` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id;
+#--eval SELECT COUNT(*) AS `Expect 0` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id AND (`表格一`.c <> `表格二`.c OR `表格一`.b <> `表格二`.b OR `表格一`.v <> `表格二`.v);
+#--remove_file $MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt
+#DROP TABLE `表格二`;
+#
+#--let $clauses=FIELDS TERMINATED BY '5C' ENCLOSED BY '0' LINES TERMINATED BY '1'
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval SELECT $fields INTO OUTFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' $clauses FROM `表格一`;
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval SELECT LOAD_FILE('$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt');
+#--eval CREATE TABLE `表格二` LIKE `表格一`;
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval LOAD DATA INFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' INTO TABLE `表格二` CHARACTER SET utf8mb4 $clauses;
+#--eval SELECT COUNT(*) AS `Expect 3` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id;
+#--eval SELECT COUNT(*) AS `Expect 0` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id AND (`表格一`.c <> `表格二`.c OR `表格一`.b <> `表格二`.b OR `表格一`.v <> `表格二`.v);
+#--remove_file $MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt
+#DROP TABLE `表格二`;
+#
+#--let $clauses=FIELDS TERMINATED BY 'd'
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval SELECT $fields INTO OUTFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' $clauses FROM `表格一`;
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval SELECT LOAD_FILE('$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt');
+#--eval CREATE TABLE `表格二` LIKE `表格一`;
+#--replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
+#--eval LOAD DATA INFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' INTO TABLE `表格二` CHARACTER SET utf8mb4 $clauses;
+#--eval SELECT COUNT(*) AS `Expect 3` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id;
+#--eval SELECT COUNT(*) AS `Expect 0` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id AND (`表格一`.c <> `表格二`.c OR `表格一`.b <> `表格二`.b OR `表格一`.v <> `表格二`.v);
+#--remove_file $MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt
+#DROP TABLE `表格二`, `表格一`;
 
---let $fields=*
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval SELECT $fields INTO OUTFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' FROM `表格一`;
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval SELECT LOAD_FILE('$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt');
---eval CREATE TABLE `表格二` LIKE `表格一`;
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval LOAD DATA INFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' INTO TABLE `表格二` CHARACTER SET utf8mb4;
---eval SELECT COUNT(*) AS `Expect 3` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id;
---eval SELECT COUNT(*) AS `Expect 0` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id AND (`表格一`.c <> `表格二`.c OR `表格一`.b <> `表格二`.b OR `表格一`.v <> `表格二`.v);
---remove_file $MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt
-DROP TABLE `表格二`;
+# DROP DATABASE
+DROP DATABASE test_ctype_gb18030_encoding_utf8;
 
---let $clauses=FIELDS TERMINATED BY '5C' ENCLOSED BY '"'
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval SELECT $fields INTO OUTFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' $clauses FROM `表格一`;
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval SELECT LOAD_FILE('$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt');
---eval CREATE TABLE `表格二` LIKE `表格一`;
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval LOAD DATA INFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' INTO TABLE `表格二` CHARACTER SET utf8mb4 $clauses;
---eval SELECT COUNT(*) AS `Expect 3` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id;
---eval SELECT COUNT(*) AS `Expect 0` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id AND (`表格一`.c <> `表格二`.c OR `表格一`.b <> `表格二`.b OR `表格一`.v <> `表格二`.v);
---remove_file $MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt
-DROP TABLE `表格二`;
-
---let $clauses=FIELDS TERMINATED BY '5C' ENCLOSED BY '0' LINES TERMINATED BY '1'
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval SELECT $fields INTO OUTFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' $clauses FROM `表格一`;
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval SELECT LOAD_FILE('$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt');
---eval CREATE TABLE `表格二` LIKE `表格一`;
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval LOAD DATA INFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' INTO TABLE `表格二` CHARACTER SET utf8mb4 $clauses;
---eval SELECT COUNT(*) AS `Expect 3` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id;
---eval SELECT COUNT(*) AS `Expect 0` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id AND (`表格一`.c <> `表格二`.c OR `表格一`.b <> `表格二`.b OR `表格一`.v <> `表格二`.v);
---remove_file $MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt
-DROP TABLE `表格二`;
-
---let $clauses=FIELDS TERMINATED BY 'd'
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval SELECT $fields INTO OUTFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' $clauses FROM `表格一`;
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval SELECT LOAD_FILE('$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt');
---eval CREATE TABLE `表格二` LIKE `表格一`;
---replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
---eval LOAD DATA INFILE '$MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt' INTO TABLE `表格二` CHARACTER SET utf8mb4 $clauses;
---eval SELECT COUNT(*) AS `Expect 3` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id;
---eval SELECT COUNT(*) AS `Expect 0` FROM `表格一`, `表格二` WHERE `表格一`.id = `表格二`.id AND (`表格一`.c <> `表格二`.c OR `表格一`.b <> `表格二`.b OR `表格一`.v <> `表格二`.v);
---remove_file $MYSQLTEST_VARDIR/tmp/gb18030_encoding.txt
-DROP TABLE `表格二`, `表格一`;
+--source include/uninstall_sequoiadb.inc

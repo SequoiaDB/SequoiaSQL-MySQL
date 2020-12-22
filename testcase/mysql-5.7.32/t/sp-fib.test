@@ -1,6 +1,8 @@
 # Fibonacci, for recursion test. (Yet Another Numerical series :)
 # Split from main.sp due to problems reported in Bug#15866
 
+--source include/have_sequoiadb.inc 
+
 --disable_warnings
 drop table if exists t3;
 --enable_warnings
@@ -51,4 +53,6 @@ select * from t3 order by f asc|
 drop table t3|
 drop procedure fib|
 set @@max_sp_recursion_depth= 0|
+
+--source include/uninstall_sequoiadb.inc
 

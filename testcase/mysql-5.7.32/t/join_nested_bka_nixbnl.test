@@ -1,7 +1,7 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+
+--source include/have_sequoiadb.inc
 
 # 
 # Run join_nested.test with BKA enabled 
@@ -24,19 +24,20 @@ INSERT INTO t6 VALUES (1,2,0), (3,2,0), (6,1,0);
 INSERT INTO t7 VALUES (1,1,0), (2,2,0);
 INSERT INTO t8 VALUES (0,2,0), (1,2,0);
 
-EXPLAIN
-SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
-  FROM t5 
-       LEFT JOIN 
-       ( 
-         (t6, t7)
-         LEFT JOIN 
-         t8
-         ON t7.b=t8.b AND t6.b < 10
-       )
-       ON t6.b >= 2 AND t5.b=t7.b AND
-          (t8.a > 0 OR t8.c IS NULL);
+#EXPLAIN
+#SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
+#  FROM t5 
+#       LEFT JOIN 
+#       ( 
+#         (t6, t7)
+#         LEFT JOIN 
+#         t8
+#         ON t7.b=t8.b AND t6.b < 10
+#       )
+#       ON t6.b >= 2 AND t5.b=t7.b AND
+#          (t8.a > 0 OR t8.c IS NULL);
 
+--sorted_result
 SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
   FROM t5 
        LEFT JOIN 
@@ -59,33 +60,33 @@ INSERT INTO t6 VALUES (3,3,0);
 INSERT INTO t7 VALUES (1,2,0);
 INSERT INTO t8 VALUES (1,1,0);
 
-EXPLAIN
-SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
-  FROM t5 LEFT JOIN                
-       (t6 LEFT JOIN t7 ON t7.a=1, t8)
-       ON (t5.b=t8.b);
+#EXPLAIN
+#SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
+#  FROM t5 LEFT JOIN                
+#       (t6 LEFT JOIN t7 ON t7.a=1, t8)
+#       ON (t5.b=t8.b);
 
 SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
   FROM t5 LEFT JOIN                
        (t6 LEFT JOIN t7 ON t7.a=1, t8)
        ON (t5.b=t8.b);
 
-EXPLAIN
-SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
-  FROM t5 LEFT JOIN                
-       (t6 LEFT JOIN t7 ON t7.b=2, t8)
-       ON (t5.b=t8.b);
+#EXPLAIN
+#SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
+#  FROM t5 LEFT JOIN                
+#       (t6 LEFT JOIN t7 ON t7.b=2, t8)
+#       ON (t5.b=t8.b);
 
 SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
   FROM t5 LEFT JOIN                
        (t6 LEFT JOIN t7 ON t7.b=2, t8)
        ON (t5.b=t8.b);
 
-EXPLAIN
-SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
-  FROM t5 LEFT JOIN                
-       (t8, t6 LEFT JOIN t7 ON t7.a=1)
-       ON (t5.b=t8.b);
+#EXPLAIN
+#SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
+#  FROM t5 LEFT JOIN                
+#       (t8, t6 LEFT JOIN t7 ON t7.a=1)
+#       ON (t5.b=t8.b);
 
 SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
   FROM t5 LEFT JOIN                
@@ -95,3 +96,5 @@ SELECT t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b
 DROP TABLE t5,t6,t7,t8;
 
 set optimizer_switch=default;
+
+--source include/uninstall_sequoiadb.inc

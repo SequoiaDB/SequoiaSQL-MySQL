@@ -1,7 +1,7 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB
+
+--source include/have_sequoiadb.inc
 
 #
 # Test of problem with CONCAT_WS() and long separators.
@@ -92,6 +92,7 @@ DROP TABLE t1;
 --echo #
 --echo # Bug #44743: Join in combination with concat does not always work
 --echo #
+#Bug #SEQUOIADBMAINSTREAM-3564
 CREATE TABLE t1 (
   a VARCHAR(100) NOT NULL DEFAULT '0',
   b VARCHAR(2) NOT NULL DEFAULT '',
@@ -114,8 +115,8 @@ INSERT INTO t2 VALUES ('A'), ('AB'), ('ABC');
 SELECT CONCAT('gui_', t2.a), t1.d FROM t2 
   LEFT JOIN t1 ON t1.a = CONCAT('gui_', t2.a) AND t1.b = 'a' AND t1.c = 'b';
 
-EXPLAIN SELECT CONCAT('gui_', t2.a), t1.d FROM t2 
-  LEFT JOIN t1 ON t1.a = CONCAT('gui_', t2.a) AND t1.b = 'a' AND t1.c = 'b';
+#EXPLAIN SELECT CONCAT('gui_', t2.a), t1.d FROM t2 
+#  LEFT JOIN t1 ON t1.a = CONCAT('gui_', t2.a) AND t1.b = 'a' AND t1.c = 'b';
 
 DROP TABLE t1, t2;
 
@@ -151,5 +152,6 @@ CALL p1();
 CALL p1();
 
 DROP PROCEDURE p1;
+--source include/uninstall_sequoiadb.inc
 
 --echo # End of 5.1 tests

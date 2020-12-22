@@ -25,10 +25,8 @@ AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR
 Warnings:
 Warning	1618	<IV> option ignored
 Warning	1618	<IV> option ignored
-####Test with InnoDB tables
+####Test with SequoiaDB tables
 DROP TABLE IF EXISTS t1;
-Warnings:
-Note	1051	Unknown table 'test.t1'
 CREATE TABLE t1(f1 varchar(256));
 INSERT INTO t1 values(@ENCSTR);
 should return 1
@@ -42,9 +40,9 @@ AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR
 Warnings:
 Warning	1618	<IV> option ignored
 Warning	1618	<IV> option ignored
-####Test with MyISAM tables
+####Test with SequoiaDB tables
 DROP TABLE IF EXISTS t1;
-CREATE TABLE t1(f1 varchar(256)) engine=MyISAM;
+CREATE TABLE t1(f1 varchar(256)) engine=SequoiaDB;
 INSERT INTO t1 values(@ENCSTR);
 should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
@@ -78,7 +76,7 @@ AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR
 Warnings:
 Warning	1618	<IV> option ignored
 Warning	1618	<IV> option ignored
-####Test with InnoDB tables
+####Test with SequoiaDB tables
 DROP TABLE IF EXISTS t1;
 CREATE TABLE t1(f1 varchar(256));
 INSERT INTO t1 values(@ENCSTR);
@@ -93,9 +91,9 @@ AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR
 Warnings:
 Warning	1618	<IV> option ignored
 Warning	1618	<IV> option ignored
-####Test with MyISAM tables
+####Test with SequoiaDB tables
 DROP TABLE IF EXISTS t1;
-CREATE TABLE t1(f1 varchar(256)) engine=MyISAM;
+CREATE TABLE t1(f1 varchar(256)) engine=SequoiaDB;
 INSERT INTO t1 values(@ENCSTR);
 should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
@@ -131,7 +129,7 @@ AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR
 Warnings:
 Warning	1618	<IV> option ignored
 Warning	1618	<IV> option ignored
-####Test with InnoDB tables
+####Test with SequoiaDB tables
 DROP TABLE IF EXISTS t1;
 CREATE TABLE t1(f1 varchar(256));
 INSERT INTO t1 values(@ENCSTR);
@@ -146,9 +144,9 @@ AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR
 Warnings:
 Warning	1618	<IV> option ignored
 Warning	1618	<IV> option ignored
-####Test with MyISAM tables
+####Test with SequoiaDB tables
 DROP TABLE IF EXISTS t1;
-CREATE TABLE t1(f1 varchar(256)) engine=MyISAM;
+CREATE TABLE t1(f1 varchar(256)) engine=SequoiaDB;
 INSERT INTO t1 values(@ENCSTR);
 should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
@@ -200,8 +198,6 @@ SET @KEYS='helloworld1234567890';
 SET @ENCSTR=REPEAT('J',255);
 SET @@session.block_encryption_mode = 'aes-128-ecb';
 DROP TABLE IF EXISTS t1;
-Warnings:
-Note	1051	Unknown table 'test.t1'
 CREATE TABLE t1(f1 varchar(256));
 INSERT INTO t1 values(AES_ENCRYPT(@ENCSTR, @KEYS, @IV));
 Warnings:

@@ -1,4 +1,4 @@
-
+-- source include/have_sequoiadb.inc
 -- source include/have_ucs2.inc
 -- source include/have_utf8mb4.inc
 
@@ -49,7 +49,9 @@ DROP TABLE t1;
 #
 SET collation_connection=utf8mb4_czech_ci;
 --source include/ctype_czech.inc
+#Bug #SEQUOIADBMAINSTREAM-3633
 --source include/ctype_like_ignorable.inc
+--source include/uninstall_sequoiadb.inc
 
 --echo #
 --echo # End of 5.5 tests

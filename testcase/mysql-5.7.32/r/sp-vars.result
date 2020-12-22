@@ -410,14 +410,8 @@ CASE expression tests.
 ---------------------------------------------------------------
 
 DROP PROCEDURE IF EXISTS p1;
-Warnings:
-Note	1305	PROCEDURE test.p1 does not exist
 DROP PROCEDURE IF EXISTS p2;
-Warnings:
-Note	1305	PROCEDURE test.p2 does not exist
 DROP TABLE IF EXISTS t1;
-Warnings:
-Note	1051	Unknown table 'test.t1'
 CREATE TABLE t1(log_msg VARCHAR(1024));
 CREATE PROCEDURE p1(arg VARCHAR(255))
 BEGIN
@@ -1221,15 +1215,3 @@ DROP PROCEDURE vctest;
 BUG#19770958
 ---------------------------------------------------------------
 
-CREATE TABLE t (a INT PRIMARY KEY, b TEXT, FULLTEXT(b)) ENGINE=InnoDB;
-CREATE FUNCTION f() RETURNS TEXT RETURN @@GLOBAL.innodb_ft_aux_table;
-SELECT @@GLOBAL.innodb_ft_aux_table, f();
-@@GLOBAL.innodb_ft_aux_table	f()
-NULL	NULL
-SET GLOBAL innodb_ft_aux_table="test/t";
-SELECT @@GLOBAL.innodb_ft_aux_table, f();
-@@GLOBAL.innodb_ft_aux_table	f()
-test/t	test/t
-SET GLOBAL innodb_ft_aux_table= default;
-DROP FUNCTION f;
-DROP TABLE t;

@@ -1,7 +1,8 @@
-# This is a MyISAM only test and hance should retain force_myisam_default.
-# It tests that rollback does not work for MyISAM
---source include/force_myisam_default.inc
---source include/have_myisam.inc
+# The include statement below is a temp one for tests that are yet to
+#be ported to run with SequoiaDB,
+# (#Case #13131: Check transaction rollback)
+
+--source include/have_sequoiadb.inc
 
 #
 # This test should fail as MyISAM doesn't have rollback
@@ -13,7 +14,7 @@ drop table if exists t1;
 # PS doesn't work with BEGIN ... ROLLBACK
 --disable_ps_protocol
 
-create table t1 (n int not null primary key) engine=myisam;
+create table t1 (n int not null primary key) engine=sequoiadb;
 begin work;
 insert into t1 values (4);
 insert into t1 values (5);
@@ -26,4 +27,5 @@ show warnings;
 select @@warning_count;
 drop table t1;
 
+--source include/uninstall_sequoiadb.inc
 # End of 4.1 tests

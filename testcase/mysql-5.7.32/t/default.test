@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 
 #
 # test of already fixed bugs
@@ -38,7 +39,7 @@ CREATE TABLE t1 (a varchar(30) binary NOT NULL DEFAULT ' ',
                  z varchar(20) binary NOT NULL DEFAULT ' ',
                  a1 varchar(30) binary NOT NULL DEFAULT ' ',
 		 b1 tinyblob NULL)
-ENGINE=InnoDB DEFAULT CHARACTER SET = latin1 COLLATE latin1_bin;
+ENGINE=SequoiaDB DEFAULT CHARACTER SET = latin1 COLLATE latin1_bin;
 --enable_warnings
 
 INSERT into t1 (b) values ('1');
@@ -104,6 +105,7 @@ drop table t2;
 #      occurs, but if this happens for the second or subsequent row of a
 #      multiple-row statement, the preceding rows will have been inserted.
 #
+#Bug #SEQUOIADBMAINSTREAM-3583
 create table bug20691 (i int, d datetime NOT NULL, dn datetime not null default '0000-00-00 00:00:00');
 insert into bug20691 values (1, DEFAULT, DEFAULT), (1, '1975-07-10 07:10:03', '1978-01-13 14:08:51'), (1, DEFAULT, DEFAULT);
 insert into bug20691 (i) values (2);
@@ -150,7 +152,7 @@ drop table t1;
 # Bug #39002: crash with
 #             INSERT ... SELECT ... ON DUPLICATE KEY UPDATE col=DEFAULT
 #
-
+#Bug #SEQUOIADBMAINSTREAM-3640
 create table t1 (a int unique);
 create table t2 (b int default 10);
 insert into t1 (a) values (1);
@@ -167,3 +169,4 @@ drop table t1, t2;
 SET sql_mode = default;
 --echo End of 5.0 tests.
 
+--source include/uninstall_sequoiadb.inc

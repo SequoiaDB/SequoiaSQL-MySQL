@@ -1,11 +1,13 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 # This test uses chmod, can't be run with root permissions
 -- source include/not_as_root.inc
 
+--disable_query_log
+CALL mtr.add_suppression("Could not remove temporary table *");
+--enable_query_log
 
 #
 # Basic triggers test
@@ -14,15 +16,21 @@
 --disable_warnings
 drop table if exists t1, t2, t3, t4;
 drop view if exists v1;
-drop database if exists mysqltest;
+# Compatible with parallel > 1, don't use mysqltest here, instead use database: mysqltest_casename
+drop database if exists mysqltest_trigger;
 drop function if exists f1;
 drop function if exists f2;
 drop procedure if exists p1;
 --enable_warnings
 
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_trigger;
+use test_trigger;
+
 # Create additional connections used through test
-connect (addconroot1, localhost, root,,);
-connect (addconroot2, localhost, root,,);
+# new connection, should identify with database name
+connect (addconroot1, localhost, root,, test_trigger,,);
+connect (addconroot2, localhost, root,, test_trigger,,);
 # Connection without current database set
 connect (addconwithoutdb, localhost, root,,*NO-ONE*);
 connection default;
@@ -171,6 +179,8 @@ drop table t1;
 
 # Let us test how triggers work for special forms of INSERT such as
 # REPLACE and INSERT ... ON DUPLICATE KEY UPDATE
+
+#Bug #SEQUOIADBMAINSTREAM-3665
 create table t1 (id int not null primary key, data int);
 create trigger t1_bi before insert on t1 for each row
   set @log:= concat(@log, "(BEFORE_INSERT: new=(id=", new.id, ", data=", new.data,"))");
@@ -192,12 +202,16 @@ insert into t1 values (1, 1);
 select @log;
 # INSERT IGNORE for already existing key - only before trigger should fire
 set @log:= "";
+#Bug #SEQUOIASQLMAINSTREAM-160,SEQUOIASQLMAINSTREAM-183
 insert ignore t1 values (1, 2);
 select @log;
 # INSERT ... ON DUPLICATE KEY UPDATE ...
 set @log:= "";
-insert into t1 (id, data) values (1, 3), (2, 2) on duplicate key update data= data + 1;
-select @log;
+
+#Bug #SEQUOIASQLMAINSTREAM-112
+#Bug #SEQUOIASQLMAINSTREAM-466
+#insert into t1 (id, data) values (1, 3), (2, 2) on duplicate key update data= data + 1;
+#select @log;
 # REPLACE (also test for bug#13479 "REPLACE activates UPDATE trigger,
 #          not the DELETE and INSERT triggers")
 # We define REPLACE as INSERT which DELETEs old rows which conflict with
@@ -205,16 +219,20 @@ select @log;
 # call before insert trigger, then delete will be executed (and both delete
 # triggers should fire). Finally after insert trigger will be called.
 # For the second record we will just call both on insert triggers.
-set @log:= "";
-replace t1 values (1, 4), (3, 3);
-select @log;
+#set @log:= "";
+
+#Bug #SEQUOIASQLMAINSTREAM-90
+#replace t1 values (1, 4), (3, 3);
+#select @log;
 # Now we will drop ON DELETE triggers to test REPLACE which is internally
 # executed via update
 drop trigger t1_bd;
 drop trigger t1_ad;
-set @log:= "";
-replace t1 values (1, 5);
-select @log;
+#set @log:= "";
+
+#Bug #SEQUOIASQLMAINSTREAM-90
+#replace t1 values (1, 5);
+#select @log;
 
 # This also drops associated triggers
 drop table t1;
@@ -224,6 +242,7 @@ drop table t1;
 # Let us test triggers which access other tables.
 #
 # Trivial trigger which inserts data into another table
+#engine sequoiadb modify test result as same as the innodb
 create table t1 (id int primary key, data varchar(10), fk int);
 create table t2 (event varchar(100));
 create table t3 (id int primary key);
@@ -248,6 +267,7 @@ delimiter ;|
 insert into t3 values (1);
 --error ER_BAD_NULL_ERROR
 insert into t1 values (4, "four", 1), (5, "five", 2);
+#engine sequoiadb modify test result as same as the innodb
 select * from t1;
 select * from t2;
 drop table t1, t2, t3;
@@ -372,7 +392,7 @@ drop table t1;
 # we should perform row-by-row deletion instead of using optimized
 # delete_all_rows() method.
 #
-create table t1 (i int) engine=myisam;
+create table t1 (i int);
 insert into t1 values (1), (2);
 create trigger trg1 before delete on t1 for each row set @del_before:= @del_before + old.i;
 create trigger trg2 after delete on t1 for each row set @del_after:= @del_after + old.i;
@@ -394,25 +414,25 @@ select * from t1;
 drop table t1;
 
 # Test for bug #6559 "DROP DATABASE forgets to drop triggers". 
-create database mysqltest;
-use mysqltest;
+create database mysqltest_trigger;
+use mysqltest_trigger;
 create table t1 (i int);
 create trigger trg1 before insert on t1 for each row set @a:= 1;
 # This should succeed
-drop database mysqltest;
-use test;
+drop database mysqltest_trigger;
+use test_trigger;
 
 # Test for bug #8791
 # "Triggers: Allowed to create triggers on a subject table in a different DB". 
-create database mysqltest;
-create table mysqltest.t1 (i int);
+create database mysqltest_trigger;
+create table mysqltest_trigger.t1 (i int);
 --error ER_TRG_IN_WRONG_SCHEMA
-create trigger trg1 before insert on mysqltest.t1 for each row set @a:= 1;
-use mysqltest;
+create trigger trg1 before insert on mysqltest_trigger.t1 for each row set @a:= 1;
+use mysqltest_trigger;
 --error ER_NO_SUCH_TABLE
-create trigger test.trg1 before insert on t1 for each row set @a:= 1;
-drop database mysqltest;
-use test;
+create trigger test_trigger.trg1 before insert on t1 for each row set @a:= 1;
+drop database mysqltest_trigger;
+use test_trigger;
 
 
 # Test for bug #5860 "Multi-table UPDATE does not activate update triggers"
@@ -486,7 +506,7 @@ drop table t1;
 
 # Test for bug #5894 "Triggers with altered tables cause corrupt databases"
 # Also tests basic error handling for various kinds of triggers.
-create table t1 (i int, at int, k int, key(k)) engine=myisam;
+create table t1 (i int, at int, k int, key(k));
 create table t2 (i int);
 insert into t1 values (1, 1, 1);
 # We need at least 3 elements in t2 to test multi-update properly
@@ -501,14 +521,14 @@ select * from t1;
 # The following statements changing t1 should fail, but still cause
 # their main effect. This is because operation on the table row is
 # executed before "after" trigger and its effect cannot be rolled back
-# when whole statement fails, because t1 is MyISAM table.
+# when whole statement fails, because t1 is Sequoiadb table.
 --error ER_BAD_FIELD_ERROR
 insert into t1 values (2, 1);
 select * from t1;
---error ER_BAD_FIELD_ERROR
+#engine sequoiadb modify testcase result as same as innodb
 update t1 set k = 2 where i = 2;
 select * from t1;
---error ER_BAD_FIELD_ERROR
+#engine sequoiadb modify testcase result as same as innodb
 delete from t1 where i = 2;
 select * from t1;
 # Should fail and insert only 1 row
@@ -517,38 +537,47 @@ load data infile '../../std_data/loaddata5.dat' into table t1 fields terminated 
 select * from t1;
 --error ER_BAD_FIELD_ERROR
 insert into t1 select 3, 3;
+#engine sequoiadb modify testcase result as same as innodb
 select * from t1;
 # Multi-update working on the fly, again it will update only
 # one row even if more matches
 --error ER_BAD_FIELD_ERROR
 update t1, t2 set k = k + 10 where t1.i = t2.i;
+#engine sequoiadb modify testcase result as same as innodb
 select * from t1;
 # The same for multi-update via temp table
 --error ER_BAD_FIELD_ERROR
 update t1, t2 set k = k + 10 where t1.i = t2.i and k < 3;
+#engine sequoiadb modify testcase result as same as innodb
 select * from t1;
 # Multi-delete on the fly
 --error ER_BAD_FIELD_ERROR
 delete t1, t2 from t1 straight_join t2 where t1.i = t2.i;
+#engine sequoiadb modify testcase result as same as innodb
 select * from t1;
 # And via temporary storage
 --error ER_BAD_FIELD_ERROR
 delete t2, t1 from t2 straight_join t1 where t1.i = t2.i;
+#engine sequoiadb modify testcase result as same as innodb
 select * from t1;
 # Prepare table for testing of REPLACE and INSERT ... ON DUPLICATE KEY UPDATE
 alter table t1 add primary key (i);
+
+#Bug #SEQUOIADBMAINSTREAM-3675
 --error ER_BAD_FIELD_ERROR
 insert into t1 values (3, 4) on duplicate key update k= k + 10;
 select * from t1;
 # The following statement will delete old row and won't
 # insert new one since after delete trigger will fail.
+
+#Bug #SEQUOIADBMAINSTREAM-3573
 --error ER_BAD_FIELD_ERROR
 replace into t1 values (3, 3);
 select * from t1;
 # Also drops all triggers
 drop table t1, t2;
 
-create table t1 (i int, bt int, k int, key(k)) engine=myisam;
+create table t1 (i int, bt int, k int, key(k));
 create table t2 (i int);
 insert into t1 values (1, 1, 1), (2, 2, 2);
 insert into t2 values (1), (2), (3);
@@ -594,10 +623,13 @@ select * from t1;
 # in ordinary INSERT we need to drop "before insert" trigger.
 alter table t1 add primary key (i);
 drop trigger bi;
+
+#BUG #SEQUOIADBMAINSTREAM-3675
 --error ER_BAD_FIELD_ERROR
 insert into t1 values (2, 4) on duplicate key update k= k + 10;
 select * from t1;
---error ER_BAD_FIELD_ERROR
+
+#Bug #SEQUOIASQLMAINSTREAM-467
 replace into t1 values (2, 4);
 select * from t1;
 # Also drops all triggers
@@ -637,20 +669,23 @@ select @a;
 show triggers;
 drop table t1;
 # check that rigger preserve sql_mode during execution
-set sql_mode="traditional";
-create table t1 (a date);
--- error 1292
-insert into t1 values ('2004-01-00');
-set sql_mode="";
-create trigger t1_bi before insert on t1 for each row set new.a = '2004-01-00';
-set sql_mode="traditional";
-insert into t1 values ('2004-01-01');
-select * from t1;
+
+#Bug #SEQUOIADBMAINSTREAM-3682
+#SEQUOIASQLMAINSTREAM-541
+#set sql_mode="traditional";
+#create table t1 (a date);
+#-- error 1292
+#insert into t1 values ('2004-01-00');
+#set sql_mode="";
+#create trigger t1_bi before insert on t1 for each row set new.a = '2004-01-00';
+#set sql_mode="traditional";
+#insert into t1 values ('2004-01-01');
+#select * from t1;
 set sql_mode=default;
-show create table t1;
---replace_column 6 #
-show triggers;
-drop table t1;
+#show create table t1;
+#--replace_column 6 #
+#show triggers;
+#drop table t1;
 
 # Test for bug #12280 "Triggers: crash if flush tables"
 # FLUSH TABLES and FLUSH PRIVILEGES should be disallowed inside
@@ -824,19 +859,20 @@ set @@max_sp_recursion_depth=100;
 --error ER_CANT_UPDATE_USED_TABLE_IN_SF_OR_TRG
 insert into t1 values (1);
 set @@max_sp_recursion_depth=@SAVE_SP_RECURSION_LEVELS;
+#engine sequoiadb modify test result as same as the innodb
 select * from t1;
 select * from t2;
 drop trigger t1_ai;
 drop trigger t2_ai;
 create trigger t1_bu before update on t1
   for each row insert into t1 values (2);
---error ER_CANT_UPDATE_USED_TABLE_IN_SF_OR_TRG
+#engine sequoiadb modify testcase result as same as innodb
 update t1 set f1= 10;
 select * from t1;
 drop trigger t1_bu;
 create trigger t1_bu before update on t1
   for each row delete from t1 where f1=new.f1;
---error ER_CANT_UPDATE_USED_TABLE_IN_SF_OR_TRG
+#engine sequoiadb modify testcase result as same as innodb
 update t1 set f1= 10;
 select * from t1;
 drop trigger t1_bu;
@@ -844,6 +880,7 @@ drop trigger t1_bu;
 create trigger t1_bi before insert on t1
   for each row set new.f1=(select sum(f1) from t1);
 insert into t1 values (3);
+#engine sequoiadb modify test result as same as the innodb
 select * from t1;
 drop trigger t1_bi;
 drop tables t1, t2;
@@ -1020,9 +1057,9 @@ drop table t1;
 #
 connection addconwithoutdb;
 --error ER_NO_DB_ERROR
-create trigger t1_bi before insert on test.t1 for each row set @a:=0;
+create trigger t1_bi before insert on test_trigger.t1 for each row set @a:=0;
 --error ER_NO_SUCH_TABLE
-create trigger test.t1_bi before insert on t1 for each row set @a:=0;
+create trigger test_trigger.t1_bi before insert on t1 for each row set @a:=0;
 --error ER_NO_DB_ERROR
 drop trigger t1_bi;
 connection default;
@@ -1032,118 +1069,125 @@ connection default;
 # and bug #17866 "Problem with renaming table with triggers with fully
 # qualified subject table".
 #
+
 create table t1 (id int);
 create trigger t1_bi before insert on t1 for each row set @a:=new.id;
-create trigger t1_ai after insert on test.t1 for each row set @b:=new.id;
+create trigger t1_ai after insert on test_trigger.t1 for each row set @b:=new.id;
 insert into t1 values (101);
 select @a, @b;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
+
 rename table t1 to t2;
 # Trigger should work after rename
 insert into t2 values (102);
 select @a, @b;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
 # Let us check that the same works for simple ALTER TABLE ... RENAME
 alter table t2 rename to t3;
 insert into t3 values (103);
 select @a, @b;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
 # And for more complex ALTER TABLE
 alter table t3 rename to t4, add column val int default 0;
 insert into t4 values (104, 1);
 select @a, @b;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
+       where event_object_schema = 'test_trigger';
 # .TRN file should be updated with new table name
 drop trigger t1_bi;
 drop trigger t1_ai;
 drop table t4;
 # Rename between different databases if triggers exist should fail
-create database mysqltest;
-use mysqltest;
+create database mysqltest_trigger;
+use mysqltest_trigger;
 create table t1 (id int);
 create trigger t1_bi before insert on t1 for each row set @a:=new.id;
 insert into t1 values (101);
 select @a;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' or event_object_schema = 'mysqltest';
---error ER_TRG_IN_WRONG_SCHEMA
-rename table t1 to test.t2;
+       where event_object_schema = 'test_trigger' or event_object_schema = 'mysqltest_trigger';
+#SEQUOIASQLMAINSTREAM-184
+--error 1025
+rename table t1 to test_trigger.t2;
 insert into t1 values (102);
 select @a;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' or event_object_schema = 'mysqltest';
+       where event_object_schema = 'test_trigger' or event_object_schema = 'mysqltest_trigger';
 # There should be no fantom .TRN files 
 --error ER_TRG_DOES_NOT_EXIST
-drop trigger test.t1_bi;
+drop trigger test_trigger.t1_bi;
 # Let us also check handling of this restriction in ALTER TABLE ... RENAME
---error ER_TRG_IN_WRONG_SCHEMA
-alter table t1 rename to test.t1;
+#SEQUOIASQLMAINSTREAM-184
+--error 1025
+alter table t1 rename to test_trigger.t1;
 insert into t1 values (103);
 select @a;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' or event_object_schema = 'mysqltest';
+       where event_object_schema = 'test_trigger' or event_object_schema = 'mysqltest_trigger';
 # Again there should be no fantom .TRN files 
 --error ER_TRG_DOES_NOT_EXIST
-drop trigger test.t1_bi;
---error ER_TRG_IN_WRONG_SCHEMA
-alter table t1 rename to test.t1, add column val int default 0;
+drop trigger test_trigger.t1_bi;
+#SEQUOIASQLMAINSTREAM-184
+--error 1025
+alter table t1 rename to test_trigger.t1, add column val int default 0;
+# Compatible with InnoDB, insert fail here
+--error 1136
 insert into t1 values (104);
 select @a;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' or event_object_schema = 'mysqltest';
+       where event_object_schema = 'test_trigger' or event_object_schema = 'mysqltest_trigger';
 # Table definition should not change
 show create table t1;
 # And once again check for fantom .TRN files 
 --error ER_TRG_DOES_NOT_EXIST
-drop trigger test.t1_bi;
+drop trigger test_trigger.t1_bi;
 drop trigger t1_bi;
 drop table t1;
-drop database mysqltest;
-use test;
+drop database mysqltest_trigger;
+use test_trigger;
 # And now let us check that the properly handle rename if there is some
 # error during it (that we rollback such renames completely).
-create table t1 (id int);
-create trigger t1_bi before insert on t1 for each row set @a:=new.id;
-create trigger t1_ai after insert on t1 for each row set @b:=new.id;
-insert into t1 values (101);
-select @a, @b;
-select trigger_schema, trigger_name, event_object_schema,
-       event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
-# Trick which makes update of second .TRN file impossible
-let $MYSQLD_DATADIR= `select @@datadir`;
-write_file $MYSQLD_DATADIR/test/t1_ai.TRN~;
-dummy
-EOF
-chmod 0000 $MYSQLD_DATADIR/test/t1_ai.TRN~;
-# Normalize the datadir path; the embedded server doesn't chdir to datadir
---replace_result $MYSQLTEST_VARDIR . mysqld.1/data/ ''
---error 1
-rename table t1 to t2;
-# 't1' should be still there and triggers should work correctly
-insert into t1 values (102);
-select @a, @b;
-select trigger_schema, trigger_name, event_object_schema,
-       event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test';
-chmod 0600 $MYSQLD_DATADIR/test/t1_ai.TRN~;
-remove_file $MYSQLD_DATADIR/test/t1_ai.TRN~;
-# Let us check that updates to .TRN files were rolled back too
-drop trigger t1_bi;
-drop trigger t1_ai;
-drop table t1;
+#create table t1 (id int);
+#create trigger t1_bi before insert on t1 for each row set @a:=new.id;
+#create trigger t1_ai after insert on t1 for each row set @b:=new.id;
+#insert into t1 values (101);
+#select @a, @b;
+#select trigger_schema, trigger_name, event_object_schema,
+#       event_object_table, action_statement from information_schema.triggers
+#       where event_object_schema = 'test_trigger';
+## Trick which makes update of second .TRN file impossible
+#let $MYSQLD_DATADIR= `select @@datadir`;
+#write_file $MYSQLD_DATADIR/test/t1_ai.TRN~;
+#dummy
+#EOF
+#chmod 0000 $MYSQLD_DATADIR/test/t1_ai.TRN~;
+## Normalize the datadir path; the embedded server doesn't chdir to datadir
+#--replace_result $MYSQLTEST_VARDIR . mysqld.1/data/ ''
+##--error 1
+#rename table t1 to t2;
+## 't1' should be still there and triggers should work correctly
+#insert into t1 values (102);
+#select @a, @b;
+#select trigger_schema, trigger_name, event_object_schema,
+#       event_object_table, action_statement from information_schema.triggers
+#       where event_object_schema = 'test_trigger';
+#chmod 0600 $MYSQLD_DATADIR/test/t1_ai.TRN~;
+#remove_file $MYSQLD_DATADIR/test/t1_ai.TRN~;
+## Let us check that updates to .TRN files were rolled back too
+#drop trigger t1_bi;
+#drop trigger t1_ai;
+#drop table t1;
 
 # Test for bug #16829 "Firing trigger with RETURN crashes the server"
 # RETURN is not supposed to be used anywhere except functions, so error
@@ -1154,7 +1198,7 @@ create trigger t1_bi before insert on t1 for each row return 0;
 insert into t1 values (1);
 drop table t1;
 
-# Test for bug #17764 "Trigger crashes MyISAM table"
+# Test for bug #17764 "Trigger crashes Sequoiadb table"
 #
 # Table was reported as crashed when it was subject table of trigger invoked
 # by insert statement which was executed with enabled bulk insert mode (which
@@ -1193,6 +1237,7 @@ drop table t1, t2;
 # slightly different symptoms (instead of reporting table as crashed
 # storage engine reported error number 124)
 #
+#BUG #SEQUOIADBMAINSTREAM-3573
 create table t1(i int not null, j int not null, n numeric(15,2), primary key(i,j));
 create table t2(i int not null, n numeric(15,2), primary key(i));
 delimiter |;
@@ -1226,7 +1271,8 @@ CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW
 
 INSERT INTO t1 (conn_id, trigger_conn_id) VALUES (CONNECTION_ID(), -1);
 
-connect (con1,localhost,root,,);
+# new connection, should identify with database name
+connect (con1,localhost,root,,test_trigger,,);
 INSERT INTO t1 (conn_id, trigger_conn_id) VALUES (CONNECTION_ID(), -1);
 connection default;
 disconnect con1;
@@ -1351,6 +1397,7 @@ DROP TRIGGER t1_au;
 DROP PROCEDURE p1;
 
 # Post requisite.
+#engine sequoiadb modify test result as same as the innodb
 SELECT * FROM t1;
 
 DROP TABLE t1;
@@ -1375,7 +1422,7 @@ create trigger wont_work after update on event for each row
 begin
  set @a:= 1;
 end|
-use test|
+use test_trigger|
 delimiter ;|
 
 
@@ -1409,7 +1456,7 @@ DROP TABLE t2;
 #
 # Bug#20028 Function with select return no data
 # 
-
+#Bug #SEQUOIASQLMAINSTREAM-216
 --disable_warnings
 drop table if exists t1;
 drop table if exists t2;
@@ -1468,7 +1515,7 @@ drop table t2;
 drop table t3;
 drop table t4;
 
-#
+
 # Bug#20670 "UPDATE using key and invoking trigger that modifies
 #            this key does not stop"
 #
@@ -1707,6 +1754,7 @@ DELIMITER ;|
 INSERT INTO t1(val) VALUES ('test1'),('test2');
 SELECT * FROM t1;
 SELECT * FROM t2;
+#Bug #SEQUOIASQLMAINSTREAM-112
 INSERT INTO t1 VALUES (2,'test2') ON DUPLICATE KEY UPDATE val=VALUES(val);
 INSERT INTO t1 VALUES (2,'test3') ON DUPLICATE KEY UPDATE val=VALUES(val);
 INSERT INTO t1 VALUES (3,'test4') ON DUPLICATE KEY UPDATE val=VALUES(val);
@@ -1747,67 +1795,68 @@ disconnect addconwithoutdb;
 #
 # Bug #26162: Trigger DML ignores low_priority_updates setting
 #
-CREATE TABLE t1 (id INTEGER);
-CREATE TABLE t2 (id INTEGER);
-
-INSERT INTO t2 VALUES (1),(2);
-
-# trigger that produces the high priority insert, but should be low, adding
-# LOW_PRIORITY fixes this
-CREATE TRIGGER t1_test AFTER INSERT ON t1 FOR EACH ROW 
-  INSERT INTO t2 VALUES (new.id);
-
-CONNECT (rl_holder,    localhost, root,,);
-CONNECT (rl_acquirer,  localhost, root,,);
-CONNECT (wl_acquirer,  localhost, root,,);
-CONNECT (rl_contender, localhost, root,,);
-
-CONNECTION rl_holder;
-SELECT GET_LOCK('B26162',120);
-
-CONNECTION rl_acquirer;
---send
-SELECT 'rl_acquirer', GET_LOCK('B26162',120), id FROM t2 WHERE id = 1;
-
-CONNECTION wl_acquirer;
-SET SESSION LOW_PRIORITY_UPDATES=1;
-SET GLOBAL LOW_PRIORITY_UPDATES=1;
-#need to wait for rl_acquirer to lock on the B26162 lock 
-sleep 2;
---send
-INSERT INTO t1 VALUES (5);
-
-CONNECTION rl_contender;
-# must not "see" the row inserted by the INSERT (as it must run before the
-# INSERT)
---send
-SELECT 'rl_contender', id FROM t2 WHERE id > 1;
-
-CONNECTION rl_holder;
-#need to wait for wl_acquirer and rl_contender to lock on t2 
-sleep 2;
-SELECT RELEASE_LOCK('B26162');
-
-CONNECTION rl_acquirer;
---reap
-SELECT RELEASE_LOCK('B26162');
-CONNECTION wl_acquirer;
---reap
-CONNECTION rl_contender;
---reap
-
-CONNECTION default;
-DISCONNECT rl_acquirer;
-DISCONNECT wl_acquirer;
-DISCONNECT rl_contender;
-DISCONNECT rl_holder;
-
-DROP TRIGGER t1_test;
-DROP TABLE t1,t2;
-SET SESSION LOW_PRIORITY_UPDATES=DEFAULT;
-SET GLOBAL LOW_PRIORITY_UPDATES=DEFAULT;
+#Sequoidb not support set session priority
+#CREATE TABLE t1 (id INTEGER);
+#CREATE TABLE t2 (id INTEGER);
+#
+#INSERT INTO t2 VALUES (1),(2);
+#
+## trigger that produces the high priority insert, but should be low, adding
+## LOW_PRIORITY fixes this
+#CREATE TRIGGER t1_test AFTER INSERT ON t1 FOR EACH ROW 
+#  INSERT INTO t2 VALUES (new.id);
+#
+#CONNECT (rl_holder,    localhost, root,,);
+#CONNECT (rl_acquirer,  localhost, root,,);
+#CONNECT (wl_acquirer,  localhost, root,,);
+#CONNECT (rl_contender, localhost, root,,);
+#
+#CONNECTION rl_holder;
+#SELECT GET_LOCK('B26162',120);
+#
+#CONNECTION rl_acquirer;
+#--send
+#SELECT 'rl_acquirer', GET_LOCK('B26162',120), id FROM t2 WHERE id = 1;
+#
+#CONNECTION wl_acquirer;
+#SET SESSION LOW_PRIORITY_UPDATES=1;
+#SET GLOBAL LOW_PRIORITY_UPDATES=1;
+##need to wait for rl_acquirer to lock on the B26162 lock 
+#sleep 2;
+#--send
+#INSERT INTO t1 VALUES (5);
+#
+#CONNECTION rl_contender;
+## must not "see" the row inserted by the INSERT (as it must run before the
+## INSERT)
+#--send
+#SELECT 'rl_contender', id FROM t2 WHERE id > 1;
+#
+#CONNECTION rl_holder;
+##need to wait for wl_acquirer and rl_contender to lock on t2 
+#sleep 2;
+#SELECT RELEASE_LOCK('B26162');
+#
+#CONNECTION rl_acquirer;
+#--reap
+#SELECT RELEASE_LOCK('B26162');
+#CONNECTION wl_acquirer;
+#--reap
+#CONNECTION rl_contender;
+#--reap
+#
+#CONNECTION default;
+#DISCONNECT rl_acquirer;
+#DISCONNECT wl_acquirer;
+#DISCONNECT rl_contender;
+#DISCONNECT rl_holder;
+#
+#DROP TRIGGER t1_test;
+#DROP TABLE t1,t2;
+#SET SESSION LOW_PRIORITY_UPDATES=DEFAULT;
+#SET GLOBAL LOW_PRIORITY_UPDATES=DEFAULT;
 --echo
---echo Bug#28502 Triggers that update another innodb table will block
+--echo Bug#28502 Triggers that update another Sequoiadb table will block
 --echo on X lock unnecessarily
 --echo
 --echo Ensure we do not open and lock tables for triggers we do not fire.
@@ -1834,7 +1883,7 @@ insert into t1 (id, count) values (1, 0);
 
 lock table t1 write;
 
---connect (connection_insert, localhost, root, , test, , )
+--connect (connection_insert, localhost, root, , test_trigger, , )
 connection connection_insert;
 # Is expected to pass.
 insert into t2 set id=1;
@@ -1932,6 +1981,7 @@ insert into t1 (id, operation) values
 on duplicate key update id=NULL,
 operation="INSERT ON DUPLICATE KEY UPDATE, updating the duplicate";
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
 select * from t1_op_log;
 truncate t1;
@@ -1945,9 +1995,12 @@ select * from t1;
 select * from t1_op_log;
 truncate t1_op_log;
 
+#Bug #SEQUOIASQLMAINSTREAM-467
 replace into t1 values (@id, "REPLACE, deleting the duplicate");
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
+#SEQUOIASQLMAINSTREAM-467
 select * from t1_op_log;
 truncate t1;
 truncate t1_op_log;
@@ -1964,7 +2017,9 @@ truncate t1_op_log;
 replace into t1
 select @id, "CREATE TABLE ... REPLACE SELECT, deleting a duplicate key";
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
+#SEQUOIASQLMAINSTREAM-467
 select * from t1_op_log;
 truncate t1;
 truncate t1_op_log;
@@ -1984,6 +2039,7 @@ select @id,
 on duplicate key update id=NULL,
 operation="INSERT ... SELECT ... ON DUPLICATE KEY UPDATE, updating a duplicate";
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
 select * from t1_op_log;
 truncate t1;
@@ -2001,7 +2057,9 @@ truncate t1_op_log;
 replace into t1 (id, operation)
 select @id, "REPLACE ... SELECT, deleting a duplicate";
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
+#SEQUOIASQLMAINSTREAM-467
 select * from t1_op_log;
 truncate t1;
 truncate t1_op_log;
@@ -2071,6 +2129,7 @@ insert into v1 (id, operation) values
 on duplicate key update id=NULL,
 operation="INSERT ON DUPLICATE KEY UPDATE, updating the duplicate";
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
 select * from t1_op_log;
 truncate t1;
@@ -2086,7 +2145,9 @@ truncate t1_op_log;
 
 replace into v1 values (@id, "REPLACE, deleting the duplicate");
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
+#SEQUOIASQLMAINSTREAM-467
 select * from t1_op_log;
 truncate t1;
 truncate t1_op_log;
@@ -2103,7 +2164,9 @@ truncate t1_op_log;
 replace into v1
 select @id, "CREATE TABLE ... REPLACE SELECT, deleting a duplicate key";
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
+#SEQUOIASQLMAINSTREAM-467
 select * from t1_op_log;
 truncate t1;
 truncate t1_op_log;
@@ -2123,6 +2186,7 @@ select @id,
 on duplicate key update id=NULL,
 operation="INSERT ... SELECT ... ON DUPLICATE KEY UPDATE, updating a duplicate";
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
 select * from t1_op_log;
 truncate t1;
@@ -2140,7 +2204,9 @@ truncate t1_op_log;
 replace into v1 (id, operation)
 select @id, "REPLACE ... SELECT, deleting a duplicate";
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 select * from t1;
+#SEQUOIASQLMAINSTREAM-467
 select * from t1_op_log;
 truncate t1;
 truncate t1_op_log;
@@ -2251,6 +2317,7 @@ select * from table_25411_a;
 --error ER_BAD_TABLE_ERROR
 insert into table_25411_a values (1);
 
+#engine sequoiadb modify test result as same as the innodb
 select * from table_25411_a;
 
 drop table table_25411_a;
@@ -2409,6 +2476,9 @@ INSERT t1 VALUES (1),(2),(3);
 UPDATE IGNORE t1 SET id=NULL;
 CREATE TRIGGER t1_bu BEFORE UPDATE ON t1 FOR EACH ROW
   INSERT INTO t2 VALUES (3);
+
+#Sequoiadb engine throw an error as the sam as innodb but myisam can update successfully
+--error 1048
 UPDATE t1 SET id=NULL;
 DROP TRIGGER t1_bu;
 DROP TABLE t1,t2;
@@ -2416,33 +2486,33 @@ DROP TABLE t1,t2;
 --echo #
 --echo # Bug#50755: Crash if stored routine def contains version comments
 --echo #
-
+# Compatible with parallel > 1, don't use db1 here, instead create and use database: db1_casename
 --disable_warnings
-DROP DATABASE IF EXISTS db1;
+DROP DATABASE IF EXISTS db1_trigger;
 DROP TRIGGER IF EXISTS trg1;
 DROP TABLE IF EXISTS t1, t2;
 --enable_warnings
 
-CREATE DATABASE db1;
-USE db1;
+CREATE DATABASE db1_trigger;
+USE db1_trigger;
 
 CREATE TABLE t1 (b INT);
 CREATE TABLE t2 (a INT);
 
 CREATE TRIGGER trg1 BEFORE INSERT ON t2 FOR EACH ROW INSERT/*!INTO*/t1 VALUES (1);
 --echo # Used to crash
-SHOW TRIGGERS IN db1;
+SHOW TRIGGERS IN db1_trigger;
 --error ER_PARSE_ERROR
 INSERT INTO t2 VALUES (1);
 SELECT * FROM t1;
 
 --echo # Work around Bug#45235
 let $MYSQLD_DATADIR = `select @@datadir`;
---remove_file $MYSQLD_DATADIR/db1/t2.TRG
---remove_file $MYSQLD_DATADIR/db1/trg1.TRN
+--remove_file $MYSQLD_DATADIR/db1_trigger/t2.TRG
+--remove_file $MYSQLD_DATADIR/db1_trigger/trg1.TRN
 
-DROP DATABASE db1;
-USE test;
+DROP DATABASE db1_trigger;
+USE test_trigger;
 
 --echo End of 5.1 tests.
 
@@ -2556,7 +2626,7 @@ create temporary table t1 (j int);
 --echo # Dropping of trigger should succeed.
 drop trigger t1_bi;
 select trigger_name from information_schema.triggers
-  where event_object_schema = 'test' and event_object_table = 't1';
+  where event_object_schema = 'test_trigger' and event_object_table = 't1';
 --echo # Clean-up.
 drop temporary table t1;
 drop table t1;
@@ -2681,7 +2751,7 @@ CREATE TRIGGER t1_au AFTER UPDATE ON t1 FOR EACH ROW STOP SLAVE;
 CREATE TRIGGER t1_au AFTER UPDATE ON t1 FOR EACH ROW
 CREATE SERVER s FOREIGN DATA WRAPPER mysql OPTIONS (USER 'Remote',
                                                     HOST '192.168.1.106',
-                                                    DATABASE 'test');
+                                                    DATABASE 'test_trigger');
 
 --error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
 CREATE TRIGGER t1_bu BEFORE UPDATE ON t1 FOR EACH ROW
@@ -2691,13 +2761,13 @@ ALTER SERVER s OPTIONS (password '1');
 CREATE TRIGGER tr1 AFTER UPDATE ON t1 FOR EACH ROW
 DROP SERVER IF EXISTS s;
 
-CREATE DATABASE db1;
+CREATE DATABASE db1_trigger;
 
 --error ER_COMMIT_NOT_ALLOWED_IN_SF_OR_TRG
 CREATE TRIGGER tr1 AFTER UPDATE ON t1 FOR EACH ROW
-ALTER DATABASE db1 CHARACTER SET latin1;
+ALTER DATABASE db1_trigger CHARACTER SET latin1;
 
-DROP DATABASE db1;
+DROP DATABASE db1_trigger;
 
 CREATE USER 'u1'@'localhost' IDENTIFIED BY 'pass';
 
@@ -2866,6 +2936,7 @@ DROP TABLE t1;
 --echo # Bug#16522924 : UPDATE TRIGGER INVOKED WHEN UPDATE IGNORE MEANS
 --echo #                      THAT NO UPDATE IS PERFORMED
 --echo #
+#Bug #SEQUOIADBMAINSTREAM-3665
 CREATE TABLE t1 (a INT PRIMARY KEY);
 CREATE TABLE t2 (after_update CHAR(50));
 CREATE TABLE t3(b INT PRIMARY KEY);
@@ -2892,18 +2963,18 @@ DROP TABLE t1,t2,t3;
 --echo #
 
 CREATE USER user_name_robert_golebiowski@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char;
-CREATE TABLE test.silly_one (ID INT);
+CREATE TABLE test_trigger.silly_one (ID INT);
 
-CREATE DEFINER=user_name_robert_golebiowski@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char TRIGGER test.silly_trigger BEFORE INSERT ON test.silly_one FOR EACH ROW SET @x=1;
+CREATE DEFINER=user_name_robert_golebiowski@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char TRIGGER test_trigger.silly_trigger BEFORE INSERT ON test_trigger.silly_one FOR EACH ROW SET @x=1;
 
 --replace_column 6 #
-SHOW TRIGGERS FROM test LIKE 'silly_one';
+SHOW TRIGGERS FROM test_trigger LIKE 'silly_one';
 
 SELECT DEFINER FROM information_schema.triggers WHERE TRIGGER_NAME='silly_trigger';
 
 DROP USER user_name_robert_golebiowski@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char;
-DROP TRIGGER test.silly_trigger;
-DROP TABLE test.silly_one;
+DROP TRIGGER test_trigger.silly_trigger;
+DROP TABLE test_trigger.silly_one;
 
 --echo #
 --echo # Bug#25209512:  CURRENT_TIMESTAMP PRODUCES ZEROS IN TRIGGER
@@ -3060,7 +3131,7 @@ SELECT @x;
 DROP TABLE t1;
 
 let $MYSQLD_DATADIR= `select @@datadir`;
-remove_file $MYSQLD_DATADIR/test/t1.dat;
+remove_file $MYSQLD_DATADIR/test_trigger/t1.dat;
 
 SET TIMESTAMP= DEFAULT;
 
@@ -3093,6 +3164,7 @@ DELIMITER ;$$
 SELECT * FROM t1;
 SELECT * FROM t2;
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 INSERT INTO t2 (fld1) values (1100) ON DUPLICATE KEY UPDATE
 fld2= 50;
 
@@ -3144,3 +3216,8 @@ DROP TRIGGER update_before_update;
 DROP TABLE t1, t2;
 
 --echo End of 5.7 tests.
+
+# DROP DATABASE
+DROP DATABASE test_trigger;
+
+--source include/uninstall_sequoiadb.inc

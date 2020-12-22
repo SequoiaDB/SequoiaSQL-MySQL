@@ -1,4 +1,6 @@
 
+--source include/have_sequoiadb.inc
+
  #Get deafult engine value
 --let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
 
@@ -335,3 +337,5 @@ SHOW CREATE TABLE t1;
 DROP TABLE t1;
 SET sql_mode = default;
 --echo End of 5.5 tests
+
+--source include/uninstall_sequoiadb.inc

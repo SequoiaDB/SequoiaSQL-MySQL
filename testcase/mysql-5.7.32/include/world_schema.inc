@@ -16,10 +16,12 @@ CREATE TABLE city (
   INDEX (Population),
   INDEX (Country) 
 );
+# Myisam don't return error when out of range, should modify the range of Percentage
 CREATE TABLE countrylanguage (
   Country char(3) NOT NULL default '',
   Language char(30) NOT NULL default '',
-  Percentage float(3,1) NOT NULL default '0.0',
+#  Percentage float(3,1) NOT NULL default '0.0',
+  Percentage float(4,1) NOT NULL default '0.0',
   PRIMARY KEY  (Country, Language),
   INDEX (Percentage)
 );

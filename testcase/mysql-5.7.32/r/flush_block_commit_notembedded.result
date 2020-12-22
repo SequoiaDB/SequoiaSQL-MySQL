@@ -2,7 +2,7 @@
 # Establish connection con1 (user=root)
 # Establish connection con2 (user=root)
 # Switch to connection con1
-CREATE TABLE t1 (a INT) ENGINE=innodb;
+CREATE TABLE t1 (a INT) ENGINE=sequoiadb;
 RESET MASTER;
 SET AUTOCOMMIT=0;
 SELECT 1;
@@ -21,7 +21,7 @@ UNLOCK TABLES;
 # Switch to connection con1
 DROP TABLE t1;
 SET AUTOCOMMIT=1;
-create table t1 (a int) engine=innodb;
+create table t1 (a int) engine=sequoiadb;
 flush tables with read lock;
 begin;
 insert into t1 values (1);;

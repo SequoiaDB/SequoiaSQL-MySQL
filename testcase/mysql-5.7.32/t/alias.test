@@ -1,3 +1,8 @@
+# The include statement below is a temp one for tests that are yet to
+#be ported to run with SequoiaDB,
+# (#Case #13120: Check query with alias)
+--source include/have_sequoiadb.inc
+
 --disable_warnings
 DROP TABLE IF EXISTS t1;
 --enable_warnings
@@ -63,6 +68,7 @@ INSERT INTO t1 VALUES (3359362,406,3359362,'Mustermann Musterfrau',7001,'2000-05
 --source include/turn_off_only_full_group_by.inc
 
 # This died because we used the field Kundentyp twice
+# SequoiaDB convert all charsets to utf8mb4, and collate only support utf8mb4_bin, so this query result is changed
 SELECT ELT(FIELD(kundentyp,'PP','PPA','PG','PGA','FK','FKA','FP','FPA','K','KA','V','VA',''), 'Privat (Private Nutzung)','Privat (Private Nutzung) Sitz im Ausland','Privat (geschaeftliche Nutzung)','Privat (geschaeftliche Nutzung) Sitz im Ausland','Firma (Kapitalgesellschaft)','Firma (Kapitalgesellschaft) Sitz im Ausland','Firma (Personengesellschaft)','Firma (Personengesellschaft) Sitz im Ausland','oeff. rechtl. Koerperschaft','oeff. rechtl. Koerperschaft Sitz im Ausland','Eingetragener Verein','Eingetragener Verein Sitz im Ausland','Typ unbekannt') AS Kundentyp ,kategorie FROM t1 WHERE hdl_nr < 2000000 AND kategorie IN ('Prepaid','Mobilfunk') AND st_klasse = 'Workflow' GROUP BY kundentyp ORDER BY kategorie;
 
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
@@ -218,3 +224,5 @@ drop table t4;
 drop table t1,t2,t3;
 SET sql_mode = default;
 # End of 5.2 tests
+
+--source include/uninstall_sequoiadb.inc

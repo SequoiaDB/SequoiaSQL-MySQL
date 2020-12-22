@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 
 #
 # Init section
@@ -20,15 +21,17 @@ INSERT INTO t1 VALUES ('a',1),('A',1),('aa',1),('AA',1),('a',1),('aaa',0),('BBB'
 select if(1,st,st) s from t1 order by s;
 select if(u=1,st,st) s from t1 order by s;
 select if(u=1,binary st,st) s from t1 order by s;
+# SEQUOIASQLMAINSTREAM-204
 select if(u=1,st,binary st) s from t1 where st like "%a%" order by s;
+--replace_column 1 x
 analyze table t1;
-explain extended select if(u=1,st,binary st) s from t1 where st like "%a%" order by s;
+#explain extended select if(u=1,st,binary st) s from t1 where st like "%a%" order by s;
 
 #
 # NULLIF test
 #
 select nullif(u, 1) from t1;
-explain extended select nullif(u, 1) from t1;
+#explain extended select nullif(u, 1) from t1;
 drop table t1;
 select nullif(1,'test');
 
@@ -205,3 +208,5 @@ sum(distinct(if('a',
                 (select adddate(elt(convert($nines,decimal(64,0)),count(*)),
                                 interval 1 day))
                 , .1))) as foo;
+
+--source include/uninstall_sequoiadb.inc

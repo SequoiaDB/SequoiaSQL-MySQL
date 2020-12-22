@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 
 --disable_warnings
 DROP TABLE IF EXISTS t1;
@@ -145,3 +146,5 @@ SELECT * FROM t1;
 DROP TABLE t1;
 
 SET sql_mode = default;
+
+--source include/uninstall_sequoiadb.inc

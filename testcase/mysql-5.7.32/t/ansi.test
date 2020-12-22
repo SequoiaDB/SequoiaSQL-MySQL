@@ -1,10 +1,16 @@
 
+--source include/have_sequoiadb.inc
+
  #Get deafult engine value
 --let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
 
 #
 # Test of ansi mode
 #
+
+# Compatible with parallel > 1, table name will be printed when check error, should create and use database: test_casename
+create database test_ansi;
+use test_ansi;
 
 --disable_warnings
 drop table if exists t1;
@@ -31,7 +37,6 @@ drop table t1;
 SET @@SQL_MODE="";
 
 # Bug#14515
-
 CREATE TABLE t1 (i int auto_increment NOT NULL, PRIMARY KEY (i));
 
 #Replace default engine value with static engine string 
@@ -54,4 +59,8 @@ SET @@SQL_MODE="NO_FIELD_OPTIONS";
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
+#DROP DATABASE
+DROP DATABASE test_ansi;
+
+--source include/uninstall_sequoiadb.inc
 # End of 4.1 tests

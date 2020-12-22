@@ -1,5 +1,6 @@
 # This test takes long time, so only run it with the --big-test mtr-flag.
 --source include/big_test.inc
+--source include/have_sequoiadb.inc
 
  #Get deafult engine value
 --let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
@@ -448,10 +449,12 @@ WHERE (head BETWEEN '80' AND 'FF') AND (tail BETWEEN '20' AND 'FF')
 ORDER BY head, tail;
 DROP TEMPORARY TABLE head, tail;
 
+# NOW not concern other engine, just test for SequoiaDB
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 SHOW CREATE TABLE t1;
 
+# Bug #SEQUOIASQLMAINSTREAM-146
 UPDATE IGNORE t1 SET a=unhex(code) ORDER BY code;
 SELECT COUNT(*) FROM t1;
 SELECT COUNT(*) FROM t1 WHERE a<>'';
@@ -533,6 +536,7 @@ set collation_connection=eucjpms_bin;
 
 SET NAMES eucjpms;
 --source include/ctype_inet.inc
+--source include/uninstall_sequoiadb.inc
 
 --echo #
 --echo # End of 5.6 tests

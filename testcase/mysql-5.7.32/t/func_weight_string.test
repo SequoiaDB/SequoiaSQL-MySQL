@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 
  #Get deafult engine value
 --let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
@@ -79,14 +80,15 @@ select hex(weight_string('ab' level 1 DESC REVERSE));
 #
 create table t1 select weight_string('test') as w;
 
+# NOW not concern replace engine, just testing for SequoiaDB
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 drop table t1;
 create table t1 select weight_string(repeat('t',66000)) as w;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 drop table t1;
 
@@ -207,3 +209,5 @@ DROP VIEW v7;
 DROP VIEW v8;
 DROP VIEW v9;
 DROP TABLE t1;
+
+--source include/uninstall_sequoiadb.inc
