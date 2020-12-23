@@ -30,7 +30,7 @@ class Sdb_cl {
 
   ~Sdb_cl();
 
-  int init(Sdb_conn *connection, char *cs_name, char *cl_name);
+  int init(Sdb_conn *connection, const char *cs_name, const char *cl_name);
 
   bool is_transaction_on();
 
@@ -65,10 +65,10 @@ class Sdb_cl {
 
   int next(bson::BSONObj &obj, my_bool get_owned = true);
 
-  int insert(bson::BSONObj &obj, bson::BSONObj &hint, int flag = 0,
+  int insert(const bson::BSONObj &obj, const bson::BSONObj &hint, int flag = 0,
              bson::BSONObj *result = NULL);
 
-  int insert(std::vector<bson::BSONObj> &objs, bson::BSONObj &hint,
+  int insert(std::vector<bson::BSONObj> &objs, const bson::BSONObj &hint,
              int flag = 0, bson::BSONObj *result = NULL);
 
   int bulk_insert(int flag, std::vector<bson::BSONObj> &objs);

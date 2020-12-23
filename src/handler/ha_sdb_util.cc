@@ -888,6 +888,46 @@ bool sdb_convert_sub2main_partition_name(char *table_name) {
 done:
   return rs;
 }
+#elif IS_MARIADB
+int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
+                              const char *table_name, char *sequence_name) {
+  int rc = SDB_OK;
+  int unique_id = 0;
+  sdbclient::sdbCursor cursor;
+  bson::BSONObj obj;
+  static const char GET_UNIQUE_ID_SQL[] =
+      "select UniqueID from $LIST_CS where Name ='%s'";
+  char get_unique_id_sql[sizeof(GET_UNIQUE_ID_SQL) + SDB_CS_NAME_MAX_SIZE] = {
+      0};
+
+  // Get unique_id for distinct sequence.
+  sprintf(get_unique_id_sql, GET_UNIQUE_ID_SQL, cs_name);
+  rc = conn->exec(get_unique_id_sql, &cursor);
+  if (rc) {
+    goto error;
+  }
+  rc = cursor.next(obj, false);
+  if (rc) {
+    if (SDB_DMS_EOC == rc) {
+      rc = SDB_DMS_CS_NOTEXIST;
+    }
+    goto error;
+  }
+
+  unique_id = obj.getField(SDB_FIELD_UNIQUEID).numberInt();
+  // sequence_name = unique_id + table_name
+  sprintf(sequence_name, "%d_%s", unique_id, table_name);
+  if (strlen(sequence_name) > SDB_CL_NAME_MAX_SIZE) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Too long sequence name %s", MYF(0), sequence_name);
+    goto done;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
 #endif
 
 /**
@@ -1046,6 +1086,39 @@ int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
   cached_minor = minor;
   cached_fix = fix;
   sdb_version_cached = true;
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int sdb_drop_empty_cs(Sdb_conn &conn, const char *cs_name) {
+  int rc = 0;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  bson::BSONObjBuilder option_builder;
+
+  rc = sdb_get_version(conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 4) ||              // 3.x < 3.4
+      (3 == major && 4 == minor && fix < 2)) {  // 3.4.x < 3.4.2
+    conn.drop_cs(cs_name);
+  } else {
+    try {
+      option_builder.appendBool(SDB_FIELD_ENSURE_EMPTY, true);
+    }
+    SDB_EXCEPTION_CATCHER(rc,
+                          "Failed to build option when sdb drop empty cs, cs "
+                          "name:%s, exception:%s",
+                          cs_name, e.what());
+    conn.drop_empty_cs(cs_name, option_builder.obj());
+  }
 
 done:
   return rc;

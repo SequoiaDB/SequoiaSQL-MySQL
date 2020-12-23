@@ -30,6 +30,9 @@
 #endif
 
 class Sdb_cl;
+#ifdef IS_MARIADB
+class Sdb_seq;
+#endif
 class Sdb_statistics;
 
 class Sdb_session_attrs {
@@ -178,19 +181,39 @@ class Sdb_conn {
 
   inline bool is_transaction_on() { return m_transaction_on; }
 
-  int get_cl(char *cs_name, char *cl_name, Sdb_cl &cl);
+  int get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl);
 
-  int create_cl(char *cs_name, char *cl_name,
+  int create_cl(const char *cs_name, const char *cl_name,
                 const bson::BSONObj &options = SDB_EMPTY_BSON,
                 bool *created_cs = NULL, bool *created_cl = NULL);
 
-  int rename_cl(char *cs_name, char *old_cl_name, char *new_cl_name);
+  int rename_cl(const char *cs_name, const char *old_cl_name,
+                const char *new_cl_name);
 
-  int drop_cl(char *cs_name, char *cl_name);
+  int drop_cl(const char *cs_name, const char *cl_name);
 
-  int drop_cs(char *cs_name);
+  int drop_cs(const char *cs_name);
 
-  int get_cl_statistics(char *cs_name, char *cl_name, Sdb_statistics &stats);
+  int drop_empty_cs(const char *cs_name,
+                    const bson::BSONObj &option = SDB_EMPTY_BSON);
+
+#ifdef IS_MARIADB
+  int get_seq(const char *cs_name, const char *table_name, char *sequence_name,
+              Sdb_seq &seq);
+
+  int create_seq(const char *cs_name, const char *table_name,
+                 char *sequence_name,
+                 const bson::BSONObj &options = SDB_EMPTY_BSON,
+                 bool *created_cs = NULL, bool *created_seq = NULL);
+
+  int rename_seq(const char *cs_name, const char *old_table_name,
+                 const char *new_table_name);
+
+  int drop_seq(const char *cs_name, const char *table_name);
+#endif
+
+  int get_cl_statistics(const char *cs_name, const char *cl_name,
+                        Sdb_statistics &stats);
 
   int snapshot(bson::BSONObj &obj, int snap_type,
                const bson::BSONObj &condition = SDB_EMPTY_BSON,
@@ -262,13 +285,15 @@ class Sdb_conn {
 
   int set_my_session_attr();
 
+  int exec(const char *sql, sdbclient::sdbCursor *cursor);
+
  private:
   int retry(boost::function<int()> func);
 
-  int get_cl_stats_by_get_detail(char *cs_name, char *cl_name,
+  int get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
                                  Sdb_statistics &stats);
 
-  int get_cl_stats_by_snapshot(char *cs_name, char *cl_name,
+  int get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
                                Sdb_statistics &stats);
 
  private:

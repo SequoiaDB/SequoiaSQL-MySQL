@@ -22,6 +22,7 @@
 #include <client.hpp>
 #include <sstream>
 #include "sdb_cl.h"
+#include "sdb_seq.h"
 #include "ha_sdb_conf.h"
 #include "ha_sdb_util.h"
 #include "ha_sdb_errcode.h"
@@ -279,6 +280,15 @@ error:
   goto done;
 }
 
+int conn_exec(sdbclient::sdb *connection, const char *sql,
+              sdbclient::sdbCursor *cursor) {
+  return connection->exec(sql, *cursor);
+}
+
+int Sdb_conn::exec(const char *sql, sdbclient::sdbCursor *cursor) {
+  return retry(boost::bind(conn_exec, &m_connection, sql, cursor));
+}
+
 int Sdb_conn::begin_transaction(uint tx_isolation) {
   DBUG_ENTER("Sdb_conn::begin_transaction");
   int rc = SDB_ERR_OK;
@@ -427,7 +437,7 @@ int Sdb_conn::rollback_transaction() {
   DBUG_RETURN(0);
 }
 
-int Sdb_conn::get_cl(char *cs_name, char *cl_name, Sdb_cl &cl) {
+int Sdb_conn::get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl) {
   int rc = SDB_ERR_OK;
   cl.close();
 
@@ -446,7 +456,7 @@ error:
   goto done;
 }
 
-int Sdb_conn::create_cl(char *cs_name, char *cl_name,
+int Sdb_conn::create_cl(const char *cs_name, const char *cl_name,
                         const bson::BSONObj &options, bool *created_cs,
                         bool *created_cl) {
   int rc = SDB_ERR_OK;
@@ -505,7 +515,7 @@ error:
   }
   convert_sdb_code(rc);
   if (new_cs) {
-    drop_cs(cs_name);
+    sdb_drop_empty_cs(*this, cs_name);
     new_cs = false;
     new_cl = false;
   } else if (new_cl) {
@@ -515,8 +525,8 @@ error:
   goto done;
 }
 
-int conn_rename_cl(sdbclient::sdb *connection, char *cs_name, char *old_cl_name,
-                   char *new_cl_name) {
+int conn_rename_cl(sdbclient::sdb *connection, const char *cs_name,
+                   const char *old_cl_name, const char *new_cl_name) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCollectionSpace cs;
 
@@ -535,12 +545,14 @@ error:
   goto done;
 }
 
-int Sdb_conn::rename_cl(char *cs_name, char *old_cl_name, char *new_cl_name) {
+int Sdb_conn::rename_cl(const char *cs_name, const char *old_cl_name,
+                        const char *new_cl_name) {
   return retry(boost::bind(conn_rename_cl, &m_connection, cs_name, old_cl_name,
                            new_cl_name));
 }
 
-int conn_drop_cl(sdbclient::sdb *connection, char *cs_name, char *cl_name) {
+int conn_drop_cl(sdbclient::sdb *connection, const char *cs_name,
+                 const char *cl_name) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCollectionSpace cs;
 
@@ -569,11 +581,189 @@ error:
   goto done;
 }
 
-int Sdb_conn::drop_cl(char *cs_name, char *cl_name) {
+int Sdb_conn::drop_cl(const char *cs_name, const char *cl_name) {
   return retry(boost::bind(conn_drop_cl, &m_connection, cs_name, cl_name));
 }
 
-int conn_drop_cs(sdbclient::sdb *connection, char *cs_name) {
+#ifdef IS_MARIADB
+int Sdb_conn::get_seq(const char *cs_name, const char *table_name,
+                      char *sequence_name, Sdb_seq &seq) {
+  int rc = SDB_ERR_OK;
+
+  rc = sdb_rebuild_sequence_name(this, cs_name, table_name, sequence_name);
+  if (rc) {
+    goto error;
+  }
+
+  rc = seq.init(this, sequence_name);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    connect();
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
+int Sdb_conn::create_seq(const char *cs_name, const char *table_name,
+                         char *sequence_name, const bson::BSONObj &options,
+                         bool *created_cs, bool *created_seq) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+  sdbclient::sdbCollectionSpace cs;
+  sdbclient::sdbSequence seq;
+  sdbclient::sdbCollection cl;
+  bool new_cs = false;
+  bool new_seq = false;
+
+retry:
+  rc = m_connection.getCollectionSpace(cs_name, cs);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+    if (SDB_OK == rc) {
+      new_cs = true;
+    }
+  }
+
+  if (SDB_ERR_OK != rc && SDB_DMS_CS_EXIST != rc) {
+    goto error;
+  }
+
+  rc = sdb_rebuild_sequence_name(this, cs_name, table_name, sequence_name);
+  if (rc) {
+    goto error;
+  }
+
+  rc = m_connection.createSequence(sequence_name, options, seq);
+  if (SDB_SEQUENCE_EXIST == rc) {
+    rc = m_connection.getSequence(sequence_name, seq);
+    /* CS cached on sdbclient. so SDB_DMS_CS_NOTEXIST maybe retuned here. */
+  } else if (SDB_DMS_CS_NOTEXIST == rc) {
+    rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+    if (SDB_OK == rc) {
+      new_cs = true;
+    } else if (SDB_DMS_CS_EXIST != rc) {
+      goto error;
+    }
+    goto retry;
+  } else if (SDB_OK == rc) {
+    new_seq = true;
+  }
+
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+done:
+  if (created_cs) {
+    *created_cs = new_cs;
+  }
+  if (created_seq) {
+    *created_seq = new_seq;
+  }
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  if (new_cs) {
+    sdb_drop_empty_cs(*this, cs_name);
+    new_cs = false;
+    new_seq = false;
+  } else if (new_seq) {
+    m_connection.dropSequence(sequence_name);
+    new_seq = false;
+  }
+  goto done;
+}
+
+int conn_rename_seq(Sdb_conn *conn, sdbclient::sdb *connection,
+                    const char *cs_name, const char *old_table_name,
+                    const char *new_table_name) {
+  int rc = SDB_ERR_OK;
+  sdbclient::sdbCollectionSpace cs;
+  char old_sequence_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  char new_sequence_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+
+  rc = connection->getCollectionSpace(cs_name, cs);
+  if (rc) {
+    goto error;
+  }
+
+  rc = sdb_rebuild_sequence_name(conn, cs_name, old_table_name,
+                                 old_sequence_name);
+  if (rc) {
+    goto error;
+  }
+  rc = sdb_rebuild_sequence_name(conn, cs_name, new_table_name,
+                                 new_sequence_name);
+  if (rc) {
+    goto error;
+  }
+
+  rc = connection->renameSequence(old_sequence_name, new_sequence_name);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_conn::rename_seq(const char *cs_name, const char *old_seq_name,
+                         const char *new_seq_name) {
+  return retry(boost::bind(conn_rename_seq, this, &m_connection, cs_name,
+                           old_seq_name, new_seq_name));
+}
+
+int conn_drop_seq(Sdb_conn *conn, sdbclient::sdb *connection,
+                  const char *cs_name, const char *table_name) {
+  int rc = SDB_ERR_OK;
+  char sequence_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
+
+  rc = sdb_rebuild_sequence_name(conn, cs_name, table_name, sequence_name);
+  if (rc) {
+    if (SDB_DMS_CS_NOTEXIST == rc) {
+      // There is no specified collection space, igonre the error.
+      rc = SDB_ERR_OK;
+      goto done;
+    }
+    goto error;
+  }
+
+  rc = connection->dropSequence(sequence_name);
+  if (rc != SDB_ERR_OK) {
+    if (SDB_SEQUENCE_NOT_EXIST == rc) {
+      // There is no specified sequence, igonre the error.
+      rc = 0;
+      goto done;
+    }
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_conn::drop_seq(const char *cs_name, const char *table_name) {
+  return retry(
+      boost::bind(conn_drop_seq, this, &m_connection, cs_name, table_name));
+}
+#endif
+
+int conn_drop_cs(sdbclient::sdb *connection, const char *cs_name) {
   int rc = connection->dropCollectionSpace(cs_name);
   if (SDB_DMS_CS_NOTEXIST == rc) {
     rc = SDB_ERR_OK;
@@ -581,16 +771,24 @@ int conn_drop_cs(sdbclient::sdb *connection, char *cs_name) {
   return rc;
 }
 
-int Sdb_conn::drop_cs(char *cs_name) {
+int Sdb_conn::drop_cs(const char *cs_name) {
   return retry(boost::bind(conn_drop_cs, &m_connection, cs_name));
 }
 
-int conn_exec(sdbclient::sdb *connection, const char *sql,
-              sdbclient::sdbCursor *cursor) {
-  return connection->exec(sql, *cursor);
+int conn_drop_empty_cs(sdbclient::sdb *connection, const char *cs_name,
+                       const bson::BSONObj &option) {
+  int rc = connection->dropCollectionSpace(cs_name, option);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    rc = SDB_ERR_OK;
+  }
+  return rc;
 }
 
-int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
+int Sdb_conn::drop_empty_cs(const char *cs_name, const bson::BSONObj &option) {
+  return retry(boost::bind(conn_drop_empty_cs, &m_connection, cs_name, option));
+}
+
+int Sdb_conn::get_cl_statistics(const char *cs_name, const char *cl_name,
                                 Sdb_statistics &stats) {
   static bool support_get_detail = true;
   int rc = SDB_ERR_OK;
@@ -606,7 +804,8 @@ int Sdb_conn::get_cl_statistics(char *cs_name, char *cl_name,
   return rc;
 }
 
-int Sdb_conn::get_cl_stats_by_get_detail(char *cs_name, char *cl_name,
+int Sdb_conn::get_cl_stats_by_get_detail(const char *cs_name,
+                                         const char *cl_name,
                                          Sdb_statistics &stats) {
   static const int PAGE_SIZE_MIN = 4096;
   static const int PAGE_SIZE_MAX = 65536;
@@ -722,7 +921,7 @@ error:
   goto done;
 }
 
-int Sdb_conn::get_cl_stats_by_snapshot(char *cs_name, char *cl_name,
+int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
                                        Sdb_statistics &stats) {
   static const char NORMAL_CL_STATS_SQL[] =
       "select T.Details.$[0].PageSize as PageSize, "
@@ -770,16 +969,14 @@ int Sdb_conn::get_cl_stats_by_snapshot(char *cs_name, char *cl_name,
 
   // Try getting statistics as normal cl. If not, try main cl again.
   sprintf(normal_cl_stats_sql, NORMAL_CL_STATS_SQL, cs_name, cl_name);
-  rc = retry(
-      boost::bind(conn_exec, &m_connection, normal_cl_stats_sql, &cursor));
+  rc = exec(normal_cl_stats_sql, &cursor);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
   rc = cursor.next(obj, false);
   if (SDB_DMS_EOC == rc) {
     sprintf(main_cl_stats_sql, MAIN_CL_STATS_SQL, cs_name, cl_name);
-    rc = retry(
-        boost::bind(conn_exec, &m_connection, main_cl_stats_sql, &cursor));
+    rc = exec(main_cl_stats_sql, &cursor);
     if (rc != SDB_ERR_OK) {
       goto error;
     }

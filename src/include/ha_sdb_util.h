@@ -36,6 +36,19 @@ enum enum_compress_type {
   SDB_COMPRESS_TYPE_DEAFULT
 };
 
+#ifdef IS_MARIADB
+enum enum_sequence_field {
+  SEQUENCE_FIELD_RESERVED_UNTIL = 0,
+  SEQUENCE_FIELD_MIN_VALUE,
+  SEQUENCE_FIELD_MAX_VALUE,
+  SEQUENCE_FIELD_START,
+  SEQUENCE_FIELD_INCREMENT,
+  SEQUENCE_FIELD_CACHE,
+  SEQUENCE_FIELD_CYCLED,
+  SEQUENCE_FIELD_CYCLED_ROUND
+};
+#endif
+
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size);
 
@@ -93,6 +106,9 @@ bool sdb_is_single_table(THD *thd);
 
 #ifdef IS_MYSQL
 bool sdb_convert_sub2main_partition_name(char *table_name);
+#elif IS_MARIADB
+int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
+                              const char *table_name, char *sequence_name);
 #endif
 
 int sdb_filter_tab_opt(bson::BSONObj &old_opt_obj, bson::BSONObj &new_opt_obj,
@@ -108,6 +124,8 @@ inline void sdb_invalidate_version_cache() {
 
 int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
                     bool use_cached = true);
+
+int sdb_drop_empty_cs(Sdb_conn &conn, const char *cs_name);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

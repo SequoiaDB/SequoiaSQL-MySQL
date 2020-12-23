@@ -38,6 +38,9 @@ bool thd_binlog_filter_ok(const MYSQL_THD thd);
 int thd_slave_thread(const MYSQL_THD thd);
 }
 
+extern HASH sdb_temporary_sequence_cache;
+extern PSI_memory_key key_memory_sequence_cache;
+
 /*
   Stats that can be retrieved from SequoiaDB.
 */
@@ -80,6 +83,10 @@ struct Sdb_share {
     DBUG_ASSERT(0);
   }
 };
+
+typedef struct st_sequence_cache {
+  char *sequence_name;
+} sdb_sequence_cache;
 
 class ha_sdb;
 
@@ -511,6 +518,15 @@ class ha_sdb : public handler {
   int copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
                              char *table_name, TABLE *form,
                              HA_CREATE_INFO *create_info, bool *has_copy);
+
+#ifdef IS_MARIADB
+  int try_drop_as_sequence(Sdb_conn *conn, bool is_temporary,
+                           const char *db_name, const char *table_name,
+                           bool &deleted);
+  int try_rename_as_sequence(Sdb_conn *conn, const char *db_name,
+                             const char *old_table_name,
+                             const char *new_table_name, bool &renamed);
+#endif
 
   void raw_store_blob(Field_blob *blob, const char *data, uint len);
 

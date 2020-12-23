@@ -42,6 +42,8 @@
 #include <table_trigger_dispatcher.h>
 #include <json_dom.h>
 #include "ha_sdb_part.h"
+#elif IS_MARIADB
+#include "ha_sdb_seq.h"
 #endif
 
 using namespace sdbclient;
@@ -86,6 +88,8 @@ Sdb_mutex share_mutex;
 static boost::shared_ptr<Sdb_share> null_ptr;
 static PSI_mutex_key key_mutex_sdb, key_mutex_SDB_SHARE_mutex;
 static HASH sdb_open_tables;
+HASH sdb_temporary_sequence_cache;
+PSI_memory_key key_memory_sequence_cache;
 static PSI_memory_key key_memory_sdb_share;
 static PSI_memory_key sdb_key_memory_blobroot;
 
@@ -107,6 +111,13 @@ static uchar *sdb_get_key(boost::shared_ptr<Sdb_share> *share, size_t *length,
   return (uchar *)(*share)->table_name;
 }
 
+static uchar *sdb_get_sequence_key(sdb_sequence_cache *seq_cache,
+                                   size_t *length,
+                                   my_bool not_used MY_ATTRIBUTE((unused))) {
+  *length = strlen(seq_cache->sequence_name);
+  return (uchar *)seq_cache->sequence_name;
+}
+
 void free_thd_open_shares_elem(void *share_ptr) {
   THD_SDB_SHARE *tss = (THD_SDB_SHARE *)share_ptr;
   tss->share_ptr = null_ptr;
@@ -116,6 +127,10 @@ void free_sdb_open_shares_elem(void *share_ptr) {
   boost::shared_ptr<Sdb_share> *ssp = (boost::shared_ptr<Sdb_share> *)share_ptr;
   (*ssp) = null_ptr;
   my_free(ssp);
+}
+
+void free_sdb_sequence_elem(void *seq_cache_ptr) {
+  my_free(seq_cache_ptr);
 }
 
 void free_sdb_share(Sdb_share *share) {
@@ -1022,6 +1037,10 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
        HA_CAN_GEOMETRY);
 
   m_table_flags |= (sdb_use_transaction(current_thd) ? 0 : HA_NO_TRANSACTIONS);
+
+#ifdef IS_MARIADB
+  m_table_flags |= HA_CAN_TABLES_WITHOUT_ROLLBACK;
+#endif
 
   incr_stat = NULL;
   m_dup_key_nr = MAX_KEY;
@@ -5326,12 +5345,62 @@ error:
   goto done;
 }
 
+#ifdef IS_MARIADB
+/* For delete and rename operation, there has no table_share that distinguish
+   between a normal table and a sequence. For sequence, we can distinguish from
+   normal table by .FRM files. For temporary sequence, we need distinguish by
+   extra maintaining a hash.
+*/
+int ha_sdb::try_drop_as_sequence(Sdb_conn *conn, bool is_temporary,
+                                 const char *db_name, const char *table_name,
+                                 bool &deleted) {
+  int rc = 0;
+  bool is_seq = false;
+  char path[FN_REFLEN + 1] = "";
+  char engine_buf[NAME_CHAR_LEN + 1];
+  LEX_CSTRING engine = {engine_buf, 0};
+
+  if (is_temporary) {
+    void *ptr = my_hash_search(&sdb_temporary_sequence_cache,
+                               (uchar *)table_name, (uint)strlen(table_name));
+    if (ptr) {
+      my_hash_delete(&sdb_temporary_sequence_cache, (uchar *)ptr);
+      rc = conn->drop_seq(db_name, table_name);
+      if (0 != rc) {
+        goto error;
+      }
+      deleted = true;
+    }
+  } else {
+    build_table_filename(path, sizeof(path) - 1, db_name, table_name, reg_ext,
+                         0);
+    dd_frm_type(ha_thd(), path, &engine, &is_seq);
+    if (is_seq) {
+      rc = conn->drop_seq(db_name, table_name);
+      if (0 != rc) {
+        goto error;
+      }
+      deleted = true;
+    }
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+#endif
+
 int ha_sdb::delete_table(const char *from) {
   DBUG_ENTER("ha_sdb::delete_table");
 
   int rc = 0;
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
+#ifdef IS_MARIADB
+  bool is_temporary = false;
+  bool deleted = false;
+#endif
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
   if (sdb_execute_only_in_mysql(ha_thd()) ||
@@ -5367,6 +5436,9 @@ int ha_sdb::delete_table(const char *from) {
 #endif
 
   if (sdb_is_tmp_table(from, table_name)) {
+#ifdef IS_MARIADB
+    is_temporary = true;
+#endif
     if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
       rc = HA_ERR_GENERIC;
       goto error;
@@ -5378,6 +5450,16 @@ int ha_sdb::delete_table(const char *from) {
     goto error;
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+
+#ifdef IS_MARIADB
+  rc = try_drop_as_sequence(conn, is_temporary, db_name, table_name, deleted);
+  if (rc) {
+    goto error;
+  }
+  if (deleted) {
+    goto done;
+  }
+#endif
 
   rc = conn->drop_cl(db_name, table_name);
   if (0 != rc) {
@@ -5396,6 +5478,35 @@ error:
   goto done;
 }
 
+#ifdef IS_MARIADB
+// Handle with the same as try_drop_as_sequence.
+int ha_sdb::try_rename_as_sequence(Sdb_conn *conn, const char *db_name,
+                                   const char *old_table_name,
+                                   const char *new_table_name, bool &renamed) {
+  int rc = 0;
+  bool is_seq = false;
+  char path[FN_REFLEN + 1] = "";
+  char engine_buf[NAME_CHAR_LEN + 1];
+  LEX_CSTRING engine = {engine_buf, 0};
+
+  build_table_filename(path, sizeof(path) - 1, db_name, old_table_name, reg_ext,
+                       0);
+  dd_frm_type(ha_thd(), path, &engine, &is_seq);
+  if (is_seq) {
+    rc = conn->rename_seq(db_name, old_table_name, new_table_name);
+    if (0 != rc) {
+      goto error;
+    }
+    renamed = true;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+#endif
+
 int ha_sdb::rename_table(const char *from, const char *to) {
   DBUG_ENTER("ha_sdb::rename_table");
 
@@ -5403,7 +5514,9 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
-
+#ifdef IS_MARIADB
+  bool renamed = false;
+#endif
   char old_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char old_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   char new_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
@@ -5476,6 +5589,15 @@ int ha_sdb::rename_table(const char *from, const char *to) {
                                     new_table_name);
   if (0 != rc) {
     goto error;
+  }
+#elif IS_MARIADB
+  rc = try_rename_as_sequence(conn, old_db_name, old_table_name, new_table_name,
+                              renamed);
+  if (rc) {
+    goto error;
+  }
+  if (renamed) {
+    goto done;
   }
 #endif
 
@@ -6320,7 +6442,7 @@ done:
 error:
   handle_sdb_error(rc, MYF(0));
   if (created_cs) {
-    conn->drop_cs(db_name);
+    sdb_drop_empty_cs(*conn, db_name);
   } else if (created_cl) {
     conn->drop_cl(db_name, table_name);
   }
@@ -6654,6 +6776,10 @@ get_message_done:
       }
       break;
     }
+    case SDB_SEQUENCE_VALUE_USED: {
+      // For sequences: SETVAL(sequence) failed.
+      break;
+    }
     default:
       if (NULL == error_msg) {
         my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
@@ -6682,11 +6808,23 @@ static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
     file = p;
     goto done;
   }
+/*
+  Just like a normal table, the handler of sequence is also created by us.
+  Sequence operations are performed according to the handler we created later.
+  This is handled in the same way as a partition table, abstract a sequence
+  handler class.
+*/
+#elif IS_MARIADB
+  if (table && table->sequence) {
+    ha_sdb_seq *p = new (mem_root) ha_sdb_seq(hton, table);
+    file = p;
+    goto done;
+  }
 #endif
+
   file = new (mem_root) ha_sdb(hton, table);
-#ifdef IS_MYSQL
+
 done:
-#endif
   return file;
 }
 
@@ -6951,6 +7089,9 @@ static int sdb_init_func(void *p) {
   (void)sdb_hash_init(&sdb_open_tables, system_charset_info, 32, 0, 0,
                       (my_hash_get_key)sdb_get_key, free_sdb_open_shares_elem,
                       0, key_memory_sdb_share);
+  (void)sdb_hash_init(&sdb_temporary_sequence_cache, system_charset_info, 32, 0,
+                      0, (my_hash_get_key)sdb_get_sequence_key,
+                      free_sdb_sequence_elem, 0, key_memory_sequence_cache);
   sdb_hton->state = SHOW_OPTION_YES;
   sdb_hton->db_type = DB_TYPE_UNKNOWN;
   sdb_hton->create = sdb_create_handler;
@@ -6987,6 +7128,7 @@ static int sdb_done_func(void *p) {
   // TODO************
   // SHOW_COMP_OPTION state;
   my_hash_free(&sdb_open_tables);
+  my_hash_free(&sdb_temporary_sequence_cache);
   mysql_mutex_destroy(&sdb_mutex);
   sdb_string_free(&sdb_encoded_password);
   return 0;

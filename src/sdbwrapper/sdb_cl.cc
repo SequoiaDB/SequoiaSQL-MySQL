@@ -55,8 +55,8 @@ error:
   goto done;
 }
 
-int cl_init(sdbclient::sdbCollection *cl, Sdb_conn *connection, char *cs_name,
-            char *cl_name) {
+int cl_init(sdbclient::sdbCollection *cl, Sdb_conn *connection,
+            const char *cs_name, const char *cl_name) {
   int rc = SDB_ERR_OK;
   sdbCollectionSpace cs;
 
@@ -75,7 +75,8 @@ error:
   goto done;
 }
 
-int Sdb_cl::init(Sdb_conn *connection, char *cs_name, char *cl_name) {
+int Sdb_cl::init(Sdb_conn *connection, const char *cs_name,
+                 const char *cl_name) {
   int rc = SDB_ERR_OK;
 
   if (NULL == connection || NULL == cs_name || NULL == cl_name) {
@@ -215,17 +216,17 @@ error:
   goto done;
 }
 
-int cl_insert(sdbclient::sdbCollection *cl, bson::BSONObj *obj,
-              bson::BSONObj &hint, int flag, bson::BSONObj *result) {
+int cl_insert(sdbclient::sdbCollection *cl, const bson::BSONObj *obj,
+              const bson::BSONObj &hint, int flag, bson::BSONObj *result) {
   return cl->insert(*obj, hint, flag, result);
 }
 
-int Sdb_cl::insert(bson::BSONObj &obj, bson::BSONObj &hint, int flag,
-                   bson::BSONObj *result) {
+int Sdb_cl::insert(const bson::BSONObj &obj, const bson::BSONObj &hint,
+                   int flag, bson::BSONObj *result) {
   return retry(boost::bind(cl_insert, &m_cl, &obj, hint, flag, result));
 }
 
-int Sdb_cl::insert(std::vector<bson::BSONObj> &objs, bson::BSONObj &hint,
+int Sdb_cl::insert(std::vector<bson::BSONObj> &objs, const bson::BSONObj &hint,
                    int flag, bson::BSONObj *result) {
   int rc = SDB_ERR_OK;
 

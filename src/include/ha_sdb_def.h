@@ -87,6 +87,7 @@
 #define SDB_FIELD_MIN_VALUE "MinValue"
 #define SDB_FIELD_MAX_VALUE "MaxValue"
 #define SDB_FIELD_CYCLED "Cycled"
+#define SDB_FIELD_CYCLED_COUNT "CycledCount"
 #define SDB_FIELD_GENERATED "Generated"
 #define SDB_FIELD_INITIAL "Initial"
 #define SDB_FIELD_LAST_GEN_ID "LastGenerateID"
@@ -166,6 +167,7 @@
 #define SDB_FIELD_NULL_FRAC "NullFrac"
 #define SDB_FIELD_UNDEF_FRAC "UndefFrac"
 #define SDB_FIELD_SAMPLE_RECORDS "SampleRecords"
+#define SDB_FIELD_ENSURE_EMPTY "EnsureEmpty"
 
 #define SDB_PART_SEP "#P#"
 #define SDB_SUB_PART_SEP "#SP#"
@@ -180,6 +182,9 @@
 
 #define SDB_DEFAULT_FILL_MESSAGE ""
 #define SDB_ITEM_IGNORE_TYPE "ignore"
+
+#define SDB_ITEM_FUN_NEXT_VAL "nextval"
+#define SDB_ITEM_FUN_SET_VAL "setval"
 
 const static bson::BSONObj SDB_EMPTY_BSON;
 
