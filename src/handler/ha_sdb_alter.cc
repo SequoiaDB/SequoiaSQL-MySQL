@@ -26,6 +26,7 @@
 #include "ha_sdb_idx.h"
 #include "ha_sdb_thd.h"
 #include "ha_sdb_item.h"
+#include "server_ha.h"
 
 #ifdef IS_MYSQL
 #include <json_dom.h>
@@ -1932,6 +1933,8 @@ error:
 bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                                  Alter_inplace_info *ha_alter_info) {
   DBUG_ENTER("ha_sdb::inplace_alter_table");
+  char cl_full_name[SDB_CS_NAME_MAX_SIZE + SDB_CL_NAME_MAX_SIZE + 2] = {0};
+  bson::BSONObj increaseVerObj;
   bool rs = true;
   int rc = 0;
   THD *thd = current_thd;
@@ -2090,6 +2093,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       goto error;
     }
 
+    cl.set_version(ha_get_cata_version(db_name, table_name));
     if (!drop_keys.is_empty()) {
       rc = drop_index(cl, drop_keys);
       if (0 != rc) {
@@ -2119,7 +2123,23 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                         altered_table->s->table_name.str, e.what());
 
   rs = false;
+  // update cata version for collection
+  {
+    bson::BSONObjBuilder builder;
+    bson::BSONObjBuilder sub_builder(builder.subobjStart(SDB_FIELD_ALTER));
+    sub_builder.append(SDB_FIELD_NAME, "increase version");
+    sub_builder.done();
 
+    builder.append(SDB_FIELD_ALTER_TYPE, "collection");
+    builder.append(SDB_FIELD_VERSION, 1);
+    builder.append(SDB_FIELD_NAME, cl_full_name);
+    increaseVerObj = builder.obj();
+    rc = cl.alter_collection(increaseVerObj);
+    if (rc) {
+      goto error;
+    }
+    ha_set_cata_version(db_name, table_name, cl.get_version());
+  }
 done:
   if (ctx) {
     ctx->changed_columns.delete_elements();

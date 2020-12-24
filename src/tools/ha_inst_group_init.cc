@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
     rc = init_config(cmd_args.inst_group_name, ha_config, cmd_args.key,
                      cmd_args.verbose);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to initialize '%s' configuration",
-                     HA_INST_GROUP_CONFIG_CL);
+                     HA_CONFIG_CL);
 
     sdbclient::sdbCollectionSpace global_info_cs;
     sdbclient::sdbCollection inst_group_config_cl;
@@ -245,15 +245,14 @@ int main(int argc, char *argv[]) {
                      "sequoiadb error: %s",
                      orig_name.c_str(), sdb_err);
 
-    // create 'HAInstGroupConfig' collection
-    rc = inst_group_cs.createCollection(HA_INST_GROUP_CONFIG_CL, options,
+    // create 'HAConfig' collection
+    rc = inst_group_cs.createCollection(HA_CONFIG_CL, options,
                                         inst_group_config_cl);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
-                     "Error: failed to create global configuration table "
-                     "'%s.%s', sequoiadb error: %s",
-                     cmd_args.inst_group_name.c_str(), HA_INST_GROUP_CONFIG_CL,
-                     sdb_err);
+                     "Error: failed to create instance group "
+                     "configuration table '%s.%s', sequoiadb error: %s",
+                     cmd_args.inst_group_name.c_str(), HA_CONFIG_CL, sdb_err);
 
     // create 'HASQLLog' collection
     options = BSON(SDB_FIELD_NAME_AUTOINCREMENT
@@ -276,7 +275,7 @@ int main(int argc, char *argv[]) {
                      "sequoiadb error: %s",
                      HA_SQL_LOG_CL, sdb_err);
 
-    // init 'HAInstGroupConfig'
+    // init 'HAConfig'
     record = BSON(HA_FIELD_AUTH_STRING
                   << ha_config.auth_str << HA_FIELD_HOST << HA_MYSQL_AUTH_HOSTS
                   << HA_FIELD_IV << ha_config.iv << HA_FIELD_CIPHER_PASSWORD
@@ -290,7 +289,7 @@ int main(int argc, char *argv[]) {
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to initialize instance group "
                      "configuration table '%s.%s', sequoiadb error: %s",
-                     orig_name.c_str(), HA_INST_GROUP_CONFIG_CL, sdb_err);
+                     orig_name.c_str(), HA_CONFIG_CL, sdb_err);
 
     // init 'HASQLLog'
     record =

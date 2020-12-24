@@ -368,4 +368,8 @@ Protocol *sdb_thd_protocal(THD *thd);
 void sdb_protocal_start_row(Protocol *protocol);
 
 bool sdb_protocal_end_row(Protocol *protocol);
+
+uint sdb_sql_errno(THD *thd);
+
+const char *sdb_errno_message(THD *thd);
 #endif

@@ -546,3 +546,15 @@ int cl_get_index_stat(sdbclient::sdbCollection *cl, const char *index_name,
 int Sdb_cl::get_index_stat(const char *index_name, bson::BSONObj &obj) {
   return retry(boost::bind(cl_get_index_stat, &m_cl, index_name, &obj));
 }
+
+void Sdb_cl::set_version(int version) {
+  m_cl.setVersion(version);
+}
+
+int Sdb_cl::get_version() {
+  return m_cl.getVersion();
+}
+
+int Sdb_cl::alter_collection(const bson::BSONObj &obj) {
+  return m_cl.alterCollection(obj);
+}

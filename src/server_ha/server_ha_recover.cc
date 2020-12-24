@@ -36,6 +36,7 @@
 #define HA_STMT_DELETE_USER "DELETE FROM mysql.user WHERE User != 'root'"
 #define HA_STMT_DELETE_ROUTINES "DELETE FROM mysql.proc WHERE db != 'sys'"
 #define HA_STMT_SET_NAMES "SET NAMES 'utf8mb4'"
+#define HA_STMT_SHOW_TABLES "SHOW FULL TABLES FROM "
 
 // instance group user name
 static char ha_inst_group_user[HA_MAX_MYSQL_USERNAME_LEN + 1] = {0};
@@ -46,37 +47,6 @@ static char ha_inst_group_passwd[HA_MAX_PASSWD_LEN + 1] = {0};
 
 // mysql connection used to replay SQL log
 static MYSQL *ha_mysql = NULL;
-
-// update instance state cached record, called in 'replay_sql_stmt_loop'
-// and 'write_sql_log_and_states'
-int ha_update_cached_record(HASH &cache, PSI_memory_key mem_key,
-                            const char *cached_record_key, int sql_id) {
-  int rc = 0;
-  ha_cached_record *cached_record = get_cached_record(cache, cached_record_key);
-  if (cached_record) {
-    cached_record->sql_id = sql_id;
-  } else {
-    ha_cached_record *record = NULL;
-    char *key = NULL;
-    int key_len = strlen(cached_record_key);
-    if (!sdb_multi_malloc(mem_key, MYF(MY_WME | MY_ZEROFILL), &record,
-                          sizeof(ha_cached_record), &key, key_len + 1, NullS)) {
-      rc = SDB_HA_OOM;
-      goto error;
-    }
-    snprintf(key, key_len + 1, "%s", cached_record_key);
-    key[key_len] = '\0';
-    record->key = key;
-    record->sql_id = sql_id;
-    if (my_hash_insert(&cache, (uchar *)record)) {
-      rc = SDB_HA_OOM;
-    }
-  }
-done:
-  return rc;
-error:
-  goto done;
-}
 
 // create THD for creating instance group user
 static THD *create_ha_thd() {
@@ -499,17 +469,16 @@ static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
 #endif
 
   bson::BSONObj obj;
-  Sdb_cl inst_group_config_cl;
+  Sdb_cl config_cl;
 
-  rc = sdb_conn.get_cl(ha_thread->sdb_group_name, HA_INST_GROUP_CONFIG_CL,
-                       inst_group_config_cl);
+  rc = sdb_conn.get_cl(ha_thread->sdb_group_name, HA_CONFIG_CL, config_cl);
   HA_RC_CHECK(rc, error,
               "HA: Unable to get instance group configuration table: %s, "
               "sequoiadb error: %s",
-              HA_INST_GROUP_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+              HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  if (0 == (rc = inst_group_config_cl.query())) {
-    rc = inst_group_config_cl.next(obj, false);
+  if (0 == (rc = config_cl.query())) {
+    rc = config_cl.next(obj, false);
   }
   HA_RC_CHECK(rc, error,
               "HA: Failed to get instance group configuration, "
@@ -625,19 +594,20 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
   char *sdb_group_name = ha_thread->sdb_group_name;
   DBUG_ASSERT(local_instance_id > 0);
 
-  Sdb_cl gstate_cl, config_cl, sql_log_cl;
+  Sdb_cl inst_state_cl, registry_cl, sql_log_cl;
   bson::BSONObj result, cond;
 
-  rc = sdb_conn.get_cl(sdb_group_name, HA_GLOBAL_STATE_CL, gstate_cl);
-  HA_RC_CHECK(rc, error,
-              "HA: Unable to get global state table '%s', sequoiadb error: %s",
-              HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+  rc = sdb_conn.get_cl(sdb_group_name, HA_INSTANCE_STATE_CL, inst_state_cl);
+  HA_RC_CHECK(
+      rc, error,
+      "HA: Unable to get instance state table '%s', sequoiadb error: %s",
+      HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_CONFIG_CL, config_cl);
+  rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl);
   HA_RC_CHECK(rc, error,
-              "HA: Unable to get global configuration "
+              "HA: Unable to get global registry "
               "table '%s', sequoiadb error: %s",
-              HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+              HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
 
   rc = sdb_conn.get_cl(sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
   HA_RC_CHECK(rc, error,
@@ -645,16 +615,16 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
               HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
 
   cond = BSON(HA_FIELD_INSTANCE_ID << BSON("$ne" << local_instance_id));
-  // fetch other instances's configuration from 'HAGlobalState'
-  rc = gstate_cl.query(cond);
+  // fetch other instances's configuration from 'HAInstanceState'
+  rc = inst_state_cl.query(cond);
   do {
-    rc = rc ? rc : gstate_cl.next(result, false);
+    rc = rc ? rc : inst_state_cl.next(result, false);
     if (rc) {
       // do not print errors into error log, or automated testing may fail
       sql_print_information(
           "HA: Failed to get candidate dump source from "
           "'%s', sequoiadb error: %s",
-          HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+          HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
       goto error;
     }
 
@@ -675,8 +645,8 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
 
     // query 'HAConfig' by instance_id, get candidated instance information
     cond = BSON(HA_FIELD_INSTANCE_ID << instance_id);
-    rc = config_cl.query(cond);
-    rc = rc ? rc : config_cl.next(result, false);
+    rc = registry_cl.query(cond);
+    rc = rc ? rc : registry_cl.next(result, false);
     if (rc) {
       rc = 0;
       instance_id = HA_INVALID_INST_ID;
@@ -816,14 +786,14 @@ error:
   goto done;
 }
 
-// initialize current instance global and instance state by copying
-// candidated instance's global and instance state
+// initialize current instance and instance object state by copying
+// candidated instance's instace and instance object state
 static int copy_dump_source_state(ha_recover_replay_thread *ha_thread,
                                   Sdb_conn &sdb_conn,
                                   ha_dump_source &dump_source) {
   int rc = 0, sql_id = -1;
   bson::BSONObj cond, temp, obj, hint;
-  Sdb_cl gstate_cl, istate_cl;
+  Sdb_cl inst_state_cl, inst_obj_state_cl;
   char err_buf[HA_BUF_LEN] = {0};
   const char *sdb_group_name = ha_thread->sdb_group_name;
 
@@ -831,29 +801,32 @@ static int copy_dump_source_state(ha_recover_replay_thread *ha_thread,
   int instance_id = ha_thread->instance_id;
   DBUG_ASSERT(instance_id > 0);
 
-  rc = ha_get_global_state_cl(sdb_conn, sdb_group_name, gstate_cl);
-  HA_RC_CHECK(rc, done,
-              "HA: Failed to get global state table '%s', sequoiadb error: %s",
-              HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+  rc = ha_get_instance_state_cl(sdb_conn, sdb_group_name, inst_state_cl);
+  HA_RC_CHECK(
+      rc, done,
+      "HA: Failed to get instance state table '%s', sequoiadb error: %s",
+      HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  rc = ha_get_instance_state_cl(sdb_conn, sdb_group_name, istate_cl);
+  rc = ha_get_instance_object_state_cl(sdb_conn, sdb_group_name,
+                                       inst_obj_state_cl);
   HA_RC_CHECK(rc, done,
-              "HA: Failed to get instance state table '%s', "
+              "HA: Failed to get instance object state table '%s', "
               "sequoiadb error: %s",
-              HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+              HA_INSTANCE_OBJECT_STATE_CL,
+              ha_error_string(sdb_conn, rc, err_buf));
 
   cond = BSON(HA_FIELD_INSTANCE_ID << BSON("$et" << instance_id));
-  rc = istate_cl.del(cond);
+  rc = inst_obj_state_cl.del(cond);
   HA_RC_CHECK(rc, done,
-              "HA: Unable to delete instance state, sequoiadb error: %s",
+              "HA: Unable to delete instance object state, sequoiadb error: %s",
               ha_error_string(sdb_conn, rc, err_buf));
 
   // copy dump source state(sql_id) to current instance
   cond = BSON(HA_FIELD_INSTANCE_ID << dump_source.dump_source_id);
-  rc = gstate_cl.query(cond);
-  rc = rc ? rc : gstate_cl.next(obj, false);
+  rc = inst_state_cl.query(cond);
+  rc = rc ? rc : inst_state_cl.next(obj, false);
   HA_RC_CHECK(rc, done,
-              "HA: Unable to get dump source's global state, "
+              "HA: Unable to get dump source's instance state, "
               "sequoiadb error: %s",
               ha_error_string(sdb_conn, rc, err_buf));
 
@@ -861,37 +834,40 @@ static int copy_dump_source_state(ha_recover_replay_thread *ha_thread,
   sql_id = obj.getIntField(HA_FIELD_SQL_ID);
   temp = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_INSTANCE_ID
                                              << instance_id));
-  rc = gstate_cl.upsert(temp, cond);
+  rc = inst_state_cl.upsert(temp, cond);
   HA_RC_CHECK(rc, done,
-              "HA: Failed to initizlize global state, sequoiadb error: %s",
+              "HA: Failed to initizlize instance state, sequoiadb error: %s",
               ha_error_string(sdb_conn, rc, err_buf));
 
   cond = BSON(HA_FIELD_INSTANCE_ID << dump_source.dump_source_id);
-  rc = istate_cl.query(cond);
+  rc = inst_obj_state_cl.query(cond);
   do {
     const char *db_name = NULL, *tbl_name = NULL, *op_type = NULL;
     int sql_id = HA_INVALID_SQL_ID;
-    rc = rc ? rc : istate_cl.next(obj, false);
+    int cata_version = 0;
+    rc = rc ? rc : inst_obj_state_cl.next(obj, false);
     if (HA_ERR_END_OF_FILE == rc) {
       rc = 0;
       break;
     }
     HA_RC_CHECK(rc, done,
-                "HA: Unable to get dump source instance state, "
+                "HA: Unable to get dump source instance object state, "
                 "sequoiadb error: %s",
                 ha_error_string(sdb_conn, rc, err_buf));
     db_name = obj.getStringField(HA_FIELD_DB);
     tbl_name = obj.getStringField(HA_FIELD_TABLE);
     op_type = obj.getStringField(HA_FIELD_TYPE);
     sql_id = obj.getIntField(HA_FIELD_SQL_ID);
-    temp =
-        BSON(HA_FIELD_INSTANCE_ID << instance_id << HA_FIELD_DB << db_name
-                                  << HA_FIELD_TABLE << tbl_name << HA_FIELD_TYPE
-                                  << op_type << HA_FIELD_SQL_ID << sql_id);
-    rc = istate_cl.insert(temp, hint);
-    HA_RC_CHECK(rc, done,
-                "HA: Failed to initialize instance state, sequoiadb error: %s",
-                ha_error_string(sdb_conn, rc, err_buf));
+    cata_version = obj.getIntField(HA_FIELD_CAT_VERSION);
+    temp = BSON(HA_FIELD_INSTANCE_ID
+                << instance_id << HA_FIELD_DB << db_name << HA_FIELD_TABLE
+                << tbl_name << HA_FIELD_TYPE << op_type << HA_FIELD_SQL_ID
+                << sql_id << HA_FIELD_CAT_VERSION << cata_version);
+    rc = inst_obj_state_cl.insert(temp, hint);
+    HA_RC_CHECK(
+        rc, done,
+        "HA: Failed to initialize instance object state, sequoiadb error: %s",
+        ha_error_string(sdb_conn, rc, err_buf));
   } while (!rc);
 done:
   return rc;
@@ -902,7 +878,7 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
   int instance_id = 0;
-  Sdb_cl config_cl;
+  Sdb_cl registry_cl;
   bson::BSONObj cond, result, obj, hint;
   bson::BSONObjBuilder obj_builder;
 
@@ -910,23 +886,23 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
   rc = get_local_instance_id(instance_id);
   HA_RC_CHECK(rc, error, "HA: Unable to get instance ID from local file");
 
-  rc = ha_get_config_cl(sdb_conn, HA_GLOBAL_INFO, config_cl);
-  HA_RC_CHECK(rc, error, "HA: Unable to get global configuration table '%s'",
-              HA_CONFIG_CL);
+  rc = ha_get_registry_cl(sdb_conn, HA_GLOBAL_INFO, registry_cl);
+  HA_RC_CHECK(rc, error, "HA: Unable to get global registry table '%s'",
+              HA_REGISTRY_CL);
 
   rc = get_local_ip_address(ha_local_host_ip, HA_MAX_IP_LEN + 1);
   HA_RC_CHECK(rc, error, "HA: Failed to get local IP address");
 
   cond = BSON(HA_FIELD_INSTANCE_ID << instance_id);
-  rc = config_cl.query(cond);
+  rc = registry_cl.query(cond);
   if (0 == rc || HA_ERR_END_OF_FILE == rc) {
-    rc = config_cl.next(obj, false);
+    rc = registry_cl.next(obj, false);
     rc = (HA_ERR_END_OF_FILE == rc) ? 0 : rc;
   }
   HA_RC_CHECK(rc, error,
-              "HA: Unable to get instance global configuration from "
+              "HA: Unable to get instance configuration from "
               "'%s', sequoiadb error: %s",
-              HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+              HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
 
   obj_builder.append(HA_FIELD_IP, ha_local_host_ip);
   obj_builder.append(HA_FIELD_PORT, mysqld_port);
@@ -943,7 +919,7 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
     }
     // instance id is 0 means that 'myid' does not exists.
     obj = obj_builder.obj();
-    rc = config_cl.insert(obj, hint, 0, &result);
+    rc = registry_cl.insert(obj, hint, 0, &result);
     // the duplicate key error means the following situations:
     // 1. a new instance is added to the group and the port is already occupied
     //    by another instance on the same host
@@ -952,12 +928,12 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
     HA_RC_CHECK((SDB_IXM_DUP_KEY == get_sdb_code(rc)), error,
                 "HA: Mysql service port: %d is occupied by another instance on "
                 "the same host, please choose another service port or clear the"
-                "conflicted instance",
+                " conflicted instance",
                 mysqld_port);
     HA_RC_CHECK(rc, error,
                 "HA: Failed to register instance ID in '%s', "
                 "sequoiadb error: %s",
-                HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+                HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
     if (0 == instance_id) {
       instance_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
     }
@@ -965,11 +941,11 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
     // already exists, update config information
     bson::BSONObj rule_obj;
     rule_obj = BSON("$set" << obj_builder.obj());
-    rc = config_cl.update(rule_obj, cond);
+    rc = registry_cl.update(rule_obj, cond);
     HA_RC_CHECK(rc, error,
                 "HA: Failed to update 'IP', 'Port', 'HostName' and "
                 "'InstGroupName' configuration in '%s', sequoiadb error: %s",
-                HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+                HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
   }
   DBUG_ASSERT(instance_id > 0);
   ha_thread->instance_id = instance_id;
@@ -982,44 +958,46 @@ error:
 }
 
 static int check_if_local_data_expired(ha_recover_replay_thread *ha_thread,
-                                       Sdb_conn &sdb_conn, int &expired) {
+                                       Sdb_conn &sdb_conn, bool &expired) {
   int rc = 0;
-  Sdb_cl gstate_cl, sql_log_cl;
+  Sdb_cl inst_state_cl, sql_log_cl;
   longlong count = 0;
   char err_buf[HA_BUF_LEN] = {0};
   int instance_id = ha_thread->instance_id, sql_id = -1;
 
   DBUG_ASSERT(instance_id > 0);
-  rc = ha_get_global_state_cl(sdb_conn, ha_thread->sdb_group_name, gstate_cl);
+  rc = ha_get_instance_state_cl(sdb_conn, ha_thread->sdb_group_name,
+                                inst_state_cl);
+  HA_RC_CHECK(
+      rc, error,
+      "HA: Unable to get instance state table '%s', sequoiadb error: %s",
+      HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+  rc = inst_state_cl.get_count(count);
   HA_RC_CHECK(rc, error,
-              "HA: Unable to get global state table '%s', sequoiadb error: %s",
-              HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-  rc = gstate_cl.get_count(count);
-  HA_RC_CHECK(rc, error,
-              "HA: Unable to get the number of records for global "
+              "HA: Unable to get the number of records for instance "
               "state table '%s', sequoiadb error: %s",
-              HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+              HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  // global state table is not empty, check if current
+  // instance state table is not empty, check if current
   // instance global sql_id is purged(removed from 'HASQLLog')
   if (count) {
     bson::BSONObj result, cond;
     cond = BSON(HA_FIELD_INSTANCE_ID << instance_id);
-    rc = gstate_cl.query(cond);
-    rc = rc ? rc : gstate_cl.next(result, false);
+    rc = inst_state_cl.query(cond);
+    rc = rc ? rc : inst_state_cl.next(result, false);
     if (HA_ERR_END_OF_FILE == rc) {
       sql_print_information(
-          "HA: Unable to find global state in '%s', "
+          "HA: Unable to find instance state in '%s', "
           "a new instance added to instance group",
-          HA_GLOBAL_STATE_CL);
+          HA_INSTANCE_STATE_CL);
       rc = 0;
       expired = true;
       goto done;
     }
     HA_RC_CHECK(rc, error,
-                "HA: Failed to query global state table '%s', "
+                "HA: Failed to query instance state table '%s', "
                 "sequoiadb error: %s",
-                HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+                HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
     sql_id = result.getIntField(HA_FIELD_SQL_ID);
     DBUG_ASSERT(sql_id >= 0);
@@ -1041,28 +1019,28 @@ static int check_if_local_data_expired(ha_recover_replay_thread *ha_thread,
                 "HA: Failed to query SQL log table '%s', sequoiadb error: %s",
                 HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
     expired = false;
-  } else {  // no records in 'HAGlobalState'
+  } else {  // no records in 'HAInstanceState'
     bson::BSONObj obj, cond, hint;
-    sql_print_information("HA: Initialize global state table '%s'",
-                          HA_GLOBAL_STATE_CL);
+    sql_print_information("HA: Initialize instance state table '%s'",
+                          HA_INSTANCE_STATE_CL);
     obj = BSON(HA_FIELD_JOIN_ID << 1 << HA_FIELD_INSTANCE_ID << instance_id
                                 << HA_FIELD_SQL_ID << 0);
-    rc = gstate_cl.insert(obj, hint);
+    rc = inst_state_cl.insert(obj, hint);
     if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
       sql_print_information(
-          "HA: The global state table '%s' has been initialized",
-          HA_GLOBAL_STATE_CL);
+          "HA: The instance state table '%s' has been initialized",
+          HA_INSTANCE_STATE_CL);
       cond = BSON(HA_FIELD_JOIN_ID << 1);
       // blocked until first instance finish registration
-      gstate_cl.query(cond);
+      inst_state_cl.query(cond);
       expired = true;
       rc = 0;
       goto done;
     }
     HA_RC_CHECK(rc, error,
-                "HA: Failed to initialize global state table '%s', "
+                "HA: Failed to initialize instance state table '%s', "
                 "sequoiadb error: %s",
-                HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+                HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
     // current instance is the first instance in current instance group,
     // persist instance ID to local file
@@ -1071,7 +1049,8 @@ static int check_if_local_data_expired(ha_recover_replay_thread *ha_thread,
                 instance_id);
 
     expired = false;
-    sql_print_information("HA: Initialization of global state table succeeded");
+    sql_print_information(
+        "HA: Completed initialization of instance state table");
   }
 
   if (expired) {
@@ -1171,53 +1150,6 @@ static int clear_local_meta_data(MYSQL *conn) {
                 mysql_error(conn));
   }
   sql_print_information("HA: Clearing local metadata succeeded");
-done:
-  return rc;
-error:
-  goto done;
-}
-
-// clear current instance state and init its global state
-static int init_global_state(ha_recover_replay_thread *ha_thread,
-                             Sdb_conn &sdb_conn) {
-  int rc = 0;
-  bson::BSONObj cond, obj;
-  Sdb_cl gstate_cl, istate_cl, sql_log_cl;
-  char err_buf[HA_BUF_LEN] = {0};
-  char *sdb_group_name = ha_thread->sdb_group_name;
-
-  // clear current instance state
-  int instance_id = ha_thread->instance_id;
-  DBUG_ASSERT(instance_id > 0);
-  cond = BSON(HA_FIELD_INSTANCE_ID << BSON("$et" << instance_id));
-
-  rc = ha_get_global_state_cl(sdb_conn, sdb_group_name, gstate_cl);
-  HA_RC_CHECK(rc, error,
-              "HA: Unable to get global state table '%s', sequoiadb error: %s",
-              HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-  rc = ha_get_instance_state_cl(sdb_conn, sdb_group_name, istate_cl);
-  HA_RC_CHECK(
-      rc, error,
-      "HA: Unable to get instance state table '%s', sequoiadb error: %s",
-      HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-  rc = sdb_conn.get_cl(sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
-  HA_RC_CHECK(rc, error,
-              "HA: Unable to get sql log table '%s', sequoiadb error: %s",
-              HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-  rc = istate_cl.del(cond);
-  HA_RC_CHECK(rc, error,
-              "HA: Failed to clear instance state, sequoiadb error: %s",
-              ha_error_string(sdb_conn, rc, err_buf));
-  obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << 0 << HA_FIELD_INSTANCE_ID
-                                            << instance_id));
-  // init current instance's global state to 0
-  rc = gstate_cl.upsert(obj, cond);
-  HA_RC_CHECK(rc, error,
-              "HA: Failed to initialize global state, sequoiadb error: %s",
-              ha_error_string(sdb_conn, rc, err_buf));
 done:
   return rc;
 error:
@@ -1434,7 +1366,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
 
   int rc = 0;
   int glob_executed_sql_id;
-  Sdb_cl gstate_cl, sql_log_cl, istate_cl;
+  Sdb_cl inst_state_cl, sql_log_cl, inst_obj_state_cl;
   bson::BSONObjBuilder builder, simple_builder;
   bson::BSONObj result, cond, obj, order_by, attr;
   struct timespec abstime;
@@ -1450,38 +1382,42 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
   int client_charset_num = 0;
   int owner = HA_INVALID_INST_ID;
   int sql_id = HA_INVALID_SQL_ID;
+  int cata_version = -1;
 
   DBUG_ENTER("replay_sql_stmt_loop");
   DBUG_ASSERT(ha_thread->instance_id > 0);
 
-  rc = sdb_conn.get_cl(sdb_group_name, HA_GLOBAL_STATE_CL, gstate_cl);
-  HA_RC_CHECK(rc, error,
-              "HA: Unable to get global state table '%s', sequoiadb error: %s",
-              HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+  rc = sdb_conn.get_cl(sdb_group_name, HA_INSTANCE_STATE_CL, inst_state_cl);
+  HA_RC_CHECK(
+      rc, error,
+      "HA: Unable to get instance state table '%s', sequoiadb error: %s",
+      HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  // get global executed SQL ID from 'HAGlobalState' for current instance
+  // get global executed SQL ID from 'HAInstanceState' for current instance
   cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread->instance_id);
-  rc = gstate_cl.query(cond);
-  rc = rc ? rc : gstate_cl.next(result, false);
+  rc = inst_state_cl.query(cond);
+  rc = rc ? rc : inst_state_cl.next(result, false);
   HA_RC_CHECK(rc, error,
-              "HA: Unable to find global state in '%s', sequoiadb error: %s",
-              HA_GLOBAL_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+              "HA: Unable to find instance state in '%s', sequoiadb error: %s",
+              HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
   rc = sdb_conn.get_cl(sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
   HA_RC_CHECK(rc, error,
               "HA: Unable to get SQL log table '%s', sequoiadb error: %s",
               HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  rc = ha_get_instance_state_cl(sdb_conn, sdb_group_name, istate_cl);
+  rc = ha_get_instance_object_state_cl(sdb_conn, sdb_group_name,
+                                       inst_obj_state_cl);
   HA_RC_CHECK(rc, error,
-              "HA: Unable to get instance state table '%s', "
+              "HA: Unable to get instance object state table '%s', "
               "sequoiadb error: %s",
-              HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+              HA_INSTANCE_OBJECT_STATE_CL,
+              ha_error_string(sdb_conn, rc, err_buf));
 
   glob_executed_sql_id = result.getIntField(HA_FIELD_SQL_ID);
   rc = (glob_executed_sql_id < 0) ? 1 : 0;
-  HA_RC_CHECK(rc, error, "HA: Wrong global state '%d' in '%s'",
-              glob_executed_sql_id, HA_GLOBAL_STATE_CL);
+  HA_RC_CHECK(rc, error, "HA: Wrong instance state '%d' in '%s'",
+              glob_executed_sql_id, HA_INSTANCE_STATE_CL);
 
   SDB_LOG_INFO("HA: Instance %d start with global executed SQL ID: %d",
                ha_thread->instance_id, glob_executed_sql_id);
@@ -1550,12 +1486,14 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
           owner = elem.numberInt();
         } else if (0 == strcmp(elem.fieldName(), HA_FIELD_SQL_ID)) {
           sql_id = elem.numberInt();
+        } else if (0 == strcmp(elem.fieldName(), HA_FIELD_CAT_VERSION)) {
+          cata_version = elem.numberInt();
         }
       }
 
       DBUG_ASSERT(sql_id >= 0);
       if (owner == ha_thread->instance_id) {
-        // update its own global state
+        // update its own instance state
         builder.reset();
         {
           bson::BSONObjBuilder sub_builder(builder.subobjStart("$set"));
@@ -1568,9 +1506,9 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         simple_builder.append(HA_FIELD_INSTANCE_ID, ha_thread->instance_id);
         cond = simple_builder.done();
 
-        rc = gstate_cl.upsert(obj, cond);
+        rc = inst_state_cl.upsert(obj, cond);
         HA_RC_CHECK(rc, sleep_secs,
-                    "HA: Failed to update global state for current instance, "
+                    "HA: Failed to update instance state for current instance, "
                     "sequoiadb error: %s",
                     ha_error_string(sdb_conn, rc, err_buf));
         glob_executed_sql_id = sql_id;
@@ -1657,7 +1595,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                   query, sql_id, mysql_error(ha_mysql));
       SDB_LOG_DEBUG("HA: Replay of '%s' succeeded", query);
 
-      // update instance state and global state
+      // update instance object state and instance state
       for (int try_count = MAX_TRY_COUNT; try_count; try_count--) {
         simple_builder.reset();
         simple_builder.append(HA_FIELD_DB, db_name);
@@ -1670,10 +1608,11 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         {
           bson::BSONObjBuilder sub_builder(builder.subobjStart("$set"));
           sub_builder.append(HA_FIELD_SQL_ID, sql_id);
+          sub_builder.append(HA_FIELD_CAT_VERSION, cata_version);
           sub_builder.doneFast();
         }
         obj = builder.done();
-        rc = istate_cl.upsert(obj, cond);
+        rc = inst_obj_state_cl.upsert(obj, cond);
         if (rc) {
           sleep(1);
           continue;
@@ -1682,7 +1621,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         simple_builder.reset();
         simple_builder.append(HA_FIELD_INSTANCE_ID, ha_thread->instance_id);
         cond = simple_builder.done();
-        rc = gstate_cl.upsert(obj, cond);
+        rc = inst_state_cl.upsert(obj, cond);
         if (rc) {
           sleep(1);
           continue;
@@ -1690,22 +1629,20 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         glob_executed_sql_id = sql_id;
         break;
       }
-      // update cached instance state
+      // update cached instance object state
       snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
                db_name, table_name, op_type);
       if (0 == rc) {
-        mysql_mutex_lock(&ha_thread->inst_cache_mutex);
-        rc = ha_update_cached_record(ha_thread->inst_state_cache,
-                                     HA_KEY_MEM_INST_STATE_CACHE,
-                                     cached_record_key, sql_id);
-        mysql_mutex_unlock(&ha_thread->inst_cache_mutex);
+        SDB_LOG_DEBUG("HA: Update local '%s' cata version to %d",
+                      cached_record_key, cata_version);
+        rc = ha_update_cached_record(cached_record_key, sql_id, cata_version);
         // if its oom, stop current instance
         if (rc) {
           goto error;
         }
       }
       HA_RC_CHECK(rc, sleep_secs,
-                  "HA: Failed to update instance and global state, "
+                  "HA: Failed to update instance and instance state, "
                   "sequoiadb error: %s",
                   ha_error_string(sdb_conn, rc, err_buf));
       // flush privileges after replay DCL
@@ -1770,63 +1707,51 @@ void recover_and_replay_thread_end(THD *thd) {
 #endif
 }
 
-// load 'HAInstanceState' table's records into cached instance state
-// (ha_thread.inst_state_cache) for current instance
-int load_inst_state_into_cache(ha_recover_replay_thread *ha_thread,
-                               Sdb_conn &sdb_conn, HASH &cache) {
-  DBUG_ENTER("load_inst_state_into_cache");
-  int rc = 0;
-  Sdb_cl inst_state_cl;
+// load 'HAInstanceObjectState' table's records into cached instance
+// object state(ha_thread.inst_state_caches) for current instance
+int load_inst_obj_state_into_cache(ha_recover_replay_thread *ha_thread,
+                                   Sdb_conn &sdb_conn) {
+  DBUG_ENTER("load_inst_obj_state_into_cache");
+  int rc = 0, count = 0;
+  char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
+  Sdb_cl inst_obj_state_cl;
   bson::BSONObj cond, result;
   char err_buf[HA_BUF_LEN] = {0};
 
-  SDB_LOG_INFO("HA: Load instance state into cache");
-  rc = ha_get_instance_state_cl(sdb_conn, ha_thread->sdb_group_name,
-                                inst_state_cl);
+  SDB_LOG_INFO("HA: Load instance object state into cache");
+  rc = ha_get_instance_object_state_cl(sdb_conn, ha_thread->sdb_group_name,
+                                       inst_obj_state_cl);
   HA_RC_CHECK(rc, error,
-              "HA: Unable to get instance state table '%s', "
+              "HA: Unable to get instance object state table '%s', "
               "sequoiadb error: %s",
-              HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+              HA_INSTANCE_OBJECT_STATE_CL,
+              ha_error_string(sdb_conn, rc, err_buf));
 
   cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread->instance_id);
-  rc = inst_state_cl.query(cond);
+  rc = inst_obj_state_cl.query(cond);
   HA_RC_CHECK(rc, error,
               "HA: Failed to get records from %s for instance %d, "
               "sequoiadb error: %s",
-              HA_INSTANCE_STATE_CL, ha_thread->instance_id,
+              HA_INSTANCE_OBJECT_STATE_CL, ha_thread->instance_id,
               ha_error_string(sdb_conn, rc, err_buf));
-  while (!inst_state_cl.next(result, false) && !result.isEmpty()) {
+  while (!inst_obj_state_cl.next(result, false) && !result.isEmpty()) {
+    count++;
     const char *db_name = result.getStringField(HA_FIELD_DB);
     const char *table_name = result.getStringField(HA_FIELD_TABLE);
     const char *op_type = result.getStringField(HA_FIELD_TYPE);
     int sql_id = result.getIntField(HA_FIELD_SQL_ID);
-    int key_len = strlen(db_name) + strlen(table_name) + strlen(op_type) + 2;
-    ha_cached_record *record = NULL;
-    char *key = NULL;
+    int cata_version = result.getIntField(HA_FIELD_CAT_VERSION);
 
-    if (NULL == sdb_multi_malloc(HA_KEY_MEM_INST_STATE_CACHE,
-                                 MYF(MY_WME | MY_ZEROFILL), &record,
-                                 sizeof(ha_cached_record), &key, key_len + 1,
-                                 NullS)) {
+    snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
+             db_name, table_name, op_type);
+    if (ha_update_cached_record(cached_record_key, sql_id, cata_version)) {
       rc = SDB_HA_OOM;
-      sql_print_information(
-          "HA: Out of memory while initializing local instance cache");
-      goto error;
-    }
-
-    snprintf(key, key_len + 1, "%s-%s-%s", db_name, table_name, op_type);
-    key[key_len] = '\0';
-    record->key = key;
-    record->sql_id = sql_id;
-    if (my_hash_insert(&cache, (uchar *)record)) {
-      rc = SDB_HA_OOM;
-      sql_print_information(
-          "HA: Out of memory while loading instance state to cache");
+      SDB_LOG_ERROR("HA: Out of memory while loading instance object state");
       goto error;
     }
   }
-  sql_print_information("HA: Loading instance state complete, load %ld records",
-                        cache.records);
+  SDB_LOG_INFO("HA: Completed load instance object state, found %d records",
+               count);
 done:
   DBUG_RETURN(rc);
 error:
@@ -1862,7 +1787,8 @@ void wake_up_sql_persistence_threads(ha_recover_replay_thread *ha_thread) {
 void *ha_recover_and_replay(void *arg) {
 // HA function is not supported for embedded mysql
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
-  int rc = 0, local_metadata_expired = false;
+  int rc = 0;
+  bool local_metadata_expired = false;
   char err_buf[HA_BUF_LEN] = {0};
   ha_recover_replay_thread *ha_thread = (ha_recover_replay_thread *)arg;
   DBUG_ASSERT(NULL != ha_thread);
@@ -1921,10 +1847,9 @@ void *ha_recover_and_replay(void *arg) {
       HA_RC_CHECK(rc, error, "HA: Failed to recover metadata");
     }
 
-    // load current instance state into cache
-    rc = load_inst_state_into_cache(ha_thread, sdb_conn,
-                                    ha_thread->inst_state_cache);
-    HA_RC_CHECK(rc, error, "HA: Failed to load instance state to cache");
+    // load current instance object state into cache
+    rc = load_inst_obj_state_into_cache(ha_thread, sdb_conn);
+    HA_RC_CHECK(rc, error, "HA: Failed to load instance object state to cache");
 
     rc = sdb_conn.commit_transaction();
     HA_RC_CHECK(rc, error,

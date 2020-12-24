@@ -104,16 +104,79 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
+static int clear_sql_inst_group(ha_tool_args &cmd_args, sdbclient::sdb &conn,
+                                string orig_name) {
+  int rc = 0;
+  bson::BSONObj cond;
+  sdbclient::sdbCollectionSpace global_info_cs;
+  sdbclient::sdbCollection registry_cl;
+  sdbclient::sdbCollectionSpace inst_group_cs;
+
+  rc = conn.getCollectionSpace(cmd_args.inst_group_name.c_str(), inst_group_cs);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    cerr << "Error: instance group '" << orig_name << "' doesn't exist" << endl;
+    return rc;
+  } else if (0 != rc) {
+    cerr << "Error: failed to get insance group '" << cmd_args.inst_group_name
+         << "' configuration database, sequoiadb error: "
+         << ha_sdb_error_string(conn, rc) << endl;
+    return rc;
+  }
+
+  // drop instance group configuration database
+  rc = conn.dropCollectionSpace(cmd_args.inst_group_name.c_str());
+  // ignore 'SDB_DMS_CS_NOTEXIST' error
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    rc = 0;
+  }
+  HA_TOOL_RC_CHECK(rc, rc,
+                   "Error: failed to clear instance group '%s', "
+                   "sequoiadb error: %s",
+                   cmd_args.inst_group_name.c_str(),
+                   ha_sdb_error_string(conn, rc));
+
+  // delete instance group global configuration from 'HARegistry'
+  rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    cout << "Error: global configuration database doesn't exist" << endl;
+    return rc;
+  }
+  HA_TOOL_RC_CHECK(rc, rc,
+                   "Error: failed to get global configuration database '%s', "
+                   "sequoiadb error: %s",
+                   HA_GLOBAL_INFO, ha_sdb_error_string(conn, rc));
+
+  // if 'HARegistry' does not exist, do not report error
+  rc = global_info_cs.getCollection(HA_REGISTRY_CL, registry_cl);
+  if (SDB_DMS_NOTEXIST == rc) {
+    cout << "Info: completed cleanup of instance group '" << orig_name << "'"
+         << endl;
+    return SDB_HA_OK;
+  }
+  HA_TOOL_RC_CHECK(rc, rc,
+                   "Error: failed to get global configuration table '%s.%s', "
+                   "sequoiadb error: %s",
+                   HA_GLOBAL_INFO, HA_REGISTRY_CL,
+                   ha_sdb_error_string(conn, rc));
+
+  cond = BSON(HA_FIELD_INSTANCE_GROUP_NAME << orig_name.c_str());
+  rc = registry_cl.del(cond);
+  HA_TOOL_RC_CHECK(rc, rc,
+                   "Error: failed to delete instance group "
+                   "global configuration from '%s.%s', sequoiadb error: %s",
+                   HA_GLOBAL_INFO, HA_REGISTRY_CL,
+                   ha_sdb_error_string(conn, rc));
+  cout << "Info: completed cleanup of instance group '" << orig_name << "'"
+       << endl;
+  return rc;
+}
+
 int main(int argc, char *argv[]) {
   int rc = 0;
   string orig_name;
   sdbclient::sdb conn;
-  bson::BSONObj result, cond;
-  sdbclient::sdbCollectionSpace global_info_cs;
-  sdbclient::sdbCollection config_cl;
   ha_tool_args cmd_args;
   bool no_passwd_login = false;
-  const char *sdb_err = "";
 
   try {
     ha_init_default_args(cmd_args);
@@ -134,81 +197,16 @@ int main(int argc, char *argv[]) {
       valid_words.insert("Y");
       valid_words.insert("y");
       cout << "Do you really want to clear instance group '" << orig_name
-           << "' [y/N]? ";
+             << "' [y/N]? ";
       getline(cin, choose);
       if (1 != valid_words.count(choose)) {
         return 0;
       }
     }
-
-    sdbclient::sdbCollectionSpace inst_group_cs;
-    rc = conn.getCollectionSpace(cmd_args.inst_group_name.c_str(),
-                                 inst_group_cs);
-    if (SDB_DMS_CS_NOTEXIST == rc) {
-      cerr << "Error: instance group '" << orig_name << "' doesn't exist"
-           << endl;
-      return rc;
-    } else if (0 != rc) {
-      sdb_err = ha_sdb_error_string(conn, rc);
-      cerr << "Error: failed to get collection space '"
-           << cmd_args.inst_group_name << "', sequoiadb error: " << sdb_err
-           << endl;
-      return rc;
-    }
-
-    // drop instance group collection space
-    rc = conn.dropCollectionSpace(cmd_args.inst_group_name.c_str());
-    // ignore 'SDB_DMS_CS_NOTEXIST' error
-    if (SDB_DMS_CS_NOTEXIST == rc) {
-      rc = 0;
-    } else if (rc) {
-      sdb_err = ha_sdb_error_string(conn, rc);
-    } else {
-      sdb_err = "";
-    }
-    HA_TOOL_RC_CHECK(rc, rc,
-                     "Error: failed to clear instance group '%s', "
-                     "sequoiadb error: %s",
-                     cmd_args.inst_group_name.c_str(), sdb_err);
-
-    // delete instance group global configuration from 'HAConfig'
-    rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
-    sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
-    if (SDB_DMS_CS_NOTEXIST == rc) {
-      cout << "Warning: the global configuration database doesn't exist"
-           << endl;
-      return SDB_HA_OK;
-    }
-    HA_TOOL_RC_CHECK(rc, rc,
-                     "Error: failed to get global configuration database '%s', "
-                     "sequoiadb error: %s",
-                     HA_GLOBAL_INFO, sdb_err);
-
-    // if 'HAConfig' does not exist, do not report error
-    rc = global_info_cs.getCollection(HA_CONFIG_CL, config_cl);
-    if (SDB_DMS_NOTEXIST == rc) {
-      cout << "Info: completed cleanup of instance group '" << orig_name << "'"
-           << endl;
-      return SDB_HA_OK;
-    }
-    sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
-    HA_TOOL_RC_CHECK(rc, rc,
-                     "Error: failed to get global configuration table '%s.%s', "
-                     "sequoiadb error: %s",
-                     HA_GLOBAL_INFO, HA_CONFIG_CL, sdb_err);
-
-    cond = BSON(HA_FIELD_INSTANCE_GROUP_NAME << orig_name.c_str());
-    rc = config_cl.del(cond);
-    sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
-    HA_TOOL_RC_CHECK(rc, rc,
-                     "Error: failed to delete instance group "
-                     "global configuration from '%s.%s', sequoiadb error: %s",
-                     HA_GLOBAL_INFO, HA_CONFIG_CL, sdb_err);
-    cout << "Info: completed cleanup of instance group '" << orig_name << "'"
-         << endl;
+    rc = clear_sql_inst_group(cmd_args, conn, orig_name);
   } catch (std::exception &e) {
     cerr << "Error: unexpected error: " << e.what() << endl;
     return SDB_HA_EXCEPTION;
   }
-  return 0;
+  return rc;
 }

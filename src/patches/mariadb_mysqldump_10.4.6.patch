@@ -1,6 +1,8 @@
---- mysqldump.c	2020-07-13 16:28:16.509054311 +0800
-+++ mysqldump_10.4.6.c	2020-07-13 16:25:56.129058093 +0800
-@@ -115,6 +115,7 @@
+diff --git a/mariadb-v10.4.6/mysqldump.c b/mariadb-v10.4.6/mysqldump.c
+index 38db869..eb90108 100644
+--- a/mariadb-v10.4.6/mysqldump.c
++++ b/mariadb-v10.4.6/mysqldump.c
+@@ -115,6 +115,7 @@ static my_bool  verbose= 0, opt_no_create_info= 0, opt_no_data= 0, opt_no_data_m
                  opt_events= 0, opt_comments_used= 0,
                  opt_alltspcs=0, opt_notspcs= 0, opt_logging,
                  opt_drop_trigger= 0 ;
@@ -8,7 +10,7 @@
  static my_bool insert_pat_inited= 0, debug_info_flag= 0, debug_check_flag= 0,
                 select_field_names_inited= 0;
  static ulong opt_max_allowed_packet, opt_net_buffer_length;
-@@ -551,6 +552,9 @@
+@@ -551,6 +552,9 @@ static struct my_option my_long_options[] =
     "Default authentication client-side plugin to use.",
     &opt_default_auth, &opt_default_auth, 0,
     GET_STR, REQUIRED_ARG, 0, 0, 0, 0, 0, 0},
@@ -18,7 +20,7 @@
    {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
  };
  
-@@ -6178,6 +6182,12 @@
+@@ -6178,6 +6182,12 @@ int main(int argc, char **argv)
    if (opt_single_transaction && do_unlock_tables(mysql)) /* unlock but no commit! */
      goto err;
  

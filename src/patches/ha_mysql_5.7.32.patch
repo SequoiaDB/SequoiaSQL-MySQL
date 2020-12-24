@@ -1,18 +1,327 @@
---- sql_parse.cc	2020-09-14 10:26:40.310982901 +0800
-+++ sql_parse_changed.cc	2020-09-14 10:31:20.734975346 +0800
-@@ -5003,6 +5003,15 @@
+diff --git a/mysql-v5.7.32/sp_head.cc b/mysql-v5.7.32/sp_head.cc
+index 7d4a19e..5fdd300 100644
+--- a/mysql-v5.7.32/sp_head.cc
++++ b/mysql-v5.7.32/sp_head.cc
+@@ -46,6 +46,7 @@
+ #include <my_user.h>           // parse_user
+ #include "mysql/psi/mysql_statement.h"
+ #include "mysql/psi/mysql_sp.h"
++#include "sql_audit.h"
+ 
+ #ifdef HAVE_PSI_INTERFACE
+ void init_sp_psi_keys()
+@@ -833,6 +834,49 @@ bool sp_head::execute(THD *thd, bool merge_da_on_success)
+     /* Reset sp_rcontext::end_partial_result_set flag. */
+     thd->sp_runtime_ctx->end_partial_result_set= FALSE;
+ 
++#ifndef EMBEDDED_LIBRARY
++    extern char *ha_inst_group_name;
++    if (err_status && thd->get_stmt_da()->is_error() && 
++        ha_inst_group_name && 0 != strlen(ha_inst_group_name) &&
++        !thd->in_sub_stmt) 
++    {
++      uint mysql_errno = thd->get_stmt_da()->mysql_errno();
++      // notify HA set retry flag
++      mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                         0, "SetDMLRetryFlag", 15);
++      if (mysql_errno && !thd->get_stmt_da()->is_set()) 
++      {
++        // 1. prepare-execution
++        if (thd->rewritten_query.length())
++          thd->rewritten_query.mem_free();
++        
++        // 2. reexecute
++        err_status = i->execute(thd, &ip);
++        
++        // 3. post-execution
++        thd->m_digest = parent_digest;
++        if (i->free_list)
++          cleanup_items(i->free_list);
++        if (thd->locked_tables_mode <= LTM_LOCK_TABLES)
++        {
++          thd->user_var_events.clear();
++          thd->user_var_events_alloc= NULL;//DEBUG
++        }
++        
++        thd->cleanup_after_query();
++        free_root(&execute_mem_root, MYF(0));
++        
++        if (!thd->is_fatal_error && !thd->killed_errno() &&
++          thd->sp_runtime_ctx->handle_sql_condition(thd, &ip, i))
++        {
++          err_status= FALSE;
++        }
++        thd->sp_runtime_ctx->end_partial_result_set= FALSE;
++      }
++      mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                         0, "ResetDMLRetryFlag", 17);
++    }
++#endif
+   } while (!err_status && !thd->killed && !thd->is_fatal_error);
+ 
+ #if defined(ENABLED_PROFILING)
+diff --git a/mysql-v5.7.32/sp_instr.cc b/mysql-v5.7.32/sp_instr.cc
+index 48d1742..77338bb 100644
+--- a/mysql-v5.7.32/sp_instr.cc
++++ b/mysql-v5.7.32/sp_instr.cc
+@@ -44,6 +44,7 @@
+ 
+ #include "trigger.h"                  // Trigger
+ #include "table_trigger_dispatcher.h" // Table_trigger_dispatcher
++#include "sql_audit.h"
+ 
+ 
+ class Cmp_splocal_locations :
+@@ -380,6 +381,25 @@ bool sp_lex_instr::reset_lex_and_exec_core(THD *thd,
+ 
+   if (!error)
+   {
++#ifndef EMBEDDED_LIBRARY
++    // notify HA check state for routines, 
++    // handle sql 'set m:= (select c1, c2,... cn from t1)' in function or procedure
++    {
++      extern char *ha_inst_group_name;
++      Sroutine_hash_entry *sroutine_to_open = thd->lex->sroutines_list.first;
++      enum enum_sql_command sql_cmd = thd->lex->sql_command;
++      if (sroutine_to_open != NULL && !thd->in_sub_stmt &&
++         (SQLCOM_END == sql_cmd || SQLCOM_SET_OPTION == sql_cmd) &&
++          ha_inst_group_name && 0 != strlen(ha_inst_group_name))
++      {
++        enum enum_sql_command saved_cmd = thd->lex->sql_command;
++        thd->lex->sql_command = SQLCOM_SET_OPTION;
++        mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                           0, "PreCheckSQLObjects", 18);
++        thd->lex->sql_command = saved_cmd;
++      }
++    }
++#endif
+     if (open_tables)
+     {
+       // todo: break this block out into a separate function.
+@@ -452,6 +472,19 @@ bool sp_lex_instr::reset_lex_and_exec_core(THD *thd,
+       error= exec_core(thd, nextp);
+       DBUG_PRINT("info",("exec_core returned: %d", error));
+     }
++
++#ifndef EMBEDDED_LIBRARY
++    // notify HA store lex for current statement
++    {
++      extern char *ha_inst_group_name;
++      if (error && thd->get_stmt_da()->is_error() && !thd->in_sub_stmt &&
++          ha_inst_group_name && 0 != strlen(ha_inst_group_name))
++      {
++        mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                           0, "SaveInstrLex", 12);
++      }
++    }
++#endif
+   }
+ 
+   // Pop SP_instr_error_handler error handler.
+diff --git a/mysql-v5.7.32/sql_base.cc b/mysql-v5.7.32/sql_base.cc
+index 1c8ed4c..01da0eb 100644
+--- a/mysql-v5.7.32/sql_base.cc
++++ b/mysql-v5.7.32/sql_base.cc
+@@ -5873,6 +5873,19 @@ restart:
+          (thd->locked_tables_mode <= LTM_LOCK_TABLES &&
+           *sroutine_to_open))
+   {
++#ifndef EMBEDDED_LIBRARY
++    // check version after open tables, before lock tables
++    // for statement including routines
++    extern char *ha_inst_group_name;
++    if (thd->lex->sroutines_list.first != NULL &&
++        SQLCOM_CALL != thd->lex->sql_command &&
++        !thd->in_sub_stmt &&
++        ha_inst_group_name && 0 != strlen(ha_inst_group_name))
++    {
++       mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG),
++                          0, "PreCheckSQLObjects", 18);
++    }
++#endif
+     /*
+       For every table in the list of tables to open, try to find or open
+       a table.
+diff --git a/mysql-v5.7.32/sql_class.cc b/mysql-v5.7.32/sql_class.cc
+index cdc7f4a..db6f550 100644
+--- a/mysql-v5.7.32/sql_class.cc
++++ b/mysql-v5.7.32/sql_class.cc
+@@ -2689,6 +2689,20 @@ bool sql_exchange::escaped_given(void)
+ bool Query_result_send::send_result_set_metadata(List<Item> &list, uint flags)
+ {
+   bool res;
++
++  // do not send send_result_metadata once again for DML
++  extern char *ha_inst_group_name;
++  if (ha_inst_group_name && 0 != strlen(ha_inst_group_name))
++  {
++    extern thread_local_key_t ha_sql_stmt_info_key;
++    bool *is_ha_result_set_started = (bool*)my_get_thread_local(ha_sql_stmt_info_key);
++    if (is_ha_result_set_started && (*is_ha_result_set_started)) 
++    {
++      *is_ha_result_set_started = false;
++      return false;
++    }
++  }
++
+   if (!(res= thd->send_result_metadata(&list, flags)))
+     is_result_set_started= 1;
+   return res;
+diff --git a/mysql-v5.7.32/sql_parse.cc b/mysql-v5.7.32/sql_parse.cc
+index 39b266c..a9014f3 100644
+--- a/mysql-v5.7.32/sql_parse.cc
++++ b/mysql-v5.7.32/sql_parse.cc
+@@ -1197,6 +1197,59 @@ void reset_statement_timer(THD *thd)
+   thd->timer= NULL;
+ }
+ 
++void reset_execution_ctx(THD *thd, const char *beginning_of_next_stmt, 
++                         ulong length, enum enum_server_command command) 
++{
++  /* Finalize server status flags after executing a statement. */
++  thd->update_server_status();
++  // thd->send_statement_status();
++  query_cache.end_of_result(thd);
++
++  log_slow_statement(thd);
++  /* PSI end */
++  MYSQL_END_STATEMENT(thd->m_statement_psi, thd->get_stmt_da());
++  thd->m_statement_psi= NULL;
++  thd->m_digest= NULL;
++
++  /* DTRACE end */
++  if (MYSQL_QUERY_DONE_ENABLED())
++  {
++    MYSQL_QUERY_DONE(thd->is_error());
++  }
++
++  /* SHOW PROFILE end */
++#if defined(ENABLED_PROFILING)
++  thd->profiling.finish_current_query();
++#endif
++
++/* SHOW PROFILE begin */
++#if defined(ENABLED_PROFILING)
++  thd->profiling.start_new_query("continuing");
++  thd->profiling.set_query_source(beginning_of_next_stmt, length);
++#endif
++
++  /* DTRACE begin */
++  MYSQL_QUERY_START(const_cast<char*>(beginning_of_next_stmt),
++                    thd->thread_id(),
++                    (char *) (thd->db().str ? thd->db().str : ""),
++                    (char *) thd->security_context()->priv_user().str,
++                    (char *) thd->security_context()->host_or_ip().str);
++
++  /* PSI begin */
++  thd->m_digest= & thd->m_digest_state;
++  thd->m_digest->reset(thd->m_token_array, max_digest_length);
++
++  thd->m_statement_psi= MYSQL_START_STATEMENT(&thd->m_statement_state,
++                                      com_statement_info[command].m_key,
++                                      thd->db().str, thd->db().length,
++                                      thd->charset(), NULL);
++  THD_STAGE_INFO(thd, stage_starting);
++
++  thd->set_query(beginning_of_next_stmt, length);
++  thd->set_query_id(next_query_id());
++  thd->status_var.questions++;
++  thd->set_time();
++}
+ 
+ /**
+   Perform one connection-level (COM_XXXX) command.
+@@ -1490,6 +1543,38 @@ bool dispatch_command(THD *thd, const COM_DATA *com_data,
+ 
+     mysql_parse(thd, &parser_state);
+ 
++#ifndef EMBEDDED_LIBRARY
++    {
++      extern char *ha_inst_group_name;
++      if (thd->get_stmt_da()->is_error() && ha_inst_group_name && 
++          0 != strlen(ha_inst_group_name) &&
++          0 == thd->lex->sroutines_list.elements) 
++      {
++        uint mysql_errno = thd->get_stmt_da()->mysql_errno();
++        // notify HA set retry flag
++        mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                           0, "SetDMLRetryFlag", 15);
++        if (mysql_errno && !thd->get_stmt_da()->is_set()) 
++        {
++          const char *beginning_of_next_stmt= thd->query().str;
++          size_t length= static_cast<size_t>(packet_end - beginning_of_next_stmt);
++          reset_execution_ctx(thd, beginning_of_next_stmt, length, command);
++          parser_state.reset(beginning_of_next_stmt, length);
++          mysql_parse(thd, &parser_state);
++        }
++        // reset retry flag
++        mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                           0, "ResetDMLRetryFlag", 17);
++      }
++      // clear checked objects cache
++      if (ha_inst_group_name && 0 != strlen(ha_inst_group_name)) 
++      {
++        mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                           0, "ResetCheckedObjects", 19);
++      }
++    }
++#endif
++    
+     while (!thd->killed && (parser_state.m_lip.found_semicolon != NULL) &&
+            ! thd->is_error())
+     {
+@@ -1571,6 +1656,37 @@ bool dispatch_command(THD *thd, const COM_DATA *com_data,
+       parser_state.reset(beginning_of_next_stmt, length);
+       /* TODO: set thd->lex->sql_command to SQLCOM_END here */
+       mysql_parse(thd, &parser_state);
++
++#ifndef EMBEDDED_LIBRARY
++      // sequoiadb-sql DML retry 
++      {
++        extern char *ha_inst_group_name;
++        if (thd->get_stmt_da()->is_error() && ha_inst_group_name && 
++            0 != strlen(ha_inst_group_name) &&
++            0 == thd->lex->sroutines_list.elements) 
++        {
++          uint mysql_errno = thd->get_stmt_da()->mysql_errno();
++          // notify HA set retry flag
++          mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                             0, "SetDMLRetryFlag", 15);
++          if (mysql_errno && !thd->get_stmt_da()->is_set()) 
++          {
++            reset_execution_ctx(thd, beginning_of_next_stmt, length, command);
++            parser_state.reset(beginning_of_next_stmt, length);
++            mysql_parse(thd, &parser_state);
++          }
++          // reset retry flag
++          mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                             0, "ResetDMLRetryFlag", 17);
++        }
++        // clear checked objects cache
++        if (ha_inst_group_name && 0 != strlen(ha_inst_group_name)) 
++        {
++          mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 
++                             0, "ResetCheckedObjects", 19);
++        }
++      }
++#endif
+     }
+ 
+     /* Need to set error to true for graceful shutdown */
+@@ -5003,7 +5119,15 @@ finish:
        thd->reset_query_for_display();
      }
    }
+-
 +#ifndef EMBEDDED_LIBRARY
 +  else {
 +    mysql_audit_notify(thd,
-+                       first_level ? MYSQL_AUDIT_QUERY_STATUS_END :
-+                                     MYSQL_AUDIT_QUERY_NESTED_STATUS_END,
-+                       first_level ? "MYSQL_AUDIT_QUERY_STATUS_END" :
-+                                     "MYSQL_AUDIT_QUERY_NESTED_STATUS_END");
++                      first_level ? MYSQL_AUDIT_QUERY_STATUS_END :
++                                    MYSQL_AUDIT_QUERY_NESTED_STATUS_END,
++                      first_level ? "MYSQL_AUDIT_QUERY_STATUS_END" :
++                                    "MYSQL_AUDIT_QUERY_NESTED_STATUS_END");
 +  }
 +#endif /* !EMBEDDED_LIBRARY */
- 
    lex->unit->cleanup(true);
    /* Free tables */
+   THD_STAGE_INFO(thd, stage_closing_tables);

@@ -23,6 +23,7 @@
 #include "ha_sdb_thd.h"
 #include "ha_sdb_log.h"
 #include "ha_sdb_errcode.h"
+#include "server_ha.h"
 #include <strfunc.h>
 
 static void sdb_set_conn_addr(THD *thd, st_mysql_sys_var *var, void *tgt,
@@ -237,6 +238,11 @@ Thd_sdb::Thd_sdb(THD *thd)
   deleted = 0;
   duplicated = 0;
   cl_copyer = NULL;
+
+  // check collection version for HA module
+  if (ha_is_open()) {
+    m_conn.set_check_collection_version(true);
+  }
 #ifdef IS_MYSQL
   part_alter_ctx = NULL;
 #endif

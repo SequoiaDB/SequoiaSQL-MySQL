@@ -28,7 +28,8 @@
 
 void ha_kill_mysqld(THD *thd);
 int ha_update_cached_record(HASH &cache, PSI_memory_key mem_key,
-                            const char *cached_record_key, int sql_id);
+                            const char *cached_record_key, int sql_id,
+                            int cat_version);
 
 #define HA_DUMP_FILE_NUM 2
 #define HA_MAX_USE_DB_CMD_LEN (NAME_LEN * 2 + 8)

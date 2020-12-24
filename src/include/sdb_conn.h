@@ -46,6 +46,7 @@ class Sdb_session_attrs {
     last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVIAD;
     last_trans_auto_commit = SDB_DEFAULT_TRANS_AUTO_COMMIT;
     last_trans_use_rollback_segments = SDB_DEFAULT_TRANS_USE_RBS;
+    last_check_collection_version = false;
     attr_count = 0;
     source_str[0] = '\0';
     trans_isolation = SDB_TRANS_ISO_RR;
@@ -53,6 +54,7 @@ class Sdb_session_attrs {
     trans_auto_commit = true;
     trans_timeout = SDB_DEFAULT_LOCK_WAIT_TIMEOUT;
     trans_use_rollback_segments = true;
+    check_collection_version = false;
     session_attrs_mask = 0;
   }
 
@@ -134,6 +136,14 @@ class Sdb_session_attrs {
     }
   }
 
+  inline void set_check_collection_version(bool check_version) {
+    if (last_check_collection_version != check_version) {
+      check_collection_version = check_version;
+      set_attrs_mask(SDB_SESSION_ATTR_CHECK_CL_VERSION_MASK);
+      attr_count++;
+    }
+  }
+
   inline bool get_last_trans_use_rollback_segments() {
     return last_trans_use_rollback_segments;
   }
@@ -145,6 +155,7 @@ class Sdb_session_attrs {
   int last_trans_timeout;
   bool last_trans_auto_commit;
   bool last_trans_use_rollback_segments;
+  bool last_check_collection_version;
   int attr_count;
 
  private:
@@ -158,6 +169,7 @@ class Sdb_session_attrs {
   bool trans_auto_commit;           /*TransAutoCommit*/
   int trans_timeout;                /*TransTimeout*/
   bool trans_use_rollback_segments; /*TransUseRBS*/
+  bool check_collection_version;    /*CheckClientCataVersion*/
   ulonglong session_attrs_mask;
 };
 
@@ -286,6 +298,10 @@ class Sdb_conn {
   int set_my_session_attr();
 
   int exec(const char *sql, sdbclient::sdbCursor *cursor);
+  
+  void set_check_collection_version(bool check_cl_version) {
+    m_check_collection_version = check_cl_version;
+  }
 
  private:
   int retry(boost::function<int()> func);
@@ -304,6 +320,7 @@ class Sdb_conn {
   bool m_is_authenticated;
   bool m_is_server_ha_conn; /* Flag of server ha conn or normal conn. Server HA
                                conn always use transaction. */
+  bool m_check_collection_version;
   char errmsg[SDB_ERR_BUFF_SIZE];
   bool rollback_on_timeout;
 

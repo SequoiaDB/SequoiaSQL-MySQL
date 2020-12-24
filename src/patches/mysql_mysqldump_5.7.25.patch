@@ -1,6 +1,8 @@
---- mysqldump.c	                2020-07-13 15:17:01.153169502 +0800
-+++ mysqldump_5.7.25.change.c	2020-07-13 15:37:16.397136759 +0800
-@@ -114,6 +114,7 @@
+diff --git a/mysql-v5.7.25/mysqldump.c b/mysql-v5.7.25/mysqldump.c
+index 4c610e6..5b4a8be 100644
+--- a/mysql-v5.7.25/mysqldump.c
++++ b/mysql-v5.7.25/mysqldump.c
+@@ -114,6 +114,7 @@ static my_bool  verbose= 0, opt_no_create_info= 0, opt_no_data= 0,
                  opt_events= 0, opt_comments_used= 0,
                  opt_alltspcs=0, opt_notspcs= 0, opt_drop_trigger= 0,
                  opt_secure_auth= TRUE;
@@ -8,7 +10,7 @@
  static my_bool insert_pat_inited= 0, debug_info_flag= 0, debug_check_flag= 0;
  static ulong opt_max_allowed_packet, opt_net_buffer_length;
  static MYSQL mysql_connection,*mysql=0;
-@@ -563,6 +564,9 @@
+@@ -563,6 +564,9 @@ static struct my_option my_long_options[] =
     "Enable/disable the clear text authentication plugin.",
     &opt_enable_cleartext_plugin, &opt_enable_cleartext_plugin,
     0, GET_BOOL, OPT_ARG, 0, 0, 0, 0, 0, 0},
@@ -18,7 +20,7 @@
    {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
  };
  
-@@ -6286,6 +6290,12 @@
+@@ -6286,6 +6290,12 @@ int main(int argc, char **argv)
    if (opt_single_transaction && do_unlock_tables(mysql)) /* unlock but no commit! */
      goto err;
  
@@ -31,7 +33,7 @@
    if (opt_alltspcs)
      dump_all_tablespaces();
  
-@@ -6383,3 +6393,4 @@
+@@ -6383,3 +6393,4 @@ err:
  
    return(first_error);
  } /* main */

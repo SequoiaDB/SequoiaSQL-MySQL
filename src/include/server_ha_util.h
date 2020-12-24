@@ -52,13 +52,12 @@ const char *ha_error_string(Sdb_conn &sdb_conn, int rc, char err_buf[]);
 char *ha_quote_name(const char *name, char *buff);
 
 // get handler of HA tables
+int ha_get_instance_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
+                                    Sdb_cl &cl);
 int ha_get_instance_state_cl(Sdb_conn &sdb_conn, const char *group_name,
                              Sdb_cl &cl);
-int ha_get_global_state_cl(Sdb_conn &sdb_conn, const char *group_name,
-                           Sdb_cl &gstate_cl);
-int ha_get_sql_log_state_cl(Sdb_conn &sdb_conn, const char *group_name,
-                            Sdb_cl &log_state_cl);
-int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &lock_cl);
-int ha_get_config_cl(Sdb_conn &sdb_conn, const char *group_name,
-                     Sdb_cl &config_cl);
+int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
+                           Sdb_cl &cl);
+int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &cl);
+int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &cl);
 #endif

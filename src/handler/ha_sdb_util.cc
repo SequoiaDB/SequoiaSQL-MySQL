@@ -192,8 +192,12 @@ bool sdb_is_tmp_table(const char *path, const char *table_name) {
   static const uint OLD_VER_PREFIX_STR_LEN = 9;
   table_name += OLD_VER_PREFIX_STR_LEN;
 #endif
-  return (is_prefix(path, opt_mysql_tmpdir) &&
-          is_prefix(table_name, tmp_file_prefix));
+  if (NULL == path) {
+    return is_prefix(table_name, tmp_file_prefix);
+  } else {
+    return (is_prefix(path, opt_mysql_tmpdir) &&
+            is_prefix(table_name, tmp_file_prefix));
+  }
 }
 
 int sdb_convert_charset(const String &src_str, String &dst_str,

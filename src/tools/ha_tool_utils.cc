@@ -281,12 +281,19 @@ int ha_decrypt_password(const string &mix_hex_cipher, const string &token,
 
 // parse user's password from 'cipher file'
 int ha_parse_password(const string &user, const string &token,
-                      const string &file_name, string &password) {
+                      const string &orig_file_name, string &password) {
   int rc = 0;
   ifstream crypt_ifs;
-  string line, file_user, mix_cipher;
+  string line, file_user, mix_cipher, file_name;
   size_t split_pos;
   bool found = false;
+  static const char *USER_DIRECTORY = "HOME";
+  static const char *CIPHER_FILE_SUFFIX_PATH = "/sequoiadb/passwd";
+
+  if (HA_DEFAULT_CIPHER_FILE == orig_file_name) {
+    file_name = getenv(USER_DIRECTORY);
+    file_name += CIPHER_FILE_SUFFIX_PATH;
+  }
 
   password = "";
   crypt_ifs.open(file_name.c_str(), std::ifstream::in);
@@ -384,7 +391,6 @@ int ha_parse_host(const std::string &host, std::string &hostname, uint &port) {
 
 int ha_init_sequoiadb_connection(sdbclient::sdb &conn, ha_tool_args &cmd_args) {
   bool no_passwd_login = false;
-  const char *sdb_err = "";
   int rc = 0;
   cmd_args.inst_group_name = HA_INST_GROUP_PREFIX + cmd_args.inst_group_name;
   if (cmd_args.is_password_set) {
@@ -419,9 +425,8 @@ int ha_init_sequoiadb_connection(sdbclient::sdb &conn, ha_tool_args &cmd_args) {
     rc = conn.connect(cmd_args.hostname.c_str(), cmd_args.port,
                       cmd_args.user.c_str(), cmd_args.password.c_str());
   }
-  sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   HA_TOOL_RC_CHECK(rc, rc,
                    "Error: failed to connect sequoiadb, sequoiadb error: %s",
-                   sdb_err);
+                   ha_sdb_error_string(conn, rc));
   return rc;
 }

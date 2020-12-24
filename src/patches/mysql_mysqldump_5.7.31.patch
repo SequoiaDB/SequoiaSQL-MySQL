@@ -1,6 +1,8 @@
---- mysqldump.c	2020-09-14 10:27:01.210982338 +0800
-+++ mysqldump_changed.c	2020-09-14 10:31:20.722975346 +0800
-@@ -121,6 +121,7 @@
+diff --git a/mysql-v5.7.31/mysqldump.c b/mysql-v5.7.31/mysqldump.c
+index 9753f56..6df1cc0 100644
+--- a/mysql-v5.7.31/mysqldump.c
++++ b/mysql-v5.7.31/mysqldump.c
+@@ -121,6 +121,7 @@ static my_bool  verbose= 0, opt_no_create_info= 0, opt_no_data= 0,
                  opt_events= 0, opt_comments_used= 0,
                  opt_alltspcs=0, opt_notspcs= 0, opt_drop_trigger= 0,
                  opt_secure_auth= TRUE;
@@ -8,7 +10,7 @@
  static my_bool insert_pat_inited= 0, debug_info_flag= 0, debug_check_flag= 0;
  static ulong opt_max_allowed_packet, opt_net_buffer_length;
  static MYSQL mysql_connection,*mysql=0;
-@@ -570,6 +571,9 @@
+@@ -570,6 +571,9 @@ static struct my_option my_long_options[] =
     "Enable/disable the clear text authentication plugin.",
     &opt_enable_cleartext_plugin, &opt_enable_cleartext_plugin,
     0, GET_BOOL, OPT_ARG, 0, 0, 0, 0, 0, 0},
@@ -18,7 +20,7 @@
    {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
  };
  
-@@ -6298,6 +6302,12 @@
+@@ -6298,6 +6302,12 @@ int main(int argc, char **argv)
    if (opt_single_transaction && do_unlock_tables(mysql)) /* unlock but no commit! */
      goto err;
  

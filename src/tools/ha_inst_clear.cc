@@ -125,11 +125,12 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
                               const std::string &orig_name) {
   bson::BSONObj result, cond;
   sdbclient::sdbCollectionSpace global_info_cs, inst_group_cs;
-  sdbclient::sdbCollection config_cl, gstate_cl, istate_cl;
-  const char *sdb_err = "";
+  sdbclient::sdbCollection registry_cl, inst_state_cl, inst_obj_state_cl;
   sdbclient::sdbCursor cursor;
   int rc = 0;
-  bool clear_inst_state = true, clear_global_state = true, clear_config = true;
+  bool clear_inst_obj_state = true;
+  bool clear_inst_state = true;
+  bool clear_registry_info = true;
 
   // get collection space 'HASysGlobalInfo' handle
   rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
@@ -137,11 +138,10 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
     cout << "Error: global configuration database doesn't exist" << endl;
     return rc;
   }
-  sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   HA_TOOL_RC_CHECK(rc, rc,
                    "Error: failed to get global configuration database '%s', "
                    "sequoiadb error: %s",
-                   HA_GLOBAL_INFO, sdb_err);
+                   HA_GLOBAL_INFO, ha_sdb_error_string(conn, rc));
 
   // get instance group collection space handle
   rc = conn.getCollectionSpace(cmd_args.inst_group_name.c_str(), inst_group_cs);
@@ -150,39 +150,40 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
          << "' configuration database doesn't exist" << endl;
     return rc;
   }
-  sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   HA_TOOL_RC_CHECK(rc, rc,
                    "Error: failed to get instance group configuration "
                    "database '%s', sequoiadb error: %s",
-                   cmd_args.inst_group_name.c_str(), sdb_err);
+                   cmd_args.inst_group_name.c_str(),
+                   ha_sdb_error_string(conn, rc));
 
-  // get 'HAConfig' collection handler
-  rc = global_info_cs.getCollection(HA_CONFIG_CL, config_cl);
+  // get 'HARegistry' collection handler
+  rc = global_info_cs.getCollection(HA_REGISTRY_CL, registry_cl);
   if (SDB_DMS_NOTEXIST == rc) {
-    cout << "Error: no initialized SQL instances in current cluster" << endl;
-    return rc;
+    cout << "Info: no initialized SQL instances in current cluster" << endl;
+    return 0;
   }
-  sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   HA_TOOL_RC_CHECK(rc, rc,
                    "Error: failed to get global configuration table "
                    "'%s.%s', sequoiadb error: %s",
-                   HA_GLOBAL_INFO, HA_CONFIG_CL, sdb_err);
+                   HA_GLOBAL_INFO, HA_REGISTRY_CL,
+                   ha_sdb_error_string(conn, rc));
 
-  // get 'HAGlobalState' collection handler
-  rc = inst_group_cs.getCollection(HA_GLOBAL_STATE_CL, gstate_cl);
+  // get 'HAInstanceState' collection handler
+  rc = inst_group_cs.getCollection(HA_INSTANCE_STATE_CL, inst_state_cl);
   if (SDB_DMS_NOTEXIST == rc) {
-    clear_global_state = false;
-    cout << "Info: can't find instance group global state table, there is no "
-            "need to clear instance global state"
+    clear_inst_state = false;
+    cout << "Info: can't find instance state table, there is no "
+            "need to clear instance state"
          << endl;
   }
 
-  // get 'HAInstanceState' collection handler
-  rc = inst_group_cs.getCollection(HA_INSTANCE_STATE_CL, istate_cl);
+  // get 'HAInstanceObjectState' collection handler
+  rc = inst_group_cs.getCollection(HA_INSTANCE_OBJECT_STATE_CL,
+                                   inst_obj_state_cl);
   if (SDB_DMS_NOTEXIST == rc) {
-    clear_inst_state = false;
-    cout << "Info: can't find instance group instance state table, there is "
-            "no need to clear instance state"
+    clear_inst_obj_state = false;
+    cout << "Info: can't find instance group instance object state table, "
+            "there is no need to clear instance object state"
          << endl;
   }
 
@@ -201,7 +202,7 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
   // start transaction to clear instance configuration
   rc = conn.transactionBegin();
   if (0 == rc) {
-    rc = config_cl.query(cursor, cond);
+    rc = registry_cl.query(cursor, cond);
   }
   if (0 == rc) {
     rc = cursor.next(result, false);
@@ -211,11 +212,10 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
          << "'" << endl;
     return rc;
   }
-  sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
   if (rc) {
     cerr << "Error: unable to query instance configuration from '"
-         << HA_GLOBAL_INFO << "." << HA_CONFIG_CL
-         << "', sequoiadb error: " << sdb_err << endl;
+         << HA_GLOBAL_INFO << "." << HA_REGISTRY_CL
+         << "', sequoiadb error: " << ha_sdb_error_string(conn, rc) << endl;
     conn.transactionRollback();
     return rc;
   }
@@ -225,28 +225,35 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
   }
   // clear information
   cond = BSON(HA_FIELD_INSTANCE_ID << cmd_args.inst_id);
-  // clear config in 'HAConfig'
-  if (clear_config) {
-    rc = config_cl.del(cond);
-  }
-
-  // clear global state info
-  if (0 == rc && clear_global_state) {
-    rc = gstate_cl.del(cond);
+  // clear config in 'HARegistry'
+  if (clear_registry_info) {
+    rc = registry_cl.del(cond);
   }
 
   // clear instance state info
   if (0 == rc && clear_inst_state) {
-    rc = istate_cl.del(cond);
+    rc = inst_state_cl.del(cond);
+  }
+
+  // clear instance object state info
+  if (0 == rc && clear_inst_obj_state) {
+    rc = inst_obj_state_cl.del(cond);
   }
 
   if (rc) {
-    sdb_err = ha_sdb_error_string(conn, rc);
     cerr << "Error: failed clear instance configuration, sequoiadb error: "
-         << sdb_err << endl;
+         << ha_sdb_error_string(conn, rc) << endl;
     conn.transactionRollback();
   } else {
     rc = conn.transactionCommit();
+  }
+
+  if (cmd_args.is_inst_id_set) {
+    cout << "Info: completed cleanup of instance '" << cmd_args.inst_id << "'"
+         << endl;
+  } else {
+    cout << "Info: completed cleanup of instance '" << cmd_args.inst_host << "'"
+         << endl;
   }
   return rc;
 }
@@ -256,12 +263,9 @@ int main(int argc, char *argv[]) {
   string orig_name;
   sdbclient::sdb conn;
   bson::BSONObj result, cond;
-  sdbclient::sdbCollectionSpace global_info_cs, inst_group_cs;
-  sdbclient::sdbCollection config_cl, gstate_cl, istate_cl;
   ha_tool_args cmd_args;
   bool no_passwd_login = false;
   const char *sdb_err = "";
-  sdbclient::sdbCursor cursor;
 
   try {
     ha_init_default_args(cmd_args);
@@ -313,8 +317,8 @@ int main(int argc, char *argv[]) {
         return 0;
       }
     }
-    // clear instance information including 'config info', 'global state',
-    // 'instance state'
+    // clear instance information including 'config info', 'instance state',
+    // 'instance object state'
     rc = clear_sql_instance(cmd_args, conn, orig_name);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to clear SQL instance");
     if (cmd_args.is_inst_id_set) {

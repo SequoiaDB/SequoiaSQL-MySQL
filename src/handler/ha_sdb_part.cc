@@ -26,6 +26,7 @@
 #include <my_check_opt.h>
 #include "bson/lib/md5.hpp"
 #include "ha_sdb_log.h"
+#include "server_ha.h"
 
 static const uint PARTITION_ALTER_FLAG =
     Alter_info::ALTER_ADD_PARTITION | Alter_info::ALTER_DROP_PARTITION |
@@ -1202,6 +1203,8 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       rc, "Failed to create partition table, table:%s, exception:%s", name,
       e.what());
 
+  // update cached cata version, it will be written into sequoiadb
+  ha_set_cata_version(db_name, table_name, cl.get_version());
 done:
   DBUG_RETURN(rc);
 error:
@@ -1318,12 +1321,10 @@ int ha_sdb_part::info(uint flag) {
   DBUG_RETURN(rc);
 }
 
-int ha_sdb_part::detach_and_attach_scl() {
+int ha_sdb_part::detach_and_attach_scl(Sdb_cl &mcl) {
   DBUG_ENTER("ha_sdb_part::detach_and_attach_scl");
 
   int rc = 0;
-  Sdb_conn *conn = NULL;
-  Sdb_cl mcl;
   List_iterator<partition_element> temp_it;
   List_iterator<partition_element> part_it;
   partition_element *part_elem = NULL;
@@ -1331,17 +1332,6 @@ int ha_sdb_part::detach_and_attach_scl() {
   char scl_fullname[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
   uint curr_part_id = 0;
   bson::BSONObj attach_options;
-
-  rc = check_sdb_in_thd(ha_thd(), &conn, true);
-  if (rc != 0) {
-    goto error;
-  }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
-
-  rc = conn->get_cl(db_name, table_name, mcl);
-  if (rc != 0) {
-    goto error;
-  }
 
   temp_it.init(m_part_info->temp_partitions);
   while ((part_elem = temp_it++)) {
@@ -1971,6 +1961,8 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
     goto error;
   }
 
+  // update cached cata version, it will be written into sequoiadb
+  ha_set_cata_version(db_name, table_name, mcl.get_version());
 done:
   DBUG_RETURN(rc);
 error:
@@ -2042,6 +2034,8 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   DBUG_ENTER("ha_sdb_part::change_partitions_low");
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  Sdb_cl mcl;
+  Sdb_conn *conn = NULL;
 
   if (HASH_PARTITION == m_part_info->part_type &&
       ha_thd()->lex->alter_info.partition_names.elements > 0) {
@@ -2064,9 +2058,20 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
     goto done;
   }
 
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = conn->get_cl(db_name, table_name, mcl);
+  if (rc != 0) {
+    goto error;
+  }
+
   if (RANGE_PARTITION == m_part_info->part_type ||
       LIST_PARTITION == m_part_info->part_type) {
-    rc = detach_and_attach_scl();
+    rc = detach_and_attach_scl(mcl);
     if (rc != 0) {
       goto error;
     }
@@ -2086,6 +2091,9 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   if (rc != 0) {
     goto error;
   }
+
+  // update cached cata version, it will be written into sequoiadb
+  ha_set_cata_version(db_name, table_name, mcl.get_version());
 done:
   DBUG_RETURN(rc);
 error:
@@ -2269,7 +2277,6 @@ int ha_sdb_part::alter_partition_options(bson::BSONObj &old_tab_opt,
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to alter partition options, exception:%s",
                         e.what());
-
 done:
   DBUG_RETURN(rc);
 error:

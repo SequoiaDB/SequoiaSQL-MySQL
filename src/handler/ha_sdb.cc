@@ -37,6 +37,7 @@
 #include <sql_update.h>
 #include <sql_base.h>
 #include <sql_parse.h>
+#include "server_ha.h"
 
 #ifdef IS_MYSQL
 #include <table_trigger_dispatcher.h>
@@ -2508,9 +2509,9 @@ int ha_sdb::index_last(uchar *buf) {
     table->status = STATUS_NOT_FOUND;
     goto done;
   }
+
   sdb_ha_statistic_increment(&SSV::ha_read_last_count);
   rc = index_read_one(pushed_condition, -1, buf);
-
 done:
   return rc;
 }
@@ -4729,6 +4730,39 @@ int ha_sdb::ensure_collection(THD *thd) {
     }
   }
 
+  // fetch SQL instance cached cata version, set cata version for collection
+  if (ha_is_open() && !sdb_is_tmp_table(NULL, table_name)) {
+    int inst_cata_version = ha_get_cata_version(db_name, table_name);
+    int driver_cata_version = collection->get_version();
+
+    if (SQLCOM_CREATE_TABLE == thd_sql_command(thd) ||
+        SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
+      int latest_version = 0;
+      rc = ha_get_latest_cata_version(db_name, table_name, latest_version);
+      if (rc) {
+        goto error;
+      }
+      if (inst_cata_version < latest_version) {
+        inst_cata_version = latest_version;
+      }
+    }
+
+    if (inst_cata_version >= driver_cata_version) {
+      collection->set_version(inst_cata_version);
+    } else if (inst_cata_version < driver_cata_version) {
+      SDB_LOG_DEBUG(
+          "HA: Instance cached cata version %d is less than "
+          "driver cata version %d for '%s.%s', try to write an empty sql log",
+          inst_cata_version, driver_cata_version, db_name, table_name);
+      rc = ha_write_empty_sql_log(db_name, table_name, driver_cata_version);
+      if (rc) {
+        goto error;
+      }
+      inst_cata_version = ha_get_cata_version(db_name, table_name);
+      collection->set_version(inst_cata_version);
+    }
+  }
+
 done:
   DBUG_PRINT("exit", ("table %s get collection %p", table_name, collection));
   DBUG_RETURN(rc);
@@ -5510,6 +5544,8 @@ error:
 int ha_sdb::rename_table(const char *from, const char *to) {
   DBUG_ENTER("ha_sdb::rename_table");
 
+  Sdb_cl cl;
+  bool new_is_tmp = false;
   int rc = 0;
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
@@ -5538,6 +5574,12 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto error;
   }
 
+  check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+
 #ifdef IS_MYSQL
   if (thd_sdb && thd_sdb->part_alter_ctx &&
       thd_sdb->part_alter_ctx->skip_rename_table(new_table_name)) {
@@ -5545,7 +5587,10 @@ int ha_sdb::rename_table(const char *from, const char *to) {
       delete thd_sdb->part_alter_ctx;
       thd_sdb->part_alter_ctx = NULL;
     }
-    goto done;
+    // update cached cata version, it will be written into sequoiadb
+    sprintf(new_db_name, "%s", db_name);
+    sprintf(new_table_name, "%s", table_name);
+    goto set_cata_version;
   }
   sdb_convert_sub2main_partition_name(old_table_name);
   sdb_convert_sub2main_partition_name(new_table_name);
@@ -5559,6 +5604,7 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   }
 
   if (sdb_is_tmp_table(to, new_table_name)) {
+    new_is_tmp = true;
     rc = sdb_rebuild_db_name_of_temp_table(new_db_name, SDB_CS_NAME_MAX_SIZE);
     if (0 != rc) {
       goto error;
@@ -5575,15 +5621,15 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     if (rc != 0) {
       goto error;
     }
+
+    // set new table version if it's not sub-collection
+    if (!new_is_tmp && NULL == strstr(new_table_name, SDB_PART_SEP)) {
+      // rename sub-collection will change the version of the main collection
+      // so the version in driver is not up to date
+      goto set_cata_version;
+    }
     goto done;
   }
-
-  check_sdb_in_thd(thd, &conn, true);
-  if (0 != rc) {
-    goto error;
-  }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
-
 #ifdef IS_MYSQL
   rc = sdb_rename_sub_cl4part_table(conn, old_db_name, old_table_name,
                                     new_table_name);
@@ -5606,9 +5652,20 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto error;
   }
 
+  // set new table version if it's not sub-collection
+  if (!new_is_tmp && NULL == strstr(new_table_name, SDB_PART_SEP)) {
+    goto set_cata_version;
+  }
 done:
   DBUG_RETURN(rc);
 error:
+  goto done;
+set_cata_version:
+  rc = conn->get_cl(new_db_name, new_table_name, cl);
+  if (0 != rc) {
+    goto error;
+  }
+  ha_set_cata_version(new_db_name, new_table_name, cl.get_version());
   goto done;
 }
 
@@ -6354,6 +6411,13 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
         }
         goto error;
       }
+
+      if (!create_temporary) {
+        rc = conn->get_cl(db_name, table_name, cl);
+        if (0 != rc) {
+          goto error;
+        }
+      }
       goto done;
     }
   }
@@ -6438,6 +6502,11 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   }
 
 done:
+  if (0 == rc && !create_temporary && !has_copy &&
+      !sdb_execute_only_in_mysql(ha_thd())) {
+    // update cached cata version, it will be written into sequoiadb
+    ha_set_cata_version(db_name, table_name, cl.get_version());
+  }
   DBUG_RETURN(rc);
 error:
   handle_sdb_error(rc, MYF(0));
@@ -6615,6 +6684,13 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   sdb_rc = get_sdb_code(error);
   if (sdb_rc >= SDB_ERR_OK) {
     goto done;
+  }
+
+  // for HA DML statement retry in mariadb
+  if (ha_is_open()) {
+    if (SDB_CLIENT_CATA_VER_OLD == get_sdb_code(sdb_rc)) {
+      goto get_message_done;
+    }
   }
 
   // get error object from Sdb_conn

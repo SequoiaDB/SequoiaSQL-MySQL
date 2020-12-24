@@ -60,6 +60,9 @@ void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
   if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK)) {
     builder.append(SDB_SESSION_ATTR_TRANS_USE_RBS, trans_use_rollback_segments);
   }
+  if (test_attrs_mask(SDB_SESSION_ATTR_CHECK_CL_VERSION_MASK)) {
+    builder.append(SDB_SESSION_ATTR_CHECK_CL_VERSION, check_collection_version);
+  }
   *attr_obj = builder.obj();
 }
 
@@ -76,6 +79,9 @@ void Sdb_session_attrs::save_last_attrs() {
   if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_USE_RBS_MASK)) {
     last_trans_use_rollback_segments = trans_use_rollback_segments;
   }
+  if (test_attrs_mask(SDB_SESSION_ATTR_CHECK_CL_VERSION_MASK)) {
+    last_check_collection_version = check_collection_version;
+  }
 }
 
 Sdb_conn::Sdb_conn(my_thread_id _tid, bool server_ha_conn)
@@ -83,7 +89,8 @@ Sdb_conn::Sdb_conn(my_thread_id _tid, bool server_ha_conn)
       m_thread_id(_tid),
       pushed_autocommit(false),
       m_is_authenticated(false),
-      m_is_server_ha_conn(server_ha_conn) {
+      m_is_server_ha_conn(server_ha_conn),
+      m_check_collection_version(false){
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
   rollback_on_timeout = false;
@@ -221,6 +228,9 @@ int Sdb_conn::connect() {
         }
       } else {
         session_attrs->set_trans_auto_commit(false, true);
+      }
+      if (m_check_collection_version) {
+        session_attrs->set_check_collection_version(true);
       }
 
       rc = set_my_session_attr();

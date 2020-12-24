@@ -394,7 +394,7 @@ class ha_sdb_part : public ha_sdb,
 
   ulonglong get_used_stats(ulonglong total);
 
-  int detach_and_attach_scl();
+  int detach_and_attach_scl(Sdb_cl &mcl);
 
   int test_if_explicit_partition(bool* explicit_partition = NULL);
 

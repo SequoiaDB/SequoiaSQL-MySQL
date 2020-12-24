@@ -536,6 +536,14 @@ void sdb_protocal_start_row(Protocol *protocol) {
 bool sdb_protocal_end_row(Protocol *protocol) {
   return protocol->end_row();
 }
+
+uint sdb_sql_errno(THD *thd) {
+  return thd->get_stmt_da()->mysql_errno();
+}
+
+const char *sdb_errno_message(THD *thd) {
+  return thd->get_stmt_da()->message_text();
+}
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1041,5 +1049,13 @@ void sdb_protocal_start_row(Protocol *protocol) {
 
 bool sdb_protocal_end_row(Protocol *protocol) {
   return protocol->write();
+}
+
+uint sdb_sql_errno(THD *thd) {
+  return thd->get_stmt_da()->sql_errno();
+}
+
+const char *sdb_errno_message(THD *thd) {
+  return thd->get_stmt_da()->message();
 }
 #endif

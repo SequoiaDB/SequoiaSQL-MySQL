@@ -69,7 +69,8 @@ typedef unsigned int ha_event_class_t;
 #define C_STR(lex_str) lex_str.str
 #define C_STR_LEN(lex_str) lex_str.length
 
-#define MYSQL_AUDIT_QUERY_ENTRY MYSQL_AUDIT_GENERAL_CLASS
+#define MYSQL_AUDIT_QUERY_BEGIN 4
+#define MYSQL_AUDIT_QUERY_END 5
 #else
 typedef mysql_event_class_t ha_event_class_t;
 #define C_STR(lex_str) lex_str
@@ -77,11 +78,19 @@ typedef mysql_event_class_t ha_event_class_t;
 
 #define MYSQL_AUDIT_QUERY_ENTRY MYSQL_AUDIT_QUERY_CLASS
 #include "mysqld_thd_manager.h"
+// used to access private member of 'Sql_cmd_common_server'
 struct st_sql_cmd_drop_server : public Sql_cmd_common_server {
   LEX_STRING m_server_name;
   bool m_if_exists;
 };
 #endif /*IS_MARIADB*/
+
+#define HA_SET_RETRY_FLAG "SetDMLRetryFlag"
+#define HA_RESET_RETRY_FLAG "ResetDMLRetryFlag"
+#define HA_SAVE_INSTR_LEX "SaveInstrLex"
+#define HA_PRE_CHECK_OBJECTS "PreCheckSQLObjects"
+#define HA_RESET_CHECKED_OBJECTS "ResetCheckedObjects"
+#define HA_MAX_CATA_VERSION_CACHES 128
 
 // Table reference about current SQL statement
 // Initialized before execution of current SQL statement
@@ -93,11 +102,15 @@ typedef struct st_table_list {
   // set to 'HA_IS_TEMPORARY_TABLE' for a temporary table
   // when sql command is 'drop/rename/alter/truncate table'
   bool is_temporary_table;
+  // collection version
+  int cata_version;
   struct st_table_list *next;
 } ha_table_list;
 
 // store information about the SQL statement currently being executed
 typedef struct st_sql_stmt_info {
+  // indicate if query result metadata is sent
+  bool is_result_set_started;
   // indicate whether it's initialized
   bool inited;
   // useless for now
@@ -114,7 +127,15 @@ typedef struct st_sql_stmt_info {
   Sdb_conn *sdb_conn;
   // objects involved in the current SQL statement
   ha_table_list *tables;
+  ha_table_list *dml_tables;
   char err_message[HA_BUF_LEN];
+
+  // set if current DML statement need retry
+  bool dml_retry_flag;
+  // last lex of sql statement in routines
+  LEX *last_instr_lex;
+  // cache checked objects after 'wait_object_updated_to_latest'
+  HASH dml_checked_objects;
 } ha_sql_stmt_info;
 
 // use to cache current instance state of all objects(table, view and sp)
@@ -122,6 +143,7 @@ typedef struct st_cache_record {
   // key format 'db_name-table_name-op_type'
   char *key;
   int sql_id;
+  int32 cata_version;
 } ha_cached_record;
 
 // use to store audit events from mysql or mariadb
@@ -130,10 +152,17 @@ typedef struct ha_event_general {
   uint event_subclass;
   int general_error_code;
   ulong general_thread_id;
+  char *general_command;
   uint general_command_length;
   const char *general_query;
   uint general_query_length;
 } ha_event_general;
+
+// cached cata version for a single bucket
+typedef struct st_inst_state_cache {
+  native_rw_lock_t rw_lock;
+  HASH cache;
+} ha_inst_state_cache;
 
 // HA thread(recover and replay thread) data
 typedef struct st_recover_replay_thread {
@@ -153,9 +182,12 @@ typedef struct st_recover_replay_thread {
   // set true if current instance finish recovery
   bool recover_finished;
 
-  // use to cache HAInstanceState records for current instance
-  HASH inst_state_cache;
-  mysql_mutex_t inst_cache_mutex;
+  // use to cache HAInstanceObjectState records for current instance
+  // HASH inst_state_cache;
+  // mysql_mutex_t inst_cache_mutex;
+
+  // use to cache HAInstanceObjectState records for current instance
+  ha_inst_state_cache inst_state_caches[HA_MAX_CATA_VERSION_CACHES];
 
   // use to notify main thread(maybe blocked in server_ha_deinit)
   // that replay thread exit, then destroy ha_recover_replay_thread
@@ -173,5 +205,14 @@ typedef struct st_recover_replay_thread {
   my_thread_attr_t thread_attr;
 } ha_recover_replay_thread;
 
-ha_cached_record *get_cached_record(HASH &cache, const char *cached_record_key);
+extern bool ha_is_open();
+extern int ha_get_cata_version(const char *db_name, const char *table_name);
+extern void ha_set_cata_version(const char *db_name, const char *table_name,
+                                int version);
+extern int ha_write_empty_sql_log(const char *db_name, const char *table_name,
+                                  int driver_cata_version);
+extern int ha_get_latest_cata_version(const char *db_name,
+                                      const char *table_name, int &version);
+extern int ha_update_cached_record(const char *cached_record_key, int sql_id,
+                                   int cata_version);
 #endif

@@ -132,6 +132,10 @@ class Sdb_cl {
 
   int get_index_stat(const char *index_name, bson::BSONObj &obj);
 
+  void set_version(int version);
+  int get_version();
+  int alter_collection(const bson::BSONObj &obj);
+
  private:
   int retry(boost::function<int()> func);
 

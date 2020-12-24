@@ -38,16 +38,17 @@
 #include "sql_time.h"
 
 // thread local key for ha_sql_stmt_info
-static thread_local_key_t ha_sql_stmt_info_key;
+thread_local_key_t ha_sql_stmt_info_key;
 static my_thread_once_t ha_sql_stmt_info_key_once = MY_THREAD_ONCE_INIT;
 
 static ha_recover_replay_thread ha_thread;
 
 // original instance group name and key, instance group key will be modified
 // in 'server_ha_init', so it's invisible to mysql user
-static char *ha_inst_group_name = NULL;
+char *ha_inst_group_name = NULL;
 static char *ha_inst_group_key = NULL;
 static uint ha_wait_replay_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
+static uint ha_wait_recover_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
 
 static MYSQL_SYSVAR_STR(inst_group_name, ha_inst_group_name,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC |
@@ -71,9 +72,21 @@ static MYSQL_SYSVAR_UINT(wait_replay_timeout, ha_wait_replay_timeout,
                          NULL, NULL, HA_WAIT_REPLAY_TIMEOUT_DEFAULT, 0, 3600,
                          0);
 
+static MYSQL_SYSVAR_UINT(wait_recover_timeout, ha_wait_recover_timeout,
+                         PLUGIN_VAR_OPCMDARG,
+                         "Timeout waiting for instance recovery. (Default: 30)"
+                         /*等待实例启动恢复超时时间[0, 3600]，单位：sec。*/,
+                         NULL, NULL, HA_WAIT_REPLAY_TIMEOUT_DEFAULT, 0, 3600,
+                         0);
+
 struct st_mysql_sys_var *ha_sys_vars[] = {
     MYSQL_SYSVAR(inst_group_name), MYSQL_SYSVAR(inst_group_key),
-    MYSQL_SYSVAR(wait_replay_timeout), NULL};
+    MYSQL_SYSVAR(wait_replay_timeout), MYSQL_SYSVAR(wait_recover_timeout),
+    NULL};
+
+bool ha_is_open() {
+  return (ha_inst_group_name && 0 != strlen(ha_inst_group_name));
+}
 
 static uchar *cached_record_get_key(ha_cached_record *record, size_t *length,
                                     my_bool not_used MY_ATTRIBUTE((unused))) {
@@ -109,7 +122,17 @@ static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
     *sql_info = (ha_sql_stmt_info *)malloc(sizeof(ha_sql_stmt_info));
     if (*sql_info) {
       memset(*sql_info, 0, sizeof(ha_sql_stmt_info));
+
       (*sql_info)->inited = false;
+      (*sql_info)->is_result_set_started = false;
+      (*sql_info)->last_instr_lex = NULL;
+
+      if (sdb_hash_init(&((*sql_info)->dml_checked_objects),
+                        system_charset_info, 32, 0, 0,
+                        (my_hash_get_key)cached_record_get_key,
+                        free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
+        return SDB_HA_OOM;
+      }
       my_set_thread_local(ha_sql_stmt_info_key, *sql_info);
     } else {
       rc = SDB_HA_OOM;
@@ -118,17 +141,20 @@ static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
   return rc;
 }
 
-static int update_sql_stmt_info(ha_sql_stmt_info *sql_info,
-                                unsigned int event_class, const void *ev,
-                                THD *thd) {
+static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
   int rc = 0;
-  const struct mysql_event_general *event =
-      (const struct mysql_event_general *)ev;
   if (!sql_info->inited) {
     sql_info->inited = true;
     sql_info->tables = NULL;
-    sql_info->sdb_conn =
-        new (std::nothrow) Sdb_conn(event->general_thread_id, true);
+    sql_info->dml_retry_flag = false;
+    sql_info->is_result_set_started = false;
+    sql_info->last_instr_lex = NULL;
+    if (sdb_hash_init(&(sql_info->dml_checked_objects), system_charset_info, 32,
+                      0, 0, (my_hash_get_key)cached_record_get_key,
+                      free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
+      return SDB_HA_OOM;
+    }
+    sql_info->sdb_conn = new (std::nothrow) Sdb_conn(thread_id, true);
     if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
     } else {
@@ -138,8 +164,15 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info,
     // if client execute some DDL statements, exit session,
     // ha_sql_stmt_info::sdb_conn will be set to NULL.
     sql_info->tables = NULL;
-    sql_info->sdb_conn =
-        new (std::nothrow) Sdb_conn(event->general_thread_id, true);
+    sql_info->dml_retry_flag = false;
+    sql_info->is_result_set_started = false;
+    sql_info->last_instr_lex = NULL;
+    if (sdb_hash_init(&(sql_info->dml_checked_objects), system_charset_info, 32,
+                      0, 0, (my_hash_get_key)cached_record_get_key,
+                      free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
+      return SDB_HA_OOM;
+    }
+    sql_info->sdb_conn = new (std::nothrow) Sdb_conn(thread_id, true);
     if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
     } else {
@@ -287,33 +320,33 @@ static inline bool has_temporary_table_flag(THD *thd) {
   return is_temp_table_op;
 }
 
-// query table 'HASQLLogState' and get all objects to be dropped in database
+// query table 'HAObjectState' and get all objects to be dropped in database
 // add dropped database info at last
 static int get_drop_db_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   DBUG_ENTER("get_drop_db_objects");
   DBUG_ASSERT(sql_info->tables == NULL);
   int rc = 0;
-  Sdb_cl log_state_cl;
+  Sdb_cl obj_state_cl;
   bson::BSONObj cond, obj, result;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
   const char *db_name = thd->lex->name.str;
   ha_table_list *ha_tbl_list = NULL, *ha_tbl_list_tail = NULL;
 
-  rc = ha_get_sql_log_state_cl(*sdb_conn, ha_thread.sdb_group_name,
-                               log_state_cl);
+  rc =
+      ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl);
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
   }
 
   cond = BSON(HA_FIELD_DB << db_name);
-  rc = log_state_cl.query(cond);
+  rc = obj_state_cl.query(cond);
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
   }
 
-  while (!log_state_cl.next(result, false) && !result.isEmpty()) {
+  while (!obj_state_cl.next(result, false) && !result.isEmpty()) {
     const char *db_name = result.getStringField(HA_FIELD_DB);
     const char *table_name = result.getStringField(HA_FIELD_TABLE);
     const char *op_type = result.getStringField(HA_FIELD_TYPE);
@@ -594,6 +627,7 @@ error:
   goto done;
 }
 
+// get cached record without lock
 ha_cached_record *get_cached_record(HASH &cache,
                                     const char *cached_record_key) {
   DBUG_ENTER("get_cached_record");
@@ -613,30 +647,105 @@ ha_cached_record *get_cached_record(HASH &cache,
   DBUG_RETURN(record);
 }
 
+// update instance object state cached record without lock
+int update_cached_record(HASH &cache, PSI_memory_key mem_key,
+                         const char *cached_record_key, int sql_id,
+                         int cata_version) {
+  int rc = 0;
+  ha_cached_record *cached_record = get_cached_record(cache, cached_record_key);
+  if (cached_record) {
+    cached_record->sql_id = sql_id;
+    cached_record->cata_version = cata_version;
+  } else {
+    ha_cached_record *record = NULL;
+    char *key = NULL;
+    int key_len = strlen(cached_record_key);
+    if (!sdb_multi_malloc(mem_key, MYF(MY_WME | MY_ZEROFILL), &record,
+                          sizeof(ha_cached_record), &key, key_len + 1, NullS)) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
+    snprintf(key, key_len + 1, "%s", cached_record_key);
+    key[key_len] = '\0';
+    record->key = key;
+    record->sql_id = sql_id;
+    record->cata_version = cata_version;
+    if (my_hash_insert(&cache, (uchar *)record)) {
+      rc = SDB_HA_OOM;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+// base on 'my_hash_sort' in mariadb
+static my_hash_value_type my_hash_value(CHARSET_INFO *cs, const uchar *key,
+                                        size_t length) {
+  ulong nr1 = 1, nr2 = 4;
+  cs->coll->hash_sort(cs, (uchar *)key, length, &nr1, &nr2);
+  return (my_hash_value_type)nr1;
+}
+
+// find cached record in it's own hash bucket
+ha_cached_record *ha_get_cached_record(const char *cached_record_key) {
+  my_hash_value_type bucket_num =
+      my_hash_value(system_charset_info, (uchar *)cached_record_key,
+                    strlen(cached_record_key));
+  bucket_num = bucket_num % HA_MAX_CATA_VERSION_CACHES;
+  ha_inst_state_cache *inst_state_cache =
+      &ha_thread.inst_state_caches[bucket_num];
+  ha_cached_record *record = NULL;
+  native_rw_rdlock(&inst_state_cache->rw_lock);
+  record = get_cached_record(inst_state_cache->cache, cached_record_key);
+  native_rw_unlock(&inst_state_cache->rw_lock);
+  return record;
+}
+
+// update cached record in it's own hash bucket
+int ha_update_cached_record(const char *cached_record_key, int sql_id,
+                            int cata_version) {
+  int rc = 0;
+  my_hash_value_type bucket_num =
+      my_hash_value(system_charset_info, (uchar *)cached_record_key,
+                    strlen(cached_record_key));
+  bucket_num = bucket_num % HA_MAX_CATA_VERSION_CACHES;
+  ha_inst_state_cache *state_cache = &ha_thread.inst_state_caches[bucket_num];
+
+  native_rw_wrlock(&state_cache->rw_lock);
+  rc = update_cached_record(state_cache->cache, HA_KEY_MEM_INST_STATE_CACHE,
+                            cached_record_key, sql_id, cata_version);
+  native_rw_unlock(&state_cache->rw_lock);
+  return rc;
+}
+
 // wait instance state to be updated to lastest state by replay thread
 static int wait_object_updated_to_lastest(
     const char *db_name, const char *table_name, const char *op_type,
-    Sdb_cl &log_state_cl, ha_sql_stmt_info *sql_info, THD *thd) {
+    Sdb_cl &obj_state_cl, ha_sql_stmt_info *sql_info, THD *thd) {
   DBUG_ENTER("wait_object_updated_to_lastest");
 
-  int sql_id = HA_INVALID_SQL_ID, rc = 0;
+  int sql_id = HA_INVALID_SQL_ID, rc = 0, cata_version;
   bson::BSONObj cond, result;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
   ha_cached_record *cached_record = NULL;
   char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
   uint sleep_secs = 0;
 
-  // get latest SQL id from 'HASQLLogState'
+  // get latest SQL id from 'HAObjectState'
   cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
                           << HA_FIELD_TYPE << op_type);
-  rc = log_state_cl.query(cond);
-  rc = rc ? rc : log_state_cl.next(result, false);
+  rc = obj_state_cl.query(cond);
+  rc = rc ? rc : obj_state_cl.next(result, false);
   if (0 == rc) {
     sql_id = result.getIntField(HA_FIELD_SQL_ID);
+    cata_version = result.getIntField(HA_FIELD_CAT_VERSION);
     DBUG_ASSERT(sql_id >= 0);
   } else if (HA_ERR_END_OF_FILE == rc) {
-    // can't find global state in 'HASQLLogState'
-    SDB_LOG_DEBUG("HA: Can't find global state in 'HASQLLogState' for '%s:%s'",
+    // can't find object state in 'HAObjectState', this means that those
+    // objects exists before instance group function
+    SDB_LOG_DEBUG("HA: Can't find object state in 'HAObjectState' for '%s:%s'",
                   db_name, table_name);
     rc = 0;
     goto done;
@@ -650,10 +759,7 @@ static int wait_object_updated_to_lastest(
   snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s", db_name,
            table_name, op_type);
   do {
-    mysql_mutex_lock(&ha_thread.inst_cache_mutex);
-    cached_record =
-        get_cached_record(ha_thread.inst_state_cache, cached_record_key);
-    mysql_mutex_unlock(&ha_thread.inst_cache_mutex);
+    cached_record = ha_get_cached_record(cached_record_key);
     // if 'db_name:table_name:op_type' does not exists
     if (!abort_loop && !cached_record) {
       sleep(1);
@@ -672,9 +778,11 @@ static int wait_object_updated_to_lastest(
 
   // if local sql_id less than global sql id on table 'table_name'
   sleep_secs = 0;
-  SDB_LOG_DEBUG("HA: Wait for '%s' state, cached SQL ID: %d, global SQL ID: %d",
-                cached_record_key, cached_record->sql_id, sql_id);
-  DBUG_ASSERT(cached_record->sql_id <= sql_id);
+  SDB_LOG_DEBUG(
+      "HA: Wait for '%s' state, cached SQL ID: %d, global SQL ID: %d, "
+      "cached CataVersion: %d, global CataVersion: %d",
+      cached_record_key, cached_record->sql_id, sql_id,
+      cached_record->cata_version, cata_version);
   while (!abort_loop && cached_record && cached_record->sql_id < sql_id &&
          sleep_secs < ha_wait_replay_timeout && !thd_killed(thd)) {
     sleep(1);
@@ -699,15 +807,15 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
                                                ha_sql_stmt_info *sql_info) {
   int rc = 0;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
-  Sdb_cl log_state_cl, inst_state_cl;
+  Sdb_cl obj_state_cl, inst_obj_state_cl;
   const char *db_name = NULL, *table_name = NULL, *op_type = NULL;
-  rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_SQL_LOG_STATE_CL,
-                        log_state_cl);
+  rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_OBJECT_STATE_CL,
+                        obj_state_cl);
   if (rc) {
     goto sdb_error;
   }
-  rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_INSTANCE_STATE_CL,
-                        inst_state_cl);
+  rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_INSTANCE_OBJECT_STATE_CL,
+                        inst_obj_state_cl);
   if (rc) {
     goto sdb_error;
   }
@@ -717,7 +825,7 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
     table_name = HA_EMPTY_STRING;
     op_type = HA_OPERATION_TYPE_DB;
     rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
-                                        log_state_cl, sql_info, thd);
+                                        obj_state_cl, sql_info, thd);
     if (0 == rc && SQLCOM_DROP_DB == thd_sql_command(thd)) {
       rc = get_drop_db_objects(thd, sql_info);
     }
@@ -732,7 +840,7 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
       table_name = HA_EMPTY_STRING;
       op_type = HA_OPERATION_TYPE_DB;
       rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
-                                          log_state_cl, sql_info, thd);
+                                          obj_state_cl, sql_info, thd);
       if (rc) {
         goto error;
       }
@@ -747,7 +855,7 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
       table_name = HA_EMPTY_STRING;
       op_type = HA_OPERATION_TYPE_DB;
       rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
-                                          log_state_cl, sql_info, thd);
+                                          obj_state_cl, sql_info, thd);
       if (rc) {
         goto error;
       }
@@ -760,7 +868,7 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
       op_type = HA_OPERATION_TYPE_DB;
       if (db_name) {
         rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
-                                            log_state_cl, sql_info, thd);
+                                            obj_state_cl, sql_info, thd);
       }
       ha_tables = ha_tables->next;
     } while (ha_tables && (0 == rc));
@@ -780,19 +888,19 @@ static int wait_objects_updated_to_lastest(THD *thd,
                                            ha_sql_stmt_info *sql_info) {
   int rc = 0;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
-  Sdb_cl sql_log_state_cl, inst_state_cl;
+  Sdb_cl obj_state_cl, inst_obj_state_cl;
   ha_table_list *ha_tables = NULL;
 
-  // get sql log state handle
-  rc = ha_get_sql_log_state_cl(*sql_info->sdb_conn, ha_thread.sdb_group_name,
-                               sql_log_state_cl);
+  // get object state handle
+  rc = ha_get_object_state_cl(*sql_info->sdb_conn, ha_thread.sdb_group_name,
+                              obj_state_cl);
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
   }
 
-  rc = ha_get_instance_state_cl(*sql_info->sdb_conn, ha_thread.sdb_group_name,
-                                inst_state_cl);
+  rc = ha_get_instance_object_state_cl(
+      *sql_info->sdb_conn, ha_thread.sdb_group_name, inst_obj_state_cl);
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
@@ -815,7 +923,7 @@ static int wait_objects_updated_to_lastest(THD *thd,
       break;
     }
     rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
-                                        sql_log_state_cl, sql_info, thd);
+                                        obj_state_cl, sql_info, thd);
     if (rc) {
       goto error;
     }
@@ -843,6 +951,7 @@ static bool build_full_table_name(THD *thd, String &full_name,
 static bool dropping_table_exists(THD *thd, const char *db_name,
                                   const char *table_name) {
   static const uint TABLE_BUF_LEN = NAME_LEN * 2 + 20;
+  int sql_command = thd_sql_command(thd);
 
   bool table_exists = true;
   char unknown_table_buf[TABLE_BUF_LEN] = {0};
@@ -851,7 +960,15 @@ static bool dropping_table_exists(THD *thd, const char *db_name,
 
   if (!thd->is_error()) {
     // handle drop table if exists
+#ifdef IS_MARIADB
+    if (SQLCOM_DROP_TABLE == sql_command) {
+      wrong_table.append("Unknown table '");
+    } else if (SQLCOM_DROP_VIEW == sql_command) {
+      wrong_table.append("Unknown VIEW: '");
+    }
+#else
     wrong_table.append("Unknown table '");
+#endif
     wrong_table.append(db_name);
     wrong_table.append('.');
     wrong_table.append(table_name);
@@ -966,12 +1083,12 @@ static inline void build_session_attributes(THD *thd, char *session_attrs) {
 }
 
 // 1. write SQL into 'HASQLLog'
-// 2. update 'HASQLLogState' and 'HAInstanceState'
+// 2. update 'HAObjectState' and 'HAInstanceObjectState'
 static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
                                     const ha_event_general &event) {
   int rc = 0, sql_id = -1;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
-  Sdb_cl sql_log_cl, sql_log_state_cl, inst_state_cl, lock_cl;
+  Sdb_cl sql_log_cl, obj_state_cl, inst_obj_state_cl, lock_cl;
   ha_table_list *ha_tables = sql_info->tables;
   bson::BSONObj obj, result, cond, hint;
   int sql_command = thd_sql_command(thd);
@@ -982,6 +1099,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   char cached_record_key[NAME_LEN * 2 + 20] = {0};
   bool oom = false;  // out of memory while building a string
   bool first_object = true;
+  int rename_table_count = 0;
 
   oom = general_query.append(event.general_query, event.general_query_length);
   oom |= general_query.append('\0');
@@ -995,14 +1113,14 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     goto sdb_error;
   }
 
-  rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_SQL_LOG_STATE_CL,
-                        sql_log_state_cl);
+  rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_OBJECT_STATE_CL,
+                        obj_state_cl);
   if (rc) {
     goto sdb_error;
   }
 
-  rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_INSTANCE_STATE_CL,
-                        inst_state_cl);
+  rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_INSTANCE_OBJECT_STATE_CL,
+                        inst_obj_state_cl);
   if (rc) {
     goto sdb_error;
   }
@@ -1019,10 +1137,15 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     const char *db_name = ha_tables->db_name;
     const char *table_name = ha_tables->table_name;
     const char *op_type = ha_tables->op_type;
-    const char *extra_op_type = NULL;
     const char *new_db_name = NULL;
     const char *new_tbl_name = NULL;
-    bool can_write_empty_log = false;
+    int cata_version = ha_tables->cata_version;
+
+    // previous version maybe not be latest, get cached cata version again
+    if (0 == strcmp(op_type, HA_OPERATION_TYPE_TABLE)) {
+      int version = ha_get_cata_version(db_name, table_name);
+      cata_version = (version > cata_version) ? version : cata_version;
+    }
     query.length(0);
 
     // dropping function(with 'if exists') without setting database report no
@@ -1038,18 +1161,19 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       }
       oom = query.append(general_query);
     } else {
-      // skip temporary tables for drop table sql
-      if (SQLCOM_DROP_TABLE == sql_command) {
-        // skip temporary table
+      // skip temporary tables for drop/alter/rename table sql
+      if (SQLCOM_DROP_TABLE == sql_command ||
+          SQLCOM_ALTER_TABLE == sql_command ||
+          SQLCOM_RENAME_TABLE == sql_command) {
         if (ha_tables->is_temporary_table) {
           continue;
         }
       }
 
-      // decompose 'SQLCOM_DROP_TABLE' command into multiple 'DROP TABLE'
-      // commands
+      // decompose 'SQLCOM_DROP_TABLE/SQLCOM_DROP_VIEW' command into
+      // multiple 'DROP TABLE/VIEW' commands
       if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command) {
-        // check if the dropping object exists
+        // if the dropping object doesn't exist, don't write SQL log
         if (!dropping_table_exists(thd, db_name, table_name)) {
           continue;
         }
@@ -1061,25 +1185,17 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
         }
         oom |= build_full_table_name(thd, query, db_name, table_name);
       } else if (SQLCOM_RENAME_TABLE == sql_command) {
-        // not allow rename temporary in mysql by 'rename' command
-#ifdef IS_MARIADB
-        if (ha_tables->is_temporary_table) {
-          ha_tables = ha_tables->next;
-          continue;
-        }
-#endif
-        // if its rename table operation
-        // move to the next table
-        ha_tables = ha_tables->next;
-        new_db_name = ha_tables->db_name;
-        new_tbl_name = ha_tables->table_name;
+        // build rename table command for original table
+        if (0 == rename_table_count % 2) {
+          new_db_name = ha_tables->next->db_name;
+          new_tbl_name = ha_tables->next->table_name;
 
-        oom = query.append("RENAME TABLE ");
-        oom |= build_full_table_name(thd, query, db_name, table_name);
-        oom |= query.append(" TO ");
-        oom |= build_full_table_name(thd, query, new_db_name, new_tbl_name);
-        can_write_empty_log = true;
-        extra_op_type = ha_tables->op_type;
+          oom = query.append("RENAME TABLE ");
+          oom |= build_full_table_name(thd, query, db_name, table_name);
+          oom |= query.append(" TO ");
+          oom |= build_full_table_name(thd, query, new_db_name, new_tbl_name);
+        }
+        rename_table_count++;
       } else if (SQLCOM_CREATE_TRIGGER == sql_command ||
                  SQLCOM_CREATE_VIEW == sql_command ||
                  SQLCOM_ALTER_EVENT == sql_command ||
@@ -1089,23 +1205,10 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
         // 3. 'create/drop user' can hold multiple users
         // 4. 'alter event/table rename' hold two objects
 
-        if (SQLCOM_ALTER_TABLE == sql_command &&
-            ha_tables->is_temporary_table) {
-          ha_tables = ha_tables->next;
-          continue;
-        }
-
+        // write SQL statement just for the first object
         if (first_object) {
           oom = query.append(general_query);
           first_object = false;
-          goto write_sql_log;
-        } else {
-          // prepare write empty SQL log for other objects
-          new_db_name = db_name;
-          new_tbl_name = table_name;
-          can_write_empty_log = true;
-          extra_op_type = op_type;
-          goto write_empty_log;
         }
       } else if (have_exist_warning(thd)) {
         // if thd have 'not exist' or 'already exist' warning
@@ -1115,7 +1218,6 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       }
     }
 
-  write_sql_log:
     if (oom) {
       rc = SDB_HA_OOM;
       goto error;
@@ -1126,101 +1228,47 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
                            << query.c_ptr_safe() << HA_FIELD_OWNER
                            << ha_thread.instance_id << HA_FIELD_SESSION_ATTRS
                            << session_attrs << HA_FIELD_CLIENT_CHARSET_NUM
-                           << client_charset_num);
+                           << client_charset_num << HA_FIELD_CAT_VERSION
+                           << cata_version);
     rc = sql_log_cl.insert(obj, hint, 0, &result);
     if (rc) {
       goto sdb_error;
     }
 
-    // write 'HASQLLogState'
+    // write 'HAObjectState'
     sql_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
     DBUG_ASSERT(sql_id > 0);
 
     cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
                             << HA_FIELD_TYPE << op_type);
-    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
-    rc = sql_log_state_cl.upsert(obj, cond);
+    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_CAT_VERSION
+                                              << cata_version));
+    rc = obj_state_cl.upsert(obj, cond);
     if (rc) {
       goto sdb_error;
     }
 
-    // write 'HAInstanceState'
+    // write 'HAInstanceObjectState'
     cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread.instance_id << HA_FIELD_DB
                                      << db_name << HA_FIELD_TABLE << table_name
                                      << HA_FIELD_TYPE << op_type);
-    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
-    rc = inst_state_cl.upsert(obj, cond);
+    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_CAT_VERSION
+                                              << cata_version));
+    rc = inst_obj_state_cl.upsert(obj, cond);
     if (rc) {
       goto sdb_error;
     }
 
-    // update cached instance state
+    // update cached instance object state
     snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", db_name,
              table_name, op_type);
-    mysql_mutex_lock(&ha_thread.inst_cache_mutex);
-    rc = ha_update_cached_record(ha_thread.inst_state_cache,
-                                 HA_KEY_MEM_INST_STATE_CACHE, cached_record_key,
-                                 sql_id);
-    mysql_mutex_unlock(&ha_thread.inst_cache_mutex);
-
-  write_empty_log:
-    // write an empty SQL log into 'HASQLLog'
-    // for 'alter table rename/rename table', 'create view', 'create trigger'
-    if (0 == rc && new_db_name && new_tbl_name && can_write_empty_log) {
-      // write null operation into 'HASQLLog' table for new table
-      obj = BSON(HA_FIELD_DB << new_db_name << HA_FIELD_TABLE << new_tbl_name
-                             << HA_FIELD_TYPE << extra_op_type << HA_FIELD_SQL
-                             << "" << HA_FIELD_OWNER << ha_thread.instance_id
-                             << HA_FIELD_SESSION_ATTRS << session_attrs
-                             << HA_FIELD_CLIENT_CHARSET_NUM
-                             << client_charset_num);
-      rc = sql_log_cl.insert(obj, hint, 0, &result);
-      if (rc) {
-        goto sdb_error;
-      }
-
-      // write 'HASQLLogState'
-      sql_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
-      DBUG_ASSERT(sql_id > 0);
-
-      // write 'HASQLLogState' for new table
-      cond = BSON(HA_FIELD_DB << new_db_name << HA_FIELD_TABLE << new_tbl_name
-                              << HA_FIELD_TYPE << extra_op_type);
-      obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
-      rc = sql_log_state_cl.upsert(obj, cond);
-      if (rc) {
-        goto sdb_error;
-      }
-
-      // write 'HAInstanceState' for new table
-      cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread.instance_id << HA_FIELD_DB
-                                       << new_db_name << HA_FIELD_TABLE
-                                       << new_tbl_name << HA_FIELD_TYPE
-                                       << extra_op_type);
-      obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id));
-      rc = inst_state_cl.upsert(obj, cond);
-      if (rc) {
-        goto sdb_error;
-      }
-
-      // update cached instance state for new table
-      snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", new_db_name,
-               new_tbl_name, extra_op_type);
-      mysql_mutex_lock(&ha_thread.inst_cache_mutex);
-      rc = ha_update_cached_record(ha_thread.inst_state_cache,
-                                   HA_KEY_MEM_INST_STATE_CACHE,
-                                   cached_record_key, sql_id);
-      mysql_mutex_unlock(&ha_thread.inst_cache_mutex);
-    }
-
-    if (rc) {
-      goto error;
-    }
-
+    rc = ha_update_cached_record(cached_record_key, sql_id, cata_version);
+#ifdef IS_MYSQL
     if (SQLCOM_CREATE_TABLE == sql_command) {
       // sql like 'create table/view' may have multi tables in its table_list
       break;
     }
+#endif
   }
 done:
   return rc;
@@ -1286,6 +1334,15 @@ static int get_sql_objects_for_dcl(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_node->table_name = C_STR(tables->table_name);
       ha_tbl_node->op_type = op_type;
       ha_tbl_node->is_temporary_table = false;
+
+      // set cat version for table
+      if (0 == thd->lex->type) {
+        ha_tbl_node->cata_version =
+            ha_get_cata_version(ha_tbl_node->db_name, ha_tbl_node->table_name);
+      } else {
+        ha_tbl_node->cata_version = 0;
+      }
+
       ha_tbl_node->next = NULL;
       ha_tbl_list_tail->next = ha_tbl_node;
     }
@@ -1301,10 +1358,11 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   DBUG_ENTER("get_sql_objects");
   int rc = 0;
   int sql_command = thd_sql_command(thd);
+  static const int INVALID_CAT_VERSION = 0;
 
   DBUG_ASSERT(NULL == sql_info->tables);
   if (SQLCOM_DROP_DB == sql_command) {
-    // 'DROP database ' get records from 'HASQLLogState' after add 'X' lock
+    // 'DROP database ' get records from 'HAObjectState' after add 'X' lock
     // on database
   } else if (SQLCOM_CREATE_DB == sql_command ||
              SQLCOM_ALTER_DB == sql_command) {
@@ -1316,6 +1374,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     sql_info->tables->db_name = thd->lex->name.str;
     sql_info->tables->table_name = HA_EMPTY_STRING;
     sql_info->tables->op_type = HA_OPERATION_TYPE_DB;
+    sql_info->tables->cata_version = INVALID_CAT_VERSION;
     sql_info->tables->is_temporary_table = false;
     sql_info->tables->next = NULL;
   } else if (is_routine_meta_sql(thd)) {
@@ -1407,6 +1466,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_list->table_name = thd->lex->spname->m_name.str;
       ha_tbl_list->is_temporary_table = false;
       ha_tbl_list->op_type = HA_ROUTINE_TYPE_EVENT;
+      ha_tbl_list->cata_version = INVALID_CAT_VERSION;
       ha_tbl_list->next = NULL;
       sql_info->tables->next = ha_tbl_list;
     }
@@ -1423,6 +1483,8 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_list->table_name = C_STR(tables->table_name);
       ha_tbl_list->is_temporary_table = false;
       ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
+      ha_tbl_list->cata_version =
+          ha_get_cata_version(ha_tbl_list->db_name, ha_tbl_list->table_name);
       ha_tbl_list->next = NULL;
       sql_info->tables->next = ha_tbl_list;
     }
@@ -1475,6 +1537,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
 #endif
     }
     sql_info->tables->op_type = HA_OPERATION_TYPE_TABLE;
+    sql_info->tables->cata_version = INVALID_CAT_VERSION;
     sql_info->tables->is_temporary_table = false;
     sql_info->tables->next = NULL;
   } else if (is_dcl_meta_sql(thd)) {
@@ -1507,9 +1570,14 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       }
 
       ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
+      ha_tbl_list->cata_version =
+          ha_get_cata_version(ha_tbl_list->db_name, ha_tbl_list->table_name);
       ha_tbl_list->is_temporary_table = false;
       ha_tbl_list->next = NULL;
       if (!sql_info->tables) {
+        if (SQLCOM_CREATE_VIEW == sql_command) {
+          ha_tbl_list->cata_version = INVALID_CAT_VERSION;
+        }
         sql_info->tables = ha_tbl_list;
         ha_tbl_list_tail = ha_tbl_list;
       } else {
@@ -1527,7 +1595,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         is_temp_table = is_temporary_table(thd, db_name, table_name);
         // mark temporary table by setting 'ha_table_list::is_temporary_table'
         if (is_temp_table) {
-          SDB_LOG_DEBUG("found temporary table %s:%s", db_name, table_name);
+          SDB_LOG_DEBUG("HA: found temporary table %s:%s", db_name, table_name);
           ha_tbl_list->is_temporary_table = true;
         }
       }
@@ -1543,6 +1611,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_list->db_name = C_STR(sdb_lex_first_select(thd)->db);
       ha_tbl_list->table_name = thd->lex->name.str;
       ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
+      ha_tbl_list->cata_version = INVALID_CAT_VERSION;
       ha_tbl_list->is_temporary_table = false;
       ha_tbl_list->next = NULL;
       sql_info->tables->next = ha_tbl_list;
@@ -1573,6 +1642,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
           ha_tbl_list->table_name = table_name;
         }
         ha_tbl_list->op_type = HA_ROUTINE_TYPE_FUNC;
+        ha_tbl_list->cata_version = INVALID_CAT_VERSION;
         ha_tbl_list->is_temporary_table = false;
         ha_tbl_list->next = NULL;
         ha_tbl_list_tail->next = ha_tbl_list;
@@ -1614,9 +1684,13 @@ static void init_ha_event_general(ha_event_general &ha_event, const void *ev,
 #ifdef IS_MYSQL
     ha_event.general_query = event->general_query.str;
     ha_event.general_query_length = event->general_query.length;
+    ha_event.general_command = (char *)event->general_command.str;
+    ha_event.general_command_length = event->general_command.length;
 #else
     ha_event.general_query = event->general_query;
     ha_event.general_query_length = event->general_query_length;
+    ha_event.general_command = (char *)event->general_command;
+    ha_event.general_command_length = event->general_command_length;
 #endif
   }
 #ifdef IS_MYSQL
@@ -1632,11 +1706,11 @@ static void init_ha_event_general(ha_event_general &ha_event, const void *ev,
 }
 
 static inline bool need_prepare(const ha_event_general &event, bool is_trans_on,
-                                int sql_command, ha_event_class_t event_class) {
+                                ha_event_class_t event_class) {
   bool conds = !is_trans_on;
 #ifdef IS_MARIADB
   if (MYSQL_AUDIT_GENERAL_CLASS == event_class) {
-    conds = conds && (HA_MYSQL_AUDIT_SDB_DDL == event.event_subclass);
+    conds = conds && (MYSQL_AUDIT_QUERY_BEGIN == event.event_subclass);
   } else if (MYSQL_AUDIT_TABLE_CLASS == event_class) {
     // set conds to false if event class is MYSQL_AUDIT_TABLE_CLASS
     conds = false;
@@ -1659,7 +1733,8 @@ static inline bool need_complete(const ha_event_general &event,
                                  ha_event_class_t event_class) {
   bool conds = is_trans_on;
 #ifdef IS_MARIADB
-  conds = conds && (MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
+  conds = conds && (MYSQL_AUDIT_QUERY_END == event.event_subclass ||
+                    MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
                     MYSQL_AUDIT_GENERAL_RESULT == event.event_subclass);
   // for mariadb the final event class must be MYSQL_AUDIT_GENERAL_CLASS
   conds = conds && (MYSQL_AUDIT_GENERAL_CLASS == event_class);
@@ -1731,7 +1806,8 @@ int fix_create_table_stmt(THD *thd, ha_event_class_t event_class,
 #else
   if (SQLCOM_CREATE_TABLE == sql_command && table_list &&
       (MYSQL_AUDIT_GENERAL_RESULT == event.event_subclass ||
-       MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass)) {
+       MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
+       MYSQL_AUDIT_QUERY_END == event.event_subclass)) {
     if (!table_list->table && table_list->next_local) {
       // deal with SQL like "create table t1 like t2" or "create or replace
       // table like".
@@ -2321,10 +2397,501 @@ inline static void set_overwrite_status(THD *thd, ha_event_general &event,
                                         bool status) {
 #ifdef IS_MARIADB
   if (MYSQL_AUDIT_GENERAL_RESULT == event.event_subclass ||
-      MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass) {
+      MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
+      MYSQL_AUDIT_QUERY_END == event.event_subclass) {
     thd->get_stmt_da()->set_overwrite_status(status);
   }
 #endif
+}
+
+// get involved objects about current SQL statement
+int get_query_objects(THD *thd, ha_sql_stmt_info *sql_info) {
+  DBUG_ENTER("get_query_objects");
+  int rc = 0;
+  int sql_command = thd_sql_command(thd);
+  Sroutine_hash_entry **sroutine_to_open = &thd->lex->sroutines_list.first;
+  MDL_key::enum_mdl_namespace mdl_type;
+  char qname_buff[NAME_LEN * 2 + 2] = {0};
+  char *db_name = NULL, *table_name = NULL, *op_type = NULL;
+
+  ha_table_list *ha_tbl_list = NULL;
+  switch (sql_command) {
+    case SQLCOM_SHOW_FIELDS:
+    case SQLCOM_SHOW_KEYS:
+    case SQLCOM_REPLACE:
+    case SQLCOM_REPLACE_SELECT:
+    case SQLCOM_SELECT:
+    case SQLCOM_SET_OPTION:
+    case SQLCOM_CALL:
+    case SQLCOM_UPDATE:
+    case SQLCOM_DELETE:
+    case SQLCOM_INSERT:
+    case SQLCOM_DELETE_MULTI:
+    case SQLCOM_UPDATE_MULTI:
+    case SQLCOM_INSERT_SELECT:
+    case SQLCOM_SHOW_CREATE: {
+      TABLE_LIST *dml_tables = sdb_lex_first_select(thd)->get_table_list();
+      if (NULL == dml_tables) {
+        dml_tables = thd->lex->query_tables;
+      }
+
+      // deal with "SQLCOM_SHOW_FIELDS & SQLCOM_SHOW_KEYS"
+      if ((SQLCOM_SHOW_FIELDS == sql_command ||
+           SQLCOM_SHOW_KEYS == sql_command) &&
+          dml_tables->schema_table_reformed) {
+        dml_tables = dml_tables->schema_select_lex->get_table_list();
+      }
+
+      ha_table_list *ha_tbl_list_tail = NULL;
+      ha_tbl_list = NULL;
+      for (TABLE_LIST *tbl = dml_tables; tbl; tbl = tbl->next_global) {
+        ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+        if (NULL == ha_tbl_list) {
+          rc = SDB_HA_OOM;
+          goto error;
+        }
+        ha_tbl_list->db_name = C_STR(tbl->db);
+        ha_tbl_list->table_name = C_STR(tbl->table_name);
+        if (!ha_tbl_list->db_name || !ha_tbl_list->table_name) {
+          continue;
+        }
+
+        ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
+        ha_tbl_list->is_temporary_table = false;
+        ha_tbl_list->next = NULL;
+        if (!sql_info->dml_tables) {
+          sql_info->dml_tables = ha_tbl_list;
+          ha_tbl_list_tail = ha_tbl_list;
+        } else {
+          ha_tbl_list_tail->next = ha_tbl_list;
+          ha_tbl_list_tail = ha_tbl_list;
+        }
+      }
+      for (Sroutine_hash_entry *rt = *sroutine_to_open; rt;
+           sroutine_to_open = &rt->next, rt = rt->next) {
+        mdl_type = rt->mdl_request.key.mdl_namespace();
+        memset(qname_buff, 0, NAME_LEN * 2 + 2);
+        sp_name name(&rt->mdl_request.key, qname_buff);
+        db_name = (char *)name.m_db.str;
+        table_name = (char *)name.m_name.str;
+
+        ha_tbl_list =
+            (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list) + 1);
+        db_name = (char *)thd_calloc(thd, name.m_db.length);
+        table_name = (char *)thd_calloc(thd, name.m_name.length);
+        if (!ha_tbl_list || !db_name || !table_name) {
+          rc = SDB_HA_OOM;
+          goto error;
+        } else {
+          sprintf(db_name, "%s", name.m_db.str);
+          sprintf(table_name, "%s", name.m_name.str);
+          ha_tbl_list->db_name = db_name;
+          ha_tbl_list->table_name = table_name;
+        }
+
+        if (MDL_key::FUNCTION == mdl_type) {
+          op_type = HA_ROUTINE_TYPE_FUNC;
+        } else if (MDL_key::PROCEDURE == mdl_type) {
+          op_type = HA_ROUTINE_TYPE_PROC;
+        } else if (MDL_key::EVENT == mdl_type) {
+          op_type = HA_ROUTINE_TYPE_EVENT;
+        } else if (MDL_key::TRIGGER == mdl_type) {
+          op_type = HA_ROUTINE_TYPE_TRIG;
+        } else {
+          DBUG_ASSERT(0);
+        }
+        ha_tbl_list->op_type = op_type;
+        ha_tbl_list->is_temporary_table = false;
+        ha_tbl_list->next = NULL;
+        if (!sql_info->dml_tables) {
+          sql_info->dml_tables = ha_tbl_list;
+          ha_tbl_list_tail = ha_tbl_list;
+        } else {
+          ha_tbl_list_tail->next = ha_tbl_list;
+          ha_tbl_list_tail = ha_tbl_list;
+        }
+      }
+    } break;
+    case SQLCOM_SHOW_CREATE_DB:
+    case SQLCOM_CHANGE_DB:
+    case SQLCOM_SHOW_TABLES: {
+      const char *db_name = NULL;
+      if (SQLCOM_SHOW_CREATE_DB == sql_command) {
+        db_name = thd->lex->name.str;
+      } else if (SQLCOM_CHANGE_DB == sql_command) {
+        db_name = C_STR(sdb_lex_first_select(thd)->db);
+      } else {
+        db_name = C_STR(sdb_lex_first_select(thd)->db);
+        db_name = db_name ? db_name : sdb_thd_db(thd);
+      }
+      DBUG_ASSERT(db_name != NULL);
+
+      ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+      if (NULL == ha_tbl_list) {
+        rc = SDB_HA_OOM;
+        goto error;
+      }
+
+      ha_tbl_list->db_name = db_name;
+      ha_tbl_list->table_name = HA_EMPTY_STRING;
+      ha_tbl_list->op_type = HA_OPERATION_TYPE_DB;
+      ha_tbl_list->is_temporary_table = false;
+      ha_tbl_list->next = NULL;
+      sql_info->dml_tables = ha_tbl_list;
+    } break;
+    case SQLCOM_SHOW_GRANTS:
+      if (NULL == thd->lex->grant_user->user.str) {
+        // deal with 'SHOW GRANTS' without user
+        break;
+      }
+    case SQLCOM_SHOW_CREATE_USER: {
+      ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+      if (NULL == ha_tbl_list) {
+        rc = SDB_HA_OOM;
+        goto error;
+      }
+      ha_tbl_list->db_name = HA_MYSQL_DB;
+      ha_tbl_list->table_name = thd->lex->grant_user->user.str;
+      ha_tbl_list->op_type = HA_OPERATION_TYPE_DCL;
+      ha_tbl_list->is_temporary_table = false;
+      ha_tbl_list->next = NULL;
+      sql_info->dml_tables = ha_tbl_list;
+    } break;
+#ifdef IS_MARIADB
+    case SQLCOM_SHOW_CREATE_PACKAGE:
+    case SQLCOM_SHOW_CREATE_PACKAGE_BODY:
+    case SQLCOM_SHOW_PACKAGE_BODY_CODE:
+#endif
+    case SQLCOM_SHOW_PROC_CODE:
+    case SQLCOM_SHOW_FUNC_CODE:
+    case SQLCOM_SHOW_CREATE_PROC:
+    case SQLCOM_SHOW_CREATE_FUNC:
+    case SQLCOM_SHOW_CREATE_EVENT:
+    case SQLCOM_SHOW_CREATE_TRIGGER: {
+      ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+      if (NULL == ha_tbl_list) {
+        rc = SDB_HA_OOM;
+        goto error;
+      }
+      ha_tbl_list->db_name = thd->lex->spname->m_db.str;
+      ha_tbl_list->table_name = thd->lex->spname->m_name.str;
+      ha_tbl_list->is_temporary_table = false;
+      ha_tbl_list->next = NULL;
+#ifdef IS_MARIADB
+      if (SQLCOM_SHOW_CREATE_PACKAGE == sql_command ||
+          SQLCOM_SHOW_CREATE_PACKAGE_BODY == sql_command ||
+          SQLCOM_SHOW_PACKAGE_BODY_CODE == sql_command) {
+        ha_tbl_list->op_type = HA_ROUTINE_TYPE_PACKAGE;
+      }
+#endif
+      if (SQLCOM_SHOW_CREATE_PROC == sql_command ||
+          SQLCOM_SHOW_PROC_CODE == sql_command) {
+        ha_tbl_list->op_type = HA_ROUTINE_TYPE_PROC;
+      } else if (SQLCOM_SHOW_CREATE_FUNC == sql_command ||
+                 SQLCOM_SHOW_FUNC_CODE == sql_command) {
+        ha_tbl_list->op_type = HA_ROUTINE_TYPE_FUNC;
+      } else if (SQLCOM_SHOW_CREATE_EVENT == sql_command) {
+        ha_tbl_list->op_type = HA_ROUTINE_TYPE_EVENT;
+      } else if (SQLCOM_SHOW_CREATE_TRIGGER == sql_command) {
+        ha_tbl_list->op_type = HA_ROUTINE_TYPE_TRIG;
+      } else {
+        DBUG_ASSERT(0);
+      }
+      sql_info->dml_tables = ha_tbl_list;
+    } break;
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+inline static bool need_retry_stmt(THD *thd) {
+  int sql_command = thd_sql_command(thd);
+  bool need_retry = false;
+  switch (sql_command) {
+    case SQLCOM_REPLACE:
+    case SQLCOM_REPLACE_SELECT:
+    case SQLCOM_SELECT:
+    case SQLCOM_UPDATE:
+    case SQLCOM_INSERT:
+    case SQLCOM_INSERT_SELECT:
+    case SQLCOM_DELETE:
+    case SQLCOM_DELETE_MULTI:
+    case SQLCOM_UPDATE_MULTI:
+    case SQLCOM_TRUNCATE:
+    case SQLCOM_SET_OPTION:
+    case SQLCOM_SHOW_TABLES:
+      need_retry = true;
+      break;
+  }
+  return need_retry;
+}
+
+static inline bool query_entry(ha_event_class_t event_class,
+                               unsigned int sub_event_class) {
+#ifdef IS_MYSQL
+  return MYSQL_AUDIT_QUERY_CLASS == event_class &&
+         MYSQL_AUDIT_QUERY_START == sub_event_class;
+#else
+  return MYSQL_AUDIT_GENERAL_CLASS == event_class &&
+         MYSQL_AUDIT_QUERY_BEGIN == sub_event_class;
+#endif
+}
+
+static inline bool sub_stmt_entry(ha_event_class_t event_class,
+                                  unsigned int sub_event_class) {
+#ifdef IS_MYSQL
+  return MYSQL_AUDIT_QUERY_CLASS == event_class &&
+         MYSQL_AUDIT_QUERY_NESTED_START == sub_event_class;
+#else
+  return MYSQL_AUDIT_GENERAL_CLASS == event_class &&
+         MYSQL_AUDIT_QUERY_BEGIN == sub_event_class;
+#endif
+}
+
+// wait objects updated to latest states
+static int wait_query_objects_updated_to_latest(THD *thd,
+                                                ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  const char *db_name = NULL, *table_name = NULL, *op_type = NULL;
+  Sdb_conn *sdb_conn = sql_info->sdb_conn;
+  MDL_key::enum_mdl_namespace mdl_type;
+  char qname_buff[NAME_LEN * 2 + 2] = {0};
+  char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
+
+  SDB_LOG_DEBUG("HA: Deal with DML, table_list: %p", sql_info->dml_tables);
+
+  // check and lock metadata for involved objects
+  Sdb_cl obj_state_cl;
+  rc =
+      ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl);
+  if (rc) {
+    ha_error_string(*sdb_conn, rc, sql_info->err_message);
+    goto error;
+  }
+  // check instance state for each table
+  for (ha_table_list *ha_tbl = sql_info->dml_tables; ha_tbl;
+       ha_tbl = ha_tbl->next) {
+    db_name = ha_tbl->db_name;
+    table_name = HA_EMPTY_STRING;
+    op_type = HA_OPERATION_TYPE_DB;
+    snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
+             db_name, table_name, op_type);
+    ha_cached_record *cached_record =
+        get_cached_record(sql_info->dml_checked_objects, cached_record_key);
+    if (!cached_record) {
+      rc = update_cached_record(sql_info->dml_checked_objects,
+                                PSI_INSTRUMENT_ME, cached_record_key, 0, 0);
+      if (rc) {
+        goto error;
+      }
+      // wait database updated to latest state
+      rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
+                                          obj_state_cl, sql_info, thd);
+      if (rc) {
+        goto error;
+      }
+    }
+
+    // wait objects updated to latest state, ignore temporary table
+    table_name = ha_tbl->table_name;
+    op_type = ha_tbl->op_type;
+    if (0 == strcmp(op_type, HA_OPERATION_TYPE_TABLE) &&
+        is_temporary_table(thd, db_name, table_name)) {
+      continue;
+    }
+
+    snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
+             db_name, table_name, op_type);
+    cached_record =
+        get_cached_record(sql_info->dml_checked_objects, cached_record_key);
+    if (!cached_record) {
+      rc = update_cached_record(sql_info->dml_checked_objects,
+                                PSI_INSTRUMENT_ME, cached_record_key, 0, 0);
+      if (rc) {
+        goto error;
+      }
+      rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
+                                          obj_state_cl, sql_info, thd);
+      if (rc) {
+        goto error;
+      }
+    } else {
+      SDB_LOG_DEBUG("HA: Current object: %s already checked",
+                    cached_record->key);
+      continue;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+static inline bool need_retry_errno(uint mysql_errno) {
+  bool need_retry = false;
+  switch (mysql_errno) {
+    case ER_NO_SUCH_TABLE:
+    case ER_BAD_DB_ERROR:
+    case ER_WRONG_VALUE_COUNT_ON_ROW:
+    case WARN_DATA_TRUNCATED:
+    case ER_BAD_FIELD_ERROR:
+    case ER_DUP_KEY:
+    case ER_DUP_ENTRY:
+    case ER_SP_DOES_NOT_EXIST:
+    case ER_EVENT_DOES_NOT_EXIST:
+    case ER_TRG_DOES_NOT_EXIST:
+    case ER_CANNOT_USER:
+      need_retry = true;
+  }
+
+  if (SDB_DMS_NOTEXIST == get_sdb_code(mysql_errno)) {
+    need_retry = true;
+  }
+  return need_retry;
+}
+
+static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
+                                          unsigned int event_class,
+                                          ha_event_general &event);
+
+static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
+  DBUG_ENTER("set_retry_flag");
+  uint mysql_errno = sdb_sql_errno(thd);
+  bool version_error = false;
+
+  Sroutine_hash_entry *sroutine_to_open = thd->lex->sroutines_list.first;
+  static const int MAX_ERR_LEN = 30;
+  char CL_VERSION_ERR[MAX_ERR_LEN] = {0};
+
+  if (ER_GET_ERRNO == mysql_errno) {
+    int engine_error_code = SDB_CLIENT_CATA_VER_OLD;
+    convert_sdb_code(engine_error_code);
+    snprintf(CL_VERSION_ERR, MAX_ERR_LEN, "Got error %d", engine_error_code);
+  } else {
+    snprintf(CL_VERSION_ERR, MAX_ERR_LEN, "sdb client cata version old");
+  }
+  const char *cl_version_err = sdb_errno_message(thd);
+  // sequoiadb error 'sdb client cata version old' or 'Got error XXX'
+  if (0 == strncmp(CL_VERSION_ERR, cl_version_err, strlen(CL_VERSION_ERR))) {
+    version_error = true;
+    DBUG_ASSERT(!sql_info->is_result_set_started);
+    SDB_LOG_DEBUG("HA: Set result set started flag to true for %s",
+                  sdb_thd_query(thd));
+    sql_info->is_result_set_started = true;
+  }
+
+  if (need_retry_stmt(thd) &&
+      (need_retry_errno(mysql_errno) || version_error) &&
+      NULL == sroutine_to_open) {
+    SDB_LOG_DEBUG(
+        "HA: Receive set retry flag message with error code: %d, "
+        "set retry flag for current statement",
+        mysql_errno);
+    DBUG_PRINT("info", ("HA: Receive set retry flag message with error "
+                        "code: %d, set retry flag for current statement",
+                        mysql_errno));
+    thd->get_stmt_da()->reset_diagnostics_area();
+    sql_info->dml_retry_flag = true;
+  }
+  DBUG_VOID_RETURN;
+}
+
+static void reset_retry_flags(ha_sql_stmt_info *sql_info) {
+  if (sql_info->dml_retry_flag) {
+    SDB_LOG_DEBUG("HA: Reset retry flag");
+    sql_info->dml_retry_flag = false;
+  }
+  if (sql_info->is_result_set_started) {
+    SDB_LOG_DEBUG("HA: Reset result set flag to false");
+    sql_info->is_result_set_started = false;
+  }
+  if (sql_info->last_instr_lex) {
+    SDB_LOG_DEBUG("HA: Reset last instruction lex to NULL");
+    sql_info->last_instr_lex = NULL;
+  }
+}
+
+// can't handle 'show tables & show database' yet
+static inline bool need_pre_check_stmt(int sql_command) {
+  bool need_check_first = false;
+  switch (sql_command) {
+    case SQLCOM_SHOW_CREATE_USER:
+    case SQLCOM_SHOW_CREATE:
+    case SQLCOM_SHOW_CREATE_DB:
+    case SQLCOM_SHOW_CREATE_PROC:
+    case SQLCOM_SHOW_CREATE_FUNC:
+    case SQLCOM_SHOW_CREATE_EVENT:
+    case SQLCOM_SHOW_CREATE_TRIGGER:
+    case SQLCOM_SHOW_GRANTS:
+    case SQLCOM_SHOW_FIELDS:
+    case SQLCOM_SHOW_KEYS:
+    case SQLCOM_SHOW_PROC_CODE:
+    case SQLCOM_SHOW_FUNC_CODE:
+    case SQLCOM_CALL:
+    case SQLCOM_CHANGE_DB:
+#ifdef IS_MARIADB
+    case SQLCOM_SHOW_CREATE_PACKAGE:
+    case SQLCOM_SHOW_CREATE_PACKAGE_BODY:
+    case SQLCOM_SHOW_PACKAGE_BODY_CODE:
+#endif
+      need_check_first = true;
+  }
+  return need_check_first;
+}
+
+// wait query objects updated to latest state before query operation
+static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
+                                          unsigned int event_class,
+                                          ha_event_general &event) {
+  int rc = 0;
+  DBUG_ASSERT(NULL == sql_info->dml_tables);
+  Sroutine_hash_entry *sroutine_to_open = thd->lex->sroutines_list.first;
+  int sql_command = thd_sql_command(thd);
+
+  // wait objects updated to latest state in following situations:
+  // 1. dml_retry_flag is set
+  // 2. routines are not NULL
+  if (!sql_info->dml_retry_flag && NULL == sroutine_to_open) {
+    if (!need_pre_check_stmt(sql_command)) {
+      goto done;
+    }
+    SDB_LOG_DEBUG(
+        "HA: Statement contains 'SHOW', wait objects updated to latest state");
+  } else if (sql_info->dml_retry_flag) {
+    const char *query = thd->in_sub_stmt ? "sub-query" : sdb_thd_query(thd);
+    SDB_LOG_DEBUG("HA: DML retry flag is set, retry current statement");
+    SDB_LOG_DEBUG("HA: Retry DML query: %s, thread: %p", query, thd);
+  } else if (NULL != sroutine_to_open) {
+    const char *query = thd->in_sub_stmt ? "sub-query" : sdb_thd_query(thd);
+    SDB_LOG_DEBUG(
+        "HA: Current query '%s' contains routines, "
+        "wait objects updated to latest state first",
+        query);
+  }
+
+  rc = update_sql_stmt_info(sql_info, event.general_thread_id);
+  if (rc) {
+    goto error;
+  }
+
+  // get objects for current query
+  rc = get_query_objects(thd, sql_info);
+  if (rc) {
+    goto error;
+  }
+
+  // wait objects updated to latest state
+  rc = wait_query_objects_updated_to_latest(thd, sql_info);
+  if (rc) {
+    goto error;
+  }
+done:
+  sql_info->dml_tables = NULL;
+  return rc;
+error:
+  goto done;
 }
 
 static void handle_error(int error, ha_sql_stmt_info *sql_info) {
@@ -2386,6 +2953,74 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   if ((rc = get_sql_stmt_info(&sql_info))) {
     goto error;
   }
+  if ((rc = update_sql_stmt_info(sql_info, event.general_thread_id))) {
+    goto error;
+  }
+
+  // set or reset retry flag for current statement
+  if (MYSQL_AUDIT_GENERAL_CLASS == event_class &&
+      MYSQL_AUDIT_GENERAL_LOG == event.event_subclass) {
+    if (0 == strcmp(event.general_command, HA_SET_RETRY_FLAG) &&
+        !sdb_execute_only_in_mysql(thd)) {
+      LEX *saved_lex = thd->lex;
+
+      // restore lex of last executed statement in routines
+      if (sql_info->last_instr_lex) {
+        thd->lex = sql_info->last_instr_lex;
+      }
+
+      set_retry_flags(thd, sql_info);
+      // for sql like "set m:= select " including tables, in routines,
+      // 'mysql_execute_command' will not be called, so query objects
+      // need to be checked before next retry.
+      if (SQLCOM_SET_OPTION == thd->lex->sql_command &&
+          NULL == thd->lex->sroutines_list.first) {
+        rc = wait_latest_state_before_query(thd, sql_info, event_class, event);
+        if (rc) {
+          goto error;
+        }
+      }
+
+      // restore current lex
+      if (sql_info->last_instr_lex) {
+        thd->lex = saved_lex;
+      }
+      goto done;
+    } else if (0 == strcmp(event.general_command, HA_RESET_RETRY_FLAG)) {
+      reset_retry_flags(sql_info);
+      goto done;
+    } else if (0 == strcmp(event.general_command, HA_SAVE_INSTR_LEX)) {
+      // create procedure p1()    has lex1
+      // begin
+      //   select * from t1;      has lex2
+      //   select * from t2;      has lex3
+      // end|
+      // for the above query, thd->lex will be set to lex1 after execution
+      // of 'select * from t1;'. But if 'select * from t1;' need to be
+      // retried, and we can't use lex1 to check if 'select * from t1' need
+      // to be retried, last_instr_lex used to saved lex2.
+      uint sql_err = sdb_sql_errno(thd);
+      if (need_retry_errno(sql_err) && sql_info->last_instr_lex != thd->lex) {
+        SDB_LOG_DEBUG("HA: Save last instruction lex");
+        sql_info->last_instr_lex = thd->lex;
+      }
+      goto done;
+    } else if (0 == strcmp(event.general_command, HA_PRE_CHECK_OBJECTS)) {
+      rc = wait_latest_state_before_query(thd, sql_info, event_class, event);
+      if (rc) {
+        goto error;
+      }
+      goto done;
+    } else if (0 == strcmp(event.general_command, HA_RESET_CHECKED_OBJECTS)) {
+      ulong records = sql_info->dml_checked_objects.records;
+      if (records) {
+        SDB_LOG_DEBUG("HA: Cached %ld records, clear cached checked objects",
+                      records);
+        my_hash_reset(&sql_info->dml_checked_objects);
+      }
+      goto done;
+    }
+  }
 
   // destroy sequoiadb connection at end of client session
   if (sql_info->inited && MYSQL_AUDIT_CONNECTION_CLASS == event_class &&
@@ -2393,6 +3028,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     if (sql_info->sdb_conn) {
       delete sql_info->sdb_conn;
       sql_info->sdb_conn = NULL;
+      my_hash_reset(&sql_info->dml_checked_objects);
+      my_hash_free(&sql_info->dml_checked_objects);
       SDB_LOG_DEBUG("HA: Destroy sequoiadb connection");
     }
     goto done;
@@ -2404,15 +3041,23 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     goto done;
   }
 
-  // 1. do nothing if current SQL statement is not metadata operation.
+  // 1. Wait objects updated to latest state if necessary.
   // 2. In mysql, event is executed by creating a procedure, execution of
   //    event can't be written into sequoiadb
   if (!is_meta_sql(thd, event) || is_event_dispatch_execution(thd)) {
-    // TODO: handle DML query
+    // wait query objects updated to latest state by HA thread
+    if ((need_retry_stmt(thd) || need_pre_check_stmt(sql_command)) &&
+        (query_entry(event_class, event.event_subclass) ||
+         sub_stmt_entry(event_class, event.event_subclass))) {
+      rc = wait_latest_state_before_query(thd, sql_info, event_class, event);
+      if (rc) {
+        goto error;
+      }
+    }
     goto done;
   } else if (!ha_thread.recover_finished) {  // current instance is recovering
     struct timespec abstime;
-    sdb_set_timespec(abstime, ha_wait_replay_timeout);
+    sdb_set_timespec(abstime, ha_wait_recover_timeout);
 
     SDB_LOG_INFO("HA: Waiting for completion of recover process");
     // other clients must wait for completion of recover process. It's not
@@ -2445,13 +3090,12 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   set_overwrite_status(thd, event, true);
 
   // update SQL statement info according to ev
-  if ((rc = update_sql_stmt_info(sql_info, event_class, ev, thd))) {
+  if ((rc = update_sql_stmt_info(sql_info, event.general_thread_id))) {
     goto error;
   }
 
   is_trans_on = sql_info->sdb_conn->is_transaction_on();
-
-  if (need_prepare(event, is_trans_on, sql_command, event_class)) {
+  if (need_prepare(event, is_trans_on, event_class)) {
     DBUG_ASSERT(sql_info->tables == NULL);
     try {
       SDB_LOG_DEBUG("HA: At the beginning of persisting SQL: %s, thread: %p",
@@ -2459,6 +3103,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       SDB_LOG_DEBUG("HA: SQL command: %d, event: %d, subevent: %d, thread: %p",
                     sql_command, event_class, *((int *)ev), thd);
       SDB_LOG_DEBUG("HA: Start transaction for persisting SQL log");
+
       rc = sql_info->sdb_conn->begin_transaction(ISO_READ_STABILITY);
       if (rc) {
         ha_error_string(*(sql_info->sdb_conn), rc, sql_info->err_message);
@@ -2606,6 +3251,305 @@ static int persist_mysql_stmt(THD *thd, ha_event_class_t event_class,
   return persist_sql_stmt(thd, event_class, ev);
 }
 
+// get cata version from SQL instance
+int ha_get_cata_version(const char *db_name, const char *table_name) {
+  int rc = 0;
+  int version = 0;
+
+  if (ha_inst_group_name && 0 != strlen(ha_inst_group_name)) {
+    ha_cached_record *cached_record = NULL;
+    char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
+    snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
+             db_name, table_name, HA_OPERATION_TYPE_TABLE);
+    cached_record = ha_get_cached_record(cached_record_key);
+    if (cached_record) {
+      version = cached_record->cata_version;
+    } else {
+      // can't find instance state in cache, maybe its original table before
+      // upgrading to instance group HA, set version to 0
+    }
+  }
+  return version;
+}
+
+// for special DDL statement 'create table as select '
+int ha_get_latest_cata_version(const char *db_name, const char *table_name,
+                               int &version) {
+  ha_sql_stmt_info *sql_info = NULL;
+  int rc = get_sql_stmt_info(&sql_info);
+  DBUG_ASSERT(0 == rc && sql_info != NULL);
+
+  if (sql_info->tables && sql_info->tables->cata_version > version &&
+      0 == strcmp(db_name, sql_info->tables->db_name) &&
+      0 == strcmp(table_name, sql_info->tables->table_name) &&
+      0 == strcmp(HA_OPERATION_TYPE_TABLE, sql_info->tables->op_type)) {
+    version = sql_info->tables->cata_version;
+  }
+  return rc;
+}
+
+// save cata version for a single table, this is only for DDL operaion
+// in 'write_sql_log_and_states', cata version will be written into
+// 'HASQLLog', 'HAObjectState' and 'HAInstanceObjectState'
+void ha_set_cata_version(const char *db_name, const char *table_name,
+                         int version) {
+  if (ha_inst_group_name && 0 != strlen(ha_inst_group_name)) {
+    if (sdb_is_tmp_table(NULL, table_name)) {
+      return;
+    }
+    ha_sql_stmt_info *sql_info = NULL;
+    int rc = get_sql_stmt_info(&sql_info);
+    DBUG_ASSERT(0 == rc && sql_info != NULL);
+
+    for (ha_table_list *tables = sql_info->tables; tables;
+         tables = tables->next) {
+      if (0 == strcmp(tables->op_type, HA_OPERATION_TYPE_TABLE) &&
+          0 == strcmp(tables->db_name, db_name) &&
+          0 == strcmp(tables->table_name, table_name)) {
+        tables->cata_version = version;
+        break;
+      }
+    }
+    SDB_LOG_DEBUG("HA: Set cata version %d for table: %s-%s", version, db_name,
+                  table_name);
+  }
+}
+
+static int write_empty_sql_log_for_object(
+    const char *db_name, const char *table_name, const char *op_type,
+    int driver_cata_version, Sdb_cl &sql_log_cl, Sdb_cl &obj_state_cl,
+    Sdb_cl &inst_obj_state_cl) {
+  int rc = 0;
+  DBUG_ENTER("write_object_empty_log");
+  bool write_empty_log = false;
+  bson::BSONObj obj, cond, hint, result;
+  THD *thd = current_thd;
+  char cached_record_key[NAME_LEN * 2 + 20] = {0};
+  ha_sql_stmt_info *sql_info = NULL;
+
+  cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
+                          << HA_FIELD_TYPE << op_type);
+  rc = obj_state_cl.query(cond);
+  if (rc && HA_ERR_END_OF_FILE != rc) {
+    goto error;
+  }
+  rc = obj_state_cl.next(obj, false);
+  if (rc && HA_ERR_END_OF_FILE != rc) {
+    goto error;
+  }
+
+  // rc is 0 or HA_ERR_END_OF_FILE
+  if (HA_ERR_END_OF_FILE == rc) {
+    // can't find object state for current table
+    write_empty_log = true;
+  } else if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
+    // if database SQL Log state exists
+    goto done;
+  } else {
+    // if driver cata version is greater than cata version in 'HAObjectState'
+    // write an empty SQL log, and set 'CataVersion' to driver cata version
+    int object_cata_version = obj.getIntField(HA_FIELD_CAT_VERSION);
+    write_empty_log = (driver_cata_version > object_cata_version);
+    if (write_empty_log) {
+      SDB_LOG_DEBUG(
+          "HA: Write an empty log for '%s.%s', new cata version is %d", db_name,
+          table_name, driver_cata_version);
+    }
+  }
+
+  rc = get_sql_stmt_info(&sql_info);
+  if (rc) {
+    goto error;
+  }
+
+  if (write_empty_log) {
+    int sql_id = 0;
+    int charset_num = my_charset_utf8mb4_bin.number;
+
+    // wait object state updated to lastest by replay thread
+    rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
+                                        obj_state_cl, sql_info, thd);
+    if (rc) {
+      goto error;
+    }
+
+    obj = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
+                           << HA_FIELD_TYPE << op_type << HA_FIELD_SQL
+                           << HA_EMPTY_STRING << HA_FIELD_OWNER
+                           << ha_thread.instance_id << HA_FIELD_SESSION_ATTRS
+                           << "" << HA_FIELD_CLIENT_CHARSET_NUM << charset_num
+                           << HA_FIELD_CAT_VERSION << driver_cata_version);
+    rc = sql_log_cl.insert(obj, hint, 0, &result);
+    if (rc) {
+      goto error;
+    }
+    sql_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
+    DBUG_ASSERT(sql_id > 0);
+    cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
+                            << HA_FIELD_TYPE << op_type);
+    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_CAT_VERSION
+                                              << driver_cata_version));
+    rc = obj_state_cl.upsert(obj, cond);
+    if (rc) {
+      goto error;
+    }
+
+    // write 'HAInstanceObjectState'
+    cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread.instance_id << HA_FIELD_DB
+                                     << db_name << HA_FIELD_TABLE << table_name
+                                     << HA_FIELD_TYPE << op_type);
+    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_CAT_VERSION
+                                              << driver_cata_version));
+    rc = inst_obj_state_cl.upsert(obj, cond);
+    if (rc) {
+      goto error;
+    }
+
+    // update cached instance state
+    snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", db_name,
+             table_name, op_type);
+    rc =
+        ha_update_cached_record(cached_record_key, sql_id, driver_cata_version);
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+// write an empty SQL log for tables before sequoiadb-sql-3.4.2
+// and background split operation
+int ha_write_empty_sql_log(const char *db_name, const char *table_name,
+                           int driver_cata_version) {
+  int rc = 0;
+  DBUG_ENTER("write_empty_sql_log");
+
+  ha_sql_stmt_info *sql_info = NULL;
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_cl sql_log_cl, obj_state_cl, inst_obj_state_cl, lock_cl;
+  rc = get_sql_stmt_info(&sql_info);
+  if (rc) {
+    goto error;
+  }
+
+  try {
+    sdb_conn = sql_info->sdb_conn;
+    if (sdb_conn->is_transaction_on()) {
+      goto done;
+    }
+
+    rc = ha_get_lock_cl(*sdb_conn, ha_thread.sdb_group_name, lock_cl);
+    if (rc) {
+      ha_error_string(*sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
+
+    rc = sql_info->sdb_conn->begin_transaction(ISO_READ_STABILITY);
+    if (rc) {
+      goto error;
+    }
+
+    // add lock for database
+    rc = add_slock(lock_cl, db_name, HA_EMPTY_STRING, HA_OPERATION_TYPE_DB,
+                   sql_info);
+    if (HA_ERR_END_OF_FILE == rc) {
+      SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'X' lock for '%s:%s'",
+                    db_name, HA_EMPTY_STRING);
+      rc = add_xlock(lock_cl, db_name, HA_EMPTY_STRING, HA_OPERATION_TYPE_DB,
+                     sql_info);
+    }
+    if (rc) {
+      goto error;
+    }
+
+    // add lock for table
+    rc = add_xlock(lock_cl, db_name, table_name, HA_OPERATION_TYPE_TABLE,
+                   sql_info);
+    if (rc) {
+      goto error;
+    }
+
+    rc = ha_get_object_state_cl(*sql_info->sdb_conn, ha_thread.sdb_group_name,
+                                obj_state_cl);
+    if (rc) {
+      ha_error_string(*sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
+
+    rc = sdb_conn->get_cl(ha_thread.sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
+    if (rc) {
+      ha_error_string(*sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
+
+    rc = ha_get_instance_object_state_cl(*sdb_conn, ha_thread.sdb_group_name,
+                                         inst_obj_state_cl);
+    if (rc) {
+      ha_error_string(*sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
+
+    rc = write_empty_sql_log_for_object(db_name, HA_EMPTY_STRING,
+                                        HA_OPERATION_TYPE_DB, 0, sql_log_cl,
+                                        obj_state_cl, inst_obj_state_cl);
+    if (rc) {
+      goto error;
+    }
+    rc = write_empty_sql_log_for_object(
+        db_name, table_name, HA_OPERATION_TYPE_TABLE, driver_cata_version,
+        sql_log_cl, obj_state_cl, inst_obj_state_cl);
+    if (rc) {
+      goto error;
+    }
+
+    rc = sql_info->sdb_conn->commit_transaction();
+    if (rc) {
+      goto error;
+    }
+  } catch (std::bad_alloc &e) {
+    rc = SDB_ERR_OOM;
+    SDB_LOG_ERROR("Failed to write empty SQL log for table:%s.%s, exception:%s",
+                  db_name, table_name, e.what());
+    convert_sdb_code(rc);
+    goto error;
+  } catch (std::exception &e) {
+    SDB_LOG_ERROR("Failed to write empty SQL log for table:%s.%s, exception:%s",
+                  db_name, table_name, e.what());
+    rc = SDB_ERR_BUILD_BSON;
+    convert_sdb_code(rc);
+    goto error;
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  ha_error_string(*sdb_conn, rc, sql_info->err_message);
+  sql_info->sdb_conn->rollback_transaction();
+  goto done;
+}
+
+static int init_inst_state_cache() {
+  for (int i = 0; i < HA_MAX_CATA_VERSION_CACHES; i++) {
+    native_rw_init(&ha_thread.inst_state_caches[i].rw_lock);
+    if (sdb_hash_init(
+            &ha_thread.inst_state_caches[i].cache, system_charset_info, 32, 0,
+            0, (my_hash_get_key)cached_record_get_key, free_cached_record_elem,
+            0, HA_KEY_MEM_INST_STATE_CACHE)) {
+      SDB_LOG_ERROR(
+          "HA: Out of memory while initializing instance state cache");
+      return SDB_HA_OOM;
+    }
+  }
+  return 0;
+}
+
+static void destroy_inst_state_cache() {
+  for (int i = 0; i < HA_MAX_CATA_VERSION_CACHES; i++) {
+    native_rw_destroy(&ha_thread.inst_state_caches[i].rw_lock);
+    my_hash_reset(&ha_thread.inst_state_caches[i].cache);
+    my_hash_free(&ha_thread.inst_state_caches[i].cache);
+  }
+}
+
 // HA plugin initialization entry
 static int server_ha_init(void *p) {
   DBUG_ENTER("server_ha_init");
@@ -2651,21 +3595,14 @@ static int server_ha_init(void *p) {
                      &ha_thread.recover_finished_mutex, MY_MUTEX_INIT_FAST);
     mysql_mutex_init(HA_KEY_MUTEX_REPLAY_STOPPED,
                      &ha_thread.replay_stopped_mutex, MY_MUTEX_INIT_FAST);
-    mysql_mutex_init(HA_KEY_MUTEX_INST_CACHE,
-                     &ha_thread.inst_cache_mutex, MY_MUTEX_INIT_FAST);
-    my_thread_attr_init(&ha_thread.thread_attr);
-    if (sdb_hash_init(&ha_thread.inst_state_cache, system_charset_info, 32, 0,
-                      0, (my_hash_get_key)cached_record_get_key,
-                      free_cached_record_elem, 0,
-                      HA_KEY_MEM_INST_STATE_CACHE)) {
-      sql_print_error(
-          "HA: Out of memory while initializing instance state cache");
+    if (init_inst_state_cache()) {
       DBUG_RETURN(SDB_HA_OOM);
     }
+    my_thread_attr_init(&ha_thread.thread_attr);
     if (mysql_thread_create(HA_KEY_HA_THREAD, &ha_thread.thread,
                             &ha_thread.thread_attr, ha_recover_and_replay,
                             (void *)(&ha_thread))) {
-      sql_print_error("HA: Out of memory while creating 'HA' thread");
+      SDB_LOG_ERROR("HA: Out of memory while creating 'HA' thread");
       DBUG_RETURN(SDB_HA_OOM);
     }
     ha_thread.is_open = true;
@@ -2702,10 +3639,8 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
     mysql_mutex_destroy(&ha_thread.recover_finished_mutex);
     mysql_cond_destroy(&ha_thread.replay_stopped_cond);
     mysql_mutex_destroy(&ha_thread.replay_stopped_mutex);
-    mysql_mutex_destroy(&ha_thread.inst_cache_mutex);
     my_thread_attr_destroy(&ha_thread.thread_attr);
-    my_hash_reset(&ha_thread.inst_state_cache);
-    my_hash_free(&ha_thread.inst_state_cache);
+    destroy_inst_state_cache();
   }
 
   DBUG_RETURN(0);

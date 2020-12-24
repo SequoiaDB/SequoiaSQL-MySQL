@@ -43,17 +43,19 @@
 
 #define HA_MYID_FILE "myid"
 
+// global database & table
 #define HA_GLOBAL_INFO "HASysGlobalInfo"
-#define HA_CONFIG_CL "HAConfig"
-#define HA_INST_GROUP_CONFIG_CL "HAInstGroupConfig"
-#define HA_SQL_LOG_CL "HASQLLog"
-#define HA_SQL_LOG_STATE_CL "HASQLLogState"
-#define HA_INSTANCE_STATE_CL "HAInstanceState"
-#define HA_GLOBAL_STATE_CL "HAGlobalState"
-#define HA_LOCK_CL "HALock"
-#define HA_DB_STATE_CL "HADBState"
+#define HA_REGISTRY_CL "HARegistry"
 
-#define HA_INST_GROUP_PREFIX "HAInstGroup_"
+// instance group configuration and state table
+#define HA_CONFIG_CL "HAConfig"
+#define HA_LOCK_CL "HALock"
+#define HA_SQL_LOG_CL "HASQLLog"
+#define HA_OBJECT_STATE_CL "HAObjectState"
+#define HA_INSTANCE_OBJECT_STATE_CL "HAInstanceObjectState"
+#define HA_INSTANCE_STATE_CL "HAInstanceState"
+
+#define HA_INST_GROUP_PREFIX "HAInstanceGroup_"
 
 #define HA_FIELD_AUTH_STRING "AuthString"
 #define HA_FIELD_HOST "Host"
@@ -71,7 +73,7 @@
 #define HA_FIELD_TYPE "Type"
 #define HA_FIELD_SQL "SQL"
 #define HA_FIELD_OWNER "Owner"
-#define HA_FIELD_INSTANCE_GROUP_NAME "InstGroupName"
+#define HA_FIELD_INSTANCE_GROUP_NAME "InstanceGroupName"
 #define HA_FIELD_SESSION_ATTRS "SessionAttributes"
 #define HA_FIELD_CLIENT_CHARSET_NUM "ClientCharsetNum"
 
@@ -84,18 +86,18 @@
 
 #define HA_FIELD_MAX_SQL_ID "MaxSQLID"
 #define HA_FIELD_VERSION "Version"
+#define HA_FIELD_CAT_VERSION "CatVersion"
 
 // index macros on tables
 #define HA_SQL_LOG_SQLID_INDEX "SQLLogSQLIDIndex"
-#define HA_INST_STATE_DB_TABLE_TYPE_INSTID_INDEX \
-  "InstStateDBTableTypeInstIDIndex"
-#define HA_CONFIG_INSTID_INDEX "ConfigInstIDIndex"
-#define HA_CONFIG_HOST_PORT_INDEX "ConfigHostPortIndex"
-#define HA_GLOB_STATE_INSTID_INDEX "GlobStateInstIDIndex"
-#define HA_GLOB_STATE_JOIN_ID_INDEX "GlobStateJoinIDIndex"
+#define HA_INST_OBJ_STATE_DB_TABLE_TYPE_INSTID_INDEX \
+  "InstanceObjectStateDBTableTypeInstanceIDIndex"
+#define HA_REGISTRY_INSTID_INDEX "RegistryInstanceIDIndex"
+#define HA_REGISTRY_HOST_PORT_INDEX "RegistryHostPortIndex"
+#define HA_INST_STATE_INSTID_INDEX "InstanceStateInstanceIDIndex"
+#define HA_INST_STATE_JOIN_ID_INDEX "InstanceStateJoinIDIndex"
 #define HA_LOCK_DB_TABLE_TYPE_INDEX "LockDBTableTypeIndex"
-#define HA_SQL_LOG_STATE_DB_TABLE_TYPE_INDEX "SQLLogStateDBTableTypeIndex"
-#define HA_DB_STATE_DB_INDEX "DBStateDBIndex"
+#define HA_OBJ_STATE_DB_TABLE_TYPE_INDEX "ObjectStateDBTableTypeIndex"
 
 #define HA_LOOPBACK_ADDRESS "127.0.0.1"
 
@@ -110,9 +112,6 @@
 #define HA_TRANSACTION_ISOLATION "TransIsolation"
 #define HA_TRANSACTION_TIMEOUT "TransTimeout"
 #define HA_TRANSACTION_LOCK_WAIT "TransLockWait"
-#define HA_GLOBAL_DB "HA_GLOBAL_LOCK_DB_FOR_WRITE_SQL_LOG_SEQUENCE"
-#define HA_GLOBAL_TABLE "HA_GLOBAL_LOCK_TABLE_FOR_WRITE_SQL_LOG_SEQUENCE"
-#define HA_GLOBAL_TYPE "HA_GLOBAL_LOCK_TYPE_FOR_WRITE_SQL_LOG_SEQUENCE"
 
 #define HA_MUTEX_KEY_SERVER_START 10001
 #define HA_COND_KEY_SERVER_START 10002
@@ -129,11 +128,11 @@
 
 #define HA_EMPTY_STRING ""
 // operation macros for 'ha_sql_info'
-#define HA_ROUTINE_TYPE_PROC "HA_ROUTINE_TYPE_PROC"
-#define HA_ROUTINE_TYPE_FUNC "HA_ROUTINE_TYPE_FUNC"
-#define HA_ROUTINE_TYPE_TRIG "HA_ROUTINE_TYPE_TRIG"
-#define HA_ROUTINE_TYPE_EVENT "HA_ROUTINE_TYPE_EVENT"
-#define HA_ROUTINE_TYPE_PACKAGE "HA_ROUTINE_TYPE_PACKAGE"
+#define HA_ROUTINE_TYPE_PROC "HA_ROUTINE_PROC"
+#define HA_ROUTINE_TYPE_FUNC "HA_ROUTINE_FUNC"
+#define HA_ROUTINE_TYPE_TRIG "HA_ROUTINE_TRIG"
+#define HA_ROUTINE_TYPE_EVENT "HA_ROUTINE_EVENT"
+#define HA_ROUTINE_TYPE_PACKAGE "HA_ROUTINE_PACKAGE"
 
 #define HA_OPERATION_TYPE_TABLE "HA_TABLE_OPERATION"
 #define HA_OPERATION_TYPE_DCL "HA_DCL_OPERATION"
