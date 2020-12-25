@@ -1853,7 +1853,7 @@ void ha_sdb::update_last_insert_id() {
   int rc = SDB_ERR_OK;
   if (!m_has_update_insert_id) {
     Sdb_conn *conn = NULL;
-    check_sdb_in_thd(ha_thd(), &conn, true);
+    check_sdb_in_thd(ha_thd(), &conn, false);
     bson::BSONObj result;
     bson::BSONElement ele;
 
@@ -2128,7 +2128,7 @@ bool ha_sdb::is_field_rule_supported() {
     goto done;
   }
 
-  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (rc != 0) {
     goto error;
   }
@@ -2175,7 +2175,7 @@ bool ha_sdb::is_inc_rule_supported() {
     goto done;
   }
 
-  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (rc != 0) {
     goto error;
   }
@@ -4067,7 +4067,7 @@ int ha_sdb::autocommit_statement(bool direct_op) {
   int rc = 0;
   Sdb_conn *conn = NULL;
 
-  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (0 != rc) {
     goto done;
   }
@@ -5248,41 +5248,27 @@ error:
 }
 
 void ha_sdb::handle_sdb_error(int error, myf errflag) {
-  int sdb_rc = 0;
   const char *error_msg = NULL, *detail_msg = NULL, *desp_msg = NULL;
   DBUG_ENTER("ha_sdb::handle_sdb_error");
   DBUG_PRINT("info", ("error code %d", error));
+  Sdb_conn *connection = NULL;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   bson::BSONObj error_obj;
 
-  // get error object from Sdb_conn
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
-  Sdb_conn *connection = NULL;
-  sdb_rc = check_sdb_in_thd(ha_thd(), &connection, true);
-  if (sdb_rc != SDB_OK) {
-    push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
-                 SDB_GET_CONNECT_FAILED);
-    if (SDB_NET_CANNOT_CONNECT == get_sdb_code(sdb_rc) || !connection) {
-      goto done;
-    }
-  }
-  sdb_rc = connection->get_last_result_obj(error_obj, false);
-  if (sdb_rc != SDB_OK) {
-    push_warning(ha_thd(), Sql_condition::SL_WARNING, sdb_rc,
-                 SDB_GET_LAST_ERROR_FAILED);
-  }
-
-  // get error info from error_msg
-  detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
-  if (strlen(detail_msg) != 0) {
-    error_msg = detail_msg;
-  } else {
-    desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
-    if (strlen(desp_msg) != 0) {
-      error_msg = desp_msg;
+  // get error message from SequoiaDB
+  if (0 == check_sdb_in_thd(ha_thd(), &connection, false) &&
+      0 == connection->get_last_result_obj(error_obj, false)) {
+    detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
+    if (strlen(detail_msg) != 0) {
+      error_msg = detail_msg;
+    } else {
+      desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+      if (strlen(desp_msg) != 0) {
+        error_msg = desp_msg;
+      }
     }
   }
 
-done:
   switch (get_sdb_code(error)) {
     case SDB_UPDATE_SHARD_KEY:
       if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
@@ -5491,7 +5477,7 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
 
   thd_sdb->start_stmt_count = 0;
 
-  rc = check_sdb_in_thd(thd, &connection, true);
+  rc = check_sdb_in_thd(thd, &connection, false);
   if (0 != rc) {
     goto error;
   }
@@ -5541,7 +5527,7 @@ static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
 
   thd_sdb->start_stmt_count = 0;
 
-  rc = check_sdb_in_thd(thd, &connection, true);
+  rc = check_sdb_in_thd(thd, &connection, false);
   if (0 != rc) {
     goto error;
   }
@@ -5643,7 +5629,7 @@ static void sdb_kill_connection(handlerton *hton, THD *thd) {
   int rc = 0;
   uint64 tid = 0;
   Sdb_conn *connection = NULL;
-  rc = check_sdb_in_thd(thd, &connection, true);
+  rc = check_sdb_in_thd(thd, &connection, false);
   if (0 != rc) {
     goto error;
   }
