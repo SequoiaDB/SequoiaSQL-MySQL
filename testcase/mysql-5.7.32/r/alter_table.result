@@ -843,15 +843,15 @@ select * from t1;
 id
 1
 2
-1002
+1001
 alter table t1 engine = SEQUOIADB;
 insert into t1 values (null);
 select * from t1;
 id
 1
 2
+1001
 1002
-1003
 drop table t1;
 set sql_mode= default;
 create table t1(f1 int);

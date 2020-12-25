@@ -733,7 +733,7 @@ t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL AUTO_INCREMENT,
   `c` int(11) DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { c: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { c: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
 insert into t1 values();
 select * from t1 order by a;
 a	c
@@ -785,7 +785,7 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `判断添加还是修改` (`id`,`agent_org_no`) USING BTREE,
   KEY `代>理商名` (`agent_name`) USING BTREE
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{"table_options":{"ShardingType":"hash","ShardingKey":{"id":1},"Partition":4096,"ReplSize":2,"Compressed":true,"CompressionType":"lzw","AutoSplit":true,"EnsureShardingIndex":true}}'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{"table_options":{"ShardingType":"hash","ShardingKey":{"id":1},"Partition":4096,"ReplSize":2,"Compressed":true,"CompressionType":"lzw","AutoSplit":true,"EnsureShardingIndex":true}}'
 INSERT INTO t1(num, agent_org_no, agent_name, create_time, update_time) values (21,'ab','ab','2019-01-01 00:00:00','2019-01-02 00:00:00'),(22,'cd','cd','2019-11-11 00:00:00','2019-12-12 00:00:00'), (23,'ef','ef','2020-09-09 00:00:00','2020-07-07 00:00:00');
 SELECT * FROM t1;
 id	num	agent_org_no	agent_name	create_time	update_time
@@ -809,7 +809,7 @@ t1	CREATE TABLE `t1` (
   UNIQUE KEY `判断添加还是修改` (`id`,`agent_org_no`) USING BTREE,
   KEY `代>理商名` (`agent_name`) USING BTREE,
   KEY `idx_num` (`num`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=2003 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{"table_options":{"ShardingType":"hash","ShardingKey":{"id":1},"Partition":4096,"ReplSize":2,"Compressed":true,"CompressionType":"lzw","AutoSplit":true,"EnsureShardingIndex":true}}'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=2001 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{"table_options":{"ShardingType":"hash","ShardingKey":{"id":1},"Partition":4096,"ReplSize":2,"Compressed":true,"CompressionType":"lzw","AutoSplit":true,"EnsureShardingIndex":true}}'
 INSERT INTO t1(id, agent_org_no, agent_name, create_time, update_time) values (31,'ab','ab','2019-01-01 00:00:00','2019-01-02 00:00:00'),(32,'cd','cd','2019-11-11 00:00:00','2019-12-12 00:00:00'), (33,'ef','ef','2020-09-09 00:00:00','2020-07-07 00:00:00');
 SELECT * FROM t1;
 id	num	agent_org_no	agent_name	create_time	update_time
@@ -818,9 +818,9 @@ id	num	agent_org_no	agent_name	create_time	update_time
 21	21	ab	ab	2019-01-01 00:00:00	2019-01-02 00:00:00
 22	22	cd	cd	2019-11-11 00:00:00	2019-12-12 00:00:00
 23	23	ef	ef	2020-09-09 00:00:00	2020-07-07 00:00:00
-31	1002	ab	ab	2019-01-01 00:00:00	2019-01-02 00:00:00
-32	1003	cd	cd	2019-11-11 00:00:00	2019-12-12 00:00:00
-33	1004	ef	ef	2020-09-09 00:00:00	2020-07-07 00:00:00
+31	1001	ab	ab	2019-01-01 00:00:00	2019-01-02 00:00:00
+32	1002	cd	cd	2019-11-11 00:00:00	2019-12-12 00:00:00
+33	1003	ef	ef	2020-09-09 00:00:00	2020-07-07 00:00:00
 ALTER TABLE t1 MODIFY num INT DEFAULT 0;
 SHOW CREATE TABLE t1;
 Table	Create Table
@@ -844,9 +844,9 @@ id	num	agent_org_no	agent_name	create_time	update_time
 21	21	ab	ab	2019-01-01 00:00:00	2019-01-02 00:00:00
 22	22	cd	cd	2019-11-11 00:00:00	2019-12-12 00:00:00
 23	23	ef	ef	2020-09-09 00:00:00	2020-07-07 00:00:00
-31	1002	ab	ab	2019-01-01 00:00:00	2019-01-02 00:00:00
-32	1003	cd	cd	2019-11-11 00:00:00	2019-12-12 00:00:00
-33	1004	ef	ef	2020-09-09 00:00:00	2020-07-07 00:00:00
+31	1001	ab	ab	2019-01-01 00:00:00	2019-01-02 00:00:00
+32	1002	cd	cd	2019-11-11 00:00:00	2019-12-12 00:00:00
+33	1003	ef	ef	2020-09-09 00:00:00	2020-07-07 00:00:00
 40	0	C	C	2019-01-01 00:00:00	2019-01-02 00:00:00
 41	0	D	D	2031-01-11 00:00:00	2019-08-30 00:00:00
 DROP TABLE t1;
@@ -879,7 +879,7 @@ t1	CREATE TABLE `t1` (
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a, b, c, d, e) values(11,11,11,11,11);
 select * from t1 order by id;
 d	id	a	e	b	c
@@ -922,7 +922,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL,
   `f` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a, b, c, d, e, f) values(13,13,13,13,13,13);
 select * from t1 order by id;
 d	id	a	e	b	c	f
@@ -972,7 +972,7 @@ t1	CREATE TABLE `t1` (
   `col5` date NOT NULL,
   `col6` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(col1, col2, col3, col4, col5, col6, col8, col9, col10, col11, col12, col13, col14, col15, col16, col17, col18) values(100, 12.12, 15.15, 3, '2019-09-20', '2019-09-20 17:39:30', '10:10:10', '2019', 'a', 'abc', 'a', 'abc', 'abc', 'abc', 'two', 'two', '{"a":1}');
 select * from t1 order by id;
 id	col1	col2	col3	col4	col8	col9	col10	col11	col12	col13	col14	col15	col16	col17	col18	col5	col6
@@ -1010,7 +1010,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values();
 select * from t1 order by id;
 id
@@ -1047,7 +1047,7 @@ t1	CREATE TABLE `t1` (
   `col16` enum('one','two','three') NOT NULL DEFAULT 'three',
   `col17` set('one','two','three') NOT NULL DEFAULT 'two',
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values();
 insert into t1(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col16, col17) values(100, 12.12, 15.15, 3, '2019-09-20', '2019-09-21 17:39:30', '2019-09-20 17:39:30', '10:10:10', '2019', 'a', 'abc', 'a', 'abc', 'two', 'three');
 select * from t1 order by id;
@@ -1102,7 +1102,7 @@ t1	CREATE TABLE `t1` (
   `col16` enum('one','two','three') DEFAULT 'three',
   `col17` set('one','two','three') DEFAULT 'two',
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values();
 insert into t1(col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11, col12, col13, col16, col17) values(100, 12.12, 15.15, 3, '2019-09-20', '2019-09-21 17:39:30', '2019-09-20 17:39:30', '10:10:10', '2019', 'a', 'abc', 'a', 'abc', 'two', 'three');
 select * from t1 order by id;
@@ -1137,7 +1137,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `col1` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`col1`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
 select * from t1 order by id;
 id	col1
 1	1
@@ -1180,7 +1180,7 @@ t1	CREATE TABLE `t1` (
   `col1` int(11) NOT NULL AUTO_INCREMENT,
   `col2` varchar(255) NOT NULL,
   PRIMARY KEY (`col2`,`id`,`col1`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
 select * from t1 order by col1;
 id	col1	col2
 1	1	var1
@@ -1224,7 +1224,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `col1` int(11) NOT NULL AUTO_INCREMENT,
   UNIQUE KEY `col1` (`col1`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
 select * from t1 order by id;
 id	col1
 1	1
@@ -1267,7 +1267,7 @@ t1	CREATE TABLE `t1` (
   `col1` int(11) NOT NULL AUTO_INCREMENT,
   `col2` varchar(255) NOT NULL,
   UNIQUE KEY `col2` (`col2`,`id`,`col1`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
 select * from t1 order by col1;
 id	col1	col2
 1	1	var1
@@ -1311,7 +1311,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL,
   `col1` int(11) NOT NULL AUTO_INCREMENT,
   KEY `col1` (`col1`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 select * from t1 order by id;
 id	col1
 1	1
@@ -1354,7 +1354,7 @@ t1	CREATE TABLE `t1` (
   `col1` int(11) NOT NULL AUTO_INCREMENT,
   `col2` varchar(255) NOT NULL,
   KEY `col2` (`col2`,`id`,`col1`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { id: 1 }, ShardingType: ''hash'', AutoSplit:true } }'
 select * from t1 order by col1;
 id	col1	col2
 1	1	var1
@@ -1402,7 +1402,7 @@ t1	CREATE TABLE `t1` (
   `col2` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `col2` (`col2`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(col1, col2) values('string1', 100);
 select * from t1 order by id;
 id	col1	col2
@@ -1424,7 +1424,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values();
 select * from t1 order by id;
 id
@@ -1451,7 +1451,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `col1` int(11) DEFAULT '100',
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values();
 select * from t1 order by id;
 id	col1
@@ -1478,7 +1478,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 select * from t1 order by id;
 id
 1
@@ -1511,7 +1511,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 select * from t1 order by id;
 id
 1
@@ -1605,7 +1605,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT '-10',
   `d` bigint(20) DEFAULT '-10',
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values (),(),(),(),();
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1);
 insert into t1 values ();
@@ -1650,7 +1650,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL,
   `d` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1);
 insert into t1 values ();
 select * from t1 order by id;
@@ -1721,7 +1721,7 @@ t1	CREATE TABLE `t1` (
   `c` binary(8) DEFAULT '#!*()\0\0\0',
   `d` varbinary(8) DEFAULT '-1',
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values (),(),(),(),();
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), ('a', 'a', 'a', 'a');
 insert into t1 values ();
@@ -1765,7 +1765,7 @@ t1	CREATE TABLE `t1` (
   `c` binary(8) DEFAULT NULL,
   `d` varbinary(8) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), ('a', 'a', 'a', 'a');
 insert into t1 values ();
 select * from t1 order by id;
@@ -1836,7 +1836,7 @@ t1	CREATE TABLE `t1` (
   `b` double DEFAULT '6e-16',
   `c` decimal(10,0) DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values (),(),(),();
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (1.0001, 1.0001, 1.0001);
 Warnings:
@@ -1879,7 +1879,7 @@ t1	CREATE TABLE `t1` (
   `b` double DEFAULT NULL,
   `c` decimal(10,0) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values (),(),(),();
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (1.0001, 1.0001, 1.0001);
 Warnings:
@@ -1956,7 +1956,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT '9999-12-31 00:00:00',
   `e` timestamp NOT NULL DEFAULT '1999-01-02 03:04:05',
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values (),(),(),();
 insert into t1(a,b,c,d,e) values(2000, "2002-03-04",'09:00:00','2003-03-01 00:00:00', "19990102030405"), (2001, "2002-03-05",'10:11:00','2004-04-01 00:00:00', "2004-12-31 23:59:59");
 insert into t1 values ();
@@ -1998,7 +1998,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT CURRENT_TIMESTAMP,
   `e` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values ();
 select * from t1 order by id;
 id	a	b	c	d	e
@@ -2041,7 +2041,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT NULL,
   `e` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values ();
 insert into t1(a,b,c,d,e) values(2020, "2020-02-02",'10:00:00','2020-02-10 00:00:00', "19990102030405"), (2021, "2021-1-02",'10:11:00','2020-03-01 00:00:00', "2021-12-31 23:59:59");
 select * from t1 order by id;
@@ -2110,7 +2110,7 @@ t1	CREATE TABLE `t1` (
   `c` enum('a','c','d') DEFAULT 'a',
   `d` set('a','b','c','d','e') DEFAULT 'a,b,e',
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values ();
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
 select * from t1 order by id;
@@ -2148,7 +2148,7 @@ t1	CREATE TABLE `t1` (
   `c` enum('a','c','d') DEFAULT NULL,
   `d` set('a','b','c','d','e') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1 values ();
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
 select * from t1 order by id;
@@ -2203,7 +2203,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) NOT NULL,
   `d` bigint(20) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1);
 select * from t1 order by id;
 id	a	b	c	d
@@ -2231,7 +2231,7 @@ t1	CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL,
   `d` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values (-10,-10,-10,-10), (1,1,1,1), (-101,-101,-101,-101);
 insert into t1 values (),();
 select * from t1 order by id;
@@ -2330,7 +2330,7 @@ t1	CREATE TABLE `t1` (
   `c` binary(8) NOT NULL,
   `d` varbinary(8) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
 select * from t1 order by id;
 id	a	b	c	d
@@ -2357,7 +2357,7 @@ t1	CREATE TABLE `t1` (
   `c` binary(8) DEFAULT NULL,
   `d` varbinary(8) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), (NULL,NULL,NULL,NULL), ('a', 'a', 'a', 'a');
 insert into t1 values ();
 select * from t1 order by id;
@@ -2400,7 +2400,7 @@ t1	CREATE TABLE `t1` (
   `c` text NOT NULL,
   `d` longtext NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
 select * from t1 order by id;
 id	a	b	c	d
@@ -2427,7 +2427,7 @@ t1	CREATE TABLE `t1` (
   `c` text,
   `d` longtext,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), (NULL,NULL,NULL,NULL), ('a', 'a', 'a', 'a');
 insert into t1 values ();
 select * from t1 order by id;
@@ -2470,7 +2470,7 @@ t1	CREATE TABLE `t1` (
   `c` blob NOT NULL,
   `d` longblob NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('a', 'a', 'a', 'a'),('b', 'b', 'b', 'b'),('c', 'c', 'c', 'c'), ('#!*()', -1, '#!*()', -1);
 select * from t1 order by id;
 id	a	b	c	d
@@ -2497,7 +2497,7 @@ t1	CREATE TABLE `t1` (
   `c` blob,
   `d` longblob,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values ('#!*()', -1, '#!*()', -1), (NULL,NULL,NULL,NULL), ('a', 'a', 'a', 'a');
 insert into t1 values ();
 select * from t1 order by id;
@@ -2539,7 +2539,7 @@ t1	CREATE TABLE `t1` (
   `b` double NOT NULL,
   `c` decimal(10,0) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (1.0001, 1.0001, 1.0001);
 Warnings:
 Note	1265	Data truncated for column 'c' at row 1
@@ -2564,7 +2564,7 @@ t1	CREATE TABLE `t1` (
   `b` double DEFAULT NULL,
   `c` decimal(10,0) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c) values (6e-16, 6e-16, 6e-16), (NULL,NULL,NULL), (1.0001, 1.0001, 1.0001);
 Warnings:
 Note	1265	Data truncated for column 'c' at row 1
@@ -2599,7 +2599,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT NULL,
   `e` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d,e) values(2000, "2002-03-04",'09:00:00','2003-03-01 00:00:00', "19990102030405"), (2001, "2002-03-05",'10:11:00','2004-04-01 00:00:00', "2004-12-31 23:59:59");
 alter table t1 modify a year, algorithm=inplace;
 alter table t1 modify b date, algorithm=inplace;
@@ -2622,7 +2622,7 @@ t1	CREATE TABLE `t1` (
   `d` datetime DEFAULT NULL,
   `e` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d,e) values(2020, "2020-02-02",'10:00:00','2020-02-10 00:00:00', "19990102030405"), (NULL,NULL,NULL,NULL,NULL), (2021, "2021-1-02",'10:11:00','2020-03-01 00:00:00', "2021-12-31 23:59:59");
 drop table t1;
 create table t1 ( id int auto_increment primary key, a bit(8), b bool, c enum('a','c','d'), d set('a','b','c','d','e'));
@@ -2648,7 +2648,7 @@ t1	CREATE TABLE `t1` (
   `c` enum('a','c','d') NOT NULL,
   `d` set('a','b','c','d','e') NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
 select * from t1 order by id;
 id	a	b	c	d
@@ -2673,7 +2673,7 @@ t1	CREATE TABLE `t1` (
   `c` enum('a','c','d') DEFAULT NULL,
   `d` set('a','b','c','d','e') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b,c,d) values (1, false, 'a', 'b,c'), (7, true, 'c', 'b,a,e');
 insert into t1 values (),();
 select * from t1 order by id;
@@ -2708,7 +2708,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `a` json NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a) values ('-32768'),('2147483647'),('18446744073709551616');
 select * from t1 order by id;
 id	a
@@ -2728,7 +2728,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `a` json DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a) values (NULL), ('"scalar string"');
 insert into t1 values ();
 select * from t1 order by id;
@@ -2922,7 +2922,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 alter table t1 change a a enum('b','c','z'), algorithm = inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 show create table t1;
@@ -2932,7 +2932,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 alter table t1 change a a enum('1','b','c','z'), algorithm = inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 show create table t1;
@@ -2942,7 +2942,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 alter table t1 change b b set('1','a','c','k'), algorithm = inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 show create table t1;
@@ -2952,7 +2952,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 alter table t1 change b b set('0', '1', 'a', 'c', '2', 'k', 'y', 'x'), algorithm = inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 show create table t1;
@@ -2962,7 +2962,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 alter table t1 change a a enum('b','a','z','x','1','c'), algorithm = inplace;
 alter table t1 change b b set('1', 'a', 'c', '2', 'k', 'y', 'x','m','n','0'), algorithm = inplace;
 show create table t1;
@@ -2972,7 +2972,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z','x','1','c') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x','m','n','0') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b) values ('a', 'x,y'), ('x', '1,a'), ('1', 'c,k'), ('c', 'y,2'), ('1', '1,a,x,m,0'), ('c', 'k,y,x,m,n,0');
 select * from t1 order by id;
 id	a	b
@@ -2999,7 +2999,7 @@ t1	CREATE TABLE `t1` (
   `b` char(16) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `a` (`a`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=22 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
 select * from t1 order by id;
 id	a	b
 11	18	rejow
@@ -3017,7 +3017,7 @@ t1	CREATE TABLE `t1` (
   `b` char(16) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `a` (`a`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=22 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
 insert into t1(a,b) values (101, '2323o'), (98, 'r43of'), (-2, '-bgfd42il');
 select * from t1;
 id	a	b
@@ -3040,7 +3040,7 @@ t1	CREATE TABLE `t1` (
   `b` char(16) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `a` (`a`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=22 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
 alter table t1 auto_increment=30, algorithm=copy;
 show create table t1;
 Table	Create Table
@@ -3050,7 +3050,7 @@ t1	CREATE TABLE `t1` (
   `b` char(16) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `a` (`a`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=41 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
+) ENGINE=SEQUOIADB AUTO_INCREMENT=40 DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ auto_partition: false }'
 insert into t1(a,b) values (-543, 'heo'), (53, 'te'), (9, '!2*rlw');
 select * from t1 order by id;
 id	a	b
@@ -3475,7 +3475,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('b','a','z','x','1','c') DEFAULT NULL,
   `b` set('1','a','c','2','k','y','x','m','n','0') DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(a,b) values ('a', 'x,y'), ('x', '1,a'), ('1', 'c,k'), ('c', 'y,2'), ('1', '1,a,x,m,0'), ('c', 'k,y,x,m,n,0');
 select * from t1 order by id;
 id	a	b
@@ -4283,7 +4283,7 @@ t1	CREATE TABLE `t1` (
   `c3` mediumtext,
   `c4` longtext,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(c1,c2,c3,c4) values ("123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3	c4
@@ -4310,7 +4310,7 @@ t1	CREATE TABLE `t1` (
   `c2` mediumtext,
   `c3` longtext,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(c1,c2,c3) values ("gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3
@@ -4335,7 +4335,7 @@ t1	CREATE TABLE `t1` (
   `c1` mediumtext,
   `c2` longtext,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(c1,c2) values ("gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2
@@ -4358,7 +4358,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `c1` longtext,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(c1) values ("gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1
@@ -4389,7 +4389,7 @@ t1	CREATE TABLE `t1` (
   `b5` mediumblob,
   `b6` longblob,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(b1,b2,b3,b4,b5,b6) values ("123456789","123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	b1	b2	b3	b4	b5	b6
@@ -4419,7 +4419,7 @@ t1	CREATE TABLE `t1` (
   `b4` longblob,
   `b5` varbinary(8192) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(b1,b2,b3,b4,b5) values ("123456789","123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	b1	b2	b3	b4	b5
@@ -4448,7 +4448,7 @@ t1	CREATE TABLE `t1` (
   `c3` mediumblob,
   `c4` longblob,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(c1,c2,c3,c4) values ("123456789abcdefg","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3	c4
@@ -4475,7 +4475,7 @@ t1	CREATE TABLE `t1` (
   `c2` mediumblob,
   `c3` longblob,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(c1,c2,c3) values ("gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2	c3
@@ -4500,7 +4500,7 @@ t1	CREATE TABLE `t1` (
   `c1` mediumblob,
   `c2` longblob,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(c1,c2) values ("gjoewjrlw342982jlfsfjslfjslr942lj","gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1	c2
@@ -4523,7 +4523,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `c1` longblob,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(c1) values ("gjoewjrlw342982jlfsfjslfjslr942lj");
 select * from t1 order by id;
 id	c1
@@ -4544,7 +4544,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `y1` year(4) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(y1) values (1999),(2008),(2111);
 select * from t1 order by id;
 id	y1
@@ -4567,7 +4567,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `y1` time(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(y1) values ("02:02:02.009900"),("-837:59:59.999");
 select * from t1 order by id;
 id	y1
@@ -4589,7 +4589,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `d1` date DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(d1) values ("2037-12-31"),("2021-01-01");
 select * from t1 order by id;
 id	d1
@@ -4613,7 +4613,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `d1` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(d1) values ("2037-12-31 02:02:02.009900"),("2021-01-01 10:11:12.131415");
 select * from t1 order by id;
 id	d1
@@ -4637,7 +4637,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `d1` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(d1) values ("2037-12-31 02:02:02.009900"),("2021-01-01 10:11:12.131415");
 select * from t1 order by id;
 id	d1
@@ -4659,7 +4659,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `j` json DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 insert into t1(j) values ('true'),('false');
 select * from t1 order by id;
 id	j
@@ -4776,7 +4776,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `a` char(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=2003 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=2001 DEFAULT CHARSET=latin1
 select * from t1 where a = 'hello' order by id;
 id	a
 1	hello
@@ -4801,7 +4801,7 @@ t1	CREATE TABLE `t1` (
   `a` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `b` varchar(255) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=utf8
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=utf8
 alter table t1 auto_increment=3;
 insert into t1 values(NULL, 'ddd');
 select * from t1 order by a;
@@ -4816,7 +4816,7 @@ t1	CREATE TABLE `t1` (
   `a` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `b` varchar(255) NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=utf8
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=utf8
 drop table t1;
 create table t1( id int ) comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true } }";
 alter table t1 comment = "sequoiadb : { table_options: { ShardingKey: {id : 1}, IsMainCL: true, StrictDataMode:false } }", ALGORITHM=copy;
@@ -5421,7 +5421,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon NOT NULL,
   `geocol1` geometrycollection NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=9010 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=9001 DEFAULT CHARSET=latin1
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -5443,7 +5443,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon NOT NULL,
   `geocol1` geometrycollection NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=9010 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=9001 DEFAULT CHARSET=latin1
 delete from t1 where id = 2 ;
 select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1 order by id;
 id	ST_AsText(geom1)	ST_AsText(line1)	ST_AsText(poly1)	ST_AsText(mpoin1)	ST_AsText(mline1)	ST_AsText(mploy1)	ST_AsText(geocol1)
@@ -5485,7 +5485,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon DEFAULT NULL,
   `geocol1` geometrycollection DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=9010 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=9001 DEFAULT CHARSET=latin1
 insert into t1 value(2,null,@a1,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
 ERROR 23000: Column 'newgeom' cannot be null
 insert into t1 value(3,@a1,null,@a2,@a3,@a4,@a5,@a6,@a7,@a1,@a1,@a2,@a3,@a4,@a5,@a6,@a7);
@@ -5530,7 +5530,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon DEFAULT NULL,
   `geocol1` geometrycollection DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=9010 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=9001 DEFAULT CHARSET=latin1
 select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1 order by id;
 id	ST_AsText(geom1)	ST_AsText(line1)	ST_AsText(poly1)	ST_AsText(mpoin1)	ST_AsText(mline1)	ST_AsText(mploy1)	ST_AsText(geocol1)
 1	POINT(1 1)	LINESTRING(0 0,10 10,20 25,50 60)	POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))	MULTIPOINT((10 10),(20 20))	MULTILINESTRING((10 10,20 20),(15 15,30 15))	MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))	GEOMETRYCOLLECTION(POINT(10 10),LINESTRING(1 1,2 2,3 3,4 4))
@@ -5775,7 +5775,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon DEFAULT NULL,
   `geocol1` geometrycollection DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 alter table t1 modify poin point null,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify line linestring null,algorithm=inplace;
@@ -5813,7 +5813,7 @@ t1	CREATE TABLE `t1` (
   `mploy1` multipolygon DEFAULT NULL,
   `geocol1` geometrycollection DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 select id,ST_AsText(geom),ST_AsText(poin),ST_AsText(line),ST_AsText(poly),ST_AsText(mpoin),ST_AsText(mline),ST_AsText(mploy),ST_AsText(geocol) from t1 order by id;
 id	ST_AsText(geom)	ST_AsText(poin)	ST_AsText(line)	ST_AsText(poly)	ST_AsText(mpoin)	ST_AsText(mline)	ST_AsText(mploy)	ST_AsText(geocol)
 10	POINT(1 1)	POINT(1 1)	LINESTRING(0 0,10 10,20 25,50 60)	POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))	MULTIPOINT((10 10),(20 20))	MULTILINESTRING((10 10,20 20),(15 15,30 15))	MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))	GEOMETRYCOLLECTION(POINT(10 10),LINESTRING(1 1,2 2,3 3,4 4))
