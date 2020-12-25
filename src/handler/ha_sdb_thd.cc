@@ -296,7 +296,7 @@ int check_sdb_in_thd(THD *thd, Sdb_conn **conn, bool validate_conn) {
     thd_set_thd_sdb(thd, thd_sdb);
   }
 
-  if (validate_conn &&
+  if (validate_conn && !thd_sdb->get_conn()->is_transaction_on() &&
       !(thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated())) {
     rc = thd_sdb->recycle_conn();
     if (0 != rc) {

@@ -237,6 +237,7 @@ int Sdb_conn::connect() {
       if (SDB_ERR_OK != rc) {
         snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d",
                  rc);
+        m_connection.disconnect();
         goto error;
       }
     }
@@ -247,7 +248,6 @@ done:
   return rc;
 error:
   convert_sdb_code(rc);
-  m_connection.disconnect();
   goto done;
 }
 

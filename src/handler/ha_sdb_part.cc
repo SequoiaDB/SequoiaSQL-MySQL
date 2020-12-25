@@ -1997,7 +1997,7 @@ int ha_sdb_part::write_row_in_new_part(uint new_part) {
     goto done;
   }
 
-  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (rc != 0) {
     goto error;
   }
