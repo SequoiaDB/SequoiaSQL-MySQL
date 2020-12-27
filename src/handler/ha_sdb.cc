@@ -5587,10 +5587,7 @@ int ha_sdb::rename_table(const char *from, const char *to) {
       delete thd_sdb->part_alter_ctx;
       thd_sdb->part_alter_ctx = NULL;
     }
-    // update cached cata version, it will be written into sequoiadb
-    sprintf(new_db_name, "%s", db_name);
-    sprintf(new_table_name, "%s", table_name);
-    goto set_cata_version;
+    goto done;
   }
   sdb_convert_sub2main_partition_name(old_table_name);
   sdb_convert_sub2main_partition_name(new_table_name);
@@ -5661,11 +5658,13 @@ done:
 error:
   goto done;
 set_cata_version:
-  rc = conn->get_cl(new_db_name, new_table_name, cl);
-  if (0 != rc) {
-    goto error;
+  if (ha_is_open()) {
+    rc = conn->get_cl(new_db_name, new_table_name, cl);
+    if (0 != rc) {
+      goto error;
+    }
+    ha_set_cata_version(new_db_name, new_table_name, cl.get_version());
   }
-  ha_set_cata_version(new_db_name, new_table_name, cl.get_version());
   goto done;
 }
 

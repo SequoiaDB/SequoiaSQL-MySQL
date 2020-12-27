@@ -1,5 +1,5 @@
 diff --git a/mysql-v5.7.32/sp_head.cc b/mysql-v5.7.32/sp_head.cc
-index 7d4a19e..5fdd300 100644
+index 7d4a19e..0e108cd 100644
 --- a/mysql-v5.7.32/sp_head.cc
 +++ b/mysql-v5.7.32/sp_head.cc
 @@ -46,6 +46,7 @@
@@ -27,8 +27,8 @@ index 7d4a19e..5fdd300 100644
 +      if (mysql_errno && !thd->get_stmt_da()->is_set()) 
 +      {
 +        // 1. prepare-execution
-+        if (thd->rewritten_query.length())
-+          thd->rewritten_query.mem_free();
++        if (thd->rewritten_query().length())
++          thd->reset_rewritten_query();
 +        
 +        // 2. reexecute
 +        err_status = i->execute(thd, &ip);

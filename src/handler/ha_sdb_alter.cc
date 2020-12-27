@@ -2124,7 +2124,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
 
   rs = false;
   // update cata version for collection
-  {
+  if (ha_is_open()) {
     bson::BSONObjBuilder builder;
     bson::BSONObjBuilder sub_builder(builder.subobjStart(SDB_FIELD_ALTER));
     sub_builder.append(SDB_FIELD_NAME, "increase version");
