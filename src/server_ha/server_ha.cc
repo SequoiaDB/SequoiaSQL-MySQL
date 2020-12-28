@@ -309,6 +309,9 @@ static bool is_meta_sql(THD *thd, const ha_event_general &event) {
     case SQLCOM_GRANT_ROLE:
     case SQLCOM_REVOKE_ROLE:
     case SQLCOM_CREATE_ROLE:
+    case SQLCOM_CREATE_SEQUENCE:
+    case SQLCOM_ALTER_SEQUENCE:
+    case SQLCOM_DROP_SEQUENCE:
 #endif
       is_meta_sql = true;
       break;
@@ -333,8 +336,12 @@ static inline bool has_temporary_table_flag(THD *thd) {
   is_temp_table_op |=
       (SQLCOM_DROP_TABLE == sql_command && thd->lex->drop_temporary);
 #else
-  is_temp_table_op |= (SQLCOM_DROP_TABLE == sql_command) &&
-                      (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE);
+  if (SQLCOM_DROP_TABLE == sql_command ||
+      SQLCOM_CREATE_SEQUENCE == sql_command ||
+      SQLCOM_DROP_SEQUENCE == sql_command) {
+    is_temp_table_op |=
+        (thd->lex->create_info.options & HA_LEX_CREATE_TMP_TABLE);
+  }
 #endif
   return is_temp_table_op;
 }
@@ -984,6 +991,8 @@ static bool dropping_table_exists(THD *thd, const char *db_name,
       wrong_table.append("Unknown table '");
     } else if (SQLCOM_DROP_VIEW == sql_command) {
       wrong_table.append("Unknown VIEW: '");
+    } else if (SQLCOM_DROP_SEQUENCE == sql_command) {
+      wrong_table.append("Unknown SEQUENCE: '");
     }
 #else
     wrong_table.append("Unknown table '");
@@ -998,7 +1007,8 @@ static bool dropping_table_exists(THD *thd, const char *db_name,
     }
   } else if (sdb_has_sql_condition(thd, ER_BAD_TABLE_ERROR)
 #ifdef IS_MARIADB
-             || sdb_has_sql_condition(thd, ER_UNKNOWN_VIEW)
+             || sdb_has_sql_condition(thd, ER_UNKNOWN_VIEW) ||
+             sdb_has_sql_condition(thd, ER_UNKNOWN_SEQUENCES)
 #endif
   ) {
     wrong_table.append(db_name);
@@ -1251,7 +1261,12 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       // skip temporary tables for drop/alter/rename table sql
       if (SQLCOM_DROP_TABLE == sql_command ||
           SQLCOM_ALTER_TABLE == sql_command ||
-          SQLCOM_RENAME_TABLE == sql_command) {
+          SQLCOM_RENAME_TABLE == sql_command
+#ifdef IS_MARIADB
+          || SQLCOM_DROP_SEQUENCE == sql_command ||
+          SQLCOM_ALTER_SEQUENCE == sql_command
+#endif
+      ) {
         if (ha_tables->is_temporary_table) {
           continue;
         }
@@ -1259,7 +1274,11 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
 
       // decompose 'SQLCOM_DROP_TABLE/SQLCOM_DROP_VIEW' command into
       // multiple 'DROP TABLE/VIEW' commands
-      if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command) {
+      if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command
+#ifdef IS_MARIADB
+          || SQLCOM_DROP_SEQUENCE == sql_command
+#endif
+      ) {
         // check if the dropping object exists
         if (!dropping_table_exists(thd, db_name, table_name) &&
             !ha_is_executing_pending_log(thd)) {
@@ -1268,9 +1287,15 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
 
         if (SQLCOM_DROP_TABLE == sql_command) {
           oom = query.append("DROP TABLE IF EXISTS ");
-        } else {
+        } else if (SQLCOM_DROP_VIEW == sql_command) {
           oom |= query.append("DROP VIEW IF EXISTS ");
         }
+#ifdef IS_MARIADB
+        if (SQLCOM_DROP_SEQUENCE == sql_command) {
+          query.length(0);
+          oom |= query.append("DROP SEQUENCE IF EXISTS ");
+        }
+#endif
         oom |= build_full_table_name(thd, query, db_name, table_name);
       } else if (SQLCOM_RENAME_TABLE == sql_command) {
         // build rename table command for original table
@@ -1287,11 +1312,14 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       } else if (SQLCOM_CREATE_TRIGGER == sql_command ||
                  SQLCOM_CREATE_VIEW == sql_command ||
                  SQLCOM_ALTER_EVENT == sql_command ||
-                 SQLCOM_ALTER_TABLE == sql_command || is_dcl_meta_sql(thd)) {
+                 SQLCOM_ALTER_TABLE == sql_command || is_dcl_meta_sql(thd) ||
+                 SQLCOM_CREATE_TABLE == sql_command) {
         // 1. creating view depends on multiple tables and functions
         // 2. grant/revoke operation may depends on table/fun/proc
         // 3. 'create/drop user' can hold multiple users
         // 4. 'alter event/table rename' hold two objects
+        // 5. 'create table dst2(a int primary key default(next value for ts1))'
+        //    depend on sequence(just for mariadb).
 
         // write SQL statement just for the first object
         if (first_object) {
@@ -1668,8 +1696,11 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     }
   } else {
     TABLE_LIST *tables = NULL;
-    if (SQLCOM_CREATE_TABLE == sql_command ||
-        SQLCOM_CREATE_VIEW == sql_command) {
+    if (SQLCOM_CREATE_TABLE == sql_command || SQLCOM_CREATE_VIEW == sql_command
+#ifdef IS_MARIADB
+        || SQLCOM_ALTER_SEQUENCE == sql_command
+#endif
+    ) {
       tables = thd->lex->query_tables;
     } else {
       tables = sdb_lex_first_select(thd)->get_table_list();
@@ -1696,7 +1727,12 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
           ha_get_cata_version(ha_tbl_list->db_name, ha_tbl_list->table_name);
       ha_tbl_list->is_temporary_table = is_temporary_table(
           thd, ha_tbl_list->db_name, ha_tbl_list->table_name);
-      if (SQLCOM_CREATE_TABLE == sql_command && tbl == tables) {
+
+      if (tbl == tables && (SQLCOM_CREATE_TABLE == sql_command
+#ifdef IS_MARIADB
+                            || SQLCOM_CREATE_SEQUENCE == sql_command
+#endif
+                            )) {
         // create temporary table cann't be here, first table must be
         // a normal table if it's "create table" statement
         ha_tbl_list->is_temporary_table = false;
@@ -1714,8 +1750,12 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       }
 
       // mark temporary table for SQL like 'rename/alter/drop table'
-      if (SQLCOM_DROP_TABLE == sql_command ||
-          SQLCOM_ALTER_TABLE == sql_command) {
+      if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_ALTER_TABLE == sql_command
+#ifdef IS_MARIADB
+          || SQLCOM_DROP_SEQUENCE == sql_command ||
+          SQLCOM_ALTER_SEQUENCE == sql_command
+#endif
+      ) {
         db_name = ha_tbl_list->db_name;
         table_name = ha_tbl_list->table_name;
 
@@ -1949,7 +1989,11 @@ int fix_create_table_stmt(THD *thd, ha_event_class_t event_class,
       (MYSQL_AUDIT_GENERAL_RESULT == event.event_subclass ||
        MYSQL_AUDIT_GENERAL_STATUS == event.event_subclass ||
        MYSQL_AUDIT_QUERY_END == event.event_subclass)) {
-    if (!table_list->table && table_list->next_local) {
+    // SQL like "create table dst1(a int primary key default
+    // (next value for ts1), b int) engine innodb;", TABLE_LIST::next_local is
+    // NULL TABLE_LIST::next_global is not NULL
+    if (!table_list->table &&
+        (table_list->next_local || table_list->next_global)) {
       // deal with SQL like "create table t1 like t2" or "create or replace
       // table like".
       TABLE_LIST tables;
@@ -2573,10 +2617,14 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
   if (can_write_log &&
       (ER_BAD_TABLE_ERROR == error_code || ER_WRONG_OBJECT == error_code
 #ifdef IS_MARIADB
-       || ER_UNKNOWN_VIEW == error_code
+       || ER_UNKNOWN_VIEW == error_code || ER_UNKNOWN_SEQUENCES == error_code
 #endif
        ) &&
-      (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command)) {
+      (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command
+#ifdef IS_MARIADB
+       || SQLCOM_DROP_SEQUENCE == sql_command
+#endif
+       )) {
     // if drop tables/views partial success
   } else if (can_write_log && ER_CANNOT_USER == error_code &&
              (SQLCOM_CREATE_USER == sql_command ||
@@ -3302,13 +3350,19 @@ static int rebuild_rename_table_stmt(THD *thd, ha_event_general &event,
   return (oom ? SDB_HA_OOM : 0);
 }
 
-// rebuild drop table statement by skipping temporary table
+// rebuild drop table/sequence statement by skipping temporary table
 static int rebuild_drop_table_stmt(THD *thd, ha_event_general &event,
                                    String &log_query,
-                                   ha_sql_stmt_info *sql_info) {
+                                   ha_sql_stmt_info *sql_info,
+                                   bool drop_normal_table) {
   log_query.set_charset(thd->charset());
   bool oom = false, found_normal_table = false;
-  oom = log_query.append("DROP TABLE IF EXISTS ");
+
+  if (drop_normal_table) {
+    oom = log_query.append("DROP TABLE IF EXISTS ");
+  } else {
+    oom = log_query.append("DROP SEQUENCE IF EXISTS ");
+  }
   for (ha_table_list *ha_table = sql_info->tables; ha_table && (!oom);
        ha_table = ha_table->next) {
     if (!ha_table->is_temporary_table) {
@@ -3456,8 +3510,12 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
       db = sql_info->tables->db_name;
       break;
     case SQLCOM_DROP_TABLE:
-      // rebuild drop table statement, skip temporary table
-      rc = rebuild_drop_table_stmt(thd, event, rewritten_query, sql_info);
+#ifdef IS_MARIADB
+    case SQLCOM_DROP_SEQUENCE:
+#endif
+      // rebuild drop table/sequence(mariadb) statement, skip temporary table
+      rc = rebuild_drop_table_stmt(thd, event, rewritten_query, sql_info,
+                                   (SQLCOM_DROP_TABLE == sql_command));
       db = sql_info->tables->db_name;
       break;
     default:
@@ -3476,6 +3534,13 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
       sql_info->tables->is_temporary_table) {
     event.general_query_length = 0;
   }
+
+#ifdef IS_MARIADB
+  if (SQLCOM_ALTER_SEQUENCE == sql_command &&
+      sql_info->tables->is_temporary_table) {
+    goto done;
+  }
+#endif
 
   // if it's just only temporary table operation, do not write pending log
   if (0 == event.general_query_length) {
