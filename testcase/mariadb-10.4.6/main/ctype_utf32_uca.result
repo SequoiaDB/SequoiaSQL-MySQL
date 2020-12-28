@@ -6893,7 +6893,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   KEY `a_id` (`a`,`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=1002 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 #
 # Ascending sort, using filesort
 #
