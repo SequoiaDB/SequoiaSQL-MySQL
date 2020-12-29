@@ -912,3 +912,222 @@ End of 5.1 tests
 # Bug #18127749: OPTIMIZER SHOULD THROW AN ERROR WHEN USER USES
 #                COMPARISION OPERATORS ON GIS DATA
 #
+CREATE TABLE tab(c1 int NOT NULL PRIMARY KEY,c2 POINT NOT NULL,
+c3 LINESTRING NOT NULL,c4 POLYGON NOT NULL,
+c5 GEOMETRY NOT NULL);
+INSERT INTO tab(c1,c2,c3,c4,c5)
+VALUES(1,ST_GeomFromText('POINT(10 10)'),
+ST_GeomFromText('LINESTRING(5 5,20 20,30 30)'),
+ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))'),
+ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))'));
+INSERT INTO tab(c1,c2,c3,c4,c5)
+VALUES(2,ST_GeomFromText('POINT(20 20)'),
+ST_GeomFromText('LINESTRING(20 20,30 30,40 40)'),
+ST_GeomFromText('POLYGON((40 50,40 70,50 100,70 100,80 80,70 50,40 50))'),
+ST_GeomFromText('POLYGON((40 50,40 70,50 100,70 100,80 80,70 50,40 50))'));
+SET @g1 = ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+SELECT c1,ST_Astext(c4) FROM tab WHERE c4<@g1;
+ERROR HY000: Incorrect arguments to <
+SELECT c1,ST_Astext(c4) FROM tab WHERE
+c4=ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+c1	ST_Astext(c4)
+1	POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))
+SELECT c1,ST_Astext(c4) FROM tab WHERE c4>@g1+3;
+ERROR HY000: Incorrect arguments to >
+SELECT * FROM tab WHERE c2+4 > 5;
+ERROR HY000: Incorrect arguments to +
+SELECT * FROM tab WHERE c3-4 > 5;
+ERROR HY000: Incorrect arguments to -
+SELECT * FROM tab WHERE c4*4 > 5;
+ERROR HY000: Incorrect arguments to *
+SELECT * FROM tab WHERE c5/4 > 5;
+ERROR HY000: Incorrect arguments to /
+SELECT * FROM tab WHERE c3%4 > 5;
+ERROR HY000: Incorrect arguments to %
+SELECT * FROM tab WHERE c3 DIV 4 > 5;
+ERROR HY000: Incorrect arguments to DIV
+select count(*) from tab;
+count(*)
+2
+select count(distinct c2) from tab;
+count(distinct c2)
+2
+select sum(c2) from tab;
+ERROR HY000: Incorrect arguments to sum(
+select sum(distinct c2) from tab;
+ERROR HY000: Incorrect arguments to sum(distinct 
+select avg(c2) from tab;
+ERROR HY000: Incorrect arguments to avg(
+select avg(distinct c2) from tab;
+ERROR HY000: Incorrect arguments to avg(distinct 
+select min(c2) from tab;
+ERROR HY000: Incorrect arguments to min(
+select max(c2) from tab;
+ERROR HY000: Incorrect arguments to max(
+select std(c2) from tab;
+ERROR HY000: Incorrect arguments to std(
+drop table tab;
+set @g1 = 1;
+set @g2 = 2;
+select @g1 < @g2;
+@g1 < @g2
+1
+select @g1 = @g2;
+@g1 = @g2
+0
+select @g1 > @g2;
+@g1 > @g2
+0
+select @g1 + @g2;
+@g1 + @g2
+3
+SET @g1 = ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+SET @g2 = ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+select @g1=ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+@g1=ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))')
+1
+select @g1+ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to +
+select @g1-ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to -
+select @g1*ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to *
+select @g1/ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to /
+select @g1%ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to %
+select 42 / ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)');
+ERROR HY000: Incorrect arguments to /
+select 42 + ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)');
+ERROR HY000: Incorrect arguments to +
+select -(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to -
+select @g1 > ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to >
+select @g1 >= ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to >=
+select @g1 < ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to <
+select @g1 <= ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to <=
+select @g1 = ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+@g1 = ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))')
+1
+select @g1 != ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+@g1 != ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))')
+0
+select @g1 between @g1 and ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+ERROR HY000: Incorrect arguments to between
+select least(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'),
+ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to least
+select greatest(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'),
+ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to greatest
+select abs(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to abs
+select acos(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to acos
+select asin(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to asin
+select atan(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to atan
+select atan2(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to atan
+select ceil(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to ceiling
+select ceiling(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to ceiling
+select conv(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'), 2, 10);
+ERROR HY000: Incorrect arguments to conv
+select cos(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to cos
+select cot(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to cot
+select crc32(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+crc32(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'))
+2439882226
+select degrees(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to degrees
+select exp(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to exp
+select floor(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to floor
+select format(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'), 5);
+ERROR HY000: Incorrect arguments to format
+select hex(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+hex(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'))
+00000000010200000005000000000000000000F0BF000000000000F0BF000000000000F03F000000000000F0BF000000000000F0BF000000000000F0BF000000000000F0BF000000000000F03F000000000000F03F000000000000F03F
+select ln(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to ln
+select log(2, ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to log
+select log2(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to log2
+select log10(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to log10
+select mod(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'), 7);
+ERROR HY000: Incorrect arguments to %
+select pow(2, ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to pow
+select power(2, ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to pow
+select radians(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to radians
+select rand(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to rand
+select round(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to round
+select sign(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to sign
+select sin(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to sin
+select sqrt(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to sqrt
+select tan(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+ERROR HY000: Incorrect arguments to tan
+select truncate(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'),0);
+ERROR HY000: Incorrect arguments to truncate
+select @g1=@g2;
+@g1=@g2
+1
+set @g1 = 'abc';
+set @g2 = 'def';
+select @g1 < @g2;
+@g1 < @g2
+1
+select @g1 = @g2;
+@g1 = @g2
+0
+select @g1 > @g2;
+@g1 > @g2
+0
+SET @g3 = ST_GeomFromText('POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))');
+select @g1 > @g3;
+@g1 > @g3
+1
+#
+# Bug#21153489 VALGRIND ERRORS IN ITEM_BOOL_FUNC2::IS_NULL 
+#              LEAD TO CRASH LATER
+#
+set sql_mode="";
+Warnings:
+Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
+CREATE TABLE t1(a LONGBLOB NOT NULL) engine=sequoiadb default charset=latin1;
+INSERT INTO t1 VALUES (''),(''),(''),('');
+CREATE TABLE t2 (b LONGTEXT) engine=sequoiadb default charset=latin1;
+INSERT INTO t2 VALUES ('a');
+SELECT ( SELECT ( b <> 1 ) FROM t2) <> ALL(SELECT 1681007452 FROM t1) FROM t1;
+( SELECT ( b <> 1 ) FROM t2) <> ALL(SELECT 1681007452 FROM t1)
+1
+1
+1
+1
+SELECT ( SELECT ( b <> 1 ) FROM t2) <> ALL(SELECT 1681007452 FROM t1) FROM t1;
+( SELECT ( b <> 1 ) FROM t2) <> ALL(SELECT 1681007452 FROM t1)
+1
+1
+1
+1
+DROP TABLE t1,t2;
+set sql_mode=default;

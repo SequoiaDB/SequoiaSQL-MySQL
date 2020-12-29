@@ -410,10 +410,10 @@ SELECT a FROM t1 WHERE NOT a IN (SELECT a FROM t1 WHERE b = '2');
 DROP TABLE t1;
 
 --echo #geometry
-#CREATE TABLE t1 ( a geometry, b geometry);
-#INSERT INTO t1 VALUES(POINT(1,1),POINT(1,1)),(POINT(2,2),POINT(2,2)),(POINT(3,3),POINT(3,3));
-#SELECT astext(a) FROM t1 WHERE NOT a IN (SELECT a FROM t1 WHERE b = POINT(2,2));
-#DROP TABLE t1;
+CREATE TABLE t1 ( a geometry, b geometry);
+INSERT INTO t1 VALUES(POINT(1,1),POINT(1,1)),(POINT(2,2),POINT(2,2)),(POINT(3,3),POINT(3,3));
+SELECT astext(a) FROM t1 WHERE NOT a IN (SELECT a FROM t1 WHERE b = POINT(2,2));
+DROP TABLE t1;
 
 
 --echo #uncacheable queries test (random and side effect)

@@ -2478,6 +2478,17 @@ DROP TABLE t1;
 # Bug#47019: Assertion failed: 0, file .\rt_mbr.c, line 138 when 
 # forcing a spatial index
 #
+CREATE TABLE t1(a LINESTRING NOT NULL);
+INSERT INTO t1 VALUES
+(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)')),
+(ST_GEOMFROMTEXT('LINESTRING(-1 -1, 1 -1, -1 -1, -1 1, 1 1)'));
+SELECT 1 FROM t1 NATURAL LEFT JOIN t1 AS t2;
+1
+1
+1
+1
+1
+DROP TABLE t1;
 #
 # Bug #48291 : crash with row() operator,select into @var, and 
 #   subquery returning multiple rows

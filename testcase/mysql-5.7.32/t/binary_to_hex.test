@@ -19,7 +19,6 @@ USE test;
 DROP TABLE IF EXISTS t1, t2;
 --enable_warnings
 
-#Sequoiadb not support GEOMETRY
 CREATE TABLE t1 (c1  TINYBLOB,
                  c2  BLOB,
                  c3  MEDIUMBLOB,
@@ -27,16 +26,16 @@ CREATE TABLE t1 (c1  TINYBLOB,
                  c5  TEXT,
                  c6  BIT(1),
                  c7  CHAR,
-                 c8  VARCHAR(10)
-#                 c9  GEOMETRY
+                 c8  VARCHAR(10),
+                 c9  GEOMETRY
                  ) CHARACTER SET = binary;
 
 SHOW CREATE TABLE t1;
 
 INSERT INTO t1 VALUES ('tinyblob-text readable', 'blob-text readable',
                        'mediumblob-text readable', 'longblob-text readable',
-                       'text readable', b'1', 'c', 'variable');
-#                        POINT(1, 1));
+                       'text readable', b'1', 'c', 'variable',
+                        POINT(1, 1));
 
 CREATE TABLE t2(id int, `col1` binary(10),`col2` blob);
 

@@ -929,6 +929,33 @@ create table t1 (t varchar(255) default null, key t (t(80)))
 engine=SEQUOIADB default charset=latin1;
 alter table t1 change t t text;
 drop table t1;
+CREATE TABLE t1 (a varchar(500));
+ALTER TABLE t1 ADD b GEOMETRY NOT NULL, ADD SPATIAL INDEX(b);
+ERROR HY000: The used table type doesn't support SPATIAL indexes
+ALTER TABLE t1 ADD b GEOMETRY NOT NULL;
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` varchar(500) DEFAULT NULL,
+  `b` geometry NOT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+ALTER TABLE t1 ADD KEY(b(50));
+ERROR HY000: column 'b' cannot be used in key specification.
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` varchar(500) DEFAULT NULL,
+  `b` geometry NOT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+ALTER TABLE t1 ADD c POINT;
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` varchar(500) DEFAULT NULL,
+  `b` geometry NOT NULL,
+  `c` point DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+DROP TABLE t1;
 CREATE TABLE t1 (s CHAR(8) BINARY);
 INSERT INTO t1 VALUES ('test');
 SELECT LENGTH(s) FROM t1;
@@ -1910,11 +1937,6 @@ Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_par
 t1	1	key1	1	fld1	A	NULL	NULL	NULL	YES	BTREE		new comment
 DROP TABLE t1;
 #
-# Bug#19635706
-# Verify that it is possible to add a unique key to a not-NULL POINT 
-# column and that this key is promoted to primary key
-# 
-#
 # BUG#16886196 - ALTER TABLE FAILS TO CONVERT TO PREFIX INDEX IN
 #                ALTER_COLUMN_EQUAL_PACK_LENGTH
 SET @orig_sql_mode = @@sql_mode;
@@ -2605,11 +2627,24 @@ DROP TABLE t1;
 # Base line with normal column - should be promoted
 CREATE TABLE t0(a INT NOT NULL) ENGINE=SEQUOIADB;
 ALTER TABLE t0 ADD UNIQUE INDEX (a);
+CREATE TABLE t1(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
+SELECT * FROM t1;
+a
+CREATE TABLE t2(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
+SELECT * FROM t2;
+a
+CREATE TABLE t3(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL)
+ENGINE=SEQUOIADB;
+SELECT * FROM t3;
+a
 # Case d: Add unique index on virtual blob column
 CREATE TABLE t4 (a BLOB, b BLOB GENERATED ALWAYS AS (a) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
 SELECT * FROM t4;
 a	b
 DROP TABLE t0;
+DROP TABLE t1;
+DROP TABLE t2;
+DROP TABLE t3;
 DROP TABLE t4;
 #
 # Bug#21345391: ALTER TABLE ... CONVERT TO CHARACTER SET NOT EFFECT
@@ -2727,29 +2762,46 @@ DROP TABLE t1;
 SET @saved_sql_mode = @@session.sql_mode;
 # Test case with both strict mode and 'NO_ZERO_DATE' enabled.
 CREATE TABLE t1 (fld1 INT, fld2 DATETIME NOT NULL) ENGINE= SEQUOIADB;
+CREATE TABLE t2 (fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
 INSERT INTO t1 VALUES(1, '2000-01-01');
+INSERT INTO t2 values(1,  ST_PointFromText('POINT(10 10)'));
 # Without patch, the following statments report error.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1;
 # Without patch, the following statments report error.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL FIRST, ALGORITHM= COPY;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL FIRST, ALGORITHM= COPY;
 # Tests added for coverage.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1,
 ADD COLUMN fld3 DATETIME NOT NULL;
 ERROR 22007: Incorrect datetime value: '0000-00-00 00:00:00' for column 'fld3' at row 1
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
+ADD COLUMN fld3 MULTIPOINT NOT NULL;
+ERROR 22004: Invalid use of NULL value
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1,
 ADD COLUMN fld3 DATETIME NOT NULL, ALGORITHM= COPY;
 ERROR 22007: Incorrect datetime value: '0000-00-00 00:00:00' for column 'fld3' at row 1
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
+ADD COLUMN fld3 MULTIPOINT NOT NULL, ALGORITHM= COPY;
+ERROR 22004: Invalid use of NULL value
 TRUNCATE TABLE t1;
+TRUNCATE TABLE t2;
 # Without patch, the following statments report error.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1;
 # Without patch, the following statments report error.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL FIRST, ALGORITHM= COPY;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL FIRST, ALGORITHM= COPY;
 # Tests added for coverage.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1,
 ADD COLUMN fld3 DATETIME NOT NULL;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
+ADD COLUMN fld3 MULTIPOINT NOT NULL;
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1,
 ADD COLUMN fld4 DATETIME NOT NULL, ALGORITHM= COPY;
-DROP TABLE t1;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
+ADD COLUMN fld4 MULTIPOINT NOT NULL, ALGORITHM= COPY;
+DROP TABLE t1, t2;
 # Test case when a non date column is converted to datetime column.
 # Test case without any sql mode enabled.
 SET SESSION sql_mode= '';
@@ -2791,16 +2843,24 @@ ERROR 22007: Incorrect datetime value: '0000-00-00' for column 'fld1' at row 1
 DROP TABLE t1;
 # Test case when a NULL column is converted to NOT NULL column
 CREATE TABLE t1 (fld0 DATETIME, fld1 INT, fld2 DATETIME NOT NULL) ENGINE= SEQUOIADB;
+CREATE TABLE t2 (fld0 POINT, fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
 INSERT INTO t1 VALUES('2000-01-01', 1, '2000-01-01');
+INSERT INTO t2 values(ST_PointFromText('POINT(10 10)'), 1,
+ST_PointFromText('POINT(10 10)'));
 # Reports an error without patch.
 ALTER TABLE t1 MODIFY fld0 DATETIME NOT NULL AFTER fld2;
-DROP TABLE t1;
+ALTER TABLE t2 MODIFY fld0 POINT NOT NULL AFTER fld2;
+DROP TABLE t1, t2;
 # Test case demonstrating the NULL constraint check done by SE.
 CREATE TABLE t1 (fld0 DATETIME, fld1 INT, fld2 DATETIME NOT NULL) ENGINE= SEQUOIADB;
+CREATE TABLE t2 (fld0 POINT, fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
 INSERT INTO t1 VALUES(NULL, 1, '2000-01-01');
+INSERT INTO t2 values(NULL, 1, ST_PointFromText('POINT(10 10)'));
 ALTER TABLE t1 MODIFY fld0 DATETIME NOT NULL;
 ERROR 01000: Data truncated for column 'fld0' at row 1
-DROP TABLE t1;
+ALTER TABLE t2 MODIFY fld0 POINT NOT NULL;
+ERROR 22004: Invalid use of NULL value
+DROP TABLE t1, t2;
 #
 # BUG#26848813: INDEXED COLUMN CAN'T BE CHANGED FROM VARCHAR(15)
 #               TO VARCHAR(40) INSTANTANEOUSLY

@@ -1,7 +1,6 @@
 # This tests bitwise operations focusing mostly on cases where
 # one of the parameters is binary/varbinary
 -- source include/have_sequoiadb.inc
-
 CREATE TABLE t(id int, vbin1 varbinary(32), vbin2 varbinary(32));
 INSERT INTO t VALUES
 (1, x'59', x'6a'),
@@ -104,7 +103,6 @@ WHERE INET6_ATON('2c0f:ffe8::') ^ start = INET6_ATON('::');
 
 DROP TABLE networks;
 
-# NOW SequoiaDB not support GEOMETRY
 --echo #
 --echo # Table containing columns of MySQL types
 --echo #
@@ -137,7 +135,7 @@ CREATE TABLE at(_bit bit(64),
                 _mtx mediumtext,
                 _lbb longblob,
                 _ltx longtext,
-                #_pnt point,
+                _pnt point,
                 _dat date default '1988-12-15',
                 _dtt datetime default '2015-10-24 12:00:00',
                 _smp timestamp default '2015-10-24 14:00:00',
@@ -174,6 +172,7 @@ INSERT INTO at (
     _mtx,
     _lbb,
     _ltx,
+    _pnt,
     _enu,
     _set
 ) VALUES (
@@ -205,6 +204,7 @@ INSERT INTO at (
     "abcdefg",
     x'cafebabe',
     "abcdefg",
+    st_geomfromtext('point(1 1)'),
     1,
     1
 );
@@ -243,7 +243,7 @@ SELECT _mbb | 2147483647 FROM at;
 SELECT _mtx | 2147483647 FROM at;
 SELECT _lbb | 2147483647 FROM at;
 SELECT _ltx | 2147483647 FROM at;
-#SELECT _pnt | 2147483647 FROM at;
+SELECT _pnt | 2147483647 FROM at;
 SELECT _dat | 2147483647 FROM at;
 SELECT _dtt | 2147483647 FROM at;
 SELECT _smp | 2147483647 FROM at;
@@ -279,7 +279,7 @@ SELECT _mbb & 2147483647 FROM at;
 SELECT _mtx & 2147483647 FROM at;
 SELECT _lbb & 2147483647 FROM at;
 SELECT _ltx & 2147483647 FROM at;
-#SELECT _pnt & 2147483647 FROM at;
+SELECT _pnt & 2147483647 FROM at;
 SELECT _dat & 2147483647 FROM at;
 SELECT _dtt & 2147483647 FROM at;
 SELECT _smp & 2147483647 FROM at;
@@ -315,7 +315,7 @@ SELECT _mbb ^ 2147483647 FROM at;
 SELECT _mtx ^ 2147483647 FROM at;
 SELECT _lbb ^ 2147483647 FROM at;
 SELECT _ltx ^ 2147483647 FROM at;
-#SELECT _pnt ^ 2147483647 FROM at;
+SELECT _pnt ^ 2147483647 FROM at;
 SELECT _dat ^ 2147483647 FROM at;
 SELECT _dtt ^ 2147483647 FROM at;
 SELECT _smp ^ 2147483647 FROM at;
@@ -355,7 +355,7 @@ SELECT _mbb | x'cafebabe' FROM at;
 SELECT _mtx | x'cafebabe' FROM at;
 SELECT _lbb | x'cafebabe' FROM at;
 SELECT _ltx | x'cafebabe' FROM at;
-#SELECT _pnt | x'cafebabe' FROM at;
+SELECT _pnt | x'cafebabe' FROM at;
 SELECT _dat | x'cafebabe' FROM at;
 SELECT _dtt | x'cafebabe' FROM at;
 SELECT _smp | x'cafebabe' FROM at;
@@ -391,7 +391,7 @@ SELECT _mbb & x'cafebabe' FROM at;
 SELECT _mtx & x'cafebabe' FROM at;
 SELECT _lbb & x'cafebabe' FROM at;
 SELECT _ltx & x'cafebabe' FROM at;
-#SELECT _pnt & x'cafebabe' FROM at;
+SELECT _pnt & x'cafebabe' FROM at;
 SELECT _dat & x'cafebabe' FROM at;
 SELECT _dtt & x'cafebabe' FROM at;
 SELECT _smp & x'cafebabe' FROM at;
@@ -427,7 +427,7 @@ SELECT _mbb ^ x'cafebabe' FROM at;
 SELECT _mtx ^ x'cafebabe' FROM at;
 SELECT _lbb ^ x'cafebabe' FROM at;
 SELECT _ltx ^ x'cafebabe' FROM at;
-#SELECT _pnt ^ x'cafebabe' FROM at;
+SELECT _pnt ^ x'cafebabe' FROM at;
 SELECT _dat ^ x'cafebabe' FROM at;
 SELECT _dtt ^ x'cafebabe' FROM at;
 SELECT _smp ^ x'cafebabe' FROM at;

@@ -3,7 +3,6 @@
 #be ported to run with SEQUOIADB,
 #but needs to be kept for tests that would need MyISAM in future.
 --source include/have_sequoiadb.inc
-
 #
 # Test of alter table
 #
@@ -724,29 +723,30 @@ drop table t1;
 # Bug #26794: Adding an index with a prefix on a SPATIAL type breaks ALTER
 # TABLE
 #
-#not support GEOMETRY
-#CREATE TABLE t1 (a varchar(500));
-#
-#ALTER TABLE t1 ADD b GEOMETRY NOT NULL, ADD SPATIAL INDEX(b);
-#SHOW CREATE TABLE t1;
-#ALTER TABLE t1 ADD KEY(b(50));
-#SHOW CREATE TABLE t1;
-#
-#ALTER TABLE t1 ADD c POINT;
-#SHOW CREATE TABLE t1;
-#
+CREATE TABLE t1 (a varchar(500));
+--error 1464
+ALTER TABLE t1 ADD b GEOMETRY NOT NULL, ADD SPATIAL INDEX(b);
+ALTER TABLE t1 ADD b GEOMETRY NOT NULL;
+SHOW CREATE TABLE t1;
+--error 138
+ALTER TABLE t1 ADD KEY(b(50));
+SHOW CREATE TABLE t1;
+
+ALTER TABLE t1 ADD c POINT;
+SHOW CREATE TABLE t1;
+
 #--error ER_WRONG_SUB_KEY
 #CREATE TABLE t2 (a INT, KEY (a(20)));
-#
+
 #ALTER TABLE t1 ADD d INT;
 #--error ER_WRONG_SUB_KEY
 #ALTER TABLE t1 ADD KEY (d(20));
-#
-## the 5.1 part of the test
+
+# the 5.1 part of the test
 #--error ER_WRONG_SUB_KEY
 #ALTER TABLE t1 ADD e GEOMETRY NOT NULL, ADD SPATIAL KEY (e(30));
-#
-#DROP TABLE t1;
+
+DROP TABLE t1;
 
 #
 # Bug#18038  MySQL server corrupts binary columns data
@@ -2087,12 +2087,11 @@ SHOW INDEX FROM t1;
 DROP TABLE t1; 
 
 
---echo #
---echo # Bug#19635706
---echo # Verify that it is possible to add a unique key to a not-NULL POINT 
---echo # column and that this key is promoted to primary key
---echo # 
-#sequoiadb not support
+#--echo #
+#--echo # Bug#19635706
+#--echo # Verify that it is possible to add a unique key to a not-NULL POINT 
+#--echo # column and that this key is promoted to primary key
+#--echo # 
 #CREATE TABLE t1(a INT NOT NULL, b POINT NOT NULL) ENGINE=SEQUOIADB;
 #SHOW CREATE TABLE t1;
 #ALTER TABLE t1 ADD UNIQUE INDEX (b);
@@ -2780,17 +2779,19 @@ ALTER TABLE t0 ADD UNIQUE INDEX (a);
 
 #--echo # Case a: Create table with virtual unique not null column
 #CREATE TABLE t1(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL UNIQUE NOT NULL) ENGINE=SEQUOIADB;
-#SELECT * FROM t1;
+CREATE TABLE t1(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
+SELECT * FROM t1;
 
 #--echo # Case b: Create table with index on virtual point column
 #CREATE TABLE t2(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL, UNIQUE INDEX no_pk(a(1))) ENGINE=SEQUOIADB;
-#SELECT * FROM t2;
+CREATE TABLE t2(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
+SELECT * FROM t2;
 
 #--echo # Case c: Add unique index on virtual point column
-#CREATE TABLE t3(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL)
-#ENGINE=SEQUOIADB;
+CREATE TABLE t3(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL)
+ENGINE=SEQUOIADB;
 #ALTER TABLE t3 ADD UNIQUE INDEX (a(1));
-#SELECT * FROM t3;
+SELECT * FROM t3;
 
 --echo # Case d: Add unique index on virtual blob column
 CREATE TABLE t4 (a BLOB, b BLOB GENERATED ALWAYS AS (a) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
@@ -2812,9 +2813,9 @@ SELECT * FROM t4;
 
 
 DROP TABLE t0;
-#DROP TABLE t1;
-#DROP TABLE t2;
-#DROP TABLE t3;
+DROP TABLE t1;
+DROP TABLE t2;
+DROP TABLE t3;
 DROP TABLE t4;
 
 
@@ -2982,58 +2983,57 @@ SET @saved_sql_mode = @@session.sql_mode;
 
 --echo # Test case with both strict mode and 'NO_ZERO_DATE' enabled.
 CREATE TABLE t1 (fld1 INT, fld2 DATETIME NOT NULL) ENGINE= SEQUOIADB;
-#CREATE TABLE t2 (fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
+CREATE TABLE t2 (fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
 
 INSERT INTO t1 VALUES(1, '2000-01-01');
-#INSERT INTO t2 values(1,  ST_PointFromText('POINT(10 10)'));
+INSERT INTO t2 values(1,  ST_PointFromText('POINT(10 10)'));
 
 --echo # Without patch, the following statments report error.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1;
-#ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1;
 
 --echo # Without patch, the following statments report error.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL FIRST, ALGORITHM= COPY;
-#ALTER TABLE t2 MODIFY fld2 POINT NOT NULL FIRST, ALGORITHM= COPY;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL FIRST, ALGORITHM= COPY;
 
 --echo # Tests added for coverage.
 --error ER_TRUNCATED_WRONG_VALUE
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1,
                ADD COLUMN fld3 DATETIME NOT NULL;
-#--error ER_INVALID_USE_OF_NULL
-#ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
-#               ADD COLUMN fld3 MULTIPOINT NOT NULL;
+--error ER_INVALID_USE_OF_NULL
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
+               ADD COLUMN fld3 MULTIPOINT NOT NULL;
 
 --error ER_TRUNCATED_WRONG_VALUE
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1,
                ADD COLUMN fld3 DATETIME NOT NULL, ALGORITHM= COPY;
-#--error ER_INVALID_USE_OF_NULL
-#ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
-#               ADD COLUMN fld3 MULTIPOINT NOT NULL, ALGORITHM= COPY;
+--error ER_INVALID_USE_OF_NULL
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
+               ADD COLUMN fld3 MULTIPOINT NOT NULL, ALGORITHM= COPY;
 
 TRUNCATE TABLE t1;
-#TRUNCATE TABLE t2;
+TRUNCATE TABLE t2;
 
 --echo # Without patch, the following statments report error.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1;
-#ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1;
 
 --echo # Without patch, the following statments report error.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL FIRST, ALGORITHM= COPY;
-#ALTER TABLE t2 MODIFY fld2 POINT NOT NULL FIRST, ALGORITHM= COPY;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL FIRST, ALGORITHM= COPY;
 
 --echo # Tests added for coverage.
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1,
                ADD COLUMN fld3 DATETIME NOT NULL;
-#ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
-#               ADD COLUMN fld3 MULTIPOINT NOT NULL;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
+               ADD COLUMN fld3 MULTIPOINT NOT NULL;
 
 ALTER TABLE t1 MODIFY fld2 DATETIME NOT NULL AFTER fld1,
                ADD COLUMN fld4 DATETIME NOT NULL, ALGORITHM= COPY;
-#ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
-#               ADD COLUMN fld4 MULTIPOINT NOT NULL, ALGORITHM= COPY;
+ALTER TABLE t2 MODIFY fld2 POINT NOT NULL AFTER fld1,
+               ADD COLUMN fld4 MULTIPOINT NOT NULL, ALGORITHM= COPY;
 
-#DROP TABLE t1, t2;
-DROP TABLE t1;
+DROP TABLE t1, t2;
 
 --echo # Test case when a non date column is converted to datetime column.
 
@@ -3080,36 +3080,34 @@ DROP TABLE t1;
 --echo # Test case when a NULL column is converted to NOT NULL column
 #SEQUOIASQLMAINSTREAM-319
 CREATE TABLE t1 (fld0 DATETIME, fld1 INT, fld2 DATETIME NOT NULL) ENGINE= SEQUOIADB;
-#CREATE TABLE t2 (fld0 POINT, fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
+CREATE TABLE t2 (fld0 POINT, fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
 INSERT INTO t1 VALUES('2000-01-01', 1, '2000-01-01');
-#INSERT INTO t2 values(ST_PointFromText('POINT(10 10)'), 1,
-#                      ST_PointFromText('POINT(10 10)'));
+INSERT INTO t2 values(ST_PointFromText('POINT(10 10)'), 1,
+                      ST_PointFromText('POINT(10 10)'));
 
 --echo # Reports an error without patch.
 ALTER TABLE t1 MODIFY fld0 DATETIME NOT NULL AFTER fld2;
 
 #--echo # Reports an error without patch
-#ALTER TABLE t2 MODIFY fld0 POINT NOT NULL AFTER fld2;
+ALTER TABLE t2 MODIFY fld0 POINT NOT NULL AFTER fld2;
 
-#DROP TABLE t1, t2;
-DROP TABLE t1;
+DROP TABLE t1, t2;
 
 --echo # Test case demonstrating the NULL constraint check done by SE.
 CREATE TABLE t1 (fld0 DATETIME, fld1 INT, fld2 DATETIME NOT NULL) ENGINE= SEQUOIADB;
-#CREATE TABLE t2 (fld0 POINT, fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
+CREATE TABLE t2 (fld0 POINT, fld1 INT, fld2 POINT NOT NULL) ENGINE= SEQUOIADB;
 
 INSERT INTO t1 VALUES(NULL, 1, '2000-01-01');
-#INSERT INTO t2 values(NULL, 1, ST_PointFromText('POINT(10 10)'));
+INSERT INTO t2 values(NULL, 1, ST_PointFromText('POINT(10 10)'));
 
 #SEQUOIASQLMAINSTREAM-395
 --error 1265
 ALTER TABLE t1 MODIFY fld0 DATETIME NOT NULL;
 
-#--error ER_INVALID_USE_OF_NULL
-#ALTER TABLE t2 MODIFY fld0 POINT NOT NULL;
+--error ER_INVALID_USE_OF_NULL
+ALTER TABLE t2 MODIFY fld0 POINT NOT NULL;
 
-#DROP TABLE t1, t2;
-DROP TABLE t1;
+DROP TABLE t1, t2;
 
 --echo #
 --echo # BUG#26848813: INDEXED COLUMN CAN'T BE CHANGED FROM VARCHAR(15)
