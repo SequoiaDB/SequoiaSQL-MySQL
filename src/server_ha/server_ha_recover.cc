@@ -1621,6 +1621,14 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         simple_builder.reset();
         simple_builder.append(HA_FIELD_INSTANCE_ID, ha_thread->instance_id);
         cond = simple_builder.done();
+
+        builder.reset();
+        {
+          bson::BSONObjBuilder sub_builder(builder.subobjStart("$set"));
+          sub_builder.append(HA_FIELD_SQL_ID, sql_id);
+          sub_builder.doneFast();
+        }
+        obj = builder.done();
         rc = inst_state_cl.upsert(obj, cond);
         if (rc) {
           sleep(1);

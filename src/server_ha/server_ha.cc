@@ -1416,7 +1416,6 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     }
 
     DBUG_ASSERT(strlen(sql_info->sp_name) != 0);
-    DBUG_ASSERT(strlen(sql_info->sp_db_name) != 0);
 
     sql_info->tables = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
     if (NULL == sql_info->tables) {
