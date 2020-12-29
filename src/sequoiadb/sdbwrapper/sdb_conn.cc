@@ -99,7 +99,9 @@ Sdb_conn::Sdb_conn(my_thread_id _tid, bool server_ha_conn)
   rollback_on_timeout = false;
 }
 
-Sdb_conn::~Sdb_conn() {}
+Sdb_conn::~Sdb_conn() {
+  m_cursor.close();
+}
 
 sdbclient::sdb &Sdb_conn::get_sdb() {
   return m_connection;
@@ -302,15 +304,6 @@ done:
   return rc;
 error:
   goto done;
-}
-
-int conn_exec(sdbclient::sdb *connection, const char *sql,
-              sdbclient::sdbCursor *cursor) {
-  return connection->exec(sql, *cursor);
-}
-
-int Sdb_conn::exec(const char *sql, sdbclient::sdbCursor *cursor) {
-  return retry(boost::bind(conn_exec, &m_connection, sql, cursor));
 }
 
 int Sdb_conn::begin_transaction(uint tx_isolation) {
@@ -863,6 +856,16 @@ error:
   goto done;
 }
 
+int conn_exec(sdbclient::sdb *connection, const char *sql,
+              sdbclient::sdbCursor *cursor) {
+  return connection->exec(sql, *cursor);
+}
+
+int Sdb_conn::execute(const char *sql) {
+  int rc = retry(boost::bind(conn_exec, &m_connection, sql, &m_cursor));
+  return rc;
+}
+
 int Sdb_conn::get_cl_statistics(const char *cs_name, const char *cl_name,
                                 Sdb_statistics &stats) {
   int rc = SDB_ERR_OK;
@@ -1027,8 +1030,8 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
       "on CATA.Name=CL.Name";
 
   int rc = SDB_ERR_OK;
-  sdbclient::sdbCursor cursor;
   bson::BSONObj obj;
+  bson::BSONObj obj_main;
   char normal_cl_stats_sql[sizeof(NORMAL_CL_STATS_SQL) +
                            SDB_CL_FULL_NAME_MAX_SIZE] = {0};
   char main_cl_stats_sql[sizeof(MAIN_CL_STATS_SQL) +
@@ -1038,21 +1041,27 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
   DBUG_ASSERT(strlength(cs_name) != 0);
 
   // Try getting statistics as normal cl. If not, try main cl again.
-  sprintf(normal_cl_stats_sql, NORMAL_CL_STATS_SQL, cs_name, cl_name);
-  rc = exec(normal_cl_stats_sql, &cursor);
+  snprintf(normal_cl_stats_sql, sizeof(normal_cl_stats_sql),
+           NORMAL_CL_STATS_SQL, cs_name, cl_name);
+  rc = execute(normal_cl_stats_sql);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
   try {
-    rc = cursor.next(obj, false);
+    rc = next(obj, false);
     if (SDB_DMS_EOC == rc) {
-      sprintf(main_cl_stats_sql, MAIN_CL_STATS_SQL, cs_name, cl_name);
-      rc = exec(main_cl_stats_sql, &cursor);
+      snprintf(main_cl_stats_sql, sizeof(main_cl_stats_sql), MAIN_CL_STATS_SQL,
+               cs_name, cl_name);
+      rc = execute(main_cl_stats_sql);
       if (rc != SDB_ERR_OK) {
         goto error;
       }
-      rc = cursor.next(obj, false);
+      rc = next(obj, false);
     }
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
+    rc = next(obj_main, false);
     if (rc != SDB_ERR_OK) {
       goto error;
     }
@@ -1069,7 +1078,6 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
   stats.total_records = obj.getField(SDB_FIELD_TOTAL_RECORDS).numberLong();
 
 done:
-  cursor.close();
   return rc;
 error:
   convert_sdb_code(rc);

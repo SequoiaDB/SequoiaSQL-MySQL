@@ -13,27 +13,54 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # St, Fifth Floor, Boston, MA  02110-1301 USA
 cmake_minimum_required(VERSION 2.8.7)
-# spark storage engine
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-  add_definitions(-DDEBUG)
+if(MYSQL STREQUAL "5.7.25" OR MYSQL STREQUAL "5.7.32" OR MARIADB)
+  # spark storage engine
+  if(CMAKE_BUILD_TYPE MATCHES "Debug")
+    add_definitions(-DDEBUG)
+  endif()
+  add_definitions(-Wno-error)
+
+  if(SDB_PROJECT_TYPE STREQUAL "mysql")
+    add_compile_options(-DIS_MYSQL)
+  else()
+    add_compile_options(-DIS_MARIADB)
+    add_definitions(-Wno-deprecated-declarations)
+  endif()
+
+  include_directories(include)
+  aux_source_directory(handler HANDLER_FILES)
+  aux_source_directory(sparkwrapper SPK_FILES)
+  set(SPARK_SOURCES ${HANDLER_FILES} ${SPK_FILES})
+
+  include_directories(${ODBC_INCLUDE_DIR})
+  include_directories(include)
+
+  add_compile_options(-Wno-unused-variable -Wno-unused-function -Wno-write-strings -Wno-return-type)
+  set(SPK_LDFLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
+  MYSQL_ADD_PLUGIN(spark ${SPARK_SOURCES} 
+                  STORAGE_ENGINE
+                  MANDATORY
+                  LINK_LIBRARIES
+                  ${ODBC_LIBRARY})
+
+  set_target_properties(spark PROPERTIES LINK_FLAGS ${SPK_LDFLAGS})
+  install(FILES ${ODBC_LIBRARY} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(FILES ${UNIX_ODBC_DIR}/lib/libodbc.so.2 
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(FILES ${UNIX_ODBC_DIR}/lib/libodbc.so.2.0.0 
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+  if(MYSQL)
+    set(PATCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/patches/sql_pushdown_mysql_${MYSQL}.patch")
+  elseif(MARIADB)
+    set(PATCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/patches/sql_pushdown_mariadb_${MARIADB}.patch")
+  endif()
+  # apply sql pushdown patch files
+  if (EXISTS "${PATCH_FILE}")
+    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/sql/sql_parse.cc")
+    message(STATUS "Apply patch ${PATCH_FILE} for sql pushdown")
+    execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/sql" patch -s -N -i ${PATCH_FILE})
+  else()
+    message(FATAL_ERROR "Patch file ${PATCH_FILE} doesn't exist")
+  endif()
 endif()
-add_definitions(-Wno-error)
-
-include_directories(include)
-aux_source_directory(handler HANDLER_FILES)
-aux_source_directory(sparkwrapper SPK_FILES)
-set(SPARK_SOURCES ${HANDLER_FILES} ${SPK_FILES})
-
-include_directories(${ODBC_INCLUDE_DIR})
-include_directories(include)
-
-add_compile_options(-Wno-unused-variable -Wno-unused-function -Wno-write-strings -Wno-return-type)
-set(SPK_LDFLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
-MYSQL_ADD_PLUGIN(spark ${SPARK_SOURCES} 
-                 STORAGE_ENGINE
-                 MANDATORY
-                 LINK_LIBRARIES
-                 ${ODBC_LIBRARY})
-
-set_target_properties(spark PROPERTIES LINK_FLAGS ${SPK_LDFLAGS})
-install(FILES ${ODBC_LIBRARY} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

@@ -105,6 +105,9 @@ static PSI_memory_key sdb_key_memory_blobroot;
 #endif
 #endif
 
+PSI_stage_info stage_exec_sql_in_sdb = {0, "Execute sql in sdb", 0};
+PSI_stage_info stage_exec_fetch_data_in_sdb = {0, "Fetch data in sdb.", 0};
+
 static void update_shares_stats(THD *thd);
 static uchar *sdb_get_key(boost::shared_ptr<Sdb_share> *share, size_t *length,
                           my_bool not_used MY_ATTRIBUTE((unused))) {
@@ -4183,24 +4186,45 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
-  rc = collection->next(obj, false);
-  if (rc != 0) {
-    if (HA_ERR_END_OF_FILE == rc) {
-      table->status = STATUS_NOT_FOUND;
-      // SEQUOIASQLMAINSTREAM-931
-      // #ifdef IS_MARIADB
-      //       if (table->versioned() && (int)m_bulk_insert_rows.size() > 0) {
-      //         rc = flush_bulk_insert();
-      //         if (rc != 0) {
-      //           goto error;
-      //         }
-      //         rc = HA_ERR_END_OF_FILE;
-      //       }
-      // #endif
+  if (ha_thd()->variables.sdb_sql_pushdown &&
+      ha_thd()->EXEC_STEP == ha_thd()->sdb_sql_exec_step &&
+      ha_thd()->sdb_sql_push_down_query_string.length) {
+    Sdb_conn *conn = NULL;
+    rc = check_sdb_in_thd(ha_thd(), &conn, true);
+    if (0 != rc) {
+      goto error;
     }
-    goto error;
+    try {
+      rc = conn->next(cur_rec, false);
+      if (rc != 0) {
+        if (HA_ERR_END_OF_FILE == rc) {
+          table->status = STATUS_NOT_FOUND;
+        }
+        goto error;
+      }
+    }
+    SDB_EXCEPTION_CATCHER(
+        rc, "Failed to move cursor to next, table name:%s.%s, exception:%s",
+        db_name, table_name, e.what());
+  } else {
+    rc = collection->next(obj, false);
+    if (rc != 0) {
+      if (HA_ERR_END_OF_FILE == rc) {
+        table->status = STATUS_NOT_FOUND;
+        // SEQUOIASQLMAINSTREAM-931
+        // #ifdef IS_MARIADB
+        //       if (table->versioned() && (int)m_bulk_insert_rows.size() > 0) {
+        //         rc = flush_bulk_insert();
+        //         if (rc != 0) {
+        //           goto error;
+        //         }
+        //         rc = HA_ERR_END_OF_FILE;
+        //       }
+        // #endif
+      }
+      goto error;
   }
-
+  }
   rc = obj_to_row(obj, buf);
   if (rc != 0) {
     goto error;
@@ -4240,6 +4264,50 @@ int ha_sdb::rnd_next(uchar *buf) {
     DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
     sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
     if (first_read) {
+      if (ha_thd()->variables.sdb_sql_pushdown &&
+          ha_thd()->PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
+          ha_thd()->sdb_sql_push_down_query_string.length) {
+        const char *hj_sql = NULL;
+        Sdb_conn *conn = NULL;
+
+        hj_sql = ha_thd()->sdb_sql_push_down_query_string.str;
+        ha_thd()->sdb_sql_exec_step = ha_thd()->EXEC_STEP;
+        rc = check_sdb_in_thd(ha_thd(), &conn, true);
+        if (0 != rc) {
+          goto error;
+        }
+
+        DBUG_ASSERT(NULL != db_name);
+        DBUG_ASSERT(strlen(table_name) != 0);
+        THD_STAGE_INFO(ha_thd(), stage_exec_sql_in_sdb);
+        try {
+          rc = conn->execute(hj_sql);
+          if (rc != SDB_ERR_OK) {
+            goto error;
+          }
+
+          rc = conn->next(cur_rec, false);
+          if (rc != 0) {
+            if (HA_ERR_END_OF_FILE == rc) {
+              table->status = STATUS_NOT_FOUND;
+            }
+            goto error;
+          }
+        }
+        SDB_EXCEPTION_CATCHER(
+            rc, "Failed to read next for table:%s.%s, exception:%s", db_name,
+            table_name, e.what());
+        THD_STAGE_INFO(ha_thd(), stage_exec_fetch_data_in_sdb);
+        ha_statistic_increment(&SSV::ha_read_rnd_next_count);
+        rc = obj_to_row(cur_rec, buf);
+        if (rc != 0) {
+          goto error;
+        }
+        first_read = first_read ? false : first_read;
+        table->status = 0;
+        goto done;
+      }
+
 #ifdef IS_MARIADB
       const bool using_vers_sys = table->versioned();
       if (using_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
@@ -4598,6 +4666,13 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       goto done;
     }
 
+    /*Exec SQL which pushed down to sdb no need to update stats.*/
+    if (ha_thd()->variables.sdb_sql_pushdown &&
+        ha_thd()->PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
+        ha_thd()->sdb_sql_push_down_query_string.length) {
+      goto done;
+    }
+
     rc = conn->get_cl_statistics(db_name, table_name, stat);
     if (0 != rc) {
       SDB_LOG_ERROR("%s", conn->get_err_msg());
@@ -4667,10 +4742,17 @@ int ha_sdb::ensure_stats(THD *thd) {
   DBUG_PRINT("info", ("stats.records: %d, share->stat.total_records: %d.",
                       int(stats.records), int(share->stat.total_records)));
   /* not update stats in the mode of execute_only_in_mysql. */
-  if (!sdb_execute_only_in_mysql(thd)) {
-    DBUG_ASSERT((~(ha_rows)0) != stats.records);
-    DBUG_ASSERT((~(ha_rows)0) != (ha_rows)share->stat.total_records);
+  /*Exec SQL which pushed down to sdb no need to update stats.*/
+  if (sdb_execute_only_in_mysql(thd) ||
+      (ha_thd()->variables.sdb_sql_pushdown &&
+       ha_thd()->PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
+       ha_thd()->sdb_sql_push_down_query_string.length)) {
+    goto done;
   }
+
+  DBUG_ASSERT((~(ha_rows)0) != stats.records);
+  DBUG_ASSERT((~(ha_rows)0) != (ha_rows)share->stat.total_records);
+
 done:
   DBUG_RETURN(rc);
 error:

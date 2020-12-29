@@ -1,9 +1,18 @@
-/* odbc.c
+/* Copyright (c) 2018, SequoiaDB and/or its affiliates. All rights reserved.
 
-    testing unixODBC
-*/
-//gcc -o odbc_exe odbc.c -I/opt/odbc_samples/odbc/include -L/opt/odbc_samples/odbc/lib -lodbc -g
-//gcc -o spark_conn spark_conn.cc -I/opt/ywx/unixodbc-2.3.1/include -L/opt/ywx/unixodbc-2.3.1/lib -lodbc  -gdwarf-2 -g3
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; version 2 of the License.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
+
 #include <stdlib.h>
 #include "spark_conn.h"
 #include "ha_spark_log.h"
@@ -29,7 +38,7 @@ done:
 }
 
 void print_diag(SQLRETURN rc, SQLSMALLINT type, SQLHANDLE handle,
-                           const char *text, const char *file, int line) {
+                const char *text, const char *file, int line) {
   if (SQL_SUCCESS != rc) {
     SQLCHAR state[6] = {0};
     SQLCHAR message[SQL_MAX_MESSAGE_LENGTH] = {0};
@@ -37,40 +46,42 @@ void print_diag(SQLRETURN rc, SQLSMALLINT type, SQLHANDLE handle,
     SQLINTEGER native_error = 0;
     SQLRETURN diag_rc = SQL_SUCCESS;
 
-    diag_rc = SQLGetDiagRec(type, handle, 1, state, &native_error,
-                        message, SQL_MAX_MESSAGE_LENGTH - 1, &length);
-    if(SQL_SUCCEEDED(diag_rc)) {
+    diag_rc = SQLGetDiagRec(type, handle, 1, state, &native_error, message,
+                            SQL_MAX_MESSAGE_LENGTH - 1, &length);
+    if (SQL_SUCCEEDED(diag_rc)) {
       SPARK_LOG_ERROR("[%6s] %d in %s in %s on line %d", state, length, message,
                       file, line);
     } else {
-      SPARK_LOG_ERROR("Failed to get expected diagnostics from SQLGetDiagRec = "
-                      "%d in file %s on line %d", diag_rc, file, line);
+      SPARK_LOG_ERROR(
+          "Failed to get expected diagnostics from SQLGetDiagRec = "
+          "%d in file %s on line %d",
+          diag_rc, file, line);
     }
   }
 }
 
 class Thd_spark {
  private:
-  Thd_spark(THD* thd);
+  Thd_spark(THD *thd);
   ~Thd_spark();
+
  public:
   static Thd_spark *seize(THD *thd);
   static void release(Thd_spark *thd_sdb);
   Spark_conn *get_conn() { return &m_conn; }
+
  private:
-  THD* m_thd;
+  THD *m_thd;
   ulong m_thread_id;
   Spark_conn m_conn;
 };
 
-Thd_spark::Thd_spark(THD* thd)
-  : m_thd(thd),
-  m_thread_id(thd_get_thread_id(thd)),
-  m_conn((ulong)thd_get_thread_id(thd)) {
-};
+Thd_spark::Thd_spark(THD *thd)
+    : m_thd(thd),
+      m_thread_id(thd_get_thread_id(thd)),
+      m_conn((ulong)thd_get_thread_id(thd)){};
 
-Thd_spark::~Thd_spark() {
-};
+Thd_spark::~Thd_spark(){};
 
 Thd_spark *Thd_spark::seize(THD *thd) {
   Thd_spark *thd_spark = new (std::nothrow) Thd_spark(thd);
@@ -86,13 +97,13 @@ void Thd_spark::release(Thd_spark *thd_spark) {
 }
 
 // Set Thd_spark pointer for THD
-static inline void thd_set_thd_spark(THD* thd, Thd_spark* thd_spark) {
+static inline void thd_set_thd_spark(THD *thd, Thd_spark *thd_spark) {
   thd_set_ha_data(thd, spark_hton, thd_spark);
 }
 
 // Get Thd_spark pointer from THD
-static inline Thd_spark* thd_get_thd_spark(THD* thd) {
-  return (Thd_spark*)thd_get_ha_data(thd, spark_hton);
+static inline Thd_spark *thd_get_thd_spark(THD *thd) {
+  return (Thd_spark *)thd_get_ha_data(thd, spark_hton);
 }
 
 // Make sure THD has a Thd_spark struct allocated and associated
@@ -109,7 +120,7 @@ int check_spark_in_thd(THD *thd, Spark_conn **conn) {
   }
   /*TODO: STATE_C4 is enough to check if established.*/
   /*TODO: no need to established long connection in spark.*/
-  //if (STATE_C4 != (DMHDBC)(thd_spark->get_conn())-> state) {
+  // if (STATE_C4 != (DMHDBC)(thd_spark->get_conn())-> state) {
   if (!thd_spark->get_conn()->is_established()) {
     rc = thd_spark->get_conn()->connect();
     if (SQL_SUCCESS != rc) {
@@ -136,7 +147,7 @@ int Spark_conn::connect() {
   DBUG_ENTER("Spark_conn::connect");
   RETCODE rc = SQL_SUCCESS;
 
-  char status[10] = {0}; // Status SQL
+  char status[10] = {0};  // Status SQL
   SQLINTEGER error = 0;
 
   SQLSMALLINT msg_len = 0;
@@ -152,18 +163,15 @@ int Spark_conn::connect() {
   putenv(odbc_sysini);
 
   // 1. allocate Environment handle and register version
-  rc = SQLAllocHandle(SQL_HANDLE_ENV,SQL_NULL_HANDLE, &m_env);
-  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO))
-  {
+  rc = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_env);
+  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
     convert_spark_error(rc);
     SPARK_PRINT_ERROR(rc, "Failed to alloc handle of env in connecting.");
     goto error;
   }
 
-  rc = SQLSetEnvAttr(m_env, SQL_ATTR_ODBC_VERSION,
-                         (void*)SQL_OV_ODBC3, 0);
-  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO))
-  {
+  rc = SQLSetEnvAttr(m_env, SQL_ATTR_ODBC_VERSION, (void *)SQL_OV_ODBC3, 0);
+  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
     convert_spark_error(rc);
     SPARK_PRINT_ERROR(rc, "Failed to set env attribute in connecting.");
     SQLFreeHandle(SQL_HANDLE_ENV, m_env);
@@ -172,8 +180,7 @@ int Spark_conn::connect() {
 
   // 2. allocate connection handle, set timeout
   rc = SQLAllocHandle(SQL_HANDLE_DBC, m_env, &m_hdbc);
-  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO))
-  {
+  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
     convert_spark_error(rc);
     SPARK_PRINT_ERROR(rc, "Failed to alloc handle in connecting.");
     SQLFreeHandle(SQL_HANDLE_ENV, m_env);
@@ -182,18 +189,19 @@ int Spark_conn::connect() {
   SQLSetConnectAttr(m_hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER *)5, 0);
 
   // 3. Connect to the datasource "web"
-  /*connection_handle, server_name, name_len, user_name, name_len, authen, name_len*/
-  //spk_dsn_str: default(Simba Spark 64-bit)
-  rc = SQLConnect(m_hdbc, (SQLCHAR*) spk_dsn_str, SQL_NTS,
-                                     (SQLCHAR*) "", SQL_NTS,
-                                     (SQLCHAR*) "", SQL_NTS);
-  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO))
-  {
+  /*connection_handle, server_name, name_len, user_name, name_len, authen,
+   * name_len*/
+  // spk_dsn_str: default(Simba Spark 64-bit)
+  rc = SQLConnect(m_hdbc, (SQLCHAR *)spk_dsn_str, SQL_NTS, (SQLCHAR *)"",
+                  SQL_NTS, (SQLCHAR *)"", SQL_NTS);
+  if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
     convert_spark_error(rc);
-    SQLGetDiagRec(SQL_HANDLE_DBC, m_hdbc,1, (unsigned char*)status, &error,
-                  (unsigned char*)err_msg, 100, &msg_len);
-    SPARK_PRINT_ERROR(rc, "Failed to connect with data source:%s, error msg:%s,"
-                      " error:%d", spk_dsn_str, (unsigned char*)err_msg, error);
+    SQLGetDiagRec(SQL_HANDLE_DBC, m_hdbc, 1, (unsigned char *)status, &error,
+                  (unsigned char *)err_msg, 100, &msg_len);
+    SPARK_PRINT_ERROR(rc,
+                      "Failed to connect with data source:%s, error msg:%s,"
+                      " error:%d",
+                      spk_dsn_str, (unsigned char *)err_msg, error);
     SQLFreeHandle(SQL_HANDLE_ENV, m_env);
     goto error;
   }
@@ -219,7 +227,7 @@ int Spark_conn::query(SQLCHAR *query_string, SQLHSTMT &stmt) {
     goto error;
   }
 
-//  rc = SQLExecDirect(stmt, (SQLCHAR*)"select * from test.t1", SQL_NTS);
+  //  rc = SQLExecDirect(stmt, (SQLCHAR*)"select * from test.t1", SQL_NTS);
   ok_sql(rc, stmt, query_string);
   SPARK_LOG_DEBUG("Succeed to query with DSN:%s", spk_dsn_str);
 

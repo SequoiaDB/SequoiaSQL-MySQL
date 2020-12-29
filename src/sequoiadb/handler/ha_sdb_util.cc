@@ -897,7 +897,6 @@ int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
                               const char *table_name, char *sequence_name) {
   int rc = SDB_OK;
   int unique_id = 0;
-  sdbclient::sdbCursor cursor;
   bson::BSONObj obj;
   static const char GET_UNIQUE_ID_SQL[] =
       "select UniqueID from $LIST_CS where Name ='%s'";
@@ -906,12 +905,11 @@ int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
 
   // Get unique_id for distinct sequence.
   sprintf(get_unique_id_sql, GET_UNIQUE_ID_SQL, cs_name);
-  rc = conn->exec(get_unique_id_sql, &cursor);
   if (rc) {
     goto error;
   }
   try {
-    rc = cursor.next(obj, false);
+    rc = conn->execute(get_unique_id_sql);
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to move cursor to next, exception:%s",
                         e.what());

@@ -200,15 +200,3 @@ if(EXISTS "${SERVER_HA_PATCHES_DIR}")
 else()
   message(FATAL_ERROR "Can't apply 'server_ha' patch, patch directory 'patches' doesn't exist")
 endif()
-
-# spark storage engine
-SET(SPARK_SOURCES sparkwrapper/ha_spark.cc
-     sparkwrapper/ha_spark_vars.cc 
-     sparkwrapper/spark_conn.cc
-     sparkwrapper/ha_spark_log.cc )
-include_directories(${ODBC_INCLUDE_DIR})
-link_directories("/usr/lib/x86_64-linux-gnu")
-MYSQL_ADD_PLUGIN(spark ${SPARK_SOURCES} 
-                 STORAGE_ENGINE MODULE_ONLY
-                 LINK_LIBRARIES
-                 ${ODBC_LIBRARY})

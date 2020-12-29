@@ -22,6 +22,7 @@
 #include <boost/function.hpp>
 #include "ha_sdb_def.h"
 #include <mysql/plugin.h>
+#include "ha_sdb_errcode.h"
 
 #if defined IS_MYSQL
 #include <my_thread_local.h>
@@ -205,6 +206,8 @@ class Sdb_conn {
 
   int drop_cl(const char *cs_name, const char *cl_name);
 
+  int execute(const char *sql);
+
   int drop_cs(const char *cs_name);
 
   int drop_empty_cs(const char *cs_name,
@@ -314,6 +317,22 @@ class Sdb_conn {
 
   bool is_cl_statistics_supported();
 
+  int next(bson::BSONObj &obj, my_bool get_owned) {
+    int rc = SDB_ERR_OK;
+    rc = m_cursor.next(obj, get_owned);
+    if (rc != SDB_ERR_OK) {
+      if (SDB_DMS_EOC == rc) {
+        rc = HA_ERR_END_OF_FILE;
+      }
+      m_cursor.close();
+      goto error;
+    }
+  done:
+    return rc;
+  error:
+    convert_sdb_code(rc);
+    goto done;
+  }
  private:
   int retry(boost::function<int()> func);
 
@@ -325,6 +344,7 @@ class Sdb_conn {
 
  private:
   sdbclient::sdb m_connection;
+  sdbclient::sdbCursor m_cursor;
   bool m_transaction_on;
   my_thread_id m_thread_id;
   bool pushed_autocommit;
