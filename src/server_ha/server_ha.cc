@@ -1295,11 +1295,7 @@ static int get_sql_objects_for_dcl(THD *thd, ha_sql_stmt_info *sql_info) {
       rc = SDB_HA_OOM;
       goto error;
     }
-    if (tables) {
-      ha_tbl_node->db_name = C_STR(tables->db);
-    } else {
-      ha_tbl_node->db_name = HA_MYSQL_DB;
-    }
+    ha_tbl_node->db_name = HA_MYSQL_DB;
     ha_tbl_node->table_name = lex_user->user.str;
     ha_tbl_node->op_type = HA_OPERATION_TYPE_DCL;
     ha_tbl_node->is_temporary_table = false;
