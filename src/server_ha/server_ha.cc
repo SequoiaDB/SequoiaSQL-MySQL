@@ -1082,6 +1082,65 @@ static inline void build_session_attributes(THD *thd, char *session_attrs) {
   }
 }
 
+// update cached cata version for alter partition table
+static int update_cata_version_for_alter_part_table(
+    THD *thd, ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  bool is_alter_part_op = false;
+
+#ifdef IS_MYSQL
+  is_alter_part_op =
+      (thd->lex->alter_info.flags &
+       (Alter_info::ALTER_ADD_PARTITION | Alter_info::ALTER_DROP_PARTITION |
+        Alter_info::ALTER_COALESCE_PARTITION |
+        Alter_info::ALTER_REORGANIZE_PARTITION | Alter_info::ALTER_PARTITION |
+        Alter_info::ALTER_ADMIN_PARTITION | Alter_info::ALTER_TABLE_REORG |
+        Alter_info::ALTER_REBUILD_PARTITION | Alter_info::ALTER_ALL_PARTITION |
+        Alter_info::ALTER_REMOVE_PARTITIONING |
+        Alter_info::ALTER_EXCHANGE_PARTITION |
+        Alter_info::ALTER_TRUNCATE_PARTITION |
+        Alter_info::ALTER_UPGRADE_PARTITIONING));
+#else
+  is_alter_part_op =
+      thd->lex->alter_info.partition_flags &
+      (ALTER_PARTITION_ADD | ALTER_PARTITION_DROP | ALTER_PARTITION_COALESCE |
+       ALTER_PARTITION_REORGANIZE | ALTER_PARTITION_INFO |
+       ALTER_PARTITION_ADMIN | ALTER_PARTITION_REBUILD | ALTER_PARTITION_ALL |
+       ALTER_PARTITION_REMOVE | ALTER_PARTITION_EXCHANGE |
+       ALTER_PARTITION_TRUNCATE | ALTER_PARTITION_TABLE_REORG);
+#endif
+
+  if (is_alter_part_op) {
+    ha_table_list *table = NULL;
+    bson::BSONObj obj, condition;
+    char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+
+    if (sql_info->tables->next) {
+      // if its 'alter table rename table' command
+      table = sql_info->tables->next;
+    } else {
+      table = sql_info->tables;
+    }
+
+    sprintf(full_name, "%s.%s", table->db_name, table->table_name);
+    condition = BSON(SDB_FIELD_NAME << full_name);
+    rc = sql_info->sdb_conn->snapshot(obj, SDB_SNAP_CATALOG, condition);
+    if (SDB_DMS_EOC == get_sdb_code(rc)) {
+      // can not find cata info, its innodb partition table
+      rc = 0;
+      goto done;
+    } else if (0 == rc) {
+      table->cata_version = obj.getIntField(HA_FIELD_VERSION);
+    } else {
+      goto error;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 // 1. write SQL into 'HASQLLog'
 // 2. update 'HAObjectState' and 'HAInstanceObjectState'
 static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
@@ -1131,6 +1190,14 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command ||
       SQLCOM_RENAME_TABLE == sql_command) {
     query.set_charset(thd->charset());
+  }
+
+  if (SQLCOM_ALTER_TABLE == sql_command &&
+      !sql_info->tables->is_temporary_table) {
+    rc = update_cata_version_for_alter_part_table(thd, sql_info);
+    if (rc) {
+      goto error;
+    }
   }
 
   for (; ha_tables; ha_tables = ha_tables->next) {
@@ -2738,6 +2805,32 @@ static inline bool need_retry_errno(uint mysql_errno) {
     case ER_EVENT_DOES_NOT_EXIST:
     case ER_TRG_DOES_NOT_EXIST:
     case ER_CANNOT_USER:
+    case ER_KEY_DOES_NOT_EXITS:
+    case ER_NO_PARTITION_FOR_GIVEN_VALUE:
+    case ER_WARN_DATA_OUT_OF_RANGE:
+    case ER_VIEW_INVALID:
+    case ER_UNKNOWN_PARTITION:
+    case ER_GET_ERRNO:
+    case ER_DBACCESS_DENIED_ERROR:
+    case ER_BAD_NULL_ERROR:
+    case ER_INVALID_DEFAULT:
+    case ER_UNKNOWN_TABLE:
+    case ER_TABLEACCESS_DENIED_ERROR:
+    case ER_COLUMNACCESS_DENIED_ERROR:
+    case ER_WRONG_NUMBER_OF_COLUMNS_IN_SELECT:
+    case ER_TRUNCATED_WRONG_VALUE:
+    case ER_VIEW_NO_EXPLAIN:
+    case ER_NONUPDATEABLE_COLUMN:
+    case ER_NO_DEFAULT_FOR_FIELD:
+    case ER_TRUNCATED_WRONG_VALUE_FOR_FIELD:
+    case ER_PROCACCESS_DENIED_ERROR:
+    case ER_DATA_TOO_LONG:
+    case ER_NO_DEFAULT_FOR_VIEW_FIELD:
+    case ER_NON_INSERTABLE_TABLE:
+    case ER_PARTITION_CLAUSE_ON_NONPARTITIONED:
+    case ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET:
+    case ER_NON_UPDATABLE_TABLE:
+    case ER_DUP_ENTRY_WITH_KEY_NAME:
       need_retry = true;
   }
 

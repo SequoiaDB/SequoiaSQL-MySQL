@@ -4736,8 +4736,7 @@ int ha_sdb::ensure_collection(THD *thd) {
     int inst_cata_version = ha_get_cata_version(db_name, table_name);
     int driver_cata_version = collection->get_version();
 
-    if (SQLCOM_CREATE_TABLE == thd_sql_command(thd) ||
-        SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
+    if (SQLCOM_CREATE_TABLE == thd_sql_command(thd)) {
       int latest_version = 0;
       rc = ha_get_latest_cata_version(db_name, table_name, latest_version);
       if (rc) {
@@ -4748,7 +4747,12 @@ int ha_sdb::ensure_collection(THD *thd) {
       }
     }
 
-    if (inst_cata_version >= driver_cata_version) {
+    if (SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
+      SDB_LOG_DEBUG(
+          "HA: Invalidate check collection version function for alter table "
+          "command");
+      collection->set_version(0);
+    } else if (inst_cata_version >= driver_cata_version) {
       collection->set_version(inst_cata_version);
     } else if (inst_cata_version < driver_cata_version) {
       SDB_LOG_DEBUG(
