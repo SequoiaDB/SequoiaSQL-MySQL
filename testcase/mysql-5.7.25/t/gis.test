@@ -1162,6 +1162,7 @@ ST_PolyFromText(
 
 --echo # Conformance Item T6 
 # TODO: ST_Dimension() alias
+#SEQUOIASQLMAINSTREAM-204
 SELECT ST_Dimension(shore) 
 FROM lakes 
 WHERE name = 'Blue Lake'; 
