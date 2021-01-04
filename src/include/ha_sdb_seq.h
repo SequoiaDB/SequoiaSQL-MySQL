@@ -39,7 +39,7 @@ class ha_sdb_seq : public ha_sdb {
 
   int start_statement(THD *thd, uint table_count) { return 0; }
 
-  int external_lock(THD *thd, int lock_type);
+  int external_lock(THD *thd, int lock_type) { return 0; }
 
   int rnd_init(bool scan);
 
@@ -64,9 +64,6 @@ class ha_sdb_seq : public ha_sdb {
 
  private:
   Sdb_seq *m_sequence;
-  bool m_sequence_to_be_set;
-  longlong m_acquire_up_bound;
-  longlong m_acquire_low_bound;
   char m_sequence_name[SDB_CL_NAME_MAX_SIZE + 1];
 };
 

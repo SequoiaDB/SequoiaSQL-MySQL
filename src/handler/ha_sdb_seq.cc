@@ -28,14 +28,11 @@
 ha_sdb_seq::ha_sdb_seq(handlerton *hton, TABLE_SHARE *table_arg)
     : ha_sdb(hton, table_arg) {
   m_sequence = NULL;
-  m_sequence_to_be_set = false;
-  m_acquire_low_bound = -1;
-  m_acquire_up_bound = -1;
   memset(m_sequence_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
 }
 
 int ha_sdb_seq::ensure_sequence(THD *thd) {
-  DBUG_ENTER("ha_sdb::ensure_sequence");
+  DBUG_ENTER("ha_sdb_seq::ensure_sequence");
   int rc = 0;
   DBUG_ASSERT(NULL != thd);
 
@@ -132,20 +129,11 @@ error:
 }
 
 int ha_sdb_seq::open(const char *name, int mode, uint test_if_locked) {
-  DBUG_ENTER("ha_sdb::open");
+  DBUG_ENTER("ha_sdb_seq::open");
 
   int rc = 0;
   Sdb_seq sdb_seq;
-  int fetch_num = 0;
-  int increment = 0;
-  int return_num = 0;
-  longlong next_value = 0;
   Sdb_conn *connection = NULL;
-  SEQUENCE *seq = table->s->sequence;
-
-  if (sdb_execute_only_in_mysql(ha_thd())) {
-    goto done;
-  }
 
   rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
@@ -168,6 +156,10 @@ int ha_sdb_seq::open(const char *name, int mode, uint test_if_locked) {
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
 
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
+
   // Get sequence to check if the sequence is available.
   rc = connection->get_seq(db_name, table_name, m_sequence_name, sdb_seq);
   if ((SDB_DMS_CS_NOTEXIST == get_sdb_code(rc) ||
@@ -182,19 +174,6 @@ int ha_sdb_seq::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
 
-  // The sequence values need to be retrieved once when mysqld restart.
-  fetch_num = seq->cache;
-  if (thd_sql_command(ha_thd()) == SQLCOM_SHOW_FIELDS) {
-    rc = sdb_seq.fetch(fetch_num, next_value, return_num, increment);
-    if (rc) {
-      goto error;
-    }
-
-    m_sequence_to_be_set = true;
-    m_acquire_low_bound = next_value;
-    m_acquire_up_bound = next_value + return_num * increment;
-  }
-
 done:
   DBUG_RETURN(rc);
 error:
@@ -203,14 +182,19 @@ error:
 
 int ha_sdb_seq::build_attribute_of_sequence(bson::BSONObj &options) {
   int rc = SDB_OK;
+  longlong increment = 0;
   SEQUENCE *seq = table->s->sequence;
   bson::BSONObj option;
   bson::BSONObjBuilder builder(96);
+
   try {
     builder.append(SDB_FIELD_MIN_VALUE, (longlong)seq->min_value);
     builder.append(SDB_FIELD_MAX_VALUE, (longlong)seq->max_value);
     builder.append(SDB_FIELD_START_VALUE, (longlong)seq->start);
-    builder.append(SDB_FIELD_INCREMENT, (longlong)seq->increment);
+    if (!(increment = seq->increment)) {
+      increment = global_system_variables.auto_increment_increment;
+    }
+    builder.append(SDB_FIELD_INCREMENT, (longlong)increment);
     builder.append(SDB_FIELD_ACQUIRE_SIZE, (longlong)seq->cache);
     builder.append(SDB_FIELD_CACHE_SIZE, (longlong)seq->cache);
     builder.appendBool(SDB_FIELD_CYCLED, seq->cycle);
@@ -230,13 +214,13 @@ error:
 
 int ha_sdb_seq::write_row(uchar *buf) {
   int rc = 0;
-  Sdb_seq seq;
   Sdb_conn *conn = NULL;
   bool created_cs = false;
   bool created_seq = false;
   bson::BSONObj options;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = 0;
     goto done;
   }
 
@@ -259,16 +243,6 @@ int ha_sdb_seq::write_row(uchar *buf) {
     goto error;
   }
 
-  rc = conn->get_seq(db_name, table_name, m_sequence_name, seq);
-  if (rc) {
-    goto error;
-  }
-
-  rc = acquire_and_adjust_sequence_value(&seq);
-  if (rc) {
-    goto error;
-  }
-
 done:
   return rc;
 error:
@@ -285,19 +259,34 @@ int ha_sdb_seq::acquire_and_adjust_sequence_value(Sdb_seq *sdb_seq) {
   int fetch_num = 0;
   int increment = 0;
   int return_num = 0;
-  longlong up_bound = 0;
   longlong next_value = 0;
+  longlong add_to = 0;
+  longlong max_value = 0;
+  longlong min_value = 0;
   SEQUENCE *seq = table->s->sequence;
 
+  max_value = seq->max_value;
+  min_value = seq->min_value;
   fetch_num = seq->cache;
   rc = sdb_seq->fetch(fetch_num, next_value, return_num, increment);
   if (rc) {
     goto error;
   }
 
-  seq->adjust_values(next_value);
-  up_bound = next_value + return_num * increment;
-  seq->reserved_until = up_bound - seq->increment;
+  seq->res_value = next_value;
+  seq->adjust_values(seq->increment_value(next_value));
+  add_to = return_num * increment;
+  if (increment > 0) {
+    if (next_value > max_value - add_to) {
+      seq->reserved_until = max_value + 1;
+    } else
+      seq->reserved_until = next_value + add_to;
+  } else {
+    if (next_value < min_value - add_to) {
+      seq->reserved_until = min_value - 1;
+    } else
+      seq->reserved_until = next_value + add_to;
+  }
 
 done:
   return rc;
@@ -308,34 +297,59 @@ error:
 int ha_sdb_seq::insert_into_sequence() {
   int rc = SDB_OK;
   longlong nr = -1;
+  longlong min_value = -1;
+  longlong max_value = -1;
+  longlong increment = -1;
+  longlong reserved_until = -1;
   bson::BSONObj options;
-  int fetch_num = 0;
-  int increment = 0;
-  int return_num = 0;
-  longlong next_value = 0;
   bson::BSONObjBuilder builder;
   my_bitmap_map *old_map = NULL;
   SEQUENCE *seq = table->s->sequence;
 
   old_map = dbug_tmp_use_all_columns(table, table->read_set);
+
+  reserved_until = table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->val_int();
+  min_value = table->field[SEQUENCE_FIELD_MIN_VALUE]->val_int();
+  max_value = table->field[SEQUENCE_FIELD_MAX_VALUE]->val_int();
+  increment = table->field[SEQUENCE_FIELD_INCREMENT]->val_int();
+  if (!increment) {
+    increment = global_system_variables.auto_increment_increment;
+  }
   try {
-    nr =
-        table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->val_int() - seq->increment;
+    if (increment > 0) {
+      if (reserved_until - increment < min_value ||
+          reserved_until < min_value + increment) {
+        // TODO: Adjust after sdb supports setting the sequence back
+        // to starting value.
+        nr = min_value;
+      } else {
+        nr = reserved_until - increment;
+      }
+    } else {
+      if (reserved_until - increment > max_value ||
+          reserved_until < max_value + increment) {
+        // TODO: Adjust after sdb supports setting the sequence back
+        // to starting value.
+        nr = max_value;
+      } else {
+        nr = reserved_until - increment;
+      }
+    }
     builder.append(SDB_FIELD_CURRENT_VALUE, nr);
-    builder.append(SDB_FIELD_MIN_VALUE,
-                   table->field[SEQUENCE_FIELD_MIN_VALUE]->val_int());
-    builder.append(SDB_FIELD_MAX_VALUE,
-                   table->field[SEQUENCE_FIELD_MAX_VALUE]->val_int());
+    builder.append(SDB_FIELD_MIN_VALUE, min_value);
+    builder.append(SDB_FIELD_MAX_VALUE, max_value);
     builder.append(SDB_FIELD_START_VALUE,
                    table->field[SEQUENCE_FIELD_START]->val_int());
-    builder.append(SDB_FIELD_INCREMENT,
-                   table->field[SEQUENCE_FIELD_INCREMENT]->val_int());
+    builder.append(SDB_FIELD_INCREMENT, increment);
     builder.append(SDB_FIELD_ACQUIRE_SIZE,
                    table->field[SEQUENCE_FIELD_CACHE]->val_int());
     builder.append(SDB_FIELD_CACHE_SIZE,
                    table->field[SEQUENCE_FIELD_CACHE]->val_int());
     builder.appendBool(SDB_FIELD_CYCLED,
                        table->field[SEQUENCE_FIELD_CYCLED]->val_int());
+    // MariaDB has no restrictions on SDB_FIELD_CYCLED_COUNT, but it dosen't
+    // make sence here. So we remove this property when set attribute of
+    // sequence.
     options = builder.obj();
   }
   SDB_EXCEPTION_CATCHER(rc,
@@ -352,16 +366,6 @@ int ha_sdb_seq::insert_into_sequence() {
     goto error;
   }
 
-  fetch_num = seq->cache;
-  rc = m_sequence->fetch(fetch_num, next_value, return_num, increment);
-  if (rc) {
-    goto error;
-  }
-
-  m_sequence_to_be_set = true;
-  m_acquire_low_bound = next_value;
-  m_acquire_up_bound = next_value + return_num * increment;
-
 done:
   return rc;
 error:
@@ -370,19 +374,38 @@ error:
 
 int ha_sdb_seq::alter_sequence() {
   int rc = SDB_OK;
-  longlong nr = -1;
   bson::BSONObj options;
-  int fetch_num = 0;
-  int increment = 0;
-  int return_num = 0;
-  longlong next_value = 0;
   bson::BSONObjBuilder builder;
+  longlong nr = 0;
+  longlong new_increment = 0;
   SEQUENCE *seq = table->s->sequence;
   sequence_definition *new_seq = ha_thd()->lex->create_info.seq_create_info;
 
+  if (!(new_increment = new_seq->increment)) {
+    new_increment = global_system_variables.auto_increment_increment;
+  }
+
   try {
     if (seq->reserved_until != new_seq->reserved_until) {
-      nr = new_seq->reserved_until - seq->increment;
+      if (new_increment > 0) {
+        if ((new_seq->reserved_until - new_increment) < new_seq->min_value ||
+            new_seq->reserved_until < (new_seq->min_value + new_increment)) {
+          // TODO: Adjust after sdb supports setting the sequence back
+          // to starting value.
+          nr = new_seq->min_value;
+        } else {
+          nr = new_seq->reserved_until - new_increment;
+        }
+      } else {
+        if ((new_seq->reserved_until - new_increment) > new_seq->max_value ||
+            new_seq->reserved_until > (new_seq->max_value + new_increment)) {
+          // TODO: Adjust after sdb supports setting the sequence back
+          // to starting value.
+          nr = new_seq->max_value;
+        } else {
+          nr = new_seq->reserved_until - new_increment;
+        }
+      }
       builder.append(SDB_FIELD_CURRENT_VALUE, nr);
     }
     if (seq->min_value != new_seq->min_value) {
@@ -394,8 +417,8 @@ int ha_sdb_seq::alter_sequence() {
     if (seq->start != new_seq->start) {
       builder.append(SDB_FIELD_START_VALUE, new_seq->start);
     }
-    if (seq->increment != new_seq->increment) {
-      builder.append(SDB_FIELD_INCREMENT, new_seq->increment);
+    if (seq->increment != new_increment) {
+      builder.append(SDB_FIELD_INCREMENT, new_increment);
     }
     if (seq->cache != new_seq->cache) {
       builder.append(SDB_FIELD_ACQUIRE_SIZE, new_seq->cache);
@@ -418,16 +441,6 @@ int ha_sdb_seq::alter_sequence() {
     }
   }
 
-  fetch_num = seq->cache;
-  rc = m_sequence->fetch(fetch_num, next_value, return_num, increment);
-  if (rc) {
-    goto error;
-  }
-
-  m_sequence_to_be_set = true;
-  m_acquire_low_bound = next_value;
-  m_acquire_up_bound = next_value + return_num * increment;
-
 done:
   return rc;
 error:
@@ -437,12 +450,8 @@ error:
 int ha_sdb_seq::select_sequence() {
   int rc = SDB_OK;
   longlong nr = 0;
-  longlong sdb_cur_val = 0;
-  bson::BSONObj obj;
-  bson::BSONObj condition;
-  bson::BSONObjBuilder cond_builder;
+  longlong increment = 0;
   Item *item = NULL;
-  Sdb_conn *conn = NULL;
   Item_func_nextval *item_tmp = NULL;
   SEQUENCE *seq = table->s->sequence;
   SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
@@ -453,33 +462,11 @@ int ha_sdb_seq::select_sequence() {
     item_tmp = (Item_func_nextval *)item;
     if (0 == strcmp(item_tmp->func_name(), SDB_ITEM_FUN_SET_VAL)) {
       // For SELECT SETVAL().
-      rc = check_sdb_in_thd(ha_thd(), &conn, true);
-      if (0 != rc) {
-        goto error;
+      if (!(increment = seq->increment)) {
+        increment = global_system_variables.auto_increment_increment;
       }
-      DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
-
-      cond_builder.append(SDB_FIELD_NAME, m_sequence_name);
-      condition = cond_builder.done();
-
-      rc = conn->snapshot(obj, SDB_SNAP_SEQUENCES, condition);
-      if (rc) {
-        SDB_LOG_ERROR("%s", conn->get_err_msg());
-        conn->clear_err_msg();
-        SDB_PRINT_ERROR(rc, "Could not get snapshot.");
-        goto error;
-      }
-      sdb_cur_val = obj.getField(SDB_FIELD_CURRENT_VALUE).numberLong();
-      nr = seq->increment_value(sdb_cur_val);
-
-      if (seq->reserved_until > nr) {
-        nr = seq->reserved_until - seq->increment;
-        rc = m_sequence->set_current_value(nr);
-        if (rc) {
-          goto error;
-        }
-      }
-      rc = acquire_and_adjust_sequence_value(m_sequence);
+      nr = seq->reserved_until - increment;
+      rc = m_sequence->set_current_value(nr);
       if (rc) {
         goto error;
       }
@@ -499,10 +486,15 @@ error:
 }
 
 int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
-  DBUG_ENTER("ha_sdb::update_row");
+  DBUG_ENTER("ha_sdb_seq::update_row");
 
   int rc = 0;
   TABLE *query_table = ha_thd()->lex->query_tables->table;
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = 0;
+    goto done;
+  }
 
   DBUG_ASSERT(NULL != m_sequence);
   DBUG_ASSERT(m_sequence->thread_id() == sdb_thd_id(ha_thd()));
@@ -541,7 +533,7 @@ error:
 }
 
 int ha_sdb_seq::rnd_init(bool scan) {
-  DBUG_ENTER("ha_sdb::rnd_init()");
+  DBUG_ENTER("ha_sdb_seq::rnd_init()");
 
   int rc = SDB_ERR_OK;
 
@@ -560,24 +552,8 @@ error:
   goto done;
 }
 
-int ha_sdb_seq::external_lock(THD *thd, int lock_type) {
-  DBUG_ENTER("ha_sdb::external_lock");
-
-  SEQUENCE *seq = table->s->sequence;
-
-  if (F_UNLCK == lock_type && m_sequence_to_be_set) {
-    // update sequence properties when m_sequence_to_be_set.
-    m_sequence_to_be_set = false;
-    m_acquire_up_bound = m_acquire_up_bound - seq->increment;
-    seq->reserved_until = m_acquire_up_bound;
-    seq->adjust_values(m_acquire_low_bound);
-  }
-
-  DBUG_RETURN(SDB_OK);
-}
-
 int ha_sdb_seq::rnd_next(uchar *buf) {
-  DBUG_ENTER("ha_sdb::rnd_next()");
+  DBUG_ENTER("ha_sdb_seq::rnd_next()");
 
   int rc = SDB_OK;
   Sdb_conn *conn = NULL;
@@ -588,16 +564,12 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
   bson::BSONObjBuilder cond_builder;
   SEQUENCE *seq = table->s->sequence;
 
-  if (sdb_execute_only_in_mysql(ha_thd())) {
-    rc = HA_ERR_END_OF_FILE;
-    table->status = STATUS_NOT_FOUND;
-    goto error;
+  if (buf != table->record[0]) {
+    repoint_field_to_record(table, table->record[0], buf);
   }
 
-  DBUG_ASSERT(NULL != m_sequence);
-  DBUG_ASSERT(m_sequence->thread_id() == sdb_thd_id(ha_thd()));
-
-  if (buf != table->record[0]) {
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    rc = 0;
     goto done;
   }
 
@@ -607,19 +579,36 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  cond_builder.append(SDB_FIELD_NAME, m_sequence_name);
-  condition = cond_builder.done();
+  // The buf equal record[1] when write to disk by calling
+  // ha_sdb_seq::update_row. Before triggering this action, we need to manually
+  // construct an empty record to ensure that record[0] not equal record[1].
+  if (buf != table->record[0]) {
+    try {
+      static bson::BSONObj STATIC_SEQ_NULL_INFO =
+          BSON(SDB_FIELD_CURRENT_VALUE
+               << 0 << SDB_FIELD_MIN_VALUE << 0 << SDB_FIELD_MAX_VALUE << 0
+               << SDB_FIELD_START_VALUE << 0 << SDB_FIELD_INCREMENT << 0
+               << SDB_FIELD_ACQUIRE_SIZE << 0 << SDB_FIELD_CYCLED << true
+               << SDB_FIELD_CYCLED_COUNT << 0);
+      obj = STATIC_SEQ_NULL_INFO;
+    }
+    SDB_EXCEPTION_CATCHER(
+        rc, "Failed to build object when rnd next, table:%s.%s, exception:%s",
+        db_name, table_name, e.what());
+  } else {
+    cond_builder.append(SDB_FIELD_NAME, m_sequence_name);
+    condition = cond_builder.done();
 
-  rc = conn->snapshot(obj, SDB_SNAP_SEQUENCES, condition);
-  if (rc) {
-    SDB_LOG_ERROR("%s", conn->get_err_msg());
-    conn->clear_err_msg();
-    SDB_PRINT_ERROR(rc, "Could not get snapshot.");
-    goto error;
+    rc = conn->snapshot(obj, SDB_SNAP_SEQUENCES, condition);
+    if (rc) {
+      SDB_LOG_ERROR("%s", conn->get_err_msg());
+      conn->clear_err_msg();
+      my_printf_error(rc, "Could not get snapshot.", MYF(0));
+      goto error;
+    }
   }
 
   old_map = dbug_tmp_use_all_columns(table, table->write_set);
-
   /* zero possible delete markers & null bits */
   memcpy(table->record[0], table->s->default_values, table->s->null_bytes);
   {
@@ -629,11 +618,8 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
       const char *field_name = elem_tmp.fieldName();
       longlong nr = -1;
       if (0 == strcmp(field_name, SDB_FIELD_CURRENT_VALUE)) {
-        if (m_sequence_to_be_set &&
-            SEQUENCE::SEQ_UNINTIALIZED == seq->initialized) {
-          nr = m_acquire_low_bound;
-        } else {
-          nr = elem_tmp.numberLong();
+        nr = elem_tmp.numberLong();
+        if (!obj.getField(SDB_FIELD_INITIAL).booleanSafe()) {
           nr = seq->increment_value(nr);
         }
         table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->store(nr, false);
@@ -664,6 +650,9 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
   dbug_tmp_restore_column_map(table->write_set, old_map);
 
 done:
+  if (buf != table->record[0]) {
+    repoint_field_to_record(table, buf, table->record[0]);
+  }
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -675,10 +664,7 @@ int ha_sdb_seq::reset() {
     delete m_sequence;
     m_sequence = NULL;
   }
-  m_acquire_up_bound = -1;
-  m_acquire_low_bound = -1;
-  m_sequence_to_be_set = false;
-  DBUG_RETURN(ha_sdb::close());
+  DBUG_RETURN(ha_sdb::reset());
 }
 
 int ha_sdb_seq::close() {
@@ -688,7 +674,7 @@ int ha_sdb_seq::close() {
     delete collection;
     collection = NULL;
   }
-  DBUG_RETURN(0);
+  DBUG_RETURN(ha_sdb::close());
 }
 
 #endif  // IS_MARIADB

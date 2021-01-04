@@ -338,4 +338,29 @@ index e49dbe9..a13e97b 100644
 +                      command_name[COM_QUERY].str);
  
    lex->unit.cleanup();
+
+diff --git a/sql-src/mariadb-10.4.6/sql/sql_sequence.cc b/sql-src/mariadb-10.4.6/sql/sql_sequence.cc
+index 9f17590..f852761 100644
+--- a/sql-src/mariadb-10.4.6/sql/sql_sequence.cc
++++ b/sql-src/mariadb-10.4.6/sql/sql_sequence.cc
+@@ -678,7 +678,7 @@ int sequence_definition::write(TABLE *table, bool all_fields)
  
+ longlong SEQUENCE::next_value(TABLE *table, bool second_round, int *error)
+ {
+-  longlong res_value, org_reserved_until, add_to;
++  longlong org_reserved_until, add_to;
+   bool out_of_values;
+   DBUG_ENTER("SEQUENCE::next_value");
+ 
+diff --git a/sql-src/mariadb-10.4.6/sql/sql_sequence.h b/sql-src/mariadb-10.4.6/sql/sql_sequence.h
+index 2d609d8..594d886 100644
+--- a/sql-src/mariadb-10.4.6/sql/sql_sequence.h
++++ b/sql-src/mariadb-10.4.6/sql/sql_sequence.h
+@@ -130,6 +130,7 @@ public:
+ 
+   bool all_values_used;
+   seq_init initialized;
++  longlong res_value;
+ 
+ private:
+   mysql_rwlock_t mutex;

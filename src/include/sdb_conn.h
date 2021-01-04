@@ -298,7 +298,7 @@ class Sdb_conn {
   int set_my_session_attr();
 
   int exec(const char *sql, sdbclient::sdbCursor *cursor);
-  
+
   void set_check_collection_version(bool check_cl_version) {
     m_check_collection_version = check_cl_version;
   }

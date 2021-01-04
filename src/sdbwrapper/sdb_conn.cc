@@ -90,7 +90,7 @@ Sdb_conn::Sdb_conn(my_thread_id _tid, bool server_ha_conn)
       pushed_autocommit(false),
       m_is_authenticated(false),
       m_is_server_ha_conn(server_ha_conn),
-      m_check_collection_version(false){
+      m_check_collection_version(false) {
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
   rollback_on_timeout = false;
