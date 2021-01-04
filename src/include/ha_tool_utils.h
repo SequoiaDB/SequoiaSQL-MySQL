@@ -45,6 +45,7 @@ typedef unsigned char uchar;
 #define HA_TOOL_HELP_USER "User for logging sequoiadb, default: \"\""
 #define HA_TOOL_HELP_PASSWD \
   "Password used to connect to sequoiadb, default: \"\""
+#define HA_TOOL_HELP_NAME "Instance group name"
 #define HA_TOOL_HELP_KEY "Key used to encrypt random password, default: \"\""
 #define HA_TOOL_HELP_TOKEN \
   "Token used to decrypt password in cipherfile, default: \"\""
@@ -109,6 +110,7 @@ typedef struct st_args {
 enum HA_EVP_MD_TYPE { HA_EVP_MD5, HA_EVP_SHA1, HA_EVP_SHA256 };
 enum HA_ARGP_OPTION_KEY {
   HA_KEY_HOST = 10000,
+  HA_KEY_NAME,
   HA_KEY_KEY,
   HA_KEY_FILE,
   HA_KEY_INST_ID,

@@ -134,13 +134,13 @@ if(WITH_BOOST)
   set_target_properties(ha_inst_group_clear PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
   target_link_libraries(ha_inst_group_clear sdbcpp ssl crypto dl pthread)
   
-  # build ha_inst_clear
-  add_executable(ha_inst_clear tools/ha_inst_clear.cc tools/ha_tool_utils.cc)
-  set_target_properties(ha_inst_clear PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
-  set_target_properties(ha_inst_clear PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
-  target_link_libraries(ha_inst_clear sdbcpp ssl crypto dl pthread)
-  
-  install(TARGETS ha_inst_group_init ha_inst_group_clear ha_inst_clear
+  # build ha_inst_group_list
+  add_executable(ha_inst_group_list tools/ha_inst_group_list.cc tools/ha_tool_utils.cc)
+  set_target_properties(ha_inst_group_list PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
+  set_target_properties(ha_inst_group_list PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
+  target_link_libraries(ha_inst_group_list sdbcpp ssl crypto dl pthread)
+
+  install(TARGETS ha_inst_group_init ha_inst_group_clear ha_inst_group_list
           RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
