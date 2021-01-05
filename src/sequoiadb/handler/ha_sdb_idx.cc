@@ -42,6 +42,9 @@
 #define SDB_DEF_RANGE_SIGNED_MAX (99999999.9)
 #define SDB_DEF_RANGE_SIGNED_MIN (-99999999.9)
 #define SDB_DEF_RANGE_UNSIGNED_MAX (199999999.9)
+// we assumed that negative numbers are used less, so the default negative
+// range should shrink, too.
+#define SDB_NEGATIVE_SHRINKAGE_RATIO (0.3333333333333333)
 
 // 2 is better than 1. It makes unique key preferred.
 #define MIN_MATCH_COUNT (2)
@@ -1487,7 +1490,7 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
           min_value = 0;
           max_value = UINT_MAX8;
         } else {
-          min_value = INT_MIN8;
+          min_value = INT_MIN8 * SDB_NEGATIVE_SHRINKAGE_RATIO;
           max_value = INT_MAX8;
         }
         break;
@@ -1497,7 +1500,7 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
           min_value = 0;
           max_value = UINT_MAX16;
         } else {
-          min_value = INT_MIN16;
+          min_value = INT_MIN16 * SDB_NEGATIVE_SHRINKAGE_RATIO;
           max_value = INT_MAX16;
         }
         break;
@@ -1507,7 +1510,7 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
           min_value = 0;
           max_value = UINT_MAX24;
         } else {
-          min_value = INT_MIN24;
+          min_value = INT_MIN24 * SDB_NEGATIVE_SHRINKAGE_RATIO;
           max_value = INT_MAX24;
         }
         break;
@@ -1519,7 +1522,7 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
           min_value = 0;
           max_value = SDB_DEF_RANGE_UNSIGNED_MAX;
         } else {
-          min_value = SDB_DEF_RANGE_SIGNED_MIN;
+          min_value = SDB_DEF_RANGE_SIGNED_MIN * SDB_NEGATIVE_SHRINKAGE_RATIO;
           max_value = SDB_DEF_RANGE_SIGNED_MAX;
         }
         break;
@@ -1532,7 +1535,7 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
             min_value = 0;
             max_value = SDB_DEF_RANGE_UNSIGNED_MAX;
           } else {
-            min_value = SDB_DEF_RANGE_SIGNED_MIN;
+            min_value = SDB_DEF_RANGE_SIGNED_MIN * SDB_NEGATIVE_SHRINKAGE_RATIO;
             max_value = SDB_DEF_RANGE_SIGNED_MAX;
           }
         } else {
@@ -1547,7 +1550,7 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
             // e.g.: DOUBLE(5, 2) => [-999.99, 999.99]
             max_value = log_10[m - d] - (1.0 / log_10[d]);
             max_value = MIN(max_value, SDB_DEF_RANGE_SIGNED_MAX);
-            min_value = -max_value;
+            min_value = (-max_value) * SDB_NEGATIVE_SHRINKAGE_RATIO;
           }
         }
         break;
@@ -1567,7 +1570,7 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
           // e.g.: DECIMAL(5, 2) => [-999.99, 999.99]
           max_value = log_10[m - d] - (1.0 / log_10[d]);
           max_value = MIN(max_value, SDB_DEF_RANGE_SIGNED_MAX);
-          min_value = -max_value;
+          min_value = (-max_value) * SDB_NEGATIVE_SHRINKAGE_RATIO;
         }
         break;
       }
