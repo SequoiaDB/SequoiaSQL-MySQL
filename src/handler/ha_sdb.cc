@@ -5449,8 +5449,12 @@ int ha_sdb::delete_table(const char *from) {
 #endif
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
-  if (sdb_execute_only_in_mysql(ha_thd()) ||
-      SQLCOM_DROP_DB == thd_sql_command(thd)) {
+  if (sdb_execute_only_in_mysql(thd)
+// Don't skip dropping sequence when dropping database for MariaDB.
+#ifdef IS_MYSQL
+      || SQLCOM_DROP_DB == thd_sql_command(thd)
+#endif
+  ) {
     goto done;
   }
 
@@ -5502,7 +5506,7 @@ int ha_sdb::delete_table(const char *from) {
   if (rc) {
     goto error;
   }
-  if (deleted) {
+  if (deleted || SQLCOM_DROP_DB == thd_sql_command(thd)) {
     goto done;
   }
 #endif
