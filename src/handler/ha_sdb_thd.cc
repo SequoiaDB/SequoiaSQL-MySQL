@@ -18,6 +18,7 @@
 #endif
 
 #include <my_global.h>
+#include <mysql/plugin.h>
 #include <sql_class.h>
 #include <my_base.h>
 #include "ha_sdb_thd.h"
@@ -26,7 +27,12 @@
 #include "server_ha.h"
 #include <strfunc.h>
 
-static void sdb_set_conn_addr(THD *thd, st_mysql_sys_var *var, void *tgt,
+// Complete the struct declaration
+struct st_mysql_sys_var {
+  MYSQL_PLUGIN_VAR_HEADER;
+};
+
+static void sdb_set_conn_addr(THD *thd, struct st_mysql_sys_var *var, void *tgt,
                               const void *save) {
   bool addr_changed = false;
 
@@ -34,7 +40,23 @@ static void sdb_set_conn_addr(THD *thd, st_mysql_sys_var *var, void *tgt,
     addr_changed = true;
   }
 
+#if defined IS_MYSQL
   *(char **)tgt = *(char **)save;
+#elif defined IS_MARIADB
+  char *value = *(char **)save;
+  if (var->flags & PLUGIN_VAR_MEMALLOC) {
+    char *old = *(char **)tgt;
+    if (value) {
+      *(char **)tgt = my_strdup(value, MYF(0));
+    } else {
+      *(char **)tgt = 0;
+    }
+    my_free(old);
+  } else {
+    *(char **)tgt = value;
+  }
+#endif
+
   if (!addr_changed) {
     goto done;
   }
