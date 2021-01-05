@@ -525,6 +525,10 @@ bool sdb_execute_only_in_mysql(THD *thd) {
   return THDVAR(thd, execute_only_in_mysql);
 }
 
+void sdb_set_execute_only_in_mysql(THD *thd, bool val) {
+  THDVAR(thd, execute_only_in_mysql) = val;
+}
+
 longlong sdb_alter_table_overhead_threshold(THD *thd) {
   return THDVAR(thd, alter_table_overhead_threshold);
 }

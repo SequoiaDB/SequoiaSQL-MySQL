@@ -42,6 +42,7 @@ thread_local_key_t ha_sql_stmt_info_key;
 static my_thread_once_t ha_sql_stmt_info_key_once = MY_THREAD_ONCE_INIT;
 
 static ha_recover_replay_thread ha_thread;
+static ha_pending_log_replay_thread pending_log_replayer;
 
 // original instance group name and key, instance group key will be modified
 // in 'server_ha_init', so it's invisible to mysql user
@@ -141,6 +142,22 @@ static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
   return rc;
 }
 
+bool ha_is_executing_pending_log(THD *thd) {
+  const char *execute_user = NULL;
+  bool is_executing_pending_log = false;
+#ifdef IS_MYSQL
+  execute_user = thd->security_context()->priv_user().str;
+#else
+  execute_user = thd->security_context()->priv_user;
+#endif
+  const char *inst_group_user = ha_inst_group_user_name();
+  if (execute_user && strlen(execute_user) && inst_group_user &&
+      strlen(inst_group_user) && 0 == strcmp(execute_user, inst_group_user)) {
+    is_executing_pending_log = true;
+  }
+  return is_executing_pending_log;
+}
+
 static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
   int rc = 0;
   if (!sql_info->inited) {
@@ -155,6 +172,7 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
       return SDB_HA_OOM;
     }
     sql_info->sdb_conn = new (std::nothrow) Sdb_conn(thread_id, true);
+    sql_info->pending_sql_id = 0;
     if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
     } else {
@@ -173,6 +191,7 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
       return SDB_HA_OOM;
     }
     sql_info->sdb_conn = new (std::nothrow) Sdb_conn(thread_id, true);
+    sql_info->pending_sql_id = 0;
     if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
     } else {
@@ -1184,6 +1203,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     goto sdb_error;
   }
 
+  SDB_LOG_DEBUG("HA: Write SQL log and states");
   build_session_attributes(thd, session_attrs);
 
   // set charset for following sql statement
@@ -1240,8 +1260,9 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       // decompose 'SQLCOM_DROP_TABLE/SQLCOM_DROP_VIEW' command into
       // multiple 'DROP TABLE/VIEW' commands
       if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command) {
-        // if the dropping object doesn't exist, don't write SQL log
-        if (!dropping_table_exists(thd, db_name, table_name)) {
+        // check if the dropping object exists
+        if (!dropping_table_exists(thd, db_name, table_name) &&
+            !ha_is_executing_pending_log(thd)) {
           continue;
         }
 
@@ -1277,7 +1298,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
           oom = query.append(general_query);
           first_object = false;
         }
-      } else if (have_exist_warning(thd)) {
+      } else if (have_exist_warning(thd) && !ha_is_executing_pending_log(thd)) {
         // if thd have 'not exist' or 'already exist' warning
         continue;
       } else {
@@ -1414,6 +1435,44 @@ done:
   return rc;
 error:
   goto done;
+}
+
+// refer to function find_temporary_table_for_rename
+static bool is_temporary_table_for_rename(THD *thd, TABLE_LIST *first_table,
+                                          TABLE_LIST *cur_table) {
+#ifdef IS_MARIADB
+  TABLE_LIST *table = NULL;
+  TABLE *res = NULL;
+  bool found = false;
+
+  /* Find last instance when cur_table is in TO part */
+  for (table = first_table; table != cur_table;
+       table = table->next_local->next_local) {
+    TABLE_LIST *next = table->next_local;
+
+    if (!strcmp(table->get_db_name(), cur_table->get_db_name()) &&
+        !strcmp(table->get_table_name(), cur_table->get_table_name())) {
+      /* Table was moved away, can't be same as 'table' */
+      found = 1;
+      res = 0;  // Table can't be a temporary table
+    }
+    if (!strcmp(next->get_db_name(), cur_table->get_db_name()) &&
+        !strcmp(next->get_table_name(), cur_table->get_table_name())) {
+      /*
+        Table has matching name with new name of this table. cur_table should
+        have same temporary type as this table.
+      */
+      found = 1;
+      res = table->table;
+    }
+  }
+  if (!found) {
+    res = thd->find_temporary_table(table, THD::TMP_TABLE_ANY);
+  }
+  return res != NULL;
+#else
+  return false;
+#endif
 }
 
 // get objects involved in current SQL statement
@@ -1618,6 +1677,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     ha_table_list *ha_tbl_list = NULL, *ha_tbl_list_tail = NULL;
     const char *db_name = NULL, *table_name = NULL;
     bool is_temp_table = false;
+    int table_count = 0;
 
     for (TABLE_LIST *tbl = tables; tbl; tbl = tbl->next_global) {
       ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
@@ -1634,7 +1694,13 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
       ha_tbl_list->cata_version =
           ha_get_cata_version(ha_tbl_list->db_name, ha_tbl_list->table_name);
-      ha_tbl_list->is_temporary_table = false;
+      ha_tbl_list->is_temporary_table = is_temporary_table(
+          thd, ha_tbl_list->db_name, ha_tbl_list->table_name);
+      if (SQLCOM_CREATE_TABLE == sql_command && tbl == tables) {
+        // create temporary table cann't be here, first table must be
+        // a normal table if it's "create table" statement
+        ha_tbl_list->is_temporary_table = false;
+      }
       ha_tbl_list->next = NULL;
       if (!sql_info->tables) {
         if (SQLCOM_CREATE_VIEW == sql_command) {
@@ -1649,17 +1715,29 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
 
       // mark temporary table for SQL like 'rename/alter/drop table'
       if (SQLCOM_DROP_TABLE == sql_command ||
-          SQLCOM_ALTER_TABLE == sql_command ||
-          SQLCOM_RENAME_TABLE == sql_command) {
+          SQLCOM_ALTER_TABLE == sql_command) {
         db_name = ha_tbl_list->db_name;
         table_name = ha_tbl_list->table_name;
 
-        is_temp_table = is_temporary_table(thd, db_name, table_name);
         // mark temporary table by setting 'ha_table_list::is_temporary_table'
-        if (is_temp_table) {
+        if (is_temporary_table(thd, db_name, table_name)) {
           SDB_LOG_DEBUG("HA: found temporary table %s:%s", db_name, table_name);
           ha_tbl_list->is_temporary_table = true;
         }
+      }
+      // mark temporary table for SQL like 'rename'
+      if (SQLCOM_RENAME_TABLE == sql_command) {
+        // set temporary flag for 'rename table' statement,
+        // it's complicated for mariadb
+        if (0 == table_count % 2) {
+          ha_tbl_list->is_temporary_table =
+              is_temporary_table_for_rename(thd, tables, tbl);
+          is_temp_table = ha_tbl_list->is_temporary_table;
+        } else {
+          ha_tbl_list->is_temporary_table = is_temp_table;
+          is_temp_table = false;
+        }
+        table_count++;
       }
     }
     // add table to sql_info->tables for 'alter table rename'
@@ -1675,6 +1753,7 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
       ha_tbl_list->cata_version = INVALID_CAT_VERSION;
       ha_tbl_list->is_temporary_table = false;
+      ha_tbl_list->is_temporary_table = sql_info->tables->is_temporary_table;
       ha_tbl_list->next = NULL;
       sql_info->tables->next = ha_tbl_list;
     }
@@ -1935,10 +2014,25 @@ static int show_create_sp(THD *thd, const LEX_CSTRING &returns, String *buf) {
   const LEX_CSTRING name = {sp->m_name.str, sp->m_name.length};
   const LEX_CSTRING params = {sp->m_params.str, sp->m_params.length};
   const LEX_CSTRING body = {sp->m_body.str, sp->m_body.length};
-  const LEX_CSTRING definer_user = thd->lex->definer->user;
-  const LEX_CSTRING definer_host = thd->lex->definer->host;
+  LEX_CSTRING definer_user;
+  LEX_CSTRING definer_host;
   sql_mode_t sql_mode = thd->variables.sql_mode;
   sql_mode_t saved_sql_mode = thd->variables.sql_mode;
+
+  if (thd->lex->definer) {
+    definer_user = thd->lex->definer->user;
+    definer_host = thd->lex->definer->host;
+  } else {
+#ifdef IS_MYSQL
+    definer_user = thd->security_context()->priv_user();
+    definer_host = thd->security_context()->priv_host();
+#else
+    const char *tmp_str = thd->security_context()->priv_user;
+    definer_user = {tmp_str, strlen(tmp_str)};
+    tmp_str = thd->security_context()->priv_host;
+    definer_host = {tmp_str, strlen(tmp_str)};
+#endif
+  }
 
   if (sp->m_explicit_name) {
     db.str = sp->m_db.str;
@@ -2052,8 +2146,23 @@ static int show_create_sp(THD *thd, const LEX_CSTRING &returns, String *buf) {
 
 static int show_create_event(THD *thd, String *buf) {
   int rc = 0;
-  const LEX_CSTRING definer_user = thd->lex->definer->user;
-  const LEX_CSTRING definer_host = thd->lex->definer->host;
+  LEX_CSTRING definer_user;
+  LEX_CSTRING definer_host;
+
+  if (thd->lex->definer) {
+    definer_user = thd->lex->definer->user;
+    definer_host = thd->lex->definer->host;
+  } else {
+#ifdef IS_MYSQL
+    definer_user = thd->security_context()->priv_user();
+    definer_host = thd->security_context()->priv_host();
+#else
+    const char *tmp_str = thd->security_context()->priv_user;
+    definer_user = {tmp_str, strlen(tmp_str)};
+    tmp_str = thd->security_context()->priv_host;
+    definer_host = {tmp_str, strlen(tmp_str)};
+#endif
+  }
 
   // make some room for current statement
   static const int MAX_EXTRA_LEN = 50;
@@ -2116,12 +2225,27 @@ static int show_create_trigger(THD *thd, String *buf) {
   if (thd->lex->definer)
 #endif
   {
-    const LEX_CSTRING *definer_user = &thd->lex->definer->user;
-    const LEX_CSTRING *definer_host = &thd->lex->definer->host;
+    LEX_CSTRING definer_user;
+    LEX_CSTRING definer_host;
+    if (thd->lex->definer) {
+      definer_user = thd->lex->definer->user;
+      definer_host = thd->lex->definer->host;
+    } else {
+#ifdef IS_MYSQL
+      definer_user = thd->security_context()->priv_user();
+      definer_host = thd->security_context()->priv_host();
+#else
+      const char *tmp_str = thd->security_context()->priv_user;
+      definer_user = {tmp_str, strlen(tmp_str)};
+      tmp_str = thd->security_context()->priv_host;
+      definer_host = {tmp_str, strlen(tmp_str)};
+#endif
+    }
+
     buf->append(STRING_WITH_LEN("DEFINER="));
-    append_identifier(thd, buf, definer_user->str, definer_user->length);
+    append_identifier(thd, buf, definer_user.str, definer_user.length);
     buf->append('@');
-    append_identifier(thd, buf, definer_host->str, definer_host->length);
+    append_identifier(thd, buf, definer_host.str, definer_host.length);
     buf->append(' ');
   }
   // append the left part of thd->query after "DEFINER" part
@@ -2190,6 +2314,26 @@ static int fix_create_view_stmt(THD *thd, ha_event_general &event,
   oom |= log_query.append(command[thd->lex->create_view_mode].str,
                           command[thd->lex->create_view_mode].length);
 #endif
+
+  // fill definer user and host
+#ifdef IS_MYSQL
+  if (0 == view->definer.user.length) {
+    view->definer.user = thd->security_context()->priv_user();
+  }
+  if (0 == view->definer.host.length) {
+    view->definer.host = thd->security_context()->priv_host();
+  }
+#else
+  if (0 == view->definer.user.length) {
+    const char *tmp_str = thd->security_context()->priv_user;
+    view->definer.user = {tmp_str, strlen(tmp_str)};
+  }
+  if (0 == view->definer.host.length) {
+    const char *tmp_str = thd->security_context()->priv_host;
+    view->definer.host = {tmp_str, strlen(tmp_str)};
+  }
+#endif
+
   view_store_options(thd, view, &log_query);
   oom |= log_query.append(STRING_WITH_LEN("VIEW "));
 
@@ -2232,6 +2376,17 @@ static int fix_create_view_stmt(THD *thd, ha_event_general &event,
     oom |= log_query.append(')');
   }
   oom |= log_query.append(STRING_WITH_LEN(" AS "));
+  if (0 == view->source.length) {
+#ifdef IS_MARIADB
+    if (thd->lex->create_view) {
+      view->source.str = thd->lex->create_view->select.str;
+      view->source.length = thd->lex->create_view->select.length;
+    }
+#else
+    view->source.str = thd->lex->create_view_select.str;
+    view->source.length = thd->lex->create_view_select.length;
+#endif
+  }
   oom |= log_query.append(view->source.str, view->source.length);
   if (!oom) {
     event.general_query = log_query.c_ptr();
@@ -2267,8 +2422,23 @@ static int fix_alter_event_stmt(THD *thd, ha_event_general &event,
   DBUG_ASSERT(SQLCOM_ALTER_EVENT == sql_command);
   Event_parse_data *event_parse_data = thd->lex->event_parse_data;
   DBUG_ASSERT(NULL != event_parse_data);
-  LEX_CSTRING *definer_user = &thd->lex->definer->user;
-  LEX_CSTRING *definer_host = &thd->lex->definer->host;
+  LEX_CSTRING definer_user;
+  LEX_CSTRING definer_host;
+
+  if (thd->lex->definer) {
+    definer_user = thd->lex->definer->user;
+    definer_host = thd->lex->definer->host;
+  } else {
+#ifdef IS_MYSQL
+    definer_user = thd->security_context()->priv_user();
+    definer_host = thd->security_context()->priv_host();
+#else
+    const char *tmp_str = thd->security_context()->priv_user;
+    definer_user = {tmp_str, strlen(tmp_str)};
+    tmp_str = thd->security_context()->priv_host;
+    definer_host = {tmp_str, strlen(tmp_str)};
+#endif
+  }
 
 #ifdef IS_MARIADB
   // set character set, refer mariadb binlog format
@@ -2279,14 +2449,20 @@ static int fix_alter_event_stmt(THD *thd, ha_event_general &event,
 
   // append definer for 'alter event' statement
   oom |= log_query.append(STRING_WITH_LEN("DEFINER="));
-  append_identifier(thd, &log_query, definer_user->str, definer_user->length);
+  append_identifier(thd, &log_query, definer_user.str, definer_user.length);
   oom |= log_query.append('@');
-  append_identifier(thd, &log_query, definer_host->str, definer_host->length);
+  append_identifier(thd, &log_query, definer_host.str, definer_host.length);
   oom |= log_query.append(' ');
 
   oom |= log_query.append(STRING_WITH_LEN("EVENT "));
-  append_identifier(thd, &log_query, event_parse_data->name.str,
-                    event_parse_data->name.length);
+
+  if (event_parse_data->identifier->m_name.str) {
+    append_identifier(thd, &log_query, event_parse_data->identifier->m_name.str,
+                      event_parse_data->identifier->m_name.length);
+  } else {
+    append_identifier(thd, &log_query, event_parse_data->name.str,
+                      event_parse_data->name.length);
+  }
 
   // append extra options, refer to 'show create event' statement
   char tmp_buf[2 * STRING_BUFFER_USUAL_SIZE];
@@ -2368,7 +2544,6 @@ static int fix_alter_event_stmt(THD *thd, ha_event_general &event,
   if (sql_info->alter_event_body) {
     oom |= log_query.append(STRING_WITH_LEN(" DO "));
     oom |= log_query.append(sql_info->alter_event_body);
-    sql_info->alter_event_body = NULL;
   }
   oom |= log_query.append(" ");
   event.general_query = log_query.c_ptr();
@@ -2389,7 +2564,8 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
   int sql_command = thd_sql_command(thd);
   bool can_write_log = true;
 
-  if (SQLCOM_ALTER_TABLE == sql_command) {
+  if (SQLCOM_ALTER_TABLE == sql_command || SQLCOM_CREATE_INDEX == sql_command ||
+      SQLCOM_DROP_INDEX == sql_command) {
     if (sql_info->tables->is_temporary_table) {
       can_write_log = false;
     }
@@ -2723,7 +2899,6 @@ static int wait_query_objects_updated_to_latest(THD *thd,
   char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
 
   SDB_LOG_DEBUG("HA: Deal with DML, table_list: %p", sql_info->dml_tables);
-
   // check and lock metadata for involved objects
   Sdb_cl obj_state_cl;
   rc =
@@ -2740,6 +2915,7 @@ static int wait_query_objects_updated_to_latest(THD *thd,
     op_type = HA_OPERATION_TYPE_DB;
     snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
              db_name, table_name, op_type);
+
     ha_cached_record *cached_record =
         get_cached_record(sql_info->dml_checked_objects, cached_record_key);
     if (!cached_record) {
@@ -2996,13 +3172,26 @@ static void handle_error(int error, ha_sql_stmt_info *sql_info) {
     case SDB_HA_WAIT_TIMEOUT:
       my_printf_error(SDB_HA_WAIT_TIMEOUT,
                       "HA: There are SQL statements on releated objects have "
-                      "not been executed by replay thread. Please try it later",
+                      "not been executed by syncing log replayer. "
+                      "Please try it later",
                       MYF(0));
       break;
     case SDB_HA_FIX_CREATE_TABLE:
       my_printf_error(SDB_HA_FIX_CREATE_TABLE,
                       "HA: Failed to modify table creation statement. Please "
                       "check mysql error log",
+                      MYF(0));
+      break;
+    case SDB_HA_PENDING_OBJECT_EXISTS:
+      my_printf_error(SDB_HA_PENDING_OBJECT_EXISTS,
+                      "HA: There are SQL statements on releated objects have "
+                      "not been executed by pending log replayer. "
+                      "Please try it later",
+                      MYF(0));
+      break;
+    case SDB_HA_PENDING_LOG_ALREADY_EXECUTED:
+      my_printf_error(SDB_HA_PENDING_LOG_ALREADY_EXECUTED,
+                      "HA: Pending log has been executed by another instance.",
                       MYF(0));
       break;
     case SDB_HA_EXCEPTION:
@@ -3013,13 +3202,511 @@ static void handle_error(int error, ha_sql_stmt_info *sql_info) {
   }
 }
 
+// rebuild create table statement before execution for statement
+// like 'create table t1 like/(as select)' including temporary table
+static int rebuild_create_table_stmt(THD *thd, ha_event_general &event,
+                                     String &log_query,
+                                     ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  bool found_temp_table = false, oom = false;
+  TABLE *table = NULL;
+  TABLE_LIST tables;
+  log_query.set_charset(system_charset_info);
+  log_query.length(0);
+  String query;
+  // 1. check if current statement contains temporary table
+  //    start from second table
+  ha_table_list *ha_tables = sql_info->tables;
+  for (ha_table_list *ha_table = ha_tables->next; ha_table && (!oom);
+       ha_table = ha_table->next) {
+#ifdef IS_MYSQL
+    table = find_temporary_table(thd, ha_table->db_name, ha_table->table_name);
+    if (table) {
+      found_temp_table = true;
+      tables.table = table;
+      tables.reset();
+      query.length(0);
+      rc = store_create_info(thd, &tables, &query, NULL, TRUE);
+      if (rc) {
+        return SDB_HA_OOM;
+      }
+      oom |= log_query.append(query);
+      oom |= log_query.append(';');
+    }
+#else
+    table = thd->find_temporary_table(ha_table->db_name, ha_table->table_name,
+                                      THD::TMP_TABLE_NOT_IN_USE);
+    if (table) {
+      tables.reset();
+      tables.table = table;
+      query.length(0);
+      found_temp_table = true;
+      rc = show_create_table(thd, &tables, &query, NULL, WITH_DB_NAME);
+      if (rc) {
+        return SDB_HA_OOM;
+      }
+      oom |= log_query.append(query);
+      oom |= log_query.append(';');
+    }
+#endif
+  }
+
+  // 2. append original SQL statement
+  oom |= log_query.append(event.general_query, event.general_query_length);
+  oom |= log_query.append(';');
+
+  // 3. set event::general_query, there is no need to add
+  //    "drop temporary table XXX" statement because mysql connection
+  //    in pending log thread is short connection.
+  if ((!oom) && found_temp_table) {
+    event.general_query = log_query.c_ptr();
+    event.general_query_length = log_query.length();
+  }
+  return (oom ? SDB_HA_OOM : 0);
+}
+
+// rebuild rename table statement for mariadb
+// skip temporary table, rename temporary table is not allow in MySQL.
+static int rebuild_rename_table_stmt(THD *thd, ha_event_general &event,
+                                     String &log_query,
+                                     ha_sql_stmt_info *sql_info) {
+  bool oom = false, found_normal_table = false;
+  log_query.set_charset(thd->charset());
+#ifdef IS_MARIADB
+  oom = log_query.append("RENAME TABLE ");
+  const char *db_name = NULL, *table_name = NULL;
+  for (ha_table_list *ha_table = sql_info->tables; ha_table && (!oom);
+       ha_table = ha_table->next->next) {
+    if (!ha_table->is_temporary_table) {
+      // append original table name
+      db_name = ha_table->db_name;
+      table_name = ha_table->table_name;
+      oom |= build_full_table_name(thd, log_query, db_name, table_name);
+      oom |= log_query.append("TO ");
+      // append new table name
+      db_name = ha_table->next->db_name;
+      table_name = ha_table->next->table_name;
+      oom |= build_full_table_name(thd, log_query, db_name, table_name);
+      oom |= log_query.append(',');
+      found_normal_table = true;
+    }
+  }
+  // remove last ',' and set event.general_query
+  if (!oom) {
+    int len = found_normal_table ? (log_query.length() - 1) : 0;
+    log_query.length(len);
+    event.general_query = log_query.c_ptr_safe();
+    event.general_query_length = log_query.length();
+  }
+#endif
+  return (oom ? SDB_HA_OOM : 0);
+}
+
+// rebuild drop table statement by skipping temporary table
+static int rebuild_drop_table_stmt(THD *thd, ha_event_general &event,
+                                   String &log_query,
+                                   ha_sql_stmt_info *sql_info) {
+  log_query.set_charset(thd->charset());
+  bool oom = false, found_normal_table = false;
+  oom = log_query.append("DROP TABLE IF EXISTS ");
+  for (ha_table_list *ha_table = sql_info->tables; ha_table && (!oom);
+       ha_table = ha_table->next) {
+    if (!ha_table->is_temporary_table) {
+      oom |= build_full_table_name(thd, log_query, ha_table->db_name,
+                                   ha_table->table_name);
+      oom |= log_query.append(',');
+      found_normal_table = true;
+    }
+  }
+
+  // remove last ',' and set event.general_query
+  if (!oom) {
+    int len = found_normal_table ? (log_query.length() - 1) : 0;
+    log_query.length(len);
+    event.general_query = log_query.c_ptr_safe();
+    event.general_query_length = log_query.length();
+  }
+  return (oom ? SDB_HA_OOM : 0);
+}
+
+static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_cl pending_object_cl;
+  bson::BSONObj cond, result;
+  sql_info->pending_sql_id = 0;
+  bson::BSONObjBuilder bson_builder;
+  bool found_pending_object = false;
+
+  // get sdb connection
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  }
+
+  // get 'HAPendingObject'
+  rc = ha_get_pending_object_cl(*sdb_conn, ha_thread.sdb_group_name,
+                                pending_object_cl);
+  if (rc) {
+    ha_error_string(*sdb_conn, rc, sql_info->err_message);
+    goto error;
+  }
+
+  for (ha_table_list *table = sql_info->tables; table; table = table->next) {
+    bson_builder.reset();
+    bson_builder.append(HA_FIELD_DB, table->db_name);
+    bson_builder.append(HA_FIELD_TABLE, table->table_name);
+    bson_builder.append(HA_FIELD_TYPE, table->op_type);
+    cond = bson_builder.done();
+    rc = pending_object_cl.query(cond);
+    rc = rc ? rc : pending_object_cl.next(result, false);
+    if (0 == rc) {  // found pending object
+      found_pending_object = true;
+      if (ha_is_executing_pending_log(thd)) {
+        // get pending SQL id, used to delete current pending log
+        sql_info->pending_sql_id = result.getIntField(HA_FIELD_SQL_ID);
+        DBUG_ASSERT(sql_info->pending_sql_id > 0);
+        break;
+      } else {
+        rc = SDB_HA_PENDING_OBJECT_EXISTS;
+      }
+      break;
+    } else if (HA_ERR_END_OF_FILE != rc) {
+      ha_error_string(*sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
+    // reset rc for HA_ERR_END_OF_FILE error
+    rc = 0;
+  }
+  // cann't find releated objects for pending log thread,
+  // report "log has been executed error"
+  if (!found_pending_object && ha_is_executing_pending_log(thd)) {
+    sprintf(sql_info->err_message, "pending log has been executed");
+    rc = SDB_HA_PENDING_LOG_ALREADY_EXECUTED;
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
+                             ha_event_general &event) {
+  int rc = 0;
+
+  Sdb_conn *sdb_conn = NULL;
+  Sdb_conn tmp_conn(0, false);
+  Sdb_cl pending_log_cl, pending_object_cl;
+  bson::BSONObj obj, hints, result, cond;
+  int pending_id = 0;
+  longlong write_time;
+  const char *db = "";
+  int sql_command = thd_sql_command(thd);
+  String rewritten_query;
+  rewritten_query.length(0);
+  const char *backup_query = event.general_query;
+  uint backup_len = event.general_query_length;
+  char session_attrs[HA_MAX_SESSION_ATTRS_LEN] = {0};
+  bson::BSONObjBuilder bson_builder;
+
+  if (ha_is_executing_pending_log(thd)) {
+    goto done;
+  }
+
+#ifdef IS_MYSQL
+  db = thd->db().str;
+#else
+  db = thd->get_db();
+#endif
+  db = (NULL == db) ? "" : db;
+
+  switch (sql_command) {
+    case SQLCOM_CREATE_SPFUNCTION:
+    case SQLCOM_CREATE_FUNCTION:
+    case SQLCOM_CREATE_PROCEDURE:
+    case SQLCOM_CREATE_EVENT:
+    case SQLCOM_CREATE_TRIGGER:
+      // rebuild 'create function/procedure/trigger/event' statement
+      rc = fix_create_routine_stmt(thd, event, rewritten_query);
+      db = sql_info->tables->db_name;
+      break;
+    case SQLCOM_CREATE_VIEW:
+      rc = fix_create_view_stmt(thd, event, rewritten_query);
+      db = sql_info->tables->db_name;
+      break;
+    case SQLCOM_ALTER_EVENT:
+      // rebuild 'alter event' statement
+      rc = fix_alter_event_stmt(thd, event, rewritten_query, sql_info);
+      db = sql_info->tables->db_name;
+      break;
+    case SQLCOM_CREATE_TABLE:
+      // rebuild 'create table like/as select' statement including temporary
+      // table. getting table structure is so difficult before creating a table
+      // for such kind of creating table statement, this kind of statement
+      // will be converted into 'create temporary depend_table...; create table
+      // tbl as/like depend_table...'
+      rc = rebuild_create_table_stmt(thd, event, rewritten_query, sql_info);
+      db = sql_info->tables->db_name;
+      break;
+    case SQLCOM_RENAME_TABLE:
+      // rebuild rename table command statement
+      rc = rebuild_rename_table_stmt(thd, event, rewritten_query, sql_info);
+      db = sql_info->tables->db_name;
+      break;
+    case SQLCOM_DROP_TABLE:
+      // rebuild drop table statement, skip temporary table
+      rc = rebuild_drop_table_stmt(thd, event, rewritten_query, sql_info);
+      db = sql_info->tables->db_name;
+      break;
+    default:
+      break;
+  }
+
+  if (rc) {
+    goto error;
+  }
+
+  // check if it's temporary table operation for
+  // 'alter table, create/drop index' statement
+  if ((SQLCOM_ALTER_TABLE == sql_command ||
+       SQLCOM_CREATE_INDEX == sql_command ||
+       SQLCOM_DROP_INDEX == sql_command) &&
+      sql_info->tables->is_temporary_table) {
+    event.general_query_length = 0;
+  }
+
+  // if it's just only temporary table operation, do not write pending log
+  if (0 == event.general_query_length) {
+    goto done;
+  }
+
+  // get sdb connection
+  rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (rc) {
+    rc = SDB_HA_OOM;
+    goto error;
+  }
+
+  // if DDL operation is in transaction
+  // begin;  insert into t1...; drop table t2;
+  if (sdb_conn->is_transaction_on()) {
+    rc = tmp_conn.connect();
+    if (rc) {
+      goto error;
+    }
+    sdb_conn = &tmp_conn;
+  }
+
+  // get 'HAPendingLog'
+  rc = ha_get_pending_log_cl(*sdb_conn, ha_thread.sdb_group_name,
+                             pending_log_cl);
+  if (rc) {
+    goto error;
+  }
+  // get 'HAPendingObject'
+  rc = ha_get_pending_object_cl(*sdb_conn, ha_thread.sdb_group_name,
+                                pending_object_cl);
+  if (rc) {
+    goto error;
+  }
+
+  // start transaction
+  rc = sdb_conn->begin_transaction(ISO_READ_STABILITY);
+  if (rc) {
+    goto error;
+  }
+  write_time = time(NULL);
+
+  build_session_attributes(thd, session_attrs);
+
+  // write 'HAPendingLog', get pending SQLID
+  bson_builder.append(HA_FIELD_DB, db);
+  bson_builder.append(HA_FIELD_SQL, event.general_query);
+  bson_builder.append(HA_FIELD_OWNER, ha_thread.instance_id);
+  bson_builder.append(HA_FIELD_WRITE_TIME, write_time);
+  bson_builder.append(HA_FIELD_SESSION_ATTRS, session_attrs);
+  bson_builder.append(HA_FIELD_CLIENT_CHARSET_NUM, thd->charset()->number);
+  bson_builder.append(HA_FIELD_TYPE, sql_info->tables->op_type);
+  obj = bson_builder.done();
+
+  rc = pending_log_cl.insert(obj, hints, 0, &result);
+  if (rc) {
+    goto error;
+  }
+
+  pending_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
+  DBUG_ASSERT(pending_id > 0);
+  sql_info->pending_sql_id = pending_id;
+
+  SDB_LOG_DEBUG("HA: Write pending log '%s' with pending ID: %d",
+                event.general_query, pending_id);
+
+  // write 'HAPendingObject'
+  for (ha_table_list *table = sql_info->tables; table; table = table->next) {
+    if (table->is_temporary_table) {
+      // ignore temporary table
+      continue;
+    }
+    bson_builder.reset();
+    bson_builder.append(HA_FIELD_DB, table->db_name);
+    bson_builder.append(HA_FIELD_TABLE, table->table_name);
+    bson_builder.append(HA_FIELD_TYPE, table->op_type);
+    bson_builder.append(HA_FIELD_SQL_ID, pending_id);
+    obj = bson_builder.done();
+    rc = pending_object_cl.insert(obj, hints, 0, &result);
+    // deal with SQL like "create table select t1 union select t1"
+    if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
+      // ignore 'SDB_IXM_DUP_KEY' error
+      rc = 0;
+      continue;
+    }
+    if (rc) {
+      goto error;
+    }
+    SDB_LOG_DEBUG("HA: Writing pending object '%s:%s:%s'", table->db_name,
+                  table->table_name, table->op_type);
+  }
+  rc = sdb_conn->commit_transaction();
+done:
+  event.general_query = backup_query;
+  event.general_query_length = backup_len;
+  return rc;
+error:
+  if (sdb_conn) {
+    sdb_conn->rollback_transaction();
+  }
+  goto done;
+}
+
+static int clear_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  bson::BSONObj cond;
+  Sdb_cl pending_log_cl, pending_object_cl;
+  Sdb_conn *sdb_conn = sql_info->sdb_conn;
+
+  rc = ha_get_pending_log_cl(*sdb_conn, ha_thread.sdb_group_name,
+                             pending_log_cl);
+  if (rc) {
+    goto error;
+  }
+  rc = ha_get_pending_object_cl(*sdb_conn, ha_thread.sdb_group_name,
+                                pending_object_cl);
+  if (rc) {
+    goto error;
+  }
+
+  SDB_LOG_DEBUG(
+      "HA: Clear pending log with pending ID '%d', "
+      "executed by pending thread: %d",
+      sql_info->pending_sql_id, ha_is_executing_pending_log(thd));
+
+  cond = BSON(HA_FIELD_SQL_ID << sql_info->pending_sql_id);
+  rc = pending_log_cl.del(cond);
+  if (rc) {
+    goto error;
+  }
+  rc = pending_object_cl.del(cond);
+  if (rc) {
+    goto error;
+  }
+done:
+  sql_info->pending_sql_id = 0;
+  return rc;
+error:
+  goto done;
+}
+
+// check if it's ignorable error for ddl statement
+bool ha_is_ddl_ignorable_error(uint sql_errno) {
+  bool can_ignore = false;
+  switch (sql_errno) {
+    case ER_DB_DROP_EXISTS:
+    case ER_BAD_TABLE_ERROR:
+    case ER_TABLE_EXISTS_ERROR:
+    case ER_DB_CREATE_EXISTS:
+    case ER_SP_DOES_NOT_EXIST:
+    case ER_BAD_DB_ERROR:
+    case ER_SP_ALREADY_EXISTS:
+    case ER_CANNOT_USER:
+    case ER_NO_SUCH_TABLE:
+    case ER_DUP_FIELDNAME:
+    case ER_CANT_DROP_FIELD_OR_KEY:
+    case ER_DUP_KEYNAME:
+    case ER_BAD_FIELD_ERROR:
+    case ER_TRG_DOES_NOT_EXIST:
+    case ER_TRG_ALREADY_EXISTS:
+    case ER_UNKNOWN_TABLE:
+    case ER_TABLEACCESS_DENIED_ERROR:
+    case ER_COLUMNACCESS_DENIED_ERROR:
+    case ER_DUP_UNIQUE:
+    case ER_KEY_DOES_NOT_EXITS:
+    case ER_NO_PERMISSION_TO_CREATE_USER:
+    case ER_NONEXISTING_TABLE_GRANT:
+    case ER_NONEXISTING_PROC_GRANT:
+    case ER_DROP_PARTITION_NON_EXISTENT:
+    case ER_REORG_PARTITION_NOT_EXIST:
+    case ER_EVENT_ALREADY_EXISTS:
+    case ER_EVENT_DOES_NOT_EXIST:
+    case ER_FUNCTION_NOT_DEFINED:
+#ifdef IS_MARIADB
+    case ER_UNKNOWN_VIEW:
+    case ER_UNKNOWN_SEQUENCES:
+#endif
+      can_ignore = true;
+      break;
+  }
+  return can_ignore;
+}
+
+// ignore retry error for pending log replayer
+static bool is_pending_log_ignorable_error(THD *thd) {
+  if (!ha_is_executing_pending_log(thd)) {
+    return false;
+  }
+  return ha_is_ddl_ignorable_error(sdb_sql_errno(thd));
+}
+
+// saved cached state before 'write_sql_log_and_states'
+static void save_state(ha_sql_stmt_info *sql_info) {
+  ha_cached_record *cached_record = NULL;
+  char key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
+  for (ha_table_list *ha_table = sql_info->tables; ha_table;
+       ha_table = ha_table->next) {
+    snprintf(key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s", ha_table->db_name,
+             ha_table->table_name, ha_table->op_type);
+    cached_record = ha_get_cached_record(key);
+    if (cached_record) {
+      ha_table->saved_state = cached_record->sql_id;
+    } else {
+      ha_table->saved_state = 0;
+    }
+  }
+}
+
+// restore cached state updated in 'write_sql_log_and_states'
+static void restore_state(ha_sql_stmt_info *sql_info) {
+  ha_cached_record *cached_record = NULL;
+  char key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
+  for (ha_table_list *ha_table = sql_info->tables; ha_table;
+       ha_table = ha_table->next) {
+    snprintf(key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s", ha_table->db_name,
+             ha_table->table_name, ha_table->op_type);
+    cached_record = ha_get_cached_record(key);
+    if (cached_record) {
+      cached_record->sql_id = ha_table->saved_state;
+    }
+  }
+}
+
 // entry of audit plugin
 static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                             const void *ev) {
   DBUG_ENTER("persist_sql_stmt");
   DBUG_PRINT("info", ("event: %d, subevent: %d", (int)event_class, *(int *)ev));
   int rc = 0, sql_command = SQLCOM_END;
-  bool is_trans_on = false, need_kill_mysqld = false;
+  bool is_trans_on = false;
   String create_query;
   create_query.length(0);
   ha_sql_stmt_info *sql_info = NULL;
@@ -3124,7 +3811,6 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   }
 
   // if 'sequoiadb_execute_only_in_mysql' has been set, goto done
-  // 1. execute query from 'HA' thread
   if (sdb_execute_only_in_mysql(thd)) {
     goto done;
   }
@@ -3214,6 +3900,18 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       if (rc) {
         goto error;
       }
+
+      // check pending logs for current metadata operation
+      rc = check_pending_log(thd, sql_info);
+      if (rc) {
+        goto error;
+      }
+
+      // write pending logs for current metadata operation
+      rc = write_pending_log(thd, sql_info, event);
+      if (rc) {
+        goto error;
+      }
     } catch (std::bad_alloc &e) {
       rc = SDB_HA_OOM;
       goto error;
@@ -3229,7 +3927,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     SDB_LOG_DEBUG("HA: At the end of persisting SQL: %s, thread: %p",
                   sdb_thd_query(thd), thd);
     try {
-      if (can_write_sql_log(thd, sql_info, event.general_error_code)) {
+      if (can_write_sql_log(thd, sql_info, event.general_error_code) ||
+          is_pending_log_ignorable_error(thd)) {
         // rebuild create table SQL statement if necessary
         if (SQLCOM_CREATE_TABLE == sql_command) {
           rc = fix_create_table_stmt(thd, event_class, event, create_query);
@@ -3262,51 +3961,52 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
           rc = fix_alter_event_stmt(thd, event, create_query, sql_info);
         }
 
-        // update temporary table flags for 'rename table' command
-        if (SQLCOM_RENAME_TABLE == sql_command) {
-          ha_table_list *ha_tables = sql_info->tables;
-          for (TABLE_LIST *tables = thd->lex->query_tables; tables;
-               tables = tables->next_global) {
-            ha_tables->is_temporary_table = is_temporary_table(tables);
-            ha_tables = ha_tables->next;
-          }
-        }
+        // backup cached state of involved objects
+        save_state(sql_info);
 
         // write sql_logs
         rc = rc ? rc : write_sql_log_and_states(thd, sql_info, event);
 
-        // if SQL statement executes successfully but write SQL log into
-        // sequoiadb failed, kill current instances process
+        // if SQL statement executes successfully but failed to write
+        // SQL log into sequoiadb
         sql_info->tables = NULL;
         if (rc) {
-          need_kill_mysqld = true;
-          goto error;
+          sql_info->sdb_conn->rollback_transaction();
+          goto recover_state;
+        }
+
+        // clear pending log
+        rc = clear_pending_log(thd, sql_info);
+        if (rc) {
+          sql_info->sdb_conn->rollback_transaction();
+          goto recover_state;
         }
 
         rc = sql_info->sdb_conn->commit_transaction();
         if (rc) {
-          need_kill_mysqld = true;
-          ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
-          goto error;
+          goto recover_state;
         }
       } else {
         // Note: 'ha_sql_stmt_info::tables' can only be set to NULL in the
         // final step(see the entry conditions).
         SDB_LOG_DEBUG("HA: Current statement can't be persisted to SQL log");
         sql_info->tables = NULL;
-        rc = sql_info->sdb_conn->rollback_transaction();
+        rc = clear_pending_log(thd, sql_info);
         if (rc) {
-          ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
+          sql_info->sdb_conn->rollback_transaction();
+        } else {
+          rc = sql_info->sdb_conn->commit_transaction();
+        }
+
+        if (rc) {
           goto error;
         }
       }
     } catch (std::bad_alloc &e) {
       rc = SDB_HA_OOM;
-      need_kill_mysqld = true;
       goto error;
     } catch (std::exception &e) {
       rc = SDB_HA_EXCEPTION;
-      need_kill_mysqld = true;
       snprintf(sql_info->err_message, HA_BUF_LEN, "Unexpected error: %s",
                e.what());
       goto error;
@@ -3318,13 +4018,12 @@ done:
   DBUG_RETURN(rc);
 error:
   set_abort_query_flag(thd);
+  ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
   handle_error(rc, sql_info);
-  if (need_kill_mysqld) {
-    SDB_LOG_ERROR(
-        "HA: Failed to persist SQL statement, start stop current server");
-    ha_kill_mysqld(thd);
-  }
   goto done;
+recover_state:
+  restore_state(sql_info);
+  goto error;
 }
 
 // entry of Mariadb audit plugin
@@ -3671,7 +4370,7 @@ static int server_ha_init(void *p) {
   ha_thread.is_open = false;
 
   if (strlen(ha_inst_group_name) && !opt_bootstrap) {
-    // create HA thread
+    // 1. create HA thread
     ha_thread.instance_id = HA_INVALID_INST_ID;
     ha_thread.group_name = ha_inst_group_name;
 
@@ -3691,6 +4390,24 @@ static int server_ha_init(void *p) {
                             &ha_thread.thread_attr, ha_recover_and_replay,
                             (void *)(&ha_thread))) {
       SDB_LOG_ERROR("HA: Out of memory while creating 'HA' thread");
+      DBUG_RETURN(SDB_HA_OOM);
+    }
+
+    // 2. create pending log replayer thread
+    pending_log_replayer.recover_cond = &ha_thread.recover_finished_cond;
+    pending_log_replayer.recover_mutex = &ha_thread.recover_finished_mutex;
+    pending_log_replayer.sdb_group_name = ha_thread.sdb_group_name;
+    pending_log_replayer.stopped = true;
+    sdb_mysql_cond_init(HA_KEY_COND_PENDING_LOG_REPLAYER,
+                        &pending_log_replayer.stopped_cond, NULL);
+    mysql_mutex_init(HA_KEY_MUTEX_PENDING_LOG_REPLAYER,
+                     &pending_log_replayer.stopped_mutex, MY_MUTEX_INIT_FAST);
+    my_thread_attr_init(&pending_log_replayer.thread_attr);
+    if (mysql_thread_create(
+            HA_KEY_PENDING_LOG_REPLAY_THREAD, &pending_log_replayer.thread,
+            &pending_log_replayer.thread_attr, ha_replay_pending_logs,
+            (void *)(&pending_log_replayer))) {
+      SDB_LOG_ERROR("HA: Out of memory while creating pending log replayer");
       DBUG_RETURN(SDB_HA_OOM);
     }
     ha_thread.is_open = true;
@@ -3714,10 +4431,15 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
     mysql_mutex_lock(&ha_thread.replay_stopped_mutex);
     mysql_cond_signal(&ha_thread.replay_stopped_cond);
     mysql_mutex_unlock(&ha_thread.replay_stopped_mutex);
+
+    mysql_mutex_lock(&pending_log_replayer.stopped_mutex);
+    mysql_cond_signal(&pending_log_replayer.stopped_cond);
+    mysql_mutex_unlock(&pending_log_replayer.stopped_mutex);
   }
 
   // wait for replay thread to end
-  while (ha_thread.is_open && !ha_thread.stopped) {
+  while (ha_thread.is_open &&
+         (!ha_thread.stopped || !pending_log_replayer.stopped)) {
     my_sleep(20000);
   }
 
@@ -3729,6 +4451,9 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
     mysql_mutex_destroy(&ha_thread.replay_stopped_mutex);
     my_thread_attr_destroy(&ha_thread.thread_attr);
     destroy_inst_state_cache();
+    mysql_cond_destroy(&pending_log_replayer.stopped_cond);
+    mysql_mutex_destroy(&pending_log_replayer.stopped_mutex);
+    my_thread_attr_destroy(&pending_log_replayer.thread_attr);
   }
 
   DBUG_RETURN(0);

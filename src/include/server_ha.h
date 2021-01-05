@@ -105,6 +105,8 @@ typedef struct st_table_list {
   // collection version
   int cata_version;
   struct st_table_list *next;
+  // used to recover original state
+  int saved_state;
 } ha_table_list;
 
 // store information about the SQL statement currently being executed
@@ -136,6 +138,7 @@ typedef struct st_sql_stmt_info {
   LEX *last_instr_lex;
   // cache checked objects after 'wait_object_updated_to_latest'
   HASH dml_checked_objects;
+  int pending_sql_id;
 } ha_sql_stmt_info;
 
 // use to cache current instance state of all objects(table, view and sp)
@@ -205,14 +208,29 @@ typedef struct st_recover_replay_thread {
   my_thread_attr_t thread_attr;
 } ha_recover_replay_thread;
 
-extern bool ha_is_open();
-extern int ha_get_cata_version(const char *db_name, const char *table_name);
-extern void ha_set_cata_version(const char *db_name, const char *table_name,
-                                int version);
-extern int ha_write_empty_sql_log(const char *db_name, const char *table_name,
-                                  int driver_cata_version);
-extern int ha_get_latest_cata_version(const char *db_name,
-                                      const char *table_name, int &version);
-extern int ha_update_cached_record(const char *cached_record_key, int sql_id,
-                                   int cata_version);
+typedef struct st_pending_log_replay_thread {
+  mysql_cond_t stopped_cond;
+  mysql_mutex_t stopped_mutex;
+
+  mysql_cond_t *recover_cond;
+  mysql_mutex_t *recover_mutex;
+  const char *sdb_group_name;
+
+  my_thread_handle thread;
+  my_thread_attr_t thread_attr;
+  bool stopped;
+} ha_pending_log_replay_thread;
+
+bool ha_is_open();
+int ha_get_cata_version(const char *db_name, const char *table_name);
+void ha_set_cata_version(const char *db_name, const char *table_name,
+                         int version);
+int ha_write_empty_sql_log(const char *db_name, const char *table_name,
+                           int driver_cata_version);
+int ha_get_latest_cata_version(const char *db_name, const char *table_name,
+                               int &version);
+int ha_update_cached_record(const char *cached_record_key, int sql_id,
+                            int cata_version);
+bool ha_is_ddl_ignorable_error(uint sql_errno);
+bool ha_is_executing_pending_log(THD *thd);
 #endif

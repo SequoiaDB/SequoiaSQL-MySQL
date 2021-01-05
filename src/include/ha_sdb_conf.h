@@ -66,6 +66,7 @@ int sdb_encrypt_password();
 int sdb_get_password(String &res);
 uint sdb_selector_pushdown_threshold(THD *thd);
 bool sdb_execute_only_in_mysql(THD *thd);
+void sdb_set_execute_only_in_mysql(THD *thd, bool val);
 longlong sdb_alter_table_overhead_threshold(THD *thd);
 ulonglong sdb_get_optimizer_options(THD *thd);
 bool sdb_rollback_on_timeout(THD *thd);

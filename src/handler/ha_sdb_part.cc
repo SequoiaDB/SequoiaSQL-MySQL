@@ -1206,6 +1206,15 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   // update cached cata version, it will be written into sequoiadb
   ha_set_cata_version(db_name, table_name, cl.get_version());
 done:
+  // set 'execute_only_in_mysql' to true for 'create table as select ...'
+  if (0 == rc && SQLCOM_CREATE_TABLE == thd_sql_command(ha_thd()) &&
+      ha_is_open() && ha_is_executing_pending_log(ha_thd()) &&
+      sdb_lex_first_select(ha_thd())->item_list.elements) {
+    SDB_LOG_DEBUG(
+        "HA: Set 'sequoiadb_execute_only_in_mysql' to 1 after creating table "
+        "for 'create table as select...'");
+    sdb_set_execute_only_in_mysql(ha_thd(), true);
+  }
   DBUG_RETURN(rc);
 error:
   handle_sdb_error(rc, MYF(0));

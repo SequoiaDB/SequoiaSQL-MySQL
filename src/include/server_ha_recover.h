@@ -73,5 +73,6 @@ typedef struct st_dump_source {
 } ha_dump_source;
 
 void *ha_recover_and_replay(void *arg);
-
+void *ha_replay_pending_logs(void *arg);
+const char *ha_inst_group_user_name();
 #endif

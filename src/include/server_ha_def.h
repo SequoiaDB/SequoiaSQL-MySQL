@@ -54,6 +54,8 @@
 #define HA_OBJECT_STATE_CL "HAObjectState"
 #define HA_INSTANCE_OBJECT_STATE_CL "HAInstanceObjectState"
 #define HA_INSTANCE_STATE_CL "HAInstanceState"
+#define HA_PENDING_LOG_CL "HAPendingLog"
+#define HA_PENDING_OBJECT_CL "HAPendingObject"
 
 #define HA_INST_GROUP_PREFIX "HAInstanceGroup_"
 
@@ -77,6 +79,8 @@
 #define HA_FIELD_SESSION_ATTRS "SessionAttributes"
 #define HA_FIELD_CLIENT_CHARSET_NUM "ClientCharsetNum"
 
+#define HA_FIELD_WRITE_TIME "Time"
+
 #define HA_FIELD_INSTANCE_ID "InstanceID"
 #define HA_FIELD_HOST_NAME "HostName"
 #define HA_FIELD_PORT "Port"
@@ -98,6 +102,9 @@
 #define HA_INST_STATE_JOIN_ID_INDEX "InstanceStateJoinIDIndex"
 #define HA_LOCK_DB_TABLE_TYPE_INDEX "LockDBTableTypeIndex"
 #define HA_OBJ_STATE_DB_TABLE_TYPE_INDEX "ObjectStateDBTableTypeIndex"
+
+#define HA_PENDING_LOG_PENDING_ID_INDEX "PendingLogPendingIDIndex"
+#define HA_PENDING_OBJECT_DB_TABLE_TYPE_INDEX "PendingObjectDBTableTypeIndex"
 
 #define HA_LOOPBACK_ADDRESS "127.0.0.1"
 
@@ -151,6 +158,12 @@
 #define HA_KEY_RWLOCK_EXPLICITS_TIMESTAMP 11008
 #define HA_KEY_MUTEX_INST_CACHE 11009
 
+// macros for pending log replayer
+#define HA_KEY_PENDING_LOG_REPLAY_THD 11009
+#define HA_KEY_PENDING_LOG_REPLAY_THREAD 11010
+#define HA_KEY_COND_PENDING_LOG_REPLAYER 11011
+#define HA_KEY_MUTEX_PENDING_LOG_REPLAYER 11012
+
 #define HA_MYSQL_PASSWORD_PLUGIN "mysql_native_password"
 #define HA_MYSQL_AUTH_HOSTS "%"
 
@@ -182,6 +195,8 @@ enum SDB_HA_ERR_CODE {
   SDB_HA_FIX_CREATE_TABLE,
   SDB_HA_INIT_ERR,
   SDB_HA_WAIT_TIMEOUT,
-  SDB_HA_ABORT_BY_USER
+  SDB_HA_ABORT_BY_USER,
+  SDB_HA_PENDING_OBJECT_EXISTS,
+  SDB_HA_PENDING_LOG_ALREADY_EXECUTED
 };
 #endif

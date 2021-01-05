@@ -60,4 +60,8 @@ int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
                            Sdb_cl &cl);
 int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &cl);
 int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &cl);
+int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
+                          Sdb_cl &pending_log_cl);
+int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
+                             Sdb_cl &pending_object_cl);
 #endif

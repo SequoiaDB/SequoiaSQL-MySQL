@@ -2148,6 +2148,14 @@ int ha_sdb::end_bulk_insert() {
     }
   }
 
+  // restore 'sequoiadb_execute_only_in_mysql', it's set in 'create' function
+  if (SQLCOM_CREATE_TABLE == thd_sql_command(ha_thd()) && ha_is_open() &&
+      ha_is_executing_pending_log(ha_thd()) &&
+      sdb_execute_only_in_mysql(ha_thd()) &&
+      sdb_lex_first_select(ha_thd())->item_list.elements) {
+    SDB_LOG_DEBUG("HA: Reset 'sequoiadb_execute_only_in_mysql' to 0");
+    sdb_set_execute_only_in_mysql(ha_thd(), false);
+  }
   return rc;
 }
 
@@ -5964,6 +5972,7 @@ double ha_sdb::scan_time() {
   if (direct_sort) {
     sdb_clear_const_keys(ha_thd());
   }
+
   double res = rows2double(share->stat.total_index_pages);
   DBUG_PRINT("exit", ("table: %s total_index_pages: %f", table_name, res));
   DBUG_RETURN(res);
@@ -6509,6 +6518,15 @@ done:
       !sdb_execute_only_in_mysql(ha_thd())) {
     // update cached cata version, it will be written into sequoiadb
     ha_set_cata_version(db_name, table_name, cl.get_version());
+  }
+  // set 'execute_only_in_mysql' to true for 'create table as select ...'
+  if (0 == rc && SQLCOM_CREATE_TABLE == thd_sql_command(ha_thd()) &&
+      ha_is_open() && ha_is_executing_pending_log(ha_thd()) &&
+      !create_temporary && sdb_lex_first_select(thd)->item_list.elements) {
+    SDB_LOG_DEBUG(
+        "HA: Set 'sequoiadb_execute_only_in_mysql' to 1 after creating table "
+        "for 'create table as select...'");
+    sdb_set_execute_only_in_mysql(ha_thd(), true);
   }
   DBUG_RETURN(rc);
 error:
