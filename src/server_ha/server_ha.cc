@@ -346,17 +346,16 @@ static inline bool has_temporary_table_flag(THD *thd) {
   return is_temp_table_op;
 }
 
-// query table 'HAObjectState' and get all objects to be dropped in database
-// add dropped database info at last
-static int get_drop_db_objects(THD *thd, ha_sql_stmt_info *sql_info) {
-  DBUG_ENTER("get_drop_db_objects");
-  DBUG_ASSERT(sql_info->tables == NULL);
+// query table 'HAObjectState' and get all objects state
+// in current database
+static int get_db_objects(THD *thd, ha_sql_stmt_info *sql_info, bool get_db) {
+  DBUG_ENTER("get_db_objects");
   int rc = 0;
   Sdb_cl obj_state_cl;
   bson::BSONObj cond, obj, result;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
   const char *db_name = thd->lex->name.str;
-  ha_table_list *ha_tbl_list = NULL, *ha_tbl_list_tail = NULL;
+  ha_table_list *ha_tbl_list = NULL, *ha_tbl_list_tail = sql_info->tables;
 
   rc =
       ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl);
@@ -407,7 +406,7 @@ static int get_drop_db_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     }
   }
   // at last, add 'drop database ' info
-  {
+  if (get_db) {
     ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
     if (ha_tbl_list) {
       ha_tbl_list->db_name = (char *)thd_calloc(thd, strlen(db_name) + 1);
@@ -850,10 +849,12 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
     db_name = thd->lex->name.str;
     table_name = HA_EMPTY_STRING;
     op_type = HA_OPERATION_TYPE_DB;
+    int sql_command = thd_sql_command(thd);
     rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
                                         obj_state_cl, sql_info, thd);
-    if (0 == rc && SQLCOM_DROP_DB == thd_sql_command(thd)) {
-      rc = get_drop_db_objects(thd, sql_info);
+    if (0 == rc &&
+        (SQLCOM_DROP_DB == sql_command || SQLCOM_ALTER_DB == sql_command)) {
+      rc = get_db_objects(thd, sql_info, (SQLCOM_DROP_DB == sql_command));
     }
     if (rc) {
       goto error;
