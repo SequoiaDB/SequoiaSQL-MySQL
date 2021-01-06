@@ -107,6 +107,8 @@ typedef struct st_table_list {
   struct st_table_list *next;
   // used to recover original state
   int saved_state;
+  // set if dropping object exists
+  bool dropping_object_exists;
 } ha_table_list;
 
 // store information about the SQL statement currently being executed

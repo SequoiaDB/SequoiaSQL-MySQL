@@ -971,62 +971,6 @@ static bool build_full_table_name(THD *thd, String &full_name,
   return error;
 }
 
-// check if the dropping table exists, SQL like 'drop table [if exists]
-// t1,t2,t3' if 't2' does not exist, the error or warning will be "Unknown table
-// 'db1.t2'" in this situation, SQL log "DROP TABLE `db1`.`t2`" can't be written
-// into sequoiadb
-static bool dropping_table_exists(THD *thd, const char *db_name,
-                                  const char *table_name) {
-  static const uint TABLE_BUF_LEN = NAME_LEN * 2 + 20;
-  int sql_command = thd_sql_command(thd);
-
-  bool table_exists = true;
-  char unknown_table_buf[TABLE_BUF_LEN] = {0};
-  String wrong_table(unknown_table_buf, TABLE_BUF_LEN, system_charset_info);
-  wrong_table.length(0);
-
-  if (!thd->is_error()) {
-    // handle drop table if exists
-#ifdef IS_MARIADB
-    if (SQLCOM_DROP_TABLE == sql_command) {
-      wrong_table.append("Unknown table '");
-    } else if (SQLCOM_DROP_VIEW == sql_command) {
-      wrong_table.append("Unknown VIEW: '");
-    } else if (SQLCOM_DROP_SEQUENCE == sql_command) {
-      wrong_table.append("Unknown SEQUENCE: '");
-    }
-#else
-    wrong_table.append("Unknown table '");
-#endif
-    wrong_table.append(db_name);
-    wrong_table.append('.');
-    wrong_table.append(table_name);
-    wrong_table.append("'");
-    if (thd->get_stmt_da()->has_sql_condition(wrong_table.c_ptr(),
-                                              wrong_table.length())) {
-      table_exists = false;
-    }
-  } else if (sdb_has_sql_condition(thd, ER_BAD_TABLE_ERROR)
-#ifdef IS_MARIADB
-             || sdb_has_sql_condition(thd, ER_UNKNOWN_VIEW) ||
-             sdb_has_sql_condition(thd, ER_UNKNOWN_SEQUENCES)
-#endif
-  ) {
-    wrong_table.append(db_name);
-    wrong_table.append('.');
-    wrong_table.append(table_name);
-#ifdef IS_MYSQL
-    const char *err_msg = thd->get_stmt_da()->message_text();
-#else
-    const char *err_msg = thd->get_stmt_da()->message();
-#endif
-    if (strstr(err_msg, wrong_table.c_ptr_safe())) {
-      table_exists = false;
-    }
-  }
-  return table_exists;
-}
-
 // check if current execution has 'XXX not exist' or 'XXX already exists'
 // warnings
 inline static bool have_exist_warning(THD *thd) {
@@ -1281,7 +1225,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
 #endif
       ) {
         // check if the dropping object exists
-        if (!dropping_table_exists(thd, db_name, table_name) &&
+        if (!ha_tables->dropping_object_exists &&
             !ha_is_executing_pending_log(thd)) {
           continue;
         }
@@ -1501,6 +1445,26 @@ static bool is_temporary_table_for_rename(THD *thd, TABLE_LIST *first_table,
   return res != NULL;
 #else
   return false;
+#endif
+}
+
+static inline bool check_if_table_exists(THD *thd, TABLE_LIST *table) {
+#ifdef IS_MARIADB
+  return ha_table_exists(thd, &table->db, &table->table_name);
+#else
+  char path[FN_REFLEN + 1] = {0};
+  mysql_mutex_lock(&LOCK_open);
+  TABLE_SHARE *share =
+      get_cached_table_share(thd, table->db, table->table_name);
+  mysql_mutex_unlock(&LOCK_open);
+
+  if (share) {
+    return TRUE;
+  } else {
+    build_table_filename(path, sizeof(path) - 1, table->db, table->table_name,
+                         reg_ext, 0);
+    return (0 == access(path, F_OK));
+  }
 #endif
 }
 
@@ -1779,6 +1743,16 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
           is_temp_table = false;
         }
         table_count++;
+      }
+      // set 'dropping_object_exists' flag
+      ha_tbl_list->dropping_object_exists = true;
+      if (!ha_tbl_list->is_temporary_table &&
+          (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command
+#ifdef IS_MARIADB
+           || SQLCOM_DROP_SEQUENCE == sql_command
+#endif
+           )) {
+        ha_tbl_list->dropping_object_exists = check_if_table_exists(thd, tbl);
       }
     }
     // add table to sql_info->tables for 'alter table rename'
