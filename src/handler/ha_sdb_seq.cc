@@ -307,7 +307,6 @@ error:
 
 int ha_sdb_seq::insert_into_sequence() {
   int rc = SDB_OK;
-  longlong nr = -1;
   longlong min_value = -1;
   longlong max_value = -1;
   longlong increment = -1;
@@ -327,26 +326,6 @@ int ha_sdb_seq::insert_into_sequence() {
     increment = global_system_variables.auto_increment_increment;
   }
   try {
-    if (increment > 0) {
-      if (reserved_until - increment < min_value ||
-          reserved_until < min_value + increment) {
-        // TODO: Adjust after sdb supports setting the sequence back
-        // to starting value.
-        nr = min_value;
-      } else {
-        nr = reserved_until - increment;
-      }
-    } else {
-      if (reserved_until - increment > max_value ||
-          reserved_until < max_value + increment) {
-        // TODO: Adjust after sdb supports setting the sequence back
-        // to starting value.
-        nr = max_value;
-      } else {
-        nr = reserved_until - increment;
-      }
-    }
-    builder.append(SDB_FIELD_CURRENT_VALUE, nr);
     builder.append(SDB_FIELD_MIN_VALUE, min_value);
     builder.append(SDB_FIELD_MAX_VALUE, max_value);
     builder.append(SDB_FIELD_START_VALUE,
@@ -377,6 +356,11 @@ int ha_sdb_seq::insert_into_sequence() {
     goto error;
   }
 
+  rc = m_sequence->restart(reserved_until);
+  if (rc) {
+    goto error;
+  }
+
 done:
   return rc;
 error:
@@ -387,7 +371,6 @@ int ha_sdb_seq::alter_sequence() {
   int rc = SDB_OK;
   bson::BSONObj options;
   bson::BSONObjBuilder builder;
-  longlong nr = 0;
   longlong new_increment = 0;
   SEQUENCE *seq = table->s->sequence;
   sequence_definition *new_seq = ha_thd()->lex->create_info.seq_create_info;
@@ -397,28 +380,6 @@ int ha_sdb_seq::alter_sequence() {
   }
 
   try {
-    if (seq->reserved_until != new_seq->reserved_until) {
-      if (new_increment > 0) {
-        if ((new_seq->reserved_until - new_increment) < new_seq->min_value ||
-            new_seq->reserved_until < (new_seq->min_value + new_increment)) {
-          // TODO: Adjust after sdb supports setting the sequence back
-          // to starting value.
-          nr = new_seq->min_value;
-        } else {
-          nr = new_seq->reserved_until - new_increment;
-        }
-      } else {
-        if ((new_seq->reserved_until - new_increment) > new_seq->max_value ||
-            new_seq->reserved_until > (new_seq->max_value + new_increment)) {
-          // TODO: Adjust after sdb supports setting the sequence back
-          // to starting value.
-          nr = new_seq->max_value;
-        } else {
-          nr = new_seq->reserved_until - new_increment;
-        }
-      }
-      builder.append(SDB_FIELD_CURRENT_VALUE, nr);
-    }
     if (seq->min_value != new_seq->min_value) {
       builder.append(SDB_FIELD_MIN_VALUE, new_seq->min_value);
     }
@@ -447,6 +408,13 @@ int ha_sdb_seq::alter_sequence() {
 
   if (!options.isEmpty()) {
     rc = m_sequence->set_attributes(options);
+    if (rc) {
+      goto error;
+    }
+  }
+
+  if (seq->reserved_until != new_seq->reserved_until) {
+    rc = m_sequence->restart(new_seq->reserved_until);
     if (rc) {
       goto error;
     }

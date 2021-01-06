@@ -36,9 +36,11 @@ class Sdb_seq {
   int fetch(int fetch_num, longlong &next_value, int &return_num,
             int &increment);
 
-  int set_current_value(const int value);
+  int set_current_value(const longlong value);
 
   int set_attributes(const bson::BSONObj &options);
+
+  int restart(const longlong value);
 
   my_thread_id thread_id();
 

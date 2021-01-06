@@ -95,11 +95,11 @@ int Sdb_seq::fetch(int fetch_num, longlong &next_value, int &return_num,
                            &return_num, &increment));
 }
 
-int seq_set_current_value(sdbclient::sdbSequence *seq, int value) {
+int seq_set_current_value(sdbclient::sdbSequence *seq, const longlong value) {
   return seq->setCurrentValue(value);
 }
 
-int Sdb_seq::set_current_value(const int value) {
+int Sdb_seq::set_current_value(const longlong value) {
   return retry(boost::bind(seq_set_current_value, &m_seq, value));
 }
 
@@ -110,6 +110,14 @@ int seq_set_attributes(sdbclient::sdbSequence *seq,
 
 int Sdb_seq::set_attributes(const bson::BSONObj &options) {
   return retry(boost::bind(seq_set_attributes, &m_seq, options));
+}
+
+int seq_restart(sdbclient::sdbSequence *seq, const longlong value) {
+  return seq->restart(value);
+}
+
+int Sdb_seq::restart(const longlong value) {
+  return retry(boost::bind(seq_restart, &m_seq, value));
 }
 
 my_thread_id Sdb_seq::thread_id() {
