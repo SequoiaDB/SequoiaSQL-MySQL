@@ -40,7 +40,7 @@ static struct argp_option my_argp_options[] = {
     {"user", 'u', "USER", 0, HA_TOOL_HELP_USER, 1},
     {"password", 'p', "PASSWORD", OPTION_ARG_OPTIONAL, HA_TOOL_HELP_PASSWD, 2},
     {"key", HA_KEY_KEY, "KEY", 0, HA_TOOL_HELP_KEY, 3},
-    {"token", 't', "TOKEN", OPTION_ARG_OPTIONAL, HA_TOOL_HELP_TOKEN, 4},
+    {"token", 't', "TOKEN", 0, HA_TOOL_HELP_TOKEN, 4},
     {"file", HA_KEY_FILE, "FILE", 0, HA_TOOL_HELP_FILE, 5},
     {"verbose", HA_KEY_VERBOSE, 0, 0, HA_TOOL_HELP_VERBOSE, 6},
     {NULL}};
@@ -157,11 +157,7 @@ static int init_config(const string &name, ha_inst_group_config_cl &st_config,
   st_config.user = name + "_" + name_md5_hex_str;
   st_config.user = st_config.user.substr(0, HA_MAX_MYSQL_USERNAME_LEN);
   st_config.explicit_defaults_ts = 0;
-
-  if (verbose) {
-    cout << "User: " << st_config.user << endl;
-    cout << "Password: " << password << endl;
-  }
+  st_config.password = password;
   return SDB_HA_OK;
 }
 
@@ -311,6 +307,10 @@ int main(int argc, char *argv[]) {
                      "Error: failed to initialize SQL log table '%s.%s', "
                      "sequoiadb error: %s",
                      orig_name.c_str(), HA_SQL_LOG_CL, sdb_err);
+    if (cmd_args.verbose) {
+      cout << "User: " << ha_config.user << endl;
+      cout << "Password: " << ha_config.password << endl;
+    }
     cout << "Info: completed initialization of instance group '" << orig_name
          << "'" << endl;
   } catch (std::exception &e) {

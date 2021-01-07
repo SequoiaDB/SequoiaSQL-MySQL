@@ -40,11 +40,10 @@ static struct argp_option my_argp_options[] = {
     {"user", 'u', "USER", 0, HA_TOOL_HELP_USER, 1},
     {"password", 'p', "PASSWORD", OPTION_ARG_OPTIONAL, HA_TOOL_HELP_PASSWD, 2},
     {"force", HA_KEY_FORCE, 0, 0, HA_TOOL_HELP_FORCE, 3},
-    {"token", 't', "TOKEN", OPTION_ARG_OPTIONAL, HA_TOOL_HELP_TOKEN, 4},
+    {"token", 't', "TOKEN", 0, HA_TOOL_HELP_TOKEN, 4},
     {"file", HA_KEY_FILE, "FILE", 0, HA_TOOL_HELP_FILE, 5},
     {"inst_id", HA_KEY_INST_ID, "INST_ID", 0, HA_TOOL_HELP_INST_ID, 6},
     {"inst_host", HA_KEY_INST_HOST, "INST_HOST", 0, HA_TOOL_HELP_INST_HOST, 7},
-    {"verbose", HA_KEY_VERBOSE, 0, 0, HA_TOOL_HELP_VERBOSE, 8},
     {NULL}};
 
 static char *help_filter(int key, const char *text, void *input) {
@@ -239,13 +238,19 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
   }
 
   if (rc) {
-    cerr << "Error: failed clear instance configuration, sequoiadb error: "
-         << ha_sdb_error_string(conn, rc) << endl;
     conn.transactionRollback();
   } else {
     rc = conn.transactionCommit();
   }
 
+  HA_TOOL_RC_CHECK(
+      rc, rc,
+      "Error: failed to clear instance configuration, sequoiadb error: %s",
+      ha_sdb_error_string(conn, rc));
+
+  cout << "Note: clearing the instance configuration will not delete the SQL "
+          "instance. please use instance management tool to delete it"
+       << endl;
   if (cmd_args.is_inst_id_set) {
     cout << "Info: completed cleanup of instance '" << cmd_args.inst_id << "'"
          << endl;
@@ -318,6 +323,10 @@ static int clear_sql_inst_group(ha_tool_args &cmd_args, sdbclient::sdb &conn,
                    "global configuration from '%s.%s', sequoiadb error: %s",
                    HA_GLOBAL_INFO, HA_REGISTRY_CL,
                    ha_sdb_error_string(conn, rc));
+
+  cout << "Note: clearing instance group configuration will not delete SQL "
+          "instances. please use instance management tool to delete them"
+       << endl;
   cout << "Info: completed cleanup of instance group '" << orig_name << "'"
        << endl;
   return rc;

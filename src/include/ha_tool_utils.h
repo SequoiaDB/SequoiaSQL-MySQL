@@ -43,8 +43,9 @@ typedef unsigned char uchar;
 #define HA_TOOL_HELP_HOST \
   "Sequoiadb coord address(hostname:port), default: localhost:11810"
 #define HA_TOOL_HELP_USER "User for logging sequoiadb, default: \"\""
-#define HA_TOOL_HELP_PASSWD \
-  "Password used to connect to sequoiadb, default: \"\""
+#define HA_TOOL_HELP_PASSWD                                                   \
+  "Password to use when connecting to sequoiadb, default: \"\". If password " \
+  "is not given it's asked from the tty"
 #define HA_TOOL_HELP_NAME "Instance group name"
 #define HA_TOOL_HELP_KEY "Key used to encrypt random password, default: \"\""
 #define HA_TOOL_HELP_TOKEN \
@@ -54,10 +55,11 @@ typedef unsigned char uchar;
 #define HA_TOOL_HELP_INST_ID                                      \
   "Instance unique ID, if this argument is set, delete instance " \
   "configuration information by instance id"
-#define HA_TOOL_HELP_INST_HOST                                            \
-  "Instance address, used to delete instance configuration information, " \
-  "works when 'inst_id' is not set"
-#define HA_TOOL_HELP_VERBOSE "Print more information"
+#define HA_TOOL_HELP_INST_HOST                                        \
+  "Instance service address(hostname:port), used to delete instance " \
+  "configuration information, works when 'inst_id' is not set"
+#define HA_TOOL_HELP_VERBOSE \
+  "Print instance group user name and instance group key"
 
 // struct corresponding to 'HAInstGroupConfig' table
 typedef struct st_inst_group_config {
@@ -72,6 +74,7 @@ typedef struct st_inst_group_config {
   // instance group user name
   std::string user;
   int explicit_defaults_ts;
+  std::string password;
 } ha_inst_group_config_cl;
 
 // use to store command line arguments
