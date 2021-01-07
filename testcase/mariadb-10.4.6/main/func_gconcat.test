@@ -3,6 +3,9 @@
 #
 source include/have_sequence.inc;
 
+CREATE DATABASE test_func_gconcat;
+USE test_func_gconcat;
+
 create table t1 (grp int, a bigint unsigned, c char(10) not null, d char(10) not null);
 insert into t1 values (1,1,"a","a");
 insert into t1 values (2,2,"b","a");
@@ -1027,3 +1030,5 @@ drop table t1;
 --echo #
 --echo # End of 10.3 tests
 --echo #
+
+DROP DATABASE test_func_gconcat;

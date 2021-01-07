@@ -1,10 +1,12 @@
+CREATE DATABASE test_errors;
+USE test_errors;
 drop table if exists t1;
 insert into t1 values(1);
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_errors.t1' doesn't exist
 delete from t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_errors.t1' doesn't exist
 update t1 set a=1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_errors.t1' doesn't exist
 create table t1 (a int);
 select count(test.t1.b) from t1;
 ERROR 42S22: Unknown column 'test.t1.b' in 'field list'
@@ -63,10 +65,10 @@ create table t1 (a int unique);
 create table t2 (a int);
 drop function if exists f1;
 Warnings:
-Note	1305	FUNCTION test.f1 does not exist
+Note	1305	FUNCTION test_errors.f1 does not exist
 drop function if exists f2;
 Warnings:
-Note	1305	FUNCTION test.f2 does not exist
+Note	1305	FUNCTION test_errors.f2 does not exist
 create function f1() returns int
 begin
 insert into t1 (a) values (1);
@@ -80,7 +82,7 @@ return 2;
 end|
 flush status;
 select f1(), f2();
-ERROR 23000: Duplicate entry '{ "a": 1 }' for key a
+ERROR 23000: Duplicate entry '{ "a": 1 }' for key 'a'
 show status like 'Com_insert';
 Variable_name	Value
 Com_insert	2
@@ -176,3 +178,4 @@ SELECT UPDATEXML(-73 * -2465717823867977728,@@global.auto_increment_increment,nu
 ERROR 22003: BIGINT value is out of range in '-73 * -2465717823867977728'
 SELECT UPDATEXML(-73 * -2465717823867977728,@@global.long_query_time,null);
 ERROR 22003: BIGINT value is out of range in '-73 * -2465717823867977728'
+DROP DATABASE test_errors;
