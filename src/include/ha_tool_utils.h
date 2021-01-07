@@ -167,4 +167,6 @@ const char *ha_sdb_error_string(sdbclient::sdb &conn, int rc);
 int ha_parse_host(const std::string &host, std::string &hostname, uint &port);
 
 int ha_init_sequoiadb_connection(sdbclient::sdb &conn, ha_tool_args &cmd_args);
+
+int ha_check_svcname(sdbclient::sdb &conn, uint port, bool &is_coord);
 #endif

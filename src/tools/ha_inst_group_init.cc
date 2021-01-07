@@ -183,6 +183,15 @@ int main(int argc, char *argv[]) {
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to initialize sequoiadb connection");
 
+    bool is_coord = true;
+    rc = ha_check_svcname(conn, cmd_args.port, is_coord);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to check if it's coord");
+
+    if (!is_coord) {
+      cout << "Error: 'host' must be specified as coord address" << endl;
+      return SDB_HA_INVALID_PARAMETER;
+    }
+
     // check if instance group already exists
     sdbclient::sdbCollectionSpace inst_group_cs;
     rc = conn.getCollectionSpace(cmd_args.inst_group_name.c_str(),
