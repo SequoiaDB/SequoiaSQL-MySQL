@@ -119,8 +119,27 @@ static void sdb_conn_addr_update(THD *thd, struct st_mysql_sys_var *var,
 static void sdb_password_update(THD *thd, struct st_mysql_sys_var *var,
                                 void *var_ptr, const void *save) {
   Sdb_rwlock_write_guard guard(sdb_password_lock);
-  const char *new_password = *static_cast<const char *const *>(save);
-  sdb_password = const_cast<char *>(new_password);
+
+  /*var_ptr: traget addr, save: the input of new_password*/
+#if defined IS_MYSQL
+  const char *new_password = *(char **)(save);
+  sdb_password = (char *)new_password;
+#elif defined IS_MARIADB
+  char *value = *(char **)save;
+  if (var->flags & PLUGIN_VAR_MEMALLOC) {
+    char *old = *(char **)var_ptr;
+    if (value) {
+      sdb_password = my_strdup(value, MYF(0));
+    } else {
+      /*This ptr is same as var_ptr(will be freed by mysql),
+        so cannot be static empty string.*/
+      sdb_password = NULL;
+    }
+    my_free(old);
+  } else {
+    sdb_password = value;
+  }
+#endif
   sdb_encrypt_password();
 }
 
@@ -488,19 +507,31 @@ int ha_sdb_conn_addrs::get_conn_num() const {
 int sdb_encrypt_password() {
   static const uint DISPLAY_MAX_LEN = 1;
   int rc = 0;
-  String src_password(sdb_password, &my_charset_bin);
 
-  rc = sdb_passwd_encryption.encrypt(src_password, sdb_encoded_password);
-  if (rc) {
-    goto error;
+  if (!sdb_password) {
+    goto done;
   }
+  {
+    String src_password(sdb_password, &my_charset_bin);
 
-  for (uint i = 0; i < src_password.length(); ++i) {
-    src_password[i] = '*';
-  }
+    /*No need to encrypt when sdb_password is null, reduce the competition of
+      sdb_password_lock*/
+    if (0 == src_password.length()) {
+      goto done;
+    }
 
-  if (src_password.length() > DISPLAY_MAX_LEN) {
-    src_password[DISPLAY_MAX_LEN] = 0;
+    rc = sdb_passwd_encryption.encrypt(src_password, sdb_encoded_password);
+    if (rc) {
+      goto error;
+    }
+
+    for (uint i = 0; i < src_password.length(); ++i) {
+      src_password[i] = '*';
+    }
+
+    if (src_password.length() > DISPLAY_MAX_LEN) {
+      src_password[DISPLAY_MAX_LEN] = 0;
+    }
   }
 done:
   return rc;

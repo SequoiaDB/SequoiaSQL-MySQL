@@ -29,6 +29,8 @@
 #include "ha_sdb.h"
 #include "ha_sdb_def.h"
 
+extern char *sdb_password;
+
 static int sdb_proc_id() {
 #ifdef _WIN32
   return GetCurrentProcessId();
@@ -141,12 +143,13 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    rc = sdb_get_password(password);
-    if (SDB_ERR_OK != rc) {
-      snprintf(errmsg, sizeof(errmsg), "Failed to decrypt password, rc=%d", rc);
-      goto error;
-    }
-    if (password.length()) {
+    if (sdb_password && strlen(sdb_password)) {
+      rc = sdb_get_password(password);
+      if (SDB_ERR_OK != rc) {
+        snprintf(errmsg, sizeof(errmsg), "Failed to decrypt password, rc=%d",
+                 rc);
+        goto error;
+      }
       rc = m_connection.connect(conn_addrs.get_conn_addrs(),
                                 conn_addrs.get_conn_num(), sdb_user,
                                 password.ptr());
@@ -155,6 +158,7 @@ int Sdb_conn::connect() {
                                 conn_addrs.get_conn_num(), sdb_user,
                                 sdb_password_token, sdb_password_cipherfile);
     }
+
     if (SDB_ERR_OK != rc) {
       if (SDB_NET_CANNOT_CONNECT != rc) {
         switch (rc) {
