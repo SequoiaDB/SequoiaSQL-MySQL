@@ -30,7 +30,8 @@ class Sdb_cl {
 
   ~Sdb_cl();
 
-  int init(Sdb_conn *connection, char *cs_name, char *cl_name);
+  int init(Sdb_conn *connection, const char *cs_name, const char *cl_name,
+           const bool check_exist);
 
   bool is_transaction_on();
 
