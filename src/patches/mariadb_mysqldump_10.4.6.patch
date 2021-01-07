@@ -1,5 +1,5 @@
 diff --git a/mariadb-v10.4.6/mysqldump.c b/mariadb-v10.4.6/mysqldump.c
-index 38db869..eb90108 100644
+index 38db869..0185aa2 100644
 --- a/mariadb-v10.4.6/mysqldump.c
 +++ b/mariadb-v10.4.6/mysqldump.c
 @@ -115,6 +115,7 @@ static my_bool  verbose= 0, opt_no_create_info= 0, opt_no_data= 0, opt_no_data_m
@@ -20,7 +20,122 @@ index 38db869..eb90108 100644
    {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
  };
  
-@@ -6178,6 +6182,12 @@ int main(int argc, char **argv)
+@@ -3645,6 +3649,45 @@ static char *alloc_query_str(size_t size)
+   return query;
+ }
+ 
++static void dump_table(char *table, char *db);
++static my_bool dump_table_or_sequence(char *table, char *db, const char *type)
++{
++  char ignore_flag;
++  const char *table_type = NULL;
++  char table_name[NAME_LEN]={0};
++  char get_table_type_query[NAME_LEN + 100]={0};
++  uint num_fields;
++  my_bool match = FALSE;
++  MYSQL_RES *query_result = NULL;
++  MYSQL_ROW row;
++  DBUG_ENTER("dump_table");
++
++  // get table type
++  my_snprintf(get_table_type_query, NAME_LEN + 100,
++              "SELECT table_type FROM INFORMATION_SCHEMA.TABLES "
++              "WHERE table_schema = '%s' AND table_name='%s'", db, table);
++  if (mysql_query(mysql, get_table_type_query))
++    DBUG_RETURN(match);
++
++  if (!(query_result= mysql_store_result(mysql)))
++    DBUG_RETURN(match);
++
++  if (!(row= mysql_fetch_row(query_result)))
++    DBUG_RETURN(match);
++
++  table_type = (char*) row[0];
++
++  if (strcmp(table_type, "VIEW") == 0)
++    DBUG_RETURN(match);
++
++  if (strcmp(table_type, type) == 0)
++  {
++    match = TRUE;
++    dump_table(table, db);
++  }
++  DBUG_RETURN(match);
++}
++
+ 
+ /*
+ 
+@@ -4169,7 +4212,13 @@ static char *getTableName(int reset)
+ 
+   if (!get_table_name_result)
+   {
+-    if (!(get_table_name_result= mysql_list_tables(mysql,NullS)))
++    char buff[NAME_LEN + 255];
++    snprintf(buff, NAME_LEN + 255, "SELECT TABLE_NAME, TABLE_TYPE FROM "
++                                   "information_schema.TABLES WHERE "
++                                   "TABLE_SCHEMA = database() ORDER BY TABLE_TYPE DESC");
++    if (mysql_query(mysql, buff))
++      return (NULL);
++    if (!(get_table_name_result= mysql_store_result(mysql)))
+       return(NULL);
+   }
+   if ((row= mysql_fetch_row(get_table_name_result)))
+@@ -5100,11 +5149,13 @@ static int dump_selected_tables(char *db, char **table_names, int tables)
+       DBUG_RETURN(1);
+     }
+   }
+-  /* Dump each selected table */
++  /* Dump each selected sequence */
+   for (pos= dump_tables; pos < end; pos++)
+   {
+     DBUG_PRINT("info",("Dumping table %s", *pos));
+-    dump_table(*pos, db);
++    if (!dump_table_or_sequence(*pos, db, "SEQUENCE"))
++       continue;
++
+     if (opt_dump_triggers &&
+         mysql_get_server_version(mysql) >= 50009)
+     {
+@@ -5140,6 +5191,37 @@ static int dump_selected_tables(char *db, char **table_names, int tables)
+     }
+   }
+ 
++  /* Dump each selected tables */
++  for (pos= dump_tables; pos < end; pos++)
++  {
++    DBUG_PRINT("info",("Dumping table %s", *pos));
++    if (!dump_table_or_sequence(*pos, db, "BASE TABLE"))
++       continue;
++
++    if (opt_dump_triggers &&
++        mysql_get_server_version(mysql) >= 50009)
++    {
++      if (dump_triggers_for_table(*pos, db))
++      {
++        if (path)
++          my_fclose(md_result_file, MYF(MY_WME));
++        if (!ignore_errors)
++          free_root(&glob_root, MYF(0));
++        maybe_exit(EX_MYSQLERR);
++      }
++    }
++    if (opt_single_transaction && mysql_get_server_version(mysql) >= 50500)
++    {
++      verbose_msg("-- Rolling back to savepoint sp...\n");
++      if (mysql_query_with_error_report(mysql, 0, "ROLLBACK TO SAVEPOINT sp"))
++      {
++        if (!ignore_errors)
++          free_root(&glob_root, MYF(0));
++        maybe_exit(EX_MYSQLERR);
++      }
++    }
++  }
++
+   if (opt_single_transaction && mysql_get_server_version(mysql) >= 50500)
+   {
+     verbose_msg("-- Releasing savepoint...\n");
+@@ -6178,6 +6260,12 @@ int main(int argc, char **argv)
    if (opt_single_transaction && do_unlock_tables(mysql)) /* unlock but no commit! */
      goto err;
  
