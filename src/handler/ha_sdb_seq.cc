@@ -96,6 +96,17 @@ int ha_sdb_seq::create(const char *name, TABLE *form,
     goto done;
   }
 
+  if (thd_sql_command(ha_thd()) == SQLCOM_ALTER_TABLE) {
+    TABLE_SHARE *s = sdb_lex_first_select(ha_thd())->table_list.first->table->s;
+    if (s->db_type() != create_info->db_type) {
+      rc = HA_ERR_WRONG_COMMAND;
+      my_printf_error(
+          rc, "Can't support modifying storage engine of sequence table",
+          MYF(0));
+      goto error;
+    }
+  }
+
   rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
   if (0 != rc) {
@@ -571,6 +582,19 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
     goto done;
+  }
+
+  if (thd_sql_command(ha_thd()) == SQLCOM_ALTER_TABLE) {
+    TABLE *src_table = sdb_lex_first_select(ha_thd())->table_list.first->table;
+    Table_specification_st *create_info = &ha_thd()->lex->create_info;
+    if (src_table && src_table->s && create_info &&
+        src_table->s->db_type() != create_info->db_type) {
+      rc = HA_ERR_WRONG_COMMAND;
+      my_printf_error(
+          rc, "Can't support modifying storage engine of sequence table",
+          MYF(0));
+      goto error;
+    }
   }
 
   rc = check_sdb_in_thd(ha_thd(), &conn, true);
