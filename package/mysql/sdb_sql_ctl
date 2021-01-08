@@ -264,6 +264,11 @@ function add_inst()
       SQL_LOG=$(pwd)/$SQL_LOG      #relative path
    fi
    
+   if [[ $SQL_LOG == $SQL_DATA* ]]; then
+      echo "ERROR: The log file path cannot be specified in the data directory." >&2
+      exit 5
+   fi
+   
    if [ ! -z $INST_PORT ]; then
       PORT=$INST_PORT
       check_svcname_para
