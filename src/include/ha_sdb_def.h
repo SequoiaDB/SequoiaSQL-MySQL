@@ -127,6 +127,7 @@
 #define SDB_FIELD_UNIQUE "Unique"
 #define SDB_FIELD_ENFORCED "Enforced"
 #define SDB_FIELD_NOT_NULL "NotNull"
+#define SDB_FIELD_NOT_ARRAY "NotArray"
 #define SDB_FIELD_UNIQUE2 "unique"
 #define SDB_FIELD_ENFORCED2 "enforced"
 #define SDB_FIELD_KEY "key"

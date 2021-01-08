@@ -2510,7 +2510,9 @@ int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
     bool unique = false;
     bool enforced = false;
     bool not_null = false;
+    bool not_array = false ;
     bool support_not_null = true;
+    bool support_not_array = false;
     bson::BSONElement key_ele;
 
     index_def_ele = infos[i].getField(SDB_FIELD_IDX_DEF);
@@ -2556,10 +2558,23 @@ int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
       support_not_null = false;
     }
 
+    ele = index_def.getField(SDB_FIELD_NOT_ARRAY);
+    if (ele.type() != bson::EOO) {
+      not_array = ele.booleanSafe();
+      support_not_array = true;
+    } else {
+      support_not_array = false;
+    }
+
     if (support_not_null) {
       builder.append(SDB_FIELD_UNIQUE, unique);
       builder.append(SDB_FIELD_ENFORCED, enforced);
       builder.append(SDB_FIELD_NOT_NULL, not_null);
+      if(support_not_array)
+      {
+        // if supoort notArray, mysql createIndex notArray should true
+        builder.append(SDB_FIELD_NOT_ARRAY, not_array);
+      }
       rc = dst_cl.create_index(key, name, builder.obj());
       if (rc != 0) {
         goto error;

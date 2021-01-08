@@ -551,6 +551,10 @@ void Sdb_cl::set_version(int version) {
   m_cl.setVersion(version);
 }
 
+Sdb_conn* Sdb_cl::get_conn() {
+  return m_conn;
+}
+
 int Sdb_cl::get_version() {
   return m_cl.getVersion();
 }

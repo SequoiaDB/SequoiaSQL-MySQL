@@ -77,6 +77,52 @@ int sdb_get_key_direction(ha_rkey_function find_flag) {
   }
 }
 
+// SequoiaDB doesn't support notArray version
+bool is_not_array_supported(Sdb_conn *conn) {
+  static bool has_cached = false;
+  static bool cached_result = true;
+
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+
+  if (has_cached) {
+    supported = cached_result;
+    goto done;
+  }
+
+  if (NULL == conn) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(current_thd));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 2) ||              // 3.x < 3.2
+      (3 == major && 2 == minor && fix < 8) ||  // 3.2.x < 3.2.8
+      (3 == major && 4 == minor && fix < 2) ||  // 3.4.x < 3.4.2
+      (5 == major && 0 == minor && fix < 2) ) { // 5.0.x < 5.0.2
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+  cached_result = supported;
+  has_cached = true;
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id,
                      bool support_not_null) {
   int rc = 0;
@@ -123,6 +169,10 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id,
     if (support_not_null) {
       options_builder.append(SDB_FIELD_UNIQUE, is_unique);
       options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
+      if( is_not_array_supported(cl.get_conn()) )
+      {
+         options_builder.append(SDB_FIELD_NOT_ARRAY, true);
+      }
       options = options_builder.obj();
       rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
     } else {
