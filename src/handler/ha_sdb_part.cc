@@ -1163,7 +1163,7 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       goto error;
     }
 
-    rc = conn->get_cl(db_name, table_name, cl);
+    rc = conn->get_cl(db_name, table_name, cl, ha_is_open());
     if (rc != 0) {
       goto error;
     }
@@ -1204,7 +1204,9 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       e.what());
 
   // update cached cata version, it will be written into sequoiadb
-  ha_set_cata_version(db_name, table_name, cl.get_version());
+  if (ha_is_open()) {
+    ha_set_cata_version(db_name, table_name, cl.get_version());
+  }
 done:
   // set 'execute_only_in_mysql' to true for 'create table as select ...'
   if (0 == rc && SQLCOM_CREATE_TABLE == thd_sql_command(ha_thd()) &&
@@ -1876,7 +1878,6 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
 
   int rc = 0;
   Sdb_conn *conn = NULL;
-  Sdb_cl mcl;
   Sdb_cl scl;
   bson::BSONObj mcl_options;
   bson::BSONObj scl_options;
@@ -1916,11 +1917,6 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
     goto error;
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
-
-  rc = conn->get_cl(db_name, table_name, mcl);
-  if (rc != 0) {
-    goto error;
-  }
 
   rc = get_cl_options(table, create_info, mcl_options, partition_options,
                       explicit_not_auto_partition);
@@ -1970,8 +1966,6 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
     goto error;
   }
 
-  // update cached cata version, it will be written into sequoiadb
-  ha_set_cata_version(db_name, table_name, mcl.get_version());
 done:
   DBUG_RETURN(rc);
 error:
@@ -2073,7 +2067,7 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  rc = conn->get_cl(db_name, table_name, mcl);
+  rc = conn->get_cl(db_name, table_name, mcl, ha_is_open());
   if (rc != 0) {
     goto error;
   }
@@ -2102,7 +2096,9 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   }
 
   // update cached cata version, it will be written into sequoiadb
-  ha_set_cata_version(db_name, table_name, mcl.get_version());
+  if (ha_is_open()) {
+    ha_set_cata_version(db_name, table_name, mcl.get_version());
+  }
 done:
   DBUG_RETURN(rc);
 error:

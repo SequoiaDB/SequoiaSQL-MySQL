@@ -1167,21 +1167,6 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto done;
   }
 
-  // Get collection to check if the collection is available.
-  rc = connection->get_cl(db_name, table_name, cl);
-  if ((SDB_DMS_CS_NOTEXIST == (SDB_ERR_INNER_CODE_BEGIN - rc) ||
-       SDB_DMS_NOTEXIST == (SDB_ERR_INNER_CODE_BEGIN - rc)) &&
-      thd_sql_command(ha_thd()) == SQLCOM_CREATE_TABLE) {
-    rc = SDB_ERR_OK;
-    goto error;
-  }
-
-  if (0 != rc) {
-    SDB_LOG_ERROR("Collection[%s.%s] is not available. rc: %d", db_name,
-                  table_name, rc);
-    goto error;
-  }
-
 #ifdef IS_MARIADB
   if (TABLE_TYPE_UNDEFINE == share->table_type) {
     bson::BSONObj obj;
@@ -4729,7 +4714,9 @@ int ha_sdb::ensure_collection(THD *thd) {
       goto error;
     }
 
-    conn->get_cl(db_name, table_name, *collection);
+    // Only check cl existence when HA is open.
+    // Because HA DML retry relies on the cl version.
+    rc = conn->get_cl(db_name, table_name, *collection, ha_is_open());
     if (0 != rc) {
       delete collection;
       collection = NULL;
@@ -5675,7 +5662,7 @@ error:
   goto done;
 set_cata_version:
   if (ha_is_open()) {
-    rc = conn->get_cl(new_db_name, new_table_name, cl);
+    rc = conn->get_cl(new_db_name, new_table_name, cl, true);
     if (0 != rc) {
       goto error;
     }
@@ -6428,8 +6415,9 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
         goto error;
       }
 
+      // if HA is open, prepare the cl to get version
       if (!create_temporary) {
-        rc = conn->get_cl(db_name, table_name, cl);
+        rc = conn->get_cl(db_name, table_name, cl, ha_is_open());
         if (0 != rc) {
           goto error;
         }
@@ -6503,7 +6491,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   SDB_EXCEPTION_CATCHER(rc, "Failed to create table:%s.%s, exception:%s",
                         db_name, table_name, e.what());
 
-  rc = conn->get_cl(db_name, table_name, cl);
+  rc = conn->get_cl(db_name, table_name, cl, ha_is_open());
   if (0 != rc) {
     goto error;
   }
@@ -6518,7 +6506,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   }
 
 done:
-  if (0 == rc && !create_temporary && !has_copy &&
+  if (0 == rc && !create_temporary && !has_copy && ha_is_open() &&
       !sdb_execute_only_in_mysql(ha_thd())) {
     // update cached cata version, it will be written into sequoiadb
     ha_set_cata_version(db_name, table_name, cl.get_version());

@@ -451,11 +451,12 @@ int Sdb_conn::rollback_transaction() {
   DBUG_RETURN(0);
 }
 
-int Sdb_conn::get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl) {
+int Sdb_conn::get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
+                     const bool check_exist) {
   int rc = SDB_ERR_OK;
   cl.close();
 
-  rc = cl.init(this, cs_name, cl_name);
+  rc = cl.init(this, cs_name, cl_name, check_exist);
   if (rc != SDB_ERR_OK) {
     goto error;
   }

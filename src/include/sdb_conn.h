@@ -193,7 +193,8 @@ class Sdb_conn {
 
   inline bool is_transaction_on() { return m_transaction_on; }
 
-  int get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl);
+  int get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
+             const bool check_exist = false);
 
   int create_cl(const char *cs_name, const char *cl_name,
                 const bson::BSONObj &options = SDB_EMPTY_BSON,

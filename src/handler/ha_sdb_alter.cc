@@ -1972,7 +1972,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     goto error;
   }
 
-  rc = conn->get_cl(db_name, table_name, cl);
+  rc = conn->get_cl(db_name, table_name, cl, ha_is_open());
   if (0 != rc) {
     SDB_LOG_ERROR("Collection[%s.%s] is not available. rc: %d", db_name,
                   table_name, rc);

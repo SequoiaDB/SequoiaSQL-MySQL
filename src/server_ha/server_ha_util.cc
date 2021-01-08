@@ -45,7 +45,7 @@ int ha_get_instance_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl);
+  rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating instance object state table '%s'",
                           HA_INSTANCE_OBJECT_STATE_CL);
@@ -93,7 +93,7 @@ int ha_get_instance_state_cl(Sdb_conn &sdb_conn, const char *group_name,
   bson::BSONObj cl_options, key_options, index_ref;
   char err_buf[HA_BUF_LEN] = {0};
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_STATE_CL, cl);
+  rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_STATE_CL, cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating instance state table '%s'",
                           HA_INSTANCE_STATE_CL);
@@ -149,7 +149,7 @@ int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_OBJECT_STATE_CL, cl);
+  rc = sdb_conn.get_cl((char *)group_name, HA_OBJECT_STATE_CL, cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating object state table '%s'",
                           HA_OBJECT_STATE_CL);
@@ -192,7 +192,7 @@ int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name,
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_LOCK_CL, lock_cl);
+  rc = sdb_conn.get_cl((char *)group_name, HA_LOCK_CL, lock_cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating lock table '%s'", HA_LOCK_CL);
     rc = sdb_conn.create_cl((char *)group_name, HA_LOCK_CL, cl_options);
@@ -229,7 +229,7 @@ int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name,
                        Sdb_cl &registry_cl) {
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
-  rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl);
+  rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl, true);
 
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating registry table '%s:%s'", HA_GLOBAL_INFO,
@@ -281,7 +281,7 @@ int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_LOG_CL, pending_log_cl);
+  rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_LOG_CL, pending_log_cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating '%s:%s'", group_name,
                           HA_PENDING_LOG_CL);
@@ -332,7 +332,7 @@ int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
   char err_buf[HA_BUF_LEN] = {0};
 
   rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_OBJECT_CL,
-                       pending_object_cl);
+                       pending_object_cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating '%s:%s'", group_name,
                           HA_PENDING_OBJECT_CL);
