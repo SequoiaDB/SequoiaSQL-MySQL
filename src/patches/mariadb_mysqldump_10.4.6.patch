@@ -1,5 +1,5 @@
 diff --git a/mariadb-v10.4.6/mysqldump.c b/mariadb-v10.4.6/mysqldump.c
-index 38db869..0185aa2 100644
+index 38db869..805aa19 100644
 --- a/mariadb-v10.4.6/mysqldump.c
 +++ b/mariadb-v10.4.6/mysqldump.c
 @@ -115,6 +115,7 @@ static my_bool  verbose= 0, opt_no_create_info= 0, opt_no_data= 0, opt_no_data_m
@@ -74,7 +74,7 @@ index 38db869..0185aa2 100644
 +    char buff[NAME_LEN + 255];
 +    snprintf(buff, NAME_LEN + 255, "SELECT TABLE_NAME, TABLE_TYPE FROM "
 +                                   "information_schema.TABLES WHERE "
-+                                   "TABLE_SCHEMA = database() ORDER BY TABLE_TYPE DESC");
++                                   "TABLE_SCHEMA = database() GROUP BY TABLE_TYPE DESC, TABLE_NAME");
 +    if (mysql_query(mysql, buff))
 +      return (NULL);
 +    if (!(get_table_name_result= mysql_store_result(mysql)))
