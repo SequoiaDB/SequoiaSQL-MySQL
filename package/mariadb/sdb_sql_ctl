@@ -76,7 +76,7 @@ function check_svcname_available()
    local inst_port=$1
    local sql_log=$2
    
-   netstat -nlp | grep -w $inst_port
+   lsof -i:$inst_port
    local rc=$?
    test $rc -eq 0 && exec_cmd_with_print "echo \"ERROR: instance port $inst_port is already in use\"" "$sql_log"
    test $rc -eq 0 && { echo "ERROR: Fail to check svcname available, please verify log $sql_log" >&2 && return 11; }
