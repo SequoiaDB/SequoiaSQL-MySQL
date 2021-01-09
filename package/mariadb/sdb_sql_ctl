@@ -800,6 +800,30 @@ function change_configure()
       change_configure_online "$INST_NAME" "sequoiadb_alter_table_overhead_threshold" "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD"
    fi
    
+   if [ ! -z $SDB_LOCK_WAIT_TIMEOUT ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_lock_wait_timeout" "$SDB_LOCK_WAIT_TIMEOUT"
+   fi
+   
+   if [ ! -z $SDB_USE_ROLLBACK_SEGMENTS ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_use_rollback_segments" "$SDB_USE_ROLLBACK_SEGMENTS"
+   fi
+   
+   if [ ! -z $SDB_STATS_MODE ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_stats_mode" "$SDB_STATS_MODE"
+   fi
+   
+   if [ ! -z $SDB_STATS_SAMPLE_NUM ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_stats_sample_num" "$SDB_STATS_SAMPLE_NUM"
+   fi
+   
+   if [ ! -z $SDB_STATS_SAMPLE_PERCENT ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_stats_sample_percent" "$SDB_STATS_SAMPLE_PERCENT"
+   fi
+   
+   if [ ! -z $SDB_STATS_CACHE ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_stats_cache" "$SDB_STATS_CACHE"
+   fi
+   
    echo "ok"
 }
 
@@ -824,7 +848,8 @@ function build_help()
    echo "  ${ME} status     [INSTNAME]"
    echo "  ${ME} chconf     <INSTNAME> [-p PORT]                            [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE]
 [--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL] [--sdb-token=TOKEN] [--sdb-cipherfile=PATH] [--sdb-error-level=ENUM] [--sdb-replica-size=SIZE] [--sdb-use-transaction=BOOL] [--sdb-optimizer-options=SET]
-[--sdb-rollback-on-timeout=BOOL] [--sdb-execute-only-in-mysql=BOOL] [--sdb-selector-pushdown-threshold=THRESHOLD] [--sdb-alter-table-overhead-threshold=THRESHOLD]"
+[--sdb-rollback-on-timeout=BOOL] [--sdb-execute-only-in-mysql=BOOL] [--sdb-selector-pushdown-threshold=THRESHOLD] [--sdb-alter-table-overhead-threshold=THRESHOLD] [--sdb-lock-wait-timeout=TIMEOUT] [--sdb-use-rollback-segments=BOOL]
+[--sdb-stats-mode=MODE] [--sdb-stats-sample-num=NUM] [--sdb-stats-sample-percent=DOUBLE] [--sdb-stats-cache=BOOL]"
    echo ""
    echo "Options:"
    echo "  -D DATADIR                                      location of the database storage area"
@@ -849,17 +874,23 @@ function build_help()
    echo "  --sdb-error-level=ENUM                          Sequoiadb error level for updating sharding key error"
    echo "  --sdb-replica-size=SIZE                         Replica size of write operations"
    echo "  --sdb-use-transaction=BOOL                      Enable transaction of SequoiaDB"
-   echo "  --sdb-optimizer-options=SET                     Optimizer_options[=option[,option...]], where option can be 'direct_count', 'direct_delete', 'direct_update'"
+   echo "  --sdb-optimizer-options=SET                     Optimizer_options[=option[,option...]], where option can be 'direct_count', 'direct_delete', 'direct_update', 'direct_sort', 'direct_limit'"
    echo "  --sdb-rollback-on-timeout=BOOL                  Roll back the complete transaction on lock wait timeout"
    echo "  --sdb-execute-only-in-mysql=BOOL                Commands execute only in mysql"
    echo "  --sdb-selector-pushdown-threshold=THRESHOLD     The threshold of selector push down to SequoiaDB"
    echo "  --sdb-alter-table-overhead-threshold=THRESHOLD  Overhead threshold of table alteration. When count of records exceeds it, the alteration that needs to update the full table will be prohibited"
+   echo "  --sdb-lock-wait-timeout=TIMEOUT                 Timeout in seconds an InnoDB transaction may wait for a lock before being rolled back. Values above 100000000 disable the timeout."
+   echo "  --sdb-use-rollback-segments=BOOL                Whether use rollback segements in sequoiadb transaction or not. (Default: ON) (Defaults to on; use --skip-sequoiadb-use-rollback-segments to disable.)"
+   echo "  --sdb-stats-mode=MODE                           Mode of analysis. 1: sampling analysis; 2. full data analysis; 3. generate default statistics; 4. load statistics into the cache; 5. clear cached statistics; (Default: 1)"
+   echo "  --sdb-stats-sample-num=NUM                      Number of sample records for index statistics. (Default: 200)"
+   echo "  --sdb-stats-sample-percent=DOUBLE               Percentage of sample records for index statistics. (Default: 0.0)"
+   echo "  --sdb-stats-cache=BOOL                          Load statistics information into cache from SequoiaDB. Default: ON) (Defaults to on; use --skip-sequoiadb-stats-cache to disable.)"
    echo "  -v, --version                                   output version information, then exit"
 }
 #Parse command line parameters
 test $# -eq 0 && { build_help && exit 64; }
 
-ARGS=`getopt -o hvD:l:p:s:f:a:w: --long help,version,print,baklog,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-debug-log:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold: -n "${ME}" -- "$@"`
+ARGS=`getopt -o hvD:l:p:s:f:a:w: --long help,version,print,baklog,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log: -n "${ME}" -- "$@"`
 ret=$?
 test $ret -ne 0 && exit $ret
 
@@ -988,6 +1019,31 @@ do
                                               check_num_para "SDB-ALTER-TABLE-OVERHEAD-THRESHOLD" "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD"
                                               shift 2
                                               ;;
+      --sdb-lock-wait-timeout )               SDB_LOCK_WAIT_TIMEOUT=$2
+                                              check_num_para "SDB-LOCK-WAIT-TIMEOUT" "$SDB_LOCK_WAIT_TIMEOUT"
+                                              shift 2
+                                              ;;
+      --sdb-use-rollback-segments )           SDB_USE_ROLLBACK_SEGMENTS=$2
+                                              test $SDB_USE_ROLLBACK_SEGMENTS == "TRUE" -o $SDB_USE_ROLLBACK_SEGMENTS == "FALSE" -o $SDB_USE_ROLLBACK_SEGMENTS == "true" -o $SDB_USE_ROLLBACK_SEGMENTS == "false" -o $SDB_USE_ROLLBACK_SEGMENTS == "ON" -o $SDB_USE_ROLLBACK_SEGMENTS == "OFF" -o $SDB_USE_ROLLBACK_SEGMENTS == "on" -o $SDB_USE_ROLLBACK_SEGMENTS == "off" || \
+                                              err_para BOOL $SDB_USE_ROLLBACK_SEGMENTS
+                                              shift 2
+                                              ;;
+      --sdb-stats-mode )                      SDB_STATS_MODE=$2
+                                              check_num_para "SDB-STATS-MODE" "$SDB_STATS_MODE"
+                                              shift 2
+                                              ;;
+      --sdb-stats-sample-num )                SDB_STATS_SAMPLE_NUM=$2
+                                              check_num_para "SDB-STATS-SAMPLE-NUM" "$SDB_STATS_SAMPLE_NUM"
+                                              shift 2
+                                              ;;
+      --sdb-stats-sample-percent )            SDB_STATS_SAMPLE_PERCENT=$2
+                                              shift 2
+                                              ;;
+      --sdb-stats-cache )                     SDB_STATS_CACHE=$2
+                                              test $SDB_STATS_CACHE == "TRUE" -o $SDB_STATS_CACHE == "FALSE" -o $SDB_STATS_CACHE == "true" -o $SDB_STATS_CACHE == "false" -o $SDB_STATS_CACHE == "ON" -o $SDB_STATS_CACHE == "OFF" -o $SDB_STATS_CACHE == "on" -o $SDB_STATS_CACHE == "off" || \
+                                              err_para BOOL $SDB_STATS_CACHE
+                                              shift 2
+                                              ;;
       --sdb-debug-log )                       SDB_DEBUG_LOG=$2
                                               test $SDB_DEBUG_LOG == "TRUE" -o $SDB_DEBUG_LOG == "FALSE" -o $SDB_DEBUG_LOG == "true" -o $SDB_DEBUG_LOG == "false" -o $SDB_DEBUG_LOG == "ON" -o $SDB_DEBUG_LOG == "OFF" -o $SDB_DEBUG_LOG == "on" -o $SDB_DEBUG_LOG == "off" || \
                                               err_para BOOL $SDB_DEBUG_LOG
@@ -1032,7 +1088,9 @@ case "$1" in
                     -a -z "$SDB_USE_BULK_INSERT" -a -z "$SDB_BULK_INSERT_SIZE" -a -z "$SDB_USE_AUTOCOMMIT" \
                     -a -z "$SDB_DEBUG_LOG"  -a -z "$SDB_TOKEN" -a -z "$SDB_CIPHERFILE" -a -z "$SDB_ERROR_LEVEL" \
                     -a -z "$SDB_REPLICA_SIZE" -a -z "$SDB_USE_TRANSACTION" -a -z "$SDB_OPTIMIZER_OPTIONS" -a -z "$SDB_ROLLBACK_ON_TIMEOUT" \
-                    -a -z "$SDB_EXECUTE_ONLY_IN_MYSQL" -a -z "$SDB_SELECTOR_PUSHDOWN_THRESHOLD" -a -z "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD" ]; then
+                    -a -z "$SDB_EXECUTE_ONLY_IN_MYSQL" -a -z "$SDB_SELECTOR_PUSHDOWN_THRESHOLD" -a -z "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD" \
+                    -a -z "$SDB_LOCK_WAIT_TIMEOUT" -a -z "$SDB_USE_ROLLBACK_SEGMENTS" -a -z "$SDB_STATS_MODE" -a -z "$SDB_STATS_SAMPLE_NUM" \
+                    -a -z "$SDB_STATS_SAMPLE_PERCENT" -a -z "$SDB_STATS_CACHE"]; then
                   echo "${ME}: No configure specified." 
                   exit 0
                   shift 1
