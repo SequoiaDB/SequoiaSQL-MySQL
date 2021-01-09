@@ -133,7 +133,7 @@ class Sdb_cl {
 
   int get_index_stat(const char *index_name, bson::BSONObj &obj);
 
-  Sdb_conn *get_conn() ;
+  Sdb_conn *get_conn();
 
   void set_version(int version);
   int get_version();

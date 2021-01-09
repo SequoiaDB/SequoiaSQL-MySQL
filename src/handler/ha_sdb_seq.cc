@@ -531,17 +531,36 @@ error:
   goto done;
 }
 
+longlong sdb_increment_value(longlong min_value, longlong max_value,
+                             longlong increment, longlong value) {
+  if (increment > 0) {
+    if (value + increment > max_value || value > max_value - increment)
+      value = max_value + 1;
+    else
+      value += increment;
+  } else {
+    if (value + increment < min_value || value < min_value - increment)
+      value = min_value - 1;
+    else
+      value += increment;
+  }
+  return value;
+}
+
 int ha_sdb_seq::rnd_next(uchar *buf) {
   DBUG_ENTER("ha_sdb_seq::rnd_next()");
 
   int rc = SDB_OK;
+  longlong min_value = 0;
+  longlong max_value = 0;
+  longlong increment = 0;
+  longlong current_value = 0;
   Sdb_conn *conn = NULL;
   my_bitmap_map *old_map = NULL;
   bson::BSONObj obj;
   bson::BSONObj condition;
   bson::BSONObj selected;
   bson::BSONObjBuilder cond_builder;
-  SEQUENCE *seq = table->s->sequence;
 
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
@@ -608,25 +627,21 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
     while (it.more()) {
       bson::BSONElement elem_tmp = it.next();
       const char *field_name = elem_tmp.fieldName();
-      longlong nr = -1;
       if (0 == strcmp(field_name, SDB_FIELD_CURRENT_VALUE)) {
-        nr = elem_tmp.numberLong();
-        if (!obj.getField(SDB_FIELD_INITIAL).booleanSafe()) {
-          nr = seq->increment_value(nr);
-        }
-        table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->store(nr, false);
-      } else if (0 == strcmp(field_name, SDB_FIELD_MIN_VALUE)) {
-        longlong nr = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_MIN_VALUE]->store(nr, false);
+        current_value = elem_tmp.numberLong();
+      }
+      if (0 == strcmp(field_name, SDB_FIELD_MIN_VALUE)) {
+        min_value = elem_tmp.numberLong();
+        table->field[SEQUENCE_FIELD_MIN_VALUE]->store(min_value, false);
       } else if (0 == strcmp(field_name, SDB_FIELD_MAX_VALUE)) {
-        longlong nr = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_MAX_VALUE]->store(nr, false);
+        max_value = elem_tmp.numberLong();
+        table->field[SEQUENCE_FIELD_MAX_VALUE]->store(max_value, false);
       } else if (0 == strcmp(field_name, SDB_FIELD_START_VALUE)) {
         longlong nr = elem_tmp.numberLong();
         table->field[SEQUENCE_FIELD_START]->store(nr, false);
       } else if (0 == strcmp(field_name, SDB_FIELD_INCREMENT)) {
-        longlong nr = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_INCREMENT]->store(nr, false);
+        increment = elem_tmp.numberLong();
+        table->field[SEQUENCE_FIELD_INCREMENT]->store(increment, false);
       } else if (0 == strcmp(field_name, SDB_FIELD_ACQUIRE_SIZE)) {
         longlong nr = elem_tmp.numberLong();
         table->field[SEQUENCE_FIELD_CACHE]->store(nr, false);
@@ -638,6 +653,11 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
         table->field[SEQUENCE_FIELD_CYCLED_ROUND]->store(nr, false);
       }
     }
+    if (!obj.getField(SDB_FIELD_INITIAL).booleanSafe()) {
+      current_value =
+          sdb_increment_value(min_value, max_value, increment, current_value);
+    }
+    table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->store(current_value, false);
   }
   dbug_tmp_restore_column_map(table->write_set, old_map);
 

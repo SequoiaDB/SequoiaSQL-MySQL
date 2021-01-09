@@ -2510,7 +2510,7 @@ int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
     bool unique = false;
     bool enforced = false;
     bool not_null = false;
-    bool not_array = false ;
+    bool not_array = false;
     bool support_not_null = true;
     bool support_not_array = false;
     bson::BSONElement key_ele;
@@ -2570,8 +2570,7 @@ int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
       builder.append(SDB_FIELD_UNIQUE, unique);
       builder.append(SDB_FIELD_ENFORCED, enforced);
       builder.append(SDB_FIELD_NOT_NULL, not_null);
-      if(support_not_array)
-      {
+      if (support_not_array) {
         // if supoort notArray, mysql createIndex notArray should true
         builder.append(SDB_FIELD_NOT_ARRAY, not_array);
       }
