@@ -264,7 +264,7 @@ function add_inst()
       SQL_LOG=$(pwd)/$SQL_LOG      #relative path
    fi
    
-   if [[ $SQL_LOG == $SQL_DATA* ]]; then
+   if [[ $SQL_LOG == ${SQL_DATA%*/}"/"* ]]; then
       echo "ERROR: The log file path cannot be specified in the data directory." >&2
       exit 5
    fi
@@ -293,6 +293,9 @@ function add_inst()
 
    #initdb
    test `whoami` == "root" && local user="$SQL_USER" || local user=`whoami`
+   exec_cmd "mkdir -p `dirname $SQL_LOG`"
+   test $? -ne 0 && { echo "ERROR: Fail to create SQLLOG $SQL_LOG with $user" >&2 && exit 5; }
+   
    exec_cmd_with_print "mkdir -p $SQL_DATA" "$SQL_LOG"
    test $? -ne 0 && { echo "ERROR: Fail to mkdir SQLDATA $SQL_DATA with $user" >&2 && exit 5; }
    
