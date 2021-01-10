@@ -248,11 +248,20 @@ class Sdb_conn {
   }
 
   inline char *get_err_msg() { return errmsg; }
+
   inline void clear_err_msg() { errmsg[0] = '\0'; }
 
   inline Sdb_session_attrs *get_session_attrs() { return &session_attrs; }
 
   int set_my_session_attr();
+
+  void get_version(int &major, int &minor, int &fix) {
+    uint8 major_ver = 0, minor_ver = 0, fix_ver = 0;
+    m_connection.getVersion(major_ver, minor_ver, fix_ver);
+    major = major_ver;
+    minor = minor_ver;
+    fix = fix_ver;
+  }
 
  private:
   int retry(boost::function<int()> func);
