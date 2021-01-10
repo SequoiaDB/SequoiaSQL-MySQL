@@ -2098,20 +2098,12 @@ done:
 
 // SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
 bool ha_sdb::is_field_rule_supported() {
-  static bool has_cached = false;
-  static bool cached_result = true;
-
   bool supported = false;
   int major = 0;
   int minor = 0;
   int fix = 0;
   int rc = 0;
   Sdb_conn *conn = NULL;
-
-  if (has_cached) {
-    supported = cached_result;
-    goto done;
-  }
 
   rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (rc != 0) {
@@ -2133,9 +2125,6 @@ bool ha_sdb::is_field_rule_supported() {
     supported = true;
   }
 
-  cached_result = supported;
-  has_cached = true;
-
 done:
   return supported;
 error:
@@ -2145,20 +2134,12 @@ error:
 
 // SequoiaDB doesn't support "$inc" with options(Min, Max...) before v3.2.4
 bool ha_sdb::is_inc_rule_supported() {
-  static bool has_cached = false;
-  static bool cached_result = true;
-
   bool supported = false;
   int major = 0;
   int minor = 0;
   int fix = 0;
   int rc = 0;
   Sdb_conn *conn = NULL;
-
-  if (has_cached) {
-    supported = cached_result;
-    goto done;
-  }
 
   rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (rc != 0) {
@@ -2178,9 +2159,6 @@ bool ha_sdb::is_inc_rule_supported() {
   } else {
     supported = true;
   }
-
-  cached_result = supported;
-  has_cached = true;
 
 done:
   return supported;

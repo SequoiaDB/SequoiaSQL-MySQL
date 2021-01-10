@@ -51,19 +51,11 @@ int sdb_get_key_direction(ha_rkey_function find_flag) {
 
 // SequoiaDB doesn't support notArray version
 bool is_not_array_supported(Sdb_conn *conn) {
-  static bool has_cached = false;
-  static bool cached_result = true;
-
   bool supported = false;
   int major = 0;
   int minor = 0;
   int fix = 0;
   int rc = 0;
-
-  if (has_cached) {
-    supported = cached_result;
-    goto done;
-  }
 
   if (NULL == conn) {
     goto error;
@@ -84,9 +76,6 @@ bool is_not_array_supported(Sdb_conn *conn) {
   } else {
     supported = true;
   }
-
-  cached_result = supported;
-  has_cached = true;
 
 done:
   return supported;
