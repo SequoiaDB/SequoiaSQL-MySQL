@@ -1090,7 +1090,7 @@ case "$1" in
                     -a -z "$SDB_REPLICA_SIZE" -a -z "$SDB_USE_TRANSACTION" -a -z "$SDB_OPTIMIZER_OPTIONS" -a -z "$SDB_ROLLBACK_ON_TIMEOUT" \
                     -a -z "$SDB_EXECUTE_ONLY_IN_MYSQL" -a -z "$SDB_SELECTOR_PUSHDOWN_THRESHOLD" -a -z "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD" \
                     -a -z "$SDB_LOCK_WAIT_TIMEOUT" -a -z "$SDB_USE_ROLLBACK_SEGMENTS" -a -z "$SDB_STATS_MODE" -a -z "$SDB_STATS_SAMPLE_NUM" \
-                    -a -z "$SDB_STATS_SAMPLE_PERCENT" -a -z "$SDB_STATS_CACHE"]; then
+                    -a -z "$SDB_STATS_SAMPLE_PERCENT" -a -z "$SDB_STATS_CACHE" ]; then
                   echo "${ME}: No configure specified." 
                   exit 0
                   shift 1
