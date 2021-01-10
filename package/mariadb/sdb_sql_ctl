@@ -28,6 +28,7 @@ export LC_TIME=C
 PORT=6101
 NEED_PRINTSCREEN=false
 NEED_BACKUPLOG=false
+FORCE_DELETE=false
 SQL_USER=sdbadmin
 SYS_CONF_FILE=""
 PROCESS_WAIT_TIME=60
@@ -370,6 +371,21 @@ function delete_inst()
 
    echo "Deleting instance $INST_NAME ..."
 
+   if [ "$FORCE_DELETE" == false ]; then
+      typeset -u answer
+      echo "Deleting an instance will delete the data directory"
+      read -p "Do you want to delete instance?[y/N]" answer
+      test -z ${answer} && answer="N"
+      case ${answer} in
+         Y|YES)
+            ;;
+         *)
+            echo "Delete instance did not complete successfully"
+            exit 0
+            ;;
+      esac
+   fi
+   
    #stop instance
    stop_inst $INST_NAME 1> /dev/null || exit $? #print stderr
 
@@ -839,7 +855,7 @@ function build_help()
    echo "Usage:"
    echo "  ${ME} listinst"
    echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-p PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD]"
-   echo "  ${ME} delinst    <INSTNAME> [--baklog]"
+   echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
    echo "  ${ME} start      <INSTNAME>                           [--print]"
    echo "  ${ME} startall                                        [--print]"
    echo "  ${ME} stop       <INSTNAME>                           [--print]"
@@ -861,6 +877,7 @@ function build_help()
    echo "  -a MAX-CON                                      the number of simultaneous clients allowed,default:151"
    echo "  --print                                         default: not print screen"
    echo "  --baklog                                        default: don't backup LOGFILE"
+   echo "  --force                                         force delete inst"
    echo "  --sdb-conn-addr=ADDR                            SequoiaDB addresses,default:'localhost:11810'"
    echo "  --sdb-user=USER                                 SequoiaDB authentication user,default:''"
    echo "  --sdb-passwd=PASSWD                             SequoiaDB authentication password,default:''"
@@ -890,7 +907,7 @@ function build_help()
 #Parse command line parameters
 test $# -eq 0 && { build_help && exit 64; }
 
-ARGS=`getopt -o hvD:l:p:s:f:a:w: --long help,version,print,baklog,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log: -n "${ME}" -- "$@"`
+ARGS=`getopt -o hvD:l:p:s:f:a:w: --long help,version,print,baklog,force,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log: -n "${ME}" -- "$@"`
 ret=$?
 test $ret -ne 0 && exit $ret
 
@@ -946,6 +963,9 @@ do
                                               shift
                                               ;;
       --baklog )                              NEED_BACKUPLOG=true
+                                              shift
+                                              ;;
+      --force )                               FORCE_DELETE=true
                                               shift
                                               ;;
       --sdb-conn-addr )                       SDB_CONN_ADDR=$2
