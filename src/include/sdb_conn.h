@@ -263,6 +263,8 @@ class Sdb_conn {
     fix = fix_ver;
   }
 
+  bool is_cl_statistics_supported();
+
  private:
   int retry(boost::function<int()> func);
 
