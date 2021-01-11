@@ -587,6 +587,15 @@ function start_inst()
    test $rc -ne 0 && { echo "ERROR: Fail to start, please verify log $SQLLOG" >&2 && return 16; }
    
    #check
+   for ((i=0; i<15; i++));
+   do
+      if test -s $pid_file; then
+         sleep 0.2
+      else
+         break;
+      fi
+   done
+   
    get_one_status $inst >> /dev/null
    local ret=$?
 
