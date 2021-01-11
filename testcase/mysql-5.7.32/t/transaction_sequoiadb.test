@@ -1,5 +1,5 @@
 #Case 13134#Case 13168#Case 18621#Case 18635#Case 13132#Case 22401#Case 13167#Case 22432#Case 22433#Case 22434
-#Case 22435#Case 22436#Case 22449#Case 22450
+#Case 22435#Case 22436#Case 22449#Case 22450#Case 23038#Case 23039
 
 --source include/have_sequoiadb.inc
 
@@ -987,20 +987,60 @@ connection con1;
 set session sequoiadb_use_rollback_segments=off;
 rollback;
 
-disconnect con1;
-disconnect con2;
+connection con2;
+rollback;
 
 connection default;
 drop table t1;
 
+disconnect con1;
+disconnect con2;
 
+#seqDB-23038
+connect (con1, localhost, root);
+connect (con2, localhost, root);
 
+connection con1;
+set session sequoiadb_use_transaction=off;
 
+connection con2;
+create table t1(a int);
+begin;
+insert into t1 values(1);
 
+connection con1;
+begin;
+select * from t1;
+rollback;
+set session sequoiadb_use_transaction=on;
 
+connection con2;
+rollback;
 
+connection default;
+drop table t1;
 
+#seqDB-23039
+connection con1;
+set session transaction_isolation='read-uncommitted';
 
+connection con2;
+create table t1(a int);
+begin;
+insert into t1 values(1);
 
+connection con1;
+begin;
+select * from t1;
+rollback;
+set session transaction_isolation='REPEATABLE-READ';
 
+connection con2;
+rollback;
+
+connection default;
+drop table t1;
+
+disconnect con1;
+disconnect con2;
 

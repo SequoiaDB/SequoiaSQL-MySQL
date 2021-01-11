@@ -1542,4 +1542,29 @@ a	b	c
 set session sequoiadb_use_rollback_segments=off;
 ERROR 42000: Cannot change sequoiadb_use_rollback_segments during transaction.
 rollback;
+rollback;
+drop table t1;
+set session sequoiadb_use_transaction=off;
+create table t1(a int);
+begin;
+insert into t1 values(1);
+begin;
+select * from t1;
+a
+1
+rollback;
+set session sequoiadb_use_transaction=on;
+rollback;
+drop table t1;
+set session transaction_isolation='read-uncommitted';
+create table t1(a int);
+begin;
+insert into t1 values(1);
+begin;
+select * from t1;
+a
+1
+rollback;
+set session transaction_isolation='REPEATABLE-READ';
+rollback;
 drop table t1;
