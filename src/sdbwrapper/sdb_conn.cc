@@ -803,17 +803,41 @@ int Sdb_conn::drop_empty_cs(const char *cs_name, const bson::BSONObj &option) {
   return retry(boost::bind(conn_drop_empty_cs, &m_connection, cs_name, option));
 }
 
+// SequoiaDB doesn't support cl statistics before v3.4.2/5.0.2
+bool Sdb_conn::is_cl_statistics_supported() {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+
+  rc = sdb_get_version(*this, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 2) ||              // 3.x < 3.2
+      (3 == major && 2 == minor && fix < 5) ||  // 3.2.x < 3.2.5
+      (3 == major && 4 == minor && fix < 1)) {  // 3.4.x < 3.4.1
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int Sdb_conn::get_cl_statistics(const char *cs_name, const char *cl_name,
                                 Sdb_statistics &stats) {
-  static bool support_get_detail = true;
   int rc = SDB_ERR_OK;
-  if (support_get_detail) {
+  if (is_cl_statistics_supported()) {
     rc = get_cl_stats_by_get_detail(cs_name, cl_name, stats);
-    if (SDB_INVALIDARG == get_sdb_code(rc)) {
-      support_get_detail = false;
-    }
-  }
-  if (!support_get_detail) {
+  } else {
     rc = get_cl_stats_by_snapshot(cs_name, cl_name, stats);
   }
   return rc;

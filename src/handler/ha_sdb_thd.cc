@@ -124,6 +124,37 @@ error:
   goto done;
 }
 
+bool is_trans_timeout_supported(Sdb_conn *conn) {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+
+  if (NULL == conn) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(current_thd));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                  // x < 3
+      (3 == major && minor < 2)) {  // 3.x < 3.2
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 /*The session attribute of TransTimeout can be updated during transaction.*/
 void sdb_set_trans_timeout(MYSQL_THD thd, struct st_mysql_sys_var *var,
                            void *var_ptr, const void *save) {
@@ -131,7 +162,6 @@ void sdb_set_trans_timeout(MYSQL_THD thd, struct st_mysql_sys_var *var,
   int rc = SDB_OK;
   Sdb_conn *conn = NULL;
   Sdb_session_attrs *session_attrs = NULL;
-  static bool support_trans_timeout_attr = true;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
   /* Set the target value here, then we can use sdb_lock_wait_timeout(thd) to
@@ -151,19 +181,13 @@ void sdb_set_trans_timeout(MYSQL_THD thd, struct st_mysql_sys_var *var,
     goto done;
   }
 
-  if (support_trans_timeout_attr) {
+  if (is_trans_timeout_supported(conn)) {
     session_attrs = conn->get_session_attrs();
     /* Set the lock wait timeout when the lock_wait_timeout has changed*/
     /* Use sdb_lock_wait_timeout(thd) insted of *(int*)save to updated only in
        set session sequoiadb_lock_wait_timeout.*/
     session_attrs->set_trans_timeout(sdb_lock_wait_timeout(thd));
     rc = conn->set_my_session_attr();
-    // No such options before sdb v3.2.4 Ignore it.
-    if (SDB_INVALIDARG == get_sdb_code(rc)) {
-      support_trans_timeout_attr = false;
-      rc = SDB_ERR_OK;
-    }
-
     if (rc != SDB_OK) {
       SDB_LOG_WARNING("Failed to set the lock wait timeout on sequoiadb, rc=%d",
                       rc);

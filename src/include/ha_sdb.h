@@ -576,6 +576,8 @@ class ha_sdb : public handler {
 
   int fetch_index_stat(Sdb_index_stat &s);
 
+  bool is_index_stat_supported();
+
   int ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr);
 
  protected:

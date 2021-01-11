@@ -311,6 +311,9 @@ class Sdb_conn {
     minor = minor_ver;
     fix = fix_ver;
   }
+
+  bool is_cl_statistics_supported();
+
  private:
   int retry(boost::function<int()> func);
 

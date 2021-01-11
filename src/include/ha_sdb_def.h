@@ -30,6 +30,8 @@
   60  // longest lli(19 digits+ 1 sign) + llu(20 digits) + 19 chars + 1 '\0'
 #define SDB_ERR_BUFF_SIZE 200
 
+#define SDB_SHOW_VAR_BUFF_SIZE 1024
+
 #define SDB_CHARSET my_charset_utf8mb4_bin
 
 #define SDB_OID_LEN 12

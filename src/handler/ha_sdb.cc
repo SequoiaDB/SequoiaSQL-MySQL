@@ -2512,20 +2512,12 @@ done:
 
 // SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
 bool ha_sdb::is_field_rule_supported() {
-  static bool has_cached = false;
-  static bool cached_result = true;
-
   bool supported = false;
   int major = 0;
   int minor = 0;
   int fix = 0;
   int rc = 0;
   Sdb_conn *conn = NULL;
-
-  if (has_cached) {
-    supported = cached_result;
-    goto done;
-  }
 
   rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (rc != 0) {
@@ -2547,9 +2539,6 @@ bool ha_sdb::is_field_rule_supported() {
     supported = true;
   }
 
-  cached_result = supported;
-  has_cached = true;
-
 done:
   return supported;
 error:
@@ -2559,20 +2548,12 @@ error:
 
 // SequoiaDB doesn't support "$inc" with options(Min, Max...) before v3.2.4
 bool ha_sdb::is_inc_rule_supported() {
-  static bool has_cached = false;
-  static bool cached_result = true;
-
   bool supported = false;
   int major = 0;
   int minor = 0;
   int fix = 0;
   int rc = 0;
   Sdb_conn *conn = NULL;
-
-  if (has_cached) {
-    supported = cached_result;
-    goto done;
-  }
 
   rc = check_sdb_in_thd(ha_thd(), &conn, false);
   if (rc != 0) {
@@ -2592,9 +2573,6 @@ bool ha_sdb::is_inc_rule_supported() {
   } else {
     supported = true;
   }
-
-  cached_result = supported;
-  has_cached = true;
 
 done:
   return supported;
@@ -5273,17 +5251,50 @@ error:
   goto done;
 }
 
+bool ha_sdb::is_index_stat_supported() {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 4) ||              // 3.x < 3.2
+      (3 == major && 4 == minor && fix < 2) ||  // 3.4.x < 3.4.2
+      (5 == major && 0 == minor && fix < 2)) {  // 5.0.x < 5.0.2
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int ha_sdb::fetch_index_stat(Sdb_index_stat &s) {
   DBUG_ENTER("ha_sdb::fetch_index_stat");
-  static bool support_get_index_stat = true;
-
   int rc = 0;
   THD *thd = ha_thd();
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
   bson::BSONObj obj;
 
-  if (!support_get_index_stat) {
+  if (!is_index_stat_supported()) {
     s.sample_records = 0;
     goto done;
   }
@@ -5298,7 +5309,6 @@ int ha_sdb::fetch_index_stat(Sdb_index_stat &s) {
   }
   rc = cl.get_index_stat(sdb_key_name(s.key_info), obj);
   if (SDB_INVALIDARG == get_sdb_code(rc)) {
-    support_get_index_stat = false;
     s.sample_records = 0;
     rc = 0;
     goto done;
@@ -7208,6 +7218,55 @@ static int sdb_done_func(void *p) {
   return 0;
 }
 
+static int show_sdb_remote_version(MYSQL_THD thd, struct st_mysql_show_var *var,
+                                   char *buf) {
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+  int print_len = 0;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+
+  var->type = SHOW_CHAR;
+  var->value = buf;
+
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+  /*Thread safe, upper thread will get and lock.*/
+  print_len = my_snprintf(buf, SDB_SHOW_VAR_BUFF_SIZE, "%d.%d", major, minor);
+  if (0 != fix) {
+    my_snprintf(buf + print_len, SDB_SHOW_VAR_BUFF_SIZE - print_len, ".%d",
+                fix);
+  }
+done:
+  rc = 0;
+  return rc;
+error:
+  my_snprintf(buf, SDB_SHOW_VAR_BUFF_SIZE, "NULL");
+  goto done;
+}
+
+#if defined IS_MYSQL
+static struct st_mysql_show_var sdb_status[] = {
+    {"sequoiadb_remote_version", (char *)show_sdb_remote_version, SHOW_FUNC,
+     SHOW_SCOPE_GLOBAL},
+    {0, 0, SHOW_UNDEF, SHOW_SCOPE_UNDEF}};
+#elif defined IS_MARIADB
+static struct st_mysql_show_var sdb_status[] = {
+    {"sequoiadb_remote_version", (char *)show_sdb_remote_version,
+     SHOW_SIMPLE_FUNC},
+    {0, 0, SHOW_UNDEF}};
+#endif
+
 static struct st_mysql_storage_engine sdb_storage_engine = {
     MYSQL_HANDLERTON_INTERFACE_VERSION};
 
@@ -7221,7 +7280,7 @@ maria_declare_plugin(sequoiadb) {
       sdb_init_func, /* Plugin Init */
       sdb_done_func, /* Plugin Deinit */
       0x0302,        /* version */
-      NULL,          /* status variables */
+      sdb_status,    /* status variables */
       sdb_sys_vars,  /* system variables */
       NULL,          /* config options */
 #if defined IS_MYSQL
