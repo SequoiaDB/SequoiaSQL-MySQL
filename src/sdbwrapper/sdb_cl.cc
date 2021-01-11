@@ -508,6 +508,6 @@ int Sdb_cl::get_detail(sdbclient::sdbCursor &cursor) {
   return retry(boost::bind(cl_get_detail, &m_cl, &cursor));
 }
 
-Sdb_conn* Sdb_cl::get_conn() {
+Sdb_conn *Sdb_cl::get_conn() {
   return m_conn;
 }

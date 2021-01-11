@@ -71,7 +71,7 @@ bool is_not_array_supported(Sdb_conn *conn) {
       (3 == major && minor < 2) ||              // 3.x < 3.2
       (3 == major && 2 == minor && fix < 8) ||  // 3.2.x < 3.2.8
       (3 == major && 4 == minor && fix < 2) ||  // 3.4.x < 3.4.2
-      (5 == major && 0 == minor && fix < 2) ) { // 5.0.x < 5.0.2
+      (5 == major && 0 == minor && fix < 2)) {  // 5.0.x < 5.0.2
     supported = false;
   } else {
     supported = true;
@@ -84,7 +84,40 @@ error:
   goto done;
 }
 
-int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool support_not_null) {
+// Whether SequoiaDB index support NotNULL or not
+bool is_not_null_supported(Sdb_conn *conn) {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+
+  if (NULL == conn) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(current_thd));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 2) ||              // 3.x < 3.2
+      (3 == major && 2 == minor && fix < 4)) {  // 3.2.x < 3.2.4
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
+int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
   int rc = 0;
   const KEY_PART_INFO *key_part;
   const KEY_PART_INFO *key_end;
@@ -126,12 +159,11 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool support_not_null) {
     }
     key_obj = key_obj_builder.obj();
 
-    if (support_not_null) {
+    if (is_not_null_supported(cl.get_conn())) {
       options_builder.append(SDB_FIELD_UNIQUE, is_unique);
       options_builder.append(SDB_FIELD_NOT_NULL, all_is_not_null);
-      if( is_not_array_supported(cl.get_conn()) )
-      {
-         options_builder.append(SDB_FIELD_NOT_ARRAY, true);
+      if (is_not_array_supported(cl.get_conn())) {
+        options_builder.append(SDB_FIELD_NOT_ARRAY, true);
       }
       options = options_builder.obj();
       rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
@@ -151,21 +183,6 @@ done:
   return rc;
 error:
   goto done;
-}
-
-int sdb_create_index(const KEY *key_info, Sdb_cl &cl) {
-  static bool support_not_null = true;
-  int rc = SDB_ERR_OK;
-  if (support_not_null) {
-    rc = sdb_create_index(key_info, cl, true);
-    if (SDB_INVALIDARG == get_sdb_code(rc)) {
-      support_not_null = false;
-    }
-  }
-  if (!support_not_null) {
-    rc = sdb_create_index(key_info, cl, false);
-  }
-  return rc;
 }
 
 int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,
