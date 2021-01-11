@@ -260,6 +260,20 @@ function add_inst()
       SQL_DATA=$(pwd)/$SQL_DATA    #relative path
    fi
    
+   if test -s $SQL_DATA; then
+      echo "ERROR: The data directory $SQL_DATA is not empty"
+      exit 5
+   fi
+   local parentPath=`dirname $SQL_DATA`
+   local list_inst_dir=`list_inst | awk '{print $2}' | grep -vx SQLDATA | grep -vx [0-9]`
+   for dir in $list_inst_dir
+   do
+      if [[ "$parentPath" == ${dir%*/}* ]]; then
+         echo "ERROR: The instance data directory cannot be nested with other instance data directories"
+         exit 5
+      fi
+   done
+   
    test -z $SQL_LOG && SQL_LOG="${INSTALL_PATH}/${INST_NAME}.log"
    if [[ ${SQL_LOG:0:1} != "/" ]]; then
       SQL_LOG=$(pwd)/$SQL_LOG      #relative path
