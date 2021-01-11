@@ -1,0 +1,97 @@
+connection conn1;
+DROP DATABASE IF EXISTS metaSync_23285;
+connection conn2;
+SHOW CREATE DATABASE metaSync_23285;
+ERROR 42000: Unknown database 'metaSync_23285'
+connection conn1;
+CREATE DATABASE metaSync_23285;
+USE metaSync_23285;
+CREATE SEQUENCE st1;
+CREATE TABLE a1 ( id int default next value for st1 );
+CREATE TABLE b1 ( id int default next value for st1 );
+CREATE SEQUENCE st2;
+CREATE TABLE c1 ( id int default next value for st2 );
+CREATE SEQUENCE st3;
+CREATE TABLE d1 ( id int default next value for st3 );
+connection conn2;
+USE metaSync_23285;
+SHOW CREATE TABLE a1;
+Table	Create Table
+a1	CREATE TABLE `a1` (
+  `id` int(11) DEFAULT nextval(`metaSync_23285`.`st1`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SHOW CREATE TABLE b1;
+Table	Create Table
+b1	CREATE TABLE `b1` (
+  `id` int(11) DEFAULT nextval(`metaSync_23285`.`st1`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SHOW CREATE TABLE c1;
+Table	Create Table
+c1	CREATE TABLE `c1` (
+  `id` int(11) DEFAULT nextval(`metaSync_23285`.`st2`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SHOW CREATE TABLE d1;
+Table	Create Table
+d1	CREATE TABLE `d1` (
+  `id` int(11) DEFAULT nextval(`metaSync_23285`.`st3`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SHOW CREATE TABLE st1;
+Table	Create Table
+st1	CREATE TABLE `st1` (
+  `next_not_cached_value` bigint(21) NOT NULL,
+  `minimum_value` bigint(21) NOT NULL,
+  `maximum_value` bigint(21) NOT NULL,
+  `start_value` bigint(21) NOT NULL COMMENT 'start value when sequences is created or value if RESTART is used',
+  `increment` bigint(21) NOT NULL COMMENT 'increment value',
+  `cache_size` bigint(21) unsigned NOT NULL,
+  `cycle_option` tinyint(1) unsigned NOT NULL COMMENT '0 if no cycles are allowed, 1 if the sequence should begin a new cycle when maximum_value is passed',
+  `cycle_count` bigint(21) NOT NULL COMMENT 'How many cycles have been done'
+) ENGINE=SequoiaDB SEQUENCE=1
+SHOW CREATE TABLE st2;
+Table	Create Table
+st2	CREATE TABLE `st2` (
+  `next_not_cached_value` bigint(21) NOT NULL,
+  `minimum_value` bigint(21) NOT NULL,
+  `maximum_value` bigint(21) NOT NULL,
+  `start_value` bigint(21) NOT NULL COMMENT 'start value when sequences is created or value if RESTART is used',
+  `increment` bigint(21) NOT NULL COMMENT 'increment value',
+  `cache_size` bigint(21) unsigned NOT NULL,
+  `cycle_option` tinyint(1) unsigned NOT NULL COMMENT '0 if no cycles are allowed, 1 if the sequence should begin a new cycle when maximum_value is passed',
+  `cycle_count` bigint(21) NOT NULL COMMENT 'How many cycles have been done'
+) ENGINE=SequoiaDB SEQUENCE=1
+SHOW CREATE TABLE st3;
+Table	Create Table
+st3	CREATE TABLE `st3` (
+  `next_not_cached_value` bigint(21) NOT NULL,
+  `minimum_value` bigint(21) NOT NULL,
+  `maximum_value` bigint(21) NOT NULL,
+  `start_value` bigint(21) NOT NULL COMMENT 'start value when sequences is created or value if RESTART is used',
+  `increment` bigint(21) NOT NULL COMMENT 'increment value',
+  `cache_size` bigint(21) unsigned NOT NULL,
+  `cycle_option` tinyint(1) unsigned NOT NULL COMMENT '0 if no cycles are allowed, 1 if the sequence should begin a new cycle when maximum_value is passed',
+  `cycle_count` bigint(21) NOT NULL COMMENT 'How many cycles have been done'
+) ENGINE=SequoiaDB SEQUENCE=1
+connection conn1;
+DROP TABLE a1,b1,c1,d1,st1,st2,st3;
+connection conn2;
+SHOW CREATE TABLE a1;
+ERROR 42S02: Table 'metaSync_23285.a1' doesn't exist
+SHOW CREATE TABLE b1;
+ERROR 42S02: Table 'metaSync_23285.b1' doesn't exist
+SHOW CREATE TABLE c1;
+ERROR 42S02: Table 'metaSync_23285.c1' doesn't exist
+SHOW CREATE TABLE d1;
+ERROR 42S02: Table 'metaSync_23285.d1' doesn't exist
+SHOW CREATE TABLE st1;
+ERROR 42S02: Table 'metaSync_23285.st1' doesn't exist
+SHOW CREATE TABLE st2;
+ERROR 42S02: Table 'metaSync_23285.st2' doesn't exist
+SHOW CREATE TABLE st3;
+ERROR 42S02: Table 'metaSync_23285.st3' doesn't exist
+connection conn1;
+DROP DATABASE metaSync_23285;
+connection conn2;
+SHOW CREATE DATABASE metaSync_23285;
+ERROR 42000: Unknown database 'metaSync_23285'
+disconnect conn1;
+disconnect conn2;
