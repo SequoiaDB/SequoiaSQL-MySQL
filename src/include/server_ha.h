@@ -109,6 +109,9 @@ typedef struct st_table_list {
   int saved_state;
   // set if dropping object exists
   bool dropping_object_exists;
+
+  // sql ID
+  int saved_sql_id;
 } ha_table_list;
 
 // store information about the SQL statement currently being executed

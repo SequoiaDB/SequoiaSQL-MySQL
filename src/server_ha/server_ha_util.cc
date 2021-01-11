@@ -45,7 +45,8 @@ int ha_get_instance_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl, true);
+  rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl,
+                       true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating instance object state table '%s'",
                           HA_INSTANCE_OBJECT_STATE_CL);
@@ -281,7 +282,8 @@ int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_LOG_CL, pending_log_cl, true);
+  rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_LOG_CL, pending_log_cl,
+                       true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating '%s:%s'", group_name,
                           HA_PENDING_LOG_CL);

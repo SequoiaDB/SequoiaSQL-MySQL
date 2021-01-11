@@ -1182,6 +1182,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     const char *new_db_name = NULL;
     const char *new_tbl_name = NULL;
     int cata_version = ha_tables->cata_version;
+    ha_tables->saved_sql_id = 0;
 
     // previous version maybe not be latest, get cached cata version again
     if (0 == strcmp(op_type, HA_OPERATION_TYPE_TABLE)) {
@@ -1324,6 +1325,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", db_name,
              table_name, op_type);
     rc = ha_update_cached_record(cached_record_key, sql_id, cata_version);
+    ha_tables->saved_sql_id = sql_id;
 #ifdef IS_MYSQL
     if (SQLCOM_CREATE_TABLE == sql_command) {
       // sql like 'create table/view' may have multi tables in its table_list
@@ -2584,7 +2586,11 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
   bool can_write_log = true;
 
   if (SQLCOM_ALTER_TABLE == sql_command || SQLCOM_CREATE_INDEX == sql_command ||
-      SQLCOM_DROP_INDEX == sql_command) {
+      SQLCOM_DROP_INDEX == sql_command
+#ifdef IS_MARIADB
+      || SQLCOM_ALTER_SEQUENCE == sql_command
+#endif
+  ) {
     if (sql_info->tables->is_temporary_table) {
       can_write_log = false;
     }
@@ -3740,6 +3746,100 @@ static void restore_state(ha_sql_stmt_info *sql_info) {
   }
 }
 
+// wait for other instances update their SQL objects state
+// 1. add partition for a table on first instance, update data 
+//    for new partition on another instance should succeed
+// 2. revoke right on first instance, CRUD on another instance should fail
+// 3. drop trigger on first instance, trigger on another instance should fail
+// 4. alter sequence on first instance, get sequence on another instance
+static void post_wait_for_special_stmt(THD *thd, ha_sql_stmt_info *sql_info) {
+  bool need_wait = false;
+  int sql_command = thd_sql_command(thd);
+  longlong instance_count = 0, finish_replay_count = 0;
+  ha_table_list *ha_table = sql_info->tables;
+  need_wait =
+      (SQLCOM_REVOKE == sql_command || SQLCOM_DROP_TRIGGER == sql_command);
+
+#ifdef IS_MARIADB
+  need_wait = (need_wait || (SQLCOM_ALTER_SEQUENCE == sql_command));
+#else
+  bool add_partition =
+      (thd->lex->alter_info.flags & Alter_info::ALTER_ADD_PARTITION);
+  need_wait =
+      (need_wait || (SQLCOM_ALTER_TABLE == sql_command && add_partition));
+#endif
+  if (need_wait) {
+    Sdb_cl inst_obj_state_cl, inst_state_cl;
+    Sdb_conn *sdb_conn = sql_info->sdb_conn;
+    const char *group_name = ha_thread.sdb_group_name;
+    bson::BSONObj cond;
+    bson::BSONObjBuilder builder;
+    int rc = 0, sleep_count = 0;
+    static const int MAX_SLEEP_COUNT = 3;
+    static const int HA_REPLAY_CYCLE = 2;
+
+    // 1. get count of instances
+    // do not care this error
+    rc = ha_get_instance_state_cl(*sdb_conn, group_name, inst_state_cl);
+    if (rc) {
+      goto done;
+    }
+
+    rc = inst_state_cl.get_count(instance_count);
+    if (rc) {
+      goto done;
+    }
+
+    // 2. check if all instances updated to their latest state
+    rc = ha_get_instance_object_state_cl(*sdb_conn, group_name,
+                                         inst_obj_state_cl);
+    if (rc) {
+      goto done;
+    }
+
+    // get the last table in ha table list
+    while (ha_table && ha_table->next) {
+      ha_table = ha_table->next;
+    }
+
+    if (NULL == ha_table) {
+      goto done;
+    }
+
+    builder.reset();
+    builder.append(HA_FIELD_DB, ha_table->db_name);
+    builder.append(HA_FIELD_TABLE, ha_table->table_name);
+    builder.append(HA_FIELD_TYPE, ha_table->op_type);
+    {
+      bson::BSONObjBuilder sub_builder(builder.subobjStart(HA_FIELD_SQL_ID));
+      sub_builder.append("$gte", ha_table->saved_sql_id);
+      sub_builder.doneFast();
+    }
+    cond = builder.done();
+
+    while (sleep_count < MAX_SLEEP_COUNT) {
+      finish_replay_count = 0;
+      rc = inst_obj_state_cl.get_count(finish_replay_count, cond);
+      if (rc) {
+        goto done;
+      }
+
+      SDB_LOG_DEBUG(
+          "HA: Sleep count: %d, finish replay count: %lld, instance count: "
+          "%lld",
+          sleep_count, finish_replay_count, instance_count);
+      // if all instance has replayed the statement
+      if (finish_replay_count >= instance_count) {
+        break;
+      }
+      sleep_count++;
+      sleep(HA_REPLAY_CYCLE);
+    }
+  }
+done:
+  return;
+}
+
 // entry of audit plugin
 static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                             const void *ev) {
@@ -4009,7 +4109,6 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
 
         // if SQL statement executes successfully but failed to write
         // SQL log into sequoiadb
-        sql_info->tables = NULL;
         if (rc) {
           sql_info->sdb_conn->rollback_transaction();
           goto recover_state;
@@ -4026,6 +4125,12 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         if (rc) {
           goto recover_state;
         }
+
+        // wait for other instances to update their SQL objects state
+        if (!ha_is_executing_pending_log(thd)) {
+          post_wait_for_special_stmt(thd, sql_info);
+        }
+        sql_info->tables = NULL;
       } else {
         // Note: 'ha_sql_stmt_info::tables' can only be set to NULL in the
         // final step(see the entry conditions).
@@ -4062,6 +4167,7 @@ error:
   handle_error(rc, sql_info);
   goto done;
 recover_state:
+  sql_info->tables = NULL;
   restore_state(sql_info);
   goto error;
 }
