@@ -1049,6 +1049,11 @@ int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
   static int cached_fix = 0;
 
   int rc = 0;
+  conn.get_version(major, minor, fix);
+  /*SequoiaDB version is great equal than 3.2.8, no need to get from snapshot.*/
+  if (0 != major) {
+    goto done;
+  }
 
   if (!use_cached) {
     sdb_version_cached = false;

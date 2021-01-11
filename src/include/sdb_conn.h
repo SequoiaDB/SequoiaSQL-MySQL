@@ -304,6 +304,13 @@ class Sdb_conn {
     m_check_collection_version = check_cl_version;
   }
 
+  void get_version(int &major, int &minor, int &fix) {
+    uint8 major_ver = 0, minor_ver = 0, fix_ver = 0;
+    m_connection.getVersion(major_ver, minor_ver, fix_ver);
+    major = major_ver;
+    minor = minor_ver;
+    fix = fix_ver;
+  }
  private:
   int retry(boost::function<int()> func);
 
