@@ -184,6 +184,7 @@ function exec_cmd_with_print()
    local log_file=$2
    local start_line=0
    local end_line=0
+   local msg
    local rc=0
    
    local file_exist=false
@@ -197,11 +198,21 @@ function exec_cmd_with_print()
 
    if [ $cur_user == "root" ]
    then
-      su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;$cmd >> $log_file 2>&1"
+      msg=$(su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;$cmd" 2>&1)
       rc=$?
+      if test -n "$msg"; then
+          su - $SQL_USER -c "echo -e '$msg' >> $log_file 2>&1"
+      fi
    else
-      eval "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;${cmd} >> $log_file 2>&1"
+      msg=$(eval "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;${cmd}" 2>&1)
       rc=$?
+      if test -n "$msg"; then
+         echo -e "$msg" >> $log_file 2>&1
+      fi
+   fi
+   if [[ $rc != 0 ]]; then
+      echo -e "Error in executing command: '${cmd}'"
+      echo -e "ERROR: ${msg}"
    fi
 
    if [ "$NEED_PRINTSCREEN" == true ]; then
