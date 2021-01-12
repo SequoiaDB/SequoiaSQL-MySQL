@@ -909,6 +909,32 @@ error:
   goto done;
 }
 
+// 1. create [definer = ''] package in mariadb
+// 2. create [definer = ''] view/trigger/function/procedure in mysql/mariadb
+static int wait_definer_if_exists(THD *thd, ha_sql_stmt_info *sql_info,
+                                  Sdb_cl &obj_state_cl) {
+  int rc = 0;
+  int sql_command = thd_sql_command(thd);
+  if (thd->lex->definer && (SQLCOM_CREATE_VIEW == sql_command ||
+                            SQLCOM_CREATE_TRIGGER == sql_command ||
+                            SQLCOM_CREATE_FUNCTION == sql_command ||
+                            SQLCOM_CREATE_SPFUNCTION == sql_command ||
+                            SQLCOM_CREATE_PROCEDURE == sql_command
+#ifdef IS_MARIADB
+                            || SQLCOM_CREATE_PACKAGE == sql_command ||
+                            SQLCOM_CREATE_PACKAGE_BODY == sql_command
+#endif
+                            )) {
+    LEX_CSTRING definer_user = thd->lex->definer->user;
+    const char *db_name = HA_MYSQL_DB;
+    const char *table_name = definer_user.str;
+    const char *op_type = HA_OPERATION_TYPE_DCL;
+    rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
+                                        obj_state_cl, sql_info, thd);
+  }
+  return rc;
+}
+
 // check and wait for current instance to be updated by 'HA' thread
 // to the lastest state
 static int wait_objects_updated_to_lastest(THD *thd,
@@ -934,6 +960,11 @@ static int wait_objects_updated_to_lastest(THD *thd,
   }
 
   rc = pre_wait_objects_updated_to_lastest(thd, sql_info);
+  if (rc) {
+    goto error;
+  }
+
+  rc = wait_definer_if_exists(thd, sql_info, obj_state_cl);
   if (rc) {
     goto error;
   }
@@ -3747,7 +3778,7 @@ static void restore_state(ha_sql_stmt_info *sql_info) {
 }
 
 // wait for other instances update their SQL objects state
-// 1. add partition for a table on first instance, update data 
+// 1. add partition for a table on first instance, update data
 //    for new partition on another instance should succeed
 // 2. revoke right on first instance, CRUD on another instance should fail
 // 3. drop trigger on first instance, trigger on another instance should fail
