@@ -93,6 +93,9 @@
 
         <!--check umask-->
         <checkUmaskFunction/>
+
+        <!--check glibcxx-->
+        <checkGLIBCXXFunction/>
         
         <!--check or create user group-->
         <throwError>

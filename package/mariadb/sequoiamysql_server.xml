@@ -108,6 +108,47 @@
             </actionList>
         </actionDefinition>
    
+        <actionDefinition name="checkGLIBCXXFunction">
+           <actionList>
+              <createDirectory path="${installdir}/tmp"/>
+              <createDirectory path="${installdir}/tmp/lib"/>
+              <unpackFile>
+                 <component>normal_component</component>
+                 <folder>files</folder>
+                 <origin>bin/mysqld</origin>
+                 <destination>${installdir}/tmp</destination>
+              </unpackFile>
+              <unpackFile>
+                 <component>normal_component</component>
+                 <folder>files</folder>
+                 <origin>lib/libsdbcpp.so</origin>
+                 <destination>${installdir}/tmp/lib</destination>
+              </unpackFile>
+              <changePermissions files="${installdir}/tmp/mysqld" permissions="0755"/>
+              <runProgram>
+                  <program>export</program>
+                  <programArguments>LD_LIBRARY_PATH=${installdir}/tmp/lib; ${installdir}/tmp/mysqld --version </programArguments>
+                  <abortOnError>0</abortOnError>
+                  <showMessageOnError>0</showMessageOnError>
+              </runProgram>
+              <if>
+                  <conditionRuleList>
+                      <compareText logic="does_not_equal" text="${program_exit_code}" value="0"/>
+                  </conditionRuleList>
+                  <actionList>
+                     <runProgram>
+                         <program>ldd</program>
+                         <programArguments>${installdir}/tmp/mysqld | grep "libstdc++"</programArguments>
+                     </runProgram>
+                     <throwError>
+                        <text>${program_stderr}</text>
+                     </throwError>
+                  </actionList>
+              </if>
+              <deleteFile path="${installdir}/tmp"/>
+           </actionList>
+        </actionDefinition>
+   
         <actionDefinition name="getSysType">
             <actionList>
                 <getSymLinkTarget variable="pid1_fullpath">
