@@ -186,14 +186,23 @@ static int clear_sql_instance(ha_tool_args &cmd_args, sdbclient::sdb &conn,
 
   // instance info can be deleted by 'instance id' or
   // 'inst_hostname:inst_port'
+  bson::BSONObjBuilder builder;
   if (cmd_args.is_inst_id_set) {
-    cond =
-        BSON(HA_FIELD_INSTANCE_ID << cmd_args.inst_id
-                                  << HA_FIELD_INSTANCE_GROUP_NAME << orig_name);
+    builder.append(HA_FIELD_INSTANCE_ID, cmd_args.inst_id);
+    builder.append(HA_FIELD_INSTANCE_GROUP_NAME, orig_name);
+    cond = builder.done();
   } else {
-    cond = BSON(HA_FIELD_HOST_NAME
-                << cmd_args.inst_hostname << HA_FIELD_PORT << cmd_args.inst_port
-                << HA_FIELD_INSTANCE_GROUP_NAME << orig_name);
+    builder.append(HA_FIELD_PORT, cmd_args.inst_port);
+
+    bson::BSONObj inner_cond;
+    bson::BSONArrayBuilder arr_builder;
+    inner_cond = BSON(HA_FIELD_HOST_NAME << cmd_args.inst_hostname);
+    arr_builder.append(inner_cond);
+    inner_cond = BSON(HA_FIELD_IP << cmd_args.inst_hostname);
+    arr_builder.append(inner_cond);
+
+    builder.append("$or", arr_builder.arr());
+    cond = builder.done();
   }
 
   // start transaction to clear instance configuration
