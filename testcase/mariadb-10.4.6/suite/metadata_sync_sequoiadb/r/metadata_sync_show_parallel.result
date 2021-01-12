@@ -20,7 +20,7 @@ show create table metadata_sync_show_parallel.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
 drop table t1;
 connection conn2;
@@ -31,6 +31,8 @@ CREATE EVENT IF NOT EXISTS e_hourly
 ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 HOUR
 DO
 UPDATE myschema.mytable SET mycol = mycol + 1;
+Warnings:
+Warning	1105	Event scheduler is switched off, use SET GLOBAL event_scheduler=ON to enable it.
 connection conn2;
 show create event metadata_sync_show_parallel.e_hourly;
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
@@ -90,13 +92,13 @@ flush privileges;
 connection conn2;
 show create user metadata_sync_user_23109;
 CREATE USER for metadata_sync_user_23109@%
-CREATE USER 'metadata_sync_user_23109'@'%' IDENTIFIED WITH 'mysql_native_password' AS '*86887E3903D16A1494F5B518A57EF1D38197DAC8' REQUIRE NONE PASSWORD EXPIRE DEFAULT ACCOUNT UNLOCK
+CREATE USER 'metadata_sync_user_23109'@'%' IDENTIFIED BY PASSWORD '*86887E3903D16A1494F5B518A57EF1D38197DAC8'
 connection conn1;
 drop user metadata_sync_user_23109;
 flush privileges;
 connection conn2;
 show create user metadata_sync_user_23109;
-ERROR HY000: Operation SHOW CREATE USER failed for 'metadata_sync_user_23109'@'%'
+ERROR 28000: Can't find any matching row in the user table
 connection conn1;
 create table t1(a int);
 create view v1 as select * from t1;

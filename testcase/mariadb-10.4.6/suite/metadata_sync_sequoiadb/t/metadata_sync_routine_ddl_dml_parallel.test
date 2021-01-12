@@ -222,8 +222,11 @@ create user metedata_sync_user_23097;
 GRANT execute ON metadata_sync_routine_ddl_dml_parallel.* TO metedata_sync_user_23097@'%' IDENTIFIED BY 'metedata_sync_user_23097' WITH GRANT OPTION;
 flush privileges;
 
+#Bug SEQUOIASQLMAINSTREAM-897
 connection conn2;
+--disable_warnings
 create definer = metedata_sync_user_23097 function hello (s char(20)) returns char(50) deterministic return concat('Hello,' , s , '!');
+--enable_warnings
 
 connect ( conn3, $mysql_host1, 'metedata_sync_user_23097', 'metedata_sync_user_23097', $mysql_db, $port1 );
 connection conn3;

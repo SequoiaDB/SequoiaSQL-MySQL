@@ -116,7 +116,7 @@ drop user metadata_sync_user_23109;
 flush privileges;
 
 connection conn2;
---error 1396
+--error 1133
 show create user metadata_sync_user_23109;
 
 connection conn1;
