@@ -32,7 +32,7 @@ select next value for t1;
 select next_not_cached_value,cycle_count from t1;
 select next value for t1;
 #BUG #SEQUOIASQLMAINSTREAM-885
-#select next_not_cached_value,cycle_count from t1;
+select next_not_cached_value,cycle_count from t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-882
 #select NEXT VALUE for t1,seq from seq_1_to_20;
@@ -62,7 +62,7 @@ select next value for t1;
 select next_not_cached_value,cycle_count from t1;
 select next value for t1;
 #BUG #SEQUOIASQLMAINSTREAM-885
-#select next_not_cached_value,cycle_count from t1;
+select next_not_cached_value,cycle_count from t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-882
 #select NEXT VALUE for t1,seq from seq_1_to_20;

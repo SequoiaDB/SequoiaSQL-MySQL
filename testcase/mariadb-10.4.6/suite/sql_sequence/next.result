@@ -76,6 +76,9 @@ next_not_cached_value	cycle_count
 select next value for t1;
 next value for t1
 1
+select next_not_cached_value,cycle_count from t1;
+next_not_cached_value	cycle_count
+3	1
 drop sequence t1;
 CREATE SEQUENCE t1 minvalue 1 maxvalue 10 increment by -1 cache 2 cycle engine=sequoiadb;
 select next value for t1;
@@ -141,6 +144,9 @@ next_not_cached_value	cycle_count
 select next value for t1;
 next value for t1
 10
+select next_not_cached_value,cycle_count from t1;
+next_not_cached_value	cycle_count
+8	1
 drop sequence t1;
 CREATE SEQUENCE t1 start with 8 minvalue 1 maxvalue 10 increment by 1 cache 2 nocycle;
 select next value for t1;
