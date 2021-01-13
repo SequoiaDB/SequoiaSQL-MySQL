@@ -150,5 +150,7 @@ DROP DATABASE metaSync_function;
 connection conn2;
 SHOW CREATE DATABASE metaSync_function;
 ERROR 42000: Unknown database 'metaSync_function'
+drop function p1;
+ERROR 42000: FUNCTION (UDF) p1 does not exist
 disconnect conn1;
 disconnect conn2;

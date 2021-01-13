@@ -104,3 +104,5 @@ ERROR 42000: FUNCTION sp_case does not exist
 DROP DATABASE metaSync_function;
 SHOW CREATE DATABASE metaSync_function;
 ERROR 42000: Unknown database 'metaSync_function'
+drop function p1;
+ERROR 42000: FUNCTION (UDF) p1 does not exist

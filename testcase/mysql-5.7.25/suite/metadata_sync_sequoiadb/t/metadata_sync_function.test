@@ -106,5 +106,9 @@ connection conn2;
 --error ER_BAD_DB_ERROR 
 SHOW CREATE DATABASE metaSync_function;
 
+#seqDB-23359
+--error 1305
+drop function p1;
+
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
