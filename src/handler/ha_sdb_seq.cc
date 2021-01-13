@@ -561,6 +561,7 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
   bson::BSONObj condition;
   bson::BSONObj selected;
   bson::BSONObjBuilder cond_builder;
+  TABLE *query_table = ha_thd()->lex->query_tables->table;
 
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
@@ -571,7 +572,9 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
     goto done;
   }
 
-  if (thd_sql_command(ha_thd()) == SQLCOM_ALTER_TABLE) {
+  // Distinguish between 'ALTER TABLE s ENGINE INNODB' and 'ALTER TABLE t ADD
+  // COLUMN b INT DEFAULT NEXTVAL(s)'
+  if (thd_sql_command(ha_thd()) == SQLCOM_ALTER_TABLE && query_table == table) {
     TABLE *src_table = sdb_lex_first_select(ha_thd())->table_list.first->table;
     Table_specification_st *create_info = &ha_thd()->lex->create_info;
     if (src_table && src_table->s && create_info &&

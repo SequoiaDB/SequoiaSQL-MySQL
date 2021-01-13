@@ -1665,6 +1665,15 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   for (uint i = 0; altered_table->field[i]; i++) {
     if (!matched_map.is_set(i)) {
       Field *field = altered_table->field[i];
+#ifdef IS_MARIADB
+      // Avoid DEFAULT expression.
+      if (field->default_value &&
+          field->default_value->flags &
+              uint(~(VCOL_SESSION_FUNC | VCOL_TIME_FUNC))) {
+        rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+        goto error;
+      }
+#endif
       // Avoid DEFAULT CURRENT_TIMESTAMP
       if (sdb_is_current_timestamp(field)) {
         ha_alter_info->unsupported_reason =
