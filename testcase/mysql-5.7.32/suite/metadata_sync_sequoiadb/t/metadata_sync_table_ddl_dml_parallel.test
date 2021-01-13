@@ -667,7 +667,7 @@ connection conn2;
 select * from t2;
 
 #seqDB-23095
-#SEQUOIASQLMAINSTREAM-869
+#SEQUOIASQLMAINSTREAM-909
 #connection conn1;
 #create table t1(a int auto_increment primary key,b int ,c int);
 #insert into t1(b,c) values(1,1),(2,2),(3,3);

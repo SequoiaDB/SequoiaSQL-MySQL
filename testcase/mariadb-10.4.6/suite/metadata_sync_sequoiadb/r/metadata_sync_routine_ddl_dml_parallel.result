@@ -282,6 +282,21 @@ connection conn2;
 drop procedure bar;
 drop procedure zip;
 drop table t1;
+connection conn1;
+drop trigger if exists t1_bi;
+CREATE TABLE t1(a INT NOT NULL, b INT, c INT);
+CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW SET NEW.a = 1;
+connection conn2;
+INSERT INTO t1(b, c) VALUES (200, 300);
+select * from t1 order by c;
+a	b	c
+1	200	300
+connection conn1;
+drop trigger t1_bi;
+connection conn2;
+INSERT INTO t1(b, c) VALUES (200, 300);
+ERROR HY000: Field 'a' doesn't have a default value
+drop table t1;
 drop database metadata_sync_routine_ddl_dml_parallel;
 disconnect conn1;
 disconnect conn2;

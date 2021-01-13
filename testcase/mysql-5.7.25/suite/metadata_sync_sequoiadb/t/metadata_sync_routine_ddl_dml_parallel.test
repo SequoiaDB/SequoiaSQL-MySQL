@@ -224,9 +224,7 @@ flush privileges;
 
 #Bug SEQUOIASQLMAINSTREAM-897
 connection conn2;
---disable_warnings
 create definer = metedata_sync_user_23097 function hello (s char(20)) returns char(50) deterministic return concat('Hello,' , s , '!');
---enable_warnings
 
 connect ( conn3, $mysql_host1, 'metedata_sync_user_23097', 'metedata_sync_user_23097', $mysql_db, $port1 );
 connection conn3;
@@ -401,25 +399,25 @@ drop table t1;
 
 #Bug SEQUOIASQLMAINSTREAM-869
 #seqDB-23100
-#connection conn1;
-#--disable_warnings
-#drop trigger if exists t1_bi;
-#--enable_warnings
+connection conn1;
+--disable_warnings
+drop trigger if exists t1_bi;
+--enable_warnings
 
-#CREATE TABLE t1(a INT NOT NULL, b INT, c INT);
-#CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW SET NEW.a = 1;
-#
-#connection conn2;
-#INSERT INTO t1(b, c) VALUES (200, 300);
-#select * from t1 order by c;
-#
-#connection conn1;
-#drop trigger t1_bi;
-#
-#connection conn2;
-#--error 1364
-#INSERT INTO t1(b, c) VALUES (200, 300);
-#drop table t1;
+CREATE TABLE t1(a INT NOT NULL, b INT, c INT);
+CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW SET NEW.a = 1;
+
+connection conn2;
+INSERT INTO t1(b, c) VALUES (200, 300);
+select * from t1 order by c;
+
+connection conn1;
+drop trigger t1_bi;
+
+connection conn2;
+--error 1364
+INSERT INTO t1(b, c) VALUES (200, 300);
+drop table t1;
 
 drop database metadata_sync_routine_ddl_dml_parallel;
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
