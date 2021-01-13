@@ -1432,7 +1432,8 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
     cond = builder.done();
     rc = sql_log_cl.query(cond, SDB_EMPTY_BSON, order_by, SDB_EMPTY_BSON, 0,
                           REPLAY_LIMIT);
-    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc) ||
+        SDB_DMS_CS_NOTEXIST == get_sdb_code(rc)) {
       // stop current instance if the instance group has been cleared
       sql_print_error(
           "HA: SQL log table does not exists, please check if the instance "
