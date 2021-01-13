@@ -771,5 +771,42 @@ ERROR 42000: Unknown database 'metaSync_\4E2D\6587'
 SET sql_mode = default;
 SET character_set_client = default;
 SET character_set_connection = default;
+connection conn1;
+create database metaSync_create_tables;
+use metaSync_create_tables;
+create table t(a int);
+drop table t1,t;
+ERROR 42S02: Unknown table 'metaSync_create_tables.t1'
+connection conn2;
+use metaSync_create_tables;
+show create table t;
+ERROR 42S02: Table 'metaSync_create_tables.t' doesn't exist
+connection conn1;
+create table tt1(id int);
+create view vv1 as select 1;
+drop table tt111, tt1;
+ERROR 42S02: Unknown table 'metaSync_create_tables.tt111'
+drop view vv111,vv1;
+ERROR 42S02: Unknown VIEW: 'metaSync_create_tables.vv111'
+connection conn2;
+show create table tt1;
+ERROR 42S02: Table 'metaSync_create_tables.tt1' doesn't exist
+show create table vv1;
+ERROR 42S02: Table 'metaSync_create_tables.vv1' doesn't exist
+connection conn1;
+create table ts1(id int);
+create view vs1 as select 1;
+drop table if exists ts111,ts1;
+Warnings:
+Note	1051	Unknown table 'metaSync_create_tables.ts111'
+drop view if exists vs111, vs1;
+Warnings:
+Note	4092	Unknown VIEW: 'metaSync_create_tables.vs111'
+connection conn2;
+show create table ts1;
+ERROR 42S02: Table 'metaSync_create_tables.ts1' doesn't exist
+show create table vs1;
+ERROR 42S02: Table 'metaSync_create_tables.vs1' doesn't exist
+drop database metaSync_create_tables;
 disconnect conn1;
 disconnect conn2;

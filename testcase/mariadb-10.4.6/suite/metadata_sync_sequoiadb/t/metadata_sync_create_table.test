@@ -518,5 +518,48 @@ SET sql_mode = default;
 SET character_set_client = default;
 SET character_set_connection = default;
 
+#seqDB-23357
+#table
+connection conn1;
+create database metaSync_create_tables;
+use metaSync_create_tables;
+create table t(a int);
+--error 1051
+drop table t1,t;
+
+connection conn2;
+use metaSync_create_tables;
+--error 1146
+show create table t;
+
+#view
+connection conn1;
+create table tt1(id int); 
+create view vv1 as select 1; 
+--error 1051
+drop table tt111, tt1; 
+--error 4092
+drop view vv111,vv1; 
+ 
+connection conn2;
+--error 1146
+show create table tt1;
+--error 1146
+show create table vv1;
+
+#view
+connection conn1;
+create table ts1(id int);
+create view vs1 as select 1; 
+drop table if exists ts111,ts1; 
+drop view if exists vs111, vs1; 
+
+connection conn2;
+--error 1146
+show create table ts1;
+--error 1146
+show create table vs1;
+drop database metaSync_create_tables;
+
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

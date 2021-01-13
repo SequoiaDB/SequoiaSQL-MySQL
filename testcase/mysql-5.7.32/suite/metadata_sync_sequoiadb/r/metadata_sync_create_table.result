@@ -631,3 +631,34 @@ Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 SET character_set_client = default;
 SET character_set_connection = default;
+create database metaSync_create_tables;
+use metaSync_create_tables;
+create table t(a int);
+drop table t1,t;
+ERROR 42S02: Unknown table 'metaSync_create_tables.t1'
+use metaSync_create_tables;
+show create table t;
+ERROR 42S02: Table 'metaSync_create_tables.t' doesn't exist
+create table tt1(id int);
+create view vv1 as select 1;
+drop table tt111, tt1;
+ERROR 42S02: Unknown table 'metaSync_create_tables.tt111'
+drop view vv111,vv1;
+ERROR 42S02: Unknown table 'metaSync_create_tables.vv111'
+show create table tt1;
+ERROR 42S02: Table 'metaSync_create_tables.tt1' doesn't exist
+show create table vv1;
+ERROR 42S02: Table 'metaSync_create_tables.vv1' doesn't exist
+create table ts1(id int);
+create view vs1 as select 1;
+drop table if exists ts111,ts1;
+Warnings:
+Note	1051	Unknown table 'metaSync_create_tables.ts111'
+drop view if exists vs111, vs1;
+Warnings:
+Note	1051	Unknown table 'metaSync_create_tables.vs111'
+show create table ts1;
+ERROR 42S02: Table 'metaSync_create_tables.ts1' doesn't exist
+show create table vs1;
+ERROR 42S02: Table 'metaSync_create_tables.vs1' doesn't exist
+drop database metaSync_create_tables;
