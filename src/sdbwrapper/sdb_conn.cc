@@ -164,12 +164,14 @@ int Sdb_conn::connect() {
         switch (rc) {
           case SDB_FNE:
             snprintf(errmsg, sizeof(errmsg), "Cipherfile not exist, rc=%d", rc);
+            rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
             break;
           case SDB_AUTH_USER_NOT_EXIST:
             snprintf(errmsg, sizeof(errmsg),
                      "User specified is not exist, you can add the user by "
                      "sdbpasswd tool, rc=%d",
                      rc);
+            rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
             break;
           case SDB_PERM:
             snprintf(
@@ -177,13 +179,13 @@ int Sdb_conn::connect() {
                 "Permission error, you can check if you have permission to "
                 "access cipherfile, rc=%d",
                 rc);
+            rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
             break;
           default:
             snprintf(errmsg, sizeof(errmsg),
                      "Failed to connect to sequoiadb, rc=%d", rc);
             break;
         }
-        rc = SDB_AUTH_AUTHORITY_FORBIDDEN;
       }
       goto error;
     }
