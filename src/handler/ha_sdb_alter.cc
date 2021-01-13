@@ -1628,6 +1628,15 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
               rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
               goto error;
             }
+
+            if (!is_strict_mode(sql_mode) &&
+                MYSQL_TYPE_GEOMETRY == old_field->real_type()) {
+              ha_alter_info->unsupported_reason = my_get_err_msg(
+                  ER_ALTER_OPERATION_NOT_SUPPORTED_REASON_NOT_NULL);
+              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+              goto error;
+            }
+
             op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
           }
 
