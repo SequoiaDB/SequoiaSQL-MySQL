@@ -940,17 +940,76 @@ id	a
 alter table t1 add partition (partition p3 values in(11,12));
 insert into t1 values(11,11),(12,12);
 update t1 set a = a + 1 where id >=11;
+select * from t1 order by id;
+id	a
+1	2
+2	3
+3	4
+4	5
+5	6
+6	7
+7	8
+8	9
+9	10
+10	11
+11	12
+12	13
 alter table t1 drop partition p0;
 update t1 set a = a + 1;
+select * from t1 order by id;
+id	a
+2	4
+4	6
+6	8
+8	10
+10	12
+11	13
+12	14
 alter table t1 reorganize partition p1 into (partition n0 values in(2,4,6), partition n1 values in(8,10));
 insert into t1 partition (n0,n1) values(2,2),(8,8),(4,4),(10,10),(6,6);
 update t1 set a = a + 1;
+select * from t1 order by id;
+id	a
+2	5
+2	3
+4	7
+4	5
+6	9
+6	7
+8	11
+8	9
+10	13
+10	11
+11	14
+12	15
 alter table t1 reorganize partition n0,n1 into (partition p0 values in(2,4));
 insert into t1 partition (p0) values(2,2),(4,4);
 update t1 set a = a + 1;
+select * from t1 order by id;
+id	a
+2	6
+2	4
+2	3
+4	8
+4	6
+4	5
+11	15
+12	16
 alter table t1 rebuild partition p0;
 insert into t1 partition (p0) values(2,2),(4,4);
 update t1 set a = a + 1;
+select * from t1 order by id;
+id	a
+2	7
+2	5
+2	4
+2	3
+4	9
+4	7
+4	6
+4	5
+11	16
+12	17
 alter table t1 truncate partition p3;
 insert into t1 values(11,11),(12,12);
 update t1 set a = a + 1;
