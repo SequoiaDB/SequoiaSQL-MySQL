@@ -340,7 +340,7 @@ index e49dbe9..a13e97b 100644
    lex->unit.cleanup();
 
 diff --git a/sql-src/mariadb-10.4.6/sql/sql_sequence.cc b/sql-src/mariadb-10.4.6/sql/sql_sequence.cc
-index 9f17590..f852761 100644
+index 9f17590..dfd57e0 100644
 --- a/sql-src/mariadb-10.4.6/sql/sql_sequence.cc
 +++ b/sql-src/mariadb-10.4.6/sql/sql_sequence.cc
 @@ -678,7 +678,7 @@ int sequence_definition::write(TABLE *table, bool all_fields)
@@ -351,6 +351,23 @@ index 9f17590..f852761 100644
 +  longlong org_reserved_until, add_to;
    bool out_of_values;
    DBUG_ENTER("SEQUENCE::next_value");
+ 
+@@ -745,6 +745,7 @@ longlong SEQUENCE::next_value(TABLE *table, bool second_round, int *error)
+     DBUG_RETURN(next_value(table, 1, error));
+   }
+ 
++  table->file->extra(HA_EXTRA_NEXT_VALUE);
+   if (unlikely((*error= write(table, 0))))
+   {
+     reserved_until= org_reserved_until;
+@@ -851,6 +852,7 @@ int SEQUENCE::set_value(TABLE *table, longlong next_val, ulonglong next_round,
+       needs_to_be_stored)
+   {
+     reserved_until= next_free_value;
++    table->file->extra(HA_EXTRA_SET_VALUE);
+     if (write(table, 0))
+     {
+       reserved_until=  org_reserved_until;
  
 diff --git a/sql-src/mariadb-10.4.6/sql/sql_sequence.h b/sql-src/mariadb-10.4.6/sql/sql_sequence.h
 index 2d609d8..594d886 100644

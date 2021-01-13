@@ -47,6 +47,8 @@ class ha_sdb_seq : public ha_sdb {
 
   int rnd_end() { return 0; }
 
+  int extra(enum ha_extra_function operation);
+
   int reset();
 
   int close(void);
@@ -63,6 +65,8 @@ class ha_sdb_seq : public ha_sdb {
   int select_sequence();
 
  private:
+  bool m_use_next_value;
+  bool m_use_set_value;
   Sdb_seq *m_sequence;
   char m_sequence_name[SDB_CL_NAME_MAX_SIZE + 1];
 };

@@ -1,0 +1,17 @@
+diff --git a/sql-src/mariadb-10.4.6/include/my_base.h b/sql-src/mariadb-10.4.6/include/my_base.h
+index 68b3aaa..47aa283 100644
+--- a/sql-src/mariadb-10.4.6/include/my_base.h
++++ b/sql-src/mariadb-10.4.6/include/my_base.h
+@@ -215,7 +215,11 @@ enum ha_extra_function {
+   /** Finish writing rows during ALTER TABLE...ALGORITHM=COPY. */
+   HA_EXTRA_END_ALTER_COPY,
+   /** Fake the start of a statement after wsrep_load_data_splitting hack */
+-  HA_EXTRA_FAKE_START_STMT
++  HA_EXTRA_FAKE_START_STMT,
++  /** Mark writing row of NEXTVAL for sequence */
++  HA_EXTRA_NEXT_VALUE,
++  /** Mark writing row of SETVAL for sequence */
++  HA_EXTRA_SET_VALUE
+ };
+ 
+ /* Compatible option, to be deleted in 6.0 */

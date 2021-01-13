@@ -27,6 +27,8 @@
 
 ha_sdb_seq::ha_sdb_seq(handlerton *hton, TABLE_SHARE *table_arg)
     : ha_sdb(hton, table_arg) {
+  m_use_next_value = false;
+  m_use_set_value = false;
   m_sequence = NULL;
   memset(m_sequence_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
 }
@@ -430,32 +432,28 @@ int ha_sdb_seq::select_sequence() {
   int rc = SDB_OK;
   longlong nr = 0;
   longlong increment = 0;
-  Item *item = NULL;
-  Item_func_nextval *item_tmp = NULL;
   SEQUENCE *seq = table->s->sequence;
-  SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
-  List<Item> *const item_list = &select_lex->item_list;
-  List_iterator_fast<Item> it(*item_list);
 
-  for (item = it++; item; item = it++) {
-    item_tmp = (Item_func_nextval *)item;
-    if (0 == strcmp(item_tmp->func_name(), SDB_ITEM_FUN_SET_VAL)) {
-      // For SELECT SETVAL().
-      if (!(increment = seq->increment)) {
-        increment = global_system_variables.auto_increment_increment;
-      }
-      nr = seq->reserved_until - increment;
-      rc = m_sequence->set_current_value(nr);
-      if (rc) {
-        goto error;
-      }
-    } else if (0 == strcmp(item_tmp->func_name(), SDB_ITEM_FUN_NEXT_VAL)) {
-      // For SELECT NEXTVAL().
-      rc = acquire_and_adjust_sequence_value(m_sequence);
-      if (rc) {
-        goto error;
-      }
+  // For SETVAL().
+  if (m_use_set_value) {
+    if (!(increment = seq->increment)) {
+      increment = global_system_variables.auto_increment_increment;
     }
+    nr = seq->reserved_until - increment;
+    rc = m_sequence->set_current_value(nr);
+    if (rc) {
+      goto error;
+    }
+    m_use_set_value = false;
+  }
+
+  // For NEXTVAL().
+  if (m_use_next_value) {
+    rc = acquire_and_adjust_sequence_value(m_sequence);
+    if (rc) {
+      goto error;
+    }
+    m_use_next_value = false;
   }
 
 done:
@@ -468,6 +466,9 @@ int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
   DBUG_ENTER("ha_sdb_seq::update_row");
 
   int rc = 0;
+  longlong nr = 0;
+  longlong increment = 0;
+  SEQUENCE *seq = table->s->sequence;
   TABLE *query_table = ha_thd()->lex->query_tables->table;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
@@ -479,10 +480,24 @@ int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
   DBUG_ASSERT(m_sequence->thread_id() == sdb_thd_id(ha_thd()));
   if (thd_sql_command(ha_thd()) == SQLCOM_INSERT) {
     if (table != query_table) {
-      // For NEXTVAL(sequence) when INSERT INTO table.
-      rc = acquire_and_adjust_sequence_value(m_sequence);
-      if (rc) {
-        goto error;
+      // For NEXTVAL/SETVAL when INSERT INTO table.
+      if (m_use_next_value) {
+        rc = acquire_and_adjust_sequence_value(m_sequence);
+        if (rc) {
+          goto error;
+        }
+        m_use_next_value = false;
+      }
+      if (m_use_set_value) {
+        if (!(increment = seq->increment)) {
+          increment = global_system_variables.auto_increment_increment;
+        }
+        nr = seq->reserved_until - increment;
+        rc = m_sequence->set_current_value(nr);
+        if (rc) {
+          goto error;
+        }
+        m_use_set_value = false;
       }
     } else {
       // For INSERT INTO sequence.
@@ -497,8 +512,9 @@ int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
     if (rc) {
       goto error;
     }
-  } else if ((thd_sql_command(ha_thd()) == SQLCOM_SELECT)) {
-    // For SELECT sequence.
+  } else if ((thd_sql_command(ha_thd()) == SQLCOM_SELECT ||
+              thd_sql_command(ha_thd()) == SQLCOM_DO)) {
+    // For SELECT/DO sequence.
     rc = select_sequence();
     if (rc) {
       goto error;
@@ -673,8 +689,24 @@ error:
   goto done;
 }
 
+int ha_sdb_seq::extra(enum ha_extra_function operation) {
+  switch (operation) {
+    case HA_EXTRA_NEXT_VALUE: /* Dup keys don't rollback everything*/
+      m_use_next_value = true;
+      break;
+    case HA_EXTRA_SET_VALUE:
+      m_use_set_value = true;
+      break;
+  }
+
+  return 0;
+}
+
 int ha_sdb_seq::reset() {
   DBUG_ENTER("ha_sdb_seq::reset");
+
+  m_use_next_value = false;
+  m_use_set_value = false;
   if (m_sequence) {
     delete m_sequence;
     m_sequence = NULL;

@@ -144,21 +144,23 @@ if(WITH_BOOST)
           RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()
 
-# apply patches for server_ha module
+# apply patches for connector
 set(SERVER_HA_PATCHES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/patches")
 if(EXISTS "${SERVER_HA_PATCHES_DIR}")
   if(SDB_PROJECT_TYPE STREQUAL "mariadb")
     set(PATCH_FILE "${SERVER_HA_PATCHES_DIR}/ha_mariadb_${MARIADB}.patch")
     set(DUMP_PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mariadb_mysqldump_${MARIADB}.patch")
+    set(SEQ_PATCH_FILE "${SERVER_HA_PATCHES_DIR}/seq_mariadb_${MARIADB}.patch")
+    set(MROONGA_PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mroonga_mariadb_${MARIADB}.patch")
   else()
     set(PATCH_FILE "${SERVER_HA_PATCHES_DIR}/ha_mysql_${MYSQL}.patch")
     set(DUMP_PATCH_FILE "${SERVER_HA_PATCHES_DIR}/mysql_mysqldump_${MYSQL}.patch")
   endif()
   
-  # apply HA patch file for 'sql_parse.cc'
+  # apply HA patch file for 'sql/*'
   if (EXISTS "${PATCH_FILE}")
-    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/sql/sql_parse.cc")
-    message(STATUS "Apply patch ${PATCH_FILE} on ${APPLY_PATCH_TARGET} for 'server_ha' module")
+    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/sql")
+    message(STATUS "Apply patch ${PATCH_FILE} on ${APPLY_PATCH_TARGET} directory")
     execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/sql" patch -s -N -i ${PATCH_FILE})
   else()
     message(FATAL_ERROR "Patch file ${PATCH_FILE} doesn't exist")
@@ -172,8 +174,25 @@ if(EXISTS "${SERVER_HA_PATCHES_DIR}")
   else()
     message(FATAL_ERROR "Patch file ${DUMP_PATCH_FILE} doesn't exist")
   endif()
+
+  # apply sequence patch file for 'include/*'
+  if (EXISTS "${SEQ_PATCH_FILE}")
+    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/include")
+    message(STATUS "Apply patch ${SEQ_PATCH_FILE} on ${APPLY_PATCH_TARGET} directory for sequence")
+    execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/include" patch -s -N -i ${SEQ_PATCH_FILE})
+  else()
+    message(FATAL_ERROR "Patch file ${SEQ_PATCH_FILE} doesn't exist")
+  endif()
+
+  # apply sequence patch file for 'storage/mroonga/*'
+  if (EXISTS "${MROONGA_PATCH_FILE}")
+    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/storage/mroonga")
+    message(STATUS "Apply patch ${MROONGA_PATCH_FILE} on ${APPLY_PATCH_TARGET} directory for sequence")
+    execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/storage/mroonga" patch -s -N -i ${MROONGA_PATCH_FILE})
+  else()
+    message(FATAL_ERROR "Patch file ${SEQ_PATCH_FILE} doesn't exist")
+  endif()
 else()
   message(FATAL_ERROR "Can't apply 'server_ha' patch, patch directory 'patches' doesn't exist")
 endif()
-
 
