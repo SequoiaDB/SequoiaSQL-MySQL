@@ -3070,7 +3070,14 @@ static inline bool need_retry_errno(uint mysql_errno) {
       need_retry = true;
   }
 
-  if (SDB_DMS_NOTEXIST == get_sdb_code(mysql_errno)) {
+  // set retry flag on current statement for getting correct error
+  // information under following situation:
+  // 1. drop table on first instance, CRUD on deleted collection in other
+  //    instances should report "Table XXX doesn't exist" error
+  // 2. drop database on first instance, CRUD on deleted database in other
+  //    instances should report proper error
+  if (SDB_DMS_NOTEXIST == get_sdb_code(mysql_errno) ||
+      SDB_DMS_CS_NOTEXIST == get_sdb_code(mysql_errno)) {
     need_retry = true;
   }
   return need_retry;
