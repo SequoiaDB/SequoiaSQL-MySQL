@@ -271,7 +271,7 @@ function add_inst()
       SQL_DATA=$(pwd)/$SQL_DATA    #relative path
    fi
    
-   if test -s $SQL_DATA; then
+   if test -s $SQL_DATA && [[ "`ls -A $SQL_DATA`" != "" ]]; then
       echo "ERROR: The data directory $SQL_DATA is not empty"
       exit 5
    fi
