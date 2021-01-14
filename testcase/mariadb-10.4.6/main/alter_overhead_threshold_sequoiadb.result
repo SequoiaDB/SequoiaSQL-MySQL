@@ -3486,6 +3486,8 @@ alter table t1 modify mline tinyblob not null,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 alter table t1 modify mploy mediumblob not null,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
+alter table t1 modify geocol longblob not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 alter table t1 drop column geom1;
 ERROR 0A000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 drop column poin1;

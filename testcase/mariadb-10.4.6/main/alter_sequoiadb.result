@@ -5484,6 +5484,8 @@ alter table t1 modify a11 tinytext null,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 alter table t1 modify a12 text null,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
+alter table t1 modify a13 longblob null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 alter table t1 modify a14 timestamp null,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 drop table t1;
@@ -5577,6 +5579,12 @@ ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conv
 alter table t1 modify a20 geometry ,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 alter table t1 modify a24 geometry ,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
+alter table t1 modify a21 geometry ,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
+alter table t1 modify a22 geometry ,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
+alter table t1 modify a23 geometry ,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY
 show create table t1;
 Table	Create Table

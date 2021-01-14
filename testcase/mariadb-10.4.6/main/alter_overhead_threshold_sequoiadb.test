@@ -1380,9 +1380,9 @@ alter table t1 modify mpoin date not null,algorithm=inplace;
 alter table t1 modify mline tinyblob not null,algorithm=inplace;
 --error 1846
 alter table t1 modify mploy mediumblob not null,algorithm=inplace;
-#SEQUOIASQLMAINSTREAM-823	
-#--error 1846
-#alter table t1 modify geocol longblob not null,algorithm=inplace;
+#BUG #SEQUOIASQLMAINSTREAM-823	
+--error 1846
+alter table t1 modify geocol longblob not null,algorithm=inplace;
 
 --error 131
 alter table t1 drop column geom1;

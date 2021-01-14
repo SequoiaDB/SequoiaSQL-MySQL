@@ -1269,7 +1269,7 @@ select id,ST_AsText(geom),ST_AsText(poin),ST_AsText(line),ST_AsText(poly),ST_AsT
 --sorted_result
 select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1;
 
-# failed to change the property name   
+# failed to change the field name   
 --error 1845
 alter table t1 change geom newgeom geometry null,algorithm=inplace;
 --error 1845
@@ -1371,8 +1371,9 @@ alter table t1 modify mpoin date not null,algorithm=inplace;
 alter table t1 modify mline tinyblob not null,algorithm=inplace;
 --error 1846
 alter table t1 modify mploy mediumblob not null,algorithm=inplace;
-#--error 1846
-#alter table t1 modify geocol longblob not null,algorithm=inplace;
+#BUG #SEQUOIASQLMAINSTREAM-823
+--error 1846
+alter table t1 modify geocol longblob not null,algorithm=inplace;
 
 --error 131
 alter table t1 drop column geom1;
