@@ -25,10 +25,11 @@ connection conn1;
 GRANT create,alter,drop ON t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
-connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
-connection conn3;
-alter table metadata_sync_23102.t1 add column d int;
-disconnect conn3;
+#Bug 	SEQUOIASQLMAINSTREAM-907
+#connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
+#connection conn3;
+#alter table metadata_sync_23102.t1 add column d int;
+#disconnect conn3;
 
 connection conn1;
 use metadata_sync_user_parallel;
@@ -37,19 +38,21 @@ flush privileges;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23102'@'.*' for/'metadata_sync_user_23102'@'x' for/
 --error 1142
 alter table metadata_sync_23102.t1 drop column d;
 disconnect conn3;
 
 connection conn1;
-alter table metadata_sync_23102.t1 drop column d;
+#alter table metadata_sync_23102.t1 drop column d;
 GRANT insert,update,delete,select ON metadata_sync_23102.t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
-connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
-connection conn3;
-insert into metadata_sync_23102.t1 values(1,1,1);
-disconnect conn3;
+#Bug 	SEQUOIASQLMAINSTREAM-907
+#connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
+#connection conn3;
+#insert into metadata_sync_23102.t1 values(1,1,1);
+#disconnect conn3;
 
 connection conn1;
 revoke insert,update,delete,select on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
@@ -57,6 +60,7 @@ FLUSH PRIVILEGES;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23102'@'.*' for/'metadata_sync_user_23102'@'x' for/
 --error 1142
 insert into metadata_sync_23102.t1 values(1,1,1);
 disconnect conn3;
@@ -65,10 +69,11 @@ connection conn1;
 GRANT index ON metadata_sync_23102.t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
-connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
-connection conn3;
-create index a on metadata_sync_23102.t1(a);
-disconnect conn3;
+#Bug 	SEQUOIASQLMAINSTREAM-907
+#connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
+#connection conn3;
+#create index a on metadata_sync_23102.t1(a);
+#disconnect conn3;
 
 connection conn1;
 revoke index on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
@@ -76,6 +81,7 @@ FLUSH PRIVILEGES;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23102'@'.*' for/'metadata_sync_user_23102'@'x' for/
 --error 1142
 drop index a on metadata_sync_23102.t1;
 disconnect conn3;
@@ -85,11 +91,12 @@ CREATE TRIGGER metadata_sync_23102.t1_bi BEFORE INSERT ON t1 FOR EACH ROW SET NE
 GRANT insert,select,trigger ON metadata_sync_23102.t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
-connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
-connection conn3;
-insert into metadata_sync_23102.t1(b,c) values(2,2);
-select * from metadata_sync_23102.t1 order by c;
-disconnect conn3;
+#Bug 	SEQUOIASQLMAINSTREAM-907
+#connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
+#connection conn3;
+#insert into metadata_sync_23102.t1(b,c) values(2,2);
+#select * from metadata_sync_23102.t1 order by c;
+#disconnect conn3;
 
 connection conn1;
 revoke insert,trigger on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
@@ -97,6 +104,7 @@ FLUSH PRIVILEGES;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23102'@'.*' for/'metadata_sync_user_23102'@'x' for/
 --error 1142
 insert into metadata_sync_23102.t1(b,c) values(2,2);
 select * from metadata_sync_23102.t1 order by c;
@@ -118,6 +126,7 @@ FLUSH PRIVILEGES;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23102'@'.*' for/'metadata_sync_user_23102'@'x' for/
 --error 1142
 show create view metadata_sync_23102.v1;
 disconnect conn3;
@@ -160,6 +169,7 @@ flush privileges;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23103'@'.*' for/'metadata_sync_user_23103'@'x' for/
 --error 1142
 alter table metadata_sync_23103.t1 drop column d;
 disconnect conn3;
@@ -182,6 +192,7 @@ FLUSH PRIVILEGES;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23103'@'.*' for/'metadata_sync_user_23103'@'x' for/
 --error 1142
 insert into metadata_sync_23103.t1 values(1,1,1);
 disconnect conn3;
@@ -202,6 +213,7 @@ FLUSH PRIVILEGES;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23103'@'.*' for/'metadata_sync_user_23103'@'x' for/
 --error 1142
 drop index a on metadata_sync_23103.t1;
 disconnect conn3;
@@ -224,6 +236,7 @@ FLUSH PRIVILEGES;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23103'@'.*' for/'metadata_sync_user_23103'@'x' for/
 --error 1142
 insert into metadata_sync_23103.t1(b,c) values(2,2);
 select * from metadata_sync_23103.t1 order by c;
@@ -246,6 +259,7 @@ FLUSH PRIVILEGES;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
+--replace_regex /'metadata_sync_user_23103'@'.*' for/'metadata_sync_user_23103'@'x' for/
 --error 1142
 show create view metadata_sync_23103.v1;
 disconnect conn3;
