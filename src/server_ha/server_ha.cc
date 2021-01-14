@@ -127,13 +127,6 @@ static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
       (*sql_info)->inited = false;
       (*sql_info)->is_result_set_started = false;
       (*sql_info)->last_instr_lex = NULL;
-
-      if (sdb_hash_init(&((*sql_info)->dml_checked_objects),
-                        system_charset_info, 32, 0, 0,
-                        (my_hash_get_key)cached_record_get_key,
-                        free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
-        return SDB_HA_OOM;
-      }
       my_set_thread_local(ha_sql_stmt_info_key, *sql_info);
     } else {
       rc = SDB_HA_OOM;
@@ -2007,6 +2000,7 @@ int fix_create_table_stmt(THD *thd, ha_event_class_t event_class,
       TABLE_LIST tables;
       tables.init_one_table(&table_list->db, &table_list->table_name, 0,
                             TL_READ_WITH_SHARED_LOCKS);
+      close_thread_tables(thd);
       rc = open_and_lock_tables(thd, &tables, FALSE, MYSQL_LOCK_IGNORE_TIMEOUT);
       if (rc) {
         goto error;
@@ -3981,10 +3975,10 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     if (sql_info->sdb_conn) {
       delete sql_info->sdb_conn;
       sql_info->sdb_conn = NULL;
-      my_hash_reset(&sql_info->dml_checked_objects);
-      my_hash_free(&sql_info->dml_checked_objects);
       SDB_LOG_DEBUG("HA: Destroy sequoiadb connection");
     }
+    my_hash_reset(&sql_info->dml_checked_objects);
+    my_hash_free(&sql_info->dml_checked_objects);
     goto done;
   }
 
@@ -4580,6 +4574,7 @@ static int server_ha_init(void *p) {
     // 2. create pending log replayer thread
     pending_log_replayer.recover_cond = &ha_thread.recover_finished_cond;
     pending_log_replayer.recover_mutex = &ha_thread.recover_finished_mutex;
+    pending_log_replayer.recover_finished = &ha_thread.recover_finished;
     pending_log_replayer.sdb_group_name = ha_thread.sdb_group_name;
     pending_log_replayer.stopped = true;
     sdb_mysql_cond_init(HA_KEY_COND_PENDING_LOG_REPLAYER,

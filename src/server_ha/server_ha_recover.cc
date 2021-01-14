@@ -258,6 +258,7 @@ static int mysql_create_user(THD *thd, LEX_USER &lex_user) {
   rc = mysql_grant(thd, NULL, list, rights, false, false);
   close_thread_tables(thd);
   thd->mdl_context.release_transactional_locks();
+  close_connection(thd, 0);
   return rc;
 #endif
 #endif
@@ -1994,8 +1995,10 @@ void *ha_replay_pending_logs(void *arg) {
 
   sdb_set_timespec(abstime, WAIT_RECOVER_TIMEOUT);
   mysql_mutex_lock(replayer->recover_mutex);
-  mysql_cond_timedwait(replayer->recover_cond, replayer->recover_mutex,
-                       &abstime);
+  if (!replayer->recover_finished) {
+    mysql_cond_timedwait(replayer->recover_cond, replayer->recover_mutex,
+                         &abstime);
+  }
   mysql_mutex_unlock(replayer->recover_mutex);
 
   mysql_mutex_lock(&replayer->stopped_mutex);

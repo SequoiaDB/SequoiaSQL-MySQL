@@ -217,6 +217,7 @@ typedef struct st_pending_log_replay_thread {
   mysql_cond_t stopped_cond;
   mysql_mutex_t stopped_mutex;
 
+  bool *recover_finished;
   mysql_cond_t *recover_cond;
   mysql_mutex_t *recover_mutex;
   const char *sdb_group_name;
