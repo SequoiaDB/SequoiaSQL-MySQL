@@ -429,6 +429,11 @@
                 <compareText text="${installer_command_line_arguments}" value="--prefix" logic="contains"/>
             </ruleList>
         </setInstallerVariable>
+        <stringModify>
+            <variable>installdir</variable>
+            <logic>trimright</logic>
+            <text>${installdir}</text>
+        </stringModify>
         <throwError>
             <text>${msg(install.errmsg.prefix.check)}</text>
             <ruleList>
@@ -677,6 +682,11 @@
     </parameterList>
     
     <readyToInstallActionList>
+        <stringModify>
+            <variable>installdir</variable>
+            <logic>trimright</logic>
+            <text>${installdir}</text>
+        </stringModify>
         <throwError>
             <text>${msg(install.errmsg.prefix.check)}</text>
             <ruleList>
