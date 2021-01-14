@@ -263,6 +263,49 @@ error:
   goto done;
 }
 
+/* Ofssets are usually set when sequences are used in more than one
+   instance of native mariadb. That doesn't make sense to us, just
+   for compatibility.*/
+longlong apply_offset(const TABLE *table, longlong next_value) {
+  SEQUENCE *seq = table->s->sequence;
+  longlong real_increment = 0;
+  longlong increment = seq->increment;
+  longlong max_value = seq->max_value;
+
+  if (!(real_increment = increment)) {
+    longlong offset = 0;
+    longlong off = 0;
+    longlong to_add = 0;
+    /* Use auto_increment_increment and auto_increment_offset */
+    if ((real_increment = global_system_variables.auto_increment_increment) !=
+        1) {
+      offset = (global_system_variables.auto_increment_offset %
+                global_system_variables.auto_increment_increment);
+    }
+    /*
+       Ensure that next_free_value has the right offset, so that we
+       can generate a serie by just adding real_increment.
+    */
+    off = next_value % real_increment;
+    if (off < 0) {
+      off += real_increment;
+    }
+    to_add = (real_increment + offset - off) % real_increment;
+    /*
+       Check if add will make next_free_value bigger than max_value,
+       taken into account that next_free_value or max_value addition
+       may overflow
+    */
+    if (next_value > max_value - to_add || next_value + to_add > max_value) {
+      next_value = max_value + 1;
+    } else {
+      next_value += to_add;
+      DBUG_ASSERT(llabs(next_value % real_increment) == offset);
+    }
+  }
+  return next_value;
+}
+
 int ha_sdb_seq::acquire_and_adjust_sequence_value(Sdb_seq *sdb_seq) {
   int rc = SDB_OK;
   int fetch_num = 0;
@@ -282,7 +325,7 @@ int ha_sdb_seq::acquire_and_adjust_sequence_value(Sdb_seq *sdb_seq) {
     goto error;
   }
 
-  seq->res_value = next_value;
+  seq->res_value = apply_offset(table, next_value);
   seq->adjust_values(seq->increment_value(next_value));
   add_to = return_num * increment;
   if (increment > 0) {
