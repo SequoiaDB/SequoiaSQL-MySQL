@@ -3789,11 +3789,12 @@ static void post_wait_for_special_stmt(THD *thd, ha_sql_stmt_info *sql_info) {
   int sql_command = thd_sql_command(thd);
   longlong instance_count = 0, finish_replay_count = 0;
   ha_table_list *ha_table = sql_info->tables;
-  need_wait =
-      (SQLCOM_REVOKE == sql_command || SQLCOM_DROP_TRIGGER == sql_command);
+  need_wait = (SQLCOM_REVOKE == sql_command || SQLCOM_GRANT == sql_command ||
+               SQLCOM_DROP_TRIGGER == sql_command);
 
 #ifdef IS_MARIADB
-  need_wait = (need_wait || (SQLCOM_ALTER_SEQUENCE == sql_command));
+  need_wait = (need_wait || (SQLCOM_ALTER_SEQUENCE == sql_command ||
+                             SQLCOM_GRANT_ROLE == sql_command));
 #else
   bool add_partition =
       (thd->lex->alter_info.flags & Alter_info::ALTER_ADD_PARTITION);
