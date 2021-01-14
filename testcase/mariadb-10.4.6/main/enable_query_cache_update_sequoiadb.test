@@ -453,15 +453,15 @@ update t1 set b = 8111111111;
 select * from t1 order by b;
 set sql_mode = "STRICT_ALL_TABLES";
 #BUG #SEQUOIASQLMAINSTREAM-601
-#update t1 set a = -111.111111111111111111111 ;
-#select * from t1 order by a;
-#update t1 set b = 111.111111111111111111111 ;
-#select * from t1 order by b;
-#set sql_mode = "";
-#update t1 set a = -9.99999 ;
-#select * from t1 order by a;
-#update t1 set b = 9.99999 ;
-#select * from t1 order by b;
+update t1 set a = -111.111111111111111111111 ;
+select * from t1 order by a;
+update t1 set b = 111.111111111111111111111 ;
+select * from t1 order by b;
+set sql_mode = "";
+update t1 set a = -9.99999 ;
+select * from t1 order by a;
+update t1 set b = 9.99999 ;
+select * from t1 order by b;
 set sql_mode = default;
 drop table t1;
 

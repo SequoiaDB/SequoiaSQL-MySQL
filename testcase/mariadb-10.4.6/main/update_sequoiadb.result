@@ -852,6 +852,55 @@ a	b
 99999999.99	99999999.99
 99999999.99	99999999.99
 set sql_mode = "STRICT_ALL_TABLES";
+update t1 set a = -111.111111111111111111111 ;
+Warnings:
+Note	1265	Data truncated for column 'a' at row 1
+select * from t1 order by a;
+a	b
+-111.11	99999999.99
+-111.11	99999999.99
+-111.11	99999999.99
+-111.11	99999999.99
+-111.11	99999999.99
+-111.11	99999999.99
+-111.11	99999999.99
+update t1 set b = 111.111111111111111111111 ;
+Warnings:
+Note	1265	Data truncated for column 'b' at row 1
+select * from t1 order by b;
+a	b
+-111.11	111.11
+-111.11	111.11
+-111.11	111.11
+-111.11	111.11
+-111.11	111.11
+-111.11	111.11
+-111.11	111.11
+set sql_mode = "";
+update t1 set a = -9.99999 ;
+Warnings:
+Note	1265	Data truncated for column 'a' at row 1
+select * from t1 order by a;
+a	b
+-10.00	111.11
+-10.00	111.11
+-10.00	111.11
+-10.00	111.11
+-10.00	111.11
+-10.00	111.11
+-10.00	111.11
+update t1 set b = 9.99999 ;
+Warnings:
+Note	1265	Data truncated for column 'b' at row 1
+select * from t1 order by b;
+a	b
+-10.00	10.00
+-10.00	10.00
+-10.00	10.00
+-10.00	10.00
+-10.00	10.00
+-10.00	10.00
+-10.00	10.00
 set sql_mode = default;
 drop table t1;
 drop database update_test_sequoiadb;
