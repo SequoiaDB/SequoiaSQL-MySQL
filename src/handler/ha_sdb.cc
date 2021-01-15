@@ -3669,11 +3669,12 @@ error:
 int ha_sdb::index_init(uint idx, bool sorted) {
   DBUG_ENTER("ha_sdb::index_init()");
   active_index = idx;
+  int table_pos = table->pos_in_table_list->table_id;
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }
 #ifdef IS_MARIADB
-  m_secondary_sort_rowid = sdb_is_ror_scan(ha_thd(), table->tablenr);
+  m_secondary_sort_rowid = sdb_is_ror_scan(ha_thd(), table_pos);
 #endif
   DBUG_RETURN(0);
 }
