@@ -541,23 +541,6 @@ class Cast_time2time : public I_build_cast_rule {
 
 Cast_time2time t2t;
 
-class Cast_datetime2datetime : public I_build_cast_rule {
- public:
-  bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
-                  Field *new_field) {
-    bool rs = true;
-    if (old_field->decimals() <= new_field->decimals()) {
-      rs = false;
-      goto done;
-    }
-
-  done:
-    return rs;
-  }
-};
-
-Cast_datetime2datetime m2m;
-
 class Cast_timestamp2timestamp : public I_build_cast_rule {
  public:
   bool operator()(bson::BSONObjBuilder &builder, Field *old_field,
@@ -704,7 +687,7 @@ I_build_cast_rule *build_cast_funcs[SDB_TYPE_NUM][SDB_TYPE_NUM] = {
      &fai, &fai, &fai, &fai, &fai, &suc, &fai, &fai, &fai, &fai, &fai, &fai},
     /*18 DATETIME*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
-     &fai, &fai, &fai, &fai, &fai, &fai, &m2m, &fai, &fai, &fai, &fai, &fai},
+     &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai},
     /*19 TIMESTAMP*/
     {&fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai, &fai,
      &fai, &fai, &fai, &fai, &fai, &fai, &fai, &p2p, &fai, &fai, &fai, &fai},
