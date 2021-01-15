@@ -2151,20 +2151,37 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
   rs = false;
   // update cata version for collection
   if (ha_is_open()) {
-    bson::BSONObjBuilder builder;
-    bson::BSONObjBuilder sub_builder(builder.subobjStart(SDB_FIELD_ALTER));
-    sub_builder.append(SDB_FIELD_NAME, "increase version");
-    sub_builder.done();
-
-    builder.append(SDB_FIELD_ALTER_TYPE, "collection");
-    builder.append(SDB_FIELD_VERSION, 1);
-    builder.append(SDB_FIELD_NAME, cl_full_name);
-    increaseVerObj = builder.obj();
-    rc = cl.alter_collection(increaseVerObj);
-    if (rc) {
+    int major = 0, minor = 0, fix = 0;
+    rc = sdb_get_version(*conn, major, minor, fix);
+    if (rc != 0) {
       goto error;
     }
-    ha_set_cata_version(db_name, table_name, cl.get_version());
+
+    // increase collection version  is not allowed when SequoiaDB engine
+    // version is less than 3.4.2
+    if (!(major < 3 ||                               // x < 3
+          (3 == major && minor < 4) ||               // 3.x < 3.4
+          (3 == major && 4 == minor && fix < 2))) {  // 3.4.x < 3.4.2
+      try {
+        bson::BSONObjBuilder builder;
+        bson::BSONObjBuilder sub_builder(builder.subobjStart(SDB_FIELD_ALTER));
+        sub_builder.append(SDB_FIELD_NAME, "increase version");
+        sub_builder.done();
+
+        builder.append(SDB_FIELD_ALTER_TYPE, "collection");
+        builder.append(SDB_FIELD_VERSION, 1);
+        builder.append(SDB_FIELD_NAME, cl_full_name);
+        increaseVerObj = builder.obj();
+        rc = cl.alter_collection(increaseVerObj);
+        if (rc) {
+          goto error;
+        }
+      }
+      SDB_EXCEPTION_CATCHER(
+          rc, "Failed to alter collection version, table:%s.%s, exception:%s",
+          db_name, table_name, e.what());
+      ha_set_cata_version(db_name, table_name, cl.get_version());
+    }
   }
 done:
   if (ctx) {

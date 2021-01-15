@@ -103,6 +103,58 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
+static int check_sequoiadb_version(sdbclient::sdb &conn) {
+  int rc = 0;
+  try {
+    unsigned char major_ver = 0, minor_ver = 0, fix_ver = 0;
+    conn.getVersion(major_ver, minor_ver, fix_ver);
+    int major = major_ver;
+    int minor = minor_ver;
+    int fix = fix_ver;
+
+    if (0 == major) {
+      bson::BSONObjBuilder cond_ob(64);
+      cond_ob.append(SDB_FIELD_GLOBAL, false);
+      cond_ob.append(SDB_FIELD_RAWDATA, true);
+
+      bson::BSONObjBuilder sel_ob(64);
+      sel_ob.appendNull(SDB_FIELD_VERSION);
+
+      bson::BSONObj obj;
+      bson::BSONObj ver_obj;
+      sdbclient::sdbCursor cursor;
+
+      rc = conn.getSnapshot(cursor, SDB_SNAP_DATABASE, cond_ob.obj(),
+                            sel_ob.obj());
+      rc = rc ? rc : cursor.next(obj);
+      if (rc) {
+        cerr << "Error: failed to get sequoiadb version, sequoiadb error: "
+             << ha_sdb_error_string(conn, rc) << endl;
+        return rc;
+      }
+
+      ver_obj = obj.getField(SDB_FIELD_VERSION).Obj();
+      major = ver_obj.getField(SDB_FIELD_MAJOR).numberInt();
+      minor = ver_obj.getField(SDB_FIELD_MINOR).numberInt();
+      fix = ver_obj.getField(SDB_FIELD_FIX).numberInt();
+    }
+
+    if (major < 3 ||                              // x < 3
+        (3 == major && minor < 4) ||              // 3.x < 3.4
+        (3 == major && 4 == minor && fix < 2)) {  // 3.4.x < 3.4.2
+      // not support version
+      cerr << "Error: instance group function is only supported when "
+              "SequoiaDB version is greater than or equal to 3.4.2"
+           << endl;
+      rc = SDB_HA_INIT_ERR;
+    }
+  } catch (std::exception &e) {
+    cerr << "Error: unexpected error: " << e.what() << endl;
+    rc = SDB_HA_EXCEPTION;
+  }
+  return rc;
+}
+
 static int init_config(const string &name, ha_inst_group_config_cl &st_config,
                        const string &key, bool verbose = false) {
   string password_md5_hex_str, name_md5_hex_str;
@@ -187,6 +239,10 @@ int main(int argc, char *argv[]) {
       cout << "Error: 'host' must be specified as coord address" << endl;
       return SDB_HA_INVALID_PARAMETER;
     }
+
+    // check sequoiadb version
+    rc = check_sequoiadb_version(conn);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to check sequoiadb version");
 
     // check if instance group already exists
     sdbclient::sdbCollectionSpace inst_group_cs;
