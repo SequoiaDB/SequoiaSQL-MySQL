@@ -251,12 +251,13 @@ static int sdb_autoinc_current_value(Sdb_conn &conn, const char *full_name,
   bson::BSONObj info;
   bson::BSONElement elem;
   bson::BSONElement e;
-  bson::BufBuilder condition_buf(96);
-  const char *autoinc_name = NULL;
-  bson::BSONObjBuilder cond_builder(condition_buf);
-  bson::BSONObjBuilder sel_builder(96);
 
   try {
+    bson::BufBuilder condition_buf(96);
+    const char *autoinc_name = NULL;
+    bson::BSONObjBuilder cond_builder(condition_buf);
+    bson::BSONObjBuilder sel_builder(96);
+
     cond_builder.append(SDB_FIELD_NAME, full_name);
     condition = cond_builder.done();
     bson::BSONObjBuilder builder(
@@ -2037,71 +2038,70 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   int rc = SDB_ERR_OK;
-  bson::BSONObj result;
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
-  int sql_command = thd_sql_command(ha_thd());
-  /*
-    FLAG RULE:
-    INSERT IGNORE ...
-        => HA_EXTRA_IGNORE_DUP_KEY
-    REPLACE INTO ...
-        => HA_EXTRA_IGNORE_DUP_KEY + HA_EXTRA_WRITE_CAN_REPLACE
-    INSERT ... ON DUPLICATE KEY UPDATE ...
-        => HA_EXTRA_IGNORE_DUP_KEY + HA_EXTRA_INSERT_WITH_UPDATE
-  */
-  //  However, sometimes REPLACE INTO may miss HA_EXTRA_WRITE_CAN_REPLACE.
-  if (SQLCOM_REPLACE == sql_command || SQLCOM_REPLACE_SELECT == sql_command) {
-    m_write_can_replace = true;
-  }
-  int flag = 0;
-  if (m_insert_with_update) {
-    flag = 0;
-  } else if (m_write_can_replace) {
-    flag = FLG_INSERT_REPLACEONDUP | FLG_INSERT_RETURNNUM;
-  } else if (m_ignore_dup_key) {
-    flag = FLG_INSERT_CONTONDUP | FLG_INSERT_RETURNNUM;
-  }
 
-  bson::BSONObj hint;
   try {
+    bson::BSONObj result;
+    Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+    int sql_command = thd_sql_command(ha_thd());
+    /*
+      FLAG RULE:
+      INSERT IGNORE ...
+          => HA_EXTRA_IGNORE_DUP_KEY
+      REPLACE INTO ...
+          => HA_EXTRA_IGNORE_DUP_KEY + HA_EXTRA_WRITE_CAN_REPLACE
+      INSERT ... ON DUPLICATE KEY UPDATE ...
+          => HA_EXTRA_IGNORE_DUP_KEY + HA_EXTRA_INSERT_WITH_UPDATE
+    */
+    //  However, sometimes REPLACE INTO may miss HA_EXTRA_WRITE_CAN_REPLACE.
+    if (SQLCOM_REPLACE == sql_command || SQLCOM_REPLACE_SELECT == sql_command) {
+      m_write_can_replace = true;
+    }
+    int flag = 0;
+    if (m_insert_with_update) {
+      flag = 0;
+    } else if (m_write_can_replace) {
+      flag = FLG_INSERT_REPLACEONDUP | FLG_INSERT_RETURNNUM;
+    } else if (m_ignore_dup_key) {
+      flag = FLG_INSERT_CONTONDUP | FLG_INSERT_RETURNNUM;
+    }
+
+    bson::BSONObj hint;
     bson::BSONObjBuilder builder(96);
     sdb_build_clientinfo(ha_thd(), builder);
     hint = builder.obj();
+
+    rc = collection->insert(rows, hint, flag, &result);
+    if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
+      int rs = SDB_ERR_OK;
+      const char *idx_name = NULL;
+      rs = get_dup_info(result, &idx_name);
+      if (SDB_ERR_OK != rs) {
+        rc = rs;
+        goto error;
+      }
+      // Cannot support INSERT ... ON DUPLICATE KEY UPDATE ...
+      // when sdb doesn't return duplication info.
+      if (idx_name && m_insert_with_update) {
+        // Return this code so that mysql can call ::update_row().
+        rc = HA_ERR_FOUND_DUPP_KEY;
+      }
+    }
+
+    if (flag & FLG_INSERT_RETURNNUM) {
+      bson::BSONElement be_dup_num = result.getField(SDB_FIELD_DUP_NUM);
+      if (be_dup_num.isNumber()) {
+        thd_sdb->duplicated += be_dup_num.numberLong();
+      }
+      thd_sdb->replace_on_dup = m_write_can_replace;
+    }
+
+    update_last_insert_id();
+    stats.records += row_count;
+    update_incr_stat(row_count);
   }
   SDB_EXCEPTION_CATCHER(
-      rc,
-      "Failed to build client info when insert row, table:%s.%s, "
-      "exception=%s",
+      rc, "Failed to insert row table:%s.%s, exception:%s",
       db_name, table_name, e.what());
-
-  rc = collection->insert(rows, hint, flag, &result);
-  if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
-    int rs = SDB_ERR_OK;
-    const char *idx_name = NULL;
-    rs = get_dup_info(result, &idx_name);
-    if (SDB_ERR_OK != rs) {
-      rc = rs;
-      goto error;
-    }
-    // Cannot support INSERT ... ON DUPLICATE KEY UPDATE ...
-    // when sdb doesn't return duplication info.
-    if (idx_name && m_insert_with_update) {
-      // Return this code so that mysql can call ::update_row().
-      rc = HA_ERR_FOUND_DUPP_KEY;
-    }
-  }
-
-  if (flag & FLG_INSERT_RETURNNUM) {
-    bson::BSONElement be_dup_num = result.getField(SDB_FIELD_DUP_NUM);
-    if (be_dup_num.isNumber()) {
-      thd_sdb->duplicated += be_dup_num.numberLong();
-    }
-    thd_sdb->replace_on_dup = m_write_can_replace;
-  }
-
-  update_last_insert_id();
-  stats.records += row_count;
-  update_incr_stat(row_count);
 done:
   return rc;
 error:
@@ -3751,92 +3751,97 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
     org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
   }
 
-  bson::BSONObjIterator iter(obj);
+  try {
+    bson::BSONObjIterator iter(obj);
 
-  if (is_select && bitmap_is_clear_all(table->read_set)) {
-    // no field need to read
-    goto done;
-  }
-
-  rc = m_bson_element_cache.ensure(table->s->fields);
-  if (SDB_ERR_OK != rc) {
-    goto error;
-  }
-
-  free_root(&blobroot, MYF(0));
-
-  for (Field **fields = table->field; *fields; fields++) {
-    Field *field = *fields;
-    bson::BSONElement elem;
-
-    // we only skip non included fields when SELECT.
-    if (is_select && !bitmap_is_set(table->read_set, field->field_index)) {
-      continue;
+    if (is_select && bitmap_is_clear_all(table->read_set)) {
+      // no field need to read
+      goto done;
     }
 
-    if (!m_bson_element_cache[field->field_index].eoo()) {
-      elem = m_bson_element_cache[field->field_index];
-    } else {
-      while (iter.more()) {
-        bson::BSONElement elem_tmp = iter.next();
-        if (strcmp(elem_tmp.fieldName(), sdb_field_name(field)) == 0) {
-          // current element match the field
-          elem = elem_tmp;
-          break;
-        }
+    rc = m_bson_element_cache.ensure(table->s->fields);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
 
-        if (strcmp(elem_tmp.fieldName(), SDB_OID_FIELD) == 0) {
-          // ignore _id
-          continue;
-        }
+    free_root(&blobroot, MYF(0));
 
-        // find matched field to store the element
-        for (Field **next_fields = fields + 1; *next_fields; next_fields++) {
-          Field *next_field = *next_fields;
-          if (strcmp(elem_tmp.fieldName(), sdb_field_name(next_field)) == 0) {
-            m_bson_element_cache[next_field->field_index] = elem_tmp;
+    for (Field **fields = table->field; *fields; fields++) {
+      Field *field = *fields;
+      bson::BSONElement elem;
+
+      // we only skip non included fields when SELECT.
+      if (is_select && !bitmap_is_set(table->read_set, field->field_index)) {
+        continue;
+      }
+
+      if (!m_bson_element_cache[field->field_index].eoo()) {
+        elem = m_bson_element_cache[field->field_index];
+      } else {
+        while (iter.more()) {
+          bson::BSONElement elem_tmp = iter.next();
+          if (strcmp(elem_tmp.fieldName(), sdb_field_name(field)) == 0) {
+            // current element match the field
+            elem = elem_tmp;
             break;
+          }
+
+          if (strcmp(elem_tmp.fieldName(), SDB_OID_FIELD) == 0) {
+            // ignore _id
+            continue;
+          }
+
+          // find matched field to store the element
+          for (Field **next_fields = fields + 1; *next_fields; next_fields++) {
+            Field *next_field = *next_fields;
+            if (strcmp(elem_tmp.fieldName(), sdb_field_name(next_field)) == 0) {
+              m_bson_element_cache[next_field->field_index] = elem_tmp;
+              break;
+            }
           }
         }
       }
-    }
 
-    field->reset();
+      field->reset();
 
-    if (elem.eoo() || elem.isNull() || bson::Undefined == elem.type()) {
-      if (field->maybe_null()) {
-        field->set_null();
-      } else {
-        if (is_select) {
-          thd->raise_warning_printf(ER_WARN_NULL_TO_NOTNULL,
-                                    sdb_field_name(field),
-                                    sdb_thd_current_row(thd));
+      if (elem.eoo() || elem.isNull() || bson::Undefined == elem.type()) {
+        if (field->maybe_null()) {
+          field->set_null();
+        } else {
+          if (is_select) {
+            thd->raise_warning_printf(ER_WARN_NULL_TO_NOTNULL,
+                                      sdb_field_name(field),
+                                      sdb_thd_current_row(thd));
+          }
+          field->set_default();
         }
-        field->set_default();
+        continue;
       }
-      continue;
-    }
 
-    if (check_element_type_compatible(elem, field)) {
-      rc = bson_element_to_field(elem, field);
-      if (0 != rc) {
-        goto error;
+      if (check_element_type_compatible(elem, field)) {
+        rc = bson_element_to_field(elem, field);
+        if (0 != rc) {
+          goto error;
+        }
+      } else {
+        field->set_default();
+        static char buff[100] = {'\0'};
+        SDB_LOG_WARNING(
+            "The element's type:%s is not commpatible with "
+            "field type:%s, table:%s.%s",
+            sdb_elem_type_str(elem.type()), sdb_field_type_str(field->type()),
+            db_name, table_name);
+        sprintf(buff, "field type:%s, bson::elem type:%s",
+                sdb_field_type_str(field->type()),
+                sdb_elem_type_str(elem.type()));
+        thd->raise_warning_printf(ER_DATA_OUT_OF_RANGE, sdb_field_name(field),
+                                  buff);
       }
-    } else {
-      field->set_default();
-      static char buff[100] = {'\0'};
-      SDB_LOG_WARNING(
-          "The element's type:%s is not commpatible with "
-          "field type:%s, table:%s.%s",
-          sdb_elem_type_str(elem.type()), sdb_field_type_str(field->type()),
-          db_name, table_name);
-      sprintf(buff, "field type:%s, bson::elem type:%s",
-              sdb_field_type_str(field->type()),
-              sdb_elem_type_str(elem.type()));
-      thd->raise_warning_printf(ER_DATA_OUT_OF_RANGE, sdb_field_name(field),
-                                buff);
     }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to conver object to row table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
 
 done:
   if (!is_select || table->write_set != table->read_set) {
@@ -4155,148 +4160,154 @@ int ha_sdb::rnd_next(uchar *buf) {
   ha_rows num_to_skip = 0;
   ha_rows num_to_return = -1;
   bool direct_op = false;
-  bson::BSONObj rule;
-  bson::BSONObj selector;
-  bson::BSONObj condition;
-  bson::BSONObj order_by = SDB_EMPTY_BSON;
-  bson::BSONObj hint = SDB_EMPTY_BSON;
-  bson::BSONObjBuilder builder;
 
-  if (sdb_execute_only_in_mysql(ha_thd())) {
-    rc = HA_ERR_END_OF_FILE;
-    table->status = STATUS_NOT_FOUND;
-    goto error;
-  }
+  try {
+    bson::BSONObj rule;
+    bson::BSONObj selector;
+    bson::BSONObj condition;
+    bson::BSONObj order_by = SDB_EMPTY_BSON;
+    bson::BSONObj hint = SDB_EMPTY_BSON;
+    bson::BSONObjBuilder builder;
 
-  DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-  sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
-  if (first_read) {
-#ifdef IS_MARIADB
-    const bool using_vers_sys = table->versioned();
-    if (using_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
-                           SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
-      rc = sdb_append_end_condition(ha_thd(), table, pushed_condition);
-      if (rc) {
-        goto error;
-      }
-    }
-#endif
-
-    try {
-      if (!pushed_condition.isEmpty()) {
-        condition = pushed_condition.copy();
-      }
-    }
-    SDB_EXCEPTION_CATCHER(rc,
-                          "Failed to read next for table:%s.%s, exception:%s",
-                          db_name, table_name, e.what());
-
-    rc = pre_first_rnd_next(condition);
-    if (rc != 0) {
+    if (sdb_execute_only_in_mysql(ha_thd())) {
+      rc = HA_ERR_END_OF_FILE;
+      table->status = STATUS_NOT_FOUND;
       goto error;
     }
 
-    if (!field_order_condition.isEmpty()) {
-      order_by = field_order_condition;
-    }
-
-    {
-      int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-      sdb_build_clientinfo(ha_thd(), builder);
-      hint = builder.obj();
-      rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
-                             direct_op);
-      if (rc) {
-        goto error;
-      }
-
-      if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
-           thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
-          thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
-        rc = autocommit_statement(direct_op);
+    DBUG_ASSERT(NULL != collection);
+    DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+    sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
+    if (first_read) {
+  #ifdef IS_MARIADB
+      const bool using_vers_sys = table->versioned();
+      if (using_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
+                            SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
+        rc = sdb_append_end_condition(ha_thd(), table, pushed_condition);
         if (rc) {
           goto error;
         }
       }
+  #endif
 
-      if (delete_with_select) {
-        rc = collection->query_and_remove(condition, selector, order_by, hint,
-                                          0, num_to_return, flag);
-      } else {
-        SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
-        SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
-        const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
-        if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
-            sdb_is_single_table(ha_thd()) &&
-            (sdb_get_optimizer_options(ha_thd()) &
-             SDB_OPTIMIZER_OPTION_LIMIT)) {
-          if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
-            num_to_return = select_lex->get_limit();
-            if (select_lex->offset_limit) {
-              num_to_skip = select_lex->get_offset();
-              unit->offset_limit_cnt = 0;
-            }
-          }
+      try {
+        if (!pushed_condition.isEmpty()) {
+          condition = pushed_condition.copy();
         }
-        if (sdb_group_list) {
-          std::vector<bson::BSONObj> aggregate_obj;
-          rc = sdb_build_aggregate_obj(condition, group_list_condition,
-                                       order_by, num_to_skip, num_to_return,
-                                       aggregate_obj);
+      }
+      SDB_EXCEPTION_CATCHER(rc,
+                            "Failed to read next for table:%s.%s, exception:%s",
+                            db_name, table_name, e.what());
+
+      rc = pre_first_rnd_next(condition);
+      if (rc != 0) {
+        goto error;
+      }
+
+      if (!field_order_condition.isEmpty()) {
+        order_by = field_order_condition;
+      }
+
+      {
+        int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+        sdb_build_clientinfo(ha_thd(), builder);
+        hint = builder.obj();
+        rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
+                              direct_op);
+        if (rc) {
+          goto error;
+        }
+
+        if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
+            thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
+            thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
+          rc = autocommit_statement(direct_op);
           if (rc) {
             goto error;
           }
-          rc = collection->aggregate(aggregate_obj);
+        }
+
+        if (delete_with_select) {
+          rc = collection->query_and_remove(condition, selector, order_by, hint,
+                                            0, num_to_return, flag);
         } else {
-          rc = collection->query(condition, selector, order_by, hint,
-                                 num_to_skip, num_to_return, flag);
-        }
-      }
-    }
-
-    if (sdb_debug_log && !sdb_group_list) {
-      try {
-        bson::BSONObjBuilder builder(96);
-        bson::BSONObjIterator it(hint);
-        while (it.more()) {
-          bson::BSONElement elem = it.next();
-          if (0 == strcmp(elem.fieldName(), SDB_FIELD_INFO)) {
-            continue;
+          SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
+          SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
+          const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+          if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
+              sdb_is_single_table(ha_thd()) &&
+              (sdb_get_optimizer_options(ha_thd()) &
+              SDB_OPTIMIZER_OPTION_LIMIT)) {
+            if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
+              num_to_return = select_lex->get_limit();
+              if (select_lex->offset_limit) {
+                num_to_skip = select_lex->get_offset();
+                unit->offset_limit_cnt = 0;
+              }
+            }
           }
-          builder.append(elem);
+          if (sdb_group_list) {
+            std::vector<bson::BSONObj> aggregate_obj;
+            rc = sdb_build_aggregate_obj(condition, group_list_condition,
+                                        order_by, num_to_skip, num_to_return,
+                                        aggregate_obj);
+            if (rc) {
+              goto error;
+            }
+            rc = collection->aggregate(aggregate_obj);
+          } else {
+            rc = collection->query(condition, selector, order_by, hint,
+                                  num_to_skip, num_to_return, flag);
+          }
         }
-        hint = builder.obj();
       }
-      SDB_EXCEPTION_CATCHER(
-          rc,
-          "Failed to rebuild hint when rnd next, table:%s.%s, "
-          "exception:%s",
-          db_name, table_name, e.what());
 
-      SDB_LOG_DEBUG(
-          "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
-          "limit[%d], "
-          "offset[%d]",
-          condition.toString(false, false).c_str(),
-          selector.toString(false, false).c_str(),
-          order_by.toString(false, false).c_str(),
-          hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+      if (sdb_debug_log && !sdb_group_list) {
+        try {
+          bson::BSONObjBuilder builder(96);
+          bson::BSONObjIterator it(hint);
+          while (it.more()) {
+            bson::BSONElement elem = it.next();
+            if (0 == strcmp(elem.fieldName(), SDB_FIELD_INFO)) {
+              continue;
+            }
+            builder.append(elem);
+          }
+          hint = builder.obj();
+        }
+        SDB_EXCEPTION_CATCHER(
+            rc,
+            "Failed to rebuild hint when rnd next, table:%s.%s, "
+            "exception:%s",
+            db_name, table_name, e.what());
+
+        SDB_LOG_DEBUG(
+            "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+            "limit[%d], "
+            "offset[%d]",
+            condition.toString(false, false).c_str(),
+            selector.toString(false, false).c_str(),
+            order_by.toString(false, false).c_str(),
+            hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+      }
+
+      if (rc != 0) {
+        goto error;
+      }
     }
 
+    if (count_query) {
+      rc = cur_row(buf);
+    } else {
+      rc = next_row(cur_rec, buf);
+    }
     if (rc != 0) {
       goto error;
     }
   }
-
-  if (count_query) {
-    rc = cur_row(buf);
-  } else {
-    rc = next_row(cur_rec, buf);
-  }
-  if (rc != 0) {
-    goto error;
-  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to move to next rnd table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
 
 done:
   DBUG_RETURN(rc);
@@ -6091,12 +6102,13 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
   bool explicit_is_mainCL = false;
   bool explicit_range_sharding_type = false;
   bool explicit_group = false;
-  bson::BSONElement cmt_compressed, cmt_compress_type;
-
-  filter_num = sizeof(auto_fill_fields) / sizeof(*auto_fill_fields);
-  filter_options(options, auto_fill_fields, filter_num, build);
 
   try {
+    bson::BSONElement cmt_compressed, cmt_compress_type;
+
+    filter_num = sizeof(auto_fill_fields) / sizeof(*auto_fill_fields);
+    filter_options(options, auto_fill_fields, filter_num, build);
+
     explicit_sharding_key = options.hasField(SDB_FIELD_SHARDING_KEY);
     explicit_is_mainCL =
         options.hasField(SDB_FIELD_ISMAINCL) &&

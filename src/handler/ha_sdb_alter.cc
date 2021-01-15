@@ -1786,21 +1786,29 @@ int sdb_append_compress2tab_opt(enum enum_compress_type sql_compress,
   bson::BSONElement compress_type_ele;
   bson::BSONObjIterator iter(table_options);
 
-  while (iter.more()) {
-    bson::BSONElement ele = iter.next();
-    if (0 == strcmp(ele.fieldName(), SDB_FIELD_COMPRESSED)) {
-      compressed_ele = ele;
-    } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
-      compress_type_ele = ele;
-    } else {
-      builder.append(ele);
+  try {
+    while (iter.more()) {
+      bson::BSONElement ele = iter.next();
+      if (0 == strcmp(ele.fieldName(), SDB_FIELD_COMPRESSED)) {
+        compressed_ele = ele;
+      } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_COMPRESSION_TYPE)) {
+        compress_type_ele = ele;
+      } else {
+        builder.append(ele);
+      }
     }
-  }
 
-  rc = sdb_check_and_set_compress(sql_compress, compressed_ele,
-                                  compress_type_ele, builder);
-  table_options = builder.obj();
+    rc = sdb_check_and_set_compress(sql_compress, compressed_ele,
+                                    compress_type_ele, builder);
+    table_options = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to append compress type:%d to table options, exception:%s",
+      sql_compress, e.what());
+done:
   return rc;
+error:
+  goto done;
 }
 
 bool is_all_field_not_null(KEY *key) {
@@ -2232,50 +2240,55 @@ int sdb_extra_autoinc_option_from_snap(Sdb_conn *conn,
   DBUG_PRINT("info", ("autoinc_info: %s", autoinc_info.toString(true).c_str()));
 
   int rc = 0;
-  bson::BSONObjIterator it(autoinc_info);
-  bson::BSONArrayBuilder autoinc_builder(
-      builder.subarrayStart(SDB_FIELD_AUTOINCREMENT));
-  while (it.more()) {
-    bson::BSONElement obj_ele = it.next();
-    bson::BSONObj obj;
-    bson::BSONElement ele;
-    longlong id = 0;
-    bson::BSONObj result;
-    bson::BSONObj cond;
+  try {
+    bson::BSONObjIterator it(autoinc_info);
+    bson::BSONArrayBuilder autoinc_builder(
+    builder.subarrayStart(SDB_FIELD_AUTOINCREMENT));
+    while (it.more()) {
+      bson::BSONElement obj_ele = it.next();
+      bson::BSONObj obj;
+      bson::BSONElement ele;
+      longlong id = 0;
+      bson::BSONObj result;
+      bson::BSONObj cond;
 
-    if (obj_ele.type() != bson::Object) {
-      rc = SDB_ERR_INVALID_ARG;
-      goto error;
-    }
-    obj = obj_ele.embeddedObject();
-
-    ele = obj.getField(SDB_FIELD_SEQUENCE_ID);
-    if (!ele.isNumber()) {
-      rc = SDB_ERR_INVALID_ARG;
-      goto error;
-    }
-    id = ele.numberLong();
-
-    cond = BSON(SDB_FIELD_ID << id);
-    rc = conn->snapshot(result, SDB_SNAP_SEQUENCES, cond);
-    if (rc != 0) {
-      SDB_LOG_ERROR("%s", conn->get_err_msg());
-      conn->clear_err_msg();
-      goto error;
-    }
-
-    bson::BSONObjBuilder def_builder(autoinc_builder.subobjStart());
-    def_builder.append(obj.getField(SDB_FIELD_NAME_FIELD));
-    def_builder.append(obj.getField(SDB_FIELD_GENERATED));
-    for (int i = 0; i < AUTOINC_SAME_FIELD_COUNT; ++i) {
-      ele = result.getField(AUTOINC_SAME_FIELDS[i]);
-      if (ele.type() != bson::EOO) {
-        def_builder.append(ele);
+      if (obj_ele.type() != bson::Object) {
+        rc = SDB_ERR_INVALID_ARG;
+        goto error;
       }
+      obj = obj_ele.embeddedObject();
+
+      ele = obj.getField(SDB_FIELD_SEQUENCE_ID);
+      if (!ele.isNumber()) {
+        rc = SDB_ERR_INVALID_ARG;
+        goto error;
+      }
+      id = ele.numberLong();
+
+      cond = BSON(SDB_FIELD_ID << id);
+      rc = conn->snapshot(result, SDB_SNAP_SEQUENCES, cond);
+      if (rc != 0) {
+        SDB_LOG_ERROR("%s", conn->get_err_msg());
+        conn->clear_err_msg();
+        goto error;
+      }
+
+      bson::BSONObjBuilder def_builder(autoinc_builder.subobjStart());
+      def_builder.append(obj.getField(SDB_FIELD_NAME_FIELD));
+      def_builder.append(obj.getField(SDB_FIELD_GENERATED));
+      for (int i = 0; i < AUTOINC_SAME_FIELD_COUNT; ++i) {
+        ele = result.getField(AUTOINC_SAME_FIELDS[i]);
+        if (ele.type() != bson::EOO) {
+          def_builder.append(ele);
+        }
+      }
+      def_builder.done();
     }
-    def_builder.done();
+    autoinc_builder.done();
   }
-  autoinc_builder.done();
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to extra autoinc option from snap, exception:%s",
+      e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -2318,100 +2331,105 @@ int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *cs_name,
   bson::BSONElement ele;
   int cl_attribute = 0;
 
-  cond_builder.append(SDB_FIELD_NAME, fullname);
-  cond = cond_builder.obj();
+  try {
+    cond_builder.append(SDB_FIELD_NAME, fullname);
+    cond = cond_builder.obj();
 
-  rc = conn->snapshot(result, SDB_SNAP_CATALOG, cond);
-  if (rc != 0) {
-    goto error;
-  }
-
-  for (int i = 0; i < OPT_SAME_FIELD_COUNT; ++i) {
-    ele = result.getField(OPT_SAME_FIELDS[i]);
-    if (ele.type() != bson::EOO) {
-      builder.append(ele);
+    rc = conn->snapshot(result, SDB_SNAP_CATALOG, cond);
+    if (rc != 0) {
+      goto error;
     }
-  }
 
-  // Collection attributes
-  ele = result.getField(SDB_FIELD_ATTRIBUTE);
-  if (ele.type() != bson::NumberInt) {
-    rc = SDB_ERR_INVALID_ARG;
-    goto error;
-  }
-  cl_attribute = ele.numberInt();
+    for (int i = 0; i < OPT_SAME_FIELD_COUNT; ++i) {
+      ele = result.getField(OPT_SAME_FIELDS[i]);
+      if (ele.type() != bson::EOO) {
+        builder.append(ele);
+      }
+    }
 
-  if (cl_attribute & ATTR_COMPRESSED) {
-    builder.append(SDB_FIELD_COMPRESSED, true);
-    ele = result.getField(SDB_FIELD_COMPRESSION_TYPE_DESC);
-    if (ele.type() != bson::String) {
+    // Collection attributes
+    ele = result.getField(SDB_FIELD_ATTRIBUTE);
+    if (ele.type() != bson::NumberInt) {
       rc = SDB_ERR_INVALID_ARG;
       goto error;
     }
-    builder.append(SDB_FIELD_COMPRESSION_TYPE, ele.valuestr());
-  } else {
-    builder.append(SDB_FIELD_COMPRESSED, false);
-  }
+    cl_attribute = ele.numberInt();
 
-  if (cl_attribute & ATTR_NOIDINDEX) {
-    builder.append(SDB_FIELD_AUTOINDEXID, false);
-  }
-
-  if (cl_attribute & ATTR_STRICTDATAMODE) {
-    builder.append(SDB_FIELD_STRICT_DATA_MODE, true);
-  }
-
-  ele = result.getField(SDB_FIELD_CATAINFO);
-  if (ele.type() != bson::Array) {
-    rc = SDB_ERR_INVALID_ARG;
-    goto error;
-  }
-  cata_info = ele.embeddedObject().getOwned();
-
-  // Specific the `Group` by first elements of CataInfo.
-  if (!result.getField(SDB_FIELD_AUTO_SPLIT).booleanSafe() &&
-      !result.getField(SDB_FIELD_ISMAINCL).booleanSafe()) {
-    bson::BSONObjIterator it(cata_info);
-    bson::BSONElement group_ele;
-    bson::BSONElement name_ele;
-
-    if (!it.more()) {
-      rc = SDB_ERR_INVALID_ARG;
-      goto error;
-    }
-    group_ele = it.next();
-    if (group_ele.type() != bson::Object) {
-      rc = SDB_ERR_INVALID_ARG;
-      goto error;
-    }
-    name_ele = group_ele.embeddedObject().getField(SDB_FIELD_GROUP_NAME);
-    if (name_ele.type() != bson::String) {
-      rc = SDB_ERR_INVALID_ARG;
-      goto error;
-    }
-    builder.append(SDB_FIELD_GROUP, name_ele.valuestr());
-  }
-
-  // AutoIncrement field
-  if (with_autoinc) {
-    ele = result.getField(SDB_FIELD_AUTOINCREMENT);
-    if (ele.type() != bson::EOO) {
-      bson::BSONObj autoinc_info;
-      if (ele.type() != bson::Array) {
+    if (cl_attribute & ATTR_COMPRESSED) {
+      builder.append(SDB_FIELD_COMPRESSED, true);
+      ele = result.getField(SDB_FIELD_COMPRESSION_TYPE_DESC);
+      if (ele.type() != bson::String) {
         rc = SDB_ERR_INVALID_ARG;
         goto error;
       }
-      autoinc_info = ele.embeddedObject();
-      rc = sdb_extra_autoinc_option_from_snap(conn, autoinc_info, builder);
-      if (rc != 0) {
+      builder.append(SDB_FIELD_COMPRESSION_TYPE, ele.valuestr());
+    } else {
+      builder.append(SDB_FIELD_COMPRESSED, false);
+    }
+
+    if (cl_attribute & ATTR_NOIDINDEX) {
+      builder.append(SDB_FIELD_AUTOINDEXID, false);
+    }
+
+    if (cl_attribute & ATTR_STRICTDATAMODE) {
+      builder.append(SDB_FIELD_STRICT_DATA_MODE, true);
+    }
+
+    ele = result.getField(SDB_FIELD_CATAINFO);
+    if (ele.type() != bson::Array) {
+      rc = SDB_ERR_INVALID_ARG;
+      goto error;
+    }
+    cata_info = ele.embeddedObject().getOwned();
+
+    // Specific the `Group` by first elements of CataInfo.
+    if (!result.getField(SDB_FIELD_AUTO_SPLIT).booleanSafe() &&
+        !result.getField(SDB_FIELD_ISMAINCL).booleanSafe()) {
+      bson::BSONObjIterator it(cata_info);
+      bson::BSONElement group_ele;
+      bson::BSONElement name_ele;
+
+      if (!it.more()) {
+        rc = SDB_ERR_INVALID_ARG;
         goto error;
       }
+      group_ele = it.next();
+      if (group_ele.type() != bson::Object) {
+        rc = SDB_ERR_INVALID_ARG;
+        goto error;
+      }
+      name_ele = group_ele.embeddedObject().getField(SDB_FIELD_GROUP_NAME);
+      if (name_ele.type() != bson::String) {
+        rc = SDB_ERR_INVALID_ARG;
+        goto error;
+      }
+      builder.append(SDB_FIELD_GROUP, name_ele.valuestr());
     }
-  }
 
-  options = builder.obj();
-  DBUG_PRINT("info", ("options: %s, cata_info: %s", options.toString().c_str(),
-                      cata_info.toString().c_str()));
+    // AutoIncrement field
+    if (with_autoinc) {
+      ele = result.getField(SDB_FIELD_AUTOINCREMENT);
+      if (ele.type() != bson::EOO) {
+        bson::BSONObj autoinc_info;
+        if (ele.type() != bson::Array) {
+          rc = SDB_ERR_INVALID_ARG;
+          goto error;
+        }
+        autoinc_info = ele.embeddedObject();
+        rc = sdb_extra_autoinc_option_from_snap(conn, autoinc_info, builder);
+        if (rc != 0) {
+          goto error;
+        }
+      }
+    }
+
+    options = builder.obj();
+    DBUG_PRINT("info", ("options: %s, cata_info: %s", options.toString().c_str(),
+                        cata_info.toString().c_str()));
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to extral sdb collection from snap, exception:%s",
+      e.what());
 done:
   DBUG_RETURN(rc);
 error:

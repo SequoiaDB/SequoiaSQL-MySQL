@@ -596,76 +596,77 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  // The buf equal record[1] when write to disk by calling
-  // ha_sdb_seq::update_row. Before triggering this action, we need to manually
-  // construct an empty record to ensure that record[0] not equal record[1].
-  if (buf != table->record[0]) {
-    try {
-      static bson::BSONObj STATIC_SEQ_NULL_INFO =
-          BSON(SDB_FIELD_CURRENT_VALUE
-               << 0 << SDB_FIELD_MIN_VALUE << 0 << SDB_FIELD_MAX_VALUE << 0
-               << SDB_FIELD_START_VALUE << 0 << SDB_FIELD_INCREMENT << 0
-               << SDB_FIELD_ACQUIRE_SIZE << 0 << SDB_FIELD_CYCLED << true
-               << SDB_FIELD_CYCLED_COUNT << 0);
-      obj = STATIC_SEQ_NULL_INFO;
-    }
-    SDB_EXCEPTION_CATCHER(
-        rc, "Failed to build object when rnd next, table:%s.%s, exception:%s",
-        db_name, table_name, e.what());
-  } else {
-    cond_builder.append(SDB_FIELD_NAME, m_sequence_name);
-    condition = cond_builder.done();
-
-    rc = conn->snapshot(obj, SDB_SNAP_SEQUENCES, condition);
-    if (rc) {
-      SDB_LOG_ERROR("%s", conn->get_err_msg());
-      conn->clear_err_msg();
-      my_printf_error(rc, "Could not get snapshot.", MYF(0));
-      goto error;
-    }
-  }
-
-  old_map = dbug_tmp_use_all_columns(table, table->write_set);
-  /* zero possible delete markers & null bits */
-  memcpy(table->record[0], table->s->default_values, table->s->null_bytes);
-  {
-    bson::BSONObjIterator it(obj);
-    while (it.more()) {
-      bson::BSONElement elem_tmp = it.next();
-      const char *field_name = elem_tmp.fieldName();
-      if (0 == strcmp(field_name, SDB_FIELD_CURRENT_VALUE)) {
-        current_value = elem_tmp.numberLong();
+  try {
+    // The buf equal record[1] when write to disk by calling
+    // ha_sdb_seq::update_row. Before triggering this action, we need to manually
+    // construct an empty record to ensure that record[0] not equal record[1].
+    if (buf != table->record[0]) {
+        static bson::BSONObj STATIC_SEQ_NULL_INFO =
+            BSON(SDB_FIELD_CURRENT_VALUE
+                << 0 << SDB_FIELD_MIN_VALUE << 0 << SDB_FIELD_MAX_VALUE << 0
+                << SDB_FIELD_START_VALUE << 0 << SDB_FIELD_INCREMENT << 0
+                << SDB_FIELD_ACQUIRE_SIZE << 0 << SDB_FIELD_CYCLED << true
+                << SDB_FIELD_CYCLED_COUNT << 0);
+        obj = STATIC_SEQ_NULL_INFO;
       }
-      if (0 == strcmp(field_name, SDB_FIELD_MIN_VALUE)) {
-        min_value = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_MIN_VALUE]->store(min_value, false);
-      } else if (0 == strcmp(field_name, SDB_FIELD_MAX_VALUE)) {
-        max_value = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_MAX_VALUE]->store(max_value, false);
-      } else if (0 == strcmp(field_name, SDB_FIELD_START_VALUE)) {
-        longlong nr = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_START]->store(nr, false);
-      } else if (0 == strcmp(field_name, SDB_FIELD_INCREMENT)) {
-        increment = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_INCREMENT]->store(increment, false);
-      } else if (0 == strcmp(field_name, SDB_FIELD_ACQUIRE_SIZE)) {
-        longlong nr = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_CACHE]->store(nr, false);
-      } else if (0 == strcmp(field_name, SDB_FIELD_CYCLED)) {
-        bool val = elem_tmp.boolean();
-        table->field[SEQUENCE_FIELD_CYCLED]->store(val ? 1 : 0, true);
-      } else if (0 == strcmp(field_name, SDB_FIELD_CYCLED_COUNT)) {
-        longlong nr = elem_tmp.numberLong();
-        table->field[SEQUENCE_FIELD_CYCLED_ROUND]->store(nr, false);
+    } else {
+      cond_builder.append(SDB_FIELD_NAME, m_sequence_name);
+      condition = cond_builder.done();
+
+      rc = conn->snapshot(obj, SDB_SNAP_SEQUENCES, condition);
+      if (rc) {
+        SDB_LOG_ERROR("%s", conn->get_err_msg());
+        conn->clear_err_msg();
+        my_printf_error(rc, "Could not get snapshot.", MYF(0));
+        goto error;
       }
     }
-    if (!obj.getField(SDB_FIELD_INITIAL).booleanSafe()) {
-      current_value =
-          sdb_increment_value(min_value, max_value, increment, current_value);
+
+    old_map = dbug_tmp_use_all_columns(table, table->write_set);
+    /* zero possible delete markers & null bits */
+    memcpy(table->record[0], table->s->default_values, table->s->null_bytes);
+    {
+      bson::BSONObjIterator it(obj);
+      while (it.more()) {
+        bson::BSONElement elem_tmp = it.next();
+        const char *field_name = elem_tmp.fieldName();
+        if (0 == strcmp(field_name, SDB_FIELD_CURRENT_VALUE)) {
+          current_value = elem_tmp.numberLong();
+        }
+        if (0 == strcmp(field_name, SDB_FIELD_MIN_VALUE)) {
+          min_value = elem_tmp.numberLong();
+          table->field[SEQUENCE_FIELD_MIN_VALUE]->store(min_value, false);
+        } else if (0 == strcmp(field_name, SDB_FIELD_MAX_VALUE)) {
+          max_value = elem_tmp.numberLong();
+          table->field[SEQUENCE_FIELD_MAX_VALUE]->store(max_value, false);
+        } else if (0 == strcmp(field_name, SDB_FIELD_START_VALUE)) {
+          longlong nr = elem_tmp.numberLong();
+          table->field[SEQUENCE_FIELD_START]->store(nr, false);
+        } else if (0 == strcmp(field_name, SDB_FIELD_INCREMENT)) {
+          increment = elem_tmp.numberLong();
+          table->field[SEQUENCE_FIELD_INCREMENT]->store(increment, false);
+        } else if (0 == strcmp(field_name, SDB_FIELD_ACQUIRE_SIZE)) {
+          longlong nr = elem_tmp.numberLong();
+          table->field[SEQUENCE_FIELD_CACHE]->store(nr, false);
+        } else if (0 == strcmp(field_name, SDB_FIELD_CYCLED)) {
+          bool val = elem_tmp.boolean();
+          table->field[SEQUENCE_FIELD_CYCLED]->store(val ? 1 : 0, true);
+        } else if (0 == strcmp(field_name, SDB_FIELD_CYCLED_COUNT)) {
+          longlong nr = elem_tmp.numberLong();
+          table->field[SEQUENCE_FIELD_CYCLED_ROUND]->store(nr, false);
+        }
+      }
+      if (!obj.getField(SDB_FIELD_INITIAL).booleanSafe()) {
+        current_value =
+            sdb_increment_value(min_value, max_value, increment, current_value);
+      }
+      table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->store(current_value, false);
     }
-    table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->store(current_value, false);
+    dbug_tmp_restore_column_map(table->write_set, old_map);
   }
-  dbug_tmp_restore_column_map(table->write_set, old_map);
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to move to nex rnd table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
 
 done:
   if (buf != table->record[0]) {

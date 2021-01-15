@@ -105,7 +105,17 @@ int Sdb_seq::set_current_value(const longlong value) {
 
 int seq_set_attributes(sdbclient::sdbSequence *seq,
                        const bson::BSONObj &options) {
-  return seq->setAttributes(options);
+  int rc = SDB_ERR_OK ;
+  try {
+    rc = seq->setAttributes(options);
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to set sequence attributes, exception:%s",
+      e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int Sdb_seq::set_attributes(const bson::BSONObj &options) {

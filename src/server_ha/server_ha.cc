@@ -3207,11 +3207,16 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
     goto error;
   }
 
-  // wait objects updated to latest state
-  rc = wait_query_objects_updated_to_latest(thd, sql_info);
-  if (rc) {
-    goto error;
+  try {
+    // wait objects updated to latest state
+    rc = wait_query_objects_updated_to_latest(thd, sql_info);
+    if (rc) {
+      goto error;
+    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to wait query objects updated to latest, exception:%s",
+      e.what());
 done:
   sql_info->dml_tables = NULL;
   return rc;
