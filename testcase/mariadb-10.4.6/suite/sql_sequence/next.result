@@ -188,6 +188,21 @@ next value for s1
 select next value for s1;
 ERROR HY000: Sequence 'test_sequence_next.s1' has run out
 drop sequence s1;
+CREATE SEQUENCE t1 start with 1 minvalue 1 maxvalue 100 increment by 1 cache 10;
+select next value for t1;
+next value for t1
+1
+select * from t1;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+11	1	100	1	1	10	0	0
+flush tables;
+select next value for t1;
+next value for t1
+11
+select nextval(t1);
+nextval(t1)
+12
+drop sequence t1;
 CREATE SEQUENCE t9 start with 1 minvalue 1 maxvalue 10 increment by 1 cache 5 cycle;
 select previous value for t9;
 previous value for t9

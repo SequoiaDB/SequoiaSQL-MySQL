@@ -92,17 +92,17 @@ select next value for s1;
 drop sequence s1;
 
 #BUG #SEQUOIASQLMAINSTREAM-883
-##
-## Test that flush tables jumps to next next_not_cached_value
-##
 #
-#CREATE SEQUENCE t1 start with 1 minvalue 1 maxvalue 100 increment by 1 cache 10;
-#select next value for t1;
-#select * from t1;
-#flush tables;
-#select next value for t1;
-#select nextval(t1);
-#drop sequence t1;
+# Test that flush tables jumps to next next_not_cached_value
+#
+
+CREATE SEQUENCE t1 start with 1 minvalue 1 maxvalue 100 increment by 1 cache 10;
+select next value for t1;
+select * from t1;
+flush tables;
+select next value for t1;
+select nextval(t1);
+drop sequence t1;
 
 #
 # Test currval/previous
