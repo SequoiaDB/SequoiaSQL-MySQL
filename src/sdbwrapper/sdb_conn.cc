@@ -149,7 +149,7 @@ int Sdb_conn::connect() {
         rc = sdb_get_password(password);
         if (SDB_ERR_OK != rc) {
           snprintf(errmsg, sizeof(errmsg), "Failed to decrypt password, rc=%d",
-                  rc);
+                   rc);
           goto error;
         }
         rc = m_connection.connect(conn_addrs.get_conn_addrs(),
@@ -161,9 +161,7 @@ int Sdb_conn::connect() {
                                   sdb_password_token, sdb_password_cipherfile);
       }
     }
-    SDB_EXCEPTION_CATCHER(
-        rc, "Failed to connect sdb, exception:%s",
-        e.what());
+    SDB_EXCEPTION_CATCHER(rc, "Failed to connect sdb, exception:%s", e.what());
 
     if (SDB_ERR_OK != rc) {
       if (SDB_NET_CANNOT_CONNECT != rc) {
@@ -252,9 +250,8 @@ int Sdb_conn::connect() {
         try {
           m_connection.disconnect();
         }
-        SDB_EXCEPTION_CATCHER(
-            rc, "Failed to disconnect from sdb, exception:%s",
-            e.what());
+        SDB_EXCEPTION_CATCHER(rc, "Failed to disconnect from sdb, exception:%s",
+                              e.what());
         goto error;
       }
     }
@@ -529,8 +526,8 @@ retry:
     }
   }
   SDB_EXCEPTION_CATCHER(
-      rc, "Failed to create collection cl name:%s.%s, exception:%s",
-      cs_name, cl_name, e.what() );
+      rc, "Failed to create collection cl name:%s.%s, exception:%s", cs_name,
+      cl_name, e.what());
 done:
   if (created_cs) {
     *created_cs = new_cs;
@@ -614,9 +611,8 @@ int conn_drop_cl(sdbclient::sdb *connection, const char *cs_name,
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to drop collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to drop collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -702,9 +698,8 @@ retry:
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to create sequence, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to create sequence, exception:%s",
+                        e.what());
 
 done:
   if (created_cs) {
@@ -746,9 +741,8 @@ int conn_rename_seq(Sdb_conn *conn, sdbclient::sdb *connection,
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to get collection space, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get collection space, exception:%s",
+                        e.what());
 
   rc = sdb_rebuild_sequence_name(conn, cs_name, old_table_name,
                                  old_sequence_name);
@@ -1064,8 +1058,8 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
     }
   }
   SDB_EXCEPTION_CATCHER(
-      rc, "Failed to move cursor to next cl name:%s.%s, exception:%s",
-      cs_name, cl_name,e.what());
+      rc, "Failed to move cursor to next cl name:%s.%s, exception:%s", cs_name,
+      cl_name, e.what());
   stats.page_size = obj.getField(SDB_FIELD_PAGE_SIZE).numberInt();
   stats.total_data_pages = obj.getField(SDB_FIELD_TOTAL_DATA_PAGES).numberInt();
   stats.total_index_pages =
@@ -1137,13 +1131,12 @@ int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
 }
 
 int conn_get_session_attr(sdbclient::sdb *connection, bson::BSONObj *option) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
-    rc =connection->getSessionAttr(*option);
+    rc = connection->getSessionAttr(*option);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to get session attribute, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get session attribute, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -1156,13 +1149,12 @@ int Sdb_conn::get_session_attr(bson::BSONObj &option) {
 
 int conn_set_session_attr(sdbclient::sdb *connection,
                           const bson::BSONObj *option) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = connection->setSessionAttr(*option);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to set session attribute, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to set session attribute, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -1182,13 +1174,11 @@ int Sdb_conn::interrupt_operation() {
 }
 
 int conn_analyze(sdbclient::sdb *connection, const bson::BSONObj *options) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = connection->analyze(*options);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to analyze, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to analyze, exception:%s", e.what());
 done:
   return rc;
 error:

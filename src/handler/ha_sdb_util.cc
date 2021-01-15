@@ -293,8 +293,8 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
     if (cmt_compressed.type() != bson::Bool &&
         cmt_compressed.type() != bson::EOO) {
       rc = ER_WRONG_ARGUMENTS;
-      my_printf_error(rc, "Invalid options. Type of Compressed should be 'Bool'",
-                      MYF(0));
+      my_printf_error(
+          rc, "Invalid options. Type of Compressed should be 'Bool'", MYF(0));
       goto error;
     }
     if (cmt_compress_type.type() != bson::String &&
@@ -913,9 +913,8 @@ int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
   try {
     rc = cursor.next(obj, false);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to move cursor to next, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to move cursor to next, exception:%s",
+                        e.what());
   if (rc) {
     if (SDB_DMS_EOC == rc) {
       rc = SDB_DMS_CS_NOTEXIST;

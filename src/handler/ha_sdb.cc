@@ -2099,9 +2099,8 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
     stats.records += row_count;
     update_incr_stat(row_count);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to insert row table:%s.%s, exception:%s",
-      db_name, table_name, e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to insert row table:%s.%s, exception:%s",
+                        db_name, table_name, e.what());
 done:
   return rc;
 error:
@@ -3840,8 +3839,8 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
     }
   }
   SDB_EXCEPTION_CATCHER(
-      rc, "Failed to conver object to row table:%s.%s, exception:%s",
-      db_name, table_name, e.what());
+      rc, "Failed to conver object to row table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 
 done:
   if (!is_select || table->write_set != table->read_set) {
@@ -4179,16 +4178,16 @@ int ha_sdb::rnd_next(uchar *buf) {
     DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
     sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
     if (first_read) {
-  #ifdef IS_MARIADB
+#ifdef IS_MARIADB
       const bool using_vers_sys = table->versioned();
       if (using_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
-                            SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
+                             SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
         rc = sdb_append_end_condition(ha_thd(), table, pushed_condition);
         if (rc) {
           goto error;
         }
       }
-  #endif
+#endif
 
       try {
         if (!pushed_condition.isEmpty()) {
@@ -4213,13 +4212,13 @@ int ha_sdb::rnd_next(uchar *buf) {
         sdb_build_clientinfo(ha_thd(), builder);
         hint = builder.obj();
         rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
-                              direct_op);
+                               direct_op);
         if (rc) {
           goto error;
         }
 
         if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
-            thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
+             thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
             thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
           rc = autocommit_statement(direct_op);
           if (rc) {
@@ -4237,7 +4236,7 @@ int ha_sdb::rnd_next(uchar *buf) {
           if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
               sdb_is_single_table(ha_thd()) &&
               (sdb_get_optimizer_options(ha_thd()) &
-              SDB_OPTIMIZER_OPTION_LIMIT)) {
+               SDB_OPTIMIZER_OPTION_LIMIT)) {
             if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
               num_to_return = select_lex->get_limit();
               if (select_lex->offset_limit) {
@@ -4249,15 +4248,15 @@ int ha_sdb::rnd_next(uchar *buf) {
           if (sdb_group_list) {
             std::vector<bson::BSONObj> aggregate_obj;
             rc = sdb_build_aggregate_obj(condition, group_list_condition,
-                                        order_by, num_to_skip, num_to_return,
-                                        aggregate_obj);
+                                         order_by, num_to_skip, num_to_return,
+                                         aggregate_obj);
             if (rc) {
               goto error;
             }
             rc = collection->aggregate(aggregate_obj);
           } else {
             rc = collection->query(condition, selector, order_by, hint,
-                                  num_to_skip, num_to_return, flag);
+                                   num_to_skip, num_to_return, flag);
           }
         }
       }
@@ -4282,7 +4281,8 @@ int ha_sdb::rnd_next(uchar *buf) {
             db_name, table_name, e.what());
 
         SDB_LOG_DEBUG(
-            "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
+            "Query message: condition[%s], selector[%s], order_by[%s], "
+            "hint[%s], "
             "limit[%d], "
             "offset[%d]",
             condition.toString(false, false).c_str(),
@@ -4305,9 +4305,9 @@ int ha_sdb::rnd_next(uchar *buf) {
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to move to next rnd table:%s.%s, exception:%s",
-      db_name, table_name, e.what());
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to move to next rnd table:%s.%s, exception:%s",
+                        db_name, table_name, e.what());
 
 done:
   DBUG_RETURN(rc);

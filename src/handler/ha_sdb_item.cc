@@ -903,8 +903,8 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
         if (Item::FIELD_ITEM == field3->type()) {
           // field1 - num < field3
           obj_tmp = BSON(
-              (cmp_inverse ? this->inverse_name() : this->name())
-              << BSON("$field" << sdb_field_name(((Item_field *)field3)->field)));
+              (cmp_inverse ? this->inverse_name() : this->name()) << BSON(
+                  "$field" << sdb_field_name(((Item_field *)field3)->field)));
         } else {
           // field1 - num1 < num3
           rc = get_item_val((cmp_inverse ? this->inverse_name() : this->name()),
@@ -929,8 +929,8 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
             rc = get_item_val("$add", field1, ((Item_field *)field2)->field,
                               obj_tmp);
           } else if (0 == strcmp(func->func_name(), "*")) {
-            rc = get_item_val("$multiply", field1, ((Item_field *)field2)->field,
-                              obj_tmp);
+            rc = get_item_val("$multiply", field1,
+                              ((Item_field *)field2)->field, obj_tmp);
           } else {
             rc = SDB_ERR_COND_UNEXPECTED_ITEM;
           }
@@ -939,11 +939,11 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
           }
           builder_tmp.appendElements(obj_tmp);
           obj_tmp = BSON(
-              (cmp_inverse ? this->inverse_name() : this->name())
-              << BSON("$field" << sdb_field_name(((Item_field *)field3)->field)));
+              (cmp_inverse ? this->inverse_name() : this->name()) << BSON(
+                  "$field" << sdb_field_name(((Item_field *)field3)->field)));
           builder_tmp.appendElements(obj_tmp);
           obj = BSON(sdb_field_name(((Item_field *)field2)->field)
-                    << builder_tmp.obj());
+                     << builder_tmp.obj());
         } else {
           if (!field3->const_item()) {
             rc = SDB_ERR_COND_UNEXPECTED_ITEM;
@@ -957,14 +957,15 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
               goto error;
             }
             builder_tmp.appendElements(obj_tmp);
-            rc = get_item_val((cmp_inverse ? this->inverse_name() : this->name()),
-                              field3, ((Item_field *)field2)->field, obj_tmp);
+            rc = get_item_val(
+                (cmp_inverse ? this->inverse_name() : this->name()), field3,
+                ((Item_field *)field2)->field, obj_tmp);
             if (rc != SDB_ERR_OK) {
               goto error;
             }
             builder_tmp.appendElements(obj_tmp);
             obj = BSON(sdb_field_name(((Item_field *)field2)->field)
-                      << builder_tmp.obj());
+                       << builder_tmp.obj());
           } else if (0 == strcmp(func->func_name(), "-")) {
             // num1 - field2 < num3   =>   num1 < num3 + field2
             rc = get_item_val("$add", field3, ((Item_field *)field2)->field,
@@ -973,46 +974,49 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
               goto error;
             }
             builder_tmp.appendElements(obj_tmp);
-            rc = get_item_val((cmp_inverse ? this->name() : this->inverse_name()),
-                              field1, ((Item_field *)field2)->field, obj_tmp);
+            rc = get_item_val(
+                (cmp_inverse ? this->name() : this->inverse_name()), field1,
+                ((Item_field *)field2)->field, obj_tmp);
             if (rc != SDB_ERR_OK) {
               goto error;
             }
             builder_tmp.appendElements(obj_tmp);
             obj = BSON(sdb_field_name(((Item_field *)field2)->field)
-                      << builder_tmp.obj());
+                       << builder_tmp.obj());
           } else if (0 == strcmp(func->func_name(), "*")) {
             // num1 * field2 < num3
-            rc = get_item_val("$multiply", field1, ((Item_field *)field2)->field,
-                              obj_tmp);
+            rc = get_item_val("$multiply", field1,
+                              ((Item_field *)field2)->field, obj_tmp);
             if (rc != SDB_ERR_OK) {
               goto error;
             }
             builder_tmp.appendElements(obj_tmp);
-            rc = get_item_val((cmp_inverse ? this->inverse_name() : this->name()),
-                              field3, ((Item_field *)field2)->field, obj_tmp);
+            rc = get_item_val(
+                (cmp_inverse ? this->inverse_name() : this->name()), field3,
+                ((Item_field *)field2)->field, obj_tmp);
             if (rc != SDB_ERR_OK) {
               goto error;
             }
             builder_tmp.appendElements(obj_tmp);
             obj = BSON(sdb_field_name(((Item_field *)field2)->field)
-                      << builder_tmp.obj());
+                       << builder_tmp.obj());
           } else if (0 == strcmp(func->func_name(), "/")) {
             // num1 / field2 < num3   =>   num1 < num3 + field2
-            rc = get_item_val("$multiply", field3, ((Item_field *)field2)->field,
-                              obj_tmp);
+            rc = get_item_val("$multiply", field3,
+                              ((Item_field *)field2)->field, obj_tmp);
             if (rc != SDB_ERR_OK) {
               goto error;
             }
             builder_tmp.appendElements(obj_tmp);
-            rc = get_item_val((cmp_inverse ? this->name() : this->inverse_name()),
-                              field1, ((Item_field *)field2)->field, obj_tmp);
+            rc = get_item_val(
+                (cmp_inverse ? this->name() : this->inverse_name()), field1,
+                ((Item_field *)field2)->field, obj_tmp);
             if (rc != SDB_ERR_OK) {
               goto error;
             }
             builder_tmp.appendElements(obj_tmp);
             obj = BSON(sdb_field_name(((Item_field *)field2)->field)
-                      << builder_tmp.obj());
+                       << builder_tmp.obj());
           } else {
             rc = SDB_ERR_COND_UNEXPECTED_ITEM;
             goto error;
@@ -1024,9 +1028,8 @@ int Sdb_func_cmp::to_bson_with_child(bson::BSONObj &obj) {
       }
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to covert children to bson, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to covert children to bson, exception:%s",
+                        e.what());
 done:
   DBUG_RETURN(rc);
 error:

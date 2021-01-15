@@ -72,9 +72,8 @@ int cl_init(sdbclient::sdbCollection *cl, Sdb_conn *connection,
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to init collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to init collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -119,12 +118,11 @@ int cl_query(sdbclient::sdbCollection *cl, sdbclient::sdbCursor *cursor,
              longlong num_to_skip, longlong num_to_return, int flags) {
   int rc = SDB_ERR_OK;
   try {
-      rc = cl->query(*cursor, *condition, *selected, *order_by, *hint,
-                      num_to_skip, num_to_return, flags);
+    rc = cl->query(*cursor, *condition, *selected, *order_by, *hint,
+                   num_to_skip, num_to_return, flags);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to query colletion info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to query colletion info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -157,9 +155,8 @@ int cl_query_one(sdbclient::sdbCollection *cl, bson::BSONObj *obj,
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to query colletion one info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to query colletion one info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -187,8 +184,7 @@ int cl_query_and_remove(sdbclient::sdbCollection *cl,
                             num_to_skip, num_to_return, flags);
   }
   SDB_EXCEPTION_CATCHER(
-      rc, "Failed to query and remove collection info, exception:%s",
-      e.what());
+      rc, "Failed to query and remove collection info, exception:%s", e.what());
 done:
   return rc;
 error:
@@ -211,9 +207,8 @@ int cl_aggregate(sdbclient::sdbCollection *cl, sdbclient::sdbCursor *cursor,
   try {
     rc = cl->aggregate(*cursor, obj);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to aggregate colletion info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to aggregate colletion info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -252,9 +247,8 @@ int Sdb_cl::next(bson::BSONObj &obj, my_bool get_owned) {
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to move to next cursor, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to move to next cursor, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -268,9 +262,8 @@ int cl_insert(sdbclient::sdbCollection *cl, const bson::BSONObj *obj,
   try {
     rc = cl->insert(*obj, hint, flag, result);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to insert colletion info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to insert colletion info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -292,9 +285,8 @@ int Sdb_cl::insert(std::vector<bson::BSONObj> &objs, const bson::BSONObj &hint,
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to insert colletion info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to insert colletion info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -311,9 +303,8 @@ int Sdb_cl::bulk_insert(int flag, std::vector<bson::BSONObj> &objs) {
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to insert colletion info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to insert colletion info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -329,9 +320,8 @@ int cl_upsert(sdbclient::sdbCollection *cl, const bson::BSONObj *rule,
   try {
     rc = cl->upsert(*rule, *condition, *hint, *set_on_insert, flag, result);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to upsert colletion info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to upsert colletion info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -351,11 +341,10 @@ int cl_update(sdbclient::sdbCollection *cl, const bson::BSONObj *rule,
               int flag, bson::BSONObj *result) {
   int rc = SDB_ERR_OK;
   try {
-      rc = cl->update(*rule, *condition, *hint, flag, result);
+    rc = cl->update(*rule, *condition, *hint, flag, result);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to update colletion info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to update colletion info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -374,9 +363,8 @@ int cl_del(sdbclient::sdbCollection *cl, const bson::BSONObj *condition,
   try {
     rc = cl->del(*condition, *hint, flag, result);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to delete colletion info, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to delete colletion info, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -398,9 +386,8 @@ int cl_create_index(sdbclient::sdbCollection *cl,
       rc = SDB_ERR_OK;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to create collection index, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to create collection index, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -495,8 +482,7 @@ int cl_create_index2(sdbclient::sdbCollection *cl,
     }
   }
   SDB_EXCEPTION_CATCHER(
-      rc, "Failed to create index2 of collection, exception:%s",
-      e.what());
+      rc, "Failed to create index2 of collection, exception:%s", e.what());
 done:
   return rc;
 error:
@@ -511,16 +497,15 @@ int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
 }
 
 int cl_drop_index(sdbclient::sdbCollection *cl, const char *name) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->dropIndex(name);
     if (SDB_IXM_NOTEXIST == rc) {
       rc = SDB_ERR_OK;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to drop collection index, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to drop collection index, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -541,13 +526,12 @@ int Sdb_cl::truncate() {
 
 int cl_set_attributes(sdbclient::sdbCollection *cl,
                       const bson::BSONObj *options) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->setAttributes(*options);
   }
   SDB_EXCEPTION_CATCHER(
-      rc, "Failed to set attributes of collection, exception:%s",
-      e.what());
+      rc, "Failed to set attributes of collection, exception:%s", e.what());
 done:
   return rc;
 error:
@@ -560,7 +544,7 @@ int Sdb_cl::set_attributes(const bson::BSONObj &options) {
 
 int cl_drop_auto_increment(sdbclient::sdbCollection *cl,
                            const char *field_name) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     int rc = cl->dropAutoIncrement(field_name);
     if (SDB_AUTOINCREMENT_FIELD_NOT_EXIST == rc) {
@@ -582,7 +566,7 @@ int Sdb_cl::drop_auto_increment(const char *field_name) {
 
 int cl_create_auto_increment(sdbclient::sdbCollection *cl,
                              const bson::BSONObj *options) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->createAutoIncrement(*options);
     if (SDB_AUTOINCREMENT_FIELD_CONFLICT == rc) {
@@ -611,16 +595,15 @@ my_thread_id Sdb_cl::thread_id() {
 }
 
 int cl_drop(sdbclient::sdbCollection *cl) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->drop();
     if (SDB_DMS_NOTEXIST == rc) {
       rc = SDB_ERR_OK;
     }
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to drop collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to drop collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -633,13 +616,12 @@ int Sdb_cl::drop() {
 
 int cl_get_count(sdbclient::sdbCollection *cl, longlong *count,
                  const bson::BSONObj *condition, const bson::BSONObj *hint) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->getCount(*count, *condition, *hint);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to get count of collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get count of collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -653,13 +635,12 @@ int Sdb_cl::get_count(longlong &count, const bson::BSONObj &condition,
 
 int cl_get_indexes(sdbclient::sdbCollection *cl,
                    std::vector<bson::BSONObj> *infos) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->getIndexes(*infos);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to get indexes of collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get indexes of collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -673,13 +654,12 @@ int Sdb_cl::get_indexes(std::vector<bson::BSONObj> &infos) {
 int cl_attach_collection(sdbclient::sdbCollection *cl,
                          const char *sub_cl_fullname,
                          const bson::BSONObj *options) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->attachCollection(sub_cl_fullname, *options);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to attach collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to attach collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -694,13 +674,12 @@ int Sdb_cl::attach_collection(const char *sub_cl_fullname,
 
 int cl_detach_collection(sdbclient::sdbCollection *cl,
                          const char *sub_cl_fullname) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->detachCollection(sub_cl_fullname);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to detach collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to detach collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -714,14 +693,13 @@ int Sdb_cl::detach_collection(const char *sub_cl_fullname) {
 int cl_split(sdbclient::sdbCollection *cl, const char *source_group_name,
              const char *target_group_name, const bson::BSONObj *split_cond,
              const bson::BSONObj *split_end_cond) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->split(source_group_name, target_group_name, *split_cond,
                    *split_end_cond);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to split collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to split collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -736,13 +714,12 @@ int Sdb_cl::split(const char *source_group_name, const char *target_group_name,
 }
 
 int cl_get_detail(sdbclient::sdbCollection *cl, sdbclient::sdbCursor *cursor) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = cl->getDetail(*cursor);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to get detail of collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get detail of collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -771,13 +748,12 @@ Sdb_conn *Sdb_cl::get_conn() {
 }
 
 int Sdb_cl::get_version() {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = m_cl.getVersion();
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to get version of collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get version of collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -785,13 +761,12 @@ error:
 }
 
 int Sdb_cl::alter_collection(const bson::BSONObj &obj) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = m_cl.alterCollection(obj);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to alter collection, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to alter collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:

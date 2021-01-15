@@ -641,17 +641,17 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
 
   try {
     // The buf equal record[1] when write to disk by calling
-    // ha_sdb_seq::update_row. Before triggering this action, we need to manually
-    // construct an empty record to ensure that record[0] not equal record[1].
+    // ha_sdb_seq::update_row. Before triggering this action, we need to
+    // manually construct an empty record to ensure that record[0] not equal
+    // record[1].
     if (buf != table->record[0]) {
-        static bson::BSONObj STATIC_SEQ_NULL_INFO =
-            BSON(SDB_FIELD_CURRENT_VALUE
-                << 0 << SDB_FIELD_MIN_VALUE << 0 << SDB_FIELD_MAX_VALUE << 0
-                << SDB_FIELD_START_VALUE << 0 << SDB_FIELD_INCREMENT << 0
-                << SDB_FIELD_ACQUIRE_SIZE << 0 << SDB_FIELD_CYCLED << true
-                << SDB_FIELD_CYCLED_COUNT << 0);
-        obj = STATIC_SEQ_NULL_INFO;
-      }
+      static bson::BSONObj STATIC_SEQ_NULL_INFO =
+          BSON(SDB_FIELD_CURRENT_VALUE
+               << 0 << SDB_FIELD_MIN_VALUE << 0 << SDB_FIELD_MAX_VALUE << 0
+               << SDB_FIELD_START_VALUE << 0 << SDB_FIELD_INCREMENT << 0
+               << SDB_FIELD_ACQUIRE_SIZE << 0 << SDB_FIELD_CYCLED << true
+               << SDB_FIELD_CYCLED_COUNT << 0);
+      obj = STATIC_SEQ_NULL_INFO;
     } else {
       cond_builder.append(SDB_FIELD_NAME, m_sequence_name);
       condition = cond_builder.done();
@@ -707,9 +707,9 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
     }
     dbug_tmp_restore_column_map(table->write_set, old_map);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to move to nex rnd table:%s.%s, exception:%s",
-      db_name, table_name, e.what());
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to move to nex rnd table:%s.%s, exception:%s",
+                        db_name, table_name, e.what());
 
 done:
   if (buf != table->record[0]) {

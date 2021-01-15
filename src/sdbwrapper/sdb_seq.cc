@@ -24,6 +24,7 @@
 #include "sdb_seq.h"
 #include "sdb_conn.h"
 #include "ha_sdb_errcode.h"
+#include "ha_sdb_log.h"
 
 using namespace sdbclient;
 
@@ -105,13 +106,12 @@ int Sdb_seq::set_current_value(const longlong value) {
 
 int seq_set_attributes(sdbclient::sdbSequence *seq,
                        const bson::BSONObj &options) {
-  int rc = SDB_ERR_OK ;
+  int rc = SDB_ERR_OK;
   try {
     rc = seq->setAttributes(options);
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to set sequence attributes, exception:%s",
-      e.what());
+  SDB_EXCEPTION_CATCHER(rc, "Failed to set sequence attributes, exception:%s",
+                        e.what());
 done:
   return rc;
 error:

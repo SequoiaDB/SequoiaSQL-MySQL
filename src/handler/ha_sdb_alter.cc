@@ -2243,7 +2243,7 @@ int sdb_extra_autoinc_option_from_snap(Sdb_conn *conn,
   try {
     bson::BSONObjIterator it(autoinc_info);
     bson::BSONArrayBuilder autoinc_builder(
-    builder.subarrayStart(SDB_FIELD_AUTOINCREMENT));
+        builder.subarrayStart(SDB_FIELD_AUTOINCREMENT));
     while (it.more()) {
       bson::BSONElement obj_ele = it.next();
       bson::BSONObj obj;
@@ -2287,8 +2287,7 @@ int sdb_extra_autoinc_option_from_snap(Sdb_conn *conn,
     autoinc_builder.done();
   }
   SDB_EXCEPTION_CATCHER(
-      rc, "Failed to extra autoinc option from snap, exception:%s",
-      e.what());
+      rc, "Failed to extra autoinc option from snap, exception:%s", e.what());
 done:
   DBUG_RETURN(rc);
 error:
@@ -2424,12 +2423,12 @@ int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *cs_name,
     }
 
     options = builder.obj();
-    DBUG_PRINT("info", ("options: %s, cata_info: %s", options.toString().c_str(),
-                        cata_info.toString().c_str()));
+    DBUG_PRINT("info",
+               ("options: %s, cata_info: %s", options.toString().c_str(),
+                cata_info.toString().c_str()));
   }
   SDB_EXCEPTION_CATCHER(
-      rc, "Failed to extral sdb collection from snap, exception:%s",
-      e.what());
+      rc, "Failed to extral sdb collection from snap, exception:%s", e.what());
 done:
   DBUG_RETURN(rc);
 error:
