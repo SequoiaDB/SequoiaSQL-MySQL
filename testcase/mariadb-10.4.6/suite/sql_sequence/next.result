@@ -79,6 +79,28 @@ next value for t1
 select next_not_cached_value,cycle_count from t1;
 next_not_cached_value	cycle_count
 3	1
+select NEXT VALUE for t1,seq from seq_1_to_20;
+NEXT VALUE for t1	seq
+2	1
+3	2
+4	3
+5	4
+6	5
+7	6
+8	7
+9	8
+10	9
+1	10
+2	11
+3	12
+4	13
+5	14
+6	15
+7	16
+8	17
+9	18
+10	19
+1	20
 drop sequence t1;
 CREATE SEQUENCE t1 minvalue 1 maxvalue 10 increment by -1 cache 2 cycle engine=sequoiadb;
 select next value for t1;
@@ -147,6 +169,28 @@ next value for t1
 select next_not_cached_value,cycle_count from t1;
 next_not_cached_value	cycle_count
 8	1
+select NEXT VALUE for t1,seq from seq_1_to_20;
+NEXT VALUE for t1	seq
+9	1
+8	2
+7	3
+6	4
+5	5
+4	6
+3	7
+2	8
+1	9
+10	10
+9	11
+8	12
+7	13
+6	14
+5	15
+4	16
+3	17
+2	18
+1	19
+10	20
 drop sequence t1;
 CREATE SEQUENCE t1 start with 8 minvalue 1 maxvalue 10 increment by 1 cache 2 nocycle;
 select next value for t1;
@@ -219,9 +263,31 @@ next value for t9
 select previous value for t9, lastval(t9);
 previous value for t9	lastval(t9)
 2	2
+select seq, previous value for t9, NEXT VALUE for t9, previous value for t9 from seq_1_to_20;
+seq	previous value for t9	NEXT VALUE for t9	previous value for t9
+1	2	3	3
+2	3	4	4
+3	4	5	5
+4	5	6	6
+5	6	7	7
+6	7	8	8
+7	8	9	9
+8	9	10	10
+9	10	1	1
+10	1	2	2
+11	2	3	3
+12	3	4	4
+13	4	5	5
+14	5	6	6
+15	6	7	7
+16	7	8	8
+17	8	9	9
+18	9	10	10
+19	10	1	1
+20	1	2	2
 select * from t9;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
-6	1	10	1	1	5	1	0
+6	1	10	1	1	5	1	2
 drop sequence t9;
 CREATE SEQUENCE s1 cache=1;
 select next_not_cached_value from s1;
