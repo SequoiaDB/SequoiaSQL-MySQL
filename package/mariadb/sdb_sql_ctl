@@ -28,7 +28,7 @@ export LC_TIME=C
 PORT=6101
 NEED_PRINTSCREEN=false
 NEED_BACKUPLOG=false
-FORCE_DELETE=false
+FORCE_OP=false
 SQL_USER=sdbadmin
 SYS_CONF_FILE=""
 PROCESS_WAIT_TIME=60
@@ -396,7 +396,8 @@ function delete_inst()
 
    echo "Deleting instance $INST_NAME ..."
 
-   if [ "$FORCE_DELETE" == false ]; then
+   #SEQUOIASQLMAINSTREAM-766 NEED_PRINTSCREEN was added to solve the SAC compatibility problem
+   if [ "$FORCE_OP" == false ] && [ "$NEED_PRINTSCREEN" == false ]; then
       typeset -u answer
       echo "Deleting an instance will delete the data directory"
       read -p "Do you want to delete instance?[y/N]" answer
@@ -978,7 +979,7 @@ do
       --baklog )                              NEED_BACKUPLOG=true
                                               shift
                                               ;;
-      --force )                               FORCE_DELETE=true
+      --force )                               FORCE_OP=true
                                               shift
                                               ;;
       --sdb-conn-addr )                       SDB_CONN_ADDR=$2
