@@ -38,10 +38,6 @@ int ha_sdb_seq::ensure_sequence(THD *thd) {
   int rc = 0;
   DBUG_ASSERT(NULL != thd);
 
-  if (sdb_execute_only_in_mysql(ha_thd())) {
-    goto done;
-  }
-
   if (NULL != m_sequence && m_sequence->thread_id() != sdb_thd_id(thd)) {
     delete m_sequence;
     m_sequence = NULL;
@@ -532,10 +528,6 @@ int ha_sdb_seq::rnd_init(bool scan) {
 
   int rc = SDB_ERR_OK;
 
-  if (sdb_execute_only_in_mysql(ha_thd())) {
-    goto done;
-  }
-
   rc = ensure_sequence(ha_thd());
   if (rc) {
     goto error;
@@ -581,11 +573,6 @@ int ha_sdb_seq::rnd_next(uchar *buf) {
 
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
-  }
-
-  if (sdb_execute_only_in_mysql(ha_thd())) {
-    rc = 0;
-    goto done;
   }
 
   // Distinguish between 'ALTER TABLE s ENGINE INNODB' and 'ALTER TABLE t ADD
@@ -691,12 +678,13 @@ error:
 
 int ha_sdb_seq::extra(enum ha_extra_function operation) {
   switch (operation) {
-    case HA_EXTRA_NEXT_VALUE: /* Dup keys don't rollback everything*/
+    case HA_EXTRA_NEXT_VALUE:
       m_use_next_value = true;
       break;
     case HA_EXTRA_SET_VALUE:
       m_use_set_value = true;
       break;
+    default: { break; }
   }
 
   return 0;

@@ -1335,6 +1335,23 @@ static bool wait_for_mysqld_service() {
   return mysqld_failed;
 }
 
+static inline int retry_alter_sequence_stmt(MYSQL *mysql, const char *query,
+                                            const char *table_name) {
+  int rc = 0;
+  // build 'FLUSH TABLE `XXX`' command
+  char sql_cmd[NAME_LEN * 2 + 20] = "FLUSH TABLE ";
+  ha_quote_name(table_name, sql_cmd + 12);
+
+  rc = mysql_query(mysql, sql_cmd, strlen(sql_cmd));
+  if (rc) {
+    SDB_LOG_ERROR("HA: Failed to execute '%s', mysql error: %s", sql_cmd,
+                  mysql_error(mysql));
+  } else {
+    rc = mysql_query(mysql, query, strlen(query));
+  }
+  return rc;
+}
+
 // replay SQL statements fetched from 'HASQLLog'
 static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                                 Sdb_conn &sdb_conn) {
@@ -1556,6 +1573,17 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         rc = mysql_query(ha_mysql, query, strlen(query));
         mysql_free_result(mysql_store_result(ha_mysql));
       }
+
+#ifdef IS_MARIADB
+      // retry 'alter sequence ' statement if a conflict is found
+      if (0 != rc && ER_SEQUENCE_INVALID_DATA == mysql_errno(ha_mysql)) {
+        rc = retry_alter_sequence_stmt(ha_mysql, query, table_name);
+        HA_RC_CHECK(rc, sleep_secs,
+                    "HA: Failed to retry '%s' with SQL ID: %d, mysql error: %s",
+                    query, sql_id, mysql_error(ha_mysql));
+      }
+#endif
+
       if (rc && ha_is_ddl_ignorable_error(mysql_errno(ha_mysql))) {
         sql_print_information(
             "HA: Failed to replay sql '%s' with SQL ID: %d, "
