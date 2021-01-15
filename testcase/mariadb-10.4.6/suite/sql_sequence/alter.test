@@ -1,5 +1,5 @@
 --source include/have_sequence.inc
-#--source include/have_innodb.inc
+--source include/have_innodb.inc
 
 CREATE DATABASE test_sequence_alter;
 USE test_sequence_alter;
@@ -92,24 +92,25 @@ select next value for t1;
 drop sequence t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-879
-#--echo #
-#--echo # ALTER TABLE
-#--echo #
-#
-#CREATE SEQUENCE t1 engine=sequoiadb;
-#select next value for t1;
-#alter table t1 rename t2;
-#select next value for t2;
-#rename table t2 to t1;
-#select next value for t1;
-#alter table t1 comment="foo";
-#show create sequence t1;
-#alter table t1 engine=innodb;
+--echo #
+--echo # ALTER TABLE
+--echo #
+
+CREATE SEQUENCE t1 engine=sequoiadb;
+select next value for t1;
+alter table t1 rename t2;
+select next value for t2;
+rename table t2 to t1;
+select next value for t1;
+alter table t1 comment="foo";
+show create sequence t1;
+--error 131
+alter table t1 engine=innodb;
 #show create sequence t1;
 #alter table t1 engine=sequoiadb;
-#show create sequence t1;
-#select * from t1;
-#drop sequence t1;
+show create sequence t1;
+select * from t1;
+drop sequence t1;
 
 #
 # Some error testing

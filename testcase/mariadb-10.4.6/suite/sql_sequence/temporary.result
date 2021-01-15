@@ -1,4 +1,11 @@
 #
+# Create
+#
+create temporary sequence s1 engine=sequoiadb;
+alter table s1 engine innodb;
+ERROR 0A000: Can't support modifying storage engine of sequence table
+drop temporary sequence s1;
+#
 # MDEV-14762 Server crashes in MDL_ticket::has_stronger_or_equal_type
 # upon inserting into temporary sequence
 #
