@@ -90,6 +90,34 @@ drop view v1;
 #
 # Alter table
 #
+CREATE SEQUENCE s2 engine=sequoiadb;
+alter table t1 add column c int default next value for s2, add column d int default previous value for s2;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT nextval(`test_sequence_default`.`s1`),
+  `b` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT nextval(`test_sequence_default`.`s2`),
+  `d` int(11) DEFAULT lastval(`test_sequence_default`.`s2`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+select * from t1;
+a	b	c	d
+1	5	1	1
+8	12	2	2
+3	3	3	3
+4	4	4	4
+5	10	5	5
+6	7	6	6
+16	20	7	7
+drop sequence s2;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) DEFAULT nextval(`test_sequence_default`.`s1`),
+  `b` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT nextval(`test_sequence_default`.`s2`),
+  `d` int(11) DEFAULT lastval(`test_sequence_default`.`s2`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 drop sequence s1;
 #

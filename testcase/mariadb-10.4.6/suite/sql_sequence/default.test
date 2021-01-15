@@ -54,12 +54,12 @@ drop view v1;
 #SeqouiaDB cachesize must be greater than 0
 #CREATE SEQUENCE s2 nocache engine=sequoiadb;
 #BUG #SEQUOIASQLMAINSTREAM-891
-#CREATE SEQUENCE s2 engine=sequoiadb;
-#alter table t1 add column c int default next value for s2, add column d int default previous value for s2;
-#show create table t1;
-#select * from t1;
-#drop sequence s2;
-#show create table t1;
+CREATE SEQUENCE s2 engine=sequoiadb;
+alter table t1 add column c int default next value for s2, add column d int default previous value for s2;
+show create table t1;
+select * from t1;
+drop sequence s2;
+show create table t1;
 drop table t1;
 drop sequence s1;
 
