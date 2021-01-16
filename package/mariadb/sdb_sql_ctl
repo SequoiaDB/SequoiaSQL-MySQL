@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #   error code list:
+#   1     abort operation
 #   3     fail to initdb
 #   4     fail to execute stop
 #   5     fail to create directory or file
@@ -413,7 +414,7 @@ function delete_inst()
             ;;
          *)
             echo "Delete instance did not complete successfully"
-            exit 0
+            exit 1
             ;;
       esac
    fi
