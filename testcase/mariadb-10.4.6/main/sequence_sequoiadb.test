@@ -67,6 +67,8 @@ SELECT * FROM seq2;
 SELECT * FROM seq3;
 SELECT * FROM seq4;
 SELECT * FROM t1 ORDER BY id;
+drop table t1;
+
 # alter sequence attributes
 ALTER SEQUENCE seq1 
    increment by 50
@@ -114,8 +116,10 @@ SHOW CREATE SEQUENCE seq1_new;
 SHOW CREATE SEQUENCE seq2_new;
 SELECT * FROM seq1_new;
 SELECT * FROM seq2_new;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 SHOW CREATE SEQUENCE seq1;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 SHOW CREATE SEQUENCE seq2;
 # drop sequence
@@ -123,12 +127,16 @@ DROP SEQUENCE seq1_new;
 DROP SEQUENCE seq2_new;
 DROP TABLE seq3;
 DROP TABLE seq4;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 SHOW CREATE SEQUENCE seq1_new;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 SHOW CREATE SEQUENCE seq2_new;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 SHOW CREATE SEQUENCE seq3;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 SHOW CREATE SEQUENCE seq4;
 SET sql_mode = DEFAULT;
@@ -170,10 +178,12 @@ ALTER TABLE seq_tmp RENAME TO seq_tmp_new;
 SELECT nextval(seq_tmp_new);
 SHOW CREATE SEQUENCE seq_tmp_new;
 SELECT * FROM seq_tmp_new;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 SHOW CREATE SEQUENCE seq_tmp;
 # drop sequence
 DROP SEQUENCE seq_tmp_new;
+--replace_regex /test_parallel_[0-9]/X/
 --error ER_NO_SUCH_TABLE
 SHOW CREATE SEQUENCE seq_tmp_new;
 

@@ -135,6 +135,7 @@ id	name
 3	Zhangsan
 4	Tom
 2001	Lisi
+drop table t1;
 ALTER SEQUENCE seq1 
 increment by 50
 minvalue = 5
@@ -205,21 +206,21 @@ SELECT * FROM seq2_new;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 3001	1	9223372036854775806	1	1	1000	0	0
 SHOW CREATE SEQUENCE seq1;
-ERROR 42S02: Table 'test_parallel_1.seq1' doesn't exist
+ERROR 42S02: Table 'X.seq1' doesn't exist
 SHOW CREATE SEQUENCE seq2;
-ERROR 42S02: Table 'test_parallel_1.seq2' doesn't exist
+ERROR 42S02: Table 'X.seq2' doesn't exist
 DROP SEQUENCE seq1_new;
 DROP SEQUENCE seq2_new;
 DROP TABLE seq3;
 DROP TABLE seq4;
 SHOW CREATE SEQUENCE seq1_new;
-ERROR 42S02: Table 'test_parallel_1.seq1_new' doesn't exist
+ERROR 42S02: Table 'X.seq1_new' doesn't exist
 SHOW CREATE SEQUENCE seq2_new;
-ERROR 42S02: Table 'test_parallel_1.seq2_new' doesn't exist
+ERROR 42S02: Table 'X.seq2_new' doesn't exist
 SHOW CREATE SEQUENCE seq3;
-ERROR 42S02: Table 'test_parallel_1.seq3' doesn't exist
+ERROR 42S02: Table 'X.seq3' doesn't exist
 SHOW CREATE SEQUENCE seq4;
-ERROR 42S02: Table 'test_parallel_1.seq4' doesn't exist
+ERROR 42S02: Table 'X.seq4' doesn't exist
 SET sql_mode = DEFAULT;
 CREATE TEMPORARY SEQUENCE seq_tmp INCREMENT BY 10 MAXVALUE 20000 cycle;
 SHOW CREATE SEQUENCE seq_tmp;
@@ -254,10 +255,10 @@ SELECT * FROM seq_tmp_new;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 10001	1	20000	1	10	1000	1	1
 SHOW CREATE SEQUENCE seq_tmp;
-ERROR 42S02: Table 'test_parallel_1.seq_tmp' doesn't exist
+ERROR 42S02: Table 'X.seq_tmp' doesn't exist
 DROP SEQUENCE seq_tmp_new;
 SHOW CREATE SEQUENCE seq_tmp_new;
-ERROR 42S02: Table 'test_parallel_1.seq_tmp_new' doesn't exist
+ERROR 42S02: Table 'X.seq_tmp_new' doesn't exist
 CREATE SEQUENCE seq1;
 CREATE VIEW v1 AS SELECT next value for seq1;
 CREATE VIEW v2 AS SELECT previous value for seq1;
