@@ -6305,10 +6305,17 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
 
     /*
       Don't copy when
+      * adding or removing version attribute of system-versioned table;
       * source table ENGINE is not SEQUOIADB;
       * source table was created by PARTITION BY;
       * table_options has been changed;
     */
+#ifdef IS_MARIADB
+    TABLE *query_table = ha_thd()->lex->query_tables->table;
+    if (create_info->versioned() != query_table->versioned()) {
+      goto done;
+    }
+#endif
     TABLE_SHARE *s = src_table->table->s;
     if (s->db_type() == create_info->db_type &&
         s->get_table_ref_type() != TABLE_REF_TMP_TABLE &&
