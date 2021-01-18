@@ -475,6 +475,7 @@ int ha_sdb_seq::select_sequence() {
 
   // For SETVAL().
   if (m_use_set_value) {
+    m_use_set_value = false;
     if (!(increment = seq->increment)) {
       increment = global_system_variables.auto_increment_increment;
     }
@@ -483,16 +484,15 @@ int ha_sdb_seq::select_sequence() {
     if (rc) {
       goto error;
     }
-    m_use_set_value = false;
   }
 
   // For NEXTVAL().
   if (m_use_next_value) {
+    m_use_next_value = false;
     rc = acquire_and_adjust_sequence_value(m_sequence);
     if (rc) {
       goto error;
     }
-    m_use_next_value = false;
   }
 
 done:
@@ -521,13 +521,14 @@ int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
     if (table != query_table) {
       // For NEXTVAL/SETVAL when INSERT INTO table.
       if (m_use_next_value) {
+        m_use_next_value = false;
         rc = acquire_and_adjust_sequence_value(m_sequence);
         if (rc) {
           goto error;
         }
-        m_use_next_value = false;
       }
       if (m_use_set_value) {
+        m_use_set_value = false;
         if (!(increment = seq->increment)) {
           increment = global_system_variables.auto_increment_increment;
         }
@@ -536,7 +537,6 @@ int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
         if (rc) {
           goto error;
         }
-        m_use_set_value = false;
       }
     } else {
       // For INSERT INTO sequence.
