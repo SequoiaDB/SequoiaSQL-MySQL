@@ -4603,8 +4603,13 @@ id	d1
 8	2021-01-01
 drop table t1;
 create table t1 ( id int auto_increment primary key, d1 datetime(4) );
-insert into t1(d1) values ("2010-10-10 23:59:59.000"),("2005-05-05 09:50:50.998"),("2000-1-19 00:00:00.111"),("1999-09-09 12:12:12.12 "),("2013-07-01 19:19:19.992"),("2019-12-25 01:01:01.9999");
+insert into t1(d1) values ("2010-10-10 23:59:59.000"),("2005-05-05 09:50:50.998"),("2000-1-19 00:00:00.111"),("1999-09-09 12:12:12.12 "),("2013-07-01 19:19:19.992"),("2019-12-25 01:01:01.9999"),('2021-01-15 15:30:34');
 alter table t1 modify d1 datetime(6), algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
+alter table t1 modify d1 datetime(6), algorithm=copy;
+select * from t1 where d1 = '2021-01-15 15:30:34';
+id	d1
+7	2021-01-15 15:30:34.000000
 alter table t1 modify d1 datetime(5), algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 show create table t1;
@@ -4613,7 +4618,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `d1` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB AUTO_INCREMENT=2001 DEFAULT CHARSET=latin1
 insert into t1(d1) values ("2037-12-31 02:02:02.009900"),("2021-01-01 10:11:12.131415");
 select * from t1 order by id;
 id	d1
@@ -4623,8 +4628,9 @@ id	d1
 4	1999-09-09 12:12:12.120000
 5	2013-07-01 19:19:19.992000
 6	2019-12-25 01:01:01.999900
-7	2037-12-31 02:02:02.009900
-8	2021-01-01 10:11:12.131415
+7	2021-01-15 15:30:34.000000
+1001	2037-12-31 02:02:02.009900
+1002	2021-01-01 10:11:12.131415
 drop table t1;
 create table t1 ( id int auto_increment primary key, d1 timestamp(4) );
 insert into t1(d1) values ("2010-10-10 23:59:59.000"),("2005-05-05 09:50:50.998"),("2000-1-19 00:00:00.111"),("1999-09-09 12:12:12.12 "),("2013-07-01 19:19:19.992"),("2019-12-25 01:01:01.9999");

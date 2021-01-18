@@ -1167,8 +1167,13 @@ select * from t1 order by id;
 drop table t1;
 
 create table t1 ( id int auto_increment primary key, d1 datetime(4) );                                      
-insert into t1(d1) values ("2010-10-10 23:59:59.000"),("2005-05-05 09:50:50.998"),("2000-1-19 00:00:00.111"),("1999-09-09 12:12:12.12 "),("2013-07-01 19:19:19.992"),("2019-12-25 01:01:01.9999");
+insert into t1(d1) values ("2010-10-10 23:59:59.000"),("2005-05-05 09:50:50.998"),("2000-1-19 00:00:00.111"),("1999-09-09 12:12:12.12 "),("2013-07-01 19:19:19.992"),("2019-12-25 01:01:01.9999"),('2021-01-15 15:30:34');
+--error 1846
 alter table t1 modify d1 datetime(6), algorithm=inplace;
+#Bug #SEQUOIASQLMAINSTREAM-916
+#seqDB-23430
+alter table t1 modify d1 datetime(6), algorithm=copy;
+select * from t1 where d1 = '2021-01-15 15:30:34';
 #BUG #SEQUOIASQLMAINSTREAM-425
 --error 1846
 alter table t1 modify d1 datetime(5), algorithm=inplace;
