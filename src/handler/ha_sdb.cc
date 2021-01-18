@@ -1083,6 +1083,11 @@ const char **ha_sdb::bas_ext() const {
 }
 
 ulonglong ha_sdb::table_flags() const {
+#ifdef IS_MARIADB
+  if (table && table->versioned()) {
+    return m_table_flags & ~HA_DUPLICATE_POS;
+  }
+#endif
   return m_table_flags;
 }
 
@@ -2038,11 +2043,14 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   int rc = SDB_ERR_OK;
+  int flag = 0;
 
   try {
     bson::BSONObj result;
     Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
     int sql_command = thd_sql_command(ha_thd());
+    bool using_vers_sys = false;
+    bool replace_into_for_vers_sys = false;
     /*
       FLAG RULE:
       INSERT IGNORE ...
@@ -2056,7 +2064,18 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
     if (SQLCOM_REPLACE == sql_command || SQLCOM_REPLACE_SELECT == sql_command) {
       m_write_can_replace = true;
     }
-    int flag = 0;
+#ifdef IS_MARIADB
+    using_vers_sys = table->versioned();
+#endif
+    /*
+      Remove flag HA_EXTRA_IGNORE_DUP_KEY and HA_EXTRA_WRITE_CAN_REPLACE when
+      'REPLACE INTO ...' for system-versioned tables
+    */
+    if (SQLCOM_REPLACE == sql_command && using_vers_sys) {
+      m_write_can_replace = m_ignore_dup_key = false;
+      replace_into_for_vers_sys = true;
+    }
+
     if (m_insert_with_update) {
       flag = 0;
     } else if (m_write_can_replace) {
@@ -2079,9 +2098,12 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
         rc = rs;
         goto error;
       }
-      // Cannot support INSERT ... ON DUPLICATE KEY UPDATE ...
-      // when sdb doesn't return duplication info.
-      if (idx_name && m_insert_with_update) {
+      /* Cannot support when
+       * REPLACE INTO ... for system-versioned tables
+       * INSERT ... ON DUPLICATE KEY UPDATE ... when sdb doesn't return
+       * duplication info.
+       */
+      if (replace_into_for_vers_sys || (idx_name && m_insert_with_update)) {
         // Return this code so that mysql can call ::update_row().
         rc = HA_ERR_FOUND_DUPP_KEY;
       }
@@ -3669,11 +3691,11 @@ error:
 int ha_sdb::index_init(uint idx, bool sorted) {
   DBUG_ENTER("ha_sdb::index_init()");
   active_index = idx;
-  int table_pos = table->pos_in_table_list->table_id;
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }
 #ifdef IS_MARIADB
+  int table_pos = table->pos_in_table_list->table_id;
   m_secondary_sort_rowid = sdb_is_ror_scan(ha_thd(), table_pos);
 #endif
   DBUG_RETURN(0);
@@ -3735,6 +3757,9 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   THD *thd = table->in_use;
   my_bool is_select = (SQLCOM_SELECT == thd_sql_command(thd));
   memset(buf, 0, table->s->null_bytes);
+  if (buf != table->record[0]) {
+    repoint_field_to_record(table, table->record[0], buf);
+  }
 
   // allow zero date
   sql_mode_t old_sql_mode = thd->variables.sql_mode;
@@ -3844,6 +3869,9 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
       table_name, e.what());
 
 done:
+  if (buf != table->record[0]) {
+    repoint_field_to_record(table, buf, table->record[0]);
+  }
   if (!is_select || table->write_set != table->read_set) {
     dbug_tmp_restore_column_map(table->write_set, org_bitmap);
   }
