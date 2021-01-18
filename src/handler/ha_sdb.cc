@@ -1299,9 +1299,13 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
                        bool output_null, bson::BSONObj &null_obj,
                        bool auto_inc_explicit_used) {
   int rc = 0;
+  bool is_vers_sys = false;
   bson::BSONObjBuilder obj_builder;
   bson::BSONObjBuilder null_obj_builder;
 
+#ifdef IS_MARIADB
+  is_vers_sys = table->versioned();
+#endif
   my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
@@ -1325,7 +1329,9 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
           null_obj_builder.append(sdb_field_name(*field), "");
         }
       } else if (Field::NEXT_NUMBER == (*field)->unireg_check &&
-                 !auto_inc_explicit_used) {
+                 !auto_inc_explicit_used &&
+                 (!is_vers_sys ||
+                  is_vers_sys && SQLCOM_UPDATE != thd_sql_command(ha_thd()))) {
         continue;
       } else {
         rc = field_to_obj(*field, obj_builder, auto_inc_explicit_used);
