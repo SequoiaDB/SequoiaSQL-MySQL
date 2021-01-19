@@ -1299,13 +1299,9 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
                        bool output_null, bson::BSONObj &null_obj,
                        bool auto_inc_explicit_used) {
   int rc = 0;
-  bool is_vers_sys = false;
   bson::BSONObjBuilder obj_builder;
   bson::BSONObjBuilder null_obj_builder;
 
-#ifdef IS_MARIADB
-  is_vers_sys = table->versioned();
-#endif
   my_bitmap_map *org_bitmap = dbug_tmp_use_all_columns(table, table->read_set);
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
@@ -1329,9 +1325,7 @@ int ha_sdb::row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid,
           null_obj_builder.append(sdb_field_name(*field), "");
         }
       } else if (Field::NEXT_NUMBER == (*field)->unireg_check &&
-                 !auto_inc_explicit_used &&
-                 (!is_vers_sys ||
-                  is_vers_sys && SQLCOM_UPDATE != thd_sql_command(ha_thd()))) {
+                 !auto_inc_explicit_used) {
         continue;
       } else {
         rc = field_to_obj(*field, obj_builder, auto_inc_explicit_used);
@@ -2235,6 +2229,7 @@ int ha_sdb::write_row(uchar *buf) {
   bson::BSONObj obj;
   bson::BSONObj tmp_obj;
   ulonglong auto_inc = 0;
+  bool is_vers_sys = false;
   bool auto_inc_explicit_used = false;
   const Discrete_interval *forced = NULL;
 
@@ -2278,6 +2273,13 @@ int ha_sdb::write_row(uchar *buf) {
         thd->variables.sql_mode & MODE_NO_AUTO_VALUE_ON_ZERO))) {
     auto_inc_explicit_used = true;
   }
+#ifdef IS_MARIADB
+  is_vers_sys = table->versioned();
+#endif
+  if (SQLCOM_UPDATE == thd_sql_command(ha_thd()) && is_vers_sys) {
+    auto_inc_explicit_used = true;
+  }
+
   rc = row_to_obj(buf, obj, TRUE, FALSE, tmp_obj, auto_inc_explicit_used);
   if (rc != 0) {
     goto error;
