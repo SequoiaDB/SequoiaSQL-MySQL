@@ -58,6 +58,10 @@ SELECT seq4.nextval;
 ALTER SEQUENCE seq4 RESTART 2000;
 SELECT next value for seq4;
 INSERT INTO t1(name) VALUES ('Lisi');
+#BUG #SEQUOIASQLMAINSTREAM-871
+ALTER SEQUENCE seq4 RESTART 1;
+SELECT nextval(seq4);
+SELECT nextval(seq4);
 SELECT previous value for seq1;
 SELECT lastval(seq2);
 SELECT seq3.currval;
