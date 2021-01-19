@@ -169,7 +169,7 @@ index 94e2b51..35882ca 100644
      is_result_set_started= 1;
    return res;
 diff --git a/mariadb-v10.4.6/sql_parse.cc b/mariadb-v10.4.6/sql_parse.cc
-index e49dbe9..a13e97b 100644
+index e49dbe9..ef426f8 100644
 --- a/mariadb-v10.4.6/sql_parse.cc
 +++ b/mariadb-v10.4.6/sql_parse.cc
 @@ -1511,6 +1511,61 @@ uint maria_multi_check(THD *thd, char *packet, size_t packet_length)
@@ -310,7 +310,27 @@ index e49dbe9..a13e97b 100644
      }
  
      DBUG_PRINT("info",("query ready"));
-@@ -3715,6 +3828,16 @@ mysql_execute_command(THD *thd)
+@@ -3099,7 +3212,9 @@ static int mysql_create_routine(THD *thd, LEX *lex)
+       which doesn't any check routine privileges,
+       so no routine privilege record  will insert into mysql.procs_priv.
+     */
+-    if (thd->slave_thread && is_acl_user(definer->host.str, definer->user.str))
++    extern char *ha_inst_group_name;
++    bool ha_is_on = (ha_inst_group_name && 0 != strlen(ha_inst_group_name));
++    if ((thd->slave_thread || ha_is_on) && is_acl_user(definer->host.str, definer->user.str))
+     {
+       security_context.change_security_context(thd,
+                                                &thd->lex->definer->user,
+@@ -3126,7 +3241,7 @@ static int mysql_create_routine(THD *thd, LEX *lex)
+     */
+     if (restore_backup_context)
+     {
+-      DBUG_ASSERT(thd->slave_thread == 1);
++      DBUG_ASSERT(thd->slave_thread == 1 || ha_is_on);
+       thd->security_ctx->restore_security_context(thd, backup);
+     }
+ 
+@@ -3715,6 +3830,16 @@ mysql_execute_command(THD *thd)
    if (lex->sql_command != SQLCOM_SET_OPTION)
      DEBUG_SYNC(thd,"before_execute_sql_command");
  #endif
@@ -327,7 +347,7 @@ index e49dbe9..a13e97b 100644
  
    /*
      Check if we are in a read-only transaction and we're trying to
-@@ -6100,6 +6223,11 @@ finish:
+@@ -6100,6 +6225,11 @@ finish:
    thd->reset_query_timer();
    DBUG_ASSERT(!thd->in_active_multi_stmt_transaction() ||
                 thd->in_multi_stmt_transaction_mode());

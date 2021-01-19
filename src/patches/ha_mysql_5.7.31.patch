@@ -170,7 +170,7 @@ index cdc7f4a..ab83230 100644
      is_result_set_started= 1;
    return res;
 diff --git a/mysql-v5.7.31/sql_parse.cc b/mysql-v5.7.31/sql_parse.cc
-index 39b266c..ea7aec8 100644
+index 39b266c..e374ff0 100644
 --- a/mysql-v5.7.31/sql_parse.cc
 +++ b/mysql-v5.7.31/sql_parse.cc
 @@ -1197,6 +1197,60 @@ void reset_statement_timer(THD *thd)
@@ -311,7 +311,28 @@ index 39b266c..ea7aec8 100644
      }
  
      /* Need to set error to true for graceful shutdown */
-@@ -5003,6 +5120,15 @@ finish:
+@@ -4395,8 +4512,9 @@ end_with_restore_list:
+         which doesn't any check routine privileges,
+         so no routine privilege record  will insert into mysql.procs_priv.
+       */
+-
+-      if (thd->slave_thread)
++      extern char *ha_inst_group_name;
++      bool ha_is_on = (ha_inst_group_name && 0 != strlen(ha_inst_group_name));
++      if (thd->slave_thread || ha_is_on)
+       {
+         LEX_CSTRING current_user;
+         LEX_CSTRING current_host;
+@@ -4438,7 +4556,7 @@ end_with_restore_list:
+       */ 
+       if (restore_backup_context)
+       {
+-        DBUG_ASSERT(thd->slave_thread == 1);
++        DBUG_ASSERT(thd->slave_thread == 1 || ha_is_on);
+         thd->security_context()->restore_security_context(thd, backup);
+       }
+ #endif
+@@ -5003,6 +5121,15 @@ finish:
        thd->reset_query_for_display();
      }
    }

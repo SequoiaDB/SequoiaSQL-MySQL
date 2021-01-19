@@ -1375,6 +1375,26 @@ static int get_sql_objects_for_dcl(THD *thd, ha_sql_stmt_info *sql_info) {
   ha_table_list *ha_tbl_node = NULL, *ha_tbl_list_tail = NULL;
   TABLE_LIST *tables = sdb_lex_first_select(thd)->get_table_list();
 
+  if (tables) {
+    ha_tbl_node = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+    if (NULL == ha_tbl_node) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
+    ha_tbl_node->db_name = C_STR(tables->db);
+    ha_tbl_node->table_name = C_STR(tables->table_name);
+    ha_tbl_node->op_type = HA_OPERATION_TYPE_DCL;
+    ha_tbl_node->is_temporary_table = false;
+    ha_tbl_node->next = NULL;
+    if (NULL == sql_info->tables) {
+      sql_info->tables = ha_tbl_node;
+      ha_tbl_list_tail = sql_info->tables;
+    } else {
+      ha_tbl_list_tail->next = ha_tbl_node;
+      ha_tbl_list_tail = ha_tbl_list_tail->next;
+    }
+  }
+
   // add involved users
   while ((lex_user = users_list++)) {
     ha_tbl_node = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
