@@ -191,7 +191,6 @@ error:
 
 int ha_sdb_seq::build_attribute_of_sequence(bson::BSONObj &options) {
   int rc = SDB_OK;
-  longlong increment = 0;
   SEQUENCE *seq = table->s->sequence;
   bson::BSONObj option;
   bson::BSONObjBuilder builder(96);
@@ -200,10 +199,12 @@ int ha_sdb_seq::build_attribute_of_sequence(bson::BSONObj &options) {
     builder.append(SDB_FIELD_MIN_VALUE, (longlong)seq->min_value);
     builder.append(SDB_FIELD_MAX_VALUE, (longlong)seq->max_value);
     builder.append(SDB_FIELD_START_VALUE, (longlong)seq->start);
-    if (!(increment = seq->increment)) {
-      increment = global_system_variables.auto_increment_increment;
+    if (0 == seq->increment) {
+      rc = HA_ERR_WRONG_COMMAND;
+      my_printf_error(rc, "Increment of sequence can't be 0", MYF(0));
+      goto error;
     }
-    builder.append(SDB_FIELD_INCREMENT, (longlong)increment);
+    builder.append(SDB_FIELD_INCREMENT, (longlong)seq->increment);
     builder.append(SDB_FIELD_ACQUIRE_SIZE, (longlong)seq->cache);
     builder.append(SDB_FIELD_CACHE_SIZE, (longlong)seq->cache);
     builder.appendBool(SDB_FIELD_CYCLED, seq->cycle);
@@ -263,49 +264,6 @@ error:
   goto done;
 }
 
-/* Ofssets are usually set when sequences are used in more than one
-   instance of native mariadb. That doesn't make sense to us, just
-   for compatibility.*/
-longlong apply_offset(const TABLE *table, longlong next_value) {
-  SEQUENCE *seq = table->s->sequence;
-  longlong real_increment = 0;
-  longlong increment = seq->increment;
-  longlong max_value = seq->max_value;
-
-  if (!(real_increment = increment)) {
-    longlong offset = 0;
-    longlong off = 0;
-    longlong to_add = 0;
-    /* Use auto_increment_increment and auto_increment_offset */
-    if ((real_increment = global_system_variables.auto_increment_increment) !=
-        1) {
-      offset = (global_system_variables.auto_increment_offset %
-                global_system_variables.auto_increment_increment);
-    }
-    /*
-       Ensure that next_free_value has the right offset, so that we
-       can generate a serie by just adding real_increment.
-    */
-    off = next_value % real_increment;
-    if (off < 0) {
-      off += real_increment;
-    }
-    to_add = (real_increment + offset - off) % real_increment;
-    /*
-       Check if add will make next_free_value bigger than max_value,
-       taken into account that next_free_value or max_value addition
-       may overflow
-    */
-    if (next_value > max_value - to_add || next_value + to_add > max_value) {
-      next_value = max_value + 1;
-    } else {
-      next_value += to_add;
-      DBUG_ASSERT(llabs(next_value % real_increment) == offset);
-    }
-  }
-  return next_value;
-}
-
 int ha_sdb_seq::acquire_and_adjust_sequence_value(Sdb_seq *sdb_seq) {
   int rc = SDB_OK;
   int fetch_num = 0;
@@ -325,7 +283,7 @@ int ha_sdb_seq::acquire_and_adjust_sequence_value(Sdb_seq *sdb_seq) {
     goto error;
   }
 
-  seq->res_value = apply_offset(table, next_value);
+  seq->res_value = next_value;
   seq->adjust_values(seq->increment_value(next_value));
   add_to = return_num * increment;
   if (increment > 0) {
@@ -348,8 +306,6 @@ error:
 
 int ha_sdb_seq::insert_into_sequence() {
   int rc = SDB_OK;
-  longlong min_value = -1;
-  longlong max_value = -1;
   longlong increment = -1;
   longlong reserved_until = -1;
   bson::BSONObj options;
@@ -360,15 +316,18 @@ int ha_sdb_seq::insert_into_sequence() {
   old_map = dbug_tmp_use_all_columns(table, table->read_set);
 
   reserved_until = table->field[SEQUENCE_FIELD_RESERVED_UNTIL]->val_int();
-  min_value = table->field[SEQUENCE_FIELD_MIN_VALUE]->val_int();
-  max_value = table->field[SEQUENCE_FIELD_MAX_VALUE]->val_int();
   increment = table->field[SEQUENCE_FIELD_INCREMENT]->val_int();
-  if (!increment) {
-    increment = global_system_variables.auto_increment_increment;
+  if (0 == increment) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Increment of sequence can't be 0", MYF(0));
+    goto error;
   }
+
   try {
-    builder.append(SDB_FIELD_MIN_VALUE, min_value);
-    builder.append(SDB_FIELD_MAX_VALUE, max_value);
+    builder.append(SDB_FIELD_MIN_VALUE,
+                   table->field[SEQUENCE_FIELD_MIN_VALUE]->val_int());
+    builder.append(SDB_FIELD_MAX_VALUE,
+                   table->field[SEQUENCE_FIELD_MAX_VALUE]->val_int());
     builder.append(SDB_FIELD_START_VALUE,
                    table->field[SEQUENCE_FIELD_START]->val_int());
     builder.append(SDB_FIELD_INCREMENT, increment);
@@ -412,12 +371,13 @@ int ha_sdb_seq::alter_sequence() {
   int rc = SDB_OK;
   bson::BSONObj options;
   bson::BSONObjBuilder builder;
-  longlong new_increment = 0;
   SEQUENCE *seq = table->s->sequence;
   sequence_definition *new_seq = ha_thd()->lex->create_info.seq_create_info;
 
-  if (!(new_increment = new_seq->increment)) {
-    new_increment = global_system_variables.auto_increment_increment;
+  if (0 == new_seq->increment) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Increment of sequence can't be 0", MYF(0));
+    goto error;
   }
 
   try {
@@ -430,8 +390,8 @@ int ha_sdb_seq::alter_sequence() {
     if (seq->start != new_seq->start) {
       builder.append(SDB_FIELD_START_VALUE, new_seq->start);
     }
-    if (seq->increment != new_increment) {
-      builder.append(SDB_FIELD_INCREMENT, new_increment);
+    if (seq->increment != new_seq->increment) {
+      builder.append(SDB_FIELD_INCREMENT, new_seq->increment);
     }
     if (seq->cache != new_seq->cache) {
       builder.append(SDB_FIELD_ACQUIRE_SIZE, new_seq->cache);
@@ -470,16 +430,12 @@ error:
 int ha_sdb_seq::select_sequence() {
   int rc = SDB_OK;
   longlong nr = 0;
-  longlong increment = 0;
   SEQUENCE *seq = table->s->sequence;
 
   // For SETVAL().
   if (m_use_set_value) {
     m_use_set_value = false;
-    if (!(increment = seq->increment)) {
-      increment = global_system_variables.auto_increment_increment;
-    }
-    nr = seq->reserved_until - increment;
+    nr = seq->reserved_until - seq->increment;
     rc = m_sequence->set_current_value(nr);
     if (rc) {
       goto error;
@@ -506,7 +462,6 @@ int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
 
   int rc = 0;
   longlong nr = 0;
-  longlong increment = 0;
   SEQUENCE *seq = table->s->sequence;
   TABLE *query_table = ha_thd()->lex->query_tables->table;
 
@@ -529,10 +484,7 @@ int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
       }
       if (m_use_set_value) {
         m_use_set_value = false;
-        if (!(increment = seq->increment)) {
-          increment = global_system_variables.auto_increment_increment;
-        }
-        nr = seq->reserved_until - increment;
+        nr = seq->reserved_until - seq->increment;
         rc = m_sequence->set_current_value(nr);
         if (rc) {
           goto error;
