@@ -1556,7 +1556,13 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       sprintf(sql_info->alter_event_body, "%s", thd->lex->sphead->m_body.str);
     }
 
-    DBUG_ASSERT(strlen(sql_info->sp_name) != 0);
+    // if it's a udf function
+    if (0 == strlen(sql_info->sp_db_name)) {
+      sprintf(sql_info->sp_db_name, "%s", HA_MYSQL_DB);
+    }
+    if (0 == strlen(sql_info->sp_name) && SQLCOM_CREATE_FUNCTION == sql_command) {
+      sprintf(sql_info->sp_name, "%s", thd->lex->udf.name.str);
+    }
 
     sql_info->tables = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
     if (NULL == sql_info->tables) {
@@ -2315,13 +2321,11 @@ static int fix_create_routine_stmt(THD *thd, ha_event_general &event,
   log_query.set_charset(thd->charset());
 #endif
   if (SQLCOM_CREATE_SPFUNCTION == sql_command ||
-      SQLCOM_CREATE_FUNCTION == sql_command ||
       SQLCOM_CREATE_PROCEDURE == sql_command) {
     LEX_CSTRING returns = {"", 0};
     String retstr(64);
     retstr.set_charset(system_charset_info);
-    if (SQLCOM_CREATE_SPFUNCTION == sql_command ||
-        SQLCOM_CREATE_FUNCTION == sql_command) {
+    if (SQLCOM_CREATE_SPFUNCTION == sql_command) {
       sp_returns_type(thd, retstr, thd->lex->sphead);
       returns = retstr.lex_cstring();
     }
@@ -3496,7 +3500,6 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
 
   switch (sql_command) {
     case SQLCOM_CREATE_SPFUNCTION:
-    case SQLCOM_CREATE_FUNCTION:
     case SQLCOM_CREATE_PROCEDURE:
     case SQLCOM_CREATE_EVENT:
     case SQLCOM_CREATE_TRIGGER:
@@ -4113,7 +4116,6 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         }
         // rebuild 'create function/procedure/trigger/event' statement
         if (0 == rc && (SQLCOM_CREATE_SPFUNCTION == sql_command ||
-                        SQLCOM_CREATE_FUNCTION == sql_command ||
                         SQLCOM_CREATE_PROCEDURE == sql_command ||
                         SQLCOM_CREATE_EVENT == sql_command ||
                         SQLCOM_CREATE_TRIGGER == sql_command)) {
