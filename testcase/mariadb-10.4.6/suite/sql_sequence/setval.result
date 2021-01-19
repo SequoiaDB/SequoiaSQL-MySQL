@@ -110,6 +110,39 @@ next_not_cached_value	cycle_count
 select next value for t1;
 next value for t1
 1
+select next_not_cached_value,cycle_count from t1;
+next_not_cached_value	cycle_count
+11	1
+select next value for t1;
+next value for t1
+2
+select setval(t1,100,0,1);
+setval(t1,100,0,1)
+100
+select next_not_cached_value,cycle_count from t1;
+next_not_cached_value	cycle_count
+100	1
+select next value for t1;
+next value for t1
+100
+select setval(t1,100,1,2);
+setval(t1,100,1,2)
+NULL
+select next_not_cached_value,cycle_count from t1;
+next_not_cached_value	cycle_count
+101	1
+select next value for t1;
+next value for t1
+1
+select setval(t1,100,0,3);
+setval(t1,100,0,3)
+100
+select next_not_cached_value,cycle_count from t1;
+next_not_cached_value	cycle_count
+100	2
+select next value for t1;
+next value for t1
+100
 drop sequence t1;
 #
 # Testing extreme values
@@ -178,6 +211,31 @@ next value for t1
 select next value for t1;
 next value for t1
 -535
+drop sequence t1;
+CREATE SEQUENCE t1 cache=10 maxvalue=0 increment=-10;
+select setval(t1,-10,0);
+setval(t1,-10,0)
+NULL
+select next_not_cached_value,cycle_count from t1;
+next_not_cached_value	cycle_count
+-100	0
+select next value for t1;
+next value for t1
+-10
+drop sequence t1;
+#
+# Other testing
+#
+CREATE SEQUENCE t1;
+select setval(t1,10,0),setval(t1,15,1),setval(t1,5,1);
+setval(t1,10,0)	setval(t1,15,1)	setval(t1,5,1)
+10	15	NULL
+select next value for t1;
+next value for t1
+16
+select next_not_cached_value,cycle_count from t1;
+next_not_cached_value	cycle_count
+2001	0
 drop sequence t1;
 create table t1 (a int);
 select setval(t1,10);

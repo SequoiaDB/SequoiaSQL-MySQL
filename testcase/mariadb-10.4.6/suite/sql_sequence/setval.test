@@ -57,17 +57,17 @@ select setval(t1,100,0);
 select next_not_cached_value,cycle_count from t1;
 select next value for t1;
 #BUG #SEQUOIASQLMAINSTREAM-887
-#select next_not_cached_value,cycle_count from t1;
-#select next value for t1;
-#select setval(t1,100,0,1);
-#select next_not_cached_value,cycle_count from t1;
-#select next value for t1;
-#select setval(t1,100,1,2);
-#select next_not_cached_value,cycle_count from t1;
-#select next value for t1;
-#select setval(t1,100,0,3);
-#select next_not_cached_value,cycle_count from t1;
-#select next value for t1;
+select next_not_cached_value,cycle_count from t1;
+select next value for t1;
+select setval(t1,100,0,1);
+select next_not_cached_value,cycle_count from t1;
+select next value for t1;
+select setval(t1,100,1,2);
+select next_not_cached_value,cycle_count from t1;
+select next value for t1;
+select setval(t1,100,0,3);
+select next_not_cached_value,cycle_count from t1;
+select next value for t1;
 drop sequence t1;
 
 --echo #
@@ -105,23 +105,23 @@ select next value for t1;
 drop sequence t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-887
-#CREATE SEQUENCE t1 cache=10 maxvalue=0 increment=-10;
-#select setval(t1,-10,0);
-#select next_not_cached_value,cycle_count from t1;
-#select next value for t1;
-#drop sequence t1;
+CREATE SEQUENCE t1 cache=10 maxvalue=0 increment=-10;
+select setval(t1,-10,0);
+select next_not_cached_value,cycle_count from t1;
+select next value for t1;
+drop sequence t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-887
-#--echo #
-#--echo # Other testing
-#--echo #
-#
-#CREATE SEQUENCE t1;
-#select setval(t1,10,0),setval(t1,15,1),setval(t1,5,1);
-#select next value for t1;
-#select next_not_cached_value,cycle_count from t1;
+--echo #
+--echo # Other testing
+--echo #
+
+CREATE SEQUENCE t1;
+select setval(t1,10,0),setval(t1,15,1),setval(t1,5,1);
+select next value for t1;
+select next_not_cached_value,cycle_count from t1;
 #explain extended select setval(t1,100),setval(t1,100,TRUE),setval(t1,100,FALSE,50);
-#drop sequence t1;
+drop sequence t1;
 
 #
 # Some error testing
