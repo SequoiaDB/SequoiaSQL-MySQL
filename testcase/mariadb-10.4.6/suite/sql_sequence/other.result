@@ -115,6 +115,41 @@ insert into s1 values (1,1,9223372036854775806, 1, 1, 1000, 0, 0);
 UNLOCK TABLES;
 drop table s1;
 #
+# Many sequence calls with innodb
+#
+create sequence s1 cache=1000 engine=sequoiadb;
+start transaction;
+select count(nextval(s1)) from seq_1_to_2000;
+count(nextval(s1))
+2000
+commit;
+select * from s1;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+2001	1	9223372036854775806	1	1	1000	0	0
+drop sequence s1;
+create sequence s1  cache=1000 engine=sequoiadb;
+start transaction;
+select count(nextval(s1)) from seq_1_to_2000;
+count(nextval(s1))
+2000
+connect  addconroot, localhost, root,,test_sequence_other;
+connection addconroot;
+start transaction;
+select count(nextval(s1)) from seq_1_to_2000;
+count(nextval(s1))
+2000
+select * from s1;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+4001	1	9223372036854775806	1	1	1000	0	0
+commit;
+disconnect addconroot;
+connection default;
+select * from s1;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+4001	1	9223372036854775806	1	1	1000	0	0
+commit;
+drop sequence s1;
+#
 # Flush tables with read lock
 #
 create sequence s1;

@@ -99,33 +99,33 @@ UNLOCK TABLES;
 drop table s1;
 
 #BUG #SEQUOIASQLMAINSTREAM-886
-#--echo #
-#--echo # Many sequence calls with innodb
-#--echo #
-#
-#create sequence s1 cache=1000 engine=sequoiadb;
-#start transaction;
-#select count(nextval(s1)) from seq_1_to_2000;
-#commit;
-#select * from s1;
-#drop sequence s1;
-#
-#create sequence s1  cache=1000 engine=sequoiadb;
-#start transaction;
-#select count(nextval(s1)) from seq_1_to_2000;
-#
-##connect (addconroot, localhost, root,,);
-#connect (addconroot, localhost, root,,test_sequence_other);
-#connection addconroot;
-#start transaction;
-#select count(nextval(s1)) from seq_1_to_2000;
-#select * from s1;
-#commit;
-#disconnect addconroot;
-#connection default;
-#select * from s1;
-#commit;
-#drop sequence s1;
+--echo #
+--echo # Many sequence calls with innodb
+--echo #
+
+create sequence s1 cache=1000 engine=sequoiadb;
+start transaction;
+select count(nextval(s1)) from seq_1_to_2000;
+commit;
+select * from s1;
+drop sequence s1;
+
+create sequence s1  cache=1000 engine=sequoiadb;
+start transaction;
+select count(nextval(s1)) from seq_1_to_2000;
+
+#connect (addconroot, localhost, root,,);
+connect (addconroot, localhost, root,,test_sequence_other);
+connection addconroot;
+start transaction;
+select count(nextval(s1)) from seq_1_to_2000;
+select * from s1;
+commit;
+disconnect addconroot;
+connection default;
+select * from s1;
+commit;
+drop sequence s1;
 
 --echo #
 --echo # Flush tables with read lock
