@@ -776,6 +776,33 @@ X.t1	analyze	status	Engine-independent statistics collected
 X.t1	analyze	status	OK
 CREATE ALGORITHM=TEMPTABLE VIEW v1 AS SELECT * FROM t1;
 # This query returned 6 rows instead of 19
+SELECT * FROM v1
+WHERE ( a, a ) IN (
+SELECT alias2.b, alias2.a
+FROM t1 AS alias1, t1 AS alias2
+WHERE alias2.b = alias1.a
+AND ( alias1.b >= alias1.a OR alias2.b = 'z' )
+);
+a	b
+b	b
+c	c
+d	d
+d	d
+d	d
+e	e
+g	g
+j	j
+m	m
+m	m
+p	p
+q	q
+r	r
+s	s
+t	t
+v	v
+w	w
+x	x
+y	y
 # Another testcase, without the VIEW:
 CREATE TABLE t2 (a VARCHAR(1), b VARCHAR(1) NOT NULL, KEY(a)) ENGINE=SequoiaDB;
 INSERT INTO t2 SELECT * FROM t1;
