@@ -141,10 +141,11 @@ static int check_sequoiadb_version(sdbclient::sdb &conn) {
 
     if (major < 3 ||                              // x < 3
         (3 == major && minor < 4) ||              // 3.x < 3.4
-        (3 == major && 4 == minor && fix < 2)) {  // 3.4.x < 3.4.2
+        (3 == major && 4 == minor && fix < 2) ||  // 3.4.x < 3.4.2
+        (5 == major && 0 == minor && fix < 2)) {  // 5.0.x < 5.0.2
       // not support version
       cerr << "Error: instance group function is only supported when "
-              "SequoiaDB version is greater than or equal to 3.4.2"
+              "SequoiaDB version is greater than or equal to 3.4.2(or 5.0.2)"
            << endl;
       rc = SDB_HA_INIT_ERR;
     }

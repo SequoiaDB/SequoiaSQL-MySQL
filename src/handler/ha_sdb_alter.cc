@@ -2144,7 +2144,8 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     // version is less than 3.4.2
     if (!(major < 3 ||                               // x < 3
           (3 == major && minor < 4) ||               // 3.x < 3.4
-          (3 == major && 4 == minor && fix < 2))) {  // 3.4.x < 3.4.2
+          (3 == major && 4 == minor && fix < 2) ||   // 3.4.x < 3.4.2
+          (5 == major && 0 == minor && fix < 2))) {  // 5.0.x < 5.0.2
       try {
         bson::BSONObjBuilder builder;
         bson::BSONObjBuilder sub_builder(builder.subobjStart(SDB_FIELD_ALTER));
