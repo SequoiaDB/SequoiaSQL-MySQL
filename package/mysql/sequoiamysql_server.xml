@@ -616,6 +616,15 @@
                    </ruleList>
                 </ruleGroup>
             </ruleList>
+            <postShowPageActionList>
+                <setInstallerVariable>
+                   <name>installdir</name>
+                   <value>${choices}</value>
+                   <ruleList>
+                         <compareValues logic="does_not_equal" value1="${choices}" value2=""/>
+                   </ruleList>
+                </setInstallerVariable>
+            </postShowPageActionList>
         </choiceParameter>
 
         <directoryParameter name="installdir">
@@ -656,7 +665,7 @@
                 <compareTextLength text="${installdirs}" logic="greater" length="0"/>
                 <regExMatch>
                    <logic>matches</logic>
-                   <pattern>^${installdir}\n|(.*)\n${installdir}\n(.*)|(.*)\n${installdir}$|^(${installdir})$|^(${choices})$|^${choices}\n</pattern>
+                   <pattern>^${installdir}\n|(.*)\n${installdir}\n(.*)|(.*)\n${installdir}$|^(${installdir})$</pattern>
                    <text>${installdirs}</text>
                 </regExMatch>
             </ruleList>
