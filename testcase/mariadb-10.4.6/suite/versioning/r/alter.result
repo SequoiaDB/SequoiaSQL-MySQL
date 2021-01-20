@@ -453,11 +453,14 @@ alter table t1 modify b int generated always as (0) stored without system versio
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'without system versioning' at line 1
 alter table t1 modify b int generated always as (0) stored with system versioning;
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'system versioning' at line 1
+alter table t1 modify b int without system versioning;
+affected rows: 0
+info: Records: 0  Duplicates: 0  Warnings: 0
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
-  `b` int(11) GENERATED ALWAYS AS (0) STORED
+  `b` int(11) DEFAULT NULL WITHOUT SYSTEM VERSIONING
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
 select * from t1;
 a	b

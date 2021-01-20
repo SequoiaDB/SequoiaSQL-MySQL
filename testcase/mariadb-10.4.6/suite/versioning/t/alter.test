@@ -496,7 +496,7 @@ alter table t1 modify b int generated always as (0) stored without system versio
 --error ER_PARSE_ERROR
 alter table t1 modify b int generated always as (0) stored with system versioning;
 #BUG #SEQUOIASQLMAINSTREAM-903
-#alter table t1 modify b int without system versioning;
+alter table t1 modify b int without system versioning;
 --disable_info
 show create table t1;
 select * from t1;
