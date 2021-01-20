@@ -250,6 +250,58 @@ create or replace table t(
 a int
 ) engine=sequoiadb;
 insert into t values(1);
+create or replace table t (a int);
+insert t values (1),(2),(3),(4);
+alter table t add b int auto_increment null unique;
+select * from t;
+a	b
+1	1
+2	2
+3	3
+4	4
+drop table t;
+create or replace table t (a int) with system versioning engine=sequoiadb;
+insert into t values (1), (2), (3);
+delete from t where a<3;
+alter table t add b int not null unique;
+Got one of the listed errors
+alter table t add b int auto_increment null unique;
+select * from t;
+a	b
+3	3
+select * from t for system_time all;
+a	b
+1	1
+2	2
+3	3
+insert into t values (4, 0);
+select * from t for system_time all;
+a	b
+1	1
+2	2
+3	3
+4	4
+create or replace table t (a int) with system versioning;
+insert into t values (1), (2), (3);
+delete from t where a<3;
+alter table t add b int not null unique;
+Got one of the listed errors
+alter table t add b int auto_increment null unique;
+select * from t;
+a	b
+3	3
+select * from t for system_time all;
+a	b
+1	1
+2	2
+3	3
+insert into t values (4, 0);
+select * from t for system_time all;
+a	b
+1	1
+2	2
+3	3
+4	4
 create or replace table t (a int, b int primary key, c int unique) with system versioning;
 insert t values (1,2,3),(1,3,4),(1,4,5);
 alter table t drop system versioning;
