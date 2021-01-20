@@ -165,6 +165,18 @@ static void get_sdb_share(const char *table_name, TABLE *table,
    initialize its members.
   */
   void *ptr = my_hash_search(&sdb_open_tables, (uchar *)table_name, length);
+
+  // Avoid bug SEQUOIASQLMAINSTREAM-893
+  if (ptr) {
+    tmp_ptr = (boost::shared_ptr<Sdb_share> *)ptr;
+    if ((*tmp_ptr).get() && (*tmp_ptr)->idx_count != table->s->keys) {
+      DBUG_ASSERT(0);
+      my_hash_delete(&sdb_open_tables, (uchar *)ptr);
+      ptr = NULL;
+    }
+    tmp_ptr = NULL;
+  }
+
   if (!ptr) {
     if (!sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
                           &share, sizeof(*share), &tmp_name, length + 1,
