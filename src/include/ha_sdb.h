@@ -526,6 +526,9 @@ class ha_sdb : public handler {
   int try_rename_as_sequence(Sdb_conn *conn, const char *db_name,
                              const char *old_table_name,
                              const char *new_table_name, bool &renamed);
+  void get_auto_increment(ulonglong offset, ulonglong increment,
+                          ulonglong nb_desired_values, ulonglong *first_value,
+                          ulonglong *nb_reserved_values);
 #endif
 
   void raw_store_blob(Field_blob *blob, const char *data, uint len);

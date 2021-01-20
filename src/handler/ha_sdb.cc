@@ -2290,9 +2290,15 @@ int ha_sdb::write_row(uchar *buf) {
         thd->variables.sql_mode & MODE_NO_AUTO_VALUE_ON_ZERO))) {
     auto_inc_explicit_used = true;
   }
+
 #ifdef IS_MARIADB
-  if (SQLCOM_UPDATE == thd_sql_command(ha_thd()) && table->versioned()) {
-    auto_inc_explicit_used = true;
+  if (SQLCOM_UPDATE == thd_sql_command(ha_thd())) {
+    if (table->versioned()) {
+      auto_inc_explicit_used = true;
+    }
+    if (table->s->period.constr_name.str) {
+      auto_inc_explicit_used = false;
+    }
   }
 #endif
 
@@ -5310,6 +5316,18 @@ error:
   }
   goto done;
 }
+
+#ifdef IS_MARIADB
+void ha_sdb::get_auto_increment(ulonglong offset, ulonglong increment,
+                                ulonglong nb_desired_values,
+                                ulonglong *first_value,
+                                ulonglong *nb_reserved_values) {
+  // Just deal with system-versioned tables, skip directly.
+  *first_value = 1;
+  *nb_reserved_values = 0;
+  return;
+}
+#endif
 
 bool ha_sdb::is_index_stat_supported() {
   bool supported = false;
