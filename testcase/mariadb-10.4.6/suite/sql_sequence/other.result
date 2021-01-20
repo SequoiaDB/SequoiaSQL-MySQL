@@ -73,6 +73,20 @@ ERROR HY000: Sequence 'test_sequence_other.s2' values are conflicting
 select * from s1;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 2000	1	9223372036854775806	1	1	1000	0	0
+insert into s1 values (next value for s2, 1,9223372036854775806,1,1,1000,0,0);
+select * from s1;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+1	1	9223372036854775806	1	1	1000	0	0
+select * from s2;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+1001	1	9223372036854775806	1	1	1000	0	0
+insert into s1 select * from s2;
+select * from s1;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+1001	1	9223372036854775806	1	1	1000	0	0
+select nextval(s1);
+nextval(s1)
+1001
 drop sequence s1,s2;
 #
 # UPDATE and DELETE

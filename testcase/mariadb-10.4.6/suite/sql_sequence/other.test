@@ -55,11 +55,12 @@ insert into s2 values(0, 1, 10, 1, 2, 1, 1, 0);
 
 select * from s1;
 #BUG #SEQUOIASQLMAINSTREAM-923
-#insert into s1 values (next value for s2, 1,9223372036854775806,1,1,1000,0,0);
-#select * from s1;
-#select * from s2;
-#insert into s1 select * from s2;
-#select * from s1;
+insert into s1 values (next value for s2, 1,9223372036854775806,1,1,1000,0,0);
+select * from s1;
+select * from s2;
+insert into s1 select * from s2;
+select * from s1;
+select nextval(s1); # Add for regression
 drop sequence s1,s2;
 
 --echo #
