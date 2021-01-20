@@ -1778,7 +1778,11 @@ error:
 void ha_kill_mysqld(THD *thd) {
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
 #ifdef IS_MARIADB
-  kill_mysql(thd);
+  if (thd) {
+    kill_mysql(thd);
+  } else {
+    exit(0);
+  }
 #else
   extern my_thread_handle signal_thread_id;
   if (0 != signal_thread_id.thread) {
@@ -2015,11 +2019,22 @@ void *ha_replay_pending_logs(void *arg) {
   struct timespec abstime;
   ha_pending_log_replay_thread *replayer = (ha_pending_log_replay_thread *)arg;
   const char *group_name = replayer->sdb_group_name;
-  bool mysqld_failed = wait_for_mysqld_service();
+  bool stopped_mutex_locked = false;
 
   THD *thd = create_ha_thd(HA_KEY_PENDING_LOG_REPLAY_THD);
-  if (NULL == thd || mysqld_failed) {
-    goto error;
+  if (NULL == thd) {
+    SDB_LOG_ERROR("HA: Out of memory in 'pending log replay' thread");
+    ha_kill_mysqld(thd);
+    return NULL;
+  }
+
+  bool mysqld_failed = wait_for_mysqld_service();
+  if (mysqld_failed) {
+    SDB_LOG_ERROR(
+        "HA: The mysqld process was detected to be terminating, stop 'pending "
+        "log replay' thread, please check MySQL startup log");
+    ha_kill_mysqld(thd);
+    return NULL;
   }
 
   sdb_set_timespec(abstime, WAIT_RECOVER_TIMEOUT);
@@ -2031,6 +2046,7 @@ void *ha_replay_pending_logs(void *arg) {
   mysql_mutex_unlock(replayer->recover_mutex);
 
   mysql_mutex_lock(&replayer->stopped_mutex);
+  stopped_mutex_locked = true;
   replayer->stopped = false;
   while (!abort_loop && !mysqld_failed) {
     SDB_LOG_DEBUG("HA: Check pending log");
@@ -2132,10 +2148,10 @@ void *ha_replay_pending_logs(void *arg) {
     rc = 0;
   }
 done:
-  mysql_mutex_unlock(&replayer->stopped_mutex);
+  if (stopped_mutex_locked) {
+    mysql_mutex_unlock(&replayer->stopped_mutex);
+  }
   replayer->stopped = true;
   ha_thread_end(thd);
   return NULL;
-error:
-  goto done;
 }
