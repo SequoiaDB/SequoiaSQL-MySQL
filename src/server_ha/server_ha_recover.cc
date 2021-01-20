@@ -1947,33 +1947,34 @@ static int replay_pending_log(const char *db, const char *query,
   }
 
   // 3. build change database command(use database) and execute it
-  if (client_charset_num != (int)system_charset_info->number) {
-    // convert database's name charset
-    src_sql.set(db, strlen(db), system_charset_info);
-    dst_sql.length(0);
-    rc = sdb_convert_charset(src_sql, dst_sql, charset_info);
+  if (0 != strlen(db)) {
+    if (client_charset_num != (int)system_charset_info->number) {
+      // convert database's name charset
+      src_sql.set(db, strlen(db), system_charset_info);
+      dst_sql.length(0);
+      rc = sdb_convert_charset(src_sql, dst_sql, charset_info);
+      if (rc) {
+        SDB_LOG_ERROR("HA: Failed to convert system charset into '%s'",
+                      charset_info->name);
+        goto error;
+      }
+      ha_quote_name(dst_sql.c_ptr_safe(), use_db_cmd + 4);
+    } else {
+      ha_quote_name(db, use_db_cmd + 4);
+    }
+    rc = mysql_query(conn, use_db_cmd, strlen(use_db_cmd));
+    if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
+      // ignore 'Unknown database error' for 'drop/create database' operation
+      rc = (ER_BAD_DB_ERROR == mysql_errno(conn)) ? 0 : rc;
+    }
     if (rc) {
-      SDB_LOG_ERROR("HA: Failed to convert system charset into '%s'",
-                    charset_info->name);
+      SDB_LOG_ERROR(
+          "HA: Failed to change database before executing "
+          "pending log '%s', mysql error: %s",
+          query, mysql_error(conn));
       goto error;
     }
-    ha_quote_name(dst_sql.c_ptr_safe(), use_db_cmd + 4);
-  } else {
-    ha_quote_name(db, use_db_cmd + 4);
   }
-  rc = mysql_query(conn, use_db_cmd, strlen(use_db_cmd));
-  if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
-    // ignore 'Unknown database error' for 'drop/create database' operation
-    rc = (ER_BAD_DB_ERROR == mysql_errno(conn)) ? 0 : rc;
-  }
-  if (rc) {
-    SDB_LOG_ERROR(
-        "HA: Failed to change database before executing "
-        "pending log '%s', mysql error: %s",
-        query, mysql_error(conn));
-    goto error;
-  }
-
   // 4. execute pending log query
   rc = mysql_real_query(conn, query, strlen(query));
   // ignore some errors
