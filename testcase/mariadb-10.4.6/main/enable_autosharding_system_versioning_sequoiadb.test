@@ -51,7 +51,7 @@ DELETE FROM t2 WHERE x >= 3 OR y = 2;
 SELECT x,name FROM t1 ORDER BY x;
 SELECT * FROM t2 ORDER BY x;
 #BUG #SEQUOIASQLMAINSTREAM-912
-#SELECT x,name FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,ts;
+SELECT x,name FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,ts;
 SELECT * FROM t2 FOR SYSTEM_TIME ALL ORDER BY x,y;
 DROP TABLE t1,t2;
 
@@ -135,7 +135,7 @@ INSERT INTO t1(y,z) VALUES (1,1),(2,2),(3,3);
 INSERT INTO t2 VALUES (1,1,1),(2,2,2),(3,3,3);
 UPDATE t1 SET z = -1 WHERE x = 1;
 #BUG #SEQUOIASQLMAINSTREAM-912
-#UPDATE t1 SET y = -1 WHERE x = 1;
+UPDATE t1 SET y = -1 WHERE x = 1;
 UPDATE t2 SET x = -1 WHERE z = 1;
 UPDATE t2 SET y = -1 WHERE z = 1;
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,y;
@@ -300,7 +300,7 @@ SELECT * FROM t1 ORDER BY id;
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id;
 # update records
 #BUG #SEQUOIASQLMAINSTREAM-912
-#UPDATE t1 SET name = 'first update: Joe' WHERE id < 2;
+UPDATE t1 SET name = 'first update: Joe' WHERE id < 2;
 #BUG #SEQUOIASQLMAINSTREAM-911
 ## update periods
 #UPDATE t1   # update 3 rows insert 6 rows
@@ -325,7 +325,7 @@ SHOW CREATE TABLE t2;
 INSERT INTO t1(name,date_1,date_2) VALUES ('David', '1998-01-01', '2008-01-01');
 # update records
 #BUG #SEQUOIASQLMAINSTREAM-912
-#UPDATE t1 SET name = 'third update: David' WHERE id > 18;
+UPDATE t1 SET name = 'third update: David' WHERE id > 5;
 UPDATE t2 SET name = 'first update: Joe' WHERE id < 2;
 UPDATE t2   # update 1 row
 FOR PORTION OF date_period

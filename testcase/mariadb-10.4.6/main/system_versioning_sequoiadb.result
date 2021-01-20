@@ -89,6 +89,17 @@ x	name
 SELECT * FROM t2 ORDER BY x;
 x	y
 1	1
+SELECT x,name FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,ts;
+x	name
+1	NULL
+1	update_name
+2	NULL
+2	update_name
+3	NULL
+4	NULL
+5	Joe
+6	Bob
+7	Mary
 SELECT * FROM t2 FOR SYSTEM_TIME ALL ORDER BY x,y;
 x	y
 1	1
@@ -325,10 +336,12 @@ t2	CREATE TABLE `t2` (
 INSERT INTO t1(y,z) VALUES (1,1),(2,2),(3,3);
 INSERT INTO t2 VALUES (1,1,1),(2,2,2),(3,3,3);
 UPDATE t1 SET z = -1 WHERE x = 1;
+UPDATE t1 SET y = -1 WHERE x = 1;
 UPDATE t2 SET x = -1 WHERE z = 1;
 UPDATE t2 SET y = -1 WHERE z = 1;
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,y;
 x	y	z
+1	-1	-1
 1	1	-1
 2	2	2
 3	3	3
@@ -361,7 +374,7 @@ UPDATE t1 SET z = -2 WHERE x = 2;
 UPDATE t2 SET x = -2 WHERE x = 2;
 SELECT * FROM t1 ORDER BY x;
 x	y	z
-1	1	-1
+1	-1	-1
 2	2	-2
 3	3	3
 SELECT * FROM t2 ORDER BY x;
@@ -371,6 +384,7 @@ x	y	z
 3	3	3
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,y;
 x	y	z
+1	-1	-1
 1	1	-1
 2	2	-2
 3	3	3
@@ -628,9 +642,10 @@ id	name	date_1	date_2
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
+UPDATE t1 SET name = 'first update: Joe' WHERE id < 2;
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-1	Joe	1997-01-01	2001-01-01
+1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
@@ -638,6 +653,7 @@ id	name	date_1	date_2
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id,name;
 id	name	date_1	date_2
 1	Joe	1997-01-01	2001-01-01
+1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
@@ -645,13 +661,14 @@ id	name	date_1	date_2
 DELETE FROM t1 WHERE id > 4 AND id < 7;
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-1	Joe	1997-01-01	2001-01-01
+1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id,name;
 id	name	date_1	date_2
 1	Joe	1997-01-01	2001-01-01
+1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
@@ -682,17 +699,18 @@ t2	CREATE TABLE `t2` (
   PERIOD FOR `date_period` (`date_1`, `date_2`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
 INSERT INTO t1(name,date_1,date_2) VALUES ('David', '1998-01-01', '2008-01-01');
+UPDATE t1 SET name = 'third update: David' WHERE id > 5;
 UPDATE t2 SET name = 'first update: Joe' WHERE id < 2;
 UPDATE t2   # update 1 row
 FOR PORTION OF date_period
 FROM '1997-01-01' TO '2001-01-01' SET name = CONCAT('second update: ', name);
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-1	Joe	1997-01-01	2001-01-01
+1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
-1001	David	1998-01-01	2008-01-01
+1001	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t2 ORDER BY id;
 id	name	date_1	date_2
 1	second update: first update: Joe	1997-01-01	2001-01-01
@@ -711,16 +729,18 @@ DELETE FROM t2    # delete many rows
 FOR PORTION OF date_period FROM '2000-01-01' TO '2010-01-01';
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-1	Joe	1997-01-01	2001-01-01
-1001	David	1998-01-01	2008-01-01
+1	first update: Joe	1997-01-01	2001-01-01
+1001	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id;
 id	name	date_1	date_2
 1	Joe	1997-01-01	2001-01-01
+1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
 1001	David	1998-01-01	2008-01-01
+1001	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t2 ORDER BY id;
 id	name	date_1	date_2
 1	second update: first update: Joe	1997-01-01	2000-01-01
