@@ -111,13 +111,7 @@ create or replace sequence t1 start with 10 maxvalue=9223372036854775806;
 create or replace sequence t1 start with 10 minvalue=-9223372036854775807;
 drop sequence if exists t1;
 create sequence t1 increment by 0;
-show create sequence t1;
-Table	Create Table
-t1	CREATE SEQUENCE `t1` start with 1 minvalue 1 maxvalue 9223372036854775806 increment by 0 cache 1000 nocycle ENGINE=SequoiaDB
-select * from t1;
-next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
-1	1	9223372036854775806	1	1	1000	0	0
-drop sequence t1;
+ERROR 0A000: Increment of sequence can't be 0
 create table t1 (a int);
 show create sequence t1;
 ERROR 42S02: 'test_sequence_create.t1' is not a SEQUENCE

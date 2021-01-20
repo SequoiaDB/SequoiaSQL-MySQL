@@ -1,5 +1,7 @@
 CREATE SEQUENCE seq1;
 CREATE SEQUENCE seq2 increment by 0;
+ERROR 0A000: Increment of sequence can't be 0
+CREATE SEQUENCE seq2 increment by 1;
 CREATE OR REPLACE SEQUENCE seq3
 increment by -10 
 minvalue = 0 
@@ -22,7 +24,7 @@ Table	Create Table
 seq1	CREATE SEQUENCE `seq1` start with 1 minvalue 1 maxvalue 9223372036854775806 increment by 1 cache 1000 nocycle ENGINE=SequoiaDB
 SHOW CREATE SEQUENCE seq2;
 Table	Create Table
-seq2	CREATE SEQUENCE `seq2` start with 1 minvalue 1 maxvalue 9223372036854775806 increment by 0 cache 1000 nocycle ENGINE=SequoiaDB
+seq2	CREATE SEQUENCE `seq2` start with 1 minvalue 1 maxvalue 9223372036854775806 increment by 1 cache 1000 nocycle ENGINE=SequoiaDB
 SHOW CREATE SEQUENCE seq3;
 Table	Create Table
 seq3	CREATE SEQUENCE `seq3` start with 10 minvalue 0 maxvalue 50 increment by -10 cache 5 cycle ENGINE=SequoiaDB COMMENT='create or replace sequence, sequoiadb:{ table_options: { ShardingKey: { next_not_cached_value: 1 } } }'
@@ -155,6 +157,10 @@ minvalue = -100
 maxvalue = 50000
 start with -50
 cache 1001 cycle;
+ALTER SEQUENCE seq2 INCREMENT BY 0;
+ERROR 0A000: Increment of sequence can't be 0
+INSERT INTO seq2 VALUES (1,1,1000,1,0,1000,0,0);
+ERROR 0A000: Increment of sequence can't be 0
 INSERT INTO seq4 VALUES (1500,100,15000,101,10,999,1,2);
 SHOW CREATE SEQUENCE seq1;
 Table	Create Table
@@ -168,6 +174,9 @@ seq4	CREATE SEQUENCE "seq4" start with 101 minvalue 100 maxvalue 15000 increment
 SELECT * FROM seq1;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 1050	5	10000	5	50	10	1	0
+SELECT * FROM seq2;
+next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
+2001	1	9223372036854775806	1	1	1000	0	0
 SELECT * FROM seq3;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 55	-100	50000	-50	50	1001	1	0

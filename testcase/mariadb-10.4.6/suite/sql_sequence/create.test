@@ -93,10 +93,12 @@ create or replace sequence t1 start with 10 maxvalue=9223372036854775806;
 create or replace sequence t1 start with 10 minvalue=-9223372036854775807;
 drop sequence if exists t1;
 
+#BUG #SEQUOIASQLMAINSTREAM-881
+--error 131
 create sequence t1 increment by 0;
-show create sequence t1;
-select * from t1;
-drop sequence t1;
+#show create sequence t1;
+#select * from t1;
+#drop sequence t1;
 
 #
 # Wrong usage and arguments to create sequence
