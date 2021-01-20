@@ -1,6 +1,7 @@
 #Test for System Versioning Table
 #Case 23346#Case 23349#Case 23350#Case 23351
 #Case 23352#Case 23353#Case 23354#Case 23355
+#Case 23348
 
 #seqDB-23351, seqDB-23346
 #
@@ -344,3 +345,19 @@ SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id;
 SELECT * FROM t2 ORDER BY id;
 SELECT * FROM t2 FOR SYSTEM_TIME ALL ORDER BY id,name;
 DROP TABLE t1,t2;
+
+#seqDB-23348
+CREATE TABLE t1 (
+  x INT PRIMARY KEY,
+  y int,
+  start_timestamp TIMESTAMP (6) GENERATED ALWAYS as ROW START INVISIBLE,
+  end_timestamp TIMESTAMP (6) GENERATED ALWAYS as ROW END INVISIBLE,
+  PERIOD FOR SYSTEM_TIME (start_timestamp, end_timestamp)
+) COMMENT='sequoiadb:{ table_options: { ShardingKey: { x: 1 }, ShardingType: "hash", AutoSplit: true } }' WITH SYSTEM VERSIONING;
+SHOW CREATE TABLE t1;
+INSERT INTO t1(x,y) VALUES (1,1),(2,2),(3,3);
+UPDATE t1 SET y = y * 2 WHERE x < 3;
+DELETE FROM t1 WHERE x > 2;
+SELECT x,y FROM t1 ORDER BY x;
+SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,y;
+DROP TABLE t1;

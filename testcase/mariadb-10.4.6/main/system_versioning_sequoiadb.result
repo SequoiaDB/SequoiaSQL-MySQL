@@ -735,3 +735,35 @@ id	name	date_1	date_2
 2	Mary	2010-01-01	2010-10-10
 3	Mary	2008-08-08	2018-10-10
 DROP TABLE t1,t2;
+CREATE TABLE t1 (
+x INT PRIMARY KEY,
+y int,
+start_timestamp TIMESTAMP (6) GENERATED ALWAYS as ROW START INVISIBLE,
+end_timestamp TIMESTAMP (6) GENERATED ALWAYS as ROW END INVISIBLE,
+PERIOD FOR SYSTEM_TIME (start_timestamp, end_timestamp)
+) COMMENT='sequoiadb:{ table_options: { ShardingKey: { x: 1 }, ShardingType: "hash", AutoSplit: true } }' WITH SYSTEM VERSIONING;
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `x` int(11) NOT NULL,
+  `y` int(11) DEFAULT NULL,
+  `start_timestamp` timestamp(6) GENERATED ALWAYS AS ROW START INVISIBLE,
+  `end_timestamp` timestamp(6) GENERATED ALWAYS AS ROW END INVISIBLE,
+  PRIMARY KEY (`x`,`end_timestamp`),
+  PERIOD FOR SYSTEM_TIME (`start_timestamp`, `end_timestamp`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { ShardingKey: { x: 1 }, ShardingType: "hash", AutoSplit: true } }' WITH SYSTEM VERSIONING
+INSERT INTO t1(x,y) VALUES (1,1),(2,2),(3,3);
+UPDATE t1 SET y = y * 2 WHERE x < 3;
+DELETE FROM t1 WHERE x > 2;
+SELECT x,y FROM t1 ORDER BY x;
+x	y
+1	2
+2	4
+SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,y;
+x	y
+1	1
+1	2
+2	2
+2	4
+3	3
+DROP TABLE t1;
