@@ -4366,10 +4366,6 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   sdb_ha_statistic_increment(&SSV::ha_read_rnd_count);
   memcpy((void *)oid.getData(), pos, SDB_OID_LEN);
 
-  if (buf != table->record[0]) {
-    repoint_field_to_record(table, table->record[0], buf);
-  }
-
   try {
     if (m_dup_key_nr < MAX_KEY &&
         0 == memcmp(pos, m_dup_oid.getData(), SDB_OID_LEN)) {
@@ -4401,9 +4397,6 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
       db_name, table_name, e.what());
 
 done:
-  if (buf != table->record[0]) {
-    repoint_field_to_record(table, buf, table->record[0]);
-  }
   DBUG_RETURN(rc);
 error:
   goto done;
