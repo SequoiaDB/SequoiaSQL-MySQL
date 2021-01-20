@@ -1174,7 +1174,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   }
 
 #ifdef IS_MARIADB
-  if (TABLE_TYPE_UNDEFINE == share->table_type) {
+  if (table->versioned() && TABLE_TYPE_UNDEFINE == share->table_type) {
     bson::BSONObj obj;
     bson::BSONObj select;
     bson::BSONObj condition;
@@ -2229,7 +2229,6 @@ int ha_sdb::write_row(uchar *buf) {
   bson::BSONObj obj;
   bson::BSONObj tmp_obj;
   ulonglong auto_inc = 0;
-  bool is_vers_sys = false;
   bool auto_inc_explicit_used = false;
   const Discrete_interval *forced = NULL;
 
@@ -2274,11 +2273,10 @@ int ha_sdb::write_row(uchar *buf) {
     auto_inc_explicit_used = true;
   }
 #ifdef IS_MARIADB
-  is_vers_sys = table->versioned();
-#endif
-  if (SQLCOM_UPDATE == thd_sql_command(ha_thd()) && is_vers_sys) {
+  if (SQLCOM_UPDATE == thd_sql_command(ha_thd()) && table->versioned()) {
     auto_inc_explicit_used = true;
   }
+#endif
 
   rc = row_to_obj(buf, obj, TRUE, FALSE, tmp_obj, auto_inc_explicit_used);
   if (rc != 0) {
@@ -2319,9 +2317,6 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   bson::BSONObj result;
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
-#ifdef IS_MARIADB
-  const bool is_vers_sys = table->versioned();
-#endif
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -2343,7 +2338,7 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   }
 
 #ifdef IS_MARIADB
-  if (is_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd())) &&
+  if (table->versioned() && (SQLCOM_DELETE == thd_sql_command(ha_thd())) &&
       (TABLE_TYPE_PART == share->table_type)) {
     // TODO:  Replace after supporting update sharding key.
     Field *end_field = table->vers_end_field();
@@ -2382,13 +2377,18 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
         "Failed to build bson obj when update row, table:%s.%s, exception:%s",
         db_name, table_name, e.what());
 
-    m_bulk_insert_rows.push_back(obj);
-    if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size) {
-      rc = flush_bulk_insert();
-      if (rc != 0) {
-        goto error;
-      }
+    rc = collection->insert(obj, hint);
+    if (rc != 0) {
+      goto error;
     }
+    // SEQUOIASQLMAINSTREAM-931
+    // m_bulk_insert_rows.push_back(obj);
+    // if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size) {
+    //   rc = flush_bulk_insert();
+    //   if (rc != 0) {
+    //     goto error;
+    //   }
+    // }
     goto done;
   }
 #endif
@@ -4163,15 +4163,16 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
   if (rc != 0) {
     if (HA_ERR_END_OF_FILE == rc) {
       table->status = STATUS_NOT_FOUND;
-#ifdef IS_MARIADB
-      if (table->versioned() && (int)m_bulk_insert_rows.size() > 0) {
-        rc = flush_bulk_insert();
-        if (rc != 0) {
-          goto error;
-        }
-        rc = HA_ERR_END_OF_FILE;
-      }
-#endif
+      // SEQUOIASQLMAINSTREAM-931
+      // #ifdef IS_MARIADB
+      //       if (table->versioned() && (int)m_bulk_insert_rows.size() > 0) {
+      //         rc = flush_bulk_insert();
+      //         if (rc != 0) {
+      //           goto error;
+      //         }
+      //         rc = HA_ERR_END_OF_FILE;
+      //       }
+      // #endif
     }
     goto error;
   }
