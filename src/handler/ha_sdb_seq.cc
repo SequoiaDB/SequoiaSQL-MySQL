@@ -472,7 +472,8 @@ int ha_sdb_seq::update_row(const uchar *old_data, const uchar *new_data) {
 
   DBUG_ASSERT(NULL != m_sequence);
   DBUG_ASSERT(m_sequence->thread_id() == sdb_thd_id(ha_thd()));
-  if (thd_sql_command(ha_thd()) == SQLCOM_INSERT) {
+  if (SQLCOM_INSERT_SELECT == thd_sql_command(ha_thd()) ||
+      SQLCOM_INSERT == thd_sql_command(ha_thd())) {
     if (table != query_table) {
       // For NEXTVAL/SETVAL when INSERT INTO table.
       if (m_use_next_value) {
