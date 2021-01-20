@@ -1975,13 +1975,19 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   m_bulk_insert_rows.clear();
 
   /**
-    We don't bother with bulk-insert semantics when the estimated rows == 1
-    The rows value will be 0 if the server does not know how many rows
-    would be inserted. This can occur when performing INSERT...SELECT
-
-    When INSERT ... ON DUPLICATE KEY UPDATE, records must be update one by one.
+    We don't bother with bulk-insert semantics
+    * When the estimated rows == 1. The rows value will be 0 if the server does
+    not know how many rows would be inserted. This can occur when performing
+    INSERT...SELECT.
+    * When INSERT ... ON DUPLICATE KEY UPDATE, records must be update one by
+    one.
+    * When REPLACE INTO ... for system-versioned tables.
   */
-  if (rows == 1 || m_insert_with_update) {
+  if (rows == 1 || m_insert_with_update
+#ifdef IS_MARIADB
+      || (SQLCOM_REPLACE == thd_sql_command(ha_thd()) && table->versioned())
+#endif
+  ) {
     m_use_bulk_insert = false;
     return;
   }
