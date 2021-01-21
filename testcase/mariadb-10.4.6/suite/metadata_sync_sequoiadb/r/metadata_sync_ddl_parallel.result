@@ -43,6 +43,13 @@ connection conn1;
 show create database metaSync_22556;
 Database	Create Database
 metaSync_22556	CREATE DATABASE `metaSync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create table metaSync_22556.t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) NOT NULL AUTO_INCREMENT,
+  `b` int(11) NOT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 connection conn2;
 show create database metaSync_22556;
 Database	Create Database
@@ -93,6 +100,15 @@ connection conn1;
 show create database metaSync_22557;
 Database	Create Database
 metaSync_22557	CREATE DATABASE `metaSync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create function metaSync_22557.f1;
+Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
+f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
+    COMMENT 'modify function'
+BEGIN
+DECLARE retn INTEGER;
+SELECT a FROM metaSync_22557.t1 INTO retn;
+RETURN retn;
+END	latin1	latin1_swedish_ci	latin1_swedish_ci
 connection conn2;
 show create database metaSync_22557;
 Database	Create Database
@@ -404,7 +420,7 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 show create view meta_sync_test.v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where `meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`)	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where `meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`)	latin1	latin1_swedish_ci
 connection conn2;
 show create table meta_sync_test.t1;
 Table	Create Table
@@ -415,7 +431,7 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 show create view meta_sync_test.v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where `meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`)	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where `meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`)	latin1	latin1_swedish_ci
 connection conn1;
 drop table meta_sync_test.t1;
 connection conn2;

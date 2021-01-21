@@ -35,6 +35,13 @@ alter table metaSync_22556.t1 add column b int not null;
 show create database metaSync_22556;
 Database	Create Database
 metaSync_22556	CREATE DATABASE `metaSync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create table metaSync_22556.t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) NOT NULL AUTO_INCREMENT,
+  `b` int(11) NOT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show create database metaSync_22556;
 Database	Create Database
 metaSync_22556	CREATE DATABASE `metaSync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
@@ -72,6 +79,15 @@ alter function metaSync_22557.f1 comment 'modify function';
 show create database metaSync_22557;
 Database	Create Database
 metaSync_22557	CREATE DATABASE `metaSync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create function metaSync_22557.f1;
+Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
+f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
+    COMMENT 'modify function'
+BEGIN
+DECLARE retn INTEGER;
+SELECT a FROM metaSync_22557.t1 INTO retn;
+RETURN retn;
+END	latin1	latin1_swedish_ci	latin1_swedish_ci
 show create database metaSync_22557;
 Database	Create Database
 metaSync_22557	CREATE DATABASE `metaSync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
@@ -326,7 +342,7 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show create view meta_sync_test.v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`))	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`))	latin1	latin1_swedish_ci
 show create table meta_sync_test.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -336,7 +352,7 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 show create view meta_sync_test.v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`sdbadmin`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`))	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `meta_sync_test`.`v1` AS select `meta_sync_test`.`t2`.`a` AS `a`,`meta_sync_test`.`t2`.`b` AS `b` from `meta_sync_test`.`t2` where exists(select 1 from `meta_sync_test`.`t1` where (`meta_sync_test`.`t1`.`a` = `meta_sync_test`.`t2`.`a`))	latin1	latin1_swedish_ci
 drop table meta_sync_test.t1;
 drop view meta_sync_test.v1;
 drop table meta_sync_test.t2;
@@ -563,15 +579,15 @@ flush privileges;
 show grants for user_22567;
 Grants for user_22567@%
 GRANT USAGE ON *.* TO 'user_22567'@'%'
-GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
 GRANT SELECT ON `meta_sync_22567`.`v1` TO 'user_22567'@'%'
+GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
 GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO 'user_22567'@'%'
 GRANT EXECUTE ON FUNCTION `meta_sync_22567`.`f1` TO 'user_22567'@'%'
 show grants for user_22567;
 Grants for user_22567@%
 GRANT USAGE ON *.* TO 'user_22567'@'%'
-GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
 GRANT SELECT ON `meta_sync_22567`.`v1` TO 'user_22567'@'%'
+GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
 GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO 'user_22567'@'%'
 GRANT EXECUTE ON FUNCTION `meta_sync_22567`.`f1` TO 'user_22567'@'%'
 revoke insert on table meta_sync_22567.t1 from user_22567;

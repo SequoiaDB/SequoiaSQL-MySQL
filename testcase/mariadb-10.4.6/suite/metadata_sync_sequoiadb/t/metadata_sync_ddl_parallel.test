@@ -49,7 +49,7 @@ alter table metaSync_22556.t1 add column b int not null;
 connection conn1;
 show create database metaSync_22556;
 #Bug SEQUOIASQLMAINSTREAM-864
-#show create table metaSync_22556.t1;
+show create table metaSync_22556.t1;
 connection conn2;
 show create database metaSync_22556;
 show create table metaSync_22556.t1;
@@ -98,8 +98,8 @@ alter function metaSync_22557.f1 comment 'modify function';
 connection conn1;
 show create database metaSync_22557;
 #Bug SEQUOIASQLMAINSTREAM-864
-#--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
-#show create function metaSync_22557.f1;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
+show create function metaSync_22557.f1;
 connection conn2;
 show create database metaSync_22557;
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
@@ -328,9 +328,11 @@ create or replace view meta_sync_test.v1 as select * from meta_sync_test.t2 wher
 #Bug SEQUOIASQLMAINSTREAM-771
 connection conn1;
 show create table meta_sync_test.t1;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 show create view meta_sync_test.v1;
 connection conn2;
 show create table meta_sync_test.t1;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 show create view meta_sync_test.v1;
 
 connection conn1;
