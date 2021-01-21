@@ -2296,10 +2296,16 @@ int ha_sdb::write_row(uchar *buf) {
 
 #ifdef IS_MARIADB
   if (SQLCOM_UPDATE == thd_sql_command(ha_thd())) {
-    if (table->versioned()) {
+    if (table->versioned() && table->s->period.constr_name.str) {
+      // scenarios dealing with bistemporal tables.
+      if (table->vers_end_field()->is_max()) {
+        auto_inc_explicit_used = false;
+      } else {
+        auto_inc_explicit_used = true;
+      }
+    } else if (table->versioned()) {
       auto_inc_explicit_used = true;
-    }
-    if (table->s->period.constr_name.str) {
+    } else if (table->s->period.constr_name.str) {
       auto_inc_explicit_used = false;
     }
   }
@@ -4223,7 +4229,7 @@ int ha_sdb::next_row(bson::BSONObj &obj, uchar *buf) {
         // #endif
       }
       goto error;
-  }
+    }
   }
   rc = obj_to_row(obj, buf);
   if (rc != 0) {

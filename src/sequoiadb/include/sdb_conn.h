@@ -333,6 +333,7 @@ class Sdb_conn {
     convert_sdb_code(rc);
     goto done;
   }
+
  private:
   int retry(boost::function<int()> func);
 
