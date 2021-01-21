@@ -120,7 +120,7 @@ class BuildThirdParty(optparse.OptionParser):
         st = os.stat("./configure")
         os.chmod("./configure", st.st_mode | stat.S_IEXEC)
         config_cmd = "./configure --prefix=" + unix_odbc_abs_dir + "/install_path" + " --with-pic" +\
-                     debug_option
+                     debug_option + " --enable-ltdl-install"
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"

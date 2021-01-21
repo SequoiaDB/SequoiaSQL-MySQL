@@ -49,6 +49,10 @@ if(MYSQL STREQUAL "5.7.25" OR MYSQL STREQUAL "5.7.32" OR MARIADB)
           DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
   install(FILES ${UNIX_ODBC_DIR}/lib/libodbc.so.2.0.0 
           DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(FILES ${UNIX_ODBC_DIR}/../libltdl/.libs/libltdl.so.7 
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(FILES ${UNIX_ODBC_DIR}/../libltdl/.libs/libltdl.so.7.2.0
+          DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
   if(MYSQL)
     set(PATCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/patches/sql_pushdown_mysql_${MYSQL}.patch")
