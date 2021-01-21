@@ -52,6 +52,10 @@ MACRO(SDB_CHECK_ODBC)
     ELSE()
       build_unix_odbc("release")
     ENDIF()
+    find_program(ODBC_CONFIG NAMES odbc_config iodbc-config
+    PATHS ${UNIX_ODBC_DIR}/bin
+    DOC "Path to unixODBC or iODBC config program")
+    mark_as_advanced(ODBC_CONFIG)
   endif()
 
   # unixODBC and iODBC accept unified command line options
