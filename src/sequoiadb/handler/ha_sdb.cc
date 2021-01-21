@@ -4633,6 +4633,31 @@ int ha_sdb::info(uint flag) {
     if (0 != rc) {
       goto error;
     }
+    /*
+      Refresh the table key info, which can be showed by
+      INFORMATION_SCHEMA.STATISTICS, and may be used by some access plans.
+    */
+    for (uint i = 0; i < table->s->keys; i++) {
+      KEY *key_info = &table->key_info[i];
+      Sdb_idx_stat_ptr ptr = share->idx_stat_arr[i];
+      uint key_part_count = key_info->user_defined_key_parts;
+
+      if (!key_info->rec_per_key) {
+        continue;
+      }
+
+      if ((~(ha_rows)0) == ptr->sample_records || 0 == ptr->sample_records) {
+        for (uint field_nr = 0; field_nr < key_part_count; ++field_nr) {
+          key_info->rec_per_key[field_nr] = 0;
+        }
+      } else {
+        for (uint field_nr = 0; field_nr < key_part_count; ++field_nr) {
+          double n =
+              ((double)ptr->sample_records) / ptr->distinct_val_num[field_nr];
+          key_info->rec_per_key[field_nr] = (ulong)n;
+        }
+      }
+    }
   }
 
   if ((flag & HA_STATUS_AUTO) && table->found_next_number_field) {
@@ -5402,7 +5427,6 @@ int ha_sdb::ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr) {
   DBUG_ENTER("ha_sdb::ensure_index_stat");
   int rc = 0;
   Sdb_index_stat *new_stat = NULL;
-  uint key_part_count = key_info->user_defined_key_parts;
 
   if (!is_idx_stat_valid(ptr)) {
     Sdb_mutex_guard guard(share->mutex);
@@ -5424,32 +5448,12 @@ int ha_sdb::ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr) {
       goto error;
     }
     if (sdb_stats_cache) {
-      rc = fetch_index_stat(*new_stat);
+      rc = fetch_index_stat(key_info, *new_stat);
       if (rc != 0) {
         goto error;
       }
     }
     ptr.reset(new_stat);
-
-    /*
-      Refresh the table key info, which can be showed by
-      INFORMATION_SCHEMA.STATISTICS, and may be used by some access plans.
-    */
-    if (!key_info->rec_per_key) {
-      goto done;
-    }
-
-    if ((~(ha_rows)0) == ptr->sample_records || 0 == ptr->sample_records) {
-      for (uint field_nr = 0; field_nr < key_part_count; ++field_nr) {
-        key_info->rec_per_key[field_nr] = 0;
-      }
-    } else {
-      for (uint field_nr = 0; field_nr < key_part_count; ++field_nr) {
-        double n =
-            ((double)ptr->sample_records) / ptr->distinct_val_num[field_nr];
-        key_info->rec_per_key[field_nr] = (ulong)n;
-      }
-    }
   }
 
 done:
@@ -5508,7 +5512,7 @@ error:
   goto done;
 }
 
-int ha_sdb::fetch_index_stat(Sdb_index_stat &s) {
+int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
   DBUG_ENTER("ha_sdb::fetch_index_stat");
   int rc = 0;
   THD *thd = ha_thd();
@@ -5529,7 +5533,7 @@ int ha_sdb::fetch_index_stat(Sdb_index_stat &s) {
   if (rc != 0) {
     goto error;
   }
-  rc = cl.get_index_stat(sdb_key_name(s.key_info), obj);
+  rc = cl.get_index_stat(sdb_key_name(key_info), obj);
   if (SDB_INVALIDARG == get_sdb_code(rc)) {
     s.sample_records = 0;
     rc = 0;
@@ -5569,7 +5573,7 @@ int ha_sdb::fetch_index_stat(Sdb_index_stat &s) {
         }
       }
     }
-    rc = sdb_get_min_max_from_bson(s.key_info, min_ele, max_ele,
+    rc = sdb_get_min_max_from_bson(key_info, min_ele, max_ele,
                                    s.min_value_arr, s.max_value_arr);
     if (rc != 0) {
       goto error;
@@ -5602,7 +5606,8 @@ ha_rows ha_sdb::records_in_range(uint keynr, key_range *min_key,
     goto error;
   }
 
-  records = sdb_estimate_match_count(stat_ptr, stats.records, min_key, max_key);
+  records = sdb_estimate_match_count(stat_ptr, key_info, stats.records, min_key,
+                                     max_key);
 
 done:
   DBUG_RETURN(records);

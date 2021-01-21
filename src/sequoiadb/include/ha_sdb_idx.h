@@ -22,7 +22,6 @@
 #include "sdb_cl.h"
 
 struct Sdb_index_stat {
-  KEY *key_info;
   uint *distinct_val_num;
   double *min_value_arr;
   double *max_value_arr;
@@ -35,7 +34,6 @@ struct Sdb_index_stat {
   void fini();
 
   Sdb_index_stat() {
-    key_info = NULL;
     distinct_val_num = NULL;
     min_value_arr = NULL;
     max_value_arr = NULL;
@@ -72,7 +70,7 @@ int sdb_get_min_max_from_bson(KEY *key_info, bson::BSONElement &min_elem,
                               bson::BSONElement &max_elem,
                               double *min_value_arr, double *max_value_arr);
 
-ha_rows sdb_estimate_match_count(Sdb_idx_stat_ptr stat_ptr,
+ha_rows sdb_estimate_match_count(Sdb_idx_stat_ptr stat_ptr, KEY *key_info,
                                  ha_rows total_records,
                                  const key_range *start_key,
                                  const key_range *end_key);

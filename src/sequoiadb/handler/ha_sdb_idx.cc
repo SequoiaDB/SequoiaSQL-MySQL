@@ -897,18 +897,17 @@ done:
   return rs;
 }
 
-int Sdb_index_stat::init(KEY *arg_key, uint arg_version) {
+int Sdb_index_stat::init(KEY *key_info, uint arg_version) {
   int rc = 0;
   uint count = 0;
   void *buf = NULL;
 
-  if (NULL == arg_key) {
+  if (NULL == key_info) {
     DBUG_ASSERT(0);
     rc = HA_ERR_INTERNAL_ERROR;
     goto error;
   }
 
-  key_info = arg_key;
   null_frac = 0;
   sample_records = ~(ha_rows)0;
 
@@ -943,10 +942,11 @@ void Sdb_index_stat::fini() {
 */
 class Sdb_match_cnt_estimator {
  public:
-  Sdb_match_cnt_estimator(Sdb_idx_stat_ptr stat_ptr, ha_rows total_records,
-                          const key_range *start_key,
+  Sdb_match_cnt_estimator(Sdb_idx_stat_ptr stat_ptr, KEY *key_info,
+                          ha_rows total_records, const key_range *start_key,
                           const key_range *end_key) {
     m_ptr = stat_ptr;
+    m_key_info = key_info;
     m_total_records = total_records;
     m_start_key = start_key;
     m_end_key = end_key;
@@ -976,6 +976,7 @@ class Sdb_match_cnt_estimator {
 
  private:
   Sdb_idx_stat_ptr m_ptr;
+  KEY *m_key_info;
   ha_rows m_total_records;
   const key_range *m_start_key;
   const key_range *m_end_key;
@@ -984,11 +985,11 @@ class Sdb_match_cnt_estimator {
 
 ha_rows Sdb_match_cnt_estimator::eval() {
   DBUG_ENTER("Sdb_match_cnt_estimator::eval");
-  DBUG_PRINT("info", ("index name: %s", sdb_key_name(m_ptr->key_info)));
+  DBUG_PRINT("info", ("index name: %s", sdb_key_name(m_key_info)));
 
   ha_rows records = ~(ha_rows)0;
-  uint key_part_count = m_ptr->key_info->user_defined_key_parts;
-  const KEY_PART_INFO *key_part = m_ptr->key_info->key_part;
+  uint key_part_count = m_key_info->user_defined_key_parts;
+  const KEY_PART_INFO *key_part = m_key_info->key_part;
   const uchar *start_key_ptr = NULL;
   const uchar *end_key_ptr = NULL;
   uint start_key_left_len = 0;
@@ -1083,7 +1084,7 @@ void Sdb_match_cnt_estimator::debug_print_stat() {
   }
   // The max fields in index is 16, and 20 characters for each.
   char buf[16 * 20] = {0};
-  uint key_part_count = m_ptr->key_info->user_defined_key_parts;
+  uint key_part_count = m_key_info->user_defined_key_parts;
   print_array(buf, sizeof(buf), "%-18.3f", m_ptr->min_value_arr,
               key_part_count);
   DBUG_PRINT("info", ("min_value: %s", buf));
@@ -1160,7 +1161,7 @@ void Sdb_match_cnt_estimator::eval_eq_selectivity(uint field_nr,
     if (!key_part->null_bit || !*key_ptr) {
       m_is_all_null = false;
     }
-    uint last_field_nr = m_ptr->key_info->user_defined_key_parts - 1;
+    uint last_field_nr = m_key_info->user_defined_key_parts - 1;
     // If all fields equal null, use null fraction.
     if (field_nr == last_field_nr && m_is_all_null) {
       DBUG_PRINT("info",
@@ -1789,10 +1790,11 @@ error:
   goto done;
 }
 
-ha_rows sdb_estimate_match_count(Sdb_idx_stat_ptr stat_ptr,
+ha_rows sdb_estimate_match_count(Sdb_idx_stat_ptr stat_ptr, KEY *key_info,
                                  ha_rows total_records,
                                  const key_range *start_key,
                                  const key_range *end_key) {
-  return Sdb_match_cnt_estimator(stat_ptr, total_records, start_key, end_key)
+  return Sdb_match_cnt_estimator(stat_ptr, key_info, total_records, start_key,
+                                 end_key)
       .eval();
 }
