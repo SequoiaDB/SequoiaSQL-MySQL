@@ -4,7 +4,7 @@ MySQL 主备复制能够实现多个 MySQL 节点之间的元数据同步，但�
 
 MySQL 的元数据同步工具的实现原理是通过解析 MySQL 的审计日志，从中提取 SQL 语句，并连接到各远端 MySQL 实例执行，从而实现元数据同步到其它各节点。
 
-由于 MySQL 的审计插件目前只在 MySQL 企业版中提供，因此社区版需要借助第三方提供的审计插件实现审计功能。目前第三方审计插件有：McAfee 的 MySQL Audit，MariaDB 的 server_audit 以及 Percona 的 audit log。本文采用 MarriaDB 提供的 server_audit-1.4.0 的审计插件实现，以在 SequoiaSQL-MySQL 中使用为例进行介绍。
+由于 MySQL 的审计插件目前只在 MySQL 企业版中提供，因此社区版需要借助第三方提供的审计插件实现审计功能。目前第三方审计插件有：McAfee 的 MySQL Audit，MariaDB 的 server_audit 以及 Percona 的 audit log。本文采用 MariaDB 提供的 server_audit-1.4.0 的审计插件实现，以在 SequoiaSQL-MySQL 中使用为例进行介绍。
 
 ## 使用约束
 + 不支持在不同实例上并发对相同数据库对象进行 DDL 操作，会造成一致性问题，如修改同一张表的属性
@@ -15,7 +15,7 @@ MySQL 的元数据同步工具的实现原理是通过解析 MySQL 的审计日�
 + 需要在每个 MySQL 环境中部署审计插件及同步工具
 + MySQL 实例服务器之间需要使用主机名互通
 + 支持同步 ALTER，CREATE，DECLARE，GRANT，REVOKE，FLUSH 操作，其它操作暂不支持
-+ 仅支持python2
++ 仅支持 python2
 + 需要使用 SequoiaSQL-MySQL 3.2.3 或以上版本
 
 ## 审计插件安装
@@ -154,7 +154,7 @@ crontab -e
 
 ## 审计日志
 ### 配置项
-此处简要介绍审计日志插件的各参数，详细信息可参考 [marriadb-audit-plugin 官方说明](https://mariadb.com/kb/en/library/mariadb-audit-plugin-system-variables/)。
+此处简要介绍审计日志插件的各参数，详细信息可参考 [mariadb-audit-plugin 官方说明](https://mariadb.com/kb/en/library/mariadb-audit-plugin-system-variables/)。
 
 |参数|说明|备注|
 |---|---|---|
