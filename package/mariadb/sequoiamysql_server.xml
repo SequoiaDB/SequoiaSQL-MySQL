@@ -118,12 +118,12 @@
                  <origin>bin/mysqld</origin>
                  <destination>${installdir}/tmp</destination>
               </unpackFile>
-              <unpackFile>
+              <unpackDirectory>
                  <component>normal_component</component>
                  <folder>files</folder>
-                 <origin>lib/libsdbcpp.so</origin>
-                 <destination>${installdir}/tmp/lib</destination>
-              </unpackFile>
+                 <origin>lib</origin>
+                 <destination>${installdir}/tmp</destination>
+              </unpackDirectory>
               <changePermissions files="${installdir}/tmp/mysqld" permissions="0755"/>
               <runProgram>
                   <program>export</program>
