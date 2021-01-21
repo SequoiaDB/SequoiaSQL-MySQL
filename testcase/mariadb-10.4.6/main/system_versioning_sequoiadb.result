@@ -149,6 +149,7 @@ INSERT INTO t2(x,y) VALUES (1,1),(2,2),(3,3);
 INSERT IGNORE INTO t2(x,y) VALUES (1,-1),(4,4);
 Warnings:
 Warning	1062	1 duplicated records were ignored
+REPLACE INTO t2(x,y) VALUES (4,-2),(5,5);
 SELECT x,y FROM t1 ORDER BY x,y;
 x	y
 1	-1
@@ -163,7 +164,8 @@ x	y
 1	1
 2	2
 3	3
-4	4
+4	-2
+5	5
 SELECT x,y FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,y;
 x	y
 1	-1
@@ -178,7 +180,9 @@ x	y
 1	1
 2	2
 3	3
+4	-2
 4	4
+5	5
 UPDATE t1 SET y = y - 10 WHERE x > 3;
 UPDATE t2 SET y = y - 10 WHERE x > 3;
 UPDATE IGNORE t1 SET x = -3 WHERE y < -10;
@@ -205,7 +209,6 @@ x	y
 1	100
 2	2
 3	3
-4	-6
 5	11
 SELECT x,y FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,y;
 x	y
@@ -225,13 +228,17 @@ x	y
 5	11
 SELECT * FROM t2 FOR SYSTEM_TIME ALL ORDER BY x,y;
 x	y
+-3	-12
 -3	10
 1	1
 1	100
 2	2
 3	3
-4	-6
+4	-12
+4	-2
 4	4
+5	-5
+5	5
 5	11
 DELETE FROM t1 WHERE x > 3 OR y = 3;
 DELETE FROM t2 WHERE x > 3 OR y = 3;
@@ -266,13 +273,17 @@ x	y
 5	11
 SELECT * FROM t2 FOR SYSTEM_TIME ALL ORDER BY x,y;
 x	y
+-3	-12
 -3	10
 1	1
 1	100
 2	2
 3	3
-4	-6
+4	-12
+4	-2
 4	4
+5	-5
+5	5
 5	11
 DELETE FROM t1;
 DELETE FROM t2;
@@ -298,13 +309,17 @@ x	y
 5	11
 SELECT * FROM t2 FOR SYSTEM_TIME ALL ORDER BY x,y;
 x	y
+-3	-12
 -3	10
 1	1
 1	100
 2	2
 3	3
-4	-6
+4	-12
+4	-2
 4	4
+5	-5
+5	5
 5	11
 DROP TABLE t1,t2;
 CREATE TABLE t1 (
@@ -652,12 +667,12 @@ id	name	date_1	date_2
 5	Jack	2008-08-08	2021-01-01
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id,name;
 id	name	date_1	date_2
-1	Joe	1997-01-01	2001-01-01
 1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
+6	Joe	1997-01-01	2001-01-01
 DELETE FROM t1 WHERE id > 4 AND id < 7;
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
@@ -667,12 +682,12 @@ id	name	date_1	date_2
 4	Tom	2008-08-08	2009-09-09
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id,name;
 id	name	date_1	date_2
-1	Joe	1997-01-01	2001-01-01
 1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
+6	Joe	1997-01-01	2001-01-01
 ALTER TABLE t1 DROP PERIOD FOR application_time;
 ALTER TABLE t2 ADD SYSTEM VERSIONING;
 ALTER TABLE t2 ADD PERIOD FOR date_period(date_1,date_2);
@@ -733,12 +748,12 @@ id	name	date_1	date_2
 1001	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id;
 id	name	date_1	date_2
-1	Joe	1997-01-01	2001-01-01
 1	first update: Joe	1997-01-01	2001-01-01
 2	Mary	2005-05-05	2010-10-10
 3	Bob	2008-08-08	2018-10-10
 4	Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
+6	Joe	1997-01-01	2001-01-01
 1001	David	1998-01-01	2008-01-01
 1001	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t2 ORDER BY id;
