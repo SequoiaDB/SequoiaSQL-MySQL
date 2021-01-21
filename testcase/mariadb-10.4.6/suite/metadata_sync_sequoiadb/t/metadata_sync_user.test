@@ -16,7 +16,8 @@ FLUSH PRIVILEGES;
 
 # connect to conn2, check users are cleaned in the beginning
 connection conn2;
---sleep $sleep
+#Bug #SEQUOIASQLMAINSTREAM-933
+--sleep 5
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user3';
@@ -39,7 +40,8 @@ GRANT INSERT, DELETE, UPDATE ON *.*  TO 'metaSync_user1'@'localhost' IDENTIFIED 
 FLUSH PRIVILEGES;
 # check metadatas after create
 connection conn2;
---sleep $sleep
+#Bug #SEQUOIASQLMAINSTREAM-933
+--sleep 5
 SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
 SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
 SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user3';
@@ -55,7 +57,8 @@ REVOKE DELETE ON *.* FROM 'metaSync_user1_new'@'localhost';
 FLUSH PRIVILEGES;
 # check metadatas after alter
 connection conn1;
---sleep $sleep
+#Bug #SEQUOIASQLMAINSTREAM-933
+--sleep 5
 SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
 SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
 SELECT user, host, password_expired, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user3';
@@ -69,7 +72,8 @@ DROP USER 'metaSync_user3'@'localhost';
 FLUSH PRIVILEGES;
 # check metadatas after drop
 connection conn2;
---sleep $sleep
+#Bug #SEQUOIASQLMAINSTREAM-933
+--sleep 5
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1_new';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2_new';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user3';

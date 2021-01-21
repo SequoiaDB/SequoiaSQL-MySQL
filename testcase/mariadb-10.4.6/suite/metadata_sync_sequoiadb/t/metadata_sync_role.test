@@ -13,7 +13,7 @@ FLUSH PRIVILEGES;
 
 # connect to conn2, check roles are cleaned in the beginning
 connection conn2;
---sleep $sleep
+--sleep 5
 SELECT * FROM mysql.roles_mapping WHERE role = 'metaSync_role1';
 SELECT * FROM mysql.roles_mapping WHERE role = 'metaSync_role2';
 
@@ -30,7 +30,7 @@ CREATE ROLE IF NOT EXISTS metaSync_role2;
 FLUSH PRIVILEGES;
 # check metadatas after create
 connection conn2;
---sleep $sleep
+--sleep 5
 SELECT * FROM mysql.roles_mapping WHERE Role='metaSync_role1' AND user LIKE 'metaSync_ruser%';
 --replace_column 2 x
 SELECT * FROM mysql.roles_mapping WHERE Role='metaSync_role2';
@@ -40,7 +40,7 @@ DROP ROLE metaSync_role2;
 FLUSH PRIVILEGES;
 # check metadatas after drop
 connection conn1;
---sleep $sleep
+--sleep 5
 SELECT * FROM mysql.roles_mapping WHERE Role = 'metaSync_role1';
 SELECT * FROM mysql.roles_mapping WHERE Role = 'metaSync_role2';
 

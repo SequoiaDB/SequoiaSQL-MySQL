@@ -12,7 +12,6 @@ DROP SERVER IF EXISTS metaSync_s2;
 
 # connect to conn2, check servers are cleaned in the beginning
 connection conn2;
---sleep $sleep
 SELECT * FROM mysql.servers;
 
 # seqDB-22541
@@ -31,7 +30,8 @@ OPTIONS ( USER 'Official', HOST '127.0.0.3', PORT 3309 );
 
 # check metadatas after create
 connection conn2;
---sleep $sleep
+#Bug #SEQUOIASQLMAINSTREAM-933
+--sleep 5
 SELECT * FROM mysql.servers;
 
 # alter server
@@ -39,7 +39,8 @@ ALTER SERVER metaSync_s1 OPTIONS (USER 'Origin', SOCKET '/root/mysqld.sock');
 
 # check metadatas after alter
 connection conn1;
---sleep $sleep
+#Bug #SEQUOIASQLMAINSTREAM-933
+--sleep 5
 SELECT * FROM mysql.servers;
 
 # drop server 
@@ -48,7 +49,8 @@ DROP SERVER IF EXISTS metaSync_s2;
 
 # check metadatas after drop
 connection conn2;
---sleep $sleep
+#Bug #SEQUOIASQLMAINSTREAM-933
+--sleep 5
 SELECT * FROM mysql.servers;
 
 --source include/uninstall_sequoiadb.inc
