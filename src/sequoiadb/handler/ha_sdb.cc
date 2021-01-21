@@ -2295,7 +2295,10 @@ int ha_sdb::write_row(uchar *buf) {
   }
 
 #ifdef IS_MARIADB
-  if (SQLCOM_UPDATE == thd_sql_command(ha_thd())) {
+  if (SQLCOM_UPDATE == thd_sql_command(thd) ||
+      SQLCOM_UPDATE_MULTI == thd_sql_command(thd) ||
+      SQLCOM_DELETE == thd_sql_command(thd) ||
+      SQLCOM_DELETE_MULTI == thd_sql_command(thd)) {
     if (table->versioned() && table->s->period.constr_name.str) {
       // scenarios dealing with bistemporal tables.
       if (table->vers_end_field()->is_max()) {
@@ -2350,6 +2353,9 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   bson::BSONObj result;
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
+#ifdef IS_MARIADB
+  bool is_deleting = false;
+#endif
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
@@ -2371,8 +2377,58 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   }
 
 #ifdef IS_MARIADB
-  if (table->versioned() && (SQLCOM_DELETE == thd_sql_command(ha_thd())) &&
-      (TABLE_TYPE_PART == share->table_type)) {
+  /*
+    Split the update into insert + delete in cases of:
+    1. Delete from period table and the table has auto_increment field. Because
+    update cannot generate the id in coord.
+    2. Delete from system versioned table and the table has ShardingKey. Because
+    ShardingKey is not allowed to be updated.
+  */
+  is_deleting = (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
+                 SQLCOM_DELETE_MULTI == thd_sql_command(ha_thd()));
+  if (is_deleting && table->s->period.constr_name.str &&
+      table->next_number_field) {
+    bson::BSONObj obj;
+    bson::BSONObj unused;
+    bool auto_inc_explicit_used = false;
+
+    if (get_unique_key_cond(old_data, cond)) {
+      cond = cur_rec;
+    }
+    try {
+      sdb_build_clientinfo(ha_thd(), builder);
+      hint = builder.obj();
+    }
+    SDB_EXCEPTION_CATCHER(
+        rc, "Failed to build hint when update row, table:%s.%s, exception:%s",
+        db_name, table_name, e.what());
+    rc = collection->del(cond, hint);
+    if (rc != 0) {
+      goto error;
+    }
+
+    // Keep history auto_increment id
+    if (table->versioned()) {
+      Field *end_field = table->vers_end_field();
+      if (new_obj.hasField(sdb_field_name(end_field))) {
+        auto_inc_explicit_used = true;
+      }
+    }
+
+    rc = row_to_obj(const_cast<uchar *>(new_data), obj, true, false, unused,
+                    auto_inc_explicit_used);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = collection->insert(obj, hint);
+    if (rc != 0) {
+      goto error;
+    }
+    goto done;
+
+  } else if (is_deleting && table->versioned() &&
+             (TABLE_TYPE_PART == share->table_type)) {
     // TODO:  Replace after supporting update sharding key.
     Field *end_field = table->vers_end_field();
     bson::BSONObj obj;
