@@ -345,13 +345,20 @@ if(MYSQL)
       install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib"
               DESTINATION "tools")
    endif()
-elseif(MariaDB)
+elseif(MARIADB)
 # do nothing
 endif()
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/metaSync"
         DESTINATION "tools")
 install(FILES "${CMAKE_BINARY_DIR}/version.info"
         DESTINATION "./")
+if(MYSQL)
+   install(FILES "${CMAKE_SOURCE_DIR}/tools/doc/metaSync/mysql/README.md"
+           DESTINATION "tools/metaSync")
+elseif(MARIADB)
+   install(FILES "${CMAKE_SOURCE_DIR}/tools/doc/metaSync/mariadb/README.md"
+           DESTINATION "tools/metaSync")
+endif()
 
 include("${CMAKE_SOURCE_DIR}/package/cmakecpackage.cmake")
 
