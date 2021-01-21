@@ -1,4 +1,4 @@
-#case 18858#case 18861#case 18863#case 18877#case 18959
+#case 18858#case 18861#case 18863#case 18877#case 18959#Case 23482
 
 --source include/have_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
@@ -320,33 +320,34 @@ SHOW CREATE TABLE t13;
 --error ER_NO_SUCH_TABLE
 SHOW CREATE TABLE t14;
 
-# seqDB-18959
+# seqDB-18959, seqDB-23482
 # test rename table, rename column
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT );
 CREATE TABLE t2 ( a INT, b INT, c INT );
-CREATE TEMPORARY TABLE t10 ( a INT, b INT, c INT );
+CREATE TABLE t3 ( a INT, b INT, c INT );
+CREATE TEMPORARY TABLE t1 ( a INT, b INT, c INT );
 CREATE TABLE t11 ( a INT, b INT, c INT );
 CREATE TABLE t12 ( a INT, b INT, c INT );
 # SEQUOIASQLMAINSTREAM-337
-ALTER TABLE t1 RENAME t3, MIN_ROWS 10 MAX_ROWS 100;
-RENAME TABLE t3 WAIT 1 TO t1, t2 TO t4, t10 TO t101;
+ALTER TABLE t3 RENAME t103, MIN_ROWS 10 MAX_ROWS 100;
+# SEQUOIASQLMAINSTREAM-796
+RENAME TABLE t2 WAIT 1 TO t4, t1 TO t_tmp, t1 TO t101;
 # SEQUOIASQLMAINSTREAM-354
 ALTER TABLE t11 RENAME t13, ALGORITHM = COPY;
 ALTER TABLE t12 RENAME TO t14, ALGORITHM = COPY;
 # check metadatas after rename
 connection conn2;
 --sleep $sleep
+--error ER_NO_SUCH_TABLE
 SHOW CREATE TABLE t1;
 --error ER_NO_SUCH_TABLE
 SHOW CREATE TABLE t2;
 --error ER_NO_SUCH_TABLE
 SHOW CREATE TABLE t3;
 SHOW CREATE TABLE t4;
---error ER_NO_SUCH_TABLE
-SHOW CREATE TABLE t10;
---error ER_NO_SUCH_TABLE
 SHOW CREATE TABLE t101;
+SHOW CREATE TABLE t103;
 --error ER_NO_SUCH_TABLE
 SHOW CREATE TABLE t11;
 --error ER_NO_SUCH_TABLE
@@ -355,7 +356,7 @@ SHOW CREATE TABLE t13;
 SHOW CREATE TABLE t14;
 connection conn1;
 # clear tables
-DROP TABLE t1,t4,t13,t14,t101;
+DROP TABLE t4,t13,t14,t101,t103,t_tmp;
 # check tables cleared
 connection conn2;
 --sleep $sleep
@@ -367,6 +368,10 @@ SHOW CREATE TABLE t4;
 SHOW CREATE TABLE t13;
 --error ER_NO_SUCH_TABLE
 SHOW CREATE TABLE t14;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t101;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t103;
 
 # test alter partiton
 connection conn1;

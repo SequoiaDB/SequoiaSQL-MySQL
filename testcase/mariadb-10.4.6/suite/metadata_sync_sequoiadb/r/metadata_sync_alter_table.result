@@ -499,21 +499,17 @@ ERROR 42S02: Table 'metaSync_alter_tables.t14' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT );
 CREATE TABLE t2 ( a INT, b INT, c INT );
-CREATE TEMPORARY TABLE t10 ( a INT, b INT, c INT );
+CREATE TABLE t3 ( a INT, b INT, c INT );
+CREATE TEMPORARY TABLE t1 ( a INT, b INT, c INT );
 CREATE TABLE t11 ( a INT, b INT, c INT );
 CREATE TABLE t12 ( a INT, b INT, c INT );
-ALTER TABLE t1 RENAME t3, MIN_ROWS 10 MAX_ROWS 100;
-RENAME TABLE t3 WAIT 1 TO t1, t2 TO t4, t10 TO t101;
+ALTER TABLE t3 RENAME t103, MIN_ROWS 10 MAX_ROWS 100;
+RENAME TABLE t2 WAIT 1 TO t4, t1 TO t_tmp, t1 TO t101;
 ALTER TABLE t11 RENAME t13, ALGORITHM = COPY;
 ALTER TABLE t12 RENAME TO t14, ALGORITHM = COPY;
 connection conn2;
 SHOW CREATE TABLE t1;
-Table	Create Table
-t1	CREATE TABLE `t1` (
-  `a` int(11) DEFAULT NULL,
-  `b` int(11) DEFAULT NULL,
-  `c` int(11) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin MIN_ROWS=10 MAX_ROWS=100
+ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
 ERROR 42S02: Table 'metaSync_alter_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
@@ -525,10 +521,20 @@ t4	CREATE TABLE `t4` (
   `b` int(11) DEFAULT NULL,
   `c` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-SHOW CREATE TABLE t10;
-ERROR 42S02: Table 'metaSync_alter_tables.t10' doesn't exist
 SHOW CREATE TABLE t101;
-ERROR 42S02: Table 'metaSync_alter_tables.t101' doesn't exist
+Table	Create Table
+t101	CREATE TABLE `t101` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SHOW CREATE TABLE t103;
+Table	Create Table
+t103	CREATE TABLE `t103` (
+  `a` int(11) DEFAULT NULL,
+  `b` int(11) DEFAULT NULL,
+  `c` int(11) DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin MIN_ROWS=10 MAX_ROWS=100
 SHOW CREATE TABLE t11;
 ERROR 42S02: Table 'metaSync_alter_tables.t11' doesn't exist
 SHOW CREATE TABLE t12;
@@ -548,7 +554,7 @@ t14	CREATE TABLE `t14` (
   `c` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
-DROP TABLE t1,t4,t13,t14,t101;
+DROP TABLE t4,t13,t14,t101,t103,t_tmp;
 connection conn2;
 SHOW CREATE TABLE t1;
 ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
@@ -558,6 +564,10 @@ SHOW CREATE TABLE t13;
 ERROR 42S02: Table 'metaSync_alter_tables.t13' doesn't exist
 SHOW CREATE TABLE t14;
 ERROR 42S02: Table 'metaSync_alter_tables.t14' doesn't exist
+SHOW CREATE TABLE t101;
+ERROR 42S02: Table 'metaSync_alter_tables.t101' doesn't exist
+SHOW CREATE TABLE t103;
+ERROR 42S02: Table 'metaSync_alter_tables.t103' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( id INT NOT NULL, a INT, PRIMARY KEY( id ) ) ENGINE INNODB;
 CREATE TABLE t2 ( id INT ) ENGINE INNODB
