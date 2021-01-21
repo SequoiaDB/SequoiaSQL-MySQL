@@ -5323,6 +5323,84 @@ t1	CREATE TABLE `t1` (
   `geocol1` geometrycollection NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=9001 DEFAULT CHARSET=latin1
+alter table t1 modify newgeom geometry not null,algorithm=inplace;
+ERROR 22004: Invalid use of NULL value
+alter table t1 modify newpoin point not null,algorithm=inplace;
+ERROR 22004: Invalid use of NULL value
+alter table t1 modify newline linestring not null,algorithm=inplace;
+ERROR 22004: Invalid use of NULL value
+alter table t1 modify newpoly polygon not null,algorithm=inplace;
+ERROR 22004: Invalid use of NULL value
+alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
+ERROR 22004: Invalid use of NULL value
+alter table t1 modify newmline multilinestring not null,algorithm=inplace;
+ERROR 22004: Invalid use of NULL value
+alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
+ERROR 22004: Invalid use of NULL value
+alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
+ERROR 22004: Invalid use of NULL value
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `newgeom` geometry DEFAULT NULL,
+  `newpoin` point DEFAULT NULL,
+  `newline` linestring DEFAULT NULL,
+  `newpoly` polygon DEFAULT NULL,
+  `newmpoin` multipoint DEFAULT NULL,
+  `newmline` multilinestring DEFAULT NULL,
+  `newmploy` multipolygon DEFAULT NULL,
+  `newgeocol` geometrycollection DEFAULT NULL,
+  `geom1` geometry NOT NULL,
+  `poin1` point NOT NULL,
+  `line1` linestring NOT NULL,
+  `poly1` polygon NOT NULL,
+  `mpoin1` multipoint NOT NULL,
+  `mline1` multilinestring NOT NULL,
+  `mploy1` multipolygon NOT NULL,
+  `geocol1` geometrycollection NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=9001 DEFAULT CHARSET=latin1
+set sql_mode = "";
+alter table t1 modify newgeom geometry not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: cannot convert NULL to non-constant DEFAULT. Try ALGORITHM=COPY
+alter table t1 modify newpoin point not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: cannot convert NULL to non-constant DEFAULT. Try ALGORITHM=COPY
+alter table t1 modify newline linestring not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: cannot convert NULL to non-constant DEFAULT. Try ALGORITHM=COPY
+alter table t1 modify newpoly polygon not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: cannot convert NULL to non-constant DEFAULT. Try ALGORITHM=COPY
+alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: cannot convert NULL to non-constant DEFAULT. Try ALGORITHM=COPY
+alter table t1 modify newmline multilinestring not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: cannot convert NULL to non-constant DEFAULT. Try ALGORITHM=COPY
+alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: cannot convert NULL to non-constant DEFAULT. Try ALGORITHM=COPY
+alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: cannot convert NULL to non-constant DEFAULT. Try ALGORITHM=COPY
+set sql_mode = default;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `newgeom` geometry DEFAULT NULL,
+  `newpoin` point DEFAULT NULL,
+  `newline` linestring DEFAULT NULL,
+  `newpoly` polygon DEFAULT NULL,
+  `newmpoin` multipoint DEFAULT NULL,
+  `newmline` multilinestring DEFAULT NULL,
+  `newmploy` multipolygon DEFAULT NULL,
+  `newgeocol` geometrycollection DEFAULT NULL,
+  `geom1` geometry NOT NULL,
+  `poin1` point NOT NULL,
+  `line1` linestring NOT NULL,
+  `poly1` polygon NOT NULL,
+  `mpoin1` multipoint NOT NULL,
+  `mline1` multilinestring NOT NULL,
+  `mploy1` multipolygon NOT NULL,
+  `geocol1` geometrycollection NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=9001 DEFAULT CHARSET=latin1
 delete from t1 where id = 2 ;
 select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1 order by id;
 id	ST_AsText(geom1)	ST_AsText(line1)	ST_AsText(poly1)	ST_AsText(mpoin1)	ST_AsText(mline1)	ST_AsText(mploy1)	ST_AsText(geocol1)

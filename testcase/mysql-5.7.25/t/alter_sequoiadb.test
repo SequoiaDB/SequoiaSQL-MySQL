@@ -2257,36 +2257,44 @@ alter table t1 change geocol newgeocol geometrycollection null;
 show create table t1;
 
 # SEQUOIASQLMAINSTREAM-824
-# change null to not null and not null to null(set sql_mode = "" will change success anp print warning in MariaDB)
-#--error 1265
-#alter table t1 modify newgeom geometry not null,algorithm=inplace;
-#--error 1265
-#alter table t1 modify newpoin point not null,algorithm=inplace;
-##--error 1265
-#alter table t1 modify newline linestring not null,algorithm=inplace;
-#--error 1265
-#alter table t1 modify newpoly polygon not null,algorithm=inplace;
-#--error 1265
-#alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
-#--error 1265
-#alter table t1 modify newmline multilinestring not null,algorithm=inplace;
-#--error 1265
-#alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
-#--error 1265
-#alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
+# change null to not null( set sql_mode = 'STRICT_TRANS_TABLES'; set sql_mode = '' )
+--error 1138
+alter table t1 modify newgeom geometry not null,algorithm=inplace;
+--error 1138
+alter table t1 modify newpoin point not null,algorithm=inplace;
+--error 1138
+alter table t1 modify newline linestring not null,algorithm=inplace;
+--error 1138
+alter table t1 modify newpoly polygon not null,algorithm=inplace;
+--error 1138
+alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
+--error 1138
+alter table t1 modify newmline multilinestring not null,algorithm=inplace;
+--error 1138
+alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
+--error 1138
+alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
 
-#show create table t1;
+show create table t1;
 
-#set sql_mode = "";
-#alter table t1 modify newgeom geometry not null,algorithm=inplace;
-#alter table t1 modify newpoin point not null,algorithm=inplace;
-#alter table t1 modify newline linestring not null,algorithm=inplace;
-#alter table t1 modify newpoly polygon not null,algorithm=inplace;
-#alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
-#alter table t1 modify newmline multilinestring not null,algorithm=inplace;
-#alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
-#alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
-#set sql_mode = default;
+set sql_mode = "";
+--error 1846
+alter table t1 modify newgeom geometry not null,algorithm=inplace;
+--error 1846
+alter table t1 modify newpoin point not null,algorithm=inplace;
+--error 1846
+alter table t1 modify newline linestring not null,algorithm=inplace;
+--error 1846
+alter table t1 modify newpoly polygon not null,algorithm=inplace;
+--error 1846
+alter table t1 modify newmpoin multipoint not null,algorithm=inplace;
+--error 1846
+alter table t1 modify newmline multilinestring not null,algorithm=inplace;
+--error 1846
+alter table t1 modify newmploy multipolygon not null,algorithm=inplace;
+--error 1846
+alter table t1 modify newgeocol geometrycollection not null,algorithm=inplace;
+set sql_mode = default;
 
 show create table t1;
 
