@@ -4642,7 +4642,7 @@ int ha_sdb::info(uint flag) {
       Sdb_idx_stat_ptr ptr = share->idx_stat_arr[i];
       uint key_part_count = key_info->user_defined_key_parts;
 
-      if (!key_info->rec_per_key) {
+      if (!key_info->rec_per_key || !ptr.get()) {
         continue;
       }
 
@@ -5573,8 +5573,8 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
         }
       }
     }
-    rc = sdb_get_min_max_from_bson(key_info, min_ele, max_ele,
-                                   s.min_value_arr, s.max_value_arr);
+    rc = sdb_get_min_max_from_bson(key_info, min_ele, max_ele, s.min_value_arr,
+                                   s.max_value_arr);
     if (rc != 0) {
       goto error;
     }
