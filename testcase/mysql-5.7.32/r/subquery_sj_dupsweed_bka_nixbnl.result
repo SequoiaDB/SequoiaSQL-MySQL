@@ -1606,24 +1606,24 @@ insert into t3 select A.a + 10*B.a from t0 A, t0 B;
 select * from t3 where a in (select kp1 from t1 where kp1<20);
 a
 0
-10
 1
-11
 2
-12
 3
-13
 4
-14
 5
-15
 6
-16
 7
-17
 8
-18
 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
 19
 select * from t3 where a in (select kp1 from t1 where kp1<20) and a<20;
 a

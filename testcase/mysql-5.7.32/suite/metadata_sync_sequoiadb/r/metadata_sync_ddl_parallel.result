@@ -578,18 +578,18 @@ grant execute on procedure meta_sync_22567.p1 to 'user_22567';
 flush privileges;
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%'
-GRANT SELECT ON `meta_sync_22567`.`v1` TO 'user_22567'@'%'
-GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
-GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO 'user_22567'@'%'
 GRANT EXECUTE ON FUNCTION `meta_sync_22567`.`f1` TO 'user_22567'@'%'
+GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO 'user_22567'@'%'
+GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
+GRANT SELECT ON `meta_sync_22567`.`v1` TO 'user_22567'@'%'
+GRANT USAGE ON *.* TO 'user_22567'@'%'
 show grants for user_22567;
 Grants for user_22567@%
-GRANT USAGE ON *.* TO 'user_22567'@'%'
-GRANT SELECT ON `meta_sync_22567`.`v1` TO 'user_22567'@'%'
-GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
-GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO 'user_22567'@'%'
 GRANT EXECUTE ON FUNCTION `meta_sync_22567`.`f1` TO 'user_22567'@'%'
+GRANT EXECUTE ON PROCEDURE `meta_sync_22567`.`p1` TO 'user_22567'@'%'
+GRANT INSERT ON `meta_sync_22567`.`t1` TO 'user_22567'@'%'
+GRANT SELECT ON `meta_sync_22567`.`v1` TO 'user_22567'@'%'
+GRANT USAGE ON *.* TO 'user_22567'@'%'
 revoke insert on table meta_sync_22567.t1 from user_22567;
 revoke select on table meta_sync_22567.v1 from user_22567;
 revoke execute on function meta_sync_22567.f1 from user_22567;

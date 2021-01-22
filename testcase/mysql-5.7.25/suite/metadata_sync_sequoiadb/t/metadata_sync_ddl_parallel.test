@@ -550,8 +550,10 @@ grant execute on function meta_sync_22567.f1 to 'user_22567';
 grant execute on procedure meta_sync_22567.p1 to 'user_22567';
 flush privileges;
 
+--sorted_result
 connection conn1;
 show grants for user_22567;
+--sorted_result
 connection conn2;
 show grants for user_22567;
 
