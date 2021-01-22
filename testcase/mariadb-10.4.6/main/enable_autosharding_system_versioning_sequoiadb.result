@@ -564,6 +564,15 @@ FROM '1997-01-01' TO '2001-01-01' SET name = CONCAT('first update: ', name);
 UPDATE t1   # update 1 row
 FOR PORTION OF date_period
 FROM '1991-01-01' TO '2001-01-01' SET name = CONCAT('first update: ', name);
+UPDATE t1   # update 1 row insert 2 rows 
+FOR PORTION OF date_period
+FROM '2006-01-01' TO '2007-01-01' SET name = CONCAT('second update: ', name);
+UPDATE t1   # update 2 rows insert 1 row 
+FOR PORTION OF date_period
+FROM '2007-12-12' TO '2021-01-01' SET name = CONCAT('third update: ', name);
+UPDATE t1 SET date_2 = '2038-01-01 03:03:03' WHERE id > 5;
+Warnings:
+Note	1265	Data truncated for column 'date_2' at row 1
 UPDATE t2   
 FOR PORTION OF timestamp_period
 FROM '1999-01-01 10:10:10' TO '2007-07-07 07:07:07' SET name = CONCAT('first update: ', name);
@@ -575,8 +584,11 @@ ERROR HY000: Sharding key cannot be updated
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
 1	first update: Jack	1991-01-01	1997-01-01
-2	Mary	2005-05-05	2010-10-10
-3	Bob	2008-08-08	2018-10-10
+2	second update: Mary	2006-01-01	2007-01-01
+3	third update: Bob	2008-08-08	2018-10-10
+4	Mary	2005-05-05	2006-01-01
+5	third update: Mary	2007-12-12	2010-10-10
+6	Mary	2007-01-01	2038-01-01
 SELECT * FROM t2 ORDER BY name;
 name	ts	te
 Jack	2008-08-08 08:08:08.000000	2021-01-01 00:00:00.000000
@@ -584,13 +596,16 @@ Joe	1997-01-01 00:00:00.000000	2001-01-01 10:10:10.000000
 Mary	2005-05-05 10:10:10.000000	2010-10-10 10:10:10.000000
 DELETE FROM t1    # delete 1 row
 FOR PORTION OF date_period FROM '1991-01-01' TO '1997-01-01';
+DELETE FROM t1    # delete many rows
+FOR PORTION OF date_period FROM '2005-12-12' TO '2015-01-01';
 DELETE FROM t2
 FOR PORTION OF timestamp_period FROM '2005-05-05 00:00:00' TO '2020-11-30 00:00:00';
 ERROR HY000: Sharding key cannot be updated
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-2	Mary	2005-05-05	2010-10-10
-3	Bob	2008-08-08	2018-10-10
+7	third update: Bob	2015-01-01	2018-10-10
+8	Mary	2005-05-05	2005-12-12
+9	Mary	2015-01-01	2038-01-01
 SELECT * FROM t2 ORDER BY name;
 name	ts	te
 Jack	2008-08-08 08:08:08.000000	2021-01-01 00:00:00.000000
@@ -658,36 +673,66 @@ id	name	date_1	date_2
 4	Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
 UPDATE t1 SET name = 'first update: Joe' WHERE id < 2;
+UPDATE t1   # update 3 rows insert 6 rows
+FOR PORTION OF application_time
+FROM '1999-09-09' TO '2009-09-09' SET name = CONCAT('second update: ', name) ORDER BY name;
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-1	first update: Joe	1997-01-01	2001-01-01
-2	Mary	2005-05-05	2010-10-10
-3	Bob	2008-08-08	2018-10-10
-4	Tom	2008-08-08	2009-09-09
-5	Jack	2008-08-08	2021-01-01
+1	second update: first update: Joe	1999-09-09	2001-01-01
+2	second update: Mary	2005-05-05	2009-09-09
+3	second update: Bob	2008-08-08	2009-09-09
+4	second update: Tom	2008-08-08	2009-09-09
+5	second update: Jack	2008-08-08	2009-09-09
+6	Bob	2009-09-09	2018-10-10
+7	first update: Joe	1997-01-01	1999-09-09
+8	Jack	2009-09-09	2021-01-01
+9	Mary	2009-09-09	2010-10-10
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id,name;
 id	name	date_1	date_2
 1	Joe	1997-01-01	2001-01-01
 1	first update: Joe	1997-01-01	2001-01-01
+1	second update: first update: Joe	1999-09-09	2001-01-01
 2	Mary	2005-05-05	2010-10-10
+2	second update: Mary	2005-05-05	2009-09-09
 3	Bob	2008-08-08	2018-10-10
+3	second update: Bob	2008-08-08	2009-09-09
 4	Tom	2008-08-08	2009-09-09
+4	second update: Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
+5	second update: Jack	2008-08-08	2009-09-09
+6	Bob	2009-09-09	2018-10-10
+7	first update: Joe	1997-01-01	1999-09-09
+8	Jack	2009-09-09	2021-01-01
+9	Mary	2009-09-09	2010-10-10
 DELETE FROM t1 WHERE id > 4 AND id < 7;
+DELETE FROM t1    # delete many rows
+FOR PORTION OF application_time FROM '2000-01-01' TO '2010-01-01';
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-1	first update: Joe	1997-01-01	2001-01-01
-2	Mary	2005-05-05	2010-10-10
-3	Bob	2008-08-08	2018-10-10
-4	Tom	2008-08-08	2009-09-09
+7	first update: Joe	1997-01-01	1999-09-09
+10	second update: first update: Joe	1999-09-09	2000-01-01
+11	Jack	2010-01-01	2021-01-01
+12	Mary	2010-01-01	2010-10-10
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id,name;
 id	name	date_1	date_2
 1	Joe	1997-01-01	2001-01-01
 1	first update: Joe	1997-01-01	2001-01-01
+1	second update: first update: Joe	1999-09-09	2001-01-01
 2	Mary	2005-05-05	2010-10-10
+2	second update: Mary	2005-05-05	2009-09-09
 3	Bob	2008-08-08	2018-10-10
+3	second update: Bob	2008-08-08	2009-09-09
 4	Tom	2008-08-08	2009-09-09
+4	second update: Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
+5	second update: Jack	2008-08-08	2009-09-09
+6	Bob	2009-09-09	2018-10-10
+7	first update: Joe	1997-01-01	1999-09-09
+8	Jack	2009-09-09	2021-01-01
+9	Mary	2009-09-09	2010-10-10
+10	second update: first update: Joe	1999-09-09	2000-01-01
+11	Jack	2010-01-01	2021-01-01
+12	Mary	2010-01-01	2010-10-10
 ALTER TABLE t1 DROP PERIOD FOR application_time;
 ALTER TABLE t2 ADD SYSTEM VERSIONING;
 ALTER TABLE t2 ADD PERIOD FOR date_period(date_1,date_2);
@@ -721,10 +766,10 @@ FOR PORTION OF date_period
 FROM '1997-01-01' TO '2001-01-01' SET name = CONCAT('second update: ', name);
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-1	first update: Joe	1997-01-01	2001-01-01
-2	Mary	2005-05-05	2010-10-10
-3	Bob	2008-08-08	2018-10-10
-4	Tom	2008-08-08	2009-09-09
+7	third update: David	1997-01-01	1999-09-09
+10	third update: David	1999-09-09	2000-01-01
+11	third update: David	2010-01-01	2021-01-01
+12	third update: David	2010-01-01	2010-10-10
 1001	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t2 ORDER BY id;
 id	name	date_1	date_2
@@ -744,20 +789,46 @@ DELETE FROM t2    # delete many rows
 FOR PORTION OF date_period FROM '2000-01-01' TO '2010-01-01';
 SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
-1	first update: Joe	1997-01-01	2001-01-01
+7	third update: David	1997-01-01	1999-09-09
+10	third update: David	1999-09-09	2000-01-01
 1001	third update: David	1998-01-01	2008-01-01
-SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id;
+SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id,name;
 id	name	date_1	date_2
 1	Joe	1997-01-01	2001-01-01
 1	first update: Joe	1997-01-01	2001-01-01
+1	second update: first update: Joe	1999-09-09	2001-01-01
 2	Mary	2005-05-05	2010-10-10
+2	second update: Mary	2005-05-05	2009-09-09
 3	Bob	2008-08-08	2018-10-10
+3	second update: Bob	2008-08-08	2009-09-09
 4	Tom	2008-08-08	2009-09-09
+4	second update: Tom	2008-08-08	2009-09-09
 5	Jack	2008-08-08	2021-01-01
+5	second update: Jack	2008-08-08	2009-09-09
+6	Bob	2009-09-09	2018-10-10
+7	first update: Joe	1997-01-01	1999-09-09
+7	third update: David	1997-01-01	1999-09-09
+8	Jack	2009-09-09	2021-01-01
+9	Mary	2009-09-09	2010-10-10
+10	second update: first update: Joe	1999-09-09	2000-01-01
+10	third update: David	1999-09-09	2000-01-01
+11	Jack	2010-01-01	2021-01-01
+11	third update: David	2010-01-01	2021-01-01
+12	Mary	2010-01-01	2010-10-10
+12	third update: David	2010-01-01	2010-10-10
 1001	David	1998-01-01	2008-01-01
 1001	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t2 ORDER BY id;
 id	name	date_1	date_2
 1	second update: first update: Joe	1997-01-01	2000-01-01
 2	Mary	2010-01-01	2010-10-10
+SELECT * FROM t2 FOR SYSTEM_TIME ALL ORDER BY id,name,date_1;
+id	name	date_1	date_2
+1	Joe	1997-01-01	2001-01-01
+1	first update: Joe	1997-01-01	2001-01-01
+1	second update: first update: Joe	1997-01-01	2000-01-01
+1	second update: first update: Joe	1997-01-01	2001-01-01
+2	Mary	2005-05-05	2010-10-10
+2	Mary	2010-01-01	2010-10-10
+3	Mary	2008-08-08	2018-10-10
 DROP TABLE t1,t2;
