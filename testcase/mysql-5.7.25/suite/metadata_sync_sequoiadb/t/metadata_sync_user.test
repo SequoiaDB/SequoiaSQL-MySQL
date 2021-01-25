@@ -15,8 +15,9 @@ FLUSH PRIVILEGES;
 --enable_warnings
 
 # connect to conn2, check users are cleaned in the beginning
+#Bug #SEQUOIASQLMAINSTREAM-933
 connection conn2;
---sleep $sleep
+--sleep 5
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user3';
@@ -38,8 +39,9 @@ GRANT INSERT, DELETE, UPDATE ON *.*  TO 'metaSync_user1'@'localhost' IDENTIFIED 
 # SEQUOIASQLMAINSTREAM-340
 FLUSH PRIVILEGES;
 # check metadatas after create
+#Bug #SEQUOIASQLMAINSTREAM-933
 connection conn2;
---sleep $sleep
+--sleep 5
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user3';
@@ -53,8 +55,9 @@ ALTER USER IF EXISTS 'metaSync_user1_new'@'localhost' PASSWORD EXPIRE;
 REVOKE DELETE ON *.* FROM 'metaSync_user1_new'@'localhost';
 FLUSH PRIVILEGES;
 # check metadatas after alter
+#Bug #SEQUOIASQLMAINSTREAM-933
 connection conn1;
---sleep $sleep
+--sleep 5
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1_new';
@@ -66,8 +69,9 @@ DROP USER 'metaSync_user2_new'@'localhost';
 DROP USER 'metaSync_user3'@'localhost';
 FLUSH PRIVILEGES;
 # check metadatas after drop
+#Bug #SEQUOIASQLMAINSTREAM-933
 connection conn2;
---sleep $sleep
+--sleep 5
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1_new';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2_new';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user3';
