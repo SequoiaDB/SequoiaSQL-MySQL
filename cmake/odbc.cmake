@@ -14,15 +14,18 @@
 cmake_minimum_required(VERSION 2.8.7)
 function(build_unix_odbc type)
    # Build openssl
-   message(STATUS "Build UnixODBC, call ${CMAKE_SOURCE_DIR}/thirdparty/"
-           "build_thirdparty.py  --odbc=2.3.1")
    if(type STREQUAL "debug")
       set(debug_opt " -d")
    else()
       set(debug_opt "")
    endif()
+   if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+      set(arch " --arch=aarch64")
+   endif()
+   message(STATUS "Build UnixODBC, call ${CMAKE_SOURCE_DIR}/thirdparty/"
+           "build_thirdparty.py  --odbc=2.3.1 ${debug_opt} ${arch}")
    execute_process(
-      COMMAND bash -c "python3 build_thirdparty.py --odbc=2.3.1 ${debug_opt}"
+      COMMAND bash -c "python3 build_thirdparty.py --odbc=2.3.1 ${debug_opt} ${arch}"
       WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/thirdparty/
    )
 endfunction()

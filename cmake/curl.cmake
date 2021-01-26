@@ -15,7 +15,9 @@ endfunction()
 
 MACRO(SDB_CHECK_CURL)
    IF(NOT WITH_CURL)
-      SET(WITH_CURL "${CMAKE_SOURCE_DIR}/thirdparty/curl-7.69.0/lib/")
+      SET(WITH_CURL "${CMAKE_SOURCE_DIR}/thirdparty/curl-7.69.0/install_path/")
+      SET(CURL_LIBRARY "${WITH_CURL}/lib")
+      SET(CURL_INCLUDE_DIR "${WITH_CURL}/include")
    ENDIF()
 
    # Find thirdparty, then system. If system curl version not required, then build thirdparty.

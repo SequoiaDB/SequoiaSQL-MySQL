@@ -37,6 +37,7 @@ class BuildThirdParty(optparse.OptionParser):
     current_dir = ""
     debug=False
     jobs=0
+    arch="x86_64"
     def print_help(self, output=None):
         optparse.OptionParser.print_help(self, output)
 
@@ -45,6 +46,9 @@ class BuildThirdParty(optparse.OptionParser):
 
     def set_debug(self, is_debug):
         self.debug=is_debug
+
+    def set_arch(self, architect):
+        self.arch=architect
 
     def set_jobs(self, job_num):
         self.jobs=job_num
@@ -108,6 +112,8 @@ class BuildThirdParty(optparse.OptionParser):
         unix_odbc_dir = unix_odbc_dir + version
         unix_odbc_abs_dir = self.current_dir + "/" +unix_odbc_dir
         debug_option=""
+        build=""
+        host=""
         if not os.path.exists(unix_odbc_abs_dir):
             print("The UnixODBC version:{v}, dir:'{d}' not exists."
             .format(v=version, d=unix_odbc_abs_dir))
@@ -116,11 +122,15 @@ class BuildThirdParty(optparse.OptionParser):
             debug_option=" --enable-debug"
         else:
             debug_option=""
+
+        if self.arch == "aarch64":
+            build=" --build=arm-linux"
+            host=" --host=arm-linux"
         os.chdir(unix_odbc_abs_dir)
         st = os.stat("./configure")
         os.chmod("./configure", st.st_mode | stat.S_IEXEC)
         config_cmd = "./configure --prefix=" + unix_odbc_abs_dir + "/install_path" + " --with-pic" +\
-                     debug_option + " --enable-ltdl-install"
+                     debug_option + " --enable-ltdl-install" + build + host
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
@@ -162,6 +172,10 @@ def main():
                        dest="jobs", help="Allow N jobs at once, "
                        "default: num of cpu count.")
 
+    #Add --arch
+    builder.add_option("-a", "--arch", action='store', type="string",
+                       dest="arch", help="The target platform architect for building." )
+
     opt, args = builder.parse_args()
     
     if not opt.openssl and not opt.curl and not opt.odbc:
@@ -174,6 +188,9 @@ def main():
 
     if opt.debug:
         builder.set_debug(True);
+
+    if opt.arch == "aarch64":
+        builder.set_arch("aarch64");
 
     builder.set_jobs(jobs);
     if opt.openssl:
