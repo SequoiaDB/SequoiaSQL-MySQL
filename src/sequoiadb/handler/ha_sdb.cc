@@ -151,7 +151,7 @@ void free_sdb_share(Sdb_share *share) {
 }
 
 static void get_sdb_share(const char *table_name, TABLE *table,
-                          boost::shared_ptr<Sdb_share> &ssp) {
+                          boost::shared_ptr<Sdb_share> &ssp, bool &is_created) {
   DBUG_ENTER("get_sdb_share");
   Sdb_share *share = NULL;
   char *tmp_name = NULL;
@@ -162,24 +162,13 @@ static void get_sdb_share(const char *table_name, TABLE *table,
   boost::shared_ptr<Sdb_share> *tmp_ptr;
 
   mysql_mutex_lock(&sdb_mutex);
+  is_created = false;
 
   /*
    If share is not present in the hash, create a new share and
    initialize its members.
   */
   void *ptr = my_hash_search(&sdb_open_tables, (uchar *)table_name, length);
-
-  // Avoid bug SEQUOIASQLMAINSTREAM-893
-  if (ptr) {
-    tmp_ptr = (boost::shared_ptr<Sdb_share> *)ptr;
-    if ((*tmp_ptr).get() && (*tmp_ptr)->idx_count != table->s->keys) {
-      DBUG_ASSERT(0);
-      my_hash_delete(&sdb_open_tables, (uchar *)ptr);
-      ptr = NULL;
-    }
-    tmp_ptr = NULL;
-  }
-
   if (!ptr) {
     if (!sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
                           &share, sizeof(*share), &tmp_name, length + 1,
@@ -215,6 +204,8 @@ static void get_sdb_share(const char *table_name, TABLE *table,
       my_free(tmp_ptr);
       goto error;
     }
+
+    is_created = true;
   } else {
     tmp_ptr = (boost::shared_ptr<Sdb_share> *)ptr;
   }
@@ -1143,8 +1134,9 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   int rc = 0;
   Sdb_cl cl;
   Sdb_conn *connection = NULL;
+  bool is_share_created = false;
 
-  get_sdb_share(name, table, share);
+  get_sdb_share(name, table, share, is_share_created);
   if (!share) {
     rc = HA_ERR_OUT_OF_MEM;
     goto error;
@@ -1238,6 +1230,15 @@ done:
   DBUG_RETURN(rc);
 error:
   share = null_ptr;
+  if (is_share_created) {
+    mysql_mutex_lock(&sdb_mutex);
+    uchar *ptr =
+        my_hash_search(&sdb_open_tables, (uchar *)name, (uint)strlen(name));
+    if (ptr) {
+      my_hash_delete(&sdb_open_tables, ptr);
+    }
+    mysql_mutex_unlock(&sdb_mutex);
+  }
   goto done;
 }
 
@@ -1252,12 +1253,12 @@ int ha_sdb::close(void) {
     mysql_mutex_lock(&sdb_mutex);
     void *ptr = my_hash_search(&sdb_open_tables, (uchar *)share->table_name,
                                share->table_name_length);
-    if (ptr) {
+    share = null_ptr;
+    // Delete global share object if is the last one
+    if (ptr && 1 == (*((boost::shared_ptr<Sdb_share> *)ptr)).use_count()) {
       my_hash_delete(&sdb_open_tables, (uchar *)ptr);
     }
     mysql_mutex_unlock(&sdb_mutex);
-
-    share = null_ptr;
   }
   if (sdb_condition) {
     my_free(sdb_condition);
