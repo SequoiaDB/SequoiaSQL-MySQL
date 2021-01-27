@@ -13,6 +13,10 @@ flush privileges;
 connection conn1;
 GRANT create,alter,drop ON t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 ;
+connection conn3;
+alter table metadata_sync_23102.t1 add column d int;
+disconnect conn3;
 connection conn1;
 use metadata_sync_user_parallel;
 revoke create,alter,drop on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
@@ -23,8 +27,13 @@ alter table metadata_sync_23102.t1 drop column d;
 ERROR 42000: ALTER command denied to user 'metadata_sync_user_23102'@'x' for table 't1'
 disconnect conn3;
 connection conn1;
+alter table metadata_sync_23102.t1 drop column d;
 GRANT insert,update,delete,select ON metadata_sync_23102.t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 ;
+connection conn3;
+insert into metadata_sync_23102.t1 values(1,1,1);
+disconnect conn3;
 connection conn1;
 revoke insert,update,delete,select on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
 FLUSH PRIVILEGES;
@@ -36,6 +45,10 @@ disconnect conn3;
 connection conn1;
 GRANT index ON metadata_sync_23102.t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 ;
+connection conn3;
+create index a on metadata_sync_23102.t1(a);
+disconnect conn3;
 connection conn1;
 revoke index on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
 FLUSH PRIVILEGES;
@@ -48,6 +61,14 @@ connection conn1;
 CREATE TRIGGER metadata_sync_23102.t1_bi BEFORE INSERT ON t1 FOR EACH ROW SET NEW.a = 1;
 GRANT insert,select,trigger ON metadata_sync_23102.t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 ;
+connection conn3;
+insert into metadata_sync_23102.t1(b,c) values(2,2);
+select * from metadata_sync_23102.t1 order by c;
+a	b	c
+1	1	1
+1	2	2
+disconnect conn3;
 connection conn1;
 revoke insert,trigger on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
 FLUSH PRIVILEGES;
@@ -57,10 +78,16 @@ insert into metadata_sync_23102.t1(b,c) values(2,2);
 ERROR 42000: INSERT command denied to user 'metadata_sync_user_23102'@'x' for table 't1'
 select * from metadata_sync_23102.t1 order by c;
 a	b	c
+1	1	1
+1	2	2
 disconnect conn3;
 connection conn1;
 GRANT ALL ON metadata_sync_23102.* TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 ;
+connection conn3;
+create view metadata_sync_23102.v1 as select 'a';
+disconnect conn3;
 connection conn1;
 revoke ALL on metadata_sync_23102.* from metadata_sync_user_23102@'%';
 FLUSH PRIVILEGES;
@@ -85,6 +112,10 @@ create user 'metadata_sync_user_23103'@'%' IDENTIFIED BY 'metadata_sync_user_231
 connection conn1;
 GRANT create,alter,drop ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 ;
+connection conn3;
+alter table metadata_sync_23103.t1 add column d int;
+disconnect conn3;
 connection conn1;
 revoke create,alter,drop on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 flush privileges;
@@ -94,8 +125,13 @@ alter table metadata_sync_23103.t1 drop column d;
 ERROR 42000: ALTER command denied to user 'metadata_sync_user_23103'@'x' for table 't1'
 disconnect conn3;
 connection conn1;
+alter table metadata_sync_23103.t1 drop column d;
 GRANT insert,update,delete,select ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 ;
+connection conn3;
+insert into metadata_sync_23103.t1 values(1,1,1);
+disconnect conn3;
 connection conn1;
 revoke insert,update,delete,select on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
@@ -107,6 +143,10 @@ disconnect conn3;
 connection conn1;
 GRANT index ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 ;
+connection conn3;
+create index a on metadata_sync_23103.t1(a);
+disconnect conn3;
 connection conn1;
 revoke index on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
@@ -119,6 +159,14 @@ connection conn1;
 CREATE TRIGGER t1_bi BEFORE INSERT ON t1 FOR EACH ROW SET NEW.a = 1;
 GRANT insert,select,trigger ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 ;
+connection conn3;
+insert into metadata_sync_23103.t1(b,c) values(2,2);
+select * from metadata_sync_23103.t1 order by c;
+a	b	c
+1	1	1
+1	2	2
+disconnect conn3;
 connection conn1;
 revoke insert,trigger on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
@@ -128,11 +176,17 @@ insert into metadata_sync_23103.t1(b,c) values(2,2);
 ERROR 42000: INSERT command denied to user 'metadata_sync_user_23103'@'x' for table 't1'
 select * from metadata_sync_23103.t1 order by c;
 a	b	c
+1	1	1
+1	2	2
 disconnect conn3;
 connection conn1;
 revoke select on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 GRANT ALL ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 ;
+connection conn3;
+create view metadata_sync_23103.v1 as select 'a';
+disconnect conn3;
 connection conn1;
 revoke ALL on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
@@ -144,7 +198,12 @@ disconnect conn3;
 connection conn1;
 GRANT create routine,alter routine ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 ;
+connection conn3;
+create function metadata_sync_23103.hello23103 (s char(20)) returns char(50) deterministic return concat('Hello,' , s , '!');
+disconnect conn3;
 connection conn1;
+revoke EXECUTE,alter routine on function metadata_sync_23103.hello23103 from metadata_sync_user_23103@'%';
 revoke create routine,alter routine on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
 connect   conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 ;
@@ -168,6 +227,10 @@ connection conn1;
 create function hello23104 (s char(20)) returns char(50) deterministic return concat('Hello,' , s , '!');
 GRANT alter routine ON function metadata_sync_23104.hello23104 TO metadata_sync_user_23104@'%' IDENTIFIED BY 'metadata_sync_user_23104' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23104', 'metadata_sync_user_23104', $mysql_db, $port2 ;
+connection conn3;
+alter function metadata_sync_23104.hello23104 comment 'test';
+disconnect conn3;
 connection conn1;
 revoke alter routine on function metadata_sync_23104.hello23104 from metadata_sync_user_23104@'%';
 FLUSH PRIVILEGES;
@@ -179,6 +242,12 @@ disconnect conn3;
 connection conn1;
 GRANT execute ON function metadata_sync_23104.hello23104 TO metadata_sync_user_23104@'%' IDENTIFIED BY 'metadata_sync_user_23104' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+connect   conn3, $mysql_host2, 'metadata_sync_user_23104', 'metadata_sync_user_23104', $mysql_db, $port2 ;
+connection conn3;
+select metadata_sync_23104.hello23104('world');
+metadata_sync_23104.hello23104('world')
+Hello,world!
+disconnect conn3;
 connection conn1;
 revoke execute on function metadata_sync_23104.hello23104 from metadata_sync_user_23104@'%';
 FLUSH PRIVILEGES;
