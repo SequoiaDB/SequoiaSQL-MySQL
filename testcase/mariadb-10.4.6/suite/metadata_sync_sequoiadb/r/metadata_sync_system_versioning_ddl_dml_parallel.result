@@ -70,7 +70,7 @@ FOR PORTION OF application_time FROM '2008-01-01' TO '2018-01-01';
 SELECT * FROM bitemporal_tab ORDER BY id;
 id	name	date_1	date_2
 1	first update: Joe	1997-01-01	2001-01-01
-2	Bob	2018-01-01	2018-10-10
+3	Bob	2018-01-01	2018-10-10
 connection conn1;
 ALTER TABLE period_tab1 ADD COLUMN name varchar(64);
 connection conn2;
