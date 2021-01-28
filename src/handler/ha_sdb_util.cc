@@ -238,23 +238,23 @@ int sdb_check_and_set_compress(enum enum_compress_type sql_compress,
                                bson::BSONObjBuilder &build) {
   int rc = 0;
   enum enum_compress_type type;
-  if (cmt_compressed.type() != bson::Bool &&
-      cmt_compressed.type() != bson::EOO) {
-    rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(rc, "Invalid options. Type of Compressed should be 'Bool'",
-                    MYF(0));
-    goto error;
-  }
-  if (cmt_compress_type.type() != bson::String &&
-      cmt_compress_type.type() != bson::EOO) {
-    rc = ER_WRONG_ARGUMENTS;
-    my_printf_error(
-        rc, "Invalid options. Type of CompressionType should be 'String'",
-        MYF(0));
-    goto error;
-  }
-
   try {
+    if (cmt_compressed.type() != bson::Bool &&
+        cmt_compressed.type() != bson::EOO) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(
+          rc, "Invalid options. Type of Compressed should be 'Bool'", MYF(0));
+      goto error;
+    }
+    if (cmt_compress_type.type() != bson::String &&
+        cmt_compress_type.type() != bson::EOO) {
+      rc = ER_WRONG_ARGUMENTS;
+      my_printf_error(
+          rc, "Invalid options. Type of CompressionType should be 'String'",
+          MYF(0));
+      goto error;
+    }
+
     type = sdb_str_compress_type(cmt_compress_type.valuestr());
     if (cmt_compress_type.type() == bson::String) {
       if ((cmt_compressed.type() == bson::Bool &&

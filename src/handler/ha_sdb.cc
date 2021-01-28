@@ -185,12 +185,13 @@ static int sdb_autoinc_current_value(Sdb_conn &conn, const char *full_name,
   bson::BSONObj info;
   bson::BSONElement elem;
   bson::BSONElement e;
-  bson::BufBuilder condition_buf(96);
-  const char *autoinc_name = NULL;
-  bson::BSONObjBuilder cond_builder(condition_buf);
-  bson::BSONObjBuilder sel_builder(96);
 
   try {
+    bson::BufBuilder condition_buf(96);
+    const char *autoinc_name = NULL;
+    bson::BSONObjBuilder cond_builder(condition_buf);
+    bson::BSONObjBuilder sel_builder(96);
+
     cond_builder.append(SDB_FIELD_NAME, full_name);
     condition = cond_builder.done();
     bson::BSONObjBuilder builder(
@@ -3150,91 +3151,97 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
     org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
   }
 
-  bson::BSONObjIterator iter(obj);
+  try {
+    bson::BSONObjIterator iter(obj);
 
-  if (is_select && bitmap_is_clear_all(table->read_set)) {
-    // no field need to read
-    goto done;
-  }
-
-  rc = m_bson_element_cache.ensure(table->s->fields);
-  if (SDB_ERR_OK != rc) {
-    goto error;
-  }
-
-  free_root(&blobroot, MYF(0));
-
-  for (Field **fields = table->field; *fields; fields++) {
-    Field *field = *fields;
-    bson::BSONElement elem;
-
-    // we only skip non included fields when SELECT.
-    if (is_select && !bitmap_is_set(table->read_set, field->field_index)) {
-      continue;
+    if (is_select && bitmap_is_clear_all(table->read_set)) {
+      // no field need to read
+      goto done;
     }
 
-    if (!m_bson_element_cache[field->field_index].eoo()) {
-      elem = m_bson_element_cache[field->field_index];
-    } else {
-      while (iter.more()) {
-        bson::BSONElement elem_tmp = iter.next();
-        if (strcmp(elem_tmp.fieldName(), sdb_field_name(field)) == 0) {
-          // current element match the field
-          elem = elem_tmp;
-          break;
-        }
+    rc = m_bson_element_cache.ensure(table->s->fields);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
 
-        if (strcmp(elem_tmp.fieldName(), SDB_OID_FIELD) == 0) {
-          // ignore _id
-          continue;
-        }
+    free_root(&blobroot, MYF(0));
 
-        // find matched field to store the element
-        for (Field **next_fields = fields + 1; *next_fields; next_fields++) {
-          Field *next_field = *next_fields;
-          if (strcmp(elem_tmp.fieldName(), sdb_field_name(next_field)) == 0) {
-            m_bson_element_cache[next_field->field_index] = elem_tmp;
+    for (Field **fields = table->field; *fields; fields++) {
+      Field *field = *fields;
+      bson::BSONElement elem;
+
+      // we only skip non included fields when SELECT.
+      if (is_select && !bitmap_is_set(table->read_set, field->field_index)) {
+        continue;
+      }
+
+      if (!m_bson_element_cache[field->field_index].eoo()) {
+        elem = m_bson_element_cache[field->field_index];
+      } else {
+        while (iter.more()) {
+          bson::BSONElement elem_tmp = iter.next();
+          if (strcmp(elem_tmp.fieldName(), sdb_field_name(field)) == 0) {
+            // current element match the field
+            elem = elem_tmp;
             break;
+          }
+
+          if (strcmp(elem_tmp.fieldName(), SDB_OID_FIELD) == 0) {
+            // ignore _id
+            continue;
+          }
+
+          // find matched field to store the element
+          for (Field **next_fields = fields + 1; *next_fields; next_fields++) {
+            Field *next_field = *next_fields;
+            if (strcmp(elem_tmp.fieldName(), sdb_field_name(next_field)) == 0) {
+              m_bson_element_cache[next_field->field_index] = elem_tmp;
+              break;
+            }
           }
         }
       }
-    }
 
-    field->reset();
+      field->reset();
 
-    if (elem.eoo() || elem.isNull() || bson::Undefined == elem.type()) {
-      if (field->maybe_null()) {
-        field->set_null();
-      } else {
-        if (is_select) {
-          thd->raise_warning_printf(ER_WARN_NULL_TO_NOTNULL,
-                                    sdb_field_name(field),
-                                    sdb_thd_current_row(thd));
+      if (elem.eoo() || elem.isNull() || bson::Undefined == elem.type()) {
+        if (field->maybe_null()) {
+          field->set_null();
+        } else {
+          if (is_select) {
+            thd->raise_warning_printf(ER_WARN_NULL_TO_NOTNULL,
+                                      sdb_field_name(field),
+                                      sdb_thd_current_row(thd));
+          }
+          field->set_default();
         }
-        field->set_default();
+        continue;
       }
-      continue;
-    }
 
-    if (check_element_type_compatible(elem, field)) {
-      rc = bson_element_to_field(elem, field);
-      if (0 != rc) {
-        goto error;
+      if (check_element_type_compatible(elem, field)) {
+        rc = bson_element_to_field(elem, field);
+        if (0 != rc) {
+          goto error;
+        }
+      } else {
+        field->set_default();
+        static char buff[100] = {'\0'};
+        SDB_LOG_WARNING(
+            "The element's type:%s is not commpatible with "
+            "field type:%s, table:%s.%s",
+            sdb_elem_type_str(elem.type()), sdb_field_type_str(field->type()),
+            db_name, table_name);
+        sprintf(buff, "field type:%s, bson::elem type:%s",
+                sdb_field_type_str(field->type()),
+                sdb_elem_type_str(elem.type()));
+        thd->raise_warning_printf(ER_DATA_OUT_OF_RANGE, field->field_name,
+                                  buff);
       }
-    } else {
-      field->set_default();
-      static char buff[100] = {'\0'};
-      SDB_LOG_WARNING(
-          "The element's type:%s is not commpatible with "
-          "field type:%s, table:%s.%s",
-          sdb_elem_type_str(elem.type()), sdb_field_type_str(field->type()),
-          db_name, table_name);
-      sprintf(buff, "field type:%s, bson::elem type:%s",
-              sdb_field_type_str(field->type()),
-              sdb_elem_type_str(elem.type()));
-      thd->raise_warning_printf(ER_DATA_OUT_OF_RANGE, field->field_name, buff);
     }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to conver object to row table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
 
 done:
   if (!is_select || table->write_set != table->read_set) {
@@ -4657,12 +4664,13 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
   bool explicit_is_mainCL = false;
   bool explicit_range_sharding_type = false;
   bool explicit_group = false;
-  bson::BSONElement cmt_compressed, cmt_compress_type;
-
-  filter_num = sizeof(auto_fill_fields) / sizeof(*auto_fill_fields);
-  filter_options(options, auto_fill_fields, filter_num, build);
 
   try {
+    bson::BSONElement cmt_compressed, cmt_compress_type;
+
+    filter_num = sizeof(auto_fill_fields) / sizeof(*auto_fill_fields);
+    filter_options(options, auto_fill_fields, filter_num, build);
+
     explicit_sharding_key = options.hasField(SDB_FIELD_SHARDING_KEY);
     explicit_is_mainCL =
         options.hasField(SDB_FIELD_ISMAINCL) &&

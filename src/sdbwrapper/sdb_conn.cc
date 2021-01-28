@@ -28,6 +28,7 @@
 #include "ha_sdb_conf.h"
 #include "ha_sdb.h"
 #include "ha_sdb_def.h"
+#include "ha_sdb_log.h"
 
 extern char *sdb_password;
 
@@ -134,21 +135,24 @@ int Sdb_conn::connect() {
       goto error;
     }
 
-    if (sdb_password && strlen(sdb_password)) {
-      rc = sdb_get_password(password);
-      if (SDB_ERR_OK != rc) {
-        snprintf(errmsg, sizeof(errmsg), "Failed to decrypt password, rc=%d",
-                 rc);
-        goto error;
+    try {
+      if (sdb_password && strlen(sdb_password)) {
+        rc = sdb_get_password(password);
+        if (SDB_ERR_OK != rc) {
+          snprintf(errmsg, sizeof(errmsg), "Failed to decrypt password, rc=%d",
+                   rc);
+          goto error;
+        }
+        rc = m_connection.connect(conn_addrs.get_conn_addrs(),
+                                  conn_addrs.get_conn_num(), sdb_user,
+                                  password.ptr());
+      } else {
+        rc = m_connection.connect(conn_addrs.get_conn_addrs(),
+                                  conn_addrs.get_conn_num(), sdb_user,
+                                  sdb_password_token, sdb_password_cipherfile);
       }
-      rc = m_connection.connect(conn_addrs.get_conn_addrs(),
-                                conn_addrs.get_conn_num(), sdb_user,
-                                password.ptr());
-    } else {
-      rc = m_connection.connect(conn_addrs.get_conn_addrs(),
-                                conn_addrs.get_conn_num(), sdb_user,
-                                sdb_password_token, sdb_password_cipherfile);
     }
+    SDB_EXCEPTION_CATCHER(rc, "Failed to connect sdb, exception:%s", e.what());
 
     if (SDB_ERR_OK != rc) {
       if (SDB_NET_CANNOT_CONNECT != rc) {
@@ -216,7 +220,11 @@ int Sdb_conn::connect() {
       if (SDB_ERR_OK != rc) {
         snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d",
                  rc);
-        m_connection.disconnect();
+        try {
+          m_connection.disconnect();
+        }
+        SDB_EXCEPTION_CATCHER(rc, "Failed to disconnect from sdb, exception:%s",
+                              e.what());
         goto error;
       }
     }
@@ -435,38 +443,42 @@ int Sdb_conn::create_cl(char *cs_name, char *cl_name,
   bool new_cl = false;
 
 retry:
-  rc = m_connection.getCollectionSpace(cs_name, cs);
-  if (SDB_DMS_CS_NOTEXIST == rc) {
-    rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
-    if (SDB_OK == rc) {
-      new_cs = true;
+  try {
+    rc = m_connection.getCollectionSpace(cs_name, cs);
+    if (SDB_DMS_CS_NOTEXIST == rc) {
+      rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+      if (SDB_OK == rc) {
+        new_cs = true;
+      }
     }
-  }
 
-  if (SDB_ERR_OK != rc && SDB_DMS_CS_EXIST != rc) {
-    goto error;
-  }
-
-  rc = cs.createCollection(cl_name, options, cl);
-  if (SDB_DMS_EXIST == rc) {
-    rc = cs.getCollection(cl_name, cl);
-    /* CS cached on sdbclient. so SDB_DMS_CS_NOTEXIST maybe retuned here. */
-  } else if (SDB_DMS_CS_NOTEXIST == rc) {
-    rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
-    if (SDB_OK == rc) {
-      new_cs = true;
-    } else if (SDB_DMS_CS_EXIST != rc) {
+    if (SDB_ERR_OK != rc && SDB_DMS_CS_EXIST != rc) {
       goto error;
     }
-    goto retry;
-  } else if (SDB_OK == rc) {
-    new_cl = true;
-  }
 
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
+    rc = cs.createCollection(cl_name, options, cl);
+    if (SDB_DMS_EXIST == rc) {
+      rc = cs.getCollection(cl_name, cl);
+      /* CS cached on sdbclient. so SDB_DMS_CS_NOTEXIST maybe retuned here. */
+    } else if (SDB_DMS_CS_NOTEXIST == rc) {
+      rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+      if (SDB_OK == rc) {
+        new_cs = true;
+      } else if (SDB_DMS_CS_EXIST != rc) {
+        goto error;
+      }
+      goto retry;
+    } else if (SDB_OK == rc) {
+      new_cl = true;
+    }
 
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to create collection cl name:%s.%s, exception:%s", cs_name,
+      cl_name, e.what());
 done:
   if (created_cs) {
     *created_cs = new_cs;
@@ -498,15 +510,20 @@ int conn_rename_cl(sdbclient::sdb *connection, char *cs_name, char *old_cl_name,
   int rc = SDB_ERR_OK;
   sdbclient::sdbCollectionSpace cs;
 
-  rc = connection->getCollectionSpace(cs_name, cs);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
+  try {
+    rc = connection->getCollectionSpace(cs_name, cs);
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
 
-  rc = cs.renameCollection(old_cl_name, new_cl_name);
-  if (rc != SDB_ERR_OK) {
-    goto error;
+    rc = cs.renameCollection(old_cl_name, new_cl_name);
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to rename collection old name:%s new name:%s, exception:%s",
+      old_cl_name, new_cl_name, e.what());
 done:
   return rc;
 error:
@@ -522,25 +539,29 @@ int conn_drop_cl(sdbclient::sdb *connection, char *cs_name, char *cl_name) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCollectionSpace cs;
 
-  rc = connection->getCollectionSpace(cs_name, cs);
-  if (rc != SDB_ERR_OK) {
-    if (SDB_DMS_CS_NOTEXIST == rc) {
-      // There is no specified collection space, igonre the error.
-      rc = 0;
-      goto done;
+  try {
+    rc = connection->getCollectionSpace(cs_name, cs);
+    if (rc != SDB_ERR_OK) {
+      if (SDB_DMS_CS_NOTEXIST == rc) {
+        // There is no specified collection space, igonre the error.
+        rc = 0;
+        goto done;
+      }
+      goto error;
     }
-    goto error;
-  }
 
-  rc = cs.dropCollection(cl_name);
-  if (rc != SDB_ERR_OK) {
-    if (SDB_DMS_NOTEXIST == rc) {
-      // There is no specified collection, igonre the error.
-      rc = 0;
-      goto done;
+    rc = cs.dropCollection(cl_name);
+    if (rc != SDB_ERR_OK) {
+      if (SDB_DMS_NOTEXIST == rc) {
+        // There is no specified collection, igonre the error.
+        rc = 0;
+        goto done;
+      }
+      goto error;
     }
-    goto error;
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to drop collection, exception:%s",
+                        e.what());
 done:
   return rc;
 error:
@@ -552,11 +573,19 @@ int Sdb_conn::drop_cl(char *cs_name, char *cl_name) {
 }
 
 int conn_drop_cs(sdbclient::sdb *connection, char *cs_name) {
-  int rc = connection->dropCollectionSpace(cs_name);
-  if (SDB_DMS_CS_NOTEXIST == rc) {
-    rc = SDB_ERR_OK;
+  int rc = SDB_ERR_OK;
+  try {
+    rc = connection->dropCollectionSpace(cs_name);
+    if (SDB_DMS_CS_NOTEXIST == rc) {
+      rc = SDB_ERR_OK;
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to drop collection space:%s, exception:%s",
+                        cs_name, e.what());
+done:
   return rc;
+error:
+  goto done;
 }
 
 int Sdb_conn::drop_cs(char *cs_name) {
@@ -777,20 +806,24 @@ int Sdb_conn::get_cl_stats_by_snapshot(char *cs_name, char *cl_name,
   if (rc != SDB_ERR_OK) {
     goto error;
   }
-  rc = cursor.next(obj, false);
-  if (SDB_DMS_EOC == rc) {
-    sprintf(main_cl_stats_sql, MAIN_CL_STATS_SQL, cs_name, cl_name);
-    rc = retry(
-        boost::bind(conn_exec, &m_connection, main_cl_stats_sql, &cursor));
+  try {
+    rc = cursor.next(obj, false);
+    if (SDB_DMS_EOC == rc) {
+      sprintf(main_cl_stats_sql, MAIN_CL_STATS_SQL, cs_name, cl_name);
+      rc = retry(
+          boost::bind(conn_exec, &m_connection, main_cl_stats_sql, &cursor));
+      if (rc != SDB_ERR_OK) {
+        goto error;
+      }
+      rc = cursor.next(obj, false);
+    }
     if (rc != SDB_ERR_OK) {
       goto error;
     }
-    rc = cursor.next(obj, false);
   }
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to move cursor to next cl name:%s.%s, exception:%s", cs_name,
+      cl_name, e.what());
   stats.page_size = obj.getField(SDB_FIELD_PAGE_SIZE).numberInt();
   stats.total_data_pages = obj.getField(SDB_FIELD_TOTAL_DATA_PAGES).numberInt();
   stats.total_index_pages =
@@ -862,7 +895,16 @@ int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
 }
 
 int conn_get_session_attr(sdbclient::sdb *connection, bson::BSONObj *option) {
-  return connection->getSessionAttr(*option);
+  int rc = SDB_ERR_OK;
+  try {
+    rc = connection->getSessionAttr(*option);
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get session attribute, exception:%s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int Sdb_conn::get_session_attr(bson::BSONObj &option) {
@@ -871,7 +913,16 @@ int Sdb_conn::get_session_attr(bson::BSONObj &option) {
 
 int conn_set_session_attr(sdbclient::sdb *connection,
                           const bson::BSONObj *option) {
-  return connection->setSessionAttr(*option);
+  int rc = SDB_ERR_OK;
+  try {
+    rc = connection->setSessionAttr(*option);
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to set session attribute, exception:%s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int Sdb_conn::set_session_attr(const bson::BSONObj &option) {
