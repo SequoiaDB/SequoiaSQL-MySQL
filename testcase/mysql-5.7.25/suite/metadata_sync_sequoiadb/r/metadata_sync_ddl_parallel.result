@@ -27,6 +27,9 @@ select @@SESSION.sql_mode;
 @@SESSION.sql_mode
 STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,TRADITIONAL,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
 set sql_mode=default;
+drop database metaSync_19228;
+show create database metaSync_19228;
+ERROR 42000: Unknown database 'metaSync_19228'
 drop database if exists metaSync_22556;
 create database if not exists metaSync_22556 character set = 'latin1';
 create table metaSync_22556.t1 (a int key auto_increment);
@@ -553,6 +556,9 @@ show create procedure meta_sync_test.p2;
 ERROR 42000: PROCEDURE p2 does not exist
 show create table meta_sync_test.t1;
 ERROR 42S02: Table 'meta_sync_test.t1' doesn't exist
+drop database meta_sync_test;
+show create database meta_sync_test;
+ERROR 42000: Unknown database 'meta_sync_test'
 drop database if exists meta_sync_22567;
 drop user if exists user_22567;
 create database meta_sync_22567;
@@ -632,3 +638,247 @@ Grants for user_22567@%
 GRANT USAGE ON *.* TO 'user_22567'@'%'
 drop database meta_sync_22567;
 drop user user_22567;
+DROP DATABASE IF EXISTS metaSync_22559_22564;
+SHOW CREATE DATABASE metaSync_22559_22564;
+ERROR 42000: Unknown database 'metaSync_22559_22564'
+CREATE DATABASE metaSync_22559_22564;
+USE metaSync_22559_22564;
+CREATE TABLE t1 ( a INT, b CHAR(8), c BLOB );
+CREATE PROCEDURE metaSync_22559_22564.p1 ( x1 char(16), x2 char(16), y int )
+BEGIN
+CREATE TABLE metaSync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
+INSERT INTO metaSync_22559_22564.t1 VALUES ( y, x1, x1 );
+INSERT INTO metaSync_22559_22564.t2 VALUES ( y, x2 );
+END|
+USE metaSync_22559_22564;
+SET @x1 = "test1";
+SET @x2 = "test2";
+SET @y = 1;
+CALL p1( @x1, @x2, @y );
+SHOW CREATE PROCEDURE p1;
+Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
+p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x1 char(16), x2 char(16), y int )
+BEGIN
+CREATE TABLE metaSync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
+INSERT INTO metaSync_22559_22564.t1 VALUES ( y, x1, x1 );
+INSERT INTO metaSync_22559_22564.t2 VALUES ( y, x2 );
+END	latin1	latin1_swedish_ci	utf8mb4_bin
+ALTER DATABASE metaSync_22559_22564 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
+ALTER TABLE t1 ADD COLUMN d DATE, MODIFY c LONGBLOB, ADD PRIMARY KEY(a);
+ALTER TABLE t2 PARTITION BY KEY (a) PARTITIONS 10;
+ALTER PROCEDURE p1
+language sql
+sql security definer
+comment 'alter procedure comment';
+SHOW CREATE DATABASE metaSync_22559_22564;
+Database	Create Database
+metaSync_22559_22564	CREATE DATABASE `metaSync_22559_22564` /*!40100 DEFAULT CHARACTER SET ucs2 */
+SHOW CREATE PROCEDURE p1;
+Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
+p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x1 char(16), x2 char(16), y int )
+    COMMENT 'alter procedure comment'
+BEGIN
+CREATE TABLE metaSync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
+INSERT INTO metaSync_22559_22564.t1 VALUES ( y, x1, x1 );
+INSERT INTO metaSync_22559_22564.t2 VALUES ( y, x2 );
+END	latin1	latin1_swedish_ci	utf8mb4_bin
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` int(11) NOT NULL,
+  `b` char(8) COLLATE utf8mb4_bin DEFAULT NULL,
+  `c` longblob,
+  `d` date DEFAULT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SHOW CREATE TABLE t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `a` int(11) DEFAULT '1',
+  `b` char(8) COLLATE utf8mb4_bin DEFAULT ''
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+/*!50100 PARTITION BY KEY (a)
+PARTITIONS 10 */
+ALTER DATABASE metaSync_22559_22564 CHARACTER SET cp1251;
+DROP TABLE t1,t2;
+DROP PROCEDURE p1;
+SHOW CREATE TABLE t1;
+ERROR 42S02: Table 'metaSync_22559_22564.t1' doesn't exist
+SHOW CREATE TABLE t2;
+ERROR 42S02: Table 'metaSync_22559_22564.t2' doesn't exist
+SHOW CREATE DATABASE metaSync_22559_22564;
+Database	Create Database
+metaSync_22559_22564	CREATE DATABASE `metaSync_22559_22564` /*!40100 DEFAULT CHARACTER SET cp1251 */
+SHOW CREATE PROCEDURE p1;
+ERROR 42000: PROCEDURE p1 does not exist
+DROP DATABASE metaSync_22559_22564;
+SHOW CREATE DATABASE metaSync_22559_22564;
+ERROR 42000: Unknown database 'metaSync_22559_22564'
+DROP DATABASE IF EXISTS metaSync_22561_22566;
+SHOW CREATE DATABASE metaSync_22561_22566;
+ERROR 42000: Unknown database 'metaSync_22561_22566'
+CREATE DATABASE metaSync_22561_22566;
+USE metaSync_22561_22566;
+CREATE TABLE t1 ( a TINYINT PRIMARY KEY, e ENUM('y','n','giveup') );
+ALTER TABLE metaSync_22561_22566.t1 MODIFY a TINYINT AUTO_INCREMENT;
+INSERT INTO metaSync_22561_22566.t1(e) VALUES ('y'),('n');
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SEQUOIADB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+USE metaSync_22561_22566;
+SHOW CREATE DATABASE metaSync_22561_22566;
+Database	Create Database
+metaSync_22561_22566	CREATE DATABASE `metaSync_22561_22566` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin */
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+  PRIMARY KEY (`a`)
+) ENGINE=SEQUOIADB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ALTER DATABASE metaSync_22561_22566 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
+ALTER TABLE t1 ADD COLUMN c CHAR(8) DEFAULT 'char';
+ALTER TABLE t1 PARTITION BY HASH (a) PARTITIONS 4;
+ALTER TABLE t1 AUTO_INCREMENT 120;
+INSERT INTO t1(e,c) VALUES ('giveup','charnew1'),('giveup','charnew2');
+SELECT * FROM t1 ORDER BY a;
+a	e	c
+1	y	char
+2	n	char
+120	giveup	charnew1
+121	giveup	charnew2
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
+  PRIMARY KEY (`a`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+/*!50100 PARTITION BY HASH (a)
+PARTITIONS 4 */
+SHOW CREATE DATABASE metaSync_22561_22566;
+Database	Create Database
+metaSync_22561_22566	CREATE DATABASE `metaSync_22561_22566` /*!40100 DEFAULT CHARACTER SET ucs2 */
+SELECT * FROM t1 ORDER BY a;
+a	e	c
+1	y	char
+2	n	char
+120	giveup	charnew1
+121	giveup	charnew2
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
+  PRIMARY KEY (`a`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+/*!50100 PARTITION BY HASH (a)
+PARTITIONS 4 */
+ALTER DATABASE metaSync_22561_22566 CHARACTER SET cp1251;
+ALTER TABLE t1 MODIFY a TINYINT;
+INSERT INTO t1(a,e) VALUES (-1, 'giveup');
+SELECT * FROM t1 ORDER BY a;
+a	e	c
+-1	giveup	char
+1	y	char
+2	n	char
+120	giveup	charnew1
+121	giveup	charnew2
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `a` tinyint(4) NOT NULL,
+  `e` enum('y','n','giveup') COLLATE utf8mb4_bin DEFAULT NULL,
+  `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
+  PRIMARY KEY (`a`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+/*!50100 PARTITION BY HASH (a)
+PARTITIONS 4 */
+SHOW CREATE DATABASE metaSync_22561_22566;
+Database	Create Database
+metaSync_22561_22566	CREATE DATABASE `metaSync_22561_22566` /*!40100 DEFAULT CHARACTER SET cp1251 */
+DROP TABLE t1;
+SHOW CREATE TABLE t1;
+ERROR 42S02: Table 'metaSync_22561_22566.t1' doesn't exist
+DROP DATABASE metaSync_22561_22566;
+SHOW CREATE DATABASE metaSync_22561_22566;
+ERROR 42000: Unknown database 'metaSync_22561_22566'
+DROP DATABASE IF EXISTS metaSync_22697;
+SHOW CREATE DATABASE metaSync_22697;
+ERROR 42000: Unknown database 'metaSync_22697'
+CREATE DATABASE metaSync_22697;
+USE metaSync_22697;
+CREATE TABLE t1 ( id INT AUTO_INCREMENT PRIMARY KEY, name CHAR(8) );
+CREATE VIEW v1 AS SELECT id FROM t1 WHERE id > 1;
+CREATE PROCEDURE metaSync_22697.p1 ( x CHAR(8) )
+BEGIN
+ALTER TABLE metaSync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
+INSERT INTO metaSync_22697.t1 VALUES ();
+INSERT INTO metaSync_22697.t1(name) VALUES (x);
+SELECT * FROM metaSync_22697.v1;
+END|
+USE metaSync_22697;
+SET @x = "Jack";
+CALL p1( @x );
+id
+2
+SHOW CREATE VIEW v1;
+View	Create View	character_set_client	collation_connection
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`x`@`%` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`id` AS `id` from `t1` where (`t1`.`id` > 1)	latin1	latin1_swedish_ci
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` char(16) COLLATE utf8mb4_bin DEFAULT 'zhangsan',
+  PRIMARY KEY (`id`)
+) ENGINE=SEQUOIADB AUTO_INCREMENT=1001 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+SELECT * FROM t1 ORDER BY id;
+id	name
+1	zhangsan
+2	Jack
+SHOW CREATE PROCEDURE p1;
+Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
+p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x CHAR(8) )
+BEGIN
+ALTER TABLE metaSync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
+INSERT INTO metaSync_22697.t1 VALUES ();
+INSERT INTO metaSync_22697.t1(name) VALUES (x);
+SELECT * FROM metaSync_22697.v1;
+END	latin1	latin1_swedish_ci	utf8mb4_bin
+ALTER ALGORITHM = MERGE DEFINER = "root"@"localhost" SQL SECURITY INVOKER VIEW v1 AS SELECT id, name FROM t1 WHERE name IS NOT NULL;
+ALTER PROCEDURE p1
+language sql
+sql security definer
+comment 'alter procedure comment';
+SHOW CREATE VIEW v1;
+View	Create View	character_set_client	collation_connection
+v1	CREATE ALGORITHM=MERGE DEFINER=`root`@`localhost` SQL SECURITY INVOKER VIEW `v1` AS select `t1`.`id` AS `id`,`t1`.`name` AS `name` from `t1` where (`t1`.`name` is not null)	latin1	latin1_swedish_ci
+SELECT * FROM v1;
+id	name
+1	zhangsan
+2	Jack
+SHOW CREATE PROCEDURE p1;
+Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
+p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x CHAR(8) )
+    COMMENT 'alter procedure comment'
+BEGIN
+ALTER TABLE metaSync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
+INSERT INTO metaSync_22697.t1 VALUES ();
+INSERT INTO metaSync_22697.t1(name) VALUES (x);
+SELECT * FROM metaSync_22697.v1;
+END	latin1	latin1_swedish_ci	utf8mb4_bin
+DROP VIEW v1;
+DROP PROCEDURE p1;
+SHOW CREATE PROCEDURE p1;
+ERROR 42000: PROCEDURE p1 does not exist
+SHOW CREATE TABLE v1;
+ERROR 42S02: Table 'metaSync_22697.v1' doesn't exist
+DROP DATABASE metaSync_22697;
+SHOW CREATE DATABASE metaSync_22697;
+ERROR 42000: Unknown database 'metaSync_22697'

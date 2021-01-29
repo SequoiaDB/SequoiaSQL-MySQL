@@ -31,6 +31,11 @@ select @@SESSION.sql_mode;
 --disable_warnings
 set sql_mode=default;
 --enable_warnings
+connection conn1;
+drop database metaSync_19228;
+connection conn2;
+--error ER_BAD_DB_ERROR
+show create database metaSync_19228;
 
 #Case 22556
 connection conn1;
@@ -517,6 +522,11 @@ show create procedure meta_sync_test.p1;
 show create procedure meta_sync_test.p2;
 --error 1146
 show create table meta_sync_test.t1;
+connection conn1;
+drop database meta_sync_test;
+connection conn2;
+--error ER_BAD_DB_ERROR
+show create database meta_sync_test;
 
 #Case 22567
 connection conn1;
@@ -604,6 +614,238 @@ show grants for user_22567;
 connection conn1;
 drop database meta_sync_22567;
 drop user user_22567;
+
+# seqDB-22559, seqDB-22564
+# begin testing
+#
+# test database, table and procedure
+connection conn1;
+--disable_warnings
+DROP DATABASE IF EXISTS metaSync_22559_22564;
+--enable_warnings
+connection conn2;
+--error ER_BAD_DB_ERROR 
+SHOW CREATE DATABASE metaSync_22559_22564;
+connection conn1;
+CREATE DATABASE metaSync_22559_22564;
+USE metaSync_22559_22564;
+# conn1 create table
+CREATE TABLE t1 ( a INT, b CHAR(8), c BLOB );
+# conn2 create procedure
+connection conn2;
+DELIMITER |;
+CREATE PROCEDURE metaSync_22559_22564.p1 ( x1 char(16), x2 char(16), y int )
+BEGIN
+  CREATE TABLE metaSync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
+  INSERT INTO metaSync_22559_22564.t1 VALUES ( y, x1, x1 );
+  INSERT INTO metaSync_22559_22564.t2 VALUES ( y, x2 );
+END|
+DELIMITER ;|
+USE metaSync_22559_22564;
+# conn1 call sp
+connection conn1;
+SET @x1 = "test1";
+SET @x2 = "test2";
+SET @y = 1;
+CALL p1( @x1, @x2, @y );
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
+SHOW CREATE PROCEDURE p1;
+# conn2 alter database
+connection conn2;
+ALTER DATABASE metaSync_22559_22564 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
+# conn1 alter table
+connection conn1;
+ALTER TABLE t1 ADD COLUMN d DATE, MODIFY c LONGBLOB, ADD PRIMARY KEY(a);
+ALTER TABLE t2 ADD SYSTEM VERSIONING;
+# conn2 alter procedure
+connection conn2;
+ALTER PROCEDURE p1
+    language sql
+    sql security definer
+    comment 'alter procedure comment';
+# check metadatas after alter 
+connection conn1;
+SHOW CREATE DATABASE metaSync_22559_22564;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
+SHOW CREATE PROCEDURE p1;
+connection conn2;
+SHOW CREATE TABLE t1;
+SHOW CREATE TABLE t2;
+# conn1 alter database
+connection conn1;
+ALTER DATABASE metaSync_22559_22564 CHARACTER SET cp1251;
+# conn2 drop table
+connection conn2;
+DROP TABLE t1,t2;
+# conn1 drop procedure
+connection conn1;
+DROP PROCEDURE p1;
+# check metadatas after alter and drop
+connection conn1;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t1;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t2;
+connection conn2;
+SHOW CREATE DATABASE metaSync_22559_22564;
+--error ER_SP_DOES_NOT_EXIST
+SHOW CREATE PROCEDURE p1;
+# clear databases in the ending
+DROP DATABASE metaSync_22559_22564;
+# check databases are cleaned in the ending
+connection conn1;
+--error ER_BAD_DB_ERROR
+SHOW CREATE DATABASE metaSync_22559_22564;
+
+# seqDB-22561, seqDB-22566
+# begin testing
+#
+# test database, table and autoincrement
+connection conn1;
+--disable_warnings
+DROP DATABASE IF EXISTS metaSync_22561_22566;
+--enable_warnings
+connection conn2;
+--error ER_BAD_DB_ERROR
+SHOW CREATE DATABASE metaSync_22561_22566;
+# conn1 create database, table
+connection conn1;
+CREATE DATABASE metaSync_22561_22566;
+USE metaSync_22561_22566;
+CREATE TABLE t1 ( a TINYINT PRIMARY KEY, e ENUM('y','n','giveup') );
+# conn2 create auto_increment
+connection conn2;
+ALTER TABLE metaSync_22561_22566.t1 MODIFY a TINYINT AUTO_INCREMENT;
+INSERT INTO metaSync_22561_22566.t1(e) VALUES ('y'),('n');
+# check metadatas after create
+connection conn1;
+SHOW CREATE TABLE t1;
+connection conn2;
+USE metaSync_22561_22566;
+SHOW CREATE DATABASE metaSync_22561_22566;
+SHOW CREATE TABLE t1;
+# conn1 alter database
+connection conn1;
+ALTER DATABASE metaSync_22561_22566 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
+# conn2 alter table
+connection conn2;
+ALTER TABLE t1 ADD COLUMN c CHAR(8) DEFAULT 'char';  
+# conn1 alter auto_increment
+connection conn1;
+ALTER TABLE t1 AUTO_INCREMENT 120;                   
+INSERT INTO t1(e,c) VALUES ('giveup','charnew1'),('giveup','charnew2');
+# check metadatas after alter
+connection conn2;
+SELECT * FROM t1 ORDER BY a;
+SHOW CREATE TABLE t1;
+SHOW CREATE DATABASE metaSync_22561_22566;
+connection conn1;
+SELECT * FROM t1 ORDER BY a;
+SHOW CREATE TABLE t1;
+# conn2 alter database
+connection conn2;
+ALTER DATABASE metaSync_22561_22566 CHARACTER SET cp1251;
+# conn1 drop auto_increment
+connection conn1;
+ALTER TABLE t1 MODIFY a TINYINT;
+INSERT INTO t1(a,e) VALUES (-1, 'giveup');
+# check metadatas after alter, drop
+connection conn2;
+SELECT * FROM t1 ORDER BY a;
+SHOW CREATE TABLE t1;
+connection conn1;
+SHOW CREATE DATABASE metaSync_22561_22566;
+# conn1 drop table
+DROP TABLE t1;
+# check metadatas after drop table
+connection conn2;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE t1;
+# clear databases in the ending
+connection conn1;
+DROP DATABASE metaSync_22561_22566;
+# check databases are cleaned in the ending
+connection conn2;
+--error ER_BAD_DB_ERROR
+SHOW CREATE DATABASE metaSync_22561_22566;
+
+# seqDB-22697 
+# begin testing
+#
+# test view and procedure
+connection conn1;
+--disable_warnings
+DROP DATABASE IF EXISTS metaSync_22697;
+--enable_warnings
+connection conn2;
+--error ER_BAD_DB_ERROR
+SHOW CREATE DATABASE metaSync_22697;
+connection conn1;
+CREATE DATABASE metaSync_22697;
+USE metaSync_22697;
+# conn1 create view
+CREATE TABLE t1 ( id INT AUTO_INCREMENT PRIMARY KEY, name CHAR(8) );
+CREATE VIEW v1 AS SELECT id FROM t1 WHERE id > 1;
+# conn2 create procedure
+connection conn2;
+DELIMITER |;
+CREATE PROCEDURE metaSync_22697.p1 ( x CHAR(8) )
+BEGIN
+  ALTER TABLE metaSync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
+  INSERT INTO metaSync_22697.t1 VALUES ();
+  INSERT INTO metaSync_22697.t1(name) VALUES (x);
+  SELECT * FROM metaSync_22697.v1;
+END|
+DELIMITER ;|
+USE metaSync_22697;
+# conn1 call procedure
+connection conn1;
+SET @x = "Jack";
+CALL p1( @x );
+# check metadatas after create
+connection conn2;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
+SHOW CREATE VIEW v1;
+SHOW CREATE TABLE t1;
+SELECT * FROM t1 ORDER BY id;
+connection conn1;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
+SHOW CREATE PROCEDURE p1;
+# conn2 alter view
+connection conn2;
+ALTER ALGORITHM = MERGE DEFINER = "root"@"localhost" SQL SECURITY INVOKER VIEW v1 AS SELECT id, name FROM t1 WHERE name IS NOT NULL;
+# conn1 alter procedure
+connection conn1;
+ALTER PROCEDURE p1
+    language sql
+    sql security definer
+    comment 'alter procedure comment';
+# check metadatas after alter 
+connection conn1;
+SHOW CREATE VIEW v1;
+SELECT * FROM v1;
+connection conn2;
+--replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
+SHOW CREATE PROCEDURE p1;
+# conn1 drop view
+connection conn1;
+DROP VIEW v1;
+# conn2 drop procedure
+connection conn2;
+DROP PROCEDURE p1;
+# check metadatas after drop
+connection conn1;
+--error ER_SP_DOES_NOT_EXIST
+SHOW CREATE PROCEDURE p1;
+connection conn2;
+--error ER_NO_SUCH_TABLE
+SHOW CREATE TABLE v1;
+# clear databases in the ending
+DROP DATABASE metaSync_22697;
+# check databases are cleaned in the ending
+connection conn1;
+--error ER_BAD_DB_ERROR
+SHOW CREATE DATABASE metaSync_22697;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
