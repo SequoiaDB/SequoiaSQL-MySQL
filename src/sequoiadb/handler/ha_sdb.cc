@@ -1254,8 +1254,7 @@ int ha_sdb::close(void) {
     void *ptr = my_hash_search(&sdb_open_tables, (uchar *)share->table_name,
                                share->table_name_length);
     share = null_ptr;
-    // Delete global share object if is the last one
-    if (ptr && 1 == (*((boost::shared_ptr<Sdb_share> *)ptr)).use_count()) {
+    if (ptr) {
       my_hash_delete(&sdb_open_tables, (uchar *)ptr);
     }
     mysql_mutex_unlock(&sdb_mutex);
