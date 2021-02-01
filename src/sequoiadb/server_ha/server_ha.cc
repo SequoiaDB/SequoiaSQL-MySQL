@@ -1083,6 +1083,17 @@ static inline void build_session_attributes(THD *thd, char *session_attrs) {
                     ",@@session.default_storage_engine=%s",
                     plugin_name(thd->variables.table_plugin)->str);
   }
+
+  // fix bug SEQUOIASQLMAINSTREAM-939
+#ifdef IS_MARIADB
+  if (SQLCOM_ALTER_TABLE == sql_command &&
+      (thd->lex->create_info.options & HA_VERSIONED_TABLE) &&
+      (thd->lex->alter_info.flags & ALTER_COLUMN_UNVERSIONED)) {
+    end += snprintf(session_attrs + end, HA_MAX_SESSION_ATTRS_LEN,
+                    ",@@session.system_versioning_alter_history=%ld",
+                    thd->variables.vers_alter_history);
+  }
+#endif
 }
 
 // update cached cata version for alter partition table
