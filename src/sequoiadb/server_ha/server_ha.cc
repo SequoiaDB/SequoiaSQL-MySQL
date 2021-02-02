@@ -2749,6 +2749,8 @@ int get_query_objects(THD *thd, ha_sql_stmt_info *sql_info) {
 
   ha_table_list *ha_tbl_list = NULL;
   switch (sql_command) {
+    // fix bug SEQUOIASQLMAINSTREAM-921
+    case SQLCOM_LOAD:
     case SQLCOM_SHOW_FIELDS:
     case SQLCOM_SHOW_KEYS:
     case SQLCOM_REPLACE:
@@ -2955,6 +2957,8 @@ inline static bool need_retry_stmt(THD *thd) {
     case SQLCOM_TRUNCATE:
     case SQLCOM_SET_OPTION:
     case SQLCOM_SHOW_TABLES:
+    // fix bug SEQUOIASQLMAINSTREAM-921
+    case SQLCOM_LOAD:
       need_retry = true;
       break;
   }
@@ -3102,6 +3106,8 @@ static inline bool need_retry_errno(uint mysql_errno) {
     case ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET:
     case ER_NON_UPDATABLE_TABLE:
     case ER_DUP_ENTRY_WITH_KEY_NAME:
+    // fix bug SEQUOIASQLMAINSTREAM-921
+    case ER_KEY_NOT_FOUND:
       need_retry = true;
   }
 
