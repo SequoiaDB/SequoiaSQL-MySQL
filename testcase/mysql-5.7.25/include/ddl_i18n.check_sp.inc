@@ -7,9 +7,11 @@ SHOW CREATE PROCEDURE p1|
 --echo
 SHOW CREATE PROCEDURE p2|
 --echo
-SHOW CREATE PROCEDURE mysqltest2.p3|
+#SHOW CREATE PROCEDURE mysqltest2.p3|
+eval SHOW CREATE PROCEDURE $MYSQLTEST2.p3|
 --echo
-SHOW CREATE PROCEDURE mysqltest2.p4|
+#SHOW CREATE PROCEDURE mysqltest2.p4|
+eval SHOW CREATE PROCEDURE $MYSQLTEST2.p4|
 
 #   - Check SHOW statement;
 
@@ -74,10 +76,12 @@ SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|
 
 --echo
 
-CALL mysqltest2.p3(@a, @b)|
+#CALL mysqltest2.p3(@a, @b)|
+eval CALL $MYSQLTEST2.p3(@a, @b)|
 SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|
 
 --echo
 
-CALL mysqltest2.p4(@a, @b)|
+#CALL mysqltest2.p4(@a, @b)|
+eval CALL $MYSQLTEST2.p4(@a, @b)|
 SELECT COLLATION(@a) AS ca, COLLATION(@b) cb|

@@ -7,9 +7,11 @@ SHOW CREATE EVENT ev1|
 --echo
 SHOW CREATE EVENT ev2|
 --echo
-SHOW CREATE EVENT mysqltest2.ev3|
+#SHOW CREATE EVENT mysqltest2.ev3|
+eval SHOW CREATE EVENT $MYSQLTEST2.ev3|
 --echo
-SHOW CREATE EVENT mysqltest2.ev3|
+#SHOW CREATE EVENT mysqltest2.ev3|
+eval SHOW CREATE EVENT $MYSQLTEST2.ev3|
 
 #   - Check SHOW statement;
 

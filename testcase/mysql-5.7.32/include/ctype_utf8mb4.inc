@@ -1,3 +1,5 @@
+let $CURRENT_DATABASE = `select database()`;
+
 #
 # Tests with the utf8mb4 character set
 #
@@ -1341,7 +1343,10 @@ ANALYZE TABLE crashtest;
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
 DROP TABLE crashtest;
 DROP DATABASE crashtest;
-USE test;
+#USE test;
+--disable_query_log
+eval USE $CURRENT_DATABASE;
+--enable_query_log
 SET CHARACTER SET default;
 
 # End of 4.1 tests

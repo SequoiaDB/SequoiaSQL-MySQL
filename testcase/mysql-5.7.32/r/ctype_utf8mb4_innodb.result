@@ -1491,7 +1491,6 @@ Warnings:
 Warning	1300	Invalid utf8mb4 character string: 'FFFFFC'
 DROP TABLE crashtest;
 DROP DATABASE crashtest;
-USE test;
 SET CHARACTER SET default;
 CREATE TABLE t1(id varchar(20) NOT NULL) DEFAULT CHARSET=utf8mb4 ENGINE SequoiaDB;
 INSERT INTO t1 VALUES ('xxx'), ('aa'), ('yyy'), ('aa');
