@@ -14,7 +14,6 @@ about:text	CREATE TABLE `about:text` (
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table `about:text`;
-use test;
 drop table if exists t1;
 create table t1(a int) engine=SequoiaDB;
 insert into t1 values(1);

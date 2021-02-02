@@ -25,7 +25,7 @@ drop table `about:text`;
 #
 # Bug#16532:mysql server assert in debug if table det is removed
 #
-use test;
+#use test;
 --disable_warnings
 drop table if exists t1;
 --enable_warnings

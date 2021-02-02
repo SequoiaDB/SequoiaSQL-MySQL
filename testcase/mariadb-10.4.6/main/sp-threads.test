@@ -17,7 +17,10 @@ connect (con2root,localhost,root,,$db);
 connect (con3root,localhost,root,,$db);
 
 connection con1root;
-use test;
+#use test;
+--disable_query_log
+eval use $db;
+--enable_query_log
 
 --disable_warnings
 drop table if exists t1;
@@ -33,7 +36,10 @@ delimiter ;//
 
 
 connection con2root;
-use test;
+#use test;
+--disable_query_log
+eval use $db;
+--enable_query_log
 
 call bug4934();
 select * from t1;
@@ -165,14 +171,20 @@ end|
 delimiter ;|
 
 connection con2root;
-use test;
+#use test;
+--disable_query_log
+eval use $db;
+--enable_query_log
 lock table t1 write;
 
 connection con1root;
 send call p2();
 
 connection con3root;
-use test;
+#use test;
+--disable_query_log
+eval use $db;
+--enable_query_log
 drop procedure p1;
 create procedure p1() select * from t1;
 
