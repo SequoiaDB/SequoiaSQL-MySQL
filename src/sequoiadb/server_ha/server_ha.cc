@@ -50,6 +50,7 @@ char *ha_inst_group_name = NULL;
 static char *ha_inst_group_key = NULL;
 static uint ha_wait_replay_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
 static uint ha_wait_recover_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
+static bool aborting_ha = false;
 
 static MYSQL_SYSVAR_STR(inst_group_name, ha_inst_group_name,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC |
@@ -87,6 +88,10 @@ struct st_mysql_sys_var *ha_sys_vars[] = {
 
 bool ha_is_open() {
   return (ha_inst_group_name && 0 != strlen(ha_inst_group_name));
+}
+
+bool ha_is_aborting() {
+  return aborting_ha;
 }
 
 static uchar *cached_record_get_key(ha_cached_record *record, size_t *length,
@@ -1580,7 +1585,8 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     if (0 == strlen(sql_info->sp_db_name)) {
       sprintf(sql_info->sp_db_name, "%s", HA_MYSQL_DB);
     }
-    if (0 == strlen(sql_info->sp_name) && SQLCOM_CREATE_FUNCTION == sql_command) {
+    if (0 == strlen(sql_info->sp_name) &&
+        SQLCOM_CREATE_FUNCTION == sql_command) {
       sprintf(sql_info->sp_name, "%s", thd->lex->udf.name.str);
     }
 
@@ -4631,6 +4637,8 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
     DBUG_RETURN(0);
   }
 #endif
+
+  aborting_ha = true;
 
   // wake up replay thread, there is no effect if
   // replay thread already exit

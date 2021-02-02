@@ -1313,9 +1313,6 @@ error:
 // before create instance group user, mysql service must been started
 static bool wait_for_mysqld_service() {
   bool mysqld_failed = false;
-#ifdef IS_MYSQL
-  extern my_thread_handle signal_thread_id;
-#endif
   mysql_mutex_lock(&LOCK_server_started);
   // end 'HA' thread as soon as possible if found mysqld failed to start
   while (!mysqld_server_started && !mysqld_failed) {
@@ -1323,13 +1320,7 @@ static bool wait_for_mysqld_service() {
     sdb_set_timespec(abstime, 1);
     mysql_cond_timedwait(&COND_server_started, &LOCK_server_started, &abstime);
     mysqld_failed |= abort_loop;
-#ifdef IS_MARIADB
-    // thread_scheduler will be set to NULL if found mysqld failed to start
-    mysqld_failed |= (NULL == thread_scheduler);
-#else
-    // signal_thread_id.thread will be set to 0 if mysqld fails
-    mysqld_failed |= (0 == signal_thread_id.thread);
-#endif
+    mysqld_failed |= ha_is_aborting();
   }
   mysql_mutex_unlock(&LOCK_server_started);
   return mysqld_failed;
@@ -1777,6 +1768,9 @@ error:
 // call kill_mysql notifies main thread to abort current instance
 void ha_kill_mysqld(THD *thd) {
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
+  if (ha_is_aborting()) {
+    return;
+  }
 #ifdef IS_MARIADB
   if (thd) {
     kill_mysql(thd);
@@ -2020,21 +2014,22 @@ void *ha_replay_pending_logs(void *arg) {
   ha_pending_log_replay_thread *replayer = (ha_pending_log_replay_thread *)arg;
   const char *group_name = replayer->sdb_group_name;
   bool stopped_mutex_locked = false;
+  bool mysqld_failed = false;
 
   THD *thd = create_ha_thd(HA_KEY_PENDING_LOG_REPLAY_THD);
   if (NULL == thd) {
     SDB_LOG_ERROR("HA: Out of memory in 'pending log replay' thread");
     ha_kill_mysqld(thd);
-    return NULL;
+    goto done;
   }
 
-  bool mysqld_failed = wait_for_mysqld_service();
+  mysqld_failed = wait_for_mysqld_service();
   if (mysqld_failed) {
     SDB_LOG_ERROR(
         "HA: The mysqld process was detected to be terminating, stop 'pending "
         "log replay' thread, please check MySQL startup log");
     ha_kill_mysqld(thd);
-    return NULL;
+    goto done;
   }
 
   sdb_set_timespec(abstime, WAIT_RECOVER_TIMEOUT);

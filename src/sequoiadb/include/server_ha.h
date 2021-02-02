@@ -228,6 +228,7 @@ typedef struct st_pending_log_replay_thread {
 } ha_pending_log_replay_thread;
 
 bool ha_is_open();
+bool ha_is_aborting();
 int ha_get_cata_version(const char *db_name, const char *table_name);
 void ha_set_cata_version(const char *db_name, const char *table_name,
                          int version);
