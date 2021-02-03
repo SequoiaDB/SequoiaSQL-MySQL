@@ -3838,6 +3838,8 @@ static void restore_state(ha_sql_stmt_info *sql_info) {
 // 5. grant rights on first instance, CRUD on another instance should succeed
 // 6. revoke/drop/grant role on first instance, operations associated with
 //    role on another instance should be as expected
+// 7. drop sequence on first instance, get sequence on another instance should
+//    fail
 static void post_wait_for_special_stmt(THD *thd, ha_sql_stmt_info *sql_info) {
   bool need_wait = false;
   int sql_command = thd_sql_command(thd);
@@ -3847,7 +3849,8 @@ static void post_wait_for_special_stmt(THD *thd, ha_sql_stmt_info *sql_info) {
                SQLCOM_DROP_TRIGGER == sql_command);
 
 #ifdef IS_MARIADB
-  need_wait = (need_wait || (SQLCOM_ALTER_SEQUENCE == sql_command ||
+  need_wait = (need_wait || (SQLCOM_DROP_SEQUENCE == sql_command ||
+                             SQLCOM_ALTER_SEQUENCE == sql_command ||
                              SQLCOM_GRANT_ROLE == sql_command ||
                              SQLCOM_DROP_ROLE == sql_command ||
                              SQLCOM_REVOKE_ROLE == sql_command));
