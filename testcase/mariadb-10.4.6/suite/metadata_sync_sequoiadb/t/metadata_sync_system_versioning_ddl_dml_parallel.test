@@ -93,29 +93,30 @@ FOR PORTION OF application_time FROM '2008-01-01' TO '2018-01-01';
 SELECT * FROM bitemporal_tab ORDER BY id;
 #BUG #SEQUOIASQLMAINSTREAM-939
 # alter system-versioning table1
-#connection conn1;
-#SET system_versioning_alter_history = KEEP;
-#ALTER TABLE sys_version1 MODIFY name varchar(127) WITHOUT SYSTEM VERSIONING, ADD COLUMN age int, algorithm=copy;
-#SET system_versioning_alter_history = DEFAULT;
+connection conn1;
+SET system_versioning_alter_history = KEEP;
+ALTER TABLE sys_version1 MODIFY name varchar(127) WITHOUT SYSTEM VERSIONING, ADD COLUMN age int, algorithm=copy;
+SET system_versioning_alter_history = DEFAULT;
 # insert
-#connection conn2;
-#INSERT INTO sys_version1(id,name,age) VALUES (1005,'Tom',1005);
-#SELECT * FROM sys_version1 ORDER BY id;
+connection conn2;
+INSERT INTO sys_version1(id,name,age) VALUES (1005,'Tom',1005);
+SELECT * FROM sys_version1 ORDER BY id;
 # alter system-versioning table2
-#connection conn1;
-#SET system_versioning_alter_history = KEEP;
-#ALTER TABLE sys_version2 ADD COLUMN z int DEFAULT -1;
-#SET system_versioning_alter_history = DEFAULT;
+connection conn1;
+SET system_versioning_alter_history = KEEP;
+ALTER TABLE sys_version2 ADD COLUMN z int DEFAULT -1;
+SET system_versioning_alter_history = DEFAULT;
 # update
-#connection conn2;
-#UPDATE sys_version2 SET y = y * 2;
-#SELECT * FROM sys_version2 FOR SYSTEM_TIME ALL ORDER BY x,y;
+connection conn2;
+UPDATE sys_version2 SET y = y * 2;
+SELECT * FROM sys_version2 FOR SYSTEM_TIME ALL ORDER BY x,y;
 # alter system-versioning table3
-#connection conn1;
-#SET system_versioning_alter_history = KEEP;
-#ALTER TABLE sys_version3 DROP COLUMN y;
-#SET system_versioning_alter_history = DEFAULT;
-# select
+connection conn1;
+SET system_versioning_alter_history = KEEP;
+ALTER TABLE sys_version3 DROP COLUMN y;
+SET system_versioning_alter_history = DEFAULT;
+#BUG #SEQUOIASQLMAINSTREAM-949
+## select
 #connection conn2;
 #SELECT * FROM sys_version3 ORDER BY x;
 # alter application-time periods table1
@@ -132,26 +133,26 @@ ALTER TABLE period_tab2 DROP PERIOD FOR dt_period;
 connection conn2;
 SELECT * FROM period_tab2 ORDER BY id;
 # alter bitemporal table
-#connection conn1;
-#SET system_versioning_alter_history = KEEP;
-#ALTER TABLE bitemporal_tab ADD COLUMN age int, CHANGE name name varchar(127);
-#SET system_versioning_alter_history = DEFAULT; 
-## DML
-#connection conn2;
-#DELETE FROM bitemporal_tab
-#FOR PORTION OF application_time FROM '2008-01-01' TO '2010-10-10';
-#INSERT INTO bitemporal_tab(name,age,date_1,date_2) VALUES ('TOM', 20, '2020-01-01', '2021-01-01');
-#SELECT * FROM bitemporal_tab ORDER BY id;
-#SELECT * FROM bitemporal_tab FOR SYSTEM_TIME ALL ORDER BY id,name;
-#connection conn1;
-#SET system_versioning_alter_history = KEEP;
-#ALTER TABLE bitemporal_tab DROP PERIOD FOR application_time;
-#SET system_versioning_alter_history = DEFAULT; 
-## DML
-#connection conn2;
-#SELECT * FROM bitemporal_tab FOR SYSTEM_TIME ALL ORDER BY id,name;
-#UPDATE bitemporal_tab SET name = 'update after drop period' WHERE id > 2;
-#SELECT * FROM bitemporal_tab FOR SYSTEM_TIME ALL ORDER BY id,name;
+connection conn1;
+SET system_versioning_alter_history = KEEP;
+ALTER TABLE bitemporal_tab ADD COLUMN age int, CHANGE name name varchar(127);
+SET system_versioning_alter_history = DEFAULT; 
+# DML
+connection conn2;
+DELETE FROM bitemporal_tab
+FOR PORTION OF application_time FROM '2008-01-01' TO '2010-10-10';
+INSERT INTO bitemporal_tab(name,age,date_1,date_2) VALUES ('TOM', 20, '2020-01-01', '2021-01-01');
+SELECT * FROM bitemporal_tab ORDER BY id;
+SELECT * FROM bitemporal_tab FOR SYSTEM_TIME ALL ORDER BY id,name;
+connection conn1;
+SET system_versioning_alter_history = KEEP;
+ALTER TABLE bitemporal_tab DROP PERIOD FOR application_time;
+SET system_versioning_alter_history = DEFAULT; 
+# DML
+connection conn2;
+SELECT * FROM bitemporal_tab FOR SYSTEM_TIME ALL ORDER BY id,name;
+UPDATE bitemporal_tab SET name = 'update after drop period' WHERE id > 2;
+SELECT * FROM bitemporal_tab FOR SYSTEM_TIME ALL ORDER BY id,name;
 # drop system-versioning table1
 connection conn1;
 DROP TABLE sys_version1;
