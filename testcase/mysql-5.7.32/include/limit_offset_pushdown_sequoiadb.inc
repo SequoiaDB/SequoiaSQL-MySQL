@@ -62,9 +62,9 @@ UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
 DELETE FROM t2 LIMIT 2;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-23020
-EXPLAIN SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+EXPLAIN SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 --sorted_result
-SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 --source include/query_pushdown_condition_sequoiadb.inc
 EXPLAIN SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 --sorted_result

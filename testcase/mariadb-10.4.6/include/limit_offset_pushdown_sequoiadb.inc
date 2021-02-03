@@ -63,9 +63,9 @@ DELETE FROM t2 LIMIT 2;
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-23020
 #BUG #SEQUOIASQLMAINSTREAM-833
-EXPLAIN SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+EXPLAIN SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 --sorted_result
-SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 #BUG #SEQUOIASQLMAINSTREAM-833
 --source include/query_pushdown_condition_sequoiadb.inc
 #BUG #SEQUOIASQLMAINSTREAM-833
@@ -75,9 +75,9 @@ SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 #BUG #SEQUOIASQLMAINSTREAM-833
 --source include/query_pushdown_condition_sequoiadb.inc
 #seqDB-23021
-EXPLAIN SELECT * FROM t1 WHERE id IN (1,2,6,11) LIMIT 1,2;
+EXPLAIN SELECT * FROM t1 WHERE id IN (1,2,6) LIMIT 1,2;
 --sorted_result
-SELECT * FROM t1 WHERE id IN (1,2,6,11) LIMIT 1,2;
+SELECT * FROM t1 WHERE id IN (1,2,6) LIMIT 1,2;
 --source include/query_pushdown_condition_sequoiadb.inc
 EXPLAIN SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
 --sorted_result

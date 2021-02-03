@@ -8060,30 +8060,30 @@ UPDATE t1 SET a = -99 WHERE id < 10 LIMIT 4;
 [Note] SequoiaDB: Query message: condition[{ "id": { "$lt": 10 } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[-1], offset[0]
 DELETE FROM t2 LIMIT 2;
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
-EXPLAIN SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+EXPLAIN SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	8	Using sort_union(id,c); Using where with pushed condition
-SELECT * FROM t1 WHERE id > 4 OR c > 'bc' LIMIT 1,2;
+1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	5	Using sort_union(id,c); Using where with pushed condition
+SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 id	a	c
-5	-9	001
-6	15	9a
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$gt": 4 } }, { "c": { "$gt": "bc" } } ] }, { "c": { "$gt": "bc" } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+1], offset[0], mrr[1]
+2	-99	bc
+3	-99	123
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$lt": 4 } }, { "c": { "$lte": "bc" } } ] }, { "c": { "$isnull": 0 } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+1], offset[0], mrr[1]
 EXPLAIN SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	8	Using sort_union(id,c); Using where with pushed condition
+1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	5	Using sort_union(id,c); Using where with pushed condition
 SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 id	a	c
 4	-99	tf
 8	5	jk
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$lte": 4 } }, { "c": { "$gt": "abc" } } ] }, { "c": { "$gt": "abc" } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+3], offset[0], mrr[1]
-EXPLAIN SELECT * FROM t1 WHERE id IN (1,2,6,11) LIMIT 1,2;
+EXPLAIN SELECT * FROM t1 WHERE id IN (1,2,6) LIMIT 1,2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	id	id	4	NULL	8	Using where with pushed condition
-SELECT * FROM t1 WHERE id IN (1,2,6,11) LIMIT 1,2;
+1	SIMPLE	t1	range	id	id	4	NULL	6	Using where with pushed condition
+SELECT * FROM t1 WHERE id IN (1,2,6) LIMIT 1,2;
 id	a	c
 2	-99	bc
 6	15	9a
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$in": [ 1, 2, 6, 11 ] } }, { "id": { "$et": 6 } } ] }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[2+1], offset[0], mrr[1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$in": [ 1, 2, 6 ] } }, { "id": { "$et": 6 } } ] }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[2+1], offset[0], mrr[1]
 EXPLAIN SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ALL	c	NULL	NULL	NULL	11	Using where with pushed condition
@@ -13582,8 +13582,8 @@ x	10
 SELECT count(1) FROM t1 WHERE id >= 4;
 count(1)
 5
-[Note] SequoiaDB: optimizer count: 1, condition: { "$and": [ { "id": { "$gte": 4 } }, { "id": { "$gte": 4 } } ] }
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gte": 4 } }, { "id": { "$gte": 4 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
+[Note] SequoiaDB: optimizer count: 1, condition: { "id": { "$gte": 4 } }
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gte": 4 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
 SELECT count(name) FROM t1 WHERE id <= 3;
 count(name)
 5
