@@ -8,7 +8,7 @@
 #Case 22387#Case 22388#Case 22389#Case 18648#Case 14743#Case 14744#Case 14745#Case 14746#Case 14747#Case 14748#Case 14749
 #Case 14750#Case 14751#Case 14752#Case 14753#Case 14754#Case 14755#Case 14756#Case 14757#Case 22578#Case 22759#Case 22760
 #Case 22761#Case 22762#Case 22763#Case 22764#Case 22765#Case 22766#Case 22767#Case 22768#Case 22769#Case 22770#Case 22771
-#Case 23037
+#Case 23037#Case 23510#Case 23511#Case 23512#Case 23513#Case 23514#Case 23515#Case 23516#Case 23517#Case 23521
 --source include/have_sequoiadb.inc
 
 CREATE DATABASE query_pushdown_test_sequoiadb;
@@ -57,6 +57,11 @@ create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ au
 # FIELD NAME CASE SENSITIVITY PUSHDOWN TESTING
 #
 --source include/field_name_sensitivity_pushdown_sequoiadb.inc
+
+#
+# QUERY FOR COUNT TESTING
+#
+--source include/count_pushdown_sequoiadb.inc
 
 DROP DATABASE query_pushdown_test_sequoiadb;
 

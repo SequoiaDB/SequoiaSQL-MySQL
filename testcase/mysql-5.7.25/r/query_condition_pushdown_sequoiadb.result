@@ -14990,4 +14990,105 @@ ID	col2
 6	test6
 [Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "id": { "$first": "$id" }, "COL2": { "$first": "$COL2" }, "_id": { "id": "$id", "COL2": "$COL2" } } }], sort[{ "$sort": { "id": 1, "COL2": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
 DROP TABLE t1;
+CREATE TABLE t1 ( id int primary key, age int, name varchar(32), key(age) );
+INSERT INTO t1 VALUES (1,10,'Joe'),(-1,6,'Jack'),(2,15,'Tom'),(0,12,'Mary'),(10,8,'Bob'),(5,13,'Sam'),(8,20,'Jerry'),(3,18,'David');
+INSERT INTO t1(id,age) VALUES (4,10),(7,16);
+SELECT count(1) FROM t1;
+count(1)
+10
+[Note] SequoiaDB: optimizer count: 1, condition: {}
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
+SELECT count(id) FROM t1;
+count(id)
+10
+[Note] SequoiaDB: optimizer count: 1, condition: { "id": { "$isnull": 0 } }
+[Note] SequoiaDB: Query message: condition[{ "id": { "$isnull": 0 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
+SELECT count(*) FROM t1;
+count(*)
+10
+[Note] SequoiaDB: optimizer count: 1, condition: {}
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
+SELECT count(id + age) FROM t1;
+count(id + age)
+10
+SELECT id, count(*) FROM t1;
+id	count(*)
+x	10
+[Note] SequoiaDB: optimizer count: 1, condition: {}
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
+SELECT count(1) FROM t1 WHERE id >= 4;
+count(1)
+5
+[Note] SequoiaDB: optimizer count: 1, condition: { "$and": [ { "id": { "$gte": 4 } }, { "id": { "$gte": 4 } } ] }
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gte": 4 } }, { "id": { "$gte": 4 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
+SELECT count(name) FROM t1 WHERE id <= 3;
+count(name)
+5
+[Note] SequoiaDB: optimizer count: 1, condition: { "name": { "$isnull": 0 }, "id": { "$lte": 3 } }
+[Note] SequoiaDB: Query message: condition[{ "name": { "$isnull": 0 }, "id": { "$lte": 3 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
+SELECT count(*) FROM t1 WHERE name != "Bob" AND id < 5;
+count(*)
+5
+[Note] SequoiaDB: optimizer count: 1, condition: { "$and": [ { "name": { "$ne": "Bob" } }, { "id": { "$lt": 5 } } ] }
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "name": { "$ne": "Bob" } }, { "id": { "$lt": 5 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
+SELECT count(1) FROM t1 WHERE LENGTH(name) > id;
+count(1)
+5
+SELECT count(*) FROM t1 WHERE name = CONCAT(id, "_test");
+count(*)
+0
+SELECT count(id) FROM t1 WHERE name IS NULL;
+count(id)
+2
+SELECT count(*) FROM t1 WHERE name IS NOT NULL;
+count(*)
+8
+SELECT count(1) FROM t1 ORDER BY id;
+count(1)
+10
+SELECT count(name) FROM t1 GROUP BY name;
+count(name)
+0
+1
+1
+1
+1
+1
+1
+1
+1
+SELECT count(*) FROM t1 WHERE id > 1 ORDER BY id,name;
+count(*)
+7
+SELECT count(*) FROM t1 WHERE id > 1 GROUP BY id,name;
+count(*)
+1
+1
+1
+1
+1
+1
+1
+EXPLAIN SELECT count(*) FROM t1 WHERE id in(1,2);
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	range	PRIMARY	PRIMARY	4	NULL	2	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`id` in (1,2)); Using index
+Warnings:
+Note	1003	/* select#1 */ select count(0) AS `count(*)` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`id` in (1,2))
+SELECT count(*) FROM t1 WHERE id in(1,2);
+count(*)
+2
+EXPLAIN SELECT count(name) FROM t1 WHERE id <= 3 OR age > 18;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index_merge	PRIMARY,age	PRIMARY,age	4,5	NULL	9	100.00	Using sort_union(PRIMARY,age); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`id` <= 3) or (`query_pushdown_test_sequoiadb`.`t1`.`age` > 18))
+Warnings:
+Note	1003	/* select#1 */ select count(`query_pushdown_test_sequoiadb`.`t1`.`name`) AS `count(name)` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`id` <= 3) or (`query_pushdown_test_sequoiadb`.`t1`.`age` > 18))
+SELECT count(name) FROM t1 WHERE id <= 3 OR age > 18;
+count(name)
+6
+CREATE TABLE t2 ( id int primary key, course varchar(32) );
+INSERT INTO t2 VALUES (1,'Math'),(-1,'English'),(2,'Chinese'),(20,'Sport'),(10,'Japanese'),(21,'Music');
+SELECT count(*) as sum FROM t1,t2 WHERE t1.id = t2.id;
+sum
+4
+DROP TABLE t1,t2;
 DROP DATABASE query_pushdown_test_sequoiadb;
