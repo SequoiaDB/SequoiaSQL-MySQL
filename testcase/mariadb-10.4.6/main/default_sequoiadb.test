@@ -1,4 +1,4 @@
-#Case 20326 #Case 22103 #Case 23412
+#Case 20326 #Case 22103
 
 create database test_default;
 use test_default;
@@ -28,7 +28,14 @@ update t1 set i3 = ignore where i3 = -1000;
 update t1 set i4 = ignore where i4 = -10000;
 update t1 set i5 = ignore where i5 = -100000;
 select * from t1 order by i1;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+create table t2 ( id tinyint, a smallint default (id+1) ) ;
+insert into t2 values (1,default),(3,default),(-1,default);
+select * from t2 order by id;
+alter table t2 add column b int default (a+id+1);
+insert into t2(id) values (10),(-10);
+select * from t2 order by id;
+drop table t1,t2;
 
 # integer unsigned
 create table t1 ( id int default 0 ) ;
@@ -55,7 +62,14 @@ update t1 set i3 = ignore where i3 = 1111;
 update t1 set i4 = ignore where i4 = 11111;
 update t1 set i5 = ignore where i5 = 111111;
 select * from t1 order by i1;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+create table t2 ( id tinyint unsigned, a smallint unsigned default (id+1) ) ;
+insert into t2 values (1,default),(3,default),(5,default);
+select * from t2 order by id;
+alter table t2 add column b int unsigned default (a+id+1);
+insert into t2(id) values (10),(2);
+select * from t2 order by id;
+drop table t1,t2;
 
 # float and float unsigned
 create table t1 ( id int default 0 ) ;
@@ -79,7 +93,15 @@ update t1 set f2 = ignore where f2 = 1.111;
 update t1 set d1 = ignore where d1 = -2.222;
 update t1 set d2 = ignore where d2 = 2.222;
 select * from t1 order by f1;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+create table t2 ( f1 float, f2 float default (f1+1.1), d1 double, d2 double default (d1-1.0) ) ;
+insert into t2 values (1.234,default,1.234,default),(3.456,default,3.456,default),(5.678,default,5.678,default);
+select * from t2 order by f1;
+alter table t2 add column f3 float default (f1+f2);
+alter table t2 add column d3 double default (d1+d2);
+insert into t2(f1,d1) values (10.01,10.01),(11.11,11.11);
+select * from t2 order by f1;
+drop table t1,t2;
 
 # char and varchar
 create table t1 ( id int auto_increment primary key ) ;
@@ -97,7 +119,14 @@ select * from t1 order by id;
 update t1 set c1 = ignore where c1 = 'b1';
 update t1 set c2 = ignore where c2 = 'b12';
 select * from t1 order by id;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+create table t2 ( id int, ch char(32) default concat('No: ', id) ) ;
+insert into t2 values (1,default),(3,default),(10,default);
+select * from t2 order by id;
+alter table t2 add column vc varchar(32) default concat(ch, '~~hello');
+insert into t2(id) values (8),(9);
+select * from t2 order by id;
+drop table t1,t2;
 
 # binary and varbinary
 create table t1 ( id int auto_increment primary key ) ;
@@ -115,7 +144,14 @@ select * from t1 order by id;
 update t1 set b1 = ignore where b1 = 'b1';
 update t1 set b2 = ignore where b2 = 'b12';
 select * from t1 order by id;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+create table t2 ( id int, b binary(32) default concat('No: ', id) ) ;
+insert into t2 values (1,default),(3,default),(10,default);
+select * from t2 order by id;
+alter table t2 add column vb varbinary(255) default concat(b, '~~hello');
+insert into t2(id) values (8),(9);
+select id,b from t2 order by id;
+drop table t1,t2;
 
 # bit
 create table t1 ( id int auto_increment primary key ) ;
@@ -154,7 +190,14 @@ update t1 set b2 = ignore where b2 = 'b11';
 update t1 set b3 = ignore where b3 = 'b12';
 update t1 set b4 = ignore where b4 = 'b13';
 select * from t1 order by id;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+create table t2 ( id int, b blob default concat('No: ', id) ) ;
+insert into t2 values (1,default),(3,default),(10,default);
+select * from t2 order by id;
+alter table t2 add column b1 blob default concat(b, '~~hello');
+insert into t2(id) values (8),(9);
+select * from t2 order by id;
+drop table t1,t2;
 
 # text
 create table t1 ( id int auto_increment primary key ) ;
@@ -178,7 +221,14 @@ update t1 set c2 = ignore where c2 = 'b11';
 update t1 set c3 = ignore where c3 = 'b12';
 update t1 set c4 = ignore where c4 = 'b13';
 select * from t1 order by id;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+create table t2 ( id int, tx text default concat('No: ', id) ) ;
+insert into t2 values (1,default),(3,default),(10,default);
+select * from t2 order by id;
+alter table t2 add column tx1 text default concat(tx, '~~hello');
+insert into t2(id) values (8),(9);
+select * from t2 order by id;
+drop table t1,t2;
 
 # set and enum
 create table t1 ( id int auto_increment primary key ) ;
@@ -196,7 +246,11 @@ select * from t1 order by id;
 update t1 set s1 = ignore where s1 = 'f,1';
 update t1 set e1 = ignore where e1 = 'e';
 select * from t1 order by id;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+create table t2 ( id int, e1 enum('0','a','1','b'), s1 set('a','b','c','d','0','1','2') default concat(e1, ',1,a') ) ;
+insert into t2 values (1,'b',default),(3,'0',default),(10,'a',default);
+select * from t2 order by id;
+drop table t1,t2;
 
 # date, datetime, time and timestamp
 create table t1 ( id int auto_increment primary key ) ;
@@ -220,22 +274,16 @@ update t1 set d2 = ignore where d2 = '2020-01-01 00:00:00';
 update t1 set d3 = ignore where d3 = '23:59:59';
 update t1 set d4 = ignore where d4 = '2019-11-11 11:11:11';
 select * from t1 order by id;
-drop table t1;
-
-# seqDB-23412
-# default with expr
-create table t1 ( id int default (1+1+1), id1 int default (id + 1), id2 int ) ;
-show create table t1;
-insert into t1(id2) values (1),(2),(3),(4),(5);
-insert into t1 values (-1,-1,-1),(0,0,0);
-select * from t1 order by id,id2;
-alter table t1 modify id1 int default (id + 2), modify id2 int default (id * 2);
---error ER_ALTER_OPERATION_NOT_SUPPORTED
-alter table t1 add id3 int default (id+3), algorithm = inplace;
-show create table t1;
-insert into t1 values (),(),();
-insert into t1 values (-9,-9,-9);
-select * from t1 order by id,id2;
-drop table t1;
+#BUG #SEQUOIASQLMAINSTREAM-546
+CREATE TABLE t2 (a DATE, b INT, c DATE DEFAULT DATE_ADD(a, INTERVAL b DAY));
+CREATE TABLE t3 (a DATE, b TIME, c DATETIME DEFAULT ADDTIME(a, b));
+INSERT INTO t2 VALUES ('2021-01-01', 1, DEFAULT),('2021-02-01', 2, DEFAULT);
+INSERT INTO t3 VALUES ('2021-01-01', '10:10:10', DEFAULT),('2021-02-01', '10:20:30', DEFAULT);
+SELECT * FROM t2 ORDER BY a;
+SELECT * FROM t3 ORDER BY a;
+ALTER TABLE t2 ADD COLUMN d TIME DEFAULT SEC_TO_TIME(b);
+INSERT INTO t2 VALUES ('2021-03-01', 2378, DEFAULT, DEFAULT);
+SELECT * FROM t2 ORDER BY a;
+drop table t1,t2,t3;
 
 drop database test_default;
