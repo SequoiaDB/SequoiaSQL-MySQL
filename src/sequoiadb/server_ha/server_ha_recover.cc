@@ -669,7 +669,7 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
     // check if candidated instance is avaliable
     if (is_mysql_available(ip, port, ha_inst_group_user,
                            ha_inst_group_passwd)) {
-      snprintf(dump_source.dump_host, HA_MAX_IP_LEN, "%s", ip);
+      snprintf(dump_source.dump_host, HA_MAX_IP_LEN + 1, "%s", ip);
       snprintf(dump_source.dump_files[0], FN_REFLEN, "%s/non_sysdb.sql",
                mysql_real_data_home_ptr);
       snprintf(dump_source.dump_files[1], FN_REFLEN, "%s/sysdb.sql",
