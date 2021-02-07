@@ -227,6 +227,21 @@ else()
    message(STATUS "Directory ${SPK_PLUGIN_DIR} dose not exist")
 endif()
 
+# Add ld flag on libmysql_api_test.
+set(LIB_MYSQL_CMAKE_LIST "${SQL_SOURCE_ROOT}/libmysql/CMakeLists.txt")
+set(grep_cmd "grep -wn LIBMYSQL_API_TEST_LDFLAGS ${LIB_MYSQL_CMAKE_LIST} | wc -l")
+execute_process(COMMAND bash -c ${grep_cmd} OUTPUT_VARIABLE IS_ADDED)
+string(STRIP ${IS_ADDED} IS_ADDED)
+if(IS_ADDED STREQUAL "0")
+  set(addText "set(LIBMYSQL_API_TEST_LDFLAGS \"-Wl,-rpath,\${CMAKE_CURRENT_BINARY_DIR}\")\\n\
+set_target_properties(libmysql_api_test PROPERTIES LINK_FLAGS \${LIBMYSQL_API_TEST_LDFLAGS})")
+  set(sedCmd "sed -i '$a\\${addText}' ${LIB_MYSQL_CMAKE_LIST}")
+  execute_process(COMMAND bash -c ${sedCmd})
+endif()
+
+#set(LIBMYSQL_API_TEST_LDFLAGS "-Wl,-rpath,${CMAKE_CURRENT_BINARY_DIR}")
+#set_target_properties(libmysql_api_test PROPERTIES LINK_FLAGS ${LIBMYSQL_API_TEST_LDFLAGS})
+
 # Fix compilation problem of innodb with gcc 4.8.5 in ARM64
 # Refer SEQUOIADBMAINSTREAM-5417
 if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" AND

@@ -210,6 +210,9 @@ class OptionsMgr:
         if self.args.excludetest:
             cmake_arguments.append('-DPACK_TEST=OFF')
 
+        # build without rpath.
+        cmake_arguments.append('-DCMAKE_SKIP_RPATH=TRUE')
+
         print("cmake configuration arguments: {}"
               .format(' '.join(cmake_arguments)))
         return cmake_arguments

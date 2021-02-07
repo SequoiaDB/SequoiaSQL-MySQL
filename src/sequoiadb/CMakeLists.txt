@@ -51,8 +51,7 @@ endif()
 message(STATUS "SDB_INCLUDE_DIR = ${SDB_INCLUDE_DIR}")
 include_directories(${SDB_INCLUDE_DIR})
 
-set(SDB_LDFLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
-
+set(SDB_LDFLAGS "-Wl,-rpath,$ORIGIN/../lib")
 if(SDB_BUILT_IN)
   set(_SDB_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
   set(CMAKE_FIND_LIBRARY_SUFFIXES "")
@@ -127,19 +126,21 @@ if(WITH_BOOST)
   set_target_properties(ha_inst_group_init PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
   set_target_properties(ha_inst_group_init PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
   target_link_libraries(ha_inst_group_init sdbcpp ssl crypto dl pthread)
+  set_target_properties(ha_inst_group_init PROPERTIES LINK_FLAGS ${SDB_LDFLAGS})
 
   # build ha_inst_group_clear
   add_executable(ha_inst_group_clear tools/ha_inst_group_clear.cc tools/ha_tool_utils.cc)
   set_target_properties(ha_inst_group_clear PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
   set_target_properties(ha_inst_group_clear PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
   target_link_libraries(ha_inst_group_clear sdbcpp ssl crypto dl pthread)
+  set_target_properties(ha_inst_group_clear PROPERTIES LINK_FLAGS ${SDB_LDFLAGS})
 
   # build ha_inst_group_list
   add_executable(ha_inst_group_list tools/ha_inst_group_list.cc tools/ha_tool_utils.cc)
   set_target_properties(ha_inst_group_list PROPERTIES COMPILE_FLAGS ${HA_TOOLS_FLAGS})
   set_target_properties(ha_inst_group_list PROPERTIES INCLUDE_DIRECTORIES "${HA_TOOLS_INCLUDE}")
   target_link_libraries(ha_inst_group_list sdbcpp ssl crypto dl pthread)
-
+  set_target_properties(ha_inst_group_list PROPERTIES LINK_FLAGS ${SDB_LDFLAGS})
   install(TARGETS ha_inst_group_init ha_inst_group_clear ha_inst_group_list
           RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 endif()

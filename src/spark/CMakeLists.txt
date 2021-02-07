@@ -36,7 +36,7 @@ if(MYSQL STREQUAL "5.7.25" OR MYSQL STREQUAL "5.7.32" OR MARIADB)
   include_directories(include)
 
   add_compile_options(-Wno-unused-variable -Wno-unused-function -Wno-write-strings -Wno-return-type)
-  set(SPK_LDFLAGS "-Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib")
+  set(SPK_LDFLAGS "-Wl,-rpath,$ORIGIN/../lib")
   MYSQL_ADD_PLUGIN(spark ${SPARK_SOURCES} 
                   STORAGE_ENGINE
                   MANDATORY
