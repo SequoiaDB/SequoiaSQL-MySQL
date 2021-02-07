@@ -12,7 +12,7 @@ DROP SERVER IF EXISTS metaSync_s2;
 
 # connect to conn2, check servers are cleaned in the beginning
 connection conn2;
---sleep $sleep
+--sleep 5
 SELECT * FROM mysql.servers;
 
 # seqDB-22541

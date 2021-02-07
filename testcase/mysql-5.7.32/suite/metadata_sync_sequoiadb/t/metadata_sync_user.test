@@ -17,12 +17,16 @@ FLUSH PRIVILEGES;
 # connect to conn2, check users are cleaned in the beginning
 #Bug #SEQUOIASQLMAINSTREAM-933
 connection conn2;
---sleep 5
-SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1';
-SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2';
-SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user3';
-SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1_new';
-SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2_new';
+--error ER_NONEXISTING_GRANT
+SHOW GRANTS FOR 'metaSync_user1'@'localhost';
+--error ER_NONEXISTING_GRANT
+SHOW GRANTS FOR 'metaSync_user2'@'localhost';
+--error ER_NONEXISTING_GRANT
+SHOW GRANTS FOR 'metaSync_user3'@'localhost';
+--error ER_NONEXISTING_GRANT
+SHOW GRANTS FOR 'metaSync_user1_new'@'localhost';
+--error ER_NONEXISTING_GRANT
+SHOW GRANTS FOR 'metaSync_user2_new'@'localhost';
 
 # seqDB-18871
 # seqDB-18865
@@ -41,13 +45,12 @@ FLUSH PRIVILEGES;
 # check metadatas after create
 #Bug #SEQUOIASQLMAINSTREAM-933
 connection conn2;
---sleep 5
-SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
-SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
-SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user3';
 SHOW GRANTS FOR 'metaSync_user1'@'localhost';
 SHOW GRANTS FOR 'metaSync_user2'@'localhost';
 SHOW GRANTS FOR 'metaSync_user3'@'localhost';
+SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
+SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
+SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user3';
 # alter user
 RENAME USER 'metaSync_user1'@'localhost' TO 'metaSync_user1_new'@'localhost', 'metaSync_user2'@'localhost' TO 'metaSync_user2_new'@'localhost';
 ALTER USER IF EXISTS 'metaSync_user1_new'@'localhost' PASSWORD EXPIRE;
@@ -57,21 +60,26 @@ FLUSH PRIVILEGES;
 # check metadatas after alter
 #Bug #SEQUOIASQLMAINSTREAM-933
 connection conn1;
---sleep 5
+SHOW GRANTS FOR 'metaSync_user1_new'@'localhost';
+SHOW GRANTS FOR 'metaSync_user3'@'localhost';
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1';
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2';
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user1_new';
 SELECT user, host, password_expired, max_user_connections, ssl_type, plugin FROM mysql.user WHERE user = 'metaSync_user2_new';
-SHOW GRANTS FOR 'metaSync_user1_new'@'localhost';
 # drop user
-DROP USER IF EXISTS'metaSync_user1_new'@'localhost';
+DROP USER IF EXISTS 'metaSync_user1_new'@'localhost';
 DROP USER 'metaSync_user2_new'@'localhost';
 DROP USER 'metaSync_user3'@'localhost';
 FLUSH PRIVILEGES;
 # check metadatas after drop
 #Bug #SEQUOIASQLMAINSTREAM-933
 connection conn2;
---sleep 5
+--error ER_NONEXISTING_GRANT
+SHOW GRANTS FOR 'metaSync_user1_new'@'localhost';
+--error ER_NONEXISTING_GRANT
+SHOW GRANTS FOR 'metaSync_user2_new'@'localhost';
+--error ER_NONEXISTING_GRANT
+SHOW GRANTS FOR 'metaSync_user3'@'localhost';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user1_new';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user2_new';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metaSync_user3';
