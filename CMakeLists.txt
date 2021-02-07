@@ -209,6 +209,18 @@ else()
    message(STATUS "Directory ${SDB_PLUGIN_DIR} dose not exist")
 endif()
 
+# Add ld flag on libmysql_api_test.
+set(LIB_MYSQL_CMAKE_LIST "${SQL_SOURCE_ROOT}/libmysql/CMakeLists.txt")
+set(grep_cmd "grep -wn LIBMYSQL_API_TEST_LDFLAGS ${LIB_MYSQL_CMAKE_LIST} | wc -l")
+execute_process(COMMAND bash -c ${grep_cmd} OUTPUT_VARIABLE IS_ADDED)
+string(STRIP ${IS_ADDED} IS_ADDED)
+if(IS_ADDED STREQUAL "0")
+  set(addText "set(LIBMYSQL_API_TEST_LDFLAGS \"-Wl,-rpath,\${CMAKE_CURRENT_BINARY_DIR}\")\\n\
+set_target_properties(libmysql_api_test PROPERTIES LINK_FLAGS \${LIBMYSQL_API_TEST_LDFLAGS})")
+  set(sedCmd "sed -i '$a\\${addText}' ${LIB_MYSQL_CMAKE_LIST}")
+  execute_process(COMMAND bash -c ${sedCmd})
+endif()
+
 set(mapSrcCmd "ln -sf ${SQL_CONNECTOR_DIR} ${SQL_STORAGE_DIR}/sequoiadb")
 execute_process(COMMAND bash -c ${mapSrcCmd})
 
