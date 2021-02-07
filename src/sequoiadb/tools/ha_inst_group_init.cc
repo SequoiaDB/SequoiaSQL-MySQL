@@ -156,6 +156,42 @@ static int check_sequoiadb_version(sdbclient::sdb &conn) {
   return rc;
 }
 
+static int check_if_transaction_on(sdbclient::sdb &conn, bool &transaction_on) {
+  int rc = 0;
+  sdbclient::sdbCursor cursor;
+  bson::BSONObj obj, cond, selected;
+
+  static const char *SDB_HA_TOOL_FIELD_GLOBAL = "global";
+  static const char *SDB_HA_TOOL_TRANS_ON = "transactionon";
+  static const char *SDB_HA_TRUE_STR = "TRUE";
+
+  try {
+    cond = BSON(SDB_HA_TOOL_FIELD_GLOBAL << false);
+    selected = BSON(SDB_HA_TOOL_TRANS_ON << "");
+    rc = conn.getSnapshot(cursor, SDB_SNAP_CONFIGS, cond, selected);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to get snapshot, sequoiadb error: %s",
+                     ha_sdb_error_string(conn, rc));
+
+    rc = cursor.next(obj);
+    HA_TOOL_RC_CHECK(
+        rc, rc, "Error: failed to fetch snapshot result, sequoiadb error: %s",
+        ha_sdb_error_string(conn, rc));
+
+    if (!obj.isEmpty()) {
+      const char *trans_on = obj.getStringField(SDB_HA_TOOL_TRANS_ON);
+      transaction_on = (0 == strcmp(SDB_HA_TRUE_STR, trans_on));
+    } else {
+      cout << "Error: can't find transaction info from snapshot" << endl;
+      rc = SDB_HA_EXCEPTION;
+    }
+  } catch (std::exception &e) {
+    cerr << "Error: unexpected error: " << e.what() << endl;
+    rc = SDB_HA_EXCEPTION;
+  }
+  return rc;
+}
+
 static int init_config(const string &name, ha_inst_group_config_cl &st_config,
                        const string &key, bool verbose = false) {
   string password_md5_hex_str, name_md5_hex_str;
@@ -245,6 +281,17 @@ int main(int argc, char *argv[]) {
     rc = check_sequoiadb_version(conn);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to check sequoiadb version");
 
+    bool transaction_on = true;
+    rc = check_if_transaction_on(conn, transaction_on);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to check if transaction is on");
+
+    if (!transaction_on) {
+      cout << "Error: instance group function is only supported when "
+              "'transactionon' is on in SequoiaDB"
+           << endl;
+      return SDB_HA_EXCEPTION;
+    }
+
     // check if instance group already exists
     sdbclient::sdbCollectionSpace inst_group_cs;
     rc = conn.getCollectionSpace(cmd_args.inst_group_name.c_str(),
@@ -266,6 +313,7 @@ int main(int argc, char *argv[]) {
     sdbclient::sdbCollection inst_group_config_cl;
     sdbclient::sdbCollection sql_log_cl;
     bson::BSONObj options, record, index_ref, key_options;
+    bson::BSONObjBuilder builder;
 
     // create global configuration database 'HASysGlobalInfo' if necessary
     rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
@@ -317,10 +365,14 @@ int main(int argc, char *argv[]) {
                      cmd_args.inst_group_name.c_str(), HA_CONFIG_CL, sdb_err);
 
     // create 'HASQLLog' collection
-    options = BSON(SDB_FIELD_NAME_AUTOINCREMENT
-                   << BSON(SDB_FIELD_NAME_FIELD << HA_FIELD_SQL_ID
-                                                << SDB_FIELD_ACQUIRE_SIZE << 1
-                                                << SDB_FIELD_CACHE_SIZE << 1));
+    bson::BSONObjBuilder sub_builder(
+        builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+    sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_SQL_ID);
+    sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
+    sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
+    sub_builder.doneFast();
+    options = builder.done();
+
     rc = inst_group_cs.createCollection(HA_SQL_LOG_CL, options, sql_log_cl);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
@@ -338,14 +390,18 @@ int main(int argc, char *argv[]) {
                      HA_SQL_LOG_CL, sdb_err);
 
     // init 'HAConfig'
-    record = BSON(HA_FIELD_AUTH_STRING
-                  << ha_config.auth_str << HA_FIELD_HOST << HA_MYSQL_AUTH_HOSTS
-                  << HA_FIELD_IV << ha_config.iv << HA_FIELD_CIPHER_PASSWORD
-                  << ha_config.cipher_password << HA_FIELD_PLUGIN
-                  << HA_MYSQL_PASSWORD_PLUGIN << HA_FIELD_USER << ha_config.user
-                  << HA_FIELD_MD5_PASSWORD << ha_config.md5_password
-                  << HA_FIELD_EXPLICITS_DEFAULTS_TIMESTAMP
-                  << ha_config.explicit_defaults_ts);
+    builder.reset();
+    builder.append(HA_FIELD_AUTH_STRING, ha_config.auth_str);
+    builder.append(HA_FIELD_HOST, HA_MYSQL_AUTH_HOSTS);
+    builder.append(HA_FIELD_IV, ha_config.iv);
+    builder.append(HA_FIELD_CIPHER_PASSWORD, ha_config.cipher_password);
+    builder.append(HA_FIELD_PLUGIN, HA_MYSQL_PASSWORD_PLUGIN);
+    builder.append(HA_FIELD_USER, ha_config.user);
+    builder.append(HA_FIELD_MD5_PASSWORD, ha_config.md5_password);
+    builder.append(HA_FIELD_EXPLICITS_DEFAULTS_TIMESTAMP,
+                   ha_config.explicit_defaults_ts);
+    record = builder.done();
+
     rc = inst_group_config_cl.insert(record);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
@@ -354,10 +410,14 @@ int main(int argc, char *argv[]) {
                      orig_name.c_str(), HA_CONFIG_CL, sdb_err);
 
     // init 'HASQLLog'
-    record =
-        BSON(HA_FIELD_DB << HA_EMPTY_STRING << HA_FIELD_TABLE << HA_EMPTY_STRING
-                         << HA_FIELD_SQL << HA_EMPTY_STRING << HA_FIELD_OWNER
-                         << 0 << HA_FIELD_SQL_ID << 0);
+    builder.reset();
+    builder.append(HA_FIELD_DB, HA_EMPTY_STRING);
+    builder.append(HA_FIELD_TABLE, HA_EMPTY_STRING);
+    builder.append(HA_FIELD_SQL, HA_EMPTY_STRING);
+    builder.append(HA_FIELD_OWNER, 0);
+    builder.append(HA_FIELD_SQL_ID, 0);
+    record = builder.done();
+
     rc = sql_log_cl.insert(record);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
