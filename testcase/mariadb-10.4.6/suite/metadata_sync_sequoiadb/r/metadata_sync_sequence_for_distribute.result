@@ -264,6 +264,8 @@ nextval(s2)
 connection conn1;
 DROP SEQUENCE s2;
 connection conn2;
+SELECT nextval(s2);
+ERROR 42S02: Table 'metaSync_seq.s2' doesn't exist
 connection conn1;
 DROP DATABASE metaSync_seq;
 connection conn2;

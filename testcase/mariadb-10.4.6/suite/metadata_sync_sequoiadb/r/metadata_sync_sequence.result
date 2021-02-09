@@ -127,6 +127,10 @@ SHOW CREATE TABLE seq3;
 ERROR 42S02: Table 'metaSync_seq_22934.seq3' doesn't exist
 SHOW CREATE TABLE seq3_new;
 ERROR 42S02: Table 'metaSync_seq_22934.seq3_new' doesn't exist
+SELECT nextval(seq2);
+ERROR 42S02: Table 'metaSync_seq_22934.seq2' doesn't exist
+SELECT * FROM seq3;
+ERROR 42S02: Table 'metaSync_seq_22934.seq3' doesn't exist
 connection conn1;
 DROP DATABASE metaSync_seq_22934;
 connection conn2;

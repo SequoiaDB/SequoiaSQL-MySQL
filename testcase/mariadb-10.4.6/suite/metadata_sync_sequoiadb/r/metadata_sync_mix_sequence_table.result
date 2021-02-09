@@ -59,6 +59,8 @@ id1
 1012
 DROP SEQUENCE /* drop sequence */ seq1;
 connection conn1;
+INSERT INTO t1 VALUES ();
+ERROR 42S02: Table 'metaSync_mix_seq_table.seq1' doesn't exist
 DROP TABLE t1;
 SHOW CREATE TABLE seq1;
 ERROR 42S02: Table 'metaSync_mix_seq_table.seq1' doesn't exist

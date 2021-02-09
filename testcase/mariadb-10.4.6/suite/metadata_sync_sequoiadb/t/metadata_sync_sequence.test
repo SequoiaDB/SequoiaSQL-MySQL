@@ -85,10 +85,11 @@ SHOW CREATE TABLE seq3;
 --error ER_NO_SUCH_TABLE
 SHOW CREATE TABLE seq3_new;
 #BUG #SEQUOIASQLMAINSTREAM-870
-#--error ER_NO_SUCH_TABLE
-#SELECT nextval(seq2);
-#--error ER_NO_SUCH_TABLE
-#SELECT * FROM seq3;
+#BUG #SEQUOIASQLMAINSTREAM-830
+--error ER_NO_SUCH_TABLE
+SELECT nextval(seq2);
+--error ER_NO_SUCH_TABLE
+SELECT * FROM seq3;
 
 # clear databases in the ending
 connection conn1;
