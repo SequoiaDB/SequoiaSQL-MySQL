@@ -202,7 +202,7 @@ function exec_cmd_with_print()
       msg=$(su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;$cmd" 2>&1)
       rc=$?
       if test -n "$msg"; then
-          su - $SQL_USER -c "echo -e '$msg' >> $log_file 2>&1"
+          su - $SQL_USER -c "echo -e \"$msg\" >> $log_file 2>&1"
       fi
    else
       msg=$(eval "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;${cmd}" 2>&1)
