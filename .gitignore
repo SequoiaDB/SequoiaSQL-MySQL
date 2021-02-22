@@ -8,6 +8,7 @@ default.release.done
 *.cmake
 libsequoiadb*.*
 sdbvertool
+version
 
 build/
 sql-src/
