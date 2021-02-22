@@ -3932,6 +3932,19 @@ done:
   return;
 }
 
+// check if current statement contains view
+static bool has_view_in_stmt(THD *thd) {
+  TABLE_LIST *dml_tables = sdb_lex_first_select(thd)->get_table_list();
+  bool has_view = false;
+  for (TABLE_LIST *tbl = dml_tables; tbl; tbl = tbl->next_global) {
+    if (tbl->is_view()) {
+      has_view = true;
+      break;
+    }
+  }
+  return has_view;
+}
+
 // entry of audit plugin
 static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                             const void *ev) {
@@ -3977,11 +3990,13 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       }
 
       set_retry_flags(thd, sql_info);
-      // for sql like "set m:= select " including tables, in routines,
-      // 'mysql_execute_command' will not be called, so query objects
-      // need to be checked before next retry.
-      if (SQLCOM_SET_OPTION == thd->lex->sql_command &&
-          NULL == thd->lex->sroutines_list.first) {
+      // 1. for sql like "set m:= select " including tables, in routines,
+      //   'mysql_execute_command' will not be called, so query objects
+      //   need to be checked before next retry.
+      // 2. used to fix bug SEQUOIASQLMAINSTREAM-909
+      if ((SQLCOM_SET_OPTION == thd->lex->sql_command &&
+           NULL == thd->lex->sroutines_list.first) ||
+          has_view_in_stmt(thd)) {
         rc = wait_latest_state_before_query(thd, sql_info, event_class, event);
         if (rc) {
           goto error;
