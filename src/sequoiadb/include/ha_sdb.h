@@ -501,6 +501,9 @@ class ha_sdb : public handler {
   /*add current table share to open_table_share */
   int add_share_to_open_table_shares(THD *thd);
 
+  /*delete current table share from open_table_share */
+  void delete_share_from_open_table_shares(THD *thd);
+
   int get_found_updated_rows(bson::BSONObj &result, ulonglong *found,
                              ulonglong *updated);
 

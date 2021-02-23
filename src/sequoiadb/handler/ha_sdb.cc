@@ -1253,8 +1253,10 @@ int ha_sdb::close(void) {
     mysql_mutex_lock(&sdb_mutex);
     void *ptr = my_hash_search(&sdb_open_tables, (uchar *)share->table_name,
                                share->table_name_length);
+    delete_share_from_open_table_shares(ha_thd());
     share = null_ptr;
-    if (ptr) {
+    // Delete global share object only if nobody referred.
+    if (ptr && 1 == (*((boost::shared_ptr<Sdb_share> *)ptr)).use_count()) {
       my_hash_delete(&sdb_open_tables, (uchar *)ptr);
     }
     mysql_mutex_unlock(&sdb_mutex);
@@ -6220,6 +6222,7 @@ void ha_sdb::update_incr_stat(int incr) {
 
 int ha_sdb::add_share_to_open_table_shares(THD *thd) {
   DBUG_ENTER("ha_sdb::add_share_to_open_table_shares");
+  int rc = 0;
 
   if (!sdb_use_transaction(thd)) {
     incr_stat = &non_tran_stat;
@@ -6227,38 +6230,53 @@ int ha_sdb::add_share_to_open_table_shares(THD *thd) {
     DBUG_PRINT("info", ("in non-tran mode without open_table_shares"));
   } else {
     Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
-    HASH_SEARCH_STATE state;
     const Sdb_share *key = share.get();
-    THD_SDB_SHARE *thd_sdb_share = (THD_SDB_SHARE *)my_hash_first(
-        &thd_sdb->open_table_shares, (const uchar *)key, sizeof(key), &state);
+    THD_SDB_SHARE *thd_sdb_share = (THD_SDB_SHARE *)my_hash_search(
+        &thd_sdb->open_table_shares, (const uchar *)key, sizeof(key));
 
-    while (thd_sdb_share && thd_sdb_share->share_ptr.get() != share.get()) {
-      thd_sdb_share = (THD_SDB_SHARE *)my_hash_next(
-          &thd_sdb->open_table_shares, (const uchar *)key, sizeof(key), &state);
-    }
-
-    if (thd_sdb_share == 0) {
+    if (NULL == thd_sdb_share) {
       thd_sdb_share =
           (THD_SDB_SHARE *)sdb_trans_alloc(thd, sizeof(THD_SDB_SHARE));
-      if (!thd_sdb_share) {
-        my_error(ER_OUTOFMEMORY, MYF(ME_FATALERROR),
-                 static_cast<int>(sizeof(THD_SDB_SHARE)));
-        DBUG_RETURN(1);
+      if (NULL == thd_sdb_share) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
       }
 
-      memset(&thd_sdb_share->share_ptr, 0,
-             sizeof(boost::shared_ptr<Sdb_share>));
+      new (&thd_sdb_share->share_ptr) boost::shared_ptr<Sdb_share>();
       thd_sdb_share->share_ptr = share;
       thd_sdb_share->stat.no_uncommitted_rows_count = 0;
-      my_hash_insert(&thd_sdb->open_table_shares, (uchar *)thd_sdb_share);
+      if (my_hash_insert(&thd_sdb->open_table_shares, (uchar *)thd_sdb_share)) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
     }
     incr_stat = &thd_sdb_share->stat;
   }
 
   DBUG_PRINT("info",
              ("key: %p, stat.no_uncommitted_rows_count: %d, handler: %p.",
-              share.get(), int(incr_stat->no_uncommitted_rows_count), this));
-  DBUG_RETURN(0);
+              share.get(), incr_stat->no_uncommitted_rows_count, this));
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+void ha_sdb::delete_share_from_open_table_shares(THD *thd) {
+  DBUG_ENTER("ha_sdb::delete_share_from_open_table_shares");
+
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  const Sdb_share *key = share.get();
+
+  if (thd_sdb && key) {
+    THD_SDB_SHARE *thd_sdb_share = (THD_SDB_SHARE *)my_hash_search(
+        &thd_sdb->open_table_shares, (const uchar *)key, sizeof(key));
+    if (thd_sdb_share) {
+      my_hash_delete(&thd_sdb->open_table_shares, (uchar *)thd_sdb_share);
+    }
+  }
+
+  DBUG_VOID_RETURN;
 }
 
 void ha_sdb::filter_options(const bson::BSONObj &options,
