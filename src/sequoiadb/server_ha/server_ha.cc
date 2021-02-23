@@ -3152,6 +3152,11 @@ static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
     SDB_LOG_DEBUG("HA: Set result set started flag to true for %s",
                   sdb_thd_query(thd));
     sql_info->is_result_set_started = true;
+  } else if (SQLCOM_SELECT == thd_sql_command(thd) &&
+      get_sdb_code(mysql_errno) == SDB_DMS_NOTEXIST) {
+    // if sql command is 'SQLCOM_SELECT', the metadata has been sent to client
+    // if the error message is "collection does not exist"
+    sql_info->is_result_set_started = true;
   }
 
   if (need_retry_stmt(thd) &&
