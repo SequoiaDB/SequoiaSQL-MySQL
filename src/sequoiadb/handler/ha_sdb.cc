@@ -4669,7 +4669,7 @@ int ha_sdb::info(uint flag) {
     ulonglong cur_value = 0;
     ulonglong auto_inc_val = 0;
     my_bool initial = false;
-    char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 2] = {0};
+    char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
 
     rc = check_sdb_in_thd(thd, &conn, true);
     if (0 != rc) {
@@ -5923,10 +5923,10 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   bson::BSONObj up_bound;
   bson::BSONObj attach_options;
   const char *upper_scl_name = NULL;
-  char upper_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  char upper_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
 
   char mcl_name[SDB_CL_NAME_MAX_SIZE] = {0};
-  char mcl_full_name[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  char mcl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   Sdb_cl main_cl;
 
   char *sep = strstr(part_name, SDB_PART_SEP);
@@ -6265,8 +6265,12 @@ error:
 void ha_sdb::delete_share_from_open_table_shares(THD *thd) {
   DBUG_ENTER("ha_sdb::delete_share_from_open_table_shares");
 
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  Thd_sdb *thd_sdb = NULL;
   const Sdb_share *key = share.get();
+
+  if (thd) {
+    thd_sdb = thd_get_thd_sdb(thd);
+  }
 
   if (thd_sdb && key) {
     THD_SDB_SHARE *thd_sdb_share = (THD_SDB_SHARE *)my_hash_search(

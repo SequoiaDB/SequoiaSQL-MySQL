@@ -972,7 +972,7 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
   uint curr_part_id = 0;
   char *cs_name = const_cast<char *>(mcl.get_cs_name());
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-  char scl_fullname[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  char scl_fullname[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   bool created_cl = false;
 
   List_iterator_fast<partition_element> part_it(part_info->partitions);
@@ -1340,7 +1340,7 @@ int ha_sdb_part::detach_and_attach_scl(Sdb_cl &mcl) {
   List_iterator<partition_element> part_it;
   partition_element *part_elem = NULL;
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-  char scl_fullname[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  char scl_fullname[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   uint curr_part_id = 0;
   bson::BSONObj attach_options;
 
@@ -1960,11 +1960,9 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
     memcpy(new_name, scl_name, SDB_CL_NAME_MAX_SIZE + 1);
     m_new_part_id2cl_name.insert(
         std::pair<uint, char *>(new_part_id, new_name));
-  } catch (std::exception e) {
-    SDB_LOG_ERROR("Failed to create new partition, exception:%s", e.what());
-    rc = HA_ERR_OUT_OF_MEM;
-    goto error;
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to create new partition, exception:%s",
+                        e.what());
 
 done:
   DBUG_RETURN(rc);

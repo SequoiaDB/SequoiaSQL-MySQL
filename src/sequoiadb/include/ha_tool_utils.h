@@ -130,8 +130,6 @@ struct BIOFreeAll {
 };
 }  // namespace
 
-static int getch();
-
 std::string ha_get_password(const char *prompt, bool show_asterisk);
 
 std::string ha_base64_encode(const std::vector<uchar> &binary);

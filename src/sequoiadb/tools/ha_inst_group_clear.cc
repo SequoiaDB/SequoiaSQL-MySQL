@@ -346,7 +346,6 @@ int main(int argc, char *argv[]) {
   string orig_name;
   sdbclient::sdb conn;
   ha_tool_args cmd_args;
-  bool no_passwd_login = false;
   bool clear_instance = false;
   string instance;
 

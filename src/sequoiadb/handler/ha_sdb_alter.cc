@@ -2319,7 +2319,7 @@ int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *cs_name,
   DBUG_ENTER("sdb_extra_cl_option_from_snap");
 
   int rc = 0;
-  char fullname[SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  char fullname[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   snprintf(fullname, SDB_CL_FULL_NAME_MAX_SIZE, "%s.%s", cs_name, cl_name);
   // It is assumed that in most cases the len of fullname will be less than 64.
   // And maybe extra 15 bytes here, but nerver mind the exactly correct size,

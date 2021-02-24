@@ -35,7 +35,7 @@
 #include "ha_tool_utils.h"
 
 using namespace std;
-int getch() {
+static int getch() {
   int ch;
   struct termios t_old, t_new;
 
