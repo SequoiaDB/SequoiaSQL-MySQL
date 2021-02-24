@@ -2749,6 +2749,7 @@ int get_query_objects(THD *thd, ha_sql_stmt_info *sql_info) {
 
   ha_table_list *ha_tbl_list = NULL;
   switch (sql_command) {
+    case SQLCOM_ANALYZE:
     // fix bug SEQUOIASQLMAINSTREAM-921
     case SQLCOM_LOAD:
     case SQLCOM_SHOW_FIELDS:
@@ -3109,6 +3110,9 @@ static inline bool need_retry_errno(uint mysql_errno) {
     // fix bug SEQUOIASQLMAINSTREAM-921
     case ER_KEY_NOT_FOUND:
       need_retry = true;
+      break;
+    default:
+      break;
   }
 
   // set retry flag on current statement for getting correct error
@@ -3153,7 +3157,7 @@ static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
                   sdb_thd_query(thd));
     sql_info->is_result_set_started = true;
   } else if (SQLCOM_SELECT == thd_sql_command(thd) &&
-      get_sdb_code(mysql_errno) == SDB_DMS_NOTEXIST) {
+             get_sdb_code(mysql_errno) == SDB_DMS_NOTEXIST) {
     // if sql command is 'SQLCOM_SELECT', the metadata has been sent to client
     // if the error message is "collection does not exist"
     sql_info->is_result_set_started = true;
@@ -3208,12 +3212,16 @@ static inline bool need_pre_check_stmt(int sql_command) {
     case SQLCOM_SHOW_FUNC_CODE:
     case SQLCOM_CALL:
     case SQLCOM_CHANGE_DB:
+    case SQLCOM_ANALYZE:
 #ifdef IS_MARIADB
     case SQLCOM_SHOW_CREATE_PACKAGE:
     case SQLCOM_SHOW_CREATE_PACKAGE_BODY:
     case SQLCOM_SHOW_PACKAGE_BODY_CODE:
 #endif
       need_check_first = true;
+      break;
+    default:
+      break;
   }
   return need_check_first;
 }
