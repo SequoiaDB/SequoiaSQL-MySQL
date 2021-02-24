@@ -741,14 +741,8 @@ SELECT Name, Country, Population FROM City WHERE
 (Name='Samara' AND Country='RUS') OR  
 (Name='Seattle' AND Country='USA');
 Name	Country	Population
-Toronto	CAN	688275
-Vancouver	CAN	514008
-Basel	CHE	166700
-Peking	CHN	7472000
-Praha	CZE	1181126
-Dresden	DEU	476668
 Addis Abeba	ETH	2495000
-Paris	FRA	2125246
+Manila	PHL	1581082
 Jakarta	IDN	9604900
 Delhi	IND	7206704
 Bangalore	IND	2660088
@@ -756,18 +750,24 @@ Teheran	IRN	6758845
 Roma	ITA	2643581
 Venezia	ITA	277305
 Tokyo	JPN	7980230
+Toronto	CAN	688275
+Vancouver	CAN	514008
+Peking	CHN	7472000
 Seoul	KOR	9981619
 Kaunas	LTU	412639
 Rabat	MAR	623457
 Tijuana	MEX	1212232
 Lagos	NGA	1518000
-Manila	PHL	1581082
-Samara	RUS	1156100
+Paris	FRA	2125246
+Dresden	DEU	476668
 Dakar	SEN	785071
+Basel	CHE	166700
+Praha	CZE	1181126
 Ankara	TUR	3038159
 Lugansk	UKR	469000
-Seattle	USA	563374
 Caracas	VEN	1975294
+Samara	RUS	1156100
+Seattle	USA	563374
 set optimizer_switch='index_merge=off';
 SELECT Name, Country, Population FROM City WHERE
 (Name='Manila' AND Country='PHL') OR
@@ -807,8 +807,8 @@ Dresden	DEU	476668
 Addis Abeba	ETH	2495000
 Paris	FRA	2125246
 Jakarta	IDN	9604900
-Delhi	IND	7206704
 Bangalore	IND	2660088
+Delhi	IND	7206704
 Teheran	IRN	6758845
 Roma	ITA	2643581
 Venezia	ITA	277305

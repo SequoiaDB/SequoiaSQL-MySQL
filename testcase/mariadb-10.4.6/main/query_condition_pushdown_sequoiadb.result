@@ -8062,7 +8062,7 @@ DELETE FROM t2 LIMIT 2;
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 EXPLAIN SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	5	Using sort_union(id,c); Using where with pushed condition
+1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	7	Using sort_union(id,c); Using where with pushed condition
 SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 id	a	c
 2	-99	bc
@@ -8070,7 +8070,7 @@ id	a	c
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$lt": 4 } }, { "c": { "$lte": "bc" } } ] }, { "c": { "$isnull": 0 } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+1], offset[0], mrr[1]
 EXPLAIN SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	5	Using sort_union(id,c); Using where with pushed condition
+1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	7	Using sort_union(id,c); Using where with pushed condition
 SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 id	a	c
 4	-99	tf
@@ -13638,12 +13638,12 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 SELECT count(*) FROM t1 WHERE id in(1,2);
 count(*)
 2
-EXPLAIN SELECT count(name) FROM t1 WHERE id <= 3 OR age > 18;
+EXPLAIN SELECT count(name) FROM t1 WHERE id = 3 OR age > 18;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	PRIMARY,age	PRIMARY,age	4,5	NULL	9	Using sort_union(PRIMARY,age); Using where with pushed condition
-SELECT count(name) FROM t1 WHERE id <= 3 OR age > 18;
+1	SIMPLE	t1	index_merge	PRIMARY,age	PRIMARY,age	4,5	NULL	8	Using sort_union(PRIMARY,age); Using where with pushed condition
+SELECT count(name) FROM t1 WHERE id = 3 OR age > 18;
 count(name)
-6
+2
 CREATE TABLE t2 ( id int primary key, course varchar(32) );
 INSERT INTO t2 VALUES (1,'Math'),(-1,'English'),(2,'Chinese'),(20,'Sport'),(10,'Japanese'),(21,'Music');
 SELECT count(*) as sum FROM t1,t2 WHERE t1.id = t2.id;

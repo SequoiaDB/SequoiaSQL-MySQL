@@ -56,8 +56,8 @@ EXPLAIN SELECT count(*) FROM t1 WHERE id in(1,2);
 SELECT count(*) FROM t1 WHERE id in(1,2);
 #seqDB-23516
 #index_merge
-EXPLAIN SELECT count(name) FROM t1 WHERE id <= 3 OR age > 18;
-SELECT count(name) FROM t1 WHERE id <= 3 OR age > 18;
+EXPLAIN SELECT count(name) FROM t1 WHERE id = 3 OR age > 18;
+SELECT count(name) FROM t1 WHERE id = 3 OR age > 18;
 #seqDB-23517
 #multi tables
 CREATE TABLE t2 ( id int primary key, course varchar(32) );
