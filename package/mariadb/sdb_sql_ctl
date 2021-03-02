@@ -424,6 +424,9 @@ function delete_inst()
 
    #clear instance information from sequoiadb
    clear_inst_configuration
+   if [ $? != 0 ]; then
+      echo "Failed to clear up instance group configuration. Please delete it manually"
+   fi
 
    #delete file
    . $CONF_INST_PATH/$INST_NAME.conf
@@ -759,7 +762,15 @@ function clear_inst_configuration()
 {
    #clear registration configuration for current instance
    # awk -F'#' '{print $1}' used to remove comments at the end of the line
-   if [ -f "$BIN_PATH/ha_inst_group_clear" ]; then
+   if [ -f "$BIN_PATH/ha_inst_group_clear" -a -f "$SQLDATA/myid" ]; then
+      local connection_str=""
+      local instance_id=`cat $SQLDATA/myid 2>>/dev/null`
+
+      if [ -z $instance_id ]; then
+         echo "Failed to get instance ID from 'myid' file. It's empty"
+         return 1
+      fi
+
       # get instance group name from configuration file
       local inst_group_name=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*server_ha_inst_group_name"`
       inst_group_name=${inst_group_name#*=}
@@ -771,17 +782,6 @@ function clear_inst_configuration()
          sdb_user=${sdb_user#*=}
          test "${sdb_user:0:1}" == '"' && sdb_user=${sdb_user:1:-1}
 
-         local instance_id=`cat $SQLDATA/myid`
-         local identity=""
-         # set instance id or instance host
-         if [ "$instance_id" ]; then
-           identity="--inst_id $instance_id"
-         else
-           local port=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*port" | awk -F'=' '{print $NF }'`
-           local host_name=`hostname`
-           identity="--inst_host '$host_name:$port'"
-         fi
-
          #if user exists
          if [ "$sdb_user" ]; then
             # get instance group password from configuration file
@@ -790,7 +790,7 @@ function clear_inst_configuration()
             test "${sdb_password:0:1}" == '"' && sdb_password=${sdb_password:1:-1}
 
             if [ "$sdb_password" ]; then
-               $BIN_PATH/ha_inst_group_clear $inst_group_name $identity --user=$sdb_user --password=$sdb_password --force >>/dev/null 2>&1
+               connection_str="--user=$sdb_user --password=$sdb_password"
             else
                # get cipherfile from configuration file
                local sdb_cipherfile=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_cipherfile"`
@@ -801,17 +801,29 @@ function clear_inst_configuration()
                sdb_token=${sdb_token#*=}
                test "${sdb_token:0:1}" == '"' && sdb_token=${sdb_token:1:-1}
 
-               local auth=""
-               test "$sdb_cipherfile" == "" || auth="--file $sdb_cipherfile"
-               $BIN_PATH/ha_inst_group_clear $inst_group_name $identity --user=$sdb_user $auth --token="$sdb_token" --force >>/dev/null 2>&1
+               local cipherfile=""
+               test "$sdb_cipherfile" == "" || cipherfile="--file $sdb_cipherfile"
+               connection_str="--user=$sdb_user $cipherfile --token=$sdb_token"
             fi
-         else
-            $BIN_PATH/ha_inst_group_clear $inst_group_name $identity --force >>/dev/null 2>&1
          fi
 
-         #prompt user to manually delete instance configuration in the instance group
+         list_str=$($BIN_PATH/ha_inst_group_list --name=$inst_group_name $connection_str 2>&1)
          if [ $? != 0 ]; then
-            echo "Failed to clear instance configuration from instance group, please use 'ha_inst_group_clear' to clear it manually"
+            # echo error message if mode is 'leave', do not print error message if mode is 'delinst'
+            if [ "$mode" == "leave" ]; then
+               echo "$list_str"
+            fi
+            return 1
+         fi
+
+         local inst_exists_in_group=`echo $list_str | grep " $instance_id " 2>>/dev/null`
+         if [ "$inst_exists_in_group" ]; then
+            $BIN_PATH/ha_inst_group_clear $inst_group_name --inst_id $instance_id $connection_str --force >>/dev/null 2>&1
+            #prompt user to manually delete instance configuration in the instance group
+            if [ $? != 0 ]; then
+               echo "Failed to clear instance configuration from instance group. Please use 'ha_inst_group_clear' to clear it manually"
+               return 1
+            fi
          fi
       fi
    fi
@@ -845,6 +857,17 @@ function join_inst_group()
             exit 0
             ;;
       esac
+   fi
+
+   # get instance group name from configuration file
+   local inst_group_name=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*server_ha_inst_group_name"`
+   inst_group_name=${inst_group_name#*=}
+   test "${inst_group_name:0:1}" == '"' && inst_group_name=${inst_group_name:1:-1}
+
+   # check if current instance exists in instance group
+   if [ "$inst_group_name" != "" -a "$inst_group_name" == "$INST_GROUP_NAME" ]; then
+      echo "Instance '$INST_NAME' already exists in instance group '$INST_GROUP_NAME'"
+      exit 31
    fi
 
    # set instance group name
@@ -890,8 +913,28 @@ function leave_inst_group()
       esac
    fi
 
+   # get instance group name from configuration file
+   local inst_group_name=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*server_ha_inst_group_name"`
+   inst_group_name=${inst_group_name#*=}
+   test "${inst_group_name:0:1}" == '"' && inst_group_name=${inst_group_name:1:-1}
+
+   # check if current instance exists in instance group
+   if [ "$inst_group_name" == "" ]; then
+      echo "Instance '$INST_NAME' does not belong any instance group"
+      exit 32
+   fi
+
+   if [ "$inst_group_name" != "$INST_GROUP_NAME" ]; then
+      echo "Instance '$INST_NAME' does not belong instance group '$INST_GROUP_NAME'"
+      exit 32
+   fi
+
    #clear instance configuration
    clear_inst_configuration
+   if [ $? != 0 ]; then
+      echo "Failed to clear up instance group configuration"
+      exit 33
+   fi
 
    #restart instance if it's running
    get_one_status $INST_NAME >> /dev/null

@@ -284,7 +284,7 @@ int ha_parse_password(const string &user, const string &token,
                       const string &orig_file_name, string &password) {
   int rc = 0;
   ifstream crypt_ifs;
-  string line, file_user, mix_cipher, file_name;
+  string line, file_user, mix_cipher, file_name = orig_file_name;
   size_t split_pos;
   bool found = false;
   static const char *USER_DIRECTORY = "HOME";
