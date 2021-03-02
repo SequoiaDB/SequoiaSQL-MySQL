@@ -77,11 +77,19 @@ function check_svcname_available()
 {
    local inst_port=$1
    local sql_log=$2
+   local exp_available=$3
    
    netstat -npa | awk '{print $4}' | awk -F : '{print $NF}' | grep -w $inst_port
    local rc=$?
-   test $rc -eq 0 && exec_cmd_with_print "echo \"ERROR: instance port $inst_port is already in use\"" "$sql_log"
-   test $rc -eq 0 && { echo "ERROR: Fail to check svcname available, please verify log $sql_log" >&2 && return 11; }
+   if [ $rc == 0 -a $exp_available == false  ]; then
+      exec_cmd_with_print "echo \"ERROR: instance port $inst_port is already in use\"" "$sql_log"
+      echo "ERROR: Fail to check svcname available, please verify log $sql_log" >&2
+      return 11
+   fi
+   
+   if [ $rc == 0 -a $exp_available == true ]; then
+      return 11
+   fi
    return 0
 }
 
@@ -312,7 +320,7 @@ function add_inst()
    fi
    
    check_inst_exist $INST_NAME false
-   check_svcname_available $PORT $SQL_LOG
+   check_svcname_available $PORT $SQL_LOG false
    local ret=$?
    test $ret -ne 0 && { exit $ret; }
    
@@ -583,7 +591,7 @@ function start_inst()
    
    echo "Check port is available ..."
    local inst_port=`cat $SQLDATA/auto.cnf | grep "^\s*port" |awk -F'[ =]' '{print $NF }'`
-   check_svcname_available $inst_port $SQLLOG
+   check_svcname_available $inst_port $SQLLOG false
    local ret=$?
    test $ret -ne 0 && { return $ret; }
    
@@ -614,6 +622,16 @@ function start_inst()
    for ((i=0; i<15; i++));
    do
       if test -s $pid_file; then
+         sleep 0.2
+      else
+         break;
+      fi
+   done 
+   
+   for ((i=0; i<15; i++));
+   do
+      check_svcname_available $inst_port $SQLLOG true
+      if [ $? == 0 ]; then
          sleep 0.2
       else
          break;
