@@ -996,6 +996,206 @@ error:
   goto done;
 }
 
+enum enum_cond_parent {
+  COND_PARENT_NONE = 0,
+  COND_PARENT_ROOT,
+  COND_PARENT_AND,
+  COND_PARENT_OR
+};
+
+static enum_cond_parent sdb_find_cond_parent(const bson::BSONObj &all_cond,
+                                             const bson::BSONObj &sub_cond) {
+  /*
+    Take examples to descript the return:
+    COND_PARENT_ROOT: all_cond(A); sub_cond(A)
+    COND_PARENT_AND: all_cond(A and B); sub_cond(A)
+    COND_PARENT_OR: all_cond(A or B); sub_cond(A)
+    COND_PARENT_NONE: all_cond(A); sub_cond(B)
+
+    Now we only consider the first level condition. And we assume that sub_cond
+    may be $and, but never be $or.
+  */
+  enum enum_cond_parent rs = COND_PARENT_NONE;
+  try {
+    if (all_cond.isEmpty() || sub_cond.isEmpty()) {
+      goto done;
+    }
+
+    bson::BSONObjIterator it(all_cond);
+    bson::BSONElement top_ele = it.next();
+
+    if (0 == strcmp(top_ele.fieldName(), "$and")) {
+      bson::BSONObjIterator sub_it(sub_cond);
+      bson::BSONElement sub_ele = sub_it.next();
+      if (0 == strcmp(sub_ele.fieldName(), "$and")) {
+        // all_cond: { $and: [ A, B, ... ] }
+        // sub_cond: { $and: [ A, B ] }
+        rs = COND_PARENT_AND;
+        int sub_field_num = 0;
+        bson::BSONObj top_and_obj = top_ele.Obj();
+        bson::BSONObj sub_and_obj = sub_ele.Obj();
+        bson::BSONObjIterator sub_and_it(sub_and_obj);
+        while (sub_and_it.more()) {
+          sub_field_num += 1;
+          bson::BSONObj s_obj = sub_and_it.next().Obj();
+          bool is_obj_found = false;
+          bson::BSONObjIterator top_and_it(top_and_obj);
+          while (top_and_it.more()) {
+            bson::BSONObj t_obj = top_and_it.next().Obj();
+            if (t_obj.equal(s_obj)) {
+              is_obj_found = true;
+              break;
+            }
+          }
+          if (!is_obj_found) {
+            rs = COND_PARENT_NONE;
+            break;
+          }
+        }
+        if (COND_PARENT_AND == rs && top_and_obj.nFields() == sub_field_num) {
+          rs = COND_PARENT_ROOT;
+        }
+
+      } else {
+        // all_cond: { $and: [ A, B, ... ] }
+        // sub_cond: A
+        rs = COND_PARENT_NONE;
+        bson::BSONObjIterator and_it(top_ele.Obj());
+        while (and_it.more()) {
+          bson::BSONElement and_ele = and_it.next();
+          if (and_ele.Obj().equal(sub_cond)) {
+            rs = COND_PARENT_AND;
+            break;
+          }
+        }
+      }
+
+    } else if (0 == strcmp(top_ele.fieldName(), "$or")) {
+      bson::BSONObjIterator sub_it(sub_cond);
+      bson::BSONElement sub_ele = sub_it.next();
+      if (0 == strcmp(sub_ele.fieldName(), "$and")) {
+        // all_cond: { $or: [ { $and: [ A, B ] }, C, ... ] }
+        // sub_cond: { $and: [ A, B ] }
+        bool found = false;
+        bson::BSONObj top_or_obj = top_ele.Obj();
+        bson::BSONObj sub_and_obj = sub_ele.Obj();
+        bson::BSONObjIterator top_or_it(top_or_obj);
+        while (top_or_it.more()) {
+          bson::BSONElement or_ele = top_or_it.next();
+          bson::BSONElement and_of_or_ele = or_ele.Obj().getField("$and");
+          if (and_of_or_ele.type() == bson::EOO) {
+            continue;
+          }
+          found = true;
+          int sub_field_num = 0;
+          bson::BSONObj and_of_or_obj = and_of_or_ele.Obj();
+          bson::BSONObjIterator sub_and_it(sub_and_obj);
+          while (sub_and_it.more()) {
+            sub_field_num += 1;
+            bson::BSONObj s_obj = sub_and_it.next().Obj();
+            bool is_obj_found = false;
+            bson::BSONObjIterator top_and_it(and_of_or_obj);
+            while (top_and_it.more()) {
+              bson::BSONObj t_obj = top_and_it.next().Obj();
+              if (t_obj.equal(s_obj)) {
+                is_obj_found = true;
+                break;
+              }
+            }
+            if (!is_obj_found) {
+              found = false;
+              break;
+            }
+          }
+          if (found && and_of_or_obj.nFields() != sub_field_num) {
+            found = false;
+          }
+          if (found) {
+            break;
+          }
+        }
+        rs = found ? COND_PARENT_OR : COND_PARENT_NONE;
+
+      } else {
+        // all_cond: { $or: [ A, B, ... ] }
+        // sub_cond: A
+        rs = COND_PARENT_NONE;
+        bson::BSONObjIterator or_it(top_ele.Obj());
+        while (or_it.more()) {
+          bson::BSONElement or_ele = or_it.next();
+          if (or_ele.Obj().equal(sub_cond)) {
+            rs = COND_PARENT_OR;
+            break;
+          }
+        }
+      }
+
+    } else {
+      // all_cond: A
+      // sub_cond: A
+      rs = all_cond.equal(sub_cond) ? COND_PARENT_ROOT : COND_PARENT_NONE;
+    }
+  } catch (std::exception &e) {
+    SDB_LOG_ERROR("Failed to analyze BSON condition, exception:%s", e.what());
+    rs = COND_PARENT_NONE;
+  }
+done:
+  return rs;
+}
+
+static int sdb_combine_condition(const bson::BSONObj &pushed_condition,
+                                 const bson::BSONObj &index_condition,
+                                 bson::BSONObj &result_condition) {
+  /*
+    Generally, result_condition = pushed_condition AND index_condition.
+    If index_condition is a subset of pushed_condition, we can do some
+    simplification:
+    1. (idx_cond) AND (idx_cond) = (idx_cond) # both is the same
+    2. (idx_cond AND other_cond) AND (idx_cond) = (idx_cond AND other_cond)
+    3. (idx_cond OR other_cond) AND (idx_cond) = (idx_cond)
+
+    For simplicity, we only deal with the first level.
+  */
+  int rc = 0;
+  try {
+    if (!pushed_condition.isEmpty()) {
+      if (!index_condition.isEmpty()) {
+        enum enum_cond_parent parent = COND_PARENT_NONE;
+        parent = sdb_find_cond_parent(pushed_condition, index_condition);
+        switch (parent) {
+          case COND_PARENT_ROOT:
+          case COND_PARENT_OR: {
+            result_condition = index_condition;
+            break;
+          }
+          case COND_PARENT_AND: {
+            result_condition = pushed_condition;
+            break;
+          }
+          case COND_PARENT_NONE:
+          default: {
+            bson::BSONArrayBuilder arr_builder;
+            arr_builder.append(pushed_condition);
+            arr_builder.append(index_condition);
+            result_condition = BSON("$and" << arr_builder.arr());
+            break;
+          }
+        }
+      } else {
+        result_condition = pushed_condition;
+      }
+    } else {
+      result_condition = index_condition;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to append end range, exception:%s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
 const char *sharding_related_fields[] = {
     SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
     SDB_FIELD_AUTO_SPLIT,   SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_ISMAINCL};
@@ -3449,6 +3649,7 @@ error:
 int ha_sdb::index_first(uchar *buf) {
   int rc = 0;
   first_read = true;
+  bson::BSONObj condition = pushed_condition;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -3464,8 +3665,40 @@ int ha_sdb::index_first(uchar *buf) {
   if (rc) {
     goto error;
   }
-  rc = index_read_one(pushed_condition, 1, buf);
+
+  if (end_range) {
+    rc = append_end_range(condition);
+    if (rc) {
+      goto error;
+    }
+  }
+
+  rc = index_read_one(condition, 1, buf);
   if (rc) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb::append_end_range(bson::BSONObj &condition) {
+  int rc = 0;
+  KEY *key_info = table->key_info + active_index;
+  bson::BSONObj condition_idx;
+
+  DBUG_ASSERT(end_range);
+
+  rc = sdb_create_condition_from_key(table, key_info, NULL, end_range, 0,
+                                     eq_range, condition_idx);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to build index match object. rc: %d", rc);
+    goto error;
+  }
+
+  rc = sdb_combine_condition(condition, condition_idx, condition);
+  if (0 != rc) {
     goto error;
   }
 done:
@@ -3515,9 +3748,6 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   bson::BSONObj condition_idx;
   int order_direction = 1;
   first_read = true;
-#ifdef IS_MARIADB
-  const bool using_vers_sys = table->versioned();
-#endif
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -3545,8 +3775,8 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   }
 
 #ifdef IS_MARIADB
-  if (using_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
-                         SQLCOM_DELETE == thd_sql_command(ha_thd()))) {
+  if (table->versioned() && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
+                             SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
     rc = sdb_append_end_condition(ha_thd(), table, condition);
     if (rc) {
       goto error;
@@ -3554,21 +3784,10 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   }
 #endif
 
-  try {
-    if (!condition.isEmpty()) {
-      if (!condition_idx.isEmpty()) {
-        bson::BSONArrayBuilder arr_builder;
-        arr_builder.append(condition);
-        arr_builder.append(condition_idx);
-        condition = BSON("$and" << arr_builder.arr());
-      }
-    } else {
-      condition = condition_idx;
-    }
+  rc = sdb_combine_condition(condition, condition_idx, condition);
+  if (0 != rc) {
+    goto error;
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to index read map for table:%s.%s, exception:%s", db_name,
-      table_name, e.what());
 
   rc = ensure_collection(ha_thd());
   if (rc) {
@@ -4373,9 +4592,8 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
 
 #ifdef IS_MARIADB
-      const bool using_vers_sys = table->versioned();
-      if (using_vers_sys && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
-                             SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
+      if (table->versioned() && (SQLCOM_DELETE == thd_sql_command(ha_thd()) ||
+                                 SQLCOM_UPDATE == thd_sql_command(ha_thd()))) {
         rc = sdb_append_end_condition(ha_thd(), table, pushed_condition);
         if (rc) {
           goto error;

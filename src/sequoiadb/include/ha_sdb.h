@@ -287,6 +287,8 @@ class ha_sdb : public handler {
 
   int build_selector(bson::BSONObj &selector);
 
+  int append_end_range(bson::BSONObj &condition);
+
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
     skip it and and MySQL will treat it as not implemented.
