@@ -22,10 +22,10 @@ insert into t1(a,b,c) values(10, 'sa', 'sa'), (1000, 'ss', 'ss'),(100, 'sq', 'q'
 insert into t1(a,b,c) values(11, 'sb', 'sb'), (1001, 'st', 'st'),(102, 'sr', 'r'),(2, 'sy', 'sy');
 delete from t1 where id=1 order by id;
 affected rows: 1
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$et": 1 } }, { "id": { "$et": 1 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 1 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
 delete from t1 where id=2 order by a;
 affected rows: 1
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$et": 2 } }, { "id": { "$et": 2 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$et": 2 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0]
 delete from t1 where a=100 order by id;
 affected rows: 1
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
@@ -69,14 +69,14 @@ create table t1(id int auto_increment key)comment="sequoiadb:{ auto_partition: f
 insert into t1 values(),(),(),();
 delete ignore from t1 where id>2;
 affected rows: 2
-[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "id": { "$gt": 2 } }, { "id": { "$gt": 2 } } ] }
+[Note] SequoiaDB: optimizer delete: 1, condition: { "id": { "$gt": 2 } }
 select * from t1 order by id;
 id
 1
 2
 delete low_priority from t1 where id>1;
 affected rows: 1
-[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "id": { "$gt": 1 } }, { "id": { "$gt": 1 } } ] }
+[Note] SequoiaDB: optimizer delete: 1, condition: { "id": { "$gt": 1 } }
 drop table t1;
 create temporary table t1(id int auto_increment key, a int, b varchar(255), c varbinary(255))engine=sequoiadb;
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
