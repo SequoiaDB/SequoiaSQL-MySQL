@@ -122,7 +122,7 @@ static int list_instances(sdbclient::sdb &conn,
                           const string &instance_group_name) {
   int rc = 0;
   bson::BSONObj result, cond, order_by, obj;
-  sdbclient::sdbCollectionSpace global_info_cs;
+  sdbclient::sdbCollectionSpace global_info_cs, inst_group_cs;
   sdbclient::sdbCollection registry_cl;
   sdbclient::sdbCursor cursor;
 
@@ -136,6 +136,22 @@ static int list_instances(sdbclient::sdb &conn,
                    "Error: failed to get global configuration database '%s', "
                    "sequoiadb error: %s",
                    HA_GLOBAL_INFO, ha_sdb_error_string(conn, rc));
+
+  // check if instance group exists
+  if (!instance_group_name.empty()) {
+    string sdb_inst_group_name = HA_INST_GROUP_PREFIX + instance_group_name;
+    rc = conn.getCollectionSpace(sdb_inst_group_name.c_str(), inst_group_cs);
+    if (SDB_DMS_CS_NOTEXIST == rc) {
+      cout << "Error: instance group '" << instance_group_name
+           << "' does not exist" << endl;
+      return rc;
+    }
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to get instance group '%s' database, "
+                     "sequoiadb error: %s",
+                     instance_group_name.c_str(),
+                     ha_sdb_error_string(conn, rc));
+  }
 
   // get 'HARegistry' collection handle
   rc = global_info_cs.getCollection(HA_REGISTRY_CL, registry_cl);
