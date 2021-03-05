@@ -668,75 +668,77 @@ select * from t2;
 
 #seqDB-23095
 #SEQUOIASQLMAINSTREAM-909
-#connection conn1;
-#create table t1(a int auto_increment primary key,b int ,c int);
-#insert into t1(b,c) values(1,1),(2,2),(3,3);
-#create view v1 as select * from t1;
-#
-#connection conn2;
-#select * from v1 order by a;
-#
-#connection conn1;
-#alter table t1 drop column b;
-#
-#connection conn2;
-#--error 1356
-#select * from v1 order by a;
-#
-#connection conn1;
-#alter table t1 add column b int;
-#
-#connection conn2;
-#select * from v1 order by a;
-#
-#connection conn1;
-#drop table t1;
-#
-#connection conn2;
-#--error 1356
-#select * from v1 order by a;
-#
-#connection conn1;
-#create table t1(a int auto_increment primary key,b int ,c int);
-#insert into t1(b,c) values(1,1),(2,2),(3,3);
-#
-#connection conn2;
-#select * from v1 order by a;
-#
-#connection conn1;
-#create or replace view v1 as select * from t1 where a<2;
-#
-#connection conn2;
-#select * from v1 order by a;
-#
-#connection conn1;
-#--disable_warnings
-#drop database if exists table_ddl_dml_parallel_user;
-#--enable_warnings
-#create user 'table_ddl_dml_parallel_user';
-#GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
-#FLUSH PRIVILEGES;
-#
-#connection conn2;
-#alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
-#
-#connect ( conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $port1 );
-#connection conn3;
-#use metadata_sync_table_ddl_dml_parallel;
-#select * from v1 order by a;
-#disconnect conn3;
-#
-#connection conn2;
-#drop user table_ddl_dml_parallel_user;
-#FLUSH PRIVILEGES;
-#
-#connection conn1;
-#drop view v1;
-#
-#connection conn2;
-#--error 1146
-#select * from v1 order by a;
-#drop table t1;
+connection conn1;
+create table t1(a int auto_increment primary key,b int ,c int);
+insert into t1(b,c) values(1,1),(2,2),(3,3);
+create view v1 as select * from t1;
+
+connection conn2;
+select * from v1 order by a;
+
+connection conn1;
+alter table t1 drop column b;
+
+connection conn2;
+--error 1356
+select * from v1 order by a;
+
+connection conn1;
+alter table t1 add column b int;
+
+connection conn2;
+select * from v1 order by a;
+
+connection conn1;
+drop table t1;
+
+connection conn2;
+--error 1356
+select * from v1 order by a;
+
+connection conn1;
+create table t1(a int auto_increment primary key,b int ,c int);
+insert into t1(b,c) values(1,1),(2,2),(3,3);
+
+connection conn2;
+select * from v1 order by a;
+
+connection conn1;
+create or replace view v1 as select * from t1 where a<2;
+
+connection conn2;
+--sleep 5
+select * from v1 order by a;
+
+connection conn1;
+--disable_warnings
+drop database if exists table_ddl_dml_parallel_user;
+--enable_warnings
+create user 'table_ddl_dml_parallel_user';
+GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+connection conn2;
+alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
+
+connect ( conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $port1 );
+connection conn3;
+use metadata_sync_table_ddl_dml_parallel;
+--sleep 5
+select * from v1 order by a;
+disconnect conn3;
+
+connection conn1;
+drop view v1;
+
+connection conn2;
+--error 1146
+show create view v1;
+drop table t1;
+
+connection conn1;
+drop user table_ddl_dml_parallel_user;
+FLUSH PRIVILEGES;
 
 #seqDB-23096
 connection conn1;

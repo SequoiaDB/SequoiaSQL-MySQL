@@ -702,6 +702,74 @@ connection conn2;
 select * from t2;
 ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.t2' doesn't exist
 connection conn1;
+create table t1(a int auto_increment primary key,b int ,c int);
+insert into t1(b,c) values(1,1),(2,2),(3,3);
+create view v1 as select * from t1;
+connection conn2;
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+connection conn1;
+alter table t1 drop column b;
+connection conn2;
+select * from v1 order by a;
+ERROR HY000: View 'metadata_sync_table_ddl_dml_parallel.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+connection conn1;
+alter table t1 add column b int;
+connection conn2;
+select * from v1 order by a;
+a	b	c
+1	NULL	1
+2	NULL	2
+3	NULL	3
+connection conn1;
+drop table t1;
+connection conn2;
+select * from v1 order by a;
+ERROR HY000: View 'metadata_sync_table_ddl_dml_parallel.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+connection conn1;
+create table t1(a int auto_increment primary key,b int ,c int);
+insert into t1(b,c) values(1,1),(2,2),(3,3);
+connection conn2;
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+connection conn1;
+create or replace view v1 as select * from t1 where a<2;
+connection conn2;
+select * from v1 order by a;
+a	b	c
+1	1	1
+connection conn1;
+drop database if exists table_ddl_dml_parallel_user;
+create user 'table_ddl_dml_parallel_user';
+GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+connection conn2;
+alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
+connect   conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $port1 ;
+connection conn3;
+use metadata_sync_table_ddl_dml_parallel;
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+disconnect conn3;
+connection conn1;
+drop view v1;
+connection conn2;
+show create view v1;
+ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.v1' doesn't exist
+drop table t1;
+connection conn1;
+drop user table_ddl_dml_parallel_user;
+FLUSH PRIVILEGES;
+connection conn1;
 create table t1(a int);
 alter table t1 add index a(a);
 connection conn2;

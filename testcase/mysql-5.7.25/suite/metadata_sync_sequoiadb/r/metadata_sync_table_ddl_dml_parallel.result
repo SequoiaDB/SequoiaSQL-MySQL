@@ -557,6 +557,56 @@ a
 drop table t2;
 select * from t2;
 ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.t2' doesn't exist
+create table t1(a int auto_increment primary key,b int ,c int);
+insert into t1(b,c) values(1,1),(2,2),(3,3);
+create view v1 as select * from t1;
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+alter table t1 drop column b;
+select * from v1 order by a;
+ERROR HY000: View 'metadata_sync_table_ddl_dml_parallel.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+alter table t1 add column b int;
+select * from v1 order by a;
+a	b	c
+1	NULL	1
+2	NULL	2
+3	NULL	3
+drop table t1;
+select * from v1 order by a;
+ERROR HY000: View 'metadata_sync_table_ddl_dml_parallel.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+create table t1(a int auto_increment primary key,b int ,c int);
+insert into t1(b,c) values(1,1),(2,2),(3,3);
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+create or replace view v1 as select * from t1 where a<2;
+select * from v1 order by a;
+a	b	c
+1	1	1
+drop database if exists table_ddl_dml_parallel_user;
+create user 'table_ddl_dml_parallel_user';
+GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
+Warnings:
+Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
+FLUSH PRIVILEGES;
+alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
+use metadata_sync_table_ddl_dml_parallel;
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+drop view v1;
+show create view v1;
+ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.v1' doesn't exist
+drop table t1;
+drop user table_ddl_dml_parallel_user;
+FLUSH PRIVILEGES;
 create table t1(a int);
 alter table t1 add index a(a);
 explain select * from t1 force index(a);
