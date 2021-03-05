@@ -1031,7 +1031,6 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
 
   int rc = SDB_ERR_OK;
   bson::BSONObj obj;
-  bson::BSONObj obj_main;
   char normal_cl_stats_sql[sizeof(NORMAL_CL_STATS_SQL) +
                            SDB_CL_FULL_NAME_MAX_SIZE] = {0};
   char main_cl_stats_sql[sizeof(MAIN_CL_STATS_SQL) +
@@ -1049,7 +1048,7 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
   }
   try {
     rc = next(obj, false);
-    if (SDB_DMS_EOC == rc) {
+    if (HA_ERR_END_OF_FILE == rc) {
       snprintf(main_cl_stats_sql, sizeof(main_cl_stats_sql), MAIN_CL_STATS_SQL,
                cs_name, cl_name);
       rc = execute(main_cl_stats_sql);
@@ -1058,10 +1057,6 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
       }
       rc = next(obj, false);
     }
-    if (rc != SDB_ERR_OK) {
-      goto error;
-    }
-    rc = next(obj_main, false);
     if (rc != SDB_ERR_OK) {
       goto error;
     }
@@ -1078,6 +1073,7 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
   stats.total_records = obj.getField(SDB_FIELD_TOTAL_RECORDS).numberLong();
 
 done:
+  m_cursor.close(); // from ::execute()
   return rc;
 error:
   convert_sdb_code(rc);
