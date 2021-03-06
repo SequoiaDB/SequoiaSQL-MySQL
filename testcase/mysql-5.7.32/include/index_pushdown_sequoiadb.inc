@@ -153,11 +153,13 @@ INSERT INTO t1 VALUES (1.1,1.1),(2.1,2.1),(3.1,3.1),(4.1,4.1),(5.1,5.1),(6.1,6.1
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
---source include/query_pushdown_condition_sequoiadb.inc
+#BUG #SEQUOIASQLMAINSTREAM-960
+#--source include/query_pushdown_condition_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
---source include/query_pushdown_condition_sequoiadb.inc
+#BUG #SEQUOIASQLMAINSTREAM-960
+#--source include/query_pushdown_condition_sequoiadb.inc
 DROP TABLE t1;
 # double
 CREATE TABLE t1 (
@@ -172,11 +174,13 @@ INSERT INTO t1 VALUES (1.1,1.1),(2.1,2.1),(3.1,3.1),(4.1,4.1),(5.1,5.1),(6.1,6.1
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
---source include/query_pushdown_condition_sequoiadb.inc
+#BUG #SEQUOIASQLMAINSTREAM-960
+#--source include/query_pushdown_condition_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
---source include/query_pushdown_condition_sequoiadb.inc
+#BUG #SEQUOIASQLMAINSTREAM-960
+#--source include/query_pushdown_condition_sequoiadb.inc
 DROP TABLE t1;
 # decimal
 CREATE TABLE t1 (
@@ -191,10 +195,12 @@ INSERT INTO t1 VALUES (1.1,1.1),(2.1,2.1),(3.1,3.1),(4.1,4.1),(5.1,5.1),(6.1,6.1
 #BUG #SEQUOIASQLMAINSTREAM-808
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
---source include/query_pushdown_condition_sequoiadb.inc
+#BUG #SEQUOIASQLMAINSTREAM-960
+#--source include/query_pushdown_condition_sequoiadb.inc
 ANALYZE TABLE t1;
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
---source include/query_pushdown_condition_sequoiadb.inc
+#BUG #SEQUOIASQLMAINSTREAM-960
+#--source include/query_pushdown_condition_sequoiadb.inc
 
 DROP TABLE t1;

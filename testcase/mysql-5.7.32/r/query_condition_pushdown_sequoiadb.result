@@ -15162,12 +15162,12 @@ a	b
 9	9
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 EXPLAIN SELECT * FROM t1 WHERE a<10;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtereExtra
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	range	PRIMARY,ab	ab	1	NULL	6	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)
 EXPLAIN SELECT * FROM t1 WHERE a>10;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtereExtra
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	range	PRIMARY,ab	ab	1	NULL	14	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`a` > 10); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`a` > 10)
@@ -15216,12 +15216,12 @@ a	b
 9	9
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 EXPLAIN SELECT * from t1 WHERE a<10;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtereExtra
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	range	PRIMARY,ab	ab	1	NULL	9	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`a` < 10)
 EXPLAIN SELECT * from t1 WHERE a>10;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtereExtra
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	range	PRIMARY,ab	ab	1	NULL	11	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`a` > 10); Using index
 Warnings:
 Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`a` AS `a`,`query_pushdown_test_sequoiadb`.`t1`.`b` AS `b` from `query_pushdown_test_sequoiadb`.`t1` where (`query_pushdown_test_sequoiadb`.`t1`.`a` > 10)
@@ -15459,7 +15459,6 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.100000023841858 } }, { "a": { "$lt": 10.10000038146973 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
@@ -15478,7 +15477,6 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.100000023841858 } }, { "a": { "$lt": 10.10000038146973 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a double NOT NULL,
@@ -15504,7 +15502,6 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.1 } }, { "a": { "$lt": 10.1 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
@@ -15523,7 +15520,6 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.1 } }, { "a": { "$lt": 10.1 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a decimal NOT NULL,
@@ -15571,7 +15567,6 @@ a	b
 8	8.10
 9	9.10
 10	10.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": { "$decimal": "1.1" } } }, { "a": { "$lt": { "$decimal": "10.1" } } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
@@ -15591,6 +15586,5 @@ a	b
 8	8.10
 9	9.10
 10	10.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": { "$decimal": "1.1" } } }, { "a": { "$lt": { "$decimal": "10.1" } } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 DROP TABLE t1;
 DROP DATABASE query_pushdown_test_sequoiadb;
