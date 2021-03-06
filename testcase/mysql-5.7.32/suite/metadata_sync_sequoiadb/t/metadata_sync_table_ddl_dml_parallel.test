@@ -207,24 +207,24 @@ drop table t1;
 
 #seqDB-23075
 #SEQUOIASQLMAINSTREAM-870
-#connection conn1;
-#create table t1(col1 int);
-#insert into t1 values(1),(2),(3);
-#
-#connection conn2;
-#alter table t1 engine = innodb;
-#
-#connection conn1;
-#insert into t1 values(4),(5),(6);
-#select * from t1 order by col1;
-#
-#connection conn2;
-#alter table t1 engine = sequoiadb;
-#
-#connection conn1;
-#insert into t1 values(7),(8),(9);
-#select * from t1 order by col1;
-#drop table t1;
+connection conn1;
+create table t1(col1 int);
+insert into t1 values(1),(2),(3);
+
+connection conn2;
+alter table t1 engine = innodb;
+
+connection conn1;
+insert into t1 values(4),(5),(6);
+select * from t1 order by col1;
+
+connection conn2;
+alter table t1 engine = sequoiadb;
+
+connection conn1;
+insert into t1 values(7),(8),(9);
+select * from t1 order by col1;
+drop table t1;
 
 #seqDB-23076
 connection conn1;
@@ -450,19 +450,19 @@ update t2 set col2 = 1 + col2;
 select * from t2 order by col2;
 
 #SEQUOIASQLMAINSTREAM-870
-#connection conn1;
-#alter table t2 engine=innodb;
-#
-#connection conn2;
-#update t2 set col2 = 1 + col2;
-#select * from t2 order by col2;
+connection conn1;
+alter table t2 engine=innodb;
+
+connection conn2;
+update t2 set col2 = 1 + col2;
+select * from t2 order by col2;
 
 connection conn1;
 drop table t2;
 
 connection conn2;
---error 1146
-update t2 set col2 = 1 + col2;
+#--error 1146
+#update t2 set col2 = 1 + col2;
 
 #seqDB-23084
 connection conn1;
@@ -505,18 +505,18 @@ delete from t2;
 select * from t2 order by col2;
 
 #SEQUOIASQLMAINSTREAM-870
-#connection conn1;
-#alter table t2 engine=innodb;
-#
-#connection conn2;
-#delete from t2;
+connection conn1;
+alter table t2 engine=innodb;
+
+connection conn2;
+delete from t2;
 
 connection conn1;
 drop table t2;
 
 connection conn2;
---error 1146
-delete from t2;
+#--error 1146
+#delete from t2;
 
 #seqDB-23085
 connection conn1;
@@ -543,6 +543,7 @@ delete t1 from t1,t2 where t1.col1 > t2.col1;
 select * from t1 order by col1;
 
 #SEQUOIASQLMAINSTREAM-870
+#SEQUOIASQLMAINSTREAM-953
 #connection conn1;
 #drop table t2;
 #
@@ -653,18 +654,18 @@ connection conn2;
 select * from t2;
 
 #SEQUOIASQLMAINSTREAM-870
-#connection conn1;
-#alter table t2 engine=innodb;
-#
-#connection conn2;
-#select * from t2;
+connection conn1;
+alter table t2 engine=innodb;
+
+connection conn2;
+select * from t2;
 
 connection conn1;
 drop table t2;
 
 connection conn2;
---error 1146
-select * from t2;
+#--error 1146
+#select * from t2;
 
 #seqDB-23095
 #SEQUOIASQLMAINSTREAM-909
@@ -752,23 +753,24 @@ connection conn1;
 drop index a on t1;
 
 #SEQUOIASQLMAINSTREAM-870
+#SEQUOIASQLMAINSTREAM-953
 #connection conn2;
 #--error 1176
 #explain select * from t1 force index(a);
 drop table t1;
 
 #seqDB-23107
-#connection conn1;
-#create table t1(a int key);
-#
-#connection conn2;
-#analyze table t1;
-#
-#connection conn1;
-#drop table t1;
-#
-#connection conn2;
-#analyze table t1;
+connection conn1;
+create table t1(a int key);
+
+connection conn2;
+analyze table t1;
+
+connection conn1;
+drop table t1;
+
+connection conn2;
+analyze table t1;
 
 #seqDB-23108
 connection conn1;
