@@ -879,6 +879,51 @@ done:
   return rc;
 }
 
+// clear residual information for first instance to join instance group
+static int clear_sql_log_and_object_state(ha_recover_replay_thread *ha_thread,
+                                          Sdb_conn &sdb_conn) {
+  // current instance is the first instance in current instance group,
+  // persist instance ID to local file
+  bson::BSONObjBuilder builder;
+  Sdb_cl obj_state_cl, sql_log_cl;
+  bson::BSONObj cond;
+  int rc = 0;
+  char err_buf[HA_BUF_LEN] = {0};
+  bson::BSONObjBuilder sub_builder(builder.subobjStart(HA_FIELD_SQL_ID));
+  sub_builder.append("$gt", 0);
+  sub_builder.doneFast();
+  cond = builder.done();
+
+  // clear SQL log for the first instance to start
+  rc = sdb_conn.get_cl(ha_thread->sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
+  HA_RC_CHECK(rc, error,
+              "HA: Unable to get sql log table '%s', sequoiadb error: %s",
+              HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
+  rc = sql_log_cl.del(cond);
+  HA_RC_CHECK(rc, error,
+              "HA: Failed to clear SQL log for the first instance to start, "
+              "sequoiadb error: %s",
+              ha_error_string(sdb_conn, rc, err_buf));
+
+  // clear 'HAObjectState' for the first instance to start
+  rc =
+      ha_get_object_state_cl(sdb_conn, ha_thread->sdb_group_name, obj_state_cl);
+  HA_RC_CHECK(rc, error,
+              "HA: Unable to get object state table 'HAObjectState', "
+              "sequoiadb error: %s",
+              ha_error_string(sdb_conn, rc, err_buf));
+
+  rc = obj_state_cl.del();
+  HA_RC_CHECK(rc, error,
+              "HA: Failed to clear 'HAObjectState' for the "
+              "first instance to start, sequoiadb error: %s",
+              ha_error_string(sdb_conn, rc, err_buf));
+done:
+  return rc;
+error:
+  goto done;
+}
+
 static int register_instance_id(ha_recover_replay_thread *ha_thread,
                                 Sdb_conn &sdb_conn) {
   int rc = 0;
@@ -964,7 +1009,8 @@ error:
 }
 
 static int check_if_local_data_expired(ha_recover_replay_thread *ha_thread,
-                                       Sdb_conn &sdb_conn, bool &expired) {
+                                       Sdb_conn &sdb_conn, bool &expired,
+                                       bool &first_join) {
   int rc = 0;
   Sdb_cl inst_state_cl, sql_log_cl;
   longlong count = 0;
@@ -983,6 +1029,11 @@ static int check_if_local_data_expired(ha_recover_replay_thread *ha_thread,
               "HA: Unable to get the number of records for instance "
               "state table '%s', sequoiadb error: %s",
               HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+  rc = sdb_conn.get_cl(ha_thread->sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
+  HA_RC_CHECK(rc, error,
+              "HA: Unable to get sql log table '%s', sequoiadb error: %s",
+              HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
 
   // instance state table is not empty, check if current
   // instance global sql_id is purged(removed from 'HASQLLog')
@@ -1009,10 +1060,6 @@ static int check_if_local_data_expired(ha_recover_replay_thread *ha_thread,
     DBUG_ASSERT(sql_id >= 0);
     cond = BSON(HA_FIELD_SQL_ID << sql_id);
 
-    rc = sdb_conn.get_cl(ha_thread->sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to get sql log table '%s', sequoiadb error: %s",
-                HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
     rc = sql_log_cl.query(cond);
     rc = rc ? rc : sql_log_cl.next(result, false);
     if (HA_ERR_END_OF_FILE == rc) {
@@ -1047,13 +1094,7 @@ static int check_if_local_data_expired(ha_recover_replay_thread *ha_thread,
                 "HA: Failed to initialize instance state table '%s', "
                 "sequoiadb error: %s",
                 HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-    // current instance is the first instance in current instance group,
-    // persist instance ID to local file
-    rc = write_local_instance_id(instance_id);
-    HA_RC_CHECK(rc, error, "HA: Failed to persist instance ID: %d",
-                instance_id);
-
+    first_join = true;
     expired = false;
     sql_print_information(
         "HA: Completed initialization of instance state table");
@@ -1675,7 +1716,11 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
     if (!sdb_conn.is_valid()) {
       // TODO: if failed to connect, write error information into state table
       rc = sdb_conn.connect();
-      if (rc) {
+      if (SDB_DPS_TRANS_DIABLED == get_sdb_code(rc)) {
+        SDB_LOG_ERROR(
+            "HA: SequoiaDB transaction is turned off, shut instance down");
+        goto error;
+      } else if (rc) {
         sql_print_error(
             "HA: Unable to connect to sequoiadb, sequoiadb error: %s",
             ha_error_string(sdb_conn, rc, err_buf));
@@ -1802,7 +1847,7 @@ void *ha_recover_and_replay(void *arg) {
 // HA function is not supported for embedded mysql
 #ifndef NO_EMBEDDED_ACCESS_CHECKS
   int rc = 0;
-  bool local_metadata_expired = false;
+  bool local_metadata_expired = false, first_join = false;
   char err_buf[HA_BUF_LEN] = {0};
   ha_recover_replay_thread *ha_thread = (ha_recover_replay_thread *)arg;
   DBUG_ASSERT(NULL != ha_thread);
@@ -1848,8 +1893,9 @@ void *ha_recover_and_replay(void *arg) {
     HA_RC_CHECK(rc, error, "HA: Failed to check instance group user");
 
     rc = check_if_local_data_expired(ha_thread, sdb_conn,
-                                     local_metadata_expired);
+                                     local_metadata_expired, first_join);
     HA_RC_CHECK(rc, error, "HA: Failed to check local metadata");
+
     if (local_metadata_expired) {
       ha_dump_source dump_source;
       // 5. choose instance and get metadata from another instance
@@ -1859,6 +1905,14 @@ void *ha_recover_and_replay(void *arg) {
       // 6. recover metadata
       rc = recover_meta_data(ha_thread, sdb_conn, dump_source);
       HA_RC_CHECK(rc, error, "HA: Failed to recover metadata");
+    } else if (first_join) {
+      // if it's first instance to join instance group
+      rc = write_local_instance_id(ha_thread->instance_id);
+      HA_RC_CHECK(rc, error, "HA: Failed to persist instance ID: %d",
+                  ha_thread->instance_id);
+
+      rc = clear_sql_log_and_object_state(ha_thread, sdb_conn);
+      HA_RC_CHECK(rc, error, "HA: Failed to clear SQL log and object state");
     }
 
     // load current instance object state into cache

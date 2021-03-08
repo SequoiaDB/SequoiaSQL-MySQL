@@ -193,6 +193,7 @@ int Sdb_conn::connect() {
             break;
         }
       }
+      m_connection.disconnect();
       goto error;
     }
 
@@ -247,13 +248,9 @@ int Sdb_conn::connect() {
 
       rc = set_my_session_attr();
       if (SDB_ERR_OK != rc) {
+        m_connection.disconnect();
         snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d",
                  rc);
-        try {
-          m_connection.disconnect();
-        }
-        SDB_EXCEPTION_CATCHER(rc, "Failed to disconnect from sdb, exception:%s",
-                              e.what());
         goto error;
       }
     }
