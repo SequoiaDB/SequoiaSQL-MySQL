@@ -149,7 +149,7 @@ function get_system_conf_file()
    then
       SYS_CONF_FILE=$file
    else
-      echo "ERROR: No system configure file exist in /etc/default" >&2
+      echo "[ERROR] Register configuration file in /etc/default/ does not exist" >&2
       exit 12
    fi
 }
