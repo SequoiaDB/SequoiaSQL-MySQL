@@ -1,5 +1,5 @@
 diff --git a/mysql-v5.7.25/mysqldump.c b/mysql-v5.7.25/mysqldump.c
-index 4c610e6..5b4a8be 100644
+index 4c610e6..a17f4a0 100644
 --- a/mysql-v5.7.25/mysqldump.c
 +++ b/mysql-v5.7.25/mysqldump.c
 @@ -114,6 +114,7 @@ static my_bool  verbose= 0, opt_no_create_info= 0, opt_no_data= 0,
@@ -20,7 +20,33 @@ index 4c610e6..5b4a8be 100644
    {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
  };
  
-@@ -6286,6 +6290,12 @@ int main(int argc, char **argv)
+@@ -5969,6 +5973,8 @@ static my_bool get_view_structure(char *table, char* db)
+   FILE       *sql_file= md_result_file;
+   my_bool    freemem= FALSE;
+   char const *text;
++  char       table_name_buff[NAME_LEN*2+3] = {0};
++  char       db_name_buff[NAME_LEN*2+3] = {0};
+   DBUG_ENTER("get_view_structure");
+ 
+   if (opt_no_create_info) /* Don't write table creation info */
+@@ -6021,11 +6027,15 @@ static my_bool get_view_structure(char *table, char* db)
+   verbose_msg("-- Dropping the temporary view structure created\n");
+   fprintf(sql_file, "/*!50001 DROP VIEW IF EXISTS %s*/;\n", opt_quoted_table);
+ 
++  mysql_real_escape_string(mysql, table_name_buff, table, (ulong)strlen(table));
++  mysql_real_escape_string(mysql, db_name_buff, db, (ulong)strlen(db));
++
+   my_snprintf(query, sizeof(query),
+               "SELECT CHECK_OPTION, DEFINER, SECURITY_TYPE, "
+               "       CHARACTER_SET_CLIENT, COLLATION_CONNECTION "
+               "FROM information_schema.views "
+-              "WHERE table_name=\"%s\" AND table_schema=\"%s\"", table, db);
++              "WHERE table_name=\"%s\" AND table_schema=\"%s\"",
++              table_name_buff, db_name_buff);
+ 
+   if (mysql_query(mysql, query))
+   {
+@@ -6286,6 +6296,12 @@ int main(int argc, char **argv)
    if (opt_single_transaction && do_unlock_tables(mysql)) /* unlock but no commit! */
      goto err;
  
@@ -33,7 +59,7 @@ index 4c610e6..5b4a8be 100644
    if (opt_alltspcs)
      dump_all_tablespaces();
  
-@@ -6383,3 +6393,4 @@ err:
+@@ -6383,3 +6399,4 @@ err:
  
    return(first_error);
  } /* main */
