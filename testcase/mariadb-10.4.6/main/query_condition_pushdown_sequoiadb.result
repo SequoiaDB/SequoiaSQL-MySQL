@@ -13961,6 +13961,76 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 DROP TABLE t1;
 CREATE TABLE t1 (
+a int(11) DEFAULT NULL,
+b int(11) DEFAULT NULL,
+c int(11) DEFAULT NULL,
+KEY ab (a,b),
+KEY ba (b,a),
+KEY a (a),
+KEY b (b),
+KEY c (c)
+);
+INSERT INTO t1 VALUES (1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7),(8,8,8),(9,9,9),(10,10,10),(11,11,11),(12,12,12),(13,13,13),(14,14,14),(15,15,15),(16,16,16),(17,17,17),(18,18,18),(19,19,19),(20,20,20);
+EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	range	ab,ba,a,b,c	ab	10	NULL	2	Using where with pushed condition
+EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	range	ab,ba,a,b,c	b	5	NULL	5	Using where with pushed condition
+EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	index_merge	ab,ba,a,b	b,a	5,5	NULL	10	Using sort_union(b,a); Using where with pushed condition
+SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+a	b	c
+1	1	1
+2	2	2
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lte": 3 } }, { "b": { "$lte": 3 } } ] } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
+SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$or": [ { "a": { "$lte": 3 } }, { "c": { "$lte": 4 } } ] }, { "b": { "$lte": 3 } } ] }, { "$and": [ { "b": { "$isnull": 0 } }, { "b": { "$lte": 3 } } ] } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0]
+SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "b": { "$lte": 3 } }, { "a": { "$lt": 3 } } ] }, { "$and": [ { "b": { "$isnull": 0 } }, { "b": { "$lte": 3 } } ] } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "b": { "$lte": 3 } }, { "a": { "$lt": 3 } } ] }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lt": 3 } } ] } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0]
+ANALYZE TABLE t1;
+Table	Op	Msg_type	Msg_text
+query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
+query_pushdown_test_sequoiadb.t1	analyze	status	OK
+EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	range	ab,ba,a,b,c	a	5	NULL	2	Using where with pushed condition
+EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	range	ab,ba,a,b,c	b	5	NULL	2	Using where with pushed condition
+EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	index_merge	ab,ba,a,b	b,a	5,5	NULL	4	Using sort_union(b,a); Using where with pushed condition
+SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+a	b	c
+1	1	1
+2	2	2
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lte": 3 } } ] } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0]
+SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "$or": [ { "a": { "$lte": 3 } }, { "c": { "$lte": 4 } } ] }, { "b": { "$lte": 3 } } ] }, { "$and": [ { "b": { "$isnull": 0 } }, { "b": { "$lte": 3 } } ] } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0]
+SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "b": { "$lte": 3 } }, { "a": { "$lt": 3 } } ] }, { "$and": [ { "b": { "$isnull": 0 } }, { "b": { "$lte": 3 } } ] } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "b": { "$lte": 3 } }, { "a": { "$lt": 3 } } ] }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lt": 3 } } ] } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0]
+DROP TABLE t1;
+CREATE TABLE t1 (
 a float NOT NULL,
 b float(6,2) DEFAULT NULL,
 PRIMARY KEY (a),

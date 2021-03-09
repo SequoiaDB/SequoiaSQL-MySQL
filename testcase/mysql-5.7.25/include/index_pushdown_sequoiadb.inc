@@ -136,6 +136,40 @@ EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 SELECT * FROM t1 WHERE b>1 AND a<10;
 --source include/query_pushdown_condition_sequoiadb.inc
 DROP TABLE t1;
+#BUG #SEQUOIASQLMAINSTREAM-815
+CREATE TABLE t1 (
+    a int(11) DEFAULT NULL,
+    b int(11) DEFAULT NULL,
+    c int(11) DEFAULT NULL,
+    KEY ab (a,b),
+    KEY ba (b,a),
+    KEY a (a),
+    KEY b (b),
+    KEY c (c)
+);
+INSERT INTO t1 VALUES (1,1,1),(2,2,2),(3,3,3),(4,4,4),(5,5,5),(6,6,6),(7,7,7),(8,8,8),(9,9,9),(10,10,10),(11,11,11),(12,12,12),(13,13,13),(14,14,14),(15,15,15),(16,16,16),(17,17,17),(18,18,18),(19,19,19),(20,20,20);
+EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+--source include/query_pushdown_condition_sequoiadb.inc
+SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+--source include/query_pushdown_condition_sequoiadb.inc
+SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+ANALYZE TABLE t1;
+EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
+--source include/query_pushdown_condition_sequoiadb.inc
+SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
+--source include/query_pushdown_condition_sequoiadb.inc
+SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+DROP TABLE t1;
 
 # 
 # seqDB-22803
@@ -202,5 +236,4 @@ EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 #BUG #SEQUOIASQLMAINSTREAM-960
 #--source include/query_pushdown_condition_sequoiadb.inc
-
 DROP TABLE t1;
