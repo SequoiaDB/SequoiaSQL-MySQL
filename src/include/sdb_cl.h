@@ -121,7 +121,7 @@ class Sdb_cl {
   void clear_errmsg() { errmsg[0] = '\0'; }
   bool is_error() { return (errmsg[0] == '\0') ? FALSE : TRUE; }
 
-  Sdb_conn *get_conn() ;
+  Sdb_conn *get_conn();
 
  private:
   int retry(boost::function<int()> func);
