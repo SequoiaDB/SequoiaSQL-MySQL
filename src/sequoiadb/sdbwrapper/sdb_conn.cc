@@ -1070,7 +1070,7 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
   stats.total_records = obj.getField(SDB_FIELD_TOTAL_RECORDS).numberLong();
 
 done:
-  m_cursor.close(); // from ::execute()
+  execute_done();
   return rc;
 error:
   convert_sdb_code(rc);

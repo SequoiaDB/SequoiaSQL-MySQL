@@ -206,8 +206,6 @@ class Sdb_conn {
 
   int drop_cl(const char *cs_name, const char *cl_name);
 
-  int execute(const char *sql);
-
   int drop_cs(const char *cs_name);
 
   int drop_empty_cs(const char *cs_name,
@@ -301,8 +299,6 @@ class Sdb_conn {
 
   int set_my_session_attr();
 
-  int exec(const char *sql, sdbclient::sdbCursor *cursor);
-
   void set_check_collection_version(bool check_cl_version) {
     m_check_collection_version = check_cl_version;
   }
@@ -316,6 +312,8 @@ class Sdb_conn {
   }
 
   bool is_cl_statistics_supported();
+
+  int execute(const char *sql);
 
   int next(bson::BSONObj &obj, my_bool get_owned) {
     int rc = SDB_ERR_OK;
@@ -333,6 +331,8 @@ class Sdb_conn {
     convert_sdb_code(rc);
     goto done;
   }
+
+  void execute_done() { m_cursor.close(); }
 
  private:
   int retry(boost::function<int()> func);

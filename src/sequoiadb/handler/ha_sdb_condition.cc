@@ -193,10 +193,18 @@ void ha_sdb_cond_ctx::push(Item *item) {
   DBUG_ENTER("ha_sdb_cond_ctx::push()");
   int rc = SDB_ERR_OK;
   Sdb_item *item_tmp = NULL;
+  Item *cond_item = NULL;
 
-  // get the real item
-  // see aslo Item_ref
-  Item *cond_item = (NULL == item) ? NULL : item->real_item();
+  if (item) {
+    // Get the real item. See also Item_ref.
+    cond_item = item->real_item();
+    // Correct the fake function, e.g: FLOOR(1), MOD(5, 2)...their real_item is
+    // FUNC_ITEM but their type is INT_ITEM, and should be treated as constant
+    if (Item::FUNC_ITEM == cond_item->type() &&
+        Item::FUNC_ITEM != item->type()) {
+      cond_item = item;
+    }
+  }
 
   if (!keep_on()) {
     goto done;
