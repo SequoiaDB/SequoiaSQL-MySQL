@@ -299,16 +299,11 @@ function add_inst()
       fi
    done
    
-   test -z $SQL_LOG && SQL_LOG="${INSTALL_PATH}/${INST_NAME}.log"
+   test -z $SQL_LOG && SQL_LOG="${SQL_DATA}/${INST_NAME}.log"
    if [[ ${SQL_LOG:0:1} != "/" ]]; then
       SQL_LOG=$(pwd)/$SQL_LOG      #relative path
    fi
-   
-   if [[ $SQL_LOG == ${SQL_DATA%*/}"/"* ]]; then
-      echo "ERROR: The log file path cannot be specified in the data directory." >&2
-      exit 5
-   fi
-   
+
    if [ ! -z $INST_PORT ]; then
       PORT=$INST_PORT
       check_svcname_para
@@ -325,7 +320,7 @@ function add_inst()
    fi
    
    check_inst_exist $INST_NAME false
-   check_svcname_available $PORT $SQL_LOG false
+   check_svcname_available $PORT $CTL_LOG false
    local ret=$?
    test $ret -ne 0 && { exit $ret; }
    
@@ -333,25 +328,26 @@ function add_inst()
 
    #initdb
    test `whoami` == "root" && local user="$SQL_USER" || local user=`whoami`
-   exec_cmd "mkdir -p `dirname $SQL_LOG`"
-   test $? -ne 0 && { echo "ERROR: Fail to create SQLLOG $SQL_LOG with $user" >&2 && exit 5; }
-   
-   exec_cmd_with_print "mkdir -p $SQL_DATA" "$SQL_LOG"
+
+   exec_cmd_with_print "mkdir -p $SQL_DATA" "$CTL_LOG"
    test $? -ne 0 && { echo "ERROR: Fail to mkdir SQLDATA $SQL_DATA with $user" >&2 && exit 5; }
    
-   exec_cmd_with_print "$BIN_PATH/mysqld --no-defaults --basedir=$INSTALL_PATH --datadir=$SQL_DATA --user=$SQL_USER --initialize-insecure" "$SQL_LOG"
-   test $? -ne 0 && { echo "ERROR: Fail to initdb, please verify log $SQL_LOG" >&2 && exit 3; }
+   exec_cmd_with_print "$BIN_PATH/mysqld --no-defaults --basedir=$INSTALL_PATH --datadir=$SQL_DATA --user=$SQL_USER --initialize-insecure" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Fail to initdb, please verify log $CTL_LOG" >&2 && exit 3; }
    
+   exec_cmd_with_print "mkdir -p `dirname $SQL_LOG`" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Fail to create SQLLOG $SQL_LOG with $user" >&2 && exit 5; }
+
    #check configure file
-   exec_cmd_with_print "test -f $SQL_DATA/auto.cnf" "$SQL_LOG"
-   test $? -ne 0 && { echo "ERROR: File auto.conf does not exist after initdb, please verify log $SQL_LOG" >&2 && exit 3; }
+   exec_cmd_with_print "test -f $SQL_DATA/auto.cnf" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: File auto.conf does not exist after initdb, please verify log $CTL_LOG" >&2 && exit 3; }
    
-   exec_cmd_with_print "test -f $INSTALL_PATH/conf/sample/sample.cnf" "$SQL_LOG"
+   exec_cmd_with_print "test -f $INSTALL_PATH/conf/sample/sample.cnf" "$CTL_LOG"
    test $? -ne 0 && { echo "ERROR: File $INSTALL_PATH/conf/sample/sample.cnf does not exist" >&2 && exit 22; }
    
-   #write $INSTALL_DIR/auto.cnf
+   #write $SQL_DATA/auto.cnf
    #write default configure conf/sample/sample.cnf
-   exec_cmd_with_print "`cat $INSTALL_PATH/conf/sample/sample.cnf >> $SQL_DATA/auto.cnf`" "$SQL_LOG"
+   exec_cmd_with_print "`cat $INSTALL_PATH/conf/sample/sample.cnf >> $SQL_DATA/auto.cnf`" "$CTL_LOG"
    sed -i '$a\port='$PORT''                                    $SQL_DATA/auto.cnf
    sed -i '$a\basedir='$INSTALL_PATH''                         $SQL_DATA/auto.cnf
    sed -i '$a\datadir='$SQL_DATA''                             $SQL_DATA/auto.cnf
@@ -366,16 +362,16 @@ function add_inst()
    fi
 
    #generate instance configure file
-   exec_cmd_with_print "mkdir -p $CONF_INST_PATH" "$SQL_LOG"
-   test $? -ne 0 && { echo "ERROR: Failed to create directory $CONF_INST_PATH with $user, please verify log $SQL_LOG" >&2 && exit 5; }
-   exec_cmd_with_print "touch $CONF_INST_PATH/$INST_NAME.conf" "$SQL_LOG"
-   test $? -ne 0 && { echo "ERROR: Failed to create file $CONF_INST_PATH/$INST_NAME.conf, please verify log $SQL_LOG" >&2 && exit 5; }
-   exec_cmd_with_print "`echo 'INSTNAME='$INST_NAME''  >> $CONF_INST_PATH/$INST_NAME.conf`" "$SQL_LOG"
-   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $SQL_LOG" >&2 && exit 20; }
-   exec_cmd_with_print "`echo 'SQLDATA='$SQL_DATA''      >> $CONF_INST_PATH/$INST_NAME.conf`" "$SQL_LOG"
-   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $SQL_LOG" >&2 && exit 20; }
-   exec_cmd_with_print "`echo 'SQLLOG='$SQL_LOG''        >> $CONF_INST_PATH/$INST_NAME.conf`" "$SQL_LOG"
-   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $SQL_LOG" >&2 && exit 20; }
+   exec_cmd_with_print "mkdir -p $CONF_INST_PATH" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to create directory $CONF_INST_PATH with $user, please verify log $CTL_LOG" >&2 && exit 5; }
+   exec_cmd_with_print "touch $CONF_INST_PATH/$INST_NAME.conf" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to create file $CONF_INST_PATH/$INST_NAME.conf, please verify log $CTL_LOG" >&2 && exit 5; }
+   exec_cmd_with_print "`echo 'INSTNAME='$INST_NAME''  >> $CONF_INST_PATH/$INST_NAME.conf`" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $CTL_LOG" >&2 && exit 20; }
+   exec_cmd_with_print "`echo 'SQLDATA='$SQL_DATA''      >> $CONF_INST_PATH/$INST_NAME.conf`" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $CTL_LOG" >&2 && exit 20; }
+   exec_cmd_with_print "`echo 'SQLLOG='$SQL_LOG''        >> $CONF_INST_PATH/$INST_NAME.conf`" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to write file $CONF_INST_PATH/$INST_NAME.conf, please verify log $CTL_LOG" >&2 && exit 20; }
    
    add_to_svc >>/dev/null
    #start instance
@@ -403,11 +399,11 @@ function add_to_svc()
    echo "Adding instance $INST_NAME to service ..."
 
    test `whoami` == "root" && local user="$SQL_USER" || local user=`whoami`
-   exec_cmd_with_print "mkdir -p $CONF_SVC_PATH" "$SQLLOG"
-   test $? -ne 0 && { echo "ERROR: Failed to create directory $CONF_SVC_PATH with $user, please verify log $SQLLOG" >&2 && exit 5; }
+   exec_cmd_with_print "mkdir -p $CONF_SVC_PATH" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to create directory $CONF_SVC_PATH with $user, please verify log $CTL_LOG" >&2 && exit 5; }
 
-   exec_cmd_with_print "touch $CONF_SVC_PATH/$INST_NAME.conf" "$SQLLOG"
-   test $? -ne 0 && { echo "ERROR: Failed to create file $CONF_SVC_PATH/$INST_NAME.conf, please verify log $SQLLOG" >&2 && exit 5; }
+   exec_cmd_with_print "touch $CONF_SVC_PATH/$INST_NAME.conf" "$CTL_LOG"
+   test $? -ne 0 && { echo "ERROR: Failed to create file $CONF_SVC_PATH/$INST_NAME.conf, please verify log $CTL_LOG" >&2 && exit 5; }
 
    echo "ok"
 }
@@ -499,7 +495,7 @@ function get_one_status()
       printf "%-10s %-10s %-10s %-40s %-40s\n" $inst "-" "-" $SQLDATA $SQLLOG
       return 7
    else
-      echo "ERROR: Fail to query $inst status, please verify log $SQLLOG" >&2
+      echo "ERROR: Fail to query $inst status, please verify log $CTL_LOG" >&2
       exit 13
    fi
 }
@@ -599,7 +595,7 @@ function start_inst()
    
    echo "Check port is available ..."
    local inst_port=`cat $SQLDATA/auto.cnf | grep "^\s*port" |awk -F'[ =]' '{print $NF }'`
-   check_svcname_available $inst_port $SQLLOG false
+   check_svcname_available $inst_port $CTL_LOG false
    local ret=$?
    test $ret -ne 0 && { return $ret; }
    
@@ -609,9 +605,9 @@ function start_inst()
    local start_line=0
    local end_line=0
    local file_exist=false
-   test -f $SQLLOG && file_exist=true
+   test -f $CTL_LOG && file_exist=true
    if [ $file_exist == true -a "$NEED_PRINTSCREEN" == true ]; then
-      start_line=`cat $SQLLOG | wc -l`
+      start_line=`cat $CTL_LOG | wc -l`
    fi
    exec_cmd "$BIN_PATH/mysqld_safe --defaults-file=$SQLDATA/auto.cnf >> $SQLLOG 2>&1 & "
    local re=$!
@@ -619,12 +615,12 @@ function start_inst()
    wait_for_process "start" "$re" "$pid_file"
    local rc=$?
    if [ "$NEED_PRINTSCREEN" == true ]; then
-      end_line=`cat $SQLLOG | wc -l`
+      end_line=`cat $CTL_LOG | wc -l`
    fi
    if [ "$NEED_PRINTSCREEN" == true ]; then
-      `cat $SQLLOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
+      `cat $CTL_LOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
    fi
-   test $rc -ne 0 && { echo "ERROR: Fail to start, please verify log $SQLLOG" >&2 && return 16; }
+   test $rc -ne 0 && { echo "ERROR: Fail to start, please verify log $CTL_LOG" >&2 && return 16; }
    
    #check
    for ((i=0; i<15; i++));
@@ -638,7 +634,7 @@ function start_inst()
    
    for ((i=0; i<15; i++));
    do
-      check_svcname_available $inst_port $SQLLOG true
+      check_svcname_available $inst_port $CTL_LOG true
       if [ $? == 0 ]; then
          sleep 0.2
       else
@@ -656,7 +652,7 @@ function start_inst()
       return 0
    elif [ $ret == 7 ]
    then
-      echo "ERROR: Fail to start, please verify log $SQLLOG" >&2
+      echo "ERROR: Fail to start, please verify log $CTL_LOG" >&2
       return 7
    else
       echo "ERROR: Fail to query status." >&2
@@ -704,9 +700,9 @@ function stop_inst()
    local start_line=0
    local end_line=0
    local file_exist=false
-   test -f $SQLLOG && file_exist=true
+   test -f $CTL_LOG && file_exist=true
    if [ $file_exist == true -a "$NEED_PRINTSCREEN" == true ]; then
-      start_line=`cat $SQLLOG | wc -l`
+      start_line=`cat $CTL_LOG | wc -l`
    fi
    #exec_cmd_with_print "kill $pid" "$SQLLOG"
    exec_cmd "kill $pid"
@@ -716,17 +712,17 @@ function stop_inst()
    wait_for_process "stop" "$pid" "$pid_file"
    local rc=$?
    if [ "$NEED_PRINTSCREEN" == true ]; then
-      end_line=`cat $SQLLOG | wc -l`
+      end_line=`cat $CTL_LOG | wc -l`
    fi
    if [ "$NEED_PRINTSCREEN" == true ]; then
-      `cat $SQLLOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
+      `cat $CTL_LOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
    fi
    if [ $rc == 0 ]
    then 
       echo "ok"
       return 0
    else 
-      echo "ERROR: Failed to stop instance. The log files in $SQLLOG may give you some hint of what went wrong." >&2
+      echo "ERROR: Failed to stop instance. The log files in $CTL_LOG may give you some hint of what went wrong." >&2
       return 4;
    fi
 }
@@ -771,8 +767,8 @@ function change_configure_online()
          cmd="$BIN_PATH/mysql --no-defaults -uroot -p$passwd -S $socket_file -e 'set global "$para_name=$para_value"'"
       fi
       
-      exec_cmd_with_print "$cmd" "$SQLLOG"
-      test $? -ne 0 && { echo "ERROR: Fail to change $para_name, please verify log $SQLLOG" >&2 && exit 19; }
+      exec_cmd_with_print "$cmd" "$CTL_LOG"
+      test $? -ne 0 && { echo "ERROR: Fail to change $para_name, please verify log $CTL_LOG" >&2 && exit 19; }
    fi
    
    local exist_para=`sed -n -e '/'$para_name'\s*=/=' $SQLDATA/auto.cnf`
@@ -1255,6 +1251,8 @@ cd $cur_path >> /dev/null >&1
 
 CONF_INST_PATH="${INSTALL_PATH}/conf/instance"
 CONF_SVC_PATH="${INSTALL_PATH}/conf/service"
+CTL_LOG="${INSTALL_PATH}/conf/log/sdb_mysql_ctl.log"
+   
 
 eval set -- "${ARGS}"
 
