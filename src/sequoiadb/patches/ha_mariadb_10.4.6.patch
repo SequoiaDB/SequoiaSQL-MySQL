@@ -401,3 +401,59 @@ index 2d609d8..594d886 100644
  
  private:
    mysql_rwlock_t mutex;
+
+diff --git a/mariadb-v10.4.6/sql_table.cc b/mariadb-v10.4.6/sql_table.cc
+index f2be573..58f92a9 100644
+--- a/mariadb-v10.4.6/sql_table.cc
++++ b/mariadb-v10.4.6/sql_table.cc
+@@ -4236,6 +4236,9 @@ mysql_prepare_create_table(THD *thd, HA_CREATE_INFO *create_info,
+ 
+   /* Check fields. */
+   it.rewind();
++  extern char *ha_inst_group_name;
++  const char *USE_STRICT_CREATE_MODE_VAR="SDB_USER_DEFINE_VAR_USE_STRICT_CREATE_MODE";
++  const char *USE_STRICT_CREATE_MODE_FLAG="SEQUOIADB_FLAG_USE_STRICT_CREATE_MODE";
+   while ((sql_field=it++))
+   {
+     Field::utype type= (Field::utype) MTYP_TYPENR(sql_field->unireg_check);
+@@ -4256,6 +4259,25 @@ mysql_prepare_create_table(THD *thd, HA_CREATE_INFO *create_info,
+       sql_field->pack_flag|= FIELDFLAG_NO_DEFAULT;
+     }
+ 
++    user_var_entry *entry= (user_var_entry*) my_hash_search(&thd->user_vars,
++                                                            (uchar*) USE_STRICT_CREATE_MODE_VAR,
++                                                            strlen(USE_STRICT_CREATE_MODE_VAR));
++    if (ha_inst_group_name && 0 != strlen(ha_inst_group_name) &&
++        entry && entry->value && 0 == strcmp(entry->value, USE_STRICT_CREATE_MODE_FLAG) &&
++        !sql_field->has_default_function() &&
++        !sql_field->default_value &&  // maybe default NULL or not set
++        !(sql_field->flags & (NOT_NULL_FLAG | (1 << 31))) &&
++        !(sql_field->flags & AUTO_INCREMENT_FLAG))
++    {
++      if ((!sql_field->is_timestamp_type() ||
++           opt_explicit_defaults_for_timestamp)&&
++          !sql_field->vers_sys_field())
++      {
++        sql_field->flags|= NO_DEFAULT_VALUE_FLAG;
++        sql_field->pack_flag|= FIELDFLAG_NO_DEFAULT;
++      }
++    }
++
+     if (thd->variables.sql_mode & MODE_NO_ZERO_DATE &&
+         !sql_field->default_value && !sql_field->vcol_info &&
+         sql_field->is_timestamp_type() &&
+diff --git a/mariadb-v10.4.6/sql_yacc.yy b/mariadb-v10.4.6/sql_yacc.yy
+index ba2f3fe..fc6a2a3 100644
+--- a/mariadb-v10.4.6/sql_yacc.yy
++++ b/mariadb-v10.4.6/sql_yacc.yy
+@@ -7141,8 +7141,8 @@ opt_attribute_list:
+         ;
+ 
+ attribute:
+-          NULL_SYM { Lex->last_field->flags&= ~ NOT_NULL_FLAG; }
+-        | DEFAULT column_default_expr { Lex->last_field->default_value= $2; }
++          NULL_SYM { Lex->last_field->flags&= ~ NOT_NULL_FLAG; Lex->last_field->flags|= (1<< 31); }
++        | DEFAULT column_default_expr { Lex->last_field->default_value= $2; Lex->last_field->flags|= (1<< 31); }
+         | ON UPDATE_SYM NOW_SYM opt_default_time_precision
+           {
+             Item *item= new (thd->mem_root) Item_func_now_local(thd, $4);

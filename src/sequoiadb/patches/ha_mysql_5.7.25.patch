@@ -170,7 +170,7 @@ index 931bb26..9d9add1 100644
      is_result_set_started= 1;
    return res;
 diff --git a/mysql-v5.7.25/sql_parse.cc b/mysql-v5.7.25/sql_parse.cc
-index 52d319c..9fcaef2 100644
+index 52d319c..7b3cd36 100644
 --- a/mysql-v5.7.25/sql_parse.cc
 +++ b/mysql-v5.7.25/sql_parse.cc
 @@ -1190,6 +1190,60 @@ void reset_statement_timer(THD *thd)
@@ -347,3 +347,35 @@ index 52d319c..9fcaef2 100644
  
    lex->unit->cleanup(true);
    /* Free tables */
+@@ -5705,6 +5831,11 @@ bool add_field_to_list(THD *thd, LEX_STRING *field_name, enum_field_types type,
+   Create_field *new_field;
+   LEX  *lex= thd->lex;
+   uint8 datetime_precision= decimals ? atoi(decimals) : 0;
++  user_var_entry *entry= NULL;
++  extern char *ha_inst_group_name;
++  bool default_is_set= (default_value != NULL);
++  const char *USE_STRICT_CREATE_MODE_VAR="SDB_USER_DEFINE_VAR_USE_STRICT_CREATE_MODE";
++  const char *USE_STRICT_CREATE_MODE_FLAG="SEQUOIADB_FLAG_USE_STRICT_CREATE_MODE";
+   DBUG_ENTER("add_field_to_list");
+ 
+   LEX_CSTRING field_name_cstr= {field_name->str, field_name->length};
+@@ -5785,6 +5916,19 @@ bool add_field_to_list(THD *thd, LEX_STRING *field_name, enum_field_types type,
+                       interval_list, cs, uint_geom_type, gcol_info))
+     DBUG_RETURN(1);
+ 
++  entry= (user_var_entry*) my_hash_search(&thd->user_vars,
++                                          (uchar*) USE_STRICT_CREATE_MODE_VAR,
++                                          strlen(USE_STRICT_CREATE_MODE_VAR));
++  if (ha_inst_group_name && 0 != strlen(ha_inst_group_name) && !default_is_set &&
++      !(type_modifier & (NOT_NULL_FLAG | EXPLICIT_NULL_FLAG)) &&
++      !(type_modifier & AUTO_INCREMENT_FLAG) && entry &&
++      0 == strcmp(entry->ptr(), USE_STRICT_CREATE_MODE_FLAG)) {
++    if (thd->variables.explicit_defaults_for_timestamp ||
++        !is_timestamp_type(type)) {
++      new_field->flags|= NO_DEFAULT_VALUE_FLAG;
++    }
++  }
++
+   lex->alter_info.create_list.push_back(new_field);
+   lex->last_field=new_field;
+   DBUG_RETURN(0);

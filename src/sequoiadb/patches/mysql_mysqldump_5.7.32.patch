@@ -1,5 +1,5 @@
 diff --git a/mysql-v5.7.32/mysqldump.c b/mysql-v5.7.32/mysqldump.c
-index 9753f56..f0aef22 100644
+index 9753f56..1cd6ab6 100644
 --- a/mysql-v5.7.32/mysqldump.c
 +++ b/mysql-v5.7.32/mysqldump.c
 @@ -121,6 +121,7 @@ static my_bool  verbose= 0, opt_no_create_info= 0, opt_no_data= 0,
@@ -20,7 +20,21 @@ index 9753f56..f0aef22 100644
    {0, 0, 0, 0, 0, 0, GET_NO_ARG, NO_ARG, 0, 0, 0, 0, 0, 0}
  };
  
-@@ -5981,6 +5985,8 @@ static my_bool get_view_structure(char *table, char* db)
+@@ -754,6 +758,13 @@ static void write_header(FILE *sql_file, char *db_name)
+             "/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;\n",
+             path?"":"NO_AUTO_VALUE_ON_ZERO",compatible_mode_normal_str[0]==0?"":",",
+             compatible_mode_normal_str);
++    // FIX BUG SEQUOIASQLMAINSTREAM-801
++    if (opt_exec_only_in_mysql)
++    {
++      fprintf(sql_file,
++              "SET @SDB_USER_DEFINE_VAR_USE_STRICT_CREATE_MODE="
++              "'SEQUOIADB_FLAG_USE_STRICT_CREATE_MODE';");
++    }
+     check_io(sql_file);
+   }
+ } /* write_header */
+@@ -5981,6 +5992,8 @@ static my_bool get_view_structure(char *table, char* db)
    FILE       *sql_file= md_result_file;
    my_bool    freemem= FALSE;
    char const *text;
@@ -29,7 +43,7 @@ index 9753f56..f0aef22 100644
    DBUG_ENTER("get_view_structure");
  
    if (opt_no_create_info) /* Don't write table creation info */
-@@ -6033,11 +6039,15 @@ static my_bool get_view_structure(char *table, char* db)
+@@ -6033,11 +6046,15 @@ static my_bool get_view_structure(char *table, char* db)
    verbose_msg("-- Dropping the temporary view structure created\n");
    fprintf(sql_file, "/*!50001 DROP VIEW IF EXISTS %s*/;\n", opt_quoted_table);
  
@@ -46,7 +60,7 @@ index 9753f56..f0aef22 100644
  
    if (mysql_query(mysql, query))
    {
-@@ -6298,6 +6308,12 @@ int main(int argc, char **argv)
+@@ -6298,6 +6315,12 @@ int main(int argc, char **argv)
    if (opt_single_transaction && do_unlock_tables(mysql)) /* unlock but no commit! */
      goto err;
  
