@@ -1140,7 +1140,7 @@ function build_help()
    echo "  ${ME} restart    <INSTNAME>                           [--print]"
    echo "  ${ME} status     [INSTNAME]"
    echo "  ${ME} join       <INSTANCE> <-g INST_GROUP_NAME> [-k INST_GROUP_KEY] [--force]"
-   echo "  ${ME} leave      <INSTANCE> <-g INST_GROUP_NAME> [-k INST_GROUP_KEY] [--force]"
+   echo "  ${ME} leave      <INSTANCE> <-g INST_GROUP_NAME> [--force]"
    echo "  ${ME} chconf     <INSTNAME> [-p PORT]                            [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE]
 [--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL] [--sdb-token=TOKEN] [--sdb-cipherfile=PATH] [--sdb-error-level=ENUM] [--sdb-replica-size=SIZE] [--sdb-use-transaction=BOOL] [--sdb-optimizer-options=SET]
 [--sdb-rollback-on-timeout=BOOL] [--sdb-execute-only-in-mysql=BOOL] [--sdb-selector-pushdown-threshold=THRESHOLD] [--sdb-alter-table-overhead-threshold=THRESHOLD] [--sdb-lock-wait-timeout=TIMEOUT] [--sdb-use-rollback-segments=BOOL]
