@@ -47,9 +47,9 @@ INSERT INTO t1 VALUES (-1,'op','1999-04-04 08:08:08'),(10,'ok','2005-05-05 -11:1
 INSERT INTO t1 VALUES (100,'bar','2006-07-07 12:13:14'),(9,'too','2010-08-08 23:59:59'),(50,'to','2009-09-09 -23:59:59'),(-2,'bo','2020-10-10 23:00:00');
 #seqDB-14746
 #Bug SEQUOIASQLMAINSTREAM-798
-#--sorted_result
-#SELECT * FROM t1 WHERE id > FLOOR(2) AND t <= CONCAT('te','st') AND dt <> '2020-10-10 00:00:00';
-#--source include/query_pushdown_condition_sequoiadb.inc
+--sorted_result
+SELECT * FROM t1 WHERE id > FLOOR(2) AND t <= CONCAT('te','st') AND dt <> '2020-10-10 00:00:00';
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE id IN (1,8,10,50,100) AND (dt >= '2000-01-01 00:00:00' OR t LIKE 'to%');
 --source include/query_pushdown_condition_sequoiadb.inc

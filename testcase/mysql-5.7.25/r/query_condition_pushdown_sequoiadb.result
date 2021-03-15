@@ -4057,7 +4057,7 @@ id	a	b	c
 select * from t1 where a = -922337203685477806;
 id	a	b	c
 2	-922337203685477806	2	-922337203685477805.0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": -922337203685477806 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 where a != 922337203685477806;
 id	a	b	c
 1	-922337203685477808	1	-922337203685477809.0
@@ -4083,7 +4083,7 @@ id	a	b	c
 select * from t1 where a <=> -922337203685477806;
 id	a	b	c
 2	-922337203685477806	2	-922337203685477805.0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": -922337203685477806 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 where a between -922337203685477806 and 922337203685477806;
 id	a	b	c
 2	-922337203685477806	2	-922337203685477805.0
@@ -9702,6 +9702,12 @@ CREATE TABLE t1 ( id BIGINT, t TEXT, dt DATETIME );
 INSERT INTO t1 VALUES (1,'test','1970-01-01 01:01:01'),(0,'hello','2000-02-02 00:00:00'),(2,'sz','2001-03-03 10:10:10');
 INSERT INTO t1 VALUES (-1,'op','1999-04-04 08:08:08'),(10,'ok','2005-05-05 -11:11:11'),(8,'foo','1995-06-06 23:00:00');
 INSERT INTO t1 VALUES (100,'bar','2006-07-07 12:13:14'),(9,'too','2010-08-08 23:59:59'),(50,'to','2009-09-09 -23:59:59'),(-2,'bo','2020-10-10 23:00:00');
+SELECT * FROM t1 WHERE id > FLOOR(2) AND t <= CONCAT('te','st') AND dt <> '2020-10-10 00:00:00';
+id	t	dt
+10	ok	2005-05-05 11:11:11
+100	bar	2006-07-07 12:13:14
+8	foo	1995-06-06 23:00:00
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 2 } }, { "t": { "$lte": "test" } }, { "dt": { "$ne": "2020-10-10 00:00:00" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id IN (1,8,10,50,100) AND (dt >= '2000-01-01 00:00:00' OR t LIKE 'to%');
 id	t	dt
 10	ok	2005-05-05 11:11:11
@@ -9760,7 +9766,7 @@ id	t	dt
 100	bar	2006-07-07 12:13:14
 50	to	2009-09-09 23:59:59
 8	foo	1995-06-06 23:00:00
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 5 } }, { "t": { "$lte": "to" } }, { "dt": { "$ne": "1970-01-01 01:01:01" } }, { "t": { "$in": [ "abc", "ok", "test", "to", "from", "foo", "bar" ] } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id IN (-1,0,8,11,12,50,100) AND dt > '2000-01-01 01:01:01' AND (t < 'opt' OR (id BETWEEN 9 AND 10));
 id	t	dt
 0	hello	2000-02-02 00:00:00
@@ -9832,7 +9838,7 @@ id	t	dt
 50	to	2009-09-09 23:59:59
 8	foo	1995-06-06 23:00:00
 9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$gt": 5 } }, { "t": { "$lt": "foo" } }, { "dt": { "$et": "1970-01-01 01:01:01" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE NOT (id >= 2 AND t LIKE 'to%' OR dt < '2009-09-09 23:59:59');
 id	t	dt
 -2	bo	2020-10-10 23:00:00
@@ -9849,7 +9855,7 @@ id	t	dt
 0	hello	2000-02-02 00:00:00
 1	test	1970-01-01 01:01:01
 2	sz	2001-03-03 10:10:10
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$lte": 2 } }, { "t": { "$gte": "foo" } }, { "dt": { "$lte": "2010-10-10 00:00:00" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE NOT (NOT (t > 'test' OR dt < '2000-01-01 01:01:01'));
 id	t	dt
 -1	op	1999-04-04 08:08:08
