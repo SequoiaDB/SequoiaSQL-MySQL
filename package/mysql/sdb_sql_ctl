@@ -871,7 +871,14 @@ function join_inst_group()
    if [ "$FORCE_OP" == false ]; then
       #prompt user whether to add the instance to instance group
       typeset -u answer
-      echo "Adding an instance to an instance group will restart instance and clear the instance metadata if it's not the first instance to join the instance group"
+      get_one_status $INST_NAME >> /dev/null
+      if [ $? == 0 ]; then
+         echo "Current instance is running"
+         echo "Adding an instance to an instance group will restart instance and clear the instance metadata if it's not the first instance to join the instance group"
+      else
+         echo "Current instance is not running"
+         echo "Adding an instance to an instance group will clear the instance metadata during next startup if it's not the first instance to join the instance group"
+      fi
       read -p "Do you want to add instance '$INST_NAME' to instance group '$INST_GROUP_NAME'?[y/N]" answer
       test -z ${answer} && answer="N"
       case ${answer} in
@@ -900,6 +907,11 @@ function join_inst_group()
    if [ $? != 0 ]; then
       echo "$list_str"
       exit 34
+   fi
+
+   # clear original instance group information
+   if [ "$inst_group_name" != "" -a -f "$SQLDATA/myid" ]; then
+      clear_inst_configuration
    fi
 
    # set instance group name
