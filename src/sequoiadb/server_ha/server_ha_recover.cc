@@ -38,6 +38,7 @@
 #define HA_STMT_DELETE_ROUTINES "DELETE FROM mysql.proc WHERE db != 'sys'"
 #define HA_STMT_SET_NAMES "SET NAMES 'utf8mb4'"
 #define HA_STMT_SHOW_TABLES "SHOW FULL TABLES FROM "
+#define HA_STMT_DROP_UDF_FUNC "DELETE FROM mysql.func"
 
 // instance group user name
 static char ha_inst_group_user[HA_MAX_MYSQL_USERNAME_LEN + 1] = {0};
@@ -1196,6 +1197,17 @@ static int clear_local_meta_data(MYSQL *conn) {
                 "'mysql.proc' table, mysql error: %s",
                 mysql_error(conn));
   }
+
+  // 6. drop udf function from mysql.func
+  {
+    snprintf(sql_buf, MAX_CLEAN_SQL_LEN, "%s", HA_STMT_DROP_UDF_FUNC);
+    rc = mysql_query(conn, sql_buf, strlen(sql_buf));
+    HA_RC_CHECK(rc, error, "HA: Failed to drop udf function");
+#ifdef HAVE_DLOPEN
+    // clear UDF function cache
+    udf_free();
+#endif
+  }
   sql_print_information("HA: Clearing local metadata succeeded");
 done:
   return rc;
@@ -1330,6 +1342,12 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
       }
     }
   }
+
+  // recover UDF function cache
+#ifdef HAVE_DLOPEN
+  // reload UDF function from mysql.func
+  udf_init();
+#endif
 
   // execute flush privileges, update cache for 'mysql.user'
   // after restoring 'mysql.user' table with 'source' command

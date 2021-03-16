@@ -3792,6 +3792,7 @@ bool ha_is_ddl_ignorable_error(uint sql_errno) {
     case ER_EVENT_ALREADY_EXISTS:
     case ER_EVENT_DOES_NOT_EXIST:
     case ER_FUNCTION_NOT_DEFINED:
+    case ER_UDF_EXISTS:
 #ifdef IS_MARIADB
     case ER_UNKNOWN_VIEW:
     case ER_UNKNOWN_SEQUENCES:
