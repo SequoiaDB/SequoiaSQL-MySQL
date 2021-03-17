@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     }
 
     rc = list_instances(conn, orig_name);
-    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to list instances");
+    return rc;
   } catch (std::exception &e) {
     cerr << "Error: unexpected error: " << e.what() << endl;
     return SDB_HA_EXCEPTION;
