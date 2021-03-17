@@ -18,6 +18,7 @@
 
 #include <handler.h>
 #include "sql.h"
+#include "field.h"
 
 class Spark_share : public Handler_share {
  public:
@@ -49,6 +50,7 @@ class ha_spark : public handler {
   int close(void);                                            // required
   int write_row(uchar *buf);
   int update_row(const uchar *old_data, uchar *new_data);
+  int update_row(const uchar *old_data, const uchar *new_data);
   int delete_row(const uchar *buf);
   int index_read_map(uchar *buf, const uchar *key, key_part_map keypart_map,
                      enum ha_rkey_function find_flag);
@@ -58,6 +60,7 @@ class ha_spark : public handler {
   int index_last(uchar *buf);
   int read_next(uchar *buf);
   void set_field_null(Field *field, bool is_select);
+  void raw_store_blob(Field_blob *blob, const char *data, uint len);
   int convert_row_to_mysql_row(uchar *record);
   int rnd_init(bool scan);  // required
   int rnd_end();

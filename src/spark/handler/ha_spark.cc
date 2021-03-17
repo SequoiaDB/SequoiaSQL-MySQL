@@ -24,44 +24,21 @@
 #include "ha_spark_vars.h"
 #include "spark_conn.h"
 #include "ha_spark_log.h"
+#include "sql_time.h"
+#include "ha_spark_sql.h"
 
 handlerton *spark_hton;
 
 #define MAX_NAME_LEN 255
 #define MAX_DATA_WIDTH 300
 
-#ifdef IS_MYSQL
+#if defined IS_MYSQL
 #define spk_ha_statistic_increment(offset) \
   { ha_statistic_increment(offset); }
-#else
-#ifdef IS_MARIADB
+#elif defined IS_MARIADB
 #define spk_ha_statistic_increment(offset) \
   { /*do nothing*/                         \
   }
-#endif
-#endif
-
-#if defined IS_MYSQL
-const char *spk_field_name(const Field *f) {
-  return f->field_name;
-}
-ulong spk_thd_current_row(THD *thd) {
-  return thd->get_stmt_da()->current_row_for_condition();
-}
-const char *spk_thd_query(THD *thd) {
-  return thd->query().str;
-}
-
-#elif defined IS_MARIADB
-const char *spk_field_name(const Field *f) {
-  return f->field_name.str;
-}
-ulong spk_thd_current_row(THD *thd) {
-  return thd->get_stmt_da()->current_row_for_warning();
-}
-const char *spk_thd_query(THD *thd) {
-  return thd->query();
-}
 #endif
 
 static handler *spark_create_handler(handlerton *hton, TABLE_SHARE *table,
@@ -178,6 +155,10 @@ int ha_spark::write_row(uchar *buf) {
 }
 
 int ha_spark::update_row(const uchar *old_data, uchar *new_data) {
+  return update_row(old_data, const_cast<const uchar *>(new_data));
+}
+
+int ha_spark::update_row(const uchar *old_data, const uchar *new_data) {
   DBUG_ENTER("ha_spark::update_row");
   DBUG_RETURN(HA_ERR_WRONG_COMMAND);
 }
@@ -259,6 +240,43 @@ void ha_spark::set_field_null(Field *field, bool is_select) {
     field->set_default();
   }
 }
+void spk_store_packlength(uchar *ptr, uint packlength, uint number,
+                          bool low_byte_first) {
+  switch (packlength) {
+    case 1:
+      ptr[0] = (uchar)number;
+      break;
+    case 2:
+#ifdef WORDS_BIGENDIAN
+      if (low_byte_first) {
+        int2store(ptr, (unsigned short)number);
+      } else
+#endif
+        shortstore(ptr, (unsigned short)number);
+      break;
+    case 3:
+      int3store(ptr, number);
+      break;
+    case 4:
+#ifdef WORDS_BIGENDIAN
+      if (low_byte_first) {
+        int4store(ptr, number);
+      } else
+#endif
+        longstore(ptr, number);
+  }
+}
+
+void ha_spark::raw_store_blob(Field_blob *blob, const char *data, uint len) {
+  uint packlength = blob->pack_length_no_ptr();
+#if defined IS_MYSQL
+  bool low_byte_first = table->s->db_low_byte_first;
+#elif defined IS_MARIADB
+  bool low_byte_first = true;
+#endif
+  spk_store_packlength(blob->ptr, packlength, len, low_byte_first);
+  memcpy(blob->ptr + packlength, &data, sizeof(char *));
+}
 
 int ha_spark::convert_row_to_mysql_row(uchar *record) {
   SQLRETURN ret = 0;
@@ -296,15 +314,16 @@ int ha_spark::convert_row_to_mysql_row(uchar *record) {
     field->reset();
     for (n_col = 1; n_col <= n_columns; n_col++) {
       SQLLEN data_type;
+      SQLSMALLINT len;
       ok_stmt(ret, m_stmt,
               SQLColAttribute(m_stmt, n_col, SQL_DESC_BASE_COLUMN_NAME,
                               col_name, MAX_NAME_LEN, NULL, NULL));
       if (0 == strcmp((const char *)col_name, spk_field_name(field))) {
+        // SQL_DESC_TYPE
         ok_stmt(ret, m_stmt,
-                SQLColAttribute(m_stmt, n_col, SQL_DESC_TYPE, NULL, 0, NULL,
-                                &data_type));
+                SQLColAttribute(m_stmt, n_col, SQL_DESC_CONCISE_TYPE, NULL, 0,
+                                &len, &data_type));
         switch (data_type) {
-            /* SQL data type codes */
           /* SQL data type codes */
           case SQL_CHAR:
           case SQL_VARCHAR:
@@ -371,29 +390,80 @@ int ha_spark::convert_row_to_mysql_row(uchar *record) {
             field->store((SQLBIGINT)value, false);
             break;
           }
-          case SQL_BIT:
-            break;
           case SQL_DATE:
-          case SQL_TYPE_DATE:
-            break;
-          case SQL_TIMESTAMP:
-          case SQL_TYPE_TIMESTAMP:
-            break;
-          case SQL_TIME:
-          case SQL_TYPE_TIME:
-            break;
-          /*case SQL_FLOAT: {
-            SQLFLOAT value = 0;
-            ok_stmt(ret, m_stmt, SQLGetData(m_stmt, n_col, SQL_C_DOUBLE,
-                                            (SQLPOINTER)&value,
-                                            sizeof(value), &len_or_null));
-            if (SQL_NULL_DATA == len_or_null) {
+          case SQL_TYPE_DATE: {
+            SQL_TIMESTAMP_STRUCT ts;
+            MYSQL_TIME tv;
+            SQLLEN outlen = 0;
+            memset(&ts, 0, sizeof(SQL_TIMESTAMP_STRUCT));
+            ok_stmt(ret, m_stmt,
+                    SQLGetData(m_stmt, n_col, SQL_C_DATE, &ts, sizeof(ts),
+                               &outlen));
+            if (SQL_NULL_DATA == outlen) {
               set_field_null(field, is_select);
               continue;
             }
-            field->store(value);
+            memset(&tv, 0, sizeof(MYSQL_TIME));
+            tv.year = ts.year;
+            tv.month = ts.month;
+            tv.day = ts.day;
+            tv.time_type = MYSQL_TIMESTAMP_DATE;
+            field->store_time(&tv);
             break;
-          }*/
+          }
+          case SQL_TIMESTAMP:
+          case SQL_TYPE_TIMESTAMP: {
+            SQL_TIMESTAMP_STRUCT ts = {0, 0, 0, 0, 0, 0, 0};
+            MYSQL_TIME tv;
+            struct timeval tm = {0, 0};
+            SQLLEN outlen = 0;
+            int warnings = 0;
+
+            ok_stmt(ret, m_stmt,
+                    SQLGetData(m_stmt, n_col, SQL_C_TIMESTAMP, &ts, sizeof(ts),
+                               &outlen));
+            if (SQL_NULL_DATA == outlen) {
+              set_field_null(field, is_select);
+              continue;
+            }
+            memset(&tv, 0, sizeof(MYSQL_TIME));
+            tv.year = ts.year;
+            tv.month = ts.month;
+            tv.day = ts.day;
+            tv.hour = ts.hour;
+            tv.minute = ts.minute;
+            tv.second = ts.second;
+            tv.second_part = ts.fraction / 1000;
+            tv.neg = false;
+            tv.time_type = MYSQL_TIMESTAMP_TIME;
+            // datetime_to_timeval(current_thd, &tv, &tm, &warnings);
+            spk_datetime_to_timeval(ha_thd(), &tv, &tm, &warnings);
+#if defined IS_MYSQL
+            field->store_timestamp(&tm);
+#elif defined IS_MARIADB
+            field->store_timestamp(tm.tv_sec, tm.tv_usec);
+#endif
+            break;
+          }
+          case SQL_TIME:
+          case SQL_TYPE_TIME: {
+            SQLLEN outlen = 0;
+            MYSQL_TIME tv;
+            SQL_TIME_STRUCT sts = {0, 0, 0};
+            ok_stmt(ret, m_stmt,
+                    SQLGetData(m_stmt, n_col, SQL_C_TIME, &sts, sizeof(sts),
+                               &outlen));
+            if (SQL_NULL_DATA == outlen) {
+              set_field_null(field, is_select);
+              continue;
+            }
+            memset(&tv, 0, sizeof(MYSQL_TIME));
+            tv.hour = sts.hour;
+            tv.minute = sts.minute;
+            tv.second = sts.second;
+            field->store_time(&tv);
+            break;
+          }
           case SQL_REAL: {
             SQLREAL value = 0;
             ok_stmt(ret, m_stmt,
@@ -421,8 +491,28 @@ int ha_spark::convert_row_to_mysql_row(uchar *record) {
           }
           case SQL_BINARY:
           case SQL_VARBINARY:
-          case SQL_LONGVARBINARY:
+          case SQL_LONGVARBINARY: {
+            CHAR *buff = NULL;
+            int max_len = field->max_data_length();
+            buff = (CHAR *)alloc_root(ha_thd()->mem_root, max_len);
+            memset(buff, 0, field->max_data_length());
+            ok_stmt(ret, m_stmt,
+                    SQLGetData(m_stmt, n_col, SQL_C_BINARY, (SQLPOINTER)buff,
+                               max_len, &len_or_null));
+            if (SQL_NULL_DATA == len_or_null) {
+              set_field_null(field, is_select);
+              continue;
+            }
+
+            if (field->flags & BLOB_FLAG) {
+              raw_store_blob((Field_blob *)field, buff, len_or_null);
+            } else {
+              field->store(buff, len_or_null, &my_charset_bin);
+            }
             break;
+          }
+          /*spark has no bit data type*/
+          case SQL_BIT:
           case SQL_UNKNOWN_TYPE:
           default:
             break;
@@ -444,12 +534,6 @@ int ha_spark::read_next(uchar *buf) {
 
   SQLRETURN ret = SQL_SUCCESS;
   table->status = STATUS_NOT_FOUND;
-  // SQLUINTEGER fetch_order = 0;
-  // SQLUBIGINT fetch_offset = 0;
-
-  // fetch_order = SQL_FETCH_FIRST;
-  // fetch_offset = 0;
-
   ret = SQLFetch(m_stmt);
   if (SQL_SUCCESS != ret && SQL_SUCCESS_WITH_INFO != ret) {
     goto error;
@@ -502,6 +586,7 @@ int ha_spark::rnd_next(uchar *buf) {
       }
 
       rc = conn->query((SQLCHAR *)spk_query_str, m_stmt);
+      SPARK_LOG_DEBUG("SQL pushed down to spark:%s, rc:%d", spk_query_str, rc);
       if (0 != rc) {
         goto error;
       }

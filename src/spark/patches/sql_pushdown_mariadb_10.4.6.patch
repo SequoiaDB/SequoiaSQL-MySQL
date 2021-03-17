@@ -1,21 +1,3 @@
-From 826a52a0670e023f168997ea05eb4f735414f91e Mon Sep 17 00:00:00 2001
-From: yuweixing <yuweixing@sequoiadb.com>
-Date: Tue, 5 Jan 2021 15:24:39 +0800
-Subject: [PATCH] =?UTF-8?q?SEQUOIASQLMAINSTREAM-850=20=E6=94=AF=E6=8C=81?=
- =?UTF-8?q?=20SQL=20=E4=B8=8B=E5=8E=8B?=
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
----
- sql/sql_class.h    | 21 +++++++++--
- sql/sql_parse.cc   | 82 +++++++++++++++++++++++++++++++++++++++++-
- sql/sql_prepare.cc | 88 ++++++++++++++++++++++++++++++++++++++++++++++
- sql/sql_prepare.h  |  8 +++++
- sql/sys_vars.cc    |  9 +++++
- sql/sys_vars.ic    |  2 ++
- 6 files changed, 207 insertions(+), 3 deletions(-)
-
 diff --git a/sql/sql_class.h b/sql/sql_class.h
 index dd9cfbbd..43b5c2ca 100644
 --- a/sql/sql_class.h
@@ -63,7 +45,7 @@ index dd9cfbbd..43b5c2ca 100644
  
  /** A short cut for thd->get_stmt_da()->set_ok_status(). */
 diff --git a/sql/sql_parse.cc b/sql/sql_parse.cc
-index e49dbe9f..2beeb39b 100644
+index e49dbe9f..e64cc07b 100644
 --- a/sql/sql_parse.cc
 +++ b/sql/sql_parse.cc
 @@ -104,6 +104,8 @@
@@ -75,7 +57,7 @@ index e49dbe9f..2beeb39b 100644
  #define FLAGSTR(V,F) ((V)&(F)?#F" ":"")
  
  #ifdef WITH_ARIA_STORAGE_ENGINE
-@@ -1803,6 +1805,72 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
+@@ -1803,6 +1805,80 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
      MYSQL_SET_STATEMENT_TEXT(thd->m_statement_psi, thd->query(),
                               thd->query_length());
  
@@ -86,7 +68,7 @@ index e49dbe9f..2beeb39b 100644
 +    push_type type = NO_PUSH;
 +
 +    if(thd->variables.sdb_sql_pushdown) {
-+      const int LEN_OF_CONCAT_STR = 400;
++      const int LEN_OF_CONCAT_STR = 700;
 +      int len_of_concat = thd->query_length() + LEN_OF_CONCAT_STR + 1;
 +
 +      type = sql_pushdown(thd, &push_down_sql);
@@ -104,6 +86,8 @@ index e49dbe9f..2beeb39b 100644
 +      concat_join_push_down_sql[0] = '\0';
 +      if (PUSH_TO_SPK == type) {
 +        snprintf(concat_join_push_down_sql, len_of_concat,
++          "set @`sdb#pd#exec#in#only#mysql` = @@sequoiadb_execute_only_in_mysql;"
++          "set @`spk#pd#exec#in#only#mysql` = @@spark_execute_only_in_mysql;"
 +          "drop table if exists `I#T#TEMP#PHJ`;"
 +          "set session `spark_execute_only_in_mysql` = on;"
 +          "set session `sequoiadb_execute_only_in_mysql` = on;"
@@ -112,18 +96,24 @@ index e49dbe9f..2beeb39b 100644
 +          "set session `spark_execute_only_in_mysql` = off;"
 +          "set session `sequoiadb_execute_only_in_mysql` = off;"
 +          "select * from `I#T#TEMP#PHJ`;"
-+          "drop table if exists `I#T#TEMP#PHJ`;");
++          "drop table if exists `I#T#TEMP#PHJ`;"
++          "set @@sequoiadb_execute_only_in_mysql = @`sdb#pd#exec#in#only#mysql`;"
++          "set @@spark_execute_only_in_mysql = @`spk#pd#exec#in#only#mysql`;");
 +      }
 +
 +      if (PUSH_TO_SDB == type) {
 +        snprintf(concat_join_push_down_sql, len_of_concat,
-+        "drop table if exists `I#T#TEMP#PHJ`;"
-+        "set session `sequoiadb_execute_only_in_mysql` = on;"
-+        "create temporary table if not exists `I#T#TEMP#PHJ` engine = sequoiadb "
-+        "as %s;%s",push_down_sql,
-+        "set session `sequoiadb_execute_only_in_mysql` = off;"
-+        "select * from `I#T#TEMP#PHJ`;"
-+        "drop table if exists `I#T#TEMP#PHJ`;");
++          "set @`sdb#pd#exec#in#only#mysql` = @@sequoiadb_execute_only_in_mysql;"
++          "set @`spk#pd#exec#in#only#mysql` = @@spark_execute_only_in_mysql;"
++          "drop table if exists `I#T#TEMP#PHJ`;"
++          "set session `sequoiadb_execute_only_in_mysql` = on;"
++          "create temporary table if not exists `I#T#TEMP#PHJ` engine = sequoiadb "
++          "as %s;%s",push_down_sql,
++          "set session `sequoiadb_execute_only_in_mysql` = off;"
++          "select * from `I#T#TEMP#PHJ`;"
++          "drop table if exists `I#T#TEMP#PHJ`;"
++          "set @@sequoiadb_execute_only_in_mysql = @`sdb#pd#exec#in#only#mysql`;"
++          "set @@spark_execute_only_in_mysql = @`spk#pd#exec#in#only#mysql`;");
 +      }
 +
 +      CSET_STRING concat_lex_str(concat_join_push_down_sql,
@@ -148,7 +138,7 @@ index e49dbe9f..2beeb39b 100644
      Parser_state parser_state;
      if (unlikely(parser_state.init(thd, thd->query(), thd->query_length())))
        break;
-@@ -1843,7 +1911,19 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
+@@ -1843,7 +1919,21 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
  
        /* Finalize server status flags after executing a statement. */
        thd->update_server_status();
@@ -157,11 +147,13 @@ index e49dbe9f..2beeb39b 100644
 +        /* If push down hash join sql to sdb, then only send the result of 
 +           join sql exec.*/
 +        if(thd->PREPARE_STEP == thd->sdb_sql_exec_step) {
-+        } else {
++        } else if(thd->EXEC_STEP == thd->sdb_sql_exec_step) {
 +          thd->protocol->end_statement();
 +          if (add_multi_query_flag) {
 +            thd->client_capabilities&= ~CLIENT_MULTI_STATEMENTS;
 +          }
++          /*Only send the execute result to client*/
++          thd->sdb_sql_exec_step = thd->NON_PUSH_DOWN;
 +        }
 +      } else {
 +        thd->protocol->end_statement();
@@ -319,6 +311,3 @@ index aefae6d5..ae92e1c6 100644
  };
 +
 +
--- 
-2.28.0.windows.1
-

@@ -4565,10 +4565,10 @@ int ha_sdb::rnd_next(uchar *buf) {
         THD_STAGE_INFO(ha_thd(), stage_exec_sql_in_sdb);
         try {
           rc = conn->execute(hj_sql);
+          SDB_LOG_DEBUG("SQL pushed down to sdb:%s, rc:%d", hj_sql, rc);
           if (rc != SDB_ERR_OK) {
             goto error;
           }
-
           rc = conn->next(cur_rec, false);
           if (rc != 0) {
             if (HA_ERR_END_OF_FILE == rc) {
