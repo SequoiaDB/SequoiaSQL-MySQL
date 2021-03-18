@@ -859,19 +859,10 @@ int sdb_build_aggregate_obj(bson::BSONObj &condition,
     limit_builder.append("$limit", (longlong)num_to_return);
     limit_obj = limit_builder.obj();
     aggregate_obj.push_back(limit_obj);
-  } catch (std::bad_alloc &e) {
-    rc = HA_ERR_OUT_OF_MEM;
-    SDB_LOG_DEBUG(
-        "Failed to build bson obj when sdb build aggregate obj, exception:%s",
-        e.what());
-    goto done;
-  } catch (std::exception &e) {
-    rc = HA_ERR_INTERNAL_ERROR;
-    SDB_LOG_DEBUG(
-        "Failed to build bson obj when sdb build aggregate obj, exception:%s",
-        e.what());
-    goto done;
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to build bson obj when sdb build aggregate obj, exception:%s",
+      e.what());
   SDB_LOG_DEBUG(
       "Query message: match[%s], group[%s], sort[%s], skip[%s], "
       "limit[%s]",
@@ -883,6 +874,88 @@ int sdb_build_aggregate_obj(bson::BSONObj &condition,
 
 done:
   return rc;
+error:
+  goto done;
+}
+
+int sdb_merge_auto_inc_option(bson::BSONObj &options,
+                              bson::BSONObj &auto_inc_options,
+                              bson::BSONObjBuilder &builder) {
+  int rc = SDB_OK;
+  bool has_auto_inc_option = false;
+  bson::BSONObj cmt_auto_inc_options;
+  bson::BSONObjBuilder auto_inc_builder;
+  bson::BSONObjIterator it(options);
+
+  try {
+    while (it.more()) {
+      bson::BSONElement cmt_options_elem = it.next();
+      if (0 !=
+          strcmp(cmt_options_elem.fieldName(), SDB_FIELD_NAME_AUTOINCREMENT)) {
+        builder.append(cmt_options_elem);
+        continue;
+      }
+      has_auto_inc_option = true;
+      if (auto_inc_options.isEmpty()) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "The AUTO_INCREMENT keyword is required", MYF(0));
+        goto error;
+      } else if (bson::Object != cmt_options_elem.type()) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "The auto increment of comment must be object",
+                        MYF(0));
+        goto error;
+      } else {
+        cmt_auto_inc_options = cmt_options_elem.embeddedObject();
+        bson::BSONObjIterator auto_inc_it(auto_inc_options);
+        bson::BSONElement auto_inc_elem;
+        bson::BSONElement cmt_auto_inc_elem;
+        while (auto_inc_it.more()) {
+          auto_inc_elem = auto_inc_it.next();
+          if (0 != strcmp(auto_inc_elem.fieldName(), SDB_FIELD_NAME_FIELD)) {
+            cmt_auto_inc_elem =
+                cmt_auto_inc_options.getField(auto_inc_elem.fieldName());
+            if (bson::EOO != cmt_auto_inc_elem.type()) {
+              auto_inc_builder.append(cmt_auto_inc_elem);
+              continue;
+            }
+          } else {
+            cmt_auto_inc_elem =
+                cmt_auto_inc_options.getField(SDB_FIELD_NAME_FIELD);
+            if (bson::EOO != cmt_auto_inc_elem.type()) {
+              if (bson::String != cmt_auto_inc_elem.type()) {
+                rc = ER_WRONG_ARGUMENTS;
+                my_printf_error(
+                    rc, "The auto increment field of comment must be string",
+                    MYF(0));
+                goto error;
+              }
+              if (0 != strcmp(auto_inc_elem.valuestr(),
+                              cmt_auto_inc_elem.valuestr())) {
+                rc = ER_WRONG_ARGUMENTS;
+                my_printf_error(rc, "Ambiguous auto increment field", MYF(0));
+                goto error;
+              }
+            }
+          }
+          auto_inc_builder.append(auto_inc_elem);
+        }
+        builder.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_builder.obj());
+      }
+    }
+    if (!has_auto_inc_option && !auto_inc_options.isEmpty()) {
+      builder.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_options);
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to build bson obj when sdb_merge_auto_inc_option, exception:%s",
+      e.what());
+
+done:
+  return rc;
+error:
+  goto done;
 }
 
 #ifdef IS_MYSQL
@@ -6837,12 +6910,13 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
   Sdb_cl cl;
-  bson::BSONObjBuilder build;
-  bool create_temporary = (create_info->options & HA_LEX_CREATE_TMP_TABLE);
-  bson::BSONObj options;
+  bool has_copy = false;
   bool created_cs = false;
   bool created_cl = false;
-  bool has_copy = false;
+  bool create_temporary = (create_info->options & HA_LEX_CREATE_TMP_TABLE);
+  bson::BSONObj options;
+  bson::BSONObj auto_inc_options;
+  bson::BSONObjBuilder build;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -6947,7 +7021,6 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       }
 
       if (Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
-        bson::BSONObj auto_inc_options;
         rc = build_auto_inc_option(field, create_info, auto_inc_options);
         if (SDB_ERR_OK != rc) {
           SDB_LOG_ERROR(
@@ -6957,7 +7030,6 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
               sdb_field_name(field), db_name, table_name, rc);
           goto error;
         }
-        build.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_options);
       }
     }
 
@@ -6965,7 +7037,12 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     if (0 != rc) {
       goto error;
     }
-    build.appendElements(options);
+
+    // Merge auto_inc_options into options.
+    rc = sdb_merge_auto_inc_option(options, auto_inc_options, build);
+    if (rc) {
+      goto error;
+    }
 
     rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
                          &created_cl);
