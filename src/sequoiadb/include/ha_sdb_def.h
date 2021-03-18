@@ -146,6 +146,7 @@
 
 #define SDB_FIELD_DETAIL "detail"
 #define SDB_FIELD_DESCRIPTION "description"
+#define SDB_FIELD_ERRNO "errno"
 
 #define SDB_ACQUIRE_TRANSACTION_LOCK "Acquire transaction lock"
 

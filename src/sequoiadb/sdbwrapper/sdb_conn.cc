@@ -544,6 +544,42 @@ error:
   goto done;
 }
 
+const char *Sdb_conn::get_err_msg() {
+  if ('\0' == errmsg[0]) {
+    try {
+      bson::BSONObj err_obj;
+      int rc = m_connection.getLastErrorObj(err_obj);
+      if (0 == rc) {
+        const char *error_msg = err_obj.getStringField(SDB_FIELD_DETAIL);
+        if (error_msg && '\0' != error_msg[0]) {
+          snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s", error_msg);
+        } else {
+          error_msg = err_obj.getStringField(SDB_FIELD_DESCRIPTION);
+          if (error_msg && '\0' != error_msg[0]) {
+            snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s", error_msg);
+          } else {
+            int error_code = err_obj.getIntField(SDB_FIELD_ERRNO);
+            snprintf(errmsg, SDB_ERR_BUFF_SIZE, "No description for error %d",
+                     error_code);
+          }
+        }
+      } else if (SDB_DMS_EOC == rc) {
+        snprintf(errmsg, SDB_ERR_BUFF_SIZE, "There is no error object");
+      } else if (0 != rc) {
+        snprintf(errmsg, SDB_ERR_BUFF_SIZE,
+                 "Failed to get last error, error code: %d", rc);
+      }
+    } catch (std::bad_alloc &e) {
+      snprintf(errmsg, SDB_ERR_BUFF_SIZE,
+               "OOM while fetching error message, exception: %s", e.what());
+    } catch (std::exception &e) {
+      snprintf(errmsg, SDB_ERR_BUFF_SIZE,
+               "Failed to get error object, exception: %s", e.what());
+    }
+  }
+  return errmsg;
+}
+
 int conn_rename_cl(sdbclient::sdb *connection, const char *cs_name,
                    const char *old_cl_name, const char *new_cl_name) {
   int rc = SDB_ERR_OK;
@@ -1118,7 +1154,7 @@ int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type,
                        longlong num_to_skip) {
   return retry(boost::bind(conn_snapshot, &m_connection, &obj, snap_type,
                            &condition, &selected, &order_by, &hint, num_to_skip,
-                           get_err_msg()));
+                           errmsg));
 }
 
 int conn_get_last_result_obj(sdbclient::sdb *connection, bson::BSONObj *result,

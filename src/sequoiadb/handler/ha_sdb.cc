@@ -7220,6 +7220,7 @@ bool ha_sdb::get_error_message(int error, String *buf) {
   thd_sdb = thd_get_thd_sdb(ha_thd());
   conn = thd_sdb->get_conn();
   buf->append(conn->get_err_msg());
+  conn->clear_err_msg();
   return FALSE;
 }
 

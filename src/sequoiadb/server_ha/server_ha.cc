@@ -140,6 +140,19 @@ static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
   return rc;
 }
 
+// return fixed string if it's 'create/grant/alter user' sql command
+// it may contain a plaintext string, it should not be written to any log
+static inline const char *query_without_password(THD *thd) {
+  int sql_command = thd_sql_command(thd);
+  static const char *MASKED_PASSWORD_QUERY = "GRANT_CREATE_ALTER_USER_OP";
+  const char *query = sdb_thd_query(thd);
+  if (SQLCOM_CREATE_USER == sql_command || SQLCOM_ALTER_USER == sql_command ||
+      SQLCOM_GRANT == sql_command) {
+    query = MASKED_PASSWORD_QUERY;
+  }
+  return query;
+}
+
 bool ha_is_executing_pending_log(THD *thd) {
   const char *execute_user = NULL;
   bool is_executing_pending_log = false;
@@ -3243,7 +3256,8 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
       goto done;
     }
     SDB_LOG_DEBUG(
-        "HA: Statement contains 'SHOW', wait objects updated to latest state");
+        "HA: Check version of object contained in current statement in "
+        "advance");
   } else if (sql_info->dml_retry_flag) {
     const char *query = thd->in_sub_stmt ? "sub-query" : sdb_thd_query(thd);
     SDB_LOG_DEBUG("HA: DML retry flag is set, retry current statement");
@@ -3682,8 +3696,8 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   DBUG_ASSERT(pending_id > 0);
   sql_info->pending_sql_id = pending_id;
 
-  SDB_LOG_DEBUG("HA: Write pending log '%s' with pending ID: %d",
-                event.general_query, pending_id);
+  SDB_LOG_DEBUG("HA: Writing pending log '%s' with pending ID: %d",
+                query_without_password(thd), pending_id);
 
   // write 'HAPendingObject'
   for (ha_table_list *table = sql_info->tables; table; table = table->next) {
@@ -4112,7 +4126,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       goto error;
     }
     SDB_LOG_DEBUG("HA: Metadata recover finished, start execute: %s",
-                  sdb_thd_query(thd));
+                  query_without_password(thd));
     if (thd_killed(thd) || ha_thread.stopped) {
       rc = SDB_HA_ABORT_BY_USER;
       goto error;
@@ -4134,7 +4148,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     DBUG_ASSERT(sql_info->tables == NULL);
     try {
       SDB_LOG_DEBUG("HA: At the beginning of persisting SQL: %s, thread: %p",
-                    sdb_thd_query(thd), thd);
+                    query_without_password(thd), thd);
       SDB_LOG_DEBUG("HA: SQL command: %d, event: %d, subevent: %d, thread: %p",
                     sql_command, event_class, *((int *)ev), thd);
       SDB_LOG_DEBUG("HA: Start transaction for persisting SQL log");
@@ -4186,7 +4200,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
 
   if (need_complete(event, is_trans_on, sql_command, event_class)) {
     SDB_LOG_DEBUG("HA: At the end of persisting SQL: %s, thread: %p",
-                  sdb_thd_query(thd), thd);
+                  query_without_password(thd), thd);
     try {
       if (can_write_sql_log(thd, sql_info, event.general_error_code) ||
           is_pending_log_ignorable_error(thd)) {

@@ -1616,7 +1616,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                   "mysql error: %s",
                   use_db_cmd, sql_id, mysql_error(ha_mysql));
 
-      SDB_LOG_DEBUG("HA: Replay thread replay SQL: %s with SQL ID: %d", query,
+      SDB_LOG_DEBUG("HA: Start playback of SQL statement with SQL ID: %d",
                     sql_id);
 
       if (strlen(query)) {
@@ -1628,17 +1628,18 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
       // retry 'alter sequence ' statement if a conflict is found
       if (0 != rc && ER_SEQUENCE_INVALID_DATA == mysql_errno(ha_mysql)) {
         rc = retry_alter_sequence_stmt(ha_mysql, query, table_name);
-        HA_RC_CHECK(rc, sleep_secs,
-                    "HA: Failed to retry '%s' with SQL ID: %d, mysql error: %s",
-                    query, sql_id, mysql_error(ha_mysql));
+        HA_RC_CHECK(
+            rc, sleep_secs,
+            "HA: Failed to retry statement with SQL ID: %d, mysql error: %s",
+            sql_id, mysql_error(ha_mysql));
       }
 #endif
 
       if (rc && ha_is_ddl_ignorable_error(mysql_errno(ha_mysql))) {
         sql_print_information(
-            "HA: Failed to replay sql '%s' with SQL ID: %d, "
+            "HA: Failed to replay SQL statement with SQL ID: %d, "
             "mysql error: %s, ignore this error",
-            query, sql_id, mysql_error(ha_mysql));
+            sql_id, mysql_error(ha_mysql));
         rc = 0;
       }
       // if abort_loop become true, don't report errors, or mysql automated
@@ -1648,10 +1649,11 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         break;
       }
       HA_RC_CHECK(rc, sleep_secs,
-                  "HA: Failed to replay sql '%s' with SQL ID: %d, "
+                  "HA: Failed to replay SQL statement with SQL ID: %d, "
                   "mysql error: %s",
-                  query, sql_id, mysql_error(ha_mysql));
-      SDB_LOG_DEBUG("HA: Replay of '%s' succeeded", query);
+                  sql_id, mysql_error(ha_mysql));
+      SDB_LOG_DEBUG("HA: SQL statement with SQL ID: %d playback succeeded",
+                    sql_id);
 
       // update instance object state and instance state
       for (int try_count = MAX_TRY_COUNT; try_count; try_count--) {
