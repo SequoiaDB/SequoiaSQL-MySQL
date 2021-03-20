@@ -81,10 +81,18 @@ static MYSQL_SYSVAR_UINT(wait_recover_timeout, ha_wait_recover_timeout,
                          NULL, NULL, HA_WAIT_REPLAY_TIMEOUT_DEFAULT, 0, 3600,
                          0);
 
+static MYSQL_THDVAR_UINT(
+    wait_sync_timeout, PLUGIN_VAR_OPCMDARG,
+    "Timeout waiting for statement synchronization. (Default: 0)"
+    /*等待元数据操作同步到其他实例超时时间[0, 3600]，单位：sec。*/,
+    NULL, NULL, 0, 0, 3600, 0);
+
 struct st_mysql_sys_var *ha_sys_vars[] = {
-    MYSQL_SYSVAR(inst_group_name), MYSQL_SYSVAR(inst_group_key),
+    MYSQL_SYSVAR(inst_group_name),     MYSQL_SYSVAR(inst_group_key),
     MYSQL_SYSVAR(wait_replay_timeout), MYSQL_SYSVAR(wait_recover_timeout),
-    NULL};
+    MYSQL_SYSVAR(wait_sync_timeout),   NULL};
+
+static bool check_if_table_exists(THD *thd, TABLE_LIST *table);
 
 bool ha_is_open() {
   return (ha_inst_group_name && 0 != strlen(ha_inst_group_name));
@@ -954,6 +962,7 @@ static int wait_objects_updated_to_lastest(THD *thd,
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
   Sdb_cl obj_state_cl, inst_obj_state_cl;
   ha_table_list *ha_tables = NULL;
+  int sql_command = thd_sql_command(thd);
 
   // get object state handle
   rc = ha_get_object_state_cl(*sql_info->sdb_conn, ha_thread.sdb_group_name,
@@ -995,6 +1004,27 @@ static int wait_objects_updated_to_lastest(THD *thd,
                                         obj_state_cl, sql_info, thd);
     if (rc) {
       goto error;
+    }
+  }
+
+  // update 'dropping_object_exists' flag after executing unfinished
+  // associated SQL log, or the second of the following operaion may
+  // not be written into SQL log.
+  // 1. create table t1 on the first instance,
+  // 2. drop table on second instance immediately.
+  // The second operation may check that t1 does not exist,
+  // so "drop table xxx" may not be written into SQL log if
+  // 'dropping_object_exists' is not true
+  if (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command
+#ifdef IS_MARIADB
+      || SQLCOM_DROP_SEQUENCE == sql_command
+#endif
+  ) {
+    TABLE_LIST *tables = sdb_lex_first_select(thd)->get_table_list();
+    ha_tables = sql_info->tables;
+    for (TABLE_LIST *tbl = tables; tbl; tbl = tbl->next_global) {
+      ha_tables->dropping_object_exists = check_if_table_exists(thd, tbl);
+      ha_tables = ha_tables->next;
     }
   }
 done:
@@ -3858,106 +3888,93 @@ static void restore_state(ha_sql_stmt_info *sql_info) {
 }
 
 // wait for other instances update their SQL objects state
-// 1. add partition for a table on first instance, update data
-//    for new partition on another instance should succeed
-// 2. revoke right on first instance, CRUD on another instance should fail
-// 3. drop trigger on first instance, trigger on another instance should fail
-// 4. alter sequence on first instance, get sequence on another instance
-// 5. grant rights on first instance, CRUD on another instance should succeed
-// 6. revoke/drop/grant role on first instance, operations associated with
-//    role on another instance should be as expected
-// 7. drop sequence on first instance, get sequence on another instance should
-//    fail
-static void post_wait_for_special_stmt(THD *thd, ha_sql_stmt_info *sql_info) {
-  bool need_wait = false;
-  int sql_command = thd_sql_command(thd);
+static void post_wait_for_metadata_stmt(THD *thd, ha_sql_stmt_info *sql_info) {
   longlong instance_count = 0, finish_replay_count = 0;
   ha_table_list *ha_table = sql_info->tables;
-  need_wait = (SQLCOM_REVOKE == sql_command || SQLCOM_GRANT == sql_command ||
-               SQLCOM_DROP_TRIGGER == sql_command);
+  Sdb_cl inst_obj_state_cl, inst_state_cl;
+  Sdb_conn *sdb_conn = sql_info->sdb_conn;
+  const char *sdb_group_name = ha_thread.sdb_group_name;
+  bson::BSONObj cond;
+  bson::BSONObjBuilder builder;
+  int rc = 0;
+  uint sleep_count = 0;
+  static const int HA_MIN_WAIT_TIME = 1;
+  uint wait_sync_timeout = THDVAR(thd, wait_sync_timeout);
 
-#ifdef IS_MARIADB
-  need_wait = (need_wait || (SQLCOM_DROP_SEQUENCE == sql_command ||
-                             SQLCOM_ALTER_SEQUENCE == sql_command ||
-                             SQLCOM_GRANT_ROLE == sql_command ||
-                             SQLCOM_DROP_ROLE == sql_command ||
-                             SQLCOM_REVOKE_ROLE == sql_command));
-#else
-  bool add_partition =
-      (thd->lex->alter_info.flags & Alter_info::ALTER_ADD_PARTITION);
-  need_wait =
-      (need_wait || (SQLCOM_ALTER_TABLE == sql_command && add_partition));
-#endif
-  if (need_wait) {
-    Sdb_cl inst_obj_state_cl, inst_state_cl;
-    Sdb_conn *sdb_conn = sql_info->sdb_conn;
-    const char *group_name = ha_thread.sdb_group_name;
-    bson::BSONObj cond;
-    bson::BSONObjBuilder builder;
-    int rc = 0, sleep_count = 0;
-    static const int MAX_SLEEP_COUNT = 3;
-    static const int HA_REPLAY_CYCLE = 2;
+  if (0 == wait_sync_timeout) {
+    goto done;
+  }
 
-    // 1. get count of instances
-    // do not care this error
-    rc = ha_get_instance_state_cl(*sdb_conn, group_name, inst_state_cl);
+  // 1. get count of instances
+  rc = ha_get_instance_state_cl(*sdb_conn, sdb_group_name, inst_state_cl);
+  if (rc) {
+    goto error;
+  }
+
+  rc = inst_state_cl.get_count(instance_count);
+  if (rc) {
+    goto error;
+  }
+
+  // 2. check if all instances updated to their latest state
+  rc = ha_get_instance_object_state_cl(*sdb_conn, sdb_group_name,
+                                       inst_obj_state_cl);
+  if (rc) {
+    goto error;
+  }
+
+  // get the last table in ha table list
+  while (ha_table && ha_table->next) {
+    ha_table = ha_table->next;
+  }
+
+  if (NULL == ha_table) {
+    goto done;
+  }
+
+  builder.reset();
+  builder.append(HA_FIELD_DB, ha_table->db_name);
+  builder.append(HA_FIELD_TABLE, ha_table->table_name);
+  builder.append(HA_FIELD_TYPE, ha_table->op_type);
+  {
+    bson::BSONObjBuilder sub_builder(builder.subobjStart(HA_FIELD_SQL_ID));
+    sub_builder.append("$gte", ha_table->saved_sql_id);
+    sub_builder.doneFast();
+  }
+  cond = builder.done();
+
+  while (sleep_count < wait_sync_timeout && !thd_killed(thd)) {
+    finish_replay_count = 0;
+    rc = inst_obj_state_cl.get_count(finish_replay_count, cond);
     if (rc) {
-      goto done;
+      goto error;
     }
 
-    rc = inst_state_cl.get_count(instance_count);
-    if (rc) {
-      goto done;
+    SDB_LOG_DEBUG(
+        "HA: Sleep count: %d, finish replay count: %lld, "
+        "instance count: %lld",
+        sleep_count, finish_replay_count, instance_count);
+    // if all instance has replayed the statement
+    if (finish_replay_count >= instance_count) {
+      break;
     }
+    sleep_count++;
+    sleep(HA_MIN_WAIT_TIME);
+  }
 
-    // 2. check if all instances updated to their latest state
-    rc = ha_get_instance_object_state_cl(*sdb_conn, group_name,
-                                         inst_obj_state_cl);
-    if (rc) {
-      goto done;
-    }
-
-    // get the last table in ha table list
-    while (ha_table && ha_table->next) {
-      ha_table = ha_table->next;
-    }
-
-    if (NULL == ha_table) {
-      goto done;
-    }
-
-    builder.reset();
-    builder.append(HA_FIELD_DB, ha_table->db_name);
-    builder.append(HA_FIELD_TABLE, ha_table->table_name);
-    builder.append(HA_FIELD_TYPE, ha_table->op_type);
-    {
-      bson::BSONObjBuilder sub_builder(builder.subobjStart(HA_FIELD_SQL_ID));
-      sub_builder.append("$gte", ha_table->saved_sql_id);
-      sub_builder.doneFast();
-    }
-    cond = builder.done();
-
-    while (sleep_count < MAX_SLEEP_COUNT) {
-      finish_replay_count = 0;
-      rc = inst_obj_state_cl.get_count(finish_replay_count, cond);
-      if (rc) {
-        goto done;
-      }
-
-      SDB_LOG_DEBUG(
-          "HA: Sleep count: %d, finish replay count: %lld, instance count: "
-          "%lld",
-          sleep_count, finish_replay_count, instance_count);
-      // if all instance has replayed the statement
-      if (finish_replay_count >= instance_count) {
-        break;
-      }
-      sleep_count++;
-      sleep(HA_REPLAY_CYCLE);
-    }
+  if (finish_replay_count < instance_count) {
+    push_warning_printf(
+        thd, Sql_condition::SL_WARNING, SDB_HA_WAIT_SYNC_TIMEOUT,
+        "Timed out waiting for metadata synchronization operation");
   }
 done:
   return;
+error:
+  push_warning_printf(thd, Sql_condition::SL_WARNING, rc,
+                      "Found an error '%s' while waiting for metadata "
+                      "synchronization operation",
+                      ha_error_string(*sdb_conn, rc, sql_info->err_message));
+  goto done;
 }
 
 // check if current statement contains view
@@ -4262,7 +4279,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
 
         // wait for other instances to update their SQL objects state
         if (!ha_is_executing_pending_log(thd)) {
-          post_wait_for_special_stmt(thd, sql_info);
+          post_wait_for_metadata_stmt(thd, sql_info);
         }
         sql_info->tables = NULL;
       } else {
