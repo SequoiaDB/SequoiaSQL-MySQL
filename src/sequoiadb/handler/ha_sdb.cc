@@ -3783,10 +3783,16 @@ error:
 int ha_sdb::build_selector(bson::BSONObj &selector) {
   int select_num = 0;
   int rc = SDB_ERR_OK;
+  bool index_cover = false;
   bson::BSONObjBuilder selector_builder;
   try {
     uint threshold = sdb_selector_pushdown_threshold(ha_thd());
-    selector_builder.appendNull(SDB_OID_FIELD);
+
+    index_cover = sdb_judge_index_cover(ha_thd(), table, active_index);
+    if (!index_cover){
+      selector_builder.appendNull(SDB_OID_FIELD);
+    }
+
     for (Field **fields = table->field; *fields; fields++) {
       Field *field = *fields;
       if (bitmap_is_set(table->read_set, field->field_index)) {
@@ -3794,7 +3800,9 @@ int ha_sdb::build_selector(bson::BSONObj &selector) {
         select_num++;
       }
     }
-    if (((double)select_num * 100 / table_share->fields) <= (double)threshold) {
+
+    if ( (index_cover)||
+         ((double)select_num * 100 / table_share->fields) <= (double)threshold) {
       selector = selector_builder.obj();
       SDB_LOG_DEBUG("optimizer selector object: %s",
                     selector.toString(false, false).c_str());

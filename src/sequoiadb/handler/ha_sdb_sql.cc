@@ -317,6 +317,57 @@ error:
   goto done;
 }
 
+bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
+  bool index_cover = false;
+  uint i = 0;
+  QEP_TAB *tab = NULL;
+  SELECT_LEX *cur_select = sdb_lex_current_select(thd);
+  JOIN *join = cur_select->join;
+
+  // not in excute proccess,may be in optimize proccess(Explain type:const)
+  if (NULL == join || NULL == join->qep_tab) {
+    goto done;
+  }
+
+  // distinct not support index_cover
+  if( cur_select->is_distinct()){
+    goto done;
+  }
+
+  //group by not support index_cover
+  if(join->sort_and_group){
+    goto done;
+  }
+
+  // is not index query
+  if (MAX_KEY == active_index) {
+    goto done;
+  }
+
+  // not only read key
+  if (!table->key_read) {
+    goto done;
+  }
+
+  // index_merge and filesort not support index_cover
+  for (i = 0; i < join->primary_tables; i++) {
+    // get current table QEP_TAB
+    if (table->pos_in_table_list == join->qep_tab[i].table_ref) {
+      tab = join->qep_tab + i;
+      if (tab->type() == JT_INDEX_MERGE ||
+          tab->keep_current_rowid ||
+          tab->filesort) {
+          goto done;
+      }
+      break;
+    }
+  }
+  index_cover = true;
+
+done:
+  return index_cover;
+}
+
 void sdb_clear_const_keys(THD *thd) {
   JOIN *const join = sdb_lex_first_select(thd)->join;
   if (join && join->join_tab) {
@@ -804,6 +855,69 @@ done:
   return rs;
 error:
   goto done;
+}
+
+bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
+  bool index_cover = false;
+  uint i = 0;
+  SQL_SELECT *select = NULL;
+  QUICK_SELECT_I *quick = NULL;
+  JOIN_TAB *tab = NULL;
+  JOIN *join = sdb_lex_current_select(thd)->join;
+
+  // not in excute proccess,may be in optimize proccess(Explain type:const)
+  if (NULL == join || NULL == join->join_tab) {
+    goto done;
+  }
+
+  // distinct not support index_cover
+  if( join->need_distinct){
+    goto done;
+  }
+
+  //group by not support index_cover
+  if(join->sort_and_group){
+    goto done;
+  }
+
+  // is not index query
+  if (MAX_KEY == active_index) {
+    goto done;
+  }
+
+  // not only read key
+  if (!table->file->keyread_enabled()) {
+    goto done;
+  }
+
+  for (i = 0; i < join->table_count; i++) {
+    // get current table QEP_TAB
+    if (table == join->join_tab[i].table) {
+      tab = join->join_tab + i;
+      if( tab->keep_current_rowid || tab->filesort ){
+        goto done;
+      }
+
+      select = tab->select;
+      if (NULL != select) {
+        quick = select->quick;
+      }
+
+      if (NULL != quick) {
+        if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type() ||
+            QUICK_SELECT_I::QS_TYPE_INDEX_INTERSECT == quick->get_type() ||
+            QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type() ||
+            QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
+          goto done;
+        }
+      }
+      break;
+    }
+  }
+  index_cover = true;
+
+done:
+  return index_cover;
 }
 
 void sdb_clear_const_keys(THD *thd) {
