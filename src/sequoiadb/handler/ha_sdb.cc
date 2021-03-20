@@ -906,17 +906,17 @@ int sdb_merge_auto_inc_option(bson::BSONObj &options,
                         MYF(0));
         goto error;
       } else {
-        cmt_auto_inc_options = cmt_options_elem.embeddedObject();
         bson::BSONObjIterator auto_inc_it(auto_inc_options);
         bson::BSONElement auto_inc_elem;
         bson::BSONElement cmt_auto_inc_elem;
+        cmt_auto_inc_options = cmt_options_elem.embeddedObject();
+        auto_inc_builder.appendElements(cmt_auto_inc_options);
         while (auto_inc_it.more()) {
           auto_inc_elem = auto_inc_it.next();
           if (0 != strcmp(auto_inc_elem.fieldName(), SDB_FIELD_NAME_FIELD)) {
             cmt_auto_inc_elem =
                 cmt_auto_inc_options.getField(auto_inc_elem.fieldName());
             if (bson::EOO != cmt_auto_inc_elem.type()) {
-              auto_inc_builder.append(cmt_auto_inc_elem);
               continue;
             }
           } else {
@@ -936,6 +936,7 @@ int sdb_merge_auto_inc_option(bson::BSONObj &options,
                 my_printf_error(rc, "Ambiguous auto increment field", MYF(0));
                 goto error;
               }
+              continue;
             }
           }
           auto_inc_builder.append(auto_inc_elem);
@@ -3789,7 +3790,7 @@ int ha_sdb::build_selector(bson::BSONObj &selector) {
     uint threshold = sdb_selector_pushdown_threshold(ha_thd());
 
     index_cover = sdb_judge_index_cover(ha_thd(), table, active_index);
-    if (!index_cover){
+    if (!index_cover) {
       selector_builder.appendNull(SDB_OID_FIELD);
     }
 
@@ -3801,8 +3802,8 @@ int ha_sdb::build_selector(bson::BSONObj &selector) {
       }
     }
 
-    if ( (index_cover)||
-         ((double)select_num * 100 / table_share->fields) <= (double)threshold) {
+    if ((index_cover) ||
+        ((double)select_num * 100 / table_share->fields) <= (double)threshold) {
       selector = selector_builder.obj();
       SDB_LOG_DEBUG("optimizer selector object: %s",
                     selector.toString(false, false).c_str());

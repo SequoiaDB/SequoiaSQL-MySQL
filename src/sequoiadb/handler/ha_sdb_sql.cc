@@ -330,12 +330,12 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
   }
 
   // distinct not support index_cover
-  if( cur_select->is_distinct()){
+  if (cur_select->is_distinct()) {
     goto done;
   }
 
-  //group by not support index_cover
-  if(join->sort_and_group){
+  // group by not support index_cover
+  if (join->sort_and_group) {
     goto done;
   }
 
@@ -354,10 +354,9 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
     // get current table QEP_TAB
     if (table->pos_in_table_list == join->qep_tab[i].table_ref) {
       tab = join->qep_tab + i;
-      if (tab->type() == JT_INDEX_MERGE ||
-          tab->keep_current_rowid ||
+      if (tab->type() == JT_INDEX_MERGE || tab->keep_current_rowid ||
           tab->filesort) {
-          goto done;
+        goto done;
       }
       break;
     }
@@ -871,12 +870,12 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
   }
 
   // distinct not support index_cover
-  if( join->need_distinct){
+  if (join->need_distinct) {
     goto done;
   }
 
-  //group by not support index_cover
-  if(join->sort_and_group){
+  // group by not support index_cover
+  if (join->sort_and_group) {
     goto done;
   }
 
@@ -894,7 +893,7 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
     // get current table QEP_TAB
     if (table == join->join_tab[i].table) {
       tab = join->join_tab + i;
-      if( tab->keep_current_rowid || tab->filesort ){
+      if (tab->keep_current_rowid || tab->filesort) {
         goto done;
       }
 
