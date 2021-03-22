@@ -25,6 +25,8 @@ SHOW GRANTS FOR 'metaSync_mix_ruser2'@'localhost';
 #
 # create role and user
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 --disable_warnings
 CREATE ROLE metaSync_mix_role1;
 CREATE ROLE metaSync_mix_role2;
@@ -38,6 +40,8 @@ GRANT metaSync_mix_role2 TO 'metaSync_mix_ruser2'@'localhost';
 FLUSH PRIVILEGES;
 # check metadatas after create
 connection conn2;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 SHOW GRANTS FOR 'metaSync_mix_ruser1'@'localhost';
 SHOW GRANTS FOR 'metaSync_mix_ruser2'@'localhost';
 SELECT * FROM mysql.roles_mapping WHERE Role='metaSync_mix_role1' AND user LIKE 'metaSync_mix_ruser%';
@@ -56,6 +60,7 @@ SELECT * FROM mysql.roles_mapping WHERE Role = 'metaSync_mix_role2';
 DROP USER 'metaSync_mix_ruser1'@'localhost';
 DROP USER 'metaSync_mix_ruser2'@'localhost';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 # check metadatas after drop user
 connection conn2;
 --error ER_NONEXISTING_GRANT
@@ -64,6 +69,7 @@ SHOW GRANTS FOR 'metaSync_mix_ruser1'@'localhost';
 SHOW GRANTS FOR 'metaSync_mix_ruser2'@'localhost';
 SELECT user, host FROM mysql.user WHERE user = 'metaSync_mix_ruser1';
 SELECT user, host FROM mysql.user WHERE user = 'metaSync_mix_ruser2';
+set server_ha_wait_sync_timeout = 0;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

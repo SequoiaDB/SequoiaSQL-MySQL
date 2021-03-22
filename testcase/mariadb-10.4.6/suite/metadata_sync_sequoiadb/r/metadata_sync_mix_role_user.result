@@ -10,6 +10,7 @@ ERROR 42000: There is no such grant defined for user 'metaSync_mix_ruser1' on ho
 SHOW GRANTS FOR 'metaSync_mix_ruser2'@'localhost';
 ERROR 42000: There is no such grant defined for user 'metaSync_mix_ruser2' on host 'localhost'
 connection conn1;
+set server_ha_wait_sync_timeout = 5;
 CREATE ROLE metaSync_mix_role1;
 CREATE ROLE metaSync_mix_role2;
 CREATE USER 'metaSync_mix_ruser1'@'localhost';
@@ -20,6 +21,7 @@ GRANT metaSync_mix_role1 TO 'metaSync_mix_ruser1'@'localhost';
 GRANT metaSync_mix_role2 TO 'metaSync_mix_ruser2'@'localhost';
 FLUSH PRIVILEGES;
 connection conn2;
+set server_ha_wait_sync_timeout = 5;
 SHOW GRANTS FOR 'metaSync_mix_ruser1'@'localhost';
 Grants for metaSync_mix_ruser1@localhost
 GRANT metaSync_mix_role1 TO 'metaSync_mix_ruser1'@'localhost'
@@ -51,6 +53,7 @@ Host	User	Role	Admin_option
 DROP USER 'metaSync_mix_ruser1'@'localhost';
 DROP USER 'metaSync_mix_ruser2'@'localhost';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 connection conn2;
 SHOW GRANTS FOR 'metaSync_mix_ruser1'@'localhost';
 ERROR 42000: There is no such grant defined for user 'metaSync_mix_ruser1' on host 'localhost'
@@ -60,5 +63,6 @@ SELECT user, host FROM mysql.user WHERE user = 'metaSync_mix_ruser1';
 User	Host
 SELECT user, host FROM mysql.user WHERE user = 'metaSync_mix_ruser2';
 User	Host
+set server_ha_wait_sync_timeout = 0;
 disconnect conn1;
 disconnect conn2;

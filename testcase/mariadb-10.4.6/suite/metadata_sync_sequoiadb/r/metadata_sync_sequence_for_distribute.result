@@ -244,6 +244,7 @@ SELECT nextval(s1);
 nextval(s1)
 1
 connection conn1;
+set server_ha_wait_sync_timeout = 5;
 ALTER SEQUENCE s1 increment by 2;
 connection conn2;
 SELECT nextval(s1);
@@ -263,6 +264,7 @@ nextval(s2)
 5002
 connection conn1;
 DROP SEQUENCE s2;
+set server_ha_wait_sync_timeout = 0;
 connection conn2;
 SELECT nextval(s2);
 ERROR 42S02: Table 'metaSync_seq.s2' doesn't exist

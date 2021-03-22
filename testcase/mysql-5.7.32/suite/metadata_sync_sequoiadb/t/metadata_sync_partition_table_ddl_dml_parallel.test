@@ -193,8 +193,11 @@ update t1 set a = a + 1;
 select * from t1 order by id;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 alter table t1 add partition (partition p3 values in(11,12));
 insert into t1 values(11,11),(12,12);
+set server_ha_wait_sync_timeout = 0;
 
 connection conn2;
 update t1 set a = a + 1 where id >=11;
@@ -202,7 +205,10 @@ update t1 set a = a + 1 where id >=11;
 select * from t1 order by id;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 alter table t1 drop partition p0;
+set server_ha_wait_sync_timeout = 0;
 
 connection conn2;
 update t1 set a = a + 1;
@@ -210,8 +216,11 @@ update t1 set a = a + 1;
 select * from t1 order by id;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 alter table t1 reorganize partition p1 into (partition n0 values in(2,4,6), partition n1 values in(8,10));
 insert into t1 partition (n0,n1) values(2,2),(8,8),(4,4),(10,10),(6,6);
+set server_ha_wait_sync_timeout = 0;
 
 connection conn2;
 update t1 set a = a + 1;
@@ -219,8 +228,11 @@ update t1 set a = a + 1;
 select * from t1 order by id;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 alter table t1 reorganize partition n0,n1 into (partition p0 values in(2,4));
 insert into t1 partition (p0) values(2,2),(4,4);
+set server_ha_wait_sync_timeout = 0;
 
 connection conn2;
 update t1 set a = a + 1;
@@ -228,8 +240,11 @@ update t1 set a = a + 1;
 select * from t1 order by id;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 alter table t1 rebuild partition p0;
 insert into t1 partition (p0) values(2,2),(4,4);
+set server_ha_wait_sync_timeout = 0;
 
 connection conn2;
 update t1 set a = a + 1;

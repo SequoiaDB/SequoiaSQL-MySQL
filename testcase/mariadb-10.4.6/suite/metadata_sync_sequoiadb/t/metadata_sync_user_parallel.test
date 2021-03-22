@@ -55,8 +55,11 @@ insert into metadata_sync_23102.t1 values(1,1,1);
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke insert,update,delete,select on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
 connection conn3;
@@ -99,8 +102,11 @@ select * from metadata_sync_23102.t1 order by c;
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke insert,trigger on metadata_sync_23102.t1 from metadata_sync_user_23102@'%';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
 connection conn3;
@@ -111,8 +117,11 @@ select * from metadata_sync_23102.t1 order by c;
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 GRANT ALL ON metadata_sync_23102.* TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 #Bug 	SEQUOIASQLMAINSTREAM-907
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
@@ -121,8 +130,11 @@ create view metadata_sync_23102.v1 as select 'a';
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke ALL on metadata_sync_23102.* from metadata_sync_user_23102@'%';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23102', 'metadata_sync_user_23102', $mysql_db, $port2 );
 connection conn3;
@@ -154,8 +166,11 @@ flush privileges;
 create user 'metadata_sync_user_23103'@'%' IDENTIFIED BY 'metadata_sync_user_23103';
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 GRANT create,alter,drop ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 #Bug #SEQUOIASQLMAINSTREAM-907
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
@@ -164,8 +179,11 @@ alter table metadata_sync_23103.t1 add column d int;
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke create,alter,drop on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 flush privileges;
+set server_ha_wait_sync_timeout = 0;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
@@ -187,8 +205,11 @@ insert into metadata_sync_23103.t1 values(1,1,1);
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke insert,update,delete,select on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
@@ -198,8 +219,11 @@ insert into metadata_sync_23103.t1 values(1,1,1);
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 GRANT index ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 #Bug #SEQUOIASQLMAINSTREAM-907
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
@@ -208,8 +232,11 @@ create index a on metadata_sync_23103.t1(a);
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke index on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
@@ -231,8 +258,11 @@ select * from metadata_sync_23103.t1 order by c;
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke insert,trigger on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
@@ -243,9 +273,12 @@ select * from metadata_sync_23103.t1 order by c;
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke select on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 GRANT ALL ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 #Bug #SEQUOIASQLMAINSTREAM-907
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
@@ -254,8 +287,11 @@ create view metadata_sync_23103.v1 as select 'a';
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 revoke ALL on metadata_sync_23103.* from metadata_sync_user_23103@'%';
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
 connection conn3;
@@ -265,8 +301,11 @@ show create view metadata_sync_23103.v1;
 disconnect conn3;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 GRANT create routine,alter routine ON metadata_sync_23103.* TO metadata_sync_user_23103@'%' IDENTIFIED BY 'metadata_sync_user_23103' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 #Bug #SEQUOIASQLMAINSTREAM-907
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23103', 'metadata_sync_user_23103', $mysql_db, $port2 );
@@ -307,9 +346,12 @@ create user 'metadata_sync_user_23104';
 flush privileges;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 create function hello23104 (s char(20)) returns char(50) deterministic return concat('Hello,' , s , '!');
 GRANT alter routine ON function metadata_sync_23104.hello23104 TO metadata_sync_user_23104@'%' IDENTIFIED BY 'metadata_sync_user_23104' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+set server_ha_wait_sync_timeout = 0;
 
 #Bug #SEQUOIASQLMAINSTREAM-907
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23104', 'metadata_sync_user_23104', $mysql_db, $port2 );

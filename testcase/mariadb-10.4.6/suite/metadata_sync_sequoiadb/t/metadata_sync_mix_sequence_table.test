@@ -36,10 +36,14 @@ SELECT * FROM seq1;
 SELECT * FROM t1 ORDER BY id;
 SELECT PREVIOUS VALUE FOR seq1;
 SELECT NEXT VALUE FOR seq1;
-# alter sequence 
+# alter sequence
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 ALTER SEQUENCE seq1 START = 10 RESTART MINVALUE = 10 MAXVALUE = 4000 CYCLE;
 # alter table
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 ALTER TABLE t1 DROP PRIMARY KEY, CHANGE id id1 BIGINT DEFAULT ( next value for seq1 );
 # check metadatas after alter
 SELECT * FROM seq1;
@@ -70,8 +74,10 @@ SHOW CREATE TABLE t1;
 # clear databases in the ending
 connection conn1;
 DROP DATABASE metaSync_mix_seq_table;
+set server_ha_wait_sync_timeout = 0;
 # check databases are cleaned in the ending
 connection conn2;
+set server_ha_wait_sync_timeout = 0;
 --error ER_BAD_DB_ERROR
 SHOW CREATE DATABASE metaSync_mix_seq_table;
 

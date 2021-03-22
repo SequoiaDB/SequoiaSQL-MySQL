@@ -412,7 +412,10 @@ INSERT INTO t1(b, c) VALUES (200, 300);
 select * from t1 order by c;
 
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 drop trigger t1_bi;
+set server_ha_wait_sync_timeout = 0;
 
 connection conn2;
 --error 1364

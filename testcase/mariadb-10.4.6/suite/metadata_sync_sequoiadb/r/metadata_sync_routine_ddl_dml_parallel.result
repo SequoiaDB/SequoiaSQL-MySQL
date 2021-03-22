@@ -292,7 +292,9 @@ select * from t1 order by c;
 a	b	c
 1	200	300
 connection conn1;
+set server_ha_wait_sync_timeout = 5;
 drop trigger t1_bi;
+set server_ha_wait_sync_timeout = 0;
 connection conn2;
 INSERT INTO t1(b, c) VALUES (200, 300);
 ERROR HY000: Field 'a' doesn't have a default value

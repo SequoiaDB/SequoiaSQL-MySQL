@@ -138,10 +138,13 @@ CREATE SEQUENCE s1;
 connection conn2;
 SELECT nextval(s1);
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 ALTER SEQUENCE s1 increment by 2;
 connection conn2;
 SELECT nextval(s1);
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
 ALTER SEQUENCE s1 RESTART 1;
 connection conn2;
 SELECT nextval(s1);
@@ -151,6 +154,7 @@ connection conn2;
 SELECT nextval(s2);
 connection conn1;
 DROP SEQUENCE s2;
+set server_ha_wait_sync_timeout = 0;
 connection conn2;
 #BUG #SEQUOIASQLMAINSTREAM-870
 #BUG #SEQUOIASQLMAINSTREAM-830
