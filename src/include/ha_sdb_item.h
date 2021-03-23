@@ -294,7 +294,8 @@ class Sdb_func_like : public Sdb_func_bin_op {
   virtual Item_func::Functype type() { return Item_func::LIKE_FUNC; }
 
  private:
-  int get_regex_str(const char *like_str, size_t len, std::string &regex_str);
+  int get_regex_str(const char *like_str, size_t len, std::string &regex_str,
+                    bool &pre_match_all);
 
  private:
   Item_func_like *like_item;
