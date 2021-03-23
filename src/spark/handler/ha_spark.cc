@@ -687,7 +687,7 @@ static int spark_init_func(void *p) {
   spark_hton->state = SHOW_OPTION_YES;
   spark_hton->db_type = DB_TYPE_UNKNOWN;
   spark_hton->create = spark_create_handler;
-  spark_hton->flags = HTON_CAN_RECREATE;
+  spark_hton->flags = HTON_CAN_RECREATE | HTON_HIDDEN;
 #if defined IS_MYSQL
   spark_hton->system_database = spark_system_database;
   spark_hton->is_supported_system_table = spark_is_supported_system_table;
