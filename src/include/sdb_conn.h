@@ -43,6 +43,14 @@ class Sdb_session_attrs {
     last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVIAD;
     last_trans_auto_commit = SDB_DEFAULT_TRANS_AUTO_COMMIT;
     last_trans_use_rollback_segments = SDB_DEFAULT_TRANS_USE_RBS;
+    strncpy(last_prefer_inst, SDB_DEFAULT_PREFERRED_INSTANCE,
+            STRING_BUFFER_USUAL_SIZE);
+    last_prefer_inst[STRING_BUFFER_USUAL_SIZE - 1] = '\0';
+    strncpy(last_prefer_inst_mode, SDB_DEFAULT_PREFERRED_INSTANCE_MODE,
+            SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
+    last_prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
+    last_prefer_strict = true;
+    last_prefer_period = 60;
     attr_count = 0;
     source_str[0] = '\0';
     trans_isolation = SDB_TRANS_ISO_RR;
@@ -50,6 +58,14 @@ class Sdb_session_attrs {
     trans_auto_commit = true;
     trans_timeout = SDB_DEFAULT_LOCK_WAIT_TIMEOUT;
     trans_use_rollback_segments = true;
+    strncpy(prefer_inst, SDB_DEFAULT_PREFERRED_INSTANCE,
+            STRING_BUFFER_USUAL_SIZE);
+    prefer_inst[STRING_BUFFER_USUAL_SIZE - 1] = '\0';
+    strncpy(prefer_inst_mode, SDB_DEFAULT_PREFERRED_INSTANCE_MODE,
+            SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
+    prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
+    prefer_strict = SDB_DEFAULT_PREFERRED_STRICT;
+    prefer_period = SDB_DEFAULT_PREFERRED_PERIOD;
     session_attrs_mask = 0;
   }
 
@@ -131,6 +147,41 @@ class Sdb_session_attrs {
     }
   }
 
+  inline void set_preferred_instance(const char *preferred_instance) {
+    if (0 != strcmp(last_prefer_inst, preferred_instance)) {
+      strncpy(prefer_inst, preferred_instance, STRING_BUFFER_USUAL_SIZE);
+      prefer_inst[STRING_BUFFER_USUAL_SIZE - 1] = '\0';
+      set_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MASK);
+      attr_count++;
+    }
+  }
+
+  inline void set_preferred_instance_mode(const char *preferred_instance_mode) {
+    if (0 != strcmp(last_prefer_inst_mode, preferred_instance_mode)) {
+      strncpy(prefer_inst_mode, preferred_instance_mode,
+              SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
+      prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
+      set_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MODE_MASK);
+      attr_count++;
+    }
+  }
+
+  inline void set_preferred_strict(bool preferred_strict) {
+    if (last_prefer_strict != preferred_strict) {
+      prefer_strict = preferred_strict;
+      set_attrs_mask(SDB_SESSION_ATTR_PREFERRED_STRICT_MASK);
+      attr_count++;
+    }
+  }
+
+  inline void set_preferred_period(int preferred_period) {
+    if (last_prefer_period != preferred_period) {
+      prefer_period = preferred_period;
+      set_attrs_mask(SDB_SESSION_ATTR_PREFERRED_PERIOD_MASK);
+      attr_count++;
+    }
+  }
+
   inline bool get_last_trans_use_rollback_segments() {
     return last_trans_use_rollback_segments;
   }
@@ -142,6 +193,10 @@ class Sdb_session_attrs {
   int last_trans_timeout;
   bool last_trans_auto_commit;
   bool last_trans_use_rollback_segments;
+  char last_prefer_inst[STRING_BUFFER_USUAL_SIZE];
+  char last_prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE];
+  bool last_prefer_strict;
+  int last_prefer_period;
   int attr_count;
 
  private:
@@ -152,9 +207,14 @@ class Sdb_session_attrs {
   bool trans_auto_rollback; /*TransAutoRollback*/
   /*when sequoiadb_use_transaction changed, trans_auto_commit should changed
    * too.*/
-  bool trans_auto_commit;           /*TransAutoCommit*/
-  int trans_timeout;                /*TransTimeout*/
-  bool trans_use_rollback_segments; /*TransUseRBS*/
+  bool trans_auto_commit;                     /*TransAutoCommit*/
+  int trans_timeout;                          /*TransTimeout*/
+  bool trans_use_rollback_segments;           /*TransUseRBS*/
+  char prefer_inst[STRING_BUFFER_USUAL_SIZE]; /*PreferredInstance*/
+  char prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE];
+  /*PreferredInstanceMode*/
+  bool prefer_strict; /*PreferredStrict*/
+  int prefer_period;  /*PreferredPeriod*/
   ulonglong session_attrs_mask;
 };
 
