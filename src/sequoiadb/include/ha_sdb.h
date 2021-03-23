@@ -588,6 +588,10 @@ class ha_sdb : public handler {
 
   int ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr);
 
+  int merge_auto_inc_option(bson::BSONObj &options,
+                            bson::BSONObj &auto_inc_options,
+                            bson::BSONObjBuilder &builder);
+
  protected:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;

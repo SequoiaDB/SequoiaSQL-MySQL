@@ -1055,6 +1055,7 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   Sdb_cl cl;
   bson::BSONObjBuilder build;
   bson::BSONObj options;
+  bson::BSONObj auto_inc_options;
   bson::BSONObj partition_options;
   bool explicit_not_auto_partition = false;
   bool created_cs = false;
@@ -1098,7 +1099,6 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       }
 
       if (Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
-        bson::BSONObj auto_inc_options;
         rc = build_auto_inc_option(field, create_info, auto_inc_options);
         if (SDB_ERR_OK != rc) {
           SDB_LOG_ERROR(
@@ -1108,7 +1108,6 @@ int ha_sdb_part::create(const char *name, TABLE *form,
               sdb_field_name(field), db_name, table_name, rc);
           goto error;
         }
-        build.append(SDB_FIELD_NAME_AUTOINCREMENT, auto_inc_options);
       }
     }
 
@@ -1150,7 +1149,12 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       goto error;
     }
 
-    build.appendElements(options);
+    // Merge auto_inc_options into options.
+    rc = merge_auto_inc_option(options, auto_inc_options, build);
+    if (rc) {
+      goto error;
+    }
+
     rc = check_sdb_in_thd(ha_thd(), &conn, true);
     if (rc != 0) {
       goto error;
