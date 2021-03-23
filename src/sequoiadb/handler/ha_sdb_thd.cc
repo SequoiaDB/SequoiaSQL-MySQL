@@ -39,7 +39,7 @@ void sdb_update_sys_var_str(const struct st_mysql_sys_var *var,
 #elif defined IS_MARIADB
   char *value = *(char **)save;
   if (var->flags & PLUGIN_VAR_MEMALLOC) {
-    char *old = *(char **)tgt;
+    char *old = *(char **)var_ptr;
     if (value) {
       *(char **)var_ptr = my_strdup(value, MYF(0));
     } else {
