@@ -1313,6 +1313,7 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
   String str_val_conv;
   std::string regex_val;
   bson::BSONObjBuilder regex_builder;
+  bool pre_match_all = false;
 
   if (!is_finished || para_list.elements != para_num_max) {
     rc = SDB_ERR_COND_INCOMPLETED;
@@ -1370,21 +1371,41 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
     if (rc) {
       goto error;
     }
-    rc = get_regex_str(str_val_conv.ptr(), str_val_conv.length(), regex_val);
+    rc = get_regex_str(str_val_conv.ptr(), str_val_conv.length(), regex_val,
+                       pre_match_all);
     if (rc) {
       goto error;
     }
 
-    if (regex_val.empty()) {
-      // select * from t1 where a like "";
-      // => {a:""}
-      obj = BSON(sdb_item_field_name(item_field) << regex_val);
-    } else {
-      regex_builder.appendRegex(sdb_item_field_name(item_field), regex_val,
-                                "s");
+    // if string end with '%' like "abc%", turn to "$gte":"abc" and
+    // "$lt":"ab\127"
+    if (pre_match_all) {
+      bson::BSONArrayBuilder arr_builder;
+      bson::BSONObjBuilder gte_builder(92);
+      bson::BSONObjBuilder g_builder(
+          gte_builder.subobjStart(sdb_item_field_name(item_field)));
+      g_builder.append("$gte", regex_val);
+      g_builder.done();
+      bson::BSONObjBuilder lt_builder(92);
+      bson::BSONObjBuilder l_builder(
+          lt_builder.subobjStart(sdb_item_field_name(item_field)));
+      l_builder.append("$lt", regex_val + (char)0xff);
+      l_builder.done();
+      arr_builder.append(gte_builder.obj());
+      arr_builder.append(lt_builder.obj());
+      regex_builder.append("$and", arr_builder.arr());
       obj = regex_builder.obj();
+    } else {
+      if (regex_val.empty()) {
+        // select * from t1 where a like "";
+        // => {a:""}
+        obj = BSON(sdb_item_field_name(item_field) << regex_val);
+      } else {
+        regex_builder.appendRegex(sdb_item_field_name(item_field), regex_val,
+                                  "s");
+        obj = regex_builder.obj();
+      }
     }
-
     bitmap_set_bit(pushed_cond_set, item_field->field->field_index);
   }
 
@@ -1401,7 +1422,7 @@ error:
 }
 
 int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
-                                 std::string &regex_str) {
+                                 std::string &regex_str, bool &pre_match_all) {
   DBUG_ENTER("Sdb_func_like::get_regex_str()");
   int rc = SDB_ERR_OK;
   const char *p_prev, *p_cur, *p_begin, *p_end, *p_last;
@@ -1409,6 +1430,10 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
   int buf_pos = 0;
   regex_str = "";
   int escape_char = like_item->escape;
+  size_t cnt_wildcard_per = 0;
+  size_t cnt_wildcard_underscore = 0;
+  static const int INVALID_POS = -1;
+  int first_per_sym_pos = INVALID_POS;
 
   if (0 == len) {
     // select * from t1 where field like "" ;
@@ -1421,6 +1446,7 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
   p_prev = NULL;
   p_cur = p_begin;
   p_last = p_begin;
+
   while (p_cur <= p_end) {
     if (buf_pos >= SDB_MATCH_FIELD_SIZE_MAX) {
       // reserve 2 byte for character and '\'
@@ -1447,8 +1473,13 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
         }
 
         if ('%' == *p_cur) {
+          if (INVALID_POS == first_per_sym_pos) {
+            first_per_sym_pos = p_cur - p_begin;
+          }
+          cnt_wildcard_per++;
           regex_str.append(".*");
         } else {
+          cnt_wildcard_underscore++;
           regex_str.append(".");
         }
         p_last = p_cur + 1;
@@ -1490,6 +1521,18 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
     ++p_cur;
   }
 
+  /*select * from t1 where field like "abc%" can be $gte:"abc" and
+   * $lt:"abc\177"*/
+  /*1. does not have "_";
+    2. no normal characters in multiple %, eg, "ab%cd%".*/
+  if (0 == cnt_wildcard_underscore &&
+      cnt_wildcard_per == (len - first_per_sym_pos)) {
+    pre_match_all = true;
+    regex_str.clear();
+    regex_str.append(like_str, first_per_sym_pos);
+    goto done;
+  }
+
   if (p_last == p_begin) {
     regex_str = "^";
   }
@@ -1498,7 +1541,6 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
     buf_pos = 0;
   }
   regex_str.append("$");
-
 done:
   DBUG_RETURN(rc);
 }
