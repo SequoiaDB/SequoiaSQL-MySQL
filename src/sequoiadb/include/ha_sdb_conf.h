@@ -73,6 +73,10 @@ bool sdb_rollback_on_timeout(THD *thd);
 bool sdb_use_transaction(THD *thd);
 int sdb_lock_wait_timeout(THD *thd);
 bool sdb_use_rollback_segments(THD *thd);
+char *sdb_preferred_instance(THD *thd);
+char *sdb_preferred_instance_mode(THD *thd);
+bool sdb_preferred_strict(THD *thd);
+int sdb_preferred_period(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;
@@ -98,5 +102,11 @@ extern mysql_var_update_func sdb_set_connection_addr;
 extern mysql_var_check_func sdb_use_transaction_check;
 extern mysql_var_update_func sdb_set_lock_wait_timeout;
 extern mysql_var_check_func sdb_use_rollback_segments_check;
+extern mysql_var_check_func sdb_preferred_instance_check;
+extern mysql_var_update_func sdb_set_preferred_instance;
+extern mysql_var_check_func sdb_preferred_instance_mode_check;
+extern mysql_var_update_func sdb_set_preferred_instance_mode;
+extern mysql_var_update_func sdb_set_preferred_strict;
+extern mysql_var_update_func sdb_set_preferred_period;
 
 #endif

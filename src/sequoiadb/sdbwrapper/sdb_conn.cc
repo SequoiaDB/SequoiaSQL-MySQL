@@ -42,7 +42,7 @@ static int sdb_proc_id() {
 
 /* caller should catch the exception. */
 void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
-  bson::BSONObjBuilder builder(160);
+  bson::BSONObjBuilder builder(240);
 
   if (test_attrs_mask(SDB_SESSION_ATTR_SOURCE_MASK)) {
     builder.append(SDB_SESSION_ATTR_SOURCE, source_str);
@@ -66,6 +66,38 @@ void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
   if (test_attrs_mask(SDB_SESSION_ATTR_CHECK_CL_VERSION_MASK)) {
     builder.append(SDB_SESSION_ATTR_CHECK_CL_VERSION, check_collection_version);
   }
+  if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MASK)) {
+    int value = 0;
+    char *str = prefer_inst;
+    char *pos = NULL;
+    const char *separator = " ,\t";
+    bson::BSONArrayBuilder sub_builder(
+        builder.subarrayStart(SDB_SESSION_ATTR_PREFERRED_INSTANCE));
+    while (str) {
+      while ((pos = strsep(&str, separator))) {
+        if (0 == *pos) {
+          continue;
+        }
+        value = atoi(pos);
+        if (value) {
+          sub_builder.append(value);
+        } else {
+          sub_builder.append(pos);
+        }
+      }
+    }
+    sub_builder.doneFast();
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MODE_MASK)) {
+    builder.append(SDB_SESSION_ATTR_PREFERRED_INSTABCE_MODE,
+                   str_to_lowwer(prefer_inst_mode));
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_STRICT_MASK)) {
+    builder.append(SDB_SESSION_ATTR_PREFERRED_STRICT, prefer_strict);
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_PERIOD_MASK)) {
+    builder.append(SDB_SESSION_ATTR_PREFERRED_PERIOD, prefer_period);
+  }
   *attr_obj = builder.obj();
 }
 
@@ -84,6 +116,21 @@ void Sdb_session_attrs::save_last_attrs() {
   }
   if (test_attrs_mask(SDB_SESSION_ATTR_CHECK_CL_VERSION_MASK)) {
     last_check_collection_version = check_collection_version;
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MASK)) {
+    strncpy(last_prefer_inst, prefer_inst, STRING_BUFFER_USUAL_SIZE);
+    last_prefer_inst[STRING_BUFFER_USUAL_SIZE - 1] = '\0';
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MODE_MASK)) {
+    strncpy(last_prefer_inst_mode, prefer_inst_mode,
+            SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
+    last_prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_STRICT_MASK)) {
+    last_prefer_strict = prefer_strict;
+  }
+  if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_PERIOD_MASK)) {
+    last_prefer_period = prefer_period;
   }
 }
 
@@ -214,15 +261,29 @@ int Sdb_conn::connect() {
                rc);
       goto error;
     }
-    /*The pre version of SequoiaDB(3.2) has no Source/Trans attrs.*/
+
+    session_attrs = get_session_attrs();
+    session_attrs->set_preferred_instance(sdb_preferred_instance(current_thd));
+    session_attrs->set_preferred_instance_mode(
+        sdb_preferred_instance_mode(current_thd));
+
+    /*The pre version of SequoiaDB(3.2.5) and SequoiaDB(3.4.1) has no
+     * Preferred_period attrs.*/
+    if (!(major < 3 || (3 == major && minor < 2) ||
+          (3 == major && 2 == minor && fix < 5) ||
+          (3 == major && 4 == minor && fix < 1))) {
+      session_attrs->set_preferred_period(sdb_preferred_period(current_thd));
+    }
+    /*The pre version of SequoiaDB(3.2) has no Source/Trans/Preferred_strict
+     * attrs.*/
     if (!(major < 3 || (3 == major && minor < 2))) {
-      session_attrs = get_session_attrs();
       /* Sdb restart but not restart mysql client, session_attrs need to reset
         and reset the session attrs. */
       session_attrs->reset();
       session_attrs->set_source(hostname, sdb_proc_id(),
                                 (ulonglong)thread_id());
       session_attrs->set_trans_auto_rollback(false);
+      session_attrs->set_preferred_strict(sdb_preferred_strict(current_thd));
 
       /* Server HA conn:
          1. use transaction.
@@ -275,6 +336,8 @@ int Sdb_conn::set_my_session_attr() {
       session_attrs->attrs_to_obj(&attrs_obj);
       rc = set_session_attr(attrs_obj);
       if (SDB_OK == rc) {
+        SDB_LOG_DEBUG("Set session attributes: %s",
+                      attrs_obj.toString(false, false).c_str());
         session_attrs->save_last_attrs();
       } else {
         snprintf(errmsg, sizeof(errmsg),

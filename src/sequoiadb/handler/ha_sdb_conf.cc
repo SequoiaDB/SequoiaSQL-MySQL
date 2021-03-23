@@ -93,6 +93,12 @@ mysql_var_update_func sdb_set_connection_addr = NULL;
 mysql_var_check_func sdb_use_transaction_check = NULL;
 mysql_var_update_func sdb_set_lock_wait_timeout = NULL;
 mysql_var_check_func sdb_use_rollback_segments_check = NULL;
+mysql_var_check_func sdb_preferred_instance_check = NULL;
+mysql_var_update_func sdb_set_preferred_instance = NULL;
+mysql_var_check_func sdb_preferred_instance_mode_check = NULL;
+mysql_var_update_func sdb_set_preferred_instance_mode = NULL;
+mysql_var_update_func sdb_set_preferred_strict = NULL;
+mysql_var_update_func sdb_set_preferred_period = NULL;
 
 static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
                                   void *save, struct st_mysql_value *value) {
@@ -208,6 +214,59 @@ static int sdb_use_rbs_validate(THD *thd, struct st_mysql_sys_var *var,
     rc = sdb_use_rollback_segments_check(thd, var, save, value);
   }
   return rc;
+}
+
+static int sdb_preferred_instance_validate(THD *thd,
+                                           struct st_mysql_sys_var *var,
+                                           void *save,
+                                           struct st_mysql_value *value) {
+  int rc = SDB_OK;
+  if (sdb_preferred_instance_check) {
+    rc = sdb_preferred_instance_check(thd, var, save, value);
+  }
+  return rc;
+}
+
+static int sdb_preferred_instance_mode_validate(THD *thd,
+                                                struct st_mysql_sys_var *var,
+                                                void *save,
+                                                struct st_mysql_value *value) {
+  int rc = SDB_OK;
+  if (sdb_preferred_instance_mode_check) {
+    rc = sdb_preferred_instance_mode_check(thd, var, save, value);
+  }
+  return rc;
+}
+
+static void sdb_preferred_instance_update(THD *thd,
+                                          struct st_mysql_sys_var *var,
+                                          void *var_ptr, const void *save) {
+  if (sdb_set_preferred_instance) {
+    sdb_set_preferred_instance(thd, var, var_ptr, save);
+  }
+}
+
+static void sdb_preferred_instance_mode_update(THD *thd,
+                                               struct st_mysql_sys_var *var,
+                                               void *var_ptr,
+                                               const void *save) {
+  if (sdb_set_preferred_instance_mode) {
+    sdb_set_preferred_instance_mode(thd, var, var_ptr, save);
+  }
+}
+
+static void sdb_preferred_strict_update(THD *thd, struct st_mysql_sys_var *var,
+                                        void *var_ptr, const void *save) {
+  if (sdb_set_preferred_strict) {
+    sdb_set_preferred_strict(thd, var, var_ptr, save);
+  }
+}
+
+static void sdb_preferred_period_update(THD *thd, struct st_mysql_sys_var *var,
+                                        void *var_ptr, const void *save) {
+  if (sdb_set_preferred_period) {
+    sdb_set_preferred_period(thd, var, var_ptr, save);
+  }
 }
 
 // Please declare configuration in the format below:
@@ -391,6 +450,33 @@ static MYSQL_THDVAR_BOOL(use_rollback_segments, PLUGIN_VAR_OPCMDARG,
                          /*SequoiaDB 事务中是否使用 RBS。*/,
                          sdb_use_rbs_validate, NULL, TRUE);
 
+static MYSQL_THDVAR_STR(
+    preferred_instance, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
+    "Preferred SequoiaDB node for session read operation. (Default: \"M\")"
+    /*会话读操作优先选择的 SequoiaDB 节点。*/,
+    sdb_preferred_instance_validate, sdb_preferred_instance_update,
+    SDB_DEFAULT_PREFERRED_INSTANCE);
+
+static MYSQL_THDVAR_STR(
+    preferred_instance_mode, PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
+    "Selected mode when multiple nodes meet the conditions. "
+    "The options can be 'random', 'ordered'. (Default: \"random\")"
+    /*当多个节点符合 preferred_instance 的条件时，指定选择的模式。*/,
+    sdb_preferred_instance_mode_validate, sdb_preferred_instance_mode_update,
+    SDB_DEFAULT_PREFERRED_INSTANCE_MODE);
+
+static MYSQL_THDVAR_BOOL(
+    preferred_strict, PLUGIN_VAR_OPCMDARG,
+    "Whether node selection is strict mode. (Default: TRUE)"
+    /*节点选择是否为严格模式。*/,
+    NULL, sdb_preferred_strict_update, SDB_DEFAULT_PREFERRED_STRICT);
+
+static MYSQL_THDVAR_INT(preferred_period, PLUGIN_VAR_OPCMDARG,
+                        "Effective period of preferred node. (Default: 60)"
+                        /*优先节点的有效周期。*/,
+                        NULL, sdb_preferred_period_update,
+                        SDB_DEFAULT_PREFERRED_PERIOD, 0, 3600, 0);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -420,6 +506,10 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(stats_sample_percent),
     MYSQL_SYSVAR(lock_wait_timeout),
     MYSQL_SYSVAR(use_rollback_segments),
+    MYSQL_SYSVAR(preferred_instance),
+    MYSQL_SYSVAR(preferred_instance_mode),
+    MYSQL_SYSVAR(preferred_strict),
+    MYSQL_SYSVAR(preferred_period),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -582,4 +672,20 @@ int sdb_lock_wait_timeout(THD *thd) {
 
 bool sdb_use_rollback_segments(THD *thd) {
   return THDVAR(thd, use_rollback_segments);
+}
+
+char *sdb_preferred_instance(THD *thd) {
+  return THDVAR(thd, preferred_instance);
+}
+
+char *sdb_preferred_instance_mode(THD *thd) {
+  return THDVAR(thd, preferred_instance_mode);
+}
+
+bool sdb_preferred_strict(THD *thd) {
+  return THDVAR(thd, preferred_strict);
+}
+
+int sdb_preferred_period(THD *thd) {
+  return THDVAR(thd, preferred_period);
 }

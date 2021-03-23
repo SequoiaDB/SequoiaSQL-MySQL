@@ -32,6 +32,26 @@ struct st_mysql_sys_var {
   MYSQL_PLUGIN_VAR_HEADER;
 };
 
+void sdb_update_sys_var_str(const struct st_mysql_sys_var *var,
+                            const void *var_ptr, const void *save) {
+#if defined IS_MYSQL
+  *(char **)var_ptr = *(char **)save;
+#elif defined IS_MARIADB
+  char *value = *(char **)save;
+  if (var->flags & PLUGIN_VAR_MEMALLOC) {
+    char *old = *(char **)tgt;
+    if (value) {
+      *(char **)var_ptr = my_strdup(value, MYF(0));
+    } else {
+      *(char **)var_ptr = 0;
+    }
+    my_free(old);
+  } else {
+    *(char **)var_ptr = value;
+  }
+#endif
+}
+
 static void sdb_set_conn_addr(THD *thd, struct st_mysql_sys_var *var, void *tgt,
                               const void *save) {
   bool addr_changed = false;
@@ -40,22 +60,7 @@ static void sdb_set_conn_addr(THD *thd, struct st_mysql_sys_var *var, void *tgt,
     addr_changed = true;
   }
 
-#if defined IS_MYSQL
-  *(char **)tgt = *(char **)save;
-#elif defined IS_MARIADB
-  char *value = *(char **)save;
-  if (var->flags & PLUGIN_VAR_MEMALLOC) {
-    char *old = *(char **)tgt;
-    if (value) {
-      *(char **)tgt = my_strdup(value, MYF(0));
-    } else {
-      *(char **)tgt = 0;
-    }
-    my_free(old);
-  } else {
-    *(char **)tgt = value;
-  }
-#endif
+  sdb_update_sys_var_str(var, tgt, save);
 
   if (!addr_changed) {
     goto done;
@@ -256,11 +261,343 @@ error:
   goto done;
 }
 
+// Check the validity of preferred instance
+bool sdb_prefer_inst_is_valid(const char *s) {
+  int rs = true;
+  const char *right = s;
+  const char *left = s;
+  if (0 == strlen(s)) {
+    rs = false;
+    goto done;
+  }
+  while (*left != 0) {
+    size_t len = 0;
+    const char *p_str = NULL;
+    bool has_valid_char = false;
+    char str[STRING_BUFFER_USUAL_SIZE] = "";
+    right = strchr(right, ',');
+    if (right) {
+      len = right - left;
+    } else {
+      len = strlen(left);
+    }
+    memcpy(str, left, len);
+    str[len] = '\0';
+    p_str = str;
+    has_valid_char = false;
+    while (*p_str) {
+      if ((*p_str) == ' ' || (*p_str) == '\t') {
+        ++p_str;
+        continue;
+      }
+      if ((*p_str) < '0' || ((*p_str) > '9' && (*p_str) < 'A') ||
+          (*p_str) > 'z') {
+        rs = false;
+        goto done;
+      }
+      has_valid_char = true;
+      ++p_str;
+    }
+    if (!has_valid_char) {
+      rs = false;
+      goto done;
+    }
+    if (NULL == right) {
+      break;
+    }
+    if ('\0' == *(++right)) {
+      rs = false;
+      goto done;
+    }
+    left = right;
+  }
+
+done:
+  return rs;
+}
+
+static int sdb_prefer_inst_check(THD *thd, struct st_mysql_sys_var *var,
+                                 void *save, struct st_mysql_value *value) {
+  int rc = 0;
+  const char *str = NULL;
+  int length = 0;
+  char buff[STRING_BUFFER_USUAL_SIZE] = {0};
+
+  length = sizeof(buff);
+  str = value->val_str(value, buff, &length);
+  if (length >= STRING_BUFFER_USUAL_SIZE) {
+    rc = 1;
+    goto error;
+  }
+  rc = sdb_prefer_inst_is_valid(str) ? 0 : 1;
+
+done:
+  *static_cast<const char **>(save) = (0 == rc) ? str : NULL;
+  return rc;
+error:
+  goto done;
+}
+
+static void sdb_set_prefer_inst(THD *thd, struct st_mysql_sys_var *var,
+                                void *var_ptr, const void *save) {
+  int rc = SDB_OK;
+  bool is_changed = false;
+  size_t var_ptr_len = strlen(*(char **)var_ptr);
+  size_t save_len = strlen(*(char **)save);
+  int len = var_ptr_len > save_len ? var_ptr_len : save_len;
+  Sdb_conn *conn = NULL;
+  Sdb_session_attrs *session_attrs = NULL;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+
+  if (0 != strncmp(*(char **)var_ptr, *(char **)save, len)) {
+    is_changed = true;
+  }
+
+  sdb_update_sys_var_str(var, var_ptr, save);
+
+  if (!is_changed) {
+    goto done;
+  }
+
+  /* No need to change sequoiadb_preferred_instance if the sdb conn is not
+           establised. */
+  if (!(thd_sdb && thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated())) {
+    goto done;
+  }
+
+  conn = thd_sdb->get_conn();
+  session_attrs = conn->get_session_attrs();
+  session_attrs->set_preferred_instance(*(char **)var_ptr);
+  rc = conn->set_my_session_attr();
+  if (rc != SDB_OK) {
+    SDB_LOG_WARNING("Failed to set preferred instance on sequoiadb, rc=%d", rc);
+    goto error;
+  }
+
+done:
+  return;
+error:
+  goto done;
+}
+
+static int sdb_prefer_inst_mode_check(THD *thd, struct st_mysql_sys_var *var,
+                                      void *save,
+                                      struct st_mysql_value *value) {
+  int rc = 0;
+  const char *str = NULL;
+  int length = 0;
+  char buff[STRING_BUFFER_USUAL_SIZE] = {0};
+
+  length = sizeof(buff);
+  str = value->val_str(value, buff, &length);
+  if (0 != strcasecmp(str, SDB_PREFERRED_INSTANCE_MODE_RANDOM) &&
+      0 != strcasecmp(str, SDB_PREFERRED_INSTANCE_MODE_ORDERED)) {
+    rc = 1;
+  }
+  *static_cast<const char **>(save) = (0 == rc) ? str : NULL;
+  return rc;
+}
+
+static void sdb_set_prefer_inst_mode(THD *thd, struct st_mysql_sys_var *var,
+                                     void *var_ptr, const void *save) {
+  int rc = SDB_OK;
+  bool is_changed = false;
+  Sdb_conn *conn = NULL;
+  Sdb_session_attrs *session_attrs = NULL;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  size_t var_ptr_len = strlen(*(char **)var_ptr);
+  size_t save_len = strlen(*(char **)save);
+  int len = var_ptr_len > save_len ? var_ptr_len : save_len;
+
+  if (0 != strncmp(*(char **)var_ptr, *(char **)save, len)) {
+    is_changed = true;
+  }
+
+  sdb_update_sys_var_str(var, var_ptr, save);
+
+  if (!is_changed) {
+    goto done;
+  }
+
+  /* No need to change sequoiadb_preferred_instance_mode if the sdb conn is not
+           establised. */
+  if (!(thd_sdb && thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated())) {
+    goto done;
+  }
+
+  conn = thd_sdb->get_conn();
+  session_attrs = conn->get_session_attrs();
+  session_attrs->set_preferred_instance_mode(*(char **)var_ptr);
+  rc = conn->set_my_session_attr();
+  if (rc != SDB_OK) {
+    SDB_LOG_WARNING("Failed to set preferred instance mode on sequoiadb, rc=%d",
+                    rc);
+    goto error;
+  }
+
+done:
+  return;
+error:
+  goto done;
+}
+
+bool is_prefer_strict_supported(Sdb_conn *conn) {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+
+  if (NULL == conn) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(current_thd));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                  // x < 3
+      (3 == major && minor < 2)) {  // 3.x < 3.2
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
+static void sdb_set_prefer_strict(THD *thd, struct st_mysql_sys_var *var,
+                                  void *var_ptr, const void *save) {
+  int rc = SDB_OK;
+  bool is_changed = false;
+  Sdb_conn *conn = NULL;
+  Sdb_session_attrs *session_attrs = NULL;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+
+  if (*(bool *)var_ptr != *(bool *)save) {
+    is_changed = true;
+  }
+
+  *(bool *)var_ptr = *(bool *)save;
+
+  if (!is_changed) {
+    goto done;
+  }
+
+  /* No need to change sequoiadb_preferred_strict if the sdb conn is not
+           establised. */
+  if (!(thd_sdb && thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated())) {
+    goto done;
+  }
+
+  conn = thd_sdb->get_conn();
+  if (is_prefer_strict_supported(conn)) {
+    session_attrs = conn->get_session_attrs();
+    session_attrs->set_preferred_strict(*(bool *)var_ptr);
+    rc = conn->set_my_session_attr();
+    if (rc != SDB_OK) {
+      SDB_LOG_WARNING("Failed to set preferred strict on sequoiadb, rc=%d", rc);
+      goto error;
+    }
+  }
+
+done:
+  return;
+error:
+  goto done;
+}
+
+bool is_prefer_period_supported(Sdb_conn *conn) {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+
+  if (NULL == conn) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(current_thd));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 2) ||              // 3.x < 3.2
+      (3 == major && 2 == minor && fix < 5) ||  // 3.2.x < 3.2.5
+      (3 == major && 4 == minor && fix < 1)) {  // 3.4.x < 3.4.1
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
+static void sdb_set_prefer_period(THD *thd, struct st_mysql_sys_var *var,
+                                  void *var_ptr, const void *save) {
+  int rc = SDB_OK;
+  bool is_changed = false;
+  Sdb_conn *conn = NULL;
+  Sdb_session_attrs *session_attrs = NULL;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+
+  if (*(int *)var_ptr != *(int *)save) {
+    is_changed = true;
+  }
+
+  *(int *)var_ptr = *(int *)save;
+
+  if (!is_changed) {
+    goto done;
+  }
+
+  /* No need to change sequoiadb_preferred_period if the sdb conn is not
+           establised. */
+  if (!(thd_sdb && thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated())) {
+    goto done;
+  }
+
+  conn = thd_sdb->get_conn();
+  if (is_prefer_period_supported(conn)) {
+    session_attrs = conn->get_session_attrs();
+    session_attrs->set_preferred_period(*(int *)var_ptr);
+    rc = conn->set_my_session_attr();
+    if (rc != SDB_OK) {
+      SDB_LOG_WARNING("Failed to set preferred period on sequoiadb, rc=%d", rc);
+      goto error;
+    }
+  }
+
+done:
+  return;
+error:
+  goto done;
+}
+
 void sdb_init_vars_check_and_update_funcs() {
   sdb_set_connection_addr = &sdb_set_conn_addr;
   sdb_use_transaction_check = &sdb_use_trans_check;
   sdb_set_lock_wait_timeout = &sdb_set_trans_timeout;
   sdb_use_rollback_segments_check = &sdb_use_rbs_check;
+  sdb_preferred_instance_check = &sdb_prefer_inst_check;
+  sdb_set_preferred_instance = &sdb_set_prefer_inst;
+  sdb_preferred_instance_mode_check = &sdb_prefer_inst_mode_check;
+  sdb_set_preferred_instance_mode = &sdb_set_prefer_inst_mode;
+  sdb_set_preferred_strict = &sdb_set_prefer_strict;
+  sdb_set_preferred_period = &sdb_set_prefer_period;
 }
 uchar *thd_sdb_share_get_key(THD_SDB_SHARE *thd_sdb_share, size_t *length,
                              my_bool not_used MY_ATTRIBUTE((unused))) {

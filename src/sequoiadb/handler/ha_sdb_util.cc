@@ -1136,3 +1136,12 @@ done:
 error:
   goto done;
 }
+
+char *str_to_lowwer(char *str) {
+  char *orign = str;
+  while (*str != '\0') {
+    *str = tolower(*str);
+    ++str;
+  }
+  return orign;
+}

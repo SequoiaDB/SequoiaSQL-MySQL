@@ -127,6 +127,8 @@ int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
 
 int sdb_drop_empty_cs(Sdb_conn &conn, const char *cs_name);
 
+char *str_to_lowwer(char *str);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;
