@@ -634,7 +634,7 @@ function start_inst()
    
    for ((i=0; i<15; i++));
    do
-      check_svcname_available $inst_port $CTL_LOG true
+      check_svcname_available $inst_port $CTL_LOG true >> /dev/null
       if [ $? == 0 ]; then
          sleep 0.2
       else
