@@ -1430,10 +1430,11 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
   int buf_pos = 0;
   regex_str = "";
   int escape_char = like_item->escape;
-  size_t cnt_wildcard_per = 0;
-  size_t cnt_wildcard_underscore = 0;
+  size_t cnt_per_sym = 0;
+  size_t cnt_underscore_sym = 0;
+  size_t i = 0;
   static const int INVALID_POS = -1;
-  int first_per_sym_pos = INVALID_POS;
+  int first_per_pos = INVALID_POS;
 
   if (0 == len) {
     // select * from t1 where field like "" ;
@@ -1446,6 +1447,28 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
   p_prev = NULL;
   p_cur = p_begin;
   p_last = p_begin;
+
+  /*has wildcard '%' or '_' in the middle of like_str.*/
+  while (i < len) {
+    if ('%' == like_str[i]) {
+      if (INVALID_POS == first_per_pos) {
+        first_per_pos = i;
+      }
+      cnt_per_sym++;
+    }
+    if ('_' == like_str[i]) {
+      cnt_underscore_sym++;
+    }
+    i++;
+  }
+
+  /*
+    if like string end with '%' like "abc%", turn to "$gte":"abc", when:
+    1. no '_' sym in the like string.
+    2. '%' only in the ends of like string, like "abc%", "abc%%%".*/
+  if (0 == cnt_underscore_sym && cnt_per_sym == (len - first_per_pos)) {
+    pre_match_all = true;
+  }
 
   while (p_cur <= p_end) {
     if (buf_pos >= SDB_MATCH_FIELD_SIZE_MAX) {
@@ -1464,7 +1487,10 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
         //     select * from t1 where field like "abc%"
         //     => (^abc.*)
         if (p_begin == p_last) {
-          regex_str = "^";
+          // if string end with '%' like "abc%", turn to "$gte":"abc"
+          if (!pre_match_all) {
+            regex_str = "^";
+          }
         }
 
         if (buf_pos > 0) {
@@ -1473,13 +1499,11 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
         }
 
         if ('%' == *p_cur) {
-          if (INVALID_POS == first_per_sym_pos) {
-            first_per_sym_pos = p_cur - p_begin;
+          // if string such as '%' like "%bc", turn to "$regex":"^.*bc$"
+          if (!pre_match_all) {
+            regex_str.append(".*");
           }
-          cnt_wildcard_per++;
-          regex_str.append(".*");
         } else {
-          cnt_wildcard_underscore++;
           regex_str.append(".");
         }
         p_last = p_cur + 1;
@@ -1498,7 +1522,9 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
             '+' == *p_cur || '?' == *p_cur || '-' == *p_cur) {
           /* process perl regexp special characters: {}[]()^$.|*+?-\  */
           /* add '\' before the special character */
-          str_buf[buf_pos++] = '\\';
+          if (!pre_match_all) {
+            str_buf[buf_pos++] = '\\';
+          }
         }
         str_buf[buf_pos++] = *p_cur;
         p_prev = NULL;
@@ -1510,7 +1536,9 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
             (escape_char != *p_cur)) {
           /* process perl regexp special characters: {}[]()^$.|*+?-\ */
           /* add '\' before the special character */
-          str_buf[buf_pos++] = '\\';
+          if (!pre_match_all) {
+            str_buf[buf_pos++] = '\\';
+          }
           str_buf[buf_pos++] = *p_cur;
         } else {
           str_buf[buf_pos++] = *p_cur;
@@ -1521,26 +1549,16 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
     ++p_cur;
   }
 
-  /*select * from t1 where field like "abc%" can be $gte:"abc" and
-   * $lt:"abc\177"*/
-  /*1. does not have "_";
-    2. no normal characters in multiple %, eg, "ab%cd%".*/
-  if (0 == cnt_wildcard_underscore &&
-      cnt_wildcard_per == (len - first_per_sym_pos)) {
-    pre_match_all = true;
-    regex_str.clear();
-    regex_str.append(like_str, first_per_sym_pos);
-    goto done;
-  }
-
-  if (p_last == p_begin) {
+  if (p_last == p_begin && !pre_match_all) {
     regex_str = "^";
   }
   if (buf_pos > 0) {
     regex_str.append(str_buf, buf_pos);
     buf_pos = 0;
   }
-  regex_str.append("$");
+  if (!pre_match_all) {
+    regex_str.append("$");
+  }
 done:
   DBUG_RETURN(rc);
 }
