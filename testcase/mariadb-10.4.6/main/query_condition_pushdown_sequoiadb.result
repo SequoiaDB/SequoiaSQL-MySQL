@@ -8216,7 +8216,7 @@ id	t	dt
 10	ok	2005-05-05 11:11:11
 100	bar	2006-07-07 12:13:14
 50	to	2009-09-09 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$in": [ 1, 8, 10, 50, 100 ] } }, { "$or": [ { "dt": { "$gte": "2000-01-01 00:00:00" } }, { "t": { "$regex": "^to.*$", "$options": "s" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$in": [ 1, 8, 10, 50, 100 ] } }, { "$or": [ { "dt": { "$gte": "2000-01-01 00:00:00" } }, { "$and": [ { "t": { "$gte": "to" } }, { "t": { "$lt": "to�" } } ] } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id <= 10 OR t IN ('abc','test','ok','pp','too') AND dt > '2001-01-01 10:10:10';
 id	t	dt
 -1	op	1999-04-04 08:08:08
@@ -8293,7 +8293,7 @@ id	t	dt
 9	too	2010-08-08 23:59:59
 Warning	1292	Truncated incorrect date value: '2009-09-09 -23:59:59'
 Warnings:
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 2 } }, { "$or": [ { "t": { "$lt": "too" } }, { "t": { "$regex": "^b.*$", "$options": "s" } }, { "dt": { "$gt": "2009-09-09 00:00:00" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$gt": 2 } }, { "$or": [ { "t": { "$lt": "too" } }, { "$and": [ { "t": { "$gte": "b" } }, { "t": { "$lt": "b�" } } ] }, { "dt": { "$gt": "2009-09-09 00:00:00" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id <= 5 OR t = 'ok' OR dt <= '1998-01-01 01:01:01' OR dt >= '2009-10-01 01:01:01';
 id	t	dt
 -1	op	1999-04-04 08:08:08
@@ -8314,7 +8314,7 @@ id	t	dt
 50	to	2009-09-09 23:59:59
 8	foo	1995-06-06 23:00:00
 9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$gte": 10 } }, { "t": { "$regex": "^to.*$", "$options": "s" } }, { "$and": [ { "dt": { "$ne": "2010-08-08 23:59:59" } }, { "t": { "$lte": "hello" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$gte": 10 } }, { "$and": [ { "t": { "$gte": "to" } }, { "t": { "$lt": "to�" } } ] }, { "$and": [ { "dt": { "$ne": "2010-08-08 23:59:59" } }, { "t": { "$lte": "hello" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE id NOT IN (1,2,10,50,100) OR t < 'ok' AND t = 'foo' OR dt >= '2006-01-01 00:00:00';
 id	t	dt
 -1	op	1999-04-04 08:08:08
@@ -8333,7 +8333,7 @@ id	t	dt
 50	to	2009-09-09 23:59:59
 8	foo	1995-06-06 23:00:00
 9	too	2010-08-08 23:59:59
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$gt": 2 } }, { "$and": [ { "t": { "$regex": "^hel.*$", "$options": "s" } }, { "dt": { "$ne": "2009-09-09 23:59:59" } }, { "t": { "$gte": "foo" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$gt": 2 } }, { "$and": [ { "$and": [ { "t": { "$gte": "hel" } }, { "t": { "$lt": "hel�" } } ] }, { "dt": { "$ne": "2009-09-09 23:59:59" } }, { "t": { "$gte": "foo" } } ] } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE NOT (id <= ABS(5) AND t >= 'foo' AND dt <> '1970-01-01 01:01:01');
 id	t	dt
 -2	bo	2020-10-10 23:00:00
@@ -8518,7 +8518,7 @@ SELECT * FROM t1 WHERE (REPEAT(t,3) > 'opt' OR tm <= '10:10:10') AND t LIKE 'to%
 id	t	tm	dt
 50	to	-23:59:59	2018-11-11 09:09:09
 9	too	23:59:59	2020-10-10 23:00:00
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "t": { "$regex": "^to.*$", "$options": "s" } }, { "id": { "$in": [ 1, 2, 10, 20, 30, 8, 9, 50, 100 ] } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "t": { "$gte": "to" } }, { "t": { "$lt": "to�" } } ] }, { "id": { "$in": [ 1, 2, 10, 20, 30, 8, 9, 50, 100 ] } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE t <= 'test' AND ( 2 > ABS(id) OR tm <= '10:10:10') AND dt > '2000-01-01 00:00:00';
 id	t	tm	dt
 -1	op	08:08:08	2005-05-05 11:11:11
@@ -8692,7 +8692,7 @@ id	a	b	c	d
 7	abc	abc	abc	abc
 8	ac	ac	ac	ac
 9	abd	abd	abd	abd
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^a.*$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "a" } }, { "a": { "$lt": "a�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE b LIKE "%a";
 id	a	b	c	d
 1	1a	1a	1a	1a
@@ -8728,7 +8728,7 @@ id	a	b	c	d
 22	中文123456	中文123456	中文123456	中文123456
 23	中1文	中1文	中1文	中1文
 24	中12文	中12文	中12文	中12文
-[Note] SequoiaDB: Query message: condition[{ "b": { "$regex": "^ä¸­.*$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gte": "ä¸­" } }, { "b": { "$lt": "ä¸­�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE c LIKE "%中";
 id	a	b	c	d
 17	中	中	中	中
@@ -8891,7 +8891,7 @@ id	a	b
 7	abc	abc
 8	ac	ac
 9	abd	abd
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^a.*$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "a" } }, { "a": { "$lt": "a�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE a LIKE "%a";
 id	a	b
 1	1a	1a
@@ -8923,7 +8923,7 @@ id	a	b
 22	中文123456	中文123456
 23	中1文	中1文
 24	中12文	中12文
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^ä¸­.*$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "ä¸­" } }, { "a": { "$lt": "ä¸­�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE a LIKE "%中";
 id	a	b
 17	中	中
@@ -10197,10 +10197,6 @@ id	a	b	c	d
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b	c	d
 2	^abc	^abc	^abc	^abc
-SELECT * FROM t1 WHERE c LIKE "a\\\%";
-id	a	b	c	d
-10	a\bc	a\bc	a\bc	a\bc
-11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE d LIKE "a_$_";
 id	a	b	c	d
 17	ab$d	ab$d	ab$d	ab$d
@@ -10415,10 +10411,6 @@ id	a	b	c	d
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b	c	d
 2	^abc	^abc	^abc	^abc
-SELECT * FROM t1 WHERE c LIKE "a\\\%";
-id	a	b	c	d
-10	a\bc	a\bc	a\bc	a\bc
-11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE d LIKE "a_$_";
 id	a	b	c	d
 17	ab$d	ab$d	ab$d	ab$d
@@ -10632,10 +10624,6 @@ id	a	b
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b
 2	^abc	^abc
-SELECT * FROM t1 WHERE a LIKE "a\\\%";
-id	a	b
-10	a\bc	a\bc
-11	a\bd	a\bd
 SELECT * FROM t1 WHERE b LIKE "a_$_";
 id	a	b
 17	ab$d	ab$d
@@ -10844,10 +10832,6 @@ id	a	b
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b
 2	^abc	^abc
-SELECT * FROM t1 WHERE a LIKE "a\\\%";
-id	a	b
-10	a\bc	a\bc
-11	a\bd	a\bd
 SELECT * FROM t1 WHERE b LIKE "a_$_";
 id	a	b
 17	ab$d	ab$d
@@ -11247,10 +11231,6 @@ id	a	b	c	d
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b	c	d
 2	^abc	^abc	^abc	^abc
-SELECT * FROM t1 WHERE c LIKE "a\\\%";
-id	a	b	c	d
-10	a\bc	a\bc	a\bc	a\bc
-11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE d LIKE "a_$_";
 id	a	b	c	d
 17	ab$d	ab$d	ab$d	ab$d
@@ -11489,10 +11469,6 @@ abc
 abc	
 abc	
 abc	
-SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
-id	a	b	c	d
-10	a\bc	a\bc	a\bc	a\bc
-11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
 id	a	b	c	d
 10	a\bc	a\bc	a\bc	a\bc
@@ -11702,10 +11678,6 @@ abc
 abc	
 abc	
 abc	
-SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
-id	a	b	c	d
-10	a\bc	a\bc	a\bc	a\bc
-11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
 id	a	b	c	d
 10	a\bc	a\bc	a\bc	a\bc
@@ -11910,10 +11882,6 @@ id	a	b
 ]e	abcd[.
 abc
 abc	
-SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
-id	a	b
-10	a\bc	a\bc
-11	a\bd	a\bd
 SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
 id	a	b
 10	a\bc	a\bc
@@ -12113,10 +12081,6 @@ id	a	b
 ]e	abcd[.
 abc
 abc	
-SELECT * FROM t1 WHERE b LIKE "a\\\%" ESCAPE "\\";
-id	a	b
-10	a\bc	a\bc
-11	a\bd	a\bd
 SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$";
 id	a	b
 135	ab1	ab1
@@ -12296,10 +12260,6 @@ id	a	b
 ]e	abcd[.
 abc
 abc	
-SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
-id	a	b
-10	a\bc	a\bc
-11	a\bd	a\bd
 SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
 id	a	b
 10	a\bc	a\bc
@@ -12499,10 +12459,6 @@ id	a	b
 ]e	abcd[.
 abc
 abc	
-SELECT * FROM t1 WHERE b LIKE "a\\\%" ESCAPE "\\";
-id	a	b
-10	a\bc	a\bc
-11	a\bd	a\bd
 SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$";
 id	a	b
 135	ab1	ab1

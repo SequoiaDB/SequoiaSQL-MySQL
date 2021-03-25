@@ -1,3 +1,4 @@
+#BUG #SEQUOIADBMAINSTREAM-6944 annotation for temporary
 --source include/have_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
 

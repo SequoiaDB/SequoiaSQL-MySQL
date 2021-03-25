@@ -1,3 +1,4 @@
+#BUG #SEQUOIADBMAINSTREAM-6944 annotation for temporary
 --source include/have_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
 
@@ -301,9 +302,8 @@ show create table meta_sync_test.t1;
 connection conn1;
 alter table meta_sync_test.t1 rename as meta_sync_test.t2;
 #Bug SEQUOIASQLMAINSTREAM-773
-#mariadb not support rename index
-#connection conn2;
-#alter table meta_sync_test.t2 rename index a to b;
+connection conn2;
+alter table meta_sync_test.t2 rename index a to b;
 
 connection conn1;
 --error 1146
@@ -394,7 +394,6 @@ connection conn2;
 alter function meta_sync_test.f1 comment 'modify function';
 #check metaData
 #Bug SEQUOIASQLMAINSTREAM-771
-
 connection conn1;
 --error 1146
 show create table meta_sync_test.v1;
@@ -428,6 +427,8 @@ show create function meta_sync_test.f1;
 connection conn1;
 drop table meta_sync_test.t1;
 drop table meta_sync_test.t2;
+
+
 
 #Case 22698
 connection conn1;
@@ -501,6 +502,7 @@ drop view meta_sync_test.v1;
 #check metaData
 #Bug SEQUOIASQLMAINSTREAM-771
 connection conn1;
+connection conn1;
 --error 1146
 show create table meta_sync_test.v1;
 --error 1305
@@ -559,9 +561,10 @@ grant execute on function meta_sync_22567.f1 to 'user_22567';
 grant execute on procedure meta_sync_22567.p1 to 'user_22567';
 flush privileges;
 
-#Bug SEQUOIASQLMAINSTREAM-865
+--sorted_result
 connection conn1;
 show grants for user_22567;
+--sorted_result
 connection conn2;
 show grants for user_22567;
 
@@ -574,9 +577,9 @@ flush privileges;
 
 connection conn1;
 show grants for user_22567;
-#Bug SEQUOIASQLMAINSTREAM-865
 connection conn2;
 show grants for user_22567;
+
 connection conn1;
 grant all on meta_sync_22567.* to 'user_22567';
 flush privileges;
@@ -656,7 +659,7 @@ ALTER DATABASE metaSync_22559_22564 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE
 # conn1 alter table
 connection conn1;
 ALTER TABLE t1 ADD COLUMN d DATE, MODIFY c LONGBLOB, ADD PRIMARY KEY(a);
-ALTER TABLE t2 ADD SYSTEM VERSIONING;
+ALTER TABLE t2 PARTITION BY KEY (a) PARTITIONS 10; 
 # conn2 alter procedure
 connection conn2;
 ALTER PROCEDURE p1
@@ -729,7 +732,8 @@ connection conn1;
 ALTER DATABASE metaSync_22561_22566 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
 # conn2 alter table
 connection conn2;
-ALTER TABLE t1 ADD COLUMN c CHAR(8) DEFAULT 'char';  
+ALTER TABLE t1 ADD COLUMN c CHAR(8) DEFAULT 'char';
+ALTER TABLE t1 PARTITION BY HASH (a) PARTITIONS 4;
 # conn1 alter auto_increment
 connection conn1;
 ALTER TABLE t1 AUTO_INCREMENT 120;                   
