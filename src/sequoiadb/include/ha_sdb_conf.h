@@ -108,5 +108,6 @@ extern mysql_var_check_func sdb_preferred_instance_mode_check;
 extern mysql_var_update_func sdb_set_preferred_instance_mode;
 extern mysql_var_update_func sdb_set_preferred_strict;
 extern mysql_var_update_func sdb_set_preferred_period;
+extern mysql_var_check_func sdb_connection_addr_check;
 
 #endif

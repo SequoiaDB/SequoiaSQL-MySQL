@@ -26,6 +26,7 @@
 #include "ha_sdb_errcode.h"
 #include "server_ha.h"
 #include <strfunc.h>
+#include "sdb_cl.h"
 
 // Complete the struct declaration
 struct st_mysql_sys_var {
@@ -74,6 +75,115 @@ static void sdb_set_conn_addr(THD *thd, struct st_mysql_sys_var *var, void *tgt,
 done:
   /* Ignore the error code. */
   return;
+}
+
+static int sdb_conn_addr_check(THD *thd, struct st_mysql_sys_var *var,
+                               void *save, struct st_mysql_value *value) {
+  // The buffer size is not important. Because st_mysql_value::val_str
+  // internally calls the Item_string::val_str, which doesn't need a buffer.
+  static const uint SDB_CONN_ADDR_BUF_SIZE = 512;
+  char buff[SDB_CONN_ADDR_BUF_SIZE] = {0};
+  int len = sizeof(buff);
+  const char *arg_conn_addr = value->val_str(value, buff, &len);
+
+  ha_sdb_conn_addrs parser;
+  int rc = parser.parse_conn_addrs(arg_conn_addr);
+
+  // 'sequoiadb_conn_addr' can't be changed to the coord address of
+  // another cluster if 'HA' is on
+  if (0 == rc && ha_is_open() && sdb_conn_str && arg_conn_addr &&
+      0 != strcmp(sdb_conn_str, arg_conn_addr)) {
+    Sdb_conn dst_conn(0);
+    Sdb_cl registry_cl;
+    bson::BSONObj cond_obj, sel_obj, dst_obj;
+    static const char *SDB_COORD_STR = "coord";
+    const char *dst_role = NULL;
+
+    try {
+      // connect dst node
+      rc = dst_conn.connect(arg_conn_addr);
+      if (0 != rc) {
+        my_printf_error(ER_WRONG_VALUE_FOR_VAR, "%s", MYF(0),
+                        dst_conn.get_err_msg());
+        goto error;
+      }
+
+      // check if the given svrname is a coord svrname
+      cond_obj = BSON(SDB_FIELD_GLOBAL << false);
+      sel_obj = BSON(SDB_FIELD_ROLE << "");
+      rc = dst_conn.snapshot(dst_obj, SDB_SNAP_CONFIGS, cond_obj, sel_obj,
+                             SDB_EMPTY_BSON, SDB_EMPTY_BSON, 0);
+      if (0 != rc) {
+        my_printf_error(ER_WRONG_VALUE_FOR_VAR,
+                        "Failed to get snapshot, error: %s", MYF(0),
+                        dst_conn.get_err_msg());
+        goto error;
+      }
+      dst_role = dst_obj.getStringField(SDB_FIELD_ROLE);
+      if (0 != strcmp(dst_role, SDB_COORD_STR)) {
+        my_printf_error(ER_WRONG_VALUE_FOR_VAR, "'%s' is not a coord svrname",
+                        MYF(0), arg_conn_addr);
+        rc = -1;
+        goto error;
+      }
+
+      // check if they are in the same cluster
+      rc = dst_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl, true);
+      if (SDB_DMS_NOTEXIST == get_sdb_code(rc) ||
+          SDB_DMS_CS_NOTEXIST == get_sdb_code(rc)) {
+        my_printf_error(ER_WRONG_VALUE_FOR_VAR,
+                        "'%s' and '%s' are not in the same cluster", MYF(0),
+                        sdb_conn_str, arg_conn_addr);
+        goto error;
+      }
+
+      cond_obj = BSON(HA_FIELD_HOST_NAME << glob_hostname << HA_FIELD_PORT
+                                         << mysqld_port);
+      rc = registry_cl.query(cond_obj);
+      if (HA_ERR_END_OF_FILE == rc) {
+        my_printf_error(ER_WRONG_VALUE_FOR_VAR,
+                        "'%s' and '%s' are not in the same cluster", MYF(0),
+                        sdb_conn_str, arg_conn_addr);
+        goto error;
+      } else if (0 != rc) {
+        my_printf_error(ER_WRONG_VALUE_FOR_VAR,
+                        "Failed to check coord address '%s', error: %s", MYF(0),
+                        arg_conn_addr, dst_conn.get_err_msg());
+        goto error;
+      }
+
+      dst_obj = SDB_EMPTY_BSON;
+      rc = registry_cl.next(dst_obj, false);
+      if (HA_ERR_END_OF_FILE == rc || dst_obj.isEmpty()) {
+        my_printf_error(ER_WRONG_VALUE_FOR_VAR,
+                        "'%s' and '%s' are not in the same cluster", MYF(0),
+                        sdb_conn_str, arg_conn_addr);
+        rc = -1;
+        goto error;
+      } else if (0 != rc) {
+        my_printf_error(ER_WRONG_VALUE_FOR_VAR,
+                        "Failed to check coord address '%s', error: %s", MYF(0),
+                        arg_conn_addr, dst_conn.get_err_msg());
+        goto error;
+      }
+    } catch (std::bad_alloc &e) {
+      my_printf_error(ER_WRONG_VALUE_FOR_VAR,
+                      "OOM while checking coord address, exception: %s", MYF(0),
+                      e.what());
+      rc = -1;
+      goto error;
+    } catch (std::exception &e) {
+      my_printf_error(ER_WRONG_VALUE_FOR_VAR,
+                      "Failed to check coord address: %s", MYF(0), e.what());
+      rc = -1;
+      goto error;
+    }
+  }
+done:
+  *static_cast<const char **>(save) = (0 == rc) ? arg_conn_addr : NULL;
+  return rc;
+error:
+  goto done;
 }
 
 static int sdb_use_trans_check(THD *thd, struct st_mysql_sys_var *var,
@@ -598,6 +708,7 @@ void sdb_init_vars_check_and_update_funcs() {
   sdb_set_preferred_instance_mode = &sdb_set_prefer_inst_mode;
   sdb_set_preferred_strict = &sdb_set_prefer_strict;
   sdb_set_preferred_period = &sdb_set_prefer_period;
+  sdb_connection_addr_check = &sdb_conn_addr_check;
 }
 uchar *thd_sdb_share_get_key(THD_SDB_SHARE *thd_sdb_share, size_t *length,
                              my_bool not_used MY_ATTRIBUTE((unused))) {

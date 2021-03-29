@@ -99,19 +99,14 @@ mysql_var_check_func sdb_preferred_instance_mode_check = NULL;
 mysql_var_update_func sdb_set_preferred_instance_mode = NULL;
 mysql_var_update_func sdb_set_preferred_strict = NULL;
 mysql_var_update_func sdb_set_preferred_period = NULL;
+mysql_var_check_func sdb_connection_addr_check = NULL;
 
 static int sdb_conn_addr_validate(THD *thd, struct st_mysql_sys_var *var,
                                   void *save, struct st_mysql_value *value) {
-  // The buffer size is not important. Because st_mysql_value::val_str
-  // internally calls the Item_string::val_str, which doesn't need a buffer.
-  static const uint SDB_CONN_ADDR_BUF_SIZE = 3072;
-  char buff[SDB_CONN_ADDR_BUF_SIZE];
-  int len = sizeof(buff);
-  const char *arg_conn_addr = value->val_str(value, buff, &len);
-
-  ha_sdb_conn_addrs parser;
-  int rc = parser.parse_conn_addrs(arg_conn_addr);
-  *static_cast<const char **>(save) = (0 == rc) ? arg_conn_addr : NULL;
+  int rc = SDB_OK;
+  if (sdb_connection_addr_check) {
+    rc = sdb_connection_addr_check(thd, var, save, value);
+  }
   return rc;
 }
 

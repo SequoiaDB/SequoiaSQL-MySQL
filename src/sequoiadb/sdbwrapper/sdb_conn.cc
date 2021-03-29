@@ -140,7 +140,8 @@ Sdb_conn::Sdb_conn(my_thread_id _tid, bool server_ha_conn)
       pushed_autocommit(false),
       m_is_authenticated(false),
       m_is_server_ha_conn(server_ha_conn),
-      m_check_collection_version(false) {
+      m_check_collection_version(false),
+      m_use_default_addr(true) {
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
   rollback_on_timeout = false;
@@ -169,7 +170,7 @@ retry:
 done:
   return rc;
 error:
-  if (IS_SDB_NET_ERR(rc)) {
+  if (IS_SDB_NET_ERR(rc) && m_use_default_addr) {
     if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
       goto retry;
     }
@@ -178,7 +179,7 @@ error:
   goto done;
 }
 
-int Sdb_conn::connect() {
+int Sdb_conn::connect(const char *conn_addr) {
   int rc = SDB_ERR_OK;
   String password;
   Sdb_session_attrs *session_attrs = NULL;
@@ -186,7 +187,14 @@ int Sdb_conn::connect() {
   if (!(is_valid() && is_authenticated())) {
     m_transaction_on = false;
     ha_sdb_conn_addrs conn_addrs;
-    rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
+
+    // use default address if conn_addr is NULL
+    if (NULL == conn_addr) {
+      rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
+    } else {
+      m_use_default_addr = false;
+      rc = conn_addrs.parse_conn_addrs(conn_addr);
+    }
     if (SDB_ERR_OK != rc) {
       snprintf(errmsg, sizeof(errmsg),
                "Failed to parse connection addresses, rc=%d", rc);
@@ -239,6 +247,9 @@ int Sdb_conn::connect() {
                      "Failed to connect to sequoiadb, rc=%d", rc);
             break;
         }
+      } else {
+        snprintf(errmsg, sizeof(errmsg),
+                 "Failed to connect to sequoiadb, rc=%d", rc);
       }
       m_connection.disconnect();
       goto error;

@@ -240,7 +240,7 @@ class Sdb_conn {
 
   ~Sdb_conn();
 
-  int connect();
+  int connect(const char *conn_addr = NULL);
 
   sdbclient::sdb &get_sdb();
 
@@ -418,6 +418,7 @@ class Sdb_conn {
   bool rollback_on_timeout;
 
   Sdb_session_attrs session_attrs;
+  bool m_use_default_addr;
 };
 
 #endif
