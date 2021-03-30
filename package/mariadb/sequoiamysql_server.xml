@@ -110,24 +110,25 @@
    
         <actionDefinition name="checkGLIBCXXFunction">
            <actionList>
-              <createDirectory path="${installdir}/tmp"/>
-              <createDirectory path="${installdir}/tmp/lib"/>
+              <createDirectory path="${installdir}/tmp_${time}"/>
+              <createDirectory path="${installdir}/tmp_${time}/bin"/>
+              <createDirectory path="${installdir}/tmp_${time}/lib"/>
               <unpackFile>
                  <component>normal_component</component>
                  <folder>files</folder>
                  <origin>bin/mysqld</origin>
-                 <destination>${installdir}/tmp</destination>
+                 <destination>${installdir}/tmp_${time}/bin</destination>
               </unpackFile>
               <unpackDirectory>
                  <component>normal_component</component>
                  <folder>files</folder>
                  <origin>lib</origin>
-                 <destination>${installdir}/tmp</destination>
+                 <destination>${installdir}/tmp_${time}</destination>
               </unpackDirectory>
-              <changePermissions files="${installdir}/tmp/mysqld" permissions="0755"/>
+              <changePermissions files="${installdir}/tmp_${time}/bin/mysqld" permissions="0755"/>
               <runProgram>
                   <program>export</program>
-                  <programArguments>LD_LIBRARY_PATH=${installdir}/tmp/lib; ${installdir}/tmp/mysqld --version </programArguments>
+                  <programArguments>LD_LIBRARY_PATH=${installdir}/tmp_${time}/lib; ${installdir}/tmp_${time}/bin/mysqld --version </programArguments>
                   <abortOnError>0</abortOnError>
                   <showMessageOnError>0</showMessageOnError>
               </runProgram>
@@ -138,14 +139,14 @@
                   <actionList>
                      <runProgram>
                          <program>ldd</program>
-                         <programArguments>${installdir}/tmp/mysqld | grep "libstdc++"</programArguments>
+                         <programArguments>${installdir}/tmp_${time}/bin/mysqld | grep "libstdc++"</programArguments>
                      </runProgram>
                      <throwError>
                         <text>${program_stderr}</text>
                      </throwError>
                   </actionList>
               </if>
-              <deleteFile path="${installdir}/tmp"/>
+              <deleteFile path="${installdir}/tmp_${time}"/>
            </actionList>
         </actionDefinition>
    
