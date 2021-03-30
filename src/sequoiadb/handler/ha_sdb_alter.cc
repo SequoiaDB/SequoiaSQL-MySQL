@@ -1794,6 +1794,57 @@ error:
   goto done;
 }
 
+// When the auto_increment field name in table comment is empty, append from SQL
+// KEYWORD.
+int sdb_append_auto_inc_field(const TABLE *table, bson::BSONObj &tab_opt) {
+  int rc = 0;
+  const char *field_name = NULL;
+  bson::BSONObj auto_inc_obj;
+  bson::BSONElement auto_inc_ele;
+  bson::BSONObjIterator it(tab_opt);
+  bson::BSONObjBuilder builder;
+
+  auto_inc_ele = tab_opt.getField(SDB_FIELD_NAME_AUTOINCREMENT);
+  if (bson::Object != auto_inc_ele.type()) {
+    goto done;
+  }
+  auto_inc_obj = auto_inc_ele.embeddedObject();
+  if (bson::EOO != auto_inc_obj.getField(SDB_FIELD_NAME_FIELD).type()) {
+    goto done;
+  }
+  try {
+    while (it.more()) {
+      bson::BSONElement ele = it.next();
+      if (0 == strcmp(ele.fieldName(), SDB_FIELD_NAME_AUTOINCREMENT)) {
+        bson::BSONObjBuilder builder_auto_inc(
+            builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+        for (Field **fields = table->field; *fields; fields++) {
+          Field *field = *fields;
+          if (Field::NEXT_NUMBER == MTYP_TYPENR(field->unireg_check)) {
+            field_name = sdb_field_name(field);
+            builder_auto_inc.append(SDB_FIELD_NAME_FIELD, field_name);
+            break;
+          }
+        }
+        builder_auto_inc.appendElements(auto_inc_obj);
+        builder_auto_inc.done();
+        continue;
+      }
+      builder.append(ele);
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to append auto_increment field:%s to table options, exception:%s",
+      field_name, e.what());
+  tab_opt = builder.obj();
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
 bool is_all_field_not_null(KEY *key) {
   const KEY_PART_INFO *key_part;
   const KEY_PART_INFO *key_end;
@@ -1893,6 +1944,11 @@ int ha_sdb::check_and_set_options(const char *old_options_str,
   DBUG_ASSERT(0 == rc);
   rc = sdb_parse_comment_options(new_options_str, new_tab_opt,
                                  new_explicit_not_auto_part, &new_part_opt);
+  if (0 != rc) {
+    goto error;
+  }
+
+  rc = sdb_append_auto_inc_field(table, new_tab_opt);
   if (0 != rc) {
     goto error;
   }
