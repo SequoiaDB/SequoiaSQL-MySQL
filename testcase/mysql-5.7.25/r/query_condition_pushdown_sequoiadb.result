@@ -11075,7 +11075,7 @@ INSERT INTO t1(a, b, c, d) VALUES ('a','a','a','a'),('%a','%a','%a','%a'),('1a',
 SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
 id	a	b	c	d
 5	a%	a%	a%	a%
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^a%$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "a%" } }, { "a": { "$lt": "a%ÿ" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
 id	a	b	c	d
 2	%a	%a	%a	%a
@@ -11212,7 +11212,7 @@ INSERT INTO t1(a, b) VALUES ('a','a'),('%a','%a'),('1a','1a'),('1%a','1%a'),('a%
 SELECT * FROM t1 WHERE a LIKE "a|%" ESCAPE '|';
 id	a	b
 5	a%	a%
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^a%$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "a%" } }, { "a": { "$lt": "a%ÿ" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE a LIKE "|%a" ESCAPE '|';
 id	a	b
 2	%a	%a
@@ -11276,7 +11276,7 @@ id	a	b
 SELECT * FROM t1 WHERE b LIKE "a|%" ESCAPE '|';
 id	a	b
 5	a%	a%
-[Note] SequoiaDB: Query message: condition[{ "b": { "$regex": "^a%$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gte": "a%" } }, { "b": { "$lt": "a%ÿ" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE b LIKE "|%a" ESCAPE '|';
 id	a	b
 2	%a	%a
