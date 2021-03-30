@@ -356,10 +356,11 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
           tab->filesort) {
         goto done;
       }
+      // found table and is not index merge
+      index_cover = true;
       break;
     }
   }
-  index_cover = true;
 
 done:
   return index_cover;
@@ -810,12 +811,12 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
   }
 
   // distinct not support index_cover
-  if (join->need_distinct) {
+  if (sdb_lex_current_select(thd)->options & SELECT_DISTINCT) {
     goto done;
   }
 
   // group by not support index_cover
-  if (join->sort_and_group) {
+  if (NULL != sdb_lex_current_select(thd)->group_list.first) {
     goto done;
   }
 
@@ -830,9 +831,13 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
   }
 
   for (i = 0; i < join->table_count; i++) {
-    // get current table QEP_TAB
-    if (table == join->join_tab[i].table) {
-      tab = join->join_tab + i;
+    // get current table JOIN_TAB
+    tab = join->map2table[i];
+    if (NULL == tab) {
+      continue;
+    }
+
+    if (table == tab->table) {
       if (tab->keep_current_rowid || tab->filesort) {
         goto done;
       }
@@ -850,10 +855,11 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
           goto done;
         }
       }
+      // found table and is not index merge
+      index_cover = true;
       break;
     }
   }
-  index_cover = true;
 
 done:
   return index_cover;
