@@ -10239,6 +10239,91 @@ id	a	b	c	d
 21	中文1	中文1	中文1	中文1
 22	中文123456	中文123456	中文123456	中文123456
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+SELECT * FROM t1 WHERE a LIKE "a%%";
+id	a	b	c	d
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+4	a	a	a	a
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+7	abc	abc	abc	abc
+8	ac	ac	ac	ac
+9	abd	abd	abd	abd
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "a" } }, { "a": { "$lt": "a�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+SELECT * FROM t1 WHERE a LIKE "%a%";
+id	a	b	c	d
+1	1a	1a	1a	1a
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+2	2a	2a	2a	2a
+3	1234a	1234a	1234a	1234a
+4	a	a	a	a
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+7	abc	abc	abc	abc
+8	ac	ac	ac	ac
+9	abd	abd	abd	abd
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^.*a.*$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 where a like "%%";
+id	a	b	c	d
+1	1a	1a	1a	1a
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+15	hello	hello	hello	hello
+16	test	test	test	test
+17	中	中	中	中
+18	1中	1中	1中	1中
+19	1中3	1中3	1中3	1中3
+2	2a	2a	2a	2a
+20	中文	中文	中文	中文
+21	中文1	中文1	中文1	中文1
+22	中文123456	中文123456	中文123456	中文123456
+23	中1文	中1文	中1文	中1文
+24	中12文	中12文	中12文	中12文
+3	1234a	1234a	1234a	1234a
+4	a	a	a	a
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+7	abc	abc	abc	abc
+8	ac	ac	ac	ac
+9	abd	abd	abd	abd
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "" } }, { "a": { "$lt": "�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 where a like "%";
+id	a	b	c	d
+1	1a	1a	1a	1a
+10	abcd	abcd	abcd	abcd
+11	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d	a0000b1111c2222b3333d
+12	abce	abce	abce	abce
+13	abcde	abcde	abcde	abcde
+14	abcdef	abcdef	abcdef	abcdef
+15	hello	hello	hello	hello
+16	test	test	test	test
+17	中	中	中	中
+18	1中	1中	1中	1中
+19	1中3	1中3	1中3	1中3
+2	2a	2a	2a	2a
+20	中文	中文	中文	中文
+21	中文1	中文1	中文1	中文1
+22	中文123456	中文123456	中文123456	中文123456
+23	中1文	中1文	中1文	中1文
+24	中12文	中12文	中12文	中12文
+3	1234a	1234a	1234a	1234a
+4	a	a	a	a
+5	ab	ab	ab	ab
+6	a0000b	a0000b	a0000b	a0000b
+7	abc	abc	abc	abc
+8	ac	ac	ac	ac
+9	abd	abd	abd	abd
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "" } }, { "a": { "$lt": "�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE a LIKE "a_";
 id	a	b	c	d
 5	ab	ab	ab	ab
@@ -10257,6 +10342,11 @@ SELECT * FROM t1 WHERE d LIKE "a_c_e";
 id	a	b	c	d
 13	abcde	abcde	abcde	abcde
 [Note] SequoiaDB: Query message: condition[{ "d": { "$regex": "^a.c.e$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+SELECT * FROM t1 WHERE a LIKE "_a%";
+id	a	b	c	d
+1	1a	1a	1a	1a
+2	2a	2a	2a	2a
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^.a.*$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
 id	a	b	c	d
 7	abc	abc	abc	abc

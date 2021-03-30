@@ -41,6 +41,18 @@ SELECT * FROM t1 WHERE d LIKE "中%文";
 SELECT * FROM t1 WHERE a LIKE CONCAT("中文","%");
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
+SELECT * FROM t1 WHERE a LIKE "a%%";
+--source include/query_pushdown_condition_sequoiadb.inc
+--sorted_result
+SELECT * FROM t1 WHERE a LIKE "%a%";
+--source include/query_pushdown_condition_sequoiadb.inc
+--sorted_result
+select * from t1 where a like "%%";
+--source include/query_pushdown_condition_sequoiadb.inc
+--sorted_result
+select * from t1 where a like "%";
+--source include/query_pushdown_condition_sequoiadb.inc
+--sorted_result
 SELECT * FROM t1 WHERE a LIKE "a_";
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
@@ -51,6 +63,9 @@ SELECT * FROM t1 WHERE c LIKE "a_c";
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "a_c_e";
+--source include/query_pushdown_condition_sequoiadb.inc
+--sorted_result
+SELECT * FROM t1 WHERE a LIKE "_a%";
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
