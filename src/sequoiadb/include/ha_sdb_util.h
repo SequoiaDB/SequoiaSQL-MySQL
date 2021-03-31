@@ -127,7 +127,11 @@ int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
 
 int sdb_drop_empty_cs(Sdb_conn &conn, const char *cs_name);
 
-char *str_to_lowwer(char *str);
+void sdb_str_to_lowwer(char *str);
+
+bool sdb_str_is_integer(const char *str);
+
+bool sdb_prefer_inst_is_valid(const char *s);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

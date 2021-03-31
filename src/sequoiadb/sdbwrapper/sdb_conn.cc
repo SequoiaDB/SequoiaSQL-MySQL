@@ -68,9 +68,13 @@ void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
   }
   if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MASK)) {
     int value = 0;
-    char *str = prefer_inst;
+    char *str = NULL;
     char *pos = NULL;
     const char *separator = " ,\t";
+    char tmp_prefer_inst[STRING_BUFFER_USUAL_SIZE] = "";
+
+    strncpy(tmp_prefer_inst, prefer_inst, STRING_BUFFER_USUAL_SIZE);
+    str = tmp_prefer_inst;
     bson::BSONArrayBuilder sub_builder(
         builder.subarrayStart(SDB_SESSION_ATTR_PREFERRED_INSTANCE));
     while (str) {
@@ -78,8 +82,8 @@ void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
         if (0 == *pos) {
           continue;
         }
-        value = atoi(pos);
-        if (value) {
+        if (sdb_str_is_integer(pos)) {
+          value = atoi(pos);
           sub_builder.append(value);
         } else {
           sub_builder.append(pos);
@@ -89,8 +93,8 @@ void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
     sub_builder.doneFast();
   }
   if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MODE_MASK)) {
-    builder.append(SDB_SESSION_ATTR_PREFERRED_INSTABCE_MODE,
-                   str_to_lowwer(prefer_inst_mode));
+    sdb_str_to_lowwer(prefer_inst_mode);
+    builder.append(SDB_SESSION_ATTR_PREFERRED_INSTABCE_MODE, prefer_inst_mode);
   }
   if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_STRICT_MASK)) {
     builder.append(SDB_SESSION_ATTR_PREFERRED_STRICT, prefer_strict);
@@ -119,12 +123,10 @@ void Sdb_session_attrs::save_last_attrs() {
   }
   if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MASK)) {
     strncpy(last_prefer_inst, prefer_inst, STRING_BUFFER_USUAL_SIZE);
-    last_prefer_inst[STRING_BUFFER_USUAL_SIZE - 1] = '\0';
   }
   if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_INSTANCE_MODE_MASK)) {
     strncpy(last_prefer_inst_mode, prefer_inst_mode,
             SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
-    last_prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
   }
   if (test_attrs_mask(SDB_SESSION_ATTR_PREFERRED_STRICT_MASK)) {
     last_prefer_strict = prefer_strict;

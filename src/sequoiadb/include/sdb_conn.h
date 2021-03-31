@@ -50,7 +50,6 @@ class Sdb_session_attrs {
     last_check_collection_version = false;
     strncpy(last_prefer_inst, SDB_DEFAULT_PREFERRED_INSTANCE,
             STRING_BUFFER_USUAL_SIZE);
-    last_prefer_inst[STRING_BUFFER_USUAL_SIZE - 1] = '\0';
     strncpy(last_prefer_inst_mode, SDB_DEFAULT_PREFERRED_INSTANCE_MODE,
             SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
     last_prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
@@ -66,10 +65,8 @@ class Sdb_session_attrs {
     check_collection_version = false;
     strncpy(prefer_inst, SDB_DEFAULT_PREFERRED_INSTANCE,
             STRING_BUFFER_USUAL_SIZE);
-    prefer_inst[STRING_BUFFER_USUAL_SIZE - 1] = '\0';
     strncpy(prefer_inst_mode, SDB_DEFAULT_PREFERRED_INSTANCE_MODE,
             SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
-    prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
     prefer_strict = SDB_DEFAULT_PREFERRED_STRICT;
     prefer_period = SDB_DEFAULT_PREFERRED_PERIOD;
     session_attrs_mask = 0;

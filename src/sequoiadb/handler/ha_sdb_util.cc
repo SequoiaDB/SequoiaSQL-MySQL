@@ -1137,11 +1137,75 @@ error:
   goto done;
 }
 
-char *str_to_lowwer(char *str) {
-  char *orign = str;
-  while (*str != '\0') {
-    *str = tolower(*str);
-    ++str;
+void sdb_str_to_lowwer(char *str) {
+  char *pos = str;
+  while (*pos != '\0') {
+    *pos = tolower(*pos);
+    ++pos;
   }
-  return orign;
+}
+
+bool sdb_str_is_integer(const char *str) {
+  const char *pos = str;
+  if (*pos == '-') {
+    pos++;
+  }
+  if (*pos == '\0') {
+    return false;
+  }
+  while (*pos) {
+    if (*pos < '0' || *pos > '9') {
+      return false;
+    }
+    ++pos;
+  }
+  return true;
+}
+
+bool sdb_prefer_inst_is_valid(const char *s) {
+  int rs = true;
+  const char *right = s;
+  const char *left = s;
+  if (0 == strlen(s)) {
+    rs = false;
+    goto done;
+  }
+  while (*left != '\0') {
+    size_t len = 0;
+    char str[STRING_BUFFER_USUAL_SIZE] = "";
+    int i = 0, j = 0;
+    right = strchr(left, ',');
+    if (right) {
+      len = right - left;
+    } else {
+      len = strlen(left);
+    }
+    memcpy(str, left, len);
+    str[len] = '\0';
+    while (str[i] == ' ') {
+      ++i;
+    }
+    while (str[i]) {
+      str[j++] = str[i++];
+    }
+    str[j] = '\0';
+    while (str[--j] == ' ') {
+      str[j] = '\0';
+    }
+    if (*str == '\0') {
+      rs = false;
+      goto done;
+    }
+    left += len;
+    if (*left == ',') {
+      left++;
+      if (*left == '\0') {
+        rs = false;
+        goto done;
+      }
+    }
+  }
+
+done:
+  return rs;
 }

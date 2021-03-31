@@ -371,123 +371,68 @@ error:
   goto done;
 }
 
-// Check the validity of preferred instance
-bool sdb_prefer_inst_is_valid(const char *s) {
-  int rs = true;
-  const char *right = s;
-  const char *left = s;
-  if (0 == strlen(s)) {
-    rs = false;
-    goto done;
-  }
-  while (*left != 0) {
-    size_t len = 0;
-    const char *p_str = NULL;
-    bool has_valid_char = false;
-    char str[STRING_BUFFER_USUAL_SIZE] = "";
-    right = strchr(right, ',');
-    if (right) {
-      len = right - left;
-    } else {
-      len = strlen(left);
-    }
-    memcpy(str, left, len);
-    str[len] = '\0';
-    p_str = str;
-    has_valid_char = false;
-    while (*p_str) {
-      if ((*p_str) == ' ' || (*p_str) == '\t') {
-        ++p_str;
-        continue;
-      }
-      if ((*p_str) < '0' || ((*p_str) > '9' && (*p_str) < 'A') ||
-          (*p_str) > 'z') {
-        rs = false;
-        goto done;
-      }
-      has_valid_char = true;
-      ++p_str;
-    }
-    if (!has_valid_char) {
-      rs = false;
-      goto done;
-    }
-    if (NULL == right) {
-      break;
-    }
-    if ('\0' == *(++right)) {
-      rs = false;
-      goto done;
-    }
-    left = right;
-  }
-
-done:
-  return rs;
-}
-
 static int sdb_prefer_inst_check(THD *thd, struct st_mysql_sys_var *var,
                                  void *save, struct st_mysql_value *value) {
   int rc = 0;
-  const char *str = NULL;
+  int err = 0;
   int length = 0;
+  Sdb_conn *conn = NULL;
+  bson::BSONObj error_obj;
+  const char *prefer_inst = NULL;
+  Sdb_session_attrs *session_attrs = NULL;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   char buff[STRING_BUFFER_USUAL_SIZE] = {0};
+  const char *error_msg = "Failed to set preferred instance on sequoiadb";
 
   length = sizeof(buff);
-  str = value->val_str(value, buff, &length);
+  prefer_inst = value->val_str(value, buff, &length);
   if (length >= STRING_BUFFER_USUAL_SIZE) {
     rc = 1;
     goto error;
   }
-  rc = sdb_prefer_inst_is_valid(str) ? 0 : 1;
-
-done:
-  *static_cast<const char **>(save) = (0 == rc) ? str : NULL;
-  return rc;
-error:
-  goto done;
-}
-
-static void sdb_set_prefer_inst(THD *thd, struct st_mysql_sys_var *var,
-                                void *var_ptr, const void *save) {
-  int rc = SDB_OK;
-  bool is_changed = false;
-  size_t var_ptr_len = strlen(*(char **)var_ptr);
-  size_t save_len = strlen(*(char **)save);
-  int len = var_ptr_len > save_len ? var_ptr_len : save_len;
-  Sdb_conn *conn = NULL;
-  Sdb_session_attrs *session_attrs = NULL;
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
-
-  if (0 != strncmp(*(char **)var_ptr, *(char **)save, len)) {
-    is_changed = true;
-  }
-
-  sdb_update_sys_var_str(var, var_ptr, save);
-
-  if (!is_changed) {
-    goto done;
+  if (!sdb_prefer_inst_is_valid(prefer_inst)) {
+    rc = 1;
+    goto error;
   }
 
   /* No need to change sequoiadb_preferred_instance if the sdb conn is not
-           establised. */
+     establised. */
   if (!(thd_sdb && thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated())) {
     goto done;
   }
 
   conn = thd_sdb->get_conn();
   session_attrs = conn->get_session_attrs();
-  session_attrs->set_preferred_instance(*(char **)var_ptr);
+  session_attrs->set_preferred_instance(prefer_inst);
   rc = conn->set_my_session_attr();
   if (rc != SDB_OK) {
-    SDB_LOG_WARNING("Failed to set preferred instance on sequoiadb, rc=%d", rc);
+    rc = 1;
+    err = rc;
+    if (0 == conn->get_last_result_obj(error_obj, false)) {
+      err = error_obj.getIntField(SDB_FIELD_ERRNO);
+      error_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
+      if (0 == strlen(error_msg)) {
+        error_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+      }
+    }
+    SDB_LOG_WARNING("%s, rc=%d", error_msg, err);
     goto error;
   }
 
 done:
-  return;
+  *static_cast<const char **>(save) = (0 == rc) ? prefer_inst : NULL;
+  return rc;
 error:
   goto done;
+}
+
+/*
+  Because the error code cannot be return here, so advance to the check stage to
+  complete it.
+*/
+static void sdb_set_prefer_inst(THD *thd, struct st_mysql_sys_var *var,
+                                void *var_ptr, const void *save) {
+  sdb_update_sys_var_str(var, var_ptr, save);
 }
 
 static int sdb_prefer_inst_mode_check(THD *thd, struct st_mysql_sys_var *var,

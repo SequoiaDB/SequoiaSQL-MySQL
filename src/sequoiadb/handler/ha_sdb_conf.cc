@@ -460,11 +460,11 @@ static MYSQL_THDVAR_STR(
     sdb_preferred_instance_mode_validate, sdb_preferred_instance_mode_update,
     SDB_DEFAULT_PREFERRED_INSTANCE_MODE);
 
-static MYSQL_THDVAR_BOOL(
-    preferred_strict, PLUGIN_VAR_OPCMDARG,
-    "Whether node selection is strict mode. (Default: OFF)"
-    /*节点选择是否为严格模式。*/,
-    NULL, sdb_preferred_strict_update, SDB_DEFAULT_PREFERRED_STRICT);
+static MYSQL_THDVAR_BOOL(preferred_strict, PLUGIN_VAR_OPCMDARG,
+                         "Whether node selection is strict mode. (Default: OFF)"
+                         /*节点选择是否为严格模式。*/,
+                         NULL, sdb_preferred_strict_update,
+                         SDB_DEFAULT_PREFERRED_STRICT);
 
 static MYSQL_THDVAR_INT(preferred_period, PLUGIN_VAR_OPCMDARG,
                         "Effective period of preferred node. (Default: 60)"
