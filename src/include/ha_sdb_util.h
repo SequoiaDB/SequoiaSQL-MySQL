@@ -93,7 +93,11 @@ inline void sdb_invalidate_version_cache() {
 int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
                     bool use_cached = true);
 
-char *str_to_lowwer(char *str);
+void sdb_str_to_lowwer(char *str);
+
+bool sdb_str_is_integer(const char *str);
+
+bool sdb_prefer_inst_is_valid(const char *s);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
