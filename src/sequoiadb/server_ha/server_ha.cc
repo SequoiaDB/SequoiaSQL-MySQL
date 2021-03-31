@@ -2876,9 +2876,14 @@ int get_query_objects(THD *thd, ha_sql_stmt_info *sql_info) {
           op_type = HA_ROUTINE_TYPE_EVENT;
         } else if (MDL_key::TRIGGER == mdl_type) {
           op_type = HA_ROUTINE_TYPE_TRIG;
+#ifdef IS_MARIADB
+        } else if (MDL_key::PACKAGE_BODY == mdl_type) {
+          op_type = HA_ROUTINE_TYPE_PACKAGE;
+#endif
         } else {
           DBUG_ASSERT(0);
         }
+
         ha_tbl_list->op_type = op_type;
         ha_tbl_list->is_temporary_table = false;
         ha_tbl_list->next = NULL;
@@ -2956,13 +2961,7 @@ int get_query_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       ha_tbl_list->table_name = thd->lex->spname->m_name.str;
       ha_tbl_list->is_temporary_table = false;
       ha_tbl_list->next = NULL;
-#ifdef IS_MARIADB
-      if (SQLCOM_SHOW_CREATE_PACKAGE == sql_command ||
-          SQLCOM_SHOW_CREATE_PACKAGE_BODY == sql_command ||
-          SQLCOM_SHOW_PACKAGE_BODY_CODE == sql_command) {
-        ha_tbl_list->op_type = HA_ROUTINE_TYPE_PACKAGE;
-      }
-#endif
+
       if (SQLCOM_SHOW_CREATE_PROC == sql_command ||
           SQLCOM_SHOW_PROC_CODE == sql_command) {
         ha_tbl_list->op_type = HA_ROUTINE_TYPE_PROC;
@@ -2973,11 +2972,19 @@ int get_query_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         ha_tbl_list->op_type = HA_ROUTINE_TYPE_EVENT;
       } else if (SQLCOM_SHOW_CREATE_TRIGGER == sql_command) {
         ha_tbl_list->op_type = HA_ROUTINE_TYPE_TRIG;
+#ifdef IS_MARIADB
+      } else if (SQLCOM_SHOW_CREATE_PACKAGE == sql_command ||
+                 SQLCOM_SHOW_CREATE_PACKAGE_BODY == sql_command ||
+                 SQLCOM_SHOW_PACKAGE_BODY_CODE == sql_command) {
+        ha_tbl_list->op_type = HA_ROUTINE_TYPE_PACKAGE;
+#endif
       } else {
         DBUG_ASSERT(0);
       }
       sql_info->dml_tables = ha_tbl_list;
     } break;
+    default:
+      break;
   }
 done:
   DBUG_RETURN(rc);
