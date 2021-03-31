@@ -1,3 +1,4 @@
+#BUG #SEQUOIADBMAINSTREAM-6944 annotation for temporary
 #case 23502
 
 --source include/have_sequoiadb.inc
