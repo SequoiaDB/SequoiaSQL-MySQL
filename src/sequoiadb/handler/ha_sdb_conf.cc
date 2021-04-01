@@ -470,7 +470,7 @@ static MYSQL_THDVAR_INT(preferred_period, PLUGIN_VAR_OPCMDARG,
                         "Effective period of preferred node. (Default: 60)"
                         /*优先节点的有效周期。*/,
                         NULL, sdb_preferred_period_update,
-                        SDB_DEFAULT_PREFERRED_PERIOD, 0, 3600, 0);
+                        SDB_DEFAULT_PREFERRED_PERIOD, -1, INT_MAX32, 0);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
