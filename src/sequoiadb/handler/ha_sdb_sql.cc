@@ -335,7 +335,7 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
   }
 
   // group by not support index_cover
-  if (join->sort_and_group) {
+  if (cur_select->is_grouped()) {
     goto done;
   }
 
@@ -875,8 +875,9 @@ bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index) {
     goto done;
   }
 
-  // group by not support index_cover
-  if (NULL != sdb_lex_current_select(thd)->group_list.first) {
+  // group by and aggregated not support index_cover
+  if (sdb_lex_current_select(thd)->group_list.elements > 0 ||
+      sdb_lex_current_select(thd)->agg_func_used()) {
     goto done;
   }
 
