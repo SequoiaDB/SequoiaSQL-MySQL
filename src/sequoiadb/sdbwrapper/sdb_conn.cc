@@ -274,6 +274,7 @@ int Sdb_conn::connect(const char *conn_addr) {
     }
 
     session_attrs = get_session_attrs();
+    session_attrs->reset();
     session_attrs->set_preferred_instance(sdb_preferred_instance(current_thd));
     session_attrs->set_preferred_instance_mode(
         sdb_preferred_instance_mode(current_thd));
@@ -290,7 +291,6 @@ int Sdb_conn::connect(const char *conn_addr) {
     if (!(major < 3 || (3 == major && minor < 2))) {
       /* Sdb restart but not restart mysql client, session_attrs need to reset
         and reset the session attrs. */
-      session_attrs->reset();
       session_attrs->set_source(hostname, sdb_proc_id(),
                                 (ulonglong)thread_id());
       session_attrs->set_trans_auto_rollback(false);
