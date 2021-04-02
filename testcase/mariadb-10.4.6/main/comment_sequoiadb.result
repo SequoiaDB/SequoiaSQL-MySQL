@@ -117,3 +117,21 @@ t1	CREATE TABLE `t1` (
   `ordrdt` varchar(8) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{ordrdt:1},ShardingType:''range'',IsMainCL:true,EnsureShardingIndex:false,Compressed:true,ReplSize:-1,CompressionType:''lzw''}}'
 DROP TABLE t1;
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Fielda: \"id\", AcquireSize: 1, CacheSize:1 } } }";
+ERROR HY000: Invalid Argument
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Increments:1 } } }";
+ERROR HY000: Invalid Argument
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { StartValues:1 } } }";
+ERROR HY000: Invalid Argument
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { MinValues:1 } } }";
+ERROR HY000: Invalid Argument
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { MaxValues:1 } } }";
+ERROR HY000: Invalid Argument
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { CacheSizes:10 } } }";
+ERROR HY000: Invalid Argument
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { AcquireSizes:2 } } }";
+ERROR HY000: Invalid Argument
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Cycleds:true } } }";
+ERROR HY000: Invalid Argument
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Generateds:'default' } } }";
+ERROR HY000: Invalid Argument
