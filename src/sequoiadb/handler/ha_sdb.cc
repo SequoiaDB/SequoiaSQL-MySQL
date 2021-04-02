@@ -7744,6 +7744,7 @@ error:
 
 static int sdb_init_func(void *p) {
   int rc = SDB_ERR_OK;
+  const char *sys_var_str = NULL;
   ha_sdb_conn_addrs conn_addrs;
 #ifdef HAVE_PSI_INTERFACE
   init_sdb_psi_keys();
@@ -7773,6 +7774,17 @@ static int sdb_init_func(void *p) {
 #endif
   if (conn_addrs.parse_conn_addrs(sdb_conn_str)) {
     SDB_LOG_ERROR("Invalid value sequoiadb_conn_addr=%s", sdb_conn_str);
+    return 1;
+  }
+  sys_var_str = sdb_preferred_instance(current_thd);
+  if (!sdb_prefer_inst_is_valid(sys_var_str)) {
+    SDB_LOG_ERROR("Invalid value sequoiadb_preferred_instance=%s", sys_var_str);
+    return 1;
+  }
+  sys_var_str = sdb_preferred_instance_mode(current_thd);
+  if (!sdb_prefer_inst_mode_is_valid(sys_var_str)) {
+    SDB_LOG_ERROR("Invalid value sequoiadb_preferred_instance_mode=%s",
+                  sys_var_str);
     return 1;
   }
 

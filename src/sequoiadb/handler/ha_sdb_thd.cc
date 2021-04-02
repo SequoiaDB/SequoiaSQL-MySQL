@@ -445,8 +445,7 @@ static int sdb_prefer_inst_mode_check(THD *thd, struct st_mysql_sys_var *var,
 
   length = sizeof(buff);
   str = value->val_str(value, buff, &length);
-  if (0 != strcasecmp(str, SDB_PREFERRED_INSTANCE_MODE_RANDOM) &&
-      0 != strcasecmp(str, SDB_PREFERRED_INSTANCE_MODE_ORDERED)) {
+  if (!sdb_prefer_inst_mode_is_valid(str)) {
     rc = 1;
   }
   *static_cast<const char **>(save) = (0 == rc) ? str : NULL;

@@ -1209,3 +1209,11 @@ bool sdb_prefer_inst_is_valid(const char *s) {
 done:
   return rs;
 }
+
+bool sdb_prefer_inst_mode_is_valid(const char *s) {
+  if (0 != strcasecmp(s, SDB_PREFERRED_INSTANCE_MODE_RANDOM) &&
+      0 != strcasecmp(s, SDB_PREFERRED_INSTANCE_MODE_ORDERED)) {
+    return false;
+  }
+  return true;
+}
