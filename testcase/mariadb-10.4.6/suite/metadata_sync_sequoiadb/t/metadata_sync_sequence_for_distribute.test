@@ -18,6 +18,8 @@ SHOW CREATE DATABASE metaSync_seq;
 # begin testing
 # create sequence
 connection conn1;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 CREATE DATABASE metaSync_seq;
 USE metaSync_seq;
 DELIMITER |;
@@ -35,6 +37,8 @@ DELIMITER ;|
 CREATE SEQUENCE s1 MAXVALUE 4000;
 # check metadatas after create
 connection conn2;
+#SEQUOIASQLMAINSTREAM-949
+set server_ha_wait_sync_timeout = 5;
 SHOW CREATE SEQUENCE metaSync_seq.s1;
 SELECT * FROM metaSync_seq.s1;
 USE metaSync_seq;
@@ -138,8 +142,6 @@ CREATE SEQUENCE s1;
 connection conn2;
 SELECT nextval(s1);
 connection conn1;
-#SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 5;
 ALTER SEQUENCE s1 increment by 2;
 connection conn2;
 SELECT nextval(s1);
@@ -160,6 +162,7 @@ connection conn2;
 #BUG #SEQUOIASQLMAINSTREAM-830
 --error ER_NO_SUCH_TABLE
 SELECT nextval(s2);
+set server_ha_wait_sync_timeout = 0;
 
 # clear databases in the ending
 connection conn1;

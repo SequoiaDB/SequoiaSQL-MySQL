@@ -1,9 +1,11 @@
 drop database if exists metadata_sync_sequoiadb;
 create database metadata_sync_sequoiadb;
 use metadata_sync_sequoiadb;
+set server_ha_wait_sync_timeout = 5;
 create table t1(id int, name varchar(35)) partition by list(id)
 (partition p0 values in(1,3,5,7,9),
 partition p1 values in(2,4,6,8,10));
+set server_ha_wait_sync_timeout = 5;
 use metadata_sync_sequoiadb;
 insert into t1 values(1,'a'),(2,'b'),(3,'c'),(4,'d'),(5,'e'),(6,'f'),(7,'g'),(8,'h'),(9,'i'),(10,'j');
 select * from t1 order by id;
@@ -937,10 +939,8 @@ id	a
 8	9
 9	10
 10	11
-set server_ha_wait_sync_timeout = 5;
 alter table t1 add partition (partition p3 values in(11,12));
 insert into t1 values(11,11),(12,12);
-set server_ha_wait_sync_timeout = 0;
 update t1 set a = a + 1 where id >=11;
 select * from t1 order by id;
 id	a
@@ -956,9 +956,7 @@ id	a
 10	11
 11	12
 12	13
-set server_ha_wait_sync_timeout = 5;
 alter table t1 drop partition p0;
-set server_ha_wait_sync_timeout = 0;
 update t1 set a = a + 1;
 select * from t1 order by id;
 id	a
@@ -969,10 +967,8 @@ id	a
 10	12
 11	13
 12	14
-set server_ha_wait_sync_timeout = 5;
 alter table t1 reorganize partition p1 into (partition n0 values in(2,4,6), partition n1 values in(8,10));
 insert into t1 partition (n0,n1) values(2,2),(8,8),(4,4),(10,10),(6,6);
-set server_ha_wait_sync_timeout = 0;
 update t1 set a = a + 1;
 select * from t1 order by id;
 id	a
@@ -988,10 +984,8 @@ id	a
 10	11
 11	14
 12	15
-set server_ha_wait_sync_timeout = 5;
 alter table t1 reorganize partition n0,n1 into (partition p0 values in(2,4));
 insert into t1 partition (p0) values(2,2),(4,4);
-set server_ha_wait_sync_timeout = 0;
 update t1 set a = a + 1;
 select * from t1 order by id;
 id	a
@@ -1003,10 +997,8 @@ id	a
 4	5
 11	15
 12	16
-set server_ha_wait_sync_timeout = 5;
 alter table t1 rebuild partition p0;
 insert into t1 partition (p0) values(2,2),(4,4);
-set server_ha_wait_sync_timeout = 0;
 update t1 set a = a + 1;
 select * from t1 order by id;
 id	a
@@ -2285,6 +2277,8 @@ ERROR 42S02: Table 'metadata_sync_sequoiadb.t1' doesn't exist
 create table t1(col1 int, col2 char(5), col3 date unique key) partition by key(col3) partitions 4;
 replace into t1 values(2005,'a','2002-10-03'),(2006,'b','2002-10-04'),(2007,'c','2002-10-05'),(2008,'d','2002-10-06');
 drop table t1;
+set server_ha_wait_sync_timeout = 0;
 replace into t1 values(2005,'a','2002-10-03'),(2006,'b','2002-10-04'),(2007,'c','2002-10-05'),(2008,'d','2002-10-06');
 ERROR 42S02: Table 'metadata_sync_sequoiadb.t1' doesn't exist
 drop database metadata_sync_sequoiadb;
+set server_ha_wait_sync_timeout = 0;
