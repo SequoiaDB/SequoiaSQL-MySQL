@@ -117,6 +117,49 @@ t1	CREATE TABLE `t1` (
   `ordrdt` varchar(8) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{ordrdt:1},ShardingType:''range'',IsMainCL:true,EnsureShardingIndex:false,Compressed:true,ReplSize:-1,CompressionType:''lzw''}}'
 DROP TABLE t1;
+CREATE TABLE t1 ( 
+id INT PRIMARY KEY 
+) 
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id\", AcquireSize: 1 } } }";
+ERROR HY000: The AUTO_INCREMENT keyword is required
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(16)) 
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id\", AcquireSize: 1, CacheSize:1 } } }";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(16) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: "id", AcquireSize: 1, CacheSize:1 } } }'
+INSERT INTO t1(name) VALUES ('Joe'),('Mary'),('Bob');
+SELECT * FROM t1 ORDER BY id;
+id	name
+1	Joe
+2	Mary
+3	Bob
+DROP TABLE t1;
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) 
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id1\", AcquireSize: 1, CacheSize:1 } } }";
+ERROR HY000: Ambiguous auto increment field
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(16)) 
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id,name\", AcquireSize: 1, CacheSize:1 } } }";
+ERROR HY000: Ambiguous auto increment field
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(16))
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { AcquireSize: 1, CacheSize:1, Increment:5, StartValue:5, MinValue:5, Cycled:true } } }";
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(16) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { AcquireSize: 1, CacheSize:1, Increment:5, StartValue:5, MinValue:5, Cycled:true } } }'
+INSERT INTO t1(name) VALUES ('Joe'),('Mary'),('Bob');
+SELECT * FROM t1 ORDER BY id;
+id	name
+5	Joe
+10	Mary
+15	Bob
+DROP TABLE t1;
 CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Fielda: \"id\", AcquireSize: 1, CacheSize:1 } } }";
 ERROR HY000: Invalid Argument
 CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Increments:1 } } }";

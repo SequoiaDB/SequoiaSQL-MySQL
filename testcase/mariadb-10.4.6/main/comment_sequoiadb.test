@@ -1,5 +1,5 @@
 #check comments of sequoiadb
-#Case 14758#Case 14759#Case 14760#Case 14872#Case 14873#Case 23775
+#Case 14758#Case 14759#Case 14760#Case 14872#Case 14873#Case 23775#case 23712
 
 --source include/have_sequoiadb.inc
 
@@ -51,7 +51,7 @@ SELECT * FROM t1;
 DROP TABLE t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-297
---error 1210
+--error ER_WRONG_ARGUMENTS
 CREATE TABLE t1(a SMALLINT) engine = sequoiadb comment="sequoiadb:{table_options:{Compressed:false, CompressionType:'snappy'}}";
 CREATE TABLE t1(a SMALLINT) engine = sequoiadb comment="sequoiadb:{table_options:{Compressed:true, CompressionType:'snappy'}}";
 SHOW CREATE TABLE t1;
@@ -64,10 +64,39 @@ CREATE TABLE t1(ordrdt VARCHAR(8)) engine = sequoiadb comment="sequoiadb:{table_
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
+#Bug #SEQUOIASQLMAINSTREAM-955
+#seqDB-23712
+--error ER_WRONG_ARGUMENTS
+CREATE TABLE t1 ( 
+    id INT PRIMARY KEY 
+) 
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id\", AcquireSize: 1 } } }"; 
+# create table with correct autoincrement field
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(16)) 
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id\", AcquireSize: 1, CacheSize:1 } } }"; 
+SHOW CREATE TABLE t1;
+INSERT INTO t1(name) VALUES ('Joe'),('Mary'),('Bob');
+SELECT * FROM t1 ORDER BY id;
+DROP TABLE t1;
+# create table with incorrect autoincrement field
+--error ER_WRONG_ARGUMENTS
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) 
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id1\", AcquireSize: 1, CacheSize:1 } } }";
+--error ER_WRONG_ARGUMENTS
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(16)) 
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id,name\", AcquireSize: 1, CacheSize:1 } } }";
+# create table with default autoincrement field
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(16))
+COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { AcquireSize: 1, CacheSize:1, Increment:5, StartValue:5, MinValue:5, Cycled:true } } }"; 
+SHOW CREATE TABLE t1;
+INSERT INTO t1(name) VALUES ('Joe'),('Mary'),('Bob');
+SELECT * FROM t1 ORDER BY id;
+DROP TABLE t1;
+
 #BUG #SEQUOIASQLMAINSTREAM-978
-#Case 23775
+#seqDB-23775
 --error 40006
-CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Fielda: \"id\", AcquireSize: 1, CacheSize:1 } } }";
+CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Fielda: \"id\", AcquireSize: 1, CacheSize:1 } } }"; 
 --error 40006
 CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Increments:1 } } }";
 --error 40006
@@ -84,4 +113,5 @@ CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT 
 CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Cycleds:true } } }";
 --error 40006
 CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Generateds:'default' } } }";
+
 --source include/uninstall_sequoiadb.inc
