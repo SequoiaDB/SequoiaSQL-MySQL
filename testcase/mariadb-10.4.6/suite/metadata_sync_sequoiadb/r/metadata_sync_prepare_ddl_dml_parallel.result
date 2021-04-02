@@ -1,6 +1,6 @@
 connection conn1;
-DROP DATABASE IF EXISTS metadata_prepare;
-CREATE DATABASE metadata_prepare;
+drop database if exists metadata_prepare;
+create database metadata_prepare;
 use metadata_prepare;
 set @table = 't1';
 set @s = concat('create table ', @table, '(a int)');
@@ -23,5 +23,6 @@ set server_ha_wait_sync_timeout = 0;
 connection conn2;
 prepare stmt1 from 'insert into t1 values(1)';
 ERROR 42S02: Table 'metadata_prepare.t1' doesn't exist
+drop database if exists metadata_prepare;
 disconnect conn1;
 disconnect conn2;
