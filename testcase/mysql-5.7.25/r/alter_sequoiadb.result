@@ -94,7 +94,7 @@ a	b
 2	b
 drop table t1,t2;
 create table t1(a int, b char(16)) comment = "sequoiadb:{ table_options: { ReplSize:2, Compressed: true, CompressionType: \"snappy\" } }";
-create table t2(a int, b char(16)) comment = "sequoiadb:{ table_options: { Group: \"group1\", AutoIndexId: false, StrictDataMode:true, ReplSize:2, Compressed: true, CompressionType: \"snappy\" } }";
+create table t2(a int, b char(16)) comment = "sequoiadb:{ table_options: { AutoIndexId: false, StrictDataMode:true, ReplSize:2, Compressed: true, CompressionType: \"snappy\" } }";
 insert into t1 values(1,'a'),(2,'b');
 alter table t1 comment = "sequoiadb:{ table_options: { ShardingKey: { a: 1 }, ReplSize:2, Compressed: true, CompressionType: \"snappy\", IsMainCL: true } }", ALGORITHM=inplace;
 ERROR HY000: Invalid Argument
@@ -111,9 +111,9 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` int(11) DEFAULT NULL,
   `b` char(16) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { Group: "group1", AutoIndexId: false, StrictDataMode:true, ReplSize:2, Compressed: true, CompressionType: "snappy" } }'
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { AutoIndexId: false, StrictDataMode:true, ReplSize:2, Compressed: true, CompressionType: "snappy" } }'
 alter table t1 comment = "sequoiadb:{ table_options: { ShardingKey: { a: 1 }, ShardingType: \"range\", EnsureShardingIndex: false, AutoIndexId: true, StrictDataMode: true, ReplSize: 2, Compressed: true, CompressionType: \"snappy\" } }", ALGORITHM=inplace;
-alter table t2 comment = "sequoiadb:{ table_options: { Group: \"group1\", AutoIndexId: true, StrictDataMode: false, ReplSize: 4, Compressed: true, CompressionType: \"lzw\" } }", ALGORITHM=inplace;
+alter table t2 comment = "sequoiadb:{ table_options: { AutoIndexId: true, StrictDataMode: false, ReplSize: 4, Compressed: true, CompressionType: \"lzw\" } }", ALGORITHM=inplace;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -125,7 +125,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` int(11) DEFAULT NULL,
   `b` char(16) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { Group: "group1", AutoIndexId: true, StrictDataMode: false, ReplSize: 4, Compressed: true, CompressionType: "lzw" } }'
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{ table_options: { AutoIndexId: true, StrictDataMode: false, ReplSize: 4, Compressed: true, CompressionType: "lzw" } }'
 select * from t1 order by a;
 a	b
 1	a

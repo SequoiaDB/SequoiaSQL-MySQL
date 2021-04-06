@@ -178,3 +178,44 @@ CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT 
 ERROR HY000: Invalid Argument
 CREATE TABLE t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Generateds:'default' } } }";
 ERROR HY000: Invalid Argument
+create table t1 ( id INT PRIMARY KEY AUTO_INCREMENT) ENGINE = sequoiadb COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: \"id\" } } }";
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: "id" } } }'
+alter table t1 COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: {AcquireSizes: 1, CacheSize:1 } } }";
+ERROR HY000: Invalid Argument
+alter table t1 COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field:\"a\" } } }";
+ERROR HY000: Autoincrement field does not exist on collection
+alter table t1 COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{CacheSize:1, AcquireSize: 1, Increment:2, StartValue:2, MinValue:2, MaxValue:1000, Cycled:true,Generated:\"always\"} } }";
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{CacheSize:1, AcquireSize: 1, Increment:2, StartValue:2, MinValue:2, MaxValue:1000, Cycled:true,Generated:"always"} } }'
+insert into t1 values(),(),();
+select * from t1;
+id
+2
+4
+6
+alter table t1 COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{ Field: \"id\",Increment:1 } } }";
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+) ENGINE=SequoiaDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{ Field: "id",Increment:1 } } }'
+insert into t1 values(),(),();
+select * from t1;
+id
+2
+4
+6
+7
+8
+9
+drop table t1;
