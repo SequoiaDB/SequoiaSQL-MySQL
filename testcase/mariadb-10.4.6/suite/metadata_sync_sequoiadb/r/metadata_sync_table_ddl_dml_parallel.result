@@ -692,6 +692,29 @@ connection conn2;
 replace into t1 select * from t2;
 ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.t2' doesn't exist
 drop table t1;
+set server_ha_wait_sync_timeout = 4;
+create table t1 ( x INT, y INT );
+set server_ha_wait_sync_timeout = 0;
+insert into t1 values (1,1);
+connection conn2;
+select * from metadata_sync_table_ddl_dml_parallel.t1;
+x	y
+1	1
+use metadata_sync_table_ddl_dml_parallel;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `x` int(11) DEFAULT NULL,
+  `y` int(11) DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+connection conn1;
+set server_ha_wait_sync_timeout = 4;
+alter table t1 drop column x, add column z int default 1;
+set server_ha_wait_sync_timeout = 0;
+connection conn2;
+select * from t1;
+y	z
+1	1
 connection conn1;
 create table t1(a int);
 connection conn2;

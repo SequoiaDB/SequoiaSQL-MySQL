@@ -128,20 +128,6 @@ ERROR HY000: Field 'col1' doesn't have a default value
 alter table t1 drop primary key;
 alter table t1 add col2 int auto_increment key;
 insert into t1(col1) values(4),(5),(6);
-select * from t1 order by col1;
-col1	col2
-1	1
-2	2
-3	3
-4	1004
-5	1005
-6	1006
-2005	4
-2006	5
-2007	6
-4005	7
-4006	8
-4007	9
 drop table t1;
 create table t1(a int unique key);
 select * from t1 force index(a);
@@ -201,6 +187,26 @@ NULL
 10
 20
 2147483648
+drop table t1;
+create table t1(col1 int);
+insert into t1 values(1),(2),(3);
+alter table t1 engine = innodb;
+insert into t1 values(4),(5),(6);
+select * from t1 order by col1;
+col1
+4
+5
+6
+alter table t1 engine = sequoiadb;
+insert into t1 values(7),(8),(9);
+select * from t1 order by col1;
+col1
+4
+5
+6
+7
+8
+9
 drop table t1;
 create table t1 (a int, b int, c int generated always as (a + 1) virtual, d int  generated always as (b + 2) stored );
 insert into t1(a,b) values(1,1);
@@ -288,29 +294,55 @@ select * from t1 order by a;
 a
 2
 drop table t1;
-create table t2(a int auto_increment key);
-insert into t2 values(),(),(),();
+create table t2(a int key);
+insert into t2 values(1),(2),(3),(4);
 create table t1 like t2;
-insert into t2 values(),(),(),();
-insert into t1 values(),(),(),();
+insert into t2 values(5),(6),(7),(8);
+insert into t1 values(5),(6),(7),(8);
 select * from t2 order by a;
 a
 1
 2
 3
 4
-1001
-1002
-1003
-1004
+5
+6
+7
+8
 select * from t1 order by a;
+a
+5
+6
+7
+8
+drop table t2;
+insert into t1 values(9),(10),(11),(12);
+select * from t1 order by a;
+a
+5
+6
+7
+8
+9
+10
+11
+12
+drop table t1;
+create table t2(a int key);
+insert into t2 values(1),(2),(3),(4);
+create table t1 as select * from t2;
+insert into t2 values(5),(6),(7),(8);
+insert into t1 values(5),(6),(7),(8);
+select * from t2 order by a;
 a
 1
 2
 3
 4
-drop table t2;
-insert into t1 values(),(),(),();
+5
+6
+7
+8
 select * from t1 order by a;
 a
 1
@@ -321,48 +353,22 @@ a
 6
 7
 8
-drop table t1;
-create table t2(a int auto_increment key);
-insert into t2 values(),(),(),();
-create table t1 as select * from t2;
-insert into t2 values(),(),(),();
-insert into t1 values(),(),(),();
-select * from t2 order by a;
-a
-1
-2
-3
-4
-1001
-1002
-1003
-1004
-select * from t1 order by a;
-a
-0
-0
-0
-0
-1
-2
-3
-4
 drop table t2;
-insert into t1 values(),(),(),();
+insert into t1 values(9),(10),(11),(12);
 select * from t1 order by a;
 a
-0
-0
-0
-0
-0
-0
-0
-0
 1
 2
 3
 4
+5
+6
+7
+8
+9
+10
+11
+12
 drop table t1;
 create table t2(a int);
 insert into t2 values(1),(2),(3),(4);
@@ -448,9 +454,11 @@ col2	col1
 203	10
 203	10
 203	10
-drop table t2;
+alter table t2 engine=innodb;
 update t2 set col2 = 1 + col2;
-ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.t2' doesn't exist
+select * from t2 order by col2;
+col2	col1
+drop table t2;
 create table t1(a int);
 insert into t1 values(1),(2),(3),(4);
 delete from t1;
@@ -482,9 +490,9 @@ alter table t1 rename to t2;
 delete from t2;
 select * from t2 order by col2;
 col2
-drop table t2;
+alter table t2 engine=innodb;
 delete from t2;
-ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.t2' doesn't exist
+drop table t2;
 create table t1(a int, b int);
 insert into t1 values(1,1),(2,2),(3,3);
 create table t2(a int, b int);
@@ -547,6 +555,27 @@ drop table t2;
 replace into t1 select * from t2;
 ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.t2' doesn't exist
 drop table t1;
+set server_ha_wait_sync_timeout = 4;
+create table t1 ( x INT, y INT );
+set server_ha_wait_sync_timeout = 0;
+insert into t1 values (1,1);
+select * from metadata_sync_table_ddl_dml_parallel.t1;
+x	y
+1	1
+use metadata_sync_table_ddl_dml_parallel;
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `x` int(11) DEFAULT NULL,
+  `y` int(11) DEFAULT NULL
+) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+set server_ha_wait_sync_timeout = 4;
+alter table t1 drop column x, add column z int default 1;
+set server_ha_wait_sync_timeout = 0;
+select * from t1;
+y	z
+1	1
+drop table t1;
 create table t1(a int);
 select * from t1;
 a
@@ -568,9 +597,60 @@ ERROR 42000: Key 'a' doesn't exist in table 't1'
 rename table t1 to t2;
 select * from t2;
 a
-drop table t2;
+alter table t2 engine=innodb;
 select * from t2;
-ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.t2' doesn't exist
+a
+drop table t2;
+create table t1(a int auto_increment primary key,b int ,c int);
+insert into t1(b,c) values(1,1),(2,2),(3,3);
+create view v1 as select * from t1;
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+alter table t1 drop column b;
+select * from v1 order by a;
+ERROR HY000: View 'metadata_sync_table_ddl_dml_parallel.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+alter table t1 add column b int;
+select * from v1 order by a;
+a	b	c
+1	NULL	1
+2	NULL	2
+3	NULL	3
+drop table t1;
+select * from v1 order by a;
+ERROR HY000: View 'metadata_sync_table_ddl_dml_parallel.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+create table t1(a int auto_increment primary key,b int ,c int);
+insert into t1(b,c) values(1,1),(2,2),(3,3);
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+create or replace view v1 as select * from t1 where a<2;
+select * from v1 order by a;
+a	b	c
+1	1	1
+drop database if exists table_ddl_dml_parallel_user;
+create user 'table_ddl_dml_parallel_user';
+GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
+Warnings:
+Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
+FLUSH PRIVILEGES;
+alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
+use metadata_sync_table_ddl_dml_parallel;
+select * from v1 order by a;
+a	b	c
+1	1	1
+2	2	2
+3	3	3
+drop view v1;
+show create view v1;
+ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.v1' doesn't exist
+drop table t1;
+drop user table_ddl_dml_parallel_user;
+FLUSH PRIVILEGES;
 create table t1(a int);
 alter table t1 add index a(a);
 explain select * from t1 force index(a);
@@ -580,6 +660,15 @@ Warnings:
 Note	1003	/* select#1 */ select `metadata_sync_table_ddl_dml_parallel`.`t1`.`a` AS `a` from `metadata_sync_table_ddl_dml_parallel`.`t1` FORCE INDEX (`a`)
 drop index a on t1;
 drop table t1;
+create table t1(a int key);
+analyze table t1;
+Table	Op	Msg_type	Msg_text
+metadata_sync_table_ddl_dml_parallel.t1	analyze	status	OK
+drop table t1;
+analyze table t1;
+Table	Op	Msg_type	Msg_text
+metadata_sync_table_ddl_dml_parallel.t1	analyze	Error	Table 'metadata_sync_table_ddl_dml_parallel.t1' doesn't exist
+metadata_sync_table_ddl_dml_parallel.t1	analyze	status	Operation failed
 create table t1(a int key);
 desc t1;
 Field	Type	Null	Key	Default	Extra
