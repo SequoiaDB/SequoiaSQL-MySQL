@@ -1,5 +1,5 @@
 diff --git a/sql/sql_class.h b/sql/sql_class.h
-index dd9cfbbd..43b5c2ca 100644
+index dd9cfbbd..2eea2e71 100644
 --- a/sql/sql_class.h
 +++ b/sql/sql_class.h
 @@ -769,6 +769,7 @@ typedef struct system_variables
@@ -26,7 +26,7 @@ index dd9cfbbd..43b5c2ca 100644
    void set_query_and_id(char *query_arg, uint32 query_length_arg,
                          CHARSET_INFO *cs, query_id_t new_query_id);
    void set_query_id(query_id_t new_query_id)
-@@ -4982,6 +4988,17 @@ public:
+@@ -4982,6 +4988,20 @@ public:
    Item *sp_fix_func_item(Item **it_addr);
    Item *sp_prepare_func_item(Item **it_addr, uint cols= 1);
    bool sp_eval_expr(Field *result_field, Item **expr_item_ptr);
@@ -37,7 +37,10 @@ index dd9cfbbd..43b5c2ca 100644
 +    NON_PUSH_DOWN = 0,
 +    PREPARE_STEP = 1,
 +    EXEC_STEP = 2,
++    ERROR_OCCUR = 3,
++    DONE = 4,
 +  };
++
 +  /* Flag of the real push down join exec finised. All the other result need to
 +     be ignored but the real result of join exec. */
 +  sdb_sql_push_down_exec_steps sdb_sql_exec_step;
@@ -45,7 +48,7 @@ index dd9cfbbd..43b5c2ca 100644
  
  /** A short cut for thd->get_stmt_da()->set_ok_status(). */
 diff --git a/sql/sql_parse.cc b/sql/sql_parse.cc
-index e49dbe9f..e64cc07b 100644
+index e49dbe9f..4660cdc1 100644
 --- a/sql/sql_parse.cc
 +++ b/sql/sql_parse.cc
 @@ -104,6 +104,8 @@
@@ -57,7 +60,7 @@ index e49dbe9f..e64cc07b 100644
  #define FLAGSTR(V,F) ((V)&(F)?#F" ":"")
  
  #ifdef WITH_ARIA_STORAGE_ENGINE
-@@ -1803,6 +1805,80 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
+@@ -1803,10 +1805,91 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
      MYSQL_SET_STATEMENT_TEXT(thd->m_statement_psi, thd->query(),
                               thd->query_length());
  
@@ -66,6 +69,8 @@ index e49dbe9f..e64cc07b 100644
 +    char *concat_join_push_down_sql = NULL;
 +    bool add_multi_query_flag = false;
 +    push_type type = NO_PUSH;
++    uint original_sql_len = thd->query_length();
++    char *original_sql = thd->query();
 +
 +    if(thd->variables.sdb_sql_pushdown) {
 +      const int LEN_OF_CONCAT_STR = 700;
@@ -136,9 +141,19 @@ index e49dbe9f..e64cc07b 100644
 +
 +original_step:
      Parser_state parser_state;
++    uint err_no = 0;
++    char err_text[MYSQL_ERRMSG_SIZE];
++    char m_ret_sqlstate[SQLSTATE_LENGTH+1];
++    char *restore_sql = NULL;
++    static const int len_of_restore_sql = 150;
++    Diagnostics_area *da= thd->get_stmt_da();
      if (unlikely(parser_state.init(thd, thd->query(), thd->query_length())))
        break;
-@@ -1843,7 +1919,21 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
+-
+ #ifdef WITH_WSREP
+     if (WSREP_ON)
+     {
+@@ -1843,14 +1926,32 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
  
        /* Finalize server status flags after executing a statement. */
        thd->update_server_status();
@@ -153,14 +168,80 @@ index e49dbe9f..e64cc07b 100644
 +            thd->client_capabilities&= ~CLIENT_MULTI_STATEMENTS;
 +          }
 +          /*Only send the execute result to client*/
-+          thd->sdb_sql_exec_step = thd->NON_PUSH_DOWN;
++          thd->sdb_sql_exec_step = thd->DONE;
 +        }
 +      } else {
 +        thd->protocol->end_statement();
 +      }
        query_cache_end_of_result(thd);
+-
+-      mysql_audit_general(thd, MYSQL_AUDIT_GENERAL_STATUS,
+-                          thd->get_stmt_da()->is_error()
+-                            ? thd->get_stmt_da()->sql_errno()
+-                            : 0,
+-                          command_name[command].str);
++      /* SQL push down only audit sql at last time.*/
++      if (!thd->variables.sdb_sql_pushdown ||
++         thd->NON_PUSH_DOWN == thd->sdb_sql_exec_step ||
++         thd->DONE == thd->sdb_sql_exec_step) {
++        mysql_audit_general(thd, MYSQL_AUDIT_GENERAL_STATUS,
++                            thd->get_stmt_da()->is_error()
++                              ? thd->get_stmt_da()->sql_errno()
++                              : 0,
++                            command_name[command].str);
++      }
  
-       mysql_audit_general(thd, MYSQL_AUDIT_GENERAL_STATUS,
+       ulong length= (ulong)(packet_end - beginning_of_next_stmt);
+ 
+@@ -1932,9 +2033,48 @@ bool dispatch_command(enum enum_server_command command, THD *thd,
+ #endif /* WITH_WSREP */
+       mysql_parse(thd, beginning_of_next_stmt, length, &parser_state,
+                   is_com_multi, is_next_command);
++      if (!thd->killed && thd->is_error() &&
++          (thd->PREPARE_STEP == thd->sdb_sql_exec_step ||
++           thd->EXEC_STEP == thd->sdb_sql_exec_step)) {
++        err_text[0] = '\0';
++        err_no = da->sql_errno();
++        strncpy(err_text, da->message(), MYSQL_ERRMSG_SIZE);
++        strncpy(m_ret_sqlstate, da->get_sqlstate(), SQLSTATE_LENGTH+1);
++        da->reset_diagnostics_area();
++        restore_sql = (char*)thd->alloc(len_of_restore_sql);
++        if (NULL == restore_sql) {
++          my_error(ER_OUT_OF_RESOURCES, MYF(0));
++          break;
++        }
++        snprintf(restore_sql, len_of_restore_sql,
++          "set @@sequoiadb_execute_only_in_mysql = @`sdb#pd#exec#in#only#mysql`;"
++          "set @@spark_execute_only_in_mysql = @`spk#pd#exec#in#only#mysql`;");
++        CSET_STRING sql_res_lex_str(restore_sql, strlen(restore_sql),
++                                    &my_charset_utf8mb4_bin);
++        thd->set_query(sql_res_lex_str);
++        packet_end= thd->query() + thd->query_length();
++        parser_state.reset(thd->query(), thd->query_length());
++        thd->sdb_sql_exec_step = thd->ERROR_OCCUR;
++        parser_state.m_lip.found_semicolon = thd->query();
++        continue;
++      }
++    }
+ 
++    if (thd->ERROR_OCCUR == thd->sdb_sql_exec_step) {
++      da->reset_diagnostics_area();
++      da->set_error_status(err_no, err_text, m_ret_sqlstate, NULL);
++      thd->sdb_sql_exec_step = thd->DONE;
+     }
+ 
++    if (thd->variables.sdb_sql_pushdown && thd->DONE == thd->sdb_sql_exec_step) {
++      CSET_STRING ogl_sql(original_sql, original_sql_len, &my_charset_utf8mb4_bin);
++      thd->set_query(ogl_sql);
++    }
++
++    /* silence a warning about unused varaibles. */
++    (void)original_sql_len;
++    (void)original_sql;
++
+     DBUG_PRINT("info",("query ready"));
+     break;
+   }
 diff --git a/sql/sql_prepare.cc b/sql/sql_prepare.cc
 index 8088b692..d481dd33 100644
 --- a/sql/sql_prepare.cc
