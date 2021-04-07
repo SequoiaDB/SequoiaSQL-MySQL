@@ -9619,6 +9619,91 @@ test	8
 ui	7
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "c": 1, "id": 1 }], hint[{}], limit[-1], offset[0]
 DROP TABLE t1;
+CREATE TABLE t1 ( id INT, id1 INT DEFAULT 1, id2 INT DEFAULT 1, name CHAR(127), KEY(id) );
+INSERT INTO t1(id,name) VALUES (1,'Joe'),(2,'Mark'),(3,'Rose'),(4,'jim'),(5,'test'),(6,'bob'),(7,'jerry'),(8,'ok'),(9,'david'),(10,'AB');
+SELECT id FROM t1;
+id
+1
+10
+2
+3
+4
+5
+6
+7
+8
+9
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "id": null }], order_by[{ "id": 1 }], hint[{ "": "id" }], limit[-1], offset[0]
+SELECT name FROM t1;
+name
+AB
+Joe
+Mark
+Rose
+bob
+david
+jerry
+jim
+ok
+test
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null, "name": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+DROP TABLE t1;
+CREATE TABLE t1 (  
+id int(11) DEFAULT NULL,  
+name varchar(20),   
+field3 int(4) DEFAULT '100',   
+field4 int(4) DEFAULT '100',   
+field5 int(4) DEFAULT '100',   
+field6 int(4) DEFAULT '100',   
+id2 int(4) DEFAULT '0',   
+KEY field3 (field3),   
+KEY id (id) );
+INSERT INTO t1(id,name,field3) VALUES (1,'Joe',1),(2,'Mark',2),(3,'Rose',3),(4,'jim',4),(5,'test',5),(6,'bob',6),(7,'jerry',7),(8,'ok',8),(9,'david',9),(10,'AB',10);
+EXPLAIN SELECT id,field3 FROM t1 WHERE id = 1 OR field3 = 2;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	index_merge	field3,id	id,field3	5,5	NULL	4	100.00	Using union(id,field3); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`id` = 1) or (`query_pushdown_test_sequoiadb`.`t1`.`field3` = 2))
+Warnings:
+Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`id` AS `id`,`query_pushdown_test_sequoiadb`.`t1`.`field3` AS `field3` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`id` = 1) or (`query_pushdown_test_sequoiadb`.`t1`.`field3` = 2))
+SELECT id,field3 FROM t1 WHERE id = 1 OR field3 = 2;
+id	field3
+1	1
+2	2
+[Note] SequoiaDB: optimizer selector object: { "_id": null, "field3": null }
+[Note] SequoiaDB: Query message: condition[{ "field3": { "$et": 2 } }], selector[{ "_id": null, "field3": null }], order_by[{ "field3": 1, "_id": 1 }], hint[{ "": "field3" }], limit[-1], offset[0]
+set session sequoiadb_optimizer_options = "direct_count,direct_delete,direct_update,direct_limit";
+EXPLAIN SELECT field4 FROM t1 ORDER BY field4;
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	10	100.00	Using filesort
+Warnings:
+Note	1003	/* select#1 */ select `query_pushdown_test_sequoiadb`.`t1`.`field4` AS `field4` from `query_pushdown_test_sequoiadb`.`t1` order by `query_pushdown_test_sequoiadb`.`t1`.`field4`
+SELECT field4 FROM t1 ORDER BY field4;
+field4
+100
+100
+100
+100
+100
+100
+100
+100
+100
+100
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null, "field4": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+set session sequoiadb_optimizer_options = default;
+SELECT field4 FROM t1 GROUP BY field4;
+field4
+100
+[Note] SequoiaDB: optimizer selector object: { "_id": null, "field4": null }
+[Note] SequoiaDB: Query message: match[{ "$match": {} }], group[{ "$group": { "field4": { "$first": "$field4" }, "_id": { "field4": "$field4" } } }], sort[{ "$sort": { "field4": 1 } }], skip[{ "$skip": 0 }], limit[{ "$limit": -1 }]
+SELECT distinct field4 FROM t1;
+field4
+100
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null, "field4": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+SELECT SUM(field4) FROM t1;
+SUM(field4)
+1000
+[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null, "field4": null }], order_by[{}], hint[{}], limit[-1], offset[0]
+DROP TABLE t1;
 CREATE TABLE t1 ( id TINYINT, b BLOB );
 INSERT INTO t1 VALUES (1,'test'),(0,'hello'),(2,'sz'),(-1,'op'),(10,'ok'),(8,'foo'),(100,'bar'),(9,'too'),(50,'to'),(-2,'bo');
 SELECT * FROM t1 WHERE NOT id > 10;
