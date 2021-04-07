@@ -197,7 +197,7 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{CacheSize:1, AcquireSize: 1, Increment:2, StartValue:2, MinValue:2, MaxValue:1000, Cycled:true,Generated:"always"} } }'
 insert into t1 values(),(),();
-select * from t1;
+select * from t1 order by id;
 id
 2
 4
@@ -210,7 +210,7 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{ Field: "id",Increment:1 } } }'
 insert into t1 values(),(),();
-select * from t1;
+select * from t1 order by id;
 id
 2
 4
