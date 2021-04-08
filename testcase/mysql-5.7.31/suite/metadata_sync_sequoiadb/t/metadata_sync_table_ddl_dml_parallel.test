@@ -1,4 +1,3 @@
-#BUG #SEQUOIADBMAINSTREAM-6944 annotation for temporary
 --source include/have_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
 
@@ -123,7 +122,7 @@ alter table t1 add col2 int auto_increment key;
 
 connection conn2;
 insert into t1(col1) values(4),(5),(6);
-#select * from t1 order by col1;
+select * from t1 order by col1;
 drop table t1;
 
 #Bug SEQUOIASQLMAINSTREAM-868
@@ -208,24 +207,24 @@ drop table t1;
 
 #seqDB-23075
 #SEQUOIASQLMAINSTREAM-870
-connection conn1;
-create table t1(col1 int);
-insert into t1 values(1),(2),(3);
-
-connection conn2;
-alter table t1 engine = innodb;
-
-connection conn1;
-insert into t1 values(4),(5),(6);
-select * from t1 order by col1;
-
-connection conn2;
-alter table t1 engine = sequoiadb;
-
-connection conn1;
-insert into t1 values(7),(8),(9);
-select * from t1 order by col1;
-drop table t1;
+#connection conn1;
+#create table t1(col1 int);
+#insert into t1 values(1),(2),(3);
+#
+#connection conn2;
+#alter table t1 engine = innodb;
+#
+#connection conn1;
+#insert into t1 values(4),(5),(6);
+#select * from t1 order by col1;
+#
+#connection conn2;
+#alter table t1 engine = sequoiadb;
+#
+#connection conn1;
+#insert into t1 values(7),(8),(9);
+#select * from t1 order by col1;
+#drop table t1;
 
 #seqDB-23076
 connection conn1;
@@ -331,13 +330,13 @@ drop table t1;
 
 #seqDB-23080
 connection conn1;
-create table t2(a int key);
-insert into t2 values(1),(2),(3),(4);
+create table t2(a int auto_increment key);
+insert into t2 values(),(),(),();
 create table t1 like t2;
 
 connection conn2;
-insert into t2 values(5),(6),(7),(8);
-insert into t1 values(5),(6),(7),(8);
+insert into t2 values(),(),(),();
+insert into t1 values(),(),(),();
 select * from t2 order by a;
 select * from t1 order by a;
 
@@ -345,19 +344,19 @@ connection conn1;
 drop table t2;
 
 connection conn2;
-insert into t1 values(9),(10),(11),(12);
+insert into t1 values(),(),(),();
 select * from t1 order by a;
 drop table t1;
 
 #seqDB-23081
 connection conn1;
-create table t2(a int key);
-insert into t2 values(1),(2),(3),(4);
+create table t2(a int auto_increment key);
+insert into t2 values(),(),(),();
 create table t1 as select * from t2;
 
 connection conn2;
-insert into t2 values(5),(6),(7),(8);
-insert into t1 values(5),(6),(7),(8);
+insert into t2 values(),(),(),();
+insert into t1 values(),(),(),();
 select * from t2 order by a;
 select * from t1 order by a;
 
@@ -365,7 +364,7 @@ connection conn1;
 drop table t2;
 
 connection conn2;
-insert into t1 values(9),(10),(11),(12);
+insert into t1 values(),(),(),();
 select * from t1 order by a;
 drop table t1;
 
@@ -451,12 +450,12 @@ update t2 set col2 = 1 + col2;
 select * from t2 order by col2;
 
 #SEQUOIASQLMAINSTREAM-870
-connection conn1;
-alter table t2 engine=innodb;
-
-connection conn2;
-update t2 set col2 = 1 + col2;
-select * from t2 order by col2;
+#connection conn1;
+#alter table t2 engine=innodb;
+#
+#connection conn2;
+#update t2 set col2 = 1 + col2;
+#select * from t2 order by col2;
 
 connection conn1;
 drop table t2;
@@ -506,18 +505,18 @@ delete from t2;
 select * from t2 order by col2;
 
 #SEQUOIASQLMAINSTREAM-870
-connection conn1;
-alter table t2 engine=innodb;
-
-connection conn2;
-delete from t2;
+#connection conn1;
+#alter table t2 engine=innodb;
+#
+#connection conn2;
+#delete from t2;
 
 connection conn1;
 drop table t2;
 
 connection conn2;
-#--error 1146
-#delete from t2;
+--error 1146
+delete from t2;
 
 #seqDB-23085
 connection conn1;
@@ -544,25 +543,20 @@ delete t1 from t1,t2 where t1.col1 > t2.col1;
 select * from t1 order by col1;
 
 #SEQUOIASQLMAINSTREAM-870
-#SEQUOIASQLMAINSTREAM-953
-connection conn1;
-set server_ha_wait_sync_timeout = 4;
-drop table t2;
-set server_ha_wait_sync_timeout = 0;
-
-connection conn2;
---error 1146
-delete t1 from t1,t2 where t1.col1 > t2.col1;
-
-connection conn1;
-set server_ha_wait_sync_timeout = 4;
-create table t2(a int);
+#connection conn1;
+#drop table t2;
+#
+#connection conn2;
+#--error 1146
+#delete t1 from t1,t2 where t1.col1 > t2.col1;
+#
+#connection conn1;
+#create table t2(a int);
 drop table t1;
-set server_ha_wait_sync_timeout = 0;
-
-connection conn2;
---error 1146
-select * from t1,t2 where t1.a = t2.a;
+#
+#connection conn2;
+#--error 1146
+#select * from t1,t2 where t1.a = t2.a;
 drop table t2;
 
 #seqDB-23086
@@ -615,23 +609,6 @@ drop table t1;
 
 #seqDB-23090
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
-create table t1 ( x INT, y INT );
-set server_ha_wait_sync_timeout = 0;
-insert into t1 values (1,1);
-# check metadatas after create
-connection conn2;
-select * from metadata_sync_table_ddl_dml_parallel.t1;
-use metadata_sync_table_ddl_dml_parallel;
-show create table t1;
-connection conn1;
-set server_ha_wait_sync_timeout = 4;
-alter table t1 drop column x, add column z int default 1; 
-set server_ha_wait_sync_timeout = 0;
-connection conn2;
-select * from t1;
-drop table t1;
-connection conn1;
 create table t1(a int);
 
 connection conn2;
@@ -676,92 +653,90 @@ connection conn2;
 select * from t2;
 
 #SEQUOIASQLMAINSTREAM-870
-connection conn1;
-alter table t2 engine=innodb;
-
-connection conn2;
-select * from t2;
+#connection conn1;
+#alter table t2 engine=innodb;
+#
+#connection conn2;
+#select * from t2;
 
 connection conn1;
 drop table t2;
 
 connection conn2;
-#--error 1146
-#select * from t2;
+--error 1146
+select * from t2;
 
 #seqDB-23095
-#SEQUOIASQLMAINSTREAM-909
-connection conn1;
-create table t1(a int auto_increment primary key,b int ,c int);
-insert into t1(b,c) values(1,1),(2,2),(3,3);
-create view v1 as select * from t1;
-
-connection conn2;
-select * from v1 order by a;
-
-connection conn1;
-alter table t1 drop column b;
-
-connection conn2;
---error 1356
-select * from v1 order by a;
-
-connection conn1;
-alter table t1 add column b int;
-
-connection conn2;
-select * from v1 order by a;
-
-connection conn1;
-drop table t1;
-
-connection conn2;
---error 1356
-select * from v1 order by a;
-
-connection conn1;
-create table t1(a int auto_increment primary key,b int ,c int);
-insert into t1(b,c) values(1,1),(2,2),(3,3);
-
-connection conn2;
-select * from v1 order by a;
-
-connection conn1;
-create or replace view v1 as select * from t1 where a<2;
-
-connection conn2;
---sleep 5
-select * from v1 order by a;
-
-connection conn1;
---disable_warnings
-drop database if exists table_ddl_dml_parallel_user;
---enable_warnings
-create user 'table_ddl_dml_parallel_user';
-GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
-FLUSH PRIVILEGES;
-
-connection conn2;
-alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
-
-connect ( conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $port1 );
-connection conn3;
-use metadata_sync_table_ddl_dml_parallel;
---sleep 5
-select * from v1 order by a;
-disconnect conn3;
-
-connection conn1;
-drop view v1;
-
-connection conn2;
---error 1146
-show create view v1;
-drop table t1;
-
-connection conn1;
-drop user table_ddl_dml_parallel_user;
-FLUSH PRIVILEGES;
+#SEQUOIASQLMAINSTREAM-869
+#connection conn1;
+#create table t1(a int auto_increment primary key,b int ,c int);
+#insert into t1(b,c) values(1,1),(2,2),(3,3);
+#create view v1 as select * from t1;
+#
+#connection conn2;
+#select * from v1 order by a;
+#
+#connection conn1;
+#alter table t1 drop column b;
+#
+#connection conn2;
+#--error 1356
+#select * from v1 order by a;
+#
+#connection conn1;
+#alter table t1 add column b int;
+#
+#connection conn2;
+#select * from v1 order by a;
+#
+#connection conn1;
+#drop table t1;
+#
+#connection conn2;
+#--error 1356
+#select * from v1 order by a;
+#
+#connection conn1;
+#create table t1(a int auto_increment primary key,b int ,c int);
+#insert into t1(b,c) values(1,1),(2,2),(3,3);
+#
+#connection conn2;
+#select * from v1 order by a;
+#
+#connection conn1;
+#create or replace view v1 as select * from t1 where a<2;
+#
+#connection conn2;
+#select * from v1 order by a;
+#
+#connection conn1;
+#--disable_warnings
+#drop database if exists table_ddl_dml_parallel_user;
+#--enable_warnings
+#create user 'table_ddl_dml_parallel_user';
+#GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
+#FLUSH PRIVILEGES;
+#
+#connection conn2;
+#alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
+#
+#connect ( conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $port1 );
+#connection conn3;
+#use metadata_sync_table_ddl_dml_parallel;
+#select * from v1 order by a;
+#disconnect conn3;
+#
+#connection conn2;
+#drop user table_ddl_dml_parallel_user;
+#FLUSH PRIVILEGES;
+#
+#connection conn1;
+#drop view v1;
+#
+#connection conn2;
+#--error 1146
+#select * from v1 order by a;
+#drop table t1;
 
 #seqDB-23096
 connection conn1;
@@ -775,24 +750,23 @@ connection conn1;
 drop index a on t1;
 
 #SEQUOIASQLMAINSTREAM-870
-#SEQUOIASQLMAINSTREAM-953
 #connection conn2;
 #--error 1176
 #explain select * from t1 force index(a);
 drop table t1;
 
 #seqDB-23107
-connection conn1;
-create table t1(a int key);
-
-connection conn2;
-analyze table t1;
-
-connection conn1;
-drop table t1;
-
-connection conn2;
-analyze table t1;
+#connection conn1;
+#create table t1(a int key);
+#
+#connection conn2;
+#analyze table t1;
+#
+#connection conn1;
+#drop table t1;
+#
+#connection conn2;
+#analyze table t1;
 
 #seqDB-23108
 connection conn1;
