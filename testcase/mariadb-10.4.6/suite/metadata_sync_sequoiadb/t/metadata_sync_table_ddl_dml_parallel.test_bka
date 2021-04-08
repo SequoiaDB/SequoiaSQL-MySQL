@@ -462,8 +462,8 @@ connection conn1;
 drop table t2;
 
 connection conn2;
-#--error 1146
-#update t2 set col2 = 1 + col2;
+--error 1146
+update t2 set col2 = 1 + col2;
 
 #seqDB-23084
 connection conn1;
