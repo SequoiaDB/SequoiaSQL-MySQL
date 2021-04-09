@@ -53,18 +53,4 @@ if(MYSQL STREQUAL "5.7.25" OR MYSQL STREQUAL "5.7.32" OR MARIADB)
           DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
   install(FILES ${UNIX_ODBC_DIR}/../libltdl/.libs/libltdl.so.7.2.0
           DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
-  if(MYSQL)
-    set(PATCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/patches/sql_pushdown_mysql_${MYSQL}.patch")
-  elseif(MARIADB)
-    set(PATCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/patches/sql_pushdown_mariadb_${MARIADB}.patch")
-  endif()
-  # apply sql pushdown patch files
-  if (EXISTS "${PATCH_FILE}")
-    set(APPLY_PATCH_TARGET "${SQL_SOURCE_ROOT}/sql/sql_parse.cc")
-    message(STATUS "Apply patch ${PATCH_FILE} for sql pushdown")
-    execute_process(COMMAND cmake -E chdir "${SQL_SOURCE_ROOT}/sql" patch -s -N -i ${PATCH_FILE})
-  else()
-    message(FATAL_ERROR "Patch file ${PATCH_FILE} doesn't exist")
-  endif()
 endif()
