@@ -83,7 +83,7 @@ function(prepare_sql_source sql_source_root sql_name)
             WORKING_DIRECTORY "${sql_source_root}"
             RESULT_VARIABLE tar_result
          )
-         set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}")
+         set(EXTRACT_NAME "${SDB_PROJECT_TYPE}-v${SQL_VERSION}-v3.2")
          execute_process(
             COMMAND bash -c "mv ${EXTRACT_NAME}/* ./"
             WORKING_DIRECTORY "${sql_source_root}"
