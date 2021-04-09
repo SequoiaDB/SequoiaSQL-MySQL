@@ -54,8 +54,8 @@ class Sdb_session_attrs {
     strncpy(last_prefer_inst_mode, SDB_DEFAULT_PREFERRED_INSTANCE_MODE,
             SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
     last_prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
-    last_prefer_strict = true;
-    last_prefer_period = 60;
+    last_prefer_strict = SDB_DEFAULT_PREFERRED_STRICT;
+    last_prefer_period = SDB_DEFAULT_PREFERRED_PERIOD;
     attr_count = 0;
     source_str[0] = '\0';
     trans_isolation = SDB_TRANS_ISO_RR;
