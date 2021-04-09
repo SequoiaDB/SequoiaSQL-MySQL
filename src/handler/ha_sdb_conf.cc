@@ -331,7 +331,7 @@ static MYSQL_THDVAR_SET(
 
 static MYSQL_THDVAR_INT(lock_wait_timeout, PLUGIN_VAR_OPCMDARG,
                         "Timeout in seconds a SequoiaDB transaction may wait "
-                        "for a lock before being rolled back."
+                        "for a lock before being rolled back. (Default: 60)"
                         /*SequoiaDB 事务锁超时时间。*/,
                         NULL, sdb_lock_wait_timeout_update,
                         SDB_DEFAULT_LOCK_WAIT_TIMEOUT, 0, 3600, 0);
@@ -359,7 +359,7 @@ static MYSQL_THDVAR_STR(
 
 static MYSQL_THDVAR_BOOL(
     preferred_strict, PLUGIN_VAR_OPCMDARG,
-    "Whether node selection is strict mode. (Default: TRUE)"
+    "Whether node selection is strict mode. (Default: OFF)"
     /*节点选择是否为严格模式。*/,
     NULL, sdb_preferred_strict_update, SDB_DEFAULT_PREFERRED_STRICT);
 

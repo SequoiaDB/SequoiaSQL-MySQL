@@ -542,8 +542,8 @@ static void sdb_set_prefer_period(THD *thd, struct st_mysql_sys_var *var,
     goto done;
   }
 
+  conn = thd_sdb->get_conn();
   if (is_prefer_period_supported(conn)) {
-    conn = thd_sdb->get_conn();
     session_attrs = conn->get_session_attrs();
     session_attrs->set_preferred_period(*(int *)var_ptr);
     rc = conn->set_my_session_attr();
