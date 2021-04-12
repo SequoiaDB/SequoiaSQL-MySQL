@@ -139,7 +139,7 @@ function get_system_conf_file()
    local cur_install_dir=$INSTALL_PATH
    local do_find_out=false
 
-   for file in `find /etc/default -regex ".*sequoiasql-mariadb[1-4][0-9]" -o -regex ".*sequoiasql-mariadb[1-9]" -o -name "sequoiasql-mariadb"`
+   for file in `find /etc/default -regex "/etc/default/sequoiasql-mariadb[1-4][0-9]" -o -regex "/etc/default/sequoiasql-mariadb[1-9]" -o -regex "/etc/default/sequoiasql-mariadb"`
    do
       . $file
       cd $INSTALL_DIR >> /dev/null 2>&1 && local sys_install_dir=`pwd` || sys_install_dir="$INSTALL_DIR"
