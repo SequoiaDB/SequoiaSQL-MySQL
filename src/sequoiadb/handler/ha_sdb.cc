@@ -4549,13 +4549,13 @@ int ha_sdb::rnd_next(uchar *buf) {
     sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
     if (first_read) {
       if (ha_thd()->variables.sdb_sql_pushdown &&
-          ha_thd()->PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
+          THD::PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
           ha_thd()->sdb_sql_push_down_query_string.length) {
         const char *hj_sql = NULL;
         Sdb_conn *conn = NULL;
 
         hj_sql = ha_thd()->sdb_sql_push_down_query_string.str;
-        ha_thd()->sdb_sql_exec_step = ha_thd()->EXEC_STEP;
+        ha_thd()->sdb_sql_exec_step = THD::EXEC_STEP;
         rc = check_sdb_in_thd(ha_thd(), &conn, true);
         if (0 != rc) {
           goto error;
@@ -5053,7 +5053,7 @@ int ha_sdb::ensure_stats(THD *thd) {
   /*Exec SQL which pushed down to sdb no need to update stats.*/
   if (sdb_execute_only_in_mysql(thd) ||
       (ha_thd()->variables.sdb_sql_pushdown &&
-       ha_thd()->PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
+       THD::PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
        ha_thd()->sdb_sql_push_down_query_string.length)) {
     goto done;
   }
@@ -5123,6 +5123,8 @@ error:
 int ha_sdb::ensure_collection(THD *thd) {
   DBUG_ENTER("ha_sdb::ensure_collection");
   int rc = 0;
+  bool is_sql_pushdown = false;
+  bool do_check_exist = false;
   DBUG_ASSERT(NULL != thd);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
@@ -5148,15 +5150,32 @@ int ha_sdb::ensure_collection(THD *thd) {
       goto error;
     }
 
+    if (ha_is_open()) {
+      do_check_exist = true;
+    }
+
+    /* no need to check collection exists or not during
+       select * from temp_table_xx when sql push down to sdb.*/
+    if (ha_thd()->variables.sdb_sql_pushdown &&
+        ha_thd()->sdb_sql_push_down_query_string.length) {
+      DBUG_ASSERT(THD::PREPARE_STEP == ha_thd()->sdb_sql_exec_step);
+      is_sql_pushdown = true;
+      do_check_exist = false;
+    }
+
     // Only check cl existence when HA is open.
     // Because HA DML retry relies on the cl version.
-    rc = conn->get_cl(db_name, table_name, *collection, ha_is_open());
+    rc = conn->get_cl(db_name, table_name, *collection, do_check_exist);
     if (0 != rc) {
       delete collection;
       collection = NULL;
       SDB_LOG_ERROR("Collection[%s.%s] is not available. rc: %d", db_name,
                     table_name, rc);
       goto error;
+    }
+
+    if (is_sql_pushdown) {
+      goto done;
     }
   }
 
