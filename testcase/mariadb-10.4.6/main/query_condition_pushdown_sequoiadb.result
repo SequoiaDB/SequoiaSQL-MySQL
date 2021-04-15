@@ -10368,6 +10368,10 @@ id	a	b	c	d
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b	c	d
 2	^abc	^abc	^abc	^abc
+SELECT * FROM t1 WHERE c LIKE "a\\\%";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE d LIKE "a_$_";
 id	a	b	c	d
 17	ab$d	ab$d	ab$d	ab$d
@@ -10582,6 +10586,10 @@ id	a	b	c	d
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b	c	d
 2	^abc	^abc	^abc	^abc
+SELECT * FROM t1 WHERE c LIKE "a\\\%";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE d LIKE "a_$_";
 id	a	b	c	d
 17	ab$d	ab$d	ab$d	ab$d
@@ -10795,6 +10803,10 @@ id	a	b
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b
 2	^abc	^abc
+SELECT * FROM t1 WHERE a LIKE "a\\\%";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
 SELECT * FROM t1 WHERE b LIKE "a_$_";
 id	a	b
 17	ab$d	ab$d
@@ -11003,6 +11015,10 @@ id	a	b
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b
 2	^abc	^abc
+SELECT * FROM t1 WHERE a LIKE "a\\\%";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
 SELECT * FROM t1 WHERE b LIKE "a_$_";
 id	a	b
 17	ab$d	ab$d
@@ -11402,6 +11418,10 @@ id	a	b	c	d
 SELECT * FROM t1 WHERE b LIKE "%^a_c%";
 id	a	b	c	d
 2	^abc	^abc	^abc	^abc
+SELECT * FROM t1 WHERE c LIKE "a\\\%";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE d LIKE "a_$_";
 id	a	b	c	d
 17	ab$d	ab$d	ab$d	ab$d
@@ -11640,6 +11660,10 @@ abc
 abc	
 abc	
 abc	
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
 id	a	b	c	d
 10	a\bc	a\bc	a\bc	a\bc
@@ -11849,6 +11873,10 @@ abc
 abc	
 abc	
 abc	
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
+id	a	b	c	d
+10	a\bc	a\bc	a\bc	a\bc
+11	a\bd	a\bd	a\bd	a\bd
 SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
 id	a	b	c	d
 10	a\bc	a\bc	a\bc	a\bc
@@ -12053,6 +12081,10 @@ id	a	b
 ]e	abcd[.
 abc
 abc	
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
 SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
 id	a	b
 10	a\bc	a\bc
@@ -12252,6 +12284,10 @@ id	a	b
 ]e	abcd[.
 abc
 abc	
+SELECT * FROM t1 WHERE b LIKE "a\\\%" ESCAPE "\\";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
 SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$";
 id	a	b
 135	ab1	ab1
@@ -12431,6 +12467,10 @@ id	a	b
 ]e	abcd[.
 abc
 abc	
+SELECT * FROM t1 WHERE a LIKE "a\\\%" ESCAPE "\\";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
 SELECT * FROM t1 WHERE a LIKE "a\\%" ESCAPE "0";
 id	a	b
 10	a\bc	a\bc
@@ -12630,6 +12670,10 @@ id	a	b
 ]e	abcd[.
 abc
 abc	
+SELECT * FROM t1 WHERE b LIKE "a\\\%" ESCAPE "\\";
+id	a	b
+10	a\bc	a\bc
+11	a\bd	a\bd
 SELECT * FROM t1 WHERE b LIKE "a_$1" ESCAPE "$";
 id	a	b
 135	ab1	ab1
