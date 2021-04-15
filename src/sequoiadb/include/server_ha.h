@@ -144,6 +144,7 @@ typedef struct st_sql_stmt_info {
   // cache checked objects after 'wait_object_updated_to_latest'
   HASH dml_checked_objects;
   int pending_sql_id;
+  char *single_query;
 } ha_sql_stmt_info;
 
 // use to cache current instance state of all objects(table, view and sp)

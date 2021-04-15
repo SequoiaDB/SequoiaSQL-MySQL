@@ -150,13 +150,16 @@ static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
 
 // return fixed string if it's 'create/grant/alter user' sql command
 // it may contain a plaintext string, it should not be written to any log
-static inline const char *query_without_password(THD *thd) {
+static inline const char *query_without_password(THD *thd,
+                                                 ha_sql_stmt_info *sql_info) {
   int sql_command = thd_sql_command(thd);
   static const char *MASKED_PASSWORD_QUERY = "GRANT_CREATE_ALTER_USER_OP";
   const char *query = sdb_thd_query(thd);
   if (SQLCOM_CREATE_USER == sql_command || SQLCOM_ALTER_USER == sql_command ||
       SQLCOM_GRANT == sql_command) {
     query = MASKED_PASSWORD_QUERY;
+  } else if (sql_info->single_query) {
+    query = sql_info->single_query;
   }
   return query;
 }
@@ -3585,7 +3588,7 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   bson::BSONObj obj, hints, result, cond;
   int pending_id = 0;
   longlong write_time;
-  const char *db = "";
+  const char *db = "", *query = NULL;
   int sql_command = thd_sql_command(thd);
   String rewritten_query;
   rewritten_query.length(0);
@@ -3716,7 +3719,11 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
 
   // write 'HAPendingLog', get pending SQLID
   bson_builder.append(HA_FIELD_DB, db);
-  bson_builder.append(HA_FIELD_SQL, event.general_query);
+  if (sql_info->single_query) {
+    bson_builder.append(HA_FIELD_SQL, sql_info->single_query);
+  } else {
+    bson_builder.append(HA_FIELD_SQL, event.general_query);
+  }
   bson_builder.append(HA_FIELD_OWNER, ha_thread.instance_id);
   bson_builder.append(HA_FIELD_WRITE_TIME, write_time);
   bson_builder.append(HA_FIELD_SESSION_ATTRS, session_attrs);
@@ -3733,8 +3740,9 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   DBUG_ASSERT(pending_id > 0);
   sql_info->pending_sql_id = pending_id;
 
-  SDB_LOG_DEBUG("HA: Writing pending log '%s' with pending ID: %d",
-                query_without_password(thd), pending_id);
+  query = query_without_password(thd, sql_info);
+  SDB_LOG_DEBUG("HA: Writing pending log '%s' with pending ID: %d", query,
+                pending_id);
 
   // write 'HAPendingObject'
   for (ha_table_list *table = sql_info->tables; table; table = table->next) {
@@ -3997,6 +4005,29 @@ static bool has_view_in_stmt(THD *thd) {
   return has_view;
 }
 
+// set ha_sql_stmt_info 'single_query' value, if current query contains
+// multiple statements, event.general_query_length will be set to length
+// of the first statement, refer to sql_parse.cc patch
+static inline int set_single_query(THD *thd, ha_sql_stmt_info *sql_info,
+                                   ha_event_general &event) {
+  int rc = 0;
+  const char *query = sdb_thd_query(thd);
+  // if current query contains multiple statements, get the first statement
+  if (NULL == sql_info->single_query &&
+      strlen(query) > event.general_query_length) {
+    sql_info->single_query =
+        (char *)thd_calloc(thd, event.general_query_length + 1);
+    if (NULL == sql_info->single_query) {
+      rc = SDB_HA_OOM;
+    } else {
+      strncpy(sql_info->single_query, event.general_query,
+              event.general_query_length);
+      sql_info->single_query[event.general_query_length] = 0;
+    }
+  }
+  return rc;
+}
+
 // entry of audit plugin
 static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                             const void *ev) {
@@ -4150,7 +4181,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       goto error;
     }
     SDB_LOG_DEBUG("HA: Metadata recover finished, start execute: %s",
-                  query_without_password(thd));
+                  query_without_password(thd, sql_info));
     if (thd_killed(thd) || ha_thread.stopped) {
       rc = SDB_HA_ABORT_BY_USER;
       goto error;
@@ -4171,8 +4202,16 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   if (need_prepare(event, is_trans_on, event_class)) {
     DBUG_ASSERT(sql_info->tables == NULL);
     try {
+      // set "single_query" variable if current query contains multiple
+      // statement
+      sql_info->single_query = NULL;
+      rc = set_single_query(thd, sql_info, event);
+      if (rc) {
+        goto error;
+      }
+
       SDB_LOG_DEBUG("HA: At the beginning of persisting SQL: %s, thread: %p",
-                    query_without_password(thd), thd);
+                    query_without_password(thd, sql_info), thd);
       SDB_LOG_DEBUG("HA: SQL command: %d, event: %d, subevent: %d, thread: %p",
                     sql_command, event_class, *((int *)ev), thd);
       SDB_LOG_DEBUG("HA: Start transaction for persisting SQL log");
@@ -4224,7 +4263,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
 
   if (need_complete(event, is_trans_on, sql_command, event_class)) {
     SDB_LOG_DEBUG("HA: At the end of persisting SQL: %s, thread: %p",
-                  query_without_password(thd), thd);
+                  query_without_password(thd, sql_info), thd);
+    sql_info->single_query = NULL;
     try {
       if (can_write_sql_log(thd, sql_info, event.general_error_code) ||
           is_pending_log_ignorable_error(thd)) {
