@@ -62,7 +62,6 @@ my_bool sdb_use_bulk_insert = SDB_DEFAULT_USE_BULK_INSERT;
 int sdb_bulk_insert_size = SDB_DEFAULT_BULK_INSERT_SIZE;
 int sdb_replica_size = SDB_DEFAULT_REPLICA_SIZE;
 my_bool sdb_use_autocommit = SDB_DEFAULT_USE_AUTOCOMMIT;
-my_bool sdb_debug_log = SDB_DEBUG_LOG_DFT;
 ulong sdb_error_level = SDB_ERROR;
 my_bool sdb_stats_cache = SDB_DEFAULT_STATS_CACHE;
 uint sdb_stats_cache_version = 1;
@@ -350,7 +349,7 @@ static MYSQL_SYSVAR_BOOL(optimizer_select_count, sdb_optimizer_select_count,
                          /*是否开启优化select count(*)行为(已弃用)。*/,
                          NULL, NULL, TRUE);
 #endif
-static MYSQL_SYSVAR_BOOL(debug_log, sdb_debug_log, PLUGIN_VAR_OPCMDARG,
+static MYSQL_THDVAR_BOOL(debug_log, PLUGIN_VAR_OPCMDARG,
                          "Turn on debug log of SequoiaDB storage engine. "
                          "(Default: OFF)"
                          /*是否打印debug日志。*/,
@@ -683,4 +682,7 @@ bool sdb_preferred_strict(THD *thd) {
 
 int sdb_preferred_period(THD *thd) {
   return THDVAR(thd, preferred_period);
+
+bool sdb_debug_log(THD *thd) {
+  return THDVAR(thd, debug_log);
 }

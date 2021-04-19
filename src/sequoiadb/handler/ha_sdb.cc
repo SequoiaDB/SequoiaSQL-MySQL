@@ -3917,7 +3917,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
   }
 
-  if (sdb_debug_log && !sdb_group_list) {
+  if (sdb_debug_log(current_thd) && !sdb_group_list) {
     try {
       bson::BSONObjBuilder builder(96);
       bson::BSONObjIterator it(hint);
@@ -4674,7 +4674,7 @@ int ha_sdb::rnd_next(uchar *buf) {
         }
       }
 
-      if (sdb_debug_log && !sdb_group_list) {
+      if (sdb_debug_log(current_thd) && !sdb_group_list) {
         try {
           bson::BSONObjBuilder builder(96);
           bson::BSONObjIterator it(hint);
