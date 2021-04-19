@@ -76,6 +76,7 @@ char *sdb_preferred_instance(THD *thd);
 char *sdb_preferred_instance_mode(THD *thd);
 bool sdb_preferred_strict(THD *thd);
 int sdb_preferred_period(THD *thd);
+bool sdb_debug_log(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;
@@ -86,7 +87,6 @@ extern my_bool sdb_use_bulk_insert;
 extern int sdb_bulk_insert_size;
 extern int sdb_replica_size;
 extern my_bool sdb_use_autocommit;
-extern my_bool sdb_debug_log;
 extern st_mysql_sys_var *sdb_sys_vars[];
 extern ulong sdb_error_level;
 

@@ -23,7 +23,7 @@
 
 #define SDB_LOG_DEBUG(format, ...)                       \
   do {                                                   \
-    if (sdb_debug_log) {                                 \
+    if (sdb_debug_log(current_thd)) {                                 \
       sdb_log(INFORMATION_LEVEL, format, ##__VA_ARGS__); \
     }                                                    \
   } while (0)
