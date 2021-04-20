@@ -682,6 +682,7 @@ bool sdb_preferred_strict(THD *thd) {
 
 int sdb_preferred_period(THD *thd) {
   return THDVAR(thd, preferred_period);
+}
 
 bool sdb_debug_log(THD *thd) {
   return THDVAR(thd, debug_log);
