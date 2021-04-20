@@ -209,6 +209,9 @@ typedef struct st_recover_replay_thread {
   mysql_cond_t recover_finished_cond;
   mysql_mutex_t recover_finished_mutex;
 
+  // playback progress of current thread
+  int playback_progress;
+
   THD *thd;
   my_thread_handle thread;
   my_thread_attr_t thread_attr;

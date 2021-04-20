@@ -1411,7 +1411,6 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
   static const int MAX_TRY_COUNT = 3;
 
   int rc = 0;
-  int glob_executed_sql_id;
   Sdb_cl inst_state_cl, sql_log_cl, inst_obj_state_cl;
   bson::BSONObjBuilder builder, simple_builder;
   bson::BSONObj result, cond, obj, order_by, attr;
@@ -1460,13 +1459,13 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
               HA_INSTANCE_OBJECT_STATE_CL,
               ha_error_string(sdb_conn, rc, err_buf));
 
-  glob_executed_sql_id = result.getIntField(HA_FIELD_SQL_ID);
-  rc = (glob_executed_sql_id < 0) ? 1 : 0;
+  ha_thread->playback_progress = result.getIntField(HA_FIELD_SQL_ID);
+  rc = (ha_thread->playback_progress < 0) ? 1 : 0;
   HA_RC_CHECK(rc, error, "HA: Wrong instance state '%d' in '%s'",
-              glob_executed_sql_id, HA_INSTANCE_STATE_CL);
+              ha_thread->playback_progress, HA_INSTANCE_STATE_CL);
 
   SDB_LOG_INFO("HA: Instance %d start with global executed SQL ID: %d",
-               ha_thread->instance_id, glob_executed_sql_id);
+               ha_thread->instance_id, ha_thread->playback_progress);
   sdb_conn.set_pushed_autocommit();
   attr = BSON(HA_TRANSACTION_LOCK_WAIT << true);
   rc = sdb_conn.set_session_attr(attr);
@@ -1494,7 +1493,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
 
     {
       bson::BSONObjBuilder sub_builder(builder.subobjStart(HA_FIELD_SQL_ID));
-      sub_builder.append("$gt", glob_executed_sql_id);
+      sub_builder.append("$gt", ha_thread->playback_progress);
       sub_builder.doneFast();
     }
     cond = builder.done();
@@ -1558,7 +1557,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                     "HA: Failed to update instance state for current instance, "
                     "sequoiadb error: %s",
                     ha_error_string(sdb_conn, rc, err_buf));
-        glob_executed_sql_id = sql_id;
+        ha_thread->playback_progress = sql_id;
         continue;
       }
 
@@ -1694,7 +1693,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
           sleep(1);
           continue;
         }
-        glob_executed_sql_id = sql_id;
+        ha_thread->playback_progress = sql_id;
         break;
       }
       // update cached instance object state

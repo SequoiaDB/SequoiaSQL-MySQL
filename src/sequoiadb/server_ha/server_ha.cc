@@ -368,92 +368,6 @@ static inline bool has_temporary_table_flag(THD *thd) {
   return is_temp_table_op;
 }
 
-// query table 'HAObjectState' and get all objects state
-// in current database
-static int get_db_objects(THD *thd, ha_sql_stmt_info *sql_info, bool get_db) {
-  DBUG_ENTER("get_db_objects");
-  int rc = 0;
-  Sdb_cl obj_state_cl;
-  bson::BSONObj cond, obj, result;
-  Sdb_conn *sdb_conn = sql_info->sdb_conn;
-  const char *db_name = thd->lex->name.str;
-  ha_table_list *ha_tbl_list = NULL, *ha_tbl_list_tail = sql_info->tables;
-
-  rc =
-      ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl);
-  if (rc) {
-    ha_error_string(*sdb_conn, rc, sql_info->err_message);
-    goto error;
-  }
-
-  cond = BSON(HA_FIELD_DB << db_name);
-  rc = obj_state_cl.query(cond);
-  if (rc) {
-    ha_error_string(*sdb_conn, rc, sql_info->err_message);
-    goto error;
-  }
-
-  while (!obj_state_cl.next(result, false) && !result.isEmpty()) {
-    const char *db_name = result.getStringField(HA_FIELD_DB);
-    const char *table_name = result.getStringField(HA_FIELD_TABLE);
-    const char *op_type = result.getStringField(HA_FIELD_TYPE);
-    if ((0 == strlen(table_name) &&
-         0 == strcmp(op_type, HA_OPERATION_TYPE_DB))) {
-      continue;
-    }
-
-    ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
-    if (ha_tbl_list) {
-      ha_tbl_list->db_name = (char *)thd_calloc(thd, strlen(db_name) + 1);
-      ha_tbl_list->table_name = (char *)thd_calloc(thd, strlen(table_name) + 1);
-      ha_tbl_list->op_type = (char *)thd_calloc(thd, strlen(op_type) + 1);
-    }
-
-    if (NULL == ha_tbl_list || NULL == ha_tbl_list->db_name ||
-        NULL == ha_tbl_list->table_name || NULL == ha_tbl_list->op_type) {
-      rc = SDB_HA_OOM;
-      goto error;
-    }
-    sprintf((char *)ha_tbl_list->db_name, "%s", db_name);
-    sprintf((char *)ha_tbl_list->table_name, "%s", table_name);
-    sprintf((char *)ha_tbl_list->op_type, "%s", op_type);
-    ha_tbl_list->is_temporary_table = false;
-    ha_tbl_list->next = NULL;
-    if (!sql_info->tables) {
-      sql_info->tables = ha_tbl_list;
-      ha_tbl_list_tail = ha_tbl_list;
-    } else {
-      ha_tbl_list_tail->next = ha_tbl_list;
-      ha_tbl_list_tail = ha_tbl_list;
-    }
-  }
-  // at last, add 'drop database ' info
-  if (get_db) {
-    ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
-    if (ha_tbl_list) {
-      ha_tbl_list->db_name = (char *)thd_calloc(thd, strlen(db_name) + 1);
-      ha_tbl_list->table_name = HA_EMPTY_STRING;
-      ha_tbl_list->op_type = HA_OPERATION_TYPE_DB;
-    }
-    if (NULL == ha_tbl_list || NULL == ha_tbl_list->db_name) {
-      rc = SDB_HA_OOM;
-      goto error;
-    }
-    sprintf((char *)ha_tbl_list->db_name, "%s", db_name);
-    ha_tbl_list->is_temporary_table = false;
-    ha_tbl_list->next = NULL;
-    if (!sql_info->tables) {
-      sql_info->tables = ha_tbl_list;
-    } else {
-      ha_tbl_list_tail->next = ha_tbl_list;
-    }
-  }
-done:
-  DBUG_RETURN(rc);
-error:
-  goto done;
-}
-
 // add 'S' lock for an object
 inline static int add_slock(Sdb_cl &lock_cl, const char *db_name,
                             const char *table_name, const char *op_type,
@@ -874,10 +788,6 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
     int sql_command = thd_sql_command(thd);
     rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
                                         obj_state_cl, sql_info, thd);
-    if (0 == rc &&
-        (SQLCOM_DROP_DB == sql_command || SQLCOM_ALTER_DB == sql_command)) {
-      rc = get_db_objects(thd, sql_info, (SQLCOM_DROP_DB == sql_command));
-    }
     if (rc) {
       goto error;
     }
@@ -957,6 +867,73 @@ static int wait_definer_if_exists(THD *thd, ha_sql_stmt_info *sql_info,
   return rc;
 }
 
+// wait all objects updated to its latest state in 'db', 'playback_progress'
+// is updated by playback thread. If all 'SQLID' for current database is
+// less or equal than 'playback_progress', metadata operations on current
+// database can be done
+static int wait_db_objects_updated_to_latest(THD *thd, const char *db,
+                                             ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  Sdb_conn *sdb_conn = sql_info->sdb_conn;
+  Sdb_cl obj_state_cl;
+  bson::BSONObj cond;
+  bson::BSONObjBuilder cond_builder;
+  uint sleep_secs = 0;
+  longlong count = 0;
+
+  // get object state handle
+  rc =
+      ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl);
+  if (rc) {
+    ha_error_string(*sdb_conn, rc, sql_info->err_message);
+    goto error;
+  }
+
+  try {
+    do {
+      // build condition: {"DB": db, "SQLID": {$gt: playback_progress}}
+      cond_builder.reset();
+      cond_builder.append(HA_FIELD_DB, db);
+      bson::BSONObjBuilder sub_builder(
+          cond_builder.subobjStart(HA_FIELD_SQL_ID));
+      sub_builder.append("$gt", ha_thread.playback_progress);
+      sub_builder.doneFast();
+      cond = cond_builder.done();
+      rc = obj_state_cl.get_count(count, cond);
+      if (rc) {
+        ha_error_string(*sdb_conn, rc, sql_info->err_message);
+        goto error;
+      }
+      // 'count != 0' means that there are unfinished jobs for current instance
+      if (!abort_loop && count) {
+        sleep(1);
+        sleep_secs++;
+      }
+    } while (!abort_loop && count && sleep_secs < ha_wait_replay_timeout &&
+             !thd_killed(thd));
+  } catch (std::bad_alloc &e) {
+    rc = SDB_HA_OOM;
+    goto error;
+  } catch (std::exception &e) {
+    rc = SDB_HA_EXCEPTION;
+    snprintf(sql_info->err_message, HA_BUF_LEN, "Unexpected error: %s",
+             e.what());
+    goto error;
+  }
+
+  if (sleep_secs >= ha_wait_replay_timeout) {
+    rc = SDB_HA_WAIT_TIMEOUT;
+    goto error;
+  } else if (thd_killed(thd) || abort_loop) {
+    rc = SDB_HA_ABORT_BY_USER;
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 // check and wait for current instance to be updated by 'HA' thread
 // to the lastest state
 static int wait_objects_updated_to_lastest(THD *thd,
@@ -1003,8 +980,14 @@ static int wait_objects_updated_to_lastest(THD *thd,
       // 'drop function if exist' without select db report no errors
       break;
     }
-    rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
-                                        obj_state_cl, sql_info, thd);
+
+    if (SQLCOM_DROP_DB == sql_command || SQLCOM_ALTER_DB == sql_command) {
+      // wait database state updated to latest state
+      rc = wait_db_objects_updated_to_latest(thd, db_name, sql_info);
+    } else {
+      rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
+                                          obj_state_cl, sql_info, thd);
+    }
     if (rc) {
       goto error;
     }
@@ -1210,6 +1193,7 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   Sdb_cl sql_log_cl, obj_state_cl, inst_obj_state_cl, lock_cl;
   ha_table_list *ha_tables = sql_info->tables;
   bson::BSONObj obj, result, cond, hint;
+  bson::BSONObjBuilder cond_builder, obj_builder;
   int sql_command = thd_sql_command(thd);
   char quoted_name_buf[NAME_LEN * 2 + 3] = {0};
   char session_attrs[HA_MAX_SESSION_ATTRS_LEN] = {0};
@@ -1371,13 +1355,16 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       goto error;
     }
     // write sql info into 'HASQLLog' table
-    obj = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
-                           << HA_FIELD_TYPE << op_type << HA_FIELD_SQL
-                           << query.c_ptr_safe() << HA_FIELD_OWNER
-                           << ha_thread.instance_id << HA_FIELD_SESSION_ATTRS
-                           << session_attrs << HA_FIELD_CLIENT_CHARSET_NUM
-                           << client_charset_num << HA_FIELD_CAT_VERSION
-                           << cata_version);
+    obj_builder.reset();
+    obj_builder.append(HA_FIELD_DB, db_name);
+    obj_builder.append(HA_FIELD_TABLE, table_name);
+    obj_builder.append(HA_FIELD_TYPE, op_type);
+    obj_builder.append(HA_FIELD_SQL, query.c_ptr_safe());
+    obj_builder.append(HA_FIELD_OWNER, ha_thread.instance_id);
+    obj_builder.append(HA_FIELD_SESSION_ATTRS, session_attrs);
+    obj_builder.append(HA_FIELD_CLIENT_CHARSET_NUM, client_charset_num);
+    obj_builder.append(HA_FIELD_CAT_VERSION, cata_version);
+    obj = obj_builder.done();
     rc = sql_log_cl.insert(obj, hint, 0, &result);
     if (rc) {
       goto sdb_error;
@@ -1387,21 +1374,41 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     sql_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
     DBUG_ASSERT(sql_id > 0);
 
-    cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
-                            << HA_FIELD_TYPE << op_type);
-    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_CAT_VERSION
-                                              << cata_version));
+    cond_builder.reset();
+    cond_builder.append(HA_FIELD_DB, db_name);
+    cond_builder.append(HA_FIELD_TABLE, table_name);
+    cond_builder.append(HA_FIELD_TYPE, op_type);
+    cond = cond_builder.done();
+
+    obj_builder.reset();
+    {
+      bson::BSONObjBuilder sub_builder(obj_builder.subobjStart("$set"));
+      sub_builder.append(HA_FIELD_SQL_ID, sql_id);
+      sub_builder.append(HA_FIELD_CAT_VERSION, cata_version);
+      sub_builder.doneFast();
+    }
+    obj = obj_builder.done();
     rc = obj_state_cl.upsert(obj, cond);
     if (rc) {
       goto sdb_error;
     }
 
     // write 'HAInstanceObjectState'
-    cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread.instance_id << HA_FIELD_DB
-                                     << db_name << HA_FIELD_TABLE << table_name
-                                     << HA_FIELD_TYPE << op_type);
-    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_CAT_VERSION
-                                              << cata_version));
+    cond_builder.reset();
+    cond_builder.append(HA_FIELD_DB, db_name);
+    cond_builder.append(HA_FIELD_TABLE, table_name);
+    cond_builder.append(HA_FIELD_TYPE, op_type);
+    cond_builder.append(HA_FIELD_INSTANCE_ID, ha_thread.instance_id);
+    cond = cond_builder.done();
+
+    obj_builder.reset();
+    {
+      bson::BSONObjBuilder sub_builder(obj_builder.subobjStart("$set"));
+      sub_builder.append(HA_FIELD_SQL_ID, sql_id);
+      sub_builder.append(HA_FIELD_CAT_VERSION, cata_version);
+      sub_builder.doneFast();
+    }
+    obj = obj_builder.done();
     rc = inst_obj_state_cl.upsert(obj, cond);
     if (rc) {
       goto sdb_error;
@@ -1584,11 +1591,8 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   static const int INVALID_CAT_VERSION = 0;
 
   DBUG_ASSERT(NULL == sql_info->tables);
-  if (SQLCOM_DROP_DB == sql_command) {
-    // 'DROP database ' get records from 'HAObjectState' after add 'X' lock
-    // on database
-  } else if (SQLCOM_CREATE_DB == sql_command ||
-             SQLCOM_ALTER_DB == sql_command) {
+  if (SQLCOM_CREATE_DB == sql_command || SQLCOM_ALTER_DB == sql_command ||
+      SQLCOM_DROP_DB == sql_command) {
     sql_info->tables = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
     if (NULL == sql_info->tables) {
       rc = SDB_HA_OOM;

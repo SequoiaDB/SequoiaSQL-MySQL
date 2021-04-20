@@ -177,6 +177,13 @@ int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
     HA_RC_CHECK(rc, error,
                 "HA: Unable to create index for '%s', sequoiadb error: %s",
                 HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+    index_ref = BSON(HA_FIELD_DB << 1 << HA_FIELD_SQL_ID << 1);
+    rc = cl.create_index(index_ref, HA_OBJ_STATE_DB_SQLID_INDEX, key_options);
+    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+    HA_RC_CHECK(rc, error,
+                "HA: Unable to create index for '%s', sequoiadb error: %s",
+                HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
     indexes_created = true;
   }
 done:

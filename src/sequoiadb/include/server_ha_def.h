@@ -102,6 +102,7 @@
 #define HA_INST_STATE_JOIN_ID_INDEX "InstanceStateJoinIDIndex"
 #define HA_LOCK_DB_TABLE_TYPE_INDEX "LockDBTableTypeIndex"
 #define HA_OBJ_STATE_DB_TABLE_TYPE_INDEX "ObjectStateDBTableTypeIndex"
+#define HA_OBJ_STATE_DB_SQLID_INDEX "ObjectStateDBSQLIDIndex"
 
 #define HA_PENDING_LOG_PENDING_ID_INDEX "PendingLogPendingIDIndex"
 #define HA_PENDING_OBJECT_DB_TABLE_TYPE_INDEX "PendingObjectDBTableTypeIndex"
