@@ -56,6 +56,7 @@
 #define HA_INSTANCE_STATE_CL "HAInstanceState"
 #define HA_PENDING_LOG_CL "HAPendingLog"
 #define HA_PENDING_OBJECT_CL "HAPendingObject"
+#define HA_SQLID_GENERATOR_CL "HASQLIDGenerator"
 
 #define HA_INST_GROUP_PREFIX "HAInstanceGroup_"
 
@@ -106,6 +107,7 @@
 
 #define HA_PENDING_LOG_PENDING_ID_INDEX "PendingLogPendingIDIndex"
 #define HA_PENDING_OBJECT_DB_TABLE_TYPE_INDEX "PendingObjectDBTableTypeIndex"
+#define HA_PENDING_OBJECT_SQLID_INDEX "PendingObjectSQLIDIndex"
 
 #define HA_LOOPBACK_ADDRESS "127.0.0.1"
 

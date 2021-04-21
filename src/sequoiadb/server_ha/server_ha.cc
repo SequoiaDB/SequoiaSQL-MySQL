@@ -1184,15 +1184,58 @@ error:
   goto done;
 }
 
+static int query_and_update_global_sql_id(Sdb_conn *lock_conn_ptr, int &sql_id,
+                                          ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  Sdb_cl sql_id_generator_cl;
+  bson::BSONObj obj, result;
+  try {
+    rc = lock_conn_ptr->get_cl(ha_thread.sdb_group_name, HA_SQLID_GENERATOR_CL,
+                               sql_id_generator_cl, true);
+    if (rc) {
+      goto error;
+    }
+
+    // update global SQL ID
+    obj = BSON("$inc" << BSON(HA_FIELD_SQL_ID << 1));
+    rc = sql_id_generator_cl.query_and_update(obj);
+    if (rc) {
+      goto error;
+    }
+
+    result = SDB_EMPTY_BSON;
+    rc = sql_id_generator_cl.next(result, false);
+    if (rc) {
+      goto error;
+    }
+    sql_id = result.getIntField(HA_FIELD_SQL_ID);
+    DBUG_ASSERT(sql_id > 0);
+  } catch (std::bad_alloc &e) {
+    snprintf(sql_info->err_message, HA_BUF_LEN,
+             "OOM while query and update global SQL ID");
+    rc = SDB_HA_OOM;
+  } catch (std::exception &e) {
+    snprintf(sql_info->err_message, HA_BUF_LEN,
+             "Found exception %s while query and update global SQL ID",
+             e.what());
+    rc = SDB_HA_EXCEPTION;
+  }
+done:
+  return rc;
+error:
+  ha_error_string(*lock_conn_ptr, rc, sql_info->err_message);
+  goto done;
+}
+
 // 1. write SQL into 'HASQLLog'
 // 2. update 'HAObjectState' and 'HAInstanceObjectState'
 static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
                                     const ha_event_general &event) {
   int rc = 0, sql_id = -1;
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
-  Sdb_cl sql_log_cl, obj_state_cl, inst_obj_state_cl, lock_cl;
+  Sdb_cl sql_log_cl, obj_state_cl, inst_obj_state_cl;
   ha_table_list *ha_tables = sql_info->tables;
-  bson::BSONObj obj, result, cond, hint;
+  bson::BSONObj obj, cond, hint;
   bson::BSONObjBuilder cond_builder, obj_builder;
   int sql_command = thd_sql_command(thd);
   char quoted_name_buf[NAME_LEN * 2 + 3] = {0};
@@ -1203,6 +1246,8 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   bool oom = false;  // out of memory while building a string
   bool first_object = true;
   int rename_table_count = 0;
+  Sdb_conn lock_conn(0, false);
+  Sdb_conn *lock_conn_ptr = NULL;
 
   oom = general_query.append(event.general_query, event.general_query_length);
   oom |= general_query.append('\0');
@@ -1354,8 +1399,45 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       rc = SDB_HA_OOM;
       goto error;
     }
+
+    // get new sequoiadb connection, prepare query and update global SQLID
+    rc = check_sdb_in_thd(thd, &lock_conn_ptr, true);
+    if (HA_ERR_OUT_OF_MEM == rc) {
+      rc = SDB_HA_OOM;
+      goto error;
+    } else if (0 != rc) {
+      snprintf(sql_info->err_message, HA_BUF_LEN,
+               "Failed to connect sequoiadb, error code %d", rc);
+      goto error;
+    }
+
+    if (lock_conn_ptr->is_transaction_on()) {
+      rc = lock_conn.connect();
+      if (rc) {
+        lock_conn_ptr = NULL;
+        snprintf(sql_info->err_message, HA_BUF_LEN, "%s",
+                 lock_conn.get_err_msg());
+        goto error;
+      }
+      lock_conn_ptr = &lock_conn;
+    }
+
+    // start transaction, start query and update global SQLID
+    rc = lock_conn_ptr->begin_transaction(ISO_READ_STABILITY);
+    if (rc) {
+      ha_error_string(*lock_conn_ptr, rc, sql_info->err_message);
+      goto error;
+    }
+
+    // query and update global SQLID, this will add lock on 'HASQLIDGenerator'
+    rc = query_and_update_global_sql_id(lock_conn_ptr, sql_id, sql_info);
+    if (rc) {
+      goto error;
+    }
+
     // write sql info into 'HASQLLog' table
     obj_builder.reset();
+    obj_builder.append(HA_FIELD_SQL_ID, sql_id);
     obj_builder.append(HA_FIELD_DB, db_name);
     obj_builder.append(HA_FIELD_TABLE, table_name);
     obj_builder.append(HA_FIELD_TYPE, op_type);
@@ -1365,13 +1447,19 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     obj_builder.append(HA_FIELD_CLIENT_CHARSET_NUM, client_charset_num);
     obj_builder.append(HA_FIELD_CAT_VERSION, cata_version);
     obj = obj_builder.done();
-    rc = sql_log_cl.insert(obj, hint, 0, &result);
+    rc = sql_log_cl.insert(obj, SDB_EMPTY_BSON);
     if (rc) {
-      goto sdb_error;
+      goto error;
+    }
+
+    // commit transaction and release lock on record in 'HASQLIDGenerator'
+    rc = lock_conn_ptr->commit_transaction();
+    if (rc) {
+      ha_error_string(*lock_conn_ptr, rc, sql_info->err_message);
+      goto error;
     }
 
     // write 'HAObjectState'
-    sql_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
     DBUG_ASSERT(sql_id > 0);
 
     cond_builder.reset();
@@ -1432,6 +1520,9 @@ sdb_error:
   // get sequoiadb error string
   ha_error_string(*sdb_conn, rc, sql_info->err_message);
 error:
+  if (NULL != lock_conn_ptr && lock_conn_ptr->is_transaction_on()) {
+    lock_conn_ptr->rollback_transaction();
+  }
   goto done;
 }
 

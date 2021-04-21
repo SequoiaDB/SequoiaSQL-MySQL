@@ -201,6 +201,57 @@ int Sdb_cl::query_and_remove(const bson::BSONObj &condition,
                            num_to_return, flags));
 }
 
+int cl_query_and_update(sdbclient::sdbCollection *cl,
+                        sdbclient::sdbCursor *cursor,
+                        const bson::BSONObj *update,
+                        const bson::BSONObj *condition,
+                        const bson::BSONObj *selected,
+                        const bson::BSONObj *order_by,
+                        const bson::BSONObj *hint, longlong num_to_skip,
+                        longlong num_to_return, int flags, bool return_new) {
+  int rc = SDB_ERR_OK;
+  try {
+    rc = cl->queryAndUpdate(*cursor, *update, *condition, *selected, *order_by,
+                            *hint, num_to_skip, num_to_return, flags,
+                            return_new);
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to query and update collection info, exception:%s", e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_cl::query_and_update(const bson::BSONObj &update,
+                             const bson::BSONObj &condition,
+                             const bson::BSONObj &selected,
+                             const bson::BSONObj &order_by,
+                             const bson::BSONObj &hint, longlong num_to_skip,
+                             longlong num_to_return, int flags,
+                             bool return_new) {
+  int rc = SDB_ERR_OK;
+  int retry_times = 2;
+retry:
+  rc = cl_query_and_update(&m_cl, &m_cursor, &update, &condition, &selected,
+                           &order_by, &hint, num_to_skip, num_to_return, flags,
+                           return_new);
+  if (rc != SDB_ERR_OK) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  if (IS_SDB_NET_ERR(rc)) {
+    bool is_transaction = m_conn->is_transaction_on();
+    if (!is_transaction && retry_times-- > 0 && 0 == m_conn->connect()) {
+      goto retry;
+    }
+  }
+  convert_sdb_code(rc);
+  goto done;
+}
+
 int cl_aggregate(sdbclient::sdbCollection *cl, sdbclient::sdbCursor *cursor,
                  std::vector<bson::BSONObj> &obj) {
   int rc = SDB_ERR_OK;

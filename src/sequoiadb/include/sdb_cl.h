@@ -60,6 +60,15 @@ class Sdb_cl {
                        longlong num_to_skip = 0, longlong num_to_return = -1,
                        int flags = QUERY_WITH_RETURNDATA);
 
+  int query_and_update(const bson::BSONObj &update,
+                       const bson::BSONObj &condition = SDB_EMPTY_BSON,
+                       const bson::BSONObj &selected = SDB_EMPTY_BSON,
+                       const bson::BSONObj &order_by = SDB_EMPTY_BSON,
+                       const bson::BSONObj &hint = SDB_EMPTY_BSON,
+                       longlong num_to_skip = 0, longlong num_to_return = -1,
+                       int flags = QUERY_WITH_RETURNDATA,
+                       bool return_new = false);
+
   int aggregate(std::vector<bson::BSONObj> &obj);
 
   int current(bson::BSONObj &obj, my_bool get_owned = true);

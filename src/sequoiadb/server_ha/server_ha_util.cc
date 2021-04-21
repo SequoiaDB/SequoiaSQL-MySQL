@@ -370,6 +370,15 @@ int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
     HA_RC_CHECK(rc, error,
                 "HA: Unable to create index on '%s', sequoiadb error: %s",
                 HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+    index_ref = BSON(HA_FIELD_SQL_ID << 1);
+    key_options = BSON(SDB_FIELD_UNIQUE << 0);
+    rc = pending_object_cl.create_index(
+        index_ref, HA_PENDING_OBJECT_SQLID_INDEX, key_options);
+    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+    HA_RC_CHECK(rc, error,
+                "HA: Unable to create index on '%s', sequoiadb error: %s",
+                HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
     indexes_created = true;
   }
 done:

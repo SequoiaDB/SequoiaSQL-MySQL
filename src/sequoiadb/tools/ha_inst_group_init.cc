@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
 
     sdbclient::sdbCollectionSpace global_info_cs;
     sdbclient::sdbCollection inst_group_config_cl;
-    sdbclient::sdbCollection sql_log_cl;
+    sdbclient::sdbCollection sql_log_cl, sql_id_generator_cl;
     bson::BSONObj options, record, index_ref, key_options;
     bson::BSONObjBuilder builder;
 
@@ -364,15 +364,25 @@ int main(int argc, char *argv[]) {
                      "configuration table '%s.%s', sequoiadb error: %s",
                      cmd_args.inst_group_name.c_str(), HA_CONFIG_CL, sdb_err);
 
-    // create 'HASQLLog' collection
-    bson::BSONObjBuilder sub_builder(
-        builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
-    sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_SQL_ID);
-    sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
-    sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
-    sub_builder.doneFast();
-    options = builder.done();
+    // create and initialize 'HASQLIDGenerator' collection
+    rc = inst_group_cs.createCollection(HA_SQLID_GENERATOR_CL, options,
+                                        sql_id_generator_cl);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to create instance group "
+                     "SQL ID generator table '%s.%s', sequoiadb error: %s",
+                     cmd_args.inst_group_name.c_str(), HA_SQLID_GENERATOR_CL,
+                     ha_sdb_error_string(conn, rc));
+    builder.reset();
+    builder.append(HA_FIELD_SQL_ID, 1);
+    record = builder.done();
+    rc = sql_id_generator_cl.insert(record);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to initialize instance group "
+                     "SQL ID generator table '%s.%s', sequoiadb error: %s",
+                     orig_name.c_str(), HA_SQLID_GENERATOR_CL,
+                     ha_sdb_error_string(conn, rc));
 
+    // create 'HASQLLog' collection
     rc = inst_group_cs.createCollection(HA_SQL_LOG_CL, options, sql_log_cl);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
     HA_TOOL_RC_CHECK(rc, rc,
