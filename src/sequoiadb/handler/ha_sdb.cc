@@ -638,7 +638,8 @@ error:
   goto done;
 }
 
-bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition) {
+bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
+                             sdb_join_type type) {
   SELECT_LEX *const select_lex = sdb_lex_first_select(thd);
   JOIN *const join = select_lex->join;
   /* if the following conditions are included, cannot pushdown limit:
@@ -650,6 +651,7 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition) {
      6. contains calculate found rows, like 'SELECT SQL_CALC_FOUND_ROWS * FROM
         t1'.
      7. has a GROUP BY clause and/or one or more aggregate functions.
+     8. join type is QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT.
   */
   const bool use_where_condition = sdb_where_condition(thd);
   const bool use_having_condition = sdb_having_condition(thd);
@@ -663,10 +665,14 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition) {
   if (join->sort_and_group && !join->tmp_table_param.precomputed_group_by) {
     use_group_and_agg_func = true;
   }
+  const bool use_index_merge_and = SDB_JOIN_INDEX_MERGE_ROR_INTERSECT == type ||
+                                           SDB_JOIN_INDEX_MERGE_SORT_INTERSECT
+                                       ? true
+                                       : false;
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       use_distinct || calc_found_rows || use_group_and_agg_func ||
-      use_filesort) {
+      use_filesort || use_index_merge_and) {
     return false;
   }
   return true;
@@ -3461,7 +3467,8 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
   count_query = false;
   try {
     if (use_count && sdb_is_single_table(ha_thd()) && !order && !group &&
-        optimize_with_materialization && !sdb_use_mrr(ha_thd(), mrr_iter) &&
+        optimize_with_materialization &&
+        SDB_JOIN_UNKNOWN == sdb_get_join_type(ha_thd(), mrr_iter) &&
         (SDB_COND_UNCALLED == sdb_condition->status ||
          SDB_COND_SUPPORTED == sdb_condition->status) &&
         !sdb_condition->has_null_func) {
@@ -3822,7 +3829,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   ha_rows num_to_skip = 0;
   ha_rows num_to_return = -1;
   bool direct_op = false;
-  bool use_mrr = false;
+  bool use_multi_down = false;  // Mark whether conditions are batched down
   int flag = 0;
   KEY *key_info = table->key_info + active_index;
 
@@ -3880,21 +3887,23 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
     SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
     const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+    sdb_join_type type = SDB_JOIN_UNKNOWN;
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
         sdb_is_single_table(ha_thd()) &&
         (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_LIMIT)) {
-      if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
-        // org_num_to_return、org_num_to_skip keep the initial value for easy
+      type = sdb_get_join_type(ha_thd(), mrr_iter);
+      if (sdb_can_push_down_limit(ha_thd(), sdb_condition, type)) {
+        // org_num_to_return/org_num_to_skip keep the initial value for easy
         // printing debug log.
         org_num_to_return = num_to_return = select_lex->get_limit();
         if (select_lex->offset_limit) {
           org_num_to_skip = num_to_skip = select_lex->get_offset();
           // Handle scenarios where conditions are batched down, like
-          // 'MULTI_RANGE、INDEX_MERGE、JT_REF_OR_NULL'.
-          if (sdb_use_mrr(ha_thd(), mrr_iter)) {
+          // 'MULTI_RANGE/INDEX_MERGE/JT_REF_OR_NULL'.
+          if (SDB_JOIN_UNKNOWN != type) {
             // If there is a direct_sort, the indexes has been removed.
             DBUG_ASSERT(false == direct_sort);
-            use_mrr = true;
+            use_multi_down = true;
             num_to_return += num_to_skip;
             num_to_skip = 0;
           } else {
@@ -3936,17 +3945,17 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
         "exception:%s",
         db_name, table_name, e.what());
 
-    if (use_mrr) {
-      // If use_mrr, print 'limit+offset' for limit easy to understand.
+    if (use_multi_down) {
+      // If use_multi_down, print 'limit+offset' for limit easy to understand.
       SDB_LOG_DEBUG(
           "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
           "limit[%d+%d], "
-          "offset[0], mrr[%d]",
+          "offset[0]",
           condition.toString(false, false).c_str(),
           selector.toString(false, false).c_str(),
           order_by.toString(false, false).c_str(),
           hint.toString(false, false).c_str(), org_num_to_return,
-          org_num_to_skip, use_mrr);
+          org_num_to_skip);
     } else {
       SDB_LOG_DEBUG(
           "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
@@ -4650,7 +4659,8 @@ int ha_sdb::rnd_next(uchar *buf) {
               sdb_is_single_table(ha_thd()) &&
               (sdb_get_optimizer_options(ha_thd()) &
                SDB_OPTIMIZER_OPTION_LIMIT)) {
-            if (sdb_can_push_down_limit(ha_thd(), sdb_condition)) {
+            if (sdb_can_push_down_limit(ha_thd(), sdb_condition,
+                                        SDB_JOIN_UNKNOWN)) {
               num_to_return = select_lex->get_limit();
               if (select_lex->offset_limit) {
                 num_to_skip = select_lex->get_offset();

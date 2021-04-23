@@ -190,6 +190,16 @@ void trans_register_ha(THD *thd, bool all, handlerton *ht_arg,
 #define sdb_my_malloc(key, size, myFlags) my_malloc(size, myFlags)
 #endif
 
+typedef enum sdb_join_type {
+  SDB_JOIN_UNKNOWN = 0,
+  SDB_JOIN_REF_OR_NULL,
+  SDB_JOIN_INDEX_MERGE_SORT_UNION,
+  SDB_JOIN_INDEX_MERGE_SORT_INTERSECT,
+  SDB_JOIN_INDEX_MERGE_ROR_UNION,
+  SDB_JOIN_INDEX_MERGE_ROR_INTERSECT,
+  SDB_JOIN_MULTI_RANGE
+} sdb_join_type;
+
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
                          size_t pre_alloc_size MY_ATTRIBUTE((unused)));
@@ -236,9 +246,7 @@ bool sdb_use_filesort(THD *thd);
 
 bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table);
 
-// Determing whether to use multi_range_read, include
-// multi_range、index_merge、jt_ref_or_null
-bool sdb_use_mrr(THD *thd, range_seq_t rseq);
+sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq);
 
 bool sdb_judge_index_cover(THD *thd, TABLE *table, uint active_index);
 
