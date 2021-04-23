@@ -183,7 +183,9 @@ error:
 
 int Sdb_conn::connect(const char *conn_addr) {
   int rc = SDB_ERR_OK;
+  bool is_connected = false;
   String password;
+  bson::BSONObj error_obj;
   Sdb_session_attrs *session_attrs = NULL;
 
   if (!(is_valid() && is_authenticated())) {
@@ -253,9 +255,9 @@ int Sdb_conn::connect(const char *conn_addr) {
         snprintf(errmsg, sizeof(errmsg),
                  "Failed to connect to sequoiadb, rc=%d", rc);
       }
-      m_connection.disconnect();
       goto error;
     }
+    is_connected = true;
 
     const char *hostname = NULL;
     int hostname_len = (int)strlen(glob_hostname);
@@ -322,9 +324,28 @@ int Sdb_conn::connect(const char *conn_addr) {
 
       rc = set_my_session_attr();
       if (SDB_ERR_OK != rc) {
-        m_connection.disconnect();
-        snprintf(errmsg, sizeof(errmsg), "Failed to set session attr, rc=%d",
-                 rc);
+        const char *err_detail = "Failed to set session attributes";
+        const char *debug_log_path = NULL;
+#ifdef IS_MYSQL
+        debug_log_path = opt_general_logname;
+#elif IS_MARIADB
+        debug_log_path = log_error_file;
+#endif
+        try {
+          if (0 == get_last_result_obj(error_obj, false)) {
+            err_detail = error_obj.getStringField(SDB_FIELD_DETAIL);
+            if (0 == strlen(errmsg)) {
+              err_detail = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+            }
+          }
+        } catch (std::exception &e) {
+          // Use default error message.
+        }
+        snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s, rc=%d", err_detail, rc);
+        my_printf_error(
+            rc,
+            "Failed to set session attributes. Please see %s for more details",
+            MYF(0), debug_log_path);
         goto error;
       }
     }
@@ -334,6 +355,9 @@ int Sdb_conn::connect(const char *conn_addr) {
 done:
   return rc;
 error:
+  if (is_connected) {
+    m_connection.disconnect();
+  }
   convert_sdb_code(rc);
   goto done;
 }

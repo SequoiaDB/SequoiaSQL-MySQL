@@ -374,7 +374,6 @@ error:
 static int sdb_prefer_inst_check(THD *thd, struct st_mysql_sys_var *var,
                                  void *save, struct st_mysql_value *value) {
   int rc = 0;
-  int err = 0;
   int length = 0;
   Sdb_conn *conn = NULL;
   bson::BSONObj error_obj;
@@ -406,16 +405,13 @@ static int sdb_prefer_inst_check(THD *thd, struct st_mysql_sys_var *var,
   session_attrs->set_preferred_instance(prefer_inst);
   rc = conn->set_my_session_attr();
   if (rc != SDB_OK) {
-    rc = 1;
-    err = rc;
     if (0 == conn->get_last_result_obj(error_obj, false)) {
-      err = error_obj.getIntField(SDB_FIELD_ERRNO);
       error_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
       if (0 == strlen(error_msg)) {
         error_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
       }
     }
-    SDB_LOG_WARNING("%s, rc=%d", error_msg, err);
+    SDB_LOG_ERROR("%s, rc=%d", error_msg, rc);
     goto error;
   }
 
