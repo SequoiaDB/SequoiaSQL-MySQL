@@ -56,10 +56,15 @@ collation_server=utf8mb4_bin
 
 MY_CNF_DEFAULT_STORAGE = "\ndefault_storage_engine=SequoiaDB\n"
 
+MYSQL_CNF_APPEND = '''
+optimizer_switch=index_merge_intersection=off
+'''
+
 MARIADB_CNF_APPEND = '''
 join_cache_level=8\n
 optimizer_switch=mrr=on,mrr_cost_based=off,join_cache_incremental=on,\
-join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=on
+join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=on,\
+index_merge_intersection=off
 '''
 
 MY_OPTIMIZER_OPTIONS = 'optimizer_options'
@@ -438,7 +443,9 @@ def main():
 
     if opt.project_type == 'mariadb':
         my_cnf = my_cnf + MARIADB_CNF_APPEND
-    elif opt.project_type != 'mysql':
+    elif opt.project_type == 'mysql':
+        my_cnf = my_cnf + MYSQL_CNF_APPEND
+    else:
         print("ERROR: Invalid project-type option. Please use 'mysql' or"
               " 'mariadb'")
         sys.exit(ERR_INVALID_ARG)

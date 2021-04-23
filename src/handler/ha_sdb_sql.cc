@@ -263,10 +263,8 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
   return JT_REF_OR_NULL == tab->type();
 }
 
-// Determing whether to use multi_range_read, include
-// multi_range、index_merge、jt_ref_or_null
-bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
-  bool rs = false;
+sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
+  sdb_join_type type = SDB_JOIN_UNKNOWN;
   int count = 0;
   QEP_TAB *tab = NULL;
   QUICK_SELECT_I *quick = NULL;
@@ -282,18 +280,23 @@ bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
 
   // Use JT_REF_OR_NULL.
   if (JT_REF_OR_NULL == tab->type()) {
-    rs = true;
+    type = SDB_JOIN_REF_OR_NULL;
     goto done;
   }
   quick = tab->quick();
   if (quick) {
     // Use INDEX_MERGE.
-    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type() ||
-        QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type() ||
-        QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
-      rs = true;
+    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type()) {
+      type = SDB_JOIN_INDEX_MERGE_SORT_UNION;
+    } else if (QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type()) {
+      type = SDB_JOIN_INDEX_MERGE_ROR_INTERSECT;
+    } else if (QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
+      type = SDB_JOIN_INDEX_MERGE_ROR_UNION;
+    }
+    if (type) {
       goto done;
     }
+
     // Use MULTI_RANGE.
     if (QUICK_SELECT_I::QS_TYPE_RANGE == quick->get_type()) {
       QUICK_RANGE_SEQ_CTX *ctx = (QUICK_RANGE_SEQ_CTX *)rseq;
@@ -304,13 +307,13 @@ bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
       }
       ctx->first = tmp_it;
       if (count > 1) {
-        rs = true;
+        type = SDB_JOIN_MULTI_RANGE;
       }
     }
   }
 
 done:
-  return rs;
+  return type;
 error:
   goto done;
 }
@@ -745,10 +748,8 @@ bool sdb_use_JT_REF_OR_NULL(THD *thd, const TABLE *table) {
   return JT_REF_OR_NULL == tab->type;
 }
 
-// Determing whether to use multi_range_read, include
-// multi_range、index_merge、jt_ref_or_null
-bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
-  bool rs = false;
+sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
+  sdb_join_type type = SDB_JOIN_UNKNOWN;
   int count = 0;
   SQL_SELECT *select = NULL;
   QUICK_SELECT_I *quick = NULL;
@@ -764,18 +765,24 @@ bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
 
   // Use JT_REF_OR_NULL.
   if (JT_REF_OR_NULL == tab->type) {
-    rs = true;
+    type = SDB_JOIN_REF_OR_NULL;
     goto done;
   }
   if ((select = tab->select) && (quick = select->quick)) {
     // Use INDEX_MERGE.
-    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type() ||
-        QUICK_SELECT_I::QS_TYPE_INDEX_INTERSECT == quick->get_type() ||
-        QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type() ||
-        QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
-      rs = true;
+    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type()) {
+      type = SDB_JOIN_INDEX_MERGE_SORT_UNION;
+    } else if (QUICK_SELECT_I::QS_TYPE_INDEX_INTERSECT == quick->get_type()) {
+      type = SDB_JOIN_INDEX_MERGE_SORT_INTERSECT;
+    } else if (QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type()) {
+      type = SDB_JOIN_INDEX_MERGE_ROR_INTERSECT;
+    } else if (QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
+      type = SDB_JOIN_INDEX_MERGE_ROR_UNION;
+    }
+    if (type) {
       goto done;
     }
+
     // Use MULTI_RANGE.
     if (QUICK_SELECT_I::QS_TYPE_RANGE == quick->get_type()) {
       QUICK_RANGE_SEQ_CTX *ctx = (QUICK_RANGE_SEQ_CTX *)rseq;
@@ -786,13 +793,13 @@ bool sdb_use_mrr(THD *thd, range_seq_t rseq) {
       }
       ctx->first = tmp_it;
       if (count > 1) {
-        rs = true;
+        type = SDB_JOIN_MULTI_RANGE;
       }
     }
   }
 
 done:
-  return rs;
+  return type;
 error:
   goto done;
 }
