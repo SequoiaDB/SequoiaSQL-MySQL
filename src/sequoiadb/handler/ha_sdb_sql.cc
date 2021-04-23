@@ -830,17 +830,16 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
   }
   if ((select = tab->select) && (quick = select->quick)) {
     // Use INDEX_MERGE.
-    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type(){
+    if (QUICK_SELECT_I::QS_TYPE_INDEX_MERGE == quick->get_type()) {
       type = SDB_JOIN_INDEX_MERGE_SORT_UNION;
-    }
-    else if(QUICK_SELECT_I::QS_TYPE_INDEX_INTERSECT == quick->get_type()) {
-      type = SDB_JOIN_INDEX_MERGE_SORT_INTERSECT;   
-    }else if(QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type()) {
+    } else if (QUICK_SELECT_I::QS_TYPE_INDEX_INTERSECT == quick->get_type()) {
+      type = SDB_JOIN_INDEX_MERGE_SORT_INTERSECT;
+    } else if (QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == quick->get_type()) {
       type = SDB_JOIN_INDEX_MERGE_ROR_INTERSECT;
-    }else if(QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
+    } else if (QUICK_SELECT_I::QS_TYPE_ROR_UNION == quick->get_type()) {
       type = SDB_JOIN_INDEX_MERGE_ROR_UNION;
     }
-    if(SDB_JOIN_UNKNOWN != type) {
+    if (SDB_JOIN_UNKNOWN != type) {
       goto done;
     }
 
