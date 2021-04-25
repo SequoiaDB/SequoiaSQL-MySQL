@@ -379,21 +379,21 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
             char buff[MAX_FIELD_WIDTH] = {0};
             String str(buff, sizeof(buff), item_val->charset_for_protocol());
             String conv_str;
-            String *pStr = NULL;
-            pStr = item_val->val_str(&str);
-            if (NULL == pStr) {
+            String *p_str = NULL;
+            p_str = item_val->val_str(&str);
+            if (NULL == p_str) {
               rc = SDB_ERR_INVALID_ARG;
               goto error;
             }
-            if (!my_charset_same(pStr->charset(), &SDB_CHARSET)) {
-              rc = sdb_convert_charset(*pStr, conv_str, &SDB_CHARSET);
+            if (!my_charset_same(p_str->charset(), &SDB_CHARSET)) {
+              rc = sdb_convert_charset(*p_str, conv_str, &SDB_CHARSET);
               if (rc) {
                 goto error;
               }
-              pStr = &conv_str;
+              p_str = &conv_str;
             }
 
-            rc = decimal.fromString(pStr->c_ptr());
+            rc = decimal.fromString(p_str->c_ptr());
             if (0 != rc) {
               rc = SDB_ERR_INVALID_ARG;
               goto error;
@@ -416,7 +416,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
     case MYSQL_TYPE_STRING:
     case MYSQL_TYPE_BLOB: {
       if (item_val->result_type() == STRING_RESULT && !field->binary()) {
-        String *pStr = NULL;
+        String *p_str = NULL;
         String conv_str;
         char buff[MAX_FIELD_WIDTH] = {0};
         String buf;
@@ -445,7 +445,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
               rc = SDB_ERR_COND_UNEXPECTED_ITEM;
               goto error;
             }
-            pStr = &buf;
+            p_str = &buf;
           }
 #endif
         }
@@ -462,51 +462,66 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
           goto error;
         }
 
-        if (!pStr) {
-          pStr = item_val->val_str(&str);
-          if (NULL == pStr) {
+        if (!p_str) {
+          p_str = item_val->val_str(&str);
+          if (NULL == p_str) {
             rc = SDB_ERR_INVALID_ARG;
             break;
           }
         }
 
-        if (!my_charset_same(pStr->charset(), &my_charset_bin)) {
-          if (!my_charset_same(pStr->charset(), &SDB_CHARSET)) {
-            rc = sdb_convert_charset(*pStr, conv_str, &SDB_CHARSET);
+        if (!my_charset_same(p_str->charset(), &my_charset_bin)) {
+          if (!my_charset_same(p_str->charset(), &SDB_CHARSET)) {
+            rc = sdb_convert_charset(*p_str, conv_str, &SDB_CHARSET);
             if (rc) {
               break;
             }
-            pStr = &conv_str;
+            p_str = &conv_str;
           }
 
           if (MYSQL_TYPE_STRING == field->type() ||
               MYSQL_TYPE_VAR_STRING == field->type()) {
             // Trailing space of CHAR/ENUM/SET condition should be stripped.
-            pStr->strip_sp();
+            p_str->strip_sp();
           }
         }
 
         if (MYSQL_TYPE_SET == field->real_type() ||
             MYSQL_TYPE_ENUM == field->real_type()) {
-          rc = SDB_ERR_COND_UNEXPECTED_ITEM;
-          /*Field_enum *field_enum = (Field_enum *)field;
-          for (uint32 i = 0; i < field_enum->typelib->count; i++) {
-            if (0 ==
-                strcmp(field_enum->typelib->type_names[i], pStr->c_ptr())) {
-              BSON_APPEND(field_name, i + 1, obj, arr_builder);
-              break;
+          // Convert SET / ENUM from string to integer
+          Field *converter = sdb_field_clone(field, &field->table->mem_root);
+          if (NULL == converter) {
+            rc = HA_ERR_OUT_OF_MEM;
+            break;
+          }
+          my_bitmap_map *org_sets[2];
+          dbug_tmp_use_all_columns(converter->table, org_sets,
+                                   converter->table->read_set,
+                                   converter->table->write_set);
+          type_conversion_status status = converter->store(
+              p_str->c_ptr(), p_str->length(), p_str->charset());
+          if (TYPE_OK == status) {
+            try {
+              BSON_APPEND(field_name, converter->val_int(), obj, arr_builder);
+            } catch (std::exception) {
+              rc = SDB_ERR_COND_UNEXPECTED_ITEM;
             }
-          }*/
+          } else {
+            rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+          }
+          dbug_tmp_restore_column_maps(converter->table->read_set,
+                                       converter->table->write_set, org_sets);
+          delete converter;
           break;
         }
 
         if (NULL == arr_builder) {
           bson::BSONObjBuilder obj_builder;
-          obj_builder.appendStrWithNoTerminating(field_name, pStr->ptr(),
-                                                 pStr->length());
+          obj_builder.appendStrWithNoTerminating(field_name, p_str->ptr(),
+                                                 p_str->length());
           obj = obj_builder.obj();
         } else {
-          arr_builder->append(pStr->c_ptr());
+          arr_builder->append(p_str->c_ptr());
         }
       } else {
         rc = SDB_ERR_COND_UNEXPECTED_ITEM;

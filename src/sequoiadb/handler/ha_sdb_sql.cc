@@ -459,6 +459,10 @@ bool sdb_field_has_update_def_func(const Field *field) {
   return field->has_update_default_function();
 }
 
+Field *sdb_field_clone(Field *field, MEM_ROOT *root) {
+  return field->clone(root);
+}
+
 Item *sdb_get_gcol_item(const Field *field) {
   DBUG_ASSERT(field->gcol_info && field->gcol_info->expr_item);
   return field->gcol_info->expr_item;
@@ -1014,6 +1018,10 @@ bool sdb_field_has_insert_def_func(const Field *field) {
 bool sdb_field_has_update_def_func(const Field *field) {
   return field->unireg_check == Field::TIMESTAMP_UN_FIELD ||
          field->unireg_check == Field::TIMESTAMP_DNUN_FIELD;
+}
+
+Field *sdb_field_clone(Field *field, MEM_ROOT *root) {
+  return field->clone(root, (my_ptrdiff_t)0);
 }
 
 Item *sdb_get_gcol_item(const Field *field) {

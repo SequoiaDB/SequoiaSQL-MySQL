@@ -295,6 +295,8 @@ bool sdb_field_has_insert_def_func(const Field *field);
 
 bool sdb_field_has_update_def_func(const Field *field);
 
+Field *sdb_field_clone(Field *field, MEM_ROOT *root);
+
 Item *sdb_get_gcol_item(const Field *field);
 
 MY_BITMAP *sdb_get_base_columns_map(const Field *field);
