@@ -910,6 +910,7 @@ a	b	c
 5	abcd2e	testc2
 10	ccccc	testc3
 11	helloworld	helloworld
+12	string	string
 SELECT a FROM t1 WHERE b BETWEEN "abcd1e" AND "xxyyzz" ORDER BY a DESC LIMIT 7;
 a
 12
