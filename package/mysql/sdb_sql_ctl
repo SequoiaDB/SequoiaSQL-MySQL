@@ -606,9 +606,9 @@ function start_inst()
    local start_line=0
    local end_line=0
    local file_exist=false
-   test -f $CTL_LOG && file_exist=true
+   test -f $SQLLOG && file_exist=true
    if [ $file_exist == true -a "$NEED_PRINTSCREEN" == true ]; then
-      start_line=`cat $CTL_LOG | wc -l`
+      start_line=`cat $SQLLOG | wc -l`
    fi
    exec_cmd "$BIN_PATH/mysqld_safe --defaults-file=$SQLDATA/auto.cnf >> $SQLLOG 2>&1 & "
    local re=$!
@@ -616,12 +616,12 @@ function start_inst()
    wait_for_process "start" "$re" "$pid_file"
    local rc=$?
    if [ "$NEED_PRINTSCREEN" == true ]; then
-      end_line=`cat $CTL_LOG | wc -l`
+      end_line=`cat $SQLLOG | wc -l`
    fi
    if [ "$NEED_PRINTSCREEN" == true ]; then
-      `cat $CTL_LOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
+      `cat $SQLLOG | head -n $(($end_line+1)) | tail -n +$(($start_line+1)) >&2`
    fi
-   test $rc -ne 0 && { echo "ERROR: Fail to start, please verify log $CTL_LOG" >&2 && return 16; }
+   test $rc -ne 0 && { echo "ERROR: Fail to start, please verify log $SQLLOG" >&2 && return 16; }
    
    #check
    for ((i=0; i<15; i++));
