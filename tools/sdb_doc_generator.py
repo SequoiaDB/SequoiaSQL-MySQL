@@ -51,7 +51,8 @@ max_prepared_stmt_count=128000\n
 sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,\
 NO_ENGINE_SUBSTITUTION\n
 character_set_server=utf8mb4\n
-collation_server=utf8mb4_bin
+collation_server=utf8mb4_bin\n
+lower_case_table_names=1
 '''
 
 MY_CNF_DEFAULT_STORAGE = "\ndefault_storage_engine=SequoiaDB\n"
