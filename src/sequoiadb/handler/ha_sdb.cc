@@ -666,7 +666,7 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
     use_group_and_agg_func = true;
   }
   const bool use_index_merge_and = SDB_JOIN_INDEX_MERGE_ROR_INTERSECT == type ||
-                                           SDB_JOIN_INDEX_MERGE_SORT_INTERSECT
+                                           SDB_JOIN_INDEX_MERGE_SORT_INTERSECT == type
                                        ? true
                                        : false;
 
