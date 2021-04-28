@@ -513,10 +513,11 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
   if (join->sort_and_group && !join->tmp_table_param.precomputed_group_by) {
     use_group_and_agg_func = true;
   }
-  const bool use_index_merge_and = SDB_JOIN_INDEX_MERGE_ROR_INTERSECT == type ||
-                                           SDB_JOIN_INDEX_MERGE_SORT_INTERSECT
-                                       ? true
-                                       : false;
+  const bool use_index_merge_and =
+      SDB_JOIN_INDEX_MERGE_ROR_INTERSECT == type ||
+              SDB_JOIN_INDEX_MERGE_SORT_INTERSECT == type
+          ? true
+          : false;
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       use_distinct || calc_found_rows || use_group_and_agg_func ||
@@ -3076,7 +3077,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
 
   if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
       sdb_is_single_table(ha_thd())) {
-    sdb_join_type type = SDB_JOIN_UNKNOWN;
+    sdb_join_type type = sdb_get_join_type(ha_thd(), mrr_iter);
     if (sdb_can_push_down_limit(ha_thd(), sdb_condition, type)) {
       // org_num_to_return/org_num_to_skip keep the initial value for easy
       // printing debug log.
