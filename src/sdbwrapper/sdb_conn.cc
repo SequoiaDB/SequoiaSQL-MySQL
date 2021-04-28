@@ -281,7 +281,8 @@ int Sdb_conn::connect() {
       session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
       session_attrs->set_trans_use_rollback_segments(
           sdb_use_rollback_segments(current_thd), true);
-      session_attrs->set_preferred_strict(sdb_preferred_strict(current_thd));
+      session_attrs->set_preferred_strict(sdb_preferred_strict(current_thd),
+                                          true);
       rc = set_my_session_attr();
       if (SDB_ERR_OK != rc) {
         const char *err_detail = "Failed to set session attributes";
