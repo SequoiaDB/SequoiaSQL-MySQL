@@ -11,30 +11,30 @@ INSERT INTO t1(id,age) VALUES (4,10),(7,16);
 #count(number or field or *)
 SELECT count(1) FROM t1;
 #BUG #SEQUOIASQLMAINSTREAM-982
-#--replace_regex /^([^s]*)\[Note\]/[Note]/
-#--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
 SELECT count(id) FROM t1;
 #BUG #SEQUOIASQLMAINSTREAM-982
-#--replace_regex /^([^s]*)\[Note\]/[Note]/
-#--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
 SELECT count(*) FROM t1;
 #BUG #SEQUOIASQLMAINSTREAM-982
-#--replace_regex /^([^s]*)\[Note\]/[Note]/
-#--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
 #count<expr>
 SELECT count(id + age) FROM t1;
 #seqDB-23521
 --replace_column 1 x  
 SELECT id, count(*) FROM t1;
 #BUG #SEQUOIASQLMAINSTREAM-982 
-#--replace_regex /^([^s]*)\[Note\]/[Note]/
-#--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
 #seqDB-23510
 #where can pushdown
 SELECT count(1) FROM t1 WHERE id >= 4;
 #BUG #SEQUOIASQLMAINSTREAM-982
-#--replace_regex /^([^s]*)\[Note\]/[Note]/
-#--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
 SELECT count(name) FROM t1 WHERE id <= 3;
 --replace_regex /^([^s]*)\[Note\]/[Note]/
 --exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err

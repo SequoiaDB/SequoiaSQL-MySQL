@@ -13658,21 +13658,31 @@ INSERT INTO t1(id,age) VALUES (4,10),(7,16);
 SELECT count(1) FROM t1;
 count(1)
 10
+[Note] SequoiaDB: optimizer count: 1, condition: {}
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
 SELECT count(id) FROM t1;
 count(id)
 10
+[Note] SequoiaDB: optimizer count: 1, condition: { "id": { "$isnull": 0 } }
+[Note] SequoiaDB: Query message: condition[{ "id": { "$isnull": 0 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
 SELECT count(*) FROM t1;
 count(*)
 10
+[Note] SequoiaDB: optimizer count: 1, condition: {}
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
 SELECT count(id + age) FROM t1;
 count(id + age)
 10
 SELECT id, count(*) FROM t1;
 id	count(*)
 x	10
+[Note] SequoiaDB: optimizer count: 1, condition: {}
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
 SELECT count(1) FROM t1 WHERE id >= 4;
 count(1)
 5
+[Note] SequoiaDB: optimizer count: 1, condition: { "id": { "$gte": 4 } }
+[Note] SequoiaDB: Query message: condition[{ "id": { "$gte": 4 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0]
 SELECT count(name) FROM t1 WHERE id <= 3;
 count(name)
 5
