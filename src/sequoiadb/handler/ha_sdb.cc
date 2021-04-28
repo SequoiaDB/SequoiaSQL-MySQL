@@ -665,10 +665,11 @@ bool sdb_can_push_down_limit(THD *thd, ha_sdb_cond_ctx *sdb_condition,
   if (join->sort_and_group && !join->tmp_table_param.precomputed_group_by) {
     use_group_and_agg_func = true;
   }
-  const bool use_index_merge_and = SDB_JOIN_INDEX_MERGE_ROR_INTERSECT == type ||
-                                           SDB_JOIN_INDEX_MERGE_SORT_INTERSECT == type
-                                       ? true
-                                       : false;
+  const bool use_index_merge_and =
+      SDB_JOIN_INDEX_MERGE_ROR_INTERSECT == type ||
+              SDB_JOIN_INDEX_MERGE_SORT_INTERSECT == type
+          ? true
+          : false;
 
   if (use_having_condition || (use_where_condition && !where_cond_push) ||
       use_distinct || calc_found_rows || use_group_and_agg_func ||

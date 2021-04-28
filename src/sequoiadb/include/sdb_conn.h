@@ -44,17 +44,16 @@ class Sdb_session_attrs {
 
   void reset() {
     last_trans_isolation = SDB_TRANS_ISO_INVALID;
-    last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVIAD;
+    last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVALID;
     last_trans_auto_commit = SDB_DEFAULT_TRANS_AUTO_COMMIT;
     last_trans_use_rollback_segments = SDB_DEFAULT_TRANS_USE_RBS;
     last_check_collection_version = false;
-    strncpy(last_prefer_inst, SDB_DEFAULT_PREFERRED_INSTANCE,
+    strncpy(last_prefer_inst, SDB_PREFERRED_INSTANCE_INVALID,
             STRING_BUFFER_USUAL_SIZE);
-    strncpy(last_prefer_inst_mode, SDB_DEFAULT_PREFERRED_INSTANCE_MODE,
+    strncpy(last_prefer_inst_mode, SDB_PREFERRED_INSTANCE_MODE_INVALID,
             SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE);
-    last_prefer_inst_mode[SDB_PREFERRED_INSTANCE_MODE_MAX_SIZE - 1] = '\0';
     last_prefer_strict = SDB_DEFAULT_PREFERRED_STRICT;
-    last_prefer_period = SDB_DEFAULT_PREFERRED_PERIOD;
+    last_prefer_period = SDB_PREFERRED_PERIOD_INVALID;
     attr_count = 0;
     source_str[0] = '\0';
     trans_isolation = SDB_TRANS_ISO_RR;
@@ -177,8 +176,8 @@ class Sdb_session_attrs {
     }
   }
 
-  inline void set_preferred_strict(bool preferred_strict) {
-    if (last_prefer_strict != preferred_strict) {
+  inline void set_preferred_strict(bool preferred_strict, bool init = false) {
+    if (init || last_prefer_strict != preferred_strict) {
       prefer_strict = preferred_strict;
       set_attrs_mask(SDB_SESSION_ATTR_PREFERRED_STRICT_MASK);
       attr_count++;

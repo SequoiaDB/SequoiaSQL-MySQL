@@ -298,7 +298,8 @@ int Sdb_conn::connect(const char *conn_addr) {
       session_attrs->set_source(hostname, sdb_proc_id(),
                                 (ulonglong)thread_id());
       session_attrs->set_trans_auto_rollback(false);
-      session_attrs->set_preferred_strict(sdb_preferred_strict(current_thd));
+      session_attrs->set_preferred_strict(sdb_preferred_strict(current_thd),
+                                          true);
 
       /* Server HA conn:
          1. use transaction.
