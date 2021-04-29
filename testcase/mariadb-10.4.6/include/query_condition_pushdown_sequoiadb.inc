@@ -2090,8 +2090,10 @@ select * from t1 where a < c;
 --sorted_result
 select * from t1 where abs(a) = 18446744073709551615;
 --source include/query_pushdown_condition_sequoiadb.inc
+#BUG #SEQUOIASQLMAINSTREAM-763
 --sorted_result
 select * from t1 where a > -1;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 create index a on t1(a);
 
@@ -2135,8 +2137,10 @@ select * from t1 where a < c;
 
 --sorted_result
 select * from t1 where abs(a) = 18446744073709551615;
+#BUG #SEQUOIASQLMAINSTREAM-763
 --sorted_result
 select * from t1 where a > -1;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 select * from t1 order by a desc;
 select * from t1 order by a limit 1 offset 2;

@@ -4313,6 +4313,7 @@ id	a	b	c
 4	18446744073709551615	4	18446744073709551616.0
 5	18446744073709551613	5	18446744073709551612.0
 6	18446744073709551614	6	18446744073709551614.0
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": -1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 create index a on t1(a);
 select * from t1 where a is null;
 id	a	b	c
@@ -4399,6 +4400,7 @@ id	a	b	c
 4	18446744073709551615	4	18446744073709551616.0
 5	18446744073709551613	5	18446744073709551612.0
 6	18446744073709551614	6	18446744073709551614.0
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": -1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 order by a desc;
 id	a	b	c
 4	18446744073709551615	4	18446744073709551616.0
