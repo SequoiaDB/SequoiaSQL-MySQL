@@ -159,6 +159,14 @@ static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
   return rc;
 }
 
+void clear_udf_init_side_effect() {
+  ha_sql_stmt_info *sql_info = NULL;
+  get_sql_stmt_info(&sql_info);
+  DBUG_ASSERT(NULL != sql_info);
+  my_hash_reset(&sql_info->dml_checked_objects);
+  my_hash_free(&sql_info->dml_checked_objects);
+}
+
 // return fixed string if it's 'create/grant/alter user' sql command
 // it may contain a plaintext string, it should not be written to any log
 static inline const char *query_without_password(THD *thd,

@@ -1366,6 +1366,10 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
 #ifdef HAVE_DLOPEN
   // reload UDF function from mysql.func
   udf_init();
+  // clear side effect of 'udf_init', 'udf_init' will invoke
+  // 'persist_sql_stmt' and init "st_sql_stmt_info::dml_checked_objects"
+  // but no free operation on it
+  clear_udf_init_side_effect();
 #endif
 
   // execute flush privileges, update cache for 'mysql.user'
