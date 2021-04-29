@@ -7301,16 +7301,19 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   }
 
   // get error message from SequoiaDB
-  if (0 == check_sdb_in_thd(ha_thd(), &connection, false) &&
-      0 == connection->get_last_result_obj(error_obj, false)) {
-    detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
-    if (strlen(detail_msg) != 0) {
-      error_msg = detail_msg;
-    } else {
-      desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
-      if (strlen(desp_msg) != 0) {
-        error_msg = desp_msg;
+  if (0 == check_sdb_in_thd(ha_thd(), &connection, false)) {
+    if (0 == connection->get_last_result_obj(error_obj, false)) {
+      detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
+      if (detail_msg[0] != '\0') {
+        error_msg = detail_msg;
+      } else {
+        desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+        if (desp_msg[0] != '\0') {
+          error_msg = desp_msg;
+        }
       }
+    } else if (connection->get_print_screen()) {
+      error_msg = connection->get_err_msg();
     }
   }
 
@@ -7465,6 +7468,10 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   }
 
 done:
+  if (connection) {
+    connection->clear_err_msg();
+    connection->set_print_screen(false);
+  }
   DBUG_VOID_RETURN;
 }
 

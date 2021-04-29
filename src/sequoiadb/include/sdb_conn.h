@@ -391,6 +391,10 @@ class Sdb_conn {
 
   void execute_done() { m_cursor.close(); }
 
+  bool get_print_screen() { return m_print_screen; }
+
+  void set_print_screen(bool print_screen) { m_print_screen = print_screen; }
+
  private:
   int retry(boost::function<int()> func);
 
@@ -412,9 +416,9 @@ class Sdb_conn {
   bool m_check_collection_version;
   char errmsg[SDB_ERR_BUFF_SIZE];
   bool rollback_on_timeout;
-
   Sdb_session_attrs session_attrs;
   bool m_use_default_addr;
+  bool m_print_screen;
 };
 
 #endif
