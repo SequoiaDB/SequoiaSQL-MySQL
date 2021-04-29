@@ -134,7 +134,8 @@ Sdb_conn::Sdb_conn(my_thread_id _tid)
     : m_transaction_on(false),
       m_thread_id(_tid),
       pushed_autocommit(false),
-      m_is_authenticated(false) {
+      m_is_authenticated(false),
+      m_print_screen(false) {
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
 }
@@ -285,13 +286,8 @@ int Sdb_conn::connect() {
                                           true);
       rc = set_my_session_attr();
       if (SDB_ERR_OK != rc) {
+        m_print_screen = true;
         const char *err_detail = "Failed to set session attributes";
-        const char *debug_log_path = NULL;
-#ifdef IS_MYSQL
-        debug_log_path = opt_general_logname;
-#elif IS_MARIADB
-        debug_log_path = log_error_file;
-#endif
         try {
           if (0 == get_last_result_obj(error_obj, false)) {
             err_detail = error_obj.getStringField(SDB_FIELD_DETAIL);
@@ -302,11 +298,7 @@ int Sdb_conn::connect() {
         } catch (std::exception &e) {
           // Use default error message.
         }
-        snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s, rc=%d", err_detail, rc);
-        my_printf_error(
-            rc,
-            "Failed to set session attributes. Please see %s for more details",
-            MYF(0), debug_log_path);
+        snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s", err_detail);
         goto error;
       }
     }
