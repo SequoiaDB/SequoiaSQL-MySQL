@@ -90,3 +90,22 @@ EXPLAIN SELECT * FROM t1 WHERE c = 'abc' OR c IS NULL LIMIT 1,2;
 SELECT * FROM t1 WHERE c = 'abc' OR c IS NULL LIMIT 1,2;
 --source include/query_pushdown_condition_sequoiadb.inc
 DROP TABLE t1,t2,t3;
+#BUG #SEQUOIASQLMAINSTREAM-1007
+CREATE TABLE t1 (
+  tjrq DATE DEFAULT NULL,
+  xh INT(11) DEFAULT NULL,
+  comcode VARCHAR(8) COLLATE utf8mb4_bin DEFAULT NULL,
+  KEY tjrq_index(tjrq),
+  KEY comcode_index(comcode)
+);
+INSERT INTO t1 VALUES ("2021-04-06", 10, '3100'),("2021-04-06", 101, '3100'),("2021-04-06", 101, '3100'),("2021-04-06", 101, '3100'),("2021-05-06", 101, '2100'),("2021-05-06", 101, '2100'),("2021-05-06", 101, '2100'),("2021-05-06", 101, '2100'),("2021-04-06", 101, '2100'),("2021-04-06", 101, '2100');
+EXPLAIN SELECT * FROM t1 WHERE tjrq = '2021-04-06' AND comcode = '2100' LIMIT 2;
+SELECT * FROM t1 WHERE tjrq = '2021-04-06' AND comcode = '2100' LIMIT 2;
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+SET SESSION optimizer_switch="index_merge_intersection=off";
+EXPLAIN SELECT * FROM t1 WHERE tjrq = '2021-04-06' AND comcode = '2100' LIMIT 2;
+SELECT * FROM t1 WHERE tjrq = '2021-04-06' AND comcode = '2100' LIMIT 2;
+--source include/query_pushdown_condition_sequoiadb.inc
+SET SESSION optimizer_switch=default;
+DROP TABLE t1;
