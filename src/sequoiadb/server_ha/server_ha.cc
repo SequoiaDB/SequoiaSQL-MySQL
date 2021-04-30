@@ -3434,6 +3434,7 @@ error:
 }
 
 static void handle_error(int error, ha_sql_stmt_info *sql_info) {
+  DBUG_ASSERT(NULL != sql_info);
   switch (error) {
     case SDB_HA_OOM:
       my_printf_error(SDB_HA_OOM, "HA: Out of memory while persisting SQL log",
@@ -3475,6 +3476,7 @@ static void handle_error(int error, ha_sql_stmt_info *sql_info) {
                       sql_info->err_message);
       break;
   }
+  sql_info->err_message[0] = '\0';
 }
 
 // rebuild create table statement before execution for statement
@@ -3621,8 +3623,12 @@ static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
 
   // get sdb connection
   rc = check_sdb_in_thd(thd, &sdb_conn, true);
-  if (rc) {
+  if (HA_ERR_OUT_OF_MEM == rc) {
     rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    snprintf(sql_info->err_message, HA_BUF_LEN,
+             "Failed to connect sequoiadb, error code %d", rc);
     goto error;
   }
 
@@ -3775,8 +3781,12 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
 
   // get sdb connection
   rc = check_sdb_in_thd(thd, &sdb_conn, true);
-  if (rc) {
+  if (HA_ERR_OUT_OF_MEM == rc) {
     rc = SDB_HA_OOM;
+    goto error;
+  } else if (0 != rc) {
+    snprintf(sql_info->err_message, HA_BUF_LEN,
+             "Failed to connect sequoiadb, error code %d", rc);
     goto error;
   }
 

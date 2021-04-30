@@ -18,6 +18,7 @@
 #include <string>
 #include <memory>
 #include <boost/unordered_set.hpp>
+#include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>
@@ -341,6 +342,115 @@ static int clear_sql_inst_group(ha_tool_args &cmd_args, sdbclient::sdb &conn,
   return rc;
 }
 
+static int get_instance_count(sdbclient::sdb &conn, string orig_name,
+                              long long int &count) {
+  int rc = 0;
+  bson::BSONObj cond;
+  sdbclient::sdbCollectionSpace global_info_cs;
+  sdbclient::sdbCollection registry_cl;
+
+  rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
+  if (SDB_DMS_CS_NOTEXIST == rc) {
+    cout << "Error: global configuration database doesn't exist" << endl;
+    return rc;
+  }
+  HA_TOOL_RC_CHECK(rc, rc,
+                   "Error: failed to get global configuration database '%s', "
+                   "sequoiadb error: %s",
+                   HA_GLOBAL_INFO, ha_sdb_error_string(conn, rc));
+
+  rc = global_info_cs.getCollection(HA_REGISTRY_CL, registry_cl);
+  if (SDB_DMS_NOTEXIST == rc) {
+    cerr << "Error: instance group '" << orig_name << "' doesn't exist" << endl;
+    return rc;
+  }
+  HA_TOOL_RC_CHECK(rc, rc,
+                   "Error: failed to get registry table '%s.%s', "
+                   "sequoiadb error: %s",
+                   HA_GLOBAL_INFO, HA_REGISTRY_CL,
+                   ha_sdb_error_string(conn, rc));
+  try {
+    cond = BSON(HA_FIELD_INSTANCE_GROUP_NAME << orig_name.c_str());
+  } catch (std::exception &e) {
+    cerr << "Error: unexpected error: " << e.what() << endl;
+    return SDB_HA_EXCEPTION;
+  }
+  rc = registry_cl.getCount(count, cond);
+  HA_TOOL_RC_CHECK(rc, rc,
+                   "Error: failed to check if instance group is empty, "
+                   "sequoiadb error: %s",
+                   ha_sdb_error_string(conn, rc));
+  return rc;
+}
+
+static int clear_instance_group_config(ha_tool_args &cmd_args,
+                                       sdbclient::sdb &conn,
+                                       const std::string &orig_name) {
+  // prompt user to check if they really want to delete instance group config
+  if (!cmd_args.force) {
+    string choose;
+    boost::unordered_set<std::string> valid_words;
+    valid_words.insert("yes");
+    valid_words.insert("y");
+    cout << "Do you really want to clear instance group '" << orig_name
+         << "' [y/N]? ";
+    getline(cin, choose);
+    boost::to_lower(choose);
+    if (1 != valid_words.count(choose)) {
+      return 0;
+    }
+
+    // not allow to delete non-empty instance group if 'force' is not set
+    long long int count = 0;
+    int rc = get_instance_count(conn, orig_name, count);
+    if (rc) {
+      return rc;
+    } else if (0 != count) {
+      cerr << "Error: instance group is not empty, please delete it "
+              " with 'force' parameter"
+           << endl;
+      return SDB_HA_INVALID_PARAMETER;
+    }
+  }
+  return clear_sql_inst_group(cmd_args, conn, orig_name);
+}
+
+static int clear_instance_config(ha_tool_args &cmd_args, sdbclient::sdb &conn,
+                                 const std::string &orig_name) {
+  string instance;
+  int rc = 0;
+
+  // clear instance configuration by 'InstanceID'
+  if (cmd_args.is_inst_id_set) {
+    std::ostringstream os;
+    os << cmd_args.inst_id;
+    instance = os.str();
+  } else {  // clear instance configuration by 'HostName:SvcName'
+    std::ostringstream os;
+    // parse instance host service address
+    rc = ha_parse_host(cmd_args.inst_host, cmd_args.inst_hostname,
+                       cmd_args.inst_port);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: 'inst_host' is not in the correct format");
+    os << cmd_args.inst_port;
+    instance = cmd_args.inst_hostname + ":" + os.str();
+  }
+
+  // prompt user to check if they really want to delete instance config
+  if (!cmd_args.force) {
+    string choose;
+    boost::unordered_set<std::string> valid_words;
+    valid_words.insert("yes");
+    valid_words.insert("y");
+    cout << "Do you really want to clear instance '" << instance << "' [y/N]? ";
+    getline(cin, choose);
+    boost::to_lower(choose);
+    if (1 != valid_words.count(choose)) {
+      return 0;
+    }
+  }
+  return clear_sql_instance(cmd_args, conn, orig_name);
+}
+
 int main(int argc, char *argv[]) {
   int rc = 0;
   string orig_name;
@@ -370,50 +480,10 @@ int main(int argc, char *argv[]) {
     }
 
     clear_instance = (cmd_args.is_inst_id_set || !cmd_args.inst_host.empty());
-    // get instance identifier
     if (clear_instance) {
-      string choose;
-      if (cmd_args.is_inst_id_set) {
-        std::ostringstream os;
-        os << cmd_args.inst_id;
-        instance = os.str();
-      } else {
-        std::ostringstream os;
-        // parse instance host service address
-        rc = ha_parse_host(cmd_args.inst_host, cmd_args.inst_hostname,
-                           cmd_args.inst_port);
-        HA_TOOL_RC_CHECK(rc, rc,
-                         "Error: 'inst_host' is not in the correct format");
-        os << cmd_args.inst_port;
-        instance = cmd_args.inst_hostname + ":" + os.str();
-      }
-    }
-
-    // prompt user to check if they really want to delete instance group config
-    if (!cmd_args.force) {
-      string choose;
-      boost::unordered_set<std::string> valid_words;
-      valid_words.insert("yes");
-      valid_words.insert("Y");
-      valid_words.insert("y");
-
-      if (clear_instance) {
-        cout << "Do you really want to clear instance '" << instance
-             << "' [y/N]? ";
-      } else {
-        cout << "Do you really want to clear instance group '" << orig_name
-             << "' [y/N]? ";
-      }
-      getline(cin, choose);
-      if (1 != valid_words.count(choose)) {
-        return 0;
-      }
-    }
-
-    if (clear_instance) {
-      rc = clear_sql_instance(cmd_args, conn, orig_name);
+      rc = clear_instance_config(cmd_args, conn, orig_name);
     } else {
-      rc = clear_sql_inst_group(cmd_args, conn, orig_name);
+      rc = clear_instance_group_config(cmd_args, conn, orig_name);
     }
   } catch (std::exception &e) {
     cerr << "Error: unexpected error: " << e.what() << endl;
