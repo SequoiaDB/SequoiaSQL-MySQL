@@ -660,12 +660,27 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
       continue;
     }
 
+    int src_case_names = 0;
     const char *ip = result.getStringField(HA_FIELD_IP);
     uint port = result.getIntField(HA_FIELD_PORT);
     const char *db_type = result.getStringField(HA_FIELD_DB_TYPE);
     rc = strncmp(db_type, DB_TYPE, strlen(db_type));
     HA_RC_CHECK(rc, error, "HA: Can't sync metadata from '%s' to '%s'", db_type,
                 DB_TYPE);
+
+    // check 'lower_case_table_names' consistency
+    src_case_names = result.getIntField(HA_FIELD_LOWER_CASE_TABLE_NAMES);
+    DBUG_ASSERT(src_case_names >= 0);
+    if (src_case_names != (int)lower_case_table_names) {
+      const char *host_name = result.getStringField(HA_FIELD_HOST_NAME);
+      int port = result.getIntField(HA_FIELD_PORT);
+      rc = SDB_HA_INCONSIST_PARA;
+      sql_print_error(
+          "HA: Current instance 'lower_case_table_names'(%d) is "
+          "different from instance '%s:%d'(%d)",
+          lower_case_table_names, host_name, port, src_case_names);
+      goto error;
+    }
 
     // check if candidated instance is avaliable
     if (is_mysql_available(ip, port, ha_inst_group_user,
@@ -969,6 +984,10 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
       // instance group
       obj_builder.append(HA_FIELD_INSTANCE_ID, instance_id);
     }
+    // add 'lower_case_table_names' to 'HARegistry' table, use to check
+    // 'lower_case_table_names' consistency between instances. Usually, this
+    // variable is not allow to change
+    obj_builder.append(HA_FIELD_LOWER_CASE_TABLE_NAMES, lower_case_table_names);
     // instance id is 0 means that 'myid' does not exists.
     obj = obj_builder.obj();
     rc = registry_cl.insert(obj, hint, 0, &result);

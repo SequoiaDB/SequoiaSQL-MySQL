@@ -602,6 +602,10 @@ uint sdb_sql_errno(THD *thd) {
 const char *sdb_errno_message(THD *thd) {
   return thd->get_stmt_da()->message_text();
 }
+
+char *sdb_thd_strmake(THD *thd, const char *str, size_t length) {
+  return thd->strmake(str, length);
+}
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1192,5 +1196,9 @@ uint sdb_sql_errno(THD *thd) {
 
 const char *sdb_errno_message(THD *thd) {
   return thd->get_stmt_da()->message();
+}
+
+char *sdb_thd_strmake(THD *thd, const char *str, size_t length) {
+  return thd_strmake(thd, str, length);
 }
 #endif

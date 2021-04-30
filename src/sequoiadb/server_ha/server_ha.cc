@@ -102,6 +102,17 @@ bool ha_is_aborting() {
   return aborting_ha;
 }
 
+static const char *check_and_build_lower_case_name(THD *thd, const char *name) {
+  const char *name_alias = name;
+  if (lower_case_table_names) {
+    name_alias = sdb_thd_strmake(thd, name, strlen(name));
+    if (name_alias) {
+      my_casedn_str(files_charset_info, (char *)name_alias);
+    }
+  }
+  return name_alias;
+}
+
 static uchar *cached_record_get_key(ha_cached_record *record, size_t *length,
                                     my_bool not_used MY_ATTRIBUTE((unused))) {
   *length = strlen(record->key);
@@ -465,7 +476,11 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     goto done;
   } else if (SQLCOM_DROP_DB == sql_command) {  // if it's 'DROP DATABASE '
     // add 'X' lock for current database
-    db_name = thd->lex->name.str;
+    db_name = check_and_build_lower_case_name(thd, thd->lex->name.str);
+    if (NULL == db_name) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
     table_name = HA_EMPTY_STRING;
     op_type = HA_OPERATION_TYPE_DB;
     SDB_LOG_DEBUG("HA: Add 'X' lock for database '%s'", db_name);
@@ -782,7 +797,11 @@ static int pre_wait_objects_updated_to_lastest(THD *thd,
   }
 
   if (is_db_meta_sql(thd)) {
-    db_name = thd->lex->name.str;
+    db_name = check_and_build_lower_case_name(thd, thd->lex->name.str);
+    if (NULL == db_name) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
     table_name = HA_EMPTY_STRING;
     op_type = HA_OPERATION_TYPE_DB;
     int sql_command = thd_sql_command(thd);
@@ -1689,7 +1708,12 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       rc = SDB_HA_OOM;
       goto error;
     }
-    sql_info->tables->db_name = thd->lex->name.str;
+    sql_info->tables->db_name =
+        check_and_build_lower_case_name(thd, thd->lex->name.str);
+    if (NULL == sql_info->tables->db_name) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
     sql_info->tables->table_name = HA_EMPTY_STRING;
     sql_info->tables->op_type = HA_OPERATION_TYPE_DB;
     sql_info->tables->cata_version = INVALID_CAT_VERSION;
@@ -1973,8 +1997,18 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         rc = SDB_HA_OOM;
         goto error;
       }
-      ha_tbl_list->db_name = C_STR(sdb_lex_first_select(thd)->db);
-      ha_tbl_list->table_name = thd->lex->name.str;
+
+      {
+        const char *name = C_STR(sdb_lex_first_select(thd)->db);
+        ha_tbl_list->db_name = check_and_build_lower_case_name(thd, name);
+        // thd.name is the table name
+        name = thd->lex->name.str;
+        ha_tbl_list->table_name = check_and_build_lower_case_name(thd, name);
+        if (NULL == ha_tbl_list->db_name || NULL == ha_tbl_list->table_name) {
+          rc = SDB_HA_OOM;
+          goto error;
+        }
+      }
       ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
       ha_tbl_list->cata_version = INVALID_CAT_VERSION;
       ha_tbl_list->is_temporary_table = false;
@@ -3006,8 +3040,13 @@ int get_query_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         db_name = C_STR(sdb_lex_first_select(thd)->db);
         db_name = db_name ? db_name : sdb_thd_db(thd);
       }
-      DBUG_ASSERT(db_name != NULL);
 
+      db_name = check_and_build_lower_case_name(thd, (char *)db_name);
+      if (NULL == db_name) {
+        rc = SDB_HA_OOM;
+        goto error;
+      }
+      DBUG_ASSERT(db_name != NULL);
       ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
       if (NULL == ha_tbl_list) {
         rc = SDB_HA_OOM;
@@ -4558,94 +4597,158 @@ static int write_empty_sql_log_for_object(
   int rc = 0;
   DBUG_ENTER("write_object_empty_log");
   bool write_empty_log = false;
-  bson::BSONObj obj, cond, hint, result;
+  bson::BSONObj obj, cond, hint;
   THD *thd = current_thd;
   char cached_record_key[NAME_LEN * 2 + 20] = {0};
   ha_sql_stmt_info *sql_info = NULL;
+  Sdb_conn lock_conn(0, false);
+  bson::BSONObjBuilder cond_builder, obj_builder;
 
-  cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
-                          << HA_FIELD_TYPE << op_type);
-  rc = obj_state_cl.query(cond);
-  if (rc && HA_ERR_END_OF_FILE != rc) {
-    goto error;
-  }
-  rc = obj_state_cl.next(obj, false);
-  if (rc && HA_ERR_END_OF_FILE != rc) {
-    goto error;
-  }
+  try {
+    cond_builder.append(HA_FIELD_DB, db_name);
+    cond_builder.append(HA_FIELD_TABLE, table_name);
+    cond_builder.append(HA_FIELD_TYPE, op_type);
+    cond = cond_builder.done();
 
-  // rc is 0 or HA_ERR_END_OF_FILE
-  if (HA_ERR_END_OF_FILE == rc) {
-    // can't find object state for current table
-    write_empty_log = true;
-  } else if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
-    // if database SQL Log state exists
-    goto done;
-  } else {
-    // if driver cata version is greater than cata version in 'HAObjectState'
-    // write an empty SQL log, and set 'CataVersion' to driver cata version
-    int object_cata_version = obj.getIntField(HA_FIELD_CAT_VERSION);
-    write_empty_log = (driver_cata_version > object_cata_version);
+    rc = obj_state_cl.query(cond);
+    if (rc && HA_ERR_END_OF_FILE != rc) {
+      goto error;
+    }
+    rc = obj_state_cl.next(obj, false);
+    if (rc && HA_ERR_END_OF_FILE != rc) {
+      goto error;
+    }
+
+    // rc is 0 or HA_ERR_END_OF_FILE
+    if (HA_ERR_END_OF_FILE == rc) {
+      // can't find object state for current table
+      write_empty_log = true;
+    } else if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
+      // if database SQL Log state exists
+      goto done;
+    } else {
+      // if driver cata version is greater than cata version in 'HAObjectState'
+      // write an empty SQL log, and set 'CataVersion' to driver cata version
+      int object_cata_version = obj.getIntField(HA_FIELD_CAT_VERSION);
+      write_empty_log = (driver_cata_version > object_cata_version);
+      if (write_empty_log) {
+        SDB_LOG_DEBUG(
+            "HA: Write an empty log for '%s.%s', new cata version is %d",
+            db_name, table_name, driver_cata_version);
+      }
+    }
+
+    rc = get_sql_stmt_info(&sql_info);
+    if (rc) {
+      goto error;
+    }
+
     if (write_empty_log) {
-      SDB_LOG_DEBUG(
-          "HA: Write an empty log for '%s.%s', new cata version is %d", db_name,
-          table_name, driver_cata_version);
-    }
-  }
+      int sql_id = 0;
+      int charset_num = my_charset_utf8mb4_bin.number;
 
-  rc = get_sql_stmt_info(&sql_info);
-  if (rc) {
+      // wait object state updated to lastest by replay thread
+      rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
+                                          obj_state_cl, sql_info, thd);
+      if (rc) {
+        goto error;
+      }
+
+      rc = lock_conn.connect();
+      if (rc) {
+        snprintf(sql_info->err_message, HA_BUF_LEN, "%s",
+                 lock_conn.get_err_msg());
+        goto error;
+      }
+
+      // start transaction, start query and update global SQLID
+      rc = lock_conn.begin_transaction(ISO_READ_STABILITY);
+      if (rc) {
+        ha_error_string(lock_conn, rc, sql_info->err_message);
+        goto error;
+      }
+
+      // query and update global SQLID, this will add lock on 'HASQLIDGenerator'
+      rc = query_and_update_global_sql_id(&lock_conn, sql_id, sql_info);
+      if (rc) {
+        goto error;
+      }
+      DBUG_ASSERT(sql_id > 0);
+
+      // write empty SQL log
+      obj_builder.reset();
+      obj_builder.append(HA_FIELD_SQL_ID, sql_id);
+      obj_builder.append(HA_FIELD_DB, db_name);
+      obj_builder.append(HA_FIELD_TABLE, table_name);
+      obj_builder.append(HA_FIELD_TYPE, op_type);
+      obj_builder.append(HA_FIELD_SQL, HA_EMPTY_STRING);
+      obj_builder.append(HA_FIELD_OWNER, ha_thread.instance_id);
+      obj_builder.append(HA_FIELD_SESSION_ATTRS, HA_EMPTY_STRING);
+      obj_builder.append(HA_FIELD_CLIENT_CHARSET_NUM, charset_num);
+      obj_builder.append(HA_FIELD_CAT_VERSION, driver_cata_version);
+      obj = obj_builder.done();
+      rc = sql_log_cl.insert(obj, hint);
+      if (rc) {
+        goto error;
+      }
+
+      // commit transaction and release lock on record in 'HASQLIDGenerator'
+      rc = lock_conn.commit_transaction();
+      if (rc) {
+        ha_error_string(lock_conn, rc, sql_info->err_message);
+        goto error;
+      }
+
+      // write 'HAObjectState'
+      cond_builder.reset();
+      cond_builder.append(HA_FIELD_DB, db_name);
+      cond_builder.append(HA_FIELD_TABLE, table_name);
+      cond_builder.append(HA_FIELD_TYPE, op_type);
+      cond = cond_builder.done();
+
+      obj_builder.reset();
+      {
+        bson::BSONObjBuilder sub_builder(obj_builder.subobjStart("$set"));
+        sub_builder.append(HA_FIELD_SQL_ID, sql_id);
+        sub_builder.append(HA_FIELD_CAT_VERSION, driver_cata_version);
+        sub_builder.doneFast();
+      }
+      obj = obj_builder.done();
+      rc = obj_state_cl.upsert(obj, cond);
+      if (rc) {
+        goto error;
+      }
+
+      // write 'HAInstanceObjectState'
+      cond_builder.reset();
+      cond_builder.append(HA_FIELD_INSTANCE_ID, ha_thread.instance_id);
+      cond_builder.append(HA_FIELD_DB, db_name);
+      cond_builder.append(HA_FIELD_TABLE, table_name);
+      cond_builder.append(HA_FIELD_TYPE, op_type);
+      cond = cond_builder.done();
+      rc = inst_obj_state_cl.upsert(obj, cond);
+      if (rc) {
+        goto error;
+      }
+
+      // update cached instance state
+      snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", db_name,
+               table_name, op_type);
+      rc = ha_update_cached_record(cached_record_key, sql_id,
+                                   driver_cata_version);
+    }
+  } catch (std::bad_alloc &e) {
+    rc = SDB_ERR_OOM;
+    SDB_LOG_ERROR("Failed to write empty SQL log for table:%s.%s, exception:%s",
+                  db_name, table_name, e.what());
+    convert_sdb_code(rc);
     goto error;
-  }
-
-  if (write_empty_log) {
-    int sql_id = 0;
-    int charset_num = my_charset_utf8mb4_bin.number;
-
-    // wait object state updated to lastest by replay thread
-    rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
-                                        obj_state_cl, sql_info, thd);
-    if (rc) {
-      goto error;
-    }
-
-    obj = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
-                           << HA_FIELD_TYPE << op_type << HA_FIELD_SQL
-                           << HA_EMPTY_STRING << HA_FIELD_OWNER
-                           << ha_thread.instance_id << HA_FIELD_SESSION_ATTRS
-                           << "" << HA_FIELD_CLIENT_CHARSET_NUM << charset_num
-                           << HA_FIELD_CAT_VERSION << driver_cata_version);
-    rc = sql_log_cl.insert(obj, hint, 0, &result);
-    if (rc) {
-      goto error;
-    }
-    sql_id = result.getIntField(SDB_FIELD_LAST_GEN_ID);
-    DBUG_ASSERT(sql_id > 0);
-    cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
-                            << HA_FIELD_TYPE << op_type);
-    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_CAT_VERSION
-                                              << driver_cata_version));
-    rc = obj_state_cl.upsert(obj, cond);
-    if (rc) {
-      goto error;
-    }
-
-    // write 'HAInstanceObjectState'
-    cond = BSON(HA_FIELD_INSTANCE_ID << ha_thread.instance_id << HA_FIELD_DB
-                                     << db_name << HA_FIELD_TABLE << table_name
-                                     << HA_FIELD_TYPE << op_type);
-    obj = BSON("$set" << BSON(HA_FIELD_SQL_ID << sql_id << HA_FIELD_CAT_VERSION
-                                              << driver_cata_version));
-    rc = inst_obj_state_cl.upsert(obj, cond);
-    if (rc) {
-      goto error;
-    }
-
-    // update cached instance state
-    snprintf(cached_record_key, NAME_LEN * 2 + 20, "%s-%s-%s", db_name,
-             table_name, op_type);
-    rc =
-        ha_update_cached_record(cached_record_key, sql_id, driver_cata_version);
+  } catch (std::exception &e) {
+    SDB_LOG_ERROR("Failed to write empty SQL log for table:%s.%s, exception:%s",
+                  db_name, table_name, e.what());
+    rc = SDB_ERR_BUILD_BSON;
+    convert_sdb_code(rc);
+    goto error;
   }
 done:
   DBUG_RETURN(rc);
@@ -4758,8 +4861,11 @@ int ha_write_empty_sql_log(const char *db_name, const char *table_name,
 done:
   DBUG_RETURN(rc);
 error:
-  ha_error_string(*sdb_conn, rc, sql_info->err_message);
-  sql_info->sdb_conn->rollback_transaction();
+  SDB_LOG_ERROR("Failed to write empty SQL log, rc: %d", rc);
+  if (sql_info && sdb_conn) {
+    ha_error_string(*sdb_conn, rc, sql_info->err_message);
+    sql_info->sdb_conn->rollback_transaction();
+  }
   goto done;
 }
 

@@ -384,4 +384,6 @@ bool sdb_protocal_end_row(Protocol *protocol);
 uint sdb_sql_errno(THD *thd);
 
 const char *sdb_errno_message(THD *thd);
+
+char *sdb_thd_strmake(THD *thd, const char *str, size_t length);
 #endif
