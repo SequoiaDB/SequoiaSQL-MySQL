@@ -47,6 +47,7 @@ class Thd_sdb {
  public:
   static Thd_sdb* seize(THD* thd);
   static void release(Thd_sdb* thd_sdb);
+  void reset();
 
   int recycle_conn();
   inline my_thread_id thread_id() const { return m_thread_id; }

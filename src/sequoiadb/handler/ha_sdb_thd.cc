@@ -703,6 +703,13 @@ void Thd_sdb::release(Thd_sdb *thd_sdb) {
   delete thd_sdb;
 }
 
+void Thd_sdb::reset() {
+  found = 0;
+  updated = 0;
+  deleted = 0;
+  duplicated = 0;
+}
+
 int Thd_sdb::recycle_conn() {
   int rc = SDB_ERR_OK;
   rc = m_conn.connect();
