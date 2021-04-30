@@ -458,8 +458,6 @@ void sdb_set_affected_rows(THD *thd) {
         thd->get_protocol()->has_client_capability(CLIENT_FOUND_ROWS);
     my_ok(thd, has_found_rows ? found : updated, last_insert_id, buff);
     DBUG_PRINT("info", ("%llu records updated", updated));
-    found = 0;
-    updated = 0;
     sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
   }
   // For SQLCOM_DELETE...
@@ -477,12 +475,12 @@ void sdb_set_affected_rows(THD *thd) {
       message_text[0] = saved_char;
       my_ok(thd, deleted, last_insert_id, message_text);
       DBUG_PRINT("info", ("%llu records deleted", deleted));
-      deleted = 0;
       sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
     }
   }
 
 done:
+  thd_sdb->reset();
   DBUG_VOID_RETURN;
 }
 
@@ -1951,14 +1949,14 @@ int ha_sdb::get_found_updated_rows(bson::BSONObj &result, ulonglong *found,
   bson::BSONElement e;
   e = result.getField(SDB_FIELD_UPDATED_NUM);
   if (e.isNumber()) {
-    *found = (ulonglong)e.numberLong();
+    *found += (ulonglong)e.numberLong();
   } else {
     *found = (ulonglong)-1;  // unknown
   }
 
   e = result.getField(SDB_FIELD_MODIFIED_NUM);
   if (e.isNumber()) {
-    *updated = (ulonglong)e.numberLong();
+    *updated += (ulonglong)e.numberLong();
   } else {
     *updated = (ulonglong)-1;  // unknown
   }
@@ -1971,7 +1969,7 @@ int ha_sdb::get_deleted_rows(bson::BSONObj &result, ulonglong *deleted) {
   bson::BSONElement e;
   e = result.getField(SDB_FIELD_DELETED_NUM);
   if (e.isNumber()) {
-    *deleted = (ulonglong)e.numberLong();
+    *deleted += (ulonglong)e.numberLong();
   } else {
     *deleted = (ulonglong)-1;  // unknown
   }
@@ -2839,7 +2837,6 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       (sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_DELETE) &&
       optimize_delete(condition)) {
     first_read = false;
-    thd_sdb->deleted = 0;
     rc = collection->del(condition, hint, FLG_DELETE_RETURNNUM, &result);
     if (!rc) {
       rc = HA_ERR_END_OF_FILE;
@@ -2867,7 +2864,6 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
     }
     if (optimizer_update) {
       first_read = false;
-      thd_sdb->found = thd_sdb->updated = 0;
       rc = collection->update(rule, condition, hint,
                               UPDATE_KEEP_SHARDINGKEY | UPDATE_RETURNNUM,
                               &result);
@@ -4357,7 +4353,6 @@ int ha_sdb::delete_all_rows() {
       goto error;
     }
 
-    thd_sdb->deleted = 0;
     get_deleted_rows(result, &thd_sdb->deleted);
     goto done;
   }
