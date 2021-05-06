@@ -1,11 +1,11 @@
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_event;
+DROP DATABASE IF EXISTS metasync_event;
 connection conn2;
-SHOW CREATE DATABASE metaSync_event;
-ERROR 42000: Unknown database 'metaSync_event'
+SHOW CREATE DATABASE metasync_event;
+ERROR 42000: Unknown database 'metasync_event'
 connection conn1;
-CREATE DATABASE metaSync_event;
-USE metaSync_event;
+CREATE DATABASE metasync_event;
+USE metasync_event;
 CREATE EVENT IF NOT EXISTS e_hourly
 ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 HOUR
 DO
@@ -48,7 +48,7 @@ DO CALL myproc(100, 200);
 Warnings:
 Warning	1105	Event scheduler is switched off, use SET GLOBAL event_scheduler=ON to enable it.
 connection conn2;
-USE metaSync_event;
+USE metasync_event;
 SHOW CREATE EVENT e_hourly;
 Event	sql_mode	time_zone	Create Event	character_set_client	collation_connection	Database Collation
 e_hourly	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	SYSTEM	CREATE DEFINER=`x`@`%` EVENT `e_hourly` ON SCHEDULE AT 'y' ON COMPLETION NOT PRESERVE ENABLE DO UPDATE myschema.mytable SET mycol = mycol + 1	latin1	latin1_swedish_ci	utf8mb4_bin
@@ -130,9 +130,9 @@ SHOW CREATE EVENT e_yearly;
 ERROR HY000: Unknown event 'e_yearly'
 SHOW CREATE EVENT e_call_myproc;
 ERROR HY000: Unknown event 'e_call_myproc'
-DROP DATABASE metaSync_event;
+DROP DATABASE metasync_event;
 connection conn1;
-SHOW CREATE DATABASE metaSync_event;
-ERROR 42000: Unknown database 'metaSync_event'
+SHOW CREATE DATABASE metasync_event;
+ERROR 42000: Unknown database 'metasync_event'
 disconnect conn1;
 disconnect conn2;

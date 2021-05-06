@@ -6,8 +6,8 @@
 # connect to conn1, clear servers in the beginning
 connection conn1;
 --disable_warnings
-DROP SERVER IF EXISTS metaSync_s1;
-DROP SERVER IF EXISTS metaSync_s2;
+DROP SERVER IF EXISTS metasync_s1;
+DROP SERVER IF EXISTS metasync_s2;
 --enable_warnings
 
 # connect to conn2, check servers are cleaned in the beginning
@@ -19,10 +19,10 @@ SELECT * FROM mysql.servers;
 # begin testing
 # create event
 connection conn1;
-CREATE SERVER metaSync_s1 
+CREATE SERVER metasync_s1 
 FOREIGN DATA WRAPPER mysql 
 OPTIONS ( USER 'Remote', HOST '127.0.0.1', DATABASE 'test', SOCKET '/tmp/mysqld.sock', OWNER 'root', PORT 3308 );
-CREATE SERVER metaSync_s2
+CREATE SERVER metasync_s2
 FOREIGN DATA WRAPPER ssql
 OPTIONS ( USER 'Official', HOST '127.0.0.2' );
 
@@ -33,7 +33,7 @@ connection conn2;
 SELECT * FROM mysql.servers;
 
 # alter server
-ALTER SERVER metaSync_s1 OPTIONS (USER 'Origin', SOCKET '/root/mysqld.sock');
+ALTER SERVER metasync_s1 OPTIONS (USER 'Origin', SOCKET '/root/mysqld.sock');
 
 # check metadatas after alter
 #Bug #SEQUOIASQLMAINSTREAM-933
@@ -42,8 +42,8 @@ connection conn1;
 SELECT * FROM mysql.servers;
 
 # drop server 
-DROP SERVER metaSync_s1;
-DROP SERVER IF EXISTS metaSync_s2;
+DROP SERVER metasync_s1;
+DROP SERVER IF EXISTS metasync_s2;
 
 # check metadatas after drop
 #Bug #SEQUOIASQLMAINSTREAM-933

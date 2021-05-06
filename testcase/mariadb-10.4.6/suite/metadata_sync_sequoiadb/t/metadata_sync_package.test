@@ -7,14 +7,14 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_pkg;
+DROP DATABASE IF EXISTS metasync_pkg;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_pkg;
+SHOW CREATE DATABASE metasync_pkg;
 
 # seqDB-22932
 # begin testing
@@ -22,8 +22,8 @@ SHOW CREATE DATABASE metaSync_pkg;
 # create/alter/drop package
 connection conn1;
 SET sql_mode=ORACLE;
-CREATE DATABASE metaSync_pkg;
-USE metaSync_pkg;
+CREATE DATABASE metasync_pkg;
+USE metasync_pkg;
 DELIMITER |;
 CREATE OR REPLACE PACKAGE pkg1 AS
   FUNCTION f1 ( id INT ) RETURN DECIMAL(10,2);
@@ -67,7 +67,7 @@ CREATE PACKAGE pkg_body2 AS
   PROCEDURE p1;
   PROCEDURE p2;
 END; |
-CREATE PACKAGE BODY IF NOT EXISTS metaSync_pkg.pkg_body2 AS
+CREATE PACKAGE BODY IF NOT EXISTS metasync_pkg.pkg_body2 AS
   -- Public routines
   FUNCTION f1 RETURN TEXT AS
   BEGIN
@@ -93,7 +93,7 @@ DELIMITER ;|
 connection conn2;
 --sleep $sleep
 SET sql_mode=ORACLE;
-USE metaSync_pkg;
+USE metasync_pkg;
 --replace_regex /DEFINER=".*"@/DEFINER="x"@/
 SHOW CREATE PACKAGE pkg1;
 --replace_regex /DEFINER=".*"@/DEFINER="x"@/
@@ -107,9 +107,9 @@ SELECT pkg_body2.f2();
 CALL pkg_body2.p1();
 CALL pkg_body2.p2();
 # drop package
-DROP PACKAGE IF EXISTS metaSync_pkg.pkg1; 
+DROP PACKAGE IF EXISTS metasync_pkg.pkg1; 
 DROP PACKAGE pkg2; 
-DROP PACKAGE BODY IF EXISTS metaSync_pkg.pkg_body1; 
+DROP PACKAGE BODY IF EXISTS metasync_pkg.pkg_body1; 
 DROP PACKAGE BODY pkg_body2; 
 SET sql_mode=DEFAULT;
 # check metadatas after drop
@@ -127,12 +127,12 @@ SET sql_mode=DEFAULT;
 
 # clear databases in the ending
 connection conn1;
-DROP DATABASE metaSync_pkg;
+DROP DATABASE metasync_pkg;
 # check databases are cleaned in the ending
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_pkg;
+SHOW CREATE DATABASE metasync_pkg;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

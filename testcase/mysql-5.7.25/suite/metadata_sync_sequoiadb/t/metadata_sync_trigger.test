@@ -6,14 +6,14 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_trigger;
+DROP DATABASE IF EXISTS metasync_trigger;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_trigger;
+SHOW CREATE DATABASE metasync_trigger;
 
 # seqDB-18870
 # begin testing
@@ -21,8 +21,8 @@ SHOW CREATE DATABASE metaSync_trigger;
 # CREATE/DROP TRIGGER
 #
 connection conn1;
-CREATE DATABASE metaSync_trigger;
-USE metaSync_trigger;
+CREATE DATABASE metasync_trigger;
+USE metasync_trigger;
 CREATE TABLE account ( acct_num INT, amount DECIMAL(10,2) );
 CREATE TRIGGER ins_num BEFORE INSERT ON account FOR EACH ROW SET @sum = @sum + NEW.amount;
 SET @sum = 0;
@@ -43,7 +43,7 @@ DELIMITER ;|
 # check metadatas after create
 connection conn2;
 --sleep $sleep
-USE metaSync_trigger;
+USE metasync_trigger;
 SHOW CREATE TABLE account;
 --replace_column 7 x
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
@@ -63,12 +63,12 @@ SHOW CREATE TRIGGER ins_num;
 SHOW CREATE TRIGGER metaSync_delimiter_trigger;
 
 # clear databases in the ending
-DROP DATABASE metaSync_trigger;
+DROP DATABASE metasync_trigger;
 # check databases are cleaned in the ending
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_trigger;
+SHOW CREATE DATABASE metasync_trigger;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

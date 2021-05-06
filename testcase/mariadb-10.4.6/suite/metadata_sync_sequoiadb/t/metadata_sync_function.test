@@ -6,14 +6,14 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_function;
+DROP DATABASE IF EXISTS metasync_function;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_function;
+SHOW CREATE DATABASE metasync_function;
 
 # seqDB-18868
 # begin testing
@@ -21,8 +21,8 @@ SHOW CREATE DATABASE metaSync_function;
 # CREATE/ALTER/DROP FUNCTION
 #
 connection conn1;
-CREATE DATABASE metaSync_function;
-USE metaSync_function;
+CREATE DATABASE metasync_function;
+USE metasync_function;
 # test function definer
 DELIMITER |;                                                      # 定义分隔符，必须要有，可以不是$$
 CREATE DEFINER=`fs`@`%` FUNCTION sp_definer (  s varchar(30) )    # 多个参数用,分割 参数的类型必须是mysql列存在的类型
@@ -89,7 +89,7 @@ DELIMITER ;|
 # check metadatas after create
 connection conn2;
 --sleep $sleep
-USE metaSync_function;
+USE metasync_function;
 SHOW CREATE FUNCTION sp_definer;
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 SHOW CREATE FUNCTION sp_chistics;
@@ -127,12 +127,12 @@ SHOW CREATE FUNCTION sp_case;
 SHOW CREATE FUNCTION sp_aggregate_count;
 
 # clear databases in the ending
-DROP DATABASE metaSync_function;
+DROP DATABASE metasync_function;
 # check databases are cleaned in the ending
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_function;
+SHOW CREATE DATABASE metasync_function;
 
 #seqDB-23359
 --error 1305

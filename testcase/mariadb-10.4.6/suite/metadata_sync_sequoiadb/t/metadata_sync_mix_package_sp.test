@@ -7,13 +7,13 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_mix_pkg_sp;
+DROP DATABASE IF EXISTS metasync_mix_pkg_sp;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_mix_pkg_sp;
+SHOW CREATE DATABASE metasync_mix_pkg_sp;
 
 # seqDB-22947
 # begin testing
@@ -21,14 +21,14 @@ SHOW CREATE DATABASE metaSync_mix_pkg_sp;
 # create/alter/drop package and sp(function, procedure) 
 connection conn1;
 SET sql_mode=ORACLE;
-CREATE DATABASE metaSync_mix_pkg_sp;
-USE metaSync_mix_pkg_sp;
+CREATE DATABASE metasync_mix_pkg_sp;
+USE metasync_mix_pkg_sp;
 DELIMITER |;
 CREATE PACKAGE pkg_body1 AS
   FUNCTION f1 RETURN INT;
   PROCEDURE p1;
 END; |
-CREATE PACKAGE BODY IF NOT EXISTS metaSync_mix_pkg_sp.pkg_body1 AS
+CREATE PACKAGE BODY IF NOT EXISTS metasync_mix_pkg_sp.pkg_body1 AS
   FUNCTION f1 RETURN TEXT AS
   BEGIN
     RETURN 'This is pkg_body1.f1';
@@ -58,7 +58,7 @@ DELIMITER ;|
 # check metadatas after create
 connection conn2;
 SET sql_mode=ORACLE;
-USE metaSync_mix_pkg_sp;
+USE metasync_mix_pkg_sp;
 --replace_regex /DEFINER=".*"@/DEFINER="x"@/
 SHOW CREATE PACKAGE pkg_body1;
 --replace_regex /DEFINER=".*"@/DEFINER="x"@/
@@ -89,11 +89,11 @@ SHOW CREATE FUNCTION f1;
 SHOW CREATE PROCEDURE p1;
 
 # clear databases in the ending
-DROP DATABASE metaSync_mix_pkg_sp;
+DROP DATABASE metasync_mix_pkg_sp;
 # check databases are cleaned in the ending
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_mix_pkg_sp;
+SHOW CREATE DATABASE metasync_mix_pkg_sp;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

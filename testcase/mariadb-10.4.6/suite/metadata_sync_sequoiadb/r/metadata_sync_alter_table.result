@@ -1,11 +1,11 @@
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_alter_tables;
+DROP DATABASE IF EXISTS metasync_alter_tables;
 connection conn2;
-SHOW CREATE DATABASE metaSync_alter_tables;
-ERROR 42000: Unknown database 'metaSync_alter_tables'
+SHOW CREATE DATABASE metasync_alter_tables;
+ERROR 42000: Unknown database 'metasync_alter_tables'
 connection conn1;
-CREATE DATABASE metaSync_alter_tables;
-USE metaSync_alter_tables;
+CREATE DATABASE metasync_alter_tables;
+USE metasync_alter_tables;
 CREATE TABLE t1 ( a INT );
 CREATE TABLE t2 ( a VARCHAR(255) );
 CREATE TABLE t3 ( a INT ) ENGINE = SEQUOIADB;
@@ -26,7 +26,7 @@ ADD PERIOD FOR SYSTEM_TIME(ts, te),
 ADD SYSTEM VERSIONING;
 ALTER ONLINE IGNORE TABLE t7 WAIT 1 ALGORITHM=NOCOPY;
 connection conn2;
-USE metaSync_alter_tables;
+USE metasync_alter_tables;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -70,19 +70,19 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_alter_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_alter_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_alter_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_alter_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_alter_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_alter_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t7' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT );
 CREATE TABLE t2 ( a INT UNIQUE KEY );
@@ -189,17 +189,17 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_alter_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_alter_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_alter_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_alter_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_alter_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t6' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a CHAR(8) DEFAULT NULL );
 CREATE TABLE t2 ( a CHAR(8) PRIMARY KEY );
@@ -261,17 +261,17 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_alter_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_alter_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_alter_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_alter_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_alter_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t6' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT );
 CREATE TABLE t2 ( a INT, b INT, c INT );
@@ -322,13 +322,13 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_alter_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_alter_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_alter_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t4' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT, d INT );
 CREATE TABLE t2 ( a INT COMMENT "a", b INT, c INT );
@@ -469,33 +469,33 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_alter_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_alter_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_alter_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_alter_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_alter_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_alter_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_alter_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t8' doesn't exist
 SHOW CREATE TABLE t9;
-ERROR 42S02: Table 'metaSync_alter_tables.t9' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t9' doesn't exist
 SHOW CREATE TABLE t10;
-ERROR 42S02: Table 'metaSync_alter_tables.t10' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t10' doesn't exist
 SHOW CREATE TABLE t11;
-ERROR 42S02: Table 'metaSync_alter_tables.t11' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t11' doesn't exist
 SHOW CREATE TABLE t12;
-ERROR 42S02: Table 'metaSync_alter_tables.t12' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t12' doesn't exist
 SHOW CREATE TABLE t13;
-ERROR 42S02: Table 'metaSync_alter_tables.t13' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t13' doesn't exist
 SHOW CREATE TABLE t14;
-ERROR 42S02: Table 'metaSync_alter_tables.t14' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t14' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT );
 CREATE TABLE t2 ( a INT, b INT, c INT );
@@ -509,11 +509,11 @@ ALTER TABLE t11 RENAME t13, ALGORITHM = COPY;
 ALTER TABLE t12 RENAME TO t14, ALGORITHM = COPY;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_alter_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_alter_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
@@ -536,9 +536,9 @@ t103	CREATE TABLE `t103` (
   `c` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin MIN_ROWS=10 MAX_ROWS=100
 SHOW CREATE TABLE t11;
-ERROR 42S02: Table 'metaSync_alter_tables.t11' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t11' doesn't exist
 SHOW CREATE TABLE t12;
-ERROR 42S02: Table 'metaSync_alter_tables.t12' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t12' doesn't exist
 SHOW CREATE TABLE t13;
 Table	Create Table
 t13	CREATE TABLE `t13` (
@@ -557,17 +557,17 @@ connection conn1;
 DROP TABLE t4,t13,t14,t101,t103,t_tmp;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_alter_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t4' doesn't exist
 SHOW CREATE TABLE t13;
-ERROR 42S02: Table 'metaSync_alter_tables.t13' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t13' doesn't exist
 SHOW CREATE TABLE t14;
-ERROR 42S02: Table 'metaSync_alter_tables.t14' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t14' doesn't exist
 SHOW CREATE TABLE t101;
-ERROR 42S02: Table 'metaSync_alter_tables.t101' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t101' doesn't exist
 SHOW CREATE TABLE t103;
-ERROR 42S02: Table 'metaSync_alter_tables.t103' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t103' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( id INT NOT NULL, a INT, PRIMARY KEY( id ) ) ENGINE INNODB;
 CREATE TABLE t2 ( id INT ) ENGINE INNODB
@@ -606,13 +606,13 @@ connection conn1;
 DROP TABLE t1,t2;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_alter_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_alter_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_alter_tables.t2' doesn't exist
 connection conn1;
-DROP DATABASE metaSync_alter_tables;
+DROP DATABASE metasync_alter_tables;
 connection conn2;
-SHOW CREATE DATABASE metaSync_alter_tables;
-ERROR 42000: Unknown database 'metaSync_alter_tables'
+SHOW CREATE DATABASE metasync_alter_tables;
+ERROR 42000: Unknown database 'metasync_alter_tables'
 disconnect conn1;
 disconnect conn2;

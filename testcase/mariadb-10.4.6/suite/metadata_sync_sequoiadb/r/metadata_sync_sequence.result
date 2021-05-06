@@ -1,14 +1,14 @@
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_seq_22934;
+DROP DATABASE IF EXISTS metasync_seq_22934;
 connection conn2;
-SHOW CREATE DATABASE metaSync_seq_22934;
-ERROR 42000: Unknown database 'metaSync_seq_22934'
+SHOW CREATE DATABASE metasync_seq_22934;
+ERROR 42000: Unknown database 'metasync_seq_22934'
 connection conn1;
-CREATE DATABASE metaSync_seq_22934;
-USE metaSync_seq_22934;
+CREATE DATABASE metasync_seq_22934;
+USE metasync_seq_22934;
 CREATE SEQUENCE IF NOT EXISTS seq1 MAX_ROWS 10 MIN_ROWS 1 ROW_FORMAT = REDUNDANT SEQUENCE = 1 COMMENT 'create sequence';
 connection conn2;
-USE metaSync_seq_22934;
+USE metasync_seq_22934;
 SHOW CREATE TABLE seq1;
 Table	Create Table
 seq1	CREATE TABLE `seq1` (
@@ -109,7 +109,7 @@ SELECT * FROM seq3_new;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 1001	1	9223372036854775806	1	1	1000	0	0
 SHOW CREATE TABLE seq3;
-ERROR 42S02: Table 'metaSync_seq_22934.seq3' doesn't exist
+ERROR 42S02: Table 'metasync_seq_22934.seq3' doesn't exist
 SELECT NEXT VALUE FOR seq3_new;
 NEXT VALUE FOR seq3_new
 1001
@@ -117,24 +117,24 @@ DROP SEQUENCE IF EXISTS seq1;
 DROP SEQUENCE seq2,seq3_new;
 DROP SEQUENCE /* sequence does not exists */ IF EXISTS seq3_new;
 Warnings:
-Note	4091	Unknown SEQUENCE: 'metaSync_seq_22934.seq3_new'
+Note	4091	Unknown SEQUENCE: 'metasync_seq_22934.seq3_new'
 connection conn2;
 SHOW CREATE TABLE seq1;
-ERROR 42S02: Table 'metaSync_seq_22934.seq1' doesn't exist
+ERROR 42S02: Table 'metasync_seq_22934.seq1' doesn't exist
 SHOW CREATE TABLE seq2;
-ERROR 42S02: Table 'metaSync_seq_22934.seq2' doesn't exist
+ERROR 42S02: Table 'metasync_seq_22934.seq2' doesn't exist
 SHOW CREATE TABLE seq3;
-ERROR 42S02: Table 'metaSync_seq_22934.seq3' doesn't exist
+ERROR 42S02: Table 'metasync_seq_22934.seq3' doesn't exist
 SHOW CREATE TABLE seq3_new;
-ERROR 42S02: Table 'metaSync_seq_22934.seq3_new' doesn't exist
+ERROR 42S02: Table 'metasync_seq_22934.seq3_new' doesn't exist
 SELECT nextval(seq2);
-ERROR 42S02: Table 'metaSync_seq_22934.seq2' doesn't exist
+ERROR 42S02: Table 'metasync_seq_22934.seq2' doesn't exist
 SELECT * FROM seq3;
-ERROR 42S02: Table 'metaSync_seq_22934.seq3' doesn't exist
+ERROR 42S02: Table 'metasync_seq_22934.seq3' doesn't exist
 connection conn1;
-DROP DATABASE metaSync_seq_22934;
+DROP DATABASE metasync_seq_22934;
 connection conn2;
-SHOW CREATE DATABASE metaSync_seq_22934;
-ERROR 42000: Unknown database 'metaSync_seq_22934'
+SHOW CREATE DATABASE metasync_seq_22934;
+ERROR 42000: Unknown database 'metasync_seq_22934'
 disconnect conn1;
 disconnect conn2;

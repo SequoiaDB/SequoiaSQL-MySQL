@@ -1,12 +1,12 @@
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_pkg;
+DROP DATABASE IF EXISTS metasync_pkg;
 connection conn2;
-SHOW CREATE DATABASE metaSync_pkg;
-ERROR 42000: Unknown database 'metaSync_pkg'
+SHOW CREATE DATABASE metasync_pkg;
+ERROR 42000: Unknown database 'metasync_pkg'
 connection conn1;
 SET sql_mode=ORACLE;
-CREATE DATABASE metaSync_pkg;
-USE metaSync_pkg;
+CREATE DATABASE metasync_pkg;
+USE metasync_pkg;
 CREATE OR REPLACE PACKAGE pkg1 AS
 FUNCTION f1 ( id INT ) RETURN DECIMAL(10,2);
 PROCEDURE sp1 ( id INT, amount DECIMAL(10,2) );
@@ -48,7 +48,7 @@ FUNCTION f2 RETURN TEXT;
 PROCEDURE p1;
 PROCEDURE p2;
 END; |
-CREATE PACKAGE BODY IF NOT EXISTS metaSync_pkg.pkg_body2 AS
+CREATE PACKAGE BODY IF NOT EXISTS metasync_pkg.pkg_body2 AS
 -- Public routines
 FUNCTION f1 RETURN TEXT AS
 BEGIN
@@ -70,7 +70,7 @@ END;
 END; |
 connection conn2;
 SET sql_mode=ORACLE;
-USE metaSync_pkg;
+USE metasync_pkg;
 SHOW CREATE PACKAGE pkg1;
 Package	sql_mode	Create Package	character_set_client	collation_connection	Database Collation
 pkg1	PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ORACLE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS,NO_AUTO_CREATE_USER,SIMULTANEOUS_ASSIGNMENT	CREATE DEFINER="x"@"%" PACKAGE "pkg1" AS
@@ -147,9 +147,9 @@ This is pkg_body2.p2
 CALL pkg_body2.p2();
 This is pkg_body2.p2
 This is pkg_body2.p2
-DROP PACKAGE IF EXISTS metaSync_pkg.pkg1;
+DROP PACKAGE IF EXISTS metasync_pkg.pkg1;
 DROP PACKAGE pkg2;
-DROP PACKAGE BODY IF EXISTS metaSync_pkg.pkg_body1;
+DROP PACKAGE BODY IF EXISTS metasync_pkg.pkg_body1;
 DROP PACKAGE BODY pkg_body2;
 SET sql_mode=DEFAULT;
 connection conn1;
@@ -163,9 +163,9 @@ SHOW CREATE PACKAGE BODY pkg_body2;
 ERROR 42000: PACKAGE BODY pkg_body2 does not exist
 SET sql_mode=DEFAULT;
 connection conn1;
-DROP DATABASE metaSync_pkg;
+DROP DATABASE metasync_pkg;
 connection conn2;
-SHOW CREATE DATABASE metaSync_pkg;
-ERROR 42000: Unknown database 'metaSync_pkg'
+SHOW CREATE DATABASE metasync_pkg;
+ERROR 42000: Unknown database 'metasync_pkg'
 disconnect conn1;
 disconnect conn2;

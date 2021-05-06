@@ -1,17 +1,17 @@
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_mix_pkg_sp;
+DROP DATABASE IF EXISTS metasync_mix_pkg_sp;
 connection conn2;
-SHOW CREATE DATABASE metaSync_mix_pkg_sp;
-ERROR 42000: Unknown database 'metaSync_mix_pkg_sp'
+SHOW CREATE DATABASE metasync_mix_pkg_sp;
+ERROR 42000: Unknown database 'metasync_mix_pkg_sp'
 connection conn1;
 SET sql_mode=ORACLE;
-CREATE DATABASE metaSync_mix_pkg_sp;
-USE metaSync_mix_pkg_sp;
+CREATE DATABASE metasync_mix_pkg_sp;
+USE metasync_mix_pkg_sp;
 CREATE PACKAGE pkg_body1 AS
 FUNCTION f1 RETURN INT;
 PROCEDURE p1;
 END; |
-CREATE PACKAGE BODY IF NOT EXISTS metaSync_mix_pkg_sp.pkg_body1 AS
+CREATE PACKAGE BODY IF NOT EXISTS metasync_mix_pkg_sp.pkg_body1 AS
 FUNCTION f1 RETURN TEXT AS
 BEGIN
 RETURN 'This is pkg_body1.f1';
@@ -39,7 +39,7 @@ SELECT CONCAT( 'This is p', id );
 END |
 connection conn2;
 SET sql_mode=ORACLE;
-USE metaSync_mix_pkg_sp;
+USE metasync_mix_pkg_sp;
 SHOW CREATE PACKAGE pkg_body1;
 Package	sql_mode	Create Package	character_set_client	collation_connection	Database Collation
 pkg_body1	PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ORACLE,NO_KEY_OPTIONS,NO_TABLE_OPTIONS,NO_FIELD_OPTIONS,NO_AUTO_CREATE_USER,SIMULTANEOUS_ASSIGNMENT	CREATE DEFINER="x"@"%" PACKAGE "pkg_body1" AS
@@ -98,9 +98,9 @@ SHOW CREATE FUNCTION f1;
 ERROR 42000: FUNCTION f1 does not exist
 SHOW CREATE PROCEDURE p1;
 ERROR 42000: PROCEDURE p1 does not exist
-DROP DATABASE metaSync_mix_pkg_sp;
+DROP DATABASE metasync_mix_pkg_sp;
 connection conn2;
-SHOW CREATE DATABASE metaSync_mix_pkg_sp;
-ERROR 42000: Unknown database 'metaSync_mix_pkg_sp'
+SHOW CREATE DATABASE metasync_mix_pkg_sp;
+ERROR 42000: Unknown database 'metasync_mix_pkg_sp'
 disconnect conn1;
 disconnect conn2;

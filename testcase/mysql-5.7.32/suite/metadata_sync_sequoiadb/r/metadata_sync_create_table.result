@@ -1,23 +1,23 @@
 SET sql_mode = 'ANSI_QUOTES';
 SET character_set_client = utf8;
 SET character_set_connection = utf8;
-DROP DATABASE IF EXISTS metaSync_create_tables;
-DROP DATABASE IF EXISTS "metaSync_中文";
+DROP DATABASE IF EXISTS metasync_create_tables;
+DROP DATABASE IF EXISTS "metasync_中文";
 SET sql_mode=default;
 SET sql_mode = 'ANSI_QUOTES';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
 SET character_set_client = utf8;
 SET character_set_connection = utf8;
-SHOW CREATE DATABASE metaSync_create_tables;
-ERROR 42000: Unknown database 'metaSync_create_tables'
-SHOW CREATE DATABASE "metaSync_中文";
-ERROR 42000: Unknown database 'metaSync_\4E2D\6587'
+SHOW CREATE DATABASE metasync_create_tables;
+ERROR 42000: Unknown database 'metasync_create_tables'
+SHOW CREATE DATABASE "metasync_中文";
+ERROR 42000: Unknown database 'metasync_\4E2D\6587'
 SET sql_mode=default;
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
-CREATE DATABASE metaSync_create_tables;
-USE metaSync_create_tables;
+CREATE DATABASE metasync_create_tables;
+USE metasync_create_tables;
 CREATE TABLE IF NOT EXISTS t1 ( a INT, b SMALLINT, c TINYINT, d MEDIUMINT, e BIGINT );
 CREATE TABLE IF NOT EXISTS t2 ( a DECIMAL(10, 2), b NUMERIC(8,2) );
 CREATE TABLE IF NOT EXISTS t3 ( a FLOAT(10, 2), b DOUBLE );
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS t10 ( a SET("a", "b", "c"), b ENUM("a", "b", "c") );
 CREATE TABLE IF NOT EXISTS t11 ( a SET('a', 'b', 'c'), b ENUM("a", "b", "c") );
 CREATE TABLE IF NOT EXISTS t12 ( a GEOMETRY, b POINT, c LINESTRING, d POLYGON );
 CREATE TABLE IF NOT EXISTS t13 ( a JSON );
-USE metaSync_create_tables;
+USE metasync_create_tables;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -116,31 +116,31 @@ t13	CREATE TABLE `t13` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_create_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t8' doesn't exist
 SHOW CREATE TABLE t9;
-ERROR 42S02: Table 'metaSync_create_tables.t9' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t9' doesn't exist
 SHOW CREATE TABLE t10;
-ERROR 42S02: Table 'metaSync_create_tables.t10' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t10' doesn't exist
 SHOW CREATE TABLE t11;
-ERROR 42S02: Table 'metaSync_create_tables.t11' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t11' doesn't exist
 SHOW CREATE TABLE t12;
-ERROR 42S02: Table 'metaSync_create_tables.t12' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t12' doesn't exist
 SHOW CREATE TABLE t13;
-ERROR 42S02: Table 'metaSync_create_tables.t13' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t13' doesn't exist
 CREATE TABLE t1 ( a VARCHAR(255), INDEX idx( a(10) ASC ) );
 CREATE TABLE t2 ( a VARCHAR(255) KEY );
 CREATE TABLE t3 ( a VARCHAR(255), KEY idx( a(10) DESC ) );
@@ -192,19 +192,19 @@ t7	CREATE TABLE `t7` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 DROP TABLE t1,t2,t3,t4,t5,t6,t7;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 CREATE TABLE t1 ( a INT UNIQUE KEY );
 CREATE TABLE t2 ( a INT PRIMARY KEY );
 CREATE TABLE t3 ( b INT, FOREIGN KEY(b) REFERENCES t1(a) );
@@ -240,15 +240,15 @@ t5	CREATE TABLE `t5` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 DROP TABLE t1,t2,t3,t4,t5;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 CREATE TABLE t1 ( a INT CHECK ( a > 10 ) );
 CREATE TABLE t2 ( a INT KEY, CHECK ( a > 10 ) );
 CREATE TABLE t3 ( a INT NOT NULL DEFAULT 1000 );
@@ -300,21 +300,21 @@ t8	CREATE TABLE `t8` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='sequoiadb:{"table_options":{"ShardingKey":{"a":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1,"AutoIndexId":false,"EnsureShardingIndex":false,"StrictDataMode":true,"Partition":512}}'
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_create_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t8' doesn't exist
 CREATE TABLE t1 ( a INT AUTO_INCREMENT UNIQUE KEY );
 CREATE TABLE t2 ( a INT AUTO_INCREMENT PRIMARY KEY );
 CREATE TABLE t3 ( a INT AUTO_INCREMENT KEY ) AUTO_INCREMENT = 100;
@@ -378,23 +378,23 @@ t9	CREATE TABLE `t9` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin CONNECTION='connect_string'
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_create_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t8' doesn't exist
 SHOW CREATE TABLE t9;
-ERROR 42S02: Table 'metaSync_create_tables.t9' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t9' doesn't exist
 CREATE TABLE t1 ( a VARCHAR(255) ) DATA DIRECTORY = "/opt/sequoiasql/mysql/";
 CREATE TABLE t2 ( a VARCHAR(255) ) DELAY_KEY_WRITE 1 ENCRYPTION "N";
 CREATE TABLE t3 ( a VARCHAR(255) ) INSERT_METHOD first;
@@ -469,29 +469,29 @@ t12	CREATE TABLE `t12` (
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_create_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t8' doesn't exist
 SHOW CREATE TABLE t9;
-ERROR 42S02: Table 'metaSync_create_tables.t9' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t9' doesn't exist
 SHOW CREATE TABLE t10;
-ERROR 42S02: Table 'metaSync_create_tables.t10' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t10' doesn't exist
 SHOW CREATE TABLE t11;
-ERROR 42S02: Table 'metaSync_create_tables.t11' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t11' doesn't exist
 SHOW CREATE TABLE t12;
-ERROR 42S02: Table 'metaSync_create_tables.t12' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t12' doesn't exist
 CREATE TABLE t1 ( a INT, b INT, c INT );
 INSERT INTO t1 VALUES ( 1, 1, 1 );
 INSERT INTO t1 VALUES ( 2, 2, 2 );
@@ -554,22 +554,22 @@ SELECT * FROM t6 ORDER BY a;
 a
 DROP TABLE t1,t2,t3,t4,t5,t6;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SET sql_mode = 'ANSI_QUOTES';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-CREATE DATABASE "metaSync_中文";
-USE "metaSync_中文";
+CREATE DATABASE "metasync_中文";
+USE "metasync_中文";
 CREATE TABLE "t1" ( a INT );
 CREATE TABLE t2 ( a CHAR(1) );
 CREATE TABLE "    t3" ( a CHAR(1) COMMENT 'This is \a Test, \\\'s\b\nn\tt comment分多行nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn' );
@@ -578,7 +578,7 @@ CREATE TABLE "中文表名" ( a CHAR(1) );
 SET sql_mode = 'ANSI_QUOTES';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-USE "metaSync_中文";
+USE "metasync_中文";
 SHOW CREATE TABLE "t1";
 Table	Create Table
 t1	CREATE TABLE "t1" (
@@ -606,59 +606,59 @@ Table	Create Table
 ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 DROP TABLE "t1","t2","    t3","\tt1\nn1\rr1","中文表名";
 SHOW CREATE TABLE "t1";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.t1' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.t1' doesn't exist
 SHOW CREATE TABLE "t2";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.t2' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.t2' doesn't exist
 SHOW CREATE TABLE "    t3";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.    t3' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.    t3' doesn't exist
 SHOW CREATE TABLE "\tt1\nn1\rr1";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.\tt1\nn1\rr1' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.\tt1\nn1\rr1' doesn't exist
 SHOW CREATE TABLE "中文表名";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.\4E2D\6587\8868\540D' doesn't exist
-DROP DATABASE metaSync_create_tables;
-DROP DATABASE "metaSync_中文";
+ERROR 42S02: Table 'metasync_\4E2D\6587.\4E2D\6587\8868\540D' doesn't exist
+DROP DATABASE metasync_create_tables;
+DROP DATABASE "metasync_中文";
 SET sql_mode = default;
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 SET character_set_client = default;
 SET character_set_connection = default;
-SHOW CREATE DATABASE metaSync_create_tables;
-ERROR 42000: Unknown database 'metaSync_create_tables'
-SHOW CREATE DATABASE "metaSync_中文";
-ERROR 42000: Unknown database 'metaSync_\4E2D\6587'
+SHOW CREATE DATABASE metasync_create_tables;
+ERROR 42000: Unknown database 'metasync_create_tables'
+SHOW CREATE DATABASE "metasync_中文";
+ERROR 42000: Unknown database 'metasync_\4E2D\6587'
 SET sql_mode = default;
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 SET character_set_client = default;
 SET character_set_connection = default;
-create database metaSync_create_tables;
-use metaSync_create_tables;
+create database metasync_create_tables;
+use metasync_create_tables;
 create table t(a int);
 drop table t1,t;
-ERROR 42S02: Unknown table 'metaSync_create_tables.t1'
-use metaSync_create_tables;
+ERROR 42S02: Unknown table 'metasync_create_tables.t1'
+use metasync_create_tables;
 show create table t;
-ERROR 42S02: Table 'metaSync_create_tables.t' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t' doesn't exist
 create table tt1(id int);
 create view vv1 as select 1;
 drop table tt111, tt1;
-ERROR 42S02: Unknown table 'metaSync_create_tables.tt111'
+ERROR 42S02: Unknown table 'metasync_create_tables.tt111'
 drop view vv111,vv1;
-ERROR 42S02: Unknown table 'metaSync_create_tables.vv111'
+ERROR 42S02: Unknown table 'metasync_create_tables.vv111'
 show create table tt1;
-ERROR 42S02: Table 'metaSync_create_tables.tt1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.tt1' doesn't exist
 show create table vv1;
-ERROR 42S02: Table 'metaSync_create_tables.vv1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.vv1' doesn't exist
 create table ts1(id int);
 create view vs1 as select 1;
 drop table if exists ts111,ts1;
 Warnings:
-Note	1051	Unknown table 'metaSync_create_tables.ts111'
+Note	1051	Unknown table 'metasync_create_tables.ts111'
 drop view if exists vs111, vs1;
 Warnings:
-Note	1051	Unknown table 'metaSync_create_tables.vs111'
+Note	1051	Unknown table 'metasync_create_tables.vs111'
 show create table ts1;
-ERROR 42S02: Table 'metaSync_create_tables.ts1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.ts1' doesn't exist
 show create table vs1;
-ERROR 42S02: Table 'metaSync_create_tables.vs1' doesn't exist
-drop database metaSync_create_tables;
+ERROR 42S02: Table 'metasync_create_tables.vs1' doesn't exist
+drop database metasync_create_tables;

@@ -1,92 +1,92 @@
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_seq;
+DROP DATABASE IF EXISTS metasync_seq;
 connection conn2;
-SHOW CREATE DATABASE metaSync_seq;
-ERROR 42000: Unknown database 'metaSync_seq'
+SHOW CREATE DATABASE metasync_seq;
+ERROR 42000: Unknown database 'metasync_seq'
 connection conn1;
 set server_ha_wait_sync_timeout = 5;
-CREATE DATABASE metaSync_seq;
-USE metaSync_seq;
+CREATE DATABASE metasync_seq;
+USE metasync_seq;
 CREATE PROCEDURE sp1_nextval( dotime int )
 WHILE dotime DO
 SET dotime = dotime - 1;
-SELECT nextval(metaSync_seq.s1);
+SELECT nextval(metasync_seq.s1);
 END WHILE|
 CREATE PROCEDURE sp2_nextval( dotime int )
 WHILE dotime DO
 SET dotime = dotime - 1;
-SELECT nextval(metaSync_seq.s2);
+SELECT nextval(metasync_seq.s2);
 END WHILE|
 CREATE SEQUENCE s1 MAXVALUE 4000;
 connection conn2;
 set server_ha_wait_sync_timeout = 5;
-SHOW CREATE SEQUENCE metaSync_seq.s1;
+SHOW CREATE SEQUENCE metasync_seq.s1;
 Table	Create Table
 s1	CREATE SEQUENCE `s1` start with 1 minvalue 1 maxvalue 4000 increment by 1 cache 1000 nocycle ENGINE=SequoiaDB
-SELECT * FROM metaSync_seq.s1;
+SELECT * FROM metasync_seq.s1;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 1	1	4000	1	1	1000	0	0
-USE metaSync_seq;
+USE metasync_seq;
 SHOW CREATE PROCEDURE sp1_nextval;
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 sp1_nextval	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`sdbadmin`@`%` PROCEDURE `sp1_nextval`( dotime int )
 WHILE dotime DO
 SET dotime = dotime - 1;
-SELECT nextval(metaSync_seq.s1);
+SELECT nextval(metasync_seq.s1);
 END WHILE	latin1	latin1_swedish_ci	utf8mb4_bin
 SHOW CREATE PROCEDURE sp2_nextval;
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 sp2_nextval	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`sdbadmin`@`%` PROCEDURE `sp2_nextval`( dotime int )
 WHILE dotime DO
 SET dotime = dotime - 1;
-SELECT nextval(metaSync_seq.s2);
+SELECT nextval(metasync_seq.s2);
 END WHILE	latin1	latin1_swedish_ci	utf8mb4_bin
 connection conn1;
 call sp1_nextval(10);
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 2
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 3
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 4
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 5
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 6
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 7
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 8
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 9
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 10
 SELECT * FROM s1;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 1001	1	4000	1	1	1000	0	0
 connection conn2;
 call sp1_nextval(10);
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1001
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1002
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1003
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1004
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1005
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1006
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1007
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1008
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1009
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1010
 SELECT * FROM s1;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
@@ -111,50 +111,50 @@ next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_si
 999	1	4000	1	1	1000	0	0
 connection conn1;
 call sp2_nextval(10);
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 999
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1000
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1001
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1002
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1003
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1004
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1005
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1006
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1007
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1008
 SELECT * FROM s2;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 1999	1	4000	1	1	1000	0	0
 connection conn2;
 call sp2_nextval(10);
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1999
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2000
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2001
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2002
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2003
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2004
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2005
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2006
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2007
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 2008
 SELECT * FROM s2;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
@@ -184,14 +184,14 @@ next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_si
 500	1	2000	500	10	100	1	0
 connection conn1;
 call sp2_nextval(1);
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 500
 SELECT * FROM s2;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 1500	1	2000	500	10	100	1	0
 connection conn2;
 call sp2_nextval(1);
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1500
 SELECT * FROM s2;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
@@ -199,7 +199,7 @@ next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_si
 connection conn1;
 call sp2_nextval(999);
 call sp2_nextval(1);
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1001
 SELECT * FROM s2;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
@@ -207,7 +207,7 @@ next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_si
 connection conn2;
 call sp2_nextval(999);
 call sp2_nextval(1);
-nextval(metaSync_seq.s2)
+nextval(metasync_seq.s2)
 1491
 SELECT * FROM s2;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
@@ -220,25 +220,25 @@ connection conn2;
 ALTER TABLE s2 RENAME TO s1;
 connection conn1;
 call sp1_nextval(1);
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 501
 SELECT * FROM s1;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 1501	501	2000	501	10	100	1	11
 connection conn2;
 call sp1_nextval(1);
-nextval(metaSync_seq.s1)
+nextval(metasync_seq.s1)
 1501
 SELECT * FROM s1;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 2001	501	2000	501	10	100	1	11
 DROP SEQUENCE s2,s11,s1;
-ERROR 42S02: Unknown SEQUENCE: 'metaSync_seq.s2,metaSync_seq.s11'
+ERROR 42S02: Unknown SEQUENCE: 'metasync_seq.s2,metasync_seq.s11'
 connection conn1;
 SHOW CREATE TABLE s1;
-ERROR 42S02: Table 'metaSync_seq.s1' doesn't exist
+ERROR 42S02: Table 'metasync_seq.s1' doesn't exist
 SHOW CREATE TABLE s2;
-ERROR 42S02: Table 'metaSync_seq.s2' doesn't exist
+ERROR 42S02: Table 'metasync_seq.s2' doesn't exist
 connection conn1;
 CREATE SEQUENCE s1;
 connection conn2;
@@ -268,12 +268,12 @@ DROP SEQUENCE s2;
 set server_ha_wait_sync_timeout = 0;
 connection conn2;
 SELECT nextval(s2);
-ERROR 42S02: Table 'metaSync_seq.s2' doesn't exist
+ERROR 42S02: Table 'metasync_seq.s2' doesn't exist
 set server_ha_wait_sync_timeout = 0;
 connection conn1;
-DROP DATABASE metaSync_seq;
+DROP DATABASE metasync_seq;
 connection conn2;
-SHOW CREATE DATABASE metaSync_seq;
-ERROR 42000: Unknown database 'metaSync_seq'
+SHOW CREATE DATABASE metasync_seq;
+ERROR 42000: Unknown database 'metasync_seq'
 disconnect conn1;
 disconnect conn2;

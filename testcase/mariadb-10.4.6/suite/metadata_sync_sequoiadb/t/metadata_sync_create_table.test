@@ -9,8 +9,8 @@ connection conn1;
 SET sql_mode = 'ANSI_QUOTES';
 SET character_set_client = utf8;
 SET character_set_connection = utf8;
-DROP DATABASE IF EXISTS metaSync_create_tables;
-DROP DATABASE IF EXISTS "metaSync_中文";
+DROP DATABASE IF EXISTS metasync_create_tables;
+DROP DATABASE IF EXISTS "metasync_中文";
 SET sql_mode=default;
 --enable_warnings
 
@@ -21,9 +21,9 @@ SET sql_mode = 'ANSI_QUOTES';
 SET character_set_client = utf8;
 SET character_set_connection = utf8;
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_create_tables;
+SHOW CREATE DATABASE metasync_create_tables;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE "metaSync_中文";
+SHOW CREATE DATABASE "metasync_中文";
 SET sql_mode=default;
 
 # seqDB-18858
@@ -33,10 +33,10 @@ SET sql_mode=default;
 #
 # test create table with all datatypes
 connection conn1;
-CREATE DATABASE metaSync_create_tables;
-USE metaSync_create_tables;
+CREATE DATABASE metasync_create_tables;
+USE metasync_create_tables;
 --disable_query_log
-CREATE TABLE IF NOT EXISTS metaSync_reserved ( id INT PRIMARY KEY );
+CREATE TABLE IF NOT EXISTS metasync_reserved ( id INT PRIMARY KEY );
 --enable_query_log
 CREATE TABLE IF NOT EXISTS t1 ( a INT, b SMALLINT, c TINYINT, d MEDIUMINT, e BIGINT );
 CREATE TABLE IF NOT EXISTS t2 ( a DECIMAL(10, 2), b NUMERIC(8,2) );
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS t13 ( a JSON );
 # check metadatas after create
 connection conn2;
 --sleep $sleep
-USE metaSync_create_tables;
+USE metasync_create_tables;
 SHOW CREATE TABLE t1;
 SHOW CREATE TABLE t2;
 SHOW CREATE TABLE t3;
@@ -465,8 +465,8 @@ SHOW CREATE TABLE t7;
 # test set sql_mode='ANSI_QUOTES', table name with ""
 connection conn1;
 SET sql_mode = 'ANSI_QUOTES';
-CREATE DATABASE "metaSync_中文";
-USE "metaSync_中文";
+CREATE DATABASE "metasync_中文";
+USE "metasync_中文";
 CREATE TABLE "t1" ( a INT );
 CREATE TABLE t2 ( a CHAR(1) );
 # seqDB-19225
@@ -478,7 +478,7 @@ CREATE TABLE "中文表名" ( a CHAR(1) );
 connection conn2;
 --sleep $sleep
 SET sql_mode = 'ANSI_QUOTES';
-USE "metaSync_中文";
+USE "metasync_中文";
 SHOW CREATE TABLE "t1";
 SHOW CREATE TABLE "t2";
 SHOW CREATE TABLE "    t3";
@@ -502,8 +502,8 @@ SHOW CREATE TABLE "中文表名";
 
 # clear databases in the ending
 connection conn2;
-DROP DATABASE metaSync_create_tables;
-DROP DATABASE "metaSync_中文";
+DROP DATABASE metasync_create_tables;
+DROP DATABASE "metasync_中文";
 SET sql_mode = default;
 SET character_set_client = default;
 SET character_set_connection = default;
@@ -511,9 +511,9 @@ SET character_set_connection = default;
 connection conn1;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_create_tables;
+SHOW CREATE DATABASE metasync_create_tables;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE "metaSync_中文";
+SHOW CREATE DATABASE "metasync_中文";
 SET sql_mode = default;
 SET character_set_client = default;
 SET character_set_connection = default;
@@ -521,14 +521,14 @@ SET character_set_connection = default;
 #seqDB-23357
 #table
 connection conn1;
-create database metaSync_create_tables;
-use metaSync_create_tables;
+create database metasync_create_tables;
+use metasync_create_tables;
 create table t(a int);
 --error 1051
 drop table t1,t;
 
 connection conn2;
-use metaSync_create_tables;
+use metasync_create_tables;
 --error 1146
 show create table t;
 
@@ -559,7 +559,7 @@ connection conn2;
 show create table ts1;
 --error 1146
 show create table vs1;
-drop database metaSync_create_tables;
+drop database metasync_create_tables;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

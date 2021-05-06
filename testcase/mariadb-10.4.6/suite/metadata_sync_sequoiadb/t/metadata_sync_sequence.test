@@ -7,26 +7,26 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_seq_22934;
+DROP DATABASE IF EXISTS metasync_seq_22934;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_seq_22934;
+SHOW CREATE DATABASE metasync_seq_22934;
 
 # seqDB-22934
 # begin testing
 #
 # create/alter/drop sequence
 connection conn1;
-CREATE DATABASE metaSync_seq_22934;
-USE metaSync_seq_22934;
+CREATE DATABASE metasync_seq_22934;
+USE metasync_seq_22934;
 # create sequence 1
 CREATE SEQUENCE IF NOT EXISTS seq1 MAX_ROWS 10 MIN_ROWS 1 ROW_FORMAT = REDUNDANT SEQUENCE = 1 COMMENT 'create sequence';
 # check metadatas after create
 connection conn2;
-USE metaSync_seq_22934;
+USE metasync_seq_22934;
 SHOW CREATE TABLE seq1;
 SELECT * FROM seq1;
 SELECT NEXT VALUE FOR seq1;
@@ -93,11 +93,11 @@ SELECT * FROM seq3;
 
 # clear databases in the ending
 connection conn1;
-DROP DATABASE metaSync_seq_22934;
+DROP DATABASE metasync_seq_22934;
 # check databases are cleaned in the ending
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_seq_22934;
+SHOW CREATE DATABASE metasync_seq_22934;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

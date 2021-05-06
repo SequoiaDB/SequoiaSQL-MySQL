@@ -6,14 +6,14 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_alter_tables;
+DROP DATABASE IF EXISTS metasync_alter_tables;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_alter_tables;
+SHOW CREATE DATABASE metasync_alter_tables;
 
 # seqDB-18858
 # begin testing
@@ -22,10 +22,10 @@ SHOW CREATE DATABASE metaSync_alter_tables;
 #
 # test alter table comment, charset, engine, tablespace, check, table_options
 connection conn1;
-CREATE DATABASE metaSync_alter_tables;
-USE metaSync_alter_tables;
+CREATE DATABASE metasync_alter_tables;
+USE metasync_alter_tables;
 --disable_query_log
-CREATE TABLE IF NOT EXISTS metaSync_reserved ( id INT PRIMARY KEY );
+CREATE TABLE IF NOT EXISTS metasync_reserved ( id INT PRIMARY KEY );
 --enable_query_log
 CREATE TABLE t1 ( a INT );
 CREATE TABLE t2 ( a VARCHAR(255) );
@@ -50,7 +50,7 @@ ALTER ONLINE IGNORE TABLE t7 WAIT 1 ALGORITHM=NOCOPY;
 # check metadatas after alter
 connection conn2;
 --sleep $sleep
-USE metaSync_alter_tables;
+USE metasync_alter_tables;
 SHOW CREATE TABLE t1;
 SHOW CREATE TABLE t2;
 SHOW CREATE TABLE t3;
@@ -412,12 +412,12 @@ SHOW CREATE TABLE t2;
 
 # clear databases in the ending
 connection conn1;
-DROP DATABASE metaSync_alter_tables;
+DROP DATABASE metasync_alter_tables;
 # check databases are cleaned in the ending
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_alter_tables;
+SHOW CREATE DATABASE metasync_alter_tables;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

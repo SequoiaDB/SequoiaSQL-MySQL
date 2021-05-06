@@ -6,13 +6,13 @@
 # connect to conn1, clear servers in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_seq;
+DROP DATABASE IF EXISTS metasync_seq;
 --enable_warnings
 
 # connect to conn2, check servers are cleaned in the beginning
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_seq; 
+SHOW CREATE DATABASE metasync_seq; 
 
 # seqDB-23058
 # begin testing
@@ -20,18 +20,18 @@ SHOW CREATE DATABASE metaSync_seq;
 connection conn1;
 #SEQUOIASQLMAINSTREAM-949
 set server_ha_wait_sync_timeout = 5;
-CREATE DATABASE metaSync_seq;
-USE metaSync_seq;
+CREATE DATABASE metasync_seq;
+USE metasync_seq;
 DELIMITER |;
 CREATE PROCEDURE sp1_nextval( dotime int )
 WHILE dotime DO
    SET dotime = dotime - 1;
-   SELECT nextval(metaSync_seq.s1);
+   SELECT nextval(metasync_seq.s1);
 END WHILE|
 CREATE PROCEDURE sp2_nextval( dotime int )
 WHILE dotime DO
    SET dotime = dotime - 1;
-   SELECT nextval(metaSync_seq.s2);
+   SELECT nextval(metasync_seq.s2);
 END WHILE|
 DELIMITER ;|
 CREATE SEQUENCE s1 MAXVALUE 4000;
@@ -39,9 +39,9 @@ CREATE SEQUENCE s1 MAXVALUE 4000;
 connection conn2;
 #SEQUOIASQLMAINSTREAM-949
 set server_ha_wait_sync_timeout = 5;
-SHOW CREATE SEQUENCE metaSync_seq.s1;
-SELECT * FROM metaSync_seq.s1;
-USE metaSync_seq;
+SHOW CREATE SEQUENCE metasync_seq.s1;
+SELECT * FROM metasync_seq.s1;
+USE metasync_seq;
 SHOW CREATE PROCEDURE sp1_nextval;
 SHOW CREATE PROCEDURE sp2_nextval;
 # get next value of these instances
@@ -166,11 +166,11 @@ set server_ha_wait_sync_timeout = 0;
 
 # clear databases in the ending
 connection conn1;
-DROP DATABASE metaSync_seq;
+DROP DATABASE metasync_seq;
 # check databases are cleaned in the ending
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_seq;
+SHOW CREATE DATABASE metasync_seq;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

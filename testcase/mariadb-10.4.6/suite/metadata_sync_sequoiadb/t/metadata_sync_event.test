@@ -6,21 +6,21 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_event;
+DROP DATABASE IF EXISTS metasync_event;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_event;
+SHOW CREATE DATABASE metasync_event;
 
 # seqDB-22539
 # begin testing
 # create event
 connection conn1;
-CREATE DATABASE metaSync_event;
-USE metaSync_event;
+CREATE DATABASE metasync_event;
+USE metasync_event;
 CREATE EVENT IF NOT EXISTS e_hourly
     ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 HOUR
     DO
@@ -62,7 +62,7 @@ CREATE OR REPLACE EVENT e_call_myproc
 # check metadatas after create
 connection conn2;
 --sleep $sleep
-USE metaSync_event;
+USE metasync_event;
 
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/ /SCHEDULE AT '.*'/SCHEDULE AT 'y'/
 SHOW CREATE EVENT e_hourly;
@@ -137,12 +137,12 @@ SHOW CREATE EVENT e_yearly;
 SHOW CREATE EVENT e_call_myproc;
 
 # clear databases in the ending
-DROP DATABASE metaSync_event;
+DROP DATABASE metasync_event;
 # check databases are cleaned in the ending
 connection conn1;
 --sleep $sleep
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_event;
+SHOW CREATE DATABASE metasync_event;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

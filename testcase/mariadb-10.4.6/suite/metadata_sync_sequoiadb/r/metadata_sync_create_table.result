@@ -2,21 +2,21 @@ connection conn1;
 SET sql_mode = 'ANSI_QUOTES';
 SET character_set_client = utf8;
 SET character_set_connection = utf8;
-DROP DATABASE IF EXISTS metaSync_create_tables;
-DROP DATABASE IF EXISTS "metaSync_中文";
+DROP DATABASE IF EXISTS metasync_create_tables;
+DROP DATABASE IF EXISTS "metasync_中文";
 SET sql_mode=default;
 connection conn2;
 SET sql_mode = 'ANSI_QUOTES';
 SET character_set_client = utf8;
 SET character_set_connection = utf8;
-SHOW CREATE DATABASE metaSync_create_tables;
-ERROR 42000: Unknown database 'metaSync_create_tables'
-SHOW CREATE DATABASE "metaSync_中文";
-ERROR 42000: Unknown database 'metaSync_\4E2D\6587'
+SHOW CREATE DATABASE metasync_create_tables;
+ERROR 42000: Unknown database 'metasync_create_tables'
+SHOW CREATE DATABASE "metasync_中文";
+ERROR 42000: Unknown database 'metasync_\4E2D\6587'
 SET sql_mode=default;
 connection conn1;
-CREATE DATABASE metaSync_create_tables;
-USE metaSync_create_tables;
+CREATE DATABASE metasync_create_tables;
+USE metasync_create_tables;
 CREATE TABLE IF NOT EXISTS t1 ( a INT, b SMALLINT, c TINYINT, d MEDIUMINT, e BIGINT );
 CREATE TABLE IF NOT EXISTS t2 ( a DECIMAL(10, 2), b NUMERIC(8,2) );
 CREATE TABLE IF NOT EXISTS t3 ( a FLOAT(10, 2), b DOUBLE );
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS t11 ( a SET('a', 'b', 'c'), b ENUM("a", "b", "c") );
 CREATE TABLE IF NOT EXISTS t12 ( a GEOMETRY, b POINT, c LINESTRING, d POLYGON );
 CREATE TABLE IF NOT EXISTS t13 ( a JSON );
 connection conn2;
-USE metaSync_create_tables;
+USE metasync_create_tables;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -118,31 +118,31 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_create_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t8' doesn't exist
 SHOW CREATE TABLE t9;
-ERROR 42S02: Table 'metaSync_create_tables.t9' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t9' doesn't exist
 SHOW CREATE TABLE t10;
-ERROR 42S02: Table 'metaSync_create_tables.t10' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t10' doesn't exist
 SHOW CREATE TABLE t11;
-ERROR 42S02: Table 'metaSync_create_tables.t11' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t11' doesn't exist
 SHOW CREATE TABLE t12;
-ERROR 42S02: Table 'metaSync_create_tables.t12' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t12' doesn't exist
 SHOW CREATE TABLE t13;
-ERROR 42S02: Table 'metaSync_create_tables.t13' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t13' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a VARCHAR(255), INDEX idx( a(10) ASC ) );
 CREATE TABLE t2 ( a VARCHAR(255) KEY );
@@ -198,19 +198,19 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT UNIQUE KEY );
 CREATE TABLE t2 ( a INT PRIMARY KEY );
@@ -250,15 +250,15 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT CHECK ( a > 10 ) );
 CREATE TABLE t2 ( a INT KEY, CHECK ( a > 10 ) );
@@ -340,29 +340,29 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_create_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t8' doesn't exist
 SHOW CREATE TABLE t9;
-ERROR 42S02: Table 'metaSync_create_tables.t9' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t9' doesn't exist
 SHOW CREATE TABLE t10;
-ERROR 42S02: Table 'metaSync_create_tables.t10' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t10' doesn't exist
 SHOW CREATE TABLE t11;
-ERROR 42S02: Table 'metaSync_create_tables.t11' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t11' doesn't exist
 SHOW CREATE TABLE t12;
-ERROR 42S02: Table 'metaSync_create_tables.t12' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t12' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT AUTO_INCREMENT UNIQUE KEY );
 CREATE TABLE t2 ( a INT AUTO_INCREMENT PRIMARY KEY );
@@ -463,27 +463,27 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_create_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t8' doesn't exist
 SHOW CREATE TABLE t9;
-ERROR 42S02: Table 'metaSync_create_tables.t9' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t9' doesn't exist
 SHOW CREATE TABLE t10;
-ERROR 42S02: Table 'metaSync_create_tables.t10' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t10' doesn't exist
 SHOW CREATE TABLE t11;
-ERROR 42S02: Table 'metaSync_create_tables.t11' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t11' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a VARCHAR(255) ) DATA DIRECTORY = "/opt/sequoiasql/mysql/";
 CREATE TABLE t2 ( a VARCHAR(255) ) DELAY_KEY_WRITE 1;
@@ -588,37 +588,37 @@ DROP TABLE IF EXISTS t15;
 DROP TABLE t16 /*drop table t16*/ WAIT 1 RESTRICT;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 SHOW CREATE TABLE t8;
-ERROR 42S02: Table 'metaSync_create_tables.t8' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t8' doesn't exist
 SHOW CREATE TABLE t9;
-ERROR 42S02: Table 'metaSync_create_tables.t9' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t9' doesn't exist
 SHOW CREATE TABLE t10;
-ERROR 42S02: Table 'metaSync_create_tables.t10' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t10' doesn't exist
 SHOW CREATE TABLE t11;
-ERROR 42S02: Table 'metaSync_create_tables.t11' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t11' doesn't exist
 SHOW CREATE TABLE t12;
-ERROR 42S02: Table 'metaSync_create_tables.t12' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t12' doesn't exist
 SHOW CREATE TABLE t13;
-ERROR 42S02: Table 'metaSync_create_tables.t13' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t13' doesn't exist
 SHOW CREATE TABLE t14;
-ERROR 42S02: Table 'metaSync_create_tables.t14' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t14' doesn't exist
 SHOW CREATE TABLE t15;
-ERROR 42S02: Table 'metaSync_create_tables.t15' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t15' doesn't exist
 SHOW CREATE TABLE t16;
-ERROR 42S02: Table 'metaSync_create_tables.t16' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t16' doesn't exist
 connection conn1;
 CREATE TABLE t1 ( a INT, b INT, c INT );
 INSERT INTO t1 VALUES ( 1, 1, 1 );
@@ -695,23 +695,23 @@ connection conn1;
 DROP TABLE t1,t2,t3,t4,t5,t6,t7;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_create_tables.t1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_create_tables.t2' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t2' doesn't exist
 SHOW CREATE TABLE t3;
-ERROR 42S02: Table 'metaSync_create_tables.t3' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t3' doesn't exist
 SHOW CREATE TABLE t4;
-ERROR 42S02: Table 'metaSync_create_tables.t4' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t4' doesn't exist
 SHOW CREATE TABLE t5;
-ERROR 42S02: Table 'metaSync_create_tables.t5' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t5' doesn't exist
 SHOW CREATE TABLE t6;
-ERROR 42S02: Table 'metaSync_create_tables.t6' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t6' doesn't exist
 SHOW CREATE TABLE t7;
-ERROR 42S02: Table 'metaSync_create_tables.t7' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t7' doesn't exist
 connection conn1;
 SET sql_mode = 'ANSI_QUOTES';
-CREATE DATABASE "metaSync_中文";
-USE "metaSync_中文";
+CREATE DATABASE "metasync_中文";
+USE "metasync_中文";
 CREATE TABLE "t1" ( a INT );
 CREATE TABLE t2 ( a CHAR(1) );
 CREATE TABLE "    t3" ( a CHAR(1) COMMENT 'This is \a Test, \\\'s\b\nn\tt comment分多行nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn' );
@@ -719,7 +719,7 @@ CREATE TABLE "\tt1\nn1\rr1" ( a CHAR(1) );
 CREATE TABLE "中文表名" ( a CHAR(1) );
 connection conn2;
 SET sql_mode = 'ANSI_QUOTES';
-USE "metaSync_中文";
+USE "metasync_中文";
 SHOW CREATE TABLE "t1";
 Table	Create Table
 t1	CREATE TABLE "t1" (
@@ -748,65 +748,65 @@ Table	Create Table
 DROP TABLE "t1","t2","    t3","\tt1\nn1\rr1","中文表名";
 connection conn1;
 SHOW CREATE TABLE "t1";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.t1' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.t1' doesn't exist
 SHOW CREATE TABLE "t2";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.t2' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.t2' doesn't exist
 SHOW CREATE TABLE "    t3";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.    t3' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.    t3' doesn't exist
 SHOW CREATE TABLE "\tt1\nn1\rr1";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.\tt1\nn1\rr1' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.\tt1\nn1\rr1' doesn't exist
 SHOW CREATE TABLE "中文表名";
-ERROR 42S02: Table 'metaSync_\4E2D\6587.\4E2D\6587\8868\540D' doesn't exist
+ERROR 42S02: Table 'metasync_\4E2D\6587.\4E2D\6587\8868\540D' doesn't exist
 connection conn2;
-DROP DATABASE metaSync_create_tables;
-DROP DATABASE "metaSync_中文";
+DROP DATABASE metasync_create_tables;
+DROP DATABASE "metasync_中文";
 SET sql_mode = default;
 SET character_set_client = default;
 SET character_set_connection = default;
 connection conn1;
-SHOW CREATE DATABASE metaSync_create_tables;
-ERROR 42000: Unknown database 'metaSync_create_tables'
-SHOW CREATE DATABASE "metaSync_中文";
-ERROR 42000: Unknown database 'metaSync_\4E2D\6587'
+SHOW CREATE DATABASE metasync_create_tables;
+ERROR 42000: Unknown database 'metasync_create_tables'
+SHOW CREATE DATABASE "metasync_中文";
+ERROR 42000: Unknown database 'metasync_\4E2D\6587'
 SET sql_mode = default;
 SET character_set_client = default;
 SET character_set_connection = default;
 connection conn1;
-create database metaSync_create_tables;
-use metaSync_create_tables;
+create database metasync_create_tables;
+use metasync_create_tables;
 create table t(a int);
 drop table t1,t;
-ERROR 42S02: Unknown table 'metaSync_create_tables.t1'
+ERROR 42S02: Unknown table 'metasync_create_tables.t1'
 connection conn2;
-use metaSync_create_tables;
+use metasync_create_tables;
 show create table t;
-ERROR 42S02: Table 'metaSync_create_tables.t' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.t' doesn't exist
 connection conn1;
 create table tt1(id int);
 create view vv1 as select 1;
 drop table tt111, tt1;
-ERROR 42S02: Unknown table 'metaSync_create_tables.tt111'
+ERROR 42S02: Unknown table 'metasync_create_tables.tt111'
 drop view vv111,vv1;
-ERROR 42S02: Unknown VIEW: 'metaSync_create_tables.vv111'
+ERROR 42S02: Unknown VIEW: 'metasync_create_tables.vv111'
 connection conn2;
 show create table tt1;
-ERROR 42S02: Table 'metaSync_create_tables.tt1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.tt1' doesn't exist
 show create table vv1;
-ERROR 42S02: Table 'metaSync_create_tables.vv1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.vv1' doesn't exist
 connection conn1;
 create table ts1(id int);
 create view vs1 as select 1;
 drop table if exists ts111,ts1;
 Warnings:
-Note	1051	Unknown table 'metaSync_create_tables.ts111'
+Note	1051	Unknown table 'metasync_create_tables.ts111'
 drop view if exists vs111, vs1;
 Warnings:
-Note	4092	Unknown VIEW: 'metaSync_create_tables.vs111'
+Note	4092	Unknown VIEW: 'metasync_create_tables.vs111'
 connection conn2;
 show create table ts1;
-ERROR 42S02: Table 'metaSync_create_tables.ts1' doesn't exist
+ERROR 42S02: Table 'metasync_create_tables.ts1' doesn't exist
 show create table vs1;
-ERROR 42S02: Table 'metaSync_create_tables.vs1' doesn't exist
-drop database metaSync_create_tables;
+ERROR 42S02: Table 'metasync_create_tables.vs1' doesn't exist
+drop database metasync_create_tables;
 disconnect conn1;
 disconnect conn2;

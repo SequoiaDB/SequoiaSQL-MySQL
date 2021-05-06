@@ -6,25 +6,25 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_procedure;
-DROP DATABASE IF EXISTS metaSync_scptpkg;
+DROP DATABASE IF EXISTS metasync_procedure;
+DROP DATABASE IF EXISTS metasync_scptpkg;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_procedure;
+SHOW CREATE DATABASE metasync_procedure;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_scptpkg;
+SHOW CREATE DATABASE metasync_scptpkg;
 # seqDB-18869
 # begin testing
 #
 # CREATE/ALTER/DROP PROCEDURE
 #
 connection conn1;
-CREATE DATABASE metaSync_procedure;
-USE metaSync_procedure;
+CREATE DATABASE metasync_procedure;
+USE metasync_procedure;
 # test proc_parameter in, out, inout
 DELIMITER |; 
 CREATE PROCEDURE sp_param_inout ( IN p_in INT, OUT p_out INT, INOUT p_inout INT )
@@ -128,27 +128,27 @@ END|
 # test definer
 CREATE DEFINER = `root`@`localhost` PROCEDURE sp_definer ()
 BEGIN
-   CREATE DATABASE metaSync_scptpkg;
+   CREATE DATABASE metasync_scptpkg;
 
-   DROP TABLE IF EXISTS metaSync_scptpkg.TFW_RELATION;
-   CREATE TABLE metaSync_scptpkg.TFW_RELATION ( ID BIGINT, MENUID INT, ROLEID INT ); 
-   INSERT INTO metaSync_scptpkg.TFW_RELATION ( ID, MENUID, ROLEID ) VALUES ('968410495344181258', '37', '2');
-   INSERT INTO metaSync_scptpkg.TFW_RELATION ( ID, MENUID, ROLEID ) VALUES ('968410495344181259', '38', '2');
-   INSERT INTO metaSync_scptpkg.TFW_RELATION ( ID, MENUID, ROLEID ) VALUES ('968410495344181260', '20040', '2');
+   DROP TABLE IF EXISTS metasync_scptpkg.tfw_relation;
+   CREATE TABLE metasync_scptpkg.tfw_relation ( ID BIGINT, MENUID INT, ROLEID INT ); 
+   INSERT INTO metasync_scptpkg.tfw_relation ( ID, MENUID, ROLEID ) VALUES ('968410495344181258', '37', '2');
+   INSERT INTO metasync_scptpkg.tfw_relation ( ID, MENUID, ROLEID ) VALUES ('968410495344181259', '38', '2');
+   INSERT INTO metasync_scptpkg.tfw_relation ( ID, MENUID, ROLEID ) VALUES ('968410495344181260', '20040', '2');
 
-   DROP TABLE IF EXISTS metaSync_scptpkg.TFW_DICT;
-   CREATE TABLE metaSync_scptpkg.TFW_DICT ( ID BIGINT, CODE TEXT, NUM INT, PID BIGINT, NAME TEXT, TIPS TEXT, VERSION INT, SELECTED INT );
-   SELECT COUNT(1) FROM metaSync_scptpkg.TFW_DICT WHERE CODE = 'SealStatusType' INTO @temp;
+   DROP TABLE IF EXISTS metasync_scptpkg.tfw_dict;
+   CREATE TABLE metasync_scptpkg.tfw_dict ( ID BIGINT, CODE TEXT, NUM INT, PID BIGINT, NAME TEXT, TIPS TEXT, VERSION INT, SELECTED INT );
+   SELECT COUNT(1) FROM metasync_scptpkg.tfw_dict WHERE CODE = 'SealStatusType' INTO @temp;
    IF @temp = 0 THEN
-   INSERT INTO metaSync_scptpkg.TFW_DICT ( ID, CODE, NUM, PID, NAME, TIPS, VERSION, SELECTED ) VALUES ('962499376750526464','SealStatusType','0',NULL,'签章状态','',0,0);
-   INSERT INTO metaSync_scptpkg.TFW_DICT ( ID, CODE, NUM, PID, NAME, TIPS, VERSION, SELECTED ) VALUES ('962499516458598400','SealStatusType','1','962499376750526464','已启用','',0,0);
-   INSERT INTO metaSync_scptpkg.TFW_DICT ( ID, CODE, NUM, PID, NAME, TIPS, VERSION, SELECTED ) VALUES ('962499592304197632','SealStatusType','2','962499376750526464','已禁用','',0,0);
-   INSERT INTO metaSync_scptpkg.TFW_DICT ( ID, CODE, NUM, PID, NAME, TIPS, VERSION, SELECTED ) VALUES ('962499644422619136','SealStatusType','3','962499376750526464','已作废','',0,0);
+   INSERT INTO metasync_scptpkg.tfw_dict ( ID, CODE, NUM, PID, NAME, TIPS, VERSION, SELECTED ) VALUES ('962499376750526464','SealStatusType','0',NULL,'签章状态','',0,0);
+   INSERT INTO metasync_scptpkg.tfw_dict ( ID, CODE, NUM, PID, NAME, TIPS, VERSION, SELECTED ) VALUES ('962499516458598400','SealStatusType','1','962499376750526464','已启用','',0,0);
+   INSERT INTO metasync_scptpkg.tfw_dict ( ID, CODE, NUM, PID, NAME, TIPS, VERSION, SELECTED ) VALUES ('962499592304197632','SealStatusType','2','962499376750526464','已禁用','',0,0);
+   INSERT INTO metasync_scptpkg.tfw_dict ( ID, CODE, NUM, PID, NAME, TIPS, VERSION, SELECTED ) VALUES ('962499644422619136','SealStatusType','3','962499376750526464','已作废','',0,0);
    END IF ;
 
-   SELECT COUNT(1) FROM information_schema.tables WHERE table_schema = "metaSync_scptpkg" AND table_name = 'TFW_INVOKE_API_LOG' INTO @temp ;
+   SELECT COUNT(1) FROM information_schema.tables WHERE table_schema = "metasync_scptpkg" AND table_name = 'tfw_invoke_api_log' INTO @temp ;
    IF @temp = 0 then
-   CREATE TABLE metaSync_scptpkg.TFW_INVOKE_API_LOG (
+   CREATE TABLE metasync_scptpkg.tfw_invoke_api_log (
          ID bigint(24) NOT NULL,
          APPID bigint(24) DEFAULT NULL COMMENT '应用ID',
          APIURI varchar(100) DEFAULT NULL COMMENT '应用接口地址',
@@ -161,9 +161,9 @@ BEGIN
          MESSAGE text COMMENT '异常栈消息',
          PRIMARY KEY (ID)
          ) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4;
-   ALTER TABLE metaSync_scptpkg.TFW_INVOKE_API_LOG ADD INDEX INDEX_INVOKE_API_APPID (APPID); /* 这里创建索引 INDEX_INVOKE_API_APPID*/
-   ALTER TABLE metaSync_scptpkg.TFW_INVOKE_API_LOG ADD INDEX INDEX_INVOKE_API_APIURI (APIURI); # 这里创建索引 INDEX_INVOKE_API_APIURI
-   ALTER TABLE metaSync_scptpkg.TFW_INVOKE_API_LOG ADD INDEX INDEX_INVOKE_API_SUCCEED (SUCCEED); # 这里创建索引 INDEX_INVOKE_API_SUCCEED
+   ALTER TABLE metasync_scptpkg.tfw_invoke_api_log ADD INDEX INDEX_INVOKE_API_APPID (APPID); /* 这里创建索引 INDEX_INVOKE_API_APPID*/
+   ALTER TABLE metasync_scptpkg.tfw_invoke_api_log ADD INDEX INDEX_INVOKE_API_APIURI (APIURI); # 这里创建索引 INDEX_INVOKE_API_APIURI
+   ALTER TABLE metasync_scptpkg.tfw_invoke_api_log ADD INDEX INDEX_INVOKE_API_SUCCEED (SUCCEED); # 这里创建索引 INDEX_INVOKE_API_SUCCEED
    END IF ;
 END|
 DELIMITER ;|
@@ -173,7 +173,7 @@ DELIMITER ;|
 # check metadatas after create
 connection conn2;
 --sleep $sleep
-USE metaSync_procedure;
+USE metasync_procedure;
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 SHOW CREATE PROCEDURE sp_param_inout;
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
@@ -208,12 +208,12 @@ SHOW CREATE TABLE t1;
 SHOW CREATE TABLE t2;
 SHOW CREATE TABLE t3;
 SHOW CREATE TABLE t4;
-SHOW CREATE TABLE metaSync_scptpkg.TFW_RELATION;
-SHOW CREATE TABLE metaSync_scptpkg.TFW_DICT;
-SHOW CREATE TABLE metaSync_scptpkg.TFW_INVOKE_API_LOG;
-SELECT * FROM metaSync_scptpkg.TFW_RELATION ORDER BY ID;
-SELECT * FROM metaSync_scptpkg.TFW_DICT ORDER BY ID;
-SELECT * FROM metaSync_scptpkg.TFW_INVOKE_API_LOG ORDER BY ID;
+SHOW CREATE TABLE metasync_scptpkg.tfw_relation;
+SHOW CREATE TABLE metasync_scptpkg.tfw_dict;
+SHOW CREATE TABLE metasync_scptpkg.tfw_invoke_api_log;
+SELECT * FROM metasync_scptpkg.tfw_relation ORDER BY ID;
+SELECT * FROM metasync_scptpkg.tfw_dict ORDER BY ID;
+SELECT * FROM metasync_scptpkg.tfw_invoke_api_log ORDER BY ID;
 # alter procedure
 DELIMITER |;
 ALTER PROCEDURE sp_param_inout
@@ -260,20 +260,20 @@ SHOW CREATE TABLE t1;
 SHOW CREATE TABLE t2;
 SHOW CREATE TABLE t3;
 SHOW CREATE TABLE t4;
-SHOW CREATE TABLE metaSync_scptpkg.TFW_RELATION;
-SHOW CREATE TABLE metaSync_scptpkg.TFW_DICT;
-SHOW CREATE TABLE metaSync_scptpkg.TFW_INVOKE_API_LOG;
+SHOW CREATE TABLE metasync_scptpkg.tfw_relation;
+SHOW CREATE TABLE metasync_scptpkg.tfw_dict;
+SHOW CREATE TABLE metasync_scptpkg.tfw_invoke_api_log;
 
 # clear databases in the ending
-DROP DATABASE metaSync_procedure;
-DROP DATABASE metaSync_scptpkg;
+DROP DATABASE metasync_procedure;
+DROP DATABASE metasync_scptpkg;
 # check databases are cleaned in the ending
 connection conn2;
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
-SHOW CREATE DATABASE metaSync_procedure;
+SHOW CREATE DATABASE metasync_procedure;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_scptpkg;
+SHOW CREATE DATABASE metasync_scptpkg;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

@@ -6,21 +6,21 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_system_versioning_23500;
+DROP DATABASE IF EXISTS metasync_system_versioning_23500;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_system_versioning_23500;
+SHOW CREATE DATABASE metasync_system_versioning_23500;
 
 # seqDB-23500
 # begin testing
 #
 # create/alter/drop system-versioning table
 connection conn1;
-CREATE DATABASE metaSync_system_versioning_23500;
-USE metaSync_system_versioning_23500;
+CREATE DATABASE metasync_system_versioning_23500;
+USE metasync_system_versioning_23500;
 # create system-versioning table
 CREATE TABLE sys_version1 (
    id int primary key,
@@ -35,8 +35,8 @@ CREATE OR REPLACE TABLE sys_version2 (
 ) WITH SYSTEM VERSIONING;
 # check metadatas after create
 connection conn2;
-SHOW CREATE TABLE metaSync_system_versioning_23500.sys_version1;
-SHOW CREATE TABLE metaSync_system_versioning_23500.sys_version2;
+SHOW CREATE TABLE metasync_system_versioning_23500.sys_version1;
+SHOW CREATE TABLE metasync_system_versioning_23500.sys_version2;
 # create application-time periods table
 connection conn1;
 CREATE TABLE period_tab (
@@ -46,7 +46,7 @@ CREATE TABLE period_tab (
    PERIOD FOR dt_period(start_time, end_time));
 # check metadatas after create
 connection conn2;
-SHOW CREATE TABLE metaSync_system_versioning_23500.period_tab;
+SHOW CREATE TABLE metasync_system_versioning_23500.period_tab;
 # create bitemporal table
 connection conn1;
 CREATE TABLE bitemporal_tab (
@@ -60,8 +60,8 @@ CREATE TABLE bitemporal_tab (
    PERIOD FOR system_time(row_start, row_end)) WITH SYSTEM VERSIONING;
 # check metadatas after create
 connection conn2;
-SHOW CREATE TABLE metaSync_system_versioning_23500.bitemporal_tab;
-USE metaSync_system_versioning_23500;
+SHOW CREATE TABLE metasync_system_versioning_23500.bitemporal_tab;
+USE metasync_system_versioning_23500;
 #BUG #SEQUOIASQLMAINSTREAM-939
 # alter system-versioning table
 connection conn1;
@@ -112,11 +112,11 @@ SHOW CREATE TABLE bitemporal_tab;
 
 # clear databases in the ending
 connection conn1;
-DROP DATABASE metaSync_system_versioning_23500;
+DROP DATABASE metasync_system_versioning_23500;
 # check databases are cleaned in the ending
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_system_versioning_23500;
+SHOW CREATE DATABASE metasync_system_versioning_23500;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
