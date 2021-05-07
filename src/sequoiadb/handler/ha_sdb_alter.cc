@@ -2187,7 +2187,6 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
                         step_names[step], db_name, table_name,
                         altered_table->s->table_name.str, e.what());
 
-  rs = false;
   // update cata version for collection
   if (ha_is_open()) {
     int major = 0, minor = 0, fix = 0;
@@ -2223,6 +2222,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       ha_set_cata_version(db_name, table_name, cl.get_version());
     }
   }
+  rs = false;
 done:
   if (ctx) {
     ctx->changed_columns.delete_elements();
