@@ -461,6 +461,16 @@ update t1 set b = 9.99999 ;
 select * from t1 order by b;
 set sql_mode = default;
 drop table t1;
+#Case 24166
+CREATE TABLE t1 ( a CHAR(10), KEY(a) ); 
+INSERT INTO t1 VALUES ('1'),('2'),('3'),('4');
+--enable_info
+UPDATE t1 SET a = '0' WHERE a <> '5';
+--disable_info
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+SELECT * FROM t1;
+DROP TABLE t1;
 
 drop database update_test_sequoiadb;
 --source include/uninstall_sequoiadb.inc
