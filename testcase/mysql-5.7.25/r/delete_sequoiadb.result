@@ -168,4 +168,14 @@ commit;
 select *from t1;
 id	a
 drop table t1;
+CREATE TABLE t1 ( a CHAR(10), KEY(a) );
+INSERT INTO t1 VALUES ('1'),('2'),('3'),('4');
+DELETE FROM t1 WHERE a <> '4';
+affected rows: 3
+[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "a": { "$ne": "4" } }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lt": "4" } } ] } ] }
+[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "a": { "$ne": "4" } }, { "a": { "$gt": "4" } } ] }
+SELECT * FROM t1;
+a
+4
+DROP TABLE t1;
 drop database delete_test_sequoiadb;

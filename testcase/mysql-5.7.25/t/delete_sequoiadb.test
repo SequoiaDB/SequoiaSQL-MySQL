@@ -163,5 +163,16 @@ commit;
 select *from t1;
 drop table t1;
 
+#Case 24167
+CREATE TABLE t1 ( a CHAR(10), KEY(a) );
+INSERT INTO t1 VALUES ('1'),('2'),('3'),('4');
+--enable_info
+DELETE FROM t1 WHERE a <> '4';
+--disable_info
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+SELECT * FROM t1;
+DROP TABLE t1;
+
 drop database delete_test_sequoiadb;
 --source include/uninstall_sequoiadb.inc
