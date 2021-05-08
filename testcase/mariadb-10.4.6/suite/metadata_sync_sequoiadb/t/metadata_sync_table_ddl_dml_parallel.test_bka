@@ -766,19 +766,23 @@ FLUSH PRIVILEGES;
 #seqDB-23096
 connection conn1;
 create table t1(a int);
+set server_ha_wait_sync_timeout = 4;
 alter table t1 add index a(a);
+set server_ha_wait_sync_timeout = 0;
 
 connection conn2;
 explain select * from t1 force index(a);
 
 connection conn1;
+set server_ha_wait_sync_timeout = 4;
 drop index a on t1;
+set server_ha_wait_sync_timeout = 0;
 
 #SEQUOIASQLMAINSTREAM-870
 #SEQUOIASQLMAINSTREAM-953
-#connection conn2;
-#--error 1176
-#explain select * from t1 force index(a);
+connection conn2;
+--error 1176
+explain select * from t1 force index(a);
 drop table t1;
 
 #seqDB-23107
