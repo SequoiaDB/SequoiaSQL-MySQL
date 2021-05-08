@@ -580,12 +580,35 @@ function wait_for_process()
    fi
 }
 
+function refresh_conf()
+{
+   local inst=$1
+   local log_error=""
+   local inst_conf=$CONF_INST_PATH/$inst.conf
+   . $inst_conf
+   local auto_conf=$SQLDATA/auto.cnf
+   local log_error_info=`cat $auto_conf | grep "^[[:blank:]]*log[-_]error[[:blank:]]*="`
+
+   for line in $log_error_info
+   do
+     log_error=`echo $line | awk -F= '{print $2}'`
+   done
+
+   if test -z "$log_error";
+   then
+     log_error="$SQLDATA/`hostname`.err"
+   fi
+  
+   sed -i "/SQLLOG/cSQLLOG=$log_error" $inst_conf
+}
+
 function start_inst()
 {
    local inst=$1
 
    check_inst_exist $inst true
-   . $CONF_INST_PATH/$inst.conf
+
+   refresh_conf $inst
 
    #check instance start or not
    get_one_status $inst > /dev/null
