@@ -284,6 +284,34 @@ int Sdb_func_item::pop_item(Item *&para_item) {
   DBUG_RETURN(SDB_ERR_OK);
 }
 
+static my_bool sdb_can_item_type_ignore_warn(enum Item::Type type) {
+  return Item::SUBSELECT_ITEM != type && Item::CACHE_ITEM != type;
+}
+
+// detect parameters of function to judge whether warnings are ignorable
+static void sdb_detect_para4warn(const Item *item, void *arg) {
+  if (item && !sdb_can_item_type_ignore_warn(item->type())) {
+    my_bool *can_ignore_warn = (my_bool *)arg;
+    *can_ignore_warn = false;
+  }
+}
+
+my_bool Sdb_func_item::can_ignore_warning(Item *item_val) {
+  my_bool rs = true;
+  if (!sdb_can_item_type_ignore_warn(item_val->type())) {
+    rs = false;
+  } else if (Item::FUNC_ITEM == item_val->type() &&
+             Item_func::UNKNOWN_FUNC == ((Item_func *)item_val)->functype()) {
+    /*
+      UNKNOWN_FUNC is for operations like '+', '-', '*' and some math
+      functions like ABS(), FLOOR(), CEILING()...Subselect and cache item may
+      be hided after them, so detection is needed here.
+    */
+    item_val->traverse_cond(&sdb_detect_para4warn, (void *)&rs, Item::PREFIX);
+  }
+  return rs;
+}
+
 int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
                                 Field *field, bson::BSONObj &obj,
                                 bson::BSONArrayBuilder *arr_builder) {
@@ -294,7 +322,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
   // so we use `Dummy_error_handler` to ignore all error and warning states.
   Dummy_error_handler error_handler;
   my_bool has_err_handler = false;
-  if (can_ignore_warning(item_val->type())) {
+  if (can_ignore_warning(item_val)) {
     thd->push_internal_handler(&error_handler);
     has_err_handler = true;
   }
@@ -704,13 +732,6 @@ done:
   }
   DBUG_RETURN(rc);
 error:
-  // clear the cache to prevent important errors/warnings from being
-  // ignored.
-  if (has_err_handler && item_val->null_value) {
-    if (Item::CACHE_ITEM == item_val->type()) {
-      ((Item_cache *)item_val)->clear();
-    }
-  }
   goto done;
 }
 
