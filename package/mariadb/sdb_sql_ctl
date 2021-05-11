@@ -674,7 +674,7 @@ function start_inst()
       return 0
    elif [ $ret == 7 ]
    then
-      echo "ERROR: Fail to start, please verify log $CTL_LOG" >&2
+      echo "ERROR: Fail to start, please verify log $SQLLOG" >&2
       return 7
    else
       echo "ERROR: Fail to query status." >&2
