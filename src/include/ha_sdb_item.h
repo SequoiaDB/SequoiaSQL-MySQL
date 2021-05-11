@@ -106,16 +106,14 @@ class Sdb_func_item : public Sdb_item {
   uint get_para_num() { return para_num_max; }
 
  protected:
+  virtual my_bool can_ignore_warning(Item *item_val);
+
+ protected:
   List<Item> para_list;
   uint para_num_cur;
   uint para_num_max;
   Sdb_item *l_child;
   Sdb_item *r_child;
-
- private:
-  inline my_bool can_ignore_warning(enum Item::Type type) {
-    return (Item::SUBSELECT_ITEM != type);
-  }
 };
 
 class Sdb_func_unkown : public Sdb_func_item {
