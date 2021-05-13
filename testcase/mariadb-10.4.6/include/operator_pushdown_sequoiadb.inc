@@ -1,5 +1,5 @@
 #
-# seqDB-14922~seqDB-14931,seqDB-15145~seqDB-15146
+# seqDB-14922~seqDB-14931,seqDB-15145~seqDB-15146,seqDB-24174
 # operator pushdown testing
 #
 CREATE TABLE t1 (id int NOT NULL, a int, b int, c int, vc varchar(20) NOT NULL DEFAULT '');
@@ -350,7 +350,7 @@ SELECT * FROM t1 WHERE id <= (a * b + 10 - c) ;
 SELECT * FROM t1 WHERE (c - a / 2 * b + 1) != (b + id * 2 + 3) ;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-# seqDB-15145,eqDB-15146
+# seqDB-15145,seqDB-15146,seqDB-24174
 # mix "+", "-", "*", "/" operations and subquery
 #
 --sorted_result
@@ -361,6 +361,20 @@ SELECT * FROM t1 WHERE (SELECT id FROM t1 WHERE id = 5) <= a * 4 - 20;
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE id * (SELECT id FROM t1 WHERE id < 2) + 10 - id > a / (SELECT id FROM t1 WHERE id = 8) + 9;
+--source include/query_pushdown_condition_sequoiadb.inc
+#BUG #SEQUOIASQLMAINSTREAM-799
+--error ER_SUBQUERY_NO_1_ROW
+SELECT * FROM t1 WHERE id > (SELECT id FROM t1 WHERE id < 3) + 5;
+--error ER_SUBQUERY_NO_1_ROW
+SELECT * FROM t1 WHERE id > (SELECT id FROM t1 WHERE id < 3) - 5;
+--error ER_SUBQUERY_NO_1_ROW
+SELECT * FROM t1 WHERE id > (SELECT id FROM t1 WHERE id < 3) * 5;
+--error ER_SUBQUERY_NO_1_ROW
+SELECT * FROM t1 WHERE id > (SELECT id FROM t1 WHERE id < 3) / 5;
+--error ER_SUBQUERY_NO_1_ROW
+SELECT * FROM t1 WHERE id > (SELECT id FROM t1 WHERE id < 3) MOD ABS(-5);
+--sorted_result
+SELECT * FROM t1 WHERE id > (SELECT id FROM t1 WHERE id < 2) MOD ABS(-5);
 --source include/query_pushdown_condition_sequoiadb.inc
 
 # seqDB-14931
