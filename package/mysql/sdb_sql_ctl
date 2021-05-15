@@ -37,6 +37,8 @@ NEED_BACKUPLOG=false
 FORCE_OP=false
 SQL_USER=sdbadmin
 SYS_CONF_FILE=""
+PIDFILE=""
+SOCKETFILE=""
 PROCESS_WAIT_TIME=60
 ME=$(basename "$0")
 
