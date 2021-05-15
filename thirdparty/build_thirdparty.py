@@ -31,6 +31,7 @@ EXTENDED_HELP = ""
 current_dir=""
 openssl_version = "1.1.1g"
 curl_version="7.69.0"
+curses_version="5.9"
 jobs = 0
 
 class BuildThirdParty(optparse.OptionParser):
@@ -137,6 +138,35 @@ class BuildThirdParty(optparse.OptionParser):
         os.system(make_cmd)
         os.system(make_install_cmd)
 
+    def build_curses(self, version):
+        curses_dir = "ncurses-"
+        curses_dir = curses_dir + version
+        curses_abs_dir = self.current_dir + "/" +curses_dir
+        debug_option=""
+        build=""
+        if not os.path.exists(curses_abs_dir):
+            print("The Curses version:{v}, dir:'{d}' not exists."
+            .format(v=version, d=curses_abs_dir))
+            return
+        if self.debug:
+            debug_option=" --enable-debug"
+        else:
+            debug_option=""
+        if self.arch == "aarch64":
+            build=" --build=arm-linux"
+        os.chdir(curses_abs_dir)
+        st = os.stat("./configure")
+        os.chmod("./configure", st.st_mode | stat.S_IEXEC)
+        config_cmd = "./configure --prefix=" + curses_abs_dir + "/install_path" + \
+                     " --with-pic" + debug_option + build
+        os.system(config_cmd)
+        make_cmd = "make -j " + str(self.jobs)
+        make_install_cmd = "make install"
+        rm_dynamic_libs = "rm -f install_path/lib/lib*.so; rm -f install_path/lib/lib*.so.*"
+        os.system(make_cmd)
+        os.system(make_install_cmd)
+        os.system(rm_dynamic_libs)
+
 def main():
     #pdb.set_trace()
     current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -162,6 +192,11 @@ def main():
     builder.add_option("--odbc", action='store', type="string",
                        dest="odbc", help="Build unixODBC. Specify the "
                        "version of unixODBC to be built, eg: 2.3.1")
+
+    #Add --curses option
+    builder.add_option("--curses", action='store', type="string",
+                       dest="curses", help="Build Curses. Specify the "
+                       "version of Curses to be built, eg: 5.9")
 
     #Add --debug option
     builder.add_option("-d", "--debug", action='store_true', dest="debug",
@@ -204,6 +239,10 @@ def main():
     if opt.odbc:
         unix_odbc_version = opt.odbc
         builder.build_unix_odbc(unix_odbc_version)
+
+    if opt.curses:
+        curses_version = opt.curses
+        builder.build_curses(curses_version)
 
 if __name__ == '__main__':
     sys.exit(main())
