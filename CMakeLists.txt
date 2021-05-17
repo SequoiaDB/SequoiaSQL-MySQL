@@ -57,7 +57,10 @@ project(${PROJECT_NAME})
 SDB_CHECK_SSL()
 SDB_CHECK_CURL()
 SDB_CHECK_ODBC()
-SDB_CHECK_CURSES()
+# link static ncurse lib only in mysql currently.
+if(NOT MARIADB)
+   SDB_CHECK_CURSES()
+endif()
 
 function(prepare_sql_source sql_source_root sql_name)
    if(NOT EXISTS ${sql_source_root}/CMakeLists.txt)
