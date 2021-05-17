@@ -158,7 +158,7 @@ class BuildThirdParty(optparse.OptionParser):
         st = os.stat("./configure")
         os.chmod("./configure", st.st_mode | stat.S_IEXEC)
         config_cmd = "./configure --prefix=" + curses_abs_dir + "/install_path" + \
-                     " --with-pic" + debug_option + build
+                     " CFLAGS=-fPIC CPPFLAGS=-fPIC" + debug_option + build
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
