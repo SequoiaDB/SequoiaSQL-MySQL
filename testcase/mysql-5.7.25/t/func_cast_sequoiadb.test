@@ -134,7 +134,9 @@ SELECT * FROM t1 WHERE a > CAST(REPEAT('123a',3) AS CHAR);
 SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
 --sorted_result
 SELECT * FROM t1 WHERE a != CAST(1.01 AS NCHAR);
+--sorted_result
 SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
+--sorted_result
 SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
 --sorted_result
 SELECT * FROM t1 WHERE a > CAST(1 AS BINARY);
@@ -234,7 +236,9 @@ SELECT * FROM t1 WHERE a > CAST(REPEAT('123a',3) AS CHAR);
 SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
 --sorted_result
 SELECT * FROM t1 WHERE a != CAST(1.01 AS NCHAR);
+--sorted_result
 SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
+--sorted_result
 SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
 --sorted_result
 SELECT * FROM t1 WHERE a > CAST(1 AS BINARY);
