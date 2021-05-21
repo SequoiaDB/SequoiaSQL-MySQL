@@ -2,7 +2,7 @@ connection conn1;
 DROP DATABASE IF EXISTS metaSync_mix_seq_table;
 connection conn2;
 SHOW CREATE DATABASE metaSync_mix_seq_table;
-ERROR 42000: Unknown database 'metaSync_mix_seq_table'
+ERROR 42000: Unknown database 'metasync_mix_seq_table'
 connection conn1;
 CREATE DATABASE metaSync_mix_seq_table;
 USE metaSync_mix_seq_table;
@@ -15,7 +15,7 @@ connection conn1;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `id` int(11) NOT NULL DEFAULT nextval(`metaSync_mix_seq_table`.`seq1`),
+  `id` int(11) NOT NULL DEFAULT nextval(`metasync_mix_seq_table`.`seq1`),
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn2;
@@ -48,7 +48,7 @@ connection conn2;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
-  `id1` bigint(20) DEFAULT nextval(`metaSync_mix_seq_table`.`seq1`)
+  `id1` bigint(20) DEFAULT nextval(`metasync_mix_seq_table`.`seq1`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 INSERT INTO t1 VALUES (),(),();
 SELECT * FROM t1 ORDER BY id1;
@@ -62,23 +62,23 @@ id1
 DROP SEQUENCE /* drop sequence */ seq1;
 connection conn1;
 INSERT INTO t1 VALUES ();
-ERROR 42S02: Table 'metaSync_mix_seq_table.seq1' doesn't exist
+ERROR 42S02: Table 'metasync_mix_seq_table.seq1' doesn't exist
 DROP TABLE t1;
 SHOW CREATE TABLE seq1;
-ERROR 42S02: Table 'metaSync_mix_seq_table.seq1' doesn't exist
+ERROR 42S02: Table 'metasync_mix_seq_table.seq1' doesn't exist
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_mix_seq_table.t1' doesn't exist
+ERROR 42S02: Table 'metasync_mix_seq_table.t1' doesn't exist
 connection conn2;
 SHOW CREATE TABLE seq1;
-ERROR 42S02: Table 'metaSync_mix_seq_table.seq1' doesn't exist
+ERROR 42S02: Table 'metasync_mix_seq_table.seq1' doesn't exist
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_mix_seq_table.t1' doesn't exist
+ERROR 42S02: Table 'metasync_mix_seq_table.t1' doesn't exist
 connection conn1;
 DROP DATABASE metaSync_mix_seq_table;
 set server_ha_wait_sync_timeout = 0;
 connection conn2;
 set server_ha_wait_sync_timeout = 0;
 SHOW CREATE DATABASE metaSync_mix_seq_table;
-ERROR 42000: Unknown database 'metaSync_mix_seq_table'
+ERROR 42000: Unknown database 'metasync_mix_seq_table'
 disconnect conn1;
 disconnect conn2;

@@ -1,4 +1,3 @@
-#BUG #SEQUOIADBMAINSTREAM-6944 annotation for temporary
 #case 23502
 
 --source include/have_sequoiadb.inc
@@ -7,21 +6,21 @@
 # connect to conn1, clear databases in the beginning
 connection conn1;
 --disable_warnings
-DROP DATABASE IF EXISTS metaSync_23502;
+DROP DATABASE IF EXISTS metasync_23502;
 --enable_warnings
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_23502;
+SHOW CREATE DATABASE metasync_23502;
 
 # seqDB-23502
 # begin testing
 #
 # create/alter/drop system-versioning table
 connection conn1;
-CREATE DATABASE metaSync_23502;
-USE metaSync_23502;
+CREATE DATABASE metasync_23502;
+USE metasync_23502;
 # create system-versioning table1
 CREATE TABLE sys_version1 (
    id int primary key,
@@ -32,8 +31,8 @@ CREATE TABLE sys_version1 (
 ) WITH SYSTEM VERSIONING;
 # insert
 connection conn2;
-INSERT INTO metaSync_23502.sys_version1(id,name) VALUES (1,'Joe'),(2,'Bob'),(3,'Mary');
-USE metaSync_23502;
+INSERT INTO metasync_23502.sys_version1(id,name) VALUES (1,'Joe'),(2,'Bob'),(3,'Mary');
+USE metasync_23502;
 # create system-versioning table2
 connection conn1;
 CREATE OR REPLACE TABLE sys_version2 (
@@ -114,12 +113,14 @@ SELECT * FROM sys_version2 FOR SYSTEM_TIME ALL ORDER BY x,y;
 # alter system-versioning table3
 connection conn1;
 SET system_versioning_alter_history = KEEP;
+SET server_ha_wait_sync_timeout = 4; 
 ALTER TABLE sys_version3 DROP COLUMN y;
 SET system_versioning_alter_history = DEFAULT;
+SET server_ha_wait_sync_timeout = 0;
 #BUG #SEQUOIASQLMAINSTREAM-949
-## select
-#connection conn2;
-#SELECT * FROM sys_version3 ORDER BY x;
+# select
+connection conn2;
+SELECT * FROM sys_version3 ORDER BY x;
 # alter application-time periods table1
 connection conn1;
 ALTER TABLE period_tab1 ADD COLUMN name varchar(64);
@@ -201,11 +202,11 @@ SELECT * FROM bitemporal_tab;
 
 # clear databases in the ending
 connection conn1;
-DROP DATABASE metaSync_23502;
+DROP DATABASE metasync_23502;
 # check databases are cleaned in the ending
 connection conn2;
 --error ER_BAD_DB_ERROR
-SHOW CREATE DATABASE metaSync_23502;
+SHOW CREATE DATABASE metasync_23502;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

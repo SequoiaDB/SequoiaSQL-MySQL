@@ -1,11 +1,11 @@
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_23502;
+DROP DATABASE IF EXISTS metasync_23502;
 connection conn2;
-SHOW CREATE DATABASE metaSync_23502;
-ERROR 42000: Unknown database 'metaSync_23502'
+SHOW CREATE DATABASE metasync_23502;
+ERROR 42000: Unknown database 'metasync_23502'
 connection conn1;
-CREATE DATABASE metaSync_23502;
-USE metaSync_23502;
+CREATE DATABASE metasync_23502;
+USE metasync_23502;
 CREATE TABLE sys_version1 (
 id int primary key,
 name varchar(16),
@@ -14,8 +14,8 @@ end_timestamp TIMESTAMP(6) GENERATED ALWAYS as ROW END INVISIBLE,
 PERIOD FOR SYSTEM_TIME (start_timestamp, end_timestamp)
 ) WITH SYSTEM VERSIONING;
 connection conn2;
-INSERT INTO metaSync_23502.sys_version1(id,name) VALUES (1,'Joe'),(2,'Bob'),(3,'Mary');
-USE metaSync_23502;
+INSERT INTO metasync_23502.sys_version1(id,name) VALUES (1,'Joe'),(2,'Bob'),(3,'Mary');
+USE metasync_23502;
 connection conn1;
 CREATE OR REPLACE TABLE sys_version2 (
 x int primary key,
@@ -96,8 +96,14 @@ x	y	z
 1	4	-1
 connection conn1;
 SET system_versioning_alter_history = KEEP;
+SET server_ha_wait_sync_timeout = 4;
 ALTER TABLE sys_version3 DROP COLUMN y;
 SET system_versioning_alter_history = DEFAULT;
+SET server_ha_wait_sync_timeout = 0;
+connection conn2;
+SELECT * FROM sys_version3 ORDER BY x;
+x
+1
 connection conn1;
 ALTER TABLE period_tab1 ADD COLUMN name varchar(64);
 connection conn2;
@@ -158,38 +164,38 @@ connection conn1;
 DROP TABLE sys_version1;
 connection conn2;
 INSERT INTO sys_version1(id,name,age) VALUES (2001,'John',2001);
-ERROR 42S02: Table 'metaSync_23502.sys_version1' doesn't exist
+ERROR 42S02: Table 'metasync_23502.sys_version1' doesn't exist
 connection conn1;
 DROP TABLE sys_version2;
 connection conn2;
 DELETE FROM sys_version2;
-ERROR 42S02: Table 'metaSync_23502.sys_version2' doesn't exist
+ERROR 42S02: Table 'metasync_23502.sys_version2' doesn't exist
 connection conn1;
 DROP TABLE sys_version3;
 connection conn2;
 SELECT * FROM sys_version3;
-ERROR 42S02: Table 'metaSync_23502.sys_version3' doesn't exist
+ERROR 42S02: Table 'metasync_23502.sys_version3' doesn't exist
 connection conn1;
 DROP TABLE period_tab1;
 connection conn2;
 INSERT INTO period_tab1(name,start_time,end_time) VALUES ('Jerry', '2021-04-04 00:00:00', '2021-05-05 00:00:00');
-ERROR 42S02: Table 'metaSync_23502.period_tab1' doesn't exist
+ERROR 42S02: Table 'metasync_23502.period_tab1' doesn't exist
 connection conn1;
 DROP TABLE period_tab2;
 connection conn2;
 SELECT * FROM period_tab2;
-ERROR 42S02: Table 'metaSync_23502.period_tab2' doesn't exist
+ERROR 42S02: Table 'metasync_23502.period_tab2' doesn't exist
 connection conn1;
 DROP TABLE bitemporal_tab;
 connection conn2;
 UPDATE bitemporal_tab SET name = 'update last time';
-ERROR 42S02: Table 'metaSync_23502.bitemporal_tab' doesn't exist
+ERROR 42S02: Table 'metasync_23502.bitemporal_tab' doesn't exist
 SELECT * FROM bitemporal_tab;
-ERROR 42S02: Table 'metaSync_23502.bitemporal_tab' doesn't exist
+ERROR 42S02: Table 'metasync_23502.bitemporal_tab' doesn't exist
 connection conn1;
-DROP DATABASE metaSync_23502;
+DROP DATABASE metasync_23502;
 connection conn2;
-SHOW CREATE DATABASE metaSync_23502;
-ERROR 42000: Unknown database 'metaSync_23502'
+SHOW CREATE DATABASE metasync_23502;
+ERROR 42000: Unknown database 'metasync_23502'
 disconnect conn1;
 disconnect conn2;

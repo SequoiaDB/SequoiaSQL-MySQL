@@ -8,9 +8,9 @@ set sql_mode=NO_ENGINE_SUBSTITUTION;
 select @@SESSION.sql_mode;
 @@SESSION.sql_mode
 NO_ENGINE_SUBSTITUTION
-drop database if exists metaSync_19228;
-create database metaSync_19228;
-use metaSync_19228;
+drop database if exists metasync_19228;
+create database metasync_19228;
+use metasync_19228;
 CREATE TABLE t1 (
 eintrag date NOT NULL default '0000-00-00'
 );
@@ -21,7 +21,7 @@ t1	CREATE TABLE `t1` (
   `eintrag` date NOT NULL DEFAULT '0000-00-00'
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn2;
-show create table metaSync_19228.t1;
+show create table metasync_19228.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `eintrag` date NOT NULL DEFAULT '0000-00-00'
@@ -31,24 +31,24 @@ select @@SESSION.sql_mode;
 STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,TRADITIONAL,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
 set sql_mode=default;
 connection conn1;
-drop database metaSync_19228;
+drop database metasync_19228;
 connection conn2;
-show create database metaSync_19228;
-ERROR 42000: Unknown database 'metaSync_19228'
+show create database metasync_19228;
+ERROR 42000: Unknown database 'metasync_19228'
 connection conn1;
-drop database if exists metaSync_22556;
-create database if not exists metaSync_22556 character set = 'latin1';
+drop database if exists metasync_22556;
+create database if not exists metasync_22556 character set = 'latin1';
 connection conn2;
-create table metaSync_22556.t1 (a int key auto_increment);
+create table metasync_22556.t1 (a int key auto_increment);
 connection conn1;
-alter database metaSync_22556 character set = 'utf8';
+alter database metasync_22556 character set = 'utf8';
 connection conn2;
-alter table metaSync_22556.t1 add column b int not null;
+alter table metasync_22556.t1 add column b int not null;
 connection conn1;
-show create database metaSync_22556;
+show create database metasync_22556;
 Database	Create Database
-metaSync_22556	CREATE DATABASE `metaSync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
-show create table metaSync_22556.t1;
+metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create table metasync_22556.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL AUTO_INCREMENT,
@@ -56,10 +56,10 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 connection conn2;
-show create database metaSync_22556;
+show create database metasync_22556;
 Database	Create Database
-metaSync_22556	CREATE DATABASE `metaSync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
-show create table metaSync_22556.t1;
+metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create table metasync_22556.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL AUTO_INCREMENT,
@@ -67,164 +67,164 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 connection conn1;
-alter database metaSync_22556 character set = 'latin2';
+alter database metasync_22556 character set = 'latin2';
 connection conn2;
-drop table metaSync_22556.t1;
+drop table metasync_22556.t1;
 connection conn1;
-show create database metaSync_22556;
+show create database metasync_22556;
 Database	Create Database
-metaSync_22556	CREATE DATABASE `metaSync_22556` /*!40100 DEFAULT CHARACTER SET latin2 */
-show create table metaSync_22556.t1;
-ERROR 42S02: Table 'metaSync_22556.t1' doesn't exist
+metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET latin2 */
+show create table metasync_22556.t1;
+ERROR 42S02: Table 'metasync_22556.t1' doesn't exist
 connection conn2;
-show create database metaSync_22556;
+show create database metasync_22556;
 Database	Create Database
-metaSync_22556	CREATE DATABASE `metaSync_22556` /*!40100 DEFAULT CHARACTER SET latin2 */
-show create table metaSync_22556.t1;
-ERROR 42S02: Table 'metaSync_22556.t1' doesn't exist
+metasync_22556	CREATE DATABASE `metasync_22556` /*!40100 DEFAULT CHARACTER SET latin2 */
+show create table metasync_22556.t1;
+ERROR 42S02: Table 'metasync_22556.t1' doesn't exist
 connection conn1;
-drop database metaSync_22556;
+drop database metasync_22556;
 connection conn1;
-drop database if exists metaSync_22557;
-create database if not exists metaSync_22557 character set = 'latin1';
-create table metaSync_22557.t1 (a int key auto_increment);
+drop database if exists metasync_22557;
+create database if not exists metasync_22557 character set = 'latin1';
+create table metasync_22557.t1 (a int key auto_increment);
 connection conn2;
-CREATE FUNCTION metaSync_22557.f1() RETURNS INTEGER
+CREATE FUNCTION metasync_22557.f1() RETURNS INTEGER
 BEGIN
 DECLARE retn INTEGER;
-SELECT a FROM metaSync_22557.t1 INTO retn;
+SELECT a FROM metasync_22557.t1 INTO retn;
 RETURN retn;
 END//
 Warnings:
 Warning	1287	'<select expression> INTO <destination>;' is deprecated and will be removed in a future release. Please use 'SELECT <select list> INTO <destination> FROM...' instead
 connection conn1;
-alter database metaSync_22557 character set = 'utf8';
+alter database metasync_22557 character set = 'utf8';
 connection conn2;
-alter function metaSync_22557.f1 comment 'modify function';
+alter function metasync_22557.f1 comment 'modify function';
 connection conn1;
-show create database metaSync_22557;
+show create database metasync_22557;
 Database	Create Database
-metaSync_22557	CREATE DATABASE `metaSync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
-show create function metaSync_22557.f1;
+metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create function metasync_22557.f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
     COMMENT 'modify function'
 BEGIN
 DECLARE retn INTEGER;
-SELECT a FROM metaSync_22557.t1 INTO retn;
+SELECT a FROM metasync_22557.t1 INTO retn;
 RETURN retn;
 END	latin1	latin1_swedish_ci	latin1_swedish_ci
 connection conn2;
-show create database metaSync_22557;
+show create database metasync_22557;
 Database	Create Database
-metaSync_22557	CREATE DATABASE `metaSync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
-show create function metaSync_22557.f1;
+metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create function metasync_22557.f1;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 f1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` FUNCTION `f1`() RETURNS int(11)
     COMMENT 'modify function'
 BEGIN
 DECLARE retn INTEGER;
-SELECT a FROM metaSync_22557.t1 INTO retn;
+SELECT a FROM metasync_22557.t1 INTO retn;
 RETURN retn;
 END	latin1	latin1_swedish_ci	latin1_swedish_ci
 connection conn1;
-alter database metaSync_22557 character set = 'latin2';
+alter database metasync_22557 character set = 'latin2';
 connection conn2;
-drop function metaSync_22557.f1;
+drop function metasync_22557.f1;
 connection conn1;
-show create database metaSync_22557;
+show create database metasync_22557;
 Database	Create Database
-metaSync_22557	CREATE DATABASE `metaSync_22557` /*!40100 DEFAULT CHARACTER SET latin2 */
-show create function metaSync_22557.f1;
+metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET latin2 */
+show create function metasync_22557.f1;
 ERROR 42000: FUNCTION f1 does not exist
 connection conn2;
-show create database metaSync_22557;
+show create database metasync_22557;
 Database	Create Database
-metaSync_22557	CREATE DATABASE `metaSync_22557` /*!40100 DEFAULT CHARACTER SET latin2 */
-show create function metaSync_22557.f1;
+metasync_22557	CREATE DATABASE `metasync_22557` /*!40100 DEFAULT CHARACTER SET latin2 */
+show create function metasync_22557.f1;
 ERROR 42000: FUNCTION f1 does not exist
 connection conn1;
-drop database metaSync_22557;
+drop database metasync_22557;
 connection conn1;
-drop database if exists metaSync_22558;
-create database if not exists metaSync_22558 character set = 'latin1';
-create table metaSync_22558.account (acct_num int, amount decimal(10,2));
+drop database if exists metasync_22558;
+create database if not exists metasync_22558 character set = 'latin1';
+create table metasync_22558.account (acct_num int, amount decimal(10,2));
 connection conn2;
-create trigger metaSync_22558.ins_num1 before insert on account for each row set @sum = @sum + NEW.amount;
-show create trigger metaSync_22558.ins_num1;
+create trigger metasync_22558.ins_num1 before insert on account for each row set @sum = @sum + NEW.amount;
+show create trigger metasync_22558.ins_num1;
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
-ins_num1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` trigger metaSync_22558.ins_num1 before insert on account for each row set @sum = @sum + NEW.amount	latin1	latin1_swedish_ci	latin1_swedish_ci	x
+ins_num1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` trigger metasync_22558.ins_num1 before insert on account for each row set @sum = @sum + NEW.amount	latin1	latin1_swedish_ci	latin1_swedish_ci	x
 connection conn1;
-show create trigger metaSync_22558.ins_num1;
+show create trigger metasync_22558.ins_num1;
 Trigger	sql_mode	SQL Original Statement	character_set_client	collation_connection	Database Collation	Created
-ins_num1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` trigger metaSync_22558.ins_num1 before insert on account for each row set @sum = @sum + NEW.amount	latin1	latin1_swedish_ci	latin1_swedish_ci	x
-alter database metaSync_22558 character set = 'utf8';
+ins_num1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` trigger metasync_22558.ins_num1 before insert on account for each row set @sum = @sum + NEW.amount	latin1	latin1_swedish_ci	latin1_swedish_ci	x
+alter database metasync_22558 character set = 'utf8';
 connection conn2;
-drop trigger metaSync_22558.ins_num1;
+drop trigger metasync_22558.ins_num1;
 connection conn1;
-show create database metaSync_22558;
+show create database metasync_22558;
 Database	Create Database
-metaSync_22558	CREATE DATABASE `metaSync_22558` /*!40100 DEFAULT CHARACTER SET utf8 */
-show create trigger metaSync_22558.ins_num1;
+metasync_22558	CREATE DATABASE `metasync_22558` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create trigger metasync_22558.ins_num1;
 ERROR HY000: Trigger does not exist
 connection conn2;
-show create database metaSync_22558;
+show create database metasync_22558;
 Database	Create Database
-metaSync_22558	CREATE DATABASE `metaSync_22558` /*!40100 DEFAULT CHARACTER SET utf8 */
-show create trigger metaSync_22558.ins_num1;
+metasync_22558	CREATE DATABASE `metasync_22558` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create trigger metasync_22558.ins_num1;
 ERROR HY000: Trigger does not exist
 connection conn1;
-drop database metaSync_22558;
+drop database metasync_22558;
 connection conn1;
-drop database if exists metaSync_22560;
-create database if not exists metaSync_22560 character set = 'latin1';
-create table metaSync_22560.t1(a int);
+drop database if exists metasync_22560;
+create database if not exists metasync_22560 character set = 'latin1';
+create table metasync_22560.t1(a int);
 connection conn2;
-create index a on metaSync_22560.t1(a);
+create index a on metasync_22560.t1(a);
 connection conn1;
-show create database metaSync_22560;
+show create database metasync_22560;
 Database	Create Database
-metaSync_22560	CREATE DATABASE `metaSync_22560` /*!40100 DEFAULT CHARACTER SET latin1 */
-show create table metaSync_22560.t1;
+metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET latin1 */
+show create table metasync_22560.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   KEY `a` (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 connection conn2;
-show create database metaSync_22560;
+show create database metasync_22560;
 Database	Create Database
-metaSync_22560	CREATE DATABASE `metaSync_22560` /*!40100 DEFAULT CHARACTER SET latin1 */
-show create table metaSync_22560.t1;
+metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET latin1 */
+show create table metasync_22560.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   KEY `a` (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 connection conn1;
-alter database metaSync_22560 character set = 'utf8';
+alter database metasync_22560 character set = 'utf8';
 connection conn2;
-drop index a on metaSync_22560.t1;
+drop index a on metasync_22560.t1;
 connection conn1;
-show create database metaSync_22560;
+show create database metasync_22560;
 Database	Create Database
-metaSync_22560	CREATE DATABASE `metaSync_22560` /*!40100 DEFAULT CHARACTER SET utf8 */
-show create table metaSync_22560.t1;
+metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create table metasync_22560.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 connection conn2;
-show create database metaSync_22560;
+show create database metasync_22560;
 Database	Create Database
-metaSync_22560	CREATE DATABASE `metaSync_22560` /*!40100 DEFAULT CHARACTER SET utf8 */
-show create table metaSync_22560.t1;
+metasync_22560	CREATE DATABASE `metasync_22560` /*!40100 DEFAULT CHARACTER SET utf8 */
+show create table metasync_22560.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 connection conn1;
-drop database metaSync_22560;
+drop database metasync_22560;
 connection conn1;
 drop database if exists meta_sync_test;
 create database if not exists meta_sync_test character set = 'latin1';
@@ -776,22 +776,22 @@ connection conn1;
 drop database meta_sync_22567;
 drop user user_22567;
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_22559_22564;
+DROP DATABASE IF EXISTS metasync_22559_22564;
 connection conn2;
-SHOW CREATE DATABASE metaSync_22559_22564;
-ERROR 42000: Unknown database 'metaSync_22559_22564'
+SHOW CREATE DATABASE metasync_22559_22564;
+ERROR 42000: Unknown database 'metasync_22559_22564'
 connection conn1;
-CREATE DATABASE metaSync_22559_22564;
-USE metaSync_22559_22564;
+CREATE DATABASE metasync_22559_22564;
+USE metasync_22559_22564;
 CREATE TABLE t1 ( a INT, b CHAR(8), c BLOB );
 connection conn2;
-CREATE PROCEDURE metaSync_22559_22564.p1 ( x1 char(16), x2 char(16), y int )
+CREATE PROCEDURE metasync_22559_22564.p1 ( x1 char(16), x2 char(16), y int )
 BEGIN
-CREATE TABLE metaSync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
-INSERT INTO metaSync_22559_22564.t1 VALUES ( y, x1, x1 );
-INSERT INTO metaSync_22559_22564.t2 VALUES ( y, x2 );
+CREATE TABLE metasync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
+INSERT INTO metasync_22559_22564.t1 VALUES ( y, x1, x1 );
+INSERT INTO metasync_22559_22564.t2 VALUES ( y, x2 );
 END|
-USE metaSync_22559_22564;
+USE metasync_22559_22564;
 connection conn1;
 SET @x1 = "test1";
 SET @x2 = "test2";
@@ -801,12 +801,12 @@ SHOW CREATE PROCEDURE p1;
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x1 char(16), x2 char(16), y int )
 BEGIN
-CREATE TABLE metaSync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
-INSERT INTO metaSync_22559_22564.t1 VALUES ( y, x1, x1 );
-INSERT INTO metaSync_22559_22564.t2 VALUES ( y, x2 );
+CREATE TABLE metasync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
+INSERT INTO metasync_22559_22564.t1 VALUES ( y, x1, x1 );
+INSERT INTO metasync_22559_22564.t2 VALUES ( y, x2 );
 END	latin1	latin1_swedish_ci	utf8mb4_bin
 connection conn2;
-ALTER DATABASE metaSync_22559_22564 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
+ALTER DATABASE metasync_22559_22564 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
 connection conn1;
 ALTER TABLE t1 ADD COLUMN d DATE, MODIFY c LONGBLOB, ADD PRIMARY KEY(a);
 ALTER TABLE t2 ADD SYSTEM VERSIONING;
@@ -816,17 +816,17 @@ language sql
 sql security definer
 comment 'alter procedure comment';
 connection conn1;
-SHOW CREATE DATABASE metaSync_22559_22564;
+SHOW CREATE DATABASE metasync_22559_22564;
 Database	Create Database
-metaSync_22559_22564	CREATE DATABASE `metaSync_22559_22564` /*!40100 DEFAULT CHARACTER SET ucs2 */
+metasync_22559_22564	CREATE DATABASE `metasync_22559_22564` /*!40100 DEFAULT CHARACTER SET ucs2 */
 SHOW CREATE PROCEDURE p1;
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x1 char(16), x2 char(16), y int )
     COMMENT 'alter procedure comment'
 BEGIN
-CREATE TABLE metaSync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
-INSERT INTO metaSync_22559_22564.t1 VALUES ( y, x1, x1 );
-INSERT INTO metaSync_22559_22564.t2 VALUES ( y, x2 );
+CREATE TABLE metasync_22559_22564.t2 ( a INT DEFAULT 1, b CHAR(8) DEFAULT '' );
+INSERT INTO metasync_22559_22564.t1 VALUES ( y, x1, x1 );
+INSERT INTO metasync_22559_22564.t2 VALUES ( y, x2 );
 END	latin1	latin1_swedish_ci	utf8mb4_bin
 connection conn2;
 SHOW CREATE TABLE t1;
@@ -845,38 +845,38 @@ t2	CREATE TABLE `t2` (
   `b` char(8) COLLATE utf8mb4_bin DEFAULT ''
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin WITH SYSTEM VERSIONING
 connection conn1;
-ALTER DATABASE metaSync_22559_22564 CHARACTER SET cp1251;
+ALTER DATABASE metasync_22559_22564 CHARACTER SET cp1251;
 connection conn2;
 DROP TABLE t1,t2;
 connection conn1;
 DROP PROCEDURE p1;
 connection conn1;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_22559_22564.t1' doesn't exist
+ERROR 42S02: Table 'metasync_22559_22564.t1' doesn't exist
 SHOW CREATE TABLE t2;
-ERROR 42S02: Table 'metaSync_22559_22564.t2' doesn't exist
+ERROR 42S02: Table 'metasync_22559_22564.t2' doesn't exist
 connection conn2;
-SHOW CREATE DATABASE metaSync_22559_22564;
+SHOW CREATE DATABASE metasync_22559_22564;
 Database	Create Database
-metaSync_22559_22564	CREATE DATABASE `metaSync_22559_22564` /*!40100 DEFAULT CHARACTER SET cp1251 */
+metasync_22559_22564	CREATE DATABASE `metasync_22559_22564` /*!40100 DEFAULT CHARACTER SET cp1251 */
 SHOW CREATE PROCEDURE p1;
 ERROR 42000: PROCEDURE p1 does not exist
-DROP DATABASE metaSync_22559_22564;
+DROP DATABASE metasync_22559_22564;
 connection conn1;
-SHOW CREATE DATABASE metaSync_22559_22564;
-ERROR 42000: Unknown database 'metaSync_22559_22564'
+SHOW CREATE DATABASE metasync_22559_22564;
+ERROR 42000: Unknown database 'metasync_22559_22564'
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_22561_22566;
+DROP DATABASE IF EXISTS metasync_22561_22566;
 connection conn2;
-SHOW CREATE DATABASE metaSync_22561_22566;
-ERROR 42000: Unknown database 'metaSync_22561_22566'
+SHOW CREATE DATABASE metasync_22561_22566;
+ERROR 42000: Unknown database 'metasync_22561_22566'
 connection conn1;
-CREATE DATABASE metaSync_22561_22566;
-USE metaSync_22561_22566;
+CREATE DATABASE metasync_22561_22566;
+USE metasync_22561_22566;
 CREATE TABLE t1 ( a TINYINT PRIMARY KEY, e ENUM('y','n','giveup') );
 connection conn2;
-ALTER TABLE metaSync_22561_22566.t1 MODIFY a TINYINT AUTO_INCREMENT;
-INSERT INTO metaSync_22561_22566.t1(e) VALUES ('y'),('n');
+ALTER TABLE metasync_22561_22566.t1 MODIFY a TINYINT AUTO_INCREMENT;
+INSERT INTO metasync_22561_22566.t1(e) VALUES ('y'),('n');
 connection conn1;
 SHOW CREATE TABLE t1;
 Table	Create Table
@@ -886,10 +886,10 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn2;
-USE metaSync_22561_22566;
-SHOW CREATE DATABASE metaSync_22561_22566;
+USE metasync_22561_22566;
+SHOW CREATE DATABASE metasync_22561_22566;
 Database	Create Database
-metaSync_22561_22566	CREATE DATABASE `metaSync_22561_22566` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin */
+metasync_22561_22566	CREATE DATABASE `metasync_22561_22566` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin */
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -898,7 +898,7 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
-ALTER DATABASE metaSync_22561_22566 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
+ALTER DATABASE metasync_22561_22566 DEFAULT CHARACTER SET = ucs2 DEFAULT COLLATE = ucs2_general_ci;
 connection conn2;
 ALTER TABLE t1 ADD COLUMN c CHAR(8) DEFAULT 'char';
 connection conn1;
@@ -919,9 +919,9 @@ t1	CREATE TABLE `t1` (
   `c` char(8) COLLATE utf8mb4_bin DEFAULT 'char',
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-SHOW CREATE DATABASE metaSync_22561_22566;
+SHOW CREATE DATABASE metasync_22561_22566;
 Database	Create Database
-metaSync_22561_22566	CREATE DATABASE `metaSync_22561_22566` /*!40100 DEFAULT CHARACTER SET ucs2 */
+metasync_22561_22566	CREATE DATABASE `metasync_22561_22566` /*!40100 DEFAULT CHARACTER SET ucs2 */
 connection conn1;
 SELECT * FROM t1 ORDER BY a;
 a	e	c
@@ -938,7 +938,7 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB AUTO_INCREMENT=122 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn2;
-ALTER DATABASE metaSync_22561_22566 CHARACTER SET cp1251;
+ALTER DATABASE metasync_22561_22566 CHARACTER SET cp1251;
 connection conn1;
 ALTER TABLE t1 MODIFY a TINYINT;
 INSERT INTO t1(a,e) VALUES (-1, 'giveup');
@@ -959,37 +959,37 @@ t1	CREATE TABLE `t1` (
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
-SHOW CREATE DATABASE metaSync_22561_22566;
+SHOW CREATE DATABASE metasync_22561_22566;
 Database	Create Database
-metaSync_22561_22566	CREATE DATABASE `metaSync_22561_22566` /*!40100 DEFAULT CHARACTER SET cp1251 */
+metasync_22561_22566	CREATE DATABASE `metasync_22561_22566` /*!40100 DEFAULT CHARACTER SET cp1251 */
 DROP TABLE t1;
 connection conn2;
 SHOW CREATE TABLE t1;
-ERROR 42S02: Table 'metaSync_22561_22566.t1' doesn't exist
+ERROR 42S02: Table 'metasync_22561_22566.t1' doesn't exist
 connection conn1;
-DROP DATABASE metaSync_22561_22566;
+DROP DATABASE metasync_22561_22566;
 connection conn2;
-SHOW CREATE DATABASE metaSync_22561_22566;
-ERROR 42000: Unknown database 'metaSync_22561_22566'
+SHOW CREATE DATABASE metasync_22561_22566;
+ERROR 42000: Unknown database 'metasync_22561_22566'
 connection conn1;
-DROP DATABASE IF EXISTS metaSync_22697;
+DROP DATABASE IF EXISTS metasync_22697;
 connection conn2;
-SHOW CREATE DATABASE metaSync_22697;
-ERROR 42000: Unknown database 'metaSync_22697'
+SHOW CREATE DATABASE metasync_22697;
+ERROR 42000: Unknown database 'metasync_22697'
 connection conn1;
-CREATE DATABASE metaSync_22697;
-USE metaSync_22697;
+CREATE DATABASE metasync_22697;
+USE metasync_22697;
 CREATE TABLE t1 ( id INT AUTO_INCREMENT PRIMARY KEY, name CHAR(8) );
 CREATE VIEW v1 AS SELECT id FROM t1 WHERE id > 1;
 connection conn2;
-CREATE PROCEDURE metaSync_22697.p1 ( x CHAR(8) )
+CREATE PROCEDURE metasync_22697.p1 ( x CHAR(8) )
 BEGIN
-ALTER TABLE metaSync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
-INSERT INTO metaSync_22697.t1 VALUES ();
-INSERT INTO metaSync_22697.t1(name) VALUES (x);
-SELECT * FROM metaSync_22697.v1;
+ALTER TABLE metasync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
+INSERT INTO metasync_22697.t1 VALUES ();
+INSERT INTO metasync_22697.t1(name) VALUES (x);
+SELECT * FROM metasync_22697.v1;
 END|
-USE metaSync_22697;
+USE metasync_22697;
 connection conn1;
 SET @x = "Jack";
 CALL p1( @x );
@@ -1015,10 +1015,10 @@ SHOW CREATE PROCEDURE p1;
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x CHAR(8) )
 BEGIN
-ALTER TABLE metaSync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
-INSERT INTO metaSync_22697.t1 VALUES ();
-INSERT INTO metaSync_22697.t1(name) VALUES (x);
-SELECT * FROM metaSync_22697.v1;
+ALTER TABLE metasync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
+INSERT INTO metasync_22697.t1 VALUES ();
+INSERT INTO metasync_22697.t1(name) VALUES (x);
+SELECT * FROM metasync_22697.v1;
 END	latin1	latin1_swedish_ci	utf8mb4_bin
 connection conn2;
 ALTER ALGORITHM = MERGE DEFINER = "root"@"localhost" SQL SECURITY INVOKER VIEW v1 AS SELECT id, name FROM t1 WHERE name IS NOT NULL;
@@ -1041,10 +1041,10 @@ Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Da
 p1	STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION	CREATE DEFINER=`x`@`%` PROCEDURE `p1`( x CHAR(8) )
     COMMENT 'alter procedure comment'
 BEGIN
-ALTER TABLE metaSync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
-INSERT INTO metaSync_22697.t1 VALUES ();
-INSERT INTO metaSync_22697.t1(name) VALUES (x);
-SELECT * FROM metaSync_22697.v1;
+ALTER TABLE metasync_22697.t1 MODIFY name CHAR(16) DEFAULT 'zhangsan';
+INSERT INTO metasync_22697.t1 VALUES ();
+INSERT INTO metasync_22697.t1(name) VALUES (x);
+SELECT * FROM metasync_22697.v1;
 END	latin1	latin1_swedish_ci	utf8mb4_bin
 connection conn1;
 DROP VIEW v1;
@@ -1055,10 +1055,10 @@ SHOW CREATE PROCEDURE p1;
 ERROR 42000: PROCEDURE p1 does not exist
 connection conn2;
 SHOW CREATE TABLE v1;
-ERROR 42S02: Table 'metaSync_22697.v1' doesn't exist
-DROP DATABASE metaSync_22697;
+ERROR 42S02: Table 'metasync_22697.v1' doesn't exist
+DROP DATABASE metasync_22697;
 connection conn1;
-SHOW CREATE DATABASE metaSync_22697;
-ERROR 42000: Unknown database 'metaSync_22697'
+SHOW CREATE DATABASE metasync_22697;
+ERROR 42000: Unknown database 'metasync_22697'
 disconnect conn1;
 disconnect conn2;
