@@ -386,4 +386,12 @@ uint sdb_sql_errno(THD *thd);
 const char *sdb_errno_message(THD *thd);
 
 char *sdb_thd_strmake(THD *thd, const char *str, size_t length);
+
+const char *sdb_thd_query_str(THD *thd);
+
+int sdb_thd_query_length(THD *thd);
+
+String sdb_thd_rewritten_query(THD *thd);
+
+ulonglong sdb_thd_os_id(THD *thd);
 #endif

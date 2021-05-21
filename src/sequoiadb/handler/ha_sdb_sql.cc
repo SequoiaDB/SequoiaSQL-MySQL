@@ -25,6 +25,7 @@
 
 #ifdef IS_MYSQL
 #include <my_thread_local.h>
+#include <my_thread_os_id.h>
 #include <table_trigger_dispatcher.h>
 #endif
 
@@ -606,6 +607,31 @@ const char *sdb_errno_message(THD *thd) {
 char *sdb_thd_strmake(THD *thd, const char *str, size_t length) {
   return thd->strmake(str, length);
 }
+
+const char *sdb_thd_query_str(THD *thd) {
+  return thd->query().str;
+}
+
+int sdb_thd_query_length(THD *thd) {
+  return thd->query().length;
+}
+
+String sdb_thd_rewritten_query(THD *thd) {
+#ifndef MYSQL_VERSION_ID
+#error "Need MYSQL_VERSION_ID defined"
+#endif  // MYSQL_VERSION_ID
+
+#if MYSQL_VERSION_ID >= 50731
+  return thd->rewritten_query();
+#else
+  return thd->rewritten_query;
+#endif  // MYSQL_VERSION_ID
+}
+
+ulonglong sdb_thd_os_id(THD *thd) {
+  return my_thread_os_id();
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1200,5 +1226,21 @@ const char *sdb_errno_message(THD *thd) {
 
 char *sdb_thd_strmake(THD *thd, const char *str, size_t length) {
   return thd_strmake(thd, str, length);
+}
+
+const char *sdb_thd_query_str(THD *thd) {
+  return thd->query();
+}
+
+int sdb_thd_query_length(THD *thd) {
+  return thd->query_length();
+}
+
+String sdb_thd_rewritten_query(THD *thd) {
+  return String();
+}
+
+ulonglong sdb_thd_os_id(THD *thd) {
+  return (ulonglong)thd->os_thread_id;
 }
 #endif

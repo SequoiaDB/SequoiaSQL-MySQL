@@ -24,10 +24,6 @@
 #include "ha_sdb_def.h"
 #include <my_rnd.h>
 
-#ifdef IS_MYSQL
-#include <my_thread_os_id.h>
-#endif
-
 bool sdb_version_cached = false;
 
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
@@ -680,64 +676,48 @@ error:
 int sdb_add_pfs_clientinfo(THD *thd) {
   int rc = SDB_ERR_OK;
 #ifdef HAVE_PSI_STATEMENT_INTERFACE
-  char *query_text = NULL;
-  char *pos = NULL;
-  int new_statement_size = 0;
-  int length = 0;
   String rewrite_query;
+  int pfs_len = 0;
+  int old_query_len = 0;
+  const char *old_query = NULL;
+  char *pos = NULL;
+  char *new_query = NULL;
+  int new_query_len = 0;
 
-#ifdef IS_MYSQL
-#ifndef MYSQL_VERSION_ID
-#error "Need MYSQL_VERSION_ID defined"
-#endif
-
-#if MYSQL_VERSION_ID >= 50731
-  rewrite_query = thd->rewritten_query();
-#else
-  rewrite_query = thd->rewritten_query;
-#endif
+  rewrite_query = sdb_thd_rewritten_query(thd);
   if (rewrite_query.length()) {
-    length = rewrite_query.length();
-    query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));
-    if (!query_text) {
-      return HA_ERR_OUT_OF_MEM;
-    }
-    pos = query_text;
-    snprintf(pos, SDB_PFS_META_LEN, "/* qid=%lli, ostid=%llu */ ",
-             thd->query_id, my_thread_os_id());
-    pos += strlen(query_text);
-    snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s", rewrite_query.c_ptr_safe());
+    old_query = rewrite_query.c_ptr_safe();
+    old_query_len = rewrite_query.length();
   } else {
-    length = thd->query().length;
-    query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));
-    if (!query_text) {
-      return HA_ERR_OUT_OF_MEM;
-    }
-    pos = query_text;
-    snprintf(pos, SDB_PFS_META_LEN, "/* qid=%lli, ostid=%llu */ ",
-             thd->query_id, my_thread_os_id());
-    pos += strlen(query_text);
-    snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s", thd->query().str);
+    old_query = sdb_thd_query_str(thd);
+    old_query_len = sdb_thd_query_length(thd);
   }
-#else
-#ifdef IS_MARIADB
-  length = thd->query_length();
-  query_text = static_cast<char *>(thd->alloc(length + SDB_PFS_META_LEN));
-  if (!query_text) {
-    return HA_ERR_OUT_OF_MEM;
+
+  new_query = (char *)thd->alloc(old_query_len + SDB_PFS_META_MAX_LEN);
+  if (!new_query) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
   }
-  pos = query_text;
-  snprintf(pos, SDB_PFS_META_LEN, "/* qid=%lli, ostid=%u */ ", thd->query_id,
-           thd->os_thread_id);
-  pos += strlen(query_text);
-  snprintf(pos, length + SDB_NUL_BIT_SIZE, "%s", thd->query());
-#endif
-#endif
-  new_statement_size = strlen(query_text);
-  MYSQL_SET_STATEMENT_TEXT(thd->m_statement_psi, query_text,
-                           new_statement_size);
-#endif
+  pos = new_query;
+  pfs_len = snprintf(pos, SDB_PFS_META_MAX_LEN, "/* qid=%lli, ostid=%llu */ ",
+                     thd->query_id, sdb_thd_os_id(thd));
+  if (pfs_len > SDB_PFS_META_MAX_LEN) {
+    DBUG_ASSERT(0);
+    rc = HA_ERR_GENERIC;
+    goto error;
+  }
+  pos += pfs_len;
+  memcpy(pos, old_query, old_query_len);
+  pos += old_query_len;
+  *pos = '\0';
+
+  new_query_len = pfs_len + old_query_len;
+  MYSQL_SET_STATEMENT_TEXT(thd->m_statement_psi, new_query, new_query_len);
+#endif  // HAVE_PSI_STATEMENT_INTERFACE
+done:
   return rc;
+error:
+  goto done;
 }
 
 /*
