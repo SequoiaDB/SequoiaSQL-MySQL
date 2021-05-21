@@ -2365,7 +2365,9 @@ int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *cs_name,
                                           SDB_FIELD_ENSURE_SHARDING_IDX,
                                           SDB_FIELD_LOB_SHD_KEY_FMT,
                                           SDB_FIELD_PARTITION,
-                                          SDB_FIELD_AUTO_SPLIT};
+                                          SDB_FIELD_AUTO_SPLIT,
+                                          SDB_FIELD_DATASOURCE_ID,
+                                          SDB_FIELD_MAPPING};
   static const int OPT_SAME_FIELD_COUNT =
       sizeof(OPT_SAME_FIELDS) / sizeof(const char *);
   static const int ATTR_COMPRESSED = 1;
@@ -2726,6 +2728,14 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_cs_name, char *src_cl_name,
                                        cata_info, with_autoinc);
     if (rc != 0) {
       goto error;
+    }
+
+    if ( options.hasField( SDB_FIELD_DATASOURCE_ID ) )
+    {
+      rc = HA_ERR_NOT_ALLOWED_COMMAND ;
+      SDB_PRINT_ERROR(rc, "Copy cl[%s.%s] which is using data source is not "
+                      "allowed.", src_cs_name, src_cl_name);
+      goto error ;
     }
 
     rc = conn->create_cl(dst_cs_name, dst_cl_name, options, &created_cs,

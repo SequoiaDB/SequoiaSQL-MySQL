@@ -143,6 +143,8 @@
 #define SDB_FIELD_ATTRIBUTE "Attribute"
 #define SDB_FIELD_COMPRESSION_TYPE_DESC "CompressionTypeDesc"
 #define SDB_FIELD_GROUP_NAME "GroupName"
+#define SDB_FIELD_DATASOURCE_ID "DataSourceID"
+#define SDB_FIELD_MAPPING "Mapping"
 
 #define SDB_FIELD_IDX_DEF "IndexDef"
 #define SDB_FIELD_UNIQUE "Unique"
