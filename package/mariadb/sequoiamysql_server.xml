@@ -410,7 +410,7 @@
     <initializationActionList>
         <createTimeStamp>
             <variable>time</variable>
-            <format>%Y-%m-%d-%H:%M:%S</format>
+            <format>%Y-%m-%d-%H_%M_%S</format>
         </createTimeStamp>                 
         <setInstallerVariable name="project.rollbackBackupDirectory" value="${installdir}/rollback/BackupDir_${time}"/> 
         <setInstallerVariable name="add_user_done"                   value="false"/>
