@@ -360,10 +360,10 @@ select * from t1 where a in('1000-01-01','9999-12-29','2013-10-12');
 --sorted_result
 select * from t1 where a='a1';
 --source include/query_pushdown_condition_sequoiadb.inc
-#BUG #SEQUOIASQLMAINSTREAM-607
-#--sorted_result
-#select * from t1 where a<'10000-01-01';
-#--source include/query_pushdown_condition_sequoiadb.inc
+# SEQUOIASQLMAINSTREAM-607
+--sorted_result
+select * from t1 where a<'10000-01-01';
+--source include/query_pushdown_condition_sequoiadb.inc
 
 --sorted_result
 select * from t1 where a=c;
@@ -416,9 +416,9 @@ select * from t1 where a in('1000-01-01','9999-12-29','2013-10-12');
 
 --sorted_result
 select * from t1 where a='a1';
-#BUG #SEQUOIASQLMAINSTREAM-607
-#--sorted_result
-#select * from t1 where a<'10000-01-01';
+# SEQUOIASQLMAINSTREAM-607
+--sorted_result
+select * from t1 where a<'10000-01-01';
 
 --sorted_result
 select * from t1 where a=c;

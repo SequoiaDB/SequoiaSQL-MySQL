@@ -935,11 +935,15 @@ INSERT INTO t1 VALUES
 ('A1','2005-11-15 00:00:00',2000),
 ('A1','2005-12-12 08:00:00',3000),
 ('A2','2005-12-01 08:00:00',1000);
+SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-01 24:00:00';
+item	started	price
 SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-02 00:00:00';
 item	started	price
 A1	2005-11-01 08:00:00	1000.000
 A1	2005-11-15 00:00:00	2000.000
 DROP INDEX `PRIMARY` ON t1;
+SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-01 24:00:00';
+item	started	price
 SELECT * FROM t1 WHERE item='A1' AND started<='2005-12-02 00:00:00';
 item	started	price
 A1	2005-11-01 08:00:00	1000.000

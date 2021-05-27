@@ -1091,6 +1091,9 @@ id	a	b	c
 Warning	1292	Truncated incorrect datetime value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": { "$date": -62170013143000 } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
+select * from t1 where a<'10000-01-01';
+id	a	b	c
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": { "$date": -62170013143000 } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0]
 select * from t1 where a=c;
 id	a	b	c
 1	1000-01-01	a	1000-01-01
@@ -1193,6 +1196,8 @@ select * from t1 where a='a1';
 id	a	b	c
 Warning	1292	Truncated incorrect datetime value: 'a1'
 Warnings:
+select * from t1 where a<'10000-01-01';
+id	a	b	c
 select * from t1 where a=c;
 id	a	b	c
 1	1000-01-01	a	1000-01-01
