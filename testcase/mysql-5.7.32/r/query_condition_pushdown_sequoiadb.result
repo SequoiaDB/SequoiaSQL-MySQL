@@ -15707,6 +15707,7 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": 1.100000023841858 } }, { "a": { "$lt": 10.10000038146973 } } ] }, { "a": { "$lte": 10.10000038146973 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
@@ -15725,6 +15726,7 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": 1.100000023841858 } }, { "a": { "$lt": 10.10000038146973 } } ] }, { "a": { "$lte": 10.10000038146973 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a double NOT NULL,
@@ -15750,6 +15752,7 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.1 } }, { "a": { "$lt": 10.1 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
@@ -15768,6 +15771,7 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.1 } }, { "a": { "$lt": 10.1 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a decimal NOT NULL,
@@ -15815,6 +15819,7 @@ a	b
 8	8.10
 9	9.10
 10	10.10
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": { "$decimal": "1.1" } } }, { "a": { "$lt": { "$decimal": "10.1" } } } ] }, { "a": { "$lte": { "$decimal": "10" } } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
@@ -15834,5 +15839,6 @@ a	b
 8	8.10
 9	9.10
 10	10.10
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": { "$decimal": "1.1" } } }, { "a": { "$lt": { "$decimal": "10.1" } } } ] }, { "a": { "$lte": { "$decimal": "10" } } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0]
 DROP TABLE t1;
 DROP DATABASE query_pushdown_test_sequoiadb;
