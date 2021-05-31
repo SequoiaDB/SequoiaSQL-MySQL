@@ -177,6 +177,18 @@ function check_user()
    fi
 }
 
+function ensure_ctl_log()
+{
+   if [ ! -d $CONF_LOG_PATH ]
+   then
+      exec_cmd "mkdir -p $CONF_LOG_PATH"
+   fi
+   if [ ! -f "$CTL_LOG" ]
+   then
+      exec_cmd "touch $CTL_LOG"
+   fi
+}
+
 # if root: change to pg user to execute command
 # if pg user: execute command
 function exec_cmd()
@@ -1277,7 +1289,8 @@ cd $cur_path >> /dev/null >&1
 
 CONF_INST_PATH="${INSTALL_PATH}/conf/instance"
 CONF_SVC_PATH="${INSTALL_PATH}/conf/service"
-CTL_LOG="${INSTALL_PATH}/conf/log/sdb_mysql_ctl.log"
+CONF_LOG_PATH="${INSTALL_PATH}/conf/log"
+CTL_LOG="${CONF_LOG_PATH}/sdb_mysql_ctl.log"
    
 
 eval set -- "${ARGS}"
@@ -1506,6 +1519,7 @@ fi
 #check user
 get_system_conf_file
 check_user $mode
+ensure_ctl_log
 
 #enter operation mode
 case $mode in
