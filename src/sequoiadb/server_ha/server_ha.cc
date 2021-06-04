@@ -4313,7 +4313,7 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     goto done;
   } else if (!ha_thread.recover_finished) {  // current instance is recovering
     struct timespec abstime;
-    sdb_set_timespec(abstime, ha_wait_recover_timeout);
+    sdb_set_clock_time(abstime, ha_wait_recover_timeout);
 
     SDB_LOG_INFO("HA: Waiting for completion of recover process");
     // other clients must wait for completion of recover process. It's not
@@ -4900,6 +4900,16 @@ static void destroy_inst_state_cache() {
   }
 }
 
+static void init_cond_with_clock_monotonic(PSI_cond_key key,
+                                           mysql_cond_t &cond) {
+  pthread_condattr_t attr;
+  if (pthread_condattr_init(&attr) ||
+      pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) ||
+      sdb_mysql_cond_init(key, &cond, &attr)) {
+    DBUG_ASSERT(0);
+  }
+}
+
 // HA plugin initialization entry
 static int server_ha_init(void *p) {
   DBUG_ENTER("server_ha_init");
@@ -4937,10 +4947,11 @@ static int server_ha_init(void *p) {
     ha_thread.instance_id = HA_INVALID_INST_ID;
     ha_thread.group_name = ha_inst_group_name;
 
-    sdb_mysql_cond_init(HA_KEY_COND_RECOVER_FINISHED,
-                        &ha_thread.recover_finished_cond, NULL);
-    sdb_mysql_cond_init(HA_KEY_COND_REPLAY_STOPPED,
-                        &ha_thread.replay_stopped_cond, NULL);
+    init_cond_with_clock_monotonic(HA_KEY_COND_RECOVER_FINISHED,
+                                   ha_thread.recover_finished_cond);
+    init_cond_with_clock_monotonic(HA_KEY_COND_REPLAY_STOPPED,
+                                   ha_thread.replay_stopped_cond);
+
     mysql_mutex_init(HA_KEY_MUTEX_RECOVER_FINISHED,
                      &ha_thread.recover_finished_mutex, MY_MUTEX_INIT_FAST);
     mysql_mutex_init(HA_KEY_MUTEX_REPLAY_STOPPED,
@@ -4962,8 +4973,9 @@ static int server_ha_init(void *p) {
     pending_log_replayer.recover_finished = &ha_thread.recover_finished;
     pending_log_replayer.sdb_group_name = ha_thread.sdb_group_name;
     pending_log_replayer.stopped = true;
-    sdb_mysql_cond_init(HA_KEY_COND_PENDING_LOG_REPLAYER,
-                        &pending_log_replayer.stopped_cond, NULL);
+
+    init_cond_with_clock_monotonic(HA_KEY_COND_PENDING_LOG_REPLAYER,
+                                   pending_log_replayer.stopped_cond);
     mysql_mutex_init(HA_KEY_MUTEX_PENDING_LOG_REPLAYER,
                      &pending_log_replayer.stopped_mutex, MY_MUTEX_INIT_FAST);
     my_thread_attr_init(&pending_log_replayer.thread_attr);

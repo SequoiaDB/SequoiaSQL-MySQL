@@ -1769,7 +1769,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
       }
     }
     if (curr_executed < REPLAY_LIMIT) {
-      sdb_set_timespec(abstime, SLEEP_SECONDS);
+      sdb_set_clock_time(abstime, SLEEP_SECONDS);
       rc = mysql_cond_timedwait(&ha_thread->replay_stopped_cond,
                                 &ha_thread->replay_stopped_mutex, &abstime);
       DBUG_ASSERT(rc == 0 || rc == ETIMEDOUT);
@@ -2128,7 +2128,7 @@ void *ha_replay_pending_logs(void *arg) {
     goto done;
   }
 
-  sdb_set_timespec(abstime, WAIT_RECOVER_TIMEOUT);
+  sdb_set_clock_time(abstime, WAIT_RECOVER_TIMEOUT);
   mysql_mutex_lock(replayer->recover_mutex);
   if (!replayer->recover_finished) {
     mysql_cond_timedwait(replayer->recover_cond, replayer->recover_mutex,
@@ -2188,7 +2188,7 @@ void *ha_replay_pending_logs(void *arg) {
         }
       }
 
-      sdb_set_timespec(abstime, sleep_seconds);
+      sdb_set_clock_time(abstime, sleep_seconds);
       SDB_LOG_DEBUG("HA: Wait %lld seconds", sleep_seconds);
       rc = mysql_cond_timedwait(&replayer->stopped_cond,
                                 &replayer->stopped_mutex, &abstime);
@@ -2227,7 +2227,7 @@ void *ha_replay_pending_logs(void *arg) {
   sleep_secs:
     pending_log_cl.close();
     check_again_cl.close();
-    sdb_set_timespec(abstime, CHECK_TIMEOUT);
+    sdb_set_clock_time(abstime, CHECK_TIMEOUT);
     rc = mysql_cond_timedwait(&replayer->stopped_cond, &replayer->stopped_mutex,
                               &abstime);
     DBUG_ASSERT(rc == 0 || rc == ETIMEDOUT);

@@ -512,6 +512,16 @@ void sdb_string_free(String *str) {
   str->mem_free();
 }
 
+int sdb_mysql_cond_init(PSI_cond_key key, mysql_cond_t *that,
+                        const pthread_condattr_t *attr) {
+#ifdef HAVE_PSI_COND_INTERFACE
+  that->m_psi = PSI_COND_CALL(init_cond)(key, &that->m_cond);
+#else
+  that->m_psi = NULL;
+#endif
+  return pthread_cond_init(&that->m_cond, attr);
+}
+
 void *sdb_trans_alloc(THD *thd, size_t size) {
   return thd->get_transaction()->allocate_memory(size);
 }
@@ -1133,6 +1143,11 @@ my_bool sdb_hash_init(HASH *hash, CHARSET_INFO *charset,
 
 void sdb_string_free(String *str) {
   str->free();
+}
+
+int sdb_mysql_cond_init(PSI_cond_key key, mysql_cond_t *that,
+                        const pthread_condattr_t *attr) {
+  return mysql_cond_init(key, that, attr);
 }
 
 void *sdb_trans_alloc(THD *thd, size_t size) {

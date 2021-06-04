@@ -135,6 +135,8 @@ bool sdb_prefer_inst_is_valid(const char *s);
 
 bool sdb_prefer_inst_mode_is_valid(const char *s);
 
+void sdb_set_clock_time(struct timespec &abstime, ulonglong sec);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

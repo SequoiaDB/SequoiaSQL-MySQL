@@ -207,11 +207,8 @@ void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
 void sdb_string_free(String *str);
 
 // About condition variable
-#if defined IS_MYSQL
-#define sdb_mysql_cond_init(K, C, A) mysql_cond_init(K, C)
-#elif defined IS_MARIADB
-#define sdb_mysql_cond_init(K, C, A) mysql_cond_init(K, C, A)
-#endif
+int sdb_mysql_cond_init(PSI_cond_key key, mysql_cond_t *that,
+                        const pthread_condattr_t *attr);
 
 // About THD
 my_thread_id sdb_thd_id(THD *thd);

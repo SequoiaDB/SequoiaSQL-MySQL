@@ -1197,3 +1197,10 @@ bool sdb_prefer_inst_mode_is_valid(const char *s) {
   }
   return true;
 }
+
+void sdb_set_clock_time(struct timespec &abstime, ulonglong sec) {
+  if (clock_gettime(CLOCK_MONOTONIC, &abstime)) {
+    DBUG_ASSERT(0);
+  }
+  abstime.tv_sec += sec;
+}
