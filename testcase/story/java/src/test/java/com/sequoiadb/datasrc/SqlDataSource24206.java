@@ -117,7 +117,7 @@ public class SqlDataSource24206 extends SdbTestBase {
         Thread.sleep( 5000 );
         utils.update( "call " + csname + ".insertValue1()", url2 );
 
-        ThreadExecutor t = new ThreadExecutor();
+        ThreadExecutor t = new ThreadExecutor( 180000 );
         t.addWorker( new Insert() );
         t.addWorker( new Update() );
         t.addWorker( new Delete() );

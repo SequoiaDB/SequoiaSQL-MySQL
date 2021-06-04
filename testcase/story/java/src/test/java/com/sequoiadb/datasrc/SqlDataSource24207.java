@@ -15,6 +15,8 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.sql.SQLException;
+
 /**
  * @Description seqDB-24207:多实例mysql端集合映射普通表并发执行数据操作
  * @author liuli
@@ -65,7 +67,7 @@ public class SqlDataSource24207 extends SdbTestBase {
 
     @Test
     public void test() throws Exception {
-        ThreadExecutor t = new ThreadExecutor();
+        ThreadExecutor t = new ThreadExecutor( 180000 );
         Insert insert = new Insert();
         Truncate truncate = new Truncate();
         t.addWorker( insert );
@@ -93,7 +95,13 @@ public class SqlDataSource24207 extends SdbTestBase {
     class Insert extends ResultStore {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            utils.update( "call " + csName + ".insertValue()", url1 );
+            try {
+                utils.update( "call " + csName + ".insertValue()", url1 );
+            } catch ( SQLException e ) {
+                if ( !( e.getMessage().equals( "Collection is truncated" ) ) ) {
+                    throw e;
+                }
+            }
         }
     }
 
