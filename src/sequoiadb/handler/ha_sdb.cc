@@ -4867,10 +4867,19 @@ int ha_sdb::info(uint flag) {
     */
     for (uint i = 0; i < table->s->keys; i++) {
       KEY *key_info = &table->key_info[i];
-      Sdb_idx_stat_ptr ptr = share->idx_stat_arr[i];
+      Sdb_idx_stat_ptr &ptr = share->idx_stat_arr[i];
       uint key_part_count = key_info->user_defined_key_parts;
 
-      if (!key_info->rec_per_key || !ptr.get()) {
+      if (!key_info->rec_per_key) {
+        continue;
+      }
+
+      // statistics are needed when multi-table joining
+      if (!sdb_is_single_table(ha_thd())) {
+        ensure_index_stat(key_info, ptr);
+      }
+
+      if (!ptr.get()) {
         continue;
       }
 
