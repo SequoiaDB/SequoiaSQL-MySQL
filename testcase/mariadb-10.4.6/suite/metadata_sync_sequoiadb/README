@@ -1,37 +1,46 @@
-一、本地/CI 对接元数据同步工具的测试用例，准备环境如下：
-1. 准备两个 MySQL 实例，实例可同主机也可跨主机。如实例1、实例2同主机且主机名为 A，实例1端口号为 p1，实例2端口号为 p2
-/opt/sequoiasql/mysql/bin/sdb_sql_ctl addinst myinst1 -p p1 -D database/p1
-/opt/sequoiasql/mysql/bin/sdb_sql_ctl addinst myinst2 -p p2 -D database/p2
+本地或 CI 执行元数据同步测试用例
 
-2. 在主机 A 初始化 HA 实例组（当 MySQL 跟 SequoiaDB 在同一台机器上时，不需要指定 --host）
-/opt/sequoiasql/mysql/bin/ha_inst_group_init xxx --verbose --key yyy --host=localhost:11810
- 
-3. 将实例1、实例2加入 HA 实例组（见步骤2，HA 的 groupName 为 xxx，key 为 yyy。 注：groupName 和 key 可自定义）
-/opt/sequoiasql/mysql/bin/sdb_sql_ctl join myinst1 -g xxx -k yyy
-/opt/sequoiasql/mysql/bin/sdb_sql_ctl join myinst2 -g xxx -k yyy
+一、准备环境
+1、创建多个实例，多个实例可以在相同或者不同主机
+示例：创建实例 myinst1、myinst2，端口分别为 6101、6102
+/opt/sequoiasql/mariadb/bin/sdb_maria_ctl addinst myinst1 -p 6101 -D database/6101
+/opt/sequoiasql/mariadb/bin/sdb_maria_ctl addinst myinst2 -p 6102 -D database/6102
 
-4. 步骤3 join 操作会触发实例重启。实例重启后，可见实例配置文件 auto.cnf 自动新增了如下两个参数：
-server_ha_inst_group_name=xxx    
-server_ha_inst_group_key=yyy    
+2、初始化实例组
+示例：初始化 sql_group1 实例组，key 为 test（instance group name 和 key 可自定义，--host 默认为 localhost:11810（根据实际情况配置））
+/opt/sequoiasql/mariadb/bin/ha_inst_group_init sql_group1 --verbose --key test
 
-5. 步骤3 join 触发实例重启后，可以看到实例1、实例2的数据目录下，生成 myid 这个文件，myid 文件主要是存放每个实例在实例组中的 ID 
+3、添加实例到实例组
+示例：添加 myinst1、myinst2 到实例组 sql_group1
+/opt/sequoiasql/mariadb/bin/sdb_maria_ctl join myinst1 -g sql_group1 -k test
+/opt/sequoiasql/mariadb/bin/sdb_maria_ctl join myinst2 -g sql_group1 -k test
 
-6. 步骤3 join 触发实例重启后，登录 sdb shell，可以看到多出了 HA 开头的数据库和表
-> db.list(5)
+join 成功后实例会被自动重启，重启后实例组配置生效。
+
+4、查看所有实例元数据已同步（查看 SQLID 相同）
+> db.HAInstanceGroup_sql_group1.HAInstanceState.find()
 {
-  "Name": "HASysGlobalInfo"
+  "InstanceID": 1,
+  "JoinID": 1,
+  "SQLID": 8,
+  ....
 }
 {
-  "Name": "HAInstanceGroup_mysql_sync"
+  "InstanceID": 2,
+  "JoinID": 2,
+  "SQLID": 8,
+  ....
 }
 Return 2 row(s).
 
-7. 登录实例1，创建普通用户 sdbadmin，为用例执行作准备
-mysql> CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
-mysql> GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
+5、添加用户并授权
+示例：
+1）实例1，添加用户并授权，用户名：sdbadmin，密码：sdbadmin
+MariaDB [none]> CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
+MariaDB [none]> GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
 
-8. 登录实例2，检查用户 sdbadmin 已正常同步至该实例
-mysql> SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
+2）实例2，查看用户元数据已同步
+MariaDB [none]> SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
 +----------+------+
 | user     | host |
 +----------+------+
@@ -39,6 +48,17 @@ mysql> SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
 +----------+------+
 1 row in set (0.00 sec)
 
+二、执行用例
+/opt/sequoiasql/mariadb/mysql-test 目录下执行用例
+示例：
+./mysql-test-run.pl --suite=metadata_sync_sequoiadb --meta-sync-addr=sdbserver1:6101,sdbserver2:6102 --meta-sync-user=sdbadmin --meta-sync-passwd=sdbadmin --retry=1 --retry-failure=1 --force --parallel=2
+（
+  测试套：metadata_sync_sequoiadb
+  实例地址：sdbserver1:6101,sdbserver2:6102
+  用户名/密码：sdbadmin / sdbadmin （同上述准备环境中步骤5）
+  --retry=1 --retry-failure=1，重试1次，失败重试1次
+  --force，失败不退出继续执行
+  --parallel=2，两个线程并发
+）
+注意：--meta-sync-addr 主机名不能是 localhost，如localhost:6101，否则会连接失败报：failed: 1045: Access denied for user 'sdbadmin'@'localhost' (using password: YES)
 
-二、本地/CI 切到 /opt/sequoiasql/mysql/mysql-test，执行一下命令：
-./mysql-test-run.pl --suite=metadata_sync_sequoiadb --meta-sync-addr=A:p1,A:p2 --meta-sync-user=sdbadmin --meta-sync-passwd=sdbadmin --retry=1 --retry-failure=1 --force --parallel=2
