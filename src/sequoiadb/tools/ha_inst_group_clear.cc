@@ -361,8 +361,8 @@ static int get_instance_count(sdbclient::sdb &conn, string orig_name,
 
   rc = global_info_cs.getCollection(HA_REGISTRY_CL, registry_cl);
   if (SDB_DMS_NOTEXIST == rc) {
-    cerr << "Error: instance group '" << orig_name << "' doesn't exist" << endl;
-    return rc;
+    // registry table doesn't exist, there are no registered instances
+    return SDB_HA_OK;
   }
   HA_TOOL_RC_CHECK(rc, rc,
                    "Error: failed to get registry table '%s.%s', "
