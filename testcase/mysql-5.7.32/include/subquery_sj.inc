@@ -425,6 +425,7 @@ analyze table t1,t2,t3;
 --enable_result_log
 
 #explain select * from t3 where a in (select kp1 from t1 where kp1<20);
+# SEQUOIASQLMAINSTREAM-811
 select * from t3 where a in (select kp1 from t1 where kp1<20);
 
 #explain select * from t3 where a in (select kp1 from t1 where kp1<20) and a<20;
