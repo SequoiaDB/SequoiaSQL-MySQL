@@ -652,15 +652,14 @@ error:
   goto done;
 }
 
-int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hintBuilder) {
+int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hint_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObj info;
-  bson::BSONObjBuilder build(64);
   try {
-    build.append(SDB_FIELD_PORT, mysqld_port);
-    build.append(SDB_FIELD_QID, thd->query_id);
-    info = build.obj();
-    hintBuilder.append(SDB_FIELD_INFO, info);
+    bson::BSONObjBuilder client_builder(
+        hint_builder.subobjStart(SDB_FIELD_INFO));
+    client_builder.append(SDB_FIELD_PORT, mysqld_port);
+    client_builder.append(SDB_FIELD_QID, thd->query_id);
+    client_builder.done();
   }
 
   SDB_EXCEPTION_CATCHER(rc,

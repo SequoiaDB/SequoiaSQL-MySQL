@@ -94,7 +94,7 @@ int sdb_parse_comment_options(const char *comment_str,
                               bool &explicit_not_auto_partition,
                               bson::BSONObj *partition_options = NULL);
 
-int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hintBuilder);
+int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hint_builder);
 
 int sdb_add_pfs_clientinfo(THD *thd);
 

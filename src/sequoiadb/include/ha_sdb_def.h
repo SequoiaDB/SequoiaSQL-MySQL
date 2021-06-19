@@ -217,6 +217,18 @@
 #define SDB_ITEM_FUN_NEXT_VAL "nextval"
 #define SDB_ITEM_FUN_SET_VAL "setval"
 
+#define SDB_IDX_ADVANCE_POSITION "$Position"
+#define SDB_IDX_ADVANCE_TYPE "Type"
+#define SDB_IDX_ADVANCE_PREFIX_NUM "PrefixNum"
+#define SDB_IDX_ADVANCE_VALUE "IndexValue"
+
+enum SDB_ADVANCE_TYPE {
+  IDX_ADVANCE_TO_FIRST_IN_VALUE = 1,  // For index scan. Advance to the first
+                                      // record of the same value
+  IDX_ADVANCE_TO_FIRST_OUT_VALUE = 2   // For index scan. Advance to the next
+                                      // record different from the value.
+};
+
 const static bson::BSONObj SDB_EMPTY_BSON;
 
 #endif

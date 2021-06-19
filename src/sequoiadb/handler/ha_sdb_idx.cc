@@ -642,16 +642,14 @@ error:
 static inline int create_condition(Field *field, const KEY_PART_INFO *key_part,
                                    const uchar *key_ptr, const char *op_str,
                                    bool ignore_text_key,
-                                   bson::BSONArrayBuilder &builder) {
+                                   bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
   bson::BSONObj op_obj;
-
   rc = get_key_part_value(key_part, key_ptr, op_str, ignore_text_key, op_obj);
   if (SDB_ERR_OK == rc) {
     if (!op_obj.isEmpty()) {
       try {
-        bson::BSONObj cond = BSON(sdb_field_name(field) << op_obj);
-        builder.append(cond);
+        builder.append(sdb_field_name(field), op_obj);
       }
       SDB_EXCEPTION_CATCHER(
           rc, "Failed to create key obj, field:%s, table:%s, exception:%s",
@@ -670,14 +668,14 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                                   const key_range *start_key,
                                   const key_range *end_key,
                                   bool from_records_in_range, bool eq_range_arg,
-                                  bson::BSONObj &condition) {
+                                  bson::BSONObj &start_cond,
+                                  bson::BSONObj &end_cond) {
   int rc = SDB_ERR_OK;
   const uchar *key_ptr;
   uint remainder, length;
   const key_range *ranges[2] = {start_key, end_key};
   my_bitmap_map *old_map;
-  bson::BSONArrayBuilder builder;
-  bson::BSONArray array;
+  bson::BSONObjBuilder builder[2];
 
   if (start_key == NULL && end_key == NULL) {
     return rc;
@@ -695,7 +693,11 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
 
       // ignore end key of prefix index and like
       if (i > 0 && HA_READ_BEFORE_KEY != ranges[i]->flag) {
-        ignore_text_key = true;
+        /* eq_range and start_range is HA_READ_AFTER_KEY, will ignore
+          start_range but should not ignore end_range. */
+        if (!(eq_range_arg && HA_READ_AFTER_KEY == ranges[0]->flag)) {
+          ignore_text_key = true;
+        }
       }
 
       for (key_part = key_info->key_part,
@@ -712,7 +714,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
               distinguish between "IS NOT NULL" and "IS NULL" by flag. For
               "IS NULL", flag is set to HA_READ_KEY_EXACT.
             */
-            int is_null;
+            int is_null = 1;
             switch (ranges[i]->flag) {
               case HA_READ_KEY_EXACT:
               case HA_READ_BEFORE_KEY:
@@ -722,18 +724,32 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                 is_null = 1;
                 break;
               case HA_READ_AFTER_KEY:
-                is_null = i > 0 ? 1 : 0;
-                break;
+                /*start_range*/
+                if (i < 1 && eq_range_arg) {
+                  /* Only if key value of start_key is equal key value of
+                    end_key can break */
+                  if (start_key->keypart_map == end_key->keypart_map &&
+                      start_key->length == end_key->length &&
+                      0 == memcmp(start_key->key, end_key->key,
+                                  start_key->length)) {
+                    break;
+                  }
+                }
+                /*Last key part of start_key or end_key*/
+                if (store_length >= length) {
+                  is_null = i > 0 ? 1 : 0;
+                  break;
+                }
+                /*Note: no break*/
               case HA_READ_KEY_OR_NEXT:
                 // >= null means read all records
               default:
                 goto prepare_for_next_key_part;
             }
-            bson::BSONObj is_null_obj = BSON("$isnull" << is_null);
-            bson::BSONObj is_null_cond =
-                BSON(sdb_field_name(field) << is_null_obj);
-            builder.append(is_null_cond);
-
+            bson::BSONObjBuilder is_null_builder(
+                builder[i].subobjStart(sdb_field_name(field)));
+            is_null_builder.append("$isnull", is_null);
+            is_null_builder.done();
             /*
               We need to adjust pointer and length to be prepared for next
               key part. As well as check if this was last key part.
@@ -747,7 +763,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_EXACT %d", i));
             const char *op_str = from_records_in_range ? "$gte" : "$et";
             rc = create_condition(field, key_part, key_ptr, op_str,
-                                  ignore_text_key, builder);
+                                  ignore_text_key, builder[i]);
             if (0 != rc) {
               SDB_LOG_ERROR(
                   "Failed to create condition for key:%s, table:%s, rc:%d",
@@ -757,17 +773,26 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             break;
           }
           case HA_READ_AFTER_KEY: {
-            if (eq_range_arg) {
-              break;
+            /*start_range*/
+            if (i > 0 && eq_range_arg) {
+              /* Only if key value of start_key is equal key value of end_key
+                can break */
+              if (start_key->keypart_map == end_key->keypart_map &&
+                  start_key->length == end_key->length &&
+                  0 ==
+                      memcmp(start_key->key, end_key->key, start_key->length)) {
+                break;
+              }
             }
             DBUG_PRINT("info", ("sequoiadb HA_READ_AFTER_KEY %d", i));
+            /*last part of key_parts*/
             if ((store_length >= length) ||
                 (i > 0)) /* for all parts of end key*/
             {
               // end_key : start_key
               const char *op_str = i > 0 ? "$lte" : "$gt";
               rc = create_condition(field, key_part, key_ptr, op_str,
-                                    ignore_text_key, builder);
+                                    ignore_text_key, builder[i]);
               if (0 != rc) {
                 SDB_LOG_ERROR(
                     "Failed to create condition for key:%s, table:%s, rc:%d",
@@ -781,7 +806,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_OR_NEXT %d", i));
             const char *op_str = "$gte";
             rc = create_condition(field, key_part, key_ptr, op_str,
-                                  ignore_text_key, builder);
+                                  ignore_text_key, builder[i]);
             if (0 != rc) {
               SDB_LOG_ERROR(
                   "Failed to create condition for key:%s, table:%s, rc:%d",
@@ -795,7 +820,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             if (store_length >= length) {
               const char *op_str = "$lt";
               rc = create_condition(field, key_part, key_ptr, op_str,
-                                    ignore_text_key, builder);
+                                    ignore_text_key, builder[i]);
               if (0 != rc) {
                 SDB_LOG_ERROR(
                     "Failed to create condition for key:%s, table:%s, rc:%d",
@@ -811,7 +836,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
             DBUG_PRINT("info", ("sequoiadb HA_READ_KEY_OR_PREV %d", i));
             const char *op_str = "$lte";
             rc = create_condition(field, key_part, key_ptr, op_str,
-                                  ignore_text_key, builder);
+                                  ignore_text_key, builder[i]);
             if (0 != rc) {
               SDB_LOG_ERROR(
                   "Failed to create condition for key:%s, table:%s, rc:%d",
@@ -837,13 +862,8 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
       }
     }
     dbug_tmp_restore_column_map(table->read_set, old_map);
-
-    array = builder.arr();
-    if (array.nFields() > 1) {
-      condition = BSON("$and" << array);
-    } else if (!array.isEmpty()) {
-      condition = array.firstElement().embeddedObject().getOwned();
-    }
+    start_cond = builder[0].obj();
+    end_cond = builder[1].obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to create field key obj, field:%s, table:%s, exception:%s",
