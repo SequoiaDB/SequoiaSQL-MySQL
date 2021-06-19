@@ -1295,7 +1295,7 @@ int ha_sdb_part::close(void) {
 int ha_sdb_part::reset() {
   DBUG_ENTER("ha_sdb_part::reset");
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
-  if (thd_sdb->part_alter_ctx) {
+  if (thd_sdb && thd_sdb->part_alter_ctx) {
     delete thd_sdb->part_alter_ctx;
     thd_sdb->part_alter_ctx = NULL;
   }
@@ -2038,7 +2038,7 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
                                        ulonglong *const deleted) {
   DBUG_ENTER("ha_sdb_part::change_partitions_low");
   int rc = 0;
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  Thd_sdb *thd_sdb = NULL;
   Sdb_cl mcl;
   Sdb_conn *conn = NULL;
 
@@ -2082,6 +2082,9 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
     }
   }
 
+  thd_sdb = thd_get_thd_sdb(ha_thd());
+  DBUG_ASSERT(thd_sdb);
+
   if (thd_sdb->part_alter_ctx) {
     delete thd_sdb->part_alter_ctx;
   }
@@ -2104,7 +2107,7 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
 done:
   DBUG_RETURN(rc);
 error:
-  if (thd_sdb->part_alter_ctx) {
+  if (thd_sdb && thd_sdb->part_alter_ctx) {
     delete thd_sdb->part_alter_ctx;
     thd_sdb->part_alter_ctx = NULL;
   }

@@ -472,6 +472,11 @@ void sdb_set_affected_rows(THD *thd) {
   Diagnostics_area *da = thd->get_stmt_da();
   char saved_char = '\0';
 
+  if (NULL == thd_sdb) {
+    DBUG_ASSERT(0);
+    goto done;
+  }
+
   if (!da->is_ok()) {
     thd_sdb->deleted = 0;
     thd_sdb->found = 0;
@@ -559,7 +564,9 @@ void sdb_set_affected_rows(THD *thd) {
   }
 
 done:
-  thd_sdb->reset();
+  if (thd_sdb) {
+    thd_sdb->reset();
+  }
   DBUG_VOID_RETURN;
 }
 
@@ -2260,18 +2267,20 @@ error:
 
 template <class T>
 int ha_sdb::insert_row(T &rows, uint row_count) {
-  DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
-
   int rc = SDB_ERR_OK;
   int flag = 0;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+
+  DBUG_ASSERT(NULL != collection);
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+  DBUG_ASSERT(NULL != thd_sdb);
 
   try {
     bson::BSONObj result;
-    Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
     int sql_command = thd_sql_command(ha_thd());
     bool using_vers_sys = false;
     bool replace_into_for_vers_sys = false;
+
     /*
       FLAG RULE:
       INSERT IGNORE ...
@@ -2553,14 +2562,17 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   bson::BSONObj result;
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 #ifdef IS_MARIADB
   bool is_deleting = false;
 #endif
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+  DBUG_ASSERT(NULL != thd_sdb);
   sdb_ha_statistic_increment(&SSV::ha_update_count);
-  if (thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
+
+  if (thd_sdb->get_auto_commit()) {
     rc = autocommit_statement();
     if (rc) {
       goto error;
@@ -2734,11 +2746,14 @@ int ha_sdb::delete_row(const uchar *buf) {
   bson::BSONObj cond;
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+  DBUG_ASSERT(NULL != thd_sdb);
   sdb_ha_statistic_increment(&SSV::ha_delete_count);
-  if (thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
+
+  if (thd_sdb->get_auto_commit()) {
     rc = autocommit_statement();
     if (rc) {
       goto error;
@@ -3538,6 +3553,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
+  DBUG_ASSERT(NULL != thd_sdb);
+
   if (thd_sql_command(thd) == SQLCOM_SELECT) {
     rc = build_selector(selector);
     if (SDB_ERR_OK != rc) {
@@ -3829,11 +3846,13 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   bool use_multi_down = false;  // Mark whether conditions are batched down
   int flag = 0;
   KEY *key_info = table->key_info + active_index;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
   DBUG_ASSERT(NULL != collection);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
   DBUG_ASSERT(NULL != key_info);
   DBUG_ASSERT(NULL != sdb_key_name(key_info));
+  DBUG_ASSERT(NULL != thd_sdb);
 
   rc = pre_index_read_one(condition);
   if (rc) {
@@ -3870,7 +3889,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
 
   if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
        thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
-      thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
+      thd_sdb->get_auto_commit()) {
     rc = autocommit_statement(direct_op);
     if (rc) {
       goto error;
@@ -4535,6 +4554,7 @@ int ha_sdb::rnd_next(uchar *buf) {
   ha_rows num_to_skip = 0;
   ha_rows num_to_return = -1;
   bool direct_op = false;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
   try {
     bson::BSONObj rule;
@@ -4552,6 +4572,7 @@ int ha_sdb::rnd_next(uchar *buf) {
 
     DBUG_ASSERT(NULL != collection);
     DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+    DBUG_ASSERT(NULL != thd_sdb);
     sdb_ha_statistic_increment(&SSV::ha_read_rnd_next_count);
     if (first_read) {
       if (ha_thd()->variables.sdb_sql_pushdown &&
@@ -4638,7 +4659,7 @@ int ha_sdb::rnd_next(uchar *buf) {
 
         if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
              thd_sql_command(ha_thd()) == SQLCOM_DELETE) &&
-            thd_get_thd_sdb(ha_thd())->get_auto_commit()) {
+            thd_sdb->get_auto_commit()) {
           rc = autocommit_statement(direct_op);
           if (rc) {
             goto error;
@@ -5326,15 +5347,17 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
 
   if (0 == table_count) {
     Sdb_conn *conn = NULL;
+    Thd_sdb *thd_sdb = NULL;
     rc = check_sdb_in_thd(thd, &conn, true);
     if (0 != rc) {
       goto error;
     }
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
+    thd_sdb = thd_get_thd_sdb(thd);
     // in non-transaction mode, do not exec commit or rollback.
     if (!sdb_use_transaction(thd)) {
-      thd_get_thd_sdb(thd)->set_auto_commit(false);
+      thd_sdb->set_auto_commit(false);
       // but need to set TransAutoCommit = false with begin_transaction
       rc = conn->begin_transaction(thd->tx_isolation);
       if (rc != 0) {
@@ -5348,12 +5371,12 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
     // in altering table, not begin trans here but later and
     // not exec commit or rollback.
     if (SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
-      thd_get_thd_sdb(thd)->set_auto_commit(false);
+      thd_sdb->set_auto_commit(false);
       goto done;
     }
 
     if (thd_test_options(thd, OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN)) {
-      thd_get_thd_sdb(thd)->set_auto_commit(false);
+      thd_sdb->set_auto_commit(false);
       if (!conn->is_transaction_on()) {
         rc = conn->begin_transaction(thd->tx_isolation);
         if (rc != 0) {
@@ -5365,7 +5388,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
       }
     } else {
       // autocommit
-      thd_get_thd_sdb(thd)->set_auto_commit(true);
+      thd_sdb->set_auto_commit(true);
       /* In order to pushdown autocommit when do UPDATE/DELETE ops, we do not
          start the autocommit transaction until to the first query. Because we
          can only know whether should pushdown autocommit or not until to the
@@ -5483,6 +5506,12 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   DBUG_ENTER("ha_sdb::start_stmt");
 
+  if (NULL == thd_sdb) {
+    DBUG_ASSERT(0);
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+
   m_lock_type = lock_type;
   rc = start_statement(thd, thd_sdb->start_stmt_count);
   if (0 != rc) {
@@ -5490,7 +5519,7 @@ int ha_sdb::start_stmt(THD *thd, thr_lock_type lock_type) {
   }
 
   if (sdb_is_transaction_stmt(thd, !thd_sdb->get_auto_commit())) {
-    if (!sdb_execute_only_in_mysql(ha_thd())) {
+    if (!sdb_execute_only_in_mysql(thd)) {
       rc = add_share_to_open_table_shares(thd);
       if (0 != rc) {
         goto error;
@@ -5524,6 +5553,7 @@ int ha_sdb::delete_all_rows() {
     goto error;
   }
 
+  DBUG_ASSERT(NULL != thd_sdb);
   DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
 
   if (thd_sdb->get_auto_commit()) {
@@ -5995,7 +6025,8 @@ int ha_sdb::delete_table(const char *from) {
     goto error;
   }
 
-  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb->cl_copyer) {
+  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb &&
+      thd_sdb->cl_copyer) {
     // For main-cl, sdb will drop it's scl automatically
     delete thd_sdb->cl_copyer;
     thd_sdb->cl_copyer = NULL;
@@ -6108,7 +6139,8 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto error;
   }
 
-  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb->cl_copyer) {
+  if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb &&
+      thd_sdb->cl_copyer) {
     rc = thd_sdb->cl_copyer->rename(old_table_name, new_table_name);
     if (rc != 0) {
       goto error;
@@ -6484,7 +6516,11 @@ int ha_sdb::add_share_to_open_table_shares(THD *thd) {
   } else {
     Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
     const Sdb_share *key = share.get();
-    THD_SDB_SHARE *thd_sdb_share = (THD_SDB_SHARE *)my_hash_search(
+    THD_SDB_SHARE *thd_sdb_share = NULL;
+
+    DBUG_ASSERT(NULL != thd_sdb);
+
+    thd_sdb_share = (THD_SDB_SHARE *)my_hash_search(
         &thd_sdb->open_table_shares, (const uchar *)key, sizeof(key));
 
     if (NULL == thd_sdb_share) {
@@ -6793,6 +6829,7 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
     src_tab_opt = src_tab_opt ? src_tab_opt : "";
     dst_tab_opt = dst_tab_opt ? dst_tab_opt : "";
 
+    DBUG_ASSERT(thd_sdb);
     /*
       Don't copy when
       * adding or removing version attribute of system-versioned table;
@@ -7257,12 +7294,21 @@ Item *ha_sdb::idx_cond_push(uint keyno, Item *idx_cond) {
 
 /*Get the error message during connecting.*/
 bool ha_sdb::get_error_message(int error, String *buf) {
-  Thd_sdb *thd_sdb = NULL;
   Sdb_conn *conn = NULL;
-  thd_sdb = thd_get_thd_sdb(ha_thd());
+
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  if (NULL == thd_sdb) {
+    goto done;
+  }
+
   conn = thd_sdb->get_conn();
+  if (NULL == conn) {
+    goto done;
+  }
+
   buf->append(conn->get_err_msg());
   conn->clear_err_msg();
+done:
   return FALSE;
 }
 
@@ -7297,7 +7343,7 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   DBUG_ENTER("ha_sdb::handle_sdb_error");
   DBUG_PRINT("info", ("error code %d", error));
   bson::BSONObj error_obj;
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  Thd_sdb *thd_sdb = NULL;
   Sdb_conn *connection = NULL;
   sdb_rc = get_sdb_code(error);
   if (sdb_rc >= SDB_ERR_OK) {
@@ -7335,7 +7381,8 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
       }
       break;
     case SDB_VALUE_OVERFLOW:
-      if (!error_obj.isEmpty()) {
+      thd_sdb = thd_get_thd_sdb(ha_thd());
+      if (!error_obj.isEmpty() && thd_sdb) {
         bson::BSONElement elem, elem_type;
         const char *field_name = NULL;
         elem = error_obj.getField(SDB_FIELD_CURRENT_FIELD);
@@ -7544,6 +7591,8 @@ static void update_shares_stats(THD *thd) {
   DBUG_ENTER("update_shares_stats");
 
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  DBUG_ASSERT(NULL != thd_sdb);
+
   for (uint i = 0; i < thd_sdb->open_table_shares.records; i++) {
     THD_SDB_SHARE *thd_share =
         (THD_SDB_SHARE *)my_hash_element(&thd_sdb->open_table_shares, i);
@@ -7573,11 +7622,15 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   DBUG_ENTER("sdb_commit");
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
-  Sdb_conn *connection;
+  Sdb_conn *connection = NULL;
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
 
-  thd_sdb->start_stmt_count = 0;
+  if (NULL == thd_sdb) {
+    DBUG_ASSERT(0);
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
 
   sdb_add_pfs_clientinfo(thd);
 
@@ -7620,7 +7673,10 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
   update_shares_stats(thd);
 
 done:
-  my_hash_reset(&thd_sdb->open_table_shares);
+  if (thd_sdb) {
+    thd_sdb->start_stmt_count = 0;
+    my_hash_reset(&thd_sdb->open_table_shares);
+  }
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -7632,9 +7688,13 @@ static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
 
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
-  Sdb_conn *connection;
+  Sdb_conn *connection = NULL;
 
-  thd_sdb->start_stmt_count = 0;
+  if (NULL == thd_sdb) {
+    DBUG_ASSERT(0);
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
 
   rc = check_sdb_in_thd(thd, &connection, false);
   if (0 != rc) {
@@ -7677,7 +7737,10 @@ static int sdb_rollback(handlerton *hton, THD *thd, bool all) {
   }
 #endif
 done:
-  my_hash_reset(&thd_sdb->open_table_shares);
+  if (thd_sdb) {
+    thd_sdb->start_stmt_count = 0;
+    my_hash_reset(&thd_sdb->open_table_shares);
+  }
   DBUG_RETURN(rc);
 error:
   goto done;

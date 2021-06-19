@@ -2730,12 +2730,13 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_cs_name, char *src_cl_name,
       goto error;
     }
 
-    if ( options.hasField( SDB_FIELD_DATASOURCE_ID ) )
-    {
-      rc = HA_ERR_NOT_ALLOWED_COMMAND ;
-      SDB_PRINT_ERROR(rc, "Copy cl[%s.%s] which is using data source is not "
-                      "allowed.", src_cs_name, src_cl_name);
-      goto error ;
+    if (options.hasField(SDB_FIELD_DATASOURCE_ID)) {
+      rc = HA_ERR_NOT_ALLOWED_COMMAND;
+      SDB_PRINT_ERROR(rc,
+                      "Copy cl[%s.%s] which is using data source is not "
+                      "allowed.",
+                      src_cs_name, src_cl_name);
+      goto error;
     }
 
     rc = conn->create_cl(dst_cs_name, dst_cl_name, options, &created_cs,
