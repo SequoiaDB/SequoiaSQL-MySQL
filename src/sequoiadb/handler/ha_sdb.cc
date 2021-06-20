@@ -2849,6 +2849,7 @@ int ha_sdb::index_last(uchar *buf) {
   DBUG_ENTER("ha_sdb::index_last()");
   int rc = 0;
   first_read = true;
+  bson::BSONObjBuilder hint_builder;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -2857,7 +2858,7 @@ int ha_sdb::index_last(uchar *buf) {
   }
 
   sdb_ha_statistic_increment(&SSV::ha_read_last_count);
-  rc = index_read_one(pushed_condition, -1, buf);
+  rc = index_read_one(pushed_condition, -1, buf, &hint_builder);
 done:
   DBUG_RETURN(rc);
 }
@@ -3686,6 +3687,7 @@ int ha_sdb::index_first(uchar *buf) {
   int rc = 0;
   first_read = true;
   bson::BSONObj condition = pushed_condition;
+  bson::BSONObjBuilder hint_builder;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -3709,7 +3711,7 @@ int ha_sdb::index_first(uchar *buf) {
     }
   }
 
-  rc = index_read_one(condition, 1, buf);
+  rc = index_read_one(condition, 1, buf, &hint_builder);
   if (rc) {
     goto error;
   }

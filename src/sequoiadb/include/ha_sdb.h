@@ -475,7 +475,7 @@ class ha_sdb : public handler {
                       bson::BSONObjBuilder *filter_build = NULL);
 
   int index_read_one(bson::BSONObj condition, int order_direction, uchar *buf,
-                     bson::BSONObjBuilder *hint_builder = NULL);
+                     bson::BSONObjBuilder *hint_builder);
 
   my_bool get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond);
 
