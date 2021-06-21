@@ -1,5 +1,9 @@
 #Case 22371#Case 22372#Case 22373#Case 22374#Case 22375#Case 22377#Case 22378#Case 22508
 --source include/have_sequoiadb.inc
+
+CREATE DATABASE generate_column_sequoiadb;
+USE generate_column_sequoiadb;
+
 #seqDB-22371
 CREATE TABLE t1 (a INT, b INT, c INT GENERATED ALWAYS AS (a + 1) VIRTUAL, d INT GENERATED ALWAYS AS (b + 2) STORED );
 INSERT INTO t1 (a, b) VALUES (1,2);
@@ -169,5 +173,8 @@ DROP TABLE t1;
 #seqDB-22378
 --error 138
 CREATE TABLE t1 (a INT, c INT GENERATED ALWAYS AS (a + 1) VIRTUAL) COMMENT 'sequoiadb:{table_options:{ShardingKey:{c:1},ShardingType:"hash"}}'; 
+
+DROP DATABASE generate_column_sequoiadb;
+
 --source include/uninstall_sequoiadb.inc
 
