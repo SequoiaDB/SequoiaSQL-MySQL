@@ -158,6 +158,18 @@ WHERE ((c1 = 'C' AND (i2 = 40 OR i2 = 30)) OR ( c1 = 'F' AND (i2 = 40 )))
 GROUP BY c1;
 c1	max(i2)
 C	30
+SELECT c1, i1, max(i2) FROM t2
+WHERE (c1 = 'C' OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 )
+GROUP BY c1,i1;
+c1	i1	max(i2)
+C	17	17
+F	17	17
+SELECT c1, i1, max(i2) FROM t2
+WHERE (((c1 = 'C' AND i1 < 40) OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 ))
+GROUP BY c1,i1;
+c1	i1	max(i2)
+C	17	17
+F	17	17
 SELECT c1, i1, max(i2) FROM t2 
 WHERE ((c1 = 'C' AND i1 < 40) OR ( c1 = 'F' AND i1 < 35) OR ( i2 = 17 ))
 GROUP BY c1,i1;

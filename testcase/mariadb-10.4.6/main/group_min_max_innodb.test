@@ -221,20 +221,20 @@ GROUP BY c1;
 #eval EXPLAIN $query;
 eval $query;
 
-#Bug #SEQUOIASQLMAINSTREAM-259
-#let query=
-#SELECT c1, i1, max(i2) FROM t2
-#WHERE (c1 = 'C' OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 )
-#GROUP BY c1,i1;
+# SEQUOIASQLMAINSTREAM-259
+let query=
+SELECT c1, i1, max(i2) FROM t2
+WHERE (c1 = 'C' OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 )
+GROUP BY c1,i1;
 #eval EXPLAIN $query;
-#eval $query;
+eval $query;
 
-#let query=
-#SELECT c1, i1, max(i2) FROM t2 
-#WHERE (((c1 = 'C' AND i1 < 40) OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 ))
-#GROUP BY c1,i1;
+let query=
+SELECT c1, i1, max(i2) FROM t2
+WHERE (((c1 = 'C' AND i1 < 40) OR ( c1 = 'F' AND i1 < 35)) AND ( i2 = 17 ))
+GROUP BY c1,i1;
 #eval EXPLAIN $query;
-#eval $query;
+eval $query;
 
 let query=
 SELECT c1, i1, max(i2) FROM t2 

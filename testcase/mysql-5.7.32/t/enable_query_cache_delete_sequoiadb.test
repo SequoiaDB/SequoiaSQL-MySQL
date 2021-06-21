@@ -81,9 +81,9 @@ create temporary table t1(id int auto_increment key, a int, b varchar(255), c va
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
 --enable_info
 delete from t1 where a=10;
---source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_pushdown_condition_sequoiadb.inc
 delete from t1 where c='ss';
---source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;

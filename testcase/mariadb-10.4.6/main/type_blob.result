@@ -585,6 +585,7 @@ select * from t1 where txt < 'Chevy ';
 id	txt
 select * from t1 where txt < 'Chevy ' or txt is NULL;
 id	txt
+3	NULL
 select * from t1 where txt <= 'Chevy';
 id	txt
 1	Chevy

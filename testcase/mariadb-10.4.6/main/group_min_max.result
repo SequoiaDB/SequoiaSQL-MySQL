@@ -1,3 +1,5 @@
+CREATE DATABASE group_min_max;
+USE group_min_max;
 drop table if exists t1;
 create table t1 (
 a1 char(64), a2 char(64), b char(16), c char(16) not null, d char(16), dummy char(248) default ' '
@@ -40,8 +42,8 @@ create index idx_t1_1 on t1 (a1,a2,b,c);
 create index idx_t1_2 on t1 (a1,a2,b);
 analyze table t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 drop table if exists t2;
 create table t2 (
 a1 char(64), a2 char(64) not null, b char(16), c char(16), d char(16), dummy char(248) default ' '
@@ -69,8 +71,8 @@ create index idx_t2_1 on t2 (a1,a2,b,c);
 create index idx_t2_2 on t2 (a1,a2,b);
 analyze table t2;
 Table	Op	Msg_type	Msg_text
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
+group_min_max.t2	analyze	status	Engine-independent statistics collected
+group_min_max.t2	analyze	status	OK
 drop table if exists t3;
 create table t3 (
 a1 char(1), a2 char(1), b char(1), c char(4) not null, d char(3), dummy char(1) default ' '
@@ -132,8 +134,8 @@ create index idx_t3_1 on t3 (a1,a2,b,c);
 create index idx_t3_2 on t3 (a1,a2,b);
 analyze table t3;
 Table	Op	Msg_type	Msg_text
-test.t3	analyze	status	Engine-independent statistics collected
-test.t3	analyze	status	OK
+group_min_max.t3	analyze	status	Engine-independent statistics collected
+group_min_max.t3	analyze	status	OK
 select a1, min(a2) from t1 group by a1;
 a1	min(a2)
 a	a
@@ -328,6 +330,26 @@ d	a	a	a411	d411
 d	a	b	e412	h412
 d	b	a	i421	l421
 d	b	b	m422	p422
+select a1,a2,b,       max(c) from t1 where a1 = 'z' or a1 = 'b' or a1 = 'd' group by a1,a2,b;
+a1	a2	b	max(c)
+b	a	a	d211
+b	a	b	h212
+b	b	a	l221
+b	b	b	p222
+d	a	a	d411
+d	a	b	h412
+d	b	a	l421
+d	b	b	p422
+select a1,a2,b,min(c),max(c) from t1 where a1 = 'z' or a1 = 'b' or a1 = 'd' group by a1,a2,b;
+a1	a2	b	min(c)	max(c)
+b	a	a	a211	d211
+b	a	b	e212	h212
+b	b	a	i221	l221
+b	b	b	m222	p222
+d	a	a	a411	d411
+d	a	b	e412	h412
+d	b	a	i421	l421
+d	b	b	m422	p422
 select a1,a2,b,       max(c) from t1 where (a1 = 'b' or a1 = 'd' or a1 = 'a' or a1 = 'c') and (a2 > 'a') group by a1,a2,b;
 a1	a2	b	max(c)
 a	b	a	l121
@@ -362,6 +384,20 @@ d	a411	d411
 d	e412	h412
 d	i421	l421
 d	m422	p422
+select a1,  max(c)           from t1 where a1 in ('a','b','d') group by a1,a2,b;
+a1	max(c)
+a	d111
+a	h112
+a	l121
+a	p122
+b	d211
+b	h212
+b	l221
+b	p222
+d	d411
+d	h412
+d	l421
+d	p422
 select a1,a2,b,       max(c) from t2 where a1 < 'd' group by a1,a2,b;
 a1	a2	b	max(c)
 a	a	NULL	a999
@@ -465,6 +501,26 @@ d	b	a	i421	l421
 d	b	b	m422	p422
 e	a	a	NULL	NULL
 e	a	b	NULL	NULL
+select a1,a2,b,       max(c) from t2 where a1 = 'z' or a1 = 'b' or a1 = 'd' group by a1,a2,b;
+a1	a2	b	max(c)
+b	a	a	d211
+b	a	b	h212
+b	b	a	l221
+b	b	b	p222
+d	a	a	d411
+d	a	b	h412
+d	b	a	l421
+d	b	b	p422
+select a1,a2,b,min(c),max(c) from t2 where a1 = 'z' or a1 = 'b' or a1 = 'd' group by a1,a2,b;
+a1	a2	b	min(c)	max(c)
+b	a	a	a211	d211
+b	a	b	e212	h212
+b	b	a	i221	l221
+b	b	b	m222	p222
+d	a	a	a411	d411
+d	a	b	e412	h412
+d	b	a	i421	l421
+d	b	b	m422	p422
 select a1,a2,b,       max(c) from t2 where (a1 = 'b' or a1 = 'd' or a1 = 'a' or a1 = 'c') and (a2 > 'a') group by a1,a2,b;
 a1	a2	b	max(c)
 a	b	a	l121
@@ -502,6 +558,21 @@ d	i421	l421
 d	m422	p422
 e	NULL	NULL
 e	NULL	NULL
+select a1,  max(c)           from t2 where a1 in ('a','b','d') group by a1,a2,b;
+a1	max(c)
+a	a999
+a	d111
+a	h112
+a	l121
+a	p122
+b	d211
+b	h212
+b	l221
+b	p222
+d	d411
+d	h412
+d	l421
+d	p422
 select a1,a2,b,max(c),min(c) from t1 where (a2 = 'a') and (b = 'b') group by a1;
 a1	a2	b	max(c)	min(c)
 a	a	b	h112	e112
@@ -689,6 +760,10 @@ c	b	b	m322	p322
 d	a	b	f412	h412
 d	b	a	i421	l421
 d	b	b	m422	p422
+select a1,a2,b,       max(c) from t1 where (c < 'a0') group by a1,a2,b;
+a1	a2	b	max(c)
+select a1,a2,b,min(c),max(c) from t1 where (c < 'a0') group by a1,a2,b;
+a1	a2	b	min(c)	max(c)
 select a1,a2,b,       max(c) from t1 where (c < 'k321') group by a1,a2,b;
 a1	a2	b	max(c)
 a	a	a	d111
@@ -817,6 +892,16 @@ c	a	a	b311	d311
 c	a	b	e312	h312
 d	a	a	b411	d411
 d	a	b	e412	h412
+select a1,a2,b,min(c),max(c) from t1 where (c between 'b111' and 'g112') or (c between 'd000' and 'i110') group by a1,a2,b;
+a1	a2	b	min(c)	max(c)
+a	a	a	b111	d111
+a	a	b	e112	h112
+b	a	a	b211	d211
+b	a	b	e212	h212
+c	a	a	b311	d311
+c	a	b	e312	h312
+d	a	a	b411	d411
+d	a	b	e412	h412
 select a1,a2,b,       max(c) from t2 where (c > 'b1') group by a1,a2,b;
 a1	a2	b	max(c)
 a	a	a	d111
@@ -883,6 +968,10 @@ c	b	b	m322	p322
 d	a	b	f412	h412
 d	b	a	i421	l421
 d	b	b	m422	p422
+select a1,a2,b,       max(c) from t2 where (c < 'a0') group by a1,a2,b;
+a1	a2	b	max(c)
+select a1,a2,b,min(c),max(c) from t2 where (c < 'a0') group by a1,a2,b;
+a1	a2	b	min(c)	max(c)
 select a1,a2,b,       max(c) from t2 where (c < 'k321') group by a1,a2,b;
 a1	a2	b	max(c)
 a	a	NULL	a999
@@ -1085,7 +1174,7 @@ t2.c > 'b1' )
 group by a1,a2,b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	PRIMARY	t1	index	NULL	idx_t1_1	163	NULL	128	Using where; Using index
-2	DEPENDENT SUBQUERY	t2	index	NULL	idx_t2_1	163	NULL	164	Using where; Using index
+2	DEPENDENT SUBQUERY	t2	index	NULL	idx_t2_1	163	NULL	164	Using where with pushed condition; Using index
 2	DEPENDENT SUBQUERY	t3	index	NULL	idx_t3_1	10	NULL	192	Using where; Using index; FirstMatch(t2)
 select a1,a2,b,c,min(c), max(c) from t1
 where exists ( select * from t2
@@ -1619,14 +1708,17 @@ CREATE TABLE t1 (a varchar(5), b int(11), PRIMARY KEY (a,b));
 INSERT INTO t1 VALUES ('AA',1), ('AA',2), ('AA',3), ('BB',1), ('AA',4);
 OPTIMIZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	optimize	note	Table does not support optimize, doing recreate + analyze instead
-test.t1	optimize	status	OK
+group_min_max.t1	optimize	status	OK
 SELECT a FROM t1 WHERE a='AA' GROUP BY a;
 a
 AA
+Warnings:
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'b' at row 1
 SELECT a FROM t1 WHERE a='BB' GROUP BY a;
 a
 BB
+Warnings:
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'b' at row 1
 SELECT DISTINCT a FROM t1 WHERE a='BB';
 a
 BB
@@ -1636,12 +1728,14 @@ BB
 SELECT a FROM t1 WHERE a LIKE 'B%' GROUP BY a;
 a
 BB
+Warnings:
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'b' at row 1
 DROP TABLE t1;
 CREATE TABLE t1 (
 a int(11) NOT NULL DEFAULT '0',
 b varchar(16) COLLATE latin1_general_ci NOT NULL DEFAULT '',
 PRIMARY KEY  (a,b)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_ci;
 CREATE PROCEDURE a(x INT)
 BEGIN
 DECLARE rnd INT;
@@ -1684,8 +1778,8 @@ INSERT INTO t1 SELECT * FROM t1;
 INSERT INTO t1 SELECT * FROM t1;
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 SELECT DISTINCT a,a FROM t1 ORDER BY a;
 a	a
 	
@@ -1749,8 +1843,8 @@ INSERT INTO t1 VALUES
 (1,-1),(1,-2),(1,-3),(1,-4);
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 SELECT MAX(b), a FROM t1 WHERE b < 2 AND a = 1 GROUP BY a;
 MAX(b)	a
 1	1
@@ -1768,8 +1862,8 @@ INSERT INTO t1 (a, b) VALUES (1,1), (1,2), (1,3), (1,4), (1,5),
 (2,2), (2,3), (2,1), (3,1), (4,1), (4,2), (4,3), (4,4), (4,5), (4,6);
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 FLUSH STATUS;
 SELECT max(b), a FROM t1 GROUP BY a;
 max(b)	a
@@ -1814,8 +1908,8 @@ INSERT INTO t1 VALUES
 (4), (2), (1), (2), (2), (4), (1), (4);
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 SELECT DISTINCT(a) FROM t1;
 a
 1
@@ -1833,8 +1927,8 @@ INSERT INTO t1 SELECT a + 1, b FROM t1;
 INSERT INTO t1 SELECT a + 2, b FROM t1;
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 SELECT a, MIN(b), MAX(b) FROM t1 GROUP BY a ORDER BY a DESC;
 a	MIN(b)	MAX(b)
 4	1	5
@@ -1861,9 +1955,7 @@ a	MIN(b)	MAX(b)	AVG(b)
 2	1	5	3.0000
 1	1	5	3.0000
 DROP TABLE t1;
-create table t1 (a int, b int, key (a,b), key `index` (a,b)) engine=InnoDB;
-Warnings:
-Note	1831	Duplicate index `index`. This is deprecated and will be disallowed in a future release
+create table t1 (a int, b int, key (a,b)) engine=SequoiaDB;
 insert into  t1 (a,b) values 
 (0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),
 (0,7),(0,8),(0,9),(0,10),(0,11),(0,12),(0,13),
@@ -1942,8 +2034,8 @@ INSERT INTO t1 SELECT * FROM t1;
 INSERT INTO t1 SELECT a,b,c+1,d FROM t1;
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 SELECT DISTINCT c FROM t1 WHERE d=4;
 c
 1
@@ -1959,8 +2051,8 @@ INSERT INTO t SELECT * FROM t;
 INSERT INTO t SELECT * FROM t;
 ANALYZE TABLE t;
 Table	Op	Msg_type	Msg_text
-test.t	analyze	status	Engine-independent statistics collected
-test.t	analyze	status	OK
+group_min_max.t	analyze	status	Engine-independent statistics collected
+group_min_max.t	analyze	status	OK
 #should return 1 row
 SELECT a, MIN(b) FROM t WHERE b <> 0 GROUP BY a;
 a	MIN(b)
@@ -2003,8 +2095,11 @@ CREATE TABLE t1(a INT NOT NULL, b INT NOT NULL, KEY (b));
 INSERT INTO t1 VALUES(1,1),(2,1);
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
+SELECT 1 AS c, b FROM t1 WHERE b IN (1,2) GROUP BY c, b;
+c	b
+1	1
 SELECT a FROM t1 WHERE b=1;
 a
 1
@@ -2134,7 +2229,7 @@ ORDER BY min_a;
 min_a
 NULL
 DROP TABLE t1;
-create table t1 (a int, b varchar(1), key(b,a)) engine=innodb;
+create table t1 (a int, b varchar(1), key(b,a)) engine=sequoiadb;
 insert t1 values (1,'a'),(2,'b'),(3,'c'),(4,'d'),(5,'e'),(6,'f'),(7,'g'),(8,'h'),(null,'i');
 select min(a), b from t1 where a=7 or b='z' group by b;
 min(a)	b
@@ -2418,10 +2513,10 @@ CREATE TABLE t2 (c int) ;
 INSERT INTO t2 VALUES (0),(1);
 ANALYZE TABLE t1,t2;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
+group_min_max.t2	analyze	status	Engine-independent statistics collected
+group_min_max.t2	analyze	status	OK
 SELECT MIN(a), b FROM t1 WHERE a > 0 GROUP BY b;
 MIN(a)	b
 1	0
@@ -2458,10 +2553,10 @@ INSERT INTO t2 SELECT a, b + 4, c,d,e,f FROM t2;
 INSERT INTO t2 SELECT a + 1, b, c,d,e,f FROM t2;
 ANALYZE TABLE t1,t2;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
-test.t2	analyze	status	Engine-independent statistics collected
-test.t2	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
+group_min_max.t2	analyze	status	Engine-independent statistics collected
+group_min_max.t2	analyze	status	OK
 SELECT COUNT(DISTINCT a) FROM t1;
 COUNT(DISTINCT a)
 2
@@ -2638,8 +2733,8 @@ CREATE TABLE t (a INT, b INT, KEY(a,b));
 INSERT INTO t VALUES (1,1), (2,2), (3,3), (4,4), (1,0), (3,2), (4,5);
 ANALYZE TABLE t;
 Table	Op	Msg_type	Msg_text
-test.t	analyze	status	Engine-independent statistics collected
-test.t	analyze	status	OK
+group_min_max.t	analyze	status	Engine-independent statistics collected
+group_min_max.t	analyze	status	OK
 SELECT a, SUM(DISTINCT a), MIN(b) FROM t GROUP BY a;
 a	SUM(DISTINCT a)	MIN(b)
 1	1	0
@@ -2698,9 +2793,14 @@ INSERT INTO t1 SELECT a + 1, b FROM t1;
 INSERT INTO t1 SELECT a + 2, b FROM t1;
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 CREATE INDEX break_it ON t1 (a, b);
+SELECT distinct a, b FROM t1 where a = '3' ORDER BY b;
+a	b
+3	1
+3	2
+3	3
 drop table t1;
 #
 # Start of 10.0 tests
@@ -2708,7 +2808,7 @@ drop table t1;
 #
 # MDEV-6991 GROUP_MIN_MAX optimization is erroneously applied in some cases
 #
-CREATE TABLE t1 (id INT NOT NULL, a VARCHAR(20)) ENGINE=InnoDB;
+CREATE TABLE t1 (id INT NOT NULL, a VARCHAR(20)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1,'2001-01-01');
 INSERT INTO t1 VALUES (1,'2001-01-02');
 INSERT INTO t1 VALUES (1,'2001-01-03');
@@ -2748,7 +2848,7 @@ DROP TABLE t1;
 #
 # MDEV-6990 GROUP_MIN_MAX optimization is not applied in some cases when it could
 #
-CREATE TABLE t1 (id INT NOT NULL, a DATE, KEY(id,a)) ENGINE=InnoDB;
+CREATE TABLE t1 (id INT NOT NULL, a DATE, KEY(id,a)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1,'2001-01-01');
 INSERT INTO t1 VALUES (1,'2001-01-02');
 INSERT INTO t1 VALUES (1,'2001-01-03');
@@ -2767,8 +2867,8 @@ INSERT INTO t1 VALUES (4,'2001-01-03');
 INSERT INTO t1 VALUES (4,'2001-01-04');
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 SELECT id,MIN(a),MAX(a) FROM t1 WHERE a>='2001-01-04' GROUP BY id;
 id	MIN(a)	MAX(a)
 1	2001-01-04	2001-01-04
@@ -2792,7 +2892,7 @@ DROP TABLE t1;
 # MDEV-8229 GROUP_MIN_MAX is erroneously applied for BETWEEN in some cases
 #
 SET NAMES latin1;
-CREATE TABLE t1 (id INT NOT NULL, a VARCHAR(20)) ENGINE=InnoDB;
+CREATE TABLE t1 (id INT NOT NULL, a VARCHAR(20)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1,'2001-01-01');
 INSERT INTO t1 VALUES (1,'2001-01-02');
 INSERT INTO t1 VALUES (1,'2001-01-03');
@@ -2813,8 +2913,8 @@ INSERT INTO t1 SELECT * FROM t1;
 INSERT INTO t1 SELECT * FROM t1;
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	Engine-independent statistics collected
-test.t1	analyze	status	OK
+group_min_max.t1	analyze	status	Engine-independent statistics collected
+group_min_max.t1	analyze	status	OK
 SELECT id,MIN(a),MAX(a) FROM t1 WHERE a BETWEEN     ' 2001-01-04' AND    '2001-01-05' GROUP BY id;
 id	MIN(a)	MAX(a)
 1	 2001-01-04	2001-01-03
@@ -2883,3 +2983,4 @@ drop table t1;
 #
 # End of 10.1 tests
 #
+drop database group_min_max;

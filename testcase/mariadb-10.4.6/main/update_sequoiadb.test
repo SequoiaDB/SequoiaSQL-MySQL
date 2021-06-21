@@ -193,32 +193,32 @@ create temporary table t1(id int auto_increment key, a int, b varchar(255), c va
 insert into t1(a,b,c) values(1000, 'sa', 'sa'), (1, 'ss', 'ss'),(100, 'sq', 'q'),(10, 'sz', 'sz');
 --enable_info
 update t1 set c='update' where a=10;
---source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10001 where c='ss';
---source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='update' where c='sa';
---source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set a=10000 where a=10001 and c='ss';
---source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='zhang' where a=10000 or c='ss';
---source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 --enable_info
 update t1 set c='zhang' where not c='q';
---source include/query_pushdown_condition_sequoiadb.inc
+#--source include/query_pushdown_condition_sequoiadb.inc
 --disable_info
 select * from t1 order by id;
 drop table t1;
@@ -459,6 +459,18 @@ select * from t1 order by b;
 set sql_mode = default;
 drop table t1;
 #Case 24166
+# KEY(a)
+CREATE TABLE t1 ( a CHAR(10), KEY(a) );
+INSERT INTO t1 VALUES ('1'),('2'),('3'),('4');
+--enable_info
+UPDATE t1 SET a = '0' WHERE a <> '5';
+--disable_info
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec tail -n 2 $MYSQLTEST_VARDIR/log/mysqld.1.err
+SELECT * FROM t1;
+DROP TABLE t1;
+
+# KEY(a), KEY(b)
 CREATE TABLE t1 ( a CHAR(10), b CHAR(10), KEY(a), KEY(b) );
 INSERT INTO t1 VALUES ('1','1'),('2','2'),('3','3'),('4','4');
 --enable_info

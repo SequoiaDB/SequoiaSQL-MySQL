@@ -2386,6 +2386,14 @@ ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 x	analyze	status	OK
 
+SELECT SQL_BUFFER_RESULT MIN(a), b FROM t1 WHERE t1.b = 'a' GROUP BY b;
+MIN(a)	b
+0	a
+
+SELECT MIN(a), b FROM t1 WHERE t1.b = 'a' GROUP BY b;
+MIN(a)	b
+0	a
+
 DROP TABLE t1;
 #
 # Bug #12888306 MISSING ROWS FOR SELECT >ALL (SUBQUERY WITHOUT ROWS)

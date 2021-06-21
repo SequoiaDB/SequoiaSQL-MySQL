@@ -2136,8 +2136,14 @@ INSERT INTO t1 VALUES
 (1,NULL),(0,'a'),(1,NULL),(0,'a'), (1,'a'),(0,'a'),(2,'a'),(1,'a');
 
 
+SELECT SQL_BUFFER_RESULT MIN(a), b FROM t1 WHERE t1.b = 'a' GROUP BY b;
+MIN(a)	b
+0	a
 
 
+SELECT MIN(a), b FROM t1 WHERE t1.b = 'a' GROUP BY b;
+MIN(a)	b
+0	a
 
 DROP TABLE t1;
 create table t1 (a int, b int);
