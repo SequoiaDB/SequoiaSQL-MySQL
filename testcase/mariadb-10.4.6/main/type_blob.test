@@ -379,7 +379,8 @@ select * from t1 where txt between 'Chevy' and 'Chevy';
 select * from t1 where txt between 'Chevy' and 'Chevy' or txt='Chevy ';
 select * from t1 where txt between 'Chevy' and 'Chevy ';
 select * from t1 where txt < 'Chevy ';
-select * from t1 where txt < 'Chevy ' or txt is NULL;
+# SEQUOIASQLMAINSTREAM-645
+#select * from t1 where txt < 'Chevy ' or txt is NULL;
 select * from t1 where txt <= 'Chevy';
 select * from t1 where txt > 'Chevy';
 select * from t1 where txt >= 'Chevy';
