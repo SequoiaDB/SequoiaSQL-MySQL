@@ -875,6 +875,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   direct_limit = false;
   field_order_condition = SDB_EMPTY_BSON;
   group_list_condition = SDB_EMPTY_BSON;
+  last_key_value = SDB_EMPTY_BSON;
   count_times = 0;
   last_count_time = time(NULL);
   m_ignore_dup_key = false;
@@ -1100,6 +1101,7 @@ int ha_sdb::reset() {
   pushed_condition = SDB_EMPTY_BSON;
   field_order_condition = SDB_EMPTY_BSON;
   group_list_condition = SDB_EMPTY_BSON;
+  last_key_value = SDB_EMPTY_BSON;
   first_info = true;
   count_query = false;
   m_ignore_dup_key = false;
@@ -2165,6 +2167,14 @@ int ha_sdb::index_next(uchar *buf) {
     rc = cur_row(buf);
   } else {
     rc = next_row(cur_rec, buf);
+    KEY *key_info = NULL;
+    key_info = table->key_info + active_index;
+    DBUG_ASSERT(key_info);
+    /* multi columns key need to save the key value from last record,
+       save the whole record instead of key value.*/
+    if (key_info->user_defined_key_parts > 1) {
+      last_key_value = (SDB_OK == rc) ? cur_rec : SDB_EMPTY_BSON;
+    }
   }
 done:
   DBUG_RETURN(rc);
@@ -2186,14 +2196,24 @@ int ha_sdb::index_prev(uchar *buf) {
     rc = cur_row(buf);
   } else {
     rc = next_row(cur_rec, buf);
+    KEY *key_info = NULL;
+    key_info = table->key_info + active_index;
+    DBUG_ASSERT(key_info);
+    /* multi columns key need to save the key value from last record,
+       save the whole record instead of key value.*/
+    if (SDB_OK == rc && key_info->user_defined_key_parts > 1) {
+      last_key_value = (SDB_OK == rc) ? cur_rec : SDB_EMPTY_BSON;
+    }
   }
 done:
   DBUG_RETURN(rc);
 }
 
 int ha_sdb::index_last(uchar *buf) {
+  DBUG_ENTER("ha_sdb::index_last()");
   int rc = 0;
   first_read = true;
+  bson::BSONObjBuilder hint_builder;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -2202,10 +2222,9 @@ int ha_sdb::index_last(uchar *buf) {
   }
 
   ha_statistic_increment(&SSV::ha_read_last_count);
-  rc = index_read_one(pushed_condition, -1, buf);
-
+  rc = index_read_one(pushed_condition, -1, buf, &hint_builder);
 done:
-  return rc;
+  DBUG_RETURN(rc);
 }
 
 int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
@@ -2806,9 +2825,9 @@ done:
              ("optimizer update: %d, rule: %s, condition: %s", optimizer_update,
               rule.toString(false, false).c_str(),
               condition.toString(false, false).c_str()));
-  SDB_LOG_DEBUG("optimizer update: %d, rule: %s, condition: %s",
+  SDB_LOG_DEBUG("optimizer update: %d, rule: %s, condition: %s, table: %s.%s",
                 optimizer_update, rule.toString(false, false).c_str(),
-                condition.toString(false, false).c_str());
+                condition.toString(false, false).c_str(), db_name, table_name);
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -2859,8 +2878,9 @@ done:
   DBUG_PRINT("ha_sdb:info",
              ("optimizer delete: %d, condition: %s", optimizer_delete,
               condition.toString(false, false).c_str()));
-  SDB_LOG_DEBUG("optimizer delete: %d, condition: %s", optimizer_delete,
-                condition.toString(false, false).c_str());
+  SDB_LOG_DEBUG("optimizer delete: %d, condition: %s, table: %s.%s",
+                optimizer_delete, condition.toString(false, false).c_str(),
+                db_name, table_name);
   DBUG_RETURN(optimizer_delete);
 }
 
@@ -2952,8 +2972,9 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
       if (count_query) {
         count_cond_blder.appendElements(condition);
         condition = count_cond_blder.obj();
-        SDB_LOG_DEBUG("optimizer count: %d, condition: %s", count_query,
-                      condition.toString(false, false).c_str());
+        SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
+                      count_query, condition.toString(false, false).c_str(),
+                      db_name, table_name);
       }
     }
   }
@@ -3072,6 +3093,7 @@ error:
 int ha_sdb::index_first(uchar *buf) {
   int rc = 0;
   first_read = true;
+  bson::BSONObjBuilder hint_builder;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -3080,7 +3102,7 @@ int ha_sdb::index_first(uchar *buf) {
   }
 
   ha_statistic_increment(&SSV::ha_read_first_count);
-  rc = index_read_one(pushed_condition, 1, buf);
+  rc = index_read_one(pushed_condition, 1, buf, &hint_builder);
   if (rc) {
     goto error;
   }
@@ -3114,8 +3136,9 @@ int ha_sdb::build_selector(bson::BSONObj &selector) {
     if ((index_cover) ||
         ((double)select_num * 100 / table_share->fields) <= (double)threshold) {
       selector = selector_builder.obj();
-      SDB_LOG_DEBUG("optimizer selector object: %s",
-                    selector.toString(false, false).c_str());
+      SDB_LOG_DEBUG("optimizer selector object: %s, table: %s.%s",
+                    selector.toString(false, false).c_str(), db_name,
+                    table_name);
     } else {
       selector = SDB_EMPTY_BSON;
     }
@@ -3129,6 +3152,117 @@ error:
   goto done;
 }
 
+int ha_sdb::build_index_position(const KEY *key_info,
+                                 const bson::BSONObj &start_cond,
+                                 bson::BSONObjBuilder &hint_pos_builder) {
+  int rc = SDB_OK;
+  uint prefix_num = 1;
+  bool all_parts_read_exact = true;
+  bool idx_hint_position = false;
+  using namespace bson;
+  enum SDB_ADVANCE_TYPE type = IDX_ADVANCE_TO_FIRST_IN_VALUE;
+  int lastLen = hint_pos_builder.len();
+  int resered = hint_pos_builder.bb().getReserveBytes();
+  BSONObjBuilder index_value_builder(
+      hint_pos_builder.subobjStart(SDB_IDX_ADVANCE_VALUE));
+
+  try {
+    if (key_info->user_defined_key_parts > 1) {
+      bson::BSONObjIterator si(start_cond);
+
+      if (last_key_value.isEmpty()) {
+        goto done;
+      } else {
+        idx_hint_position = true;
+      }
+
+      const KEY_PART_INFO *key_part = key_info->key_part;
+      while (si.more()) {
+        BSONElement elem_tmp = si.next();
+        if (Object == elem_tmp.type()) {
+          for (; (0 != strcmp(elem_tmp.fieldName(),
+                              sdb_field_name(key_part->field))) &&
+                 prefix_num <= key_info->user_defined_key_parts;
+               prefix_num++, key_part++) {
+            // do nothing
+          }
+
+          BSONObj e_obj = elem_tmp.Obj();
+          int op_type = e_obj.firstElement().getGtLtOp(-1);
+          /*$isnull is also a type of equal.*/
+          if (all_parts_read_exact && BSONObj::Equality != op_type &&
+              BSONObj::opISNULL != op_type) {
+            all_parts_read_exact = false;
+          }
+
+          if (BSONObj::opISNULL == op_type) {
+            bool val = e_obj.firstElement().boolean();
+            if (val) {
+              BSONElement e = last_key_value.getField(elem_tmp.fieldName());
+              if (EOO != e.type() && jstNULL != e.type()) {
+                idx_hint_position = false;
+                break;
+              }
+            } else {
+              type = IDX_ADVANCE_TO_FIRST_OUT_VALUE;
+              break;
+            }
+          } else {
+            BSONElement e = last_key_value.getField(elem_tmp.fieldName());
+            if (bson::EOO != e.type() &&
+                0 != e.woCompare(e_obj.firstElement(), false)) {
+              idx_hint_position = false;
+              break;
+            }
+            index_value_builder.appendAs(e_obj.firstElement(),
+                                         elem_tmp.fieldName());
+          }
+
+          if (BSONObj::LT == op_type || BSONObj::GT == op_type) {
+            type = IDX_ADVANCE_TO_FIRST_OUT_VALUE;
+            break;
+          }
+        } else {
+          DBUG_ASSERT(false);
+        }
+      }
+      /* All parts of multi columns key equal read cannot hint position, in the
+         case of inner join, the inner table use index_same_read_read to read
+         record without key compare.*/
+      if (all_parts_read_exact) {
+        idx_hint_position = false;
+        goto done;
+      }
+
+      if (idx_hint_position) {
+        index_value_builder.done();
+        hint_pos_builder.append(SDB_IDX_ADVANCE_TYPE, type);
+        hint_pos_builder.append(SDB_IDX_ADVANCE_PREFIX_NUM, prefix_num);
+      }
+
+      if (sdb_debug_log(current_thd)) {
+        SDB_LOG_DEBUG(
+            "start_index_cond[%s], last key value[%s], "
+            "hint position[%d], table[%s.%s]",
+            start_cond.toString().c_str(), last_key_value.toString().c_str(),
+            idx_hint_position, db_name, table_name);
+      }
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to index read map for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
+done:
+  if (!idx_hint_position) {
+    index_value_builder.done();
+    hint_pos_builder.bb().setlen(lastLen);
+    hint_pos_builder.bb().setReserveBytes(resered);
+  }
+  return rc;
+error:
+  goto done;
+}
+
 int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
                            key_part_map keypart_map,
                            enum ha_rkey_function find_flag) {
@@ -3136,10 +3270,19 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   int rc = 0;
   bson::BSONObjBuilder cond_builder;
   bson::BSONObj condition;
-  bson::BSONObj condition_idx;
-  int order_direction = 1;
-  first_read = true;
+  bson::BSONObj start_cond_idx;
+  bson::BSONObj end_cond_idx;
+  bson::BSONObj cond_idx;
 
+  bson::BSONObjBuilder hint_builder;
+  int lastLen = hint_builder.len();
+  int resered = hint_builder.bb().getReserveBytes();
+  bson::BSONObjBuilder hint_pos_builder(
+      hint_builder.subobjStart(SDB_IDX_ADVANCE_POSITION));
+  int order_direction = 1;
+  KEY *key_info = NULL;
+
+  first_read = true;
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
     table->status = STATUS_NOT_FOUND;
@@ -3149,7 +3292,7 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   ha_statistic_increment(&SSV::ha_read_key_count);
 
   if (NULL != key_ptr && active_index < MAX_KEY) {
-    KEY *key_info = table->key_info + active_index;
+    key_info = table->key_info + active_index;
     key_range start_key;
     start_key.key = key_ptr;
     start_key.length = calculate_key_len(table, active_index, keypart_map);
@@ -3158,21 +3301,67 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
 
     rc = sdb_create_condition_from_key(table, key_info, &start_key, end_range,
                                        0, (NULL != end_range) ? eq_range : 0,
-                                       condition_idx);
+                                       start_cond_idx, end_cond_idx);
     if (0 != rc) {
       SDB_LOG_ERROR("Failed to build index match object. rc: %d", rc);
       goto error;
     }
 
+    rc = build_index_position(key_info, start_cond_idx, hint_pos_builder);
+    if (SDB_OK != rc) {
+      SDB_LOG_ERROR("Failed to build index position. rc: %d", rc);
+      goto error;
+    }
     order_direction = sdb_get_key_direction(find_flag);
   }
 
-  rc = sdb_combine_condition(pushed_condition, condition_idx, condition);
-  if (rc) {
-    goto error;
+  try {
+    /* Multi range on multi columns index read except all key parts read exact
+       can not push condtion_idx to matcher.*/
+    if (hint_pos_builder.isEmpty()) {
+      hint_pos_builder.done();
+      hint_builder.bb().setlen(lastLen);
+      hint_builder.bb().setReserveBytes(resered);
+
+      bson::BSONObjBuilder builder;
+      struct not_empty_cond{
+        int cnt;
+        bson::BSONObj cond[3];
+      };
+
+      struct not_empty_cond conds = {0, SDB_EMPTY_BSON};
+      if (!condition.isEmpty()) {
+        conds.cond[conds.cnt] = condition;
+        conds.cnt++;
+      }
+
+      if (!start_cond_idx.isEmpty() && !start_cond_idx.equal(condition)) {
+        conds.cond[conds.cnt] = start_cond_idx;
+        conds.cnt++;
+      }
+
+      if (!end_cond_idx.isEmpty() && !end_cond_idx.equal(start_cond_idx) &&
+          !end_cond_idx.equal(condition)) {
+        conds.cond[conds.cnt] = end_cond_idx;
+        conds.cnt++;
+      }
+
+      if (1 == conds.cnt) {
+        condition = conds.cond[0];
+      } else if (conds.cnt >= 2) {
+        bson::BSONArrayBuilder sub_array(builder.subarrayStart("$and"));
+        for (int i = 0; i < 3; i++) {
+          sub_array.append(conds.cond[i]);
+        }
+        sub_array.done();
+        condition = builder.obj();
+      }
+    } else {
+      hint_pos_builder.done();
+    }
   }
 
-  rc = index_read_one(condition, order_direction, buf);
+  rc = index_read_one(condition, order_direction, buf, &hint_builder);
   if (rc) {
     goto error;
   }
@@ -3184,7 +3373,7 @@ error:
 }
 
 int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
-                           uchar *buf) {
+                           uchar *buf, bson::BSONObjBuilder *hint_builder) {
   int rc = 0;
   bson::BSONObj hint;
   bson::BSONObj rule;
@@ -3207,7 +3396,6 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   DBUG_ASSERT(NULL != key_info);
   DBUG_ASSERT(NULL != sdb_key_name(key_info));
 
-  hint = BSON("" << sdb_key_name(key_info));
   idx_order_direction = order_direction;
   if (!field_order_condition.isEmpty()) {
     order_by = field_order_condition;
@@ -3221,6 +3409,16 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   }
 
   flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+
+  try {
+    if (hint_builder) {
+      hint_builder->append("", sdb_key_name(key_info));
+      hint = hint_builder->obj();
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to index read one for table:%s.%s, exception:%s", db_name,
+      table_name, e.what());
   rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                          direct_op);
   if (rc) {
@@ -3275,21 +3473,22 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
       SDB_LOG_DEBUG(
           "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
           "limit[%d+%d], "
-          "offset[0]",
+          "offset[0], table[%s.%s]",
           condition.toString(false, false).c_str(),
           selector.toString(false, false).c_str(),
           order_by.toString(false, false).c_str(),
           hint.toString(false, false).c_str(), org_num_to_return,
-          org_num_to_skip);
+          org_num_to_skip, db_name, table_name);
     } else {
       SDB_LOG_DEBUG(
           "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
           "limit[%d], "
-          "offset[%d]",
+          "offset[%d], table[%s.%s]",
           condition.toString(false, false).c_str(),
           selector.toString(false, false).c_str(),
           order_by.toString(false, false).c_str(),
-          hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+          hint.toString(false, false).c_str(), num_to_return, num_to_skip,
+          db_name, table_name);
     }
   }
 
@@ -3347,6 +3546,7 @@ int ha_sdb::index_init(uint idx, bool sorted) {
   if (!pushed_cond) {
     pushed_condition = SDB_EMPTY_BSON;
   }
+  last_key_value = SDB_EMPTY_BSON;
 #ifdef IS_MARIADB
   m_secondary_sort_rowid = sdb_is_ror_scan(ha_thd(), table->tablenr);
 #endif
@@ -3874,11 +4074,13 @@ int ha_sdb::rnd_next(uchar *buf) {
           "Query message: condition[%s], selector[%s], order_by[%s], "
           "hint[%s], "
           "limit[%d], "
-          "offset[%d]",
+            "offset[%d], "
+            "table[%s.%s]",
           condition.toString(false, false).c_str(),
           selector.toString(false, false).c_str(),
           order_by.toString(false, false).c_str(),
-          hint.toString(false, false).c_str(), num_to_return, num_to_skip);
+            hint.toString(false, false).c_str(), num_to_return, num_to_skip,
+            db_name, table_name);
     }
 
     if (rc != 0) {

@@ -261,6 +261,9 @@ class ha_sdb : public handler {
 
   int build_selector(bson::BSONObj &selector);
 
+  int build_index_position(const KEY *key_info, const bson::BSONObj &start_cond,
+                           bson::BSONObjBuilder &hint_pos_builder);
+
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
     skip it and and MySQL will treat it as not implemented.
@@ -448,7 +451,8 @@ class ha_sdb : public handler {
                       int filter_num, bson::BSONObjBuilder &build,
                       bson::BSONObjBuilder *filter_build = NULL);
 
-  int index_read_one(bson::BSONObj condition, int order_direction, uchar *buf);
+  int index_read_one(bson::BSONObj condition, int order_direction, uchar *buf,
+                     bson::BSONObjBuilder *hint_builder);
 
   my_bool get_unique_key_cond(const uchar *rec_row, bson::BSONObj &cond);
 
@@ -523,6 +527,7 @@ class ha_sdb : public handler {
   bson::BSONObj pushed_condition;
   bson::BSONObj field_order_condition;
   bson::BSONObj group_list_condition;
+  bson::BSONObj last_key_value;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
   char table_name[SDB_CL_NAME_MAX_SIZE + 1];
   time_t last_count_time;
