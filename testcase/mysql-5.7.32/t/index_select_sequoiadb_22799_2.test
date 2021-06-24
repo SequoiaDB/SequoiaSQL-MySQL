@@ -1,8 +1,4 @@
-# Testcase     : seqDB-22799:字段值存在null的等值查询索引选择(sequoiadb_stats_cache=OFF)
-# Author       : chenxiaodan
-# CreateTime   : 2021.05.27
-# LastEditor   : chenxiaodan
-# LastEditTime : 2021.05.27
+# Testcase: seqDB-22799:字段值存在null的等值查询索引选择(sequoiadb_stats_cache=OFF)
 
 --source include/big_test.inc
 --source include/have_sequoiadb.inc

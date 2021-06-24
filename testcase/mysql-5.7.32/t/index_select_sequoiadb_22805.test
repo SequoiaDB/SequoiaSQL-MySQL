@@ -1,8 +1,4 @@
-# Testcase     : seqDB-22805:字段类型为字符串类型，范围查询的索引选择
-# Author       : chenxiaodan
-# CreateTime   : 2021.05.27
-# LastEditor   : chenxiaodan
-# LastEditTime : 2021.05.27
+# Testcase: seqDB-22805:字段类型为字符串类型，范围查询的索引选择
 
 --source include/have_sequoiadb.inc
 

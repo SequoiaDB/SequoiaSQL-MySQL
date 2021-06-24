@@ -1,8 +1,4 @@
-# Testcase     : seqDB-22795:多表等值查询索引选择
-# Author       : chenxiaodan
-# CreateTime   : 2021.05.27
-# LastEditor   : chenxiaodan
-# LastEditTime : 2021.05.27
+# Testcase: seqDB-22795:多表等值查询索引选择
 
 --source include/big_test.inc
 --source include/have_sequoiadb.inc

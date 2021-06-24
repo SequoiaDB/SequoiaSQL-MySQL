@@ -1,8 +1,4 @@
-# Testcase     : seqDB-24265
-# Author       : huangxiaoni
-# CreateTime   : 2021.06.18
-# LastEditor   : huangxiaoni
-# LastEditTime : 2021.06.18
+# Testcase: seqDB-24265
 
 create database explain_sequoiadb_24265;
 use explain_sequoiadb_24265;
