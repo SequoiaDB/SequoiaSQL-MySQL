@@ -3324,7 +3324,7 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
       hint_builder.bb().setReserveBytes(resered);
 
       bson::BSONObjBuilder builder;
-      struct not_empty_cond{
+      struct not_empty_cond {
         int cnt;
         bson::BSONObj cond[3];
       };
@@ -4074,13 +4074,13 @@ int ha_sdb::rnd_next(uchar *buf) {
           "Query message: condition[%s], selector[%s], order_by[%s], "
           "hint[%s], "
           "limit[%d], "
-            "offset[%d], "
-            "table[%s.%s]",
+          "offset[%d], "
+          "table[%s.%s]",
           condition.toString(false, false).c_str(),
           selector.toString(false, false).c_str(),
           order_by.toString(false, false).c_str(),
-            hint.toString(false, false).c_str(), num_to_return, num_to_skip,
-            db_name, table_name);
+          hint.toString(false, false).c_str(), num_to_return, num_to_skip,
+          db_name, table_name);
     }
 
     if (rc != 0) {
