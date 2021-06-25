@@ -2,8 +2,7 @@ package com.sequoiadb.datasrc;
 
 import com.sequoiadb.base.CollectionSpace;
 import com.sequoiadb.base.Sequoiadb;
-import com.sequoiadb.testcommon.CommLib;
-import com.sequoiadb.testcommon.SdbTestBase;
+import com.sequoiadb.testcommon.*;
 import com.sequoiadb.threadexecutor.ResultStore;
 import com.sequoiadb.threadexecutor.ThreadExecutor;
 import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
@@ -16,6 +15,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @Description seqDB-24207:多实例mysql端集合映射普通表并发执行数据操作
@@ -23,30 +24,25 @@ import java.sql.SQLException;
  * @Date 2021.05.28
  * @version 1.0
  */
-public class SqlDataSource24207 extends SdbTestBase {
-    private SqlUtils utils = new SqlUtils();
-    private String url1;
-    private String url2;
+public class SqlDataSource24207 extends MysqlTestBase {
     private String csName = "cs_24207";
     private String clName = "cl_24207";
     private Sequoiadb sdb = null;
     private Sequoiadb srcdb = null;
     private String dataSrcName = "datasource24207";
+    private JdbcInterface jdbc;
 
     @BeforeClass
     public void setUp() throws Exception {
-
-        url1 = utils.getUrls().get( 0 );
-        url2 = utils.getUrls().get( 1 );
-        utils.update( "drop database if exists " + csName, url1 );
-        utils.update( "create database " + csName, url1 );
-        // 创建数据源
-        sdb = new Sequoiadb( SdbTestBase.coordUrl, "", "" );
-        srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
-                DataSrcUtils.getPasswd() );
+        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
         if ( CommLib.isStandAlone( sdb ) ) {
             throw new SkipException( "is standalone skip testcase" );
         }
+        jdbc = JdbcInterfaceFactory.build(
+                JdbcWarpperType.JdbcWarpperOfHaInst1 );
+        srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
+                DataSrcUtils.getPasswd() );
+        jdbc.dropDatabase( csName );
         DataSrcUtils.clearDataSource( sdb, csName, dataSrcName );
         DataSrcUtils.createDataSource( sdb, dataSrcName,
                 new BasicBSONObject( "TransPropagateMode", "notsupport" ) );
@@ -56,17 +52,19 @@ public class SqlDataSource24207 extends SdbTestBase {
         options.put( "DataSource", dataSrcName );
         options.put( "Mapping", csName + "." + clName );
         cs.createCollection( clName, options );
-        utils.update( "create table " + csName + "." + clName
-                + "(id int,value varchar(50));", url1 );
-        utils.update( "create procedure " + csName
-                + ".insertValue() begin declare i int; set i=1; while i<10000 do insert into "
-                + csName + "." + clName
-                + " values (i,'test'); set i=i+1; end while; end", url1 );
-        Thread.sleep( 5000 );
+        jdbc.createDatabase( csName );
     }
 
     @Test
     public void test() throws Exception {
+        String fullTableName = csName + "." + clName;
+        jdbc.update( "create table " + fullTableName
+                + "(id int,value varchar(50));" );
+        jdbc.update( "create procedure " + csName
+                + ".insertValue() begin declare i int; set i=1; while i<10000 do insert into "
+                + fullTableName
+                + " values (i,'test'); set i=i+1; end while; end" );
+        JdbcAssert.checkMetaSync();
         ThreadExecutor t = new ThreadExecutor( 180000 );
         Insert insert = new Insert();
         Truncate truncate = new Truncate();
@@ -75,14 +73,25 @@ public class SqlDataSource24207 extends SdbTestBase {
         t.run();
         Assert.assertEquals( insert.getRetCode(), 0 );
         Assert.assertEquals( truncate.getRetCode(), 0 );
+        jdbc.update(
+                "insert into " + fullTableName + " values(1,'sequoiadb')" );
+        List< String > exp = new ArrayList<>();
+        exp.add( "1|sequoiadb" );
+        List< String > act = ( List< String > ) jdbc.query( "select * from "
+                + fullTableName + " where value = 'sequoiadb'" );
+        Assert.assertEquals( act, exp );
     }
 
     @AfterClass
     public void tearDown() throws Exception {
         try {
-            utils.update( "drop database if exists " + csName, url2 );
+            jdbc.dropDatabase( csName );
             DataSrcUtils.clearDataSource( sdb, csName, dataSrcName );
+            if ( srcdb.isCollectionSpaceExist( csName ) ) {
+                srcdb.dropCollectionSpace( csName );
+            }
         } finally {
+            jdbc.close();
             if ( sdb != null ) {
                 sdb.close();
             }
@@ -92,11 +101,22 @@ public class SqlDataSource24207 extends SdbTestBase {
         }
     }
 
-    class Insert extends ResultStore {
+    private class Insert extends ResultStore {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
             try {
-                utils.update( "call " + csName + ".insertValue()", url1 );
+                JdbcInterface jdbcWarpper = JdbcInterfaceFactory
+                        .build(
+                                JdbcWarpperType.JdbcWarpperOfHaInst1 );
+                try {
+                    jdbcWarpper.update( "call " + csName + ".insertValue()" );
+                } catch ( SQLException e ) {
+                    if ( !( e.getMessage()
+                            .equals( "Collection is truncated" ) ) ) {
+                        throw e;
+                    }
+                }
+                jdbcWarpper.close();
             } catch ( SQLException e ) {
                 if ( !( e.getMessage().equals( "Collection is truncated" ) ) ) {
                     throw e;
@@ -105,10 +125,13 @@ public class SqlDataSource24207 extends SdbTestBase {
         }
     }
 
-    class Truncate extends ResultStore {
+    private class Truncate extends ResultStore {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            utils.update( "truncate " + csName + "." + clName, url2 );
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory.build(
+                    JdbcWarpperType.JdbcWarpperOfHaInst2 );
+            jdbcWarpper.update( "truncate " + csName + "." + clName );
+            jdbcWarpper.close();
         }
 
     }

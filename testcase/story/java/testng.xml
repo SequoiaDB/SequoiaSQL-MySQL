@@ -16,6 +16,8 @@
     <parameter name="MYSQL1" value="${MYSQL1URL}"/>
     <!--mysql实例2地址-->
     <parameter name="MYSQL2" value="${MYSQL2URL}"/>
+    <!--mysql InnoDB地址-->
+    <parameter name="INNODB" value="${INNODBURL}"/>
     <!--mysql实例账户-->
     <parameter name="MYSQLUSER" value="${MYSQLUSER}"/>
     <!--mysql实例密码-->

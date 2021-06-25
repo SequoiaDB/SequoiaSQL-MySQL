@@ -2,8 +2,7 @@ package com.sequoiadb.datasrc;
 
 import com.sequoiadb.base.CollectionSpace;
 import com.sequoiadb.base.Sequoiadb;
-import com.sequoiadb.testcommon.CommLib;
-import com.sequoiadb.testcommon.SdbTestBase;
+import com.sequoiadb.testcommon.*;
 import com.sequoiadb.threadexecutor.ThreadExecutor;
 import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
 import org.bson.BasicBSONObject;
@@ -23,71 +22,71 @@ import java.util.List;
  * @Date 2021.05.28
  * @version 1.0
  */
-public class SqlDataSource24203 extends SdbTestBase {
-    private com.sequoiadb.datasrc.SqlUtils utils = new com.sequoiadb.datasrc.SqlUtils();
-    private String url;
-    private String csname = "cs_24203";
-    private String clname = "cl_24203";
+public class SqlDataSource24203 extends MysqlTestBase {
+    private String csName = "cs_24203";
+    private String clName = "cl_24203";
     private Sequoiadb sdb = null;
     private Sequoiadb srcdb = null;
     private String dataSrcName = "datasource24203";
     private int recordNum = 2000;
+    private JdbcInterface jdbc;
 
     @BeforeClass
     public void setUp() throws Exception {
-        url = utils.getUrl();
-        utils.update( "drop database if exists " + csname, url );
-        utils.update( "create database " + csname, url );
-        // 创建数据源
-        sdb = new Sequoiadb( SdbTestBase.coordUrl, "", "" );
-        srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
-                DataSrcUtils.getPasswd() );
+        sdb = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
         if ( CommLib.isStandAlone( sdb ) ) {
             throw new SkipException( "is standalone skip testcase" );
         }
-        DataSrcUtils.clearDataSource( sdb, csname, dataSrcName );
+        jdbc = JdbcInterfaceFactory.build(
+                JdbcWarpperType.JdbcWarpperOfHaInst1 );
+        srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
+                DataSrcUtils.getPasswd() );
+        jdbc.dropDatabase( csName );
+        DataSrcUtils.clearDataSource( sdb, csName, dataSrcName );
         DataSrcUtils.createDataSource( sdb, dataSrcName,
                 new BasicBSONObject( "TransPropagateMode", "notsupport" ) );
-        DataSrcUtils.createCSAndCL( srcdb, csname, clname );
+        DataSrcUtils.createCSAndCL( srcdb, csName, clName );
+        CollectionSpace cs = sdb.createCollectionSpace( csName );
         BasicBSONObject options = new BasicBSONObject();
         options.put( "DataSource", dataSrcName );
-        options.put( "Mapping", clname );
-        CollectionSpace cs = sdb.createCollectionSpace( csname );
-        cs.createCollection( clname, options );
-        utils.update( "create table " + csname + "." + clname
-                + "(id int,value varchar(50),age int);", url );
+        options.put( "Mapping", csName + "." + clName );
+        cs.createCollection( clName, options );
+        jdbc.createDatabase( csName );
+        jdbc.update( "create table " + csName + "." + clName
+                + "(id int,value varchar(50),age int);" );
     }
 
     @Test
     public void test() throws Exception {
         // 创建插入数据存储过程1
-        utils.update( "create procedure " + csname + "." + "insertValue1()"
+        jdbc.update( "create procedure " + csName + "." + "insertValue1()"
                 + "begin " + "declare i int;" + "set i = 0;" + "while (i<"
-                + recordNum / 2 + ") do " + "insert into " + csname + "."
-                + clname + " values(i,'test',i);" + "set i = i+1;"
-                + "end while;" + "end", url );
+                + recordNum / 2 + ") do " + "insert into " + csName + "."
+                + clName + " values(i,'test',i);" + "set i = i+1;"
+                + "end while;" + "end" );
         // 创建插入数据存储过程2
-        utils.update( "create procedure " + csname + "." + "insertValue2()"
+        jdbc.update( "create procedure " + csName + "." + "insertValue2()"
                 + "begin " + "declare i int;" + "set i = " + recordNum / 2 + ";"
-                + "while (i<" + recordNum + ") do " + "insert into " + csname
-                + "." + clname + " values(i,'test',i);" + "set i = i+1;"
-                + "end while;" + "end", url );
+                + "while (i<" + recordNum + ") do " + "insert into " + csName
+                + "." + clName + " values(i,'test',i);" + "set i = i+1;"
+                + "end while;" + "end" );
         // 创建更新存储过程
-        utils.update( "create procedure " + csname + "." + "updateValue()"
+        jdbc.update( "create procedure " + csName + "." + "updateValue()"
                 + "begin" + " declare i int;" + "set i = 0;" + "while i<"
-                + recordNum / 4 + " do " + "update " + csname + "." + clname
+                + recordNum / 4 + " do " + "update " + csName + "." + clName
                 + " set value = 'new' where id = i;" + "set i = i+1;"
-                + "end while;" + "end", url );
+                + "end while;" + "end" );
         // 创建删除存储过程
-        utils.update( "create procedure " + csname + "." + "deleteValue()"
+        jdbc.update( "create procedure " + csName + "." + "deleteValue()"
                 + "begin" + " declare i int;" + "set i = " + recordNum / 4 + ";"
-                + "while i<" + recordNum / 2 + " do " + "delete from " + csname
-                + "." + clname + " where id = i;" + "set i = i+1;"
-                + "end while;" + "end", url );
+                + "while i<" + recordNum / 2 + " do " + "delete from " + csName
+                + "." + clName + " where id = i;" + "set i = i+1;"
+                + "end while;" + "end" );
         // 插入部分数据
-        utils.update( "call " + csname + ".insertValue1()", url );
+        jdbc.update( "call " + csName + ".insertValue1()" );
+        JdbcAssert.checkMetaSync();
 
-        ThreadExecutor t = new ThreadExecutor( 180000 );
+        ThreadExecutor t = new ThreadExecutor();
         t.addWorker( new Insert() );
         t.addWorker( new Update() );
         t.addWorker( new Delete() );
@@ -101,8 +100,8 @@ public class SqlDataSource24203 extends SdbTestBase {
         for ( int i = recordNum / 2; i < recordNum; i++ ) {
             expresults.add( i + "|" + "test" + "|" + i );
         }
-        List< String > results = utils
-                .query( "select * from " + csname + "." + clname, url );
+        List< String > results = ( List< String > ) jdbc
+                .query( "select * from " + csName + "." + clName );
         Collections.sort( results );
         Collections.sort( expresults );
         Assert.assertEquals( results.toString(), expresults.toString() );
@@ -111,9 +110,13 @@ public class SqlDataSource24203 extends SdbTestBase {
     @AfterClass
     public void tearDown() throws Exception {
         try {
-            utils.update( "drop database if exists " + csname, url );
-            DataSrcUtils.clearDataSource( sdb, csname, dataSrcName );
+            jdbc.dropDatabase( csName );
+            if ( srcdb.isCollectionSpaceExist( csName ) ) {
+                srcdb.dropCollectionSpace( csName );
+            }
+            DataSrcUtils.clearDataSource( sdb, csName, dataSrcName );
         } finally {
+            jdbc.close();
             if ( sdb != null ) {
                 sdb.close();
             }
@@ -123,24 +126,33 @@ public class SqlDataSource24203 extends SdbTestBase {
         }
     }
 
-    class Insert {
+    private class Insert {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            utils.update( "call " + csname + ".insertValue2()", url );
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory.build(
+                    JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbcWarpper.update( "call " + csName + ".insertValue2()" );
+            jdbcWarpper.close();
         }
     }
 
-    class Update {
+    private class Update {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            utils.update( "call " + csname + ".updateValue()", url );
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory.build(
+                    JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbcWarpper.update( "call " + csName + ".updateValue()" );
+            jdbcWarpper.close();
         }
     }
 
-    class Delete {
+    private class Delete {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            utils.update( "call " + csname + ".deleteValue()", url );
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory.build(
+                    JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            jdbcWarpper.update( "call " + csName + ".deleteValue()" );
+            jdbcWarpper.close();
         }
 
     }

@@ -5,7 +5,7 @@ import org.bson.BSONObject;
 import com.sequoiadb.base.CollectionSpace;
 import com.sequoiadb.base.DBCollection;
 import com.sequoiadb.base.Sequoiadb;
-import com.sequoiadb.testcommon.SdbTestBase;
+import com.sequoiadb.testcommon.MysqlTestBase;
 
 /**
  * FileName: IndexUtils.java public call function for test index
@@ -14,7 +14,7 @@ import com.sequoiadb.testcommon.SdbTestBase;
  * @Date 2020.12.04
  * @version 1.00
  */
-public class DataSrcUtils extends SdbTestBase{
+public class DataSrcUtils extends MysqlTestBase {
 
     public static void clearDataSource( Sequoiadb db, String csName,
             String dataSrcName ) {
@@ -28,13 +28,17 @@ public class DataSrcUtils extends SdbTestBase{
 
     public static void createDataSource( Sequoiadb db, String name,
             BSONObject option ) {
-        db.createDataSource( name, getSrcUrl(),
-                getUser(), getPasswd(), "", option );
+        db.createDataSource( name, getSrcUrl(), getUser(), getPasswd(), "",
+                option );
+    }
+
+    public static void createDataSource( Sequoiadb db, String name ) {
+        createDataSource( db, name, null );
     }
 
     public static String getSrcUrl() {
-        String dataSrcIp = SdbTestBase.dsHostName;
-        String port = SdbTestBase.dsServiceName;
+        String dataSrcIp = MysqlTestBase.dsHostName;
+        String port = MysqlTestBase.dsServiceName;
         return dataSrcIp + ":" + port;
     }
 

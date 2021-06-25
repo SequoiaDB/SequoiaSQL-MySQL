@@ -828,13 +828,13 @@ public class CommLib {
 //     * @return Sequoiadb
 //     */
 //    public static Sequoiadb getRandomSequoiadb() {
-//        if ( SdbTestBase.coordUrls.isEmpty() ) {
-//            try ( Sequoiadb sequoiadb = new Sequoiadb( SdbTestBase.coordUrl, "",
+//        if ( MysqlTestBase.coordUrls.isEmpty() ) {
+//            try ( Sequoiadb sequoiadb = new Sequoiadb( MysqlTestBase.coordUrl, "",
 //                    "" )) {
-//                SdbTestBase.coordUrls = CommLib.getAllCoordUrls( sequoiadb );
+//                MysqlTestBase.coordUrls = CommLib.getAllCoordUrls( sequoiadb );
 //            }
 //        }
-//        List< String > coordUrls = SdbTestBase.coordUrls;
+//        List< String > coordUrls = MysqlTestBase.coordUrls;
 //        String coord = coordUrls
 //                .get( new Random().nextInt( coordUrls.size() ) );
 //
