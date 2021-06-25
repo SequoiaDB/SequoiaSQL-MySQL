@@ -743,6 +743,9 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                 /*Note: no break*/
               case HA_READ_KEY_OR_NEXT:
                 // >= null means read all records
+                /*pre append undefined on the field which start read with
+                 * null.*/
+                builder[i].appendUndefined(sdb_field_name(field));
               default:
                 goto prepare_for_next_key_part;
             }

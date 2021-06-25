@@ -292,6 +292,9 @@ class ha_sdb : public handler {
 
   int append_end_range(bson::BSONObj &condition);
 
+  int join_cond_idx(const bson::BSONObj &start_cond_idx,
+                    const bson::BSONObj &end_cond_idx, bson::BSONObj &cond_idx);
+
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
     skip it and and MySQL will treat it as not implemented.

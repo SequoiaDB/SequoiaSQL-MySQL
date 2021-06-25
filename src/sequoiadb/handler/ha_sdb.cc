@@ -3802,18 +3802,17 @@ int ha_sdb::build_index_position(const KEY *key_info,
 
   try {
     if (key_info->user_defined_key_parts > 1) {
-      bson::BSONObjIterator si(start_cond);
-
       if (last_key_value.isEmpty()) {
         goto done;
       } else {
         idx_hint_position = true;
       }
 
+      bson::BSONObjIterator si(start_cond);
       const KEY_PART_INFO *key_part = key_info->key_part;
       while (si.more()) {
         BSONElement elem_tmp = si.next();
-        if (Object == elem_tmp.type()) {
+        if (Object == elem_tmp.type() || Undefined == elem_tmp.type()) {
           for (; (0 != strcmp(elem_tmp.fieldName(),
                               sdb_field_name(key_part->field))) &&
                  prefix_num <= key_info->user_defined_key_parts;
@@ -3821,7 +3820,13 @@ int ha_sdb::build_index_position(const KEY *key_info,
             // do nothing
           }
 
+          /*ignore the undefined op*/
+          if (Undefined == elem_tmp.type()) {
+            continue;
+          }
+
           BSONObj e_obj = elem_tmp.Obj();
+
           int op_type = e_obj.firstElement().getGtLtOp(-1);
           /*$isnull is also a type of equal.*/
           if (all_parts_read_exact && BSONObj::Equality != op_type &&
@@ -3897,6 +3902,86 @@ error:
   goto done;
 }
 
+int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond_idx,
+                          const bson::BSONObj &end_cond_idx,
+                          bson::BSONObj &cond_idx) {
+  int rc = SDB_OK;
+  bson::BSONObjBuilder builder(start_cond_idx.objsize() +
+                               end_cond_idx.objsize() + 20);
+  bool both = !start_cond_idx.isEmpty() && !end_cond_idx.isEmpty();
+  try {
+    if (both && !start_cond_idx.equal(end_cond_idx)) {
+      bson::BSONArrayBuilder sub_array(builder.subarrayStart("$and"));
+      bson::BSONObjIterator si(start_cond_idx);
+      bson::BSONObjIterator ei(end_cond_idx);
+      while (si.more() || ei.more()) {
+        bson::BSONElement elem_start;
+        bson::BSONElement elem_end;
+        const char *undefined_field_name = NULL;
+        while (si.more()) {
+          elem_start = si.next();
+          if (bson::Undefined == elem_start.type()) {
+            undefined_field_name = elem_start.fieldName();
+            break;
+          } else {
+            bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
+            sub_obj.append(elem_start);
+            sub_obj.done();
+          }
+        }
+
+        while (ei.more()) {
+          elem_end = ei.next();
+          if (undefined_field_name &&
+              0 == strcmp(elem_end.fieldName(), undefined_field_name)) {
+            bson::BSONObjBuilder or_array_obj(sub_array.subobjStart());
+            bson::BSONArrayBuilder sub_or_array(
+                or_array_obj.subarrayStart("$or"));
+            bson::BSONObjBuilder or_obj_bld(sub_or_array.subobjStart());
+            bson::BSONObjBuilder null_obj_bld(
+                or_obj_bld.subobjStart(undefined_field_name));
+            null_obj_bld.append("$isnull", 1);
+            null_obj_bld.done();
+            or_obj_bld.done();
+            bson::BSONObjBuilder end_obj_bld(sub_or_array.subobjStart());
+            end_obj_bld.append(elem_end);
+            end_obj_bld.done();
+            sub_or_array.done();
+            or_array_obj.done();
+            break;
+          } else {
+            bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
+            sub_obj.append(elem_end);
+            sub_obj.done();
+          }
+        }
+      }
+      sub_array.done();
+      cond_idx = builder.obj();
+    } else if (!start_cond_idx.isEmpty()) {
+      bson::BSONObjIterator si(start_cond_idx);
+      while (si.more()) {
+        bson::BSONElement elem_start = si.next();
+        if (bson::Undefined == elem_start.type()) {
+          continue;
+        } else {
+          builder.append(elem_start);
+        }
+      }
+      cond_idx = builder.obj();
+    } else {
+      cond_idx = end_cond_idx;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to join index condition for table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
                            key_part_map keypart_map,
                            enum ha_rkey_function find_flag) {
@@ -3909,7 +3994,7 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   bson::BSONObj cond_idx;
 
   bson::BSONObjBuilder hint_builder;
-  int lastLen = hint_builder.len();
+  int last_len = hint_builder.len();
   int resered = hint_builder.bb().getReserveBytes();
   bson::BSONObjBuilder hint_pos_builder(
       hint_builder.subobjStart(SDB_IDX_ADVANCE_POSITION));
@@ -3963,21 +4048,12 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
        can not push condtion_idx to matcher.*/
     if (hint_pos_builder.isEmpty()) {
       hint_pos_builder.done();
-      hint_builder.bb().setlen(lastLen);
+      hint_builder.bb().setlen(last_len);
       hint_builder.bb().setReserveBytes(resered);
 
-      bson::BSONObjBuilder builder;
-      bool both = !start_cond_idx.isEmpty() && !end_cond_idx.isEmpty();
-      if (both) {
-        bson::BSONArrayBuilder sub_array(builder.subarrayStart("$and"));
-        sub_array.append(start_cond_idx);
-        sub_array.append(end_cond_idx);
-        sub_array.done();
-        cond_idx = builder.obj();
-      } else if (!start_cond_idx.isEmpty()) {
-        cond_idx = start_cond_idx;
-      } else {
-        cond_idx = end_cond_idx;
+      rc = join_cond_idx(start_cond_idx, end_cond_idx, cond_idx);
+      if (0 != rc) {
+        goto error;
       }
 
       rc = sdb_combine_condition(condition, cond_idx, condition);
