@@ -13440,7 +13440,7 @@ create index a on t1(a);
 select * from t1 where a=3 or a is null order by a limit 1 offset 1;
 a	b
 NULL	NULL
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$et": 3 } }, { "a": { "$isnull": 1 } } ] }, { "$and": [ { "a": { "$isnull": 1 } }, { "a": { "$isnull": 1 } } ] } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 1 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a=3 or a is null group by a limit 1 offset 1;
 a	b
 3	1
@@ -14142,7 +14142,7 @@ SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 a	b	c
 1	1	1
 2	2	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lte": 3 }, "b": { "$lte": 3 } } ] } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lte": 3 } }, { "b": { "$lte": 3 } } ] } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 a	b	c
 1	1	1

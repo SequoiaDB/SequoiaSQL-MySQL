@@ -728,6 +728,8 @@ INSERT into t1 values (35, 2);
 INSERT into t1 values (40, NULL);
 select * from t1 force index (b) where b < 10 OR b IS NULL order by b;
 a	b
+40	NULL
+5	NULL
 1	1
 7	1
 35	2
