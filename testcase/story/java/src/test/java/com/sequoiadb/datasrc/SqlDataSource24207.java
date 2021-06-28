@@ -38,8 +38,8 @@ public class SqlDataSource24207 extends MysqlTestBase {
         if ( CommLib.isStandAlone( sdb ) ) {
             throw new SkipException( "is standalone skip testcase" );
         }
-        jdbc = JdbcInterfaceFactory.build(
-                JdbcWarpperType.JdbcWarpperOfHaInst1 );
+        jdbc = JdbcInterfaceFactory
+                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
         srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
                 DataSrcUtils.getPasswd() );
         jdbc.dropDatabase( csName );
@@ -77,8 +77,8 @@ public class SqlDataSource24207 extends MysqlTestBase {
                 "insert into " + fullTableName + " values(1,'sequoiadb')" );
         List< String > exp = new ArrayList<>();
         exp.add( "1|sequoiadb" );
-        List< String > act = ( List< String > ) jdbc.query( "select * from "
-                + fullTableName + " where value = 'sequoiadb'" );
+        List< String > act = jdbc.query( "select * from " + fullTableName
+                + " where value = 'sequoiadb'" );
         Assert.assertEquals( act, exp );
     }
 
@@ -106,8 +106,7 @@ public class SqlDataSource24207 extends MysqlTestBase {
         public void exec() throws Exception {
             try {
                 JdbcInterface jdbcWarpper = JdbcInterfaceFactory
-                        .build(
-                                JdbcWarpperType.JdbcWarpperOfHaInst1 );
+                        .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
                 try {
                     jdbcWarpper.update( "call " + csName + ".insertValue()" );
                 } catch ( SQLException e ) {
@@ -128,8 +127,8 @@ public class SqlDataSource24207 extends MysqlTestBase {
     private class Truncate extends ResultStore {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            JdbcInterface jdbcWarpper = JdbcInterfaceFactory.build(
-                    JdbcWarpperType.JdbcWarpperOfHaInst2 );
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
             jdbcWarpper.update( "truncate " + csName + "." + clName );
             jdbcWarpper.close();
         }

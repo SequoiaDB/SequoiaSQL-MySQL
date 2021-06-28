@@ -37,8 +37,8 @@ public class SqlDataSource24203 extends MysqlTestBase {
         if ( CommLib.isStandAlone( sdb ) ) {
             throw new SkipException( "is standalone skip testcase" );
         }
-        jdbc = JdbcInterfaceFactory.build(
-                JdbcWarpperType.JdbcWarpperOfHaInst1 );
+        jdbc = JdbcInterfaceFactory
+                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
         srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
                 DataSrcUtils.getPasswd() );
         jdbc.dropDatabase( csName );
@@ -100,7 +100,7 @@ public class SqlDataSource24203 extends MysqlTestBase {
         for ( int i = recordNum / 2; i < recordNum; i++ ) {
             expresults.add( i + "|" + "test" + "|" + i );
         }
-        List< String > results = ( List< String > ) jdbc
+        List< String > results = jdbc
                 .query( "select * from " + csName + "." + clName );
         Collections.sort( results );
         Collections.sort( expresults );
@@ -129,8 +129,8 @@ public class SqlDataSource24203 extends MysqlTestBase {
     private class Insert {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            JdbcInterface jdbcWarpper = JdbcInterfaceFactory.build(
-                    JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbcWarpper.update( "call " + csName + ".insertValue2()" );
             jdbcWarpper.close();
         }
@@ -139,8 +139,8 @@ public class SqlDataSource24203 extends MysqlTestBase {
     private class Update {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            JdbcInterface jdbcWarpper = JdbcInterfaceFactory.build(
-                    JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbcWarpper.update( "call " + csName + ".updateValue()" );
             jdbcWarpper.close();
         }
@@ -149,8 +149,8 @@ public class SqlDataSource24203 extends MysqlTestBase {
     private class Delete {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
-            JdbcInterface jdbcWarpper = JdbcInterfaceFactory.build(
-                    JdbcWarpperType.JdbcWarpperOfHaInst1 );
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             jdbcWarpper.update( "call " + csName + ".deleteValue()" );
             jdbcWarpper.close();
         }

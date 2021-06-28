@@ -21,7 +21,7 @@ public interface JdbcInterface {
 
     void rollback() throws SQLException;
 
-    void setAutoCommit( Boolean flag ) throws SQLException;
+    void setAutoCommit( boolean flag ) throws SQLException;
 
     void setTransactionIsolatrion( int i ) throws SQLException;
 

@@ -9,7 +9,7 @@ import java.util.Map;
 public class JdbcInterfaceFactory {
     private Map< JdbcWarpperType, String > type2cls = new HashMap<>();
 
-    public Map< JdbcWarpperType, String > getType2cls() {
+    private Map< JdbcWarpperType, String > getType2cls() {
         return type2cls;
     }
 
@@ -39,7 +39,7 @@ public class JdbcInterfaceFactory {
         return jdbcInterface;
     }
 
-    public void register( JdbcWarpperType type, String clsName ) {
+    private void register( JdbcWarpperType type, String clsName ) {
         type2cls.put( type, clsName );
     }
 }

@@ -130,7 +130,7 @@ public class JdbcWarpper implements JdbcInterface {
     }
 
     @Override
-    public void setAutoCommit( Boolean flag ) throws SQLException {
+    public void setAutoCommit( boolean flag ) throws SQLException {
         conn.setAutoCommit( flag );
     }
 

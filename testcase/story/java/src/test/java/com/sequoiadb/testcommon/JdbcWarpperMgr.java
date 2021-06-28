@@ -72,7 +72,7 @@ public class JdbcWarpperMgr implements JdbcInterface {
     }
 
     @Override
-    public void setAutoCommit( Boolean flag ) throws SQLException {
+    public void setAutoCommit( boolean flag ) throws SQLException {
         sequoiadb.setAutoCommit( flag );
         innodb.setAutoCommit( flag );
     }
