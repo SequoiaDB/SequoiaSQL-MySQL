@@ -49,6 +49,8 @@ bool sdb_is_tmp_table(const char *path, const char *table_name);
 int sdb_convert_charset(const String &src_str, String &dst_str,
                         const CHARSET_INFO *dst_charset);
 
+bool sdb_field_is_integer_type(enum_field_types type);
+
 bool sdb_field_is_floating(enum_field_types type);
 
 bool sdb_field_is_date_time(enum_field_types type);
@@ -85,6 +87,8 @@ bool sdb_is_type_diff(Field *old_field, Field *new_field);
 bool sdb_is_single_table(THD *thd);
 
 bool sdb_is_field_sortable(const Field *field);
+
+bool sdb_is_binary_type(Field *field);
 
 inline void sdb_invalidate_version_cache() {
   sdb_version_cached = false;
