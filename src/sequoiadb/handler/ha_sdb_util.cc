@@ -218,6 +218,19 @@ error:
   goto done;
 }
 
+bool sdb_field_is_integer_type(enum_field_types type) {
+  switch (type) {
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_LONG:
+    case MYSQL_TYPE_LONGLONG:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool sdb_field_is_floating(enum_field_types type) {
   switch (type) {
     case MYSQL_TYPE_DOUBLE:
@@ -1020,6 +1033,27 @@ bool sdb_is_string_type(Field *field) {
       break;
   }
   return is_string;
+}
+
+// VARBINARY, BINARY, BLOB, TINYBLOB...
+bool sdb_is_binary_type(Field *field) {
+  enum_field_types type = field->real_type();
+  bool is_bin = false;
+  switch (type) {
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_TINY_BLOB:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_MEDIUM_BLOB:
+    case MYSQL_TYPE_LONG_BLOB: {
+      is_bin = field->binary();
+      break;
+    }
+    default:
+      break;
+  }
+  return is_bin;
 }
 
 // Get the version of remote SequoiaDB cluster.

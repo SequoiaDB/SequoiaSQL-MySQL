@@ -1140,11 +1140,12 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
     }
 
     if (cmp_with_field) {
-      enum_field_types l_type = item_field->field->type();
-      enum_field_types r_type = ((Item_field *)item_val)->field->type();
-      enum_field_types l_real_type = item_field->field->real_type();
-      enum_field_types r_real_type =
-          ((Item_field *)item_val)->field->real_type();
+      Field *l_field = item_field->field;
+      Field *r_field = ((Item_field *)item_val)->field;
+      enum_field_types l_type = l_field->type();
+      enum_field_types r_type = r_field->type();
+      enum_field_types l_real_type = l_field->real_type();
+      enum_field_types r_real_type = r_field->real_type();
       if ((MYSQL_TYPE_SET == l_real_type && MYSQL_TYPE_ENUM == r_real_type) ||
           (MYSQL_TYPE_SET == r_real_type && MYSQL_TYPE_ENUM == l_real_type)
 #if defined IS_MYSQL
@@ -1155,15 +1156,13 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
         goto error;
       }
 
-      if (l_type != r_type) {
-        // floating-point values in different types can't compare
-        if (sdb_field_is_floating(l_type) && sdb_field_is_floating(r_type)) {
-          rc = SDB_ERR_COND_PART_UNSUPPORTED;
-          goto error;
-        }
-
-        // date and time types can't compare
-        if (sdb_field_is_date_time(l_type) || sdb_field_is_date_time(r_type)) {
+      if (l_type != r_type || l_field->binary() != r_field->binary()) {
+        if ((sdb_field_is_integer_type(l_type) &&
+             sdb_field_is_integer_type(r_type)) ||
+            (sdb_is_string_type(l_field) && sdb_is_string_type(r_field)) ||
+            (sdb_is_binary_type(l_field) && sdb_is_binary_type(r_field))) {
+          // These types above can compare although different
+        } else {
           rc = SDB_ERR_COND_PART_UNSUPPORTED;
           goto error;
         }
