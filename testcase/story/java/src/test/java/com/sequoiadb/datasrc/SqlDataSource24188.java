@@ -15,7 +15,7 @@ import org.testng.annotations.Test;
  * @Author YiPan
  * @Date 2021/6/17
  */
-public class SqlDataSource24188 extends MysqlTestBase{
+public class SqlDataSource24188 extends MysqlTestBase {
     private String csName = "cs_24188";
     private String clName = "cl_24188";
     private Sequoiadb sdb;
@@ -29,8 +29,8 @@ public class SqlDataSource24188 extends MysqlTestBase{
         if ( CommLib.isStandAlone( sdb ) ) {
             throw new SkipException( "is standalone skip testcase" );
         }
-        jdbcWarpperMgr = JdbcInterfaceFactory.build(
-                JdbcWarpperType.JdbcWarpperMgr );
+        jdbcWarpperMgr = JdbcInterfaceFactory
+                .build( JdbcWarpperType.JdbcWarpperMgr );
         srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
                 DataSrcUtils.getPasswd() );
         jdbcWarpperMgr.dropDatabase( csName );

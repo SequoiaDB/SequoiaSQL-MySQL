@@ -31,10 +31,10 @@ public class SqlDataSource24190 extends MysqlTestBase {
         if ( CommLib.isStandAlone( sdb ) ) {
             throw new SkipException( "is standalone skip testcase" );
         }
-        inst1Conn = JdbcInterfaceFactory.build(
-                JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        inst2Conn = JdbcInterfaceFactory.build(
-                JdbcWarpperType.JdbcWarpperOfHaInst2 );
+        inst1Conn = JdbcInterfaceFactory
+                .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
+        inst2Conn = JdbcInterfaceFactory
+                .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
 
         srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
                 DataSrcUtils.getPasswd() );

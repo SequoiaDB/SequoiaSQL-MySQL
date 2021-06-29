@@ -93,7 +93,7 @@ public class SqlDataSource24205 extends MysqlTestBase {
                 + " values(i,'test',i);" + "set i = i+1;" + "end while;"
                 + "end" );
         JdbcAssert.checkMetaSync();
-        ThreadExecutor t = new ThreadExecutor();
+        ThreadExecutor t = new ThreadExecutor( 180000 );
         Insert insert = new Insert();
         Truncate truncate = new Truncate();
         t.addWorker( insert );

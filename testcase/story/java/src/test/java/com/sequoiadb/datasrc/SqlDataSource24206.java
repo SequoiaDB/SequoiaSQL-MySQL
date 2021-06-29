@@ -112,7 +112,7 @@ public class SqlDataSource24206 extends MysqlTestBase {
         // 插入部分数据
         jdbc.update( "call " + csname + ".insertValue1()" );
         JdbcAssert.checkMetaSync();
-        ThreadExecutor t = new ThreadExecutor();
+        ThreadExecutor t = new ThreadExecutor( 180000 );
         t.addWorker( new Insert() );
         t.addWorker( new Update() );
         t.addWorker( new Delete() );

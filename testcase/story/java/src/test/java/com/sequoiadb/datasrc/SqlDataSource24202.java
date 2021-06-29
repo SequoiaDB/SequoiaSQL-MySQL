@@ -31,8 +31,8 @@ public class SqlDataSource24202 extends MysqlTestBase {
         if ( CommLib.isStandAlone( sdb ) ) {
             throw new SkipException( "is standalone skip testcase" );
         }
-        jdbcWarpperMgr = JdbcInterfaceFactory.build(
-                JdbcWarpperType.JdbcWarpperMgr );
+        jdbcWarpperMgr = JdbcInterfaceFactory
+                .build( JdbcWarpperType.JdbcWarpperMgr );
 
         srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
                 DataSrcUtils.getPasswd() );
@@ -80,8 +80,8 @@ public class SqlDataSource24202 extends MysqlTestBase {
         jdbcWarpperMgr.update( "insert into " + fullTableName
                 + " values(3, 'b'),(4, 'insert'),(5, '')" );
 
-        JdbcInterface innodb = JdbcInterfaceFactory.build(
-                JdbcWarpperType.JdbcWarpperOfInnoDB );
+        JdbcInterface innodb = JdbcInterfaceFactory
+                .build( JdbcWarpperType.JdbcWarpperOfInnoDB );
         innodb.update( "insert into " + fullTableName + " values(1,'mysql')" );
         innodb.update( "insert into " + fullTableName + " values(2,'test2')" );
         innodb.update( "insert into " + fullTableName + " values(3,'234.3')" );
