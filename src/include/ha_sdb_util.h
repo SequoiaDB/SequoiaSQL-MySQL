@@ -88,6 +88,8 @@ bool sdb_is_single_table(THD *thd);
 
 bool sdb_is_field_sortable(const Field *field);
 
+bool sdb_is_string_type(Field *field);
+
 bool sdb_is_binary_type(Field *field);
 
 inline void sdb_invalidate_version_cache() {
