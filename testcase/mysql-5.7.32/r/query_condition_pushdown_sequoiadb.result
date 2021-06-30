@@ -1347,7 +1347,7 @@ hex(a)	hex(c)
 select hex(a),hex(c) from t1 where a=c;
 hex(a)	hex(c)
 3	3
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": { "$field": "c" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select hex(a),hex(c) from t1 where a!=c;
 hex(a)	hex(c)
 1	3
@@ -1361,7 +1361,7 @@ hex(a)	hex(c)
 2	1
 6	2
 7	3
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": { "$field": "c" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select hex(a),hex(c) from t1 where a>=c;
 hex(a)	hex(c)
 2	1
@@ -4093,7 +4093,7 @@ select * from t1 where a = c;
 id	a	b	c
 3	-922337203685477807	3	-922337203685477807.0
 6	922337203685477806	6	922337203685477806.0
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": { "$field": "c" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a != c;
 id	a	b	c
 1	-922337203685477808	1	-922337203685477809.0
@@ -4104,7 +4104,7 @@ select * from t1 where a > c;
 id	a	b	c
 1	-922337203685477808	1	-922337203685477809.0
 5	922337203685477805	5	922337203685477804.0
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": { "$field": "c" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a < c;
 id	a	b	c
 2	-922337203685477806	2	-922337203685477805.0
@@ -4291,7 +4291,7 @@ id	a	b	c
 3	2	3	-1.0
 4	18446744073709551615	4	18446744073709551616.0
 5	18446744073709551613	5	18446744073709551612.0
-[Note] SequoiaDB: Query message: condition[{ "a": { "$ne": { "$field": "c" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a > c;
 id	a	b	c
 3	2	3	-1.0
@@ -4300,7 +4300,7 @@ select * from t1 where a < c;
 id	a	b	c
 2	1	2	2.0
 4	18446744073709551615	4	18446744073709551616.0
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": { "$field": "c" } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where abs(a) = 18446744073709551615;
 id	a	b	c
 4	18446744073709551615	4	18446744073709551616.0
