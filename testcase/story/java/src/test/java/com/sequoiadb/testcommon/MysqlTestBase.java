@@ -17,11 +17,11 @@ public class MysqlTestBase {
     protected static String mysqluser;
     protected static String mysqlpasswd;
 
-    @Parameters({ "HOSTNAME", "SVCNAME", "DSHOSTNAME", "DSSVCNAME", "SEQUOIADB",
+    @Parameters({ "HOSTNAME", "SVCNAME", "DSHOSTNAME", "DSSVCNAME", "MYSQLURL",
             "INNODB", "MYSQLUSER", "MYSQLPASSWD" })
     @BeforeSuite(alwaysRun = true)
     public static void initSuite( String HOSTNAME, String SVCNAME,
-            String DSHOSTNAME, String DSSVCNAME, String SEQUOIADB, String INNODB,
+            String DSHOSTNAME, String DSSVCNAME, String MYSQLURL, String INNODB,
             String MYSQLUSER, String MYSQLPASSWD ) {
         System.out.println( "initSuite....." );
         innodb = INNODB;
@@ -30,7 +30,7 @@ public class MysqlTestBase {
         dsHostName = DSHOSTNAME;
         dsServiceName = DSSVCNAME;
         coordUrl = HOSTNAME + ":" + SVCNAME;
-        mysql = SEQUOIADB;
+        mysql = MYSQLURL;
         mysqluser = MYSQLUSER;
         mysqlpasswd = MYSQLPASSWD;
     }

@@ -13,7 +13,7 @@
     <!--数据源集群端端口号，CI默认传入11810-->
     <parameter name="DSSVCNAME" value="${DSSVCNAME}"/>
     <!--mysql 默认引擎为SequoiaDB实例地址-->
-    <parameter name="SEQUOIADB" value="${SEQUOIADBURL}"/>
+    <parameter name="MYSQLURL" value="${MYSQLURL}"/>
     <!--mysql 默认引擎为InnoDB实例地址-->
     <parameter name="INNODB" value="${INNODBURL}"/>
     <!--mysql实例账户-->
