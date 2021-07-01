@@ -66,7 +66,7 @@ public class SqlDataSource24181 extends MysqlTestBase {
                 + "PARTITION p2 VALUES LESS THAN (1308700800), "
                 + "PARTITION p3 VALUES LESS THAN (1308787200), PARTITION p4 VALUES LESS THAN (1308873600), "
                 + "PARTITION p5 VALUES LESS THAN (1308960000)); ";
-        JdbcAssert.execInvalidUpdate( jdbcSdbConn, createSQL, 40236 );
+        JdbcAssert.execInvalidUpdate( jdbcSdbConn, createSQL, 1572 );
     }
 
     @AfterClass
