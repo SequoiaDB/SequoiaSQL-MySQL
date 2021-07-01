@@ -12,18 +12,17 @@ public class MysqlTestBase {
     protected static String serviceName;
     protected static String dsHostName;
     protected static String dsServiceName;
-    protected static String mysql1;
-    protected static String mysql2;
+    protected static String mysql;
     protected static String innodb;
     protected static String mysqluser;
     protected static String mysqlpasswd;
 
-    @Parameters({ "HOSTNAME", "SVCNAME", "DSHOSTNAME", "DSSVCNAME", "MYSQL1",
-            "MYSQL2", "INNODB", "MYSQLUSER", "MYSQLPASSWD" })
+    @Parameters({ "HOSTNAME", "SVCNAME", "DSHOSTNAME", "DSSVCNAME", "SEQUOIADB",
+            "INNODB", "MYSQLUSER", "MYSQLPASSWD" })
     @BeforeSuite(alwaysRun = true)
     public static void initSuite( String HOSTNAME, String SVCNAME,
-            String DSHOSTNAME, String DSSVCNAME, String MYSQL1, String MYSQL2,
-            String INNODB, String MYSQLUSER, String MYSQLPASSWD ) {
+            String DSHOSTNAME, String DSSVCNAME, String SEQUOIADB, String INNODB,
+            String MYSQLUSER, String MYSQLPASSWD ) {
         System.out.println( "initSuite....." );
         innodb = INNODB;
         hostName = HOSTNAME;
@@ -31,8 +30,7 @@ public class MysqlTestBase {
         dsHostName = DSHOSTNAME;
         dsServiceName = DSSVCNAME;
         coordUrl = HOSTNAME + ":" + SVCNAME;
-        mysql1 = MYSQL1;
-        mysql2 = MYSQL2;
+        mysql = SEQUOIADB;
         mysqluser = MYSQLUSER;
         mysqlpasswd = MYSQLPASSWD;
     }
@@ -55,13 +53,8 @@ public class MysqlTestBase {
         return url;
     }
 
-    public static String getUrlOfHaInst1() {
-        return initUrl( MysqlTestBase.mysql1, MysqlTestBase.mysqluser,
-                MysqlTestBase.mysqlpasswd );
-    }
-
-    public static String getUrlOfHaInst2() {
-        return initUrl( MysqlTestBase.mysql2, MysqlTestBase.mysqluser,
+    public static String getUrlOfSequoiadb() {
+        return initUrl( MysqlTestBase.mysql, MysqlTestBase.mysqluser,
                 MysqlTestBase.mysqlpasswd );
     }
 

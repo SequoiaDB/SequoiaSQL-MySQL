@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public enum JdbcWarpperType {
-    JdbcWarpperOfHaInst1( new String[] { MysqlTestBase.getUrlOfHaInst1() } ),
-    JdbcWarpperOfHaInst2( new String[] {MysqlTestBase.getUrlOfHaInst2() } ),
+    JdbcWarpperOfHaInst1 ( new String[] { MysqlTestBase.getUrlOfSequoiadb() } ),
+    JdbcWarpperOfHaInst2 ( new String[] { MysqlTestBase.getUrlOfSequoiadb() } ),
     JdbcWarpperOfInnoDB( new String[] { MysqlTestBase.getUrlOfInnodb() } ),
-    JdbcWarpperMgr( new String[] {MysqlTestBase.getUrlOfHaInst1(),
+    JdbcWarpperMgr( new String[] {MysqlTestBase.getUrlOfSequoiadb(),
             MysqlTestBase.getUrlOfInnodb() } );
 
     private List< String > urls;

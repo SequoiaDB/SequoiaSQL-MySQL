@@ -11,68 +11,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class JdbcAssert {
-    public static void checkMetaSync() throws Exception {
-        Sequoiadb db = new Sequoiadb( MysqlTestBase.coordUrl, "", "" );
-        checkMetaSync( db );
-        db.close();
-    }
-
-    public static void checkMetaSync( Sequoiadb db ) throws Exception {
-        checkMetaSync( 30000, db );
-    }
-
-    public static void checkMetaSync( int maxtime, Sequoiadb db )
-            throws Exception {
-        final String SQLID = "SQLID";
-        String HAInstanceStateName = "HAInstanceState";
-        String HASQLLogName = "HASQLLog";
-        DBCursor dbCursor = db.listCollections();
-        String csName = null;
-        while ( dbCursor.hasNext() ) {
-            BSONObject next = dbCursor.getNext();
-            String name = ( String ) next.get( "Name" );
-            if ( name.indexOf( HAInstanceStateName ) > 0 ) {
-                csName = name.substring( 0, name.indexOf( "." ) );
-            }
-            if ( csName != null ) {
-                dbCursor.close();
-                break;
-            }
-        }
-        HashSet< Integer > allSqlId = new HashSet<>();
-        DBCollection HAInstanceState = db.getCollectionSpace( csName )
-                .getCollection( HAInstanceStateName );
-        DBCollection HASQLLog = db.getCollectionSpace( csName )
-                .getCollection( HASQLLogName );
-        BSONObject SQLLog = HASQLLog.queryOne( null,
-                new BasicBSONObject( SQLID, "" ),
-                new BasicBSONObject( SQLID, -1 ), null, 0 );
-        int maxSqlId = ( int ) SQLLog.get( SQLID );
-        int times = 0;
-        while ( true ) {
-            times++;
-            Thread.sleep( 1000 );
-            if ( times > ( maxtime / 1000 ) ) {
-                throw new Exception( "Meta sync time out" );
-            }
-            DBCursor sqlid = HAInstanceState.query( null,
-                    new BasicBSONObject( SQLID, "" ), null, null );
-            Boolean sync = true;
-            while ( sqlid.hasNext() ) {
-                Integer SqlId = ( Integer ) sqlid.getNext().get( SQLID );
-                allSqlId.add( SqlId );
-                if ( SqlId < maxSqlId ) {
-                    sync = false;
-                    break;
-                }
-            }
-            sqlid.close();
-            if ( sync ) {
-                break;
-            }
-        }
-    }
-
     public static void execInvalidUpdate( JdbcInterface jdbcWarpper, String sql,
             int errorCode ) throws Exception {
         isJdbcWarpper( jdbcWarpper );
@@ -97,30 +35,6 @@ public class JdbcAssert {
                 throw e;
             }
         }
-    }
-
-    public static void checkTableDataWithSql( String sql, JdbcInterface actInst,
-            JdbcInterface expInst ) throws Exception {
-        isJdbcWarpper( actInst, expInst );
-        List< String > actResult = actInst.query( sql );
-        List< String > expResult = expInst.query( sql );
-        Assert.assertEquals( actResult.toString(), expResult.toString() );
-    }
-
-    public static void checkTableData( String FullTableName,
-            JdbcInterface actInst, JdbcInterface expInst ) throws Exception {
-        isJdbcWarpper( actInst, expInst );
-        String sql = "select * from " + FullTableName;
-        checkTableDataWithSql( sql, actInst, expInst );
-    }
-
-    public static void checkTableMeta( String FullTableName,
-            JdbcInterface actInst, JdbcInterface expInst ) throws Exception {
-        isJdbcWarpper( actInst, expInst );
-        String sql = "show create table " + FullTableName;
-        String actMeta = actInst.querymeta( sql );
-        String expMeta = expInst.querymeta( sql );
-        Assert.assertEquals( actMeta, expMeta );
     }
 
     public static void checkTableDataWithSql( String sql,

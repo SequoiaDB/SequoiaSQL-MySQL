@@ -12,11 +12,9 @@
     <parameter name="DSHOSTNAME" value="${DSHOSTNAME}"/>
     <!--数据源集群端端口号，CI默认传入11810-->
     <parameter name="DSSVCNAME" value="${DSSVCNAME}"/>
-    <!--mysql实例1地址-->
-    <parameter name="MYSQL1" value="${MYSQL1URL}"/>
-    <!--mysql实例2地址-->
-    <parameter name="MYSQL2" value="${MYSQL2URL}"/>
-    <!--mysql InnoDB地址-->
+    <!--mysql 默认引擎为SequoiaDB实例地址-->
+    <parameter name="SEQUOIADB" value="${SEQUOIADBURL}"/>
+    <!--mysql 默认引擎为InnoDB实例地址-->
     <parameter name="INNODB" value="${INNODBURL}"/>
     <!--mysql实例账户-->
     <parameter name="MYSQLUSER" value="${MYSQLUSER}"/>
