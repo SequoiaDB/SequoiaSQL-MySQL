@@ -264,6 +264,10 @@ class ha_sdb : public handler {
   int build_index_position(const KEY *key_info, const bson::BSONObj &start_cond,
                            bson::BSONObjBuilder &hint_pos_builder);
 
+  int join_cond_idx(const bson::BSONObj &start_cond,
+                    const bson::BSONObj &end_cond,
+                    const bson::BSONObj &pushed_cond, bson::BSONObj &condition);
+
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;
     skip it and and MySQL will treat it as not implemented.
