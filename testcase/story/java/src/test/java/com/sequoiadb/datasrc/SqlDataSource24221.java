@@ -80,7 +80,8 @@ public class SqlDataSource24221 extends MysqlTestBase {
         jdbcWarpperMgr.createDatabase( csName );
     }
 
-    @Test
+    //定位中，暂时屏蔽
+    @Test(enabled = false)
     public void test() throws Exception {
         String fullTableName = csName + "." + mainCLName;
         jdbcWarpperMgr.update( "create table " + fullTableName
