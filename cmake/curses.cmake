@@ -21,8 +21,12 @@ endfunction()
 MACRO(SDB_CHECK_CURSES)
    IF(NOT WITH_CURSES)
       SET(WITH_CURSES "${CMAKE_SOURCE_DIR}/thirdparty/ncurses-5.9/install_path")
+      INCLUDE_DIRECTORIES(${WITH_CURSES}/include/ncurses )
+      INCLUDE_DIRECTORIES(${WITH_CURSES}/include )
+      ADD_DEFINITIONS(-DHAVE_TERM_H=1)
+      SET(HAVE_TERM_H 1 CACHE INTERNAL "Have term.h curses.h")
    ENDIF()
-
+   
    # Ignore system ncurses
    # FIND_PACKAGE(Curses) cannot specific others paths, so use FIND_LIBRARY instead.
    FIND_LIBRARY(CURSES_LIBRARY
