@@ -107,6 +107,8 @@ class Sdb_func_item : public Sdb_item {
 
  protected:
   virtual my_bool can_ignore_warning(Item *item_val);
+  void disable_warning(THD *thd);
+  void enable_warning(THD *thd);
 
  protected:
   List<Item> para_list;
@@ -114,6 +116,8 @@ class Sdb_func_item : public Sdb_item {
   uint para_num_max;
   Sdb_item *l_child;
   Sdb_item *r_child;
+  bool is_warn_enabled;
+  Dummy_error_handler dummy_handler;
 };
 
 class Sdb_func_unkown : public Sdb_func_item {

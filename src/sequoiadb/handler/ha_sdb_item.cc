@@ -195,10 +195,12 @@ error:
   goto done;
 }
 
-Sdb_func_item::Sdb_func_item() : para_num_cur(0), para_num_max(1) {
-  l_child = NULL;
-  r_child = NULL;
-}
+Sdb_func_item::Sdb_func_item()
+    : para_num_cur(0),
+      para_num_max(1),
+      l_child(NULL),
+      r_child(NULL),
+      is_warn_enabled(true) {}
 
 Sdb_func_item::~Sdb_func_item() {
   para_list.pop();
@@ -312,19 +314,30 @@ my_bool Sdb_func_item::can_ignore_warning(Item *item_val) {
   return rs;
 }
 
+void Sdb_func_item::disable_warning(THD *thd) {
+  if (is_warn_enabled) {
+    // We use `Dummy_error_handler` to ignore all error and warning states.
+    thd->push_internal_handler(&dummy_handler);
+    is_warn_enabled = false;
+  }
+}
+
+void Sdb_func_item::enable_warning(THD *thd) {
+  if (!is_warn_enabled) {
+    thd->pop_internal_handler();
+    is_warn_enabled = true;
+  }
+}
+
 int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
                                 Field *field, bson::BSONObj &obj,
                                 bson::BSONArrayBuilder *arr_builder) {
   DBUG_ENTER("Sdb_func_item::get_item_val()");
   int rc = SDB_ERR_OK;
   THD *thd = current_thd;
-  // When type casting is needed, some mysql functions may raise warning,
-  // so we use `Dummy_error_handler` to ignore all error and warning states.
-  Dummy_error_handler error_handler;
-  my_bool has_err_handler = false;
+  // When type casting is needed, some mysql functions may raise warning.
   if (can_ignore_warning(item_val)) {
-    thd->push_internal_handler(&error_handler);
-    has_err_handler = true;
+    disable_warning(thd);
   }
 
   if (NULL == item_val || !item_val->const_item() ||
@@ -393,6 +406,14 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
             rc = SDB_ERR_TYPE_UNSUPPORTED;
             goto error;
           }
+          if (MYSQL_TYPE_VARCHAR != item_val->field_type() &&
+              MYSQL_TYPE_VAR_STRING != item_val->field_type() &&
+              MYSQL_TYPE_STRING != item_val->field_type()) {
+            rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+            goto error;
+          }
+          // casting from string to number should never ignore warnings.
+          enable_warning(thd);
           // pass through
         }
         case DECIMAL_RESULT: {
@@ -722,9 +743,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
   }
 
 done:
-  if (has_err_handler) {
-    thd->pop_internal_handler();
-  }
+  enable_warning(thd);
   if (rc == SDB_ERR_OK && pushed_cond_set) {
     bitmap_set_bit(pushed_cond_set, field->field_index);
     DBUG_PRINT("ha_sdb:info", ("Table: %s, field: %s is in pushed condition",
