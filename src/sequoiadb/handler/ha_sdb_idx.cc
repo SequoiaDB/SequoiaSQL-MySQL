@@ -254,9 +254,9 @@ error:
 }
 
 static int get_int_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
-                           const char *op_str, bson::BSONObj &obj) {
+                           const char *op_str,
+                           bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder(32);
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   longlong value = field->val_int(new_ptr);
@@ -274,7 +274,6 @@ static int get_int_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
     } else {
       obj_builder.append(op_str, (int)value);
     }
-    obj = obj_builder.obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
@@ -288,9 +287,8 @@ error:
 
 static int get_float_key_obj(const uchar *key_ptr,
                              const KEY_PART_INFO *key_part, const char *op_str,
-                             bson::BSONObj &obj) {
+                             bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder(32);
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   const uchar *old_ptr = field->ptr;
@@ -299,7 +297,6 @@ static int get_float_key_obj(const uchar *key_ptr,
   field->ptr = (uchar *)old_ptr;
   try {
     obj_builder.append(op_str, value);
-    obj = obj_builder.obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
@@ -312,15 +309,14 @@ error:
 
 static int get_decimal_key_obj(const uchar *key_ptr,
                                const KEY_PART_INFO *key_part,
-                               const char *op_str, bson::BSONObj &obj) {
+                               const char *op_str,
+                               bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder(32);
   String str_val;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   key_part->field->val_str(&str_val, new_ptr);
   try {
     obj_builder.appendDecimal(op_str, str_val.c_ptr());
-    obj = obj_builder.obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
@@ -333,9 +329,9 @@ error:
 }
 
 static int get_text_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
-                            const char *op_str, bson::BSONObj &obj) {
+                            const char *op_str,
+                            bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder(96);
 
   String *str = NULL;
   String org_str;
@@ -377,7 +373,6 @@ static int get_text_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   try {
     obj_builder.appendStrWithNoTerminating(op_str, (const char *)(str->ptr()),
                                            str->length());
-    obj = obj_builder.obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
@@ -389,9 +384,9 @@ error:
 }
 
 static int get_char_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
-                            const char *op_str, bson::BSONObj &obj) {
+                            const char *op_str,
+                            bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder(96);
   String str_val, conv_str;
   String *str;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
@@ -425,7 +420,6 @@ static int get_char_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   try {
     obj_builder.appendStrWithNoTerminating(op_str, (const char *)(str->ptr()),
                                            str->length());
-    obj = obj_builder.obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
@@ -437,9 +431,9 @@ error:
 }
 
 static int get_date_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
-                            const char *op_str, bson::BSONObj &obj) {
+                            const char *op_str,
+                            bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder(32);
   struct tm tm_val;
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
@@ -462,7 +456,6 @@ static int get_date_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   bson::Date_t dt((longlong)(time_tmp * 1000));
   try {
     obj_builder.appendDate(op_str, dt);
-    obj = obj_builder.obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
@@ -475,9 +468,9 @@ error:
 
 static int get_datetime_key_obj(const uchar *key_ptr,
                                 const KEY_PART_INFO *key_part,
-                                const char *op_str, bson::BSONObj &obj) {
+                                const char *op_str,
+                                bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder(32);
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   String org_str, str_val;
   key_part->field->val_str(&org_str, new_ptr);
@@ -485,7 +478,6 @@ static int get_datetime_key_obj(const uchar *key_ptr,
   try {
     obj_builder.appendStrWithNoTerminating(op_str, str_val.ptr(),
                                            str_val.length());
-    obj = obj_builder.obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
@@ -498,9 +490,9 @@ error:
 
 static int get_timestamp_key_obj(const uchar *key_ptr,
                                  const KEY_PART_INFO *key_part,
-                                 const char *op_str, bson::BSONObj &obj) {
+                                 const char *op_str,
+                                 bson::BSONObjBuilder &obj_builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObjBuilder obj_builder(32);
   struct timeval tv;
   Field *field = key_part->field;
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
@@ -517,7 +509,6 @@ static int get_timestamp_key_obj(const uchar *key_ptr,
   }
   try {
     obj_builder.appendTimestamp(op_str, tv.tv_sec * 1000, tv.tv_usec);
-    obj = obj_builder.obj();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to get field key obj, field:%s, table:%s, exception:%s",
@@ -528,9 +519,10 @@ error:
   goto done;
 }
 
-static int get_key_part_value(const KEY_PART_INFO *key_part,
-                              const uchar *key_ptr, const char *op_str,
-                              bool ignore_text_key, bson::BSONObj &obj) {
+int sdb_get_key_part_value(const KEY_PART_INFO *key_part,
+                           const uchar *key_ptr, const char *op_str,
+                           bool ignore_text_key,
+                           bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
 
   switch (key_part->field->type()) {
@@ -541,7 +533,7 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
     case MYSQL_TYPE_LONGLONG:
     case MYSQL_TYPE_BIT:
     case MYSQL_TYPE_YEAR: {
-      rc = get_int_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_int_key_obj(key_ptr, key_part, op_str, builder);
       if (SDB_ERR_OK != rc) {
         goto error;
       }
@@ -550,7 +542,7 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
     case MYSQL_TYPE_TIME: {
-      rc = get_float_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_float_key_obj(key_ptr, key_part, op_str, builder);
       if (SDB_ERR_OK != rc) {
         goto error;
       }
@@ -558,28 +550,28 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
     }
     case MYSQL_TYPE_DECIMAL:
     case MYSQL_TYPE_NEWDECIMAL: {
-      rc = get_decimal_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_decimal_key_obj(key_ptr, key_part, op_str, builder);
       if (SDB_ERR_OK != rc) {
         goto error;
       }
       break;
     }
     case MYSQL_TYPE_DATE: {
-      rc = get_date_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_date_key_obj(key_ptr, key_part, op_str, builder);
       if (SDB_ERR_OK != rc) {
         goto error;
       }
       break;
     }
     case MYSQL_TYPE_DATETIME: {
-      rc = get_datetime_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_datetime_key_obj(key_ptr, key_part, op_str, builder);
       if (SDB_ERR_OK != rc) {
         goto error;
       }
       break;
     }
     case MYSQL_TYPE_TIMESTAMP: {
-      rc = get_timestamp_key_obj(key_ptr, key_part, op_str, obj);
+      rc = get_timestamp_key_obj(key_ptr, key_part, op_str, builder);
       if (SDB_ERR_OK != rc) {
         goto error;
       }
@@ -589,7 +581,7 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
     case MYSQL_TYPE_VAR_STRING: {
       if (MYSQL_TYPE_SET == key_part->field->real_type() ||
           MYSQL_TYPE_ENUM == key_part->field->real_type()) {
-        rc = get_int_key_obj(key_ptr, key_part, op_str, obj);
+        rc = get_int_key_obj(key_ptr, key_part, op_str, builder);
         if (SDB_ERR_OK != rc) {
           goto error;
         }
@@ -597,7 +589,7 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
       }
       if (!key_part->field->binary()) {
         if (!ignore_text_key) {
-          rc = get_char_key_obj(key_ptr, key_part, op_str, obj);
+          rc = get_char_key_obj(key_ptr, key_part, op_str, builder);
           if (rc) {
             goto error;
           }
@@ -613,7 +605,7 @@ static int get_key_part_value(const KEY_PART_INFO *key_part,
     case MYSQL_TYPE_BLOB: {
       if (!key_part->field->binary()) {
         if (!ignore_text_key) {
-          rc = get_text_key_obj(key_ptr, key_part, op_str, obj);
+          rc = get_text_key_obj(key_ptr, key_part, op_str, builder);
           if (rc) {
             goto error;
           }
@@ -645,11 +637,13 @@ static inline int create_condition(Field *field, const KEY_PART_INFO *key_part,
                                    bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
   bson::BSONObj op_obj;
-  rc = get_key_part_value(key_part, key_ptr, op_str, ignore_text_key, op_obj);
+  bson::BSONObjBuilder op_builder(128);
+  rc = sdb_get_key_part_value(key_part, key_ptr, op_str, ignore_text_key,
+                              op_builder);
   if (SDB_ERR_OK == rc) {
-    if (!op_obj.isEmpty()) {
+    if (!op_builder.isEmpty()) {
       try {
-        builder.append(sdb_field_name(field), op_obj);
+        builder.append(sdb_field_name(field), op_builder.obj());
       }
       SDB_EXCEPTION_CATCHER(
           rc, "Failed to create key obj, field:%s, table:%s, exception:%s",

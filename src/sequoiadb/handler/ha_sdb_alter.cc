@@ -1148,7 +1148,6 @@ error:
 int ha_sdb::alter_column(TABLE *altered_table,
                          Alter_inplace_info *ha_alter_info, Sdb_conn *conn,
                          Sdb_cl &cl) {
-  static const int EMPTY_BUILDER_LEN = 8;
   static const char *EXCEED_THRESHOLD_MSG =
       "Table is too big to be altered. The records count exceeds the "
       "sequoiadb_alter_table_overhead_threshold.";
@@ -1329,20 +1328,20 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
     // 4.Full table update
     step = full_table_update;
-    if (unset_builder.len() > EMPTY_BUILDER_LEN) {
+    if (!unset_builder.isEmpty()) {
       builder.append("$unset", unset_builder.obj());
     }
-    if (set_builder.len() > EMPTY_BUILDER_LEN) {
+    if (!set_builder.isEmpty()) {
       builder.append("$set", set_builder.obj());
     }
-    /*if (inc_builder.len() > EMPTY_BUILDER_LEN) {
+    /*if (!inc_builder.isEmpty()) {
       builder.append("$inc", inc_builder.obj());
     }
-    if (cast_builder.len() > EMPTY_BUILDER_LEN) {
+    if (!cast_builder.isEmpty()) {
       builder.append("$cast", cast_builder.obj());
     }*/
 
-    if (builder.len() > EMPTY_BUILDER_LEN) {
+    if (!builder.isEmpty()) {
       if (count > sdb_alter_table_overhead_threshold(thd)) {
         rc = HA_ERR_WRONG_COMMAND;
         my_printf_error(rc, "%s", MYF(0), EXCEED_THRESHOLD_MSG);

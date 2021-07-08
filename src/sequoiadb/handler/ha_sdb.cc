@@ -2863,6 +2863,155 @@ done:
   DBUG_RETURN(rc);
 }
 
+int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
+  int rc = 0;
+  try {
+    int range_res = 0;
+    KEY *key_info = table->key_info + active_index;
+    const KEY_PART_INFO *key_part = key_info->key_part;
+    bson::BSONObjBuilder builder;
+    bson::BSONObjBuilder in_builder(
+        builder.subobjStart(sdb_field_name(key_part->field)));
+    bson::BSONArrayBuilder array(in_builder.subarrayStart("$in"));
+    bson::BSONObjBuilder value_builder(128);
+
+    DBUG_ASSERT(can_pushdown_cond_in);
+
+    while (!(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
+      rc = sdb_get_key_part_value(key_part, mrr_cur_range.start_key.key, "$et",
+                                  false, value_builder);
+      if (rc != 0) {
+        goto error;
+      }
+      array.append(value_builder.done().firstElement());
+      value_builder.reset();
+    }
+
+    array.done();
+    in_builder.done();
+    condition = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to build condition $in, exception:%s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
+                                  uint n_ranges, uint mode,
+                                  HANDLER_BUFFER *buf) {
+  DBUG_ENTER("ha_sdb::multi_range_read_init()");
+  int rc = 0;
+  rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
+  first_read = true;
+  /*
+    Check whether $in condition is usable:
+    1. All ranges are equal.
+    2. Only one key part. That means we don't support
+       `WHERE (f1,f2) in((v1,v2), (v3,v4))`
+    3. Key part is not a prefix index.
+    4. No NULL range.
+    5. No range association(for BKA join)
+  */
+  can_pushdown_cond_in = true;
+  int range_res = 0;
+  KEY_MULTI_RANGE cur_range;
+  KEY *key_info = table->key_info + active_index;
+  const KEY_PART_INFO *key_part = key_info->key_part;
+
+  if ((key_part->key_part_flag & HA_PART_KEY_SEG) ||
+      !(mode & HA_MRR_NO_ASSOCIATION) || 1 == n_ranges) {
+    can_pushdown_cond_in = false;
+    goto done;
+  }
+
+  while (!(range_res = mrr_funcs.next(mrr_iter, &cur_range))) {
+    key_range &start_key = cur_range.start_key;
+    key_range &end_key = cur_range.end_key;
+
+    if ((start_key.keypart_map == end_key.keypart_map &&  // Only one key part
+         my_count_bits(start_key.keypart_map) == 1) &&
+
+        (MY_TEST(cur_range.range_flag & EQ_RANGE) &&  // Is equal range
+         HA_READ_KEY_EXACT == start_key.flag &&
+         start_key.length == end_key.length &&
+         0 == memcmp(start_key.key, end_key.key, start_key.length)) &&
+
+        !(key_part->null_bit && *start_key.key)  // Not a NULL
+    ) {
+      // can pushdown, continue
+    } else {
+      can_pushdown_cond_in = false;
+      break;
+    }
+  }
+  mrr_iter = seq->init(seq_init_param, n_ranges, mode);
+
+done:
+  DBUG_RETURN(rc);
+}
+
+int ha_sdb::multi_range_read_next(range_id_t *range_info) {
+  DBUG_ENTER("ha_sdb::multi_range_read_next()");
+  int rc = 0;
+  if (can_pushdown_cond_in) {
+    /*
+      If they are ranges like `WHERE f IN(1, 2, 3)` that has all exact values,
+      we can just pushdown one `{$in: [1, 2, 3]}` query instead of multi `$et`
+      query, to reduce IO.
+    */
+    if (first_read) {
+      first_read = false;
+      bson::BSONObj condition;
+      bson::BSONObj condition_idx;
+      bson::BSONObjBuilder hint_builder;
+
+      rc = create_condition_in_for_mrr(condition_idx);
+      if (rc != 0) {
+        goto error;
+      }
+      /* If range association is needed, this buffer should hold the
+         {rowid, range_id} pairs. But we never need this, let it be dummy. */
+      *range_info = mrr_cur_range.ptr;
+
+      rc = sdb_combine_condition(pushed_condition, condition_idx, condition);
+      if (0 != rc) {
+        goto error;
+      }
+      rc = ensure_collection(ha_thd());
+      if (rc) {
+        goto error;
+      }
+      rc = ensure_stats(ha_thd());
+      if (rc) {
+        goto error;
+      }
+      rc = index_read_one(condition, 1, table->record[0], &hint_builder);
+      if (rc) {
+        goto error;
+      }
+
+    } else {
+      rc = index_next(table->record[0]);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+
+  } else {
+    rc = handler::multi_range_read_next(range_info);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
 // SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
 bool ha_sdb::is_field_rule_supported() {
   bool supported = false;

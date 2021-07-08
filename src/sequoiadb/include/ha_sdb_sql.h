@@ -111,6 +111,8 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define my_aes_mode my_aes_opmode
 #define MY_AES_ECB my_aes_128_ecb
 
+typedef char *range_id_t;
+
 #if MYSQL_VERSION_ID < 50725
 #define PLUGIN_VAR_INVISIBLE 0
 #endif

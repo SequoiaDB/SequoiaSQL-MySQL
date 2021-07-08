@@ -225,7 +225,7 @@
 enum SDB_ADVANCE_TYPE {
   IDX_ADVANCE_TO_FIRST_IN_VALUE = 1,  // For index scan. Advance to the first
                                       // record of the same value
-  IDX_ADVANCE_TO_FIRST_OUT_VALUE = 2   // For index scan. Advance to the next
+  IDX_ADVANCE_TO_FIRST_OUT_VALUE = 2  // For index scan. Advance to the next
                                       // record different from the value.
 };
 
