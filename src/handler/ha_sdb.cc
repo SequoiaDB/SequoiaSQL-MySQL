@@ -826,6 +826,34 @@ void sdb_add_tmp_join_tab(THD *thd) {
 }
 #endif
 
+static int sdb_combine_condition(const bson::BSONObj &pushed_condition,
+                                 const bson::BSONObj &index_condition,
+                                 bson::BSONObj &result_condition) {
+  int rc = 0;
+  try {
+    if (!pushed_condition.isEmpty()) {
+      if (!index_condition.isEmpty()) {
+        bson::BSONObjBuilder builder;
+        bson::BSONArrayBuilder arr_builder(builder.subarrayStart("$and"));
+        arr_builder.append(pushed_condition);
+        arr_builder.append(index_condition);
+        arr_builder.done();
+        result_condition = builder.obj();
+      } else {
+        result_condition = pushed_condition;
+      }
+    } else {
+      result_condition = index_condition;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to build bson condition, exception:%s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
 const char *sharding_related_fields[] = {
     SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
     SDB_FIELD_AUTO_SPLIT,   SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_ISMAINCL};
@@ -2180,6 +2208,154 @@ done:
   return rc;
 }
 
+int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
+  int rc = 0;
+  try {
+    int range_res = 0;
+    KEY *key_info = table->key_info + active_index;
+    const KEY_PART_INFO *key_part = key_info->key_part;
+    bson::BSONObjBuilder builder;
+    bson::BSONObjBuilder in_builder(
+        builder.subobjStart(sdb_field_name(key_part->field)));
+    bson::BSONArrayBuilder array(in_builder.subarrayStart("$in"));
+    bson::BSONObjBuilder value_builder(128);
+
+    DBUG_ASSERT(can_pushdown_cond_in);
+
+    while (!(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
+      rc = sdb_get_key_part_value(key_part, mrr_cur_range.start_key.key, "$et",
+                                  false, value_builder);
+      if (rc != 0) {
+        goto error;
+      }
+      array.append(value_builder.done().firstElement());
+      value_builder.reset();
+    }
+
+    array.done();
+    in_builder.done();
+    condition = builder.obj();
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to build condition $in, exception:%s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
+                                  uint n_ranges, uint mode,
+                                  HANDLER_BUFFER *buf) {
+  DBUG_ENTER("ha_sdb::multi_range_read_init()");
+  int rc = 0;
+  rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
+  first_read = true;
+  /*
+    Check whether $in condition is usable:
+    1. All ranges are equal.
+    2. Only one key part. That means we don't support
+       `WHERE (f1,f2) in((v1,v2), (v3,v4))`
+    3. Key part is not a prefix index.
+    4. No NULL range.
+    5. No range association(for BKA join)
+  */
+  can_pushdown_cond_in = true;
+  int range_res = 0;
+  KEY_MULTI_RANGE cur_range;
+  KEY *key_info = table->key_info + active_index;
+  const KEY_PART_INFO *key_part = key_info->key_part;
+
+  if ((key_part->key_part_flag & HA_PART_KEY_SEG) ||
+      !(mode & HA_MRR_NO_ASSOCIATION) || 1 == n_ranges) {
+    can_pushdown_cond_in = false;
+    goto done;
+  }
+
+  while (!(range_res = mrr_funcs.next(mrr_iter, &cur_range))) {
+    key_range &start_key = cur_range.start_key;
+    key_range &end_key = cur_range.end_key;
+
+    if ((start_key.keypart_map == end_key.keypart_map &&  // Only one key part
+         my_count_bits(start_key.keypart_map) == 1) &&
+
+        (MY_TEST(cur_range.range_flag & EQ_RANGE) &&  // Is equal range
+         HA_READ_KEY_EXACT == start_key.flag &&
+         start_key.length == end_key.length &&
+         0 == memcmp(start_key.key, end_key.key, start_key.length)) &&
+
+        !(key_part->null_bit && *start_key.key)  // Not a NULL
+    ) {
+      // can pushdown, continue
+    } else {
+      can_pushdown_cond_in = false;
+      break;
+    }
+  }
+  mrr_iter = seq->init(seq_init_param, n_ranges, mode);
+
+done:
+  DBUG_RETURN(rc);
+}
+
+int ha_sdb::multi_range_read_next(char **range_info) {
+  DBUG_ENTER("ha_sdb::multi_range_read_next()");
+  int rc = 0;
+  if (can_pushdown_cond_in) {
+    /*
+      If they are ranges like `WHERE f IN(1, 2, 3)` that has all exact values,
+      we can just pushdown one `{$in: [1, 2, 3]}` query instead of multi `$et`
+      query, to reduce IO.
+    */
+    if (first_read) {
+      first_read = false;
+      bson::BSONObj condition;
+      bson::BSONObj condition_idx;
+
+      rc = create_condition_in_for_mrr(condition_idx);
+      if (rc != 0) {
+        goto error;
+      }
+      /* If range association is needed, this buffer should hold the
+         {rowid, range_id} pairs. But we never need this, let it be dummy. */
+      *range_info = mrr_cur_range.ptr;
+
+      rc = sdb_combine_condition(pushed_condition, condition_idx, condition);
+      if (rc) {
+        goto error;
+      }
+      rc = ensure_collection(ha_thd());
+      if (rc) {
+        goto error;
+      }
+      rc = ensure_stats(ha_thd());
+      if (rc) {
+        goto error;
+      }
+      rc = index_read_one(condition, 1, table->record[0]);
+      if (rc) {
+        goto error;
+      }
+
+    } else {
+      rc = index_next(table->record[0]);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+
+  } else {
+    rc = handler::multi_range_read_next(range_info);
+    if (rc != 0) {
+      goto error;
+    }
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
 // SequoiaDB doesn't support updating with "$field" before v3.2.5 & v3.4.1.
 bool ha_sdb::is_field_rule_supported() {
   bool supported = false;
@@ -2959,7 +3135,7 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   DBUG_ENTER("ha_sdb::index_read_map()");
   int rc = 0;
   bson::BSONObjBuilder cond_builder;
-  bson::BSONObj condition = pushed_condition;
+  bson::BSONObj condition;
   bson::BSONObj condition_idx;
   int order_direction = 1;
   first_read = true;
@@ -2991,21 +3167,10 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
     order_direction = sdb_get_key_direction(find_flag);
   }
 
-  try {
-    if (!condition.isEmpty()) {
-      if (!condition_idx.isEmpty()) {
-        bson::BSONArrayBuilder arr_builder;
-        arr_builder.append(condition);
-        arr_builder.append(condition_idx);
-        condition = BSON("$and" << arr_builder.arr());
-      }
-    } else {
-      condition = condition_idx;
-    }
+  rc = sdb_combine_condition(pushed_condition, condition_idx, condition);
+  if (rc) {
+    goto error;
   }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to index read map for table:%s.%s, exception:%s", db_name,
-      table_name, e.what());
 
   rc = index_read_one(condition, order_direction, buf);
   if (rc) {

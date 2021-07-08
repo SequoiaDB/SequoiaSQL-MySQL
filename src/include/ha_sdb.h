@@ -303,6 +303,11 @@ class ha_sdb : public handler {
   */
   int index_last(uchar *buf);
 
+  int multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
+                            uint n_ranges, uint mode, HANDLER_BUFFER *buf);
+
+  int multi_range_read_next(char **range_info);
+
   // int index_read(uchar *buf, const uchar *key_ptr, uint key_len,
   //               enum ha_rkey_function find_flage);
 
@@ -503,6 +508,8 @@ class ha_sdb : public handler {
 
   bool is_inc_rule_supported();
 
+  int create_condition_in_for_mrr(bson::BSONObj &condition);
+
  private:
   THR_LOCK_DATA lock_data;
   enum thr_lock_type m_lock_type;
@@ -544,4 +551,5 @@ class ha_sdb : public handler {
   Field *updated_field;
   st_order *sdb_order;
   st_order *sdb_group_list;
+  bool can_pushdown_cond_in;
 };

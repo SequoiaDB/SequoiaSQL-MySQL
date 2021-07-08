@@ -31,6 +31,10 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
                                   bool from_records_in_range, bool eq_range_arg,
                                   bson::BSONObj &condition);
 
+int sdb_get_key_part_value(const KEY_PART_INFO *key_part, const uchar *key_ptr,
+                           const char *op_str, bool ignore_text_key,
+                           bson::BSONObjBuilder &obj_builder);
+
 int sdb_get_key_direction(ha_rkey_function find_flag);
 
 my_bool sdb_is_same_index(const KEY *a, const KEY *b);
