@@ -4478,6 +4478,7 @@ select * from t1 where a = 'a1';
 id	a	b	c
 7	0.00	7	0.00
 Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warnings:
 select * from t1 where a = c;
 id	a	b	c
@@ -4569,6 +4570,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 7	0.00	7	0.00
+Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warnings:
 select * from t1 where a = c;
@@ -4662,6 +4664,7 @@ select * from t1 where a = 'a1';
 id	a	b	c
 1	0.00	1	0
 Warning	1292	Truncated incorrect DOUBLE value: 'a1'
+Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 0.0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a = c;
@@ -4733,6 +4736,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 1	0.00	1	0
+Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warnings:
 select * from t1 where a = c;
@@ -4835,6 +4839,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 7	0.00	7	0.00
+Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warnings:
 select * from t1 where a = c;
@@ -5020,6 +5025,7 @@ id	a	b	c
 select * from t1 where a = 'a1';
 id	a	b	c
 1	0.00	1	0.00
+Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warning	1292	Truncated incorrect DOUBLE value: 'a1'
 Warnings:
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 0.0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
@@ -9524,7 +9530,7 @@ SELECT * FROM t1 WHERE id IN (1,2,6,11) LIMIT 1,2;
 id	a	c
 2	-99	bc
 6	15	9a
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "id": { "$in": [ 1, 2, 6, 11 ] } }, { "id": { "$et": 6 } } ] }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[2+1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$in": [ 1, 2, 6, 11 ] } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[2+1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 EXPLAIN SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	ALL	c	NULL	NULL	NULL	11	100.00	Using where with pushed condition (`query_pushdown_test_sequoiadb`.`t1`.`c` not in ('123','bc','abc','hello'))
