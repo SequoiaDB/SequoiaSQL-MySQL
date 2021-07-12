@@ -600,14 +600,13 @@ static inline int create_condition(Field *field, const KEY_PART_INFO *key_part,
                                    bool ignore_text_key,
                                    bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
-  bson::BSONObj op_obj;
   bson::BSONObjBuilder op_builder(128);
   rc = sdb_get_key_part_value(key_part, key_ptr, op_str, ignore_text_key,
                               op_builder);
   if (SDB_ERR_OK == rc) {
     if (!op_builder.isEmpty()) {
       try {
-        builder.append(sdb_field_name(field), op_obj);
+        builder.append(sdb_field_name(field), op_builder.obj());
       }
       SDB_EXCEPTION_CATCHER(
           rc, "Failed to create key obj, field:%s, table:%s, exception:%s",
