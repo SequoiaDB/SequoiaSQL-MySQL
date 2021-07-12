@@ -261,12 +261,13 @@ class ha_sdb : public handler {
 
   int build_selector(bson::BSONObj &selector);
 
+  int append_end_range(bson::BSONObj &condition);
+
   int build_index_position(const KEY *key_info, const bson::BSONObj &start_cond,
                            bson::BSONObjBuilder &hint_pos_builder);
 
   int join_cond_idx(const bson::BSONObj &start_cond,
-                    const bson::BSONObj &end_cond,
-                    const bson::BSONObj &pushed_cond, bson::BSONObj &condition);
+                    const bson::BSONObj &end_cond, bson::BSONObj &cond_idx);
 
   /** @brief
     We implement this in ha_example.cc. It's not an obligatory method;

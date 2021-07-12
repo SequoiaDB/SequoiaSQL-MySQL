@@ -826,19 +826,191 @@ void sdb_add_tmp_join_tab(THD *thd) {
 }
 #endif
 
+enum enum_cond_parent {
+  COND_PARENT_NONE = 0,
+  COND_PARENT_ROOT,
+  COND_PARENT_AND,
+  COND_PARENT_OR
+};
+
+static enum_cond_parent sdb_find_cond_parent(const bson::BSONObj &all_cond,
+                                             const bson::BSONObj &sub_cond) {
+  /*
+    Take examples to descript the return:
+    COND_PARENT_ROOT: all_cond(A); sub_cond(A)
+    COND_PARENT_AND: all_cond(A and B); sub_cond(A)
+    COND_PARENT_OR: all_cond(A or B); sub_cond(A)
+    COND_PARENT_NONE: all_cond(A); sub_cond(B)
+
+    Now we only consider the first level condition. And we assume that sub_cond
+    may be $and, but never be $or.
+  */
+  enum enum_cond_parent rs = COND_PARENT_NONE;
+  try {
+    if (all_cond.isEmpty() || sub_cond.isEmpty()) {
+      goto done;
+    }
+
+    bson::BSONObjIterator it(all_cond);
+    bson::BSONElement top_ele = it.next();
+
+    if (0 == strcmp(top_ele.fieldName(), "$and")) {
+      bson::BSONObjIterator sub_it(sub_cond);
+      bson::BSONElement sub_ele = sub_it.next();
+      if (0 == strcmp(sub_ele.fieldName(), "$and")) {
+        // all_cond: { $and: [ A, B, ... ] }
+        // sub_cond: { $and: [ A, B ] }
+        rs = COND_PARENT_AND;
+        int sub_field_num = 0;
+        bson::BSONObj top_and_obj = top_ele.Obj();
+        bson::BSONObj sub_and_obj = sub_ele.Obj();
+        bson::BSONObjIterator sub_and_it(sub_and_obj);
+        while (sub_and_it.more()) {
+          sub_field_num += 1;
+          bson::BSONObj s_obj = sub_and_it.next().Obj();
+          bool is_obj_found = false;
+          bson::BSONObjIterator top_and_it(top_and_obj);
+          while (top_and_it.more()) {
+            bson::BSONObj t_obj = top_and_it.next().Obj();
+            if (t_obj.equal(s_obj)) {
+              is_obj_found = true;
+              break;
+            }
+          }
+          if (!is_obj_found) {
+            rs = COND_PARENT_NONE;
+            break;
+          }
+        }
+        if (COND_PARENT_AND == rs && top_and_obj.nFields() == sub_field_num) {
+          rs = COND_PARENT_ROOT;
+        }
+
+      } else {
+        // all_cond: { $and: [ A, B, ... ] }
+        // sub_cond: A
+        rs = COND_PARENT_NONE;
+        bson::BSONObjIterator and_it(top_ele.Obj());
+        while (and_it.more()) {
+          bson::BSONElement and_ele = and_it.next();
+          if (and_ele.Obj().equal(sub_cond)) {
+            rs = COND_PARENT_AND;
+            break;
+          }
+        }
+      }
+
+    } else if (0 == strcmp(top_ele.fieldName(), "$or")) {
+      bson::BSONObjIterator sub_it(sub_cond);
+      bson::BSONElement sub_ele = sub_it.next();
+      if (0 == strcmp(sub_ele.fieldName(), "$and")) {
+        // all_cond: { $or: [ { $and: [ A, B ] }, C, ... ] }
+        // sub_cond: { $and: [ A, B ] }
+        bool found = false;
+        bson::BSONObj top_or_obj = top_ele.Obj();
+        bson::BSONObj sub_and_obj = sub_ele.Obj();
+        bson::BSONObjIterator top_or_it(top_or_obj);
+        while (top_or_it.more()) {
+          bson::BSONElement or_ele = top_or_it.next();
+          bson::BSONElement and_of_or_ele = or_ele.Obj().getField("$and");
+          if (and_of_or_ele.type() == bson::EOO) {
+            continue;
+          }
+          found = true;
+          int sub_field_num = 0;
+          bson::BSONObj and_of_or_obj = and_of_or_ele.Obj();
+          bson::BSONObjIterator sub_and_it(sub_and_obj);
+          while (sub_and_it.more()) {
+            sub_field_num += 1;
+            bson::BSONObj s_obj = sub_and_it.next().Obj();
+            bool is_obj_found = false;
+            bson::BSONObjIterator top_and_it(and_of_or_obj);
+            while (top_and_it.more()) {
+              bson::BSONObj t_obj = top_and_it.next().Obj();
+              if (t_obj.equal(s_obj)) {
+                is_obj_found = true;
+                break;
+              }
+            }
+            if (!is_obj_found) {
+              found = false;
+              break;
+            }
+          }
+          if (found && and_of_or_obj.nFields() != sub_field_num) {
+            found = false;
+          }
+          if (found) {
+            break;
+          }
+        }
+        rs = found ? COND_PARENT_OR : COND_PARENT_NONE;
+
+      } else {
+        // all_cond: { $or: [ A, B, ... ] }
+        // sub_cond: A
+        rs = COND_PARENT_NONE;
+        bson::BSONObjIterator or_it(top_ele.Obj());
+        while (or_it.more()) {
+          bson::BSONElement or_ele = or_it.next();
+          if (or_ele.Obj().equal(sub_cond)) {
+            rs = COND_PARENT_OR;
+            break;
+          }
+        }
+      }
+
+    } else {
+      // all_cond: A
+      // sub_cond: A
+      rs = all_cond.equal(sub_cond) ? COND_PARENT_ROOT : COND_PARENT_NONE;
+    }
+  } catch (std::exception &e) {
+    SDB_LOG_ERROR("Failed to analyze BSON condition, exception:%s", e.what());
+    rs = COND_PARENT_NONE;
+  }
+done:
+  return rs;
+}
+
 static int sdb_combine_condition(const bson::BSONObj &pushed_condition,
                                  const bson::BSONObj &index_condition,
                                  bson::BSONObj &result_condition) {
+  /*
+    Generally, result_condition = pushed_condition AND index_condition.
+    If index_condition is a subset of pushed_condition, we can do some
+    simplification:
+    1. (idx_cond) AND (idx_cond) = (idx_cond) # both is the same
+    2. (idx_cond AND other_cond) AND (idx_cond) = (idx_cond AND other_cond)
+    3. (idx_cond OR other_cond) AND (idx_cond) = (idx_cond)
+
+    For simplicity, we only deal with the first level.
+  */
   int rc = 0;
   try {
     if (!pushed_condition.isEmpty()) {
       if (!index_condition.isEmpty()) {
-        bson::BSONObjBuilder builder;
-        bson::BSONArrayBuilder arr_builder(builder.subarrayStart("$and"));
-        arr_builder.append(pushed_condition);
-        arr_builder.append(index_condition);
-        arr_builder.done();
-        result_condition = builder.obj();
+        enum enum_cond_parent parent = COND_PARENT_NONE;
+        parent = sdb_find_cond_parent(pushed_condition, index_condition);
+        switch (parent) {
+          case COND_PARENT_ROOT:
+          case COND_PARENT_OR: {
+            result_condition = index_condition;
+            break;
+          }
+          case COND_PARENT_AND: {
+            result_condition = pushed_condition;
+            break;
+          }
+          case COND_PARENT_NONE:
+          default: {
+            bson::BSONArrayBuilder arr_builder;
+            arr_builder.append(pushed_condition);
+            arr_builder.append(index_condition);
+            result_condition = BSON("$and" << arr_builder.arr());
+            break;
+          }
+        }
       } else {
         result_condition = pushed_condition;
       }
@@ -3095,6 +3267,7 @@ int ha_sdb::index_first(uchar *buf) {
   int rc = 0;
   first_read = true;
   bson::BSONObjBuilder hint_builder;
+  bson::BSONObj condition = pushed_condition;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -3103,8 +3276,41 @@ int ha_sdb::index_first(uchar *buf) {
   }
 
   ha_statistic_increment(&SSV::ha_read_first_count);
-  rc = index_read_one(pushed_condition, 1, buf, &hint_builder);
+
+  if (end_range) {
+    rc = append_end_range(condition);
+    if (rc) {
+      goto error;
+    }
+  }
+
+  rc = index_read_one(condition, 1, buf, &hint_builder);
   if (rc) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb::append_end_range(bson::BSONObj &condition) {
+  int rc = 0;
+  KEY *key_info = table->key_info + active_index;
+  bson::BSONObj start_cond;
+  bson::BSONObj end_cond;
+
+  DBUG_ASSERT(end_range);
+
+  rc = sdb_create_condition_from_key(table, key_info, NULL, end_range, 0,
+                                     eq_range, start_cond, end_cond);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to build index match object. rc: %d", rc);
+    goto error;
+  }
+
+  rc = sdb_combine_condition(condition, end_cond, condition);
+  if (0 != rc) {
     goto error;
   }
 done:
@@ -3269,38 +3475,63 @@ error:
   goto done;
 }
 
-int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond,
-                          const bson::BSONObj &end_cond,
-                          const bson::BSONObj &pushed_cond,
-                          bson::BSONObj &condition) {
+int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond_idx,
+                          const bson::BSONObj &end_cond_idx,
+                          bson::BSONObj &cond_idx) {
   int rc = SDB_OK;
-  int cond_cnt = 0;
-  bson::BSONObj start_cond_idx = SDB_EMPTY_BSON;
-  bson::BSONObj end_cond_idx = SDB_EMPTY_BSON;
-  bson::BSONObj temp_obj = SDB_EMPTY_BSON;
-  bson::BSONObjBuilder builder(start_cond.objsize() + end_cond.objsize() +
-                               pushed_cond.objsize() + 30);
-  if (!pushed_cond.isEmpty()) {
-    temp_obj = pushed_cond;
-    cond_cnt++;
-  }
-
-  if (!start_cond.isEmpty() && !start_cond.equal(condition)) {
-    temp_obj = start_cond;
-    start_cond_idx = start_cond;
-    cond_cnt++;
-  }
-
-  if (!end_cond.isEmpty() && !end_cond.equal(start_cond) &&
-      !end_cond.equal(condition)) {
-    temp_obj = end_cond;
-    end_cond_idx = end_cond;
-    cond_cnt++;
-  }
-
+  bson::BSONObjBuilder builder(start_cond_idx.objsize() +
+                               end_cond_idx.objsize() + 20);
+  bool both = !start_cond_idx.isEmpty() && !end_cond_idx.isEmpty();
   try {
-    /*remove $undefined from start_cond.*/
-    if (1 == cond_cnt && !start_cond_idx.isEmpty()) {
+    if (both && !start_cond_idx.equal(end_cond_idx)) {
+      bson::BSONArrayBuilder sub_array(builder.subarrayStart("$and"));
+      bson::BSONObjIterator si(start_cond_idx);
+      bson::BSONObjIterator ei(end_cond_idx);
+      while (si.more() || ei.more()) {
+        bson::BSONElement elem_start;
+        bson::BSONElement elem_end;
+        const char *undefined_field_name = NULL;
+        while (si.more()) {
+          elem_start = si.next();
+          if (bson::Undefined == elem_start.type()) {
+            undefined_field_name = elem_start.fieldName();
+            break;
+          } else {
+            bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
+            sub_obj.append(elem_start);
+            sub_obj.done();
+          }
+        }
+
+        while (ei.more()) {
+          elem_end = ei.next();
+          if (undefined_field_name &&
+              0 == strcmp(elem_end.fieldName(), undefined_field_name)) {
+            bson::BSONObjBuilder or_array_obj(sub_array.subobjStart());
+            bson::BSONArrayBuilder sub_or_array(
+                or_array_obj.subarrayStart("$or"));
+            bson::BSONObjBuilder or_obj_bld(sub_or_array.subobjStart());
+            bson::BSONObjBuilder null_obj_bld(
+                or_obj_bld.subobjStart(undefined_field_name));
+            null_obj_bld.append("$isnull", 1);
+            null_obj_bld.done();
+            or_obj_bld.done();
+            bson::BSONObjBuilder end_obj_bld(sub_or_array.subobjStart());
+            end_obj_bld.append(elem_end);
+            end_obj_bld.done();
+            sub_or_array.done();
+            or_array_obj.done();
+            break;
+          } else {
+            bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
+            sub_obj.append(elem_end);
+            sub_obj.done();
+          }
+        }
+      }
+      sub_array.done();
+      cond_idx = builder.obj();
+    } else if (!start_cond_idx.isEmpty()) {
       bson::BSONObjIterator si(start_cond_idx);
       while (si.more()) {
         bson::BSONElement elem_start = si.next();
@@ -3310,94 +3541,9 @@ int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond,
           builder.append(elem_start);
         }
       }
-      condition = builder.obj();
-      goto done;
-    }
-
-    if (1 == cond_cnt) {
-      condition = temp_obj;
-      goto done;
-    }
-
-    if (cond_cnt >= 2) {
-      bson::BSONArrayBuilder sub_array(builder.subarrayStart("$and"));
-      if (!pushed_cond.isEmpty()) {
-        sub_array.append(pushed_cond);
-      }
-      if (!start_cond_idx.isEmpty() && !end_cond_idx.isEmpty() &&
-          !start_cond_idx.equal(end_cond_idx)) {
-        bson::BSONObjIterator si(start_cond_idx);
-        bson::BSONObjIterator ei(end_cond_idx);
-        while (si.more() || ei.more()) {
-          bson::BSONElement elem_start;
-          bson::BSONElement elem_end;
-          const char *undefined_field_name = NULL;
-          while (si.more()) {
-            elem_start = si.next();
-            if (bson::Undefined == elem_start.type()) {
-              undefined_field_name = elem_start.fieldName();
-              break;
-            } else {
-              bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
-              sub_obj.append(elem_start);
-              sub_obj.done();
-            }
-          }
-
-          while (ei.more()) {
-            elem_end = ei.next();
-            if (undefined_field_name &&
-                0 == strcmp(elem_end.fieldName(), undefined_field_name)) {
-              bson::BSONObjBuilder or_array_obj(sub_array.subobjStart());
-              bson::BSONArrayBuilder sub_or_array(
-                  or_array_obj.subarrayStart("$or"));
-              bson::BSONObjBuilder or_obj_bld(sub_or_array.subobjStart());
-              bson::BSONObjBuilder null_obj_bld(
-                  or_obj_bld.subobjStart(undefined_field_name));
-              null_obj_bld.append("$isnull", 1);
-              null_obj_bld.done();
-              or_obj_bld.done();
-              bson::BSONObjBuilder end_obj_bld(sub_or_array.subobjStart());
-              end_obj_bld.append(elem_end);
-              end_obj_bld.done();
-              sub_or_array.done();
-              or_array_obj.done();
-              break;
-            } else {
-              bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
-              sub_obj.append(elem_end);
-              sub_obj.done();
-            }
-          }
-        }
-        sub_array.done();
-        condition = builder.obj();
-        goto done;
-      }
-
-      if (!start_cond_idx.isEmpty()) {
-        bson::BSONObjIterator si(start_cond_idx);
-        while (si.more()) {
-          bson::BSONElement elem_start = si.next();
-          if (bson::Undefined == elem_start.type()) {
-            continue;
-          } else {
-            bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
-            sub_obj.append(elem_start);
-            sub_obj.done();
-          }
-        }
-        sub_array.done();
-        condition = builder.obj();
-        goto done;
-      }
-
-      if (start_cond_idx.isEmpty()) {
-        sub_array.append(pushed_cond);
-        sub_array.append(end_cond_idx);
-        sub_array.done();
-        condition = builder.obj();
-      }
+      cond_idx = builder.obj();
+    } else {
+      cond_idx = end_cond_idx;
     }
   }
   SDB_EXCEPTION_CATCHER(
@@ -3469,8 +3615,12 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
       hint_builder.bb().setlen(last_len);
       hint_builder.bb().setReserveBytes(resered);
 
-      rc = join_cond_idx(start_cond_idx, end_cond_idx, pushed_condition,
-                         condition);
+      rc = join_cond_idx(start_cond_idx, end_cond_idx, cond_idx);
+      if (0 != rc) {
+        goto error;
+      }
+
+      rc = sdb_combine_condition(pushed_condition, cond_idx, condition);
       if (0 != rc) {
         goto error;
       }
