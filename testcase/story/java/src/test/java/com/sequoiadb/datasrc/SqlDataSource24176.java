@@ -33,17 +33,18 @@ public class SqlDataSource24176 extends MysqlTestBase {
         }
         jdbcWarpperMgr = JdbcInterfaceFactory
                 .build( JdbcWarpperType.JdbcWarpperMgr );
-
         srcdb = new Sequoiadb( DataSrcUtils.getSrcUrl(), DataSrcUtils.getUser(),
                 DataSrcUtils.getPasswd() );
+
         jdbcWarpperMgr.dropDatabase( CSName );
         DataSrcUtils.clearDataSource( sdb, CSName, dataSrcName );
         DataSrcUtils.createDataSource( sdb, dataSrcName,
                 new BasicBSONObject( "TransPropagateMode", "notsupport" ) );
         jdbcWarpperMgr.createDatabase( CSName );
-        DataSrcUtils.clearDataSource( sdb, CSName, dataSrcName );
-        DataSrcUtils.createDataSource( sdb, dataSrcName,
-                new BasicBSONObject( "TransPropagateMode", "notsupport" ) );
+
+        if ( srcdb.isCollectionSpaceExist( CSName ) ) {
+            srcdb.dropCollectionSpace( CSName );
+        }
         CollectionSpace srcCS = srcdb.createCollectionSpace( CSName );
         srcCS.createCollection( CLName + 1 );
         srcCS.createCollection( CLName + 2 );
