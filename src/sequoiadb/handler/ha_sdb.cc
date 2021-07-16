@@ -2191,6 +2191,7 @@ error:
 }
 
 void ha_sdb::start_bulk_insert(ha_rows rows) {
+  THD *thd = ha_thd();
   if (!sdb_use_bulk_insert) {
     m_use_bulk_insert = false;
     return;
@@ -2206,8 +2207,14 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
     * When INSERT ... ON DUPLICATE KEY UPDATE, records must be update one by
     one.
     * When REPLACE INTO ... for system-versioned tables.
+    * When using binlog of format ROW and AUTO_INCREMENT exists, we have to
+    return last id one by one.
   */
-  if (rows == 1 || m_insert_with_update
+  bool using_binlog_row =
+      (!thd->is_current_stmt_binlog_disabled() && thd_binlog_filter_ok(thd) &&
+       thd->is_current_stmt_binlog_format_row());
+  bool has_autoinc = (table->next_number_field != NULL);
+  if (rows == 1 || m_insert_with_update || (using_binlog_row && has_autoinc)
 #ifdef IS_MARIADB
       || (SQLCOM_REPLACE == thd_sql_command(ha_thd()) && table->versioned())
 #endif
@@ -2416,6 +2423,9 @@ void ha_sdb::update_last_insert_id() {
     }
 
     insert_id_for_cur_row = ele.numberLong();
+    if (table->next_number_field) {
+      table->next_number_field->store((longlong)insert_id_for_cur_row, TRUE);
+    }
     m_has_update_insert_id = true;
   }
 done:
@@ -2541,6 +2551,9 @@ int ha_sdb::write_row(uchar *buf) {
     }
   } else {
     rc = insert_row(obj, 1);
+    if (rc != 0) {
+      goto error;
+    }
   }
 
 done:

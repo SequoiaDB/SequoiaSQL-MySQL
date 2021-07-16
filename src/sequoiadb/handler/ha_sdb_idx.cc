@@ -519,9 +519,8 @@ error:
   goto done;
 }
 
-int sdb_get_key_part_value(const KEY_PART_INFO *key_part,
-                           const uchar *key_ptr, const char *op_str,
-                           bool ignore_text_key,
+int sdb_get_key_part_value(const KEY_PART_INFO *key_part, const uchar *key_ptr,
+                           const char *op_str, bool ignore_text_key,
                            bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
 
