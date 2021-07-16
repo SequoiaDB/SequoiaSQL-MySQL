@@ -374,6 +374,26 @@ function add_inst()
       sed -i '/\[mysqld\]/a\server_ha_inst_group_name='$INST_GROUP_NAME'' $SQL_DATA/auto.cnf
    fi
 
+   # set sequoiadb user
+   if [ ! -z $SDB_USER ]; then
+      sed -i 's/.*sequoiadb_user\s*=.*/sequoiadb_user='$SDB_USER'/' $SQL_DATA/auto.cnf
+   fi
+
+   # set sequoiadb password
+   if [ ! -z $SDB_PASSWD ]; then
+      sed -i 's/.*sequoiadb_password\s*=.*/sequoiadb_password='$SDB_PASSWD'/' $SQL_DATA/auto.cnf
+   fi
+
+   # set sequoiadb cipherfile, use '|' as the separator
+   if [ ! -z $SDB_CIPHERFILE ]; then
+      sed -i 's|.*sequoiadb_cipherfile\s*=.*|sequoiadb_cipherfile='$SDB_CIPHERFILE'|' $SQL_DATA/auto.cnf
+   fi
+
+   # set sequoiadb token
+   if [ ! -z $SDB_TOKEN ]; then
+      sed -i 's/.*sequoiadb_token*=.*/sequoiadb_token='$SDB_TOKEN'/' $SQL_DATA/auto.cnf
+   fi
+
    #generate instance configure file
    exec_cmd_with_print "mkdir -p $CONF_INST_PATH" "$CTL_LOG"
    test $? -ne 0 && { echo "ERROR: Failed to create directory $CONF_INST_PATH with $user, please verify log $CTL_LOG" >&2 && exit 5; }
@@ -1190,7 +1210,7 @@ function build_help()
    echo ""
    echo "Usage:"
    echo "  ${ME} listinst"
-   echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-p PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD] [-g INST_GROUP_NAME] [-k INST_GROUP_KEY]"
+   echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-p PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD] [-g INST_GROUP_NAME] [-k INST_GROUP_KEY] [--sdb-user USER] [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] [--sdb-token TOKEN]"
    echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
    echo "  ${ME} start      <INSTNAME>                           [--print]"
    echo "  ${ME} startall                                        [--print]"
