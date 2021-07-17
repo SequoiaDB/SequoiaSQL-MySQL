@@ -1161,23 +1161,20 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
     if (cmp_with_field) {
       Field *l_field = item_field->field;
       Field *r_field = ((Item_field *)item_val)->field;
-      enum_field_types l_type = l_field->type();
-      enum_field_types r_type = r_field->type();
       enum_field_types l_real_type = l_field->real_type();
       enum_field_types r_real_type = r_field->real_type();
-      if ((MYSQL_TYPE_SET == l_real_type && MYSQL_TYPE_ENUM == r_real_type) ||
-          (MYSQL_TYPE_SET == r_real_type && MYSQL_TYPE_ENUM == l_real_type)
+
 #if defined IS_MYSQL
-          || (MYSQL_TYPE_JSON == l_type || MYSQL_TYPE_JSON == r_type)
-#endif
-      ) {
+      if (MYSQL_TYPE_JSON == l_real_type || MYSQL_TYPE_JSON == r_real_type) {
         rc = SDB_ERR_COND_PART_UNSUPPORTED;
         goto error;
       }
+#endif
 
-      if (l_type != r_type || l_field->binary() != r_field->binary()) {
-        if ((sdb_field_is_integer_type(l_type) &&
-             sdb_field_is_integer_type(r_type)) ||
+      if (l_real_type != r_real_type ||
+          l_field->binary() != r_field->binary()) {
+        if ((sdb_field_is_integer_type(l_real_type) &&
+             sdb_field_is_integer_type(r_real_type)) ||
             (sdb_is_string_type(l_field) && sdb_is_string_type(r_field)) ||
             (sdb_is_binary_type(l_field) && sdb_is_binary_type(r_field))) {
           // These types above can compare although different
@@ -1187,9 +1184,17 @@ int Sdb_func_cmp::to_bson(bson::BSONObj &obj) {
         }
       }
 
-      obj = BSON(sdb_item_field_name(item_field)
-                 << BSON(name_tmp << BSON("$field" << sdb_item_field_name(
-                                              (Item_field *)item_val))));
+      {
+        bson::BSONObjBuilder builder(128);
+        bson::BSONObjBuilder field_builder(
+            builder.subobjStart(sdb_item_field_name(item_field)));
+        bson::BSONObjBuilder op_builder(field_builder.subobjStart(name_tmp));
+        op_builder.append("$field",
+                          sdb_item_field_name((Item_field *)item_val));
+        op_builder.done();
+        field_builder.done();
+        obj = builder.obj();
+      }
       goto done;
     }
 
