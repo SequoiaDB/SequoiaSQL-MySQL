@@ -742,10 +742,23 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
               default:
                 goto prepare_for_next_key_part;
             }
-            bson::BSONObjBuilder is_null_builder(
-                builder[i].subobjStart(sdb_field_name(field)));
-            is_null_builder.append("$isnull", is_null);
-            is_null_builder.done();
+
+            if (is_null) {
+              bson::BSONObjBuilder is_null_builder(
+                  builder[i].subobjStart(sdb_field_name(field)));
+              is_null_builder.append("$isnull", 1);
+              is_null_builder.done();
+            } else if (0 == i && NULL == ranges[1]) {
+              /*
+                Generally `is not null` is an implicit condition that no need
+                to append. e.g.: `id is not null and id < 1` equals `id < 1`
+                But it has to be appended when no other conditions like here.
+              */
+              bson::BSONObjBuilder is_null_builder(
+                  builder[i].subobjStart(sdb_field_name(field)));
+              is_null_builder.append("$isnull", 0);
+              is_null_builder.done();
+            }
             /*
               We need to adjust pointer and length to be prepared for next
               key part. As well as check if this was last key part.
