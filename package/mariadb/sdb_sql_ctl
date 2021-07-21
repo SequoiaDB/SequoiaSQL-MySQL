@@ -374,6 +374,11 @@ function add_inst()
       sed -i '/\[mysqld\]/a\server_ha_inst_group_name='$INST_GROUP_NAME'' $SQL_DATA/auto.cnf
    fi
 
+   # set SequoiaDB addresses
+   if [ ! -z $SDB_CONN_ADDR ]; then
+      sed -i 's/.*sequoiadb_conn_addr\s*=.*/sequoiadb_conn_addr='$SDB_CONN_ADDR'/' $SQL_DATA/auto.cnf
+   fi
+
    # set sequoiadb user
    if [ ! -z $SDB_USER ]; then
       sed -i 's/.*sequoiadb_user\s*=.*/sequoiadb_user='$SDB_USER'/' $SQL_DATA/auto.cnf
@@ -1210,7 +1215,7 @@ function build_help()
    echo ""
    echo "Usage:"
    echo "  ${ME} listinst"
-   echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-p PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD] [-g INST_GROUP_NAME] [-k INST_GROUP_KEY] [--sdb-user USER] [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] [--sdb-token TOKEN]"
+   echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-p PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD] [-g INST_GROUP_NAME] [-k INST_GROUP_KEY] [--sdb-conn-addr=ADDR] [--sdb-user USER] [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] [--sdb-token TOKEN]"
    echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
    echo "  ${ME} start      <INSTNAME>                           [--print]"
    echo "  ${ME} startall                                        [--print]"
