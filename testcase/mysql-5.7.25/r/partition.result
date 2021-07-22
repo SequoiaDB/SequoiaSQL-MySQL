@@ -262,7 +262,7 @@ insert into t1 select * from t1;
 create index i on t1 (a);
 ERROR 42000: Duplicate key name 'i'
 create index i2 on t1 (a);
-ERROR HY000: Exist one index which can cover this scene
+ERROR HY000: The scene of index 'i2' is covered by the existing index 'i'
 drop table t1;
 CREATE TABLE t1 (a INT, FOREIGN KEY (a) REFERENCES t0 (a))
 PARTITION BY HASH (a);
@@ -2110,4 +2110,47 @@ PARTITION BY LINEAR KEY(a) PARTITIONS 2;
 SELECT 1 FROM t1 WHERE EXP(10000);
 ERROR 22003: DOUBLE value is out of range in 'exp(10000)'
 DROP TABLE t1;
+#
+# Bug#28573894 ALTER PARTITIONED TABLE ADD AUTO_INCREMENT DIFF RESULT
+#
+CREATE TABLE t (a VARCHAR(10) NOT NULL,b INT,PRIMARY KEY (b)) ENGINE=SEQUOIADB
+PARTITION BY RANGE (b)
+(PARTITION pa VALUES LESS THAN (2),
+PARTITION pb VALUES LESS THAN (20),
+PARTITION pc VALUES LESS THAN (30),
+PARTITION pd VALUES LESS THAN (40));
+INSERT INTO t
+VALUES('A',0),('B',1),('C',2),('D',3),('E',4),('F',5),('G',25),('H',35);
+SELECT * FROM t;
+a	b
+A	0
+B	1
+C	2
+D	3
+E	4
+F	5
+G	25
+H	35
+DROP TABLE t;
+#
+# Bug #25207522: INCORRECT ORDER-BY BEHAVIOR ON A PARTITIONED TABLE
+# WITH A COMPOSITE PREFIX INDEX
+#
+CREATE TABLE t(  id int unsigned NOT NULL,
+data varchar(2) DEFAULT NULL,
+KEY data_idx (data(1),id)
+) DEFAULT CHARSET=utf8
+/*!50100 PARTITION BY RANGE (id)
+(PARTITION p10 VALUES LESS THAN (10) ,
+PARTITION p20 VALUES LESS THAN (20) ) */;
+INSERT INTO t VALUES (6, 'ab'), (4, 'ab'), (5, 'ab'), (16, 'ab'), (14, 'ab'), (15, 'ab'), (5, 'ac'), (15, 'aa') ;
+SELECT id FROM t WHERE data = 'ab' ORDER BY id ASC;
+id
+4
+5
+6
+14
+15
+16
+DROP TABLE t;
 DROP DATABASE test_partition;

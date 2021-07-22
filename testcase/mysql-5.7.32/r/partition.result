@@ -262,7 +262,7 @@ insert into t1 select * from t1;
 create index i on t1 (a);
 ERROR 42000: Duplicate key name 'i'
 create index i2 on t1 (a);
-ERROR HY000: Exist one index which can cover this scene
+ERROR HY000: The scene of index 'i2' is covered by the existing index 'i'
 drop table t1;
 CREATE TABLE t1 (a INT, FOREIGN KEY (a) REFERENCES t0 (a))
 PARTITION BY HASH (a);
