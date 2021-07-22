@@ -36,7 +36,7 @@ Note	1003	/* select#1 */ select `index_select_sequoiadb_22802`.`t1`.`a` AS `a`,`
 SELECT * FROM t1 WHERE b<2;
 a	b
 1	1
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lt": 2 } }, { "$and": [ { "b": { "$isnull": 0 } }, { "b": { "$lt": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 2 } }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22802.t1	analyze	status	OK
@@ -57,7 +57,7 @@ Note	1003	/* select#1 */ select `index_select_sequoiadb_22802`.`t1`.`a` AS `a`,`
 SELECT * FROM t1 WHERE b<2;
 a	b
 1	1
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lt": 2 } }, { "$and": [ { "b": { "$isnull": 0 } }, { "b": { "$lt": 2 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 2 } }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a SMALLINT UNSIGNED,
@@ -155,7 +155,7 @@ Note	1003	/* select#1 */ select `index_select_sequoiadb_22802`.`t1`.`a` AS `a`,`
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }, { "$and": [ { "b": { "$isnull": 0 } }, { "b": { "$lt": 3 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22802.t1	analyze	status	OK
@@ -196,7 +196,7 @@ Note	1003	/* select#1 */ select `index_select_sequoiadb_22802`.`t1`.`a` AS `a`,`
 SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 a	b
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "a": { "$gte": 65534 } }, { "b": { "$lte": 3 } } ] }, { "$and": [ { "b": { "$isnull": 0 } }, { "b": { "$lte": 3 } } ] } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 65534 } }, { "b": { "$lte": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22802.t1	analyze	status	OK

@@ -180,7 +180,7 @@ CREATE TABLE t1 ( a CHAR(10), b CHAR(10), KEY(a), KEY(b) );
 INSERT INTO t1 VALUES ('1','1'),('2','2'),('3','3'),('4','4');
 DELETE FROM t1 WHERE a <> '4' AND b <> '4';
 affected rows: 3
-[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "$and": [ { "a": { "$ne": "4" } }, { "b": { "$ne": "4" } } ] }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lt": "4" } } ] } ] }, table: delete_test_sequoiadb.t1
+[Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "$and": [ { "a": { "$ne": "4" } }, { "b": { "$ne": "4" } } ] }, { "a": { "$lt": "4" } } ] }, table: delete_test_sequoiadb.t1
 [Note] SequoiaDB: optimizer delete: 1, condition: { "$and": [ { "$and": [ { "a": { "$ne": "4" } }, { "b": { "$ne": "4" } } ] }, { "a": { "$gt": "4" } } ] }, table: delete_test_sequoiadb.t1
 SELECT * FROM t1;
 a	b

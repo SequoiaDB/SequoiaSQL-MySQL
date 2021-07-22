@@ -916,7 +916,7 @@ INSERT INTO t1 VALUES ('1','1'),('2','2'),('3','3'),('4','4');
 UPDATE t1 SET a = '0', b = '0' WHERE a <> '5' AND b <> '5';
 affected rows: 4
 info: Rows matched: 4  Changed: 4  Warnings: 0
-[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": "0", "b": "0" } }, condition: { "$and": [ { "$and": [ { "a": { "$ne": "5" } }, { "b": { "$ne": "5" } } ] }, { "$and": [ { "a": { "$isnull": 0 } }, { "a": { "$lt": "5" } } ] } ] }, table: update_test_sequoiadb.t1
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": "0", "b": "0" } }, condition: { "$and": [ { "$and": [ { "a": { "$ne": "5" } }, { "b": { "$ne": "5" } } ] }, { "a": { "$lt": "5" } } ] }, table: update_test_sequoiadb.t1
 [Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": "0", "b": "0" } }, condition: { "$and": [ { "$and": [ { "a": { "$ne": "5" } }, { "b": { "$ne": "5" } } ] }, { "a": { "$gt": "5" } } ] }, table: update_test_sequoiadb.t1
 SELECT * FROM t1;
 a	b
