@@ -667,7 +667,7 @@ function start_inst()
    if [ $file_exist == true -a "$NEED_PRINTSCREEN" == true ]; then
       start_line=`cat $SQLLOG | wc -l`
    fi
-   exec_cmd "$BIN_PATH/mysqld_safe --defaults-file=$SQLDATA/auto.cnf >> $SQLLOG 2>&1 & "
+   exec_cmd "$BIN_PATH/mysqld_safe --defaults-file=$SQLDATA/auto.cnf --user=$SQL_USER >> $SQLLOG 2>&1 & "
    local re=$!
    local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
    wait_for_process "start" "$re" "$pid_file"
