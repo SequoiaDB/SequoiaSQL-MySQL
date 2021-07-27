@@ -4650,6 +4650,7 @@ error:
 bool ha_sdb::check_element_type_compatible(bson::BSONElement &elem,
                                            Field *field) {
   bool compatible = false;
+  return true;
   DBUG_ASSERT(NULL != field);
   switch (field->real_type()) {
     // is number()
