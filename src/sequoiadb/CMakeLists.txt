@@ -20,8 +20,14 @@
 # include/ and lib/libsdbcpp.so
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
-  add_definitions(-DDEBUG)
+  add_definitions(-DDEBUG)  
+elseif(${MYSQL} STREQUAL 5.7.34)
+    add_definitions(-DDBUG_OFF)
 endif()
+
+#if(${MYSQL} STREQUAL 5.7.34)
+#add_definitions(-DDBUG_OFF)
+
 add_definitions(-Wno-error)
 
 if(SDB_PROJECT_TYPE STREQUAL "mysql")
@@ -113,9 +119,10 @@ endif()
 
 if(WITH_BOOST)
   # set openssl dir
-  set(OPENSSL_DIR "${SQL_SOURCE_ROOT}/../../thirdparty/openssl-1.1.1g")
-  set(OPENSSL_INCLUDE_DIR "${OPENSSL_DIR}/include")
-  set(OPENSSL_LIB_DIR "${OPENSSL_DIR}/install_path/lib")
+  if(NOT WITH_SSL)
+    set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
+    set(OPENSSL_LIB_DIR "${OPENSSL_ROOT_DIR}/lib")
+  endif()
 
   # build ha_inst_group_init
   set(HA_TOOLS_FLAGS "-Wno-unused-value -Wno-missing-field-initializers -Wno-deprecated-declarations")

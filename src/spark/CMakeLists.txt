@@ -13,7 +13,8 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 # St, Fifth Floor, Boston, MA  02110-1301 USA
 cmake_minimum_required(VERSION 2.8.7)
-if(MYSQL STREQUAL "5.7.25" OR MYSQL STREQUAL "5.7.32" OR MARIADB)
+if(MYSQL OR MARIADB)
+#if(MYSQL STREQUAL "5.7.25" OR MYSQL STREQUAL "5.7.32" OR MARIADB)
   # spark storage engine
   if(CMAKE_BUILD_TYPE MATCHES "Debug")
     add_definitions(-DDEBUG)

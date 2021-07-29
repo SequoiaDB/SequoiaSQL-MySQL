@@ -32,6 +32,14 @@
 typedef class st_select_lex_unit SELECT_LEX_UNIT;
 
 #if defined IS_MYSQL
+#ifndef DBUG_OFF
+#define DBUG_ASSERT(A) assert(A)
+#else
+#define DBUG_ASSERT(A) \
+  do {                 \
+  } while (0)
+#endif
+
 #include <my_aes.h>
 #include <item_cmpfunc.h>
 #include <sql_optimizer.h>

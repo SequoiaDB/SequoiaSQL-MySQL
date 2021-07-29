@@ -45,7 +45,10 @@ MACRO(SDB_CHECK_ODBC)
 
   find_program(ODBC_CONFIG NAMES odbc_config iodbc-config
                PATHS ${UNIX_ODBC_DIR}/bin
-               DOC "Path to unixODBC or iODBC config program")
+               DOC "Path to unixODBC or iODBC config program"
+               NO_CMAKE_SYSTEM_PATH
+               NO_DEFAULT_PATH
+               NO_CMAKE_ENVIRONMENT_PATH)
   mark_as_advanced(ODBC_CONFIG)
 
   if(NOT ODBC_CONFIG)
