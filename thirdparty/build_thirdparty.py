@@ -29,8 +29,8 @@ USAGE = ""
 EXTENDED_HELP = ""
 
 current_dir=""
-openssl_version = "1.1.1g"
-curl_version="7.69.0"
+openssl_version = "1.1.1k"
+curl_version="7.74.0"
 jobs = 0
 
 class BuildThirdParty(optparse.OptionParser):
@@ -66,13 +66,13 @@ class BuildThirdParty(optparse.OptionParser):
             debug_option=" -d"
         else:
             debug_option=""
-        config_cmd = "./config --prefix=" + openssl_abs_dir + "/lib" + " -fPIC" +\
+        config_cmd = "./config --prefix=" + openssl_abs_dir + "/install_path" + " -fPIC" +\
                      debug_option
         print(config_cmd)
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
-        rm_dynamic_libs = "rm -f lib/lib/lib*.so; rm -f lib/lib/lib*.so.*"
+        rm_dynamic_libs = "rm -f install_path/lib/lib*.so; rm -f install_path/lib/lib*.so.*"
         os.system(make_cmd)
         os.system(make_install_cmd)
         os.system(rm_dynamic_libs)
@@ -93,12 +93,12 @@ class BuildThirdParty(optparse.OptionParser):
         os.chdir(curl_abs_dir)
         st = os.stat("./configure")
         os.chmod("./configure", st.st_mode | stat.S_IEXEC)
-        config_cmd = "./configure --prefix=" + curl_abs_dir + "/lib" + " --with-pic" +\
+        config_cmd = "./configure --prefix=" + curl_abs_dir + "/install_path" + " --with-pic" +\
                      debug_option
         os.system(config_cmd)
         make_cmd = "make -j " + str(self.jobs)
         make_install_cmd = "make install"
-        rm_dynamic_libs = "rm -f lib/lib/lib*.so; rm -f lib/lib/lib*.so.*"
+        rm_dynamic_libs = "rm -f install_path/lib/lib*.so; rm -f install_path/lib/lib*.so.*"
         os.system(make_cmd)
         os.system(make_install_cmd)
         os.system(rm_dynamic_libs)
@@ -119,7 +119,7 @@ def main():
     #Add --openssl option
     builder.add_option("-o", "--openssl", action='store', type="string",
                        dest="openssl", help="Build OpenSSL. Specify the "
-                       "version of OpenSSL to be built, 1.1.1g.")
+                       "version of OpenSSL to be built, 1.1.1k.")
     #Add --curl option
     builder.add_option("-c", "--curl", action='store', type="string",
                        dest="curl", help="Build Curl. Specify the version "
