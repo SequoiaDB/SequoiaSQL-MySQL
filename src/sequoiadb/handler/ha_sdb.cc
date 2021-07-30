@@ -3648,7 +3648,7 @@ done:
   RETURN
     return TRUE if do direct_count.
 */
-int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
+int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   DBUG_ENTER("ha_sdb::optimize_count()");
   int rc = SDB_ERR_OK;
   bson::BSONObjBuilder count_cond_blder;
@@ -3659,7 +3659,6 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
   bool use_count = join && join->tmp_table_param.sum_func_count;
   bool optimize_with_materialization =
       sdb_optimizer_switch_flag(ha_thd(), OPTIMIZER_SWITCH_MATERIALIZATION);
-  DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   count_query = false;
   try {
@@ -3704,15 +3703,9 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
             count_query = false;
             goto done;
           }
+        }else if (Item::FIELD_ITEM == item->type()) {
+          read_one_record = true;
         }
-      }
-
-      if (count_query) {
-        count_cond_blder.appendElements(condition);
-        condition = count_cond_blder.obj();
-        SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
-                      count_query, condition.toString(false, false).c_str(),
-                      db_name, table_name);
       }
     }
   }
@@ -3721,7 +3714,6 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
       table_name, e.what());
 
 done:
-  can_direct = count_query;
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -3732,7 +3724,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                               ha_rows &num_to_return, bool &direct_op) {
   DBUG_ENTER("ha_sdb::optimize_proccess");
   int rc = 0;
-  bool can_direct = false;
+  bool read_one_record = false;
   bson::BSONObj result;
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
@@ -3746,15 +3738,23 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
     }
 
     if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT)) {
-      rc = optimize_count(condition, can_direct);
-      if (SDB_ERR_OK == rc && can_direct) {
+      rc = optimize_count(condition, read_one_record);
+      if (SDB_ERR_OK == rc && count_query) {
+        SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
+                      count_query, condition.toString().c_str(),
+                      db_name, table_name);
         rc = collection->get_count(total_count, condition, hint);
         if (rc) {
           SDB_LOG_ERROR("Failed to get count on table:%s.%s. rc: %d", db_name,
                         table_name, rc);
           goto error;
         }
-        num_to_return = 1;
+        if (!read_one_record) {
+          first_read = false;
+          num_to_return = 0;
+          sdb_lex_first_select(ha_thd())->join->first_record = 1;
+        }
+        table->status = 0;
       } else {
         goto error;
       }
@@ -4305,6 +4305,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
                          direct_op);
   if (rc) {
     goto error;
+  }
+
+  if (0 == num_to_return) {
+    table->status = 0;
+    goto done;
   }
 
   if ((thd_sql_command(ha_thd()) == SQLCOM_UPDATE ||
@@ -4888,7 +4893,6 @@ int ha_sdb::cur_row(uchar *buf) {
     count_query = false;
     cur_rec = SDB_EMPTY_BSON;
     table->status = STATUS_NOT_FOUND;
-    DBUG_PRINT("query_count", ("total_count: %llu", total_count));
     total_count = 0;
     goto done;
   }
