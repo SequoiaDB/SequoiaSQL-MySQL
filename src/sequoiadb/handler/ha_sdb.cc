@@ -5751,7 +5751,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
   DBUG_ENTER("ha_sdb::start_statement()");
   int rc = 0;
 
-  sdb_add_pfs_clientinfo(thd);
+  //sdb_add_pfs_clientinfo(thd);
 
   rc = pre_start_statement();
   if (0 != rc) {
@@ -8060,7 +8060,7 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
     goto error;
   }
 
-  sdb_add_pfs_clientinfo(thd);
+  //sdb_add_pfs_clientinfo(thd);
 
   rc = check_sdb_in_thd(thd, &connection, false);
   if (0 != rc) {
