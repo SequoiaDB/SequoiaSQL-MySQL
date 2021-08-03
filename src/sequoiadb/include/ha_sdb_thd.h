@@ -26,8 +26,9 @@ extern handlerton* sdb_hton;
 struct Sdb_share;
 
 class Sdb_cl_copyer;
-#ifdef IS_MYSQL
 class Sdb_part_alter_ctx;
+#ifdef IS_MARIADB
+class Sdb_part_del_ren_ctx;
 #endif
 
 struct Sdb_local_table_statistics {
@@ -74,8 +75,9 @@ class Thd_sdb {
   // For ALTER TABLE in ALGORITHM COPY
   Sdb_cl_copyer* cl_copyer;
 
-#ifdef IS_MYSQL
   Sdb_part_alter_ctx* part_alter_ctx;
+#ifdef IS_MARIADB
+  Sdb_part_del_ren_ctx* part_del_ren_ctx;
 #endif
 
  private:

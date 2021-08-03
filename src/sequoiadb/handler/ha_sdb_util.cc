@@ -50,7 +50,6 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   }
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
-#if defined IS_MYSQL
   do {
     /*
       If it's a partitioned table name, parse each part one by one
@@ -92,9 +91,6 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                               true);
     strcat(table_name, part_buff);
   } while (0);
-#elif defined IS_MARIADB
-  sdb_filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1, true);
-#endif
   // scan db_name
   ptr--;
   end = ptr;
@@ -852,7 +848,6 @@ bool str_end_with(const char *str, const char *sub_str) {
   return (0 == strcmp(p, sub_str));
 }
 
-#ifdef IS_MYSQL
 /**
   If it's a sub partition name, convert it to the main partition name.
   @Return false: converted; true: not a sub partition.
@@ -884,7 +879,8 @@ bool sdb_convert_sub2main_partition_name(char *table_name) {
 done:
   return rs;
 }
-#elif IS_MARIADB
+
+#ifdef IS_MARIADB
 int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
                               const char *table_name, char *sequence_name) {
   int rc = SDB_OK;

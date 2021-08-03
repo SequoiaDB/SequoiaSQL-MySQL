@@ -106,9 +106,9 @@ bool sdb_is_type_diff(Field *old_field, Field *new_field);
 
 bool sdb_is_single_table(THD *thd);
 
-#ifdef IS_MYSQL
 bool sdb_convert_sub2main_partition_name(char *table_name);
-#elif IS_MARIADB
+
+#ifdef IS_MARIADB
 int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
                               const char *table_name, char *sequence_name);
 #endif

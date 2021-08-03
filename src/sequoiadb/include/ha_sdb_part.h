@@ -16,11 +16,32 @@
 #ifndef HA_SDB_PART__H
 #define HA_SDB_PART__H
 
-#ifdef IS_MYSQL
-
 #include "ha_sdb.h"
+
+#ifdef IS_MYSQL
 #include <partitioning/partition_handler.h>
 #include <list>
+#elif IS_MARIADB
+#include <ha_partition.h>
+#endif
+
+const uint SDB_PARTITION_ALTER_FLAG =
+    ALTER_PARTITION_ADD | ALTER_PARTITION_DROP | ALTER_PARTITION_COALESCE |
+    ALTER_PARTITION_REORGANIZE | ALTER_PARTITION_INFO | ALTER_PARTITION_ADMIN |
+    ALTER_PARTITION_TABLE_REORG | ALTER_PARTITION_REBUILD |
+    ALTER_PARTITION_ALL | ALTER_PARTITION_REMOVE;
+
+#ifdef IS_MARIADB
+typedef struct Sdb_part_del_ren_ctx {
+  char skip_delete_cl[SDB_CL_NAME_MAX_SIZE + 1];
+  char skip_rename_main_cl[SDB_CL_NAME_MAX_SIZE + 1];
+  char skip_rename_sub_cl[SDB_CL_NAME_MAX_SIZE + 1];
+  query_id_t query_id;
+} Sdb_part_del_ren_ctx;
+#endif
+
+class ha_sdb_part;
+class ha_sdb_part_wrapper;
 
 class Sdb_part_alter_ctx {
  public:
@@ -59,11 +80,29 @@ class ha_sdb_part_share : public Partition_share {
   longlong* m_main_part_name_hashs;
 };
 
-class ha_sdb_part : public ha_sdb,
+class ha_sdb_part : public ha_sdb
+#ifdef IS_MYSQL
+    ,
                     public Partition_helper,
-                    public Partition_handler {
+                    public Partition_handler
+#endif
+{
  public:
   ha_sdb_part(handlerton* hton, TABLE_SHARE* table_arg);
+
+#ifdef IS_MARIADB
+  void init();
+
+  handler* clone(const char* name, MEM_ROOT* mem_root);
+
+  bool set_altered_partitions();
+
+  void set_part_part_share(Partition_share* part_share) {
+    m_part_share = part_share;
+  }
+
+  int vers_set_hist_part(THD* thd, Vers_part_info* vers_info);
+#endif
 
   // ulonglong table_flags() const {
   //   return (ha_sdb::table_flags() | HA_CAN_REPAIR);
@@ -81,9 +120,7 @@ class ha_sdb_part : public ha_sdb,
 
   void print_error(int error, myf errflag);
 
-  uint32 calculate_key_hash_value(Field** field_array) {
-    return (Partition_helper::ph_calculate_key_hash_value(field_array));
-  }
+  uint32 calculate_key_hash_value(Field** field_array);
 
   uint alter_flags(uint flags) const {
     return (HA_PARTITION_FUNCTION_SUPPORTED | HA_FAST_CHANGE_PARTITION);
@@ -306,6 +343,7 @@ class ha_sdb_part : public ha_sdb,
   /** Implementing Partition_handler interface @see partition_handler.h
   @{ */
 
+#ifdef IS_MYSQL
   /** See Partition_handler. */
   void get_dynamic_partition_info(ha_statistics* stat_info,
                                   ha_checksum* check_sum, uint part_id) {
@@ -322,6 +360,7 @@ class ha_sdb_part : public ha_sdb,
   }
 
   handler* get_handler() { return (static_cast<handler*>(this)); }
+#endif
 
   int check(THD* thd, HA_CHECK_OPT* check_opt);
 
@@ -344,7 +383,8 @@ class ha_sdb_part : public ha_sdb,
                       bool explicit_not_auto_partition,
                       bson::BSONObj& scl_options);
 
-  int get_attach_options(partition_info* part_info, uint curr_part_id,
+  int get_attach_options(partition_info* part_info,
+                         partition_element* part_elem, uint curr_part_id,
                          bson::BSONObj& attach_options);
 
   int build_scl_name(const char* mcl_name, const char* partition_name,
@@ -407,10 +447,354 @@ class ha_sdb_part : public ha_sdb,
 
   int check_misplaced_rows(THD* thd, uint read_part_id, bool repair);
 
+#ifdef IS_MARIADB
+ public:
+  ha_sdb_part_wrapper* m_handler_wrapper;
+
+ private:
+  TABLE* m_table;
+  uint m_tot_parts;
+  const uchar* m_err_rec;
+  Partition_share* m_part_share;
+  partition_info* m_part_info;
+#endif
+
  private:
   bool m_sharded_by_part_hash_id;
   std::map<uint, char*> m_new_part_id2cl_name;
 };
 
-#endif  // IS_MYSQL
+#ifdef IS_MARIADB
+bool sdb_check_engine_by_par_file(const char* name);
+
+/*
+ ha_sdb_part_wrapper is a wrapper class that ovverrides ha_partition several
+ interfaces of ha_partition. It integrates the qoperations of multiple tables
+ into the operations of one table. Here we uniformly use the first sub handler
+ m_file[0].
+*/
+class ha_sdb_part_wrapper : public ha_partition {
+  friend class ha_sdb_part;
+
+ public:
+  ha_sdb_part_wrapper(handlerton* hton, TABLE_SHARE* table_arg)
+      : ha_partition(hton, table_arg) {}
+
+  ha_sdb_part_wrapper(handlerton* hton, TABLE_SHARE* share,
+                      partition_info* part_info_arg, ha_partition* clone_arg,
+                      MEM_ROOT* clone_mem_root_arg)
+      : ha_partition(hton, share, part_info_arg, clone_arg,
+                     clone_mem_root_arg) {}
+
+  ~ha_sdb_part_wrapper() {}
+
+  int create(const char* name, TABLE* form, HA_CREATE_INFO* create_info) {
+    if (get_from_handler_file(name, ha_thd()->mem_root, false)) {
+      return 1;
+    }
+    return m_file[0]->create(name, form, create_info);
+  }
+
+  int open(const char* name, int mode, uint test_if_locked);
+
+  int change_partitions_to_open(List<String>* partition_names);
+
+  handler* clone(const char* name, MEM_ROOT* mem_root);
+
+  int start_stmt(THD* thd, thr_lock_type lock_type) {
+    return m_file[0]->start_stmt(thd, lock_type);
+  }
+
+  int external_lock(THD* thd, int lock_type);
+
+  int info(uint flag);
+
+  int extra(enum ha_extra_function operation) {
+    return m_file[0]->extra(operation);
+  }
+
+  int reset(void) { return m_file[0]->ha_reset(); }
+
+  int close(void);
+
+  bool set_ha_share_ref(Handler_share** ha_share);
+
+  void get_dynamic_partition_info(PARTITION_STATS* stat_info, uint part_id);
+
+  void set_part_info(partition_info* part_info) {
+    m_tot_parts = 1;
+    m_part_info = part_info;
+    m_is_sub_partitioned = false;
+  }
+
+  void update_create_info(HA_CREATE_INFO* create_info) {
+    m_file[0]->update_create_info(create_info);
+  }
+
+  int truncate() { return m_file[0]->ha_truncate(); }
+
+  void start_bulk_insert(ha_rows rows, uint flags) {
+    return m_file[0]->ha_start_bulk_insert(rows, flags);
+  }
+
+  int end_bulk_insert() { return m_file[0]->ha_end_bulk_insert(); }
+
+  int write_row(uchar* buf);
+
+  int delete_row(const uchar* buf) { return m_file[0]->ha_delete_row(buf); }
+
+  int delete_all_rows() { return m_file[0]->ha_delete_all_rows(); }
+
+  int update_row(const uchar* old_data, const uchar* new_data) {
+    return m_file[0]->ha_update_row(old_data, new_data);
+  }
+
+  void position(const uchar* record) {
+    handler* file = m_file[0];
+    file->position(record);
+    memcpy(ref, file->ref, file->ref_length);
+    return;
+  }
+
+  int rnd_pos(uchar* buf, uchar* pos) {
+    return m_file[0]->ha_rnd_pos(buf, pos);
+  }
+  int rnd_init(bool scan) { return m_file[0]->ha_rnd_init(scan); }
+
+  int rnd_end() { return m_file[0]->ha_rnd_end(); }
+
+  int rnd_next(uchar* buf) { return m_file[0]->ha_rnd_next(buf); }
+
+  int index_init(uint idx, bool sorted) {
+    return m_file[0]->ha_index_init(idx, sorted);
+  }
+
+  int index_end() { return m_file[0]->ha_index_end(); }
+
+  int index_first(uchar* buf) { return m_file[0]->ha_index_first(buf); }
+
+  int index_last(uchar* buf) { return m_file[0]->ha_index_last(buf); }
+
+  int index_next(uchar* buf) { return m_file[0]->ha_index_next(buf); }
+
+  int index_next_same(uchar* buf, const uchar* key, uint keylen) {
+    return m_file[0]->ha_index_next_same(buf, key, keylen);
+  }
+
+  int index_prev(uchar* buf) { return m_file[0]->ha_index_prev(buf); }
+
+  int index_read_map(uchar* record, const uchar* key, key_part_map keypart_map,
+                     enum ha_rkey_function find_flag) {
+    return m_file[0]->ha_index_read_map(record, key, keypart_map, find_flag);
+  }
+
+  int index_read_idx_map(uchar* buf, uint index, const uchar* key,
+                         key_part_map keypart_map,
+                         enum ha_rkey_function find_flag) {
+    return m_file[0]->ha_index_read_idx_map(buf, index, key, keypart_map,
+                                            find_flag);
+  }
+
+  int create_new_partition(TABLE* table, HA_CREATE_INFO* create_info,
+                           const char* part_name, uint new_part_id,
+                           partition_element* part_elem) {
+    return static_cast<ha_sdb_part*>(m_file[0])->create_new_partition(
+        table, create_info, part_name, new_part_id, part_elem);
+  }
+
+  int my_change_partitions(HA_CREATE_INFO* create_info, const char* path,
+                           ulonglong* const copied, ulonglong* const deleted);
+
+  int change_partitions(HA_CREATE_INFO* create_info, const char* path,
+                        ulonglong* const copied, ulonglong* const deleted,
+                        const uchar* pack_frm_data, size_t pack_frm_len) {
+    return static_cast<ha_sdb_part*>(m_file[0])->change_partitions_low(
+        create_info, path, copied, deleted);
+  }
+
+  int rename_partitions(const char* path);
+
+  int truncate_partition(Alter_info* alter_info, bool* binlog_stmt);
+
+  int drop_partitions(const char* path);
+
+  handlerton* partition_ht() const { return m_file[0]->ht; }
+
+  const char* table_type() const { return ("SequoiaDB"); }
+
+  uint8 table_cache_type() { return HA_CACHE_TBL_NOCACHE; }
+
+  handler::Table_flags table_flags() const {
+    return m_file[0]->ha_table_flags();
+  }
+
+  ulong index_flags(uint inx, uint part, bool all_parts) const {
+    return m_file[0]->index_flags(inx, part, all_parts);
+  }
+
+  const char* index_type(uint inx) { return m_file[0]->index_type(inx); }
+
+  enum row_type get_row_type() const { return m_file[0]->get_row_type(); }
+
+  int optimize(THD* thd, HA_CHECK_OPT* check_opt) {
+    return m_file[0]->ha_optimize(thd, check_opt);
+  }
+
+  int analyze(THD* thd, HA_CHECK_OPT* check_opt) {
+    return m_file[0]->ha_analyze(thd, check_opt);
+  }
+
+  bool check_and_repair(THD* thd) { return false; }
+
+  int check(THD* thd, HA_CHECK_OPT* check_opt) {
+    return m_file[0]->ha_check(thd, check_opt);
+  }
+
+  int repair(THD* thd, HA_CHECK_OPT* check_opt) {
+    return m_file[0]->ha_repair(thd, check_opt);
+  }
+
+  uint count_query_cache_dependant_tables(uint8* tables_type) { return 0; }
+
+  my_bool register_query_cache_dependant_tables(THD* thd, Query_cache* cache,
+                                                Query_cache_block_table** block,
+                                                uint* n) {
+    return false;
+  }
+
+  THR_LOCK_DATA** store_lock(THD* thd, THR_LOCK_DATA** to,
+                             enum thr_lock_type lock_type) {
+    return m_file[0]->store_lock(thd, to, lock_type);
+  }
+
+  void unlock_row() { return m_file[0]->unlock_row(); }
+
+  void try_semi_consistent_read(bool) {}
+
+  bool was_semi_consistent_read() { return 0; }
+
+  bool is_crashed() const { return false; }
+
+  bool check_if_incompatible_data(HA_CREATE_INFO* create_info,
+                                  uint table_changes) {
+    return ROW_TYPE_NOT_USED;
+  }
+
+  enum_alter_inplace_result check_if_supported_inplace_alter(
+      TABLE* altered_table, Alter_inplace_info* ha_alter_info) {
+    return m_file[0]->check_if_supported_inplace_alter(altered_table,
+                                                       ha_alter_info);
+  }
+
+  bool prepare_inplace_alter_table(TABLE* altered_table,
+                                   Alter_inplace_info* ha_alter_info) {
+    return m_file[0]->ha_prepare_inplace_alter_table(altered_table,
+                                                     ha_alter_info);
+  }
+
+  bool inplace_alter_table(TABLE* altered_table,
+                           Alter_inplace_info* ha_alter_info) {
+    return m_file[0]->ha_inplace_alter_table(altered_table, ha_alter_info);
+  }
+
+  bool commit_inplace_alter_table(TABLE* altered_table,
+                                  Alter_inplace_info* ha_alter_info,
+                                  bool commit) {
+    return m_file[0]->ha_commit_inplace_alter_table(altered_table,
+                                                    ha_alter_info, commit);
+  }
+
+  bool need_info_for_auto_inc() { return 0; }
+
+  bool can_use_for_auto_inc_init() { return 1; }
+
+  void get_auto_increment(ulonglong offset, ulonglong increment,
+                          ulonglong nb_desired_values, ulonglong* first_value,
+                          ulonglong* nb_reserved_values) {
+    return;
+  }
+
+  void release_auto_increment() { return; };
+
+  TABLE_LIST* get_next_global_for_child() { return NULL; }
+
+  const COND* cond_push(const COND* cond);
+
+  THD* get_thd() const { return ha_thd(); }
+
+  int read_range_first(const key_range* start_key, const key_range* end_key,
+                       bool eq_range, bool sorted) {
+    return m_file[0]->read_range_first(start_key, end_key, eq_range, sorted);
+  }
+
+  int multi_range_read_init(RANGE_SEQ_IF* seq, void* seq_init_param,
+                            uint n_ranges, uint mrr_mode, HANDLER_BUFFER* buf) {
+    return m_file[0]->multi_range_read_init(seq, seq_init_param, n_ranges,
+                                            mrr_mode, buf);
+  }
+
+  int multi_range_read_next(range_id_t* range_info) {
+    return m_file[0]->multi_range_read_next(range_info);
+  }
+
+  ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint keys,
+                                uint key_parts, uint* bufsz, uint* mrr_mode,
+                                Cost_estimate* cost) {
+    return m_file[0]->multi_range_read_info(keyno, n_ranges, keys, key_parts,
+                                            bufsz, mrr_mode, cost);
+  }
+
+  ha_rows multi_range_read_info_const(uint keyno, RANGE_SEQ_IF* seq,
+                                      void* seq_init_param, uint n_ranges,
+                                      uint* bufsz, uint* mrr_mode,
+                                      Cost_estimate* cost) {
+    return m_file[0]->multi_range_read_info_const(
+        keyno, seq, seq_init_param, n_ranges, bufsz, mrr_mode, cost);
+  }
+
+  int multi_range_read_explain_info(uint mrr_mode, char* str, size_t size) {
+    return m_file[0]->multi_range_read_explain_info(mrr_mode, str, size);
+  }
+
+  ha_rows records_in_range(uint inx, key_range* min_key, key_range* max_key) {
+    return m_file[0]->records_in_range(inx, min_key, max_key);
+  }
+
+  const key_map* keys_to_use_for_scanning() {
+    return m_file[0]->keys_to_use_for_scanning();
+  }
+
+  double read_time(uint index, uint ranges, ha_rows rows) {
+    return m_file[0]->read_time(index, ranges, rows);
+  }
+
+  int extra_opt(enum ha_extra_function operation, ulong arg) {
+    return m_file[0]->extra(operation);
+  }
+
+  int ft_init() { return handler::ft_init(); }
+
+  FT_INFO* ft_init_ext(uint flags, uint inx, String* key) {
+    return handler::ft_init_ext(flags, inx, key);
+  }
+
+  void ft_end() { return handler::ft_end(); }
+
+  int ft_read(uchar* buf) { return handler::ft_read(buf); }
+
+  int handle_pre_scan(bool reverse_order, bool use_parallel) { return 0; }
+
+  ha_rows estimate_rows_upper_bound();
+
+ private:
+  bool create_handlers(MEM_ROOT* mem_root);
+
+  bool create_handler_file(const char* name);
+
+  bool populate_partition_name_hash();
+
+  int copy_partitions(ulonglong* const copied, ulonglong* const deleted);
+};
+#endif
+
 #endif  // HA_SDB_PART__H

@@ -677,8 +677,9 @@ Thd_sdb::Thd_sdb(THD *thd)
   if (ha_is_open()) {
     m_conn.set_check_collection_version(true);
   }
-#ifdef IS_MYSQL
   part_alter_ctx = NULL;
+#ifdef IS_MARIADB
+  part_del_ren_ctx = NULL;
 #endif
 
   (void)sdb_hash_init(&open_table_shares, table_alias_charset, 5, 0, 0,

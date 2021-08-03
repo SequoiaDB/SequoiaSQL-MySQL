@@ -540,12 +540,20 @@ class ha_sdb : public handler {
   int try_drop_as_sequence(Sdb_conn *conn, bool is_temporary,
                            const char *db_name, const char *table_name,
                            bool &deleted);
+
   int try_rename_as_sequence(Sdb_conn *conn, const char *db_name,
                              const char *old_table_name,
                              const char *new_table_name, bool &renamed);
+
   void get_auto_increment(ulonglong offset, ulonglong increment,
                           ulonglong nb_desired_values, ulonglong *first_value,
                           ulonglong *nb_reserved_values);
+
+  int prepare_delete_part_table(THD *thd, bool &is_skip);
+
+  int prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
+                                char *old_table_name, char *new_table_name,
+                                bool &is_skip);
 #endif
 
   void raw_store_blob(Field_blob *blob, const char *data, uint len);
@@ -578,9 +586,7 @@ class ha_sdb : public handler {
                                       bson::BSONObj &new_part_opt);
   /* end */
 
-#ifdef IS_MYSQL
   int drop_partition(THD *thd, char *db_name, char *part_name);
-#endif
 
   int check_and_set_options(const char *old_options_str,
                             const char *new_options_str,
@@ -631,6 +637,7 @@ class ha_sdb : public handler {
   bool m_insert_with_update;
   bool m_secondary_sort_rowid;
   bool m_use_bulk_insert;
+  bool m_del_ren_main_cl;
   int m_bulk_insert_total;
   std::vector<bson::BSONObj> m_bulk_insert_rows;
   Sdb_obj_cache<bson::BSONElement> m_bson_element_cache;

@@ -13,10 +13,12 @@
   along with this program; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
-#ifdef IS_MYSQL
-
 #ifndef MYSQL_SERVER
 #define MYSQL_SERVER
+#endif
+
+#ifdef IS_MARIADB
+#include <my_global.h>
 #endif
 
 #include "ha_sdb_part.h"
@@ -28,13 +30,9 @@
 #include "ha_sdb_log.h"
 #include "server_ha.h"
 
-static const uint PARTITION_ALTER_FLAG =
-    Alter_info::ALTER_ADD_PARTITION | Alter_info::ALTER_DROP_PARTITION |
-    Alter_info::ALTER_COALESCE_PARTITION |
-    Alter_info::ALTER_REORGANIZE_PARTITION | Alter_info::ALTER_PARTITION |
-    Alter_info::ALTER_ADMIN_PARTITION | Alter_info::ALTER_TABLE_REORG |
-    Alter_info::ALTER_REBUILD_PARTITION | Alter_info::ALTER_ALL_PARTITION |
-    Alter_info::ALTER_REMOVE_PARTITIONING;
+// System-Versioned table's end_timestamp for MariaDB: 2038-01-19
+// 11:14:07.999999
+static struct timeval END_TIMESTAMP { 2147483647, 999999 };
 
 /*
  * Exception catcher need to be added when call this function.
@@ -176,8 +174,6 @@ int sdb_get_bound(enum_sdb_bound_type type, partition_info *part_info,
       part_column_list_val &col_val = range_col_array[start + i];
       if (col_val.max_value) {
         sub_builder.appendMaxKey(field_name);
-      } else if (col_val.null_value) {
-        // Do nothing to append $Undefined
       } else {
         bson::BSONObj obj;
         rc = item_convertor.get_item_val(field_name, col_val.item_expression,
@@ -211,6 +207,28 @@ int sdb_append_bound_cond(enum_sdb_bound_type type, partition_info *part_info,
   }
   try {
     bson::BSONObjBuilder sub_builder(builder.subobjStart());
+#ifdef IS_MARIADB
+    // VERSIONING
+    if (VERSIONING_PARTITION == part_info->part_type) {
+      List_iterator_fast<partition_element> part_it(part_info->partitions);
+      Field *field = part_info->part_field_array[0];
+      partition_element *part_elem;
+      uint pos = 0;
+      while (pos++ <= part_id) {
+        part_elem = part_it++;
+      }
+      if ((partition_element::HISTORY == part_elem->type() &&
+           SDB_UP_BOUND == type) ||
+          (partition_element::CURRENT == part_elem->type() &&
+           SDB_LOW_BOUND == type)) {
+        bson::BSONObjBuilder(sub_builder.subobjStart(sdb_field_name(field)))
+            .appendTimestamp(matcher, END_TIMESTAMP.tv_sec * 1000,
+                             END_TIMESTAMP.tv_usec)
+            .done();
+      }
+      goto end_builder;
+    }
+#endif
     // RANGE COLUMNS(<column_list>)
     if (part_info->column_list) {
       Sdb_func_isnull item_convertor;  // convert Item to BSONObj
@@ -237,6 +255,10 @@ int sdb_append_bound_cond(enum_sdb_bound_type type, partition_info *part_info,
             .done();
       }
     }
+
+#ifdef IS_MARIADB
+  end_builder:
+#endif
     sub_builder.done();
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to append bound condition, exception:%s",
@@ -550,8 +572,1156 @@ longlong ha_sdb_part_share::get_main_part_hash_id(uint part_id) const {
   return m_main_part_name_hashs[part_id];
 }
 
+#ifdef IS_MARIADB
+void ha_sdb_part::init() {
+  if (m_handler_wrapper) {
+    m_tot_parts = m_handler_wrapper->m_tot_parts;
+    m_err_rec = m_handler_wrapper->m_err_rec;
+    m_part_info = m_handler_wrapper->m_part_info;
+  }
+}
+
+int ha_sdb_part::vers_set_hist_part(THD *thd, Vers_part_info *vers_info) {
+  int rc = 0;
+  Sdb_cl cl;
+  longlong records = 0;
+  bson::BSONObj hint;
+  Sdb_conn *conn = NULL;
+  partition_element *next = NULL;
+  bson::BSONObjBuilder clientinfo_builder;
+  char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
+  List_iterator<partition_element> it(m_part_info->partitions);
+
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+
+  if (vers_info->limit) {
+    sdb_build_clientinfo(ha_thd(), clientinfo_builder);
+    hint = clientinfo_builder.obj();
+    while (next != vers_info->hist_part) {
+      next = it++;
+    }
+
+    rc = build_scl_name(table_name, next->partition_name, scl_name);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = conn->get_cl(db_name, scl_name, cl);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = cl.get_count(records, SDB_EMPTY_BSON, hint);
+    if (rc) {
+      goto error;
+    }
+    while ((next = it++) != vers_info->now_part) {
+      longlong next_records = 0;
+      rc = build_scl_name(table_name, next->partition_name, scl_name);
+      if (rc != 0) {
+        goto error;
+      }
+
+      rc = conn->get_cl(db_name, scl_name, cl);
+      if (rc != 0) {
+        goto error;
+      }
+
+      rc = cl.get_count(next_records, SDB_EMPTY_BSON, hint);
+      if (rc) {
+        goto error;
+      }
+      if (next_records == 0) {
+        break;
+      }
+      vers_info->hist_part = next;
+      records = next_records;
+    }
+    if ((ha_rows)records > vers_info->limit) {
+      if (next == vers_info->now_part) {
+        goto warn;
+      }
+      vers_info->hist_part = next;
+    }
+    goto done;
+  }
+
+  if (vers_info->interval.is_set()) {
+    if (vers_info->hist_part->range_value > thd->query_start())
+      goto done;
+
+    partition_element *next = NULL;
+    List_iterator<partition_element> it(m_part_info->partitions);
+    while (next != vers_info->hist_part) {
+      next = it++;
+    }
+
+    while ((next = it++) != vers_info->now_part) {
+      vers_info->hist_part = next;
+      if (next->range_value > thd->query_start()) {
+        goto done;
+      }
+    }
+    goto warn;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+warn:
+  my_error(WARN_VERS_PART_FULL, MYF(ME_WARNING | ME_ERROR_LOG), db_name,
+           table_name, vers_info->hist_part->partition_name);
+  goto done;
+}
+
+bool ha_sdb_part_wrapper::populate_partition_name_hash() {
+  int rs = false;
+  bool org_is_sub_partitioned = m_is_sub_partitioned;
+  m_is_sub_partitioned = m_part_info->is_sub_partitioned();
+  rs = ha_partition::populate_partition_name_hash();
+  m_is_sub_partitioned = org_is_sub_partitioned;
+  return rs;
+}
+
+int ha_sdb_part_wrapper::open(const char *name, int mode, uint test_if_locked) {
+  int rc = 0;
+  handler **file = NULL;
+
+  if (init_partition_bitmaps()) {
+    rc = HA_ERR_INITIALIZATION;
+    goto error;
+  }
+  if (populate_partition_name_hash()) {
+    rc = HA_ERR_INITIALIZATION;
+    goto error;
+  }
+  if (!MY_TEST(m_is_clone_of) &&
+      unlikely(
+          (rc = m_part_info->set_partition_bitmaps(m_partitions_to_open)))) {
+    rc = HA_ERR_INITIALIZATION;
+    goto error;
+  }
+
+  if (m_is_clone_of) {
+    uint alloc_len = 0;
+    DBUG_ASSERT(m_clone_mem_root);
+
+    /* Allocate an array of handler pointers for the partitions handlers. */
+    alloc_len = (m_tot_parts + 1) * sizeof(handler *);
+    if (!(m_file = (handler **)alloc_root(m_clone_mem_root, alloc_len))) {
+      rc = HA_ERR_INITIALIZATION;
+      goto error;
+    }
+    memset(m_file, 0, alloc_len);
+    /*
+       Populate them by cloning the original partitions. This also opens them.
+       Note that file->ref is allocated too.
+     */
+    file = m_is_clone_of->get_child_handlers();
+
+    /* ::clone() will also set ha_share from the original. */
+    if (!(m_file[0] = file[0]->clone(name, m_clone_mem_root))) {
+      rc = HA_ERR_INITIALIZATION;
+      goto error;
+    }
+
+    ((ha_sdb_part *)(m_file[0]))->m_handler_wrapper = this;
+    if (m_file[0]->ha_open(table, name, table->db_stat,
+                           HA_OPEN_IGNORE_IF_LOCKED, m_clone_mem_root)) {
+      delete m_file[0];
+      m_file[0] = NULL;
+      goto error;
+    }
+  } else {
+    rc = m_file[0]->ha_open(table, name, mode,
+                            test_if_locked | HA_OPEN_NO_PSI_CALL);
+    if (rc) {
+      goto error;
+    }
+  }
+
+  ref_length = m_file[0]->ref_length;
+  m_ref_length = ref_length;
+  if (!m_file_sample) {
+    m_file_sample = m_file[0];
+  }
+  /*
+     Release buffer read from .par file. It will not be reused again after
+     being opened once.
+   */
+  clear_handler_file();
+  info(HA_STATUS_VARIABLE | HA_STATUS_CONST | HA_STATUS_OPEN);
+
+done:
+  return rc;
+error:
+  free_partition_bitmaps();
+  goto done;
+}
+
+bool ha_sdb_part_wrapper::set_ha_share_ref(Handler_share **ha_share) {
+  bool rs = false;
+  Handler_share **ha_shares = NULL;
+  DBUG_ENTER("ha_sdb_part_wrapper::set_ha_share_ref");
+
+  DBUG_ASSERT(!part_share);
+  DBUG_ASSERT(table_share);
+  DBUG_ASSERT(!m_is_clone_of);
+  DBUG_ASSERT(m_tot_parts);
+
+  lock_shared_ha_data();
+  if (handler::set_ha_share_ref(ha_share)) {
+    rs = true;
+    goto error;
+  }
+  part_share = static_cast<ha_sdb_part_share *>(get_ha_share_ptr());
+  if (part_share == NULL) {
+    part_share = new (std::nothrow) ha_sdb_part_share();
+    if (part_share == NULL) {
+      rs = true;
+      goto error;
+    }
+    if (part_share->init(m_tot_parts)) {
+      delete part_share;
+      part_share = NULL;
+      rs = true;
+      goto error;
+    }
+    set_ha_share_ptr(static_cast<Handler_share *>(part_share));
+  }
+
+  DBUG_ASSERT(part_share->partitions_share_refs.num_parts >= m_tot_parts);
+  ha_shares = part_share->partitions_share_refs.ha_shares;
+  if (m_file[0]->set_ha_share_ref(&ha_shares[0])) {
+    rs = true;
+    goto error;
+  }
+  static_cast<ha_sdb_part *>(m_file[0])->set_part_part_share(part_share);
+
+done:
+  unlock_shared_ha_data();
+  DBUG_RETURN(rs);
+error:
+  goto done;
+}
+
+/*
+  Here we just need to create a handler and set m_tot_part to 1. The
+  actual number of partitions is saved in m_part_info.
+*/
+bool ha_sdb_part_wrapper::create_handlers(MEM_ROOT *mem_root) {
+  bool rs = false;
+  int real_tot_part = 1;
+  handlerton *hton = NULL;
+  uint alloc_len = (real_tot_part + 1) * sizeof(handler *);
+  DBUG_ENTER("ha_sdb_part_wrapper::create_handlers");
+
+  if (!(m_file = (handler **)alloc_root(mem_root, alloc_len))) {
+    rs = true;
+    goto error;
+  }
+  m_file_tot_parts = m_tot_parts;
+  m_tot_parts = real_tot_part;
+  bzero((char *)m_file, alloc_len);
+  hton = plugin_data(m_engine_array[0], handlerton *);
+  if (!(m_file[0] = get_new_handler(table_share, mem_root, hton))) {
+    rs = true;
+    goto error;
+  }
+  ((ha_sdb_part *)(m_file[0]))->m_handler_wrapper = this;
+  DBUG_PRINT("info", ("engine_type: %u", hton->db_type));
+
+done:
+  DBUG_RETURN(rs);
+error:
+  goto done;
+}
+
+bool ha_sdb_part_wrapper::create_handler_file(const char *name) {
+  int rs = false;
+  bool org_is_sub_partitioned = m_is_sub_partitioned;
+  m_is_sub_partitioned = m_part_info->is_sub_partitioned();
+  rs = ha_partition::create_handler_file(name);
+  m_is_sub_partitioned = org_is_sub_partitioned;
+  return rs;
+}
+
+int ha_sdb_part_wrapper::change_partitions_to_open(
+    List<String> *partition_names) {
+  int rc = 0;
+  if (m_is_clone_of) {
+    goto done;
+  }
+  m_partitions_to_open = partition_names;
+  rc = m_part_info->set_partition_bitmaps(partition_names);
+
+done:
+  return rc;
+}
+
+handler *ha_sdb_part_wrapper::clone(const char *name, MEM_ROOT *mem_root) {
+  DBUG_ENTER("ha_sdb_part_wrapper::clone");
+
+  ha_sdb_part_wrapper *new_handler = new (mem_root)
+      ha_sdb_part_wrapper(ht, table_share, m_part_info, this, mem_root);
+  if (!new_handler) {
+    goto error_alloc;
+  }
+
+  /*
+     We will not clone each partition's handler here, it will be done in
+     ha_partition::open() for clones. Also set_ha_share_ref is not needed
+     here, since 1) ha_share is copied in the constructor used above
+     2) each partition's cloned handler will set it from its original.
+   */
+
+  /*
+     Allocate new_handler->ref here because otherwise ha_open will allocate it
+     on this->table->mem_root and we will not be able to reclaim that memory
+     when the clone handler object is destroyed.
+   */
+  if (!(new_handler->ref =
+            (uchar *)alloc_root(mem_root, ALIGN_SIZE(m_ref_length) * 2))) {
+    goto error;
+  }
+
+  if (new_handler->ha_open(table, name, table->db_stat,
+                           HA_OPEN_IGNORE_IF_LOCKED | HA_OPEN_NO_PSI_CALL)) {
+    goto error;
+  }
+
+done:
+  DBUG_RETURN((handler *)new_handler);
+error:
+  delete new_handler;
+  new_handler = NULL;
+  goto done;
+error_alloc:
+  goto done;
+}
+
+int ha_sdb_part_wrapper::copy_partitions(ulonglong *const copied,
+                                         ulonglong *const deleted) {
+  uint new_part = 0;
+  int rc = 0;
+  longlong func_value = 0;
+  DBUG_ENTER("Partition_helper::copy_partitions");
+
+  if (m_part_info->linear_hash_ind) {
+    if (m_part_info->part_type == HASH_PARTITION) {
+      set_linear_hash_mask(m_part_info, m_part_info->num_parts);
+    } else {
+      set_linear_hash_mask(m_part_info, m_part_info->num_subparts);
+    }
+  } else if (m_part_info->part_type == VERSIONING_PARTITION) {
+    if (m_part_info->check_constants(ha_thd(), m_part_info)) {
+      goto done;
+    }
+  }
+
+  /*
+     `m_part_info->read_partitions` bitmap is setup for all the reorganized
+     partitions to be copied. So we can use the normal handler rnd
+     interface for reading.
+   */
+  if ((rc = m_file[0]->ha_rnd_init_with_error(1))) {
+    goto done;
+  }
+  while (true) {
+    if ((rc = m_file[0]->ha_rnd_next(table->record[0]))) {
+      if (rc != HA_ERR_END_OF_FILE) {
+        goto error;
+      }
+      // End-of-file reached, break out to end the copy process.
+      rc = 0;
+      break;
+    }
+    /* Found record to insert into new handler */
+    if (m_part_info->get_partition_id(m_part_info, &new_part, &func_value)) {
+      /*
+         This record is in the original table but will not be in the new
+         table since it doesn't fit into any partition any longer due to
+         changed partitioning ranges or list values.
+       */
+      (*deleted)++;
+    } else {
+      THD *thd = ha_thd();
+      /* Copy record to new handler */
+      (*copied)++;
+      tmp_disable_binlog(thd); /* Do not replicate the low-level changes. */
+      rc = static_cast<ha_sdb_part *>(m_file[0])->write_row_in_new_part(
+          new_part);
+      reenable_binlog(thd);
+      if (rc) {
+        goto error;
+      }
+    }
+  }
+  m_file[0]->ha_rnd_end();
+
+done:
+  DBUG_RETURN(rc);
+error:
+  m_file[0]->ha_rnd_end();
+  goto done;
+}
+
+/*
+  Because MariaDB has multiple handlers, the change_partitions is implemented
+  by maintaining handlers m_reorged_file. But we only have one handler all the
+  time, so we can't reuse its implementation directly.
+  Here is a set of implementations borrowed from MySQL.
+*/
+int ha_sdb_part_wrapper::my_change_partitions(HA_CREATE_INFO *create_info,
+                                              const char *path,
+                                              ulonglong *const copied,
+                                              ulonglong *const deleted) {
+  int rc = 1;
+  uint i = 0;
+  bool first = false;
+  char part_name_buff[FN_REFLEN + 1] = "";
+  uint num_remain_partitions = 0;
+  uint num_parts = m_part_info->partitions.elements;
+  uint num_subparts = m_part_info->num_subparts;
+  uint temp_partitions = m_part_info->temp_partitions.elements;
+  List_iterator<partition_element> part_it(m_part_info->partitions);
+  List_iterator<partition_element> t_it(m_part_info->temp_partitions);
+  DBUG_ENTER("ha_sdb_part_wrapper::my_change_partitions");
+
+  /*
+     Use the read_partitions bitmap for reorganized partitions,
+     i.e. what to copy.
+   */
+  bitmap_clear_all(&m_part_info->read_partitions);
+
+  /*
+     Assert that it works without HA_FILE_BASED and lower_case_table_name = 2.
+     We use m_file[0] as long as all partitions have the same storage engine.
+   */
+  DBUG_ASSERT(
+      !strcmp(path, get_canonical_filename(m_file[0], path, part_name_buff)));
+  m_reorged_parts = 0;
+  if (!m_part_info->is_sub_partitioned())
+    num_subparts = 1;
+
+  /*
+     Step 1:
+     Calculate number of reorganized partitions.
+   */
+  if (temp_partitions) {
+    m_reorged_parts = temp_partitions * num_subparts;
+  } else {
+    do {
+      partition_element *part_elem = part_it++;
+      if (part_elem->part_state == PART_CHANGED ||
+          part_elem->part_state == PART_REORGED_DROPPED) {
+        m_reorged_parts += num_subparts;
+      }
+    } while (++i < num_parts);
+  }
+
+  /*
+     Step 2:
+     Calculate number of partitions after change.
+   */
+  if (temp_partitions) {
+    num_remain_partitions = num_parts * num_subparts;
+  } else {
+    part_it.rewind();
+    i = 0;
+    do {
+      partition_element *part_elem = part_it++;
+      if (part_elem->part_state == PART_NORMAL ||
+          part_elem->part_state == PART_TO_BE_ADDED ||
+          part_elem->part_state == PART_CHANGED) {
+        num_remain_partitions += num_subparts;
+      }
+    } while (++i < num_parts);
+  }
+
+  /*
+     Step 3:
+     Set the read_partition bit for all partitions to be copied.
+   */
+  if (m_reorged_parts) {
+    i = 0;
+    first = true;
+    part_it.rewind();
+    do {
+      partition_element *part_elem = part_it++;
+      if (part_elem->part_state == PART_CHANGED ||
+          part_elem->part_state == PART_REORGED_DROPPED) {
+        for (uint sp = 0; sp < num_subparts; sp++) {
+          bitmap_set_bit(&m_part_info->read_partitions, i * num_subparts + sp);
+        }
+        DBUG_ASSERT(first);
+      } else if (first && temp_partitions &&
+                 part_elem->part_state == PART_TO_BE_ADDED) {
+        /*
+           When doing an ALTER TABLE REORGANIZE PARTITION a number of
+           partitions is to be reorganized into a set of new partitions.
+           The reorganized partitions are in this case in the temp_partitions
+           list. We mark all of them in one batch and thus we only do this
+           until we find the first partition with state PART_TO_BE_ADDED
+           since this is where the new partitions go in and where the old
+           ones used to be.
+         */
+        first = false;
+        DBUG_ASSERT(((i * num_subparts) + m_reorged_parts) <= m_file_tot_parts);
+        for (uint sp = 0; sp < m_reorged_parts; sp++) {
+          bitmap_set_bit(&m_part_info->read_partitions, i * num_subparts + sp);
+        }
+      }
+    } while (++i < num_parts);
+  }
+
+  /*
+     Step 4:
+     Create the new partitions and also open, lock and call
+     external_lock on them (if needed) to prepare them for copy phase
+     and also for later close calls.
+     No need to create PART_NORMAL partitions since they must not
+     be written to!
+     Only PART_CHANGED and PART_TO_BE_ADDED should be written to!
+   */
+
+  i = 0;
+  part_it.rewind();
+  do {
+    partition_element *part_elem = part_it++;
+    DBUG_ASSERT(part_elem->part_state >= PART_NORMAL &&
+                part_elem->part_state <= PART_CHANGED);
+    if (part_elem->part_state == PART_TO_BE_ADDED ||
+        part_elem->part_state == PART_CHANGED) {
+      /*
+         A new partition needs to be created PART_TO_BE_ADDED means an
+         entirely new partition and PART_CHANGED means a changed partition
+         that will still exist with either more or less data in it.
+       */
+      uint name_variant = NORMAL_PART_NAME;
+      if (part_elem->part_state == PART_CHANGED ||
+          (part_elem->part_state == PART_TO_BE_ADDED && temp_partitions))
+        name_variant = TEMP_PART_NAME;
+      if (m_part_info->is_sub_partitioned()) {
+        List_iterator<partition_element> sub_it(part_elem->subpartitions);
+        uint j = 0, part;
+        do {
+          partition_element *sub_elem = sub_it++;
+          rc = create_subpartition_name(part_name_buff, sizeof(part_name_buff),
+                                        path, part_elem->partition_name,
+                                        sub_elem->partition_name, name_variant);
+          if (rc) {
+            goto error;
+          }
+          part = i * num_subparts + j;
+          DBUG_PRINT("info", ("Add subpartition %s", part_name_buff));
+          /*
+             update_create_info was called previously in
+             mysql_prepare_alter_table. Which may have set data/index_file_name
+             for the partitions to the full partition name, including
+             '#P#<part_name>[#SP#<subpart_name>] suffix. Remove that suffix
+             if it exists.
+           */
+          truncate_partition_filename((char *)sub_elem->data_file_name);
+          truncate_partition_filename((char *)sub_elem->index_file_name);
+          /* Notice that sub_elem is already based on part_elem's defaults. */
+          rc = set_up_table_before_create(table, part_name_buff, create_info,
+                                          sub_elem);
+          if (rc) {
+            goto error;
+          }
+          rc = create_new_partition(table, create_info, part_name_buff, part,
+                                    sub_elem);
+          if (rc) {
+            goto error;
+          }
+        } while (++j < num_subparts);
+      } else {
+        rc = create_partition_name(part_name_buff, sizeof(part_name_buff), path,
+                                   part_elem->partition_name, name_variant,
+                                   true);
+        if (rc) {
+          goto error;
+        }
+        DBUG_PRINT("info", ("Add partition %s", part_name_buff));
+        /* See comment in subpartition branch above! */
+        truncate_partition_filename((char *)part_elem->data_file_name);
+        truncate_partition_filename((char *)part_elem->index_file_name);
+        rc = set_up_table_before_create(table, part_name_buff, create_info,
+                                        part_elem);
+        if (rc) {
+          goto error;
+        }
+        rc = create_new_partition(table, create_info,
+                                  (const char *)part_name_buff, i, part_elem);
+        if (rc) {
+          goto error;
+        }
+      }
+    }
+  } while (++i < num_parts);
+
+  /*
+     Step 5:
+     State update to prepare for next write of the frm file.
+   */
+  i = 0;
+  part_it.rewind();
+  do {
+    partition_element *part_elem = part_it++;
+    if (part_elem->part_state == PART_TO_BE_ADDED)
+      part_elem->part_state = PART_IS_ADDED;
+    else if (part_elem->part_state == PART_CHANGED)
+      part_elem->part_state = PART_IS_CHANGED;
+    else if (part_elem->part_state == PART_REORGED_DROPPED)
+      part_elem->part_state = PART_TO_BE_DROPPED;
+  } while (++i < num_parts);
+  for (i = 0; i < temp_partitions; i++) {
+    partition_element *part_elem = t_it++;
+    DBUG_ASSERT(part_elem->part_state == PART_TO_BE_REORGED);
+    part_elem->part_state = PART_TO_BE_DROPPED;
+  }
+  rc = copy_partitions(copied, deleted);
+  if (rc) {
+    goto error;
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+/*
+  The logic is consistent with ha_partition::rename_partitions, but the
+  usage of m_tot_parts and m_file is different, so the native code is overwritten.
+*/
+int ha_sdb_part_wrapper::rename_partitions(const char *path) {
+  int rc = 0;
+  uint i = 0, j = 0;
+  partition_element *part_elem, *sub_elem;
+  char part_name_buff[FN_REFLEN + 1] = "";
+  char norm_name_buff[FN_REFLEN + 1] = "";
+  uint num_subparts = m_part_info->num_subparts;
+  uint num_parts = m_part_info->partitions.elements;
+  bool is_sub_partitioned = m_part_info->is_sub_partitioned();
+  uint temp_partitions = m_part_info->temp_partitions.elements;
+  List_iterator<partition_element> part_it(m_part_info->partitions);
+  List_iterator<partition_element> temp_it(m_part_info->temp_partitions);
+
+  DBUG_ENTER("ha_sdb_part_wrapper::rename_partitions");
+
+  /*
+     Assert that it works without HA_FILE_BASED and lower_case_table_name = 2.
+     We use m_file[0] as long as all partitions have the same storage engine.
+   */
+  DBUG_ASSERT(
+      !strcmp(path, get_canonical_filename(m_file[0], path, norm_name_buff)));
+
+  DEBUG_SYNC(ha_thd(), "before_rename_partitions");
+  if (temp_partitions) {
+    /*
+       These are the reorganised partitions that have already been copied.
+       We delete the partitions and log the delete by inactivating the
+       delete log entry in the table log. We only need to synchronise
+       these writes before moving to the next loop since there is no
+       interaction among reorganised partitions, they cannot have the
+       same name.
+     */
+    do {
+      part_elem = temp_it++;
+      if (is_sub_partitioned) {
+        List_iterator<partition_element> sub_it(part_elem->subpartitions);
+        j = 0;
+        do {
+          sub_elem = sub_it++;
+          if (unlikely((rc = create_subpartition_name(
+                            norm_name_buff, sizeof(norm_name_buff), path,
+                            part_elem->partition_name, sub_elem->partition_name,
+                            NORMAL_PART_NAME)))) {
+            goto error;
+          }
+          DBUG_PRINT("info", ("Delete subpartition %s", norm_name_buff));
+          if (unlikely((rc = m_file[0]->ha_delete_table(norm_name_buff)))) {
+            goto error;
+          } else if (unlikely(deactivate_ddl_log_entry(
+                         sub_elem->log_entry->entry_pos))) {
+            rc = 1;
+            goto error;
+          } else {
+            sub_elem->log_entry = NULL; /* Indicate success */
+          }
+        } while (++j < num_subparts);
+      } else {
+        if (unlikely((rc = create_partition_name(norm_name_buff,
+                                                 sizeof(norm_name_buff), path,
+                                                 part_elem->partition_name,
+                                                 NORMAL_PART_NAME, TRUE)))) {
+          goto error;
+        } else {
+          DBUG_PRINT("info", ("Delete partition %s", norm_name_buff));
+          if (unlikely((rc = m_file[0]->ha_delete_table(norm_name_buff)))) {
+            goto error;
+          } else if (unlikely(deactivate_ddl_log_entry(
+                         part_elem->log_entry->entry_pos))) {
+            rc = 1;
+            goto error;
+          } else {
+            part_elem->log_entry = NULL; /* Indicate success */
+          }
+        }
+      }
+    } while (++i < temp_partitions);
+    (void)sync_ddl_log();
+  }
+
+  i = 0;
+  do {
+    /*
+       When state is PART_IS_CHANGED it means that we have created a new
+       TEMP partition that is to be renamed to normal partition name and
+       we are to delete the old partition with currently the normal name.
+
+       We perform this operation by
+       1) Delete old partition with normal partition name
+       2) Signal this in table log entry
+       3) Synch table log to ensure we have consistency in crashes
+       4) Rename temporary partition name to normal partition name
+       5) Signal this to table log entry
+       It is not necessary to synch the last state since a new rename
+       should not corrupt things if there was no temporary partition.
+
+       The only other parts we need to cater for are new parts that
+       replace reorganised parts. The reorganised parts were deleted
+       by the code above that goes through the temp_partitions list.
+       Thus the synch above makes it safe to simply perform step 4 and 5
+       for those entries.
+     */
+    part_elem = part_it++;
+    if (part_elem->part_state == PART_IS_CHANGED ||
+        part_elem->part_state == PART_TO_BE_DROPPED ||
+        (part_elem->part_state == PART_IS_ADDED && temp_partitions)) {
+      if (is_sub_partitioned) {
+        List_iterator<partition_element> sub_it(part_elem->subpartitions);
+        j = 0;
+        do {
+          sub_elem = sub_it++;
+          if (unlikely((rc = create_subpartition_name(
+                            norm_name_buff, sizeof(norm_name_buff), path,
+                            part_elem->partition_name, sub_elem->partition_name,
+                            NORMAL_PART_NAME)))) {
+            goto error;
+          }
+          if (part_elem->part_state == PART_IS_CHANGED) {
+            DBUG_PRINT("info", ("Delete subpartition %s", norm_name_buff));
+            if (unlikely((rc = m_file[0]->ha_delete_table(norm_name_buff)))) {
+              goto error;
+            } else if (unlikely(deactivate_ddl_log_entry(
+                           sub_elem->log_entry->entry_pos))) {
+              rc = 1;
+              goto error;
+            }
+            (void)sync_ddl_log();
+          }
+          if (unlikely((rc = create_subpartition_name(
+                            part_name_buff, sizeof(part_name_buff), path,
+                            part_elem->partition_name, sub_elem->partition_name,
+                            TEMP_PART_NAME)))) {
+            goto error;
+          }
+          DBUG_PRINT("info", ("Rename subpartition from %s to %s",
+                              part_name_buff, norm_name_buff));
+          if (unlikely((rc = m_file[0]->ha_rename_table(part_name_buff,
+                                                        norm_name_buff)))) {
+            goto error;
+          } else if (unlikely(deactivate_ddl_log_entry(
+                         sub_elem->log_entry->entry_pos))) {
+            rc = 1;
+            goto error;
+          } else {
+            sub_elem->log_entry = NULL;
+          }
+        } while (++j < num_subparts);
+      } else {
+        if (unlikely((rc = create_partition_name(
+                          norm_name_buff, sizeof(norm_name_buff), path,
+                          part_elem->partition_name, NORMAL_PART_NAME, TRUE)) ||
+                     (rc = create_partition_name(
+                          part_name_buff, sizeof(part_name_buff), path,
+                          part_elem->partition_name, TEMP_PART_NAME, TRUE)))) {
+          goto error;
+        } else {
+          if (part_elem->part_state == PART_IS_CHANGED) {
+            DBUG_PRINT("info", ("Delete partition %s", norm_name_buff));
+            if (unlikely((rc = m_file[0]->ha_delete_table(norm_name_buff)))) {
+              goto error;
+            } else if (unlikely(deactivate_ddl_log_entry(
+                           part_elem->log_entry->entry_pos))) {
+              rc = 1;
+              goto error;
+            }
+            (void)sync_ddl_log();
+          }
+          DBUG_PRINT("info", ("Rename partition from %s to %s", part_name_buff,
+                              norm_name_buff));
+          if (unlikely((rc = m_file[0]->ha_rename_table(part_name_buff,
+                                                        norm_name_buff)))) {
+            goto error;
+          } else if (unlikely(deactivate_ddl_log_entry(
+                         part_elem->log_entry->entry_pos))) {
+            rc = 1;
+            goto error;
+          } else {
+            part_elem->log_entry = NULL;
+          }
+        }
+      }
+    }
+  } while (++i < num_parts);
+  (void)sync_ddl_log();
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+/*
+  The processing idea is the same as ha_sdb_part_wrapper::rename_partitions.
+*/
+int ha_sdb_part_wrapper::drop_partitions(const char *path) {
+  int rc = 0;
+  uint i = 0;
+  uint name_variant = -1;
+  char part_name_buff[FN_REFLEN + 1] = "";
+  bool is_sub_partitioned = m_part_info->is_sub_partitioned();
+  uint num_parts = m_part_info->partitions.elements;
+  uint num_subparts = m_part_info->num_subparts;
+  List_iterator<partition_element> part_it(m_part_info->partitions);
+
+  DBUG_ENTER("ha_sdb_part_wrapper::drop_partitions");
+
+  /*
+     Assert that it works without HA_FILE_BASED and lower_case_table_name = 2.
+     We use m_file[0] as long as all partitions have the same storage engine.
+   */
+  DBUG_ASSERT(
+      !strcmp(path, get_canonical_filename(m_file[0], path, part_name_buff)));
+  do {
+    partition_element *part_elem = part_it++;
+    if (part_elem->part_state == PART_TO_BE_DROPPED) {
+      /*
+         This part is to be dropped, meaning the part or all its subparts.
+       */
+      name_variant = NORMAL_PART_NAME;
+      if (is_sub_partitioned) {
+        List_iterator<partition_element> sub_it(part_elem->subpartitions);
+        uint j = 0;
+        do {
+          partition_element *sub_elem = sub_it++;
+          if (unlikely((rc = create_subpartition_name(
+                            part_name_buff, sizeof(part_name_buff), path,
+                            part_elem->partition_name, sub_elem->partition_name,
+                            name_variant)))) {
+            goto error;
+          }
+          DBUG_PRINT("info", ("Drop subpartition %s", part_name_buff));
+          if (unlikely((rc = m_file[0]->ha_delete_table(part_name_buff)))) {
+            goto error;
+          }
+          if (unlikely(
+                  deactivate_ddl_log_entry(sub_elem->log_entry->entry_pos))) {
+            rc = 1;
+            goto error;
+          }
+        } while (++j < num_subparts);
+      } else {
+        if ((rc = create_partition_name(part_name_buff, sizeof(part_name_buff),
+                                        path, part_elem->partition_name,
+                                        name_variant, TRUE))) {
+          goto error;
+        } else {
+          DBUG_PRINT("info", ("Drop partition %s", part_name_buff));
+          if (unlikely((rc = m_file[0]->ha_delete_table(part_name_buff)))) {
+            goto error;
+          }
+          if (unlikely(
+                  deactivate_ddl_log_entry(part_elem->log_entry->entry_pos))) {
+            rc = 1;
+            goto error;
+          }
+        }
+      }
+
+      if (part_elem->part_state == PART_IS_CHANGED) {
+        part_elem->part_state = PART_NORMAL;
+      } else {
+        part_elem->part_state = PART_IS_DROPPED;
+      }
+    }
+  } while (++i < num_parts);
+  (void)sync_ddl_log();
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_sdb_part_wrapper::truncate_partition(Alter_info *alter_info,
+                                            bool *binlog_stmt) {
+  int rc = 0;
+  uint i = 0;
+  uint num_parts = m_part_info->num_parts;
+  uint num_subparts = m_part_info->num_subparts;
+  List_iterator<partition_element> part_it1(m_part_info->partitions);
+  List_iterator<partition_element> part_it2(m_part_info->partitions);
+  DBUG_ENTER("ha_sdb_part_wrapper::truncate_partition");
+
+  /* Only binlog when it starts any call to the partitions handlers */
+  *binlog_stmt = false;
+  if (set_part_state(alter_info, m_part_info, PART_ADMIN)) {
+    rc = HA_ERR_NO_PARTITION_FOUND;
+    goto error;
+  }
+  *binlog_stmt = true;
+
+  bitmap_clear_all(&m_part_info->read_partitions);
+  do {
+    partition_element *part_elem = part_it1++;
+    if (part_elem->part_state == PART_ADMIN) {
+      if (m_is_sub_partitioned) {
+        List_iterator<partition_element> subpart_it(part_elem->subpartitions);
+        partition_element *sub_elem;
+        uint j = 0, part = -1;
+        do {
+          sub_elem = subpart_it++;
+          part = i * num_subparts + j;
+          bitmap_set_bit(&m_part_info->read_partitions, part);
+        } while (++j < num_subparts);
+      } else {
+        bitmap_set_bit(&m_part_info->read_partitions, i);
+      }
+    }
+  } while (++i < num_parts);
+
+  rc = static_cast<ha_sdb_part *>(m_file[0])->truncate_partition_low();
+  if (rc) {
+    goto error;
+  }
+
+  i = 0;
+  do {
+    partition_element *part_elem = part_it2++;
+    if (part_elem->part_state == PART_ADMIN) {
+      if (m_is_sub_partitioned) {
+        List_iterator<partition_element> subpart_it(part_elem->subpartitions);
+        partition_element *sub_elem;
+        uint j = 0;
+        do {
+          sub_elem = subpart_it++;
+          sub_elem->part_state = PART_NORMAL;
+        } while (++j < num_subparts);
+      }
+      part_elem->part_state = PART_NORMAL;
+    }
+  } while (++i < num_parts);
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_sdb_part_wrapper::external_lock(THD *thd, int lock_type) {
+  int rc = 0;
+  MY_BITMAP *used_partitions = &(m_part_info->lock_partitions);
+  DBUG_ENTER("ha_sdb_part_wrapper::external_lock");
+
+  if (unlikely((rc = m_file[0]->ha_external_lock(thd, lock_type)))) {
+    if (lock_type != F_UNLCK) {
+      goto error;
+    }
+  }
+  if (lock_type == F_UNLCK) {
+    bitmap_clear_all(used_partitions);
+  }
+  if (lock_type == F_WRLCK) {
+    if (m_part_info->part_expr) {
+      m_part_info->part_expr->walk(&Item::register_field_in_read_map, 1, 0);
+    }
+    if (m_part_info->part_type == VERSIONING_PARTITION) {
+      // sdb_vers_set_hist_part(thd, m_part_info->vers_info);
+      rc = static_cast<ha_sdb_part *>(m_file[0])->vers_set_hist_part(
+          thd, m_part_info->vers_info);
+      if (rc) {
+        goto error;
+      }
+    }
+  }
+
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_sdb_part_wrapper::info(uint flag) {
+  int rc = 0;
+  handler *file = m_file[0];
+  rc = file->info(flag);
+  if (rc) {
+    goto error;
+  }
+
+  stats = file->stats;
+  if (flag & HA_STATUS_ERRKEY) {
+    errkey = file->errkey;
+    memcpy(dup_ref, file->dup_ref, ref_length);
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+const COND *ha_sdb_part_wrapper::cond_push(const COND *cond) {
+  handler *file = m_file[0];
+  COND *res_cond = NULL;
+  if (file->pushed_cond != cond) {
+    if (file->cond_push(cond)) {
+      res_cond = (COND *)cond;
+    } else {
+      file->pushed_cond = cond;
+    }
+  }
+  return res_cond;
+}
+
+int ha_sdb_part_wrapper::close(void) {
+  return m_file[0]->ha_close();
+}
+
+void ha_sdb_part_wrapper::get_dynamic_partition_info(PARTITION_STATS *stat_info,
+                                                     uint part_id) {
+  ulonglong used = 0;
+  ulonglong total_stats = 0;
+  uint tot_parts = m_part_info->get_tot_partitions();
+  ulonglong quotient = 0, remainder = 0;
+
+  m_file[0]->info(HA_STATUS_CONST | HA_STATUS_TIME | HA_STATUS_VARIABLE |
+                  HA_STATUS_NO_LOCK);
+
+  stats = m_file[0]->stats;
+  total_stats = stats.records;
+  if (total_stats != (~(ha_rows)0)) {
+    quotient = total_stats / tot_parts;
+    remainder = total_stats % tot_parts;
+    used += (quotient + ((part_id < remainder) ? 1 : 0));
+    stat_info->records = used;
+  } else {
+    stat_info->records = total_stats;
+  }
+
+  stat_info->mean_rec_length = stats.mean_rec_length;
+  stat_info->data_file_length = stats.data_file_length;
+  stat_info->max_data_file_length = stats.max_data_file_length;
+  stat_info->index_file_length = stats.index_file_length;
+  stat_info->max_index_file_length = stats.max_index_file_length;
+  stat_info->delete_length = stats.delete_length;
+  stat_info->create_time = stats.create_time;
+  stat_info->update_time = stats.update_time;
+  stat_info->check_time = stats.check_time;
+  stat_info->check_sum = stats.checksum;
+  stat_info->check_sum_null = stats.checksum_null;
+}
+
+int ha_sdb_part_wrapper::write_row(uchar *buf) {
+  int rc = 0;
+  rc = m_file[0]->ha_write_row(buf);
+  if (rc) {
+    goto error;
+  }
+  insert_id_for_cur_row = m_file[0]->insert_id_for_cur_row;
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+ha_rows ha_sdb_part_wrapper::estimate_rows_upper_bound() {
+  ha_rows tot_rows = stats.records;
+  uint num_parts = m_part_info->get_tot_partitions();
+
+  for (uint i = sdb_get_first_used_partition(m_part_info); i < num_parts;
+       i = sdb_get_next_used_partition(m_part_info, i)) {
+    tot_rows += EXTRA_RECORDS;
+  }
+
+  return tot_rows;
+}
+
+handler *ha_sdb_part::clone(const char *name, MEM_ROOT *mem_root) {
+  Handler_share *ha_share_ptr = NULL;
+  handler *new_handler = get_new_handler(table->s, mem_root, ht);
+  if (!new_handler) {
+    goto done;
+  }
+  lock_shared_ha_data();
+  ha_share_ptr = get_ha_share_ptr();
+  unlock_shared_ha_data();
+  if (new_handler->set_ha_share_ref(&ha_share_ptr)) {
+    goto error;
+  }
+
+done:
+  return new_handler;
+error:
+  delete new_handler;
+  new_handler = NULL;
+  goto done;
+}
+
+// Set used partitions bitmap from Alter_info.
+bool ha_sdb_part::set_altered_partitions() {
+  Alter_info *alter_info = &ha_thd()->lex->alter_info;
+  List<char> *partition_names;
+
+  if ((alter_info->partition_flags & ALTER_PARTITION_ADMIN) == 0 ||
+      (alter_info->partition_flags & ALTER_PARTITION_ALL)) {
+    /*
+       Full table command, not ALTER TABLE t <cmd> PARTITION <partition list>.
+       All partitions are already set, so do nothing.
+     */
+    return false;
+  }
+
+  partition_names = (List<char> *)&alter_info->partition_names;
+  return m_part_info->set_read_partitions(partition_names);
+}
+#endif
+
 ha_sdb_part::ha_sdb_part(handlerton *hton, TABLE_SHARE *table_arg)
-    : ha_sdb(hton, table_arg), Partition_helper(this) {
+    : ha_sdb(hton, table_arg)
+#ifdef IS_MYSQL
+      ,
+      Partition_helper(this)
+#endif
+{
+#ifdef IS_MARIADB
+  m_tot_parts = 0;
+  m_table = NULL;
+  m_err_rec = NULL;
+  m_part_share = NULL;
+  m_part_info = NULL;
+  m_handler_wrapper = NULL;
+#endif
   m_sharded_by_part_hash_id = false;
 }
 
@@ -559,7 +1729,14 @@ bool ha_sdb_part::is_sharded_by_part_hash_id(partition_info *part_info) {
   bool is_range_part_with_func =
       (RANGE_PARTITION == part_info->part_type && !part_info->column_list);
   bool is_list_part = (LIST_PARTITION == part_info->part_type);
-  return (is_range_part_with_func || is_list_part);
+  bool is_versioning_with_extra = false;
+#ifdef IS_MARIADB
+  is_versioning_with_extra =
+      (VERSIONING_PARTITION == part_info->part_type &&
+       (INTERVAL_LAST != part_info->vers_info->interval.type ||
+        0 != part_info->vers_info->limit));
+#endif
+  return (is_range_part_with_func || is_list_part || is_versioning_with_extra);
 }
 
 int ha_sdb_part::get_sharding_key(partition_info *part_info,
@@ -569,6 +1746,12 @@ int ha_sdb_part::get_sharding_key(partition_info *part_info,
   uint field_num = 0;
   Field *field = NULL;
   bson::BSONObjBuilder builder;
+#ifdef IS_MARIADB
+  bool is_versioning_range_part =
+      (VERSIONING_PARTITION == part_info->part_type &&
+       INTERVAL_LAST == part_info->vers_info->interval.type &&
+       0 == part_info->vers_info->limit);
+#endif
 
   // Check if the shardingkey contains virtual generated column.
   field_num = part_info->num_part_fields;
@@ -625,6 +1808,21 @@ int ha_sdb_part::get_sharding_key(partition_info *part_info,
         }
         break;
       }
+#ifdef IS_MARIADB
+      case VERSIONING_PARTITION: {
+        // VERSIONING
+        if (is_versioning_range_part) {
+          field_num = part_info->part_field_list.elements;
+          for (uint i = 0; i < field_num; ++i) {
+            field = part_info->part_field_array[i];
+            builder.append(sdb_field_name(field), 1);
+          }
+        } else {
+          builder.append(SDB_FIELD_PART_HASH_ID, 1);
+        }
+        break;
+      }
+#endif
       default: { DBUG_ASSERT(0); }
     }
     sharding_key = builder.obj();
@@ -689,7 +1887,13 @@ int ha_sdb_part::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
 
   try {
     opt_ele = table_options.getField(SDB_FIELD_ISMAINCL);
-    is_main_cl = RANGE_PARTITION == part_type || LIST_PARTITION == part_type;
+    if (RANGE_PARTITION == part_type || LIST_PARTITION == part_type
+#ifdef IS_MARIADB
+        || VERSIONING_PARTITION == part_type
+#endif
+    ) {
+      is_main_cl = true;
+    }
     if (bson::EOO == opt_ele.type()) {
       if (is_main_cl) {
         builder.append(SDB_FIELD_ISMAINCL, true);
@@ -881,6 +2085,7 @@ error:
 }
 
 int ha_sdb_part::get_attach_options(partition_info *part_info,
+                                    partition_element *part_elem,
                                     uint curr_part_id,
                                     bson::BSONObj &attach_options) {
   DBUG_ENTER("ha_sdb_part::get_attach_options");
@@ -905,6 +2110,34 @@ int ha_sdb_part::get_attach_options(partition_info *part_info,
       }
       up_builder.done();
     }
+#ifdef IS_MARIADB
+    // VERSIONING
+    else if (VERSIONING_PARTITION == part_info->part_type) {
+      DBUG_ASSERT(0 == part_info->vers_info->limit);
+      DBUG_ASSERT(INTERVAL_LAST == part_info->vers_info->interval.type);
+      const char *field_name = sdb_field_name(part_info->part_field_array[0]);
+      if (partition_element::HISTORY == part_elem->type()) {
+        bson::BSONObjBuilder(builder.subobjStart(SDB_FIELD_LOW_BOUND))
+            .appendMinKey(field_name)
+            .done();
+        bson::BSONObjBuilder(builder.subobjStart(SDB_FIELD_UP_BOUND))
+            .appendTimestamp(field_name, END_TIMESTAMP.tv_sec * 1000,
+                             END_TIMESTAMP.tv_usec)
+            .done();
+      } else if (partition_element::CURRENT == part_elem->type()) {
+        bson::BSONObjBuilder(builder.subobjStart(SDB_FIELD_LOW_BOUND))
+            .appendTimestamp(field_name, END_TIMESTAMP.tv_sec * 1000,
+                             END_TIMESTAMP.tv_usec)
+            .done();
+        bson::BSONObjBuilder(builder.subobjStart(SDB_FIELD_UP_BOUND))
+            .appendMaxKey(field_name)
+            .done();
+      } else {
+        DBUG_ASSERT(0);
+        rc = HA_ERR_INTERNAL_ERROR;
+      }
+    }
+#endif
     // RANGE COLUMNS(<column_list>)
     else if (part_info->column_list) {
       rc = sdb_get_bound(SDB_LOW_BOUND, part_info, curr_part_id, builder);
@@ -974,10 +2207,29 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   char scl_fullname[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   bool created_cl = false;
+#ifdef IS_MARIADB
+  bool is_versioning_range_part =
+      (VERSIONING_PARTITION == part_info->part_type &&
+       INTERVAL_LAST == part_info->vers_info->interval.type &&
+       0 == part_info->vers_info->limit);
+#endif
 
   List_iterator_fast<partition_element> part_it(part_info->partitions);
   partition_element *part_elem;
   while ((part_elem = part_it++)) {
+#ifdef IS_MARIADB
+    /*
+      For system-versioned partitioning by SYSTEM_TIME. History records can
+      only be stored in one history partition, but syntax does not restrict
+      the create multiple history partitions. Therefore, we need to manually
+      eliminate useless partitions.
+    */
+    if (is_versioning_range_part &&
+        part_elem != part_info->vers_info->hist_part &&
+        part_elem != part_info->vers_info->now_part) {
+      continue;
+    }
+#endif
     created_cl = false;
     rc = build_scl_name(mcl.get_cl_name(), part_elem->partition_name, scl_name);
     if (rc != 0) {
@@ -996,7 +2248,8 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
     }
     created_cl = true;
 
-    rc = get_attach_options(part_info, curr_part_id++, attach_options);
+    rc = get_attach_options(part_info, part_elem, curr_part_id++,
+                            attach_options);
     if (rc != 0) {
       goto error;
     }
@@ -1046,6 +2299,58 @@ bool ha_sdb_part::check_if_alter_table_options(THD *thd,
   return rs;
 }
 
+#ifdef IS_MARIADB
+/*
+  Check whether the partitioned table engine is SequoiaDB.
+  True is it is, else return false.
+*/
+bool sdb_check_engine_by_par_file(const char *name) {
+  DBUG_ENTER("sdb_check_engine_by_par_file");
+  DBUG_PRINT("enter", ("table name: '%s'", name));
+
+  static const uint PAR_WORD_SIZE = 4;
+  static const uint PAR_ENGINES_OFFSET = 12;
+  static const char *HA_PAR_EXT = ".par";
+
+  bool rs = false;
+  char buff[FN_REFLEN] = {0};
+  uchar file_buffer[FN_REFLEN] = {0};
+  File file;
+  uint len_bytes = 0, len_words = 0;
+  uchar *part_type = NULL;
+  enum legacy_db_type db_type = DB_TYPE_UNKNOWN;
+  handlerton *hton = NULL;
+
+  fn_format(buff, name, "", HA_PAR_EXT, MY_APPEND_EXT);
+
+  if ((file = mysql_file_open(key_file_partition, buff, O_RDONLY | O_SHARE,
+                              MYF(0))) < 0) {
+    goto error;
+  }
+  if (mysql_file_read(file, (uchar *)&buff[0], PAR_WORD_SIZE, MYF(MY_NABP))) {
+    goto error;
+  }
+  len_words = uint4korr(buff);
+  len_bytes = PAR_WORD_SIZE * len_words;
+  if (mysql_file_seek(file, 0, MY_SEEK_SET, MYF(0)) == MY_FILEPOS_ERROR) {
+    goto error;
+  }
+  if (mysql_file_read(file, file_buffer, len_bytes, MYF(MY_NABP))) {
+    goto error;
+  }
+  part_type = (uchar *)(file_buffer + PAR_ENGINES_OFFSET);
+  db_type = (enum legacy_db_type)part_type[0];
+  hton = ha_resolve_by_legacy_type(NULL, db_type);
+  rs = (hton == sdb_hton);
+
+done:
+  mysql_file_close(file, MYF(0));
+  DBUG_RETURN(rs);
+error:
+  goto done;
+}
+#endif
+
 int ha_sdb_part::create(const char *name, TABLE *form,
                         HA_CREATE_INFO *create_info) {
   DBUG_ENTER("ha_sdb_part::create");
@@ -1068,6 +2373,9 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     goto done;
   }
 
+  /* Not allowed to create temporary partitioned tables */
+  DBUG_ASSERT(create_info && !(create_info->options & HA_LEX_CREATE_TMP_TABLE));
+
   if (check_if_alter_table_options(ha_thd(), create_info)) {
     rc = HA_ERR_WRONG_COMMAND;
     my_printf_error(rc,
@@ -1076,9 +2384,6 @@ int ha_sdb_part::create(const char *name, TABLE *form,
                     MYF(0));
     goto error;
   }
-
-  /* Not allowed to create temporary partitioned tables. */
-  DBUG_ASSERT(create_info && !(create_info->options & HA_LEX_CREATE_TMP_TABLE));
 
   try {
     for (Field **fields = form->field; *fields; fields++) {
@@ -1112,11 +2417,11 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     }
 
     // Auto-increment field cannot be used for RANGE / LIST partition.
-    if (RANGE_PARTITION == m_part_info->part_type ||
-        LIST_PARTITION == m_part_info->part_type) {
-      uint field_num = m_part_info->num_part_fields;
+    if (RANGE_PARTITION == part_info->part_type ||
+        LIST_PARTITION == part_info->part_type) {
+      uint field_num = part_info->num_part_fields;
       for (uint i = 0; i < field_num; ++i) {
-        Field *fld = m_part_info->part_field_array[i];
+        Field *fld = part_info->part_field_array[i];
         if (Field::NEXT_NUMBER == MTYP_TYPENR(fld->unireg_check)) {
           rc = HA_WRONG_CREATE_OPTION;
           my_printf_error(rc,
@@ -1173,7 +2478,11 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     }
 
     if (RANGE_PARTITION == part_info->part_type ||
-        LIST_PARTITION == part_info->part_type) {
+        LIST_PARTITION == part_info->part_type
+#ifdef IS_MARIADB
+        || VERSIONING_PARTITION == part_info->part_type
+#endif
+    ) {
       rc =
           create_and_attach_scl(conn, cl, part_info, options, partition_options,
                                 explicit_not_auto_partition);
@@ -1238,15 +2547,15 @@ int ha_sdb_part::open(const char *name, int mode, uint test_if_locked) {
   int rc = 0;
   ha_sdb_part_share *sdb_share = NULL;
 
+  init();
+#ifdef IS_MYSQL
   DBUG_ASSERT(table);
   if (NULL == m_part_info) {
     // Fix m_part_info for ::clone()
     DBUG_ASSERT(table->part_info);
     m_part_info = table->part_info;
   }
-
   m_sharded_by_part_hash_id = is_sharded_by_part_hash_id(m_part_info);
-
   lock_shared_ha_data();
   m_part_share = static_cast<ha_sdb_part_share *>(get_ha_share_ptr());
   if (m_part_share == NULL) {
@@ -1273,6 +2582,17 @@ int ha_sdb_part::open(const char *name, int mode, uint test_if_locked) {
     rc = HA_ERR_INITIALIZATION;
     goto error;
   }
+#elif IS_MARIADB
+  m_sharded_by_part_hash_id = is_sharded_by_part_hash_id(m_part_info);
+  lock_shared_ha_data();
+  sdb_share = (ha_sdb_part_share *)m_part_share;
+  if (sdb_share && sdb_share->populate_main_part_name(m_part_info)) {
+    unlock_shared_ha_data();
+    rc = HA_ERR_INTERNAL_ERROR;
+    goto error;
+  }
+  unlock_shared_ha_data();
+#endif
 
   rc = ha_sdb::open(name, mode, test_if_locked);
   if (rc != 0) {
@@ -1288,7 +2608,9 @@ error:
 
 int ha_sdb_part::close(void) {
   DBUG_ENTER("ha_sdb_part::close");
+#ifdef IS_MYSQL
   close_partitioning();
+#endif
   DBUG_RETURN(ha_sdb::close());
 }
 
@@ -1299,6 +2621,13 @@ int ha_sdb_part::reset() {
     delete thd_sdb->part_alter_ctx;
     thd_sdb->part_alter_ctx = NULL;
   }
+
+#ifdef IS_MARIADB
+  if (thd_sdb && thd_sdb->part_del_ren_ctx) {
+    delete thd_sdb->part_del_ren_ctx;
+    thd_sdb->part_del_ren_ctx = NULL;
+  }
+#endif
 
   std::map<uint, char *>::iterator it = m_new_part_id2cl_name.begin();
   while (it != m_new_part_id2cl_name.end()) {
@@ -1312,19 +2641,31 @@ int ha_sdb_part::reset() {
 
 ulonglong ha_sdb_part::get_used_stats(ulonglong total_stats) {
   ulonglong used = 0;
-  ulonglong quotient = total_stats / m_tot_parts;
-  ulonglong remainder = total_stats % m_tot_parts;
+  uint num_parts = m_part_info->get_tot_partitions();
+  ulonglong quotient = total_stats / num_parts;
+  ulonglong remainder = total_stats % num_parts;
 
-  for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-       i = m_part_info->get_next_used_partition(i)) {
+  for (uint i = sdb_get_first_used_partition(m_part_info); i < num_parts;
+       i = sdb_get_next_used_partition(m_part_info, i)) {
     used += (quotient + ((i < remainder) ? 1 : 0));
+  }
+
+  if (total_stats > 0 && used == 0) {
+    used = 1;
   }
   return used;
 }
 
 int ha_sdb_part::info(uint flag) {
   DBUG_ENTER("ha_sdb_part::info");
-  int rc = ha_sdb::info(flag);
+
+  int rc = 0;
+
+  rc = ha_sdb::info(flag);
+  if (rc) {
+    goto error;
+  }
+
   if (flag & HA_STATUS_VARIABLE) {
     stats.data_file_length = get_used_stats(stats.data_file_length);
     stats.index_file_length = get_used_stats(stats.index_file_length);
@@ -1333,7 +2674,11 @@ int ha_sdb_part::info(uint flag) {
       stats.records = get_used_stats(stats.records);
     }
   }
+
+done:
   DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 int ha_sdb_part::detach_and_attach_scl(Sdb_cl &mcl) {
@@ -1384,7 +2729,8 @@ int ha_sdb_part::detach_and_attach_scl(Sdb_cl &mcl) {
       it = m_new_part_id2cl_name.find(curr_part_id);
       sprintf(scl_fullname, "%s.%s", db_name, it->second);
 
-      rc = get_attach_options(m_part_info, curr_part_id, attach_options);
+      rc = get_attach_options(m_part_info, part_elem, curr_part_id,
+                              attach_options);
       if (rc != 0) {
         goto error;
       }
@@ -1433,6 +2779,7 @@ int ha_sdb_part::pre_row_to_obj(bson::BSONObjBuilder &builder) {
 
   rc = test_if_explicit_partition();
   if (rc != 0) {
+    my_printf_error(rc, "Cannot specify HASH or KEY partitions", MYF(0));
     goto error;
   }
 
@@ -1447,9 +2794,9 @@ int ha_sdb_part::pre_row_to_obj(bson::BSONObjBuilder &builder) {
   }
 
   if (!(SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
-        thd->lex->alter_info.flags & PARTITION_ALTER_FLAG)) {
+        sdb_alter_partition_flags(thd) & SDB_PARTITION_ALTER_FLAG)) {
     // Check if record in specified partition.
-    if (!m_part_info->is_partition_locked(part_id)) {
+    if (!sdb_is_partition_locked(m_part_info, part_id)) {
       rc = HA_ERR_NOT_IN_LOCK_PARTITIONS;
       goto error;
     }
@@ -1482,10 +2829,22 @@ void ha_sdb_part::print_error(int error, myf errflag) {
   if (SDB_CAT_NO_MATCH_CATALOG == get_sdb_code(error)) {
     error = HA_ERR_NO_PARTITION_FOUND;
   }
+#ifdef IS_MYSQL
   if (print_partition_error(error, errflag)) {
     ha_sdb::print_error(error, errflag);
   }
+#elif IS_MARIADB
+  ha_sdb::print_error(error, errflag);
+#endif
   DBUG_VOID_RETURN;
+}
+
+uint32 ha_sdb_part::calculate_key_hash_value(Field **field_array) {
+#ifdef IS_MYSQL
+  return (Partition_helper::ph_calculate_key_hash_value(field_array));
+#elif IS_MARIADB
+  return m_handler_wrapper->calculate_key_hash_value(field_array);
+#endif
 }
 
 int ha_sdb_part::pre_get_update_obj(const uchar *old_data,
@@ -1496,7 +2855,7 @@ int ha_sdb_part::pre_get_update_obj(const uchar *old_data,
     uint old_part_id = -1;
     uint new_part_id = -1;
     longlong func_value = 0;
-    rc = get_parts_for_update(
+    rc = sdb_get_parts_for_update(
         const_cast<uchar *>(old_data), const_cast<uchar *>(new_data),
         table->record[0], m_part_info, &old_part_id, &new_part_id, &func_value);
     if (rc != 0) {
@@ -1524,6 +2883,7 @@ int ha_sdb_part::pre_delete_all_rows(bson::BSONObj &condition) {
   int rc = 0;
   rc = test_if_explicit_partition();
   if (rc != 0) {
+    my_printf_error(rc, "Cannot specify HASH or KEY partitions", MYF(0));
     goto error;
   }
 
@@ -1554,10 +2914,25 @@ int ha_sdb_part::inner_append_range_cond(bson::BSONArrayBuilder &builder) {
   uint last_part_id = UINT_MAX32;
 
   try {
-    for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-         i = m_part_info->get_next_used_partition(i)) {
+    for (uint i = sdb_get_first_used_partition(m_part_info);
+         i < m_part_info->get_tot_partitions();
+         i = sdb_get_next_used_partition(m_part_info, i)) {
       uint part_id = i;
       convert_sub2main_part_id(part_id);
+#ifdef IS_MARIADB
+      if (VERSIONING_PARTITION == m_part_info->part_type) {
+        List_iterator_fast<partition_element> part_it(m_part_info->partitions);
+        partition_element *part_elem;
+        uint pos = 0;
+        while (pos++ <= part_id) {
+          part_elem = part_it++;
+        }
+        if (part_elem != m_part_info->vers_info->hist_part &&
+            part_elem != m_part_info->vers_info->now_part) {
+          continue;
+        }
+      }
+#endif
       if (part_id == last_part_id) {
         continue;
       }
@@ -1577,7 +2952,13 @@ int ha_sdb_part::inner_append_range_cond(bson::BSONArrayBuilder &builder) {
       uint pre_part_id = part_id;
       uint next_part_id = 0;
       do {
-        next_part_id = m_part_info->get_next_used_partition(j++);
+#ifdef IS_MARIADB
+        if (VERSIONING_PARTITION == m_part_info->part_type) {
+          next_part_id = pre_part_id;
+          break;
+        }
+#endif
+        next_part_id = sdb_get_next_used_partition(m_part_info, j++);
         convert_sub2main_part_id(next_part_id);
         uint diff = next_part_id - pre_part_id;
         if (0 == diff) {
@@ -1650,10 +3031,16 @@ int ha_sdb_part::append_range_cond(bson::BSONArrayBuilder &builder) {
   bool need_cond_or = false;
 
   // Test if need $or.
-  for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-       i = m_part_info->get_next_used_partition(i)) {
+  for (uint i = sdb_get_first_used_partition(m_part_info);
+       i < m_part_info->get_tot_partitions();
+       i = sdb_get_next_used_partition(m_part_info, i)) {
     uint part_id = i;
     convert_sub2main_part_id(part_id);
+#ifdef IS_MARIADB
+    if (VERSIONING_PARTITION == m_part_info->part_type) {
+      break;
+    }
+#endif
     if (last_part_id != UINT_MAX32 && (part_id - last_part_id) > 1) {
       need_cond_or = true;
       break;
@@ -1666,7 +3053,6 @@ int ha_sdb_part::append_range_cond(bson::BSONArrayBuilder &builder) {
     if (rc != 0) {
       goto error;
     }
-
   } else {
     try {
       bson::BSONObjBuilder or_obj_builder(builder.subobjStart());
@@ -1779,8 +3165,9 @@ int ha_sdb_part::append_shard_cond(bson::BSONObj &condition) {
       bson::BSONObjBuilder sub_obj(builder.subobjStart(SDB_FIELD_PART_HASH_ID));
       bson::BSONArrayBuilder sub_array(sub_obj.subarrayStart("$in"));
       uint last_part_id = -1;
-      for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-           i = m_part_info->get_next_used_partition(i)) {
+      for (uint i = sdb_get_first_used_partition(m_part_info);
+           i < m_part_info->get_tot_partitions();
+           i = sdb_get_next_used_partition(m_part_info, i)) {
         uint part_id = i;
         convert_sub2main_part_id(part_id);
         if (part_id != last_part_id) {
@@ -1818,18 +3205,43 @@ error:
 
 int ha_sdb_part::pre_first_rnd_next(bson::BSONObj &condition) {
   static const uint HASH_IGNORED_FLAG =
-      (PARTITION_ALTER_FLAG & (~(Alter_info::ALTER_REMOVE_PARTITIONING |
-                                 Alter_info::ALTER_PARTITION)));
+      (SDB_PARTITION_ALTER_FLAG &
+       (~(ALTER_PARTITION_REMOVE | ALTER_PARTITION_INFO)));
 
   int rc = 0;
+  bool has_valid_part = true;
   THD *thd = ha_thd();
 
   rc = test_if_explicit_partition();
   if (rc != 0) {
+    my_printf_error(rc, "Cannot specify HASH or KEY partitions", MYF(0));
     goto error;
   }
 
-  if (MY_BIT_NONE == m_part_info->get_first_used_partition() ||
+#ifdef IS_MARIADB
+  if (VERSIONING_PARTITION == m_part_info->part_type &&
+      INTERVAL_LAST == m_part_info->vers_info->interval.type &&
+      0 == m_part_info->vers_info->limit) {
+    has_valid_part = false;
+    for (uint i = sdb_get_first_used_partition(m_part_info);
+         i < m_part_info->get_tot_partitions();
+         i = sdb_get_next_used_partition(m_part_info, i)) {
+      List_iterator_fast<partition_element> part_it(m_part_info->partitions);
+      partition_element *part_elem;
+      uint pos = 0;
+      while (pos++ <= i) {
+        part_elem = part_it++;
+      }
+      if (part_elem == m_part_info->vers_info->hist_part ||
+          part_elem == m_part_info->vers_info->now_part) {
+        has_valid_part = true;
+      }
+    }
+  }
+#endif
+
+  if (!has_valid_part ||
+      MY_BIT_NONE == sdb_get_first_used_partition(m_part_info) ||
       (HASH_PARTITION == m_part_info->part_type &&
        SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
        thd->lex->alter_info.flags & HASH_IGNORED_FLAG)) {
@@ -1848,10 +3260,11 @@ int ha_sdb_part::pre_index_read_one(bson::BSONObj &condition) {
   int rc = 0;
   rc = test_if_explicit_partition();
   if (rc != 0) {
+    my_printf_error(rc, "Cannot specify HASH or KEY partitions", MYF(0));
     goto error;
   }
 
-  if (MY_BIT_NONE == m_part_info->get_first_used_partition()) {
+  if (MY_BIT_NONE == sdb_get_first_used_partition(m_part_info)) {
     rc = HA_ERR_END_OF_FILE;
     table->status = STATUS_NOT_FOUND;
     goto done;
@@ -2049,14 +3462,19 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
     goto error;
   }
 
+#ifdef IS_MYSQL
   rc = Partition_helper::change_partitions(create_info, path, copied, deleted);
+#elif IS_MARIADB
+  rc = m_handler_wrapper->my_change_partitions(create_info, path, copied,
+                                               deleted);
+#endif
   if (rc != 0) {
     goto error;
   }
 
   /*
     When sequoiadb_execute_only_in_mysql = ON, don't skip
-    Partition_helper::change_partitions() to update partitions status.
+    change_partitions() to update partitions status.
   */
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -2122,11 +3540,16 @@ int ha_sdb_part::truncate_partition_low() {
   Sdb_cl cl;
   uint last_part_id = -1;
   bool truncate_all = bitmap_is_set_all(&m_part_info->read_partitions);
-  DBUG_ASSERT(HASH_PARTITION == m_part_info->part_type ? truncate_all : true);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
     goto done;
+  }
+
+  if (HASH_PARTITION == m_part_info->part_type && !truncate_all) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Cannot specify HASH or KEY partitions", MYF(0));
+    goto error;
   }
 
   rc = check_sdb_in_thd(ha_thd(), &conn, true);
@@ -2149,8 +3572,9 @@ int ha_sdb_part::truncate_partition_low() {
     goto done;
   }
 
-  for (uint i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-       i = m_part_info->get_next_used_partition(i)) {
+  for (uint i = sdb_get_first_used_partition(m_part_info);
+       i < m_part_info->get_tot_partitions();
+       i = sdb_get_next_used_partition(m_part_info, i)) {
     uint part_id = i;
     convert_sub2main_part_id(part_id);
     if (part_id == last_part_id) {
@@ -2313,11 +3737,11 @@ int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
     String str(buf, sizeof(buf), system_charset_info);
     str.length(0);
     str.append("No matched partition, please update or delete the record:\n");
-    append_row_to_str(str, m_err_rec, m_table);
+    ::append_row_to_str(str, m_err_rec, table);
 
-    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                    m_table->alias, "repair", INSERT_FAIL_MSG, src_part_name,
-                    dst_part_name, str.c_ptr_safe());
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                    sdb_get_table_alias(table), "repair", INSERT_FAIL_MSG,
+                    src_part_name, dst_part_name, str.c_ptr_safe());
     rc = HA_ADMIN_CORRUPT;
     goto error;
   }
@@ -2327,7 +3751,7 @@ int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
     for every N row, so the repair will be one large transaction!
   */
   // record auto_increment field always has value.
-  rc = row_to_obj(m_table->record[0], new_obj, true, false, tmp_obj, true);
+  rc = row_to_obj(table->record[0], new_obj, true, false, tmp_obj, true);
   if (0 == rc) {
     rc = mcl.insert(new_obj, hint);
   }
@@ -2339,11 +3763,11 @@ int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
     if (get_sdb_code(rc) == SDB_IXM_DUP_KEY) {
       str.append("Duplicate key found, please update or delete the record:\n");
     }
-    append_row_to_str(str, m_err_rec, m_table);
+    ::append_row_to_str(str, m_err_rec, table);
 
-    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                    m_table->alias, "repair", INSERT_FAIL_MSG, src_part_name,
-                    dst_part_name, str.c_ptr_safe());
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                    sdb_get_table_alias(table), "repair", INSERT_FAIL_MSG,
+                    src_part_name, dst_part_name, str.c_ptr_safe());
 
     // If the engine supports transactions, the failure will be rollbacked.
     // Log this error, so the DBA can notice it and fix it!
@@ -2351,7 +3775,7 @@ int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
       char msg[MYSQL_ERRMSG_SIZE] = {0};
       snprintf(msg, sizeof(msg), INSERT_FAIL_MSG, src_part_name, dst_part_name,
                str.c_ptr_safe());
-      sql_print_error("Table '%-192s': %s", m_table->s->table_name.str, msg);
+      sql_print_error("Table '%-192s': %s", table->s->table_name.str, msg);
     }
     rc = HA_ADMIN_CORRUPT;
     goto error;
@@ -2371,7 +3795,7 @@ int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
       from the wrong partition.
     */
     str.length(0);
-    append_row_to_str(str, m_err_rec, m_table);
+    ::append_row_to_str(str, m_err_rec, table);
 
     /* Log this error, so the DBA can notice it and fix it! */
     sql_print_error(
@@ -2379,7 +3803,7 @@ int ha_sdb_part::move_misplaced_row(THD *thd, Sdb_conn *conn, Sdb_cl &mcl,
         " error %d. But it was already inserted into"
         " part %d, when moving the misplaced row!"
         "\nPlease manually fix the duplicate row:\n%s",
-        m_table->s->table_name.str, src_part_id, rc, dst_part_id,
+        table->s->table_name.str, src_part_id, rc, dst_part_id,
         str.c_ptr_safe());
     rc = HA_ADMIN_CORRUPT;
     goto error;
@@ -2421,8 +3845,8 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
   */
   rc = check_sdb_in_thd(thd, &conn, true);
   if (rc != 0) {
-    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                    m_table->alias, op_name,
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                    sdb_get_table_alias(table), op_name,
                     "Failed to get SequoiaDB connection, error: %d", rc);
     rc = HA_ADMIN_FAILED;
     goto error;
@@ -2433,8 +3857,8 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
   build_scl_name(table_name, read_part_name, scl_name);
   rc = conn->get_cl(db_name, scl_name, scl);
   if (rc != 0) {
-    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                    m_table->alias, op_name,
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                    sdb_get_table_alias(table), op_name,
                     "Failed to get sub collection %s, error: %d", scl_name, rc);
     rc = HA_ADMIN_FAILED;
     goto error;
@@ -2442,8 +3866,8 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
 
   if (repair) {
     // We must read the full row, if we need to move it!
-    bitmap_set_all(m_table->read_set);
-    bitmap_set_all(m_table->write_set);
+    bitmap_set_all(table->read_set);
+    bitmap_set_all(table->write_set);
 
     bson::BSONObjBuilder builder;
     sdb_build_clientinfo(thd, builder);
@@ -2451,8 +3875,8 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
 
     rc = conn->get_cl(db_name, table_name, mcl);
     if (rc != 0) {
-      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                      m_table->alias, "repair",
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                      sdb_get_table_alias(table), "repair",
                       "Failed to get collection, error: %d", rc);
       rc = HA_ADMIN_FAILED;
       goto error;
@@ -2460,8 +3884,8 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
 
     rc = conn->begin_transaction(thd->tx_isolation);
     if (rc != 0) {
-      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                      m_table->alias, op_name,
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                      sdb_get_table_alias(table), op_name,
                       "Failed to start transaction, error: %d", rc);
       rc = HA_ADMIN_FAILED;
       goto error;
@@ -2469,14 +3893,14 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
 
   } else {
     // Only need to read the partitioning fields.
-    bitmap_union(m_table->read_set, &m_part_info->full_part_field_set);
+    bitmap_union(table->read_set, &m_part_info->full_part_field_set);
     build_selector(selector);
   }
 
   rc = scl.query(SDB_EMPTY_BSON, selector);
   if (rc != 0) {
-    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                    m_table->alias, op_name,
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                    sdb_get_table_alias(table), op_name,
                     "Failed to query from partition %s, error: %d",
                     read_part_name, rc);
     rc = HA_ADMIN_FAILED;
@@ -2486,10 +3910,10 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
   while (0 == (rc = scl.next(obj, false))) {
     const char *correct_part_name = NULL;
 
-    rc = obj_to_row(obj, m_table->record[0]);
+    rc = obj_to_row(obj, table->record[0]);
     if (rc != 0) {
-      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                      m_table->alias, op_name,
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                      sdb_get_table_alias(table), op_name,
                       "Failed to convert BSON to mysql row, error: %d", rc);
       rc = HA_ADMIN_FAILED;
       goto error;
@@ -2519,10 +3943,10 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
       char buf[MAX_KEY_LENGTH] = {0};
       String str(buf, sizeof(buf), system_charset_info);
       str.length(0);
-      append_row_to_str(str, m_err_rec, m_table);
+      ::append_row_to_str(str, m_err_rec, table);
 
-      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                      m_table->alias, op_name,
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                      sdb_get_table_alias(table), op_name,
                       "Found a misplaced row"
                       " in part %s should be in part %s:\n%s",
                       read_part_name, correct_part_name, str.c_ptr_safe());
@@ -2543,8 +3967,8 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
   }
   rc = (HA_ERR_END_OF_FILE == rc) ? 0 : rc;
   if (rc != 0) {
-    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                    m_table->alias, op_name,
+    print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                    sdb_get_table_alias(table), op_name,
                     "Failed to get next record from part %s, error: %d",
                     read_part_name, rc);
     rc = HA_ADMIN_FAILED;
@@ -2554,17 +3978,17 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
   if (repair) {
     rc = conn->commit_transaction();
     if (rc != 0) {
-      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", m_table->s->db.str,
-                      m_table->alias, op_name,
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
+                      sdb_get_table_alias(table), op_name,
                       "Failed to commit transaction, error: %d", rc);
       rc = HA_ADMIN_FAILED;
       goto error;
     }
 
     if (num_misplaced_rows > 0) {
-      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "warning", m_table->s->db.str,
-                      m_table->alias, op_name, "Moved %lld misplaced rows",
-                      num_misplaced_rows);
+      print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "warning", table->s->db.str,
+                      sdb_get_table_alias(table), op_name,
+                      "Moved %lld misplaced rows", num_misplaced_rows);
     }
   }
 done:
@@ -2593,8 +4017,9 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
   if (HASH_PARTITION == m_part_info->part_type) {
     if (thd->lex->alter_info.partition_names.elements > 0) {
       rc = HA_ADMIN_INVALID;
-      print_admin_msg(thd, 256, "error", table_share->db.str, table->alias,
-                      op_name, "Cannot specify HASH or KEY partitions");
+      print_admin_msg(thd, 256, "error", table_share->db.str,
+                      sdb_get_table_alias(table), op_name,
+                      "Cannot specify HASH or KEY partitions");
       goto error;
     }
     // Nothing to check for hash partition.
@@ -2603,8 +4028,13 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
 
   // Can't explicitly specify sub partition.
   if (m_part_info->is_sub_partitioned()) {
-    List_iterator<String> names_it(thd->lex->alter_info.partition_names);
+#ifdef IS_MYSQL
     String *name = NULL;
+    List_iterator<String> names_it(thd->lex->alter_info.partition_names);
+#elif IS_MARIADB
+    const char *name = NULL;
+    List_iterator<const char> names_it(thd->lex->alter_info.partition_names);
+#endif
 
     while ((name = names_it++)) {
       List_iterator<partition_element> part_it(m_part_info->partitions);
@@ -2615,11 +4045,16 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
         partition_element *sub_elem = NULL;
 
         while ((sub_elem = sub_it++)) {
-          if (0 == my_strcasecmp(system_charset_info, name->c_ptr(),
+          if (0 == my_strcasecmp(system_charset_info,
+#ifdef IS_MYSQL
+                                 name->c_ptr(),
+#elif IS_MARIADB
+                                 name,
+#endif
                                  sub_elem->partition_name)) {
             rc = HA_ADMIN_INVALID;
             print_admin_msg(thd, 256, "error", table_share->db.str,
-                            table->alias, op_name,
+                            sdb_get_table_alias(table), op_name,
                             "Specifying subpartitions is not supported");
             goto error;
           }
@@ -2633,8 +4068,9 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
     goto error;
   }
 
-  for (i = m_part_info->get_first_used_partition(); i < m_tot_parts;
-       i = m_part_info->get_next_used_partition(i)) {
+  for (i = sdb_get_first_used_partition(m_part_info);
+       i < m_part_info->get_tot_partitions();
+       i = sdb_get_next_used_partition(m_part_info, i)) {
     uint part_id = i;
     convert_sub2main_part_id(part_id);
     if (part_id == last_part_id) {
@@ -2644,8 +4080,9 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, HA_CHECK_OPT *check_opt,
 
     rc = check_misplaced_rows(thd, part_id, repair);
     if (rc != 0) {
-      print_admin_msg(thd, 256, "error", table_share->db.str, table->alias,
-                      op_name, "Partition %s returned error",
+      print_admin_msg(thd, 256, "error", table_share->db.str,
+                      sdb_get_table_alias(table), op_name,
+                      "Partition %s returned error",
                       sdb_get_partition_name(m_part_info, part_id));
       break;
     }
@@ -2663,5 +4100,3 @@ int ha_sdb_part::check(THD *thd, HA_CHECK_OPT *check_opt) {
 int ha_sdb_part::repair(THD *thd, HA_CHECK_OPT *repair_opt) {
   return check_misplaced_rows(thd, repair_opt, true);
 }
-
-#endif  // IS_MYSQL

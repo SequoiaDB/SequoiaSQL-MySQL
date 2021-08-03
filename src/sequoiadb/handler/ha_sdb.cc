@@ -38,11 +38,11 @@
 #include <sql_base.h>
 #include <sql_parse.h>
 #include "server_ha.h"
+#include "ha_sdb_part.h"
 
 #ifdef IS_MYSQL
 #include <table_trigger_dispatcher.h>
 #include <json_dom.h>
-#include "ha_sdb_part.h"
 #elif IS_MARIADB
 #include "ha_sdb_seq.h"
 #endif
@@ -217,12 +217,6 @@ error:
   ssp = null_ptr;
   goto done;
 }
-
-#ifdef IS_MYSQL
-static uint sdb_partition_flags() {
-  return (HA_CANNOT_PARTITION_FK | HA_CAN_PARTITION_UNIQUE);
-}
-#endif
 
 static ulonglong sdb_default_autoinc_acquire_size(enum enum_field_types type) {
   ulonglong default_value = 0;
@@ -705,7 +699,8 @@ int sdb_handle_sort_condition(THD *thd, TABLE *table,
   const bool use_having_condition = sdb_having_condition(thd);
   const bool use_distinct = sdb_use_distinct(thd);
   const bool use_force_index = table->force_index;
-  if (!join || use_having_condition || use_distinct || use_force_index) {
+  if (!(*sdb_condition) || !join || use_having_condition || use_distinct ||
+      use_force_index) {
     goto done;
   }
   if (sdb_where_condition(thd)) {
@@ -1232,6 +1227,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_insert_with_update = false;
   m_secondary_sort_rowid = false;
   m_use_bulk_insert = false;
+  m_del_ren_main_cl = false;
   m_bulk_insert_total = 0;
   m_has_update_insert_id = false;
   total_count = 0;
@@ -1501,6 +1497,7 @@ int ha_sdb::reset() {
   m_insert_with_update = false;
   m_secondary_sort_rowid = false;
   m_use_bulk_insert = false;
+  m_del_ren_main_cl = false;
   m_has_update_insert_id = false;
 
   // when sdb_use_transaction is off, in some situation reset will
@@ -5542,6 +5539,10 @@ int ha_sdb::extra(enum ha_extra_function operation) {
     case HA_EXTRA_SECONDARY_SORT_ROWID:
       m_secondary_sort_rowid = true;
       break;
+#elif IS_MARIADB
+    case HA_EXTRA_DEL_REN_PART_TABLE:
+      m_del_ren_main_cl = true;
+      break;
 #endif
     // To make them effective until ::reset(), ignore this reset here.
     case HA_EXTRA_NO_IGNORE_DUP_KEY:
@@ -6367,6 +6368,76 @@ done:
 error:
   goto done;
 }
+
+int ha_sdb::prepare_delete_part_table(THD *thd, bool &is_skip) {
+  int rc = 0;
+  int name_len = 0;
+  char *sep = NULL;
+  char *pos = table_name;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  char skip_delete_cl[SDB_CL_NAME_MAX_SIZE + 1] = "";
+
+  m_del_ren_main_cl = false;
+  while (sep = strstr(pos, SDB_PART_SEP)) {
+    pos = sep + 1;
+  }
+  sep = pos - 1;
+
+  DBUG_ASSERT((sep - table_name) > 0);
+  /*
+     There are several scenarios delete main_cl directly:
+       1. DROP TABLE t1
+       2. ALTER TABLE t1 REMOVE PARTITIONING
+       3. CREATE TABLE t1(id INT, a INT);
+          ALTER TABLE t1 PARTITION BY RANGE(id) (
+              PARTITION p0 VALUES LESS THAN (100),
+              PARTITION p1 VALUES LESS THAN (200)
+          )
+       4. ALTER TABLE using copy algorithm, like 'ALTER TABLE t1 CHANGE
+          a b INT'
+  */
+  if (SQLCOM_DROP_TABLE == thd_sql_command(thd) ||
+      (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
+       (sdb_alter_partition_flags(thd) & ALTER_PARTITION_REMOVE ||
+        sdb_alter_partition_flags(thd) & ALTER_PARTITION_INFO ||
+        !sdb_alter_partition_flags(thd)))) {
+    name_len = (int)(sep - table_name);
+  } else {
+    name_len = strlen(table_name);
+  }
+  memcpy(skip_delete_cl, table_name, name_len);
+  skip_delete_cl[name_len] = '\0';
+
+  if (thd_sdb->part_del_ren_ctx) {
+    if (thd_sdb->part_del_ren_ctx->query_id == ha_thd()->query_id &&
+        0 ==
+            strcmp(thd_sdb->part_del_ren_ctx->skip_delete_cl, skip_delete_cl)) {
+      is_skip = true;
+      goto done;
+    } else {
+      memcpy(thd_sdb->part_del_ren_ctx->skip_delete_cl, skip_delete_cl,
+             name_len);
+      thd_sdb->part_del_ren_ctx->skip_delete_cl[name_len] = '\0';
+      thd_sdb->part_del_ren_ctx->query_id = ha_thd()->query_id;
+      table_name[name_len] = '\0';
+    }
+  } else {
+    thd_sdb->part_del_ren_ctx = new (std::nothrow) Sdb_part_del_ren_ctx;
+    if (!thd_sdb->part_del_ren_ctx) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+    memcpy(thd_sdb->part_del_ren_ctx->skip_delete_cl, skip_delete_cl, name_len);
+    thd_sdb->part_del_ren_ctx->skip_delete_cl[name_len] = '\0';
+    thd_sdb->part_del_ren_ctx->query_id = ha_thd()->query_id;
+    table_name[name_len] = '\0';
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
 #endif
 
 int ha_sdb::delete_table(const char *from) {
@@ -6378,8 +6449,14 @@ int ha_sdb::delete_table(const char *from) {
 #ifdef IS_MARIADB
   bool is_temporary = false;
   bool deleted = false;
+  bool is_skip = false;
+  bool is_part = m_del_ren_main_cl ||
+                 (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
+                  (sdb_alter_partition_flags(thd) &
+                   (SDB_PARTITION_ALTER_FLAG &
+                    ~(ALTER_PARTITION_INFO | ALTER_PARTITION_REMOVE))));
 #endif
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  Thd_sdb *thd_sdb = NULL;
 
   if (sdb_execute_only_in_mysql(thd)
 // Don't skip dropping sequence when dropping database for MariaDB.
@@ -6390,13 +6467,19 @@ int ha_sdb::delete_table(const char *from) {
     goto done;
   }
 
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+  thd_sdb = thd_get_thd_sdb(thd);
+
   rc = sdb_parse_table_name(from, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
   if (rc != 0) {
     goto error;
   }
 
-#ifdef IS_MYSQL
   if (thd_sdb && thd_sdb->part_alter_ctx &&
       thd_sdb->part_alter_ctx->skip_delete_table(table_name)) {
     if (thd_sdb->part_alter_ctx->empty()) {
@@ -6408,12 +6491,26 @@ int ha_sdb::delete_table(const char *from) {
   sdb_convert_sub2main_partition_name(table_name);
 
   if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
-      thd->lex->alter_info.flags & Alter_info::ALTER_DROP_PARTITION) {
+      sdb_alter_partition_flags(thd) & ALTER_PARTITION_DROP) {
     rc = drop_partition(thd, db_name, table_name);
     if (rc != 0) {
       goto error;
     }
     goto done;
+  }
+
+#ifdef IS_MARIADB
+  if (is_part) {
+    rc = prepare_delete_part_table(thd, is_skip);
+    if (rc) {
+      goto error;
+    }
+    if (is_skip) {
+      goto done;
+    }
+  } else if (thd_sdb->part_del_ren_ctx) {
+    delete thd_sdb->part_del_ren_ctx;
+    thd_sdb->part_del_ren_ctx = NULL;
   }
 #endif
 
@@ -6426,12 +6523,6 @@ int ha_sdb::delete_table(const char *from) {
       goto error;
     }
   }
-
-  rc = check_sdb_in_thd(thd, &conn, true);
-  if (0 != rc) {
-    goto error;
-  }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
 #ifdef IS_MARIADB
   rc = try_drop_as_sequence(conn, is_temporary, db_name, table_name, deleted);
@@ -6488,6 +6579,146 @@ done:
 error:
   goto done;
 }
+
+int sdb_rename_main_cl(Sdb_conn *conn, const char *old_db_name,
+                       const char *old_table_name, const char *new_table_name) {
+  int rc = 0;
+  const char *pos = NULL;
+  const char *part_sep = NULL;
+  int old_main_cl_len = 0;
+  int new_main_cl_len = 0;
+  char old_main_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
+  char new_main_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
+
+  pos = old_table_name;
+  while (part_sep = strstr(pos, SDB_PART_SEP)) {
+    pos = part_sep + 1;
+  }
+  part_sep = pos - 1;
+  old_main_cl_len = int(part_sep - old_table_name);
+  memcpy(old_main_cl_name, old_table_name, old_main_cl_len);
+  old_main_cl_name[old_main_cl_len] = '\0';
+
+  pos = new_table_name;
+  while (part_sep = strstr(pos, SDB_PART_SEP)) {
+    pos = part_sep + 1;
+  }
+  part_sep = pos - 1;
+  new_main_cl_len = int(part_sep - new_table_name);
+  memcpy(new_main_cl_name, new_table_name, new_main_cl_len);
+  new_main_cl_name[new_main_cl_len] = '\0';
+
+  rc = conn->rename_cl(old_db_name, old_main_cl_name, new_main_cl_name);
+  if (rc != 0) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int ha_sdb::prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
+                                      char *old_table_name,
+                                      char *new_table_name, bool &is_skip) {
+  int rc = 0;
+  int main_cl_len = 0;
+  int sub_cl_len = 0;
+  char *part_sep = NULL;
+  char *pos = old_table_name;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  char skip_rename_main_cl[SDB_CL_NAME_MAX_SIZE + 1] = "";
+  char skip_rename_sub_cl[SDB_CL_NAME_MAX_SIZE + 1] = "";
+
+  m_del_ren_main_cl = false;
+  while (part_sep = strstr(pos, SDB_PART_SEP)) {
+    pos = part_sep + 1;
+  }
+  part_sep = pos - 1;
+
+  DBUG_ASSERT((part_sep - old_table_name) > 0);
+  main_cl_len = (int)(part_sep - old_table_name);
+  sub_cl_len = strlen(old_table_name);
+  memcpy(skip_rename_main_cl, old_table_name, main_cl_len);
+  skip_rename_main_cl[main_cl_len] = '\0';
+  memcpy(skip_rename_sub_cl, old_table_name, sub_cl_len);
+  skip_rename_sub_cl[sub_cl_len] = '\0';
+
+  if (thd_sdb->part_del_ren_ctx) {
+    if (thd_sdb->part_del_ren_ctx->query_id == ha_thd()->query_id &&
+        0 == strcmp(thd_sdb->part_del_ren_ctx->skip_rename_sub_cl,
+                    skip_rename_sub_cl)) {
+      is_skip = true;
+      goto done;
+    }
+    if (thd_sdb->part_del_ren_ctx->query_id != ha_thd()->query_id ||
+        (0 != strcmp(thd_sdb->part_del_ren_ctx->skip_rename_sub_cl,
+                     skip_rename_sub_cl) &&
+         0 != strcmp(thd_sdb->part_del_ren_ctx->skip_rename_main_cl,
+                     skip_rename_main_cl))) {
+      /*
+        There are several scenarios need to rename main_cl:
+          1. RENAME TABLE t1 TO t2
+          2. ALTER TABLE t1 REMOVE PARTITIONING
+          3. CREATE TABLE t1(id INT, a INT);
+             ALTER TABLE t1 PARTITION BY RANGE(id) (
+                 PARTITION p0 VALUES LESS THAN (100),
+                 PARTITION p1 VALUES LESS THAN (200)
+             )
+          4. ALTER TABLE using copy algorithm, like 'ALTER TABLE t1 CHANGE
+             a b INT'
+      */
+      if (SQLCOM_RENAME_TABLE == thd_sql_command(thd) ||
+          (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
+           (sdb_alter_partition_flags(thd) & ALTER_PARTITION_REMOVE ||
+            sdb_alter_partition_flags(thd) & ALTER_PARTITION_INFO ||
+            !sdb_alter_partition_flags(thd)))) {
+        // rename main_cl
+        rc = sdb_rename_main_cl(conn, db_name, old_table_name, new_table_name);
+        if (rc != 0) {
+          goto error;
+        }
+      }
+    }
+    memcpy(thd_sdb->part_del_ren_ctx->skip_rename_main_cl, skip_rename_main_cl,
+           main_cl_len);
+    thd_sdb->part_del_ren_ctx->skip_rename_main_cl[main_cl_len] = '\0';
+    memcpy(thd_sdb->part_del_ren_ctx->skip_rename_sub_cl, skip_rename_sub_cl,
+           sub_cl_len);
+    thd_sdb->part_del_ren_ctx->skip_rename_sub_cl[sub_cl_len] = '\0';
+    thd_sdb->part_del_ren_ctx->query_id = ha_thd()->query_id;
+  } else {
+    thd_sdb->part_del_ren_ctx = new (std::nothrow) Sdb_part_del_ren_ctx;
+    if (!thd_sdb->part_del_ren_ctx) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+    // rename main_cl
+    if (SQLCOM_RENAME_TABLE == thd_sql_command(thd) ||
+        (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
+         (sdb_alter_partition_flags(thd) & ALTER_PARTITION_REMOVE ||
+          sdb_alter_partition_flags(thd) & ALTER_PARTITION_INFO ||
+          !sdb_alter_partition_flags(thd)))) {
+      rc = sdb_rename_main_cl(conn, db_name, old_table_name, new_table_name);
+      if (rc != 0) {
+        goto error;
+      }
+    }
+    memcpy(thd_sdb->part_del_ren_ctx->skip_rename_main_cl, skip_rename_main_cl,
+           main_cl_len);
+    thd_sdb->part_del_ren_ctx->skip_rename_main_cl[main_cl_len] = '\0';
+    memcpy(thd_sdb->part_del_ren_ctx->skip_rename_sub_cl, skip_rename_sub_cl,
+           sub_cl_len);
+    thd_sdb->part_del_ren_ctx->skip_rename_sub_cl[sub_cl_len] = '\0';
+    thd_sdb->part_del_ren_ctx->query_id = ha_thd()->query_id;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
 #endif
 
 int ha_sdb::rename_table(const char *from, const char *to) {
@@ -6498,9 +6729,15 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   int rc = 0;
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  Thd_sdb *thd_sdb = NULL;
 #ifdef IS_MARIADB
   bool renamed = false;
+  bool is_skip = false;
+  bool is_part = m_del_ren_main_cl ||
+                 (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
+                  (sdb_alter_partition_flags(thd) &
+                   (SDB_PARTITION_ALTER_FLAG &
+                    ~(ALTER_PARTITION_INFO | ALTER_PARTITION_REMOVE))));
 #endif
   char old_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char old_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
@@ -6510,6 +6747,13 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
   }
+
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
+  thd_sdb = thd_get_thd_sdb(thd);
 
   rc = sdb_parse_table_name(from, old_db_name, SDB_CS_NAME_MAX_SIZE,
                             old_table_name, SDB_CL_NAME_MAX_SIZE);
@@ -6523,13 +6767,6 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto error;
   }
 
-  check_sdb_in_thd(thd, &conn, true);
-  if (0 != rc) {
-    goto error;
-  }
-  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
-
-#ifdef IS_MYSQL
   if (thd_sdb && thd_sdb->part_alter_ctx &&
       thd_sdb->part_alter_ctx->skip_rename_table(new_table_name)) {
     if (thd_sdb->part_alter_ctx->empty()) {
@@ -6540,7 +6777,6 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   }
   sdb_convert_sub2main_partition_name(old_table_name);
   sdb_convert_sub2main_partition_name(new_table_name);
-#endif
 
   if (sdb_is_tmp_table(from, old_table_name)) {
     rc = sdb_rebuild_db_name_of_temp_table(old_db_name, SDB_CS_NAME_MAX_SIZE);
@@ -6592,9 +6828,28 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   if (renamed) {
     goto done;
   }
+
+  if (is_part) {
+    rc = prepare_rename_part_table(thd, conn, old_db_name, old_table_name,
+                                   new_table_name, is_skip);
+    if (rc) {
+      goto error;
+    }
+    if (is_skip) {
+      goto done;
+    }
+  } else if (thd_sdb->part_del_ren_ctx) {
+    delete thd_sdb->part_del_ren_ctx;
+    thd_sdb->part_del_ren_ctx = NULL;
+  }
 #endif
 
   rc = conn->rename_cl(old_db_name, old_table_name, new_table_name);
+#ifdef IS_MARIADB
+  if (is_part && SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+    rc = 0;
+  }
+#endif
   if (0 != rc) {
     goto error;
   }
@@ -6618,9 +6873,8 @@ set_cata_version:
   goto done;
 }
 
-#ifdef IS_MYSQL
 int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
-  DBUG_ENTER("ha_sdb::rename_table");
+  DBUG_ENTER("ha_sdb::drop_partition");
 
   int rc = 0;
   Sdb_conn *conn = NULL;
@@ -6767,7 +7021,6 @@ done:
 error:
   goto done;
 }
-#endif
 
 int ha_sdb::get_default_sharding_key(TABLE *form, bson::BSONObj &sharding_key) {
   int rc = 0;
@@ -7964,13 +8217,18 @@ static handler *sdb_create_handler(handlerton *hton, TABLE_SHARE *table,
     file = p;
     goto done;
   }
-/*
-  Just like a normal table, the handler of sequence is also created by us.
-  Sequence operations are performed according to the handler we created later.
-  This is handled in the same way as a partition table, abstract a sequence
-  handler class.
-*/
 #elif IS_MARIADB
+  if (table && table->partition_info_str && table->partition_info_str_len) {
+    ha_sdb_part *p = new (mem_root) ha_sdb_part(hton, table);
+    file = p;
+    goto done;
+  }
+  /*
+    Just like a normal table, the handler of sequence is also created by us.
+    Sequence operations are performed according to the handler we created later.
+    This is handled in the same way as a partition table, abstract a sequence
+    handler class.
+  */
   if (table && table->sequence) {
     ha_sdb_seq *p = new (mem_root) ha_sdb_seq(hton, table);
     file = p;
@@ -8250,6 +8508,32 @@ error:
   goto done;
 }
 
+#ifdef IS_MARIADB
+static handler *(*mysql_org_create_partition_func)(handlerton *, TABLE_SHARE *,
+                                                   MEM_ROOT *) = NULL;
+
+static handler *sdb_create_partition_handler(handlerton *hton,
+                                             TABLE_SHARE *share,
+                                             MEM_ROOT *mem_root) {
+  handler *file = NULL;
+  if (share && share->normalized_path.str &&
+      sdb_check_engine_by_par_file(share->normalized_path.str)) {
+    ha_sdb_part_wrapper *p = new (mem_root) ha_sdb_part_wrapper(hton, share);
+    if (p && p->initialize_partition(mem_root)) {
+      delete p;
+      p = NULL;
+      goto done;
+    }
+    file = p;
+  } else {
+    file = (*mysql_org_create_partition_func)(hton, share, mem_root);
+  }
+
+done:
+  return file;
+}
+#endif
+
 static int sdb_init_func(void *p) {
   int rc = SDB_ERR_OK;
   const char *sys_var_str = NULL;
@@ -8272,13 +8556,19 @@ static int sdb_init_func(void *p) {
   sdb_hton->rollback = sdb_rollback;
   sdb_hton->drop_database = sdb_drop_database;
   sdb_hton->close_connection = sdb_close_connection;
-#ifdef IS_MARIADB
-  sdb_hton->flags = (HTON_SUPPORT_LOG_TABLES | HTON_NO_PARTITION);
-  sdb_hton->kill_query = sdb_kill_query;
-#else
   sdb_hton->flags = HTON_SUPPORT_LOG_TABLES;
-  sdb_hton->kill_connection = sdb_kill_connection;
   sdb_hton->partition_flags = sdb_partition_flags;
+#ifdef IS_MYSQL
+  sdb_hton->kill_connection = sdb_kill_connection;
+#elif IS_MARIADB
+  sdb_hton->kill_query = sdb_kill_query;
+  // Overwrite the entry to create partitioned table to adapt SequoiaDB.
+  handlerton *part_engine =
+      ha_resolve_by_legacy_type(NULL, DB_TYPE_PARTITION_DB);
+  if (part_engine) {
+    mysql_org_create_partition_func = part_engine->create;
+    part_engine->create = sdb_create_partition_handler;
+  }
 #endif
   if (conn_addrs.parse_conn_addrs(sdb_conn_str)) {
     SDB_LOG_ERROR("Invalid value sequoiadb_conn_addr=%s", sdb_conn_str);

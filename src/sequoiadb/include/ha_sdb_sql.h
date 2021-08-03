@@ -99,6 +99,18 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define ALTER_COLUMN_COLUMN_FORMAT \
   Alter_inplace_info::ALTER_COLUMN_COLUMN_FORMAT
 
+// Partition flags
+#define ALTER_PARTITION_ADD Alter_info::ALTER_ADD_PARTITION
+#define ALTER_PARTITION_DROP Alter_info::ALTER_DROP_PARTITION
+#define ALTER_PARTITION_COALESCE Alter_info::ALTER_COALESCE_PARTITION
+#define ALTER_PARTITION_REORGANIZE Alter_info::ALTER_REORGANIZE_PARTITION
+#define ALTER_PARTITION_INFO Alter_info::ALTER_PARTITION
+#define ALTER_PARTITION_ADMIN Alter_info::ALTER_ADMIN_PARTITION
+#define ALTER_PARTITION_TABLE_REORG Alter_info::ALTER_TABLE_REORG
+#define ALTER_PARTITION_REBUILD Alter_info::ALTER_REBUILD_PARTITION
+#define ALTER_PARTITION_ALL Alter_info::ALTER_ALL_PARTITION
+#define ALTER_PARTITION_REMOVE Alter_info::ALTER_REMOVE_PARTITIONING
+
 // Other alter flags
 #define ALTER_CHANGE_CREATE_OPTION Alter_inplace_info::CHANGE_CREATE_OPTION
 #define ALTER_RENAME_INDEX Alter_inplace_info::RENAME_INDEX
@@ -184,6 +196,10 @@ extern "C" void thd_mark_transaction_to_rollback(MYSQL_THD thd, bool all);
 
 void trans_register_ha(THD *thd, bool all, handlerton *ht_arg,
                        const ulonglong *trxid);
+
+bool print_admin_msg(THD *thd, uint len, const char *msg_type,
+                     const char *db_name, const char *table_name,
+                     const char *op_name, const char *fmt, ...);
 #endif
 
 /*
@@ -374,6 +390,26 @@ bool sdb_table_has_gcol(TABLE *table);
 const char *sdb_table_alias(TABLE *table);
 
 uint sdb_tables_in_join(JOIN *join);
+
+const char *sdb_get_table_alias(TABLE *table);
+
+// About partition
+uint sdb_partition_flags();
+
+bool sdb_create_tmp_table(HA_CREATE_INFO *create_info);
+
+uint sdb_alter_partition_flags(THD *thd);
+
+uint sdb_get_first_used_partition(const partition_info *part_info);
+
+uint sdb_get_next_used_partition(const partition_info *part_info, uint part_id);
+
+bool sdb_is_partition_locked(partition_info *part_info, uint part_id);
+
+int sdb_get_parts_for_update(const uchar *old_data, uchar *new_data,
+                             const uchar *rec0, partition_info *part_info,
+                             uint32 *old_part_id, uint32 *new_part_id,
+                             longlong *new_func_value);
 
 // About interface
 void sdb_set_timespec(struct timespec &abstime, ulonglong sec);

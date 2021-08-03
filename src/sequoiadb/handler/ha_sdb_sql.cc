@@ -22,11 +22,13 @@
 #include <sql_select.h>
 #include <sql_time.h>
 #include <sql_update.h>
+#include <partition_info.h>
 
 #ifdef IS_MYSQL
 #include <my_thread_local.h>
 #include <my_thread_os_id.h>
 #include <table_trigger_dispatcher.h>
+#include <sql_partition.h>
 #endif
 
 #ifdef IS_MARIADB
@@ -49,6 +51,58 @@ uint calculate_key_len(TABLE *table, uint key, key_part_map keypart_map) {
 void trans_register_ha(THD *thd, bool all, handlerton *ht_arg,
                        const ulonglong *trxid) {
   trans_register_ha(thd, all, ht_arg);
+}
+
+bool print_admin_msg(THD *thd, uint len, const char *msg_type,
+                     const char *db_name, const char *table_name,
+                     const char *op_name, const char *fmt, ...) {
+  bool rs = false;
+  va_list args;
+  Protocol *protocol = thd->protocol;
+  size_t length;
+  size_t msg_length;
+  char name[NAME_LEN * 2 + 2];
+  char *msgbuf;
+
+  if (!(msgbuf = (char *)my_malloc(len, MYF(0)))) {
+    rs = true;
+    goto error;
+  }
+  va_start(args, fmt);
+  msg_length = my_vsnprintf(msgbuf, len, fmt, args);
+  va_end(args);
+  if (msg_length >= (len - 1)) {
+    rs = true;
+    goto error;
+  }
+  msgbuf[len - 1] = 0;  // healthy paranoia
+
+  if (!thd->vio_ok()) {
+    sql_print_error("%s", msgbuf);
+    rs = true;
+    goto done;
+  }
+
+  length = (size_t)(strxmov(name, db_name, ".", table_name, NullS) - name);
+  DBUG_PRINT("info", ("print_admin_msg:  %s, %s, %s, %s", name, op_name,
+                      msg_type, msgbuf));
+  protocol->prepare_for_resend();
+  protocol->store(name, length, system_charset_info);
+  protocol->store(op_name, system_charset_info);
+  protocol->store(msg_type, system_charset_info);
+  protocol->store(msgbuf, msg_length, system_charset_info);
+  if (protocol->write()) {
+    sql_print_error("Failed on my_net_write, writing to stderr instead: %s",
+                    msgbuf);
+    rs = true;
+    goto error;
+  }
+
+done:
+  my_free(msgbuf);
+  return rs;
+error:
+  goto done;
 }
 #endif
 
@@ -580,6 +634,39 @@ const char *sdb_table_alias(TABLE *table) {
 
 uint sdb_tables_in_join(JOIN *join) {
   return join->tables;
+}
+
+const char *sdb_get_table_alias(TABLE *table) {
+  return table->alias;
+}
+
+uint sdb_partition_flags() {
+  return (HA_CANNOT_PARTITION_FK | HA_CAN_PARTITION_UNIQUE);
+}
+
+uint sdb_alter_partition_flags(THD *thd) {
+  return thd->lex->alter_info.flags;
+}
+
+uint sdb_get_first_used_partition(const partition_info *part_info) {
+  return part_info->get_first_used_partition();
+}
+
+uint sdb_get_next_used_partition(const partition_info *part_info,
+                                 uint part_id) {
+  return part_info->get_next_used_partition(part_id);
+}
+
+bool sdb_is_partition_locked(partition_info *part_info, uint part_id) {
+  return part_info->is_partition_locked(part_id);
+}
+
+int sdb_get_parts_for_update(const uchar *old_data, uchar *new_data,
+                             const uchar *rec0, partition_info *part_info,
+                             uint32 *old_part_id, uint32 *new_part_id,
+                             longlong *new_func_value) {
+  return get_parts_for_update(old_data, new_data, rec0, part_info, old_part_id,
+                              new_part_id, new_func_value);
 }
 
 void sdb_set_timespec(struct timespec &abstime, ulonglong sec) {
@@ -1197,6 +1284,51 @@ const char *sdb_table_alias(TABLE *table) {
 
 uint sdb_tables_in_join(JOIN *join) {
   return join->table_count;
+}
+
+const char *sdb_get_table_alias(TABLE *table) {
+  return table->alias.c_ptr_safe();
+}
+
+uint sdb_partition_flags() {
+  return HA_CAN_PARTITION_UNIQUE;
+}
+
+uint sdb_alter_partition_flags(THD *thd) {
+  return thd->lex->alter_info.partition_flags;
+}
+
+uint sdb_get_first_used_partition(const partition_info *part_info) {
+  return bitmap_get_first_set(&part_info->read_partitions);
+}
+
+uint sdb_get_next_used_partition(const partition_info *part_info,
+                                 uint part_id) {
+  return bitmap_get_next_set(&part_info->read_partitions, part_id);
+}
+
+bool sdb_is_partition_locked(partition_info *part_info, uint part_id) {
+  return bitmap_is_set(&part_info->lock_partitions, part_id);
+}
+
+int sdb_get_parts_for_update(const uchar *old_data, uchar *new_data,
+                             const uchar *rec0, partition_info *part_info,
+                             uint32 *old_part_id, uint32 *new_part_id,
+                             longlong *new_func_value) {
+  int rc = 0;
+  rc = get_part_for_buf(old_data, rec0, part_info, old_part_id);
+  if (rc) {
+    goto error;
+  }
+  rc = get_part_for_buf(new_data, rec0, part_info, new_part_id);
+  if (rc) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
 }
 
 void sdb_set_timespec(struct timespec &abstime, ulonglong sec) {
