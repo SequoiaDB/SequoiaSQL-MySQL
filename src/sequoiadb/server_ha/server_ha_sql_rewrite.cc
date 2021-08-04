@@ -14,6 +14,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
 // 'sql_class.h' can be inclued if 'MYSQL_SERVER' is defined
+#ifdef IS_MARIADB
 #ifndef MYSQL_SERVER
 #define MYSQL_SERVER
 #endif
@@ -372,3 +373,4 @@ int ha_rewrite_query(THD *thd, String &rewritten_query) {
   }
   DBUG_RETURN(rc);
 }
+#endif
