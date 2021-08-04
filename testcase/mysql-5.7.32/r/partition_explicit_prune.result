@@ -110,10 +110,10 @@ pNeg	subp0	1
 pNeg	subp1	1
 p0-9	subp2	1
 p0-9	subp3	1
-p10-99	subp4	0
-p10-99	subp5	0
-p100-99999	subp6	0
-p100-99999	subp7	0
+p10-99	subp4	1
+p10-99	subp5	1
+p100-99999	subp6	1
+p100-99999	subp7	1
 SET @@global.innodb_stats_on_metadata=@save_innodb_stats_on_metadata;
 FLUSH STATUS;
 SELECT * FROM t1 PARTITION (pNonexistent);
