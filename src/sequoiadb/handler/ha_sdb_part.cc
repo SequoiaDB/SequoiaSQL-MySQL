@@ -1198,7 +1198,8 @@ error:
 
 /*
   The logic is consistent with ha_partition::rename_partitions, but the
-  usage of m_tot_parts and m_file is different, so the native code is overwritten.
+  usage of m_tot_parts and m_file is different, so the native code is
+  overwritten.
 */
 int ha_sdb_part_wrapper::rename_partitions(const char *path) {
   int rc = 0;
@@ -3126,7 +3127,7 @@ int ha_sdb_part::test_if_explicit_partition(bool *explicit_partition) {
             part_name_str->length());
         if (!part_def) {
           my_error(ER_UNKNOWN_PARTITION, MYF(0), part_name_str->ptr(),
-                   table->alias);
+                   sdb_get_table_alias(table));
           rc = ER_UNKNOWN_PARTITION;
           goto error;
         }
