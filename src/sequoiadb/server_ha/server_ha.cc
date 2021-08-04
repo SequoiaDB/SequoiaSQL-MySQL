@@ -37,6 +37,10 @@
 #include "tztime.h"
 #include "sql_time.h"
 
+#ifdef IS_MARIADB
+#include "server_ha_sql_rewrite.h"
+#endif
+
 // thread local key for ha_sql_stmt_info
 thread_local_key_t ha_sql_stmt_info_key;
 static my_thread_once_t ha_sql_stmt_info_key_once = MY_THREAD_ONCE_INIT;
@@ -4451,6 +4455,22 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
           rc = fix_alter_event_stmt(thd, event, create_query, sql_info);
         }
 
+#ifdef IS_MARIADB
+        // mask plaintext password
+        if (0 == rc &&
+            (SQLCOM_GRANT == sql_command || SQLCOM_CREATE_USER == sql_command ||
+             SQLCOM_ALTER_USER == sql_command)) {
+          rc = ha_rewrite_query(thd, create_query);
+          if (rc) {
+            sql_info->sdb_conn->rollback_transaction();
+            goto error;
+          }
+          if (create_query.length()) {
+            event.general_query = create_query.c_ptr();
+            event.general_query_length = create_query.length();
+          }
+        }
+#endif
         // backup cached state of involved objects
         save_state(sql_info);
 
