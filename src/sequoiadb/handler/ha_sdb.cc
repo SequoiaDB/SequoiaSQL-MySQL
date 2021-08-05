@@ -3703,7 +3703,7 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
             count_query = false;
             goto done;
           }
-        }else if (Item::FIELD_ITEM == item->type()) {
+        } else if (Item::FIELD_ITEM == item->type()) {
           read_one_record = true;
         }
       }
@@ -3741,8 +3741,8 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
       rc = optimize_count(condition, read_one_record);
       if (SDB_ERR_OK == rc && count_query) {
         SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
-                      count_query, condition.toString().c_str(),
-                      db_name, table_name);
+                      count_query, condition.toString().c_str(), db_name,
+                      table_name);
         rc = collection->get_count(total_count, condition, hint);
         if (rc) {
           SDB_LOG_ERROR("Failed to get count on table:%s.%s. rc: %d", db_name,
@@ -5751,7 +5751,7 @@ int ha_sdb::start_statement(THD *thd, uint table_count) {
   DBUG_ENTER("ha_sdb::start_statement()");
   int rc = 0;
 
-  //sdb_add_pfs_clientinfo(thd);
+  // sdb_add_pfs_clientinfo(thd);
 
   rc = pre_start_statement();
   if (0 != rc) {
@@ -8060,7 +8060,7 @@ static int sdb_commit(handlerton *hton, THD *thd, bool all) {
     goto error;
   }
 
-  //sdb_add_pfs_clientinfo(thd);
+  // sdb_add_pfs_clientinfo(thd);
 
   rc = check_sdb_in_thd(thd, &connection, false);
   if (0 != rc) {
