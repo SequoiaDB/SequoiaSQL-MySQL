@@ -28,7 +28,7 @@ uncompressed_length(compress(@test_compress_string))
 select length(compress(@test_compress_string))<length(@test_compress_string);
 length(compress(@test_compress_string))<length(@test_compress_string)
 1
-create table t1 (a text, b char(255), c char(4)) engine=myisam;
+create table t1 (a text, b char(255), c char(4)) engine=sequoiadb;
 insert into t1 (a,b,c) values (compress(@test_compress_string),compress(@test_compress_string),'d ');
 select uncompress(a) from t1;
 uncompress(a)
@@ -94,22 +94,11 @@ drop table t1;
 End of 4.1 tests
 create table t1 (a varchar(32) not null);
 insert into t1 values ('foo');
-explain select * from t1 where uncompress(a) is null;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-Warnings:
-Warning	1259	ZLIB: Input data corrupted
-Note	1003	/* select#1 */ select 'foo' AS `a` from dual where isnull(uncompress('foo'))
 select * from t1 where uncompress(a) is null;
 a
 foo
 Warnings:
 Warning	1259	ZLIB: Input data corrupted
-explain select *, uncompress(a) from t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select 'foo' AS `a`,uncompress('foo') AS `uncompress(a)` from dual
 select *, uncompress(a) from t1;
 a	uncompress(a)
 foo	NULL

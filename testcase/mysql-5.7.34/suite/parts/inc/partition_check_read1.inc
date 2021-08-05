@@ -24,7 +24,7 @@ ANALYZE TABLE t1;
 -- enable_query_log
 
 ## EXPLAIN PARTITIONS SELECT for one single row
-EXPLAIN PARTITIONS SELECT COUNT(*) FROM t1 WHERE f_date = '1000-02-10';
+#EXPLAIN PARTITIONS SELECT COUNT(*) FROM t1 WHERE f_date = '1000-02-10';
 
 ## Check SELECT for one single row
 let $success= 1;

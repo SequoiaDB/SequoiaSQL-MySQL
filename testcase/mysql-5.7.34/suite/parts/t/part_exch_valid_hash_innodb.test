@@ -3,9 +3,9 @@
 
 --source include/have_partition.inc
 
-let $engine_table= InnoDB;
-let $engine_part= InnoDB;
-let $engine_subpart= InnoDB;
+let $engine_table= SequoiaDB;
+let $engine_part= SequoiaDB;
+let $engine_subpart= SequoiaDB;
 
 --source suite/parts/inc/part_exch_valid_hash.inc
 

@@ -827,9 +827,12 @@ INSERT into t1 values (30, 4);
 INSERT into t1 values (35, 2);
 INSERT into t1 values (40, NULL);
 
+# SEQUOIASQLMAINSTREAM-645
+--sorted_result
 select * from t1 force index (b) where b < 10 OR b IS NULL order by b;
 select * from t1 force index (b) where b < 10 ORDER BY b;
 select * from t1 force index (b) where b < 10 ORDER BY b DESC;
+select * from t1 force index (b) where b < 10 ORDER BY b DESC, a;
 drop table t1;
 
 create table t1 (a int not null, b int, c varchar(20), key (a,b,c))

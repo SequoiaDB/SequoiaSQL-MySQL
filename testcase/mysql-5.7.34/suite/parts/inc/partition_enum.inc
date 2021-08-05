@@ -8,12 +8,12 @@ partition pa3 max_rows=30 min_rows=4,
 partition pa4 max_rows=40 min_rows=2);
 show create table t1;
 insert into t1 values ('A'),('D'),('L'),('G');
-select * from t1;
+select * from t1 order by a;
 select * from t1 where a='A';
-update t1 set a='E' where a='L';
-select * from t1;
+#update t1 set a='E' where a='L';
+select * from t1 order by a;
 delete from t1 where a='E';
-select * from t1;
+select * from t1 order by a;
 drop table t1;
 
 eval create table t2 (a enum (
@@ -36,7 +36,7 @@ dec $letter;
 SET sql_mode = default;
 insert into t2 values ('1'),('2'),('3'),('4'),('5'),('6'),('7'),('8'),('9'),('0');
 select count(*) from t2;
-select * from t2;
+select * from t2 order by a;
 drop table t2;
 
 # mleich: Several partitioning functions are no more allowed.

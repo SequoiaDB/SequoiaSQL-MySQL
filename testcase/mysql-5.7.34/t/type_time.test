@@ -2,7 +2,7 @@
 #
 # testing of the TIME column type
 #
-
+--source include/have_sequoiadb.inc
 --disable_warnings
 drop table if exists t1;
 --enable_warnings
@@ -82,7 +82,6 @@ insert into t1 values('2007-07-02', 1);
 insert into t1 values('2007-07-02', 2);
 SELECT sum(f3) FROM t1 where f2='2007-07-01 00:00:00' group by f2;
 drop table t1;
-
 
 --echo #
 --echo # Bug #44792: valgrind warning when casting from time to time
@@ -274,10 +273,9 @@ DROP TABLE t1;
 --echo # Systematic testing of ref access and range scan
 
 SET TIMESTAMP=UNIX_TIMESTAMP('2012-01-31 10:14:35');
-
-CREATE TABLE t1 (col_time_key TIME, KEY(col_time_key)) ENGINE=InnoDB;
+CREATE TABLE t1 (col_time_key TIME, KEY(col_time_key)) ENGINE=Sequoiadb;
 INSERT INTO t1 VALUES ('00:00:00'),('-24:00:00'),('-48:00:00'),('24:00:00'),('48:00:00');
-CREATE TABLE t2 (col_datetime_key DATETIME, KEY(col_datetime_key)) ENGINE=InnoDB;
+CREATE TABLE t2 (col_datetime_key DATETIME, KEY(col_datetime_key)) ENGINE=Sequoiadb;
 INSERT INTO t2 SELECT * FROM t1;
 
 -- disable_result_log
@@ -331,11 +329,11 @@ while ($cnt_0)
             let $second_operand=col_time_key;
           }
   
-          eval EXPLAIN EXTENDED SELECT * FROM
-               $first_table $first_index_hint INDEX ($first_index)
-               STRAIGHT_JOIN
-               $second_table $second_index_hint INDEX ($second_index)
-               WHERE $first_operand $operator $second_operand;
+#          eval EXPLAIN EXTENDED SELECT * FROM
+#               $first_table $first_index_hint INDEX ($first_index)
+#               STRAIGHT_JOIN
+#               $second_table $second_index_hint INDEX ($second_index)
+#               WHERE $first_operand $operator $second_operand;
           --sorted_result
           eval SELECT * FROM
                $first_table $first_index_hint INDEX ($first_index)
@@ -386,7 +384,7 @@ CREATE TABLE t1 (
   col_int_key INT NOT NULL,
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES (10,1,7), (11,7,0), (12,4,9), (13,7,3),
 (14,0,4), (15,2,2), (16,9,5), (17,4,3), (18,0,1), (19,9,3), (20,1,6),
@@ -399,14 +397,14 @@ CREATE TABLE t2 (
   col_varchar_key VARCHAR(1) NOT NULL,
   KEY col_datetime_key (col_datetime_key),
   KEY col_varchar_key (col_varchar_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (1,'2001-11-04 19:07:55','k');
 
 CREATE TABLE t3 (
   col_time_key TIME,
   KEY col_time_key (col_time_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t3 VALUES ('21:22:34'), ('10:50:38'), ('00:21:38'),
 ('04:08:02'), ('16:25:11'), ('10:14:58'), ('19:47:59'), ('11:14:24'),
@@ -422,13 +420,13 @@ ANALYZE TABLE t3;
 
 let $query=SELECT * FROM t2 STRAIGHT_JOIN t3 FORCE INDEX (col_time_key)
            ON t3.col_time_key > t2.col_datetime_key;
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 --sorted_result
 eval $query;
 
 let $query=SELECT * FROM t2 STRAIGHT_JOIN t3 IGNORE INDEX (col_time_key)
            ON t3.col_time_key > t2.col_datetime_key;
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 --sorted_result
 eval $query;
 
@@ -439,3 +437,5 @@ SET sql_mode = default;
 --echo #
 --echo # End of 5.6 tests
 --echo #
+--source include/uninstall_sequoiadb.inc
+

@@ -41,6 +41,8 @@ eval $insert_first_half;
 # 1030: ER_GET_ERRNO
 # 1502: ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF
 # 1506: ER_DROP_PARTITION_NON_EXISTENT
+# 40177: SEQUOIADB, ER_SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY 
+# 40178: SEQUOIADB, ER_SDB_UPDATE_SHARD_KEY   --- FOR #SEQUOIASQLMAINSTREAM-813
 --disable_abort_on_error
 eval $alter;
 --enable_abort_on_error
@@ -50,12 +52,26 @@ if ($no_debug)
 }
 eval SET @my_errno = $mysql_errno;
 let $run_test= `SELECT @my_errno = 0`;
-if (`SELECT @my_errno NOT IN (0,$ER_GET_ERRNO,
+#if (`SELECT @my_errno NOT IN (0,$ER_GET_ERRNO,
+#                              $ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF,
+#                              $ER_DROP_PARTITION_NON_EXISTENT)`);
+#{
+#   --echo #      The last command got an unexepected error response.
+#   --echo #      Expected/handled SQL codes are 0,$ER_GET_ERRNO,$ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF,$ER_DROP_PARTITION_NON_EXISTENT
+#   SELECT '#      SQL code we got was: ' AS "", @my_errno AS "";
+#   --echo #      Sorry, have to abort.
+#   --echo #      Please check the error name to number mapping in inc/partition.pre.
+#   exit;
+#   --echo
+#}
+if (`SELECT @my_errno NOT IN (0, $ER_GET_ERRNO,
+                              $ER_SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY,
+                              $ER_SDB_UPDATE_SHARD_KEY,
                               $ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF,
-                              $ER_DROP_PARTITION_NON_EXISTENT)`);
+                              $ER_DROP_PARTITION_NON_EXISTENT)`)
 {
    --echo #      The last command got an unexepected error response.
-   --echo #      Expected/handled SQL codes are 0,$ER_GET_ERRNO,$ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF,$ER_DROP_PARTITION_NON_EXISTENT
+   --echo #      Expected/handled SQL codes are 0,$ER_GET_ERRNO,$ER_SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY,$ER_SDB_UPDATE_SHARD_KEY,$ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF,$ER_DROP_PARTITION_NON_EXISTENT
    SELECT '#      SQL code we got was: ' AS "", @my_errno AS "";
    --echo #      Sorry, have to abort.
    --echo #      Please check the error name to number mapping in inc/partition.pre.
@@ -67,6 +83,6 @@ if (`SELECT @my_errno NOT IN (0,$ER_GET_ERRNO,
 if ($run_test)
 {
 eval $insert_second_half;
---source suite/parts/inc/partition_check.inc
+#--source suite/parts/inc/partition_check.inc
 }
 DROP TABLE t1;

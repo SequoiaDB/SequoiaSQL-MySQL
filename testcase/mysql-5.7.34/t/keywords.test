@@ -2,6 +2,7 @@
 #
 # Test keywords as fields
 #
+--source include/have_sequoiadb.inc
 
 --disable_warnings
 drop table if exists t1;
@@ -163,3 +164,5 @@ call p2();
 DROP PROCEDURE p1;
 DROP PROCEDURE p2;
 DROP TABLE t1;
+
+--source include/uninstall_sequoiadb.inc

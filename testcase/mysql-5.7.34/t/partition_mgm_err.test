@@ -1,6 +1,6 @@
 
  #Get deafult engine value
---let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
+#--let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
 
 #
 # Simple test for the erroneos create statements using the 
@@ -129,6 +129,7 @@ ALTER TABLE t1 DROP PARTITION x1;
 --error ER_PARTITION_MGMT_ON_NONPARTITIONED
 ALTER TABLE t1 COALESCE PARTITION 1;
 
+--disable_result_log
 ALTER TABLE t1 ANALYZE PARTITION p1;
 
 ALTER TABLE t1 CHECK PARTITION p1;
@@ -136,7 +137,7 @@ ALTER TABLE t1 CHECK PARTITION p1;
 ALTER TABLE t1 OPTIMIZE PARTITION p1;
 
 ALTER TABLE t1 REPAIR PARTITION p1;
-
+--enable_result_log
 DROP TABLE t1;
 
 CREATE TABLE t1 (a int)
@@ -203,12 +204,12 @@ DROP TABLE t1;
 CREATE TABLE t1 (a INT);
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 SHOW CREATE TABLE t1;
 ALTER TABLE t1 PARTITION BY KEY(a) PARTITIONS 2;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
@@ -234,7 +235,7 @@ PARTITION p2 VALUES IN (2) (SUBPARTITION p1b)
 --echo # Bug#20284744: COMMANDS OUT OF SYNC, MALFORMED PACKET, HANG,
 --echo # DISCONNECTIONS
 --echo #
-create table t1 (a int) engine=innodb;
+create table t1 (a int) engine=sequoiadb;
 delimiter $;
 
 create procedure `p1`()
@@ -248,9 +249,11 @@ end $
 delimiter ;$
 
 --echo # Without the fix this would fail with 2027: Malformed packet
+--disable_result_log
 call p1();
 --echo # Without the fix the connection would get out of sync here (error 2014)!
 call p1();
+--enable_result_log
 
 drop procedure p1;
 drop table t1;

@@ -1,6 +1,9 @@
 # Tests which involve triggers and transactions
 # (or just InnoDB storage engine)
---source include/have_innodb.inc
+#--source include/have_SEQUOIADB.inc
+--source include/have_sequoiadb.inc
+create database test_trigger_trans;
+use test_trigger_trans;
 
 --disable_warnings
 drop table if exists t1;
@@ -9,7 +12,7 @@ drop table if exists t1;
 # Test for bug #18153 "OPTIMIZE/ALTER on transactional tables corrupt
 #                      triggers/triggers are lost".
 
-create table t1 (a varchar(16), b int) engine=innodb;
+create table t1 (a varchar(16), b int) engine=SEQUOIADB;
 delimiter |;
 create trigger t1_bi before insert on t1 for each row
 begin
@@ -19,39 +22,39 @@ end|
 delimiter ;|
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' and event_object_table = 't1';
+       where event_object_schema = 'test_trigger_trans' and event_object_table = 't1';
 insert into t1 values ('The Lion', 10);
 select * from t1;
-optimize table t1;
+#optimize table t1;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' and event_object_table = 't1';
+       where event_object_schema = 'test_trigger_trans' and event_object_table = 't1';
 insert into t1 values ('The Unicorn', 20);
 select * from t1;
 alter table t1 add column c int default 0;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' and event_object_table = 't1';
+       where event_object_schema = 'test_trigger_trans' and event_object_table = 't1';
 insert into t1 values ('Alice', 30, 1);
 select * from t1;
 # Special tricky cases allowed by ALTER TABLE ... RENAME
 alter table t1 rename to t1;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' and event_object_table = 't1';
+       where event_object_schema = 'test_trigger_trans' and event_object_table = 't1';
 insert into t1 values ('The Crown', 40, 1);
 select * from t1;
 alter table t1 rename to t1, add column d int default 0;
 select trigger_schema, trigger_name, event_object_schema,
        event_object_table, action_statement from information_schema.triggers
-       where event_object_schema = 'test' and event_object_table = 't1';
+       where event_object_schema = 'test_trigger_trans' and event_object_table = 't1';
 insert into t1 values ('The Pie', 50, 1, 1);
 select * from t1;
 drop table t1;
 
 --echo
 --echo Bug#26141 mixing table types in trigger causes full
---echo table lock on innodb table
+--echo table lock on SEQUOIADB table
 --echo
 --echo Ensure we do not open and lock tables for the triggers we do not
 --echo fire.
@@ -63,9 +66,9 @@ drop trigger if exists trg_bug26141_ai;
 --enable_warnings
 # Note, for InnoDB to allow concurrent UPDATE and INSERT the
 # table must have a unique key.
-create table t1 (c int primary key) engine=innodb;
-create table t2 (c int) engine=myisam;
-create table t3 (c int) engine=myisam;
+create table t1 (c int primary key) engine=SEQUOIADB;
+create table t2 (c int) engine=SEQUOIADB;
+create table t3 (c int) engine=SEQUOIADB;
 insert into t1 (c) values (1);
 delimiter |;
 
@@ -89,8 +92,8 @@ end|
 delimiter ;|
 
 # Establish an alternative connection.
---connect (connection_aux,localhost,root,,test,,)
---connect (connection_update,localhost,root,,test,,)
+--connect (connection_aux,localhost,root,,test_trigger_trans,,)
+--connect (connection_update,localhost,root,,test_trigger_trans,,)
 
 connection connection_aux;
 # Lock the wait lock, it must not be locked, so specify zero timeout.
@@ -131,48 +134,48 @@ disconnect connection_aux;
 #
 # Bug#34643: TRUNCATE crash if trigger and foreign key.
 #
+#Sequoiadb doesn't support REFERENCES
+#--disable_warnings
+#DROP TABLE IF EXISTS t1;
+#DROP TABLE IF EXISTS t2;
+#--enable_warnings
 
---disable_warnings
-DROP TABLE IF EXISTS t1;
-DROP TABLE IF EXISTS t2;
---enable_warnings
+#CREATE TABLE t1(a INT PRIMARY KEY) ENGINE=SEQUOIADB;
+#CREATE TABLE t2(b INT, FOREIGN KEY(b) REFERENCES t1(a)) ENGINE=SEQUOIADB;
 
-CREATE TABLE t1(a INT PRIMARY KEY) ENGINE=innodb;
-CREATE TABLE t2(b INT, FOREIGN KEY(b) REFERENCES t1(a)) ENGINE=innodb;
+#INSERT INTO t1 VALUES (1);
 
-INSERT INTO t1 VALUES (1);
+#CREATE TRIGGER t1_bd BEFORE DELETE ON t1 FOR EACH ROW SET @a = 1;
+#CREATE TRIGGER t1_ad AFTER DELETE ON t1 FOR EACH ROW SET @b = 1;
 
-CREATE TRIGGER t1_bd BEFORE DELETE ON t1 FOR EACH ROW SET @a = 1;
-CREATE TRIGGER t1_ad AFTER DELETE ON t1 FOR EACH ROW SET @b = 1;
+#SET @a = 0;
+#SET @b = 0;
 
-SET @a = 0;
-SET @b = 0;
+#--error ER_TRUNCATE_ILLEGAL_FK
+#TRUNCATE t1;
 
---error ER_TRUNCATE_ILLEGAL_FK
-TRUNCATE t1;
+#SELECT @a, @b;
 
-SELECT @a, @b;
+#DELETE FROM t1;
 
-DELETE FROM t1;
+#SELECT @a, @b;
 
-SELECT @a, @b;
+#INSERT INTO t1 VALUES (1);
 
-INSERT INTO t1 VALUES (1);
+#DELETE FROM t1;
 
-DELETE FROM t1;
+#SELECT @a, @b;
 
-SELECT @a, @b;
-
-DROP TABLE t2, t1;
+#DROP TABLE t2, t1;
 
 
 --echo End of 5.0 tests
 
 --echo BUG#31612
 --echo Trigger fired multiple times leads to gaps in auto_increment sequence
-create table t1 (a int, val char(1)) engine=InnoDB;
+create table t1 (a int, val char(1)) engine=SEQUOIADB;
 create table t2 (b int auto_increment primary key,
- val char(1)) engine=InnoDB;
+ val char(1)) engine=SEQUOIADB;
 create trigger t1_after_insert after
  insert on t1 for each row insert into t2 set val=NEW.val;
 insert into t1 values ( 123, 'a'), ( 123, 'b'), ( 123, 'c'),
@@ -190,7 +193,7 @@ drop table t1,t2;
 --enable_connect_log
 
 CREATE TABLE t1 (id int unsigned PRIMARY KEY, val int DEFAULT 0)
-ENGINE=InnoDB;
+ENGINE=SEQUOIADB;
 INSERT INTO t1 (id) VALUES (1), (2);
 
 CREATE TABLE t2 (id int PRIMARY KEY);
@@ -211,10 +214,10 @@ START TRANSACTION;
 UPDATE t1 SET val = val + 1;
 
 # Transaction 2:
---connect (con2,localhost,root,,test,,)
+--connect (con2,localhost,root,,test_trigger_trans,,)
 SET SESSION innodb_lock_wait_timeout = 2;
 # Trigger lock timeout (1205) 
---error ER_LOCK_WAIT_TIMEOUT
+--error 1205 
 UPDATE t1 SET val = val + 1;
 
 # This insert should go through, as the continue handler should
@@ -229,3 +232,5 @@ connection default;
 DROP TABLE t3, t2, t1;
 
 --disable_connect_log
+drop database test_trigger_trans;
+--source include/uninstall_sequoiadb.inc

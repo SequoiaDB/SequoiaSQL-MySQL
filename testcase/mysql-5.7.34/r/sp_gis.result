@@ -1,4 +1,5 @@
-use test;
+create database test_sp_gis;
+use test_sp_gis;
 drop function if exists a;
 drop function if exists x;
 drop function if exists y;
@@ -22,9 +23,10 @@ ERROR 42000: Incorrect parameter count in the call to native function 'y'
 select ST_x(ST_PointFromText("POINT(10 20)")), ST_y(ST_PointFromText("POINT(10 20)"));
 ST_x(ST_PointFromText("POINT(10 20)"))	ST_y(ST_PointFromText("POINT(10 20)"))
 10	20
-select test.a(), test.x(), test.y();
-test.a()	test.x()	test.y()
+select test_sp_gis.a(), test_sp_gis.x(), test_sp_gis.y();
+test_sp_gis.a()	test_sp_gis.x()	test_sp_gis.y()
 1	2	3
 drop function a;
 drop function x;
 drop function y;
+drop database test_sp_gis;

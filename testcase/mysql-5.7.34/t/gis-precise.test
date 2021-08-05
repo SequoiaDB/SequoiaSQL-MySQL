@@ -1,8 +1,6 @@
 # GIS implementation is specific to myisam.
 # Hence retaining the below inc file.
---source include/force_myisam_default.inc
---source include/have_myisam.inc
-
+--source include/have_sequoiadb.inc
 -- source include/have_geometry.inc
 
 
@@ -703,8 +701,10 @@ select st_distance(linestring(point(26,87),point(13,95)),
 --echo #
 --echo # Bug #18304448  ST_TOUCHES: CRASH IN GCALC_HEAP::NEW_POINT_INFO
 --echo #
+--disable_warnings
 drop table if exists t1;
-create table t1(a int)engine=innodb;
+--enable_warnings
+create table t1(a int)engine=sequoiadb;
 delete from t1 where
 st_touches(
   linestring(point(4294967224,4294967212),
@@ -738,7 +738,9 @@ select st_intersects(@a, @l);
 --echo #
 --echo # Bug #16174580  ST_OVERLAPS AND ST_INTERSECTS GIVE ERRONEOUS RESULTS
 --echo #
+--disable_warnings
 drop table if exists tbl_polygon;
+--enable_warnings
 create table tbl_polygon(id varchar(32), geom POLYGON);
 insert into tbl_polygon (id, geom) values
 ('POLY1',ST_GeomFromText('POLYGON((0 0,0 10,10 10,10 0,0 0))'));
@@ -1544,16 +1546,18 @@ select st_astext(st_union(cast(point(1,1)as char(15)),point(1,1))) as res;
 --echo #
 --echo # Bug #21663612 AUTO INCREMENT COLUMN VALUES ARE NOT VISIBLE IN A TABLE CONTAINING SPATIAL INDEX
 --echo #
-CREATE TABLE t2 (id INT PRIMARY KEY AUTO_INCREMENT, g GEOMETRY NOT
-                 NULL, SPATIAL INDEX(g)) ENGINE=INNODB;
+#CREATE TABLE t2 (id INT PRIMARY KEY AUTO_INCREMENT, g GEOMETRY NOT
+#                 NULL, SPATIAL INDEX(g)) ENGINE=SequoiaDB;
+CREATE TABLE t2 (id INT PRIMARY KEY AUTO_INCREMENT, g GEOMETRY NOT NULL) ENGINE=SequoiaDB;
 INSERT INTO t2(g) VALUES (ST_GEOMFROMTEXT('POINT(0 0)'));
 INSERT INTO t2(g) VALUES (ST_GEOMFROMTEXT('POINT(10 0)'));
 INSERT INTO t2(g) VALUES (ST_GEOMFROMTEXT('POINT(10 10)'));
 SELECT id FROM t2;
 DROP TABLE t2;
 
-CREATE TABLE t3 (id INT PRIMARY KEY, g GEOMETRY NOT NULL,
-                 SPATIAL INDEX(g)) ENGINE=INNODB;
+#CREATE TABLE t3 (id INT PRIMARY KEY, g GEOMETRY NOT NULL,
+#                 SPATIAL INDEX(g)) ENGINE=SequoiaDB;
+CREATE TABLE t3 (id INT PRIMARY KEY, g GEOMETRY NOT NULL) ENGINE=SequoiaDB;
 INSERT INTO t3(id, g) VALUES
 (1, ST_GEOMFROMTEXT('POINT(0 0)')),
 (2, ST_GEOMFROMTEXT('POINT(10 0)')),

@@ -603,12 +603,13 @@ create table t1 as select concat(interval(23, 1, 15, 17, 30, 44, 200)) as c1;
 show create table t1;
 drop table t1;
 
-create table t1 (a varchar(10), fulltext key(a));
-insert into t1 values ('a');
-select hex(concat(match (a) against ('a'))) from t1;
-create table t2 as select concat(match (a) against ('a')) as a from t1;
-show create table t2;
-drop table t1, t2;
+# NOW SequoiaDB not support fulltext
+#create table t1 (a varchar(10), fulltext key(a));
+#insert into t1 values ('a');
+#select hex(concat(match (a) against ('a'))) from t1;
+#create table t2 as select concat(match (a) against ('a')) as a from t1;
+#show create table t2;
+#drop table t1, t2;
 
 select hex(ifnull(1,'a'));
 create table t1 as select ifnull(1,'a') as c1;
@@ -1029,6 +1030,7 @@ drop table t1;
 #
 # Bug#8204
 #
+#Bug #SEQUOIADBMAINSTREAM-3633, set `ucs2_german2_ci` and update will fail
 create table t1 as select repeat(' ', 64) as a limit 0;
 show create table t1;
 insert into t1 values ("1.1"), ("2.1");
@@ -1624,16 +1626,17 @@ SELECT charset(@ST_X), collation(@ST_X);
 --echo # Bug#54916 GROUP_CONCAT + IFNULL truncates output
 --echo #
 SELECT @@collation_connection;
-# ENGINE=MYISAM is very important to make sure "SYSTEM" join type
+# ENGINE=SEQUOIADB is very important to make sure "SYSTEM" join type
 # is in use, which will create instances of Item_copy.
-CREATE TABLE t1 (a MEDIUMINT NULL) ENGINE=MYISAM;
+CREATE TABLE t1 (a MEDIUMINT NULL) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES (1234567);
 SELECT GROUP_CONCAT(IFNULL(a,'')) FROM t1;
 SELECT GROUP_CONCAT(IF(a,a,'')) FROM t1;
 SELECT GROUP_CONCAT(CASE WHEN a THEN a ELSE '' END) FROM t1;
---enable_metadata
-SELECT COALESCE(a,'') FROM t1 GROUP BY 1;
---disable_metadata
+# check metadata, is special for MyISAM, NOW SequoiaDB not concern about that
+#--enable_metadata
+#SELECT COALESCE(a,'') FROM t1 GROUP BY 1;
+#--disable_metadata
 --echo # All columns must be VARCHAR(9) with the same length:
 --disable_warnings
 CREATE TABLE t2 AS
@@ -1738,11 +1741,11 @@ CREATE TABLE t1 (
   date_column DATE DEFAULT NULL,
   KEY(date_column));
 INSERT INTO t1 VALUES (1,'2010-09-01'),(2,'2010-10-01');
-ANALYZE TABLE t1;
-EXPLAIN SELECT * FROM t1 WHERE date_column BETWEEN '2010-09-01' AND '2010-10-01';
+#ANALYZE TABLE t1;
+#EXPLAIN SELECT * FROM t1 WHERE date_column BETWEEN '2010-09-01' AND '2010-10-01';
 ALTER TABLE t1 MODIFY date_column DATETIME DEFAULT NULL;
-ANALYZE TABLE t1;
-EXPLAIN SELECT * FROM t1 WHERE date_column BETWEEN '2010-09-01' AND '2010-10-01';
+#ANALYZE TABLE t1;
+#EXPLAIN SELECT * FROM t1 WHERE date_column BETWEEN '2010-09-01' AND '2010-10-01';
 DROP TABLE t1;
 
 
@@ -1801,6 +1804,7 @@ SELECT f1() FROM t1 LEFT JOIN (SELECT 1 AS a FROM t1 LIMIT 0) AS d ON 1 GROUP BY
 DROP FUNCTION f1;
 DROP TABLE t1;
 
+#Bug #SEQUOIADBMAINSTREAM-3564
 SET NAMES latin1;
 SET sql_mode='';
 CREATE TABLE t1(a char(215) CHARACTER SET utf8 NOT NULL DEFAULT '', KEY(a));

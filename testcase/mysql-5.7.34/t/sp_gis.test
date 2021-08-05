@@ -1,10 +1,11 @@
 # GIS implementation is specific to myisam.
 # Hence retaining the below inc file.
---source include/force_myisam_default.inc
---source include/have_myisam.inc
+-- source include/have_sequoiadb.inc
 -- source include/have_geometry.inc
 
-use test;
+#use test;
+create database test_sp_gis;
+use test_sp_gis;
 
 #
 # BUG#21025: misleading error message when creating functions named 'x', or 'y'
@@ -34,10 +35,12 @@ select ST_x(ST_PointFromText("POINT(10 20)")), ST_y(ST_PointFromText("POINT(10 2
 
 # Non deterministic warnings from db_load_routine
 --disable_warnings
-select test.a(), test.x(), test.y();
+#select test.a(), test.x(), test.y();
+eval select test_sp_gis.a(), test_sp_gis.x(), test_sp_gis.y();
 --enable_warnings
 
 drop function a;
 drop function x;
 drop function y;
 
+drop database test_sp_gis;

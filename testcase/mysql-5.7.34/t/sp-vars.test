@@ -3,6 +3,7 @@
 # Cleanup.
 #
 ###########################################################################
+--source include/have_sequoiadb.inc 
 
 --disable_warnings
 
@@ -213,10 +214,11 @@ DROP PROCEDURE p1;
 #
 # Prepare.
 #
-
+--disable_warnings
 DROP PROCEDURE IF EXISTS p1;
 DROP PROCEDURE IF EXISTS p2;
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 
 #
 # Test case.
@@ -1494,12 +1496,13 @@ DROP PROCEDURE vctest;
 --echo BUG#19770958
 --echo ---------------------------------------------------------------
 --echo
-
-CREATE TABLE t (a INT PRIMARY KEY, b TEXT, FULLTEXT(b)) ENGINE=InnoDB; 
-CREATE FUNCTION f() RETURNS TEXT RETURN @@GLOBAL.innodb_ft_aux_table;
-SELECT @@GLOBAL.innodb_ft_aux_table, f();
-SET GLOBAL innodb_ft_aux_table="test/t";
-SELECT @@GLOBAL.innodb_ft_aux_table, f();
-SET GLOBAL innodb_ft_aux_table= default;
-DROP FUNCTION f;
-DROP TABLE t;
+#Sequoiadb not support fulltext
+#CREATE TABLE t (a INT PRIMARY KEY, b TEXT, FULLTEXT(b)) ENGINE=Sequoiadb; 
+#CREATE FUNCTION f() RETURNS TEXT RETURN @@GLOBAL.innodb_ft_aux_table;
+#SELECT @@GLOBAL.innodb_ft_aux_table, f();
+#SET GLOBAL innodb_ft_aux_table="test/t";
+#SELECT @@GLOBAL.innodb_ft_aux_table, f();
+#SET GLOBAL innodb_ft_aux_table= default;
+#DROP FUNCTION f;
+#DROP TABLE t;
+--source include/uninstall_sequoiadb.inc

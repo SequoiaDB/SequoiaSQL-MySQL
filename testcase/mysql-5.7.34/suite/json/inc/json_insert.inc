@@ -116,6 +116,7 @@ execute ps2 using @e;
 execute ps2 using @f;
 execute ps2 using @g;
 
+#Bug #SEQUOIASQLMAINSTREAM-189
 select json_type(j), j from pt1 order by j;
 select json_type(j), j from pt2 order by j;
 
@@ -146,13 +147,13 @@ connection default;
 
 SET global max_allowed_packet=default;
 
---echo #
+--echo #                                                    
 --echo # Bug#26867509: JSON_OBJECT CREATES INVALID JSON CODE
---echo #
-
-CREATE TABLE t1(i INT, KEY(i));
-INSERT INTO t1 VALUES (1), (2), (3);
-CREATE TABLE t2(i INT, vc VARCHAR(100));
-INSERT INTO t2 SELECT i, JSON_ARRAY(i) FROM t1 GROUP BY i;
-SELECT * FROM t2 ORDER BY i;
-DROP TABLE t1, t2;
+--echo #                                                    
+                                                            
+CREATE TABLE t1(i INT, KEY(i));                             
+INSERT INTO t1 VALUES (1), (2), (3);                        
+CREATE TABLE t2(i INT, vc VARCHAR(100));                    
+INSERT INTO t2 SELECT i, JSON_ARRAY(i) FROM t1 GROUP BY i;  
+SELECT * FROM t2 ORDER BY i;                                
+DROP TABLE t1, t2;                                          

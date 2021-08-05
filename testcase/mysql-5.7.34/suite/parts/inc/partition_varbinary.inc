@@ -1,6 +1,7 @@
 --echo ---- Partitioning and varbinary data type
 
-eval create table t1 (a varbinary(767) not null, primary key(a)) engine=$engine 
+#eval create table t1 (a varbinary(767) not null, primary key(a)) engine=$engine
+eval create table t1 (a varbinary(767) not null) engine=$engine
 partition by key (a) (
 partition pa1 max_rows=20 min_rows=2,
 partition pa2 max_rows=30 min_rows=3,
@@ -8,14 +9,15 @@ partition pa3 max_rows=30 min_rows=4,
 partition pa4 max_rows=40 min_rows=2);
 show create table t1;
 insert into t1 values (repeat('a',767)), ('b'), (repeat('a',500)), (repeat('b',64));
-select * from t1;
+select * from t1 order by a;
 select * from t1 where a='b';
-update t1 set a='bb' where a='b';
+#update t1 set a='bb' where a='b';
 delete from t1 where a='bb';
-select * from t1;
+select * from t1 order by a;
 drop table t1;
 
-eval create table t2 (a varbinary(767) not null, primary key(a)) engine=$engine 
+#eval create table t2 (a varbinary(767) not null, primary key(a)) engine=$engine
+eval create table t2 (a varbinary(767) not null) engine=$engine 
 partition by key (a) partitions 30;
 show create table t2;
 let $count=26;
@@ -29,7 +31,7 @@ dec $count;
 inc $letter;
 }
 select count(*) from t2;
-select * from t2;
+select * from t2 order by a;
 drop table t2;
 
 

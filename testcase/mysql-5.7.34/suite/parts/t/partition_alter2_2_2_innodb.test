@@ -56,8 +56,8 @@ let $only_part_2= 1;
 # Engine specific settings and requirements
 
 ##### Storage engine to be tested
---source include/have_innodb.inc
-let $engine= 'InnoDB';
+#--source include/have_innodb.inc
+let $engine= 'SequoiaDB';
 
 ##### Execute the test of "table" files
 # InnoDB has no files per PK, UI, ...

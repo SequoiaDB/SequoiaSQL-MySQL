@@ -3,10 +3,14 @@
 # The variable $after_select must be set before calling this routine.
 
 eval CREATE VIEW v1 AS SELECT $after_select;
-SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1';
+# Compatible with parallel > 1, modify query condition "TABLE_SCHEMA = 'test'" to "TABLE_SCHEMA like 'test_parallel_*'"
+#SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1';
+SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA LIKE 'test_parallel%' AND TABLE_NAME = 'v1';
 #
 # Extract the VIEW's SELECT from INFORMATION_SCHEMA.VIEWS
-let $query1 = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+# Compatible with parallel > 1, modify query condition "TABLE_SCHEMA = 'test'" to "TABLE_SCHEMA like 'test_parallel_*'"
+#let $query1 = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'test' AND TABLE_NAME = 'v1'`;
+let $query1 = `SELECT VIEW_DEFINITION FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA LIKE 'test_parallel%' AND TABLE_NAME = 'v1'`;
 #
 # Extract the VIEW's SELECT from SHOW CREATE VIEW
 # SHOW CREATE VIEW v1
@@ -17,9 +21,13 @@ let $query2 = `SELECT SUBSTR("$value",INSTR("$value",' as select ') + CHAR_LENGT
 DROP VIEW v1;
 
 # Recreate the view based on SELECT from INFORMATION_SCHEMA.VIEWS
+--disable_query_log
 eval CREATE VIEW v1 AS $query1;
+--enable_query_log
 DROP VIEW v1;
 # Recreate the view based on SHOW CREATE VIEW
+--disable_query_log
 eval CREATE VIEW v1 AS $query2;
+--enable_query_log
 DROP VIEW v1;
 

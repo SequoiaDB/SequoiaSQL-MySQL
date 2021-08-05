@@ -1,9 +1,10 @@
 drop table if exists t1,t2,t3,t4,t9,`t1a``b`,v1,v2,v3,v4,v5,v6;
 drop view if exists t1,t2,`t1a``b`,v1,v2,v3,v4,v5,v6;
-drop database if exists mysqltest;
-use test;
+drop database if exists mysqltest_view;
+create database test_view;
+use test_view;
 create view v1 (c,d) as select a,b from t1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_view.t1' doesn't exist
 create temporary table t1 (a int, b int);
 create view v1 (c) as select b+1 from t1;
 ERROR HY000: View's SELECT refers to a temporary table 't1'
@@ -51,7 +52,7 @@ show create view v1;
 View	Create View	character_set_client	collation_connection
 v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select (`t1`.`b` + 1) AS `c` from `t1`	latin1	latin1_swedish_ci
 show create view t1;
-ERROR HY000: 'test.t1' is not VIEW
+ERROR HY000: 'test_view.t1' is not VIEW
 drop table t1;
 select a from v1;
 ERROR 42S22: Unknown column 'a' in 'field list'
@@ -61,12 +62,6 @@ select b from v1;
 ERROR 42S22: Unknown column 'b' in 'field list'
 select v1.b from v1;
 ERROR 42S22: Unknown column 'v1.b' in 'field list'
-explain extended select c from v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select (`test`.`t1`.`b` + 1) AS `c` from `test`.`t1`
 create algorithm=temptable view v2 (c) as select b+1 from t1;
 show create view v2;
 View	Create View	character_set_client	collation_connection
@@ -78,13 +73,6 @@ c
 5
 6
 11
-explain extended select c from v2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `v2`.`c` AS `c` from `test`.`v2`
 create view v3 (c) as select a+1 from v1;
 ERROR 42S22: Unknown column 'a' in 'field list'
 create view v3 (c) as select b+1 from v1;
@@ -97,12 +85,6 @@ c
 6
 7
 12
-explain extended select c from v3;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select ((`test`.`t1`.`b` + 1) + 1) AS `c` from `test`.`t1`
 create algorithm=temptable view v4 (c) as select c+1 from v2;
 select c from v4;
 c
@@ -111,14 +93,6 @@ c
 6
 7
 12
-explain extended select c from v4;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-2	DERIVED	<derived3>	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-3	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `v4`.`c` AS `c` from `test`.`v4`
 create view v5 (c) as select c+1 from v2;
 select c from v5;
 c
@@ -127,13 +101,6 @@ c
 6
 7
 12
-explain extended select c from v5;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived3>	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-3	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select (`v2`.`c` + 1) AS `c` from `test`.`v2`
 create algorithm=temptable view v6 (c) as select c+1 from v1;
 select c from v6;
 c
@@ -142,15 +109,8 @@ c
 6
 7
 12
-explain extended select c from v6;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `v6`.`c` AS `c` from `test`.`v6`
 show tables;
-Tables_in_test
+Tables_in_test_view
 t1
 v1
 v2
@@ -159,7 +119,7 @@ v4
 v5
 v6
 show full tables;
-Tables_in_test	Table_type
+Tables_in_test_view	Table_type
 t1	BASE TABLE
 v1	VIEW
 v2	VIEW
@@ -167,15 +127,6 @@ v3	VIEW
 v4	VIEW
 v5	VIEW
 v6	VIEW
-show table status;
-Name	Engine	Version	Row_format	Rows	Avg_row_length	Data_length	Max_data_length	Index_length	Data_free	Auto_increment	Create_time	Update_time	Check_time	Collation	Checksum	Create_options	Comment
-t1	MyISAM	10	Fixed	5	9	45	#	1024	0	NULL	#	#	NULL	latin1_swedish_ci	NULL		
-v1	NULL	NULL	NULL	NULL	NULL	NULL	#	NULL	NULL	NULL	#	#	NULL	NULL	NULL	NULL	VIEW
-v2	NULL	NULL	NULL	NULL	NULL	NULL	#	NULL	NULL	NULL	#	#	NULL	NULL	NULL	NULL	VIEW
-v3	NULL	NULL	NULL	NULL	NULL	NULL	#	NULL	NULL	NULL	#	#	NULL	NULL	NULL	NULL	VIEW
-v4	NULL	NULL	NULL	NULL	NULL	NULL	#	NULL	NULL	NULL	#	#	NULL	NULL	NULL	NULL	VIEW
-v5	NULL	NULL	NULL	NULL	NULL	NULL	#	NULL	NULL	NULL	#	#	NULL	NULL	NULL	NULL	VIEW
-v6	NULL	NULL	NULL	NULL	NULL	NULL	#	NULL	NULL	NULL	#	#	NULL	NULL	NULL	NULL	VIEW
 drop view v1,v2,v3,v4,v5,v6;
 create view v1 (c,d,e,f) as select a,b,
 a in (select a+2 from t1), a = all (select a from t1) from t1;
@@ -199,7 +150,7 @@ ERROR 42S01: Table 'v1' already exists
 create or replace view v1 (c,d,e,f) as select a,b, a in (select a+2 from t1), a = all (select a from t1) from t1;
 drop view v2;
 alter view v2 as select c, d from v1;
-ERROR 42S02: Table 'test.v2' doesn't exist
+ERROR 42S02: Table 'test_view.v2' doesn't exist
 create or replace view v2 as select c, d from v1;
 alter view v1 (c,d) as select a,max(b) from t1 group by a;
 select * from v1;
@@ -213,11 +164,11 @@ c	d
 2	5
 3	10
 drop view v100;
-ERROR 42S02: Unknown table 'test.v100'
+ERROR 42S02: Unknown table 'test_view.v100'
 drop view t1;
-ERROR HY000: 'test.t1' is not VIEW
+ERROR HY000: 'test_view.t1' is not VIEW
 drop table v1;
-ERROR 42S02: Unknown table 'test.v1'
+ERROR 42S02: Unknown table 'test_view.v1'
 drop view v1,v2;
 drop table t1;
 create table t1 (a int);
@@ -249,12 +200,6 @@ a
 1
 2
 3
-explain select * from v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
 select * from t1;
 a
 1
@@ -267,7 +212,7 @@ drop view v1;
 drop table t1;
 create table t1 (a int);
 create view v1 as select distinct a from t1 WITH CHECK OPTION;
-ERROR HY000: CHECK OPTION on non-updatable view 'test.v1'
+ERROR HY000: CHECK OPTION on non-updatable view 'test_view.v1'
 create view v1 as select a from t1 WITH CHECK OPTION;
 create view v2 as select a from t1 WITH CASCADED CHECK OPTION;
 create view v3 as select a from t1 WITH LOCAL CHECK OPTION;
@@ -278,7 +223,7 @@ drop table t1;
 create table t1 (a int, b int);
 insert into t1 values (1,2), (1,3), (2,4), (2,5), (3,10);
 create view v1 (c) as select b+1 from t1;
-select test.c from v1 test;
+select test_view.c from v1 test_view;
 c
 3
 4
@@ -286,7 +231,7 @@ c
 6
 11
 create algorithm=temptable view v2 (c) as select b+1 from t1;
-select test.c from v2 test;
+select test_view.c from v2 test_view;
 c
 3
 4
@@ -316,12 +261,6 @@ select * from v1;
 a+1
 5
 4
-explain select * from v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `v1`.`a+1` AS `a+1` from `test`.`v1`
 drop view v1;
 drop table t1;
 create table t1 (a int);
@@ -404,12 +343,6 @@ select * from v1;
 c
 20
 30
-explain extended select * from v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	5	33.33	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`b` AS `c` from `test`.`t1` where (`test`.`t1`.`a` < 3)
 update v1 set c=c+1;
 select * from t1;
 a	b
@@ -627,10 +560,10 @@ create view v1 as select * from t1;
 drop table t1;
 create table t1 (col1 char(5),newcol2 char(5));
 insert into v1 values('a','aa');
-ERROR HY000: View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_view.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 drop table t1;
 select * from v1;
-ERROR HY000: View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_view.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 drop view v1;
 SET sql_mode = default;
 create view v1 (a,a) as select 'a','a';
@@ -695,7 +628,7 @@ drop table t1;
 CREATE VIEW v02 AS SELECT * FROM DUAL;
 ERROR HY000: No tables used
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_view
 CREATE VIEW v1 AS SELECT EXISTS (SELECT 1 UNION SELECT 2);
 select * from v1;
 EXISTS (SELECT 1 UNION SELECT 2)
@@ -704,7 +637,7 @@ drop view v1;
 create table t1 (col1 int,col2 char(22));
 create view v1 as select * from t1;
 create index i1 on v1 (col1);
-ERROR HY000: 'test.v1' is not BASE TABLE
+ERROR HY000: 'test_view.v1' is not BASE TABLE
 drop view v1;
 drop table t1;
 CREATE VIEW v1 (f1,f2,f3,f4) AS SELECT connection_id(), pi(), current_user(), version();
@@ -752,25 +685,12 @@ show create view `v 1`;
 View	Create View	character_set_client	collation_connection
 v 1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v 1` AS select 5 AS `5`	latin1	latin1_swedish_ci
 drop view `v 1`;
-create database mysqltest;
-create table mysqltest.t1 (a int, b int);
-create view mysqltest.v1 as select a from mysqltest.t1;
-alter view mysqltest.v1 as select b from mysqltest.t1;
-alter view mysqltest.v1 as select a from mysqltest.t1;
-drop database mysqltest;
-CREATE TABLE t1 (c1 int not null auto_increment primary key, c2 varchar(20), fulltext(c2));
-insert into t1 (c2) VALUES ('real Beer'),('Water'),('Kossu'),('Coca-Cola'),('Vodka'),('Wine'),('almost real Beer');
-select * from t1 WHERE match (c2) against ('Beer');
-c1	c2
-1	real Beer
-7	almost real Beer
-CREATE VIEW v1 AS SELECT  * from t1 WHERE match (c2) against ('Beer');
-select * from v1;
-c1	c2
-1	real Beer
-7	almost real Beer
-drop view v1;
-drop table t1;
+create database mysqltest_view;
+create table mysqltest_view.t1 (a int, b int);
+create view mysqltest_view.v1 as select a from mysqltest_view.t1;
+alter view mysqltest_view.v1 as select b from mysqltest_view.t1;
+alter view mysqltest_view.v1 as select a from mysqltest_view.t1;
+drop database mysqltest_view;
 create table t1 (a int);
 insert into t1 values (1),(1),(2),(2),(3),(3);
 create view v1 as select a from t1;
@@ -822,12 +742,12 @@ v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VI
 drop view v3, v2, v1;
 drop table t2, t1;
 create function `f``1` () returns int return 5;
-create view v1 as select test.`f``1` ();
+create view v1 as select test_view.`f``1` ();
 show create view v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `test`.`f``1`() AS `test.``f````1`` ()`	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `test_view`.`f``1`() AS `test_view.``f````1`` ()`	latin1	latin1_swedish_ci
 select * from v1;
-test.`f``1` ()
+test_view.`f``1` ()
 5
 drop view v1;
 drop function `f``1`;
@@ -862,13 +782,7 @@ create table t1 (s1 int);
 create view v1 as select x1() from t1;
 drop function x1;
 select * from v1;
-ERROR HY000: View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-show table status;
-Name	Engine	Version	Row_format	Rows	Avg_row_length	Data_length	Max_data_length	Index_length	Data_free	Auto_increment	Create_time	Update_time	Check_time	Collation	Checksum	Create_options	Comment
-t1	MyISAM	10	Fixed	0	0	0	#	1024	0	NULL	#	#	NULL	latin1_swedish_ci	NULL		
-v1	NULL	NULL	NULL	NULL	NULL	NULL	#	NULL	NULL	NULL	#	#	NULL	NULL	NULL	NULL	View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-Warnings:
-Warning	1356	View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_view.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 drop view v1;
 drop table t1;
 create view v1 as select 99999999999999999999999999999999999999999999999999999 as col1;
@@ -910,15 +824,15 @@ drop view v1;
 create table t1 (a int);
 create view v1 as select a from t1;
 create view v3 as select a from t1;
-create database mysqltest;
-rename table v1 to mysqltest.v1;
-ERROR HY000: Changing schema from 'test' to 'mysqltest' is not allowed.
+create database mysqltest_view;
+rename table v1 to mysqltest_view.v1;
+ERROR HY000: Changing schema from 'test_view' to 'mysqltest_view' is not allowed.
 rename table v1 to v2;
 rename table v3 to v1, v2 to t1;
 ERROR 42S01: Table 't1' already exists
 drop table t1;
 drop view v2,v3;
-drop database mysqltest;
+drop database mysqltest_view;
 create view v1 as select 'a',1;
 create view v2 as select * from v1 union all select * from v1;
 create view v3 as select * from v2 where 1 = (select `1` from v2);
@@ -1069,7 +983,7 @@ drop table t1,t2,t3;
 create table t1 (s1 int);
 create view v1 as select * from t1;
 handler v1 open as xx;
-ERROR HY000: 'test.v1' is not BASE TABLE
+ERROR HY000: 'test_view.v1' is not BASE TABLE
 drop view v1;
 drop table t1;
 create table t1(a int);
@@ -1138,11 +1052,11 @@ create table t1 (a int);
 create view v1 as select * from t1 where a < 2 with check option;
 insert into v1 values(1);
 insert into v1 values(3);
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 insert ignore into v1 values (2),(3),(0);
 Warnings:
-Warning	1369	CHECK OPTION failed 'test.v1'
-Warning	1369	CHECK OPTION failed 'test.v1'
+Warning	1369	CHECK OPTION failed 'test_view.v1'
+Warning	1369	CHECK OPTION failed 'test_view.v1'
 select * from t1;
 a
 1
@@ -1150,20 +1064,20 @@ a
 delete from t1;
 insert into v1 SELECT 1;
 insert into v1 SELECT 3;
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 create table t2 (a int);
 insert into t2 values (2),(3),(0);
 insert ignore into v1 SELECT a from t2;
 Warnings:
-Warning	1369	CHECK OPTION failed 'test.v1'
-Warning	1369	CHECK OPTION failed 'test.v1'
+Warning	1369	CHECK OPTION failed 'test_view.v1'
+Warning	1369	CHECK OPTION failed 'test_view.v1'
 select * from t1 order by a desc;
 a
 1
 0
 update v1 set a=-1 where a=0;
 update v1 set a=2 where a=1;
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 select * from t1 order by a desc;
 a
 1
@@ -1178,7 +1092,7 @@ a
 update v1 set a=a+1;
 update ignore v1,t2 set v1.a=v1.a+1 where v1.a=t2.a;
 Warnings:
-Warning	1369	CHECK OPTION failed 'test.v1'
+Warning	1369	CHECK OPTION failed 'test_view.v1'
 select * from t1;
 a
 1
@@ -1192,13 +1106,13 @@ create view v3 as select * from v1 where a > 0 with cascaded check option;
 insert into v2 values (1);
 insert into v3 values (1);
 insert into v2 values (0);
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 insert into v3 values (0);
-ERROR HY000: CHECK OPTION failed 'test.v3'
+ERROR HY000: CHECK OPTION failed 'test_view.v3'
 insert into v2 values (2);
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 insert into v3 values (2);
-ERROR HY000: CHECK OPTION failed 'test.v3'
+ERROR HY000: CHECK OPTION failed 'test_view.v3'
 select * from t1;
 a
 1
@@ -1209,10 +1123,10 @@ create table t1 (a int, primary key (a));
 create view v1 as select * from t1 where a < 2 with check option;
 insert into v1 values (1) on duplicate key update a=2;
 insert into v1 values (1) on duplicate key update a=2;
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 insert ignore into v1 values (1) on duplicate key update a=2;
 Warnings:
-Warning	1369	CHECK OPTION failed 'test.v1'
+Warning	1369	CHECK OPTION failed 'test_view.v1'
 select * from t1;
 a
 1
@@ -1222,13 +1136,13 @@ create table t1 (s1 int);
 create view v1 as select * from t1;
 create view v2 as select * from v1;
 alter view v1 as select * from v2;
-ERROR 42S02: Table 'test.v1' doesn't exist
+ERROR 42S02: Table 'test_view.v1' doesn't exist
 alter view v1 as select * from v1;
-ERROR 42S02: Table 'test.v1' doesn't exist
+ERROR 42S02: Table 'test_view.v1' doesn't exist
 create or replace view v1 as select * from v2;
-ERROR 42S02: Table 'test.v1' doesn't exist
+ERROR 42S02: Table 'test_view.v1' doesn't exist
 create or replace view v1 as select * from v1;
-ERROR 42S02: Table 'test.v1' doesn't exist
+ERROR 42S02: Table 'test_view.v1' doesn't exist
 drop view v2,v1;
 drop table t1;
 create table t1 (a int);
@@ -1267,7 +1181,7 @@ s1
 alter view v2 as select * from t2 where s1 in (select s1 from t1) with check option;
 insert into v2 values (5);
 update v2 set s1 = 1;
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 insert into t1 values (1);
 update v2 set s1 = 1;
 select * from v2;
@@ -1304,17 +1218,17 @@ create table t1 (s1 tinyint);
 create view v1 as select * from t1 where s1 <> 0 with local check option;
 create view v2 as select * from v1 with cascaded check option;
 insert into v2 values (0);
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 drop view v2, v1;
 drop table t1;
 create table t1 (s1 int);
 create view v1 as select * from t1 where s1 < 5 with check option;
 insert ignore into v1 values (6);
 Warnings:
-Warning	1369	CHECK OPTION failed 'test.v1'
+Warning	1369	CHECK OPTION failed 'test_view.v1'
 insert ignore into v1 values (6),(3);
 Warnings:
-Warning	1369	CHECK OPTION failed 'test.v1'
+Warning	1369	CHECK OPTION failed 'test_view.v1'
 select * from t1;
 s1
 3
@@ -1327,7 +1241,7 @@ create table t1 (s1 tinyint);
 create trigger t1_bi before insert on t1 for each row set new.s1 = 500;
 create view v1 as select * from t1 where s1 <> 127 with check option;
 insert into v1 values (0);
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 select * from v1;
 s1
 select * from t1;
@@ -1340,70 +1254,12 @@ create table t1 (s1 tinyint);
 create view v1 as select * from t1 where s1 <> 0;
 create view v2 as select * from v1 where s1 <> 1 with cascaded check option;
 insert into v2 values (0);
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 select * from v2;
 s1
 select * from t1;
 s1
 drop view v2, v1;
-drop table t1;
-create table t1 (a int, b char(10));
-create view v1 as select * from t1 where a != 0 with check option;
-load data infile '../../std_data/loaddata3.dat' into table v1 fields terminated by '' enclosed by '' ignore 1 lines;
-ERROR HY000: CHECK OPTION failed 'test.v1'
-select * from t1;
-a	b
-1	row 1
-2	row 2
-select * from v1;
-a	b
-1	row 1
-2	row 2
-delete from t1;
-load data infile '../../std_data/loaddata3.dat' ignore into table v1 fields terminated by '' enclosed by '' ignore 1 lines;
-Warnings:
-Warning	1366	Incorrect integer value: 'error      ' for column 'a' at row 3
-Warning	1369	CHECK OPTION failed 'test.v1'
-Warning	1366	Incorrect integer value: 'wrong end  ' for column 'a' at row 4
-Warning	1369	CHECK OPTION failed 'test.v1'
-select * from t1 order by a,b;
-a	b
-1	row 1
-2	row 2
-3	row 3
-select * from v1 order by a,b;
-a	b
-1	row 1
-2	row 2
-3	row 3
-drop view v1;
-drop table t1;
-create table t1 (a text, b text);
-create view v1 as select * from t1 where a <> 'Field A' with check option;
-load data infile '../../std_data/loaddata2.dat' into table v1 fields terminated by ',' enclosed by '''';
-ERROR HY000: CHECK OPTION failed 'test.v1'
-select concat('|',a,'|'), concat('|',b,'|') from t1;
-concat('|',a,'|')	concat('|',b,'|')
-select concat('|',a,'|'), concat('|',b,'|') from v1;
-concat('|',a,'|')	concat('|',b,'|')
-delete from t1;
-load data infile '../../std_data/loaddata2.dat' ignore into table v1 fields terminated by ',' enclosed by '''';
-Warnings:
-Warning	1369	CHECK OPTION failed 'test.v1'
-Warning	1261	Row 2 doesn't contain data for all columns
-select concat('|',a,'|'), concat('|',b,'|') from t1;
-concat('|',a,'|')	concat('|',b,'|')
-|Field 1|	|Field 2' 
-Field 3,'Field 4|
-|Field 5' ,'Field 6|	NULL
-|Field 6|	| 'Field 7'|
-select concat('|',a,'|'), concat('|',b,'|') from v1;
-concat('|',a,'|')	concat('|',b,'|')
-|Field 1|	|Field 2' 
-Field 3,'Field 4|
-|Field 5' ,'Field 6|	NULL
-|Field 6|	| 'Field 7'|
-drop view v1;
 drop table t1;
 create table t1 (s1 smallint);
 create view v1 as select * from t1 where 20 < (select (s1) from t1);
@@ -1419,23 +1275,6 @@ ERROR HY000: The target table v4 of the INSERT is not insertable-into
 drop view v4, v3, v2, v1;
 drop table t1;
 create table t1 (a int);
-create view v1 as select * from t1;
-check table t1,v1;
-Table	Op	Msg_type	Msg_text
-test.t1	check	status	OK
-test.v1	check	status	OK
-check table v1,t1;
-Table	Op	Msg_type	Msg_text
-test.v1	check	status	OK
-test.t1	check	status	OK
-drop table t1;
-check table v1;
-Table	Op	Msg_type	Msg_text
-test.v1	check	Error	Table 'test.t1' doesn't exist
-test.v1	check	Error	View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-test.v1	check	error	Corrupt
-drop view v1;
-create table t1 (a int);
 create table t2 (a int);
 create table t3 (a int);
 insert into t1 values (1), (2), (3);
@@ -1447,14 +1286,6 @@ a	a	b
 1	1	1
 2	2	NULL
 4	NULL	NULL
-explain extended select * from t3 left join v3 on (t3.a = v3.a);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a`,`test`.`t1`.`a` AS `a`,`test`.`t2`.`a` AS `b` from `test`.`t3` left join (`test`.`t1` left join `test`.`t2` on((`test`.`t2`.`a` = `test`.`t3`.`a`))) on((`test`.`t1`.`a` = `test`.`t3`.`a`)) where 1
 create view v1 (a) as select a from t1;
 create view v2 (a) as select a from t2;
 create view v4 (a,b) as select v1.a as a, v2.a as b from v1 left join v2 on (v1.a=v2.a);
@@ -1463,14 +1294,6 @@ a	a	b
 1	1	1
 2	2	NULL
 4	NULL	NULL
-explain extended select * from t3 left join v4 on (t3.a = v4.a);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a`,`test`.`t1`.`a` AS `a`,`test`.`t2`.`a` AS `b` from `test`.`t3` left join (`test`.`t1` left join (`test`.`t2`) on(((`test`.`t1`.`a` = `test`.`t3`.`a`) and (`test`.`t2`.`a` = `test`.`t3`.`a`)))) on((`test`.`t1`.`a` = `test`.`t3`.`a`)) where 1
 prepare stmt1 from "select * from t3 left join v4 on (t3.a = v4.a);";
 execute stmt1;
 a	a	b
@@ -1543,37 +1366,34 @@ create table t2 (a int, primary key (a), b int);
 insert into t2 values (1000, 2000);
 create view v3 (a,b) as select t1.a as a, t2.a as b from t1, t2;
 insert into v3 values (1,2);
-ERROR HY000: Can not insert into join view 'test.v3' without fields list
+ERROR HY000: Can not insert into join view 'test_view.v3' without fields list
 insert into v3 select * from t2;
-ERROR HY000: Can not insert into join view 'test.v3' without fields list
+ERROR HY000: Can not insert into join view 'test_view.v3' without fields list
 insert into v3(a,b) values (1,2);
-ERROR HY000: Can not modify more than one base table through a join view 'test.v3'
+ERROR HY000: Can not modify more than one base table through a join view 'test_view.v3'
 insert into v3(a,b) select * from t2;
-ERROR HY000: Can not modify more than one base table through a join view 'test.v3'
+ERROR HY000: Can not modify more than one base table through a join view 'test_view.v3'
 insert into v3(a) values (1);
 insert into v3(b) values (10);
 insert into v3(a) select a from t2;
 insert into v3(b) select b from t2;
-Warnings:
-Warning	1048	Column 'a' cannot be null
+ERROR 23000: Column 'a' cannot be null
 insert into v3(a) values (1) on duplicate key update a=a+10000+VALUES(a);
-select * from t1;
+select * from t1 order by a;
 a	b
-10002	NULL
 10	NULL
 1000	NULL
-select * from t2;
+10002	NULL
+select * from t2 order by a;
 a	b
-1000	2000
 10	NULL
-2000	NULL
-0	NULL
+1000	2000
 delete from v3;
-ERROR HY000: Can not delete from join view 'test.v3'
+ERROR HY000: Can not delete from join view 'test_view.v3'
 delete v3,t1 from v3,t1;
-ERROR HY000: Can not delete from join view 'test.v3'
+ERROR HY000: Can not delete from join view 'test_view.v3'
 delete t1,v3 from t1,v3;
-ERROR HY000: Can not delete from join view 'test.v3'
+ERROR HY000: Can not delete from join view 'test_view.v3'
 delete from t1;
 prepare stmt1 from "insert into v3(a) values (?);";
 set @a= 100;
@@ -1587,24 +1407,16 @@ execute stmt1 using @a;
 set @a= 301;
 execute stmt1 using @a;
 deallocate prepare stmt1;
-select * from v3;
+select * from v3 order by a,b;
 a	b
-100	0
-101	0
-300	0
-301	0
 100	10
-101	10
-300	10
-301	10
 100	1000
+101	10
 101	1000
+300	10
 300	1000
+301	10
 301	1000
-100	2000
-101	2000
-300	2000
-301	2000
 drop view v3;
 drop tables t1,t2;
 create table t1(f1 int);
@@ -1959,18 +1771,18 @@ CREATE VIEW v6 AS SELECT CONVERT_TZ(col1,'GMT','MET') FROM t2;
 DROP TABLE t1;
 CHECK TABLE v1, v2, v3, v4, v5, v6;
 Table	Op	Msg_type	Msg_text
-test.v1	check	Error	Table 'test.t1' doesn't exist
-test.v1	check	Error	View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-test.v1	check	error	Corrupt
-test.v2	check	status	OK
-test.v3	check	Error	Table 'test.t1' doesn't exist
-test.v3	check	Error	View 'test.v3' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-test.v3	check	error	Corrupt
-test.v4	check	status	OK
-test.v5	check	Error	Table 'test.t1' doesn't exist
-test.v5	check	Error	View 'test.v5' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-test.v5	check	error	Corrupt
-test.v6	check	status	OK
+test_view.v1	check	Error	Table 'test_view.t1' doesn't exist
+test_view.v1	check	Error	View 'test_view.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+test_view.v1	check	error	Corrupt
+test_view.v2	check	status	OK
+test_view.v3	check	Error	Table 'test_view.t1' doesn't exist
+test_view.v3	check	Error	View 'test_view.v3' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+test_view.v3	check	error	Corrupt
+test_view.v4	check	status	OK
+test_view.v5	check	Error	Table 'test_view.t1' doesn't exist
+test_view.v5	check	Error	View 'test_view.v5' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+test_view.v5	check	error	Corrupt
+test_view.v6	check	status	OK
 drop view v1, v2, v3, v4, v5, v6;
 drop table t2;
 drop function if exists f1;
@@ -1989,25 +1801,25 @@ CREATE VIEW v6 AS SELECT f2() FROM t3;
 drop function f1;
 CHECK TABLE v1, v2, v3, v4, v5, v6;
 Table	Op	Msg_type	Msg_text
-test.v1	check	Error	View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-test.v1	check	status	Operation failed
-test.v2	check	status	OK
-test.v3	check	Error	View 'test.v3' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-test.v3	check	status	Operation failed
-test.v4	check	status	OK
-test.v5	check	Error	View 'test.v5' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
-test.v5	check	status	Operation failed
-test.v6	check	status	OK
+test_view.v1	check	Error	View 'test_view.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+test_view.v1	check	status	Operation failed
+test_view.v2	check	status	OK
+test_view.v3	check	Error	View 'test_view.v3' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+test_view.v3	check	status	Operation failed
+test_view.v4	check	status	OK
+test_view.v5	check	Error	View 'test_view.v5' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+test_view.v5	check	status	Operation failed
+test_view.v6	check	status	OK
 create function f1 () returns int return (select max(col1) from t1);
 DROP TABLE t1;
 CHECK TABLE v1, v2, v3, v4, v5, v6;
 Table	Op	Msg_type	Msg_text
-test.v1	check	status	OK
-test.v2	check	status	OK
-test.v3	check	status	OK
-test.v4	check	status	OK
-test.v5	check	status	OK
-test.v6	check	status	OK
+test_view.v1	check	status	OK
+test_view.v2	check	status	OK
+test_view.v3	check	status	OK
+test_view.v4	check	status	OK
+test_view.v5	check	status	OK
+test_view.v6	check	status	OK
 drop function f1;
 drop function f2;
 drop view v1, v2, v3, v4, v5, v6;
@@ -2056,9 +1868,9 @@ CREATE VIEW v2 (vcol1) AS SELECT col1 FROM t1 WHERE col2 > 2;
 INSERT INTO t1 (col1) VALUES(12);
 ERROR HY000: Field 'col2' doesn't have a default value
 INSERT INTO v1 (vcol1) VALUES(12);
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_view.v1' underlying table doesn't have a default value
 INSERT INTO v2 (vcol1) VALUES(12);
-ERROR HY000: Field of view 'test.v2' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_view.v2' underlying table doesn't have a default value
 drop view v2,v1;
 drop table t1;
 create table t1 (f1 int);
@@ -2119,7 +1931,7 @@ CREATE TABLE t1 ( bug_table_seq   INTEGER NOT NULL);
 CREATE OR REPLACE VIEW v1 AS SELECT * from t1;
 DROP PROCEDURE IF EXISTS p1;
 Warnings:
-Note	1305	PROCEDURE test.p1 does not exist
+Note	1305	PROCEDURE test_view.p1 does not exist
 CREATE PROCEDURE p1 ( )
 BEGIN
 DO (SELECT  @next := IFNULL(max(bug_table_seq),0) + 1 FROM v1);
@@ -2196,9 +2008,9 @@ create table t1(a int);
 create procedure p1() create view v1 as select * from t1;
 drop table t1;
 call p1();
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_view.t1' doesn't exist
 call p1();
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_view.t1' doesn't exist
 drop procedure p1;
 create table t1 (f1 int);
 create table t2 (f1 int);
@@ -2227,7 +2039,7 @@ Field	Type	Null	Key	Default	Extra
 f4	char(5)	YES		NULL	
 ALTER TABLE t1 CHANGE COLUMN f4 f4x CHAR(5);
 DESCRIBE v1;
-ERROR HY000: View 'test.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_view.v1' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 DROP TABLE t1;
 DROP VIEW v1;
 create table t1 (f1 char);
@@ -2248,12 +2060,12 @@ drop table t1;
 create table t1 (
 r_object_id char(16) NOT NULL,
 group_name varchar(32) NOT NULL
-) engine = InnoDB;
+) engine = Sequoiadb;
 create table t2 (
 r_object_id char(16) NOT NULL,
 i_position int(11) NOT NULL,
 users_names varchar(32) default NULL
-) Engine = InnoDB;
+) Engine = Sequoiadb;
 create view v1 as select r_object_id, group_name from t1;
 create view v2 as select r_object_id, i_position, users_names from t2;
 create unique index r_object_id on t1(r_object_id);
@@ -2373,24 +2185,6 @@ INSERT INTO t2 VALUES (1,1),(2,2),(3,3);
 INSERT INTO t3 VALUES (1),(2),(3);
 CREATE VIEW v1 AS SELECT t1.* FROM t1,t2 WHERE t1.a=t2.a AND t1.b=t2.b;
 CREATE VIEW v2 AS SELECT t3.* FROM t1,t3 WHERE t1.a=t3.a;
-EXPLAIN SELECT t1.* FROM t1 JOIN t2 WHERE t1.a=t2.a AND t1.b=t2.b AND t1.a=1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	a	a	5	const	1	100.00	Using where; Using index
-1	SIMPLE	t2	NULL	ref	a	a	10	const,test.t1.b	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`b` = `test`.`t1`.`b`) and (`test`.`t1`.`a` = 1) and (`test`.`t2`.`a` = 1))
-EXPLAIN SELECT * FROM v1 WHERE a=1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	a	a	5	const	1	100.00	Using where; Using index
-1	SIMPLE	t2	NULL	ref	a	a	10	const,test.t1.b	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`b` = `test`.`t1`.`b`) and (`test`.`t1`.`a` = 1) and (`test`.`t2`.`a` = 1))
-EXPLAIN SELECT * FROM v2 WHERE a=1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	a	a	5	const	1	100.00	Using index
-1	SIMPLE	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t1` join `test`.`t3` where ((`test`.`t1`.`a` = 1) and (`test`.`t3`.`a` = 1))
 DROP VIEW v1,v2;
 DROP TABLE t1,t2,t3;
 create table t1 (f1 int);
@@ -2438,29 +2232,29 @@ CREATE TABLE t1(id INT);
 CREATE VIEW v1 AS SELECT id FROM t1;
 OPTIMIZE TABLE v1;
 Table	Op	Msg_type	Msg_text
-test.v1	optimize	Error	'test.v1' is not BASE TABLE
-test.v1	optimize	status	Operation failed
+test_view.v1	optimize	Error	'test_view.v1' is not BASE TABLE
+test_view.v1	optimize	status	Operation failed
 ANALYZE TABLE v1;
 Table	Op	Msg_type	Msg_text
-test.v1	analyze	Error	'test.v1' is not BASE TABLE
-test.v1	analyze	status	Operation failed
+test_view.v1	analyze	Error	'test_view.v1' is not BASE TABLE
+test_view.v1	analyze	status	Operation failed
 REPAIR TABLE v1;
 Table	Op	Msg_type	Msg_text
-test.v1	repair	Error	'test.v1' is not BASE TABLE
-test.v1	repair	status	Operation failed
+test_view.v1	repair	Error	'test_view.v1' is not BASE TABLE
+test_view.v1	repair	status	Operation failed
 DROP TABLE t1;
 OPTIMIZE TABLE v1;
 Table	Op	Msg_type	Msg_text
-test.v1	optimize	Error	'test.v1' is not BASE TABLE
-test.v1	optimize	status	Operation failed
+test_view.v1	optimize	Error	'test_view.v1' is not BASE TABLE
+test_view.v1	optimize	status	Operation failed
 ANALYZE TABLE v1;
 Table	Op	Msg_type	Msg_text
-test.v1	analyze	Error	'test.v1' is not BASE TABLE
-test.v1	analyze	status	Operation failed
+test_view.v1	analyze	Error	'test_view.v1' is not BASE TABLE
+test_view.v1	analyze	status	Operation failed
 REPAIR TABLE v1;
 Table	Op	Msg_type	Msg_text
-test.v1	repair	Error	'test.v1' is not BASE TABLE
-test.v1	repair	status	Operation failed
+test_view.v1	repair	Error	'test_view.v1' is not BASE TABLE
+test_view.v1	repair	status	Operation failed
 DROP VIEW v1;
 create definer = current_user() sql security invoker view v1 as select 1;
 show create view v1;
@@ -2475,11 +2269,6 @@ drop view v1;
 create table t1 (id INT, primary key(id));
 insert into t1 values (1),(2);
 create view v1 as select * from t1;
-explain select id from v1 order by id;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	NULL	PRIMARY	4	NULL	2	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`id` AS `id` from `test`.`t1` order by `test`.`t1`.`id`
 drop view v1;
 drop table t1;
 create table t1(f1 int, f2 int);
@@ -2545,32 +2334,12 @@ MAX(a)
 SELECT MAX(a) FROM v1;
 MAX(a)
 5
-EXPLAIN SELECT MAX(a) FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select max(`test`.`t1`.`a`) AS `MAX(a)` from `test`.`t1`
-EXPLAIN SELECT MAX(a) FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select max(`test`.`t1`.`a`) AS `MAX(a)` from `test`.`t1`
 SELECT MIN(a) FROM t1;
 MIN(a)
 0
 SELECT MIN(a) FROM v1;
 MIN(a)
 0
-EXPLAIN SELECT MIN(a) FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select min(`test`.`t1`.`a`) AS `MIN(a)` from `test`.`t1`
-EXPLAIN SELECT MIN(a) FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select min(`test`.`t1`.`a`) AS `MIN(a)` from `test`.`t1`
 DROP VIEW v1;
 DROP TABLE t1;
 CREATE TABLE t1 (x varchar(10));
@@ -2684,7 +2453,7 @@ create view v2 as select * from v1;
 drop table t1;
 rename table v2 to t1;
 select * from v1;
-ERROR HY000: `test`.`v1` contains view recursion
+ERROR HY000: `test_view`.`v1` contains view recursion
 drop view t1, v1;
 create table t1 (a int);
 create function f1() returns int
@@ -2819,13 +2588,13 @@ CREATE TABLE t1 (a INT NOT NULL, b INT NULL DEFAULT NULL);
 CREATE VIEW v1 AS SELECT a, b FROM t1;
 INSERT IGNORE INTO v1 (b) VALUES (2);
 Warnings:
-Warning	1423	Field of view 'test.v1' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_view.v1' underlying table doesn't have a default value
 SET SQL_MODE = STRICT_ALL_TABLES;
 Warnings:
 Warning	3135	'NO_ZERO_DATE', 'NO_ZERO_IN_DATE' and 'ERROR_FOR_DIVISION_BY_ZERO' sql modes should be used with strict mode. They will be merged with strict mode in a future release.
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
 INSERT INTO v1 (b) VALUES (4);
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_view.v1' underlying table doesn't have a default value
 SET SQL_MODE = '';
 SELECT * FROM t1;
 a	b
@@ -2916,19 +2685,19 @@ DROP TABLE t1;
 CREATE TABLE t1 (id INT);
 CREATE VIEW v1 AS SELECT id FROM t1;
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_view
 t1
 v1
 DROP VIEW v2,v1;
-ERROR 42S02: Unknown table 'test.v2'
+ERROR 42S02: Unknown table 'test_view.v2'
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_view
 t1
 CREATE VIEW v1 AS SELECT id FROM t1;
 DROP VIEW t1,v1;
-ERROR HY000: 'test.t1' is not VIEW
+ERROR HY000: 'test_view.t1' is not VIEW
 SHOW TABLES;
-Tables_in_test
+Tables_in_test_view
 t1
 DROP TABLE t1;
 DROP VIEW IF EXISTS v1;
@@ -2954,7 +2723,7 @@ DROP USER 'user21261'@'localhost';
 DROP VIEW v1;
 DROP TABLE t1;
 DROP DATABASE bug21261DB;
-USE test;
+USE test_view;
 create table t1 (f1 datetime);
 create view v1 as select * from t1 where f1 between now() and now() + interval 1 minute;
 show create view v1;
@@ -3001,29 +2770,7 @@ DROP VIEW v1, v2;
 DROP TABLE t1;
 CREATE TABLE t1 (s1 int);
 CREATE VIEW v1 AS SELECT * FROM t1;
-EXPLAIN SELECT * FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Note	1003	/* select#1 */ select NULL AS `s1` from `test`.`t1`
-EXPLAIN SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Note	1003	/* select#1 */ select NULL AS `s1` from `test`.`t1`
 INSERT INTO t1 VALUES (1), (3), (2);
-EXPLAIN SELECT * FROM t1 t WHERE t.s1+1 < (SELECT MAX(t1.s1) FROM t1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
-2	SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t`.`s1` AS `s1` from `test`.`t1` `t` where ((`test`.`t`.`s1` + 1) < (/* select#2 */ select max(`test`.`t1`.`s1`) from `test`.`t1`))
-EXPLAIN SELECT * FROM v1 t WHERE t.s1+1 < (SELECT MAX(t1.s1) FROM t1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
-2	SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1` from `test`.`t1` where ((`test`.`t1`.`s1` + 1) < (/* select#2 */ select max(`test`.`t1`.`s1`) from `test`.`t1`))
 DROP VIEW v1;
 DROP TABLE t1;
 create table t1 (s1 int);
@@ -3066,9 +2813,9 @@ CREATE VIEW v1 AS SELECT id, val FROM t1 WHERE val >= 1 AND val <= 5 WITH CHECK 
 INSERT INTO v1 (val) VALUES (2);
 INSERT INTO v1 (val) VALUES (4);
 INSERT INTO v1 (val) VALUES (6);
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 UPDATE v1 SET val=6 WHERE id=2;
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 DROP VIEW v1;
 DROP TABLE t1;
 DROP VIEW IF EXISTS v1, v2;
@@ -3154,7 +2901,7 @@ b
 1
 2
 UPDATE v1 SET b=3;
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 SELECT * FROM v1;
 b
 1
@@ -3188,12 +2935,6 @@ f1	f2
 2	2
 1	3
 2	3
-explain extended select * from v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`f1` AS `f1`,`test`.`t1`.`f2` AS `f2` from `test`.`t1` order by `test`.`t1`.`f2`
 select * from v1 order by f1;
 f1	f2
 1	2
@@ -3202,12 +2943,6 @@ f1	f2
 2	3
 2	1
 2	2
-explain extended select * from v1 order by f1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`f1` AS `f1`,`test`.`t1`.`f2` AS `f2` from `test`.`t1` order by `test`.`t1`.`f1`
 drop view v1;
 drop table t1;
 CREATE TABLE t1 (
@@ -3417,37 +3152,16 @@ a
 1
 2
 3
-EXPLAIN SELECT * FROM t1 UNION SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-2	UNION	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` union /* select#2 */ select `test`.`t1`.`a` AS `a` from `test`.`t1`
 SELECT * FROM v1 UNION SELECT * FROM t1;
 a
 1
 2
 3
-EXPLAIN SELECT * FROM v1 UNION SELECT * FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-2	UNION	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` union /* select#2 */ select `test`.`t1`.`a` AS `a` from `test`.`t1`
 SELECT * FROM t1 UNION SELECT * FROM v1 ORDER BY a;
 a
 1
 2
 3
-EXPLAIN SELECT * FROM t1 UNION SELECT * FROM v1 ORDER BY a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-2	UNION	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-NULL	UNION RESULT	<union1,2>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` union /* select#2 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` order by `a`
 DROP VIEW v1;
 DROP TABLE t1;
 CREATE VIEW v1 AS SELECT CAST( 1.23456789 AS DECIMAL( 7,5 ) ) AS col;
@@ -3506,14 +3220,14 @@ a1	c
 1	0
 2	0
 UPDATE v1 SET c=3;
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 PREPARE t FROM 'UPDATE v1 SET c=3';
 EXECUTE t;
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 EXECUTE t;
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 INSERT INTO v1(a1, c) VALUES (3, 3);
-ERROR HY000: CHECK OPTION failed 'test.v1'
+ERROR HY000: CHECK OPTION failed 'test_view.v1'
 UPDATE v1 SET c=1 WHERE a1=1;
 SELECT * FROM v1;
 a1	c
@@ -3532,14 +3246,14 @@ a1	c
 1	1
 2	0
 UPDATE v2 SET c=3;
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 PREPARE t FROM 'UPDATE v2 SET c=3';
 EXECUTE t;
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 EXECUTE t;
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 INSERT INTO v2(a1, c) VALUES (3, 3);
-ERROR HY000: CHECK OPTION failed 'test.v2'
+ERROR HY000: CHECK OPTION failed 'test_view.v2'
 UPDATE v2 SET c=2 WHERE a1=1;
 SELECT * FROM v2;
 a1	c
@@ -3557,28 +3271,13 @@ CREATE VIEW v1 AS SELECT a, b+1 as b FROM t1;
 SELECT b, SUM(a) FROM v1 WHERE b=3 GROUP BY b;
 b	SUM(a)
 3	4
-EXPLAIN SELECT b, SUM(a) FROM v1 WHERE b=3 GROUP BY b;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select (`test`.`t1`.`b` + 1) AS `b`,sum(`test`.`t1`.`a`) AS `SUM(a)` from `test`.`t1` where ((`test`.`t1`.`b` + 1) = 3) group by `b`
 SELECT a, SUM(b) FROM v1 WHERE b=3 GROUP BY a;
 a	SUM(b)
 1	6
 2	3
-EXPLAIN SELECT a, SUM(b) FROM v1 WHERE b=3 GROUP BY a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using where; Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,sum((`test`.`t1`.`b` + 1)) AS `SUM(b)` from `test`.`t1` where ((`test`.`t1`.`b` + 1) = 3) group by `test`.`t1`.`a`
 SELECT a, SUM(b) FROM v1 WHERE a=1 GROUP BY a;
 a	SUM(b)
 1	10
-EXPLAIN SELECT a, SUM(b) FROM v1 WHERE a=1 GROUP BY a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	25.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,sum((`test`.`t1`.`b` + 1)) AS `SUM(b)` from `test`.`t1` where (`test`.`t1`.`a` = 1) group by `test`.`t1`.`a`
 DROP VIEW v1;
 DROP TABLE t1;
 CREATE TABLE t1 (
@@ -3617,13 +3316,6 @@ INSERT INTO t3 VALUES
 (5,'IA_SUPERVISOR','IACANS'),(6,'IA_READONLY','IACANS'),
 (7,'SOC_USER','SOCCANS'),(8,'CAYIT_USER','CAYITCANS'),
 (9,'RTOS_DCFSPOS_SUPERVISOR','RTOS');
-EXPLAIN SELECT t.person_id AS a, t.person_id AS b FROM v1 t WHERE t.person_id=6;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	profile	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	Using temporary; Using filesort
-1	SIMPLE	userrole	NULL	ref	idx_person_id,idx_role_id	idx_person_id	4	const	2	100.00	NULL
-1	SIMPLE	role	NULL	eq_ref	PRIMARY	PRIMARY	4	test.userrole.role_id	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select '6' AS `a`,'6' AS `b` from `test`.`t1` `profile` join `test`.`t2` `userrole` join `test`.`t3` `role` where ((`role`.`role_id` = `userrole`.`role_id`) and (`userrole`.`person_id` = 6)) order by '6',`role`.`app_name`,`role`.`role_name`
 SELECT t.person_id AS a, t.person_id AS b FROM v1 t WHERE t.person_id=6;
 a	b
 6	6
@@ -3663,29 +3355,14 @@ CREATE VIEW v1 AS SELECT * FROM t1 FORCE KEY (PRIMARY,b) ORDER BY a;
 SHOW CREATE VIEW v1;
 View	Create View	character_set_client	collation_connection
 v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b` from `t1` FORCE INDEX (PRIMARY) FORCE INDEX (`b`) order by `t1`.`a`	latin1	latin1_swedish_ci
-EXPLAIN SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	NULL	PRIMARY	4	NULL	15	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` FORCE INDEX (PRIMARY) FORCE INDEX (`b`) order by `test`.`t1`.`a`
 CREATE VIEW v2 AS SELECT * FROM t1 USE KEY () ORDER BY a;
 SHOW CREATE VIEW v2;
 View	Create View	character_set_client	collation_connection
 v2	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v2` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b` from `t1` USE INDEX () order by `t1`.`a`	latin1	latin1_swedish_ci
-EXPLAIN SELECT * FROM v2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	15	100.00	Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` USE INDEX () order by `test`.`t1`.`a`
 CREATE VIEW v3 AS SELECT * FROM t1 IGNORE KEY (b) ORDER BY a;
 SHOW CREATE VIEW v3;
 View	Create View	character_set_client	collation_connection
 v3	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v3` AS select `t1`.`a` AS `a`,`t1`.`b` AS `b` from `t1` IGNORE INDEX (`b`) order by `t1`.`a`	latin1	latin1_swedish_ci
-EXPLAIN SELECT * FROM v3;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	15	100.00	Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` IGNORE INDEX (`b`) order by `test`.`t1`.`a`
 DROP VIEW v1;
 DROP VIEW v2;
 DROP VIEW v3;
@@ -3698,13 +3375,13 @@ create table t1(f1 int, f2 int not null);
 create view v1 as select f1 from t1;
 insert into v1 values(1);
 Warnings:
-Warning	1423	Field of view 'test.v1' underlying table doesn't have a default value
+Warning	1423	Field of view 'test_view.v1' underlying table doesn't have a default value
 set @old_mode=@@sql_mode;
 set @@sql_mode=traditional;
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
 insert into v1 values(1);
-ERROR HY000: Field of view 'test.v1' underlying table doesn't have a default value
+ERROR HY000: Field of view 'test_view.v1' underlying table doesn't have a default value
 set @@sql_mode=@old_mode;
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
@@ -3745,7 +3422,7 @@ CREATE TABLE t1(c1 INT);
 SELECT * FROM t1;
 c1
 ALTER ALGORITHM=TEMPTABLE SQL SECURITY INVOKER VIEW t1 (c2) AS SELECT (1);
-ERROR HY000: 'test.t1' is not VIEW
+ERROR HY000: 'test_view.t1' is not VIEW
 
 DROP TABLE t1;
 
@@ -3803,20 +3480,20 @@ CREATE TABLE t1(a INT UNIQUE);
 CREATE VIEW v1 AS SELECT t1.a FROM t1, t1 AS a;
 INSERT INTO t1 VALUES (1), (2);
 REPLACE INTO v1(a) SELECT 1 FROM t1,t1 AS c;
-ERROR HY000: Can not delete from join view 'test.v1'
+ERROR HY000: Can not delete from join view 'test_view.v1'
 SELECT * FROM v1;
 a
 1
-2
 1
+2
 2
 REPLACE INTO v1(a) SELECT 3 FROM t1,t1 AS c;
-ERROR HY000: Can not delete from join view 'test.v1'
+ERROR HY000: Can not delete from join view 'test_view.v1'
 SELECT * FROM v1;
 a
 1
-2
 1
+2
 2
 DELETE FROM t1 WHERE a=3;
 INSERT INTO v1(a) SELECT 1 FROM t1,t1 AS c
@@ -3829,28 +3506,28 @@ a
 2
 CREATE VIEW v2 AS SELECT t1.a FROM t1, v1 AS a;
 REPLACE INTO v2(a) SELECT 1 FROM t1,t1 AS c;
-ERROR HY000: Can not delete from join view 'test.v2'
+ERROR HY000: Can not delete from join view 'test_view.v2'
 SELECT * FROM v2;
 a
 1
-2
+1
+1
 1
 2
-1
 2
-1
+2
 2
 REPLACE INTO v2(a) SELECT 3 FROM t1,t1 AS c;
-ERROR HY000: Can not delete from join view 'test.v2'
+ERROR HY000: Can not delete from join view 'test_view.v2'
 SELECT * FROM v2;
 a
 1
-2
+1
+1
 1
 2
-1
 2
-1
+2
 2
 INSERT INTO v2(a) SELECT 1 FROM t1,t1 AS c
 ON DUPLICATE KEY UPDATE `v2`.`a`= 1;
@@ -3908,7 +3585,7 @@ v-2
 DROP TABLE `t-2`;
 DROP VIEW  `v-2`;
 DROP DATABASE `d-1`;
-USE test;
+USE test_view;
 
 #
 # Bug#26676 VIEW using old table schema in a session.
@@ -3976,7 +3653,7 @@ SELECT * FROM v1 WHERE c2 = 'text2';
 c1	c2
 text1	text2
 
-use test;
+use test_view;
 SET names latin1;
 
 SELECT COLLATION(c1), COLLATION(c2) FROM v1;
@@ -4011,7 +3688,7 @@ drop procedure p;
 CREATE TABLE t1 (a INT);
 CREATE VIEW v1 AS SELECT a FROM t1;
 ALTER TABLE v1;
-ERROR HY000: 'test.v1' is not BASE TABLE
+ERROR HY000: 'test_view.v1' is not BASE TABLE
 DROP VIEW v1;
 DROP TABLE t1;
 #
@@ -4032,9 +3709,9 @@ END//
 CREATE VIEW v1 AS SELECT f1() FROM t1;
 SHOW CREATE VIEW v1;
 View	Create View	character_set_client	collation_connection
-v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `f1`() AS `f1()` from `t1`	latin1	latin1_swedish_ci
+v1	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v1` AS select `f1`() AS `f1()` from `test_view`.`t1`	latin1	latin1_swedish_ci
 Warnings:
-Note	1599	View `test`.`v2` has no creation context
+Note	1599	View `test_view`.`v2` has no creation context
 DROP VIEW v1,v2;
 DROP TABLE t1,t2;
 DROP FUNCTION f1;
@@ -4082,13 +3759,13 @@ drop view if exists v_9801;
 create table t_9801 (s1 int);
 create view v_9801 as
 select sum(s1) from t_9801 with check option;
-ERROR HY000: CHECK OPTION on non-updatable view 'test.v_9801'
+ERROR HY000: CHECK OPTION on non-updatable view 'test_view.v_9801'
 create view v_9801 as
 select sum(s1) from t_9801 group by s1 with check option;
-ERROR HY000: CHECK OPTION on non-updatable view 'test.v_9801'
+ERROR HY000: CHECK OPTION on non-updatable view 'test_view.v_9801'
 create view v_9801 as
 select sum(s1) from t_9801 group by s1 with rollup with check option;
-ERROR HY000: CHECK OPTION on non-updatable view 'test.v_9801'
+ERROR HY000: CHECK OPTION on non-updatable view 'test_view.v_9801'
 drop table t_9801;
 #
 # Bug #47335 assert in get_table_share
@@ -4097,7 +3774,7 @@ DROP TABLE IF EXISTS t1;
 DROP VIEW IF EXISTS v1;
 CREATE TEMPORARY TABLE t1 (id INT);
 ALTER VIEW t1 AS SELECT 1 AS f1;
-ERROR 42S02: Table 'test.t1' doesn't exist
+ERROR 42S02: Table 'test_view.t1' doesn't exist
 DROP TABLE t1;
 CREATE VIEW v1 AS SELECT 1 AS f1;
 CREATE TEMPORARY TABLE v1 (id INT);
@@ -4147,8 +3824,10 @@ CALL p1();
 # Connection 2
 # ... then try to drop the view. This should block.
 # Sending:
-DROP VIEW v1;
+DROP VIEW test_view.v1;
 # Connection 3
+Timeout in wait_condition.inc for SELECT COUNT(*) = 1 from information_schema.processlist
+WHERE state = "Waiting for table metadata lock" AND info = "DROP VIEW v1"
 # Now allow CALL p1() to complete
 SELECT RELEASE_LOCK('blocker');
 RELEASE_LOCK('blocker')
@@ -4186,7 +3865,7 @@ CREATE VIEW v1 AS SELECT f1() AS a FROM t1;
 CREATE VIEW v2 AS SELECT f2(a) AS a FROM v1;
 DROP FUNCTION f1;
 SELECT f2(a) FROM v2;
-ERROR HY000: View 'test.v2' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
+ERROR HY000: View 'test_view.v2' references invalid table(s) or column(s) or function(s) or definer/invoker of view lack rights to use them
 DROP VIEW v2;
 DROP VIEW v1;
 DROP FUNCTION f2;
@@ -4196,7 +3875,7 @@ DROP TABLE t1;
 #               TL_READ' FAILED | MYSQL_LOCK_TABLES
 #
 DROP TABLE IF EXISTS t1;
-CREATE TEMPORARY TABLE t1 (a INT) engine=InnoDB;
+CREATE TEMPORARY TABLE t1 (a INT) engine=Sequoiadb;
 CREATE VIEW t1 AS SELECT 1;
 DROP VIEW t1;
 DROP TEMPORARY TABLE t1;
@@ -4217,7 +3896,7 @@ c_int_key INT,
 PRIMARY KEY (pk),
 KEY (c_int_key)
 ) 
-ENGINE=innodb;
+ENGINE=Sequoiadb;
 CREATE VIEW v_t1 AS SELECT * FROM t1;
 CREATE TABLE t2 (
 pk              INT auto_increment,
@@ -4228,7 +3907,7 @@ c_varchar_600_z VARCHAR(600),
 PRIMARY KEY (pk),
 KEY (c_int_key)
 ) 
-ENGINE=innodb;
+ENGINE=Sequoiadb;
 CREATE VIEW v_t2 AS SELECT * FROM t2;
 INSERT INTO t2 VALUES
 (
@@ -4304,51 +3983,21 @@ FROM t1 JOIN v2 AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN v2 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`)
 SELECT *
 FROM t1, v2 AS dt WHERE t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1, v2 AS dt WHERE t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`)
 SELECT *
 FROM (t1 JOIN t2 ON t1.a=t2.a) JOIN v2 AS dt ON t1.a=dt.a;
 a	b	a	b	a	b
 1	10	1	100	1	100
 2	20	2	200	2	200
-explain SELECT *
-FROM (t1 JOIN t2 ON t1.a=t2.a) JOIN v2 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` join `test`.`t2` where ((`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t2`.`a` = `test`.`t1`.`a`))
 SELECT *
 FROM t1 JOIN v12_1 AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN v12_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t1` join `test`.`t2` where ((`test`.`t1`.`a` = `test`.`t1`.`a`) and (`test`.`t2`.`a` = `test`.`t1`.`a`))
 SELECT *
 FROM (t1 JOIN t2 USING (a))
 JOIN v12_1 AS dt
@@ -4356,17 +4005,6 @@ ON t1.a=dt.a;
 a	b	b	a	b
 1	10	100	1	100
 2	20	200	2	200
-explain SELECT *
-FROM (t1 JOIN t2 USING (a))
-JOIN v12_1 AS dt
-ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` join `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t1`.`a` = `test`.`t1`.`a`) and (`test`.`t2`.`a` = `test`.`t1`.`a`))
 SELECT *
 FROM (t1 JOIN t2 USING (a))
 JOIN v12_2 AS dt1
@@ -4376,61 +4014,20 @@ ON dt1.a=dt2.a;
 a	b	b	a	b	a	b
 1	10	100	1	100	1	100
 2	20	200	2	200	2	200
-explain SELECT *
-FROM (t1 JOIN t2 USING (a))
-JOIN v12_2 AS dt1
-ON t1.a=dt1.a AND t2.b=dt1.b
-JOIN v12_1 AS dt2
-ON dt1.a=dt2.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`b` AS `b`,`test`.`t1`.`a` AS `a`,`test`.`t2`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` join `test`.`t1` join `test`.`t2` join `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`b` = `test`.`t2`.`b`) and (`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t1`.`a` = `test`.`t1`.`a`) and (`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t1`.`a` = `test`.`t1`.`a`) and (`test`.`t2`.`a` = `test`.`t1`.`a`))
 SELECT *
 FROM t1 JOIN v12_3 AS dt ON t1.a=dt.a;
 a	b	a	b
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN v12_3 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t1` join `test`.`t2` where ((`test`.`t1`.`a` = `test`.`t1`.`a`) and (`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t1`.`b` > 15))
 SELECT *
 FROM t1 JOIN v2_sj AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN v2_sj AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; FirstMatch(t2); Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` semi join (`test`.`t1`) join `test`.`t2` where ((`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t1`.`a` = `test`.`t1`.`a`))
 SELECT *
 FROM t1 JOIN vu_1 AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vu_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-1	PRIMARY	<derived2>	NULL	ref	<auto_key0>	<auto_key0>	5	test.t1.a	2	100.00	NULL
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-3	UNION	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-NULL	UNION RESULT	<union2,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`dt`.`a` AS `a`,`dt`.`b` AS `b` from `test`.`t1` join `test`.`vu_1` `dt` where (`dt`.`a` = `test`.`t1`.`a`)
 SELECT *
 FROM t1 JOIN vu_2 AS dt ON t1.a=dt.a;
 a	b	a	b
@@ -4438,282 +4035,114 @@ a	b	a	b
 1	10	1	100
 2	20	2	200
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vu_2 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-1	PRIMARY	<derived2>	NULL	ref	<auto_key0>	<auto_key0>	5	test.t1.a	2	100.00	NULL
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-3	UNION	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`dt`.`a` AS `a`,`dt`.`b` AS `b` from `test`.`t1` join `test`.`vu_2` `dt` where (`dt`.`a` = `test`.`t1`.`a`)
 SELECT *
 FROM t1 JOIN vd_1 AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vd_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-1	PRIMARY	<derived2>	NULL	ref	<auto_key0>	<auto_key0>	5	test.t1.a	2	100.00	NULL
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`dt`.`a` AS `a`,`dt`.`b` AS `b` from `test`.`t1` join `test`.`vd_1` `dt` where (`dt`.`a` = `test`.`t1`.`a`)
 SELECT *
 FROM t1 JOIN va_1 AS dt ON t1.a=dt.a;
 a	b	a	b
-explain SELECT *
-FROM t1 JOIN va_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,'3' AS `a`,'300' AS `b` from `test`.`t1` where (`test`.`t1`.`a` = '3')
 SELECT *
 FROM t1 JOIN vg_1 AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vg_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-1	PRIMARY	<derived2>	NULL	ref	<auto_key0>	<auto_key0>	5	test.t1.a	2	100.00	NULL
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`dt`.`a` AS `a`,`dt`.`b` AS `b` from `test`.`t1` join `test`.`vg_1` `dt` where (`dt`.`a` = `test`.`t1`.`a`)
 SELECT *
 FROM t1 JOIN vh_1 AS dt ON t1.a=dt.a;
 a	b	a
 1	10	1
-explain SELECT *
-FROM t1 JOIN vh_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	DERIVED	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,NULL AS `a` from `test`.`t1` join `test`.`vh_1` `dt` where multiple equal(`test`.`t1`.`a`, NULL)
 SELECT *
 FROM t1 JOIN vl_1 AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
-explain SELECT *
-FROM t1 JOIN vl_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,'1' AS `a`,'100' AS `b` from `test`.`t1` where (`test`.`t1`.`a` = '1')
 SELECT *
 FROM t1 JOIN vlo_1 AS dt ON t1.a=dt.a;
 a	b	a	b
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vlo_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-1	PRIMARY	<derived2>	NULL	ref	<auto_key0>	<auto_key0>	5	test.t1.a	2	100.00	NULL
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`dt`.`a` AS `a`,`dt`.`b` AS `b` from `test`.`t1` join `test`.`vlo_1` `dt` where (`dt`.`a` = `test`.`t1`.`a`)
 SELECT *
 FROM t1 JOIN vrow AS dt ON t1.a=dt.a;
 a	b	a
 1	10	1
-explain SELECT *
-FROM t1 JOIN vrow AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-2	DERIVED	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,'1' AS `a` from `test`.`t1` where (`test`.`t1`.`a` = '1')
 SELECT *
 FROM vo_1 AS dt;
 a	b
 1	100
 2	200
-explain SELECT *
-FROM vo_1 AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t2` order by `test`.`t2`.`a`
 SELECT *
 FROM vo_2 AS dt;
 a	b
 2	200
 1	100
-explain SELECT *
-FROM vo_2 AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t2` order by `test`.`t2`.`a` desc
 SELECT *
 FROM vo_1 AS dt
 WHERE dt.a > 0;
 a	b
 1	100
 2	200
-explain SELECT *
-FROM vo_1 AS dt
-WHERE dt.a > 0;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t2` where (`test`.`t2`.`a` > 0) order by `test`.`t2`.`a`
 SELECT *
 FROM vo_2 AS dt
 WHERE dt.a > 0;
 a	b
 2	200
 1	100
-explain SELECT *
-FROM vo_2 AS dt
-WHERE dt.a > 0;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t2` where (`test`.`t2`.`a` > 0) order by `test`.`t2`.`a` desc
 SELECT *
 FROM t1 JOIN vo_1 AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vo_1 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`)
 SELECT *
 FROM t1 JOIN vo_2 AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vo_2 AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`)
 SELECT dt.a, COUNT(*)
 FROM vo_1 AS dt
 GROUP BY dt.a;
 a	COUNT(*)
 1	1
 2	1
-explain SELECT dt.a, COUNT(*)
-FROM vo_1 AS dt
-GROUP BY dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,count(0) AS `COUNT(*)` from `test`.`t2` group by `test`.`t2`.`a`
 SELECT dt.a, COUNT(*)
 FROM vo_2 AS dt
 GROUP BY dt.a;
 a	COUNT(*)
 1	1
 2	1
-explain SELECT dt.a, COUNT(*)
-FROM vo_2 AS dt
-GROUP BY dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,count(0) AS `COUNT(*)` from `test`.`t2` group by `test`.`t2`.`a`
 SELECT COUNT(*)
 FROM vo_1 AS dt;
 COUNT(*)
 2
-explain SELECT COUNT(*)
-FROM vo_1 AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select count(0) AS `COUNT(*)` from `test`.`t2`
 SELECT COUNT(*)
 FROM vo_2 AS dt;
 COUNT(*)
 2
-explain SELECT COUNT(*)
-FROM vo_2 AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select count(0) AS `COUNT(*)` from `test`.`t2`
 SELECT DISTINCT *
 FROM vo_1 AS dt;
 a	b
 1	100
 2	200
-explain SELECT DISTINCT *
-FROM vo_1 AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select distinct `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t2`
 SELECT DISTINCT *
 FROM vo_2 AS dt;
 a	b
 1	100
 2	200
-explain SELECT DISTINCT *
-FROM vo_2 AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select distinct `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t2`
 SELECT *
 FROM t1 JOIN vo_1 AS dt ON t1.a=dt.a
 ORDER BY t1.b;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vo_1 AS dt ON t1.a=dt.a
-ORDER BY t1.b;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`) order by `test`.`t1`.`b`
 SELECT *
 FROM t1 JOIN vo_2 AS dt ON t1.a=dt.a
 ORDER BY t1.b;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vo_2 AS dt ON t1.a=dt.a
-ORDER BY t1.b;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`) order by `test`.`t1`.`b`
 SELECT *
 FROM t1 JOIN vx AS dt ON t1.a=dt.a;
 a	b	a	b
 1	10	1	100
 2	20	2	200
-explain SELECT *
-FROM t1 JOIN vx AS dt ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-1	PRIMARY	<derived2>	NULL	ref	<auto_key0>	<auto_key0>	5	test.t1.a	2	100.00	NULL
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-3	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Note	1276	Field or reference 'test.t2.b' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`dt`.`a` AS `a`,`dt`.`b` AS `b` from `test`.`t1` join `test`.`vx` `dt` where (`dt`.`a` = `test`.`t1`.`a`)
 SET @optimizer_switch_saved= @@optimizer_switch;
 SET @@optimizer_switch="derived_merge=off";
 SELECT *
@@ -4723,18 +4152,6 @@ ON t1.a=dt.a;
 a	b	b	a	b
 1	10	100	1	100
 2	20	200	2	200
-explain SELECT *
-FROM (t1 JOIN t2 USING (a))
-JOIN v12_1 AS dt
-ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	PRIMARY	<derived2>	NULL	ref	<auto_key0>	<auto_key0>	5	test.t1.a	2	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`b` AS `b`,`dt`.`a` AS `a`,`dt`.`b` AS `b` from `test`.`t1` join `test`.`t2` join `test`.`v12_1` `dt` where ((`test`.`t2`.`a` = `test`.`t1`.`a`) and (`dt`.`a` = `test`.`t1`.`a`))
 SET @@optimizer_switch="derived_merge=on";
 SELECT *
 FROM (t1 JOIN t2 USING (a))
@@ -4743,17 +4160,6 @@ ON t1.a=dt.a;
 a	b	b	a	b
 1	10	100	1	100
 2	20	200	2	200
-explain SELECT *
-FROM (t1 JOIN t2 USING (a))
-JOIN v12_1 AS dt
-ON t1.a=dt.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`b` AS `b`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t1` join `test`.`t2` join `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t1`.`a` = `test`.`t1`.`a`) and (`test`.`t2`.`a` = `test`.`t1`.`a`))
 SET @@optimizer_switch= @optimizer_switch_saved;
 DROP VIEW v2, v2_sj, v12_1, v12_2, v12_3;
 DROP VIEW vu_1, vu_2, vd_1, va_1, vg_1, vh_1, vl_1;
@@ -4785,16 +4191,6 @@ a
 4
 5
 NULL
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a` from `test`.`t2`
-explain SELECT * FROM (SELECT * FROM t2) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a` from `test`.`t2`
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT * FROM t1 WHERE b=a*10) AS dt;
@@ -4808,16 +4204,6 @@ a	b
 1	10
 2	20
 4	40
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` where (`test`.`t1`.`b` = (`test`.`t1`.`a` * 10))
-explain SELECT * FROM (SELECT * FROM t1 WHERE b=a*10) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` where (`test`.`t1`.`b` = (`test`.`t1`.`a` * 10))
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT a, SUM(b) AS s, COUNT(*) AS c FROM t1 GROUP BY a ORDER BY a) AS dt;
@@ -4833,18 +4219,6 @@ a	s	c
 2	41	2
 3	NULL	1
 4	210	5
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived3>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `dt`.`a` AS `a`,`dt`.`s` AS `s`,`dt`.`c` AS `c` from (/* select#3 */ select `test`.`t1`.`a` AS `a`,sum(`test`.`t1`.`b`) AS `s`,count(0) AS `c` from `test`.`t1` group by `test`.`t1`.`a` order by `test`.`t1`.`a`) `dt`
-explain SELECT * FROM (SELECT a, SUM(b) AS s, COUNT(*) AS c FROM t1 GROUP BY a ORDER BY a) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select `dt`.`a` AS `a`,`dt`.`s` AS `s`,`dt`.`c` AS `c` from (/* select#2 */ select `test`.`t1`.`a` AS `a`,sum(`test`.`t1`.`b`) AS `s`,count(0) AS `c` from `test`.`t1` group by `test`.`t1`.`a` order by `test`.`t1`.`a`) `dt`
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT DISTINCT a FROM t1) AS dt;
@@ -4860,18 +4234,6 @@ a
 2
 3
 4
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived3>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select `dt`.`a` AS `a` from (/* select#3 */ select distinct `test`.`t1`.`a` AS `a` from `test`.`t1`) `dt`
-explain SELECT * FROM (SELECT DISTINCT a FROM t1) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select `dt`.`a` AS `a` from (/* select#2 */ select distinct `test`.`t1`.`a` AS `a` from `test`.`t1`) `dt`
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT * FROM t1 LIMIT 3 OFFSET 3) AS dt;
@@ -4885,18 +4247,6 @@ a	b
 3	NULL
 4	40
 4	41
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived3>	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	NULL
-3	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `dt`.`a` AS `a`,`dt`.`b` AS `b` from (/* select#3 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` limit 3,3) `dt`
-explain SELECT * FROM (SELECT * FROM t1 LIMIT 3 OFFSET 3) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `dt`.`a` AS `a`,`dt`.`b` AS `b` from (/* select#2 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` limit 3,3) `dt`
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT DISTINCT a FROM t1 UNION ALL SELECT a FROM t2) AS dt;
@@ -4924,20 +4274,6 @@ a
 4
 5
 NULL
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived3>	NULL	ALL	NULL	NULL	NULL	NULL	15	100.00	NULL
-3	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary
-4	UNION	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `dt`.`a` AS `a` from (/* select#3 */ select distinct `test`.`t1`.`a` AS `a` from `test`.`t1` union all /* select#4 */ select `test`.`t2`.`a` AS `a` from `test`.`t2`) `dt`
-explain SELECT * FROM (SELECT DISTINCT a FROM t1 UNION ALL SELECT a FROM t2) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	15	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary
-3	UNION	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `dt`.`a` AS `a` from (/* select#2 */ select distinct `test`.`t1`.`a` AS `a` from `test`.`t1` union all /* select#3 */ select `test`.`t2`.`a` AS `a` from `test`.`t2`) `dt`
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT * FROM t1 WHERE (SELECT a FROM t1 LIMIT 1) = b/10) AS dt;
@@ -4947,18 +4283,6 @@ a	b
 SELECT * FROM (SELECT * FROM t1 WHERE (SELECT a FROM t1 LIMIT 1) = b/10) AS dt;
 a	b
 1	10
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using where
-4	SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` where ((/* select#4 */ select `test`.`t1`.`a` from `test`.`t1` limit 1) = (`test`.`t1`.`b` / 10))
-explain SELECT * FROM (SELECT * FROM t1 WHERE (SELECT a FROM t1 LIMIT 1) = b/10) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using where
-3	SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` where ((/* select#3 */ select `test`.`t1`.`a` from `test`.`t1` limit 1) = (`test`.`t1`.`b` / 10))
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT * FROM t1 WHERE a IN (SELECT a FROM t2 WHERE a % 2 = 0)) AS dt;
@@ -4980,18 +4304,6 @@ a	b
 4	42
 4	43
 4	44
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Using where; Start temporary
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where; End temporary; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` semi join (`test`.`t2`) where ((`test`.`t1`.`a` = `test`.`t2`.`a`) and ((`test`.`t2`.`a` % 2) = 0))
-explain SELECT * FROM (SELECT * FROM t1 WHERE a IN (SELECT a FROM t2 WHERE a % 2 = 0)) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Using where; Start temporary
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where; End temporary; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` semi join (`test`.`t2`) where ((`test`.`t1`.`a` = `test`.`t2`.`a`) and ((`test`.`t2`.`a` % 2) = 0))
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT a, (SELECT a FROM t2 WHERE a=t1.a)
@@ -5007,25 +4319,6 @@ a	(SELECT a FROM t2 WHERE a=t1.a)
 1	1
 2	2
 4	4
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived3>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-3	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Start temporary
-3	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where; End temporary; Using join buffer (Block Nested Loop)
-5	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #5 was resolved in SELECT #3
-Note	1003	/* select#1 */ select `dt`.`a` AS `a`,`dt`.`(SELECT a FROM t2 WHERE a=t1.a)` AS `(SELECT a FROM t2 WHERE a=t1.a)` from (/* select#3 */ select `test`.`t1`.`a` AS `a`,(/* select#5 */ select `test`.`t2`.`a` from `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`)) AS `(SELECT a FROM t2 WHERE a=t1.a)` from `test`.`t1` semi join (`test`.`t2`) where (`test`.`t1`.`b` = (`test`.`t2`.`a` * 10))) `dt`
-explain SELECT * FROM (SELECT a, (SELECT a FROM t2 WHERE a=t1.a)
-FROM t1 WHERE b IN (SELECT a*10 FROM t2)) AS dt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DERIVED	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Start temporary
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where; End temporary; Using join buffer (Block Nested Loop)
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `dt`.`a` AS `a`,`dt`.`(SELECT a FROM t2 WHERE a=t1.a)` AS `(SELECT a FROM t2 WHERE a=t1.a)` from (/* select#2 */ select `test`.`t1`.`a` AS `a`,(/* select#3 */ select `test`.`t2`.`a` from `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`)) AS `(SELECT a FROM t2 WHERE a=t1.a)` from `test`.`t1` semi join (`test`.`t2`) where (`test`.`t1`.`b` = (`test`.`t2`.`a` * 10))) `dt`
 DROP VIEW v1;
 CREATE VIEW v1 AS
 SELECT * FROM (SELECT a, (SELECT a FROM t2) FROM t1 WHERE b=a*10) AS dt;
@@ -5046,20 +4339,6 @@ a	b	a
 1	10	1
 2	20	2
 4	40	4
-explain SELECT * FROM v1 JOIN t2 ON v1.a=t2.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Start temporary
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where; End temporary; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a` from `test`.`t1` semi join (`test`.`t2`) join `test`.`t2` where ((`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t1`.`b` = (`test`.`t2`.`a` * 10)))
-explain SELECT * FROM (SELECT a, b FROM t1 WHERE b IN (SELECT a*10 FROM t2)) AS dt JOIN t2 ON dt.a=t2.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	100.00	Start temporary
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where; End temporary; Using join buffer (Block Nested Loop)
-1	SIMPLE	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,`test`.`t2`.`a` AS `a` from `test`.`t1` semi join (`test`.`t2`) join `test`.`t2` where ((`test`.`t2`.`a` = `test`.`t1`.`a`) and (`test`.`t1`.`b` = (`test`.`t2`.`a` * 10)))
 DROP VIEW v1;
 DROP TABLE t1, t2;
 CREATE TABLE t1(a INTEGER, b INTEGER);
@@ -5106,24 +4385,6 @@ a	b	s
 4	42	1
 4	43	1
 4	44	1
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,(/* select#3 */ select 1 from `test`.`t2` where (`test`.`t2`.`a` = 3)) AS `s` from `test`.`t1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1`
-explain SELECT a, b, (SELECT 1 FROM t2 WHERE a=3) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,(/* select#2 */ select 1 from `test`.`t2` where (`test`.`t2`.`a` = 3)) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, (SELECT 1 FROM t2 WHERE a=6) AS s
 FROM t1;
@@ -5161,24 +4422,6 @@ a	b	s
 4	42	NULL
 4	43	NULL
 4	44	NULL
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,(/* select#3 */ select 1 from `test`.`t2` where (`test`.`t2`.`a` = 6)) AS `s` from `test`.`t1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1`
-explain SELECT a, b, (SELECT 1 FROM t2 WHERE a=6) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,(/* select#2 */ select 1 from `test`.`t2` where (`test`.`t2`.`a` = 6)) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, (SELECT 1 FROM t2 WHERE a>=3) AS s
 FROM t1;
@@ -5198,11 +4441,6 @@ a
 SELECT a, b, (SELECT 1 FROM t2 WHERE a>=3) AS s
 FROM t1;
 ERROR 21000: Subquery returns more than 1 row
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, a IN (SELECT 1 FROM t2 WHERE a=6) AS s
 FROM t1;
@@ -5240,27 +4478,6 @@ a	b	s
 4	42	0
 4	43	0
 4	44	0
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1003	/* select#1 */ select `v1`.`a` AS `a`,`v1`.`b` AS `b`,`v1`.`s` AS `s` from `test`.`v1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
-explain SELECT a, b, a IN (SELECT 1 FROM t2 WHERE a=6) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,<in_optimizer>(`test`.`t1`.`a`,`test`.`t1`.`a` in ( <materialize> (/* select#2 */ select 1 from `test`.`t2` where (`test`.`t2`.`a` = 6) ), <primary_index_lookup>(`test`.`t1`.`a` in <temporary table> on <auto_key> where ((`test`.`t1`.`a` = `materialized-subquery`.`1`))))) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, (SELECT COUNT(*) FROM t2) AS c
 FROM t1;
@@ -5298,24 +4515,6 @@ a	b	c
 4	42	6
 4	43	6
 4	44	6
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,(/* select#3 */ select count(0) from `test`.`t2`) AS `c` from `test`.`t1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1`
-explain SELECT a, b, (SELECT COUNT(*) FROM t2) AS c
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,(/* select#2 */ select count(0) from `test`.`t2`) AS `c` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, a IN (SELECT COUNT(*) FROM t2) AS c
 FROM t1;
@@ -5353,27 +4552,6 @@ a	b	c
 4	42	0
 4	43	0
 4	44	0
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select `v1`.`a` AS `a`,`v1`.`b` AS `b`,`v1`.`c` AS `c` from `test`.`v1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
-explain SELECT a, b, a IN (SELECT COUNT(*) FROM t2) AS c
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,<in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select count(0) from `test`.`t2` having <if>(outer_field_is_not_null, (<cache>(`test`.`t1`.`a`) = <ref_null_helper>(count(0))), true))) AS `c` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, (SELECT a*2 FROM t2 WHERE a=t1.a) AS s
 FROM t1;
@@ -5411,30 +4589,6 @@ a	b	s
 4	42	8
 4	43	8
 4	44	8
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a`,`v1`.`b` AS `b`,`v1`.`s` AS `s` from `test`.`v1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
-explain SELECT a, b, (SELECT a*2 FROM t2 WHERE a=t1.a) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,(/* select#2 */ select (`test`.`t2`.`a` * 2) from `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`)) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, EXISTS (SELECT a*2 FROM t2 WHERE a=t1.a) AS s
 FROM t1;
@@ -5472,30 +4626,6 @@ a	b	s
 4	42	1
 4	43	1
 4	44	1
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a`,`v1`.`b` AS `b`,`v1`.`s` AS `s` from `test`.`v1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
-explain SELECT a, b, EXISTS (SELECT a*2 FROM t2 WHERE a=t1.a) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,exists(/* select#2 */ select (`test`.`t2`.`a` * 2) from `test`.`t2` where (`test`.`t2`.`a` = `test`.`t1`.`a`)) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, (SELECT COUNT(*) FROM t1 AS t2 WHERE a=t1.a) AS s
 FROM t1;
@@ -5533,30 +4663,6 @@ a	b	s
 4	42	5
 4	43	5
 4	44	5
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a`,`v1`.`b` AS `b`,`v1`.`s` AS `s` from `test`.`v1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
-explain SELECT a, b, (SELECT COUNT(*) FROM t1 AS t2 WHERE a=t1.a) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,(/* select#2 */ select count(0) from `test`.`t1` `t2` where (`t2`.`a` = `test`.`t1`.`a`)) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, b, EXISTS (SELECT COUNT(*) FROM t1 AS t2 WHERE a=t1.a) AS s
 FROM t1;
@@ -5594,30 +4700,6 @@ a	b	s
 4	42	1
 4	43	1
 4	44	1
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a`,`v1`.`b` AS `b`,`v1`.`s` AS `s` from `test`.`v1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
-explain SELECT a, b, EXISTS (SELECT COUNT(*) FROM t1 AS t2 WHERE a=t1.a) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	9	11.11	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b`,exists(/* select#2 */ select count(0) from `test`.`t1` `t2` where (`t2`.`a` = `test`.`t1`.`a`)) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
 FROM t1;
@@ -5628,22 +4710,6 @@ SELECT (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
 FROM t1;
 s
 4
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select '4' AS `s` from dual
-explain SELECT (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select `test`.`t2`.`a` from `test`.`t2` where (`test`.`t2`.`a` = floor((count(`test`.`t1`.`a`) / 2)))) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT COUNT(*) AS a, (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
 FROM t1;
@@ -5657,30 +4723,6 @@ SELECT COUNT(*) AS a, (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
 FROM t1;
 a	s
 9	4
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select '9' AS `a`,'4' AS `s` from dual
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select '9' AS `a` from dual
-explain SELECT COUNT(*) AS a, (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select count(0) AS `a`,(/* select#2 */ select `test`.`t2`.`a` from `test`.`t2` where (`test`.`t2`.`a` = floor((count(`test`.`t1`.`a`) / 2)))) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a IN (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
 FROM t1;
@@ -5691,22 +4733,6 @@ SELECT a IN (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
 FROM t1;
 s
 0
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select '0' AS `s` from dual
-explain SELECT a IN (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select <in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t2` where (`test`.`t2`.`a` = floor((count(`test`.`t1`.`a`) / 2))) having <if>(outer_field_is_not_null, (<cache>(`test`.`t1`.`a`) = <ref_null_helper>(`test`.`t2`.`a`)), true))) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT COUNT(*) AS a, a IN (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
 FROM t1;
@@ -5720,30 +4746,6 @@ SELECT COUNT(*) AS a, a IN (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
 FROM t1;
 a	s
 9	0
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select '9' AS `a`,'0' AS `s` from dual
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select '9' AS `a` from dual
-explain SELECT COUNT(*) AS a, a IN (SELECT a FROM t2 WHERE a=FLOOR(COUNT(t1.a)/2)) AS s
-FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select count(0) AS `a`,<in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t2` where (`test`.`t2`.`a` = floor((count(`test`.`t1`.`a`) / 2))) having <if>(outer_field_is_not_null, (<cache>(`test`.`t1`.`a`) = <ref_null_helper>(`test`.`t2`.`a`)), true))) AS `s` from `test`.`t1`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, COUNT(*) AS c, (SELECT a FROM t2 WHERE a=COUNT(t1.a)) AS s
 FROM t1
@@ -5768,31 +4770,6 @@ a	c	s
 2	2	2
 3	1	1
 4	5	5
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary; Using filesort
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a`,`v1`.`c` AS `c`,`v1`.`s` AS `s` from `test`.`v1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary; Using filesort
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
-explain SELECT a, COUNT(*) AS c, (SELECT a FROM t2 WHERE a=COUNT(t1.a)) AS s
-FROM t1
-GROUP BY a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary; Using filesort
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,count(0) AS `c`,(/* select#2 */ select `test`.`t2`.`a` from `test`.`t2` where (`test`.`t2`.`a` = count(`test`.`t1`.`a`))) AS `s` from `test`.`t1` group by `test`.`t1`.`a`
 DROP VIEW v1;
 CREATE VIEW v1 AS SELECT a, COUNT(*) AS c, a IN (SELECT a FROM t2 WHERE a=COUNT(t1.a)) AS s
 FROM t1
@@ -5817,62 +4794,11 @@ a	c	s
 2	2	1
 3	1	0
 4	5	0
-explain SELECT * FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary; Using filesort
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a`,`v1`.`c` AS `c`,`v1`.`s` AS `s` from `test`.`v1`
-explain SELECT a FROM v1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary; Using filesort
-3	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `v1`.`a` AS `a` from `test`.`v1`
-explain SELECT a, COUNT(*) AS c, a IN (SELECT a FROM t2 WHERE a=COUNT(t1.a)) AS s
-FROM t1
-GROUP BY a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	9	100.00	Using temporary; Using filesort
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,count(0) AS `c`,<in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t2` where (`test`.`t2`.`a` = count(`test`.`t1`.`a`)) having <if>(outer_field_is_not_null, (<cache>(`test`.`t1`.`a`) = <ref_null_helper>(`test`.`t2`.`a`)), true))) AS `s` from `test`.`t1` group by `test`.`t1`.`a`
 DROP VIEW v1;
 DROP TABLE t1, t2;
 #
 # Bug#19789450 Assert fail in add_key_field
 #
-CREATE TABLE t1 (
-pk int NOT NULL,
-col_date_key date DEFAULT NULL,
-PRIMARY KEY (pk),
-KEY col_date_key (col_date_key)
-) ;
-CREATE TABLE t2 (
-pk int NOT NULL,
-col_time_key time DEFAULT NULL,
-col_datetime_key datetime DEFAULT NULL,
-PRIMARY KEY (pk),
-KEY col_time_key (col_time_key),
-KEY col_datetime_key (col_datetime_key)
-);
-CREATE ALGORITHM=MERGE VIEW v1 AS 
-SELECT col_date_key
-FROM t1 WHERE (pk, pk, col_date_key) IN
-(SELECT col_datetime_key,
-col_time_key,
-col_time_key
-FROM t2
-WHERE pk <= 7);
-SELECT * FROM v1;
-col_date_key
-DROP VIEW v1;
-DROP TABLE t1, t2;
 #
 # BUG#14117018 - MYSQL SERVER CREATES INVALID VIEW DEFINITION 
 # BUG#18405221 - SHOW CREATE VIEW OUTPUT INCCORRECT 
@@ -5929,27 +4855,6 @@ col_varchar_nokey varchar(1) NOT NULL,
 PRIMARY KEY (pk)
 );
 CREATE VIEW v2 AS SELECT * FROM t2;
-explain SELECT STRAIGHT_JOIN alias1.pk
-FROM t2 AS alias1
-RIGHT JOIN
-(SELECT sq1_alias2.*
-FROM t1 AS sq1_alias1
-RIGHT OUTER JOIN
-v2 AS sq1_alias2
-ON sq1_alias2.col_varchar_key = sq1_alias1.col_varchar_key AND
-sq1_alias2.col_varchar_nokey IN
-(SELECT c_sq1_alias1.col_varchar_nokey AS c_sq1_field1
-FROM t3 AS c_sq1_alias1
-WHERE c_sq1_alias1.col_int_key <> c_sq1_alias1.col_int_key
-)
-) AS alias2
-ON alias2.col_varchar_key = alias1.col_varchar_key;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	alias1	NULL	system	NULL	NULL	NULL	NULL	0	0.00	const row not found
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DERIVED	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Note	1003	/* select#1 */ select straight_join NULL AS `pk` from (/* select#2 */ select NULL AS `pk`,NULL AS `col_varchar_key`,NULL AS `col_varchar_nokey` from `test`.`t2` left join (`test`.`t1` `sq1_alias1` semi join (`test`.`t3` `c_sq1_alias1`)) on((1 and (`test`.`c_sq1_alias1`.`col_int_key` <> `test`.`c_sq1_alias1`.`col_int_key`) and multiple equal(NULL, `test`.`sq1_alias1`.`col_varchar_key`) and multiple equal(NULL, `test`.`c_sq1_alias1`.`col_varchar_nokey`)))) `alias2` where 1
 SELECT STRAIGHT_JOIN alias1.pk
 FROM t2 AS alias1
 RIGHT JOIN
@@ -6061,29 +4966,29 @@ INSERT INTO t2 VALUES
 (6,100), (7,100), (8,100), (9,100), (10,100),
 (11,100), (12,100), (13,100), (14,100);
 DELETE FROM vtt WHERE a1=1;
-ERROR HY000: Can not delete from join view 'test.vtt'
+ERROR HY000: Can not delete from join view 'test_view.vtt'
 DELETE FROM vtr WHERE a1=2;
-ERROR HY000: Can not delete from join view 'test.vtr'
+ERROR HY000: Can not delete from join view 'test_view.vtr'
 DELETE FROM vtrd WHERE a1=3;
-ERROR HY000: Can not delete from join view 'test.vtrd'
+ERROR HY000: Can not delete from join view 'test_view.vtrd'
 DELETE FROM vrt WHERE a1=4;
-ERROR HY000: Can not delete from join view 'test.vrt'
+ERROR HY000: Can not delete from join view 'test_view.vrt'
 DELETE FROM vrtd WHERE a1=5;
-ERROR HY000: Can not delete from join view 'test.vrtd'
+ERROR HY000: Can not delete from join view 'test_view.vrtd'
 DELETE FROM vrr WHERE a1=6;
 ERROR HY000: The target table vrr of the DELETE is not updatable
 DELETE FROM vrrd WHERE a1=7;
 ERROR HY000: The target table vrrd of the DELETE is not updatable
 DELETE vtt FROM vtt WHERE a1=8;
-ERROR HY000: Can not delete from join view 'test.vtt'
+ERROR HY000: Can not delete from join view 'test_view.vtt'
 DELETE vtr FROM vtr WHERE a1=9;
-ERROR HY000: Can not delete from join view 'test.vtr'
+ERROR HY000: Can not delete from join view 'test_view.vtr'
 DELETE vtrd FROM vtrd WHERE a1=10;
-ERROR HY000: Can not delete from join view 'test.vtrd'
+ERROR HY000: Can not delete from join view 'test_view.vtrd'
 DELETE vrt FROM vrt WHERE a1=11;
-ERROR HY000: Can not delete from join view 'test.vrt'
+ERROR HY000: Can not delete from join view 'test_view.vrt'
 DELETE vrtd FROM vrtd WHERE a1=12;
-ERROR HY000: Can not delete from join view 'test.vrtd'
+ERROR HY000: Can not delete from join view 'test_view.vrtd'
 DELETE vrr FROM vrr WHERE a1=13;
 ERROR HY000: The target table vrr of the DELETE is not updatable
 DELETE vrrd FROM vrrd WHERE a1=14;
@@ -6178,10 +5083,10 @@ v3l	CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER V
 insert into t1 values('');
 insert into v1n values('');
 insert into v2c values('');
-ERROR HY000: CHECK OPTION failed 'test.v2c'
+ERROR HY000: CHECK OPTION failed 'test_view.v2c'
 insert into v2c values('v2c');
 insert into v3l values('');
-ERROR HY000: CHECK OPTION failed 'test.v3l'
+ERROR HY000: CHECK OPTION failed 'test_view.v3l'
 insert into v3l values('v3l');
 # We also test UPDATE of the successfully inserted row
 update v1n set a='_';
@@ -6189,9 +5094,9 @@ update v1n set a='_';
 # not matching v2c's filter, which is against the goal of CHECK
 # OPTION.
 update v2c set a='';
-ERROR HY000: CHECK OPTION failed 'test.v2c'
+ERROR HY000: CHECK OPTION failed 'test_view.v2c'
 update v3l set a='';
-ERROR HY000: CHECK OPTION failed 'test.v3l'
+ERROR HY000: CHECK OPTION failed 'test_view.v3l'
 # Top view without no CHECK OPTION, still CHECK OPTION conditions
 # of underlying views are checked.
 create view v4n as select * from v2c where a like '%v4n%';
@@ -6202,7 +5107,7 @@ create view v5n as select * from v3l where a like '%v5n%';
 # then we take each tag away and verify that it fails.
 insert into v4n values('v2c');
 insert into v4n values('');
-ERROR HY000: CHECK OPTION failed 'test.v4n'
+ERROR HY000: CHECK OPTION failed 'test_view.v4n'
 # To check UPDATE on v4n, we need to update a row originally
 # visible in v4n, so we create it:
 insert into v4n values('v4n v2c');
@@ -6211,13 +5116,13 @@ update v4n set a='v2c';
 insert into v4n values('v4n v2c');
 # But this row cannot disappear from v2c:
 update v4n set a='v4n';
-ERROR HY000: CHECK OPTION failed 'test.v4n'
+ERROR HY000: CHECK OPTION failed 'test_view.v4n'
 # Lest we delete it:
 delete from v4n;
 # v5n -> v3l -> t1
 insert into v5n values('v3l');
 insert into v5n values('');
-ERROR HY000: CHECK OPTION failed 'test.v5n'
+ERROR HY000: CHECK OPTION failed 'test_view.v5n'
 # Top view with LOCAL CHECK OPTION, still CHECK OPTION conditions
 # of underlying views are checked.
 create view v4l as select * from v2c where a like '%v4l%'
@@ -6227,85 +5132,85 @@ create view v5l as select * from v3l where a like '%v5l%'
 # v4l -> v2c -> t1
 insert into v4l values('v4l v2c');
 insert into v4l values('v2c');
-ERROR HY000: CHECK OPTION failed 'test.v4l'
+ERROR HY000: CHECK OPTION failed 'test_view.v4l'
 update v4l set a='v2c';
-ERROR HY000: CHECK OPTION failed 'test.v4l'
+ERROR HY000: CHECK OPTION failed 'test_view.v4l'
 insert into v4l values('v4l');
-ERROR HY000: CHECK OPTION failed 'test.v4l'
+ERROR HY000: CHECK OPTION failed 'test_view.v4l'
 update v4l set a='v4l';
-ERROR HY000: CHECK OPTION failed 'test.v4l'
+ERROR HY000: CHECK OPTION failed 'test_view.v4l'
 # v5l -> v3l -> t1
 insert into v5l values('v5l v3l');
 insert into v5l values('v3l');
-ERROR HY000: CHECK OPTION failed 'test.v5l'
+ERROR HY000: CHECK OPTION failed 'test_view.v5l'
 update v5l set a='v3l';
-ERROR HY000: CHECK OPTION failed 'test.v5l'
+ERROR HY000: CHECK OPTION failed 'test_view.v5l'
 insert into v5l values('v5l');
-ERROR HY000: CHECK OPTION failed 'test.v5l'
+ERROR HY000: CHECK OPTION failed 'test_view.v5l'
 update v5l set a='v5l';
-ERROR HY000: CHECK OPTION failed 'test.v5l'
+ERROR HY000: CHECK OPTION failed 'test_view.v5l'
 # CASCADED makes all filtering conditions a requirement
 create view v6c as select * from v5n where a like '%v6c%'
  with cascaded check option;
 # v6c -> v5n -> v3l -> t1
 insert into v6c values('v6c v5n v3l');
 insert into v6c values('v5n v3l');
-ERROR HY000: CHECK OPTION failed 'test.v6c'
+ERROR HY000: CHECK OPTION failed 'test_view.v6c'
 update v6c set a='v5n v3l';
-ERROR HY000: CHECK OPTION failed 'test.v6c'
+ERROR HY000: CHECK OPTION failed 'test_view.v6c'
 insert into v6c values('v6c v3l');
-ERROR HY000: CHECK OPTION failed 'test.v6c'
+ERROR HY000: CHECK OPTION failed 'test_view.v6c'
 update v6c set a='v6c v3l';
-ERROR HY000: CHECK OPTION failed 'test.v6c'
+ERROR HY000: CHECK OPTION failed 'test_view.v6c'
 insert into v6c values('v6c v5n');
-ERROR HY000: CHECK OPTION failed 'test.v6c'
+ERROR HY000: CHECK OPTION failed 'test_view.v6c'
 update v6c set a='v6c v5n';
-ERROR HY000: CHECK OPTION failed 'test.v6c'
+ERROR HY000: CHECK OPTION failed 'test_view.v6c'
 # Also true if top view has no check option:
 create view v7n as select * from v6c where a like '%v7n%';
 # v7n -> v6c -> v5n -> v3l -> t1
 insert into v7n values('v6c v5n v3l');
 insert into v7n values('v5n v3l');
-ERROR HY000: CHECK OPTION failed 'test.v7n'
+ERROR HY000: CHECK OPTION failed 'test_view.v7n'
 insert into v7n values('v6c v3l');
-ERROR HY000: CHECK OPTION failed 'test.v7n'
+ERROR HY000: CHECK OPTION failed 'test_view.v7n'
 insert into v7n values('v6c v5n');
-ERROR HY000: CHECK OPTION failed 'test.v7n'
+ERROR HY000: CHECK OPTION failed 'test_view.v7n'
 # Make a visible row to update:
 insert into v7n values('v7n v6c v5n v3l');
 update v7n set a='v7n v5n v3l';
-ERROR HY000: CHECK OPTION failed 'test.v7n'
+ERROR HY000: CHECK OPTION failed 'test_view.v7n'
 update v7n set a='v7n v6c v3l';
-ERROR HY000: CHECK OPTION failed 'test.v7n'
+ERROR HY000: CHECK OPTION failed 'test_view.v7n'
 update v7n set a='v7n v6c v5nà';
-ERROR HY000: CHECK OPTION failed 'test.v7n'
+ERROR HY000: CHECK OPTION failed 'test_view.v7n'
 # Also true if top view has LOCAL:
 create view v8l as select * from v7n where a like '%v8l%'
  with local check option;
 # v8l -> v7n -> v6c -> v5n -> v3l -> t1
 insert into v8l values('v8l v6c v5n v3l');
 insert into v8l values('v6c v5n v3l');
-ERROR HY000: CHECK OPTION failed 'test.v8l'
+ERROR HY000: CHECK OPTION failed 'test_view.v8l'
 insert into v8l values('v8l v5n v3l');
-ERROR HY000: CHECK OPTION failed 'test.v8l'
+ERROR HY000: CHECK OPTION failed 'test_view.v8l'
 insert into v8l values('v8l v6c v3l');
-ERROR HY000: CHECK OPTION failed 'test.v8l'
+ERROR HY000: CHECK OPTION failed 'test_view.v8l'
 insert into v8l values('v8l v6c v5n');
-ERROR HY000: CHECK OPTION failed 'test.v8l'
+ERROR HY000: CHECK OPTION failed 'test_view.v8l'
 # Make a visible row (=> satisfy v7n's WHERE clause):
 insert into v8l values('v8l v7n v6c v5n v3l');
 update v8l set a='v7n v6c v5n v3l';
-ERROR HY000: CHECK OPTION failed 'test.v8l'
+ERROR HY000: CHECK OPTION failed 'test_view.v8l'
 update v8l set a='v8l v7n v5n v3l';
-ERROR HY000: CHECK OPTION failed 'test.v8l'
+ERROR HY000: CHECK OPTION failed 'test_view.v8l'
 update v8l set a='v8l v7n v6c v3l';
-ERROR HY000: CHECK OPTION failed 'test.v8l'
+ERROR HY000: CHECK OPTION failed 'test_view.v8l'
 update v8l set a='v8l v7n v6c v5n';
-ERROR HY000: CHECK OPTION failed 'test.v8l'
+ERROR HY000: CHECK OPTION failed 'test_view.v8l'
 drop view v1n,v2c,v3l,v4n,v5n,v4l,v5l,v6c,v7n,v8l;
 drop table t1;
 # Bug#20982756 Crash in Table_list::fetch_number_of_rows
-CREATE TABLE t1(a INTEGER) engine=innodb;
+CREATE TABLE t1(a INTEGER) engine=Sequoiadb;
 CREATE VIEW v3 AS SELECT 1 FROM t1;
 CREATE VIEW v2 AS SELECT 1 FROM v3 LEFT JOIN t1 ON 1;
 PREPARE s FROM "set @a:=(SELECT 1 FROM t1,v2);";
@@ -6314,7 +5219,7 @@ EXECUTE s;
 DROP VIEW  v2,v3;
 DROP TABLE t1;
 # Bug#21097485 *insert_table_ref && (*insert_table_ref)->is_insertable
-CREATE TABLE t1 (r INTEGER) engine=innodb;
+CREATE TABLE t1 (r INTEGER) engine=Sequoiadb;
 CREATE VIEW v1 AS
 SELECT 1 AS z from t1;
 INSERT INTO v1(z) VALUES(1);
@@ -6399,3 +5304,4 @@ CREATE VIEW v2 AS
 SELECT MIN(duration) AS dmin, MAX(duration) AS dmax FROM v1;
 DROP VIEW v1, v2;
 DROP TABLE t;
+DROP DATABASE test_view;

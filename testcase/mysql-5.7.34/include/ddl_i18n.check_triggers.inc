@@ -10,10 +10,12 @@ SHOW CREATE TRIGGER trg1|
 SHOW CREATE TRIGGER trg2|
 --echo
 --replace_column 7 CREATED
-SHOW CREATE TRIGGER mysqltest2.trg3|
+#SHOW CREATE TRIGGER mysqltest2.trg3|
+eval SHOW CREATE TRIGGER $MYSQLTEST2.trg3|
 --echo
 --replace_column 7 CREATED
-SHOW CREATE TRIGGER mysqltest2.trg4|
+#SHOW CREATE TRIGGER mysqltest2.trg4|
+eval SHOW CREATE TRIGGER $MYSQLTEST2.trg4|
 
 #   - Check SHOW statement;
 
@@ -25,14 +27,16 @@ SHOW TRIGGERS|
 
 --echo
 
-use mysqltest2|
+#use mysqltest2|
+eval use $MYSQLTEST2|
 
 --echo
 
 --replace_column 6 CREATED
 SHOW TRIGGERS|
 
-use mysqltest1|
+#use mysqltest1|
+eval use $MYSQLTEST1|
 
 #   - Check INFORMATION_SCHEMA;
 
@@ -93,11 +97,13 @@ DELETE FROM log|
 --echo
 --echo
 
-INSERT INTO mysqltest2.t1 VALUES(1)|
+#INSERT INTO mysqltest2.t1 VALUES(1)|
+eval INSERT INTO $MYSQLTEST2.t1 VALUES(1)|
 
 --echo
 --echo ---> Log:
-SELECT msg FROM mysqltest2.log|
+#SELECT msg FROM mysqltest2.log|
+eval SELECT msg FROM $MYSQLTEST2.log|
 
 --echo
 SELECT
@@ -109,4 +115,5 @@ SELECT
   COLLATION(@b3) AS cb3|
 
 --echo
-DELETE FROM mysqltest2.log|
+#DELETE FROM mysqltest2.log|
+eval DELETE FROM $MYSQLTEST2.log|

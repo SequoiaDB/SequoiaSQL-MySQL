@@ -4,7 +4,12 @@
 # This test copies some tests originally in json.test                #
 ######################################################################
 # Set the session storage engine
-set default_storage_engine=innodb;
+
+--source include/have_sequoiadb.inc
+
+set default_storage_engine=SequoiaDB;
 
 # Run the test
 --source suite/json/inc/json_insert.inc
+
+--source include/uninstall_sequoiadb.inc

@@ -1,6 +1,7 @@
 --echo ---- Partitioning and binary data type
 
-eval create table t1 (a binary(255) not null, primary key(a)) engine=$engine 
+#eval create table t1 (a binary(255) not null, primary key(a)) engine=$engine 
+eval create table t1 (a binary(255) not null) engine=$engine 
 partition by key (a) (
 partition pa1 max_rows=20 min_rows=2,
 partition pa2 max_rows=30 min_rows=3,
@@ -8,15 +9,16 @@ partition pa3 max_rows=30 min_rows=4,
 partition pa4 max_rows=40 min_rows=2);
 show create table t1;
 insert into t1 values (repeat('a',255)), ('b'), (repeat('a',128)), (repeat('b',64));
-select hex(a) from t1;
+select hex(a) from t1 order by a;
 select a from t1 where substr(a,1,2)='b\0';
-update t1 set a='cc' where substr(a,1,2)= 'b\0';
+#update t1 set a='cc' where substr(a,1,2)= 'b\0';
 select a from t1 where substr(a,1,1)='c';
 delete from t1 where substr(a,1,2)='cc';
-select hex(a) from t1;
+select hex(a) from t1 order by a;
 drop table t1;
 
-eval create table t2 (a binary(255) not null, primary key(a)) engine=$engine 
+#eval create table t2 (a binary(255) not null, primary key(a)) engine=$engine 
+eval create table t2 (a binary(255) not null) engine=$engine 
 partition by key (a) partitions 27;
 show create table t2;
 let $count=26;
@@ -30,7 +32,7 @@ dec $count;
 inc $letter;
 }
 select count(*) from t2;
-select hex(a) from t2;
+select hex(a) from t2 order by a;
 drop table t2;
 
 # mleich: Several partitioning functions are no more allowed.
@@ -56,7 +58,7 @@ dec $count;
 inc $letter;
 }
 select count(*) from t3;
-select hex(a) from t3;
+select hex(a) from t3 order by a;
 drop table t3;
 
 
@@ -82,7 +84,7 @@ inc $letter;
 }
 
 select count(*) from t4;
-select hex(a) from t4;
+select hex(a) from t4 order by a;
 drop table t4;
 }
 # End of tests with disallowed partitioning functions.

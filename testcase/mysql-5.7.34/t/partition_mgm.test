@@ -10,7 +10,9 @@ DROP TABLE IF EXISTS t1;
 CREATE TABLE t1
 (a INT)
 PARTITION BY KEY(a) PARTITIONS 3;
+--disable_result_log
 ALTER TABLE t1 REPAIR PARTITION p2,p3,p1;
+--enable_result_log
 ALTER TABLE t1 ORDER BY a; 
 DROP TABLE t1;
 
@@ -19,12 +21,14 @@ DROP TABLE t1;
 --echo #                         HASH/KEY partitioned tables
 --echo #
 CREATE TABLE t1 (a INT PRIMARY KEY)
-ENGINE MYISAM
+ENGINE SequoiaDB
 PARTITION BY HASH (a)
 PARTITIONS 1;
 INSERT INTO t1 VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11);
 INSERT INTO t1 VALUES (12), (13), (14), (15), (16), (17), (18), (19), (20);
 --echo # This changes from auto partitioned to manual partitioned
+#SEQUOIASQLMAINSTREAM-789
+--error 131
 ALTER TABLE t1 REORGANIZE PARTITION p0 INTO (PARTITION pHidden);
 SHOW CREATE TABLE t1;
 ALTER TABLE t1 ADD PARTITION PARTITIONS 1;
@@ -38,6 +42,7 @@ ALTER TABLE t1 ADD PARTITION
 ALTER TABLE t1 ADD PARTITION PARTITIONS 1;
 SHOW CREATE TABLE t1;
 ALTER TABLE t1 REBUILD PARTITION all;
+--error 131
 ALTER TABLE t1 REBUILD PARTITION pNamed1,p5;
 ALTER TABLE t1 COALESCE PARTITION 1;
 ALTER TABLE t1 COALESCE PARTITION 2;
@@ -48,7 +53,7 @@ DROP TABLE t1;
 # Bug 40389: REORGANIZE PARTITION crashes when only using one partition
 #
 CREATE TABLE t1 (a INT PRIMARY KEY)
-ENGINE MYISAM
+ENGINE SequoiaDB
 PARTITION BY HASH (a)
 PARTITIONS 1;
 INSERT INTO t1 VALUES (1),(2),(3),(4),(5);
@@ -71,22 +76,22 @@ alter table t1 reorganize partition p0 into
 subpartition sp01, subpartition sp02));
 drop table t1;
  
-CREATE TABLE t1 (f_date DATE, f_varchar VARCHAR(30)) ENGINE=MYISAM
+CREATE TABLE t1 (f_date DATE, f_varchar VARCHAR(30)) ENGINE=SequoiaDB
 PARTITION BY HASH(YEAR(f_date)) PARTITIONS 2;
 SHOW CREATE TABLE t1;
-let $MYSQLD_DATADIR= `select @@datadir`;
--- file_exists $MYSQLD_DATADIR/test/t1#P#p0.MYD
--- file_exists $MYSQLD_DATADIR/test/t1#P#p0.MYI
--- file_exists $MYSQLD_DATADIR/test/t1#P#p1.MYD
--- file_exists $MYSQLD_DATADIR/test/t1#P#p1.MYI
--- file_exists $MYSQLD_DATADIR/test/t1.frm
--- file_exists $MYSQLD_DATADIR/test/t1.par
+#let $MYSQLD_DATADIR= `select @@datadir`;
+#-- file_exists $MYSQLD_DATADIR/test/t1#P#p0.MYD
+#-- file_exists $MYSQLD_DATADIR/test/t1#P#p0.MYI
+#-- file_exists $MYSQLD_DATADIR/test/t1#P#p1.MYD
+#-- file_exists $MYSQLD_DATADIR/test/t1#P#p1.MYI
+#-- file_exists $MYSQLD_DATADIR/test/t1.frm
+#-- file_exists $MYSQLD_DATADIR/test/t1.par
 ALTER TABLE t1 COALESCE PARTITION 1;
 SHOW CREATE TABLE t1;
--- file_exists $MYSQLD_DATADIR/test/t1#P#p0.MYD
--- file_exists $MYSQLD_DATADIR/test/t1#P#p0.MYI
--- file_exists $MYSQLD_DATADIR/test/t1.frm
--- file_exists $MYSQLD_DATADIR/test/t1.par
+#-- file_exists $MYSQLD_DATADIR/test/t1#P#p0.MYD
+#-- file_exists $MYSQLD_DATADIR/test/t1#P#p0.MYI
+#-- file_exists $MYSQLD_DATADIR/test/t1.frm
+#-- file_exists $MYSQLD_DATADIR/test/t1.par
 drop table t1;
 #
 # Bug 20767: REORGANIZE partition crashes
@@ -136,7 +141,7 @@ DROP TABLE t1;
 --echo # NATIVE PARTITIONING
 --echo #
 CREATE TABLE t1 (a int PRIMARY KEY, b varchar(63))
-ENGINE = MyISAM
+ENGINE = SequoiaDB 
 PARTITION BY RANGE (a)
 (PARTITION p0 VALUES LESS THAN (100),
  PARTITION p1 VALUES LESS THAN (200),

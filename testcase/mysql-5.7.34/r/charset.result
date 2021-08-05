@@ -1,7 +1,3 @@
-#
-#Bug#21958734: INNODB: FAILING ASSERTION: *MBMAXLEN < 5 IN
-#              FILE HA_INNODB.CC LINE 1803
-#
 SHOW CHARACTER SET LIKE '%filename%';
 Charset	Description	Default collation	Maxlen
 SHOW COLLATION LIKE '%filename%';

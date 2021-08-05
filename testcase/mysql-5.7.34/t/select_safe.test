@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 #
 # test of safe selects
@@ -12,6 +11,7 @@ drop table if exists t1;
 --enable_warnings
 
 SET SQL_SAFE_UPDATES=1,SQL_SELECT_LIMIT=4, MAX_JOIN_SIZE=9;
+
 create table t1 (a int auto_increment primary key, b char(20));
 insert into t1 values(1,"test");
 SELECT SQL_BUFFER_RESULT * from t1;
@@ -20,6 +20,8 @@ delete from t1 where a=1;
 insert into t1 values(1,"test"),(2,"test2");
 SELECT SQL_BUFFER_RESULT * from t1;
 update t1 set b="a" where a=1;
+#BUG #SEQUOIASQLMAINSTREAM-98
+SET SQL_SAFE_UPDATES=1,SQL_SELECT_LIMIT=4, MAX_JOIN_SIZE=20;
 select 1 from t1,t1 as t2,t1 as t3;
 
 # The following should give errors:
@@ -61,12 +63,12 @@ SELECT * from t1;
 #
 # Test MAX_SEEKS_FOR_KEY
 #
-analyze table t1;
-insert into t1 values (null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a");
-explain select STRAIGHT_JOIN * from t1,t1 as t2 where t1.b=t2.b;
-set MAX_SEEKS_FOR_KEY=1;
-explain select STRAIGHT_JOIN * from t1,t1 as t2 where t1.b=t2.b;
-SET MAX_SEEKS_FOR_KEY=DEFAULT;
+#analyze table t1;
+#insert into t1 values (null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a"),(null,"a");
+#explain select STRAIGHT_JOIN * from t1,t1 as t2 where t1.b=t2.b;
+#set MAX_SEEKS_FOR_KEY=1;
+#explain select STRAIGHT_JOIN * from t1,t1 as t2 where t1.b=t2.b;
+#SET MAX_SEEKS_FOR_KEY=DEFAULT;
 
 drop table t1;
 
@@ -92,6 +94,8 @@ drop table t1;
 
 SET SQL_SAFE_UPDATES=0,SQL_SELECT_LIMIT=DEFAULT, MAX_JOIN_SIZE=DEFAULT;
 
+--source include/uninstall_sequoiadb.inc
+
 # End of 4.1 tests
 
 --echo #
@@ -104,6 +108,7 @@ CREATE TABLE t2 (c1 INT NOT NULL, c2 VARCHAR(200) NOT NULL,
                  UNIQUE KEY idx1 (c1));
 INSERT INTO t1 VALUES (1, 'a'), (2, 'b'), (3, 'c'), (4, 'd');
 INSERT INTO t2 VALUES (11, 'a'), (12, 'b'), (3, 'c'), (14, 'd');
+--replace_column 1 x
 ANALYZE TABLE t1, t2;
 
 SET SESSION sql_safe_updates=1;
@@ -130,39 +135,39 @@ let query9= DELETE FROM t2;
 
 
 
-eval EXPLAIN $query1;
+#eval EXPLAIN $query1;
 --error ER_UPDATE_WITHOUT_KEY_IN_SAFE_MODE
 eval $query1;
 
-eval EXPLAIN $query2;
+#eval EXPLAIN $query2;
 --error ER_UPDATE_WITHOUT_KEY_IN_SAFE_MODE
 eval $query2;
 SET RANGE_OPTIMIZER_MAX_MEM_SIZE= default;
 
-eval EXPLAIN $query3;
+#eval EXPLAIN $query3;
 --error ER_UPDATE_WITHOUT_KEY_IN_SAFE_MODE
 eval $query3;
 
-eval EXPLAIN $query4;
+#eval EXPLAIN $query4;
 --error ER_UPDATE_WITHOUT_KEY_IN_SAFE_MODE
 eval $query4;
 
-eval EXPLAIN $query5;
+#eval EXPLAIN $query5;
 eval $query5;
 
-eval EXPLAIN $query6;
+#eval EXPLAIN $query6;
 --error ER_UPDATE_WITHOUT_KEY_IN_SAFE_MODE
 eval $query6;
 
-eval EXPLAIN $query7;
+#eval EXPLAIN $query7;
 --error ER_UPDATE_WITHOUT_KEY_IN_SAFE_MODE
 eval $query7;
 
-eval EXPLAIN $query8;
+#eval EXPLAIN $query8;
 --error ER_UPDATE_WITHOUT_KEY_IN_SAFE_MODE
 eval $query8;
 
-eval EXPLAIN $query9;
+#eval EXPLAIN $query9;
 --error ER_UPDATE_WITHOUT_KEY_IN_SAFE_MODE
 eval $query9;
 

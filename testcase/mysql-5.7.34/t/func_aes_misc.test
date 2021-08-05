@@ -2,6 +2,8 @@
 --echo #### Tests for ECB Mode
 --echo ##############################################
 
+--source include/have_sequoiadb.inc
+
 SET @IV='abcd1234efgh5678';
 SET @KEYS=REPEAT('c', 16);
 SET @ENCSTR=REPEAT('d', 256);
@@ -19,8 +21,10 @@ SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR;
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR;
 
---echo ####Test with InnoDB tables
+--echo ####Test with SequoiaDB tables
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 CREATE TABLE t1(f1 varchar(256));
 INSERT INTO t1 values(@ENCSTR);
 --echo should return 1
@@ -28,9 +32,11 @@ SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR FROM t1;
 
---echo ####Test with MyISAM tables
+--echo ####Test with SequoiaDB tables
+--disable_warnings
 DROP TABLE IF EXISTS t1;
-CREATE TABLE t1(f1 varchar(256)) engine=MyISAM;
+--enable_warnings
+CREATE TABLE t1(f1 varchar(256)) engine=SequoiaDB;
 INSERT INTO t1 values(@ENCSTR);
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
@@ -50,8 +56,10 @@ SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR;
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR;
 
---echo ####Test with InnoDB tables
+--echo ####Test with SequoiaDB tables
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 CREATE TABLE t1(f1 varchar(256));
 INSERT INTO t1 values(@ENCSTR);
 --echo should return 1
@@ -59,9 +67,11 @@ SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR FROM t1;
 
---echo ####Test with MyISAM tables
+--echo ####Test with SequoiaDB tables
+--disable_warnings
 DROP TABLE IF EXISTS t1;
-CREATE TABLE t1(f1 varchar(256)) engine=MyISAM;
+--enable_warnings
+CREATE TABLE t1(f1 varchar(256)) engine=SequoiaDB;
 INSERT INTO t1 values(@ENCSTR);
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
@@ -82,8 +92,10 @@ SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR;
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR;
 
---echo ####Test with InnoDB tables
+--echo ####Test with SequoiaDB tables
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 CREATE TABLE t1(f1 varchar(256));
 INSERT INTO t1 values(@ENCSTR);
 --echo should return 1
@@ -91,15 +103,19 @@ SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR FROM t1;
 
---echo ####Test with MyISAM tables
+--echo ####Test with SequoiaDB tables
+--disable_warnings
 DROP TABLE IF EXISTS t1;
-CREATE TABLE t1(f1 varchar(256)) engine=MyISAM;
+--enable_warnings
+CREATE TABLE t1(f1 varchar(256)) engine=SequoiaDB;
 INSERT INTO t1 values(@ENCSTR);
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS), @KEYS)=@ENCSTR FROM t1;
 --echo should return 1
 SELECT AES_DECRYPT(AES_ENCRYPT(@ENCSTR, @KEYS, @IV), @KEYS, @IV)=@ENCSTR FROM t1;
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 --echo "--------------------------------------------"
 
 --echo ##############################################
@@ -137,7 +153,9 @@ SET @ENCSTR=REPEAT('J',255);
 
 SET @@session.block_encryption_mode = 'aes-128-ecb';
 
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 CREATE TABLE t1(f1 varchar(256));
 INSERT INTO t1 values(AES_ENCRYPT(@ENCSTR, @KEYS, @IV));
 
@@ -172,9 +190,11 @@ SET @@session.block_encryption_mode = 'aes-128-ecb';
 SELECT AES_DECRYPT(f1, @KEYS, @IV)=@ENCSTR FROM t1;
 
 SET @@session.block_encryption_mode = DEFAULT;
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 
-
+--source include/uninstall_sequoiadb.inc
 --echo #
 --echo # End of 5.7 tests
 --echo #

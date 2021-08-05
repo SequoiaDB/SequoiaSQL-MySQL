@@ -103,39 +103,39 @@ PARTITION BY RANGE(f_int1 + f_int2)
 #            the first UNIQUE INDEX as PRIMARY KEY.
 
 let $unique_index= UNIQUE INDEX (f_int2);
-
+#Bug #SEQUOIASQLMAINSTREAM-659
 #----------- PARTITION BY HASH
-let $partition_scheme= PARTITION BY HASH(f_int1) PARTITIONS 2;
---source suite/parts/inc/partition_syntax_2.inc
-let $partition_scheme= PARTITION BY HASH(f_int1 + f_int2) PARTITIONS 2;
---source suite/parts/inc/partition_syntax_2.inc
-#----------- PARTITION BY KEY
-let $partition_scheme= PARTITION BY KEY(f_int1) PARTITIONS 2;
---source suite/parts/inc/partition_syntax_2.inc
-let $partition_scheme= PARTITION BY KEY(f_int1,f_int2) PARTITIONS 2;
---source suite/parts/inc/partition_syntax_2.inc
-#----------- PARTITION BY LIST
-let $partition_scheme= PARTITION BY LIST(MOD(f_int1,3))
-   (PARTITION partN VALUES IN (NULL),
-    PARTITION part0 VALUES IN (0),
-    PARTITION part1 VALUES IN (1),
-    PARTITION part2 VALUES IN (2));
---source suite/parts/inc/partition_syntax_2.inc
-let $partition_scheme= PARTITION BY LIST(MOD(f_int1 + f_int2,3))
-   (PARTITION partN VALUES IN (NULL),
-    PARTITION part0 VALUES IN (0),
-    PARTITION part1 VALUES IN (1),
-    PARTITION part2 VALUES IN (2));
---source suite/parts/inc/partition_syntax_2.inc
-#----------- PARTITION BY RANGE
-let $partition_scheme= PARTITION BY RANGE(f_int1)
-   (PARTITION part1 VALUES LESS THAN (1),
-    PARTITION part2 VALUES LESS THAN (2147483646));
---source suite/parts/inc/partition_syntax_2.inc
-let $partition_scheme= PARTITION BY RANGE(f_int1 + f_int2)
-   (PARTITION part1 VALUES LESS THAN (1),
-    PARTITION part2 VALUES LESS THAN (2147483646));
---source suite/parts/inc/partition_syntax_2.inc
+#let $partition_scheme= PARTITION BY HASH(f_int1) PARTITIONS 2;
+#--source suite/parts/inc/partition_syntax_2.inc
+#let $partition_scheme= PARTITION BY HASH(f_int1 + f_int2) PARTITIONS 2;
+#--source suite/parts/inc/partition_syntax_2.inc
+##----------- PARTITION BY KEY
+#let $partition_scheme= PARTITION BY KEY(f_int1) PARTITIONS 2;
+#--source suite/parts/inc/partition_syntax_2.inc
+#let $partition_scheme= PARTITION BY KEY(f_int1,f_int2) PARTITIONS 2;
+#--source suite/parts/inc/partition_syntax_2.inc
+##----------- PARTITION BY LIST
+#let $partition_scheme= PARTITION BY LIST(MOD(f_int1,3))
+#   (PARTITION partN VALUES IN (NULL),
+#    PARTITION part0 VALUES IN (0),
+#    PARTITION part1 VALUES IN (1),
+#    PARTITION part2 VALUES IN (2));
+#--source suite/parts/inc/partition_syntax_2.inc
+#let $partition_scheme= PARTITION BY LIST(MOD(f_int1 + f_int2,3))
+#   (PARTITION partN VALUES IN (NULL),
+#    PARTITION part0 VALUES IN (0),
+#    PARTITION part1 VALUES IN (1),
+#    PARTITION part2 VALUES IN (2));
+#--source suite/parts/inc/partition_syntax_2.inc
+##----------- PARTITION BY RANGE
+#let $partition_scheme= PARTITION BY RANGE(f_int1)
+#   (PARTITION part1 VALUES LESS THAN (1),
+#    PARTITION part2 VALUES LESS THAN (2147483646));
+#--source suite/parts/inc/partition_syntax_2.inc
+#let $partition_scheme= PARTITION BY RANGE(f_int1 + f_int2)
+#   (PARTITION part1 VALUES LESS THAN (1),
+#    PARTITION part2 VALUES LESS THAN (2147483646));
+#--source suite/parts/inc/partition_syntax_2.inc
 
 #
 --echo #------------------------------------------------------------------------
@@ -187,33 +187,34 @@ PARTITION BY LIST(f_int2) SUBPARTITION BY KEY(f_int1)
 --echo #      Variant a) Without additional PRIMARY KEY        
 --echo #      Variant b) With correct additional PRIMARY KEY        
 --echo #------------------------------------------------------------------------
-let $partition_scheme= PARTITION BY RANGE(f_int2)
-SUBPARTITION BY HASH(f_int1) SUBPARTITIONS 3
-   (PARTITION part1 VALUES LESS THAN (1),
-    PARTITION part2 VALUES LESS THAN (2147483646));
---source suite/parts/inc/partition_syntax_2.inc
-#----------- PARTITION BY RANGE -- SUBPARTITION BY KEY
-let $partition_scheme= PARTITION BY RANGE(f_int2)
-SUBPARTITION BY KEY(f_int1) SUBPARTITIONS 3
-   (PARTITION part1 VALUES LESS THAN (1),
-    PARTITION part2 VALUES LESS THAN (2147483646));
---source suite/parts/inc/partition_syntax_2.inc
-#----------- PARTITION BY LIST -- SUBPARTITION BY HASH
-let $partition_scheme= PARTITION BY LIST(MOD(f_int2,3))
-SUBPARTITION BY HASH(f_int1) SUBPARTITIONS 2
-   (PARTITION partN VALUES IN (NULL),
-    PARTITION part0 VALUES IN (0),
-    PARTITION part1 VALUES IN (1),
-    PARTITION part2 VALUES IN (2));
---source suite/parts/inc/partition_syntax_2.inc
-#----------- PARTITION BY LIST -- SUBPARTITION BY KEY
-let $partition_scheme= PARTITION BY LIST(MOD(f_int2,3))
-SUBPARTITION BY KEY(f_int1) SUBPARTITIONS 2
-   (PARTITION partN VALUES IN (NULL),
-    PARTITION part0 VALUES IN (0),
-    PARTITION part1 VALUES IN (1),
-    PARTITION part2 VALUES IN (2));
---source suite/parts/inc/partition_syntax_2.inc
+#Bug #SEQUOIASQLMAINSTREAM-659
+#let $partition_scheme= PARTITION BY RANGE(f_int2)
+#SUBPARTITION BY HASH(f_int1) SUBPARTITIONS 3
+#   (PARTITION part1 VALUES LESS THAN (1),
+#    PARTITION part2 VALUES LESS THAN (2147483646));
+#--source suite/parts/inc/partition_syntax_2.inc
+##----------- PARTITION BY RANGE -- SUBPARTITION BY KEY
+#let $partition_scheme= PARTITION BY RANGE(f_int2)
+#SUBPARTITION BY KEY(f_int1) SUBPARTITIONS 3
+#   (PARTITION part1 VALUES LESS THAN (1),
+#    PARTITION part2 VALUES LESS THAN (2147483646));
+#--source suite/parts/inc/partition_syntax_2.inc
+##----------- PARTITION BY LIST -- SUBPARTITION BY HASH
+#let $partition_scheme= PARTITION BY LIST(MOD(f_int2,3))
+#SUBPARTITION BY HASH(f_int1) SUBPARTITIONS 2
+#   (PARTITION partN VALUES IN (NULL),
+#    PARTITION part0 VALUES IN (0),
+#    PARTITION part1 VALUES IN (1),
+#    PARTITION part2 VALUES IN (2));
+#--source suite/parts/inc/partition_syntax_2.inc
+##----------- PARTITION BY LIST -- SUBPARTITION BY KEY
+#let $partition_scheme= PARTITION BY LIST(MOD(f_int2,3))
+#SUBPARTITION BY KEY(f_int1) SUBPARTITIONS 2
+#   (PARTITION partN VALUES IN (NULL),
+#    PARTITION part0 VALUES IN (0),
+#    PARTITION part1 VALUES IN (1),
+#    PARTITION part2 VALUES IN (2));
+#--source suite/parts/inc/partition_syntax_2.inc
 
 --echo
 --echo #========================================================================

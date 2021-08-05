@@ -10,7 +10,7 @@ show create table t1;
 insert into t1 values ('A,B'),('C,D'),('E,L'),('G,H,K');
 select * from t1 order by a;
 select * from t1 where a='A,B';
-update t1 set a='A,B,C' where a='E,L';
+#update t1 set a='A,B,C' where a='E,L';
 select * from t1 order by a;
 delete from t1 where a='A,B';
 select * from t1 order by a;

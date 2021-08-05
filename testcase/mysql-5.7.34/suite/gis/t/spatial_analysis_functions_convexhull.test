@@ -9,7 +9,7 @@
 # Author : Pavan Naik                                               #
 #                                                                   #
 #####################################################################
-
+--source include/have_sequoiadb.inc
 --source include/have_geometry.inc
 
 ############################################################################################
@@ -17,7 +17,7 @@
 ############################################################################################
 
 --echo # Creating the spatial Geometry object
-USE test;
+#USE test;
 
 CREATE TABLE gis_geometrycollection (fid INTEGER NOT NULL PRIMARY KEY, g GEOMETRY);
 

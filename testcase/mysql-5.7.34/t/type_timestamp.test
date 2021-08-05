@@ -1,6 +1,8 @@
+# The include statement below is a temp one for tests that are yet to
+#be ported to run with SequoiaDB,
+# (#Case #13092: Check insert/update/delete/query of DataType Timestamp)
 
- #Get deafult engine value
---let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
+--source include/have_sequoiadb.inc
 
 #
 # Test timestamp
@@ -94,8 +96,9 @@ drop table t1;
 
 # Let us test TIMESTAMP auto-update behaviour
 
+# Can't Replace Default Engine
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 # Also we will test behaviour of TIMESTAMP field in SHOW CREATE TABLE and
 # behaviour of DEFAULT literal for such fields
 create table t1 (t1 timestamp not null default '2003-01-01 00:00:00', t2 datetime, t3 timestamp NOT NULL DEFAULT '0000-00-00 00:00:00');
@@ -108,7 +111,7 @@ insert into t1 (t1,t3) values (default, default);
 select * from t1;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 show columns from t1;
 drop table t1;
@@ -123,7 +126,7 @@ insert into t1 (t1,t3) values (default, default);
 select * from t1;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 show columns from t1;
 drop table t1;
@@ -139,7 +142,7 @@ insert into t1 (t1) values (default);
 select * from t1;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 show columns from t1;
 drop table t1;
@@ -155,7 +158,7 @@ insert into t1 (t1) values (default);
 select * from t1;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 show columns from t1;
 drop table t1;
@@ -171,7 +174,7 @@ insert into t1 (t1,t3) values (default, default);
 select * from t1;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 show columns from t1;
 drop table t1;
@@ -190,7 +193,7 @@ insert into t1 (t1) values (default);
 select * from t1;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 show columns from t1;
 truncate table t1;
@@ -222,6 +225,7 @@ drop table t1;
 create table t1 (pk int primary key, t1 timestamp not null default '2003-01-01 00:00:00' on update current_timestamp, bulk int);
 insert into t1 values (1, '2004-04-01 00:00:00', 10);
 SET TIMESTAMP=1000000014;
+#Bug #SEQUOIADBMAINSTREAM-3573
 replace into t1 set pk = 1, bulk= 20; 
 select * from t1;
 drop table t1;
@@ -250,7 +254,7 @@ drop table t1;
 create table t1 (a timestamp null, b timestamp null);
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 insert into t1 values (NULL, NULL);
 SET TIMESTAMP=1000000017;
@@ -262,7 +266,7 @@ drop table t1;
 create table t1 (a timestamp null default current_timestamp on update current_timestamp, b timestamp null);
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 insert into t1 values (NULL, NULL);
 SET TIMESTAMP=1000000018;
@@ -277,7 +281,7 @@ drop table t1;
 create table t1 (a timestamp null default null, b timestamp null default '2003-01-01 00:00:00');
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 insert into t1 values (NULL, NULL);
 insert into t1 values (DEFAULT, DEFAULT);
@@ -314,7 +318,7 @@ set sql_mode='maxdb';
 create table t1 (a timestamp, b timestamp);
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
+#--replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 # restore default mode
 set sql_mode='';
@@ -333,6 +337,7 @@ insert into t1 (a) values (4);
 select * from t1;
 update t1 set c = '2004-04-04 04:04:04' where a = 4;
 select * from t1;
+#Bug #SEQUOIASQLMAINSTREAM-112
 insert into t1 (a) values (3), (5) on duplicate key update b = 3, c = c;
 select * from t1;
 insert into t1 (a, c) values (4, '2004-04-04 00:00:00'),
@@ -350,15 +355,14 @@ CREATE TABLE t1 (
 `username` varchar(80) NOT NULL default '',
 `posted_on` timestamp NOT NULL default '0000-00-00 00:00:00',
 PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
 show fields from t1;
 select is_nullable from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='t1' and COLUMN_NAME='posted_on';
 drop table t1;
 
-#
+
 # Bug#41370: TIMESTAMP field does not accepts NULL from FROM_UNIXTIME()
-#
 
 CREATE TABLE t1 ( f1 INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
                   f2 TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -381,7 +385,6 @@ DROP TABLE t1;
 --echo # Bug #55779: select does not work properly in mysql server
 --echo #             Version "5.1.42 SUSE MySQL RPM"
 --echo #
-
 CREATE TABLE t1 (a TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, KEY (a));
 
 INSERT INTO t1 VALUES ('2000-01-01 00:00:00'), ('2000-01-01 00:00:00'),
@@ -403,15 +406,16 @@ INSERT INTO t1 VALUES( '2010-02-01 09:31:02' );
 INSERT INTO t1 VALUES( '2010-02-01 09:31:03' );
 INSERT INTO t1 VALUES( '2010-02-01 09:31:04' );
 
+--replace_column 1 x
 ANALYZE TABLE t1;
 SELECT * FROM t1 WHERE a >= '2010-02-01 09:31:02.0';
 SELECT * FROM t1 WHERE '2010-02-01 09:31:02.0' <= a;
 SELECT * FROM t1 WHERE a <= '2010-02-01 09:31:02.0';
 SELECT * FROM t1 WHERE '2010-02-01 09:31:02.0' >= a;
 
---replace_column 1 x 2 x 3 x 6 x 7 x 8 x 9 x 10 x 12 x
-EXPLAIN
-SELECT * FROM t1 WHERE a >= '2010-02-01 09:31:02.0';
+#--replace_column 1 x 2 x 3 x 6 x 7 x 8 x 9 x 10 x 12 x
+#EXPLAIN
+#SELECT * FROM t1 WHERE a >= '2010-02-01 09:31:02.0';
 SELECT * FROM t1 WHERE a >= '2010-02-01 09:31:02.0';
 
 CREATE TABLE t2 ( a TIMESTAMP, KEY ( a DESC ) );
@@ -429,16 +433,17 @@ INSERT INTO t2 VALUES( '2010-02-01 09:31:10' );
 INSERT INTO t2 VALUES( '2010-02-01 09:31:11' );
 
 
+--replace_column 1 x
 ANALYZE TABLE t2;
 --echo # The bug would cause the range optimizer's comparison to use an open
 --echo # interval here. This reveals itself only in the number of reads 
 --echo # performed.
-FLUSH STATUS;
---replace_column 1 x 2 x 3 x 6 x 7 x 8 x 9 x 10 x 12 x
-EXPLAIN
+#FLUSH STATUS;
+#--replace_column 1 x 2 x 3 x 6 x 7 x 8 x 9 x 10 x 12 x
+#EXPLAIN
+#SELECT * FROM t2 WHERE a < '2010-02-01 09:31:02.0';
 SELECT * FROM t2 WHERE a < '2010-02-01 09:31:02.0';
-SELECT * FROM t2 WHERE a < '2010-02-01 09:31:02.0';
-SHOW STATUS LIKE 'Handler_read_next';
+#SHOW STATUS LIKE 'Handler_read_next';
 
 DROP TABLE t1, t2;
 
@@ -538,8 +543,7 @@ SET @@sql_mode='NO_ZERO_IN_DATE,STRICT_ALL_TABLES';
 --error ER_INVALID_DEFAULT
 ALTER TABLE t1 ADD c2 TIMESTAMP DEFAULT '2012-02-00';
 
-
---echo #Alter table with out any SQL modes
+#--echo #Alter table with out any SQL modes
 SET @@sql_mode='';
 ALTER TABLE t1 ADD c2 TIMESTAMP DEFAULT 0;
 ALTER TABLE t1 ADD c3 TIMESTAMP DEFAULT '0000-00-00';
@@ -553,3 +557,4 @@ SET @@sql_mode= @org_mode;
 --echo # End of 5.6 tests
 --echo #
 
+--source include/uninstall_sequoiadb.inc

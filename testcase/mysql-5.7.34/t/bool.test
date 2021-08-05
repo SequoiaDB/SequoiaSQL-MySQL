@@ -2,6 +2,8 @@
 # Test of boolean operations with NULL
 #
 
+--source include/have_sequoiadb.inc
+
 --disable_warnings
 DROP TABLE IF EXISTS t1;
 --enable_warnings
@@ -59,4 +61,5 @@ select ifnull(A=1, 'N') as A, ifnull(B=1, 'N') as B, ifnull(not (A=1), 'N') as n
 
 drop table t1;
 
+--source include/uninstall_sequoiadb.inc
 # End of 4.1 tests

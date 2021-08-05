@@ -66,22 +66,27 @@ INSERT INTO t1(f_int1, f_int2) values(300, 400);
 INSERT INTO t1(f_int1, f_int2) values(400, 500);
 INSERT INTO t1(f_int1, f_int2) values(500, 100);
 
+--disable_result_log
 CHECK TABLE t1;
+--enable_result_log
 
-# Execute ALTER TABLE statement: Error
-if ($expect_inplace_error) {
-  --echo Execute ALTER: Expect Error 1845
-  --error 1845
-  eval $alter;
-}
-
+#SequoiaDB alter drop/add primary key with algorithm inplace will return secceed
+## Execute ALTER TABLE statement: Error
+#if ($expect_inplace_error) {
+#  --echo Execute ALTER: Expect Error 1845
+#  --error 1845
+#  eval $alter;
+#}
+#
 # Execute ALTER TABLE statement: Success
 if ($expect_inplace_error == 0) {
   --echo Execute ALTER: Expect Success
   eval $alter;
 }
 
+--disable_result_log
 CHECK TABLE t1;
+--enable_result_log
 SHOW CREATE TABLE t1;
 
 DROP TABLE t1;

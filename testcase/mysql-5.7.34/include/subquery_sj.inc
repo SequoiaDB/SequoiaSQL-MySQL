@@ -22,11 +22,11 @@ insert into t1 values (1,10), (2,20), (3,30),  (4,40);
 insert into t2 values (2), (3), (4), (5);
 insert into t3 values (10,3), (20,4), (30,5);
 select * from t2 where t2.a in (select a from t1);
-explain extended select * from t2 where t2.a in (select a from t1);
+#explain extended select * from t2 where t2.a in (select a from t1);
 select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
-explain extended select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
+#explain extended select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
 select * from t2 where t2.a in (select t1.a from t1,t3 where t1.b=t3.a);
-explain extended select * from t2 where t2.a in (select t1.a from t1,t3 where t1.b=t3.a);
+#explain extended select * from t2 where t2.a in (select t1.a from t1,t3 where t1.b=t3.a);
 drop table t1, t2, t3;
 create table t1 (a int, b int, index a (a,b));
 create table t2 (a int, index a (a));
@@ -41,15 +41,15 @@ select rand()*100000+200,rand()*100000 from t0 A, t0 B, t0 C, t0 D;
 insert into t2 values (2), (3), (4), (5);
 insert into t3 values (10,3), (20,4), (30,5);
 select * from t2 where t2.a in (select a from t1);
-explain extended select * from t2 where t2.a in (select a from t1);
+#explain extended select * from t2 where t2.a in (select a from t1);
 select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
-explain extended select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
+#explain extended select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
 select * from t2 where t2.a in (select t1.a from t1,t3 where t1.b=t3.a);
-explain extended select * from t2 where t2.a in (select t1.a from t1,t3 where t1.b=t3.a);
+#explain extended select * from t2 where t2.a in (select t1.a from t1,t3 where t1.b=t3.a);
 insert into t1 values (3,31);
 select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
 select * from t2 where t2.a in (select a from t1 where t1.b <> 30 and t1.b <> 31);
-explain extended select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
+#explain extended select * from t2 where t2.a in (select a from t1 where t1.b <> 30);
 drop table t0, t1, t2, t3;
 
 
@@ -72,55 +72,55 @@ insert into t12 select * from t10;
 
 
 --echo Flattened because of dependency, t10=func(t1)
-explain select * from t1 where a in (select pk from t10);
+#explain select * from t1 where a in (select pk from t10);
 select * from t1 where a in (select pk from t10);
 
 --echo A confluent case of dependency
-explain select * from t1 where a in (select a from t10 where pk=12);
+#explain select * from t1 where a in (select a from t10 where pk=12);
 select * from t1 where a in (select a from t10 where pk=12);
 
-explain select * from t1 where a in (select a from t10 where pk=9);
+#explain select * from t1 where a in (select a from t10 where pk=9);
 select * from t1 where a in (select a from t10 where pk=9);
 
 --echo An empty table inside
-explain select * from t1 where a in (select a from t11);
+#explain select * from t1 where a in (select a from t11);
 select * from t1 where a in (select a from t11);
 
-explain select * from t1 where a in (select pk from t10) and b in (select pk from t10);
+#explain select * from t1 where a in (select pk from t10) and b in (select pk from t10);
 select * from t1 where a in (select pk from t10) and b in (select pk from t10);
 
 --echo flattening a nested subquery
-explain select * from t1 where a in (select pk from t10 where t10.a in (select pk from t12));
+#explain select * from t1 where a in (select pk from t10 where t10.a in (select pk from t12));
 select * from t1 where a in (select pk from t10 where t10.a in (select pk from t12));
 
 --echo flattening subquery w/ several tables
-explain extended select * from t1 where a in (select t10.pk from t10, t12 where t12.pk=t10.a);
+#explain extended select * from t1 where a in (select t10.pk from t10, t12 where t12.pk=t10.a);
 
 --echo subqueries within outer joins go into ON expr.
 # TODO: psergey: check if case conversions like those are ok (it broke on  windows)
---replace_result a A b B
-explain extended
-select * from t1 left join (t2 a, t2 b) on ( a.a= t1.a and b.a in (select pk from t10));
+#--replace_result a A b B
+#explain extended
+#select * from t1 left join (t2 a, t2 b) on ( a.a= t1.a and b.a in (select pk from t10));
 
 # TODO: psergey: check if case conversions like those are ok (it broke on  windows)
---echo t2 should be wrapped into OJ-nest, so we have "t1 LJ (t2 J t10)"
---replace_result a A b B
-explain extended
-select * from t1 left join t2 on (t2.a= t1.a and t2.a in (select pk from t10));
+#--echo t2 should be wrapped into OJ-nest, so we have "t1 LJ (t2 J t10)"
+#--replace_result a A b B
+#explain extended
+#select * from t1 left join t2 on (t2.a= t1.a and t2.a in (select pk from t10));
 
---echo we shouldn't flatten if we're going to get a join of > MAX_TABLES.
-explain select * from 
-  t1 s00, t1 s01,  t1 s02, t1 s03, t1 s04,t1 s05,t1 s06,t1 s07,t1 s08,t1 s09,
-  t1 s10, t1 s11,  t1 s12, t1 s13, t1 s14,t1 s15,t1 s16,t1 s17,t1 s18,t1 s19,
-  t1 s20, t1 s21,  t1 s22, t1 s23, t1 s24,t1 s25,t1 s26,t1 s27,t1 s28,t1 s29,
-  t1 s30, t1 s31,  t1 s32, t1 s33, t1 s34,t1 s35,t1 s36,t1 s37,t1 s38,t1 s39,
-  t1 s40, t1 s41,  t1 s42, t1 s43, t1 s44,t1 s45,t1 s46,t1 s47,t1 s48,t1 s49
-where
-  s00.a in (
-  select m00.a from
-    t1 m00, t1 m01,  t1 m02, t1 m03, t1 m04,t1 m05,t1 m06,t1 m07,t1 m08,t1 m09,
-    t1 m10, t1 m11,  t1 m12, t1 m13, t1 m14,t1 m15,t1 m16,t1 m17,t1 m18,t1 m19
-  );
+#--echo we shouldn't flatten if we're going to get a join of > MAX_TABLES.
+#explain select * from 
+#  t1 s00, t1 s01,  t1 s02, t1 s03, t1 s04,t1 s05,t1 s06,t1 s07,t1 s08,t1 s09,
+#  t1 s10, t1 s11,  t1 s12, t1 s13, t1 s14,t1 s15,t1 s16,t1 s17,t1 s18,t1 s19,
+#  t1 s20, t1 s21,  t1 s22, t1 s23, t1 s24,t1 s25,t1 s26,t1 s27,t1 s28,t1 s29,
+#  t1 s30, t1 s31,  t1 s32, t1 s33, t1 s34,t1 s35,t1 s36,t1 s37,t1 s38,t1 s39,
+#  t1 s40, t1 s41,  t1 s42, t1 s43, t1 s44,t1 s45,t1 s46,t1 s47,t1 s48,t1 s49
+#where
+#  s00.a in (
+#  select m00.a from
+#    t1 m00, t1 m01,  t1 m02, t1 m03, t1 m04,t1 m05,t1 m06,t1 m07,t1 m08,t1 m09,
+#    t1 m10, t1 m11,  t1 m12, t1 m13, t1 m14,t1 m15,t1 m16,t1 m17,t1 m18,t1 m19
+#  );
 
 select * from
   t1 left join t2 on (t2.a= t1.a and t2.a in (select pk from t10)) 
@@ -138,7 +138,7 @@ execute s1;
 
 # Try I2O orders
 insert into t1 select (A.a + 10 * B.a),1 from t0 A, t0 B;
-explain extended select * from t1 where a in (select pk from t10 where pk<3);
+#explain extended select * from t1 where a in (select pk from t10 where pk<3);
 
 drop table t0, t1, t2;
 drop table t10, t11, t12;
@@ -166,7 +166,7 @@ while ($i)
          let $query=
          SELECT * FROM t1 WHERE (t1.i) IN 
            (SELECT t3.i FROM t2 INNER JOIN t3 ON t2.i=t3.i);
-         eval EXPLAIN $query;
+         #eval EXPLAIN $query;
          eval $query;
 
          eval PREPARE stmt FROM "$query";
@@ -177,7 +177,7 @@ while ($i)
          let $query=
          SELECT * FROM t1 WHERE (t1.i) IN 
            (SELECT t3.i FROM t2 LEFT JOIN t3 ON t2.i=t3.i);
-         eval EXPLAIN $query;
+         #eval EXPLAIN $query;
          eval $query;
 
          eval PREPARE stmt FROM "$query";
@@ -188,37 +188,38 @@ while ($i)
          let $query=
          SELECT * FROM t1 WHERE (t1.i) IN 
            (SELECT t3.i FROM t2 RIGHT JOIN t3 ON t2.i=t3.i);
-         eval EXPLAIN $query;
+         #eval EXPLAIN $query;
          eval $query;
 
          let $query=
          SELECT * FROM t1 WHERE (t1.i) IN 
            (SELECT t3.i FROM t2 STRAIGHT_JOIN t3);
-         eval EXPLAIN $query;
+         #eval EXPLAIN $query;
          eval $query;
 
          let $query=
          SELECT * FROM t1 WHERE (11) IN 
            (SELECT t3.i FROM t2 LEFT JOIN t3 ON t2.i=t3.i);
-         eval EXPLAIN $query;
+         #eval EXPLAIN $query;
          eval $query;
 
+         #Bug #SEQUOIADBMAINSTREAM-3596
          let $query=
          SELECT * FROM t1 WHERE (11) IN 
            (SELECT t3.i FROM t2 LEFT JOIN t3 ON t2.i=t3.i WHERE t1.i);
-         eval EXPLAIN $query;
+         #eval EXPLAIN $query;
          eval $query;
 
          let $query=
          SELECT * FROM t1 WHERE (11) IN 
            (SELECT t3.i FROM t2 RIGHT JOIN t3 ON t2.i=t3.i);
-         eval EXPLAIN $query;
+         #eval EXPLAIN $query;
          eval $query;
 
          let $query=
          SELECT * FROM t1 WHERE (11) IN 
            (SELECT t3.i FROM t2 STRAIGHT_JOIN t3);
-         eval EXPLAIN $query;
+         #eval EXPLAIN $query;
          eval $query;
 
 	 dec $k;
@@ -331,6 +332,7 @@ drop table x2;
 # process should unpack column value not to SCOL but rather to PCOL, as 
 # substitute_best_equal has made all conditions to refer to PCOL.
 #
+#Bug #SEQUOIADBMAINSTREAM-3654
 CREATE TABLE t1 (
   a int(11) NOT NULL,
   b int(11) NOT NULL,
@@ -362,9 +364,9 @@ create table t21 select * from t1 where b = 67 AND (c IS NULL OR c > '2005-12-08
 create table t22 select * from t1 where b = 67 AND (c IS NULL OR c > '2005-12-08') order by 3 desc;
 
 update t22 set c = '2005-12-08 15:58:27' where a = 255;
-explain select t21.* from t21,t22 where t21.a = t22.a and 
-t22.a in (select t12.a from t11, t12 where t11.a in(255,256) and t11.a = t12.a and t11.c is null) and t22.c is null order by t21.a;
-explain format=json select * from t1 where a in (select a from t11);
+#explain select t21.* from t21,t22 where t21.a = t22.a and 
+#t22.a in (select t12.a from t11, t12 where t11.a in(255,256) and t11.a = t12.a and t11.c is null) and t22.c is null order by t21.a;
+#explain format=json select * from t1 where a in (select a from t11);
 select t21.* from t21,t22 where t21.a = t22.a and 
 t22.a in (select t12.a from t11, t12 where t11.a in(255,256) and t11.a = t12.a and t11.c is null) and t22.c is null order by t21.a;
 
@@ -378,8 +380,8 @@ drop table t1, t11, t12, t21, t22;
 create table t1(a int);
 insert into t1 values (0),(1);
 
-explain 
-select (select max(y.a) from t1 y where a in (select a from t1 z) and a < x.a) as subq from t1 x;
+#explain 
+#select (select max(y.a) from t1 y where a in (select a from t1 z) and a < x.a) as subq from t1 x;
 select (select max(y.a) from t1 y where a in (select a from t1 z) and a < x.a) as subq from t1 x;
 
 drop table t1;
@@ -392,15 +394,15 @@ insert into t0 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
 create table t1 as select * from t0;
 insert into t1 select a+10 from t0;
 insert into t0 values(2);
-explain select * from t1 where 2 in (select a from t0);
+#explain select * from t1 where 2 in (select a from t0);
 select * from t1 where 2 in (select a from t0);
 
 # 
 # FirstMatch referring to a derived table
 #
 let $query=select * from (select a from t0) x where a in (select a from t1);
---eval explain $query
---eval explain format=json $query
+#--eval explain $query
+#--eval explain format=json $query
 drop table t0, t1;
 
 #
@@ -416,19 +418,32 @@ insert into t1 select * from t1 where kp1 < 20;
 create table t3 (a int);
 insert into t3 select A.a + 10*B.a from t0 A, t0 B;
 
-explain select * from t3 where a in (select kp1 from t1 where kp1<20);
+--disable_query_log
+--disable_result_log
+analyze table t1,t2,t3;
+--enable_query_log
+--enable_result_log
+
+#explain select * from t3 where a in (select kp1 from t1 where kp1<20);
+# SEQUOIASQLMAINSTREAM-811
 select * from t3 where a in (select kp1 from t1 where kp1<20);
 
-explain select * from t3 where a in (select kp1 from t1 where kp1<20) and a<20;
+#explain select * from t3 where a in (select kp1 from t1 where kp1<20) and a<20;
 select * from t3 where a in (select kp1 from t1 where kp1<20) and a<20;
 
 create table t4 (pk int primary key);
 insert into t4 select a from t3;
 
-explain select * from t3 where a in 
-          (select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c);
+--disable_query_log
+--disable_result_log
+analyze table t4;
+--enable_query_log
+--enable_result_log
+
+#explain select * from t3 where a in 
+#          (select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c);
 select * from t3 where a in 
-  (select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c);
+  (select t1.kp1 from t1,t4 where kp1<20 and t4.pk=t1.c) order by t3.a;
 
 drop table t1, t3, t4;
 
@@ -447,9 +462,9 @@ set @@max_heap_table_size= 16384;
 --echo # that these situations occurred with max_heap_table_size=16384
 --echo # and optimizer_join_cache_level equals 1 and 0, respectively.
 --echo # Finally execute a test that does not overflow the heap table.
-explain
-select count(*) from t0 a, t0 b, t0 c
-where c.a in (select a from t1 d);
+#explain
+#select count(*) from t0 a, t0 b, t0 c
+#where c.a in (select a from t1 d);
 flush status;
 select count(*) from t0 a, t0 b, t0 c
 where c.a in (select a from t1 d);
@@ -472,7 +487,7 @@ create table t2(a int);
 insert into t2 values (1),(2);
 create table t3 ( a int , filler char(100), key(a)); 
 insert into t3 select A.a + 10*B.a, 'filler' from t0 A, t0 B;
-explain select * from t3 where a in (select a from t2) and (a > 5 or a < 10); 
+#explain select * from t3 where a in (select a from t2) and (a > 5 or a < 10); 
 select * from t3 where a in (select a from t2); 
 
 drop table t0, t2, t3;
@@ -487,14 +502,14 @@ insert into t2 values (1),(2);
 create table t3 (a char(10));
 insert into t3 select * from t1;
 insert into t3 values (1),(2);
-explain select * from t2 where a in (select a from t1);
-explain select * from t2 where a in (select a from t2);
-explain select * from t2 where a in (select a from t3);
-explain select * from t1 where a in (select a from t3);
+#explain select * from t2 where a in (select a from t1);
+#explain select * from t2 where a in (select a from t2);
+#explain select * from t2 where a in (select a from t3);
+#explain select * from t1 where a in (select a from t3);
 drop table t1, t2, t3;
 create table t1 (a decimal);
 insert into t1 values (1),(2);
-explain select * from t1 where a in (select a from t1);
+#explain select * from t1 where a in (select a from t1);
 drop table t1;
 
 #
@@ -505,27 +520,27 @@ insert into t1 values (0),(1),(2),(3),(4),(5),(6),(7),(8),(9);
 create table t2 as select * from t1;
 create table t3 (a int, b int, filler char(100), key(a));
 insert into t3 select A.a + 10*B.a, A.a + 10*B.a, 'filler' from t1 A, t1 B, t1 C;
-explain select * from t1, t3 where t3.a in (select a from t2) and (t3.a < 10 or t3.a >30) and t1.a =3;
---replace_regex /"rows_produced_per_join": 792/"rows_produced_per_join": 793/
-explain format=json select * from t1, t3 where t3.a in (select a from t2) and (t3.a < 10 or t3.a >30) and t1.a =3;
+#explain select * from t1, t3 where t3.a in (select a from t2) and (t3.a < 10 or t3.a >30) and t1.a =3;
+#--replace_regex /"rows_produced_per_join": 792/"rows_produced_per_join": 793/
+#explain format=json select * from t1, t3 where t3.a in (select a from t2) and (t3.a < 10 or t3.a >30) and t1.a =3;
 
 #
 # Verify that straight_join modifier in parent or child prevents flattening
 #
-explain select straight_join * from t1 a, t1 b where a.a in (select a from t2);
-explain select * from t2 where a in (select straight_join a.a from t1 a, t1 b);
-explain select * from t2 where a in (select straight_join a.a from t1 a, t1 b);
-explain select straight_join * from t2 x, t2 y 
-where x.a in (select straight_join a.a from t1 a, t1 b);
+#explain select straight_join * from t1 a, t1 b where a.a in (select a from t2);
+#explain select * from t2 where a in (select straight_join a.a from t1 a, t1 b);
+#explain select * from t2 where a in (select straight_join a.a from t1 a, t1 b);
+#explain select straight_join * from t2 x, t2 y 
+#where x.a in (select straight_join a.a from t1 a, t1 b);
 
 #
 # SJ-Materialization scan + first table being system const table
 #
 create table t0 (a int, b int);
 insert into t0 values(1,1);
-explain select * from t0, t3 where t3.a in (select a from t2) and (t3.a < 10 or t3.a >30);
+#explain select * from t0, t3 where t3.a in (select a from t2) and (t3.a < 10 or t3.a >30);
 create table t4 as select a as x, a as y from t1;
-explain select * from t0, t3 where (t3.a, t3.b) in (select x,y from t4) and (t3.a < 10 or t3.a >30);
+#explain select * from t0, t3 where (t3.a, t3.b) in (select x,y from t4) and (t3.a < 10 or t3.a >30);
 drop table t0,t1,t2,t3,t4;
 
 #
@@ -537,8 +552,8 @@ create table t1 (a int, b int, filler char(100), key(a,b));
 insert into t1 select A.a, B.a, 'filler' from t0 A, t0 B;
 create table t2 as select * from t1;
 
-explain select * from t2 where a in (select b from t1 where a=3);
-explain select * from t2 where (b,a) in (select a,b from t1 where a=3);
+#explain select * from t2 where a in (select b from t1 where a=3);
+#explain select * from t2 where (b,a) in (select a,b from t1 where a=3);
 
 drop table t1,t2;
 
@@ -550,7 +565,7 @@ insert into t1 select a,a from t0;
 create table t2 (a int, b int); 
 insert into t2 select A.a + 10*B.a, A.a + 10*B.a from t0 A, t0 B;
 
-explain select * from t1 where (a,b) in (select a,b from t2);
+#explain select * from t1 where (a,b) in (select a,b from t2);
 
 drop table t0, t1, t2;
 
@@ -600,7 +615,7 @@ create table t0 (a decimal(4,2));
 insert into t0 values (10.24), (22.11);
 create table t1 as select * from t0;
 insert into t1 select * from t0;
-explain select * from t0 where a in (select a from t1);
+#explain select * from t0 where a in (select a from t1);
 select * from t0 where a in (select a from t1);
 drop table t0, t1;
 
@@ -608,7 +623,7 @@ create table t0(a date);
 insert into t0 values ('2008-01-01'),('2008-02-02');
 create table t1 as select * from t0;
 insert into t1 select * from t0;
-explain select * from t0 where a in (select a from t1);
+#explain select * from t0 where a in (select a from t1);
 select * from t0 where a in (select a from t1);
 drop table t0, t1;
 
@@ -622,7 +637,7 @@ create table t1 as select a as a, a as b, a as c from t0 where a < 3;
 create table t2 as select a as a, a as b from t0 where a < 3;
 insert into t2 select * from t2;
 
-explain select * from t1 where (a,b,c) in (select x.a, y.a, z.a from t2 x, t2 y, t2 z where x.b=33);
+#explain select * from t1 where (a,b,c) in (select x.a, y.a, z.a from t2 x, t2 y, t2 z where x.b=33);
 
 drop table t0,t1,t2;
 
@@ -649,17 +664,17 @@ insert into t1 values (18, 'duplicate ok', 'duplicate ok');
 insert into t2 values (3, 'duplicate ok', 'duplicate ok');
 insert into t2 values (19, 'duplicate ok', 'duplicate ok');
 
-explain select 
- a, mid(filler1, 1,10), length(filler1)=length(filler2) as z 
-from t1 ot where a in (select a from t2 it);
+#explain select 
+# a, mid(filler1, 1,10), length(filler1)=length(filler2) as z 
+#from t1 ot where a in (select a from t2 it);
 --sorted_result
 select 
  a, mid(filler1, 1,10), length(filler1)=length(filler2) as z 
 from t1 ot where a in (select a from t2 it);
 
-explain select 
-  a, mid(filler1, 1,10), length(filler1)=length(filler2) 
-from t2 ot where a in (select a from t1 it);
+#explain select 
+#  a, mid(filler1, 1,10), length(filler1)=length(filler2) 
+#from t2 ot where a in (select a from t1 it);
 --sorted_result
 select 
   a, mid(filler1, 1,10), length(filler1)=length(filler2) 
@@ -669,17 +684,17 @@ from t2 ot where a in (select a from t1 it);
 insert into t1 select a+20, 'filler123456', 'filler123456' from t0;
 insert into t1 select a+20, 'filler123456', 'filler123456' from t0;
 
-explain select 
- a, mid(filler1, 1,10), length(filler1)=length(filler2) as z 
-from t1 ot where a in (select a from t2 it);
+#explain select 
+# a, mid(filler1, 1,10), length(filler1)=length(filler2) as z 
+#from t1 ot where a in (select a from t2 it);
 --sorted_result
 select 
  a, mid(filler1, 1,10), length(filler1)=length(filler2) as z 
 from t1 ot where a in (select a from t2 it);
 
-explain select 
-  a, mid(filler1, 1,10), length(filler1)=length(filler2) 
-from t2 ot where a in (select a from t1 it);
+#explain select 
+#  a, mid(filler1, 1,10), length(filler1)=length(filler2) 
+#from t2 ot where a in (select a from t1 it);
 --sorted_result
 select 
   a, mid(filler1, 1,10), length(filler1)=length(filler2) 
@@ -698,9 +713,9 @@ insert into t2 select a,a from t0;
 insert into t3 select a,a from t0;
 
 --echo t2 and t3 must be use 'ref', not 'ALL':
-explain select * 
-from t0 where a in
-  (select t2.a+t3.a from t1 left join (t2 join t3) on t2.a=t1.a and t3.a=t1.a);
+#explain select * 
+#from t0 where a in
+#  (select t2.a+t3.a from t1 left join (t2 join t3) on t2.a=t1.a and t3.a=t1.a);
 
 drop table t0, t1,t2,t3;
 
@@ -744,27 +759,27 @@ insert into t3_16 values
  (concat('1 - 04', repeat('x', @suffix_len)), concat('2 - 04', repeat('x', @suffix_len)));
 
 # single value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_16
-where a1 in (select b1 from t2_16 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_16
+#where a1 in (select b1 from t2_16 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_16
 where a1 in (select b1 from t2_16 where b1 > '0');
 
 # row value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_16
-where (a1,a2) in (select b1, b2 from t2_16 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_16
+#where (a1,a2) in (select b1, b2 from t2_16 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_16
 where (a1,a2) in (select b1, b2 from t2_16 where b1 > '0');
 
 # string function with a blob argument, the return type may be != blob
-explain extended select left(a1,7), left(a2,7)
-from t1_16
-where a1 in (select substring(b1,1,16) from t2_16 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_16
+#where a1 in (select substring(b1,1,16) from t2_16 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_16
@@ -773,9 +788,9 @@ where a1 in (select substring(b1,1,16) from t2_16 where b1 > '0');
 # group_concat with a blob argument - depends on
 # the variable group_concat_max_len, and
 # convert_blob_length == max_len*collation->mbmaxlen > CONVERT_IF_BIGGER_TO_BLOB
-explain extended select left(a1,7), left(a2,7)
-from t1_16
-where a1 in (select group_concat(b1) from t2_16 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_16
+#where a1 in (select group_concat(b1) from t2_16 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_16
@@ -783,9 +798,9 @@ where a1 in (select group_concat(b1) from t2_16 group by b2);
 
 set @@group_concat_max_len = 256; # anything < (CONVERT_IF_BIGGER_TO_BLOB = 512)
 
-explain extended select left(a1,7), left(a2,7)
-from t1_16
-where a1 in (select group_concat(b1) from t2_16 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_16
+#where a1 in (select group_concat(b1) from t2_16 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_16
@@ -812,14 +827,14 @@ insert into t3 values ('1 - 06', '2 - 06');
 insert into t3 values ('1 - 07', '2 - 07');
 insert into t3 values ('1 - 08', '2 - 08');
 
-explain extended
-select * from t1
-where concat(a1,'x') IN
-      (select left(a1,8) from t1_16
-       where (a1, a2) IN
-             (select t2_16.b1, t2_16.b2 from t2_16, t2
-              where t2.b2 = substring(t2_16.b2,1,6) and
-                    t2.b1 IN (select c1 from t3 where c2 > '0')));
+#explain extended
+#select * from t1
+#where concat(a1,'x') IN
+#      (select left(a1,8) from t1_16
+#       where (a1, a2) IN
+#             (select t2_16.b1, t2_16.b2 from t2_16, t2
+#              where t2.b2 = substring(t2_16.b2,1,6) and
+#                    t2.b1 IN (select c1 from t3 where c2 > '0')));
 
 
 drop table t1_16, t2_16, t3_16, t1, t2, t3;
@@ -857,27 +872,27 @@ insert into t3_512 values
  (concat('1 - 04', repeat('x', @suffix_len)), concat('2 - 04', repeat('x', @suffix_len)));
 
 # single value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_512
-where a1 in (select b1 from t2_512 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_512
+#where a1 in (select b1 from t2_512 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_512
 where a1 in (select b1 from t2_512 where b1 > '0');
 
 # row value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_512
-where (a1,a2) in (select b1, b2 from t2_512 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_512
+#where (a1,a2) in (select b1, b2 from t2_512 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_512
 where (a1,a2) in (select b1, b2 from t2_512 where b1 > '0');
 
 # string function with a blob argument, the return type may be != blob
-explain extended select left(a1,7), left(a2,7)
-from t1_512
-where a1 in (select substring(b1,1,512) from t2_512 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_512
+#where a1 in (select substring(b1,1,512) from t2_512 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_512
@@ -886,9 +901,9 @@ where a1 in (select substring(b1,1,512) from t2_512 where b1 > '0');
 # group_concat with a blob argument - depends on
 # the variable group_concat_max_len, and
 # convert_blob_length == max_len*collation->mbmaxlen > CONVERT_IF_BIGGER_TO_BLOB
-explain extended select left(a1,7), left(a2,7)
-from t1_512
-where a1 in (select group_concat(b1) from t2_512 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_512
+#where a1 in (select group_concat(b1) from t2_512 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_512
@@ -896,9 +911,9 @@ where a1 in (select group_concat(b1) from t2_512 group by b2);
 
 set @@group_concat_max_len = 256; # anything < (CONVERT_IF_BIGGER_TO_BLOB = 512)
 
-explain extended select left(a1,7), left(a2,7)
-from t1_512
-where a1 in (select group_concat(b1) from t2_512 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_512
+#where a1 in (select group_concat(b1) from t2_512 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_512
@@ -939,27 +954,27 @@ insert into t3_513 values
  (concat('1 - 04', repeat('x', @suffix_len)), concat('2 - 04', repeat('x', @suffix_len)));
 
 # single value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_513
-where a1 in (select b1 from t2_513 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_513
+#where a1 in (select b1 from t2_513 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_513
 where a1 in (select b1 from t2_513 where b1 > '0');
 
 # row value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_513
-where (a1,a2) in (select b1, b2 from t2_513 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_513
+#where (a1,a2) in (select b1, b2 from t2_513 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_513
 where (a1,a2) in (select b1, b2 from t2_513 where b1 > '0');
 
 # string function with a blob argument, the return type may be != blob
-explain extended select left(a1,7), left(a2,7)
-from t1_513
-where a1 in (select substring(b1,1,513) from t2_513 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_513
+#where a1 in (select substring(b1,1,513) from t2_513 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_513
@@ -968,9 +983,9 @@ where a1 in (select substring(b1,1,513) from t2_513 where b1 > '0');
 # group_concat with a blob argument - depends on
 # the variable group_concat_max_len, and
 # convert_blob_length == max_len*collation->mbmaxlen > CONVERT_IF_BIGGER_TO_BLOB
-explain extended select left(a1,7), left(a2,7)
-from t1_513
-where a1 in (select group_concat(b1) from t2_513 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_513
+#where a1 in (select group_concat(b1) from t2_513 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_513
@@ -1011,27 +1026,27 @@ insert into t3_1024 values
  (concat('1 - 04', repeat('x', @suffix_len)), concat('2 - 04', repeat('x', @suffix_len)));
 
 # single value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_1024
-where a1 in (select b1 from t2_1024 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1024
+#where a1 in (select b1 from t2_1024 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_1024
 where a1 in (select b1 from t2_1024 where b1 > '0');
 
 # row value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_1024
-where (a1,a2) in (select b1, b2 from t2_1024 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1024
+#where (a1,a2) in (select b1, b2 from t2_1024 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_1024
 where (a1,a2) in (select b1, b2 from t2_1024 where b1 > '0');
 
 # string function with a blob argument, the return type may be != blob
-explain extended select left(a1,7), left(a2,7)
-from t1_1024
-where a1 in (select substring(b1,1,1024) from t2_1024 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1024
+#where a1 in (select substring(b1,1,1024) from t2_1024 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_1024
@@ -1040,9 +1055,9 @@ where a1 in (select substring(b1,1,1024) from t2_1024 where b1 > '0');
 # group_concat with a blob argument - depends on
 # the variable group_concat_max_len, and
 # convert_blob_length == max_len*collation->mbmaxlen > CONVERT_IF_BIGGER_TO_BLOB
-explain extended select left(a1,7), left(a2,7)
-from t1_1024
-where a1 in (select group_concat(b1) from t2_1024 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1024
+#where a1 in (select group_concat(b1) from t2_1024 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_1024
@@ -1050,9 +1065,9 @@ where a1 in (select group_concat(b1) from t2_1024 group by b2);
 
 set @@group_concat_max_len = 256; # anything < (CONVERT_IF_BIGGER_TO_BLOB = 1024)
 
-explain extended select left(a1,7), left(a2,7)
-from t1_1024
-where a1 in (select group_concat(b1) from t2_1024 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1024
+#where a1 in (select group_concat(b1) from t2_1024 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_1024
@@ -1093,27 +1108,27 @@ insert into t3_1025 values
  (concat('1 - 04', repeat('x', @suffix_len)), concat('2 - 04', repeat('x', @suffix_len)));
 
 # single value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_1025
-where a1 in (select b1 from t2_1025 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1025
+#where a1 in (select b1 from t2_1025 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_1025
 where a1 in (select b1 from t2_1025 where b1 > '0');
 
 # row value transformer
-explain extended select left(a1,7), left(a2,7)
-from t1_1025
-where (a1,a2) in (select b1, b2 from t2_1025 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1025
+#where (a1,a2) in (select b1, b2 from t2_1025 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_1025
 where (a1,a2) in (select b1, b2 from t2_1025 where b1 > '0');
 
 # string function with a blob argument, the return type may be != blob
-explain extended select left(a1,7), left(a2,7)
-from t1_1025
-where a1 in (select substring(b1,1,1025) from t2_1025 where b1 > '0');
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1025
+#where a1 in (select substring(b1,1,1025) from t2_1025 where b1 > '0');
 
 select left(a1,7), left(a2,7)
 from t1_1025
@@ -1122,9 +1137,9 @@ where a1 in (select substring(b1,1,1025) from t2_1025 where b1 > '0');
 # group_concat with a blob argument - depends on
 # the variable group_concat_max_len, and
 # convert_blob_length == max_len*collation->mbmaxlen > CONVERT_IF_BIGGER_TO_BLOB
-explain extended select left(a1,7), left(a2,7)
-from t1_1025
-where a1 in (select group_concat(b1) from t2_1025 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1025
+#where a1 in (select group_concat(b1) from t2_1025 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_1025
@@ -1132,9 +1147,9 @@ where a1 in (select group_concat(b1) from t2_1025 group by b2);
 
 set @@group_concat_max_len = 256; # anything < (CONVERT_IF_BIGGER_TO_BLOB = 1025)
 
-explain extended select left(a1,7), left(a2,7)
-from t1_1025
-where a1 in (select group_concat(b1) from t2_1025 group by b2);
+#explain extended select left(a1,7), left(a2,7)
+#from t1_1025
+#where a1 in (select group_concat(b1) from t2_1025 group by b2);
 
 select left(a1,7), left(a2,7)
 from t1_1025
@@ -1168,7 +1183,7 @@ let $query=
 SELECT *
 FROM ot1 LEFT JOIN ot2 ON ot1.a=ot2.a
 WHERE ot1.a IN (SELECT a FROM it3);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1178,7 +1193,7 @@ let $query=
 SELECT *
 FROM ot1 LEFT JOIN ot2 ON ot1.a=ot2.a
 WHERE COALESCE(ot2.a,0) IN (SELECT a FROM it3);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1188,7 +1203,7 @@ let $query=
 SELECT *
 FROM ot1 LEFT JOIN ot2 ON ot1.a=ot2.a
 WHERE (ot1.a,ot2.a) IN (SELECT a, a FROM it3);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1262,7 +1277,7 @@ WHERE COALESCE(ot3.a,0) IN (SELECT a FROM it3);
 let $query=
 SELECT *
 FROM ot1 JOIN ot2 ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it3);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1272,7 +1287,7 @@ let $query=
 SELECT *
 FROM ot1 JOIN ot2 ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it2)
                                  AND ot2.a IN (SELECT a FROM it3);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1311,7 +1326,7 @@ FROM ot1 JOIN ot2 ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it3)
 let $query=
 SELECT *
 FROM ot1 LEFT JOIN ot2 ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it3);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1320,7 +1335,7 @@ eval $query;
 let $query=
 SELECT *
 FROM ot1 LEFT JOIN ot2 ON ot1.a=ot2.a AND ot2.a IN (SELECT a FROM it2);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1330,7 +1345,7 @@ let $query=
 SELECT *
 FROM ot1 LEFT JOIN ot2 ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it1)
                                       AND ot2.a IN (SELECT a FROM it2);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1341,7 +1356,7 @@ SELECT *
 FROM ot1 LEFT JOIN ot2 ON ot1.a=ot2.a AND
                          (ot1.a, ot2.a) IN (SELECT it1.a, it2.a
                                             FROM it1 JOIN it2 ON it1.a=it2.a);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1394,7 +1409,7 @@ FROM   ot1
      LEFT JOIN
        (ot2 JOIN ot3 ON ot2.a=ot3.a)
      ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it1);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1406,7 +1421,7 @@ FROM   ot1
      JOIN
        (ot2 JOIN ot3 ON ot2.a=ot3.a)
      ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it1);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1418,7 +1433,7 @@ FROM   ot1
      JOIN
        (ot2 LEFT JOIN ot3 ON ot2.a=ot3.a)
      ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it1);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1430,7 +1445,7 @@ FROM   ot1
      LEFT JOIN
        (ot2 LEFT JOIN ot3 ON ot2.a=ot3.a)
      ON ot1.a=ot2.a AND ot1.a IN (SELECT a FROM it1);
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -1542,22 +1557,22 @@ DROP TABLE ot1,ot2,ot3,it1,it2,it3;
 
 CREATE TABLE t (
   a INTEGER DEFAULT NULL
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 INSERT INTO t VALUES (1);
 
 CREATE TABLE t2 (
   a INTEGER DEFAULT NULL
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 INSERT INTO t2 VALUES (1),(1);
 
 CREATE TABLE t4 (
   a INTEGER DEFAULT NULL
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 INSERT INTO t4 VALUES (1),(1);
 
 CREATE TABLE v (
   a INTEGER DEFAULT NULL
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 INSERT INTO v VALUES (1),(1);
 
 let $query=
@@ -1572,7 +1587,7 @@ FROM t AS t1
       )
      ON TRUE
 WHERE t1.a IN (SELECT * FROM v AS it2);
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t,t2,t4,v;
@@ -1623,6 +1638,8 @@ drop table t1;
 --echo # BUG#41842: Semi-join materialization strategy crashes when the upper query has HAVING
 --echo #
 
+# MyISAM support invalid date-time value, here should add "set sql_mode='';"
+set sql_mode='';
 CREATE TABLE t1 (
   pk int(11) NOT NULL AUTO_INCREMENT,
   int_nokey int(11) NOT NULL,
@@ -1635,8 +1652,8 @@ CREATE TABLE t1 (
   KEY time_key (time_key),
   KEY datetime_key (datetime_key),
   KEY varchar_key (varchar_key)
-) ENGINE=MyISaM;
-
+) ENGINE=Sequoiadb;
+# just like innodb, no warnings
 INSERT INTO t1 VALUES 
 (1,0, '00:16:10','2008-09-03 14:25:40','2008-09-03 14:25:40','h','h'),
 (2,7, '00:00:00','2001-01-13 00:00:00','2001-01-13 00:00:00','',''),
@@ -1686,6 +1703,7 @@ WHERE
                              ) 
   AND OUTR . varchar_nokey <= 'w' 
 HAVING X > '2012-12-12';
+set sql_mode=default;
 drop table t1, t2;
 
 --echo
@@ -1714,7 +1732,7 @@ INSERT INTO t2 VALUES
 CREATE TABLE t3 (
   varchar_key varchar(1) DEFAULT NULL,
   KEY varchar_key (varchar_key)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=Sequoiadb DEFAULT CHARSET=latin1;
 INSERT INTO t3 VALUES
   (NULL),('c'),('d'),('e'),('f'),('h'),('j'),('k'),('k'),('m'),('m'),('m'),
   ('n'),('o'),('r'),('t'),('t'),('u'),('w'),('y');
@@ -1746,9 +1764,10 @@ CREATE TABLE t0 (
 INSERT INTO t0 
 VALUES (1,'g','g'), (2,'v','v'), (3,'t','t'), (4,'u','u'), (5,'n','n');
 
-EXPLAIN EXTENDED SELECT vkey FROM t0 WHERE pk IN 
-  (SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey);
+#EXPLAIN EXTENDED SELECT vkey FROM t0 WHERE pk IN 
+#  (SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey);
 
+--sorted_result 
 SELECT vkey FROM t0 WHERE pk IN 
   (SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey);
 
@@ -1822,68 +1841,74 @@ DROP TABLE t1, t2;
 --echo # Bug#42353 "SELECT ... WHERE oe IN (SELECT w/ LEFT JOIN) query
 --echo # causes crash."
 --echo #
-CREATE TABLE t1 (
-  pk INTEGER PRIMARY KEY,
-  int_nokey INTEGER,
-  int_key INTEGER,
-  date_key DATE,
-  datetime_nokey DATETIME,
-  varchar_nokey VARCHAR(1)
-);
+#Sequoiadb not support create index on date,insert '0000-00-00' on date when use innodb or sequoiadb has an error,but success use myisam
+#CREATE TABLE t1 (
+#  pk INTEGER PRIMARY KEY,
+#  int_nokey INTEGER,
+#  int_key INTEGER,
+#  date_key DATE,
+#  datetime_nokey DATETIME,
+#  varchar_nokey VARCHAR(1)
+#);
+#
+#CREATE TABLE t2 (
+#  date_nokey DATE
+#);
+#
+#CREATE TABLE t3 (
+#  pk INTEGER PRIMARY KEY,
+#  int_nokey INTEGER,
+#  date_key date,
+#  varchar_key VARCHAR(1),
+#  varchar_nokey VARCHAR(1),
+#  KEY date_key (date_key)
+#);
+#
+#SELECT date_key FROM t1
+#WHERE (int_key, int_nokey)
+#  IN (SELECT  t3.int_nokey, t3.pk
+#      FROM t2 LEFT JOIN t3 ON (t2.date_nokey < t3.date_key) 
+#      WHERE t3.varchar_key <= t3.varchar_nokey OR t3.int_nokey <= t3.pk
+#     )
+#  AND (varchar_nokey <> 'f' OR NOT int_key < 7); 
+#
+#
+#--echo #
+#--echo # Bug#45933 "Crash in optimize_semijoin_nests on JOIN in subquery 
+#--echo # + AND in outer query".
+#--echo #
+#INSERT INTO t1 VALUES (10,7,5,'2009-06-16','2002-04-10 14:25:30','w'),
+#                      (11,7,0,'0000-00-00','0000-00-00 00:00:00','s'), 
+#		      (12,4,0,'2003-07-14','2006-09-14 04:01:02','y'), 
+#		      (13,0,4,'2002-07-25','0000-00-00 00:00:00','c'), 
+#		      (14,1,8,'2007-07-03','0000-00-00 00:00:00','q'), 
+#		      (15,6,5,'2001-11-12','0000-00-00 00:00:00',''), 
+#		      (16,2,9,'0000-00-00','0000-00-00 00:00:00','j'), 
+#		      (29,9,1,'0000-00-00','2003-08-11 00:00:00','m');
+#INSERT IGNORE INTO t3 VALUES (1,9,'0000-00-00','b','b'),
+#                             (2,2,'2002-09-17','h','h');
+#
+#SELECT t1.varchar_nokey FROM t1 JOIN t3 ON t1.datetime_nokey
+#WHERE t1.varchar_nokey 
+#  IN (SELECT varchar_nokey FROM t1 
+#      WHERE (pk) 
+#        IN (SELECT t3.int_nokey
+#            FROM t3 LEFT JOIN t1 ON t1.varchar_nokey
+#            WHERE t3.date_key BETWEEN '2008-06-07' AND '2006-06-26'
+#           )  
+#     );
+#
+#DROP TABLE t1, t2, t3;
 
-CREATE TABLE t2 (
-  date_nokey DATE
-);
-
-CREATE TABLE t3 (
-  pk INTEGER PRIMARY KEY,
-  int_nokey INTEGER,
-  date_key date,
-  varchar_key VARCHAR(1),
-  varchar_nokey VARCHAR(1),
-  KEY date_key (date_key)
-);
-
-SELECT date_key FROM t1
-WHERE (int_key, int_nokey)
-  IN (SELECT  t3.int_nokey, t3.pk
-      FROM t2 LEFT JOIN t3 ON (t2.date_nokey < t3.date_key) 
-      WHERE t3.varchar_key <= t3.varchar_nokey OR t3.int_nokey <= t3.pk
-     )
-  AND (varchar_nokey <> 'f' OR NOT int_key < 7); 
-
-
---echo #
---echo # Bug#45933 "Crash in optimize_semijoin_nests on JOIN in subquery 
---echo # + AND in outer query".
---echo #
-INSERT INTO t1 VALUES (10,7,5,'2009-06-16','2002-04-10 14:25:30','w'),
-                      (11,7,0,'0000-00-00','0000-00-00 00:00:00','s'), 
-		      (12,4,0,'2003-07-14','2006-09-14 04:01:02','y'), 
-		      (13,0,4,'2002-07-25','0000-00-00 00:00:00','c'), 
-		      (14,1,8,'2007-07-03','0000-00-00 00:00:00','q'), 
-		      (15,6,5,'2001-11-12','0000-00-00 00:00:00',''), 
-		      (16,2,9,'0000-00-00','0000-00-00 00:00:00','j'), 
-		      (29,9,1,'0000-00-00','2003-08-11 00:00:00','m');
-INSERT IGNORE INTO t3 VALUES (1,9,'0000-00-00','b','b'),
-                             (2,2,'2002-09-17','h','h');
-
-SELECT t1.varchar_nokey FROM t1 JOIN t3 ON t1.datetime_nokey
-WHERE t1.varchar_nokey 
-  IN (SELECT varchar_nokey FROM t1 
-      WHERE (pk) 
-        IN (SELECT t3.int_nokey
-            FROM t3 LEFT JOIN t1 ON t1.varchar_nokey
-            WHERE t3.date_key BETWEEN '2008-06-07' AND '2006-06-26'
-           )  
-     );
-
-DROP TABLE t1, t2, t3;
-
+# Insert '0000-00-00' insert failed, but myisam not fail, supply set sql_mode='' before inserting
 --echo #
 --echo # Bug#45219 "Crash on SELECT DISTINCT query containing a  
 --echo # LEFT JOIN in subquery"
 --echo #
+
+--disable_query_log
+set sql_mode = '';
+--enable_query_log
 
 CREATE TABLE t1 (
   pk INTEGER NOT NULL,
@@ -1927,6 +1952,10 @@ SELECT DISTINCT datetime_key FROM t1
 WHERE (int_nokey, pk)  
   IN (SELECT t3.pk, t3.pk FROM t2 LEFT JOIN t3 ON t3.varchar_key)  
   AND pk = 9;
+
+--disable_query_log
+set sql_mode = default;
+--enable_query_log
 
 DROP TABLE t1, t2, t3;
 
@@ -1992,6 +2021,8 @@ FROM t0
 WHERE varchar_nokey  IN (  
   SELECT t1 .varchar_key  from t1
 );
+
+#Bug #SEQUOIADBMAINSTREMA-3596
 SELECT t0.int_key  
 FROM t0
 WHERE t0.varchar_nokey  IN (  
@@ -1999,13 +2030,13 @@ WHERE t0.varchar_nokey  IN (
   FROM t1 AS t1_1  JOIN t1 AS t1_2 ON t1_1 .int_key
 );
 
-EXPLAIN
-SELECT t0.int_key  
-FROM t0
-WHERE t0.varchar_nokey  IN (  
-  SELECT t1_1 .varchar_key  
-  FROM t1 AS t1_1  JOIN t1 AS t1_2 ON t1_1 .int_key
-);
+#EXPLAIN
+#SELECT t0.int_key  
+#FROM t0
+#WHERE t0.varchar_nokey  IN (  
+#  SELECT t1_1 .varchar_key  
+#  FROM t1 AS t1_1  JOIN t1 AS t1_2 ON t1_1 .int_key
+#);
 
 SELECT t0.int_key  
 FROM t0, t2
@@ -2014,13 +2045,13 @@ WHERE t0.varchar_nokey  IN (
   FROM t1 AS t1_1  JOIN t1 AS t1_2 ON t1_1 .int_key  
 );
 
-EXPLAIN
-SELECT t0.int_key  
-FROM t0, t2
-WHERE t0.varchar_nokey  IN (  
-  SELECT t1_1 .varchar_key  
-  FROM t1 AS t1_1  JOIN t1 AS t1_2 ON t1_1 .int_key  
-);
+#EXPLAIN
+#SELECT t0.int_key  
+#FROM t0, t2
+#WHERE t0.varchar_nokey  IN (  
+#  SELECT t1_1 .varchar_key  
+#  FROM t1 AS t1_1  JOIN t1 AS t1_2 ON t1_1 .int_key  
+#);
 
 DROP TABLE t0, t1, t2;
 
@@ -2180,17 +2211,18 @@ WHERE t1field IN (SELECT * FROM v2);
 EXECUTE stmt;
 EXECUTE stmt;
 
-PREPARE stmt FROM
-"
-EXPLAIN
-SELECT t1field
-FROM t1
-WHERE t1field IN (SELECT * FROM v2)
-  AND t1field IN (SELECT * FROM v3)
-";
+#Sequoiadb not support explain
+#PREPARE stmt FROM
+#"
+#EXPLAIN
+#SELECT t1field
+#FROM t1
+#WHERE t1field IN (SELECT * FROM v2)
+#  AND t1field IN (SELECT * FROM v3)
+#";
 
-EXECUTE stmt;
-EXECUTE stmt;
+#EXECUTE stmt;
+#EXECUTE stmt;
 
 DROP TABLE t1, t2, t3;
 DROP VIEW v2, v3;
@@ -2209,13 +2241,13 @@ INSERT INTO ot  VALUES('aaa'), ('bbb'), ('eee'), ('mmm'), ('ppp');
 INSERT INTO it1 VALUES('aaa'), ('aaa'), ('bbb'), ('eee'), ('mmm'), ('ppp');
 INSERT INTO it2 VALUES('aaa'), ('bbb'), ('eee'), ('mmm'), ('ppp');
 
-EXPLAIN
-SELECT *
-FROM ot
-WHERE ot.val IN (SELECT it1.val FROM it1
-                 WHERE  it1.val LIKE 'a%' OR it1.val LIKE 'e%')
-  AND ot.val IN (SELECT it2.val FROM it2
-                 WHERE  it2.val LIKE 'a%' OR it2.val LIKE 'e%');
+#EXPLAIN
+#SELECT *
+#FROM ot
+#WHERE ot.val IN (SELECT it1.val FROM it1
+#                 WHERE  it1.val LIKE 'a%' OR it1.val LIKE 'e%')
+#  AND ot.val IN (SELECT it2.val FROM it2
+#                 WHERE  it2.val LIKE 'a%' OR it2.val LIKE 'e%');
 
 SELECT *
 FROM ot
@@ -2250,13 +2282,17 @@ DROP TABLE t1, t2, t3;
 
 --echo # End of Bug#51487
 
+# Insert '0000-00-00' insert failed, but myisam not fail, supply set sql_mode='' before inserting
 --echo # 
 --echo # BUG#38075: Wrong result: rows matching a subquery with outer join not returned
 --echo # 
-
 --disable_warnings
 DROP TABLE IF EXISTS ot1, it1, it2;
 --enable_warnings
+
+--disable_query_log
+set sql_mode = '';
+--enable_query_log
 
 CREATE TABLE it2 (
   int_key int(11) NOT NULL,
@@ -2294,10 +2330,15 @@ INSERT INTO it1 VALUES
 SELECT int_key FROM ot1
 WHERE int_nokey IN (SELECT it2.int_key
                     FROM it1 LEFT JOIN it2 ON it2.datetime_key);
-EXPLAIN
-SELECT int_key FROM ot1
-WHERE int_nokey IN (SELECT it2.int_key
-                    FROM it1 LEFT JOIN it2 ON it2.datetime_key);
+#EXPLAIN
+#SELECT int_key FROM ot1
+#WHERE int_nokey IN (SELECT it2.int_key
+#                    FROM it1 LEFT JOIN it2 ON it2.datetime_key);
+
+--disable_query_log
+set sql_mode = default;
+--enable_query_log
+
 DROP TABLE ot1, it1, it2;
 
 --echo # End of BUG#38075
@@ -2319,19 +2360,19 @@ SELECT t1field
 FROM t1
 WHERE t1field IN (SELECT v1field FROM v1);
 
-EXPLAIN
-SELECT t1field
-FROM t1
-WHERE t1field IN (SELECT v1field FROM v1);
+#EXPLAIN
+#SELECT t1field
+#FROM t1
+#WHERE t1field IN (SELECT v1field FROM v1);
 
 --sorted_result
 SELECT t1.t1field
 FROM t1 LEFT JOIN t1 AS t2 ON t1.t1field IN (SELECT v1field FROM v1);
 
-EXPLAIN
-SELECT t1field
-FROM t1
-WHERE t1field IN (SELECT v1field FROM v1);
+#EXPLAIN
+#SELECT t1field
+#FROM t1
+#WHERE t1field IN (SELECT v1field FROM v1);
 
 delimiter |;
 CREATE PROCEDURE p1() 
@@ -2400,12 +2441,12 @@ INSERT INTO works VALUES  ('E4','P2',20);
 INSERT INTO works VALUES  ('E4','P4',40);
 INSERT INTO works VALUES  ('E4','P5',80);
 
-explain SELECT EMPNUM, EMPNAME
-FROM staff
-WHERE EMPNUM IN
-  (SELECT EMPNUM  FROM works
-   WHERE PNUM IN
-     (SELECT PNUM  FROM proj));
+#explain SELECT EMPNUM, EMPNAME
+#FROM staff
+#WHERE EMPNUM IN
+#  (SELECT EMPNUM  FROM works
+#   WHERE PNUM IN
+#     (SELECT PNUM  FROM proj));
 
 SELECT EMPNUM, EMPNAME
 FROM staff
@@ -2463,12 +2504,12 @@ create table t3 (
 insert into t3 values (1,1, 'foo'), (2,2,'bar');
 
 --echo The following must be converted to a semi-join:
-explain extended SELECT a.idIndividual FROM t1 a 
-WHERE a.idIndividual IN 
-	(	SELECT c.idObj FROM t3 cona 
-		INNER JOIN t2 c ON c.idContact=cona.idContact 
-		WHERE cona.postalStripped='T2H3B2'
-	);
+#explain extended SELECT a.idIndividual FROM t1 a 
+#WHERE a.idIndividual IN 
+#	(	SELECT c.idObj FROM t3 cona 
+#		INNER JOIN t2 c ON c.idContact=cona.idContact 
+#		WHERE cona.postalStripped='T2H3B2'
+#	);
 drop table t1,t2,t3;
 
 #
@@ -2497,9 +2538,9 @@ SELECT one,two from t1 where ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag 
 SELECT one,two,ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = 'N' group by one,two) as 'test' from t1;
 SELECT one,two,ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = '0') as 'test' from t1;
 SELECT one,two,ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = '0' group by one,two) as 'test' from t1;
-explain extended SELECT one,two,ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = '0') as 'test' from t1;
-explain extended SELECT one,two from t1 where ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = 'N');
-explain extended SELECT one,two,ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = '0' group by one,two) as 'test' from t1;
+#explain extended SELECT one,two,ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = '0') as 'test' from t1;
+#explain extended SELECT one,two from t1 where ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = 'N');
+#explain extended SELECT one,two,ROW(one,two) IN (SELECT one,two FROM t2 WHERE flag = '0' group by one,two) as 'test' from t1;
 DROP TABLE t1,t2;
 
 
@@ -2525,17 +2566,17 @@ INSERT INTO t1 VALUES ('a', 'aaa');
 SELECT a,b FROM t1 WHERE b IN (SELECT a FROM t1);
 CREATE INDEX I1 ON t1 (a);
 CREATE INDEX I2 ON t1 (b);
-EXPLAIN SELECT a,b FROM t1 WHERE b IN (SELECT a FROM t1);
+#EXPLAIN SELECT a,b FROM t1 WHERE b IN (SELECT a FROM t1);
 SELECT a,b FROM t1 WHERE b IN (SELECT a FROM t1);
 
 CREATE TABLE t2 (a VARCHAR(1), b VARCHAR(10));
 INSERT INTO t2 SELECT * FROM t1;
 CREATE INDEX I1 ON t2 (a);
 CREATE INDEX I2 ON t2 (b);
-EXPLAIN SELECT a,b FROM t2 WHERE b IN (SELECT a FROM t2);
+#EXPLAIN SELECT a,b FROM t2 WHERE b IN (SELECT a FROM t2);
 SELECT a,b FROM t2 WHERE b IN (SELECT a FROM t2);
-EXPLAIN
-SELECT a,b FROM t1 WHERE b IN (SELECT a FROM t1 WHERE LENGTH(a)<500);
+#EXPLAIN
+#SELECT a,b FROM t1 WHERE b IN (SELECT a FROM t1 WHERE LENGTH(a)<500);
 SELECT a,b FROM t1 WHERE b IN (SELECT a FROM t1 WHERE LENGTH(a)<500);
 
 DROP TABLE t1,t2;
@@ -2597,131 +2638,132 @@ DROP TABLE C,BB;
 --echo # Because there was a bug in one of the selected strategies, I became
 --echo # aware of the problem. Adding an EXPLAIN query to catch this.
 
---disable_warnings
-DROP TABLE IF EXISTS t1, t2, t3;
---enable_warnings
+#Sequoiadb not support explain
+#--disable_warnings
+#DROP TABLE IF EXISTS t1, t2, t3;
+#--enable_warnings
+#
+#CREATE TABLE t1
+# (EMPNUM   CHAR(3) NOT NULL,
+#  EMPNAME  CHAR(20),
+#  GRADE    DECIMAL(4),
+#  CITY     CHAR(15));
+#
+#CREATE TABLE t2
+# (PNUM     CHAR(3) NOT NULL,
+#  PNAME    CHAR(20),
+#  PTYPE    CHAR(6),
+#  BUDGET   DECIMAL(9),
+#  CITY     CHAR(15));
+#
+#CREATE TABLE t3
+# (EMPNUM   CHAR(3) NOT NULL,
+#  PNUM     CHAR(3) NOT NULL,
+#  HOURS    DECIMAL(5));
+#
+#INSERT INTO t1 VALUES ('E1','Alice',12,'Deale');
+#INSERT INTO t1 VALUES ('E2','Betty',10,'Vienna');
+#INSERT INTO t1 VALUES ('E3','Carmen',13,'Vienna');
+#INSERT INTO t1 VALUES ('E4','Don',12,'Deale');
+#INSERT INTO t1 VALUES ('E5','Ed',13,'Akron');
+#
+#INSERT INTO t2 VALUES ('P1','MXSS','Design',10000,'Deale');
+#INSERT INTO t2 VALUES ('P2','CALM','Code',30000,'Vienna');
+#INSERT INTO t2 VALUES ('P3','SDP','Test',30000,'Tampa');
+#INSERT INTO t2 VALUES ('P4','SDP','Design',20000,'Deale');
+#INSERT INTO t2 VALUES ('P5','IRM','Test',10000,'Vienna');
+#INSERT INTO t2 VALUES ('P6','PAYR','Design',50000,'Deale');
+#
+#INSERT INTO t3 VALUES  ('E1','P1',40);
+#INSERT INTO t3 VALUES  ('E1','P2',20);
+#INSERT INTO t3 VALUES  ('E1','P3',80);
+#INSERT INTO t3 VALUES  ('E1','P4',20);
+#INSERT INTO t3 VALUES  ('E1','P5',12);
+#INSERT INTO t3 VALUES  ('E1','P6',12);
+#INSERT INTO t3 VALUES  ('E2','P1',40);
+#INSERT INTO t3 VALUES  ('E2','P2',80);
+#INSERT INTO t3 VALUES  ('E3','P2',20);
+#INSERT INTO t3 VALUES  ('E4','P2',20);
+#INSERT INTO t3 VALUES  ('E4','P4',40);
+#INSERT INTO t3 VALUES  ('E4','P5',80);
+#
+#CREATE UNIQUE INDEX t1_IDX ON t1(EMPNUM);
 
-CREATE TABLE t1
- (EMPNUM   CHAR(3) NOT NULL,
-  EMPNAME  CHAR(20),
-  GRADE    DECIMAL(4),
-  CITY     CHAR(15));
+#EXPLAIN SELECT EMPNAME
+#FROM t1
+#WHERE EMPNUM IN
+#   (SELECT EMPNUM
+#    FROM t3
+#    WHERE PNUM IN
+#       (SELECT PNUM
+#        FROM t2
+#        WHERE PTYPE = 'Design'));
 
-CREATE TABLE t2
- (PNUM     CHAR(3) NOT NULL,
-  PNAME    CHAR(20),
-  PTYPE    CHAR(6),
-  BUDGET   DECIMAL(9),
-  CITY     CHAR(15));
+#PREPARE stmt FROM "EXPLAIN SELECT EMPNAME
+#FROM t1
+#WHERE EMPNUM IN
+#   (SELECT EMPNUM
+#    FROM t3
+#    WHERE PNUM IN
+#       (SELECT PNUM
+#        FROM t2
+#        WHERE PTYPE = 'Design'))";
+#EXECUTE stmt;
+#EXECUTE stmt;
+#DEALLOCATE PREPARE stmt;
+#
+#DROP INDEX t1_IDX ON t1;
+#CREATE INDEX t1_IDX ON t1(EMPNUM);
 
-CREATE TABLE t3
- (EMPNUM   CHAR(3) NOT NULL,
-  PNUM     CHAR(3) NOT NULL,
-  HOURS    DECIMAL(5));
+#EXPLAIN SELECT EMPNAME
+#FROM t1
+#WHERE EMPNUM IN
+#   (SELECT EMPNUM
+#    FROM t3
+#    WHERE PNUM IN
+#       (SELECT PNUM
+#        FROM t2
+#        WHERE PTYPE = 'Design'));
 
-INSERT INTO t1 VALUES ('E1','Alice',12,'Deale');
-INSERT INTO t1 VALUES ('E2','Betty',10,'Vienna');
-INSERT INTO t1 VALUES ('E3','Carmen',13,'Vienna');
-INSERT INTO t1 VALUES ('E4','Don',12,'Deale');
-INSERT INTO t1 VALUES ('E5','Ed',13,'Akron');
+#PREPARE stmt FROM "EXPLAIN SELECT EMPNAME
+#FROM t1
+#WHERE EMPNUM IN
+#   (SELECT EMPNUM
+#    FROM t3
+#    WHERE PNUM IN
+#       (SELECT PNUM
+#        FROM t2
+#        WHERE PTYPE = 'Design'))";
+#EXECUTE stmt;
+#EXECUTE stmt;
+#DEALLOCATE PREPARE stmt;
+#
+#DROP INDEX t1_IDX ON t1;
 
-INSERT INTO t2 VALUES ('P1','MXSS','Design',10000,'Deale');
-INSERT INTO t2 VALUES ('P2','CALM','Code',30000,'Vienna');
-INSERT INTO t2 VALUES ('P3','SDP','Test',30000,'Tampa');
-INSERT INTO t2 VALUES ('P4','SDP','Design',20000,'Deale');
-INSERT INTO t2 VALUES ('P5','IRM','Test',10000,'Vienna');
-INSERT INTO t2 VALUES ('P6','PAYR','Design',50000,'Deale');
+#EXPLAIN SELECT EMPNAME
+#FROM t1
+#WHERE EMPNUM IN
+#  (SELECT EMPNUM
+#    FROM t3
+#    WHERE PNUM IN
+#      (SELECT PNUM
+#        FROM t2
+#        WHERE PTYPE = 'Design'));
 
-INSERT INTO t3 VALUES  ('E1','P1',40);
-INSERT INTO t3 VALUES  ('E1','P2',20);
-INSERT INTO t3 VALUES  ('E1','P3',80);
-INSERT INTO t3 VALUES  ('E1','P4',20);
-INSERT INTO t3 VALUES  ('E1','P5',12);
-INSERT INTO t3 VALUES  ('E1','P6',12);
-INSERT INTO t3 VALUES  ('E2','P1',40);
-INSERT INTO t3 VALUES  ('E2','P2',80);
-INSERT INTO t3 VALUES  ('E3','P2',20);
-INSERT INTO t3 VALUES  ('E4','P2',20);
-INSERT INTO t3 VALUES  ('E4','P4',40);
-INSERT INTO t3 VALUES  ('E4','P5',80);
+#PREPARE stmt FROM "EXPLAIN SELECT EMPNAME
+#FROM t1
+#WHERE EMPNUM IN
+#   (SELECT EMPNUM
+#    FROM t3
+#    WHERE PNUM IN
+#       (SELECT PNUM
+#        FROM t2
+#        WHERE PTYPE = 'Design'))";
+#EXECUTE stmt;
+#EXECUTE stmt;
+#DEALLOCATE PREPARE stmt;
 
-CREATE UNIQUE INDEX t1_IDX ON t1(EMPNUM);
-
-EXPLAIN SELECT EMPNAME
-FROM t1
-WHERE EMPNUM IN
-   (SELECT EMPNUM
-    FROM t3
-    WHERE PNUM IN
-       (SELECT PNUM
-        FROM t2
-        WHERE PTYPE = 'Design'));
-
-PREPARE stmt FROM "EXPLAIN SELECT EMPNAME
-FROM t1
-WHERE EMPNUM IN
-   (SELECT EMPNUM
-    FROM t3
-    WHERE PNUM IN
-       (SELECT PNUM
-        FROM t2
-        WHERE PTYPE = 'Design'))";
-EXECUTE stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-DROP INDEX t1_IDX ON t1;
-CREATE INDEX t1_IDX ON t1(EMPNUM);
-
-EXPLAIN SELECT EMPNAME
-FROM t1
-WHERE EMPNUM IN
-   (SELECT EMPNUM
-    FROM t3
-    WHERE PNUM IN
-       (SELECT PNUM
-        FROM t2
-        WHERE PTYPE = 'Design'));
-
-PREPARE stmt FROM "EXPLAIN SELECT EMPNAME
-FROM t1
-WHERE EMPNUM IN
-   (SELECT EMPNUM
-    FROM t3
-    WHERE PNUM IN
-       (SELECT PNUM
-        FROM t2
-        WHERE PTYPE = 'Design'))";
-EXECUTE stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-DROP INDEX t1_IDX ON t1;
-
-EXPLAIN SELECT EMPNAME
-FROM t1
-WHERE EMPNUM IN
-   (SELECT EMPNUM
-    FROM t3
-    WHERE PNUM IN
-       (SELECT PNUM
-        FROM t2
-        WHERE PTYPE = 'Design'));
-
-PREPARE stmt FROM "EXPLAIN SELECT EMPNAME
-FROM t1
-WHERE EMPNUM IN
-   (SELECT EMPNUM
-    FROM t3
-    WHERE PNUM IN
-       (SELECT PNUM
-        FROM t2
-        WHERE PTYPE = 'Design'))";
-EXECUTE stmt;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
-DROP TABLE t1, t2, t3;
+#DROP TABLE t1, t2, t3;
 
 --echo #
 --echo # BUG#45221 Query SELECT pk FROM C WHERE pk IN (SELECT int_key) failing
@@ -2772,12 +2814,12 @@ WHERE 1 IN(SELECT 1
              WHERE 1 IN(SELECT 1
                           FROM t3));
 
-explain extended SELECT *
-FROM t1
-WHERE 1 IN(SELECT 1
-             FROM t2
-             WHERE 1 IN(SELECT 1
-                          FROM t3));
+#explain extended SELECT *
+#FROM t1
+#WHERE 1 IN(SELECT 1
+#             FROM t2
+#             WHERE 1 IN(SELECT 1
+#s                          FROM t3));
 
 delete from t2;
 delete from t3;
@@ -2796,14 +2838,14 @@ WHERE 1 IN(SELECT 1
                       WHERE 1 IN(SELECT 1
                                  FROM t4)));
 
-explain SELECT *
-FROM t1
-WHERE 1 IN(SELECT 1
-           FROM t2
-           WHERE 1 IN(SELECT 1
-                      FROM t3
-                      WHERE 1 IN(SELECT 1
-                                 FROM t4)));
+#explain SELECT *
+#FROM t1
+#WHERE 1 IN(SELECT 1
+#           FROM t2
+#           WHERE 1 IN(SELECT 1
+#                      FROM t3
+#                      WHERE 1 IN(SELECT 1
+#                                 FROM t4)));
 
 SELECT *
 FROM t1
@@ -2816,9 +2858,9 @@ WHERE 1 IN(SELECT 1
 
 drop table t1,t2,t3,t4;
 
---echo #
---echo # Bug#53236 Segfault in DTCollation::set(DTCollation&)
---echo #
+#--echo #
+#--echo # Bug#53236 Segfault in DTCollation::set(DTCollation&)
+#--echo #
 
 CREATE TABLE t1 (
   pk INTEGER AUTO_INCREMENT,
@@ -2861,9 +2903,9 @@ insert into t3 values (1,3), (1,3);
 create table t4 (uid int);
 insert into t4 values (3);
 
-explain select t2.uid from t2, t1 
-  where t1.uid in (select t4.uid from t4, t3 where t3.uid=1 and t4.uid=t3.fid)
-        and t2.uid=t1.fid;
+#explain select t2.uid from t2, t1 
+#  where t1.uid in (select t4.uid from t4, t3 where t3.uid=1 and t4.uid=t3.fid)
+#        and t2.uid=t1.fid;
 
 --sorted_result
 select t2.uid from t2, t1 
@@ -2889,7 +2931,7 @@ INSERT INTO t1 VALUES (1,'o','ffff','ffff','ffoo'),(2,'f','ffff','ffff','ffff');
 CREATE TABLE t2 LIKE t1;
 INSERT INTO t2 VALUES (1,'i','iiii','iiii','iiii'),(2,'f','ffff','ffff','ffff');
 
-EXPLAIN SELECT pk FROM t1 WHERE (a) IN (SELECT a FROM t2 WHERE pk > 0);
+#EXPLAIN SELECT pk FROM t1 WHERE (a) IN (SELECT a FROM t2 WHERE pk > 0);
 SELECT pk FROM t1 WHERE (a) IN (SELECT a FROM t2 WHERE pk > 0);
 SELECT pk FROM t1 WHERE (b,c,d) IN (SELECT b,c,d FROM t2 WHERE pk > 0);
 DROP TABLE t1, t2;
@@ -2898,7 +2940,7 @@ DROP TABLE t1, t2;
 # Bug #44303 Assertion failures in Field_new_decimal::store_decimal
 #            when executing materialized InsideOut semijoin
 # 
-CREATE TABLE t1 (f1 INT, f2 DECIMAL(5,3)) ENGINE=MyISAM;
+CREATE TABLE t1 (f1 INT, f2 DECIMAL(5,3)) ENGINE=Sequoiadb;
 INSERT INTO t1 (f1, f2) VALUES (1, 1.789);
 INSERT INTO t1 (f1, f2) VALUES (13, 1.454);
 INSERT INTO t1 (f1, f2) VALUES (10, 1.668);
@@ -2907,7 +2949,7 @@ CREATE TABLE t2 LIKE t1;
 INSERT INTO t2 VALUES (1, 1.789);
 INSERT INTO t2 VALUES (13, 1.454);
 
-EXPLAIN SELECT COUNT(*) FROM t1 WHERE (f1,f2) IN (SELECT f1,f2 FROM t2);
+#EXPLAIN SELECT COUNT(*) FROM t1 WHERE (f1,f2) IN (SELECT f1,f2 FROM t2);
 SELECT COUNT(*) FROM t1 WHERE (f1,f2) IN (SELECT f1,f2 FROM t2);
 
 DROP TABLE t1, t2;
@@ -2917,7 +2959,6 @@ DROP TABLE t1, t2;
 # Bug #27348: Assertion abort for a query with two subqueries to be flattened  
 # Bug #35674: Range optimizer ignores conditions on inner tables in
 #             semi-join IN subqueries 
-#
 CREATE TABLE t1 (
   ID int(11) NOT NULL auto_increment,
   Name char(35) NOT NULL default '',
@@ -3002,8 +3043,8 @@ SELECT Name FROM t2
         t2.Code IN (SELECT Country FROM t3 
                            WHERE Language='English' AND Percentage > 10 AND
                                  t2.Population > 100000);
---eval EXPLAIN $query
---eval EXPLAIN FORMAT=JSON $query
+#--eval EXPLAIN $query
+#--eval EXPLAIN FORMAT=JSON $query
 
 DROP TABLE t1,t2,t3;
 
@@ -3246,10 +3287,10 @@ insert into t1 (Code, Name, Continent) values
 update t2 set population=6000000 where Name in ('Wien', 'Vancouver', 'Praha');
 --enable_query_log
 
---echo This must not use LooseScan:
-EXPLAIN SELECT Name FROM t1 
-  WHERE t1.Code IN (
-    SELECT t2.CountryCode FROM t2 WHERE Population > 5000000);
+#--echo This must not use LooseScan:
+#EXPLAIN SELECT Name FROM t1 
+#  WHERE t1.Code IN (
+#    SELECT t2.CountryCode FROM t2 WHERE Population > 5000000);
 
 SELECT Name FROM t1 
   WHERE t1.Code IN (
@@ -3272,9 +3313,9 @@ insert into t2 select * from t1;
 
 # Table t2 should be pulled out because t2.a=t0.a equality
 --echo Table t2, unlike table t1, should be displayed as pulled out
-explain extended select * from t0
-where t0.a in ( select t1.a from t1,t2 where t2.a=t0.a and
-t1.b=t2.b);
+#explain extended select * from t0
+#where t0.a in ( select t1.a from t1,t2 where t2.a=t0.a and
+#t1.b=t2.b);
 
 #
 # BUG#46556 "Returning incorrect, empty results for some IN subqueries 
@@ -3456,8 +3497,8 @@ create table t2 as select * from t1;
 create table t3 (pk int, a int, primary key(pk));
 insert into t3 select a,a from t0;
 
-explain 
-select * from t1 left join t2 on (t2.a= t1.a and t2.a in (select pk from t3));
+#explain 
+#select * from t1 left join t2 on (t2.a= t1.a and t2.a in (select pk from t3));
 
 drop table t0, t1, t2, t3;
 
@@ -3479,7 +3520,7 @@ insert into t3 select @a:=@a+1, t2.a from t2, t0;
 
 alter table t3 add primary key(id), add key(a);
 --echo The following must use loose index scan over t3, key a:
-explain select count(a) from t2 where a in ( SELECT  a FROM t3);
+#explain select count(a) from t2 where a in ( SELECT  a FROM t3);
 select count(a) from t2 where a in ( SELECT  a FROM t3);
 
 drop table t0,t1,t2,t3;
@@ -3580,52 +3621,52 @@ INSERT INTO t2 VALUES (1,'i','iiii','iiii','iiii','iiii','ffff','ffff','ffff','f
 # table would contain GEOMETRY or different kinds of BLOB/TEXT columns
 let $query=
 SELECT pk FROM t1 WHERE (a, b) IN (SELECT a, b FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, c) IN (SELECT b, c FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, d) IN (SELECT b, d FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, e) IN (SELECT b, e FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, f) IN (SELECT b, f FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, g) IN (SELECT b, g FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, h) IN (SELECT b, h FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, i) IN (SELECT b, i FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, j) IN (SELECT b, j FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 let $query=
 SELECT pk FROM t1 WHERE (b, k) IN (SELECT b, k FROM t2 WHERE pk > 0);
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -3640,8 +3681,8 @@ INSERT INTO t1 VALUES (1), (2), (3), (4), (5);
 CREATE TABLE t2 (i INTEGER, j INTEGER, KEY k(i, j));
 INSERT INTO t2 VALUES (1, 0), (1, 1), (2, 0), (2, 1);
 
-EXPLAIN
-SELECT * FROM t1 WHERE (i) IN (SELECT i FROM t2 where j > 0);
+#EXPLAIN
+#SELECT * FROM t1 WHERE (i) IN (SELECT i FROM t2 where j > 0);
 SELECT * FROM t1 WHERE (i) IN (SELECT i FROM t2 where j > 0);
 
 DROP TABLE t1, t2;
@@ -3673,9 +3714,9 @@ insert into t4 values
   (1, "A"), (2, "B"), (3, "C"), (4, "D"), (5, "E"),
   (6, "F"), (7, "G"), (8, "H"), (9, "I");
 
-explain select name from t2, t1 
-  where t1.uid in (select t4.uid from t4, t3 where t3.uid=1 and t4.uid=t3.fid)
-        and t2.uid=t1.fid;
+#explain select name from t2, t1 
+#  where t1.uid in (select t4.uid from t4, t3 where t3.uid=1 and t4.uid=t3.fid)
+#        and t2.uid=t1.fid;
 
 --sorted_result
 select name from t2, t1 
@@ -3718,17 +3759,17 @@ CREATE TABLE t3 (
 
 INSERT INTO t3 VALUES('nicke', 'imp');
 
-EXPLAIN
-SELECT t1.partner_id
-FROM t1
-WHERE t1.id IN (
-    SELECT t2.id
-    FROM t2
-    WHERE article_id IN (
-      SELECT article_id FROM t3
-      WHERE user_id = 'nicke'
-    )
-  );
+#EXPLAIN
+#SELECT t1.partner_id
+#FROM t1
+#WHERE t1.id IN (
+#    SELECT t2.id
+#    FROM t2
+#    WHERE article_id IN (
+#      SELECT article_id FROM t3
+#      WHERE user_id = 'nicke'
+#    )
+#  );
 
 SELECT t1.partner_id
 FROM t1
@@ -3741,33 +3782,34 @@ WHERE t1.id IN (
     )
   );
 
-PREPARE stmt FROM
-'EXPLAIN SELECT t1.partner_id
-FROM t1
-WHERE t1.id IN (
-    SELECT t2.id
-    FROM t2
-    WHERE article_id IN (
-      SELECT article_id FROM t3
-      WHERE user_id = \'nicke\'
-    )
-  )';
-EXECUTE stmt;
-EXECUTE stmt;
+#Sequoiadb not support explain
+#PREPARE stmt FROM
+#'EXPLAIN SELECT t1.partner_id
+#FROM t1
+#WHERE t1.id IN (
+#    SELECT t2.id
+#    FROM t2
+#    WHERE article_id IN (
+#      SELECT article_id FROM t3
+#      WHERE user_id = \'nicke\'
+#    )
+#  )';
+#EXECUTE stmt;
+#EXECUTE stmt;
 
-PREPARE stmt FROM
-'SELECT t1.partner_id
-FROM t1
-WHERE t1.id IN (
-    SELECT t2.id
-    FROM t2
-    WHERE article_id IN (
-      SELECT article_id FROM t3
-      WHERE user_id = \'nicke\'
-    )
-  )';
-EXECUTE stmt;
-EXECUTE stmt;
+#PREPARE stmt FROM
+#'SELECT t1.partner_id
+#FROM t1
+#WHERE t1.id IN (
+#    SELECT t2.id
+#    FROM t2
+#    WHERE article_id IN (
+#      SELECT article_id FROM t3
+#      WHERE user_id = \'nicke\'
+#    )
+#  )';
+#EXECUTE stmt;
+#EXECUTE stmt;
 
 DROP TABLE t1,t2,t3;
 
@@ -3782,8 +3824,8 @@ CREATE TABLE t3 (i INTEGER);
 INSERT INTO t1 VALUES (1), (2);
 INSERT INTO t2 VALUES (6);
 INSERT INTO t3 VALUES (1), (2);
-explain extended SELECT * FROM t1 WHERE (t1.i) IN 
-(SELECT t3.i FROM t3 LEFT JOIN t2 ON t2.i=t3.i);
+#explain extended SELECT * FROM t1 WHERE (t1.i) IN 
+#(SELECT t3.i FROM t3 LEFT JOIN t2 ON t2.i=t3.i);
 SELECT * FROM t1 WHERE (t1.i) IN 
 (SELECT t3.i FROM t3 LEFT JOIN t2 ON t2.i=t3.i);
 drop table t1,t2,t3;
@@ -3829,7 +3871,7 @@ insert into t2 values(1),(1),(1),(1);
 insert into t3 values(2),(2);
 
 let $query=select * from t1 where t1.a in (select t2.a from t2 left join t3 on t2.a=t3.a);
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 drop table t1,t2,t3;
@@ -3848,7 +3890,7 @@ let $query=
 SELECT * FROM t1
 WHERE t1.a IN (SELECT t2.a
                FROM t2 LEFT JOIN (t2 AS t2inner, t3) ON t2.a=t3.a);
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1,t2,t3;
@@ -3931,7 +3973,7 @@ WHERE (varchar_nokey, varchar_nokey) IN (SELECT varchar_key, varchar_nokey
                                          FROM t2  
                                          WHERE varchar_nokey < 'n' XOR pk);
 eval $query;
-eval explain $query;
+#eval explain $query;
 
 DROP TABLE t1, t2;
 
@@ -3953,7 +3995,7 @@ SELECT * FROM t1 WHERE t1.i IN (SELECT t2.i
                                 FROM t2 JOIN t3
                                 WHERE t2.i + t3.i = 5);
 eval $query;
-eval explain $query;
+#eval explain $query;
 
 DROP TABLE t1,t2,t3;
 
@@ -3978,7 +4020,7 @@ WHERE (ot1.a,ot4.a) IN (SELECT it2.a,it3.a
                         FROM it2,it3);
 
 eval $query;
-eval explain $query;
+#eval explain $query;
 
 DROP TABLE IF EXISTS ot1, ot4, it2, it3;
 
@@ -4005,7 +4047,7 @@ FROM   ot1
        (ot2 JOIN ot3 on ot2.a=ot3.a)
      ON ot1.a=ot2.a AND ot1.a IN (SELECT a from it1);
 
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 eval prepare s from '$query';
@@ -4023,8 +4065,8 @@ DROP TABLE ot1, ot2, ot3, it1;
 --echo # Bug#11766739: Crash in tmp_table_param::init() with semijoin=on
 --echo #
 
-CREATE TABLE t1 (f1 INTEGER) ENGINE=MyISAM;
-CREATE TABLE t2 (f1 INTEGER, f2 INTEGER) ENGINE=MyISAM;
+CREATE TABLE t1 (f1 INTEGER) ENGINE=Sequoiadb;
+CREATE TABLE t2 (f1 INTEGER, f2 INTEGER) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES (1);
 INSERT INTO t2 VALUES (1,1), (2,1);
@@ -4033,7 +4075,7 @@ let $query=
 SELECT * FROM t2
 WHERE f2 IN (SELECT t1.f1
              FROM t1 LEFT OUTER JOIN (t2 AS b1 JOIN t2 AS b2 ON TRUE) ON TRUE);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -4093,6 +4135,7 @@ CREATE TABLE t2 (pk int, col_int_nokey int, col_varchar_nokey varchar(1));
 INSERT INTO t2 VALUES (1,4,'b'),(94,6,'u');
 CREATE TABLE t3 (pk int, col_int_nokey int, col_varchar_key varchar(1));
 INSERT INTO t3 VALUES (1,4,'j'),(2,6,'v');
+#Bug #SEQUOIADBMAINSTREAM-3596
 SELECT table2.col_int_key
 from t3 as table1 join t1 as table2 on table2.col_int_nokey 
 where table1.col_int_nokey in 
@@ -4117,7 +4160,7 @@ DROP TABLE t1,t2,t3;
 CREATE TABLE t1 (i1 int);
 INSERT INTO t1 VALUES (1);
 
-CREATE TABLE t2 (i1 int, i2 int) ENGINE=memory;
+CREATE TABLE t2 (i1 int, i2 int) ENGINE=Sequoiadb;
 INSERT INTO t2 VALUES (1, 2),(7, 3);
 
 SELECT GRANDPARENT1.i1
@@ -4155,8 +4198,9 @@ INSERT INTO t1 VALUES
 CREATE TABLE t2 (
   pk int NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (pk)
-) ENGINE=Innodb;
+) ENGINE=Sequoiadb;
 
+#Bug #SEQUOIASQLMAINSTREAM-273
 CREATE TABLE t3
 SELECT alias1.col_varchar_10_latin1_key
 FROM t1 AS alias1
@@ -4178,7 +4222,7 @@ WHERE col_varchar_10_latin1_key IN (
          ON alias1.col_varchar_1024_utf8_key
     WHERE alias1.pk AND alias1.pk < 3 OR alias1.pk AND alias3.pk);
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1, t2, t3;
@@ -4197,7 +4241,7 @@ CREATE TABLE t1 (
   PRIMARY KEY(pk),
   KEY col_int_key(col_int_key),
   KEY col_varchar_key(col_varchar_key, col_int_key)
-) engine=innodb;
+) engine=Sequoiadb;
 
 INSERT INTO t1 VALUES
 (1,7,'a','a'),
@@ -4224,7 +4268,7 @@ CREATE TABLE t2 (
   col_varchar_key varchar(1) NOT NULL,
   PRIMARY KEY(pk),
   KEY col_varchar_key(col_varchar_key, col_int_key)
-) engine=innodb;
+) engine=Sequoiadb;
 
 INSERT INTO t2(pk,col_int_key,col_varchar_key) VALUES
 (8,7,'c'),
@@ -4264,7 +4308,7 @@ ANALYZE TABLE t2;
 -- enable_result_log
 -- enable_query_log
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -4316,7 +4360,7 @@ WHERE (grandparent1.col_varchar_key) IN
         FROM t1 AS child1 LEFT JOIN t2 AS child2
                 ON (child1.col_varchar_key > child2.col_varchar_nokey)));
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 --sorted_result
 eval $query;
 
@@ -4335,7 +4379,7 @@ CREATE TABLE t1 (
  KEY col_int_key (col_int_key),
  KEY col_datetime_key(col_datetime_key),
  KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES
  (7,'2004-06-06 04:22:12','v'), (0,'2005-11-13 01:12:31','s'),
@@ -4351,7 +4395,7 @@ INSERT INTO t1 VALUES
 
 CREATE TABLE t2 (
  col_varchar_nokey VARCHAR(1) NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES ('v'), ('y'), ('j'), ('c'), ('d'), ('r');
 
@@ -4369,7 +4413,7 @@ WHERE col_varchar_key IN (SELECT col_varchar_nokey
                           FROM t2)
 ORDER BY col_datetime_key LIMIT 4;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -4408,7 +4452,7 @@ DROP TABLE t1, t2;
 
 CREATE TABLE t1 (
  g1 VARCHAR(1) NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES ('d'), ('s');
 
@@ -4419,7 +4463,7 @@ CREATE TABLE t2 (
  col_varchar_nokey VARCHAR(1) NOT NULL,
  PRIMARY KEY (pk),
  KEY col_varchar_key(col_varchar_key, col_int_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES
  (1,4,'j','j'), (2,6,'v','v'), (3,3,'c','c'), (4,5,'m','m'),
@@ -4431,7 +4475,7 @@ INSERT INTO t2 VALUES
 CREATE TABLE t3 (
  pk INTEGER NOT NULL,
  PRIMARY KEY (pk)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t3 VALUES (10);
 
@@ -4458,7 +4502,7 @@ WHERE g1 NOT IN
       AND grandparent1.col_varchar_key IS NOT NULL
     );
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1, t2, t3;
@@ -4470,7 +4514,7 @@ CREATE TABLE t1 (
  col_varchar_nokey VARCHAR(1) ,
  PRIMARY KEY (pk),
  KEY (col_varchar_key,col_int_key)
- ) ENGINE=INNODB;
+ ) ENGINE=Sequoiadb;
 INSERT INTO t1 (col_int_key,col_varchar_key,col_varchar_nokey) VALUES
  (0,'x','x'), (1,'j','j'), (1,'r','r'), (9,'v','v'), (5,'r','r');
 
@@ -4482,7 +4526,7 @@ CREATE TABLE t2 (
  PRIMARY KEY (pk),
  KEY (col_int_key),
  KEY (col_varchar_key,col_int_key)
- ) AUTO_INCREMENT=10 ENGINE=INNODB;
+ ) AUTO_INCREMENT=10 ENGINE=Sequoiadb;
 INSERT INTO t2 (col_int_key, col_varchar_key, col_varchar_nokey) VALUES
  (NULL,'x','x'), (NULL,'j','j'), (8,'c','c');
 
@@ -4520,7 +4564,7 @@ CREATE TABLE it (
   pk int NOT NULL,
   col_varchar VARCHAR(10) DEFAULT NULL,
   PRIMARY KEY (pk)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 INSERT INTO it VALUES (1, 'g');
 
@@ -4707,7 +4751,7 @@ WHERE (col_int_nokey, col_varchar_key) IN
     WHERE t2.col_int_key = 1
 );
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1, t2, t4;
@@ -4726,7 +4770,7 @@ CREATE TABLE t1 (
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key),
   KEY col_varchar_key (col_varchar_key, col_int_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES
 (10,8,'x','x'),
@@ -4761,9 +4805,9 @@ ANALYZE TABLE t2;
 -- enable_result_log
 -- enable_query_log
 
-eval EXPLAIN SELECT *
-FROM t2
-WHERE (field1) IN ($query);
+#eval EXPLAIN SELECT *
+#FROM t2
+#WHERE (field1) IN ($query);
 
 eval SELECT *
 FROM t2
@@ -4799,7 +4843,7 @@ FROM ot1, ot2
 WHERE ot1.a IN (SELECT a FROM it1) AND
       ot2.a IN (SELECT a FROM it2);
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE ot1, ot2, it1, it2;
@@ -4816,7 +4860,7 @@ CREATE TABLE t1 (
   col_int_key INT NOT NULL,
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES
 (1,4,0),
@@ -4837,7 +4881,7 @@ CREATE TABLE t2 (
   col_int_key int NOT NULL,
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES
 (10,8,7);
@@ -4870,8 +4914,8 @@ WHERE g1 NOT IN
       AND grandparent1.col_int_key <> 3
 );
 
-eval explain $query;
-eval explain format=json $query;
+#eval explain $query;
+#eval explain format=json $query;
 eval $query;
 
 DROP TABLE t1, t2, t3;
@@ -4912,7 +4956,7 @@ FROM t1 AS alias1
      ON alias2.col_int_nokey = alias1.col_int_nokey AND
           'o' IN (SELECT col_varchar_nokey
                   FROM t3);
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 eval PREPARE stmt FROM "$query";
@@ -4932,7 +4976,7 @@ CREATE TABLE t1 (
   col_int_key int NOT NULL,
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE=MyIsam;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES
  (10,1,7), (13,7,3), (18,0,1), (23,8,1);
@@ -4942,7 +4986,7 @@ CREATE TABLE t2 (
   col_int_key int NOT NULL,
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE=MyIsam;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (1,7);
 
@@ -4959,13 +5003,13 @@ WHERE t1a.col_int_key IN (
   )
 );
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
-ALTER TABLE t1 ENGINE=Innodb;
-ALTER TABLE t2 ENGINE=Innodb;
+ALTER TABLE t1 ENGINE=Sequoiadb;
+ALTER TABLE t2 ENGINE=Sequoiadb;
 
-eval $query;
+#eval $query;
 
 DROP TABLE t1, t2;
 
@@ -5004,7 +5048,7 @@ WHERE (a, a) IN
    )
 ;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -5057,7 +5101,7 @@ WHERE grandparent1.col_varchar_key IN (
         )
     );
 
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -5100,7 +5144,7 @@ WHERE
   )
 ;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 --sorted_result
 eval $query;
 
@@ -5114,7 +5158,7 @@ CREATE TABLE t1 (
   col_int_key INT NOT NULL,
   col_varchar_nokey VARCHAR(1) NOT NULL,
   KEY col_int_key (col_int_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES
  (7,'v'), (0,'s'), (9,'l'), (3,'y'), (4,'c'), (2,'i'), (5,'h'), (3,'q'),
@@ -5129,7 +5173,7 @@ CREATE TABLE t2 (
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES
  (1,0,'j','j'), (2,8,'v','v'), (3,1,'c','c'), (4,8,'m','m'),
@@ -5154,7 +5198,7 @@ WHERE (ot1.col_varchar_key, ot2.col_varchar_nokey) IN (
 
 --echo # This query should never use a LooseScan strategy
 
-eval explain $query;
+#eval explain $query;
 --sorted_result
 eval $query;
 
@@ -5171,7 +5215,7 @@ CREATE TABLE t1 (
  col_int_nokey int NOT NULL,
  col_varchar_key varchar(1) NOT NULL,
  KEY col_varchar_key (col_varchar_key)
-) engine=InnoDB;
+) engine=Sequoiadb;
 
 INSERT INTO t1 VALUES
  (1,'v'), (7,'s'), (4,'l'), (7,'y'), (0,'c'), (2,'i'), (9,'h'), (4,'q'),
@@ -5181,7 +5225,7 @@ INSERT INTO t1 VALUES
 CREATE TABLE t2 (
  col_int_nokey int NOT NULL,
  col_varchar_nokey varchar(1) NOT NULL
-) engine=InnoDB;
+) engine=Sequoiadb;
 
 INSERT INTO t2 VALUES
  (4,'j'), (6,'v'), (3,'c'), (5,'m'), (3,'d'), (246,'d'), (2,'y'), (9,'t'),
@@ -5206,20 +5250,21 @@ WHERE col_varchar_nokey IN (
 )
 ORDER BY col_varchar_nokey;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
-ALTER TABLE t1 ENGINE=MyISAM;
-ALTER TABLE t2 ENGINE=MyISAM;
+#Sequoiadb engine not concern with other engine
+#ALTER TABLE t1 ENGINE=MyISAM;
+#ALTER TABLE t2 ENGINE=MyISAM;
 
-eval explain $query;
-eval $query;
+#eval explain $query;
+#eval $query;
 
-ALTER TABLE t1 ENGINE=Memory;
-ALTER TABLE t2 ENGINE=Memory;
+#ALTER TABLE t1 ENGINE=Memory;
+#ALTER TABLE t2 ENGINE=Memory;
 
-eval explain $query;
-eval $query;
+#eval explain $query;
+#eval $query;
 
 DROP TABLE t1, t2;
 
@@ -5267,7 +5312,7 @@ WHERE (gp1.col_varchar_nokey, gp1.col_varchar_nokey)
          )
 ;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1,t2,t3;
@@ -5283,7 +5328,7 @@ CREATE TABLE t1 (
   vc_nokey varchar(1) DEFAULT NULL,
   KEY int_key (int_key),
   KEY vc_key (vc_key, int_key)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES
  (8,'x','x'), (7,'d','d'), (1,'r','r'), (7,'f','f'),
@@ -5297,7 +5342,7 @@ CREATE TABLE t2 (
   vc_key varchar(1) DEFAULT NULL,
   KEY int_key (int_key),
   KEY vc_key (vc_key, int_key)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (8,'g');
 
@@ -5313,7 +5358,7 @@ WHERE (vc_nokey, vc_key ) IN
    )
  );
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -5342,7 +5387,7 @@ DROP TABLE t1;
 
 --echo # BUG#13726217: Crash in Item_ident::fix_after_pullout()
 
-CREATE TABLE t1(a INTEGER) engine=innodb;
+CREATE TABLE t1(a INTEGER) engine=Sequoiadb;
 INSERT INTO t1 VALUES (0);
 
 SELECT 0
@@ -5375,6 +5420,13 @@ INSERT INTO t1 VALUES
  (2,2,'i'), (9,5,'h'), (0,1,'a'), (9,3,'v');
 
 CREATE VIEW v1 AS SELECT * FROM t1;
+
+--disable_query_log
+--disable_result_log
+analyze table t1;
+analyze table v1;
+--enable_query_log
+--enable_result_log
 
 let $query=
 SELECT *
@@ -5426,7 +5478,11 @@ CREATE TABLE t2 (
 
 INSERT INTO t2 VALUES (7,'2003-08-21 00:00:00','b','b');
 
+--disable_query_log
+--disable_result_log
 ANALYZE TABLE t1, t2;
+--enable_query_log
+--enable_result_log
 
 SET @old_depth=@@optimizer_search_depth;
 SET optimizer_search_depth=4;
@@ -5444,7 +5500,7 @@ WHERE col_datetime_key IN (
     ON alias5.col_varchar_key = alias4.col_varchar_key
 );
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1,t2;
@@ -5481,7 +5537,7 @@ HAVING (1, 2) IN (
 
 --source include/turn_off_only_full_group_by.inc
 
---eval explain $query
+#--eval explain $query
 --eval $query
 
 --source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
@@ -5498,7 +5554,7 @@ CREATE TABLE t1 (
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES (10,NULL,8,'x');
 
@@ -5506,7 +5562,7 @@ CREATE TABLE t2 (
   pk int NOT NULL,
   col_varchar_nokey varchar(1) DEFAULT NULL,
   PRIMARY KEY (pk)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (1,'x');
 
@@ -5516,7 +5572,7 @@ CREATE TABLE t3 (
   col_varchar_nokey varchar(1) DEFAULT NULL,
   PRIMARY KEY (pk),
   KEY col_varchar_key (col_varchar_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t3 VALUES
  (1,'v','v'), (2,'v','v'), (3,'c','c'), (4,NULL,NULL);
@@ -5546,7 +5602,7 @@ ANALYZE TABLE t3;
 --enable_query_log
 
 --replace_result 20.00 25.00
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1, t2, t3;
@@ -5563,7 +5619,7 @@ FROM t1 AS ot1 LEFT JOIN t1 AS ot2
         ot2.pk IN
            (SELECT it1.pk
             FROM t1 AS it1 LEFT JOIN t1 AS it2 ON it1.pk=it2.pk);
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1;
@@ -5622,7 +5678,7 @@ CREATE TABLE t1 (
   col_varchar_nokey VARCHAR(1),
   PRIMARY KEY (pk),
   KEY (col_varchar_key)
-) ENGINE=INNODB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 (
   col_int_key, col_int_nokey,
@@ -5640,7 +5696,7 @@ CREATE TABLE t2 (
   col_int_key INT,
   PRIMARY KEY (pk),
   KEY (col_int_key)
-) AUTO_INCREMENT=10 ENGINE=INNODB;
+) AUTO_INCREMENT=10 ENGINE=Sequoiadb;
 
 INSERT INTO t2 (col_int_key, col_int_nokey) VALUES
  (8, NULL), (7, 8), (1, 1), (7, 9), (9, 4), (NULL, 3), (1, 2), (9, NULL),
@@ -5652,7 +5708,7 @@ CREATE TABLE t3 (
   col_varchar_key VARCHAR(1),
   PRIMARY KEY (pk),
   KEY (col_varchar_key)
-) ENGINE=INNODB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t3 (col_varchar_key) VALUES
  ('c'), ('c'), ('q'), ('g'), ('e'), ('l'), (NULL), ('c'), ('h'), ('d'),
@@ -5692,7 +5748,7 @@ FROM t2 AS table1
        )
 ;
 
-explain SELECT * FROM v1;
+#explain SELECT * FROM v1;
 SELECT * FROM v1;
 
 DROP VIEW v1;
@@ -5707,7 +5763,7 @@ DROP TABLE t1,t2,t3;
 CREATE TABLE t1 (
   col_datetime_key DATETIME DEFAULT NULL,
   KEY col_datetime_key (col_datetime_key)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES
  ('2001-04-18 00:00:00'), ('2008-12-18 19:39:55'),
@@ -5720,10 +5776,10 @@ CREATE TABLE t2 (
   col_datetime_key datetime DEFAULT NULL,
   col_varchar_key varchar(1) DEFAULT NULL,
   col_varchar_nokey varchar(1) DEFAULT NULL,
-  KEY col_time_key (col_time_key),
+#  KEY col_time_key (col_time_key),
   KEY col_datetime_key (col_datetime_key),
   KEY col_varchar_key(col_varchar_key)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES ('1900-01-01',NULL,'2001-11-04 19:07:55','x','x');
 
@@ -5796,7 +5852,7 @@ let $query=
 eval PREPARE prep_stmt_7430 FROM '$query';
 EXECUTE prep_stmt_7430;
 EXECUTE prep_stmt_7430;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 
 # Assertion sj_inner_tables == ((remaining_tables |
 # new_join_tab->table->map) & sj_inner_tables)
@@ -5822,7 +5878,7 @@ let $query=
 eval PREPARE prep_stmt_7430 FROM '$query';
 EXECUTE prep_stmt_7430;
 EXECUTE prep_stmt_7430;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 
 DROP TABLE t1,t2;
 DROP VIEW view_c;
@@ -5865,14 +5921,14 @@ let $query=
 eval PREPARE prep_stmt_20421 FROM '$query';
 EXECUTE prep_stmt_20421;
 EXECUTE prep_stmt_20421;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 
 ALTER TABLE t1 DROP INDEX col_varchar_key;
 # Assertion join->best_read < double(1.79769313486231570815e+308L)
 eval PREPARE prep_stmt_20421 FROM '$query';
 EXECUTE prep_stmt_20421;
 EXECUTE prep_stmt_20421;
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 
 DROP TABLE t1;
 DROP VIEW view_b;
@@ -5917,7 +5973,7 @@ FROM t3 AS outer_t1
               ON inner_t3.col_varchar_nokey = inner_t2.col_varchar_key
         );
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1, t2, t3;
@@ -6027,7 +6083,7 @@ WHERE (alias1.col_varchar_key, alias1.col_varchar_nokey) IN
    (SELECT * FROM view_inline_2
    );
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 SET @@optimizer_switch= @optimizer_switch_saved;
@@ -6040,7 +6096,7 @@ DROP TABLE t1, t2, t3;
 --echo #
 --echo # Bug#13974177: Assert !(tab->table->regginfo.not_exists_optimize...
 --echo #
-
+   
 CREATE TABLE t1 (
   pk INTEGER AUTO_INCREMENT,
   col_int_nokey INTEGER,
@@ -6067,7 +6123,7 @@ CREATE TABLE t2 (
   col_time_nokey TIME NOT NULL,
   PRIMARY KEY (pk),
   KEY (col_time_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 (col_int_nokey, col_time_key, col_time_nokey) VALUES
  (7, '00:00:00', '00:00:00'), (0, '00:00:00', '00:00:00'),
@@ -6102,7 +6158,7 @@ WHERE (ot1.col_int_nokey, ot1.pk) IN
    ) AND ot1.pk IS NULL
 ;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -6127,7 +6183,7 @@ CREATE TABLE t2 (
   col_varchar_key VARCHAR(1),
   col_varchar_nokey VARCHAR(1),
   PRIMARY KEY (pk)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 CREATE TABLE t3 (
   i INT
@@ -6150,7 +6206,7 @@ WHERE table1.col_varchar_nokey IN
    )
 ;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 SET @@optimizer_switch= @optimizer_switch_saved;
@@ -6172,7 +6228,7 @@ CREATE TABLE t1 (
   col_int_key INT NOT NULL,
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES (10,1,7), (11,7,0), (12,4,9), (13,7,3),
 (14,0,4), (15,2,2), (16,9,5), (17,4,3), (18,0,1), (19,9,3), (20,1,6),
@@ -6185,14 +6241,14 @@ CREATE TABLE t2 (
   col_varchar_key VARCHAR(1) NOT NULL,
   KEY col_datetime_key (col_datetime_key),
   KEY col_varchar_key (col_varchar_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (1,'2001-11-04 19:07:55','k');
 
 CREATE TABLE t3 (
-  col_time_key TIME,
-  KEY col_time_key (col_time_key)
-) ENGINE=InnoDB;
+  col_time_key TIME
+#  KEY col_time_key (col_time_key)
+) ENGINE=Sequoiadb;
 
 INSERT INTO t3 VALUES ('21:22:34'), ('10:50:38'), ('00:21:38'),
 ('04:08:02'), ('16:25:11'), ('10:14:58'), ('19:47:59'), ('11:14:24'),
@@ -6222,7 +6278,7 @@ WHERE outr.col_int_nokey IN (
   OR
   outr.col_varchar_key IS NULL
 );
-eval EXPLAIN EXTENDED $query;
+#eval EXPLAIN EXTENDED $query;
 --sorted_result
 eval $query;
 
@@ -6256,7 +6312,7 @@ SELECT t2.vc, t2.ik AS t2_ik, t1.ik AS t1_ik
 FROM t2 LEFT JOIN t1 ON t2.vc=t1.vc
 WHERE t2.vc IN (SELECT vc FROM t2 AS t3);
 
-eval explain format=json $query;
+#eval explain format=json $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -6276,6 +6332,12 @@ INSERT INTO t1 VALUES (0), (1);
 
 CREATE VIEW view_t1 AS SELECT * FROM t1;
 
+--disable_query_log
+--disable_result_log
+analyze table t1,view_t1;
+--enable_query_log
+--enable_result_log
+
 let $query=
 SELECT alias1.col_int
 FROM t1 AS alias1
@@ -6285,7 +6347,7 @@ FROM t1 AS alias1
         FROM t1 AS sq1_alias1
        );
 
-eval explain $query;
+#eval explain $query;
 
 eval PREPARE stmt FROM "$query";
 EXECUTE stmt;
@@ -6332,7 +6394,7 @@ WHERE (col_varchar_nokey, col_varchar_nokey) IN
     FROM t2 AS derived2
    );
 
-eval explain format=json $query;
+#eval explain format=json $query;
 eval $query;
 
 SET @@optimizer_switch= @optimizer_switch_saved;
@@ -6368,7 +6430,7 @@ WHERE (col_int_nokey, col_int_nokey) IN
     FROM t2
    );
 
-eval explain format=json $query;
+#eval explain format=json $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -6383,7 +6445,7 @@ CREATE TABLE t1 (
   KEY col_int_key (col_int_key),  
   KEY col_datetime_key (col_datetime_key),  
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) engine=MyISAM;
+) engine=Sequoiadb;
  
 INSERT INTO t1 VALUES
  (10,7,'2004-06-06 04:22:12','v','v'), (11,0,'2005-11-13 01:12:31','s','s'),
@@ -6396,7 +6458,7 @@ INSERT INTO t1 VALUES
  (24,204,'2005-05-03 07:06:22','h','h'), (25,224,'2009-03-11 17:09:50','p','p'),
  (26,9,'2007-12-08 01:54:28','e','e'), (27,5,'2009-07-28 18:19:54','i','i'),
  (28,0,'2008-06-08 00:00:00','y','y'), (29,3,'2005-02-09 09:20:26','w','w');
- 
+
 CREATE TABLE t2 (
   pk int,
   col_int_key int,
@@ -6407,7 +6469,7 @@ CREATE TABLE t2 (
   KEY col_int_key (col_int_key),
   KEY col_datetime_key (col_datetime_key),
   KEY col_varchar_key (col_varchar_key,col_int_key)
-) engine=MyISAM;
+) engine=Sequoiadb;
  
 INSERT INTO t2 VALUES
  (1,0,'2002-02-13 17:30:06','j','j'), (2,8,'2008-09-27 00:34:58','v','v'),
@@ -6421,6 +6483,12 @@ INSERT INTO t2 VALUES
  (17,1,'2002-12-08 11:34:58','q','q'), (18,9,'1900-01-01 00:00:00','w','w'),
  (19,4,'1900-01-01 00:00:00','d','d'), (20,8,'2002-08-25 20:35:06','e','e');
  
+--disable_query_log
+--disable_result_log
+analyze table t1,t2;
+--enable_query_log
+--enable_result_log
+
 SELECT alias1.col_datetime_key
 FROM t2 AS alias1
      RIGHT JOIN t2 AS alias2
@@ -6432,9 +6500,10 @@ WHERE (alias2.col_varchar_key, alias2.col_varchar_key) IN
        (SELECT sq2_alias2.col_varchar_key, sq2_alias1.col_varchar_nokey
         FROM t1 AS sq2_alias1, t1 AS sq2_alias2
         WHERE sq2_alias2.col_int_key < 2);
- 
-ALTER TABLE t1 DISABLE KEYS;
-ALTER TABLE t2 DISABLE KEYS;
+
+#Sequoiadb not support 
+#ALTER TABLE t1 DISABLE KEYS;
+#ALTER TABLE t2 DISABLE KEYS;
 
 let $query=
 SELECT alias1.col_datetime_key
@@ -6449,7 +6518,7 @@ WHERE (alias2.col_varchar_key, alias2.col_varchar_key) IN
         FROM t1 AS sq2_alias1, t1 AS sq2_alias2
         WHERE sq2_alias2.col_int_key < 2);
 
-eval explain format=json $query;
+#eval explain format=json $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -6499,6 +6568,7 @@ DROP TABLE b,c,d;
 --echo #
 --echo # Bug#17292723:INCORRECT RESULT FOR (SELECT...) IN (SELECT...) STATEMENT
 --echo #
+
 CREATE TABLE t1 (
   ID int(11) NOT NULL AUTO_INCREMENT,
   id2 int(11) DEFAULT NULL,
@@ -6509,7 +6579,7 @@ CREATE TABLE t1 (
   KEY id2 (id2),
   KEY id3 (id3),
   KEY id5 (id5)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES
 (123,1,1,'1',NULL),
@@ -6524,7 +6594,7 @@ CREATE TABLE t2 (
   id7 int(11) NOT NULL,
   PRIMARY KEY (id6,id7),
   KEY id7 (id7)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (126,123),(130,123),(135,123);
 
@@ -6546,7 +6616,7 @@ set @@optimizer_switch=@old_opt_switch;
 
 CREATE TABLE t1 (
   col_varchar_nokey varchar(1)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES ('c'),(NULL),('x');
 
@@ -6555,11 +6625,15 @@ CREATE TABLE t2 (
   col_varchar_key varchar(1),
   PRIMARY KEY (pk),
   KEY col_varchar_key (col_varchar_key)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (10,'l'),(11,'p');
 
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1,t2;
+-- enable_query_log
+-- enable_result_log
 
 let $query=
 SELECT 1
@@ -6572,7 +6646,7 @@ WHERE outr.col_varchar_nokey IN
   )
 ;
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 DROP TABLE t1,t2;
 
@@ -6597,12 +6671,16 @@ DROP TABLE t1;
 --echo #               PREDICATE INSIDE IN PREDICATE
 --echo #
 
-CREATE TABLE t(X INT) ENGINE=InnoDB;
+CREATE TABLE t(X INT) ENGINE=Sequoiadb;
 INSERT INTO t VALUES (1);
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t;
+-- enable_query_log
+-- enable_result_log
 
 let $query=SELECT 1 FROM t WHERE (1 IN (SELECT 1 FROM t)) IN (SELECT 1 FROM t);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t;
@@ -6615,7 +6693,7 @@ CREATE TABLE t1 (
   pk INTEGER NOT NULL,
   i1 INTEGER NOT NULL,
   PRIMARY KEY (pk)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t1 VALUES (1,1);
 
@@ -6624,7 +6702,7 @@ CREATE TABLE t2 (
   c1 VARCHAR(1) NOT NULL,
   PRIMARY KEY (pk),
   KEY c1_key (c1)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (1,'j'),(2,'v'),(3,'c');
 
@@ -6633,11 +6711,15 @@ CREATE TABLE t3 (
   c1 VARCHAR(1) NOT NULL,
   PRIMARY KEY (pk),
   KEY c1_key (c1)
-) ENGINE=InnoDB;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t3 VALUES (10,'v'),(11,'s');
 
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1, t2, t3;
+-- enable_query_log
+-- enable_result_log
 
 let $query=
 SELECT *
@@ -6648,7 +6730,7 @@ WHERE t2.c1 IN (
   WHERE t3.pk < 3
 );
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1,t2,t3;
@@ -6657,23 +6739,27 @@ DROP TABLE t1,t2,t3;
 --echo # Bug#19586047: CRASH IN ARG_COMPARATOR::SET_CMP_FUNC
 --echo #
 
-CREATE TABLE t1(x INT) ENGINE=InnoDB;
+CREATE TABLE t1(x INT) ENGINE=Sequoiadb;
 INSERT INTO t1 VALUES (1);
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1;
+-- enable_query_log
+-- enable_result_log
 
 let $query=SELECT 1 FROM t1 WHERE EXISTS(SELECT 1) IN (SELECT 1 FROM t1);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 let $query=
 SELECT 1 FROM t1 WHERE (SELECT 1, 2 FROM t1) IN (SELECT 1, 2 FROM t1);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 let $query=
 SELECT 1 FROM t1 WHERE
   (SELECT 1, 2 FROM t1 WHERE x = 2) IN (SELECT 1, 2 FROM t1);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP TABLE t1;
@@ -6718,7 +6804,11 @@ INSERT INTO t3 VALUES (1, 'c'),(2, 'c'),(3, 'q'),(4, 'g'),(5, 'e'),(6, 'l'),
 (7, NULL),(8, 'v'),(9, 'c'),(10, 'u'),(11, 'x'),(12, 'x'),(13, 'x'),(14, 'l'),
 (15, 'e'),(16, 's'),(17, 'k'),(18, 'm'),(19, 'x'),(20, 's');
 
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1,t2,t3;
+-- enable_query_log
+-- enable_result_log
 
 let $query1=
 SELECT r1.col_date_key
@@ -6734,9 +6824,9 @@ WHERE r1.col_int_key NOT IN
                    ON iir2.col_varchar_nokey = iir1.col_varchar_key)) 
 ORDER BY r1.col_date_key;   
 
---disable_warnings
-eval EXPLAIN $query1;
---enable_warnings
+#--disable_warnings
+#eval EXPLAIN $query1;
+#--enable_warnings
 # test Bug#20119743 and Bug#20239912.
 eval $query1;
 
@@ -6849,7 +6939,7 @@ CREATE TABLE t1 (
   pk INT NOT NULL,
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE = INNODB;
+) ENGINE = Sequoiadb;
 INSERT INTO t1 VALUES
 ( 0, 3 ),
 ( 0, 4 ),
@@ -6863,7 +6953,7 @@ CREATE TABLE t2 (
   pk INT NOT NULL,
   col_int INT,
   PRIMARY KEY (pk)
-) ENGINE = INNODB;
+) ENGINE = Sequoiadb;
 INSERT INTO t2 VALUES
 ( 1, 3 ),
 ( 2, 2 ),
@@ -6874,14 +6964,14 @@ CREATE TABLE t3 (
   col_int_key INT,
   col_int INT,
   KEY (col_int_key)
-) ENGINE = INNODB;
+) ENGINE = Sequoiadb;
 INSERT INTO t3 VALUES
 ( 5, 1 ),
 ( -1, -1 ),
 ( 300000000, 1 ),
 ( 8, 1 );
 
-CREATE TABLE t4 ( col_int_key INT ) ENGINE = INNODB;
+CREATE TABLE t4 ( col_int_key INT ) ENGINE = Sequoiadb;
 INSERT INTO t4 VALUES
 (0),
 (3),
@@ -6890,7 +6980,11 @@ INSERT INTO t4 VALUES
 (1368719360),
 (1922236416);
 
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1, t2, t3, t4;
+-- enable_query_log
+-- enable_result_log
 
 let $query=
 SELECT *
@@ -6903,7 +6997,7 @@ WHERE (col_int_key) IN (
 ORDER BY col_int_key
 ;
 
-eval explain $query;
+#eval explain $query;
 
 eval $query;
 
@@ -6941,7 +7035,7 @@ WHERE field1 IN (
   SELECT tv1.var_255_utf8
   FROM v1 AS tv1 LEFT JOIN v1 AS tv2 ON tv1.var_10_latin1=tv2.var_10_utf8);
 
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 
 DROP VIEW v1;
@@ -6962,8 +7056,8 @@ DROP TABLE t1;
 
 --echo # 17845989 Assertion failed: !(used_tables() & ...
 
-CREATE TABLE a(b INTEGER) engine=innodb;
-CREATE TABLE c(a INTEGER) engine=innodb;
+CREATE TABLE a(b INTEGER) engine=Sequoiadb;
+CREATE TABLE c(a INTEGER) engine=Sequoiadb;
 
 SELECT 1
 FROM a
@@ -6998,11 +7092,15 @@ INSERT INTO t4 VALUES
 (1, "A"), (2, "B"), (3, "C"), (4, "D"), (5, "E"),
 (6, "F"), (7, "G"), (8, "H"), (9, "I");
 
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t1,t2,t3,t4;
+-- enable_query_log
+-- enable_result_log
 
-EXPLAIN SELECT name FROM t2, t1
-WHERE t1.uid IN (SELECT t4.uid FROM t4, t3 WHERE t3.uid=1 AND t4.uid=t3.fid)
-AND t2.uid=t1.fid;
+#EXPLAIN SELECT name FROM t2, t1
+#WHERE t1.uid IN (SELECT t4.uid FROM t4, t3 WHERE t3.uid=1 AND t4.uid=t3.fid)
+#AND t2.uid=t1.fid;
 
 FLUSH STATUS;
 
@@ -7010,7 +7108,7 @@ SELECT name FROM t2, t1
 WHERE t1.uid IN (SELECT t4.uid FROM t4, t3 WHERE t3.uid=1 AND t4.uid=t3.fid)
 AND t2.uid=t1.fid;
 
-SHOW STATUS LIKE '%handler_read%';
+#SHOW STATUS LIKE '%handler_read%';
 
 DROP TABLE t1,t2,t3,t4;
 
@@ -7026,12 +7124,12 @@ pk INTEGER,
 col_varchar varchar(1),
 col_int INTEGER,
 PRIMARY KEY (pk)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 CREATE TABLE t2 (
 col_int INTEGER,
 col_varchar varchar(1)
-) ENGINE=MyISAM;
+) ENGINE=Sequoiadb;
 
 INSERT INTO t2 VALUES (7,'x');
 INSERT INTO t2 VALUES (4,'z');
@@ -7047,8 +7145,8 @@ DROP TABLE t1,t2;
 
 --echo # Bug#21139722: Assertion failed: !(used_tables() & ((table_map) 1) ...
 
-CREATE TABLE t1(a INTEGER) engine=innodb;
-CREATE TABLE t2(b INTEGER) engine=innodb;
+CREATE TABLE t1(a INTEGER) engine=Sequoiadb;
+CREATE TABLE t2(b INTEGER) engine=Sequoiadb;
 
 let $query=
 SELECT 1
@@ -7059,7 +7157,7 @@ FROM (SELECT 1 IN (SELECT 1
       FROM t2
      ) AS z;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1, t2;
@@ -7067,22 +7165,22 @@ DROP TABLE t1, t2;
 # A test case containing two outer references from different query blocks
 # Debugging is needed to inspect correct transformation, unfortunately.
 
-CREATE TABLE t1(a INTEGER) engine=innodb;
+CREATE TABLE t1(a INTEGER) engine=Sequoiadb;
 
 let $query=
 SELECT (SELECT a FROM t1 AS t2
         WHERE a IN (SELECT t1.a+t2.a FROM t1 AS t3))
 FROM t1 AS t1;
 
-eval explain $query;
+#eval explain $query;
 eval $query;
 
 DROP TABLE t1;
 
 --echo # End of test for Bug#21139722
 
-# New tests can use InnoDB as default
-SET DEFAULT_STORAGE_ENGINE=INNODB;
+# New tests can use Sequoiadb as default
+SET DEFAULT_STORAGE_ENGINE=Sequoiadb;
 
 --echo #
 --echo # Bug#21139402 ASSERTION FAILED: LENGTH > 0 && KEYPARTS != 0, CRASH IN JOIN::OPTIMIZE_KEYUSE
@@ -7094,14 +7192,14 @@ let $query=
 SELECT 1 FROM t1
 WHERE 1 IN
  (SELECT (c IS NULL) IN (SELECT a FROM t1 WHERE b)  FROM t2);
-eval EXPLAIN $query;
+#eval EXPLAIN $query;
 eval $query;
 DROP TABLE t1,t2;
 
 --echo #
 --echo # Bug#21619634 ACCESS OF DEALLOCATED ITEM_OUTER_REF CAUSES CRASH: PREPARED STMT
 --echo #
-create table cc (i int) engine="innodb";
+create table cc (i int) engine="Sequoiadb";
 insert into cc values (1);
 
 # Always worked
@@ -7137,8 +7235,12 @@ WHERE t1.a IN (SELECT t2.a
                                              FROM t AS t3
                                              WHERE t3.b=1));
 
+-- disable_query_log
+-- disable_result_log
 ANALYZE TABLE t;
-eval EXPLAIN extended $query;
+-- enable_query_log
+-- enable_result_log
+#eval EXPLAIN extended $query;
 eval $query;
 
 DROP TABLE t;

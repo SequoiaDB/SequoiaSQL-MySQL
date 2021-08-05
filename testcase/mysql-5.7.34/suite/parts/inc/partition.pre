@@ -71,10 +71,12 @@ let $ER_NO_PARTS_ERROR=                   1504;
 let $ER_DROP_PARTITION_NON_EXISTENT=      1507;
 let $ER_SAME_NAME_PARTITION=              1517;
 let $ER_NO_PARTITION_FOR_GIVEN_VALUE=     1526;
+let $ER_SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY=  40177;
+let $ER_SDB_UPDATE_SHARD_KEY=             40178;
 
 # Set the variable $engine_other to a storage engine <> $engine
 --disable_query_log
-eval SELECT UPPER($engine) = 'MEMORY' INTO @aux;
+eval SELECT UPPER($engine) = 'SEQUOIADB' INTO @aux;
 let $aux= `SELECT @aux`;
 if ($aux)
 {
@@ -82,7 +84,7 @@ if ($aux)
 }
 if (!$aux)
 {
-   let $engine_other= 'MEMORY';
+   let $engine_other= 'SEQUOIADB';
 }
 --enable_query_log
 
@@ -148,7 +150,7 @@ DROP TABLE IF EXISTS t0_template;
 eval CREATE TABLE t0_template (
 $column_list ,
 PRIMARY KEY(f_int1))
-ENGINE = MEMORY;
+ENGINE = SEQUOIADB;
 --echo #     Logging of <max_row> INSERTs into t0_template suppressed
 --disable_query_log
 let $num= `SELECT @max_row`;
@@ -171,14 +173,14 @@ state CHAR(3),
 create_command VARBINARY(5000),
 file_list      VARBINARY(10000),
 PRIMARY KEY (state)
-) ENGINE = MEMORY;
+) ENGINE = SEQUOIADB;
 
 # Auxiliary table used for trigger experiments
 --disable_warnings
 DROP TABLE IF EXISTS t0_aux;
 --enable_warnings
 eval CREATE TABLE t0_aux ( $column_list )
-ENGINE = MEMORY;
+ENGINE = SEQUOIADB;
 
 # Prevent that a change of defaults breaks the tests.
 SET AUTOCOMMIT= 1;

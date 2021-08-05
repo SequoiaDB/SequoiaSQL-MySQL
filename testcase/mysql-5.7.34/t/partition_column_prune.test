@@ -3,6 +3,9 @@
 #
 -- source include/have_partition.inc
 
+CREATE DATABASE test_partition_column_prune;
+USE test_partition_column_prune;
+
 --disable_warnings
 drop table if exists t1,t2,t3,t4,t5,t6,t7,t8,t9;
 --enable_warnings
@@ -12,7 +15,7 @@ partition by range columns(a,b,c)
 ( partition p0 values less than ('a','b','c'));
 insert into t1 values ('a', NULL, 'd');
 analyze table t1;
-explain select * from t1 where a = 'a' AND c = 'd';
+#explain select * from t1 where a = 'a' AND c = 'd';
 select * from t1 where a = 'a' AND c = 'd';
 drop table t1;
 
@@ -42,8 +45,8 @@ insert into t2 values (5),(15),(25),(35),(45),(55),(65);
 insert into t2 values (5),(15),(25),(35),(45),(55),(65);
 
 analyze table t1;
-explain partitions select * from t1 where a > 35 and a < 45;
-explain partitions select * from t2 where a > 35 and a < 45;
+#explain partitions select * from t1 where a > 35 and a < 45;
+#explain partitions select * from t2 where a > 35 and a < 45;
 
 drop table t1, t2;
 
@@ -67,10 +70,12 @@ insert into t1 values (2,5), (2,15), (2,25),
 insert into t1 select * from t1;
 
 analyze table t1;
-explain partitions select * from t1 where a=2;
-explain partitions select * from t1 where a=4;
+#explain partitions select * from t1 where a=2;
+#explain partitions select * from t1 where a=4;
 # Somewhat unstable filtering numbers
---replace_regex /5.56/5.55/
-explain partitions select * from t1 where a=2 and b < 22;
+#--replace_regex /5.56/5.55/
+#explain partitions select * from t1 where a=2 and b < 22;
 
 drop table t1;
+
+DROP DATABASE test_partition_column_prune;

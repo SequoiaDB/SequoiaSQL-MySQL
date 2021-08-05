@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb
+--source include/have_sequoiadb.inc
 
 #
 # This file contains tests covering the parser
@@ -24,6 +23,10 @@ SET @save_sql_mode=@@sql_mode;
 # - no error is the correct result
 # - an error is the expected result with the current implementation,
 #   and is a limitation.
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_parser;
+use test_parser;
 
 set SQL_MODE='';
 
@@ -165,13 +168,14 @@ drop table SUM;
 
 --error ER_PARSE_ERROR
 create table SYSDATE(a int);
-create table SYSDATE (a int);
-drop table SYSDATE;
+#Sequoiadb not support collection named like SYS*;
+#create table SYSDATE (a int);
+#drop table SYSDATE;
 
-create table SYSTEM_USER(a int);
-drop table SYSTEM_USER;
-create table SYSTEM_USER (a int);
-drop table SYSTEM_USER;
+#create table SYSTEM_USER(a int);
+#drop table SYSTEM_USER;
+#create table SYSTEM_USER (a int);
+#drop table SYSTEM_USER;
 
 --error ER_PARSE_ERROR
 create table TRIM(a int);
@@ -342,10 +346,11 @@ create table SYSDATE(a int);
 --error ER_PARSE_ERROR
 create table SYSDATE (a int);
 
-create table SYSTEM_USER(a int);
-drop table SYSTEM_USER;
-create table SYSTEM_USER (a int);
-drop table SYSTEM_USER;
+#Sequoiadb not support named like SYS*
+#create table SYSTEM_USER(a int);
+#drop table SYSTEM_USER;
+#create table SYSTEM_USER (a int);
+#drop table SYSTEM_USER;
 
 --error ER_PARSE_ERROR
 create table TRIM(a int);
@@ -763,43 +768,43 @@ DROP TABLE t1, t2, t3;
 # Bug#31293 - Incorrect parser errors for create/alter/drop logfile group/tablespace
 #
 
---echo # Should use myisam
+--echo # Should use sequoiadb
 
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 create logfile group ndb_lg1 add undofile 'ndb_undo1' initial_size=32M; 
 -- error ER_ILLEGAL_HA_CREATE_OPTION
-create logfile group ndb_lg1 add undofile 'ndb_undo1' engine=myisam;
+create logfile group ndb_lg1 add undofile 'ndb_undo1' engine=sequoiadb;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 create logfile group ndb_lg1 add undofile 'ndb_undo1';
 
 -- error ER_ILLEGAL_HA_CREATE_OPTION
-create tablespace ndb_ts1 add datafile 'ndb_ts1.dat' use logfile group ndb_lg1 engine=myisam initial_size=32M;
+create tablespace ndb_ts1 add datafile 'ndb_ts1.dat' use logfile group ndb_lg1 engine=sequoiadb initial_size=32M;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
-create tablespace ndb_ts1 add datafile 'ndb_ts1.dat' use logfile group ndb_lg1 engine=myisam;
+create tablespace ndb_ts1 add datafile 'ndb_ts1.dat' use logfile group ndb_lg1 engine=sequoiadb;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 create tablespace ndb_ts1 add datafile 'ndb_ts1.dat' use logfile group ndb_lg1;
 
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 alter logfile group ndb_lg1 add undofile 'ndb_undo1' wait;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
-alter logfile group ndb_lg1 add undofile 'ndb_undo1' engine=myisam;
+alter logfile group ndb_lg1 add undofile 'ndb_undo1' engine=sequoiadb;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 alter logfile group ndb_lg1 add undofile 'ndb_undo1';
 
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 alter tablespace ndb_ts1 add datafile 'ndb_ts1.dat' initial_size=32M;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
-alter tablespace ndb_ts1 add datafile 'ndb_ts1.dat' engine=myisam;
+alter tablespace ndb_ts1 add datafile 'ndb_ts1.dat' engine=sequoiadb;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 alter tablespace ndb_ts1 add datafile 'ndb_ts1.dat';
 
 -- error ER_ILLEGAL_HA_CREATE_OPTION
-drop logfile group ndb_lg1 engine=myisam;
+drop logfile group ndb_lg1 engine=sequoiadb;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 drop logfile group ndb_lg1;
 
 -- error ER_ILLEGAL_HA_CREATE_OPTION
-drop tablespace ndb_ts1 engine=myisam;
+drop tablespace ndb_ts1 engine=sequoiadb;
 -- error ER_ILLEGAL_HA_CREATE_OPTION
 drop tablespace ndb_ts1;
 
@@ -1148,25 +1153,25 @@ DROP TABLE t1;
 --echo #                accepted but parsed incorrectly
 --echo #
 --error ER_WRONG_TYPE_FOR_VAR 
-SET default_storage_engine=a.myisam;
+SET default_storage_engine=a.sequoiadb;
 --error ER_WRONG_TYPE_FOR_VAR 
-SET default_storage_engine = .a.MyISAM;
+SET default_storage_engine = .a.sequoiadb;
 --error ER_WRONG_TYPE_FOR_VAR 
-SET default_storage_engine = a.b.MyISAM;
+SET default_storage_engine = a.b.sequoiadb;
 --error ER_WRONG_TYPE_FOR_VAR 
-SET default_storage_engine = `a`.MyISAM;
+SET default_storage_engine = `a`.sequoiadb;
 --error ER_WRONG_TYPE_FOR_VAR 
-SET default_storage_engine = `a`.`MyISAM`; 
+SET default_storage_engine = `a`.`sequoiadb`; 
 --error ER_UNKNOWN_STORAGE_ENGINE 
-set default_storage_engine = "a.MYISAM";
+set default_storage_engine = "a.sequoiadb";
 --error ER_UNKNOWN_STORAGE_ENGINE 
-set default_storage_engine = 'a.MYISAM';
+set default_storage_engine = 'a.sequoiadb';
 --error ER_UNKNOWN_STORAGE_ENGINE 
-set default_storage_engine = `a.MYISAM`;
+set default_storage_engine = `a.sequoiadb`;
 CREATE TABLE t1 (s VARCHAR(100));
 --ERROR ER_BAD_FIELD_ERROR
 CREATE TRIGGER trigger1 BEFORE INSERT ON t1 FOR EACH ROW
-SET default_storage_engine = NEW.INNODB;
+SET default_storage_engine = NEW.sequoiadb;
 DROP TABLE t1;
 
 --echo #
@@ -1210,20 +1215,20 @@ DROP TABLE t1, t2;
 --echo # Bug#18486460 ASSERTION FAILED: N < M_SIZE AFTER FIX_INNER_REFS
 --echo #
 
-CREATE TABLE t1(b INT);
-CREATE TABLE t2(a INT, b INT, c INT, d INT);
+#CREATE TABLE t1(b INT);
+#CREATE TABLE t2(a INT, b INT, c INT, d INT);
 
---source include/turn_off_only_full_group_by.inc
-EXPLAIN SELECT
-(
-  SELECT
-  ROW(t1.b, a) = ROW( ROW(1, t2.c) = ROW(1, d), c) = a
-  FROM t1
-)
-FROM t2 GROUP BY a;
---source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
+#--source include/turn_off_only_full_group_by.inc
+#EXPLAIN SELECT
+#(
+#  SELECT
+#  ROW(t1.b, a) = ROW( ROW(1, t2.c) = ROW(1, d), c) = a
+#  FROM t1
+#)
+#FROM t2 GROUP BY a;
+#--source include/restore_sql_mode_after_turn_off_only_full_group_by.inc
 
-DROP TABLE t1, t2;
+#DROP TABLE t1, t2;
 
 --echo #
 --echo # Bug#18498344: SELECT WITH ALIAS NOT WORKING IN 5.7
@@ -1271,16 +1276,17 @@ SELECT  !((UNHEX() IS NULL));
 --echo #
 --echo # Bug #20086997: PARSER CONFUSES WITH 7BIT-CHARACTER STRING DETECTION
 --echo #
-
-CREATE DATABASE mysqltest1 CHARACTER SET LATIN2;
-USE mysqltest1;
+# Compatible with parallel > 1, don't use mysqltest1 here, instead use database: mysqltest1_casename
+CREATE DATABASE mysqltest1_parser CHARACTER SET LATIN2;
+USE mysqltest1_parser;
 CREATE TABLE t1 (a VARCHAR(255) CHARACTER SET LATIN2);
 SET CHARACTER SET cp1250_latin2;
 INSERT INTO t1 VALUES ('£¥ª¯');
 INSERT INTO t1 VALUES ('£¥ª¯' '');
 SELECT HEX(a) FROM t1;
-DROP DATABASE mysqltest1;
-USE test;
+DROP DATABASE mysqltest1_parser;
+USE test_parser;
+
 
 --echo #
 --echo # WL #7201, WL #7202 and WL#8062 coverage tests
@@ -1332,9 +1338,11 @@ PARSE_GCOL_EXPR (1);
 
 CREATE TABLE t1 (x INT PRIMARY KEY);
 ALTER TABLE t1;
+
 ALTER TABLE t1 ALGORITHM=DEFAULT;
 ALTER TABLE t1 ALGORITHM=COPY;
 ALTER TABLE t1 ALGORITHM=INPLACE;
+
 ALTER TABLE t1 LOCK=DEFAULT;
 --error ER_ALTER_OPERATION_NOT_SUPPORTED
 ALTER TABLE t1 LOCK=NONE;
@@ -1386,6 +1394,11 @@ INSERT INTO t1 VALUES (1, 2, 3);
 
 SELECT `*` FROM t1;
 SELECT t1.`*`, t1.* FROM t1;
-SELECT test.t1.`*`, test.t1.* FROM t1;
+SELECT test_parser.t1.`*`, test_parser.t1.* FROM t1;
 
 DROP TABLE t1;
+
+# DROP DATABASE 
+DROP DATABASE test_parser;
+
+--source include/uninstall_sequoiadb.inc

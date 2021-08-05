@@ -41,7 +41,9 @@ insert into t1 values (-5, 1, 1),
 analyze table t1;
 -- enable_result_log
 -- enable_query_log
-explain select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
+#Sequoiadb not support explain
+#explain select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
+--sorted_result
 select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
 drop table t1;
 
@@ -59,6 +61,7 @@ insert into t1 values (0, 1, 1),
   (0xFFFFFFFE, 1, 1),
   (1, 1, 1),
   (2, 1, 1);
+--sorted_result
 select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
 drop table t1;
 
@@ -75,6 +78,7 @@ insert into t1 values ('a1', 1, 1),
   ('b2', 1, 1),
   ('A3', 1, 1),
   ('B4', 1, 1);
+--sorted_result
 select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
 drop table t1;
 
@@ -96,12 +100,16 @@ insert into t1 values
 insert ignore into t1 select pk1, char(0xEC), pk3, key1, key2  from t1;
 insert ignore into t1 select pk1, 'x', pk3, key1, key2  from t1 where pk2='u';
 insert ignore into t1 select 2, pk2, pk3, key1, key2  from t1;
+--sorted_result
 select * from t1;
+--sorted_result
 select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
 
 # Hidden PK
 alter table t1 drop primary key;
+--sorted_result
 select * from t1;
+--sorted_result
 select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
 drop table t1;
 
@@ -121,6 +129,7 @@ insert into t1 values ('','empt',2,2),
   ('bb','b--b',2,2),
   ('ccc','c--c',2,2),
   ('dddd','d--d',2,2);
+--sorted_result
 select * from t1 force index(key1, key2) where key1 < 3 or key2 < 3;
 
 drop table t1;

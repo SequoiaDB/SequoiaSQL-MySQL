@@ -24,10 +24,11 @@
 
 #------------------------------------------------------------------------------#
 # Engine specific settings and requirements
+let $skip_update= 1;
 
 ##### Storage engine to be tested
-let $engine= 'InnoDB';
---source include/have_innodb.inc
+let $engine= 'SequoiaDB';
+--source include/have_sequoiadb.inc
 
 #------------------------------------------------------------------------------#
 # Execute the tests to be applied to all storage engines
@@ -35,5 +36,5 @@ let $engine= 'InnoDB';
 
 #------------------------------------------------------------------------------#
 # Test export/import of tablespace with partitioned table for InnoDB
---source suite/parts/inc/partition_auto_increment_import.inc
+#--source suite/parts/inc/partition_auto_increment_import.inc
 

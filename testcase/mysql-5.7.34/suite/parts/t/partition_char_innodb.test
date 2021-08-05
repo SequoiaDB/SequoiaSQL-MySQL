@@ -35,8 +35,8 @@ let $debug= 0;
 # Engine specific settings and requirements
 
 ##### Storage engine to be tested
---source include/have_innodb.inc
-let $engine= 'InnoDB';
+--source include/have_sequoiadb.inc
+let $engine= 'SequoiaDB';
 
 ##### max rows to be inserted
 let $maxrows=65535;

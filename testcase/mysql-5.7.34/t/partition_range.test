@@ -5,30 +5,30 @@
 # 
 -- source include/have_partition.inc
 # This test needs MyISAM as it has testcases for defined engine MyISAM
---source include/have_myisam.inc
+#--source include/have_myisam.inc
 
 --disable_warnings
 drop table if exists t1, t2;
 --enable_warnings
 
---echo #
---echo # Bug#48229: group by performance issue of partitioned table
---echo #
-CREATE TABLE t1 (
- a INT,
- b INT,
- KEY a (a,b)
-)
-PARTITION BY HASH (a) PARTITIONS 1;
-
-# insert some rows (i.e. so that rows/blocks > 1)
-INSERT INTO t1 VALUES (0, 580092), (3, 894076), (4, 805483), (4, 913540), (6, 611137), (8, 171602), (9, 599495), (9, 746305), (10, 272829), (10, 847519), (12, 258869), (12, 929028), (13, 288970), (15, 20971), (15, 105839), (16, 788272), (17, 76914), (18, 827274), (19, 802258), (20, 123677), (20, 587729), (22, 701449), (25, 31565), (25, 230782), (25, 442887), (25, 733139), (25, 851020);
-
-# Before the fix the 'Extra' column showed 'Using index for group-by'
-analyze table t1;
-EXPLAIN SELECT a, MAX(b) FROM t1 WHERE a IN (10, 100, 3) GROUP BY a;
-
-DROP TABLE t1;
+#--echo #
+#--echo # Bug#48229: group by performance issue of partitioned table
+#--echo #
+#CREATE TABLE t1 (
+# a INT,
+# b INT,
+# KEY a (a,b)
+#)
+#PARTITION BY HASH (a) PARTITIONS 1;
+#
+## insert some rows (i.e. so that rows/blocks > 1)
+#INSERT INTO t1 VALUES (0, 580092), (3, 894076), (4, 805483), (4, 913540), (6, 611137), (8, 171602), (9, 599495), (9, 746305), (10, 272829), (10, 847519), (12, 258869), (12, 929028), (13, 288970), (15, 20971), (15, 105839), (16, 788272), (17, 76914), (18, 827274), (19, 802258), (20, 123677), (20, 587729), (22, 701449), (25, 31565), (25, 230782), (25, 442887), (25, 733139), (25, 851020);
+#
+## Before the fix the 'Extra' column showed 'Using index for group-by'
+#analyze table t1;
+#EXPLAIN SELECT a, MAX(b) FROM t1 WHERE a IN (10, 100, 3) GROUP BY a;
+#
+#DROP TABLE t1;
 
 #
 #BUG#49591, Add proper version number to SHOW CREATE TABLE
@@ -45,25 +45,25 @@ create table t1 (a int)
 partition by range (a)
 ( partition p0 values less than (NULL),
   partition p1 values less than (MAXVALUE));
-#
-# Merge fix of bug#27927 for TO_SECONDS function
-#
-create table t1 (a datetime not null)
-partition by range (TO_SECONDS(a))
-( partition p0 VALUES LESS THAN (TO_SECONDS('2007-03-08 00:00:00')),
-  partition p1 VALUES LESS THAN (TO_SECONDS('2007-04-01 00:00:00')));
-select partition_method, partition_expression, partition_description
-  from information_schema.partitions where table_name = "t1";
-INSERT INTO t1 VALUES ('2007-03-01 12:00:00'), ('2007-03-07 12:00:00');
-INSERT INTO t1 VALUES ('2007-03-08 12:00:00'), ('2007-03-15 12:00:00');
-analyze table t1;
-explain partitions select * from t1 where a < '2007-03-08 00:00:00';
-explain partitions select * from t1 where a < '2007-03-08 00:00:01';
-explain partitions select * from t1 where a <= '2007-03-08 00:00:00';
-explain partitions select * from t1 where a <= '2007-03-07 23:59:59';
-explain partitions select * from t1 where a < '2007-03-07 23:59:59';
-show create table t1;
-drop table t1;
+##
+## Merge fix of bug#27927 for TO_SECONDS function
+##
+#create table t1 (a datetime not null)
+#partition by range (TO_SECONDS(a))
+#( partition p0 VALUES LESS THAN (TO_SECONDS('2007-03-08 00:00:00')),
+#  partition p1 VALUES LESS THAN (TO_SECONDS('2007-04-01 00:00:00')));
+#select partition_method, partition_expression, partition_description
+#  from information_schema.partitions where table_name = "t1";
+#INSERT INTO t1 VALUES ('2007-03-01 12:00:00'), ('2007-03-07 12:00:00');
+#INSERT INTO t1 VALUES ('2007-03-08 12:00:00'), ('2007-03-15 12:00:00');
+#analyze table t1;
+#explain partitions select * from t1 where a < '2007-03-08 00:00:00';
+#explain partitions select * from t1 where a < '2007-03-08 00:00:01';
+#explain partitions select * from t1 where a <= '2007-03-08 00:00:00';
+#explain partitions select * from t1 where a <= '2007-03-07 23:59:59';
+#explain partitions select * from t1 where a < '2007-03-07 23:59:59';
+#show create table t1;
+#drop table t1;
 #
 # New test cases for new function to_seconds
 #
@@ -72,11 +72,15 @@ partition by range(to_seconds(a))
 (partition p0 values less than (to_seconds('2004-01-01')),
  partition p1 values less than (to_seconds('2005-01-01')));
 insert into t1 values ('2003-12-30'),('2004-12-31');
+--sorted_result
 select * from t1;
+--disable_result_log
 analyze table t1;
-explain partitions select * from t1 where a <= '2003-12-31';
+--enable_result_log
+#explain partitions select * from t1 where a <= '2003-12-31';
 select * from t1 where a <= '2003-12-31';
-explain partitions select * from t1 where a <= '2005-01-01';
+#explain partitions select * from t1 where a <= '2005-01-01';
+--sorted_result
 select * from t1 where a <= '2005-01-01';
 show create table t1;
 drop table t1;
@@ -86,11 +90,14 @@ partition by range(to_seconds(a))
 (partition p0 values less than (to_seconds('2004-01-01 12:00:00')),
  partition p1 values less than (to_seconds('2005-01-01 12:00:00')));
 insert into t1 values ('2004-01-01 11:59:29'),('2005-01-01 11:59:59');
+--sorted_result
 select * from t1;
+--disable_result_log
 analyze table t1;
-explain partitions select * from t1 where a <= '2004-01-01 11:59.59';
+--enable_result_log
+#explain partitions select * from t1 where a <= '2004-01-01 11:59.59';
 select * from t1 where a <= '2004-01-01 11:59:59';
-explain partitions select * from t1 where a <= '2005-01-01';
+#explain partitions select * from t1 where a <= '2005-01-01';
 select * from t1 where a <= '2005-01-01';
 show create table t1;
 drop table t1;
@@ -217,16 +224,19 @@ partition by range (a)
 insert into t1 values (null),(0),(1);
 
 select * from t1 where a is null;
+--sorted_result
 select * from t1 where a >= 0;
 select * from t1 where a < 0;
 select * from t1 where a <= 0;
 select * from t1 where a > 1;
+--disable_result_log
 analyze table t1;
-explain partitions select * from t1 where a is null;
-explain partitions select * from t1 where a >= 0;
-explain partitions select * from t1 where a < 0;
-explain partitions select * from t1 where a <= 0;
-explain partitions select * from t1 where a > 1;
+--enable_result_log
+#explain partitions select * from t1 where a is null;
+#explain partitions select * from t1 where a >= 0;
+#explain partitions select * from t1 where a < 0;
+#explain partitions select * from t1 where a <= 0;
+#explain partitions select * from t1 where a > 1;
 drop table t1;
 
 create table t1 (a int unsigned, b int unsigned)
@@ -239,129 +249,132 @@ subpartitions 2
 insert into t1 values (null,0),(null,1),(0,0),(0,1),(1,0),(1,1);
 
 select * from t1 where a is null;
+--sorted_result
 select * from t1 where a >= 0;
 select * from t1 where a < 0;
 select * from t1 where a <= 0;
 select * from t1 where a > 1;
+--disable_result_log
 analyze table t1;
-explain partitions select * from t1 where a is null;
-explain partitions select * from t1 where a >= 0;
-explain partitions select * from t1 where a < 0;
-explain partitions select * from t1 where a <= 0;
-explain partitions select * from t1 where a > 1;
+--enable_result_log
+#explain partitions select * from t1 where a is null;
+#explain partitions select * from t1 where a >= 0;
+#explain partitions select * from t1 where a < 0;
+#explain partitions select * from t1 where a <= 0;
+#explain partitions select * from t1 where a > 1;
 
 drop table t1;
 
+##
+## Partition by range, basic
+##
+#CREATE TABLESPACE ts1 ADD DATAFILE 'ts1.ibd';
+#CREATE TABLESPACE ts2 ADD DATAFILE 'ts2.ibd';
+#CREATE TABLESPACE ts3 ADD DATAFILE 'ts3.ibd';
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key(a,b))
+#partition by range (a)
+#partitions 3
+#(partition x1 values less than (5) tablespace ts1,
+# partition x2 values less than (10) tablespace ts2,
+# partition x3 values less than maxvalue tablespace ts3);
 #
-# Partition by range, basic
+## Simple insert and verify test
+#INSERT into t1 values (1, 1, 1);
+#INSERT into t1 values (6, 1, 1);
+#INSERT into t1 values (10, 1, 1);
+#INSERT into t1 values (15, 1, 1);
 #
-CREATE TABLESPACE ts1 ADD DATAFILE 'ts1.ibd';
-CREATE TABLESPACE ts2 ADD DATAFILE 'ts2.ibd';
-CREATE TABLESPACE ts3 ADD DATAFILE 'ts3.ibd';
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key(a,b))
-partition by range (a)
-partitions 3
-(partition x1 values less than (5) tablespace ts1,
- partition x2 values less than (10) tablespace ts2,
- partition x3 values less than maxvalue tablespace ts3);
-
-# Simple insert and verify test
-INSERT into t1 values (1, 1, 1);
-INSERT into t1 values (6, 1, 1);
-INSERT into t1 values (10, 1, 1);
-INSERT into t1 values (15, 1, 1);
-
-select * from t1;
-show create table t1;
-
-ALTER TABLE t1
-partition by range (a)
-partitions 3
-(partition x1 values less than (5) tablespace ts1,
- partition x2 values less than (10) tablespace ts2,
- partition x3 values less than maxvalue tablespace ts3);
-
-select * from t1;
-show create table t1;
-
-drop table if exists t1;
-
+#select * from t1;
+#show create table t1;
 #
-# Partition by range, basic
-# No primary key
+#ALTER TABLE t1
+#partition by range (a)
+#partitions 3
+#(partition x1 values less than (5) tablespace ts1,
+# partition x2 values less than (10) tablespace ts2,
+# partition x3 values less than maxvalue tablespace ts3);
 #
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null)
-partition by range (a)
-partitions 3
-(partition x1 values less than (5) tablespace ts1,
- partition x2 values less than (10) tablespace ts2,
- partition x3 values less than maxvalue tablespace ts3);
-
-# Simple insert and verify test
-INSERT into t1 values (1, 1, 1);
-INSERT into t1 values (6, 1, 1);
-INSERT into t1 values (10, 1, 1);
-INSERT into t1 values (15, 1, 1);
-
-select * from t1;
-SHOW CREATE TABLE t1;
-
-ALTER TABLE t1
-partition by range (a)
-partitions 3
-(partition x1 values less than (5) tablespace ts1,
- partition x2 values less than (10) tablespace ts2,
- partition x3 values less than maxvalue tablespace ts3);
-
-select * from t1;
-
-SHOW CREATE TABLE t1;
-drop table if exists t1;
-
+#select * from t1;
+#show create table t1;
 #
-# Partition by range, basic
-# No max value used
+#drop table if exists t1;
 #
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key(a,b))
-partition by range (a)
-partitions 3
-(partition x1 values less than (5) tablespace ts1,
- partition x2 values less than (10) tablespace ts2,
- partition x3 values less than (15) tablespace ts3);
-
-
-# Simple insert and verify test
-INSERT into t1 values (1, 1, 1);
-INSERT into t1 values (6, 1, 1);
-INSERT into t1 values (10, 1, 1);
---error ER_NO_PARTITION_FOR_GIVEN_VALUE
-INSERT into t1 values (15, 1, 1);
-
-select * from t1;
-SHOW CREATE TABLE t1;
-
-ALTER TABLE t1
-partition by range (a)
-partitions 3
-(partition x1 values less than (5) tablespace ts1,
- partition x2 values less than (10) tablespace ts2,
- partition x3 values less than (15) tablespace ts3);
-
-select * from t1;
-
-SHOW CREATE TABLE t1;
-drop table t1;
+##
+## Partition by range, basic
+## No primary key
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null)
+#partition by range (a)
+#partitions 3
+#(partition x1 values less than (5) tablespace ts1,
+# partition x2 values less than (10) tablespace ts2,
+# partition x3 values less than maxvalue tablespace ts3);
+#
+## Simple insert and verify test
+#INSERT into t1 values (1, 1, 1);
+#INSERT into t1 values (6, 1, 1);
+#INSERT into t1 values (10, 1, 1);
+#INSERT into t1 values (15, 1, 1);
+#
+#select * from t1;
+#SHOW CREATE TABLE t1;
+#
+#ALTER TABLE t1
+#partition by range (a)
+#partitions 3
+#(partition x1 values less than (5) tablespace ts1,
+# partition x2 values less than (10) tablespace ts2,
+# partition x3 values less than maxvalue tablespace ts3);
+#
+#select * from t1;
+#
+#SHOW CREATE TABLE t1;
+#drop table if exists t1;
+#
+##
+## Partition by range, basic
+## No max value used
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key(a,b))
+#partition by range (a)
+#partitions 3
+#(partition x1 values less than (5) tablespace ts1,
+# partition x2 values less than (10) tablespace ts2,
+# partition x3 values less than (15) tablespace ts3);
+#
+#
+## Simple insert and verify test
+#INSERT into t1 values (1, 1, 1);
+#INSERT into t1 values (6, 1, 1);
+#INSERT into t1 values (10, 1, 1);
+#--error ER_NO_PARTITION_FOR_GIVEN_VALUE
+#INSERT into t1 values (15, 1, 1);
+#
+#select * from t1;
+#SHOW CREATE TABLE t1;
+#
+#ALTER TABLE t1
+#partition by range (a)
+#partitions 3
+#(partition x1 values less than (5) tablespace ts1,
+# partition x2 values less than (10) tablespace ts2,
+# partition x3 values less than (15) tablespace ts3);
+#
+#select * from t1;
+#
+#SHOW CREATE TABLE t1;
+#drop table t1;
 
 #
 # Partition by range, only one partition
@@ -394,6 +407,7 @@ subpartition by hash (a+b)
      subpartition x22)
 );
 
+--sorted_result
 SELECT * from t1;
 show create table t1;
 
@@ -402,55 +416,56 @@ show create table t1;
 
 drop table t1;
 
+# InnoDB will return fail: A general tablespace named `t1` cannot be found
+##
+## Subpartition by hash, two partitions and two subpartitions
+## Defined tablespace, engine and node group
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key (a,b))
+#partition by range (a)
+#subpartition by hash (a+b)
+#( partition x1 values less than (1)
+#  ( subpartition x11 tablespace t1 engine sequoiadb nodegroup 0,
+#    subpartition x12 tablespace t2 engine sequoiadb nodegroup 1),
+#   partition x2 values less than (5)
+#   ( subpartition x21 tablespace t1 engine sequoiadb nodegroup 0,
+#     subpartition x22 tablespace t2 engine sequoiadb nodegroup 1)
+#);
 #
-# Subpartition by hash, two partitions and two subpartitions
-# Defined tablespace, engine and node group
+#SELECT * from t1;
 #
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key (a,b))
-partition by range (a)
-subpartition by hash (a+b)
-( partition x1 values less than (1)
-  ( subpartition x11 tablespace t1 engine myisam nodegroup 0,
-    subpartition x12 tablespace t2 engine myisam nodegroup 1),
-   partition x2 values less than (5)
-   ( subpartition x21 tablespace t1 engine myisam nodegroup 0,
-     subpartition x22 tablespace t2 engine myisam nodegroup 1)
-);
-
-SELECT * from t1;
-
-drop table t1;
-
+#drop table t1;
 #
-# Subpartition by hash, two partitions and two subpartitions
-# Defined tablespace, node group
+##
+## Subpartition by hash, two partitions and two subpartitions
+## Defined tablespace, node group
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key (a,b))
+#partition by range (a)
+#subpartition by hash (a+b)
+#( partition x1 values less than (1)
+#  ( subpartition x11 tablespace ts1 nodegroup 0,
+#    subpartition x12 tablespace ts2 nodegroup 1),
+#   partition x2 values less than (5)
+#   ( subpartition x21 tablespace ts1 nodegroup 0,
+#     subpartition x22 tablespace ts2 nodegroup 1)
+#);
 #
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key (a,b))
-partition by range (a)
-subpartition by hash (a+b)
-( partition x1 values less than (1)
-  ( subpartition x11 tablespace ts1 nodegroup 0,
-    subpartition x12 tablespace ts2 nodegroup 1),
-   partition x2 values less than (5)
-   ( subpartition x21 tablespace ts1 nodegroup 0,
-     subpartition x22 tablespace ts2 nodegroup 1)
-);
-
-SELECT * from t1;
-SHOW CREATE TABLE t1;
-
-drop table t1;
-DROP TABLESPACE ts1;
-DROP TABLESPACE ts2;
-DROP TABLESPACE ts3;
+#SELECT * from t1;
+#SHOW CREATE TABLE t1;
+#
+#drop table t1;
+#DROP TABLESPACE ts1;
+#DROP TABLESPACE ts2;
+#DROP TABLESPACE ts3;
 
 #
 # Subpartition by hash, two partitions and two subpartitions
@@ -464,11 +479,11 @@ primary key (a,b))
 partition by range (a)
 subpartition by hash (a+b)
 ( partition x1 values less than (1)
-  ( subpartition x11 engine myisam nodegroup 0,
-    subpartition x12 engine myisam nodegroup 1),
+  ( subpartition x11 engine sequoiadb nodegroup 0,
+    subpartition x12 engine sequoiadb nodegroup 1),
    partition x2 values less than (5)
-   ( subpartition x21 engine myisam nodegroup 0,
-     subpartition x22 engine myisam nodegroup 1)
+   ( subpartition x21 engine sequoiadb nodegroup 0,
+     subpartition x22 engine sequoiadb nodegroup 1)
 );
 
 INSERT into t1 VALUES (1,1,1);
@@ -476,104 +491,108 @@ INSERT into t1 VALUES (4,1,1);
 --error ER_NO_PARTITION_FOR_GIVEN_VALUE
 INSERT into t1 VALUES (5,1,1);
 
+--sorted_result
 SELECT * from t1;
 
 ALTER TABLE t1
 partition by range (a)
 subpartition by hash (a+b)
 ( partition x1 values less than (1)
-  ( subpartition x11 engine myisam nodegroup 0,
-    subpartition x12 engine myisam nodegroup 1),
+  ( subpartition x11 engine sequoiadb nodegroup 0,
+    subpartition x12 engine sequoiadb nodegroup 1),
    partition x2 values less than (5)
-   ( subpartition x21 engine myisam nodegroup 0,
-     subpartition x22 engine myisam nodegroup 1)
+   ( subpartition x21 engine sequoiadb nodegroup 0,
+     subpartition x22 engine sequoiadb nodegroup 1)
 );
 
+--sorted_result
 SELECT * from t1;
 
 drop table t1;
 
+# InnoDB will return fail: A general tablespace named `t1` cannot be found
+##
+## Subpartition by hash, two partitions and two subpartitions
+## Defined tablespace, engine
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key (a,b))
+#partition by range (a)
+#subpartition by hash (a+b)
+#( partition x1 values less than (1)
+#  ( subpartition x11 tablespace t1 engine sequoiadb,
+#    subpartition x12 tablespace t2 engine sequoiadb),
+#  partition x2 values less than (5)
+#  ( subpartition x21 tablespace t1 engine sequoiadb,
+#    subpartition x22 tablespace t2 engine sequoiadb)
+#);
 #
-# Subpartition by hash, two partitions and two subpartitions
-# Defined tablespace, engine
+#INSERT into t1 VALUES (1,1,1);
+#INSERT into t1 VALUES (4,1,1);
+#--error ER_NO_PARTITION_FOR_GIVEN_VALUE
+#INSERT into t1 VALUES (5,1,1);
 #
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key (a,b))
-partition by range (a)
-subpartition by hash (a+b)
-( partition x1 values less than (1)
-  ( subpartition x11 tablespace t1 engine myisam,
-    subpartition x12 tablespace t2 engine myisam),
-  partition x2 values less than (5)
-  ( subpartition x21 tablespace t1 engine myisam,
-    subpartition x22 tablespace t2 engine myisam)
-);
-
-INSERT into t1 VALUES (1,1,1);
-INSERT into t1 VALUES (4,1,1);
---error ER_NO_PARTITION_FOR_GIVEN_VALUE
-INSERT into t1 VALUES (5,1,1);
-
-SELECT * from t1;
-
-ALTER TABLE t1
-partition by range (a)
-subpartition by hash (a+b)
-( partition x1 values less than (1)
-  ( subpartition x11 tablespace t1 engine myisam,
-    subpartition x12 tablespace t2 engine myisam),
-  partition x2 values less than (5)
-  ( subpartition x21 tablespace t1 engine myisam,
-    subpartition x22 tablespace t2 engine myisam)
-);
-
-SELECT * from t1;
-
-drop table t1;
-
+#SELECT * from t1;
 #
-# Subpartition by hash, two partitions and two subpartitions
-# Defined tablespace
+#ALTER TABLE t1
+#partition by range (a)
+#subpartition by hash (a+b)
+#( partition x1 values less than (1)
+#  ( subpartition x11 tablespace t1 engine sequoiadb,
+#    subpartition x12 tablespace t2 engine sequoiadb),
+#  partition x2 values less than (5)
+#  ( subpartition x21 tablespace t1 engine sequoiadb,
+#    subpartition x22 tablespace t2 engine sequoiadb)
+#);
 #
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key (a,b))
-partition by range (a)
-subpartition by hash (a+b)
-( partition x1 values less than (1)
-  ( subpartition x11 tablespace t1 engine myisam,
-    subpartition x12 tablespace t2 engine myisam),
-   partition x2 values less than (5)
-  ( subpartition x21 tablespace t1 engine myisam,
-    subpartition x22 tablespace t2 engine myisam)
-);
+#SELECT * from t1;
+#
+#drop table t1;
 
-INSERT into t1 VALUES (1,1,1);
-INSERT into t1 VALUES (4,1,1);
---error ER_NO_PARTITION_FOR_GIVEN_VALUE
-INSERT into t1 VALUES (5,1,1);
-
-SELECT * from t1;
-
-ALTER TABLE t1
-partition by range (a)
-subpartition by hash (a+b)
-( partition x1 values less than (1)
-  ( subpartition x11 tablespace t1 engine myisam,
-    subpartition x12 tablespace t2 engine myisam),
-  partition x2 values less than (5)
-  ( subpartition x21 tablespace t1 engine myisam,
-    subpartition x22 tablespace t2 engine myisam)
-);
-
-SELECT * from t1;
-
-drop table t1;
+# InnoDB will return fail: A general tablespace named `t1` cannot be found
+##
+## Subpartition by hash, two partitions and two subpartitions
+## Defined tablespace
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key (a,b))
+#partition by range (a)
+#subpartition by hash (a+b)
+#( partition x1 values less than (1)
+#  ( subpartition x11 tablespace t1 engine sequoiadb,
+#    subpartition x12 tablespace t2 engine sequoiadb),
+#   partition x2 values less than (5)
+#  ( subpartition x21 tablespace t1 engine sequoiadb,
+#    subpartition x22 tablespace t2 engine sequoiadb)
+#);
+#
+#INSERT into t1 VALUES (1,1,1);
+#INSERT into t1 VALUES (4,1,1);
+#--error ER_NO_PARTITION_FOR_GIVEN_VALUE
+#INSERT into t1 VALUES (5,1,1);
+#
+#SELECT * from t1;
+#
+#ALTER TABLE t1
+#partition by range (a)
+#subpartition by hash (a+b)
+#( partition x1 values less than (1)
+#  ( subpartition x11 tablespace t1 engine sequoiadb,
+#    subpartition x12 tablespace t2 engine sequoiadb),
+#  partition x2 values less than (5)
+#  ( subpartition x21 tablespace t1 engine sequoiadb,
+#    subpartition x22 tablespace t2 engine sequoiadb)
+#);
+#
+#SELECT * from t1;
+#
+#drop table t1;
 
 #
 # Subpartition by hash, two partitions and two subpartitions
@@ -587,11 +606,11 @@ primary key (a,b))
 partition by range (a)
 subpartition by hash (a+b)
 ( partition x1 values less than (1)
-  ( subpartition x11 engine myisam,
-    subpartition x12 engine myisam),
+  ( subpartition x11 engine sequoiadb,
+    subpartition x12 engine sequoiadb),
   partition x2 values less than (5)
-  ( subpartition x21 engine myisam,
-    subpartition x22 engine myisam)
+  ( subpartition x21 engine sequoiadb,
+    subpartition x22 engine sequoiadb)
 );
 
 INSERT into t1 VALUES (1,1,1);
@@ -599,19 +618,21 @@ INSERT into t1 VALUES (4,1,1);
 --error ER_NO_PARTITION_FOR_GIVEN_VALUE
 INSERT into t1 VALUES (5,1,1);
 
+--sorted_result
 SELECT * from t1;
 
 ALTER TABLE t1
 partition by range (a)
 subpartition by hash (a+b)
 ( partition x1 values less than (1)
-  ( subpartition x11 engine myisam,
-    subpartition x12 engine myisam),
+  ( subpartition x11 engine sequoiadb,
+    subpartition x12 engine sequoiadb),
   partition x2 values less than (5)
-  ( subpartition x21 engine myisam,
-    subpartition x22 engine myisam)
+  ( subpartition x21 engine sequoiadb,
+    subpartition x22 engine sequoiadb)
 );
 
+--sorted_result
 SELECT * from t1;
 
 drop table t1;
@@ -620,7 +641,7 @@ drop table t1;
 # Bug #17894 Comparison with "less than" operator fails with Range partition 
 #
 CREATE TABLE t1 (c1 int default NULL, c2 varchar(30) default NULL, 
-c3 date default NULL) engine=myisam
+c3 date default NULL) engine=sequoiadb
 PARTITION BY RANGE (year(c3)) (PARTITION p0 VALUES LESS THAN (1995),
 PARTITION p1 VALUES LESS THAN (1996) , PARTITION p2 VALUES LESS THAN (1997) ,
 PARTITION p3 VALUES LESS THAN (1998) , PARTITION p4 VALUES LESS THAN (1999) ,
@@ -702,7 +723,7 @@ drop table t1;
 create table t1 (a int DEFAULT NULL,
                  b varchar(30) DEFAULT NULL,
                  c date DEFAULT NULL)
-ENGINE=MYISAM DEFAULT CHARSET=latin1;
+ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 
 insert into t1 values (1, 'abc', '1995-01-01');
 insert into t1 values (1, 'abc', '1995-01-02');
@@ -885,17 +906,21 @@ INSERT INTO t1 VALUES ('2006-05-13'),('2006-05-20'),('2006-05-30');
 INSERT INTO t1 VALUES ('2006-06-13'),('2006-06-20'),('2006-06-30');
 INSERT INTO t1 VALUES ('2006-07-13'),('2006-07-20'),('2006-07-30');
 
+--sorted_result
 SELECT * FROM t1
 WHERE a >= '2004-07-01' AND a <= '2004-09-30';
+--disable_result_log
 analyze table t1;
-EXPLAIN PARTITIONS SELECT * FROM t1
-WHERE a >= '2004-07-01' AND a <= '2004-09-30';
+--enable_result_log
+#EXPLAIN PARTITIONS SELECT * FROM t1
+#WHERE a >= '2004-07-01' AND a <= '2004-09-30';
+--sorted_result
 SELECT * from t1
 WHERE (a >= '2004-07-01' AND a <= '2004-09-30') OR
       (a >= '2005-07-01' AND a <= '2005-09-30');
-EXPLAIN PARTITIONS SELECT * from t1
-WHERE (a >= '2004-07-01' AND a <= '2004-09-30') OR
-      (a >= '2005-07-01' AND a <= '2005-09-30');
+#EXPLAIN PARTITIONS SELECT * from t1
+#WHERE (a >= '2004-07-01' AND a <= '2004-09-30') OR
+#      (a >= '2005-07-01' AND a <= '2005-09-30');
 DROP TABLE t1;
 
 #
@@ -978,19 +1003,22 @@ INSERT INTO t1 SELECT a + 40, b + 40 FROM t1;
 INSERT INTO t2 SELECT * FROM t1;
 
 --echo # plans should be identical
+--disable_result_log
 analyze table t1;
 analyze table t2;
-EXPLAIN SELECT a, MAX(b) FROM t1 WHERE a IN (10,100) GROUP BY a;
-EXPLAIN SELECT a, MAX(b) FROM t2 WHERE a IN (10,100) GROUP BY a;
+--enable_result_log
+#EXPLAIN SELECT a, MAX(b) FROM t1 WHERE a IN (10,100) GROUP BY a;
+#EXPLAIN SELECT a, MAX(b) FROM t2 WHERE a IN (10,100) GROUP BY a;
 
 FLUSH status;
+# SEQUOIASQLMAINSTREAM-259
 SELECT a, MAX(b) FROM t1 WHERE a IN (10, 100) GROUP BY a;
---echo # Should be no more than 2 reads.
-SHOW status LIKE 'handler_read_key';
+#--echo Should be no more than 2 reads.
+#SHOW status LIKE 'handler_read_key';
 
 FLUSH status;
 SELECT a, MAX(b) FROM t2 WHERE a IN (10, 100) GROUP BY a;
---echo # Should be no more than 2 reads.
-SHOW status LIKE 'handler_read_key';
+#--echo Should be no more than 2 reads.
+#SHOW status LIKE 'handler_read_key';
 
 DROP TABLE t1, t2;

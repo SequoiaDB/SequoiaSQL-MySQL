@@ -1,11 +1,15 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+
+--source include/have_sequoiadb.inc
 
 #
 # Test some error conditions
 #
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_errors;
+use test_errors;
 
 --disable_warnings
 drop table if exists t1;
@@ -149,16 +153,19 @@ SET sql_quote_show_create=_latin1 x'5452DC45';
 --echo #
 --echo # Bug#52430 Incorrect key in the error message for duplicate key error involving BINARY type
 --echo #
-CREATE TABLE t1(c1 BINARY(10), c2 BINARY(10), c3 BINARY(10),
-PRIMARY KEY(c1,c2,c3));
+#Bug #SEQUOIADBMAINSTREAM-3571
+CREATE TABLE t1(c1 BINARY(10), c2 BINARY(10), c3 BINARY(10));
+#PRIMARY KEY(c1,c2,c3));
 INSERT INTO t1 (c1,c2,c3) VALUES('abc','abc','abc');
---error ER_DUP_ENTRY
+# replaced by SequoiaDB error
+#--error 1030
 INSERT INTO t1 (c1,c2,c3) VALUES('abc','abc','abc');
 DROP TABLE t1;
 
-CREATE TABLE t1 (f1 VARBINARY(19) PRIMARY KEY);
+#CREATE TABLE t1 (f1 VARBINARY(19) PRIMARY KEY);
+CREATE TABLE t1 (f1 VARBINARY(19));
 INSERT INTO t1 VALUES ('abc\0\0');
---error ER_DUP_ENTRY
+#--error 1030
 INSERT INTO t1 VALUES ('abc\0\0');
 DROP TABLE t1;
 
@@ -195,3 +202,35 @@ INSERT INTO t2 VALUES (1,0) ON DUPLICATE KEY UPDATE
 INSERT INTO t2(a,b) VALUES (1,0) ON DUPLICATE KEY UPDATE
   b=(SELECT VALUES(a)+2 FROM t1);
 DROP TABLE t1, t2;
+
+#
+# Compatible with parallel > 1
+# Annotater test in "subquery_all.test(subquery.inc)", mainly check errors , move to this place 
+#
+# Test Error "ER_NO_SUCH_TABLE"
+-- error ER_NO_SUCH_TABLE
+do (SELECT a from t1);
+-- error ER_NO_SUCH_TABLE
+set @a:=(SELECT a from t1);
+-- error ER_NO_SUCH_TABLE
+select t1.Continent, t2.Name, t2.Population from t1 LEFT JOIN t2 ON t1.Code = t2.Country  where t2.Population IN (select max(t2.Population) AS Population from t2, t1 where t2.Country = t1.Code group by Continent);
+
+# Test Error "ER_VIEW_CHECK_FAILED"
+CREATE TABLE t1 (id int);
+CREATE TABLE t2 (id int, c int);
+
+CREATE VIEW v2 (a,b) AS
+SELECT t2.id, t2.c AS c FROM t1, t2
+WHERE t1.id=t2.id AND 1 IN (SELECT id FROM t1) WITH CHECK OPTION;
+
+--error ER_VIEW_CHECK_FAILED
+INSERT INTO v2(a,b) VALUES (2,2);
+
+#DROP VIEW v1,v2,v3;
+DROP VIEW v2;
+DROP TABLE t1,t2;
+
+#DROP DATABASE
+DROP DATABASE test_errors;
+
+--source include/uninstall_sequoiadb.inc

@@ -7,10 +7,11 @@ create table t1 as select repeat(' ',10) as a union select null;
 alter table t1 add key(a);
 show create table t1;
 insert into t1 values ("a"),("abc"),("abcd"),("hello"),("test");
-explain select * from t1 where a like 'abc%';
-explain select * from t1 where a like concat('abc','%');
+#explain select * from t1 where a like 'abc%';
+#explain select * from t1 where a like concat('abc','%');
 select * from t1 where a like "abc%";
 select * from t1 where a like concat("abc","%");
+# SEQUOIASQLMAINSTREAM-204
 select * from t1 where a like "ABC%";
 select * from t1 where a like "test%";
 select * from t1 where a like "te_t";

@@ -80,7 +80,7 @@ t1	CREATE TABLE `t1` (
   `NOW(4)` datetime(4) NOT NULL,
   `NOW(5)` datetime(5) NOT NULL,
   `NOW(6)` datetime(6) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT
 SYSDATE(0),
@@ -96,7 +96,7 @@ t1	CREATE TABLE `t1` (
   `SYSDATE(4)` datetime(4) NOT NULL,
   `SYSDATE(5)` datetime(5) NOT NULL,
   `SYSDATE(6)` datetime(6) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT
 FROM_UNIXTIME(1),
@@ -114,7 +114,7 @@ t1	CREATE TABLE `t1` (
   `FROM_UNIXTIME(1.12345)` datetime(5) DEFAULT NULL,
   `FROM_UNIXTIME(1.123456)` datetime(6) DEFAULT NULL,
   `FROM_UNIXTIME(1.1234567)` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing rounding from VARCHAR and TIME(6) to TIME(N)
@@ -2527,7 +2527,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` time NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing bad FSPs
@@ -2661,11 +2661,6 @@ a
 -01:00:00.000001
 -01:00:00.999999
 -838:59:59.000000
-EXPLAIN SELECT * FROM t1 WHERE a='01:02:03.456700';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	a	a	6	const	1	100.00	Using where; Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where (`test`.`t1`.`a` = '01:02:03.456700')
 SELECT * FROM t1 WHERE a='01:02:03.456700';
 a
 01:02:03.456700
@@ -2904,12 +2899,6 @@ a
 #
 # Testing Item_temporal_with_ref::print
 #
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a IN (990000,0);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	14	20.00	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where (`test`.`t1`.`a` in ('99:00:00.000000','00:00:00.000000'))
 #
 # Testing IN with index: field->store_packed
 #
@@ -2939,7 +2928,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2, t1;
 #
 # Testing CREATE TABLE .. SELECT
@@ -2950,7 +2939,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2, t1;
 #
 # Testing JOIN between TIME(6) and TIME(6)
@@ -3044,8 +3033,6 @@ INSERT INTO t1 VALUES ('00:01:02.12');
 INSERT INTO t1 VALUES ('00:01:02.123');
 INSERT INTO t1 VALUES ('00:01:02.1234');
 INSERT INTO t1 VALUES ('00:01:02.12345');
-INSERT INTO t1 VALUES ('00:01:02.12345');
-ERROR 23000: Duplicate entry '00:01:02.123450' for key 'a'
 DROP TABLE t1;
 #
 # Testing GROUP BY
@@ -3202,7 +3189,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `LEAST(TIME'00:00:00.1', TIME'00:00:00.12')` time(2) NOT NULL DEFAULT '00:00:00.00',
   `GREATEST(TIME'00:00:00.1', TIME'00:00:00.12')` time(2) NOT NULL DEFAULT '00:00:00.00'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing INSERT with near-maximum and near-minimum supported values.
@@ -3615,7 +3602,7 @@ t2	CREATE TABLE `t2` (
   `i` decimal(14,6) DEFAULT NULL,
   `d` decimal(14,6) DEFAULT NULL,
   `f` double DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1, t2;
 #
 # Testing that TIME behaves as INT/DECIMAL for numeric arithmetic
@@ -3666,7 +3653,7 @@ t2	CREATE TABLE `t2` (
   `TIME'10:10:10' / 1` decimal(11,4) DEFAULT NULL,
   `TIME'10:10:10.123' / 1` decimal(14,7) DEFAULT NULL,
   `TIME'10:10:10.123456' / 1` decimal(17,10) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -3727,7 +3714,7 @@ t2	CREATE TABLE `t2` (
   `MAX(t6)` time(6) DEFAULT NULL,
   `AVG(t6)` decimal(17,10) DEFAULT NULL,
   `SUM(t6)` decimal(35,6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -3850,14 +3837,14 @@ t2	CREATE TABLE `t2` (
   `TIMEDIFF(a,'00:00:00.000001')` time(6) DEFAULT NULL,
   `TIMEDIFF(a,a)` time(6) DEFAULT NULL,
   `TIMEDIFF(CAST(a AS TIME(0)), CAST('10:10:10' AS TIME(0)))` time DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT MAX(ADDTIME(a, '00:00:00.1')) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `MAX(ADDTIME(a, '00:00:00.1'))` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2;
 MAX(ADDTIME(a, '00:00:00.1'))
 01:00:00.100001
@@ -3932,7 +3919,7 @@ t1	CREATE TABLE `t1` (
   `TIMEDIFF(TIME'00:00:00.0000', TIME'00:00:00')` time(4) DEFAULT NULL,
   `TIMEDIFF(TIME'00:00:00.00000', TIME'00:00:00')` time(5) DEFAULT NULL,
   `TIMEDIFF(TIME'00:00:00.000000', TIME'00:00:00')` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 SELECT ADDTIME(TIME'00:00:00', TIME'00:00:00');
 ADDTIME(TIME'00:00:00', TIME'00:00:00')
@@ -4123,7 +4110,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `SEC_TO_TIME(3661)` time DEFAULT NULL,
   `CAST(SEC_TO_TIME(3661) AS CHAR)` varchar(10) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 SEC_TO_TIME(3661)	CAST(SEC_TO_TIME(3661) AS CHAR)
 01:01:01	01:01:01
@@ -4146,7 +4133,7 @@ t1	CREATE TABLE `t1` (
   `SEC_TO_TIME(3661.11111)` time(5) DEFAULT NULL,
   `SEC_TO_TIME(3661.111111)` time(6) DEFAULT NULL,
   `SEC_TO_TIME(3661.1111111)` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 SEC_TO_TIME(3661.1)	SEC_TO_TIME(3661.11)	SEC_TO_TIME(3661.111)	SEC_TO_TIME(3661.1111)	SEC_TO_TIME(3661.11111)	SEC_TO_TIME(3661.111111)	SEC_TO_TIME(3661.1111111)
 01:01:01.1	01:01:01.11	01:01:01.111	01:01:01.1111	01:01:01.11111	01:01:01.111111	01:01:01.111111
@@ -4265,54 +4252,6 @@ SET @@timestamp=default;
 #
 # Testing EXPLAIN EXTENDED SELECT for CAST(TIME(N))
 #
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS TIME);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as time) AS `CAST('10:10:10' AS TIME)`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS TIME(0));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as time) AS `CAST('10:10:10' AS TIME(0))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS TIME(1));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as time(1)) AS `CAST('10:10:10' AS TIME(1))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS TIME(2));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as time(2)) AS `CAST('10:10:10' AS TIME(2))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS TIME(3));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as time(3)) AS `CAST('10:10:10' AS TIME(3))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS TIME(4));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as time(4)) AS `CAST('10:10:10' AS TIME(4))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS TIME(5));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as time(5)) AS `CAST('10:10:10' AS TIME(5))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS TIME(6));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as time(6)) AS `CAST('10:10:10' AS TIME(6))`
 #
 # Testing CAST with bad FSPs
 #
@@ -4417,7 +4356,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(17) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT a, LENGTH(a) FROM t2;
 a	LENGTH(a)
 11:22:33.123000	15
@@ -4435,7 +4374,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` time(6) NOT NULL DEFAULT '11:22:33.123456'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Mixing TIME(6) with another TIME(6) in IF
@@ -4446,7 +4385,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -4458,7 +4397,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` time(2) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -4510,7 +4449,7 @@ t2	CREATE TABLE `t2` (
   `CASE WHEN 1 THEN t6 ELSE t1 END` time(6) DEFAULT NULL,
   `CASE WHEN 1 THEN t6 ELSE t3 END` time(6) DEFAULT NULL,
   `CASE WHEN 1 THEN t6 ELSE t4 END` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -4531,7 +4470,7 @@ t2	CREATE TABLE `t2` (
   `COALESCE(e,f)` time(4) DEFAULT NULL,
   `COALESCE(c,e)` time(3) DEFAULT NULL,
   `COALESCE(c,f)` time(4) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT
 CONCAT(COALESCE(a, b)), CONCAT(COALESCE(c, b)),
@@ -4547,7 +4486,7 @@ t2	CREATE TABLE `t2` (
   `CONCAT(COALESCE(e, f))` varchar(15) DEFAULT NULL,
   `CONCAT(COALESCE(c, e))` varchar(14) DEFAULT NULL,
   `CONCAT(COALESCE(c, f))` varchar(15) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -4559,7 +4498,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` time(6) NOT NULL DEFAULT '00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -4572,7 +4511,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` time(6) NOT NULL DEFAULT '00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY a;
 a
 00:11:22.123456
@@ -4590,7 +4529,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t0` time(6) NOT NULL DEFAULT '00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY t0;
 t0
 00:11:22.123456
@@ -4601,7 +4540,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t6` time(6) NOT NULL DEFAULT '00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY t6;
 t6
 00:11:22.123456
@@ -4612,7 +4551,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t3` time(4) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY t3;
 t3
 00:11:23.1230
@@ -4628,28 +4567,28 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(17) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT c FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(22) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT d FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(22) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT e FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(20) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -4740,11 +4679,7 @@ DROP TABLE t1;
 # Testing partitions
 #
 CREATE TABLE t1 (a TIME(6)) PARTITION BY KEY(a) PARTITIONS 4;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('00:00:00.000000');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('00:00:00.000001');
 INSERT INTO t1 VALUES ('00:00:00.000002');
 INSERT INTO t1 VALUES ('00:00:00.000003');
@@ -4787,55 +4722,13 @@ INSERT INTO t1 VALUES ('00:00:02.000004');
 INSERT INTO t1 VALUES ('00:00:02.000005');
 INSERT INTO t1 VALUES ('00:00:02.000006');
 SELECT * FROM t1 PARTITION(p0);
-a
-00:00:01.000002
-00:00:01.000006
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p1);
-a
-00:00:00.000000
-00:00:00.000001
-00:00:00.000002
-00:00:00.000003
-00:00:00.000004
-00:00:00.000005
-00:00:00.000006
-00:00:00.000010
-00:00:00.000011
-00:00:00.000012
-00:00:00.000013
-00:00:00.000014
-00:00:00.000015
-00:00:00.000016
-00:00:00.000110
-00:00:00.000111
-00:00:00.000112
-00:00:00.000113
-00:00:00.000114
-00:00:00.000115
-00:00:00.000116
-00:00:00.000210
-00:00:00.000211
-00:00:00.000212
-00:00:00.000213
-00:00:00.000214
-00:00:00.000215
-00:00:00.000216
-00:00:01.000003
-00:00:02.000001
-00:00:02.000003
-00:00:02.000005
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p2);
-a
-00:00:01.000000
-00:00:01.000004
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p3);
-a
-00:00:01.000001
-00:00:01.000005
-00:00:02.000000
-00:00:02.000002
-00:00:02.000004
-00:00:02.000006
+ERROR HY000: Cannot specify HASH or KEY partitions
 ALTER TABLE t1 PARTITION BY RANGE COLUMNS (a)
 (
 PARTITION p0 VALUES LESS THAN ('00:00:00.000200'),
@@ -4843,8 +4736,6 @@ PARTITION p1 VALUES LESS THAN ('00:00:01'),
 PARTITION p2 VALUES LESS THAN ('00:00:02.000003'),
 PARTITION p3 VALUES LESS THAN MAXVALUE
 );
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT * FROM t1 PARTITION(p0);
 a
 00:00:00.000000
@@ -4868,8 +4759,6 @@ a
 00:00:00.000114
 00:00:00.000115
 00:00:00.000116
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT * FROM t1 PARTITION(p1);
 a
 00:00:00.000210
@@ -4881,21 +4770,21 @@ a
 00:00:00.000216
 SELECT * FROM t1 PARTITION(p2);
 a
-00:00:01.000002
-00:00:01.000006
-00:00:01.000003
-00:00:02.000001
 00:00:01.000000
-00:00:01.000004
 00:00:01.000001
+00:00:01.000002
+00:00:01.000003
+00:00:01.000004
 00:00:01.000005
+00:00:01.000006
 00:00:02.000000
+00:00:02.000001
 00:00:02.000002
 SELECT * FROM t1 PARTITION(p3);
 a
 00:00:02.000003
-00:00:02.000005
 00:00:02.000004
+00:00:02.000005
 00:00:02.000006
 DROP TABLE t1;
 #
@@ -4904,17 +4793,13 @@ DROP TABLE t1;
 CREATE TABLE t1 (s1 TIME(6))
 PARTITION BY RANGE COLUMNS (s1)
 (PARTITION p1 VALUES LESS THAN (TIME'01:01:01.000001'));
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `s1` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50500 PARTITION BY RANGE  COLUMNS(s1)
-(PARTITION p1 VALUES LESS THAN ('01:01:01.000001') ENGINE = MyISAM) */
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
+(PARTITION p1 VALUES LESS THAN ('01:01:01.000001') ENGINE = SequoiaDB) */
 DROP TABLE t1;
 #
 # Testing MAKETIME()
@@ -4952,7 +4837,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` time DEFAULT NULL,
   `b` varchar(10) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT
 MAKETIME(1, 1, 1),
@@ -4972,7 +4857,7 @@ t1	CREATE TABLE `t1` (
   `MAKETIME(1, 1, 1.0000)` time(4) DEFAULT NULL,
   `MAKETIME(1, 1, 1.00000)` time(5) DEFAULT NULL,
   `MAKETIME(1, 1, 1.000000)` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing rounding with MAKETIME()
@@ -5107,7 +4992,7 @@ t1	CREATE TABLE `t1` (
   `CAST(1.1 AS TIME(6))` time(6) DEFAULT NULL,
   `CAST('1' AS TIME(6))` time(6) DEFAULT NULL,
   `CAST(1e0 AS TIME(6))` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 SET sql_mode = default;
 CREATE TABLE t1 (a TIME, b TIME(6));
@@ -5118,7 +5003,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS TIME)` time DEFAULT NULL,
   `CAST(b AS TIME)` time DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT CAST(a AS TIME(0)), CAST(b AS TIME(0)) FROM t1;
 SHOW CREATE TABLE t2;
@@ -5126,7 +5011,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS TIME(0))` time DEFAULT NULL,
   `CAST(b AS TIME(0))` time DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT CAST(a AS TIME(6)), CAST(b AS TIME(6)) FROM t1;
 SHOW CREATE TABLE t2;
@@ -5134,7 +5019,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS TIME(6))` time(6) DEFAULT NULL,
   `CAST(b AS TIME(6))` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 #
 # Testing Item_time_typecast::val_str
@@ -5250,7 +5135,7 @@ t1	CREATE TABLE `t1` (
   `TIME(TIMESTAMP('2001-01-01 00:00:00.1234'))` time(4) DEFAULT NULL,
   `TIME(TIMESTAMP('2001-01-01 00:00:00.12345'))` time(5) DEFAULT NULL,
   `TIME(TIMESTAMP('2001-01-01 00:00:00.123456'))` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing comparison between a TIME(6) field and a TIME(N) type cast
@@ -5377,7 +5262,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` longtext
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 a
 11:22:33.123456
@@ -5446,7 +5331,7 @@ CALL p1//
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP PROCEDURE p1//
 CREATE FUNCTION p1 (a TIME(6)) RETURNS TIME(6)
 BEGIN
@@ -5468,7 +5353,7 @@ DROP FUNCTION p1//
 CREATE TABLE t1 (a TIME(6));
 SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='t1';;
 TABLE_CATALOG	def
-TABLE_SCHEMA	test
+TABLE_SCHEMA	#
 TABLE_NAME	t1
 COLUMN_NAME	a
 ORDINAL_POSITION	1
@@ -5601,7 +5486,7 @@ t1	CREATE TABLE `t1` (
   `t5s0` time(5) DEFAULT NULL,
   `t6s0` time(6) DEFAULT NULL,
   `t0ms` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT
 ADDTIME(TIME'00:00:00', TIME'00:00:01') AS t0s0,
@@ -5633,7 +5518,7 @@ t1	CREATE TABLE `t1` (
   `t4s0` time(4) DEFAULT NULL,
   `t5s0` time(5) DEFAULT NULL,
   `t6s0` time(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing that CAST from various fields to TIME rounds.
@@ -5736,7 +5621,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` datetime NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing internal representation format for DATETIME(N)
@@ -7211,11 +7096,6 @@ a
 2000-01-01 01:02:03.000000
 0000-00-00 23:59:59.999999
 0000-00-00 00:00:00.000000
-EXPLAIN SELECT * FROM t1 WHERE a='2000-01-01 01:02:03.456700';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	a	a	8	const	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where (`test`.`t1`.`a` = '2000-01-01 01:02:03.456700')
 SELECT * FROM t1 WHERE a='2000-01-01 01:02:03.456700';
 a
 2000-01-01 01:02:03.456700
@@ -7792,7 +7672,7 @@ t0	2001-01-01 10:10:10
 DROP TABLE t1;
 #
 # Testing truncation warnings
-#
+# 
 CREATE TABLE t1 (a DATETIME(6));
 INSERT INTO t1 VALUES ('0000-00-00 00:00:00.111111 xxx');
 Warnings:
@@ -7892,12 +7772,6 @@ a
 #
 # Testing Item_temporal_with_ref::print
 #
-EXPLAIN EXTENDED SELECT * FROM t1 WHERE a IN (0.000001,0);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	11	20.00	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where (`test`.`t1`.`a` in ('0000-00-00 00:00:00.000001','0000-00-00 00:00:00.000000'))
 #
 # Testing IN with index: involves field->store_packed()
 #
@@ -7931,7 +7805,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2, t1;
 #
 # Testing CREATE TABLE .. SELECT
@@ -7942,7 +7816,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2, t1;
 #
 # Testing JOIN between DATETIME(6) and DATETIME(6)
@@ -8037,7 +7911,7 @@ INSERT INTO t1 VALUES ('2000-01-01 00:01:02.123');
 INSERT INTO t1 VALUES ('2000-01-01 00:01:02.1234');
 INSERT INTO t1 VALUES ('2000-01-01 00:01:02.12345');
 INSERT INTO t1 VALUES ('2000-01-01 00:01:02.12345');
-ERROR 23000: Duplicate entry '2000-01-01 00:01:02.123450' for key 'a'
+ERROR 23000: Duplicate entry '{ "a": "2000-01-01 00:01:02.123450" }' for key 'a'
 DROP TABLE t1;
 #
 # Testing GROUP BY
@@ -8208,7 +8082,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `l` datetime(2) DEFAULT NULL,
   `g` datetime(2) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing INSERT, MAX and MIN values
@@ -8530,7 +8404,7 @@ t2	CREATE TABLE `t2` (
   `i` decimal(21,6) DEFAULT NULL,
   `d` decimal(21,6) DEFAULT NULL,
   `f` double DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1, t2;
 #
 # Testing that DATETIME behaves as INT/DECIMAL for numeric arithmetic
@@ -8581,7 +8455,7 @@ t2	CREATE TABLE `t2` (
   `TIMESTAMP'2001-01-01 10:10:10' / 1` decimal(18,4) DEFAULT NULL,
   `TIMESTAMP'2001-01-01 10:10:10.123' / 1` decimal(21,7) DEFAULT NULL,
   `TIMESTAMP'2001-01-01 10:10:10.123456' / 1` decimal(24,10) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -8642,7 +8516,7 @@ t2	CREATE TABLE `t2` (
   `MAX(t6)` datetime(6) DEFAULT NULL,
   `AVG(t6)` decimal(24,10) DEFAULT NULL,
   `SUM(t6)` decimal(42,6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 SET sql_mode = default;
@@ -8739,7 +8613,7 @@ t2	CREATE TABLE `t2` (
   `ADDTIME(CAST(a AS DATETIME(0)), CAST('10:00:00' AS TIME(0)))` datetime DEFAULT NULL,
   `ADDTIME(CAST(a AS DATETIME(6)), CAST('10:00:00' AS TIME(0)))` datetime(6) DEFAULT NULL,
   `ADDTIME(CAST(a AS DATETIME(0)), CAST('10:00:00' AS TIME(6)))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 SELECT TIMESTAMP(a, '10:00:00') FROM t1;
 TIMESTAMP(a, '10:00:00')
@@ -8786,7 +8660,7 @@ t2	CREATE TABLE `t2` (
   `TIMESTAMP(CAST(a AS DATETIME(0)), CAST('00:00:00' AS TIME(0)))` datetime DEFAULT NULL,
   `TIMESTAMP(CAST(a AS DATETIME(6)), CAST('00:00:00' AS TIME(0)))` datetime(6) DEFAULT NULL,
   `TIMESTAMP(CAST(a AS DATETIME(0)), CAST('00:00:00' AS TIME(6)))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 SELECT SUBTIME(a, '00:00:00.000001') FROM t1 ORDER BY a;
 SUBTIME(a, '00:00:00.000001')
@@ -8925,14 +8799,14 @@ t2	CREATE TABLE `t2` (
   `DATE_SUB(CAST(a AS DATETIME), INTERVAL 1 SECOND)` datetime DEFAULT NULL,
   `DATE_ADD(CAST(a AS DATETIME), INTERVAL 1 MICROSECOND)` datetime(6) DEFAULT NULL,
   `DATE_SUB(CAST(a AS DATETIME), INTERVAL 1 MICROSECOND)` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT MAX(ADDTIME(a, '00:00:00.1')) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `MAX(ADDTIME(a, '00:00:00.1'))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2;
 MAX(ADDTIME(a, '00:00:00.1'))
 2001-01-01 01:00:00.100001
@@ -8970,7 +8844,7 @@ t1	CREATE TABLE `t1` (
   `t5s0` datetime(5) DEFAULT NULL,
   `t6s0` datetime(6) DEFAULT NULL,
   `t0ms` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 AS SELECT
 CONVERT_TZ(TIMESTAMP'2001-01-01 00:00:00', '+00:00', '+01:00') AS d0,
@@ -8990,7 +8864,7 @@ t1	CREATE TABLE `t1` (
   `d4` datetime(4) DEFAULT NULL,
   `d5` datetime(5) DEFAULT NULL,
   `d6` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing copy from DATETIME to DATETIME(6) and vice versa
@@ -9089,54 +8963,6 @@ DROP TABLE t1;
 #
 # Testing EXPLAIN EXTENDED SELECT for CAST(DATETIME(N))
 #
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS DATETIME);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as datetime) AS `CAST('10:10:10' AS DATETIME)`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS DATETIME(0));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as datetime) AS `CAST('10:10:10' AS DATETIME(0))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS DATETIME(1));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as datetime(1)) AS `CAST('10:10:10' AS DATETIME(1))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS DATETIME(2));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as datetime(2)) AS `CAST('10:10:10' AS DATETIME(2))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS DATETIME(3));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as datetime(3)) AS `CAST('10:10:10' AS DATETIME(3))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS DATETIME(4));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as datetime(4)) AS `CAST('10:10:10' AS DATETIME(4))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS DATETIME(5));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as datetime(5)) AS `CAST('10:10:10' AS DATETIME(5))`
-EXPLAIN EXTENDED SELECT CAST('10:10:10' AS DATETIME(6));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select cast('10:10:10' as datetime(6)) AS `CAST('10:10:10' AS DATETIME(6))`
 #
 # Testing CAST with bad FSPs
 #
@@ -9250,7 +9076,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT a, LENGTH(a) FROM t2;
 a	LENGTH(a)
 2001-01-01 11:22:33.123000	26
@@ -9557,7 +9383,7 @@ t1	CREATE TABLE `t1` (
   `TIMESTAMP(TIMESTAMP('2001-01-01 00:00:00.1234'))` datetime(4) DEFAULT NULL,
   `TIMESTAMP(TIMESTAMP('2001-01-01 00:00:00.12345'))` datetime(5) DEFAULT NULL,
   `TIMESTAMP(TIMESTAMP('2001-01-01 00:00:00.123456'))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing DEFAULT value
@@ -9567,7 +9393,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` datetime(6) NOT NULL DEFAULT '2000-01-01 11:22:33.123456'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Mixing varios DATETIME(N) in CASE
@@ -9619,7 +9445,7 @@ t2	CREATE TABLE `t2` (
   `CASE WHEN 1 THEN t6 ELSE t1 END` datetime(6) DEFAULT NULL,
   `CASE WHEN 1 THEN t6 ELSE t3 END` datetime(6) DEFAULT NULL,
   `CASE WHEN 1 THEN t6 ELSE t4 END` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -9646,7 +9472,7 @@ t2	CREATE TABLE `t2` (
   `COALESCE(e, f)` datetime(4) DEFAULT NULL,
   `COALESCE(c, e)` datetime(3) DEFAULT NULL,
   `COALESCE(c, f)` datetime(4) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT
 CONCAT(COALESCE(a, b)), CONCAT(COALESCE(c, b)),
@@ -9662,7 +9488,7 @@ t2	CREATE TABLE `t2` (
   `CONCAT(COALESCE(e, f))` varchar(24) DEFAULT NULL,
   `CONCAT(COALESCE(c, e))` varchar(23) DEFAULT NULL,
   `CONCAT(COALESCE(c, f))` varchar(24) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -9674,7 +9500,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -9687,7 +9513,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(1, a, b)` datetime(2) DEFAULT NULL,
   `IF(1, b, a)` datetime(2) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -9699,7 +9525,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` datetime(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -9712,7 +9538,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` datetime(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY a;
 a
 2001-01-01 00:11:22.123456
@@ -9728,21 +9554,21 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t0` datetime(1) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT t1 FROM t1 UNION SELECT t3 FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t1` datetime(3) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT t3 FROM t1 UNION SELECT t4 FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t3` datetime(4) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -9755,7 +9581,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` datetime(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY a;
 a
 2001-01-01 00:11:22.123456
@@ -9766,7 +9592,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `b` datetime(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY b;
 b
 2001-01-01 00:11:22.123456
@@ -9796,28 +9622,28 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT c FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT d FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT e FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -9882,11 +9708,7 @@ DROP TABLE t1;
 # Testing partitions
 #
 CREATE TABLE t1 (a DATETIME(6)) PARTITION BY KEY(a) PARTITIONS 4;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000000');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000001');
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000002');
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000003');
@@ -9929,55 +9751,13 @@ INSERT INTO t1 VALUES ('2001-01-01 00:00:02.000004');
 INSERT INTO t1 VALUES ('2001-01-01 00:00:02.000005');
 INSERT INTO t1 VALUES ('2001-01-01 00:00:02.000006');
 SELECT * FROM t1 PARTITION(p0);
-a
-2001-01-01 00:00:01.000000
-2001-01-01 00:00:01.000004
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p1);
-a
-2001-01-01 00:00:01.000001
-2001-01-01 00:00:01.000005
-2001-01-01 00:00:02.000000
-2001-01-01 00:00:02.000002
-2001-01-01 00:00:02.000004
-2001-01-01 00:00:02.000006
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p2);
-a
-2001-01-01 00:00:01.000002
-2001-01-01 00:00:01.000006
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p3);
-a
-2001-01-01 00:00:00.000000
-2001-01-01 00:00:00.000001
-2001-01-01 00:00:00.000002
-2001-01-01 00:00:00.000003
-2001-01-01 00:00:00.000004
-2001-01-01 00:00:00.000005
-2001-01-01 00:00:00.000006
-2001-01-01 00:00:00.000010
-2001-01-01 00:00:00.000011
-2001-01-01 00:00:00.000012
-2001-01-01 00:00:00.000013
-2001-01-01 00:00:00.000014
-2001-01-01 00:00:00.000015
-2001-01-01 00:00:00.000016
-2001-01-01 00:00:00.000110
-2001-01-01 00:00:00.000111
-2001-01-01 00:00:00.000112
-2001-01-01 00:00:00.000113
-2001-01-01 00:00:00.000114
-2001-01-01 00:00:00.000115
-2001-01-01 00:00:00.000116
-2001-01-01 00:00:00.000210
-2001-01-01 00:00:00.000211
-2001-01-01 00:00:00.000212
-2001-01-01 00:00:00.000213
-2001-01-01 00:00:00.000214
-2001-01-01 00:00:00.000215
-2001-01-01 00:00:00.000216
-2001-01-01 00:00:01.000003
-2001-01-01 00:00:02.000001
-2001-01-01 00:00:02.000003
-2001-01-01 00:00:02.000005
+ERROR HY000: Cannot specify HASH or KEY partitions
 ALTER TABLE t1 PARTITION BY RANGE COLUMNS (a)
 (
 PARTITION p0 VALUES LESS THAN ('2001-01-01 00:00:00.000200'),
@@ -9985,8 +9765,6 @@ PARTITION p1 VALUES LESS THAN ('2001-01-01 00:00:01'),
 PARTITION p2 VALUES LESS THAN ('2001-01-01 00:00:02.000003'),
 PARTITION p3 VALUES LESS THAN MAXVALUE
 );
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT * FROM t1 PARTITION(p0);
 a
 2001-01-01 00:00:00.000000
@@ -10010,8 +9788,6 @@ a
 2001-01-01 00:00:00.000114
 2001-01-01 00:00:00.000115
 2001-01-01 00:00:00.000116
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT * FROM t1 PARTITION(p1);
 a
 2001-01-01 00:00:00.000210
@@ -10024,21 +9800,21 @@ a
 SELECT * FROM t1 PARTITION(p2);
 a
 2001-01-01 00:00:01.000000
-2001-01-01 00:00:01.000004
 2001-01-01 00:00:01.000001
-2001-01-01 00:00:01.000005
-2001-01-01 00:00:02.000000
-2001-01-01 00:00:02.000002
 2001-01-01 00:00:01.000002
-2001-01-01 00:00:01.000006
 2001-01-01 00:00:01.000003
+2001-01-01 00:00:01.000004
+2001-01-01 00:00:01.000005
+2001-01-01 00:00:01.000006
+2001-01-01 00:00:02.000000
 2001-01-01 00:00:02.000001
+2001-01-01 00:00:02.000002
 SELECT * FROM t1 PARTITION(p3);
 a
-2001-01-01 00:00:02.000004
-2001-01-01 00:00:02.000006
 2001-01-01 00:00:02.000003
+2001-01-01 00:00:02.000004
 2001-01-01 00:00:02.000005
+2001-01-01 00:00:02.000006
 DROP TABLE t1;
 #
 # Checking that DATETIME/DATE literals can be a partition LESS value
@@ -10047,18 +9823,14 @@ CREATE TABLE t1 (s1 DATETIME(6))
 PARTITION BY RANGE COLUMNS (s1)
 (PARTITION p1 VALUES LESS THAN (TIMESTAMP'2001-01-01 01:01:01.000001'),
 PARTITION p2 VALUES LESS THAN (DATE'2002-01-01'));
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `s1` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50500 PARTITION BY RANGE  COLUMNS(s1)
-(PARTITION p1 VALUES LESS THAN ('2001-01-01 01:01:01.000001') ENGINE = MyISAM,
- PARTITION p2 VALUES LESS THAN ('2002-01-01') ENGINE = MyISAM) */
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
+(PARTITION p1 VALUES LESS THAN ('2001-01-01 01:01:01.000001') ENGINE = SequoiaDB,
+ PARTITION p2 VALUES LESS THAN ('2002-01-01') ENGINE = SequoiaDB) */
 DROP TABLE t1;
 #
 # Testing CAST to DATETIME and DATETIME(6)
@@ -10101,7 +9873,7 @@ t1	CREATE TABLE `t1` (
   `CAST(111.1 AS DATETIME(6))` datetime(6) DEFAULT NULL,
   `CAST('20001111' AS DATETIME(6))` datetime(6) DEFAULT NULL,
   `CAST(111e0 AS DATETIME(6))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 (a DATETIME, b DATETIME(6));
 INSERT INTO t1 VALUES ('2001-01-01 11:22:33', '2001-01-01 11:22:33.123456');
@@ -10111,7 +9883,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS DATETIME)` datetime DEFAULT NULL,
   `CAST(b AS DATETIME)` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT CAST(a AS DATETIME(0)), CAST(b AS DATETIME(0)) FROM t1;
 SHOW CREATE TABLE t2;
@@ -10119,7 +9891,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS DATETIME(0))` datetime DEFAULT NULL,
   `CAST(b AS DATETIME(0))` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT CAST(a AS DATETIME(6)), CAST(b AS DATETIME(6)) FROM t1;
 SHOW CREATE TABLE t2;
@@ -10127,7 +9899,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS DATETIME(6))` datetime(6) DEFAULT NULL,
   `CAST(b AS DATETIME(6))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 #
 # Testing Item_datetime_typecast::val_str
@@ -10336,7 +10108,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` longtext
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 a
 2001-01-01 11:22:33.123456
@@ -10405,7 +10177,7 @@ CALL p1//
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP PROCEDURE p1//
 CREATE FUNCTION p1 (a DATETIME(6)) RETURNS DATETIME(6)
 BEGIN
@@ -10430,7 +10202,7 @@ DROP FUNCTION p1//
 CREATE TABLE t1 (a DATETIME(6));
 SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='t1';;
 TABLE_CATALOG	def
-TABLE_SCHEMA	test
+TABLE_SCHEMA	#
 TABLE_NAME	t1
 COLUMN_NAME	a
 ORDINAL_POSITION	1
@@ -10740,7 +10512,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing internal representation format for DATETIME(N)
@@ -12364,11 +12136,6 @@ a
 0000-00-00 00:00:00.000000
 0000-00-00 00:00:00.000000
 0000-00-00 00:00:00.000000
-EXPLAIN SELECT * FROM t1 WHERE a='2000-01-01 01:02:03.456700';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	a	a	7	const	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where (`test`.`t1`.`a` = '2000-01-01 01:02:03.456700')
 SELECT * FROM t1 WHERE a='2000-01-01 01:02:03.456700';
 a
 2000-01-01 01:02:03.456700
@@ -12667,7 +12434,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2, t1;
 #
 # Testing CREATE TABLE .. SELECT
@@ -12678,7 +12445,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2, t1;
 #
 # Testing JOIN between TIMESTAMP(6) and TIMESTAMP(6)
@@ -12777,7 +12544,7 @@ INSERT INTO t1 VALUES ('2000-01-01 00:01:02.123');
 INSERT INTO t1 VALUES ('2000-01-01 00:01:02.1234');
 INSERT INTO t1 VALUES ('2000-01-01 00:01:02.12345');
 INSERT INTO t1 VALUES ('2000-01-01 00:01:02.12345');
-ERROR 23000: Duplicate entry '2000-01-01 00:01:02.123450' for key 'a'
+ERROR 23000: Duplicate entry '{ "a": {"$timestamp": "2000-01-01-00.01.02.123450"} }' for key 'a'
 DROP TABLE t1;
 #
 # Testing GROUP BY
@@ -12851,7 +12618,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `LEAST(a, b)` timestamp(2) NOT NULL DEFAULT '0000-00-00 00:00:00.00',
   `GREATEST(a, b)` timestamp(2) NOT NULL DEFAULT '0000-00-00 00:00:00.00'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -13248,7 +13015,7 @@ t2	CREATE TABLE `t2` (
   `i` decimal(21,6) NOT NULL DEFAULT '0.000000',
   `d` decimal(21,6) NOT NULL DEFAULT '0.000000',
   `f` double NOT NULL DEFAULT '0'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1, t2;
 #
 # Testing that TIMESTAMP behaves as INT/DECIMAL for numeric arithmetic
@@ -13299,7 +13066,7 @@ t2	CREATE TABLE `t2` (
   `TIMESTAMP'2001-01-01 10:10:10' / 1` decimal(18,4) DEFAULT NULL,
   `TIMESTAMP'2001-01-01 10:10:10.123' / 1` decimal(21,7) DEFAULT NULL,
   `TIMESTAMP'2001-01-01 10:10:10.123456' / 1` decimal(24,10) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -13360,7 +13127,7 @@ t2	CREATE TABLE `t2` (
   `MAX(t6)` datetime(6) DEFAULT NULL,
   `AVG(t6)` decimal(24,10) DEFAULT NULL,
   `SUM(t6)` decimal(42,6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -13470,7 +13237,7 @@ t2	CREATE TABLE `t2` (
   `ADDTIME(CAST(a AS DATETIME(0)), 100000)` datetime DEFAULT NULL,
   `ADDTIME(CAST(a AS DATETIME(0)), 100000.1)` datetime(1) DEFAULT NULL,
   `ADDTIME(a,a)` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 SELECT TIMESTAMP(a, '10:00:00') FROM t1;
 TIMESTAMP(a, '10:00:00')
@@ -13525,7 +13292,7 @@ t2	CREATE TABLE `t2` (
   `TIMESTAMP(CAST(a AS DATETIME(0)), CAST('00:00:00' AS TIME(0)))` datetime DEFAULT NULL,
   `TIMESTAMP(CAST(a AS DATETIME(6)), CAST('00:00:00' AS TIME(0)))` datetime(6) DEFAULT NULL,
   `TIMESTAMP(CAST(a AS DATETIME(0)), CAST('00:00:00' AS TIME(6)))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 SELECT SUBTIME(a, '00:00:00.000001') FROM t1 ORDER BY a;
 SUBTIME(a, '00:00:00.000001')
@@ -13572,7 +13339,7 @@ t2	CREATE TABLE `t2` (
   `SUBTIME(CAST(a AS DATETIME(0)), 100000)` datetime DEFAULT NULL,
   `SUBTIME(CAST(a AS DATETIME(0)), 100000.1)` datetime(1) DEFAULT NULL,
   `SUBTIME(a,a)` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 SELECT DATE_ADD(a, INTERVAL 1 MINUTE) FROM t1 ORDER BY a;
 DATE_ADD(a, INTERVAL 1 MINUTE)
@@ -13671,14 +13438,14 @@ t2	CREATE TABLE `t2` (
   `DATE_SUB(CAST(a AS DATETIME), INTERVAL 1 SECOND)` datetime DEFAULT NULL,
   `DATE_ADD(CAST(a AS DATETIME), INTERVAL 1 MICROSECOND)` datetime(6) DEFAULT NULL,
   `DATE_SUB(CAST(a AS DATETIME), INTERVAL 1 MICROSECOND)` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT MAX(DATE_ADD(a, INTERVAL 1 MINUTE)) FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `MAX(DATE_ADD(a, INTERVAL 1 MINUTE))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2;
 MAX(DATE_ADD(a, INTERVAL 1 MINUTE))
 2001-01-01 01:01:00.000001
@@ -13849,7 +13616,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) NOT NULL DEFAULT ''
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT a, LENGTH(a) FROM t2;
 a	LENGTH(a)
 2001-01-01 11:22:33.123000	26
@@ -13865,42 +13632,42 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(1) NOT NULL DEFAULT CURRENT_TIMESTAMP(1) ON UPDATE CURRENT_TIMESTAMP(1)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 (a TIMESTAMP(2) NOT NULL DEFAULT CURRENT_TIMESTAMP(2) ON UPDATE CURRENT_TIMESTAMP(2));
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(2) NOT NULL DEFAULT CURRENT_TIMESTAMP(2) ON UPDATE CURRENT_TIMESTAMP(2)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 (a TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3));
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 (a TIMESTAMP(4) NOT NULL DEFAULT CURRENT_TIMESTAMP(4) ON UPDATE CURRENT_TIMESTAMP(4));
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(4) NOT NULL DEFAULT CURRENT_TIMESTAMP(4) ON UPDATE CURRENT_TIMESTAMP(4)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 (a TIMESTAMP(5) NOT NULL DEFAULT CURRENT_TIMESTAMP(5) ON UPDATE CURRENT_TIMESTAMP(5));
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(5) NOT NULL DEFAULT CURRENT_TIMESTAMP(5) ON UPDATE CURRENT_TIMESTAMP(5)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 (a TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6));
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing DEFAULT value
@@ -13910,7 +13677,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(6) NOT NULL DEFAULT '2000-01-01 11:22:33.123456'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing DEFAULT CURRENT_TIMESTAMP
@@ -14057,7 +13824,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000' ON UPDATE CURRENT_TIMESTAMP(6)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 (a DATETIME(6) ON UPDATE CURRENT_TIMESTAMP);
 ERROR HY000: Invalid ON UPDATE clause for 'a' column
@@ -14079,7 +13846,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` datetime(6) DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Testing that ON UPDATE CURRENT_TIMESTAMP(n) truncates rather than rounds
@@ -14156,7 +13923,7 @@ t2	CREATE TABLE `t2` (
   `CASE WHEN 1 THEN t6 ELSE t1 END` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000',
   `CASE WHEN 1 THEN t6 ELSE t3 END` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000',
   `CASE WHEN 1 THEN t6 ELSE t4 END` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -14183,7 +13950,7 @@ t2	CREATE TABLE `t2` (
   `COALESCE(e, f)` timestamp(4) NOT NULL DEFAULT '0000-00-00 00:00:00.0000',
   `COALESCE(c, e)` timestamp(3) NOT NULL DEFAULT '0000-00-00 00:00:00.000',
   `COALESCE(c, f)` timestamp(4) NOT NULL DEFAULT '0000-00-00 00:00:00.0000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT
 CONCAT(COALESCE(a, b)), CONCAT(COALESCE(c, b)),
@@ -14199,7 +13966,7 @@ t2	CREATE TABLE `t2` (
   `CONCAT(COALESCE(e, f))` varchar(24) NOT NULL DEFAULT '',
   `CONCAT(COALESCE(c, e))` varchar(23) NOT NULL DEFAULT '',
   `CONCAT(COALESCE(c, f))` varchar(24) NOT NULL DEFAULT ''
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -14211,7 +13978,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -14224,7 +13991,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `IF(1, a, b)` timestamp(2) NOT NULL DEFAULT '0000-00-00 00:00:00.00',
   `IF(1, b, a)` timestamp(2) NOT NULL DEFAULT '0000-00-00 00:00:00.00'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -14236,7 +14003,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -14249,7 +14016,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2 ORDER BY a;
 a
 2001-01-01 00:11:22.123456
@@ -14265,21 +14032,21 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t0` timestamp(1) NOT NULL DEFAULT '0000-00-00 00:00:00.0'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT t1 FROM t1 UNION SELECT t3 FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t1` timestamp(3) NOT NULL DEFAULT '0000-00-00 00:00:00.000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT t3 FROM t1 UNION SELECT t4 FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `t3` timestamp(4) NOT NULL DEFAULT '0000-00-00 00:00:00.0000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -14351,28 +14118,28 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT c FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT d FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 CREATE TABLE t2 AS SELECT a FROM t1 UNION SELECT e FROM t1;
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(26) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -14404,11 +14171,7 @@ DROP TABLE t1;
 # Testing partitions
 #
 CREATE TABLE t1 (a TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)) PARTITION BY KEY(a) PARTITIONS 4;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000000');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000001');
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000002');
 INSERT INTO t1 VALUES ('2001-01-01 00:00:00.000003');
@@ -14451,55 +14214,13 @@ INSERT INTO t1 VALUES ('2001-01-01 00:00:02.000004');
 INSERT INTO t1 VALUES ('2001-01-01 00:00:02.000005');
 INSERT INTO t1 VALUES ('2001-01-01 00:00:02.000006');
 SELECT * FROM t1 PARTITION(p0);
-a
-2001-01-01 00:00:00.000003
-2001-01-01 00:00:00.000011
-2001-01-01 00:00:00.000015
-2001-01-01 00:00:00.000111
-2001-01-01 00:00:00.000115
-2001-01-01 00:00:00.000211
-2001-01-01 00:00:00.000215
-2001-01-01 00:00:01.000003
-2001-01-01 00:00:02.000003
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p1);
-a
-2001-01-01 00:00:00.000000
-2001-01-01 00:00:00.000004
-2001-01-01 00:00:00.000012
-2001-01-01 00:00:00.000016
-2001-01-01 00:00:00.000112
-2001-01-01 00:00:00.000116
-2001-01-01 00:00:00.000212
-2001-01-01 00:00:00.000216
-2001-01-01 00:00:01.000002
-2001-01-01 00:00:01.000006
-2001-01-01 00:00:02.000000
-2001-01-01 00:00:02.000004
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p2);
-a
-2001-01-01 00:00:00.000001
-2001-01-01 00:00:00.000005
-2001-01-01 00:00:00.000013
-2001-01-01 00:00:00.000113
-2001-01-01 00:00:00.000213
-2001-01-01 00:00:01.000001
-2001-01-01 00:00:01.000005
-2001-01-01 00:00:02.000001
-2001-01-01 00:00:02.000005
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p3);
-a
-2001-01-01 00:00:00.000002
-2001-01-01 00:00:00.000006
-2001-01-01 00:00:00.000010
-2001-01-01 00:00:00.000014
-2001-01-01 00:00:00.000110
-2001-01-01 00:00:00.000114
-2001-01-01 00:00:00.000210
-2001-01-01 00:00:00.000214
-2001-01-01 00:00:01.000000
-2001-01-01 00:00:01.000004
-2001-01-01 00:00:02.000002
-2001-01-01 00:00:02.000006
+ERROR HY000: Cannot specify HASH or KEY partitions
 ALTER TABLE t1 PARTITION BY RANGE COLUMNS (a)
 (
 PARTITION p0 VALUES LESS THAN ('2001-01-01 00:00:00.000200'),
@@ -14509,55 +14230,13 @@ PARTITION p3 VALUES LESS THAN MAXVALUE
 );
 ERROR HY000: Field 'a' is of a not allowed type for this type of partitioning
 SELECT * FROM t1 PARTITION(p0);
-a
-2001-01-01 00:00:00.000003
-2001-01-01 00:00:00.000011
-2001-01-01 00:00:00.000015
-2001-01-01 00:00:00.000111
-2001-01-01 00:00:00.000115
-2001-01-01 00:00:00.000211
-2001-01-01 00:00:00.000215
-2001-01-01 00:00:01.000003
-2001-01-01 00:00:02.000003
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p1);
-a
-2001-01-01 00:00:00.000000
-2001-01-01 00:00:00.000004
-2001-01-01 00:00:00.000012
-2001-01-01 00:00:00.000016
-2001-01-01 00:00:00.000112
-2001-01-01 00:00:00.000116
-2001-01-01 00:00:00.000212
-2001-01-01 00:00:00.000216
-2001-01-01 00:00:01.000002
-2001-01-01 00:00:01.000006
-2001-01-01 00:00:02.000000
-2001-01-01 00:00:02.000004
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p2);
-a
-2001-01-01 00:00:00.000001
-2001-01-01 00:00:00.000005
-2001-01-01 00:00:00.000013
-2001-01-01 00:00:00.000113
-2001-01-01 00:00:00.000213
-2001-01-01 00:00:01.000001
-2001-01-01 00:00:01.000005
-2001-01-01 00:00:02.000001
-2001-01-01 00:00:02.000005
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM t1 PARTITION(p3);
-a
-2001-01-01 00:00:00.000002
-2001-01-01 00:00:00.000006
-2001-01-01 00:00:00.000010
-2001-01-01 00:00:00.000014
-2001-01-01 00:00:00.000110
-2001-01-01 00:00:00.000114
-2001-01-01 00:00:00.000210
-2001-01-01 00:00:00.000214
-2001-01-01 00:00:01.000000
-2001-01-01 00:00:01.000004
-2001-01-01 00:00:02.000002
-2001-01-01 00:00:02.000006
+ERROR HY000: Cannot specify HASH or KEY partitions
 DROP TABLE t1;
 #
 # CAST from TIMESTAMP to TATETIME
@@ -14570,7 +14249,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS DATETIME)` datetime DEFAULT NULL,
   `CAST(b AS DATETIME)` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2;
 CAST(a AS DATETIME)	CAST(b AS DATETIME)
 2001-01-01 11:22:33	2001-01-01 11:22:33
@@ -14581,7 +14260,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS DATETIME(0))` datetime DEFAULT NULL,
   `CAST(b AS DATETIME(0))` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2;
 CAST(a AS DATETIME(0))	CAST(b AS DATETIME(0))
 2001-01-01 11:22:33	2001-01-01 11:22:33
@@ -14592,7 +14271,7 @@ Table	Create Table
 t2	CREATE TABLE `t2` (
   `CAST(a AS DATETIME(6))` datetime(6) DEFAULT NULL,
   `CAST(b AS DATETIME(6))` datetime(6) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t2;
 CAST(a AS DATETIME(6))	CAST(b AS DATETIME(6))
 2001-01-01 11:22:33.000000	2001-01-01 11:22:33.123456
@@ -14714,7 +14393,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` longtext
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 a
 2001-01-01 11:22:33.123456
@@ -14785,7 +14464,7 @@ CALL p1//
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` timestamp(6) NULL DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP PROCEDURE p1//
 CREATE FUNCTION p1 (a TIMESTAMP(6)) RETURNS TIMESTAMP(6)
 BEGIN
@@ -14810,7 +14489,7 @@ DROP FUNCTION p1//
 CREATE TABLE t1 (a TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6));
 SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='t1';;
 TABLE_CATALOG	def
-TABLE_SCHEMA	test
+TABLE_SCHEMA	#
 TABLE_NAME	t1
 COLUMN_NAME	a
 ORDINAL_POSITION	1
@@ -15567,7 +15246,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` time(3) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Bug#12546965 - 60990: INCORRECT DATE COMPARISON 
@@ -15736,7 +15415,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `UNIX_TIMESTAMP(CURRENT_TIMESTAMP(6))` decimal(16,6) NOT NULL DEFAULT '0.000000'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 UNIX_TIMESTAMP(CURRENT_TIMESTAMP(6))
 1316637605.123456
@@ -15773,7 +15452,7 @@ TIME(CURRENT_DATE)
 CREATE TABLE t1 (
 pk TIMESTAMP(1) NOT NULL DEFAULT '0000-00-00  00:00:00.0',
 PRIMARY KEY (pk)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
 INSERT INTO t1 VALUES ('2011-07-13 13:17:58.3'), ('2011-07-13 13:17:59.3');
 SELECT EXTRACT(HOUR_SECOND FROM CURRENT_DATE) FROM t1;
 EXTRACT(HOUR_SECOND FROM CURRENT_DATE)
@@ -15808,6 +15487,7 @@ FROM t1
 WHERE col_datetime_4_not_null_key > 7;
 col_time_3_not_null_key
 Warnings:
+Warning	1292	Incorrect datetime value: '7' for column 'col_datetime_4_not_null_key' at row 1
 Warning	1292	Incorrect datetime value: '7' for column 'col_datetime_4_not_null_key' at row 1
 DROP TABLE t1;
 #
@@ -15865,8 +15545,6 @@ KEY col_datetime_3_key (col_datetime_3_key),
 KEY col_time_not_null_key (col_time_not_null_key),
 KEY col_time_4_not_null_key (col_time_4_not_null_key))
 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT col_datetime_3_key , COUNT( col_timestamp_5_key )
 FROM t1 FORCE KEY
 (PRIMARY, col_datetime_5_not_null_key, col_datetime_6_key, col_time_5_key, col_time_2_key) 
@@ -15900,8 +15578,6 @@ AND
 (col_datetime_4_not_null_key IS NULL OR col_time_5_key BETWEEN '20051201163954.001782' AND '0000-00-00 00:00:00')
 GROUP BY col_datetime_6_not_null_key;
 col_datetime_3_key	COUNT( col_timestamp_5_key )
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 DROP TABLE t1;
 #
 # bug11
@@ -15920,8 +15596,6 @@ KEY col_time_2_key (col_time_2_key),
 KEY col_timestamp_3_not_null_key (col_timestamp_3_not_null_key),
 KEY col_datetime_5_key (col_datetime_5_key))
 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES (
 '00:20:00.00000',
 '15:50:06.1',
@@ -15931,8 +15605,6 @@ INSERT INTO t1 VALUES (
 '2009-10-14 21:00:00.000',
 '0000-00-00 00:00:00.00000',
 '22:59:36.734');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT col_datetime_5_key AS c1
 FROM t1
 WHERE col_datetime_not_null NOT BETWEEN col_time_5 AND
@@ -15999,7 +15671,7 @@ col_datetime_5 datetime(5) DEFAULT NULL,
 col_timestamp_6_key timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000',
 col_time_2_not_null time(2) NOT NULL,
 KEY col_timestamp_6_key (col_timestamp_6_key))
-ENGINE=MEMORY DEFAULT CHARSET=latin1;
+ENGINE=SEQUOIADB DEFAULT CHARSET=latin1;
 INSERT INTO t1 VALUES (current_timestamp(5),current_timestamp(6),current_time(6));
 SELECT col_datetime_5 AS c1 FROM t1
 WHERE col_time_2_not_null = GREATEST(CURRENT_DATE(),col_timestamp_6_key)
@@ -16107,8 +15779,6 @@ PRIMARY KEY (pk),
 KEY col_timestamp_4_not_null_key (col_timestamp_4_not_null_key),
 KEY col_timestamp_5_not_null_key (col_timestamp_5_not_null_key)
 ) /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT
 LEAST('2008-05-18', LOCALTIMESTAMP(), col_timestamp_5_not_null_key ) AS c1
 FROM t1
@@ -16147,11 +15817,7 @@ KEY col_time_4_key (col_time_4_key),
 KEY col_time_2_key (col_time_2_key),
 KEY col_time_3_key (col_time_3_key)
 )/*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('2004-06-28 22:47:21.052552','17:11:33.0','00:20:09.0000','00:20:04.0','02:05:58.4461','08:36:44.02','0000-00-00 00:00:00','0000-00-00 00:00:00.00000','02:17:50.049','07:31:13.030');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT col_datetime_6 AS c1, col_datetime AS c2 
 FROM t1 
 WHERE col_time_2_key
@@ -16180,8 +15846,6 @@ KEY col_time_6_not_null_key (col_time_6_not_null_key),
 KEY col_time_key (col_time_key),
 KEY col_time_2_not_null_key (col_time_2_not_null_key)
 ) /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES (
 CURRENT_TIME(4),
 CURRENT_TIME(),
@@ -16191,8 +15855,6 @@ CURRENT_TIME(2),
 CURRENT_TIME(4),
 CURRENT_TIME(3),
 CURRENT_TIMESTAMP(2));
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT col_datetime_2 AS c1, col_time_not_null AS c2
 FROM t1
 WHERE
@@ -16216,8 +15878,6 @@ KEY col_time_5_key (col_time_5_key),
 KEY col_time_key (col_time_key),
 KEY col_datetime_key (col_datetime_key)
 ) /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES
 ('03:07:29.013169',NULL,'0000-00-00 00:00:00','18:29:54','2000-06-10 19:41:30',
 '13:56:51','2011-09-07 23:08:20.8362'),('00:20:06.000000','08:25:11.04580',
@@ -16236,8 +15896,6 @@ INSERT INTO t1 VALUES
 '0000-00-00 00:00:00','07:55:21','0000-00-00 00:00:00','14:48:29',
 '2011-09-07 23:08:25.8362'),('06:00:36.034953','00:20:01.00000','2007-03-15 21:00:00',
 '00:20:01',NULL,'23:29:59','2011-09-07 23:08:27.8362');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT col_time_5_key AS c1, col_time_key AS c2, col_timestamp AS c3 
 FROM t1 
 WHERE col_time_not_null
@@ -16266,9 +15924,7 @@ PRIMARY KEY (pk),
 KEY col_timestamp_4_not_null_key (col_timestamp_4_not_null_key),
 KEY col_date_key (col_date_key),
 KEY col_time_3_not_null_key (col_time_3_not_null_key)
-) ENGINE=MEMORY /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
+) ENGINE=SEQUOIADB /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
 INSERT INTO t1 VALUES (
 CURRENT_TIME(5),
 CURRENT_TIMESTAMP(4),
@@ -16277,8 +15933,6 @@ CURRENT_TIMESTAMP(),
 CURRENT_DATE(),
 CURRENT_TIME(),
 CURRENT_TIMESTAMP(),CURRENT_TIME());
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT col_time_3_not_null_key AS c1
 FROM t1
 WHERE col_timestamp <> col_date_key
@@ -16311,14 +15965,14 @@ col_timestamp_6 TIMESTAMP(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000',
 col_date date DEFAULT NULL,
 col_timestamp_3_not_null TIMESTAMP(3) NOT NULL DEFAULT '0000-00-00 00:00:00.000',
 col_datetime_1_not_null_key DATETIME(1) NOT NULL,
-KEY col_time_2_key (col_time_2_key),
-KEY col_time_4_key (col_time_4_key),
+#  KEY col_time_2_key (col_time_2_key),
+#  KEY col_time_4_key (col_time_4_key),
 KEY col_datetime_3_key (col_datetime_3_key),
-KEY col_time_6_key (col_time_6_key),
-KEY col_timestamp_2_not_null_key (col_timestamp_2_not_null_key),
-KEY col_time_3_key (col_time_3_key),
-KEY col_time_6_not_null_key (col_time_6_not_null_key),
-KEY col_timestamp_2_key (col_timestamp_2_key),
+#  KEY col_time_6_key (col_time_6_key),
+#  KEY col_timestamp_2_not_null_key (col_timestamp_2_not_null_key),
+#  KEY col_time_3_key (col_time_3_key),
+#  KEY col_time_6_not_null_key (col_time_6_not_null_key),
+#  KEY col_timestamp_2_key (col_timestamp_2_key),
 KEY col_datetime_1_not_null_key (col_datetime_1_not_null_key)
 );
 INSERT INTO t1 VALUES
@@ -16381,11 +16035,7 @@ KEY col_time_5_not_null_key (col_time_5_not_null_key),
 KEY col_time_2_not_null_key (col_time_2_not_null_key),
 KEY col_time_2_key (col_time_2_key)
 )/*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('2007-11-05 00:00:00.0','00:20:01.00000','0000-00-00 00:00:00.00','0000-00-00 00:00:00.00','00:20:08.00','07:54:36.06','0000-00-00 00:00:00.000','2008-02-19 21:00:00.0000'),('2001-09-22 23:10:01.0','00:20:00.00000','0000-00-00 00:00:00.00','2011-09-09 20:59:53.03','00:20:01.00','00:20:02.00','0000-00-00 00:00:00.000','2003-07-11 13:55:04.0379'),('2007-10-20 00:00:00.0','22:15:28.06072','0000-00-00 00:00:00.00','2011-09-09 20:59:54.03','00:20:03.00','00:20:07.00','0000-00-00 00:00:00.000','0000-00-00 00:00:00.0000'),('0000-00-00 00:00:00.0','00:20:03.00000','2009-01-27 00:00:00.00','2011-09-09 20:59:55.03','03:34:18.06','14:32:24.01','0000-00-00 00:00:00.000','2003-11-17 09:58:11.0160'),('2008-04-10 00:00:00.0','00:20:05.00000','2004-10-16 01:19:20.06','2011-09-09 20:59:56.03','21:14:08.05','02:32:00.04','2008-09-15 17:48:32.047','2003-01-16 21:00:00.0000'),('0000-00-00 00:00:00.0','00:20:03.00000','0000-00-00 00:00:00.00','2011-09-09 20:59:57.03','00:20:05.00','22:08:39.02','0000-00-00 00:00:00.000','2003-03-19 02:39:29.0637'),('2009-04-10 21:16:38.0','00:20:07.00000','2001-05-17 15:25:33.04','2011-09-09 20:59:58.03','00:20:05.00','09:36:28.04','2005-01-12 10:44:24.031','0000-00-00 00:00:00.0000'),('2001-06-10 20:23:08.0','07:38:25.03484','2002-06-22 00:00:00.00','2011-09-09 20:59:59.03','02:05:30.01','04:24:09.06','2002-05-25 21:00:00.000','2006-05-16 06:48:03.0399');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT
 col_datetime_2_not_null AS c1,
 col_time_2_key AS c2,
@@ -16420,8 +16070,6 @@ PRIMARY KEY (pk),
 KEY col_datetime_6_not_null_key (col_datetime_6_not_null_key),
 KEY col_timestamp_key (col_timestamp_key)
 ) /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES (
 CURRENT_TIME(1),
 CURRENT_TIME(6),
@@ -16433,8 +16081,6 @@ CURRENT_TIMESTAMP,
 CURRENT_TIMESTAMP(3),
 CURRENT_TIME(6),
 CURRENT_TIMESTAMP(3));
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT col_timestamp_not_null AS c1, col_datetime_6_not_null_key AS c2 
 FROM t1 
 WHERE col_timestamp IS NOT NULL
@@ -16536,11 +16182,7 @@ KEY col_datetime_5_not_null_key (col_datetime_5_not_null_key),
 KEY col_timestamp_6_key (col_timestamp_6_key),
 KEY col_time_2_key (col_time_2_key)
 )/*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('00:20:02','2007-08-09 05:14:12.05054','2007-06-20 21:00:00.000000','06:16:36.0','2011-09-09 21:37:45.2','19:15:37.02'),('18:00:14','0000-00-00 00:00:00.00000','2000-12-10 12:35:01.029761','00:20:04.0','2011-09-09 21:37:46.2','06:21:03.03');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 SELECT col_time_1 AS c1 
 FROM t1 
 WHERE col_time_not_null_key <= col_timestamp_6_key
@@ -16560,9 +16202,9 @@ PRIMARY KEY (pk),
 KEY col_timestamp_3_not_null_key (col_timestamp_3_not_null_key),
 KEY col_time_5_not_null_key (col_time_5_not_null_key),
 KEY col_timestamp_1_not_null_key (col_timestamp_1_not_null_key),
-KEY col_datetime_4_key (col_datetime_4_key),
+# KEY col_datetime_4_key (col_datetime_4_key),
 KEY col_time_2_not_null_key (col_time_2_not_null_key)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
 INSERT INTO t1 VALUES ('0000-00-00 00:00:00.000','14:09:27.6','0000-00-00 00:00:00.000000','18:38:36.04289','2003-07-01 21:00:00.0','2009-09-15 09:25:49.0110','15:47:52.01');
 INSERT INTO t1 VALUES ('2004-04-08 23:25:16.012','14:09:26.6',NULL,'05:45:23.05509','2008-12-11 21:00:00.0','2001-04-23 20:41:27.0470','05:09:23.04');
@@ -16580,13 +16222,9 @@ PRIMARY KEY (pk),
 KEY col_time_1_not_null_key (col_time_1_not_null_key),
 KEY col_datetime_3_not_null_key (col_datetime_3_not_null_key),
 KEY col_time_2_key (col_time_2_key)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('00:20:05.0','1999-12-31 21:00:01','0000-00-00 00:00:00.000','04:25:59.01');
-Warnings:
-Warning	1287	The partition engine, used by table 'test.t1', is deprecated and will be removed in a future release. Please use native partitioning instead.
 INSERT INTO t1 VALUES ('00:15:56.0','1999-12-31 21:00:03','0000-00-00 00:00:00.000','00:20:06.00');
 INSERT INTO t1 VALUES ('00:20:03.0','1999-12-31 21:00:05','2002-10-18 16:08:58.006','00:20:00.00');
 INSERT INTO t1 VALUES ('00:20:09.0','1999-12-31 21:00:07','2002-11-11 17:21:02.045','18:39:12.05');
@@ -16879,9 +16517,6 @@ SELECT CONVERT_TZ(GREATEST(DATE('2021-00-00'),DATE('2021-00-00')),'+00:00','+7:5
 CONVERT_TZ(GREATEST(DATE('2021-00-00'),DATE('2021-00-00')),'+00:00','+7:5')
 NULL
 SET timestamp=UNIX_TIMESTAMP('2011-11-16 17:28:30');
-DROP TABLE IF EXISTS t1;
-Warnings:
-Note	1051	Unknown table 'test.t1'
 CREATE TABLE t1 (
 col_timestamp_2_not_null_key timestamp(2) NULL DEFAULT '0000-00-00 00:00:00.00',
 pk time NOT NULL DEFAULT '00:00:00',
@@ -16970,7 +16605,7 @@ col_datetime_6_key datetime(6),
 col_time_3_not_null_key time(3) not null,
 col_datetime_3_key  datetime(3),
 key (col_datetime_6_not_null_key),
-key (col_datetime_3_key)) ENGINE=innodb;
+key (col_datetime_3_key)) ENGINE=SEQUOIADB;
 CREATE OR REPLACE VIEW v1 AS SELECT * FROM t1;
 SELECT col_datetime_3_key AS c1 FROM v1
 WHERE SYSDATE() IS NULL
@@ -17119,7 +16754,7 @@ col_datetime_2_not_null datetime(2) NOT NULL,
 PRIMARY KEY (pk),
 KEY col_datetime_1_key (col_datetime_1_key),
 KEY col_datetime_6_not_null_key (col_datetime_6_not_null_key))
-ENGINE=MyISAM DEFAULT CHARSET=latin1;
+ENGINE=SEQUOIADB DEFAULT CHARSET=latin1;
 INSERT INTO t1 VALUES ('19:14:35.36','0000-00-00 00:00:00.000','0000-00-00 00:00:00.0','2000-08-28 07:34:20.051690','2009-09-20 07:32:39.06');
 INSERT INTO t1 VALUES ('19:14:37.36','2005-07-04 08:03:50.051','0000-00-00 00:00:00.0','0000-00-00 00:00:00.000000','0000-00-00 00:00:00.00');
 INSERT INTO t1 VALUES ('19:14:39.36','0000-00-00 00:00:00.000',NULL,'2005-10-11 07:24:45.059064','2009-11-19 00:00:00.00');
@@ -17151,7 +16786,7 @@ c_timestamp timestamp NULL DEFAULT 0,
 c_time time,
 primary key (pk),
 key (c_timestamp)
-) ENGINE=INNODB;
+) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES
 (SEC_TO_TIME(2),'20000627024305.040518','00:00:00.000000'),      
 (SEC_TO_TIME(4),'0000-00-00','20010412233415.034269'),                  
@@ -17661,7 +17296,7 @@ SET sql_mode = default;
 #              TIME_TO_LONGLONG_DATETIME_PACKED
 #
 SET @@session.sql_buffer_result=TRUE;
-CREATE TABLE t1(a DATETIME) engine=innodb;
+CREATE TABLE t1(a DATETIME) engine=SEQUOIADB;
 INSERT INTO t1 VALUES('9999-12-31 23:59:58.000015');
 SELECT ADDTIME(a, 100000) FROM t1;
 ADDTIME(a, 100000)

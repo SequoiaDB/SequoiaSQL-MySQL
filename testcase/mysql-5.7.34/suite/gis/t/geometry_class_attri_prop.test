@@ -12,7 +12,6 @@
 # Description:Test Cases of the geometry base class Properties                #
 #                                                                             #
 ###############################################################################
-
 --source include/have_geometry.inc
 
 ############################################################################################
@@ -20,7 +19,7 @@
 ############################################################################################
 
 --echo # Creating the spatial Geometry object
-USE test;
+#USE test;
 
 CREATE TABLE gis_point (fid INTEGER NOT NULL PRIMARY KEY, g POINT);
 CREATE TABLE gis_linestring (fid INTEGER NOT NULL PRIMARY KEY, g LINESTRING);
@@ -308,28 +307,28 @@ SELECT COUNT(DISTINCT(ST_ASTEXT(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Displaying the inserted spatial Data
-SELECT fid, ST_ASTEXT(g) FROM gis_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_point order by fid;
 
-SELECT fid, ST_ASTEXT(g) FROM gis_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_linestring order by fid;
 
-SELECT fid, ST_ASTEXT(g) FROM gis_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_polygon order by fid;
 
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_point order by fid;
 
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring order by fid; 
 
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon order by fid;
 
-SELECT fid, ST_ASTEXT(g) FROM gis_geometrycollection;
+SELECT fid, ST_ASTEXT(g) FROM gis_geometrycollection order by fid;
 
-SELECT fid, ST_ASTEXT(g) FROM gis_geometry;
+SELECT fid, ST_ASTEXT(g) FROM gis_geometry order by fid;
 
 ############################################################################################
 # Checking the geometry type of the spatial objects inserted into GEOMETRY class           #
 ############################################################################################
 
 --echo # Checking the geometry type of the spatial objects inserted into GEOMETRY class
-SELECT fid, ST_GEOMETRYTYPE(g) FROM gis_geometry;
+SELECT fid, ST_GEOMETRYTYPE(g) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_GEOMETRYTYPE(g)) FROM gis_geometry;
 
@@ -340,7 +339,7 @@ SELECT COUNT(DISTINCT(ST_GEOMETRYTYPE(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Checking the ST_SRID of the spatial objects inserted into GEOMETRY class
-SELECT fid, ST_SRID(g) FROM gis_geometry;
+SELECT fid, ST_SRID(g) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_SRID(g)) FROM gis_geometry;
 
@@ -351,7 +350,7 @@ SELECT COUNT(DISTINCT(ST_SRID(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Checking the Dimension of the spatial objects inserted into GEOMETRY class
-SELECT fid, ST_DIMENSION(g) FROM gis_geometry;
+SELECT fid, ST_DIMENSION(g) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_DIMENSION(g)) FROM gis_geometry;
 
@@ -362,7 +361,7 @@ SELECT COUNT(DISTINCT(ST_DIMENSION(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Checking if the geometries are simple or not
-SELECT fid, ST_ISSIMPLE(g) FROM gis_geometry;
+SELECT fid, ST_ISSIMPLE(g) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_ISSIMPLE(g)) FROM gis_geometry;
 
@@ -373,7 +372,7 @@ SELECT COUNT(DISTINCT(ST_ISSIMPLE(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Checking the Envelope of the spatial objects inserted into GEOMETRY class
-SELECT fid, ST_ASTEXT(ST_ENVELOPE(g)) FROM gis_geometry;
+SELECT fid, ST_ASTEXT(ST_ENVELOPE(g)) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_ENVELOPE(g)) FROM gis_geometry;
 
@@ -384,7 +383,7 @@ SELECT COUNT(DISTINCT(ST_ENVELOPE(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Checking the Area of the spatial objects inserted into GEOMETRY class
-SELECT fid, ST_AREA(g) FROM gis_geometry;
+SELECT fid, ST_AREA(g) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_AREA(g)) FROM gis_geometry;
 
@@ -395,7 +394,7 @@ SELECT COUNT(DISTINCT(ST_AREA(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Checking the Centroid of the spatial objects inserted into GEOMETRY class
-SELECT fid, ST_ASTEXT(ST_CENTROID(g)) FROM gis_geometry;
+SELECT fid, ST_ASTEXT(ST_CENTROID(g)) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_CENTROID(g)) FROM gis_geometry;
 
@@ -406,7 +405,7 @@ SELECT COUNT(DISTINCT(ST_CENTROID(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Checking the ConvexHull of the spatial objects inserted into GEOMETRY class
-SELECT fid, ST_ASTEXT(ST_CONVEXHULL(g)) FROM gis_geometry;
+SELECT fid, ST_ASTEXT(ST_CONVEXHULL(g)) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_CONVEXHULL(g)) FROM gis_geometry;
 
@@ -417,7 +416,7 @@ SELECT COUNT(DISTINCT(ST_CONVEXHULL(g))) FROM gis_geometry;
 ############################################################################################
 
 --echo # Checking if the geometries are empty or not
-SELECT fid, ST_ISEMPTY(g) FROM gis_geometry;
+SELECT fid, ST_ISEMPTY(g) FROM gis_geometry order by fid;
 
 SELECT COUNT(ST_ISEMPTY(g)) FROM gis_geometry;
 
@@ -471,15 +470,15 @@ DELIMITER ;|
 UPDATE gis_geometry SET fid = 999 where fid = 111;
 
 --echo # Checking the GEOMETRY class properties on the spatial data in the gis_geometry_1 table
-SELECT fid, ST_GEOMETRYTYPE(g) FROM gis_geometry_1;
-SELECT fid, ST_SRID(g) FROM gis_geometry_1;
-SELECT fid, ST_DIMENSION(g) FROM gis_geometry_1;
-SELECT fid, ST_ISSIMPLE(g) FROM gis_geometry_1;
-SELECT fid, ST_ASTEXT(ST_ENVELOPE(g)) FROM gis_geometry_1;
-SELECT fid, ST_AREA(g) FROM gis_geometry_1;
-SELECT fid, ST_ASTEXT(ST_CENTROID(g)) FROM gis_geometry_1;
-SELECT fid, ST_ASTEXT(ST_CONVEXHULL(g)) FROM gis_geometry_1;
-SELECT fid, ST_ISEMPTY(g) FROM gis_geometry_1;
+SELECT fid, ST_GEOMETRYTYPE(g) FROM gis_geometry_1 order by fid;
+SELECT fid, ST_SRID(g) FROM gis_geometry_1 order by fid;
+SELECT fid, ST_DIMENSION(g) FROM gis_geometry_1 order by fid;
+SELECT fid, ST_ISSIMPLE(g) FROM gis_geometry_1 order by fid;
+SELECT fid, ST_ASTEXT(ST_ENVELOPE(g)) FROM gis_geometry_1 order by fid;
+SELECT fid, ST_AREA(g) FROM gis_geometry_1 order by fid;
+SELECT fid, ST_ASTEXT(ST_CENTROID(g)) FROM gis_geometry_1 order by fid;
+SELECT fid, ST_ASTEXT(ST_CONVEXHULL(g)) FROM gis_geometry_1 order by fid;
+SELECT fid, ST_ISEMPTY(g) FROM gis_geometry_1 order by fid;
 
 --echo # Cleaning up the trigger
 DROP TRIGGER geom_trigger;
@@ -536,7 +535,7 @@ WHERE
     ST_DIMENSION(tableX.g) = ST_DIMENSION(tableY.g) AND
     ST_ISSIMPLE(tableX.g) = ST_ISSIMPLE(tableY.g) AND
     ST_AREA(tableX.g) = ST_AREA(tableY.g) AND
-    ST_ISEMPTY(tableX.g) = ST_ISEMPTY(tableY.g);
+    ST_ISEMPTY(tableX.g) = ST_ISEMPTY(tableY.g) order by tableX.fid;
 
 ############################################################################################
 # Checking the aggregate functions on the geometry class properties                        #

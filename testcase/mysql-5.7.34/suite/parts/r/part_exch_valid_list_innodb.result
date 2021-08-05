@@ -1,4 +1,3 @@
-use test;
 call mtr.add_suppression("row in wrong partition.*from REBUILD/REORGANIZED");
 DROP TABLE IF EXISTS t_10;
 DROP TABLE IF EXISTS t_100;
@@ -32,17 +31,17 @@ CREATE TABLE t_10 (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB;
+ENGINE = SequoiaDB;
 CREATE TABLE t_100 (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB;
+ENGINE = SequoiaDB;
 CREATE TABLE t_1000 (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB;
+ENGINE = SequoiaDB;
 INSERT INTO t_10 VALUES (1, "One", '2001-01-01'), (3, "Three", '2003-01-01'), (5, "Five", '2005-01-01'), (9, "Nine", '2009-01-01');
 INSERT INTO t_100 VALUES (11, "Eleven", '2011-01-01'), (13, "Thirdteen", '2013-01-01'), (15, "Fifeteen", '2015-01-01'), (19, "Nineteen", '2019-01-01');
 INSERT INTO t_100 VALUES (91, "Ninety-one", '2091-01-01'), (93, "Ninety-three", '2093-01-01'), (95, "Ninety-five", '2095-01-01'), (99, "Ninety-nine", '2099-01-01');
@@ -54,32 +53,32 @@ CREATE TABLE t_empty (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB;
+ENGINE = SequoiaDB;
 CREATE TABLE t_null (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB;
+ENGINE = SequoiaDB;
 CREATE TABLE tsp_01(a INT,b VARCHAR(25),c DATE,PRIMARY KEY (a))
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 AS SELECT a, b FROM t_10 WHERE MOD(a,5)= 1;
 CREATE TABLE tsp_02(a INT,b VARCHAR(25),c DATE,PRIMARY KEY (a)) 
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 AS SELECT a, b FROM t_10 WHERE MOD(a,5)= 2;
 CREATE TABLE tsp_03(a INT,b VARCHAR(25),c DATE,PRIMARY KEY (a)) 
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 AS SELECT a, b FROM t_10 WHERE MOD(a,5)= 3;
 CREATE TABLE tsp_04(a INT,b VARCHAR(25),c DATE,PRIMARY KEY (a)) 
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 AS SELECT a, b FROM t_10 WHERE MOD(a,5)= 4;
 CREATE TABLE tsp_00(a INT,b VARCHAR(25),c DATE,PRIMARY KEY (a)) 
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 AS SELECT a, b FROM t_10 WHERE MOD(a,5)= 0;
 CREATE TABLE tp_r (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB
+ENGINE = SequoiaDB
 PARTITION BY RANGE (a)
 (PARTITION p0 VALUES LESS THAN (10)  ,
 PARTITION p1 VALUES LESS THAN (100)  ,
@@ -88,7 +87,7 @@ CREATE TABLE tsp_r (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB
+ENGINE = SequoiaDB
 PARTITION BY RANGE (a)
 SUBPARTITION BY HASH(a)
 (PARTITION p0 VALUES LESS THAN (10)  
@@ -122,7 +121,7 @@ INSERT INTO tsp_r VALUES (122, "Hundred twenty-two", '2122-01-01'), (124, "Hundr
 INSERT INTO tsp_r VALUES (162, "Hundred sixty-two", '2162-01-01'), (164, "Hundred sixty-four", '2164-01-01'), (166, "Hundred sixty-six", '2166-01-01'), (168, "Hundred sixty-eight", '2168-01-01');
 INSERT INTO tsp_r VALUES (182, "Hundred eight-two", '2182-01-01'), (184, "Hundred eighty-four", '2184-01-01'), (186, "Hundred eighty-six", '2186-01-01'), (188, "Hundred eighty-eight", '2188-01-01');
 CREATE TABLE tp_rvar(a INT,b VARCHAR(25),c DATE,PRIMARY KEY (b)) 
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 PARTITION BY RANGE (b)
 (PARTITION p0 VALUES LESS THAN ('H')  ,
 PARTITION p1 VALUES LESS THAN ('Q')  ,
@@ -132,7 +131,7 @@ AS SELECT a, b FROM tp_r;
 ERROR HY000: VALUES value for partition 'p0' must have type INT
 CREATE TABLE tp_rintvar(a INT,b VARCHAR(25),c DATE,
 PRIMARY KEY (a,b))
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 PARTITION BY RANGE COLUMNS (a,b)
 (PARTITION p0 VALUES LESS THAN (10,'HHHHHHHHHHHHHHHHHHHHHHHHH'),
 PARTITION p1 VALUES LESS THAN (100,'PPPPPPPPPPPPPPPPPPPPPPPPP'),
@@ -140,7 +139,7 @@ PARTITION p2 VALUES LESS THAN (1000,'WWWWWWWWWWWWWWWWWWWWWWWWW'),
 PARTITION p3 VALUES LESS THAN (MAXVALUE,MAXVALUE))
 AS SELECT a, b, c FROM tp_r;
 CREATE TABLE tp_rvar(a INT,b VARCHAR(25),c DATE) 
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 PARTITION BY RANGE COLUMNS (b)
 (PARTITION p0 VALUES LESS THAN ('HHHHHHHHHHHHHHHHHHHHHHHHH'),
 PARTITION p1 VALUES LESS THAN ('PPPPPPPPPPPPPPPPPPPPPPPPP'),
@@ -149,7 +148,7 @@ PARTITION p3 VALUES LESS THAN (MAXVALUE))
 AS SELECT a, b, c FROM tp_r;
 CREATE TABLE tp_rintdate(a INT,b VARCHAR(25),c DATE, 
 PRIMARY KEY (a,c))
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 PARTITION BY RANGE COLUMNS (a,c)
 (PARTITION p0 VALUES LESS THAN (10,'2010-01-01'),
 PARTITION p1 VALUES LESS THAN (100,'2200-01-01'),
@@ -160,7 +159,7 @@ INSERT tp_rintdate SELECT * FROM t_100;
 INSERT tp_rintdate SELECT * FROM t_1000;
 CREATE TABLE tp_rdate(a INT,b VARCHAR(25),c DATE,
 PRIMARY KEY (c))
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 PARTITION BY RANGE COLUMNS (c)
 (PARTITION p0 VALUES LESS THAN ('2010-01-01'),
 PARTITION p1 VALUES LESS THAN ('2200-01-01'),
@@ -168,7 +167,7 @@ PARTITION p2 VALUES LESS THAN ('2300-01-01'),
 PARTITION p3 VALUES LESS THAN (MAXVALUE))
 AS SELECT a, b, c FROM tp_r;
 CREATE TABLE tsp_rvar(a INT,b VARCHAR(25),c DATE) 
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 PARTITION BY RANGE COLUMNS (b)
 SUBPARTITION BY HASH(a)
 SUBPARTITIONS 5
@@ -191,8 +190,9 @@ SUBPARTITION sp22,
 SUBPARTITION sp23,
 SUBPARTITION sp24))
 AS SELECT a, b, c FROM tsp_r;
+ERROR HY000: Table has no partition for value from column_list
 CREATE TABLE tsp_rvar1(a INT,b VARCHAR(25),c DATE) 
-ENGINE = InnoDB  
+ENGINE = SequoiaDB  
 PARTITION BY RANGE COLUMNS (b)
 SUBPARTITION BY HASH(a)
 SUBPARTITIONS 5
@@ -200,11 +200,12 @@ SUBPARTITIONS 5
 PARTITION p1 VALUES LESS THAN ('PPPPPPPPPPPPPPPPPPPPPPPPP'),
 PARTITION p2 VALUES LESS THAN ('WWWWWWWWWWWWWWWWWWWWWWWWW'))
 AS SELECT a, b, c FROM tsp_r;
+ERROR HY000: Table has no partition for value from column_list
 CREATE TABLE tp_l (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB
+ENGINE = SequoiaDB
 PARTITION BY LIST (a)
 (PARTITION p0 VALUES IN (0,1,2,3,4,5,6,7,8,9),
 PARTITION p1 VALUES IN (10,11,12,13,14,15,16,17,18,19,90,91,92,93,94,95,96,97,98,99),
@@ -220,7 +221,7 @@ CREATE TABLE tsp_l (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB
+ENGINE = SequoiaDB
 PARTITION BY LIST (a)
 SUBPARTITION BY HASH(a)
 (PARTITION p0 VALUES IN (0,1,2,3,4,5,6,7,8,9)
@@ -252,7 +253,7 @@ CREATE TABLE tp_k (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB
+ENGINE = SequoiaDB
 PARTITION BY KEY (a)
 PARTITIONS 3
 AS SELECT a, b, c FROM tp_r;
@@ -260,7 +261,7 @@ CREATE TABLE tp_kvar (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (b))  
-ENGINE = InnoDB
+ENGINE = SequoiaDB
 PARTITION BY KEY (b)
 PARTITIONS 3
 AS SELECT a, b, c FROM tp_r;
@@ -268,7 +269,7 @@ CREATE TABLE tp_kdate (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (c))  
-ENGINE = InnoDB
+ENGINE = SequoiaDB
 PARTITION BY KEY (c)
 PARTITIONS 3
 AS SELECT a, b, c FROM tp_r;
@@ -276,19 +277,18 @@ CREATE TABLE tp_h (a INT,
 b VARCHAR(25),
 c DATE,
 PRIMARY KEY (a))  
-ENGINE = InnoDB
+ENGINE = SequoiaDB
 PARTITION BY HASH (a)
 PARTITIONS 3
 AS SELECT a, b, c FROM tp_r;
 ########################################################################
 ### List partitioned tables with/out validation
-ALTER TABLE tp_l EXCHANGE PARTITION p0 WITH TABLE t_10 WITH VALIDATION;
 SELECT * FROM tp_l PARTITION (p0);
 a	b	c
-1	One	2001-01-01
-3	Three	2003-01-01
-5	Five	2005-01-01
-9	Nine	2009-01-01
+2	Two	2002-01-01
+4	Four	2004-01-01
+6	Six	2006-01-01
+8	Eight	2008-01-01
 SELECT * FROM tp_l PARTITION (p1);
 a	b	c
 12	twelve	2012-01-01
@@ -313,19 +313,12 @@ a	b	c
 184	Hundred eighty-four	2184-01-01
 186	Hundred eighty-six	2186-01-01
 188	Hundred eighty-eight	2188-01-01
-ALTER TABLE tp_l EXCHANGE PARTITION p0 WITH TABLE t_100 WITH VALIDATION;
-ERROR HY000: Found a row that does not match the partition
-ALTER TABLE tp_l EXCHANGE PARTITION p0 WITH TABLE t_100 WITHOUT VALIDATION;
 SELECT * FROM tp_l PARTITION (p0);
 a	b	c
-11	Eleven	2011-01-01
-13	Thirdteen	2013-01-01
-15	Fifeteen	2015-01-01
-19	Nineteen	2019-01-01
-91	Ninety-one	2091-01-01
-93	Ninety-three	2093-01-01
-95	Ninety-five	2095-01-01
-99	Ninety-nine	2099-01-01
+2	Two	2002-01-01
+4	Four	2004-01-01
+6	Six	2006-01-01
+8	Eight	2008-01-01
 SELECT * FROM tp_l PARTITION (p1);
 a	b	c
 12	twelve	2012-01-01
@@ -350,8 +343,6 @@ a	b	c
 184	Hundred eighty-four	2184-01-01
 186	Hundred eighty-six	2186-01-01
 188	Hundred eighty-eight	2188-01-01
-ALTER TABLE tp_l EXCHANGE PARTITION p2 WITH TABLE t_100 WITHOUT VALIDATION;
-ALTER TABLE tp_l EXCHANGE PARTITION p2 WITH TABLE t_100 WITHOUT VALIDATION;
 SELECT * FROM tp_l PARTITION (p2);
 a	b	c
 112	Hundred twelve	2112-01-01
@@ -371,13 +362,7 @@ a	b	c
 186	Hundred eighty-six	2186-01-01
 188	Hundred eighty-eight	2188-01-01
 ALTER TABLE tp_l ANALYZE PARTITION p0;
-Table	Op	Msg_type	Msg_text
-test.tp_l	analyze	status	OK
 ALTER TABLE tp_l OPTIMIZE PARTITION p0;
-Table	Op	Msg_type	Msg_text
-test.tp_l	optimize	note	Table does not support optimize on partitions. All partitions will be rebuilt and analyzed.
-test.tp_l	optimize	status	OK
-ALTER TABLE tp_l EXCHANGE PARTITION p0 WITH TABLE t_10 WITH VALIDATION;
 SELECT * FROM tp_l PARTITION (p0);
 a	b	c
 2	Two	2002-01-01
@@ -412,50 +397,25 @@ CREATE TABLE t_11 LIKE tp_l;
 ALTER TABLE t_11 REMOVE PARTITIONING;
 INSERT INTO t_11 SELECT * FROM t_10;
 INSERT INTO t_11 SELECT * FROM t_100;
-ALTER TABLE tp_l EXCHANGE PARTITION p0 WITH TABLE t_11 WITHOUT VALIDATION;
 SELECT * FROM tp_l PARTITION (p0);
 a	b	c
-1	One	2001-01-01
-11	Eleven	2011-01-01
-13	Thirdteen	2013-01-01
-15	Fifeteen	2015-01-01
-19	Nineteen	2019-01-01
-3	Three	2003-01-01
-5	Five	2005-01-01
-9	Nine	2009-01-01
-91	Ninety-one	2091-01-01
-93	Ninety-three	2093-01-01
-95	Ninety-five	2095-01-01
-99	Ninety-nine	2099-01-01
+2	Two	2002-01-01
+4	Four	2004-01-01
+6	Six	2006-01-01
+8	Eight	2008-01-01
 DELETE FROM tp_l PARTITION (p1);
 SELECT * FROM tp_l PARTITION (p1);
 a	b	c
 ALTER TABLE tp_l CHECK PARTITION p0 ;
-Table	Op	Msg_type	Msg_text
-test.tp_l	check	error	Found a misplaced row in part 0 should be in part 1:
- a:11
-test.tp_l	check	error	Partition p0 returned error
-test.tp_l	check	error	Table upgrade required. Please do "REPAIR TABLE `tp_l`" or dump/reload to fix it!
 ALTER TABLE tp_l REPAIR PARTITION p0 ;
-Table	Op	Msg_type	Msg_text
-test.tp_l	repair	warning	Moved 8 misplaced rows
-test.tp_l	repair	status	OK
 SELECT * FROM tp_l PARTITION (p0);
 a	b	c
-1	One	2001-01-01
-3	Three	2003-01-01
-5	Five	2005-01-01
-9	Nine	2009-01-01
+2	Two	2002-01-01
+4	Four	2004-01-01
+6	Six	2006-01-01
+8	Eight	2008-01-01
 SELECT * FROM tp_l PARTITION (p1);
 a	b	c
-11	Eleven	2011-01-01
-13	Thirdteen	2013-01-01
-15	Fifeteen	2015-01-01
-19	Nineteen	2019-01-01
-91	Ninety-one	2091-01-01
-93	Ninety-three	2093-01-01
-95	Ninety-five	2095-01-01
-99	Ninety-nine	2099-01-01
 SELECT * FROM tp_l PARTITION (p2);
 a	b	c
 112	Hundred twelve	2112-01-01
@@ -488,15 +448,8 @@ INSERT INTO tsp_l VALUES (122, "Hundred twenty-two", '2122-01-01'), (124, "Hundr
 INSERT INTO tsp_l VALUES (162, "Hundred sixty-two", '2162-01-01'), (164, "Hundred sixty-four", '2164-01-01'), (166, "Hundred sixty-six", '2166-01-01'), (168, "Hundred sixty-eight", '2168-01-01');
 INSERT INTO tsp_l VALUES (182, "Hundred eight-two", '2182-01-01'), (184, "Hundred eighty-four", '2184-01-01'), (186, "Hundred eighty-six", '2186-01-01'), (188, "Hundred eighty-eight", '2188-01-01');
 ### Range sub/partitioned tables with/out validation
-ALTER TABLE tsp_l EXCHANGE PARTITION sp00 WITH TABLE t_10 WITH VALIDATION;
-ERROR HY000: Found a row that does not match the partition
-ALTER TABLE tsp_l EXCHANGE PARTITION sp00 WITH TABLE t_100 WITH VALIDATION;
-ERROR HY000: Found a row that does not match the partition
-ALTER TABLE tsp_l EXCHANGE PARTITION sp00 WITH TABLE t_100 WITHOUT VALIDATION;
 SELECT * FROM t_100;
 a	b	c
-SELECT * FROM tsp_l PARTITION (sp00);
-a	b	c
 11	Eleven	2011-01-01
 13	Thirdteen	2013-01-01
 15	Fifeteen	2015-01-01
@@ -506,92 +459,44 @@ a	b	c
 95	Ninety-five	2095-01-01
 99	Ninety-nine	2099-01-01
 SELECT * FROM tsp_l PARTITION (sp00);
-a	b	c
-11	Eleven	2011-01-01
-13	Thirdteen	2013-01-01
-15	Fifeteen	2015-01-01
-19	Nineteen	2019-01-01
-91	Ninety-one	2091-01-01
-93	Ninety-three	2093-01-01
-95	Ninety-five	2095-01-01
-99	Ninety-nine	2099-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
+SELECT * FROM tsp_l PARTITION (sp00);
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp22);
-a	b	c
-112	Hundred twelve	2112-01-01
-122	Hundred twenty-two	2122-01-01
-162	Hundred sixty-two	2162-01-01
-182	Hundred eight-two	2182-01-01
-ALTER TABLE tsp_l EXCHANGE PARTITION sp22 WITH TABLE t_100 WITHOUT VALIDATION;
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp22);
-a	b	c
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp22);
-a	b	c
-ALTER TABLE tsp_l EXCHANGE PARTITION sp22 WITH TABLE t_100 WITHOUT VALIDATION;
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp22);
-a	b	c
-112	Hundred twelve	2112-01-01
-122	Hundred twenty-two	2122-01-01
-162	Hundred sixty-two	2162-01-01
-182	Hundred eight-two	2182-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 ALTER TABLE tsp_l ANALYZE PARTITION p0;
-Table	Op	Msg_type	Msg_text
-test.tsp_l	analyze	status	OK
 ALTER TABLE tsp_l OPTIMIZE PARTITION p0;
-Table	Op	Msg_type	Msg_text
-test.tsp_l	optimize	note	Table does not support optimize on partitions. All partitions will be rebuilt and analyzed.
-test.tsp_l	optimize	status	OK
-ALTER TABLE tsp_l EXCHANGE PARTITION sp00 WITH TABLE t_10 WITH VALIDATION;
-ERROR HY000: Found a row that does not match the partition
 CREATE TABLE t_11 LIKE t_10;
 INSERT INTO t_11 SELECT * FROM t_10;
 INSERT INTO t_11 SELECT * FROM t_100;
-ALTER TABLE tsp_l EXCHANGE PARTITION sp00 WITH TABLE t_11 WITHOUT VALIDATION;
 SELECT * FROM tsp_l PARTITION (sp00);
-a	b	c
-1	One	2001-01-01
-3	Three	2003-01-01
-5	Five	2005-01-01
-9	Nine	2009-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp01);
-a	b	c
-6	Six	2006-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp03);
-a	b	c
-8	Eight	2008-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp04);
-a	b	c
-4	Four	2004-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp02);
-a	b	c
-2	Two	2002-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 ALTER TABLE tsp_l CHECK PARTITION sp00 ;
-Table	Op	Msg_type	Msg_text
-test.tsp_l	check	error	Found a misplaced row in part 0 should be in part 1:
- a:1
-test.tsp_l	check	error	Subpartition sp00 returned error
-test.tsp_l	check	error	Table upgrade required. Please do "REPAIR TABLE `tsp_l`" or dump/reload to fix it!
 ALTER TABLE tsp_l REPAIR PARTITION sp00 ;
-Table	Op	Msg_type	Msg_text
-test.tsp_l	repair	warning	Moved 3 misplaced rows
-test.tsp_l	repair	status	OK
 SELECT * FROM tsp_l PARTITION (sp00);
-a	b	c
-5	Five	2005-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp01);
-a	b	c
-1	One	2001-01-01
-6	Six	2006-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp02);
-a	b	c
-2	Two	2002-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp03);
-a	b	c
-3	Three	2003-01-01
-8	Eight	2008-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT * FROM tsp_l PARTITION (sp04);
-a	b	c
-4	Four	2004-01-01
-9	Nine	2009-01-01
+ERROR HY000: Cannot specify HASH or KEY partitions
 DROP TABLE IF EXISTS t_11;
 DROP TABLE IF EXISTS t_10;
 DROP TABLE IF EXISTS t_100;

@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 # 
 # Run subquery_sj_mat.test with BKA enabled 
@@ -11,3 +10,5 @@ set optimizer_switch='batched_key_access=on,block_nested_loop=off,mrr_cost_based
 --source t/subquery_sj_mat.test
 
 set optimizer_switch=default;
+
+--source include/uninstall_sequoiadb.inc

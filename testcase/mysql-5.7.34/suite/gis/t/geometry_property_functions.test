@@ -15,7 +15,6 @@
 # Author : Pavan Naik                                                         #
 #                                                                             #
 ###############################################################################
-
 --source include/have_geometry.inc
 
 ############################################################################################
@@ -23,7 +22,7 @@
 ############################################################################################
 
 --echo # Creating the spatial objects
-USE test;
+#USE test;
 
 CREATE TABLE gis_point (fid INTEGER NOT NULL PRIMARY KEY, g POINT);
 CREATE TABLE gis_linestring (fid INTEGER NOT NULL PRIMARY KEY, g LINESTRING);
@@ -61,7 +60,7 @@ INSERT INTO gis_point VALUES
     (115, ST_POINTFROMWKB(ST_ASWKB(ST_POINTFROMTEXT('POINT(-1e308 -1e308)'))));
 
 --echo # Displaying the inserted POINT Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_point order by fid;
 
 --echo # Checking the integrity of the above insert statements 
 SELECT COUNT(g) FROM gis_point;
@@ -104,7 +103,7 @@ INSERT INTO gis_linestring VALUES
     (215, ST_LINESTRINGFROMWKB(ST_ASWKB(ST_LINESTRINGFROMTEXT('LINESTRING(10 10,10 -10,-10 -10,-10 10,10 10)'))));
 
 --echo # Displaying the inserted LINESTRING Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_linestring order by fid;
 
 --echo # Checking the integrity of the above insert statements 
 SELECT COUNT(g) FROM gis_linestring;
@@ -149,7 +148,7 @@ INSERT INTO gis_polygon VALUES
     (315, ST_POLYGONFROMWKB(ST_ASWKB(ST_POLYGONFROMTEXT('POLYGON((0 0,0 10,10 10,10 0,0 0),(2 2,2 4,4 4,4 2,2 2),(6 6,6 8,8 8,8 6,6 6))'))));
 
 --echo # Displaying the inserted POLYGON Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_polygon order by fid;
 
 --echo # Checking the integrity of the above insert statements 
 SELECT COUNT(g) FROM gis_polygon;
@@ -192,7 +191,7 @@ INSERT INTO gis_multi_point VALUES
     (415, ST_MPOINTFROMWKB(ST_ASWKB(ST_MPOINTFROMTEXT('MULTIPOINT(1e308 1e308,1e308 -1e308,-1e308 1e308,-1e308 -1e308,1e308 1e308)'))));
 
 --echo # Displaying the inserted MULTIPOINT Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_point order by fid;
 
 --echo # Checking the integrity of the above insert statements 
 SELECT COUNT(g) FROM gis_multi_point;
@@ -237,7 +236,7 @@ INSERT INTO gis_multi_linestring VALUES
     (515, ST_MULTILINESTRINGFROMWKB(ST_ASWKB(ST_MULTILINESTRINGFROMTEXT('MULTILINESTRING((0 0,0 100),(0 0,100 0),(0 0,0 -100),(0 0,-100 0))'))));
 
 --echo # Displaying the inserted MULTILINESTRING Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring order by fid;
 
 --echo # Checking the integrity of the above insert statements 
 SELECT COUNT(g) FROM gis_multi_linestring;
@@ -285,7 +284,7 @@ INSERT INTO gis_multi_polygon VALUES
     (615, ST_MULTIPOLYGONFROMWKB(ST_ASWKB(ST_MULTIPOLYGONFROMTEXT('MULTIPOLYGON(((0 0,5 5,10 0,5 -5,0 0)))'))));
 
 --echo # Displaying the inserted MULTIPOLYGON Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon order by fid;
 
 --echo # Checking the integrity of the above insert statements 
 SELECT COUNT(g) FROM gis_multi_polygon;
@@ -381,7 +380,7 @@ INSERT INTO gis_geometrycollection VALUES
                                                                 'MULTIPOLYGON(((0 0,0 5,5 5,5 0,0 0)),((5 5,5 10,10 10,10 5,5 5))))'))));
 
 --echo # Displaying the inserted GEOMETRYCOLLECTION Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_geometrycollection;
+SELECT fid, ST_ASTEXT(g) FROM gis_geometrycollection order by fid;
 
 --echo # Checking the integrity of the above insert statements 
 SELECT COUNT(g) FROM gis_geometrycollection;
@@ -1642,8 +1641,8 @@ DELIMITER ;|
 UPDATE gis_point SET fid = 999 WHERE fid = 111;
 
 --echo # Checking the table entries
-SELECT fid, ST_ASTEXT(g) FROM gis_point;
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_point order by fid;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_point order by fid;
 
 --echo # Cleaning up the trigger
 DROP TRIGGER geom_trigger;
@@ -1669,8 +1668,8 @@ DELIMITER ;|
 UPDATE gis_linestring SET fid = 999 WHERE fid = 211;
 
 --echo # Checking the table entries
-SELECT fid, ST_ASTEXT(g) FROM gis_linestring;
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_linestring order by fid;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring order by fid;
 
 --echo # Cleaning up the trigger
 DROP TRIGGER geom_trigger;
@@ -1696,8 +1695,8 @@ DELIMITER ;|
 UPDATE gis_polygon SET fid = 999 WHERE fid = 311;
 
 --echo # Checking the table entries
-SELECT fid, ST_ASTEXT(g) FROM gis_polygon;
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_polygon order by fid;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon order by fid;
 
 --echo # Cleaning up the trigger
 DROP TRIGGER geom_trigger;

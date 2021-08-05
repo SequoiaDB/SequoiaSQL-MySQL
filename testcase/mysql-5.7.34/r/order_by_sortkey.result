@@ -48,7 +48,7 @@ Sort_merge_passes	0
 Sort_range	0
 Sort_rows	0
 Sort_scan	0
-SELECT * FROM t1 ORDER BY f2 LIMIT 100;
+SELECT * FROM t1 ORDER BY f2,f0 LIMIT 100;
 f0	f1	f2
 1	0	0
 101	0	0
@@ -154,8 +154,8 @@ SHOW SESSION STATUS LIKE 'Sort%';
 Variable_name	Value
 Sort_merge_passes	0
 Sort_range	0
-Sort_rows	100
-Sort_scan	1
+Sort_rows	0
+Sort_scan	0
 FLUSH STATUS;
 CREATE TABLE t2 (f1 int);
 INSERT INTO t2 VALUES (0), (0);

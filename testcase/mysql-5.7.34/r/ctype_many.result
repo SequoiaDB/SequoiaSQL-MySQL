@@ -12,14 +12,14 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `comment` char(32) CHARACTER SET latin1 NOT NULL,
   `koi8_ru_f` char(32) CHARACTER SET koi8r NOT NULL DEFAULT ''
-) ENGINE=ENGINE DEFAULT CHARSET=latin5
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin5
 ALTER TABLE t1 CHANGE comment comment CHAR(32) CHARACTER SET latin2 NOT NULL;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `comment` char(32) CHARACTER SET latin2 NOT NULL,
   `koi8_ru_f` char(32) CHARACTER SET koi8r NOT NULL DEFAULT ''
-) ENGINE=ENGINE DEFAULT CHARSET=latin5
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin5
 ALTER TABLE t1 ADD latin5_f CHAR(32) NOT NULL;
 SHOW CREATE TABLE t1;
 Table	Create Table
@@ -27,7 +27,7 @@ t1	CREATE TABLE `t1` (
   `comment` char(32) CHARACTER SET latin2 NOT NULL,
   `koi8_ru_f` char(32) CHARACTER SET koi8r NOT NULL DEFAULT '',
   `latin5_f` char(32) NOT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin5
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin5
 ALTER TABLE t1 DEFAULT CHARSET=latin2;
 ALTER TABLE t1 ADD latin2_f CHAR(32) NOT NULL;
 SHOW CREATE TABLE t1;
@@ -37,14 +37,14 @@ t1	CREATE TABLE `t1` (
   `koi8_ru_f` char(32) CHARACTER SET koi8r NOT NULL DEFAULT '',
   `latin5_f` char(32) CHARACTER SET latin5 NOT NULL,
   `latin2_f` char(32) NOT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin2
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin2
 ALTER TABLE t1 DROP latin2_f, DROP latin5_f;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `comment` char(32) NOT NULL,
   `koi8_ru_f` char(32) CHARACTER SET koi8r NOT NULL DEFAULT ''
-) ENGINE=ENGINE DEFAULT CHARSET=latin2
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin2
 INSERT INTO t1 (koi8_ru_f,comment) VALUES ('a','LAT SMALL A');
 INSERT INTO t1 (koi8_ru_f,comment) VALUES ('b','LAT SMALL B');
 INSERT INTO t1 (koi8_ru_f,comment) VALUES ('c','LAT SMALL C');
@@ -1306,6 +1306,71 @@ CYR SMALL YA	CYR SMALL YA
 SET CHARACTER SET utf8;
 ALTER TABLE t1 ADD ucs2_f CHAR(32) CHARACTER SET ucs2;
 ALTER TABLE t1 CHANGE ucs2_f ucs2_f CHAR(32) UNICODE NOT NULL;
+Warnings:
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 1
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 2
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 3
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 4
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 5
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 6
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 7
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 8
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 9
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 10
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 11
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 12
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 13
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 14
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 15
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 16
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 17
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 18
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 19
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 20
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 21
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 22
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 23
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 24
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 25
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 26
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 27
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 28
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 29
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 30
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 31
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 32
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 33
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 34
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 35
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 36
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 37
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 38
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 39
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 40
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 41
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 42
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 43
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 44
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 45
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 46
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 47
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 48
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 49
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 50
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 51
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 52
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 53
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 54
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 55
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 56
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 57
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 58
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 59
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 60
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 61
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 62
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 63
+Warning	1263	Column set to default value; NULL supplied to NOT NULL column 'ucs2_f' at row 64
 INSERT INTO t1 (ucs2_f,comment) VALUES (0x0391,'GREEK CAPIT ALPHA');
 INSERT INTO t1 (ucs2_f,comment) VALUES (0x0392,'GREEK CAPIT BETA');
 INSERT INTO t1 (ucs2_f,comment) VALUES (0x0393,'GREEK CAPIT GAMMA');

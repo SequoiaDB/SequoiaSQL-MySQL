@@ -1,7 +1,7 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB
+
+--source include/have_sequoiadb.inc
 
 --disable_warnings
 drop table if exists t1,t2;
@@ -12,9 +12,9 @@ create table t1(str varchar(10) default 'def',strnull varchar(10),intg int defau
 
 insert into t1 values ('','',0,0.0);
 select default(str), default(strnull), default(intg), default(rel) from t1;
-explain extended select default(str), default(strnull), default(intg), default(rel) from t1;
+#explain extended select default(str), default(strnull), default(intg), default(rel) from t1;
 select * from t1 where str <> default(str);
-explain select * from t1 where str <> default(str);
+#explain select * from t1 where str <> default(str);
 
 #TODO: uncomment when bug will be fixed
 #create table t2 select default(str), default(strnull), default(intg), default(rel) from t1;
@@ -34,3 +34,4 @@ INSERT INTO t1 VALUES (1, 'one'), (2, 'two'), (3, 'three');
 SELECT s, 32 AS mi FROM t1 GROUP BY s HAVING DEFAULT(mi) IS NULL;
 DROP TABLE t1;
 
+--source include/uninstall_sequoiadb.inc

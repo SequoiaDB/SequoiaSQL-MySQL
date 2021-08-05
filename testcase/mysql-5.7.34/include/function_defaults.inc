@@ -130,6 +130,7 @@ SELECT * FROM t1;
 
 DROP TABLE t1;
 
+# Bug #SEQUOIADBMAINSTREAM-3640
 --echo #
 --echo # Test of ON DUPLICATE KEY UPDATE
 --echo #
@@ -139,13 +140,13 @@ eval CREATE TABLE t1 (
   c $timestamp NOT NULL DEFAULT $current_timestamp ON UPDATE $current_timestamp,
   d $timestamp NOT NULL DEFAULT $current_timestamp,
   e $timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE $current_timestamp,
-  f $timestamp NOT NULL DEFAULT '1986-09-27 03:00:00.098765',
+ f $timestamp NOT NULL DEFAULT '1986-09-27 03:00:00.098765',
   g $timestamp NULL,
   h $datetime DEFAULT $current_timestamp ON UPDATE $current_timestamp,
   i $datetime DEFAULT $current_timestamp,
   j $datetime ON UPDATE $current_timestamp,
   k $datetime NULL,
-  l $datetime DEFAULT '1986-09-27 03:00:00.098765'
+ l $datetime DEFAULT '1986-09-27 03:00:00.098765'
 );
 
 --echo # 1977-12-21 23:00:00 UTC
@@ -185,6 +186,7 @@ SELECT * FROM t1;
 UPDATE t1 SET c = '2004-04-04 04:04:04.444444' WHERE a = 4;
 SELECT * FROM t1;
 
+# Bug #SEQUOIADBMAINSTREAM-3640
 INSERT INTO t1 ( a ) VALUES ( 3 ), ( 5 ) ON DUPLICATE KEY UPDATE b = 3, c = c;
 SELECT * FROM t1;
 
@@ -197,7 +199,7 @@ SELECT * FROM t1;
 
 DROP TABLE t1;
 
-
+# Bug #SEQUOIASQLMAINSTREAM-90
 --echo #
 --echo # Test of REPLACE INTO executed as UPDATE.
 --echo #
@@ -479,7 +481,6 @@ eval CREATE TABLE t1 ( a $timestamp NOT NULL DEFAULT $now ON UPDATE $current_tim
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
-
 --echo #
 --echo # Test of ALTER TABLE, adding columns.
 --echo #
@@ -698,7 +699,9 @@ eval CREATE TABLE t1 (
   f $datetime DEFAULT $current_timestamp,
   g $datetime ON UPDATE $current_timestamp
 );
-CREATE PROCEDURE p1() INSERT INTO test.t1( a ) VALUES ( 1 );
+# Compatible with parallel > 1, don't use database "test" here, should change "test.t1" to "t1"
+#CREATE PROCEDURE p1() INSERT INTO test.t1( a ) VALUES ( 1 );
+CREATE PROCEDURE p1() INSERT INTO t1( a ) VALUES ( 1 );
 CREATE PROCEDURE p2() UPDATE t1 SET a = 2 WHERE a = 1;
 
 --echo # 1971-01-31 20:13:57 UTC
@@ -910,9 +913,10 @@ ROWS IDENTIFIED BY '<row>';
 DROP TABLE t1, t2;
 
 let $MYSQLD_DATADIR= `select @@datadir`;
-remove_file $MYSQLD_DATADIR/test/t3.dat;
-remove_file $MYSQLD_DATADIR/test/t4.dat;
-remove_file $MYSQLD_DATADIR/test/t5.dat;
+let $CURRENT_DATABASE = `select database()`;
+remove_file $MYSQLD_DATADIR/$CURRENT_DATABASE/t3.dat;
+remove_file $MYSQLD_DATADIR/$CURRENT_DATABASE/t4.dat;
+remove_file $MYSQLD_DATADIR/$CURRENT_DATABASE/t5.dat;
 
 
 --echo #
@@ -1032,8 +1036,8 @@ delete from t1;
 --echo # TIMESTAMP NOT NULL (e) gets NOW.
 
 drop table t1;
-remove_file $MYSQLD_DATADIR/test/file1.dat;
-remove_file $MYSQLD_DATADIR/test/file2.dat;
+remove_file $MYSQLD_DATADIR/$CURRENT_DATABASE/file1.dat;
+remove_file $MYSQLD_DATADIR/$CURRENT_DATABASE/file2.dat;
 
 --echo #
 --echo # Test of updatable views with check options. The option can be violated
@@ -1085,6 +1089,7 @@ SELECT * FROM v1;
 
 SET TIMESTAMP = 1.126789;
 
+# Bug #SEQUOIADBMAINSTREAM-3640
 --echo Logically, there should be an ER_VIEW_CHECK_FAILED here.
 INSERT INTO v1 ( c ) VALUES ( 1 ) ON DUPLICATE KEY UPDATE c = 2;
 
@@ -1156,7 +1161,6 @@ ALTER TABLE t1 MODIFY COLUMN b DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3);
 SELECT * FROM t1;
 
 DROP TABLE t1;
-
 
 eval CREATE TABLE t1 (
   a $timestamp NOT NULL DEFAULT '1999-12-01 11:22:33' ON UPDATE $current_timestamp,

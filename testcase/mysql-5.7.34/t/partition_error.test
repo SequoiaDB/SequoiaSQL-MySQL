@@ -3,8 +3,11 @@
 # partition storage engine
 #
 -- source include/have_partition.inc
-# This test needs MyISAM for some sub tests
---source include/have_myisam.inc
+# This test needs SequoiaDB for some sub tests
+--source include/have_sequoiadb.inc
+
+CREATE DATABASE test_partition_error;
+USE test_partition_error;
 
 --disable_warnings
 drop table if exists t1, t2;
@@ -754,9 +757,6 @@ DROP TABLE t1;
 CREATE TABLE t1 (c TIMESTAMP)
 PARTITION BY HASH (c) PARTITIONS 4;
 
---echo # Moved to partition_myisam, since it was MyISAM specific
---echo # Added test with existing TIMESTAMP partitioning (when it was allowed).
-
 --echo #
 --echo # Bug#49477: Assertion `0' failed in ha_partition.cc:5530
 --echo # with temporary table and partitions
@@ -777,7 +777,7 @@ SUBPARTITION BY HASH(TO_DAYS(purchased))
 (PARTITION p0 VALUES LESS THAN MAXVALUE
   DATA DIRECTORY = '/tmp/not-existing'
   INDEX DIRECTORY = '/tmp/not-existing');
---replace_result MyISAM <curr_engine> InnoDB <curr_engine>
+#--replace_result MyISAM <curr_engine> InnoDB <curr_engine>
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 CREATE TABLE t1 (id INT, purchased DATE)
@@ -788,7 +788,7 @@ SUBPARTITION BY HASH(TO_DAYS(purchased)) SUBPARTITIONS 2
    DATA DIRECTORY = '/tmp/not-existing'
    INDEX DIRECTORY = '/tmp/not-existing',
   SUBPARTITION sp1));
---replace_result MyISAM <curr_engine> InnoDB <curr_engine>
+#--replace_result MyISAM <curr_engine> InnoDB <curr_engine>
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 CREATE TABLE t1 (id INT, purchased DATE)
@@ -796,7 +796,7 @@ PARTITION BY RANGE(YEAR(purchased))
 (PARTITION p0 VALUES LESS THAN MAXVALUE
   DATA DIRECTORY = '/tmp/not-existing'
   INDEX DIRECTORY = '/tmp/not-existing');
---replace_result MyISAM <curr_engine> InnoDB <curr_engine>
+#--replace_result MyISAM <curr_engine> InnoDB <curr_engine>
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 SET @@sql_mode= @org_mode;
@@ -2067,6 +2067,7 @@ PARTITION BY LIST (a)
 CREATE TABLE t2 LIKE t1;
 ALTER TABLE t2 REMOVE PARTITIONING;
 INSERT INTO t2 VALUES (2),(3),(4),(6);
+--error 1505
 ALTER TABLE t1 EXCHANGE PARTITION p1 WITH TABLE t2 WITHOUT VALIDATION;
 
 --echo # These should fail gracefully (WHERE used to not trigger pruning!)
@@ -2075,20 +2076,22 @@ CALL mtr.add_suppression(" corrupted: row in wrong partition: ");
 INSERT INTO t1 VALUES (2);
 --error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
 INSERT INTO t1 PARTITION (p1) VALUES (3);
---error ER_NO_PARTITION_FOR_GIVEN_VALUE
+#--error ER_NO_PARTITION_FOR_GIVEN_VALUE
 UPDATE t1 SET a = 3 WHERE (a % 3) != 0;
---error ER_NO_PARTITION_FOR_GIVEN_VALUE
+#--error ER_NO_PARTITION_FOR_GIVEN_VALUE
 UPDATE t1 PARTITION (p1) SET a = 3 WHERE (a % 3) != 0;
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
 UPDATE t1 PARTITION (p1) SET a = 5 WHERE (a % 3) = 0;
---error ER_NO_PARTITION_FOR_GIVEN_VALUE
+#--error ER_NO_PARTITION_FOR_GIVEN_VALUE
 UPDATE t1 PARTITION (p1) SET a = 3 WHERE (a % 5) > 3;
---error ER_ROW_IN_WRONG_PARTITION
+#--error ER_ROW_IN_WRONG_PARTITION
 UPDATE t1 PARTITION (p1,p6) SET a = 7 WHERE (a % 7) > 5;
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
 DELETE FROM t1 PARTITION (p1) WHERE (a % 7) > 2;
---error ER_ROW_IN_WRONG_PARTITION
+#--error ER_ROW_IN_WRONG_PARTITION
 DELETE FROM t1 PARTITION (p1,p6) WHERE (a % 7) > 5;
---error ER_NO_PARTITION_FOR_GIVEN_VALUE
+#--error ER_NO_PARTITION_FOR_GIVEN_VALUE
 DELETE FROM t1 WHERE a > 0;
 DROP TABLE t1, t2;
+
+DROP DATABASE test_partition_error;

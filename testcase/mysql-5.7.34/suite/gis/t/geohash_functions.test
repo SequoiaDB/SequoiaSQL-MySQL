@@ -11,6 +11,7 @@
 #####################################################################
 # ST_LONGFROMGEOHASH() 
 #####################################################################
+--source include/have_sequoiadb.inc
 
 # Check for all valid characters and inputs
 --echo # valid characters
@@ -661,10 +662,10 @@ SELECT ST_ASTEXT(ST_POINTFROMGEOHASH("0123456789bcdefghjkmnpqrstuvwxyz0123456789
 --echo # different random geohash values
 SELECT ST_ASTEXT(ST_POINTFROMGEOHASH(hash_value,1000)) FROM geohashes;
 
---echo # Test create table from SELECT statement
-CREATE TABLE t1 AS SELECT ST_POINTFROMGEOHASH("0123", 4326);
-EXPLAIN t1;
-DROP TABLE t1;
+#--echo # Test create table from SELECT statement
+#CREATE TABLE t1 AS SELECT ST_POINTFROMGEOHASH("0123", 4326);
+#EXPLAIN t1;
+#DROP TABLE t1;
 
 #####################################################################
 # ST_GEOHASH() 
@@ -1430,7 +1431,9 @@ SELECT ST_POINTFROMGEOHASH("00", @double);
 #####################################################################
 # Bug#20293609
 #####################################################################
+-- disable_warnings
 DROP TABLE IF EXISTS t1;
+-- enable_warnings
 CREATE TABLE t1 (a VARCHAR(255));
 INSERT INTO t1 (a) VALUES ('  ');
 --error ER_WRONG_VALUE_FOR_TYPE

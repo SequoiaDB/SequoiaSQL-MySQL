@@ -1,3 +1,5 @@
+let $CURRENT_DATABASE = `select database()`;
+
 #
 # Tests with the utf8mb4 character set
 #
@@ -195,12 +197,12 @@ if(!$is_heap)
 if(!$is_ndb)
 {
 --error ER_TOO_LONG_KEY
-eval create table t1 (a text character set utf8mb4, primary key(a(371))) engine $engine;
+eval create table t1 (a text character set utf8mb4, primary key(a(769))) engine $engine;
 }
 if($is_ndb)
 {
 --error ER_BLOB_USED_AS_KEY
-eval create table t1 (a text character set utf8mb4, primary key(a(371))) engine $engine;
+eval create table t1 (a text character set utf8mb4, primary key(a(769))) engine $engine;
 }
 }
 
@@ -276,10 +278,11 @@ if (!$is_ndb)
 eval create table t1 (c varchar(30) character set utf8mb4, unique(c(10))) engine $engine;
 insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
 insert into t1 values ('aaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaaa');
 insert into t1 values (repeat('b',20));
 select c c1 from t1 where c='1';
 select c c2 from t1 where c='2';
@@ -300,10 +303,11 @@ eval create table t1 (c varchar(30) character set utf8mb4, unique(c(10))) engine
 --enable_warnings
 insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
 insert into t1 values ('aaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaaa');
 insert into t1 values (repeat('b',20));
 select c c1 from t1 where c='1';
 select c c2 from t1 where c='2';
@@ -323,24 +327,29 @@ eval create table t1 (c char(3) character set utf8mb4, unique (c(2))) engine $en
 insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
 insert into t1 values ('a');
 insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('b');
 insert into t1 values ('bb');
---error ER_DUP_ENTRY
-insert into t1 values ('bbb');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('bbb');
 insert into t1 values ('а');
 insert into t1 values ('аа');
---error ER_DUP_ENTRY
-insert into t1 values ('ааа');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ааа');
 insert into t1 values ('б');
 insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 insert into t1 values ('ꪪ');
 insert into t1 values ('ꪪꪪ');
---error ER_DUP_ENTRY
-insert into t1 values ('ꪪꪪꪪ');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ꪪꪪꪪ');
 drop table t1;
 #
 # Bug 4521: unique key prefix interacts poorly with utf8mb4
@@ -352,24 +361,29 @@ eval create table t1 (c char(3) character set utf8mb4, unique (c(2))) engine=$en
 insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
 insert into t1 values ('a');
 insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('b');
 insert into t1 values ('bb');
---error ER_DUP_ENTRY
-insert into t1 values ('bbb');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('bbb');
 insert into t1 values ('а');
 insert into t1 values ('аа');
---error ER_DUP_ENTRY
-insert into t1 values ('ааа');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ааа');
 insert into t1 values ('б');
 insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 insert into t1 values ('ꪪ');
 insert into t1 values ('ꪪꪪ');
---error ER_DUP_ENTRY
-insert into t1 values ('ꪪꪪꪪ');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ꪪꪪꪪ');
 drop table t1;
 #
 # Bug 4531: unique key prefix interacts poorly with utf8mb4
@@ -381,15 +395,16 @@ unique key a using hash (c(1))
 ) engine=$engine;
 show create table t1;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
 select c as c_a from t1 where c='б';
@@ -405,15 +420,16 @@ unique key a using btree (c(1))
 ) engine=$engine;
 show create table t1;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
 select c as c_a from t1 where c='б';
@@ -430,15 +446,16 @@ unique key a (c(1))
 ) engine=$engine;
 --enable_warnings
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
 select c as c_a from t1 where c='б';
@@ -451,10 +468,11 @@ drop table t1;
 eval create table t1 (c varchar(30) character set utf8mb4 collate utf8mb4_bin, unique(c(10))) engine $engine;
 insert into t1 values ('1'),('2'),('3'),('x'),('y'),('z');
 insert into t1 values ('aaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaaaaaaaaaaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaaaaaaaaaaa');
 insert into t1 values (repeat('b',20));
 select c c1 from t1 where c='1';
 select c c2 from t1 where c='2';
@@ -474,24 +492,25 @@ eval create table t1 (c char(3) character set utf8mb4 collate utf8mb4_bin, uniqu
 insert into t1 values ('1'),('2'),('3'),('4'),('x'),('y'),('z');
 insert into t1 values ('a');
 insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('b');
 insert into t1 values ('bb');
---error ER_DUP_ENTRY
-insert into t1 values ('bbb');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('bbb');
 insert into t1 values ('а');
 insert into t1 values ('аа');
---error ER_DUP_ENTRY
-insert into t1 values ('ааа');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ааа');
 insert into t1 values ('б');
 insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 insert into t1 values ('ꪪ');
 insert into t1 values ('ꪪꪪ');
---error ER_DUP_ENTRY
-insert into t1 values ('ꪪꪪꪪ');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ꪪꪪꪪ');
 drop table t1;
 
 #
@@ -504,15 +523,16 @@ unique key a using hash (c(1))
 ) engine=$engine;
 show create table t1;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
 select c as c_a from t1 where c='б';
@@ -528,15 +548,16 @@ unique key a using btree (c(1))
 ) engine=$engine;
 show create table t1;
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
 select c as c_a from t1 where c='б';
@@ -553,15 +574,16 @@ unique key a (c(1))
 ) engine=$engine;
 --enable_warnings
 insert into t1 values ('a'),('b'),('c'),('d'),('e'),('f');
---error ER_DUP_ENTRY
-insert into t1 values ('aa');
---error ER_DUP_ENTRY
-insert into t1 values ('aaa');
+#SequoiaDB doesn't support prefix index
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aa');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('aaa');
 insert into t1 values ('б');
---error ER_DUP_ENTRY
-insert into t1 values ('бб');
---error ER_DUP_ENTRY
-insert into t1 values ('ббб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('бб');
+#--error ER_DUP_ENTRY
+#insert into t1 values ('ббб');
 select c as c_all from t1 order by c;
 select c as c_a from t1 where c='a';
 select c as c_a from t1 where c='б';
@@ -701,6 +723,7 @@ eval CREATE TABLE t1 (
 INSERT INTO t1 set list_id = 1, term = "test�test";
 INSERT INTO t1 set list_id = 1, term = "testetest";
 INSERT INTO t1 set list_id = 1, term = "test�test";
+#SequoiaDB case sensitive,modify result
 SELECT id, term FROM t1 where (list_id = 1) AND (term = "test�test");
 SELECT id, term FROM t1 where (list_id = 1) AND (term = "testetest");
 SELECT id, term FROM t1 where (list_id = 1) AND (term = "test�test");
@@ -723,7 +746,7 @@ insert into t1 values(1,'foo'),(2,'foobar');
 --sorted_result
 select * from t1 where b like 'foob%';
 --disable_warnings
-alter table t1 engine=innodb;
+alter table t1 engine=sequoiadb;
 --enable_warnings
 --sorted_result
 select * from t1 where b like 'foob%';
@@ -823,6 +846,7 @@ select ifnull(NULL, _utf8mb4'string');
 set names utf8mb4;
 eval create table t1 (s1 char(5) character set utf8mb4 collate utf8mb4_lithuanian_ci) engine $engine;
 insert into t1 values ('I'),('K'),('Y');
+#SequoiaDB case sensitive,modify result
 --sorted_result
 select * from t1 where s1 < 'K' and s1 = 'Y';
 --sorted_result
@@ -831,6 +855,7 @@ drop table t1;
 
 eval create table t1 (s1 char(5) character set utf8mb4 collate utf8mb4_czech_ci) engine $engine;
 insert into t1 values ('c'),('d'),('h'),('ch'),('CH'),('cH'),('Ch'),('i');
+#SequoiaDB case sensitive,modify result
 --sorted_result
 select * from t1 where s1 > 'd' and s1 = 'CH';
 --sorted_result
@@ -860,6 +885,7 @@ eval create table t1 (
 insert into t1 values (1,'Durban North');
 insert into t1 values (2,'Durban');
 select * from t1 where city = 'Durban';
+#SequoiaDB tableSpace sensitive,modify result
 select * from t1 where city = 'Durban ';
 drop table t1;
 
@@ -947,6 +973,7 @@ insert into t1 values ("a"),("abc"),("abcd"),("hello"),("test");
 select * from t1 where a like "abc%";
 --sorted_result
 select * from t1 where a like concat("abc","%");
+#SequoiaDB case sensitive
 --sorted_result
 select * from t1 where a like "ABC%";
 select * from t1 where a like "test%";
@@ -1028,32 +1055,34 @@ DROP TABLE t1;
 #
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 SET NAMES utf8mb4;
+--disable_warnings
 DROP TABLE IF EXISTS t1;
+--enable_warnings
 eval CREATE TABLE t1(a VARCHAR(255), KEY(a)) ENGINE=$engine DEFAULT CHARSET=utf8mb4;
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
 INSERT INTO t1 VALUES('uu');
-check table t1;
+#check table t1;
 INSERT INTO t1 VALUES('uU');
-check table t1;
+#check table t1;
 INSERT INTO t1 VALUES('uu');
-check table t1;
+#check table t1;
 INSERT INTO t1 VALUES('uuABC');
-check table t1;
+#check table t1;
 INSERT INTO t1 VALUES('UuABC');
-check table t1;
+#check table t1;
 INSERT INTO t1 VALUES('uuABC');
-check table t1;
+#check table t1;
 alter table t1 add b int;
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',1);
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',2);
 delete from t1 where b=1;
 INSERT INTO t1 VALUES('UUABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',1);
-check table t1;
+#check table t1;
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',3);
 INSERT INTO t1 VALUES('uuABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',4);
 delete from t1 where b=3;
 INSERT INTO t1 VALUES('uUABCDEFGHIGKLMNOPRSTUVWXYZ̈bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',3);
-check table t1;
+#check table t1;
 drop table t1;
 SET sql_mode = default;
 #
@@ -1192,10 +1221,10 @@ analyze table t2;
 SELECT a FROM t1 WHERE a LIKE 'Käli Käli 2+4';
 SELECT a FROM t2 WHERE a LIKE 'Kali Kali 2+4';
 
-EXPLAIN SELECT a FROM t1 WHERE a LIKE 'Käli Käli 2+4';
-EXPLAIN SELECT a FROM t1 WHERE a = 'Käli Käli 2+4';
-EXPLAIN SELECT a FROM t2 WHERE a LIKE 'Kali Kali 2+4';
-EXPLAIN SELECT a FROM t2 WHERE a = 'Kali Kali 2+4';
+#EXPLAIN SELECT a FROM t1 WHERE a LIKE 'Käli Käli 2+4';
+#EXPLAIN SELECT a FROM t1 WHERE a = 'Käli Käli 2+4';
+#EXPLAIN SELECT a FROM t2 WHERE a LIKE 'Kali Kali 2+4';
+#EXPLAIN SELECT a FROM t2 WHERE a = 'Kali Kali 2+4';
 
 DROP TABLE t1,t2;
 
@@ -1244,6 +1273,7 @@ INSERT INTO t1 VALUES
   (42141,72,'VOLN� ADSL'),(42565,72,'VOLN� ADSL Combi'),
   (42749,72,'VOLN� ADSL'),(44205,72,'VOLN� ADSL');
 
+#SequoiaDB case sensitive
 SELECT * FROM t1 WHERE tid=72 and val LIKE 'VOLNY ADSL'; 
 SELECT * FROM t1 WHERE tid=72 and val LIKE 'VOLN� ADSL'; 
 SELECT * FROM t1 WHERE tid=72 and val LIKE '%VOLN� ADSL'; 
@@ -1269,9 +1299,9 @@ insert into t1 values (unhex('65')), (unhex('C3A9')), (unhex('65'));
 analyze table t1;
 -- enable_result_log
 -- enable_query_log
-explain select distinct a from t1;
+#explain select distinct a from t1;
 SELECT COUNT(*) FROM (SELECT DISTINCT a FROM t1) AS t2;
-explain select a from t1 group by a;
+#explain select a from t1 group by a;
 SELECT COUNT(*) FROM (SELECT a FROM t1 GROUP BY a) AS t2;
 drop table t1;
 
@@ -1286,8 +1316,8 @@ insert into t1 values ('123'), ('456');
 analyze table t1;
 -- enable_result_log
 -- enable_query_log
-explain
-  select substr(z.a,-1), z.a from t1 as y join t1 as z on y.a=z.a order by 1;
+#explain
+#  select substr(z.a,-1), z.a from t1 as y join t1 as z on y.a=z.a order by 1;
 select substr(z.a,-1), z.a from t1 as y join t1 as z on y.a=z.a order by 1;
 drop table t1;
 
@@ -1309,11 +1339,14 @@ INSERT INTO crashtest VALUES ('-1000');
 ANALYZE TABLE crashtest;
 -- enable_result_log
 -- enable_query_log
-EXPLAIN SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
+#EXPLAIN SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
 SELECT * FROM crashtest ORDER BY CHAR(crash USING utf8mb4);
 DROP TABLE crashtest;
 DROP DATABASE crashtest;
-USE test;
+#USE test;
+--disable_query_log
+eval USE $CURRENT_DATABASE;
+--enable_query_log
 SET CHARACTER SET default;
 
 # End of 4.1 tests
@@ -1798,6 +1831,7 @@ SELECT u_decimal,hex(utf8mb3_encoding) FROM t2;
 ALTER TABLE t1 MODIFY utf8mb4_encoding VARCHAR(10) CHARACTER SET utf8mb3;
 --enable_warnings
 SHOW CREATE TABLE t1;
+#SequoiaDB support utf8mb4 only;
 --sorted_result
 SELECT u_decimal,hex(utf8mb4_encoding) FROM t1;
 
@@ -1823,7 +1857,8 @@ eval CREATE TABLE t3 (
 
 # Insert select utf8mb4 (4-byte) into utf8 (3-byte), error
 #--error ER_INVALID_CHARACTER_STRING
-INSERT INTO t3 SELECT * FROM t1;
+#SequoiaDB doesn't support
+#INSERT INTO t3 SELECT * FROM t1;
 
 --disable_warnings
 DROP TABLE IF EXISTS t4;

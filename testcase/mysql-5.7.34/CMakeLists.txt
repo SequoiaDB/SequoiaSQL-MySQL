@@ -1,4 +1,4 @@
-# Copyright (c) 2009, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
@@ -37,19 +37,19 @@ INSTALL(
   PATTERN "*.in" EXCLUDE
 )
   IF(NOT INSTALL_LAYOUT MATCHES "RPM")
-    INSTALL(FILES ${SQL_SOURCE_ROOT}/COPYING
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/COPYING
       DESTINATION ${INSTALL_DOCREADMEDIR}
       COMPONENT TestReadme
       RENAME COPYING-test
       OPTIONAL
       )
-    INSTALL(FILES ${SQL_SOURCE_ROOT}/LICENSE.mysql
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/LICENSE.mysql
       DESTINATION ${INSTALL_DOCREADMEDIR}
       COMPONENT TestReadme
       RENAME LICENSE.mysql-test
       OPTIONAL
       )
-    INSTALL(FILES ${SQL_SOURCE_ROOT}/README
+    INSTALL(FILES ${CMAKE_SOURCE_DIR}/README
       DESTINATION ${INSTALL_DOCREADMEDIR}
       COMPONENT TestReadme
       RENAME README-test
@@ -59,7 +59,7 @@ ENDIF()
 
 
 
-IF(NOT ${SQL_SOURCE_ROOT} STREQUAL ${CMAKE_BINARY_DIR})
+IF(NOT ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   # Enable running mtr from build directory
   CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/mtr.out-of-source 

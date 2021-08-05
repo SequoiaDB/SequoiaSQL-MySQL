@@ -1,5 +1,4 @@
 # Creating the spatial objects
-USE test;
 CREATE TABLE gis_point (fid INTEGER NOT NULL PRIMARY KEY, g POINT);
 CREATE TABLE gis_linestring (fid INTEGER NOT NULL PRIMARY KEY, g LINESTRING);
 CREATE TABLE gis_polygon (fid INTEGER NOT NULL PRIMARY KEY, g POLYGON);
@@ -33,7 +32,7 @@ INSERT INTO gis_point VALUES
 (114, ST_POINTFROMWKB(ST_ASWKB(ST_POINTFROMTEXT('POINT(-1e308 1e308)')))),
 (115, ST_POINTFROMWKB(ST_ASWKB(ST_POINTFROMTEXT('POINT(-1e308 -1e308)'))));
 # Displaying the inserted POINT Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_point order by fid;
 fid	ST_ASTEXT(g)
 101	POINT(0 0)
 102	POINT(1 0)
@@ -93,7 +92,7 @@ INSERT INTO gis_linestring VALUES
 (214, ST_LINEFROMWKB(ST_ASWKB(ST_LINEFROMTEXT('LINESTRING(1 1,2 2,3 3,4 4,5 5,6 6,7 7,8 8,9 9)')))),
 (215, ST_LINESTRINGFROMWKB(ST_ASWKB(ST_LINESTRINGFROMTEXT('LINESTRING(10 10,10 -10,-10 -10,-10 10,10 10)'))));
 # Displaying the inserted LINESTRING Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_linestring order by fid;
 fid	ST_ASTEXT(g)
 201	LINESTRING(0 0,5 5)
 202	LINESTRING(0 0,2 2,4 4)
@@ -155,7 +154,7 @@ INSERT INTO gis_polygon VALUES
 (314, ST_POLYFROMWKB(ST_ASWKB(ST_POLYGONFROMTEXT('POLYGON((10 0,10 10,0 10,-10 10,-10 0,-10 -10,0 10,10 -10,10 0))')))),
 (315, ST_POLYGONFROMWKB(ST_ASWKB(ST_POLYGONFROMTEXT('POLYGON((0 0,0 10,10 10,10 0,0 0),(2 2,2 4,4 4,4 2,2 2),(6 6,6 8,8 8,8 6,6 6))'))));
 # Displaying the inserted POLYGON Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_polygon order by fid;
 fid	ST_ASTEXT(g)
 301	POLYGON((0 0,0 5,5 5,0 0))
 302	POLYGON((0 0,0 5,5 5,5 0,0 0))
@@ -215,7 +214,7 @@ INSERT INTO gis_multi_point VALUES
 (414, ST_MPOINTFROMWKB(ST_ASWKB(ST_MPOINTFROMTEXT('MULTIPOINT(0 0,1e308 1e308,-1e308 -1e308)')))),
 (415, ST_MPOINTFROMWKB(ST_ASWKB(ST_MPOINTFROMTEXT('MULTIPOINT(1e308 1e308,1e308 -1e308,-1e308 1e308,-1e308 -1e308,1e308 1e308)'))));
 # Displaying the inserted MULTIPOINT Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_point order by fid;
 fid	ST_ASTEXT(g)
 401	MULTIPOINT((0 0))
 402	MULTIPOINT((0 0),(2 2),(4 4))
@@ -277,7 +276,7 @@ INSERT INTO gis_multi_linestring VALUES
 (514, ST_MLINEFROMWKB(ST_ASWKB(ST_MULTILINESTRINGFROMTEXT('MULTILINESTRING((0 0,10 10,-10 10,0 0),(0 0,-10 -10,10 -10,0 0))')))),
 (515, ST_MULTILINESTRINGFROMWKB(ST_ASWKB(ST_MULTILINESTRINGFROMTEXT('MULTILINESTRING((0 0,0 100),(0 0,100 0),(0 0,0 -100),(0 0,-100 0))'))));
 # Displaying the inserted MULTILINESTRING Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring order by fid;
 fid	ST_ASTEXT(g)
 501	MULTILINESTRING((0 0,2 2))
 502	MULTILINESTRING((0 0,2 2,4 4))
@@ -342,7 +341,7 @@ INSERT INTO gis_multi_polygon VALUES
 (614, ST_MPOLYFROMWKB(ST_ASWKB(ST_MULTIPOLYGONFROMTEXT('MULTIPOLYGON(((0 0,10 10,-10 10,0 0)),((0 0,-10 -10,10 -10,0 0)))')))),
 (615, ST_MULTIPOLYGONFROMWKB(ST_ASWKB(ST_MULTIPOLYGONFROMTEXT('MULTIPOLYGON(((0 0,5 5,10 0,5 -5,0 0)))'))));
 # Displaying the inserted MULTIPOLYGON Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon order by fid;
 fid	ST_ASTEXT(g)
 601	MULTIPOLYGON(((0 0,0 5,5 5,0 0)))
 602	MULTIPOLYGON(((0 0,0 5,5 5,0 0)),((5 5,5 10,10 10,5 5)))
@@ -455,7 +454,7 @@ INSERT INTO gis_geometrycollection VALUES
                                                                 'MULTILINESTRING((0 0,10 10),(0 10,10 0)),'
                                                                 'MULTIPOLYGON(((0 0,0 5,5 5,5 0,0 0)),((5 5,5 10,10 10,10 5,5 5))))'))));
 # Displaying the inserted GEOMETRYCOLLECTION Geometry Data
-SELECT fid, ST_ASTEXT(g) FROM gis_geometrycollection;
+SELECT fid, ST_ASTEXT(g) FROM gis_geometrycollection order by fid;
 fid	ST_ASTEXT(g)
 701	GEOMETRYCOLLECTION(POINT(0 0))
 702	GEOMETRYCOLLECTION(POINT(0 0),LINESTRING(0 0,10 10))
@@ -1826,7 +1825,7 @@ END|
 # Calling the trigger
 UPDATE gis_point SET fid = 999 WHERE fid = 111;
 # Checking the table entries
-SELECT fid, ST_ASTEXT(g) FROM gis_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_point order by fid;
 fid	ST_ASTEXT(g)
 101	POINT(0 0)
 102	POINT(1 0)
@@ -1843,7 +1842,7 @@ fid	ST_ASTEXT(g)
 114	POINT(-1e308 1e308)
 115	POINT(-1e308 -1e308)
 999	POINT(-1e308 1e308)
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_point;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_point order by fid;
 fid	ST_ASTEXT(g)
 101	POINT(0 0)
 102	POINT(1 0)
@@ -1888,7 +1887,7 @@ END|
 # Calling the trigger
 UPDATE gis_linestring SET fid = 999 WHERE fid = 211;
 # Checking the table entries
-SELECT fid, ST_ASTEXT(g) FROM gis_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_linestring order by fid;
 fid	ST_ASTEXT(g)
 201	LINESTRING(0 0,5 5)
 202	LINESTRING(0 0,2 2,4 4)
@@ -1905,7 +1904,7 @@ fid	ST_ASTEXT(g)
 214	LINESTRING(1 1,2 2,3 3,4 4,5 5,6 6,7 7,8 8,9 9)
 215	LINESTRING(10 10,10 -10,-10 -10,-10 10,10 10)
 999	LINESTRING(0 0,10 0,0 0,0 10,0 0,-10 0,0 0,0 10,0 0)
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_linestring order by fid;
 fid	ST_ASTEXT(g)
 201	LINESTRING(0 0,5 5)
 202	LINESTRING(0 0,2 2,4 4)
@@ -1950,7 +1949,7 @@ END|
 # Calling the trigger
 UPDATE gis_polygon SET fid = 999 WHERE fid = 311;
 # Checking the table entries
-SELECT fid, ST_ASTEXT(g) FROM gis_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_polygon order by fid;
 fid	ST_ASTEXT(g)
 301	POLYGON((0 0,0 5,5 5,0 0))
 302	POLYGON((0 0,0 5,5 5,5 0,0 0))
@@ -1967,7 +1966,7 @@ fid	ST_ASTEXT(g)
 314	POLYGON((10 0,10 10,0 10,-10 10,-10 0,-10 -10,0 10,10 -10,10 0))
 315	POLYGON((0 0,0 10,10 10,10 0,0 0),(2 2,2 4,4 4,4 2,2 2),(6 6,6 8,8 8,8 6,6 6))
 999	POLYGON((0 0,10 0,10 10,0 10,0 0),(3 3,3 7,7 7,7 3,3 3))
-SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon;
+SELECT fid, ST_ASTEXT(g) FROM gis_multi_polygon order by fid;
 fid	ST_ASTEXT(g)
 301	POLYGON((0 0,0 5,5 5,0 0))
 302	POLYGON((0 0,0 5,5 5,5 0,0 0))

@@ -1,15 +1,22 @@
+--source include/have_sequoiadb.inc
 
-connect (con1,localhost,root,,);
-connect (con2,localhost,root,,);
+# Compatible with parallel > 1, don't use test here, instead use database: test_casename
+create database test_flush;
+use test_flush;
+
+connect (con1,localhost,root,, test_flush);
+connect (con2,localhost,root,, test_flush);
 connection con1;
 
 --disable_warnings
 drop table if exists t1,t2;
-drop database if exists mysqltest;
+# Compatible with parallel > 1, don't use mysqltest here, instead use database: mysqltest_casename
+drop database if exists mysqltest_flush;
 --enable_warnings
 
+#Bug #SEQUOIASQLMAINSTREAM-90
 create temporary table t1(n int not null primary key);
-create table t2(n int);
+create table t2(n int) engine = sequoiadb;
 insert into t2 values(3);
 let $1=100;
 disable_query_log;
@@ -41,21 +48,21 @@ reap;
 
 #test if drop database will wait until we release the global read lock
 connection con1;
-create database mysqltest;
-create table mysqltest.t1(n int);
-insert into mysqltest.t1 values (23);
+create database mysqltest_flush;
+create table mysqltest_flush.t1(n int) engine = sequoiadb;
+insert into mysqltest_flush.t1 values (23);
 flush tables with read lock;
 connection con2;
-send drop database mysqltest;
+send drop database mysqltest_flush;
 connection con1;
-select * from mysqltest.t1;
+select * from mysqltest_flush.t1;
 unlock tables;
 connection con2;
 reap;
 
 # test if dirty close releases global read lock
 connection con1;
-create table t1 (n int);
+create table t1 (n int) engine = sequoiadb;
 flush tables with read lock;
 dirty_close con1;
 connection con2;
@@ -66,7 +73,7 @@ drop table t1;
 #
 # Bug#9459 - deadlock with flush with lock, and lock table write
 #
-create table t1 (c1 int);
+create table t1 (c1 int) engine = sequoiadb;
 lock table t1 write;
 # Cannot get the global read lock with write locked tables.
 --error ER_LOCK_OR_ACTIVE_TRANSACTION 
@@ -84,8 +91,8 @@ lock table t1 read;
 lock table t1 write;
 # Release all table locks and the global read lock.
 unlock tables;
-create table t2 (c1 int);
-create table t3 (c1 int);
+create table t2 (c1 int) engine = sequoiadb;
+create table t3 (c1 int) engine = sequoiadb;
 lock table t1 read, t2 read, t3 write;
 # Cannot get the global read lock with write locked tables.
 --error ER_LOCK_OR_ACTIVE_TRANSACTION
@@ -104,11 +111,11 @@ drop table t1, t2, t3;
 # (Bug was in NTPL threads in Linux when using different mutex while
 #  waiting for a condtion variable)
 
-create table t1 (c1 int);
-create table t2 (c1 int);
+create table t1 (c1 int) engine = sequoiadb;
+create table t2 (c1 int) engine = sequoiadb;
 
-connect (con1,localhost,root,,);
-connect (con3,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
+connect (con3,localhost,root,, test_flush);
 
 connection con1;
 lock table t1 write;
@@ -147,8 +154,8 @@ drop table if exists t1, t2;
 
 set session low_priority_updates=1;
 
-create table t1 (a int);
-create table t2 (b int);
+create table t1 (a int) engine = sequoiadb;
+create table t2 (b int) engine = sequoiadb;
 
 lock tables t1 write;
 --error ER_LOCK_OR_ACTIVE_TRANSACTION
@@ -173,7 +180,7 @@ set session low_priority_updates=default;
 # Bug #33334 mysqltest_embedded crashes when disconnecting before reap
 #
 
-connect (con1,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
 send select benchmark(200, (select sin(1))) > 1000;
 disconnect con1;
 --source include/wait_until_disconnected.inc
@@ -214,7 +221,7 @@ set global read_only= @old_read_only;
 --disable_warnings
 drop tables if exists t1, t2;
 --enable_warnings
-create table t1 (i int);
+create table t1 (i int) engine = sequoiadb;
 create temporary table t2 (j int);
 flush tables with read lock;
 lock table t2 read;
@@ -250,9 +257,9 @@ show tables;
 --disable_warnings
 drop table if exists t1, t2, t3;
 --enable_warnings
-create table t1 (a int);
-create table t2 (a int);
-create table t3 (a int);
+create table t1 (a int) engine = sequoiadb;
+create table t2 (a int) engine = sequoiadb;
+create table t3 (a int) engine = sequoiadb;
 lock table t1 read, t2 read;
 --error ER_LOCK_OR_ACTIVE_TRANSACTION
 flush tables with read lock;
@@ -303,7 +310,7 @@ insert into t3 (a) values (2);
 --echo # 
 --echo # III. Concurrent tests.
 --echo #
-connect (con1,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
 --echo # --> connection default
 --echo #
 --echo # Check that flush tables <list> with read lock
@@ -385,7 +392,7 @@ drop table t1, t2, t3;
 drop view if exists v1, v2, v3;
 drop table if exists t1, v1;
 --enable_warnings
-create table t1 (a int);
+create table t1 (a int) engine = sequoiadb;
 create view v1 as select 1;
 create view v2 as select * from t1;
 create view v3 as select * from v2;
@@ -402,35 +409,35 @@ create temporary table v1 (a int);
 --error ER_WRONG_OBJECT
 flush table v1 with read lock;
 drop view v1;
-create table v1 (a int);
+create table v1 (a int) engine = sequoiadb;
 flush table v1 with read lock;
 drop temporary table v1;
 unlock tables;
 drop view v2, v3;
 drop table t1, v1;
 
-
---echo # 
---echo # FLUSH TABLES <list> WITH READ LOCK and HANDLER
---echo # 
---disable_warnings
-drop table if exists t1;
---enable_warnings
-create table t1 (a int, key a (a));
-insert into t1 (a) values (1), (2), (3);
-handler t1 open;
-handler t1 read a next;
-handler t1 read a next;
-flush tables t1 with read lock;
---error ER_LOCK_OR_ACTIVE_TRANSACTION
-handler t1 read a next;
-unlock tables;
---echo #
---echo # Sic: lost handler position.
---echo #
-handler t1 read a next;
-handler t1 close;
-drop table t1;
+# NOW SequoiaDB not support HANDLER
+#--echo # 
+#--echo # FLUSH TABLES <list> WITH READ LOCK and HANDLER
+#--echo # 
+#--disable_warnings
+#drop table if exists t1;
+#--enable_warnings
+#create table t1 (a int, key a (a)) engine = sequoiadb;
+#insert into t1 (a) values (1), (2), (3);
+#handler t1 open;
+#handler t1 read a next;
+#handler t1 read a next;
+#flush tables t1 with read lock;
+#--error ER_LOCK_OR_ACTIVE_TRANSACTION
+#handler t1 read a next;
+#unlock tables;
+#--echo #
+#--echo # Sic: lost handler position.
+#--echo #
+#handler t1 read a next;
+#handler t1 close;
+#drop table t1;
 
 --echo #
 --echo # Bug#52117 Pending FLUSH TALBES <list> aborts
@@ -439,12 +446,12 @@ drop table t1;
 --disable_warnings
 drop table if exists t1;
 --enable_warnings
-connect (con1,localhost,root,,);
-connect (con2,localhost,root,,);
+connect (con1,localhost,root,, test_flush);
+connect (con2,localhost,root,, test_flush);
 --echo # --> conection default
 connection default;
 
-create table t1 (a int);
+create table t1 (a int) engine = sequoiadb;
 begin;
 select * from t1;
 --echo # --> connection con1
@@ -547,104 +554,104 @@ disconnect con2;
 connection default;
 drop table t1;
 
+# NOW SequoiaDB not support merge table
+#--echo #
+#--echo # Test for bug #55273 "FLUSH TABLE tm WITH READ LOCK for Merge table
+#--echo #                      causes assert failure".
+#--echo #
+#--disable_warnings
+#drop table if exists t1, t2, tm;
+#--enable_warnings
+#create table t1 (i int) engine = sequoiadb;
+#create table t2 (i int) engine = sequoiadb;
+#create table tm (i int) engine=merge union=(t1, t2);
+#insert into t1 values (1), (2);
+#insert into t2 values (3), (4);
+#--echo # The below statement should succeed and lock merge
+#--echo # table for read. Only merge table gets flushed and
+#--echo # not underlying tables.
+#flush tables tm with read lock;
+#select * from tm;
+#--echo # Check that underlying tables are locked.
+#select * from t1;
+#select * from t2;
+#unlock tables;
+#--echo # This statement should succeed as well and flush
+#--echo # all tables in the list.
+#flush tables tm, t1, t2 with read lock;
+#select * from tm;
+#--echo # Naturally, underlying tables should be locked in this case too.
+#select * from t1;
+#select * from t2;
+#unlock tables;
+#drop tables tm, t1, t2;
 
---echo #
---echo # Test for bug #55273 "FLUSH TABLE tm WITH READ LOCK for Merge table
---echo #                      causes assert failure".
---echo #
---disable_warnings
-drop table if exists t1, t2, tm;
---enable_warnings
-create table t1 (i int) engine = myisam;
-create table t2 (i int) engine = myisam;
-create table tm (i int) engine=merge union=(t1, t2);
-insert into t1 values (1), (2);
-insert into t2 values (3), (4);
---echo # The below statement should succeed and lock merge
---echo # table for read. Only merge table gets flushed and
---echo # not underlying tables.
-flush tables tm with read lock;
-select * from tm;
---echo # Check that underlying tables are locked.
-select * from t1;
-select * from t2;
-unlock tables;
---echo # This statement should succeed as well and flush
---echo # all tables in the list.
-flush tables tm, t1, t2 with read lock;
-select * from tm;
---echo # Naturally, underlying tables should be locked in this case too.
-select * from t1;
-select * from t2;
-unlock tables;
-drop tables tm, t1, t2;
+# NOW SequoiaDB not support HANDLER
+#--echo #
+#--echo # Test for bug #57006 "Deadlock between HANDLER and
+#--echo #                      FLUSH TABLES WITH READ LOCK".
+#--echo #
+#--disable_warnings
+#drop table if exists t1, t2;
+#--enable_warnings
+#connect (con1,localhost,root,, test_flush);
+#connect (con2,localhost,root,, test_flush);
+#connection default;
+#create table t1 (i int) engine = sequoiadb;
+#create table t2 (i int) engine = sequoiadb;
+#handler t1 open;
 
+#--echo # Switching to connection 'con1'.
+#connection con1;
+#--echo # Sending:
+#--send flush tables with read lock
 
---echo #
---echo # Test for bug #57006 "Deadlock between HANDLER and
---echo #                      FLUSH TABLES WITH READ LOCK".
---echo #
---disable_warnings
-drop table if exists t1, t2;
---enable_warnings
-connect (con1,localhost,root,,);
-connect (con2,localhost,root,,);
-connection default;
-create table t1 (i int);
-create table t2 (i int);
-handler t1 open;
+#--echo # Switching to connection 'con2'.
+#connection con2;
+#--echo # Wait until FTWRL starts waiting for 't1' to be closed.
+#let $wait_condition=
+#  select count(*) = 1 from information_schema.processlist
+#  where state = "Waiting for table flush"
+#  and info = "flush tables with read lock";
+#--source include/wait_condition.inc
 
---echo # Switching to connection 'con1'.
-connection con1;
---echo # Sending:
---send flush tables with read lock
+#--echo # Switching to connection 'default'.
+#connection default;
+#--echo # The below statement should not cause deadlock.
+#--echo # Sending:
+#--send insert into t2 values (1)
 
---echo # Switching to connection 'con2'.
-connection con2;
---echo # Wait until FTWRL starts waiting for 't1' to be closed.
-let $wait_condition=
-  select count(*) = 1 from information_schema.processlist
-  where state = "Waiting for table flush"
-  and info = "flush tables with read lock";
---source include/wait_condition.inc
+#--echo # Switching to connection 'con2'.
+#connection con2;
+#--echo # Wait until INSERT starts to wait for FTWRL to go away.
+#let $wait_condition=
+#  select count(*) = 1 from information_schema.processlist
+#  where state = "Waiting for global read lock"
+#  and info = "insert into t2 values (1)";
+#--source include/wait_condition.inc
 
---echo # Switching to connection 'default'.
-connection default;
---echo # The below statement should not cause deadlock.
---echo # Sending:
---send insert into t2 values (1)
+#--echo # Switching to connection 'con1'.
+#connection con1;
+#--echo # FTWRL should be able to continue now.
+#--echo # Reap FTWRL.
+#--reap
+#unlock tables;
 
---echo # Switching to connection 'con2'.
-connection con2;
---echo # Wait until INSERT starts to wait for FTWRL to go away.
-let $wait_condition=
-  select count(*) = 1 from information_schema.processlist
-  where state = "Waiting for global read lock"
-  and info = "insert into t2 values (1)";
---source include/wait_condition.inc
+#--echo # Switching to connection 'default'.
+#connection default;
+#--echo # Reap INSERT.
+#--reap
+#handler t1 close;
 
---echo # Switching to connection 'con1'.
-connection con1;
---echo # FTWRL should be able to continue now.
---echo # Reap FTWRL.
---reap
-unlock tables;
-
---echo # Switching to connection 'default'.
-connection default;
---echo # Reap INSERT.
---reap
-handler t1 close;
-
---echo # Cleanup.
-connection con1;
-disconnect con1;
---source include/wait_until_disconnected.inc
-connection con2;
-disconnect con2;
---source include/wait_until_disconnected.inc
-connection default;
-drop tables t1, t2;
+#--echo # Cleanup.
+#connection con1;
+#disconnect con1;
+#--source include/wait_until_disconnected.inc
+#connection con2;
+#disconnect con2;
+#--source include/wait_until_disconnected.inc
+#connection default;
+#drop tables t1, t2;
 
 
 --echo #
@@ -656,7 +663,7 @@ drop tables t1, t2;
 DROP TABLE IF EXISTS t1;
 --enable_warnings
 
-CREATE TABLE t1 (a INT);
+CREATE TABLE t1 (a INT) engine = sequoiadb;
 FLUSH TABLES t1 WITH READ LOCK;
 
 # All these triggered the assertion
@@ -683,14 +690,14 @@ DROP TABLE t1;
 --disable_warnings
 DROP TABLE IF EXISTS t1;
 --enable_warnings
-CREATE TABLE t1 (id INT PRIMARY KEY, value INT);
+CREATE TABLE t1 (id INT PRIMARY KEY, value INT) engine = sequoiadb;
 INSERT INTO t1 VALUES (1, 1);
 CREATE TRIGGER t1_au AFTER UPDATE ON t1 FOR EACH ROW SET @var = "a";
 BEGIN;
 UPDATE t1 SET value= value + 1 WHERE id = 1;
 
 --echo # Switching to connection 'con1'.
-connect(con1, localhost, root);
+connect(con1, localhost, root,, test_flush);
 --echo # The below FLUSH TABLES WITH READ LOCK should succeed and
 --echo # should not be blocked by the transaction in default connection.
 FLUSH TABLES WITH READ LOCK;
@@ -702,3 +709,8 @@ disconnect con1;
 connection default;
 COMMIT;
 DROP TABLE t1;
+
+# DROP DATABASE
+DROP DATABASE test_flush;
+
+--source include/uninstall_sequoiadb.inc

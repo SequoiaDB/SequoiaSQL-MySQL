@@ -1,5 +1,5 @@
 # -*- cperl -*-
-# Copyright (c) 2004, 2021, Oracle and/or its affiliates.
+# Copyright (C) 2004-2008 MySQL AB
 # Use is subject to license terms
 # 
 # This program is free software; you can redistribute it and/or modify

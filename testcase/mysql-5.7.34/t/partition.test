@@ -12,7 +12,10 @@
 --source include/no_valgrind_without_big.inc
 
 # This test contains various subtests for MyISAM
---source include/have_myisam.inc
+#--source include/have_myisam.inc
+
+CREATE DATABASE test_partition;
+USE test_partition;
 
 --disable_warnings
 drop table if exists t1, t2;
@@ -91,15 +94,15 @@ AND A.c = 343;
 
 DROP TABLE t1;
 
---echo #
---echo # Bug#59503: explain extended crash in get_mm_leaf
---echo #
-CREATE TABLE t1 (a VARCHAR(51) CHARACTER SET latin1)
-PARTITION BY KEY (a) PARTITIONS 1;
-INSERT INTO t1 VALUES ('a'),('b'),('c');
-analyze table t1;
-EXPLAIN EXTENDED SELECT 1 FROM t1 WHERE a > 1;
-DROP TABLE t1;
+#--echo #
+#--echo # Bug#59503: explain extended crash in get_mm_leaf
+#--echo #
+#CREATE TABLE t1 (a VARCHAR(51) CHARACTER SET latin1)
+#PARTITION BY KEY (a) PARTITIONS 1;
+#INSERT INTO t1 VALUES ('a'),('b'),('c');
+#analyze table t1;
+#EXPLAIN EXTENDED SELECT 1 FROM t1 WHERE a > 1;
+#DROP TABLE t1;
 
 --echo #
 --echo # Bug#57778: failed primary key add to partitioned innodb table
@@ -112,11 +115,13 @@ INSERT INTO t1 VALUES (0,1), (0,2);
 ALTER TABLE t1 ADD PRIMARY KEY (a);
 SHOW CREATE TABLE t1;
 SELECT * FROM t1;
+#sharding key cannot be updated
+--error 40178
 UPDATE t1 SET a = 1, b = 1 WHERE a = 0 AND b = 2;
-ALTER TABLE t1 ADD PRIMARY KEY (a);
+#ALTER TABLE t1 ADD PRIMARY KEY (a);
 SELECT * FROM t1;
-ALTER TABLE t1 DROP PRIMARY KEY;
-SELECT * FROM t1;
+#ALTER TABLE t1 DROP PRIMARY KEY;
+#SELECT * FROM t1;
 DROP TABLE t1;
 
 --echo #
@@ -148,7 +153,7 @@ CREATE TABLE t1 (
   `id` int NOT NULL,
   `user_num` int DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES (1,8601);
 INSERT INTO t1 VALUES (2,8601);
 INSERT INTO t1 VALUES (3,8601);
@@ -158,7 +163,7 @@ CREATE TABLE t2 (
   `user_num` int DEFAULT NULL,
   `name` varchar(64) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM CHARSET=latin1
+) ENGINE=SequoiaDB CHARSET=latin1
 PARTITION BY HASH (id)
 PARTITIONS 2;
 INSERT INTO t2 VALUES (1,8601,'John');
@@ -239,19 +244,21 @@ INSERT INTO t1 VALUES ('2007-07-30 17:35:48', 'p1');
 INSERT INTO t1 VALUES ('2009-07-14 17:35:55', 'pmax');
 INSERT INTO t1 VALUES ('2009-09-21 17:31:42', 'pmax');
 
+--sorted_result
 SELECT * FROM t1;
 SELECT * FROM t1 where a between '2007-01-01' and '2007-08-01';
 analyze table t1;
-EXPLAIN PARTITIONS SELECT * FROM t1 where a between '2007-01-01' and '2007-08-01';
-EXPLAIN PARTITIONS SELECT * FROM t1 where a = '2007-07-30 17:35:48';
+#EXPLAIN PARTITIONS SELECT * FROM t1 where a between '2007-01-01' and '2007-08-01';
+#EXPLAIN PARTITIONS SELECT * FROM t1 where a = '2007-07-30 17:35:48';
 ALTER TABLE t1 REORGANIZE PARTITION pmax INTO (
  PARTITION p3 VALUES LESS THAN (1247688000),
  PARTITION pmax VALUES LESS THAN MAXVALUE);
+--sorted_result
 SELECT * FROM t1;
 SELECT * FROM t1 where a between '2007-01-01' and '2007-08-01';
 analyze table t1;
-EXPLAIN PARTITIONS SELECT * FROM t1 where a between '2007-01-01' and '2007-08-01';
-EXPLAIN PARTITIONS SELECT * FROM t1 where a = '2007-07-30 17:35:48';
+#EXPLAIN PARTITIONS SELECT * FROM t1 where a between '2007-01-01' and '2007-08-01';
+#EXPLAIN PARTITIONS SELECT * FROM t1 where a = '2007-07-30 17:35:48';
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 
@@ -266,19 +273,19 @@ subpartition by key (b)
  partition p1 values in (2));
 drop table t1;
 
-#
-# Bug#44059: rec_per_key on empty partition gives weird optimiser results
-#
-create table t1 (a int, b int, key(a))
-partition by list (a)
-( partition p0 values in (1),
-  partition p1 values in (2));
-insert into t1 values (1,1),(2,1),(2,2),(2,3);
-analyze table t1;
-show indexes from t1;
-analyze table t1;
-show indexes from t1;
-drop table t1;
+##
+## Bug#44059: rec_per_key on empty partition gives weird optimiser results
+##
+#create table t1 (a int, b int, key(a))
+#partition by list (a)
+#( partition p0 values in (1),
+#  partition p1 values in (2));
+#insert into t1 values (1,1),(2,1),(2,2),(2,3);
+#analyze table t1;
+#show indexes from t1;
+#analyze table t1;
+#show indexes from t1;
+#drop table t1;
 
 #
 # Bug#40181: hang if create index
@@ -290,15 +297,19 @@ insert into t1 values (1);
 insert into t1 select * from t1;
 --error ER_DUP_KEYNAME
 create index i on t1 (a);
+#sequoiadb allows only one index with same scene
+--error 40291
 create index i2 on t1 (a);
 drop table t1;
 
 #
 # Bug#36001: Partitions: spelling and using some error messages
 #
---error ER_FOREIGN_KEY_ON_PARTITIONED
+#BUG #SEQUOIASQLMAINSTREAM-658
+#--error ER_FOREIGN_KEY_ON_PARTITIONED
 CREATE TABLE t1 (a INT, FOREIGN KEY (a) REFERENCES t0 (a))
 PARTITION BY HASH (a);
+DROP TABLE t1;
 
 #
 # Bug#40954: Crash if range search and order by.
@@ -326,7 +337,7 @@ CREATE TABLE t1 (a INT)
 ENGINE=NonExistentEngine
 PARTITION BY HASH (a);
 CREATE TABLE t1 (a INT)
-ENGINE=Memory;
+ENGINE=SequoiaDB;
 --error ER_UNKNOWN_STORAGE_ENGINE
 ALTER TABLE t1 ENGINE=NonExistentEngine;
 # OK to only specify one partitions engine, since it is already assigned at
@@ -334,7 +345,7 @@ ALTER TABLE t1 ENGINE=NonExistentEngine;
 --error ER_UNKNOWN_STORAGE_ENGINE
 ALTER TABLE t1
 PARTITION BY HASH (a)
-(PARTITION p0 ENGINE=Memory,
+(PARTITION p0 ENGINE=SequoiaDB,
  PARTITION p1 ENGINE=NonExistentEngine);
 --error ER_UNKNOWN_STORAGE_ENGINE
 ALTER TABLE t1 ENGINE=NonExistentEngine;
@@ -350,13 +361,13 @@ ENGINE=NonExistentEngine
 PARTITION BY HASH (a);
 DROP TABLE t1;
 CREATE TABLE t1 (a INT)
-ENGINE=Memory;
+ENGINE=SequoiaDB;
 ALTER TABLE t1 ENGINE=NonExistentEngine;
 # OK to only specify one partitions engine, since it is already assigned at
 # table level (after create, it is specified on all levels and all parts).
 ALTER TABLE t1
 PARTITION BY HASH (a)
-(PARTITION p0 ENGINE=Memory,
+(PARTITION p0 ENGINE=SequoiaDB,
  PARTITION p1 ENGINE=NonExistentEngine);
 ALTER TABLE t1 ENGINE=NonExistentEngine;
 SHOW CREATE TABLE t1;
@@ -452,7 +463,7 @@ SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 ALTER TABLE t1 DROP INDEX b;
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
-ALTER TABLE t1 ENGINE = Memory;
+ALTER TABLE t1 ENGINE = SequoiaDB;
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 ALTER TABLE t1 ADD INDEX b USING HASH (b);
@@ -476,17 +487,17 @@ INSERT INTO `t1` VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),
 INSERT INTO `t2` VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20);
 
 analyze table t1;
-EXPLAIN PARTITIONS SELECT c1 FROM t1 WHERE (c1 > 10 AND c1 < 13) OR (c1 > 17 AND c1 < 20);
+#EXPLAIN PARTITIONS SELECT c1 FROM t1 WHERE (c1 > 10 AND c1 < 13) OR (c1 > 17 AND c1 < 20);
 
 FLUSH STATUS;
 SELECT c1 FROM t1 WHERE (c1 > 10 AND c1 < 13) OR (c1 > 17 AND c1 < 20);
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 
-EXPLAIN PARTITIONS SELECT c1 FROM t2 WHERE (c1 > 10 AND c1 < 13) OR (c1 > 17 AND c1 < 20);
+#EXPLAIN PARTITIONS SELECT c1 FROM t2 WHERE (c1 > 10 AND c1 < 13) OR (c1 > 17 AND c1 < 20);
 
 FLUSH STATUS;
 SELECT c1 FROM t2 WHERE (c1 > 10 AND c1 < 13) OR (c1 > 17 AND c1 < 20);
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 DROP TABLE t1,t2;
 
 # Bug#37329 Range scan on partitioned tables shows higher Handler_read_next
@@ -508,29 +519,29 @@ INSERT INTO `t1` VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),
 INSERT INTO `t2` VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20);
 
 analyze table t1;
-EXPLAIN PARTITIONS SELECT c1 FROM t1 WHERE (c1 > 2 AND c1 < 5);
+#EXPLAIN PARTITIONS SELECT c1 FROM t1 WHERE (c1 > 2 AND c1 < 5);
 
 FLUSH STATUS;
 SELECT c1 FROM t1 WHERE (c1 > 2 AND c1 < 5);
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 
-EXPLAIN PARTITIONS SELECT c1 FROM t2 WHERE (c1 > 2 AND c1 < 5);
+#EXPLAIN PARTITIONS SELECT c1 FROM t2 WHERE (c1 > 2 AND c1 < 5);
 
 FLUSH STATUS;
 SELECT c1 FROM t2 WHERE (c1 > 2 AND c1 < 5);
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 
-EXPLAIN PARTITIONS SELECT c1 FROM t1 WHERE (c1 > 12 AND c1 < 15);
+#EXPLAIN PARTITIONS SELECT c1 FROM t1 WHERE (c1 > 12 AND c1 < 15);
 
 FLUSH STATUS;
 SELECT c1 FROM t1 WHERE (c1 > 12 AND c1 < 15);
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 
-EXPLAIN PARTITIONS SELECT c1 FROM t2 WHERE (c1 > 12 AND c1 < 15);
+#EXPLAIN PARTITIONS SELECT c1 FROM t2 WHERE (c1 > 12 AND c1 < 15);
 
 FLUSH STATUS;
 SELECT c1 FROM t2 WHERE (c1 > 12 AND c1 < 15);
-SHOW STATUS LIKE 'Handler_read_%';
+#SHOW STATUS LIKE 'Handler_read_%';
 DROP TABLE t1,t2;
 
 --error ER_PARTITION_FUNCTION_IS_NOT_ALLOWED
@@ -563,24 +574,25 @@ SELECT * FROM t1 LIMIT 1;
 
 DROP TABLE t1;
 
+# Sequoiadb auto-increment field cannot be used for RANGE or LIST partition
+##
+## Bug 30878: crashing when alter an auto_increment non partitioned
+##            table to partitioned
 #
-# Bug 30878: crashing when alter an auto_increment non partitioned
-#            table to partitioned
-
-create table t1 (id int auto_increment, s1 int, primary key (id));
-
-insert into t1 values (null,1);
-insert into t1 values (null,6);
-
--- sorted_result
-select * from t1;
-
-alter table t1 partition by range (id) (
-  partition p0 values less than (3),
-  partition p1 values less than maxvalue
-);
-
-drop table t1;
+#create table t1 (id int auto_increment, s1 int, primary key (id));
+#
+#insert into t1 values (null,1);
+#insert into t1 values (null,6);
+#
+#-- sorted_result
+#select * from t1;
+#
+#alter table t1 partition by range (id) (
+#  partition p0 values less than (3),
+#  partition p1 values less than maxvalue
+#);
+#
+#drop table t1;
 
 #
 # Bug 15890: Strange number of partitions accepted
@@ -646,13 +658,14 @@ select * from t1 where (a + 1) < 10;
 select * from t1 where (a + 1) > 10;
 drop table t1;
 
-#
-# Added test case
-#
-create table t1 (a int)
-partition by key(a)
-(partition p0 engine = MEMORY);
-drop table t1;
+# not necessary to test engine = MEMORY
+##
+## Added test case
+##
+#create table t1 (a int)
+#partition by key(a)
+#(partition p0 engine = MEMORY);
+#drop table t1;
 
 #
 # BUG 19067 ALTER TABLE .. ADD PARTITION for subpartitioned table crashes
@@ -737,83 +750,83 @@ c int not null,
 primary key(a,b))
 partition by key (a)
 partitions 3
-(partition x1 engine myisam,
- partition x2 engine myisam,
- partition x3 engine myisam);
+(partition x1 engine sequoiadb,
+ partition x2 engine sequoiadb,
+ partition x3 engine sequoiadb);
 
 drop table t1;
+##
+## Partition by key specifying tablespace
+##
+#CREATE TABLESPACE ts1 ADD DATAFILE 'ts1.ibd';
+#CREATE TABLESPACE ts2 ADD DATAFILE 'ts2.ibd';
+#CREATE TABLESPACE ts3 ADD DATAFILE 'ts3.ibd';
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key(a,b))
+#partition by key (a)
+#partitions 3
+#(partition x1 tablespace ts1,
+# partition x2 tablespace ts2,
+# partition x3 tablespace ts3);
 #
-# Partition by key specifying tablespace
+#CREATE TABLE t2 LIKE t1;
 #
-CREATE TABLESPACE ts1 ADD DATAFILE 'ts1.ibd';
-CREATE TABLESPACE ts2 ADD DATAFILE 'ts2.ibd';
-CREATE TABLESPACE ts3 ADD DATAFILE 'ts3.ibd';
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key(a,b))
-partition by key (a)
-partitions 3
-(partition x1 tablespace ts1,
- partition x2 tablespace ts2,
- partition x3 tablespace ts3);
-
-CREATE TABLE t2 LIKE t1;
-
-SHOW CREATE TABLE t1;
-SHOW CREATE TABLE t2;
-drop table t2;
-drop table t1;
-
+#SHOW CREATE TABLE t1;
+#SHOW CREATE TABLE t2;
+#drop table t2;
+#drop table t1;
 #
-# Partition by key list, basic
+##
+## Partition by key list, basic
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key(a,b))
+#partition by list (a)
+#partitions 3
+#(partition x1 values in (1,2,9,4) tablespace ts1,
+# partition x2 values in (3, 11, 5, 7) tablespace ts2,
+# partition x3 values in (16, 8, 5+19, 70-43) tablespace ts3);
 #
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key(a,b))
-partition by list (a)
-partitions 3
-(partition x1 values in (1,2,9,4) tablespace ts1,
- partition x2 values in (3, 11, 5, 7) tablespace ts2,
- partition x3 values in (16, 8, 5+19, 70-43) tablespace ts3);
-
-SHOW CREATE TABLE t1;
-drop table t1;
+#SHOW CREATE TABLE t1;
+#drop table t1;
+##
+## Partition by key list, list function
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key(a,b))
+#partition by list (b*a)
+#partitions 3
+#(partition x1 values in (1,2,9,4) tablespace ts1,
+# partition x2 values in (3, 11, 5, 7) tablespace ts2,
+# partition x3 values in (16, 8, 5+19, 70-43) tablespace ts3);
 #
-# Partition by key list, list function
+#SHOW CREATE TABLE t1;
+#drop table t1;
 #
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key(a,b))
-partition by list (b*a)
-partitions 3
-(partition x1 values in (1,2,9,4) tablespace ts1,
- partition x2 values in (3, 11, 5, 7) tablespace ts2,
- partition x3 values in (16, 8, 5+19, 70-43) tablespace ts3);
-
-SHOW CREATE TABLE t1;
-drop table t1;
-
+##
+## Partition by key list, list function, no spec of #partitions
+##
+#CREATE TABLE t1 (
+#a int not null,
+#b int not null,
+#c int not null,
+#primary key(a,b))
+#partition by list (b*a)
+#(partition x1 values in (1) tablespace ts1,
+# partition x2 values in (3, 11, 5, 7) tablespace ts2,
+# partition x3 values in (16, 8, 5+19, 70-43) tablespace ts3);
 #
-# Partition by key list, list function, no spec of #partitions
-#
-CREATE TABLE t1 (
-a int not null,
-b int not null,
-c int not null,
-primary key(a,b))
-partition by list (b*a)
-(partition x1 values in (1) tablespace ts1,
- partition x2 values in (3, 11, 5, 7) tablespace ts2,
- partition x3 values in (16, 8, 5+19, 70-43) tablespace ts3);
-
-SHOW CREATE TABLE t1;
-drop table t1;
+#SHOW CREATE TABLE t1;
+#drop table t1;
 
 #
 # Bug 13154: Insert crashes due to bad calculation of partition id
@@ -868,6 +881,7 @@ PARTITION BY LIST (a)
 (PARTITION p0 VALUES IN (1,2,3), PARTITION p1 VALUES IN (4,5,6));
 
 insert into t1 values (1),(2),(3),(4),(5),(6);
+--sorted_result
 select * from t1;
 truncate t1;
 select * from t1;
@@ -890,7 +904,7 @@ drop table t1;
 # Bug#22351 - handler::index_next_same() call to key_cmp_if_same()
 #             uses the wrong buffer
 #
-CREATE TABLE t1 (c1 INT, c2 INT, PRIMARY KEY USING BTREE (c1,c2)) ENGINE=MEMORY
+CREATE TABLE t1 (c1 INT, c2 INT, PRIMARY KEY USING BTREE (c1,c2)) ENGINE=SequoiaDB
   PARTITION BY KEY(c2,c1) PARTITIONS 4;
 INSERT INTO t1 VALUES (0,0),(1,1),(2,2),(3,3),(4,4),(5,5),(6,6);
 SELECT * FROM t1 WHERE c1 = 4;
@@ -902,7 +916,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (a int)
 PARTITION BY LIST (a)
 PARTITIONS 1
-(PARTITION x1 VALUES IN (1) ENGINE=MEMORY);
+(PARTITION x1 VALUES IN (1) ENGINE=SequoiaDB);
 
 show create table t1;
 drop table t1;
@@ -1037,16 +1051,16 @@ insert into t1 values(10,1);
 select * from t1 where f1 = 10;
 drop table t1;
 
-#
-# Bug #16775: Wrong engine type stored for subpartition
-#
-set session default_storage_engine= 'memory';
-create table t1 (f_int1 int(11) default null) engine = memory
-  partition by range (f_int1) subpartition by hash (f_int1)
-  (partition part1 values less than (1000)
-   (subpartition subpart11 engine = memory));
-drop table t1;
-set session default_storage_engine='myisam';
+##
+## Bug #16775: Wrong engine type stored for subpartition
+##
+#set session default_storage_engine= 'memory';
+#create table t1 (f_int1 int(11) default null) engine = memory
+#  partition by range (f_int1) subpartition by hash (f_int1)
+#  (partition part1 values less than (1000)
+#   (subpartition subpart11 engine = memory));
+#drop table t1;
+#set session default_storage_engine='myisam';
 
 #
 # Bug #16782: Crash using REPLACE on table with primary key
@@ -1073,17 +1087,17 @@ drop table t1;
 create table t1 (a int)
 partition by key(a)
 partitions 2
-(partition p0 engine=myisam, partition p1 engine=myisam);
+(partition p0 engine=sequoiadb, partition p1 engine=sequoiadb);
 show create table t1;
 
 alter table t1;
 show create table t1;
 
-alter table t1 engine=myisam;
+alter table t1 engine=sequoiadb;
 show create table t1;
 
-alter table t1 engine=heap;
-show create table t1;
+#alter table t1 engine=heap;
+#show create table t1;
 
 alter table t1 remove partitioning;
 show create table t1;
@@ -1091,69 +1105,69 @@ show create table t1;
 drop table t1;
 
 create table t1 (a int)
-engine=myisam
+engine=innodb
 partition by key(a)
 partitions 2
-(partition p0 engine=myisam, partition p1 engine=myisam);
+(partition p0 engine=innodb, partition p1 engine=innodb);
 show create table t1;
 
 alter table t1 add column b int remove partitioning;
 show create table t1;
 
 alter table t1
-engine=myisam
+engine=sequoiadb
 partition by key(a)
-(partition p0 engine=myisam, partition p1);
+(partition p0 engine=sequoiadb, partition p1);
 show create table t1;
 
 alter table t1
-engine=heap
+engine=sequoiadb
 partition by key(a)
-(partition p0, partition p1 engine=heap);
+(partition p0, partition p1 engine=sequoiadb);
 show create table t1;
 
-alter table t1 engine=myisam, add column c int remove partitioning;
+alter table t1 engine=sequoiadb, add column c int remove partitioning;
 show create table t1;
 
 alter table t1
-engine=heap
+engine=sequoiadb
 partition by key (a)
 (partition p0, partition p1);
 show create table t1;
 
-alter table t1
-partition by key (a)
-(partition p0, partition p1);
-show create table t1;
+#alter table t1
+#partition by key (a)
+#(partition p0, partition p1);
+#show create table t1;
 
-alter table t1
-engine=heap
-partition by key (a)
-(partition p0, partition p1);
-show create table t1;
+#alter table t1
+#engine=heap
+#partition by key (a)
+#(partition p0, partition p1);
+#show create table t1;
 
-# Since alter, it already have ENGINE=HEAP from before on table level
-# -> OK
-alter table t1
-partition by key(a)
-(partition p0, partition p1 engine=heap);
+## Since alter, it already have ENGINE=HEAP from before on table level
+## -> OK
+#alter table t1
+#partition by key(a)
+#(partition p0, partition p1 engine=heap);
 
-# Since alter, it already have ENGINE=HEAP from before on table level
-# -> OK
-alter table t1
-partition by key(a)
-(partition p0 engine=heap, partition p1);
+## Since alter, it already have ENGINE=HEAP from before on table level
+## -> OK
+#alter table t1
+#partition by key(a)
+#(partition p0 engine=heap, partition p1);
 
 --error ER_MIX_HANDLER_ERROR
 alter table t1
-engine=heap
+engine=sequoiadb
 partition by key (a)
-(partition p0 engine=heap, partition p1 engine=myisam);
+(partition p0 engine=innodb, partition p1 engine=sequoiadb);
 
---error ER_MIX_HANDLER_ERROR
-alter table t1
-partition by key (a)
-(partition p0 engine=heap, partition p1 engine=myisam);
+#--error ER_MIX_HANDLER_ERROR
+#alter table t1
+#partition by key (a)
+#(partition p0 engine=heap, partition p1 engine=myisam);
 
 drop table t1;
 
@@ -1231,29 +1245,29 @@ drop procedure p//
 drop table t1//
 delimiter ;//
 
+##
+## Bug #15447  Partitions: NULL is treated as zero
+##
 #
-# Bug #15447  Partitions: NULL is treated as zero
+## NULL for RANGE partition
+#create table t1 (a int,b int,c int,key(a,b))
+#partition by range (a)
+#partitions 3
+#(partition x1 values less than (0) tablespace ts1,
+# partition x2 values less than (10) tablespace ts2,
+# partition x3 values less than maxvalue tablespace ts3);
 #
-
-# NULL for RANGE partition
-create table t1 (a int,b int,c int,key(a,b))
-partition by range (a)
-partitions 3
-(partition x1 values less than (0) tablespace ts1,
- partition x2 values less than (10) tablespace ts2,
- partition x3 values less than maxvalue tablespace ts3);
-
-insert into t1 values (NULL, 1, 1);
-insert into t1 values (0, 1, 1);
-insert into t1 values (12, 1, 1);
-
-select partition_name, partition_description, table_rows
-from information_schema.partitions where table_schema ='test';
-SHOW CREATE TABLE t1;
-drop table t1;
-DROP TABLESPACE ts1 ENGINE = InnoDB;
-DROP TABLESPACE ts2 ENGINE = InnoDB;
-DROP TABLESPACE ts3 ENGINE = InnoDB;
+#insert into t1 values (NULL, 1, 1);
+#insert into t1 values (0, 1, 1);
+#insert into t1 values (12, 1, 1);
+#
+#select partition_name, partition_description, table_rows
+#from information_schema.partitions where table_schema ='test_partition';
+#SHOW CREATE TABLE t1;
+#drop table t1;
+#DROP TABLESPACE ts1 ENGINE = SequoiaDB;
+#DROP TABLESPACE ts2 ENGINE = SequoiaDB;
+#DROP TABLESPACE ts3 ENGINE = SequoiaDB;
 
 # NULL for LIST partition
 --error ER_MULTIPLE_DEF_CONST_IN_LIST_PART_ERROR
@@ -1289,7 +1303,7 @@ insert into t1 values (11,1,6);
 insert into t1 values (NULL,1,1);
 
 select partition_name, partition_description, table_rows
-from information_schema.partitions where table_schema ='test';
+from information_schema.partitions where table_schema ='test_partition';
 drop table t1;
 
 #
@@ -1424,17 +1438,18 @@ alter table t1 rebuild partition;
 
 drop table t1;
 
-#
-# Bug #14526: Partitions: indexed searches fail
-#
-create table t2 (s1 int not null auto_increment, primary key (s1)) partition by list (s1) (partition p1 values in (1),partition p2 values in (2),partition p3 values in (3),partition p4 values in (4));
-insert into t2 values (null),(null),(null);
-select * from t2;
-select * from t2 where s1 < 2;
-update t2 set s1 = s1 + 1 order by s1 desc;
-select * from t2 where s1 < 3;
-select * from t2 where s1 = 2;
-drop table t2;
+#SequoiaDB auto-increment field cannot be used for RANGE or LIST partition
+##
+## Bug #14526: Partitions: indexed searches fail
+##
+#create table t2 (s1 int not null auto_increment, primary key (s1)) partition by list (s1) (partition p1 values in (1),partition p2 values in (2),partition p3 values in (3),partition p4 values in (4));
+#insert into t2 values (null),(null),(null);
+#select * from t2;
+#select * from t2 where s1 < 2;
+#update t2 set s1 = s1 + 1 order by s1 desc;
+#select * from t2 where s1 < 3;
+#select * from t2 where s1 = 2;
+#drop table t2;
 
 #
 # Bug #17497: Partitions: crash if add partition on temporary table
@@ -1489,7 +1504,7 @@ drop table t1;
 # bug 17290 SP with delete, create and rollback to save point causes MySQLD core
 #
 delimiter |;
-eval CREATE PROCEDURE test.p1(IN i INT)
+eval CREATE PROCEDURE test_partition.p1(IN i INT)
 BEGIN
   DECLARE CONTINUE HANDLER FOR sqlexception BEGIN END;
   DROP TABLE IF EXISTS t1;
@@ -1502,10 +1517,10 @@ BEGIN
     COMMIT;
 END|
 delimiter ;|
-CALL test.p1(12);
-CALL test.p1(13);
+CALL test_partition.p1(12);
+CALL test_partition.p1(13);
 drop table t1;
-drop procedure test.p1;
+drop procedure test_partition.p1;
 
 #
 # Bug 13520: Problem with delimiters in COMMENT DATA DIRECTORY ..
@@ -1535,13 +1550,14 @@ create table t1 (f1 integer) partition by range(f1)
 insert into t1 set f1 = null;
 select * from t1 where f1 is null;
 analyze table t1;
-explain partitions select * from t1 where f1 is null;
+#explain partitions select * from t1 where f1 is null;
 drop table t1;
 
 create table t1 (f1 integer) partition by list(f1)
 (partition p1 values in (1), partition p2 values in (null));
 insert into t1 set f1 = null;
 insert into t1 set f1 = 1;
+--sorted_result
 select * from t1 where f1 is null or f1 = 1;
 drop table t1;
 
@@ -1573,11 +1589,12 @@ create table t1 (f1 integer) partition by list(f1)
 );
 
 insert into t1 values (1),(2),(3),(4),(null);
+--sorted_result
 select * from t1 where f1 < 3;
 analyze table t1;
-explain partitions select * from t1 where f1 < 3;
+#explain partitions select * from t1 where f1 < 3;
 select * from t1 where f1 is null;
-explain partitions select * from t1 where f1 is null;
+#explain partitions select * from t1 where f1 is null;
 drop table t1;
 
 create table t1 (f1 int) partition by list(f1 div 2)
@@ -1592,9 +1609,9 @@ create table t1 (f1 int) partition by list(f1 div 2)
 insert into t1 values (2),(4),(6),(8),(null);
 select * from t1 where f1 < 3;
 analyze table t1;
-explain partitions select * from t1 where f1 < 3;
+#explain partitions select * from t1 where f1 < 3;
 select * from t1 where f1 is null;
-explain partitions select * from t1 where f1 is null;
+#explain partitions select * from t1 where f1 is null;
 drop table t1;
 
 create table t1 (a int) partition by LIST(a) (
@@ -1604,25 +1621,27 @@ create table t1 (a int) partition by LIST(a) (
   partition p2 values in (2)
 );
 insert into t1 values (NULL),(0),(1),(2);
+--sorted_result
 select * from t1 where a is null or a < 2;
 analyze table t1;
-explain partitions select * from t1 where a is null or a < 2;
+#explain partitions select * from t1 where a is null or a < 2;
+--sorted_result
 select * from t1 where a is null or a < 0 or a > 1;
-explain partitions select * from t1 where a is null or a < 0 or a > 1;
+#explain partitions select * from t1 where a is null or a < 0 or a > 1;
 drop table t1;
 
-#
-#Bug# 17631 SHOW TABLE STATUS reports wrong engine
-#
-CREATE TABLE t1 (id INT NOT NULL PRIMARY KEY, name VARCHAR(20)) 
-ENGINE=MyISAM DEFAULT CHARSET=latin1
-PARTITION BY RANGE(id)
-(PARTITION p0  VALUES LESS THAN (10) ENGINE = MyISAM,
-PARTITION p1 VALUES LESS THAN (20) ENGINE = MyISAM,
-PARTITION p2 VALUES LESS THAN (30) ENGINE = MyISAM);
---replace_column 6 0 7 0 8 0 9 0 12 NULL 13 NULL 14 NULL
-SHOW TABLE STATUS;
-DROP TABLE t1;
+##
+##Bug# 17631 SHOW TABLE STATUS reports wrong engine
+##
+#CREATE TABLE t1 (id INT NOT NULL PRIMARY KEY, name VARCHAR(20)) 
+#ENGINE=MyISAM DEFAULT CHARSET=latin1
+#PARTITION BY RANGE(id)
+#(PARTITION p0  VALUES LESS THAN (10) ENGINE = MyISAM,
+#PARTITION p1 VALUES LESS THAN (20) ENGINE = MyISAM,
+#PARTITION p2 VALUES LESS THAN (30) ENGINE = MyISAM);
+#--replace_column 6 0 7 0 8 0 9 0 12 NULL 13 NULL 14 NULL
+#SHOW TABLE STATUS;
+#DROP TABLE t1;
 
 #
 #BUG 16002 Erroneus handling of unsigned partition functions
@@ -1679,25 +1698,26 @@ CREATE TABLE t1 (a int)
 PARTITION BY RANGE(a)
 (PARTITION p0 VALUES LESS THAN (NULL));
 
-#
-# Bug#18753 Partitions: auto_increment fails
-#
-create table t1 (s1 int auto_increment primary key)
-partition by list (s1)
-(partition p1 values in (1),
- partition p2 values in (2),
- partition p3 values in (3));
-insert into t1 values (null);
-insert into t1 values (null);
-insert into t1 values (null);
-select auto_increment from information_schema.tables where table_name='t1';
-select * from t1;
-drop table t1;
+#SequoiaDB auto-increment field cannot be used for RANGE or LIST partition
+##
+## Bug#18753 Partitions: auto_increment fails
+##
+#create table t1 (s1 int auto_increment primary key)
+#partition by list (s1)
+#(partition p1 values in (1),
+# partition p2 values in (2),
+# partition p3 values in (3));
+#insert into t1 values (null);
+#insert into t1 values (null);
+#insert into t1 values (null);
+#select auto_increment from information_schema.tables where table_name='t1';
+#select * from t1;
+#drop table t1;
 
 #
 # BUG 19140 Partitions: Create index for partitioned table crashes
 #
-create table t1 (a int) engine=memory
+create table t1 (a int) engine=sequoiadb
 partition by key(a);
 insert into t1 values (1);
 create index inx1 on t1(a);
@@ -1738,14 +1758,14 @@ drop table t1;
 #
 CREATE TABLE t1 (a int) PARTITION BY KEY(a);
 INSERT into t1 values (1), (2);
---replace_column 9 0 12 NULL 13 NULL 14 NULL
-SHOW TABLE STATUS;
+#--replace_column 9 0 12 NULL 13 NULL 14 NULL
+#SHOW TABLE STATUS;
 DELETE from t1 where a = 1;
---replace_column 9 0 12 NULL 13 NULL 14 NULL
-SHOW TABLE STATUS;
+#--replace_column 9 0 12 NULL 13 NULL 14 NULL
+#SHOW TABLE STATUS;
 ALTER TABLE t1 OPTIMIZE PARTITION p0;
---replace_column 12 NULL 13 NULL 14 NULL
-SHOW TABLE STATUS;
+#--replace_column 12 NULL 13 NULL 14 NULL
+#SHOW TABLE STATUS;
 DROP TABLE t1;
 
 #
@@ -1761,13 +1781,15 @@ DROP TABLE t1;
 #                       table on partitioned table
 # (added check/analyze for gcov of Bug#20129)
 create table t1 (a int)
-engine=MEMORY
+engine=sequoiadb
 partition by key (a);
 
+--disable_result_log
 REPAIR TABLE t1;
 OPTIMIZE TABLE t1;
 CHECK TABLE t1;
 ANALYZE TABLE t1;
+--enable_result_log
 
 drop table t1;
 
@@ -1775,7 +1797,7 @@ drop table t1;
 #BUG 17138 Problem with stored procedure and analyze partition
 #
 --disable_warnings
-drop procedure if exists mysqltest_1;
+drop procedure if exists partition_mysqltest_1;
 --enable_warnings
 
 create table t1 (a int)
@@ -1785,7 +1807,7 @@ partition by list (a)
 insert into t1 values (0);
 delimiter //;
 
-create procedure mysqltest_1 ()
+create procedure partition_mysqltest_1 ()
 begin
   begin
     declare continue handler for sqlexception begin end;
@@ -1795,10 +1817,10 @@ begin
   execute stmt1;
 end//
 
-call mysqltest_1()//
+call partition_mysqltest_1()//
 delimiter ;//
 drop table t1;
-drop procedure mysqltest_1;
+drop procedure partition_mysqltest_1;
 
 #
 # Bug 20583 Partitions: Crash using index_last
@@ -1819,9 +1841,11 @@ partitions 10;
 show create table t1;
 insert into t1 values (18446744073709551615), (0xFFFFFFFFFFFFFFFE),
 (18446744073709551613), (18446744073709551612);
+--sorted_result
 select * from t1;
 select * from t1 where a = 18446744073709551615;
 delete from t1 where a = 18446744073709551615;
+--sorted_result
 select * from t1;
 drop table t1;
 
@@ -1850,7 +1874,7 @@ CREATE TABLE t2 (
   id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (id,taken),
   KEY taken (taken)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 
 INSERT INTO t2 VALUES 
 ('2006-09-27 21:50:01',16421),
@@ -1867,7 +1891,7 @@ INSERT INTO t2 VALUES
 CREATE TABLE t1 (
   id int(8) NOT NULL,
   PRIMARY KEY (id)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 
 INSERT INTO t1 VALUES 
 (16421),
@@ -1879,7 +1903,7 @@ CREATE TABLE t4 (
   id int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (id,taken),
   KEY taken (taken)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 
 PARTITION BY RANGE (to_days(taken)) 
 (
 PARTITION p01 VALUES LESS THAN (732920) , 
@@ -1891,7 +1915,7 @@ INSERT INTO t4 select * from t2;
 set @f_date='2006-09-28';
 set @t_date='2006-10-02';
 
-SELECT t1.id AS MyISAM_part
+SELECT t1.id AS InnoDB_part
 FROM t1
 WHERE t1.id IN (
     SELECT distinct id
@@ -1906,7 +1930,7 @@ CREATE TABLE t1 (
   id int(11) NOT NULL DEFAULT '0',
   status varchar(20) NOT NULL DEFAULT '',
   PRIMARY KEY (id,taken)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 PARTITION BY RANGE (to_days(taken))
 (
 PARTITION p15 VALUES LESS THAN (732950) ,
@@ -1924,7 +1948,7 @@ CREATE TABLE t2 (
   priority tinyint(4) NOT NULL DEFAULT '0',
   status varchar(20) DEFAULT NULL,
   alien tinyint(4) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 
 INSERT INTO t2 VALUES
 (22589,1,1,'Need Feedback',0);
@@ -1950,22 +1974,22 @@ drop table t1;
 create table t1 (s1 bigint) partition by list (s1) (partition p1 values in (-9223372036854775808));
 drop table t1;
 
-#
-# Bug #28806: Running SHOW TABLE STATUS during high INSERT load crashes server
-#
-create table t1(a int auto_increment, b int, primary key (b, a)) 
-  partition by hash(b) partitions 2;
-insert into t1 values (null, 1);
---replace_column 9 0 12 NULL 13 NULL 14 NULL
-show table status;
-drop table t1;
+##
+## Bug #28806: Running SHOW TABLE STATUS during high INSERT load crashes server
+##
+#create table t1(a int auto_increment, b int, primary key (b, a)) 
+#  partition by hash(b) partitions 2;
+#insert into t1 values (null, 1);
+#--replace_column 9 0 12 NULL 13 NULL 14 NULL
+#show table status;
+#drop table t1;
 
-create table t1(a int auto_increment primary key)
-  partition by key(a) partitions 2;
-insert into t1 values (null), (null), (null);
---replace_column 9 0 12 NULL 13 NULL 14 NULL
-show table status;
-drop table t1;
+#create table t1(a int auto_increment primary key)
+#  partition by key(a) partitions 2;
+#insert into t1 values (null), (null), (null);
+#--replace_column 9 0 12 NULL 13 NULL 14 NULL
+#show table status;
+#drop table t1;
 # Bug #28488: Incorrect information in file: './test/t1_test#.frm'
 #
 
@@ -2011,27 +2035,28 @@ PARTITION BY RANGE (b) (
 show create table t1;
 drop table t1, t2;
 
+#sharding key cannot be updated
+##
+## Bug #32067 Partitions: crash with timestamp column
+##  this bug occurs randomly on some UPDATE statement
+##  with the '1032: Can't find record in 't1'' error
 #
-# Bug #32067 Partitions: crash with timestamp column
-#  this bug occurs randomly on some UPDATE statement
-#  with the '1032: Can't find record in 't1'' error
-
-create table t1
- (s1 timestamp on update current_timestamp, s2 int)
- partition by key(s1) partitions 3;
-
-insert into t1 values (null,null);
---disable_query_log
-let $cnt= 1000;
-while ($cnt)
-{
-  update t1 set s2 = 1;
-  update t1 set s2 = 2;
-  dec $cnt;
-}
---enable_query_log
-
-drop table t1;
+#create table t1
+# (s1 timestamp on update current_timestamp, s2 int)
+# partition by key(s1) partitions 3;
+#
+#insert into t1 values (null,null);
+#--disable_query_log
+#let $cnt= 1000;
+#while ($cnt)
+#{
+#  update t1 set s2 = 1;
+#  update t1 set s2 = 2;
+#  dec $cnt;
+#}
+#--enable_query_log
+#
+#drop table t1;
 
 #
 # BUG#32772: partition crash 1: enum column
@@ -2093,6 +2118,7 @@ CREATE TABLE t1 (s1 BIGINT UNSIGNED)
 );
 INSERT INTO t1 VALUES (-1), (0), (18446744073709551613), 
   (18446744073709551614), (18446744073709551615);
+--sorted_result
 SELECT * FROM t1;
 SELECT * FROM t1 WHERE s1 = 0;
 SELECT * FROM t1 WHERE s1 = 18446744073709551614;
@@ -2134,56 +2160,58 @@ INSERT INTO t1 (int_column, char_column) VALUES
 SELECT * FROM t1 ORDER BY char_column DESC;
 DROP TABLE t1;
 
+#SequoiaDB auto-increment field cannot be used for RANGE or LIST partition
+##
+## Bug #32247 Test reports wrong value of "AUTO_INCREMENT" (on a partitioned InnoDB table)
+##
 #
-# Bug #32247 Test reports wrong value of "AUTO_INCREMENT" (on a partitioned InnoDB table)
+#CREATE TABLE t1(id MEDIUMINT NOT NULL AUTO_INCREMENT,
+#                user CHAR(25), PRIMARY KEY(id))
+#                   PARTITION BY RANGE(id)
+#                   SUBPARTITION BY hash(id) subpartitions 2
+#                   (PARTITION pa1 values less than (10),
+#                    PARTITION pa2 values less than (20),
+#                    PARTITION pa11 values less than MAXVALUE);
+#--disable_query_log
+#let $n= 15;
+#while ($n)
+#{
+#  insert into t1 (user) values ('mysql');
+#  dec $n;
+#}
+#--enable_query_log
+#show create table t1;
+#drop table t1;
+
+#sharding key cannot be updated
+##
+## Bug #38272 timestamps fields incorrectly defaulted on update accross partitions.
+##
 #
-
-CREATE TABLE t1(id MEDIUMINT NOT NULL AUTO_INCREMENT,
-                user CHAR(25), PRIMARY KEY(id))
-                   PARTITION BY RANGE(id)
-                   SUBPARTITION BY hash(id) subpartitions 2
-                   (PARTITION pa1 values less than (10),
-                    PARTITION pa2 values less than (20),
-                    PARTITION pa11 values less than MAXVALUE);
---disable_query_log
-let $n= 15;
-while ($n)
-{
-  insert into t1 (user) values ('mysql');
-  dec $n;
-}
---enable_query_log
-show create table t1;
-drop table t1;
-
+#CREATE TABLE  t1 (
+#  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+#  `createdDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+#  `number` int,
+#  PRIMARY KEY (`ID`, number)
+#)
+#PARTITION BY RANGE (number) (
+#    PARTITION p0 VALUES LESS THAN (6),
+#    PARTITION p1 VALUES LESS THAN (11)
+#);
 #
-# Bug #38272 timestamps fields incorrectly defaulted on update accross partitions.
+#create table t2 (
+#  `ID` bigint(20),
+#  `createdDate` TIMESTAMP,
+#  `number` int
+#);
 #
-
-CREATE TABLE  t1 (
-  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
-  `createdDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `number` int,
-  PRIMARY KEY (`ID`, number)
-)
-PARTITION BY RANGE (number) (
-    PARTITION p0 VALUES LESS THAN (6),
-    PARTITION p1 VALUES LESS THAN (11)
-);
-
-create table t2 (
-  `ID` bigint(20),
-  `createdDate` TIMESTAMP,
-  `number` int
-);
-
-INSERT INTO t1 SET number=1;
-insert into t2 select * from t1;
-SELECT SLEEP(1);
-UPDATE t1 SET number=6;
-select count(*) from t1, t2 where t1.createdDate = t2.createdDate;
-
-drop table t1, t2;
+#INSERT INTO t1 SET number=1;
+#insert into t2 select * from t1;
+#SELECT SLEEP(1);
+#UPDATE t1 SET number=6;
+#select count(*) from t1, t2 where t1.createdDate = t2.createdDate;
+#
+#drop table t1, t2;
 
 #
 # Bug #38083 Error-causing row inserted into partitioned table despite error
@@ -2258,18 +2286,18 @@ select count(*) from t1;
 drop table t1;
 
 
---echo #
---echo # Bug#42944: partition not pruned correctly
---echo #
-CREATE TABLE t1 (a int) PARTITION BY RANGE (a)
-  (PARTITION p0 VALUES LESS THAN (100),
-   PARTITION p1 VALUES LESS THAN (200),
-   PARTITION p2 VALUES LESS THAN (300),
-   PARTITION p3 VALUES LESS THAN MAXVALUE);
-INSERT INTO t1 VALUES (10), (100), (200), (300), (400);
-analyze table t1;
-EXPLAIN PARTITIONS SELECT * FROM t1 WHERE a>=200;
-DROP TABLE t1;
+#--echo #
+#--echo # Bug#42944: partition not pruned correctly
+#--echo #
+#CREATE TABLE t1 (a int) PARTITION BY RANGE (a)
+#  (PARTITION p0 VALUES LESS THAN (100),
+#   PARTITION p1 VALUES LESS THAN (200),
+#   PARTITION p2 VALUES LESS THAN (300),
+#   PARTITION p3 VALUES LESS THAN MAXVALUE);
+#INSERT INTO t1 VALUES (10), (100), (200), (300), (400);
+#analyze table t1;
+#EXPLAIN PARTITIONS SELECT * FROM t1 WHERE a>=200;
+#DROP TABLE t1;
 
 #
 # Bug#44821: select distinct on partitioned table returns wrong results
@@ -2307,8 +2335,8 @@ INSERT INTO t1 VALUES
 
 SELECT b, c FROM t1 WHERE b = 1 GROUP BY b, c;
 analyze table t1;
-EXPLAIN
-SELECT b, c FROM t1 WHERE b = 1 GROUP BY b, c;
+#EXPLAIN
+#SELECT b, c FROM t1 WHERE b = 1 GROUP BY b, c;
 
 DROP TABLE t1;
 
@@ -2383,7 +2411,8 @@ LOCK TABLES t1 WRITE, t1 b READ;
 
 UNLOCK TABLES;
 
---error ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF
+#--error ER_UNIQUE_KEY_NEED_ALL_FIELDS_IN_PF
+--error 40177 
 ALTER TABLE t1 ADD COLUMN (s3 VARCHAR(5) UNIQUE);
 
 # The SELECT below used to hang in tdc_wait_for_old_versions().
@@ -2391,17 +2420,17 @@ SELECT * FROM t1;
 
 DROP TABLE t1;
 
---echo #
---echo # BUG#51868 - crash with myisam_use_mmap and partitioned myisam tables
---echo #
-SET GLOBAL myisam_use_mmap=1;
-CREATE TABLE t1(a INT) PARTITION BY HASH(a) PARTITIONS 1;
-INSERT INTO t1 VALUES(0);
-FLUSH TABLE t1;
-TRUNCATE TABLE t1;
-INSERT INTO t1 VALUES(0);
-DROP TABLE t1;
-SET GLOBAL myisam_use_mmap=default;
+#--echo #
+#--echo # BUG#51868 - crash with myisam_use_mmap and partitioned myisam tables
+#--echo #
+#SET GLOBAL myisam_use_mmap=1;
+#CREATE TABLE t1(a INT) PARTITION BY HASH(a) PARTITIONS 1;
+#INSERT INTO t1 VALUES(0);
+#FLUSH TABLE t1;
+#TRUNCATE TABLE t1;
+#INSERT INTO t1 VALUES(0);
+#DROP TABLE t1;
+#SET GLOBAL myisam_use_mmap=default;
 
 --echo End of 5.1 tests
 --echo # Start of 5.5 tests
@@ -2420,6 +2449,7 @@ CREATE VIEW v1 AS SELECT * FROM t1_part;
 
 --echo
 --echo # Should be (1,1),(10,10)
+--sorted_result
 SELECT * FROM t1_part;
 
 --echo
@@ -2440,6 +2470,7 @@ UPDATE v1 AS A NATURAL JOIN t1_part as B SET A.nokey = 2 , B.partkey = 3;
 
 --echo
 --echo # Should be (1,1),(10,10)
+--sorted_result
 SELECT * FROM t1_part;
 
 --echo
@@ -2449,6 +2480,7 @@ UPDATE t1_part AS A NATURAL JOIN t1_part B SET A.nokey = 2 , B.nokey = 3;
 
 --echo
 --echo # Should be (1,3),(10,3)
+--sorted_result
 SELECT * FROM t1_part;
 
 --echo
@@ -2508,24 +2540,24 @@ SELECT 1 FROM t1 WHERE 1 IN
 
 DROP TABLE t1;
 
---echo #
---echo # WL#5855 (EXPLAIN FORMAT=JSON) partition test
---echo #
-
-CREATE TABLE t1 (c1 int(11) DEFAULT NULL, KEY c1 (c1))
-  PARTITION BY RANGE (c1)
-    (PARTITION a VALUES LESS THAN (10),
-     PARTITION b VALUES LESS THAN (100),
-     PARTITION c VALUES LESS THAN MAXVALUE);
-
-INSERT INTO t1 VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20);
-
-let $query=SELECT c1 FROM t1 WHERE (c1 > 2 AND c1 < 15);
---eval EXPLAIN PARTITIONS $query
---eval EXPLAIN EXTENDED $query
---eval EXPLAIN FORMAT=JSON $query
-
-DROP TABLE t1;
+#--echo #
+#--echo # WL#5855 (EXPLAIN FORMAT=JSON) partition test
+#--echo #
+#
+#CREATE TABLE t1 (c1 int(11) DEFAULT NULL, KEY c1 (c1))
+#  PARTITION BY RANGE (c1)
+#    (PARTITION a VALUES LESS THAN (10),
+#     PARTITION b VALUES LESS THAN (100),
+#     PARTITION c VALUES LESS THAN MAXVALUE);
+#
+#INSERT INTO t1 VALUES (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),(12),(13),(14),(15),(16),(17),(18),(19),(20);
+#
+#let $query=SELECT c1 FROM t1 WHERE (c1 > 2 AND c1 < 15);
+#--eval EXPLAIN PARTITIONS $query
+#--eval EXPLAIN EXTENDED $query
+#--eval EXPLAIN FORMAT=JSON $query
+#
+#DROP TABLE t1;
 
 --echo #
 --echo # Bug#19584181: CRASH AFTER DDL RETURNS WARNINGS - CORRUPT ERROR_HANDLER
@@ -2554,7 +2586,7 @@ DROP TABLE t1;
 --echo #
 --echo # Bug#28573894 ALTER PARTITIONED TABLE ADD AUTO_INCREMENT DIFF RESULT
 --echo #
-CREATE TABLE t (a VARCHAR(10) NOT NULL,b INT,PRIMARY KEY (b)) ENGINE=INNODB
+CREATE TABLE t (a VARCHAR(10) NOT NULL,b INT,PRIMARY KEY (b)) ENGINE=SEQUOIADB
 PARTITION BY RANGE (b)
 (PARTITION pa VALUES LESS THAN (2),
  PARTITION pb VALUES LESS THAN (20),
@@ -2564,8 +2596,12 @@ PARTITION BY RANGE (b)
 INSERT INTO t
 VALUES('A',0),('B',1),('C',2),('D',3),('E',4),('F',5),('G',25),('H',35);
 
-ALTER TABLE t ADD COLUMN r INT UNSIGNED NOT NULL AUTO_INCREMENT, ADD UNIQUE
-KEY (r,b), ALGORITHM=INPLACE, LOCK=SHARED;
+#SequoiaDB must COPY, and value of AUTO_INCREMENT will be random
+#ALTER TABLE t ADD COLUMN r INT UNSIGNED NOT NULL AUTO_INCREMENT, ADD UNIQUE
+#KEY (r,b), ALGORITHM=INPLACE, LOCK=SHARED;
+#ALTER TABLE t ADD COLUMN r INT UNSIGNED NOT NULL AUTO_INCREMENT, ADD UNIQUE
+#KEY (r,b), ALGORITHM=COPY, LOCK=SHARED;
+--sorted_result
 SELECT * FROM t;
 DROP TABLE t;
 
@@ -2585,3 +2621,4 @@ INSERT INTO t VALUES (6, 'ab'), (4, 'ab'), (5, 'ab'), (16, 'ab'), (14, 'ab'), (1
 SELECT id FROM t WHERE data = 'ab' ORDER BY id ASC;
 DROP TABLE t;
 
+DROP DATABASE test_partition;

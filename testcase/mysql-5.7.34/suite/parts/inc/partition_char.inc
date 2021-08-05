@@ -10,7 +10,7 @@ show create table t1;
 insert into t1 values (repeat('a',255)), ('b'), (repeat('a',128)), (repeat('b',64));
 select * from t1;
 select * from t1 where a='b';
-update t1 set a='bb' where a='b';
+#update t1 set a='bb' where a='b';
 delete from t1 where a='bb';
 select * from t1;
 drop table t1;

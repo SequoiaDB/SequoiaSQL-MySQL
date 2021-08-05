@@ -7,7 +7,7 @@ create table t1 (
   col1 int,
   filler varchar(255),
   key(date_col, col1)
-) engine=innodb
+) engine=SequoiaDB
 partition by range columns(date_col)
 (
   partition p0 values less than ('2015-01-01 00:00:00'),
@@ -46,7 +46,7 @@ drop table t1,t2;
 
 #Multi range index read
 
-create table t1 ( f1 int ,f2 int, key(f2)) engine=innodb
+create table t1 ( f1 int ,f2 int, key(f2)) engine=SequoiaDB
 partition by range columns (f2)
 (
 partition p0 values less than (10000),

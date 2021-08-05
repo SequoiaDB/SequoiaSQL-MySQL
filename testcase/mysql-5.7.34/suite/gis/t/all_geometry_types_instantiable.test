@@ -20,7 +20,7 @@
 # Description:Test Cases of the geometry base class hierarchy.                #
 #                                                                             #
 ###############################################################################
-
+--source include/have_sequoiadb.inc
 --source include/have_geometry.inc
 
 ############################################################################################
@@ -28,7 +28,7 @@
 ############################################################################################
 
 --echo # Creating the spatial objects
-USE test;
+#USE test;
 
 CREATE TABLE gis_point (fid INTEGER NOT NULL PRIMARY KEY, g POINT);
 CREATE TABLE gis_linestring (fid INTEGER NOT NULL PRIMARY KEY, g LINESTRING);
@@ -386,6 +386,7 @@ SHOW FIELDS FROM gis_geometry;
 ############################################################################################
 
 --echo # Analyzing the spatial objets
+-- disable_result_log
 ANALYZE TABLE gis_point;
 
 ANALYZE TABLE gis_linestring;
@@ -401,7 +402,7 @@ ANALYZE TABLE gis_multi_polygon;
 ANALYZE TABLE gis_geometrycollection;
 
 ANALYZE TABLE gis_geometry;
-
+-- enable_result_log
 ############################################################################################
 # DDL Functionality on the GIS geometry types                                              #
 ############################################################################################
@@ -586,19 +587,19 @@ SELECT ST_ASTEXT(c8) FROM tab2;
 # Checking spatial index with geometry data                                                #
 ############################################################################################
 
---echo # Creating a table with spatial index column
-CREATE TABLE geom_index (fid INTEGER NOT NULL PRIMARY KEY, g GEOMETRY NOT NULL, SPATIAL INDEX(g));
-
---echo # Inserting geometry values
-INSERT INTO geom_index SELECT * FROM gis_geometry;
-
---echo # Check column datatypes
-SHOW CREATE TABLE geom_index;
-
-SET @polygon = ST_GEOMFROMTEXT('POLYGON((0 0,0 10,10 10,10 0,0 0))');
-
---echo # Sptail index query
-SELECT fid, ST_ASTEXT(g) FROM geom_index WHERE MBRCONTAINS(@polygon, g) ORDER BY fid;
+#--echo # Creating a table with spatial index column
+#CREATE TABLE geom_index (fid INTEGER NOT NULL PRIMARY KEY, g GEOMETRY NOT NULL, SPATIAL INDEX(g));
+#
+#--echo # Inserting geometry values
+#INSERT INTO geom_index SELECT * FROM gis_geometry;
+#
+#--echo # Check column datatypes
+#SHOW CREATE TABLE geom_index;
+#
+#SET @polygon = ST_GEOMFROMTEXT('POLYGON((0 0,0 10,10 10,10 0,0 0))');
+#
+#--echo # Sptail index query
+#SELECT fid, ST_ASTEXT(g) FROM geom_index WHERE MBRCONTAINS(@polygon, g) ORDER BY fid;
 
 ############################################################################################
 # Checking the commit and rollback                                                         #
@@ -661,4 +662,4 @@ DROP TABLE gis_geometrycollection;
 DROP TABLE gis_geometry;
 DROP TABLE tab;
 DROP TABLE tab2;
-DROP TABLE geom_index;
+#DROP TABLE geom_index;

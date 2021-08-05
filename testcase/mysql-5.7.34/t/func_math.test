@@ -1,11 +1,17 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+# (#Case #13115: Check Function Math)
+# (#Case #14763: Check update)
+
+--source include/have_sequoiadb.inc
 
 #
 # Test of math functions
 #
+
+# Compatible with parallel > 1, table name will be printed when check error, should create and use database: test_casename
+create database test_func_math;
+use test_func_math;
 
 --disable_warnings                                                              
 drop table if exists t1;                                                        
@@ -138,11 +144,10 @@ DROP TABLE t1;
 #
 # Bug #14009: use of abs() on null value causes problems with filesort
 #
-# InnoDB is required to reproduce the fault, but it is okay if we default to
-# MyISAM when testing.
+# SequoiaDB is required to reproduce the fault, but it is okay if we default to 
 SET timestamp=UNIX_TIMESTAMP('2001-01-01 00:00:00');
 --disable_warnings
-create table t1 (a varchar(90), ts datetime not null, index (a)) engine=innodb default charset=utf8;
+create table t1 (a varchar(90), ts datetime not null, index (a)) engine=sequoiadb default charset=utf8;
 --enable_warnings
 insert into t1 values ('http://www.foo.com/', now());
 select a from t1 where a='http://www.foo.com/' order by abs(timediff(ts, 0));
@@ -184,14 +189,14 @@ create table t1
 (f1 varchar(32) not null,
  f2 smallint(5) unsigned not null,
  f3 int(10) unsigned not null default '0')
-engine=myisam default charset=utf8;
+engine=sequoiadb default charset=utf8;
 insert into t1 values ('zombie',0,0),('gold',1,10000),('silver',2,10000);
 
 create table t2
 (f1 int(10) unsigned not null,
  f2 int(10) unsigned not null,
  f3 smallint(5) unsigned not null)
-engine=myisam default charset=utf8;
+engine=sequoiadb default charset=utf8;
 insert into t2 values (16777216,16787215,1),(33554432,33564431,2);
 
 select format(t2.f2-t2.f1+1,0) from t1,t2
@@ -279,7 +284,7 @@ DROP TABLE t1;
 #
 # Bug#45152 crash with round() function on longtext column in a derived table
 #
-CREATE TABLE t1(f1 LONGTEXT) engine=myisam;
+CREATE TABLE t1(f1 LONGTEXT) engine=sequoiadb;
 INSERT INTO t1 VALUES ('a');
 SELECT 1 FROM (SELECT ROUND(f1) AS a FROM t1) AS s WHERE a LIKE 'a';
 SELECT 1 FROM (SELECT ROUND(f1, f1) AS a FROM t1) AS s WHERE a LIKE 'a';
@@ -614,6 +619,7 @@ SELECT * FROM t1 ORDER BY a;
 UPDATE t1 SET a = ln(0);
 SELECT * FROM t1 ORDER BY a;
 
+#Bug #SEQUOIADBMAINSTREAM-3588
 SET sql_mode='NO_AUTO_CREATE_USER';
 UPDATE t1 SET a = ln(0);
 SELECT * FROM t1 ORDER BY a;
@@ -683,7 +689,6 @@ DELIMITER ;|
 
 CALL test_round_fn();
 DROP PROCEDURE test_round_fn;
-
 
 --echo #
 --echo # Bug#26495791 - EXPAND TEST SUITE TO INCLUDE CRC32 TESTS
@@ -921,3 +926,8 @@ LOAD DATA INFILE '../../std_data/loaddata_utf8.dat' INTO TABLE t1 CHARACTER SET 
 SELECT HEX(a), CRC32(a) from t1;
 DROP TABLE t1;
 SET NAMES default;
+
+# DROP DATABASE 
+DROP DATABASE test_func_math;
+
+--source include/uninstall_sequoiadb.inc

@@ -1,6 +1,11 @@
+--source include/have_sequoiadb.inc
 
  #Get deafult engine value
 --let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
+
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_ctype_collate;
+use test_ctype_collate;
 
 --disable_warnings
 DROP TABLE IF EXISTS t1;
@@ -135,15 +140,15 @@ ALTER TABLE t1 CHANGE latin1_f
 latin1_f CHAR(32) CHARACTER SET latin1 COLLATE latin1_bin;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
-SHOW CREATE TABLE t1;
-SHOW FIELDS FROM  t1;
+#--replace_result $DEFAULT_ENGINE ENGINE
+#SHOW CREATE TABLE t1;
+#SHOW FIELDS FROM  t1;
 ALTER TABLE t1 CHARACTER SET latin1 COLLATE latin1_bin;
 
 #Replace default engine value with static engine string 
---replace_result $DEFAULT_ENGINE ENGINE
-SHOW CREATE TABLE t1;
-SHOW FIELDS FROM  t1;
+#--replace_result $DEFAULT_ENGINE ENGINE
+#SHOW CREATE TABLE t1;
+#SHOW FIELDS FROM  t1;
 
 #
 # Check SET CHARACTER SET
@@ -152,7 +157,7 @@ SHOW FIELDS FROM  t1;
 SET CHARACTER SET 'latin1';
 SHOW VARIABLES LIKE 'character_set_client';
 SELECT charset('a'),collation('a'),coercibility('a'),'a'='A';
-explain extended SELECT charset('a'),collation('a'),coercibility('a'),'a'='A';
+#explain extended SELECT charset('a'),collation('a'),coercibility('a'),'a'='A';
 
 SET CHARACTER SET koi8r;
 SHOW VARIABLES LIKE 'collation_client';
@@ -194,7 +199,9 @@ insert into t1 values ('A'),('a'),('B'),('b'),('C'),('c');
 select * from t1 where a > 'B' collate latin1_bin;
 select * from t1 where a <> 'B' collate latin1_bin;
 create index i on t1 (a);
+--sorted_result
 select * from t1 where a > 'B' collate latin1_bin;
+--sorted_result
 select * from t1 where a <> 'B' collate latin1_bin;
 drop table t1;
 
@@ -216,24 +223,25 @@ INSERT INTO t1 VALUES ('h','h');
 INSERT INTO t1 VALUES ('i','i');
 INSERT INTO t1 VALUES ('j','j');
 
+--replace_column 1 x
 ANALYZE TABLE t1;
-EXPLAIN SELECT * FROM t1 WHERE s1='a';
-EXPLAIN SELECT * FROM t1 WHERE s2='a';
-EXPLAIN SELECT * FROM t1 WHERE s1='a' COLLATE latin1_german1_ci;
---replace_result 11 10 9.09 10.00
-EXPLAIN SELECT * FROM t1 WHERE s2='a' COLLATE latin1_german1_ci;
+#EXPLAIN SELECT * FROM t1 WHERE s1='a';
+#EXPLAIN SELECT * FROM t1 WHERE s2='a';
+#EXPLAIN SELECT * FROM t1 WHERE s1='a' COLLATE latin1_german1_ci;
+#--replace_result 11 10 9.09 10.00
+#EXPLAIN SELECT * FROM t1 WHERE s2='a' COLLATE latin1_german1_ci;
 
-EXPLAIN SELECT * FROM t1 WHERE s1 BETWEEN 'a' AND 'b' COLLATE latin1_german1_ci;
---replace_result 11 10
-EXPLAIN SELECT * FROM t1 WHERE s2 BETWEEN 'a' AND 'b' COLLATE latin1_german1_ci;
+#EXPLAIN SELECT * FROM t1 WHERE s1 BETWEEN 'a' AND 'b' COLLATE latin1_german1_ci;
+#--replace_result 11 10
+#EXPLAIN SELECT * FROM t1 WHERE s2 BETWEEN 'a' AND 'b' COLLATE latin1_german1_ci;
 
-EXPLAIN SELECT * FROM t1 WHERE s1 IN  ('a','b' COLLATE latin1_german1_ci);
---replace_result 11 10 18.18 20.00 3.31 4.00
-EXPLAIN SELECT * FROM t1 WHERE s2 IN  ('a','b' COLLATE latin1_german1_ci);
+#EXPLAIN SELECT * FROM t1 WHERE s1 IN  ('a','b' COLLATE latin1_german1_ci);
+#--replace_result 11 10 18.18 20.00 3.31 4.00
+#EXPLAIN SELECT * FROM t1 WHERE s2 IN  ('a','b' COLLATE latin1_german1_ci);
 
-EXPLAIN SELECT * FROM t1 WHERE s1 LIKE 'a' COLLATE latin1_german1_ci;
---replace_result 11 10
-EXPLAIN SELECT * FROM t1 WHERE s2 LIKE 'a' COLLATE latin1_german1_ci;
+#EXPLAIN SELECT * FROM t1 WHERE s1 LIKE 'a' COLLATE latin1_german1_ci;
+#--replace_result 11 10
+#EXPLAIN SELECT * FROM t1 WHERE s2 LIKE 'a' COLLATE latin1_german1_ci;
 
 DROP TABLE t1;
 
@@ -243,23 +251,25 @@ DROP TABLE t1;
 # Bug#29261: Sort order of the collation wasn't used when comparing trailing
 #            spaces.
 #
-create table t1(f1 varchar(10) character set latin2 collate latin2_hungarian_ci, key(f1));
-insert into t1 set f1=0x3F3F9DC73F;
-insert into t1 set f1=0x3F3F1E563F;
-insert into t1 set f1=0x3F3F;
-check table t1 extended;
-drop table t1;
+# NOW SequoiaDB not support check table
+#create table t1(f1 varchar(10) character set latin2 collate latin2_hungarian_ci, key(f1));
+#insert into t1 set f1=0x3F3F9DC73F;
+#insert into t1 set f1=0x3F3F1E563F;
+#insert into t1 set f1=0x3F3F;
+#check table t1 extended;
+#drop table t1;
 
 #
 # Bug#29461: Sort order of the collation wasn't used when comparing characters
 #            with the space character.
 #
-create table t1 (a varchar(2) character set latin7 collate latin7_general_ci,key(a));
-insert into t1 set a=0x4c20;
-insert into t1 set a=0x6c;
-insert into t1 set a=0x4c98;
-check table t1 extended;
-drop table t1;
+# NOW SequoiaDB not support check table
+#create table t1 (a varchar(2) character set latin7 collate latin7_general_ci,key(a));
+#insert into t1 set a=0x4c20;
+#insert into t1 set a=0x6c;
+#insert into t1 set a=0x4c98;
+#check table t1 extended;
+#drop table t1;
 
 #
 # Bug#41627 Illegal mix of collations in LEAST / GREATEST / CASE
@@ -335,7 +345,7 @@ SHOW CREATE TABLE t1;
 DROP TABLE t1;
 DROP FUNCTION getText;
 DROP DATABASE test1;
-USE test;
+USE test_ctype_collate;
 SET NAMES latin1;
 
 --echo # Bug#20425399: CAN'T USE COLLATE
@@ -370,3 +380,8 @@ SELECT * FROM t3 ORDER BY b COLLATE utf8_general_ci;
 DROP TABLE t1;
 DROP TABLE t2;
 DROP TABLE t3;
+
+# DROP DATABASE
+DROP DATABASE test_ctype_collate;
+
+--source include/uninstall_sequoiadb.inc

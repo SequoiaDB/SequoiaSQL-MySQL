@@ -43,8 +43,8 @@ SET @max_row = 20;
 # Engine specific settings and requirements
 
 ##### Storage engine to be tested
---source include/have_innodb.inc
-let $engine= 'INNODB';
+--source include/have_sequoiadb.inc
+let $engine= 'SEQUOIADB';
 
 ##### Assign a big number smaller than the maximum value for partitions  #####
 #     and smaller than the maximum value of SIGNED INTEGER

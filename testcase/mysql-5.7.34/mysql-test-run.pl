@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # -*- cperl -*-
 
-# Copyright (c) 2004, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License, version 2.0,
@@ -375,6 +375,11 @@ my $opt_parallel= $ENV{MTR_PARALLEL} || 1;
 
 our $opt_summary_report;
 our $opt_xml_report;
+
+my $sequoiadb_meta_sync_addr;
+my $sequoiadb_meta_sync_user;
+my $sequoiadb_meta_sync_passwd;
+my $sequoiadb_meta_sync_timeout;
 
 select(STDOUT);
 $| = 1; # Automatically flush STDOUT
@@ -1218,6 +1223,12 @@ sub command_line_setup {
   # Note: Keep list in sync with usage at end of this file
   Getopt::Long::Configure("pass_through");
   my %options=(
+             # sequoiadb_meta_sync
+             'meta-sync-addr=s'         => \$sequoiadb_meta_sync_addr,
+             'meta-sync-user=s'         => \$sequoiadb_meta_sync_user,
+             'meta-sync-passwd=s'       => \$sequoiadb_meta_sync_passwd,
+             'meta-sync-timeout=i'      => \$sequoiadb_meta_sync_timeout,
+			 
              # Control what engine/variation to run
              'embedded-server'          => \$opt_embedded_server,
              'ps-protocol'              => \$opt_ps_protocol,
@@ -1394,6 +1405,44 @@ sub command_line_setup {
   # --------------------------------------------------------------------------
   # Setup verbosity
   # --------------------------------------------------------------------------
+
+  #sequoiadb_meta_sync
+  my @sequoiadb_meta_sync_addr;
+  if(!$sequoiadb_meta_sync_addr){
+    $sequoiadb_meta_sync_addr="127.0.0.1:3306,127.0.0.1:3316";
+    @sequoiadb_meta_sync_addr = split(/,/,$sequoiadb_meta_sync_addr);
+    if(!$sequoiadb_meta_sync_user){
+      $sequoiadb_meta_sync_user = "root";
+    }
+    if(!$sequoiadb_meta_sync_passwd){
+      $sequoiadb_meta_sync_passwd = "root";
+    }
+  }else{
+    @sequoiadb_meta_sync_addr = split(/,/,$sequoiadb_meta_sync_addr);
+    if(scalar@sequoiadb_meta_sync_addr<2){
+      print "**** ERROR **** ","\n",
+      "The address in the meta-sync-addr must be greater than or equal to 2","\n";
+      exit(1);
+    }
+    foreach my $addr(@sequoiadb_meta_sync_addr){
+      if($addr=~ /\d+\.\d+\.\d+\.\d+\:\d+/||$addr=~ /[\w\W]*\:\d+/){
+	  
+      }else{
+        print "**** ERROR **** ","\n",
+        "--meta-sync-addr value is invalid value , try typing '--meta-sync-addr=host1:port1,host2:port2' on the command line ","\n";
+        exit(1);
+      }
+    }
+  }
+  for(my $i = 0;$i<scalar@sequoiadb_meta_sync_addr;$i++){
+    my @each_addr = split(/:/,$sequoiadb_meta_sync_addr[$i]);
+    $ENV{'META_SYNC_HOST'.($i+1)} = $each_addr[0];
+    $ENV{'META_SYNC_PORT'.($i+1)} = $each_addr[1];
+  }
+  $ENV{'META_SYNC_USER'}= $sequoiadb_meta_sync_user;
+  $ENV{'META_SYNC_PASSWD'}= $sequoiadb_meta_sync_passwd;
+  $ENV{'META_SYNC_TIMEOUT'}= $sequoiadb_meta_sync_timeout || 5;
+ 
   if ($opt_verbose != 0){
     report_option('verbose', $opt_verbose);
   }
@@ -4185,6 +4234,19 @@ sub mysql_install_db {
   mkpath("$install_datadir/mysql");
   mkpath("$install_datadir/test");
 
+  # liuxiaoxuan: Create directories for each parallel when parallel > 1
+  mtr_tofile($bootstrap_sql_file,
+             "set global sequoiadb_auto_partition=on;\n");
+  for my $child_num (1..$opt_parallel)
+  {
+     mkpath("$install_datadir/test_parallel_$child_num");
+     #zhaoyu: Create table for sequoiadb to reserved database file
+     mtr_tofile($bootstrap_sql_file,
+             "CREATE TABLE test_parallel_$child_num.reserved(a int primary key)engine=sequoiadb;\n");
+  }
+  mtr_tofile($bootstrap_sql_file,
+             "set global sequoiadb_auto_partition=off;\n");
+
   if ( $opt_manual_boot_gdb )
   {
     # The configuration has been set up and user has been prompted for
@@ -6735,7 +6797,11 @@ sub start_mysqltest ($) {
   mtr_add_arg($args, "--mark-progress")
     if $opt_mark_progress;
 
-  mtr_add_arg($args, "--database=test");
+  # liuxiaoxuan: Use unique database for each parallel
+  my $parallel_thread = $tinfo->{worker};
+  $parallel_thread = 1 if $opt_parallel <= 1;
+  my $current_parallel_database = "test_parallel_$parallel_thread";
+  mtr_add_arg($args, "--database=$current_parallel_database");
 
   if ( $opt_ps_protocol )
   {
@@ -7381,6 +7447,11 @@ sub usage ($) {
 $0 [ OPTIONS ] [ TESTCASE ]
 
 Options to control what engine/variation to run
+
+  meta-sync-addr        Mysql address used by sequoiadb_meta_sync(default: --meta-sync-addr=127.0.0.1:3306,127.0.0.1:3316)
+  meta-sync-user        Mysql username used by sequoiadb_meta_sync(default: --meta-sync-user=root)
+  meta-sync-passwd      Mysql password used by sequoiadb_meta_sync(default: --meta-sync-passwd=root)
+  meta-sync-timeout     Mysql timeout used by sequoiadb_meta_sync(default: --meta-sync-timeout=5)
 
   embedded-server       Use the embedded server, i.e. no mysqld daemons
   ps-protocol           Use the binary protocol between client and server

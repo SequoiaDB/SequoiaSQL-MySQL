@@ -17,7 +17,7 @@ select 0, ST_Within(ST_GeomFromText('POLYGON((0 0,20 10,10 30, 0 0))'), ST_GeomF
 select 1, ST_Within(ST_GeomFromText('POLYGON((1 1,20 10,10 30, 1 1))'), ST_GeomFromText('POLYGON((0 0,30 5,10 40, 0 0))'));
 
 
-create table t1 (g point)engine=innodb;
+create table t1 (g point)engine=sequoiadb;
 insert into t1 values
 (ST_GeomFromText('POINT(2 2)')), (ST_GeomFromText('POINT(2 4)')), (ST_GeomFromText('POINT(2 6)')), (ST_GeomFromText('POINT(2 8)')),
 (ST_GeomFromText('POINT(4 2)')), (ST_GeomFromText('POINT(4 4)')), (ST_GeomFromText('POINT(4 6)')), (ST_GeomFromText('POINT(4 8)')),
@@ -80,7 +80,7 @@ select ST_astext(ST_UNION(ST_GeomFromText('POLYGON((0 0, 50 45, 40 50, 0 0))'), 
 # Buffer() tests
 --replace_numeric_round 14
 select ST_astext(ST_buffer(ST_geometryfromtext('point(1 1)'), 1));
-create table t1(geom geometrycollection)engine=innodb;
+create table t1(geom geometrycollection)engine=sequoiadb;
 --error ER_CANT_CREATE_GEOMETRY_OBJECT
 insert into t1 values (ST_geomfromtext('POLYGON((0 0, 10 10, 0 8, 0 0))'));
 --error ER_CANT_CREATE_GEOMETRY_OBJECT

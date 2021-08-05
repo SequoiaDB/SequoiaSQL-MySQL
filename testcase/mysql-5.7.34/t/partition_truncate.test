@@ -20,6 +20,8 @@ subpartition by hash (a)
 subpartitions 1
 (partition p1 values in (1)
  (subpartition sp1));
+#cannot specify HASH or KEY partitions
+--error 131
 alter table t1 truncate partition sp1;
 drop table t1;
 

@@ -1,7 +1,6 @@
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with SequoiaDB,
+--source include/have_sequoiadb.inc
 
 -- source include/have_ujis.inc
 -- source include/have_ucs2.inc
@@ -186,7 +185,8 @@ insert into t1 set ujis=0x7F, name='U+007F DELETE';
 # Fill table t1 with codes "[A1..FE][A1..FE]" using helper table t2.
 # 8836 codes total:
 #
-insert into t1 (ujis) select concat(t21.code,t22.code) from t2 t21, t2 t22 order by 1;
+# NOW SequoiaDB will convert all character sets to utf8, so the following records is not allowed to converted into utf8
+#insert into t1 (ujis) select concat(t21.code,t22.code) from t2 t21, t2 t22 order by 1;
 
 update t1 set name='U+3000 IDEOGRAPHIC SPACE' where ujis=0xA1A1;
 update t1 set name='U+3001 IDEOGRAPHIC COMMA' where ujis=0xA1A2;
@@ -888,7 +888,9 @@ insert into t1 (ujis,name) values (0x8EDF,'U+FF9F HALFWIDTH KATAKANA SEMI-VOICED
 # Fill table t1 with codes [8F][A1..FE][A1..FE] using helper table t2,
 # 8836 codes total
 #
-insert into t1 (ujis) select concat(0x8F,t21.code,t22.code) from t2 t21, t2 t22 order by 1;
+#
+# NOW SequoiaDB will convert all character sets to utf8, so the following records is not allowed to converted into utf8 
+#insert into t1 (ujis) select concat(0x8F,t21.code,t22.code) from t2 t21, t2 t22 order by 1;
 
 update t1 set name='U+02D8 BREVE' where ujis=0x8FA2AF;
 update t1 set name='U+02C7 CARON (Mandarin Chinese third tone)' where ujis=0x8FA2B0;
@@ -1248,6 +1250,7 @@ update t1 set name='User defined range #2' where ujis >= 0x8FF5A1 and ujis <= 0x
 # Other characters are not assigned
 update t1 set name='UNASSIGNED' where name='';
 
+# Bug #SEQUOIASQLMAINSTREAM-146
 update ignore t1 set ucs2=ujis, ujis2=ucs2;
 --echo Characters with safe Unicode round trip
 select hex(ujis), hex(ucs2), hex(ujis2), name from t1 where ujis=ujis2 order by ujis;
@@ -1288,6 +1291,7 @@ drop table t1;
 #
 # Unicode characters which are not in x-eucjp-unicode-0.9
 #
+# Bug #SEQUOIASQLMAINSTREAM-146
 create table t1 (
   ujis char(1) character set ujis,
   ucs2 char(1) character set ucs2,
@@ -1308,4 +1312,5 @@ update ignore t1 set ujis=ucs2;
 select hex(ucs2),hex(ujis),name from t1 order by name;
 drop table t1;
 
+--source include/uninstall_sequoiadb.inc
 --echo End of 5.1 tests

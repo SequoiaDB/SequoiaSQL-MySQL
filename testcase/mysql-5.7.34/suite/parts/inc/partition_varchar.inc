@@ -8,11 +8,11 @@ partition pa3 max_rows=30 min_rows=4,
 partition pa4 max_rows=40 min_rows=2);
 show create table t1;
 insert into t1 values (repeat('a',767)), ('b'), (repeat('a',500)), (repeat('b',64));
-select * from t1;
+select * from t1 order by a;
 select * from t1 where a='b';
-update t1 set a='bb' where a='b';
+#update t1 set a='bb' where a='b';
 delete from t1 where a='bb';
-select * from t1;
+select * from t1 order by a;
 drop table t1;
 
 eval create table t2 (a varchar(767) not null, primary key(a)) engine=$engine 
@@ -29,7 +29,7 @@ dec $count;
 inc $letter;
 }
 select count(*) from t2;
-select * from t2;
+select * from t2 order by a;
 drop table t2;
 
 if (0)

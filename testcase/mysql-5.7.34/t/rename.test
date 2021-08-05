@@ -3,8 +3,11 @@
 # Test of rename table
 #
 
+--source include/have_sequoiadb.inc
 --source include/count_sessions.inc
 
+create database test_rename;
+use test_rename;
 --disable_warnings
 drop table if exists t0,t1,t2,t3,t4;
 # Clear up from other tests (to ensure that SHOW TABLES below is right)
@@ -50,9 +53,11 @@ connect (con1,localhost,root,,);
 connect (con2,localhost,root,,);
 
 connection con1;
+use test_rename;
 CREATE TABLE t1 (a int);
 CREATE TABLE t3 (a int);
 connection con2;
+use test_rename;
 FLUSH TABLES WITH READ LOCK;
 connection con1;
 send RENAME TABLE t1 TO t2, t3 to t4;
@@ -91,8 +96,10 @@ create view v1 as select * from t1;
 alter table v1 rename to v2;
 drop view v1;
 drop table t1;
+drop database test_rename;
 
 --echo End of 5.0 tests
 
 --source include/wait_until_count_sessions.inc
+--source include/uninstall_sequoiadb.inc
 

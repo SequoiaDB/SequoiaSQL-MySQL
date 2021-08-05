@@ -2,6 +2,8 @@
 # Bug #47412: Valgrind warnings / user can read uninitalized memory
 # using SP variables
 #
+CREATE DATABASE test_sp_bugs;
+USE test_sp_bugs;
 CREATE SCHEMA testdb;
 USE testdb;
 CREATE FUNCTION f2 () RETURNS INTEGER
@@ -44,7 +46,7 @@ SELECT f2 ();
 f2 ()
 NULL
 DROP SCHEMA testdb;
-USE test;
+USE test_sp_bugs;
 #
 # Bug#50423: Crash on second call of a procedure dropping a trigger
 #
@@ -78,9 +80,9 @@ DROP PROCEDURE p1;
 # in different default schema
 #
 SET @@SQL_MODE = 'STRICT_ALL_TABLES';
-DROP DATABASE IF EXISTS db1;
-CREATE DATABASE db1;
-USE db1;
+DROP DATABASE IF EXISTS db1_sp_bugs;
+CREATE DATABASE db1_sp_bugs;
+USE db1_sp_bugs;
 DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (c1 int NOT NULL PRIMARY KEY);
 INSERT INTO t1 VALUES (1);
@@ -93,22 +95,22 @@ BEGIN
 INSERT INTO t1 SET c1 = some_value;
 RETURN(LAST_INSERT_ID());
 END$$
-DROP DATABASE IF EXISTS db2;
-CREATE DATABASE db2;
-USE db2;
+DROP DATABASE IF EXISTS db2_sp_bugs;
+CREATE DATABASE db2_sp_bugs;
+USE db2_sp_bugs;
 SELECT DATABASE();
 DATABASE()
-db2
-SELECT db1.f1(1);
-ERROR 23000: Duplicate entry '1' for key 'PRIMARY'
+db2_sp_bugs
+SELECT db1_sp_bugs.f1(1);
+ERROR 23000: Duplicate entry '{ "c1": 1 }' for key 'PRIMARY'
 SELECT DATABASE();
 DATABASE()
-db2
-USE test;
-DROP FUNCTION db1.f1;
-DROP TABLE db1.t1;
-DROP DATABASE db1;
-DROP DATABASE db2;
+db2_sp_bugs
+USE test_sp_bugs;
+DROP FUNCTION db1_sp_bugs.f1;
+DROP TABLE db1_sp_bugs.t1;
+DROP DATABASE db1_sp_bugs;
+DROP DATABASE db2_sp_bugs;
 #
 # Bug#13105873:valgrind warning:possible crash in foreign 
 # key handling on subsequent create table if not exists 
@@ -128,7 +130,7 @@ CALL p1();
 Warnings:
 Note	1050	Table 't2' already exists
 DROP DATABASE testdb;
-USE test;
+USE test_sp_bugs;
 End of 5.1 tests
 #
 # BUG#13489996 valgrind:conditional jump or move depends on
@@ -161,16 +163,16 @@ TESTF_bug11763507()
 0
 SHOW FUNCTION STATUS LIKE  'testf_bug11763507';
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	testf_bug11763507	FUNCTION	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_bugs	testf_bug11763507	FUNCTION	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW FUNCTION STATUS WHERE NAME='testf_bug11763507';
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	testf_bug11763507	FUNCTION	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_bugs	testf_bug11763507	FUNCTION	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW FUNCTION STATUS LIKE  'TESTF_bug11763507';
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	testf_bug11763507	FUNCTION	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_bugs	testf_bug11763507	FUNCTION	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW FUNCTION STATUS WHERE NAME='TESTF_bug11763507';
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	testf_bug11763507	FUNCTION	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_bugs	testf_bug11763507	FUNCTION	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW CREATE FUNCTION testf_bug11763507;
 Function	sql_mode	Create Function	character_set_client	collation_connection	Database Collation
 testf_bug11763507		CREATE DEFINER=`root`@`localhost` FUNCTION `testf_bug11763507`() RETURNS int(11)
@@ -191,16 +193,16 @@ PROCEDURE testp_bug11763507
 PROCEDURE testp_bug11763507
 SHOW PROCEDURE STATUS LIKE  'testp_bug11763507';
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	testp_bug11763507	PROCEDURE	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_bugs	testp_bug11763507	PROCEDURE	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW PROCEDURE STATUS WHERE NAME='testp_bug11763507';
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	testp_bug11763507	PROCEDURE	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_bugs	testp_bug11763507	PROCEDURE	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW PROCEDURE STATUS LIKE  'TESTP_bug11763507';
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	testp_bug11763507	PROCEDURE	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_bugs	testp_bug11763507	PROCEDURE	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW PROCEDURE STATUS WHERE NAME='TESTP_bug11763507';
 Db	Name	Type	Definer	Modified	Created	Security_type	Comment	character_set_client	collation_connection	Database Collation
-test	testp_bug11763507	PROCEDURE	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
+test_sp_bugs	testp_bug11763507	PROCEDURE	root@localhost	#	#	DEFINER		latin1	latin1_swedish_ci	latin1_swedish_ci
 SHOW CREATE PROCEDURE testp_bug11763507;
 Procedure	sql_mode	Create Procedure	character_set_client	collation_connection	Database Collation
 testp_bug11763507		CREATE DEFINER=`root`@`localhost` PROCEDURE `testp_bug11763507`()
@@ -372,3 +374,4 @@ fn1()
 1
 DROP FUNCTION fn1;
 SET sql_mode= default;
+DROP DATABASE test_sp_bugs;

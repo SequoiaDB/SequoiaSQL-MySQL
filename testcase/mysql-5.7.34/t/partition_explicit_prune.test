@@ -1,91 +1,95 @@
---source include/have_innodb.inc
+#--source include/have_innodb.inc
 --source include/have_partition.inc
 
-# Helper statement
-let $get_handler_status_counts= SELECT * FROM INFORMATION_SCHEMA.SESSION_STATUS
-WHERE VARIABLE_NAME LIKE 'HANDLER_%' AND VARIABLE_VALUE > 0;
+CREATE DATABASE test_partition_explicit_prune;
+USE test_partition_explicit_prune;
 
---echo #
---echo # Bug#13559657: PARTITION SELECTION DOES NOT WORK WITH VIEWS
---echo #
-CREATE TABLE t1 (a int)
-ENGINE = InnoDB
-PARTITION BY HASH (a) PARTITIONS 2;
-INSERT INTO t1 VALUES (0), (1), (2), (3);
-CREATE VIEW v1 AS SELECT a FROM t1 PARTITION (p0);
-SHOW CREATE VIEW v1;
-FLUSH STATUS;
---sorted_result
-SELECT * FROM v1;
---source include/get_handler_status_counts.inc
-FLUSH STATUS;
---sorted_result
-SELECT a FROM t1 PARTITION (p0);
---source include/get_handler_status_counts.inc
-FLUSH STATUS;
-INSERT INTO v1 VALUES (10);
---source include/get_handler_status_counts.inc
-FLUSH STATUS;
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
-INSERT INTO v1 VALUES (11);
---source include/get_handler_status_counts.inc
-FLUSH STATUS;
---sorted_result
-SELECT * FROM v1;
---source include/get_handler_status_counts.inc
-FLUSH STATUS;
---sorted_result
-SELECT a FROM t1 PARTITION (p0);
---source include/get_handler_status_counts.inc
---sorted_result
-SELECT * FROM t1;
-DROP VIEW v1;
-CREATE VIEW v1 AS SELECT a FROM t1 PARTITION (p0) WITH CHECK OPTION;
-FLUSH STATUS;
-INSERT INTO v1 VALUES (20);
---source include/get_handler_status_counts.inc
-FLUSH STATUS;
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
-INSERT INTO v1 VALUES (21);
---source include/get_handler_status_counts.inc
---sorted_result
-SELECT * FROM v1;
---sorted_result
-SELECT * FROM t1;
-DROP VIEW v1;
-CREATE VIEW v1 AS
-SELECT a FROM t1 PARTITION (p0) WHERE a = 30 WITH CHECK OPTION;
-FLUSH STATUS;
-INSERT INTO v1 VALUES (30);
---source include/get_handler_status_counts.inc
-FLUSH STATUS;
---error ER_VIEW_CHECK_FAILED
-INSERT INTO v1 VALUES (31);
---source include/get_handler_status_counts.inc
-FLUSH STATUS;
---error ER_VIEW_CHECK_FAILED
-INSERT INTO v1 VALUES (32);
---source include/get_handler_status_counts.inc
---sorted_result
-SELECT * FROM v1;
---sorted_result
-SELECT * FROM t1;
-DROP VIEW v1;
-DROP TABLE t1;
+# Helper statement
+#let $get_handler_status_counts= SELECT * FROM INFORMATION_SCHEMA.SESSION_STATUS
+#WHERE VARIABLE_NAME LIKE 'HANDLER_%' AND VARIABLE_VALUE > 0;
+
+#BUG #SEQUOIASQLMAINSTREAM-651
+#--echo #
+#--echo # Bug#13559657: PARTITION SELECTION DOES NOT WORK WITH VIEWS
+#--echo #
+#CREATE TABLE t1 (a int)
+#ENGINE = SequoiaDB 
+#PARTITION BY HASH (a) PARTITIONS 2;
+#INSERT INTO t1 VALUES (0), (1), (2), (3);
+#CREATE VIEW v1 AS SELECT a FROM t1 PARTITION (p0);
+#SHOW CREATE VIEW v1;
+#FLUSH STATUS;
+#--sorted_result
+#SELECT * FROM v1;
+##--source include/get_handler_status_counts.inc
+#FLUSH STATUS;
+#--sorted_result
+#SELECT a FROM t1 PARTITION (p0);
+##--source include/get_handler_status_counts.inc
+#FLUSH STATUS;
+#INSERT INTO v1 VALUES (10);
+##--source include/get_handler_status_counts.inc
+#FLUSH STATUS;
+##--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#INSERT INTO v1 VALUES (11);
+##--source include/get_handler_status_counts.inc
+#FLUSH STATUS;
+#--sorted_result
+#SELECT * FROM v1;
+##--source include/get_handler_status_counts.inc
+#FLUSH STATUS;
+#--sorted_result
+#SELECT a FROM t1 PARTITION (p0);
+##--source include/get_handler_status_counts.inc
+#--sorted_result
+#SELECT * FROM t1;
+#DROP VIEW v1;
+#CREATE VIEW v1 AS SELECT a FROM t1 PARTITION (p0) WITH CHECK OPTION;
+#FLUSH STATUS;
+#INSERT INTO v1 VALUES (20);
+##--source include/get_handler_status_counts.inc
+#FLUSH STATUS;
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#INSERT INTO v1 VALUES (21);
+##--source include/get_handler_status_counts.inc
+#--sorted_result
+#SELECT * FROM v1;
+#--sorted_result
+#SELECT * FROM t1;
+#DROP VIEW v1;
+#CREATE VIEW v1 AS
+#SELECT a FROM t1 PARTITION (p0) WHERE a = 30 WITH CHECK OPTION;
+#FLUSH STATUS;
+#INSERT INTO v1 VALUES (30);
+##--source include/get_handler_status_counts.inc
+#FLUSH STATUS;
+#--error ER_VIEW_CHECK_FAILED
+#INSERT INTO v1 VALUES (31);
+##--source include/get_handler_status_counts.inc
+#FLUSH STATUS;
+#--error ER_VIEW_CHECK_FAILED
+#INSERT INTO v1 VALUES (32);
+##--source include/get_handler_status_counts.inc
+#--sorted_result
+#SELECT * FROM v1;
+#--sorted_result
+#SELECT * FROM t1;
+#DROP VIEW v1;
+#DROP TABLE t1;
 
 --echo # Original tests for WL#5217
 
 --echo # Must have InnoDB as engine to get the same statistics results.
 --echo # embedded uses MyISAM as default. CREATE SELECT uses the default engine.
 SET @old_default_storage_engine = @@default_storage_engine;
-SET @@default_storage_engine = 'InnoDB';
+SET @@default_storage_engine = 'SequoiaDB';
 
 --let $MYSQLD_DATADIR= `SELECT @@datadir`
 
 --echo # Test to show if I_S affects HANDLER_ counts
 FLUSH STATUS;
---source include/get_handler_status_counts.inc
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # OK, seems to add number of variables processed before HANDLER_WRITE
 --echo # and number of variables + 1 evaluated in the previous call in RND_NEXT
 
@@ -94,7 +98,7 @@ CREATE TABLE t1
  b varchar (64),
  INDEX (b,a),
  PRIMARY KEY (a))
-ENGINE = InnoDB
+ENGINE = SequoiaDB 
 PARTITION BY RANGE (a)
 SUBPARTITION BY HASH (a) SUBPARTITIONS 2
 (PARTITION pNeg VALUES LESS THAN (0)
@@ -124,40 +128,49 @@ INSERT INTO t1 PARTITION (pNeg, pNonExisting) VALUES (1, "error");
 --echo # Duplicate partitions and overlapping partitions and subpartitios is OK
 FLUSH STATUS;
 INSERT INTO t1 PARTITION (pNeg, pNeg) VALUES (-1, "pNeg(-subp1)");
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # Should be 1 commit
 --echo # and 18 write (1 ha_innobase + 17 internal I_S write)
+#cannot specify HASH or KEY partitions
+--error 131
 INSERT INTO t1 PARTITION (pNeg, subp0) VALUES (-3, "pNeg(-subp1)");
+--error 131
 INSERT INTO t1 PARTITION (pNeg, subp0) VALUES (-2, "(pNeg-)subp0");
 
 --echo # should be correct
 INSERT INTO t1 PARTITION (`p100-99999`) VALUES (100, "`p100-99999`(-subp6)"), (101, "`p100-99999`(-subp7)"), (1000, "`p100-99999`(-subp6)");
+#cannot specify HASH or KEY partitions
+--error 131
 INSERT INTO t1 PARTITION(`p10-99`,subp3) VALUES (1, "subp3"), (10, "p10-99");
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 INSERT INTO t1 PARTITION(subp3) VALUES (3, "subp3");
---source include/get_handler_status_counts.inc
---echo # Should be 1 commit
---echo # (1 ha_partition + 1 ha_innobase) x 2 (lock + unlock)
---echo # and 18 write (1 ha_innobase + 17 internal I_S write)
-FLUSH STATUS;
-LOCK TABLE t1 WRITE;
---source include/get_handler_status_counts.inc
---echo # should be 1 commit
---echo # 17 writes (internal I_S)
-INSERT INTO t1 PARTITION(`p0-9`) VALUES (5, "p0-9:subp3");
---source include/get_handler_status_counts.inc
---echo # + 1 commit
---echo # + 19 rnd next (internal I_S)
---echo # + 19 write (18 internal I_S + 1 insert)
-UNLOCK TABLES;
---source include/get_handler_status_counts.inc
---echo # + 19 rnd next (internal I_S)
---echo # + 18 write (internal I_S)
+#--source include/get_handler_status_counts.inc
+#--echo # Should be 1 commit
+#--echo # (1 ha_partition + 1 ha_innobase) x 2 (lock + unlock)
+#--echo # and 18 write (1 ha_innobase + 17 internal I_S write)
+#FLUSH STATUS;
+#LOCK TABLE t1 WRITE;
+#--source include/get_handler_status_counts.inc
+#--echo # should be 1 commit
+#--echo # 17 writes (internal I_S)
+#INSERT INTO t1 PARTITION(`p0-9`) VALUES (5, "p0-9:subp3");
+#--source include/get_handler_status_counts.inc
+#--echo # + 1 commit
+#--echo # + 19 rnd next (internal I_S)
+#--echo # + 19 write (18 internal I_S + 1 insert)
+#UNLOCK TABLES;
+#--source include/get_handler_status_counts.inc
+#--echo # + 19 rnd next (internal I_S)
+#--echo # + 18 write (internal I_S)
 
 --echo # Not matching partitions with inserted value
 --error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
 INSERT INTO t1 PARTITION (pNeg, pNeg) VALUES (1, "error");
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#cannot specify HASH or KEY partitions
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+--error 131
 INSERT INTO t1 PARTITION (pNeg, subp0) VALUES (1, "error");
 --error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
 INSERT INTO t1 PARTITION (`p100-99999`) VALUES (1, "error"), (10, "error");
@@ -165,7 +178,9 @@ INSERT INTO t1 PARTITION (`p100-99999`) VALUES (1, "error"), (10, "error");
 INSERT INTO t1 VALUES (1000000, "error"), (9999999, "error");
 --error ER_NO_PARTITION_FOR_GIVEN_VALUE
 INSERT INTO t1 PARTITION (`p100-99999`) VALUES (1000000, "error"), (9999999, "error");
---error ER_DUP_ENTRY,ER_DUP_KEY
+#cannot specify HASH or KEY partitions
+#--error ER_DUP_ENTRY,ER_DUP_KEY
+--error 131
 INSERT INTO t1 PARTITION (pNeg, subp4) VALUES (-7, "pNeg(-subp1)"), (-10, "pNeg(-subp0)"), (-1, "pNeg(-subp1)"), (-99, "pNeg(-subp1)");
 
 SELECT * FROM t1 ORDER BY a;
@@ -175,25 +190,29 @@ SET @save_innodb_stats_on_metadata=@@global.innodb_stats_on_metadata;
 SET @@global.innodb_stats_on_metadata=ON;
 SELECT PARTITION_NAME, SUBPARTITION_NAME, TABLE_ROWS
 FROM INFORMATION_SCHEMA.PARTITIONS
-WHERE TABLE_SCHEMA = 'test'
+WHERE TABLE_SCHEMA = 'test_partition_explicit_prune'
 AND TABLE_NAME = 't1' ORDER BY SUBPARTITION_NAME;
 SET @@global.innodb_stats_on_metadata=@save_innodb_stats_on_metadata;
 
 FLUSH STATUS;
 --error ER_UNKNOWN_PARTITION
 SELECT * FROM t1 PARTITION (pNonexistent);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # should have failed before locking (only 17 internal I_S writes)
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 SELECT * FROM t1 PARTITION (subp2);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # Should be 1 commit
 --echo # 1 read first (also calls index_read)
 --echo # 2 read key (first from innobase_get_index and second from index first)
 --echo # 17 writes (internal I_S)
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 SELECT * FROM t1 PARTITION (subp2,pNeg) AS TableAlias;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # Should be 1 commit
 --echo # 3 read first (one for each partition)
 --echo # 6 read key (3 from read first and 3 from innobase_get_index)
@@ -201,15 +220,17 @@ SELECT * FROM t1 PARTITION (subp2,pNeg) AS TableAlias;
 --echo # 17 writes (internal I_S)
 FLUSH STATUS;
 LOCK TABLE t1 READ, t1 as TableAlias READ;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 commit
 --echo # 18 READ KEY from opening a new partition table instance,
 --echo # (1 innobase_get_index for each index, per partition, 1 x 2 x 8 = 16
 --echo #  + info(HA_STATUS_CONST) call on the partition with the most number
 --echo #  of rows, 2 innobase_get_index for updating both index statistics)
 --echo # 17 writes (internal I_S)
+#cannot specify HASH or KEY partitions
+--error 131
 SELECT * FROM t1 PARTITION (subp3) AS TableAlias;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # + 1 commit
 --echo # + 1 read first (read first key from index in one partition)
 --echo # + 2 read key (innobase_get_index from index_init + from index_first)
@@ -217,7 +238,7 @@ SELECT * FROM t1 PARTITION (subp3) AS TableAlias;
 --echo # + 19 rnd next (from the last I_S query)
 --echo # + 18 write (internal I_S)
 SELECT COUNT(*) FROM t1 PARTITION (`p10-99`);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # + 1 commit
 --echo # + 2 read first (one for each subpart)
 --echo # + 4 read key (innobase_get_index from index_init + from index_first)
@@ -225,24 +246,24 @@ SELECT COUNT(*) FROM t1 PARTITION (`p10-99`);
 --echo # + 19 rnd next (from the last I_S query)
 --echo # + 18 write (internal I_S)
 SELECT * FROM t1 WHERE a = 1000000;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # No matching partition, only internal I_S.
 SELECT * FROM t1 PARTITION (pNeg) WHERE a = 100;
 UNLOCK TABLES;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # + 18 for unlock (same as lock above) (100 is not in pNeg, no match)
 
---echo # Test that EXPLAIN PARTITION works
---error ER_UNKNOWN_PARTITION
-EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (pNonexistent);
-EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (subp2);
-FLUSH STATUS;
-EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (subp2,pNeg) AS tablealias;
---source include/get_handler_status_counts.inc
-EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (subp3) AS tablealias;
-EXPLAIN PARTITIONS SELECT COUNT(*) FROM t1 PARTITION (`p10-99`);
-EXPLAIN PARTITIONS SELECT * FROM t1 WHERE a = 1000000;
-EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (pNeg) WHERE a = 100;
+#--echo # Test that EXPLAIN PARTITION works
+#--error ER_UNKNOWN_PARTITION
+#EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (pNonexistent);
+#EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (subp2);
+#FLUSH STATUS;
+#EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (subp2,pNeg) AS tablealias;
+#--source include/get_handler_status_counts.inc
+#EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (subp3) AS tablealias;
+#EXPLAIN PARTITIONS SELECT COUNT(*) FROM t1 PARTITION (`p10-99`);
+#EXPLAIN PARTITIONS SELECT * FROM t1 WHERE a = 1000000;
+#EXPLAIN PARTITIONS SELECT * FROM t1 PARTITION (pNeg) WHERE a = 100;
 
 --echo # Test how it changes the alias/keywords/reserved words
 --error ER_PARSE_ERROR
@@ -256,22 +277,28 @@ SELECT * FROM t1 AS `PARTITION`;
 --echo # Test REPLACE
 --echo #
 FLUSH STATUS;
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#cannot specify HASH or KEY partitions
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+--error 131
 REPLACE INTO t1 PARTITION (subp0) VALUES (-21, 'Should fail!');
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # explicit pruning says part_id 0 and implicit pruning says part_id 1
 --echo # so no partition will be locked!
 --echo # 0 rollback (since no locked partition)
 --echo # 17 writes (I_S internal)
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 REPLACE INTO t1 PARTITION (subp1) VALUES (-21, 'Insert by REPLACE');
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 commit
 --echo # 18 writes (17 I_S internal, 1 ha_innobase)
 SELECT * FROM t1 PARTITION (pNeg);
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 REPLACE INTO t1 PARTITION (subp1) VALUES (-21, 'REPLACEd by REPLACE');
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 commit
 --echo # 2 read key (1 innobase_get_index when init the index + 1 index read
 --echo # to get the position to update)
@@ -280,50 +307,50 @@ REPLACE INTO t1 PARTITION (subp1) VALUES (-21, 'REPLACEd by REPLACE');
 --echo # 18 write (17 from I_S, 1 for the failed insert)
 SELECT * FROM t1 PARTITION (pNeg);
 FLUSH STATUS;
-LOCK TABLE t1 WRITE;
---source include/get_handler_status_counts.inc
---echo # 1 commit
---echo # 17 write (internal I_S)
-DELETE FROM t1 PARTITION(subp1) WHERE b = "REPLACEd by REPLACE";
---source include/get_handler_status_counts.inc
---echo # + 1 commit
---echo # + 1 delete (one row deleted)
---echo # + 3 read key (1 innodb_get_index in records_in_range,
---echo #   1 innodb_get_index in index_init, 1 index_read in index_read_first)
---echo # + 1 read next (search for another row in secondary index)
---echo # + 19 rnd next (internal I_S)
---echo # + 18 write (internal I_S)
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
-REPLACE INTO t1 PARTITION (subp0) VALUES (-21, 'Should fail!');
---source include/get_handler_status_counts.inc
---echo # Failed before start_stmt/execution.
---echo # + 19 rnd next (internal I_S)
---echo #   0 rollback (No partition had called start_stmt, all parts pruned)
---echo # + 18 write (internal I_S)
-REPLACE INTO t1 PARTITION (pNeg) VALUES (-21, 'Insert by REPLACE');
---source include/get_handler_status_counts.inc
---echo # + 1 commit
---echo # + 19 rnd next (internal I_S)
---echo # + 19 write (18 internal I_S + 1 real write)
-REPLACE INTO t1 PARTITION (subp1) VALUES (-21, 'REPLACEd by REPLACE');
---source include/get_handler_status_counts.inc
---echo # + 1 commit
---echo # + 2 read key (see non locked query)
---echo # + 19 rnd next (internal I_S)
---echo # + 1 update (see non locked query)
---echo # + 19 write (18 internal I_S + 1 failed write)
-SELECT * FROM t1 PARTITION (subp1);
---source include/get_handler_status_counts.inc
---echo # + 1 commit
---echo # + 1 read first 
---echo # + 2 read key 
---echo # + 3 read next
---echo # + 19 rnd next (internal I_S)
---echo # + 18 write (internal I_S)
-UNLOCK TABLES;
---source include/get_handler_status_counts.inc
---echo # + 19 rnd next (internal I_S)
---echo # + 18 write (internal I_S)
+#LOCK TABLE t1 WRITE;
+#--source include/get_handler_status_counts.inc
+#--echo # 1 commit
+#--echo # 17 write (internal I_S)
+#DELETE FROM t1 PARTITION(subp1) WHERE b = "REPLACEd by REPLACE";
+#--source include/get_handler_status_counts.inc
+#--echo # + 1 commit
+#--echo # + 1 delete (one row deleted)
+#--echo # + 3 read key (1 innodb_get_index in records_in_range,
+#--echo #   1 innodb_get_index in index_init, 1 index_read in index_read_first)
+#--echo # + 1 read next (search for another row in secondary index)
+#--echo # + 19 rnd next (internal I_S)
+#--echo # + 18 write (internal I_S)
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#REPLACE INTO t1 PARTITION (subp0) VALUES (-21, 'Should fail!');
+#--source include/get_handler_status_counts.inc
+#--echo # Failed before start_stmt/execution.
+#--echo # + 19 rnd next (internal I_S)
+#--echo #   0 rollback (No partition had called start_stmt, all parts pruned)
+#--echo # + 18 write (internal I_S)
+#REPLACE INTO t1 PARTITION (pNeg) VALUES (-21, 'Insert by REPLACE');
+#--source include/get_handler_status_counts.inc
+#--echo # + 1 commit
+#--echo # + 19 rnd next (internal I_S)
+#--echo # + 19 write (18 internal I_S + 1 real write)
+#REPLACE INTO t1 PARTITION (subp1) VALUES (-21, 'REPLACEd by REPLACE');
+#--source include/get_handler_status_counts.inc
+#--echo # + 1 commit
+#--echo # + 2 read key (see non locked query)
+#--echo # + 19 rnd next (internal I_S)
+#--echo # + 1 update (see non locked query)
+#--echo # + 19 write (18 internal I_S + 1 failed write)
+#SELECT * FROM t1 PARTITION (subp1);
+#--source include/get_handler_status_counts.inc
+#--echo # + 1 commit
+#--echo # + 1 read first 
+#--echo # + 2 read key 
+#--echo # + 3 read next
+#--echo # + 19 rnd next (internal I_S)
+#--echo # + 18 write (internal I_S)
+#UNLOCK TABLES;
+#--source include/get_handler_status_counts.inc
+#--echo # + 19 rnd next (internal I_S)
+#--echo # + 18 write (internal I_S)
 
 --echo #
 --echo # Test LOAD
@@ -331,7 +358,7 @@ UNLOCK TABLES;
 SELECT * FROM t1 PARTITION (pNeg, `p10-99`);
 FLUSH STATUS;
 SELECT * FROM t1 PARTITION (pNeg, `p10-99`) INTO OUTFILE 'loadtest.txt';
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 commit
 --echo # 4 read first (for reading the first row in 4 partitions)
 --echo # 8 read key (4 from read first + 4 for index init)
@@ -339,96 +366,115 @@ SELECT * FROM t1 PARTITION (pNeg, `p10-99`) INTO OUTFILE 'loadtest.txt';
 --echo # 17 write (internal I_S)
 FLUSH STATUS;
 ALTER TABLE t1 TRUNCATE PARTITION pNeg, `p10-99`;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 SELECT * FROM t1 PARTITION (pNeg, `p10-99`);
 FLUSH STATUS;
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#InnoDB will return succeed
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
 LOAD DATA INFILE 'loadtest.txt' INTO TABLE t1 PARTITION (pNeg);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 rollback
 SELECT * FROM t1 PARTITION (pNeg, `p10-99`);
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 LOAD DATA INFILE 'loadtest.txt' INTO TABLE t1 PARTITION (pNeg, subp4, subp5);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 10 lock (1 ha_partition + 4 ha_innobase) x 2 (lock + unlock)
 ALTER TABLE t1 TRUNCATE PARTITION pNeg, `p10-99`;
 FLUSH STATUS;
-LOCK TABLE t1 WRITE;
---source include/get_handler_status_counts.inc
---echo # 18 read key (ALTER forces table to be closed, see above for open)
-LOAD DATA INFILE 'loadtest.txt' INTO TABLE t1 PARTITION (pNeg, `p10-99`);
---source include/get_handler_status_counts.inc
---echo # + 23 write (18 internal I_S + 5 rows)
-UNLOCK TABLES;
---source include/get_handler_status_counts.inc
---remove_file $MYSQLD_DATADIR/test/loadtest.txt
+#LOCK TABLE t1 WRITE;
+#--source include/get_handler_status_counts.inc
+#--echo # 18 read key (ALTER forces table to be closed, see above for open)
+#LOAD DATA INFILE 'loadtest.txt' INTO TABLE t1 PARTITION (pNeg, `p10-99`);
+#--source include/get_handler_status_counts.inc
+#--echo # + 23 write (18 internal I_S + 5 rows)
+#UNLOCK TABLES;
+#--source include/get_handler_status_counts.inc
+--remove_file $MYSQLD_DATADIR/test_partition_explicit_prune/loadtest.txt
 
 --echo #
 --echo # Test UPDATE
 --echo #
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated');
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 commit
 --echo # 4 lock (1 ha_partition + 1 ha_innobase) x 2 (lock + unlock)
 --echo # 1 read first (read first row, called from first rnd_next)
 --echo # 2 read key (innobase_get_index from rnd_init +
 --echo #             read next row from second rnd_next)
 --echo # 1 update (update the row)
-EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated');
+#EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated');
+#cannot specify HASH or KEY partitions
+--error 131
 SELECT * FROM t1 PARTITION (subp0) ORDER BY a;
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated2') WHERE a = -2;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 commit
 --echo # 4 lock
 --echo # 1 read key
 --echo # 1 update
-EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated2') WHERE a = -2;
+#EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated2') WHERE a = -2;
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 UPDATE t1 PARTITION(subp0) SET a = -4, b = concat(b, ', Updated from a = -2')
 WHERE a = -2;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 commit
 --echo # 4 lock
 --echo # 2 read key - (2 index read)
 --echo # 1 read rnd - rnd_pos
 --echo # 1 update
-EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0) SET a = -4, b = concat(b, ', Updated from a = -2');
+#EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0) SET a = -4, b = concat(b, ', Updated from a = -2');
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
 UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated2') WHERE a = 100;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # Nothing, since impossible PARTITION+WHERE clause.
-EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated2') WHERE a = 100;
+#EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0) SET b = concat(b, ', Updated2') WHERE a = 100;
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
 UPDATE t1 PARTITION(subp0) SET a = -2, b = concat(b, ', Updated from a = 100')
 WHERE a = 100;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # Nothing, since impossible PARTITION+WHERE clause.
-EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0)
-SET a = -2, b = concat(b, ', Updated from a = 100') WHERE a = 100;
+#EXPLAIN PARTITIONS UPDATE t1 PARTITION(subp0)
+#SET a = -2, b = concat(b, ', Updated from a = 100') WHERE a = 100;
 FLUSH STATUS;
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#SequoiaDB sharding key cannot be updated
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+--error 40178
 UPDATE t1 PARTITION(`p100-99999`) SET a = -2, b = concat(b, ', Updated from a = 100')
 WHERE a = 100;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 6 lock
 --echo # 4 read key (1 index init + 1 index read + 1 rnd init + 1 rnd pos)
 --echo # 1 read rnd (rnd pos)
 --echo # 1 rollback
 FLUSH STATUS;
---error ER_DUP_ENTRY,ER_DUP_KEY
+#SequoiaDB sharding key cannot be updated
+#--error ER_DUP_ENTRY,ER_DUP_KEY
+--error 40178
 UPDATE t1 PARTITION(`p100-99999`, pNeg) SET a = -4, b = concat(b, ', Updated from a = 100')
 WHERE a = 100;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 4 read key
 --echo # 1 read rnd
 --echo # 1 rollback
 --echo # 18 write (17 internal I_S + 1 failed insert)
 FLUSH STATUS;
+#SequoiaDB sharding key cannot be updated
+--error 40178
 UPDATE t1 PARTITION(`p100-99999`, pNeg) SET a = -222, b = concat(b, ', Updated from a = 100')
 WHERE a = 100;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 commit
 --echo # 1 delete
 --echo # 4 read key
@@ -439,28 +485,28 @@ SELECT * FROM t1 ORDER BY a;
 --echo # Test of non matching partition (i.e ER_NO_PARTITION_FOUND)
 FLUSH STATUS;
 UPDATE t1 SET b = concat(b, ', Updated2') WHERE a = 1000000;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # Nothing (no matching partition found)
 FLUSH STATUS;
 UPDATE t1 PARTITION (pNeg) SET b = concat(b, ', Updated2') WHERE a = 1000000;
---source include/get_handler_status_counts.inc
---echo # Nothing (no matching partition found)
-FLUSH STATUS;
-LOCK TABLE t1 WRITE;
---source include/get_handler_status_counts.inc
-UPDATE t1 PARTITION (subp7) SET b = concat(b, ', Updated to 103'), a = 103 WHERE a = 101;
---source include/get_handler_status_counts.inc
---echo # + 4 read key
---echo # + 1 read rnd
---echo # + 1 update
-UPDATE t1 PARTITION (`p100-99999`) SET b = concat(b, ', Updated to 110'), a = 110 WHERE a = 103;
---source include/get_handler_status_counts.inc
---echo # + 1 delete
---echo # + 4 read key
---echo # + 1 read rnd
---echo # + 19 write (18 internal I_S + 1 insert)
-UNLOCK TABLES;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
+#--echo # Nothing (no matching partition found)
+#FLUSH STATUS;
+#LOCK TABLE t1 WRITE;
+#--source include/get_handler_status_counts.inc
+#UPDATE t1 PARTITION (subp7) SET b = concat(b, ', Updated to 103'), a = 103 WHERE a = 101;
+#--source include/get_handler_status_counts.inc
+#--echo # + 4 read key
+#--echo # + 1 read rnd
+#--echo # + 1 update
+#UPDATE t1 PARTITION (`p100-99999`) SET b = concat(b, ', Updated to 110'), a = 110 WHERE a = 103;
+#--source include/get_handler_status_counts.inc
+#--echo # + 1 delete
+#--echo # + 4 read key
+#--echo # + 1 read rnd
+#--echo # + 19 write (18 internal I_S + 1 insert)
+#UNLOCK TABLES;
+#--source include/get_handler_status_counts.inc
 
 --echo #
 --echo # Test DELETE
@@ -468,94 +514,106 @@ UNLOCK TABLES;
 SELECT * FROM t1 ORDER BY b, a;
 FLUSH STATUS;
 DELETE FROM t1 PARTITION (pNeg) WHERE a = -1;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 --echo # 1 delete
 --echo # 1 read key (index read)
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 DELETE FROM t1 PARTITION (subp1) WHERE b like '%subp1%';
---source include/get_handler_status_counts.inc
---echo # 1 delete
---echo # 1 read first
---echo # 2 read key
---echo # 3 read rnd
-FLUSH STATUS;
-LOCK TABLE t1 WRITE;
---source include/get_handler_status_counts.inc
-DELETE FROM t1 PARTITION (subp1) WHERE b = 'p0-9:subp3';
---source include/get_handler_status_counts.inc
---echo # + 3 read key (1 innodb_get_index in records_in_range
---echo #               + 1 innobase_get_index in index_init + 1 index read)
-DELETE FROM t1 PARTITION (`p0-9`) WHERE b = 'p0-9:subp3';
---source include/get_handler_status_counts.inc
---echo # + 1 delete
---echo # + 6 read key (same as above, but for two subpartitions)
---echo # + 1 read next (read next after found row)
-UNLOCK TABLES;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
+#--echo # 1 delete
+#--echo # 1 read first
+#--echo # 2 read key
+#--echo # 3 read rnd
+#FLUSH STATUS;
+#LOCK TABLE t1 WRITE;
+#--source include/get_handler_status_counts.inc
+#DELETE FROM t1 PARTITION (subp1) WHERE b = 'p0-9:subp3';
+#--source include/get_handler_status_counts.inc
+#--echo # + 3 read key (1 innodb_get_index in records_in_range
+#--echo #               + 1 innobase_get_index in index_init + 1 index read)
+#DELETE FROM t1 PARTITION (`p0-9`) WHERE b = 'p0-9:subp3';
+#--source include/get_handler_status_counts.inc
+#--echo # + 1 delete
+#--echo # + 6 read key (same as above, but for two subpartitions)
+#--echo # + 1 read next (read next after found row)
+#UNLOCK TABLES;
+#--source include/get_handler_status_counts.inc
 
 --echo # Test multi-table DELETE
 --echo # Can be expressed in two different ways.
 CREATE TABLE t2 LIKE t1;
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 INSERT INTO t2 PARTITION (`p10-99`, subp3, `p100-99999`) SELECT * FROM t1 PARTITION (subp3, `p10-99`, `p100-99999`);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 FLUSH STATUS;
 ALTER TABLE t2 TRUNCATE PARTITION `p10-99`, `p0-9`, `p100-99999`;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 FLUSH STATUS;
---error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+#cannot specify HASH or KEY partitions
+#--error ER_ROW_DOES_NOT_MATCH_GIVEN_PARTITION_SET
+--error 131
 INSERT INTO t2 PARTITION (subp3) SELECT * FROM t1 PARTITION (subp3, `p10-99`, `p100-99999`);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 INSERT IGNORE INTO t2 PARTITION (subp3) SELECT * FROM t1 PARTITION (subp3, `p10-99`, `p100-99999`);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 TRUNCATE TABLE t2;
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 INSERT INTO t2 SELECT * FROM t1 PARTITION (subp3, `p10-99`, `p100-99999`);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 FLUSH STATUS;
+#cannot specify HASH or KEY partitions
+--error 131
 CREATE TABLE t3 SELECT * FROM t1 PARTITION (pNeg,subp3,`p100-99999`);
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 SHOW CREATE TABLE t1;
 SELECT * FROM t1;
 SHOW CREATE TABLE t2;
 SELECT * FROM t2;
-SHOW CREATE TABLE t3;
-SELECT * FROM t3;
-FLUSH STATUS;
---error ER_PARSE_ERROR
-DELETE t1 PARTITION (pNeg), t3 FROM t1, t3
-WHERE t1.a = t3.a AND t3.b = 'subp3';
---source include/get_handler_status_counts.inc
---echo # Multi table delete without any matching rows
-FLUSH STATUS;
-DELETE t1, t2 FROM t1 PARTITION (pNeg), t3, t2 PARTITION (subp3)
-WHERE t1.a = t3.a AND t3.b = 'subp3' AND t3.a = t2.a;
---source include/get_handler_status_counts.inc
---echo # 1 read first (first rnd_next in t2)
---echo # 4 read key (1 innodb_get_index in rnd_init in t2 + index read in t2
---echo #             + 2 innodb_get_index in index_init in t1)
---echo # 3 read rnd next (3 rnd next in t2, 2 rows + 1 empty) 
---echo # Multi table delete matching all rows in subp3 (2 rows in per table)
-FLUSH STATUS;
-DELETE FROM t2, t3 USING t2 PARTITION (`p0-9`), t3, t1 PARTITION (subp3)
-WHERE t1.a = t3.a AND t3.b = 'subp3' AND t2.a = t1.a;
---source include/get_handler_status_counts.inc
---echo # 4 delete (2 in t2 + 2 in t3)
---echo # 3 read first (1 in t1 + 1 in t3 + 1 in t3, for second row in t1)
---echo # 17 read key (1 index_init in t1 + 1 read first in t1 + 
---echo #              2 index_init in t2 + 1 index read in t2 +
---echo #              1 index_init in t3 + 1 index read in t3 +
---echo #              1 index read in t2 +
---echo #              1 index_init in t3 + 1 index read in t3 +
---echo #              2 index_init in t2 + 2 index read in t2 (from rnd_pos)
---echo #              1 index_init in t3 + 2 index read in t3 (from rnd_pos))
---echo # 2 read next (1 in t1 + 1 in t1, second row)
---echo # 4 read rnd (position on 4 found rows to delete)
---echo # 16 rnd next (8 in t3 + 8 in t3, for second row)
+#SHOW CREATE TABLE t3;
+#SELECT * FROM t3;
+#FLUSH STATUS;
+#--error ER_PARSE_ERROR
+#DELETE t1 PARTITION (pNeg), t3 FROM t1, t3
+#WHERE t1.a = t3.a AND t3.b = 'subp3';
+##--source include/get_handler_status_counts.inc
+#--echo # Multi table delete without any matching rows
+#FLUSH STATUS;
+#DELETE t1, t2 FROM t1 PARTITION (pNeg), t3, t2 PARTITION (subp3)
+#WHERE t1.a = t3.a AND t3.b = 'subp3' AND t3.a = t2.a;
+#--source include/get_handler_status_counts.inc
+#--echo # 1 read first (first rnd_next in t2)
+#--echo # 4 read key (1 innodb_get_index in rnd_init in t2 + index read in t2
+#--echo #             + 2 innodb_get_index in index_init in t1)
+#--echo # 3 read rnd next (3 rnd next in t2, 2 rows + 1 empty) 
+#--echo # Multi table delete matching all rows in subp3 (2 rows in per table)
+#FLUSH STATUS;
+#DELETE FROM t2, t3 USING t2 PARTITION (`p0-9`), t3, t1 PARTITION (subp3)
+#WHERE t1.a = t3.a AND t3.b = 'subp3' AND t2.a = t1.a;
+##--source include/get_handler_status_counts.inc
+#--echo # 4 delete (2 in t2 + 2 in t3)
+#--echo # 3 read first (1 in t1 + 1 in t3 + 1 in t3, for second row in t1)
+#--echo # 17 read key (1 index_init in t1 + 1 read first in t1 + 
+#--echo #              2 index_init in t2 + 1 index read in t2 +
+#--echo #              1 index_init in t3 + 1 index read in t3 +
+#--echo #              1 index read in t2 +
+#--echo #              1 index_init in t3 + 1 index read in t3 +
+#--echo #              2 index_init in t2 + 2 index read in t2 (from rnd_pos)
+#--echo #              1 index_init in t3 + 2 index read in t3 (from rnd_pos))
+#--echo # 2 read next (1 in t1 + 1 in t1, second row)
+#--echo # 4 read rnd (position on 4 found rows to delete)
+#--echo # 16 rnd next (8 in t3 + 8 in t3, for second row)
 SELECT * FROM t1 ORDER BY a;
 SELECT * FROM t2 ORDER BY a;
-SELECT * FROM t3 ORDER BY a;
+#SELECT * FROM t3 ORDER BY a;
 
 
 --echo # Test TRUNCATE TABLE (should fail, since one should use
@@ -567,13 +625,14 @@ TRUNCATE TABLE t1 PARTITION(`p10-99`);
 --echo # Note that it does not support truncating subpartitions
 FLUSH STATUS;
 ALTER TABLE t1 TRUNCATE PARTITION pNeg;
---source include/get_handler_status_counts.inc
+#--source include/get_handler_status_counts.inc
 
---echo # Test on non partitioned table
---error ER_PARTITION_CLAUSE_ON_NONPARTITIONED
-SELECT * FROM t3 PARTITION (pNeg);
+#--echo # Test on non partitioned table
+#--error ER_PARTITION_CLAUSE_ON_NONPARTITIONED
+#SELECT * FROM t3 PARTITION (pNeg);
 
-DROP TABLE t1, t2, t3;
+#DROP TABLE t1, t2, t3;
+DROP TABLE t1, t2;
 #
 --echo # Test from superseeded WL# 2682
 # Partition select tests.
@@ -584,16 +643,17 @@ drop table if exists t1,t2,t3,t4,t5,t6,t7,t8,t9;
 
 CREATE TABLE `t1` (
 `id` int(11) default NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB
 PARTITION BY RANGE (id) (
-PARTITION p0 VALUES LESS THAN (6) ENGINE = MyISAM,
-PARTITION p1 VALUES LESS THAN (11) ENGINE = MyISAM,
-PARTITION p2 VALUES LESS THAN (16) ENGINE = MyISAM,
-PARTITION p3 VALUES LESS THAN (21) ENGINE = MyISAM);
+PARTITION p0 VALUES LESS THAN (6) ENGINE = SequoiaDB,
+PARTITION p1 VALUES LESS THAN (11) ENGINE = SequoiaDB,
+PARTITION p2 VALUES LESS THAN (16) ENGINE = SequoiaDB,
+PARTITION p3 VALUES LESS THAN (21) ENGINE = SequoiaDB);
 
 INSERT INTO `t1` VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10),
 (11), (12), (13), (14), (15), (16), (17), (18), (19), (20);
 
+--sorted_result
 SELECT * FROM t1;
 SELECT * FROM t1 PARTITION (p0);
 SELECT * FROM t1 PARTITION (p1);
@@ -607,12 +667,12 @@ SELECT * FROM t1 PARTITION (foo);
 CREATE TABLE `t2` (
 `id` int(11) NOT NULL DEFAULT 0,
 PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 PARTITION BY RANGE (id) (
-PARTITION p0 VALUES LESS THAN (6) ENGINE = MyISAM,
-PARTITION p1 VALUES LESS THAN (11) ENGINE = MyISAM,
-PARTITION p2 VALUES LESS THAN (16) ENGINE = MyISAM,
-PARTITION p3 VALUES LESS THAN (21) ENGINE = MyISAM);
+PARTITION p0 VALUES LESS THAN (6) ENGINE = SequoiaDB,
+PARTITION p1 VALUES LESS THAN (11) ENGINE = SequoiaDB,
+PARTITION p2 VALUES LESS THAN (16) ENGINE = SequoiaDB,
+PARTITION p3 VALUES LESS THAN (21) ENGINE = SequoiaDB);
 
 INSERT INTO `t2` VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10),
 (11), (12), (13), (14), (15), (16), (17), (18), (19), (20);
@@ -631,7 +691,7 @@ SELECT * FROM t2 PARTITION (foo);
 CREATE TABLE `t3` (
   `id` int(32) default NULL,
   `name` varchar(32) default NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 
 PARTITION BY LIST (id) (
   PARTITION p0 VALUES IN (1,3,5,7),
   PARTITION p1 VALUES IN (0,2,4,6,8),
@@ -640,6 +700,7 @@ PARTITION BY LIST (id) (
 
 INSERT INTO `t3` VALUES (1,'first'), (3,'third'),(5,'fifth'),(7,'seventh'),(0,'zilch'),(2,'second'),(4,'fourth'),(6,'sixth'),(8,'eighth'),(9,'ninth'),(10,'tenth'),(11,'eleventh'),(12,'twelfth'),(13,'thirteenth');
 
+--sorted_result
 SELECT * FROM `t3`;
 SELECT * FROM `t3` PARTITION (p0);
 SELECT * FROM `t3` PARTITION (p1);
@@ -649,7 +710,7 @@ SELECT * FROM `t3` PARTITION (p2) ORDER BY id;
 DROP TABLE IF EXISTS `t4`;
 CREATE TABLE `t4` (
   `id` int(32) default NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 PARTITION BY HASH (id) ;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 PARTITION BY HASH (id) ;
 
 INSERT INTO `t4` SELECT * FROM `t2`;
 INSERT INTO `t4` SELECT * FROM `t2` ORDER BY id;
@@ -701,30 +762,38 @@ INSERT INTO `t5` VALUES (18, 'sssssss', '1950-09-23 00:00:00');
 INSERT INTO `t5` VALUES (19, 'ttttttt', '1999-08-02 00:00:00');
 INSERT INTO `t5` VALUES (20, 'uuuuuuu', '1994-05-28 00:00:00');
 
+--sorted_result
 SELECT * FROM `t5`;
 SELECT * FROM `t5` PARTITION(p0) ORDER BY id;
+#cannot specify HASH or KEY partitions
+--error 131
 SELECT * FROM `t5` PARTITION(s0) ORDER BY id;
+--error 131
 SELECT * FROM `t5` PARTITION(s1) ORDER BY id;
 SELECT * FROM `t5` PARTITION(p1) ORDER BY id;
+--error 131
 SELECT * FROM `t5` PARTITION(s2) ORDER BY id;
+--error 131
 SELECT * FROM `t5` PARTITION(s3) ORDER BY id;
 SELECT * FROM `t5` PARTITION(p2) ORDER BY id;
+--error 131
 SELECT * FROM `t5` PARTITION(s4) ORDER BY id;
+--error 131
 SELECT * FROM `t5` PARTITION(s5) ORDER BY id;
 
 --disable_warnings
 drop table t1,t2,t3,t4,t5;
 --enable_warnings
 
-# Tests for working together with partition pruning.
-create table t1 (a int) partition by hash(a) partitions 3;
-insert into t1 values(1),(2),(3);
-explain partitions select * from t1 where a=1;
-explain partitions select * from t1 partition (p1) where a=1;
-explain partitions select * from t1 partition (p1) where a=1 or a=2;
-explain partitions select * from t1 partition (p2) where a=1;
-
-drop table t1;
+## Tests for working together with partition pruning.
+#create table t1 (a int) partition by hash(a) partitions 3;
+#insert into t1 values(1),(2),(3);
+#explain partitions select * from t1 where a=1;
+#explain partitions select * from t1 partition (p1) where a=1;
+#explain partitions select * from t1 partition (p1) where a=1 or a=2;
+#explain partitions select * from t1 partition (p2) where a=1;
+#
+#drop table t1;
 
 --echo #
 --echo # Bug#59864: Crash if table empty: DELETE FROM t2 PARTITION (subp3).
@@ -767,16 +836,23 @@ INSERT INTO t1 VALUES (3339, "Three thousand three hundred thirty nine"), (3338,
 
 --sorted_result
 SELECT * FROM t1;
---sorted_result
+#cannot specify HASH or KEY partitions
+#--sorted_result
+--error 131
 SELECT * FROM t1 PARTITION (subp3);
 
+#cannot specify HASH or KEY partitions
+--error 131
 DELETE FROM t1 PARTITION (subp3);
 
 --sorted_result
 SELECT * FROM t1;
---sorted_result
+#cannot specify HASH or KEY partitions
+#--sorted_result
+--error 131
 SELECT * FROM t1 PARTITION (subp3);
 
+#BUG SEQUOIASQLMAINSTREAM-656
 DELETE FROM t1 PARTITION (`p0-29`);
 
 --sorted_result
@@ -786,11 +862,15 @@ SELECT * FROM t1 PARTITION (`p0-29`);
 
 ALTER TABLE t1 PARTITION BY HASH (a) PARTITIONS 3;
 
+#cannot specify HASH or KEY partitions
+--error 131
 DELETE FROM t1 PARTITION (p2);
 
 --sorted_result
 SELECT * FROM t1;
 --sorted_result
+#cannot specify HASH or KEY partitions
+--error 131
 SELECT * FROM t1 PARTITION (p2);
 
 DROP TABLE t1;
@@ -810,5 +890,7 @@ CREATE TABLE t1 (a INT) PARTITION BY HASH (a) PARTITIONS 3;
 --error ER_PARSE_ERROR
 CREATE TABLE t2 LIKE t1 PARTITION (p0, p2);
 DROP TABLE t1;
+
+DROP DATABASE test_partition_explicit_prune;
 
 SET @@default_storage_engine = @old_default_storage_engine;

@@ -1,20 +1,22 @@
+create database test_func_system;
+use test_func_system;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
 select database();
 database()
-test
+test_func_system
 select charset(database());
 charset(database())
 utf8
-select database() = "test";
-database() = "test"
+select database() = "test_func_system";
+database() = "test_func_system"
 1
-select database() = _utf8"test";
-database() = _utf8"test"
+select database() = _utf8"test_func_system";
+database() = _utf8"test_func_system"
 1
-select database() = _latin1"test";
-database() = _latin1"test"
+select database() = _latin1"test_func_system";
+database() = _latin1"test_func_system"
 1
 select user() like "%@%";
 user() like "%@%"
@@ -53,7 +55,7 @@ t1	CREATE TABLE `t1` (
   `database()` varchar(34) CHARACTER SET utf8 DEFAULT NULL,
   `user()` varchar(93) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `version` char(60) DEFAULT NULL
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t1;
 select charset(charset(_utf8'a')), charset(collation(_utf8'a'));
 charset(charset(_utf8'a'))	charset(collation(_utf8'a'))
@@ -67,7 +69,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `charset(_utf8'a')` varchar(64) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `collation(_utf8'a')` varchar(64) CHARACTER SET utf8 NOT NULL DEFAULT ''
-) ENGINE=ENGINE DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t1;
 select TRUE,FALSE,NULL;
 TRUE	FALSE	NULL
@@ -84,9 +86,9 @@ root@localhost--row 2
 root@localhost--row 3
 select concat(database(), '--', c1) from t1;
 concat(database(), '--', c1)
-test--row 1
-test--row 2
-test--row 3
+test_func_system--row 1
+test_func_system--row 2
+test_func_system--row 3
 drop table t1;
 create table t1 (a char(10)) character set latin1;
 select * from t1 where a=version();
@@ -100,3 +102,4 @@ select left(concat(a,version()),1) from t1;
 left(concat(a,version()),1)
 a
 drop table t1;
+DROP DATABASE test_func_system;

@@ -3,12 +3,13 @@
 # All tests are required to run with Myisam.
 # Hence MTR starts mysqld with MyISAM as default
 
---source include/force_myisam_default.inc
---source include/have_myisam.inc
-
+--source include/have_sequoiadb.inc
 -- source include/have_geometry.inc
 
 SET sql_mode = 'ONLY_FULL_GROUP_BY,NO_ENGINE_SUBSTITUTION';
+
+CREATE DATABASE test_gis;
+USE test_gis;
 
 #
 # Spatial objects
@@ -94,11 +95,11 @@ SELECT fid, ST_Dimension(g) FROM gis_geometry;
 SELECT fid, ST_GeometryType(g) FROM gis_geometry;
 SELECT fid, ST_IsEmpty(g) FROM gis_geometry;
 SELECT fid, ST_AsText(ST_Envelope(g)) FROM gis_geometry;
-explain extended select ST_Dimension(g), ST_GeometryType(g), ST_IsEmpty(g), ST_AsText(ST_Envelope(g)) from gis_geometry;
+#explain extended select ST_Dimension(g), ST_GeometryType(g), ST_IsEmpty(g), ST_AsText(ST_Envelope(g)) from gis_geometry;
 
 SELECT fid, ST_X(g) FROM gis_point;
 SELECT fid, ST_Y(g) FROM gis_point;
-explain extended select ST_X(g),ST_Y(g) FROM gis_point;
+#explain extended select ST_X(g),ST_Y(g) FROM gis_point;
 
 SELECT fid, ST_AsText(ST_StartPoint(g)) FROM gis_line;
 SELECT fid, ST_AsText(ST_EndPoint(g)) FROM gis_line;
@@ -106,14 +107,14 @@ SELECT fid, ST_Length(g) FROM gis_line;
 SELECT fid, ST_NumPoints(g) FROM gis_line;
 SELECT fid, ST_AsText(ST_PointN(g, 2)) FROM gis_line;
 SELECT fid, ST_IsClosed(g) FROM gis_line;
-explain extended select ST_AsText(ST_StartPoint(g)),ST_AsText(ST_EndPoint(g)),ST_Length(g),ST_NumPoints(g),ST_AsText(ST_PointN(g, 2)),ST_IsClosed(g) FROM gis_line;
+#explain extended select ST_AsText(ST_StartPoint(g)),ST_AsText(ST_EndPoint(g)),ST_Length(g),ST_NumPoints(g),ST_AsText(ST_PointN(g, 2)),ST_IsClosed(g) FROM gis_line;
 
 SELECT fid, ST_AsText(ST_Centroid(g)) FROM gis_polygon;
 SELECT fid, ST_Area(g) FROM gis_polygon;
 SELECT fid, ST_AsText(ST_ExteriorRing(g)) FROM gis_polygon;
 SELECT fid, ST_NumInteriorRings(g) FROM gis_polygon;
 SELECT fid, ST_AsText(ST_InteriorRingN(g, 1)) FROM gis_polygon;
-explain extended select ST_AsText(ST_Centroid(g)),ST_Area(g),ST_AsText(ST_ExteriorRing(g)),ST_NumInteriorRings(g),ST_AsText(ST_InteriorRingN(g, 1)) FROM gis_polygon;
+#explain extended select ST_AsText(ST_Centroid(g)),ST_Area(g),ST_AsText(ST_ExteriorRing(g)),ST_NumInteriorRings(g),ST_AsText(ST_InteriorRingN(g, 1)) FROM gis_polygon;
 
 SELECT fid, ST_IsClosed(g) FROM gis_multi_line;
 
@@ -124,25 +125,25 @@ SELECT fid, ST_NumGeometries(g) from gis_multi_point;
 SELECT fid, ST_NumGeometries(g) from gis_multi_line;
 SELECT fid, ST_NumGeometries(g) from gis_multi_polygon;
 SELECT fid, ST_NumGeometries(g) from gis_geometrycollection;
-explain extended SELECT fid, ST_NumGeometries(g) from gis_multi_point;
+#explain extended SELECT fid, ST_NumGeometries(g) from gis_multi_point;
 
 SELECT fid, ST_AsText(ST_GeometryN(g, 2)) from gis_multi_point;
 SELECT fid, ST_AsText(ST_GeometryN(g, 2)) from gis_multi_line;
 SELECT fid, ST_AsText(ST_GeometryN(g, 2)) from gis_multi_polygon;
 SELECT fid, ST_AsText(ST_GeometryN(g, 2)) from gis_geometrycollection;
 SELECT fid, ST_AsText(ST_GeometryN(g, 1)) from gis_geometrycollection;
-explain extended SELECT fid, ST_AsText(ST_GeometryN(g, 2)) from gis_multi_point;
+#explain extended SELECT fid, ST_AsText(ST_GeometryN(g, 2)) from gis_multi_point;
 
 SELECT g1.fid as first, g2.fid as second,
 MBRWithin(g1.g, g2.g) as w, MBRContains(g1.g, g2.g) as c, MBROverlaps(g1.g, g2.g) as o,
 MBREquals(g1.g, g2.g) as e, MBRDisjoint(g1.g, g2.g) as d, ST_Touches(g1.g, g2.g) as t,
 MBRIntersects(g1.g, g2.g) as i, ST_Crosses(g1.g, g2.g) as r
 FROM gis_geometrycollection g1, gis_geometrycollection g2 ORDER BY first, second;
-explain extended SELECT g1.fid as first, g2.fid as second,
-MBRWithin(g1.g, g2.g) as w, MBRContains(g1.g, g2.g) as c, MBROverlaps(g1.g, g2.g) as o,
-MBREquals(g1.g, g2.g) as e, MBRDisjoint(g1.g, g2.g) as d, ST_Touches(g1.g, g2.g) as t,
-MBRIntersects(g1.g, g2.g) as i, ST_Crosses(g1.g, g2.g) as r
-FROM gis_geometrycollection g1, gis_geometrycollection g2 ORDER BY first, second;
+#explain extended SELECT g1.fid as first, g2.fid as second,
+#MBRWithin(g1.g, g2.g) as w, MBRContains(g1.g, g2.g) as c, MBROverlaps(g1.g, g2.g) as o,
+#MBREquals(g1.g, g2.g) as e, MBRDisjoint(g1.g, g2.g) as d, ST_Touches(g1.g, g2.g) as t,
+#MBRIntersects(g1.g, g2.g) as i, ST_Crosses(g1.g, g2.g) as r
+#FROM gis_geometrycollection g1, gis_geometrycollection g2 ORDER BY first, second;
 
 DROP TABLE gis_point, gis_line, gis_polygon, gis_multi_point, gis_multi_line, gis_multi_polygon, gis_geometrycollection, gis_geometry;
 
@@ -166,12 +167,12 @@ SHOW FIELDS FROM t1;
 DROP TABLE t1;
 
 SELECT ST_AsText(ST_GeometryFromWKB(ST_AsWKB(ST_GeometryFromText('POINT(1 4)'))));
-explain extended SELECT ST_AsText(ST_GeometryFromWKB(ST_AsWKB(ST_GeometryFromText('POINT(1 4)'))));
-explain extended SELECT ST_AsText(ST_GeometryFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 4)'))));
+#explain extended SELECT ST_AsText(ST_GeometryFromWKB(ST_AsWKB(ST_GeometryFromText('POINT(1 4)'))));
+#explain extended SELECT ST_AsText(ST_GeometryFromWKB(ST_AsWKB(ST_PointFromText('POINT(1 4)'))));
 SELECT ST_SRID(ST_GeomFromText('LineString(1 1,2 2)',101));
-explain extended SELECT ST_SRID(ST_GeomFromText('LineString(1 1,2 2)',101));
+#explain extended SELECT ST_SRID(ST_GeomFromText('LineString(1 1,2 2)',101));
 #select ST_issimple(MultiPoint(Point(3, 6), Point(4, 10))), ST_issimple(Point(3, 6)),ST_issimple(ST_PolygonFromText('POLYGON((10 10,20 10,20 20,10 20,10 10))')),ST_issimple(ST_GeometryFromText('POINT(1 4)')), ST_issimple(ST_AsWKB(ST_GeometryFromText('POINT(1 4)')));
-explain extended select ST_issimple(MultiPoint(Point(3, 6), Point(4, 10))), ST_issimple(Point(3, 6));
+#explain extended select ST_issimple(MultiPoint(Point(3, 6), Point(4, 10))), ST_issimple(Point(3, 6));
 
 create table t1 (a geometry not null);
 insert into t1 values (ST_GeomFromText('Point(1 2)'));
@@ -179,15 +180,17 @@ insert into t1 values (ST_GeomFromText('Point(1 2)'));
 insert into t1 values ('Garbage');
 -- error 1416
 insert IGNORE into t1 values ('Garbage');
-alter table t1 add spatial index(a);
+#--error 1464
+#alter table t1 add spatial index(a);
 
 drop table t1;
 
 #
 # Bug #5219: problem with range optimizer
 #
-
-create table t1(a geometry not null, spatial index(a));
+#--error 1464
+#create table t1(a geometry not null, spatial index(a));
+create table t1(a geometry not null);
 insert into t1 values
 (ST_GeomFromText('POINT(1 1)')), (ST_GeomFromText('POINT(3 3)')), 
 (ST_GeomFromText('POINT(4 4)')), (ST_GeomFromText('POINT(6 6)'));
@@ -201,7 +204,9 @@ select ST_AsText(a) from t1 where
   MBRContains(ST_GeomFromText('Polygon((0 0, 0 7, 7 7, 7 0, 0 0))'), a);
 drop table t1;
 
-CREATE TABLE t1 (Coordinates POINT NOT NULL, SPATIAL INDEX(Coordinates)); 
+#--error 1464
+#CREATE TABLE t1 (Coordinates POINT NOT NULL, SPATIAL INDEX(Coordinates)); 
+CREATE TABLE t1 (Coordinates POINT NOT NULL); 
 INSERT INTO t1 VALUES(ST_GeomFromText('POINT(383293632 1754448)')); 
 INSERT INTO t1 VALUES(ST_GeomFromText('POINT(564952612 157516260)')); 
 INSERT INTO t1 VALUES(ST_GeomFromText('POINT(903994614 180726515)')); 
@@ -296,7 +301,7 @@ show create table t1;
 drop table t1;
 
 CREATE TABLE `t1` (`object_id` bigint(20) unsigned NOT NULL default '0', `geo`
-geometry NOT NULL default '') ENGINE=MyISAM ;
+geometry NOT NULL default '') ENGINE=SequoiaDB;
 
 insert into t1 values ('85984',ST_GeomFromText('MULTIPOLYGON(((-115.006363
 36.305435,-114.992394 36.305202,-114.991219 36.305975,-114.991163
@@ -386,14 +391,16 @@ drop table t1;
 select (ST_asWKT(ST_geomfromwkb((0x000000000140240000000000004024000000000000))));
 select (ST_asWKT(ST_geomfromwkb((0x010100000000000000000024400000000000002440))));
 
---enable_metadata
-create table t1 (g GEOMETRY);
-select * from t1;
-select ST_asbinary(g) from t1;
---disable_metadata
-drop table t1;
+#--enable_metadata
+#create table t1 (g GEOMETRY);
+#select * from t1;
+#select ST_asbinary(g) from t1;
+#--disable_metadata
+#drop table t1;
 
-create table t1 (a TEXT, b GEOMETRY NOT NULL, SPATIAL KEY(b));
+#--error 1464
+#create table t1 (a TEXT, b GEOMETRY NOT NULL, SPATIAL KEY(b));
+create table t1 (a TEXT, b GEOMETRY NOT NULL);
 alter table t1 disable keys;
 --error 1263
 load data infile '../../std_data/bad_gis_data.dat' into table t1;
@@ -440,7 +447,7 @@ drop table t1;
 #
 # Bug #27164: Crash when mixing InnoDB and MyISAM Geospatial tables
 #
-CREATE TABLE t1(a POINT) ENGINE=MyISAM;
+CREATE TABLE t1(a POINT) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (NULL);
 SELECT * FROM t1;
 DROP TABLE t1;
@@ -459,14 +466,14 @@ DROP TABLE t1;
 #
 
 CREATE TABLE t1 (
-  geomdata polygon NOT NULL,
-  SPATIAL KEY index_geom (geomdata)
-) ENGINE=MyISAM DEFAULT CHARSET=latin2 DELAY_KEY_WRITE=1 ROW_FORMAT=FIXED;
+  geomdata polygon NOT NULL
+#  SPATIAL KEY index_geom (geomdata)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin2 DELAY_KEY_WRITE=1 ROW_FORMAT=FIXED;
 
 CREATE TABLE t2 (
-  geomdata polygon NOT NULL,
-  SPATIAL KEY index_geom (geomdata)
-) ENGINE=MyISAM DEFAULT CHARSET=latin2 DELAY_KEY_WRITE=1 ROW_FORMAT=FIXED;
+  geomdata polygon NOT NULL
+#  SPATIAL KEY index_geom (geomdata)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin2 DELAY_KEY_WRITE=1 ROW_FORMAT=FIXED;
 
 CREATE TABLE t3
 select 
@@ -489,8 +496,9 @@ drop table t3;
 # Bug #30284 spatial key corruption 
 #
 
-create table t1(col1 geometry default null,col15 geometrycollection not
-null,spatial index(col15),index(col1(15)))engine=myisam;
+#create table t1(col1 geometry default null,col15 geometrycollection not
+#null,spatial index(col15),index(col1(15)))engine=sequoiadb;
+create table t1(col1 geometry default null,col15 geometrycollection not null)engine=sequoiadb;
 --error ER_CANT_CREATE_GEOMETRY_OBJECT
 insert into t1 set col15 = ST_GeomFromText('POINT(6 5)');
 --error ER_CANT_CREATE_GEOMETRY_OBJECT
@@ -522,15 +530,17 @@ select ST_astext(fn3());
 drop function fn3;
 
 #
-# Bug #12267 (primary key over GIS)
+# Bug #12267 (primary key over GIS) 
 #
 create table t1(pt POINT);
-alter table t1 add primary key pti(pt);
+#--error 138
+#alter table t1 add primary key pti(pt);
 drop table t1;
 create table t1(pt GEOMETRY);
 --error 1170
 alter table t1 add primary key pti(pt);
-alter table t1 add primary key pti(pt(20));
+#--error 138
+#alter table t1 add primary key pti(pt(20));
 drop table t1;
 
 
@@ -663,13 +673,13 @@ SELECT ST_AsText(ST_GeometryFromText(CONCAT(
 --enable_query_log
 SELECT 1;
 
--- source include/gis_keys.inc
+#-- source include/gis_keys.inc
 
 #
 # Bug #31155 gis types in union'd select cause crash
 #
 
-create table `t1` (`col002` point)engine=myisam;
+create table `t1` (`col002` point)engine=sequoiadb;
 insert into t1 values (),(),();
 --error ER_WRONG_ARGUMENTS
 select min(`col002`) from t1 union select `col002` from t1;
@@ -768,7 +778,7 @@ SET @a=ST_POLYFROMWKB(@a);
 # Bug #57321    crashes and valgrind errors from spatial types
 #
 
-create table t1(a polygon NOT NULL)engine=myisam;
+create table t1(a polygon NOT NULL)engine=sequoiadb;
 --error ER_CANT_CREATE_GEOMETRY_OBJECT
 insert into t1 values (ST_geomfromtext("point(0 1)"));
 --error ER_CANT_CREATE_GEOMETRY_OBJECT
@@ -777,14 +787,14 @@ select * from (select polygon(t1.a) as p from t1 order by t1.a) d;
 drop table t1;
 
 
---echo #
---echo # Test for bug #59888 "debug assertion when attempt to create spatial index
---echo #                      on char > 31 bytes".
---echo #
-create table t1(a char(32) not null) engine=myisam;
---error ER_SPATIAL_MUST_HAVE_GEOM_COL
-create spatial index i on t1 (a);
-drop table t1;
+#--echo #
+#--echo # Test for bug #59888 "debug assertion when attempt to create spatial index
+#--echo #                      on char > 31 bytes".
+#--echo #
+#create table t1(a char(32) not null) engine=sequoiadb;
+#--error ER_SPATIAL_MUST_HAVE_GEOM_COL
+#create spatial index i on t1 (a);
+#drop table t1;
 
 
 --echo End of 5.1 tests
@@ -795,49 +805,49 @@ drop table t1;
 # Bug#11767480 SPATIAL INDEXES ON NON-SPATIAL COLUMNS 
 #              CAUSE CRASHES.
 #
-CREATE TABLE t0 (a BINARY(32) NOT NULL);
---error ER_SPATIAL_MUST_HAVE_GEOM_COL
-CREATE SPATIAL INDEX i on t0 (a);
-INSERT INTO t0 VALUES (1);
+#CREATE TABLE t0 (a BINARY(32) NOT NULL);
+#--error ER_SPATIAL_MUST_HAVE_GEOM_COL
+#CREATE SPATIAL INDEX i on t0 (a);
+#INSERT INTO t0 VALUES (1);
 
---error ER_SPATIAL_MUST_HAVE_GEOM_COL
-CREATE TABLE t1(
-  col0 BINARY NOT NULL,
-  col2 TIMESTAMP,
-  SPATIAL INDEX i1 (col0)
-) ENGINE=MyISAM;
+#--error ER_SPATIAL_MUST_HAVE_GEOM_COL
+#CREATE TABLE t1(
+#  col0 BINARY NOT NULL,
+#  col2 TIMESTAMP,
+#  SPATIAL INDEX i1 (col0)
+#) ENGINE=SequoiaDB;
 
 # Test other ways to add indices
-CREATE TABLE t1 (
-  col0 BINARY NOT NULL,
-  col2 TIMESTAMP
-) ENGINE=MyISAM;
+#CREATE TABLE t1 (
+#  col0 BINARY NOT NULL,
+#  col2 TIMESTAMP
+#) ENGINE=SequoiaDB;
+#
+#--error ER_SPATIAL_MUST_HAVE_GEOM_COL
+#CREATE SPATIAL INDEX idx0 ON t1(col0);
+#
+#--error ER_SPATIAL_MUST_HAVE_GEOM_COL
+#ALTER TABLE t1 ADD SPATIAL INDEX i1 (col0);
 
---error ER_SPATIAL_MUST_HAVE_GEOM_COL
-CREATE SPATIAL INDEX idx0 ON t1(col0);
-
---error ER_SPATIAL_MUST_HAVE_GEOM_COL
-ALTER TABLE t1 ADD SPATIAL INDEX i1 (col0);
-
-CREATE TABLE t2 (
-  col0 INTEGER NOT NULL,
-  col1 POINT,
-  col2 POINT
-);
-
---error ER_TOO_MANY_KEY_PARTS
-CREATE SPATIAL INDEX idx0 ON t2 (col1, col2);
-
---error ER_TOO_MANY_KEY_PARTS
-CREATE TABLE t3 (
-  col0 INTEGER NOT NULL,
-  col1 POINT,
-  col2 LINESTRING,
-  SPATIAL INDEX i1 (col1, col2)
-);
-
-# cleanup
-DROP TABLE t0, t1, t2;
+#CREATE TABLE t2 (
+#  col0 INTEGER NOT NULL,
+#  col1 POINT,
+#  col2 POINT
+#);
+#
+#--error ER_TOO_MANY_KEY_PARTS
+#CREATE SPATIAL INDEX idx0 ON t2 (col1, col2);
+#
+#--error ER_TOO_MANY_KEY_PARTS
+#CREATE TABLE t3 (
+#  col0 INTEGER NOT NULL,
+#  col1 POINT,
+#  col2 LINESTRING,
+#  SPATIAL INDEX i1 (col1, col2)
+#);
+#
+## cleanup
+#DROP TABLE t0, t1, t2;
 
 
 --echo #
@@ -858,23 +868,23 @@ SELECT GEOMETRYCOLLECTION((SELECT @@OLD));
 --echo End of 5.1 tests
 
 
---echo #
---echo # Bug#11908153: CRASH AND/OR VALGRIND ERRORS IN FIELD_BLOB::GET_KEY_IMAGE
---echo #
-
-CREATE TABLE g1
-(a geometry NOT NULL, UNIQUE KEY i (a(151))) engine=myisam;
-
-INSERT INTO g1 VALUES (ST_geomfromtext('point(1 1)'));
-INSERT INTO g1 VALUES (ST_geomfromtext('point(1 2)'));
-
-FLUSH TABLES;
-
-SELECT 1 FROM g1 
-FORCE INDEX(i) WHERE a = date_sub(now(), interval 2808.4 year_month)
-;
-
-DROP TABLE g1;
+#--echo #
+#--echo # Bug#11908153: CRASH AND/OR VALGRIND ERRORS IN FIELD_BLOB::GET_KEY_IMAGE
+#--echo #
+#
+#CREATE TABLE g1
+#(a geometry NOT NULL, UNIQUE KEY i (a(151))) engine=sequoiadb;
+#
+#INSERT INTO g1 VALUES (ST_geomfromtext('point(1 1)'));
+#INSERT INTO g1 VALUES (ST_geomfromtext('point(1 2)'));
+#
+#FLUSH TABLES;
+#
+#SELECT 1 FROM g1 
+#FORCE INDEX(i) WHERE a = date_sub(now(), interval 2808.4 year_month)
+#;
+#
+#DROP TABLE g1;
 
 --echo #
 --echo # Bug#13013970 MORE CRASHES IN FIELD_BLOB::GET_KEY_IMAGE
@@ -920,11 +930,14 @@ SELECT
 #
 
 --disable_warnings
-DROP DATABASE IF EXISTS gis_ogs;
+#DROP DATABASE IF EXISTS gis_ogs;
+DROP DATABASE IF EXISTS gis_ogs_1;
 --enable_warnings
 
-CREATE DATABASE gis_ogs;
-USE gis_ogs;
+#CREATE DATABASE gis_ogs;
+#USE gis_ogs;
+CREATE DATABASE gis_ogs_1;
+USE gis_ogs_1;
 
 --echo #
 --echo # C.3.3.1 Geometry types and functions schema construction 
@@ -1149,6 +1162,7 @@ ST_PolyFromText(
 
 --echo # Conformance Item T6 
 # TODO: ST_Dimension() alias
+#SEQUOIASQLMAINSTREAM-204
 SELECT ST_Dimension(shore) 
 FROM lakes 
 WHERE name = 'Blue Lake'; 
@@ -1444,7 +1458,8 @@ WHERE ST_Contains(ST_Buffer(bridges.position, 15.0), buildings.footprint) = 1;
 #FROM lakes 
 #WHERE lakes.name = 'Blue Lake'; 
 
-DROP DATABASE gis_ogs;
+#DROP DATABASE gis_ogs;
+DROP DATABASE gis_ogs_1;
 
 --echo #
 --echo # Bug#13362660 ASSERTION `FIELD_POS < FIELD_COUNT' FAILED. IN PROTOCOL_TEXT::STORE
@@ -1458,8 +1473,10 @@ SELECT ST_Union('', ''), md5(1);
 --echo #               BUT IT SHOULDN'T BE.
 --echo #
 
-USE test;
-CREATE TABLE t1(a POINT NOT NULL, SPATIAL KEY(a)) engine=myisam;
+#USE test;
+USE test_gis;
+#CREATE TABLE t1(a POINT NOT NULL, SPATIAL KEY(a)) engine=sequoiadb;
+CREATE TABLE t1(a POINT NOT NULL) engine=sequoiadb;
 
 --echo # Check that normal INSERT gives error
 --error ER_CANT_CREATE_GEOMETRY_OBJECT
@@ -2151,58 +2168,65 @@ DROP TABLE t1;
 --echo # SPATIAL INDEX ON MULTICOLUMN
 --echo #
 
---error ER_TOO_MANY_KEY_PARTS
-CREATE TABLE t1 (
-  a GEOMETRY NOT NULL,
-  b GEOMETRY NOT NULL,
-  c GEOMETRY NOT NULL,
-  d GEOMETRY NOT NULL,
-  e GEOMETRY NOT NULL,
-  f GEOMETRY NOT NULL,
-  g GEOMETRY NOT NULL,
-  h GEOMETRY NOT NULL,
-  i GEOMETRY NOT NULL,
-  j GEOMETRY NOT NULL,
-  k GEOMETRY NOT NULL,
-  l GEOMETRY NOT NULL,
-  m GEOMETRY NOT NULL,
-  n GEOMETRY NOT NULL,
-  o GEOMETRY NOT NULL,
-  p GEOMETRY NOT NULL,
-  q GEOMETRY NOT NULL,
-  r GEOMETRY NOT NULL,
-  SPATIAL INDEX (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r)
-);
+#--error ER_TOO_MANY_KEY_PARTS
+#CREATE TABLE t1 (
+#  a GEOMETRY NOT NULL,
+#  b GEOMETRY NOT NULL,
+#  c GEOMETRY NOT NULL,
+#  d GEOMETRY NOT NULL,
+#  e GEOMETRY NOT NULL,
+#  f GEOMETRY NOT NULL,
+#  g GEOMETRY NOT NULL,
+#  h GEOMETRY NOT NULL,
+#  i GEOMETRY NOT NULL,
+#  j GEOMETRY NOT NULL,
+#  k GEOMETRY NOT NULL,
+#  l GEOMETRY NOT NULL,
+#  m GEOMETRY NOT NULL,
+#  n GEOMETRY NOT NULL,
+#  o GEOMETRY NOT NULL,
+#  p GEOMETRY NOT NULL,
+#  q GEOMETRY NOT NULL,
+#  r GEOMETRY NOT NULL,
+#  SPATIAL INDEX (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r)
+#);
 
---echo #
---echo # Bug #18422162 THE FIND_FLAG PASSED TO MYISAM AND INNODB ARE DIFFERENT
---echo #
-SET @poly1 = ST_GeomFromText('POLYGON((25 25, 25 35, 35 35, 35 25, 25 25))');
+ --echo #
+ --echo # Bug #18422162 THE FIND_FLAG PASSED TO MYISAM AND INNODB ARE DIFFERENT
+ --echo #
+ SET @poly1 = ST_GeomFromText('POLYGON((25 25, 25 35, 35 35, 35 25, 25 25))');
+ 
+# CREATE TABLE t1 (
+#                    a INT NOT NULL,
+#                    p POINT NOT NULL,
+#                    l LINESTRING NOT NULL,
+#                    g GEOMETRY NOT NULL,
+#                    PRIMARY KEY(p),
+#                    SPATIAL KEY idx2 (p),
+#                    SPATIAL KEY idx3 (l),
+#                    SPATIAL KEY idx4 (g)
+#                 ) ENGINE=SequoiaDB;
 
 CREATE TABLE t1 (
                    a INT NOT NULL,
                    p POINT NOT NULL,
                    l LINESTRING NOT NULL,
-                   g GEOMETRY NOT NULL,
-                   PRIMARY KEY(p),
-                   SPATIAL KEY idx2 (p),
-                   SPATIAL KEY idx3 (l),
-                   SPATIAL KEY idx4 (g)
-                ) ENGINE=InnoDB;
-
-INSERT INTO t1 VALUES(
-                      1, ST_GeomFromText('POINT(10 10)'),
-                      ST_GeomFromText('LINESTRING(1 1, 5 5, 10 10)'),
-                      ST_GeomFromText('POLYGON((30 30, 40 40, 50 50, 30 50, 30 40, 30 30))'));
+                   g GEOMETRY NOT NULL
+                );
+ 
+ INSERT INTO t1 VALUES( 
+		1, ST_GeomFromText('POINT(10 10)'),
+                ST_GeomFromText('LINESTRING(1 1, 5 5, 10 10)'),
+                ST_GeomFromText('POLYGON((30 30, 40 40, 50 50, 30 50, 30 40, 30 30))'));
 
 INSERT INTO t1 VALUES(
                       2, ST_GeomFromText('POINT(30 30)'),
                       ST_GeomFromText('LINESTRING(2 3, 7 8, 9 10, 15 16)'),
                       ST_GeomFromText('POLYGON((10 30, 30 40, 40 50, 40 30, 30 20, 10 30))'));
 
-EXPLAIN SELECT ST_AsText(p) FROM t1 WHERE ST_Within(p, @poly1);
+#EXPLAIN SELECT ST_AsText(p) FROM t1 WHERE ST_Within(p, @poly1);
 SELECT ST_AsText(p) FROM t1 WHERE ST_Within(p, @poly1);
-EXPLAIN SELECT ST_AsText(p) FROM t1 WHERE ST_Equals(p, ST_PointFromText('POINT(20 20)'));
+#EXPLAIN SELECT ST_AsText(p) FROM t1 WHERE ST_Equals(p, ST_PointFromText('POINT(20 20)'));
 SELECT ST_AsText(p) FROM t1 WHERE ST_Equals(p, ST_PointFromText('POINT(20 20)'));
 DROP TABLE t1;
 
@@ -2210,12 +2234,12 @@ CREATE TABLE t1 (
                    a INT NOT NULL,
                    p POINT NOT NULL,
                    l LINESTRING NOT NULL,
-                   g GEOMETRY NOT NULL,
-                   PRIMARY KEY(p),
-                   SPATIAL KEY idx2 (p),
-                   SPATIAL KEY idx3 (l),
-                   SPATIAL KEY idx4 (g)
-                ) ENGINE=MyISAM;
+                   g GEOMETRY NOT NULL
+                  # PRIMARY KEY(p),
+                  # SPATIAL KEY idx2 (p),
+                  # SPATIAL KEY idx3 (l),
+                  # SPATIAL KEY idx4 (g)
+                ) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES(
                       1, ST_GeomFromText('POINT(10 10)'),
@@ -2227,9 +2251,9 @@ INSERT INTO t1 VALUES(
                       ST_GeomFromText('LINESTRING(2 3, 7 8, 9 10, 15 16)'),
                       ST_GeomFromText('POLYGON((10 30, 30 40, 40 50, 40 30, 30 20, 10 30))'));
 
-EXPLAIN SELECT ST_AsText(p) FROM t1 WHERE ST_Within(p, @poly1);
+#EXPLAIN SELECT ST_AsText(p) FROM t1 WHERE ST_Within(p, @poly1);
 SELECT ST_AsText(p) FROM t1 WHERE ST_Within(p, @poly1);
-EXPLAIN SELECT ST_AsText(p) FROM t1 WHERE ST_Equals(p, ST_PointFromText('POINT(20 20)'));
+#EXPLAIN SELECT ST_AsText(p) FROM t1 WHERE ST_Equals(p, ST_PointFromText('POINT(20 20)'));
 SELECT ST_AsText(p) FROM t1 WHERE ST_Equals(p, ST_PointFromText('POINT(20 20)'));
 
 DROP TABLE t1;
@@ -2238,7 +2262,8 @@ DROP TABLE t1;
 --echo # Bug #21067378 GEOMETRIC OPERATION RETURNS ERROR INSTEAD OF RESULT
 --echo #
 
-CREATE TABLE t1 (p POINT NOT NULL UNIQUE) ENGINE=InnoDB;
+#CREATE TABLE t1 (p POINT NOT NULL UNIQUE) ENGINE=SequoiaDB;
+CREATE TABLE t1 (p POINT NOT NULL) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (ST_GEOMFROMTEXT('POINT(1 1)'));
 
@@ -2251,7 +2276,8 @@ WHERE MBRCOVEREDBY
 
 DROP TABLE t1;
 
-CREATE TABLE t1 (p POINT NOT NULL UNIQUE) ENGINE=MyISAM;
+#CREATE TABLE t1 (p POINT NOT NULL UNIQUE) ENGINE=SequoiaDB;
+CREATE TABLE t1 (p POINT NOT NULL) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (ST_GEOMFROMTEXT('POINT(1 1)'));
 
@@ -2302,8 +2328,9 @@ SELECT ST_AsText(ST_Buffer(g, 2)), ST_AsText(ST_Buffer(g, 2)) FROM t1;
 SELECT ST_AsText(ST_Buffer(g, 2)), ST_AsText(ST_Difference(g, g)) FROM t1;
 DROP TABLE t1;
 
-CREATE TABLE t1(id INT PRIMARY KEY AUTO_INCREMENT, g GEOMETRY NOT NULL,
-                SPATIAL INDEX(g));
+#CREATE TABLE t1(id INT PRIMARY KEY AUTO_INCREMENT, g GEOMETRY NOT NULL,
+#                SPATIAL INDEX(g));
+CREATE TABLE t1(id INT PRIMARY KEY AUTO_INCREMENT, g GEOMETRY NOT NULL);
 
 INSERT INTO t1(g) VALUES
 (ST_GEOMFROMTEXT('MULTIPOLYGON(((0 7,-3 -14,9 -11,0 7)))'));
@@ -2369,7 +2396,7 @@ ST_GEOMFROMTEXT('MULTIPOLYGON(((15 10,10 15,10 17,15 10)),((15 10,10
 --echo # Bug#21614368 CRASH IN GEOMETRY::CONSTRUCT WITH BLOB INPUT
 --echo #
 FLUSH TABLES;
-CREATE TABLE t(a BLOB NOT NULL, b DATE NOT NULL) ENGINE=Innodb;
+CREATE TABLE t(a BLOB NOT NULL, b DATE NOT NULL) ENGINE=SequoiaDB;
 
 SELECT NOT EXISTS
 ( SELECT 1 FROM t WHERE (SELECT a FROM t)
@@ -2396,7 +2423,7 @@ SELECT ST_GeomFromText('POINT(0 0)') > (SELECT b FROM t) AS result;
 SELECT ST_AsWKB(ST_GeomFromText('POINT(0 0)')) > (SELECT b FROM t) AS result;
 DROP TABLE t;
 
-CREATE TABLE t1(a BLOB NOT NULL, b INT NOT NULL) ENGINE=Innodb;
+CREATE TABLE t1(a BLOB NOT NULL, b INT NOT NULL) ENGINE=SequoiaDB;
 
 SELECT NOT EXISTS
 ( SELECT 1 FROM t1 WHERE (SELECT a FROM t1)
@@ -2430,7 +2457,7 @@ DROP TABLE t1;
 --echo # Add a GEOMETRY NOT NULL column to a table without rows
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 ALTER TABLE t1 ADD COLUMN g GEOMETRY NOT NULL, ALGORITHM=INPLACE;
 ALTER TABLE t1 ADD COLUMN g2 GEOMETRY NOT NULL, ALGORITHM=COPY;
 ALTER TABLE t1 ADD COLUMN g3 GEOMETRY;
@@ -2443,7 +2470,7 @@ DROP TABLE t1;
 --echo # Add a GEOMETRY NOT NULL column to a table with rows
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0);
 --error ER_INVALID_USE_OF_NULL
 ALTER TABLE t1 ADD COLUMN g GEOMETRY NOT NULL, ALGORITHM=INPLACE;
@@ -2464,7 +2491,7 @@ DROP TABLE t1;
 --echo # GEOMETRY NOT NULL
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 ALTER TABLE t1 ADD COLUMN g INT;
 ALTER TABLE t1 MODIFY COLUMN g GEOMETRY;
 ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
@@ -2474,7 +2501,7 @@ DROP TABLE t1;
 --echo # Convert an INT column without rows to GEOMETRY NOT NULL
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 ALTER TABLE t1 ADD COLUMN g INT;
 ALTER TABLE t1 ADD COLUMN g2 INT;
 ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
@@ -2494,7 +2521,7 @@ DROP TABLE t1;
 --echo # to GEOMETRY NOT NULL
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0);
 ALTER TABLE t1 ADD COLUMN g INT;
 SHOW CREATE TABLE t1;
@@ -2510,7 +2537,7 @@ DROP TABLE t1;
 --echo # Convert an INT column with NULL values to GEOMETRY NOT NULL
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0);
 ALTER TABLE t1 ADD COLUMN g INT;
 SHOW CREATE TABLE t1;
@@ -2536,7 +2563,7 @@ DROP TABLE t1;
 --echo # Convert an INT column without NULL values to GEOMETRY
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0);
 ALTER TABLE t1 ADD COLUMN g INT DEFAULT 1;
 SHOW CREATE TABLE t1;
@@ -2553,7 +2580,7 @@ DROP TABLE t1;
 --echo # NULL
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0);
 ALTER TABLE t1 ADD COLUMN g INT DEFAULT 1;
 --error ER_CANT_CREATE_GEOMETRY_OBJECT
@@ -2567,7 +2594,7 @@ DROP TABLE t1;
 --echo # Convert a VARCHAR column with an empty string to GEOMETRY
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0);
 ALTER TABLE t1 ADD COLUMN g VARCHAR(20) NOT NULL;
 SHOW CREATE TABLE t1;
@@ -2584,7 +2611,7 @@ DROP TABLE t1;
 --echo # NULL
 CREATE TABLE t1 (
   i INT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0);
 ALTER TABLE t1 ADD COLUMN g VARCHAR(20) NOT NULL;
 SHOW CREATE TABLE t1;
@@ -2625,7 +2652,7 @@ CREATE TABLE t1 (
   p2 POINT,
   p3 POINT,
   p4 POINT
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 ALTER TABLE t1 MODIFY COLUMN p1 POLYGON;
 ALTER TABLE t1 CHANGE COLUMN p2 q2 POLYGON;
 ALTER TABLE t1 MODIFY COLUMN p3 POLYGON NOT NULL;
@@ -2637,7 +2664,7 @@ DROP TABLE t1;
 --echo # Convert a POINT column without NULL values to POLYGON
 CREATE TABLE t1 (
   p POINT
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES(POINT(0,0));
 SHOW CREATE TABLE t1;
 SELECT ST_AsText(p) FROM t1;
@@ -2658,7 +2685,7 @@ DROP TABLE t1;
 --echo # GEOMETRYCOLLECTION NOT NULL, to GEOMETRY NOT NULL and back
 CREATE TABLE t1 (
   mp MULTIPOINT NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES(MULTIPOINT(POINT(1,1)));
 SHOW CREATE TABLE t1;
 SELECT ST_AsText(mp) FROM t1;
@@ -2671,48 +2698,49 @@ SELECT ST_AsText(mp) FROM t1;
 DROP TABLE t1;
 
 --echo # Convert a GEOMETRY column without rows to GEOMETRY NOT NULL
-CREATE TABLE t1 (g GEOMETRY) ENGINE=InnoDB;
+CREATE TABLE t1 (g GEOMETRY) ENGINE=SequoiaDB;
 ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
-CREATE TABLE t1 (g GEOMETRY) ENGINE=MyISAM;
-ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
-SHOW CREATE TABLE t1;
-DROP TABLE t1;
+#CREATE TABLE t1 (g GEOMETRY) ENGINE=MyISAM;
+#ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
+#SHOW CREATE TABLE t1;
+#DROP TABLE t1;
 
 --echo # Convert a GEOMETRY column with geometry data to GEOMETRY NOT
 --echo # NULL
-CREATE TABLE t1 (g GEOMETRY) ENGINE=InnoDB;
+CREATE TABLE t1 (g GEOMETRY) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (POINT(0,0));
 ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
 SELECT ST_ASTEXT(g) FROM t1;
 DROP TABLE t1;
-CREATE TABLE t1 (g GEOMETRY) ENGINE=MyISAM;
-INSERT INTO t1 VALUES (POINT(0,0));
-ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
-SELECT ST_ASTEXT(g) FROM t1;
-DROP TABLE t1;
+#CREATE TABLE t1 (g GEOMETRY) ENGINE=MyISAM;
+#INSERT INTO t1 VALUES (POINT(0,0));
+#ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
+#SELECT ST_ASTEXT(g) FROM t1;
+#DROP TABLE t1;
 
+#BUG #SEQUOIASQLMAINSTREAM-819
 --echo # Convert a GEOMETRY column with a NULL value to GEOMETRY NOT NULL
-CREATE TABLE t1 (g GEOMETRY) ENGINE=InnoDB;
+CREATE TABLE t1 (g GEOMETRY) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (NULL);
 --error ER_INVALID_USE_OF_NULL
 ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
 DROP TABLE t1;
-CREATE TABLE t1 (g GEOMETRY) ENGINE=MyISAM;
+CREATE TABLE t1 (g GEOMETRY) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (NULL);
 --error ER_INVALID_USE_OF_NULL
 ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
 SHOW CREATE TABLE t1;
 SELECT g FROM t1;
-SET @save_innodb_strict_mode=@@session.innodb_strict_mode;
-SET SESSION innodb_strict_mode=OFF;
-SET @save_sql_mode=@@session.sql_mode;
+#SET @save_innodb_strict_mode=@@session.innodb_strict_mode;
+#SET SESSION innodb_strict_mode=OFF;
+#SET @save_sql_mode=@@session.sql_mode;
 SET SESSION sql_mode="";
 --error ER_INVALID_USE_OF_NULL
 ALTER TABLE t1 MODIFY COLUMN g GEOMETRY NOT NULL;
-SET SESSION sql_mode=@save_sql_mode;
-SET SESSION innodb_strict_mode=@save_innodb_strict_mode;
+#SET SESSION sql_mode=@save_sql_mode;
+#SET SESSION innodb_strict_mode=@save_innodb_strict_mode;
 SHOW CREATE TABLE t1;
 SELECT g FROM t1;
 DROP TABLE t1;
@@ -2868,3 +2896,5 @@ DROP TABLE d, dp, r;
 SET collation_connection='utf32_bin';
 SELECT '2010-10-10 10:10:10' + INTERVAL
   ST_GeometryType(ST_GeomFromText('POINT(1 1)')) HOUR_SECOND;
+
+DROP DATABASE test_gis;

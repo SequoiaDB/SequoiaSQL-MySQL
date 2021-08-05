@@ -1,6 +1,6 @@
---source include/have_innodb.inc
+#--source include/have_innodb.inc
 --source include/have_partition.inc
---source include/have_innodb_16k.inc
+#--source include/have_innodb_16k.inc
 
 --echo #
 --echo # Bug#18167648: WRONG RESULTS WITH PARTITIONING, INDEX_MERGE AND NO PK
@@ -11,7 +11,7 @@ CREATE TABLE t1
  c smallint,
  KEY  a (a),
  KEY  b (b)
-) ENGINE=InnoDB
+) ENGINE=SequoiaDB
 PARTITION BY HASH(c) PARTITIONS 3;
 
 --echo # c will simulate DB_ROW_ID + force to chosen partition.
@@ -23,12 +23,14 @@ INSERT INTO t1 VALUES (1,2,1+12), (2,2,2+15), (2,2,2+18), (1,2,3+21);
 --echo # More index matching rows for index_merge_intersect: N+4, N+5
 INSERT INTO t1 VALUES (2,2,1+24);
 INSERT INTO t1 VALUES (2,1,1+27);
-CREATE TABLE t2 (a int primary key) ENGINE = InnoDB;
+CREATE TABLE t2 (a int primary key) ENGINE = SequoiaDB;
 INSERT INTO t2 VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9);
 INSERT INTO t1 SELECT 1, 1, 97 FROM t2 LIMIT 10;
 INSERT INTO t1 SELECT 2, 1, 98 FROM t2 LIMIT 4;
 INSERT INTO t1 SELECT 1, 2, 99 FROM t2 LIMIT 4;
+--disable_result_log
 ANALYZE TABLE t1;
+--enable_result_log
 
 SET @old_opt_switch = @@session.optimizer_switch;
 SET SESSION optimizer_switch="index_merge=on";
@@ -39,7 +41,7 @@ if ($use_optimizer_trace)
 {
 SET SESSION optimizer_trace="enabled=on";
 }
-EXPLAIN SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
+#EXPLAIN SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
 if ($use_optimizer_trace)
 {
 SELECT TRACE FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
@@ -70,18 +72,22 @@ SELECT TRACE FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
 # a reads row N+5 (0x209) from p1 c = 28
 # No more match...
 
+--sorted_result
 SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
-EXPLAIN SELECT a,b,c FROM t1 WHERE a = 2 AND b = 2 AND c IN (13,25,28);
+#EXPLAIN SELECT a,b,c FROM t1 WHERE a = 2 AND b = 2 AND c IN (13,25,28);
 SELECT a,b,c FROM t1 WHERE a = 2 AND b = 2 AND c IN (13,25,28);
 SET SESSION optimizer_switch="index_merge_intersection=off";
+--sorted_result
 SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
-EXPLAIN SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
+#EXPLAIN SELECT a,b,c FROM t1 WHERE b = 2 AND a = 2 AND  c > 0 AND c < 100;
 
 --echo # Adding more fillers to get index_merge_union
 INSERT INTO t1 SELECT 1, 1, 97 FROM t2, t2 t3 LIMIT 32;
+--disable_result_log
 ANALYZE TABLE t1;
+--enable_result_log
 SET SESSION optimizer_switch="index_merge_union=on";
-EXPLAIN SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
+#EXPLAIN SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
 if ($use_optimizer_trace)
 {
 SELECT TRACE FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
@@ -123,26 +129,32 @@ SELECT TRACE FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
 # Fetching whole row for (0x205) c = 17 (2,2,17)
 # Fetching whole row for (0x206) c = 20 (2,2,20)
 
+--sorted_result
 SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
 SET SESSION optimizer_switch="index_merge_union=off";
+--sorted_result
 SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
-EXPLAIN SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
+#EXPLAIN SELECT a,b,c FROM t1 WHERE (b = 2 OR a = 2) AND  c > 0 AND c < 100;
 
 --echo Insert a few more rows to trigger sort_union
 INSERT INTO t1 SELECT 1, 1, 97 FROM t2, t2 t3 LIMIT 48;
+--disable_result_log
 ANALYZE TABLE t1;
+--enable_result_log
 SET SESSION optimizer_switch="index_merge_sort_union=on";
-EXPLAIN SELECT a,b,c FROM t1 WHERE (b >= 2 OR a >= 2) AND  c > 0 AND c < 100;
+#EXPLAIN SELECT a,b,c FROM t1 WHERE (b >= 2 OR a >= 2) AND  c > 0 AND c < 100;
 if ($use_optimizer_trace)
 {
 SELECT TRACE FROM INFORMATION_SCHEMA.OPTIMIZER_TRACE;
 SET SESSION optimizer_trace="enabled=off";
 }
 --echo # Not affected, added for completeness...
+--sorted_result
 SELECT a,b,c FROM t1 WHERE (b >= 2 OR a >= 2) AND  c > 0 AND c < 100;
 SET SESSION optimizer_switch="index_merge_sort_union=off";
+--sorted_result
 SELECT a,b,c FROM t1 WHERE (b >= 2 OR a >= 2) AND  c > 0 AND c < 100;
-EXPLAIN SELECT a,b,c FROM t1 WHERE (b >= 2 OR a >= 2) AND  c > 0 AND c < 100;
+#EXPLAIN SELECT a,b,c FROM t1 WHERE (b >= 2 OR a >= 2) AND  c > 0 AND c < 100;
 
 SET @@session.optimizer_switch = @old_opt_switch;
 DROP TABLE t1, t2;

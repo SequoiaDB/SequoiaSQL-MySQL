@@ -9,40 +9,13 @@ drop table if exists t1,t2,t3,t4,t5,t6,t7,t8,t11,t12;
 select (select 2);
 (select 2)
 2
-explain extended select (select 2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1249	Select 2 was reduced during optimization
-Note	1003	/* select#1 */ select 2 AS `(select 2)`
 SELECT (SELECT 1) UNION SELECT (SELECT 2);
 (SELECT 1)
 1
 2
-explain extended SELECT (SELECT 1) UNION SELECT (SELECT 2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-3	UNION	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-NULL	UNION RESULT	<union1,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1249	Select 2 was reduced during optimization
-Note	1249	Select 4 was reduced during optimization
-Note	1003	/* select#1 */ select 1 AS `(SELECT 1)` union /* select#3 */ select 2 AS `(SELECT 2)`
 SELECT (SELECT (SELECT 0 UNION SELECT 0));
 (SELECT (SELECT 0 UNION SELECT 0))
 0
-explain extended SELECT (SELECT (SELECT 0 UNION SELECT 0));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-3	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-4	UNION	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-NULL	UNION RESULT	<union3,4>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1249	Select 2 was reduced during optimization
-Note	1003	/* select#1 */ select (/* select#3 */ select 0 union /* select#4 */ select 0) AS `(SELECT (SELECT 0 UNION SELECT 0))`
 SELECT (SELECT 1 FROM (SELECT 1) as b HAVING a=1) as a;
 ERROR 42S22: Reference 'a' not supported (forward reference in item list)
 SELECT (SELECT 1 FROM (SELECT 1) as b HAVING b=1) as a,(SELECT 1 FROM (SELECT 1) as c HAVING a=1) as b;
@@ -52,16 +25,6 @@ SELECT (SELECT 1),MAX(1) FROM (SELECT 1) as a;
 1	1
 SELECT (SELECT a) as a;
 ERROR 42S22: Reference 'a' not supported (forward reference in item list)
-EXPLAIN EXTENDED SELECT 1 FROM (SELECT 1 as a) as b  HAVING (SELECT a)=1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-3	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-2	DERIVED	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'b.a' of SELECT #3 was resolved in SELECT #1
-Note	1276	Field or reference 'b.a' of SELECT #3 was resolved in SELECT #1
-Note	1003	/* select#1 */ select 1 AS `1` from dual having ((/* select#3 */ select '1') = 1)
 SELECT 1 FROM (SELECT 1 as a) as b HAVING (SELECT a)=1;
 1
 1
@@ -190,16 +153,6 @@ a	b
 2	7
 4	8
 3	8
-explain extended (select * from t2 where t2.b=(select a from t3 order by 1 desc limit 1)) union (select * from t4 where t4.b=(select max(t2.a)*4 from t2) order by a);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-2	SUBQUERY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	Using filesort
-3	UNION	t4	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where
-4	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-NULL	UNION RESULT	<union1,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	(/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b` from `test`.`t2` where (`test`.`t2`.`b` = (/* select#2 */ select `test`.`t3`.`a` from `test`.`t3` order by `test`.`t3`.`a` desc limit 1))) union (/* select#3 */ select `test`.`t4`.`a` AS `a`,`test`.`t4`.`b` AS `b` from `test`.`t4` where (`test`.`t4`.`b` = (/* select#4 */ select (max(`test`.`t2`.`a`) * 4) from `test`.`t2`)))
 select (select a from t3 where a<t2.a*4 order by 1 desc limit 1), a from t2;
 (select a from t3 where a<t2.a*4 order by 1 desc limit 1)	a
 3	1
@@ -208,14 +161,6 @@ select (select t3.a from t3 where a<8 order by 1 desc limit 1), a from
 (select * from t2 where a>1) as tt;
 (select t3.a from t3 where a<8 order by 1 desc limit 1)	a
 7	2
-explain extended select (select t3.a from t3 where a<8 order by 1 desc limit 1), a from
-(select * from t2 where a>1) as tt;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-2	SUBQUERY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where; Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select (/* select#2 */ select `test`.`t3`.`a` from `test`.`t3` where (`test`.`t3`.`a` < 8) order by `test`.`t3`.`a` desc limit 1) AS `(select t3.a from t3 where a<8 order by 1 desc limit 1)`,`test`.`t2`.`a` AS `a` from `test`.`t2` where (`test`.`t2`.`a` > 1)
 select * from t1 where t1.a=(select t2.a from t2 where t2.b=(select max(a) from t3) order by 1 desc limit 1);
 a
 2
@@ -229,15 +174,6 @@ b	(select avg(t2.a+(select min(t3.a) from t3 where t3.a >= t4.a)) from t2)
 8	7.5000
 8	4.5000
 9	7.5000
-explain extended select b,(select avg(t2.a+(select min(t3.a) from t3 where t3.a >= t4.a)) from t2) from t4;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t4	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-3	DEPENDENT SUBQUERY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t4.a' of SELECT #3 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t4`.`b` AS `b`,(/* select#2 */ select avg((`test`.`t2`.`a` + (/* select#3 */ select min(`test`.`t3`.`a`) from `test`.`t3` where (`test`.`t3`.`a` >= `test`.`t4`.`a`)))) from `test`.`t2`) AS `(select avg(t2.a+(select min(t3.a) from t3 where t3.a >= t4.a)) from t2)` from `test`.`t4`
 select * from t3 where exists (select * from t2 where t2.b=t3.a);
 a
 7
@@ -278,13 +214,6 @@ select * from t3 where a >= any (select b from t2);
 a
 6
 7
-explain extended select * from t3 where a >= any (select b from t2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	66.67	Using where
-2	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where <nop>((`test`.`t3`.`a` >= (/* select#2 */ select min(`test`.`t2`.`b`) from `test`.`t2`)))
 select * from t3 where a >= all (select b from t2);
 a
 7
@@ -319,17 +248,6 @@ select (select a from t1 where t1.a=t2.a union select a from t5 where t5.a=t2.a)
 (select a from t1 where t1.a=t2.a union select a from t5 where t5.a=t2.a)	a
 NULL	1
 2	2
-explain extended select (select a from t1 where t1.a=t2.a union select a from t5 where t5.a=t2.a), a from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-3	DEPENDENT UNION	t5	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-NULL	UNION RESULT	<union2,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.a' of SELECT #2 was resolved in SELECT #1
-Note	1276	Field or reference 'test.t2.a' of SELECT #3 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select '2' from dual where ('2' = `test`.`t2`.`a`) union /* select#3 */ select `test`.`t5`.`a` from `test`.`t5` where (`test`.`t5`.`a` = `test`.`t2`.`a`)) AS `(select a from t1 where t1.a=t2.a union select a from t5 where t5.a=t2.a)`,`test`.`t2`.`a` AS `a` from `test`.`t2`
 select (select a from t1 where t1.a=t2.a union all select a from t5 where t5.a=t2.a), a from t2;
 ERROR 21000: Subquery returns more than 1 row
 create table t6 (patient_uq int, clinic_uq int, index i1 (clinic_uq));
@@ -341,14 +259,6 @@ patient_uq	clinic_uq
 1	1
 1	2
 2	2
-explain extended select * from t6 where exists (select * from t7 where uq = clinic_uq);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t6	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using where
-2	DEPENDENT SUBQUERY	t7	NULL	eq_ref	PRIMARY	PRIMARY	4	test.t6.clinic_uq	1	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t6.clinic_uq' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t6`.`patient_uq` AS `patient_uq`,`test`.`t6`.`clinic_uq` AS `clinic_uq` from `test`.`t6` where exists(/* select#2 */ select 1 from `test`.`t7` where (`test`.`t7`.`uq` = `test`.`t6`.`clinic_uq`))
 select * from t1 where a= (select a from t2,t4 where t2.b=t4.b);
 ERROR 23000: Column 'a' in field list is ambiguous
 drop table t1,t2,t3;
@@ -372,19 +282,10 @@ CREATE TABLE `t8` (
 `email` varchar(60) character set latin1 NOT NULL default '',
 PRIMARY KEY  (`pseudo`),
 UNIQUE KEY `email` (`email`)
-) ENGINE=MyISAM CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 INSERT INTO t8 (pseudo,email) VALUES ('joce','test');
 INSERT INTO t8 (pseudo,email) VALUES ('joce1','test1');
 INSERT INTO t8 (pseudo,email) VALUES ('2joce1','2test1');
-EXPLAIN EXTENDED SELECT pseudo,(SELECT email FROM t8 WHERE pseudo=(SELECT pseudo FROM t8 WHERE pseudo='joce')) FROM t8 WHERE pseudo=(SELECT pseudo FROM t8 WHERE pseudo='joce');
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t8	NULL	const	PRIMARY	PRIMARY	37	const	1	100.00	Using index
-4	SUBQUERY	t8	NULL	const	PRIMARY	PRIMARY	37	const	1	100.00	Using index
-2	SUBQUERY	t8	NULL	const	PRIMARY	PRIMARY	37	const	1	100.00	NULL
-3	SUBQUERY	t8	NULL	const	PRIMARY	PRIMARY	37	const	1	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select 'joce' AS `pseudo`,(/* select#2 */ select 'test' from `test`.`t8` where 1) AS `(SELECT email FROM t8 WHERE pseudo=(SELECT pseudo FROM t8 WHERE pseudo='joce'))` from `test`.`t8` where 1
 SELECT pseudo FROM t8 WHERE pseudo=(SELECT pseudo,email FROM
 t8 WHERE pseudo='joce');
 ERROR 21000: Operand should contain 1 column(s)
@@ -403,22 +304,9 @@ CREATE TABLE `t1` (
 `pseudo` varchar(35) character set latin1 NOT NULL default '',
 PRIMARY KEY  (`pseudo`,`date`,`topic`),
 KEY `topic` (`topic`)
-) ENGINE=MyISAM ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB ROW_FORMAT=DYNAMIC;
 INSERT INTO t1 (topic,date,pseudo) VALUES
 ('43506','2002-10-02','joce'),('40143','2002-08-03','joce');
-EXPLAIN EXTENDED SELECT DISTINCT date FROM t1 WHERE date='2002-08-03';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	PRIMARY	PRIMARY	43	NULL	2	50.00	Using where; Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select distinct `test`.`t1`.`date` AS `date` from `test`.`t1` where (`test`.`t1`.`date` = '2002-08-03')
-EXPLAIN EXTENDED SELECT (SELECT DISTINCT date FROM t1 WHERE date='2002-08-03');
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-2	SUBQUERY	t1	NULL	index	PRIMARY	PRIMARY	43	NULL	2	50.00	Using where; Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select (/* select#2 */ select distinct `test`.`t1`.`date` from `test`.`t1` where (`test`.`t1`.`date` = '2002-08-03')) AS `(SELECT DISTINCT date FROM t1 WHERE date='2002-08-03')`
 SELECT DISTINCT date FROM t1 WHERE date='2002-08-03';
 date
 2002-08-03
@@ -432,22 +320,13 @@ SELECT 1 FROM t1 WHERE 1=(SELECT 1 UNION SELECT 1) UNION ALL SELECT 1;
 1
 SELECT 1 FROM t1 WHERE 1=(SELECT 1 UNION ALL SELECT 1) UNION SELECT 1;
 ERROR 21000: Subquery returns more than 1 row
-EXPLAIN EXTENDED SELECT 1 FROM t1 WHERE 1=(SELECT 1 UNION SELECT 1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	index	NULL	topic	3	NULL	2	100.00	Using index
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-3	UNION	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-NULL	UNION RESULT	<union2,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select 1 AS `1` from `test`.`t1` where 1
 drop table t1;
 CREATE TABLE `t1` (
 `numeropost` mediumint(8) unsigned NOT NULL auto_increment,
 `maxnumrep` int(10) unsigned NOT NULL default '0',
 PRIMARY KEY  (`numeropost`),
 UNIQUE KEY `maxnumrep` (`maxnumrep`)
-) ENGINE=MyISAM ROW_FORMAT=FIXED;
+) ENGINE=SequoiaDB ROW_FORMAT=FIXED;
 INSERT INTO t1 (numeropost,maxnumrep) VALUES (40143,1),(43506,2);
 CREATE TABLE `t2` (
 `mot` varchar(30) NOT NULL default '',
@@ -455,7 +334,7 @@ CREATE TABLE `t2` (
 `date` date NOT NULL default '0000-00-00',
 `pseudo` varchar(35) NOT NULL default '',
 PRIMARY KEY  (`mot`,`pseudo`,`date`,`topic`)
-) ENGINE=MyISAM ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB ROW_FORMAT=DYNAMIC;
 INSERT INTO t2 (mot,topic,date,pseudo) VALUES ('joce','40143','2002-10-22','joce'), ('joce','43506','2002-10-22','joce');
 select numeropost as a FROM t1 GROUP BY (SELECT 1 FROM t1 HAVING a=1);
 a
@@ -519,7 +398,7 @@ CREATE TABLE `t1` (
 `maxnumrep` int(10) unsigned NOT NULL default '0',
 PRIMARY KEY  (`numeropost`),
 UNIQUE KEY `maxnumrep` (`maxnumrep`)
-) ENGINE=MyISAM ROW_FORMAT=FIXED;
+) ENGINE=SequoiaDB ROW_FORMAT=FIXED;
 INSERT INTO t1 (numeropost,maxnumrep) VALUES (1,0),(2,1);
 select numeropost as a FROM t1 GROUP BY (SELECT 1 FROM t1 HAVING a=1);
 ERROR 21000: Subquery returns more than 1 row
@@ -546,7 +425,7 @@ CREATE TABLE `t1` (
 PRIMARY KEY  (`numeropost`,`numreponse`),
 UNIQUE KEY `numreponse` (`numreponse`),
 KEY `pseudo` (`pseudo`,`numeropost`)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 SELECT (SELECT numeropost FROM t1 HAVING numreponse=a),numreponse FROM (SELECT * FROM t1) as a;
 ERROR 42S22: Reference 'numreponse' not supported (forward reference in item list)
 SELECT numreponse, (SELECT numeropost FROM t1 HAVING numreponse=a) FROM (SELECT * FROM t1) as a;
@@ -554,21 +433,6 @@ ERROR 42S22: Unknown column 'a' in 'having clause'
 SELECT numreponse, (SELECT numeropost FROM t1 HAVING numreponse=1) FROM (SELECT * FROM t1) as a;
 numreponse	(SELECT numeropost FROM t1 HAVING numreponse=1)
 INSERT INTO t1 (numeropost,numreponse,pseudo) VALUES (1,1,'joce'),(1,2,'joce'),(1,3,'test');
-EXPLAIN EXTENDED SELECT numreponse FROM t1 WHERE numeropost='1' AND numreponse=(SELECT 1 FROM t1 WHERE numeropost='1');
-ERROR 21000: Subquery returns more than 1 row
-EXPLAIN EXTENDED SELECT MAX(numreponse) FROM t1 WHERE numeropost='1';
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select max(`test`.`t1`.`numreponse`) AS `MAX(numreponse)` from `test`.`t1` where (`test`.`t1`.`numeropost` = '1')
-EXPLAIN EXTENDED SELECT numreponse FROM t1 WHERE numeropost='1' AND numreponse=(SELECT MAX(numreponse) FROM t1 WHERE numeropost='1');
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	const	PRIMARY,numreponse	PRIMARY	7	const,const	1	100.00	Using index
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select '3' AS `numreponse` from `test`.`t1` where (('1' = '1'))
 drop table t1;
 CREATE TABLE t1 (a int(1));
 INSERT INTO t1 VALUES (1);
@@ -716,41 +580,17 @@ x	y
 drop table t1, t2, t3;
 SELECT * FROM (SELECT 1) b WHERE 1 IN (SELECT *);
 ERROR HY000: No tables used
-CREATE TABLE t2 (id int(11) default NULL, KEY id (id)) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t2 (id int(11) default NULL, KEY id (id)) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t2 VALUES (1),(2);
 SELECT * FROM t2 WHERE id IN (SELECT 1);
 id
 1
-EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ref	id	id	5	const	1	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1249	Select 2 was reduced during optimization
-Note	1003	/* select#1 */ select `test`.`t2`.`id` AS `id` from `test`.`t2` where (`test`.`t2`.`id` = 1)
 SELECT * FROM t2 WHERE id IN (SELECT 1 UNION SELECT 3);
 id
 1
 SELECT * FROM t2 WHERE id IN (SELECT 1+(select 1));
 id
 2
-EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1+(select 1));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t2	NULL	ref	id	id	5	const	1	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1249	Select 3 was reduced during optimization
-Note	1249	Select 2 was reduced during optimization
-Note	1003	/* select#1 */ select `test`.`t2`.`id` AS `id` from `test`.`t2` where (`test`.`t2`.`id` = (1 + 1))
-EXPLAIN EXTENDED SELECT * FROM t2 WHERE id IN (SELECT 1 UNION SELECT 3);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	index	NULL	id	5	NULL	2	100.00	Using where; Using index
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-3	DEPENDENT UNION	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-NULL	UNION RESULT	<union2,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t2`.`id` AS `id` from `test`.`t2` where <in_optimizer>(`test`.`t2`.`id`,<exists>(/* select#2 */ select 1 having (<cache>(`test`.`t2`.`id`) = <ref_null_helper>(1)) union /* select#3 */ select 3 having (<cache>(`test`.`t2`.`id`) = <ref_null_helper>(3))))
 SELECT * FROM t2 WHERE id IN (SELECT 5 UNION SELECT 3);
 id
 SELECT * FROM t2 WHERE id IN (SELECT 5 UNION SELECT 2);
@@ -764,7 +604,7 @@ SELECT * FROM t2;
 id
 1
 2
-CREATE TABLE t1 (id int(11) default NULL, KEY id (id)) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t1 (id int(11) default NULL, KEY id (id)) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 values (1),(1);
 UPDATE t2 SET id=(SELECT * FROM t1);
 ERROR 21000: Subquery returns more than 1 row
@@ -870,14 +710,6 @@ NULL
 select 10.5 > ANY (SELECT * from t1);
 10.5 > ANY (SELECT * from t1)
 1
-explain extended select (select a+1) from t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1249	Select 2 was reduced during optimization
-Note	1003	/* select#1 */ select (`test`.`t1`.`a` + 1) AS `(select a+1)` from `test`.`t1`
 select (select a+1) from t1;
 (select a+1)
 2.5
@@ -894,13 +726,6 @@ a	t1.a in (select t2.a from t2)
 2	1
 3	1
 4	0
-explain extended SELECT t1.a, t1.a in (select t2.a from t2) FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	index	NULL	PRIMARY	4	NULL	4	100.00	Using index
-2	DEPENDENT SUBQUERY	t2	NULL	index_subquery	a	a	5	func	4	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,<in_optimizer>(`test`.`t1`.`a`,<exists>(<index_lookup>(<cache>(`test`.`t1`.`a`) in t2 on a checking NULL having <is_not_null_test>(`test`.`t2`.`a`)))) AS `t1.a in (select t2.a from t2)` from `test`.`t1`
 CREATE TABLE t3 (a int(11) default '0');
 INSERT INTO t3 VALUES (1),(2),(3);
 SELECT t1.a, t1.a in (select t2.a from t2,t3 where t3.a=t2.a) FROM t1;
@@ -909,14 +734,6 @@ a	t1.a in (select t2.a from t2,t3 where t3.a=t2.a)
 2	1
 3	1
 4	0
-explain extended SELECT t1.a, t1.a in (select t2.a from t2,t3 where t3.a=t2.a) FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	index	NULL	PRIMARY	4	NULL	4	100.00	Using index
-2	DEPENDENT SUBQUERY	t2	NULL	ref_or_null	a	a	5	func	4	100.00	Using where; Using index
-2	DEPENDENT SUBQUERY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,<in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t2` join `test`.`t3` where ((`test`.`t3`.`a` = `test`.`t2`.`a`) and ((<cache>(`test`.`t1`.`a`) = `test`.`t2`.`a`) or isnull(`test`.`t2`.`a`))) having <is_not_null_test>(`test`.`t2`.`a`))) AS `t1.a in (select t2.a from t2,t3 where t3.a=t2.a)` from `test`.`t1`
 drop table t1,t2,t3;
 create table t1 (a float);
 select 10.5 IN (SELECT * from t1 LIMIT 1);
@@ -990,16 +807,6 @@ select @a;
 @a
 1
 drop table t1;
-do (SELECT a from t1);
-ERROR 42S02: Table 'test.t1' doesn't exist
-set @a:=(SELECT a from t1);
-ERROR 42S02: Table 'test.t1' doesn't exist
-CREATE TABLE t1 (a int, KEY(a));
-HANDLER t1 OPEN;
-HANDLER t1 READ a=((SELECT 1));
-ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'SELECT 1))' at line 1
-HANDLER t1 CLOSE;
-drop table t1;
 create table t1 (a int);
 create table t2 (b int);
 insert into t1 values (1),(2);
@@ -1017,7 +824,7 @@ a	b
 1	2
 1	3
 drop table t1, t2;
-CREATE TABLE `t1` (`i` int(11) NOT NULL default '0',PRIMARY KEY  (`i`)) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE `t1` (`i` int(11) NOT NULL default '0',PRIMARY KEY  (`i`)) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES (1);
 UPDATE t1 SET i=i+1 WHERE i=(SELECT MAX(i));
 select * from t1;
@@ -1025,28 +832,6 @@ i
 2
 drop table t1;
 CREATE TABLE t1 (a int(1));
-EXPLAIN EXTENDED SELECT (SELECT RAND() FROM t1) FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	UNCACHEABLE SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select (/* select#2 */ select rand() from `test`.`t1`) AS `(SELECT RAND() FROM t1)` from `test`.`t1`
-EXPLAIN EXTENDED SELECT (SELECT ENCRYPT('test') FROM t1) FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	UNCACHEABLE SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Warning	1287	'ENCRYPT' is deprecated and will be removed in a future release. Please use AES_ENCRYPT instead
-Note	1003	/* select#1 */ select (/* select#2 */ select encrypt('test') from `test`.`t1`) AS `(SELECT ENCRYPT('test') FROM t1)` from `test`.`t1`
-EXPLAIN EXTENDED SELECT (SELECT BENCHMARK(1,1) FROM t1) FROM t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	UNCACHEABLE SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select (/* select#2 */ select benchmark(1,1) from `test`.`t1`) AS `(SELECT BENCHMARK(1,1) FROM t1)` from `test`.`t1`
 drop table t1;
 CREATE TABLE `t1` (
 `mot` varchar(30) character set latin1 NOT NULL default '',
@@ -1056,7 +841,7 @@ CREATE TABLE `t1` (
 PRIMARY KEY  (`mot`,`pseudo`,`date`,`topic`),
 KEY `pseudo` (`pseudo`,`date`,`topic`),
 KEY `topic` (`topic`)
-) ENGINE=MyISAM CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 CREATE TABLE `t2` (
 `mot` varchar(30) character set latin1 NOT NULL default '',
 `topic` mediumint(8) unsigned NOT NULL default '0',
@@ -1065,13 +850,13 @@ CREATE TABLE `t2` (
 PRIMARY KEY  (`mot`,`pseudo`,`date`,`topic`),
 KEY `pseudo` (`pseudo`,`date`,`topic`),
 KEY `topic` (`topic`)
-) ENGINE=MyISAM CHARSET=latin1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB CHARSET=latin1 ROW_FORMAT=DYNAMIC;
 CREATE TABLE `t3` (
 `numeropost` mediumint(8) unsigned NOT NULL auto_increment,
 `maxnumrep` int(10) unsigned NOT NULL default '0',
 PRIMARY KEY  (`numeropost`),
 UNIQUE KEY `maxnumrep` (`maxnumrep`)
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES ('joce','1','','joce'),('test','2','','test');
 Warnings:
 Warning	1265	Data truncated for column 'date' at row 1
@@ -1104,7 +889,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(1) NOT NULL DEFAULT '0',
   `(SELECT 1)` int(1) NOT NULL DEFAULT '0'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t1;
 CREATE TABLE t1 SELECT * FROM (SELECT 1 as a,(SELECT a)) a;
 SHOW CREATE TABLE t1;
@@ -1112,7 +897,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(1) NOT NULL DEFAULT '0',
   `(SELECT a)` int(1) NOT NULL DEFAULT '0'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 SELECT * FROM (SELECT 1 as a,(SELECT a+0)) a;
 SHOW CREATE TABLE t1;
@@ -1120,7 +905,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(1) NOT NULL DEFAULT '0',
   `(SELECT a+0)` int(3) NOT NULL DEFAULT '0'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1 SELECT (SELECT 1 as a UNION SELECT 1+1 limit 1,1) as a;
 select * from t1;
@@ -1130,22 +915,11 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` bigint(20) NOT NULL DEFAULT '0'
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 (a int);
 insert into t1 values (1), (2), (3);
-explain extended select a,(select (select rand() from t1 limit 1)  from t1 limit 1)
-from t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-2	UNCACHEABLE SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-3	UNCACHEABLE SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,(/* select#2 */ select (/* select#3 */ select rand() from `test`.`t1` limit 1) from `test`.`t1` limit 1) AS `(select (select rand() from t1 limit 1)  from t1 limit 1)` from `test`.`t1`
 drop table t1;
-select t1.Continent, t2.Name, t2.Population from t1 LEFT JOIN t2 ON t1.Code = t2.Country  where t2.Population IN (select max(t2.Population) AS Population from t2, t1 where t2.Country = t1.Code group by Continent);
-ERROR 42S02: Table 'test.t1' doesn't exist
 CREATE TABLE t1 (
 ID int(11) NOT NULL auto_increment,
 name char(35) NOT NULL default '',
@@ -1153,7 +927,7 @@ t2 char(3) NOT NULL default '',
 District char(20) NOT NULL default '',
 Population int(11) NOT NULL default '0',
 PRIMARY KEY  (ID)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (130,'Sydney','AUS','New South Wales',3276207);
 INSERT INTO t1 VALUES (131,'Melbourne','AUS','Victoria',2865329);
 INSERT INTO t1 VALUES (132,'Brisbane','AUS','Queensland',1291117);
@@ -1174,7 +948,7 @@ HeadOfState char(60) default NULL,
 Capital int(11) default NULL,
 Code2 char(2) NOT NULL default '',
 PRIMARY KEY  (Code)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES ('AUS','Australia','Oceania','Australia and New Zealand',7741220.00,1901,18886000,79.8,351182.00,392911.00,'Australia','Constitutional Monarchy, Federation','Elisabeth II',135,'AU');
 INSERT INTO t2 VALUES ('AZE','Azerbaijan','Asia','Middle East',86600.00,1991,7734000,62.9,4127.00,4100.00,'Azärbaycan','Federal Republic','Heydär Äliyev',144,'AZ');
 select t2.Continent, t1.Name, t1.Population from t2 LEFT JOIN t1 ON t2.Code = t1.t2  where t1.Population IN (select max(t1.Population) AS Population from t1, t2 where t1.t2 = t2.Code group by Continent);
@@ -1186,34 +960,20 @@ CREATE TABLE `t1` (
 `pseudo` varchar(35) character set latin1 NOT NULL default '',
 PRIMARY KEY  (`id`),
 UNIQUE KEY `pseudo` (`pseudo`)
-) ENGINE=MyISAM PACK_KEYS=1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB PACK_KEYS=1 ROW_FORMAT=DYNAMIC;
 INSERT INTO t1 (pseudo) VALUES ('test');
 SELECT 0 IN (SELECT 1 FROM t1 a);
 0 IN (SELECT 1 FROM t1 a)
 0
-EXPLAIN EXTENDED SELECT 0 IN (SELECT 1 FROM t1 a);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select <in_optimizer>(0,<exists>(/* select#2 */ select 1 from `test`.`t1` `a` where 0)) AS `0 IN (SELECT 1 FROM t1 a)`
 INSERT INTO t1 (pseudo) VALUES ('test1');
 SELECT 0 IN (SELECT 1 FROM t1 a);
 0 IN (SELECT 1 FROM t1 a)
 0
-EXPLAIN EXTENDED SELECT 0 IN (SELECT 1 FROM t1 a);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select <in_optimizer>(0,<exists>(/* select#2 */ select 1 from `test`.`t1` `a` where 0)) AS `0 IN (SELECT 1 FROM t1 a)`
 drop table t1;
 CREATE TABLE `t1` (
 `i` int(11) NOT NULL default '0',
 PRIMARY KEY  (`i`)
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES (1);
 UPDATE t1 SET i=i+(SELECT MAX(i) FROM (SELECT 1) t) WHERE i=(SELECT MAX(i));
 UPDATE t1 SET i=i+1 WHERE i=(SELECT MAX(i));
@@ -1225,12 +985,12 @@ i
 drop table t1;
 CREATE TABLE t1 (
 id int(11) default NULL
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES (1),(1),(2),(2),(1),(3);
 CREATE TABLE t2 (
 id int(11) default NULL,
 name varchar(15) default NULL
-) ENGINE=MyISAM CHARSET=latin1;
+) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t2 VALUES (4,'vita'), (1,'vita'), (2,'vita'), (1,'vita');
 update t1, t2 set t2.name='lenka' where t2.id in (select id from t1);
 select * from t2;
@@ -1248,13 +1008,6 @@ NULL
 drop table t1;
 create table t1 (id int not null auto_increment primary key, salary int, key(salary));
 insert into t1 (salary) values (100),(1000),(10000),(10),(500),(5000),(50000);
-explain extended SELECT id FROM t1 where salary = (SELECT MAX(salary) FROM t1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ref	salary	salary	5	const	1	100.00	Using where
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Select tables optimized away
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`id` AS `id` from `test`.`t1` where (`test`.`t1`.`salary` = (/* select#2 */ select max(`test`.`t1`.`salary`) from `test`.`t1`))
 drop table t1;
 CREATE TABLE t1 (
 ID int(10) unsigned NOT NULL auto_increment,
@@ -1262,10 +1015,10 @@ SUB_ID int(3) unsigned NOT NULL default '0',
 REF_ID int(10) unsigned default NULL,
 REF_SUB int(3) unsigned default '0',
 PRIMARY KEY (ID,SUB_ID),
-UNIQUE KEY t1_PK (ID,SUB_ID),
+# UNIQUE KEY t1_PK (ID,SUB_ID), # will cause -291
 KEY t1_FK (REF_ID,REF_SUB),
 KEY t1_REFID (REF_ID)
-) ENGINE=MyISAM CHARSET=cp1251;
+) ENGINE=SequoiaDB CHARSET=cp1251;
 INSERT INTO t1 VALUES (1,0,NULL,NULL),(2,0,NULL,NULL);
 SELECT DISTINCT REF_ID FROM t1 WHERE ID= (SELECT DISTINCT REF_ID FROM t1 WHERE ID=2);
 REF_ID
@@ -1290,7 +1043,7 @@ CREATE TABLE `t1` (
 PRIMARY KEY  (`id`),
 UNIQUE KEY `email` (`email`),
 UNIQUE KEY `pseudo` (`pseudo`)
-) ENGINE=MyISAM CHARSET=latin1 PACK_KEYS=1 ROW_FORMAT=DYNAMIC;
+) ENGINE=SequoiaDB CHARSET=latin1 PACK_KEYS=1 ROW_FORMAT=DYNAMIC;
 INSERT INTO t1 (id,pseudo,email) VALUES (1,'test','test'),(2,'test1','test1');
 SELECT pseudo as a, pseudo as b FROM t1 GROUP BY (SELECT a) ORDER BY (SELECT id*1);
 a	b
@@ -1351,12 +1104,6 @@ insert into t1 values ('tttt');
 select * from t1 where ('a','b')=(select 'a','b' from t1 union select 'a','b' from t1);
 s1
 tttt
-explain extended (select * from t1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	(/* select#1 */ select 'tttt' AS `s1` from dual)
 (select * from t1);
 s1
 tttt
@@ -1385,34 +1132,6 @@ s1	s1 NOT IN (SELECT s1 FROM t2 WHERE s1 < 'a2')
 a1	0
 a2	1
 a3	1
-explain extended select s1, s1 NOT IN (SELECT s1 FROM t2) from t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	index	NULL	s1	6	NULL	3	100.00	Using index
-2	DEPENDENT SUBQUERY	t2	NULL	index_subquery	s1	s1	6	func	4	100.00	Using index; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,(not(<in_optimizer>(`test`.`t1`.`s1`,<exists>(<index_lookup>(<cache>(`test`.`t1`.`s1`) in t2 on s1 checking NULL having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`s1`), true)))))) AS `s1 NOT IN (SELECT s1 FROM t2)` from `test`.`t1`
-explain extended select s1, s1 = ANY (SELECT s1 FROM t2) from t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	index	NULL	s1	6	NULL	3	100.00	Using index
-2	DEPENDENT SUBQUERY	t2	NULL	index_subquery	s1	s1	6	func	4	100.00	Using index; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,<in_optimizer>(`test`.`t1`.`s1`,<exists>(<index_lookup>(<cache>(`test`.`t1`.`s1`) in t2 on s1 checking NULL having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`s1`), true)))) AS `s1 = ANY (SELECT s1 FROM t2)` from `test`.`t1`
-explain extended select s1, s1 <> ALL (SELECT s1 FROM t2) from t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	index	NULL	s1	6	NULL	3	100.00	Using index
-2	DEPENDENT SUBQUERY	t2	NULL	index_subquery	s1	s1	6	func	4	100.00	Using index; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,(not(<in_optimizer>(`test`.`t1`.`s1`,<exists>(<index_lookup>(<cache>(`test`.`t1`.`s1`) in t2 on s1 checking NULL having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`s1`), true)))))) AS `s1 <> ALL (SELECT s1 FROM t2)` from `test`.`t1`
-explain extended select s1, s1 NOT IN (SELECT s1 FROM t2 WHERE s1 < 'a2') from t1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	index	NULL	s1	6	NULL	3	100.00	Using index
-2	DEPENDENT SUBQUERY	t2	NULL	index_subquery	s1	s1	6	func	4	100.00	Using where; Using index; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`s1` AS `s1`,(not(<in_optimizer>(`test`.`t1`.`s1`,<exists>(<index_lookup>(<cache>(`test`.`t1`.`s1`) in t2 on s1 checking NULL where (`test`.`t2`.`s1` < 'a2') having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`s1`), true)))))) AS `s1 NOT IN (SELECT s1 FROM t2 WHERE s1 < 'a2')` from `test`.`t1`
 drop table t1,t2;
 create table t2 (a int, b int);
 create table t3 (a int);
@@ -1422,99 +1141,36 @@ a
 6
 7
 3
-explain extended select * from t3 where a >= all (select b from t2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	66.67	Using where
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where <not>((`test`.`t3`.`a` < <max>(/* select#2 */ select NULL from `test`.`t2`)))
 select * from t3 where a >= some (select b from t2);
 a
-explain extended select * from t3 where a >= some (select b from t2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	66.67	Using where
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where <nop>((`test`.`t3`.`a` >= (/* select#2 */ select min(NULL) from `test`.`t2`)))
 select * from t3 where a >= all (select b from t2 group by 1);
 a
 6
 7
 3
-explain extended select * from t3 where a >= all (select b from t2 group by 1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	66.67	Using where
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where <not>((`test`.`t3`.`a` < <max>(/* select#2 */ select NULL from `test`.`t2`)))
 select * from t3 where a >= some (select b from t2 group by 1);
 a
-explain extended select * from t3 where a >= some (select b from t2 group by 1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	66.67	Using where
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where <nop>((`test`.`t3`.`a` >= (/* select#2 */ select min(NULL) from `test`.`t2`)))
 select * from t3 where NULL >= any (select b from t2);
 a
-explain extended select * from t3 where NULL >= any (select b from t2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where 0
 select * from t3 where NULL >= any (select b from t2 group by 1);
 a
-explain extended select * from t3 where NULL >= any (select b from t2 group by 1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where 0
 select * from t3 where NULL >= some (select b from t2);
 a
-explain extended select * from t3 where NULL >= some (select b from t2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where 0
 select * from t3 where NULL >= some (select b from t2 group by 1);
 a
-explain extended select * from t3 where NULL >= some (select b from t2 group by 1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where 0
 insert into t2 values (2,2), (2,1), (3,3), (3,1);
 select * from t3 where a > all (select max(b) from t2 group by a);
 a
 6
 7
-explain extended select * from t3 where a > all (select max(b) from t2 group by a);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	66.67	Using where
-2	SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using temporary; Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a` from `test`.`t3` where <not>((`test`.`t3`.`a` <= <max>(/* select#2 */ select max(`test`.`t2`.`b`) from `test`.`t2` group by `test`.`t2`.`a`)))
 drop table t2, t3;
-CREATE TABLE `t1` ( `id` mediumint(9) NOT NULL auto_increment, `taskid` bigint(20) NOT NULL default '0', `dbid` int(11) NOT NULL default '0', `create_date` datetime NOT NULL default '0000-00-00 00:00:00', `last_update` datetime NOT NULL default '0000-00-00 00:00:00', PRIMARY KEY  (`id`)) ENGINE=MyISAM CHARSET=latin1 AUTO_INCREMENT=3 ;
+CREATE TABLE `t1` ( `id` mediumint(9) NOT NULL auto_increment, `taskid` bigint(20) NOT NULL default '0', `dbid` int(11) NOT NULL default '0', `create_date` datetime NOT NULL default '0000-00-00 00:00:00', `last_update` datetime NOT NULL default '0000-00-00 00:00:00', PRIMARY KEY  (`id`)) ENGINE=SequoiaDB CHARSET=latin1 AUTO_INCREMENT=3 ;
 INSERT INTO `t1` (`id`, `taskid`, `dbid`, `create_date`,`last_update`) VALUES (1, 1, 15, '2003-09-29 10:31:36', '2003-09-29 10:31:36'), (2, 1, 21, now(), now());
-CREATE TABLE `t2` (`db_id` int(11) NOT NULL auto_increment,`name` varchar(200) NOT NULL default '',`primary_uid` smallint(6) NOT NULL default '0',`secondary_uid` smallint(6) NOT NULL default '0',PRIMARY KEY  (`db_id`),UNIQUE KEY `name_2` (`name`),FULLTEXT KEY `name` (`name`)) ENGINE=MyISAM CHARSET=latin1 AUTO_INCREMENT=2147483647;
+CREATE TABLE `t2` (`db_id` int(11) NOT NULL auto_increment,`name` varchar(200) NOT NULL default '',`primary_uid` smallint(6) NOT NULL default '0',`secondary_uid` smallint(6) NOT NULL default '0',PRIMARY KEY  (`db_id`),UNIQUE KEY `name_2` (`name`)) ENGINE=SequoiaDB CHARSET=latin1 AUTO_INCREMENT=2147483647;
 INSERT INTO `t2` (`db_id`, `name`, `primary_uid`, `secondary_uid`) VALUES (18, 'Not Set 1', 0, 0),(19, 'Valid', 1, 2),(20, 'Valid 2', 1, 2),(21, 'Should Not Return', 1, 2),(26, 'Not Set 2', 0, 0),(-1, 'ALL DB\'S', 0, 0);
-CREATE TABLE `t3` (`taskgenid` mediumint(9) NOT NULL auto_increment,`dbid` int(11) NOT NULL default '0',`taskid` int(11) NOT NULL default '0',`mon` tinyint(4) NOT NULL default '1',`tues` tinyint(4) NOT NULL default '1',`wed` tinyint(4) NOT NULL default '1',`thur` tinyint(4) NOT NULL default '1',`fri` tinyint(4) NOT NULL default '1',`sat` tinyint(4) NOT NULL default '0',`sun` tinyint(4) NOT NULL default '0',`how_often` smallint(6) NOT NULL default '1',`userid` smallint(6) NOT NULL default '0',`active` tinyint(4) NOT NULL default '1',PRIMARY KEY  (`taskgenid`)) ENGINE=MyISAM CHARSET=latin1 AUTO_INCREMENT=2 ;
+CREATE TABLE `t3` (`taskgenid` mediumint(9) NOT NULL auto_increment,`dbid` int(11) NOT NULL default '0',`taskid` int(11) NOT NULL default '0',`mon` tinyint(4) NOT NULL default '1',`tues` tinyint(4) NOT NULL default '1',`wed` tinyint(4) NOT NULL default '1',`thur` tinyint(4) NOT NULL default '1',`fri` tinyint(4) NOT NULL default '1',`sat` tinyint(4) NOT NULL default '0',`sun` tinyint(4) NOT NULL default '0',`how_often` smallint(6) NOT NULL default '1',`userid` smallint(6) NOT NULL default '0',`active` tinyint(4) NOT NULL default '1',PRIMARY KEY  (`taskgenid`)) ENGINE=SequoiaDB CHARSET=latin1 AUTO_INCREMENT=2 ;
 INSERT INTO `t3` (`taskgenid`, `dbid`, `taskid`, `mon`, `tues`,`wed`, `thur`, `fri`, `sat`, `sun`, `how_often`, `userid`, `active`) VALUES (1,-1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1);
-CREATE TABLE `t4` (`task_id` smallint(6) NOT NULL default '0',`description` varchar(200) NOT NULL default '') ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE `t4` (`task_id` smallint(6) NOT NULL default '0',`description` varchar(200) NOT NULL default '') ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO `t4` (`task_id`, `description`) VALUES (1, 'Daily Check List'),(2, 'Weekly Status');
 select  dbid, name, (date_format(now() , '%Y-%m-%d') - INTERVAL how_often DAY) >= ifnull((SELECT date_format(max(create_date),'%Y-%m-%d') FROM t1 WHERE dbid = b.db_id AND taskid = a.taskgenid), '1950-01-01') from t3 a, t2 b, t4  WHERE dbid = - 1 AND primary_uid = '1' AND t4.task_id = taskid;
 dbid	name	(date_format(now() , '%Y-%m-%d') - INTERVAL how_often DAY) >= ifnull((SELECT date_format(max(create_date),'%Y-%m-%d') FROM t1 WHERE dbid = b.db_id AND taskid = a.taskgenid), '1950-01-01')
@@ -1526,9 +1182,9 @@ dbid	name
 -1	Valid
 -1	Valid 2
 drop table t1,t2,t3,t4;
-CREATE TABLE t1 (id int(11) default NULL) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t1 (id int(11) default NULL) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES (1),(5);
-CREATE TABLE t2 (id int(11) default NULL) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t2 (id int(11) default NULL) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t2 VALUES (2),(6);
 select * from t1 where (1,2,6) in (select * from t2);
 ERROR 21000: Operand should contain 3 column(s)
@@ -1549,19 +1205,10 @@ e
 select * from t1 where 'f' > any (select s1 from t1 union select s1 from t1);
 s1
 e
-explain extended select * from t1 where 'f' > any (select s1 from t1 union select s1 from t1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	SUBQUERY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-3	UNION	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-NULL	UNION RESULT	<union2,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select 'e' AS `s1` from dual where 1
 drop table t1;
-CREATE TABLE t1 (number char(11) NOT NULL default '') ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t1 (number char(11) NOT NULL default '') ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t1 VALUES ('69294728265'),('18621828126'),('89356874041'),('95895001874');
-CREATE TABLE t2 (code char(5) NOT NULL default '',UNIQUE KEY code (code)) ENGINE=MyISAM CHARSET=latin1;
+CREATE TABLE t2 (code char(5) NOT NULL default '',UNIQUE KEY code (code)) ENGINE=SequoiaDB CHARSET=latin1;
 INSERT INTO t2 VALUES ('1'),('1226'),('1245'),('1862'),('18623'),('1874'),('1967'),('6');
 select c.number as phone,(select p.code from t2 p where c.number like concat(p.code, '%') order by length(p.code) desc limit 1) as code from t1 c;
 phone	code
@@ -1671,21 +1318,6 @@ id	text
 10	text10
 11	text11
 12	text12
-explain extended select * from t1 where id not in (select id from t1 where id < 8);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	12	100.00	Using where
-2	DEPENDENT SUBQUERY	t1	NULL	unique_subquery	PRIMARY	PRIMARY	4	func	1	100.00	Using where; Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`id` AS `id`,`test`.`t1`.`text` AS `text` from `test`.`t1` where (not(<in_optimizer>(`test`.`t1`.`id`,<exists>(<primary_index_lookup>(<cache>(`test`.`t1`.`id`) in t1 on PRIMARY where ((`test`.`t1`.`id` < 8) and (<cache>(`test`.`t1`.`id`) = `test`.`t1`.`id`)))))))
-explain extended select * from t1 as tt where not exists (select id from t1 where id < 8 and (id = tt.id or id is null) having id is not null);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	tt	NULL	ALL	NULL	NULL	NULL	NULL	12	100.00	Using where
-2	DEPENDENT SUBQUERY	t1	NULL	eq_ref	PRIMARY	PRIMARY	4	test.tt.id	1	100.00	Using where; Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.tt.id' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`tt`.`id` AS `id`,`test`.`tt`.`text` AS `text` from `test`.`t1` `tt` where (not(exists(/* select#2 */ select `test`.`t1`.`id` from `test`.`t1` where ((`test`.`t1`.`id` < 8) and (`test`.`t1`.`id` = `test`.`tt`.`id`)) having (`test`.`t1`.`id` is not null))))
 insert into t1 (id, text) values (1000, 'text1000'), (1001, 'text1001');
 create table t2 (id int not null, text varchar(20) not null default '', primary key (id));
 insert into t2 (id, text) values (1, 'text1'), (2, 'text2'), (3, 'text3'), (4, 'text4'), (5, 'text5'), (6, 'text6'), (7, 'text7'), (8, 'text8'), (9, 'text9'), (10, 'text10'), (11, 'text1'), (12, 'text2'), (13, 'text3'), (14, 'text4'), (15, 'text5'), (16, 'text6'), (17, 'text7'), (18, 'text8'), (19, 'text9'), (20, 'text10'),(21, 'text1'), (22, 'text2'), (23, 'text3'), (24, 'text4'), (25, 'text5'), (26, 'text6'), (27, 'text7'), (28, 'text8'), (29, 'text9'), (30, 'text10'), (31, 'text1'), (32, 'text2'), (33, 'text3'), (34, 'text4'), (35, 'text5'), (36, 'text6'), (37, 'text7'), (38, 'text8'), (39, 'text9'), (40, 'text10'), (41, 'text1'), (42, 'text2'), (43, 'text3'), (44, 'text4'), (45, 'text5'), (46, 'text6'), (47, 'text7'), (48, 'text8'), (49, 'text9'), (50, 'text10');
@@ -1705,23 +1337,9 @@ id	text	id	text	id	text
 12	text12	12	text2	12	text12
 1000	text1000	NULL	NULL	1000	text1000
 1001	text1001	NULL	NULL	1000	text1000
-explain extended select * from t1 a left join t2 b on (a.id=b.id or b.id is null) join t1 c on (if(isnull(b.id), 1000, b.id)=c.id);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	a	NULL	ALL	NULL	NULL	NULL	NULL	14	100.00	NULL
-1	SIMPLE	b	NULL	eq_ref	PRIMARY	PRIMARY	4	test.a.id	1	100.00	Using join buffer (Batched Key Access)
-1	SIMPLE	c	NULL	eq_ref	PRIMARY	PRIMARY	4	func	1	100.00	Using index condition; Using join buffer (Batched Key Access)
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`a`.`id` AS `id`,`test`.`a`.`text` AS `text`,`test`.`b`.`id` AS `id`,`test`.`b`.`text` AS `text`,`test`.`c`.`id` AS `id`,`test`.`c`.`text` AS `text` from `test`.`t1` `a` left join `test`.`t2` `b` on(((`test`.`b`.`id` = `test`.`a`.`id`) or isnull(`test`.`b`.`id`))) join `test`.`t1` `c` where (if(isnull(`test`.`b`.`id`),1000,`test`.`b`.`id`) = `test`.`c`.`id`)
 drop table t1,t2;
 create table t1 (a int);
 insert into t1 values (1);
-explain select benchmark(1000, (select a from t1 where a=sha(rand())));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-2	UNCACHEABLE SUBQUERY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select benchmark(1000,(/* select#2 */ select '1' from dual where ('1' = sha(rand())))) AS `benchmark(1000, (select a from t1 where a=sha(rand())))`
 drop table t1;
 create table t1(id int);
 create table t2(id int);
@@ -2218,14 +1836,6 @@ select * from t1 up where exists (select * from t1 where t1.a=up.a);
 a	b
 1	2
 3	4
-explain extended select * from t1 up where exists (select * from t1 where t1.a=up.a);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	up	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.up.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`up`.`a` AS `a`,`test`.`up`.`b` AS `b` from `test`.`t1` `up` where exists(/* select#2 */ select 1 from `test`.`t1` where (`test`.`t1`.`a` = `test`.`up`.`a`))
 drop table t1;
 CREATE TABLE t1 (t1_a int);
 INSERT INTO t1 VALUES (1);
@@ -2290,26 +1900,13 @@ abc	b
 3	4
 deallocate prepare stmt1;
 DROP TABLE t1, t2, t3;
-CREATE TABLE `t1` ( `a` int(11) default NULL) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+CREATE TABLE `t1` ( `a` int(11) default NULL) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 insert into t1 values (1);
-CREATE TABLE `t2` ( `b` int(11) default NULL, `a` int(11) default NULL) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+CREATE TABLE `t2` ( `b` int(11) default NULL, `a` int(11) default NULL) ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 insert into t2 values (1,2);
 select t000.a, count(*) `C` FROM t1 t000 GROUP BY t000.a HAVING count(*) > ALL (SELECT count(*) FROM t2 t001 WHERE t001.a=1);
 a	C
 1	1
-drop table t1,t2;
-create table t1 (a int not null auto_increment primary key, b varchar(40), fulltext(b));
-insert into t1 (b) values ('ball'),('ball games'), ('games'), ('foo'), ('foobar'), ('Serg'), ('Sergei'),('Georg'), ('Patrik'),('Hakan');
-create table t2 (a int);
-insert into t2 values (1),(3),(2),(7);
-select a,b from t1 where match(b) against ('Ball') > 0;
-a	b
-1	ball
-2	ball games
-select a from t2 where a in (select a from t1 where match(b) against ('Ball') > 0);
-a
-1
-2
 drop table t1,t2;
 CREATE TABLE t1(`IZAVORGANG_ID` VARCHAR(11) CHARACTER SET latin1 COLLATE latin1_bin,`KUERZEL` VARCHAR(10) CHARACTER SET latin1 COLLATE latin1_bin,`IZAANALYSEART_ID` VARCHAR(11) CHARACTER SET latin1 COLLATE latin1_bin,`IZAPMKZ_ID` VARCHAR(11) CHARACTER SET latin1 COLLATE latin1_bin);
 CREATE INDEX AK01IZAVORGANG ON t1(izaAnalyseart_id,Kuerzel);
@@ -2394,25 +1991,11 @@ drop tables t1,t2;
 create table t1 (a int not null, b int not null, c int, primary key (a,b));
 insert into t1 values (1,1,1), (2,2,2), (3,3,3);
 set @b:= 0;
-explain select sum(a) from t1 where b > @b;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	NULL	PRIMARY	8	NULL	3	33.33	Using where; Using index
-Warnings:
-Note	1003	/* select#1 */ select sum(`test`.`t1`.`a`) AS `sum(a)` from `test`.`t1` where (`test`.`t1`.`b` > (@`b`))
 set @a:= (select sum(a) from t1 where b > @b);
-explain select a from t1 where c=2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where (`test`.`t1`.`c` = 2)
 do @a:= (select sum(a) from t1 where b > @b);
-explain select a from t1 where c=2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where (`test`.`t1`.`c` = 2)
 drop table t1;
 set @got_val= (SELECT 1 FROM (SELECT 'A' as my_col) as T1 ) ;
+SET default_storage_engine = SequoiaDB;
 create table t1 (a int, b int);
 create table t2 (a int, b int);
 insert into t1 values (1,1),(1,2),(1,3),(2,4),(2,5);
@@ -2425,18 +2008,11 @@ a	b	(select max(b) from t2 where t1.b=t2.a)
 2	4	NULL
 2	5	NULL
 drop table t1, t2;
-create table t1 (id int);
-create table t2 (id int, body text, fulltext (body));
-insert into t1 values(1),(2),(3);
-insert into t2 values (1,'test'), (2,'mysql'), (3,'test'), (4,'test');
-select count(distinct id) from t1 where id in (select id from t2 where match(body) against ('mysql' in boolean mode));
-count(distinct id)
-1
-drop table t2,t1;
 create table t1 (s1 int,s2 int);
 insert into t1 values (20,15);
 select * from t1 where  (('a',null) <=> (select 'a',s2 from t1 where s1 = 0));
 s1	s2
+20	15
 drop table t1;
 create table t1 (s1 int);
 insert into t1 values (1),(null);
@@ -2463,12 +2039,14 @@ GovernmentForm char(45) NOT NULL default '',
 HeadOfState char(60) default NULL,
 Capital int(11) default NULL,
 Code2 char(2) NOT NULL default ''
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ('XXX','Xxxxx','Oceania','Xxxxxx',26.00,0,0,0,0,0,'Xxxxx','Xxxxx','Xxxxx',NULL,'XX');
 INSERT INTO t1 VALUES ('ASM','American Samoa','Oceania','Polynesia',199.00,0,68000,75.1,334.00,NULL,'Amerika Samoa','US Territory','George W. Bush',54,'AS');
 INSERT INTO t1 VALUES ('ATF','French Southern territories','Antarctica','Antarctica',7780.00,0,0,NULL,0.00,NULL,'Terres australes françaises','Nonmetropolitan Territory of France','Jacques Chirac',NULL,'TF');
 INSERT INTO t1 VALUES ('UMI','United States Minor Outlying Islands','Oceania','Micronesia/Caribbean',16.00,0,0,NULL,0.00,NULL,'United States Minor Outlying Islands','Dependent Territory of the US','George W. Bush',NULL,'UM');
 /*!40000 ALTER TABLE t1 ENABLE KEYS */;
+Warnings:
+Note	1031	Table storage engine for 't1' doesn't have this option
 SELECT DISTINCT Continent AS c FROM t1 outr WHERE
 Code <> SOME ( SELECT Code FROM t1 WHERE Continent = outr.Continent AND
 Population < 200);
@@ -2805,17 +2383,6 @@ create table t1(a int, primary key (a));
 insert into t1 values (10);
 create table t2 (a int primary key, b varchar(32), c int, unique key b(c, b));
 insert into t2(a, c, b) values (1,10,'359'), (2,10,'35988'), (3,10,'35989');
-explain SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
-ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
-             ORDER BY t2.c DESC, t2.b DESC LIMIT 1) WHERE t1.a = 10;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	system	PRIMARY	NULL	NULL	NULL	1	100.00	NULL
-1	PRIMARY	r	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	range	b	b	40	NULL	2	100.00	Using index condition
-Warnings:
-Warning	1681	'SQL_NO_CACHE' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select sql_no_cache '10' AS `a`,'3' AS `a`,'35989' AS `b` from `test`.`t2` `r` where 1
 SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
 ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
             ORDER BY t2.c DESC, t2.b DESC LIMIT 1) WHERE t1.a = 10;
@@ -2823,17 +2390,6 @@ a	a	b
 10	3	35989
 Warnings:
 Warning	1681	'SQL_NO_CACHE' is deprecated and will be removed in a future release.
-explain SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
-ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
-            ORDER BY t2.c, t2.b LIMIT 1) WHERE t1.a = 10;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	system	PRIMARY	NULL	NULL	NULL	1	100.00	NULL
-1	PRIMARY	r	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	range	b	b	40	NULL	2	100.00	Using index condition
-Warnings:
-Warning	1681	'SQL_NO_CACHE' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select sql_no_cache '10' AS `a`,'1' AS `a`,'359' AS `b` from `test`.`t2` `r` where 1
 SELECT sql_no_cache t1.a, r.a, r.b FROM t1 LEFT JOIN t2 r
 ON r.a = (SELECT t2.a FROM t2 WHERE t2.c = t1.a AND t2.b <= '359899'
             ORDER BY t2.c, t2.b LIMIT 1) WHERE t1.a = 10;
@@ -2883,12 +2439,6 @@ INSERT INTO t1 VALUES (1), (3), (5), (7);
 INSERT INTO t1 VALUES (NULL);
 CREATE TABLE t2(a int);
 INSERT INTO t2 VALUES (1),(2),(3);
-EXPLAIN SELECT a, a IN (SELECT a FROM t1) FROM t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	index_subquery	a	a	5	func	4	100.00	Using index; Full scan on NULL key
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,<in_optimizer>(`test`.`t2`.`a`,<exists>(<index_lookup>(<cache>(`test`.`t2`.`a`) in t1 on a checking NULL having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`a`), true)))) AS `a IN (SELECT a FROM t1)` from `test`.`t2`
 SELECT a, a IN (SELECT a FROM t1) FROM t2;
 a	a IN (SELECT a FROM t1)
 1	1
@@ -2904,13 +2454,13 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `sub_a` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 CREATE TABLE t3 AS (SELECT a FROM t1 WHERE a < '2000-01-01') UNION (SELECT a FROM t1 WHERE a > '2000-01-01');
 SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `a` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
 DROP TABLE t1,t2,t3;
 CREATE TABLE t1 (a int);
 INSERT INTO t1 VALUES (1), (2);
@@ -2920,12 +2470,6 @@ SELECT a FROM t1 WHERE (SELECT 1 FROM DUAL WHERE 1=0) IS NULL;
 a
 1
 2
-EXPLAIN SELECT a FROM t1 WHERE (SELECT 1 FROM DUAL WHERE 1=0) IS NULL;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where isnull((/* select#2 */ select 1 from DUAL  where 0))
 DROP TABLE t1;
 CREATE TABLE t1 (a int);
 INSERT INTO t1 VALUES (2), (4), (1), (3);
@@ -3390,19 +2934,6 @@ t datetime default NULL,
 PRIMARY KEY  (i1)
 );
 INSERT INTO t2 VALUES (24,1,'2006-06-20 12:29:40');
-EXPLAIN
-SELECT * FROM t1,t2
-WHERE t1.t = (SELECT t1.t FROM t1
-WHERE t1.t < t2.t  AND t1.i2=1 AND t2.i1=t1.i1
-ORDER BY t1.t DESC LIMIT 1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-1	PRIMARY	t1	NULL	index	NULL	PRIMARY	13	NULL	11	100.00	Using where; Using index
-2	DEPENDENT SUBQUERY	t1	NULL	range	PRIMARY	PRIMARY	13	NULL	5	100.00	Using where; Using index
-Warnings:
-Note	1276	Field or reference 'test.t2.t' of SELECT #2 was resolved in SELECT #1
-Note	1276	Field or reference 'test.t2.i1' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`i1` AS `i1`,`test`.`t1`.`i2` AS `i2`,`test`.`t1`.`t` AS `t`,'24' AS `i1`,'1' AS `i2`,'2006-06-20 12:29:40' AS `t` from `test`.`t1` where (`test`.`t1`.`t` = (/* select#2 */ select `test`.`t1`.`t` from `test`.`t1` where ((`test`.`t1`.`i1` = '24') and (`test`.`t1`.`i2` = 1) and (`test`.`t1`.`t` < '2006-06-20 12:29:40')) order by `test`.`t1`.`t` desc limit 1))
 SELECT * FROM t1,t2
 WHERE t1.t = (SELECT t1.t FROM t1
 WHERE t1.t < t2.t  AND t1.i2=1 AND t2.i1=t1.i1
@@ -3424,19 +2955,6 @@ Warning	1681	'SQL_NO_CACHE' is deprecated and will be removed in a future releas
 SELECT * FROM t1
 WHERE NOT EXISTS (((SELECT i FROM t1) UNION (SELECT i FROM t1)));
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'UNION (SELECT i FROM t1)))' at line 2
-explain select ((select t11.i from t1 t11) union (select t12.i from t1 t12))
-from t1;
-ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'union (select t12.i from t1 t12))
-from t1' at line 1
-explain select * from t1 where not exists
-((select t11.i from t1 t11) union (select t12.i from t1 t12));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-3	UNION	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-NULL	UNION RESULT	<union2,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Note	1003	/* select#1 */ select NULL AS `i` from `test`.`t1` where 1
 DROP TABLE t1;
 CREATE TABLE t1 (a VARCHAR(250), b INT auto_increment, PRIMARY KEY (b));
 insert into t1 (a) values (FLOOR(rand() * 100));
@@ -3900,12 +3418,6 @@ ERROR 42S22: Unknown column 'XXA' in 'having clause'
 DROP TABLE t1,t2;
 CREATE TABLE t1 (a int, b int, KEY (a));
 INSERT INTO t1 VALUES (1,1),(2,1);
-EXPLAIN SELECT 1 FROM t1 WHERE a = (SELECT COUNT(*) FROM t1 GROUP BY b);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ref	a	a	5	const	1	100.00	Using where; Using index
-2	SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
-Warnings:
-Note	1003	/* select#1 */ select 1 AS `1` from `test`.`t1` where (`test`.`t1`.`a` = (/* select#2 */ select count(0) from `test`.`t1` group by `test`.`t1`.`b`))
 DROP TABLE t1;
 CREATE TABLE t1 (id int NOT NULL, st CHAR(2), UNIQUE INDEX idx(id));
 INSERT INTO t1 VALUES
@@ -3939,14 +3451,6 @@ id	st
 DROP TABLE t1,t2;
 CREATE TABLE t1 (a int);
 INSERT INTO t1 VALUES (1), (2);
-EXPLAIN EXTENDED
-SELECT * FROM (SELECT count(*) FROM t1 GROUP BY a) as res;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	<derived2>	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DERIVED	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `res`.`count(*)` AS `count(*)` from (/* select#2 */ select count(0) AS `count(*)` from `test`.`t1` group by `test`.`t1`.`a`) `res`
 DROP TABLE t1;
 CREATE TABLE t1 (
 a varchar(255) default NULL,
@@ -4026,8 +3530,6 @@ SELECT s1, s2 FROM t1 WHERE s2 IN (SELECT s1 FROM t1);
 s1	s2
 SELECT s1, s2 FROM t1 WHERE (s2, 10) IN (SELECT s1, 10 FROM t1);
 s1	s2
-CREATE INDEX I1 ON t1 (s1);
-CREATE INDEX I2 ON t1 (s2);
 SELECT s1, s2 FROM t1 WHERE s2 IN (SELECT s1 FROM t1);
 s1	s2
 SELECT s1, s2 FROM t1 WHERE (s2, 10) IN (SELECT s1, 10 FROM t1);
@@ -4037,8 +3539,8 @@ INSERT INTO t1 VALUES (0x41,0x41);
 SELECT * FROM t1 WHERE s1 = (SELECT s2 FROM t1);
 s1	s2
 DROP TABLE t1;
-CREATE TABLE t1 (a1 VARBINARY(2) NOT NULL DEFAULT '0', PRIMARY KEY (a1));
-CREATE TABLE t2 (a2 BINARY(2) default '0', INDEX (a2));
+CREATE TABLE t1 (a1 VARBINARY(2) NOT NULL DEFAULT '0');
+CREATE TABLE t2 (a2 BINARY(2) default '0');
 CREATE TABLE t3 (a3 BINARY(2) default '0');
 INSERT INTO t1 VALUES (1),(2),(3),(4);
 INSERT INTO t2 VALUES (1),(2),(3);
@@ -4055,9 +3557,9 @@ a1	t1.a1 in (SELECT t2.a2 FROM t2,t3 WHERE t3.a3=t2.a2)
 3	0
 4	0
 DROP TABLE t1,t2,t3;
-CREATE TABLE t1 (a1 BINARY(3) PRIMARY KEY, b1 VARBINARY(3));
-CREATE TABLE t2 (a2 VARBINARY(3) PRIMARY KEY);
-CREATE TABLE t3 (a3 VARBINARY(3) PRIMARY KEY);
+CREATE TABLE t1 (a1 BINARY(3) , b1 VARBINARY(3));
+CREATE TABLE t2 (a2 VARBINARY(3));
+CREATE TABLE t3 (a3 VARBINARY(3));
 INSERT INTO t1 VALUES (1,10), (2,20), (3,30), (4,40);
 INSERT INTO t2 VALUES (2), (3), (4), (5);
 INSERT INTO t3 VALUES (10), (20), (30);
@@ -4071,25 +3573,10 @@ a2
 DROP TABLE t1, t2, t3;
 CREATE TABLE t1(a INT, b INT);
 INSERT INTO t1 VALUES (1,1), (1,2), (2,3), (2,4);
-EXPLAIN
 SELECT a AS out_a, MIN(b) FROM t1
 WHERE b > (SELECT MIN(b) FROM t1 WHERE a = out_a)
 GROUP BY a;
 ERROR 42S22: Unknown column 'out_a' in 'where clause'
-SELECT a AS out_a, MIN(b) FROM t1
-WHERE b > (SELECT MIN(b) FROM t1 WHERE a = out_a)
-GROUP BY a;
-ERROR 42S22: Unknown column 'out_a' in 'where clause'
-EXPLAIN
-SELECT a AS out_a, MIN(b) FROM t1 t1_outer
-WHERE b > (SELECT MIN(b) FROM t1 WHERE a = t1_outer.a)
-GROUP BY a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1_outer	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using where; Using temporary; Using filesort
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	25.00	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1_outer.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1_outer`.`a` AS `out_a`,min(`test`.`t1_outer`.`b`) AS `MIN(b)` from `test`.`t1` `t1_outer` where (`test`.`t1_outer`.`b` > (/* select#2 */ select min(`test`.`t1`.`b`) from `test`.`t1` where (`test`.`t1`.`a` = `test`.`t1_outer`.`a`))) group by `test`.`t1_outer`.`a`
 SELECT a AS out_a, MIN(b) FROM t1 t1_outer
 WHERE b > (SELECT MIN(b) FROM t1 WHERE a = t1_outer.a)
 GROUP BY a;
@@ -4105,28 +3592,6 @@ SELECT 2 FROM t1 WHERE EXISTS ((SELECT 1 FROM t2 WHERE t1.a=t2.a));
 2
 2
 2
-EXPLAIN EXTENDED
-SELECT 2 FROM t1 WHERE EXISTS ((SELECT 1 FROM t2 WHERE t1.a=t2.a));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select 2 AS `2` from `test`.`t1` where exists(/* select#2 */ select 1 from `test`.`t2` where (`test`.`t1`.`a` = `test`.`t2`.`a`))
-EXPLAIN EXTENDED
-SELECT 2 FROM t1 WHERE EXISTS ((SELECT 1 FROM t2 WHERE t1.a=t2.a) UNION
-(SELECT 1 FROM t2 WHERE t1.a = t2.a));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-3	DEPENDENT UNION	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-NULL	UNION RESULT	<union2,3>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	Using temporary
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #1
-Note	1003	/* select#1 */ select 2 AS `2` from `test`.`t1` where exists((/* select#2 */ select 1 from `test`.`t2` where (`test`.`t1`.`a` = `test`.`t2`.`a`)) union (/* select#3 */ select 1 from `test`.`t2` where (`test`.`t1`.`a` = `test`.`t2`.`a`)))
 DROP TABLE t1,t2;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 Warnings:
@@ -4216,9 +3681,6 @@ int_nokey	int_key
 0	0
 5	5
 0	0
-EXPLAIN EXTENDED SELECT * FROM C WHERE `int_key` IN (SELECT `int_nokey`);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	C	NULL	ALL	NULL	NULL	NULL	NULL	20	100.00	Using where
 DROP TABLE C;
 # End of test for bug#45061.
 #
@@ -4235,16 +3697,6 @@ CREATE TABLE st1 like t1;
 INSERT INTO st1 VALUES (1,1), (2,1);
 CREATE TABLE st2 like t1;
 INSERT INTO st2 VALUES (1,1), (2,1);
-EXPLAIN
-SELECT MAX(b), (SELECT COUNT(*) FROM st1,st2 WHERE st2.b <= t1.b)
-FROM t1 
-WHERE a = 230;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Note	1276	Field or reference 'test.t1.b' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select max(NULL) AS `MAX(b)`,(/* select#2 */ select count(0) from `test`.`st1` join `test`.`st2` where (`test`.`st2`.`b` <= NULL)) AS `(SELECT COUNT(*) FROM st1,st2 WHERE st2.b <= t1.b)` from `test`.`t1` where multiple equal(230, NULL)
 SELECT MAX(b), (SELECT COUNT(*) FROM st1,st2 WHERE st2.b <= t1.b)
 FROM t1 
 WHERE a = 230;
@@ -4259,17 +3711,6 @@ CREATE TABLE t1 (pk int PRIMARY KEY, int_key int);
 INSERT INTO t1 VALUES (10,1), (14,1);
 CREATE TABLE t2 (pk int PRIMARY KEY, int_key int);
 INSERT INTO t2 VALUES (3,3), (5,NULL), (7,3);
-# should have eq_ref for t1, unless subquery materialization is used
-EXPLAIN
-SELECT * FROM t2 outr
-WHERE outr.int_key NOT IN (SELECT t1.pk FROM t1, t2)  
-ORDER BY outr.pk;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-x	x	outr	NULL	ALL	x	x	x	x	x	100.00	x
-x	x	t1	NULL	eq_ref	x	x	x	x	x	100.00	x
-x	x	t2	NULL	index	x	x	x	x	x	100.00	x
-Warnings:
-x	x	/* select#1 */ select `test`.`outr`.`pk` AS `pk`,`test`.`outr`.`int_key` AS `int_key` from `test`.`t2` `outr` where (not(<in_optimizer>(`test`.`outr`.`int_key`,<exists>(/* select#2 */ select 1 from `test`.`t1` join `test`.`t2` where <if>(outer_field_is_not_null, (<cache>(`test`.`outr`.`int_key`) = `test`.`t1`.`pk`), true))))) order by `test`.`outr`.`pk`
 # should not crash on debug binaries
 SELECT * FROM t2 outr
 WHERE outr.int_key NOT IN (SELECT t1.pk FROM t1, t2)  
@@ -4301,26 +3742,6 @@ a	oref	Z
 3	3	NULL
 NULL	4	0
 NULL	2	NULL
-explain extended
-select a, oref, a in (select max(ie) 
-from t1 where oref=t2.oref group by grp) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where; Using temporary; Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`oref` AS `oref`,<in_optimizer>(`test`.`t2`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` where (`test`.`t1`.`oref` = `test`.`t2`.`oref`) group by `test`.`t1`.`grp` having <if>(outer_field_is_not_null, (<cache>(`test`.`t2`.`a`) = <ref_null_helper>(max(`test`.`t1`.`ie`))), true))) AS `z` from `test`.`t2`
-explain extended
-select a, oref from t2 
-where a in (select max(ie) from t1 where oref=t2.oref group by grp);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	Using where
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where; Using temporary; Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`oref` AS `oref` from `test`.`t2` where <in_optimizer>(`test`.`t2`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` where (`test`.`t1`.`oref` = `test`.`t2`.`oref`) group by `test`.`t1`.`grp` having (<cache>(`test`.`t2`.`a`) = <ref_null_helper>(max(`test`.`t1`.`ie`)))))
 select a, oref, a in (
 select max(ie) from t1 where oref=t2.oref group by grp union
 select max(ie) from t1 where oref=t2.oref group by grp
@@ -4338,19 +3759,9 @@ select a in (select max(ie) from t1 where oref=4 group by grp) from t3;
 a in (select max(ie) from t1 where oref=4 group by grp)
 0
 0
-show status like 'Handler_read_rnd_next';
-Variable_name	Value
-Handler_read_rnd_next	11
 select ' ^ This must show 11' Z;
 Z
  ^ This must show 11
-explain extended select a in (select max(ie) from t1 where oref=4 group by grp) from t3;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where; Using temporary; Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select <in_optimizer>(`test`.`t3`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` where (`test`.`t1`.`oref` = 4) group by `test`.`t1`.`grp` having <if>(outer_field_is_not_null, (<cache>(`test`.`t3`.`a`) = <ref_null_helper>(max(`test`.`t1`.`ie`))), true))) AS `a in (select max(ie) from t1 where oref=4 group by grp)` from `test`.`t3`
 drop table t1, t2, t3;
 create table t1 (a int, oref int, key(a));
 insert into t1 values 
@@ -4367,22 +3778,10 @@ oref	a	Z
 2	2	0
 3	NULL	NULL
 4	NULL	0
-explain extended 
-select oref, a, a in (select a from t1 where oref=t2.oref) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	index_subquery	a	a	5	func	4	20.00	Using where; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,<in_optimizer>(`test`.`t2`.`a`,<exists>(<index_lookup>(<cache>(`test`.`t2`.`a`) in t1 on a checking NULL where (`test`.`t1`.`oref` = `test`.`t2`.`oref`) having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`a`), true)))) AS `z` from `test`.`t2`
 flush status;
 select oref, a from t2 where a in (select a from t1 where oref=t2.oref);
 oref	a
 1	1
-show status like '%Handler_read_rnd_next';
-Variable_name	Value
-Handler_read_rnd_next	5
 delete from t2;
 insert into t2 values (NULL, 0),(NULL, 0), (NULL, 0), (NULL, 0);
 flush status;
@@ -4431,18 +3830,6 @@ a	oref	Z
 1	1	1
 NULL	1	NULL
 NULL	0	0
-explain extended
-select a, oref, 
-t3.a in (select t1.a from t1, t2 where t1.b=t2.a and t2.b=t3.oref) z 
-from t3;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	a	NULL	NULL	NULL	10	10.00	Using where
-2	DEPENDENT SUBQUERY	t1	NULL	ref_or_null	a	a	5	func	4	10.00	Using where; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t3.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a`,`test`.`t3`.`oref` AS `oref`,<in_optimizer>(`test`.`t3`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` join `test`.`t2` where ((`test`.`t1`.`b` = `test`.`t2`.`a`) and (`test`.`t2`.`b` = `test`.`t3`.`oref`) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t3`.`a`) = `test`.`t1`.`a`) or isnull(`test`.`t1`.`a`)), true)) having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`a`), true))) AS `z` from `test`.`t3`
 drop table t1, t2, t3;
 create table t1 (a int NOT NULL, b int NOT NULL, key(a));
 insert into t1 values 
@@ -4460,18 +3847,6 @@ a	oref	Z
 NULL	1	NULL
 NULL	0	0
 This must show a trig_cond:
-explain extended
-select a, oref, 
-t3.a in (select t1.a from t1, t2 where t1.b=t2.a and t2.b=t3.oref) z 
-from t3;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ref	a	a	4	func	2	100.00	Using where; Full scan on NULL key
-2	DEPENDENT SUBQUERY	t2	NULL	ref	a	a	4	test.t1.b	1	10.00	Using where; Using join buffer (Batched Key Access)
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t3.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t3`.`a` AS `a`,`test`.`t3`.`oref` AS `oref`,<in_optimizer>(`test`.`t3`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`a` = `test`.`t1`.`b`) and (`test`.`t2`.`b` = `test`.`t3`.`oref`) and <if>(outer_field_is_not_null, (<cache>(`test`.`t3`.`a`) = `test`.`t1`.`a`), true)))) AS `z` from `test`.`t3`
 drop table t1,t2,t3;
 create table t1 (oref int, grp int);
 insert into t1 (oref, grp) values
@@ -4487,16 +3862,6 @@ a	oref	Z
 NULL	1	NULL
 NULL	2	0
 This must show a trig_cond:
-explain extended
-select a, oref, 
-a in (select count(*) from t1 group by grp having grp=t2.oref) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using temporary; Using filesort
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 't2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`oref` AS `oref`,<in_optimizer>(`test`.`t2`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` group by `test`.`t1`.`grp` having ((`test`.`t1`.`grp` = `test`.`t2`.`oref`) and <if>(outer_field_is_not_null, (<cache>(`test`.`t2`.`a`) = <ref_null_helper>(count(0))), true)))) AS `z` from `test`.`t2`
 drop table t1, t2;
 create table t1 (a int, b int, primary key (a));
 insert into t1 values (1,1), (3,1),(100,1);
@@ -4522,32 +3887,12 @@ create table t2 (a int, b int, oref int);
 insert into t2 values (NULL,1, 100), (NULL,2, 100);
 create table t1 (a int, b int, c int, key(a,b));
 insert into t1 select 2*A, 2*A, 100 from t3;
-explain extended select a,b, oref, (a,b) in (select a,b from t1 where c=t2.oref) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	index_subquery	a	a	5	func	2	10.00	Using where; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b`,`test`.`t2`.`oref` AS `oref`,<in_optimizer>((`test`.`t2`.`a`,`test`.`t2`.`b`),<exists>(<index_lookup>(<cache>(`test`.`t2`.`a`) in t1 on a checking NULL where ((`test`.`t1`.`c` = `test`.`t2`.`oref`) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`a`) = `test`.`t1`.`a`) or isnull(`test`.`t1`.`a`)), true) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`b`) = `test`.`t1`.`b`) or isnull(`test`.`t1`.`b`)), true)) having (<if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`a`), true) and <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`b`), true))))) AS `z` from `test`.`t2`
 select a,b, oref, (a,b) in (select a,b from t1 where c=t2.oref) z from t2;
 a	b	oref	z
 NULL	1	100	0
 NULL	2	100	NULL
 create table t4 (x int);
 insert into t4 select A.a + 10*B.a from t1 A, t1 B;
-explain extended 
-select a,b, oref, 
-(a,b) in (select a,b from t1,t4 where c=t2.oref) z 
-from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ref_or_null	a	a	5	func	2	10.00	Using where; Full scan on NULL key
-2	DEPENDENT SUBQUERY	t4	NULL	ALL	NULL	NULL	NULL	NULL	100	100.00	Using join buffer (Block Nested Loop)
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b`,`test`.`t2`.`oref` AS `oref`,<in_optimizer>((`test`.`t2`.`a`,`test`.`t2`.`b`),<exists>(/* select#2 */ select 1,1 from `test`.`t1` join `test`.`t4` where ((`test`.`t1`.`c` = `test`.`t2`.`oref`) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`a`) = `test`.`t1`.`a`) or isnull(`test`.`t1`.`a`)), true) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`b`) = `test`.`t1`.`b`) or isnull(`test`.`t1`.`b`)), true)) having (<if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`a`), true) and <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`b`), true)))) AS `z` from `test`.`t2`
 select a,b, oref, 
 (a,b) in (select a,b from t1,t4 where c=t2.oref) z 
 from t2;
@@ -4585,15 +3930,6 @@ insert into t1 values ('new1', 1234, 10, NULL);
 select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) Z from t2 where a=10 and b=10;
 oref	a	b	Z
 new1	10	10	NULL
-explain extended
-select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2 where a=10 and b=10;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	8	12.50	Using where
-2	DEPENDENT SUBQUERY	t1	NULL	index_subquery	idx	idx	5	func	4	10.00	Using where; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b`,<in_optimizer>((`test`.`t2`.`a`,`test`.`t2`.`b`),<exists>(<index_lookup>(<cache>(`test`.`t2`.`a`) in t1 on idx checking NULL where ((`test`.`t1`.`oref` = `test`.`t2`.`oref`) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`a`) = `test`.`t1`.`ie1`) or isnull(`test`.`t1`.`ie1`)), true) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`b`) = `test`.`t1`.`ie2`) or isnull(`test`.`t1`.`ie2`)), true)) having (<if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`ie1`), true) and <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`ie2`), true))))) AS `z` from `test`.`t2` where ((`test`.`t2`.`b` = 10) and (`test`.`t2`.`a` = 10))
 drop table t1, t2;
 create table t1 (oref char(4), grp int, ie int);
 insert into t1 (oref, grp, ie) values
@@ -4696,13 +4032,6 @@ cc	3
 aa	1
 dd	NULL
 alter table t1 add index idx(ie);
-explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	7	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	index_subquery	idx	idx	5	func	4	10.00	Using where; Full scan on NULL key
-Warnings:
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,<in_optimizer>(`test`.`t2`.`a`,<exists>(<index_lookup>(<cache>(`test`.`t2`.`a`) in t1 on idx checking NULL where (`test`.`t1`.`oref` = `test`.`t2`.`oref`) having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`ie`), true)))) AS `z` from `test`.`t2`
 select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
 oref	a	z
 ee	NULL	NULL
@@ -4722,13 +4051,6 @@ bb	2
 dd	NULL
 alter table t1 drop index idx;
 alter table t1 add index idx(oref,ie);
-explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	7	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ref_or_null	idx	idx	10	test.t2.oref,func	4	100.00	Using where; Using index; Full scan on NULL key
-Warnings:
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,<in_optimizer>(`test`.`t2`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` where ((`test`.`t1`.`oref` = `test`.`t2`.`oref`) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`a`) = `test`.`t1`.`ie`) or isnull(`test`.`t1`.`ie`)), true)) having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`ie`), true))) AS `z` from `test`.`t2`
 select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
 oref	a	z
 ee	NULL	NULL
@@ -4740,23 +4062,12 @@ dd	NULL	0
 bb	NULL	NULL
 select oref, a from t2 where a in (select ie from t1 where oref=t2.oref);
 oref	a
-ff	2
 aa	1
+ff	2
 select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
 oref	a
 bb	2
 dd	NULL
-explain 
-select oref, a, 
-a in (select min(ie) from t1 where oref=t2.oref 
-group by grp having min(ie) > 1) z 
-from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	7	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ref	idx	idx	5	test.t2.oref	2	100.00	Using index condition; Using temporary; Using filesort
-Warnings:
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,<in_optimizer>(`test`.`t2`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` where (`test`.`t1`.`oref` = `test`.`t2`.`oref`) group by `test`.`t1`.`grp` having ((min(`test`.`t1`.`ie`) > 1) and <if>(outer_field_is_not_null, (<cache>(`test`.`t2`.`a`) = <ref_null_helper>(min(`test`.`t1`.`ie`))), true)))) AS `z` from `test`.`t2`
 select oref, a, 
 a in (select min(ie) from t1 where oref=t2.oref 
 group by grp having min(ie) > 1) z 
@@ -4844,13 +4155,6 @@ bb	2	1
 ff	2	2
 dd	1	NULL
 alter table t1 add index idx(ie1,ie2);
-explain select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	7	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	index_subquery	idx	idx	5	func	4	10.00	Using where; Full scan on NULL key
-Warnings:
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b`,<in_optimizer>((`test`.`t2`.`a`,`test`.`t2`.`b`),<exists>(<index_lookup>(<cache>(`test`.`t2`.`a`) in t1 on idx checking NULL where ((`test`.`t1`.`oref` = `test`.`t2`.`oref`) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`a`) = `test`.`t1`.`ie1`) or isnull(`test`.`t1`.`ie1`)), true) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`b`) = `test`.`t1`.`ie2`) or isnull(`test`.`t1`.`ie2`)), true)) having (<if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`ie1`), true) and <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`ie2`), true))))) AS `z` from `test`.`t2`
 select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2;
 oref	a	b	z
 ee	NULL	1	NULL
@@ -4868,15 +4172,6 @@ select oref, a, b from t2 where (a,b) not in (select ie1,ie2 from t1 where oref=
 oref	a	b
 bb	2	1
 dd	1	NULL
-explain extended 
-select oref, a, b, (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	7	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	index_subquery	idx	idx	5	func	4	10.00	Using where; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,`test`.`t2`.`b` AS `b`,<in_optimizer>((`test`.`t2`.`a`,`test`.`t2`.`b`),<exists>(<index_lookup>(<cache>(`test`.`t2`.`a`) in t1 on idx checking NULL where ((`test`.`t1`.`oref` = `test`.`t2`.`oref`) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`a`) = `test`.`t1`.`ie1`) or isnull(`test`.`t1`.`ie1`)), true) and <if>(outer_field_is_not_null, ((<cache>(`test`.`t2`.`b`) = `test`.`t1`.`ie2`) or isnull(`test`.`t1`.`ie2`)), true)) having (<if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`ie1`), true) and <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t1`.`ie2`), true))))) AS `z` from `test`.`t2`
 drop table t1,t2;
 create table t1 (oref char(4), grp int, ie int primary key);
 insert into t1 (oref, grp, ie) values
@@ -4895,13 +4190,6 @@ insert into t2 values
 ('cc', NULL),
 ('aa', 1),
 ('bb', NULL);
-explain select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	7	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	unique_subquery	PRIMARY	PRIMARY	4	func	1	16.67	Using where; Full scan on NULL key
-Warnings:
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,<in_optimizer>(`test`.`t2`.`a`,<exists>(<primary_index_lookup>(<cache>(`test`.`t2`.`a`) in t1 on PRIMARY where ((`test`.`t1`.`oref` = `test`.`t2`.`oref`) and <if>(outer_field_is_not_null, (<cache>(`test`.`t2`.`a`) = `test`.`t1`.`ie`), true))))) AS `z` from `test`.`t2`
 select oref, a, a in (select ie from t1 where oref=t2.oref) z from t2;
 oref	a	z
 ee	NULL	0
@@ -4920,14 +4208,6 @@ oref	a
 ee	NULL
 bb	2
 cc	2
-explain 
-select oref, a, a in (select min(ie) from t1 where oref=t2.oref group by grp) z from t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	7	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	6	16.67	Using where; Using temporary; Using filesort
-Warnings:
-Note	1276	Field or reference 'test.t2.oref' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`oref` AS `oref`,`test`.`t2`.`a` AS `a`,<in_optimizer>(`test`.`t2`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` where (`test`.`t1`.`oref` = `test`.`t2`.`oref`) group by `test`.`t1`.`grp` having <if>(outer_field_is_not_null, (<cache>(`test`.`t2`.`a`) = <ref_null_helper>(min(`test`.`t1`.`ie`))), true))) AS `z` from `test`.`t2`
 select oref, a, a in (select min(ie) from t1 where oref=t2.oref group by grp) z from t2;
 oref	a	z
 ee	NULL	0
@@ -5005,15 +4285,6 @@ CREATE TABLE t1 (a int);
 CREATE TABLE t2 (b int, PRIMARY KEY(b));
 INSERT INTO t1 VALUES (1), (NULL), (4);
 INSERT INTO t2 VALUES (3), (1),(2), (5), (4), (7), (6);
-EXPLAIN EXTENDED 
-SELECT a FROM t1, t2 WHERE a=b AND (b NOT IN (SELECT a FROM t1));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	100.00	Using where
-1	PRIMARY	t2	NULL	eq_ref	PRIMARY	PRIMARY	4	test.t1.a	1	100.00	Using index
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	55.56	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`b` = `test`.`t1`.`a`) and (not(<in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select 1 from `test`.`t1` where ((<cache>(`test`.`t2`.`b`) = `test`.`t1`.`a`) or isnull(`test`.`t1`.`a`)) having <is_not_null_test>(`test`.`t1`.`a`))))))
 SELECT a FROM t1, t2 WHERE a=b AND (b NOT IN (SELECT a FROM t1));
 a
 SELECT a FROM t1, t2 WHERE a=b AND (b NOT IN (SELECT a FROM t1 WHERE a > 4));
@@ -5027,16 +4298,6 @@ CREATE TABLE t3 (id int PRIMARY KEY, name varchar(10));
 INSERT INTO t1 VALUES (2), (NULL), (3), (1);
 INSERT INTO t2 VALUES (234), (345), (457);
 INSERT INTO t3 VALUES (222,'bbb'), (333,'ccc'), (111,'aaa');
-EXPLAIN
-SELECT * FROM t1
-WHERE t1.id NOT IN (SELECT t2.id FROM t2,t3 
-WHERE t3.name='xxx' AND t2.id=t3.id);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using where
-2	DEPENDENT SUBQUERY	t2	NULL	eq_ref	PRIMARY	PRIMARY	4	func	1	100.00	Using where; Using index; Full scan on NULL key
-2	DEPENDENT SUBQUERY	t3	NULL	eq_ref	PRIMARY	PRIMARY	4	func	1	33.33	Using where; Full scan on NULL key
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`id` AS `id` from `test`.`t1` where (not(<in_optimizer>(`test`.`t1`.`id`,<exists>(/* select#2 */ select 1 from `test`.`t2` join `test`.`t3` where ((`test`.`t3`.`id` = `test`.`t2`.`id`) and (`test`.`t3`.`name` = 'xxx') and <if>(outer_field_is_not_null, (<cache>(`test`.`t1`.`id`) = `test`.`t2`.`id`), true))))))
 SELECT * FROM t1
 WHERE t1.id NOT IN (SELECT t2.id FROM t2,t3 
 WHERE t3.name='xxx' AND t2.id=t3.id);
@@ -5066,12 +4327,6 @@ SELECT a FROM t1 WHERE a NOT IN (SELECT a FROM t2);
 a
 1
 -1
-EXPLAIN SELECT a FROM t1 WHERE a NOT IN (SELECT a FROM t2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	Using where
-2	DEPENDENT SUBQUERY	t2	NULL	unique_subquery	PRIMARY	PRIMARY	4	func	1	100.00	Using where; Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where (not(<in_optimizer>(`test`.`t1`.`a`,<exists>(<primary_index_lookup>(<cache>(`test`.`t1`.`a`) in t2 on PRIMARY where (<cache>(`test`.`t1`.`a`) = `test`.`t2`.`a`))))))
 DROP TABLE t1, t2;
 CREATE TABLE t1 (a INT);
 INSERT INTO t1 VALUES(1);
@@ -5173,20 +4428,8 @@ ROW(1,2) = (SELECT    1,    2)	ROW(1,2) IN (SELECT    1,    2)
 1	1
 CREATE TABLE t1 (a INT, b INT, c INT);
 INSERT INTO t1 VALUES (1,1,1), (1,1,1);
-EXPLAIN EXTENDED 
-SELECT cc FROM 
-( SELECT 
-(SELECT COUNT(a) FROM 
-(SELECT COUNT(b) FROM t1) AS x GROUP BY c
-) AS cc FROM t1 GROUP BY b
-) AS y;
-ERROR 42000: Expression #1 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'test.t1.c' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
 SHOW WARNINGS;
 Level	Code	Message
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.a' of SELECT #3 was resolved in SELECT #2
-Note	1276	Field or reference 'test.t1.c' of SELECT #3 was resolved in SELECT #2
-Error	1055	Expression #1 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'test.t1.c' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by
 DROP TABLE t1;
 #
 # Bug #46791: Assertion failed:(table->key_read==0),function unknown
@@ -5198,17 +4441,6 @@ CREATE TABLE t2 LIKE t1;
 INSERT INTO t2 VALUES (1,1),(2,2);
 CREATE TABLE t3 LIKE t1;
 # should have 1 impossible where and 2 dependent subqueries
-EXPLAIN
-SELECT COUNT(*) FROM t1
-WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE 1 = (SELECT MIN(t2.b) FROM t3))
-ORDER BY COUNT(*);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	index	NULL	a	5	NULL	2	100.00	Using index
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-3	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Note	1276	Field or reference 'test.t2.b' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select count(0) AS `COUNT(*)` from `test`.`t1` where (not(exists(/* select#2 */ select 1 from `test`.`t2` where (1 = (/* select#3 */ select min(`test`.`t2`.`b`) from `test`.`t3`)))))
 # should not crash the next statement
 SELECT COUNT(*) FROM t1
 WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE 1 = (SELECT MIN(t2.b) FROM t3))
@@ -5237,17 +4469,6 @@ CREATE TABLE t3 LIKE t1;
 INSERT INTO t3 SELECT * FROM t1;
 # Should not crash.
 # Should have 1 impossible where and 2 dependent subqs.
-EXPLAIN
-SELECT
-(SELECT 1 FROM t1,t2 WHERE t2.b > t3.b)
-FROM t3 WHERE 1 = 0 GROUP BY 1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	b	NULL	NULL	NULL	2	50.00	Range checked for each record (index map: 0x2)
-2	DEPENDENT SUBQUERY	t1	NULL	index	NULL	PRIMARY	4	NULL	2	100.00	Using index; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1276	Field or reference 'test.t3.b' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select 1 from `test`.`t1` join `test`.`t2` where (`test`.`t2`.`b` > `test`.`t3`.`b`)) AS `(SELECT 1 FROM t1,t2 WHERE t2.b > t3.b)` from `test`.`t3` where 0 group by (/* select#2 */ select 1 from `test`.`t1` join `test`.`t2` where (`test`.`t2`.`b` > `test`.`t3`.`b`))
 # should return 0 rows
 SELECT
 (SELECT 1 FROM t1,t2 WHERE t2.b > t3.b)
@@ -5617,16 +4838,6 @@ KEY c (c),
 KEY b_2 (b)
 );
 INSERT INTO t3 VALUES (1,1,1), (2,32,1);
-explain
-SELECT t1.a, (SELECT 1 FROM t2 WHERE t2.b=t3.c AND t2.c=t1.a ORDER BY t2.d LIMIT 1) AS incorrect FROM t1, t3 WHERE t3.b=t1.a;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t3	NULL	index	b,b_2	b	10	NULL	2	100.00	Using where; Using index
-1	PRIMARY	t1	NULL	eq_ref	PRIMARY	PRIMARY	4	test.t3.b	1	100.00	Using index
-2	DEPENDENT SUBQUERY	t2	NULL	ref	b,b_2,c	b	10	test.t3.c,test.t1.a	2	100.00	Using where; Using index; Using filesort
-Warnings:
-Note	1276	Field or reference 'test.t3.c' of SELECT #2 was resolved in SELECT #1
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,(/* select#2 */ select 1 from `test`.`t2` where ((`test`.`t2`.`b` = `test`.`t3`.`c`) and (`test`.`t2`.`c` = `test`.`t1`.`a`)) order by `test`.`t2`.`d` limit 1) AS `incorrect` from `test`.`t1` join `test`.`t3` where (`test`.`t1`.`a` = `test`.`t3`.`b`)
 SELECT t1.a, (SELECT 1 FROM t2 WHERE t2.b=t3.c AND t2.c=t1.a ORDER BY t2.d LIMIT 1) AS incorrect FROM t1, t3 WHERE t3.b=t1.a;
 a	incorrect
 1	1
@@ -5644,8 +4855,6 @@ UPDATE v1 SET c=1;
 CREATE VIEW v2 (a,b) AS
 SELECT t2.id, t2.c AS c FROM t1, t2
 WHERE t1.id=t2.id AND 1 IN (SELECT id FROM t1) WITH CHECK OPTION;
-INSERT INTO v2(a,b) VALUES (2,2);
-ERROR HY000: CHECK OPTION failed 'test.v2'
 INSERT INTO v2(a,b) VALUES (1,2);
 SELECT * FROM v1;
 c
@@ -5814,14 +5023,14 @@ ERROR 42000: You have an error in your SQL syntax; check the manual that corresp
 SELECT * FROM t1 JOIN  (t1 t1a)  ON 1;
 a	a
 1	1
-2	1
 1	2
+2	1
 2	2
 SELECT * FROM t1 JOIN ((t1 t1a)) ON 1;
 a	a
 1	1
-2	1
 1	2
+2	1
 2	2
 SELECT * FROM (t1 t1a);
 a
@@ -6111,12 +5320,6 @@ DROP TABLE t1,t2;
 # Bug#54568: create view cause Assertion failed: 0, 
 # file .\item_subselect.cc, line 836
 #
-EXPLAIN SELECT 1 LIKE ( 1 IN ( SELECT 1 ) );
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-Warnings:
-Note	1249	Select 2 was reduced during optimization
-Note	1003	/* select#1 */ select (1 like (1 = 1)) AS `1 LIKE ( 1 IN ( SELECT 1 ) )`
 DESCRIBE SELECT 1 LIKE ( 1 IN ( SELECT 1 ) );
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
@@ -6131,7 +5334,7 @@ Set up test tables.
 CREATE TABLE t1 (
 t1_id INT UNSIGNED,
 PRIMARY KEY(t1_id)
-) Engine=MyISAM;
+) Engine=SequoiaDB;
 INSERT INTO t1 (t1_id) VALUES (1), (2), (3), (4), (5);
 CREATE TABLE t2 SELECT * FROM t1;
 CREATE TABLE t3 (
@@ -6140,7 +5343,7 @@ t1_id INT UNSIGNED,
 amount DECIMAL(16,2),
 PRIMARY KEY(t3_id),
 KEY(t1_id)
-) Engine=MyISAM;
+) Engine=SequoiaDB;
 INSERT INTO t3 (t1_id, t3_id, amount) 
 VALUES (1, 1, 100.00), (2, 2, 200.00), (4, 4, 400.00);
 This is the 'inner query' running by itself.
@@ -6314,18 +5517,6 @@ DROP TABLE t1,t2;
 # Bug #52711: Segfault when doing EXPLAIN SELECT with 
 #  union...order by (select... where...)
 #
-CREATE TABLE t1 (a VARCHAR(10), FULLTEXT KEY a (a));
-INSERT INTO t1 VALUES (1),(2);
-CREATE TABLE t2 (b INT);
-INSERT INTO t2 VALUES (1),(2);
-# Should not crash
-EXPLAIN
-SELECT * FROM t2 UNION SELECT * FROM t2
-ORDER BY (SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE));
-# Should not crash
-SELECT * FROM t2 UNION SELECT * FROM t2
-ORDER BY (SELECT * FROM t1 WHERE MATCH(a) AGAINST ('+abc' IN BOOLEAN MODE));
-DROP TABLE t1,t2;
 #
 # Bug #58818: Incorrect result for IN/ANY subquery
 # with HAVING condition 
@@ -6412,18 +5603,7 @@ End of 5.1 tests
 CREATE TABLE t1 (a INT, b INT, INDEX (a));
 INSERT INTO t1 VALUES (3, 10), (2, 20), (7, 10), (5, 20);
 
-EXPLAIN SELECT * FROM (SELECT * FROM t1 WHERE a=7) t;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	a	a	5	const	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` where (`test`.`t1`.`a` = 7)
 
-EXPLAIN SELECT * FROM t1 WHERE EXISTS (SELECT * FROM t1 WHERE a=7);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	NULL
-2	SUBQUERY	t1	NULL	ref	a	a	5	const	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` where 1
 
 DROP TABLE t1;
 #
@@ -6434,13 +5614,6 @@ CREATE TABLE t1 (i INTEGER);
 INSERT INTO t1 VALUES (1);
 CREATE TABLE t2 (i INTEGER, KEY k(i));
 INSERT INTO t2 VALUES (1), (2);
-EXPLAIN  
-SELECT i FROM t1 WHERE (1) NOT IN (SELECT i FROM t2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-2	SUBQUERY	t2	NULL	index_subquery	k	k	5	const	2	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`i` AS `i` from `test`.`t1` where 0
 DROP TABLE t2;
 DROP TABLE t1;
 #
@@ -6559,18 +5732,6 @@ NULL	r	1
 2	v	1
 7	c	0
 
-EXPLAIN EXTENDED
-SELECT i, v, (SELECT COUNT(DISTINCT i)
-FROM t1
-WHERE v  = t2.v) as subsel
-FROM t2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	3	33.33	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t2.v' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t2`.`i` AS `i`,`test`.`t2`.`v` AS `v`,(/* select#2 */ select count(distinct `test`.`t1`.`i`) from `test`.`t1` where (`test`.`t1`.`v` = `test`.`t2`.`v`)) AS `subsel` from `test`.`t2`
 DROP TABLE t1,t2;
 #
 # BUG#50257: Missing info in REF column of the EXPLAIN 
@@ -6579,22 +5740,11 @@ DROP TABLE t1,t2;
 CREATE TABLE t1 (a INT, b INT, INDEX (a));
 INSERT INTO t1 VALUES (3, 10), (2, 20), (7, 10), (5, 20);
 
-EXPLAIN SELECT * FROM (SELECT * FROM t1 WHERE a=7) t;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	ref	a	a	5	const	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` where (`test`.`t1`.`a` = 7)
 
-EXPLAIN SELECT * FROM t1 WHERE EXISTS (SELECT * FROM t1 WHERE a=7);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	4	100.00	NULL
-2	SUBQUERY	t1	NULL	ref	a	a	5	const	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a`,`test`.`t1`.`b` AS `b` from `test`.`t1` where 1
 
 DROP TABLE t1;
 #
-# BUG#58561: Server Crash with correlated subquery and MyISAM tables 
+# BUG#58561: Server Crash with correlated subquery and SequoiaDB tables 
 #
 CREATE TABLE cc (
 pk INT,
@@ -6603,7 +5753,7 @@ col_varchar_key VARCHAR(1),
 PRIMARY KEY (pk),
 KEY col_int_key (col_int_key),
 KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO cc VALUES (10,7,'v');
 INSERT INTO cc VALUES (11,1,'r');
 CREATE TABLE bb (
@@ -6611,7 +5761,7 @@ pk INT,
 col_date_key DATE,
 PRIMARY KEY (pk),
 KEY col_date_key (col_date_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO bb VALUES (10,'2002-02-21');
 CREATE TABLE c (
 pk INT,
@@ -6620,7 +5770,7 @@ col_varchar_key VARCHAR(1),
 PRIMARY KEY (pk),
 KEY col_int_key (col_int_key),
 KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO c VALUES (1,NULL,'w');
 INSERT INTO c VALUES (19,NULL,'f');
 CREATE TABLE b (
@@ -6630,7 +5780,7 @@ col_varchar_key VARCHAR(1),
 PRIMARY KEY (pk),
 KEY col_int_key (col_int_key),
 KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO b VALUES (1,7,'f');
 SELECT col_int_key
 FROM b granparent1
@@ -6662,38 +5812,14 @@ base query
 SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 ;
 RESULT
 NULL
-EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 ;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.c' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select 1 from `test`.`t2` where multiple equal(NULL, `test`.`t2`.`d`)) AS `RESULT` from dual
 first equivalent variant
 SELECT (SELECT 1 FROM t2 WHERE d = IFNULL(c,NULL)) AS RESULT FROM t1 GROUP BY c ;
 RESULT
 NULL
-EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = IFNULL(c,NULL)) AS RESULT FROM t1 GROUP BY c;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.c' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select 1 from `test`.`t2` where (`test`.`t2`.`d` = ifnull(NULL,NULL))) AS `RESULT` from dual group by NULL
 second equivalent variant
 SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 GROUP BY c ;
 RESULT
 NULL
-EXPLAIN EXTENDED SELECT (SELECT 1 FROM t2 WHERE d = c) AS RESULT FROM t1 GROUP BY c ;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.t1.c' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select 1 from `test`.`t2` where multiple equal(NULL, `test`.`t2`.`d`)) AS `RESULT` from dual group by NULL
 DROP TABLE t1,t2;
 
 BUG#37842: Assertion in DsMrr_impl::dsmrr_init, at handler.cc:4307
@@ -6703,7 +5829,7 @@ CREATE TABLE t1 (
 `int_key` int(11) DEFAULT NULL,
 PRIMARY KEY (`pk`),
 KEY `int_key` (`int_key`)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1,9),(2,3),(3,8),(4,6),(5,9),(6,5),(7,5),(8,9),(9,1),(10,10);
 SELECT `pk` FROM t1 AS OUTR WHERE `int_key` = ALL (
 SELECT `int_key` FROM t1 AS INNR WHERE INNR . `pk` >= 9
@@ -6787,41 +5913,26 @@ SELECT DISTINCT f1_key
 FROM t2 
 WHERE f1_key != table2.f1_key AND f1_key >= table1.f1 );
 f1	f1_key
-v	c
 s	c
-v	d
 s	d
-v	d
 s	d
-v	d
 s	d
-v	j
 s	j
-v	m
 s	m
-v	s
 s	s
-v	t
 s	t
-v	v
 s	v
-v	y
 s	y
-explain SELECT table1.f1, table2.f1_key
-FROM t1 AS table1, t2 AS table2
-WHERE EXISTS 
-( 
-SELECT DISTINCT f1_key 
-FROM t2 
-WHERE f1_key != table2.f1_key AND f1_key >= table1.f1 );
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	table1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	PRIMARY	table2	NULL	index	NULL	f1_key	4	NULL	10	100.00	Using where; Using index; Using join buffer (Block Nested Loop)
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	f1_key	NULL	NULL	NULL	10	30.00	Range checked for each record (index map: 0x1)
-Warnings:
-Note	1276	Field or reference 'test.table2.f1_key' of SELECT #2 was resolved in SELECT #1
-Note	1276	Field or reference 'test.table1.f1' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`table1`.`f1` AS `f1`,`test`.`table2`.`f1_key` AS `f1_key` from `test`.`t1` `table1` join `test`.`t2` `table2` where exists(/* select#2 */ select `test`.`t2`.`f1_key` from `test`.`t2` where ((`test`.`t2`.`f1_key` <> `test`.`table2`.`f1_key`) and (`test`.`t2`.`f1_key` >= `test`.`table1`.`f1`)))
+v	c
+v	d
+v	d
+v	d
+v	j
+v	m
+v	s
+v	t
+v	v
+v	y
 DROP TABLE t1,t2;
 #
 # BUG#12616477 - 0 VS NULL DIFFERENCES WITH OUTER JOIN, SUBQUERY
@@ -6860,27 +5971,6 @@ WHERE 'e' <> t1f.col_varchar_nokey )
 9	e	e	8	e	NULL
 224	p	p	4	p	4
 9	e	e	4	p	NULL
-explain SELECT t1f.*,t3f.*,(
-SELECT MIN(t3s.col_int_key)
-FROM t3 AS t3s JOIN
-t1 AS t1s ON t1s.col_int_key = 9 and
-t1s.col_varchar_key = 'e'
-WHERE 'e' <> t1f.col_varchar_nokey )
-FROM
-t1 AS t1f STRAIGHT_JOIN t3 AS t3f;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1f	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-1	PRIMARY	t3f	NULL	index	NULL	col_varchar_key	9	NULL	3	100.00	Using index; Using join buffer (Block Nested Loop)
-2	DEPENDENT SUBQUERY	t1s	NULL	ref	col_int_key	col_int_key	5	const	1	50.00	Using where
-2	DEPENDENT SUBQUERY	t3s	NULL	index	NULL	col_int_key	5	NULL	3	100.00	Using index; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1276	Field or reference 'test.t1f.col_varchar_nokey' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`t1f`.`col_int_key` AS `col_int_key`,`test`.`t1f`.`col_varchar_key` AS `col_varchar_key`,`test`.`t1f`.`col_varchar_nokey` AS `col_varchar_nokey`,`test`.`t3f`.`col_int_key` AS `col_int_key`,`test`.`t3f`.`col_varchar_key` AS `col_varchar_key`,(/* select#2 */ select min(`test`.`t3s`.`col_int_key`) from `test`.`t3` `t3s` join `test`.`t1` `t1s` where ((`test`.`t1s`.`col_varchar_key` = 'e') and (`test`.`t1s`.`col_int_key` = 9) and ('e' <> `test`.`t1f`.`col_varchar_nokey`))) AS `(
-SELECT MIN(t3s.col_int_key)
-FROM t3 AS t3s JOIN
-t1 AS t1s ON t1s.col_int_key = 9 and
-t1s.col_varchar_key = 'e'
-WHERE 'e' <> t1f.col_varchar_nokey )` from `test`.`t1` `t1f` straight_join `test`.`t3` `t3f`
 DROP TABLE t1,t3;
 #
 # Bug#12795555: Missing rows with ALL/ANY subquery
@@ -6933,19 +6023,6 @@ WHERE col_int_key IS NULL);
 col_int_nokey
 1
 
-EXPLAIN EXTENDED
-SELECT col_int_nokey 
-FROM ot 
-WHERE col_varchar_nokey IN
-(SELECT col_varchar_key
-FROM it 
-WHERE col_int_key IS NULL);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	ot	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	it	NULL	index_subquery	idx_cvk_cik	idx_cvk_cik	9	func,const	2	100.00	Using where; Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select '1' AS `col_int_nokey` from dual where <in_optimizer>('x',<exists>(<index_lookup>(<cache>('x') in it on idx_cvk_cik where (isnull(`test`.`it`.`col_int_key`) and (<cache>('x') = `test`.`it`.`col_varchar_key`)))))
 
 SELECT col_int_nokey 
 FROM ot 
@@ -6956,20 +6033,6 @@ WHERE coalesce(col_int_nokey, 1) );
 col_int_nokey
 1
 
-EXPLAIN EXTENDED
-SELECT col_int_nokey 
-FROM ot 
-WHERE col_varchar_nokey IN
-(SELECT col_varchar_key
-FROM it 
-WHERE coalesce(col_int_nokey, 1) );
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	ot	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	it	NULL	index_subquery	idx_cvk_cik	idx_cvk_cik	4	func	2	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'test.ot.col_int_nokey' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select '1' AS `col_int_nokey` from dual where <in_optimizer>('x',<exists>(<index_lookup>(<cache>('x') in it on idx_cvk_cik)))
 DROP TABLE it;
 CREATE TABLE it (
 col_int_key int(11),
@@ -6988,19 +6051,6 @@ WHERE col_int_key IS NULL);
 col_int_nokey
 1
 
-EXPLAIN EXTENDED
-SELECT col_int_nokey
-FROM ot
-WHERE (col_varchar_nokey, 'x') IN
-(SELECT col_varchar_key, col_varchar_key2
-FROM it
-WHERE col_int_key IS NULL);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	ot	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	it	NULL	index_subquery	idx_cvk_cvk2_cik,idx_cvk_cik	idx_cvk_cvk2_cik	13	func,const,const	2	100.00	Using where; Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select '1' AS `col_int_nokey` from dual where <in_optimizer>(('x','x'),<exists>(<index_lookup>(<cache>('x') in it on idx_cvk_cvk2_cik where (isnull(`test`.`it`.`col_int_key`) and (<cache>('x') = `test`.`it`.`col_varchar_key`) and (<cache>('x') = `test`.`it`.`col_varchar_key2`)))))
 
 DROP TABLE it, ot;
 #
@@ -7032,28 +6082,6 @@ KEY col_varchar_key (col_varchar_key,col_int_key)
 INSERT INTO t1 VALUES (1,0,'j','j'),(2,8,'v','v'),
 (3,1,'c','c'),(4,8,'m','m'),(5,9,'d','d');
 CREATE VIEW v1 AS SELECT * FROM t1;
-EXPLAIN EXTENDED SELECT alias2.col_varchar_nokey
-FROM v1 AS alias1
-RIGHT JOIN t1 AS alias2 ON 1
-WHERE alias2.col_varchar_key IN (
-SELECT sq2_alias1.col_varchar_nokey
-FROM v1 AS sq2_alias1
-LEFT JOIN t1 AS sq2_alias2
-ON (sq2_alias2.col_int_key = sq2_alias1.pk)
-WHERE sq2_alias1.pk != alias1.col_int_key
-AND sq2_alias1.col_varchar_key > alias1.col_varchar_key
-)
-;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	alias2	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-1	PRIMARY	t1	NULL	index	NULL	col_varchar_key	7	NULL	5	100.00	Using where; Using index; Using join buffer (Block Nested Loop)
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	col_varchar_key	NULL	NULL	NULL	5	20.00	Range checked for each record (index map: 0x4)
-2	DEPENDENT SUBQUERY	sq2_alias2	NULL	ref	col_int_key	col_int_key	4	test.t1.pk	2	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'alias1.col_int_key' of SELECT #2 was resolved in SELECT #1
-Note	1276	Field or reference 'alias1.col_varchar_key' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`alias2`.`col_varchar_nokey` AS `col_varchar_nokey` from `test`.`t1` `alias2` left join (`test`.`t1`) on(1) where <in_optimizer>(`test`.`alias2`.`col_varchar_key`,<exists>(/* select#2 */ select 1 from `test`.`t1` left join `test`.`t1` `sq2_alias2` on((`test`.`sq2_alias2`.`col_int_key` = `test`.`t1`.`pk`)) where ((`test`.`t1`.`pk` <> `test`.`t1`.`col_int_key`) and (`test`.`t1`.`col_varchar_key` > `test`.`t1`.`col_varchar_key`) and (<cache>(`test`.`alias2`.`col_varchar_key`) = `test`.`t1`.`col_varchar_nokey`))))
 SELECT alias2.col_varchar_nokey
 FROM v1 AS alias1
 RIGHT JOIN t1 AS alias2 ON 1
@@ -7088,17 +6116,6 @@ WHERE sq2_alias1.pk != alias1.col_int_key
 AND sq2_alias1.col_varchar_key > alias1.col_varchar_key
 )
 ;
-EXPLAIN EXTENDED SELECT * FROM v2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	alias2	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-1	PRIMARY	t1	NULL	index	NULL	col_varchar_key	7	NULL	5	100.00	Using where; Using index; Using join buffer (Block Nested Loop)
-3	DEPENDENT SUBQUERY	t1	NULL	ALL	col_varchar_key	NULL	NULL	NULL	5	20.00	Using where
-3	DEPENDENT SUBQUERY	sq2_alias2	NULL	ref	col_int_key	col_int_key	4	test.t1.pk	2	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'alias1.col_int_key' of SELECT #3 was resolved in SELECT #2
-Note	1276	Field or reference 'alias1.col_varchar_key' of SELECT #3 was resolved in SELECT #2
-Note	1003	/* select#1 */ select `test`.`alias2`.`col_varchar_nokey` AS `col_varchar_nokey` from `test`.`t1` `alias2` left join (`test`.`t1`) on(1) where <in_optimizer>(`test`.`alias2`.`col_varchar_key`,<exists>(/* select#3 */ select 1 from `test`.`t1` left join `test`.`t1` `sq2_alias2` on((`sq2_alias2`.`col_int_key` = `test`.`t1`.`pk`)) where ((`test`.`t1`.`pk` <> `t1`.`col_int_key`) and (`test`.`t1`.`col_varchar_key` > `t1`.`col_varchar_key`) and (<cache>(`test`.`alias2`.`col_varchar_key`) = `test`.`t1`.`col_varchar_nokey`))))
 SELECT * FROM v2;
 col_varchar_nokey
 d
@@ -7110,27 +6127,6 @@ v
 v
 v
 v
-EXPLAIN EXTENDED SELECT alias2.col_varchar_nokey
-FROM t1 AS alias2
-LEFT JOIN v1 AS alias1 ON 1
-WHERE alias2.col_varchar_key IN (
-SELECT sq2_alias1.col_varchar_nokey
-FROM v1 AS sq2_alias1
-LEFT JOIN t1 AS sq2_alias2
-ON (sq2_alias2.col_int_key = sq2_alias1.pk)
-WHERE sq2_alias1.pk != alias1.col_int_key
-AND sq2_alias1.col_varchar_key > alias1.col_varchar_key
-);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	alias2	NULL	ALL	NULL	NULL	NULL	NULL	5	100.00	NULL
-1	PRIMARY	t1	NULL	index	NULL	col_varchar_key	7	NULL	5	100.00	Using where; Using index; Using join buffer (Block Nested Loop)
-2	DEPENDENT SUBQUERY	t1	NULL	ALL	col_varchar_key	NULL	NULL	NULL	5	20.00	Using where
-2	DEPENDENT SUBQUERY	sq2_alias2	NULL	ref	col_int_key	col_int_key	4	test.t1.pk	2	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1276	Field or reference 'alias1.col_int_key' of SELECT #2 was resolved in SELECT #1
-Note	1276	Field or reference 'alias1.col_varchar_key' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`alias2`.`col_varchar_nokey` AS `col_varchar_nokey` from `test`.`t1` `alias2` left join (`test`.`t1`) on(1) where <in_optimizer>(`test`.`alias2`.`col_varchar_key`,<exists>(/* select#2 */ select 1 from `test`.`t1` left join `test`.`t1` `sq2_alias2` on((`sq2_alias2`.`col_int_key` = `test`.`t1`.`pk`)) where ((`test`.`t1`.`pk` <> `t1`.`col_int_key`) and (`test`.`t1`.`col_varchar_key` > `t1`.`col_varchar_key`) and (<cache>(`test`.`alias2`.`col_varchar_key`) = `test`.`t1`.`col_varchar_nokey`))))
 SELECT alias2.col_varchar_nokey
 FROM t1 AS alias2
 LEFT JOIN v1 AS alias1 ON 1
@@ -7169,7 +6165,7 @@ PRIMARY KEY (pk),
 KEY col_int_key (col_int_key),
 KEY col_time_key (col_time_key),
 KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 CREATE TABLE t2 (
 pk int NOT NULL AUTO_INCREMENT,
 col_int_nokey int NOT NULL,
@@ -7181,19 +6177,11 @@ PRIMARY KEY (pk),
 KEY col_int_key (col_int_key),
 KEY col_time_key (col_time_key),
 KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES (1,4,4,'00:00:00','b','b');
 SET @var2:=4, @var3:=8;
 
 Testcase without inner subquery
-EXPLAIN SELECT @var3:=12, sq4_alias1.*
-FROM t1 AS sq4_alias1
-WHERE (sq4_alias1.col_varchar_key + NULL) IS NULL OR
-sq4_alias1.col_varchar_key = @var3;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Note	1003	/* select#1 */ select (@var3:=12) AS `@var3:=12`,NULL AS `pk`,NULL AS `col_int_nokey`,NULL AS `col_int_key`,NULL AS `col_time_key`,NULL AS `col_varchar_key`,NULL AS `col_varchar_nokey` from `test`.`t1` `sq4_alias1` where (isnull((NULL + NULL)) or (NULL = (@`var3`)))
 SELECT @var3:=12, sq4_alias1.*
 FROM t1 AS sq4_alias1
 WHERE (sq4_alias1.col_varchar_key + NULL) IS NULL OR
@@ -7202,15 +6190,6 @@ sq4_alias1.col_varchar_key = @var3;
 SELECT @var3;
 @var3
 8
-EXPLAIN SELECT * FROM ( SELECT @var3:=12, sq4_alias1.*
-FROM t1 AS sq4_alias1
-WHERE (sq4_alias1.col_varchar_key + NULL) IS NULL OR
-sq4_alias1.col_varchar_key = @var3 ) AS alias3;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	DERIVED	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-Warnings:
-Note	1003	/* select#1 */ select NULL AS `@var3:=12`,NULL AS `pk`,NULL AS `col_int_nokey`,NULL AS `col_int_key`,NULL AS `col_time_key`,NULL AS `col_varchar_key`,NULL AS `col_varchar_nokey` from (/* select#2 */ select (@var3:=12) AS `@var3:=12`,NULL AS `pk`,NULL AS `col_int_nokey`,NULL AS `col_int_key`,NULL AS `col_time_key`,NULL AS `col_varchar_key`,NULL AS `col_varchar_nokey` from `test`.`t1` `sq4_alias1` where (isnull((NULL + NULL)) or (NULL = (@`var3`)))) `alias3`
 SELECT * FROM ( SELECT @var3:=12, sq4_alias1.*
 FROM t1 AS sq4_alias1
 WHERE (sq4_alias1.col_varchar_key + NULL) IS NULL OR
@@ -7222,20 +6201,6 @@ SELECT @var3;
 
 Testcase with inner subquery; crashed WL#6095
 SET @var3=8;
-EXPLAIN SELECT sq4_alias1.*
-FROM t1 AS sq4_alias1
-WHERE (sq4_alias1.col_varchar_key , sq4_alias1.col_varchar_nokey)
-NOT IN
-(SELECT c_sq1_alias1.col_varchar_key AS c_sq1_field1,
-c_sq1_alias1.col_varchar_nokey AS c_sq1_field2
-FROM t2 AS c_sq1_alias1
-WHERE (c_sq1_alias1.col_int_nokey != @var2
-OR c_sq1_alias1.pk != @var3));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	DEPENDENT SUBQUERY	c_sq1_alias1	NULL	system	PRIMARY,col_varchar_key	NULL	NULL	NULL	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select NULL AS `pk`,NULL AS `col_int_nokey`,NULL AS `col_int_key`,NULL AS `col_time_key`,NULL AS `col_varchar_key`,NULL AS `col_varchar_nokey` from `test`.`t1` `sq4_alias1` where (not(<in_optimizer>((NULL,NULL),<exists>(/* select#2 */ select 1,1 from dual where ((('4' <> (@`var2`)) or ('1' <> (@`var3`))) and (<cache>(NULL) = 'b') and (<cache>(NULL) = 'b')) having (<is_not_null_test>('b') and <is_not_null_test>('b'))))))
 SELECT sq4_alias1.*
 FROM t1 AS sq4_alias1
 WHERE (sq4_alias1.col_varchar_key , sq4_alias1.col_varchar_nokey)
@@ -7246,20 +6211,6 @@ FROM t2 AS c_sq1_alias1
 WHERE (c_sq1_alias1.col_int_nokey != @var2
 OR c_sq1_alias1.pk != @var3));
 pk	col_int_nokey	col_int_key	col_time_key	col_varchar_key	col_varchar_nokey
-EXPLAIN SELECT * FROM ( SELECT sq4_alias1.*
-FROM t1 AS sq4_alias1
-WHERE (sq4_alias1.col_varchar_key , sq4_alias1.col_varchar_nokey)
-NOT IN
-(SELECT c_sq1_alias1.col_varchar_key AS c_sq1_field1,
-c_sq1_alias1.col_varchar_nokey AS c_sq1_field2
-FROM t2 AS c_sq1_alias1
-WHERE (c_sq1_alias1.col_int_nokey != @var2
-OR c_sq1_alias1.pk != @var3)) ) AS alias3;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-3	DEPENDENT SUBQUERY	c_sq1_alias1	NULL	system	PRIMARY,col_varchar_key	NULL	NULL	NULL	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select NULL AS `pk`,NULL AS `col_int_nokey`,NULL AS `col_int_key`,NULL AS `col_time_key`,NULL AS `col_varchar_key`,NULL AS `col_varchar_nokey` from `test`.`t1` `sq4_alias1` where (not(<in_optimizer>((NULL,NULL),<exists>(/* select#3 */ select 1,1 from dual where ((('4' <> (@`var2`)) or ('1' <> (@`var3`))) and (<cache>(NULL) = 'b') and (<cache>(NULL) = 'b')) having (<is_not_null_test>('b') and <is_not_null_test>('b'))))))
 SELECT * FROM ( SELECT sq4_alias1.*
 FROM t1 AS sq4_alias1
 WHERE (sq4_alias1.col_varchar_key , sq4_alias1.col_varchar_nokey)
@@ -7281,24 +6232,9 @@ create table t1(a int);
 insert into t1 values(1),(2);
 create table t2(a int primary key, b int);
 insert into t2 values(1,10),(2,10);
-explain select * from t1 where a in (select a from t2 where b=3);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	t2	NULL	unique_subquery	PRIMARY	PRIMARY	4	func	1	50.00	Using where
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where <in_optimizer>(`test`.`t1`.`a`,<exists>(<primary_index_lookup>(<cache>(`test`.`t1`.`a`) in t2 on PRIMARY where ((`test`.`t2`.`b` = 3) and (<cache>(`test`.`t1`.`a`) = `test`.`t2`.`a`)))))
 flush status;
 select * from t1 where a in (select a from t2 where b=3);
 a
-show status like "handler_read%";
-Variable_name	Value
-Handler_read_first	0
-Handler_read_key	2
-Handler_read_last	0
-Handler_read_next	0
-Handler_read_prev	0
-Handler_read_rnd	0
-Handler_read_rnd_next	3
 drop table t1,t2;
 #
 # Bug#13735980 Difference in number of rows when using subqueries
@@ -7381,7 +6317,7 @@ CREATE TABLE t1 (
 col_varchar_key varchar(1) NOT NULL,
 col_varchar_nokey varchar(1) NOT NULL,
 KEY col_varchar_key (col_varchar_key)
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES
 ('v','v'), ('s','s'), ('l','l'), ('y','y'), ('c','c'),
 ('i','i'), ('h','h'), ('q','q'), ('a','a'), ('v','v'),
@@ -7390,7 +6326,7 @@ INSERT INTO t1 VALUES
 CREATE TABLE t2 (
 col_int_nokey INT NOT NULL,
 col_varchar_nokey varchar(1) NOT NULL
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES
 (4,'j'), (6,'v'), (3,'c'), (5,'m'), (3,'d'), (246,'d'), (2,'y'), (9,'t'),
 (3,'d'), (8,'s'), (1,'r'), (8,'m'), (8,'b'), (5,'x'), (7,'g'), (5,'p'),
@@ -7415,37 +6351,22 @@ FROM t2 AS it2 LEFT JOIN t1 AS it1
 ON it2.col_varchar_nokey = it1.col_varchar_key
 );
 col_varchar_nokey
-explain extended SELECT col_varchar_nokey
-FROM t1
-WHERE (SELECT i1 FROM t0 WHERE i1 = 7) NOT IN
-(SELECT it2.col_int_nokey
-FROM t2 AS it2 LEFT JOIN t1 AS it1
-ON it2.col_varchar_nokey = it1.col_varchar_key
-);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE noticed after reading const tables
-3	DEPENDENT SUBQUERY	it2	NULL	ALL	NULL	NULL	NULL	NULL	20	100.00	Using where
-3	DEPENDENT SUBQUERY	it1	NULL	ref	col_varchar_key	col_varchar_key	3	test.it2.col_varchar_nokey	1	100.00	Using index
-2	SUBQUERY	t0	NULL	system	PRIMARY	NULL	NULL	NULL	1	100.00	NULL
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`col_varchar_nokey` AS `col_varchar_nokey` from `test`.`t1` where (not(<in_optimizer>((/* select#2 */ select '7' from dual where 1),<exists>(/* select#3 */ select 1 from `test`.`t2` `it2` left join `test`.`t1` `it1` on((`test`.`it1`.`col_varchar_key` = `test`.`it2`.`col_varchar_nokey`)) where <if>(outer_field_is_not_null, (<cache>((/* select#2 */ select '7' from dual where 1)) = `test`.`it2`.`col_int_nokey`), true)))))
 DROP TABLE t0, t1, t2;
 #
-# Bug#13735704 Memory engine + NOT IN + subquery produces different
+# Bug#13735704 SequoiaDB engine + NOT IN + subquery produces different
 # result set
 #
 CREATE TABLE t1(
 col_varchar_key varchar(1),
 KEY col_varchar_key(col_varchar_key)
-) engine=MEMORY;
+) engine=SequoiaDB;
 INSERT INTO t1 VALUES
 ('v'), ('s'), ('y'), ('z'), ('h'), ('p');
 CREATE TABLE t2(
 col_int_nokey int,
 col_int_key int,
 KEY col_int_key(col_int_key)
-) engine=MEMORY;
+) engine=SequoiaDB;
 INSERT INTO t2 VALUES
 (4,4), (2,7), (2,5), (2,3), (197,188), (4,4), (6,2), (1,4),
 (156,231), (2,1), (1,2), (80,194), (3,2), (8,3), (91,98), (6,3),
@@ -7459,19 +6380,6 @@ FROM t1
 WHERE (7,2) NOT IN
 (SELECT col_int_key,col_int_nokey FROM t2);
 col_varchar_key
-explain extended SELECT col_varchar_key
-FROM t1
-WHERE ((SELECT i1 FROM t0 WHERE i1 = 7),
-(SELECT i1 FROM t0 WHERE i1 = 2)) NOT IN
-(SELECT col_int_key,col_int_nokey FROM t2);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE noticed after reading const tables
-4	DEPENDENT SUBQUERY	t2	NULL	index_subquery	col_int_key	col_int_key	5	func	4	100.00	Using where; Full scan on NULL key
-3	SUBQUERY	t0	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	Using index
-2	SUBQUERY	t0	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	Using index
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select `test`.`t1`.`col_varchar_key` AS `col_varchar_key` from `test`.`t1` where (not(<in_optimizer>(((/* select#2 */ select '7' from `test`.`t0` where 1),(/* select#3 */ select '2' from `test`.`t0` where 1)),<exists>(<index_lookup>(<cache>((/* select#2 */ select '7' from `test`.`t0` where 1)) in t2 on col_int_key checking NULL where (<if>(outer_field_is_not_null, ((<cache>((/* select#2 */ select '7' from `test`.`t0` where 1)) = `test`.`t2`.`col_int_key`) or isnull(`test`.`t2`.`col_int_key`)), true) and <if>(outer_field_is_not_null, ((<cache>((/* select#3 */ select '2' from `test`.`t0` where 1)) = `test`.`t2`.`col_int_nokey`) or isnull(`test`.`t2`.`col_int_nokey`)), true)) having (<if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`col_int_key`), true) and <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`col_int_nokey`), true)))))))
 SELECT col_varchar_key
 FROM t1
 WHERE ((SELECT i1 FROM t0 WHERE i1 = 7),
@@ -7485,28 +6393,14 @@ DROP TABLE t0, t1, t2;
 #
 CREATE TABLE t1 (
 id int
-) ENGINE=InnoDB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 (id) VALUES (11);
 CREATE TABLE t2 (
 t1_id int,
 position int,
 KEY t1_id (t1_id),
 KEY t1_id_position (t1_id,position)
-) ENGINE=InnoDB;
-EXPLAIN SELECT
-(SELECT position FROM t2
-WHERE t2.t1_id = t1.id
-ORDER BY t2.t1_id , t2.position
-LIMIT 10,1
-) AS maxkey
-FROM t1
-LIMIT 1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ref	t1_id,t1_id_position	t1_id_position	5	test.t1.id	1	100.00	Using where; Using index
-Warnings:
-Note	1276	Field or reference 'test.t1.id' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select `test`.`t2`.`position` from `test`.`t2` where (`test`.`t2`.`t1_id` = `test`.`t1`.`id`) order by `test`.`t2`.`t1_id`,`test`.`t2`.`position` limit 10,1) AS `maxkey` from `test`.`t1` limit 1
+) ENGINE=SequoiaDB;
 SELECT
 (SELECT position FROM t2
 WHERE t2.t1_id = t1.id
@@ -7531,32 +6425,12 @@ INSERT INTO t4 VALUES(1);
 SELECT ((0,1) NOT IN (SELECT NULL,1)) IS NULL;
 ((0,1) NOT IN (SELECT NULL,1)) IS NULL
 1
-EXPLAIN EXTENDED SELECT * FROM t1
-WHERE ((a,b) NOT IN (SELECT t2.a,t2.b FROM
-t4 STRAIGHT_JOIN t2 WHERE t4.a=t2.b)) IS NULL;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	t4	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ref_or_null	a_b	a_b	10	func,const	4	100.00	Using where; Using index; Full scan on NULL key
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select '0' AS `a`,'1' AS `b` from dual where isnull((not(<in_optimizer>(('0','1'),<exists>(/* select#2 */ select 1,1 from `test`.`t2` where ((`test`.`t2`.`b` = '1') and <if>(outer_field_is_not_null, ((<cache>('0') = `test`.`t2`.`a`) or isnull(`test`.`t2`.`a`)), true) and <if>(outer_field_is_not_null, ((<cache>('1') = '1') or <cache>(isnull('1'))), true)) having (<if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`a`), true) and <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`b`), true)))))))
 SELECT * FROM t1
 WHERE ((a,b) NOT IN (SELECT t2.a,t2.b FROM
 t4 STRAIGHT_JOIN t2 WHERE t4.a=t2.b)) IS NULL;
 a	b
 0	1
 ALTER TABLE t2 DROP INDEX a_b;
-EXPLAIN EXTENDED SELECT * FROM t1
-WHERE ((a,b) NOT IN (SELECT t2.a,t2.b FROM
-t4 STRAIGHT_JOIN t2 WHERE t4.a=t2.b)) IS NULL;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	t4	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select '0' AS `a`,'1' AS `b` from dual where isnull((not(<in_optimizer>(('0','1'),<exists>(/* select#2 */ select 1,1 from `test`.`t2` where ((`test`.`t2`.`b` = '1') and <if>(outer_field_is_not_null, ((<cache>('0') = `test`.`t2`.`a`) or isnull(`test`.`t2`.`a`)), true) and <if>(outer_field_is_not_null, ((<cache>('1') = '1') or <cache>(isnull('1'))), true)) having (<if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`a`), true) and <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`b`), true)))))))
 SELECT * FROM t1
 WHERE ((a,b) NOT IN (SELECT t2.a,t2.b FROM
 t4 STRAIGHT_JOIN t2 WHERE t4.a=t2.b)) IS NULL;
@@ -7576,13 +6450,17 @@ col_varchar_nokey VARCHAR(1),
 PRIMARY KEY (pk),
 KEY col_int_key (col_int_key),
 KEY col_varchar_key (col_varchar_key,col_int_key)
-) ENGINE=MyISAM;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (17,NULL,9,NULL,NULL),
 (18,2,2,'o','o'),(19,NULL,9,'w','w'),(20,6,2,'m','m'),(21,7,4,'q','q'),
 (22,2,0,NULL,NULL),(23,5,4,'d','d'),(24,7,8,'g','g'),(25,6,NULL,'x','x'),
 (26,6,NULL,'f','f'),(27,2,0,'p','p'),(28,9,NULL,'j','j'),(29,6,8,'c','c');
 ALTER TABLE t1 DISABLE KEYS;
+Warnings:
+Note	1031	Table storage engine for 't1' doesn't have this option
 ALTER TABLE t1 ENABLE KEYS;
+Warnings:
+Note	1031	Table storage engine for 't1' doesn't have this option
 CREATE TABLE t2 SELECT table1.col_varchar_key AS field1,
 table1.col_int_nokey AS field2,
 table2.col_varchar_key AS field3,
@@ -7659,14 +6537,6 @@ CREATE TABLE t1 (a INT NOT NULL, b INT NOT NULL);
 INSERT INTO t1 VALUES (0,8), (8,7);
 CREATE TABLE t2 (c INT NOT NULL);
 INSERT INTO t2 VALUES (10);
-EXPLAIN EXTENDED
-SELECT 1 FROM t2 WHERE c > ANY (SELECT a FROM t1 WHERE b >= 3) IS TRUE;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t2	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Warning	1681	'EXTENDED' is deprecated and will be removed in a future release.
-Note	1003	/* select#1 */ select 1 AS `1` from dual where (<nop>(('10' > (/* select#2 */ select min(`test`.`t1`.`a`) from `test`.`t1` where (`test`.`t1`.`b` >= 3)))) is true)
 SELECT 1 FROM t2 WHERE c > ANY (SELECT a FROM t1 WHERE b >= 3) IS TRUE;
 1
 1
@@ -7700,13 +6570,13 @@ scalar
 DROP TABLE t1,t2;
 SET sql_mode = default;
 #
-# Bug #19179529 SEGMENTATION FAULT IN ADD_KEY_FIELD FOR ENGINES MYISAM AND MEMORY
+# Bug #19179529 SEGMENTATION FAULT IN ADD_KEY_FIELD FOR ENGINE SequoiaDB
 #
 CREATE TABLE t1 (
 pk INTEGER PRIMARY KEY,
 col_int_key INTEGER NOT NULL,
 KEY (col_int_key)
-) ENGINE=MYISAM;
+) ENGINE=SEQUOIADB;
 SELECT
 ( SELECT MIN(  1 ) AS SQ1_field1
 FROM t1 AS SQ1_alias1 , t1 AS SQ1_alias2
@@ -7725,19 +6595,9 @@ col_datetime_key DATETIME,
 PRIMARY KEY (pk),
 KEY (col_int_key),
 KEY (col_datetime_key)
-)  ENGINE=MEMORY;
+)  ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1, 1, 7, '2001-11-04 19:07:55.051133');
-CREATE TABLE t2(field1 INT, field2 INT) ENGINE=MEMORY;
-EXPLAIN SELECT * FROM t2 WHERE (field1, field2) IN (
-SELECT MAX(col_datetime_key), col_int_key
-FROM t1
-WHERE col_int_key > col_int_nokey
-GROUP BY col_int_key);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	no matching row in const table
-2	DEPENDENT SUBQUERY	t1	NULL	system	NULL	NULL	NULL	NULL	1	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select NULL AS `field1`,NULL AS `field2` from `test`.`t2` where <in_optimizer>((NULL,NULL),<exists>(/* select#2 */ select 1,1 from dual where ('7' > '1') group by '7' having (((<cache>(NULL) = max('2001-11-04 19:07:55')) or isnull(max('2001-11-04 19:07:55'))) and ((<cache>(NULL) = '7') or isnull('7')) and <is_not_null_test>(max('2001-11-04 19:07:55')) and <is_not_null_test>('7'))))
+CREATE TABLE t2(field1 INT, field2 INT) ENGINE=SequoiaDB;
 SELECT * FROM t2 WHERE (field1, field2) IN (
 SELECT MAX(col_datetime_key), col_int_key
 FROM t1
@@ -7855,12 +6715,6 @@ DROP TABLE t1, t2;
 CREATE TABLE t1(a INTEGER);
 CREATE VIEW v1 AS SELECT * FROM t1;
 INSERT INTO t1 VALUES(0), (1);
-EXPLAIN SELECT * FROM t1 WHERE a <ANY (SELECT a FROM v1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-2	SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`a` AS `a` from `test`.`t1` where <nop>((`test`.`t1`.`a` < (/* select#2 */ select max(`test`.`t1`.`a`) from `test`.`t1`)))
 PREPARE s FROM "SELECT * FROM t1 WHERE a <ANY (SELECT a FROM v1)";
 EXECUTE s;
 a
@@ -7878,36 +6732,13 @@ CREATE TABLE t1 (a INT);
 INSERT INTO t1 VALUES(1),(2);
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
-test.t1	analyze	status	OK
-EXPLAIN SELECT 1 as col FROM t1 WHERE a IN (SELECT a FROM DUAL WHERE 0);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select 1 AS `col` from `test`.`t1` where <in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select `test`.`t1`.`a` from DUAL  where 0))
+x	analyze	status	OK
 SELECT 1 as col FROM t1 WHERE a IN (SELECT a FROM DUAL WHERE 0);
 col
-EXPLAIN SELECT 1 as col FROM t1 WHERE a IN (SELECT a FROM DUAL HAVING 0);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible HAVING
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select 1 AS `col` from `test`.`t1` where <in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select `test`.`t1`.`a` having 0))
 SELECT 1 as col FROM t1 WHERE a IN (SELECT a FROM DUAL HAVING 0);
 col
 SELECT 1 as col FROM t1 WHERE a IN (SELECT a FROM DUAL LIMIT 0);
 ERROR 42000: This version of MySQL doesn't yet support 'LIMIT & IN/ALL/ANY/SOME subquery'
-EXPLAIN SELECT 1 as col FROM t1
-WHERE a IN (SELECT a FROM DUAL WHERE 3 IN (SELECT a FROM t1));
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Impossible WHERE
-3	SUBQUERY	t1	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
-Warnings:
-Note	1276	Field or reference 'test.t1.a' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select 1 AS `col` from `test`.`t1` where <in_optimizer>(`test`.`t1`.`a`,<exists>(/* select#2 */ select `test`.`t1`.`a` from DUAL  where 0))
 PREPARE s FROM 'SELECT 1 as col FROM t1
 WHERE a IN (SELECT a FROM DUAL WHERE 3 IN (SELECT a FROM t1))';
 EXECUTE s;
@@ -7920,20 +6751,9 @@ DROP TABLE t1;
 #
 CREATE TABLE t1 (t1_id INT PRIMARY KEY);
 INSERT INTO t1 VALUES(1),(2),(3);
-EXPLAIN SELECT * FROM t1 GROUP BY t1_id ORDER BY t1_id DESC LIMIT 1;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	PRIMARY	PRIMARY	4	NULL	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `test`.`t1`.`t1_id` AS `t1_id` from `test`.`t1` group by `test`.`t1`.`t1_id` desc order by `test`.`t1`.`t1_id` desc limit 1
 SELECT * FROM t1 GROUP BY t1_id ORDER BY t1_id DESC LIMIT 1;
 t1_id
 3
-EXPLAIN SELECT (SELECT * FROM t1 GROUP BY t1_id ORDER BY t1_id DESC LIMIT 1) AS C FROM DUAL;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	No tables used
-2	SUBQUERY	t1	NULL	index	PRIMARY	PRIMARY	4	NULL	1	100.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select (/* select#2 */ select `test`.`t1`.`t1_id` from `test`.`t1` group by `test`.`t1`.`t1_id` desc order by `test`.`t1`.`t1_id` desc limit 1) AS `C`
 SELECT (SELECT * FROM t1 GROUP BY t1_id ORDER BY t1_id DESC LIMIT 1) AS C FROM DUAL;
 C
 3
@@ -7944,9 +6764,9 @@ DROP TABLE t1;
 CREATE TABLE t1 (
 pk INT NOT NULL PRIMARY KEY,
 col_varchar VARCHAR(1)
-) ENGINE=INNODB;
+) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES (1, 'v');
-CREATE TABLE t2 ENGINE=INNODB SELECT
+CREATE TABLE t2 ENGINE=SEQUOIADB SELECT
 col_varchar AS field1,
 pk AS field2
 FROM t1
@@ -7971,7 +6791,7 @@ DROP TABLE t1,t2;
 #
 # Bug#21211187 CRASH IN JOIN::UPDATE_DEPEND_MAP
 #
-CREATE TABLE t1 (a INT PRIMARY KEY) ENGINE=INNODB;
+CREATE TABLE t1 (a INT PRIMARY KEY) ENGINE=SEQUOIADB;
 CREATE TABLE t0(a INT);
 INSERT INTO t0 VALUES();
 SELECT 1 FROM t1
@@ -7995,7 +6815,7 @@ DROP TABLE t0,t1;
 set sql_mode="";
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
-CREATE TABLE t (a INT) ENGINE=INNODB;
+CREATE TABLE t (a INT) ENGINE=SEQUOIADB;
 SELECT 1 FROM t WHERE 1 IN
 (
 SELECT 1 FROM t WHERE 1 <=>
@@ -8014,7 +6834,7 @@ HAVING 1
 1
 SET @@SQL_MODE=DEFAULT;
 DROP TABLE t;
-SET DEFAULT_STORAGE_ENGINE=INNODB;
+SET DEFAULT_STORAGE_ENGINE=SEQUOIADB;
 #
 # Bug#21205577 ASSERTION FAILED: (INT)IDX >= 0 && IDX < PARENT_JOIN->TABLES
 #
@@ -8069,21 +6889,6 @@ PRIMARY KEY (pk),
 KEY col_int_key (col_int_key)
 );
 INSERT INTO t3 VALUES (4,'l',2,2);
-explain SELECT pk,
-col_int IN
-(SELECT innr1.pk
-FROM t1 AS innr2
-LEFT JOIN (SELECT pk, col_date FROM t2) AS innr1
-ON innr2.col_date <> innr1.col_date
-WHERE outr.col_int_key < 6) AS x
-FROM t3 AS outr;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	outr	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	NULL
-2	DEPENDENT SUBQUERY	innr2	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where
-2	DEPENDENT SUBQUERY	t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where; Using join buffer (Block Nested Loop)
-Warnings:
-Note	1276	Field or reference 'test.outr.col_int_key' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select `test`.`outr`.`pk` AS `pk`,<in_optimizer>(`test`.`outr`.`col_int`,<exists>(/* select#2 */ select 1 from `test`.`t1` `innr2` left join (`test`.`t2`) on((`test`.`innr2`.`col_date` <> `test`.`t2`.`col_date`)) where ((`test`.`outr`.`col_int_key` < 6) and <if>(outer_field_is_not_null, ((<cache>(`test`.`outr`.`col_int`) = `test`.`t2`.`pk`) or isnull(`test`.`t2`.`pk`)), true)) having <if>(outer_field_is_not_null, <is_not_null_test>(`test`.`t2`.`pk`), true))) AS `x` from `test`.`t3` `outr`
 SELECT pk,
 col_int IN
 (SELECT innr1.pk
@@ -8108,7 +6913,7 @@ DROP TABLE t1, t2, t3;
 #
 # Bug#22090717 WRONG RESULT FOR SELECT NULL IN (<SUBQUERY>)
 #
-CREATE TABLE t1(a MEDIUMTEXT CHARSET UTF8) ENGINE=INNODB;
+CREATE TABLE t1(a MEDIUMTEXT CHARSET UTF8) ENGINE=SEQUOIADB;
 INSERT INTO t1 VALUES(0x6F76786E7875);
 SELECT NULL IN (SELECT 1 FROM t1);
 NULL IN (SELECT 1 FROM t1)
@@ -8178,18 +6983,6 @@ PRIMARY KEY  (t3_id),
 KEY t3_t1_id_idx (t3_t1_val)
 );
 INSERT INTO t3 VALUES (1,1,2.50);
-EXPLAIN SELECT (SELECT t3.t3_val
-FROM t3
-WHERE t3.t3_t1_val = t1.t1_id) as CMS, t2.t2_val, t1.t1_id
-FROM t1 INNER JOIN t2 ON t1.join_val = t2.join_val
-WHERE t1.t1_id = 1 GROUP BY t2.t2_val;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	Using temporary; Using filesort
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where
-2	DEPENDENT SUBQUERY	t3	NULL	ref	t3_t1_id_idx	t3_t1_id_idx	5	const	1	100.00	NULL
-Warnings:
-Note	1276	Field or reference 'test.t1.t1_id' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select `test`.`t3`.`t3_val` from `test`.`t3` where (`test`.`t3`.`t3_t1_val` = '1')) AS `CMS`,`test`.`t2`.`t2_val` AS `t2_val`,'1' AS `t1_id` from `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`join_val` = '5')) group by `test`.`t2`.`t2_val`
 SELECT (SELECT t3.t3_val
 FROM t3
 WHERE t3.t3_t1_val = t1.t1_id) as CMS, t2.t2_val, t1.t1_id
@@ -8197,19 +6990,6 @@ FROM t1 INNER JOIN t2 ON t1.join_val = t2.join_val
 WHERE t1.t1_id = 1 GROUP BY t2.t2_val;
 CMS	t2_val	t1_id
 2.50	1	1
-EXPLAIN SELECT (SELECT t3.t3_val
-FROM t3
-WHERE t3.t3_t1_val = t1.t1_id * t1.t1_id) as CMS, t2.t2_val, t1.t1_id
-FROM t1 INNER JOIN t2 ON t1.join_val = t2.join_val
-WHERE t1.t1_id = 1 GROUP BY t2.t2_val;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	PRIMARY	t1	NULL	const	PRIMARY	PRIMARY	4	const	1	100.00	Using temporary; Using filesort
-1	PRIMARY	t2	NULL	ALL	NULL	NULL	NULL	NULL	1	100.00	Using where
-2	DEPENDENT SUBQUERY	t3	NULL	ref	t3_t1_id_idx	t3_t1_id_idx	5	const	1	100.00	NULL
-Warnings:
-Note	1276	Field or reference 'test.t1.t1_id' of SELECT #2 was resolved in SELECT #1
-Note	1276	Field or reference 'test.t1.t1_id' of SELECT #2 was resolved in SELECT #1
-Note	1003	/* select#1 */ select (/* select#2 */ select `test`.`t3`.`t3_val` from `test`.`t3` where (`test`.`t3`.`t3_t1_val` = ('1' * '1'))) AS `CMS`,`test`.`t2`.`t2_val` AS `t2_val`,'1' AS `t1_id` from `test`.`t1` join `test`.`t2` where ((`test`.`t2`.`join_val` = '5')) group by `test`.`t2`.`t2_val`
 SELECT (SELECT t3.t3_val
 FROM t3
 WHERE t3.t3_t1_val = t1.t1_id * t1.t1_id) as CMS, t2.t2_val, t1.t1_id

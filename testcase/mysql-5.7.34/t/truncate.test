@@ -1,7 +1,13 @@
+#
+# (#Case #13103: Check Truncate tables)
+#
 
-#
-# Test of truncate
-#
+--source include/have_sequoiadb.inc
+
+# Compatible with parallel > 1, table name will be printed when check error, should create and use database: test_casename
+create database test_truncate;
+use test_truncate;
+
 --disable_warnings
 drop table if exists t1, t2;
 --enable_warnings
@@ -29,7 +35,6 @@ truncate non_existing_table;
 #
 # test autoincrement with TRUNCATE; verifying difference with DELETE
 #
-
 create table t1 (a integer auto_increment primary key);
 insert into t1 (a) values (NULL),(NULL);
 truncate table t1;
@@ -74,6 +79,7 @@ drop table t1;
 --echo # Bug#20667 - Truncate table fails for a write locked table
 --echo #
 CREATE TABLE t1 (c1 INT);
+# Bug#SEQUOIASQLMAINSTREAM-161
 LOCK TABLE t1 WRITE;
 INSERT INTO t1 VALUES (1);
 SELECT * FROM t1;
@@ -150,17 +156,21 @@ DROP TABLE IF EXISTS t1;
 
 CREATE TABLE t1 AS SELECT 1 AS f1;
 
-HANDLER t1 OPEN;
---echo # Here comes the crash.
-TRUNCATE t1;
+# NOW SequoiaDB not support Handler
+#HANDLER t1 OPEN;
+#--echo # Here comes the crash.
+#TRUNCATE t1;
 
---echo # Currently TRUNCATE, just like other DDL, implicitly closes
---echo # open HANDLER table.
---error ER_UNKNOWN_TABLE
-HANDLER t1 READ FIRST;
+#--echo # Currently TRUNCATE, just like other DDL, implicitly closes
+#--echo # open HANDLER table.
+#--error ER_UNKNOWN_TABLE
+#HANDLER t1 READ FIRST;
 
 # Cleanup
 DROP TABLE t1;
+DROP DATABASE test_truncate;
+
+--source include/uninstall_sequoiadb.inc
 
 --echo # End of 6.0 tests
 

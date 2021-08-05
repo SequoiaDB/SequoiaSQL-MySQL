@@ -4,9 +4,9 @@
 
 --source include/have_query_cache.inc
 
---source include/have_innodb.inc
+#--source include/have_innodb.inc
 --source include/have_partition.inc
-let $engine_type= InnoDB;
+let $engine_type= SequoiaDB;
 # Using SELECT to get a space as first character.
 let $partitions_a= `SELECT ' PARTITION BY KEY (a) PARTITIONS 3'`;
 let $partitions_id= `SELECT ' PARTITION BY HASH (id) PARTITIONS 3'`;
@@ -23,8 +23,8 @@ CREATE TABLE t1
  `UPDATE_TIME` datetime NOT NULL,
  PRIMARY KEY (`NUM`,`UPDATE_TIME`))
 PARTITION BY RANGE (month(UPDATE_TIME))
-(PARTITION p2 VALUES LESS THAN (3) ENGINE = InnoDB,
- PARTITION p3 VALUES LESS THAN (4) ENGINE = InnoDB);
+(PARTITION p2 VALUES LESS THAN (3) ENGINE = SequoiaDB,
+ PARTITION p3 VALUES LESS THAN (4) ENGINE = SequoiaDB);
 
 SELECT * FROM t1 WHERE MONTH(update_time)=3;
 

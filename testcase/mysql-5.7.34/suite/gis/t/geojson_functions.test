@@ -11,6 +11,7 @@
 #####################################################################
 # ST_ASGEOJSON()
 #####################################################################
+--source include/have_sequoiadb.inc
 
 --echo # Checking all valid GEOMETRY types
 SELECT ST_ASGEOJSON(ST_GEOMFROMTEXT("POINT(10 11)"));
@@ -3868,7 +3869,7 @@ SELECT ST_GeomFromGeoJSON(REPEAT('{"foo":', 1000));
 --echo #              THD::SEND_STATEMENT_STATUS, SQL_CLASS.CC
 --echo #
 
-CREATE TABLE t (a INT) ENGINE=InnoDB;
+CREATE TABLE t (a INT) ENGINE=SequoiaDB;
 INSERT INTO t (a) VALUES (0), (1);
 SELECT 1 FROM t GROUP BY ST_AsGeoJSON(NULL, "1", NULL);
 SELECT 1 FROM t GROUP BY ST_AsGeoJSON(NULL, 5, 0);

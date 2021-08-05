@@ -29,7 +29,7 @@ y varchar(5) binary NOT NULL DEFAULT ' ',
 z varchar(20) binary NOT NULL DEFAULT ' ',
 a1 varchar(30) binary NOT NULL DEFAULT ' ',
 b1 tinyblob NULL)
-ENGINE=InnoDB DEFAULT CHARACTER SET = latin1 COLLATE latin1_bin;
+ENGINE=SequoiaDB DEFAULT CHARACTER SET = latin1 COLLATE latin1_bin;
 INSERT into t1 (b) values ('1');
 SHOW WARNINGS;
 Level	Code	Message
@@ -96,7 +96,7 @@ t2	CREATE TABLE `t2` (
   `z` varchar(20) COLLATE latin1_bin NOT NULL DEFAULT ' ',
   `a1` varchar(30) COLLATE latin1_bin NOT NULL DEFAULT ' ',
   `b1` tinyblob
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
+) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
 INSERT into t2 (b) values ('1');
 SHOW WARNINGS;
 Level	Code	Message

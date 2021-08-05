@@ -87,6 +87,7 @@ $column_list
 $unique
 )
 $partitioning;
+#BUG #SEQUOIASQLMAINSTREAM-683
 --source suite/parts/inc/partition_alter_1.inc
 
 #----------- PARTITION BY RANGE
@@ -105,6 +106,7 @@ $column_list
 $unique
 )
 $partitioning;
+#BUG #SEQUOIASQLMAINSTREAM-683
 --source suite/parts/inc/partition_alter_1.inc
 
 #----------- PARTITION BY RANGE -- SUBPARTITION BY HASH

@@ -195,6 +195,8 @@ PARTITION BY RANGE COLUMNS (c)
  PARTITION p3 VALUES LESS THAN (MAXVALUE))
              AS SELECT a, b, c FROM tp_r;
 
+# SequoiaDB is case-sensitive
+--error 1526
 eval CREATE TABLE tsp_rvar(a INT,b VARCHAR(25),c DATE) 
              ENGINE = $engine_table $data_directory $index_directory
 PARTITION BY RANGE COLUMNS (b)
@@ -220,6 +222,8 @@ SUBPARTITIONS 5
   SUBPARTITION sp24))
   AS SELECT a, b, c FROM tsp_r;
 
+# SequoiaDB is case-sensitive
+--error 1526
 eval CREATE TABLE tsp_rvar1(a INT,b VARCHAR(25),c DATE) 
              ENGINE = $engine_table $data_directory $index_directory
 PARTITION BY RANGE COLUMNS (b)

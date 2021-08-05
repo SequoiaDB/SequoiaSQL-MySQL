@@ -4,7 +4,10 @@
 # This test copies some tests originally in json.test                #
 ######################################################################
 # Set the session storage engine
-set default_storage_engine=innodb;
+
+--source include/have_sequoiadb.inc
+
+set default_storage_engine=SequoiaDB;
 
 --source suite/json/inc/json_group_concat.inc
 
@@ -23,3 +26,5 @@ select group_concat(j), group_concat(distinct j), group_concat(c) from t;
 # This test is disabled until bug 22353594 is resolved
 #select group_concat(j order by j), group_concat(distinct j order by j), group_concat(c order by c) from t;
 drop table t;
+
+--source include/uninstall_sequoiadb.inc

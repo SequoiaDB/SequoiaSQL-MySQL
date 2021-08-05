@@ -1,7 +1,8 @@
+# (#Case #16239)
+# (#Case #16240)
 # The include statement below is a temp one for tests that are yet to
-#be ported to run with InnoDB,
-#but needs to be kept for tests that would need MyISAM in future.
---source include/force_myisam_default.inc
+#be ported to run with Sequoiadb.
+--source include/have_sequoiadb.inc
 
 # Thread stack overrun on solaris
 let $have_solaris = `select convert(@@version_compile_os using latin1) LIKE ("solaris%")`;
@@ -17,7 +18,7 @@ if ($have_solaris)
 #
 # Some tests that require --error go into sp-error.test
 # Tests that require inndb go into sp_trans.test
-# Tests that check privilege and security issues go to sp-security.test.
+# Tests that check privilege and security issues go to sp-security.test_sp.
 # Tests that require multiple connections, except security/privilege tests,
 #   go to sp-thread.
 # Tests that uses 'goto' to into sp-goto.test (currently disabled)
@@ -26,8 +27,10 @@ if ($have_solaris)
 # Tests that require --with-geometry go into sp_gis.test
 # Tests that require multibyte character sets, which are not always available,
 #   go into separate files (e.g. sp-ucs2.test)
-
-use test;
+# Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
+create database test_sp;
+use test_sp;
+#use test;
 
 # Test tables
 #
@@ -57,7 +60,7 @@ create table t2 (
 --disable_warnings ONCE
 drop procedure if exists foo42;
 create procedure foo42()
-  insert into test.t1 values ("foo", 42);
+  insert into test_sp.t1 values ("foo", 42);
 
 call foo42();
 select * from t1;
@@ -69,7 +72,7 @@ drop procedure foo42;
 --disable_warnings ONCE
 drop procedure if exists bar;
 create procedure bar(x char(16), y int)
-  insert into test.t1 values (x, y);
+  insert into test_sp.t1 values (x, y);
 
 call bar("bar", 666);
 select * from t1;
@@ -90,7 +93,7 @@ end|
 call empty()|
 drop procedure empty|
 
-# Scope test. This is legal (warnings might be possible in the future,
+# Scope test_sp. This is legal (warnings might be possible in the future,
 # but for the time being, we just accept it).
 --disable_warnings ONCE
 drop procedure if exists scope|
@@ -111,8 +114,8 @@ drop procedure scope|
 drop procedure if exists two|
 create procedure two(x1 char(16), x2 char(16), y int)
 begin
-  insert into test.t1 values (x1, y);
-  insert into test.t1 values (x2, y);
+  insert into test_sp.t1 values (x1, y);
+  insert into test_sp.t1 values (x2, y);
 end|
 
 call two("one", "two", 3)|
@@ -129,7 +132,7 @@ begin
   declare z1, z2 int;
   set z1 = y;
   set z2 = z1+2;
-  insert into test.t1 values (x, z2);
+  insert into test_sp.t1 values (x, z2);
 end|
 
 call locset("locset", 19)|
@@ -194,7 +197,7 @@ begin
   declare z int;
 
   set @z = y, z = 666, max_join_size = 100;
-  insert into test.t1 values (x, z);
+  insert into test_sp.t1 values (x, z);
 end|
 
 call mixset("mixset", 19)|
@@ -268,7 +271,7 @@ drop procedure if exists iotest|
 create procedure iotest(x1 char(16), x2 char(16), y int)
 begin
   call inc2(x2, y);
-  insert into test.t1 values (x1, y);
+  insert into test_sp.t1 values (x1, y);
 end|
 
 --disable_warnings ONCE
@@ -276,7 +279,7 @@ drop procedure if exists inc2|
 create procedure inc2(x char(16), y int)
 begin
   call inc(y);
-  insert into test.t1 values (x, y);
+  insert into test_sp.t1 values (x, y);
 end|
 
 --disable_warnings ONCE
@@ -316,7 +319,7 @@ begin
   declare y int default 3;
 
   call cbv2(y+1, y);
-  insert into test.t1 values ("cbv1", y);
+  insert into test_sp.t1 values ("cbv1", y);
 end|
 
 --disable_warnings ONCE
@@ -324,7 +327,7 @@ drop procedure if exists cbv2|
 create procedure cbv2(y1 int, inout y2 int)
 begin
   set y2 = 4711;
-  insert into test.t1 values ("cbv2", y1);
+  insert into test_sp.t1 values ("cbv2", y1);
 end|
 
 call cbv1()|
@@ -341,15 +344,15 @@ insert into t2 values ("a", 1, 1.1), ("b", 2, 1.2), ("c", 3, 1.3)|
 --disable_warnings ONCE
 drop procedure if exists sub1|
 create procedure sub1(id char(16), x int)
-  insert into test.t1 values (id, x)|
+  insert into test_sp.t1 values (id, x)|
 
 --disable_warnings ONCE
 drop procedure if exists sub2|
 create procedure sub2(id char(16))
 begin
   declare x int;
-  set x = (select sum(t.i) from test.t2 t);
-  insert into test.t1 values (id, x);
+  set x = (select sum(t.i) from test_sp.t2 t);
+  insert into test_sp.t1 values (id, x);
 end|
 
 --disable_warnings ONCE
@@ -379,7 +382,7 @@ drop procedure if exists a0|
 create procedure a0(x int)
 while x do
   set x = x-1;
-  insert into test.t1 values ("a0", x);
+  insert into test_sp.t1 values ("a0", x);
 end while|
 
 call a0(3)|
@@ -388,13 +391,13 @@ delete from t1|
 drop procedure a0|
 
 
-# The same, but with a more traditional test.
+# The same, but with a more traditional test_sp.
 --disable_warnings ONCE
 drop procedure if exists a|
 create procedure a(x int)
 while x > 0 do
   set x = x-1;
-  insert into test.t1 values ("a", x);
+  insert into test_sp.t1 values ("a", x);
 end while|
 
 call a(3)|
@@ -408,7 +411,7 @@ drop procedure a|
 drop procedure if exists b|
 create procedure b(x int)
 repeat
-  insert into test.t1 values (repeat("b",3), x);
+  insert into test_sp.t1 values (repeat("b",3), x);
   set x = x-1;
 until x = 0 end repeat|
 
@@ -423,7 +426,7 @@ drop procedure b|
 drop procedure if exists b2|
 create procedure b2(x int)
 repeat(select 1 into outfile 'b2');
-  insert into test.t1 values (repeat("b2",3), x);
+  insert into test_sp.t1 values (repeat("b2",3), x);
   set x = x-1;
 until x = 0 end repeat|
 
@@ -436,10 +439,10 @@ drop procedure b2|
 drop procedure if exists c|
 create procedure c(x int)
 hmm: while x > 0 do
-  insert into test.t1 values ("c", x);
+  insert into test_sp.t1 values ("c", x);
   set x = x-1;
   iterate hmm;
-  insert into test.t1 values ("x", x);
+  insert into test_sp.t1 values ("x", x);
 end while hmm|
 
 call c(3)|
@@ -453,10 +456,10 @@ drop procedure c|
 drop procedure if exists d|
 create procedure d(x int)
 hmm: while x > 0 do
-  insert into test.t1 values ("d", x);
+  insert into test_sp.t1 values ("d", x);
   set x = x-1;
   leave hmm;
-  insert into test.t1 values ("x", x);
+  insert into test_sp.t1 values ("x", x);
 end while|
 
 call d(3)|
@@ -473,7 +476,7 @@ foo: loop
   if x = 0 then
     leave foo;
   end if;
-  insert into test.t1 values ("e", x);
+  insert into test_sp.t1 values ("e", x);
   set x = x-1;
 end loop foo|
 
@@ -488,11 +491,11 @@ drop procedure e|
 drop procedure if exists f|
 create procedure f(x int)
 if x < 0 then
-  insert into test.t1 values ("f", 0);
+  insert into test_sp.t1 values ("f", 0);
 elseif x = 0 then
-  insert into test.t1 values ("f", 1);
+  insert into test_sp.t1 values ("f", 1);
 else
-  insert into test.t1 values ("f", 2);
+  insert into test_sp.t1 values ("f", 2);
 end if|
 
 call f(-2)|
@@ -509,11 +512,11 @@ drop procedure if exists g|
 create procedure g(x int)
 case
 when x < 0 then
-  insert into test.t1 values ("g", 0);
+  insert into test_sp.t1 values ("g", 0);
 when x = 0 then
-  insert into test.t1 values ("g", 1);
+  insert into test_sp.t1 values ("g", 1);
 else
-  insert into test.t1 values ("g", 2);
+  insert into test_sp.t1 values ("g", 2);
 end case|
 
 call g(-42)|
@@ -530,11 +533,11 @@ drop procedure if exists h|
 create procedure h(x int)
 case x
 when 0 then
-  insert into test.t1 values ("h0", x);
+  insert into test_sp.t1 values ("h0", x);
 when 1 then
-  insert into test.t1 values ("h1", x);
+  insert into test_sp.t1 values ("h1", x);
 else
-  insert into test.t1 values ("h?", x);
+  insert into test_sp.t1 values ("h?", x);
 end case|
 
 call h(0)|
@@ -554,7 +557,7 @@ begin
   if x = 0 then
     leave foo;
   end if;
-  insert into test.t1 values ("i", x);
+  insert into test_sp.t1 values ("i", x);
 end foo|
 
 call i(0)|
@@ -596,9 +599,9 @@ delete from t2|
 drop procedure if exists into_test|
 create procedure into_test(x char(16), y int)
 begin
-  insert into test.t1 values (x, y);
-  select id,data into x,y from test.t1 limit 1;
-  insert into test.t1 values (concat(x, "2"), y+2);
+  insert into test_sp.t1 values (x, y);
+  select id,data into x,y from test_sp.t1 limit 1;
+  insert into test_sp.t1 values (concat(x, "2"), y+2);
 end|
 
 call into_test("into", 100)|
@@ -612,9 +615,9 @@ drop procedure into_test|
 drop procedure if exists into_tes2|
 create procedure into_test2(x char(16), y int)
 begin
-  insert into test.t1 values (x, y);
-  select id,data into x,@z from test.t1 limit 1;
-  insert into test.t1 values (concat(x, "2"), y+2);
+  insert into test_sp.t1 values (x, y);
+  select id,data into x,@z from test_sp.t1 limit 1;
+  insert into test_sp.t1 values (concat(x, "2"), y+2);
 end|
 
 call into_test2("into", 100)|
@@ -631,8 +634,8 @@ begin
   declare x char(16);
   declare y int;
 
-  select * into x,y from test.t1 limit 1;
-  insert into test.t2 values (x, y, 0.0);
+  select * into x,y from test_sp.t1 limit 1;
+  insert into test_sp.t2 values (x, y, 0.0);
 end|
 
 insert into t1 values ("into3", 19)|
@@ -653,8 +656,8 @@ create procedure into_test4()
 begin
   declare x int;
 
-  select data into x from test.t1 limit 1;
-  insert into test.t3 values ("into4", x);
+  select data into x from test_sp.t1 limit 1;
+  insert into test_sp.t3 values ("into4", x);
 end|
 
 delete from t1|
@@ -676,9 +679,9 @@ drop procedure if exists into_outfile|
 --replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
 eval create procedure into_outfile(x char(16), y int)
 begin
-  insert into test.t1 values (x, y);
-  select * into outfile "$MYSQLTEST_VARDIR/tmp/spout" from test.t1;
-  insert into test.t1 values (concat(x, "2"), y+2);
+  insert into test_sp.t1 values (x, y);
+  select * into outfile "$MYSQLTEST_VARDIR/tmp/spout" from test_sp.t1;
+  insert into test_sp.t1 values (concat(x, "2"), y+2);
 end|
 
 # Check that file does not exists
@@ -694,9 +697,9 @@ drop procedure if exists into_dumpfile|
 --replace_result $MYSQLTEST_VARDIR MYSQLTEST_VARDIR
 eval create procedure into_dumpfile(x char(16), y int)
 begin
-  insert into test.t1 values (x, y);
-  select * into dumpfile "$MYSQLTEST_VARDIR/tmp/spdump" from test.t1 limit 1;
-  insert into test.t1 values (concat(x, "2"), y+2);
+  insert into test_sp.t1 values (x, y);
+  select * into dumpfile "$MYSQLTEST_VARDIR/tmp/spdump" from test_sp.t1 limit 1;
+  insert into test_sp.t1 values (concat(x, "2"), y+2);
 end|
 
 # Check that file does not exists
@@ -711,9 +714,9 @@ drop procedure into_dumpfile|
 drop procedure if exists create_select|
 create procedure create_select(x char(16), y int)
 begin
-  insert into test.t1 values (x, y);
-  create temporary table test.t3 select * from test.t1;
-  insert into test.t3 values (concat(x, "2"), y+2);
+  insert into test_sp.t1 values (x, y);
+  create temporary table test_sp.t3 select * from test_sp.t1;
+  insert into test_sp.t3 values (concat(x, "2"), y+2);
 end|
 
 call create_select("cs", 90)|
@@ -816,9 +819,9 @@ begin
   declare zip condition for sqlstate value '42S99';  # Just for testing syntax
   declare continue handler for foo set x = 1;
 
-  insert into test.t1 values ("hndlr1", val, 2);  # Too many values
+  insert into test_sp.t1 values ("hndlr1", val, 2);  # Too many values
   if (x) then
-    insert into test.t1 values ("hndlr1", val);   # This instead then
+    insert into test_sp.t1 values ("hndlr1", val);   # This instead then
   end if;
 end|
 
@@ -836,10 +839,10 @@ begin
   begin
     declare exit handler for sqlstate '21S01' set x = 1;
 
-    insert into test.t1 values ("hndlr2", val, 2); # Too many values
+    insert into test_sp.t1 values ("hndlr2", val, 2); # Too many values
   end;
 
-  insert into test.t1 values ("hndlr2", x);
+  insert into test_sp.t1 values ("hndlr2", x);
 end|
 
 call hndlr2(42)|
@@ -866,9 +869,9 @@ begin
       declare y int;
 
       set y = val + 10;
-      insert into test.t1 values ("hndlr3", y, 2);  # Too many values
+      insert into test_sp.t1 values ("hndlr3", y, 2);  # Too many values
       if x then
-        insert into test.t1 values ("hndlr3", y);
+        insert into test_sp.t1 values ("hndlr3", y);
       end if;
     end;
   end if;
@@ -893,9 +896,9 @@ begin
   declare val int;	                           # No default
   declare continue handler for sqlstate '02000' set x=1;
 
-  select data into val from test.t3 where id='z' limit 1;  # No hits
+  select data into val from test_sp.t3 where id='z' limit 1;  # No hits
 
-  insert into test.t3 values ('z', val);
+  insert into test_sp.t3 values ('z', val);
 end|
 
 call hndlr4()|
@@ -915,14 +918,14 @@ begin
   declare b int;
   declare c double;
   declare done int default 0;
-  declare c cursor for select * from test.t2;
+  declare c cursor for select * from test_sp.t2;
   declare continue handler for sqlstate '02000' set done = 1;
 
   open c;
   repeat
     fetch c into a, b, c;
     if not done then
-       insert into test.t1 values (a, b+c);
+       insert into test_sp.t1 values (a, b+c);
     end if;
   until done end repeat;
   close c;
@@ -940,8 +943,8 @@ drop procedure if exists cur2|
 create procedure cur2()
 begin
   declare done int default 0;
-  declare c1 cursor for select id,data from test.t1 order by id,data;
-  declare c2 cursor for select i from test.t2 order by i;
+  declare c1 cursor for select id,data from test_sp.t1 order by id,data;
+  declare c2 cursor for select i from test_sp.t2 order by i;
   declare continue handler for sqlstate '02000' set done = 1;
 
   open c1;
@@ -955,9 +958,9 @@ begin
     fetch next from c2 into c;
     if not done then
       if b < c then
-        insert into test.t3 values (a, b);
+        insert into test_sp.t3 values (a, b);
       else
-        insert into test.t3 values (a, c);
+        insert into test_sp.t3 values (a, c);
       end if;
     end if;
   end;
@@ -1062,7 +1065,7 @@ use sp_db2|
 # Just put something in here...
 create table t3 ( s char(4), t int )|
 insert into t3 values ("abcd", 42), ("dcba", 666)|
-use test|
+use test_sp|
 drop database sp_db2|
 
 # And yet again, with just a procedure.
@@ -1072,7 +1075,7 @@ use sp_db3|
 drop procedure if exists dummy|
 create procedure dummy(out x int)
   set x = 42|
-use test|
+use test_sp|
 drop database sp_db3|
 # Check that it's gone
 select type,db,name from mysql.proc where db = 'sp_db3'|
@@ -1080,6 +1083,7 @@ select type,db,name from mysql.proc where db = 'sp_db3'|
 
 # ROW_COUNT() function after a CALL
 # We test the other cases here too, although it's not strictly SP specific
+#Bug #SEQUOIASQLMAINSTREAM-144
 --disable_warnings ONCE
 drop procedure if exists rc|
 create procedure rc()
@@ -1092,6 +1096,7 @@ call rc()|
 select row_count()|
 --disable_ps_protocol
 update t1 set data=42 where id = "b";
+#BUG #BUG SEQUOIASQLMAINSTREAM-438
 select row_count()|
 --enable_ps_protocol
 delete from t1|
@@ -1394,7 +1399,7 @@ begin
   end if;
   while i <= n do
     begin
-      insert into test.t3 values (i, fac(i));
+      insert into test_sp.t3 values (i, fac(i));
       set i = i + 1;
     end;
   end while;
@@ -1449,7 +1454,7 @@ begin
       begin
         declare p bigint unsigned;
 
-        select t.p into p from test.t3 t where t.i = s;
+        select t.p into p from test_sp.t3 t where t.i = s;
         if b+p > r then
           set pp = 1;
           leave again;
@@ -1479,7 +1484,7 @@ begin
 
       call opp(p, pp);
       if pp then
-        insert into test.t3 values (i, p);
+        insert into test_sp.t3 values (i, p);
         set i = i+1;
       end if;
       set p = p+2;
@@ -1488,7 +1493,7 @@ begin
 end|
 show create procedure opp|
 --replace_column 4 'root@localhost' 5 '0000-00-00 00:00:00' 6 '0000-00-00 00:00:00'
-show procedure status where name like '%p%' and db='test'|
+show procedure status where name like '%p%' and db='test_sp'|
 
 # This isn't the fastest way in the world to compute prime numbers, so
 # don't be too ambitious. ;-)
@@ -1506,7 +1511,7 @@ drop table t3|
 drop procedure opp|
 drop procedure ip|
 --replace_column 4 'root@localhost' 5 '0000-00-00 00:00:00' 6 '0000-00-00 00:00:00'
-show procedure status where name like '%p%' and db='test'|
+show procedure status where name like '%p%' and db='test_sp'|
 
 
 #
@@ -1517,7 +1522,7 @@ show procedure status where name like '%p%' and db='test'|
 drop procedure if exists bar|
 create procedure bar(x char(16), y int)
  comment "111111111111" sql security invoker
- insert into test.t1 values (x, y)|
+ insert into test_sp.t1 values (x, y)|
 --replace_column 4 'root@localhost' 5 '0000-00-00 00:00:00' 6 '0000-00-00 00:00:00'
 show procedure status like 'bar'|
 alter procedure bar comment "2222222222" sql security definer|
@@ -1945,6 +1950,7 @@ begin
   end;
 end|
 
+#Bug #SEQUOIASQLMAINSTREAM-143
 call h_ee()|
 call h_es()|
 call h_en()|
@@ -2156,14 +2162,14 @@ drop procedure bug2260|
 drop procedure if exists bug2267_1|
 create procedure bug2267_1()
 begin
-  show procedure status where db='test';
+  show procedure status where db='test_sp';
 end|
 
 --disable_warnings ONCE
 drop procedure if exists bug2267_2|
 create procedure bug2267_2()
 begin
-  show function status where db='test';
+  show function status where db='test_sp';
 end|
 
 --disable_warnings ONCE
@@ -2441,31 +2447,32 @@ drop procedure bug3426|
 #
 # BUG#3734
 #
-create table t3 (
-  id int unsigned auto_increment not null primary key,
-  title VARCHAR(200),
-  body text,
-  fulltext (title,body)
-)|
-
-insert into t3 (title,body) values
-  ('MySQL Tutorial','DBMS stands for DataBase ...'),
-  ('How To Use MySQL Well','After you went through a ...'),
-  ('Optimizing MySQL','In this tutorial we will show ...'),
-  ('1001 MySQL Tricks','1. Never run mysqld as root. 2. ...'),
-  ('MySQL vs. YourSQL','In the following database comparison ...'),
-  ('MySQL Security','When configured properly, MySQL ...')|
-
---disable_warnings ONCE
-drop procedure if exists bug3734 |
-create procedure bug3734 (param1 varchar(100))
-  select * from t3 where match (title,body) against (param1)|
-
-call bug3734('database')|
-call bug3734('Security')|
-
-drop procedure bug3734|
-drop table t3|
+#Sequoiadb not support fulltext
+#create table t3 (
+#  id int unsigned auto_increment not null primary key,
+#  title VARCHAR(200),
+#  body text,
+#  fulltext (title,body)
+#)|
+#
+#insert into t3 (title,body) values
+#  ('MySQL Tutorial','DBMS stands for DataBase ...'),
+#  ('How To Use MySQL Well','After you went through a ...'),
+#  ('Optimizing MySQL','In this tutorial we will show ...'),
+#  ('1001 MySQL Tricks','1. Never run mysqld as root. 2. ...'),
+#  ('MySQL vs. YourSQL','In the following database comparison ...'),
+#  ('MySQL Security','When configured properly, MySQL ...')|
+#
+#--disable_warnings ONCE
+#drop procedure if exists bug3734 |
+#create procedure bug3734 (param1 varchar(100))
+#  select * from t3 where match (title,body) against (param1)|
+#
+#call bug3734('database')|
+#call bug3734('Security')|
+#
+#drop procedure bug3734|
+#drop table t3|
 
 #
 # BUG#3863
@@ -2596,7 +2603,7 @@ drop procedure if exists bug3843|
 create procedure bug3843()
   analyze table t1|
 
-# Testing for packets out of order
+## Testing for packets out of order
 call bug3843()|
 call bug3843()|
 select 1+2|
@@ -2816,7 +2823,7 @@ drop procedure if exists bug336|
 create procedure bug336(out y int)
 begin
   declare x int;
-  set x = (select sum(t.data) from test.t1 t);
+  set x = (select sum(t.data) from test_sp.t1 t);
   set y = x;
 end|
 
@@ -2858,11 +2865,11 @@ begin
 end|
 
 select created into @c1 from mysql.proc
-  where db='test' and name='bug5251'|
+  where db='test_sp' and name='bug5251'|
 --sleep 2
 alter procedure bug5251 comment 'foobar'|
 select count(*) from mysql.proc
-  where  db='test' and name='bug5251' and created = @c1|
+  where  db='test_sp' and name='bug5251' and created = @c1|
 
 drop procedure bug5251|
 
@@ -2979,6 +2986,7 @@ drop procedure bug4941|
 #
 # BUG#4905: Stored procedure doesn't clear for "Rows affected"
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings ONCE
 drop procedure if exists bug4905|
 
@@ -3031,6 +3039,7 @@ drop function bug6022|
 #
 # BUG#6029: Stored procedure specific handlers should have priority
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings ONCE
 drop procedure if exists bug6029|
 
@@ -3107,7 +3116,7 @@ create table t4 (
   b smallint(5) unsigned not null,
   c char(32) not null,
   primary key  (a)
-) engine=myisam default charset=latin1|
+) engine=Sequoiadb default charset=latin1|
 insert into t4 values (1, 2, 'oneword')|
 insert into t4 values (2, 2, 'anotherword')|
 
@@ -3362,6 +3371,7 @@ delete from t1|
 # BUG#9074: STORED PROC: The scope of every handler declared is not
 #                        properly applied
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings
 drop procedure if exists bug6900|
 drop procedure if exists bug9074|
@@ -3988,7 +3998,7 @@ create function bug10055(v char(255)) returns char(255) return lower(v)|
 # This select should not crash server and should return all fields in t1
 select t.column_name, bug10055(t.column_name)
 from information_schema.columns as t
-where t.table_schema = 'test' and t.table_name = 't1'|
+where t.table_schema = 'test_sp' and t.table_name = 't1'|
 drop function bug10055|
 
 #
@@ -4017,7 +4027,7 @@ drop procedure bug12297|
 
 #
 # Bug #11247 "Stored procedures: Function calls in long loops leak memory"
-# One more memleak bug test. One could use this test to check that the memory
+# One more memleak bug test_sp. One could use this test to check that the memory
 # isn't leaking by increasing the input value for p_bug11247.
 #
 
@@ -4238,6 +4248,7 @@ drop function bug131333|
 # BUG#12379: PROCEDURE with HANDLER calling FUNCTION with error get
 #            strange result
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings
 drop function if exists bug12379|
 drop procedure if exists bug12379_1|
@@ -4273,7 +4284,7 @@ begin
    select bug12379();
 end|
 
---error ER_DUP_ENTRY
+--error 1062
 select bug12379()|
 select 1|
 # statement-based binlogging will show warning which row-based won't;
@@ -4284,7 +4295,7 @@ select 2|
 call bug12379_2()|
 --enable_warnings
 select 3|
---error ER_DUP_ENTRY
+--error 1062
 call bug12379_3()|
 select 4|
 
@@ -4338,6 +4349,7 @@ drop procedure bug12979_2|
 #
 # BUG#6127: Stored procedure handlers within handlers don't work
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings
 drop table if exists t3|
 drop procedure if exists bug6127|
@@ -4363,7 +4375,7 @@ end|
 
 call bug6127()|
 select * from t3|
---error ER_DUP_ENTRY
+--error 1062
 call bug6127()|
 select * from t3|
 set sql_mode=@sm|
@@ -4375,6 +4387,7 @@ drop procedure bug6127|
 # BUG#12589: Assert when creating temp. table from decimal stored procedure
 #            variable
 #
+#Bug #SEQUOISQLMAINSTREAM-119
 --disable_warnings
 drop procedure if exists bug12589_1|
 drop procedure if exists bug12589_2|
@@ -4427,6 +4440,7 @@ drop procedure bug12589_3|
 #
 # BUG#7049: Stored procedure CALL errors are ignored
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings
 drop table if exists t3|
 drop procedure if exists bug7049_1|
@@ -4659,6 +4673,7 @@ drop procedure bug14845|
 # procedure and last of these variables is used in argument of NOT
 # operator.
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings
 drop procedure if exists bug13549_1|
 drop procedure if exists bug13549_2|
@@ -4813,6 +4828,7 @@ drop view v1|
 #
 # BUG#13729: Stored procedures: packet error after exception handled
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings
 drop procedure if exists bug13729|
 drop table if exists t3|
@@ -5007,38 +5023,39 @@ drop procedure bug5967|
 #
 # Bug#13012 "SP: REPAIR/BACKUP/RESTORE TABLE crashes the server"
 #
---let $backupdir = $MYSQLTEST_VARDIR/tmp/
---error 0,1
---remove_file $backupdir/t1.frm
---error 0,1
---remove_file $backupdir/t1.MYD
+#Sequoiadb not support repair table
+#--let $backupdir = $MYSQLTEST_VARDIR/tmp/
+#--error 0,1
+#--remove_file $backupdir/t1.frm
+#--error 0,1
+#--remove_file $backupdir/t1.MYD
+#
+#--disable_warnings
+#drop procedure if exists bug13012|
+## Disable warnings also for BACKUP/RESTORE: they are deprecated.
+#eval create procedure bug13012()
+#    BEGIN
+#       REPAIR TABLE t1;
+#    END|
+#call bug13012()|
+#
+#--enable_warnings
+#
+#drop procedure bug13012|
 
---disable_warnings
-drop procedure if exists bug13012|
-# Disable warnings also for BACKUP/RESTORE: they are deprecated.
-eval create procedure bug13012()
-    BEGIN
-       REPAIR TABLE t1;
-    END|
-call bug13012()|
-
---enable_warnings
-
-drop procedure bug13012|
-
-create view v1 as select * from t1|
-create procedure bug13012()
-BEGIN
-  REPAIR TABLE t1,t2,t3,v1;
-  OPTIMIZE TABLE t1,t2,t3,v1;
-  ANALYZE TABLE t1,t2,t3,v1;
-END|
-call bug13012()|
-call bug13012()|
-call bug13012()|
-drop procedure bug13012|
-drop view v1|
-select * from t1 order by data|
+#create view v1 as select * from t1|
+#create procedure bug13012()
+#BEGIN
+#  REPAIR TABLE t1,t2,t3,v1;
+#  OPTIMIZE TABLE t1,t2,t3,v1;
+#  ANALYZE TABLE t1,t2,t3,v1;
+#END|
+#call bug13012()|
+#call bug13012()|
+#call bug13012()|
+#drop procedure bug13012|
+#drop view v1|
+#select * from t1 order by data|
 
 #
 # A test case for Bug#15392 "Server crashes during prepared statement
@@ -5048,20 +5065,22 @@ select * from t1 order by data|
 # It's necessary to use several DBs because in the original code
 # the successful return of mysql_change_db overrode the error from
 # execution.
-drop schema if exists mysqltest1|
-drop schema if exists mysqltest2|
-drop schema if exists mysqltest3|
-create schema mysqltest1|
-create schema mysqltest2|
-create schema mysqltest3|
-use mysqltest3|
 
-create procedure mysqltest1.p1 (out prequestid varchar(100))
+# Compatible with parallel > 1, don't use mysqltest1/mysqltest2/mysqltest3 here, instead use database: mysqltest1/2/3_casename
+drop schema if exists mysqltest1_sp|
+drop schema if exists mysqltest2_sp|
+drop schema if exists mysqltest3_sp|
+create schema mysqltest1_sp|
+create schema mysqltest2_sp|
+create schema mysqltest3_sp|
+use mysqltest3_sp|
+
+create procedure mysqltest1_sp.p1 (out prequestid varchar(100))
 begin
-  call mysqltest2.p2('call mysqltest3.p3(1, 2)');
+  call mysqltest2_sp.p2('call mysqltest3_sp.p3(1, 2)');
 end|
 
-create procedure mysqltest2.p2(in psql text)
+create procedure mysqltest2_sp.p2(in psql text)
 begin
   declare lsql text;
   set @lsql= psql;
@@ -5070,21 +5089,21 @@ begin
   deallocate prepare lstatement;
 end|
 
-create procedure mysqltest3.p3(in p1 int)
+create procedure mysqltest3_sp.p3(in p1 int)
 begin
   select p1;
 end|
 
 --error ER_SP_WRONG_NO_OF_ARGS
-call mysqltest1.p1(@rs)|
+call mysqltest1_sp.p1(@rs)|
 --error ER_SP_WRONG_NO_OF_ARGS
-call mysqltest1.p1(@rs)|
+call mysqltest1_sp.p1(@rs)|
 --error ER_SP_WRONG_NO_OF_ARGS
-call mysqltest1.p1(@rs)|
-drop schema if exists mysqltest1|
-drop schema if exists mysqltest2|
-drop schema if exists mysqltest3|
-use test|
+call mysqltest1_sp.p1(@rs)|
+drop schema if exists mysqltest1_sp|
+drop schema if exists mysqltest2_sp|
+drop schema if exists mysqltest3_sp|
+use test_sp|
 
 #
 # Bug#15441 "Running SP causes Server to Crash": check that an SP variable
@@ -5121,6 +5140,7 @@ drop procedure bug15441|
 # In UPDATE statement, just check that values() function returns NULL for
 # non- INSERT...UPDATE statements, as stated in the manual.
 
+#Bug #SEQUOIASQLMAINSTREAM-112
 create procedure bug15441(county varchar(25))
 begin
   declare c varchar(25) default "hello";
@@ -5132,6 +5152,7 @@ begin
   update t3 set id=2, county=values(id);
   select * from t3;
 end|
+#Bug #SEQUOIASQLMAINSTREAM-468
 call bug15441('Yale')|
 drop table t3|
 drop procedure bug15441|
@@ -5308,6 +5329,7 @@ drop procedure bug15231_6|
 #
 # BUG#15011: error handler in nested block not activated
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings ONCE
 drop procedure if exists bug15011|
 
@@ -5466,7 +5488,7 @@ delete from t1|
 # BUG#15728: LAST_INSERT_ID function inside a stored function returns 0
 #
 # The solution is not to reset last_insert_id on enter to sub-statement.
-#
+#   
 --disable_warnings
 drop function if exists bug15728|
 drop table if exists t3|
@@ -5519,7 +5541,7 @@ use bug18344_0123456789012|
 create procedure bug18344() begin end|
 create procedure bug18344_2() begin end|
 
-use test|
+use test_sp|
 
 select schema_name from information_schema.schemata where 
   schema_name like 'bug18344%'|
@@ -5655,47 +5677,47 @@ DROP PROCEDURE bug18037_p2|
 #            to a function from another database.
 #            See also ps.test for an additional test case for this bug.
 #
-use test|
+use test_sp|
 create table t3 (i int)|
 insert into t3 values (1), (2)|
-create database mysqltest1|
-use mysqltest1|
+create database mysqltest1_sp|
+use mysqltest1_sp|
 create function bug17199() returns varchar(2) deterministic return 'ok'|
-use test|
-select *, mysqltest1.bug17199() from t3|
+use test_sp|
+select *, mysqltest1_sp.bug17199() from t3|
 #
 # Bug#18444: Fully qualified stored function names don't work correctly
 #            in select statements
 #
-use mysqltest1|
+use mysqltest1_sp|
 create function bug18444(i int) returns int no sql deterministic return i + 1|
-use test|
-select mysqltest1.bug18444(i) from t3|
-drop database mysqltest1|
+use test_sp|
+select mysqltest1_sp.bug18444(i) from t3|
+drop database mysqltest1_sp|
 #
 # Check that current database has no influence to a stored procedure
 #
-create database mysqltest1 charset=utf8|
-create database mysqltest2 charset=utf8|
-create procedure mysqltest1.p1()
+create database mysqltest1_sp charset=utf8|
+create database mysqltest2_sp charset=utf8|
+create procedure mysqltest1_sp.p1()
 begin
 -- alters the default collation of database test 
   alter database character set koi8r;
 end|
-use mysqltest1|
+use mysqltest1_sp|
 call p1()|
-show create database mysqltest1|
-show create database mysqltest2|
-alter database mysqltest1 character set utf8|
-use mysqltest2|
-call mysqltest1.p1()|
-show create database mysqltest1|
-show create database mysqltest2|
-drop database mysqltest1|
-drop database mysqltest2|
+show create database mysqltest1_sp|
+show create database mysqltest2_sp|
+alter database mysqltest1_sp character set utf8|
+use mysqltest2_sp|
+call mysqltest1_sp.p1()|
+show create database mysqltest1_sp|
+show create database mysqltest2_sp|
+drop database mysqltest1_sp|
+drop database mysqltest2_sp|
 #
 # Restore the old environemnt
-use test|
+use test_sp|
 #
 # Bug#15217 "Using a SP cursor on a table created with PREPARE fails with
 #           weird error". Check that the code that is supposed to work at
@@ -5729,7 +5751,7 @@ drop procedure bug15217|
 # BUG#21013: Performance Degrades when importing data that uses
 # Trigger and Stored Procedure
 #
-# This is a performance and memory leak test.  Run with large number
+# This is a performance and memory leak test_sp.  Run with large number
 # passed to bug21013() procedure.
 #
 --disable_warnings ONCE
@@ -5757,16 +5779,16 @@ DROP PROCEDURE bug21013 |
 # Prepare: create database with fixed, pre-defined character set.
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
+DROP DATABASE IF EXISTS mysqltest1_sp|
+DROP DATABASE IF EXISTS mysqltest2_sp|
 --enable_warnings
 
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8|
-CREATE DATABASE mysqltest2 DEFAULT CHARACTER SET utf8|
+CREATE DATABASE mysqltest1_sp DEFAULT CHARACTER SET utf8|
+CREATE DATABASE mysqltest2_sp DEFAULT CHARACTER SET utf8|
 
 # Test case:
 
-use mysqltest1|
+use mysqltest1_sp|
 
 #   - Create two stored functions -- with and without explicit CHARSET-clause
 #     for return value;
@@ -5777,10 +5799,10 @@ CREATE FUNCTION bug16211_f1() RETURNS CHAR(10)
 CREATE FUNCTION bug16211_f2() RETURNS CHAR(10) CHARSET koi8r
   RETURN ""|
 
-CREATE FUNCTION mysqltest2.bug16211_f3() RETURNS CHAR(10)
+CREATE FUNCTION mysqltest2_sp.bug16211_f3() RETURNS CHAR(10)
   RETURN ""|
 
-CREATE FUNCTION mysqltest2.bug16211_f4() RETURNS CHAR(10) CHARSET koi8r
+CREATE FUNCTION mysqltest2_sp.bug16211_f4() RETURNS CHAR(10) CHARSET koi8r
   RETURN ""|
 
 #   - Check that CHARSET-clause is specified for the second function;
@@ -5788,72 +5810,72 @@ CREATE FUNCTION mysqltest2.bug16211_f4() RETURNS CHAR(10) CHARSET koi8r
 SHOW CREATE FUNCTION bug16211_f1|
 SHOW CREATE FUNCTION bug16211_f2|
 
-SHOW CREATE FUNCTION mysqltest2.bug16211_f3|
-SHOW CREATE FUNCTION mysqltest2.bug16211_f4|
+SHOW CREATE FUNCTION mysqltest2_sp.bug16211_f3|
+SHOW CREATE FUNCTION mysqltest2_sp.bug16211_f4|
 
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA = "mysqltest1" AND ROUTINE_NAME = "bug16211_f1"|
+WHERE ROUTINE_SCHEMA = "mysqltest1_sp" AND ROUTINE_NAME = "bug16211_f1"|
 
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA = "mysqltest1" AND ROUTINE_NAME = "bug16211_f2"|
+WHERE ROUTINE_SCHEMA = "mysqltest1_sp" AND ROUTINE_NAME = "bug16211_f2"|
 
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA = "mysqltest2" AND ROUTINE_NAME = "bug16211_f3"|
+WHERE ROUTINE_SCHEMA = "mysqltest2_sp" AND ROUTINE_NAME = "bug16211_f3"|
 
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA = "mysqltest2" AND ROUTINE_NAME = "bug16211_f4"|
+WHERE ROUTINE_SCHEMA = "mysqltest2_sp" AND ROUTINE_NAME = "bug16211_f4"|
 
 SELECT CHARSET(bug16211_f1())|
 SELECT CHARSET(bug16211_f2())|
 
-SELECT CHARSET(mysqltest2.bug16211_f3())|
-SELECT CHARSET(mysqltest2.bug16211_f4())|
+SELECT CHARSET(mysqltest2_sp.bug16211_f3())|
+SELECT CHARSET(mysqltest2_sp.bug16211_f4())|
 
 #   - Alter database character set.
 
-ALTER DATABASE mysqltest1 CHARACTER SET cp1251|
-ALTER DATABASE mysqltest2 CHARACTER SET cp1251|
+ALTER DATABASE mysqltest1_sp CHARACTER SET cp1251|
+ALTER DATABASE mysqltest2_sp CHARACTER SET cp1251|
 
 #   - Check that CHARSET-clause has not changed.
 
 SHOW CREATE FUNCTION bug16211_f1|
 SHOW CREATE FUNCTION bug16211_f2|
 
-SHOW CREATE FUNCTION mysqltest2.bug16211_f3|
-SHOW CREATE FUNCTION mysqltest2.bug16211_f4|
+SHOW CREATE FUNCTION mysqltest2_sp.bug16211_f3|
+SHOW CREATE FUNCTION mysqltest2_sp.bug16211_f4|
 
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA = "mysqltest1" AND ROUTINE_NAME = "bug16211_f1"|
+WHERE ROUTINE_SCHEMA = "mysqltest1_sp" AND ROUTINE_NAME = "bug16211_f1"|
 
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA = "mysqltest1" AND ROUTINE_NAME = "bug16211_f2"|
+WHERE ROUTINE_SCHEMA = "mysqltest1_sp" AND ROUTINE_NAME = "bug16211_f2"|
 
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA = "mysqltest2" AND ROUTINE_NAME = "bug16211_f3"|
+WHERE ROUTINE_SCHEMA = "mysqltest2_sp" AND ROUTINE_NAME = "bug16211_f3"|
 
 SELECT dtd_identifier
 FROM INFORMATION_SCHEMA.ROUTINES
-WHERE ROUTINE_SCHEMA = "mysqltest2" AND ROUTINE_NAME = "bug16211_f4"|
+WHERE ROUTINE_SCHEMA = "mysqltest2_sp" AND ROUTINE_NAME = "bug16211_f4"|
 
 SELECT CHARSET(bug16211_f1())|
 SELECT CHARSET(bug16211_f2())|
 
-SELECT CHARSET(mysqltest2.bug16211_f3())|
-SELECT CHARSET(mysqltest2.bug16211_f4())|
+SELECT CHARSET(mysqltest2_sp.bug16211_f3())|
+SELECT CHARSET(mysqltest2_sp.bug16211_f4())|
 
 # Cleanup.
 
-use test|
+use test_sp|
 
-DROP DATABASE mysqltest1|
-DROP DATABASE mysqltest2|
+DROP DATABASE mysqltest1_sp|
+DROP DATABASE mysqltest2_sp|
 
 
 #
@@ -5863,13 +5885,13 @@ DROP DATABASE mysqltest2|
 # Prepare: create database with fixed, pre-defined character set.
 
 --disable_warnings ONCE
-DROP DATABASE IF EXISTS mysqltest1|
+DROP DATABASE IF EXISTS mysqltest1_sp|
 
-CREATE DATABASE mysqltest1 DEFAULT CHARACTER SET utf8|
+CREATE DATABASE mysqltest1_sp DEFAULT CHARACTER SET utf8|
 
 # Test case:
 
-use mysqltest1|
+use mysqltest1_sp|
 
 #   - Create two stored procedures -- with and without explicit CHARSET-clause;
 
@@ -5903,9 +5925,9 @@ CALL bug16676_p2('a', @v2, @v3)|
 
 # Cleanup.
 
-use test|
+use test_sp|
 
-DROP DATABASE mysqltest1|
+DROP DATABASE mysqltest1_sp|
 #
 # BUG#8153: Stored procedure with subquery and continue handler, wrong result
 #
@@ -6031,20 +6053,20 @@ DROP FUNCTION bug19862|
 # selected.
 --disable_warnings
 drop table if exists t3|
-drop database if exists mysqltest1|
+drop database if exists mysqltest1_sp|
 --enable_warnings
 create table t3 (a int)|
 insert into t3 (a) values (1), (2)|
 
-create database mysqltest1|
-use mysqltest1|
-drop database mysqltest1|
+create database mysqltest1_sp|
+use mysqltest1_sp|
+drop database mysqltest1_sp|
 
 # No current database
 select database()|
 
-select * from (select 1 as a) as t1 natural join (select * from test.t3) as t2|
-use test|
+select * from (select 1 as a) as t1 natural join (select * from test_sp.t3) as t2|
+use test_sp|
 drop table t3|
 
 
@@ -6117,7 +6139,6 @@ drop database това_е_дълго_име_за_база_данни_нали|
 # BUG#21493: Crash on the second call of a procedure containing
 #            a select statement that uses an IN aggregating subquery  
 #
-
 CREATE TABLE t3 (
   Member_ID varchar(15) NOT NULL,
   PRIMARY KEY (Member_ID)
@@ -6357,7 +6378,7 @@ create table t3 (s1 int)|
 create procedure proc_bug19733()
 begin
   declare v int default 0;
-  while v < 100 do
+  while v < 10 do
     create index i on t3 (s1);
     drop index i on t3;
     set v = v + 1;
@@ -6435,7 +6456,7 @@ select pi(), pi ();
 
 # Non deterministic warnings from db_load_routine
 --disable_warnings ONCE
-select test.pi(), test.pi ();
+select test_sp.pi(), test_sp.pi ();
 
 SET SQL_MODE='';
 
@@ -6443,7 +6464,7 @@ select pi(), pi ();
 
 # Non deterministic warnings from db_load_routine
 --disable_warnings ONCE
-select test.pi(), test.pi ();
+select test_sp.pi(), test_sp.pi ();
 
 SET @@sql_mode=@save_sql_mode;
 
@@ -6455,9 +6476,9 @@ drop function pi;
 #
 
 --disable_warnings
-drop function if exists test.database;
-drop function if exists test.current_user;
-drop function if exists test.md5;
+drop function if exists test_sp.database;
+drop function if exists test_sp.current_user;
+drop function if exists test_sp.md5;
 --enable_warnings
 
 create database nowhere;
@@ -6478,7 +6499,7 @@ select database(), database ();
 select current_user(), current_user ();
 select md5("aaa"), md5 ("aaa");
 
-use test;
+use test_sp;
 
 create function `database`() returns varchar(50)
 return "Stored function database";
@@ -6497,9 +6518,9 @@ select md5("aaa"), md5 ("aaa");
 
 # Non deterministic warnings from db_load_routine
 --disable_warnings
-select test.database(), test.database ();
-select test.current_user(), test.current_user ();
-select test.md5("aaa"), test.md5 ("aaa");
+select test_sp.database(), test_sp.database ();
+select test_sp.current_user(), test_sp.current_user ();
+select test_sp.md5("aaa"), test_sp.md5 ("aaa");
 --enable_warnings
 
 SET SQL_MODE='';
@@ -6510,18 +6531,18 @@ select md5("aaa"), md5 ("aaa");
 
 # Non deterministic warnings from db_load_routine
 --disable_warnings
-select test.database(), test.database ();
-select test.current_user(), test.current_user ();
-select test.md5("aaa"), test.md5 ("aaa");
+select test_sp.database(), test_sp.database ();
+select test_sp.current_user(), test_sp.current_user ();
+select test_sp.md5("aaa"), test_sp.md5 ("aaa");
 --enable_warnings
 
 SET @@sql_mode=@save_sql_mode;
 
-drop function test.database;
-drop function test.current_user;
+drop function test_sp.database;
+drop function test_sp.current_user;
 drop function md5;
 
-use test;
+use test_sp;
 delimiter |;
 # End of BUG#22619
 
@@ -6578,6 +6599,7 @@ INSERT INTO bug23760 (num) VALUES (0), (1), (1), (2), (3), (5), (8)|
 SELECT ROW_COUNT()|
 
 CALL bug23760_test_row_count()|
+#Bug ##BUG SEQUOIASQLMAINSTREAM-438
 SELECT * FROM bug23760_log ORDER BY id|
 
 SET @save_max_sp_recursion= @@max_sp_recursion_depth|
@@ -6586,6 +6608,7 @@ SET max_sp_recursion_depth= 5|
 SELECT @@max_sp_recursion_depth|
 CALL bug23760_test_row_count2(2)|
 SELECT ROW_COUNT()|
+#Bug ##BUG SEQUOIASQLMAINSTREAM-438
 SELECT * FROM bug23760_log ORDER BY id|
 SELECT * FROM bug23760 ORDER by ID|
 SET max_sp_recursion_depth= @save_max_sp_recursion|
@@ -6674,7 +6697,7 @@ drop function func_8407_b|
 #
 # Bug#26503 (Illegal SQL exception handler code causes the server to crash)
 #
-
+#Bug #SEQUOIASQLMAINSTREAM-143
 --disable_warnings
 drop table if exists table_26503|
 drop procedure if exists proc_26503_ok_1|
@@ -6826,7 +6849,7 @@ DROP TABLE t3|
 # BUG#25082: Default database change on trigger execution breaks replication.
 #
 # As it turned out, this bug has actually two bugs. So, here we have two test
-# cases -- one in sp.test, the other in sp-security.test.
+# cases -- one in sp.test, the other in sp-security.test_sp.
 #
 
 #
@@ -6836,29 +6859,29 @@ DROP TABLE t3|
 # Prepare.
 
 --disable_warnings
-DROP DATABASE IF EXISTS mysqltest1|
-DROP DATABASE IF EXISTS mysqltest2|
+DROP DATABASE IF EXISTS mysqltest1_sp|
+DROP DATABASE IF EXISTS mysqltest2_sp|
 --enable_warnings
 
-CREATE DATABASE mysqltest1|
-CREATE DATABASE mysqltest2|
+CREATE DATABASE mysqltest1_sp|
+CREATE DATABASE mysqltest2_sp|
 
 # Test.
 
-CREATE PROCEDURE mysqltest1.p1()
-  DROP DATABASE mysqltest2|
+CREATE PROCEDURE mysqltest1_sp.p1()
+  DROP DATABASE mysqltest2_sp|
 
-use mysqltest2|
+use mysqltest2_sp|
 
-CALL mysqltest1.p1()|
+CALL mysqltest1_sp.p1()|
 
 SELECT DATABASE()|
 
 # Cleanup.
 
-DROP DATABASE mysqltest1|
+DROP DATABASE mysqltest1_sp|
 
-use test|
+use test_sp|
 
 
 #
@@ -6978,8 +7001,8 @@ drop table t1,t2;
 
 # Disable warnings to allow test run without InnoDB
 --disable_warnings
-CREATE TABLE t1 (a int auto_increment primary key) engine=MyISAM;
-CREATE TABLE t2 (a int auto_increment primary key, b int) engine=innodb;
+CREATE TABLE t1 (a int auto_increment primary key) engine=SequoiaDB;
+CREATE TABLE t2 (a int auto_increment primary key, b int) engine=SequoiaDB;
 --enable_warnings
 set @a=0;
 
@@ -7012,7 +7035,7 @@ INSERT INTO t1 VALUES (1),(2);
 
 CREATE FUNCTION metered(a INT) RETURNS INT RETURN 12;
 
-CREATE VIEW v1 AS SELECT test.metered(a) as metered FROM t1;
+CREATE VIEW v1 AS SELECT test_sp.metered(a) as metered FROM t1;
 
 SHOW CREATE VIEW v1;
 
@@ -7023,7 +7046,7 @@ DROP TABLE t1;
 #
 # Bug#29834: Accessing a view column by name in SP/PS causes a memory leak.
 #
-# This is leak test. Run with large number assigned to $execute_cnt,
+# This is leak test_sp. Run with large number assigned to $execute_cnt,
 # $p1_cnt, $p2_cnt, @p1_p2_cnt, $f1_normal_cnt or $f1_prep_cnt variables.
 #
 
@@ -7096,35 +7119,36 @@ DROP TABLE t1;
 # stored procedures"
 #
 --disable_warnings ONCE
-drop database if exists mysqltest_db1;
-create database mysqltest_db1;
-create procedure mysqltest_db1.sp_bug28551() begin end;
-call mysqltest_db1.sp_bug28551();
+# Compatible with parallel > 1, don't use mysqltest_db1 here, instead create and use database: mysqltest_db1_casename
+drop database if exists mysqltest_db1_sp;
+create database mysqltest_db1_sp;
+create procedure mysqltest_db1_sp.sp_bug28551() begin end;
+call mysqltest_db1_sp.sp_bug28551();
 show warnings;
-drop database mysqltest_db1;
+drop database mysqltest_db1_sp;
 #
 # Bug#29050 Creation of a legal stored procedure fails if a database is not
 # selected prior
 #
 --disable_warnings
-drop database if exists mysqltest_db1;
-drop table if exists test.t1;
+drop database if exists mysqltest_db1_sp;
+drop table if exists test_sp.t1;
 --enable_warnings
-create database mysqltest_db1;
-use mysqltest_db1;
+create database mysqltest_db1_sp;
+use mysqltest_db1_sp;
 # For the sake of its side effect
-drop database mysqltest_db1; 
+drop database mysqltest_db1_sp; 
 # Now we have no current database selected.
-create table test.t1 (id int);
-insert into test.t1 (id) values (1);
+create table test_sp.t1 (id int);
+
 delimiter //;
-create procedure test.sp_bug29050() begin select * from t1; end//
+create procedure test_sp.sp_bug29050() begin select * from t1; end//
 delimiter ;//
 show warnings;
-call test.sp_bug29050();
+call test_sp.sp_bug29050();
 show warnings;
 # Restore the old current database
-use test;
+use test_sp;
 drop procedure sp_bug29050;
 drop table t1;
 
@@ -7231,31 +7255,31 @@ drop procedure proc_26302;
 # Bug #29338: no optimization for stored functions with a trivial body
 # always returning constant.
 #
-
-CREATE FUNCTION f1() RETURNS INT DETERMINISTIC RETURN 2;
-CREATE FUNCTION f2(I INT) RETURNS INT DETERMINISTIC RETURN 3;
-
-CREATE TABLE t1 (c1 INT, INDEX(c1));
-
-INSERT INTO t1 VALUES (1), (2), (3), (4), (5);
-
-CREATE VIEW v1 AS SELECT c1 FROM t1;
-
-EXPLAIN SELECT * FROM t1 WHERE c1=1;
-EXPLAIN SELECT * FROM t1 WHERE c1=f1();
-
-EXPLAIN SELECT * FROM v1 WHERE c1=1;
-EXPLAIN SELECT * FROM v1 WHERE c1=f1();
-
-EXPLAIN SELECT * FROM t1 WHERE c1=f2(10);
-EXPLAIN SELECT * FROM t1 WHERE c1=f2(c1);
-EXPLAIN SELECT * FROM t1 WHERE c1=f2(rand());
-
-
-DROP VIEW v1;
-DROP FUNCTION f1;
-DROP FUNCTION f2;
-DROP TABLE t1;
+#Sequoiadb not support explain
+#CREATE FUNCTION f1() RETURNS INT DETERMINISTIC RETURN 2;
+#CREATE FUNCTION f2(I INT) RETURNS INT DETERMINISTIC RETURN 3;
+#
+#CREATE TABLE t1 (c1 INT, INDEX(c1));
+#
+#INSERT INTO t1 VALUES (1), (2), (3), (4), (5);
+#
+#CREATE VIEW v1 AS SELECT c1 FROM t1;
+#
+#EXPLAIN SELECT * FROM t1 WHERE c1=1;
+#EXPLAIN SELECT * FROM t1 WHERE c1=f1();
+#
+#EXPLAIN SELECT * FROM v1 WHERE c1=1;
+#EXPLAIN SELECT * FROM v1 WHERE c1=f1();
+#
+#EXPLAIN SELECT * FROM t1 WHERE c1=f2(10);
+#EXPLAIN SELECT * FROM t1 WHERE c1=f2(c1);
+#EXPLAIN SELECT * FROM t1 WHERE c1=f2(rand());
+#
+#
+#DROP VIEW v1;
+#DROP FUNCTION f1;
+#DROP FUNCTION f2;
+#DROP TABLE t1;
 
 #
 # Bug#29408 Cannot find view in columns table if the selection contains a function
@@ -7281,9 +7305,9 @@ create view v1 as select 1 as one, f1() as days;
 connect (bug29408, localhost, root,,*NO-ONE*);                     
 connection bug29408;
 
-show create view test.v1;      
+show create view test_sp.v1;      
 select column_name from information_schema.columns
-where table_name='v1' and table_schema='test';
+where table_name='v1' and table_schema='test_sp';
 
 disconnect bug29408;
 --source include/wait_until_disconnected.inc
@@ -7518,7 +7542,7 @@ INSERT INTO t1 (id, barcode) VALUES (2, 12345679);
 
 --echo
 
-CREATE TABLE test.t2 (
+CREATE TABLE test_sp.t2 (
    id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
    barcode BIGINT(11) UNSIGNED ZEROFILL NOT NULL,
    PRIMARY KEY  (id)
@@ -7526,8 +7550,8 @@ CREATE TABLE test.t2 (
 
 --echo
 
-INSERT INTO test.t2 (id, barcode) VALUES (1, 12345106708);
-INSERT INTO test.t2 (id, barcode) VALUES (2, 12345106709);
+INSERT INTO test_sp.t2 (id, barcode) VALUES (1, 12345106708);
+INSERT INTO test_sp.t2 (id, barcode) VALUES (2, 12345106709);
 
 --echo
 
@@ -7663,7 +7687,7 @@ DROP PROCEDURE db28318_a.t1;
 DROP PROCEDURE db28318_b.t2;
 DROP DATABASE db28318_a;
 DROP DATABASE db28318_b;
-use test;
+use test_sp;
 
 ###########################################################################
 
@@ -7694,14 +7718,14 @@ DROP PROCEDURE bug29770;
 # Bug#33618 Crash in sp_rcontext
 #
 
-use test;
+use test_sp;
 
 --disable_warnings
 drop table if exists t_33618;
 drop procedure if exists proc_33618;
 --enable_warnings
 
-create table t_33618 (`a` int, unique(`a`), `b` varchar(30)) engine=myisam;
+create table t_33618 (`a` int, unique(`a`), `b` varchar(30)) engine=Sequoiadb;
 insert into t_33618 (`a`,`b`) values (1,'1'),(2,'2');
 
 delimiter //;
@@ -7745,7 +7769,7 @@ drop procedure proc_33618;
 --echo #
 --echo # Bug#30787: Stored function ignores user defined alias.
 --echo #
-use test;
+use test_sp;
 --disable_warnings ONCE
 drop function if exists func30787;
 create table t1(f1 int);
@@ -8047,6 +8071,7 @@ DROP TABLE t1;
 #
 # Bug#47649 crash during CALL procedure
 #
+#Bug #SEQUOIASQLMAINSTREAM-143
 CREATE TABLE t1 ( f1 integer, primary key (f1));
 CREATE TABLE t2 LIKE t1;
 CREATE TEMPORARY TABLE t3 LIKE t1;
@@ -8221,7 +8246,7 @@ BEGIN
 END|
 delimiter ;|
 
-CREATE TABLE t1 (a INT) ENGINE = myisam;
+CREATE TABLE t1 (a INT) ENGINE = Sequoiadb;
 INSERT INTO t1 VALUES (1);
 
 --error ER_NO_SUCH_TABLE
@@ -8623,7 +8648,6 @@ drop function f1;
 --echo # BUG#11766234: 59299: ASSERT (TABLE_REF->TABLE || TABLE_REF->VIEW) 
 --echo #               FAILS IN SET_FIELD_ITERATOR
 --echo # 
-
 CREATE TABLE t1 (a INT);
 CREATE TABLE t2 (a INT);
 CREATE VIEW v1 AS SELECT a FROM t2;
@@ -8858,7 +8882,7 @@ DROP FUNCTION f1;
 --echo # RERUN OF STORED FUNCTION CAUSES SEGFAULT IN MAKE_JOIN_SELECT
 --echo #
 
-CREATE TABLE t1 (a INT) ENGINE=myisam;
+CREATE TABLE t1 (a INT) ENGINE=Sequoiadb;
 INSERT INTO t1 VALUES (1);
 CREATE VIEW v1 AS SELECT a FROM t1;
 
@@ -8876,6 +8900,8 @@ prepare s from 'select 1 from `v1` join `t1` on `v1`.`a`
 where (select 1 from `t1` where `v1`.`a`)';
 execute s;
 execute s;
+
+#Bug #SEQUOIASQLMAINSTREAM-142
 prepare s from 'select 1 from `v1` join `t1` on `v1`.`a`';
 execute s;
 execute s;
@@ -9023,7 +9049,7 @@ CREATE PROCEDURE p1()
 SET @default_storage_engine_saved = @@default_storage_engine;
 
 SELECT @@default_storage_engine;
-SET @@default_storage_engine = InnoDB;
+SET @@default_storage_engine = Sequoiadb;
 SELECT @@default_storage_engine;
 
 CALL p1();
@@ -9045,7 +9071,7 @@ DROP TABLE t1;
 SET @org_mode= @@sql_mode;
 SET sql_mode= 'STRICT_TRANS_TABLES'; 
 
-CREATE TABLE t1(a INT) ENGINE= InnoDB; 
+CREATE TABLE t1(a INT) ENGINE= Sequoiadb; 
 INSERT INTO t1 VALUES (123456); 
 DELIMITER $; 
 
@@ -9123,23 +9149,24 @@ DROP TABLE t1, t2;
 --echo # Bug #18599181: CALLING A ROUTINE WITHOUT SPECIFYING DATABASE PREFIX
 --echo #                MAY RETURN ERROR 1370
 --echo #
-
-CREATE DATABASE db1;
+# Compatible with parallel > 1, don't use db1 anymore, instead create and use db1_testcase
+CREATE DATABASE db1_sp;
 CREATE FUNCTION f1() RETURNS INT RETURN 1;
-CREATE FUNCTION db1.f2() RETURNS INT RETURN test.f1();
+CREATE FUNCTION db1_sp.f2() RETURNS INT RETURN test_sp.f1();
 CREATE USER myuser@'localhost';
-GRANT ALL ON db1.* TO myuser@'localhost';
+GRANT ALL ON db1_sp.* TO myuser@'localhost';
 --disconnect default
 --source include/wait_until_disconnected.inc
---connect(con1,localhost,myuser,,db1)
+--connect(con1,localhost,myuser,,db1_sp)
 SELECT f2();
 SELECT f2();
 --disconnect con1
 --source include/wait_until_disconnected.inc
 --connect(default,localhost,root)
-DROP DATABASE db1;
+DROP DATABASE db1_sp;
 DROP USER myuser@localhost;
-DROP FUNCTION f1;
+# new connection, should identify with database name
+DROP FUNCTION test_sp.f1;
 
 --echo #
 --echo # Bug #22222013 ASSERTION `! IS_SET() || M_CAN_OVERWRITE_STATUS' FAILED
@@ -9164,17 +9191,17 @@ SET NAMES default;
 --echo #This should just work with username + hostname of length 93 as DEFINER
 CREATE USER user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char;
 --echo #For procedure
-CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test.proc_test() SELECT CURRENT_USER();
+CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test_sp.proc_test() SELECT CURRENT_USER();
 --echo #and for function
-CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test.f_test() RETURNS INT RETURN 1;
+CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test_sp.f_test() RETURNS INT RETURN 1;
 
 --replace_column 5 # 6 #
 SHOW PROCEDURE STATUS LIKE 'proc_test';
-DROP PROCEDURE test.proc_test;
+DROP PROCEDURE test_sp.proc_test;
 
 --replace_column 5 # 6 #
 SHOW FUNCTION STATUS LIKE 'f_test';
-DROP FUNCTION test.f_test;
+DROP FUNCTION test_sp.f_test;
 
 --echo # Changing mysql.proc.definer column to char(77) - i.e. old layout (5.7.12)
 SET @orig_sql_mode= @@sql_mode;
@@ -9189,41 +9216,41 @@ SET sql_mode= @orig_sql_mode;
 --echo #This should just pass as the DEFINER length is 77 chars - so the same as mysql.proc.definer
 CREATE USER robert_golebiows@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char;
 --echo #For procedure
-CREATE DEFINER=robert_golebiows@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test.proc_test_1() SELECT CURRENT_USER();
-DROP PROCEDURE test.proc_test_1;
+CREATE DEFINER=robert_golebiows@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test_sp.proc_test_1() SELECT CURRENT_USER();
+DROP PROCEDURE test_sp.proc_test_1;
 --echo #For function
-CREATE DEFINER=robert_golebiows@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test.f_test_1() RETURNS INT RETURN 1;
-DROP FUNCTION test.f_test_1;
+CREATE DEFINER=robert_golebiows@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test_sp.f_test_1() RETURNS INT RETURN 1;
+DROP FUNCTION test_sp.f_test_1;
 
 --echo #Now definer is 93 char long so we should get error as mysql.proc.definer in old schema was only 77 char long
 --echo #For procedure
 --error ER_USER_COLUMN_OLD_LENGTH
-CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test.proc_test() SELECT CURRENT_USER();
+CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test_sp.proc_test() SELECT CURRENT_USER();
 --echo #For function
 --error ER_USER_COLUMN_OLD_LENGTH
-CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test.f_test_1() RETURNS INT RETURN 1;
+CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test_sp.f_test_1() RETURNS INT RETURN 1;
 
 --echo # Let us check with user name + hostname of length 78
 --echo #For procedure
 --error ER_USER_COLUMN_OLD_LENGTH
-CREATE DEFINER=robert_golebiowsk@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test.proc_test() SELECT CURRENT_USER();
+CREATE DEFINER=robert_golebiowsk@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test_sp.proc_test() SELECT CURRENT_USER();
 --echo #For function
 --error ER_USER_COLUMN_OLD_LENGTH
-CREATE DEFINER=robert_golebiowsk@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test.f_test_1() RETURNS INT RETURN 1;
+CREATE DEFINER=robert_golebiowsk@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test_sp.f_test_1() RETURNS INT RETURN 1;
 
 --echo # DEFINER with length longer than 93 characters should fail with old plain error staying that data is too long for username
 --echo # as upgrading to 93 characters (with mysql_upgrade) will not help
 --echo # Let us try with 94 characters long username
 
 --error ER_WRONG_STRING_LENGTH
-CREATE DEFINER=user_name_robert_golebiowski12345@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test.proc_test() SELECT CURRENT_USER();
+CREATE DEFINER=user_name_robert_golebiowski12345@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char PROCEDURE test_sp.proc_test() SELECT CURRENT_USER();
 --error ER_WRONG_STRING_LENGTH
-CREATE DEFINER=user_name_robert_golebiowski12345@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test.f_test_1() RETURNS INT RETURN 1;
+CREATE DEFINER=user_name_robert_golebiowski12345@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char FUNCTION test_sp.f_test_1() RETURNS INT RETURN 1;
 
 --error ER_WRONG_STRING_LENGTH
-CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char1 PROCEDURE test.proc_test() SELECT CURRENT_USER();
+CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char1 PROCEDURE test_sp.proc_test() SELECT CURRENT_USER();
 --error ER_WRONG_STRING_LENGTH
-CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char1 FUNCTION test.f_test_1() RETURNS INT RETURN 1;
+CREATE DEFINER=user_name_robert_golebiowski1234@oh_my_gosh_this_is_a_long_hostname_look_at_it_it_has_60_char1 FUNCTION test_sp.f_test_1() RETURNS INT RETURN 1;
 
 --echo #Cleanup
 
@@ -9237,3 +9264,6 @@ ALTER TABLE mysql.proc
   MODIFY definer char(93) collate utf8_bin DEFAULT '' NOT NULL;
 SET sql_mode= @orig_sql_mode;
 
+# drop database test_casename
+drop database test_sp;
+--source include/uninstall_sequoiadb.inc

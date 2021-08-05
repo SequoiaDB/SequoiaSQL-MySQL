@@ -3,6 +3,8 @@
 # Testing of comments
 #
 
+--source include/have_sequoiadb.inc
+
 select 1+2/*hello*/+3;
 select 1 /* long
 multi line comment */;
@@ -66,3 +68,4 @@ prepare bar from "DELETE FROM table_28779 WHERE a = 7 OR 1=1/*!98765' AND b = 'b
 
 drop table table_28779;
 
+--source include/uninstall_sequoiadb.inc

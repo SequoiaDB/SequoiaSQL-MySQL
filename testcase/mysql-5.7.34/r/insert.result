@@ -1,3 +1,5 @@
+create database test_insert;
+use test_insert;
 drop table if exists t1,t2,t3;
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 Warnings:
@@ -45,22 +47,22 @@ a	t>0	c	i
 5	0	a	NULL
 6	1	hello	NULL
 drop table t1;
-create table t1 (sid char(20), id int(2) NOT NULL auto_increment, key(sid, id)) engine=myisam;
+create table t1 (sid char(20), id int(2) NOT NULL auto_increment, key(sid, id)) engine=sequoiadb;
 insert into t1 values ('skr',NULL),('skr',NULL),('test',NULL);
 select * from t1;
 sid	id
 skr	1
 skr	2
-test	1
+test	3
 insert into t1 values ('rts',NULL),('rts',NULL),('test',NULL);
 select * from t1;
 sid	id
-rts	1
-rts	2
+rts	4
+rts	5
 skr	1
 skr	2
-test	1
-test	2
+test	3
+test	6
 drop table t1;
 create table t1 (id int NOT NULL DEFAULT 8);
 insert into t1 values(NULL);
@@ -80,17 +82,17 @@ create table t2(id int not null auto_increment primary key, t2 varchar(50), uniq
 insert into t2 (t2) select distinct substring(email, locate('@', email)+1) from t1;
 select * from t2;
 id	t2
-3	aol.com
-2	hotmail.com
 1	mysql.com
+2	hotmail.com
+3	aol.com
 drop table t1,t2;
-drop database if exists mysqltest;
-create database mysqltest;
-use mysqltest;
+drop database if exists mysqltest_insert;
+create database mysqltest_insert;
+use mysqltest_insert;
 create table t1 (c int);
-insert into mysqltest.t1 set mysqltest.t1.c = '1';
-drop database mysqltest;
-use test;
+insert into mysqltest_insert.t1 set mysqltest_insert.t1.c = '1';
+drop database mysqltest_insert;
+use test_insert;
 create table t1(number int auto_increment primary key, original_value varchar(50), f_double double, f_float float, f_double_7_2 double(7,2), f_float_4_3 float (4,3), f_double_u double unsigned, f_float_u float unsigned, f_double_15_1_u double(15,1) unsigned, f_float_3_1_u float (3,1) unsigned);
 set @value= "aa";
 insert into t1 values(null,@value,@value,@value,@value,@value,@value,@value,@value,@value);
@@ -330,7 +332,7 @@ row_count()
 3
 insert ignore into t1 values (1, 1);
 Warnings:
-Warning	1062	Duplicate entry '1' for key 'PRIMARY'
+Warning	1062	1 duplicated records were ignored
 select row_count();
 row_count()
 -1
@@ -357,33 +359,29 @@ create view v1 as select * from t1, t2 where f1= f3;
 insert into t1 values (1,11), (2,22);
 insert into t2 values (1,12), (2,24);
 insert into v1 (f1) values (3) on duplicate key update f3= f3 + 10;
-ERROR HY000: Can not modify more than one base table through a join view 'test.v1'
+ERROR HY000: Can not modify more than one base table through a join view 'test_insert.v1'
 insert into v1 (f1) values (3) on duplicate key update f1= f3 + 10;
-ERROR HY000: Can not modify more than one base table through a join view 'test.v1'
+ERROR HY000: Can not modify more than one base table through a join view 'test_insert.v1'
 select * from t1;
 f1	f2
 1	11
 2	22
 insert into v1 (f1) values (3) on duplicate key update f1= f3 + 10;
-ERROR HY000: Can not modify more than one base table through a join view 'test.v1'
+ERROR HY000: Can not modify more than one base table through a join view 'test_insert.v1'
 select * from t1;
 f1	f2
 1	11
 2	22
 drop view v1;
 drop table t1,t2;
-create table t1 (id int primary key auto_increment, data int, unique(data)) engine=myisam;
+create table t1 (id int primary key auto_increment, data int, unique(data)) engine=sequoiadb;
 insert ignore into t1 values(NULL,100),(NULL,110),(NULL,120);
 insert ignore into t1 values(NULL,10),(NULL,20),(NULL,110),(NULL,120),(NULL,100),(NULL,90);
 Warnings:
-Warning	1062	Duplicate entry '110' for key 'data'
-Warning	1062	Duplicate entry '120' for key 'data'
-Warning	1062	Duplicate entry '100' for key 'data'
+Warning	1062	3 duplicated records were ignored
 insert ignore into t1 values(NULL,130),(NULL,140),(500,110),(550,120),(450,100),(NULL,150);
 Warnings:
-Warning	1062	Duplicate entry '110' for key 'data'
-Warning	1062	Duplicate entry '120' for key 'data'
-Warning	1062	Duplicate entry '100' for key 'data'
+Warning	1062	3 duplicated records were ignored
 select * from t1 order by id;
 id	data
 1	100
@@ -391,10 +389,10 @@ id	data
 3	120
 4	10
 5	20
-6	90
-7	130
-8	140
-9	150
+9	90
+10	130
+11	140
+551	150
 drop table t1;
 CREATE TABLE t1 (
 a char(20) NOT NULL,
@@ -641,10 +639,9 @@ INSERT IGNORE INTO t VALUES (1);
 affected rows: 1
 INSERT IGNORE INTO t VALUES (1),(1);
 affected rows: 0
-info: Records: 2  Duplicates: 2  Warnings: 2
+info: Records: 2  Duplicates: 2  Warnings: 1
 Warnings:
-Warning	1062	Duplicate entry '1' for key 'PRIMARY'
-Warning	1062	Duplicate entry '1' for key 'PRIMARY'
+Warning	1062	2 duplicated records were ignored
 DROP TABLE t;
 affected rows: 0
 #
@@ -663,38 +660,12 @@ CREATE VIEW v2 AS
 SELECT * FROM t2 WHERE pk IN (SELECT a FROM t3);
 CREATE VIEW v3 AS
 SELECT t1.pk,t1.a FROM t1 JOIN t4 ON pk IN (SELECT a FROM t3);
-EXPLAIN INSERT INTO v1
-SELECT * FROM v2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	INSERT	t1	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-1	PRIMARY	<subquery5>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	100.00	Using where
-1	PRIMARY	t2	NULL	eq_ref	PRIMARY	PRIMARY	4	<subquery5>.a	1	100.00	NULL
-5	MATERIALIZED	t3	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-3	DEPENDENT SUBQUERY	t3	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
 INSERT INTO v1
 SELECT * FROM v2;
 DELETE FROM t1;
-EXPLAIN INSERT INTO v3(pk,a)
-SELECT * FROM v2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	INSERT	t1	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-1	PRIMARY	<subquery5>	NULL	ALL	NULL	NULL	NULL	NULL	NULL	100.00	Using where
-1	PRIMARY	t2	NULL	eq_ref	PRIMARY	PRIMARY	4	<subquery5>.a	1	100.00	NULL
-5	MATERIALIZED	t3	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	NULL
-3	DEPENDENT SUBQUERY	t3	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
 INSERT INTO v3(pk,a)
 SELECT * FROM v2;
 DELETE FROM t1;
-EXPLAIN INSERT INTO v1
-SELECT dt.pk, v2.a
-FROM (SELECT * FROM v2) AS dt JOIN v2 ON dt.pk=v2.pk;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	INSERT	t1	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	2	100.00	Using where; Start temporary
-1	PRIMARY	t3	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where; Using join buffer (Block Nested Loop)
-1	PRIMARY	t2	NULL	eq_ref	PRIMARY	PRIMARY	4	test.t3.a	1	100.00	Using index
-1	PRIMARY	t2	NULL	eq_ref	PRIMARY	PRIMARY	4	test.t3.a	1	100.00	End temporary
-4	DEPENDENT SUBQUERY	t3	NULL	ALL	NULL	NULL	NULL	NULL	2	50.00	Using where
 INSERT INTO v1
 SELECT dt.pk, v2.a
 FROM (SELECT * FROM v2) AS dt JOIN v2 ON dt.pk=v2.pk;
@@ -704,21 +675,9 @@ DROP TABLE t1, t2, t3, t4;
 CREATE TABLE t1(a INTEGER);
 CREATE TABLE t2(b INTEGER);
 CREATE VIEW v AS SELECT * FROM t1 JOIN t2 ON TRUE;
-explain INSERT INTO v(a) VALUES(1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	INSERT	t1	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 INSERT INTO v(a) VALUES(1);
-explain INSERT INTO v(b) VALUES(1);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	INSERT	t2	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 INSERT INTO v(b) VALUES(1);
-explain INSERT INTO v(a) SELECT 2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	INSERT	t1	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 INSERT INTO v(a) SELECT 2;
-explain INSERT INTO v(b) SELECT 2;
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	INSERT	t2	NULL	ALL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 INSERT INTO v(b) SELECT 2;
 SELECT * FROM t1;
 a
@@ -807,52 +766,19 @@ DROP TABLE t1;
 # BUG#22037930: INSERT IGNORE FAILS TO IGNORE
 #               FOREIGN KEY CONSTRAINT
 # Setup.
-CREATE TABLE t1 (fld1 INT PRIMARY KEY) ENGINE=INNODB;
+CREATE TABLE t1 (fld1 INT PRIMARY KEY) ENGINE=SEQUOIADB;
 CREATE TABLE t2 (fld2 INT, FOREIGN KEY (fld2) REFERENCES t1 (fld1))
-ENGINE=INNODB;
-INSERT INTO t1 VALUES(0);
-INSERT INTO t2 VALUES(0);
+ENGINE=SEQUOIADB;
 # Without fix, an error is reported.
-INSERT IGNORE INTO t2 VALUES(1);
-Warnings:
-Warning	1452	Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-UPDATE IGNORE t2 SET fld2=20 WHERE fld2=0;
-Warnings:
-Warning	1452	Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-UPDATE IGNORE t1 SET fld1=20 WHERE fld1=0;
-Warnings:
-Warning	1451	Cannot delete or update a parent row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
 # Test for multi update.
-UPDATE IGNORE t1, t2 SET t2.fld2= t2.fld2 + 3;
-Warnings:
-Warning	1452	Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-UPDATE IGNORE t1, t2 SET t1.fld1= t1.fld1 + 3;
-Warnings:
-Warning	1451	Cannot delete or update a parent row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
 # Reports an error since IGNORE is not used.
-INSERT INTO t2 VALUES(1);
-ERROR 23000: Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-UPDATE t2 SET fld2=20 WHERE fld2=0;
-ERROR 23000: Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-UPDATE t1 SET fld1=20 WHERE fld1=0;
-ERROR 23000: Cannot delete or update a parent row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-UPDATE t1, t2 SET t2.fld2= t2.fld2 + 3;
-ERROR 23000: Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-UPDATE t1, t2 SET t1.fld1= t1.fld1 + 3;
-ERROR 23000: Cannot delete or update a parent row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `t2_ibfk_1` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
 DROP TABLE t2, t1;
 #
 # BUG#22037930: INSERT IGNORE FAILS TO IGNORE FOREIGN
 #               KEY CONSTRAINT
-CREATE TABLE t1 (fld1 INT PRIMARY KEY) ENGINE= INNODB;
+CREATE TABLE t1 (fld1 INT PRIMARY KEY) ENGINE= SEQUOIADB;
 CREATE TABLE t2 (fld1 VARCHAR(10), fld2 INT NOT NULL,
-CONSTRAINT fk FOREIGN KEY (fld2) REFERENCES t1(fld1)) ENGINE= INNODB;
+CONSTRAINT fk FOREIGN KEY (fld2) REFERENCES t1(fld1)) ENGINE= SEQUOIADB;
 # Without patch, reports incorrect error.
-INSERT INTO t2 VALUES('abc', 2) ON DUPLICATE KEY UPDATE fld1= 'def';
-ERROR 23000: Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `fk` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-REPLACE INTO t2 VALUES('abc', 2);
-ERROR 23000: Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `fk` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
-INSERT IGNORE INTO t2 VALUES('abc', 2) ON DUPLICATE KEY UPDATE fld1= 'def';
-Warnings:
-Warning	1452	Cannot add or update a child row: a foreign key constraint fails (`test`.`t2`, CONSTRAINT `fk` FOREIGN KEY (`fld2`) REFERENCES `t1` (`fld1`))
 DROP TABLE t2, t1;
+DROP DATABASE test_insert;

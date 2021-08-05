@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 
 #
 # Testing if SET and similar functions
@@ -83,6 +84,13 @@ drop table if exists t1;
 create table t1 (f1 set('test1','test2','test3') character set utf8 default null)
 default charset=latin1;
 insert into t1 values (''),(null),(null),(''),(''),('');
+
+--disable_query_log
+--disable_result_log
+analyze table t1;
+--enable_query_log
+--enable_result_log
+
 select find_in_set(f1,f1) as a from t1,(select find_in_set(f1,f1) as b from t1) a;
 drop table t1;
 #
@@ -165,6 +173,8 @@ trim( both(-8388607)
 
 --echo # Bug#21547779 Assertion failed: select_lex->leaf_table_count == 0
 
-CREATE TABLE t(a INTEGER) engine=innodb;
+CREATE TABLE t(a INTEGER) engine=sequoiadb;
 SELECT 1 IN (SELECT MAKE_SET(-1, 1, (SELECT 1 FROM t)) FROM t);
 DROP TABLE t;
+
+--source include/uninstall_sequoiadb.inc

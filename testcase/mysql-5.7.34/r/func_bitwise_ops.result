@@ -401,13 +401,10 @@ start varbinary(16) NOT NULL,
 end varbinary(16) NOT NULL,
 country_code varchar(2) NOT NULL,
 country varchar(255) NOT NULL,
-PRIMARY KEY (id),
-KEY start (start),
-KEY end (end)
+PRIMARY KEY (id)
+#  KEY start (start), # not support index
+#  KEY end (end)
 );
-#
-# Testing bitiwise operations on a real-life test case
-#
 INSERT INTO networks(start, end, country_code, country) VALUES
 (INET6_ATON('2c0f:fff0::'),INET6_ATON('2c0f:fff0:ffff:ffff:ffff:ffff:ffff:ffff'),'NG','Nigeria'),
 (INET6_ATON('2405:1d00::'),INET6_ATON('2405:1d00:ffff:ffff:ffff:ffff:ffff:ffff'),'GR','Greenland'),

@@ -35,8 +35,8 @@ let $debug= 0;
 # Engine specific settings and requirements
 
 ##### Storage engine to be tested
---source include/have_innodb.inc
-let $engine= 'INNODB';
+#--source include/have_innodb.inc
+let $engine= 'SEQUOIADB';
 
 #------------------------------------------------------------------------------#
 --source suite/parts/inc/part_blocked_sql_funcs_main.inc

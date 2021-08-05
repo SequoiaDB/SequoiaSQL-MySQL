@@ -1,3 +1,4 @@
+--source include/have_sequoiadb.inc
 
  #Get deafult engine value
 --let $DEFAULT_ENGINE = `select @@global.default_storage_engine`
@@ -57,5 +58,7 @@ create table t1 (c nchar varying(10));
 --replace_result $DEFAULT_ENGINE ENGINE
 show create table t1;
 drop table t1;
+
+--source include/uninstall_sequoiadb.inc
 
 # End of 4.1 tests

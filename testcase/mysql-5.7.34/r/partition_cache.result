@@ -1,4 +1,4 @@
-SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
+SET SESSION DEFAULT_STORAGE_ENGINE = SequoiaDB;
 drop table if exists t1,t2,t3;
 set @save_query_cache_size = @@global.query_cache_size;
 Warnings:
@@ -115,7 +115,7 @@ select count(*) from t1;
 count(*)
 1
 drop table t1;
-SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
+SET SESSION DEFAULT_STORAGE_ENGINE = SequoiaDB;
 SET @@autocommit=1;
 connection default
 SHOW VARIABLES LIKE 'have_query_cache';
@@ -126,7 +126,7 @@ Warnings:
 Warning	1287	'@@query_cache_size' is deprecated and will be removed in a future release.
 flush status;
 SET @@autocommit=1;
-SET SESSION DEFAULT_STORAGE_ENGINE = InnoDB;
+SET SESSION DEFAULT_STORAGE_ENGINE = SequoiaDB;
 CREATE TABLE t2 (s1 int, s2 varchar(1000), key(s1)) PARTITION BY KEY (s1) PARTITIONS 3;
 INSERT INTO t2 VALUES (1,repeat('a',10)),(2,repeat('a',10)),(3,repeat('a',10)),(4,repeat('a',10));
 COMMIT;
@@ -170,7 +170,7 @@ Qcache_queries_in_cache	0
 connection default
 SELECT sql_cache count(*) FROM t2 WHERE s2 = 'w';
 count(*)
-1
+2
 Warnings:
 Warning	1681	'SQL_CACHE' is deprecated and will be removed in a future release.
 COMMIT;
@@ -250,8 +250,8 @@ CREATE TABLE t1
 `UPDATE_TIME` datetime NOT NULL,
 PRIMARY KEY (`NUM`,`UPDATE_TIME`))
 PARTITION BY RANGE (month(UPDATE_TIME))
-(PARTITION p2 VALUES LESS THAN (3) ENGINE = InnoDB,
-PARTITION p3 VALUES LESS THAN (4) ENGINE = InnoDB);
+(PARTITION p2 VALUES LESS THAN (3) ENGINE = SequoiaDB,
+PARTITION p3 VALUES LESS THAN (4) ENGINE = SequoiaDB);
 SELECT * FROM t1 WHERE MONTH(update_time)=3;
 NUM	UPDATE_TIME
 INSERT INTO t1 VALUES ('AAA', '2010-03-11 00:00:00');
