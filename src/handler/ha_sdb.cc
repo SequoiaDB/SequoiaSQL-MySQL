@@ -1026,6 +1026,12 @@ error:
   goto done;
 }
 
+static bool sdb_is_ele_not_null(const bson::BSONElement &ele) {
+  static bson::BSONObj IS_NOT_NULL_OBJ = BSON("$isnull" << 0);
+  return (bson::Object == ele.type() &&
+          ele.embeddedObject().equal(IS_NOT_NULL_OBJ));
+}
+
 const char *sharding_related_fields[] = {
     SDB_FIELD_SHARDING_KEY, SDB_FIELD_SHARDING_TYPE,       SDB_FIELD_PARTITION,
     SDB_FIELD_AUTO_SPLIT,   SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_ISMAINCL};
@@ -3484,6 +3490,7 @@ int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond_idx,
   bool both = !start_cond_idx.isEmpty() && !end_cond_idx.isEmpty();
   try {
     if (both && !start_cond_idx.equal(end_cond_idx)) {
+      uint array_elements = 0;
       bson::BSONArrayBuilder sub_array(builder.subarrayStart("$and"));
       bson::BSONObjIterator si(start_cond_idx);
       bson::BSONObjIterator ei(end_cond_idx);
@@ -3496,10 +3503,14 @@ int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond_idx,
           if (bson::Undefined == elem_start.type()) {
             undefined_field_name = elem_start.fieldName();
             break;
+          } else if (sdb_is_ele_not_null(elem_start) &&
+                     end_cond_idx.hasField(elem_start.fieldName())) {
+            continue;
           } else {
             bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
             sub_obj.append(elem_start);
             sub_obj.done();
+            ++array_elements;
           }
         }
 
@@ -3521,16 +3532,25 @@ int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond_idx,
             end_obj_bld.done();
             sub_or_array.done();
             or_array_obj.done();
+            ++array_elements;
             break;
           } else {
             bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
             sub_obj.append(elem_end);
             sub_obj.done();
+            ++array_elements;
           }
         }
       }
-      sub_array.done();
-      cond_idx = builder.obj();
+      if (array_elements > 1) {
+        sub_array.done();
+        cond_idx = builder.obj();
+      } else {
+        // Remove the $and if only one element.
+        bson::BSONObj arr_obj = sub_array.done();
+        cond_idx = arr_obj.firstElement().embeddedObject().getOwned();
+      }
+
     } else if (!start_cond_idx.isEmpty()) {
       bson::BSONObjIterator si(start_cond_idx);
       while (si.more()) {
@@ -3542,6 +3562,7 @@ int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond_idx,
         }
       }
       cond_idx = builder.obj();
+
     } else {
       cond_idx = end_cond_idx;
     }
