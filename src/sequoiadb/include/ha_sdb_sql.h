@@ -116,6 +116,8 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define ALTER_RENAME_INDEX Alter_inplace_info::RENAME_INDEX
 #define ALTER_RENAME Alter_inplace_info::ALTER_RENAME
 #define ALTER_RECREATE_TABLE Alter_inplace_info::RECREATE_TABLE
+#define ALTER_ADD_CHECK_CONSTRAINT 0
+#define ALTER_DROP_CHECK_CONSTRAINT 0
 
 // Alter inplace result
 #define HA_ALTER_INPLACE_NOCOPY_NO_LOCK HA_ALTER_INPLACE_NO_LOCK_AFTER_PREPARE
