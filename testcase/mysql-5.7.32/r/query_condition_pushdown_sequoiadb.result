@@ -9510,7 +9510,7 @@ SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 id	a	c
 2	-99	bc
 3	-99	123
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "id": { "$lt": 4 } }, { "c": { "$lte": "bc" } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "id": { "$lt": 4 } }, { "c": { "$lte": "bc" } } ] }, { "c": { "$isnull": 0 } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[2+1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 EXPLAIN SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	index_merge	id,c	id,c	4,65	NULL	7	100.00	Using sort_union(id,c); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`id` <= 4) or (`query_pushdown_test_sequoiadb`.`t1`.`c` > 'abc'))
@@ -15638,7 +15638,7 @@ SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 a	b	c
 1	1	1
 2	2	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }, { "a": { "$lte": 3 }, "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 a	b	c
 1	1	1
@@ -15674,7 +15674,7 @@ SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 a	b	c
 1	1	1
 2	2	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }, { "a": { "$lte": 3 }, "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 a	b	c
 1	1	1
