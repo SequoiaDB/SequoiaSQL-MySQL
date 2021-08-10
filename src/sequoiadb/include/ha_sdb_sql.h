@@ -218,6 +218,37 @@ bool print_admin_msg(THD *thd, uint len, const char *msg_type,
 #define sdb_my_malloc(key, size, myFlags) my_malloc(size, myFlags)
 #endif
 
+// About plugin
+#if defined IS_MYSQL
+#define sdb_declare_plugin(name) mysql_declare_plugin(name)
+#define st_sdb_plugin st_mysql_plugin
+#define sdb_define_plugin(var_name, type, descriptor, plugin_name, author,    \
+                          desc_text, license, init, deinit, version,          \
+                          status_vars, system_vars)                           \
+  struct st_mysql_plugin var_name = {                                         \
+      type,   descriptor, plugin_name, author,      desc_text, license, init, \
+      deinit, version,    status_vars, system_vars, NULL,      0UL}
+#elif defined IS_MARIADB
+#define sdb_declare_plugin(name) maria_declare_plugin(name)
+#define st_sdb_plugin st_maria_plugin
+#define sdb_define_plugin(var_name, type, descriptor, plugin_name, author, \
+                          desc_text, license, init, deinit, version,       \
+                          status_vars, system_vars)                        \
+  struct st_maria_plugin var_name = {type,                                 \
+                                     descriptor,                           \
+                                     plugin_name,                          \
+                                     author,                               \
+                                     desc_text,                            \
+                                     license,                              \
+                                     init,                                 \
+                                     deinit,                               \
+                                     version,                              \
+                                     status_vars,                          \
+                                     system_vars,                          \
+                                     NULL,                                 \
+                                     MariaDB_PLUGIN_MATURITY_STABLE}
+#endif
+
 typedef enum sdb_join_type {
   SDB_JOIN_UNKNOWN = 0,
   SDB_JOIN_REF_OR_NULL,

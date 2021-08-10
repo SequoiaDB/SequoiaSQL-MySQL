@@ -25,6 +25,7 @@
 #include "ha_sdb_log.h"
 #include "ha_sdb_thd.h"
 #include "ha_sdb_util.h"
+#include "i_s_common.h"
 #include <item_sum.h>
 #include <client.hpp>
 #include <my_bit.h>
@@ -8681,23 +8682,19 @@ static struct st_mysql_show_var sdb_status[] = {
 static struct st_mysql_storage_engine sdb_storage_engine = {
     MYSQL_HANDLERTON_INTERFACE_VERSION};
 
-#if defined IS_MYSQL
-mysql_declare_plugin(sequoiadb) {
-#elif defined IS_MARIADB
-maria_declare_plugin(sequoiadb) {
-#endif
-  MYSQL_STORAGE_ENGINE_PLUGIN, &sdb_storage_engine, "SequoiaDB",
-      "SequoiaDB Inc.", sdb_plugin_info, PLUGIN_LICENSE_GPL,
-      sdb_init_func, /* Plugin Init */
-      sdb_done_func, /* Plugin Deinit */
-      0x0302,        /* version */
-      sdb_status,    /* status variables */
-      sdb_sys_vars,  /* system variables */
-      NULL,          /* config options */
-#if defined IS_MYSQL
-      0, /* flags */
-#elif defined IS_MARIADB
-      MariaDB_PLUGIN_MATURITY_STABLE, /* maturity */
-#endif
-}
-mysql_declare_plugin_end;
+sdb_define_plugin(ha_sdb_storage,
+                  MYSQL_STORAGE_ENGINE_PLUGIN, /* the plugin type */
+                  &sdb_storage_engine,         /* plugin descriptor */
+                  "SequoiaDB",                 /* plugin name */
+                  "SequoiaDB Inc.",            /* plugin author */
+                  sdb_plugin_info,             /* descriptor text */
+                  PLUGIN_LICENSE_GPL,          /* license */
+                  sdb_init_func,               /* plugin init */
+                  sdb_done_func,               /* plugin deinit */
+                  0x0302,                      /* version */
+                  sdb_status,                  /* status variables */
+                  sdb_sys_vars                 /* system variables */
+);
+
+sdb_declare_plugin(sequoiadb) ha_sdb_storage, i_s_sdb_session_attr
+    mysql_declare_plugin_end;
