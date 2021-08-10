@@ -459,7 +459,7 @@ t1	CREATE TABLE `t1` (
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=2001 DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -747,7 +747,7 @@ t1	CREATE TABLE `t1` (
   `row_end` timestamp(6) GENERATED ALWAYS AS ROW END INVISIBLE,
   PRIMARY KEY (`id`,`row_end`),
   PERIOD FOR SYSTEM_TIME (`row_start`, `row_end`)
-) ENGINE=SequoiaDB AUTO_INCREMENT=2001 DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
+) ENGINE=SequoiaDB AUTO_INCREMENT=1001 DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
@@ -770,7 +770,7 @@ id	name	date_1	date_2
 10	third update: David	1999-09-09	2000-01-01
 11	third update: David	2010-01-01	2021-01-01
 12	third update: David	2010-01-01	2010-10-10
-1001	third update: David	1998-01-01	2008-01-01
+13	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t2 ORDER BY id;
 id	name	date_1	date_2
 1	second update: first update: Joe	1997-01-01	2001-01-01
@@ -791,7 +791,7 @@ SELECT * FROM t1 ORDER BY id;
 id	name	date_1	date_2
 7	third update: David	1997-01-01	1999-09-09
 10	third update: David	1999-09-09	2000-01-01
-1001	third update: David	1998-01-01	2008-01-01
+13	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id,name;
 id	name	date_1	date_2
 1	Joe	1997-01-01	2001-01-01
@@ -816,8 +816,8 @@ id	name	date_1	date_2
 11	third update: David	2010-01-01	2021-01-01
 12	Mary	2010-01-01	2010-10-10
 12	third update: David	2010-01-01	2010-10-10
-1001	David	1998-01-01	2008-01-01
-1001	third update: David	1998-01-01	2008-01-01
+13	David	1998-01-01	2008-01-01
+13	third update: David	1998-01-01	2008-01-01
 SELECT * FROM t2 ORDER BY id;
 id	name	date_1	date_2
 1	second update: first update: Joe	1997-01-01	2000-01-01
