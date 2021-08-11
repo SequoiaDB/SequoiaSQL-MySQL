@@ -535,6 +535,11 @@ bool sdb_stored_gcol_expr_is_equal(const Field *old_field,
          0 == strncmp(old_expr.str, new_expr.str, old_expr.length);
 }
 
+void sdb_field_set_warning(Field *field, unsigned int code,
+                           int cuted_increment) {
+  field->set_warning(Sql_condition::SL_WARNING, code, cuted_increment);
+}
+
 bool sdb_item_like_escape_is_evaluated(Item *item) {
   return ((Item_func_like *)item)->escape_is_evaluated();
 }
@@ -640,6 +645,10 @@ const char *sdb_get_table_alias(TABLE *table) {
   return table->alias;
 }
 
+const char *sdb_get_change_column(const Create_field *def) {
+  return def->change;
+}
+
 uint sdb_partition_flags() {
   return (HA_CANNOT_PARTITION_FK | HA_CAN_PARTITION_UNIQUE);
 }
@@ -728,7 +737,6 @@ String sdb_thd_rewritten_query(THD *thd) {
 ulonglong sdb_thd_os_id(THD *thd) {
   return my_thread_os_id();
 }
-
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1202,6 +1210,11 @@ bool sdb_stored_gcol_expr_is_equal(const Field *old_field,
                      sdb_parse_stored_gcol_expr(new_field).c_ptr_safe());
 }
 
+void sdb_field_set_warning(Field *field, unsigned int code,
+                           int cuted_increment) {
+  field->set_warning(code, cuted_increment);
+}
+
 bool sdb_item_like_escape_is_evaluated(Item *item) {
   // mariadb has evaluated escape in sql level
   return true;
@@ -1288,6 +1301,10 @@ uint sdb_tables_in_join(JOIN *join) {
 
 const char *sdb_get_table_alias(TABLE *table) {
   return table->alias.c_ptr_safe();
+}
+
+const char *sdb_get_change_column(const Create_field *def) {
+  return def->change.str;
 }
 
 uint sdb_partition_flags() {

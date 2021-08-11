@@ -30,9 +30,11 @@
 #include "ha_sdb_log.h"
 #include "server_ha.h"
 
+#ifdef IS_MARIADB
 // System-Versioned table's end_timestamp for MariaDB: 2038-01-19
 // 11:14:07.999999
-static struct timeval END_TIMESTAMP { 2147483647, 999999 };
+static struct timeval END_TIMESTAMP = {2147483647, 999999};
+#endif
 
 /*
  * Exception catcher need to be added when call this function.

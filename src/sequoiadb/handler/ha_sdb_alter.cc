@@ -50,7 +50,7 @@ static const alter_table_operations INPLACE_ONLINE_OPERATIONS =
     ALTER_RENAME_INDEX | ALTER_RENAME | ALTER_COLUMN_INDEX_LENGTH |
     ALTER_ADD_FOREIGN_KEY | ALTER_DROP_FOREIGN_KEY | ALTER_INDEX_COMMENT |
     ALTER_COLUMN_STORAGE_TYPE | ALTER_COLUMN_COLUMN_FORMAT |
-    ALTER_RECREATE_TABLE | ALTER_DROP_CHECK_CONSTRAINT;
+    ALTER_RECREATE_TABLE | ALTER_DROP_CHECK_CONSTRAINT | ALTER_COLUMN_NAME;
 
 static const int SDB_TYPE_NUM = 24;
 static const uint INT_TYPE_NUM = 5;
@@ -777,6 +777,7 @@ struct Col_alter_info : public Sql_alloc {
   static const int TURN_TO_NOT_NULL = 8;
   static const int TURN_TO_NULL = 16;
   static const int FAST_SHORTEN = 32;
+  static const int RENAME_FIELD_NAME = 64;
 
   Field *before;
   Field *after;
@@ -1180,6 +1181,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
     // bson::BSONObjBuilder inc_builder;
     List_iterator_fast<Field> added_it;
 
+    bson::BSONObjBuilder name_builder;
     bson::BSONObjBuilder cast_builder;
     List_iterator_fast<Col_alter_info> changed_it;
     Col_alter_info *info = NULL;
@@ -1236,12 +1238,11 @@ int ha_sdb::alter_column(TABLE *altered_table,
     step = build_cast_obj;
     changed_it.init(changed_columns);
     while ((info = changed_it++)) {
-      if (strcmp(sdb_field_name(info->before), sdb_field_name(info->after))) {
-        rc = HA_ERR_WRONG_COMMAND;
-        my_printf_error(
-            rc, "Cannot change column name case. Try '%s' instead of '%s'.",
-            MYF(0), sdb_field_name(info->before), sdb_field_name(info->after));
-        goto error;
+      const char *old_field_name = sdb_field_name(info->before);
+      const char *new_field_name = sdb_field_name(info->after);
+
+      if (info->op_flag & Col_alter_info::RENAME_FIELD_NAME) {
+        name_builder.append(old_field_name, new_field_name);
       }
 
       if (info->op_flag & Col_alter_info::CHANGE_DATA_TYPE &&
@@ -1258,9 +1259,8 @@ int ha_sdb::alter_column(TABLE *altered_table,
         rc = cl.query_one(result, info->check_bound_cond, SDB_EMPTY_BSON,
                           SDB_EMPTY_BSON, hint);
         if (0 == rc) {
-          rc = ER_WARN_DATA_OUT_OF_RANGE;
-          my_printf_error(rc, ER(ER_WARN_DATA_OUT_OF_RANGE), MYF(0),
-                          sdb_field_name(info->before), 1);
+          rc = ER_DATA_TOO_LONG;
+          sdb_field_set_warning(info->after, ER_DATA_TOO_LONG, 1);
           goto error;
         } else if (SDB_DMS_EOC == get_sdb_code(rc)) {
           rc = 0;
@@ -1270,7 +1270,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
       }
 
       if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL) {
-        const char *field_name = sdb_field_name(info->after);
+        const char *field_name = new_field_name;
 
         if (is_strict_mode(sql_mode)) {
           // As data cannot be changed in strict mode, we can just check
@@ -1333,6 +1333,9 @@ int ha_sdb::alter_column(TABLE *altered_table,
     }
     if (!set_builder.isEmpty()) {
       builder.append("$set", set_builder.obj());
+    }
+    if (!name_builder.isEmpty()) {
+      builder.append("$rename", name_builder.obj());
     }
     /*if (!inc_builder.isEmpty()) {
       builder.append("$inc", inc_builder.obj());
@@ -1499,16 +1502,241 @@ error:
   goto done;
 }
 
+enum_alter_inplace_result ha_sdb::filter_alter_columns(
+    TABLE *altered_table, Alter_inplace_info *ha_alter_info,
+    ha_sdb_alter_ctx *ctx) {
+  enum_alter_inplace_result rs = HA_ALTER_ERROR;
+  int rc = SDB_ERR_OK;
+  sql_mode_t sql_mode = ha_thd()->variables.sql_mode;
+  List<Create_field> &create_list = ha_alter_info->alter_info->create_list;
+  List_iterator_fast<Create_field> iter(create_list);
+
+  try {
+    // Filter added_columns and changed_columns
+    for (uint i = 0; i < altered_table->s->fields; i++) {
+      int op_flag = 0;
+      bson::BSONObjBuilder cast_builder;
+      bson::BSONObjBuilder cond_builder;
+      const Create_field *definition = iter++;
+      Field *old_field = definition->field;
+      Field *new_field = altered_table->field[i];
+
+      // added_columns
+      if (old_field == NULL) {
+#ifdef IS_MARIADB
+        // Avoid DEFAULT expression.
+        if (new_field->default_value &&
+            new_field->default_value->flags &
+                uint(~(VCOL_SESSION_FUNC | VCOL_TIME_FUNC))) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
+#endif
+        // Avoid DEFAULT CURRENT_TIMESTAMP
+        if (sdb_is_current_timestamp(new_field)) {
+          ha_alter_info->unsupported_reason =
+              "DEFAULT CURRENT_TIMESTAMP is unsupported.";
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
+        // Avoid ZERO DATE when sql_mode doesn't allow
+        if (is_temporal_type_with_date(new_field->type()) &&
+            !(new_field->flags & NO_DEFAULT_VALUE_FLAG)) {
+          MYSQL_TIME ltime;
+          int warnings = 0;
+#ifdef IS_MYSQL
+          date_mode_t flags(TIME_FUZZY_DATES | TIME_INVALID_DATES);
+#elif IS_MARIADB
+          date_mode_t flags(date_conv_mode_t::INVALID_DATES);
+#endif
+          if (sql_mode & MODE_NO_ZERO_DATE) {
+            flags |= TIME_NO_ZERO_DATE;
+          }
+          if (sql_mode & MODE_NO_ZERO_IN_DATE) {
+            flags |= TIME_NO_ZERO_IN_DATE;
+          }
+
+          if (new_field->get_date(&ltime, flags) ||
+              check_date(&ltime, non_zero_date(&ltime), (ulonglong)flags,
+                         &warnings) ||
+              warnings) {
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          }
+        }
+        // Temporarily unsupported for SEQUOIADBMAINSTREAM-4889.
+        if (new_field->flags & AUTO_INCREMENT_FLAG) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
+        if (ctx->added_columns.push_back(new_field)) {
+          rc = HA_ERR_OUT_OF_MEM;
+          goto error;
+        }
+      }
+      // changed_columns
+      else if (sdb_get_change_column(definition)) {
+        // True if stored generated column's expression is equal.
+        if (sdb_field_is_stored_gcol(old_field) &&
+            sdb_field_is_stored_gcol(new_field) &&
+            !sdb_stored_gcol_expr_is_equal(old_field, new_field)) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
+
+        if (0 != my_strcasecmp(system_charset_info, sdb_field_name(old_field),
+                               sdb_field_name(new_field))) {
+          op_flag |= Col_alter_info::RENAME_FIELD_NAME;
+        }
+        if (sdb_is_type_diff(old_field, new_field)) {
+          if (0 == get_cast_rule(cast_builder, old_field, new_field)) {
+            op_flag |= Col_alter_info::CHANGE_DATA_TYPE;
+          } else if (!is_strict_mode(sql_mode)) {
+            ha_alter_info->unsupported_reason =
+                "Can't do such type conversion.";
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          } else {
+            bool out_of_bound;
+            rc = get_check_bound_cond(old_field, new_field, cond_builder,
+                                      out_of_bound);
+            if (SDB_ERR_OK != rc) {
+              rs = HA_ALTER_ERROR;
+              goto error;
+            }
+            if (out_of_bound) {
+              ha_alter_info->unsupported_reason =
+                  "Can't do such type conversion.";
+              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+              goto error;
+            }
+            op_flag |= Col_alter_info::FAST_SHORTEN;
+          }
+        }
+
+        bool old_is_auto_inc = (old_field->flags & AUTO_INCREMENT_FLAG);
+        bool new_is_auto_inc = (new_field->flags & AUTO_INCREMENT_FLAG);
+        if (!old_is_auto_inc && new_is_auto_inc) {
+          op_flag |= Col_alter_info::ADD_AUTO_INC;
+        } else if (old_is_auto_inc && !new_is_auto_inc) {
+          op_flag |= Col_alter_info::DROP_AUTO_INC;
+        }
+        // Temporarily unsupported for SEQUOIADBMAINSTREAM-4889.
+        if (op_flag & Col_alter_info::ADD_AUTO_INC) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
+
+        if (!new_field->maybe_null() && old_field->maybe_null()) {
+          // Avoid ZERO DATE when sql_mode doesn't allow
+          if (is_temporal_type_with_date(new_field->type()) &&
+              sql_mode & MODE_NO_ZERO_DATE) {
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          }
+
+          if (!is_strict_mode(sql_mode) &&
+              MYSQL_TYPE_GEOMETRY == old_field->real_type()) {
+            ha_alter_info->unsupported_reason = my_get_err_msg(
+                ER_ALTER_OPERATION_NOT_SUPPORTED_REASON_NOT_NULL);
+            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+            goto error;
+          }
+
+          op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
+        }
+
+        if (!old_field->maybe_null() && new_field->maybe_null()) {
+          op_flag |= Col_alter_info::TURN_TO_NULL;
+        }
+      }
+      // added PRIMARY KEY
+      else if (!new_field->maybe_null() && old_field->maybe_null()) {
+        // Avoid ZERO DATE when sql_mode doesn't allow
+        if (is_temporal_type_with_date(new_field->type()) &&
+            sql_mode & MODE_NO_ZERO_DATE) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
+
+        if (!is_strict_mode(sql_mode) &&
+            MYSQL_TYPE_GEOMETRY == old_field->real_type()) {
+          ha_alter_info->unsupported_reason =
+              my_get_err_msg(ER_ALTER_OPERATION_NOT_SUPPORTED_REASON_NOT_NULL);
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
+
+        op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
+      }
+      if (op_flag) {
+        Col_alter_info *info = new Col_alter_info();
+        if (!info) {
+          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
+          goto error;
+        }
+        info->before = old_field;
+        info->after = new_field;
+        info->op_flag = op_flag;
+        info->cast_rule = cast_builder.obj();
+        info->check_bound_cond = cond_builder.obj();
+        if (ctx->changed_columns.push_back(info)) {
+          rc = HA_ERR_OUT_OF_MEM;
+          goto error;
+        }
+      }
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc,
+      "Failed to check if support inplace alter, table:%s.%s, "
+      "temp table:%s, exception:%s",
+      db_name, table_name, altered_table->s->table_name.str, e.what());
+
+  // dropped_columns
+  for (uint i = 0; i < table->s->fields; i++) {
+    bool is_match = false;
+    Field *old_field = table->field[i];
+    const Create_field *definition = NULL;
+    iter.rewind();
+    while ((definition = iter++)) {
+      if (definition->field == old_field) {
+        is_match = true;
+        break;
+      }
+    }
+    if (!is_match) {
+      if (ctx->dropped_columns.push_back(old_field)) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
+    }
+  }
+
+  rs = HA_ALTER_INPLACE_NOCOPY_NO_LOCK;
+done:
+  return rs;
+error:
+  if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
+    rs = HA_ALTER_ERROR;
+    print_error(rc, 0);
+  }
+  if (ctx) {
+    ctx->changed_columns.delete_elements();
+    delete ctx;
+    ha_alter_info->handler_ctx = NULL;
+  }
+  goto done;
+}
+
 enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
     TABLE *altered_table, Alter_inplace_info *ha_alter_info) {
   enum_alter_inplace_result rs = HA_ALTER_ERROR;
-  int rc = SDB_ERR_OK;
-  List_iterator_fast<Create_field> cf_it;
-  Bitmap<MAX_FIELDS> matched_map;
   ha_sdb_alter_ctx *ctx = NULL;
   KEY *new_key = NULL;
   KEY_PART_INFO *key_part = NULL;
-  sql_mode_t sql_mode = ha_thd()->variables.sql_mode;
+  List<Create_field> &create_list = ha_alter_info->alter_info->create_list;
+  List_iterator_fast<Create_field> iter(create_list);
 
   DBUG_ASSERT(!ha_alter_info->handler_ctx);
 
@@ -1539,174 +1767,11 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   }
   ha_alter_info->handler_ctx = ctx;
 
-  try {
-    // Filter added_columns, dropped_columns and changed_columns
-    matched_map.clear_all();
-    for (uint i = 0; table->field[i]; i++) {
-      Field *old_field = table->field[i];
-      bool found_col = false;
-      for (uint j = 0; altered_table->field[j]; j++) {
-        bson::BSONObjBuilder cast_builder;
-        bson::BSONObjBuilder cond_builder;
-        Field *new_field = altered_table->field[j];
-        if (!matched_map.is_set(j) &&
-            my_strcasecmp(system_charset_info, sdb_field_name(old_field),
-                          sdb_field_name(new_field)) == 0) {
-          matched_map.set_bit(j);
-          found_col = true;
-
-          // True if stored generated column's expression is equal.
-          if (sdb_field_is_stored_gcol(old_field) &&
-              sdb_field_is_stored_gcol(new_field) &&
-              !sdb_stored_gcol_expr_is_equal(old_field, new_field)) {
-            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-            goto error;
-          }
-
-          int op_flag = 0;
-          if (sdb_is_type_diff(old_field, new_field)) {
-            if (0 == get_cast_rule(cast_builder, old_field, new_field)) {
-              op_flag |= Col_alter_info::CHANGE_DATA_TYPE;
-            } else if (!is_strict_mode(sql_mode)) {
-              ha_alter_info->unsupported_reason =
-                  "Can't do such type conversion.";
-              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-              goto error;
-            } else {
-              bool out_of_bound;
-              rc = get_check_bound_cond(old_field, new_field, cond_builder,
-                                        out_of_bound);
-              if (SDB_ERR_OK != rc) {
-                rs = HA_ALTER_ERROR;
-                goto error;
-              }
-              if (out_of_bound) {
-                ha_alter_info->unsupported_reason =
-                    "Can't do such type conversion.";
-                rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-                goto error;
-              }
-              op_flag |= Col_alter_info::FAST_SHORTEN;
-            }
-          }
-
-          bool old_is_auto_inc = (old_field->flags & AUTO_INCREMENT_FLAG);
-          bool new_is_auto_inc = (new_field->flags & AUTO_INCREMENT_FLAG);
-          if (!old_is_auto_inc && new_is_auto_inc) {
-            op_flag |= Col_alter_info::ADD_AUTO_INC;
-          } else if (old_is_auto_inc && !new_is_auto_inc) {
-            op_flag |= Col_alter_info::DROP_AUTO_INC;
-          }
-          // Temporarily unsupported for SEQUOIADBMAINSTREAM-4889.
-          if (op_flag & Col_alter_info::ADD_AUTO_INC) {
-            rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-            goto error;
-          }
-
-          if (!new_field->maybe_null() && old_field->maybe_null()) {
-            // Avoid ZERO DATE when sql_mode doesn't allow
-            if (is_temporal_type_with_date(new_field->type()) &&
-                sql_mode & MODE_NO_ZERO_DATE) {
-              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-              goto error;
-            }
-
-            if (!is_strict_mode(sql_mode) &&
-                MYSQL_TYPE_GEOMETRY == old_field->real_type()) {
-              ha_alter_info->unsupported_reason = my_get_err_msg(
-                  ER_ALTER_OPERATION_NOT_SUPPORTED_REASON_NOT_NULL);
-              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-              goto error;
-            }
-
-            op_flag |= Col_alter_info::TURN_TO_NOT_NULL;
-          }
-
-          if (!old_field->maybe_null() && new_field->maybe_null()) {
-            op_flag |= Col_alter_info::TURN_TO_NULL;
-          }
-
-          if (op_flag) {
-            Col_alter_info *info = new Col_alter_info();
-            if (!info) {
-              rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-              goto error;
-            }
-            info->before = old_field;
-            info->after = new_field;
-            info->op_flag = op_flag;
-            info->cast_rule = cast_builder.obj();
-            info->check_bound_cond = cond_builder.obj();
-            ctx->changed_columns.push_back(info);
-          }
-          break;
-        }
-      }
-      if (!found_col) {
-        ctx->dropped_columns.push_back(old_field);
-      }
-    }
-  }
-  SDB_EXCEPTION_CATCHER(
-      rc,
-      "Failed to check if support inplace alter, table:%s.%s, "
-      "temp table:%s, exception:%s",
-      db_name, table_name, altered_table->s->table_name.str, e.what());
-
-  for (uint i = 0; altered_table->field[i]; i++) {
-    if (!matched_map.is_set(i)) {
-      Field *field = altered_table->field[i];
-#ifdef IS_MARIADB
-      // Avoid DEFAULT expression.
-      if (field->default_value &&
-          field->default_value->flags &
-              uint(~(VCOL_SESSION_FUNC | VCOL_TIME_FUNC))) {
-        rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-        goto error;
-      }
-#endif
-      // Avoid DEFAULT CURRENT_TIMESTAMP
-      if (sdb_is_current_timestamp(field)) {
-        ha_alter_info->unsupported_reason =
-            "DEFAULT CURRENT_TIMESTAMP is unsupported.";
-        rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-        goto error;
-      }
-      // Avoid ZERO DATE when sql_mode doesn't allow
-      if (is_temporal_type_with_date(field->type()) &&
-          !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
-        MYSQL_TIME ltime;
-        int warnings = 0;
-#ifdef IS_MYSQL
-        date_mode_t flags(TIME_FUZZY_DATES | TIME_INVALID_DATES);
-#elif IS_MARIADB
-        date_mode_t flags(date_conv_mode_t::INVALID_DATES);
-#endif
-        if (sql_mode & MODE_NO_ZERO_DATE) {
-          flags |= TIME_NO_ZERO_DATE;
-        }
-        if (sql_mode & MODE_NO_ZERO_IN_DATE) {
-          flags |= TIME_NO_ZERO_IN_DATE;
-        }
-
-        if (field->get_date(&ltime, flags) ||
-            check_date(&ltime, non_zero_date(&ltime), (ulonglong)flags,
-                       &warnings) ||
-            warnings) {
-          rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-          goto error;
-        }
-      }
-      // Temporarily unsupported for SEQUOIADBMAINSTREAM-4889.
-      if (field->flags & AUTO_INCREMENT_FLAG) {
-        rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
-        goto error;
-      }
-      ctx->added_columns.push_back(field);
-    }
+  rs = filter_alter_columns(altered_table, ha_alter_info, ctx);
+  if (HA_ALTER_INPLACE_NOCOPY_NO_LOCK != rs) {
+    goto error;
   }
 
-  cf_it.init(ha_alter_info->alter_info->create_list);
   for (new_key = ha_alter_info->key_info_buffer;
        new_key < ha_alter_info->key_info_buffer + ha_alter_info->key_count;
        new_key++) {
@@ -1716,8 +1781,8 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
          key_part++) {
       const Create_field *new_field;
       DBUG_ASSERT(key_part->fieldnr < altered_table->s->fields);
-      cf_it.rewind();
-      for (uint fieldnr = 0; (new_field = cf_it++); fieldnr++) {
+      iter.rewind();
+      for (uint fieldnr = 0; (new_field = iter++); fieldnr++) {
         if (fieldnr == key_part->fieldnr) {
           break;
         }
@@ -1738,15 +1803,6 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
 done:
   return rs;
 error:
-  if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
-    rs = HA_ALTER_ERROR;
-    print_error(rc, 0);
-  }
-  if (ctx) {
-    ctx->changed_columns.delete_elements();
-    delete ctx;
-    ha_alter_info->handler_ctx = NULL;
-  }
   goto done;
 }
 
@@ -1857,13 +1913,28 @@ bool is_all_field_not_null(KEY *key) {
   return true;
 }
 
+bool sdb_index_contains_old_field(KEY *old_key_info,
+                                  const Col_alter_info *info) {
+  KEY_PART_INFO *key_part = NULL;
+  for (key_part = old_key_info->key_part;
+       key_part < old_key_info->key_part + old_key_info->user_defined_key_parts;
+       key_part++) {
+    if (my_strcasecmp(system_charset_info, sdb_field_name(key_part->field),
+                      sdb_field_name(info->after)) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
   Filter the indexes which need to update the NotNull attribute, and push them
   into add_keys(to be added list) and drop_keys(to be dropped list) to rebuild
   them later.
 */
 int sdb_append_index_to_be_rebuild(TABLE *table, TABLE *altered_table,
-                                   List<KEY> &add_keys, List<KEY> &drop_keys) {
+                                   Col_alter_info *info, List<KEY> &add_keys,
+                                   List<KEY> &drop_keys) {
   int rc = 0;
   bool old_has_not_null = false, new_has_not_null = false;
   KEY *old_key_info = NULL, *new_key_info = NULL;
@@ -1873,6 +1944,20 @@ int sdb_append_index_to_be_rebuild(TABLE *table, TABLE *altered_table,
 
     for (uint j = 0; j < altered_table->s->keys; ++j) {
       new_key_info = altered_table->s->key_info + j;
+      if (info->op_flag & Col_alter_info::RENAME_FIELD_NAME &&
+          sdb_index_contains_old_field(new_key_info, info)) {
+        if (drop_keys.push_back(old_key_info)) {
+          rc = HA_ERR_OUT_OF_MEM;
+          my_error(rc, MYF(0));
+          goto error;
+        }
+
+        if (add_keys.push_back(new_key_info)) {
+          rc = HA_ERR_OUT_OF_MEM;
+          my_error(rc, MYF(0));
+          goto error;
+        }
+      }
 
       if (strcmp(sdb_key_name(old_key_info), sdb_key_name(new_key_info)) == 0) {
         old_has_not_null = is_all_field_not_null(old_key_info);
@@ -2045,7 +2130,10 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
 
   if (alter_flags & INPLACE_ONLINE_DROPIDX) {
     for (uint i = 0; i < ha_alter_info->index_drop_count; i++) {
-      drop_keys.push_back(ha_alter_info->index_drop_buffer[i]);
+      if (drop_keys.push_back(ha_alter_info->index_drop_buffer[i])) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
     }
   }
 
@@ -2057,7 +2145,10 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       if (rc != 0) {
         goto done;
       }
-      add_keys.push_back(k);
+      if (add_keys.push_back(k)) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
     }
   }
   try {
@@ -2143,9 +2234,10 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     changed_it.init(changed_columns);
     while ((info = changed_it++)) {
       if (info->op_flag & Col_alter_info::TURN_TO_NOT_NULL ||
-          info->op_flag & Col_alter_info::TURN_TO_NULL) {
-        rc = sdb_append_index_to_be_rebuild(table, altered_table, add_keys,
-                                            drop_keys);
+          info->op_flag & Col_alter_info::TURN_TO_NULL ||
+          info->op_flag & Col_alter_info::RENAME_FIELD_NAME) {
+        rc = sdb_append_index_to_be_rebuild(table, altered_table, info,
+                                            add_keys, drop_keys);
         if (rc != 0) {
           goto error;
         }
