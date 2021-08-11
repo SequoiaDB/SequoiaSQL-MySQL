@@ -477,6 +477,11 @@ bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field) {
          0 == strncmp(old_expr.str, new_expr.str, old_expr.length);
 }
 
+void sdb_field_set_warning(Field *field, unsigned int code,
+                           int cuted_increment) {
+  field->set_warning(Sql_condition::SL_WARNING, code, cuted_increment);
+}
+
 bool sdb_item_like_escape_is_evaluated(Item *item) {
   return ((Item_func_like *)item)->escape_is_evaluated();
 }
@@ -544,6 +549,9 @@ uint sdb_tables_in_join(JOIN *join) {
   return join->tables;
 }
 
+const char *sdb_get_change_column(const Create_field *def) {
+  return def->change;
+}
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1004,6 +1012,11 @@ bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field) {
                      sdb_parse_gcol_expr(new_field->table).c_ptr_safe());
 }
 
+void sdb_field_set_warning(Field *field, unsigned int code,
+                           int cuted_increment) {
+  field->set_warning(Sql_condition::WARN_LEVEL_WARN, code, cuted_increment);
+}
+
 bool sdb_item_like_escape_is_evaluated(Item *item) {
   // mariadb has evaluated escape in sql level
   return true;
@@ -1059,4 +1072,7 @@ uint sdb_tables_in_join(JOIN *join) {
   return join->table_count;
 }
 
+const char *sdb_get_change_column(const Create_field *def) {
+  return def->change.str;
+}
 #endif

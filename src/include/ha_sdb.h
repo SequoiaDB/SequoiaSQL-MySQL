@@ -111,6 +111,8 @@ class Sdb_cl_copyer : public Sql_alloc {
   bson::BSONObj m_auto_inc_options;
 };
 
+class ha_sdb_alter_ctx;
+
 class ha_sdb : public handler {
  public:
   ha_sdb(handlerton *hton, TABLE_SHARE *table_arg);
@@ -518,6 +520,10 @@ class ha_sdb : public handler {
   bool is_inc_rule_supported();
 
   int create_condition_in_for_mrr(bson::BSONObj &condition);
+
+  enum_alter_inplace_result filter_alter_columns(
+      TABLE *altered_table, Alter_inplace_info *ha_alter_info,
+      ha_sdb_alter_ctx *ctx);
 
  private:
   THR_LOCK_DATA lock_data;

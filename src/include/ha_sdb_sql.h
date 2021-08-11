@@ -104,6 +104,7 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #define ALTER_RENAME_INDEX Alter_inplace_info::RENAME_INDEX
 #define ALTER_RENAME Alter_inplace_info::ALTER_RENAME
 #define ALTER_RECREATE_TABLE Alter_inplace_info::RECREATE_TABLE
+#define ALTER_COLUMN_NAME Alter_inplace_info::ALTER_COLUMN_NAME
 
 // Alter inplace result
 #define HA_ALTER_INPLACE_NOCOPY_NO_LOCK HA_ALTER_INPLACE_NO_LOCK_AFTER_PREPARE
@@ -296,6 +297,8 @@ MY_BITMAP *sdb_get_base_columns_map(const Field *field);
 
 bool sdb_gcol_expr_is_equal(const Field *old_field, const Field *new_field);
 
+void sdb_field_set_warning(Field *field, unsigned int code,
+                           int cuted_increment);
 // About Item
 const char *sdb_item_field_name(const Item_field *f);
 
@@ -351,4 +354,6 @@ void sdb_query_cache_invalidate(THD *thd, bool all);
 bool sdb_table_has_gcol(TABLE *table);
 
 uint sdb_tables_in_join(JOIN *join);
+
+const char *sdb_get_change_column(const Create_field *def);
 #endif
