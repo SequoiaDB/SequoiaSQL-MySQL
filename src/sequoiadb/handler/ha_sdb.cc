@@ -8585,8 +8585,7 @@ static int sdb_init_func(void *p) {
 #elif IS_MARIADB
   sdb_hton->kill_query = sdb_kill_query;
   // Overwrite the entry to create partitioned table to adapt SequoiaDB.
-  handlerton *part_engine =
-      ha_resolve_by_legacy_type(NULL, DB_TYPE_PARTITION_DB);
+  handlerton *part_engine = get_installed_htons(DB_TYPE_PARTITION_DB);
   if (part_engine) {
     mysql_org_create_partition_func = part_engine->create;
     part_engine->create = sdb_create_partition_handler;
