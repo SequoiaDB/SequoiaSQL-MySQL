@@ -1212,7 +1212,7 @@ bool sdb_stored_gcol_expr_is_equal(const Field *old_field,
 
 void sdb_field_set_warning(Field *field, unsigned int code,
                            int cuted_increment) {
-  field->set_warning(code, cuted_increment);
+  field->set_warning(Sql_condition::WARN_LEVEL_WARN, code, cuted_increment);
 }
 
 bool sdb_item_like_escape_is_evaluated(Item *item) {
