@@ -2192,7 +2192,7 @@ ALTER TABLE t1 ENGINE= SEQUOIADB;
 #ALGORITHM= INPLACE;
 
 #has reason the error code is 1845(sequoiadb and myisam), no reason the error code is 1846(innodb)
---error 1845
+--error 1846
 ALTER TABLE t1 CHANGE COLUMN f_time fld4 TIMESTAMP, ALGORITHM= INPLACE;
 
 --error ER_ALTER_OPERATION_NOT_SUPPORTED_REASON

@@ -3363,21 +3363,21 @@ id	ST_AsText(geom1)	ST_AsText(line1)	ST_AsText(poly1)	ST_AsText(mpoin1)	ST_AsTex
 115	POINT(1 1)	LINESTRING(0 0,10 10,20 25,50 60)	POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))	MULTIPOINT((10 10),(20 20))	MULTILINESTRING((10 10,20 20),(15 15,30 15))	MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))	GEOMETRYCOLLECTION(POINT(10 10),LINESTRING(1 1,2 2,3 3,4 4))
 2	POINT(1 1)	LINESTRING(0 0,10 10,20 25,50 60)	POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))	MULTIPOINT((10 10),(20 20))	MULTILINESTRING((10 10,20 20),(15 15,30 15))	MULTIPOLYGON(((0 0,10 0,10 10,0 10,0 0)),((5 5,7 5,7 7,5 7,5 5)))	GEOMETRYCOLLECTION(POINT(10 10),LINESTRING(1 1,2 2,3 3,4 4))
 alter table t1 change geom newgeom geometry null,algorithm=inplace;
-ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
+ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change poin newpoin  point null,algorithm=inplace;
-ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
+ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change line newline linestring null,algorithm=inplace;
-ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
+ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change poly newpoly polygon null,algorithm=inplace;
-ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
+ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change mpoin newmpoin multipoint null,algorithm=inplace;
-ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
+ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change mline newmline multilinestring null,algorithm=inplace;
-ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
+ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change mploy newmploy multipolygon null,algorithm=inplace;
-ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
+ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 alter table t1 change geocol newgeocol geometrycollection null,algorithm=inplace;
-ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
+ERROR HY000: Table is too big to be altered. The records count exceeds the sequoiadb_alter_table_overhead_threshold.
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
