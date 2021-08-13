@@ -143,12 +143,9 @@ a
 connection conn1;
 alter table t1 change a col1 int auto_increment;
 connection conn2;
-insert into t1 values(),(),();
 connection conn1;
 alter table t1 modify col1 int;
 connection conn2;
-insert into t1 values(),(),();
-ERROR HY000: Field 'col1' doesn't have a default value
 connection conn1;
 alter table t1 drop primary key;
 alter table t1 add col2 int auto_increment key;
