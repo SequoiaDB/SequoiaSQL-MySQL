@@ -2255,6 +2255,11 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
 
     cl.set_version(ha_get_cata_version(db_name, table_name));
+    if (ha_is_open() && ha_is_executing_pending_log(thd)) {
+      // no need check version for pending log statement
+      cl.set_version(0);
+    }
+
     if (!drop_keys.is_empty()) {
       rc = drop_index(cl, drop_keys);
       if (0 != rc) {
