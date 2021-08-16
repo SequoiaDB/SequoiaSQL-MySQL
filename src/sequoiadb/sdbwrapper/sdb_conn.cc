@@ -722,7 +722,7 @@ int conn_drop_cl(sdbclient::sdb *connection, const char *cs_name,
 
     rc = cs.dropCollection(cl_name);
     if (rc != SDB_ERR_OK) {
-      if (SDB_DMS_NOTEXIST == rc) {
+      if (SDB_DMS_NOTEXIST == rc || SDB_DMS_CS_NOTEXIST == rc) {
         // There is no specified collection, igonre the error.
         rc = 0;
         goto done;
