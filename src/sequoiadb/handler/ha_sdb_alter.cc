@@ -1584,10 +1584,6 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
           goto error;
         }
 
-        if (0 != my_strcasecmp(system_charset_info, sdb_field_name(old_field),
-                               sdb_field_name(new_field))) {
-          op_flag |= Col_alter_info::RENAME_FIELD_NAME;
-        }
         if (sdb_is_type_diff(old_field, new_field)) {
           if (0 == get_cast_rule(cast_builder, old_field, new_field)) {
             op_flag |= Col_alter_info::CHANGE_DATA_TYPE;
@@ -1625,6 +1621,15 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
         if (op_flag & Col_alter_info::ADD_AUTO_INC) {
           rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
           goto error;
+        }
+
+        if (0 != my_strcasecmp(system_charset_info, sdb_field_name(old_field),
+                               sdb_field_name(new_field))) {
+          op_flag |= Col_alter_info::RENAME_FIELD_NAME;
+          if (old_is_auto_inc && new_is_auto_inc) {
+            op_flag |= Col_alter_info::DROP_AUTO_INC;
+            op_flag |= Col_alter_info::ADD_AUTO_INC;
+          }
         }
 
         if (!new_field->maybe_null() && old_field->maybe_null()) {
