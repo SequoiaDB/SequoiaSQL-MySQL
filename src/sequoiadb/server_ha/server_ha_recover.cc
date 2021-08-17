@@ -560,29 +560,80 @@ static int get_local_ip_address(char *ip_addr, int max_ip_len) {
   int rc = 0;
   if (my_bind_addr_str && strcmp(my_bind_addr_str, "*") != 0) {
     strncpy(ip_addr, my_bind_addr_str, max_ip_len);
+    ip_addr[max_ip_len - 1] = '\0';
   } else {
     struct ifaddrs *if_addr_struct = NULL, *ifa = NULL;
     void *addr_ptr = NULL;
-    char addr_buf[INET_ADDRSTRLEN];
+    char addr_buf[INET_ADDRSTRLEN] = {0};
+    char *first_available_ip = NULL;
+    bool matched = FALSE;
 
+    // get host IP address by hostname, from '/etc/hosts'
+    struct hostent *hosts = gethostbyname(glob_hostname);
+    rc = (NULL == hosts) ? SDB_HA_GET_LOCAL_IP : 0;
+    HA_RC_CHECK(
+        rc, error,
+        "HA: System call 'gethostbyname()' error: %s, rc: %d, errno: %d",
+        strerror(errno), rc, errno);
+
+    // get host IP address by 'getifaddrs', on error, -1 is returned
     rc = getifaddrs(&if_addr_struct);
-    HA_RC_CHECK(rc, error, "HA: System call 'getifaddrs()' error: %s",
-                strerror(errno));
+    HA_RC_CHECK(rc, error, "HA: System call 'getifaddrs()' error: %s, errno: %d",
+                strerror(errno), errno);
 
-    for (ifa = if_addr_struct; ifa != NULL; ifa = ifa->ifa_next) {
-      if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
-        addr_ptr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
-        const char *ip =
-            inet_ntop(AF_INET, addr_ptr, addr_buf, INET_ADDRSTRLEN);
-        if (ip && strcmp(ip, HA_LOOPBACK_ADDRESS) != 0) {
-          strncpy(ip_addr, ip, max_ip_len);
+    for (ifa = if_addr_struct; ifa != NULL && !matched; ifa = ifa->ifa_next) {
+      // support IPV4 for now
+      if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET) {
+        continue;
+      }
+      addr_ptr = &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+      DBUG_ASSERT(NULL != addr_ptr);
+      const char *ip = inet_ntop(AF_INET, addr_ptr, addr_buf, INET_ADDRSTRLEN);
+      if (NULL == ip) {
+        sql_print_error("HA: System call 'inet_ntop' error: %s, errno: %d",
+                        strerror(errno), errno);
+        continue;
+      } else if (strcmp(ip, HA_LOOPBACK_ADDRESS) == 0) {
+        sql_print_information("HA: Skip loopback address");
+        continue;
+      }
+
+      // handle available IP address now
+      // check if current IP address is in hosts file
+      for (int i = 0; hosts && hosts->h_addr_list[i]; i++) {
+        if (hosts->h_addrtype != AF_INET) {
+          continue;
+        }
+
+        const char *hosts_ip =
+            inet_ntoa(*((struct in_addr *)hosts->h_addr_list[i]));
+        if (NULL == hosts_ip) {
+          sql_print_error("HA: System call 'inet_ntoa' error: %s, errno: %d",
+                          strerror(errno), errno);
+          continue;
+        }
+
+        if (strcmp(hosts_ip, ip) == 0) {
+          strncpy(ip_addr, hosts_ip, max_ip_len);
+          ip_addr[max_ip_len - 1] = '\0';
+          matched = TRUE;
           break;
-        } else if (NULL == ip) {
-          sql_print_error("HA: System call 'inet_ntop' error: %s",
-                          strerror(errno));
         }
       }
+      // set 'ip_addr' in case it is not set
+      if (NULL == first_available_ip && !matched) {
+        first_available_ip = strncpy(ip_addr, ip, max_ip_len);
+        ip_addr[max_ip_len - 1] = '\0';
+      }
     }
+
+    // no matched IP address in 'hosts' and network interface address
+    if (!matched) {
+      sql_print_warning(
+          "HA: No matched IP addresses in 'hosts' file and network interface "
+          "address, 'hosts' file may not be configured correctly");
+    }
+
     rc = strlen(ip_addr) ? 0 : SDB_HA_GET_LOCAL_IP;
     freeifaddrs(if_addr_struct);
   }
