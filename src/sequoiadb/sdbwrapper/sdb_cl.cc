@@ -507,7 +507,7 @@ error:
   goto done;
 }
 
-int cl_create_index2(sdbclient::sdbCollection *cl,
+int cl_create_index2(sdbclient::sdbCollection *cl, Sdb_conn *conn,
                      const bson::BSONObj *index_def, const CHAR *name,
                      const bson::BSONObj *options, char *errmsg) {
   int rc = SDB_ERR_OK;
@@ -522,11 +522,15 @@ int cl_create_index2(sdbclient::sdbCollection *cl,
     }
 
     if (SDB_IXM_EXIST == rc) {
+      conn->set_print_screen(true);
+      conn->save_err_msg();
       rs = is_old_version_index(cl, *index_def, name, *options, is_old, errmsg);
       if (SDB_OK != rs) {
         goto error;
       }
       if (is_old) {
+        conn->set_print_screen(false);
+        conn->clear_err_msg();
         rc = SDB_ERR_OK;
         goto done;
       }
@@ -543,8 +547,8 @@ error:
 
 int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
                          const bson::BSONObj &options) {
-  return retry(boost::bind(cl_create_index2, &m_cl, &index_def, name, &options,
-                           get_errmsg()));
+  return retry(boost::bind(cl_create_index2, &m_cl, get_conn(), &index_def,
+                           name, &options, get_errmsg()));
 }
 
 int cl_drop_index(sdbclient::sdbCollection *cl, const char *name) {

@@ -673,6 +673,10 @@ const char *Sdb_conn::get_err_msg() {
   return errmsg;
 }
 
+void Sdb_conn::save_err_msg() {
+  get_err_msg();
+}
+
 int conn_rename_cl(sdbclient::sdb *connection, const char *cs_name,
                    const char *old_cl_name, const char *new_cl_name) {
   int rc = SDB_ERR_OK;

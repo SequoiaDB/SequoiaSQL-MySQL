@@ -344,6 +344,8 @@ class Sdb_conn {
 
   const char *get_err_msg();
 
+  void save_err_msg();
+
   inline void clear_err_msg() { errmsg[0] = '\0'; }
 
   inline void set_rollback_on_timeout(const bool rollback) {
