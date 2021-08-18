@@ -584,6 +584,10 @@ error:
   goto done;
 }
 
+void Sdb_conn::save_err_msg() {
+  get_err_msg();
+}
+
 int conn_rename_cl(sdbclient::sdb *connection, char *cs_name, char *old_cl_name,
                    char *new_cl_name) {
   int rc = SDB_ERR_OK;

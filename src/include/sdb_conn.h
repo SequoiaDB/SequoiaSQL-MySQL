@@ -305,6 +305,8 @@ class Sdb_conn {
 
   inline char *get_err_msg() { return errmsg; }
 
+  void save_err_msg();
+
   inline void clear_err_msg() { errmsg[0] = '\0'; }
 
   inline Sdb_session_attrs *get_session_attrs() { return &session_attrs; }
