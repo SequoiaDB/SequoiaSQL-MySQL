@@ -437,20 +437,24 @@ int ha_check_svcname(sdbclient::sdb &conn, uint port, bool &is_coord) {
   sdbclient::sdbCursor cursor;
   bson::BSONObj obj, cond, selected;
   static const char *SDB_HA_TOOL_FIELD_ROLE = "role";
-  static const char *SDB_HA_TOOL_FIELD_SVCNAME = "svcname";
   static const char *SDB_HA_TOOL_ROLE_COORD_STR = "coord";
-  std::ostringstream os;
-  os << port;
-  cond = BSON(SDB_HA_TOOL_FIELD_SVCNAME << os.str());
-  selected = BSON(SDB_HA_TOOL_FIELD_ROLE << "");
-  rc = conn.getSnapshot(cursor, SDB_SNAP_CONFIGS, cond, selected);
-  HA_TOOL_RC_CHECK(rc, rc, "Error: failed to get snapshot, sequoiadb error: %s",
-                   ha_sdb_error_string(conn, rc));
 
-  rc = cursor.next(obj);
-  HA_TOOL_RC_CHECK(
-      rc, rc, "Error: failed to fetch snapshot result, sequoiadb error: %s",
-      ha_sdb_error_string(conn, rc));
+  try {
+    cond = BSON(SDB_FIELD_GLOBAL << false);
+    selected = BSON(SDB_HA_TOOL_FIELD_ROLE << "");
+    rc = conn.getSnapshot(cursor, SDB_SNAP_CONFIGS, cond, selected);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to get snapshot, sequoiadb error: %s",
+                     ha_sdb_error_string(conn, rc));
+
+    rc = cursor.next(obj);
+    HA_TOOL_RC_CHECK(
+        rc, rc, "Error: failed to fetch snapshot result, sequoiadb error: %s",
+        ha_sdb_error_string(conn, rc));
+  } catch (std::exception &e) {
+    cout << "Error: unexpected error: " << e.what() << endl;
+    return SDB_HA_EXCEPTION;
+  }
   if (!obj.isEmpty()) {
     const char *role = obj.getStringField(SDB_HA_TOOL_FIELD_ROLE);
     is_coord = (0 == strcmp(SDB_HA_TOOL_ROLE_COORD_STR, role));
