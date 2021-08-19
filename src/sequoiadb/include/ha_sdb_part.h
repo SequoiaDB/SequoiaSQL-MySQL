@@ -549,6 +549,10 @@ class ha_sdb_part_wrapper : public ha_partition {
     return m_file[0]->ha_update_row(old_data, new_data);
   }
 
+  int cmp_ref(const uchar *ref1, const uchar *ref2) {
+    return m_file[0]->cmp_ref(ref1, ref2);
+  }
+
   void position(const uchar* record) {
     handler* file = m_file[0];
     file->position(record);
