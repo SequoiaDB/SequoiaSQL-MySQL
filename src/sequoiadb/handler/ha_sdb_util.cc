@@ -901,8 +901,12 @@ int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to move cursor to next, exception:%s",
                         e.what());
+  if(rc) {
+    goto error;
+  }
+  rc = conn->next(obj, false);
   if (rc) {
-    if (SDB_DMS_EOC == rc) {
+    if (HA_ERR_END_OF_FILE == rc) {
       rc = SDB_DMS_CS_NOTEXIST;
     }
     goto error;
@@ -918,6 +922,7 @@ int sdb_rebuild_sequence_name(Sdb_conn *conn, const char *cs_name,
   }
 
 done:
+  conn->execute_done();
   return rc;
 error:
   goto done;
