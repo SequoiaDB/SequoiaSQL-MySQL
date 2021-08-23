@@ -351,6 +351,8 @@ error:
   goto done;
 }
 
+/* 
+  SEQUOIASQLMAINSTREAM-1102 Replace by modifying MariaDB source code. 
 #ifdef IS_MARIADB
 int sdb_get_select_quick_type(SELECT_LEX *select_lex, uint tablenr) {
   JOIN *join = NULL;
@@ -410,6 +412,7 @@ bool sdb_is_ror_scan(THD *thd, uint tablenr) {
          QUICK_SELECT_I::QS_TYPE_ROR_INTERSECT == type;
 }
 #endif
+*/
 
 longlong sdb_get_min_int_value(Field *field) {
   longlong nr = 0;
@@ -4479,10 +4482,6 @@ int ha_sdb::index_init(uint idx, bool sorted) {
     pushed_condition = SDB_EMPTY_BSON;
   }
   last_key_value = SDB_EMPTY_BSON;
-#ifdef IS_MARIADB
-  int table_pos = table->pos_in_table_list->table_id;
-  m_secondary_sort_rowid = sdb_is_ror_scan(ha_thd(), table_pos);
-#endif
   DBUG_RETURN(0);
 }
 
@@ -5557,11 +5556,10 @@ int ha_sdb::extra(enum ha_extra_function operation) {
     case HA_EXTRA_INSERT_WITH_UPDATE:
       m_insert_with_update = true;
       m_use_bulk_insert = false;
-#ifdef IS_MYSQL
     case HA_EXTRA_SECONDARY_SORT_ROWID:
       m_secondary_sort_rowid = true;
       break;
-#elif IS_MARIADB
+#ifdef IS_MARIADB
     case HA_EXTRA_DEL_REN_PART_TABLE:
       m_del_ren_main_cl = true;
       break;
