@@ -78,6 +78,7 @@ char *sdb_preferred_instance_mode(THD *thd);
 bool sdb_preferred_strict(THD *thd);
 int sdb_preferred_period(THD *thd);
 bool sdb_debug_log(THD *thd);
+void sdb_set_debug_log(THD *thd, bool val);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;

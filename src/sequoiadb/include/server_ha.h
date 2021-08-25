@@ -145,6 +145,7 @@ typedef struct st_sql_stmt_info {
   HASH dml_checked_objects;
   int pending_sql_id;
   char *single_query;
+  bool with_admin;
 } ha_sql_stmt_info;
 
 // use to cache current instance state of all objects(table, view and sp)
@@ -229,6 +230,7 @@ typedef struct st_pending_log_replay_thread {
   my_thread_handle thread;
   my_thread_attr_t thread_attr;
   bool stopped;
+  THD *thd;
 } ha_pending_log_replay_thread;
 
 bool ha_is_open();

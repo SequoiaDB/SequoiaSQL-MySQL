@@ -26,6 +26,7 @@
 #include <exception>
 #include "errmsg.h"
 #include "sql_common.h"
+#include "server_ha_query.h"
 
 // SQL statements
 #define HA_STMT_EXEC_ONLY_IN_MYSQL "SET sequoiadb_execute_only_in_mysql = 1"
@@ -54,78 +55,41 @@ const char *ha_inst_group_user_name() {
   return ha_inst_group_user;
 }
 
-// create THD for creating instance group user
-static THD *create_ha_thd(PSI_thread_key thread_key) {
+static THD *create_ha_thd() {
   THD *thd = NULL;
-  my_thread_init();
-  my_thread_id thread_id;
+  try {
 #ifdef IS_MYSQL
-  thd = create_thd(false, true, false, thread_key);
-  DBUG_ASSERT(thd != NULL);
+    thd = new THD;
+    DBUG_ASSERT(NULL != thd);
+    thd->set_command(COM_DAEMON);
+    thd->system_thread = SYSTEM_THREAD_BACKGROUND;
+    thd->security_context()->set_host_or_ip_ptr(C_STRING_WITH_LEN(""));
 #else
-  thd = create_thd();
-  DBUG_ASSERT(thd != NULL);
-  DBUG_ASSERT(thd->mysys_var != NULL);
-  // remove current thread from server_threads, so it can be
-  // notified to be finished in 'server_ha_deinit' function, or it will
-  // be killed in 'close_connections' function, note the change
-  // of thread_count in recover_and_replay_thread_end
-  server_threads.erase(thd);
-  thread_count--;
+    my_thread_init();
+    thd = new THD(next_thread_id());
+    DBUG_ASSERT(NULL != thd);
+    thd->set_command(COM_DAEMON);
+    thd->system_thread = SYSTEM_THREAD_GENERIC;
+    thd->security_ctx->host_or_ip = "";
 #endif
-  thd->get_stmt_da()->reset_diagnostics_area();
-  thd->get_stmt_da()->set_overwrite_status(true);
+  } catch (std::bad_alloc &e) {
+    sql_print_error("HA: Out of memory in 'HA' thread");
+    goto error;
+  } catch (std::exception &e) {
+    sql_print_error("HA: Unexpected error: %s", e.what());
+    goto error;
+  }
+  // set thd context
+  if (0 != set_thd_context(thd)) {
+    delete thd;
+    thd = NULL;
+    my_error(ER_OUT_OF_RESOURCES, MYF(0));
+    goto error;
+  }
+done:
   return thd;
-}
-
-// build context for creating instance group user
-static void set_lex_user(LEX_USER &lex_user, const char *name, const char *host,
-                         const char *plugin, const char *auth_str) {
-#ifdef IS_MYSQL
-  lex_user.user.str = name;
-  lex_user.user.length = strlen(name);
-  lex_user.host.str = host;
-  lex_user.host.length = strlen(host);
-  lex_user.plugin.str = plugin;
-  lex_user.plugin.length = strlen(plugin);
-  lex_user.auth.str = auth_str;
-  lex_user.auth.length = strlen(auth_str);
-  lex_user.uses_identified_by_clause = false;
-  lex_user.uses_identified_with_clause = true;
-  lex_user.uses_authentication_string_clause = true;
-  lex_user.uses_identified_by_password_clause = false;
-
-  lex_user.alter_status.update_password_expired_fields = false;
-  lex_user.alter_status.update_password_expired_column = false;
-  lex_user.alter_status.use_default_password_lifetime = false;
-  lex_user.alter_status.expire_after_days = EXPIRED_AFTER_DAYS;
-  lex_user.alter_status.update_account_locked_column = false;
-  lex_user.alter_status.account_locked = false;
-#else
-  lex_user.user = {name, strlen(name)};
-  lex_user.host = {host, strlen(host)};
-  lex_user.auth->plugin = {plugin, strlen(plugin)};
-  lex_user.auth->auth_str = {auth_str, strlen(auth_str)};
-  lex_user.auth->next = NULL;
-  lex_user.auth->pwtext = {NULL, 0};
-#endif
-}
-
-// set necessary flag for creating instance group user
-static void set_lex_extra(THD *thd) {
-#ifdef IS_MYSQL
-  thd->lex->ssl_cipher = 0;
-  thd->lex->x509_issuer = 0;
-  thd->lex->x509_subject = 0;
-  thd->lex->ssl_type = SSL_TYPE_NOT_SPECIFIED;
-#else
-  thd->lex->account_options.reset();
-  thd->security_ctx->master_access |= CREATE_USER_ACL;
-  // set query_time used to change 'password_last_changed'
-  thd->set_start_time();
-  thd->security_ctx->skip_grants();
-  thd->lex->grant |= GRANT_ACL;
-#endif
+error:
+  goto done;
 }
 
 // read instance ID from local file
@@ -187,82 +151,6 @@ done:
 error:
   rc = SDB_HA_WRITE_INST_ID;
   goto done;
-}
-
-// call mysql or mariadb interface, create user
-static int mysql_create_user(THD *thd, LEX_USER &lex_user) {
-#ifndef NO_EMBEDDED_ACCESS_CHECKS
-#ifdef IS_MYSQL
-  // can't use mysql_grant in mysql because of 'mysql_rewrite_grant'
-  // open the mysql.user and mysql.db or mysql.proxies_priv tables
-  TABLE_LIST tables[2];
-  uint rights = ALL_PRIVILEGES;
-  rights |= GRANT_ACL;
-  thd->set_skip_readonly_check();
-  thd->tx_read_only = false;
-  tables[0].init_one_table(C_STRING_WITH_LEN(HA_MYSQL_DB),
-                           C_STRING_WITH_LEN(HA_USER_TABLE), HA_USER_TABLE,
-                           TL_WRITE);
-  tables[1].init_one_table(C_STRING_WITH_LEN(HA_MYSQL_DB),
-                           C_STRING_WITH_LEN(HA_DB_TABLE), HA_DB_TABLE,
-                           TL_WRITE);
-  tables[0].next_local = tables[0].next_global = tables + 1;
-
-  if (open_and_lock_tables(
-          thd, tables,
-          MYSQL_LOCK_IGNORE_TIMEOUT)) {  // This should never happen
-    return -1;
-  }
-
-  Partitioned_rwlock_write_guard lock(&LOCK_grant);
-  mysql_mutex_lock(&acl_cache->lock);
-  grant_version++;
-  int ret = replace_user_table(thd, tables[0].table, &lex_user, rights, false,
-                               true, (2 | ACCESS_RIGHTS_ATTR));
-  mysql_mutex_unlock(&acl_cache->lock);
-  lock.unlock();
-
-  bool rollback_transaction = thd->transaction_rollback_request || ret;
-  if (rollback_transaction) {
-    trans_rollback_stmt(thd);
-    trans_rollback_implicit(thd);
-    return -1;
-  } else {
-    trans_commit_stmt(thd);
-    trans_commit_implicit(thd);
-  }
-  close_thread_tables(thd);
-  thd->mdl_context.release_transactional_locks();
-
-  (void)acl_reload(thd);
-  (void)grant_reload(thd);
-
-  ha_close_connection(thd);
-  return 0;
-#else
-  List<LEX_USER> list;
-  uint rights = ALL_PRIVILEGES;
-  rights |= GRANT_ACL;
-  list.push_front(&lex_user);
-  bool rc = 0;
-
-  // if binlog is open, query must be set in mariadb
-  char *query = HA_STMT_USELESS_SQL;
-  thd->set_query(query, strlen(query));
-  thd->tx_read_only = false;
-  mysql_drop_user(thd, list, false);
-  thd->clear_error();
-  close_thread_tables(thd);
-
-  query = HA_STMT_USELESS_SQL;
-  thd->set_query(query, strlen(query));
-  rc = mysql_grant(thd, NULL, list, rights, false, false);
-  close_thread_tables(thd);
-  thd->mdl_context.release_transactional_locks();
-  close_connection(thd, 0);
-  return rc;
-#endif
-#endif
 }
 
 // decrypt encrypted password from 'HAUser' table
@@ -467,13 +355,8 @@ static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
   const char *user = NULL, *host = NULL, *plugin = NULL;
   const char *iv = NULL, *auth_str = NULL;
   const char *cipher_password = NULL, *md5_password = NULL;
-  LEX_USER lex_user;
   char err_buf[HA_BUF_LEN] = {0};
-
-#ifdef IS_MARIADB
-  USER_AUTH auth;
-  lex_user.auth = &auth;
-#endif
+  char sql_str[HA_BUF_LEN] = {0};
 
   bson::BSONObj obj;
   Sdb_cl config_cl;
@@ -528,15 +411,23 @@ static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
     goto done;
   }
 
-  // create instance group user
+  // create instance group user by 'mysql_parse'
   sql_print_information("HA: Create instance group user '%s'", user);
-  set_lex_user(lex_user, user, host, plugin, auth_str);
-  set_lex_extra(ha_thread->thd);
-  rc = mysql_create_user(ha_thread->thd, lex_user);
-  rc = rc ? SDB_HA_CREATE_INST_GROUP_USER : 0;
+  // 1. drop user first
+  sdb_set_execute_only_in_mysql(ha_thread->thd, true);
+  snprintf(sql_str, HA_BUF_LEN, "DROP USER IF EXISTS '%s'@'%s'", user, "%");
+  rc = server_ha_query(ha_thread->thd, sql_str, strlen(sql_str));
   HA_RC_CHECK(rc, error,
-              "HA: Failed to create instance group user, "
-              "please check mysql error log");
+              "HA: Failed to drop instance group user, mysql error: %d", rc);
+
+  // 2. create instance group user
+  snprintf(sql_str, HA_BUF_LEN,
+           "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s' IDENTIFIED BY '%s' "
+           "WITH GRANT OPTION",
+           user, "%", ha_inst_group_passwd);
+  rc = server_ha_query(ha_thread->thd, sql_str, strlen(sql_str));
+  HA_RC_CHECK(rc, error,
+              "HA: Failed to create instance group user, mysql error: %d", rc);
 
   // init mysql connection for 'HA' thread
   rc = init_ha_mysql_connection(ha_local_host_ip, mysqld_port, user,
@@ -1421,6 +1312,10 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
   // 'persist_sql_stmt' and init "st_sql_stmt_info::dml_checked_objects"
   // but no free operation on it
   clear_udf_init_side_effect();
+
+  // restore current thd after udf_init changed current thd
+  ha_thread->thd->thread_stack = (char *)&ha_thread->thd;
+  ha_thread->thd->store_globals();
 #endif
 
   // execute flush privileges, update cache for 'mysql.user'
@@ -1459,19 +1354,19 @@ static bool wait_for_mysqld_service() {
   return mysqld_failed;
 }
 
-static inline int retry_alter_sequence_stmt(MYSQL *mysql, const char *query,
+static inline int retry_alter_sequence_stmt(THD *thd, const char *query,
                                             const char *table_name) {
   int rc = 0;
   // build 'FLUSH TABLE `XXX`' command
   char sql_cmd[NAME_LEN * 2 + 20] = "FLUSH TABLE ";
   ha_quote_name(table_name, sql_cmd + 12);
 
-  rc = mysql_query(mysql, sql_cmd, strlen(sql_cmd));
+  rc = server_ha_query(thd, sql_cmd, strlen(sql_cmd));
   if (rc) {
     SDB_LOG_ERROR("HA: Failed to execute '%s', mysql error: %s", sql_cmd,
-                  mysql_error(mysql));
+                  sdb_da_message_text(thd->get_stmt_da()));
   } else {
-    rc = mysql_query(mysql, query, strlen(query));
+    rc = server_ha_query(thd, query, strlen(query));
   }
   return rc;
 }
@@ -1502,6 +1397,8 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
   int owner = HA_INVALID_INST_ID;
   int sql_id = HA_INVALID_SQL_ID;
   int cata_version = -1;
+  THD *thd = ha_thread->thd;
+  Diagnostics_area *da = thd->get_stmt_da();
 
   DBUG_ENTER("replay_sql_stmt_loop");
   DBUG_ASSERT(ha_thread->instance_id > 0);
@@ -1547,21 +1444,17 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
               "HA: Failed to set '%s' before replay SQL log, "
               "sequoiadb error: %s",
               HA_TRANSACTION_LOCK_WAIT, ha_error_string(sdb_conn, rc, err_buf));
+  // set execute only in mysql flag
+  sdb_set_execute_only_in_mysql(thd, true);
 
-  rc = mysql_query(ha_mysql, C_STRING_WITH_LEN(HA_STMT_EXEC_ONLY_IN_MYSQL));
-  HA_RC_CHECK(rc, error,
-              "HA: Unable to open 'sequoiadb_execute_only_in_mysql'"
-              "before replay SQL log, mysql error: %s",
-              mysql_error(ha_mysql));
-
-  rc = set_mysql_read_only(ha_mysql, false);
+  query = "SET GLOBAL read_only = OFF";
+  rc = server_ha_query(thd, query, strlen(query));
   HA_RC_CHECK(rc, error, "HA: Unable to set 'read_only' to 0, mysql error: %s",
-              mysql_error(ha_mysql));
+              sdb_da_message_text(da));
 
   // set 'order_by' flag for querying SQL log order by 'SQLID' field
   order_by = BSON(HA_FIELD_SQL_ID << 1);
-
-  while (true) {
+  while (!abort_loop) {
     curr_executed = 0;
     builder.reset();
 
@@ -1586,6 +1479,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                 ha_error_string(sdb_conn, rc, err_buf));
 
     while (0 == (rc = sql_log_cl.next(result, false))) {
+      sdb_set_debug_log(thd, sdb_debug_log(NULL));
       curr_executed++;
       bson::BSONObjIterator iter(result);
       while (iter.more()) {
@@ -1637,7 +1531,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
 
       // set session attributes
       if (strlen(session_attrs)) {
-        rc = mysql_query(ha_mysql, session_attrs, strlen(session_attrs));
+        rc = server_ha_query(thd, session_attrs, strlen(session_attrs));
         // if abort_loop become true, don't report errors, or mysql automated
         // testing will report errors if found '[ERROR]' in error log
         if (rc && abort_loop) {
@@ -1671,11 +1565,11 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
       snprintf(use_db_cmd, HA_MAX_USE_DB_CMD_LEN, "USE %s", quoted_name_buf);
 
       SDB_LOG_DEBUG("HA: Change database to: %s", use_db_cmd);
-      rc = mysql_query(ha_mysql, use_db_cmd, strlen(use_db_cmd));
 
+      rc = server_ha_query(thd, use_db_cmd, strlen(use_db_cmd));
       if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
         // change database failed
-        rc = (ER_BAD_DB_ERROR == mysql_errno(ha_mysql)) ? 0 : rc;
+        rc = (ER_BAD_DB_ERROR == rc) ? 0 : rc;
       }
 
       // if abort_loop become true, don't report errors, or mysql automated
@@ -1685,34 +1579,33 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         break;
       }
       HA_RC_CHECK(rc, sleep_secs,
-                  "HA: Failed to change database: %s for SQL ID: %d, "
+                  "HA: Failed to execute: %s for SQL ID: %d, "
                   "mysql error: %s",
-                  use_db_cmd, sql_id, mysql_error(ha_mysql));
+                  use_db_cmd, sql_id, sdb_da_message_text(da));
 
       SDB_LOG_DEBUG("HA: Start playback of SQL statement with SQL ID: %d",
                     sql_id);
 
       if (strlen(query)) {
-        rc = mysql_query(ha_mysql, query, strlen(query));
-        mysql_free_result(mysql_store_result(ha_mysql));
+        rc = server_ha_query(thd, query, strlen(query));
       }
 
 #ifdef IS_MARIADB
       // retry 'alter sequence ' statement if a conflict is found
-      if (0 != rc && ER_SEQUENCE_INVALID_DATA == mysql_errno(ha_mysql)) {
-        rc = retry_alter_sequence_stmt(ha_mysql, query, table_name);
+      if (0 != rc && ER_SEQUENCE_INVALID_DATA == rc) {
+        rc = retry_alter_sequence_stmt(thd, query, table_name);
         HA_RC_CHECK(
             rc, sleep_secs,
             "HA: Failed to retry statement with SQL ID: %d, mysql error: %s",
-            sql_id, mysql_error(ha_mysql));
+            sql_id, sdb_da_message_text(da));
       }
 #endif
 
-      if (rc && ha_is_ddl_ignorable_error(mysql_errno(ha_mysql))) {
+      if (rc && ha_is_ddl_ignorable_error(rc)) {
         sql_print_information(
             "HA: Failed to replay SQL statement with SQL ID: %d, "
             "mysql error: %s, ignore this error",
-            sql_id, mysql_error(ha_mysql));
+            sql_id, sdb_da_message_text(da));
         rc = 0;
       }
       // if abort_loop become true, don't report errors, or mysql automated
@@ -1724,9 +1617,11 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
       HA_RC_CHECK(rc, sleep_secs,
                   "HA: Failed to replay SQL statement with SQL ID: %d, "
                   "mysql error: %s",
-                  sql_id, mysql_error(ha_mysql));
+                  sql_id, sdb_da_message_text(da));
       SDB_LOG_DEBUG("HA: SQL statement with SQL ID: %d playback succeeded",
                     sql_id);
+      // reset for next command
+      da->reset_diagnostics_area();
 
       // update instance object state and instance state
       for (int try_count = MAX_TRY_COUNT; try_count; try_count--) {
@@ -1788,16 +1683,19 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                   ha_error_string(sdb_conn, rc, err_buf));
       // flush privileges after replay DCL
       if (0 == strcmp(op_type, HA_OPERATION_TYPE_DCL)) {
-        rc = mysql_query(ha_mysql, C_STRING_WITH_LEN(HA_STMT_FLUSH_PRIVILEGES));
+        rc = server_ha_query(thd, C_STRING_WITH_LEN(HA_STMT_FLUSH_PRIVILEGES));
         // if the main thread is about to terminate
         if (rc && abort_loop) {
           rc = 0;
           break;
         } else if (rc) {
           sql_print_warning(
-              "HA: Failed to flush privileges after replay DCL statement");
+              "HA: Failed to flush privileges after replay DCL statement, "
+              "mysql error: %s",
+              sdb_da_message_text(da));
           rc = 0;
         }
+        da->reset_diagnostics_area();
       }
     }
 
@@ -1806,6 +1704,7 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
                       ha_error_string(sdb_conn, rc, err_buf));
     }
   sleep_secs:
+    da->reset_diagnostics_area();
     if (!sdb_conn.is_valid()) {
       // TODO: if failed to connect, write error information into state table
       rc = sdb_conn.connect();
@@ -1841,11 +1740,15 @@ error:
 // necessary work for ending HA thread
 void ha_thread_end(THD *thd) {
 #ifdef IS_MYSQL
+  Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
+  thd->release_resources();
+  thd_manager->remove_thd(thd);
   my_thread_end();
   my_thread_exit(0);
 #else
   if (thd) {
-    thread_count++;
+    thd->add_status_to_global();
+    server_threads.erase(thd);
     delete thd;
   }
   my_thread_end();
@@ -1935,6 +1838,20 @@ void wake_up_sql_persistence_threads(ha_recover_replay_thread *ha_thread) {
   mysql_mutex_unlock(&ha_thread->recover_finished_mutex);
 }
 
+// set current mutex and cond for current thd, the main thread will send
+// stop signal after getting 'shutdown' command
+void watch_kill_signal(THD *thd, mysql_cond_t *cond, mysql_mutex_t *mutex) {
+#ifdef IS_MYSQL
+  // refer to "close_connections and Set_kill_conn()" function
+  thd->current_mutex = mutex;
+  thd->current_cond = cond;
+#else
+  // refer to "kill_thread_phase_1 and kill_thread" function
+  thd->mysys_var->current_mutex = mutex;
+  thd->mysys_var->current_cond = cond;
+#endif
+}
+
 // HA thread entry
 void *ha_recover_and_replay(void *arg) {
 // HA function is not supported for embedded mysql
@@ -1945,8 +1862,17 @@ void *ha_recover_and_replay(void *arg) {
   ha_recover_replay_thread *ha_thread = (ha_recover_replay_thread *)arg;
   DBUG_ASSERT(NULL != ha_thread);
 
+  // wait for mysqld service
+  bool mysqld_failed = wait_for_mysqld_service();
+  if (mysqld_failed) {
+    sql_print_error(
+        "HA: The mysqld process was detected to be terminating, "
+        "stop 'HA' thread, please check MySQL startup log");
+    exit(mysqld_failed);
+  }
+
   // init thd for 'HA' thread
-  ha_thread->thd = create_ha_thd(HA_KEY_HA_THD);
+  ha_thread->thd = create_ha_thd();
   if (NULL == ha_thread->thd) {
     sql_print_error("HA: Out of memory in 'HA' thread");
     ha_kill_mysqld(ha_thread->thd);
@@ -1956,16 +1882,16 @@ void *ha_recover_and_replay(void *arg) {
   // 1. create thread local var and init sequoiadb connection
   Sdb_conn sdb_conn(sdb_thd_id(ha_thread->thd), true);
 
+  // watch main thread 'term' signal, current thread can be stopped immediately
+  // by handle this signal
+  watch_kill_signal(ha_thread->thd, &ha_thread->replay_stopped_cond,
+                    &ha_thread->replay_stopped_mutex);
+
   sql_print_information("HA: Start 'HA' thread");
   mysql_mutex_lock(&ha_thread->replay_stopped_mutex);
 
   try {
-    // 2. start dump and recover process after mysqld service
-    bool mysqld_failed = wait_for_mysqld_service();
-    HA_RC_CHECK(mysqld_failed, error,
-                "HA: The mysqld process was detected to be terminating, "
-                "stop 'HA' thread, please check MySQL startup log");
-
+    // 2. connect to sequoiadb
     rc = sdb_conn.connect();
     HA_RC_CHECK(rc, error,
                 "HA: Unable to connect to sequoiadb, sequoiadb error: %s",
@@ -2008,6 +1934,10 @@ void *ha_recover_and_replay(void *arg) {
       HA_RC_CHECK(rc, error, "HA: Failed to clear SQL log and object state");
     }
 
+    // close recover connection
+    mysql_close(ha_mysql);
+    ha_mysql = NULL;
+
     // load current instance object state into cache
     rc = load_inst_obj_state_into_cache(ha_thread, sdb_conn);
     HA_RC_CHECK(rc, error, "HA: Failed to load instance object state to cache");
@@ -2047,7 +1977,7 @@ error:
 #endif
 }
 
-static int replay_pending_log(const char *db, const char *query,
+static int replay_pending_log(THD *thd, const char *db, const char *query,
                               const char *session_attrs, int client_charset_num,
                               const char *op_type) {
   int rc = 0;
@@ -2055,30 +1985,14 @@ static int replay_pending_log(const char *db, const char *query,
   sprintf(use_db_cmd, "USE ");
   const CHARSET_INFO *charset_info = NULL;
   String src_sql, dst_sql;
-
-  // initialize mysql connection to local instance
-  MYSQL *conn = mysql_init(NULL);
-  if (NULL == conn) {
-    SDB_LOG_ERROR("HA: Out of memory while creating mysql connection");
-    rc = SDB_HA_OOM;
-    goto error;
-  } else if (!mysql_real_connect(
-                 conn, ha_local_host_ip, ha_inst_group_user,
-                 ha_inst_group_passwd, HA_MYSQL_DB, mysqld_port, 0,
-                 CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS)) {
-    SDB_LOG_ERROR("HA: Failed to connect local instance, mysql error: %s",
-                  mysql_error(conn));
-    rc = SDB_HA_OOM;
-    goto error;
-  }
+  Diagnostics_area *da = thd->get_stmt_da();
 
   // 1. set session attributes
-  if ((rc = mysql_real_query(conn, session_attrs, strlen(session_attrs)))) {
+  if ((rc = server_ha_query(thd, session_attrs, strlen(session_attrs)))) {
     SDB_LOG_ERROR(
         "HA: Failed to set session attributes for query '%s', "
         "mysql error: %s",
-        mysql_error(conn));
-    rc = SDB_HA_EXCEPTION;
+        query, sdb_da_message_text(da));
     goto error;
   }
 
@@ -2107,34 +2021,33 @@ static int replay_pending_log(const char *db, const char *query,
     } else {
       ha_quote_name(db, use_db_cmd + 4);
     }
-    rc = mysql_query(conn, use_db_cmd, strlen(use_db_cmd));
+    rc = server_ha_query(thd, use_db_cmd, strlen(use_db_cmd));
     if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
       // ignore 'Unknown database error' for 'drop/create database' operation
-      rc = (ER_BAD_DB_ERROR == mysql_errno(conn)) ? 0 : rc;
+      rc = (ER_BAD_DB_ERROR == rc) ? 0 : rc;
     }
     if (rc) {
       SDB_LOG_ERROR(
           "HA: Failed to change database before executing "
           "pending log '%s', mysql error: %s",
-          query, mysql_error(conn));
+          query, sdb_da_message_text(da));
       goto error;
     }
   }
   // 4. execute pending log query
-  rc = mysql_real_query(conn, query, strlen(query));
+  rc = server_ha_query(thd, query, strlen(query));
   // ignore some errors
-  if (ha_is_ddl_ignorable_error(mysql_errno(conn))) {
+  if (ha_is_ddl_ignorable_error(rc)) {
     SDB_LOG_WARNING(
         "HA: An ignorable error '%s' is found while executing pending log '%s'",
-        mysql_error(conn), query);
+        sdb_da_message_text(da), query);
     rc = 0;
   }
   HA_RC_CHECK(rc, error,
               "HA: Failed to replay pending log '%s', mysql error: %s", query,
-              mysql_error(conn));
+              sdb_da_message_text(da));
   SDB_LOG_DEBUG("HA: Pending log '%s' has been executed", query);
 done:
-  mysql_close(conn);
   return rc;
 error:
   goto done;
@@ -2162,14 +2075,21 @@ void *ha_replay_pending_logs(void *arg) {
   const char *group_name = replayer->sdb_group_name;
   bool stopped_mutex_locked = false;
   bool mysqld_failed = false;
+  mysql_cond_t *current_cond = NULL;
+  mysql_mutex_t *current_mutex = NULL;
 
-  THD *thd = create_ha_thd(HA_KEY_PENDING_LOG_REPLAY_THD);
+  THD *thd = create_ha_thd();
   if (NULL == thd) {
     SDB_LOG_ERROR("HA: Out of memory in 'pending log replay' thread");
     ha_kill_mysqld(thd);
     goto done;
   }
 
+  watch_kill_signal(thd, &replayer->stopped_cond, &replayer->stopped_mutex);
+  current_mutex = &replayer->stopped_mutex;
+  current_cond = &replayer->stopped_cond;
+
+  replayer->thd = thd;
   mysqld_failed = wait_for_mysqld_service();
   if (mysqld_failed) {
     SDB_LOG_ERROR(
@@ -2187,10 +2107,11 @@ void *ha_replay_pending_logs(void *arg) {
   }
   mysql_mutex_unlock(replayer->recover_mutex);
 
-  mysql_mutex_lock(&replayer->stopped_mutex);
+  mysql_mutex_lock(current_mutex);
   stopped_mutex_locked = true;
   replayer->stopped = false;
   while (!abort_loop && !mysqld_failed) {
+    sdb_set_debug_log(thd, sdb_debug_log(NULL));
     SDB_LOG_DEBUG("HA: Check pending log");
     if (!sdb_conn.is_valid()) {
       rc = sdb_conn.connect();
@@ -2241,8 +2162,7 @@ void *ha_replay_pending_logs(void *arg) {
 
       sdb_set_clock_time(abstime, sleep_seconds);
       SDB_LOG_DEBUG("HA: Wait %lld seconds", sleep_seconds);
-      rc = mysql_cond_timedwait(&replayer->stopped_cond,
-                                &replayer->stopped_mutex, &abstime);
+      rc = mysql_cond_timedwait(current_cond, current_mutex, &abstime);
       DBUG_ASSERT(rc == 0 || rc == ETIMEDOUT);
       // got stop signal, stop pending log replayer
       if (0 == rc) {
@@ -2273,7 +2193,8 @@ void *ha_replay_pending_logs(void *arg) {
       session_attrs = result.getStringField(HA_FIELD_SESSION_ATTRS);
       client_charset_num = result.getIntField(HA_FIELD_CLIENT_CHARSET_NUM);
       op_type = result.getStringField(HA_FIELD_TYPE);
-      replay_pending_log(db, query, session_attrs, client_charset_num, op_type);
+      replay_pending_log(thd, db, query, session_attrs, client_charset_num,
+                         op_type);
     }
   sleep_secs:
     pending_log_cl.close();
@@ -2291,7 +2212,7 @@ void *ha_replay_pending_logs(void *arg) {
   }
 done:
   if (stopped_mutex_locked) {
-    mysql_mutex_unlock(&replayer->stopped_mutex);
+    mysql_mutex_unlock(current_mutex);
   }
   replayer->stopped = true;
   ha_thread_end(thd);

@@ -687,3 +687,7 @@ int sdb_preferred_period(THD *thd) {
 bool sdb_debug_log(THD *thd) {
   return THDVAR(thd, debug_log);
 }
+
+void sdb_set_debug_log(THD *thd, bool val) {
+  THDVAR(thd, debug_log) = val;
+}

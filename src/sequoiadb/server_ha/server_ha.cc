@@ -188,19 +188,8 @@ static inline const char *query_without_password(THD *thd,
 }
 
 bool ha_is_executing_pending_log(THD *thd) {
-  const char *execute_user = NULL;
-  bool is_executing_pending_log = false;
-#ifdef IS_MYSQL
-  execute_user = thd->security_context()->priv_user().str;
-#else
-  execute_user = thd->security_context()->priv_user;
-#endif
-  const char *inst_group_user = ha_inst_group_user_name();
-  if (execute_user && strlen(execute_user) && inst_group_user &&
-      strlen(inst_group_user) && 0 == strcmp(execute_user, inst_group_user)) {
-    is_executing_pending_log = true;
-  }
-  return is_executing_pending_log;
+  return pending_log_replayer.thd &&
+         sdb_thd_id(thd) == sdb_thd_id(pending_log_replayer.thd);
 }
 
 static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
@@ -3663,6 +3652,38 @@ static int rebuild_drop_table_stmt(THD *thd, ha_event_general &event,
   return (oom ? SDB_HA_OOM : 0);
 }
 
+/*
+  create role statement need to be rewritten if 'ADMIN' option is not set.
+  User 'u1' create a role 'r1' on instance 'inst1' without 'ADMIN' option:
+  "create role r1"(r1 admin is 'u1'). The statement will be replayed on
+  instance 'inst2', role r1's admin will be set to instance group user
+  instead of 'u1'. So 'create role r1' need to be rewritten as
+  "create role r1 with admin 'u1'@'host'" to make sure that r1's admin is 'u1'
+*/
+static int rebuild_create_role_stmt(THD *thd, String &rewritten_query,
+                                    const char *query, size_t q_len) {
+  bool oom = false;
+#ifdef IS_MARIADB
+  DBUG_ASSERT(SQLCOM_CREATE_ROLE == thd_sql_command(thd));
+  rewritten_query.set_charset(thd->charset());
+  const char *user = NULL, *host = NULL;
+  if (NULL == thd->lex->definer) {
+    user = thd->security_context()->priv_user;
+    host = thd->security_context()->priv_host;
+  } else {
+    user = thd->lex->definer->user.str;
+    host = thd->lex->definer->host.str;
+  }
+  oom |= rewritten_query.append(query, q_len);
+  oom |= rewritten_query.append(" WITH ADMIN '");
+  oom |= rewritten_query.append(user);
+  oom |= rewritten_query.append("'@'");
+  oom |= rewritten_query.append(host);
+  oom |= rewritten_query.append("'");
+#endif
+  return oom ? SDB_HA_OOM : 0;
+}
+
 static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
   int rc = 0;
   Sdb_conn *sdb_conn = NULL;
@@ -3801,6 +3822,21 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
                                    (SQLCOM_DROP_TABLE == sql_command));
       db = sql_info->tables->db_name;
       break;
+#ifdef IS_MARIADB
+    case SQLCOM_CREATE_ROLE:
+      sql_info->with_admin = true;
+      if (NULL == thd->lex->definer) {
+        rc = rebuild_create_role_stmt(thd, rewritten_query, event.general_query,
+                                      event.general_query_length);
+        sql_info->with_admin = false;
+      }
+      if (0 == rc && rewritten_query.length()) {
+        event.general_query = rewritten_query.c_ptr_safe();
+        event.general_query_length = rewritten_query.length();
+      }
+      db = HA_MYSQL_DB;
+      break;
+#endif
     default:
       break;
   }
@@ -4202,7 +4238,8 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
   // 3. mysql service is starting;
   // 4. SQL statement has 'temporary' flag, eg: 'create temporary table'
   if (!thd || !ha_thread.is_open || opt_bootstrap || !mysqld_server_started ||
-      has_temporary_table_flag(thd)) {
+      has_temporary_table_flag(thd) ||
+      (ha_thread.thd && sdb_thd_id(thd) == sdb_thd_id(ha_thread.thd))) {
     goto done;
   }
   sql_command = thd_sql_command(thd);
@@ -4444,6 +4481,14 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
             event.general_query = create_query.c_ptr();
             event.general_query_length = create_query.length();
           }
+        } else if (SQLCOM_CREATE_ROLE == sql_command && !sql_info->with_admin) {
+          sql_info->with_admin = true;
+          rc = rebuild_create_role_stmt(thd, create_query, event.general_query,
+                                        event.general_query_length);
+          if (0 == rc && create_query.length()) {
+            event.general_query = create_query.c_ptr();
+            event.general_query_length = create_query.length();
+          }
         }
 #endif
         // rebuild 'create view' statement
@@ -4506,7 +4551,11 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         // final step(see the entry conditions).
         SDB_LOG_DEBUG("HA: Current statement can't be persisted to SQL log");
         sql_info->tables = NULL;
-        rc = clear_pending_log(thd, sql_info);
+
+        // if execution of pending log fails, pending log should not be cleared
+        if (!ha_is_executing_pending_log(thd)) {
+          rc = clear_pending_log(thd, sql_info);
+        }
         if (rc) {
           sql_info->sdb_conn->rollback_transaction();
         } else {
@@ -4980,6 +5029,7 @@ static int server_ha_init(void *p) {
       DBUG_RETURN(SDB_HA_OOM);
     }
     my_thread_attr_init(&ha_thread.thread_attr);
+    ha_thread.thd = NULL;
     if (mysql_thread_create(HA_KEY_HA_THREAD, &ha_thread.thread,
                             &ha_thread.thread_attr, ha_recover_and_replay,
                             (void *)(&ha_thread))) {
@@ -4999,6 +5049,7 @@ static int server_ha_init(void *p) {
     mysql_mutex_init(HA_KEY_MUTEX_PENDING_LOG_REPLAYER,
                      &pending_log_replayer.stopped_mutex, MY_MUTEX_INIT_FAST);
     my_thread_attr_init(&pending_log_replayer.thread_attr);
+    pending_log_replayer.thd = NULL;
     if (mysql_thread_create(
             HA_KEY_PENDING_LOG_REPLAY_THREAD, &pending_log_replayer.thread,
             &pending_log_replayer.thread_attr, ha_replay_pending_logs,
@@ -5022,18 +5073,6 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
 #endif
 
   aborting_ha = true;
-
-  // wake up replay thread, there is no effect if
-  // replay thread already exit
-  if (strlen(ha_inst_group_name) && !opt_bootstrap) {
-    mysql_mutex_lock(&ha_thread.replay_stopped_mutex);
-    mysql_cond_signal(&ha_thread.replay_stopped_cond);
-    mysql_mutex_unlock(&ha_thread.replay_stopped_mutex);
-
-    mysql_mutex_lock(&pending_log_replayer.stopped_mutex);
-    mysql_cond_signal(&pending_log_replayer.stopped_cond);
-    mysql_mutex_unlock(&pending_log_replayer.stopped_mutex);
-  }
 
   // wait for replay thread to end
   while (ha_thread.is_open &&
