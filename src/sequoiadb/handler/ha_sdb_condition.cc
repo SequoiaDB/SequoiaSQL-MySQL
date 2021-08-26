@@ -50,6 +50,7 @@ void ha_sdb_cond_ctx::reset() {
   status = SDB_COND_UNCALLED;
   bitmap_clear_all(&pushed_cond_set);
   bitmap_clear_all(&where_cond_set);
+  has_null_func = false;
   clear();
 }
 
