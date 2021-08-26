@@ -2388,6 +2388,20 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     goto error;
   }
 
+#ifdef IS_MYSQL
+  {
+    Key *key;
+    List_iterator_fast<Key> key_iterator(ha_thd()->lex->alter_info.key_list);
+    while ((key = key_iterator++)) {
+      if (key->type == KEYTYPE_FOREIGN) {
+        rc = ER_FOREIGN_KEY_ON_PARTITIONED;
+        my_error(rc, MYF(0));
+        goto error;
+      }
+    }
+  }
+#endif
+
   try {
     for (Field **fields = form->field; *fields; fields++) {
       Field *field = *fields;

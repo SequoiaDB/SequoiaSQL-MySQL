@@ -148,7 +148,7 @@ class ha_sdb : public handler {
   /** @brief
      The name that will be used for display purposes.
      */
-  const char *table_type() const { return "SEQUOIADB"; }
+  const char *table_type() const { return "SequoiaDB"; }
 
   /** @brief
      The name of the index type that will be used for display.

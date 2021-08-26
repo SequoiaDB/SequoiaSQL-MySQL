@@ -360,6 +360,17 @@ class ha_sdb_part : public ha_sdb
   }
 
   handler* get_handler() { return (static_cast<handler*>(this)); }
+
+  enum_alter_inplace_result check_if_supported_inplace_alter(
+      TABLE* altered_table, Alter_inplace_info* ha_alter_info) {
+    if (ha_alter_info->handler_flags &
+        (Alter_info::ADD_FOREIGN_KEY || Alter_info::DROP_FOREIGN_KEY)) {
+      my_error(ER_FOREIGN_KEY_ON_PARTITIONED, MYF(0));
+      return HA_ALTER_INPLACE_NOT_SUPPORTED;
+    }
+    return ha_sdb::check_if_supported_inplace_alter(altered_table,
+                                                    ha_alter_info);
+  }
 #endif
 
   int check(THD* thd, HA_CHECK_OPT* check_opt);
@@ -549,7 +560,7 @@ class ha_sdb_part_wrapper : public ha_partition {
     return m_file[0]->ha_update_row(old_data, new_data);
   }
 
-  int cmp_ref(const uchar *ref1, const uchar *ref2) {
+  int cmp_ref(const uchar* ref1, const uchar* ref2) {
     return m_file[0]->cmp_ref(ref1, ref2);
   }
 
