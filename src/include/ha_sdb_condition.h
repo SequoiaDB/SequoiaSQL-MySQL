@@ -88,17 +88,16 @@ class ha_sdb_cond_ctx : public Sql_alloc {
 
   bool keep_on();
 
+ public:
   Sdb_item *cur_item;
   List<Sdb_item> item_list;
   SDB_COND_STATUS status;
-  bool has_null_func;
-
- public:
   THD *thd;
   enum Ctx_type type;
   TABLE *table;
   MY_BITMAP where_cond_set;
   MY_BITMAP pushed_cond_set;
+  bool has_null_func;
   bool sub_sel;
 };
 
