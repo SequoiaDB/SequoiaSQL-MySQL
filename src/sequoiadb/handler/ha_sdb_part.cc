@@ -1498,11 +1498,8 @@ int ha_sdb_part_wrapper::truncate_partition(Alter_info *alter_info,
     partition_element *part_elem = part_it1++;
     if (part_elem->part_state == PART_ADMIN) {
       if (m_is_sub_partitioned) {
-        List_iterator<partition_element> subpart_it(part_elem->subpartitions);
-        partition_element *sub_elem;
         uint j = 0, part = -1;
         do {
-          sub_elem = subpart_it++;
           part = i * num_subparts + j;
           bitmap_set_bit(&m_part_info->read_partitions, part);
         } while (++j < num_subparts);
@@ -2849,10 +2846,10 @@ error:
 
 void ha_sdb_part::print_error(int error, myf errflag) {
   DBUG_ENTER("ha_sdb_part::print_error");
+#ifdef IS_MYSQL
   if (SDB_CAT_NO_MATCH_CATALOG == get_sdb_code(error)) {
     error = HA_ERR_NO_PARTITION_FOUND;
   }
-#ifdef IS_MYSQL
   if (print_partition_error(error, errflag)) {
     ha_sdb::print_error(error, errflag);
   }

@@ -351,8 +351,8 @@ error:
   goto done;
 }
 
-/* 
-  SEQUOIASQLMAINSTREAM-1102 Replace by modifying MariaDB source code. 
+/*
+  SEQUOIASQLMAINSTREAM-1102 Replace by modifying MariaDB source code.
 #ifdef IS_MARIADB
 int sdb_get_select_quick_type(SELECT_LEX *select_lex, uint tablenr) {
   JOIN *join = NULL;
@@ -6398,7 +6398,7 @@ int ha_sdb::prepare_delete_part_table(THD *thd, bool &is_skip) {
   char skip_delete_cl[SDB_CL_NAME_MAX_SIZE + 1] = "";
 
   m_del_ren_main_cl = false;
-  while (sep = strstr(pos, SDB_PART_SEP)) {
+  while ((sep = strstr(pos, SDB_PART_SEP))) {
     pos = sep + 1;
   }
   sep = pos - 1;
@@ -6611,7 +6611,7 @@ int sdb_rename_main_cl(Sdb_conn *conn, const char *old_db_name,
   char new_main_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
 
   pos = old_table_name;
-  while (part_sep = strstr(pos, SDB_PART_SEP)) {
+  while ((part_sep = strstr(pos, SDB_PART_SEP))) {
     pos = part_sep + 1;
   }
   part_sep = pos - 1;
@@ -6620,7 +6620,7 @@ int sdb_rename_main_cl(Sdb_conn *conn, const char *old_db_name,
   old_main_cl_name[old_main_cl_len] = '\0';
 
   pos = new_table_name;
-  while (part_sep = strstr(pos, SDB_PART_SEP)) {
+  while ((part_sep = strstr(pos, SDB_PART_SEP))) {
     pos = part_sep + 1;
   }
   part_sep = pos - 1;
@@ -6652,7 +6652,7 @@ int ha_sdb::prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
   char skip_rename_sub_cl[SDB_CL_NAME_MAX_SIZE + 1] = "";
 
   m_del_ren_main_cl = false;
-  while (part_sep = strstr(pos, SDB_PART_SEP)) {
+  while ((part_sep = strstr(pos, SDB_PART_SEP))) {
     pos = part_sep + 1;
   }
   part_sep = pos - 1;

@@ -801,6 +801,13 @@ class ha_sdb_part_wrapper : public ha_partition {
 
   ha_rows estimate_rows_upper_bound();
 
+  void print_error(int error, myf errflag) {
+    if (SDB_CAT_NO_MATCH_CATALOG == get_sdb_code(error)) {
+      error = HA_ERR_NO_PARTITION_FOUND;
+    }
+    ha_partition::print_error(error, errflag);
+  }
+
  private:
   bool create_handlers(MEM_ROOT* mem_root);
 
