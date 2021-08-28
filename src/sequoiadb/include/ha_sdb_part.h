@@ -495,7 +495,9 @@ class ha_sdb_part_wrapper : public ha_partition {
                       partition_info* part_info_arg, ha_partition* clone_arg,
                       MEM_ROOT* clone_mem_root_arg)
       : ha_partition(hton, share, part_info_arg, clone_arg,
-                     clone_mem_root_arg) {}
+                     clone_mem_root_arg) {
+    m_is_exchange_partition = false;
+  }
 
   ~ha_sdb_part_wrapper() {}
 
@@ -524,7 +526,10 @@ class ha_sdb_part_wrapper : public ha_partition {
     return m_file[0]->extra(operation);
   }
 
-  int reset(void) { return m_file[0]->ha_reset(); }
+  int reset(void) {
+    m_is_exchange_partition = false;
+    return m_file[0]->ha_reset();
+  }
 
   int close(void);
 
@@ -536,6 +541,11 @@ class ha_sdb_part_wrapper : public ha_partition {
     m_tot_parts = 1;
     m_part_info = part_info;
     m_is_sub_partitioned = false;
+  }
+
+  void update_part_create_info(HA_CREATE_INFO* create_info, uint part_id) {
+    m_is_exchange_partition = true;
+    m_file[0]->update_create_info(create_info);
   }
 
   void update_create_info(HA_CREATE_INFO* create_info) {
@@ -816,6 +826,9 @@ class ha_sdb_part_wrapper : public ha_partition {
   bool populate_partition_name_hash();
 
   int copy_partitions(ulonglong* const copied, ulonglong* const deleted);
+
+ private:
+  bool m_is_exchange_partition;
 };
 #endif
 

@@ -1573,6 +1573,13 @@ error:
 int ha_sdb_part_wrapper::info(uint flag) {
   int rc = 0;
   handler *file = m_file[0];
+
+  if (m_is_exchange_partition) {
+    rc = ER_PARTITION_MGMT_ON_NONPARTITIONED;
+    my_error(rc, MYF(0));
+    goto error;
+  }
+
   rc = file->info(flag);
   if (rc) {
     goto error;
