@@ -24,12 +24,12 @@
     <parameter name="MYSQLPASSWD" value="${MYSQLPASSWD}"/>
 
     <listeners>
-        <listener class-name="com.sequoiadb.testcommon.TimePrinterListener"/>
+        <listener class-name="com.sequoiasql.testcommon.TimePrinterListener"/>
     </listeners>
 
     <test name="normaltest" parallel="classes" thread-count="5">
         <packages>
-            <package name="com.sequoiadb.datasrc"/>
+            <package name="com.sequoiasql.datasrc"/>
             <package name="com.sequoiasql.index"/>
         </packages>
     </test>
