@@ -13,11 +13,11 @@ import org.testng.annotations.Test;
 
 import com.sequoiadb.base.DBCollection;
 import com.sequoiadb.base.Sequoiadb;
-import com.sequoiadb.testcommon.CommLib;
-import com.sequoiadb.testcommon.JdbcInterface;
-import com.sequoiadb.testcommon.JdbcInterfaceFactory;
-import com.sequoiadb.testcommon.JdbcWarpperType;
-import com.sequoiadb.testcommon.MysqlTestBase;
+import com.sequoiasql.testcommon.CommLib;
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.JdbcInterfaceFactory;
+import com.sequoiasql.testcommon.JdbcWarpperType;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
  * @Descreption seqDB-24276:构造join_type为index merge
