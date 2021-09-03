@@ -469,7 +469,8 @@ static int get_local_ip_address(char *ip_addr, int max_ip_len) {
 
     // get host IP address by 'getifaddrs', on error, -1 is returned
     rc = getifaddrs(&if_addr_struct);
-    HA_RC_CHECK(rc, error, "HA: System call 'getifaddrs()' error: %s, errno: %d",
+    HA_RC_CHECK(rc, error,
+                "HA: System call 'getifaddrs()' error: %s, errno: %d",
                 strerror(errno), errno);
 
     for (ifa = if_addr_struct; ifa != NULL && !matched; ifa = ifa->ifa_next) {

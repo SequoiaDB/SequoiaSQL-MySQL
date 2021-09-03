@@ -1143,6 +1143,9 @@ static inline void build_session_attributes(THD *thd, char *session_attrs) {
                     thd->variables.vers_alter_history);
   }
 #endif
+  end += snprintf(session_attrs + end, HA_MAX_SESSION_ATTRS_LEN,
+                  ",@@session.foreign_key_checks=%d",
+                  thd_test_options(thd, OPTION_NO_FOREIGN_KEY_CHECKS) ? 0 : 1);
 }
 
 // update cached cata version for alter partition table
@@ -1339,10 +1342,11 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       }
       oom = query.append(general_query);
     } else {
-      // skip temporary tables for drop/alter/rename table sql
+      // skip temporary tables for drop/alter/rename/create table sql
       if (SQLCOM_DROP_TABLE == sql_command ||
           SQLCOM_ALTER_TABLE == sql_command ||
-          SQLCOM_RENAME_TABLE == sql_command
+          SQLCOM_RENAME_TABLE == sql_command ||
+          SQLCOM_CREATE_TABLE == sql_command
 #ifdef IS_MARIADB
           || SQLCOM_DROP_SEQUENCE == sql_command ||
           SQLCOM_ALTER_SEQUENCE == sql_command
@@ -1527,12 +1531,6 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
              table_name, op_type);
     rc = ha_update_cached_record(cached_record_key, sql_id, cata_version);
     ha_tables->saved_sql_id = sql_id;
-#ifdef IS_MYSQL
-    if (SQLCOM_CREATE_TABLE == sql_command) {
-      // sql like 'create table/view' may have multi tables in its table_list
-      break;
-    }
-#endif
   }
 done:
   return rc;
@@ -1694,6 +1692,78 @@ static inline bool check_if_table_exists(THD *thd, TABLE_LIST *table) {
 #endif
 }
 
+/**
+  Append tables from foreign key constraint
+
+  @param thd               thread descriptor
+  @param sql_info          SQL context for 'HA' module
+  @return 0                Success.
+*/
+static int append_foreign_tables(THD *thd, ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  int sql_command = thd_sql_command(thd);
+  LEX *lex = thd->lex;
+  List_iterator<Key> key_iterator(lex->alter_info.key_list);
+  Foreign_key *fk_key = NULL;
+  Key *key = NULL;
+  ha_table_list *ha_tbl_list = NULL, *ha_tbl_list_tail = NULL;
+  ha_table_list *tables = sql_info->tables;
+  char *db_name = NULL, *table_name = NULL;
+
+  if (SQLCOM_CREATE_TABLE != sql_command && SQLCOM_ALTER_TABLE != sql_command) {
+    goto done;
+  }
+
+  // get the last element
+  while (tables) {
+    ha_tbl_list_tail = tables;
+    tables = tables->next;
+  }
+  while ((key = key_iterator++)) {
+#ifdef IS_MARIADB
+    if (key->type != Key::FOREIGN_KEY) {
+      continue;
+    }
+#else
+    if (key->type != KEYTYPE_FOREIGN) {
+      continue;
+    }
+#endif
+    fk_key = static_cast<Foreign_key *>(key);
+    ha_tbl_list = (ha_table_list *)thd_calloc(thd, sizeof(ha_table_list));
+
+    // if DB is not set, fk_key->ref_db.str will be NULL, db_name will be set
+    // to current database
+    if (fk_key->ref_db.length) {
+      db_name = (char *)thd_calloc(thd, fk_key->ref_db.length + 1);
+    } else {
+      db_name = (char *)sdb_thd_db(thd);
+    }
+    table_name = (char *)thd_calloc(thd, fk_key->ref_table.length + 1);
+
+    if (!ha_tbl_list || !db_name || !table_name) {
+      rc = SDB_HA_OOM;
+      goto error;
+    }
+
+    ha_tbl_list->db_name =
+        fk_key->ref_db.length ? strcpy(db_name, fk_key->ref_db.str) : db_name;
+    ha_tbl_list->table_name = strcpy(table_name, fk_key->ref_table.str);
+    ha_tbl_list->op_type = HA_OPERATION_TYPE_TABLE;
+    ha_tbl_list->cata_version =
+        ha_get_cata_version(ha_tbl_list->db_name, ha_tbl_list->table_name);
+    // foreign table can not be temporary table
+    ha_tbl_list->is_temporary_table = false;
+    ha_tbl_list->next = NULL;
+    ha_tbl_list_tail->next = ha_tbl_list;
+    ha_tbl_list_tail = ha_tbl_list;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 // get objects involved in current SQL statement
 static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   DBUG_ENTER("get_sql_objects");
@@ -1755,6 +1825,10 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     if (SQLCOM_ALTER_EVENT == sql_command && thd->lex->sphead) {
       sql_info->alter_event_body =
           (char *)thd_calloc(thd, thd->lex->sphead->m_body.length + 1);
+      if (NULL == sql_info->alter_event_body) {
+        rc = SDB_HA_OOM;
+        goto error;
+      }
       sprintf(sql_info->alter_event_body, "%s", thd->lex->sphead->m_body.str);
     }
 
@@ -2049,6 +2123,11 @@ static int get_sql_objects(THD *thd, ha_sql_stmt_info *sql_info) {
         ha_tbl_list_tail->next = ha_tbl_list;
         ha_tbl_list_tail = ha_tbl_list_tail->next;
       }
+    }
+
+    rc = append_foreign_tables(thd, sql_info);
+    if (rc) {
+      goto error;
     }
     DBUG_ASSERT(sql_info->tables != NULL);
   }
@@ -2840,7 +2919,10 @@ bool can_write_sql_log(THD *thd, ha_sql_stmt_info *sql_info, int error_code) {
   if (can_write_log &&
       (ER_BAD_TABLE_ERROR == error_code || ER_WRONG_OBJECT == error_code
 #ifdef IS_MARIADB
-       || ER_UNKNOWN_VIEW == error_code || ER_UNKNOWN_SEQUENCES == error_code
+       || ER_UNKNOWN_VIEW == error_code || ER_UNKNOWN_SEQUENCES == error_code ||
+       ER_ROW_IS_REFERENCED_2 == error_code
+#else
+       || ER_ROW_IS_REFERENCED == error_code
 #endif
        ) &&
       (SQLCOM_DROP_TABLE == sql_command || SQLCOM_DROP_VIEW == sql_command
@@ -4045,9 +4127,17 @@ bool ha_is_ddl_ignorable_error(uint sql_errno) {
     case ER_FUNCTION_NOT_DEFINED:
     case ER_UDF_EXISTS:
     case ER_MULTIPLE_PRI_KEY:
+      // table t2(foreign key) depends on t1, if 'drop table t1, t2'
+      // is executed, t2 will be dropped and ER_ROW_IS_REFERENCED_2
+      // (in mariadb, error code is ER_ROW_IS_REFERENCED_2 and in mysql
+      // error code is ER_ROW_IS_REFERENCED)
+      // error will be reported. t1 will not be dropped.
 #ifdef IS_MARIADB
+    case ER_ROW_IS_REFERENCED_2:
     case ER_UNKNOWN_VIEW:
     case ER_UNKNOWN_SEQUENCES:
+#else
+    case ER_ROW_IS_REFERENCED:
 #endif
       can_ignore = true;
       break;
