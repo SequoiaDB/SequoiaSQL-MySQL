@@ -81,7 +81,7 @@ public class SqlDataSource24180 extends MysqlTestBase {
         JdbcAssert.checkTableData( fullTableName, jdbcWarpperMgr );
         List< String > ignore = new ArrayList<>();
         ignore.add( " AUTO_INCREMENT=5" );
-        ignore.add( "ENGINE=SEQUOIADB" );
+        ignore.add( "ENGINE=SequoiaDB" );
         ignore.add( "ENGINE=InnoDB" );
         JdbcAssert.checkTableMetaWithIgnore( fullTableName, ignore,
                 jdbcWarpperMgr );

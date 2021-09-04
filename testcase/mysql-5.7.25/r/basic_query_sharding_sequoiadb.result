@@ -4367,7 +4367,7 @@ date_time datetime NOT NULL,
 create_time datetime DEFAULT NULL,
 PRIMARY KEY (id, date_time),
 key IDX_METERID (meter_id)
-) ENGINE=SEQUOIADB COMMENT='sequoiadb:{"table_options":{"ShardingKey":{"date_time":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1, "AutoSplit":true}}';
+) ENGINE=SequoiaDB COMMENT='sequoiadb:{"table_options":{"ShardingKey":{"date_time":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1, "AutoSplit":true}}';
 ANALYZE TABLE elec_meter_data;
 SELECT COUNT(*) FROM elec_meter_data WHERE meter_id IN (497, 498, 499, 500) AND date_time >= "2018-04-03 00:00:00" AND date_time < "2018-04-20 00:00:00" ORDER BY id, date_time ASC;
 COUNT(*)

@@ -56,7 +56,7 @@ drop table t1;
 CREATE TABLE t1 (
   e1 enum('ябълка'),
   e2 enum('мляко')
-) ENGINE=SEQUOIADB character set cp1251;
+) ENGINE=SequoiaDB character set cp1251;
 SHOW CREATE TABLE t1;
 DROP TABLE t1;
 

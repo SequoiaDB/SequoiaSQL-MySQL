@@ -766,9 +766,9 @@ DROP TABLE t1;
 # BUG#22037930: INSERT IGNORE FAILS TO IGNORE
 #               FOREIGN KEY CONSTRAINT
 # Setup.
-CREATE TABLE t1 (fld1 INT PRIMARY KEY) ENGINE=SEQUOIADB;
+CREATE TABLE t1 (fld1 INT PRIMARY KEY) ENGINE=SequoiaDB;
 CREATE TABLE t2 (fld2 INT, FOREIGN KEY (fld2) REFERENCES t1 (fld1))
-ENGINE=SEQUOIADB;
+ENGINE=SequoiaDB;
 # Without fix, an error is reported.
 # Test for multi update.
 # Reports an error since IGNORE is not used.

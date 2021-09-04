@@ -1982,7 +1982,7 @@ t1	CREATE TABLE `t1` (
   `i` decimal(19,0) NOT NULL DEFAULT '0',
   `c` decimal(19,0) NOT NULL DEFAULT '0',
   `co` decimal(19,0) NOT NULL DEFAULT '0'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 select 
 if(1, cast(1111111111111111111 as unsigned), 1) i,

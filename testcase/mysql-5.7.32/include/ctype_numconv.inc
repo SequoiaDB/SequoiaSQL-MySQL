@@ -1626,9 +1626,9 @@ SELECT charset(@ST_X), collation(@ST_X);
 --echo # Bug#54916 GROUP_CONCAT + IFNULL truncates output
 --echo #
 SELECT @@collation_connection;
-# ENGINE=SEQUOIADB is very important to make sure "SYSTEM" join type
+# ENGINE=SequoiaDB is very important to make sure "SYSTEM" join type
 # is in use, which will create instances of Item_copy.
-CREATE TABLE t1 (a MEDIUMINT NULL) ENGINE=SEQUOIADB;
+CREATE TABLE t1 (a MEDIUMINT NULL) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1234567);
 SELECT GROUP_CONCAT(IFNULL(a,'')) FROM t1;
 SELECT GROUP_CONCAT(IF(a,a,'')) FROM t1;

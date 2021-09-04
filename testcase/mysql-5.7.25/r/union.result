@@ -587,7 +587,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(2) NOT NULL DEFAULT ''
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT 12 as a UNION select "aa" as a;
 select * from t1;
@@ -598,7 +598,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(2) NOT NULL DEFAULT ''
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT 12 as a UNION select 12.2 as a;
 select * from t1;
@@ -609,7 +609,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` decimal(3,1) NOT NULL DEFAULT '0.0'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t2 (it1 tinyint, it2 tinyint not null, i int not null, ib bigint, f float, d double, y year, da date, dt datetime, sc char(10), sv varchar(10), b blob, tx text);
 insert into t2 values (NULL, 1, 3, 4, 1.5, 2.5, 1972, '1972-10-22', '1972-10-22 11:50', 'testc', 'testv', 'tetetetetest', 'teeeeeeeeeeeest');
@@ -622,7 +622,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `it2` tinyint(4) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT it2 from t2 UNION select i from t2;
 select * from t1;
@@ -633,7 +633,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `it2` int(11) NOT NULL DEFAULT '0'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT i from t2 UNION select f from t2;
 select * from t1;
@@ -644,7 +644,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` double DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT f from t2 UNION select d from t2;
 select * from t1;
@@ -655,7 +655,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `f` double DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT ib from t2 UNION select f from t2;
 select * from t1;
@@ -666,7 +666,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `ib` double DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT ib from t2 UNION select d from t2;
 select * from t1;
@@ -677,7 +677,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `ib` double DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT f from t2 UNION select y from t2;
 select * from t1;
@@ -688,7 +688,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `f` float DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT f from t2 UNION select da from t2;
 select * from t1;
@@ -699,7 +699,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `f` varchar(12) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT y from t2 UNION select da from t2;
 select * from t1;
@@ -710,7 +710,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `y` varchar(10) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT y from t2 UNION select dt from t2;
 select * from t1;
@@ -721,7 +721,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `y` varchar(19) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT da from t2 UNION select dt from t2;
 select * from t1;
@@ -732,7 +732,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `da` datetime DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT dt from t2 UNION select trim(sc) from t2;
 select trim(dt) from t1;
@@ -743,7 +743,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `dt` varchar(19) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT dt from t2 UNION select sv from t2;
 select * from t1;
@@ -754,7 +754,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `dt` varchar(19) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT sc from t2 UNION select sv from t2;
 select * from t1;
@@ -765,7 +765,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `sc` varchar(10) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT dt from t2 UNION select b from t2;
 select * from t1;
@@ -776,7 +776,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `dt` blob
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT sv from t2 UNION select b from t2;
 select * from t1;
@@ -787,7 +787,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `sv` blob
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT i from t2 UNION select d from t2 UNION select b from t2;
 select * from t1;
@@ -799,7 +799,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` blob
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT sv from t2 UNION select tx from t2;
 select * from t1;
@@ -810,7 +810,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `sv` text
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 SELECT b from t2 UNION select tx from t2;
 select * from t1;
@@ -821,7 +821,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `b` blob
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1,t2;
 create table t1 select 1 union select -1;
 select * from t1;
@@ -832,7 +832,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `1` bigint(20) NOT NULL DEFAULT '0'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 select _latin1"test" union select _latin2"testt" ;
 ERROR HY000: Illegal mix of collations (latin1_swedish_ci,COERCIBLE) and (latin2_general_ci,COERCIBLE) for operation 'UNION'
@@ -841,7 +841,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `test` varchar(5) CHARACTER SET latin2 NOT NULL DEFAULT ''
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 (s char(200));
 insert into t1 values (repeat("1",200));
@@ -1071,7 +1071,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `test` varchar(4) NOT NULL DEFAULT ''
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 select count(*) from t1;
 count(*)
 1
@@ -1084,7 +1084,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `_latin1'test' collate latin1_bin` varchar(4) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 select count(*) from t1;
 count(*)
 3
@@ -1097,7 +1097,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `test` varchar(4) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 select count(*) from t1;
 count(*)
 3
@@ -1110,7 +1110,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `test` varchar(4) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 select count(*) from t1;
 count(*)
 3
@@ -1129,7 +1129,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a collate latin1_german1_ci` varchar(1) CHARACTER SET latin1 COLLATE latin1_german1_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 as
 (select a from t2) union
@@ -1138,7 +1138,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) CHARACTER SET latin1 COLLATE latin1_german1_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 as
 (select a from t2) union
@@ -1148,7 +1148,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) CHARACTER SET latin1 COLLATE latin1_german1_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 drop table t2;
 create table t1(a1 int, f1 char(10));
@@ -1235,7 +1235,7 @@ t1	CREATE TABLE `t1` (
   `a` enum('ä','ö','ü') CHARACTER SET utf8 NOT NULL DEFAULT 'ü',
   `b` enum('one','two') CHARACTER SET utf8 DEFAULT NULL,
   `c` enum('one','two') DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ('ä', 'one', 'one'), ('ö', 'two', 'one'), ('ü', NULL, NULL);
 create table t2 select NULL union select a from t1;
 show columns from t2;
@@ -1291,7 +1291,7 @@ show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(12) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 select row_format from information_schema.TABLES where table_schema like "test%" and table_name="t2";
 row_format
 Dynamic
@@ -1300,7 +1300,7 @@ show create table t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `a` varchar(12) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 ROW_FORMAT=FIXED
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 ROW_FORMAT=FIXED
 drop table t1,t2;
 CREATE TABLE t1 (a mediumtext);
 CREATE TABLE t2 (b varchar(20));
@@ -1314,7 +1314,7 @@ show create table t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `left(a,100000000)` mediumtext
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop tables t1,t2,t3;
 CREATE TABLE t1 (a longtext);
 CREATE TABLE t2 (b varchar(20));
@@ -1328,7 +1328,7 @@ show create table t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `left(a,100000000)` longtext
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop tables t1,t2,t3;
 SELECT @tmp_max:= @@global.max_allowed_packet;
 @tmp_max:= @@global.max_allowed_packet
@@ -1349,7 +1349,7 @@ SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `a` varchar(510) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLES t1,t3;
 CREATE TABLE t1 (a mediumtext);
 INSERT INTO t1 VALUES ('a');
@@ -1358,7 +1358,7 @@ SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `a` longtext
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLES t1,t3;
 CREATE TABLE t1 (a tinyblob);
 INSERT INTO t1 VALUES ('a');
@@ -1367,7 +1367,7 @@ SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `a` varbinary(510) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLES t1,t2,t3;
 SET @@global.max_allowed_packet:= @tmp_max;
 create table t1 ( id int not null auto_increment, primary key (id), col1 int);
@@ -1405,7 +1405,7 @@ t2	CREATE TABLE `t2` (
   `f6` varchar(1) CHARACTER SET utf8 DEFAULT NULL,
   `f7` text,
   `f8` mediumtext CHARACTER SET utf8
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1, t2;
 SET sql_mode = default;
 (select avg(1)) union (select avg(1)) union (select avg(1)) union
@@ -2076,7 +2076,7 @@ t1	CREATE TABLE `t1` (
   `d3` date DEFAULT NULL,
   `d4` date DEFAULT NULL,
   `d5` date DEFAULT '2017-11-14'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SET SQL_MODE='';
 Warnings:
 Warning	3090	Changing sql mode 'NO_AUTO_CREATE_USER' is deprecated. It will be removed in a future release.
@@ -2099,7 +2099,7 @@ t2	CREATE TEMPORARY TABLE `t2` (
   `d3` date DEFAULT NULL,
   `d4` date DEFAULT NULL,
   `d5` date DEFAULT '2017-11-14'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TEMPORARY TABLE t2;
 CREATE TEMPORARY TABLE t2 AS
 SELECT * FROM t1
@@ -2118,7 +2118,7 @@ t2	CREATE TEMPORARY TABLE `t2` (
   `d3` date DEFAULT NULL,
   `d4` date DEFAULT NULL,
   `d5` date DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TEMPORARY TABLE t2;
 CREATE TEMPORARY TABLE t2 AS
 SELECT * FROM t1
@@ -2137,7 +2137,7 @@ t2	CREATE TEMPORARY TABLE `t2` (
   `d3` date DEFAULT NULL,
   `d4` date DEFAULT NULL,
   `d5` date DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # With UNION and UNION ALL, defaults are not inherited; every
 # column gets, as default, NULL (if nullable) or 0 (if not
 # nullable). Exception: if strict mode and a date type,
@@ -2167,7 +2167,7 @@ t2	CREATE TEMPORARY TABLE `t2` (
   `d3` date DEFAULT NULL,
   `d4` date DEFAULT NULL,
   `d5` date DEFAULT '2017-11-14'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TEMPORARY TABLE t2;
 CREATE TEMPORARY TABLE t2 AS
 SELECT * FROM t1
@@ -2186,7 +2186,7 @@ t2	CREATE TEMPORARY TABLE `t2` (
   `d3` date DEFAULT NULL,
   `d4` date DEFAULT NULL,
   `d5` date DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TEMPORARY TABLE t2;
 CREATE TEMPORARY TABLE t2 AS
 SELECT * FROM t1
@@ -2205,7 +2205,7 @@ t2	CREATE TEMPORARY TABLE `t2` (
   `d3` date DEFAULT NULL,
   `d4` date DEFAULT NULL,
   `d5` date DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # With UNION and UNION ALL, defaults are not inherited; every
 # column gets, as default, NULL (if nullable) or 0 (if not
 # nullable). Exception: if strict mode and a date type,

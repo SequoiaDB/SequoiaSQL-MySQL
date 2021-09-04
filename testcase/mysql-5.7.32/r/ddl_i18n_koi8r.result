@@ -1734,13 +1734,13 @@ USE `mysqltest1_ddl_i18n_koi8r`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `log` (
   `msg` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 INSERT INTO `t1` VALUES (1),(0),(1);
 ALTER DATABASE `mysqltest1_ddl_i18n_koi8r` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
@@ -1813,13 +1813,13 @@ USE `mysqltest2_ddl_i18n_koi8r`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `log` (
   `msg` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `t1` (
   `c` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 INSERT INTO `t1` VALUES (1),(0),(1);
 ALTER DATABASE `mysqltest2_ddl_i18n_koi8r` CHARACTER SET utf8 COLLATE utf8_unicode_ci ;
@@ -2779,26 +2779,26 @@ CALL p1()|
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `col1` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 
 SHOW CREATE TABLE t1|
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `col1` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 
 
 CALL mysqltest2_ddl_i18n_koi8r.p2()|
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `col1` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 
 SHOW CREATE TABLE mysqltest2_ddl_i18n_koi8r.t2|
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `col1` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci
 
 ALTER DATABASE mysqltest1_ddl_i18n_koi8r COLLATE cp1251_general_cs|
 ALTER DATABASE mysqltest2_ddl_i18n_koi8r COLLATE cp1251_general_cs|
@@ -2809,26 +2809,26 @@ CALL p1()|
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `col1` varchar(10) COLLATE cp1251_general_cs DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
+) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
 
 SHOW CREATE TABLE t1|
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `col1` varchar(10) COLLATE cp1251_general_cs DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
+) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
 
 
 CALL mysqltest2_ddl_i18n_koi8r.p2()|
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `col1` varchar(10) COLLATE cp1251_general_cs DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
+) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
 
 SHOW CREATE TABLE mysqltest2_ddl_i18n_koi8r.t2|
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `col1` varchar(10) COLLATE cp1251_general_cs DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
+) ENGINE=SequoiaDB DEFAULT CHARSET=cp1251 COLLATE=cp1251_general_cs
 
 ---> connection: con2
 

@@ -78,7 +78,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `name` varchar(10) DEFAULT NULL,
   `level` smallint(5) unsigned DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=gbk
+) ENGINE=SequoiaDB DEFAULT CHARSET=gbk
 insert into t1 values ('string',1);
 select concat(name,space(level)), concat(name, repeat(' ',level)) from t1;
 concat(name,space(level))	concat(name, repeat(' ',level))
@@ -268,7 +268,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` mediumtext NOT NULL,
   `c2` text NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=gbk
+) ENGINE=default_engine DEFAULT CHARSET=gbk
 drop table t1;
 CREATE TABLE t1(a MEDIUMTEXT CHARACTER SET gbk,
 b MEDIUMTEXT CHARACTER SET big5);
@@ -303,7 +303,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `code` varchar(8) DEFAULT NULL,
   `a` varchar(1) CHARACTER SET gbk NOT NULL DEFAULT ''
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 UPDATE IGNORE t1 SET a=unhex(code) ORDER BY code;
 Warnings:
 Warning	1366	Incorrect string value: '\x80 ' for column 'a' at row 1

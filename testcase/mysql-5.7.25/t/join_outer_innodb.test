@@ -9,9 +9,9 @@
 # 
 
 CREATE TABLE t1 (id int(11) NOT NULL PRIMARY KEY, name varchar(20),
-                 INDEX (name)) ENGINE=SEQUOIADB;
+                 INDEX (name)) ENGINE=SequoiaDB;
 CREATE TABLE t2 (id int(11) NOT NULL PRIMARY KEY, fkey int(11),
-                 FOREIGN KEY (fkey) REFERENCES t2(id)) ENGINE=SEQUOIADB;
+                 FOREIGN KEY (fkey) REFERENCES t2(id)) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1,'A1'),(2,'A2'),(3,'B');
 INSERT INTO t2 VALUES (1,1),(2,2),(3,2),(4,3),(5,3);
 
@@ -41,7 +41,7 @@ CREATE TABLE t1 (
   pk INT NOT NULL,
   PRIMARY KEY (pk),
   KEY col_int_key (col_int_key)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (NULL,1,1), (6,2,2), (5,3,3), (NULL,4,4);
 INSERT INTO t1 VALUES (1,NULL,6), (8,5,7), (NULL,8,8), (8,NULL,5);
@@ -52,7 +52,7 @@ ANALYZE TABLE t1;
 
 CREATE TABLE t2 (
   pk INT PRIMARY KEY
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 
 let $query=
 SELECT t1.pk
