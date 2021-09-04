@@ -101,7 +101,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `l` varchar(10) CHARACTER SET utf16 DEFAULT NULL,
   `r` varchar(10) CHARACTER SET utf16 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 select hex(l), hex(r) from t1;
 hex(l)	hex(r)
 0421042104210421042104210421042104210420	0420042104210421042104210421042104210421
@@ -127,7 +127,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(10) CHARACTER SET utf16 DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ("a"),("abc"),("abcd"),("hello"),("test");
 select * from t1 where a like "abc%";
 a
@@ -438,7 +438,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` enum('x','y','z') CHARACTER SET utf16 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ('x');
 insert into t1 values ('y');
 insert into t1 values ('z');
@@ -452,7 +452,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` enum('x','y','z','d','e','ä','ö','ü') CHARACTER SET utf16 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ('D');
 insert into t1 values ('E ');
 insert into t1 values ('ä');
@@ -474,7 +474,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` set('x','y','z','ä','ö','ü') CHARACTER SET utf16 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ('x');
 insert into t1 values ('y');
 insert into t1 values ('z');
@@ -547,7 +547,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) CHARACTER SET utf16 COLLATE utf16_bin DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 INSERT INTO t1 VALUES (_utf8mb4 0xEFBE9D),(_utf8mb4 0xF0908E84);
 INSERT INTO t1 VALUES (_utf8mb4 0xCE85),(_utf8mb4 0xF4808080);
 SELECT HEX(a), HEX(CONVERT(a USING utf8mb4)) FROM t1 ORDER BY a;
@@ -687,14 +687,14 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `status` enum('active','passive') CHARACTER SET utf16 NOT NULL DEFAULT 'passive'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 ALTER TABLE t1 ADD a int NOT NULL AFTER status;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `status` enum('active','passive') CHARACTER SET utf16 NOT NULL DEFAULT 'passive',
   `a` int(11) NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 End of 4.1 tests
 CREATE TABLE t1 (a varchar(64) character set utf16, b decimal(10,3));
@@ -902,7 +902,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` mediumtext CHARACTER SET utf16
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 SET sql_mode = default;
 create table t1 (a varchar(768) character set utf16 primary key) engine=SequoiaDB;
@@ -911,7 +911,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(768) CHARACTER SET utf16 NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 (a varchar(769) character set utf16 primary key) engine=SequoiaDB;
 ERROR 42000: Specified key was too long; max key length is 3072 bytes
@@ -921,7 +921,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(768) CHARACTER SET utf16 NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 set GLOBAL innodb_large_prefix=OFF;
 Warnings:
@@ -956,7 +956,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `s1` varchar(64) CHARACTER SET utf16 DEFAULT NULL,
   `s2` varchar(64) CHARACTER SET utf16 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=default_engine DEFAULT CHARSET=latin1
 delete from t1;
 insert into t1 values('aaa','aaa');
 insert into t1 values('aaa|qqq','qqq');
@@ -1010,7 +1010,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `s1` varchar(2) CHARACTER SET utf16 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 INSERT INTO t1 VALUES ('ab'),('AE'),('ab'),('AE');
 SELECT * FROM t1 ORDER BY s1;
 s1

@@ -14,7 +14,7 @@ show create table metadata_sync_show_parallel.t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 drop table t1;
 show create table metadata_sync_show_parallel.t1;
 ERROR 42S02: Table 'metadata_sync_show_parallel.t1' doesn't exist

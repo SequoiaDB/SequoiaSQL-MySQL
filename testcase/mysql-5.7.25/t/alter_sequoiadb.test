@@ -373,7 +373,7 @@ drop table if exists t1;
 #
 # check alter auto_increment
 #
-CREATE TABLE t1 ( id INT(11) NOT NULL, num INT(11) NOT NULL, agent_org_no VARCHAR(200), agent_name VARCHAR(200), create_time DATETIME, update_time DATETIME, PRIMARY KEY(id), UNIQUE KEY `判断添加还是修改` (id, agent_org_no) USING BTREE, KEY `代>理商名` (agent_name) USING BTREE ) ENGINE=SEQUOIADB COMMENT='sequoiadb:{"table_options":{"ShardingType":"hash","ShardingKey":{"id":1},"Partition":4096,"ReplSize":2,"Compressed":true,"CompressionType":"lzw","AutoSplit":true,"EnsureShardingIndex":true}}';
+CREATE TABLE t1 ( id INT(11) NOT NULL, num INT(11) NOT NULL, agent_org_no VARCHAR(200), agent_name VARCHAR(200), create_time DATETIME, update_time DATETIME, PRIMARY KEY(id), UNIQUE KEY `判断添加还是修改` (id, agent_org_no) USING BTREE, KEY `代>理商名` (agent_name) USING BTREE ) ENGINE=SequoiaDB COMMENT='sequoiadb:{"table_options":{"ShardingType":"hash","ShardingKey":{"id":1},"Partition":4096,"ReplSize":2,"Compressed":true,"CompressionType":"lzw","AutoSplit":true,"EnsureShardingIndex":true}}';
 SHOW CREATE TABLE t1; 
 INSERT INTO t1 VALUES (10,10,'a','a','2019-01-01 00:00:00','2019-01-02 00:00:00'),(20,20,'b','b','2019-11-11 00:00:00','2019-12-12 00:00:00');
 

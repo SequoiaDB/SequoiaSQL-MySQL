@@ -20,7 +20,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a=318387;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	const	PRIMARY,ab	PRIMARY	4	const	#	100.00	NULL
@@ -100,7 +100,7 @@ t1	CREATE TABLE `t1` (
   KEY `ab` (`a`,`b`),
   KEY `ida` (`id`,`a`),
   KEY `idab` (`id`,`a`,`b`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE id=400812;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	const	PRIMARY,ida,idab	PRIMARY	4	const	#	100.00	NULL
@@ -176,7 +176,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `abc` (`a`,`b`,`c`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a='d58beb7d5' and b=16661.5;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	const	PRIMARY,b,ab,abc	PRIMARY	10	const	#	100.00	NULL

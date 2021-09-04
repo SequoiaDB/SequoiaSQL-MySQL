@@ -4,19 +4,19 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 ALTER TABLE t1 COMPRESSION 'snappy';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
 ALTER TABLE t1 COMPRESSION 'NONE';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='NONE'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='NONE'
 ALTER TABLE t1 COMPRESSION 'ZLIB';
 ERROR HY000: Invalid compression type
 DROP TABLE t1;
@@ -26,13 +26,13 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='none'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='none'
 ALTER TABLE t1 COMPRESSION 'snappy';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "snappy";
 INSERT INTO t1 VALUES (1);
@@ -40,13 +40,13 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='snappy'
 ALTER TABLE t1 COMPRESSION 'lzw';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='lzw'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='lzw'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "LZW";
 INSERT INTO t1 VALUES (1);
@@ -54,21 +54,21 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='LZW'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='LZW'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "" COMMENT 'sequoiadb: {table_options: {Compressed: true}}';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: true}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: true}}'
 INSERT INTO t1 VALUES (1);
 ALTER TABLE t1 COMPRESSION '' COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
 ALTER TABLE t1 COMPRESSION 'lzw' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
 ERROR HY000: Ambiguous compression
 ALTER TABLE t1 COMPRESSION 'snappy' COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
@@ -77,7 +77,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
 INSERT INTO t1 VALUES (1);
@@ -85,7 +85,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
 ALTER TABLE t1 COMPRESSION 'None' COMMENT 'sequoiadb: {table_options: {Compressed:true}}';
 ERROR HY000: Ambiguous compression
 ALTER TABLE t1 COMPRESSION 'lzw' COMMENT 'sequoiadb: {table_options: {Compressed:false}}';
@@ -94,14 +94,14 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb: {table_options: {Compressed: false}}'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "NONE" COMMENT 'sequoiadb: {table_options: {Compressed: false}}';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='NONE' COMMENT='sequoiadb: {table_options: {Compressed: false}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='NONE' COMMENT='sequoiadb: {table_options: {Compressed: false}}'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "NONE" COMMENT 'sequoiadb: {table_options: {Compressed: true}}';
 ERROR HY000: Ambiguous compression
@@ -114,14 +114,14 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='lzw' COMMENT='sequoiadb: {table_options: {CompressionType: "lzw"}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='lzw' COMMENT='sequoiadb: {table_options: {CompressionType: "lzw"}}'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "snappy" COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='snappy' COMMENT='sequoiadb: {table_options: {CompressionType: "snappy"}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='snappy' COMMENT='sequoiadb: {table_options: {CompressionType: "snappy"}}'
 DROP TABLE t1;
 CREATE TABLE t1 ( id int ) COMPRESSION "lzw" COMMENT 'sequoiadb: {table_options: {CompressionType: "snappy"}}';
 ERROR HY000: Ambiguous compression
@@ -137,17 +137,17 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='lzw'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='lzw'
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='lzw' COMMENT='sequoiadb: {table_options: {Compressed: true, CompressionType: ''lzw''}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='lzw' COMMENT='sequoiadb: {table_options: {Compressed: true, CompressionType: ''lzw''}}'
 SHOW CREATE TABLE t3;
 Table	Create Table
 t3	CREATE TABLE `t3` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMPRESSION='lzw' COMMENT='sequoiadb: {table_options: {ReplSize: 3}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMPRESSION='lzw' COMMENT='sequoiadb: {table_options: {ReplSize: 3}}'
 DROP TABLE t1,t2,t3;
 CREATE TABLE t1 ( id int ) COMPRESSION 'zlib';
 ERROR HY000: Invalid compression type
@@ -160,5 +160,5 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;

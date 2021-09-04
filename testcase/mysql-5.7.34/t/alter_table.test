@@ -75,7 +75,7 @@ CREATE TABLE t1 (
   user_id int(11) unsigned NOT NULL default '0',
   status enum('new','old') NOT NULL default 'new',
   PRIMARY KEY (id)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 
 ALTER TABLE t1 ORDER BY t1.id, t1.status, t1.type_id, t1.user_id, t1.body;
 DROP TABLE t1;
@@ -175,7 +175,7 @@ CREATE TABLE t1 (
   Host varchar(16) binary NOT NULL default '',
   User varchar(16) binary NOT NULL default '',
   PRIMARY KEY  (Host,User)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 
 ALTER TABLE t1 DISABLE KEYS;
 LOCK TABLES t1 WRITE;
@@ -195,7 +195,7 @@ CREATE TABLE t1 (
   User varchar(16) binary NOT NULL default '',
   PRIMARY KEY  (Host,User),
   KEY  (Host)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 
 ALTER TABLE t1 DISABLE KEYS;
 SHOW INDEX FROM t1;
@@ -222,7 +222,7 @@ CREATE TABLE t1 (
   User varchar(16) binary NOT NULL default '',
   PRIMARY KEY  (Host,User),
   KEY  (Host)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 
 LOCK TABLES t1 WRITE;
 ALTER TABLE t1 DISABLE KEYS;
@@ -349,7 +349,7 @@ drop table t1;
 # BUG 12207 alter table ... discard table space on MyISAM table causes ERROR 2013 (HY000)
 #
 # Some platforms (Mac OS X, Windows) will send the error message using small letters.
-CREATE TABLE T12207(a int) ENGINE=SEQUOIADB;
+CREATE TABLE T12207(a int) ENGINE=SequoiaDB;
 --replace_result t12207 T12207
 --error ER_ILLEGAL_HA
 ALTER TABLE T12207 DISCARD TABLESPACE;
@@ -1081,7 +1081,7 @@ DROP TABLE t1;
 #
 
 CREATE TABLE t1 (f1 TIMESTAMP NULL DEFAULT NULL,
-                 f2 INT(11) DEFAULT NULL) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8;
+                 f2 INT(11) DEFAULT NULL) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 
 INSERT INTO t1 VALUES (NULL, NULL), ("2009-10-09 11:46:19", 2);
 
@@ -1231,7 +1231,7 @@ DROP DATABASE db1;
 DROP TABLE IF EXISTS t1;
 --enable_warnings
 
-CREATE TEMPORARY TABLE t1 (i int) ENGINE=SEQUOIADB;
+CREATE TEMPORARY TABLE t1 (i int) ENGINE=SequoiaDB;
 
 --error ER_ILLEGAL_HA
 ALTER TABLE t1 DISCARD TABLESPACE;
@@ -1609,49 +1609,49 @@ DROP TABLE tm1;
 
 use mysql;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE db ENGINE=SEQUOIADB;
+ALTER TABLE db ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE user ENGINE=SEQUOIADB;
+ALTER TABLE user ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE proc ENGINE=SEQUOIADB;
+ALTER TABLE proc ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE func ENGINE=SEQUOIADB;
+ALTER TABLE func ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE event ENGINE=SEQUOIADB;
+ALTER TABLE event ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE servers ENGINE=SEQUOIADB;
+ALTER TABLE servers ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE procs_priv ENGINE=SEQUOIADB;
+ALTER TABLE procs_priv ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE tables_priv ENGINE=SEQUOIADB;
+ALTER TABLE tables_priv ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE columns_priv ENGINE=SEQUOIADB;
+ALTER TABLE columns_priv ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE time_zone ENGINE=SEQUOIADB;
+ALTER TABLE time_zone ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-ALTER TABLE help_topic ENGINE=SEQUOIADB;
+ALTER TABLE help_topic ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE db (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE db (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE user (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE user (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE proc (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE proc (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE func (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE func (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE event (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE event (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE servers (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE servers (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE procs_priv (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE procs_priv (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE tables_priv (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE tables_priv (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE columns_priv (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE columns_priv (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE time_zone (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE time_zone (dummy int) ENGINE=SequoiaDB;
 --error ER_UNSUPPORTED_ENGINE
-CREATE TABLE help_topic (dummy int) ENGINE=SEQUOIADB;
+CREATE TABLE help_topic (dummy int) ENGINE=SequoiaDB;
 use alter_test;
 --echo # End of Bug#11815557
 
@@ -1873,7 +1873,7 @@ drop table t1;
 #call mtr.add_suppression("InnoDB: Operating system error number 2 in a file operation.");
 #call mtr.add_suppression("InnoDB: The error means the system cannot find the path specified.");
 #
-#CREATE TABLE t1 (i INT) ENGINE=SEQUOIADB;
+#CREATE TABLE t1 (i INT) ENGINE=SequoiaDB;
 #
 #--echo #
 #--echo # 1) Check that ALTER TABLE ... IMPORT/DISCARD TABLESPACE on
@@ -1938,14 +1938,14 @@ drop table t1;
 #--echo #    should not try to acquire X metadata lock on base table.
 #--echo #
 #
-#CREATE TABLE t1 (i INT) ENGINE=SEQUOIADB;
+#CREATE TABLE t1 (i INT) ENGINE=SequoiaDB;
 #
 #connection con1;
 #--echo # Acquire S lock on table 't1'.
 #HANDLER t1 OPEN;
 #
 #connection con2;
-#CREATE TEMPORARY TABLE t1 (j INT) ENGINE=SEQUOIADB;
+#CREATE TEMPORARY TABLE t1 (j INT) ENGINE=SequoiaDB;
 #
 #--echo # Both DISCARD and IMPORT on temporary table should fail without
 #--echo # acquiring any locks and blocking.
@@ -2019,14 +2019,14 @@ drop table t1;
 #--echo #    table.
 #--echo #
 #
-#CREATE TABLE t1 (i INT) ENGINE=SEQUOIADB;
+#CREATE TABLE t1 (i INT) ENGINE=SequoiaDB;
 #
 #connection con1;
 #--echo # Acquire S lock on table 't1'.
 #HANDLER t1 OPEN;
 #
 #connection con2;
-#CREATE TEMPORARY TABLE t1 (j INT) ENGINE=SEQUOIADB;
+#CREATE TEMPORARY TABLE t1 (j INT) ENGINE=SequoiaDB;
 #LOCK TABLES t1 WRITE;
 #
 #--echo # Both DISCARD and IMPORT on temporary table should fail without
@@ -2092,7 +2092,7 @@ DROP TABLE t1;
 #--echo # Verify that it is possible to add a unique key to a not-NULL POINT 
 #--echo # column and that this key is promoted to primary key
 #--echo # 
-#CREATE TABLE t1(a INT NOT NULL, b POINT NOT NULL) ENGINE=SEQUOIADB;
+#CREATE TABLE t1(a INT NOT NULL, b POINT NOT NULL) ENGINE=SequoiaDB;
 #SHOW CREATE TABLE t1;
 #ALTER TABLE t1 ADD UNIQUE INDEX (b);
 #
@@ -2650,7 +2650,7 @@ SHOW INDEX FROM t1;
 DROP TABLE t1;
 
 # Alter the comment, but keep the same comment length
-CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'old comment') ENGINE=SEQUOIADB;
+CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'old comment') ENGINE=SequoiaDB;
 SHOW INDEX FROM t1;
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT 'new comment',
 ALGORITHM= INPLACE;
@@ -2659,7 +2659,7 @@ DROP TABLE t1;
 
 --echo #Test cases with merge threshold specified in the index comment.
 
-CREATE TABLE t1(fld1 int, key key1(fld1)) ENGINE=SEQUOIADB;
+CREATE TABLE t1(fld1 int, key key1(fld1)) ENGINE=SequoiaDB;
 SHOW INDEX FROM t1;
 #SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_SYS_INDEXES WHERE NAME='key1';
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT
@@ -2669,7 +2669,7 @@ SHOW INDEX FROM t1;
 DROP TABLE t1;
 
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'MERGE_THRESHOLD=40') 
-ENGINE=SEQUOIADB;
+ENGINE=SequoiaDB;
 SHOW INDEX FROM t1;
 #SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_SYS_INDEXES WHERE NAME='key1';
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1);
@@ -2678,7 +2678,7 @@ SHOW INDEX FROM t1;
 DROP TABLE t1;
 
 CREATE TABLE t1(fld1 int, key key1(fld1) COMMENT 'MERGE_THRESHOLD=40')
-ENGINE=SEQUOIADB;
+ENGINE=SequoiaDB;
 SHOW INDEX FROM t1;
 #SELECT MERGE_THRESHOLD from INFORMATION_SCHEMA.INNODB_SYS_INDEXES WHERE NAME='key1';
 ALTER TABLE t1 DROP INDEX key1, ADD INDEX key1(fld1) COMMENT
@@ -2718,7 +2718,7 @@ DROP TABLE t1;
 --echo #               INDEX IS NOT INPLACE/FAST.
 
 #SEQUOIASQLMAINSTREAM-319
-#CREATE TABLE t1(fld1 varchar(200), FULLTEXT(fld1)) ENGINE=SEQUOIADB;
+#CREATE TABLE t1(fld1 varchar(200), FULLTEXT(fld1)) ENGINE=SequoiaDB;
 #INSERT INTO t1 VALUES('ABCD');
 #
 --enable_info
@@ -2732,7 +2732,7 @@ DROP TABLE t1;
 #DROP TABLE t1;
 #
 #--echo #Test with InnoDB engine.
-#CREATE TABLE t1(fld1 varchar(200), FULLTEXT(fld1)) ENGINE=SEQUOIADB;
+#CREATE TABLE t1(fld1 varchar(200), FULLTEXT(fld1)) ENGINE=SequoiaDB;
 #INSERT INTO t1 VALUES('ABCD');
 #
 --enable_info
@@ -2774,27 +2774,27 @@ DROP TABLE t1;
 --echo #
 --echo # Base line with normal column - should be promoted
 #SEQUOIASQLMAINSTREAM-319
-CREATE TABLE t0(a INT NOT NULL) ENGINE=SEQUOIADB;
+CREATE TABLE t0(a INT NOT NULL) ENGINE=SequoiaDB;
 ALTER TABLE t0 ADD UNIQUE INDEX (a);
 
 #--echo # Case a: Create table with virtual unique not null column
-#CREATE TABLE t1(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL UNIQUE NOT NULL) ENGINE=SEQUOIADB;
-CREATE TABLE t1(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
+#CREATE TABLE t1(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL UNIQUE NOT NULL) ENGINE=SequoiaDB;
+CREATE TABLE t1(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL) ENGINE=SequoiaDB;
 SELECT * FROM t1;
 
 #--echo # Case b: Create table with index on virtual point column
-#CREATE TABLE t2(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL, UNIQUE INDEX no_pk(a(1))) ENGINE=SEQUOIADB;
-CREATE TABLE t2(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
+#CREATE TABLE t2(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL, UNIQUE INDEX no_pk(a(1))) ENGINE=SequoiaDB;
+CREATE TABLE t2(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL) ENGINE=SequoiaDB;
 SELECT * FROM t2;
 
 #--echo # Case c: Add unique index on virtual point column
 CREATE TABLE t3(a POINT GENERATED ALWAYS AS (POINT(1,1)) VIRTUAL NOT NULL)
-ENGINE=SEQUOIADB;
+ENGINE=SequoiaDB;
 #ALTER TABLE t3 ADD UNIQUE INDEX (a(1));
 SELECT * FROM t3;
 
 --echo # Case d: Add unique index on virtual blob column
-CREATE TABLE t4 (a BLOB, b BLOB GENERATED ALWAYS AS (a) VIRTUAL NOT NULL) ENGINE=SEQUOIADB;
+CREATE TABLE t4 (a BLOB, b BLOB GENERATED ALWAYS AS (a) VIRTUAL NOT NULL) ENGINE=SequoiaDB;
 #ALTER TABLE t4 ADD UNIQUE INDEX (b(1));
 SELECT * FROM t4;
 
@@ -3129,7 +3129,7 @@ ROW_FORMAT= COMPACT;
 CREATE TABLE t2 (fld1 VARCHAR(3073), KEY(fld1)) CHARSET latin1 ENGINE= SEQUOIADB;
 
 --echo # Test with innodb prefix indexes where the index limit is 767 bytes
-CREATE TABLE t1 (fld1 VARCHAR(3072), KEY(fld1)) CHARSET latin1 ENGINE=SEQUOIADB
+CREATE TABLE t1 (fld1 VARCHAR(3072), KEY(fld1)) CHARSET latin1 ENGINE=SequoiaDB
 ROW_FORMAT=COMPACT;
 
 --error ER_TOO_LONG_KEY
@@ -3139,7 +3139,7 @@ ALTER TABLE t1 MODIFY fld1 VARCHAR(3073), ALGORITHM= INPLACE;
 ALTER TABLE t1 MODIFY fld1 VARCHAR(3073), ALGORITHM= COPY;
 
 --echo # Test with innodb prefix indexes where the index limit is 3072 bytes
-CREATE TABLE t2 (fld1 VARCHAR(3072), KEY(fld1)) CHARSET latin1 ENGINE=SEQUOIADB
+CREATE TABLE t2 (fld1 VARCHAR(3072), KEY(fld1)) CHARSET latin1 ENGINE=SequoiaDB
 ROW_FORMAT=DYNAMIC;
 
 --error ER_TOO_LONG_KEY
@@ -3168,14 +3168,14 @@ ROW_FORMAT=COMPACT;
 CREATE TABLE t2 (fld1 VARCHAR(3073), KEY(fld1)) ENGINE= SEQUOIADB;
 
 --echo # Test with innodb prefix indexes where the index limit is 767 bytes.
-CREATE TABLE t3 (fld1 VARCHAR(767), KEY(fld1))ENGINE=SEQUOIADB ROW_FORMAT=COMPACT;
+CREATE TABLE t3 (fld1 VARCHAR(767), KEY(fld1))ENGINE=SequoiaDB ROW_FORMAT=COMPACT;
 
 ALTER TABLE t3 MODIFY fld1 VARCHAR(768), ALGORITHM= INPLACE;
 
 ALTER TABLE t3 MODIFY fld1 VARCHAR(800), ALGORITHM= COPY;
 
 --echo # Test with innodb prefix indexes where the index limit is 3072 bytes.
-CREATE TABLE t4 (fld1 VARCHAR(3072), KEY(fld1))ENGINE=SEQUOIADB
+CREATE TABLE t4 (fld1 VARCHAR(3072), KEY(fld1))ENGINE=SequoiaDB
 ROW_FORMAT=DYNAMIC;
 
 ALTER TABLE t4 MODIFY fld1 VARCHAR(3073), ALGORITHM= INPLACE;
@@ -3203,7 +3203,7 @@ SET sql_mode= @orig_sql_mode;
 SET GLOBAL innodb_large_prefix= ON;
 
 --echo # Tests added for coverage.
-CREATE TABLE t1(fld1 VARCHAR(3), KEY(fld1)) ENGINE=SEQUOIADB;
+CREATE TABLE t1(fld1 VARCHAR(3), KEY(fld1)) ENGINE=SequoiaDB;
 
 --echo # Conversion of unpacked keys to packed keys reports
 --echo # error for INPLACE Alter.
@@ -3240,9 +3240,9 @@ SET GLOBAL innodb_large_prefix= @orig_innodb_large_prefix;
 SET GLOBAL max_allowed_packet=17825792;
 
 --connect(con1, localhost, root,,alter_test)
-CREATE TABLE t1 (t1_fld1 TEXT) ENGINE=SEQUOIADB;
-CREATE TABLE t2 (t2_fld1 MEDIUMTEXT) ENGINE=SEQUOIADB;
-CREATE TABLE t3 (t3_fld1 LONGTEXT) ENGINE=SEQUOIADB;
+CREATE TABLE t1 (t1_fld1 TEXT) ENGINE=SequoiaDB;
+CREATE TABLE t2 (t2_fld1 MEDIUMTEXT) ENGINE=SequoiaDB;
+CREATE TABLE t3 (t3_fld1 LONGTEXT) ENGINE=SequoiaDB;
 
 INSERT INTO t1 VALUES (REPEAT('a',300));
 INSERT INTO t2 VALUES (REPEAT('b',65680));

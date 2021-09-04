@@ -292,13 +292,16 @@ drop table t1;
 #
 create table t1 (a int)
 partition by hash (a);
+# SEQUOIASQLMAINSTREAM-1089
+# # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 create index i on t1 (a);
 insert into t1 values (1);
 insert into t1 select * from t1;
---error ER_DUP_KEYNAME
+--error 1506
 create index i on t1 (a);
 #sequoiadb allows only one index with same scene
---error 40291
+--error 1506
 create index i2 on t1 (a);
 drop table t1;
 
@@ -306,10 +309,10 @@ drop table t1;
 # Bug#36001: Partitions: spelling and using some error messages
 #
 #BUG #SEQUOIASQLMAINSTREAM-658
-#--error ER_FOREIGN_KEY_ON_PARTITIONED
+--error ER_FOREIGN_KEY_ON_PARTITIONED
 CREATE TABLE t1 (a INT, FOREIGN KEY (a) REFERENCES t0 (a))
 PARTITION BY HASH (a);
-DROP TABLE t1;
+#DROP TABLE t1;
 
 #
 # Bug#40954: Crash if range search and order by.
@@ -466,6 +469,9 @@ SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 ALTER TABLE t1 ENGINE = SequoiaDB;
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
+# SEQUOIASQLMAINSTREAM-1089
+# failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 ALTER TABLE t1 ADD INDEX b USING HASH (b);
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
@@ -1720,6 +1726,9 @@ PARTITION BY RANGE(a)
 create table t1 (a int) engine=sequoiadb
 partition by key(a);
 insert into t1 values (1);
+# SEQUOIASQLMAINSTREAM-1089
+# failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 create index inx1 on t1(a);
 drop table t1;
 
@@ -2241,6 +2250,9 @@ SET SQL_MODE= @orig_sql_mode;
 #
 
 create table t1 (s1 int) partition by hash(s1) partitions 2;
+# SEQUOIASQLMAINSTREAM-1089
+# failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 create index i on t1 (s1);
 insert into t1 values (1);
 insert into t1 select s1 from t1;
@@ -2252,6 +2264,7 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
+--error 1506
 create index i on t1 (s1);
 insert into t1 values (1);
 insert into t1 select s1 from t1;
@@ -2263,6 +2276,7 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
+--error 1506
 create index i on t1 (s1);
 insert into t1 values (20);
 insert into t1 select s1 from t1;
@@ -2274,6 +2288,7 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
+--error 1506
 create index i on t1 (s1);
 insert into t1 values (1), (2), (3), (4), (5), (6), (7), (8);
 insert into t1 select s1 from t1;
@@ -2586,7 +2601,7 @@ DROP TABLE t1;
 --echo #
 --echo # Bug#28573894 ALTER PARTITIONED TABLE ADD AUTO_INCREMENT DIFF RESULT
 --echo #
-CREATE TABLE t (a VARCHAR(10) NOT NULL,b INT,PRIMARY KEY (b)) ENGINE=SEQUOIADB
+CREATE TABLE t (a VARCHAR(10) NOT NULL,b INT,PRIMARY KEY (b)) ENGINE=SequoiaDB
 PARTITION BY RANGE (b)
 (PARTITION pa VALUES LESS THAN (2),
  PARTITION pb VALUES LESS THAN (20),

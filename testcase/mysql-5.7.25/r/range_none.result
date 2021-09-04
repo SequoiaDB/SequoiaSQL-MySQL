@@ -2501,7 +2501,7 @@ KEY tbl_id_idx (tbl,id),
 KEY created_idx (created),
 KEY trans_type_created_idx (trans_type,created),
 KEY app_trans_id_idx (app_trans_id)
-) ENGINE=SEQUOIADB ;
+) ENGINE=SequoiaDB ;
 CREATE TABLE t1 (c1 INT);
 INSERT INTO t1 VALUES (1), (1000), (2000), (3000), (4000), (5000), (6000),
 (7000), (8000), (9000);

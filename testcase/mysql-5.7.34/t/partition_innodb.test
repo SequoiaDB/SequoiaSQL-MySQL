@@ -604,6 +604,9 @@ drop table t1;
 #
 CREATE TABLE t1 (a INT) ENGINE=SequoiaDB
   PARTITION BY list(a) (PARTITION p1 VALUES IN (1));
+# SEQUOIASQLMAINSTREAM-1089
+# failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
+--error 1506
 CREATE INDEX i1 ON t1 (a);
 DROP TABLE t1;
 

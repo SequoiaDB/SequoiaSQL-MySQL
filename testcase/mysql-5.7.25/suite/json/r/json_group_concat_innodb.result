@@ -72,7 +72,7 @@ Table	Create Table
 t	CREATE TABLE `t` (
   `j` json DEFAULT NULL,
   `c` varchar(20) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t values (cast('[1,2,3]' as json), '[a,b,c]');
 insert into t values (cast(7 as json), '7'),  (cast(2 as json), '2');
 insert into t values (cast(7 as json), '7'),  (cast(2 as json), '2');

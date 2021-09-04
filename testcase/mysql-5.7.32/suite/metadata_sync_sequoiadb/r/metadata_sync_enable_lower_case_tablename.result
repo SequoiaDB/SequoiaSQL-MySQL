@@ -10,7 +10,7 @@ Table	Create Table
 test1	CREATE TABLE `test1` (
   `ID` int(11) DEFAULT NULL,
   `age` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SELECT * FROM metaSync_Enable_24157.Test1 ORDER BY id;
 ID	age
 1	10

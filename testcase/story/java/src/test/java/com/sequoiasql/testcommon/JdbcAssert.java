@@ -245,7 +245,7 @@ public class JdbcAssert {
             JdbcInterface jdbcWarpperMgr ) throws Exception {
         isJdbcWarpperMgr( jdbcWarpperMgr );
         List< String > ignore = new ArrayList<>();
-        ignore.add( "ENGINE=SEQUOIADB" );
+        ignore.add( "ENGINE=SequoiaDB" );
         ignore.add( "ENGINE=InnoDB" );
         checkTableMetaWithIgnore( fullTableName, ignore, jdbcWarpperMgr );
     }

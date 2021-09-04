@@ -5,7 +5,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` varchar(4) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `c2` varchar(4) CHARACTER SET utf8 NOT NULL DEFAULT ''
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DELETE FROM t1;
 ALTER TABLE t1 ADD c3 CHAR(4) CHARACTER SET utf8;
 SHOW CREATE TABLE t1;
@@ -14,7 +14,7 @@ t1	CREATE TABLE `t1` (
   `c1` varchar(4) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `c2` varchar(4) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `c3` char(4) CHARACTER SET utf8 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 INSERT IGNORE INTO t1 VALUES ('aaaabbbbccccdddd','aaaabbbbccccdddd','aaaabbbbccccdddd');
 Warnings:
 Warning	1265	Data truncated for column 'c1' at row 1
@@ -30,7 +30,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(4) CHARACTER SET utf8 DEFAULT NULL,
   KEY `key_a` (`a`(3))
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SHOW KEYS FROM t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	1	key_a	1	a	A	NULL	3	NULL	YES	BTREE		
@@ -40,7 +40,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(4) DEFAULT NULL,
   KEY `key_a` (`a`(3))
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SHOW KEYS FROM t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	1	key_a	1	a	A	NULL	3	NULL	YES	BTREE		
@@ -50,7 +50,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(4) CHARACTER SET utf8 DEFAULT NULL,
   KEY `key_a` (`a`(3))
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SHOW KEYS FROM t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	1	key_a	1	a	A	NULL	3	NULL	YES	BTREE		

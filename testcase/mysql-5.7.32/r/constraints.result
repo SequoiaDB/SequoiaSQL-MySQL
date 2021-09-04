@@ -21,7 +21,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   UNIQUE KEY `constraint_1` (`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 drop table if exists t_illegal;
 create table t_illegal (a int, b int, check a>b);

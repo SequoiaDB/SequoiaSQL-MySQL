@@ -143,7 +143,7 @@ t1	CREATE TABLE `t1` (
   `g` geometry NOT NULL,
   `p` point DEFAULT NULL,
   `p1` point DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 INSERT INTO t1 VALUES(ST_PointFromText('POINT(0.5 0.5)'), ST_PointFromText('POINT(0 1)'), ST_PointFromText('POINT(10 19)'));
 INSERT INTO t1 VALUES(ST_PointFromText('POINT(0.6 0.6)'), ST_PointFromText('POINT(1 1)'), ST_PointFromText('POINT(10 20)'));
 INSERT INTO t1 VALUES(ST_PointFromText('POINT(0.7 0.7)'), ST_PointFromText('POINT(1 0)'), ST_PointFromText('POINT(10 21)'));
@@ -1236,7 +1236,7 @@ Table	Create Table
 geom	CREATE TABLE `geom` (
   `i` int(11) DEFAULT NULL,
   `g` point NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT ST_AsText(g) FROM geom;
 ST_AsText(g)
 POINT(0 0)
@@ -1248,7 +1248,7 @@ Table	Create Table
 geom	CREATE TABLE `geom` (
   `i` int(11) DEFAULT NULL,
   `g` geometry NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 TRUNCATE TABLE geom;
 From GEOMETRY to POINT, the table is empty
 ALTER TABLE geom MODIFY g POINT NOT NULL;
@@ -1257,7 +1257,7 @@ Table	Create Table
 geom	CREATE TABLE `geom` (
   `i` int(11) DEFAULT NULL,
   `g` point NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT ST_AsText(g) FROM geom;
 ST_AsText(g)
 CHECK TABLE gis_point;
@@ -1314,7 +1314,7 @@ t1	CREATE TABLE `t1` (
   `p` point NOT NULL,
   `l` linestring NOT NULL,
   `g` geometry NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT a, ST_AsText(p), ST_AsText(l), ST_AsText(g) FROM t1;
 a	ST_AsText(p)	ST_AsText(l)	ST_AsText(g)
 1	POINT(10 10)	LINESTRING(1 1,5 5,10 10)	POLYGON((30 30,40 40,50 50,30 50,30 40,30 30))

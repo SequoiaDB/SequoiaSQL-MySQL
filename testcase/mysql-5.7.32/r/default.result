@@ -96,7 +96,7 @@ t2	CREATE TABLE `t2` (
   `z` varchar(20) COLLATE latin1_bin NOT NULL DEFAULT ' ',
   `a1` varchar(30) COLLATE latin1_bin NOT NULL DEFAULT ' ',
   `b1` tinyblob
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COLLATE=latin1_bin
 INSERT into t2 (b) values ('1');
 SHOW WARNINGS;
 Level	Code	Message

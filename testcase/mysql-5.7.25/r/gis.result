@@ -525,7 +525,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `ST_GeomFromWKB(POINT(1,3))` geometry DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 CREATE TABLE `t1` (`object_id` bigint(20) unsigned NOT NULL default '0', `geo`
 geometry NOT NULL default '') ENGINE=SequoiaDB;
@@ -2209,7 +2209,7 @@ t1	CREATE TABLE `t1` (
   `g3` geometry NOT NULL,
   `g4` geometry NOT NULL,
   `g5` geometry NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 # Add a GEOMETRY NOT NULL column to a table with rows
 CREATE TABLE t1 (
@@ -2228,7 +2228,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` geometry DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	NULL
@@ -2239,7 +2239,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` geometry NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, ST_ASTEXT(g) FROM t1;
 i	ST_ASTEXT(g)
 0	POINT(0 0)
@@ -2257,7 +2257,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` geometry NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 # Convert an INT column without rows to GEOMETRY NOT NULL
 CREATE TABLE t1 (
@@ -2285,7 +2285,7 @@ t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `h` geometry NOT NULL,
   `h2` geometry NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 # Convert an INT column with NULL values to GEOMETRY, and then
 # to GEOMETRY NOT NULL
@@ -2299,7 +2299,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	NULL
@@ -2314,7 +2314,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` geometry DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	NULL
@@ -2330,7 +2330,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	NULL
@@ -2357,7 +2357,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	NULL
@@ -2373,7 +2373,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` int(11) DEFAULT '1'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	1
@@ -2386,7 +2386,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` int(11) DEFAULT '1'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	1
@@ -2407,7 +2407,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` int(11) DEFAULT '1'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 i	g
 0	1
@@ -2423,7 +2423,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` varchar(20) NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	
@@ -2436,7 +2436,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` varchar(20) NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	
@@ -2453,7 +2453,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` varchar(20) NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	
@@ -2466,7 +2466,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `i` int(11) NOT NULL,
   `g` varchar(20) NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT i, g FROM t1;
 i	g
 0	
@@ -2497,7 +2497,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `b` blob
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 b
                        
@@ -2521,7 +2521,7 @@ t1	CREATE TABLE `t1` (
   `q2` polygon DEFAULT NULL,
   `p3` polygon NOT NULL,
   `q4` polygon NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 p1	q2	p3	q4
 DROP TABLE t1;
@@ -2534,7 +2534,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `p` point DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT ST_AsText(p) FROM t1;
 ST_AsText(p)
 POINT(0 0)
@@ -2553,7 +2553,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `p` point DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT ST_AsText(p) FROM t1;
 ST_AsText(p)
 POINT(0 0)
@@ -2568,7 +2568,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `mp` multipoint NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT ST_AsText(mp) FROM t1;
 ST_AsText(mp)
 MULTIPOINT((1 1))
@@ -2580,7 +2580,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `mp` multipoint NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT ST_AsText(mp) FROM t1;
 ST_AsText(mp)
 MULTIPOINT((1 1))
@@ -2592,7 +2592,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` geometry NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 # Convert a GEOMETRY column with geometry data to GEOMETRY NOT
 # NULL
@@ -2617,7 +2617,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` geometry DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT g FROM t1;
 g
 NULL
@@ -2630,7 +2630,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `g` geometry DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT g FROM t1;
 g
 NULL

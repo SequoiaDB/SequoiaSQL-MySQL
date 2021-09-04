@@ -15,7 +15,7 @@ CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `t2` (
   `a` int(11) NOT NULL,

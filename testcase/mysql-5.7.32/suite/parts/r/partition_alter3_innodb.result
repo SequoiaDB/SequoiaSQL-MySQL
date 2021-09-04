@@ -57,7 +57,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `f_date` date DEFAULT NULL,
   `f_varchar` varchar(30) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # check read single success: 1
 # check read all success: 1
 # check read row by row success: 1
@@ -290,7 +290,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `f_date` date DEFAULT NULL,
   `f_varchar` varchar(30) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # check read single success: 1
 # check read all success: 1
 # check read row by row success: 1
@@ -326,7 +326,7 @@ t1	CREATE TABLE `t1` (
   `f_char1` char(20) DEFAULT NULL,
   `f_char2` char(20) DEFAULT NULL,
   `f_charbig` varchar(1000) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # check read single success: 1
 # check read all success: 1
 # check read row by row success: 1
@@ -561,7 +561,7 @@ t1	CREATE TABLE `t1` (
   `f_char1` char(20) DEFAULT NULL,
   `f_char2` char(20) DEFAULT NULL,
   `f_charbig` varchar(1000) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # check read single success: 1
 # check read all success: 1
 # check read row by row success: 1

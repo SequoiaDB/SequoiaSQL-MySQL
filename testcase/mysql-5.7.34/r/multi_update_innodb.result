@@ -7,7 +7,7 @@ pk INT,
 a INT,
 b INT,
 PRIMARY KEY (pk)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0,0,0);
 UPDATE t1 AS A, t1 AS B SET A.pk = 1, B.a = 2;
 SELECT * FROM t1;
@@ -35,7 +35,7 @@ pk int,
 col_int int, 
 key(col_int_key), 
 primary key (pk)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (1,2,3);
 
 CREATE TABLE t2 ( 
@@ -45,7 +45,7 @@ pk_2 int,
 col_int int, 
 key(col_int_key), 
 primary key (pk_1,pk_2)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES (1,2,3,4);
 
 UPDATE t1 AS A NATURAL JOIN t1 B SET A.pk=5,B.pk=7;
@@ -66,7 +66,7 @@ DROP TABLE t1,t2;
 #Bug 11757486 - 49539: NON-DESCRIPTIVE ERR (ERROR 0 FROM STORAGE ENGINE)
 #                      WITH MULTI-TABLE UPDATE
 #
-CREATE TABLE table_11757486 (field1 tinyint) ENGINE=SEQUOIADB;
+CREATE TABLE table_11757486 (field1 tinyint) ENGINE=SequoiaDB;
 INSERT INTO table_11757486 VALUES (0),(0);
 SET SESSION SQL_MODE=default;
 UPDATE IGNORE (SELECT 128 as col1) x, table_11757486 SET field1=x.col1;
@@ -83,9 +83,9 @@ DROP TABLE table_11757486;
 #
 # Bug#20748537 INNODB: FAILING ASSERTION: NODE->PCUR->REL_POS == BTR_PCUR_ON
 #
-CREATE TABLE t1(c1 INT) ENGINE=SEQUOIADB;
+CREATE TABLE t1(c1 INT) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES (0),(0),(1);
-CREATE TABLE t2(b INT) ENGINE=SEQUOIADB;
+CREATE TABLE t2(b INT) ENGINE=SequoiaDB;
 INSERT INTO t2 VALUES(0),(0);
 ANALYZE TABLE t1,t2;
 Table	Op	Msg_type	Msg_text

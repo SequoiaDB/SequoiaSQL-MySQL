@@ -9,7 +9,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(10) CHARACTER SET cp1251 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT a FROM t1;
 a
 проба
@@ -33,7 +33,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` text CHARACTER SET cp1251
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT HEX(a) FROM t1;
 HEX(a)
 EFF0EEE1E0
@@ -80,7 +80,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `Д` char(128) DEFAULT 'Д',
   `Д1` enum('Д1','Д2') DEFAULT 'Д2'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SHOW COLUMNS FROM t1;
 Field	Type	Null	Key	Default	Extra
 Д	char(128)	YES		Д	
@@ -91,7 +91,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `ц╓` char(128) DEFAULT 'ц╓',
   `ц╓1` enum('ц╓1','ц╓2') DEFAULT 'ц╓2'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SHOW COLUMNS FROM t1;
 Field	Type	Null	Key	Default	Extra
 ц╓	char(128)	YES		ц╓	
@@ -199,7 +199,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` char(1) CHARACTER SET cp1251 DEFAULT 'Ъ'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1(a char character set latin1 default _cp1251 0xFF);
 ERROR 42000: Invalid default value for 'a'

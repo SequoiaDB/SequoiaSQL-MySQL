@@ -194,7 +194,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `round(1, 6)` int(1) NOT NULL DEFAULT '0'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 select * from t1;
 round(1, 6)
 1
@@ -546,7 +546,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `C` varchar(23) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 #
 # Bug#11764994  57900: CREATE TABLE .. SELECT ASSERTS SCALE >= 0 && PRECISION > 0 && SCALE <= PR

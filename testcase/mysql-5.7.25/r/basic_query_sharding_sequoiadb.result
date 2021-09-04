@@ -4367,7 +4367,7 @@ date_time datetime NOT NULL,
 create_time datetime DEFAULT NULL,
 PRIMARY KEY (id, date_time),
 key IDX_METERID (meter_id)
-) ENGINE=SEQUOIADB COMMENT='sequoiadb:{"table_options":{"ShardingKey":{"date_time":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1, "AutoSplit":true}}';
+) ENGINE=SequoiaDB COMMENT='sequoiadb:{"table_options":{"ShardingKey":{"date_time":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1, "AutoSplit":true}}';
 ANALYZE TABLE elec_meter_data;
 SELECT COUNT(*) FROM elec_meter_data WHERE meter_id IN (497, 498, 499, 500) AND date_time >= "2018-04-03 00:00:00" AND date_time < "2018-04-20 00:00:00" ORDER BY id, date_time ASC;
 COUNT(*)
@@ -14400,7 +14400,7 @@ gis_search	CREATE TABLE `gis_search` (
   `geoco2` geometrycollection DEFAULT NULL,
   `geom2` geometry DEFAULT NULL,
   PRIMARY KEY (`gid`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SET @point1 = ST_PointFromText('POINT(1 1)');
 SET @point2 = ST_PointFromText('POINT(10 10)');
 SET @point3 = ST_PointFromText('POINT(20 10)');

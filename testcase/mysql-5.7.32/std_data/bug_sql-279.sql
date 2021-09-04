@@ -17,7 +17,7 @@ CREATE TABLE elec_meter_data (
   create_time datetime DEFAULT NULL,
   PRIMARY KEY (id, date_time),
   key IDX_METERID (meter_id)
-) ENGINE=SEQUOIADB COMMENT='sequoiadb:{"table_options":{"ShardingKey":{"date_time":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1, "AutoSplit":true}}';
+) ENGINE=SequoiaDB COMMENT='sequoiadb:{"table_options":{"ShardingKey":{"date_time":1},"Compressed":true,"CompressionType":"lzw","ReplSize":1, "AutoSplit":true}}';
 
 --disable_query_log
 INSERT INTO elec_meter_data VALUES

@@ -55,7 +55,7 @@ t1	CREATE TABLE `t1` (
   `database()` varchar(34) CHARACTER SET utf8 DEFAULT NULL,
   `user()` varchar(93) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `version` char(60) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 select charset(charset(_utf8'a')), charset(collation(_utf8'a'));
 charset(charset(_utf8'a'))	charset(collation(_utf8'a'))
@@ -69,7 +69,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `charset(_utf8'a')` varchar(64) CHARACTER SET utf8 NOT NULL DEFAULT '',
   `collation(_utf8'a')` varchar(64) CHARACTER SET utf8 NOT NULL DEFAULT ''
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 select TRUE,FALSE,NULL;
 TRUE	FALSE	NULL

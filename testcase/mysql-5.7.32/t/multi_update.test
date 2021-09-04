@@ -841,7 +841,7 @@ DROP TABLE t1;
 --echo #                      WITH MULTI-TABLE UPDATE
 --echo #
 
-CREATE TABLE table_11757486 (field1 tinyint) ENGINE=SEQUOIADB;
+CREATE TABLE table_11757486 (field1 tinyint) ENGINE=SequoiaDB;
 INSERT INTO table_11757486 VALUES (0),(0);
 SET SESSION SQL_MODE=default;
 UPDATE IGNORE (SELECT 128 as col1) x, table_11757486 SET field1=x.col1;

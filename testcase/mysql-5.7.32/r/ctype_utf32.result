@@ -100,7 +100,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `l` varchar(10) CHARACTER SET utf32 DEFAULT NULL,
   `r` varchar(10) CHARACTER SET utf32 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 select hex(l), hex(r) from t1;
 hex(l)	hex(r)
 00000421000004210000042100000421000004210000042100000421000004210000042100000420	00000420000004210000042100000421000004210000042100000421000004210000042100000421
@@ -126,7 +126,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(10) CHARACTER SET utf32 DEFAULT NULL,
   KEY `a` (`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ("a"),("abc"),("abcd"),("hello"),("test");
 select * from t1 where a like "abc%";
 a
@@ -437,7 +437,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` enum('x','y','z') CHARACTER SET utf32 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ('x');
 insert into t1 values ('y');
 insert into t1 values ('z');
@@ -451,7 +451,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` enum('x','y','z','d','e','ä','ö','ü') CHARACTER SET utf32 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ('D');
 insert into t1 values ('E ');
 insert into t1 values ('ä');
@@ -473,7 +473,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` set('x','y','z','ä','ö','ü') CHARACTER SET utf32 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 insert into t1 values ('x');
 insert into t1 values ('y');
 insert into t1 values ('z');
@@ -546,7 +546,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(1) CHARACTER SET utf32 COLLATE utf32_bin DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 INSERT INTO t1 VALUES (_utf8mb4 0xEFBE9D),(_utf8mb4 0xF0908E84);
 INSERT INTO t1 VALUES (_utf8mb4 0xCE85),(_utf8mb4 0xF4808080);
 SELECT HEX(a), HEX(CONVERT(a USING utf8mb4)) FROM t1 ORDER BY a;
@@ -678,14 +678,14 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `status` enum('active','passive') CHARACTER SET utf32 NOT NULL DEFAULT 'passive'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 ALTER TABLE t1 ADD a int NOT NULL AFTER status;
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `status` enum('active','passive') CHARACTER SET utf32 NOT NULL DEFAULT 'passive',
   `a` int(11) NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t2 (
 status enum('active','passive') collate ucs2_turkish_ci 
@@ -695,7 +695,7 @@ SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `status` enum('active','passive') CHARACTER SET ucs2 COLLATE ucs2_turkish_ci NOT NULL DEFAULT 'passive'
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 ALTER TABLE t2 ADD a int NOT NULL AFTER status;
 DROP TABLE t2;
 End of 4.1 tests
@@ -911,7 +911,7 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` mediumtext CHARACTER SET utf32
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 SET sql_mode = default;
 create table t1 (a varchar(768) character set utf32 primary key) engine=SequoiaDB;
@@ -920,7 +920,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(768) CHARACTER SET utf32 NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 create table t1 (a varchar(769) character set utf32 primary key) engine=SequoiaDB;
 ERROR 42000: Specified key was too long; max key length is 3072 bytes
@@ -930,7 +930,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` varchar(768) CHARACTER SET utf32 NOT NULL,
   PRIMARY KEY (`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 drop table t1;
 SET GLOBAL innodb_large_prefix=OFF;
 Warnings:
@@ -973,7 +973,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `s1` varchar(64) CHARACTER SET utf32 DEFAULT NULL,
   `s2` varchar(64) CHARACTER SET utf32 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=default_engine DEFAULT CHARSET=latin1
 delete from t1;
 insert into t1 values('aaa','aaa');
 insert into t1 values('aaa|qqq','qqq');
@@ -1034,7 +1034,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `s1` varchar(2) CHARACTER SET utf32 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 INSERT INTO t1 VALUES ('ab'),('AE'),('ab'),('AE');
 SELECT * FROM t1 ORDER BY s1;
 s1
@@ -1084,7 +1084,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `format(123,2,'no_NO')` varchar(37) CHARACTER SET utf32 DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 SELECT * FROM t1;
 format(123,2,'no_NO')
 123,00
@@ -1095,7 +1095,7 @@ DROP TABLE t1;
 CREATE TABLE t1 (
 b char(250) CHARACTER SET utf32,
 key (b)
-) ENGINE=SEQUOIADB;
+) ENGINE=SequoiaDB;
 INSERT INTO t1 VALUES ('d'),('f');
 SELECT * FROM t1 WHERE b BETWEEN 'a' AND 'z';
 b

@@ -4,7 +4,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` tinyint(4) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:1},ShardingType:"hash",Partition:1024,Compressed:true,CompressionType:"lzw",ReplSize:2,AutoSplit:true,AutoIndexId:true,EnsureShardingIndex:true,StrictDataMode:true}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:1},ShardingType:"hash",Partition:1024,Compressed:true,CompressionType:"lzw",ReplSize:2,AutoSplit:true,AutoIndexId:true,EnsureShardingIndex:true,StrictDataMode:true}}'
 INSERT INTO t1 VALUES (1, 1),(2, 2),(3, 3),(10, 10),(-1, -1);
 SELECT * FROM t1;
 a	b
@@ -34,7 +34,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` tinyint(4) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:-1},ShardingType:"range"}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:-1},ShardingType:"range"}}'
 INSERT INTO t1 VALUES (1, 1),(2, 2),(0, 0),(-109, -109),(12, 12);
 SELECT * FROM t1;
 a	b
@@ -65,7 +65,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL,
   `b` tinyint(4) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:1}, IsMainCL:true}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{a:1}, IsMainCL:true}}'
 DROP TABLE t1;
 CREATE TABLE t1(a INT NOT NULL AUTO_INCREMENT, KEY(a)) comment="abc|string";
 SHOW CREATE TABLE t1;
@@ -73,7 +73,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) NOT NULL AUTO_INCREMENT,
   KEY `a` (`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='abc|string'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='abc|string'
 INSERT INTO t1 VALUES ();
 SELECT * FROM t1;
 a
@@ -84,14 +84,14 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 DROP TABLE t1;
 CREATE TABLE t1(a SMALLINT) comment="sequoiadb:{table_options:{Compressed:false}}";
 SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` smallint(6) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{Compressed:false}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{Compressed:false}}'
 INSERT INTO t1 VALUES (1);
 SELECT * FROM t1;
 a
@@ -104,7 +104,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `a` smallint(6) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{Compressed:true, CompressionType:''snappy''}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{Compressed:true, CompressionType:''snappy''}}'
 INSERT INTO t1 VALUES (1);
 SELECT * FROM t1;
 a
@@ -115,7 +115,7 @@ SHOW CREATE TABLE t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `ordrdt` varchar(8) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{ordrdt:1},ShardingType:''range'',IsMainCL:true,EnsureShardingIndex:false,Compressed:true,ReplSize:-1,CompressionType:''lzw''}}'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='sequoiadb:{table_options:{ShardingKey:{ordrdt:1},ShardingType:''range'',IsMainCL:true,EnsureShardingIndex:false,Compressed:true,ReplSize:-1,CompressionType:''lzw''}}'
 DROP TABLE t1;
 CREATE TABLE t1 ( 
 id INT PRIMARY KEY 
@@ -130,7 +130,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: "id", AcquireSize: 1, CacheSize:1 } } }'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: "id", AcquireSize: 1, CacheSize:1 } } }'
 INSERT INTO t1(name) VALUES ('Joe'),('Mary'),('Bob');
 SELECT * FROM t1 ORDER BY id;
 id	name
@@ -152,7 +152,7 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(16) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { AcquireSize: 1, CacheSize:1, Increment:5, StartValue:5, MinValue:5, Cycled:true } } }'
+) ENGINE=SequoiaDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { AcquireSize: 1, CacheSize:1, Increment:5, StartValue:5, MinValue:5, Cycled:true } } }'
 INSERT INTO t1(name) VALUES ('Joe'),('Mary'),('Bob');
 SELECT * FROM t1 ORDER BY id;
 id	name
@@ -184,7 +184,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: "id" } } }'
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field: "id" } } }'
 alter table t1 COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: {AcquireSizes: 1, CacheSize:1 } } }";
 ERROR HY000: Invalid Argument
 alter table t1 COMMENT = "a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement: { Field:\"a\" } } }";
@@ -195,7 +195,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{CacheSize:1, AcquireSize: 1, Increment:2, StartValue:2, MinValue:2, MaxValue:1000, Cycled:true,Generated:"always"} } }'
+) ENGINE=SequoiaDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{CacheSize:1, AcquireSize: 1, Increment:2, StartValue:2, MinValue:2, MaxValue:1000, Cycled:true,Generated:"always"} } }'
 insert into t1 values(),(),();
 select * from t1 order by id;
 id
@@ -208,7 +208,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
-) ENGINE=SEQUOIADB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{ Field: "id",Increment:1 } } }'
+) ENGINE=SequoiaDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1 COMMENT='a strictly increasing sequence, sequoiadb:{ table_options: { AutoIncrement:{ Field: "id",Increment:1 } } }'
 insert into t1 values(),(),();
 select * from t1 order by id;
 id

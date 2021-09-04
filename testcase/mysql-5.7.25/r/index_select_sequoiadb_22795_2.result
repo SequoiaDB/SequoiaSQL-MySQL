@@ -23,7 +23,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 alter table t2 add PRIMARY KEY(a);
 alter table t2 add index b(b);
 alter table t2 add index ab(a,b);
@@ -37,7 +37,7 @@ t2	CREATE TABLE `t2` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1,t2 where t1.a=t2.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t2	NULL	index	PRIMARY,ab	ab	69	NULL	#	100.00	Using index
@@ -96,7 +96,7 @@ t1	CREATE TABLE `t1` (
   KEY `ab` (`a`,`b`),
   KEY `bc` (`b`,`c`),
   KEY `abc` (`a`,`b`,`c`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 alter table t2 add PRIMARY KEY(a);
 alter table t2 add index b(b);
 alter table t2 add index ab(a,b);
@@ -113,7 +113,7 @@ t2	CREATE TABLE `t2` (
   KEY `ab` (`a`,`b`),
   KEY `bc` (`b`,`c`),
   KEY `abc` (`a`,`b`,`c`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1,t2 where t1.a=t2.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t2	NULL	index	PRIMARY,ab,abc	abc	19	NULL	#	100.00	Using index
@@ -202,7 +202,7 @@ t1	CREATE TABLE `t1` (
   KEY `ab` (`a`,`b`),
   KEY `bc` (`b`,`c`),
   KEY `abc` (`a`,`b`,`c`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 alter table t2 add PRIMARY KEY(a);
 alter table t2 add index b(b);
 alter table t2 add index ab(a,b);
@@ -219,7 +219,7 @@ t2	CREATE TABLE `t2` (
   KEY `ab` (`a`,`b`),
   KEY `bc` (`b`,`c`),
   KEY `abc` (`a`,`b`,`c`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1,t2 where t1.a=t2.a;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t2	NULL	index	PRIMARY,ab,abc	abc	8	NULL	#	100.00	Using index

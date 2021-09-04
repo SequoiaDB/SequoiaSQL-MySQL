@@ -9,7 +9,7 @@ t	CREATE TABLE `t` (
   `i` int(11) DEFAULT NULL,
   `j1` json DEFAULT NULL,
   `j2` json NOT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 INSERT INTO t VALUES
 (0, NULL, 'null'),
 (1, '1', '1'),

@@ -226,7 +226,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # Cleaning up after KEY PARTITIONING test
 DROP TABLE TableA;
 # 2.0 HASH partitioning mgm
@@ -463,7 +463,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # Cleaning up after HASH PARTITIONING test
 DROP TABLE TableA;
 # 3.0 RANGE partitioning mgm
@@ -694,7 +694,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # Cleaning up after RANGE PARTITIONING test
 DROP TABLE TableA;
 # 4.0 LIST partitioning mgm
@@ -914,7 +914,7 @@ SHOW CREATE TABLE TableA;
 Table	Create Table
 TableA	CREATE TABLE `TableA` (
   `a` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 # Cleaning up after LIST PARTITIONING test
 DROP TABLE TableA;
 # Cleaning up before exit

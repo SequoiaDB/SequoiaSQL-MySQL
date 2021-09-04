@@ -6391,7 +6391,7 @@ SELECT TIME(CURRENT_DATE) FROM dual;
 CREATE TABLE t1 (
   pk TIMESTAMP(1) NOT NULL DEFAULT '0000-00-00  00:00:00.0',
   PRIMARY KEY (pk)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
 INSERT INTO t1 VALUES ('2011-07-13 13:17:58.3'), ('2011-07-13 13:17:59.3');
 SELECT EXTRACT(HOUR_SECOND FROM CURRENT_DATE) FROM t1;
 DROP TABLE t1;
@@ -6592,7 +6592,7 @@ CREATE TABLE t1 (
   col_timestamp_6_key timestamp(6) NOT NULL DEFAULT '0000-00-00 00:00:00.000000',
   col_time_2_not_null time(2) NOT NULL,
   KEY col_timestamp_6_key (col_timestamp_6_key))
-  ENGINE=SEQUOIADB DEFAULT CHARSET=latin1;
+  ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t1 VALUES (current_timestamp(5),current_timestamp(6),current_time(6));
 SELECT col_datetime_5 AS c1 FROM t1
 WHERE col_time_2_not_null = GREATEST(CURRENT_DATE(),col_timestamp_6_key)
@@ -6800,7 +6800,7 @@ CREATE TABLE t1 (
   KEY col_timestamp_4_not_null_key (col_timestamp_4_not_null_key),
   KEY col_date_key (col_date_key),
   KEY col_time_3_not_null_key (col_time_3_not_null_key)
-) ENGINE=SEQUOIADB /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
+) ENGINE=SequoiaDB /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
 INSERT INTO t1 VALUES (
   CURRENT_TIME(5),
   CURRENT_TIMESTAMP(4),
@@ -7093,7 +7093,7 @@ CREATE TABLE t1 (
   KEY col_timestamp_1_not_null_key (col_timestamp_1_not_null_key),
 # KEY col_datetime_4_key (col_datetime_4_key),
   KEY col_time_2_not_null_key (col_time_2_not_null_key)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
 INSERT INTO t1 VALUES ('0000-00-00 00:00:00.000','14:09:27.6','0000-00-00 00:00:00.000000','18:38:36.04289','2003-07-01 21:00:00.0','2009-09-15 09:25:49.0110','15:47:52.01');
 INSERT INTO t1 VALUES ('2004-04-08 23:25:16.012','14:09:26.6',NULL,'05:45:23.05509','2008-12-11 21:00:00.0','2001-04-23 20:41:27.0470','05:09:23.04');
@@ -7117,7 +7117,7 @@ CREATE TABLE t1 (
   KEY col_time_1_not_null_key (col_time_1_not_null_key),
  KEY col_datetime_3_not_null_key (col_datetime_3_not_null_key),
   KEY col_time_2_key (col_time_2_key)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 /*!50100 PARTITION BY KEY (pk)PARTITIONS 2 */;
 INSERT INTO t1 VALUES ('00:20:05.0','1999-12-31 21:00:01','0000-00-00 00:00:00.000','04:25:59.01');
 INSERT INTO t1 VALUES ('00:15:56.0','1999-12-31 21:00:03','0000-00-00 00:00:00.000','00:20:06.00');
@@ -7435,7 +7435,7 @@ CREATE TABLE t1 (
   col_time_3_not_null_key time(3) not null,
   col_datetime_3_key  datetime(3),
 key (col_datetime_6_not_null_key),
-key (col_datetime_3_key)) ENGINE=SEQUOIADB;
+key (col_datetime_3_key)) ENGINE=SequoiaDB;
 CREATE OR REPLACE VIEW v1 AS SELECT * FROM t1;
 SELECT col_datetime_3_key AS c1 FROM v1
 WHERE SYSDATE() IS NULL
@@ -7538,7 +7538,7 @@ CREATE TABLE t1 (
   PRIMARY KEY (pk),
   KEY col_datetime_1_key (col_datetime_1_key),
   KEY col_datetime_6_not_null_key (col_datetime_6_not_null_key))
-ENGINE=SEQUOIADB DEFAULT CHARSET=latin1;
+ENGINE=SequoiaDB DEFAULT CHARSET=latin1;
 INSERT INTO t1 VALUES ('19:14:35.36','0000-00-00 00:00:00.000','0000-00-00 00:00:00.0','2000-08-28 07:34:20.051690','2009-09-20 07:32:39.06');
 INSERT INTO t1 VALUES ('19:14:37.36','2005-07-04 08:03:50.051','0000-00-00 00:00:00.0','0000-00-00 00:00:00.000000','0000-00-00 00:00:00.00');
 INSERT INTO t1 VALUES ('19:14:39.36','0000-00-00 00:00:00.000',NULL,'2005-10-11 07:24:45.059064','2009-11-19 00:00:00.00');
@@ -7568,7 +7568,7 @@ CREATE TABLE t1 (
   c_time time,
   primary key (pk),
   key (c_timestamp)
-) ENGINE=SEQUOIADB;  
+) ENGINE=SequoiaDB;  
 INSERT INTO t1 VALUES
 (SEC_TO_TIME(2),'20000627024305.040518','00:00:00.000000'),      
 (SEC_TO_TIME(4),'0000-00-00','20010412233415.034269'),                  

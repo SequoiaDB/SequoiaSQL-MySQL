@@ -18,7 +18,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a<'b';
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	range	PRIMARY,ab	ab	1	NULL	#	100.00	Using where with pushed condition (`index_select_sequoiadb_22805`.`t1`.`a` < 'b'); Using index
@@ -109,7 +109,7 @@ t1	CREATE TABLE `t1` (
   KEY `b` (`b`),
   KEY `ab` (`a`,`b`),
   KEY `ba` (`b`,`a`)
-) ENGINE=SEQUOIADB DEFAULT CHARSET=latin1
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a<>b;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
 1	SIMPLE	t1	NULL	index	NULL	ab	515	NULL	#	90.00	Using where with pushed condition (`index_select_sequoiadb_22805`.`t1`.`a` <> `index_select_sequoiadb_22805`.`t1`.`b`); Using index

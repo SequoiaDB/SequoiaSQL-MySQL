@@ -585,7 +585,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `x` int(11) DEFAULT NULL,
   `y` int(11) DEFAULT NULL
-) ENGINE=SEQUOIADB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 set server_ha_wait_sync_timeout = 4;
 alter table t1 drop column x, add column z int default 1;
 set server_ha_wait_sync_timeout = 0;
