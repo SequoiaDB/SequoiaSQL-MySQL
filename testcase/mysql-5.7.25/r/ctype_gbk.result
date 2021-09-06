@@ -268,7 +268,7 @@ Table	Create Table
 t1	CREATE TABLE `t1` (
   `c1` mediumtext NOT NULL,
   `c2` text NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=gbk
+) ENGINE=default_engine DEFAULT CHARSET=gbk
 drop table t1;
 CREATE TABLE t1(a MEDIUMTEXT CHARACTER SET gbk,
 b MEDIUMTEXT CHARACTER SET big5);

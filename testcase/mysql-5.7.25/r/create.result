@@ -279,7 +279,7 @@ show create table t3;
 Table	Create Table
 t3	CREATE TEMPORARY TABLE `t3` (
   `id` int(11) NOT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=TMP_TABLE_ENGINE DEFAULT CHARSET=latin1
 select * from t3;
 id
 drop table t3;
@@ -300,7 +300,7 @@ Table	Create Table
 t3	CREATE TEMPORARY TABLE `t3` (
   `id` int(11) NOT NULL,
   `name` char(20) DEFAULT NULL
-) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+) ENGINE=TMP_TABLE_ENGINE DEFAULT CHARSET=latin1
 create table t2 like t3;
 show create table t2;
 Table	Create Table
