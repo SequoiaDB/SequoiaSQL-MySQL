@@ -16,7 +16,7 @@ TRANS_RC_COUNT	tinyint(1)	YES		NULL
 SOURCE	varchar(80)	YES		NULL	
 select * from SDB_SESSION_ATTR_CURRENT;
 PREFERRED_INSTANCE	PREFERRED_INSTANCE_MODE	PREFERRED_STRICT	PREFERRED_PERIOD	TIMEOUT	TRANS_ISOLATION	TRANS_TIMEOUT	TRANS_USE_RBS	TRANS_LOCK_WAIT	TRANS_AUTO_COMMIT	TRANS_AUTO_ROLLBACK	TRANS_RC_COUNT	SOURCE
-M	random	0	60	-1	0	3	0	1	1	0	1	MySQL:hostname:pid:tid
+M	random	0	60	-1	0	3	1	0	1	0	1	MySQL:hostname:pid:tid
 set session sequoiadb_preferred_instance='1';
 set session sequoiadb_preferred_instance_mode='ordered';
 set session sequoiadb_preferred_period=59;
@@ -33,7 +33,7 @@ a
 1
 select * from SDB_SESSION_ATTR_CURRENT;
 PREFERRED_INSTANCE	PREFERRED_INSTANCE_MODE	PREFERRED_STRICT	PREFERRED_PERIOD	TIMEOUT	TRANS_ISOLATION	TRANS_TIMEOUT	TRANS_USE_RBS	TRANS_LOCK_WAIT	TRANS_AUTO_COMMIT	TRANS_AUTO_ROLLBACK	TRANS_RC_COUNT	SOURCE
-	ordered	1	59	-1	0	59	0	1	1	0	1	MySQL:hostname:pid:tid
+	ordered	1	59	-1	0	59	1	0	1	0	1	MySQL:hostname:pid:tid
 set session sequoiadb_preferred_instance='M';
 set session sequoiadb_preferred_instance_mode='random';
 set session sequoiadb_preferred_period=60;
