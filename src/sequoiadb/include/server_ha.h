@@ -242,6 +242,7 @@ int ha_write_empty_sql_log(const char *db_name, const char *table_name,
                            int driver_cata_version);
 int ha_get_latest_cata_version(const char *db_name, const char *table_name,
                                int &version);
+bool ha_is_the_first_table(const char *db_name, const char *table_name);
 int ha_update_cached_record(const char *cached_record_key, int sql_id,
                             int cata_version);
 bool ha_is_ddl_ignorable_error(uint sql_errno);

@@ -5431,6 +5431,7 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
   DBUG_PRINT("info", ("do_read_stat: %d", do_read_stat));
 
   Sdb_statistics stat;
+  Sdb_cl cl;
   int rc = 0;
 
   if (!do_read_stat) {
@@ -5458,6 +5459,16 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
         ha_thd()->PREPARE_STEP == ha_thd()->sdb_sql_exec_step &&
         ha_thd()->sdb_sql_push_down_query_string.length) {
       goto done;
+    }
+
+    // set correct collection version, or it will be set to
+    // default value '1' by call get_cl(check_exist = false) in
+    // 'Sdb_conn::get_cl_statistics'
+    rc = conn->get_cl(db_name, table_name, cl, ha_is_open());
+    if (rc != SDB_ERR_OK) {
+      SDB_LOG_ERROR("%s", conn->get_err_msg());
+      conn->clear_err_msg();
+      goto error;
     }
 
     rc = conn->get_cl_statistics(db_name, table_name, stat);
@@ -5666,35 +5677,58 @@ int ha_sdb::ensure_collection(THD *thd) {
     int inst_cata_version = ha_get_cata_version(db_name, table_name);
     int driver_cata_version = collection->get_version();
 
-    if (SQLCOM_CREATE_TABLE == thd_sql_command(thd)) {
-      int latest_version = 0;
-      rc = ha_get_latest_cata_version(db_name, table_name, latest_version);
-      if (rc) {
-        goto error;
-      }
-      if (inst_cata_version < latest_version) {
-        inst_cata_version = latest_version;
-      }
-    }
-
+    // disable collection version checking for alter table command
     if (SQLCOM_ALTER_TABLE == thd_sql_command(thd)) {
       SDB_LOG_DEBUG(
-          "HA: Invalidate check collection version function for alter table "
-          "command");
+          "HA: Invalidate collection version checking for altering "
+          "table(%s.%s)",
+          db_name, table_name);
       collection->set_version(0);
-    } else if (inst_cata_version >= driver_cata_version) {
-      collection->set_version(inst_cata_version);
-    } else if (inst_cata_version < driver_cata_version) {
-      SDB_LOG_DEBUG(
-          "HA: Instance cached cata version %d is less than "
-          "driver cata version %d for '%s.%s', try to write an empty sql log",
-          inst_cata_version, driver_cata_version, db_name, table_name);
-      rc = ha_write_empty_sql_log(db_name, table_name, driver_cata_version);
-      if (rc) {
-        goto error;
+    } else if (SQLCOM_CREATE_TABLE == thd_sql_command(thd)) {
+      // "create table as select .." will be here
+      if (ha_is_the_first_table(db_name,
+                                table_name)) {  // for the creating table
+        // get current collection version from 'ha_table_list'(the first
+        // element)
+        int latest_version = 0;
+        rc = ha_get_latest_cata_version(db_name, table_name, latest_version);
+        if (rc) {
+          goto error;
+        }
+        if (inst_cata_version < latest_version) {
+          inst_cata_version = latest_version;
+        }
+        if (inst_cata_version >= driver_cata_version) {
+          collection->set_version(inst_cata_version);
+        }
+      } else if (driver_cata_version) {  // not the first table
+        // if it's not the first table, disable collection version checking
+        // or current stmt will fail if current table metadata is modified
+        // in SequoiaDB shell.
+        if (inst_cata_version < driver_cata_version) {
+          SDB_LOG_WARNING(
+              "HA: Local cached version %d is less than driver cached "
+              "version %d for table '%s.%s'",
+              inst_cata_version, driver_cata_version, db_name, table_name);
+        }
+        collection->set_version(0);
       }
-      inst_cata_version = ha_get_cata_version(db_name, table_name);
-      collection->set_version(inst_cata_version);
+    } else {  // normal query command
+      if (inst_cata_version >= driver_cata_version) {
+        collection->set_version(inst_cata_version);
+      } else if (inst_cata_version < driver_cata_version) {
+        SDB_LOG_INFO(
+            "HA: Local cached version %d is less than "
+            "driver cached version %d for table '%s.%s', "
+            "try to write an empty sql log",
+            inst_cata_version, driver_cata_version, db_name, table_name);
+        rc = ha_write_empty_sql_log(db_name, table_name, driver_cata_version);
+        if (rc) {
+          goto error;
+        }
+        inst_cata_version = ha_get_cata_version(db_name, table_name);
+        collection->set_version(inst_cata_version);
+      }
     }
   }
 
@@ -8194,8 +8228,10 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
       break;
     }
     case SDB_TIMEOUT: {
-      if (strncmp(error_msg, SDB_ACQUIRE_TRANSACTION_LOCK,
-                  strlen(SDB_ACQUIRE_TRANSACTION_LOCK)) == 0) {
+      if (NULL == error_msg) {
+        my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
+      } else if (strncmp(error_msg, SDB_ACQUIRE_TRANSACTION_LOCK,
+                         strlen(SDB_ACQUIRE_TRANSACTION_LOCK)) == 0) {
         if (sdb_use_transaction(ha_thd()) &&
             sdb_rollback_on_timeout(ha_thd())) {
 #ifdef IS_MARIADB

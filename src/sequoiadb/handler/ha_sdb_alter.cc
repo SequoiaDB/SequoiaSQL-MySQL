@@ -2263,8 +2263,10 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
 
     cl.set_version(ha_get_cata_version(db_name, table_name));
-    if (ha_is_open() && ha_is_executing_pending_log(thd)) {
-      // no need check version for pending log statement
+    if (ha_is_open()) {
+      // no need check version for 'HA'
+      SDB_LOG_DEBUG(
+          "HA: Invalidate collection version checking for altering table");
       cl.set_version(0);
     }
 

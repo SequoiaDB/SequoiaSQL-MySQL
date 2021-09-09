@@ -4746,6 +4746,14 @@ int ha_get_latest_cata_version(const char *db_name, const char *table_name,
   return rc;
 }
 
+bool ha_is_the_first_table(const char *db_name, const char *table_name) {
+  ha_sql_stmt_info *sql_info = NULL;
+  int rc = get_sql_stmt_info(&sql_info);
+  DBUG_ASSERT(0 == rc && sql_info != NULL);
+  return (0 == strcmp(db_name, sql_info->tables->db_name) &&
+          0 == strcmp(table_name, sql_info->tables->table_name));
+}
+
 // save cata version for a single table, this is only for DDL operaion
 // in 'write_sql_log_and_states', cata version will be written into
 // 'HASQLLog', 'HAObjectState' and 'HAInstanceObjectState'
