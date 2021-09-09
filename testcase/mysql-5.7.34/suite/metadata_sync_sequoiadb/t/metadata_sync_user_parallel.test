@@ -15,7 +15,7 @@ CREATE TABLE t1(a INT NOT NULL, b INT, c INT);
 
 connection conn2;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 5;
+set server_ha_wait_sync_timeout = 10;
 --disable_warnings
 drop user if exists metadata_sync_user_23102;
 flush privileges;
@@ -25,7 +25,7 @@ flush privileges;
 
 connection conn1;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 5;
+set server_ha_wait_sync_timeout = 10;
 GRANT create,alter,drop ON t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 

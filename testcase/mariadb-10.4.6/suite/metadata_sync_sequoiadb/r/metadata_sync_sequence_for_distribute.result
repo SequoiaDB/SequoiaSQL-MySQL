@@ -4,7 +4,7 @@ connection conn2;
 SHOW CREATE DATABASE metasync_seq;
 ERROR 42000: Unknown database 'metasync_seq'
 connection conn1;
-set server_ha_wait_sync_timeout = 5;
+set server_ha_wait_sync_timeout = 10;
 CREATE DATABASE metasync_seq;
 USE metasync_seq;
 CREATE PROCEDURE sp1_nextval( dotime int )
@@ -19,7 +19,7 @@ SELECT nextval(metasync_seq.s2);
 END WHILE|
 CREATE SEQUENCE s1 MAXVALUE 4000;
 connection conn2;
-set server_ha_wait_sync_timeout = 5;
+set server_ha_wait_sync_timeout = 10;
 SHOW CREATE SEQUENCE metasync_seq.s1;
 Table	Create Table
 s1	CREATE SEQUENCE `s1` start with 1 minvalue 1 maxvalue 4000 increment by 1 cache 1000 nocycle ENGINE=SequoiaDB

@@ -12,7 +12,7 @@ use metadata_prepare;
 
 set @table ='t1';
 set @s = concat('create table ', @table, '(a int)');
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from @s;
 execute stmt1;
 deallocate prepare stmt1;
@@ -25,7 +25,7 @@ execute stmt1;
 deallocate prepare stmt1;
 
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from 'drop table t1';
 execute stmt1;
 deallocate prepare stmt1;
@@ -82,7 +82,7 @@ flush privileges;
 
 #routine
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 create table t1 (
         id   char(16) not null default '',
         data int not null
@@ -92,7 +92,7 @@ insert into t1 values ("foo", 42);
 set server_ha_wait_sync_timeout = 0;
   
 connection conn2;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from "call metadata_sync_ddl_dml_parallel()";
 execute stmt1;
 deallocate prepare stmt1;
@@ -105,7 +105,7 @@ connection conn1;
 drop database if exists metadata_prepare_23106;
 --enable_warnings
 
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from "create database metadata_prepare_23106";
 execute stmt1;
 deallocate prepare stmt1;
@@ -113,7 +113,7 @@ set server_ha_wait_sync_timeout = 0;
 use metadata_prepare_23106;
 
 connection conn2;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from "create table metadata_prepare_23106.t1(a int)";
 execute stmt1;
 deallocate prepare stmt1;
@@ -121,19 +121,19 @@ set server_ha_wait_sync_timeout = 0;
 use metadata_prepare_23106;
 
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from "create unique index a on t1(a)";
 execute stmt1;
 deallocate prepare stmt1;
 set server_ha_wait_sync_timeout = 0;
 
 connection conn2;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from "insert into t1 values(1)";
 execute stmt1;
 deallocate prepare stmt1;
 set server_ha_wait_sync_timeout = 0;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from "insert into t1 values(1)";
 --error 1062
 execute stmt1;
@@ -141,7 +141,7 @@ deallocate prepare stmt1;
 set server_ha_wait_sync_timeout = 0;
 
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 prepare stmt1 from "create view v1 as select * from t1";
 execute stmt1;
 deallocate prepare stmt1;

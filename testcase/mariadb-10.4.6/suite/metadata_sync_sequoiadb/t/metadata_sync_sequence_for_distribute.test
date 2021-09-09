@@ -19,7 +19,7 @@ SHOW CREATE DATABASE metasync_seq;
 # create sequence
 connection conn1;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 5;
+set server_ha_wait_sync_timeout = 10;
 CREATE DATABASE metasync_seq;
 USE metasync_seq;
 DELIMITER |;
@@ -38,7 +38,7 @@ CREATE SEQUENCE s1 MAXVALUE 4000;
 # check metadatas after create
 connection conn2;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 5;
+set server_ha_wait_sync_timeout = 10;
 SHOW CREATE SEQUENCE metasync_seq.s1;
 SELECT * FROM metasync_seq.s1;
 USE metasync_seq;

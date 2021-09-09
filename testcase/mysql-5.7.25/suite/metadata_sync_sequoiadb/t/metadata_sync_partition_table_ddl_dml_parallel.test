@@ -9,14 +9,14 @@ drop database if exists metadata_sync_sequoiadb;
 create database metadata_sync_sequoiadb;
 use metadata_sync_sequoiadb;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 5;
+set server_ha_wait_sync_timeout = 10;
 create table t1(id int, name varchar(35)) partition by list(id)
 (partition p0 values in(1,3,5,7,9),
  partition p1 values in(2,4,6,8,10));
 
 connection conn2;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 5;
+set server_ha_wait_sync_timeout = 10;
 use metadata_sync_sequoiadb;
 insert into t1 values(1,'a'),(2,'b'),(3,'c'),(4,'d'),(5,'e'),(6,'f'),(7,'g'),(8,'h'),(9,'i'),(10,'j');
 select * from t1 order by id;

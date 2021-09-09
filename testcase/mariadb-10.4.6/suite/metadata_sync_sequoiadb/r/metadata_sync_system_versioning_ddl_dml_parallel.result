@@ -96,7 +96,7 @@ x	y	z
 1	4	-1
 connection conn1;
 SET system_versioning_alter_history = KEEP;
-SET server_ha_wait_sync_timeout = 4;
+SET server_ha_wait_sync_timeout = 10;
 ALTER TABLE sys_version3 DROP COLUMN y;
 SET system_versioning_alter_history = DEFAULT;
 SET server_ha_wait_sync_timeout = 0;

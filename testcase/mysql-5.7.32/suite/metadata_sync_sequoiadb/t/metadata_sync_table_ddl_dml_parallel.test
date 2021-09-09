@@ -459,7 +459,7 @@ update t2 set col2 = 1 + col2;
 select * from t2 order by col2;
 
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 drop table t2;
 set server_ha_wait_sync_timeout = 0;
 
@@ -486,7 +486,7 @@ select * from t1 order by a;
 insert into t1 values(1,1),(2,2),(3,3),(4,4);
 
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 alter table t1 drop column col1;
 set server_ha_wait_sync_timeout = 0;
 
@@ -517,7 +517,7 @@ connection conn2;
 delete from t2;
 
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 drop table t2;
 set server_ha_wait_sync_timeout = 0;
 
@@ -552,7 +552,7 @@ select * from t1 order by col1;
 #SEQUOIASQLMAINSTREAM-870
 #SEQUOIASQLMAINSTREAM-953
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 drop table t2;
 set server_ha_wait_sync_timeout = 0;
 
@@ -561,7 +561,7 @@ connection conn2;
 delete t1 from t1,t2 where t1.col1 > t2.col1;
 
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 create table t2(a int);
 drop table t1;
 set server_ha_wait_sync_timeout = 0;
@@ -621,7 +621,7 @@ drop table t1;
 
 #seqDB-23090
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 create table t1 ( x INT, y INT );
 set server_ha_wait_sync_timeout = 0;
 insert into t1 values (1,1);
@@ -631,7 +631,7 @@ select * from metadata_sync_table_ddl_dml_parallel.t1;
 use metadata_sync_table_ddl_dml_parallel;
 show create table t1;
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 alter table t1 drop column x, add column z int default 1; 
 set server_ha_wait_sync_timeout = 0;
 connection conn2;
@@ -772,7 +772,7 @@ FLUSH PRIVILEGES;
 #seqDB-23096
 connection conn1;
 create table t1(a int);
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 alter table t1 add index a(a);
 set server_ha_wait_sync_timeout = 0;
 
@@ -780,7 +780,7 @@ connection conn2;
 explain select * from t1 force index(a);
 
 connection conn1;
-set server_ha_wait_sync_timeout = 4;
+set server_ha_wait_sync_timeout = 10;
 drop index a on t1;
 set server_ha_wait_sync_timeout = 0;
 
