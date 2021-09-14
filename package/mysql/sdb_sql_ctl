@@ -87,7 +87,7 @@ function check_svcname_available()
    local exp_available=$3
 
    # ignore the TIME_WAIT port, which is usable.
-   netstat -npa | awk '{print $4,$6}' | grep -vw TIME_WAIT | awk -F : '{print $NF}' | grep -w $inst_port
+   netstat -npa | awk '{print $4,$6}' | grep -vw TIME_WAIT | grep -vw FIN_WAIT2 | grep -vw FIN_WAIT1 | grep -vw COLSE_WAIT | awk -F : '{print $NF}' | grep -w $inst_port
    local rc=$?
    if [ $rc == 0 -a $exp_available == false  ]; then
       exec_cmd_with_print "echo \"ERROR: instance port $inst_port is already in use\"" "$sql_log"
