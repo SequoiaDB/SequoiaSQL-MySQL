@@ -490,6 +490,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
         if (Item::FUNC_ITEM == item_val->type()) {
           const char *func_name = ((Item_func *)item_val)->func_name();
           if (0 == strcmp("cast_as_date", func_name) ||
+              0 == strcmp("cast_as_time", func_name) ||
               0 == strcmp("cast_as_datetime", func_name)) {
             rc = SDB_ERR_COND_UNEXPECTED_ITEM;
             goto error;
