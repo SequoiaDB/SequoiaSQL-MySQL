@@ -24,6 +24,8 @@ select * from test_get_session_attr.t1;
 --replace_column 13 MySQL:hostname:pid:tid
 select * from SDB_SESSION_ATTR_CURRENT;
 # 复原会话属性
+# 受问题单DB-7494影响，设置sequoiadb_preferred_strict为off
+set session sequoiadb_preferred_strict='off';
 set session sequoiadb_preferred_instance='M';
 set session sequoiadb_preferred_instance_mode='random';
 set session sequoiadb_preferred_period=60;
