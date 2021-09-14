@@ -489,7 +489,9 @@ class ha_sdb_part_wrapper : public ha_partition {
 
  public:
   ha_sdb_part_wrapper(handlerton* hton, TABLE_SHARE* table_arg)
-      : ha_partition(hton, table_arg) {}
+      : ha_partition(hton, table_arg) {
+    m_is_exchange_partition = false;
+  }
 
   ha_sdb_part_wrapper(handlerton* hton, TABLE_SHARE* share,
                       partition_info* part_info_arg, ha_partition* clone_arg,
