@@ -3084,6 +3084,7 @@ done:
     6 without is null or not null.
     7 count not support expresion.
     8 not enable optimize_with_materialization.
+    9 just use one count function.
 
 
   RETURN
@@ -3097,14 +3098,14 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
   JOIN *join = select->join;
   ORDER *order = select->order_list.first;
   ORDER *group = select->group_list.first;
-  bool use_count = join && join->tmp_table_param.sum_func_count;
+  bool only_one_func = join && (join->tmp_table_param.sum_func_count == 1);
   bool optimize_with_materialization =
       sdb_optimizer_switch_flag(ha_thd(), OPTIMIZER_SWITCH_MATERIALIZATION);
   DBUG_PRINT("ha_sdb:info", ("read set: %x", *table->read_set->bitmap));
 
   count_query = false;
   try {
-    if (use_count && sdb_is_single_table(ha_thd()) && !order && !group &&
+    if (only_one_func && sdb_is_single_table(ha_thd()) && !order && !group &&
         optimize_with_materialization &&
         SDB_JOIN_UNKNOWN == sdb_get_join_type(ha_thd(), mrr_iter) &&
         (SDB_COND_UNCALLED == sdb_condition->status ||
