@@ -121,7 +121,10 @@ a
 2006
 2007
 alter table t1 change a col1 int auto_increment;
+insert into t1 values(),(),();
 alter table t1 modify col1 int;
+insert into t1 values(),(),();
+ERROR HY000: Field 'col1' doesn't have a default value
 alter table t1 drop primary key;
 alter table t1 add col2 int auto_increment key;
 insert into t1(col1) values(4),(5),(6);

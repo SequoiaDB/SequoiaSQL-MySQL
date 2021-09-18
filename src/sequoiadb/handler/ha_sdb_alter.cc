@@ -50,7 +50,7 @@ static const alter_table_operations INPLACE_ONLINE_OPERATIONS =
     ALTER_RENAME_INDEX | ALTER_RENAME | ALTER_COLUMN_INDEX_LENGTH |
     ALTER_ADD_FOREIGN_KEY | ALTER_DROP_FOREIGN_KEY | ALTER_INDEX_COMMENT |
     ALTER_COLUMN_STORAGE_TYPE | ALTER_COLUMN_COLUMN_FORMAT |
-    ALTER_RECREATE_TABLE | ALTER_DROP_CHECK_CONSTRAINT | ALTER_COLUMN_NAME;
+    ALTER_RECREATE_TABLE | ALTER_DROP_CHECK_CONSTRAINT;
 
 static const int SDB_TYPE_NUM = 24;
 static const uint INT_TYPE_NUM = 5;
@@ -1240,6 +1240,14 @@ int ha_sdb::alter_column(TABLE *altered_table,
     while ((info = changed_it++)) {
       const char *old_field_name = sdb_field_name(info->before);
       const char *new_field_name = sdb_field_name(info->after);
+
+      if (strcmp(old_field_name, new_field_name)) {
+        rc = HA_ERR_WRONG_COMMAND;
+        my_printf_error(
+            rc, "Cannot change column name case. Try '%s' instead of '%s'.",
+            MYF(0), old_field_name, new_field_name);
+        goto error;
+      }
 
       if (info->op_flag & Col_alter_info::RENAME_FIELD_NAME) {
         name_builder.append(old_field_name, new_field_name);

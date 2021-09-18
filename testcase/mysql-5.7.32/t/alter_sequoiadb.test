@@ -13,8 +13,8 @@
 #Case 22789
 
 --source include/have_sequoiadb.inc
-create database test_alter_sequoiadb;
-use test_alter_sequoiadb;
+create database test_alter;
+use test_alter;
 --disable_query_log
 create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ auto_partition: true }';
 --enable_query_log
@@ -1983,6 +1983,7 @@ drop table t1;
 #BUG #SEQUOIASQLMAINSTREAM-578
 create table t1 ( POPulation int(11) not null default '0', index (POPulation));
 insert into t1 values (1);
+--error 131
 alter table t1 change population population int(11) null;
 # alter with copy is allowed
 alter table t1 change population population int(11) null, ALGORITHM=COPY;
@@ -2557,5 +2558,5 @@ show create table t1;
 create index geoindex on t1 (g(128));
 drop table t1;
 
-drop database test_alter_sequoiadb;
+drop database test_alter;
 --source include/uninstall_sequoiadb.inc

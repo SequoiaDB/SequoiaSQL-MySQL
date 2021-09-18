@@ -37,7 +37,7 @@ set server_ha_wait_sync_timeout = 10;
 ALTER SEQUENCE seq1 START = 10 RESTART MINVALUE = 10 MAXVALUE = 4000 CYCLE;
 connection conn1;
 set server_ha_wait_sync_timeout = 10;
-ALTER TABLE t1 DROP PRIMARY KEY, CHANGE id id1 BIGINT DEFAULT ( next value for seq1 ), ALGORITHM=COPY;
+ALTER TABLE t1 DROP PRIMARY KEY, CHANGE id id1 BIGINT DEFAULT ( next value for seq1 );
 SELECT * FROM seq1;
 next_not_cached_value	minimum_value	maximum_value	start_value	increment	cache_size	cycle_option	cycle_count
 10	10	4000	10	1	1000	1	0

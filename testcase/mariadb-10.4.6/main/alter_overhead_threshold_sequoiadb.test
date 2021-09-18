@@ -1284,21 +1284,21 @@ select id,ST_AsText(geom),ST_AsText(poin),ST_AsText(line),ST_AsText(poly),ST_AsT
 select id,ST_AsText(geom1),ST_AsText(line1),ST_AsText(poly1),ST_AsText(mpoin1),ST_AsText(mline1),ST_AsText(mploy1),ST_AsText(geocol1) from t1;
 
 # failed to change the field name   
---error 131
+--error 1845
 alter table t1 change geom newgeom geometry null,algorithm=inplace;
---error 131
+--error 1845
 alter table t1 change poin newpoin  point null,algorithm=inplace;
---error 131
+--error 1845
 alter table t1 change line newline linestring null,algorithm=inplace;
---error 131
+--error 1845
 alter table t1 change poly newpoly polygon null,algorithm=inplace;
---error 131
+--error 1845
 alter table t1 change mpoin newmpoin multipoint null,algorithm=inplace;
---error 131
+--error 1845
 alter table t1 change mline newmline multilinestring null,algorithm=inplace;
---error 131
+--error 1845
 alter table t1 change mploy newmploy multipolygon null,algorithm=inplace;
---error 131
+--error 1845
 alter table t1 change geocol newgeocol geometrycollection null,algorithm=inplace;
 
 show create table t1;

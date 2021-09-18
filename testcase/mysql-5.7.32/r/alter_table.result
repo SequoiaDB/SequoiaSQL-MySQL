@@ -1202,39 +1202,39 @@ DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (id int, c int) character set latin1;
 INSERT INTO t1 VALUES (1,1);
 ALTER TABLE t1 CHANGE c d int;
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 1
+info: Records: 1  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 CHANGE d c int;
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 1
+info: Records: 1  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 MODIFY c VARCHAR(10);
 affected rows: 1
 info: Records: 1  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 CHANGE c d varchar(10);
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 1
+info: Records: 1  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 CHANGE d c varchar(10);
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 1
+info: Records: 1  Duplicates: 0  Warnings: 0
 DROP TABLE t1;
 DROP TABLE IF EXISTS t1;
 CREATE TABLE t1 (id int, c int) character set utf8;
 INSERT INTO t1 VALUES (1,1);
 ALTER TABLE t1 CHANGE c d int;
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 1
+info: Records: 1  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 CHANGE d c int;
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 1
+info: Records: 1  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 MODIFY c VARCHAR(10);
 affected rows: 1
 info: Records: 1  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 CHANGE c d varchar(10);
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 1
+info: Records: 1  Duplicates: 0  Warnings: 0
 ALTER TABLE t1 CHANGE d c varchar(10);
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 1
+info: Records: 1  Duplicates: 0  Warnings: 0
 DROP TABLE t1;
 create table t1(f1 int not null, f2 int not null, key  (f1), key (f2));
 select index_length into @unpaked_keys_size from
@@ -1333,8 +1333,8 @@ f2 INT(11) DEFAULT NULL) ENGINE=SequoiaDB DEFAULT CHARSET=utf8;
 INSERT INTO t1 VALUES (NULL, NULL), ("2009-10-09 11:46:19", 2);
 this should affect no rows as there is no real change
 ALTER TABLE t1 CHANGE COLUMN f1 f1_no_real_change TIMESTAMP NULL DEFAULT NULL;
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 2
+info: Records: 2  Duplicates: 0  Warnings: 0
 DROP TABLE t1;
 #
 # Bug #31145: ALTER TABLE DROP COLUMN, ADD COLUMN crashes (linux) 
@@ -1407,8 +1407,8 @@ INSERT INTO t1 VALUES (1, 1), (2, 2);
 # The below ALTER should not copy table and so no rows should
 # be shown as affected.
 ALTER TABLE t1 CHANGE a id INT;
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 2
+info: Records: 2  Duplicates: 0  Warnings: 0
 DROP TABLE t1;
 #
 # Bug#11754461 CANNOT ALTER TABLE WHEN KEY PREFIX TOO LONG
@@ -1604,11 +1604,11 @@ ALTER TABLE tm1 ALTER COLUMN b DROP DEFAULT;
 affected rows: 0
 info: Records: 0  Duplicates: 0  Warnings: 0
 ALTER TABLE ti1 CHANGE COLUMN f g INT;
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 2
+info: Records: 2  Duplicates: 0  Warnings: 0
 ALTER TABLE tm1 CHANGE COLUMN f g INT;
-affected rows: 0
-info: Records: 0  Duplicates: 0  Warnings: 0
+affected rows: 2
+info: Records: 2  Duplicates: 0  Warnings: 0
 ALTER TABLE ti1 CHANGE COLUMN g h VARCHAR(20);
 affected rows: 2
 info: Records: 2  Duplicates: 0  Warnings: 0
@@ -1986,7 +1986,7 @@ ALTER TABLE t1 ENGINE= SEQUOIADB;
 #ALTER operations using INPLACE algorithm is disallowed
 #since the table contains old temporal type.
 ALTER TABLE t1 CHANGE COLUMN f_time fld4 TIMESTAMP, ALGORITHM= INPLACE;
-ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
+ERROR 0A000: ALGORITHM=INPLACE is not supported for this operation. Try ALGORITHM=COPY.
 ALTER TABLE t1 MODIFY f_datetime TIME, ALGORITHM= INPLACE;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 #ALTER operations using COPY algorithm is allowed
