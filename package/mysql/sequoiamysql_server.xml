@@ -744,6 +744,11 @@
             <substitution></substitution>
             <text>${installdir}</text>
         </setInstallerVariableFromRegEx>
+        <pathManipulation>
+            <action>absolutize</action>
+            <path>${installdir}</path>
+            <variable>installdir</variable>
+        </pathManipulation>
         <setInstallerVariable name="project.rollbackBackupDirectory" value="${installdir}/rollback/BackupDir_${time}"/>
         <setInstallerVariable name="project.installationType" value="upgrade">
             <ruleEvaluationLogic>or</ruleEvaluationLogic>
