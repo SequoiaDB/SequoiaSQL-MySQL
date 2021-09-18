@@ -12,8 +12,8 @@
 #Case 22221#Case 22487#Case 22488#Case 22490#Case 22490#Case 22494#Case 22495
 
 --source include/have_sequoiadb.inc
-create database test_alter_sequoiadb;
-use test_alter_sequoiadb;
+create database test_alter;
+use test_alter;
 --disable_query_log
 create table reserved(a int primary key)ENGINE=sequoiadb COMMENT='sequoiadb:{ auto_partition: true }';
 --enable_query_log
@@ -1970,6 +1970,7 @@ drop table t1;
 #seqDB-20524
 create table t1 ( POPulation int(11) not null default '0', index (POPulation));
 insert into t1 values (1);
+--error 131
 alter table t1 change population population int(11) null;
 # alter with copy is allowed
 alter table t1 change population population int(11) null, ALGORITHM=COPY;
@@ -2191,5 +2192,5 @@ alter table t1 modify b double(2,0),algorithm=inplace;
 alter table t1 modify c decimal(2,0),algorithm=inplace;
 drop table t1;
 
-drop database test_alter_sequoiadb;
+drop database test_alter;
 --source include/uninstall_sequoiadb.inc
