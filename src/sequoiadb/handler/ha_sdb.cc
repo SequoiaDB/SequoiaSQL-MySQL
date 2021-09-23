@@ -4261,8 +4261,15 @@ int ha_sdb::index_read_map(uchar *buf, const uchar *key_ptr,
   if (rc) {
     goto error;
   }
+  /*
+    SEQUOIASQLMAINSTREAM-1124
+    Record end flag rule:
+    1. index_read_map return HA_ERR_KEY_NOT_FOUND
+    2. index_first/index_last/index_next/index_prev return HA_ERR_END_OF_FILE
+  */
   rc = index_read_one(condition, order_direction, buf, &hint_builder);
   if (rc) {
+    rc = (HA_ERR_END_OF_FILE == rc) ? HA_ERR_KEY_NOT_FOUND : rc;
     goto error;
   }
 
@@ -4439,36 +4446,10 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   }
 
   rc = (1 == order_direction) ? index_next(buf) : index_prev(buf);
-  switch (rc) {
-    case SDB_OK: {
-      table->status = 0;
-      break;
-    }
-
-    case SDB_DMS_EOC:
-    // MySQL add a flag of end of file
-    case HA_ERR_END_OF_FILE: {
-      SELECT_LEX *current_select = sdb_lex_current_select(ha_thd());
-#ifdef IS_MYSQL
-      if (current_select->join && current_select->join->implicit_grouping)
-#elif defined IS_MARIADB
-      // In both cases need to return HA_ERR_KEY_NOT_FOUND:
-      // 1. the query contains an aggregate function but has no GROUP BY clause.
-      // 2. unique index using the hash algorithm.
-      if ((current_select->join && current_select->join->implicit_grouping) ||
-          table->s->long_unique_table)
-#endif
-      {
-        rc = HA_ERR_KEY_NOT_FOUND;
-      }
-      table->status = STATUS_NOT_FOUND;
-      break;
-    }
-
-    default: {
-      table->status = STATUS_NOT_FOUND;
-      break;
-    }
+  if (rc != 0) {
+    table->status = STATUS_NOT_FOUND;
+  } else {
+    table->status = 0;
   }
 done:
   return rc;
