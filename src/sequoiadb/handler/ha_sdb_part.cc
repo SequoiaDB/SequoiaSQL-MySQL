@@ -2180,7 +2180,7 @@ int ha_sdb_part::build_scl_name(const char *mcl_name,
 
   uint name_len =
       strlen(mcl_name) + strlen(SDB_PART_SEP) + strlen(partition_name);
-  if (name_len > SDB_CL_NAME_MAX_SIZE) {
+  if (name_len + SDB_PART_SUFFIX_SIZE > SDB_CL_NAME_MAX_SIZE) {
     rc = ER_WRONG_ARGUMENTS;
     my_printf_error(rc, "Too long table name %s%s%s", MYF(0), mcl_name,
                     SDB_PART_SEP, partition_name);
@@ -2311,7 +2311,7 @@ bool ha_sdb_part::check_if_alter_table_options(THD *thd,
   Check whether the partitioned table engine is SequoiaDB.
   True is it is, else return false.
 */
-bool sdb_check_engine_by_par_file(const char *name) {
+bool sdb_check_engine_by_par_file(const char *name, MEM_ROOT *mem_root) {
   DBUG_ENTER("sdb_check_engine_by_par_file");
   DBUG_PRINT("enter", ("table name: '%s'", name));
 
@@ -2321,7 +2321,7 @@ bool sdb_check_engine_by_par_file(const char *name) {
 
   bool rs = false;
   char buff[FN_REFLEN] = {0};
-  uchar file_buffer[FN_REFLEN] = {0};
+  uchar *file_buffer = NULL;
   File file;
   uint len_bytes = 0, len_words = 0;
   uchar *part_type = NULL;
@@ -2340,6 +2340,9 @@ bool sdb_check_engine_by_par_file(const char *name) {
   len_words = uint4korr(buff);
   len_bytes = PAR_WORD_SIZE * len_words;
   if (mysql_file_seek(file, 0, MY_SEEK_SET, MYF(0)) == MY_FILEPOS_ERROR) {
+    goto error;
+  }
+  if (!(file_buffer = (uchar *)alloc_root(mem_root, len_bytes))) {
     goto error;
   }
   if (mysql_file_read(file, file_buffer, len_bytes, MYF(MY_NABP))) {
@@ -3328,6 +3331,7 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
   bson::BSONObj partition_options;
   bool explicit_not_auto_partition = false;
   partition_info *part_info = table->part_info;
+  char part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
 
@@ -3340,12 +3344,16 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
     goto done;
   }
 
-  rc = sdb_parse_table_name(part_name, db_name, SDB_CS_NAME_MAX_SIZE, scl_name,
-                            SDB_CL_NAME_MAX_SIZE);
+  rc = sdb_parse_table_name(part_name, db_name, SDB_CS_NAME_MAX_SIZE,
+                            part_tab_name, SDB_PART_TAB_NAME_SIZE);
   if (rc != 0) {
     goto error;
   }
-  sdb_convert_sub2main_partition_name(scl_name);
+
+  rc = sdb_convert_sub2main_partition_name(part_tab_name, scl_name);
+  if (rc) {
+    goto error;
+  }
 
   if (part_info->is_sub_partitioned()) {
     convert_sub2main_part_id(new_part_id);

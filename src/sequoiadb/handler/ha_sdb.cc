@@ -6517,6 +6517,7 @@ int ha_sdb::delete_table(const char *from) {
                     ~(ALTER_PARTITION_INFO | ALTER_PARTITION_REMOVE))));
 #endif
   Thd_sdb *thd_sdb = NULL;
+  char part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
 
   if (sdb_execute_only_in_mysql(thd)
 // Don't skip dropping sequence when dropping database for MariaDB.
@@ -6534,21 +6535,21 @@ int ha_sdb::delete_table(const char *from) {
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
   thd_sdb = thd_get_thd_sdb(thd);
 
-  rc = sdb_parse_table_name(from, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
-                            SDB_CL_NAME_MAX_SIZE);
+  rc = sdb_parse_table_name(from, db_name, SDB_CS_NAME_MAX_SIZE, part_tab_name,
+                            SDB_PART_TAB_NAME_SIZE);
   if (rc != 0) {
     goto error;
   }
 
   if (thd_sdb && thd_sdb->part_alter_ctx &&
-      thd_sdb->part_alter_ctx->skip_delete_table(table_name)) {
+      thd_sdb->part_alter_ctx->skip_delete_table(part_tab_name)) {
     if (thd_sdb->part_alter_ctx->empty()) {
       delete thd_sdb->part_alter_ctx;
       thd_sdb->part_alter_ctx = NULL;
     }
     goto done;
   }
-  sdb_convert_sub2main_partition_name(table_name);
+  sdb_convert_sub2main_partition_name(part_tab_name, table_name);
 
   if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
       sdb_alter_partition_flags(thd) & ALTER_PARTITION_DROP) {
@@ -6803,6 +6804,8 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   char old_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   char new_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char new_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  char old_part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
+  char new_part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
@@ -6816,27 +6819,34 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   thd_sdb = thd_get_thd_sdb(thd);
 
   rc = sdb_parse_table_name(from, old_db_name, SDB_CS_NAME_MAX_SIZE,
-                            old_table_name, SDB_CL_NAME_MAX_SIZE);
+                            old_part_tab_name, SDB_PART_TAB_NAME_SIZE);
   if (0 != rc) {
     goto error;
   }
 
   rc = sdb_parse_table_name(to, new_db_name, SDB_CS_NAME_MAX_SIZE,
-                            new_table_name, SDB_CL_NAME_MAX_SIZE);
+                            new_part_tab_name, SDB_PART_TAB_NAME_SIZE);
   if (0 != rc) {
     goto error;
   }
 
   if (thd_sdb && thd_sdb->part_alter_ctx &&
-      thd_sdb->part_alter_ctx->skip_rename_table(new_table_name)) {
+      thd_sdb->part_alter_ctx->skip_rename_table(new_part_tab_name)) {
     if (thd_sdb->part_alter_ctx->empty()) {
       delete thd_sdb->part_alter_ctx;
       thd_sdb->part_alter_ctx = NULL;
     }
     goto done;
   }
-  sdb_convert_sub2main_partition_name(old_table_name);
-  sdb_convert_sub2main_partition_name(new_table_name);
+
+  rc = sdb_convert_sub2main_partition_name(old_part_tab_name, old_table_name);
+  if (rc) {
+    goto error;
+  }
+  rc = sdb_convert_sub2main_partition_name(new_part_tab_name, new_table_name);
+  if (rc) {
+    goto error;
+  }
 
   if (sdb_is_tmp_table(from, old_table_name)) {
     rc = sdb_rebuild_db_name_of_temp_table(old_db_name, SDB_CS_NAME_MAX_SIZE);
@@ -8586,7 +8596,7 @@ static handler *sdb_create_partition_handler(handlerton *hton,
                                              MEM_ROOT *mem_root) {
   handler *file = NULL;
   if (share && share->normalized_path.str &&
-      sdb_check_engine_by_par_file(share->normalized_path.str)) {
+      sdb_check_engine_by_par_file(share->normalized_path.str, mem_root)) {
     ha_sdb_part_wrapper *p = new (mem_root) ha_sdb_part_wrapper(hton, share);
     if (p && p->initialize_partition(mem_root)) {
       delete p;

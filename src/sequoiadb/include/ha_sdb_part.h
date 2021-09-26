@@ -476,7 +476,7 @@ class ha_sdb_part : public ha_sdb
 };
 
 #ifdef IS_MARIADB
-bool sdb_check_engine_by_par_file(const char* name);
+bool sdb_check_engine_by_par_file(const char* name, MEM_ROOT* mem_root);
 
 /*
  ha_sdb_part_wrapper is a wrapper class that ovverrides ha_partition several

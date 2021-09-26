@@ -23,6 +23,8 @@
 #define SDB_RG_NAME_MAX_SIZE 127
 #define SDB_CL_FULL_NAME_MAX_SIZE \
   (SDB_CS_NAME_MAX_SIZE + 1 + SDB_CL_NAME_MAX_SIZE)
+// table_name + partition name + sub partition name
+#define SDB_PART_TAB_NAME_SIZE (128 * 3 - 1)
 
 #define SDB_FIELD_MAX_LEN (16 * 1024 * 1024)
 #define SDB_IDX_FIELD_SIZE_MAX 1024
@@ -202,6 +204,10 @@
 
 #define SDB_PART_SEP "#P#"
 #define SDB_SUB_PART_SEP "#SP#"
+// Partition name suffixes, including "#TMP#" and "#REN#"
+#define SDB_PART_SUFFIX_SIZE 5
+#define SDB_PART_TMP_SUFFIX "#TMP#"
+#define SDB_PART_REN_SUFFIX "#REN#"
 #define SDB_FIELD_PART_HASH_ID "_phid_"
 
 #define SDB_FIELD_GLOBAL "Global"

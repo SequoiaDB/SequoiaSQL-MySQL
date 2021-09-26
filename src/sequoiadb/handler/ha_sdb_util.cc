@@ -33,9 +33,8 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   char *end = NULL;
   char *ptr = NULL;
   char *tmp_name = NULL;
-  char tmp_buff[SDB_CL_NAME_MAX_SIZE + SDB_CS_NAME_MAX_SIZE + 1];
-
-  tmp_name = tmp_buff;
+  char *tmp_table_buff = NULL;
+  char *tmp_db_buff = NULL;
 
   // scan table_name from the end
   end = strend(from) - 1;
@@ -43,11 +42,14 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   while (ptr >= from && *ptr != '\\' && *ptr != '/') {
     ptr--;
   }
+
   name_len = (int)(end - ptr);
-  if (name_len > table_name_max_size) {
-    rc = ER_TOO_LONG_IDENT;
+  if (!(tmp_table_buff = new (std::nothrow) char[name_len + 1])) {
+    rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
+  tmp_name = tmp_table_buff;
+
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
   do {
@@ -60,7 +62,12 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     if (sep) {
       *sep = 0;
     }
-    sdb_filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1, true);
+    sdb_filename_to_tablename(tmp_name, table_name, table_name_max_size + 1,
+                              true);
+    if (int(strlen(table_name)) >= table_name_max_size) {
+      rc = ER_TOO_LONG_IDENT;
+      goto error;
+    }
 
     // <part_name>
     if (!sep) {
@@ -75,9 +82,12 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     if (sub_sep) {
       *sub_sep = 0;
     }
-    sdb_filename_to_tablename(part_name, part_buff, sizeof(part_buff) - 1,
-                              true);
+    sdb_filename_to_tablename(part_name, part_buff, sizeof(part_buff), true);
     strcat(table_name, part_buff);
+    if (int(strlen(table_name)) >= table_name_max_size) {
+      rc = ER_TOO_LONG_IDENT;
+      goto error;
+    }
 
     // <sub_part_name>
     if (!sub_sep) {
@@ -87,10 +97,15 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     strcat(table_name, SDB_SUB_PART_SEP);
 
     char *sub_part_name = sub_sep + strlen(SDB_SUB_PART_SEP);
-    sdb_filename_to_tablename(sub_part_name, part_buff, sizeof(part_buff) - 1,
+    sdb_filename_to_tablename(sub_part_name, part_buff, sizeof(part_buff),
                               true);
+    if (int(strlen(part_buff)) >= table_name_max_size) {
+      rc = ER_TOO_LONG_IDENT;
+      goto error;
+    }
     strcat(table_name, part_buff);
   } while (0);
+
   // scan db_name
   ptr--;
   end = ptr;
@@ -98,15 +113,25 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     ptr--;
   }
   name_len = (int)(end - ptr);
-  if (name_len > db_name_max_size) {
+  if (!(tmp_db_buff = new (std::nothrow) char[name_len + 1])) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+  memcpy(tmp_db_buff, ptr + 1, end - ptr);
+  tmp_db_buff[name_len] = '\0';
+  sdb_filename_to_tablename(tmp_db_buff, db_name, db_name_max_size, true);
+  if (int(strlen(db_name)) > db_name_max_size) {
     rc = ER_TOO_LONG_IDENT;
     goto error;
   }
-  memcpy(tmp_name, ptr + 1, end - ptr);
-  tmp_name[name_len] = '\0';
-  sdb_filename_to_tablename(tmp_name, db_name, sizeof(tmp_buff) - 1, true);
 
 done:
+  if (tmp_table_buff) {
+    delete[] tmp_table_buff;
+  }
+  if (tmp_db_buff) {
+    delete[] tmp_db_buff;
+  }
   return rc;
 error:
   goto done;
@@ -856,7 +881,7 @@ bool str_end_with(const char *str, const char *sub_str) {
   If it's a sub partition name, convert it to the main partition name.
   @Return false: converted; true: not a sub partition.
 */
-bool sdb_convert_sub2main_partition_name(char *table_name) {
+int sdb_convert_sub2main_partition_name(char *part_tb_name, char *table_name) {
   /*
     sub partition name =
         <table_name> + "#P#" +
@@ -864,24 +889,33 @@ bool sdb_convert_sub2main_partition_name(char *table_name) {
         <sub_part_name> [ + { "#TMP#' | "#REN#" }]
     e.g: t1#P#p3#SP#p3sp0#TMP#
   */
-  static const char *TMP_SUFFIX = "#TMP#";
-  static const char *REN_SUFFIX = "#REN#";
 
-  bool rs = true;
-  char *pos = strstr(table_name, SDB_SUB_PART_SEP);
+  int rc = 0;
+  char *pos = strstr(part_tb_name, SDB_SUB_PART_SEP);
   if (!pos) {
     goto done;
   }
 
   *pos = 0;
-  if (str_end_with(pos + 1, TMP_SUFFIX)) {
-    strcat(table_name, TMP_SUFFIX);
-  } else if (str_end_with(pos + 1, REN_SUFFIX)) {
-    strcat(table_name, REN_SUFFIX);
+  if (int(strlen(part_tb_name)) + SDB_PART_SUFFIX_SIZE > SDB_CL_NAME_MAX_SIZE) {
+    rc = ER_WRONG_ARGUMENTS;
+    my_printf_error(rc, "Too long table name %s", MYF(0), part_tb_name);
+    goto error;
   }
-  rs = false;
+
+  if (str_end_with(pos + 1, SDB_PART_TMP_SUFFIX)) {
+    strcat(part_tb_name, SDB_PART_TMP_SUFFIX);
+  } else if (str_end_with(pos + 1, SDB_PART_REN_SUFFIX)) {
+    strcat(part_tb_name, SDB_PART_REN_SUFFIX);
+  }
+
 done:
-  return rs;
+  if (0 == rc) {
+    strncpy(table_name, part_tb_name, SDB_CL_NAME_MAX_SIZE);
+  }
+  return rc;
+error:
+  goto done;
 }
 
 #ifdef IS_MARIADB
