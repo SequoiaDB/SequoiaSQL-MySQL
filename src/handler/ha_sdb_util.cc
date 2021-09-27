@@ -33,9 +33,8 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
   char *end = NULL;
   char *ptr = NULL;
   char *tmp_name = NULL;
-  char tmp_buff[SDB_CL_NAME_MAX_SIZE + SDB_CS_NAME_MAX_SIZE + 1];
-
-  tmp_name = tmp_buff;
+  char *tmp_table_buff = NULL;
+  char *tmp_db_buff = NULL;
 
   // scan table_name from the end
   end = strend(from) - 1;
@@ -44,13 +43,21 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     ptr--;
   }
   name_len = (int)(end - ptr);
-  if (name_len > table_name_max_size) {
+
+  if (!(tmp_table_buff = new (std::nothrow) char[name_len + 1])) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+  tmp_name = tmp_table_buff;
+
+  memcpy(tmp_name, ptr + 1, end - ptr);
+  tmp_name[name_len] = '\0';
+  sdb_filename_to_tablename(tmp_name, table_name, table_name_max_size + 1,
+                            true);
+  if (int(strlen(table_name)) >= table_name_max_size) {
     rc = ER_TOO_LONG_IDENT;
     goto error;
   }
-  memcpy(tmp_name, ptr + 1, end - ptr);
-  tmp_name[name_len] = '\0';
-  sdb_filename_to_tablename(tmp_name, table_name, sizeof(tmp_buff) - 1, true);
 
   // scan db_name
   ptr--;
@@ -59,15 +66,26 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     ptr--;
   }
   name_len = (int)(end - ptr);
-  if (name_len > db_name_max_size) {
-    rc = ER_TOO_LONG_IDENT;
+  if (!(tmp_db_buff = new (std::nothrow) char[name_len + 1])) {
+    rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
-  sdb_filename_to_tablename(tmp_name, db_name, sizeof(tmp_buff) - 1, true);
+  sdb_filename_to_tablename(tmp_name, db_name, db_name_max_size + 1, true);
+  if (int(strlen(db_name)) >= db_name_max_size) {
+    rc = ER_TOO_LONG_IDENT;
+    goto error;
+  }
 
 done:
+  if (tmp_table_buff) {
+    delete[] tmp_table_buff;
+  }
+  if (tmp_db_buff) {
+    delete[] tmp_db_buff;
+  }
+
   return rc;
 error:
   goto done;
