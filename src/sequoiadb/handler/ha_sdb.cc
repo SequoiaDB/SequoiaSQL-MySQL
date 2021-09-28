@@ -6406,17 +6406,22 @@ int ha_sdb::prepare_delete_part_table(THD *thd, bool &is_skip) {
   DBUG_ASSERT((sep - table_name) > 0);
   /*
      There are several scenarios delete main_cl directly:
-       1. DROP TABLE t1
-       2. ALTER TABLE t1 REMOVE PARTITIONING
-       3. CREATE TABLE t1(id INT, a INT);
+       1. CREATE OR REPLACE TABLE t1(a INT)
+            PARTITION BY RANGE COLUMNS(a) (
+              PARTITION p0 VALUES LESS THAN(100),
+              PARTITION P1 VALUES LESS THAN(200));
+       2. DROP TABLE t1
+       3. ALTER TABLE t1 REMOVE PARTITIONING
+       4. CREATE TABLE t1(id INT, a INT);
           ALTER TABLE t1 PARTITION BY RANGE(id) (
               PARTITION p0 VALUES LESS THAN (100),
               PARTITION p1 VALUES LESS THAN (200)
           )
-       4. ALTER TABLE using copy algorithm, like 'ALTER TABLE t1 CHANGE
+       5. ALTER TABLE using copy algorithm, like 'ALTER TABLE t1 CHANGE
           a b INT'
   */
-  if (SQLCOM_DROP_TABLE == thd_sql_command(thd) ||
+  if (SQLCOM_CREATE_TABLE == thd_sql_command(thd) ||
+      SQLCOM_DROP_TABLE == thd_sql_command(thd) ||
       (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
        (sdb_alter_partition_flags(thd) & ALTER_PARTITION_REMOVE ||
         sdb_alter_partition_flags(thd) & ALTER_PARTITION_INFO ||
