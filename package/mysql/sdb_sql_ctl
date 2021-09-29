@@ -848,6 +848,14 @@ function build_auth_string()
    local sdb_user=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_user"`
    sdb_user=${sdb_user#*=}
    test "${sdb_user:0:1}" == '"' && sdb_user=${sdb_user:1:-1}
+
+   # get coord address
+   local sdb_host=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_conn_addr"`
+   sdb_host=${sdb_host#*=}
+   if [ "$sdb_host" == "" ]; then
+      sdb_host="localhost:11810"
+   fi
+
    local connection_str=""
 
    #if user exists
@@ -858,7 +866,7 @@ function build_auth_string()
       test "${sdb_password:0:1}" == '"' && sdb_password=${sdb_password:1:-1}
 
       if [ "$sdb_password" ]; then
-         connection_str="--user=$sdb_user --password=$sdb_password"
+         connection_str="--host=$sdb_host --user=$sdb_user --password=$sdb_password"
       else
          # get cipherfile from configuration file
          local sdb_cipherfile=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*sequoiadb_cipherfile"`
@@ -871,8 +879,10 @@ function build_auth_string()
 
          local cipherfile=""
          test "$sdb_cipherfile" == "" || cipherfile="--file $sdb_cipherfile"
-         connection_str="--user=$sdb_user $cipherfile --token=$sdb_token"
+         connection_str="--host=$sdb_host --user=$sdb_user $cipherfile --token=$sdb_token"
       fi
+   else
+      connection_str="--host=$sdb_host "
    fi
    echo "$connection_str"
 }
