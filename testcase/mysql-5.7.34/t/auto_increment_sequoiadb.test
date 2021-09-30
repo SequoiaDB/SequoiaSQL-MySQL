@@ -1,8 +1,8 @@
 #check auto increment 
 #Case 18247#Case 18248#Case 18249#Case 18287#Case 18288#Case 18289#Case 18290
 #Case 18291#Case 18292#Case 18293#Case 18294#Case 18295#Case 18296#Case 18297
-#Case 18328#Case 18393#Case 18399#Case 20320#Case 20408#Case 22119#case 22229 
-
+#Case 18328#Case 18393#Case 18399#Case 20320#Case 20408#Case 22119#Case 22229 
+#Case 24413
 --source include/have_sequoiadb.inc
 
 CREATE DATABASE test_auto_increment;
@@ -429,6 +429,19 @@ SET INSERT_ID = 2147483648;
 --error 1264
 INSERT INTO t1 VALUES (NULL);
 SELECT * FROM t1 ORDER BY c1;
+DROP TABLE t1;
+
+# seqDB-24413
+CREATE TABLE t1(a INT AUTO_INCREMENT KEY)COMMENT='sequoiadb:{auto_partition:false}';
+INSERT INTO t1 VALUES(),(),();
+SELECT * FROM t1;
+ALTER TABLE t1 AUTO_INCREMENT = 2002;
+INSERT INTO t1 VALUES(),(),();
+SELECT * FROM t1;
+ALTER TABLE t1 CHANGE a col1 INT AUTO_INCREMENT;
+INSERT INTO t1 VALUES(),(),();
+SELECT * FROM t1;
+DROP TABLE t1;
 
 DROP DATABASE test_auto_increment;
 --source include/uninstall_sequoiadb.inc
