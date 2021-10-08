@@ -681,6 +681,14 @@ class ha_sdb_part_wrapper : public ha_partition {
     return m_file[0]->ha_repair(thd, check_opt);
   }
 
+  int assign_to_keycache(THD* thd, HA_CHECK_OPT* check_opt) {
+    return HA_ADMIN_NOT_IMPLEMENTED;
+  }
+
+  int preload_keys(THD* thd, HA_CHECK_OPT* check_opt) {
+    return HA_ADMIN_NOT_IMPLEMENTED;
+  }
+
   uint count_query_cache_dependant_tables(uint8* tables_type) { return 0; }
 
   my_bool register_query_cache_dependant_tables(THD* thd, Query_cache* cache,
