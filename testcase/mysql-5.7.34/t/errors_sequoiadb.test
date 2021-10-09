@@ -41,6 +41,7 @@ create index t_idx on t1(t(255));
 --error 40039
 insert into t1 values(2, repeat('a', 4084));
 create table t2 (id int) comment "sequoiadb: {table_options: {ShardingKey:{id:1},IsMainCL:true}}";
+# SEQUOIADBMAINSTREAM-7359
 --error 40135
 insert into t2 values(1);
 --error 40245
