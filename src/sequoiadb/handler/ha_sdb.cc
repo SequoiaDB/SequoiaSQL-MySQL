@@ -1214,7 +1214,7 @@ const char *auto_fill_fields[] = {
     SDB_FIELD_SHARDING_KEY,        SDB_FIELD_AUTO_SPLIT,
     SDB_FIELD_ENSURE_SHARDING_IDX, SDB_FIELD_COMPRESSED,
     SDB_FIELD_COMPRESSION_TYPE,    SDB_FIELD_REPLSIZE,
-    SDB_FIELD_STRICT_DATA_MODE};
+    SDB_FIELD_STRICT_DATA_MODE,    SDB_FIELD_GROUP};
 
 ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
@@ -7331,6 +7331,7 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
   bool explicit_is_mainCL = false;
   bool explicit_range_sharding_type = false;
   bool explicit_group = false;
+  const char *default_data_group = ha_get_data_group();
 
   try {
     bson::BSONElement cmt_compressed, cmt_compress_type;
@@ -7372,6 +7373,12 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
       build.append(SDB_FIELD_REPLSIZE, sdb_replica_size);
     } else {
       build.append(options.getField(SDB_FIELD_REPLSIZE));
+    }
+
+    if (explicit_group) {
+      build.append(options.getField(SDB_FIELD_GROUP));
+    } else if (default_data_group[0] != '\0') {
+      build.append(SDB_FIELD_GROUP, default_data_group);
     }
 
     if (!options.hasField(SDB_FIELD_STRICT_DATA_MODE)) {
@@ -8670,17 +8677,10 @@ error:
   goto done;
 }
 
-#if defined IS_MYSQL
 static struct st_mysql_show_var sdb_status[] = {
-    {"sequoiadb_remote_version", (char *)show_sdb_remote_version, SHOW_FUNC,
-     SHOW_SCOPE_GLOBAL},
-    {0, 0, SHOW_UNDEF, SHOW_SCOPE_UNDEF}};
-#elif defined IS_MARIADB
-static struct st_mysql_show_var sdb_status[] = {
-    {"sequoiadb_remote_version", (char *)show_sdb_remote_version,
-     SHOW_SIMPLE_FUNC},
-    {0, 0, SHOW_UNDEF}};
-#endif
+    SDB_ST_SHOW_VAR("sequoiadb_remote_version", (char *)show_sdb_remote_version,
+                    SHOW_FUNC, SHOW_SCOPE_GLOBAL),
+    SDB_ST_SHOW_VAR(0, 0, SHOW_UNDEF, SHOW_SCOPE_UNDEF)};
 
 static struct st_mysql_storage_engine sdb_storage_engine = {
     MYSQL_HANDLERTON_INTERFACE_VERSION};

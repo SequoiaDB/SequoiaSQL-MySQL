@@ -43,6 +43,7 @@ static struct argp_option my_argp_options[] = {
     {"token", 't', "TOKEN", 0, HA_TOOL_HELP_TOKEN, 4},
     {"file", HA_KEY_FILE, "FILE", 0, HA_TOOL_HELP_FILE, 5},
     {"verbose", HA_KEY_VERBOSE, 0, 0, HA_TOOL_HELP_VERBOSE, 6},
+    {"data-group", HA_KEY_DATA_GROUP, "NAME", 0, HA_TOOL_HELP_DATA_GROUP, 7},
     {NULL}};
 
 static char *help_filter(int key, const char *text, void *input) {
@@ -85,6 +86,9 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
       break;
     case HA_KEY_VERBOSE:
       args->verbose = true;
+      break;
+    case HA_KEY_DATA_GROUP:
+      args->data_group = arg ? arg : "";
       break;
     case ARGP_KEY_NO_ARGS:
       argp_usage(state);
@@ -192,8 +196,12 @@ static int check_if_transaction_on(sdbclient::sdb &conn, bool &transaction_on) {
   return rc;
 }
 
-static int init_config(const string &name, ha_inst_group_config_cl &st_config,
-                       const string &key, bool verbose = false) {
+static int init_config(const st_args &args,
+                       ha_inst_group_config_cl &st_config) {
+  const string name = args.inst_group_name;
+  const string key = args.key;
+  const string data_group = args.data_group;
+
   string password_md5_hex_str, name_md5_hex_str;
   string iv, password, auth_str, encoded;
 
@@ -247,6 +255,7 @@ static int init_config(const string &name, ha_inst_group_config_cl &st_config,
   st_config.user = st_config.user.substr(0, HA_MAX_MYSQL_USERNAME_LEN);
   st_config.explicit_defaults_ts = 0;
   st_config.password = password;
+  st_config.data_group = data_group;
   return SDB_HA_OK;
 }
 
@@ -262,6 +271,10 @@ int main(int argc, char *argv[]) {
     rc = argp_parse(&my_argp, argc, argv, 0, 0, &cmd_args);
     HA_TOOL_RC_CHECK(rc, rc, "Error: command-line argument parsing error: %s",
                      strerror(rc));
+
+    HA_TOOL_RC_CHECK(cmd_args.data_group.length() > SDB_RG_NAME_MAX_SIZE,
+                     SDB_HA_INVALID_PARAMETER,
+                     "Error: too long data group name");
 
     string orig_name = cmd_args.inst_group_name;
     rc = ha_init_sequoiadb_connection(conn, cmd_args);
@@ -304,8 +317,7 @@ int main(int argc, char *argv[]) {
     }
 
     ha_inst_group_config_cl ha_config;
-    rc = init_config(cmd_args.inst_group_name, ha_config, cmd_args.key,
-                     cmd_args.verbose);
+    rc = init_config(cmd_args, ha_config);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to initialize '%s' configuration",
                      HA_CONFIG_CL);
 
@@ -410,6 +422,7 @@ int main(int argc, char *argv[]) {
     builder.append(HA_FIELD_MD5_PASSWORD, ha_config.md5_password);
     builder.append(HA_FIELD_EXPLICITS_DEFAULTS_TIMESTAMP,
                    ha_config.explicit_defaults_ts);
+    builder.append(HA_FIELD_DATA_GROUP, ha_config.data_group);
     record = builder.done();
 
     rc = inst_group_config_cl.insert(record);

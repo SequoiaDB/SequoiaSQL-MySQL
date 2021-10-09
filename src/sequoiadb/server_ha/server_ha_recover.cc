@@ -254,7 +254,7 @@ static int mysql_ha_reconnect(MYSQL *conn) {
   MYSQL *mysql = NULL;
   DBUG_ASSERT(NULL != conn);
 
-  mysql_close(conn);
+  mysql_close(conn);
   mysql = mysql_init(conn);
   if (NULL == mysql) {
     sql_print_error("HA: Out of memory while initializing mysql connection");
@@ -280,7 +280,7 @@ static inline int mysql_query(MYSQL *conn, const char *query, ulong len,
 
   mysql_err_num = mysql_errno(conn);
   DBUG_ASSERT(0 != mysql_err_num);
-  if (CR_SERVER_GONE_ERROR != mysql_err_num &&
+  if (CR_SERVER_GONE_ERROR != mysql_err_num &&
       CR_SERVER_LOST != mysql_err_num) {
     rc = mysql_err_num;
     goto error;
@@ -347,18 +347,16 @@ error:
   goto done;
 }
 
-// get user info from 'HAUser' table and create user
-static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
-                                  Sdb_conn &sdb_conn) {
+// load configuration from 'HAConfig' table and validate it
+static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
+                                      Sdb_conn &sdb_conn,
+                                      bson::BSONObj &config_obj) {
   int rc = 0;
-  bool explicit_defaults_ts = 0;
-  const char *user = NULL, *host = NULL, *plugin = NULL;
-  const char *iv = NULL, *auth_str = NULL;
-  const char *cipher_password = NULL, *md5_password = NULL;
   char err_buf[HA_BUF_LEN] = {0};
-  char sql_str[HA_BUF_LEN] = {0};
+  bool explicit_defaults_ts = 0;
 
   bson::BSONObj obj;
+  bson::BSONElement elem;
   Sdb_cl config_cl;
 
   rc = sdb_conn.get_cl(ha_thread->sdb_group_name, HA_CONFIG_CL, config_cl);
@@ -380,6 +378,30 @@ static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
   if (rc) {
     goto error;
   }
+
+  elem = obj.getField(HA_FIELD_DATA_GROUP);
+  if (bson::String == elem.type()) {
+    ha_set_data_group(elem.valuestr());
+  }
+
+  config_obj = obj;
+done:
+  return rc;
+error:
+  goto done;
+}
+
+// create special user if not exist
+static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
+                                  bson::BSONObj &config_obj) {
+  int rc = 0;
+  const char *user = NULL, *host = NULL, *plugin = NULL;
+  const char *iv = NULL, *auth_str = NULL;
+  const char *cipher_password = NULL, *md5_password = NULL;
+  char sql_str[HA_BUF_LEN] = {0};
+
+  bson::BSONObj &obj = config_obj;
+  Sdb_cl config_cl;
 
   user = obj.getStringField(HA_FIELD_USER);
   host = obj.getStringField(HA_FIELD_HOST);
@@ -1862,6 +1884,7 @@ void *ha_recover_and_replay(void *arg) {
   char err_buf[HA_BUF_LEN] = {0};
   ha_recover_replay_thread *ha_thread = (ha_recover_replay_thread *)arg;
   DBUG_ASSERT(NULL != ha_thread);
+  bson::BSONObj config_obj;
 
   // wait for mysqld service
   bool mysqld_failed = wait_for_mysqld_service();
@@ -1909,7 +1932,10 @@ void *ha_recover_and_replay(void *arg) {
     HA_RC_CHECK(rc, error, "HA: Failed to register instance ID");
 
     // 4. ensure that instance group user is available
-    rc = ensure_inst_group_user(ha_thread, sdb_conn);
+    rc = load_and_check_inst_config(ha_thread, sdb_conn, config_obj);
+    HA_RC_CHECK(rc, error, "HA: Failed to check instance configuration");
+
+    rc = ensure_inst_group_user(ha_thread, config_obj);
     HA_RC_CHECK(rc, error, "HA: Failed to check instance group user");
 
     rc = check_if_local_data_expired(ha_thread, sdb_conn,

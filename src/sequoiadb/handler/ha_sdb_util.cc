@@ -681,9 +681,9 @@ error:
   goto done;
 }
 
+#ifdef HAVE_PSI_STATEMENT_INTERFACE
 int sdb_add_pfs_clientinfo(THD *thd) {
   int rc = SDB_ERR_OK;
-#ifdef HAVE_PSI_STATEMENT_INTERFACE
   String rewrite_query;
   int pfs_len = 0;
   int old_query_len = 0;
@@ -721,12 +721,16 @@ int sdb_add_pfs_clientinfo(THD *thd) {
 
   new_query_len = pfs_len + old_query_len;
   MYSQL_SET_STATEMENT_TEXT(thd->m_statement_psi, new_query, new_query_len);
-#endif  // HAVE_PSI_STATEMENT_INTERFACE
 done:
   return rc;
 error:
   goto done;
 }
+#else
+int sdb_add_pfs_clientinfo(THD *thd) {
+  return 0;
+}
+#endif  // HAVE_PSI_STATEMENT_INTERFACE
 
 /*
  * check if two MYSQL_TYPE_GEOMETRY fiels's geom type same or not.

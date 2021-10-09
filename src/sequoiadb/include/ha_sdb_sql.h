@@ -228,6 +228,8 @@ bool print_admin_msg(THD *thd, uint len, const char *msg_type,
   struct st_mysql_plugin var_name = {                                         \
       type,   descriptor, plugin_name, author,      desc_text, license, init, \
       deinit, version,    status_vars, system_vars, NULL,      0UL}
+#define SDB_ST_SHOW_VAR(name, value, type, scope) \
+  { name, value, type, scope }
 #elif defined IS_MARIADB
 #define sdb_declare_plugin(name) maria_declare_plugin(name)
 #define st_sdb_plugin st_maria_plugin
@@ -247,6 +249,9 @@ bool print_admin_msg(THD *thd, uint len, const char *msg_type,
                                      system_vars,                          \
                                      NULL,                                 \
                                      MariaDB_PLUGIN_MATURITY_STABLE}
+enum enum_mysql_show_scope { SHOW_SCOPE_UNDEF, SHOW_SCOPE_GLOBAL };
+#define SDB_ST_SHOW_VAR(name, value, type, scope) \
+  { name, value, type }
 #endif
 
 typedef enum sdb_join_type {

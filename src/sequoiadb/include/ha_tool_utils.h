@@ -60,6 +60,8 @@ typedef unsigned char uchar;
   "configuration information, works when 'inst_id' is not set"
 #define HA_TOOL_HELP_VERBOSE \
   "Print instance group user name and instance group key"
+#define HA_TOOL_HELP_DATA_GROUP \
+  "The default SequoiaDB replication group for data storage, default: \"\""
 
 // struct corresponding to 'HAInstGroupConfig' table
 typedef struct st_inst_group_config {
@@ -73,8 +75,10 @@ typedef struct st_inst_group_config {
   std::string iv;
   // instance group user name
   std::string user;
-  int explicit_defaults_ts;
   std::string password;
+  int explicit_defaults_ts;
+  // sdb replication group
+  std::string data_group;
 } ha_inst_group_config_cl;
 
 // use to store command line arguments
@@ -101,6 +105,9 @@ typedef struct st_args {
   // check if user input 'user', 'password', 'verbose' argument
   bool is_user_set, is_password_set, verbose;
 
+  // sdb replication group name
+  std::string data_group;
+
   // inst_id used to delete instance information
   int inst_id;
   // check if inst_id is set
@@ -121,7 +128,8 @@ enum HA_ARGP_OPTION_KEY {
   HA_KEY_VERBOSE,
   HA_KEY_FORCE,
   HA_KEY_HELP,
-  HA_KEY_USAGE
+  HA_KEY_USAGE,
+  HA_KEY_DATA_GROUP
 };
 
 namespace {

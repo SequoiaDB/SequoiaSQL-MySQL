@@ -339,6 +339,7 @@ void ha_init_default_args(st_args &cmd_args) {
   cmd_args.token = "";
   cmd_args.file_name = HA_DEFAULT_CIPHER_FILE;
   cmd_args.verbose = false;
+  cmd_args.data_group = "";
 
   cmd_args.is_inst_id_set = false;
   cmd_args.inst_host = "";

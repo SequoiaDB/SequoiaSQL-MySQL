@@ -247,4 +247,6 @@ int ha_update_cached_record(const char *cached_record_key, int sql_id,
 bool ha_is_ddl_ignorable_error(uint sql_errno);
 bool ha_is_executing_pending_log(THD *thd);
 void clear_udf_init_side_effect();
+void ha_set_data_group(const char *name);
+const char *ha_get_data_group();
 #endif

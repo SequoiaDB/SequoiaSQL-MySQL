@@ -69,6 +69,7 @@
 #define HA_FIELD_USER "User"
 #define HA_FIELD_MD5_PASSWORD "MD5Password"
 #define HA_FIELD_EXPLICITS_DEFAULTS_TIMESTAMP "ExplicitDefaultsTimestamp"
+#define HA_FIELD_DATA_GROUP "DataGroup"
 
 #define HA_FIELD_SQL_ID "SQLID"
 #define HA_FIELD_DB "DB"

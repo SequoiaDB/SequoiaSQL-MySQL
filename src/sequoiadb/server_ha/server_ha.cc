@@ -55,6 +55,8 @@ static char *ha_inst_group_key = NULL;
 static uint ha_wait_replay_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
 static uint ha_wait_recover_timeout = HA_WAIT_REPLAY_TIMEOUT_DEFAULT;
 static bool aborting_ha = false;
+static char ha_data_group_name[SDB_RG_NAME_MAX_SIZE + 1] = {0};
+static char *ha_data_group_name_ptr = ha_data_group_name;
 
 static MYSQL_SYSVAR_STR(inst_group_name, ha_inst_group_name,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC |
@@ -96,6 +98,11 @@ struct st_mysql_sys_var *ha_sys_vars[] = {
     MYSQL_SYSVAR(wait_replay_timeout), MYSQL_SYSVAR(wait_recover_timeout),
     MYSQL_SYSVAR(wait_sync_timeout),   NULL};
 
+static struct st_mysql_show_var ha_status[] = {
+    SDB_ST_SHOW_VAR("server_ha_data_group", (char *)&ha_data_group_name_ptr,
+                    SHOW_CHAR_PTR, SHOW_SCOPE_GLOBAL),
+    SDB_ST_SHOW_VAR(0, 0, SHOW_UNDEF, SHOW_SCOPE_UNDEF)};
+
 static bool check_if_table_exists(THD *thd, TABLE_LIST *table);
 
 bool ha_is_open() {
@@ -104,6 +111,14 @@ bool ha_is_open() {
 
 bool ha_is_aborting() {
   return aborting_ha;
+}
+
+void ha_set_data_group(const char *name) {
+  strncpy(ha_data_group_name, name, sizeof(ha_data_group_name));
+}
+
+const char *ha_get_data_group() {
+  return ha_data_group_name_ptr;
 }
 
 static const char *check_and_build_lower_case_name(THD *thd, const char *name) {
@@ -5226,7 +5241,7 @@ maria_declare_plugin(server_ha){
     server_ha_init,
     server_ha_deinit,
     PLUGIN_VERSION,
-    0,
+    ha_status,
     ha_sys_vars,
     PLUGIN_STR_VERSION,
     MariaDB_PLUGIN_MATURITY_STABLE} maria_declare_plugin_end;
@@ -5254,7 +5269,7 @@ mysql_declare_plugin(server_ha){MYSQL_AUDIT_PLUGIN,
                                 server_ha_init,
                                 server_ha_deinit,
                                 PLUGIN_VERSION,
-                                0,
+                                ha_status,
                                 ha_sys_vars,
                                 NULL,
                                 0} mysql_declare_plugin_end;
