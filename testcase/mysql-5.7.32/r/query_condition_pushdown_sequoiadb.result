@@ -301,6 +301,7 @@ select * from t1 where a is null;
 id	a	b	c
 25	NULL	a	NULL
 26	NULL	b	NULL
+[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 1 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a is not null;
 id	a	b	c
 1	1	a	1
@@ -327,6 +328,7 @@ id	a	b	c
 7	4	d	7
 8	9999999991	x	8
 9	5	e	9
+[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a = '-9999999999';
 id	a	b	c
 12	-9999999999	a	-2

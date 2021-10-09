@@ -71,8 +71,10 @@ select * from t1 where abs(a) in(9999999998,4) or a=-1;
 create index a on t1(a);
 --sorted_result
 select * from t1 where a is null;
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 select * from t1 where a is not null;
+--source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 select * from t1 where a = '-9999999999';
 --sorted_result
