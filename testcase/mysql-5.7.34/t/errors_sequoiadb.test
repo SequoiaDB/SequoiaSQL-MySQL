@@ -1,4 +1,7 @@
 --source include/have_sequoiadb.inc
+create database test_errors_sequoiadb;
+use test_errors_sequoiadb;
+
 create table t1 (a int, primary key(a))engine=sequoiadb COMMENT='sequoiadb:{ table_options: { ShardingKey: { a: 1 }, AutoSplit:true } }';
 insert into t1 values (1); 
 --error 1062
@@ -93,5 +96,7 @@ alter table t1 add primary key(id), algorithm=inplace;
 --error 1265
 alter table t1 add primary key(id), algorithm=copy;
 drop table t1;
+
+drop database test_errors_sequoiadb;
 
 --source include/uninstall_sequoiadb.inc
