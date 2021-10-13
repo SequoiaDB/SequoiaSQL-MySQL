@@ -366,7 +366,7 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
               HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
 
   if (0 == (rc = config_cl.query())) {
-    rc = config_cl.next(obj, false);
+    rc = config_cl.next(obj, true);
   }
   HA_RC_CHECK(rc, error,
               "HA: Failed to get instance group configuration, "
