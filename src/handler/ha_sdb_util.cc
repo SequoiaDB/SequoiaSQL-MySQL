@@ -70,9 +70,9 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     rc = HA_ERR_OUT_OF_MEM;
     goto error;
   }
-  memcpy(tmp_name, ptr + 1, end - ptr);
-  tmp_name[name_len] = '\0';
-  sdb_filename_to_tablename(tmp_name, db_name, db_name_max_size + 1, true);
+  memcpy(tmp_db_buff, ptr + 1, end - ptr);
+  tmp_db_buff[name_len] = '\0';
+  sdb_filename_to_tablename(tmp_db_buff, db_name, db_name_max_size + 1, true);
   if (int(strlen(db_name)) >= db_name_max_size) {
     rc = ER_TOO_LONG_IDENT;
     goto error;
