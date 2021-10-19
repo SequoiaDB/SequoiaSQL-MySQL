@@ -7218,8 +7218,9 @@ int ha_sdb::get_sharding_key(TABLE *form, bson::BSONObj &options,
     goto error;
   }
 
-  if (sharding_key.isEmpty() && sdb_auto_partition) {
-    return get_default_sharding_key(form, sharding_key);
+  if (sharding_key.isEmpty() && '\0' == ha_get_data_group()[0] &&
+      sdb_auto_partition) {
+    rc = get_default_sharding_key(form, sharding_key);
   }
 
 done:
@@ -7376,6 +7377,7 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
   bool explicit_range_sharding_type = false;
   bool explicit_group = false;
   const char *default_data_group = ha_get_data_group();
+  bson::BSONElement ele;
 
   try {
     bson::BSONElement cmt_compressed, cmt_compress_type;
@@ -7384,14 +7386,11 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
     filter_options(options, auto_fill_fields, filter_num, build);
 
     explicit_sharding_key = options.hasField(SDB_FIELD_SHARDING_KEY);
-    explicit_is_mainCL =
-        options.hasField(SDB_FIELD_ISMAINCL) &&
-        (options.getField(SDB_FIELD_ISMAINCL).type() == bson::Bool) &&
-        (options.getField(SDB_FIELD_ISMAINCL).Bool() == true);
+    ele = options.getField(SDB_FIELD_ISMAINCL);
+    explicit_is_mainCL = (ele.type() == bson::Bool) && (ele.Bool() == true);
+    ele = options.getField(SDB_FIELD_SHARDING_TYPE);
     explicit_range_sharding_type =
-        options.hasField(SDB_FIELD_SHARDING_TYPE) &&
-        (options.getField(SDB_FIELD_SHARDING_TYPE).type() == bson::String) &&
-        (options.getField(SDB_FIELD_SHARDING_TYPE).String() == "range");
+        (ele.type() == bson::String) && (0 == strcmp(ele.valuestr(), "range"));
     explicit_group = options.hasField(SDB_FIELD_GROUP);
 
     if (!sharding_key.isEmpty()) {
@@ -7401,22 +7400,27 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
         build.appendBool(SDB_FIELD_ENSURE_SHARDING_IDX, false);
       }
       if (!(explicit_is_mainCL || explicit_range_sharding_type ||
-            explicit_group || options.hasField(SDB_FIELD_AUTO_SPLIT))) {
+            explicit_group || default_data_group[0] != '\0' ||
+            options.hasField(SDB_FIELD_AUTO_SPLIT))) {
         build.appendBool(SDB_FIELD_AUTO_SPLIT, true);
       }
     }
 
-    if (options.hasField(SDB_FIELD_AUTO_SPLIT)) {
-      build.append(options.getField(SDB_FIELD_AUTO_SPLIT));
-    }
-    if (options.hasField(SDB_FIELD_ENSURE_SHARDING_IDX)) {
-      build.append(options.getField(SDB_FIELD_ENSURE_SHARDING_IDX));
+    ele = options.getField(SDB_FIELD_AUTO_SPLIT);
+    if (ele.type() != bson::EOO) {
+      build.append(ele);
     }
 
-    if (!options.hasField(SDB_FIELD_REPLSIZE)) {
+    ele = options.getField(SDB_FIELD_ENSURE_SHARDING_IDX);
+    if (ele.type() != bson::EOO) {
+      build.append(ele);
+    }
+
+    ele = options.getField(SDB_FIELD_REPLSIZE);
+    if (bson::EOO == ele.type()) {
       build.append(SDB_FIELD_REPLSIZE, sdb_replica_size);
     } else {
-      build.append(options.getField(SDB_FIELD_REPLSIZE));
+      build.append(ele);
     }
 
     if (explicit_group) {
@@ -7425,10 +7429,11 @@ int ha_sdb::auto_fill_default_options(enum enum_compress_type sql_compress,
       build.append(SDB_FIELD_GROUP, default_data_group);
     }
 
-    if (!options.hasField(SDB_FIELD_STRICT_DATA_MODE)) {
+    ele = options.getField(SDB_FIELD_STRICT_DATA_MODE);
+    if (bson::EOO == ele.type()) {
       build.appendBool(SDB_FIELD_STRICT_DATA_MODE, true);
     } else {
-      build.append(options.getField(SDB_FIELD_STRICT_DATA_MODE));
+      build.append(ele);
     }
 
     cmt_compressed = options.getField(SDB_FIELD_COMPRESSED);
