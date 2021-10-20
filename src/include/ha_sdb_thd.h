@@ -59,6 +59,7 @@ class Thd_sdb {
   ulonglong updated;
   ulonglong deleted;
   ulonglong duplicated;
+  query_id_t unexpected_id_err_query_id;
   bool replace_on_dup;
 
   // store stats info for each open table share
