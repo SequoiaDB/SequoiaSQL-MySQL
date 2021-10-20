@@ -834,7 +834,11 @@ function change_configure_online()
    
    local exist_para=`sed -n -e '/'$para_name'\s*=/=' $SQLDATA/auto.cnf`
    if [ ! -z $exist_para ];then
-      sed -i 's/.*'$para_name'\s*=.*/'$para_name'='$para_value'/' $SQLDATA/auto.cnf
+      if [ "$para_name" == "sequoiadb_cipherfile" ]; then
+         sed -i 's|.*'$para_name'\s*=.*|'$para_name'='$para_value'|' $SQLDATA/auto.cnf
+      else
+         sed -i 's/.*'$para_name'\s*=.*/'$para_name'='$para_value'/' $SQLDATA/auto.cnf
+      fi
    else
       sed -i '/\[mysqld\]/a\'$para_name'='$para_value'' $SQLDATA/auto.cnf
    fi
