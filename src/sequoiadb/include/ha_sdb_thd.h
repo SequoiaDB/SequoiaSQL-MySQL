@@ -66,6 +66,7 @@ class Thd_sdb {
   ulonglong updated;
   ulonglong deleted;
   ulonglong duplicated;
+  query_id_t unexpected_id_err_query_id;
   bool replace_on_dup;
 
   // store stats info for each open table share
@@ -79,7 +80,6 @@ class Thd_sdb {
 #ifdef IS_MARIADB
   Sdb_part_del_ren_ctx* part_del_ren_ctx;
 #endif
-
  private:
   THD* m_thd;
   my_thread_id m_thread_id;

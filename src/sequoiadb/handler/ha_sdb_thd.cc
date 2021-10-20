@@ -672,6 +672,7 @@ Thd_sdb::Thd_sdb(THD *thd)
   deleted = 0;
   duplicated = 0;
   cl_copyer = NULL;
+  unexpected_id_err_query_id = 0;
 
   // check collection version for HA module
   if (ha_is_open()) {
@@ -709,6 +710,7 @@ void Thd_sdb::reset() {
   updated = 0;
   deleted = 0;
   duplicated = 0;
+  unexpected_id_err_query_id = 0;
 }
 
 int Thd_sdb::recycle_conn() {

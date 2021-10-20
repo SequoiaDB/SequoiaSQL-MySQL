@@ -5251,13 +5251,23 @@ error:
 void ha_sdb::position(const uchar *record) {
   DBUG_ENTER("ha_sdb::position()");
   bson::BSONElement beField;
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   if (cur_rec.getObjectID(beField)) {
     bson::OID oid = beField.__oid();
     memcpy(ref, oid.getData(), SDB_OID_LEN);
     if (beField.type() != bson::jstOID) {
-      SDB_LOG_ERROR("Unexpected _id's type: %d ", beField.type());
+      if (thd_sdb->unexpected_id_err_query_id != 0){
+        if(thd_sdb->unexpected_id_err_query_id == ha_thd()->query_id)
+          goto done;
+      }    
+      else{
+        thd_sdb->unexpected_id_err_query_id = ha_thd()->query_id;
+        SDB_LOG_ERROR("Unexpected _id's type: %d ; db name : %s ; table name : %s"
+        , beField.type(), db_name , table_name);
+      }
     }
   }
+done:
   DBUG_VOID_RETURN;
 }
 
