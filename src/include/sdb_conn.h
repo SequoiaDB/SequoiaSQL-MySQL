@@ -303,7 +303,7 @@ class Sdb_conn {
     }
   }
 
-  inline char *get_err_msg() { return errmsg; }
+  const char *get_err_msg();
 
   void save_err_msg();
 
