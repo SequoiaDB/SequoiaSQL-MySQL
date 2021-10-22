@@ -5237,14 +5237,14 @@ void ha_sdb::position(const uchar *record) {
     bson::OID oid = beField.__oid();
     memcpy(ref, oid.getData(), SDB_OID_LEN);
     if (beField.type() != bson::jstOID) {
-      if (thd_sdb->unexpected_id_err_query_id != 0){
-        if(thd_sdb->unexpected_id_err_query_id == ha_thd()->query_id)
+      if (thd_sdb->unexpected_id_err_query_id != 0) {
+        if (thd_sdb->unexpected_id_err_query_id == ha_thd()->query_id)
           goto done;
-      }    
-      else{
+      } else {
         thd_sdb->unexpected_id_err_query_id = ha_thd()->query_id;
-        SDB_LOG_ERROR("Unexpected _id's type: %d ; db name : %s ; table name : %s"
-        , beField.type(), db_name , table_name);
+        SDB_LOG_ERROR(
+            "Unexpected _id's type: %d ; db name : %s ; table name : %s",
+            beField.type(), db_name, table_name);
       }
     }
   }
