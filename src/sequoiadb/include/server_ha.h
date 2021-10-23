@@ -250,4 +250,7 @@ bool ha_is_executing_pending_log(THD *thd);
 void clear_udf_init_side_effect();
 void ha_set_data_group(const char *name);
 const char *ha_get_data_group();
+const char *ha_get_inst_group();
+const char *ha_get_sys_meta_group();
+bool ha_data_group_is_set();
 #endif

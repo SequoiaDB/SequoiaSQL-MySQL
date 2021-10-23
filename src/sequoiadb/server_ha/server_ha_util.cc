@@ -38,12 +38,15 @@ char *ha_quote_name(const char *name, char *buff) {
 }
 
 int ha_get_instance_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
-                                    Sdb_cl &cl) {
+                                    Sdb_cl &cl, const char *data_group) {
   static bool indexes_created = false;
 
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
+  if (NULL != data_group && '\0' != data_group[0]) {
+    cl_options = BSON(SDB_FIELD_GROUP << data_group);
+  }
 
   rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl,
                        true);
@@ -87,21 +90,32 @@ error:
 }
 
 int ha_get_instance_state_cl(Sdb_conn &sdb_conn, const char *group_name,
-                             Sdb_cl &cl) {
+                             Sdb_cl &cl, const char *data_group) {
   static bool indexes_created = false;
 
   int rc = 0;
   bson::BSONObj cl_options, key_options, index_ref;
   char err_buf[HA_BUF_LEN] = {0};
+  if (NULL != data_group && '\0' != data_group[0]) {
+    cl_options = BSON(SDB_FIELD_GROUP << data_group);
+  }
 
   rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_STATE_CL, cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating instance state table '%s'",
                           HA_INSTANCE_STATE_CL);
-    cl_options = BSON(SDB_FIELD_NAME_AUTOINCREMENT
-                      << BSON(SDB_FIELD_NAME_FIELD
-                              << HA_FIELD_JOIN_ID << SDB_FIELD_ACQUIRE_SIZE << 1
-                              << SDB_FIELD_CACHE_SIZE << 1));
+    bson::BSONObjBuilder builder;
+    bson::BSONObjBuilder sub_builder(
+        builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+
+    sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_JOIN_ID);
+    sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
+    sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
+    sub_builder.doneFast();
+    if (NULL != data_group && '\0' != data_group[0]) {
+      builder.append(SDB_FIELD_GROUP, data_group);
+    }
+    cl_options = builder.done();
     rc = sdb_conn.create_cl((char *)group_name, HA_INSTANCE_STATE_CL,
                             cl_options);
     rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
@@ -143,12 +157,15 @@ error:
 }
 
 int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
-                           Sdb_cl &cl) {
+                           Sdb_cl &cl, const char *data_group) {
   static bool indexes_created = false;
 
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
+  if (NULL != data_group && '\0' != data_group[0]) {
+    cl_options = BSON(SDB_FIELD_GROUP << data_group);
+  }
 
   rc = sdb_conn.get_cl((char *)group_name, HA_OBJECT_STATE_CL, cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
@@ -192,13 +209,16 @@ error:
   goto done;
 }
 
-int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name,
-                   Sdb_cl &lock_cl) {
+int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &lock_cl,
+                   const char *data_group) {
   static bool indexes_created = false;
 
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
+  if (NULL != data_group && '\0' != data_group[0]) {
+    cl_options = BSON(SDB_FIELD_GROUP << data_group);
+  }
 
   rc = sdb_conn.get_cl((char *)group_name, HA_LOCK_CL, lock_cl, true);
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
@@ -234,7 +254,7 @@ error:
 }
 
 int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name,
-                       Sdb_cl &registry_cl) {
+                       Sdb_cl &registry_cl, const char *data_group) {
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
   rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl, true);
@@ -243,10 +263,18 @@ int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name,
     sql_print_information("HA: Creating registry table '%s:%s'", HA_GLOBAL_INFO,
                           HA_REGISTRY_CL);
     bson::BSONObj cl_options, index_ref, key_options;
-    cl_options = BSON(SDB_FIELD_NAME_AUTOINCREMENT
-                      << BSON(SDB_FIELD_NAME_FIELD
-                              << HA_FIELD_INSTANCE_ID << SDB_FIELD_ACQUIRE_SIZE
-                              << 1 << SDB_FIELD_CACHE_SIZE << 1));
+    bson::BSONObjBuilder builder;
+    bson::BSONObjBuilder sub_builder(
+        builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+
+    sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_INSTANCE_ID);
+    sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
+    sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
+    sub_builder.doneFast();
+    if (NULL != data_group && '\0' != data_group[0]) {
+      builder.append(SDB_FIELD_GROUP, data_group);
+    }
+    cl_options = builder.done();
     rc = sdb_conn.create_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, cl_options);
     rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
     HA_RC_CHECK(rc, error,
@@ -283,7 +311,7 @@ error:
 }
 
 int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
-                          Sdb_cl &pending_log_cl) {
+                          Sdb_cl &pending_log_cl, const char *data_group) {
   static bool indexes_created = false;
 
   int rc = 0;
@@ -304,6 +332,9 @@ int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
     sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
     sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
     sub_builder.doneFast();
+    if (NULL != data_group && '\0' != data_group[0]) {
+      builder.append(SDB_FIELD_GROUP, data_group);
+    }
     cl_options = builder.done();
     rc = sdb_conn.create_cl((char *)group_name, HA_PENDING_LOG_CL, cl_options);
     rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
@@ -334,7 +365,8 @@ error:
 }
 
 int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
-                             Sdb_cl &pending_object_cl) {
+                             Sdb_cl &pending_object_cl,
+                             const char *data_group) {
   static bool indexes_created = false;
 
   int rc = 0;
@@ -345,8 +377,10 @@ int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     sql_print_information("HA: Creating '%s:%s'", group_name,
                           HA_PENDING_OBJECT_CL);
-
     bson::BSONObj cl_options;
+    if (NULL != data_group && '\0' != data_group[0]) {
+      cl_options = BSON(SDB_FIELD_GROUP << data_group);
+    }
     rc = sdb_conn.create_cl((char *)group_name, HA_PENDING_OBJECT_CL,
                             cl_options);
     rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;

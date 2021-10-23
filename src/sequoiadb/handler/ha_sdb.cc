@@ -48,6 +48,8 @@
 #include "ha_sdb_seq.h"
 #endif
 
+#include "name_map.h"
+
 using namespace sdbclient;
 
 #ifndef SDB_DRIVER_VERSION
@@ -570,8 +572,9 @@ done:
   DBUG_VOID_RETURN;
 }
 
-int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
-                                 char *old_table_name, char *new_table_name) {
+int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *orig_db_name,
+                                 char *db_name, char *old_table_name,
+                                 char *new_table_name) {
   DBUG_ENTER("sdb_rename_sub_cl4part_table");
   int rc = 0;
   char part_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
@@ -598,6 +601,11 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
       snprintf(part_prefix, SDB_CL_NAME_MAX_SIZE, "%s%s", old_table_name,
                SDB_PART_SEP);
       prefix_len = strlen(part_prefix);
+      char tmp_db_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+      char db_prefix_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+      MetadataMapping *name_map = MetadataMapping::get_instance();
+      snprintf(db_prefix_name, SDB_CS_NAME_MAX_SIZE, "%s#%s#",
+               MetadataMapping::get_sql_group(), orig_db_name);
 
       bson::BSONObj sub_cl_arr = obj.getField(SDB_FIELD_CATAINFO).Obj();
       bson::BSONObjIterator it(sub_cl_arr);
@@ -605,10 +613,11 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
         bson::BSONObj ele = it.next().Obj();
         char *sub_cl_name = const_cast<char *>(
             ele.getField(SDB_FIELD_SUBCL_NAME).valuestrsafe());
-        if (strncmp(sub_cl_name, db_name, strlen(db_name) != 0)) {
+        if (0 != strncmp(sub_cl_name, orig_db_name, strlen(orig_db_name)) &&
+            0 != strncmp(sub_cl_name, db_prefix_name, strlen(db_prefix_name))) {
           continue;
         }
-        sub_cl_name = sub_cl_name + strlen(db_name) + 1;
+        sub_cl_name = strstr(sub_cl_name, ".") + 1;
 
         if (strncmp(sub_cl_name, part_prefix, prefix_len) != 0) {
           continue;
@@ -625,8 +634,20 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
         sprintf(new_sub_cl_name, "%s%s%s", new_table_name, SDB_PART_SEP,
                 part_name);
 
-        rc = conn->rename_cl(db_name, sub_cl_name, new_sub_cl_name);
+        rc = name_map->get_table_mapping(conn, orig_db_name, sub_cl_name,
+                                         tmp_db_name, NULL);
+        if (0 != rc) {
+          goto error;
+        }
+
+        rc = conn->rename_cl(tmp_db_name, sub_cl_name, new_sub_cl_name);
         if (rc != 0) {
+          goto error;
+        }
+
+        rc = name_map->update_table_mapping(conn, orig_db_name, sub_cl_name,
+                                            orig_db_name, new_sub_cl_name);
+        if (0 != rc) {
           goto error;
         }
       }
@@ -1445,6 +1466,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   auto_commit = false;
   sdb_condition = NULL;
   stats.records = ~(ha_rows)0;
+  memset(orig_db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
   memset(db_name, 0, SDB_CS_NAME_MAX_SIZE + 1);
   memset(table_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
   sdb_init_alloc_root(&blobroot, sdb_key_memory_blobroot, "init_ha_sdb",
@@ -1571,19 +1593,11 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   stats.table_in_mem_estimate = 0;
 #endif
 
-  rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
-                            SDB_CL_NAME_MAX_SIZE);
+  rc = sdb_parse_table_name(name, orig_db_name, SDB_CS_NAME_MAX_SIZE,
+                            table_name, SDB_CL_NAME_MAX_SIZE);
   if (rc != 0) {
     SDB_LOG_ERROR("Table name[%s] can't be parsed. rc: %d", name, rc);
     goto error;
-  }
-
-  if (sdb_is_tmp_table(name, table_name)) {
-    DBUG_ASSERT(table->s->tmp_table);
-    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
-      rc = HA_ERR_GENERIC;
-      goto error;
-    }
   }
 
   rc = check_sdb_in_thd(ha_thd(), &connection, true);
@@ -1591,6 +1605,21 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     goto error;
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
+
+  if ('\0' != share->mapping_cs[0]) {
+    sprintf(db_name, "%s", share->mapping_cs);
+  } else {
+    MetadataMapping *name_map = MetadataMapping::get_instance();
+    rc = name_map->get_table_mapping(connection, orig_db_name, table_name,
+                                     db_name, NULL,
+                                     sdb_is_tmp_table(name, table_name));
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to get table '%s' mapping name, error: %d",
+                    table_name, rc);
+      goto error;
+    }
+    sprintf(share->mapping_cs, "%s", db_name);
+  }
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
@@ -6071,7 +6100,7 @@ int ha_sdb::ensure_collection(THD *thd) {
 
   // fetch SQL instance cached cata version, set cata version for collection
   if (ha_is_open() && !sdb_is_tmp_table(NULL, table_name)) {
-    int inst_cata_version = ha_get_cata_version(db_name, table_name);
+    int inst_cata_version = ha_get_cata_version(orig_db_name, table_name);
     int driver_cata_version = collection->get_version();
 
     // disable collection version checking for alter table command
@@ -6088,7 +6117,8 @@ int ha_sdb::ensure_collection(THD *thd) {
         // get current collection version from 'ha_table_list'(the first
         // element)
         int latest_version = 0;
-        rc = ha_get_latest_cata_version(db_name, table_name, latest_version);
+        rc = ha_get_latest_cata_version(orig_db_name, table_name,
+                                        latest_version);
         if (rc) {
           goto error;
         }
@@ -6106,7 +6136,7 @@ int ha_sdb::ensure_collection(THD *thd) {
           SDB_LOG_WARNING(
               "HA: Local cached version %d is less than driver cached "
               "version %d for table '%s.%s'",
-              inst_cata_version, driver_cata_version, db_name, table_name);
+              inst_cata_version, driver_cata_version, orig_db_name, table_name);
         }
         collection->set_version(0);
       }
@@ -6118,12 +6148,13 @@ int ha_sdb::ensure_collection(THD *thd) {
             "HA: Local cached version %d is less than "
             "driver cached version %d for table '%s.%s', "
             "try to write an empty sql log",
-            inst_cata_version, driver_cata_version, db_name, table_name);
-        rc = ha_write_empty_sql_log(db_name, table_name, driver_cata_version);
+            inst_cata_version, driver_cata_version, orig_db_name, table_name);
+        rc = ha_write_empty_sql_log(orig_db_name, table_name,
+                                    driver_cata_version);
         if (rc) {
           goto error;
         }
-        inst_cata_version = ha_get_cata_version(db_name, table_name);
+        inst_cata_version = ha_get_cata_version(orig_db_name, table_name);
         collection->set_version(inst_cata_version);
       }
     }
@@ -6568,6 +6599,11 @@ int ha_sdb::analyze(THD *thd, HA_CHECK_OPT *check_opt) {
     goto error;
   }
 
+  rc = name_map->update_table_mapping(conn, old_db_name, old_main_cl_name,
+                                      old_db_name, new_main_cl_name);
+  if (0 != rc) {
+    goto error;
+  }
 done:
   return rc;
 error:
@@ -6777,6 +6813,31 @@ error:
 }
 
 #ifdef IS_MARIADB
+static int get_main_cl_mapping_name(Sdb_conn *conn, const char *orig_db_name,
+                                    char *cs_name, const char *table_name) {
+  char orig_table_table[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  sprintf(orig_table_table, "%s", table_name);
+  MetadataMapping *name_map = MetadataMapping::get_instance();
+  char *part_sep = NULL;
+  char *pos = orig_table_table;
+  while ((part_sep = strstr(pos, SDB_PART_SEP))) {
+    pos = part_sep + 1;
+  }
+  part_sep = pos - 1;
+
+  DBUG_ASSERT(NULL != part_sep);
+  *part_sep = '\0';
+  // get main table mapping info
+  int rc = name_map->get_table_mapping(conn, orig_db_name, orig_table_table,
+                                       cs_name, NULL);
+  if (0 != rc) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
 /* For delete and rename operation, there has no table_share that distinguish
    between a normal table and a sequence. For sequence, we can distinguish from
    normal table by .FRM files. For temporary sequence, we need distinguish by
@@ -6790,24 +6851,37 @@ int ha_sdb::try_drop_as_sequence(Sdb_conn *conn, bool is_temporary,
   char path[FN_REFLEN + 1] = "";
   char engine_buf[NAME_CHAR_LEN + 1];
   LEX_CSTRING engine = {engine_buf, 0};
+  MetadataMapping *name_map = MetadataMapping::get_instance();
+  char tmp_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
 
   if (is_temporary) {
     void *ptr = my_hash_search(&sdb_temporary_sequence_cache,
                                (uchar *)table_name, (uint)strlen(table_name));
     if (ptr) {
       my_hash_delete(&sdb_temporary_sequence_cache, (uchar *)ptr);
-      rc = conn->drop_seq(db_name, table_name);
+      rc = name_map->get_sequence_mapping_cs(orig_db_name, tmp_db_name, true,
+                                             !ha_data_group_is_set());
+      if (0 != rc) {
+        goto error;
+      }
+
+      rc = conn->drop_seq(tmp_db_name, table_name);
       if (0 != rc) {
         goto error;
       }
       deleted = true;
     }
   } else {
-    build_table_filename(path, sizeof(path) - 1, db_name, table_name, reg_ext,
-                         0);
+    build_table_filename(path, sizeof(path) - 1, orig_db_name, table_name,
+                         reg_ext, 0);
     dd_frm_type(ha_thd(), path, &engine, &is_seq);
     if (is_seq) {
-      rc = conn->drop_seq(db_name, table_name);
+      rc = name_map->get_sequence_mapping_cs(orig_db_name, tmp_db_name, false,
+                                             !ha_data_group_is_set());
+      if (0 != rc) {
+        goto error;
+      }
+      rc = conn->drop_seq(tmp_db_name, table_name);
       if (0 != rc) {
         goto error;
       }
@@ -6914,6 +6988,8 @@ int ha_sdb::delete_table(const char *from) {
 #endif
   Thd_sdb *thd_sdb = NULL;
   char part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
+  MetadataMapping *name_map = MetadataMapping::get_instance();
+  int cl_count = 1;
 
   if (sdb_execute_only_in_mysql(thd)
 // Don't skip dropping sequence when dropping database for MariaDB.
@@ -6931,11 +7007,12 @@ int ha_sdb::delete_table(const char *from) {
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
   thd_sdb = thd_get_thd_sdb(thd);
 
-  rc = sdb_parse_table_name(from, db_name, SDB_CS_NAME_MAX_SIZE, part_tab_name,
-                            SDB_PART_TAB_NAME_SIZE);
+  rc = sdb_parse_table_name(from, orig_db_name, SDB_CS_NAME_MAX_SIZE,
+                            part_tab_name, SDB_PART_TAB_NAME_SIZE);
   if (rc != 0) {
     goto error;
   }
+  sprintf(db_name, "%s", orig_db_name);
 
   if (thd_sdb && thd_sdb->part_alter_ctx &&
       thd_sdb->part_alter_ctx->skip_delete_table(part_tab_name)) {
@@ -6949,8 +7026,18 @@ int ha_sdb::delete_table(const char *from) {
 
   if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) &&
       sdb_alter_partition_flags(thd) & ALTER_PARTITION_DROP) {
+    rc = name_map->get_table_mapping(conn, orig_db_name, table_name, db_name,
+                                     NULL, sdb_is_tmp_table(from, table_name));
+    if (0 != rc) {
+      goto error;
+    }
     rc = drop_partition(thd, db_name, table_name);
     if (rc != 0) {
+      goto error;
+    }
+    // clear table mapping
+    rc = name_map->remove_table_mapping(conn, orig_db_name, table_name);
+    if (0 != rc) {
       goto error;
     }
     goto done;
@@ -6963,6 +7050,11 @@ int ha_sdb::delete_table(const char *from) {
       goto error;
     }
     if (is_skip) {
+      // remove partition mapping info
+      rc = name_map->remove_table_mapping(conn, orig_db_name, part_tab_name);
+      if (0 != rc) {
+        goto error;
+      }
       goto done;
     }
   } else if (thd_sdb->part_del_ren_ctx) {
@@ -6975,13 +7067,31 @@ int ha_sdb::delete_table(const char *from) {
 #ifdef IS_MARIADB
     is_temporary = true;
 #endif
-    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
-      rc = HA_ERR_GENERIC;
+    rc = name_map->get_table_mapping(conn, orig_db_name, table_name, db_name,
+                                     NULL, true);
+    if (0 != rc) {
+      goto error;
+    }
+  } else {
+    rc = name_map->get_table_mapping(conn, orig_db_name, table_name, db_name,
+                                     NULL, false, NULL, &cl_count);
+    if (0 != rc) {
       goto error;
     }
   }
 
 #ifdef IS_MARIADB
+  // Handle delete HASH or KEY part table
+  if (is_part && '\0' == db_name[0]) {
+    rc = get_main_cl_mapping_name(conn, orig_db_name, db_name, part_tab_name);
+    if (0 != rc) {
+      goto error;
+    }
+    // for the second partition, can't get the main CL mapping
+    if ('\0' == db_name[0]) {
+      goto done;
+    }
+  }
   rc = try_drop_as_sequence(conn, is_temporary, db_name, table_name, deleted);
   if (rc) {
     goto error;
@@ -6995,6 +7105,33 @@ int ha_sdb::delete_table(const char *from) {
   if (0 != rc) {
     goto error;
   }
+
+#ifdef IS_MARIADB
+  // clear part info mapping
+  if (is_part) {
+    rc = name_map->remove_table_mapping(conn, orig_db_name, part_tab_name);
+    if (0 != rc) {
+      goto error;
+    }
+  }
+#endif
+
+  // clear main CL mapping, table_name will be set to the main table name in
+  // prepare_delete_part_table
+  rc = name_map->remove_table_mapping(conn, orig_db_name, table_name,
+                                      sdb_is_tmp_table(from, table_name));
+  if (0 != rc) {
+    goto error;
+  }
+
+#ifdef IS_MYSQL
+  if (0 == cl_count) {
+    rc = name_map->remove_parts_mapping(conn, orig_db_name, table_name);
+    if (0 != rc) {
+      goto error;
+    }
+  }
+#endif
 
   if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb &&
       thd_sdb->cl_copyer) {
@@ -7013,7 +7150,8 @@ error:
 // Handle with the same as try_drop_as_sequence.
 int ha_sdb::try_rename_as_sequence(Sdb_conn *conn, const char *db_name,
                                    const char *old_table_name,
-                                   const char *new_table_name, bool &renamed) {
+                                   const char *new_table_name, bool &renamed,
+                                   bool is_tmp_table) {
   int rc = 0;
   bool is_seq = false;
   char path[FN_REFLEN + 1] = "";
@@ -7024,7 +7162,15 @@ int ha_sdb::try_rename_as_sequence(Sdb_conn *conn, const char *db_name,
                        0);
   dd_frm_type(ha_thd(), path, &engine, &is_seq);
   if (is_seq) {
-    rc = conn->rename_seq(db_name, old_table_name, new_table_name);
+    MetadataMapping *name_map = MetadataMapping::get_instance();
+    char tmp_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+    rc = name_map->get_sequence_mapping_cs(
+        orig_db_name, tmp_db_name, is_tmp_table, !ha_data_group_is_set());
+    if (0 != rc) {
+      goto error;
+    }
+
+    rc = conn->rename_seq(tmp_db_name, old_table_name, new_table_name);
     if (0 != rc) {
       goto error;
     }
@@ -7046,6 +7192,7 @@ int sdb_rename_main_cl(Sdb_conn *conn, const char *old_db_name,
   int new_main_cl_len = 0;
   char old_main_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
   char new_main_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = "";
+  MetadataMapping *name_map = MetadataMapping::get_instance();
 
   pos = old_table_name;
   while ((part_sep = strstr(pos, SDB_PART_SEP))) {
@@ -7201,6 +7348,7 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   char new_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   char old_part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
   char new_part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
+  MetadataMapping *name_map = MetadataMapping::get_instance();
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
@@ -7225,6 +7373,11 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto error;
   }
 
+  if (strcmp(old_db_name, new_db_name) != 0) {
+    rc = HA_ERR_NOT_ALLOWED_COMMAND;
+    goto error;
+  }
+
   if (thd_sdb && thd_sdb->part_alter_ctx &&
       thd_sdb->part_alter_ctx->skip_rename_table(new_part_tab_name)) {
     if (thd_sdb->part_alter_ctx->empty()) {
@@ -7243,30 +7396,47 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto error;
   }
 
-  if (sdb_is_tmp_table(from, old_table_name)) {
-    rc = sdb_rebuild_db_name_of_temp_table(old_db_name, SDB_CS_NAME_MAX_SIZE);
+  sprintf(orig_db_name, "%s", old_db_name);
+
+  rc = name_map->get_table_mapping(conn, orig_db_name, old_table_name, db_name,
+                                   new_table_name,
+                                   sdb_is_tmp_table(from, old_table_name));
+  if (0 != rc) {
+    goto error;
+  }
+
+#ifdef IS_MARIADB
+  // Handle rename HASH or KEY part table
+  if (is_part && '\0' == db_name[0]) {
+    rc = get_main_cl_mapping_name(conn, orig_db_name, db_name,
+                                  old_part_tab_name);
     if (0 != rc) {
       goto error;
     }
+    // if it's the second HASH or KEY partition of the table
+    if ('\0' == db_name[0]) {
+      goto done;
+    }
   }
+#endif
+
+  sprintf(old_db_name, "%s", db_name);
+  sprintf(new_db_name, "%s", db_name);
 
   if (sdb_is_tmp_table(to, new_table_name)) {
     new_is_tmp = true;
-    rc = sdb_rebuild_db_name_of_temp_table(new_db_name, SDB_CS_NAME_MAX_SIZE);
-    if (0 != rc) {
-      goto error;
-    }
-  }
-
-  if (strcmp(old_db_name, new_db_name) != 0) {
-    rc = HA_ERR_NOT_ALLOWED_COMMAND;
-    goto error;
   }
 
   if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb &&
       thd_sdb->cl_copyer) {
     rc = thd_sdb->cl_copyer->rename(old_table_name, new_table_name);
     if (rc != 0) {
+      goto error;
+    }
+
+    rc = name_map->update_table_mapping(conn, orig_db_name, old_table_name,
+                                        orig_db_name, new_table_name);
+    if (0 != rc) {
       goto error;
     }
 
@@ -7279,14 +7449,14 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto done;
   }
 #ifdef IS_MYSQL
-  rc = sdb_rename_sub_cl4part_table(conn, old_db_name, old_table_name,
-                                    new_table_name);
+  rc = sdb_rename_sub_cl4part_table(conn, orig_db_name, old_db_name,
+                                    old_table_name, new_table_name);
   if (0 != rc) {
     goto error;
   }
 #elif IS_MARIADB
-  rc = try_rename_as_sequence(conn, old_db_name, old_table_name, new_table_name,
-                              renamed);
+  rc = try_rename_as_sequence(conn, orig_db_name, old_table_name,
+                              new_table_name, renamed, new_is_tmp);
   if (rc) {
     goto error;
   }
@@ -7319,6 +7489,12 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     goto error;
   }
 
+  rc = name_map->update_table_mapping(conn, orig_db_name, old_table_name,
+                                      orig_db_name, new_table_name);
+  if (0 != rc) {
+    goto error;
+  }
+
   // set new table version if it's not sub-collection
   if (!new_is_tmp && NULL == strstr(new_table_name, SDB_PART_SEP)) {
     goto set_cata_version;
@@ -7333,7 +7509,7 @@ set_cata_version:
     if (0 != rc) {
       goto error;
     }
-    ha_set_cata_version(new_db_name, new_table_name, cl.get_version());
+    ha_set_cata_version(orig_db_name, new_table_name, cl.get_version());
   }
   goto done;
 }
@@ -7352,10 +7528,11 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   const char *upper_scl_name = NULL;
   char upper_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   char dropped_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
-
   char mcl_name[SDB_CL_NAME_MAX_SIZE] = {0};
   char mcl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   Sdb_cl main_cl;
+  char mcl_cs[SDB_CL_NAME_MAX_SIZE] = {0};
+  MetadataMapping *name_map = MetadataMapping::get_instance();
 
   char *sep = strstr(part_name, SDB_PART_SEP);
   uint sep_len = strlen(SDB_PART_SEP);
@@ -7367,15 +7544,19 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     }
   }
 
-  memcpy(mcl_name, part_name, sep - part_name);
-  sprintf(mcl_full_name, "%s.%s", db_name, mcl_name);
-
   rc = check_sdb_in_thd(thd, &conn, true);
   if (0 != rc) {
     goto error;
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
+  memcpy(mcl_name, part_name, sep - part_name);
+  rc = name_map->get_table_mapping(conn, orig_db_name, mcl_name, mcl_cs, NULL,
+                                   false);
+  if (0 != rc) {
+    goto error;
+  }
+  sprintf(mcl_full_name, "%s.%s", mcl_cs, mcl_name);
   try {
     cond = BSON(SDB_FIELD_NAME << mcl_full_name);
   }
@@ -7458,7 +7639,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto done;
   }
 
-  rc = conn->get_cl(db_name, mcl_name, main_cl);
+  rc = conn->get_cl(mcl_cs, mcl_name, main_cl);
   if (rc != 0) {
     goto error;
   }
@@ -8013,12 +8194,22 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
 
       *has_copy = true;
 
-      const char *src_db_name = src_table->get_db_name();
+      char src_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
       const char *src_table_name = src_table->get_table_name();
       bson::BSONObj auto_inc_options;
+      Sdb_cl_copyer *cl_copyer = NULL;
+      bool is_tmp_table = (create_info->options & HA_LEX_CREATE_TMP_TABLE);
 
-      Sdb_cl_copyer *cl_copyer = new Sdb_cl_copyer(
-          conn, src_db_name, src_table_name, db_name, table_name);
+      MetadataMapping *name_map = MetadataMapping::get_instance();
+      rc = name_map->get_table_mapping(conn, src_table->get_db_name(),
+                                       src_table_name, src_db_name, NULL,
+                                       is_tmp_table);
+      if (0 != rc) {
+        goto error;
+      }
+
+      cl_copyer = new Sdb_cl_copyer(conn, src_db_name, src_table_name, db_name,
+                                    table_name);
       if (!cl_copyer) {
         rc = HA_ERR_OUT_OF_MEM;
         goto error;
@@ -8151,6 +8342,9 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   bson::BSONObj options;
   bson::BSONObj auto_inc_options;
   bson::BSONObjBuilder build;
+  MetadataMapping *name_map = MetadataMapping::get_instance();
+  enum_mapping_state state = NM_STATE_NONE;
+  bool created_mapping = false;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -8170,17 +8364,26 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     }
   }
 
-  rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
-                            SDB_CL_NAME_MAX_SIZE);
+  rc = sdb_parse_table_name(name, orig_db_name, SDB_CS_NAME_MAX_SIZE,
+                            table_name, SDB_CL_NAME_MAX_SIZE);
   if (0 != rc) {
     goto error;
   }
 
-  if (create_temporary) {
-    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
-      rc = HA_WRONG_CREATE_OPTION;
+  // before create collection
+  rc = name_map->get_table_mapping(conn, orig_db_name, table_name, db_name,
+                                   table_name, create_temporary, &state);
+  if (0 != rc) {
+    goto error;
+  }
+  if (NM_STATE_NONE == state) {
+    rc = name_map->add_table_mapping(conn, orig_db_name, table_name, db_name,
+                                     table_name, !ha_data_group_is_set(),
+                                     create_temporary);
+    if (0 != rc) {
       goto error;
     }
+    created_mapping = true;
   }
 
   for (Field **fields = form->field; *fields; fields++) {
@@ -8204,10 +8407,15 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   if (sdb_create_table_like(thd)) {
     TABLE_LIST *src_table = thd->lex->create_last_non_select_table->next_global;
     if (src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE) {
-      const char *src_db_name = src_table->get_db_name();
+      char src_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
       const char *src_table_name = src_table->get_table_name();
+      rc = name_map->get_table_mapping(conn, src_table->get_db_name(),
+                                       src_table_name, src_db_name, NULL);
       Sdb_cl_copyer cl_copyer(conn, src_db_name, src_table_name, db_name,
                               table_name);
+      if (0 != rc) {
+        goto error;
+      }
       rc = cl_copyer.copy(this);
       if (rc != 0) {
         if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
@@ -8295,6 +8503,13 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   SDB_EXCEPTION_CATCHER(rc, "Failed to create table:%s.%s, exception:%s",
                         db_name, table_name, e.what());
 
+  // after create collection
+  rc = name_map->set_table_mapping_state(conn, orig_db_name, table_name,
+                                         create_temporary, NM_STATE_CREATED);
+  if (0 != rc) {
+    goto error;
+  }
+
   rc = conn->get_cl(db_name, table_name, cl, ha_is_open());
   if (0 != rc) {
     goto error;
@@ -8329,12 +8544,11 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       goto error;
     }
   }
-
 done:
   if (0 == rc && !create_temporary && !has_copy && ha_is_open() &&
       !sdb_execute_only_in_mysql(ha_thd())) {
     // update cached cata version, it will be written into sequoiadb
-    ha_set_cata_version(db_name, table_name, cl.get_version());
+    ha_set_cata_version(orig_db_name, table_name, cl.get_version());
   }
   // set 'execute_only_in_mysql' to true for 'create table as select ...'
   if (0 == rc && SQLCOM_CREATE_TABLE == thd_sql_command(ha_thd()) &&
@@ -8353,6 +8567,10 @@ error:
   }
   if (created_cs) {
     sdb_drop_empty_cs(*conn, db_name);
+  }
+  if (created_mapping) {
+    name_map->remove_table_mapping(conn, orig_db_name, table_name,
+                                   create_temporary);
   }
   goto done;
 }
@@ -8965,11 +9183,49 @@ static void sdb_drop_database(handlerton *hton, char *path) {
     goto error;
   }
 
-  rc = connection->drop_cs(db_name);
-  if (rc != 0) {
-    goto error;
+  // drop collection spaces
+  {
+    bson::BSONObj obj;
+    char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+    snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
+             NM_SQL_GROUP_PREFIX, MetadataMapping::get_sql_group());
+
+    static const char GET_TBL_MAP_CNT[] =
+        "SELECT CSName, COUNT(CSName) AS CNT FROM %s.%s "
+        "WHERE DBName = '%s' GROUP BY CSName";
+    char query[sizeof(GET_TBL_MAP_CNT) + SDB_CS_NAME_MAX_SIZE * 3] = {0};
+    sprintf(query, GET_TBL_MAP_CNT, sql_group_cs_name, NM_TABLE_MAP, db_name);
+    rc = connection->execute(query);
+    if (0 != rc && SDB_DMS_CS_NOTEXIST == rc) {
+      SDB_LOG_ERROR(
+          "Failed to query mapping database for '%s' while dropping database",
+          db_name);
+      goto error;
+    } else if (0 == rc) {
+      while (0 == (rc = connection->next(obj, false))) {
+        const char *cs_name = obj.getStringField(NM_FIELD_CS_NAME);
+        if ('\0' != cs_name[0]) {
+          rc = connection->drop_cs(cs_name);
+          if (0 != rc) {
+            SDB_LOG_WARNING("Failed to drop CS '%s', error: %d", cs_name, rc);
+          }
+        }
+      }
+      MetadataMapping *name_map = MetadataMapping::get_instance();
+      rc = name_map->drop_db_mapping(connection, db_name);
+      if (0 != rc) {
+        goto error;
+      }
+    } else {
+      // mapping collection space does not exist
+      rc = 0;
+    }
   }
 
+  rc = connection->drop_cs(db_name);
+  if (0 != rc) {
+    goto error;
+  }
 done:
   return;
 error:

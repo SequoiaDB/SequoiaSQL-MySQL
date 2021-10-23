@@ -70,6 +70,7 @@ enum Sdb_table_type {
 
 struct Sdb_share {
   char *table_name;
+  char mapping_cs[SDB_CS_NAME_MAX_SIZE + 1];
   enum Sdb_table_type table_type;
   uint table_name_length;
   THR_LOCK lock;
@@ -121,9 +122,9 @@ class Sdb_cl_copyer : public Sql_alloc {
 
  private:
   Sdb_conn *m_conn;
-  char *m_mcl_cs;
+  char m_mcl_cs[SDB_CS_NAME_MAX_SIZE + 1];
   char *m_mcl_name;
-  char *m_new_cs;
+  char m_new_cs[SDB_CS_NAME_MAX_SIZE + 1];
   char *m_new_mcl_tmp_name;
   char *m_old_mcl_tmp_name;
   bson::BSONObj m_old_scl_info;
@@ -610,7 +611,8 @@ class ha_sdb : public handler {
 
   int try_rename_as_sequence(Sdb_conn *conn, const char *db_name,
                              const char *old_table_name,
-                             const char *new_table_name, bool &renamed);
+                             const char *new_table_name, bool &renamed,
+                             bool is_tmp_table);
 
   void get_auto_increment(ulonglong offset, ulonglong increment,
                           ulonglong nb_desired_values, ulonglong *first_value,
@@ -701,6 +703,7 @@ class ha_sdb : public handler {
   bson::BSONObj group_list_condition;
   bson::BSONObj last_key_value;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
+  char orig_db_name[SDB_CS_NAME_MAX_SIZE + 1];
   char table_name[SDB_CL_NAME_MAX_SIZE + 1];
   time_t last_count_time;
   int count_times;

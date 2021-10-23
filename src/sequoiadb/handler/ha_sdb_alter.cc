@@ -2302,7 +2302,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       goto error;
     }
 
-    cl.set_version(ha_get_cata_version(db_name, table_name));
+    cl.set_version(ha_get_cata_version(orig_db_name, table_name));
     if (ha_is_open()) {
       // no need check version for 'HA'
       SDB_LOG_DEBUG(
@@ -2370,7 +2370,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
       SDB_EXCEPTION_CATCHER(
           rc, "Failed to alter collection version, table:%s.%s, exception:%s",
           db_name, table_name, e.what());
-      ha_set_cata_version(db_name, table_name, cl.get_version());
+      ha_set_cata_version(orig_db_name, table_name, cl.get_version());
     }
   }
   rs = false;
@@ -2408,9 +2408,9 @@ Sdb_cl_copyer::Sdb_cl_copyer(Sdb_conn *conn, const char *src_db_name,
                              const char *dst_db_name,
                              const char *dst_table_name) {
   m_conn = conn;
-  m_mcl_cs = const_cast<char *>(src_db_name);
+  snprintf(m_mcl_cs, SDB_CS_NAME_MAX_SIZE, "%s", src_db_name);
   m_mcl_name = const_cast<char *>(src_table_name);
-  m_new_cs = const_cast<char *>(dst_db_name);
+  snprintf(m_new_cs, SDB_CS_NAME_MAX_SIZE, "%s", dst_db_name);
   m_new_mcl_tmp_name = const_cast<char *>(dst_table_name);
   m_old_mcl_tmp_name = NULL;
   m_replace_index = false;
@@ -3235,20 +3235,32 @@ int Sdb_cl_copyer::rename(const char *from, const char *to) {
     if (0 == strcmp(from, m_mcl_name)) {
       m_old_mcl_tmp_name = const_cast<char *>(to);
       rc = rename_old_cl();
+      if (0 != rc) {
+        goto error;
+      }
+      DBUG_PRINT("info", ("cs: %s, from: %s, to: %s", m_mcl_cs, from, to));
+      rc = m_conn->rename_cl(m_mcl_cs, const_cast<char *>(from),
+                             const_cast<char *>(to));
+      if (rc != 0) {
+        goto error;
+      }
     } else {
       rc = rename_new_cl();
+      if (0 != rc) {
+        goto error;
+      }
+      DBUG_PRINT("info", ("cs: %s, from: %s, to: %s", m_new_cs, from, to));
+      rc = m_conn->rename_cl(m_new_cs, const_cast<char *>(from),
+                             const_cast<char *>(to));
+      if (rc != 0) {
+        goto error;
+      }
     }
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to rename collection, old cl:%s, new cl:%s, exception:%s",
       from, to, e.what());
 
-  DBUG_PRINT("info", ("cs: %s, from: %s, to: %s", m_mcl_cs, from, to));
-  rc = m_conn->rename_cl(m_mcl_cs, const_cast<char *>(from),
-                         const_cast<char *>(to));
-  if (rc != 0) {
-    goto error;
-  }
 done:
   DBUG_RETURN(rc);
 error:

@@ -24,6 +24,8 @@
 #include "ha_sdb_thd.h"
 #include "ha_sdb_util.h"
 #include "ha_sdb_log.h"
+#include "server_ha.h"
+#include "name_map.h"
 
 ha_sdb_seq::ha_sdb_seq(handlerton *hton, TABLE_SHARE *table_arg)
     : ha_sdb(hton, table_arg) {
@@ -92,6 +94,7 @@ int ha_sdb_seq::create(const char *name, TABLE *form,
   int key_len = 0;
   sdb_sequence_cache *seq_cache = NULL;
   bool create_temporary = (create_info->options & HA_LEX_CREATE_TMP_TABLE);
+  MetadataMapping *name_map = MetadataMapping::get_instance();
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -109,17 +112,19 @@ int ha_sdb_seq::create(const char *name, TABLE *form,
     }
   }
 
-  rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
-                            SDB_CL_NAME_MAX_SIZE);
+  rc = sdb_parse_table_name(name, orig_db_name, SDB_CS_NAME_MAX_SIZE,
+                            table_name, SDB_CL_NAME_MAX_SIZE);
+  if (0 != rc) {
+    goto error;
+  }
+
+  rc = name_map->get_sequence_mapping_cs(
+      orig_db_name, db_name, create_temporary, !ha_data_group_is_set());
   if (0 != rc) {
     goto error;
   }
 
   if (create_temporary) {
-    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
-      rc = HA_WRONG_CREATE_OPTION;
-      goto error;
-    }
     key_len = strlen(table_name);
     if (NULL == sdb_multi_malloc(key_memory_sequence_cache,
                                  MYF(MY_WME | MY_ZEROFILL), &seq_cache,
@@ -147,20 +152,21 @@ int ha_sdb_seq::open(const char *name, int mode, uint test_if_locked) {
   int rc = 0;
   Sdb_seq sdb_seq;
   Sdb_conn *connection = NULL;
+  MetadataMapping *name_map = MetadataMapping::get_instance();
 
-  rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
-                            SDB_CL_NAME_MAX_SIZE);
+  rc = sdb_parse_table_name(name, orig_db_name, SDB_CS_NAME_MAX_SIZE,
+                            table_name, SDB_CL_NAME_MAX_SIZE);
   if (rc != 0) {
     SDB_LOG_ERROR("Table name[%s] can't be parsed. rc: %d", name, rc);
     goto error;
   }
 
-  if (sdb_is_tmp_table(name, table_name)) {
-    DBUG_ASSERT(table->s->tmp_table);
-    if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
-      rc = HA_ERR_GENERIC;
-      goto error;
-    }
+  rc = name_map->get_sequence_mapping_cs(orig_db_name, db_name,
+                                         sdb_is_tmp_table(name, table_name),
+                                         !ha_data_group_is_set());
+  if (0 != rc) {
+    rc = HA_ERR_GENERIC;
+    goto error;
   }
 
   rc = check_sdb_in_thd(ha_thd(), &connection, true);

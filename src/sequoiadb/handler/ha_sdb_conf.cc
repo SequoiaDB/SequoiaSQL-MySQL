@@ -70,6 +70,11 @@ int sdb_stats_sample_num = SDB_DEFAULT_STATS_SAMPLE_NUM;
 double sdb_stats_sample_percent = SDB_DEFAULT_STATS_SAMPLE_PERCENT;
 my_bool sdb_strict_collation = SDB_DEFAULT_STRICT_COLLATION;
 
+// use to metadata mapping function
+my_bool sdb_enable_mapping = FALSE;
+int sdb_mapping_group_size = NM_MAPPING_GROUP_SIZE;
+int sdb_mapping_group_num = NM_MAPPING_GROUP_NUM;
+
 static const char *sdb_optimizer_options_names[] = {
     "direct_count", "direct_delete", "direct_update",
     "direct_sort",  "direct_limit",  NullS};
@@ -500,6 +505,25 @@ static MYSQL_THDVAR_ENUM(
     "(Default:strict)"
     /*严格校验语法*/,
     NULL, NULL, SDB_SUPPORT_MODE_STRICT, &sdb_support_mode_option_typelib);
+// used to metadata mapping module
+static MYSQL_SYSVAR_BOOL(enable_mapping, sdb_enable_mapping,
+                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
+                         "Enable metadata mapping function. "
+                         "(Default: OFF)"
+                         /*是否启用元数据映射功能。*/,
+                         NULL, NULL, FALSE);
+static MYSQL_SYSVAR_INT(mapping_group_size, sdb_mapping_group_size,
+                        PLUGIN_VAR_OPCMDARG,
+                        "The size of mapping group. "
+                        "(Default: 1024)"
+                        /*映射组的大小。*/,
+                        NULL, NULL, 6, 6, 18, 6);
+static MYSQL_SYSVAR_INT(mapping_group_number, sdb_mapping_group_num,
+                        PLUGIN_VAR_OPCMDARG,
+                        "Number of mapping group. "
+                        "(Default: 10)"
+                        /*映射组的数量, 范围[10, 50]。*/,
+                        NULL, NULL, 10, 10, 50, 10);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
@@ -536,6 +560,9 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(preferred_period),
     MYSQL_SYSVAR(strict_collation),
     MYSQL_SYSVAR(support_mode),
+    MYSQL_SYSVAR(enable_mapping),
+    MYSQL_SYSVAR(mapping_group_size),
+    MYSQL_SYSVAR(mapping_group_number),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {

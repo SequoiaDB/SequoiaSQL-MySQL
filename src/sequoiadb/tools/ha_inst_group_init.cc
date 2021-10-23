@@ -367,6 +367,12 @@ int main(int argc, char *argv[]) {
                      "sequoiadb error: %s",
                      orig_name.c_str(), sdb_err);
 
+    // set data group for instance group tables, data group
+    // "SysMetaGroup" must be created first
+    if (cmd_args.data_group.length() > 0) {
+      options = BSON(SDB_FIELD_GROUP << NM_SYS_META_GROUP);
+    }
+
     // create 'HAConfig' collection
     rc = inst_group_cs.createCollection(HA_CONFIG_CL, options,
                                         inst_group_config_cl);

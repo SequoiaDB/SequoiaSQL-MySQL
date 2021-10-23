@@ -113,6 +113,10 @@ extern my_bool sdb_strict_collation;
 extern Sdb_rwlock sdb_password_lock;
 extern String sdb_encoded_password;
 
+extern my_bool sdb_enable_mapping;
+extern int sdb_mapping_group_size;
+extern int sdb_mapping_group_num;
+
 extern mysql_var_update_func sdb_set_connection_addr;
 extern mysql_var_update_func sdb_set_user;
 extern mysql_var_update_func sdb_set_password;

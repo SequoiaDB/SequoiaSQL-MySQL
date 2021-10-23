@@ -36,6 +36,7 @@
 #include "events.h"
 #include "tztime.h"
 #include "sql_time.h"
+#include "name_map.h"
 
 #ifdef IS_MARIADB
 #include "server_ha_sql_rewrite.h"
@@ -119,6 +120,18 @@ void ha_set_data_group(const char *name) {
 
 const char *ha_get_data_group() {
   return ha_data_group_name_ptr;
+}
+
+const char *ha_get_inst_group() {
+  return ha_inst_group_name;
+}
+
+const char *ha_get_sys_meta_group() {
+  return sdb_enable_mapping ? NM_SYS_META_GROUP : NULL;
+}
+
+bool ha_data_group_is_set() {
+  return '\0' != ha_data_group_name_ptr[0];
 }
 
 static const char *check_and_build_lower_case_name(THD *thd, const char *name) {
@@ -590,7 +603,8 @@ static int lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
   bson::BSONObj cond, obj;
   int sql_command = thd_sql_command(thd);
 
-  rc = ha_get_lock_cl(*sdb_conn, ha_thread.sdb_group_name, lock_cl);
+  rc = ha_get_lock_cl(*sdb_conn, ha_thread.sdb_group_name, lock_cl,
+                      ha_get_sys_meta_group());
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
@@ -927,8 +941,8 @@ static int wait_db_objects_updated_to_latest(THD *thd, const char *db,
   longlong count = 0;
 
   // get object state handle
-  rc =
-      ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl);
+  rc = ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl,
+                              ha_get_sys_meta_group());
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
@@ -991,14 +1005,15 @@ static int wait_objects_updated_to_lastest(THD *thd,
 
   // get object state handle
   rc = ha_get_object_state_cl(*sql_info->sdb_conn, ha_thread.sdb_group_name,
-                              obj_state_cl);
+                              obj_state_cl, ha_get_sys_meta_group());
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
   }
 
-  rc = ha_get_instance_object_state_cl(
-      *sql_info->sdb_conn, ha_thread.sdb_group_name, inst_obj_state_cl);
+  rc = ha_get_instance_object_state_cl(*sdb_conn, ha_thread.sdb_group_name,
+                                       inst_obj_state_cl,
+                                       ha_get_sys_meta_group());
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
@@ -1032,6 +1047,20 @@ static int wait_objects_updated_to_lastest(THD *thd,
     } else {
       rc = wait_object_updated_to_lastest(db_name, table_name, op_type,
                                           obj_state_cl, sql_info, thd);
+      if (rc) {
+        goto error;
+      }
+
+      if (0 == strcmp(op_type, HA_OPERATION_TYPE_TABLE)) {
+        ha_cached_record *cached_record = NULL;
+        char cached_record_key[HA_MAX_CACHED_RECORD_KEY_LEN] = {0};
+        snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
+                 db_name, table_name, op_type);
+        cached_record = ha_get_cached_record(cached_record_key);
+        if (cached_record) {
+          ha_tables->cata_version = cached_record->cata_version;
+        }
+      }
     }
     if (rc) {
       goto error;
@@ -1205,6 +1234,8 @@ static int update_cata_version_for_alter_part_table(
     ha_table_list *table = NULL;
     bson::BSONObj obj, condition;
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+    char tmp_db_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+    MetadataMapping *name_map = MetadataMapping::get_instance();
 
     if (sql_info->tables->next) {
       // if its 'alter table rename table' command
@@ -1213,7 +1244,15 @@ static int update_cata_version_for_alter_part_table(
       table = sql_info->tables;
     }
 
-    sprintf(full_name, "%s.%s", table->db_name, table->table_name);
+    // Modifying sub CL will update version of the main CL
+    // Get the true version of the main CL after altering partition table
+    rc = name_map->get_table_mapping(sql_info->sdb_conn, table->db_name,
+                                     table->table_name, tmp_db_name, NULL);
+    if (0 != rc) {
+      goto error;
+    }
+    assert('\0' != tmp_db_name[0]);
+    sprintf(full_name, "%s.%s", tmp_db_name, table->table_name);
     condition = BSON(SDB_FIELD_NAME << full_name);
     rc = sql_info->sdb_conn->snapshot(obj, SDB_SNAP_CATALOG, condition);
     if (SDB_DMS_EOC == get_sdb_code(rc)) {
@@ -1347,12 +1386,6 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
     const char *new_tbl_name = NULL;
     int cata_version = ha_tables->cata_version;
     ha_tables->saved_sql_id = 0;
-
-    // previous version maybe not be latest, get cached cata version again
-    if (0 == strcmp(op_type, HA_OPERATION_TYPE_TABLE)) {
-      int version = ha_get_cata_version(db_name, table_name);
-      cata_version = (version > cata_version) ? version : cata_version;
-    }
     query.length(0);
 
     // dropping function(with 'if exists') without setting database report no
@@ -3297,8 +3330,8 @@ static int wait_query_objects_updated_to_latest(THD *thd,
   SDB_LOG_DEBUG("HA: Deal with DML, table_list: %p", sql_info->dml_tables);
   // check and lock metadata for involved objects
   Sdb_cl obj_state_cl;
-  rc =
-      ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl);
+  rc = ha_get_object_state_cl(*sdb_conn, ha_thread.sdb_group_name, obj_state_cl,
+                              ha_get_sys_meta_group());
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
@@ -3814,7 +3847,7 @@ static int check_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
 
   // get 'HAPendingObject'
   rc = ha_get_pending_object_cl(*sdb_conn, ha_thread.sdb_group_name,
-                                pending_object_cl);
+                                pending_object_cl, ha_get_sys_meta_group());
   if (rc) {
     ha_error_string(*sdb_conn, rc, sql_info->err_message);
     goto error;
@@ -3998,13 +4031,13 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
 
   // get 'HAPendingLog'
   rc = ha_get_pending_log_cl(*sdb_conn, ha_thread.sdb_group_name,
-                             pending_log_cl);
+                             pending_log_cl, ha_get_sys_meta_group());
   if (rc) {
     goto error;
   }
   // get 'HAPendingObject'
   rc = ha_get_pending_object_cl(*sdb_conn, ha_thread.sdb_group_name,
-                                pending_object_cl);
+                                pending_object_cl, ha_get_sys_meta_group());
   if (rc) {
     goto error;
   }
@@ -4089,12 +4122,12 @@ static int clear_pending_log(THD *thd, ha_sql_stmt_info *sql_info) {
   Sdb_conn *sdb_conn = sql_info->sdb_conn;
 
   rc = ha_get_pending_log_cl(*sdb_conn, ha_thread.sdb_group_name,
-                             pending_log_cl);
+                             pending_log_cl, ha_get_sys_meta_group());
   if (rc) {
     goto error;
   }
   rc = ha_get_pending_object_cl(*sdb_conn, ha_thread.sdb_group_name,
-                                pending_object_cl);
+                                pending_object_cl, ha_get_sys_meta_group());
   if (rc) {
     goto error;
   }
@@ -4231,7 +4264,8 @@ static void post_wait_for_metadata_stmt(THD *thd, ha_sql_stmt_info *sql_info) {
   }
 
   // 1. get count of instances
-  rc = ha_get_instance_state_cl(*sdb_conn, sdb_group_name, inst_state_cl);
+  rc = ha_get_instance_state_cl(*sdb_conn, sdb_group_name, inst_state_cl,
+                                ha_get_sys_meta_group());
   if (rc) {
     goto error;
   }
@@ -4242,8 +4276,8 @@ static void post_wait_for_metadata_stmt(THD *thd, ha_sql_stmt_info *sql_info) {
   }
 
   // 2. check if all instances updated to their latest state
-  rc = ha_get_instance_object_state_cl(*sdb_conn, sdb_group_name,
-                                       inst_obj_state_cl);
+  rc = ha_get_instance_object_state_cl(
+      *sdb_conn, sdb_group_name, inst_obj_state_cl, ha_get_sys_meta_group());
   if (rc) {
     goto error;
   }
@@ -4983,7 +5017,8 @@ int ha_write_empty_sql_log(const char *db_name, const char *table_name,
       goto done;
     }
 
-    rc = ha_get_lock_cl(*sdb_conn, ha_thread.sdb_group_name, lock_cl);
+    rc = ha_get_lock_cl(*sdb_conn, ha_thread.sdb_group_name, lock_cl,
+                        ha_get_sys_meta_group());
     if (rc) {
       ha_error_string(*sdb_conn, rc, sql_info->err_message);
       goto error;
@@ -5015,7 +5050,7 @@ int ha_write_empty_sql_log(const char *db_name, const char *table_name,
     }
 
     rc = ha_get_object_state_cl(*sql_info->sdb_conn, ha_thread.sdb_group_name,
-                                obj_state_cl);
+                                obj_state_cl, ha_get_sys_meta_group());
     if (rc) {
       ha_error_string(*sdb_conn, rc, sql_info->err_message);
       goto error;
@@ -5028,7 +5063,8 @@ int ha_write_empty_sql_log(const char *db_name, const char *table_name,
     }
 
     rc = ha_get_instance_object_state_cl(*sdb_conn, ha_thread.sdb_group_name,
-                                         inst_obj_state_cl);
+                                         inst_obj_state_cl,
+                                         ha_get_sys_meta_group());
     if (rc) {
       ha_error_string(*sdb_conn, rc, sql_info->err_message);
       goto error;
@@ -5187,6 +5223,20 @@ static int server_ha_init(void *p) {
       DBUG_RETURN(SDB_HA_OOM);
     }
     ha_thread.is_open = true;
+  }
+
+  // Init metadata mapping module and set configuration
+  MetadataMapping::enable_metadata_mapping(sdb_enable_mapping);
+  MetadataMapping::set_sql_group(ha_inst_group_name);
+  MetadataMapping::set_mapping_group_size(sdb_mapping_group_size);
+  MetadataMapping::set_mapping_group_number(sdb_mapping_group_num);
+  MetadataMapping *name_map = MetadataMapping::get_instance();
+  DBUG_ASSERT(NULL != name_map);
+
+  if (sdb_enable_mapping) {
+    SDB_LOG_INFO(
+        "Metadata mapping is on, make sure that 'SysMetaGroup' group has been "
+        "created");
   }
   DBUG_RETURN(0);
 }

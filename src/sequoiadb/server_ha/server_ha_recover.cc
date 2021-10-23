@@ -382,6 +382,13 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
   elem = obj.getField(HA_FIELD_DATA_GROUP);
   if (bson::String == elem.type()) {
     ha_set_data_group(elem.valuestr());
+    const char *data_group = ha_get_data_group();
+    // if data group for is set and metadata mapping is not set, report error
+    if ('\0' != data_group[0] && !sdb_enable_mapping) {
+      SDB_LOG_ERROR("Metadata mapping is not enabled while data group is set");
+      rc = SDB_HA_EXCEPTION;
+      goto error;
+    }
   }
 
   config_obj = obj;
@@ -788,14 +795,15 @@ static int copy_dump_source_state(ha_recover_replay_thread *ha_thread,
   int instance_id = ha_thread->instance_id;
   DBUG_ASSERT(instance_id > 0);
 
-  rc = ha_get_instance_state_cl(sdb_conn, sdb_group_name, inst_state_cl);
+  rc = ha_get_instance_state_cl(sdb_conn, sdb_group_name, inst_state_cl,
+                                ha_get_sys_meta_group());
   HA_RC_CHECK(
       rc, done,
       "HA: Failed to get instance state table '%s', sequoiadb error: %s",
       HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  rc = ha_get_instance_object_state_cl(sdb_conn, sdb_group_name,
-                                       inst_obj_state_cl);
+  rc = ha_get_instance_object_state_cl(
+      sdb_conn, sdb_group_name, inst_obj_state_cl, ha_get_sys_meta_group());
   HA_RC_CHECK(rc, done,
               "HA: Failed to get instance object state table '%s', "
               "sequoiadb error: %s",
@@ -887,8 +895,8 @@ static int clear_sql_log_and_object_state(ha_recover_replay_thread *ha_thread,
               ha_error_string(sdb_conn, rc, err_buf));
 
   // clear 'HAObjectState' for the first instance to start
-  rc =
-      ha_get_object_state_cl(sdb_conn, ha_thread->sdb_group_name, obj_state_cl);
+  rc = ha_get_object_state_cl(sdb_conn, ha_thread->sdb_group_name, obj_state_cl,
+                              ha_get_sys_meta_group());
   HA_RC_CHECK(rc, error,
               "HA: Unable to get object state table 'HAObjectState', "
               "sequoiadb error: %s",
@@ -918,7 +926,8 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
   rc = get_local_instance_id(instance_id);
   HA_RC_CHECK(rc, error, "HA: Unable to get instance ID from local file");
 
-  rc = ha_get_registry_cl(sdb_conn, HA_GLOBAL_INFO, registry_cl);
+  rc = ha_get_registry_cl(sdb_conn, HA_GLOBAL_INFO, registry_cl,
+                          ha_get_sys_meta_group());
   HA_RC_CHECK(rc, error, "HA: Unable to get global registry table '%s'",
               HA_REGISTRY_CL);
 
@@ -1004,7 +1013,7 @@ static int check_if_local_data_expired(ha_recover_replay_thread *ha_thread,
 
   DBUG_ASSERT(instance_id > 0);
   rc = ha_get_instance_state_cl(sdb_conn, ha_thread->sdb_group_name,
-                                inst_state_cl);
+                                inst_state_cl, ha_get_sys_meta_group());
   HA_RC_CHECK(
       rc, error,
       "HA: Unable to get instance state table '%s', sequoiadb error: %s",
@@ -1445,8 +1454,8 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
               "HA: Unable to get SQL log table '%s', sequoiadb error: %s",
               HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  rc = ha_get_instance_object_state_cl(sdb_conn, sdb_group_name,
-                                       inst_obj_state_cl);
+  rc = ha_get_instance_object_state_cl(
+      sdb_conn, sdb_group_name, inst_obj_state_cl, ha_get_sys_meta_group());
   HA_RC_CHECK(rc, error,
               "HA: Unable to get instance object state table '%s', "
               "sequoiadb error: %s",
@@ -1810,7 +1819,8 @@ int load_inst_obj_state_into_cache(ha_recover_replay_thread *ha_thread,
 
   SDB_LOG_INFO("HA: Load instance object state into cache");
   rc = ha_get_instance_object_state_cl(sdb_conn, ha_thread->sdb_group_name,
-                                       inst_obj_state_cl);
+                                       inst_obj_state_cl,
+                                       ha_get_sys_meta_group());
   HA_RC_CHECK(rc, error,
               "HA: Unable to get instance object state table '%s', "
               "sequoiadb error: %s",
@@ -2169,14 +2179,16 @@ void *ha_replay_pending_logs(void *arg) {
       }
     }
 
-    rc = ha_get_pending_log_cl(sdb_conn, group_name, pending_log_cl);
+    rc = ha_get_pending_log_cl(sdb_conn, group_name, pending_log_cl,
+                               ha_get_sys_meta_group());
     if (rc) {
       SDB_LOG_ERROR("HA: Failed to get pending log table, sequoiadb error: %s",
                     ha_error_string(sdb_conn, rc, err_buff));
       goto sleep_secs;
     }
 
-    rc = ha_get_pending_log_cl(sdb_conn, group_name, check_again_cl);
+    rc = ha_get_pending_log_cl(sdb_conn, group_name, check_again_cl,
+                               ha_get_sys_meta_group());
     if (rc) {
       SDB_LOG_ERROR("HA: Failed to get pending log table, sequoiadb error: %s",
                     ha_error_string(sdb_conn, rc, err_buff));

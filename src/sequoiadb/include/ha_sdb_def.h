@@ -58,6 +58,24 @@
 #define SDB_SESSION_ATTR_PREFERRED_STRICT "PreferedStrict"
 #define SDB_SESSION_ATTR_PREFERRED_PERIOD "PreferedPeriod"
 
+// Macro for metadata mapping module
+#define NM_SYS_META_GROUP "SysMetaGroup"
+#define NM_SQL_GROUP_PREFIX "SQL_NAME_MAPPING"
+#define NM_DEFAULT_GROUP_NAME "DEF_INST_GROUP"
+#define NM_TABLE_MAP "TABLE_MAPPING"
+#define NM_MAX_MAPPING_GROUP_SIZE 50
+#define NM_MAPPING_GROUP_SIZE 1024
+#define NM_MAPPING_GROUP_NUM 10
+#define NM_FIELD_DB_NAME "DBName"
+#define NM_FIELD_TABLE_NAME "TableName"
+#define NM_FIELD_CS_NAME "CSName"
+#define NM_FIELD_CL_NAME "CLName"
+#define NM_FIELD_CL_COUNT "CLCount"
+#define NM_FIELD_STATE "State"
+#define NM_DB_TABLE_INDEX "MappingTableDBTableIndex"
+
+#define SDB_MAX_RETRY_TIME 3
+
 #define SDB_TRANS_ISO_INVALID ((ulong)(-1))
 #define SDB_TRANS_ISO_RU 0
 #define SDB_TRANS_ISO_RC 1
