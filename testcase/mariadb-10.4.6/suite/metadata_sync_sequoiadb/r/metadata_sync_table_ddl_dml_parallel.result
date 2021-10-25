@@ -137,9 +137,9 @@ a
 1
 2
 3
-2005
-2006
-2007
+2002
+2003
+2004
 connection conn1;
 alter table t1 change a col1 int auto_increment;
 connection conn2;

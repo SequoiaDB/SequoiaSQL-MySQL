@@ -117,9 +117,9 @@ a
 1
 2
 3
-2005
-2006
-2007
+2002
+2003
+2004
 alter table t1 change a col1 int auto_increment;
 insert into t1 values(),(),();
 alter table t1 modify col1 int;
