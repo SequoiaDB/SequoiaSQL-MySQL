@@ -347,7 +347,6 @@ int ha_sdb_seq::insert_into_sequence() {
                         "table:%s.%s, exception:%s",
                         db_name, table_name, e.what());
 
-  dbug_tmp_restore_column_map(table->read_set, old_map);
   seq->used_fields = ~(uint)0;
   seq->print_dbug();
 
@@ -362,6 +361,7 @@ int ha_sdb_seq::insert_into_sequence() {
   }
 
 done:
+  dbug_tmp_restore_column_map(table->read_set, old_map);
   return rc;
 error:
   goto done;

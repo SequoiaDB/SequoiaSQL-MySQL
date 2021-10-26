@@ -913,6 +913,7 @@ int sdb_append_end_condition(THD *thd, TABLE *table, bson::BSONObj &condition) {
   Field *end_field = table->vers_end_field();
   TABLE_LIST *table_list = thd->lex->query_tables;
 
+  bitmap_set_bit(table->write_set, end_field->field_index);
   end_field->set_max();
   sdb_field_get_timestamp(end_field, &tv);
   // True if 'DELETE HISTORY FROM ...'
