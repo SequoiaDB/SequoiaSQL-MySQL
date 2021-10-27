@@ -5322,17 +5322,18 @@ create view v2 as
   select id, 
   d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d as p
   from v1;
-insert into t1 (id, r)
-select id,p from
-(
-  select id, 
-  d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d as p
-  from (
-    select id, if(r=r,1,2) as d
-    from t1
-  ) a
-) b
-on duplicate key update r=p;
+#BUG #SEQUOIASQLMAINSTREAM-1146
+#insert into t1 (id, r)
+#select id,p from
+#(
+#  select id, 
+#  d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d+d as p
+#  from (
+#    select id, if(r=r,1,2) as d
+#    from t1
+#  ) a
+#) b
+#on duplicate key update r=p;
 insert into t1 (id, r)
 select id,p from v2 
 on duplicate key update r=p;
