@@ -352,9 +352,9 @@ static int get_text_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   org_str.set((const char *)(key_ptr + key_start_pos), key_length,
               key_part->field->charset());
   str = &org_str;
-  if (!my_charset_same(org_str.charset(), &SDB_CHARSET) &&
+  if (!sdb_is_supported_collation(org_str.charset()) &&
       !my_charset_same(org_str.charset(), &my_charset_bin)) {
-    rc = sdb_convert_charset(org_str, conv_str, &SDB_CHARSET);
+    rc = sdb_convert_charset(org_str, conv_str, &SDB_COLLATION_UTF8MB4);
     if (rc) {
       goto error;
     }
@@ -398,8 +398,8 @@ static int get_char_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   }
 
   if (!my_charset_same(str->charset(), &my_charset_bin)) {
-    if (!my_charset_same(str->charset(), &SDB_CHARSET)) {
-      rc = sdb_convert_charset(*str, conv_str, &SDB_CHARSET);
+    if (!sdb_is_supported_collation(str->charset())) {
+      rc = sdb_convert_charset(*str, conv_str, &SDB_COLLATION_UTF8MB4);
       if (rc) {
         goto error;
       }
@@ -474,7 +474,7 @@ static int get_datetime_key_obj(const uchar *key_ptr,
   const uchar *new_ptr = key_ptr + key_part->store_length - key_part->length;
   String org_str, str_val;
   key_part->field->val_str(&org_str, new_ptr);
-  sdb_convert_charset(org_str, str_val, &SDB_CHARSET);
+  sdb_convert_charset(org_str, str_val, &SDB_COLLATION_UTF8MB4);
   try {
     obj_builder.appendStrWithNoTerminating(op_str, str_val.ptr(),
                                            str_val.length());
@@ -1337,9 +1337,9 @@ double Sdb_match_cnt_estimator::convert_str_to_scalar(
     }
   }
 
-  if (!my_charset_same(str->charset(), &SDB_CHARSET) &&
+  if (!sdb_is_supported_collation(str->charset()) &&
       !my_charset_same(str->charset(), &my_charset_bin)) {
-    rc = sdb_convert_charset(*str, conv_str, &SDB_CHARSET);
+    rc = sdb_convert_charset(*str, conv_str, &SDB_COLLATION_UTF8MB4);
     if (rc) {
       goto error;
     }

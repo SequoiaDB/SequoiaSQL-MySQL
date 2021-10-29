@@ -1888,8 +1888,8 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
         } else {
           String conv_str;
           String *str = &val_tmp;
-          if (!my_charset_same(str->charset(), &SDB_CHARSET)) {
-            rc = sdb_convert_charset(*str, conv_str, &SDB_CHARSET);
+          if (!sdb_is_supported_collation(str->charset())) {
+            rc = sdb_convert_charset(*str, conv_str, &SDB_COLLATION_UTF8MB4);
             if (rc) {
               goto error;
             }
@@ -4775,8 +4775,8 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
         uint len = elem.valuestrsize() - 1;
         const CHARSET_INFO *field_charset = ((Field_str *)field)->charset();
 
-        if (!my_charset_same(field_charset, &SDB_CHARSET)) {
-          String org_str(data, len, &SDB_CHARSET);
+        if (!sdb_is_supported_collation(field_charset)) {
+          String org_str(data, len, &SDB_COLLATION_UTF8MB4);
           String conv_str;
           uchar *new_data = NULL;
           rc = sdb_convert_charset(org_str, conv_str, field_charset);
@@ -4798,7 +4798,8 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
         raw_store_blob((Field_blob *)field, data, len);
       } else {
         // DATETIME is stored as string, too.
-        field->store(elem.valuestr(), elem.valuestrsize() - 1, &SDB_CHARSET);
+        field->store(elem.valuestr(), elem.valuestrsize() - 1,
+                     &SDB_COLLATION_UTF8MB4);
       }
       break;
     }
@@ -7774,6 +7775,14 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   if (create_temporary) {
     if (0 != sdb_rebuild_db_name_of_temp_table(db_name, SDB_CS_NAME_MAX_SIZE)) {
       rc = HA_WRONG_CREATE_OPTION;
+      goto error;
+    }
+  }
+
+  for (Field **fields = form->field; *fields; fields++) {
+    Field *field = *fields;
+    rc = sdb_check_collation(field);
+    if (rc) {
       goto error;
     }
   }

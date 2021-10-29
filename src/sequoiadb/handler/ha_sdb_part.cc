@@ -2436,6 +2436,11 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     for (Field **fields = form->field; *fields; fields++) {
       Field *field = *fields;
 
+      rc = sdb_check_collation(field);
+      if (rc) {
+        goto error;
+      }
+
       if (field->type() == MYSQL_TYPE_YEAR && field->field_length != 4) {
         rc = ER_INVALID_YEAR_COLUMN_LENGTH;
         my_printf_error(rc, "Supports only YEAR or YEAR(4) column", MYF(0));

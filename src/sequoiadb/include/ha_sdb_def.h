@@ -35,7 +35,9 @@
 
 #define SDB_SHOW_VAR_BUFF_SIZE 1024
 
-#define SDB_CHARSET my_charset_utf8mb4_bin
+#define SDB_COLLATION_UTF8MB4 my_charset_utf8mb4_bin
+
+#define SDB_COLLATION_UTF8 my_charset_utf8_bin
 
 #define SDB_OID_LEN 12
 #define SDB_OID_FIELD "_id"

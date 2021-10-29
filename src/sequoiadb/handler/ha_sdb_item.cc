@@ -450,8 +450,9 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
               rc = SDB_ERR_INVALID_ARG;
               goto error;
             }
-            if (!my_charset_same(p_str->charset(), &SDB_CHARSET)) {
-              rc = sdb_convert_charset(*p_str, conv_str, &SDB_CHARSET);
+            if (!sdb_is_supported_collation(p_str->charset())) {
+              rc =
+                  sdb_convert_charset(*p_str, conv_str, &SDB_COLLATION_UTF8MB4);
               if (rc) {
                 goto error;
               }
@@ -537,8 +538,8 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
         }
 
         if (!my_charset_same(p_str->charset(), &my_charset_bin)) {
-          if (!my_charset_same(p_str->charset(), &SDB_CHARSET)) {
-            rc = sdb_convert_charset(*p_str, conv_str, &SDB_CHARSET);
+          if (!sdb_is_supported_collation(p_str->charset())) {
+            rc = sdb_convert_charset(*p_str, conv_str, &SDB_COLLATION_UTF8MB4);
             if (rc) {
               break;
             }
@@ -1434,7 +1435,8 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
     }
 
     str_val_org = item_val->val_str(NULL);
-    rc = sdb_convert_charset(*str_val_org, str_val_conv, &SDB_CHARSET);
+    rc =
+        sdb_convert_charset(*str_val_org, str_val_conv, &SDB_COLLATION_UTF8MB4);
     if (rc) {
       goto error;
     }

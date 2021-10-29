@@ -48,6 +48,7 @@ static const int SDB_DEFAULT_STATS_SAMPLE_NUM = 200;
 static const double SDB_DEFAULT_STATS_SAMPLE_PERCENT = 0.0;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
+static const my_bool SDB_DEFAULT_STRICT_COLLATION = TRUE;
 
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
 
@@ -67,6 +68,7 @@ uint sdb_stats_cache_version = 1;
 int sdb_stats_mode = SDB_DEFAULT_STATS_MODE;
 int sdb_stats_sample_num = SDB_DEFAULT_STATS_SAMPLE_NUM;
 double sdb_stats_sample_percent = SDB_DEFAULT_STATS_SAMPLE_PERCENT;
+my_bool sdb_strict_collation = SDB_DEFAULT_STRICT_COLLATION;
 
 static const char *sdb_optimizer_options_names[] = {
     "direct_count", "direct_delete", "direct_update",
@@ -477,6 +479,12 @@ static MYSQL_THDVAR_INT(preferred_period, PLUGIN_VAR_OPCMDARG,
                         /*优先节点的有效周期。*/,
                         NULL, sdb_preferred_period_update,
                         SDB_DEFAULT_PREFERRED_PERIOD, -1, INT_MAX32, 0);
+static MYSQL_SYSVAR_BOOL(
+    strict_collation, sdb_strict_collation, PLUGIN_VAR_OPCMDARG,
+    "Whether to strictly verify the utf8mb4_bin or utf8_bin collation. "
+    "(Default: ON)"
+    /*是否严格校验 utf8mb4_bin 或 utf8_bin 校对集。*/,
+    NULL, NULL, SDB_DEFAULT_STRICT_COLLATION);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
@@ -511,6 +519,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(preferred_instance_mode),
     MYSQL_SYSVAR(preferred_strict),
     MYSQL_SYSVAR(preferred_period),
+    MYSQL_SYSVAR(strict_collation),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {

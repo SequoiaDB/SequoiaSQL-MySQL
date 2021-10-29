@@ -141,6 +141,10 @@ bool sdb_prefer_inst_mode_is_valid(const char *s);
 
 void sdb_set_clock_time(struct timespec &abstime, ulonglong sec);
 
+int sdb_check_collation(Field *field);
+
+bool sdb_is_supported_collation(const CHARSET_INFO *cs1);
+
 class Sdb_encryption {
   static const uint KEY_LEN = 32;
   static const enum my_aes_mode AES_OPMODE = MY_AES_ECB;

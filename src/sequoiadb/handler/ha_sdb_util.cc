@@ -287,7 +287,8 @@ int sdb_convert_tab_opt_to_obj(const char *str, bson::BSONObj &obj) {
     return rc;
   }
   const char *sdb_cmt_pos = str + strlen(SDB_COMMENT);
-  while (*sdb_cmt_pos != '\0' && my_isspace(&SDB_CHARSET, *sdb_cmt_pos)) {
+  while (*sdb_cmt_pos != '\0' &&
+         my_isspace(&SDB_COLLATION_UTF8MB4, *sdb_cmt_pos)) {
     sdb_cmt_pos++;
   }
 
@@ -297,7 +298,8 @@ int sdb_convert_tab_opt_to_obj(const char *str, bson::BSONObj &obj) {
   }
 
   sdb_cmt_pos += 1;
-  while (*sdb_cmt_pos != '\0' && my_isspace(&SDB_CHARSET, *sdb_cmt_pos)) {
+  while (*sdb_cmt_pos != '\0' &&
+         my_isspace(&SDB_COLLATION_UTF8MB4, *sdb_cmt_pos)) {
     sdb_cmt_pos++;
   }
 
@@ -1275,4 +1277,36 @@ void sdb_set_clock_time(struct timespec &abstime, ulonglong sec) {
     DBUG_ASSERT(0);
   }
   abstime.tv_sec += sec;
+}
+
+/*
+   In addition to binary data, the following field types are not
+   supported when their collation is not utf8mb4_bin:
+   1. MYSQL_TYPE_STRING: CHAR SET ENUM
+   2. MYSQL_TYPE_VARCHAR: VARCHAR
+   3. MYSQL_TYPE_BLOB: TINYTEXT TEXT MEDIUMTEXT LONGTEXT
+*/
+int sdb_check_collation(Field *field) {
+  int rc = 0;
+  if (sdb_strict_collation &&
+      ((field->type() == MYSQL_TYPE_STRING &&
+        !((Field_str *)field)->binary()) ||
+       (field->type() == MYSQL_TYPE_VARCHAR &&
+        !((Field_str *)field)->binary()) ||
+       (field->type() == MYSQL_TYPE_BLOB && !((Field_str *)field)->binary())) &&
+      !my_charset_same(field->charset(), &SDB_COLLATION_UTF8MB4) &&
+      !my_charset_same(field->charset(), &SDB_COLLATION_UTF8)) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc,
+                    "The collation of column '%s' is not supported. Try '%s' "
+                    "instead of '%s'.",
+                    MYF(0), sdb_field_name(field), SDB_COLLATION_UTF8MB4.name,
+                    field->charset()->name);
+  }
+  return rc;
+}
+
+bool sdb_is_supported_collation(const CHARSET_INFO *cs) {
+  return my_charset_same(cs, &SDB_COLLATION_UTF8MB4) ||
+         my_charset_same(cs, &SDB_COLLATION_UTF8);
 }

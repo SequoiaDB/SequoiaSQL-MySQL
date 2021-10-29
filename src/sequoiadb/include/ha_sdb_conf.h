@@ -100,6 +100,7 @@ extern uint sdb_stats_cache_version;
 extern int sdb_stats_mode;
 extern int sdb_stats_sample_num;
 extern double sdb_stats_sample_percent;
+extern my_bool sdb_strict_collation;
 
 extern Sdb_rwlock sdb_password_lock;
 extern String sdb_encoded_password;
