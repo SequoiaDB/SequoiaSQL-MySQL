@@ -418,9 +418,9 @@ function delete_inst()
 
    #SEQUOIASQLMAINSTREAM-766 NEED_PRINTSCREEN was added to solve the SAC compatibility problem
    if [ "$FORCE_OP" == false ] && [ "$NEED_PRINTSCREEN" == false ]; then
-      typeset -u answer
       echo "Deleting an instance will delete the data directory"
       read -p "Do you want to delete instance?[y/N]" answer
+      answer=`echo ${answer} | tr -t [a-z] [A-Z]`
       test -z ${answer} && answer="N"
       case ${answer} in
          Y|YES)
