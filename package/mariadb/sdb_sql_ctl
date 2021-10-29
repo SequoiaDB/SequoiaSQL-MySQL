@@ -454,9 +454,9 @@ function delete_inst()
 
    #SEQUOIASQLMAINSTREAM-766 NEED_PRINTSCREEN was added to solve the SAC compatibility problem
    if [ "$FORCE_OP" == false ] && [ "$NEED_PRINTSCREEN" == false ]; then
-      typeset -u answer
       echo "Deleting an instance will delete the data directory"
       read -p "Do you want to delete instance?[y/N]" answer
+      answer=`echo ${answer} | tr -t [a-z] [A-Z]`
       test -z ${answer} && answer="N"
       case ${answer} in
          Y|YES)
@@ -946,7 +946,6 @@ function join_inst_group()
 
    if [ "$FORCE_OP" == false ]; then
       #prompt user whether to add the instance to instance group
-      typeset -u answer
       get_one_status $INST_NAME >> /dev/null
       if [ $? == 0 ]; then
          echo "Current instance is running"
@@ -956,6 +955,7 @@ function join_inst_group()
          echo "Adding an instance to an instance group will clear the instance metadata during next startup if it's not the first instance to join the instance group"
       fi
       read -p "Do you want to add instance '$INST_NAME' to instance group '$INST_GROUP_NAME'?[y/N]" answer
+      answer=`echo ${answer} | tr -t [a-z] [A-Z]`
       test -z ${answer} && answer="N"
       case ${answer} in
          Y|YES)
@@ -1019,9 +1019,9 @@ function leave_inst_group()
 
    if [ "$FORCE_OP" == false ]; then
       #prompt user whether to remove instance from instance group
-      typeset -u answer
       echo "Remove instance '$INST_NAME' from instance group '$INST_GROUP_NAME' will restart instance if it's running"
       read -p "Do you want to remove instance '$INST_NAME' from instance group '$INST_GROUP_NAME'?[y/N]" answer
+      answer=`echo ${answer} | tr -t [a-z] [A-Z]`
       test -z ${answer} && answer="N"
       case ${answer} in
          Y|YES)
