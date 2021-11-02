@@ -56,50 +56,6 @@ error:
   goto done;
 }
 
-int cl_init(sdbclient::sdbCollection *cl, Sdb_conn *connection,
-            const char *cs_name, const char *cl_name, const bool check_exist) {
-  int rc = SDB_ERR_OK;
-  sdbCollectionSpace cs;
-
-  try {
-    rc = connection->get_sdb().getCollectionSpace(cs_name, cs, check_exist);
-    if (rc != SDB_ERR_OK) {
-      goto error;
-    }
-
-    rc = cs.getCollection(cl_name, *cl, check_exist);
-    if (rc != SDB_ERR_OK) {
-      goto error;
-    }
-  }
-  SDB_EXCEPTION_CATCHER(rc, "Failed to init collection, exception:%s",
-                        e.what());
-done:
-  return rc;
-error:
-  goto done;
-}
-
-int Sdb_cl::init(Sdb_conn *connection, const char *cs_name, const char *cl_name,
-                 const bool check_exist) {
-  int rc = SDB_ERR_OK;
-
-  if (NULL == connection || NULL == cs_name || NULL == cl_name) {
-    rc = SDB_ERR_INVALID_ARG;
-    goto error;
-  }
-
-  m_conn = connection;
-  m_thread_id = connection->thread_id();
-
-  rc = retry(
-      boost::bind(cl_init, &m_cl, connection, cs_name, cl_name, check_exist));
-done:
-  return rc;
-error:
-  goto done;
-}
-
 bool Sdb_cl::is_transaction_on() {
   return m_conn->is_transaction_on();
 }

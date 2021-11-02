@@ -25,13 +25,13 @@
 #include "sdb_conn.h"
 
 class Sdb_cl {
+  friend int Sdb_conn::get_cl(const char *cs_name, const char *cl_name,
+                              Sdb_cl &cl, const bool check_exist = false);
+
  public:
   Sdb_cl();
 
   ~Sdb_cl();
-
-  int init(Sdb_conn *connection, const char *cs_name, const char *cl_name,
-           const bool check_exist);
 
   bool is_transaction_on();
 
@@ -149,6 +149,10 @@ class Sdb_cl {
   int alter_collection(const bson::BSONObj &obj);
 
  private:
+  Sdb_cl(const Sdb_cl &other);
+
+  Sdb_cl &operator=(const Sdb_cl &);
+
   int retry(boost::function<int()> func);
 
  private:

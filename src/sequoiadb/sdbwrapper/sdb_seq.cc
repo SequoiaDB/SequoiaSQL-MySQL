@@ -53,38 +53,6 @@ error:
   goto done;
 }
 
-int seq_init(sdbclient::sdbSequence *seq, Sdb_conn *connection,
-             const char *seq_name) {
-  int rc = SDB_ERR_OK;
-
-  rc = connection->get_sdb().getSequence(seq_name, *seq);
-  if (rc != SDB_ERR_OK) {
-    goto error;
-  }
-done:
-  return rc;
-error:
-  goto done;
-}
-
-int Sdb_seq::init(Sdb_conn *connection, const char *seq_name) {
-  int rc = SDB_ERR_OK;
-
-  if (NULL == connection || NULL == seq_name) {
-    rc = SDB_ERR_INVALID_ARG;
-    goto error;
-  }
-
-  m_conn = connection;
-  m_thread_id = connection->thread_id();
-
-  rc = retry(boost::bind(seq_init, &m_seq, connection, seq_name));
-done:
-  return rc;
-error:
-  goto done;
-}
-
 int seq_fetch(sdbclient::sdbSequence *seq, int fetch_num, longlong *next_value,
               int *return_num, int *increment) {
   return seq->fetch(fetch_num, *next_value, *return_num, *increment);

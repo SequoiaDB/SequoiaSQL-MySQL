@@ -220,7 +220,7 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
                       free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
       return SDB_HA_OOM;
     }
-    sql_info->sdb_conn = new (std::nothrow) Sdb_conn(thread_id, true);
+    sql_info->sdb_conn = new (std::nothrow) Sdb_pool_conn(thread_id, true);
     sql_info->pending_sql_id = 0;
     if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
@@ -239,7 +239,7 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
                       free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
       return SDB_HA_OOM;
     }
-    sql_info->sdb_conn = new (std::nothrow) Sdb_conn(thread_id, true);
+    sql_info->sdb_conn = new (std::nothrow) Sdb_pool_conn(thread_id, true);
     sql_info->pending_sql_id = 0;
     if (likely(sql_info->sdb_conn)) {
       SDB_LOG_DEBUG("HA: Init sequoiadb connection");
@@ -1284,7 +1284,8 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
   bool oom = false;  // out of memory while building a string
   bool first_object = true;
   int rename_table_count = 0;
-  Sdb_conn lock_conn(0, false);
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &lock_conn = pool_conn;
   Sdb_conn *lock_conn_ptr = NULL;
 
   oom = general_query.append(event.general_query, event.general_query_length);
@@ -3853,7 +3854,8 @@ static int write_pending_log(THD *thd, ha_sql_stmt_info *sql_info,
   int rc = 0;
 
   Sdb_conn *sdb_conn = NULL;
-  Sdb_conn tmp_conn(0, false);
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &tmp_conn = pool_conn;
   Sdb_cl pending_log_cl, pending_object_cl;
   bson::BSONObj obj, hints, result, cond;
   int pending_id = 0;
@@ -4792,7 +4794,8 @@ static int write_empty_sql_log_for_object(
   THD *thd = current_thd;
   char cached_record_key[NAME_LEN * 2 + 20] = {0};
   ha_sql_stmt_info *sql_info = NULL;
-  Sdb_conn lock_conn(0, false);
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &lock_conn = pool_conn;
   bson::BSONObjBuilder cond_builder, obj_builder;
 
   try {

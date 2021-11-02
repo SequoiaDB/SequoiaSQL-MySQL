@@ -18,6 +18,7 @@
 
 #include "ha_sdb_sql.h"
 #include <client.hpp>
+#include <sdbConnectionPool.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include "ha_sdb_def.h"
@@ -232,13 +233,11 @@ class Sdb_session_attrs {
 
 class Sdb_conn {
  public:
-  Sdb_conn(my_thread_id _tid, bool server_ha_conn = false);
+  Sdb_conn(my_thread_id tid, bool server_ha_conn = false);
 
-  ~Sdb_conn();
+  virtual ~Sdb_conn();
 
-  int connect(const char *conn_addr = NULL);
-
-  sdbclient::sdb &get_sdb();
+  int connect();
 
   my_thread_id thread_id();
 
@@ -300,7 +299,7 @@ class Sdb_conn {
 
   int interrupt_operation();
 
-  bool is_valid() { return m_connection.isValid(); }
+  bool is_valid() { return m_connection && m_connection->isValid(); }
 
   bool is_authenticated() { return m_is_authenticated; }
 
@@ -310,9 +309,7 @@ class Sdb_conn {
 
   inline bool get_pushed_autocommit() { return pushed_autocommit; }
 
-  int get_last_error(bson::BSONObj &errObj) {
-    return m_connection.getLastErrorObj(errObj);
-  }
+  int get_last_error(bson::BSONObj &errObj);
 
   inline ulong convert_to_sdb_isolation(const ulong tx_isolation,
                                         const int major = 3) {
@@ -364,7 +361,7 @@ class Sdb_conn {
 
   void get_version(int &major, int &minor, int &fix) {
     uint8 major_ver = 0, minor_ver = 0, fix_ver = 0;
-    m_connection.getVersion(major_ver, minor_ver, fix_ver);
+    m_connection->getVersion(major_ver, minor_ver, fix_ver);
     major = major_ver;
     minor = minor_ver;
     fix = fix_ver;
@@ -397,7 +394,7 @@ class Sdb_conn {
 
   void set_print_screen(bool print_screen) { m_print_screen = print_screen; }
 
- private:
+ protected:
   int retry(boost::function<int()> func);
 
   int get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
@@ -406,8 +403,12 @@ class Sdb_conn {
   int get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
                                Sdb_statistics &stats);
 
- private:
-  sdbclient::sdb m_connection;
+  virtual int get_connection() = 0;
+
+  virtual void release_connection() = 0;
+
+ protected:
+  sdbclient::sdb *m_connection;
   sdbclient::sdbCursor m_cursor;
   bool m_transaction_on;
   my_thread_id m_thread_id;
@@ -419,8 +420,39 @@ class Sdb_conn {
   char errmsg[SDB_ERR_BUFF_SIZE];
   bool rollback_on_timeout;
   Sdb_session_attrs session_attrs;
-  bool m_use_default_addr;
   bool m_print_screen;
+};
+
+class Sdb_pool_conn : public Sdb_conn {
+ public:
+  static int init();
+  static int fini();
+  static int update_address();
+  static void update_auth_info();
+
+ public:
+  Sdb_pool_conn(my_thread_id tid, bool server_ha_conn = false)
+      : Sdb_conn(tid, server_ha_conn) {}
+  ~Sdb_pool_conn();
+
+  virtual int get_connection();
+  virtual void release_connection();
+
+ private:
+  static sdbclient::sdbConnectionPool conn_pool;
+};
+
+class Sdb_normal_conn : public Sdb_conn {
+ public:
+  Sdb_normal_conn(my_thread_id tid, const char *conn_addr);
+  ~Sdb_normal_conn();
+
+  virtual int get_connection();
+  virtual void release_connection();
+
+ private:
+  sdbclient::sdb m_connection_obj;
+  const char *m_conn_addr;
 };
 
 #endif

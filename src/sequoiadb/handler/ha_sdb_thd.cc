@@ -71,7 +71,6 @@ static void sdb_set_conn_addr(THD *thd, struct st_mysql_sys_var *var, void *tgt,
   /* TODO: not consider the case of coord addrs was configured with
      two or more different version of sdb.*/
   sdb_invalidate_version_cache();
-
 done:
   /* Ignore the error code. */
   return;
@@ -93,7 +92,7 @@ static int sdb_conn_addr_check(THD *thd, struct st_mysql_sys_var *var,
   // another cluster if 'HA' is on
   if (0 == rc && ha_is_open() && sdb_conn_str && arg_conn_addr &&
       0 != strcmp(sdb_conn_str, arg_conn_addr)) {
-    Sdb_conn dst_conn(0);
+    Sdb_normal_conn dst_conn(0, arg_conn_addr);
     Sdb_cl registry_cl;
     bson::BSONObj cond_obj, sel_obj, dst_obj;
     static const char *SDB_COORD_STR = "coord";
@@ -101,7 +100,7 @@ static int sdb_conn_addr_check(THD *thd, struct st_mysql_sys_var *var,
 
     try {
       // connect dst node
-      rc = dst_conn.connect(arg_conn_addr);
+      rc = dst_conn.connect();
       if (0 != rc) {
         my_printf_error(ER_WRONG_VALUE_FOR_VAR, "%s", MYF(0),
                         dst_conn.get_err_msg());
@@ -179,11 +178,45 @@ static int sdb_conn_addr_check(THD *thd, struct st_mysql_sys_var *var,
       goto error;
     }
   }
+
+  rc = Sdb_pool_conn::update_address();
+  if (0 != rc) {
+    rc = -1;
+    goto error;
+  }
+
 done:
   *static_cast<const char **>(save) = (0 == rc) ? arg_conn_addr : NULL;
   return rc;
 error:
   goto done;
+}
+
+static void sdb_set_usr(THD *thd, struct st_mysql_sys_var *var, void *tgt,
+                        const void *save) {
+  sdb_update_sys_var_str(var, tgt, save);
+  Sdb_pool_conn::update_auth_info();
+}
+
+static void sdb_set_passwd(THD *thd, struct st_mysql_sys_var *var, void *tgt,
+                           const void *save) {
+  sdb_password_lock.write_lock();
+  sdb_update_sys_var_str(var, tgt, save);
+  sdb_encrypt_password();
+  sdb_password_lock.unlock();
+  Sdb_pool_conn::update_auth_info();
+}
+
+static void sdb_set_passwd_cipherfile(THD *thd, struct st_mysql_sys_var *var,
+                                      void *tgt, const void *save) {
+  sdb_update_sys_var_str(var, tgt, save);
+  Sdb_pool_conn::update_auth_info();
+}
+
+static void sdb_set_passwd_token(THD *thd, struct st_mysql_sys_var *var,
+                                 void *tgt, const void *save) {
+  sdb_update_sys_var_str(var, tgt, save);
+  Sdb_pool_conn::update_auth_info();
 }
 
 static int sdb_use_trans_check(THD *thd, struct st_mysql_sys_var *var,
@@ -639,6 +672,10 @@ error:
 
 void sdb_init_vars_check_and_update_funcs() {
   sdb_set_connection_addr = &sdb_set_conn_addr;
+  sdb_set_user = &sdb_set_usr;
+  sdb_set_password = &sdb_set_passwd;
+  sdb_set_password_cipherfile = &sdb_set_passwd_cipherfile;
+  sdb_set_password_token = &sdb_set_passwd_token;
   sdb_use_transaction_check = &sdb_use_trans_check;
   sdb_set_lock_wait_timeout = &sdb_set_trans_timeout;
   sdb_use_rollback_segments_check = &sdb_use_rbs_check;

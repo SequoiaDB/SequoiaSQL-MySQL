@@ -1904,7 +1904,8 @@ void *ha_recover_and_replay(void *arg) {
   }
 
   // 1. create thread local var and init sequoiadb connection
-  Sdb_conn sdb_conn(sdb_thd_id(ha_thread->thd), true);
+  Sdb_pool_conn pool_conn(sdb_thd_id(ha_thread->thd), true);
+  Sdb_conn &sdb_conn = pool_conn;
 
   // watch main thread 'term' signal, current thread can be stopped immediately
   // by handle this signal
@@ -2083,7 +2084,8 @@ error:
 // replay pending log in 'HAPendingLog'
 void *ha_replay_pending_logs(void *arg) {
   int rc = 0;
-  Sdb_conn sdb_conn(0, false);
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &sdb_conn = pool_conn;
   Sdb_cl pending_log_cl, check_again_cl;
   bson::BSONObj order_by, result, cond, check_again_result;
   static const int REPLAY_PENDING_LOG_LIMIT = 20;

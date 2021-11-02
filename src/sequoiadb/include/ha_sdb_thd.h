@@ -84,7 +84,7 @@ class Thd_sdb {
   THD* m_thd;
   my_thread_id m_thread_id;
   const bool m_slave_thread;  // cached value of m_thd->slave_thread
-  Sdb_conn m_conn;
+  Sdb_pool_conn m_conn;
   bool auto_commit;
 };
 

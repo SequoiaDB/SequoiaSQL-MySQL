@@ -17,6 +17,7 @@
 #define SDB_CONF__H
 
 #include <my_global.h>
+#include "ha_sdb_lock.h"
 #include "ha_sdb_util.h"
 #include <mysql/plugin.h>
 #include <sql_string.h>
@@ -50,6 +51,8 @@ class ha_sdb_conn_addrs {
 
   int get_conn_num() const;
 
+  int get_conn_addrs(std::vector<std::string> &addr_vec) const;
+
  private:
   ha_sdb_conn_addrs(const ha_sdb_conn_addrs &rh) {}
 
@@ -63,6 +66,7 @@ class ha_sdb_conn_addrs {
 };
 
 int sdb_encrypt_password();
+bool sdb_has_password_str();
 int sdb_get_password(String &res);
 uint sdb_selector_pushdown_threshold(THD *thd);
 bool sdb_execute_only_in_mysql(THD *thd);
@@ -97,9 +101,14 @@ extern int sdb_stats_mode;
 extern int sdb_stats_sample_num;
 extern double sdb_stats_sample_percent;
 
+extern Sdb_rwlock sdb_password_lock;
 extern String sdb_encoded_password;
 
 extern mysql_var_update_func sdb_set_connection_addr;
+extern mysql_var_update_func sdb_set_user;
+extern mysql_var_update_func sdb_set_password;
+extern mysql_var_update_func sdb_set_password_cipherfile;
+extern mysql_var_update_func sdb_set_password_token;
 extern mysql_var_check_func sdb_use_transaction_check;
 extern mysql_var_update_func sdb_set_lock_wait_timeout;
 extern mysql_var_check_func sdb_use_rollback_segments_check;

@@ -26,12 +26,13 @@
 #include "sdb_conn.h"
 
 class Sdb_seq {
+  friend int Sdb_conn::get_seq(const char *cs_name, const char *table_name,
+                               char *sequence_name, Sdb_seq &seq);
+
  public:
   Sdb_seq();
 
   ~Sdb_seq();
-
-  int init(Sdb_conn *connection, const char *seq_name);
 
   int fetch(int fetch_num, longlong &next_value, int &return_num,
             int &increment);
@@ -45,6 +46,10 @@ class Sdb_seq {
   my_thread_id thread_id();
 
  private:
+  Sdb_seq(const Sdb_seq &other);
+
+  Sdb_seq &operator=(const Sdb_seq &);
+
   int retry(boost::function<int()> func);
 
  private:

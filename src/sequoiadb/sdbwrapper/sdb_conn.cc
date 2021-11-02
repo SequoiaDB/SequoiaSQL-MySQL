@@ -30,8 +30,6 @@
 #include "ha_sdb_def.h"
 #include "ha_sdb_log.h"
 
-extern char *sdb_password;
-
 static int sdb_proc_id() {
 #ifdef _WIN32
   return GetCurrentProcessId();
@@ -136,27 +134,21 @@ void Sdb_session_attrs::save_last_attrs() {
   }
 }
 
-Sdb_conn::Sdb_conn(my_thread_id _tid, bool server_ha_conn)
-    : m_transaction_on(false),
-      m_thread_id(_tid),
+Sdb_conn::Sdb_conn(my_thread_id tid, bool server_ha_conn)
+    : m_connection(NULL),
+      m_transaction_on(false),
+      m_thread_id(tid),
       pushed_autocommit(false),
       m_is_authenticated(false),
       m_is_server_ha_conn(server_ha_conn),
       m_check_collection_version(false),
-      m_use_default_addr(true),
       m_print_screen(false) {
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
   rollback_on_timeout = false;
 }
 
-Sdb_conn::~Sdb_conn() {
-  m_cursor.close();
-}
-
-sdbclient::sdb &Sdb_conn::get_sdb() {
-  return m_connection;
-}
+Sdb_conn::~Sdb_conn() {}
 
 my_thread_id Sdb_conn::thread_id() {
   return m_thread_id;
@@ -173,7 +165,7 @@ retry:
 done:
   return rc;
 error:
-  if (IS_SDB_NET_ERR(rc) && m_use_default_addr) {
+  if (IS_SDB_NET_ERR(rc)) {
     if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
       goto retry;
     }
@@ -182,7 +174,7 @@ error:
   goto done;
 }
 
-int Sdb_conn::connect(const char *conn_addr) {
+int Sdb_conn::connect() {
   int rc = SDB_ERR_OK;
   bool is_connected = false;
   String password;
@@ -193,38 +185,7 @@ int Sdb_conn::connect(const char *conn_addr) {
     m_transaction_on = false;
     ha_sdb_conn_addrs conn_addrs;
 
-    // use default address if conn_addr is NULL
-    if (NULL == conn_addr) {
-      rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
-    } else {
-      m_use_default_addr = false;
-      rc = conn_addrs.parse_conn_addrs(conn_addr);
-    }
-    if (SDB_ERR_OK != rc) {
-      snprintf(errmsg, sizeof(errmsg),
-               "Failed to parse connection addresses, rc=%d", rc);
-      goto error;
-    }
-
-    try {
-      if (sdb_password && strlen(sdb_password)) {
-        rc = sdb_get_password(password);
-        if (SDB_ERR_OK != rc) {
-          snprintf(errmsg, sizeof(errmsg), "Failed to decrypt password, rc=%d",
-                   rc);
-          goto error;
-        }
-        rc = m_connection.connect(conn_addrs.get_conn_addrs(),
-                                  conn_addrs.get_conn_num(), sdb_user,
-                                  password.ptr());
-      } else {
-        rc = m_connection.connect(conn_addrs.get_conn_addrs(),
-                                  conn_addrs.get_conn_num(), sdb_user,
-                                  sdb_password_token, sdb_password_cipherfile);
-      }
-    }
-    SDB_EXCEPTION_CATCHER(rc, "Failed to connect sdb, exception:%s", e.what());
-
+    rc = get_connection();
     if (SDB_ERR_OK != rc) {
       if (SDB_NET_CANNOT_CONNECT != rc) {
         switch (rc) {
@@ -349,7 +310,7 @@ done:
   return rc;
 error:
   if (is_connected) {
-    m_connection.disconnect();
+    release_connection();
   }
   convert_sdb_code(rc);
   goto done;
@@ -480,7 +441,7 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
     if (pushed_autocommit) {
       m_transaction_on = true;
     } else {
-      rc = m_connection.transactionBegin();
+      rc = m_connection->transactionBegin();
       if (SDB_ERR_OK == rc) {
         m_transaction_on = true;
       } else if (IS_SDB_NET_ERR(rc) && --retry_times > 0) {
@@ -506,7 +467,7 @@ int Sdb_conn::commit_transaction(const bson::BSONObj &hint) {
   if (m_transaction_on) {
     m_transaction_on = false;
     if (!pushed_autocommit) {
-      rc = m_connection.transactionCommit(hint);
+      rc = m_connection->transactionCommit(hint);
       if (rc != SDB_ERR_OK) {
         goto error;
       }
@@ -532,7 +493,7 @@ int Sdb_conn::rollback_transaction() {
     int rc = SDB_ERR_OK;
     m_transaction_on = false;
     if (!pushed_autocommit) {
-      rc = m_connection.transactionRollback();
+      rc = m_connection->transactionRollback();
       if (IS_SDB_NET_ERR(rc)) {
         connect();
       }
@@ -547,19 +508,28 @@ int Sdb_conn::rollback_transaction() {
 int Sdb_conn::get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
                      const bool check_exist) {
   int rc = SDB_ERR_OK;
+  sdbclient::sdbCollectionSpace cs;
   cl.close();
 
-  rc = cl.init(this, cs_name, cl_name, check_exist);
-  if (rc != SDB_ERR_OK) {
-    goto error;
+  cl.m_conn = this;
+  cl.m_thread_id = this->thread_id();
+
+  try {
+    rc = m_connection->getCollectionSpace(cs_name, cs, check_exist);
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
+
+    rc = cs.getCollection(cl_name, cl.m_cl, check_exist);
+    if (rc != SDB_ERR_OK) {
+      goto error;
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get collection, exception:%s", e.what());
 
 done:
   return rc;
 error:
-  if (IS_SDB_NET_ERR(rc)) {
-    connect();
-  }
   convert_sdb_code(rc);
   goto done;
 }
@@ -576,9 +546,9 @@ int Sdb_conn::create_cl(const char *cs_name, const char *cl_name,
 
 retry:
   try {
-    rc = m_connection.getCollectionSpace(cs_name, cs);
+    rc = m_connection->getCollectionSpace(cs_name, cs);
     if (SDB_DMS_CS_NOTEXIST == rc) {
-      rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+      rc = m_connection->createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
       if (SDB_OK == rc) {
         new_cs = true;
       }
@@ -593,7 +563,7 @@ retry:
       rc = cs.getCollection(cl_name, cl);
       /* CS cached on sdbclient. so SDB_DMS_CS_NOTEXIST maybe retuned here. */
     } else if (SDB_DMS_CS_NOTEXIST == rc) {
-      rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+      rc = m_connection->createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
       if (SDB_OK == rc) {
         new_cs = true;
       } else if (SDB_DMS_CS_EXIST != rc) {
@@ -641,7 +611,7 @@ const char *Sdb_conn::get_err_msg() {
   if ('\0' == errmsg[0]) {
     try {
       bson::BSONObj err_obj;
-      int rc = m_connection.getLastErrorObj(err_obj);
+      int rc = m_connection->getLastErrorObj(err_obj);
       if (0 == rc) {
         const char *error_msg = err_obj.getStringField(SDB_FIELD_DETAIL);
         if (error_msg && '\0' != error_msg[0]) {
@@ -704,7 +674,7 @@ error:
 
 int Sdb_conn::rename_cl(const char *cs_name, const char *old_cl_name,
                         const char *new_cl_name) {
-  return retry(boost::bind(conn_rename_cl, &m_connection, cs_name, old_cl_name,
+  return retry(boost::bind(conn_rename_cl, m_connection, cs_name, old_cl_name,
                            new_cl_name));
 }
 
@@ -743,7 +713,7 @@ error:
 }
 
 int Sdb_conn::drop_cl(const char *cs_name, const char *cl_name) {
-  return retry(boost::bind(conn_drop_cl, &m_connection, cs_name, cl_name));
+  return retry(boost::bind(conn_drop_cl, m_connection, cs_name, cl_name));
 }
 
 #ifdef IS_MARIADB
@@ -756,17 +726,20 @@ int Sdb_conn::get_seq(const char *cs_name, const char *table_name,
     goto error;
   }
 
-  rc = seq.init(this, sequence_name);
-  if (rc != SDB_ERR_OK) {
-    goto error;
+  seq.m_conn = this;
+  seq.m_thread_id = this->thread_id();
+
+  try {
+    rc = m_connection->getSequence(seq_name, seq.m_seq);
+    if (rc) {
+      goto error;
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get sequence, exception:%s",
 
 done:
   return rc;
 error:
-  if (IS_SDB_NET_ERR(rc)) {
-    connect();
-  }
   convert_sdb_code(rc);
   goto done;
 }
@@ -784,9 +757,9 @@ int Sdb_conn::create_seq(const char *cs_name, const char *table_name,
 
 retry:
   try {
-    rc = m_connection.getCollectionSpace(cs_name, cs);
+    rc = m_connection->getCollectionSpace(cs_name, cs);
     if (SDB_DMS_CS_NOTEXIST == rc) {
-      rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+      rc = m_connection->createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
       if (SDB_OK == rc) {
         new_cs = true;
       }
@@ -801,12 +774,12 @@ retry:
       goto error;
     }
 
-    rc = m_connection.createSequence(sequence_name, options, seq);
+    rc = m_connection->createSequence(sequence_name, options, seq);
     if (SDB_SEQUENCE_EXIST == rc) {
-      rc = m_connection.getSequence(sequence_name, seq);
+      rc = m_connection->getSequence(sequence_name, seq);
       /* CS cached on sdbclient. so SDB_DMS_CS_NOTEXIST maybe retuned here. */
     } else if (SDB_DMS_CS_NOTEXIST == rc) {
-      rc = m_connection.createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
+      rc = m_connection->createCollectionSpace(cs_name, SDB_PAGESIZE_64K, cs);
       if (SDB_OK == rc) {
         new_cs = true;
       } else if (SDB_DMS_CS_EXIST != rc) {
@@ -844,7 +817,7 @@ error:
     new_cs = false;
     new_seq = false;
   } else if (new_seq) {
-    m_connection.dropSequence(sequence_name);
+    m_connection->dropSequence(sequence_name);
     new_seq = false;
   }
   goto done;
@@ -891,7 +864,7 @@ error:
 
 int Sdb_conn::rename_seq(const char *cs_name, const char *old_seq_name,
                          const char *new_seq_name) {
-  return retry(boost::bind(conn_rename_seq, this, &m_connection, cs_name,
+  return retry(boost::bind(conn_rename_seq, this, m_connection, cs_name,
                            old_seq_name, new_seq_name));
 }
 
@@ -928,7 +901,7 @@ error:
 
 int Sdb_conn::drop_seq(const char *cs_name, const char *table_name) {
   return retry(
-      boost::bind(conn_drop_seq, this, &m_connection, cs_name, table_name));
+      boost::bind(conn_drop_seq, this, m_connection, cs_name, table_name));
 }
 #endif
 
@@ -941,7 +914,7 @@ int conn_drop_cs(sdbclient::sdb *connection, const char *cs_name) {
 }
 
 int Sdb_conn::drop_cs(const char *cs_name) {
-  return retry(boost::bind(conn_drop_cs, &m_connection, cs_name));
+  return retry(boost::bind(conn_drop_cs, m_connection, cs_name));
 }
 
 int conn_drop_empty_cs(sdbclient::sdb *connection, const char *cs_name,
@@ -954,7 +927,7 @@ int conn_drop_empty_cs(sdbclient::sdb *connection, const char *cs_name,
 }
 
 int Sdb_conn::drop_empty_cs(const char *cs_name, const bson::BSONObj &option) {
-  return retry(boost::bind(conn_drop_empty_cs, &m_connection, cs_name, option));
+  return retry(boost::bind(conn_drop_empty_cs, m_connection, cs_name, option));
 }
 
 // SequoiaDB doesn't support cl statistics before v3.4.2/5.0.2
@@ -992,7 +965,7 @@ int conn_exec(sdbclient::sdb *connection, const char *sql,
 }
 
 int Sdb_conn::execute(const char *sql) {
-  int rc = retry(boost::bind(conn_exec, &m_connection, sql, &m_cursor));
+  int rc = retry(boost::bind(conn_exec, m_connection, sql, &m_cursor));
   return rc;
 }
 
@@ -1249,19 +1222,43 @@ int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type,
                        const bson::BSONObj &selected,
                        const bson::BSONObj &order_by, const bson::BSONObj &hint,
                        longlong num_to_skip) {
-  return retry(boost::bind(conn_snapshot, &m_connection, &obj, snap_type,
+  return retry(boost::bind(conn_snapshot, m_connection, &obj, snap_type,
                            &condition, &selected, &order_by, &hint, num_to_skip,
                            errmsg));
 }
 
-int conn_get_last_result_obj(sdbclient::sdb *connection, bson::BSONObj *result,
-                             bool get_owned) {
-  return connection->getLastResultObj(*result, get_owned);
+int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
+  int rc = SDB_ERR_OK;
+  if (!m_connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
+  rc = m_connection->getLastResultObj(result, get_owned);
+  if (rc) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  convert_sdb_code(rc);
+  goto done;
 }
 
-int Sdb_conn::get_last_result_obj(bson::BSONObj &result, bool get_owned) {
-  return retry(
-      boost::bind(conn_get_last_result_obj, &m_connection, &result, get_owned));
+int Sdb_conn::get_last_error(bson::BSONObj &errObj) {
+  int rc = SDB_ERR_OK;
+  if (!m_connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
+  rc = m_connection->getLastErrorObj(errObj);
+  if (rc) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  convert_sdb_code(rc);
+  goto done;
 }
 
 int conn_get_session_attr(sdbclient::sdb *connection, bson::BSONObj *option) {
@@ -1278,7 +1275,7 @@ error:
 }
 
 int Sdb_conn::get_session_attr(bson::BSONObj &option) {
-  return retry(boost::bind(conn_get_session_attr, &m_connection, &option));
+  return retry(boost::bind(conn_get_session_attr, m_connection, &option));
 }
 
 int conn_set_session_attr(sdbclient::sdb *connection,
@@ -1296,7 +1293,7 @@ error:
 }
 
 int Sdb_conn::set_session_attr(const bson::BSONObj &option) {
-  return retry(boost::bind(conn_set_session_attr, &m_connection, &option));
+  return retry(boost::bind(conn_set_session_attr, m_connection, &option));
 }
 
 int conn_interrupt(sdbclient::sdb *connection) {
@@ -1304,7 +1301,7 @@ int conn_interrupt(sdbclient::sdb *connection) {
 }
 
 int Sdb_conn::interrupt_operation() {
-  return retry(boost::bind(conn_interrupt, &m_connection));
+  return retry(boost::bind(conn_interrupt, m_connection));
 }
 
 int conn_analyze(sdbclient::sdb *connection, const bson::BSONObj *options) {
@@ -1320,5 +1317,170 @@ error:
 }
 
 int Sdb_conn::analyze(const bson::BSONObj &options) {
-  return retry(boost::bind(conn_analyze, &m_connection, &options));
+  return retry(boost::bind(conn_analyze, m_connection, &options));
+}
+
+sdbclient::sdbConnectionPool Sdb_pool_conn::conn_pool;
+
+int Sdb_pool_conn::init() {
+  int rc = 0;
+  sdbclient::sdbConnectionPoolConf conf;
+  ha_sdb_conn_addrs conn_addrs;
+  std::vector<std::string> urls;
+  String password;
+
+  // parameters: initCnt, deltaIncCnt, maxIdleCnt, maxCnt
+  conf.setConnCntInfo(0, 1, 0, INT32_MAX);
+  conf.setCheckIntervalInfo(60000);
+  conf.setSyncCoordInterval(0);
+  conf.setConnectStrategy(sdbclient::SDB_CONN_STY_LOCAL);
+  conf.setValidateConnection(FALSE);
+  conf.setUseSSL(FALSE);
+
+  if (sdb_has_password_str()) {
+    rc = sdb_get_password(password);
+    if (rc != 0) {
+      goto error;
+    }
+    conf.setAuthInfo(sdb_user, password.ptr());
+  } else {
+    conf.setAuthInfo(sdb_user, sdb_password_cipherfile, sdb_password_token);
+  }
+
+  rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = conn_addrs.get_conn_addrs(urls);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = conn_pool.init(urls, conf);
+  if (rc != 0) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_pool_conn::fini() {
+  conn_pool.close();
+  return 0;
+}
+
+int Sdb_pool_conn::update_address() {
+  int rc = 0;
+  ha_sdb_conn_addrs conn_addrs;
+  std::vector<std::string> urls;
+
+  rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = conn_addrs.get_conn_addrs(urls);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = conn_pool.updateAddress(urls);
+  if (rc != 0) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+void Sdb_pool_conn::update_auth_info() {
+  if (sdb_has_password_str()) {
+    String password;
+    sdb_get_password(password);
+    conn_pool.updateAuthInfo(sdb_user, password.ptr());
+  } else {
+    conn_pool.updateAuthInfo(sdb_user, sdb_password_cipherfile,
+                             sdb_password_token);
+  }
+}
+
+Sdb_pool_conn::~Sdb_pool_conn() {
+  release_connection();
+}
+
+int Sdb_pool_conn::get_connection() {
+  if (m_connection) {
+    conn_pool.releaseConnection(m_connection);
+    m_connection = NULL;
+  }
+  return conn_pool.getConnection(m_connection);
+}
+
+void Sdb_pool_conn::release_connection() {
+  m_cursor.close();
+  if (m_connection) {
+    conn_pool.releaseConnection(m_connection);
+    m_connection = NULL;
+  }
+}
+
+Sdb_normal_conn::Sdb_normal_conn(my_thread_id tid, const char *conn_addr)
+    : Sdb_conn(tid) {
+  m_conn_addr = conn_addr;
+}
+
+Sdb_normal_conn::~Sdb_normal_conn() {
+  release_connection();
+}
+
+int Sdb_normal_conn::get_connection() {
+  int rc = 0;
+  ha_sdb_conn_addrs conn_addrs;
+  String password;
+
+  m_connection = &m_connection_obj;
+
+  rc = conn_addrs.parse_conn_addrs(m_conn_addr);
+  if (SDB_ERR_OK != rc) {
+    snprintf(errmsg, sizeof(errmsg),
+             "Failed to parse connection addresses, rc=%d", rc);
+    goto error;
+  }
+
+  if (sdb_has_password_str()) {
+    rc = sdb_get_password(password);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
+    rc = m_connection->connect(conn_addrs.get_conn_addrs(),
+                               conn_addrs.get_conn_num(), sdb_user,
+                               password.ptr());
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
+
+  } else {
+    rc = m_connection->connect(conn_addrs.get_conn_addrs(),
+                               conn_addrs.get_conn_num(), sdb_user,
+                               sdb_password_token, sdb_password_cipherfile);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
+  }
+
+done:
+  return rc;
+error:
+  goto done;
+}
+
+void Sdb_normal_conn::release_connection() {
+  m_cursor.close();
+  m_connection->disconnect();
+  m_connection = NULL;
 }

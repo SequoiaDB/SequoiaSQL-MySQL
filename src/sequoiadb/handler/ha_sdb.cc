@@ -8670,12 +8670,19 @@ static int sdb_init_func(void *p) {
     return 1;
   }
 
+  rc = Sdb_pool_conn::init();
+  if (SDB_ERR_OK != rc) {
+    SDB_LOG_ERROR("Failed to setup connection, rc=%d", rc);
+    return 1;
+  }
+
   return 0;
 }
 
 static int sdb_done_func(void *p) {
   // TODO************
   // SHOW_COMP_OPTION state;
+  Sdb_pool_conn::fini();
   my_hash_free(&sdb_open_tables);
   my_hash_free(&sdb_temporary_sequence_cache);
   mysql_mutex_destroy(&sdb_mutex);

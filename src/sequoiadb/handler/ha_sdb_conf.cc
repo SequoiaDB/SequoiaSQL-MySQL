@@ -18,7 +18,6 @@
 #endif
 
 #include "ha_sdb_conf.h"
-#include "ha_sdb_lock.h"
 #include "ha_sdb_def.h"
 
 // Complete the struct declaration
@@ -88,7 +87,12 @@ TYPELIB sdb_error_level_typelib = {array_elements(sdb_error_level_names) - 1,
 
 static const int SDB_SAMPLE_NUM_MIN = 100;
 static const int SDB_SAMPLE_NUM_MAX = 10000;
+
 mysql_var_update_func sdb_set_connection_addr = NULL;
+mysql_var_update_func sdb_set_user = NULL;
+mysql_var_update_func sdb_set_password = NULL;
+mysql_var_update_func sdb_set_password_cipherfile = NULL;
+mysql_var_update_func sdb_set_password_token = NULL;
 mysql_var_check_func sdb_use_transaction_check = NULL;
 mysql_var_update_func sdb_set_lock_wait_timeout = NULL;
 mysql_var_check_func sdb_use_rollback_segments_check = NULL;
@@ -116,31 +120,33 @@ static void sdb_conn_addr_update(THD *thd, struct st_mysql_sys_var *var,
   }
 }
 
+static void sdb_user_update(THD *thd, struct st_mysql_sys_var *var,
+                            void *var_ptr, const void *save) {
+  if (sdb_set_user) {
+    sdb_set_user(thd, var, var_ptr, save);
+  }
+}
+
 static void sdb_password_update(THD *thd, struct st_mysql_sys_var *var,
                                 void *var_ptr, const void *save) {
-  Sdb_rwlock_write_guard guard(sdb_password_lock);
-
-  /*var_ptr: traget addr, save: the input of new_password*/
-#if defined IS_MYSQL
-  const char *new_password = *(char **)(save);
-  sdb_password = (char *)new_password;
-#elif defined IS_MARIADB
-  char *value = *(char **)save;
-  if (var->flags & PLUGIN_VAR_MEMALLOC) {
-    char *old = *(char **)var_ptr;
-    if (value) {
-      sdb_password = my_strdup(value, MYF(0));
-    } else {
-      /*This ptr is same as var_ptr(will be freed by mysql),
-        so cannot be static empty string.*/
-      sdb_password = NULL;
-    }
-    my_free(old);
-  } else {
-    sdb_password = value;
+  if (sdb_set_password) {
+    sdb_set_password(thd, var, var_ptr, save);
   }
-#endif
-  sdb_encrypt_password();
+}
+
+static void sdb_password_cipherfile_update(THD *thd,
+                                           struct st_mysql_sys_var *var,
+                                           void *var_ptr, const void *save) {
+  if (sdb_set_password_cipherfile) {
+    sdb_set_password_cipherfile(thd, var, var_ptr, save);
+  }
+}
+
+static void sdb_password_token_update(THD *thd, struct st_mysql_sys_var *var,
+                                      void *var_ptr, const void *save) {
+  if (sdb_set_password_token) {
+    sdb_set_password_token(thd, var, var_ptr, save);
+  }
 }
 
 static int sdb_use_transaction_validate(THD *thd, struct st_mysql_sys_var *var,
@@ -282,7 +288,7 @@ static MYSQL_SYSVAR_STR(user, sdb_user,
                         "SequoiaDB authentication user. "
                         "(Default: \"\")"
                         /*SequoiaDB 鉴权用户。*/,
-                        NULL, NULL, SDB_USER_DFT);
+                        NULL, sdb_user_update, SDB_USER_DFT);
 static MYSQL_SYSVAR_STR(password, sdb_password,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
                         "SequoiaDB authentication password. "
@@ -294,13 +300,14 @@ static MYSQL_SYSVAR_STR(token, sdb_password_token,
                         "SequoiaDB authentication password token. "
                         "(Default: \"\")"
                         /*SequoiaDB 鉴权加密口令。*/,
-                        NULL, NULL, SDB_DEFAULT_TOKEN);
+                        NULL, sdb_password_token_update, SDB_DEFAULT_TOKEN);
 static MYSQL_SYSVAR_STR(cipherfile, sdb_password_cipherfile,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_MEMALLOC,
                         "SequoiaDB authentication cipherfile. "
                         "(Default: \"~/sequoiadb/passwd\")"
                         /*SequoiaDB 鉴权密码文件路径。*/,
-                        NULL, NULL, SDB_DEFAULT_CIPHERFILE);
+                        NULL, sdb_password_cipherfile_update,
+                        SDB_DEFAULT_CIPHERFILE);
 static MYSQL_SYSVAR_BOOL(auto_partition, sdb_auto_partition,
                          PLUGIN_VAR_OPCMDARG,
                          "Automatically create partition table on SequoiaDB. "
@@ -588,6 +595,20 @@ int ha_sdb_conn_addrs::get_conn_num() const {
   return conn_num;
 }
 
+int ha_sdb_conn_addrs::get_conn_addrs(
+    std::vector<std::string> &addr_vec) const {
+  int rc = 0;
+  try {
+    addr_vec.clear();
+    for (int i = 0; i < conn_num; ++i) {
+      addr_vec.push_back(addrs[i]);
+    }
+  } catch (std::exception &e) {
+    rc = HA_ERR_GENERIC;
+  }
+  return rc;
+}
+
 int sdb_encrypt_password() {
   static const uint DISPLAY_MAX_LEN = 1;
   int rc = 0;
@@ -621,6 +642,10 @@ done:
   return rc;
 error:
   goto done;
+}
+
+bool sdb_has_password_str() {
+  return (sdb_password && sdb_password[0] != '\0');
 }
 
 int sdb_get_password(String &res) {
