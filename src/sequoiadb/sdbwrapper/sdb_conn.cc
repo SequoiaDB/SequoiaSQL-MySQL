@@ -730,12 +730,12 @@ int Sdb_conn::get_seq(const char *cs_name, const char *table_name,
   seq.m_thread_id = this->thread_id();
 
   try {
-    rc = m_connection->getSequence(seq_name, seq.m_seq);
+    rc = m_connection->getSequence(sequence_name, seq.m_seq);
     if (rc) {
       goto error;
     }
   }
-  SDB_EXCEPTION_CATCHER(rc, "Failed to get sequence, exception:%s",
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get sequence, exception:%s", e.what());
 
 done:
   return rc;
