@@ -5334,14 +5334,14 @@ create view v2 as
 #  ) a
 #) b
 #on duplicate key update r=p;
-insert into t1 (id, r)
-select id,p from v2 
-on duplicate key update r=p;
-
-prepare stmt from "insert into t1 (id, r) select id,p from v2 on duplicate key update r=p";
-execute stmt;
-execute stmt;
-deallocate prepare stmt;
+#insert into t1 (id, r)
+#select id,p from v2 
+#on duplicate key update r=p;
+#
+#prepare stmt from "insert into t1 (id, r) select id,p from v2 on duplicate key update r=p";
+#execute stmt;
+#execute stmt;
+#deallocate prepare stmt;
 
 drop view v1,v2;
 drop table `t1`;
