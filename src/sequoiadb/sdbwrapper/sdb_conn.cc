@@ -1330,7 +1330,7 @@ int Sdb_pool_conn::init() {
   String password;
 
   // parameters: initCnt, deltaIncCnt, maxIdleCnt, maxCnt
-  conf.setConnCntInfo(0, 1, 0, INT32_MAX);
+  conf.setConnCntInfo(0, 1, 0, INT_MAX32);
   conf.setCheckIntervalInfo(60000);
   conf.setSyncCoordInterval(0);
   conf.setConnectStrategy(sdbclient::SDB_CONN_STY_LOCAL);
