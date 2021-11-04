@@ -209,45 +209,55 @@ bool ha_is_executing_pending_log(THD *thd) {
 
 static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
   int rc = 0;
-  if (!sql_info->inited) {
-    sql_info->inited = true;
-    sql_info->tables = NULL;
-    sql_info->dml_retry_flag = false;
-    sql_info->is_result_set_started = false;
-    sql_info->last_instr_lex = NULL;
-    if (sdb_hash_init(&(sql_info->dml_checked_objects), system_charset_info, 32,
-                      0, 0, (my_hash_get_key)cached_record_get_key,
-                      free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
-      return SDB_HA_OOM;
-    }
-    sql_info->sdb_conn = new (std::nothrow) Sdb_pool_conn(thread_id, true);
-    sql_info->pending_sql_id = 0;
-    if (likely(sql_info->sdb_conn)) {
-      SDB_LOG_DEBUG("HA: Init sequoiadb connection");
-    } else {
-      rc = SDB_HA_OOM;
-    }
-  } else if (NULL == sql_info->sdb_conn) {
+  bool is_hash_inited = false;
+  bool is_conn_created = false;
+
+  if (sql_info->inited && sql_info->sdb_conn) {
     // if client execute some DDL statements, exit session,
     // ha_sql_stmt_info::sdb_conn will be set to NULL.
-    sql_info->tables = NULL;
-    sql_info->dml_retry_flag = false;
-    sql_info->is_result_set_started = false;
-    sql_info->last_instr_lex = NULL;
-    if (sdb_hash_init(&(sql_info->dml_checked_objects), system_charset_info, 32,
-                      0, 0, (my_hash_get_key)cached_record_get_key,
-                      free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
-      return SDB_HA_OOM;
-    }
-    sql_info->sdb_conn = new (std::nothrow) Sdb_pool_conn(thread_id, true);
-    sql_info->pending_sql_id = 0;
-    if (likely(sql_info->sdb_conn)) {
-      SDB_LOG_DEBUG("HA: Init sequoiadb connection");
-    } else {
-      rc = SDB_HA_OOM;
-    }
+    goto done;
   }
+
+  sql_info->tables = NULL;
+  sql_info->dml_retry_flag = false;
+  sql_info->is_result_set_started = false;
+  sql_info->last_instr_lex = NULL;
+  if (sdb_hash_init(&(sql_info->dml_checked_objects), system_charset_info, 32,
+                    0, 0, (my_hash_get_key)cached_record_get_key,
+                    free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
+    rc = SDB_HA_OOM;
+    goto error;
+  }
+  is_hash_inited = true;
+
+  sql_info->sdb_conn = new (std::nothrow) Sdb_pool_conn(thread_id, true);
+  sql_info->pending_sql_id = 0;
+  if (likely(sql_info->sdb_conn)) {
+    SDB_LOG_DEBUG("HA: Init sequoiadb connection");
+  } else {
+    rc = SDB_HA_OOM;
+    goto error;
+  }
+  is_conn_created = true;
+
+  rc = sql_info->sdb_conn->connect();
+  if (rc) {
+    goto error;
+  }
+
+  sql_info->inited = true;
+
+done:
   return rc;
+error:
+  if (is_hash_inited) {
+    my_hash_free(&sql_info->dml_checked_objects);
+  }
+  if (is_conn_created) {
+    delete sql_info->sdb_conn;
+    sql_info->sdb_conn = NULL;
+  }
+  goto done;
 }
 
 static bool is_routine_meta_sql(THD *thd) {
