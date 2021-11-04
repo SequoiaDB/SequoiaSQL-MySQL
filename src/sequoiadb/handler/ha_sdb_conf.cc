@@ -512,15 +512,15 @@ static MYSQL_SYSVAR_BOOL(enable_mapping, sdb_enable_mapping,
                          "(Default: OFF)"
                          /*是否启用元数据映射功能。*/,
                          NULL, NULL, FALSE);
-static MYSQL_SYSVAR_INT(mapping_group_size, sdb_mapping_group_size,
-                        PLUGIN_VAR_OPCMDARG,
-                        "The size of mapping group. "
+static MYSQL_SYSVAR_INT(mapping_unit_size, sdb_mapping_group_size,
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
+                        "The size of mapping unit. "
                         "(Default: 1024)"
                         /*映射组的大小。*/,
-                        NULL, NULL, 6, 6, 18, 6);
-static MYSQL_SYSVAR_INT(mapping_group_number, sdb_mapping_group_num,
-                        PLUGIN_VAR_OPCMDARG,
-                        "Number of mapping group. "
+                        NULL, NULL, 1024, 1024, 2048, 512);
+static MYSQL_SYSVAR_INT(mapping_unit_count, sdb_mapping_group_num,
+                        PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
+                        "Count of mapping unit. "
                         "(Default: 10)"
                         /*映射组的数量, 范围[10, 50]。*/,
                         NULL, NULL, 10, 10, 50, 10);
@@ -561,8 +561,8 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(strict_collation),
     MYSQL_SYSVAR(support_mode),
     MYSQL_SYSVAR(enable_mapping),
-    MYSQL_SYSVAR(mapping_group_size),
-    MYSQL_SYSVAR(mapping_group_number),
+    MYSQL_SYSVAR(mapping_unit_size),
+    MYSQL_SYSVAR(mapping_unit_count),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
