@@ -3446,7 +3446,7 @@ static void set_retry_flags(THD *thd, ha_sql_stmt_info *sql_info) {
   }
   const char *cl_version_err = sdb_errno_message(thd);
   // sequoiadb error 'sdb client cata version old' or 'Got error XXX'
-  if (0 == strncmp(CL_VERSION_ERR, cl_version_err, strlen(CL_VERSION_ERR))) {
+  if (0 == strncmp(CL_VERSION_ERR, cl_version_err, MAX_ERR_LEN)) {
     version_error = true;
     DBUG_ASSERT(!sql_info->is_result_set_started);
     SDB_LOG_DEBUG("HA: Set result set started flag to true for %s",

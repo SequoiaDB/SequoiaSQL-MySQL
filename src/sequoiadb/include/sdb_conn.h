@@ -427,7 +427,7 @@ class Sdb_pool_conn : public Sdb_conn {
  public:
   static int init();
   static int fini();
-  static int update_address();
+  static int update_address(const char *conn_addr = NULL);
   static void update_auth_info();
 
  public:

@@ -1373,12 +1373,16 @@ int Sdb_pool_conn::fini() {
   return 0;
 }
 
-int Sdb_pool_conn::update_address() {
+int Sdb_pool_conn::update_address(const char *conn_str) {
   int rc = 0;
   ha_sdb_conn_addrs conn_addrs;
   std::vector<std::string> urls;
 
-  rc = conn_addrs.parse_conn_addrs(sdb_conn_str);
+  if (NULL == conn_str) {
+    conn_str = sdb_conn_str;
+  }
+
+  rc = conn_addrs.parse_conn_addrs(conn_str);
   if (rc != 0) {
     goto error;
   }

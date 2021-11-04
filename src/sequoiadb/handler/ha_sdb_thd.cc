@@ -57,7 +57,7 @@ static void sdb_set_conn_addr(THD *thd, struct st_mysql_sys_var *var, void *tgt,
                               const void *save) {
   bool addr_changed = false;
 
-  if (0 != strncmp(*(char **)tgt, *(char **)save, strlen(*(char **)save))) {
+  if (0 != strcmp(*(char **)tgt, *(char **)save)) {
     addr_changed = true;
   }
 
@@ -179,7 +179,7 @@ static int sdb_conn_addr_check(THD *thd, struct st_mysql_sys_var *var,
     }
   }
 
-  rc = Sdb_pool_conn::update_address();
+  rc = Sdb_pool_conn::update_address(arg_conn_addr);
   if (0 != rc) {
     rc = -1;
     goto error;
@@ -488,11 +488,8 @@ static void sdb_set_prefer_inst_mode(THD *thd, struct st_mysql_sys_var *var,
   Sdb_conn *conn = NULL;
   Sdb_session_attrs *session_attrs = NULL;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
-  size_t var_ptr_len = strlen(*(char **)var_ptr);
-  size_t save_len = strlen(*(char **)save);
-  int len = var_ptr_len > save_len ? var_ptr_len : save_len;
 
-  if (0 != strncmp(*(char **)var_ptr, *(char **)save, len)) {
+  if (0 != strcmp(*(char **)var_ptr, *(char **)save)) {
     is_changed = true;
   }
 

@@ -629,7 +629,7 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
     const char *ip = result.getStringField(HA_FIELD_IP);
     uint port = result.getIntField(HA_FIELD_PORT);
     const char *db_type = result.getStringField(HA_FIELD_DB_TYPE);
-    rc = strncmp(db_type, DB_TYPE, strlen(db_type));
+    rc = strcmp(db_type, DB_TYPE);
     HA_RC_CHECK(rc, error, "HA: Can't sync metadata from '%s' to '%s'", db_type,
                 DB_TYPE);
 
