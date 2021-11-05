@@ -481,13 +481,16 @@ function delete_inst()
 
    #delete file
    . $CONF_INST_PATH/$INST_NAME.conf
-   exec_cmd "rm -rf $SQLDATA $CONF_INST_PATH/$INST_NAME.conf $CONF_SVC_PATH/$INST_NAME.conf"
    if [ "$NEED_BACKUPLOG" == false ]; then
       exec_cmd "rm -rf $SQLLOG"
    else
       local cur_time=`date +%F-%T`
-      exec_cmd "mv $SQLLOG '$SQLLOG'.'$cur_time'"
+      local backup_dir=${INSTALL_DIR}/backup_log
+      test -d "${backup_dir}" || exec_cmd "mkdir -p ${backup_dir}"
+      exec_cmd "mv $SQLLOG ${backup_dir}/${INST_NAME}.log.${cur_time}"
+      echo "instance logs ${INST_NAME}.log.${cur_time} are backed up to the ${backup_dir} directory"
    fi
+   exec_cmd "rm -rf $SQLDATA $CONF_INST_PATH/$INST_NAME.conf $CONF_SVC_PATH/$INST_NAME.conf"
    echo "ok"
 }
 
