@@ -2288,9 +2288,10 @@ create table t1(id int auto_increment primary key, a bigint, b char(255), c varc
 alter table t1 modify a mediumint not null,algorithm=inplace;
 insert into t1(a,b,c) values(1,'a','a');
 alter table t1 modify b char(100) not null,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 insert into t1(a,b,c) values(1,'a','aaaaa'),(1,'a',null);
 alter table t1 modify c varchar(5) not null,algorithm=inplace;
-ERROR 22004: Invalid use of NULL value
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 select * from t1 order by id;
 id	a	b	c
 1	1	a	a
@@ -5222,13 +5223,16 @@ t1	CREATE TABLE `t1` (
 drop table t1,t2;
 create table t1 (id int auto_increment primary key, a char(10));
 alter table t1 modify a char(9),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
 alter table t1 modify a char(7),algorithm=inplace;
-ERROR 22001: Data too long for column 'a' at row 1
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a char(8),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a varchar(7),algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a varchar(8),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a char(255);
 alter table t1 modify a tinytext,algorithm=inplace;
 alter table t1 modify a char(255);
@@ -5249,10 +5253,12 @@ id	a
 drop table t1;
 create table t1 (id int auto_increment primary key, a varchar(10));
 alter table t1 modify a varchar(9),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
 alter table t1 modify a varchar(7),algorithm=inplace;
-ERROR 22001: Data too long for column 'a' at row 1
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a varchar(8),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a char(8),algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a varchar(255),algorithm=inplace;
@@ -5275,16 +5281,20 @@ id	a
 drop table t1;
 create table t1 (id int auto_increment primary key, a longtext);
 alter table t1 modify a mediumtext,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
 insert into t1(a) values(repeat('a', 256));
 alter table t1 modify a tinytext,algorithm=inplace;
-ERROR 22001: Data too long for column 'a' at row 1
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a text,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 delete from t1 where length(a)>254;
 alter table t1 modify a char(255),algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a varchar(255),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a text,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 alter table t1 modify a tinyblob,algorithm=inplace;
 ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 set sql_mode='';

@@ -885,9 +885,11 @@ set sql_mode = "STRICT_ALL_TABLES";
 create table t1(id int auto_increment primary key, a bigint, b char(255), c varchar(255));
 alter table t1 modify a mediumint not null,algorithm=inplace;
 insert into t1(a,b,c) values(1,'a','a');
+#bug SEQUOIASQLMAINSTREAM-1059
+--error 1846
 alter table t1 modify b char(100) not null,algorithm=inplace;
 insert into t1(a,b,c) values(1,'a','aaaaa'),(1,'a',null);
---error 1138
+--error 1846
 alter table t1 modify c varchar(5) not null,algorithm=inplace;
 select * from t1 order by id;
 
@@ -2082,13 +2084,16 @@ drop table t1,t2;
 
 #seqDB-22487
 create table t1 (id int auto_increment primary key, a char(10));
+--error 1846
 alter table t1 modify a char(9),algorithm=inplace;
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
---error 1406
+--error 1846
 alter table t1 modify a char(7),algorithm=inplace;
+--error 1846
 alter table t1 modify a char(8),algorithm=inplace;
 --error 1846
 alter table t1 modify a varchar(7),algorithm=inplace;
+--error 1846
 alter table t1 modify a varchar(8),algorithm=inplace;
 alter table t1 modify a char(255);
 alter table t1 modify a tinytext,algorithm=inplace;
@@ -2110,10 +2115,12 @@ drop table t1;
 
 #seqDB-22488
 create table t1 (id int auto_increment primary key, a varchar(10));
+--error 1846
 alter table t1 modify a varchar(9),algorithm=inplace;
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
---error 1406
+--error 1846
 alter table t1 modify a varchar(7),algorithm=inplace;
+--error 1846
 alter table t1 modify a varchar(8),algorithm=inplace;
 --error 1846
 alter table t1 modify a char(8),algorithm=inplace;
@@ -2137,16 +2144,20 @@ drop table t1;
 
 #seqDB-22490
 create table t1 (id int auto_increment primary key, a longtext);
+--error 1846
 alter table t1 modify a mediumtext,algorithm=inplace;
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
 insert into t1(a) values(repeat('a', 256));
---error 1406
+--error 1846
 alter table t1 modify a tinytext,algorithm=inplace;
+--error 1846
 alter table t1 modify a text,algorithm=inplace;
 delete from t1 where length(a)>254;
 --error 1846
 alter table t1 modify a char(255),algorithm=inplace;
+--error 1846
 alter table t1 modify a varchar(255),algorithm=inplace;
+--error 1846
 alter table t1 modify a text,algorithm=inplace;
 --error 1846
 alter table t1 modify a tinyblob,algorithm=inplace;

@@ -3242,6 +3242,7 @@ drop table t1;
 create table t1 (id int auto_increment primary key, a char(10));
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
 alter table t1 modify a char(8),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 select * from t1 order by id;
 id	a
 1	aaaaaaaa
@@ -3254,6 +3255,7 @@ drop table t1;
 create table t1 (id int auto_increment primary key, a varchar(10));
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa '),('aaaaaa ');
 alter table t1 modify a varchar(8),algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 select * from t1 order by id;
 id	a
 1	aaaaaaaa
@@ -3267,6 +3269,7 @@ create table t1 (id int auto_increment primary key, a longtext);
 insert into t1(a) values('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaaa'),('aaaaaaa ');
 insert into t1(a) values(repeat('a', 256));
 alter table t1 modify a text,algorithm=inplace;
+ERROR 0A000: ALGORITHM=INPLACE is not supported. Reason: Can't do such type conversion.. Try ALGORITHM=COPY.
 select * from t1 order by id;
 id	a
 1	aaaaaaaa
