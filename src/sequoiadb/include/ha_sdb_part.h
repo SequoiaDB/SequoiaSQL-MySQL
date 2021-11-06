@@ -831,6 +831,8 @@ class ha_sdb_part_wrapper : public ha_partition {
  private:
   bool create_handlers(MEM_ROOT* mem_root);
 
+  bool setup_engine_array(MEM_ROOT* mem_root);
+
   bool create_handler_file(const char* name);
 
   bool populate_partition_name_hash();

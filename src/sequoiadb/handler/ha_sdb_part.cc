@@ -818,7 +818,11 @@ error:
 bool ha_sdb_part_wrapper::create_handlers(MEM_ROOT *mem_root) {
   bool rs = false;
   int real_tot_part = 1;
-  handlerton *hton = NULL;
+  uchar *engine_buff = NULL;
+  handlerton *engine = NULL;
+  // offset to the engines array, from ha_partition.cc
+  static const uint PAR_ENGINES_OFFSET = 12;
+  enum legacy_db_type db_type = DB_TYPE_UNKNOWN;
   uint alloc_len = (real_tot_part + 1) * sizeof(handler *);
   DBUG_ENTER("ha_sdb_part_wrapper::create_handlers");
 
@@ -829,18 +833,35 @@ bool ha_sdb_part_wrapper::create_handlers(MEM_ROOT *mem_root) {
   m_file_tot_parts = m_tot_parts;
   m_tot_parts = real_tot_part;
   bzero((char *)m_file, alloc_len);
-  hton = plugin_data(m_engine_array[0], handlerton *);
-  if (!(m_file[0] = get_new_handler(table_share, mem_root, hton))) {
+
+  engine_buff = (uchar *)(m_file_buffer + PAR_ENGINES_OFFSET);
+  db_type = (enum legacy_db_type)engine_buff[0];
+  engine = ha_resolve_by_legacy_type(ha_thd(), db_type);
+  if (!engine) {
+    rs = true;
+    goto error;
+  }
+
+  if (!(m_file[0] = get_new_handler(table_share, mem_root, engine))) {
     rs = true;
     goto error;
   }
   ((ha_sdb_part *)(m_file[0]))->m_handler_wrapper = this;
-  DBUG_PRINT("info", ("engine_type: %u", hton->db_type));
+  DBUG_PRINT("info", ("engine_type: %u", engine->db_type));
 
 done:
   DBUG_RETURN(rs);
 error:
   goto done;
+}
+
+bool ha_sdb_part_wrapper::setup_engine_array(MEM_ROOT *mem_root) {
+  bool rs = false;
+  if (create_handlers(mem_root)) {
+    clear_handler_file();
+    rs = true;
+  }
+  return rs;
 }
 
 bool ha_sdb_part_wrapper::create_handler_file(const char *name) {
@@ -1611,6 +1632,8 @@ const COND *ha_sdb_part_wrapper::cond_push(const COND *cond) {
 }
 
 int ha_sdb_part_wrapper::close(void) {
+  free_partition_bitmaps();
+  m_handler_status = handler_closed;
   return m_file[0]->ha_close();
 }
 
@@ -2350,7 +2373,7 @@ bool sdb_check_engine_by_par_file(const char *name, MEM_ROOT *mem_root) {
   }
   part_type = (uchar *)(file_buffer + PAR_ENGINES_OFFSET);
   db_type = (enum legacy_db_type)part_type[0];
-  hton = ha_resolve_by_legacy_type(NULL, db_type);
+  hton = ha_resolve_by_legacy_type(current_thd, db_type);
   rs = (hton == sdb_hton);
 
 done:
