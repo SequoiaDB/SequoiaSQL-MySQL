@@ -999,7 +999,7 @@ bool get_cast_rule(bson::BSONObjBuilder &builder, Field *old_field,
   new data type.
   @return false if success. true if no such condition.
 */
-bool get_check_bound_cond(Field *old_field, Field *new_field,
+bool get_check_bound_cond(Field *old_field, Field *new_field, Sdb_conn *conn,
                           bson::BSONObjBuilder &builder, bool &out_of_bound) {
   bool rs = true;
   int rc = SDB_ERR_OK;
@@ -1083,9 +1083,29 @@ bool get_check_bound_cond(Field *old_field, Field *new_field,
       goto done;
     }
     {
-      // { a: { $strlen: 1, $gt: <char length> } }
+      // { a: { $strlenCP: 1, $gt: <character length> } }
+      int major = 0;
+      int minor = 0;
+      int fix = 0;
       bson::BSONObjBuilder sub_builder(builder.subobjStart(field_name));
-      sub_builder.append("$strlen", 1);
+
+      rc = sdb_get_version(*conn, major, minor, fix);
+      if (rc != 0) {
+        goto error;
+      }
+
+      /*The pre version of SequoiaDB(3.4.4) and SequoiaDB(5.0.3) has no
+       * operator of '$strlenCP'*/
+      if (major < 3 || (3 == major && minor < 4) ||
+          (3 == major && 4 == minor && fix < 4) ||
+          (5 == major && 0 == minor && fix < 3)) {
+        // Can't do such type conversion
+        rs = true;
+        goto done;
+      } else {
+        sub_builder.append("$strlenCP", 1);
+      }
+
       sub_builder.append("$gt", new_field->char_length());
       sub_builder.done();
       rs = false;
@@ -1528,9 +1548,16 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
     ha_sdb_alter_ctx *ctx) {
   enum_alter_inplace_result rs = HA_ALTER_ERROR;
   int rc = SDB_ERR_OK;
+  Sdb_conn *conn = NULL;
   sql_mode_t sql_mode = ha_thd()->variables.sql_mode;
   List<Create_field> &create_list = ha_alter_info->alter_info->create_list;
   List_iterator_fast<Create_field> iter(create_list);
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
   try {
     // Filter added_columns and changed_columns
@@ -1615,7 +1642,7 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
             goto error;
           } else {
             bool out_of_bound;
-            rc = get_check_bound_cond(old_field, new_field, cond_builder,
+            rc = get_check_bound_cond(old_field, new_field, conn, cond_builder,
                                       out_of_bound);
             if (SDB_ERR_OK != rc) {
               rs = HA_ALTER_ERROR;
