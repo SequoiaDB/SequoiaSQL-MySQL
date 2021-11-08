@@ -3167,7 +3167,7 @@ int Sdb_cl_copyer::rename_new_cl() {
     if (rc != 0) {
       goto error;
     }
-    tmp_tbl_mapping.rename_mapping(m_mcl_cs, cl_name, right_cl_name);
+    rc = tmp_tbl_mapping.rename_mapping(m_mcl_cs, cl_name, right_cl_name);
     if (0 != rc) {
       goto error;
     }
