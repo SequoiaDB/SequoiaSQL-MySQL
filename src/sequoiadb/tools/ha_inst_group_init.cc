@@ -281,6 +281,11 @@ int main(int argc, char *argv[]) {
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to initialize sequoiadb connection");
 
+    if (std::string::npos != orig_name.find("#")) {
+      cout << "Error: instance group name should not contain '#'" << endl;
+      return SDB_HA_INVALID_PARAMETER;
+    }
+
     bool is_coord = true;
     rc = ha_check_svcname(conn, cmd_args.port, is_coord);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to check if it's coord");
