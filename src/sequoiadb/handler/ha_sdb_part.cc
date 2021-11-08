@@ -2586,10 +2586,11 @@ done:
   DBUG_RETURN(rc);
 error:
   handle_sdb_error(rc, MYF(0));
+  if (created_cl) {
+    conn->drop_cl(db_name, table_name);
+  }
   if (created_cs) {
     sdb_drop_empty_cs(*conn, db_name);
-  } else if (created_cl) {
-    conn->drop_cl(db_name, table_name);
   }
   goto done;
 }
