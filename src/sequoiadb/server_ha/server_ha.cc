@@ -1248,6 +1248,11 @@ static int update_cata_version_for_alter_part_table(
     Metadata_Mapping tbl_mapping(&sql_info->sdb_conn);
     rc = tbl_mapping.get_mapping(table->db_name, table->table_name);
     if (0 != rc) {
+      if (HA_ERR_END_OF_FILE == rc) {
+        // it maybe an innodb table
+        rc = 0;
+        goto error;
+      }
       goto error;
     }
     sprintf(full_name, "%s.%s", tbl_mapping.get_mapping_db_name(),

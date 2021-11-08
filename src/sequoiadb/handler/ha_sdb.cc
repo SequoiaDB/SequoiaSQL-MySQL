@@ -1622,8 +1622,8 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
     }
 
     if (0 != rc) {
-      SDB_LOG_ERROR("Failed to get table '%s' mapping name, error: %d",
-                    table_name, rc);
+      SDB_LOG_ERROR("Failed to get table '%s.%s' mapping name, error: %d",
+                    db_name, table_name, rc);
       goto error;
     }
     sprintf(share->mapping_cs, "%s", table_mapping.get_mapping_db_name());
