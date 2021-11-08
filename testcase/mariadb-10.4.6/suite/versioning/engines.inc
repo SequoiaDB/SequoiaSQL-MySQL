@@ -1,1 +1,1 @@
-#--source include/have_innodb.inc
+--source include/have_innodb.inc
