@@ -1,5 +1,6 @@
 #include "server_ha_util.h"
 #include "ha_sdb_errcode.h"
+#include "ha_sdb_log.h"
 
 // get Sdb_conn error string
 const char *ha_error_string(Sdb_conn &sdb_conn, int rc, char err_buf[]) {
@@ -44,45 +45,50 @@ int ha_get_instance_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
-  if (NULL != data_group && '\0' != data_group[0]) {
-    cl_options = BSON(SDB_FIELD_GROUP << data_group);
+
+  try {
+    if (NULL != data_group && '\0' != data_group[0]) {
+      cl_options = BSON(SDB_FIELD_GROUP << data_group);
+    }
+
+    rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl,
+                         true);
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      sql_print_information("HA: Creating instance object state table '%s'",
+                            HA_INSTANCE_OBJECT_STATE_CL);
+      rc = sdb_conn.create_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL,
+                              cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create instance object state table '%s', "
+                  "sequoiadb error: %s",
+                  HA_INSTANCE_OBJECT_STATE_CL,
+                  ha_error_string(sdb_conn, rc, err_buf));
+    }
+
+    if (!indexes_created) {
+      rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl);
+      HA_RC_CHECK(
+          rc, error,
+          "HA: Unable to get instance object state table '%s', sequoiadb "
+          "error: %s",
+          HA_INSTANCE_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      index_ref = BSON(HA_FIELD_DB << 1 << HA_FIELD_TABLE << 1 << HA_FIELD_TYPE
+                                   << 1 << HA_FIELD_INSTANCE_ID << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+
+      rc = cl.create_index(
+          index_ref, HA_INST_OBJ_STATE_DB_TABLE_TYPE_INSTID_INDEX, key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(
+          rc, error, "HA: Unable to create index for '%s', sequoiadb error: %s",
+          HA_INSTANCE_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+      indexes_created = true;
+    }
   }
-
-  rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl,
-                       true);
-  if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
-    sql_print_information("HA: Creating instance object state table '%s'",
-                          HA_INSTANCE_OBJECT_STATE_CL);
-    rc = sdb_conn.create_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL,
-                            cl_options);
-    rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create instance object state table '%s', "
-                "sequoiadb error: %s",
-                HA_INSTANCE_OBJECT_STATE_CL,
-                ha_error_string(sdb_conn, rc, err_buf));
-  }
-
-  if (!indexes_created) {
-    rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_OBJECT_STATE_CL, cl);
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to get instance object state table '%s', sequoiadb "
-                "error: %s",
-                HA_INSTANCE_OBJECT_STATE_CL,
-                ha_error_string(sdb_conn, rc, err_buf));
-
-    index_ref = BSON(HA_FIELD_DB << 1 << HA_FIELD_TABLE << 1 << HA_FIELD_TYPE
-                                 << 1 << HA_FIELD_INSTANCE_ID << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1);
-
-    rc = cl.create_index(
-        index_ref, HA_INST_OBJ_STATE_DB_TABLE_TYPE_INSTID_INDEX, key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(
-        rc, error, "HA: Unable to create index for '%s', sequoiadb error: %s",
-        HA_INSTANCE_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-    indexes_created = true;
-  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
+                        HA_INSTANCE_OBJECT_STATE_CL, e.what());
 done:
   return rc;
 error:
@@ -96,60 +102,65 @@ int ha_get_instance_state_cl(Sdb_conn &sdb_conn, const char *group_name,
   int rc = 0;
   bson::BSONObj cl_options, key_options, index_ref;
   char err_buf[HA_BUF_LEN] = {0};
-  if (NULL != data_group && '\0' != data_group[0]) {
-    cl_options = BSON(SDB_FIELD_GROUP << data_group);
-  }
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_STATE_CL, cl, true);
-  if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
-    sql_print_information("HA: Creating instance state table '%s'",
-                          HA_INSTANCE_STATE_CL);
-    bson::BSONObjBuilder builder;
-    bson::BSONObjBuilder sub_builder(
-        builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
-
-    sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_JOIN_ID);
-    sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
-    sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
-    sub_builder.doneFast();
+  try {
     if (NULL != data_group && '\0' != data_group[0]) {
-      builder.append(SDB_FIELD_GROUP, data_group);
+      cl_options = BSON(SDB_FIELD_GROUP << data_group);
     }
-    cl_options = builder.done();
-    rc = sdb_conn.create_cl((char *)group_name, HA_INSTANCE_STATE_CL,
-                            cl_options);
-    rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(
-        rc, error,
-        "HA: Unable to create instance state table '%s', sequoiadb error: %s",
-        HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-  }
 
-  if (!indexes_created) {
-    // create index on 'InstanceID'
-    index_ref = BSON(HA_FIELD_INSTANCE_ID << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1);
-    rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_STATE_CL, cl);
-    HA_RC_CHECK(
-        rc, error,
-        "HA: Unable to get instance state table '%s', sequoiadb error: %s",
-        HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-    rc = cl.create_index(index_ref, HA_INST_STATE_INSTID_INDEX, key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index for '%s', sequoiadb error: %s",
-                HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+    rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_STATE_CL, cl, true);
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      sql_print_information("HA: Creating instance state table '%s'",
+                            HA_INSTANCE_STATE_CL);
+      bson::BSONObjBuilder builder;
+      bson::BSONObjBuilder sub_builder(
+          builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
 
-    // create index on "JoinID"
-    index_ref = BSON(HA_FIELD_JOIN_ID << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1);
-    rc = cl.create_index(index_ref, HA_INST_STATE_JOIN_ID_INDEX, key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index for '%s', sequoiadb error: %s",
-                HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-    indexes_created = true;
+      sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_JOIN_ID);
+      sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
+      sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
+      sub_builder.doneFast();
+      if (NULL != data_group && '\0' != data_group[0]) {
+        builder.append(SDB_FIELD_GROUP, data_group);
+      }
+      cl_options = builder.done();
+      rc = sdb_conn.create_cl((char *)group_name, HA_INSTANCE_STATE_CL,
+                              cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(
+          rc, error,
+          "HA: Unable to create instance state table '%s', sequoiadb error: %s",
+          HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
+
+    if (!indexes_created) {
+      // create index on 'InstanceID'
+      index_ref = BSON(HA_FIELD_INSTANCE_ID << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = sdb_conn.get_cl((char *)group_name, HA_INSTANCE_STATE_CL, cl);
+      HA_RC_CHECK(
+          rc, error,
+          "HA: Unable to get instance state table '%s', sequoiadb error: %s",
+          HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+      rc = cl.create_index(index_ref, HA_INST_STATE_INSTID_INDEX, key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index for '%s', sequoiadb error: %s",
+                  HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      // create index on "JoinID"
+      index_ref = BSON(HA_FIELD_JOIN_ID << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = cl.create_index(index_ref, HA_INST_STATE_JOIN_ID_INDEX, key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index for '%s', sequoiadb error: %s",
+                  HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+      indexes_created = true;
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
+                        HA_INSTANCE_STATE_CL, e.what());
 done:
   return rc;
 error:
@@ -163,46 +174,51 @@ int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
-  if (NULL != data_group && '\0' != data_group[0]) {
-    cl_options = BSON(SDB_FIELD_GROUP << data_group);
-  }
+  try {
+    if (NULL != data_group && '\0' != data_group[0]) {
+      cl_options = BSON(SDB_FIELD_GROUP << data_group);
+    }
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_OBJECT_STATE_CL, cl, true);
-  if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
-    sql_print_information("HA: Creating object state table '%s'",
-                          HA_OBJECT_STATE_CL);
-    rc = sdb_conn.create_cl((char *)group_name, HA_OBJECT_STATE_CL, cl_options);
-    rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(
-        rc, error,
-        "HA: Unable to create object state table '%s', sequoiadb error: %s",
-        HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-  }
+    rc = sdb_conn.get_cl((char *)group_name, HA_OBJECT_STATE_CL, cl, true);
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      sql_print_information("HA: Creating object state table '%s'",
+                            HA_OBJECT_STATE_CL);
+      rc = sdb_conn.create_cl((char *)group_name, HA_OBJECT_STATE_CL,
+                              cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(
+          rc, error,
+          "HA: Unable to create object state table '%s', sequoiadb error: %s",
+          HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
-  if (!indexes_created) {
-    rc = sdb_conn.get_cl((char *)group_name, HA_OBJECT_STATE_CL, cl);
-    HA_RC_CHECK(
-        rc, error,
-        "HA: Unable to get object state table '%s', sequoiadb error: %s",
-        HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-    index_ref =
-        BSON(HA_FIELD_DB << 1 << HA_FIELD_TABLE << 1 << HA_FIELD_TYPE << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1);
-    rc = cl.create_index(index_ref, HA_OBJ_STATE_DB_TABLE_TYPE_INDEX,
-                         key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index for '%s', sequoiadb error: %s",
-                HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+    if (!indexes_created) {
+      rc = sdb_conn.get_cl((char *)group_name, HA_OBJECT_STATE_CL, cl);
+      HA_RC_CHECK(
+          rc, error,
+          "HA: Unable to get object state table '%s', sequoiadb error: %s",
+          HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+      index_ref =
+          BSON(HA_FIELD_DB << 1 << HA_FIELD_TABLE << 1 << HA_FIELD_TYPE << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = cl.create_index(index_ref, HA_OBJ_STATE_DB_TABLE_TYPE_INDEX,
+                           key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index for '%s', sequoiadb error: %s",
+                  HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-    index_ref = BSON(HA_FIELD_DB << 1 << HA_FIELD_SQL_ID << 1);
-    rc = cl.create_index(index_ref, HA_OBJ_STATE_DB_SQLID_INDEX, key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index for '%s', sequoiadb error: %s",
-                HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
-    indexes_created = true;
+      index_ref = BSON(HA_FIELD_DB << 1 << HA_FIELD_SQL_ID << 1);
+      rc = cl.create_index(index_ref, HA_OBJ_STATE_DB_SQLID_INDEX, key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index for '%s', sequoiadb error: %s",
+                  HA_OBJECT_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+      indexes_created = true;
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
+                        HA_OBJECT_STATE_CL, e.what());
 done:
   return rc;
 error:
@@ -216,37 +232,41 @@ int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &lock_cl,
   int rc = 0;
   char err_buf[HA_BUF_LEN] = {0};
   bson::BSONObj cl_options, index_ref, key_options;
-  if (NULL != data_group && '\0' != data_group[0]) {
-    cl_options = BSON(SDB_FIELD_GROUP << data_group);
-  }
+  try {
+    if (NULL != data_group && '\0' != data_group[0]) {
+      cl_options = BSON(SDB_FIELD_GROUP << data_group);
+    }
 
-  rc = sdb_conn.get_cl((char *)group_name, HA_LOCK_CL, lock_cl, true);
-  if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
-    sql_print_information("HA: Creating lock table '%s'", HA_LOCK_CL);
-    rc = sdb_conn.create_cl((char *)group_name, HA_LOCK_CL, cl_options);
-    rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create lock table '%s', sequoiadb error: %s",
-                HA_LOCK_CL, ha_error_string(sdb_conn, rc, err_buf));
-  }
+    rc = sdb_conn.get_cl((char *)group_name, HA_LOCK_CL, lock_cl, true);
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      sql_print_information("HA: Creating lock table '%s'", HA_LOCK_CL);
+      rc = sdb_conn.create_cl((char *)group_name, HA_LOCK_CL, cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create lock table '%s', sequoiadb error: %s",
+                  HA_LOCK_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
 
-  if (!indexes_created) {
-    rc = sdb_conn.get_cl((char *)group_name, HA_LOCK_CL, lock_cl);
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to get lock table '%s', sequoiadb error: %s",
-                HA_LOCK_CL, ha_error_string(sdb_conn, rc, err_buf));
+    if (!indexes_created) {
+      rc = sdb_conn.get_cl((char *)group_name, HA_LOCK_CL, lock_cl);
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to get lock table '%s', sequoiadb error: %s",
+                  HA_LOCK_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-    index_ref =
-        BSON(HA_FIELD_DB << 1 << HA_FIELD_TABLE << 1 << HA_FIELD_TYPE << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1);
-    rc = lock_cl.create_index(index_ref, HA_LOCK_DB_TABLE_TYPE_INDEX,
-                              key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index for '%s', sequoiadb error: %s",
-                HA_LOCK_CL, ha_error_string(sdb_conn, rc, err_buf));
-    indexes_created = true;
+      index_ref =
+          BSON(HA_FIELD_DB << 1 << HA_FIELD_TABLE << 1 << HA_FIELD_TYPE << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = lock_cl.create_index(index_ref, HA_LOCK_DB_TABLE_TYPE_INDEX,
+                                key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index for '%s', sequoiadb error: %s",
+                  HA_LOCK_CL, ha_error_string(sdb_conn, rc, err_buf));
+      indexes_created = true;
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
+                        HA_LOCK_CL, e.what());
 done:
   return rc;
 error:
@@ -260,49 +280,54 @@ int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name,
   rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl, true);
 
   if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
-    sql_print_information("HA: Creating registry table '%s:%s'", HA_GLOBAL_INFO,
-                          HA_REGISTRY_CL);
-    bson::BSONObj cl_options, index_ref, key_options;
-    bson::BSONObjBuilder builder;
-    bson::BSONObjBuilder sub_builder(
-        builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+    try {
+      sql_print_information("HA: Creating registry table '%s:%s'",
+                            HA_GLOBAL_INFO, HA_REGISTRY_CL);
+      bson::BSONObj cl_options, index_ref, key_options;
+      bson::BSONObjBuilder builder;
+      bson::BSONObjBuilder sub_builder(
+          builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
 
-    sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_INSTANCE_ID);
-    sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
-    sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
-    sub_builder.doneFast();
-    if (NULL != data_group && '\0' != data_group[0]) {
-      builder.append(SDB_FIELD_GROUP, data_group);
+      sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_INSTANCE_ID);
+      sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
+      sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
+      sub_builder.doneFast();
+      if (NULL != data_group && '\0' != data_group[0]) {
+        builder.append(SDB_FIELD_GROUP, data_group);
+      }
+      cl_options = builder.done();
+      rc = sdb_conn.create_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(
+          rc, error,
+          "HA: Unable to create registry table '%s', sequoiadb error: %s",
+          HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      index_ref = BSON(HA_FIELD_INSTANCE_ID << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl);
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to get registry table '%s', sequoiadb error: %s",
+                  HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      rc = registry_cl.create_index(index_ref, HA_REGISTRY_INSTID_INDEX,
+                                    key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index on '%s', sequoiadb error: %s",
+                  HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      index_ref = BSON(HA_FIELD_HOST_NAME << 1 << HA_FIELD_PORT << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1 << SDB_FIELD_NOT_NULL << 1);
+      rc = registry_cl.create_index(index_ref, HA_REGISTRY_HOST_PORT_INDEX,
+                                    key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index on '%s', sequoiadb error: %s",
+                  HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
     }
-    cl_options = builder.done();
-    rc = sdb_conn.create_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, cl_options);
-    rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create registry table '%s', sequoiadb error: %s",
-                HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-    index_ref = BSON(HA_FIELD_INSTANCE_ID << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1);
-    rc = sdb_conn.get_cl(HA_GLOBAL_INFO, HA_REGISTRY_CL, registry_cl);
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to get registry table '%s', sequoiadb error: %s",
-                HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-    rc = registry_cl.create_index(index_ref, HA_REGISTRY_INSTID_INDEX,
-                                  key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index on '%s', sequoiadb error: %s",
-                HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-    index_ref = BSON(HA_FIELD_HOST_NAME << 1 << HA_FIELD_PORT << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1 << SDB_FIELD_NOT_NULL << 1);
-    rc = registry_cl.create_index(index_ref, HA_REGISTRY_HOST_PORT_INDEX,
-                                  key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index on '%s', sequoiadb error: %s",
-                HA_REGISTRY_CL, ha_error_string(sdb_conn, rc, err_buf));
+    SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exeception:%s",
+                          HA_REGISTRY_CL, e.what());
   }
 done:
   return rc;
@@ -319,45 +344,51 @@ int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
 
   rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_LOG_CL, pending_log_cl,
                        true);
-  if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
-    sql_print_information("HA: Creating '%s:%s'", group_name,
-                          HA_PENDING_LOG_CL);
+  try {
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      sql_print_information("HA: Creating '%s:%s'", group_name,
+                            HA_PENDING_LOG_CL);
 
-    bson::BSONObj cl_options;
-    bson::BSONObjBuilder builder;
-    bson::BSONObjBuilder sub_builder(
-        builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
+      bson::BSONObj cl_options;
+      bson::BSONObjBuilder builder;
+      bson::BSONObjBuilder sub_builder(
+          builder.subobjStart(SDB_FIELD_NAME_AUTOINCREMENT));
 
-    sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_SQL_ID);
-    sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
-    sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
-    sub_builder.doneFast();
-    if (NULL != data_group && '\0' != data_group[0]) {
-      builder.append(SDB_FIELD_GROUP, data_group);
+      sub_builder.append(SDB_FIELD_NAME_FIELD, HA_FIELD_SQL_ID);
+      sub_builder.append(SDB_FIELD_ACQUIRE_SIZE, 1);
+      sub_builder.append(SDB_FIELD_CACHE_SIZE, 1);
+      sub_builder.doneFast();
+      if (NULL != data_group && '\0' != data_group[0]) {
+        builder.append(SDB_FIELD_GROUP, data_group);
+      }
+      cl_options = builder.done();
+      rc =
+          sdb_conn.create_cl((char *)group_name, HA_PENDING_LOG_CL, cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error, "HA: Unable to create '%s', sequoiadb error: %s",
+                  HA_PENDING_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
     }
-    cl_options = builder.done();
-    rc = sdb_conn.create_cl((char *)group_name, HA_PENDING_LOG_CL, cl_options);
-    rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error, "HA: Unable to create '%s', sequoiadb error: %s",
-                HA_PENDING_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
-  }
 
-  if (!indexes_created) {
-    bson::BSONObj index_ref, key_options;
-    index_ref = BSON(HA_FIELD_SQL_ID << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1);
-    rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_LOG_CL, pending_log_cl);
-    HA_RC_CHECK(rc, error, "HA: Unable to get '%s', sequoiadb error: %s",
-                HA_PENDING_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
+    if (!indexes_created) {
+      bson::BSONObj index_ref, key_options;
+      index_ref = BSON(HA_FIELD_SQL_ID << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_LOG_CL,
+                           pending_log_cl);
+      HA_RC_CHECK(rc, error, "HA: Unable to get '%s', sequoiadb error: %s",
+                  HA_PENDING_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-    rc = pending_log_cl.create_index(index_ref, HA_PENDING_LOG_PENDING_ID_INDEX,
-                                     key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index on '%s', sequoiadb error: %s",
-                HA_PENDING_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
-    indexes_created = true;
+      rc = pending_log_cl.create_index(
+          index_ref, HA_PENDING_LOG_PENDING_ID_INDEX, key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index on '%s', sequoiadb error: %s",
+                  HA_PENDING_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
+      indexes_created = true;
+    }
   }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
+                        HA_PENDING_LOG_CL, e.what());
 done:
   return rc;
 error:
@@ -374,47 +405,51 @@ int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
 
   rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_OBJECT_CL,
                        pending_object_cl, true);
-  if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
-    sql_print_information("HA: Creating '%s:%s'", group_name,
-                          HA_PENDING_OBJECT_CL);
-    bson::BSONObj cl_options;
-    if (NULL != data_group && '\0' != data_group[0]) {
-      cl_options = BSON(SDB_FIELD_GROUP << data_group);
+  try {
+    if (SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      sql_print_information("HA: Creating '%s:%s'", group_name,
+                            HA_PENDING_OBJECT_CL);
+      bson::BSONObj cl_options;
+      if (NULL != data_group && '\0' != data_group[0]) {
+        cl_options = BSON(SDB_FIELD_GROUP << data_group);
+      }
+      rc = sdb_conn.create_cl((char *)group_name, HA_PENDING_OBJECT_CL,
+                              cl_options);
+      rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error, "HA: Unable to create '%s', sequoiadb error: %s",
+                  HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
     }
-    rc = sdb_conn.create_cl((char *)group_name, HA_PENDING_OBJECT_CL,
-                            cl_options);
-    rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error, "HA: Unable to create '%s', sequoiadb error: %s",
-                HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+    if (!indexes_created) {
+      bson::BSONObj index_ref, key_options;
+      index_ref =
+          BSON(HA_FIELD_DB << 1 << HA_FIELD_TABLE << 1 << HA_FIELD_TYPE << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_OBJECT_CL,
+                           pending_object_cl);
+      HA_RC_CHECK(rc, error, "HA: Unable to '%s', sequoiadb error: %s",
+                  HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      rc = pending_object_cl.create_index(
+          index_ref, HA_PENDING_OBJECT_DB_TABLE_TYPE_INDEX, key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index on '%s', sequoiadb error: %s",
+                  HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      index_ref = BSON(HA_FIELD_SQL_ID << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 0);
+      rc = pending_object_cl.create_index(
+          index_ref, HA_PENDING_OBJECT_SQLID_INDEX, key_options);
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index on '%s', sequoiadb error: %s",
+                  HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
+      indexes_created = true;
+    }
   }
-
-  if (!indexes_created) {
-    bson::BSONObj index_ref, key_options;
-    index_ref =
-        BSON(HA_FIELD_DB << 1 << HA_FIELD_TABLE << 1 << HA_FIELD_TYPE << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 1);
-    rc = sdb_conn.get_cl((char *)group_name, HA_PENDING_OBJECT_CL,
-                         pending_object_cl);
-    HA_RC_CHECK(rc, error, "HA: Unable to '%s', sequoiadb error: %s",
-                HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-    rc = pending_object_cl.create_index(
-        index_ref, HA_PENDING_OBJECT_DB_TABLE_TYPE_INDEX, key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index on '%s', sequoiadb error: %s",
-                HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
-
-    index_ref = BSON(HA_FIELD_SQL_ID << 1);
-    key_options = BSON(SDB_FIELD_UNIQUE << 0);
-    rc = pending_object_cl.create_index(
-        index_ref, HA_PENDING_OBJECT_SQLID_INDEX, key_options);
-    rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
-    HA_RC_CHECK(rc, error,
-                "HA: Unable to create index on '%s', sequoiadb error: %s",
-                HA_PENDING_OBJECT_CL, ha_error_string(sdb_conn, rc, err_buf));
-    indexes_created = true;
-  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get '%s' instance, exception:%s",
+                        HA_PENDING_OBJECT_CL, e.what());
 done:
   return rc;
 error:
