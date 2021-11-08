@@ -526,17 +526,27 @@ error:
   goto done;
 }
 
-int Sdb_conn::get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
-                     const bool check_exist) {
+int Sdb_conn::get_cl(const char *db_name, const char *table_name, Sdb_cl &cl,
+                     const bool check_exist, Name_mapping *nm) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCollectionSpace cs;
   cl.close();
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
 
   cl.m_conn = this;
   cl.m_thread_id = this->thread_id();
   if (!m_connection) {
     rc = SDB_NOT_CONNECTED;
     goto error;
+  }
+  if (NULL != nm) {
+    rc = nm->get_mapping(db_name, table_name);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = nm->get_mapping_db_name();
+    cl_name = nm->get_mapping_table_name();
   }
 
   try {
@@ -559,21 +569,29 @@ error:
   goto done;
 }
 
-int Sdb_conn::create_cl(const char *cs_name, const char *cl_name,
+int Sdb_conn::create_cl(const char *db_name, const char *table_name,
                         const bson::BSONObj &options, bool *created_cs,
-                        bool *created_cl) {
+                        bool *created_cl, Name_mapping *nm) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
   sdbclient::sdbCollectionSpace cs;
   sdbclient::sdbCollection cl;
   bool new_cs = false;
   bool new_cl = false;
-
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
   if (!m_connection) {
     rc = SDB_NOT_CONNECTED;
     goto error;
   }
-
+  if (NULL != nm) {
+    rc = nm->add_mapping(db_name, table_name);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = nm->get_mapping_db_name();
+    cl_name = nm->get_mapping_table_name();
+  }
 retry:
   try {
     rc = m_connection->getCollectionSpace(cs_name, cs);
@@ -632,6 +650,9 @@ error:
     new_cl = false;
   } else if (new_cl) {
     drop_cl(cs_name, cl_name);
+    if (NULL != nm) {
+      nm->delete_mapping(db_name, table_name);
+    }
     new_cl = false;
   }
   goto done;
@@ -710,10 +731,35 @@ error:
   goto done;
 }
 
-int Sdb_conn::rename_cl(const char *cs_name, const char *old_cl_name,
-                        const char *new_cl_name) {
-  return retry(boost::bind(conn_rename_cl, m_connection, cs_name, old_cl_name,
-                           new_cl_name));
+int Sdb_conn::rename_cl(const char *db_name, const char *old_tbl_name,
+                        const char *new_tbl_name, Name_mapping *src_nm) {
+  int rc = 0;
+  const char *cs_name = db_name;
+  const char *old_cl_name = old_tbl_name;
+  const char *new_cl_name = new_tbl_name;
+  if (NULL != src_nm) {
+    rc = src_nm->get_mapping(db_name, old_tbl_name);
+    if (HA_ERR_END_OF_FILE == rc) {
+      rc = SDB_DMS_NOTEXIST;
+      goto error;
+    } else if (0 != rc) {
+      goto error;
+    }
+    cs_name = src_nm->get_mapping_db_name();
+    old_cl_name = src_nm->get_mapping_table_name();
+  }
+  rc = retry(boost::bind(conn_rename_cl, &m_connection, cs_name, old_cl_name,
+                         new_cl_name));
+  if (0 != rc) {
+    goto error;
+  }
+  if (NULL != src_nm) {
+    rc = src_nm->rename_mapping(db_name, old_tbl_name, new_tbl_name);
+  }
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int conn_drop_cl(sdbclient::sdb *connection, const char *cs_name,
@@ -750,19 +796,52 @@ error:
   goto done;
 }
 
-int Sdb_conn::drop_cl(const char *cs_name, const char *cl_name) {
-  return retry(boost::bind(conn_drop_cl, m_connection, cs_name, cl_name));
+int Sdb_conn::drop_cl(const char *db_name, const char *table_name,
+                      Name_mapping *nm) {
+  int rc = 0;
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
+  if (NULL != nm) {
+    rc = nm->get_mapping(db_name, table_name);
+    if (HA_ERR_END_OF_FILE == rc) {
+      rc = 0;
+      goto done;
+    } else if (0 != rc) {
+      goto error;
+    }
+    cs_name = nm->get_mapping_db_name();
+    cl_name = nm->get_mapping_table_name();
+  }
+  rc = retry(boost::bind(conn_drop_cl, &m_connection, cs_name, cl_name));
+  if (0 != rc) {
+    goto error;
+  }
+  if (NULL != nm) {
+    rc = nm->delete_mapping(db_name, table_name);
+  }
+done:
+  return rc;
+error:
+  goto done;
 }
 
 #ifdef IS_MARIADB
 int Sdb_conn::get_seq(const char *cs_name, const char *table_name,
-                      char *sequence_name, Sdb_seq &seq) {
+                      char *sequence_name, Sdb_seq &seq, Name_mapping *nm) {
   int rc = SDB_ERR_OK;
   if (!m_connection) {
     rc = SDB_NOT_CONNECTED;
     goto error;
   }
 
+  if (NULL != nm) {
+    rc = nm->get_fixed_mapping(cs_name, table_name);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = nm->get_mapping_db_name();
+    table_name = nm->get_mapping_table_name();
+  }
   rc = sdb_rebuild_sequence_name(this, cs_name, table_name, sequence_name);
   if (rc) {
     goto error;
@@ -788,7 +867,8 @@ error:
 
 int Sdb_conn::create_seq(const char *cs_name, const char *table_name,
                          char *sequence_name, const bson::BSONObj &options,
-                         bool *created_cs, bool *created_seq) {
+                         bool *created_cs, bool *created_seq,
+                         Name_mapping *nm) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
   sdbclient::sdbCollectionSpace cs;
@@ -801,6 +881,14 @@ int Sdb_conn::create_seq(const char *cs_name, const char *table_name,
     goto error;
   }
 
+  if (NULL != nm) {
+    rc = nm->get_fixed_mapping(cs_name, table_name);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = nm->get_mapping_db_name();
+    table_name = nm->get_mapping_table_name();
+  }
 retry:
   try {
     rc = m_connection->getCollectionSpace(cs_name, cs);
@@ -909,9 +997,21 @@ error:
 }
 
 int Sdb_conn::rename_seq(const char *cs_name, const char *old_seq_name,
-                         const char *new_seq_name) {
-  return retry(boost::bind(conn_rename_seq, this, m_connection, cs_name,
-                           old_seq_name, new_seq_name));
+                         const char *new_seq_name, Name_mapping *nm) {
+  int rc = 0;
+  if (NULL != nm) {
+    rc = nm->get_fixed_mapping(cs_name, old_seq_name);
+    if (0 != rc) {
+      goto error;
+    }
+  }
+  cs_name = nm->get_mapping_db_name();
+  rc = retry(boost::bind(conn_rename_seq, this, &m_connection, cs_name,
+                         old_seq_name, new_seq_name));
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int conn_drop_seq(Sdb_conn *conn, sdbclient::sdb *connection,
@@ -945,9 +1045,23 @@ error:
   goto done;
 }
 
-int Sdb_conn::drop_seq(const char *cs_name, const char *table_name) {
-  return retry(
-      boost::bind(conn_drop_seq, this, m_connection, cs_name, table_name));
+int Sdb_conn::drop_seq(const char *cs_name, const char *table_name,
+                       Name_mapping *nm) {
+  int rc = 0;
+  if (NULL != nm) {
+    rc = nm->get_fixed_mapping(cs_name, table_name);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = nm->get_mapping_db_name();
+    table_name = nm->get_mapping_table_name();
+  }
+  rc = retry(
+      boost::bind(conn_drop_seq, this, &m_connection, cs_name, table_name));
+done:
+  return rc;
+error:
+  goto done;
 }
 #endif
 

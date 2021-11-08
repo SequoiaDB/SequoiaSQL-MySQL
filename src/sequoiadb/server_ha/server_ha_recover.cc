@@ -27,6 +27,7 @@
 #include "errmsg.h"
 #include "sql_common.h"
 #include "server_ha_query.h"
+#include "name_map.h"
 
 // SQL statements
 #define HA_STMT_EXEC_ONLY_IN_MYSQL "SET sequoiadb_execute_only_in_mysql = 1"
@@ -388,6 +389,9 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
       SDB_LOG_ERROR("Metadata mapping is not enabled while data group is set");
       rc = SDB_HA_EXCEPTION;
       goto error;
+    } else if (sdb_enable_mapping && '\0' != data_group[0]) {
+      // if data group is set and 'sequoiadb_enable_mapping' is set
+      Metadata_Mapping::set_perfer_origin_name(false);
     }
   }
 

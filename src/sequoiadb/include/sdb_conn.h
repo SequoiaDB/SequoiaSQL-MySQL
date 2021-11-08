@@ -24,6 +24,7 @@
 #include "ha_sdb_def.h"
 #include <mysql/plugin.h>
 #include "ha_sdb_errcode.h"
+#include "name_map.h"
 
 #if defined IS_MYSQL
 #include <my_thread_local.h>
@@ -250,16 +251,18 @@ class Sdb_conn {
   inline bool is_transaction_on() { return m_transaction_on; }
 
   int get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
-             const bool check_exist = false);
+             const bool check_exist = false, Name_mapping *nm = NULL);
 
   int create_cl(const char *cs_name, const char *cl_name,
                 const bson::BSONObj &options = SDB_EMPTY_BSON,
-                bool *created_cs = NULL, bool *created_cl = NULL);
+                bool *created_cs = NULL, bool *created_cl = NULL,
+                Name_mapping *nm = NULL);
 
   int rename_cl(const char *cs_name, const char *old_cl_name,
-                const char *new_cl_name);
+                const char *new_cl_name, Name_mapping *src_nm = NULL);
 
-  int drop_cl(const char *cs_name, const char *cl_name);
+  int drop_cl(const char *cs_name, const char *cl_name,
+              Name_mapping *nm = NULL);
 
   int drop_cs(const char *cs_name);
 
@@ -268,17 +271,17 @@ class Sdb_conn {
 
 #ifdef IS_MARIADB
   int get_seq(const char *cs_name, const char *table_name, char *sequence_name,
-              Sdb_seq &seq);
+              Sdb_seq &seq, Name_mapping *nm = NULL);
 
   int create_seq(const char *cs_name, const char *table_name,
                  char *sequence_name,
                  const bson::BSONObj &options = SDB_EMPTY_BSON,
-                 bool *created_cs = NULL, bool *created_seq = NULL);
+                 bool *created_cs = NULL, bool *created_seq = NULL, Name_mapping *nm = NULL);
 
   int rename_seq(const char *cs_name, const char *old_table_name,
-                 const char *new_table_name);
+                 const char *new_table_name, Name_mapping *nm = NULL);
 
-  int drop_seq(const char *cs_name, const char *table_name);
+  int drop_seq(const char *cs_name, const char *table_name, Name_mapping *nm = NULL);
 #endif
 
   int get_cl_statistics(const char *cs_name, const char *cl_name,

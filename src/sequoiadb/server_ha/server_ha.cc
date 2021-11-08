@@ -1235,7 +1235,6 @@ static int update_cata_version_for_alter_part_table(
     bson::BSONObj obj, condition;
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
     char tmp_db_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
-    MetadataMapping *name_map = MetadataMapping::get_instance();
 
     if (sql_info->tables->next) {
       // if its 'alter table rename table' command
@@ -1246,13 +1245,13 @@ static int update_cata_version_for_alter_part_table(
 
     // Modifying sub CL will update version of the main CL
     // Get the true version of the main CL after altering partition table
-    rc = name_map->get_table_mapping(sql_info->sdb_conn, table->db_name,
-                                     table->table_name, tmp_db_name, NULL);
+    Metadata_Mapping tbl_mapping(&sql_info->sdb_conn);
+    rc = tbl_mapping.get_mapping(table->db_name, table->table_name);
     if (0 != rc) {
       goto error;
     }
-    assert('\0' != tmp_db_name[0]);
-    sprintf(full_name, "%s.%s", tmp_db_name, table->table_name);
+    sprintf(full_name, "%s.%s", tbl_mapping.get_mapping_db_name(),
+            tbl_mapping.get_mapping_table_name());
     condition = BSON(SDB_FIELD_NAME << full_name);
     rc = sql_info->sdb_conn->snapshot(obj, SDB_SNAP_CATALOG, condition);
     if (SDB_DMS_EOC == get_sdb_code(rc)) {
@@ -5226,12 +5225,10 @@ static int server_ha_init(void *p) {
   }
 
   // Init metadata mapping module and set configuration
-  MetadataMapping::enable_metadata_mapping(sdb_enable_mapping);
-  MetadataMapping::set_sql_group(ha_inst_group_name);
-  MetadataMapping::set_mapping_group_size(sdb_mapping_group_size);
-  MetadataMapping::set_mapping_group_number(sdb_mapping_group_num);
-  MetadataMapping *name_map = MetadataMapping::get_instance();
-  DBUG_ASSERT(NULL != name_map);
+  Metadata_Mapping::enable_metadata_mapping(sdb_enable_mapping);
+  Metadata_Mapping::set_sql_group(ha_inst_group_name);
+  Metadata_Mapping::set_mapping_group_size(sdb_mapping_group_size);
+  Metadata_Mapping::set_mapping_group_number(sdb_mapping_group_num);
 
   if (sdb_enable_mapping) {
     SDB_LOG_INFO(

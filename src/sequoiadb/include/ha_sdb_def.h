@@ -71,6 +71,7 @@
 #define NM_FIELD_CS_NAME "CSName"
 #define NM_FIELD_CL_NAME "CLName"
 #define NM_FIELD_CL_COUNT "CLCount"
+#define NM_FIELD_IS_PHY_TABLE "IsPhysicalTable"
 #define NM_FIELD_STATE "State"
 #define NM_DB_TABLE_INDEX "MappingTableDBTableIndex"
 
