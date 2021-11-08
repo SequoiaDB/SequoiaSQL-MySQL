@@ -37,7 +37,7 @@ insert into t1 values(2, repeat('a', 4084));
 ERROR HY000: Index key is too large
 create table t2 (id int) comment "sequoiadb: {table_options: {ShardingKey:{id:1},IsMainCL:true}}";
 insert into t2 values(1);
-ERROR HY000: Couldn't find matching sub-collection in main collection test_errors_sequoiadb.t2, rc: -135
+ERROR HY000: Unable to find the matched catalog information
 alter table t1 comment 'sequoiadb: {table_options: {AutoSplit: true}}';
 ERROR HY000: There is no valid sharding-key defined
 alter table t1 comment 'sequoiadb: {table_options: {AutoIndexId: false}}';
