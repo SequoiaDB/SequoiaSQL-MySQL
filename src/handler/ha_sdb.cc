@@ -5796,10 +5796,11 @@ done:
   DBUG_RETURN(rc);
 error:
   convert_sdb_code(rc);
+  if (created_cl) {
+    conn->drop_cl(db_name, table_name);
+  }
   if (created_cs) {
     conn->drop_cs(db_name);
-  } else if (created_cl) {
-    conn->drop_cl(db_name, table_name);
   }
   goto done;
 }
