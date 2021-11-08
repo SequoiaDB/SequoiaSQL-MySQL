@@ -276,16 +276,24 @@ class Sdb_conn {
   int create_seq(const char *cs_name, const char *table_name,
                  char *sequence_name,
                  const bson::BSONObj &options = SDB_EMPTY_BSON,
-                 bool *created_cs = NULL, bool *created_seq = NULL, Name_mapping *nm = NULL);
+                 bool *created_cs = NULL, bool *created_seq = NULL,
+                 Name_mapping *nm = NULL);
 
   int rename_seq(const char *cs_name, const char *old_table_name,
                  const char *new_table_name, Name_mapping *nm = NULL);
 
-  int drop_seq(const char *cs_name, const char *table_name, Name_mapping *nm = NULL);
+  int drop_seq(const char *cs_name, const char *table_name,
+               Name_mapping *nm = NULL);
 #endif
 
   int get_cl_statistics(const char *cs_name, const char *cl_name,
                         Sdb_statistics &stats);
+
+  int list(int list_type, const bson::BSONObj &condition = SDB_EMPTY_BSON,
+           const bson::BSONObj &selected = SDB_EMPTY_BSON,
+           const bson::BSONObj &order_by = SDB_EMPTY_BSON,
+           const bson::BSONObj &hint = SDB_EMPTY_BSON,
+           longlong num_to_skip = 0);
 
   int snapshot(bson::BSONObj &obj, int snap_type,
                const bson::BSONObj &condition = SDB_EMPTY_BSON,

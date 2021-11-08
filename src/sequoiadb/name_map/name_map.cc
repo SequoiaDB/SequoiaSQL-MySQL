@@ -148,12 +148,12 @@ int Metadata_Mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
                                              const char *db_name, int &slot) {
   int rc = 0;
   int i = 0;
-  bool cs_slot_is_occupied[NM_MAX_MAPPING_GROUP_SIZE];
+  bool cs_slot_is_full[NM_MAX_MAPPING_GROUP_SIZE];
   const char *cs_name = NULL;
   bson::BSONObj obj;
 
   while (i < m_mapping_unit_count) {
-    cs_slot_is_occupied[i++] = false;
+    cs_slot_is_full[i++] = false;
   }
   char query[SDB_CS_NAME_MAX_SIZE * 3 + 150] = {0};
   // "SELECT CSName, COUNT(IsPhysicalTable) AS CLCount FROM %s.%s WHERE DBName =
@@ -180,17 +180,20 @@ int Metadata_Mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
     slot = atoi(strrchr(cs_name, '#') + 1);
     if (cl_cnt < m_mapping_unit_size) {
       break;
+    } else if (slot >= m_mapping_unit_count) {
+      // can't be here by usual operation
+      slot = 0;
     } else {
-      cs_slot_is_occupied[slot] = true;
+      cs_slot_is_full[slot] = true;
     }
   }
 
   rc = (rc == HA_ERR_END_OF_FILE) ? 0 : rc;
-  if (cs_slot_is_occupied[slot]) {
+  if (cs_slot_is_full[slot]) {
     i = slot;
     do {
       i = (i + 1) % m_mapping_unit_count;
-      if (!cs_slot_is_occupied[i]) {
+      if (!cs_slot_is_full[i]) {
         slot = i;
         break;
       }
@@ -198,7 +201,7 @@ int Metadata_Mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
   }
 
   DBUG_ASSERT(slot < m_mapping_unit_count);
-  if (cs_slot_is_occupied[slot]) {
+  if (cs_slot_is_full[slot]) {
     rc = SDB_HA_EXCEPTION;
     SDB_LOG_ERROR("NM: too many tables in current database, limit: %d",
                   m_mapping_unit_size * m_mapping_unit_count);
@@ -578,47 +581,54 @@ error:
 
 int Metadata_Mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn,
                                            const char *db_name,
-                                           std::vector<String> &mapping_cs) {
+                                           std::vector<string> &mapping_cs) {
   int rc = 0;
-  char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
-  bson::BSONObj obj;
-  char query[SDB_CS_NAME_MAX_SIZE * 3 + 100] = {0};
+  char cs_prefix[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  bson::BSONObj obj, cond, regex;
+  int end = 0;
 
-  if (!m_enabled) {
-    String tmp_str(strlen(db_name));
-    tmp_str.append(db_name);
-    mapping_cs.push_back(tmp_str);
-    goto done;
-  }
-
-  snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
-           NM_SQL_GROUP_PREFIX, m_sql_group);
-
-  // SELECT CSName, COUNT(CSName) AS CNT FROM %s.%s
-  // WHERE DBName = '%s' GROUP BY CSName
-  sprintf(query,
-          "SELECT %s, COUNT(%s) AS CNT FROM %s.%s WHERE %s = '%s' GROUP BY %s",
-          NM_FIELD_CS_NAME, NM_FIELD_CS_NAME, sql_group_cs_name, NM_TABLE_MAP,
-          NM_FIELD_DB_NAME, db_name, NM_FIELD_CS_NAME);
-  rc = sdb_conn->execute(query);
-  if (0 != rc) {
-    SDB_LOG_ERROR(
-        "Failed to query mapping CS for database '%s' before dropping database",
-        db_name);
-    goto error;
-  } else if (0 == rc) {
-    while (0 == (rc = sdb_conn->next(obj, false))) {
-      const char *cs_name = obj.getStringField(NM_FIELD_CS_NAME);
-      if ('\0' != cs_name[0]) {
-        String tmp_str(strlength(cs_name));
-        tmp_str.append(cs_name);
-        mapping_cs.push_back(tmp_str);
+  try {
+    if (!m_enabled || m_pefer_origin_name) {
+      mapping_cs.push_back(db_name);
+      if (!m_enabled) {
+        goto done;
       }
     }
-    if (HA_ERR_END_OF_FILE == rc) {
-      rc = 0;
+    // list(SDB_SNAP_COLLECTIONSPACES, {Name: {$regex: "GroupName#DBName#"}})
+    end = sprintf(cs_prefix, "%s#", m_sql_group);
+    if (NULL == strstr(db_name, "#")) {
+      sprintf(cs_prefix + end, "%s#", db_name);
+    } else {
+      // replace '#' with '@'
+      for (uint i = 0; i < strlen(db_name); i++) {
+        cs_prefix[end++] = ('#' == db_name[i]) ? '@' : db_name[i];
+      }
+      cs_prefix[end] = '#';
+    }
+    regex = BSON("$regex" << cs_prefix);
+    cond = BSON(SDB_FIELD_NAME << regex);
+    rc = sdb_conn->list(SDB_SNAP_COLLECTIONSPACES, cond);
+    if (0 != rc) {
+      SDB_LOG_ERROR(
+          "Failed to list mapping CS for database '%s' "
+          "before dropping database",
+          db_name);
+      goto error;
+    } else if (0 == rc) {
+      while (0 == (rc = sdb_conn->next(obj, false))) {
+        const char *cs_name = obj.getStringField(SDB_FIELD_NAME);
+        if ('\0' != cs_name[0]) {
+          mapping_cs.push_back(cs_name);
+        }
+      }
+      if (HA_ERR_END_OF_FILE == rc) {
+        rc = 0;
+      }
     }
   }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to getting mapping for database:%s, exception:%s", db_name,
+      e.what());
 done:
   return rc;
 error:

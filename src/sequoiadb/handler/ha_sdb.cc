@@ -9043,7 +9043,7 @@ static void sdb_drop_database(handlerton *hton, char *path) {
   char db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   Sdb_conn *connection = NULL;
   THD *thd = current_thd;
-  std::vector<String> mapping_cs;
+  std::vector<string> mapping_cs;
 
   if (NULL == thd) {
     goto error;
@@ -9071,10 +9071,10 @@ static void sdb_drop_database(handlerton *hton, char *path) {
   }
 
   for (uint i = 0; i < mapping_cs.size(); i++) {
-    rc = connection->drop_cs(mapping_cs[i].c_ptr());
+    rc = connection->drop_cs(mapping_cs[i].c_str());
     if (rc != 0) {
       SDB_LOG_WARNING("Failed to drop CS '%s', error: %d",
-                      mapping_cs[i].c_ptr(), rc);
+                      mapping_cs[i].c_str(), rc);
     }
   }
 

@@ -1343,6 +1343,23 @@ error:
   goto done;
 }
 
+int conn_list(sdbclient::sdb *connection, int list_type,
+              const bson::BSONObj *condition, const bson::BSONObj *selector,
+              const bson::BSONObj *order_by, const bson::BSONObj *hint,
+              longlong num_to_skip, sdbclient::sdbCursor *cursor,
+              char *errmsg) {
+  return connection->getList(*cursor, list_type, *condition, *selector,
+                             *order_by, *hint, num_to_skip);
+}
+
+int Sdb_conn::list(int list_type, const bson::BSONObj &condition,
+                   const bson::BSONObj &selected, const bson::BSONObj &order_by,
+                   const bson::BSONObj &hint, longlong num_to_skip) {
+  return retry(boost::bind(conn_list, &m_connection, list_type, &condition,
+                           &selected, &order_by, &hint, num_to_skip, &m_cursor,
+                           errmsg));
+}
+
 int conn_snapshot(sdbclient::sdb *connection, bson::BSONObj *obj, int snap_type,
                   const bson::BSONObj *condition, const bson::BSONObj *selected,
                   const bson::BSONObj *order_by, const bson::BSONObj *hint,

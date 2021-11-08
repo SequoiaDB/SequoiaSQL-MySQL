@@ -32,7 +32,8 @@ class Name_mapping {
   virtual int get_mapping(const char *db_name, const char *table_name) = 0;
   virtual int rename_mapping(const char *db_name, const char *from,
                              const char *to) = 0;
-  virtual int get_fixed_mapping(const char *db_name, const char *table_name) = 0;
+  virtual int get_fixed_mapping(const char *db_name,
+                                const char *table_name) = 0;
 
   virtual const char *get_mapping_db_name() = 0;
   virtual const char *get_mapping_table_name() = 0;
@@ -128,7 +129,7 @@ class Metadata_Mapping : public Name_mapping {
                            const char *dst_table_name);
 
   static int get_mapping_cs_by_db(Sdb_conn *conn, const char *db_name,
-                                  std::vector<String> &mapping_cs);
+                                  std::vector<string> &mapping_cs);
 
   int set_table_mapping_state(Sdb_conn *sdb_conn, const char *db_name,
                               const char *table_name, enum_mapping_state state);
