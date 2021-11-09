@@ -1875,12 +1875,17 @@ analyze table t1;
 --enable_result_log
 
 select * from (t1 as t2 left join t1 as t3 using (a)), t1;
+--sorted_result
 select * from t1, (t1 as t2 left join t1 as t3 using (a));
 # stright_join
+--sorted_result
 select * from (t1 as t2 left join t1 as t3 using (a)) straight_join t1;
+--sorted_result
 select * from t1 straight_join (t1 as t2 left join t1 as t3 using (a));
 # inner join on
+--sorted_result
 select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 on t1.a>1 order by t1.a,t2.a,t3.a;
+--sorted_result
 select * from t1 inner join (t1 as t2 left join t1 as t3 using (a)) on t1.a>1;
 # inner join using
 select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 using ( a );
@@ -1888,6 +1893,7 @@ select * from t1 inner join (t1 as t2 left join t1 as t3 using (a)) using ( a );
 # left [outer] join on
 --sorted_result
 select * from (t1 as t2 left join t1 as t3 using (a)) left outer join t1 on t1.a>1;
+--sorted_result
 select * from t1 left outer join (t1 as t2 left join t1 as t3 using (a)) on t1.a>1;
 # left join using
 select * from (t1 as t2 left join t1 as t3 using (a)) left join t1 using ( a );
@@ -3770,6 +3776,7 @@ INSERT INTO t2 VALUES (1, 1), (1, 2), (1, 3), (1, 4), (1, 5),
 
 FLUSH STATUS;
 SELECT DISTINCT b FROM t1 LEFT JOIN t2 USING(a) WHERE c <= 3;
+--sorted_result
 SHOW STATUS LIKE 'Handler_read%';
 DROP TABLE t1, t2;
 

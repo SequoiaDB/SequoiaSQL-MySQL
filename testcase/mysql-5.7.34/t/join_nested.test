@@ -1138,6 +1138,7 @@ INSERT INTO t3 VALUES (0), (1), (2), (3), (4), (5);
  
 #EXPLAIN SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON c < 3 and b = c;
 #EXPLAIN SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON b < 3 and b = c;
+--sorted_result
 SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON b < 3 and b = c;
 
 DELETE FROM t3;
