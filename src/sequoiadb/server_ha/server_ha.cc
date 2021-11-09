@@ -130,10 +130,6 @@ const char *ha_get_sys_meta_group() {
   return sdb_enable_mapping ? NM_SYS_META_GROUP : NULL;
 }
 
-bool ha_data_group_is_set() {
-  return '\0' != ha_data_group_name_ptr[0];
-}
-
 static const char *check_and_build_lower_case_name(THD *thd, const char *name) {
   const char *name_alias = name;
   if (lower_case_table_names) {

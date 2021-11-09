@@ -252,5 +252,4 @@ void ha_set_data_group(const char *name);
 const char *ha_get_data_group();
 const char *ha_get_inst_group();
 const char *ha_get_sys_meta_group();
-bool ha_data_group_is_set();
 #endif

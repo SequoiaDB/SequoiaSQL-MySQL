@@ -26,7 +26,8 @@
 
 class Sdb_cl {
   friend int Sdb_conn::get_cl(const char *cs_name, const char *cl_name,
-                              Sdb_cl &cl, const bool check_exist = false);
+                              Sdb_cl &cl, const bool check_exist = false,
+                              Name_mapping *nm = NULL);
 
  public:
   Sdb_cl();

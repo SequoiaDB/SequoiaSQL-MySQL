@@ -748,7 +748,7 @@ int Sdb_conn::rename_cl(const char *db_name, const char *old_tbl_name,
     cs_name = src_nm->get_mapping_db_name();
     old_cl_name = src_nm->get_mapping_table_name();
   }
-  rc = retry(boost::bind(conn_rename_cl, &m_connection, cs_name, old_cl_name,
+  rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name, old_cl_name,
                          new_cl_name));
   if (0 != rc) {
     goto error;
@@ -812,7 +812,7 @@ int Sdb_conn::drop_cl(const char *db_name, const char *table_name,
     cs_name = nm->get_mapping_db_name();
     cl_name = nm->get_mapping_table_name();
   }
-  rc = retry(boost::bind(conn_drop_cl, &m_connection, cs_name, cl_name));
+  rc = retry(boost::bind(conn_drop_cl, m_connection, cs_name, cl_name));
   if (0 != rc) {
     goto error;
   }
@@ -1006,7 +1006,7 @@ int Sdb_conn::rename_seq(const char *cs_name, const char *old_seq_name,
     }
   }
   cs_name = nm->get_mapping_db_name();
-  rc = retry(boost::bind(conn_rename_seq, this, &m_connection, cs_name,
+  rc = retry(boost::bind(conn_rename_seq, this, m_connection, cs_name,
                          old_seq_name, new_seq_name));
 done:
   return rc;
@@ -1057,7 +1057,7 @@ int Sdb_conn::drop_seq(const char *cs_name, const char *table_name,
     table_name = nm->get_mapping_table_name();
   }
   rc = retry(
-      boost::bind(conn_drop_seq, this, &m_connection, cs_name, table_name));
+      boost::bind(conn_drop_seq, this, m_connection, cs_name, table_name));
 done:
   return rc;
 error:
@@ -1355,7 +1355,7 @@ int conn_list(sdbclient::sdb *connection, int list_type,
 int Sdb_conn::list(int list_type, const bson::BSONObj &condition,
                    const bson::BSONObj &selected, const bson::BSONObj &order_by,
                    const bson::BSONObj &hint, longlong num_to_skip) {
-  return retry(boost::bind(conn_list, &m_connection, list_type, &condition,
+  return retry(boost::bind(conn_list, m_connection, list_type, &condition,
                            &selected, &order_by, &hint, num_to_skip, &m_cursor,
                            errmsg));
 }
