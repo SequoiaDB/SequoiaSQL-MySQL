@@ -42,6 +42,8 @@
 #define SDB_OID_LEN 12
 #define SDB_OID_FIELD "_id"
 
+#define NO_RECORD ((uint)-1)
+
 #define SDB_SESSION_ATTR_SOURCE "Source"
 #define PREFIX_THREAD_ID "MySQL"
 #define PREFIX_THREAD_ID_LEN 6

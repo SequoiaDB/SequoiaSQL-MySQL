@@ -21,6 +21,8 @@
 #include <boost/shared_ptr.hpp>
 #include "sdb_cl.h"
 
+const static uint16 NULL_BITS = 1;
+
 struct Sdb_index_stat {
   uint *distinct_val_num;
   double *min_value_arr;
@@ -46,6 +48,10 @@ struct Sdb_index_stat {
 };
 
 typedef boost::shared_ptr<Sdb_index_stat> Sdb_idx_stat_ptr;
+
+inline int get_variable_key_length(const uchar *A) {
+  return (int)(((uint16)(A[0])) + ((uint16)(A[1]) << 8));
+}
 
 int sdb_create_index(const KEY *key_info, Sdb_cl &cl,
                      bool shard_by_part_id = false);

@@ -212,10 +212,14 @@ bool print_admin_msg(THD *thd, uint len, const char *msg_type,
 #define sdb_multi_malloc(key, myFlags, ...) \
   my_multi_malloc(key, myFlags, ##__VA_ARGS__)
 #define sdb_my_malloc(key, size, myFlags) my_malloc(key, size, myFlags)
+#define sdb_my_realloc(key, old_ptr, size, myFlags) \
+  my_realloc(key, old_ptr, size, myFlags)
 #elif defined IS_MARIADB
 #define sdb_multi_malloc(key, myFlags, ...) \
   my_multi_malloc(myFlags, ##__VA_ARGS__)
 #define sdb_my_malloc(key, size, myFlags) my_malloc(size, myFlags)
+#define sdb_my_realloc(key, old_ptr, size, myFlags) \
+  my_realloc(old_ptr, size, myFlags)
 #endif
 
 // About plugin

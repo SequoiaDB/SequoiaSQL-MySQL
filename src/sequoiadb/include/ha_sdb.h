@@ -139,6 +139,64 @@ class Sdb_cl_copyer : public Sql_alloc {
 
 class ha_sdb_alter_ctx;
 
+typedef struct sdb_key_range_info {
+  uchar *key;  // key value
+  int key_length;
+  uchar *ptr;  // ptr to row in the range
+} sdb_key_range_info;
+
+class sdb_batched_keys_ranges {
+ public:
+  sdb_batched_keys_ranges();
+  ~sdb_batched_keys_ranges();
+
+  const uint &array_max_elements() const {
+    return m_ranges_buf.array.max_element;
+  }
+
+  bool initialized() { return NULL != m_keys_buf; }
+
+  bool need_expand(int n_ranges) { return n_ranges > m_max_elements_cnt; }
+
+  int expand_buf(int n_ranges);
+
+  void reuse_buf(int n_ranges);
+
+  const bool &need_read_buf_next() const { return m_read_ranges_buf_next; }
+
+  void set_state(HASH_SEARCH_STATE state) { m_state = state; }
+
+  void set_need_read_buf_next(bool need_next) {
+    m_read_ranges_buf_next = need_next;
+  }
+
+  int init(TABLE *table, uint active_index, bool is_mrr_assoc, int n_ranges,
+           size_t key_length);
+
+  void deinit();
+
+  int fill_ranges_buf(KEY_MULTI_RANGE &cur_range);
+
+  sdb_key_range_info *ranges_buf_first();
+
+  sdb_key_range_info *ranges_buf_next();
+
+ private:
+  HASH m_ranges_buf;
+  uchar *m_keys_buf;
+  int m_keys_buf_idx;
+  int m_key_length;
+  int m_max_elements_cnt;
+  int m_used_elements_cnt;
+  sdb_key_range_info *m_records_buf;
+  bool m_read_ranges_buf_next;
+  HASH_SEARCH_STATE m_state;
+
+  TABLE *m_table;
+  uint m_active_index;
+  bool m_is_mrr_assoc;
+};
+
 class ha_sdb : public handler {
  public:
   ha_sdb(handlerton *hton, TABLE_SHARE *table_arg);
@@ -338,6 +396,13 @@ class ha_sdb : public handler {
     skip it and and MySQL will treat it as not implemented.
   */
   int index_last(uchar *buf);
+
+  ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
+                                uint key_parts, uint *bufsz, uint *flags,
+                                Cost_estimate *cost);
+
+  ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
+                                uint *bufsz, uint *flags, Cost_estimate *cost);
 
   int multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
                             uint n_ranges, uint mode, HANDLER_BUFFER *buf);
@@ -665,7 +730,13 @@ class ha_sdb : public handler {
   Field *updated_field;
   st_order *sdb_order;
   st_order *sdb_group_list;
-  bool can_pushdown_cond_in;
+
+  bool m_use_default_impl;
+  sdb_batched_keys_ranges m_batched_keys_ranges;
+#ifdef IS_MARIADB  // TODO: temp to make mariadb compile succeed.
+  bool is_join_bka;
+  uint key_parts;
+#endif
 };
 
 #endif

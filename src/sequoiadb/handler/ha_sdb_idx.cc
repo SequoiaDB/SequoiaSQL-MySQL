@@ -57,12 +57,6 @@
 // range should be better than a single $gt or $lt
 #define GT_OR_LT_MIN_SELECTIVITY (EQ_DEFAULT_SELECTIVITY * 3)
 
-static const uint16 NULL_BITS = 1;
-
-static inline int get_variable_key_length(const uchar *A) {
-  return (int)(((uint16)(A[0])) + ((uint16)(A[1]) << 8));
-}
-
 int sdb_get_key_direction(ha_rkey_function find_flag) {
   switch (find_flag) {
     case HA_READ_KEY_EXACT:

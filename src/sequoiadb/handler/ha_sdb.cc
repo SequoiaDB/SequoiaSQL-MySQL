@@ -94,6 +94,8 @@ HASH sdb_temporary_sequence_cache;
 PSI_memory_key key_memory_sequence_cache;
 static PSI_memory_key key_memory_sdb_share;
 static PSI_memory_key sdb_key_memory_blobroot;
+static PSI_memory_key sdb_key_memory_batched_keys_hash;
+static PSI_memory_key sdb_key_memory_batched_keys_buf;
 
 #ifdef IS_MYSQL
 #define sdb_ha_statistic_increment(offset) \
@@ -1217,6 +1219,203 @@ const char *auto_fill_fields[] = {
     SDB_FIELD_COMPRESSION_TYPE,    SDB_FIELD_REPLSIZE,
     SDB_FIELD_STRICT_DATA_MODE,    SDB_FIELD_GROUP};
 
+uchar *sdb_multi_range_get_key(sdb_key_range_info *key_range_info,
+                               size_t *length,
+                               my_bool not_used MY_ATTRIBUTE((unused))) {
+  *length = key_range_info->key_length;
+  return (uchar *)key_range_info->key;
+}
+
+sdb_batched_keys_ranges::sdb_batched_keys_ranges() {
+  m_keys_buf = NULL;
+  m_keys_buf_idx = 0;
+  m_key_length = 0;
+  m_max_elements_cnt = 0;
+  m_records_buf = NULL;
+  m_read_ranges_buf_next = false;
+  m_state = NO_RECORD;
+  m_table = NULL;
+  m_active_index = 0;
+  m_is_mrr_assoc = false;
+}
+
+sdb_batched_keys_ranges::~sdb_batched_keys_ranges() {
+  deinit();
+}
+
+int sdb_batched_keys_ranges::init(TABLE *table, uint active_index,
+                                  bool is_mrr_assoc, int n_ranges,
+                                  size_t key_length) {
+  int rc = SDB_OK;
+  uchar *ptr = NULL;
+  DBUG_ASSERT(!initialized());
+  rc = sdb_hash_init(&m_ranges_buf, &my_charset_bin, n_ranges, 0, key_length,
+                     (my_hash_get_key)sdb_multi_range_get_key, NULL, 0,
+                     sdb_key_memory_batched_keys_hash);
+  if (SDB_OK != rc) {
+    SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
+    goto error;
+  }
+
+  ptr = (uchar *)sdb_multi_malloc(sdb_key_memory_batched_keys_buf,
+                                  MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
+                                  key_length * n_ranges, &m_records_buf,
+                                  sizeof(sdb_key_range_info) * n_ranges, NullS);
+  if (NULL == ptr) {
+    rc = HA_ERR_OUT_OF_MEM;
+    SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
+    goto error;
+  }
+  m_table = table;
+  m_active_index = active_index;
+  m_is_mrr_assoc = is_mrr_assoc;
+
+  m_max_elements_cnt = n_ranges;
+  m_used_elements_cnt = n_ranges;
+  m_key_length = key_length;
+done:
+  return rc;
+error:
+  goto done;
+}
+
+void sdb_batched_keys_ranges::deinit() {
+  if (initialized()) {
+    my_hash_free(&m_ranges_buf);
+    my_free(m_keys_buf);
+    m_keys_buf = NULL;
+    m_max_elements_cnt = 0;
+    m_records_buf = NULL;
+    m_keys_buf_idx = 0;
+    m_used_elements_cnt = 0;
+    m_key_length = 0;
+  }
+  m_read_ranges_buf_next = false;
+  m_state = NO_RECORD;
+  m_table = NULL;
+  m_active_index = 0;
+  m_is_mrr_assoc = false;
+}
+
+void sdb_batched_keys_ranges::reuse_buf(int n_ranges) {
+  /* Reuse the buffer */
+  DBUG_ASSERT(initialized() && !need_expand(n_ranges));
+  int original_keys_buf_size = m_key_length * m_max_elements_cnt;
+  int records_buf_size = sizeof(sdb_key_range_info) * m_max_elements_cnt;
+  my_hash_reset(&m_ranges_buf);
+  memset(m_keys_buf, 0, original_keys_buf_size + records_buf_size);
+  m_keys_buf_idx = 0;
+  m_used_elements_cnt = n_ranges;
+  m_state = NO_RECORD;
+}
+
+int sdb_batched_keys_ranges::expand_buf(int n_ranges) {
+  int rc = SDB_OK;
+  uchar *ptr = NULL;
+  int keys_buf_size = m_key_length * n_ranges;
+  DBUG_ASSERT(initialized() && need_expand(n_ranges));
+  /* Realloc the buffer */
+  int records_buf_size = sizeof(sdb_key_range_info) * n_ranges;
+  ptr = (uchar *)sdb_my_realloc(sdb_key_memory_batched_keys_buf, m_keys_buf,
+                                keys_buf_size + records_buf_size,
+                                MYF(MY_WME | MY_ZEROFILL));
+  if (NULL == ptr) {
+    rc = HA_ERR_OUT_OF_MEM;
+    SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
+    goto error;
+  }
+  my_hash_reset(&m_ranges_buf);
+  m_keys_buf = ptr;
+  m_keys_buf_idx = 0;
+  m_records_buf = (sdb_key_range_info *)(m_keys_buf + keys_buf_size);
+  m_max_elements_cnt = n_ranges;
+  m_used_elements_cnt = n_ranges;
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int sdb_batched_keys_ranges::fill_ranges_buf(KEY_MULTI_RANGE &cur_range) {
+  int rc = SDB_OK;
+  KEY *key_info = m_table->key_info + m_active_index;
+  const KEY_PART_INFO *key_part = key_info->key_part;
+  int key_start_pos = key_part->store_length - key_part->length;
+  HASH *ranges_buf = &m_ranges_buf;
+  int key_length = 0;
+  uchar *key_ptr = NULL;
+  uchar *key = NULL;
+  sdb_key_range_info *record = NULL;
+  int idx = m_keys_buf_idx;
+
+  DBUG_ASSERT(idx < m_max_elements_cnt);
+  record = &m_records_buf[idx];
+  key = (uchar *)(m_keys_buf + idx * ranges_buf->key_length);
+  ++m_keys_buf_idx;
+
+  if (key_start_pos > NULL_BITS) {
+    key_ptr = (uchar *)cur_range.start_key.key;
+    key_length = key_part->null_bit ? get_variable_key_length(&key_ptr[1])
+                                    : get_variable_key_length(&key_ptr[0]);
+  } else {
+    key_length = ranges_buf->key_length;
+  }
+  memcpy(key, (uchar *)cur_range.start_key.key + key_start_pos, key_length);
+  record->key = key;
+  if (m_is_mrr_assoc) {
+    record->ptr = (uchar *)cur_range.ptr;
+  } else {
+    record->ptr = NULL;
+  }
+  record->key_length = ranges_buf->key_length;
+  if (my_hash_insert(ranges_buf, (uchar *)record)) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_first() {
+  const HASH *ranges_buf = &m_ranges_buf;
+  const KEY *key_info = m_table->key_info + m_active_index;
+  const KEY_PART_INFO *key_part = key_info->key_part;
+  bool maybe_null = m_table->field[key_part->fieldnr - 1]->is_real_null();
+  Field *fld = m_table->field[key_part->fieldnr - 1];
+  uchar *fld_ptr = fld->ptr;
+  int fld_start_pos = maybe_null ? 1 : 0;
+  if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
+       MYSQL_TYPE_VARCHAR == fld->type()) &&
+      !fld->binary()) {
+    int length_bytes = ((Field_varstring *)fld)->length_bytes;
+    fld_start_pos += length_bytes;
+  }
+
+  return (sdb_key_range_info *)my_hash_first(
+      ranges_buf, fld_ptr + fld_start_pos, ranges_buf->key_length, &m_state);
+}
+
+sdb_key_range_info *sdb_batched_keys_ranges::ranges_buf_next() {
+  const HASH *ranges_buf = &m_ranges_buf;
+  const KEY *key_info = m_table->key_info + m_active_index;
+  const KEY_PART_INFO *key_part = key_info->key_part;
+  bool maybe_null = m_table->field[key_part->fieldnr - 1]->is_real_null();
+  Field *fld = m_table->field[key_part->fieldnr - 1];
+  uchar *fld_ptr = fld->ptr;
+  int fld_start_pos = maybe_null ? 1 : 0;
+  if ((MYSQL_TYPE_VAR_STRING == fld->type() ||
+       MYSQL_TYPE_VARCHAR == fld->type()) &&
+      !fld->binary()) {
+    int length_bytes = ((Field_varstring *)fld)->length_bytes;
+    fld_start_pos += length_bytes;
+  }
+
+  return (sdb_key_range_info *)my_hash_next(ranges_buf, fld_ptr + fld_start_pos,
+                                            ranges_buf->key_length, &m_state);
+}
+
 ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
   active_index = MAX_KEY;
@@ -1269,6 +1468,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   updated_field = NULL;
   sdb_order = NULL;
   sdb_group_list = NULL;
+  m_use_default_impl = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1523,7 +1723,10 @@ int ha_sdb::reset() {
   direct_limit = false;
   sdb_order = NULL;
   sdb_group_list = NULL;
-
+  m_batched_keys_ranges.deinit();
+  m_use_default_impl = false;
+  is_join_bka = false;
+  key_parts = 0;
   DBUG_RETURN(0);
 }
 
@@ -2818,7 +3021,6 @@ int ha_sdb::index_next(uchar *buf) {
     rc = HA_ERR_WRONG_COMMAND;
     goto done;
   }
-
   sdb_ha_statistic_increment(&SSV::ha_read_next_count);
   if (count_query) {
     rc = cur_row(buf);
@@ -2880,12 +3082,13 @@ int ha_sdb::index_last(uchar *buf) {
 
   sdb_ha_statistic_increment(&SSV::ha_read_last_count);
   rc = index_read_one(pushed_condition, -1, buf, &hint_builder);
+  rc = (HA_ERR_KEY_NOT_FOUND == rc) ? HA_ERR_END_OF_FILE : rc;
 done:
   DBUG_RETURN(rc);
 }
 
 int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
-  int rc = 0;
+  int rc = SDB_OK;
   try {
     int range_res = 0;
     KEY *key_info = table->key_info + active_index;
@@ -2896,16 +3099,21 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
     bson::BSONArrayBuilder array(in_builder.subarrayStart("$in"));
     bson::BSONObjBuilder value_builder(128);
 
-    DBUG_ASSERT(can_pushdown_cond_in);
-
     while (!(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
       rc = sdb_get_key_part_value(key_part, mrr_cur_range.start_key.key, "$et",
                                   false, value_builder);
       if (rc != 0) {
         goto error;
       }
-      array.append(value_builder.done().firstElement());
+      bson::BSONElement ele = value_builder.done().firstElement();
+      array.append(ele);
       value_builder.reset();
+      if (m_batched_keys_ranges.initialized()) {
+        rc = m_batched_keys_ranges.fill_ranges_buf(mrr_cur_range);
+        if (SDB_OK != rc) {
+          goto error;
+        }
+      }
     }
 
     array.done();
@@ -2920,111 +3128,260 @@ error:
   goto done;
 }
 
+#ifdef IS_MARIADB
+/* MariaDB inherited*/
+/* The cost of $in is always cheaper than default implementation, no need to
+   call handler::multi_range_read_info to get cost and compare.*/
+ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
+                                      uint key_parts, uint *bufsz, uint *flags,
+                                      Cost_estimate *cost) {
+  DBUG_ASSERT(*flags | HA_MRR_SINGLE_POINT);
+  *bufsz = 0; /* Default implementation doesn't need a buffer */
+  cost->reset();
+  cost->avg_io_cost = 1; /* assume random seeks */
+  return 0;
+}
+#endif
+
+#ifdef IS_MYSQL
+/*MySQL inherited*/
+ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
+                                      uint *bufsz, uint *flags,
+                                      Cost_estimate *cost) {
+  ha_rows res MY_ATTRIBUTE((unused));
+  /* Get cost/flags/mem_usage of default MRR implementation */
+  res = handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags,
+                                       cost);
+  DBUG_ASSERT(!res);
+
+  if (!(*flags & HA_MRR_NO_NULL_ENDPOINTS)) {  // NULL range can not bka.
+    /* Default implementation is choosen */
+    DBUG_PRINT("info", ("Default MRR implementation choosen"));
+    goto done;
+  }
+
+  if (*flags & HA_MRR_USE_DEFAULT_IMPL) {
+    const bool mrr_on = hint_key_state(ha_thd(), table, keyno, MRR_HINT_ENUM,
+                                       OPTIMIZER_SWITCH_MRR);
+    const bool force_mrr_by_hints =
+        hint_key_state(ha_thd(), table, keyno, MRR_HINT_ENUM, 0) ||
+        hint_table_state(ha_thd(), table, BKA_HINT_ENUM, 0);
+
+    if (!(mrr_on || force_mrr_by_hints) ||
+        key_parts >= 2 ||  // $in not support (a, b) $in [1,2]
+        key_uses_partial_cols(table, keyno)) {
+      /* Default implementation is choosen */
+      DBUG_PRINT("info", ("Default MRR implementation choosen"));
+      goto done;
+    }
+    *flags &= ~HA_MRR_USE_DEFAULT_IMPL; /* Use the mrr implementation */
+    *flags &= ~HA_MRR_SUPPORT_SORTED;   /* We can't provide ordered output */
+    *bufsz = 0;                         /* We do not use the buf mixed.*/
+    cost->reset(); /* We do not compare the cost of default implementation and
+                      mrr. Batched keys is always better perf.*/
+    goto done;
+  } else {
+    *flags &= ~HA_MRR_SUPPORT_SORTED; /* We can't provide ordered output */
+    *bufsz = 0;                       /* We do not use the buf mixed.*/
+    cost->reset(); /* We do not compare the cost of default implementation and
+                      mrr. Batched keys is always better perf.*/
+    DBUG_PRINT("info", ("Sdb Batched Keys access implementation choosen"));
+  }
+done:
+  return 0;
+}
+#endif
+
 int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
                                   uint n_ranges, uint mode,
                                   HANDLER_BUFFER *buf) {
   DBUG_ENTER("ha_sdb::multi_range_read_init()");
   int rc = 0;
-  rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
-  first_read = true;
-  /*
-    Check whether $in condition is usable:
-    1. All ranges are equal.
-    2. Only one key part. That means we don't support
-       `WHERE (f1,f2) in((v1,v2), (v3,v4))`
-    3. Key part is not a prefix index.
-    4. No NULL range.
-    5. No range association(for BKA join)
-  */
-  can_pushdown_cond_in = true;
-  int range_res = 0;
-  KEY_MULTI_RANGE cur_range;
-  KEY *key_info = table->key_info + active_index;
-  const KEY_PART_INFO *key_part = key_info->key_part;
+  bool enabled = false;
+  bool is_mrr_assoc = false;
 
-  if ((key_part->key_part_flag & HA_PART_KEY_SEG) ||
-      !(mode & HA_MRR_NO_ASSOCIATION) || 1 == n_ranges) {
-    can_pushdown_cond_in = false;
+  m_use_default_impl = false;
+  rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
+  if (SDB_OK != rc) {
+    goto error;
+  }
+#ifdef IS_MYSQL
+  enabled = !hint_key_state(ha_thd(), table, active_index, MRR_HINT_ENUM,
+                            OPTIMIZER_SWITCH_MRR);
+#elif IS_MARIADB
+  enabled = !((mode & HA_MRR_SINGLE_POINT) &&
+              optimizer_flag(ha_thd(), OPTIMIZER_SWITCH_MRR_SORT_KEYS));
+#endif
+
+  if (enabled || mode & HA_MRR_SORTED || n_ranges <= 1) {
+    m_use_default_impl = true;
     goto done;
   }
 
-  while (!(range_res = mrr_funcs.next(mrr_iter, &cur_range))) {
-    key_range &start_key = cur_range.start_key;
-    key_range &end_key = cur_range.end_key;
-
-    if ((start_key.keypart_map == end_key.keypart_map &&  // Only one key part
-         my_count_bits(start_key.keypart_map) == 1) &&
-
-        (MY_TEST(cur_range.range_flag & EQ_RANGE) &&  // Is equal range
-         HA_READ_KEY_EXACT == start_key.flag &&
-         start_key.length == end_key.length &&
-         0 == memcmp(start_key.key, end_key.key, start_key.length)) &&
-
-        !(key_part->null_bit && *start_key.key)  // Not a NULL
-    ) {
-      // can pushdown, continue
-    } else {
-      can_pushdown_cond_in = false;
-      break;
+  {
+    int range_res = 0;
+    KEY_MULTI_RANGE cur_range;
+    KEY *key_info = table->key_info + active_index;
+    const KEY_PART_INFO *key_part = key_info->key_part;
+    is_mrr_assoc = !MY_TEST(mode & HA_MRR_NO_ASSOCIATION);
+    first_read = true;
+    /* not bka join need check if push $in conditon here. */
+    if (!is_join_bka) {
+      /*
+        Check whether $in condition is usable:
+        1. All ranges are equal.
+        2. Only one key part. That means we don't support
+           `WHERE (f1,f2) in((v1,v2), (v3,v4))`
+        3. Key part is not a prefix index.
+        4. No NULL range.
+        5. No range association(for BKA join)
+      */
+      if ((key_part->key_part_flag & HA_PART_KEY_SEG) ||
+          !((mode & HA_MRR_NO_ASSOCIATION) ||
+            (mode & HA_MRR_NO_NULL_ENDPOINTS)) ||
+          1 == n_ranges) {
+        m_use_default_impl = true;
+        goto done;
+      }
     }
-  }
-  mrr_iter = seq->init(seq_init_param, n_ranges, mode);
 
+    while (!(range_res = mrr_funcs.next(mrr_iter, &cur_range))) {
+      key_range &start_key = cur_range.start_key;
+      key_range &end_key = cur_range.end_key;
+      if ((start_key.keypart_map == end_key.keypart_map &&  // Only one key part
+           my_count_bits(start_key.keypart_map) == 1) &&
+
+          (MY_TEST(cur_range.range_flag & EQ_RANGE) &&  // Is equal range
+           HA_READ_KEY_EXACT == start_key.flag &&
+           start_key.length == end_key.length &&
+           0 == memcmp(start_key.key, end_key.key, start_key.length)) &&
+
+          !(key_part->null_bit && *start_key.key)  // Not a NULL
+      ) {
+        // can pushdown, continue
+      } else {
+        m_use_default_impl = true;
+        mrr_iter = seq->init(seq_init_param, n_ranges, mode);
+        goto done;
+      }
+    }
+
+    if (is_join_bka) {
+      sdb_batched_keys_ranges *ranges = &m_batched_keys_ranges;
+      /* BKA join, deinit in multi_range_read_init when be called in every time
+         the join_buffer is full. No need to free the keys buf to check if can
+         reuse it or not. */
+      if (!ranges->initialized()) {
+        rc = ranges->init(table, active_index, is_mrr_assoc, n_ranges,
+                          key_part->length);
+        if (SDB_OK != rc) {
+          SDB_PRINT_ERROR(rc,
+                          "Failed to init batched keys read bufs for "
+                          "table:%s.%s, rc:%d",
+                          db_name, table_name, rc);
+          goto error;
+        }
+      } else if (ranges->need_expand(n_ranges)) {
+        rc = ranges->expand_buf(n_ranges);
+        if (SDB_OK != rc) {
+          SDB_PRINT_ERROR(rc,
+                          "Failed to expand batched keys read bufs for "
+                          "table:%s.%s, rc:%d",
+                          db_name, table_name, rc);
+          goto error;
+        }
+      } else {
+        ranges->reuse_buf(n_ranges);
+      }
+    }
+    mrr_iter = seq->init(seq_init_param, n_ranges, mode);
+  }
 done:
   DBUG_RETURN(rc);
+error:
+  goto done;
 }
 
 int ha_sdb::multi_range_read_next(range_id_t *range_info) {
   DBUG_ENTER("ha_sdb::multi_range_read_next()");
   int rc = 0;
-  if (can_pushdown_cond_in) {
-    /*
-      If they are ranges like `WHERE f IN(1, 2, 3)` that has all exact values,
-      we can just pushdown one `{$in: [1, 2, 3]}` query instead of multi `$et`
-      query, to reduce IO.
-    */
-    if (first_read) {
-      first_read = false;
-      bson::BSONObj condition;
-      bson::BSONObj condition_idx;
-      bson::BSONObjBuilder hint_builder;
+  sdb_key_range_info *cur_range = NULL;
 
-      rc = create_condition_in_for_mrr(condition_idx);
-      if (rc != 0) {
-        goto error;
-      }
-      /* If range association is needed, this buffer should hold the
-         {rowid, range_id} pairs. But we never need this, let it be dummy. */
-      *range_info = mrr_cur_range.ptr;
+  if (m_use_default_impl) {
+    rc = handler::multi_range_read_next(range_info);
+    goto done;
+  }
+  /*
+    If they are ranges like `WHERE f IN(1, 2, 3)` that has all exact values,
+    we can just pushdown one `{$in: [1, 2, 3]}` query instead of multi `$et`
+    query, to reduce IO.
+  */
+  if (first_read) {
+    first_read = false;
+    bson::BSONObj condition;
+    bson::BSONObj condition_idx;
+    bson::BSONObjBuilder hint_builder;
 
-      rc = sdb_combine_condition(pushed_condition, condition_idx, condition);
-      if (0 != rc) {
-        goto error;
-      }
-      rc = ensure_collection(ha_thd());
-      if (rc) {
-        goto error;
-      }
-      rc = ensure_stats(ha_thd());
-      if (rc) {
-        goto error;
-      }
-      rc = index_read_one(condition, 1, table->record[0], &hint_builder);
-      if (rc) {
-        goto error;
-      }
-
-    } else {
-      rc = index_next(table->record[0]);
-      if (rc != 0) {
-        goto error;
+    rc = create_condition_in_for_mrr(condition_idx);
+    if (rc != 0) {
+      SDB_PRINT_ERROR(rc, "Failed to build condition for table:%s.%s, rc:%d",
+                      db_name, table_name, rc);
+      goto error;
+    }
+    rc = sdb_combine_condition(pushed_condition, condition_idx, condition);
+    if (0 != rc) {
+      SDB_PRINT_ERROR(rc,
+                      "Failed to combine index and pushed condtion "
+                      "during buiding condtion for table:%s.%s, rc:%d",
+                      db_name, table_name, rc);
+      goto error;
+    }
+    rc = ensure_collection(ha_thd());
+    if (rc) {
+      goto error;
+    }
+    rc = ensure_stats(ha_thd());
+    if (rc) {
+      goto error;
+    }
+    if (m_batched_keys_ranges.initialized()) {
+      SDB_LOG_DEBUG("Query message: Batched keys num[%d], table[%s.%s]",
+                    m_batched_keys_ranges.array_max_elements(), db_name,
+                    table_name);
+    }
+    rc = index_read_one(condition, 1, table->record[0], &hint_builder);
+    if (rc) {
+      rc = (HA_ERR_KEY_NOT_FOUND == rc) ? HA_ERR_END_OF_FILE : rc;
+      goto error;
+    }
+  } else {
+    if (m_batched_keys_ranges.initialized() &&
+        m_batched_keys_ranges.need_read_buf_next()) {
+      cur_range = m_batched_keys_ranges.ranges_buf_next();
+      if (cur_range) {
+        m_batched_keys_ranges.set_need_read_buf_next(true);
+        *range_info = (char *)cur_range->ptr;
+        goto done;
+      } else {
+        m_batched_keys_ranges.set_need_read_buf_next(false);
+        m_batched_keys_ranges.set_state(NO_RECORD);
       }
     }
 
-  } else {
-    rc = handler::multi_range_read_next(range_info);
+    rc = index_next(table->record[0]);
     if (rc != 0) {
       goto error;
+    }
+  }
+
+  if (m_batched_keys_ranges.initialized()) {
+    cur_range = m_batched_keys_ranges.ranges_buf_first();
+    if (cur_range) {
+      m_batched_keys_ranges.set_need_read_buf_next(true);
+      *range_info = (char *)cur_range->ptr;
+    } else {
+      rc = HA_ERR_END_OF_FILE;
+      goto done;
     }
   }
 done:
@@ -3884,6 +4241,7 @@ int ha_sdb::index_first(uchar *buf) {
 
   rc = index_read_one(condition, 1, buf, &hint_builder);
   if (rc) {
+    rc = (HA_ERR_KEY_NOT_FOUND == rc) ? HA_ERR_END_OF_FILE : rc;
     goto error;
   }
 done:
@@ -4527,6 +4885,7 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
   if (buf != table->record[0]) {
     repoint_field_to_record(table, table->record[0], buf);
   }
+  DBUG_PRINT("ywx:info", ("row:%s", obj.toString().c_str()));
   // allow zero date
   sql_mode_t old_sql_mode = thd->variables.sql_mode;
   thd->variables.sql_mode &= ~(MODE_NO_ZERO_DATE | MODE_NO_ZERO_IN_DATE);
@@ -8333,7 +8692,9 @@ done:
 #ifdef IS_MYSQL
 static PSI_memory_info all_sdb_memory[] = {
     {&key_memory_sdb_share, "Sdb_share", PSI_FLAG_GLOBAL},
-    {&sdb_key_memory_blobroot, "blobroot", 0}};
+    {&sdb_key_memory_blobroot, "blobroot", 0},
+    {&sdb_key_memory_batched_keys_hash, "Sdb_batched_keys_hash", 0},
+    {&sdb_key_memory_batched_keys_buf, "Sdb_batched_keys_buf", 0}};
 #endif
 
 static PSI_mutex_info all_sdb_mutexes[] = {
