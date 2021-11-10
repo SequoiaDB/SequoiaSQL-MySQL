@@ -4,6 +4,8 @@
 --echo # Bug mdev-3866: valgrind complain from ANALYZE on a table with BIT field
 --echo # 
 
+CREATE DATABASE test_stat_tables_partition;
+USE test_stat_tables_partition;
 SET use_stat_tables = 'preferably';
 
 CREATE TABLE t1 (pk int PRIMARY KEY, a bit(1), INDEX idx(a)
@@ -15,3 +17,4 @@ ANALYZE TABLE t1;
 SET use_stat_tables = DEFAULT;
 
 DROP TABLE t1;
+DROP DATABASE test_stat_tables_partition;

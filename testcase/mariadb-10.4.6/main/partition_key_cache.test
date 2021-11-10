@@ -1,6 +1,8 @@
 # Test of key cache with partitions
 --source include/have_partition.inc
 
+CREATE DATABASE test_partition_key_cache;
+USE test_partition_key_cache;
 --disable_warnings
 DROP TABLE IF EXISTS t1, t2, v, x;
 --enable_warnings
@@ -175,3 +177,4 @@ SELECT @@global.cold_cache.key_buffer_size a, @@global.cold_cache.key_cache_bloc
 --disable_warnings
 SET @@global.default.key_buffer_size = @org_key_cache_buffer_size;
 --enable_warnings
+DROP DATABASE test_partition_key_cache;

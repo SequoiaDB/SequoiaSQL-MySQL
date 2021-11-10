@@ -3,6 +3,8 @@
 #
 # partition rotation
 #
+create database test_partition_rotation;
+use test_partition_rotation;
 set timestamp=unix_timestamp('2001-02-03 10:20:30');
 create or replace table t1 (i int) with system versioning
 partition by system_time interval 1 day
@@ -40,3 +42,4 @@ select * from t1 for system_time all where row_end = @ts;
 explain partitions select * from t1 for system_time all where row_end = @ts;
 
 drop table t1;
+drop database test_partition_rotation;

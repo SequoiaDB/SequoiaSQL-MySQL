@@ -1,3 +1,5 @@
+CREATE DATABASE test_partition_key_cache;
+USE test_partition_key_cache;
 DROP TABLE IF EXISTS t1, t2, v, x;
 # Actual test of key caches
 # Verifing that reads/writes use the key cache correctly
@@ -67,7 +69,7 @@ FLUSH STATUS;
 # All these have to read the indexes
 LOAD INDEX INTO CACHE t1 PARTITION (p1);
 Table	Op	Msg_type	Msg_text
-test_parallel_1.t1	preload_keys	note	The storage engine for the table doesn't support preload_keys
+test_partition_key_cache.t1	preload_keys	note	The storage engine for the table doesn't support preload_keys
 Zero key reads?
 Yes!
 SELECT COUNT(b) FROM t1 WHERE b >= 0;
@@ -207,3 +209,4 @@ SELECT @@global.cold_cache.key_buffer_size a, @@global.cold_cache.key_cache_bloc
 a	b	c	d
 0	1024	300	100
 SET @@global.default.key_buffer_size = @org_key_cache_buffer_size;
+DROP DATABASE test_partition_key_cache;
