@@ -1888,6 +1888,7 @@ select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 on t1.a>1 or
 --sorted_result
 select * from t1 inner join (t1 as t2 left join t1 as t3 using (a)) on t1.a>1;
 # inner join using
+--sorted_result
 select * from (t1 as t2 left join t1 as t3 using (a)) inner join t1 using ( a );
 select * from t1 inner join (t1 as t2 left join t1 as t3 using (a)) using ( a );
 # left [outer] join on

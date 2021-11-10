@@ -1137,9 +1137,9 @@ id	a
 show status like 'Handler_read%';
 Variable_name	Value
 Handler_read_first	0
-Handler_read_key	5
+Handler_read_key	0
 Handler_read_last	0
-Handler_read_next	5
+Handler_read_next	10
 Handler_read_prev	0
 Handler_read_rnd	0
 Handler_read_rnd_next	6
@@ -2084,8 +2084,8 @@ ON alias1.col_int = alias4.col_int
 ;
 col_datetime_key
 1970-01-01 00:00:00
-NULL
 1970-01-01 00:00:00
+NULL
 DROP TABLE t1, t2, t3, t4;
 # Bug#22833364: Left join returns incorrect results on the outer side
 CREATE TABLE ta (

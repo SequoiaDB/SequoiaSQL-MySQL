@@ -3,7 +3,6 @@
 #Case 18291#Case 18292#Case 18293#Case 18294#Case 18295#Case 18296#Case 18297
 #Case 18328#Case 18393#Case 18399#Case 20320#Case 20408#Case 22119#Case 22229 
 #Case 24413
-
 --source include/have_sequoiadb.inc
 
 CREATE DATABASE test_auto_increment;

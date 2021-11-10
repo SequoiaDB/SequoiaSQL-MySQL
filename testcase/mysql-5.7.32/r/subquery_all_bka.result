@@ -1324,6 +1324,11 @@ insert into t2 (id, text) values (1, 'text1'), (2, 'text2'), (3, 'text3'), (4, '
 select * from t1 a left join t2 b on (a.id=b.id or b.id is null) join t1 c on (if(isnull(b.id), 1000, b.id)=c.id);
 id	text	id	text	id	text
 1	text1	1	text1	1	text1
+10	text10	10	text10	10	text10
+1000	text1000	NULL	NULL	1000	text1000
+1001	text1001	NULL	NULL	1000	text1000
+11	text11	11	text1	11	text11
+12	text12	12	text2	12	text12
 2	text2	2	text2	2	text2
 3	text3	3	text3	3	text3
 4	text4	4	text4	4	text4
@@ -1332,11 +1337,6 @@ id	text	id	text	id	text
 7	text7	7	text7	7	text7
 8	text8	8	text8	8	text8
 9	text9	9	text9	9	text9
-10	text10	10	text10	10	text10
-11	text11	11	text1	11	text11
-12	text12	12	text2	12	text12
-1000	text1000	NULL	NULL	1000	text1000
-1001	text1001	NULL	NULL	1000	text1000
 drop table t1,t2;
 create table t1 (a int);
 insert into t1 values (1);

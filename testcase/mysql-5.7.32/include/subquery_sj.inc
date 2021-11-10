@@ -5049,6 +5049,7 @@ WHERE (a, a) IN
 ;
 
 #eval explain $query;
+--sorted_result
 eval $query;
 
 DROP TABLE t1, t2;
@@ -7103,7 +7104,7 @@ ANALYZE TABLE t1,t2,t3,t4;
 #AND t2.uid=t1.fid;
 
 FLUSH STATUS;
-
+--sorted_result
 SELECT name FROM t2, t1
 WHERE t1.uid IN (SELECT t4.uid FROM t4, t3 WHERE t3.uid=1 AND t4.uid=t3.fid)
 AND t2.uid=t1.fid;
