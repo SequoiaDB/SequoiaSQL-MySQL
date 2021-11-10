@@ -3355,11 +3355,16 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
       goto error;
     }
   } else {
+  skip_and_continue_next_one:
     if (m_batched_keys_ranges.initialized() &&
         m_batched_keys_ranges.need_read_buf_next()) {
       cur_range = m_batched_keys_ranges.ranges_buf_next();
       if (cur_range) {
         m_batched_keys_ranges.set_need_read_buf_next(true);
+        if (mrr_funcs.skip_index_tuple &&
+            mrr_funcs.skip_index_tuple(mrr_iter, (char *)cur_range->ptr)) {
+          goto skip_and_continue_next_one;
+        }
         *range_info = (char *)cur_range->ptr;
         goto done;
       } else {
@@ -3378,6 +3383,10 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
     cur_range = m_batched_keys_ranges.ranges_buf_first();
     if (cur_range) {
       m_batched_keys_ranges.set_need_read_buf_next(true);
+      if (mrr_funcs.skip_index_tuple &&
+          mrr_funcs.skip_index_tuple(mrr_iter, (char *)cur_range->ptr)) {
+        goto skip_and_continue_next_one;
+      }
       *range_info = (char *)cur_range->ptr;
     } else {
       rc = HA_ERR_END_OF_FILE;
