@@ -72,8 +72,8 @@ my_bool sdb_strict_collation = SDB_DEFAULT_STRICT_COLLATION;
 
 // use to metadata mapping function
 my_bool sdb_enable_mapping = FALSE;
-int sdb_mapping_group_size = NM_MAPPING_GROUP_SIZE;
-int sdb_mapping_group_num = NM_MAPPING_GROUP_NUM;
+int sdb_mapping_unit_size = NM_MAPPING_UNIT_SIZE;
+int sdb_mapping_unit_count = NM_MAPPING_UNIT_COUNT;
 
 static const char *sdb_optimizer_options_names[] = {
     "direct_count", "direct_delete", "direct_update",
@@ -512,13 +512,13 @@ static MYSQL_SYSVAR_BOOL(enable_mapping, sdb_enable_mapping,
                          "(Default: OFF)"
                          /*是否启用元数据映射功能。*/,
                          NULL, NULL, FALSE);
-static MYSQL_SYSVAR_INT(mapping_unit_size, sdb_mapping_group_size,
+static MYSQL_SYSVAR_INT(mapping_unit_size, sdb_mapping_unit_size,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
                         "The size of mapping unit. "
                         "(Default: 1024)"
                         /*映射组的大小。*/,
                         NULL, NULL, 1024, 1024, 2048, 512);
-static MYSQL_SYSVAR_INT(mapping_unit_count, sdb_mapping_group_num,
+static MYSQL_SYSVAR_INT(mapping_unit_count, sdb_mapping_unit_count,
                         PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
                         "Count of mapping unit. "
                         "(Default: 10)"

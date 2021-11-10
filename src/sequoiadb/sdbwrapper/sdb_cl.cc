@@ -683,6 +683,26 @@ int Sdb_cl::attach_collection(const char *sub_cl_fullname,
       boost::bind(cl_attach_collection, &m_cl, sub_cl_fullname, &options));
 }
 
+int Sdb_cl::attach_collection(const char *db_name, const char *table_name,
+                              const bson ::BSONObj &options, Name_mapping *nm) {
+  int rc = SDB_ERR_OK;
+  char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+  if (NULL != nm) {
+    rc = nm->get_mapping(db_name, table_name, this->get_conn());
+    if (0 != rc) {
+      goto error;
+    }
+    db_name = nm->get_mapping_db_name();
+    table_name = nm->get_mapping_table_name();
+  }
+  sprintf(full_name, "%s.%s", db_name, table_name);
+  rc = attach_collection(full_name, options);
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int cl_detach_collection(sdbclient::sdbCollection *cl,
                          const char *sub_cl_fullname) {
   int rc = SDB_ERR_OK;
@@ -699,6 +719,26 @@ error:
 
 int Sdb_cl::detach_collection(const char *sub_cl_fullname) {
   return retry(boost::bind(cl_detach_collection, &m_cl, sub_cl_fullname));
+}
+
+int Sdb_cl::detach_collection(const char *db_name, const char *table_name,
+                              Name_mapping *nm) {
+  int rc = SDB_ERR_OK;
+  char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+  if (NULL != nm) {
+    rc = nm->get_mapping(db_name, table_name, this->get_conn());
+    if (0 != rc) {
+      goto error;
+    }
+    db_name = nm->get_mapping_db_name();
+    table_name = nm->get_mapping_table_name();
+  }
+  sprintf(full_name, "%s.%s", db_name, table_name);
+  rc = detach_collection(full_name);
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int cl_split(sdbclient::sdbCollection *cl, const char *source_group_name,

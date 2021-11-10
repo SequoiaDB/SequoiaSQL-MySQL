@@ -2174,8 +2174,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     goto error;
   }
 
-  DBUG_ASSERT('\0' != cs_name[0] && '\0' != cl_name);
-  rc = conn->get_cl(cs_name, cl_name, cl, ha_is_open());
+  rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &table_mapping);
   if (0 != rc) {
     SDB_LOG_ERROR("Collection[%s.%s] is not available. rc: %d", db_name,
                   table_name, rc);
@@ -2532,27 +2531,15 @@ int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *cs_name,
   // It is assumed that in most cases the len of fullname will be less than 64.
   // And maybe extra 15 bytes here, but nerver mind the exactly correct size,
   // just for saving mem.
-  bson::BSONObjBuilder cond_builder(96);
-  bson::BSONObj cond;
   bson::BSONObj result;
   bson::BSONObjBuilder builder;
   bson::BSONElement ele;
   int cl_attribute = 0;
 
-  char fullname[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
-  Metadata_Mapping table_mapping(&conn);
-  rc = table_mapping.get_mapping(cs_name, cl_name);
-  if (0 != rc) {
-    goto error;
-  }
-  snprintf(fullname, SDB_CL_FULL_NAME_MAX_SIZE, "%s.%s",
-           table_mapping.get_mapping_db_name(),
-           table_mapping.get_mapping_table_name());
+  Metadata_mapping tbl_mapping(&conn);
   try {
-    cond_builder.append(SDB_FIELD_NAME, fullname);
-    cond = cond_builder.obj();
-
-    rc = conn->snapshot(result, SDB_SNAP_CATALOG, cond);
+    rc = conn->snapshot(result, SDB_SNAP_CATALOG, cs_name, cl_name,
+                        &tbl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -2880,10 +2867,8 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_cs_name, char *src_cl_name,
       "initialization_phase", "getting_collection_options_from_snapshot",
       "copying_group_info", "copying_collection_index"};
   bool with_autoinc = !(flags & SDB_COPY_WITHOUT_AUTO_INC);
-  Metadata_Mapping src_tbl_mapping(&conn), dst_tbl_mapping(&conn);
-  Name_mapping *src_name_map = &src_tbl_mapping;
-  Name_mapping *dst_name_map = &dst_tbl_mapping;
-
+  Metadata_mapping src_tbl_mapping(&conn);
+  Metadata_mapping dst_tbl_mapping(&conn);
   try {
     step = extra_cl_option;
     rc = sdb_extra_cl_option_from_snap(conn, src_cs_name, src_cl_name, options,
@@ -2902,7 +2887,7 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_cs_name, char *src_cl_name,
     }
 
     rc = conn->create_cl(dst_cs_name, dst_cl_name, options, &created_cs,
-                         &created_cl, dst_name_map);
+                         &created_cl, &dst_tbl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -2911,12 +2896,14 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_cs_name, char *src_cl_name,
                       dst_cs_name, dst_cl_name);
     }
 
-    rc = conn->get_cl(src_cs_name, src_cl_name, src_cl, false, src_name_map);
+    rc =
+        conn->get_cl(src_cs_name, src_cl_name, src_cl, false, &src_tbl_mapping);
     if (rc != 0) {
       goto error;
     }
 
-    rc = conn->get_cl(dst_cs_name, dst_cl_name, dst_cl, false, dst_name_map);
+    rc =
+        conn->get_cl(dst_cs_name, dst_cl_name, dst_cl, false, &dst_tbl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -2987,11 +2974,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
   bson::BSONObj obj;
   bson::BSONObjIterator bo_it;
   List_iterator_fast<char> list_it;
-  Metadata_Mapping new_table_mapping(&m_conn);
-  Name_mapping *new_table_name_map = &new_table_mapping;
-
-  Metadata_Mapping table_mapping(&m_conn);
-  Name_mapping *name_map = &table_mapping;
+  Metadata_mapping new_tbl_mapping(&m_conn);
   /*
     1. Copy cl without indexes.
     2. If it's mcl, copy and attach it's scl. Else skip.
@@ -3017,7 +3000,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
     }
 
     rc = m_conn->get_cl(m_new_cs, m_new_mcl_tmp_name, mcl, false,
-                        new_table_name_map);
+                        &new_tbl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -3027,6 +3010,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
     while (bo_it.more()) {
       bson::BSONElement ele = bo_it.next();
       bson::BSONElement scl_name_ele;
+      Metadata_mapping scl_mapping(&m_conn);
 
       if (ele.type() != bson::Object) {
         rc = SDB_ERR_INVALID_ARG;
@@ -3039,15 +3023,13 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
         rc = SDB_ERR_INVALID_ARG;
         goto error;
       }
-      cl_fullname = const_cast<char *>(scl_name_ele.valuestr());
-
-      sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
+      cs_name = m_mcl_cs;
+      cl_name = (char *)(strstr(scl_name_ele.valuestr(), ".") + 1);
       snprintf(tmp_name_buf, SDB_CL_NAME_MAX_SIZE, "%s-%d", m_new_mcl_tmp_name,
                scl_id++);
       rc = sdb_copy_cl(m_conn, cs_name, cl_name, cs_name, tmp_name_buf,
                        SDB_COPY_WITHOUT_INDEX);
       if (rc != 0) {
-        sdb_restore_cl_fullname(cl_fullname);
         goto error;
       }
 
@@ -3055,12 +3037,10 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
       new_fullname = (char *)thd_alloc(current_thd, name_len);
       if (!new_fullname) {
         rc = HA_ERR_OUT_OF_MEM;
-        sdb_restore_cl_fullname(cl_fullname);
         goto error;
       }
 
       snprintf(new_fullname, name_len, "%s.%s", cs_name, tmp_name_buf);
-      sdb_restore_cl_fullname(cl_fullname);
       if (m_new_scl_tmp_fullnames.push_back(new_fullname)) {
         rc = HA_ERR_OUT_OF_MEM;
         goto error;
@@ -3072,7 +3052,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
         builder.append(obj.getField(SDB_FIELD_UP_BOUND));
         options = builder.obj();
       }
-      rc = mcl.attach_collection(new_fullname, options);
+      rc = mcl.attach_collection(cs_name, tmp_name_buf, options, &scl_mapping);
       if (rc != 0) {
         goto error;
       }
@@ -3090,10 +3070,8 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
     }
   } else {
     Sdb_cl old_mcl;
-    Metadata_Mapping old_table_mapping(&m_conn);
-    Name_mapping *old_table_name_map = &old_table_mapping;
-    rc = m_conn->get_cl(m_mcl_cs, m_mcl_name, old_mcl, false,
-                        old_table_name_map);
+    Metadata_mapping old_tbl_mapping(&m_conn);
+    rc = m_conn->get_cl(m_mcl_cs, m_mcl_name, old_mcl, false, &old_tbl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -3116,16 +3094,16 @@ error:
   if (HA_ERR_OUT_OF_MEM != rc && HA_ERR_INTERNAL_ERROR != rc) {
     ha->handle_sdb_error(rc, MYF(0));
   }
-  tmp_rc = m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name, new_table_name_map);
+  tmp_rc = m_conn->drop_cl(m_new_cs, m_new_mcl_tmp_name, &new_tbl_mapping);
   if (tmp_rc != 0) {
     SDB_LOG_WARNING("Failed to rollback creation of cl[%s.%s], rc: %d",
                     m_new_cs, m_new_mcl_tmp_name, tmp_rc);
   }
   list_it.init(m_new_scl_tmp_fullnames);
   while ((cl_fullname = list_it++)) {
+    Metadata_mapping scl_mapping(&m_conn);
     sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
-    tmp_rc = m_conn->drop_cl(cs_name, cl_name, name_map);
-    sdb_restore_cl_fullname(cl_fullname);
+    tmp_rc = m_conn->drop_cl(cs_name, cl_name, &scl_mapping);
     if (tmp_rc != 0) {
       SDB_LOG_WARNING("Failed to rollback creation of sub cl[%s], rc: %d",
                       cl_fullname, tmp_rc);
@@ -3149,11 +3127,10 @@ int Sdb_cl_copyer::rename_new_cl() {
   char *cs_name = NULL;
   char *cl_name = NULL;
   char *right_cl_name = NULL;
-  Metadata_Mapping tmp_tbl_mapping(&m_conn);
-
   List_iterator_fast<char> list_it(m_new_scl_tmp_fullnames);
   bson::BSONObjIterator bo_it(m_old_scl_info);
   while ((cl_fullname = list_it++)) {
+    Metadata_mapping tbl_mapping(&m_conn);
     bson::BSONObj obj = bo_it.next().embeddedObject();
     right_cl_name =
         const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
@@ -3162,13 +3139,8 @@ int Sdb_cl_copyer::rename_new_cl() {
     sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
     DBUG_PRINT("info",
                ("cs: %s, from: %s, to: %s", cs_name, cl_name, right_cl_name));
-    rc = m_conn->rename_cl(cs_name, cl_name, right_cl_name);
-    sdb_restore_cl_fullname(cl_fullname);
+    rc = m_conn->rename_cl(cs_name, cl_name, right_cl_name, &tbl_mapping);
     if (rc != 0) {
-      goto error;
-    }
-    rc = tmp_tbl_mapping.rename_mapping(m_mcl_cs, cl_name, right_cl_name);
-    if (0 != rc) {
       goto error;
     }
   }
@@ -3193,39 +3165,31 @@ int Sdb_cl_copyer::rename_old_cl() {
   char *new_fullname = NULL;
   uint name_len = 0;
   int scl_id = rand();
-  Metadata_Mapping tmp_tbl_mapping(&m_conn);
 
   bson::BSONObjIterator it(m_old_scl_info);
   while (it.more()) {
+    Metadata_mapping tbl_mapping(&m_conn);
     bson::BSONObj obj = it.next().embeddedObject();
     cl_fullname =
         const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
-    sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
-
+    cs_name = m_mcl_cs;
+    cl_name = strstr(cl_fullname, ".") + 1;
     snprintf(tmp_name_buf, SDB_CL_NAME_MAX_SIZE, "%s-%d", m_old_mcl_tmp_name,
              scl_id++);
     DBUG_PRINT("info",
                ("cs: %s, from: %s, to: %s", cs_name, cl_name, tmp_name_buf));
-    rc = m_conn->rename_cl(cs_name, cl_name, tmp_name_buf);
+    rc = m_conn->rename_cl(cs_name, cl_name, tmp_name_buf, &tbl_mapping);
     if (rc != 0) {
-      sdb_restore_cl_fullname(cl_fullname);
       goto error;
     }
-    rc = tmp_tbl_mapping.rename_mapping(m_mcl_cs, cl_name, tmp_name_buf);
-    if (0 != rc) {
-      goto error;
-    }
-
     name_len = strlen(cs_name) + strlen(tmp_name_buf) + 2;
     new_fullname = (char *)thd_alloc(current_thd, name_len);
     if (!new_fullname) {
       rc = HA_ERR_OUT_OF_MEM;
-      sdb_restore_cl_fullname(cl_fullname);
       goto error;
     }
 
     snprintf(new_fullname, name_len, "%s.%s", cs_name, tmp_name_buf);
-    sdb_restore_cl_fullname(cl_fullname);
     if (m_old_scl_tmp_fullnames.push_back(new_fullname)) {
       rc = HA_ERR_OUT_OF_MEM;
       goto error;
@@ -3240,24 +3204,17 @@ error:
     bson::BSONObjIterator bo_it(m_old_scl_info);
     char *right_cl_name = NULL;
     while ((cl_fullname = list_it++)) {
+      Metadata_mapping tbl_mapping(&m_conn);
       bson::BSONObj obj = bo_it.next().embeddedObject();
       right_cl_name =
           const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
       right_cl_name = strchr(right_cl_name, '.') + 1;
-
-      sdb_tmp_split_cl_fullname(cl_fullname, &cs_name, &cl_name);
-      tmp_rc = m_conn->rename_cl(cs_name, cl_name, right_cl_name);
-      sdb_restore_cl_fullname(cl_fullname);
+      cs_name = m_mcl_cs;
+      cl_name = strstr(cl_fullname, ".") + 1;
+      tmp_rc = m_conn->rename_cl(cs_name, cl_name, right_cl_name, &tbl_mapping);
       if (tmp_rc != 0) {
         SDB_LOG_WARNING("Failed to rollback rename cl from [%s.%s] to [%s]",
                         cs_name, right_cl_name, cl_name);
-      } else {
-        tmp_rc =
-            tmp_tbl_mapping.rename_mapping(m_mcl_cs, cl_name, right_cl_name);
-        if (0 != tmp_rc) {
-          SDB_LOG_WARNING("Failed to restore mapping from [%s.%s] to [%s]",
-                          cs_name, right_cl_name, cl_name);
-        }
       }
     }
   }
@@ -3267,8 +3224,7 @@ error:
 int Sdb_cl_copyer::rename(const char *from, const char *to) {
   DBUG_ENTER("Sdb_cl_copyer::rename");
   int rc = 0;
-  Metadata_Mapping src_mapping(&m_conn);
-  Name_mapping *src_name_map = &src_mapping;
+  Metadata_mapping src_tbl_mapping(&m_conn);
   try {
     if (0 == strcmp(from, m_mcl_name)) {
       m_old_mcl_tmp_name = const_cast<char *>(to);
@@ -3283,7 +3239,7 @@ int Sdb_cl_copyer::rename(const char *from, const char *to) {
 
   DBUG_PRINT("info", ("cs: %s, from: %s, to: %s", m_mcl_cs, from, to));
   rc = m_conn->rename_cl(m_mcl_cs, const_cast<char *>(from),
-                         const_cast<char *>(to), src_name_map);
+                         const_cast<char *>(to), &src_tbl_mapping);
   if (rc != 0) {
     goto error;
   }

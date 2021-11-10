@@ -287,13 +287,20 @@ class Sdb_conn {
 #endif
 
   int get_cl_statistics(const char *cs_name, const char *cl_name,
-                        Sdb_statistics &stats);
+                        Sdb_statistics &stats, Name_mapping *nm);
 
   int list(int list_type, const bson::BSONObj &condition = SDB_EMPTY_BSON,
            const bson::BSONObj &selected = SDB_EMPTY_BSON,
            const bson::BSONObj &order_by = SDB_EMPTY_BSON,
            const bson::BSONObj &hint = SDB_EMPTY_BSON,
            longlong num_to_skip = 0);
+
+  int snapshot(bson::BSONObj &obj, int snap_type, const char *db_name,
+               const char *table_name, Name_mapping *nm,
+               const bson::BSONObj &selected = SDB_EMPTY_BSON,
+               const bson::BSONObj &orderBy = SDB_EMPTY_BSON,
+               const bson::BSONObj &hint = SDB_EMPTY_BSON,
+               longlong numToSkip = 0);
 
   int snapshot(bson::BSONObj &obj, int snap_type,
                const bson::BSONObj &condition = SDB_EMPTY_BSON,
@@ -313,6 +320,9 @@ class Sdb_conn {
   bool is_valid() { return m_connection && m_connection->isValid(); }
 
   bool is_authenticated() { return m_is_authenticated; }
+
+  int analyze(const char *db_name, const char *table_name, int stats_mode,
+              int stats_sample_num, int stats_sample_percent, Name_mapping *nm);
 
   int analyze(const bson::BSONObj &options);
 
@@ -412,10 +422,10 @@ class Sdb_conn {
   int retry(boost::function<int()> func);
 
   int get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
-                                 Sdb_statistics &stats);
+                                 Sdb_statistics &stats, Name_mapping *nm);
 
   int get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
-                               Sdb_statistics &stats);
+                               Sdb_statistics &stats, Name_mapping *nm);
 
   virtual int get_connection() = 0;
 

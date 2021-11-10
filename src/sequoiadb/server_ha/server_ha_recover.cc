@@ -391,7 +391,7 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
       goto error;
     } else if (sdb_enable_mapping && '\0' != data_group[0]) {
       // if data group is set and 'sequoiadb_enable_mapping' is set
-      Metadata_Mapping::set_perfer_origin_name(false);
+      Metadata_mapping::set_prefer_origin_name(false);
     }
   }
 

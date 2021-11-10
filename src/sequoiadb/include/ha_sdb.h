@@ -704,8 +704,7 @@ class ha_sdb : public handler {
   bson::BSONObj last_key_value;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
   char table_name[SDB_CL_NAME_MAX_SIZE + 1];
-  char cs_name[SDB_CS_NAME_MAX_SIZE + 1];
-  char cl_name[SDB_CL_NAME_MAX_SIZE + 1];
+  Metadata_mapping table_mapping;
   time_t last_count_time;
   int count_times;
   MEM_ROOT blobroot;

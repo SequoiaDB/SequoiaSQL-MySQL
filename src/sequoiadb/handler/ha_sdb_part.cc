@@ -606,12 +606,13 @@ int ha_sdb_part::vers_set_hist_part(THD *thd, Vers_part_info *vers_info) {
       next = it++;
     }
 
-    rc = build_scl_name(cl_name, next->partition_name, scl_name);
+    Metadata_mapping scl_mapping(&conn);
+    rc = build_scl_name(table_name, next->partition_name, scl_name);
     if (rc != 0) {
       goto error;
     }
 
-    rc = conn->get_cl(cs_name, scl_name, cl);
+    rc = conn->get_cl(db_name, scl_name, cl, false, &scl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -622,12 +623,13 @@ int ha_sdb_part::vers_set_hist_part(THD *thd, Vers_part_info *vers_info) {
     }
     while ((next = it++) != vers_info->now_part) {
       longlong next_records = 0;
-      rc = build_scl_name(cl_name, next->partition_name, scl_name);
+      Metadata_mapping tmp_scl_mapping(&conn);
+      rc = build_scl_name(table_name, next->partition_name, scl_name);
       if (rc != 0) {
         goto error;
       }
 
-      rc = conn->get_cl(cs_name, scl_name, cl);
+      rc = conn->get_cl(db_name, scl_name, cl, false, &tmp_scl_mapping);
       if (rc != 0) {
         goto error;
       }
@@ -2242,7 +2244,6 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
   uint curr_part_id = 0;
   char *cs_name = db_name;
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-  char scl_fullname[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   bool created_cl = false;
 #ifdef IS_MARIADB
   bool is_versioning_range_part =
@@ -2250,9 +2251,7 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
        INTERVAL_LAST == part_info->vers_info->interval.type &&
        0 == part_info->vers_info->limit);
 #endif
-  Metadata_Mapping tbl_mapping(&conn);
-  Name_mapping *name_map = &tbl_mapping;
-
+  Metadata_mapping scl_tmp_mapping(&conn);
   List_iterator_fast<partition_element> part_it(part_info->partitions);
   partition_element *part_elem;
   while ((part_elem = part_it++)) {
@@ -2269,6 +2268,7 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
       continue;
     }
 #endif
+    Metadata_mapping scl_mapping(&conn);
     created_cl = false;
     rc = build_scl_name(mcl.get_cl_name(), part_elem->partition_name, scl_name);
 
@@ -2282,7 +2282,8 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
       goto error;
     }
 
-    rc = conn->create_cl(cs_name, scl_name, scl_options, NULL, NULL, name_map);
+    rc = conn->create_cl(cs_name, scl_name, scl_options, NULL, NULL,
+                         &scl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -2294,9 +2295,7 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
       goto error;
     }
 
-    sprintf(scl_fullname, "%s.%s", name_map->get_mapping_db_name(),
-            name_map->get_mapping_table_name());
-    rc = mcl.attach_collection(scl_fullname, attach_options);
+    rc = mcl.attach_collection(db_name, scl_name, attach_options, &scl_mapping);
     if (SDB_BOUND_CONFLICT == get_sdb_code(rc) &&
         is_sharded_by_part_hash_id(part_info)) {
       my_printf_error(rc, "Partition name '%s' conflicted on hash value",
@@ -2312,7 +2311,7 @@ done:
 error:
   if (created_cl) {
     handle_sdb_error(rc, MYF(0));
-    conn->drop_cl(cs_name, scl_name, name_map);
+    conn->drop_cl(cs_name, scl_name, &scl_tmp_mapping);
   }
   goto done;
 }
@@ -2411,8 +2410,7 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   bool created_cl = false;
   partition_info *part_info = form->part_info;
   bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
-  Metadata_Mapping part_tbl_mapping(&conn, true);
-  Name_mapping *name_map = &part_tbl_mapping;
+  Metadata_mapping part_tbl_mapping(&conn, true);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -2538,12 +2536,12 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
     rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
-                         &created_cl, name_map);
+                         &created_cl, &part_tbl_mapping);
     if (rc != 0) {
       goto error;
     }
 
-    rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), name_map);
+    rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &part_tbl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -2605,12 +2603,10 @@ done:
 error:
   handle_sdb_error(rc, MYF(0));
   if (created_cl) {
-    conn->drop_cl(db_name, table_name);
+    conn->drop_cl(db_name, table_name, &part_tbl_mapping);
   }
   if (created_cs) {
     sdb_drop_empty_cs(*conn, db_name);
-  } else if (created_cl) {
-    conn->drop_cl(db_name, table_name, name_map);
   }
   goto done;
 }
@@ -2758,7 +2754,6 @@ int ha_sdb_part::detach_and_attach_scl(Sdb_cl &mcl) {
   List_iterator<partition_element> part_it;
   partition_element *part_elem = NULL;
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-  char scl_fullname[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   uint curr_part_id = 0;
   bson::BSONObj attach_options;
   Sdb_conn *conn = mcl.get_conn();
@@ -2766,15 +2761,9 @@ int ha_sdb_part::detach_and_attach_scl(Sdb_cl &mcl) {
   temp_it.init(m_part_info->temp_partitions);
   while ((part_elem = temp_it++)) {
     if (part_elem->part_state == PART_TO_BE_DROPPED) {
+      Metadata_mapping tbl_mapping(&conn);
       build_scl_name(mcl.get_cl_name(), part_elem->partition_name, scl_name);
-      Metadata_Mapping tbl_mapping(&conn);
-      rc = tbl_mapping.get_mapping(db_name, scl_name);
-      if (0 != rc) {
-        goto error;
-      }
-      sprintf(scl_fullname, "%s.%s", tbl_mapping.get_mapping_db_name(),
-              tbl_mapping.get_mapping_table_name());
-      rc = mcl.detach_collection(scl_fullname);
+      rc = mcl.detach_collection(db_name, scl_name, &tbl_mapping);
       if (rc != 0) {
         goto error;
       }
@@ -2785,15 +2774,9 @@ int ha_sdb_part::detach_and_attach_scl(Sdb_cl &mcl) {
   while ((part_elem = part_it++)) {
     if (part_elem->part_state == PART_TO_BE_DROPPED ||
         part_elem->part_state == PART_IS_CHANGED) {
+      Metadata_mapping tbl_mapping(&conn);
       build_scl_name(mcl.get_cl_name(), part_elem->partition_name, scl_name);
-      Metadata_Mapping tbl_mapping(&conn);
-      rc = tbl_mapping.get_mapping(db_name, scl_name);
-      if (0 != rc) {
-        goto error;
-      }
-      sprintf(scl_fullname, "%s.%s", tbl_mapping.get_mapping_db_name(),
-              tbl_mapping.get_mapping_table_name());
-      rc = mcl.detach_collection(scl_fullname);
+      rc = mcl.detach_collection(db_name, scl_name, &tbl_mapping);
       if (rc != 0) {
         goto error;
       }
@@ -2807,20 +2790,15 @@ int ha_sdb_part::detach_and_attach_scl(Sdb_cl &mcl) {
         part_elem->part_state == PART_IS_CHANGED) {
       std::map<uint, char *>::iterator it;
       it = m_new_part_id2cl_name.find(curr_part_id);
-      Metadata_Mapping tbl_mapping(&conn);
-      rc = tbl_mapping.get_mapping(db_name, it->second);
-      if (0 != rc) {
-        goto error;
-      }
-      sprintf(scl_fullname, "%s.%s", tbl_mapping.get_mapping_db_name(),
-              tbl_mapping.get_mapping_table_name());
+      Metadata_mapping tbl_mapping(&conn);
       rc = get_attach_options(m_part_info, part_elem, curr_part_id,
                               attach_options);
       if (rc != 0) {
         goto error;
       }
 
-      rc = mcl.attach_collection(scl_fullname, attach_options);
+      rc = mcl.attach_collection(db_name, it->second, attach_options,
+                                 &tbl_mapping);
       if (SDB_BOUND_CONFLICT == get_sdb_code(rc) &&
           is_sharded_by_part_hash_id(m_part_info)) {
         my_printf_error(rc, "Partition name '%s' conflicted on hash value",
@@ -3394,8 +3372,7 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
   char part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
   char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
-  Metadata_Mapping tbl_mapping(&conn);
-  Name_mapping *name_map = &tbl_mapping;
+  Metadata_mapping tbl_part_mapping(&conn);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -3444,12 +3421,13 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
     goto error;
   }
 
-  rc = conn->create_cl(db_name, scl_name, scl_options, NULL, NULL, name_map);
+  rc = conn->create_cl(db_name, scl_name, scl_options, NULL, NULL,
+                       &tbl_part_mapping);
   if (rc != 0) {
     goto error;
   }
 
-  rc = conn->get_cl(db_name, scl_name, scl, false, name_map);
+  rc = conn->get_cl(db_name, scl_name, scl, false, &tbl_part_mapping);
   if (rc != 0) {
     goto error;
   }
@@ -3493,8 +3471,7 @@ int ha_sdb_part::write_row_in_new_part(uint new_part) {
   Sdb_cl cl;
   bson::BSONObj obj;
   bson::BSONObj tmp_obj;
-  Metadata_Mapping tbl_mapping(&conn);
-  Name_mapping *name_map = &tbl_mapping;
+  Metadata_mapping tbl_part_mapping(&conn);
 
   bson::BSONObj hint;
   bson::BSONObjBuilder builder;
@@ -3520,7 +3497,7 @@ int ha_sdb_part::write_row_in_new_part(uint new_part) {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  rc = conn->get_cl(db_name, it->second, cl, false, name_map);
+  rc = conn->get_cl(db_name, it->second, cl, true, &tbl_part_mapping);
   if (rc != 0) {
     goto error;
   }
@@ -3553,8 +3530,7 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   Thd_sdb *thd_sdb = NULL;
   Sdb_cl mcl;
   Sdb_conn *conn = NULL;
-  Metadata_Mapping tbl_mapping(&conn);
-  Name_mapping *name_map = &tbl_mapping;
+  Metadata_mapping tbl_mapping(&conn);
 
   if (HASH_PARTITION == m_part_info->part_type &&
       ha_thd()->lex->alter_info.partition_names.elements > 0) {
@@ -3588,7 +3564,7 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
 
-  rc = conn->get_cl(db_name, table_name, mcl, ha_is_open(), name_map);
+  rc = conn->get_cl(db_name, table_name, mcl, ha_is_open(), &tbl_mapping);
   if (rc != 0) {
     goto error;
   }
@@ -3641,8 +3617,7 @@ int ha_sdb_part::truncate_partition_low() {
   Sdb_cl cl;
   uint last_part_id = -1;
   bool truncate_all = bitmap_is_set_all(&m_part_info->read_partitions);
-  Metadata_Mapping tbl_mapping(&conn);
-  Name_mapping *tbl_name_map = &tbl_mapping;
+  Metadata_mapping tbl_mapping(&conn);
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -3663,7 +3638,7 @@ int ha_sdb_part::truncate_partition_low() {
 
   // Quickly handle `ALTER TABLE tb TRUNCATE PARTITION ALL`
   if (truncate_all) {
-    rc = conn->get_cl(db_name, table_name, cl, false, tbl_name_map);
+    rc = conn->get_cl(db_name, table_name, cl, false, &tbl_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -3697,7 +3672,7 @@ int ha_sdb_part::truncate_partition_low() {
     }
 
     char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-    Metadata_Mapping sub_tbl_mapping(&conn);
+    Metadata_mapping sub_tbl_mapping(&conn);
     Name_mapping *sub_tbl_name_map = &sub_tbl_mapping;
 
     rc = build_scl_name(table_name, partition_name, scl_name);
@@ -3769,8 +3744,7 @@ int ha_sdb_part::alter_partition_options(bson::BSONObj &old_tab_opt,
       bson::BSONObj diff_options;
       char scl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
       Sdb_cl scl;
-      Metadata_Mapping tbl_part_mapping(&conn);
-      Name_mapping *tbl_part_name_map = &tbl_part_mapping;
+      Metadata_mapping tbl_part_mapping(&conn);
 
       /*
         Find out which option was different
@@ -3805,7 +3779,7 @@ int ha_sdb_part::alter_partition_options(bson::BSONObj &old_tab_opt,
         goto error;
       }
 
-      rc = conn->get_cl(db_name, scl_name, scl, false, tbl_part_name_map);
+      rc = conn->get_cl(db_name, scl_name, scl, false, &tbl_part_mapping);
       if (rc != 0) {
         goto error;
       }
@@ -3946,8 +3920,7 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
 
   m_err_rec = table->record[0];
 
-  Metadata_Mapping sub_tbl_mapping(&conn);
-  Name_mapping *sub_tbl_name_map = &sub_tbl_mapping;
+  Metadata_mapping sub_tbl_mapping(&conn);
 
   /*
     Here connect to the sub collection, because main collection may not find
@@ -3965,7 +3938,7 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
 
   read_part_name = sdb_get_partition_name(m_part_info, read_part_id);
   build_scl_name(table_name, read_part_name, scl_name);
-  rc = conn->get_cl(db_name, scl_name, scl, false, sub_tbl_name_map);
+  rc = conn->get_cl(db_name, scl_name, scl, false, &sub_tbl_mapping);
   if (rc != 0) {
     print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
                     sdb_get_table_alias(table), op_name,
@@ -3983,9 +3956,8 @@ int ha_sdb_part::check_misplaced_rows(THD *thd, uint read_part_id,
     sdb_build_clientinfo(thd, builder);
     hint = builder.obj();
 
-    Metadata_Mapping tbl_mapping(&conn);
-    Name_mapping *tbl_name_map = &tbl_mapping;
-    rc = conn->get_cl(db_name, table_name, mcl, false, tbl_name_map);
+    Metadata_mapping tbl_mapping(&conn);
+    rc = conn->get_cl(db_name, table_name, mcl, false, &tbl_mapping);
     if (rc != 0) {
       print_admin_msg(thd, MYSQL_ERRMSG_SIZE, "error", table->s->db.str,
                       sdb_get_table_alias(table), "repair",

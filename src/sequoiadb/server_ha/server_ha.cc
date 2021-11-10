@@ -1228,7 +1228,7 @@ static int update_cata_version_for_alter_part_table(
 
   if (is_alter_part_op) {
     ha_table_list *table = NULL;
-    bson::BSONObj obj, condition;
+    bson::BSONObj obj;
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
     char tmp_db_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
 
@@ -1241,20 +1241,9 @@ static int update_cata_version_for_alter_part_table(
 
     // Modifying sub CL will update version of the main CL
     // Get the true version of the main CL after altering partition table
-    Metadata_Mapping tbl_mapping(&sql_info->sdb_conn);
-    rc = tbl_mapping.get_mapping(table->db_name, table->table_name);
-    if (0 != rc) {
-      if (HA_ERR_END_OF_FILE == rc) {
-        // it maybe an innodb table
-        rc = 0;
-        goto error;
-      }
-      goto error;
-    }
-    sprintf(full_name, "%s.%s", tbl_mapping.get_mapping_db_name(),
-            tbl_mapping.get_mapping_table_name());
-    condition = BSON(SDB_FIELD_NAME << full_name);
-    rc = sql_info->sdb_conn->snapshot(obj, SDB_SNAP_CATALOG, condition);
+    Metadata_mapping tbl_mapping(&sql_info->sdb_conn);
+    rc = sql_info->sdb_conn->snapshot(obj, SDB_SNAP_CATALOG, table->db_name,
+                                      table->table_name, &tbl_mapping);
     if (SDB_DMS_EOC == get_sdb_code(rc)) {
       // can not find cata info, its innodb partition table
       rc = 0;
@@ -5230,10 +5219,10 @@ static int server_ha_init(void *p) {
   }
 
   // Init metadata mapping module and set configuration
-  Metadata_Mapping::enable_metadata_mapping(sdb_enable_mapping);
-  Metadata_Mapping::set_sql_group(ha_inst_group_name);
-  Metadata_Mapping::set_mapping_group_size(sdb_mapping_group_size);
-  Metadata_Mapping::set_mapping_group_number(sdb_mapping_group_num);
+  Metadata_mapping::enable_metadata_mapping(sdb_enable_mapping);
+  Metadata_mapping::set_sql_group(ha_inst_group_name);
+  Metadata_mapping::set_mapping_unit_size(sdb_mapping_unit_size);
+  Metadata_mapping::set_mapping_unit_count(sdb_mapping_unit_count);
 
   if (sdb_enable_mapping) {
     SDB_LOG_INFO(

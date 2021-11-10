@@ -41,7 +41,6 @@ int ha_sdb_seq::ensure_sequence(THD *thd) {
   DBUG_ENTER("ha_sdb_seq::ensure_sequence");
   int rc = 0;
   DBUG_ASSERT(NULL != thd);
-  Metadata_Mapping tbl_mapping;
 
   if (NULL != m_sequence && m_sequence->thread_id() != sdb_thd_id(thd)) {
     delete m_sequence;
@@ -63,7 +62,7 @@ int ha_sdb_seq::ensure_sequence(THD *thd) {
     }
 
     conn->get_seq(db_name, table_name, m_sequence_name, *m_sequence,
-                  &tbl_mapping);
+                  &table_mapping);
     if (0 != rc) {
       delete m_sequence;
       m_sequence = NULL;
@@ -94,7 +93,6 @@ int ha_sdb_seq::create(const char *name, TABLE *form,
   int key_len = 0;
   sdb_sequence_cache *seq_cache = NULL;
   bool create_temporary = (create_info->options & HA_LEX_CREATE_TMP_TABLE);
-  Metadata_Mapping tbl_mapping;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -137,13 +135,6 @@ int ha_sdb_seq::create(const char *name, TABLE *form,
       goto error;
     }
   }
-
-  rc = tbl_mapping.get_sequence_mapping_cs(db_name, table_name);
-  if (0 != rc) {
-    goto error;
-  }
-  sprintf(cs_name, "%s", tbl_mapping.get_mapping_db_name());
-  sprintf(cl_name, "%s", tbl_mapping.get_mapping_table_name());
 done:
   DBUG_RETURN(rc);
 error:
@@ -156,7 +147,6 @@ int ha_sdb_seq::open(const char *name, int mode, uint test_if_locked) {
   int rc = 0;
   Sdb_seq sdb_seq;
   Sdb_conn *connection = NULL;
-  Metadata_Mapping tbl_mapping;
 
   rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
@@ -185,7 +175,7 @@ int ha_sdb_seq::open(const char *name, int mode, uint test_if_locked) {
 
   // Get sequence to check if the sequence is available.
   rc = connection->get_seq(db_name, table_name, m_sequence_name, sdb_seq,
-                           &tbl_mapping);
+                           &table_mapping);
   if ((SDB_DMS_CS_NOTEXIST == get_sdb_code(rc) ||
        SDB_SEQUENCE_NOT_EXIST == get_sdb_code(rc)) &&
       thd_sql_command(ha_thd()) == SQLCOM_CREATE_SEQUENCE) {
@@ -230,7 +220,6 @@ int ha_sdb_seq::build_attribute_of_sequence(bson::BSONObj &options) {
                         "Failed to build attribute obj of sequence, "
                         "table:%s.%s, exception:%s",
                         db_name, table_name, e.what());
-
 done:
   return rc;
 error:
@@ -243,7 +232,6 @@ int ha_sdb_seq::write_row(uchar *buf) {
   bool created_cs = false;
   bool created_seq = false;
   bson::BSONObj options;
-  Metadata_Mapping tbl_mapping;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -262,7 +250,7 @@ int ha_sdb_seq::write_row(uchar *buf) {
   }
 
   rc = conn->create_seq(db_name, table_name, m_sequence_name, options,
-                        &created_cs, &created_seq, &tbl_mapping);
+                        &created_cs, &created_seq, &table_mapping);
   SDB_LOG_DEBUG("Create sequence: name[%s], options[%s]", m_sequence_name,
                 options.toString(false, false).c_str());
   if (rc) {
@@ -275,7 +263,7 @@ error:
   if (created_cs) {
     sdb_drop_empty_cs(*conn, db_name);
   } else if (created_seq) {
-    conn->drop_seq(db_name, table_name, &tbl_mapping);
+    conn->drop_seq(db_name, table_name, &table_mapping);
   }
   goto done;
 }

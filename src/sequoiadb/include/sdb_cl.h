@@ -130,6 +130,12 @@ class Sdb_cl {
   int attach_collection(const char *sub_cl_fullname,
                         const bson::BSONObj &options);
 
+  int attach_collection(const char *db_name, const char *table_name,
+                        const bson ::BSONObj &options, Name_mapping *nm = NULL);
+
+  int detach_collection(const char *db_name, const char *table_name,
+                        Name_mapping *nm = NULL);
+
   int detach_collection(const char *sub_cl_fullname);
 
   int split(const char *source_group_name, const char *target_group_name,
