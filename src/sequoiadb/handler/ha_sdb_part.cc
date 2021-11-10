@@ -831,6 +831,7 @@ bool ha_sdb_part_wrapper::create_handlers(MEM_ROOT *mem_root) {
     goto error;
   }
   m_file_tot_parts = m_tot_parts;
+  m_org_tot_parts = m_tot_parts;
   m_tot_parts = real_tot_part;
   bzero((char *)m_file, alloc_len);
 

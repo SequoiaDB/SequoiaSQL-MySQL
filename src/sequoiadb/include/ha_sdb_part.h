@@ -490,6 +490,7 @@ class ha_sdb_part_wrapper : public ha_partition {
  public:
   ha_sdb_part_wrapper(handlerton* hton, TABLE_SHARE* table_arg)
       : ha_partition(hton, table_arg) {
+    m_org_tot_parts = 0;
     m_is_exchange_partition = false;
   }
 
@@ -498,6 +499,7 @@ class ha_sdb_part_wrapper : public ha_partition {
                       MEM_ROOT* clone_mem_root_arg)
       : ha_partition(hton, share, part_info_arg, clone_arg,
                      clone_mem_root_arg) {
+    m_org_tot_parts = 0;
     m_is_exchange_partition = false;
   }
 
@@ -529,6 +531,7 @@ class ha_sdb_part_wrapper : public ha_partition {
   }
 
   int reset(void) {
+    m_org_tot_parts = 0;
     m_is_exchange_partition = false;
     return m_file[0]->ha_reset();
   }
@@ -644,6 +647,11 @@ class ha_sdb_part_wrapper : public ha_partition {
   int truncate_partition(Alter_info* alter_info, bool* binlog_stmt);
 
   int drop_partitions(const char* path);
+
+  bool get_no_parts(const char* name, uint* num_parts) {
+    *num_parts = m_org_tot_parts;
+    return false;
+  }
 
   handlerton* partition_ht() const { return m_file[0]->ht; }
 
@@ -840,6 +848,7 @@ class ha_sdb_part_wrapper : public ha_partition {
   int copy_partitions(ulonglong* const copied, ulonglong* const deleted);
 
  private:
+  uint m_org_tot_parts;
   bool m_is_exchange_partition;
 };
 #endif
