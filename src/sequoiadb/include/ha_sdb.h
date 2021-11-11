@@ -621,6 +621,9 @@ class ha_sdb : public handler {
   int prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
                                 char *old_table_name, char *new_table_name,
                                 bool &is_skip);
+  int before_del_ren_part();
+
+  int after_del_ren_part();
 #endif
 
   void raw_store_blob(Field_blob *blob, const char *data, uint len);

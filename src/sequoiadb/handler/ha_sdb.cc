@@ -5933,11 +5933,6 @@ int ha_sdb::extra(enum ha_extra_function operation) {
     case HA_EXTRA_SECONDARY_SORT_ROWID:
       m_secondary_sort_rowid = true;
       break;
-#ifdef IS_MARIADB
-    case HA_EXTRA_DEL_REN_PART_TABLE:
-      m_del_ren_main_cl = true;
-      break;
-#endif
     // To make them effective until ::reset(), ignore this reset here.
     case HA_EXTRA_NO_IGNORE_DUP_KEY:
     case HA_EXTRA_WRITE_CANNOT_REPLACE:
@@ -5947,6 +5942,20 @@ int ha_sdb::extra(enum ha_extra_function operation) {
 
   return 0;
 }
+
+#ifdef IS_MARIADB
+/* Only for partition table of SequoiaDB  */
+int ha_sdb::before_del_ren_part() {
+  m_del_ren_main_cl = true;
+  return 0;
+}
+
+/* Only for partition table of SequoiaDB  */
+int ha_sdb::after_del_ren_part() {
+  m_del_ren_main_cl = false;
+  return 0;
+}
+#endif
 
 int ha_sdb::ensure_cond_ctx(THD *thd) {
   DBUG_ENTER("ha_sdb::ensute_bitmap");
@@ -6049,7 +6058,7 @@ int ha_sdb::ensure_collection(THD *thd) {
     } else if (SQLCOM_CREATE_TABLE == thd_sql_command(thd)) {
       // "create table as select .." will be here
       if (ha_is_stmt_first_table(db_name,
-                                table_name)) {  // for the creating table
+                                 table_name)) {  // for the creating table
         // get current collection version from 'ha_table_list'(the first
         // element)
         int latest_version = 0;
@@ -6794,7 +6803,6 @@ int ha_sdb::prepare_delete_part_table(THD *thd, bool &is_skip) {
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   char skip_delete_cl[SDB_CL_NAME_MAX_SIZE + 1] = "";
 
-  m_del_ren_main_cl = false;
   while ((sep = strstr(pos, SDB_PART_SEP))) {
     pos = sep + 1;
   }
@@ -7054,7 +7062,6 @@ int ha_sdb::prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
   char skip_rename_main_cl[SDB_CL_NAME_MAX_SIZE + 1] = "";
   char skip_rename_sub_cl[SDB_CL_NAME_MAX_SIZE + 1] = "";
 
-  m_del_ren_main_cl = false;
   while ((part_sep = strstr(pos, SDB_PART_SEP))) {
     pos = part_sep + 1;
   }
