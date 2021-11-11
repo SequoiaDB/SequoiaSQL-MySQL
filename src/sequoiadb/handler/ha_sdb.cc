@@ -3135,11 +3135,8 @@ error:
 ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
                                       uint key_parts, uint *bufsz, uint *flags,
                                       Cost_estimate *cost) {
-  DBUG_ASSERT(*flags | HA_MRR_SINGLE_POINT);
-  *bufsz = 0; /* Default implementation doesn't need a buffer */
-  cost->reset();
-  cost->avg_io_cost = 1; /* assume random seeks */
-  return 0;
+  return handler::multi_range_read_info(keyno, n_ranges, n_rows, key_parts,
+                                        bufsz, flags, cost);
 }
 #endif
 
@@ -3199,6 +3196,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   int rc = 0;
   bool enabled = false;
   bool is_mrr_assoc = false;
+  bool is_sorted_mode = false;
 
   m_use_default_impl = false;
   rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
@@ -3208,12 +3206,15 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
 #ifdef IS_MYSQL
   enabled = !hint_key_state(ha_thd(), table, active_index, MRR_HINT_ENUM,
                             OPTIMIZER_SWITCH_MRR);
+  is_sorted_mode = mode & HA_MRR_SORTED;
 #elif IS_MARIADB
-  enabled = !((mode & HA_MRR_SINGLE_POINT) &&
-              optimizer_flag(ha_thd(), OPTIMIZER_SWITCH_MRR_SORT_KEYS));
+  // enabled = !((mode & HA_MRR_SINGLE_POINT) &&
+  //            optimizer_flag(ha_thd(), OPTIMIZER_SWITCH_MRR_SORT_KEYS));
+  /* MariaDB not support bka, can support sorted. So not care is_sorted_mode */
+  // is_sorted_mode;
 #endif
 
-  if (enabled || mode & HA_MRR_SORTED || n_ranges <= 1) {
+  if (enabled || is_sorted_mode || n_ranges <= 1) {
     m_use_default_impl = true;
     goto done;
   }

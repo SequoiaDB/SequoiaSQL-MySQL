@@ -52,13 +52,13 @@ sql_mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,\
 NO_ENGINE_SUBSTITUTION\n
 character_set_server=utf8mb4\n
 collation_server=utf8mb4_bin\n
-lower_case_table_names=1\n
-join_buffer_size=2097152
+lower_case_table_names=1
 '''
 
 MY_CNF_DEFAULT_STORAGE = "\ndefault_storage_engine=SequoiaDB\n"
 
 MYSQL_CNF_APPEND = '''
+join_buffer_size=2097152\n
 optimizer_switch=index_merge_intersection=off,batched_key_access=on
 '''
 
@@ -66,7 +66,7 @@ MARIADB_CNF_APPEND = '''
 join_cache_level=8\n
 optimizer_switch=mrr=on,mrr_cost_based=off,join_cache_incremental=on,\
 join_cache_hashed=on,join_cache_bka=on,optimize_join_buffer_size=on,\
-index_merge_intersection=off,batched_key_access=on
+index_merge_intersection=off
 '''
 
 MY_OPTIMIZER_OPTIONS = 'optimizer_options'
