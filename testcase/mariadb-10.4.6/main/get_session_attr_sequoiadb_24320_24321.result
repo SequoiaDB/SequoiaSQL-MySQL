@@ -17,12 +17,14 @@ SOURCE	varchar(80)	YES		NULL
 select * from SDB_SESSION_ATTR_CURRENT;
 PREFERRED_INSTANCE	PREFERRED_INSTANCE_MODE	PREFERRED_STRICT	PREFERRED_PERIOD	TIMEOUT	TRANS_ISOLATION	TRANS_TIMEOUT	TRANS_USE_RBS	TRANS_LOCK_WAIT	TRANS_AUTO_COMMIT	TRANS_AUTO_ROLLBACK	TRANS_RC_COUNT	SOURCE
 M	random	0	60	-1	0	3	1	0	1	0	1	MySQL:hostname:pid:tid
+set session sequoiadb_preferred_instance='M';
+set session sequoiadb_preferred_strict='on';
 set session sequoiadb_preferred_instance='1';
+set session sequoiadb_preferred_instance='M';
 set session sequoiadb_preferred_instance_mode='ordered';
 set session sequoiadb_preferred_period=59;
 set session sequoiadb_lock_wait_timeout=59;
 set session tx_isolation='READ-UNCOMMITTED';
-set session sequoiadb_preferred_strict='on';
 create database test_get_session_attr;
 use test_get_session_attr;
 create table t1( a int primary key );
@@ -34,12 +36,6 @@ a
 select * from SDB_SESSION_ATTR_CURRENT;
 PREFERRED_INSTANCE	PREFERRED_INSTANCE_MODE	PREFERRED_STRICT	PREFERRED_PERIOD	TIMEOUT	TRANS_ISOLATION	TRANS_TIMEOUT	TRANS_USE_RBS	TRANS_LOCK_WAIT	TRANS_AUTO_COMMIT	TRANS_AUTO_ROLLBACK	TRANS_RC_COUNT	SOURCE
 	ordered	1	59	-1	0	59	1	0	1	0	1	MySQL:hostname:pid:tid
-set session sequoiadb_preferred_strict='off';
-set session sequoiadb_preferred_instance='M';
-set session sequoiadb_preferred_instance_mode='random';
-set session sequoiadb_preferred_period=60;
-set session sequoiadb_lock_wait_timeout=60;
-set session tx_isolation='REPEATABLE-READ';
 drop database test_get_session_attr;
 insert into SDB_SESSION_ATTR_CURRENT values ("S","random",1,50,-1,0,60,0,1,1,0,1,"MySQL:hostname:pid:tid");
 ERROR 42000: Access denied for user 'root'@'localhost' to database 'information_schema'

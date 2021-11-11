@@ -7,12 +7,15 @@ desc SDB_SESSION_ATTR_CURRENT;
 --replace_column 13 MySQL:hostname:pid:tid
 select * from SDB_SESSION_ATTR_CURRENT;
 # 修改会话属性
+# 以下四行是测试instance取值不为实例id时修改strict为on、strict为on时修改instance值为非实例id都能成功修改
+set session sequoiadb_preferred_instance='M';
+set session sequoiadb_preferred_strict='on';
 set session sequoiadb_preferred_instance='1';
+set session sequoiadb_preferred_instance='M';
 set session sequoiadb_preferred_instance_mode='ordered';
 set session sequoiadb_preferred_period=59;
 set session sequoiadb_lock_wait_timeout=59;
 set session tx_isolation='READ-UNCOMMITTED';
-set session sequoiadb_preferred_strict='on';
 # SDB_SESSION_ATTR_CURRENT中字段TRANS_TIMEOUT和TRANS_ISOLATION要执行事务操作才能刷新取值
 create database test_get_session_attr;
 use test_get_session_attr;
@@ -23,14 +26,7 @@ select * from test_get_session_attr.t1;
 # 查看会话属性
 --replace_column 13 MySQL:hostname:pid:tid
 select * from SDB_SESSION_ATTR_CURRENT;
-# 复原会话属性
-# 受问题单DB-7494影响，设置sequoiadb_preferred_strict为off
-set session sequoiadb_preferred_strict='off';
-set session sequoiadb_preferred_instance='M';
-set session sequoiadb_preferred_instance_mode='random';
-set session sequoiadb_preferred_period=60;
-set session sequoiadb_lock_wait_timeout=60;
-set session tx_isolation='REPEATABLE-READ';
+
 drop database test_get_session_attr;
 
 # seqDB-24321
