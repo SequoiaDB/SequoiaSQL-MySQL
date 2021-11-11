@@ -6047,7 +6047,7 @@ int ha_sdb::ensure_collection(THD *thd) {
       collection->set_version(0);
     } else if (SQLCOM_CREATE_TABLE == thd_sql_command(thd)) {
       // "create table as select .." will be here
-      if (ha_is_the_first_table(db_name,
+      if (ha_is_stmt_first_table(db_name,
                                 table_name)) {  // for the creating table
         // get current collection version from 'ha_table_list'(the first
         // element)

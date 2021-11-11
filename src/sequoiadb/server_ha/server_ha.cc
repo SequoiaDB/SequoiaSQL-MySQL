@@ -4758,7 +4758,7 @@ int ha_get_latest_cata_version(const char *db_name, const char *table_name,
   return rc;
 }
 
-bool ha_is_the_first_table(const char *db_name, const char *table_name) {
+bool ha_is_stmt_first_table(const char *db_name, const char *table_name) {
   ha_sql_stmt_info *sql_info = NULL;
   int rc = get_sql_stmt_info(&sql_info);
   DBUG_ASSERT(0 == rc && sql_info != NULL);
