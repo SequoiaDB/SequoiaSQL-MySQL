@@ -479,14 +479,52 @@ time_round_mode_t sdb_thd_time_round_mode(THD *thd) {
   return 0;
 }
 
-bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
-  // For datetime/timestamp, get_time() will truncate the date info.
-  // But the day may be useful. So get_date() instead.
-  if (MYSQL_TYPE_DATETIME == item_val->field_type() ||
-      MYSQL_TYPE_TIMESTAMP == item_val->field_type()) {
-    return item_val->get_date(ltime, TIME_FUZZY_DATE);
+static bool sdb_get_time_from_string(Item *item_val, MYSQL_TIME *ltime) {
+  /*
+    When string is invalid, Item_string::get_time() still return ok,
+    and just push a warning. But we require failure. So we write this to
+    replace Item_string::get_time()
+  */
+  bool ret_val = true;
+  char buff[MAX_DATE_STRING_REP_LENGTH] = { 0 };
+  String tmp(buff, sizeof(buff), &my_charset_bin);
+  String *res = NULL;
+  MYSQL_TIME_STATUS status;
+
+  if (!(res = item_val->val_str(&tmp))) {
+    goto error;
   }
-  return item_val->get_time(ltime);
+
+  if (str_to_time(res, ltime, 0, &status) || status.warnings) {
+    goto error;
+  }
+
+  ret_val = false;
+
+done:
+  return ret_val;
+error:
+  set_zero_time(ltime, MYSQL_TIMESTAMP_TIME);
+  goto done;
+}
+
+bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
+  switch (item_val->field_type()) {
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_TIMESTAMP: {
+      // For datetime/timestamp, get_time() will truncate the date info.
+      // But the day may be useful. So get_date() instead.
+      return item_val->get_date(ltime, TIME_FUZZY_DATE);
+    }
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VARCHAR: {
+      return sdb_get_time_from_string(item_val, ltime);
+    }
+    default: {
+      return item_val->get_time(ltime);
+    }
+  }
 }
 
 bool sdb_is_current_timestamp(Field *field) {
