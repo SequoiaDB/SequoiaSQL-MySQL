@@ -1815,7 +1815,7 @@ select * from t1 where a='a1';
 id	a	b	c
 Warning	1292	Incorrect time value: 'a1' for column 'a' at row 1
 Warnings:
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 0.0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a=c;
 id	a	b	c
 1	-838:59:59	a	-838:59:59
