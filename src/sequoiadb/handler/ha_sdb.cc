@@ -6568,9 +6568,6 @@ int ha_sdb::analyze(THD *thd, HA_CHECK_OPT *check_opt) {
     rc = HA_ADMIN_FAILED;
     goto error;
   }
-
-  rc = name_map->update_table_mapping(conn, old_db_name, old_main_cl_name,
-                                      old_db_name, new_main_cl_name);
   if (0 != rc) {
     goto error;
   }

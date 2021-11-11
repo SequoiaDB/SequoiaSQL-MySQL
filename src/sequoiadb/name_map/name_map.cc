@@ -1,5 +1,4 @@
 #include "client.hpp"
-#include "ha_sdb_def.h"
 #include "server_ha_def.h"
 
 #include <my_global.h>
@@ -8,6 +7,7 @@
 #include <mysql/plugin_audit.h>
 #include <string.h>
 #include <mysql/psi/mysql_thread.h>
+#include "ha_sdb_def.h"
 
 // 'sql_class.h' can be inclued if 'MYSQL_SERVER' is defined
 #ifndef MYSQL_SERVER
