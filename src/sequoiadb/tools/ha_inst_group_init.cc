@@ -259,6 +259,24 @@ static int init_config(const st_args &args,
   return SDB_HA_OK;
 }
 
+static bool has_separator_in_str(const std::string &str) {
+  bool rs = true;
+  for (uint i = 0; i < str.length(); ++i) {
+    switch (str[i]) {
+      case ',':
+      case ';':
+      case ' ':
+      case '\t': {
+        goto done;
+      }
+      default: { break; }
+    }
+  }
+  rs = false;
+done:
+  return rs;
+}
+
 int main(int argc, char *argv[]) {
   int rc = 0;
   sdbclient::sdb conn;
@@ -275,6 +293,10 @@ int main(int argc, char *argv[]) {
     HA_TOOL_RC_CHECK(cmd_args.data_group.length() > SDB_RG_NAME_MAX_SIZE,
                      SDB_HA_INVALID_PARAMETER,
                      "Error: too long data group name");
+
+    HA_TOOL_RC_CHECK(has_separator_in_str(cmd_args.data_group),
+                     SDB_HA_INVALID_PARAMETER,
+                     "Error: multiple data groups are not supported");
 
     string orig_name = cmd_args.inst_group_name;
     rc = ha_init_sequoiadb_connection(conn, cmd_args);
