@@ -831,7 +831,12 @@ class ha_sdb_part_wrapper : public ha_partition {
 
   void print_error(int error, myf errflag) {
     if (SDB_CAT_NO_MATCH_CATALOG == get_sdb_code(error)) {
-      error = HA_ERR_NO_PARTITION_FOUND;
+      DBUG_ASSERT(HASH_PARTITION != m_part_info->part_type);
+      if (HASH_PARTITION == m_part_info->part_type) {
+        error = HA_ERR_GENERIC;
+      } else {
+        error = HA_ERR_NO_PARTITION_FOUND;
+      }
     }
     ha_partition::print_error(error, errflag);
   }

@@ -2888,7 +2888,12 @@ void ha_sdb_part::print_error(int error, myf errflag) {
   DBUG_ENTER("ha_sdb_part::print_error");
 #ifdef IS_MYSQL
   if (SDB_CAT_NO_MATCH_CATALOG == get_sdb_code(error)) {
-    error = HA_ERR_NO_PARTITION_FOUND;
+    DBUG_ASSERT(HASH_PARTITION != m_part_info->part_type);
+    if (HASH_PARTITION == m_part_info->part_type) {
+      error = HA_ERR_GENERIC;
+    } else {
+      error = HA_ERR_NO_PARTITION_FOUND;
+    }
   }
   if (print_partition_error(error, errflag)) {
     ha_sdb::print_error(error, errflag);
