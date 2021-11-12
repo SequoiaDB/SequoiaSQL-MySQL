@@ -22,11 +22,11 @@
 #include "ha_sdb_util.h"
 #include <my_config.h>
 
-char Metadata_mapping::m_sql_group[SDB_CS_NAME_MAX_SIZE + 1] = {0};
-bool Metadata_mapping::m_enabled = false;
-int Metadata_mapping::m_mapping_unit_size = NM_MAPPING_UNIT_SIZE;
-int Metadata_mapping::m_mapping_unit_count = NM_MAPPING_UNIT_COUNT;
-bool Metadata_mapping::m_prefer_origin_name = true;
+char Name_mapping::m_sql_group[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+bool Name_mapping::m_enabled = false;
+int Name_mapping::m_mapping_unit_size = NM_MAPPING_UNIT_SIZE;
+int Name_mapping::m_mapping_unit_count = NM_MAPPING_UNIT_COUNT;
+bool Name_mapping::m_prefer_origin_name = true;
 
 static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
                             Sdb_cl &table_map) {
@@ -84,6 +84,31 @@ error:
   goto done;
 }
 
+// replace '#' with '@#'
+static int build_escaped_sep_name(const char *name, char *escaped_name) {
+  int rc = SDB_ERR_OK;
+  // if name does not contain '#'
+  if (NULL == strstr(name, "#")) {
+    strncpy(escaped_name, name, SDB_CS_NAME_MAX_SIZE);
+    goto done;
+  }
+
+  for (uint i = 0, j = 0; i < strlen(name); i++, j++) {
+    if ('#' == name[i]) {
+      if (j >= SDB_CS_NAME_MAX_SIZE) {
+        rc = HA_ERR_GENERIC;
+        goto error;
+      }
+      escaped_name[j++] = '@';
+    }
+    escaped_name[j] = name[i];
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 static int check_table_mapping_limit(Sdb_conn *sdb_conn,
                                      const char *sql_group_cs_name,
                                      const char *db_name, const char *cs_name,
@@ -120,53 +145,97 @@ error:
   goto done;
 }
 
-int Metadata_mapping::add_mapping(const char *db_name, const char *table_name,
-                                  Sdb_conn *conn) {
-  return add_table_mapping(conn, db_name, table_name);
+int check_if_mapping_table_empty(Sdb_conn *conn, bool &is_empty) {
+  int rc = SDB_ERR_OK;
+  char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  Sdb_cl mapping_table;
+  longlong count = 0;
+  snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
+           NM_SQL_GROUP_PREFIX, Name_mapping::get_sql_group());
+  rc = get_table_map_cl(*conn, sql_group_cs_name, mapping_table);
+  if (SDB_CLS_GRP_NOT_EXIST == rc) {
+    SDB_LOG_INFO(
+        "'SysMetaGroup' data group does not exist, "
+        "mapping function is not enabled");
+    is_empty = true;
+    goto done;
+  }
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to get mapping table handler, error: %d", rc);
+    goto error;
+  }
+  rc = mapping_table.get_count(count);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to get number of record for '%s.%s', error: %d",
+                  sql_group_cs_name, NM_TABLE_MAP, rc);
+    goto error;
+  }
+  DBUG_ASSERT(count >= 0);
+  is_empty = (count == 0);
+done:
+  return rc;
+error:
+  goto done;
 }
 
-int Metadata_mapping::delete_mapping(const char *db_name,
-                                     const char *table_name, Sdb_conn *conn) {
-  return remove_table_mapping(conn, db_name, table_name);
+int Name_mapping::add_mapping(const char *db_name, const char *table_name,
+                              Sdb_conn *conn, Mapping_context *mapping_ctx) {
+  return add_table_mapping(db_name, table_name, conn, mapping_ctx);
 }
 
-int Metadata_mapping::get_mapping(const char *db_name, const char *table_name,
-                                  Sdb_conn *conn) {
-  return get_table_mapping(conn, db_name, table_name);
+int Name_mapping::delete_mapping(const char *db_name, const char *table_name,
+                                 Sdb_conn *conn, Mapping_context *mapping_ctx) {
+  return remove_table_mapping(db_name, table_name, conn, mapping_ctx);
 }
 
-int Metadata_mapping::rename_mapping(const char *db_name, const char *from,
-                                     const char *to, Sdb_conn *conn) {
-  return update_table_mapping(conn, db_name, from, db_name, to);
+int Name_mapping::get_mapping(const char *db_name, const char *table_name,
+                              Sdb_conn *conn, Mapping_context *mapping_ctx) {
+  return get_table_mapping(db_name, table_name, conn, mapping_ctx);
 }
 
-int Metadata_mapping::get_fixed_mapping(const char *db_name,
-                                        const char *table_name,
-                                        Sdb_conn *conn) {
-  return get_sequence_mapping_cs(conn, db_name, table_name);
+int Name_mapping::rename_mapping(const char *db_name, const char *from,
+                                 const char *to, Sdb_conn *conn,
+                                 Mapping_context *mapping_ctx) {
+  return update_table_mapping(db_name, from, db_name, to, conn, mapping_ctx);
 }
 
-int Metadata_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
-                                             const char *sql_group_cs_name,
-                                             const char *db_name, int &slot) {
+int Name_mapping::get_fixed_mapping(const char *db_name, const char *table_name,
+                                    Mapping_context *mapping_ctx) {
+  return get_sequence_mapping_cs(db_name, table_name, mapping_ctx);
+}
+
+int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
+                                         const char *sql_group_cs_name,
+                                         const char *db_name, int &slot) {
   int rc = 0;
   int i = 0;
   bool cs_slot_is_full[NM_MAX_MAPPING_UNIT_SIZE];
   const char *cs_name = NULL;
   bson::BSONObj obj;
+  char cs_name_lower_bound[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  char cs_name_upper_bound[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  snprintf(cs_name_lower_bound, SDB_CS_NAME_MAX_SIZE, "%s#%s#0", m_sql_group,
+           db_name);
+  snprintf(cs_name_upper_bound, SDB_CS_NAME_MAX_SIZE, "%s#%s#999", m_sql_group,
+           db_name);
+  uint prefix_len = strlen(cs_name_lower_bound) - 1;
 
   while (i < m_mapping_unit_count) {
     cs_slot_is_full[i++] = false;
   }
+  cs_slot_is_full[0] = true;  // disable the first slot
   char query[SDB_CS_NAME_MAX_SIZE * 3 + 150] = {0};
-  // "SELECT CSName, COUNT(IsPhysicalTable) AS CLCount FROM %s.%s WHERE DBName =
-  // '%s' AND CSName <> '%s' GROUP BY CSName ORDER BY CLCount DESC"
+  // "SELECT CSName, COUNT(IsPhysicalTable) AS CLCount FROM %s.%s WHERE
+  // DBName = '%s' AND CSName <> '%s' AND CSName > '%s' AND CSName < '%s'
+  // GROUP BY CSName ORDER BY CLCount DESC" (CSName > groupname#db_name#0
+  // and CSName < groupname#db_name#999)
   snprintf(query, sizeof(query),
-           "SELECT %s, SUM(%s) AS %s FROM %s.%s WHERE %s = '%s' AND %s <> "
-           "'%s' GROUP BY %s ORDER BY %s ASC",
+           "SELECT %s, SUM(%s) AS %s FROM %s.%s WHERE %s = '%s' "
+           "AND %s > '%s' AND %s < '%s' GROUP BY %s ORDER BY %s ASC",
            NM_FIELD_CS_NAME, NM_FIELD_IS_PHY_TABLE, NM_FIELD_CL_COUNT,
            sql_group_cs_name, NM_TABLE_MAP, NM_FIELD_DB_NAME, db_name,
-           NM_FIELD_CS_NAME, db_name, NM_FIELD_CS_NAME, NM_FIELD_CL_COUNT);
+           NM_FIELD_CS_NAME, cs_name_lower_bound, NM_FIELD_CS_NAME,
+           cs_name_upper_bound, NM_FIELD_CS_NAME, NM_FIELD_CL_COUNT);
   rc = sdb_conn->execute(query);
   if (0 != rc) {
     goto error;
@@ -176,14 +245,19 @@ int Metadata_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
     cs_name = obj.getStringField(NM_FIELD_CS_NAME);
     int cl_cnt = obj.getIntField(NM_FIELD_CL_COUNT);
     if (NULL == cs_name || cs_name[0] == '\0') {
-      // start with "group_name#db_name#0"
-      slot = 0;
+      // start with "group_name#db_name#1"
+      slot = 1;
       break;
     }
-    slot = atoi(strrchr(cs_name, '#') + 1);
+    slot = atoi(cs_name + prefix_len);
+    if (0 == slot) {
+      // do not use the first slot, it's not a number
+      continue;
+    }
+
     if (cl_cnt < m_mapping_unit_size) {
       break;
-    } else if (slot >= m_mapping_unit_count) {
+    } else if (slot > m_mapping_unit_count) {
       // can't be here by usual operation
       slot = 0;
     } else {
@@ -191,6 +265,7 @@ int Metadata_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
     }
   }
 
+  DBUG_ASSERT(slot >= 0 && slot <= m_mapping_unit_count);
   rc = (rc == HA_ERR_END_OF_FILE) ? 0 : rc;
   if (cs_slot_is_full[slot]) {
     i = slot;
@@ -216,13 +291,14 @@ error:
   goto done;
 }
 
-int Metadata_mapping::calculate_mapping_cs(Sdb_conn *sdb_conn,
-                                           const char *db_name, char *cs_name,
-                                           const char *sql_group_name) {
+int Name_mapping::calculate_mapping_cs(Sdb_conn *sdb_conn, const char *db_name,
+                                       char *cs_name,
+                                       const char *sql_group_name) {
   int rc = 0, slot = -1;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, sql_group_name);
+  char escaped_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
 
   if (m_prefer_origin_name) {
     int cl_cnt = 0;
@@ -241,7 +317,7 @@ int Metadata_mapping::calculate_mapping_cs(Sdb_conn *sdb_conn,
     }
   }
 
-  // 'pefer_origin_name' false or the number of tables in database
+  // 'prefer_origin_name' false or the number of tables in database
   // 'db_name' exceed the limit
   rc = calculate_mapping_slot(sdb_conn, sql_group_cs_name, db_name, slot);
   if (0 != rc) {
@@ -253,30 +329,35 @@ int Metadata_mapping::calculate_mapping_cs(Sdb_conn *sdb_conn,
     rc = HA_ERR_GENERIC;
     goto error;
   }
-  snprintf(cs_name, SDB_CS_NAME_MAX_SIZE, "%s#%s#%d", sql_group_name, db_name,
-           slot);
+  rc = build_escaped_sep_name(db_name, escaped_db_name);
+  if (0 != rc) {
+    SDB_LOG_ERROR("database '%s' name is too long", db_name);
+    goto error;
+  }
+  snprintf(cs_name, SDB_CS_NAME_MAX_SIZE, "%s#%s#%d", sql_group_name,
+           escaped_db_name, slot);
 done:
   return rc;
 error:
   goto done;
 }
 
-int Metadata_mapping::get_table_mapping(Sdb_conn *sdb_conn, const char *db_name,
-                                        const char *table_name,
-                                        enum_mapping_state *state) {
+int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
+                                    Sdb_conn *sdb_conn,
+                                    Mapping_context *mapping_ctx) {
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj obj, cond;
   bson::BSONObjBuilder cond_builder;
   // no mapping for table name
-  strncpy(m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
+  strncpy(mapping_ctx->m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
   if (!m_enabled) {
-    strncpy(m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
+    strncpy(mapping_ctx->m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
     goto done;
   }
   // use the cached name mapping
-  if ('\0' != m_cs_name[0] && '\0' != m_cl_name[0]) {
+  if ('\0' != mapping_ctx->m_cs_name[0] && '\0' != mapping_ctx->m_cl_name[0]) {
     goto done;
   }
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
@@ -285,8 +366,8 @@ int Metadata_mapping::get_table_mapping(Sdb_conn *sdb_conn, const char *db_name,
   rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
   if (SDB_CLS_GRP_NOT_EXIST == get_sdb_code(rc)) {
     // group used to store mapping info does not exist, use original name
-    strncpy(m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
-    strncpy(m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
+    strncpy(mapping_ctx->m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
+    strncpy(mapping_ctx->m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
     rc = 0;
     goto done;
   } else if (0 != rc) {
@@ -306,13 +387,13 @@ int Metadata_mapping::get_table_mapping(Sdb_conn *sdb_conn, const char *db_name,
   rc = mapping_table.query(cond);
   rc = rc ? rc : mapping_table.next(obj, false);
   if (0 == rc) {
-    sprintf(m_cs_name, "%s", obj.getStringField(NM_FIELD_CS_NAME));
-    sprintf(m_cl_name, "%s", obj.getStringField(NM_FIELD_CL_NAME));
-    if (NULL != state) {
-      *state = (enum_mapping_state)obj.getIntField(NM_FIELD_STATE);
-      DBUG_ASSERT(*state == NM_STATE_CREATING || *state == NM_STATE_CREATED);
-    }
-    m_is_part_table = (obj.getIntField(NM_FIELD_IS_PHY_TABLE) == 0);
+    sprintf(mapping_ctx->m_cs_name, "%s", obj.getStringField(NM_FIELD_CS_NAME));
+    sprintf(mapping_ctx->m_cl_name, "%s", obj.getStringField(NM_FIELD_CL_NAME));
+    mapping_ctx->m_state = (enum_mapping_state)obj.getIntField(NM_FIELD_STATE);
+    DBUG_ASSERT(mapping_ctx->m_state == NM_STATE_CREATING ||
+                mapping_ctx->m_state == NM_STATE_CREATED);
+    mapping_ctx->m_is_part_table =
+        (obj.getIntField(NM_FIELD_IS_PHY_TABLE) == 0);
   } else if (HA_ERR_END_OF_FILE == rc) {
     // mapping does not exist for HASH or KEY partition
     goto error;
@@ -325,8 +406,9 @@ error:
   goto done;
 }
 
-int Metadata_mapping::add_table_mapping(Sdb_conn *sdb_conn, const char *db_name,
-                                        const char *table_name) {
+int Name_mapping::add_table_mapping(const char *db_name, const char *table_name,
+                                    Sdb_conn *sdb_conn,
+                                    Mapping_context *mapping_ctx) {
   int rc = 0, retry_count = 0, cl_cnt = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
@@ -337,9 +419,9 @@ int Metadata_mapping::add_table_mapping(Sdb_conn *sdb_conn, const char *db_name,
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
   // no mapping for table name
-  strncpy(m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
+  strncpy(mapping_ctx->m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
   if (!m_enabled) {
-    strncpy(m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
+    strncpy(mapping_ctx->m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
     goto done;
   }
 
@@ -351,7 +433,8 @@ retry:
   }
 
   // 1. calculate mapping CS name
-  rc = calculate_mapping_cs(sdb_conn, db_name, m_cs_name, m_sql_group);
+  rc = calculate_mapping_cs(sdb_conn, db_name, mapping_ctx->m_cs_name,
+                            m_sql_group);
   if (0 != rc) {
     SDB_LOG_ERROR("Failed to calculate mapping CS, error: %d", rc);
     goto error;
@@ -359,15 +442,15 @@ retry:
 
   // 2. persistent mapping info
   try {
-    is_phy_table = (m_is_part_table) ? false : true;
+    is_phy_table = (mapping_ctx->m_is_part_table) ? false : true;
     cond_builder.reset();
     cond_builder.append(NM_FIELD_DB_NAME, db_name);
     cond_builder.append(NM_FIELD_TABLE_NAME, table_name);
     cond = cond_builder.done();
 
     obj_builder.reset();
-    obj_builder.append(NM_FIELD_CS_NAME, m_cs_name);
-    obj_builder.append(NM_FIELD_CL_NAME, table_name);
+    obj_builder.append(NM_FIELD_CS_NAME, mapping_ctx->m_cs_name);
+    obj_builder.append(NM_FIELD_CL_NAME, mapping_ctx->m_cl_name);
     obj_builder.append(NM_FIELD_IS_PHY_TABLE, (int)is_phy_table);
     obj_builder.append(NM_FIELD_STATE, (int)NM_STATE_CREATING);
     obj = obj_builder.done();
@@ -388,12 +471,12 @@ retry:
 
   // 3.  check if the number of collection in 'cs_name' exceed the limit
   rc = check_table_mapping_limit(sdb_conn, sql_group_cs_name, db_name,
-                                 m_cs_name, cl_cnt);
+                                 mapping_ctx->m_cs_name, cl_cnt);
   if (0 != rc) {
     SDB_LOG_ERROR(
         "Failed to check if the number of mapping in '%s' exceed the limit "
         "after adding table mapping, error: %d",
-        m_cs_name, rc);
+        mapping_ctx->m_cs_name, rc);
     goto error;
   }
 
@@ -410,7 +493,7 @@ retry:
     goto retry;
   } else if (cl_cnt > m_mapping_unit_size) {
     SDB_LOG_ERROR("Number of table mapping in '%s' exceed the limit %d",
-                  m_cs_name, m_mapping_unit_size);
+                  mapping_ctx->m_cs_name, m_mapping_unit_size);
     rc = SDB_DMS_NOSPC;
   }
 done:
@@ -425,9 +508,10 @@ error:
   goto done;
 }
 
-int Metadata_mapping::remove_table_mapping(Sdb_conn *sdb_conn,
-                                           const char *db_name,
-                                           const char *table_name) {
+int Name_mapping::remove_table_mapping(const char *db_name,
+                                       const char *table_name,
+                                       Sdb_conn *sdb_conn,
+                                       Mapping_context *mapping_ctx) {
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
@@ -458,7 +542,7 @@ int Metadata_mapping::remove_table_mapping(Sdb_conn *sdb_conn,
     }
 
     // delete partition mapping for MySQL
-    if (m_is_part_table) {
+    if (mapping_ctx->m_is_part_table) {
       bson::BSONObj obj;
       char part_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
       snprintf(part_prefix, SDB_CL_NAME_MAX_SIZE, "%s#P#", table_name);
@@ -481,10 +565,10 @@ error:
   goto done;
 }
 
-int Metadata_mapping::set_table_mapping_state(Sdb_conn *sdb_conn,
-                                              const char *db_name,
-                                              const char *table_name,
-                                              enum_mapping_state state) {
+int Name_mapping::set_table_mapping_state(const char *db_name,
+                                          const char *table_name,
+                                          Sdb_conn *sdb_conn,
+                                          Mapping_context *mapping_ctx) {
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
@@ -507,16 +591,17 @@ int Metadata_mapping::set_table_mapping_state(Sdb_conn *sdb_conn,
     cond_builder.append(NM_FIELD_TABLE_NAME, table_name);
     cond = cond_builder.done();
 
-    obj = BSON(NM_FIELD_STATE << state);
+    obj = BSON(NM_FIELD_STATE << mapping_ctx->m_state);
     rule = BSON("$set" << obj);
+    mapping_ctx->m_state = NM_STATE_CREATED;
   }
   SDB_EXCEPTION_CATCHER(rc,
                         "Failed to setting '%s.%s' mapping state, exception:%s",
                         db_name, table_name, e.what());
   rc = mapping_table.update(rule, cond);
   if (0 != rc) {
-    SDB_LOG_ERROR("Failed to update mapping '%s.%s' state to %d, error: %d",
-                  db_name, table_name, state, rc);
+    SDB_LOG_ERROR("Failed to update mapping '%s.%s', error: %d", db_name,
+                  table_name, rc);
     goto error;
   }
 done:
@@ -525,11 +610,12 @@ error:
   goto done;
 }
 
-int Metadata_mapping::update_table_mapping(Sdb_conn *sdb_conn,
-                                           const char *src_db_name,
-                                           const char *src_table_name,
-                                           const char *dst_db_name,
-                                           const char *dst_table_name) {
+int Name_mapping::update_table_mapping(const char *src_db_name,
+                                       const char *src_table_name,
+                                       const char *dst_db_name,
+                                       const char *dst_table_name,
+                                       Sdb_conn *sdb_conn,
+                                       Mapping_context *mapping_ctx) {
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
@@ -571,11 +657,11 @@ error:
   goto done;
 }
 
-int Metadata_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn,
-                                           const char *db_name,
-                                           std::vector<string> &mapping_cs) {
+int Name_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn, const char *db_name,
+                                       std::vector<string> &mapping_cs) {
   int rc = 0;
   char cs_prefix[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  char escaped_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj obj, cond, regex;
 
   try {
@@ -586,7 +672,12 @@ int Metadata_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn,
       }
     }
     // list(SDB_SNAP_COLLECTIONSPACES, {Name: {$regex: "GroupName#DBName#"}})
-    sprintf(cs_prefix, "%s#%s#", m_sql_group, db_name);
+    rc = build_escaped_sep_name(db_name, escaped_db_name);
+    if (0 != rc) {
+      SDB_LOG_ERROR("database '%s' name is too long", db_name);
+      goto error;
+    }
+    sprintf(cs_prefix, "%s#%s#", m_sql_group, escaped_db_name);
     regex = BSON("$regex" << cs_prefix);
     cond = BSON(SDB_FIELD_NAME << regex);
     rc = sdb_conn->list(SDB_SNAP_COLLECTIONSPACES, cond);
@@ -617,38 +708,41 @@ error:
   goto error;
 }
 
-int Metadata_mapping::get_sequence_mapping_cs(Sdb_conn *conn,
-                                              const char *db_name,
-                                              const char *table_name) {
+int Name_mapping::get_sequence_mapping_cs(const char *db_name,
+                                          const char *table_name,
+                                          Mapping_context *mapping_ctx) {
   int rc = 0;
-  strncpy(m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
-  if (m_prefer_origin_name) {
+  char escaped_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  rc = build_escaped_sep_name(db_name, escaped_db_name);
+  if (0 != rc) {
+    SDB_LOG_ERROR("database '%s' name is too long", db_name);
+    goto error;
+  }
+
+  strncpy(mapping_ctx->m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
+  if (m_prefer_origin_name || !m_enabled) {
     // only one instance group or instance group function is not open
-    strncpy(m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
+    strncpy(mapping_ctx->m_cs_name, escaped_db_name, SDB_CS_NAME_MAX_SIZE);
     goto done;
   }
 
-  // mapping not enabled
-  if (!m_enabled) {
-    strncpy(m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
-    goto done;
-  }
-
-  if (strlen(m_sql_group) + strlen(db_name) + 3 > SDB_CS_NAME_MAX_SIZE) {
+  if (strlen(m_sql_group) + strlen(escaped_db_name) + 3 >
+      SDB_CS_NAME_MAX_SIZE) {
     rc = HA_ERR_GENERIC;
     goto error;
   }
 
   // multi instance group with mapping
-  snprintf(m_cs_name, SDB_CS_NAME_MAX_SIZE, "%s#%s#0", m_sql_group, db_name);
+  snprintf(mapping_ctx->m_cs_name, SDB_CS_NAME_MAX_SIZE, "%s#%s#1", m_sql_group,
+           escaped_db_name);
 done:
   return rc;
 error:
   goto done;
 }
 
-int Metadata_mapping::remove_table_mappings(Sdb_conn *sdb_conn,
-                                            const char *db_name) {
+int Name_mapping::remove_table_mappings(Sdb_conn *sdb_conn,
+                                        const char *db_name) {
   int rc = 0;
   Sdb_cl mapping_table;
   bson::BSONObj cond, hint;

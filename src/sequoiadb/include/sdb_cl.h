@@ -27,7 +27,7 @@
 class Sdb_cl {
   friend int Sdb_conn::get_cl(const char *cs_name, const char *cl_name,
                               Sdb_cl &cl, const bool check_exist = false,
-                              Name_mapping *nm = NULL);
+                              Mapping_context *mapping_ctx = NULL);
 
  public:
   Sdb_cl();
@@ -131,10 +131,11 @@ class Sdb_cl {
                         const bson::BSONObj &options);
 
   int attach_collection(const char *db_name, const char *table_name,
-                        const bson ::BSONObj &options, Name_mapping *nm = NULL);
+                        const bson ::BSONObj &options,
+                        Mapping_context *mapping_ctx = NULL);
 
   int detach_collection(const char *db_name, const char *table_name,
-                        Name_mapping *nm = NULL);
+                        Mapping_context *mapping_ctx = NULL);
 
   int detach_collection(const char *sub_cl_fullname);
 

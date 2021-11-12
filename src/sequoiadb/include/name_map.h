@@ -25,24 +25,21 @@ enum enum_mapping_state {
   NM_STATE_CREATED
 };
 
-class Name_mapping {
+class Mapping_context {
  public:
-  virtual int add_mapping(const char *db_name, const char *table_name,
-                          Sdb_conn *conn) = 0;
-  virtual int delete_mapping(const char *db_name, const char *table_name,
-                             Sdb_conn *conn) = 0;
-  virtual int get_mapping(const char *db_name, const char *table_name,
-                          Sdb_conn *conn) = 0;
-  virtual int rename_mapping(const char *db_name, const char *from,
-                             const char *to, Sdb_conn *conn) = 0;
-  virtual int get_fixed_mapping(const char *db_name, const char *table_name,
-                                Sdb_conn *conn) = 0;
+  Mapping_context(bool is_part_table = false)
+      : m_state(NM_STATE_NONE), m_is_part_table(is_part_table) {
+    m_cs_name[0] = '\0';
+    m_cl_name[0] = '\0';
+  }
 
-  virtual const char *get_mapping_db_name() = 0;
-  virtual const char *get_mapping_table_name() = 0;
+  enum_mapping_state m_state;
+  bool m_is_part_table;
+  char m_cs_name[SDB_CS_NAME_MAX_SIZE + 1];
+  char m_cl_name[SDB_CL_NAME_MAX_SIZE + 1];
 };
 
-class Metadata_mapping : public Name_mapping {
+class Name_mapping {
  private:
   static char m_sql_group[SDB_CS_NAME_MAX_SIZE + 1];
   static bool m_enabled;
@@ -50,32 +47,8 @@ class Metadata_mapping : public Name_mapping {
   static int m_mapping_unit_count;
   static bool m_prefer_origin_name;
 
-  Sdb_conn **m_sdb_conn;
-  bool m_is_part_table;
-  char m_cs_name[SDB_CS_NAME_MAX_SIZE + 1];
-  char m_cl_name[SDB_CL_NAME_MAX_SIZE + 1];
-
  public:
-  Metadata_mapping() : m_sdb_conn(NULL), m_is_part_table(false) {
-    m_cs_name[0] = '\0';
-    m_cl_name[0] = '\0';
-  }
-
-  Metadata_mapping(Sdb_conn **conn, bool is_part_table = false)
-      : m_sdb_conn(conn), m_is_part_table(is_part_table) {
-    m_cs_name[0] = '\0';
-    m_cl_name[0] = '\0';
-  }
-
- private:
-  int calculate_mapping_slot(Sdb_conn *sdb_conn, const char *sql_group_cs_name,
-                             const char *db_name, int &slot);
-
-  int calculate_mapping_cs(Sdb_conn *sdb_conn, const char *db_name,
-                           char *cs_name, const char *sql_group_name);
-
- public:
-  static void enable_metadata_mapping(bool enable) { m_enabled = enable; }
+  static void enable_name_mapping(bool enable) { m_enabled = enable; }
 
   static void set_sql_group(const char *sql_group) {
     // set group name
@@ -107,46 +80,61 @@ class Metadata_mapping : public Name_mapping {
     m_prefer_origin_name = prefer_origin_name;
   }
 
-  int add_mapping(const char *db_name, const char *table_name, Sdb_conn *conn);
+  static int add_mapping(const char *db_name, const char *table_name,
+                         Sdb_conn *sdb_conn, Mapping_context *mapping_ctx);
 
-  int delete_mapping(const char *db_name, const char *table_name,
-                     Sdb_conn *conn);
+  static int delete_mapping(const char *db_name, const char *table_name,
+                            Sdb_conn *sdb_conn, Mapping_context *mapping_ctx);
 
-  int get_mapping(const char *db_name, const char *table_name, Sdb_conn *conn);
+  static int get_mapping(const char *db_name, const char *table_name,
+                         Sdb_conn *sdb_conn, Mapping_context *mapping_ctx);
 
-  int rename_mapping(const char *db_name, const char *from, const char *to,
-                     Sdb_conn *conn);
+  static int rename_mapping(const char *db_name, const char *from,
+                            const char *to, Sdb_conn *sdb_conn,
+                            Mapping_context *mapping_ctx);
 
-  int get_fixed_mapping(const char *db_name, const char *table_name,
-                        Sdb_conn *conn);
-
-  int get_table_mapping(Sdb_conn *sdb_conn, const char *db_name,
-                        const char *table_name,
-                        enum_mapping_state *state = NULL);
-
-  int add_table_mapping(Sdb_conn *sdb_conn, const char *db_name,
-                        const char *table_name);
-
-  int remove_table_mapping(Sdb_conn *sdb_conn, const char *db_name,
-                           const char *table_name);
-
-  int update_table_mapping(Sdb_conn *sdb_conn, const char *src_db_name,
-                           const char *src_table_name, const char *dst_db_name,
-                           const char *dst_table_name);
+  static int get_fixed_mapping(const char *db_name, const char *table_name,
+                               Mapping_context *mapping_ctx);
 
   static int get_mapping_cs_by_db(Sdb_conn *conn, const char *db_name,
                                   std::vector<string> &mapping_cs);
 
-  int set_table_mapping_state(Sdb_conn *sdb_conn, const char *db_name,
-                              const char *table_name, enum_mapping_state state);
-
-  int get_sequence_mapping_cs(Sdb_conn *conn, const char *db_name,
-                              const char *table_name);
-
   static int remove_table_mappings(Sdb_conn *sdb_conn, const char *db_name);
 
-  const char *get_mapping_db_name() { return m_cs_name; }
+ private:
+  static int calculate_mapping_slot(Sdb_conn *sdb_conn,
+                                    const char *sql_group_cs_name,
+                                    const char *db_name, int &slot);
 
-  const char *get_mapping_table_name() { return m_cl_name; }
+  static int calculate_mapping_cs(Sdb_conn *sdb_conn, const char *db_name,
+                                  char *cs_name, const char *sql_group_name);
+
+  static int get_table_mapping(const char *db_name, const char *table_name,
+                               Sdb_conn *sdb_conn,
+                               Mapping_context *mapping_ctx);
+
+  static int add_table_mapping(const char *db_name, const char *table_name,
+                               Sdb_conn *sdb_conn,
+                               Mapping_context *mapping_ctx);
+
+  static int remove_table_mapping(const char *db_name, const char *table_name,
+                                  Sdb_conn *sdb_conn,
+                                  Mapping_context *mapping_ctx);
+
+  static int update_table_mapping(const char *src_db_name,
+                                  const char *src_table_name,
+                                  const char *dst_db_name,
+                                  const char *dst_table_name,
+                                  Sdb_conn *sdb_conn,
+                                  Mapping_context *mapping_ctx);
+
+  static int set_table_mapping_state(const char *db_name,
+                                     const char *table_name, Sdb_conn *sdb_conn,
+                                     Mapping_context *mapping_ctx);
+
+  static int get_sequence_mapping_cs(const char *db_name,
+                                     const char *table_name,
+                                     Mapping_context *mapping_ctx);
 };
+int check_if_mapping_table_empty(Sdb_conn *conn, bool &is_empty);
 #endif

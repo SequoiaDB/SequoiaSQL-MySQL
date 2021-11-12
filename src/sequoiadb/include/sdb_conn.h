@@ -251,18 +251,19 @@ class Sdb_conn {
   inline bool is_transaction_on() { return m_transaction_on; }
 
   int get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
-             const bool check_exist = false, Name_mapping *nm = NULL);
+             const bool check_exist = false,
+             Mapping_context *mapping_ctx = NULL);
 
   int create_cl(const char *cs_name, const char *cl_name,
                 const bson::BSONObj &options = SDB_EMPTY_BSON,
                 bool *created_cs = NULL, bool *created_cl = NULL,
-                Name_mapping *nm = NULL);
+                Mapping_context *mapping_ctx = NULL);
 
   int rename_cl(const char *cs_name, const char *old_cl_name,
-                const char *new_cl_name, Name_mapping *src_nm = NULL);
+                const char *new_cl_name, Mapping_context *mapping_ctx = NULL);
 
   int drop_cl(const char *cs_name, const char *cl_name,
-              Name_mapping *nm = NULL);
+              Mapping_context *mapping_ctx = NULL);
 
   int drop_cs(const char *cs_name);
 
@@ -271,23 +272,25 @@ class Sdb_conn {
 
 #ifdef IS_MARIADB
   int get_seq(const char *cs_name, const char *table_name, char *sequence_name,
-              Sdb_seq &seq, Name_mapping *nm = NULL);
+              Sdb_seq &seq, Mapping_context *mapping_ctx = NULL);
 
   int create_seq(const char *cs_name, const char *table_name,
                  char *sequence_name,
                  const bson::BSONObj &options = SDB_EMPTY_BSON,
                  bool *created_cs = NULL, bool *created_seq = NULL,
-                 Name_mapping *nm = NULL);
+                 Mapping_context *mapping_ctx = NULL);
 
   int rename_seq(const char *cs_name, const char *old_table_name,
-                 const char *new_table_name, Name_mapping *nm = NULL);
+                 const char *new_table_name,
+                 Mapping_context *mapping_ctx = NULL);
 
   int drop_seq(const char *cs_name, const char *table_name,
-               Name_mapping *nm = NULL);
+               Mapping_context *mapping_ctx = NULL);
 #endif
 
   int get_cl_statistics(const char *cs_name, const char *cl_name,
-                        Sdb_statistics &stats, Name_mapping *nm);
+                        Sdb_statistics &stats,
+                        Mapping_context *mapping_ctx = NULL);
 
   int list(int list_type, const bson::BSONObj &condition = SDB_EMPTY_BSON,
            const bson::BSONObj &selected = SDB_EMPTY_BSON,
@@ -296,7 +299,7 @@ class Sdb_conn {
            longlong num_to_skip = 0);
 
   int snapshot(bson::BSONObj &obj, int snap_type, const char *db_name,
-               const char *table_name, Name_mapping *nm,
+               const char *table_name, Mapping_context *mapping_ctx = NULL,
                const bson::BSONObj &selected = SDB_EMPTY_BSON,
                const bson::BSONObj &orderBy = SDB_EMPTY_BSON,
                const bson::BSONObj &hint = SDB_EMPTY_BSON,
@@ -322,7 +325,8 @@ class Sdb_conn {
   bool is_authenticated() { return m_is_authenticated; }
 
   int analyze(const char *db_name, const char *table_name, int stats_mode,
-              int stats_sample_num, int stats_sample_percent, Name_mapping *nm);
+              int stats_sample_num, int stats_sample_percent,
+              Mapping_context *mapping_ctx = NULL);
 
   int analyze(const bson::BSONObj &options);
 
@@ -422,10 +426,12 @@ class Sdb_conn {
   int retry(boost::function<int()> func);
 
   int get_cl_stats_by_get_detail(const char *cs_name, const char *cl_name,
-                                 Sdb_statistics &stats, Name_mapping *nm);
+                                 Sdb_statistics &stats,
+                                 Mapping_context *mapping_ctx = NULL);
 
   int get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
-                               Sdb_statistics &stats, Name_mapping *nm);
+                               Sdb_statistics &stats,
+                               Mapping_context *mapping_ctx = NULL);
 
   virtual int get_connection() = 0;
 

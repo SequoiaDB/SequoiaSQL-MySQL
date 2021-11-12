@@ -28,7 +28,7 @@
 class Sdb_seq {
   friend int Sdb_conn::get_seq(const char *cs_name, const char *table_name,
                                char *sequence_name, Sdb_seq &seq,
-                               Name_mapping *nm = NULL);
+                               Mapping_context *mapping_ctx = NULL);
 
  public:
   Sdb_seq();

@@ -1241,7 +1241,7 @@ static int update_cata_version_for_alter_part_table(
 
     // Modifying sub CL will update version of the main CL
     // Get the true version of the main CL after altering partition table
-    Metadata_mapping tbl_mapping(&sql_info->sdb_conn);
+    Mapping_context tbl_mapping;
     rc = sql_info->sdb_conn->snapshot(obj, SDB_SNAP_CATALOG, table->db_name,
                                       table->table_name, &tbl_mapping);
     if (SDB_DMS_EOC == get_sdb_code(rc)) {
@@ -5219,10 +5219,10 @@ static int server_ha_init(void *p) {
   }
 
   // Init metadata mapping module and set configuration
-  Metadata_mapping::enable_metadata_mapping(sdb_enable_mapping);
-  Metadata_mapping::set_sql_group(ha_inst_group_name);
-  Metadata_mapping::set_mapping_unit_size(sdb_mapping_unit_size);
-  Metadata_mapping::set_mapping_unit_count(sdb_mapping_unit_count);
+  Name_mapping::enable_name_mapping(sdb_enable_mapping);
+  Name_mapping::set_sql_group(ha_inst_group_name);
+  Name_mapping::set_mapping_unit_size(sdb_mapping_unit_size);
+  Name_mapping::set_mapping_unit_count(sdb_mapping_unit_count);
 
   if (sdb_enable_mapping) {
     SDB_LOG_INFO(

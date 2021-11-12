@@ -527,7 +527,7 @@ error:
 }
 
 int Sdb_conn::get_cl(const char *db_name, const char *table_name, Sdb_cl &cl,
-                     const bool check_exist, Name_mapping *nm) {
+                     const bool check_exist, Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCollectionSpace cs;
   cl.close();
@@ -540,15 +540,14 @@ int Sdb_conn::get_cl(const char *db_name, const char *table_name, Sdb_cl &cl,
     rc = SDB_NOT_CONNECTED;
     goto error;
   }
-  if (NULL != nm) {
-    rc = nm->get_mapping(db_name, table_name, this);
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, this, mapping_ctx);
     if (0 != rc) {
       goto error;
     }
-    cs_name = nm->get_mapping_db_name();
-    cl_name = nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
   }
-
   try {
     rc = m_connection->getCollectionSpace(cs_name, cs, check_exist);
     if (rc != SDB_ERR_OK) {
@@ -571,7 +570,7 @@ error:
 
 int Sdb_conn::create_cl(const char *db_name, const char *table_name,
                         const bson::BSONObj &options, bool *created_cs,
-                        bool *created_cl, Name_mapping *nm) {
+                        bool *created_cl, Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
   sdbclient::sdbCollectionSpace cs;
@@ -584,13 +583,13 @@ int Sdb_conn::create_cl(const char *db_name, const char *table_name,
     rc = SDB_NOT_CONNECTED;
     goto error;
   }
-  if (NULL != nm) {
-    rc = nm->add_mapping(db_name, table_name, this);
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::add_mapping(db_name, table_name, this, mapping_ctx);
     if (0 != rc) {
       goto error;
     }
-    cs_name = nm->get_mapping_db_name();
-    cl_name = nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
   }
 retry:
   try {
@@ -649,7 +648,7 @@ error:
     new_cs = false;
     new_cl = false;
   } else if (new_cl) {
-    drop_cl(cs_name, cl_name, nm);
+    drop_cl(cs_name, cl_name, mapping_ctx);
     new_cl = false;
   }
   goto done;
@@ -729,29 +728,32 @@ error:
 }
 
 int Sdb_conn::rename_cl(const char *db_name, const char *old_tbl_name,
-                        const char *new_tbl_name, Name_mapping *src_nm) {
+                        const char *new_tbl_name,
+                        Mapping_context *mapping_ctx) {
   int rc = 0;
   const char *cs_name = db_name;
   const char *old_cl_name = old_tbl_name;
   const char *new_cl_name = new_tbl_name;
-  if (NULL != src_nm) {
-    rc = src_nm->get_mapping(db_name, old_tbl_name, this);
+
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, old_tbl_name, this, mapping_ctx);
     if (HA_ERR_END_OF_FILE == rc) {
       rc = SDB_DMS_NOTEXIST;
       goto error;
     } else if (0 != rc) {
       goto error;
     }
-    cs_name = src_nm->get_mapping_db_name();
-    old_cl_name = src_nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    old_cl_name = mapping_ctx->m_cl_name;
   }
   rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name, old_cl_name,
                          new_cl_name));
   if (0 != rc) {
     goto error;
   }
-  if (NULL != src_nm) {
-    rc = src_nm->rename_mapping(db_name, old_tbl_name, new_tbl_name, this);
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::rename_mapping(db_name, old_tbl_name, new_tbl_name, this,
+                                      mapping_ctx);
   }
 done:
   return rc;
@@ -794,27 +796,27 @@ error:
 }
 
 int Sdb_conn::drop_cl(const char *db_name, const char *table_name,
-                      Name_mapping *nm) {
+                      Mapping_context *mapping_ctx) {
   int rc = 0;
   const char *cs_name = db_name;
   const char *cl_name = table_name;
-  if (NULL != nm) {
-    rc = nm->get_mapping(db_name, table_name, this);
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, this, mapping_ctx);
     if (HA_ERR_END_OF_FILE == rc) {
       rc = 0;
       goto done;
     } else if (0 != rc) {
       goto error;
     }
-    cs_name = nm->get_mapping_db_name();
-    cl_name = nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
   }
   rc = retry(boost::bind(conn_drop_cl, m_connection, cs_name, cl_name));
   if (0 != rc) {
     goto error;
   }
-  if (NULL != nm) {
-    rc = nm->delete_mapping(db_name, table_name, this);
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::delete_mapping(db_name, table_name, this, mapping_ctx);
   }
 done:
   return rc;
@@ -823,23 +825,25 @@ error:
 }
 
 #ifdef IS_MARIADB
-int Sdb_conn::get_seq(const char *cs_name, const char *table_name,
-                      char *sequence_name, Sdb_seq &seq, Name_mapping *nm) {
+int Sdb_conn::get_seq(const char *db_name, const char *table_name,
+                      char *sequence_name, Sdb_seq &seq,
+                      Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
   if (!m_connection) {
     rc = SDB_NOT_CONNECTED;
     goto error;
   }
-
-  if (NULL != nm) {
-    rc = nm->get_fixed_mapping(cs_name, table_name, this);
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_fixed_mapping(db_name, table_name, mapping_ctx);
     if (0 != rc) {
       goto error;
     }
-    cs_name = nm->get_mapping_db_name();
-    table_name = nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
   }
-  rc = sdb_rebuild_sequence_name(this, cs_name, table_name, sequence_name);
+  rc = sdb_rebuild_sequence_name(this, cs_name, cl_name, sequence_name);
   if (rc) {
     goto error;
   }
@@ -862,10 +866,10 @@ error:
   goto done;
 }
 
-int Sdb_conn::create_seq(const char *cs_name, const char *table_name,
+int Sdb_conn::create_seq(const char *db_name, const char *table_name,
                          char *sequence_name, const bson::BSONObj &options,
                          bool *created_cs, bool *created_seq,
-                         Name_mapping *nm) {
+                         Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
   int retry_times = 2;
   sdbclient::sdbCollectionSpace cs;
@@ -873,18 +877,19 @@ int Sdb_conn::create_seq(const char *cs_name, const char *table_name,
   sdbclient::sdbCollection cl;
   bool new_cs = false;
   bool new_seq = false;
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
   if (!m_connection) {
     rc = SDB_NOT_CONNECTED;
     goto error;
   }
-
-  if (NULL != nm) {
-    rc = nm->get_fixed_mapping(cs_name, table_name, this);
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_fixed_mapping(db_name, table_name, mapping_ctx);
     if (0 != rc) {
       goto error;
     }
-    cs_name = nm->get_mapping_db_name();
-    table_name = nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
   }
 retry:
   try {
@@ -900,7 +905,7 @@ retry:
       goto error;
     }
 
-    rc = sdb_rebuild_sequence_name(this, cs_name, table_name, sequence_name);
+    rc = sdb_rebuild_sequence_name(this, cs_name, cl_name, sequence_name);
     if (rc) {
       goto error;
     }
@@ -993,16 +998,18 @@ error:
   goto done;
 }
 
-int Sdb_conn::rename_seq(const char *cs_name, const char *old_seq_name,
-                         const char *new_seq_name, Name_mapping *nm) {
+int Sdb_conn::rename_seq(const char *db_name, const char *old_seq_name,
+                         const char *new_seq_name,
+                         Mapping_context *mapping_ctx) {
   int rc = 0;
-  if (NULL != nm) {
-    rc = nm->get_fixed_mapping(cs_name, old_seq_name, this);
+  const char *cs_name = db_name;
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_fixed_mapping(cs_name, old_seq_name, mapping_ctx);
     if (0 != rc) {
       goto error;
     }
+    cs_name = mapping_ctx->m_cs_name;
   }
-  cs_name = nm->get_mapping_db_name();
   rc = retry(boost::bind(conn_rename_seq, this, m_connection, cs_name,
                          old_seq_name, new_seq_name));
 done:
@@ -1042,19 +1049,20 @@ error:
   goto done;
 }
 
-int Sdb_conn::drop_seq(const char *cs_name, const char *table_name,
-                       Name_mapping *nm) {
+int Sdb_conn::drop_seq(const char *db_name, const char *table_name,
+                       Mapping_context *mapping_ctx) {
   int rc = 0;
-  if (NULL != nm) {
-    rc = nm->get_fixed_mapping(cs_name, table_name, this);
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_fixed_mapping(db_name, table_name, mapping_ctx);
     if (0 != rc) {
       goto error;
     }
-    cs_name = nm->get_mapping_db_name();
-    table_name = nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
   }
-  rc = retry(
-      boost::bind(conn_drop_seq, this, m_connection, cs_name, table_name));
+  rc = retry(boost::bind(conn_drop_seq, this, m_connection, cs_name, cl_name));
 done:
   return rc;
 error:
@@ -1127,12 +1135,13 @@ int Sdb_conn::execute(const char *sql) {
 }
 
 int Sdb_conn::get_cl_statistics(const char *cs_name, const char *cl_name,
-                                Sdb_statistics &stats, Name_mapping *nm) {
+                                Sdb_statistics &stats,
+                                Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
   if (is_cl_statistics_supported()) {
-    rc = get_cl_stats_by_get_detail(cs_name, cl_name, stats, nm);
+    rc = get_cl_stats_by_get_detail(cs_name, cl_name, stats, mapping_ctx);
   } else {
-    rc = get_cl_stats_by_snapshot(cs_name, cl_name, stats, nm);
+    rc = get_cl_stats_by_snapshot(cs_name, cl_name, stats, mapping_ctx);
   }
   return rc;
 }
@@ -1140,7 +1149,7 @@ int Sdb_conn::get_cl_statistics(const char *cs_name, const char *cl_name,
 int Sdb_conn::get_cl_stats_by_get_detail(const char *cs_name,
                                          const char *cl_name,
                                          Sdb_statistics &stats,
-                                         Name_mapping *nm) {
+                                         Mapping_context *mapping_ctx) {
   static const int PAGE_SIZE_MIN = 4096;
   static const int PAGE_SIZE_MAX = 65536;
 
@@ -1152,7 +1161,7 @@ int Sdb_conn::get_cl_stats_by_get_detail(const char *cs_name,
   DBUG_ASSERT(NULL != cs_name);
   DBUG_ASSERT(strlength(cs_name) != 0);
 
-  rc = get_cl(cs_name, cl_name, cl, false, nm);
+  rc = get_cl(cs_name, cl_name, cl, false, mapping_ctx);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
@@ -1255,9 +1264,10 @@ error:
   goto done;
 }
 
-int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
+int Sdb_conn::get_cl_stats_by_snapshot(const char *db_name,
+                                       const char *table_name,
                                        Sdb_statistics &stats,
-                                       Name_mapping *nm) {
+                                       Mapping_context *mapping_ctx) {
   static const char NORMAL_CL_STATS_SQL[] =
       "select T.Details.$[0].PageSize as PageSize, "
       "T.Details.$[0].TotalDataPages as TotalDataPages,"
@@ -1297,20 +1307,22 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *cs_name, const char *cl_name,
                            SDB_CL_FULL_NAME_MAX_SIZE] = {0};
   char main_cl_stats_sql[sizeof(MAIN_CL_STATS_SQL) +
                          SDB_CL_FULL_NAME_MAX_SIZE] = {0};
+  const char *cs_name = NULL, *cl_name = NULL;
 
-  DBUG_ASSERT(NULL != cs_name);
-  DBUG_ASSERT(strlength(cs_name) != 0);
+  DBUG_ASSERT(NULL != db_name);
+  DBUG_ASSERT(strlength(table_name) != 0);
 
   Sdb_cl cl;
   // get the mapping name for current table
   // SequoiaDB doesn't support cl statistics before v3.4.2/5.0.2
-  rc = get_cl(cs_name, cl_name, cl, true, nm);
+  rc = get_cl(db_name, table_name, cl, true, mapping_ctx);
   if (rc != SDB_ERR_OK) {
     goto error;
   }
-  cs_name = nm->get_mapping_db_name();
-  cl_name = nm->get_mapping_table_name();
-
+  if (NULL != mapping_ctx) {
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
+  }
   // Try getting statistics as normal cl. If not, try main cl again.
   snprintf(normal_cl_stats_sql, sizeof(normal_cl_stats_sql),
            NORMAL_CL_STATS_SQL, cs_name, cl_name);
@@ -1408,7 +1420,7 @@ error:
 }
 
 int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type, const char *db_name,
-                       const char *table_name, Name_mapping *nm,
+                       const char *table_name, Mapping_context *mapping_ctx,
                        const bson::BSONObj &selected,
                        const bson::BSONObj &orderBy, const bson::BSONObj &hint,
                        longlong numToSkip) {
@@ -1417,13 +1429,13 @@ int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type, const char *db_name,
   bson::BSONObj condition;
   bson::BufBuilder condition_buf(96);
   bson::BSONObjBuilder cond_builder(condition_buf);
-  if (NULL != nm) {
-    rc = nm->get_mapping(db_name, table_name, this);
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, this, mapping_ctx);
     if (0 != rc) {
       goto error;
     }
-    db_name = nm->get_mapping_db_name();
-    table_name = nm->get_mapping_table_name();
+    db_name = mapping_ctx->m_cs_name;
+    table_name = mapping_ctx->m_cl_name;
   }
   try {
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
@@ -1540,10 +1552,12 @@ error:
 
 int Sdb_conn::analyze(const char *db_name, const char *table_name,
                       int stats_mode, int stats_sample_num,
-                      int stats_sample_percent, Name_mapping *nm) {
+                      int stats_sample_percent, Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
   bson::BSONObjBuilder builder(256);
   try {
+    const char *cs_name = db_name;
+    const char *cl_name = table_name;
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
     builder.append(SDB_FIELD_MODE, stats_mode);
     if (stats_sample_num) {
@@ -1553,15 +1567,15 @@ int Sdb_conn::analyze(const char *db_name, const char *table_name,
       builder.append(SDB_FIELD_SAMPLE_PERCENT, stats_sample_percent);
     }
 
-    if (NULL != nm) {
-      rc = nm->get_mapping(db_name, table_name, this);
+    if (NULL != mapping_ctx) {
+      rc = Name_mapping::get_mapping(db_name, table_name, this, mapping_ctx);
       if (0 != rc) {
         goto error;
       }
-      db_name = nm->get_mapping_db_name();
-      table_name = nm->get_mapping_table_name();
+      cs_name = mapping_ctx->m_cs_name;
+      cl_name = mapping_ctx->m_cl_name;
     }
-    snprintf(full_name, sizeof(full_name), "%s.%s", db_name, table_name);
+    snprintf(full_name, sizeof(full_name), "%s.%s", cs_name, cl_name);
     builder.append(SDB_FIELD_COLLECTION, full_name);
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to analyze, exception:%s", e.what());

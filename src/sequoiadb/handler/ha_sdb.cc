@@ -222,6 +222,31 @@ error:
   goto done;
 }
 
+static int build_and_cache_mapping_ctx(const char *db_name,
+                                       const char *table_name, THD *thd,
+                                       boost::shared_ptr<Sdb_share> share,
+                                       Mapping_context *mapping_ctx) {
+  int rc = SDB_ERR_OK;
+  Sdb_conn *conn = NULL;
+  rc = check_sdb_in_thd(thd, &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  if ('\0' == share->mapping_cs[0] || '\0' == share->mapping_cl[0]) {
+    Sdb_cl cl;
+    rc = conn->get_cl(db_name, table_name, cl, false, mapping_ctx);
+    if (0 != rc) {
+      goto error;
+    }
+    sprintf(share->mapping_cs, "%s", mapping_ctx->m_cs_name);
+    sprintf(share->mapping_cl, "%s", mapping_ctx->m_cl_name);
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 static ulonglong sdb_default_autoinc_acquire_size(enum enum_field_types type) {
   ulonglong default_value = 0;
   switch (type) {
@@ -246,7 +271,8 @@ static ulonglong sdb_default_autoinc_acquire_size(enum enum_field_types type) {
 }
 
 static int sdb_autoinc_current_value(Sdb_conn &conn, const char *db_name,
-                                     const char *table_name, Name_mapping *nm,
+                                     const char *table_name,
+                                     Mapping_context *mapping_ctx,
                                      const char *field_name,
                                      ulonglong *cur_value, my_bool *initial) {
   int rc = SDB_ERR_OK;
@@ -267,8 +293,8 @@ static int sdb_autoinc_current_value(Sdb_conn &conn, const char *db_name,
     builder1.done();
     builder.done();
     selected = sel_builder.done();
-    rc =
-        conn.snapshot(obj, SDB_SNAP_CATALOG, db_name, table_name, nm, selected);
+    rc = conn.snapshot(obj, SDB_SNAP_CATALOG, db_name, table_name, mapping_ctx,
+                       selected);
     if (0 != rc) {
       SDB_LOG_ERROR("%s", conn.get_err_msg());
       conn.clear_err_msg();
@@ -576,7 +602,7 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
   char part_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   uint prefix_len = 0;
   char new_sub_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-  Metadata_mapping tbl_mapping(&conn);
+  Mapping_context tbl_mapping;
   try {
     bson::BSONObj obj;
     rc = conn->snapshot(obj, SDB_SNAP_CATALOG, db_name, old_table_name,
@@ -597,7 +623,7 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
       prefix_len = strlen(part_prefix);
       char db_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
       snprintf(db_prefix, SDB_CS_NAME_MAX_SIZE, "%s#%s#",
-               Metadata_mapping::get_sql_group(), db_name);
+               Name_mapping::get_sql_group(), db_name);
 
       bson::BSONObj sub_cl_arr = obj.getField(SDB_FIELD_CATAINFO).Obj();
       bson::BSONObjIterator it(sub_cl_arr);
@@ -611,7 +637,7 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
         }
         sub_cl_name = strstr(sub_cl_name, ".") + 1;
 
-        Metadata_mapping src_cl_mapping(&conn);
+        Mapping_context src_cl_mapping;
         if (strncmp(sub_cl_name, part_prefix, prefix_len) != 0) {
           continue;
         }
@@ -1595,22 +1621,17 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
 
-  if ('\0' == share->mapping_cs[0] || '\0' == share->mapping_cl[0]) {
-    Sdb_cl cl;
-    rc = connection->get_cl(db_name, table_name, cl, false, &table_mapping);
-    if (sdb_execute_only_in_mysql(ha_thd()) && HA_ERR_END_OF_FILE == rc) {
-      rc = 0;
-      goto done;
-    }
-    if (0 != rc) {
-      SDB_LOG_ERROR("Failed to get table '%s.%s' mapping name, error: %d",
-                    db_name, table_name, rc);
-      goto error;
-    }
-    sprintf(share->mapping_cs, "%s", table_mapping.get_mapping_db_name());
-    sprintf(share->mapping_cl, "%s", table_mapping.get_mapping_table_name());
+  rc = build_and_cache_mapping_ctx(db_name, table_name, ha_thd(), share,
+                                   &table_mapping);
+  if (sdb_execute_only_in_mysql(ha_thd()) && HA_ERR_END_OF_FILE == rc) {
+    rc = 0;
+    goto done;
   }
-
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to build and cache mapping for '%s.%s'", db_name,
+                  table_name);
+    goto error;
+  }
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
   }
@@ -6793,7 +6814,7 @@ int ha_sdb::try_drop_as_sequence(Sdb_conn *conn, bool is_temporary,
   char path[FN_REFLEN + 1] = "";
   char engine_buf[NAME_CHAR_LEN + 1];
   LEX_CSTRING engine = {engine_buf, 0};
-  Metadata_mapping tbl_mapping;
+  Mapping_context tbl_mapping;
 
   if (is_temporary) {
     void *ptr = my_hash_search(&sdb_temporary_sequence_cache,
@@ -7068,7 +7089,7 @@ int sdb_rename_main_cl(Sdb_conn *conn, const char *old_db_name,
   new_main_cl_len = int(part_sep - new_table_name);
   memcpy(new_main_cl_name, new_table_name, new_main_cl_len);
   new_main_cl_name[new_main_cl_len] = '\0';
-  Metadata_mapping src_tbl_mapping(&conn);
+  Mapping_context src_tbl_mapping;
   rc = conn->rename_cl(old_db_name, old_main_cl_name, new_main_cl_name,
                        &src_tbl_mapping);
   if (rc != 0) {
@@ -7206,7 +7227,7 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   char new_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   char old_part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
   char new_part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
-  Metadata_mapping src_tbl_mapping(&conn);
+  Mapping_context src_tbl_mapping;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
@@ -7336,7 +7357,7 @@ error:
   goto done;
 set_cata_version:
   if (ha_is_open()) {
-    Metadata_mapping tbl_tmp_mapping(&conn);
+    Mapping_context tbl_tmp_mapping;
     rc = conn->get_cl(new_db_name, new_table_name, cl, true, &tbl_tmp_mapping);
     if (0 != rc) {
       goto error;
@@ -7358,13 +7379,13 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   bson::BSONObj up_bound;
   bson::BSONObj attach_options;
   const char *upper_scl_name = NULL;
-  char upper_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   char dropped_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   char mcl_name[SDB_CL_NAME_MAX_SIZE] = {0};
+  char part_table_name[SDB_CL_NAME_MAX_SIZE] = {0};
   Sdb_cl main_cl;
   // use to get the table partition mapping info
-  Metadata_mapping table_part_mapping(&conn);
-  Metadata_mapping subcl_mapping(&conn);
+  Mapping_context table_part_mapping;
+  Mapping_context subcl_mapping;
   char *sep = strstr(part_name, SDB_PART_SEP);
   uint sep_len = strlen(SDB_PART_SEP);
   uint i = strlen(part_name) - sep_len;
@@ -7381,8 +7402,9 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   }
   DBUG_ASSERT(conn->thread_id() == sdb_thd_id(thd));
 
-  memcpy(mcl_name, part_name, sep - part_name);
-  rc = conn->snapshot(obj, SDB_SNAP_CATALOG, db_name, mcl_name, &table_mapping);
+  memcpy(part_table_name, part_name, sep - part_name);
+  rc = conn->snapshot(obj, SDB_SNAP_CATALOG, db_name, part_table_name,
+                      &table_mapping);
   if (get_sdb_code(rc) == SDB_DMS_EOC) {  // cl don't exist.
     rc = 0;
     goto done;
@@ -7457,7 +7479,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto done;
   }
 
-  rc = conn->get_cl(db_name, mcl_name, main_cl, false, &table_mapping);
+  rc = conn->get_cl(db_name, part_table_name, main_cl, false, &table_mapping);
   if (rc != 0) {
     goto error;
   }
@@ -8967,7 +8989,7 @@ static void sdb_drop_database(handlerton *hton, char *path) {
     goto error;
   }
 
-  rc = Metadata_mapping::get_mapping_cs_by_db(connection, db_name, mapping_cs);
+  rc = Name_mapping::get_mapping_cs_by_db(connection, db_name, mapping_cs);
   if (0 != rc) {
     goto error;
   }
@@ -8980,7 +9002,7 @@ static void sdb_drop_database(handlerton *hton, char *path) {
     }
   }
 
-  rc = Metadata_mapping::remove_table_mappings(connection, db_name);
+  rc = Name_mapping::remove_table_mappings(connection, db_name);
   if (0 != rc) {
     SDB_LOG_WARNING(
         "Failed to clear table mapping for database '%s', error: %d", db_name,

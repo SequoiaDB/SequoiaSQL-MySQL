@@ -684,18 +684,22 @@ int Sdb_cl::attach_collection(const char *sub_cl_fullname,
 }
 
 int Sdb_cl::attach_collection(const char *db_name, const char *table_name,
-                              const bson ::BSONObj &options, Name_mapping *nm) {
+                              const bson ::BSONObj &options,
+                              Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
   char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
-  if (NULL != nm) {
-    rc = nm->get_mapping(db_name, table_name, this->get_conn());
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, this->get_conn(),
+                                   mapping_ctx);
     if (0 != rc) {
       goto error;
     }
-    db_name = nm->get_mapping_db_name();
-    table_name = nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
   }
-  sprintf(full_name, "%s.%s", db_name, table_name);
+  sprintf(full_name, "%s.%s", cs_name, cl_name);
   rc = attach_collection(full_name, options);
 done:
   return rc;
@@ -722,18 +726,21 @@ int Sdb_cl::detach_collection(const char *sub_cl_fullname) {
 }
 
 int Sdb_cl::detach_collection(const char *db_name, const char *table_name,
-                              Name_mapping *nm) {
+                              Mapping_context *mapping_ctx) {
   int rc = SDB_ERR_OK;
   char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
-  if (NULL != nm) {
-    rc = nm->get_mapping(db_name, table_name, this->get_conn());
+  const char *cs_name = db_name;
+  const char *cl_name = table_name;
+  if (NULL != mapping_ctx) {
+    rc = Name_mapping::get_mapping(db_name, table_name, this->get_conn(),
+                                   mapping_ctx);
     if (0 != rc) {
       goto error;
     }
-    db_name = nm->get_mapping_db_name();
-    table_name = nm->get_mapping_table_name();
+    cs_name = mapping_ctx->m_cs_name;
+    cl_name = mapping_ctx->m_cl_name;
   }
-  sprintf(full_name, "%s.%s", db_name, table_name);
+  sprintf(full_name, "%s.%s", cs_name, cl_name);
   rc = detach_collection(full_name);
 done:
   return rc;

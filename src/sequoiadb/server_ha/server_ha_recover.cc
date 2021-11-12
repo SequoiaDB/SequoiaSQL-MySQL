@@ -391,7 +391,20 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
       goto error;
     } else if (sdb_enable_mapping && '\0' != data_group[0]) {
       // if data group is set and 'sequoiadb_enable_mapping' is set
-      Metadata_mapping::set_prefer_origin_name(false);
+      Name_mapping::set_prefer_origin_name(false);
+    }
+  } else {
+    bool is_empty = true;
+    rc = check_if_mapping_table_empty(&sdb_conn, is_empty);
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to check if mapping table is empty");
+      goto error;
+    }
+    if (!is_empty && !sdb_enable_mapping) {
+      SDB_LOG_ERROR(
+          "Can't disable mapping function while mapping table is not empty");
+      rc = SDB_HA_EXCEPTION;
+      goto error;
     }
   }
 
