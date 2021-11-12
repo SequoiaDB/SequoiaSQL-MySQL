@@ -1143,7 +1143,6 @@ SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON b < 3 and b = c;
 
 DELETE FROM t3;
 #EXPLAIN SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON b < 3 and b = c;
---sorted_result
 SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON b < 3 and b = c;
 
 DROP TABLE t1,t2,t3;
