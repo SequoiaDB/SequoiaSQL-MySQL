@@ -228,7 +228,9 @@ drop database metasync_22560;
 connection conn1;
 drop database if exists meta_sync_test;
 create database if not exists meta_sync_test character set = 'latin1';
+SET GLOBAL sequoiadb_strict_collation=OFF;
 create table meta_sync_test.t1 (a int key auto_increment,b char(255));
+SET GLOBAL sequoiadb_strict_collation=ON;
 connection conn2;
 CREATE FUNCTION meta_sync_test.f1() RETURNS INTEGER
 BEGIN
@@ -279,7 +281,9 @@ SELECT a FROM meta_sync_test.t1 INTO retn;
 RETURN retn;
 END	latin1	latin1_swedish_ci	latin1_swedish_ci
 connection conn1;
+SET GLOBAL sequoiadb_strict_collation=OFF;
 alter table meta_sync_test.t1 change column c d bigint not null;
+SET GLOBAL sequoiadb_strict_collation=ON;
 connection conn2;
 drop function meta_sync_test.f1;
 connection conn1;
@@ -540,7 +544,9 @@ connection conn1;
 drop table meta_sync_test.t1;
 drop table meta_sync_test.t2;
 connection conn1;
+SET GLOBAL sequoiadb_strict_collation=OFF;
 create table meta_sync_test.t1 (id int, name char(255));
+SET GLOBAL sequoiadb_strict_collation=ON;
 connection conn2;
 create procedure meta_sync_test.p1()
 begin
