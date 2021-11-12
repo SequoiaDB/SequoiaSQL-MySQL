@@ -677,7 +677,7 @@
                     <description>${msg(install.para.user.password.description)}</description>
                     <explanation></explanation>
                     <value></value>
-                    <default>${username}</default>
+                    <default>Sdbadmin@1024</default>
                     <allowEmptyValue>0</allowEmptyValue>
                     <descriptionRetype>${msg(install.para.user.reentrypw.description)}</descriptionRetype>
                     <width>40</width>                           
