@@ -35,7 +35,7 @@ a
 1
 select * from SDB_SESSION_ATTR_CURRENT;
 PREFERRED_INSTANCE	PREFERRED_INSTANCE_MODE	PREFERRED_STRICT	PREFERRED_PERIOD	TIMEOUT	TRANS_ISOLATION	TRANS_TIMEOUT	TRANS_USE_RBS	TRANS_LOCK_WAIT	TRANS_AUTO_COMMIT	TRANS_AUTO_ROLLBACK	TRANS_RC_COUNT	SOURCE
-	ordered	1	59	-1	0	59	1	0	1	0	1	MySQL:hostname:pid:tid
+M	ordered	1	59	-1	0	59	1	0	1	0	1	MySQL:hostname:pid:tid
 drop database test_get_session_attr;
 insert into SDB_SESSION_ATTR_CURRENT values ("S","random",1,50,-1,0,60,0,1,1,0,1,"MySQL:hostname:pid:tid");
 ERROR 42000: Access denied for user 'root'@'localhost' to database 'information_schema'
