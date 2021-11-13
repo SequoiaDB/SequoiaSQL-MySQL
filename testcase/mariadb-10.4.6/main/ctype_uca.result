@@ -6882,7 +6882,6 @@ a?z
 ab
 az
 aЀ
-aր
 SET @query=CONCAT('SELECT ch FROM t1 WHERE ch>''a', 0xD1,''' ORDER BY ch');
 PREPARE stmt FROM @query;
 EXECUTE stmt;
