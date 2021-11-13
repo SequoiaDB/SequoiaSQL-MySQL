@@ -4495,6 +4495,9 @@ int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond_idx,
             ++array_elements;
             break;
           } else {
+            if (bson::Undefined == elem_end.type()) {
+              continue;
+            }
             bson::BSONObjBuilder sub_obj(sub_array.subobjStart());
             sub_obj.append(elem_end);
             sub_obj.done();
@@ -4524,7 +4527,16 @@ int ha_sdb::join_cond_idx(const bson::BSONObj &start_cond_idx,
       cond_idx = builder.obj();
 
     } else {
-      cond_idx = end_cond_idx;
+      bson::BSONObjIterator si(end_cond_idx);
+      while (si.more()) {
+        bson::BSONElement elem_end = si.next();
+        if (bson::Undefined == elem_end.type()) {
+          continue;
+        } else {
+          builder.append(elem_end);
+        }
+      }
+      cond_idx = builder.obj();
     }
   }
   SDB_EXCEPTION_CATCHER(
