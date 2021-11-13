@@ -494,11 +494,11 @@ error:
 // if 'bind_address' current instance is set and it's not '*'', set
 // ip_addr to my_bind_addr_str, or get one of ip address(not include
 // loopback address) from system
-static int get_local_ip_address(char *ip_addr, int max_ip_len) {
+static int get_local_ip_address(char *ip_addr, int len) {
   int rc = 0;
   if (my_bind_addr_str && strcmp(my_bind_addr_str, "*") != 0) {
-    strncpy(ip_addr, my_bind_addr_str, max_ip_len);
-    ip_addr[max_ip_len - 1] = '\0';
+    strncpy(ip_addr, my_bind_addr_str, len);
+    ip_addr[len - 1] = '\0';
   } else {
     struct ifaddrs *if_addr_struct = NULL, *ifa = NULL;
     void *addr_ptr = NULL;
@@ -508,11 +508,6 @@ static int get_local_ip_address(char *ip_addr, int max_ip_len) {
 
     // get host IP address by hostname, from '/etc/hosts'
     struct hostent *hosts = gethostbyname(glob_hostname);
-    rc = (NULL == hosts) ? SDB_HA_GET_LOCAL_IP : 0;
-    HA_RC_CHECK(
-        rc, error,
-        "HA: System call 'gethostbyname()' error: %s, rc: %d, errno: %d",
-        strerror(errno), rc, errno);
 
     // get host IP address by 'getifaddrs', on error, -1 is returned
     rc = getifaddrs(&if_addr_struct);
@@ -553,16 +548,23 @@ static int get_local_ip_address(char *ip_addr, int max_ip_len) {
         }
 
         if (strcmp(hosts_ip, ip) == 0) {
-          strncpy(ip_addr, hosts_ip, max_ip_len);
-          ip_addr[max_ip_len - 1] = '\0';
+          strncpy(ip_addr, hosts_ip, len);
+          ip_addr[len - 1] = '\0';
           matched = TRUE;
           break;
         }
       }
+
+      if (NULL == hosts) {
+        strncpy(ip_addr, ip, len);
+        ip_addr[len - 1] = '\0';
+        break;
+      }
+
       // set 'ip_addr' in case it is not set
       if (NULL == first_available_ip && !matched) {
-        first_available_ip = strncpy(ip_addr, ip, max_ip_len);
-        ip_addr[max_ip_len - 1] = '\0';
+        first_available_ip = strncpy(ip_addr, ip, len);
+        ip_addr[len - 1] = '\0';
       }
     }
 
