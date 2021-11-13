@@ -7325,6 +7325,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   bson::BSONObj attach_options;
   const char *upper_scl_name = NULL;
   char upper_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+  char dropped_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
 
   char mcl_name[SDB_CL_NAME_MAX_SIZE] = {0};
   char mcl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
@@ -7381,6 +7382,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto done;
   }
 
+  sprintf(dropped_scl_full_name, "%s.%s", db_name, part_name);
   try {
     // Get the low bound and up bound of the sub cl dropped.
     bson::BSONObj dropped_low_bound;
@@ -7390,7 +7392,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     while (iter.more()) {
       bson::BSONObj item = iter.next().Obj();
       const char *name = item.getField(SDB_FIELD_SUBCL_NAME).valuestrsafe();
-      if (strcmp(name, part_name) != 0) {
+      if (strcmp(name, dropped_scl_full_name) != 0) {
         continue;
       }
       dropped_low_bound = item.getField(SDB_FIELD_LOW_BOUND).Obj();
@@ -7408,12 +7410,13 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     }
 
     // Find the upper sub cl.
-    bson::BSONObjIterator iter2(cata_info);
     while (iter.more()) {
       bson::BSONObj item = iter.next().Obj();
       low_bound = item.getField(SDB_FIELD_LOW_BOUND).Obj();
       if (low_bound.equal(dropped_up_bound)) {
         upper_scl_name = item.getField(SDB_FIELD_SUBCL_NAME).valuestrsafe();
+        strncpy(upper_scl_full_name, upper_scl_name,
+                SDB_CL_FULL_NAME_MAX_SIZE + 1);
         low_bound = dropped_low_bound;
         up_bound = item.getField(SDB_FIELD_UP_BOUND).Obj();
         break;
@@ -7434,7 +7437,6 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto error;
   }
 
-  sprintf(upper_scl_full_name, "%s.%s", db_name, upper_scl_name);
   rc = main_cl.detach_collection(upper_scl_full_name);
   if (rc != 0) {
     goto error;
