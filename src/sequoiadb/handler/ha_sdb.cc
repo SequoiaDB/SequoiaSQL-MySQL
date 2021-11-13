@@ -7379,8 +7379,8 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   bson::BSONObj up_bound;
   bson::BSONObj attach_options;
   const char *upper_scl_name = NULL;
+  char upper_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   char dropped_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
-  char mcl_name[SDB_CL_NAME_MAX_SIZE] = {0};
   char part_table_name[SDB_CL_NAME_MAX_SIZE] = {0};
   Sdb_cl main_cl;
   // use to get the table partition mapping info
@@ -7484,6 +7484,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto error;
   }
 
+  upper_scl_name = strstr(upper_scl_full_name, ".") + 1;
   rc = main_cl.detach_collection(db_name, upper_scl_name, &subcl_mapping);
   if (rc != 0) {
     goto error;
