@@ -361,6 +361,9 @@ class Sdb_conn {
 
   void get_version(int &major, int &minor, int &fix) {
     uint8 major_ver = 0, minor_ver = 0, fix_ver = 0;
+    if (!m_connection) {
+      return;
+    }
     m_connection->getVersion(major_ver, minor_ver, fix_ver);
     major = major_ver;
     minor = minor_ver;

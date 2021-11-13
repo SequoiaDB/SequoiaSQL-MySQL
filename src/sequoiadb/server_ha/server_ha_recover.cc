@@ -1487,6 +1487,38 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
       sub_builder.doneFast();
     }
     cond = builder.done();
+
+    if (!(sdb_conn.is_valid() && sdb_conn.is_authenticated())) {
+      // TODO: if failed to connect, write error information into state table
+      rc = sdb_conn.connect();
+      if (SDB_DPS_TRANS_DIABLED == get_sdb_code(rc)) {
+        SDB_LOG_ERROR(
+            "HA: SequoiaDB transaction is turned off, shut instance down");
+        goto error;
+      } else if (rc) {
+        sql_print_error(
+            "HA: Unable to connect to sequoiadb, sequoiadb error: %s",
+            ha_error_string(sdb_conn, rc, err_buf));
+        goto sleep_secs;
+      }
+      rc = sdb_conn.get_cl(sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
+      sql_print_error(
+          "HA: Unable to get SQL log table '%s', sequoiadb error: %s",
+          HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
+      rc = sdb_conn.get_cl(sdb_group_name, HA_INSTANCE_STATE_CL, inst_state_cl);
+      HA_RC_CHECK(
+          rc, error,
+          "HA: Unable to get instance state table '%s', sequoiadb error: %s",
+          HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
+      rc = sdb_conn.get_cl(sdb_group_name, HA_INSTANCE_OBJECT_STATE_CL,
+                           inst_obj_state_cl);
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to get instance object state table '%s', "
+                  "sequoiadb error: %s",
+                  HA_INSTANCE_OBJECT_STATE_CL,
+                  ha_error_string(sdb_conn, rc, err_buf));
+    }
+
     rc = sql_log_cl.query(cond, SDB_EMPTY_BSON, order_by, SDB_EMPTY_BSON, 0,
                           REPLAY_LIMIT);
     if (SDB_DMS_NOTEXIST == get_sdb_code(rc) ||
@@ -1728,19 +1760,6 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
     }
   sleep_secs:
     da->reset_diagnostics_area();
-    if (!sdb_conn.is_valid()) {
-      // TODO: if failed to connect, write error information into state table
-      rc = sdb_conn.connect();
-      if (SDB_DPS_TRANS_DIABLED == get_sdb_code(rc)) {
-        SDB_LOG_ERROR(
-            "HA: SequoiaDB transaction is turned off, shut instance down");
-        goto error;
-      } else if (rc) {
-        sql_print_error(
-            "HA: Unable to connect to sequoiadb, sequoiadb error: %s",
-            ha_error_string(sdb_conn, rc, err_buf));
-      }
-    }
     if (curr_executed < REPLAY_LIMIT) {
       sdb_set_clock_time(abstime, SLEEP_SECONDS);
       rc = mysql_cond_timedwait(&ha_thread->replay_stopped_cond,
@@ -2142,7 +2161,7 @@ void *ha_replay_pending_logs(void *arg) {
   while (!abort_loop && !mysqld_failed) {
     sdb_set_debug_log(thd, sdb_debug_log(NULL));
     SDB_LOG_DEBUG("HA: Check pending log");
-    if (!sdb_conn.is_valid()) {
+    if (!(sdb_conn.is_valid() && sdb_conn.is_authenticated())) {
       rc = sdb_conn.connect();
       if (rc) {
         SDB_LOG_ERROR("HA: Failed to connect sequoiadb, error code: %d", rc);

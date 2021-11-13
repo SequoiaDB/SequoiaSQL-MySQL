@@ -4700,7 +4700,9 @@ done:
   DBUG_RETURN(rc);
 error:
   set_abort_query_flag(thd);
-  ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
+  if (sql_info->sdb_conn) {
+    ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
+  }
   handle_error(rc, sql_info);
   goto done;
 recover_state:

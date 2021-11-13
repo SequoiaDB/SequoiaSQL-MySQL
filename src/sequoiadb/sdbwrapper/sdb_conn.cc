@@ -183,6 +183,7 @@ int Sdb_conn::connect() {
 
   if (!(is_valid() && is_authenticated())) {
     m_transaction_on = false;
+    m_is_authenticated = false;
     ha_sdb_conn_addrs conn_addrs;
 
     rc = get_connection();
@@ -441,11 +442,17 @@ int Sdb_conn::begin_transaction(uint tx_isolation) {
     if (pushed_autocommit) {
       m_transaction_on = true;
     } else {
+      if (!m_connection || !(is_valid() && is_authenticated())) {
+        rc = connect();
+        if (IS_SDB_NET_ERR(rc) && --retry_times > 0) {
+          continue;
+        } else if (SDB_OK != rc) {
+          goto error;
+        }
+      }
       rc = m_connection->transactionBegin();
       if (SDB_ERR_OK == rc) {
         m_transaction_on = true;
-      } else if (IS_SDB_NET_ERR(rc) && --retry_times > 0) {
-        connect();
       } else {
         goto error;
       }
@@ -464,6 +471,11 @@ error:
 int Sdb_conn::commit_transaction(const bson::BSONObj &hint) {
   DBUG_ENTER("Sdb_conn::commit_transaction");
   int rc = SDB_ERR_OK;
+  if (!m_connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
+
   if (m_transaction_on) {
     m_transaction_on = false;
     if (!pushed_autocommit) {
@@ -481,7 +493,7 @@ done:
   DBUG_RETURN(rc);
 error:
   if (IS_SDB_NET_ERR(rc)) {
-    connect();
+    rc = connect();
   }
   convert_sdb_code(rc);
   goto done;
@@ -489,20 +501,29 @@ error:
 
 int Sdb_conn::rollback_transaction() {
   DBUG_ENTER("Sdb_conn::rollback_transaction");
+  int rc = SDB_OK;
+  if (!m_connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
+
   if (m_transaction_on) {
-    int rc = SDB_ERR_OK;
+    rc = SDB_ERR_OK;
     m_transaction_on = false;
     if (!pushed_autocommit) {
       rc = m_connection->transactionRollback();
       if (IS_SDB_NET_ERR(rc)) {
-        connect();
+        rc = connect();
       }
     }
     DBUG_PRINT("Sdb_conn::info",
                ("Rollback transaction, flag: %d", pushed_autocommit));
     pushed_autocommit = false;
   }
+done:
   DBUG_RETURN(0);
+error:
+  goto done;
 }
 
 int Sdb_conn::get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
@@ -513,6 +534,10 @@ int Sdb_conn::get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
 
   cl.m_conn = this;
   cl.m_thread_id = this->thread_id();
+  if (!m_connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
 
   try {
     rc = m_connection->getCollectionSpace(cs_name, cs, check_exist);
@@ -543,6 +568,11 @@ int Sdb_conn::create_cl(const char *cs_name, const char *cl_name,
   sdbclient::sdbCollection cl;
   bool new_cs = false;
   bool new_cl = false;
+
+  if (!m_connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
 
 retry:
   try {
@@ -609,6 +639,10 @@ error:
 
 const char *Sdb_conn::get_err_msg() {
   if ('\0' == errmsg[0]) {
+    if (!m_connection) {
+      return errmsg;
+    }
+
     try {
       bson::BSONObj err_obj;
       int rc = m_connection->getLastErrorObj(err_obj);
@@ -651,6 +685,10 @@ int conn_rename_cl(sdbclient::sdb *connection, const char *cs_name,
                    const char *old_cl_name, const char *new_cl_name) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCollectionSpace cs;
+  if (!connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
 
   try {
     rc = connection->getCollectionSpace(cs_name, cs);
@@ -720,6 +758,10 @@ int Sdb_conn::drop_cl(const char *cs_name, const char *cl_name) {
 int Sdb_conn::get_seq(const char *cs_name, const char *table_name,
                       char *sequence_name, Sdb_seq &seq) {
   int rc = SDB_ERR_OK;
+  if (!m_connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
 
   rc = sdb_rebuild_sequence_name(this, cs_name, table_name, sequence_name);
   if (rc) {
@@ -754,6 +796,10 @@ int Sdb_conn::create_seq(const char *cs_name, const char *table_name,
   sdbclient::sdbCollection cl;
   bool new_cs = false;
   bool new_seq = false;
+  if (!m_connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
 
 retry:
   try {
@@ -1189,6 +1235,10 @@ int conn_snapshot(sdbclient::sdb *connection, bson::BSONObj *obj, int snap_type,
                   longlong num_to_skip, char *errmsg) {
   int rc = SDB_ERR_OK;
   sdbclient::sdbCursor cursor;
+  if (!connection) {
+    rc = SDB_NOT_CONNECTED;
+    goto error;
+  }
 
   rc = connection->getSnapshot(cursor, snap_type, *condition, *selected,
                                *order_by, *hint, num_to_skip, 1);
