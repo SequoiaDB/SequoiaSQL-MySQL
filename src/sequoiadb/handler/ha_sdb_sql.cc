@@ -486,7 +486,7 @@ static bool sdb_get_time_from_string(Item *item_val, MYSQL_TIME *ltime) {
     replace Item_string::get_time()
   */
   bool ret_val = true;
-  char buff[MAX_DATE_STRING_REP_LENGTH] = { 0 };
+  char buff[MAX_DATE_STRING_REP_LENGTH] = {0};
   String tmp(buff, sizeof(buff), &my_charset_bin);
   String *res = NULL;
   MYSQL_TIME_STATUS status;
@@ -521,9 +521,7 @@ bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
     case MYSQL_TYPE_VARCHAR: {
       return sdb_get_time_from_string(item_val, ltime);
     }
-    default: {
-      return item_val->get_time(ltime);
-    }
+    default: { return item_val->get_time(ltime); }
   }
 }
 

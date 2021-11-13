@@ -143,7 +143,7 @@ void sdb_set_clock_time(struct timespec &abstime, ulonglong sec);
 
 int sdb_check_collation(Field *field);
 
-bool sdb_is_supported_collation(const CHARSET_INFO *cs1);
+bool sdb_is_supported_charset(const CHARSET_INFO *cs1);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

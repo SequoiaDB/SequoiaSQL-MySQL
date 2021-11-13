@@ -450,7 +450,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
               rc = SDB_ERR_INVALID_ARG;
               goto error;
             }
-            if (!sdb_is_supported_collation(p_str->charset())) {
+            if (!sdb_is_supported_charset(p_str->charset())) {
               rc =
                   sdb_convert_charset(*p_str, conv_str, &SDB_COLLATION_UTF8MB4);
               if (rc) {
@@ -538,7 +538,7 @@ int Sdb_func_item::get_item_val(const char *field_name, Item *item_val,
         }
 
         if (!my_charset_same(p_str->charset(), &my_charset_bin)) {
-          if (!sdb_is_supported_collation(p_str->charset())) {
+          if (!sdb_is_supported_charset(p_str->charset())) {
             rc = sdb_convert_charset(*p_str, conv_str, &SDB_COLLATION_UTF8MB4);
             if (rc) {
               break;

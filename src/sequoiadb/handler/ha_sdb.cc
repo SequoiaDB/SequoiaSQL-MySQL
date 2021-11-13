@@ -2091,7 +2091,7 @@ int ha_sdb::field_to_obj(Field *field, bson::BSONObjBuilder &obj_builder,
         } else {
           String conv_str;
           String *str = &val_tmp;
-          if (!sdb_is_supported_collation(str->charset())) {
+          if (!sdb_is_supported_charset(str->charset())) {
             rc = sdb_convert_charset(*str, conv_str, &SDB_COLLATION_UTF8MB4);
             if (rc) {
               goto error;
@@ -5156,7 +5156,7 @@ int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
         uint len = elem.valuestrsize() - 1;
         const CHARSET_INFO *field_charset = ((Field_str *)field)->charset();
 
-        if (!sdb_is_supported_collation(field_charset)) {
+        if (!sdb_is_supported_charset(field_charset)) {
           String org_str(data, len, &SDB_COLLATION_UTF8MB4);
           String conv_str;
           uchar *new_data = NULL;

@@ -1279,23 +1279,27 @@ void sdb_set_clock_time(struct timespec &abstime, ulonglong sec) {
   abstime.tv_sec += sec;
 }
 
+static bool sdb_collation_same(const CHARSET_INFO *cs1,
+                               const CHARSET_INFO *cs2) {
+  return ((cs1 == cs2) || 0 == strcmp(cs1->name, cs2->name));
+}
+
+static bool sdb_is_type_with_collation(Field *field) {
+  /*
+   CHAR VARCHAR TINYTEXT TEXT MEDIUMTEXT LONGTEXT SET ENUM
+  */
+  return (sdb_is_string_type(field) || MYSQL_TYPE_SET == field->real_type() ||
+          MYSQL_TYPE_ENUM == field->real_type());
+}
 /*
    In addition to binary data, the following field types are not
    supported when their collation is not utf8mb4_bin:
-   1. MYSQL_TYPE_STRING: CHAR SET ENUM
-   2. MYSQL_TYPE_VARCHAR: VARCHAR
-   3. MYSQL_TYPE_BLOB: TINYTEXT TEXT MEDIUMTEXT LONGTEXT
 */
 int sdb_check_collation(Field *field) {
   int rc = 0;
-  if (sdb_strict_collation &&
-      ((field->type() == MYSQL_TYPE_STRING &&
-        !((Field_str *)field)->binary()) ||
-       (field->type() == MYSQL_TYPE_VARCHAR &&
-        !((Field_str *)field)->binary()) ||
-       (field->type() == MYSQL_TYPE_BLOB && !((Field_str *)field)->binary())) &&
-      !my_charset_same(field->charset(), &SDB_COLLATION_UTF8MB4) &&
-      !my_charset_same(field->charset(), &SDB_COLLATION_UTF8)) {
+  if (sdb_strict_collation && sdb_is_type_with_collation(field) &&
+      !sdb_collation_same(field->charset(), &SDB_COLLATION_UTF8MB4) &&
+      !sdb_collation_same(field->charset(), &SDB_COLLATION_UTF8)) {
     rc = HA_ERR_WRONG_COMMAND;
     my_printf_error(rc,
                     "The collation of column '%s' is not supported. Try '%s' "
@@ -1306,7 +1310,7 @@ int sdb_check_collation(Field *field) {
   return rc;
 }
 
-bool sdb_is_supported_collation(const CHARSET_INFO *cs) {
+bool sdb_is_supported_charset(const CHARSET_INFO *cs) {
   return my_charset_same(cs, &SDB_COLLATION_UTF8MB4) ||
          my_charset_same(cs, &SDB_COLLATION_UTF8);
 }

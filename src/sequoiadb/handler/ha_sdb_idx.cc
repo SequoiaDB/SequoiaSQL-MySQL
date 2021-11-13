@@ -346,7 +346,7 @@ static int get_text_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   org_str.set((const char *)(key_ptr + key_start_pos), key_length,
               key_part->field->charset());
   str = &org_str;
-  if (!sdb_is_supported_collation(org_str.charset()) &&
+  if (!sdb_is_supported_charset(org_str.charset()) &&
       !my_charset_same(org_str.charset(), &my_charset_bin)) {
     rc = sdb_convert_charset(org_str, conv_str, &SDB_COLLATION_UTF8MB4);
     if (rc) {
@@ -392,7 +392,7 @@ static int get_char_key_obj(const uchar *key_ptr, const KEY_PART_INFO *key_part,
   }
 
   if (!my_charset_same(str->charset(), &my_charset_bin)) {
-    if (!sdb_is_supported_collation(str->charset())) {
+    if (!sdb_is_supported_charset(str->charset())) {
       rc = sdb_convert_charset(*str, conv_str, &SDB_COLLATION_UTF8MB4);
       if (rc) {
         goto error;
@@ -1331,7 +1331,7 @@ double Sdb_match_cnt_estimator::convert_str_to_scalar(
     }
   }
 
-  if (!sdb_is_supported_collation(str->charset()) &&
+  if (!sdb_is_supported_charset(str->charset()) &&
       !my_charset_same(str->charset(), &my_charset_bin)) {
     rc = sdb_convert_charset(*str, conv_str, &SDB_COLLATION_UTF8MB4);
     if (rc) {
