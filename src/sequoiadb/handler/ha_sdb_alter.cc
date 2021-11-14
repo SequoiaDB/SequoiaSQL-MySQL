@@ -1731,8 +1731,8 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
         info->before = old_field;
         info->after = new_field;
         info->op_flag = op_flag;
-        info->cast_rule = cast_builder.obj();
-        info->check_bound_cond = cond_builder.obj();
+        info->cast_rule = cast_builder.obj().copy();
+        info->check_bound_cond = cond_builder.obj().copy();
         if (ctx->changed_columns.push_back(info)) {
           rc = HA_ERR_OUT_OF_MEM;
           goto error;

@@ -1485,6 +1485,7 @@ ha_sdb::~ha_sdb() {
     sdb_condition = NULL;
   }
 
+  reset();
   DBUG_VOID_RETURN;
 }
 
@@ -1681,17 +1682,26 @@ int ha_sdb::close(void) {
   m_bulk_insert_rows.clear();
   m_bson_element_cache.release();
 
+  reset();
   DBUG_RETURN(0);
 }
 
 int ha_sdb::reset() {
   DBUG_ENTER("ha_sdb::reset");
   DBUG_PRINT("info", ("table name %s, handler %p", table_name, this));
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
+#ifdef IS_MARIADB
+  if (thd_sdb && thd_sdb->part_del_ren_ctx) {
+    delete thd_sdb->part_del_ren_ctx;
+    thd_sdb->part_del_ren_ctx = NULL;
+  }
+#endif
   if (NULL != collection) {
     delete collection;
     collection = NULL;
   }
+
   // don't release bson element cache, so that we can reuse it
   m_bulk_insert_rows.clear();
   free_root(&blobroot, MYF(0));

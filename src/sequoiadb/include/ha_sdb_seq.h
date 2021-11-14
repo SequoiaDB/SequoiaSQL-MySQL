@@ -25,6 +25,8 @@ class ha_sdb_seq : public ha_sdb {
  public:
   ha_sdb_seq(handlerton *hton, TABLE_SHARE *table_arg);
 
+  ~ha_sdb_seq();
+
   int info(uint flag) { return 0; }
 
   int ensure_sequence(THD *thd);

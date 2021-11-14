@@ -90,6 +90,8 @@ class ha_sdb_part : public ha_sdb
  public:
   ha_sdb_part(handlerton* hton, TABLE_SHARE* table_arg);
 
+  ~ha_sdb_part();
+
 #ifdef IS_MARIADB
   void init();
 

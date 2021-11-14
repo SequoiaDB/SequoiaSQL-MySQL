@@ -33,6 +33,10 @@ ha_sdb_seq::ha_sdb_seq(handlerton *hton, TABLE_SHARE *table_arg)
   memset(m_sequence_name, 0, SDB_CL_NAME_MAX_SIZE + 1);
 }
 
+ha_sdb_seq::~ha_sdb_seq() {
+  reset();
+}
+
 int ha_sdb_seq::ensure_sequence(THD *thd) {
   DBUG_ENTER("ha_sdb_seq::ensure_sequence");
   int rc = 0;
@@ -706,6 +710,7 @@ int ha_sdb_seq::close() {
     delete collection;
     collection = NULL;
   }
+  reset();
   DBUG_RETURN(ha_sdb::close());
 }
 

@@ -1865,6 +1865,10 @@ error:
   goto done;
 }
 
+ha_sdb_part::~ha_sdb_part() {
+  reset();
+}
+
 int ha_sdb_part::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
                                 bson::BSONObj &options,
                                 bson::BSONObj &partition_options,
@@ -2671,6 +2675,7 @@ int ha_sdb_part::close(void) {
 #ifdef IS_MYSQL
   close_partitioning();
 #endif
+  reset();
   DBUG_RETURN(ha_sdb::close());
 }
 
@@ -2681,13 +2686,6 @@ int ha_sdb_part::reset() {
     delete thd_sdb->part_alter_ctx;
     thd_sdb->part_alter_ctx = NULL;
   }
-
-#ifdef IS_MARIADB
-  if (thd_sdb && thd_sdb->part_del_ren_ctx) {
-    delete thd_sdb->part_del_ren_ctx;
-    thd_sdb->part_del_ren_ctx = NULL;
-  }
-#endif
 
   std::map<uint, char *>::iterator it = m_new_part_id2cl_name.begin();
   while (it != m_new_part_id2cl_name.end()) {
