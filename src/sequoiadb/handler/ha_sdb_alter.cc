@@ -27,6 +27,7 @@
 #include "ha_sdb_thd.h"
 #include "ha_sdb_item.h"
 #include "server_ha.h"
+#include "mapping_context_impl.h"
 
 #ifdef IS_MYSQL
 #include <json_dom.h>
@@ -2174,7 +2175,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     goto error;
   }
 
-  rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &table_mapping);
+  rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_ctx_impl);
   if (0 != rc) {
     SDB_LOG_ERROR("Collection[%s.%s] is not available. rc: %d", db_name,
                   table_name, rc);
@@ -2537,7 +2538,7 @@ int sdb_extra_cl_option_from_snap(Sdb_conn *conn, const char *db_name,
   bson::BSONElement ele;
   int cl_attribute = 0;
 
-  Mapping_context tbl_mapping;
+  Mapping_context_impl tbl_mapping;
   try {
     rc = conn->snapshot(result, SDB_SNAP_CATALOG, db_name, table_name,
                         &tbl_mapping);
@@ -2868,8 +2869,8 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_db_name, char *src_tbl_name,
       "initialization_phase", "getting_collection_options_from_snapshot",
       "copying_group_info", "copying_collection_index"};
   bool with_autoinc = !(flags & SDB_COPY_WITHOUT_AUTO_INC);
-  Mapping_context src_tbl_mapping;
-  Mapping_context dst_tbl_mapping;
+  Mapping_context_impl src_tbl_mapping;
+  Mapping_context_impl dst_tbl_mapping;
   try {
     step = extra_cl_option;
     rc = sdb_extra_cl_option_from_snap(conn, src_db_name, src_tbl_name, options,
@@ -2975,7 +2976,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
   bson::BSONObj obj;
   bson::BSONObjIterator bo_it;
   List_iterator_fast<char> list_it;
-  Mapping_context new_tbl_mapping;
+  Mapping_context_impl new_tbl_mapping;
   /*
     1. Copy cl without indexes.
     2. If it's mcl, copy and attach it's scl. Else skip.
@@ -3011,7 +3012,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
     while (bo_it.more()) {
       bson::BSONElement ele = bo_it.next();
       bson::BSONElement scl_name_ele;
-      Mapping_context scl_mapping;
+      Mapping_context_impl scl_mapping;
 
       if (ele.type() != bson::Object) {
         rc = SDB_ERR_INVALID_ARG;
@@ -3071,7 +3072,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
     }
   } else {
     Sdb_cl old_mcl;
-    Mapping_context old_tbl_mapping;
+    Mapping_context_impl old_tbl_mapping;
     rc = m_conn->get_cl(m_mcl_cs, m_mcl_name, old_mcl, false, &old_tbl_mapping);
     if (rc != 0) {
       goto error;
@@ -3102,7 +3103,7 @@ error:
   }
   list_it.init(m_new_scl_tmp_fullnames);
   while ((cl_fullname = list_it++)) {
-    Mapping_context scl_mapping;
+    Mapping_context_impl scl_mapping;
     sdb_tmp_split_cl_fullname(cl_fullname, &db_name, &tbl_name);
     tmp_rc = m_conn->drop_cl(db_name, tbl_name, &scl_mapping);
     if (tmp_rc != 0) {
@@ -3131,7 +3132,7 @@ int Sdb_cl_copyer::rename_new_cl() {
   List_iterator_fast<char> list_it(m_new_scl_tmp_fullnames);
   bson::BSONObjIterator bo_it(m_old_scl_info);
   while ((cl_fullname = list_it++)) {
-    Mapping_context tbl_mapping;
+    Mapping_context_impl tbl_mapping;
     bson::BSONObj obj = bo_it.next().embeddedObject();
     right_cl_name =
         const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
@@ -3169,7 +3170,7 @@ int Sdb_cl_copyer::rename_old_cl() {
 
   bson::BSONObjIterator it(m_old_scl_info);
   while (it.more()) {
-    Mapping_context tbl_mapping;
+    Mapping_context_impl tbl_mapping;
     bson::BSONObj obj = it.next().embeddedObject();
     cl_fullname =
         const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
@@ -3205,7 +3206,7 @@ error:
     bson::BSONObjIterator bo_it(m_old_scl_info);
     char *right_cl_name = NULL;
     while ((cl_fullname = list_it++)) {
-      Mapping_context tbl_mapping;
+      Mapping_context_impl tbl_mapping;
       bson::BSONObj obj = bo_it.next().embeddedObject();
       right_cl_name =
           const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
@@ -3226,7 +3227,7 @@ error:
 int Sdb_cl_copyer::rename(const char *from, const char *to) {
   DBUG_ENTER("Sdb_cl_copyer::rename");
   int rc = 0;
-  Mapping_context src_tbl_mapping;
+  Mapping_context_impl src_tbl_mapping;
   try {
     if (0 == strcmp(from, m_mcl_name)) {
       m_old_mcl_tmp_name = const_cast<char *>(to);

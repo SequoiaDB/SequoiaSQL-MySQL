@@ -16,28 +16,9 @@
 #ifndef NAME_MAP__H
 #define NAME_MAP__H
 #include "sdb_conn.h"
+#include "mapping_context.h"
 
 class Sdb_conn;
-
-enum enum_mapping_state {
-  NM_STATE_NONE = 0,
-  NM_STATE_CREATING,
-  NM_STATE_CREATED
-};
-
-class Mapping_context {
- public:
-  Mapping_context(bool is_part_table = false)
-      : m_state(NM_STATE_NONE), m_is_part_table(is_part_table) {
-    m_cs_name[0] = '\0';
-    m_cl_name[0] = '\0';
-  }
-
-  enum_mapping_state m_state;
-  bool m_is_part_table;
-  char m_cs_name[SDB_CS_NAME_MAX_SIZE + 1];
-  char m_cl_name[SDB_CL_NAME_MAX_SIZE + 1];
-};
 
 class Name_mapping {
  private:

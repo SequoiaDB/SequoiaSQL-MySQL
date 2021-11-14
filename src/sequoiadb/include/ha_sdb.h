@@ -30,6 +30,7 @@
 #include "ha_sdb_idx.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include "mapping_context_impl.h"
 
 /* Make entry to sql_class method. */
 extern "C" {
@@ -704,7 +705,7 @@ class ha_sdb : public handler {
   bson::BSONObj last_key_value;
   char db_name[SDB_CS_NAME_MAX_SIZE + 1];
   char table_name[SDB_CL_NAME_MAX_SIZE + 1];
-  Mapping_context table_mapping;
+  Mapping_context_impl tbl_ctx_impl;
   time_t last_count_time;
   int count_times;
   MEM_ROOT blobroot;
@@ -744,5 +745,4 @@ class ha_sdb : public handler {
   uint key_parts;
 #endif
 };
-
 #endif

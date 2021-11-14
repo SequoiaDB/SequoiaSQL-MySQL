@@ -1241,7 +1241,7 @@ static int update_cata_version_for_alter_part_table(
 
     // Modifying sub CL will update version of the main CL
     // Get the true version of the main CL after altering partition table
-    Mapping_context tbl_mapping;
+    Mapping_context_impl tbl_mapping;
     rc = sql_info->sdb_conn->snapshot(obj, SDB_SNAP_CATALOG, table->db_name,
                                       table->table_name, &tbl_mapping);
     if (SDB_DMS_EOC == get_sdb_code(rc)) {

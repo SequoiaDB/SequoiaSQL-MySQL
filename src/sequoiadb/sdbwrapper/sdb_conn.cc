@@ -545,8 +545,8 @@ int Sdb_conn::get_cl(const char *db_name, const char *table_name, Sdb_cl &cl,
     if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
   try {
     rc = m_connection->getCollectionSpace(cs_name, cs, check_exist);
@@ -588,8 +588,8 @@ int Sdb_conn::create_cl(const char *db_name, const char *table_name,
     if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
 retry:
   try {
@@ -743,8 +743,8 @@ int Sdb_conn::rename_cl(const char *db_name, const char *old_tbl_name,
     } else if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    old_cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    old_cl_name = mapping_ctx->get_mapping_cl();
   }
   rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name, old_cl_name,
                          new_cl_name));
@@ -808,8 +808,8 @@ int Sdb_conn::drop_cl(const char *db_name, const char *table_name,
     } else if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
   rc = retry(boost::bind(conn_drop_cl, m_connection, cs_name, cl_name));
   if (0 != rc) {
@@ -840,8 +840,8 @@ int Sdb_conn::get_seq(const char *db_name, const char *table_name,
     if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
   rc = sdb_rebuild_sequence_name(this, cs_name, cl_name, sequence_name);
   if (rc) {
@@ -888,8 +888,8 @@ int Sdb_conn::create_seq(const char *db_name, const char *table_name,
     if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
 retry:
   try {
@@ -1008,7 +1008,7 @@ int Sdb_conn::rename_seq(const char *db_name, const char *old_seq_name,
     if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
+    cs_name = mapping_ctx->get_mapping_cs();
   }
   rc = retry(boost::bind(conn_rename_seq, this, m_connection, cs_name,
                          old_seq_name, new_seq_name));
@@ -1059,8 +1059,8 @@ int Sdb_conn::drop_seq(const char *db_name, const char *table_name,
     if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
   rc = retry(boost::bind(conn_drop_seq, this, m_connection, cs_name, cl_name));
 done:
@@ -1320,8 +1320,8 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *db_name,
     goto error;
   }
   if (NULL != mapping_ctx) {
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
   // Try getting statistics as normal cl. If not, try main cl again.
   snprintf(normal_cl_stats_sql, sizeof(normal_cl_stats_sql),
@@ -1434,8 +1434,8 @@ int Sdb_conn::snapshot(bson::BSONObj &obj, int snap_type, const char *db_name,
     if (0 != rc) {
       goto error;
     }
-    db_name = mapping_ctx->m_cs_name;
-    table_name = mapping_ctx->m_cl_name;
+    db_name = mapping_ctx->get_mapping_cs();
+    table_name = mapping_ctx->get_mapping_cl();
   }
   try {
     char full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
@@ -1572,8 +1572,8 @@ int Sdb_conn::analyze(const char *db_name, const char *table_name,
       if (0 != rc) {
         goto error;
       }
-      cs_name = mapping_ctx->m_cs_name;
-      cl_name = mapping_ctx->m_cl_name;
+      cs_name = mapping_ctx->get_mapping_cs();
+      cl_name = mapping_ctx->get_mapping_cl();
     }
     snprintf(full_name, sizeof(full_name), "%s.%s", cs_name, cl_name);
     builder.append(SDB_FIELD_COLLECTION, full_name);

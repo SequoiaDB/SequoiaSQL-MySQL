@@ -24,6 +24,7 @@
 #include <mysql/psi/mysql_thread.h>
 #include "client.hpp"
 #include "server_ha_def.h"
+#include "mapping_context_impl.h"
 
 // 'sql_class.h' can be inclued if 'MYSQL_SERVER' is defined
 #ifndef MYSQL_SERVER

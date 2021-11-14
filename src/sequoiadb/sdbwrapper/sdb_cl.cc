@@ -696,8 +696,8 @@ int Sdb_cl::attach_collection(const char *db_name, const char *table_name,
     if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
   sprintf(full_name, "%s.%s", cs_name, cl_name);
   rc = attach_collection(full_name, options);
@@ -737,8 +737,8 @@ int Sdb_cl::detach_collection(const char *db_name, const char *table_name,
     if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->m_cs_name;
-    cl_name = mapping_ctx->m_cl_name;
+    cs_name = mapping_ctx->get_mapping_cs();
+    cl_name = mapping_ctx->get_mapping_cl();
   }
   sprintf(full_name, "%s.%s", cs_name, cl_name);
   rc = detach_collection(full_name);

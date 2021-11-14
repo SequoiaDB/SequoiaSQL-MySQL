@@ -41,6 +41,7 @@
 #include "server_ha.h"
 #include "ha_sdb_part.h"
 #include "name_map.h"
+#include "mapping_context_impl.h"
 
 #ifdef IS_MYSQL
 #include <table_trigger_dispatcher.h>
@@ -222,31 +223,6 @@ error:
   goto done;
 }
 
-static int build_and_cache_mapping_ctx(const char *db_name,
-                                       const char *table_name, THD *thd,
-                                       boost::shared_ptr<Sdb_share> share,
-                                       Mapping_context *mapping_ctx) {
-  int rc = SDB_ERR_OK;
-  Sdb_conn *conn = NULL;
-  rc = check_sdb_in_thd(thd, &conn, true);
-  if (0 != rc) {
-    goto error;
-  }
-  if ('\0' == share->mapping_cs[0] || '\0' == share->mapping_cl[0]) {
-    Sdb_cl cl;
-    rc = conn->get_cl(db_name, table_name, cl, false, mapping_ctx);
-    if (0 != rc) {
-      goto error;
-    }
-    sprintf(share->mapping_cs, "%s", mapping_ctx->m_cs_name);
-    sprintf(share->mapping_cl, "%s", mapping_ctx->m_cl_name);
-  }
-done:
-  return rc;
-error:
-  goto done;
-}
-
 static ulonglong sdb_default_autoinc_acquire_size(enum enum_field_types type) {
   ulonglong default_value = 0;
   switch (type) {
@@ -272,7 +248,7 @@ static ulonglong sdb_default_autoinc_acquire_size(enum enum_field_types type) {
 
 static int sdb_autoinc_current_value(Sdb_conn &conn, const char *db_name,
                                      const char *table_name,
-                                     Mapping_context *mapping_ctx,
+                                     Mapping_context_impl *mapping_ctx,
                                      const char *field_name,
                                      ulonglong *cur_value, my_bool *initial) {
   int rc = SDB_ERR_OK;
@@ -602,7 +578,7 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
   char part_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   uint prefix_len = 0;
   char new_sub_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-  Mapping_context tbl_mapping;
+  Mapping_context_impl tbl_mapping;
   try {
     bson::BSONObj obj;
     rc = conn->snapshot(obj, SDB_SNAP_CATALOG, db_name, old_table_name,
@@ -637,7 +613,7 @@ int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
         }
         sub_cl_name = strstr(sub_cl_name, ".") + 1;
 
-        Mapping_context src_cl_mapping;
+        Mapping_context_impl src_cl_mapping;
         if (strncmp(sub_cl_name, part_prefix, prefix_len) != 0) {
           continue;
         }
@@ -1621,8 +1597,9 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
 
-  rc = build_and_cache_mapping_ctx(db_name, table_name, ha_thd(), share,
-                                   &table_mapping);
+  tbl_ctx_impl.reset();
+  tbl_ctx_impl.set_share_cache(share.get());
+  rc = Name_mapping::get_mapping(db_name, table_name, connection, &tbl_ctx_impl);
   if (sdb_execute_only_in_mysql(ha_thd()) && HA_ERR_END_OF_FILE == rc) {
     rc = 0;
     goto done;
@@ -1652,7 +1629,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
                           db_name, table_name, e.what())
 
     rc = connection->snapshot(obj, SDB_SNAP_CATALOG, db_name, table_name,
-                              &table_mapping, select);
+                              &tbl_ctx_impl, select);
     if (get_sdb_code(rc) == SDB_DMS_EOC) {  // cl don't exist.
       rc = 0;
       goto done;
@@ -1722,6 +1699,8 @@ int ha_sdb::close(void) {
 #ifdef IS_MARIADB
   reset();
 #endif
+  reset();
+  tbl_ctx_impl.reset();
   DBUG_RETURN(0);
 }
 
@@ -1776,6 +1755,7 @@ int ha_sdb::reset() {
   m_use_default_impl = false;
   is_join_bka = false;
   key_parts = 0;
+  tbl_ctx_impl.reset();
   DBUG_RETURN(0);
 }
 
@@ -5807,7 +5787,7 @@ int ha_sdb::info(uint flag) {
       goto error;
     }
 
-    rc = sdb_autoinc_current_value(*conn, db_name, table_name, &table_mapping,
+    rc = sdb_autoinc_current_value(*conn, db_name, table_name, &tbl_ctx_impl,
                                    sdb_field_name(auto_inc_field), &cur_value,
                                    &initial);
     if (SDB_ERR_OK != rc) {
@@ -5884,14 +5864,14 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
     // set correct collection version, or it will be set to
     // default value '1' by call get_cl(check_exist = false) in
     // 'Sdb_conn::get_cl_statistics'
-    rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &table_mapping);
+    rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_ctx_impl);
     if (rc != SDB_ERR_OK) {
       SDB_LOG_ERROR("%s", conn->get_err_msg());
       conn->clear_err_msg();
       goto error;
     }
 
-    rc = conn->get_cl_statistics(db_name, table_name, stat, &table_mapping);
+    rc = conn->get_cl_statistics(db_name, table_name, stat, &tbl_ctx_impl);
     if (0 != rc) {
       SDB_LOG_ERROR("%s", conn->get_err_msg());
       conn->clear_err_msg();
@@ -6088,7 +6068,7 @@ int ha_sdb::ensure_collection(THD *thd) {
     // Only check cl existence when HA is open.
     // Because HA DML retry relies on the cl version.
     rc = conn->get_cl(db_name, table_name, *collection, do_check_exist,
-                      &table_mapping);
+                      &tbl_ctx_impl);
     if (0 != rc) {
       delete collection;
       collection = NULL;
@@ -6560,7 +6540,7 @@ int ha_sdb::analyze(THD *thd, HA_CHECK_OPT *check_opt) {
   try {
     rc =
         conn->analyze(db_name, table_name, sdb_stats_mode, sdb_stats_sample_num,
-                      sdb_stats_sample_percent, &table_mapping);
+                      sdb_stats_sample_percent, &tbl_ctx_impl);
     if (0 != rc) {
       bson::BSONObj error_obj;
       const char *error_msg = NULL;
@@ -6714,7 +6694,7 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
   if (0 != rc) {
     goto error;
   }
-  rc = conn->get_cl(db_name, table_name, cl, false, &table_mapping);
+  rc = conn->get_cl(db_name, table_name, cl, false, &tbl_ctx_impl);
   if (rc != 0) {
     goto error;
   }
@@ -6814,7 +6794,7 @@ int ha_sdb::try_drop_as_sequence(Sdb_conn *conn, bool is_temporary,
   char path[FN_REFLEN + 1] = "";
   char engine_buf[NAME_CHAR_LEN + 1];
   LEX_CSTRING engine = {engine_buf, 0};
-  Mapping_context tbl_mapping;
+  Mapping_context_impl tbl_mapping;
 
   if (is_temporary) {
     void *ptr = my_hash_search(&sdb_temporary_sequence_cache,
@@ -6939,6 +6919,7 @@ int ha_sdb::delete_table(const char *from) {
 #endif
   Thd_sdb *thd_sdb = NULL;
   char part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
+  Mapping_context_impl tbl_mapping;
 
   if (sdb_execute_only_in_mysql(thd)
 // Don't skip dropping sequence when dropping database for MariaDB.
@@ -7016,7 +6997,7 @@ int ha_sdb::delete_table(const char *from) {
   }
 #endif
 
-  rc = conn->drop_cl(db_name, table_name, &table_mapping);
+  rc = conn->drop_cl(db_name, table_name, &tbl_mapping);
   if (0 != rc) {
     goto error;
   }
@@ -7049,7 +7030,7 @@ int ha_sdb::try_rename_as_sequence(Sdb_conn *conn, const char *db_name,
   dd_frm_type(ha_thd(), path, &engine, &is_seq);
   if (is_seq) {
     rc = conn->rename_seq(db_name, old_table_name, new_table_name,
-                          &table_mapping);
+                          &tbl_ctx_impl);
     if (0 != rc) {
       goto error;
     }
@@ -7089,7 +7070,7 @@ int sdb_rename_main_cl(Sdb_conn *conn, const char *old_db_name,
   new_main_cl_len = int(part_sep - new_table_name);
   memcpy(new_main_cl_name, new_table_name, new_main_cl_len);
   new_main_cl_name[new_main_cl_len] = '\0';
-  Mapping_context src_tbl_mapping;
+  Mapping_context_impl src_tbl_mapping;
   rc = conn->rename_cl(old_db_name, old_main_cl_name, new_main_cl_name,
                        &src_tbl_mapping);
   if (rc != 0) {
@@ -7227,7 +7208,7 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   char new_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
   char old_part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
   char new_part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
-  Mapping_context src_tbl_mapping;
+  Mapping_context_impl src_tbl_mapping;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     goto done;
@@ -7357,7 +7338,7 @@ error:
   goto done;
 set_cata_version:
   if (ha_is_open()) {
-    Mapping_context tbl_tmp_mapping;
+    Mapping_context_impl tbl_tmp_mapping;
     rc = conn->get_cl(new_db_name, new_table_name, cl, true, &tbl_tmp_mapping);
     if (0 != rc) {
       goto error;
@@ -7384,8 +7365,8 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   char part_table_name[SDB_CL_NAME_MAX_SIZE] = {0};
   Sdb_cl main_cl;
   // use to get the table partition mapping info
-  Mapping_context table_part_mapping;
-  Mapping_context subcl_mapping;
+  Mapping_context_impl table_part_mapping;
+  Mapping_context_impl subcl_mapping;
   char *sep = strstr(part_name, SDB_PART_SEP);
   uint sep_len = strlen(SDB_PART_SEP);
   uint i = strlen(part_name) - sep_len;
@@ -7404,7 +7385,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
 
   memcpy(part_table_name, part_name, sep - part_name);
   rc = conn->snapshot(obj, SDB_SNAP_CATALOG, db_name, part_table_name,
-                      &table_mapping);
+                      &tbl_ctx_impl);
   if (get_sdb_code(rc) == SDB_DMS_EOC) {  // cl don't exist.
     rc = 0;
     goto done;
@@ -7479,7 +7460,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto done;
   }
 
-  rc = conn->get_cl(db_name, part_table_name, main_cl, false, &table_mapping);
+  rc = conn->get_cl(db_name, part_table_name, main_cl, false, &tbl_ctx_impl);
   if (rc != 0) {
     goto error;
   }
@@ -8241,7 +8222,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       // if HA is open, prepare the cl to get version
       if (!create_temporary) {
         rc =
-            conn->get_cl(db_name, table_name, cl, ha_is_open(), &table_mapping);
+            conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_ctx_impl);
         if (0 != rc) {
           goto error;
         }
@@ -8310,7 +8291,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     }
 
     rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
-                         &created_cl, &table_mapping);
+                         &created_cl, &tbl_ctx_impl);
     if (0 != rc) {
       goto error;
     }
@@ -8318,7 +8299,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   SDB_EXCEPTION_CATCHER(rc, "Failed to create table:%s.%s, exception:%s",
                         db_name, table_name, e.what());
 
-  rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &table_mapping);
+  rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_ctx_impl);
   if (0 != rc) {
     goto error;
   }
@@ -8372,7 +8353,7 @@ done:
 error:
   handle_sdb_error(rc, MYF(0));
   if (created_cl) {
-    conn->drop_cl(db_name, table_name, &table_mapping);
+    conn->drop_cl(db_name, table_name, &tbl_ctx_impl);
   }
   if (created_cs) {
     sdb_drop_empty_cs(*conn, db_name);

@@ -84,29 +84,10 @@ error:
   goto done;
 }
 
-// replace '#' with '@#'
 static int build_escaped_sep_name(const char *name, char *escaped_name) {
   int rc = SDB_ERR_OK;
-  // if name does not contain '#'
-  if (NULL == strstr(name, "#")) {
-    strncpy(escaped_name, name, SDB_CS_NAME_MAX_SIZE);
-    goto done;
-  }
-
-  for (uint i = 0, j = 0; i < strlen(name); i++, j++) {
-    if ('#' == name[i]) {
-      if (j >= SDB_CS_NAME_MAX_SIZE) {
-        rc = HA_ERR_GENERIC;
-        goto error;
-      }
-      escaped_name[j++] = '@';
-    }
-    escaped_name[j] = name[i];
-  }
-done:
+  strncpy(escaped_name, name, SDB_CS_NAME_MAX_SIZE);
   return rc;
-error:
-  goto done;
 }
 
 static int check_table_mapping_limit(Sdb_conn *sdb_conn,
@@ -350,14 +331,16 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj obj, cond;
   bson::BSONObjBuilder cond_builder;
-  // no mapping for table name
-  strncpy(mapping_ctx->m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
-  if (!m_enabled) {
-    strncpy(mapping_ctx->m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
+  const char *cs_name = mapping_ctx->get_mapping_cs();
+  const char *cl_name = mapping_ctx->get_mapping_cl();
+  // use the cached name mapping
+  if ('\0' != cs_name[0] && '\0' != cl_name[0]) {
     goto done;
   }
-  // use the cached name mapping
-  if ('\0' != mapping_ctx->m_cs_name[0] && '\0' != mapping_ctx->m_cl_name[0]) {
+  // no mapping for table name
+  mapping_ctx->set_mapping_cl(table_name);
+  if (!m_enabled) {
+    mapping_ctx->set_mapping_cs(db_name);
     goto done;
   }
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
@@ -366,8 +349,8 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
   if (SDB_CLS_GRP_NOT_EXIST == get_sdb_code(rc)) {
     // group used to store mapping info does not exist, use original name
-    strncpy(mapping_ctx->m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
-    strncpy(mapping_ctx->m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
+    mapping_ctx->set_mapping_cs(db_name);
+    mapping_ctx->set_mapping_cl(table_name);
     rc = 0;
     goto done;
   } else if (0 != rc) {
@@ -387,13 +370,13 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   rc = mapping_table.query(cond);
   rc = rc ? rc : mapping_table.next(obj, false);
   if (0 == rc) {
-    sprintf(mapping_ctx->m_cs_name, "%s", obj.getStringField(NM_FIELD_CS_NAME));
-    sprintf(mapping_ctx->m_cl_name, "%s", obj.getStringField(NM_FIELD_CL_NAME));
-    mapping_ctx->m_state = (enum_mapping_state)obj.getIntField(NM_FIELD_STATE);
-    DBUG_ASSERT(mapping_ctx->m_state == NM_STATE_CREATING ||
-                mapping_ctx->m_state == NM_STATE_CREATED);
-    mapping_ctx->m_is_part_table =
-        (obj.getIntField(NM_FIELD_IS_PHY_TABLE) == 0);
+    mapping_ctx->set_mapping_cs(obj.getStringField(NM_FIELD_CS_NAME));
+    mapping_ctx->set_mapping_cl(obj.getStringField(NM_FIELD_CL_NAME));
+    mapping_ctx->set_mapping_state(
+        (enum_mapping_state)obj.getIntField(NM_FIELD_STATE));
+    DBUG_ASSERT(mapping_ctx->get_mapping_state() == NM_STATE_CREATING ||
+                mapping_ctx->get_mapping_state() == NM_STATE_CREATED);
+    mapping_ctx->set_part_table(obj.getIntField(NM_FIELD_IS_PHY_TABLE) == 0);
   } else if (HA_ERR_END_OF_FILE == rc) {
     // mapping does not exist for HASH or KEY partition
     goto error;
@@ -415,13 +398,14 @@ int Name_mapping::add_table_mapping(const char *db_name, const char *table_name,
   bson::BSONObj rule, cond, obj;
   bson::BSONObjBuilder rule_builder, obj_builder, cond_builder;
   bool inserted = false, is_phy_table = true;
-
+  char cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  const char *cl_name = table_name;
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
   // no mapping for table name
-  strncpy(mapping_ctx->m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
+  mapping_ctx->set_mapping_cl(table_name);
   if (!m_enabled) {
-    strncpy(mapping_ctx->m_cs_name, db_name, SDB_CS_NAME_MAX_SIZE);
+    mapping_ctx->set_mapping_cs(db_name);
     goto done;
   }
 
@@ -433,8 +417,7 @@ retry:
   }
 
   // 1. calculate mapping CS name
-  rc = calculate_mapping_cs(sdb_conn, db_name, mapping_ctx->m_cs_name,
-                            m_sql_group);
+  rc = calculate_mapping_cs(sdb_conn, db_name, cs_name, m_sql_group);
   if (0 != rc) {
     SDB_LOG_ERROR("Failed to calculate mapping CS, error: %d", rc);
     goto error;
@@ -442,15 +425,15 @@ retry:
 
   // 2. persistent mapping info
   try {
-    is_phy_table = (mapping_ctx->m_is_part_table) ? false : true;
+    is_phy_table = (mapping_ctx->is_part_table()) ? false : true;
     cond_builder.reset();
     cond_builder.append(NM_FIELD_DB_NAME, db_name);
     cond_builder.append(NM_FIELD_TABLE_NAME, table_name);
     cond = cond_builder.done();
 
     obj_builder.reset();
-    obj_builder.append(NM_FIELD_CS_NAME, mapping_ctx->m_cs_name);
-    obj_builder.append(NM_FIELD_CL_NAME, mapping_ctx->m_cl_name);
+    obj_builder.append(NM_FIELD_CS_NAME, cs_name);
+    obj_builder.append(NM_FIELD_CL_NAME, cl_name);
     obj_builder.append(NM_FIELD_IS_PHY_TABLE, (int)is_phy_table);
     obj_builder.append(NM_FIELD_STATE, (int)NM_STATE_CREATING);
     obj = obj_builder.done();
@@ -470,16 +453,19 @@ retry:
   inserted = true;
 
   // 3.  check if the number of collection in 'cs_name' exceed the limit
-  rc = check_table_mapping_limit(sdb_conn, sql_group_cs_name, db_name,
-                                 mapping_ctx->m_cs_name, cl_cnt);
+  rc = check_table_mapping_limit(sdb_conn, sql_group_cs_name, db_name, cs_name,
+                                 cl_cnt);
   if (0 != rc) {
     SDB_LOG_ERROR(
         "Failed to check if the number of mapping in '%s' exceed the limit "
         "after adding table mapping, error: %d",
-        mapping_ctx->m_cs_name, rc);
+        cs_name, rc);
     goto error;
   }
-
+  mapping_ctx->set_mapping_cs(cs_name);
+  mapping_ctx->set_mapping_cl(cl_name);
+  mapping_ctx->set_mapping_state(NM_STATE_CREATING);
+  mapping_ctx->set_part_table(!is_phy_table);
   if (cl_cnt > m_mapping_unit_size && retry_count < SDB_MAX_RETRY_TIME) {
     retry_count++;
     rc = mapping_table.del(cond);
@@ -493,7 +479,7 @@ retry:
     goto retry;
   } else if (cl_cnt > m_mapping_unit_size) {
     SDB_LOG_ERROR("Number of table mapping in '%s' exceed the limit %d",
-                  mapping_ctx->m_cs_name, m_mapping_unit_size);
+                  cs_name, m_mapping_unit_size);
     rc = SDB_DMS_NOSPC;
   }
 done:
@@ -542,7 +528,7 @@ int Name_mapping::remove_table_mapping(const char *db_name,
     }
 
     // delete partition mapping for MySQL
-    if (mapping_ctx->m_is_part_table) {
+    if (mapping_ctx->is_part_table()) {
       bson::BSONObj obj;
       char part_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
       snprintf(part_prefix, SDB_CL_NAME_MAX_SIZE, "%s#P#", table_name);
@@ -591,9 +577,9 @@ int Name_mapping::set_table_mapping_state(const char *db_name,
     cond_builder.append(NM_FIELD_TABLE_NAME, table_name);
     cond = cond_builder.done();
 
-    obj = BSON(NM_FIELD_STATE << mapping_ctx->m_state);
+    obj = BSON(NM_FIELD_STATE << mapping_ctx->get_mapping_state());
     rule = BSON("$set" << obj);
-    mapping_ctx->m_state = NM_STATE_CREATED;
+    mapping_ctx->set_mapping_state(NM_STATE_CREATED);
   }
   SDB_EXCEPTION_CATCHER(rc,
                         "Failed to setting '%s.%s' mapping state, exception:%s",
@@ -713,16 +699,17 @@ int Name_mapping::get_sequence_mapping_cs(const char *db_name,
                                           Mapping_context *mapping_ctx) {
   int rc = 0;
   char escaped_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  char cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   rc = build_escaped_sep_name(db_name, escaped_db_name);
   if (0 != rc) {
     SDB_LOG_ERROR("database '%s' name is too long", db_name);
     goto error;
   }
 
-  strncpy(mapping_ctx->m_cl_name, table_name, SDB_CL_NAME_MAX_SIZE);
+  mapping_ctx->set_mapping_cl(table_name);
   if (m_prefer_origin_name || !m_enabled) {
     // only one instance group or instance group function is not open
-    strncpy(mapping_ctx->m_cs_name, escaped_db_name, SDB_CS_NAME_MAX_SIZE);
+    mapping_ctx->set_mapping_cs(db_name);
     goto done;
   }
 
@@ -733,8 +720,9 @@ int Name_mapping::get_sequence_mapping_cs(const char *db_name,
   }
 
   // multi instance group with mapping
-  snprintf(mapping_ctx->m_cs_name, SDB_CS_NAME_MAX_SIZE, "%s#%s#1", m_sql_group,
+  snprintf(cs_name, SDB_CS_NAME_MAX_SIZE, "%s#%s#1", m_sql_group,
            escaped_db_name);
+  mapping_ctx->set_mapping_cs(cs_name);
 done:
   return rc;
 error:
