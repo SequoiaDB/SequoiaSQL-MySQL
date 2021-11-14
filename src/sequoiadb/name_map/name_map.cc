@@ -190,7 +190,7 @@ int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
                                          const char *db_name, int &slot) {
   int rc = 0;
   int i = 0;
-  bool cs_slot_is_full[NM_MAX_MAPPING_UNIT_SIZE];
+  bool cs_slot_is_full[NM_MAX_MAPPING_UNIT_COUNT];
   const char *cs_name = NULL;
   bson::BSONObj obj;
   char cs_name_lower_bound[SDB_CS_NAME_MAX_SIZE + 1] = {0};
@@ -402,11 +402,22 @@ int Name_mapping::add_table_mapping(const char *db_name, const char *table_name,
   const char *cl_name = table_name;
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &lock_conn = pool_conn;
   // no mapping for table name
   mapping_ctx->set_mapping_cl(table_name);
   if (!m_enabled) {
     mapping_ctx->set_mapping_cs(db_name);
     goto done;
+  }
+
+  if (sdb_conn->is_transaction_on()) {
+    rc = lock_conn.connect();
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
+      goto error;
+    }
+    sdb_conn = &lock_conn;
   }
 
 retry:
@@ -503,9 +514,21 @@ int Name_mapping::remove_table_mapping(const char *db_name,
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj cond;
   bson::BSONObjBuilder cond_builder;
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &lock_conn = pool_conn;
 
   if (!m_enabled) {
     goto done;
+  }
+
+  // create new connection if current transaction is on
+  if (sdb_conn->is_transaction_on()) {
+    rc = lock_conn.connect();
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
+      goto error;
+    }
+    sdb_conn = &lock_conn;
   }
   try {
     snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
@@ -561,8 +584,19 @@ int Name_mapping::set_table_mapping_state(const char *db_name,
   bson::BSONObj rule, cond, obj;
   bson::BSONObjBuilder rule_builder, cond_builder;
 
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &lock_conn = pool_conn;
   if (!m_enabled) {
     goto done;
+  }
+  // create new connection if current transaction is on
+  if (sdb_conn->is_transaction_on()) {
+    rc = lock_conn.connect();
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
+      goto error;
+    }
+    sdb_conn = &lock_conn;
   }
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
@@ -607,9 +641,20 @@ int Name_mapping::update_table_mapping(const char *src_db_name,
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj rule, cond, obj;
   bson::BSONObjBuilder rule_builder, cond_builder;
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &lock_conn = pool_conn;
 
   if (!m_enabled) {
     goto done;
+  }
+  // create new connection if current transaction is on
+  if (sdb_conn->is_transaction_on()) {
+    rc = lock_conn.connect();
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
+      goto error;
+    }
+    sdb_conn = &lock_conn;
   }
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);

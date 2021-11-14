@@ -8155,6 +8155,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   bson::BSONObj options;
   bson::BSONObj auto_inc_options;
   bson::BSONObjBuilder build;
+  Mapping_context_impl tbl_mapping;
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
     goto done;
@@ -8222,7 +8223,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       // if HA is open, prepare the cl to get version
       if (!create_temporary) {
         rc =
-            conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_ctx_impl);
+            conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_mapping);
         if (0 != rc) {
           goto error;
         }
@@ -8291,7 +8292,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     }
 
     rc = conn->create_cl(db_name, table_name, build.obj(), &created_cs,
-                         &created_cl, &tbl_ctx_impl);
+                         &created_cl, &tbl_mapping);
     if (0 != rc) {
       goto error;
     }
@@ -8299,7 +8300,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   SDB_EXCEPTION_CATCHER(rc, "Failed to create table:%s.%s, exception:%s",
                         db_name, table_name, e.what());
 
-  rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_ctx_impl);
+  rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_mapping);
   if (0 != rc) {
     goto error;
   }
@@ -8353,7 +8354,7 @@ done:
 error:
   handle_sdb_error(rc, MYF(0));
   if (created_cl) {
-    conn->drop_cl(db_name, table_name, &tbl_ctx_impl);
+    conn->drop_cl(db_name, table_name, &tbl_mapping);
   }
   if (created_cs) {
     sdb_drop_empty_cs(*conn, db_name);

@@ -9,6 +9,7 @@ enum enum_mapping_state {
 
 class Mapping_context {
  public:
+  virtual ~Mapping_context() {}
   virtual const char *get_mapping_cs() = 0;
   virtual void set_mapping_cs(const char *cs_name) = 0;
   virtual const char *get_mapping_cl() = 0;
