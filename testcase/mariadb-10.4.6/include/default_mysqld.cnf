@@ -24,6 +24,7 @@ character-set-server=      latin1
 sequoiadb_auto_partition=OFF
 sequoiadb_lock_wait_timeout=3
 sequoiadb_strict_collation=OFF
+sequoiadb_support_mode=compatible
 
 # Increase default connect_timeout to avoid intermittent
 # disconnects when test servers are put under load see BUG#28359

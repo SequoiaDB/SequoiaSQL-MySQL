@@ -108,7 +108,7 @@ Note:
 
   ```sql
   use sequoiadb_foreign_config 
-  update referential_constraints set column_name = 'name', referenced_column_name = 'name' where fk_name = 'test_fk_name';
+  update referential_constraints set column_name = 'name', referenced_column_name = 'name' where foreign_key_name = 'test_fk_name';
   ```
 
   调用 sdb_fk_notify.sh 脚本完成外键更新
