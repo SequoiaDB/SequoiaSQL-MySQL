@@ -7669,7 +7669,8 @@ int ha_sdb::add_share_to_open_table_shares(THD *thd) {
     DBUG_ASSERT(NULL != thd_sdb);
 
     thd_sdb_share = (THD_SDB_SHARE *)my_hash_search(
-        &thd_sdb->open_table_shares, (const uchar *)key, sizeof(key));
+        &thd_sdb->open_table_shares, (const uchar *)key->table_name,
+        key->table_name_length);
 
     if (NULL == thd_sdb_share) {
       thd_sdb_share =
@@ -7711,7 +7712,8 @@ void ha_sdb::delete_share_from_open_table_shares(THD *thd) {
 
   if (thd_sdb && key) {
     THD_SDB_SHARE *thd_sdb_share = (THD_SDB_SHARE *)my_hash_search(
-        &thd_sdb->open_table_shares, (const uchar *)key, sizeof(key));
+        &thd_sdb->open_table_shares, (const uchar *)key->table_name,
+        key->table_name_length);
     if (thd_sdb_share) {
       my_hash_delete(&thd_sdb->open_table_shares, (uchar *)thd_sdb_share);
     }

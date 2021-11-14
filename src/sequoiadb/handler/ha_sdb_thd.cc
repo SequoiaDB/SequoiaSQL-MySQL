@@ -27,6 +27,7 @@
 #include "server_ha.h"
 #include <strfunc.h>
 #include "sdb_cl.h"
+#include "ha_sdb.h"
 
 // Complete the struct declaration
 struct st_mysql_sys_var {
@@ -686,8 +687,9 @@ void sdb_init_vars_check_and_update_funcs() {
 }
 uchar *thd_sdb_share_get_key(THD_SDB_SHARE *thd_sdb_share, size_t *length,
                              my_bool not_used MY_ATTRIBUTE((unused))) {
-  *length = sizeof(thd_sdb_share->share_ptr.get());
-  return (uchar *)thd_sdb_share->share_ptr.get();
+  const Sdb_share *share = thd_sdb_share->share_ptr.get();
+  *length = share->table_name_length;
+  return (uchar *)share->table_name;
 }
 
 extern void free_thd_open_shares_elem(void *share_ptr);

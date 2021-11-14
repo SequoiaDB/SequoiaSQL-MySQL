@@ -9,7 +9,7 @@
 
 const char *Mapping_context_impl::get_mapping_cs() {
   if (m_share && '\0' != m_share->mapping_cs[0] &&
-      '\0' != m_share->mapping_cl[0]) {
+      '\0' != m_share->mapping_cl[0] && '\0' == m_cs_name[0]) {
     strncpy(m_cs_name, m_share->mapping_cs, SDB_CS_NAME_MAX_SIZE);
   }
   return m_cs_name;
@@ -24,7 +24,7 @@ void Mapping_context_impl::set_mapping_cs(const char *cs_name) {
 
 const char *Mapping_context_impl::get_mapping_cl() {
   if (m_share && '\0' != m_share->mapping_cs[0] &&
-      '\0' != m_share->mapping_cl[0]) {
+      '\0' != m_share->mapping_cl[0] && '\0' == m_cl_name[0]) {
     strncpy(m_cl_name, m_share->mapping_cl, SDB_CL_NAME_MAX_SIZE);
   }
   return m_cl_name;
