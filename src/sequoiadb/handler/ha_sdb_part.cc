@@ -1866,7 +1866,9 @@ error:
 }
 
 ha_sdb_part::~ha_sdb_part() {
+#ifdef IS_MARIADB
   reset();
+#endif
 }
 
 int ha_sdb_part::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
@@ -2674,8 +2676,9 @@ int ha_sdb_part::close(void) {
   DBUG_ENTER("ha_sdb_part::close");
 #ifdef IS_MYSQL
   close_partitioning();
-#endif
+#elif IS_MARIADB
   reset();
+#endif
   DBUG_RETURN(ha_sdb::close());
 }
 

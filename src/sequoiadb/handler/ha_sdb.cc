@@ -1485,7 +1485,9 @@ ha_sdb::~ha_sdb() {
     sdb_condition = NULL;
   }
 
+#ifdef IS_MARIADB
   reset();
+#endif
   DBUG_VOID_RETURN;
 }
 
@@ -1682,16 +1684,18 @@ int ha_sdb::close(void) {
   m_bulk_insert_rows.clear();
   m_bson_element_cache.release();
 
+#ifdef IS_MARIADB
   reset();
+#endif
   DBUG_RETURN(0);
 }
 
 int ha_sdb::reset() {
   DBUG_ENTER("ha_sdb::reset");
   DBUG_PRINT("info", ("table name %s, handler %p", table_name, this));
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
 
 #ifdef IS_MARIADB
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   if (thd_sdb && thd_sdb->part_del_ren_ctx) {
     delete thd_sdb->part_del_ren_ctx;
     thd_sdb->part_del_ren_ctx = NULL;
