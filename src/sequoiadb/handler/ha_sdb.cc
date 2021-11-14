@@ -8300,7 +8300,12 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     Key *key;
     List_iterator_fast<Key> key_iterator(ha_thd()->lex->alter_info.key_list);
     while ((key = key_iterator++)) {
-      if (key->type == KEYTYPE_FOREIGN) {
+#ifdef IS_MYSQL
+      if (key->type == KEYTYPE_FOREIGN)
+#else
+      if (key->type == Key::FOREIGN_KEY)
+#endif
+      {
         rc = HA_ERR_WRONG_COMMAND;
         my_printf_error(
             rc,
