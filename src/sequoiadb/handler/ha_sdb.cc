@@ -1699,7 +1699,6 @@ int ha_sdb::close(void) {
 #ifdef IS_MARIADB
   reset();
 #endif
-  reset();
   tbl_ctx_impl.reset();
   DBUG_RETURN(0);
 }
