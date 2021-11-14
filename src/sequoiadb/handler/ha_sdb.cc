@@ -8296,6 +8296,22 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     goto error;
   }
 
+  if (sdb_get_support_mode(thd) == SDB_SUPPORT_MODE_STRICT) {
+    Key *key;
+    List_iterator_fast<Key> key_iterator(ha_thd()->lex->alter_info.key_list);
+    while ((key = key_iterator++)) {
+      if (key->type == KEYTYPE_FOREIGN) {
+        rc = HA_ERR_WRONG_COMMAND;
+        my_printf_error(
+            rc,
+            "Foreign key syntax is not supported, "
+            "'set sequoiadb_support_mode=compatible' to ignore the err",
+            MYF(0));
+        goto error;
+      }
+    }
+  }
+
   for (uint i = 0; i < form->s->keys; i++) {
     rc = sdb_create_index(form->s->key_info + i, cl);
     if (0 != rc) {

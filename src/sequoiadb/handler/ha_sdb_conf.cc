@@ -78,6 +78,13 @@ TYPELIB sdb_optimizer_options_typelib = {
     array_elements(sdb_optimizer_options_names) - 1, "",
     sdb_optimizer_options_names, NULL};
 
+static const char *sdb_support_mode_option_names[] = {"strict", "compatible",
+                                                      NullS};
+
+static TYPELIB sdb_support_mode_option_typelib = {
+    array_elements(sdb_support_mode_option_names) - 1,
+    "sdb_support_mode_option_typelib", sdb_support_mode_option_names, NULL};
+
 String sdb_encoded_password;
 Sdb_encryption sdb_passwd_encryption;
 Sdb_rwlock sdb_password_lock;
@@ -486,6 +493,14 @@ static MYSQL_SYSVAR_BOOL(
     /*是否严格校验 utf8mb4_bin 或 utf8_bin 校对集。*/,
     NULL, NULL, SDB_DEFAULT_STRICT_COLLATION);
 
+static MYSQL_THDVAR_ENUM(
+    support_mode, PLUGIN_VAR_RQCMDARG,
+    "Strictly check the syntax which if not supported in strict mode"
+    "Syntax errors are ignored in 'compatible'"
+    "(Default:strict)"
+    /*严格校验语法*/,
+    NULL, NULL, SDB_SUPPORT_MODE_STRICT, &sdb_support_mode_option_typelib);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -520,6 +535,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(preferred_strict),
     MYSQL_SYSVAR(preferred_period),
     MYSQL_SYSVAR(strict_collation),
+    MYSQL_SYSVAR(support_mode),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -724,4 +740,8 @@ bool sdb_debug_log(THD *thd) {
 
 void sdb_set_debug_log(THD *thd, bool val) {
   THDVAR(thd, debug_log) = val;
+}
+
+enum_sdb_support_mode sdb_get_support_mode(THD *thd) {
+  return (enum_sdb_support_mode)THDVAR(thd, support_mode);
 }

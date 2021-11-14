@@ -40,6 +40,13 @@
 #endif
 
 #define SDB_COORD_NUM_MAX 128
+
+typedef enum {
+  SDB_SUPPORT_MODE_STRICT,
+  SDB_SUPPORT_MODE_COMPATIBLE,
+  SDB_SUPPORT_MODE_NULLS
+} enum_sdb_support_mode;
+
 class ha_sdb_conn_addrs {
  public:
   ha_sdb_conn_addrs();
@@ -73,6 +80,7 @@ bool sdb_execute_only_in_mysql(THD *thd);
 void sdb_set_execute_only_in_mysql(THD *thd, bool val);
 longlong sdb_alter_table_overhead_threshold(THD *thd);
 ulonglong sdb_get_optimizer_options(THD *thd);
+enum_sdb_support_mode sdb_get_support_mode(THD *thd);
 bool sdb_rollback_on_timeout(THD *thd);
 bool sdb_use_transaction(THD *thd);
 int sdb_lock_wait_timeout(THD *thd);

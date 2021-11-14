@@ -339,6 +339,14 @@ install(PROGRAMS "${PROJECT_PACKAGE_DIR}/common/preUninstall.sh"
         DESTINATION "./")
 install(DIRECTORY "${PROJECT_PACKAGE_SUB_DIR}/license"
         DESTINATION "./")
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/tools/sdbfk/sdb_fk_init.sh"
+        DESTINATION "tools/sdbfk")
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/tools/sdbfk/sdb_fk_notify.sh"
+        DESTINATION "tools/sdbfk")
+install(FILES "${CMAKE_SOURCE_DIR}/tools/sdbfk/README.md"
+        DESTINATION "tools/sdbfk")
+
+
 execute_process( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 message( STATUS "Architecture: ${ARCHITECTURE}" )
 if(MYSQL)
