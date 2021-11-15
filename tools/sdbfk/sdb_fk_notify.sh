@@ -39,7 +39,7 @@ function exec_sql()
 {
   #$2有参数的情况下不打印错误到屏幕，目前只有添加索引时需要这种情况
   if [ "$2" = "" ];then
-    ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -N -e " ${1} "
+    ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -N -e " ${1} " 2>&1 | grep -v 'Warning'
   else
     ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -N -e " ${1} " > /dev/null 2>&1
   fi
@@ -380,7 +380,7 @@ select foreign_key_name,
       status,
       md5 from sequoiadb_foreign_config.referential_constraints${inst_group}
       ${fk_condition} \G
-"  | while read line
+" 2>&1 | grep -v 'Warning' | while read line
 do
   for((i=0 ; i<10 ;i++))
   do

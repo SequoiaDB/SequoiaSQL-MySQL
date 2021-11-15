@@ -42,7 +42,7 @@ function grant_to_customer()
   do
     ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -e "
     GRANT ALL ON sequoiadb_foreign_config.* to '${custmor_array[$i]}'@'%';
-    "
+    " 2>&1 | grep -v 'Warning'
     if [ $? = 0 ];then
       echo "Succeed to grant sequoiadb_foreign_config privileges to <${custmor_array[$i]}>."
     else
@@ -53,11 +53,19 @@ function grant_to_customer()
 
 
 function init_all(){
+  
+  local support__sql="show variables like 'sequoiadb_support_mode'"
+
+  local support_str=(`${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -N -e"
+  ${support_str}" 2>&1 | grep -v 'Warning'`)
+
+  local support_type=${support_str[1]}
 
   ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -e " 
 
   CREATE database IF NOT EXISTS sequoiadb_foreign_config;
   use sequoiadb_foreign_config;
+  SET sequoiadb_support_mode='';
   CREATE table IF NOT EXISTS referential_constraints${inst_group}
   (
     foreign_key_name varchar(64) default NULL,
@@ -73,6 +81,7 @@ function init_all(){
     INDEX(database_name,table_name),
     UNIQUE INDEX(foreign_key_name)
   )engine=sequoiadb COMMENT='sequoiadb:{auto_partition:false}';
+  SET sequoiadb_support_mode='${support_type}';
 
   DROP trigger IF EXISTS sdb_trig_insert;
   delimiter $
@@ -96,7 +105,7 @@ function init_all(){
   END;
   $
   delimiter ;
-  "
+  " 2>&1 | grep -v 'Warning'
 echo "Succeed to create table sequoiadb_foreign_config.referential_constraints."
 return
 }
