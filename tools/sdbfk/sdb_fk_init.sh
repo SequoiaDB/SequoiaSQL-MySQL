@@ -54,10 +54,10 @@ function grant_to_customer()
 
 function init_all(){
   
-  local support__sql="show variables like 'sequoiadb_support_mode'"
+  local support_sql="show variables like 'sequoiadb_support_mode'"
 
   local support_str=(`${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -N -e"
-  ${support_str}" 2>&1 | grep -v 'Warning'`)
+  ${support_sql}" 2>&1 | grep -v 'Warning'`)
 
   local support_type=${support_str[1]}
 
