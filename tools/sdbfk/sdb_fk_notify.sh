@@ -164,16 +164,10 @@ function add_status_and_trigger()
 
  
   exec_sql "${add_tri_sql}"
-  if [ $? != 0 ] ;then
-    return 2
-  fi
 
   exec_sql "${create_index_sql}" "ignore"
 
   exec_sql "${update_sql}" 
-  if [ $? != 0 ] ;then
-    return 2
-  fi
   }
 
 
@@ -182,17 +176,8 @@ function update_trigger()
 {
   local rs=0
   add_status_and_trigger 
-  rs=$?
-  if [ ${rs} != 0 ]; then
-    return 4
-  else
-    drop_trigger
-    rs=$?
-    if [ ${rs} != 0 ]; then
-      return 4
-    fi
-  fi
-  return $rs
+  drop_trigger
+  return 
 } 
 
 function delete_record()
@@ -214,11 +199,7 @@ function drop_trigger()
     drop trigger ${str_arr[$trigger_name]};
   "
   exec_sql "${drop_sql}"
-  local rs=$?
-  if [ $rs != 0 ];then
-    return 3
-  fi
-  return $rs
+  return 
 }
 
 #检查状态，根据状态的不同选择操作，是添加触发器、删除触发器还是更新配置表与触发器
@@ -267,23 +248,6 @@ function check_status()
     rs=$?
   fi
 
-  case $rs in
-      2)
-         echo "An error occurred during create,db_name:${str_arr[${referenced_database_name}]},\
-         table_name:${str_arr[${referenced_table_name}]}"
-         ;;
-      3)
-         echo "An error occurred during delete,db_name:${str_arr[${referenced_database_name}]},\
-         table_name:${str_arr[${referenced_table_name}]}"
-         ;;
-      4)
-         echo "An error occurred during update,db_name:${str_arr[${referenced_database_name}]},\
-         table_name:${str_arr[${referenced_table_name}]}"
-         ;;
-      0)
-         ;;
-
-  esac
   return
 }
 
