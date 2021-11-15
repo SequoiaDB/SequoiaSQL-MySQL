@@ -6400,7 +6400,7 @@ static int sdb_init_func(void *p) {
 #endif
   sdb_hton = (handlerton *)p;
   mysql_mutex_init(key_mutex_sdb, &sdb_mutex, MY_MUTEX_INIT_FAST);
-  (void)sdb_hash_init(&sdb_open_tables, system_charset_info, 32, 0, 0,
+  (void)sdb_hash_init(&sdb_open_tables, table_alias_charset, 32, 0, 0,
                       (my_hash_get_key)sdb_get_key, 0, 0, key_memory_sdb_share);
   sdb_hton->state = SHOW_OPTION_YES;
   sdb_hton->db_type = DB_TYPE_UNKNOWN;
