@@ -780,8 +780,8 @@ insert into t2 values (4,1, 'qwerty'),(4,2, 'qwerty'),(4,3, 'qwerty'),
 
 --sorted_result
 #Bug #SEQUOIASQLMAINSTREAM-1162
-#select t2.f1, t2.f2, t2.f3 from t1,t2
-#where t1.f1=t2.f1 and t2.f2 between t1.f1 and t1.f2 and t2.f2 + 1 >= t1.f1 + 1;
+select t2.f1, t2.f2, t2.f3 from t1,t2
+where t1.f1=t2.f1 and t2.f2 between t1.f1 and t1.f2 and t2.f2 + 1 >= t1.f1 + 1;
 
 #explain select t2.f1, t2.f2, t2.f3 from t1,t2
 #where t1.f1=t2.f1 and t2.f2 between t1.f1 and t2.f2;
