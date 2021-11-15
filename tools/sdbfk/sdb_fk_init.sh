@@ -65,7 +65,7 @@ function init_all(){
 
   CREATE database IF NOT EXISTS sequoiadb_foreign_config;
   use sequoiadb_foreign_config;
-  SET sequoiadb_support_mode='';
+  SET global sequoiadb_support_mode='';
   CREATE table IF NOT EXISTS referential_constraints${inst_group}
   (
     foreign_key_name varchar(64) default NULL,
@@ -81,7 +81,7 @@ function init_all(){
     INDEX(database_name,table_name),
     UNIQUE INDEX(foreign_key_name)
   )engine=sequoiadb COMMENT='sequoiadb:{auto_partition:false}';
-  SET sequoiadb_support_mode='${support_type}';
+  SET global sequoiadb_support_mode='${support_type}';
 
   DROP trigger IF EXISTS sdb_trig_insert;
   delimiter $
