@@ -231,7 +231,7 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
   sql_info->dml_retry_flag = false;
   sql_info->is_result_set_started = false;
   sql_info->last_instr_lex = NULL;
-  if (sdb_hash_init(&(sql_info->dml_checked_objects), system_charset_info, 32,
+  if (sdb_hash_init(&(sql_info->dml_checked_objects), table_alias_charset, 32,
                     0, 0, (my_hash_get_key)cached_record_get_key,
                     free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
     rc = SDB_HA_OOM;
@@ -703,7 +703,7 @@ static my_hash_value_type my_hash_value(CHARSET_INFO *cs, const uchar *key,
 // find cached record in it's own hash bucket
 ha_cached_record *ha_get_cached_record(const char *cached_record_key) {
   my_hash_value_type bucket_num =
-      my_hash_value(system_charset_info, (uchar *)cached_record_key,
+      my_hash_value(table_alias_charset, (uchar *)cached_record_key,
                     strlen(cached_record_key));
   bucket_num = bucket_num % HA_MAX_CATA_VERSION_CACHES;
   ha_inst_state_cache *inst_state_cache =
@@ -720,7 +720,7 @@ int ha_update_cached_record(const char *cached_record_key, int sql_id,
                             int cata_version) {
   int rc = 0;
   my_hash_value_type bucket_num =
-      my_hash_value(system_charset_info, (uchar *)cached_record_key,
+      my_hash_value(table_alias_charset, (uchar *)cached_record_key,
                     strlen(cached_record_key));
   bucket_num = bucket_num % HA_MAX_CATA_VERSION_CACHES;
   ha_inst_state_cache *state_cache = &ha_thread.inst_state_caches[bucket_num];
@@ -5108,7 +5108,7 @@ static int init_inst_state_cache() {
   for (int i = 0; i < HA_MAX_CATA_VERSION_CACHES; i++) {
     native_rw_init(&ha_thread.inst_state_caches[i].rw_lock);
     if (sdb_hash_init(
-            &ha_thread.inst_state_caches[i].cache, system_charset_info, 32, 0,
+            &ha_thread.inst_state_caches[i].cache, table_alias_charset, 32, 0,
             0, (my_hash_get_key)cached_record_get_key, free_cached_record_elem,
             0, HA_KEY_MEM_INST_STATE_CACHE)) {
       SDB_LOG_ERROR(

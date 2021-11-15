@@ -282,7 +282,7 @@ static int i_s_sdb_sess_attr_init(void *p) {
   init_i_s_psi_keys();
 #endif
 
-  rc = sdb_hash_init(&i_s_name_id_pair_hash, system_charset_info, 32, 0, 0,
+  rc = sdb_hash_init(&i_s_name_id_pair_hash, &my_charset_utf8mb4_bin, 32, 0, 0,
                      (my_hash_get_key)i_s_pair_get_key, my_free, 0,
                      key_memory_i_s_sess_attr);
   if (rc) {
