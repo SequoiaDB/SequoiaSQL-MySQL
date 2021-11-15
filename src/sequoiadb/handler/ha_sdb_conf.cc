@@ -48,7 +48,6 @@ static const int SDB_DEFAULT_STATS_SAMPLE_NUM = 200;
 static const double SDB_DEFAULT_STATS_SAMPLE_PERCENT = 0.0;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
-static const my_bool SDB_DEFAULT_STRICT_COLLATION = TRUE;
 
 my_bool sdb_optimizer_select_count = OPTIMIZER_SWITCH_SELECT_COUNT;
 
@@ -68,7 +67,6 @@ uint sdb_stats_cache_version = 1;
 int sdb_stats_mode = SDB_DEFAULT_STATS_MODE;
 int sdb_stats_sample_num = SDB_DEFAULT_STATS_SAMPLE_NUM;
 double sdb_stats_sample_percent = SDB_DEFAULT_STATS_SAMPLE_PERCENT;
-my_bool sdb_strict_collation = SDB_DEFAULT_STRICT_COLLATION;
 
 // use to metadata mapping function
 my_bool sdb_enable_mapping = FALSE;
@@ -83,8 +81,7 @@ TYPELIB sdb_optimizer_options_typelib = {
     array_elements(sdb_optimizer_options_names) - 1, "",
     sdb_optimizer_options_names, NULL};
 
-static const char *sdb_support_mode_option_names[] = {"strict", "compatible",
-                                                      NullS};
+static const char *sdb_support_mode_option_names[] = {"strict_on_table", NullS};
 
 static TYPELIB sdb_support_mode_option_typelib = {
     array_elements(sdb_support_mode_option_names) - 1,
@@ -491,20 +488,14 @@ static MYSQL_THDVAR_INT(preferred_period, PLUGIN_VAR_OPCMDARG,
                         /*优先节点的有效周期。*/,
                         NULL, sdb_preferred_period_update,
                         SDB_DEFAULT_PREFERRED_PERIOD, -1, INT_MAX32, 0);
-static MYSQL_SYSVAR_BOOL(
-    strict_collation, sdb_strict_collation, PLUGIN_VAR_OPCMDARG,
-    "Whether to strictly verify the utf8mb4_bin or utf8_bin collation. "
-    "(Default: ON)"
-    /*是否严格校验 utf8mb4_bin 或 utf8_bin 校对集。*/,
-    NULL, NULL, SDB_DEFAULT_STRICT_COLLATION);
 
-static MYSQL_THDVAR_ENUM(
+static MYSQL_THDVAR_SET(
     support_mode, PLUGIN_VAR_RQCMDARG,
-    "Strictly check the syntax which if not supported in strict mode"
-    "Syntax errors are ignored in 'compatible'"
-    "(Default:strict)"
-    /*严格校验语法*/,
-    NULL, NULL, SDB_SUPPORT_MODE_STRICT, &sdb_support_mode_option_typelib);
+    "Strict mode for table includes the effect of the foreign key syntax "
+    "and collation constraint. (Default: strict_on_table)"
+    /*表严格模式*/,
+    NULL, NULL, SDB_SUPPORT_MODE_DEFAULT, &sdb_support_mode_option_typelib);
+
 // used to metadata mapping module
 static MYSQL_SYSVAR_BOOL(enable_mapping, sdb_enable_mapping,
                          PLUGIN_VAR_OPCMDARG | PLUGIN_VAR_READONLY,
@@ -558,7 +549,6 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(preferred_instance_mode),
     MYSQL_SYSVAR(preferred_strict),
     MYSQL_SYSVAR(preferred_period),
-    MYSQL_SYSVAR(strict_collation),
     MYSQL_SYSVAR(support_mode),
     MYSQL_SYSVAR(enable_mapping),
     MYSQL_SYSVAR(mapping_unit_size),
@@ -769,6 +759,6 @@ void sdb_set_debug_log(THD *thd, bool val) {
   THDVAR(thd, debug_log) = val;
 }
 
-enum_sdb_support_mode sdb_get_support_mode(THD *thd) {
+ulonglong sdb_get_support_mode(THD *thd) {
   return (enum_sdb_support_mode)THDVAR(thd, support_mode);
 }

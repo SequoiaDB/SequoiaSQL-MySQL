@@ -2454,7 +2454,7 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     for (Field **fields = form->field; *fields; fields++) {
       Field *field = *fields;
 
-      rc = sdb_check_collation(field);
+      rc = sdb_check_collation(ha_thd(), field);
       if (rc) {
         goto error;
       }

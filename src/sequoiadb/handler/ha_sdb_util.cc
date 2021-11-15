@@ -1295,15 +1295,16 @@ static bool sdb_is_type_with_collation(Field *field) {
    In addition to binary data, the following field types are not
    supported when their collation is not utf8mb4_bin:
 */
-int sdb_check_collation(Field *field) {
+int sdb_check_collation(THD *thd, Field *field) {
   int rc = 0;
-  if (sdb_strict_collation && sdb_is_type_with_collation(field) &&
+  if ((sdb_get_support_mode(thd) & SDB_STRICT_ON_TABLE) &&
+      sdb_is_type_with_collation(field) &&
       !sdb_collation_same(field->charset(), &SDB_COLLATION_UTF8MB4) &&
       !sdb_collation_same(field->charset(), &SDB_COLLATION_UTF8)) {
     rc = HA_ERR_WRONG_COMMAND;
     my_printf_error(rc,
-                    "The collation of column '%s' is not supported. Try '%s' "
-                    "instead of '%s'.",
+                    "The collation of column '%s' is not supported on "
+                    "strict mode. Try '%s' instead of '%s'.",
                     MYF(0), sdb_field_name(field), SDB_COLLATION_UTF8MB4.name,
                     field->charset()->name);
   }

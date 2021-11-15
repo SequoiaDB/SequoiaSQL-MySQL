@@ -33,6 +33,10 @@
    SDB_OPTIMIZER_OPTION_UPDATE | SDB_OPTIMIZER_OPTION_SORT |         \
    SDB_OPTIMIZER_OPTION_LIMIT)
 
+#define SDB_STRICT_ON_TABLE (1ULL << 0)
+
+#define SDB_SUPPORT_MODE_DEFAULT (SDB_STRICT_ON_TABLE)
+
 #if MYSQL_VERSION_ID >= 50725
 #define SDB_INVISIBLE | PLUGIN_VAR_INVISIBLE
 #else
@@ -80,7 +84,7 @@ bool sdb_execute_only_in_mysql(THD *thd);
 void sdb_set_execute_only_in_mysql(THD *thd, bool val);
 longlong sdb_alter_table_overhead_threshold(THD *thd);
 ulonglong sdb_get_optimizer_options(THD *thd);
-enum_sdb_support_mode sdb_get_support_mode(THD *thd);
+ulonglong sdb_get_support_mode(THD *thd);
 bool sdb_rollback_on_timeout(THD *thd);
 bool sdb_use_transaction(THD *thd);
 int sdb_lock_wait_timeout(THD *thd);
@@ -108,7 +112,6 @@ extern uint sdb_stats_cache_version;
 extern int sdb_stats_mode;
 extern int sdb_stats_sample_num;
 extern double sdb_stats_sample_percent;
-extern my_bool sdb_strict_collation;
 
 extern Sdb_rwlock sdb_password_lock;
 extern String sdb_encoded_password;

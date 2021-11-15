@@ -1231,7 +1231,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
     while ((field = added_it++)) {
       my_ptrdiff_t offset = field->table->default_values_offset();
 
-      rc = sdb_check_collation(field);
+      rc = sdb_check_collation(ha_thd(), field);
       if (rc) {
         goto error;
       }
@@ -1270,7 +1270,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
       const char *old_field_name = sdb_field_name(info->before);
       const char *new_field_name = sdb_field_name(new_field);
 
-      rc = sdb_check_collation(new_field);
+      rc = sdb_check_collation(ha_thd(), new_field);
       if (rc) {
         goto error;
       }

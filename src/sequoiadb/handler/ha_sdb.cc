@@ -1599,7 +1599,8 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
 
   tbl_ctx_impl.reset();
   tbl_ctx_impl.set_share_cache(share.get());
-  rc = Name_mapping::get_mapping(db_name, table_name, connection, &tbl_ctx_impl);
+  rc =
+      Name_mapping::get_mapping(db_name, table_name, connection, &tbl_ctx_impl);
   if (sdb_execute_only_in_mysql(ha_thd()) && HA_ERR_END_OF_FILE == rc) {
     rc = 0;
     goto done;
@@ -8190,7 +8191,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
 
   for (Field **fields = form->field; *fields; fields++) {
     Field *field = *fields;
-    rc = sdb_check_collation(field);
+    rc = sdb_check_collation(thd, field);
     if (rc) {
       goto error;
     }
@@ -8223,8 +8224,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
 
       // if HA is open, prepare the cl to get version
       if (!create_temporary) {
-        rc =
-            conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_mapping);
+        rc = conn->get_cl(db_name, table_name, cl, ha_is_open(), &tbl_mapping);
         if (0 != rc) {
           goto error;
         }
@@ -8306,7 +8306,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     goto error;
   }
 
-  if (sdb_get_support_mode(thd) == SDB_SUPPORT_MODE_STRICT) {
+  if ((sdb_get_support_mode(thd) & SDB_STRICT_ON_TABLE)) {
     Key *key;
     List_iterator_fast<Key> key_iterator(ha_thd()->lex->alter_info.key_list);
     while ((key = key_iterator++)) {
@@ -8318,10 +8318,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       {
         rc = HA_ERR_WRONG_COMMAND;
         my_printf_error(
-            rc,
-            "Foreign key syntax is not supported, "
-            "'set sequoiadb_support_mode=compatible' to ignore the err",
-            MYF(0));
+            rc, "Foreign key syntax is not supported on strict mode.", MYF(0));
         goto error;
       }
     }
