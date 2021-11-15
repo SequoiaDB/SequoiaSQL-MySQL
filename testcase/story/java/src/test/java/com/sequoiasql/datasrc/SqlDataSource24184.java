@@ -73,7 +73,7 @@ public class SqlDataSource24184 extends MysqlTestBase {
 
         String alterSQL_b = "alter table " + fullTableName
                 + " convert to character set utf8,algorithm=COPY;  ";
-        JdbcAssert.execInvalidUpdate( jdbcSdbConn, alterSQL_b, 200 );
+        JdbcAssert.execInvalidUpdate( jdbcSdbConn, alterSQL_b, 131 );
 
         String alterSQL_c1 = "alter table " + fullTableName
                 + " modify no int default 1,algorithm=COPY; ";
