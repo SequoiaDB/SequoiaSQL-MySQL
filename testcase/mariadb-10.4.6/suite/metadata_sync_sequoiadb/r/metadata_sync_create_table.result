@@ -215,6 +215,7 @@ connection conn1;
 CREATE TABLE t1 ( a INT UNIQUE KEY );
 CREATE TABLE t2 ( a INT PRIMARY KEY );
 CREATE TABLE t3 ( b INT, FOREIGN KEY(b) REFERENCES t1(a) );
+ERROR 0A000: Foreign key syntax is not supported, 'set sequoiadb_support_mode=compatible' to ignore the err
 CREATE TABLE t4 ( b INT REFERENCES t1(a) MATCH FULL ON DELETE RESTRICT );
 CREATE TABLE t5 ( b INT REFERENCES t1(a) MATCH PARTIAL ON UPDATE CASCADE );
 connection conn2;
@@ -230,12 +231,6 @@ t2	CREATE TABLE `t2` (
   `a` int(11) NOT NULL,
   PRIMARY KEY (`a`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-SHOW CREATE TABLE t3;
-Table	Create Table
-t3	CREATE TABLE `t3` (
-  `b` int(11) DEFAULT NULL,
-  KEY `b` (`b`)
-) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 SHOW CREATE TABLE t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
@@ -247,7 +242,7 @@ t5	CREATE TABLE `t5` (
   `b` int(11) DEFAULT NULL
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
-DROP TABLE t1,t2,t3,t4,t5;
+DROP TABLE t1,t2,t4,t5;
 connection conn2;
 SHOW CREATE TABLE t1;
 ERROR 42S02: Table 'metasync_create_tables.t1' doesn't exist
@@ -263,7 +258,9 @@ connection conn1;
 CREATE TABLE t1 ( a INT CHECK ( a > 10 ) );
 CREATE TABLE t2 ( a INT KEY, CHECK ( a > 10 ) );
 CREATE TABLE t3 ( a INT NOT NULL DEFAULT 1000, b BLOB NOT NULL DEFAULT 'blob', t TEXT NOT NULL DEFAULT 'text', c INT DEFAULT (a+1), d INT DEFAULT UUID_SHORT());
+set global sequoiadb_strict_collation = OFF;
 CREATE TABLE t4 ( a VARCHAR(255) CHARSET utf8);
+set global sequoiadb_strict_collation = ON;
 CREATE TABLE t5 ( a INT ZEROFILL, iv INT INVISIBLE );
 CREATE TABLE t6 ( a VARCHAR(255) /*COLUMN_FORMAT DYNAMIC*/ );
 CREATE TABLE t7 ( a INT, b INT WITHOUT SYSTEM VERSIONING) WITH SYSTEM VERSIONING;

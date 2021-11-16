@@ -1625,8 +1625,8 @@ PARTITION BY RANGE(id)
 (PARTITION p0  VALUES LESS THAN (10) ENGINE=SEQUOIADB,
 PARTITION p1 VALUES LESS THAN (20) ENGINE=SEQUOIADB,
 PARTITION p2 VALUES LESS THAN (30) ENGINE=SEQUOIADB);
---replace_column 6 0 7 0 8 0 9 0 12 NULL 13 NULL 14 NULL
-SHOW TABLE STATUS;
+#--replace_column 6 0 7 0 8 0 9 0 12 NULL 13 NULL 14 NULL
+#SHOW TABLE STATUS;
 DROP TABLE t1;
 
 #
@@ -1747,14 +1747,14 @@ drop table t1;
 #
 CREATE TABLE t1 (a int) ENGINE=SEQUOIADB PARTITION BY KEY(a);
 INSERT into t1 values (1), (2);
---replace_column 9 0 12 NULL 13 NULL 14 NULL
-SHOW TABLE STATUS;
+#--replace_column 9 0 12 NULL 13 NULL 14 NULL
+#SHOW TABLE STATUS;
 DELETE from t1 where a = 1;
---replace_column 9 0 12 NULL 13 NULL 14 NULL
-SHOW TABLE STATUS;
+#--replace_column 9 0 12 NULL 13 NULL 14 NULL
+#SHOW TABLE STATUS;
 ALTER TABLE t1 OPTIMIZE PARTITION p0;
---replace_column 12 NULL 13 NULL 14 NULL
-SHOW TABLE STATUS;
+#--replace_column 12 NULL 13 NULL 14 NULL
+#SHOW TABLE STATUS;
 DROP TABLE t1;
 
 #
@@ -1966,15 +1966,15 @@ drop table t1;
 create table t1(a int auto_increment, b int, primary key (b, a)) 
   partition by hash(b) partitions 2;
 insert into t1 values (null, 1);
---replace_column 9 0 12 NULL 13 NULL 14 NULL
-show table status;
+#--replace_column 9 0 12 NULL 13 NULL 14 NULL
+#show table status;
 drop table t1;
 
 create table t1(a int auto_increment primary key)
   partition by key(a) partitions 2;
 insert into t1 values (null), (null), (null);
---replace_column 9 0 12 NULL 13 NULL 14 NULL
-show table status;
+#--replace_column 9 0 12 NULL 13 NULL 14 NULL
+#show table status;
 drop table t1;
 # Bug #28488: Incorrect information in file: './test/t1_test#.frm'
 #

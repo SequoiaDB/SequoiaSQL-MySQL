@@ -1675,9 +1675,6 @@ PARTITION BY RANGE(id)
 (PARTITION p0  VALUES LESS THAN (10) ENGINE=SEQUOIADB,
 PARTITION p1 VALUES LESS THAN (20) ENGINE=SEQUOIADB,
 PARTITION p2 VALUES LESS THAN (30) ENGINE=SEQUOIADB);
-SHOW TABLE STATUS;
-Name	Engine	Version	Row_format	Rows	Avg_row_length	Data_length	Max_data_length	Index_length	Data_free	Auto_increment	Create_time	Update_time	Check_time	Collation	Checksum	Create_options	Comment	Max_index_length	Temporary
-t1	SequoiaDB	10	Dynamic	0	0	0	0	0	65536	NULL	NULL	NULL	NULL	latin1_swedish_ci	NULL	partitioned		8796093022208	N
 DROP TABLE t1;
 create table t1 (a bigint unsigned)
 partition by list (a)
@@ -1761,19 +1758,10 @@ t1	CREATE TABLE `t1` (
 drop table t1;
 CREATE TABLE t1 (a int) ENGINE=SEQUOIADB PARTITION BY KEY(a);
 INSERT into t1 values (1), (2);
-SHOW TABLE STATUS;
-Name	Engine	Version	Row_format	Rows	Avg_row_length	Data_length	Max_data_length	Index_length	Data_free	Auto_increment	Create_time	Update_time	Check_time	Collation	Checksum	Create_options	Comment	Max_index_length	Temporary
-t1	SequoiaDB	10	Fixed	2	66	65536	8796093022208	0	65404	NULL	NULL	NULL	NULL	latin1_swedish_ci	NULL	partitioned		8796093022208	N
 DELETE from t1 where a = 1;
-SHOW TABLE STATUS;
-Name	Engine	Version	Row_format	Rows	Avg_row_length	Data_length	Max_data_length	Index_length	Data_free	Auto_increment	Create_time	Update_time	Check_time	Collation	Checksum	Create_options	Comment	Max_index_length	Temporary
-t1	SequoiaDB	10	Fixed	1	132	65536	8796093022208	0	65404	NULL	NULL	NULL	NULL	latin1_swedish_ci	NULL	partitioned		8796093022208	N
 ALTER TABLE t1 OPTIMIZE PARTITION p0;
 Table	Op	Msg_type	Msg_text
 test_partition.t1	optimize	status	OK
-SHOW TABLE STATUS;
-Name	Engine	Version	Row_format	Rows	Avg_row_length	Data_length	Max_data_length	Index_length	Data_free	Auto_increment	Create_time	Update_time	Check_time	Collation	Checksum	Create_options	Comment	Max_index_length	Temporary
-t1	SequoiaDB	10	Fixed	1	132	65536	8796093022208	262144	65404	NULL	NULL	NULL	NULL	latin1_swedish_ci	NULL	partitioned		8796093022208	N
 DROP TABLE t1;
 CREATE TABLE t1 (a int, index(a)) PARTITION BY KEY(a);
 ALTER TABLE t1 DISABLE KEYS;
@@ -1958,16 +1946,10 @@ drop table t1;
 create table t1(a int auto_increment, b int, primary key (b, a)) 
 partition by hash(b) partitions 2;
 insert into t1 values (null, 1);
-show table status;
-Name	Engine	Version	Row_format	Rows	Avg_row_length	Data_length	Max_data_length	Index_length	Data_free	Auto_increment	Create_time	Update_time	Check_time	Collation	Checksum	Create_options	Comment	Max_index_length	Temporary
-t1	SequoiaDB	10	Fixed	1	100	65536	8796093022208	0	65436	1001	NULL	NULL	NULL	latin1_swedish_ci	NULL	partitioned		8796093022208	N
 drop table t1;
 create table t1(a int auto_increment primary key)
 partition by key(a) partitions 2;
 insert into t1 values (null), (null), (null);
-show table status;
-Name	Engine	Version	Row_format	Rows	Avg_row_length	Data_length	Max_data_length	Index_length	Data_free	Auto_increment	Create_time	Update_time	Check_time	Collation	Checksum	Create_options	Comment	Max_index_length	Temporary
-t1	SequoiaDB	10	Fixed	3	68	65536	8796093022208	0	65332	1001	NULL	NULL	NULL	latin1_swedish_ci	NULL	partitioned		8796093022208	N
 drop table t1;
 CREATE TABLE t1(a INT NOT NULL, b TINYBLOB, KEY(a))
 PARTITION BY RANGE(a) ( PARTITION p0 VALUES LESS THAN (32));
