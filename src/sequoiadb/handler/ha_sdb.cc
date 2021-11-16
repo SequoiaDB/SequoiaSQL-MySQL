@@ -40,6 +40,7 @@
 #include <sql_parse.h>
 #include "server_ha.h"
 #include "ha_sdb_part.h"
+#include "ha_sdb_ctx.h"
 #include "name_map.h"
 #include "mapping_context_impl.h"
 
@@ -1490,9 +1491,6 @@ ha_sdb::~ha_sdb() {
     sdb_condition = NULL;
   }
 
-#ifdef IS_MARIADB
-  reset();
-#endif
   DBUG_VOID_RETURN;
 }
 
@@ -1697,9 +1695,6 @@ int ha_sdb::close(void) {
   m_bulk_insert_rows.clear();
   m_bson_element_cache.release();
 
-#ifdef IS_MARIADB
-  reset();
-#endif
   tbl_ctx_impl.reset();
   DBUG_RETURN(0);
 }

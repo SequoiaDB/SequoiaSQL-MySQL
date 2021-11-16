@@ -20,16 +20,13 @@
 #include <client.hpp>
 #include <partition_element.h>
 #include "sdb_conn.h"
+#include "ha_sdb_ctx.h"
 #include <boost/shared_ptr.hpp>
 
 extern handlerton* sdb_hton;
 struct Sdb_share;
 
 class Sdb_cl_copyer;
-class Sdb_part_alter_ctx;
-#ifdef IS_MARIADB
-class Sdb_part_del_ren_ctx;
-#endif
 
 struct Sdb_local_table_statistics {
   int no_uncommitted_rows_count;

@@ -31,40 +31,8 @@ const uint SDB_PARTITION_ALTER_FLAG =
     ALTER_PARTITION_TABLE_REORG | ALTER_PARTITION_REBUILD |
     ALTER_PARTITION_ALL | ALTER_PARTITION_REMOVE;
 
-#ifdef IS_MARIADB
-typedef struct Sdb_part_del_ren_ctx {
-  char skip_delete_cl[SDB_CL_NAME_MAX_SIZE + 1];
-  char skip_rename_main_cl[SDB_CL_NAME_MAX_SIZE + 1];
-  char skip_rename_sub_cl[SDB_CL_NAME_MAX_SIZE + 1];
-  query_id_t query_id;
-} Sdb_part_del_ren_ctx;
-#endif
-
 class ha_sdb_part;
 class ha_sdb_part_wrapper;
-
-class Sdb_part_alter_ctx {
- public:
-  Sdb_part_alter_ctx() {}
-
-  ~Sdb_part_alter_ctx();
-
-  int init(partition_info* part_info);
-
-  bool skip_delete_table(const char* table_name);
-
-  bool skip_rename_table(const char* new_table_name);
-
-  bool empty();
-
- private:
-  int push_table_name2list(std::list<char*>& list, const char* org_table_name,
-                           const char* part_name,
-                           const char* sub_part_name = NULL);
-
-  std::list<char*> m_skip_list4delete;
-  std::list<char*> m_skip_list4rename;
-};
 
 class ha_sdb_part_share : public Partition_share {
  public:
@@ -91,7 +59,6 @@ class ha_sdb_part : public ha_sdb
   ha_sdb_part(handlerton* hton, TABLE_SHARE* table_arg);
 
   ~ha_sdb_part();
-
 #ifdef IS_MARIADB
   void init();
 

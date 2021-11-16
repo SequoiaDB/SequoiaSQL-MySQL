@@ -725,6 +725,16 @@ Thd_sdb::Thd_sdb(THD *thd)
 }
 
 Thd_sdb::~Thd_sdb() {
+  if (part_alter_ctx) {
+    delete part_alter_ctx;
+    part_alter_ctx = NULL;
+  }
+#ifdef IS_MARIADB
+  if (part_del_ren_ctx) {
+    delete part_del_ren_ctx;
+    part_del_ren_ctx = NULL;
+  }
+#endif
   my_hash_free(&open_table_shares);
 }
 
