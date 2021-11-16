@@ -1809,9 +1809,11 @@ error:
 // necessary work for ending HA thread
 void ha_thread_end(THD *thd) {
 #ifdef IS_MYSQL
-  Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
-  thd->release_resources();
-  thd_manager->remove_thd(thd);
+  if (thd) {
+    Global_THD_manager *thd_manager = Global_THD_manager::get_instance();
+    thd->release_resources();
+    thd_manager->remove_thd(thd);
+  }
   my_thread_end();
   my_thread_exit(0);
 #else
@@ -1933,26 +1935,27 @@ void *ha_recover_and_replay(void *arg) {
   DBUG_ASSERT(NULL != ha_thread);
   bson::BSONObj config_obj;
 
+  // 1. create thread local var and init sequoiadb connection
+  // 'm_thread_id' is useless for HA thread, set it to 0
+  Sdb_pool_conn pool_conn(0, true);
+  Sdb_conn &sdb_conn = pool_conn;
+  bool stopped_mutex_locked = false;
+
   // wait for mysqld service
   bool mysqld_failed = wait_for_mysqld_service();
   if (mysqld_failed) {
     sql_print_error(
         "HA: The mysqld process was detected to be terminating, "
         "stop 'HA' thread, please check MySQL startup log");
-    exit(mysqld_failed);
+    goto error;
   }
 
   // init thd for 'HA' thread
   ha_thread->thd = create_ha_thd();
   if (NULL == ha_thread->thd) {
     sql_print_error("HA: Out of memory in 'HA' thread");
-    ha_kill_mysqld(ha_thread->thd);
-    return NULL;
+    goto error;
   }
-
-  // 1. create thread local var and init sequoiadb connection
-  Sdb_pool_conn pool_conn(sdb_thd_id(ha_thread->thd), true);
-  Sdb_conn &sdb_conn = pool_conn;
 
   // watch main thread 'term' signal, current thread can be stopped immediately
   // by handle this signal
@@ -1961,6 +1964,7 @@ void *ha_recover_and_replay(void *arg) {
 
   sql_print_information("HA: Start 'HA' thread");
   mysql_mutex_lock(&ha_thread->replay_stopped_mutex);
+  stopped_mutex_locked = true;
 
   try {
     // 2. connect to sequoiadb
@@ -2038,7 +2042,9 @@ void *ha_recover_and_replay(void *arg) {
   }
 done:
   mysql_close(ha_mysql);
-  mysql_mutex_unlock(&ha_thread->replay_stopped_mutex);
+  if (stopped_mutex_locked) {
+    mysql_mutex_unlock(&ha_thread->replay_stopped_mutex);
+  }
   sql_print_information("HA: 'HA' thread terminated");
   // set stop flag, main thread will no longer sleep by checking this flag
   ha_thread->stopped = true;
