@@ -390,6 +390,11 @@ function add_inst()
    if [ ! -z $SDB_PASSWD ]; then
       sed -i 's/.*sequoiadb_password\s*=.*/sequoiadb_password='$SDB_PASSWD'/' $SQL_DATA/auto.cnf
    fi
+   
+   if [ ! -z $SDB_ENABLE_MAPPING ]; then
+      sed -i '/\[mysqld\]/a\sequoiadb_enable_mapping=1'   $SQL_DATA/auto.cnf
+   fi
+
 
    # set sequoiadb cipherfile, use '|' as the separator
    if [ ! -z $SDB_CIPHERFILE ]; then
@@ -1149,7 +1154,11 @@ function change_configure()
    if [ ! -z $SDB_PASSWD ]; then
       change_configure_online "$INST_NAME" "sequoiadb_password" "\"$SDB_PASSWD\""
    fi
-   
+
+   if [ ! -z $SDB_ENABLE_MAPPING ]; then
+      change_configure_online "$INST_NAME" "sequoiadb_enable_mapping" "1"
+   fi
+
    if [ ! -z $SDB_AUTO_PARTITION ]; then
       change_configure_online "$INST_NAME" "sequoiadb_auto_partition" "$SDB_AUTO_PARTITION"
    fi
@@ -1249,7 +1258,7 @@ function build_help()
    echo ""
    echo "Usage:"
    echo "  ${ME} listinst"
-   echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-p PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD] [-g INST_GROUP_NAME] [-k INST_GROUP_KEY] [--sdb-conn-addr=ADDR] [--sdb-user USER] [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] [--sdb-token TOKEN]"
+   echo "  ${ME} addinst    <INSTNAME> <-D DATADIR> [-l LOGFILE] [--print] [-p PORT] [-f PIDFILE] [-s SOCKETFILE] [-w PASSWORD] [-g INST_GROUP_NAME] [-k INST_GROUP_KEY] [--sdb-conn-addr=ADDR] [--sdb-user USER] [--sdb-passwd PASSWD] [--sdb-cipherfile PATH] [--sdb-token TOKEN] [--sdb-enable-mapping]"
    echo "  ${ME} delinst    <INSTNAME> [--baklog] [--force]"
    echo "  ${ME} start      <INSTNAME>                           [--print]"
    echo "  ${ME} startall                                        [--print]"
@@ -1259,7 +1268,7 @@ function build_help()
    echo "  ${ME} status     [INSTNAME]"
    echo "  ${ME} join       <INSTANCE> <-g INST_GROUP_NAME> [-k INST_GROUP_KEY] [--force]"
    echo "  ${ME} leave      <INSTANCE> <-g INST_GROUP_NAME> [--force]"
-   echo "  ${ME} chconf     <INSTNAME> [-p PORT] [-e LEVEL]                 [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE]
+   echo "  ${ME} chconf     <INSTNAME> [-p PORT] [-e LEVEL]                 [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-enable-mapping] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE]
 [--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL] [--sdb-token=TOKEN] [--sdb-cipherfile=PATH] [--sdb-error-level=ENUM] [--sdb-replica-size=SIZE] [--sdb-use-transaction=BOOL] [--sdb-optimizer-options=SET]
 [--sdb-rollback-on-timeout=BOOL] [--sdb-execute-only-in-mysql=BOOL] [--sdb-selector-pushdown-threshold=THRESHOLD] [--sdb-alter-table-overhead-threshold=THRESHOLD] [--sdb-lock-wait-timeout=TIMEOUT] [--sdb-use-rollback-segments=BOOL]
 [--sdb-stats-mode=MODE] [--sdb-stats-sample-num=NUM] [--sdb-stats-sample-percent=DOUBLE] [--sdb-stats-cache=BOOL] [--inst-group-name=NAME] [--inst-group-key=KEY]"
@@ -1281,6 +1290,7 @@ function build_help()
    echo "  --sdb-conn-addr=ADDR                            SequoiaDB addresses,default:'localhost:11810'"
    echo "  --sdb-user=USER                                 SequoiaDB authentication user,default:''"
    echo "  --sdb-passwd=PASSWD                             SequoiaDB authentication password,default:''"
+   echo "  --sdb-enable-mapping                            specify to enable sequoiadb_enable_mapping"
    echo "  --sdb-auto-partition=BOOL                       enable auto partition,default:on"
    echo "  --sdb-use-bulk-insert=BOOL                      enable bulk insert to sequoiadb,default:on"
    echo "  --sdb-bulk-insert-size=SIZE                     bulk insert size,default:100"
@@ -1309,7 +1319,7 @@ function build_help()
 #Parse command line parameters
 test $# -eq 0 && { build_help && exit 64; }
 
-ARGS=`getopt -o hvD:l:p:s:f:e:a:w:g:k: --long help,version,print,baklog,force,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log: -n "${ME}" -- "$@"`
+ARGS=`getopt -o hvD:l:p:s:f:e:a:w:g:k: --long help,version,print,baklog,force,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-enable-mapping,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log: -n "${ME}" -- "$@"`
 ret=$?
 test $ret -ne 0 && exit $ret
 
@@ -1392,6 +1402,9 @@ do
       --sdb-passwd )                          SDB_PASSWD=$2
                                               shift 2
                                               ;;
+      --sdb-enable-mapping)                   SDB_ENABLE_MAPPING="TRUE"
+                                              shift 1
+                                              ;;                                              
       --sdb-use-partition )                   SDB_AUTO_PARTITION=$2
                                               test $SDB_AUTO_PARTITION == "TRUE" -o $SDB_AUTO_PARTITION == "FALSE" -o $SDB_AUTO_PARTITION == "true" -o $SDB_AUTO_PARTITION == "false" -o $SDB_AUTO_PARTITION == "ON" -o $SDB_AUTO_PARTITION == "OFF"  -o $SDB_AUTO_PARTITION == "on" -o $SDB_AUTO_PARTITION == "off" || \
                                               err_para BOOL $SDB_AUTO_PARTITION
@@ -1532,7 +1545,7 @@ case "$1" in
                mode=$1; shift 2;;
    chconf)     mode=$1
                if [ -z "$PORT" -a -z "$LOG_ERROR_VERBOSITY" -a -z "$MAX_CON" -a -z "$SDB_USER" -a -z "$SDB_PASSWD" \
-                    -a -z "$SDB_AUTO_PARTITION" -a -z "$SDB_USE_BULK_INSERT" -a -z "$SDB_BULK_INSERT_SIZE" \
+                    -a -z "$SDB_ENABLE_MAPPING" -a -z "$SDB_AUTO_PARTITION" -a -z "$SDB_USE_BULK_INSERT" -a -z "$SDB_BULK_INSERT_SIZE" \
                     -a -z "$SDB_USE_AUTOCOMMIT" -a -z "$SDB_DEBUG_LOG" -a -z "$SDB_TOKEN" -a -z "$SDB_CIPHERFILE" -a -z "$SDB_ERROR_LEVEL" \
                     -a -z "$SDB_REPLICA_SIZE" -a -z "$SDB_USE_TRANSACTION" -a -z "$SDB_OPTIMIZER_OPTIONS" -a -z "$SDB_ROLLBACK_ON_TIMEOUT" \
                     -a -z "$SDB_EXECUTE_ONLY_IN_MYSQL" -a -z "$SDB_SELECTOR_PUSHDOWN_THRESHOLD" -a -z "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD" \
