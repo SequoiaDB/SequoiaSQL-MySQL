@@ -4,12 +4,14 @@
 #seqDB-19228
 #Bug SEQUOIASQLMAINSTREAM-360
 connection conn2;
+set session sequoiadb_support_mode="";
 --disable_warnings
 set sql_mode=TRADITIONAL;
 --enable_warnings
 select @@SESSION.sql_mode;
 
 connection conn1;
+set session sequoiadb_support_mode="";
 --disable_warnings
 set sql_mode=NO_ENGINE_SUBSTITUTION;
 select @@SESSION.sql_mode;
@@ -202,9 +204,7 @@ connection conn1;
 drop database if exists meta_sync_test;
 --enable_warnings
 create database if not exists meta_sync_test character set = 'latin1';
-SET GLOBAL sequoiadb_strict_collation=OFF;
 create table meta_sync_test.t1 (a int key auto_increment,b char(255));
-SET GLOBAL sequoiadb_strict_collation=ON;
 
 connection conn2;
 delimiter //;
@@ -232,9 +232,7 @@ show create table meta_sync_test.t1;
 show create function meta_sync_test.f1;
 
 connection conn1;
-SET GLOBAL sequoiadb_strict_collation=OFF;
 alter table meta_sync_test.t1 change column c d bigint not null;
-SET GLOBAL sequoiadb_strict_collation=ON;
 connection conn2;
 drop function meta_sync_test.f1;
 
@@ -435,9 +433,7 @@ drop table meta_sync_test.t2;
 
 #Case 22698
 connection conn1;
-SET GLOBAL sequoiadb_strict_collation=OFF;
 create table meta_sync_test.t1 (id int, name char(255));
-SET GLOBAL sequoiadb_strict_collation=ON;
 connection conn2;
 delimiter //;
 create procedure meta_sync_test.p1()

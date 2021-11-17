@@ -5,6 +5,7 @@
 
 # connect to conn1, clear databases in the beginning
 connection conn1;
+set session sequoiadb_support_mode="";
 --disable_warnings
 DROP DATABASE IF EXISTS metasync_procedure;
 DROP DATABASE IF EXISTS metasync_scptpkg;
@@ -12,6 +13,7 @@ DROP DATABASE IF EXISTS metasync_scptpkg;
 
 # connect to conn2, check databases are cleaned in the beginning
 connection conn2;
+set session sequoiadb_support_mode="";
 --sleep $sleep
 --error ER_BAD_DB_ERROR 
 SHOW CREATE DATABASE metasync_procedure;

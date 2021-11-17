@@ -1,8 +1,9 @@
+set session sequoiadb_support_mode="";
 set sql_mode=TRADITIONAL;
 select @@SESSION.sql_mode;
 @@SESSION.sql_mode
 STRICT_TRANS_TABLES,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,TRADITIONAL,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
-SET GLOBAL sequoiadb_strict_collation=OFF;
+set session sequoiadb_support_mode="";
 set sql_mode=NO_ENGINE_SUBSTITUTION;
 select @@SESSION.sql_mode;
 @@SESSION.sql_mode
@@ -883,4 +884,3 @@ ERROR 42S02: Table 'metasync_22697.v1' doesn't exist
 DROP DATABASE metasync_22697;
 SHOW CREATE DATABASE metasync_22697;
 ERROR 42000: Unknown database 'metasync_22697'
-SET GLOBAL sequoiadb_strict_collation=ON;

@@ -1,6 +1,8 @@
 connection conn1;
+set session sequoiadb_support_mode="";
 DROP DATABASE IF EXISTS metasync_alter_tables;
 connection conn2;
+set session sequoiadb_support_mode="";
 SHOW CREATE DATABASE metasync_alter_tables;
 ERROR 42000: Unknown database 'metasync_alter_tables'
 connection conn1;
@@ -14,9 +16,7 @@ CREATE TABLE t5 ( a INT );
 CREATE TABLE t6 ( a INT );
 CREATE TABLE t7 ( a INT );
 ALTER TABLE t1 COMMENT "{table_options:{ShardingKey:{a:1}},ShardingType:'range',Compressed:true,CompressionType:'lzw',ReplSize:3,EnsureShardingIndex:false, StrictDataMode:true,AutoIndexId:true}", ALGORITHM=COPY;
-SET GLOBAL sequoiadb_strict_collation=OFF;
 ALTER TABLE t2 CONVERT TO CHARACTER SET 'cp1251', ALGORITHM=COPY;
-SET GLOBAL sequoiadb_strict_collation=ON;
 ALTER TABLE t3 ENGINE INNODB;
 ALTER TABLE t4 TABLESPACE ts, ALGORITHM = INPLACE;
 ALTER TABLE t4 ADD CHECK ( a > 10 );
@@ -571,8 +571,8 @@ ERROR 42S02: Table 'metasync_alter_tables.t101' doesn't exist
 SHOW CREATE TABLE t103;
 ERROR 42S02: Table 'metasync_alter_tables.t103' doesn't exist
 connection conn1;
-CREATE TABLE t1 ( id INT NOT NULL, a INT, PRIMARY KEY( id ) ) ENGINE INNODB;
-CREATE TABLE t2 ( id INT ) ENGINE INNODB
+CREATE TABLE t1 ( id INT NOT NULL, a INT, PRIMARY KEY( id ) ) ENGINE SEQUOIADB;
+CREATE TABLE t2 ( id INT ) ENGINE SEQUOIADB
 PARTITION BY RANGE ( id )
 (PARTITION p0 VALUES LESS THAN (0),
 PARTITION p1 VALUES LESS THAN (1) );
@@ -592,18 +592,18 @@ t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
   `a` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
  PARTITION BY RANGE (`id`)
 SUBPARTITION BY HASH (`id`)
 (PARTITION `p1` VALUES LESS THAN (1)
- (SUBPARTITION `p1sp0` ENGINE = InnoDB),
+ (SUBPARTITION `p1sp0` ENGINE = SequoiaDB),
  PARTITION `p3` VALUES LESS THAN (3)
- (SUBPARTITION `sp3` ENGINE = InnoDB))
+ (SUBPARTITION `sp3` ENGINE = SequoiaDB))
 SHOW CREATE TABLE t2;
 Table	Create Table
 t2	CREATE TABLE `t2` (
   `id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 connection conn1;
 DROP TABLE t1,t2;
 connection conn2;

@@ -1,7 +1,9 @@
 connection conn1;
+set session sequoiadb_support_mode="";
 DROP DATABASE IF EXISTS metasync_procedure;
 DROP DATABASE IF EXISTS metasync_scptpkg;
 connection conn2;
+set session sequoiadb_support_mode="";
 SHOW CREATE DATABASE metasync_procedure;
 ERROR 42000: Unknown database 'metasync_procedure'
 SHOW CREATE DATABASE metasync_scptpkg;

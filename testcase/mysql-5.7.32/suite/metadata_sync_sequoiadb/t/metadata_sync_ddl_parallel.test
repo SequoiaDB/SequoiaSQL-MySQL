@@ -4,13 +4,14 @@
 #seqDB-19228
 #Bug SEQUOIASQLMAINSTREAM-360
 connection conn2;
+set session sequoiadb_support_mode="";
 --disable_warnings
 set sql_mode=TRADITIONAL;
 --enable_warnings
 select @@SESSION.sql_mode;
 
 connection conn1;
-SET GLOBAL sequoiadb_strict_collation=OFF;
+set session sequoiadb_support_mode="";
 --disable_warnings
 set sql_mode=NO_ENGINE_SUBSTITUTION;
 select @@SESSION.sql_mode;
@@ -850,8 +851,6 @@ DROP DATABASE metasync_22697;
 connection conn1;
 --error ER_BAD_DB_ERROR
 SHOW CREATE DATABASE metasync_22697;
-
-SET GLOBAL sequoiadb_strict_collation=ON;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
