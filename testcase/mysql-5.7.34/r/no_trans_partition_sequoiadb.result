@@ -1,3 +1,10 @@
+drop database if exists no_trans_partition_sequoiadb;
+Warnings:
+Note	1008	Can't drop database 'no_trans_partition_sequoiadb'; database doesn't exist
+create database no_trans_partition_sequoiadb;
+drop database no_trans_partition_sequoiadb;
+create database no_trans_partition_sequoiadb;
+use no_trans_partition_sequoiadb;
 CREATE TABLE t1 ( a INT, c CHAR(16), PRIMARY KEY(a,c) )
 PARTITION BY RANGE COLUMNS (a,c) (
 PARTITION p1 VALUES LESS THAN (10,'h'),
@@ -115,7 +122,7 @@ id	b	c
 45	90	10
 150	300	11
 SELECT PARTITION_NAME, PARTITION_METHOD, PARTITION_EXPRESSION, TABLE_ROWS
-FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%test_parallel%' AND TABLE_NAME = 't#P#1';
+FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%no_trans_partition_sequoiadb%' AND TABLE_NAME = 't#P#1';
 PARTITION_NAME	PARTITION_METHOD	PARTITION_EXPRESSION	TABLE_ROWS
 p0	RANGE COLUMNS	`b`	3
 p1	RANGE COLUMNS	`b`	2
@@ -316,8 +323,28 @@ Duplicate key found, please update or delete the record:
  id:3 b:6 c:20
 x	repair	error	Partition pmix1 returned error
 x	repair	error	Corrupt
+show create table `t#P#1`;
+Table	Create Table
+t#P#1	CREATE TABLE `t#P#1` (
+  `id` int(11) DEFAULT NULL,
+  `b` int(11) GENERATED ALWAYS AS ((`id` * 2)) STORED,
+  `c` char(16) DEFAULT NULL,
+  UNIQUE KEY `b` (`b`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
+/*!50500 PARTITION BY RANGE  COLUMNS(b)
+(PARTITION p1 VALUES LESS THAN (10) ENGINE = SequoiaDB,
+ PARTITION pmix1 VALUES LESS THAN (5000) ENGINE = SequoiaDB) */
+select * from `t#P#1`;
+id	b	c
+150	300	newC
+0	0	3
+3	6	16
+3	6	20
+1000	2000	newC
+1500	3000	newC
+500	1000	newC
 ALTER TABLE `t#P#1` REBUILD PARTITION P1;
-ERROR 23000: Can't write; duplicate key in table 't#P#1'
+ERROR 23000: Duplicate entry '{ "b": 6 }' for key 'b'
 CHECK TABLE `t#P#1`;
 Table	Op	Msg_type	Msg_text
 x	check	error	Found a misplaced row in part pmix1 should be in part p1:
@@ -562,7 +589,7 @@ id	a	d
 4	3	2008-02-01
 81	80	2020-03-01
 SELECT PARTITION_NAME, PARTITION_METHOD, PARTITION_EXPRESSION, TABLE_ROWS 
-FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%test_parallel%' AND TABLE_NAME = 't1#Range#Expr';
+FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%no_trans_partition_sequoiadb%' AND TABLE_NAME = 't1#Range#Expr';
 PARTITION_NAME	PARTITION_METHOD	PARTITION_EXPRESSION	TABLE_ROWS
 p0	RANGE	 YEAR(d)	2
 p1	RANGE	 YEAR(d)	1
@@ -570,14 +597,14 @@ p2	RANGE	 YEAR(d)	1
 p3	RANGE	 YEAR(d)	1
 p4	RANGE	 YEAR(d)	1
 SELECT PARTITION_NAME, PARTITION_METHOD, PARTITION_EXPRESSION, TABLE_ROWS 
-FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%test_parallel%' AND TABLE_NAME = 't1#List#Expr';
+FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%no_trans_partition_sequoiadb%' AND TABLE_NAME = 't1#List#Expr';
 PARTITION_NAME	PARTITION_METHOD	PARTITION_EXPRESSION	TABLE_ROWS
 ptest1	LIST	b	2
 otest2	LIST	b	2
 qtest3	LIST	b	2
 ytest4	LIST	b	1
 SELECT PARTITION_NAME, PARTITION_METHOD, PARTITION_EXPRESSION, TABLE_ROWS 
-FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%test_parallel%' AND TABLE_NAME = 't1#P#List#Columns';
+FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%no_trans_partition_sequoiadb%' AND TABLE_NAME = 't1#P#List#Columns';
 PARTITION_NAME	PARTITION_METHOD	PARTITION_EXPRESSION	TABLE_ROWS
 l1	LIST COLUMNS	`a`,`d`	1
 l2	LIST COLUMNS	`a`,`d`	1
@@ -826,7 +853,7 @@ x	check	error	Found a misplaced row in part pmoren2 should be in part ptest1:
 x	check	error	Partition pmoren2 returned error
 x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#List#Expr`" or dump/reload to fix it!
 ALTER TABLE `t1#List#Expr` REBUILD PARTITION ALL;
-ERROR 23000: Can't write; duplicate key in table 't1#List#Expr'
+ERROR 23000: Duplicate entry '{ "b": 11, "_phid_": 1552968119539958649 }' for key 'b'
 CHECK TABLE `t1#List#Expr`;
 Table	Op	Msg_type	Msg_text
 x	check	error	Found a misplaced row in part pmoren2 should be in part ptest1:
@@ -1098,7 +1125,7 @@ ERROR HY000: Cannot specify HASH or KEY partitions
 UPDATE `t1#P#Sub#` PARTITION (x21) SET a = 10;
 ERROR HY000: Cannot specify HASH or KEY partitions
 SELECT PARTITION_NAME, SUBPARTITION_NAME, PARTITION_METHOD, SUBPARTITION_METHOD, PARTITION_EXPRESSION, SUBPARTITION_EXPRESSION, TABLE_ROWS 
-FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%test_parallel%' AND TABLE_NAME = 't1#Sub#';
+FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%no_trans_partition_sequoiadb%' AND TABLE_NAME = 't1#Sub#';
 PARTITION_NAME	SUBPARTITION_NAME	PARTITION_METHOD	SUBPARTITION_METHOD	PARTITION_EXPRESSION	SUBPARTITION_EXPRESSION	TABLE_ROWS
 p01	p01sp0	RANGE	LINEAR KEY	 ABS(f2)	`f1`	3
 p01	p01sp1	RANGE	LINEAR KEY	 ABS(f2)	`f1`	2
@@ -1107,7 +1134,7 @@ p11	p11sp1	RANGE	LINEAR KEY	 ABS(f2)	`f1`	2
 p21	p21sp0	RANGE	LINEAR KEY	 ABS(f2)	`f1`	2
 p21	p21sp1	RANGE	LINEAR KEY	 ABS(f2)	`f1`	2
 SELECT PARTITION_NAME, SUBPARTITION_NAME, PARTITION_METHOD, SUBPARTITION_METHOD, PARTITION_EXPRESSION, SUBPARTITION_EXPRESSION, TABLE_ROWS 
-FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%test_parallel%' AND TABLE_NAME = 't1#P#Sub#';
+FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_SCHEMA LIKE '%no_trans_partition_sequoiadb%' AND TABLE_NAME = 't1#P#Sub#';
 PARTITION_NAME	SUBPARTITION_NAME	PARTITION_METHOD	SUBPARTITION_METHOD	PARTITION_EXPRESSION	SUBPARTITION_EXPRESSION	TABLE_ROWS
 x1	x11	RANGE COLUMNS	HASH	`b`,`c`	a+b	2
 x1	x12	RANGE COLUMNS	HASH	`b`,`c`	a+b	2
@@ -1462,7 +1489,7 @@ x	check	error	Found a misplaced row in part p11 should be in part p21:
 x	check	error	Partition p11 returned error
 x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
 ALTER TABLE `t1#Sub#` REBUILD PARTITION ALL;
-ERROR 23000: Can't write; duplicate key in table 't1#Sub#'
+ERROR 23000: Duplicate entry '{ "f1": 12, "f2": 165, "_phid_": 831078883276435528 }' for key 'PRIMARY'
 REPAIR TABLE `t1#Sub#`;
 Table	Op	Msg_type	Msg_text
 x	repair	error	Failed to move/insert a row from part p01 into part p11:
@@ -2190,3 +2217,4 @@ PARTITION p0 VALUES LESS THAN (100),
 PARTITION p1 VALUES LESS THAN (200)
 );
 ERROR HY000: Virtual generated column 'id' cannot be used for ShardingKey
+drop database no_trans_partition_sequoiadb;
