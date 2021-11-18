@@ -1244,7 +1244,7 @@ static int update_cata_version_for_alter_part_table(
     Mapping_context_impl tbl_mapping;
     rc = sql_info->sdb_conn->snapshot(obj, SDB_SNAP_CATALOG, table->db_name,
                                       table->table_name, &tbl_mapping);
-    if (SDB_DMS_EOC == get_sdb_code(rc)) {
+    if (SDB_DMS_EOC == get_sdb_code(rc) || HA_ERR_END_OF_FILE == rc) {
       // can not find cata info, its innodb partition table
       rc = 0;
       goto done;
