@@ -31,6 +31,7 @@
 #include "sql_class.h"  // THD
 #include "sql_parse.h"  // mysql_parse
 
+#include "server_ha.h"
 #include "server_ha_query.h"
 #include "mysql/psi/mysql_file.h"
 
@@ -82,6 +83,10 @@ int server_ha_query(THD *thd, const char *query, size_t q_len) {
   rc = thd->is_error() ? thd->get_stmt_da()->mysql_errno() : 0;
 
 #ifndef EMBEDDED_LIBRARY
+  // reset st_sql_stmt_info::dml_checked_objects
+  mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_GENERAL_LOG), 0,
+                     STRING_WITH_LEN(HA_RESET_CHECKED_OBJECTS));
+
   // this is the final step of audit. it's necessary, or the sequoiadb
   // transaction for 'HA' module will not be over if it's invoked in
   // 'replay_pending_log' function
@@ -161,6 +166,9 @@ int server_ha_query(THD* thd, const char* query, size_t q_len) {
   mysql_parse(thd, (char*)query, q_len, &parser_state, FALSE, FALSE);
 
   rc = thd->is_error() ? thd->get_stmt_da()->sql_errno() : 0;
+
+  // reset st_sql_stmt_info::dml_checked_objects
+  mysql_audit_general(thd, 0, 0, HA_RESET_CHECKED_OBJECTS);
 
   // this is the final step of audit. it's necessary, or the sequoiadb
   // transaction for 'HA' module will not be over if it's invoked in

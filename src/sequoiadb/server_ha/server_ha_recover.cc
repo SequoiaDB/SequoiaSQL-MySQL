@@ -28,6 +28,7 @@
 #include "sql_common.h"
 #include "server_ha_query.h"
 #include "name_map.h"
+#include "sql_audit.h"
 
 // SQL statements
 #define HA_STMT_EXEC_ONLY_IN_MYSQL "SET sequoiadb_execute_only_in_mysql = 1"
@@ -2051,6 +2052,16 @@ error:
 #endif
 }
 
+static void audit_disconnect(THD *thd) {
+#ifdef IS_MARIADB
+  mysql_audit_notify_connection_disconnect(thd, 0);
+#else
+#ifndef EMBEDDED_LIBRARY
+  mysql_audit_notify(thd, AUDIT_EVENT(MYSQL_AUDIT_CONNECTION_DISCONNECT), 0);
+#endif
+#endif
+}
+
 static int replay_pending_log(THD *thd, const char *db, const char *query,
                               const char *session_attrs, int client_charset_num,
                               const char *op_type) {
@@ -2288,6 +2299,9 @@ void *ha_replay_pending_logs(void *arg) {
     rc = 0;
   }
 done:
+  if (thd) {
+    audit_disconnect(thd);
+  }
   if (stopped_mutex_locked) {
     mysql_mutex_unlock(current_mutex);
   }
