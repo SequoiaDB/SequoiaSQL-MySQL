@@ -13,6 +13,9 @@ set @@global.concurrent_insert= 0;
 
 # Compatible with parallel > 1, don't use test anymore, instead create and use database: test_casename
 create database test_sp_notembedded;
+# 清理mysql和sdb的数据
+drop database test_sp_notembedded;
+create database test_sp_notembedded;
 use test_sp_notembedded;
 
 --disable_warnings
@@ -465,7 +468,8 @@ DROP FUNCTION f1;
 --echo #
 
 connection default;
-
+set @old_log_error_verbosity = @@global.log_error_verbosity;
+set @@global.log_error_verbosity = 1;
 --disable_warnings
 DROP DATABASE IF EXISTS `my.db`;
 --enable_warnings
@@ -487,7 +491,7 @@ connection default;
 disconnect addcon;
 DROP DATABASE `my.db`;
 USE test_sp_notembedded;
-
+set @@global.log_error_verbosity = @old_log_error_verbosity;
 
 --echo #
 --echo # Bug#11763507 - 56224: FUNCTION NAME IS CASE-SENSITIVE

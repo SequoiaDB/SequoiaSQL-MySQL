@@ -1,6 +1,8 @@
 set @old_concurrent_insert= @@global.concurrent_insert;
 set @@global.concurrent_insert= 0;
 create database test_sp_notembedded;
+drop database test_sp_notembedded;
+create database test_sp_notembedded;
 use test_sp_notembedded;
 drop table if exists t1,t3;
 drop procedure if exists bug4902|
@@ -296,6 +298,8 @@ DROP FUNCTION f1;
 # The real problem was that server was unable handle properly stored
 # functions in databases which names contained dot.
 #
+set @old_log_error_verbosity = @@global.log_error_verbosity;
+set @@global.log_error_verbosity = 1;
 DROP DATABASE IF EXISTS `my.db`;
 create database `my.db`;
 use `my.db`;
@@ -311,6 +315,7 @@ SELECT `my.db`.f1(2);
 # Switching to default connection.
 DROP DATABASE `my.db`;
 USE test_sp_notembedded;
+set @@global.log_error_verbosity = @old_log_error_verbosity;
 #
 # Bug#11763507 - 56224: FUNCTION NAME IS CASE-SENSITIVE
 #
