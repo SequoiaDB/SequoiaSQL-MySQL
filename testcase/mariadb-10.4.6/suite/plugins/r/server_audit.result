@@ -1,14 +1,11 @@
 install plugin server_audit soname 'server_audit';
+drop database if exists server_audit;
 create database server_audit;
-show databases;
-Database
-information_schema
-mtr
-mysql
-performance_schema
+drop database server_audit;
+create database server_audit;
+show databases like "server_audit";
+Database (server_audit)
 server_audit
-test
-test_parallel_1
 use server_audit;
 show variables like 'server_audit%';
 Variable_name	Value

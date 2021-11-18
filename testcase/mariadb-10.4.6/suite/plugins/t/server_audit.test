@@ -7,8 +7,13 @@ if (!$SERVER_AUDIT_SO) {
 
 install plugin server_audit soname 'server_audit';
 
+--disable_warnings
+drop database if exists server_audit;
+--enable_warnings
 create database server_audit;
-show databases;
+drop database server_audit;
+create database server_audit;
+show databases like "server_audit";
 use server_audit;
 
 show variables like 'server_audit%';

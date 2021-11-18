@@ -956,14 +956,14 @@ CREATE TABLE t1 (a int)
 PARTITION BY LIST (a)
 (PARTITION p0 VALUES IN (1,2,3), PARTITION p1 VALUES IN (4,5,6));
 insert into t1 values (1),(2),(3),(4),(5),(6);
-select * from t1;
+select * from t1 order by a;
 a
-4
-5
-6
 1
 2
 3
+4
+5
+6
 truncate t1;
 select * from t1;
 a

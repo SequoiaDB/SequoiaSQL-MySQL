@@ -873,7 +873,7 @@ PARTITION BY LIST (a)
 
 --sorted_result
 insert into t1 values (1),(2),(3),(4),(5),(6);
-select * from t1;
+select * from t1 order by a;
 truncate t1;
 select * from t1;
 truncate t1;
