@@ -334,15 +334,15 @@ t#P#1	CREATE TABLE `t#P#1` (
 /*!50500 PARTITION BY RANGE  COLUMNS(b)
 (PARTITION p1 VALUES LESS THAN (10) ENGINE = SequoiaDB,
  PARTITION pmix1 VALUES LESS THAN (5000) ENGINE = SequoiaDB) */
-select * from `t#P#1`;
+select * from `t#P#1` order by id,b,c;
 id	b	c
-150	300	newC
 0	0	3
 3	6	16
 3	6	20
+150	300	newC
+500	1000	newC
 1000	2000	newC
 1500	3000	newC
-500	1000	newC
 ALTER TABLE `t#P#1` REBUILD PARTITION P1;
 ERROR 23000: Duplicate entry '{ "b": 6 }' for key 'b'
 CHECK TABLE `t#P#1`;

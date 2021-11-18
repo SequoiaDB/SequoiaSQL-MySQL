@@ -140,7 +140,7 @@ ALTER TABLE `t#P#1` REPAIR PARTITION P1;
 --replace_column 1 x
 ALTER TABLE `t#P#1` REPAIR PARTITION pmix1 EXTENDED;
 show create table `t#P#1`;
-select * from `t#P#1`;
+select * from `t#P#1` order by id,b,c;
 #--error ER_DUP_KEY
 # SEQUOIASQLMAINSTREAM-1193
 --error 1062
