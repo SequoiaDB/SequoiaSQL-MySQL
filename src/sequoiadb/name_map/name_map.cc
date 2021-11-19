@@ -44,7 +44,7 @@ static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
                    NM_TABLE_MAP);
       cl_options = BSON(SDB_FIELD_GROUP << NM_SYS_META_GROUP);
       rc = sdb_conn.create_cl(sql_group_cs_name, NM_TABLE_MAP, cl_options);
-      if (SDB_DMS_CS_EXIST == rc) {
+      if (SDB_DMS_CS_EXIST == get_sdb_code(rc)) {
         rc = sdb_conn.create_cl(sql_group_cs_name, NM_TABLE_MAP, cl_options);
       }
       rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
@@ -134,11 +134,12 @@ int check_if_mapping_table_empty(Sdb_conn *conn, bool &is_empty) {
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, Name_mapping::get_sql_group());
   rc = get_table_map_cl(*conn, sql_group_cs_name, mapping_table);
-  if (SDB_CLS_GRP_NOT_EXIST == rc) {
+  if (SDB_CLS_GRP_NOT_EXIST == get_sdb_code(rc)) {
     SDB_LOG_INFO(
         "'SysMetaGroup' data group does not exist, "
         "mapping function is not enabled");
     is_empty = true;
+    rc = 0;
     goto done;
   }
   if (0 != rc) {
