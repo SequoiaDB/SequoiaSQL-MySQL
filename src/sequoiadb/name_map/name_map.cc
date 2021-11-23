@@ -48,6 +48,12 @@ static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
         rc = sdb_conn.create_cl(sql_group_cs_name, NM_TABLE_MAP, cl_options);
       }
       rc = (SDB_DMS_EXIST == get_sdb_code(rc)) ? 0 : rc;
+      if (SDB_CLS_GRP_NOT_EXIST == get_sdb_code(rc)) {
+        SDB_LOG_WARNING(
+            "NM: Data group '%s' does not exist, unable to create '%s.%s'",
+            NM_SYS_META_GROUP, sql_group_cs_name, NM_TABLE_MAP);
+        goto error;
+      }
       if (0 != rc) {
         SDB_LOG_ERROR("NM: Unable to get table '%s', sequoiadb error: %d",
                       NM_TABLE_MAP, rc);
