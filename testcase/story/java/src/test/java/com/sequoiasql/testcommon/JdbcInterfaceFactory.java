@@ -18,6 +18,10 @@ public class JdbcInterfaceFactory {
                 JdbcWarpper.class.getName() );
         register( JdbcWarpperType.JdbcWarpperOfHaInst2,
                 JdbcWarpper.class.getName() );
+        register( JdbcWarpperType.JdbcWarpperOfAnother1,
+                JdbcWarpper.class.getName() );
+        register( JdbcWarpperType.JdbcWarpperOfAnother2,
+                JdbcWarpper.class.getName() );
         register( JdbcWarpperType.JdbcWarpperOfInnoDB,
                 JdbcWarpper.class.getName() );
         register( JdbcWarpperType.JdbcWarpperMgr,
