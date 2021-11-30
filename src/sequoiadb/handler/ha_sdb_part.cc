@@ -588,6 +588,17 @@ error:
   goto done;
 }
 
+void ha_sdb_part_wrapper::reset_part_state(THD *thd) {
+  List_iterator<partition_element> part_it(m_part_info->partitions);
+  partition_element *part_elem = NULL;
+
+  while ((part_elem = part_it++)) {
+    if (part_elem->part_state == PART_ADMIN) {
+      part_elem->part_state = PART_NORMAL;
+    }
+  }
+}
+
 /*
   Here we just need to create a handler and set m_tot_part to 1. The
   actual number of partitions is saved in m_part_info.

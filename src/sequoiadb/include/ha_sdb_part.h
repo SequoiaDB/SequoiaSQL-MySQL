@@ -641,28 +641,42 @@ class ha_sdb_part_wrapper : public ha_partition {
   enum row_type get_row_type() const { return m_file[0]->get_row_type(); }
 
   int optimize(THD* thd, HA_CHECK_OPT* check_opt) {
-    return m_file[0]->ha_optimize(thd, check_opt);
+    int rc = 0;
+    rc = m_file[0]->ha_optimize(thd, check_opt);
+    reset_part_state(thd);
+    return rc;
   }
 
   int analyze(THD* thd, HA_CHECK_OPT* check_opt) {
-    return m_file[0]->ha_analyze(thd, check_opt);
+    int rc = 0;
+    rc = m_file[0]->ha_analyze(thd, check_opt);
+    reset_part_state(thd);
+    return rc;
   }
 
   bool check_and_repair(THD* thd) { return false; }
 
   int check(THD* thd, HA_CHECK_OPT* check_opt) {
-    return m_file[0]->ha_check(thd, check_opt);
+    int rc = 0;
+    rc = m_file[0]->ha_check(thd, check_opt);
+    reset_part_state(thd);
+    return rc;
   }
 
   int repair(THD* thd, HA_CHECK_OPT* check_opt) {
-    return m_file[0]->ha_repair(thd, check_opt);
+    int rc = 0;
+    rc = m_file[0]->ha_repair(thd, check_opt);
+    reset_part_state(thd);
+    return rc;
   }
 
   int assign_to_keycache(THD* thd, HA_CHECK_OPT* check_opt) {
+    reset_part_state(thd);
     return HA_ADMIN_NOT_IMPLEMENTED;
   }
 
   int preload_keys(THD* thd, HA_CHECK_OPT* check_opt) {
+    reset_part_state(thd);
     return HA_ADMIN_NOT_IMPLEMENTED;
   }
 
@@ -811,6 +825,8 @@ class ha_sdb_part_wrapper : public ha_partition {
   }
 
  private:
+  void reset_part_state(THD* thd);
+
   bool create_handlers(MEM_ROOT* mem_root);
 
   bool setup_engine_array(MEM_ROOT* mem_root);
