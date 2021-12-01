@@ -25,6 +25,7 @@ let $mysql_pwd    = $META_PASSWD;                         ## mysql password
 let $sleep        = $META_SYNC_TIMEOUT;                   ## sync waiting time of multiple instances of an instance group
 let $mysql_db     = information_schema;                   ## mysql database, should exist in mysql instance
 
+--disable_query_log
 # instance group1
 connect ( group1_conn1, $mysql_group1_host1, $mysql_user, $mysql_pwd, $mysql_db, $mysql_group1_port1 );
 connect ( group1_conn2, $mysql_group1_host2, $mysql_user, $mysql_pwd, $mysql_db, $mysql_group1_port2 );
@@ -32,3 +33,4 @@ connect ( group1_conn2, $mysql_group1_host2, $mysql_user, $mysql_pwd, $mysql_db,
 # inst1 of group2
 connect ( group2_conn1, $mysql_group2_host1, $mysql_user, $mysql_pwd, $mysql_db, $mysql_group2_port1 );
 connect ( group2_conn2, $mysql_group2_host2, $mysql_user, $mysql_pwd, $mysql_db, $mysql_group2_port2 );
+--enable_query_log
