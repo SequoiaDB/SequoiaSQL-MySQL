@@ -69,23 +69,22 @@ id	name	email
 2	zhaoxin	23456322@qq.com
 3	libai	77869322@qq.com
 drop table t3;
-create table t4(id int primary key,name varchar(10) not null,sdate datetime);
+create table t4(id int primary key,name varchar(10) not null);
 show create table t4;
 Table	Create Table
 t4	CREATE TABLE `t4` (
   `id` int(11) NOT NULL,
   `name` varchar(10) NOT NULL,
-  `sdate` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
-insert into t4 values(1,'abc',now());
-insert into t4(name,sdate) values('daqiao',now());
+insert into t4 values(1,'abc');
+insert into t4(name) values('daqiao');
 ERROR HY000: Field 'id' doesn't have a default value
-insert into t4(id,sdate) values(2,now());
+insert into t4(id) values(2);
 ERROR HY000: Field 'name' doesn't have a default value
 select * from t4;
-id	name	sdate
-1	abc	2021-11-25 22:20:30
+id	name
+1	abc
 drop table t4;
 create table t5(id int auto_increment primary key,name varchar(10),email varchar(128) default 'sequoiadb.com');
 show create table t5;

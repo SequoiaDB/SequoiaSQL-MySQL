@@ -39,13 +39,13 @@ insert into t3(name,email) values('zhaoxin','23456322@qq.com');
 select * from t3;
 drop table t3;
 #非空约束测试
-create table t4(id int primary key,name varchar(10) not null,sdate datetime);
+create table t4(id int primary key,name varchar(10) not null);
 show create table t4;
-insert into t4 values(1,'abc',now());
+insert into t4 values(1,'abc');
 --error 1364
-insert into t4(name,sdate) values('daqiao',now());
+insert into t4(name) values('daqiao');
 --error 1364
-insert into t4(id,sdate) values(2,now());
+insert into t4(id) values(2);
 select * from t4;
 drop table t4;
 #默认值约束
