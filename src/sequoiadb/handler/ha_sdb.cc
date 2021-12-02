@@ -8530,6 +8530,12 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   Sdb_conn *connection = NULL;
   sdb_rc = get_sdb_code(error);
   if (sdb_rc >= SDB_ERR_OK) {
+    if (SDB_ERR_TOO_MANY_TABLES == sdb_rc) {
+      my_printf_error(sdb_rc,
+                      "Too many tables in current database, "
+                      "the upper limit is %d",
+                      MYF(0), sdb_mapping_unit_count * sdb_mapping_unit_size);
+    }
     goto done;
   }
 

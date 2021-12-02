@@ -39,6 +39,9 @@ enum SDB_ERR_CODE {
   SDB_ERR_BUILD_BSON,
   SDB_ERR_OOM,
 
+  // name mapping error code
+  SDB_ERR_TOO_MANY_TABLES,
+
   SDB_ERR_INNER_CODE_BEGIN = 40000,
   SDB_ERR_INNER_CODE_END = 50000
 };

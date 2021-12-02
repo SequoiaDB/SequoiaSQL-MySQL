@@ -268,7 +268,7 @@ int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
 
   DBUG_ASSERT(slot < m_mapping_unit_count);
   if (cs_slot_is_full[slot]) {
-    rc = SDB_HA_EXCEPTION;
+    rc = SDB_ERR_TOO_MANY_TABLES;
     SDB_LOG_ERROR("NM: too many tables in current database, limit: %d",
                   m_mapping_unit_size * m_mapping_unit_count);
     goto error;
@@ -480,10 +480,7 @@ retry:
         cs_name, rc);
     goto error;
   }
-  mapping_ctx->set_mapping_cs(cs_name);
-  mapping_ctx->set_mapping_cl(cl_name);
-  mapping_ctx->set_mapping_state(NM_STATE_CREATING);
-  mapping_ctx->set_part_table(!is_phy_table);
+
   if (cl_cnt > m_mapping_unit_size && retry_count < SDB_MAX_RETRY_TIME) {
     retry_count++;
     rc = mapping_table.del(cond);
@@ -498,8 +495,14 @@ retry:
   } else if (cl_cnt > m_mapping_unit_size) {
     SDB_LOG_ERROR("Number of table mapping in '%s' exceed the limit %d",
                   cs_name, m_mapping_unit_size);
-    rc = SDB_DMS_NOSPC;
+    rc = SDB_ERR_TOO_MANY_TABLES;
+    goto error;
   }
+
+  mapping_ctx->set_mapping_cs(cs_name);
+  mapping_ctx->set_mapping_cl(cl_name);
+  mapping_ctx->set_mapping_state(NM_STATE_CREATING);
+  mapping_ctx->set_part_table(!is_phy_table);
 done:
   return rc;
 error:
