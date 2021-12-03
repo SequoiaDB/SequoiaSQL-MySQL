@@ -1319,21 +1319,23 @@ int sdb_batched_keys_ranges::expand_buf(int n_ranges) {
   int rc = SDB_OK;
   uchar *ptr = NULL;
   int keys_buf_size = m_key_length * n_ranges;
+  uchar *old_ptr = NULL;
   DBUG_ASSERT(initialized() && need_expand(n_ranges));
+  old_ptr = m_keys_buf;
   /* Realloc the buffer */
   int records_buf_size = sizeof(sdb_key_range_info) * n_ranges;
-  ptr = (uchar *)sdb_my_realloc(sdb_key_memory_batched_keys_buf, m_keys_buf,
-                                keys_buf_size + records_buf_size,
-                                MYF(MY_WME | MY_ZEROFILL));
+  ptr = (uchar *)sdb_multi_malloc(sdb_key_memory_batched_keys_buf,
+                                  MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
+                                  keys_buf_size, &m_records_buf,
+                                  records_buf_size, NullS);
   if (NULL == ptr) {
     rc = HA_ERR_OUT_OF_MEM;
     SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
     goto error;
   }
+  my_free(old_ptr);
   my_hash_reset(&m_ranges_buf);
-  m_keys_buf = ptr;
   m_keys_buf_idx = 0;
-  m_records_buf = (sdb_key_range_info *)(m_keys_buf + keys_buf_size);
   m_max_elements_cnt = n_ranges;
   m_used_elements_cnt = n_ranges;
 done:
