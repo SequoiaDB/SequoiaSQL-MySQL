@@ -179,6 +179,7 @@ static int get_sql_stmt_info(ha_sql_stmt_info **sql_info) {
       (*sql_info)->inited = false;
       (*sql_info)->is_result_set_started = false;
       (*sql_info)->last_instr_lex = NULL;
+      (*sql_info)->has_handle_error = false;
       my_set_thread_local(ha_sql_stmt_info_key, *sql_info);
     } else {
       rc = SDB_HA_OOM;
@@ -219,7 +220,6 @@ bool ha_is_executing_pending_log(THD *thd) {
 static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
   int rc = 0;
   bool is_hash_inited = false;
-  bool is_conn_created = false;
 
   if (sql_info->inited && sql_info->sdb_conn) {
     // if client execute some DDL statements, exit session,
@@ -231,6 +231,7 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
   sql_info->dml_retry_flag = false;
   sql_info->is_result_set_started = false;
   sql_info->last_instr_lex = NULL;
+  sql_info->has_handle_error = false;
   if (sdb_hash_init(&(sql_info->dml_checked_objects), table_alias_charset, 32,
                     0, 0, (my_hash_get_key)cached_record_get_key,
                     free_cached_record_elem, 0, PSI_INSTRUMENT_ME)) {
@@ -247,13 +248,6 @@ static int update_sql_stmt_info(ha_sql_stmt_info *sql_info, ulong thread_id) {
     rc = SDB_HA_OOM;
     goto error;
   }
-  is_conn_created = true;
-
-  rc = sql_info->sdb_conn->connect();
-  if (rc) {
-    goto error;
-  }
-
   sql_info->inited = true;
 
 done:
@@ -261,10 +255,6 @@ done:
 error:
   if (is_hash_inited) {
     my_hash_free(&sql_info->dml_checked_objects);
-  }
-  if (is_conn_created) {
-    delete sql_info->sdb_conn;
-    sql_info->sdb_conn = NULL;
   }
   goto done;
 }
@@ -3584,6 +3574,11 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
     goto error;
   }
 
+  rc = sql_info->sdb_conn->connect();
+  if (rc) {
+    goto error;
+  }
+
   // get objects for current query
   rc = get_query_objects(thd, sql_info);
   if (rc) {
@@ -3609,6 +3604,7 @@ error:
 
 static void handle_error(int error, ha_sql_stmt_info *sql_info) {
   DBUG_ASSERT(NULL != sql_info);
+  sql_info->has_handle_error = true;
   switch (error) {
     case SDB_HA_OOM:
       my_printf_error(SDB_HA_OOM, "HA: Out of memory while persisting SQL log",
@@ -3650,6 +3646,7 @@ static void handle_error(int error, ha_sql_stmt_info *sql_info) {
                       sql_info->err_message);
       break;
   }
+  sql_info->has_handle_error = false;
   sql_info->err_message[0] = '\0';
 }
 
@@ -4554,6 +4551,11 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
                     sql_command, event_class, *((int *)ev), thd);
       SDB_LOG_DEBUG("HA: Start transaction for persisting SQL log");
 
+      rc = sql_info->sdb_conn->connect();
+      if (rc) {
+        goto error;
+      }
+
       rc = sql_info->sdb_conn->begin_transaction(ISO_READ_STABILITY);
       if (rc) {
         ha_error_string(*(sql_info->sdb_conn), rc, sql_info->err_message);
@@ -4730,7 +4732,10 @@ error:
   if (sql_info->sdb_conn) {
     ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
   }
-  handle_error(rc, sql_info);
+
+  if (!sql_info->has_handle_error) {
+    handle_error(rc, sql_info);
+  }
   goto done;
 recover_state:
   sql_info->tables = NULL;

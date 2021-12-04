@@ -147,6 +147,7 @@ typedef struct st_sql_stmt_info {
   int pending_sql_id;
   char *single_query;
   bool with_admin;
+  bool has_handle_error;
 } ha_sql_stmt_info;
 
 // use to cache current instance state of all objects(table, view and sp)
