@@ -354,17 +354,25 @@ if(MYSQL)
       if(WITH_DEBUG)
          install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/x86_64/debug"
                  DESTINATION "tools/lib")
+         install(FILES "${CMAKE_SOURCE_DIR}/tools/lib/x86_64/debug/server_audit.so"
+                 DESTINATION "lib/plugin")
       else()
          install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/x86_64/release"
                  DESTINATION "tools/lib")
+         install(FILES "${CMAKE_SOURCE_DIR}/tools/lib/x86_64/release/server_audit.so"
+                 DESTINATION "lib/plugin")
       endif()
    elseif( ${ARCHITECTURE} STREQUAL "aarch64" )
       if(WITH_DEBUG)
          install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/aarch64/debug"
                  DESTINATION "tools/lib")
+         install(FILES "${CMAKE_SOURCE_DIR}/tools/lib/aarch64/debug/server_audit.so"
+                 DESTINATION "lib/plugin")
       else()
          install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib/aarch64/release"
                  DESTINATION "tools/lib")
+         install(FILES "${CMAKE_SOURCE_DIR}/tools/lib/aarch64/release/server_audit.so"
+                 DESTINATION "lib/plugin")
       endif()
    else()
       install(DIRECTORY "${CMAKE_SOURCE_DIR}/tools/lib"
