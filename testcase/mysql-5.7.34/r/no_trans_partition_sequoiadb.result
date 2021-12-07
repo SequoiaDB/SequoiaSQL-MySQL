@@ -782,10 +782,9 @@ id	a	b
 29	29	30
 CHECK TABLE `t1#List#Expr` EXTENDED;
 Table	Op	Msg_type	Msg_text
-x	check	error	Found a misplaced row in part ptest1 should be in part pmoren2:
- b:30
-x	check	error	Partition ptest1 returned error
-x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#List#Expr`" or dump/reload to fix it!
+x	check	error	there are two possible output.
+x	check	error	there are two possible output.
+x	check	error	there are two possible output.
 ALTER TABLE `t1#List#Expr` REPAIR PARTITION ptest1 EXTENDED;
 Table	Op	Msg_type	Msg_text
 x	repair	warning	Moved 2 misplaced rows
@@ -1359,16 +1358,14 @@ id	f1	f2
 1010	13	1000
 CHECK TABLE `t1#Sub#`;
 Table	Op	Msg_type	Msg_text
-x	check	error	Found a misplaced row in part p01 should be in part p21:
- f1:300 f2:290
-x	check	error	Partition p01 returned error
-x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
+x	check	error	there are two possible output.
+x	check	error	there are two possible output.
+x	check	error	there are two possible output.
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p01 MEDIUM;
 Table	Op	Msg_type	Msg_text
-x	check	error	Found a misplaced row in part p01 should be in part p21:
- f1:300 f2:290
-x	check	error	Partition p01 returned error
-x	check	error	Table upgrade required. Please do "REPAIR TABLE `t1#Sub#`" or dump/reload to fix it!
+x	check	error	there are two possible output.
+x	check	error	there are two possible output.
+x	check	error	there are two possible output.
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p11 MEDIUM;
 Table	Op	Msg_type	Msg_text
 x	check	status	OK

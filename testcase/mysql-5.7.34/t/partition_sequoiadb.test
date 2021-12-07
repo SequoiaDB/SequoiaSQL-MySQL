@@ -295,7 +295,7 @@ CHECK TABLE `t1#List#Expr`;
 INSERT INTO `t1#List#Expr#P#ptest1`(id, _phid_, a) VALUES (29,29,29),(-31,31,-31) ;
 INSERT INTO `t1#List#Expr#P#pmoren2`(id, _phid_, a) VALUES (10,10,10);
 SELECT * FROM `t1#List#Expr` ORDER BY id, a; 
---replace_column 1 x
+--replace_column 1 x 4 'there are two possible output.'
 CHECK TABLE `t1#List#Expr` EXTENDED; 
 --replace_column 1 x
 ALTER TABLE `t1#List#Expr` REPAIR PARTITION ptest1 EXTENDED;
@@ -495,9 +495,9 @@ CREATE TABLE `t1#Sub##P#p21` ( id INT(11) NOT NULL, _phid_ BIGINT, f1 INT AUTO_I
 INSERT INTO `t1#Sub##P#p01`(id,f1,_phid_) VALUES (300,300,300),(120,120,120) ;
 INSERT INTO `t1#Sub##P#p21`(id,f1,_phid_) VALUES (80,80,80);
 SELECT * FROM `t1#Sub#` ORDER BY id;  
---replace_column 1 x
+--replace_column 1 x 4 'there are two possible output.'
 CHECK TABLE `t1#Sub#`;    
---replace_column 1 x
+--replace_column 1 x 4 'there are two possible output.'
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p01 MEDIUM;  
 --replace_column 1 x
 ALTER TABLE  `t1#Sub#` CHECK PARTITION p11 MEDIUM;
