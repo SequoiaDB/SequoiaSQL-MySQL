@@ -103,7 +103,11 @@ static int check_table_mapping_limit(Sdb_conn *sdb_conn,
   int rc = 0;
   bson::BSONObj obj;
   const char *tmp_cs_name = NULL;
-  char query[SDB_CS_NAME_MAX_SIZE * 3 + 150] = {0};
+  // MAX_EXTRA_CHARS_LEN is the max length of extra chars(not include variables)
+  // in the query
+  static const int MAX_EXTRA_CHARS_LEN = 150;
+  // there are 3 variables about CS name in the query
+  char query[SDB_CS_NAME_MAX_SIZE * 3 + MAX_EXTRA_CHARS_LEN] = {0};
   // "SELECT SUM(IsPhysicalTable) AS CLCount FROM
   // sql_group_cs_name.TABLE_MAPPING WHERE
   // DBName = 'db_name' AND CSName = 'cs_name'"
@@ -195,7 +199,7 @@ int Name_mapping::get_fixed_mapping(const char *db_name, const char *table_name,
 int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
                                          const char *sql_group_cs_name,
                                          const char *db_name, int &slot) {
-  int rc = 0;
+  int rc = 0, slot_idx = 0;
   int i = 0;
   bool cs_slot_is_full[NM_MAX_MAPPING_UNIT_COUNT];
   const char *cs_name = NULL;
@@ -211,11 +215,16 @@ int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
   while (i < m_mapping_unit_count) {
     cs_slot_is_full[i++] = false;
   }
-  cs_slot_is_full[0] = true;  // disable the first slot
-  char query[SDB_CS_NAME_MAX_SIZE * 3 + 150] = {0};
+  // MAX_EXTRA_CHARS_LEN is the max length of extra chars(not include variables)
+  // in the query
+  static const int MAX_EXTRA_CHARS_LEN = 150;
+  // there are 5 variables about CS name and 1 variable about CL
+  // name in the query
+  char query[SDB_CS_NAME_MAX_SIZE * 5 + SDB_CL_NAME_MAX_SIZE +
+             MAX_EXTRA_CHARS_LEN] = {0};
   // "SELECT CSName, COUNT(IsPhysicalTable) AS CLCount FROM %s.%s WHERE
   // DBName = '%s' AND CSName <> '%s' AND CSName > '%s' AND CSName < '%s'
-  // GROUP BY CSName ORDER BY CLCount DESC" (CSName > groupname#db_name#0
+  // GROUP BY CSName ORDER BY CLCount ASC" (CSName > groupname#db_name#0
   // and CSName < groupname#db_name#999)
   snprintf(query, sizeof(query),
            "SELECT %s, SUM(%s) AS %s FROM %s.%s WHERE %s = '%s' "
@@ -233,46 +242,47 @@ int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
     cs_name = obj.getStringField(NM_FIELD_CS_NAME);
     int cl_cnt = obj.getIntField(NM_FIELD_CL_COUNT);
     if (NULL == cs_name || cs_name[0] == '\0') {
-      // start with "group_name#db_name#1"
-      slot = 1;
+      slot_idx = 0;
       break;
     }
+
     slot = atoi(cs_name + prefix_len);
-    if (0 == slot) {
-      // do not use the first slot, it's not a number
+    // correct slot number range [1, m_mapping_unit_count]
+    if (slot <= 0 || slot > m_mapping_unit_count) {
       continue;
     }
+    slot_idx = slot - 1;
 
     if (cl_cnt < m_mapping_unit_size) {
       break;
-    } else if (slot > m_mapping_unit_count) {
-      // can't be here by usual operation
-      slot = 0;
-    } else {
-      cs_slot_is_full[slot] = true;
     }
+    // current slot is not available
+    cs_slot_is_full[slot_idx] = true;
   }
 
-  DBUG_ASSERT(slot >= 0 && slot <= m_mapping_unit_count);
   rc = (rc == HA_ERR_END_OF_FILE) ? 0 : rc;
-  if (cs_slot_is_full[slot]) {
-    i = slot;
+  if (cs_slot_is_full[slot_idx]) {
+    // current slots are full, choose from the slots have not been used before
+    i = slot_idx;
     do {
       i = (i + 1) % m_mapping_unit_count;
       if (!cs_slot_is_full[i]) {
-        slot = i;
+        slot_idx = i;
         break;
       }
-    } while (i != slot);
+    } while (i != slot_idx);
   }
 
-  DBUG_ASSERT(slot < m_mapping_unit_count);
-  if (cs_slot_is_full[slot]) {
+  DBUG_ASSERT(slot_idx < m_mapping_unit_count);
+  if (cs_slot_is_full[slot_idx]) {
     rc = SDB_ERR_TOO_MANY_TABLES;
-    SDB_LOG_ERROR("NM: too many tables in current database, limit: %d",
-                  m_mapping_unit_size * m_mapping_unit_count);
+    int limit = m_mapping_unit_size *
+                (m_mapping_unit_count + (m_prefer_origin_name ? 1 : 0));
+    SDB_LOG_ERROR("NM: too many tables in current database, limit: %d", limit);
     goto error;
   }
+  // slot number start with 1
+  slot = slot_idx + 1;
 done:
   return rc;
 error:
