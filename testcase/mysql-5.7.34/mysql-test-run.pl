@@ -176,7 +176,9 @@ our $opt_vs_config = $ENV{'MTR_VS_CONFIG'};
 
 # If you add a new suite, please check TEST_DIRS in Makefile.am.
 #
-my $DEFAULT_SUITES= "main,sys_vars,binlog,federated,gis,rpl,innodb,innodb_gis,innodb_fts,innodb_zip,innodb_undo,perfschema,funcs_1,opt_trace,parts,auth_sec,query_rewrite_plugins,gcol,sysschema,test_service_sql_api,json,connection_control";
+my $DEFAULT_SUITES= "main,gis,group_replication,innodb_gis,json,
+                        metadata_mapping_sequoiadb,metadata_sync_sequoiadb,parts,
+                        plugins,x";
 my $opt_suites;
 
 our $opt_verbose= 0;  # Verbose output, enable with --verbose
@@ -377,9 +379,11 @@ our $opt_summary_report;
 our $opt_xml_report;
 
 my $sequoiadb_meta_sync_addr;
-my $sequoiadb_meta_sync_user;
-my $sequoiadb_meta_sync_passwd;
 my $sequoiadb_meta_sync_timeout;
+my $sequoiadb_meta_mapping_group1_addr;
+my $sequoiadb_meta_mapping_group2_addr;
+my $sequoiadb_meta_user;
+my $sequoiadb_meta_passwd;
 
 select(STDOUT);
 $| = 1; # Automatically flush STDOUT
@@ -1225,9 +1229,13 @@ sub command_line_setup {
   my %options=(
              # sequoiadb_meta_sync
              'meta-sync-addr=s'         => \$sequoiadb_meta_sync_addr,
-             'meta-sync-user=s'         => \$sequoiadb_meta_sync_user,
-             'meta-sync-passwd=s'       => \$sequoiadb_meta_sync_passwd,
              'meta-sync-timeout=i'      => \$sequoiadb_meta_sync_timeout,
+             # sequoiadb_meta_mapping
+             'meta-mapping-group1-addr=s'   => \$sequoiadb_meta_mapping_group1_addr,
+             'meta-mapping-group2-addr=s'   => \$sequoiadb_meta_mapping_group2_addr,
+             # sequoiadb_meta_auth
+             'meta-user=s'              => \$sequoiadb_meta_user,
+             'meta-passwd=s'            => \$sequoiadb_meta_passwd,
 			 
              # Control what engine/variation to run
              'embedded-server'          => \$opt_embedded_server,
@@ -1406,27 +1414,21 @@ sub command_line_setup {
   # Setup verbosity
   # --------------------------------------------------------------------------
 
-  #sequoiadb_meta_sync
+  # sequoiadb_meta_sync
   my @sequoiadb_meta_sync_addr;
   if(!$sequoiadb_meta_sync_addr){
-    $sequoiadb_meta_sync_addr="127.0.0.1:3306,127.0.0.1:3316";
+    $sequoiadb_meta_sync_addr = "127.0.0.1:3306,127.0.0.1:3316";
     @sequoiadb_meta_sync_addr = split(/,/,$sequoiadb_meta_sync_addr);
-    if(!$sequoiadb_meta_sync_user){
-      $sequoiadb_meta_sync_user = "root";
-    }
-    if(!$sequoiadb_meta_sync_passwd){
-      $sequoiadb_meta_sync_passwd = "root";
-    }
   }else{
     @sequoiadb_meta_sync_addr = split(/,/,$sequoiadb_meta_sync_addr);
-    if(scalar@sequoiadb_meta_sync_addr<2){
+    if(scalar@sequoiadb_meta_sync_addr < 2){
       print "**** ERROR **** ","\n",
       "The address in the meta-sync-addr must be greater than or equal to 2","\n";
       exit(1);
     }
     foreach my $addr(@sequoiadb_meta_sync_addr){
-      if($addr=~ /\d+\.\d+\.\d+\.\d+\:\d+/||$addr=~ /[\w\W]*\:\d+/){
-	  
+      if($addr =~ /\d+\.\d+\.\d+\.\d+\:\d+/ || $addr =~ /[\w\W]*\:\d+/){
+	      
       }else{
         print "**** ERROR **** ","\n",
         "--meta-sync-addr value is invalid value , try typing '--meta-sync-addr=host1:port1,host2:port2' on the command line ","\n";
@@ -1434,14 +1436,80 @@ sub command_line_setup {
       }
     }
   }
-  for(my $i = 0;$i<scalar@sequoiadb_meta_sync_addr;$i++){
+  for(my $i = 0;$i < scalar@sequoiadb_meta_sync_addr; $i++){
     my @each_addr = split(/:/,$sequoiadb_meta_sync_addr[$i]);
     $ENV{'META_SYNC_HOST'.($i+1)} = $each_addr[0];
     $ENV{'META_SYNC_PORT'.($i+1)} = $each_addr[1];
   }
-  $ENV{'META_SYNC_USER'}= $sequoiadb_meta_sync_user;
-  $ENV{'META_SYNC_PASSWD'}= $sequoiadb_meta_sync_passwd;
-  $ENV{'META_SYNC_TIMEOUT'}= $sequoiadb_meta_sync_timeout || 5;
+  $ENV{'META_SYNC_TIMEOUT'} = $sequoiadb_meta_sync_timeout || 5;
+  
+  # sequoiadb_meta_mapping
+  # sequoiadb_meta_mapping_group1_addr
+  my @sequoiadb_meta_mapping_group1_addr;
+  if(!$sequoiadb_meta_mapping_group1_addr){
+    $sequoiadb_meta_mapping_group1_addr = "127.0.0.1:3406,127.0.0.1:3416";
+    @sequoiadb_meta_mapping_group1_addr = split(/,/,$sequoiadb_meta_mapping_group1_addr);
+  }else{
+    @sequoiadb_meta_mapping_group1_addr = split(/,/,$sequoiadb_meta_mapping_group1_addr);
+    if(scalar@sequoiadb_meta_mapping_group1_addr < 2){
+      print "**** ERROR **** ","\n",
+      "The address in the meta_mapping_group1_addr must be greater than or equal to 2","\n";
+      exit(1);
+    }
+    foreach my $addr(@sequoiadb_meta_mapping_group1_addr){
+      if($addr =~ /\d+\.\d+\.\d+\.\d+\:\d+/ || $addr =~ /[\w\W]*\:\d+/){
+	      
+      }else{
+        print "**** ERROR **** ","\n",
+        "--meta-sync-addr value is invalid value , try typing '--meta_mapping_group1_addr=host1:port1,host2:port2' on the command line ","\n";
+        exit(1);
+      }
+    }
+  }
+  for(my $i = 0;$i < scalar@sequoiadb_meta_mapping_group1_addr; $i++){
+    my @each_addr = split(/:/,$sequoiadb_meta_mapping_group1_addr[$i]);
+    $ENV{'META_MAPPING_GROUP1_HOST'.($i+1)} = $each_addr[0];
+    $ENV{'META_MAPPING_GROUP1_PORT'.($i+1)} = $each_addr[1];
+  }
+
+  # sequoiadb_meta_mapping_group2_addr
+  my @sequoiadb_meta_mapping_group2_addr;
+  if(!$sequoiadb_meta_mapping_group2_addr){
+    $sequoiadb_meta_mapping_group2_addr = "127.0.0.1:3506,127.0.0.1:3516";
+    @sequoiadb_meta_mapping_group2_addr = split(/,/,$sequoiadb_meta_mapping_group2_addr);
+  }else{
+    @sequoiadb_meta_mapping_group2_addr = split(/,/,$sequoiadb_meta_mapping_group2_addr);
+    if(scalar@sequoiadb_meta_mapping_group2_addr < 2){
+      print "**** ERROR **** ","\n",
+      "The address in the meta_mapping_group2_addr must be greater than or equal to 2","\n";
+      exit(1);
+    }
+    foreach my $addr(@sequoiadb_meta_mapping_group2_addr){
+      if($addr =~ /\d+\.\d+\.\d+\.\d+\:\d+/ || $addr =~ /[\w\W]*\:\d+/){
+	      
+      }else{
+        print "**** ERROR **** ","\n",
+        "--meta-sync-addr value is invalid value , try typing '--meta_mapping_group2_addr=host1:port1,host2:port2' on the command line ","\n";
+        exit(1);
+      }
+    }
+  }
+  for(my $i = 0; $i < scalar@sequoiadb_meta_mapping_group2_addr; $i++){
+    my @each_addr = split(/:/,$sequoiadb_meta_mapping_group2_addr[$i]);
+    $ENV{'META_MAPPING_GROUP2_HOST'.($i+1)} = $each_addr[0];
+    $ENV{'META_MAPPING_GROUP2_PORT'.($i+1)} = $each_addr[1];
+  }
+
+  # sequoiadb_meta_auth
+  if(!$sequoiadb_meta_user){
+    $sequoiadb_meta_user = "root";
+  }
+  $ENV{'META_USER'} = $sequoiadb_meta_user;
+  if(!$sequoiadb_meta_passwd){
+    $sequoiadb_meta_passwd = "root";
+  }
+  $ENV{'META_PASSWD'} = $sequoiadb_meta_passwd;
+
  
   if ($opt_verbose != 0){
     report_option('verbose', $opt_verbose);
@@ -7448,10 +7516,20 @@ $0 [ OPTIONS ] [ TESTCASE ]
 
 Options to control what engine/variation to run
 
-  meta-sync-addr        Mysql address used by sequoiadb_meta_sync(default: --meta-sync-addr=127.0.0.1:3306,127.0.0.1:3316)
-  meta-sync-user        Mysql username used by sequoiadb_meta_sync(default: --meta-sync-user=root)
-  meta-sync-passwd      Mysql password used by sequoiadb_meta_sync(default: --meta-sync-passwd=root)
-  meta-sync-timeout     Mysql timeout used by sequoiadb_meta_sync(default: --meta-sync-timeout=5)
+  meta-sync-addr        Mysql address used by sequoiadb_meta_sync
+                        (default: 127.0.0.1:3306,127.0.0.1:3316)
+  meta-sync-timeout     Mysql timeout used by sequoiadb_meta_sync
+                        (default: 5)
+  meta-mapping-group1-addr
+                        Mysql address used by sequoiadb_meta_sync
+                        (default: 127.0.0.1:3406,127.0.0.1:3416)
+  meta-mapping-group2-addr
+                        Mysql address used by sequoiadb_meta_sync
+                        (default: 127.0.0.1:3506,127.0.0.1:3516)
+  meta-user             Mysql username used by sequoiadb_meta
+                        (default: root)
+  meta-passwd           Mysql password used by sequoiadb_meta
+                        (default: root)
 
   embedded-server       Use the embedded server, i.e. no mysqld daemons
   ps-protocol           Use the binary protocol between client and server
