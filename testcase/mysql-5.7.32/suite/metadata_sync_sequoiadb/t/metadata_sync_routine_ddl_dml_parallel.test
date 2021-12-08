@@ -226,7 +226,7 @@ flush privileges;
 connection conn2;
 create definer = metedata_sync_user_23097 function hello (s char(20)) returns char(50) deterministic return concat('Hello,' , s , '!');
 
-connect ( conn3, $mysql_host1, 'metedata_sync_user_23097', 'metedata_sync_user_23097', $mysql_db, $port1 );
+connect ( conn3, $mysql_host1, 'metedata_sync_user_23097', 'metedata_sync_user_23097', $mysql_db, $mysql_port1 );
 connection conn3;
 select metadata_sync_routine_ddl_dml_parallel.hello('world');
 disconnect conn3;
@@ -241,7 +241,7 @@ GRANT execute ON metadata_sync_routine_ddl_dml_parallel.* TO metedata_sync_user_
 update mysql.proc set definer='metedata_sync_user_23097_alter@%' where name='hello';
 flush privileges;
 
-connect ( conn3, $mysql_host1, 'metedata_sync_user_23097_alter', 'metedata_sync_user_23097_alter', $mysql_db, $port1 );
+connect ( conn3, $mysql_host1, 'metedata_sync_user_23097_alter', 'metedata_sync_user_23097_alter', $mysql_db, $mysql_port1 );
 connection conn3;
 select metadata_sync_routine_ddl_dml_parallel.hello('world');
 disconnect conn3;
@@ -314,7 +314,7 @@ drop procedure if exists metadata_sync_routine_ddl_dml_parallel;
 create definer =  metedata_sync_user_23099 procedure metadata_sync_routine_ddl_dml_parallel()
   insert into metadata_sync_routine_ddl_dml_parallel.t1 values ("foo", 42);
 
-connect ( conn3, $mysql_host1, 'metedata_sync_user_23099', 'metedata_sync_user_23099', $mysql_db, $port1 );
+connect ( conn3, $mysql_host1, 'metedata_sync_user_23099', 'metedata_sync_user_23099', $mysql_db, $mysql_port1 );
 connection conn3;
 call metadata_sync_routine_ddl_dml_parallel.metadata_sync_routine_ddl_dml_parallel();
 select * from metadata_sync_routine_ddl_dml_parallel.t1;
@@ -329,7 +329,7 @@ create user metedata_sync_user_23099_alter;
 GRANT all ON metadata_sync_routine_ddl_dml_parallel.* TO metedata_sync_user_23099_alter@'%' IDENTIFIED BY 'metedata_sync_user_23099_alter' WITH GRANT OPTION;
 update mysql.proc set definer='metedata_sync_user_23099_alter@%' where name='metadata_sync_routine_ddl_dml_parallel';
 
-connect ( conn3, $mysql_host1, 'metedata_sync_user_23099_alter', 'metedata_sync_user_23099_alter', $mysql_db, $port1 );
+connect ( conn3, $mysql_host1, 'metedata_sync_user_23099_alter', 'metedata_sync_user_23099_alter', $mysql_db, $mysql_port1 );
 connection conn3;
 call metadata_sync_routine_ddl_dml_parallel.metadata_sync_routine_ddl_dml_parallel();
 select * from metadata_sync_routine_ddl_dml_parallel.t1;

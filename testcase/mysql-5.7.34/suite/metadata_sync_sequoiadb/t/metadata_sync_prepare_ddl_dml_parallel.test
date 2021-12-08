@@ -52,7 +52,7 @@ execute stmt1;
 deallocate prepare stmt1;
 FLUSH PRIVILEGES;
 
-connect ( conn3, $mysql_host1, 'metadata_sync_user_23106', 'metadata_sync_user_23106', $mysql_db, $port1 );
+connect ( conn3, $mysql_host1, 'metadata_sync_user_23106', 'metadata_sync_user_23106', $mysql_db, $mysql_port1 );
 connection conn3;
 prepare stmt1 from "alter table metadata_prepare.t1 add column d int;";
 execute stmt1;
@@ -65,7 +65,7 @@ execute stmt1;
 deallocate prepare stmt1;
 flush privileges;
 
-connect ( conn3, $mysql_host1, 'metadata_sync_user_23106', 'metadata_sync_user_23106', $mysql_db, $port1 );
+connect ( conn3, $mysql_host1, 'metadata_sync_user_23106', 'metadata_sync_user_23106', $mysql_db, $mysql_port1 );
 connection conn3;
 prepare stmt1 from "alter table metadata_prepare.t1 drop column d";
 --disable_result_log

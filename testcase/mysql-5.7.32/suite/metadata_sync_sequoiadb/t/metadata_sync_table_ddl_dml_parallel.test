@@ -749,7 +749,7 @@ FLUSH PRIVILEGES;
 connection conn2;
 alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
 
-connect ( conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $port1 );
+connect ( conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $mysql_port1 );
 connection conn3;
 use metadata_sync_table_ddl_dml_parallel;
 --sleep 5
