@@ -32,6 +32,7 @@ public class RenameTable24576 extends MysqlTestBase {
     private String dbName = "db_24576";
     private List< String > tableNames = new ArrayList<>();
     private Sequoiadb sdb = null;
+    private boolean runSuccess = false;
 
     @BeforeClass
     private void setUp() throws Exception {
@@ -179,12 +180,14 @@ public class RenameTable24576 extends MysqlTestBase {
                 }
             }
         }
+        runSuccess = true;
     }
 
     @AfterClass
     private void tearDown() throws Exception {
         try {
-            jdbc.dropDatabase( dbName );
+            if ( runSuccess )
+                jdbc.dropDatabase( dbName );
         } finally {
             sdb.close();
             jdbc.close();
@@ -207,7 +210,8 @@ public class RenameTable24576 extends MysqlTestBase {
                         + " to " + dbName + "." + newTableName );
             } catch ( SQLException e ) {
                 saveResult( e.getErrorCode(), e );
-                if ( e.getErrorCode() != 1050 && e.getErrorCode() != 1117 ) {
+                if ( e.getErrorCode() != 1050 && e.getErrorCode() != 1117
+                        && e.getErrorCode() != 1017 ) {
                     throw e;
                 }
             }
