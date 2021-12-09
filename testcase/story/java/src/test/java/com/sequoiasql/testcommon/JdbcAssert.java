@@ -41,23 +41,45 @@ public class JdbcAssert {
      */
     public static void checkMetaSync( int maxtime, Sequoiadb db )
             throws Exception {
-        final String SQLID = "SQLID";
-        String HAInstanceStateName = "HAInstanceState";
-        String HASQLLogName = "HASQLLog";
-        DBCursor dbCursor = db.listCollections();
-        String csName = null;
+        List< String > haInstanceGroupCSNames = getHAInstanceGroupCS( db );
+        for ( int i = 0; i < haInstanceGroupCSNames.size(); i++ ) {
+            waitMetaSync( db, haInstanceGroupCSNames.get( i ), maxtime );
+        }
+    }
+
+    /**
+     * 获取所有同步组csName的集合
+     * 
+     * @param db
+     * @return
+     */
+    private static List< String > getHAInstanceGroupCS( Sequoiadb db ) {
+        List< String > csNames = new ArrayList<>();
+        String HAInstanceGroup = "HAInstanceGroup_";
+        DBCursor dbCursor = db.listCollectionSpaces();
         while ( dbCursor.hasNext() ) {
             BSONObject next = dbCursor.getNext();
-            String name = ( String ) next.get( "Name" );
-            if ( name.indexOf( HAInstanceStateName ) > 0 ) {
-                csName = name.substring( 0, name.indexOf( "." ) );
-            }
-            if ( csName != null ) {
-                dbCursor.close();
-                break;
+            String csName = ( String ) next.get( "Name" );
+            if ( csName.contains( HAInstanceGroup ) ) {
+                csNames.add( csName );
             }
         }
-        HashSet< Integer > allSqlId = new HashSet<>();
+        return csNames;
+    }
+
+    /**
+     * 等待当前csName所属于同步足同步完成
+     * 
+     * @param db
+     * @param csName
+     * @param maxtime
+     * @throws Exception
+     */
+    private static void waitMetaSync( Sequoiadb db, String csName, int maxtime )
+            throws Exception {
+        final String SQLID = "SQLID";
+        String HASQLLogName = "HASQLLog";
+        String HAInstanceStateName = "HAInstanceState";
         DBCollection HAInstanceState = db.getCollectionSpace( csName )
                 .getCollection( HAInstanceStateName );
         DBCollection HASQLLog = db.getCollectionSpace( csName )
@@ -73,18 +95,16 @@ public class JdbcAssert {
             if ( times > ( maxtime / 1000 ) ) {
                 throw new Exception( "Meta sync time out" );
             }
-            DBCursor sqlid = HAInstanceState.query( null,
+            DBCursor sqlId = HAInstanceState.query( null,
                     new BasicBSONObject( SQLID, "" ), null, null );
-            Boolean sync = true;
-            while ( sqlid.hasNext() ) {
-                Integer SqlId = ( Integer ) sqlid.getNext().get( SQLID );
-                allSqlId.add( SqlId );
+            boolean sync = true;
+            while ( sqlId.hasNext() ) {
+                Integer SqlId = ( Integer ) sqlId.getNext().get( SQLID );
                 if ( SqlId < maxSqlId ) {
                     sync = false;
                     break;
                 }
             }
-            sqlid.close();
             if ( sync ) {
                 break;
             }
@@ -167,9 +187,12 @@ public class JdbcAssert {
     /**
      * JdbcWarpper使用，元数据同步组校验表元数据
      * 
-     * @param FullTableName 表全名
-     * @param actInst 校验实例
-     * @param expInst 对比实例
+     * @param FullTableName
+     *            表全名
+     * @param actInst
+     *            校验实例
+     * @param expInst
+     *            对比实例
      * @throws Exception
      */
     public static void checkTableMeta( String FullTableName,
