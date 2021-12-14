@@ -3,6 +3,11 @@
 
 --source include/have_sequoiadb.inc
 
+let $tx_iso= `SELECT @@transaction_isolation`;
+if($tx_iso == 'REPEATABLE-READ'){
+    echo $tx_iso;
+    skip TRANSACTION ISOLATION LEVEL is RR, but the result of this test is for RC
+}
 --disable_query_log
 CALL mtr.add_suppression(".*failed to query with condition.*rc: 40013");
 CALL mtr.add_suppression(".*not support transaction serializable isolation*");
