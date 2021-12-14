@@ -5,6 +5,13 @@
 CREATE DATABASE test_partition_innodb;
 USE test_partition_innodb;
 
+let $tx_iso= `SELECT @@transaction_isolation`;
+if($tx_iso == 'REPEATABLE-READ'){
+    echo $tx_iso;
+    skip TRANSACTION ISOLATION LEVEL is RR, but the result of this test is for RC
+}
+
+
 --disable_warnings
 drop table if exists t1, t2;
 --enable_warnings

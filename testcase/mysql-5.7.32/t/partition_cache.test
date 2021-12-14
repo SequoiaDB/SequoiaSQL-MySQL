@@ -4,6 +4,13 @@
 
 --source include/have_query_cache.inc
 
+let $tx_iso= `SELECT @@transaction_isolation`;
+if($tx_iso == 'REPEATABLE-READ'){
+    echo $tx_iso;
+    skip TRANSACTION ISOLATION LEVEL is RR, but the result of this test is for RC
+}
+
+
 #--source include/have_innodb.inc
 --source include/have_partition.inc
 let $engine_type= SequoiaDB;
