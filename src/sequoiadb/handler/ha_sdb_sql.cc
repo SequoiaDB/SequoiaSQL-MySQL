@@ -1258,7 +1258,20 @@ bool sdb_item_like_escape_is_evaluated(Item *item) {
 
 uint sdb_filename_to_tablename(const char *from, char *to, size_t to_length,
                                bool stay_quiet) {
-  return filename_to_tablename(from, to, to_length, stay_quiet);
+  uint res = filename_to_tablename(from, to, to_length, stay_quiet);
+
+  DBUG_ASSERT(res == strlen(to));
+
+  bool is_tmp = is_prefix(from, tmp_file_prefix);
+  if (is_tmp) {
+    DBUG_ASSERT(is_prefix(to, MYSQL50_TABLE_NAME_PREFIX));
+
+    uint new_len = res - MYSQL50_TABLE_NAME_PREFIX_LENGTH;
+    memmove(to, to + MYSQL50_TABLE_NAME_PREFIX_LENGTH, new_len);
+    to[new_len] = '\0';
+    return new_len;
+  }
+  return res;
 }
 
 bool sdb_is_string_item(Item *item) {

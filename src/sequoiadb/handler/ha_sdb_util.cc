@@ -52,6 +52,7 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
 
   memcpy(tmp_name, ptr + 1, end - ptr);
   tmp_name[name_len] = '\0';
+
   do {
     /*
       If it's a partitioned table name, parse each part one by one
@@ -64,6 +65,7 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     }
     sdb_filename_to_tablename(tmp_name, table_name, table_name_max_size + 1,
                               true);
+
     if (int(strlen(table_name)) >= table_name_max_size) {
       rc = ER_TOO_LONG_IDENT;
       goto error;
@@ -204,11 +206,6 @@ int sdb_rebuild_db_name_of_temp_table(char *db_name, int db_name_max_size) {
 }
 
 bool sdb_is_tmp_table(const char *path, const char *table_name) {
-#ifdef IS_MARIADB
-  // TODO: why mariadb table is of old version?
-  static const uint OLD_VER_PREFIX_STR_LEN = 9;
-  table_name += OLD_VER_PREFIX_STR_LEN;
-#endif
   if (NULL == path) {
     return is_prefix(table_name, tmp_file_prefix);
   } else {
