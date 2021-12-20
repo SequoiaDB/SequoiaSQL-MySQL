@@ -407,6 +407,16 @@ class ha_sdb : public handler {
   ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
                                 uint *bufsz, uint *flags, Cost_estimate *cost);
 
+#ifdef IS_MARIADB
+  bool choose_mrr_impl(uint keyno, uint *bufsz, uint *flags,
+                       Cost_estimate *cost);
+
+  ha_rows multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
+                                      void *seq_init_param, uint n_ranges,
+                                      uint *bufsz, uint *flags,
+                                      Cost_estimate *cost);
+#endif
+
   int multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
                             uint n_ranges, uint mode, HANDLER_BUFFER *buf);
 
@@ -740,9 +750,5 @@ class ha_sdb : public handler {
 
   bool m_use_default_impl;
   sdb_batched_keys_ranges m_batched_keys_ranges;
-#ifdef IS_MARIADB  // TODO: temp to make mariadb compile succeed.
-  bool is_join_bka;
-  uint key_parts;
-#endif
 };
 #endif

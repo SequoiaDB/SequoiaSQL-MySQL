@@ -97,8 +97,8 @@ HASH sdb_temporary_sequence_cache;
 PSI_memory_key key_memory_sequence_cache;
 static PSI_memory_key key_memory_sdb_share;
 static PSI_memory_key sdb_key_memory_blobroot;
-static PSI_memory_key sdb_key_memory_batched_keys_hash;
-static PSI_memory_key sdb_key_memory_batched_keys_buf;
+static PSI_memory_key sdb_key_memory_batched_keys_hash MY_ATTRIBUTE((unused));
+static PSI_memory_key sdb_key_memory_batched_keys_buf MY_ATTRIBUTE((unused));
 
 #ifdef IS_MYSQL
 #define sdb_ha_statistic_increment(offset) \
@@ -1324,10 +1324,9 @@ int sdb_batched_keys_ranges::expand_buf(int n_ranges) {
   old_ptr = m_keys_buf;
   /* Realloc the buffer */
   int records_buf_size = sizeof(sdb_key_range_info) * n_ranges;
-  ptr = (uchar *)sdb_multi_malloc(sdb_key_memory_batched_keys_buf,
-                                  MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
-                                  keys_buf_size, &m_records_buf,
-                                  records_buf_size, NullS);
+  ptr = (uchar *)sdb_multi_malloc(
+      sdb_key_memory_batched_keys_buf, MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
+      keys_buf_size, &m_records_buf, records_buf_size, NullS);
   if (NULL == ptr) {
     rc = HA_ERR_OUT_OF_MEM;
     SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
@@ -1751,7 +1750,9 @@ int ha_sdb::reset() {
   m_batched_keys_ranges.deinit();
   m_use_default_impl = false;
   is_join_bka = false;
+#ifdef IS_MYSQL
   key_parts = 0;
+#endif
   tbl_ctx_impl.reset();
   DBUG_RETURN(0);
 }
@@ -3155,14 +3156,84 @@ error:
 }
 
 #ifdef IS_MARIADB
+/*
+  @retval TRUE   Default MRR implementation should be used
+  @retval FALSE  Batched keys implementation should be used
+*/
+bool ha_sdb::choose_mrr_impl(uint keyno, uint *bufsz, uint *flags,
+                             Cost_estimate *cost) {
+  bool default_impl = false;
+  if (*flags & HA_MRR_USE_DEFAULT_IMPL) {
+    if (!optimizer_flag(ha_thd(), OPTIMIZER_SWITCH_MRR) ||
+        key_uses_partial_cols(table_share, keyno)) {
+      /* Default implementation is choosen */
+      *flags |= HA_MRR_USE_DEFAULT_IMPL;
+      default_impl = true;
+      goto done;
+    }
+    *flags &= ~HA_MRR_USE_DEFAULT_IMPL; /* Use the mrr implementation */
+    *flags &= ~HA_MRR_SORTED;
+    *bufsz = 0;    /* We do not use the buf mixed.*/
+    cost->reset(); /* We do not compare the cost of default implementation and
+                      mrr. Batched keys is always better perf.*/
+    default_impl = false;
+    goto done;
+  } else {
+    *flags &= ~HA_MRR_SORTED; /* We can't provide ordered output */
+    *bufsz = 0;               /* We do not use the buf mixed.*/
+    cost->reset(); /* We do not compare the cost of default implementation and
+                      mrr. Batched keys is always better perf.*/
+    default_impl = false;
+  }
+done:
+  return default_impl;
+}
+
 /* MariaDB inherited*/
 /* The cost of $in is always cheaper than default implementation, no need to
    call handler::multi_range_read_info to get cost and compare.*/
 ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
                                       uint key_parts, uint *bufsz, uint *flags,
                                       Cost_estimate *cost) {
-  return handler::multi_range_read_info(keyno, n_ranges, n_rows, key_parts,
-                                        bufsz, flags, cost);
+  ha_rows res __attribute__((unused)) = 0;
+  res = handler::multi_range_read_info(keyno, n_ranges, n_rows, key_parts,
+                                       bufsz, flags, cost);
+  DBUG_ASSERT(!res);
+
+  if (!(*flags & HA_MRR_NO_NULL_ENDPOINTS)) {  // NULL range can not bka.
+    /* Default implementation is choosen */
+    DBUG_PRINT("info", ("Default MRR implementation choosen"));
+    goto done;
+  }
+  *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
+  if (((*flags & HA_MRR_USE_DEFAULT_IMPL) && key_parts >= 2) ||
+      choose_mrr_impl(keyno, bufsz, flags, cost)) {
+    DBUG_PRINT("info", ("Default MRR implementation choosen"));
+  } else {
+    DBUG_PRINT("info", ("Sdb Batched Keys access implementation choosen"));
+  }
+done:
+  return res;
+}
+
+/* MariaDB inherited*/
+/* The cost of $in is always cheaper than default implementation, no need to
+   call handler::multi_range_read_info to get cost and compare.*/
+ha_rows ha_sdb::multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
+                                            void *seq_init_param, uint n_ranges,
+                                            uint *bufsz, uint *flags,
+                                            Cost_estimate *cost) {
+  ha_rows res __attribute__((unused)) = 0;
+  /* Get cost/flags/mem_usage of default MRR implementation */
+  res = handler::multi_range_read_info_const(keyno, seq, seq_init_param,
+                                             n_ranges, bufsz, flags, cost);
+  *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
+  if (choose_mrr_impl(keyno, bufsz, flags, cost)) {
+    DBUG_PRINT("info", ("Default MRR implementation choosen"));
+  } else {
+    DBUG_PRINT("info", ("Sdb Batched Keys access implementation choosen"));
+  }
+  return res;
 }
 #endif
 
@@ -3232,13 +3303,9 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
 #ifdef IS_MYSQL
   enabled = !hint_key_state(ha_thd(), table, active_index, MRR_HINT_ENUM,
                             OPTIMIZER_SWITCH_MRR);
-  is_sorted_mode = mode & HA_MRR_SORTED;
-#elif IS_MARIADB
-  // enabled = !((mode & HA_MRR_SINGLE_POINT) &&
-  //            optimizer_flag(ha_thd(), OPTIMIZER_SWITCH_MRR_SORT_KEYS));
-  /* MariaDB not support bka, can support sorted. So not care is_sorted_mode */
-  // is_sorted_mode;
 #endif
+
+  is_sorted_mode = mode & HA_MRR_SORTED;
 
   if (enabled || is_sorted_mode || n_ranges <= 1) {
     m_use_default_impl = true;
