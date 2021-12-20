@@ -25,7 +25,7 @@ bin/sdb_sql_ctl join myinst2 -g sql_group1 -k test
 bin/sdb_sql_ctl join myinst3 -g sql_group2 -k test
 bin/sdb_sql_ctl join myinst4 -g sql_group2 -k test
 
-join 成功后实例会被自动重启，重启后实例组配置生效。
+配置文件配置 sequoiadb_enable_mapping=on，重启实例生效
 
 5、查看实例组下实例元数据已同步（查看 SQLID 相同）
 > db.HAInstanceGroup_sql_group1.HAInstanceState.find()
