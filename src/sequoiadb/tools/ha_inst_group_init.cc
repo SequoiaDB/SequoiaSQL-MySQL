@@ -376,6 +376,35 @@ int main(int argc, char *argv[]) {
                      "database '%s', sequoiadb error: %s",
                      HA_GLOBAL_INFO, sdb_err);
 
+    // set data group for instance group tables, data group
+    // "SysMetaGroup" must be created first
+    if (cmd_args.data_group.length() > 0) {
+      sdbclient::sdbReplicaGroup sdb_rg;
+      // check if data group exists
+      rc = conn.getReplicaGroup(cmd_args.data_group.c_str(), sdb_rg);
+      if (SDB_CLS_GRP_NOT_EXIST == rc) {
+        cout << "Error: data group '" << cmd_args.data_group
+             << "' does not exist" << endl;
+        return rc;
+      }
+      sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
+      HA_TOOL_RC_CHECK(
+          rc, rc, "Error: failed to get data group '%s', sequoiadb error: %s",
+          cmd_args.data_group.c_str(), sdb_err);
+      // check if "SysMetaGroup" exists
+      rc = conn.getReplicaGroup(NM_SYS_META_GROUP, sdb_rg);
+      if (SDB_CLS_GRP_NOT_EXIST == rc) {
+        cout << "Error: data group '" << NM_SYS_META_GROUP << "' does not exist"
+             << endl;
+        return rc;
+      }
+      sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
+      HA_TOOL_RC_CHECK(
+          rc, rc, "Error: failed to get data group '%s', sequoiadb error: %s",
+          NM_SYS_META_GROUP, sdb_err);
+      options = BSON(SDB_FIELD_GROUP << NM_SYS_META_GROUP);
+    }
+
     // create instance group collection spaces
     rc = conn.createCollectionSpace(cmd_args.inst_group_name.c_str(),
                                     SDB_PAGESIZE_64K, inst_group_cs);
@@ -394,17 +423,11 @@ int main(int argc, char *argv[]) {
                      "sequoiadb error: %s",
                      orig_name.c_str(), sdb_err);
 
-    // set data group for instance group tables, data group
-    // "SysMetaGroup" must be created first
-    if (cmd_args.data_group.length() > 0) {
-      options = BSON(SDB_FIELD_GROUP << NM_SYS_META_GROUP);
-    }
-
     // create 'HAConfig' collection
     rc = inst_group_cs.createCollection(HA_CONFIG_CL, options,
                                         inst_group_config_cl);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
-    HA_TOOL_RC_CHECK(rc, rc,
+    HA_TOOL_ERR_GOTO(rc, clear_inst_group_cs,
                      "Error: failed to create instance group "
                      "configuration table '%s.%s', sequoiadb error: %s",
                      cmd_args.inst_group_name.c_str(), HA_CONFIG_CL, sdb_err);
@@ -412,7 +435,7 @@ int main(int argc, char *argv[]) {
     // create and initialize 'HASQLIDGenerator' collection
     rc = inst_group_cs.createCollection(HA_SQLID_GENERATOR_CL, options,
                                         sql_id_generator_cl);
-    HA_TOOL_RC_CHECK(rc, rc,
+    HA_TOOL_ERR_GOTO(rc, clear_inst_group_cs,
                      "Error: failed to create instance group "
                      "SQL ID generator table '%s.%s', sequoiadb error: %s",
                      cmd_args.inst_group_name.c_str(), HA_SQLID_GENERATOR_CL,
@@ -421,16 +444,16 @@ int main(int argc, char *argv[]) {
     builder.append(HA_FIELD_SQL_ID, 1);
     record = builder.done();
     rc = sql_id_generator_cl.insert(record);
-    HA_TOOL_RC_CHECK(rc, rc,
+    HA_TOOL_ERR_GOTO(rc, clear_inst_group_cs,
                      "Error: failed to initialize instance group "
                      "SQL ID generator table '%s.%s', sequoiadb error: %s",
-                     orig_name.c_str(), HA_SQLID_GENERATOR_CL,
+                     cmd_args.inst_group_name.c_str(), HA_SQLID_GENERATOR_CL,
                      ha_sdb_error_string(conn, rc));
 
     // create 'HASQLLog' collection
     rc = inst_group_cs.createCollection(HA_SQL_LOG_CL, options, sql_log_cl);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
-    HA_TOOL_RC_CHECK(rc, rc,
+    HA_TOOL_ERR_GOTO(rc, clear_inst_group_cs,
                      "Error: failed to create SQL log table '%s.%s', "
                      "sequoiadb error: %s",
                      cmd_args.inst_group_name.c_str(), HA_SQL_LOG_CL, sdb_err);
@@ -439,7 +462,7 @@ int main(int argc, char *argv[]) {
     key_options = BSON(SDB_FIELD_UNIQUE << 1);
     rc = sql_log_cl.createIndex(index_ref, HA_SQL_LOG_SQLID_INDEX, key_options);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
-    HA_TOOL_RC_CHECK(rc, rc,
+    HA_TOOL_ERR_GOTO(rc, clear_inst_group_cs,
                      "Error: failed to create index on '%s', "
                      "sequoiadb error: %s",
                      HA_SQL_LOG_CL, sdb_err);
@@ -460,10 +483,10 @@ int main(int argc, char *argv[]) {
 
     rc = inst_group_config_cl.insert(record);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
-    HA_TOOL_RC_CHECK(rc, rc,
+    HA_TOOL_ERR_GOTO(rc, clear_inst_group_cs,
                      "Error: failed to initialize instance group "
                      "configuration table '%s.%s', sequoiadb error: %s",
-                     orig_name.c_str(), HA_CONFIG_CL, sdb_err);
+                     cmd_args.inst_group_name.c_str(), HA_CONFIG_CL, sdb_err);
 
     // init 'HASQLLog'
     builder.reset();
@@ -476,10 +499,10 @@ int main(int argc, char *argv[]) {
 
     rc = sql_log_cl.insert(record);
     sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
-    HA_TOOL_RC_CHECK(rc, rc,
+    HA_TOOL_ERR_GOTO(rc, clear_inst_group_cs,
                      "Error: failed to initialize SQL log table '%s.%s', "
                      "sequoiadb error: %s",
-                     orig_name.c_str(), HA_SQL_LOG_CL, sdb_err);
+                     cmd_args.inst_group_name.c_str(), HA_SQL_LOG_CL, sdb_err);
     if (cmd_args.verbose) {
       cout << "User: " << ha_config.user << endl;
       cout << "Password: " << ha_config.password << endl;
@@ -491,5 +514,9 @@ int main(int argc, char *argv[]) {
     return SDB_HA_EXCEPTION;
   }
 
-  return 0;
+done:
+  return rc;
+clear_inst_group_cs:
+  conn.dropCollectionSpace(cmd_args.inst_group_name.c_str());
+  goto done;
 }

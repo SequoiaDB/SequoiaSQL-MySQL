@@ -31,6 +31,15 @@
     }                                        \
   } while (0)
 
+#define HA_TOOL_ERR_GOTO(cond, label, fmt, ...) \
+  do {                                          \
+    if ((cond)) {                               \
+      fprintf(stderr, fmt, ##__VA_ARGS__);      \
+      fprintf(stderr, "\n");                    \
+      goto label;                               \
+    }                                           \
+  } while (0)
+
 typedef unsigned char uchar;
 
 #define HA_TOOL_HELP_DOC_INIT_INST_GROUP "Init instance group information.\v"
