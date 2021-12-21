@@ -215,6 +215,11 @@ int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
   while (i < m_mapping_unit_count) {
     cs_slot_is_full[i++] = false;
   }
+
+  // disable the last slot if original name mapping is counted in
+  if (m_prefer_origin_name) {
+    cs_slot_is_full[m_mapping_unit_count - 1] = true;
+  }
   // MAX_EXTRA_CHARS_LEN is the max length of extra chars(not include variables)
   // in the query
   static const int MAX_EXTRA_CHARS_LEN = 150;
@@ -251,6 +256,11 @@ int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
     if (slot <= 0 || slot > m_mapping_unit_count) {
       continue;
     }
+
+    // disable the last slot if original name mapping is counted in
+    if (m_prefer_origin_name && slot == m_mapping_unit_count) {
+      continue;
+    }
     slot_idx = slot - 1;
 
     if (cl_cnt < m_mapping_unit_size) {
@@ -276,9 +286,8 @@ int Name_mapping::calculate_mapping_slot(Sdb_conn *sdb_conn,
   DBUG_ASSERT(slot_idx < m_mapping_unit_count);
   if (cs_slot_is_full[slot_idx]) {
     rc = SDB_ERR_TOO_MANY_TABLES;
-    int limit = m_mapping_unit_size *
-                (m_mapping_unit_count + (m_prefer_origin_name ? 1 : 0));
-    SDB_LOG_ERROR("NM: too many tables in current database, limit: %d", limit);
+    SDB_LOG_ERROR("NM: too many tables in current database, limit: %d",
+                  m_mapping_unit_size * m_mapping_unit_count);
     goto error;
   }
   // slot number start with 1
