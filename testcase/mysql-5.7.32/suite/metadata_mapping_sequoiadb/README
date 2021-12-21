@@ -1,7 +1,7 @@
 本地或 CI 执行元数据同步测试用例
 
 一、准备环境
-1、sequoiadb添加"SysMetaGroup"数据组
+1、sequoiadb添加"SysMetaGroup"数据组，并添加数据节点，节点个数无限制
 
 2、初始化实例组
 示例：初始化 sql_group1 实例组，实例组名 和 key 可自定义，需要指定--data-group 数据组，--host 默认为 localhost:11810（根据实际情况配置）
