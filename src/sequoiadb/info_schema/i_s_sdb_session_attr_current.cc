@@ -20,129 +20,84 @@
 #include "i_s_common.h"
 #include <sql_show.h>
 
+enum enum_i_s_sess_attr_field {
+  I_S_FLD_PREFER_INST = 0,
+  I_S_FLD_PREFER_INST_MODE,
+  I_S_FLD_PREFER_STRICT,
+  I_S_FLD_PREFER_PERIOD,
+  I_S_FLD_TIMEOUT,
+  I_S_FLD_ISOLATION,
+  I_S_FLD_TRANS_TIMEOUT,
+  I_S_FLD_USE_RBS,
+  I_S_FLD_LOCK_WAIT,
+  I_S_FLD_AUTO_COMMIT,
+  I_S_FLD_AUTO_ROLLBACK,
+  I_S_FLD_RC_COUNT,
+  I_S_FLD_SOURCE,
+  I_S_FLD_END
+};
+
 static ST_FIELD_INFO i_s_sess_attr_info[] = {
+    /* field_name, field_length, field_type, value, field_flags, old_name,
+       open_method */
+    [I_S_FLD_PREFER_INST] = {"PREFERRED_INSTANCE", STRING_BUFFER_USUAL_SIZE,
+                             MYSQL_TYPE_STRING, 0, MY_I_S_MAYBE_NULL, "",
+                             SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "PREFERRED_INSTANCE",
-     /* field_length */ STRING_BUFFER_USUAL_SIZE,
-     /* field_type   */ MYSQL_TYPE_STRING,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_PREFER_INST_MODE] = {"PREFERRED_INSTANCE_MODE", 16,
+                                  MYSQL_TYPE_STRING, 0, MY_I_S_MAYBE_NULL, "",
+                                  SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "PREFERRED_INSTANCE_MODE",
-     /* field_length */ 16,
-     /* field_type   */ MYSQL_TYPE_STRING,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_PREFER_STRICT] = {"PREFERRED_STRICT", 1, MYSQL_TYPE_TINY, 0,
+                               MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "PREFERRED_STRICT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_PREFER_PERIOD] = {"PREFERRED_PERIOD", 1, MYSQL_TYPE_LONG, 0,
+                               MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "PREFERRED_PERIOD",
-     /* field_length */ 4,
-     /* field_type   */ MYSQL_TYPE_LONG,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_TIMEOUT] = {"TIMEOUT", 1, MYSQL_TYPE_LONG, 0, MY_I_S_MAYBE_NULL,
+                         "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "TIMEOUT",
-     /* field_length */ 4,
-     /* field_type   */ MYSQL_TYPE_LONG,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_ISOLATION] = {"TRANS_ISOLATION", 1, MYSQL_TYPE_LONG, 0,
+                           MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "TRANS_ISOLATION",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_LONG,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_TRANS_TIMEOUT] = {"TRANS_TIMEOUT", 1, MYSQL_TYPE_LONG, 0,
+                               MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "TRANS_TIMEOUT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_LONG,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_USE_RBS] = {"TRANS_USE_RBS", 1, MYSQL_TYPE_TINY, 0,
+                         MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "TRANS_USE_RBS",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_LOCK_WAIT] = {"TRANS_LOCK_WAIT", 1, MYSQL_TYPE_TINY, 0,
+                           MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "TRANS_LOCK_WAIT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_AUTO_COMMIT] = {"TRANS_AUTO_COMMIT", 1, MYSQL_TYPE_TINY, 0,
+                             MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "TRANS_AUTO_COMMIT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_AUTO_ROLLBACK] = {"TRANS_AUTO_ROLLBACK", 1, MYSQL_TYPE_TINY, 0,
+                               MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "TRANS_AUTO_ROLLBACK",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_RC_COUNT] = {"TRANS_RC_COUNT", 1, MYSQL_TYPE_TINY, 0,
+                          MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "TRANS_RC_COUNT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_SOURCE] = {"SOURCE", STRING_BUFFER_USUAL_SIZE, MYSQL_TYPE_STRING,
+                        0, MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
 
-    {/* field_name   */ "SOURCE",
-     /* field_length */ STRING_BUFFER_USUAL_SIZE,
-     /* field_type   */ MYSQL_TYPE_STRING,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+    [I_S_FLD_END] = I_S_END_FIELD_INFO};
 
-    I_S_END_FIELD_INFO};
-
-// Note that the field order of it must be the same as i_s_sess_attr_info
-static const char *i_s_sess_attr_sdb_name[] = {"PreferedInstance",
-                                               "PreferedInstanceMode",
-                                               "PreferedStrict",
-                                               "PreferedPeriod",
-                                               "Timeout",
-                                               "TransIsolation",
-                                               "TransTimeout",
-                                               "TransUseRBS",
-                                               "TransLockWait",
-                                               "TransAutoCommit",
-                                               "TransAutoRollback",
-                                               "TransRCCount",
-                                               "Source",
-                                               NULL};
+static const char *i_s_sess_attr_sdb_name[] = {
+    [I_S_FLD_PREFER_INST] = "PreferedInstance",
+    [I_S_FLD_PREFER_INST_MODE] = "PreferedInstanceMode",
+    [I_S_FLD_PREFER_STRICT] = "PreferedStrict",
+    [I_S_FLD_PREFER_PERIOD] = "PreferedPeriod",
+    [I_S_FLD_TIMEOUT] = "Timeout",
+    [I_S_FLD_ISOLATION] = "TransIsolation",
+    [I_S_FLD_TRANS_TIMEOUT] = "TransTimeout",
+    [I_S_FLD_USE_RBS] = "TransUseRBS",
+    [I_S_FLD_LOCK_WAIT] = "TransLockWait",
+    [I_S_FLD_AUTO_COMMIT] = "TransAutoCommit",
+    [I_S_FLD_AUTO_ROLLBACK] = "TransAutoRollback",
+    [I_S_FLD_RC_COUNT] = "TransRCCount",
+    [I_S_FLD_SOURCE] = "Source",
+    [I_S_FLD_END] = NULL};
 
 static PSI_memory_key key_memory_i_s_sess_attr;
 
@@ -168,6 +123,24 @@ static void init_i_s_psi_keys(void) {}
 
 static HASH i_s_name_id_pair_hash;
 
+static int i_s_elem_to_string(bson::BSONElement &elem, std::string &str) {
+  int rc = 0;
+  try {
+    if (bson::String == elem.type()) {
+      str = elem.String();
+    } else {
+      str = elem.toString(false, true);
+    }
+  } catch (std::exception &e) {
+    rc = 1;
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 static int i_s_store_elem_to_field(TABLE *table, bson::BSONElement &elem) {
   int rc = 0;
   Field *field = NULL;
@@ -187,8 +160,12 @@ static int i_s_store_elem_to_field(TABLE *table, bson::BSONElement &elem) {
 
   switch (field->type()) {
     case MYSQL_TYPE_VARCHAR: {
-      const char *str = elem.valuestrsafe();
-      field->store(str, strlen(str), system_charset_info);
+      std::string str;
+      rc = i_s_elem_to_string(elem, str);
+      if (rc) {
+        goto error;
+      }
+      field->store(str.c_str(), str.length(), system_charset_info);
       break;
     }
     case MYSQL_TYPE_LONG: {
