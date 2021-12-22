@@ -20,129 +20,105 @@
 #include "i_s_common.h"
 #include <sql_show.h>
 
-static ST_FIELD_INFO i_s_sess_attr_info[] = {
+enum enum_i_s_sess_attr_field {
+  I_S_FLD_PREFER_INST = 0,
+  I_S_FLD_PREFER_INST_MODE,
+  I_S_FLD_PREFER_STRICT,
+  I_S_FLD_PREFER_PERIOD,
+  I_S_FLD_TIMEOUT,
+  I_S_FLD_ISOLATION,
+  I_S_FLD_TRANS_TIMEOUT,
+  I_S_FLD_USE_RBS,
+  I_S_FLD_LOCK_WAIT,
+  I_S_FLD_AUTO_COMMIT,
+  I_S_FLD_AUTO_ROLLBACK,
+  I_S_FLD_RC_COUNT,
+  I_S_FLD_SOURCE,
+  I_S_FLD_END
+};
 
-    {/* field_name   */ "PREFERRED_INSTANCE",
-     /* field_length */ STRING_BUFFER_USUAL_SIZE,
-     /* field_type   */ MYSQL_TYPE_STRING,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+static ST_FIELD_INFO i_s_sess_attr_info[I_S_FLD_END + 1];
 
-    {/* field_name   */ "PREFERRED_INSTANCE_MODE",
-     /* field_length */ 16,
-     /* field_type   */ MYSQL_TYPE_STRING,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+static void i_s_init_sess_attr_info() {
+  /* ST_FIELD_INFO: field_name, field_length, field_type, value, field_flags,
+   * old_name, open_method */
+  ST_FIELD_INFO pi = {"PREFERRED_INSTANCE", STRING_BUFFER_USUAL_SIZE,
+                      MYSQL_TYPE_STRING,    0,
+                      MY_I_S_MAYBE_NULL,    "",
+                      SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_PREFER_INST] = pi;
 
-    {/* field_name   */ "PREFERRED_STRICT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO pim = {"PREFERRED_INSTANCE_MODE", 16, MYSQL_TYPE_STRING, 0,
+                       MY_I_S_MAYBE_NULL,         "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_PREFER_INST_MODE] = pim;
 
-    {/* field_name   */ "PREFERRED_PERIOD",
-     /* field_length */ 4,
-     /* field_type   */ MYSQL_TYPE_LONG,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO ps = {"PREFERRED_STRICT", 1,  MYSQL_TYPE_TINY, 0,
+                      MY_I_S_MAYBE_NULL,  "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_PREFER_STRICT] = ps;
 
-    {/* field_name   */ "TIMEOUT",
-     /* field_length */ 4,
-     /* field_type   */ MYSQL_TYPE_LONG,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO pp = {"PREFERRED_PERIOD", 1,  MYSQL_TYPE_LONG, 0,
+                      MY_I_S_MAYBE_NULL,  "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_PREFER_PERIOD] = pp;
 
-    {/* field_name   */ "TRANS_ISOLATION",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_LONG,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO t = {"TIMEOUT",         1,  MYSQL_TYPE_LONG, 0,
+                     MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_TIMEOUT] = t;
 
-    {/* field_name   */ "TRANS_TIMEOUT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_LONG,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO ti = {"TRANS_ISOLATION", 1,  MYSQL_TYPE_LONG, 0,
+                      MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_ISOLATION] = ti;
 
-    {/* field_name   */ "TRANS_USE_RBS",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tt = {"TRANS_TIMEOUT",   1,  MYSQL_TYPE_LONG, 0,
+                      MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_TRANS_TIMEOUT] = tt;
 
-    {/* field_name   */ "TRANS_LOCK_WAIT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tur = {"TRANS_USE_RBS",   1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_USE_RBS] = tur;
 
-    {/* field_name   */ "TRANS_AUTO_COMMIT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tlw = {"TRANS_LOCK_WAIT", 1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_LOCK_WAIT] = tlw;
 
-    {/* field_name   */ "TRANS_AUTO_ROLLBACK",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tac = {"TRANS_AUTO_COMMIT", 1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL,   "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_AUTO_COMMIT] = tac;
 
-    {/* field_name   */ "TRANS_RC_COUNT",
-     /* field_length */ 1,
-     /* field_type   */ MYSQL_TYPE_TINY,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tar = {"TRANS_AUTO_ROLLBACK", 1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL,     "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_AUTO_ROLLBACK] = tar;
 
-    {/* field_name   */ "SOURCE",
-     /* field_length */ STRING_BUFFER_USUAL_SIZE,
-     /* field_type   */ MYSQL_TYPE_STRING,
-     /* value        */ 0,
-     /* field_flags  */ MY_I_S_MAYBE_NULL,
-     /* old_name     */ "",
-     /* open_method  */ SKIP_OPEN_TABLE},
+  ST_FIELD_INFO trc = {"TRANS_RC_COUNT",  1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_RC_COUNT] = trc;
 
-    I_S_END_FIELD_INFO};
+  ST_FIELD_INFO s = {"SOURCE",          STRING_BUFFER_USUAL_SIZE,
+                     MYSQL_TYPE_STRING, 0,
+                     MY_I_S_MAYBE_NULL, "",
+                     SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_SOURCE] = s;
 
-// Note that the field order of it must be the same as i_s_sess_attr_info
-static const char *i_s_sess_attr_sdb_name[] = {"PreferedInstance",
-                                               "PreferedInstanceMode",
-                                               "PreferedStrict",
-                                               "PreferedPeriod",
-                                               "Timeout",
-                                               "TransIsolation",
-                                               "TransTimeout",
-                                               "TransUseRBS",
-                                               "TransLockWait",
-                                               "TransAutoCommit",
-                                               "TransAutoRollback",
-                                               "TransRCCount",
-                                               "Source",
-                                               NULL};
+  i_s_sess_attr_info[I_S_FLD_END] = I_S_END_FIELD_INFO;
+}
+
+static const char *i_s_sess_attr_sdb_name[I_S_FLD_END + 1];
+
+static void i_s_init_sess_attr_sdb_name() {
+  i_s_sess_attr_sdb_name[I_S_FLD_PREFER_INST] = "PreferedInstance";
+  i_s_sess_attr_sdb_name[I_S_FLD_PREFER_INST_MODE] = "PreferedInstanceMode";
+  i_s_sess_attr_sdb_name[I_S_FLD_PREFER_STRICT] = "PreferedStrict";
+  i_s_sess_attr_sdb_name[I_S_FLD_PREFER_PERIOD] = "PreferedPeriod";
+  i_s_sess_attr_sdb_name[I_S_FLD_TIMEOUT] = "Timeout";
+  i_s_sess_attr_sdb_name[I_S_FLD_ISOLATION] = "TransIsolation";
+  i_s_sess_attr_sdb_name[I_S_FLD_TRANS_TIMEOUT] = "TransTimeout";
+  i_s_sess_attr_sdb_name[I_S_FLD_USE_RBS] = "TransUseRBS";
+  i_s_sess_attr_sdb_name[I_S_FLD_LOCK_WAIT] = "TransLockWait";
+  i_s_sess_attr_sdb_name[I_S_FLD_AUTO_COMMIT] = "TransAutoCommit";
+  i_s_sess_attr_sdb_name[I_S_FLD_AUTO_ROLLBACK] = "TransAutoRollback";
+  i_s_sess_attr_sdb_name[I_S_FLD_RC_COUNT] = "TransRCCount";
+  i_s_sess_attr_sdb_name[I_S_FLD_SOURCE] = "Source";
+  i_s_sess_attr_sdb_name[I_S_FLD_END] = NULL;
+}
 
 static PSI_memory_key key_memory_i_s_sess_attr;
 
@@ -168,6 +144,24 @@ static void init_i_s_psi_keys(void) {}
 
 static HASH i_s_name_id_pair_hash;
 
+static int i_s_elem_to_string(bson::BSONElement &elem, std::string &str) {
+  int rc = 0;
+  try {
+    if (bson::String == elem.type()) {
+      str = elem.String();
+    } else {
+      str = elem.toString(false, true);
+    }
+  } catch (std::exception &e) {
+    rc = 1;
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 static int i_s_store_elem_to_field(TABLE *table, bson::BSONElement &elem) {
   int rc = 0;
   Field *field = NULL;
@@ -187,8 +181,12 @@ static int i_s_store_elem_to_field(TABLE *table, bson::BSONElement &elem) {
 
   switch (field->type()) {
     case MYSQL_TYPE_VARCHAR: {
-      const char *str = elem.valuestrsafe();
-      field->store(str, strlen(str), system_charset_info);
+      std::string str;
+      rc = i_s_elem_to_string(elem, str);
+      if (rc) {
+        goto error;
+      }
+      field->store(str.c_str(), str.length(), system_charset_info);
       break;
     }
     case MYSQL_TYPE_LONG: {
@@ -265,15 +263,15 @@ error:
 }
 
 static int i_s_sdb_sess_attr_init(void *p) {
-  DBUG_ASSERT(array_elements(i_s_sess_attr_info) ==
-              array_elements(i_s_sess_attr_sdb_name));
-
   int rc = 0;
   ST_SCHEMA_TABLE *schema = (ST_SCHEMA_TABLE *)p;
   uint i = 0;
   const char *name = NULL;
   i_s_name_id_pair *new_pair = NULL;
   bool hash_inited = false;
+
+  i_s_init_sess_attr_info();
+  i_s_init_sess_attr_sdb_name();
 
   schema->fields_info = i_s_sess_attr_info;
   schema->fill_table = i_s_sess_attr_fill_table;
