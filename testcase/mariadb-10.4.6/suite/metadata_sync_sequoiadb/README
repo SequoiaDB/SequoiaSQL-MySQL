@@ -34,14 +34,16 @@ join 成功后实例会被自动重启，重启后实例组配置生效。
 Return 2 row(s).
 
 5、登录mysql，添加用户并授权
+(用户名/密码以 sdbadmin / sdbadmin 为例)
 示例：
-1）实例1，添加用户并授权，用户名：sdbadmin，密码：sdbadmin
+1）实例1，添加用户并授权
 CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
 GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
 SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
 
 2）实例2，查看用户元数据已同步
 SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
++----------+------+
 | user     | host |
 +----------+------+
 | sdbadmin | %    |

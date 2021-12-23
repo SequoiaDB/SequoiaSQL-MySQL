@@ -43,7 +43,7 @@ bin/sdb_sql_ctl join myinst4 -g sql_group2 -k test
 }
 ......
 
-6、添加用户并授权
+6、登录mysql，添加用户并授权
 (用户名/密码以 sdbadmin / sdbadmin 为例)
 示例：
 1）分别在每个实例组下添加用户并授权
@@ -53,7 +53,7 @@ GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
 SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
 
 2）其他实例查看用户元数据已同步
-mysql> SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
+SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
 +----------+------+
 | user     | host |
 +----------+------+
