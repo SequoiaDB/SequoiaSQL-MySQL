@@ -5,7 +5,7 @@
 示例：初始化 sql_group1 实例组，实例组名 和 key 可自定义，--host 默认为 localhost:11810（根据实际情况配置）
 bin/ha_inst_group_init sql_group1 --verbose --key test
 
-1、创建多个实例，多个实例可以在相同或者不同主机
+2、创建多个实例，多个实例可以在相同或者不同主机
 示例：创建实例 myinst1、myinst2，端口分别为 6101、6102
 bin/sdb_sql_ctl addinst myinst1 -p 6101 -D database/6101
 bin/sdb_sql_ctl addinst myinst2 -p 6102 -D database/6102
@@ -33,14 +33,15 @@ join 成功后实例会被自动重启，重启后实例组配置生效。
 }
 Return 2 row(s).
 
-5、添加用户并授权
+5、登录mysql，添加用户并授权
 示例：
 1）实例1，添加用户并授权，用户名：sdbadmin，密码：sdbadmin
-mysql> CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
-mysql> GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
+CREATE USER 'sdbadmin'@'%' IDENTIFIED BY 'sdbadmin';
+GRANT all on *.* TO 'sdbadmin'@'%' with grant option;
+SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
 
 2）实例2，查看用户元数据已同步
-mysql> SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
+SELECT user,host FROM mysql.user WHERE user = 'sdbadmin';
 +----------+------+
 | user     | host |
 +----------+------+
