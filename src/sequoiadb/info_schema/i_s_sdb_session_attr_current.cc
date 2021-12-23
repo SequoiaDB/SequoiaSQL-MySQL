@@ -37,67 +37,88 @@ enum enum_i_s_sess_attr_field {
   I_S_FLD_END
 };
 
-static ST_FIELD_INFO i_s_sess_attr_info[] = {
-    /* field_name, field_length, field_type, value, field_flags, old_name,
-       open_method */
-    [I_S_FLD_PREFER_INST] = {"PREFERRED_INSTANCE", STRING_BUFFER_USUAL_SIZE,
-                             MYSQL_TYPE_STRING, 0, MY_I_S_MAYBE_NULL, "",
-                             SKIP_OPEN_TABLE},
+static ST_FIELD_INFO i_s_sess_attr_info[I_S_FLD_END + 1];
 
-    [I_S_FLD_PREFER_INST_MODE] = {"PREFERRED_INSTANCE_MODE", 16,
-                                  MYSQL_TYPE_STRING, 0, MY_I_S_MAYBE_NULL, "",
-                                  SKIP_OPEN_TABLE},
+static void i_s_init_sess_attr_info() {
+  /* ST_FIELD_INFO: field_name, field_length, field_type, value, field_flags,
+   * old_name, open_method */
+  ST_FIELD_INFO pi = {"PREFERRED_INSTANCE", STRING_BUFFER_USUAL_SIZE,
+                      MYSQL_TYPE_STRING,    0,
+                      MY_I_S_MAYBE_NULL,    "",
+                      SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_PREFER_INST] = pi;
 
-    [I_S_FLD_PREFER_STRICT] = {"PREFERRED_STRICT", 1, MYSQL_TYPE_TINY, 0,
-                               MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO pim = {"PREFERRED_INSTANCE_MODE", 16, MYSQL_TYPE_STRING, 0,
+                       MY_I_S_MAYBE_NULL,         "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_PREFER_INST_MODE] = pim;
 
-    [I_S_FLD_PREFER_PERIOD] = {"PREFERRED_PERIOD", 1, MYSQL_TYPE_LONG, 0,
-                               MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO ps = {"PREFERRED_STRICT", 1,  MYSQL_TYPE_TINY, 0,
+                      MY_I_S_MAYBE_NULL,  "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_PREFER_STRICT] = ps;
 
-    [I_S_FLD_TIMEOUT] = {"TIMEOUT", 1, MYSQL_TYPE_LONG, 0, MY_I_S_MAYBE_NULL,
-                         "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO pp = {"PREFERRED_PERIOD", 1,  MYSQL_TYPE_LONG, 0,
+                      MY_I_S_MAYBE_NULL,  "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_PREFER_PERIOD] = pp;
 
-    [I_S_FLD_ISOLATION] = {"TRANS_ISOLATION", 1, MYSQL_TYPE_LONG, 0,
-                           MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO t = {"TIMEOUT",         1,  MYSQL_TYPE_LONG, 0,
+                     MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_TIMEOUT] = t;
 
-    [I_S_FLD_TRANS_TIMEOUT] = {"TRANS_TIMEOUT", 1, MYSQL_TYPE_LONG, 0,
-                               MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO ti = {"TRANS_ISOLATION", 1,  MYSQL_TYPE_LONG, 0,
+                      MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_ISOLATION] = ti;
 
-    [I_S_FLD_USE_RBS] = {"TRANS_USE_RBS", 1, MYSQL_TYPE_TINY, 0,
-                         MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tt = {"TRANS_TIMEOUT",   1,  MYSQL_TYPE_LONG, 0,
+                      MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_TRANS_TIMEOUT] = tt;
 
-    [I_S_FLD_LOCK_WAIT] = {"TRANS_LOCK_WAIT", 1, MYSQL_TYPE_TINY, 0,
-                           MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tur = {"TRANS_USE_RBS",   1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_USE_RBS] = tur;
 
-    [I_S_FLD_AUTO_COMMIT] = {"TRANS_AUTO_COMMIT", 1, MYSQL_TYPE_TINY, 0,
-                             MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tlw = {"TRANS_LOCK_WAIT", 1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_LOCK_WAIT] = tlw;
 
-    [I_S_FLD_AUTO_ROLLBACK] = {"TRANS_AUTO_ROLLBACK", 1, MYSQL_TYPE_TINY, 0,
-                               MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tac = {"TRANS_AUTO_COMMIT", 1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL,   "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_AUTO_COMMIT] = tac;
 
-    [I_S_FLD_RC_COUNT] = {"TRANS_RC_COUNT", 1, MYSQL_TYPE_TINY, 0,
-                          MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO tar = {"TRANS_AUTO_ROLLBACK", 1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL,     "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_AUTO_ROLLBACK] = tar;
 
-    [I_S_FLD_SOURCE] = {"SOURCE", STRING_BUFFER_USUAL_SIZE, MYSQL_TYPE_STRING,
-                        0, MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE},
+  ST_FIELD_INFO trc = {"TRANS_RC_COUNT",  1,  MYSQL_TYPE_TINY, 0,
+                       MY_I_S_MAYBE_NULL, "", SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_RC_COUNT] = trc;
 
-    [I_S_FLD_END] = I_S_END_FIELD_INFO};
+  ST_FIELD_INFO s = {"SOURCE",          STRING_BUFFER_USUAL_SIZE,
+                     MYSQL_TYPE_STRING, 0,
+                     MY_I_S_MAYBE_NULL, "",
+                     SKIP_OPEN_TABLE};
+  i_s_sess_attr_info[I_S_FLD_SOURCE] = s;
 
-static const char *i_s_sess_attr_sdb_name[] = {
-    [I_S_FLD_PREFER_INST] = "PreferedInstance",
-    [I_S_FLD_PREFER_INST_MODE] = "PreferedInstanceMode",
-    [I_S_FLD_PREFER_STRICT] = "PreferedStrict",
-    [I_S_FLD_PREFER_PERIOD] = "PreferedPeriod",
-    [I_S_FLD_TIMEOUT] = "Timeout",
-    [I_S_FLD_ISOLATION] = "TransIsolation",
-    [I_S_FLD_TRANS_TIMEOUT] = "TransTimeout",
-    [I_S_FLD_USE_RBS] = "TransUseRBS",
-    [I_S_FLD_LOCK_WAIT] = "TransLockWait",
-    [I_S_FLD_AUTO_COMMIT] = "TransAutoCommit",
-    [I_S_FLD_AUTO_ROLLBACK] = "TransAutoRollback",
-    [I_S_FLD_RC_COUNT] = "TransRCCount",
-    [I_S_FLD_SOURCE] = "Source",
-    [I_S_FLD_END] = NULL};
+  i_s_sess_attr_info[I_S_FLD_END] = I_S_END_FIELD_INFO;
+}
+
+static const char *i_s_sess_attr_sdb_name[I_S_FLD_END + 1];
+
+static void i_s_init_sess_attr_sdb_name() {
+  i_s_sess_attr_sdb_name[I_S_FLD_PREFER_INST] = "PreferedInstance";
+  i_s_sess_attr_sdb_name[I_S_FLD_PREFER_INST_MODE] = "PreferedInstanceMode";
+  i_s_sess_attr_sdb_name[I_S_FLD_PREFER_STRICT] = "PreferedStrict";
+  i_s_sess_attr_sdb_name[I_S_FLD_PREFER_PERIOD] = "PreferedPeriod";
+  i_s_sess_attr_sdb_name[I_S_FLD_TIMEOUT] = "Timeout";
+  i_s_sess_attr_sdb_name[I_S_FLD_ISOLATION] = "TransIsolation";
+  i_s_sess_attr_sdb_name[I_S_FLD_TRANS_TIMEOUT] = "TransTimeout";
+  i_s_sess_attr_sdb_name[I_S_FLD_USE_RBS] = "TransUseRBS";
+  i_s_sess_attr_sdb_name[I_S_FLD_LOCK_WAIT] = "TransLockWait";
+  i_s_sess_attr_sdb_name[I_S_FLD_AUTO_COMMIT] = "TransAutoCommit";
+  i_s_sess_attr_sdb_name[I_S_FLD_AUTO_ROLLBACK] = "TransAutoRollback";
+  i_s_sess_attr_sdb_name[I_S_FLD_RC_COUNT] = "TransRCCount";
+  i_s_sess_attr_sdb_name[I_S_FLD_SOURCE] = "Source";
+  i_s_sess_attr_sdb_name[I_S_FLD_END] = NULL;
+}
 
 static PSI_memory_key key_memory_i_s_sess_attr;
 
@@ -242,15 +263,15 @@ error:
 }
 
 static int i_s_sdb_sess_attr_init(void *p) {
-  DBUG_ASSERT(array_elements(i_s_sess_attr_info) ==
-              array_elements(i_s_sess_attr_sdb_name));
-
   int rc = 0;
   ST_SCHEMA_TABLE *schema = (ST_SCHEMA_TABLE *)p;
   uint i = 0;
   const char *name = NULL;
   i_s_name_id_pair *new_pair = NULL;
   bool hash_inited = false;
+
+  i_s_init_sess_attr_info();
+  i_s_init_sess_attr_sdb_name();
 
   schema->fields_info = i_s_sess_attr_info;
   schema->fill_table = i_s_sess_attr_fill_table;
