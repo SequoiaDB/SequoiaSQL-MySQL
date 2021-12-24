@@ -330,7 +330,7 @@ id	a	b	c
 7	4	d	7
 8	9999999991	x	8
 9	5	e	9
-[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 0 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$isnull": 0 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a = '-9999999999';
 id	a	b	c
 12	-9999999999	a	-2
@@ -733,7 +733,7 @@ id	a	b	c
 select * from t1 where a = '1970-01-01 00:00:01.000000';
 id	a	b	c
 1	1970-01-01 00:00:01.000000	a	1970-01-01 00:00:01
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": {"$timestamp": "1970-01-01-08.00.01.000000"} } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": {"$timestamp": "1969-12-31-19.00.01.000000"} } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a = '2038-01-19 03:14:07.999999';
 id	a	b	c
 4	2038-01-19 03:14:07.999999	c	2038-01-19 03:14:07
@@ -750,7 +750,7 @@ id	a	b	c
 6	2038-01-18 03:14:07.999999	d	2038-01-19 03:14:07
 8	2018-12-19 09:19:38.700796	a	NULL
 9	2018-12-19 09:19:38.700796	b	NULL
-[Note] SequoiaDB: Query message: condition[{ "a": { "$ne": {"$timestamp": "2012-01-02-20.12.12.000000"} } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$ne": {"$timestamp": "2012-01-02-07.12.12.000000"} } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a <> '2012-01-02 12:12:12.000000';
 id	a	b	c
 1	1970-01-01 00:00:01.000000	a	1970-01-01 00:00:01
@@ -761,7 +761,7 @@ id	a	b	c
 6	2038-01-18 03:14:07.999999	d	2038-01-19 03:14:07
 8	2018-12-19 09:19:38.700796	a	NULL
 9	2018-12-19 09:19:38.700796	b	NULL
-[Note] SequoiaDB: Query message: condition[{ "a": { "$ne": {"$timestamp": "2012-01-02-20.12.12.000000"} } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$ne": {"$timestamp": "2012-01-02-07.12.12.000000"} } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a <> '2012-01-02 12:12:12.000001';
 id	a	b	c
 1	1970-01-01 00:00:01.000000	a	1970-01-01 00:00:01
@@ -797,13 +797,13 @@ id	a	b	c
 7	2012-01-02 12:12:12.000000	a	2012-01-02 12:12:12
 8	2018-12-19 09:19:38.700796	a	NULL
 9	2018-12-19 09:19:38.700796	b	NULL
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": {"$timestamp": "2012-01-02-20.12.12.000000"} } }, { "a": { "$lte": {"$timestamp": "2038-01-18-11.14.07.999999"} } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": {"$timestamp": "2012-01-02-07.12.12.000000"} } }, { "a": { "$lte": {"$timestamp": "2038-01-17-22.14.07.999999"} } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a in('1970-01-01 00:00:01.000000','2038-01-19 03:14:07.999999','2012-01-02 12:12:12.000000','2012-01-02 12:12:12.000001');
 id	a	b	c
 1	1970-01-01 00:00:01.000000	a	1970-01-01 00:00:01
 4	2038-01-19 03:14:07.999999	c	2038-01-19 03:14:07
 7	2012-01-02 12:12:12.000000	a	2012-01-02 12:12:12
-[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ {"$timestamp": "1970-01-01-08.00.01.000000"}, {"$timestamp": "2038-01-19-11.14.07.999999"}, {"$timestamp": "2012-01-02-20.12.12.000000"}, {"$timestamp": "2012-01-02-20.12.12.000001"} ] } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ {"$timestamp": "1969-12-31-19.00.01.000000"}, {"$timestamp": "2038-01-18-22.14.07.999999"}, {"$timestamp": "2012-01-02-07.12.12.000000"}, {"$timestamp": "2012-01-02-07.12.12.000001"} ] } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a='a1';
 id	a	b	c
 Warning	1292	Truncated incorrect datetime value: 'a1'
@@ -1092,10 +1092,10 @@ select * from t1 where a='a1';
 id	a	b	c
 Warning	1292	Truncated incorrect datetime value: 'a1'
 Warnings:
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": { "$date": -62170013143000 } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$et": { "$date": -62169966238000 } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a<'10000-01-01';
 id	a	b	c
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": { "$date": -62170013143000 } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": { "$date": -62169966238000 } } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a=c;
 id	a	b	c
 1	1000-01-01	a	1000-01-01
@@ -8053,13 +8053,13 @@ id	a	c
 [Note] SequoiaDB: Query message: condition[{ "id": { "$in": [ 1, 2, 6 ] } }], selector[{}], order_by[{ "id": 1, "c": 1 }], hint[{ "": "id" }], limit[2+1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 EXPLAIN SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ALL	c	NULL	NULL	NULL	11	Using where with pushed condition
+1	SIMPLE	t1	range	c	c	65	NULL	11	Using where with pushed condition
 SELECT * FROM t1 WHERE c NOT IN ('123','bc','abc','hello') LIMIT 3 OFFSET 1;
 id	a	c
-4	-99	tf
-5	-9	001
+1	-99	op
 6	15	9a
-[Note] SequoiaDB: Query message: condition[{ "c": { "$nin": [ "123", "bc", "abc", "hello" ] } }], selector[{}], order_by[{}], hint[{}], limit[3], offset[1], table[query_pushdown_test_sequoiadb.t1]
+8	5	jk
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "c": { "$nin": [ "123", "bc", "abc", "hello" ] } }, { "c": { "$gt": "hello" } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[3+1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 INSERT INTO t1 (id,a) VALUES (12,12), (13,13);
 EXPLAIN SELECT * FROM t1 WHERE c = 'abc' OR c IS NULL LIMIT 1,2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -13826,11 +13826,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	kb	kb	5	const	2	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a = 1 AND b = 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	ka,kb	ka,kb	5,5	NULL	1	Using intersect(ka,kb); Using where with pushed condition; Using index
+1	SIMPLE	t1	ref	ka,kb	ka	5	const	2	Using where with pushed condition
 SELECT * FROM t1 WHERE a = 1 AND b = 1;
 a	b
 1	1
-[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{}], order_by[{ "b": 1, "_id": 1 }], hint[{ "": "kb" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$et": 1 } }, { "a": { "$et": 1 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "ka" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
@@ -13843,11 +13843,11 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	kb	kb	5	const	2	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a = 1 AND b = 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	ka,kb	kb,ka	5,5	NULL	1	Using intersect(kb,ka); Using where with pushed condition; Using index
+1	SIMPLE	t1	range	ka,kb	ka	5	NULL	3	Using where with pushed condition
 SELECT * FROM t1 WHERE a = 1 AND b = 1;
 a	b
 1	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 } }], selector[{}], order_by[{ "a": 1, "_id": 1 }], hint[{ "": "ka" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$et": 1 } }, { "b": { "$et": 1 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "ka" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 ( 
 a tinyint NOT NULL, 
@@ -13861,7 +13861,7 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 ),(12,12),(13,13),(14,14),(15,15),(16,16),(17,17),(18,18),(19,19),(20,20);
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	1	NULL	6	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	1	NULL	6	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -13872,13 +13872,13 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 EXPLAIN SELECT * FROM t1 WHERE a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	6	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,ab	PRIMARY	1	NULL	6	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a>10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	14	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,ab	PRIMARY	1	NULL	14	Using where with pushed condition
 SELECT * FROM t1 WHERE a<10;
 a	b
 1	1
@@ -13890,7 +13890,7 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 10 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 10 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE a>10;
 a	b
 11	11
@@ -13903,14 +13903,14 @@ a	b
 18	18
 19	19
 20	20
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 10 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 10 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	1	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	1	NULL	9	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -13921,13 +13921,13 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 EXPLAIN SELECT * from t1 WHERE a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,ab	PRIMARY	1	NULL	9	Using where with pushed condition
 EXPLAIN SELECT * from t1 WHERE a>10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	11	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,ab	PRIMARY	1	NULL	11	Using where with pushed condition
 SELECT * FROM t1 WHERE a<10;
 a	b
 1	1
@@ -13939,7 +13939,7 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 10 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 10 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE a>10;
 a	b
 11	11
@@ -13952,7 +13952,7 @@ a	b
 18	18
 19	19
 20	20
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 10 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 10 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a smallint NOT NULL,
@@ -13966,7 +13966,7 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 ),(12,12),(13,13),(14,14),(15,15),(16,16),(17,17),(18,18),(19,19),(20,20);
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	5	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	2	NULL	5	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -13977,14 +13977,14 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	2	NULL	9	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -13995,7 +13995,7 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a mediumint NOT NULL,
@@ -14009,7 +14009,7 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 ),(12,12),(13,13),(14,14),(15,15),(16,16),(17,17),(18,18),(19,19),(20,20);
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	3	NULL	5	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	3	NULL	5	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -14020,14 +14020,14 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	3	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	3	NULL	9	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -14038,7 +14038,7 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a int NOT NULL,
@@ -14052,7 +14052,7 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 ),(12,12),(13,13),(14,14),(15,15),(16,16),(17,17),(18,18),(19,19),(20,20);
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	4	NULL	5	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	4	NULL	5	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -14063,14 +14063,14 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	4	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	4	NULL	9	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -14081,7 +14081,7 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a bigint NOT NULL,
@@ -14095,7 +14095,7 @@ INSERT INTO t1 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8),(9,9),(10,
 ),(12,12),(13,13),(14,14),(15,15),(16,16),(17,17),(18,18),(19,19),(20,20);
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	8	NULL	5	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	8	NULL	5	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -14106,14 +14106,14 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1 AND a<10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	8	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	8	NULL	9	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1 AND a<10;
 a	b
 2	2
@@ -14124,7 +14124,7 @@ a	b
 7	7
 8	8
 9	9
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1 } }, { "a": { "$lt": 10 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a int(11) DEFAULT NULL,
@@ -14142,10 +14142,10 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	ab,ba,a,b,c	ab	10	NULL	2	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	ab,ba,a,b,c	b	5	NULL	5	Using where with pushed condition
+1	SIMPLE	t1	range	ab,ba,a,b,c	ba	5	NULL	5	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	ab,ba,a,b	b,a	5,5	NULL	10	Using sort_union(b,a); Using where with pushed condition
+1	SIMPLE	t1	index_merge	ab,ba,a,b	ba,ab	5,5	NULL	10	Using sort_union(ba,ab); Using where with pushed condition
 SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 a	b	c
 1	1	1
@@ -14156,45 +14156,45 @@ a	b	c
 1	1	1
 2	2	2
 3	3	3
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lte": 3 } }, { "c": { "$lte": 4 } } ] }, { "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lte": 3 } }, { "c": { "$lte": 4 } } ] }, { "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
 a	b	c
 1	1	1
 2	2	2
 3	3	3
-[Note] SequoiaDB: Query message: condition[{ "b": { "$lte": 3 } }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 3 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lte": 3 } }], selector[{}], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 3 } }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	ab,ba,a,b,c	a	5	NULL	2	Using where with pushed condition
+1	SIMPLE	t1	range	ab,ba,a,b,c	ab	10	NULL	2	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	ab,ba,a,b,c	b	5	NULL	2	Using where with pushed condition
+1	SIMPLE	t1	range	ab,ba,a,b,c	ba	5	NULL	2	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	ab,ba,a,b	b,a	5,5	NULL	4	Using sort_union(b,a); Using where with pushed condition
+1	SIMPLE	t1	index_merge	ab,ba,a,b	ba,ab	5,5	NULL	4	Using sort_union(ba,ab); Using where with pushed condition
 SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 a	b	c
 1	1	1
 2	2	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 a	b	c
 1	1	1
 2	2	2
 3	3	3
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lte": 3 } }, { "c": { "$lte": 4 } } ] }, { "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$or": [ { "a": { "$lte": 3 } }, { "c": { "$lte": 4 } } ] }, { "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
 a	b	c
 1	1	1
 2	2	2
 3	3	3
-[Note] SequoiaDB: Query message: condition[{ "b": { "$lte": 3 } }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 3 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lte": 3 } }], selector[{}], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 3 } }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a float NOT NULL,
@@ -14207,7 +14207,7 @@ KEY ba (b,a)
 INSERT INTO t1 VALUES (1.1,1.1),(2.1,2.1),(3.1,3.1),(4.1,4.1),(5.1,5.1),(6.1,6.1),(7.1,7.1),(8.1,8.1),(9.1,9.1),(10.1,10.1),(11.1,11.1),(12.1,12.1),(13.1,13.1),(14.1,14.1),(15.1,15.1),(16.1,16.1),(17.1,17.1),(18.1,18.1),(19.1,19.1),(20.1,20.1);
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	4	NULL	5	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	4	NULL	5	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 a	b
 2.1	2.10
@@ -14218,14 +14218,14 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": 1.100000023841858 } }, { "a": { "$lt": 10.10000038146973 } } ] }, { "a": { "$lte": 10.10000038146973 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": 1.100000023841858 } }, { "a": { "$lt": 10.10000038146973 } } ] }, { "a": { "$lte": 10.10000038146973 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	4	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	4	NULL	9	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 a	b
 2.1	2.10
@@ -14236,7 +14236,7 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": 1.100000023841858 } }, { "a": { "$lt": 10.10000038146973 } } ] }, { "a": { "$lte": 10.10000038146973 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": 1.100000023841858 } }, { "a": { "$lt": 10.10000038146973 } } ] }, { "a": { "$lte": 10.10000038146973 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a double NOT NULL,
@@ -14249,7 +14249,7 @@ KEY ba (b,a)
 INSERT INTO t1 VALUES (1.1,1.1),(2.1,2.1),(3.1,3.1),(4.1,4.1),(5.1,5.1),(6.1,6.1),(7.1,7.1),(8.1,8.1),(9.1,9.1),(10.1,10.1),(11.1,11.1),(12.1,12.1),(13.1,13.1),(14.1,14.1),(15.1,15.1),(16.1,16.1),(17.1,17.1),(18.1,18.1),(19.1,19.1),(20.1,20.1);
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	8	NULL	5	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	8	NULL	5	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 a	b
 2.1	2.10
@@ -14260,14 +14260,14 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.1 } }, { "a": { "$lt": 10.1 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.1 } }, { "a": { "$lt": 10.1 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	8	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	8	NULL	9	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 a	b
 2.1	2.10
@@ -14278,7 +14278,7 @@ a	b
 7.1	7.10
 8.1	8.10
 9.1	9.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.1 } }, { "a": { "$lt": 10.1 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gt": 1.1 } }, { "a": { "$lt": 10.1 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a decimal NOT NULL,
@@ -14312,7 +14312,7 @@ Note	1265	Data truncated for column 'a' at row 19
 Note	1265	Data truncated for column 'a' at row 20
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	5	NULL	5	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	5	NULL	5	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 a	b
 2	2.10
@@ -14324,14 +14324,14 @@ a	b
 8	8.10
 9	9.10
 10	10.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": { "$decimal": "1.1" } } }, { "a": { "$lt": { "$decimal": "10.1" } } } ] }, { "a": { "$lte": { "$decimal": "10" } } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": { "$decimal": "1.1" } } }, { "a": { "$lt": { "$decimal": "10.1" } } } ] }, { "a": { "$lte": { "$decimal": "10" } } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	5	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	5	NULL	9	Using where with pushed condition
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 a	b
 2	2.10
@@ -14343,6 +14343,6 @@ a	b
 8	8.10
 9	9.10
 10	10.10
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": { "$decimal": "1.1" } } }, { "a": { "$lt": { "$decimal": "10.1" } } } ] }, { "a": { "$lte": { "$decimal": "10" } } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "b": { "$gt": { "$decimal": "1.1" } } }, { "a": { "$lt": { "$decimal": "10.1" } } } ] }, { "a": { "$lte": { "$decimal": "10" } } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 DROP DATABASE query_pushdown_test_sequoiadb;
