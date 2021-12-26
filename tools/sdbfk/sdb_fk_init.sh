@@ -43,7 +43,7 @@ function grant_to_customer()
     ${INSTALL_PATH}/bin/mysql -u${userName} ${pstr} -h${host} -P${port} -e "
     GRANT ALL ON sequoiadb_foreign_config.* to '${custmor_array[$i]}'@'%';
     " 2>&1 | grep -v 'Warning'
-    if [ $? = 0 ];then
+    if [ ${PIPESTATUS[0]} = 0 ];then
       echo "Succeed to grant sequoiadb_foreign_config privileges to <${custmor_array[$i]}>."
     else
       echo "fail to grant sequoiadb_foreign_config privileges to <${custmor_array[$i]}>."
@@ -99,6 +99,11 @@ function init_all(){
   $
   delimiter ;
   " 2>&1 | grep -v 'Warning'
+
+if [ ${PIPESTATUS[0]} != 0 ];then
+  echo "Can't create table sequoiadb_foreign_config.referential_constraints."
+  exit
+fi
 
 echo "Succeed to create table sequoiadb_foreign_config.referential_constraints."
 
