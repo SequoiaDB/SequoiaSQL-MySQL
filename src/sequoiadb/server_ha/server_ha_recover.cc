@@ -1969,11 +1969,20 @@ void *ha_recover_and_replay(void *arg) {
   stopped_mutex_locked = true;
 
   try {
+    bson::BSONObj attr;
     // 2. connect to sequoiadb
     rc = sdb_conn.connect();
     HA_RC_CHECK(rc, error,
                 "HA: Unable to connect to sequoiadb, sequoiadb error: %s",
                 ha_error_string(sdb_conn, rc, err_buf));
+
+    attr = BSON(HA_TRANSACTION_LOCK_WAIT << true);
+    rc = sdb_conn.set_session_attr(attr);
+    HA_RC_CHECK(
+        rc, error,
+        "HA: Failed to set '%s' before transaction, sequoiadb error: %s",
+        HA_TRANSACTION_LOCK_WAIT, ha_error_string(sdb_conn, rc, err_buf));
+
     // set isolation level: SDB_TRANS_ISO_RC
     rc = sdb_conn.begin_transaction(ISO_READ_COMMITTED);
     HA_RC_CHECK(rc, error,
