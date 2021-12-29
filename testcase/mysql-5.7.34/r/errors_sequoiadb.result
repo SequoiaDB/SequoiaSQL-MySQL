@@ -20,8 +20,6 @@ create table t1 (a char(10));
 insert into t1 values ('abc'),('bcd'),('abc');
 drop table t1;
 create table t1 ( id int, t longtext, index (`id`) ) ;
-create index id1 on t1(id);
-ERROR HY000: Exist one index which can cover this scene
 insert into t1 values(1, repeat('a',16773075));
 ERROR HY000: User record is too large
 create index t_idx on t1(t(255));

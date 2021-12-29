@@ -39,8 +39,9 @@ drop table t1;
 # SEQUOIASQLMAINSTREAM-487 SEQUOIADBMAINSTREAM-7255
 # Testcase: seqDB-24293
 create table t1 ( id int, t longtext, index (`id`) ) ;
---error 40291
-create index id1 on t1(id);
+#BUG:SEQUOIADBMAINSTREAM-7882
+#--error 40291
+#create index id1 on t1(id);
 --error 40024
 insert into t1 values(1, repeat('a',16773075));
 create index t_idx on t1(t(255));
