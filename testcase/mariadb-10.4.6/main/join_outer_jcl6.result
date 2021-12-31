@@ -1767,18 +1767,18 @@ SELECT t1.b, t2.c, t2.d FROM t2 JOIN t1 ON t2.c = t1.a
 WHERE t1.pk BETWEEN 5 AND 6 AND t1.b IS NULL OR t1.b = 5
 ORDER BY t1.b;
 b	c	d
-5	8	81
+5	8	88
 5	8	81
 5	8	88
-5	8	88
+5	8	81
 SELECT t1.b, t2.c, t2.d FROM t2 LEFT JOIN t1 ON t2.c = t1.a
 WHERE t1.pk BETWEEN 5 AND 6 AND t1.b IS NULL OR t1.b = 5
 ORDER BY t1.b;
 b	c	d
-5	8	81
+5	8	88
 5	8	81
 5	8	88
-5	8	88
+5	8	81
 DROP TABLE t1,t2;
 #
 # Bug mdev-4336: LEFT JOIN with disjunctive 

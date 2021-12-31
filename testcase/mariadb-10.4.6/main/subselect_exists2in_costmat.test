@@ -78,7 +78,6 @@ set @@optimizer_switch = 'exists_to_in=on,in_to_exists=on,semijoin=on,materializ
 #       Name LIKE 'L%') AND
 #      surfacearea > 1000000;
 
---sorted_result
 SELECT Name FROM Country
 WHERE (EXISTS (select 1 from City where City.Population > 100000 and
 Code = Country) OR

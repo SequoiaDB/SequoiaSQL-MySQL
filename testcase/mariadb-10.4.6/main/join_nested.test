@@ -475,7 +475,6 @@ CREATE INDEX idx_b ON t2(b);
 #       LEFT JOIN              
 #       (t1,t2)
 #       ON t3.a=1 AND t3.b=t2.b AND t2.b=t4.b AND t2.a>0;
---sorted_result
 SELECT t2.a,t2.b,t3.a,t3.b,t4.a,t4.b
   FROM (t3,t4)
        LEFT JOIN              
@@ -637,7 +636,7 @@ CREATE INDEX idx_a ON t0(a);
 #           (t8.a < 1 OR t8.c IS NULL) AND
 #           (t8.b=t9.b OR t8.c IS NULL) AND
 #           (t9.a=1); 
---sorted_result
+
 SELECT t0.a,t0.b,t1.a,t1.b,t2.a,t2.b,t3.a,t3.b,t4.a,t4.b,
        t5.a,t5.b,t6.a,t6.b,t7.a,t7.b,t8.a,t8.b,t9.a,t9.b
   FROM t0,t1
@@ -745,7 +744,6 @@ INSERT INTO t3 VALUES (0), (1), (2), (3), (4), (5);
  
 #EXPLAIN SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON c < 3 and b = c;
 #EXPLAIN SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON b < 3 and b = c;
---sorted_result
 SELECT a, b, c FROM t1 LEFT JOIN (t2, t3) ON b < 3 and b = c;
 
 DELETE FROM t3;
@@ -1240,7 +1238,7 @@ INSERT INTO t2 VALUES
   (1,NULL), (4,2), (5,2), (3,4), (2,8);
 INSERT INTO t3 VALUES
   (1,9), (2,2), (3,5), (4,2), (5,7), (6,0), (7,5);
---sorted_result
+
 SELECT t1.pk, t1.a, t2.pk, t2.a,t3.pk, t3.a 
   FROM t1 LEFT JOIN (t2 LEFT JOIN t3 ON t3.a=t2.a) ON t2.a=t1.a;
 
@@ -1351,8 +1349,8 @@ FROM
       OR (t2i.K2 IS NULL))
 WHERE 
 t2a.K1r = 1 AND t2i.K2 IS NULL;
-#BUG:SEQUOIASQLMAINSTREAM-1242,mariadb bka,返回记录数不对
-#eval $q1;
+
+eval $q1;
 #eval EXPLAIN EXTENDED $q1;
 
 CREATE VIEW v1 AS 
@@ -1374,8 +1372,8 @@ FROM
 WHERE
   t1a.K1 = 1 AND 
   t2b.K2 IS NULL;
-#BUG:SEQUOIASQLMAINSTREAM-1242,mariadb bka,返回记录数不对
-#eval $q2;
+
+eval $q2;
 #eval EXPLAIN EXTENDED $q2;
 
 DROP VIEW v1;

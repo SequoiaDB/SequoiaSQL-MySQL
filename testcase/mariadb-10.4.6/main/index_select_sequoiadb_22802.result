@@ -21,36 +21,36 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a>19;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	PRIMARY	1	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	index	PRIMARY,ab	ab	3	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a>19;
 a	b
 20	20
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 19 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 19 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE b<2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	b,ba	b	2	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	b,ba	ba	2	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE b<2;
 a	b
 1	1
-[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 2 } }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 2 } }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics collected
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a>19;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	PRIMARY	1	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a>19;
 a	b
 20	20
-[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 19 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 19 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE b<2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	b,ba	b	2	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	b,ba	ba	2	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE b<2;
 a	b
 1	1
-[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 2 } }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$lt": 2 } }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a SMALLINT UNSIGNED,
@@ -73,11 +73,11 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	2	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE a<>b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index	NULL	ab	5	NULL	#	Using where with pushed condition; Using index
@@ -96,11 +96,11 @@ index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	2	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE a<>b;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index	NULL	ab	5	NULL	#	Using where with pushed condition; Using index
@@ -135,22 +135,22 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	3	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ba	4	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics collected
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	3	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	3	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gt": 65533 } }, { "b": { "$lt": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a INT UNSIGNED,
@@ -173,22 +173,22 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	4	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ba	5	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 a	b
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 65534 } }, { "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 65534 } }, { "b": { "$lte": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics collected
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	PRIMARY	4	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	9	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 a	b
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": 65534 } }, { "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "$and": [ { "a": { "$gte": 65534 } }, { "b": { "$lte": 3 } } ] }, { "a": { "$gte": 65534 }, "b": { "$isnull": 0 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 DROP TABLE t1;
 CREATE TABLE t1 (
 a BIGINT UNSIGNED,
@@ -211,45 +211,45 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a in (1,2,3);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	PRIMARY	8	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,ab	ab	8	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a in (1,2,3);
 a	b
 1	1
 2	2
 3	65535
-[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	b,ba	b	9	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	b,ba	ba	9	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 a	b
 1	1
 10	1
 2	2
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics collected
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a in (1,2,3);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	PRIMARY	8	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	PRIMARY,ab	ab	8	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a in (1,2,3);
 a	b
 1	1
 2	2
 3	65535
-[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "PRIMARY" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	b,ba	b	9	NULL	#	Using where with pushed condition
+1	SIMPLE	t1	range	b,ba	ba	9	NULL	#	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 a	b
 1	1
 10	1
 2	2
 65535	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] }], selector[{}], order_by[{ "b": 1 }], hint[{ "": "b" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 DROP TABLE t1;
 DROP DATABASE index_select_sequoiadb_22802;

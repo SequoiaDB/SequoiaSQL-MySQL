@@ -318,7 +318,6 @@ insert into t2 values
 
 select oref, a, a in (select ie from t1 where oref=t2.oref) Z from t2;
 
---sorted_result
 select oref, a from t2 where a in (select ie from t1 where oref=t2.oref); 
 
 select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
@@ -373,7 +372,6 @@ alter table t1 add index idx(oref,ie);
 
 select oref, a, a in (select ie from t1 where oref=t2.oref) Z from t2;
 
---sorted_result
 select oref, a from t2 where a in (select ie from t1 where oref=t2.oref); 
 
 select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);

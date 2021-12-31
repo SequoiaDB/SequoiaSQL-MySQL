@@ -173,12 +173,12 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
         CountryLanguage.Percentage > 50 AND
         LENGTH(Language) < LENGTH(City.Name) - 2;
 
---sorted_result
+
 SELECT Country.Name, Country.Population, City.Name, City.Population 
   FROM Country LEFT JOIN City
        ON City.Country=Country.Code AND City.Population > 5000000
    WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
---sorted_result
+
 SELECT Country.Name, Country.Population, City.Name, City.Population
   FROM Country LEFT JOIN City 
        ON City.Country=Country.Code AND
@@ -198,7 +198,6 @@ ANALYZE TABLE City;
 #       ON City.Country=Country.Code AND City.Population > 5000000
 #   WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 
---sorted_result
 SELECT Country.Name, Country.Population, City.Name, City.Population 
   FROM Country LEFT JOIN City
        ON City.Country=Country.Code AND City.Population > 5000000
@@ -211,7 +210,6 @@ SELECT Country.Name, Country.Population, City.Name, City.Population
 #          (City.Population > 5000000 OR City.Name LIKE 'Za%')
 #  WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 
---sorted_result
 SELECT Country.Name, Country.Population, City.Name, City.Population
   FROM Country LEFT JOIN City 
        ON City.Country=Country.Code AND
@@ -412,7 +410,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -423,7 +420,7 @@ SELECT Name FROM City
 #       (CountryLanguage.Country=Country.Code AND Language='English')
 #  WHERE 
 #       Country.Population > 10000000;
---sorted_result
+
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
   FROM Country LEFT JOIN CountryLanguage ON
        (CountryLanguage.Country=Country.Code AND Language='English')
@@ -467,7 +464,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -478,7 +474,7 @@ SELECT Name FROM City
 #       (CountryLanguage.Country=Country.Code AND Language='English')
 #  WHERE 
 #       Country.Population > 10000000;
---sorted_result
+
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
   FROM Country LEFT JOIN CountryLanguage ON
        (CountryLanguage.Country=Country.Code AND Language='English')
@@ -493,7 +489,6 @@ SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.P
 #       ON City.Country=Country.Code AND City.Population > 5000000
 #   WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 
---sorted_result
 SELECT Country.Name, Country.Population, City.Name, City.Population 
   FROM Country LEFT JOIN City
        ON City.Country=Country.Code AND City.Population > 5000000
@@ -508,7 +503,6 @@ CREATE INDEX City_Name ON City(Name);
 #          (City.Population > 5000000 OR City.Name LIKE 'Za%')
 #  WHERE Country.Name LIKE 'C%' AND Country.Population > 10000000;
 
---sorted_result
 SELECT Country.Name, Country.Population, City.Name, City.Population
   FROM Country LEFT JOIN City 
        ON City.Country=Country.Code AND
@@ -554,7 +548,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -565,7 +558,7 @@ SELECT Name FROM City
 #       (CountryLanguage.Country=Country.Code AND Language='English')
 #  WHERE 
 #       Country.Population > 10000000;
---sorted_result
+
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
   FROM Country LEFT JOIN CountryLanguage ON
        (CountryLanguage.Country=Country.Code AND Language='English')
@@ -608,7 +601,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -619,7 +611,7 @@ SELECT Name FROM City
 #       (CountryLanguage.Country=Country.Code AND Language='English')
 #  WHERE 
 #       Country.Population > 10000000;
---sorted_result
+
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
   FROM Country LEFT JOIN CountryLanguage ON
        (CountryLanguage.Country=Country.Code AND Language='English')
@@ -662,7 +654,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -673,7 +664,7 @@ SELECT Name FROM City
 #       (CountryLanguage.Country=Country.Code AND Language='English')
 #  WHERE 
 #       Country.Population > 10000000;
---sorted_result
+
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
   FROM Country LEFT JOIN CountryLanguage ON
        (CountryLanguage.Country=Country.Code AND Language='English')
@@ -716,7 +707,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -727,7 +717,7 @@ SELECT Name FROM City
 #       (CountryLanguage.Country=Country.Code AND Language='English')
 #  WHERE 
 #       Country.Population > 10000000;
---sorted_result
+
 SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.Percentage)
   FROM Country LEFT JOIN CountryLanguage ON
        (CountryLanguage.Country=Country.Code AND Language='English')
@@ -773,7 +763,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -839,21 +828,21 @@ SELECT City.Name, Country.Name FROM City,Country
 #        City.Name LIKE 'L%' AND Country.Population > 3000000 AND
 #        CountryLanguage.Percentage > 50 AND
 #        LENGTH(Language) < LENGTH(City.Name) - 2;
-#BUG:SEQUOIASQLMAINSTREAM-1242,mariadb bka返回记录数不正确
-#SELECT City.Name, Country.Name, CountryLanguage.Language
-#  FROM City,Country,CountryLanguage
-#  WHERE City.Country=Country.Code AND
-#        CountryLanguage.Country=Country.Code AND
-#        City.Name LIKE 'L%' AND Country.Population > 3000000 AND
-#        CountryLanguage.Percentage > 50 AND
-#        LENGTH(Language) < LENGTH(City.Name) - 2;
+
+--sorted_result
+SELECT City.Name, Country.Name, CountryLanguage.Language
+  FROM City,Country,CountryLanguage
+  WHERE City.Country=Country.Code AND
+        CountryLanguage.Country=Country.Code AND
+        City.Name LIKE 'L%' AND Country.Population > 3000000 AND
+        CountryLanguage.Percentage > 50 AND
+        LENGTH(Language) < LENGTH(City.Name) - 2;
 
 #EXPLAIN
 #SELECT Name FROM City
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -879,21 +868,21 @@ SELECT City.Name, Country.Name FROM City,Country
 #        City.Name LIKE 'L%' AND Country.Population > 3000000 AND
 #        CountryLanguage.Percentage > 50 AND
 #        LENGTH(Language) < LENGTH(City.Name) - 2;
-#BUG:SEQUOIASQLMAINSTREAM-1242,mariadb bka返回记录数不对
-#SELECT City.Name, Country.Name, CountryLanguage.Language
-#  FROM City,Country,CountryLanguage
-#  WHERE City.Country=Country.Code AND
-#        CountryLanguage.Country=Country.Code AND
-#        City.Name LIKE 'L%' AND Country.Population > 3000000 AND
-#        CountryLanguage.Percentage > 50 AND
-#        LENGTH(Language) < LENGTH(City.Name) - 2;
+
+--sorted_result
+SELECT City.Name, Country.Name, CountryLanguage.Language
+  FROM City,Country,CountryLanguage
+  WHERE City.Country=Country.Code AND
+        CountryLanguage.Country=Country.Code AND
+        City.Name LIKE 'L%' AND Country.Population > 3000000 AND
+        CountryLanguage.Percentage > 50 AND
+        LENGTH(Language) < LENGTH(City.Name) - 2;
 
 #EXPLAIN
 #SELECT Name FROM City
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -934,7 +923,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -975,7 +963,6 @@ SELECT City.Name, Country.Name, CountryLanguage.Language
 #  WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
 #        City.Population > 100000;
 
---sorted_result
 SELECT Name FROM City
   WHERE City.Country IN (SELECT Code FROM Country WHERE Country.Name LIKE 'L%') AND
         City.Population > 100000;
@@ -1318,7 +1305,6 @@ set join_buffer_size=512;
 #       SUBSTR(filler1,1,1) AS s1, SUBSTR(filler2,1,1) AS s2
 #FROM t1,t2,t3 WHERE a1=a2 AND b2=b3 AND MOD(c3,10)>7; 
 
---sorted_result
 SELECT a1<>a2, a1, a2, b2, b3, c3,
        SUBSTR(filler1,1,1) AS s1, SUBSTR(filler2,1,1) AS s2
 FROM t1,t2,t3 WHERE a1=a2 AND b2=b3 AND MOD(c3,10)>7;
@@ -2154,7 +2140,6 @@ set join_buffer_size=2048;
 #    WHERE t1.id1=t5.id1 AND t1.id2=t5.id2 and  t4.id2=t1.id2 AND
 #          t5.enum2='Active' AND t3.id4=t2.id4 AND t2.id3=t1.id3 AND t3.text1<'D';
 
---sorted_result
 SELECT STRAIGHT_JOIN t1.id1, t1.num3, t3.text1, t3.id4, t2.id3, t4.dummy
   FROM t1 JOIN  t2 JOIN  t3 JOIN  t4 JOIN  t5 
     WHERE t1.id1=t5.id1 AND t1.id2=t5.id2 and  t4.id2=t1.id2 AND
@@ -2918,11 +2903,10 @@ INSERT INTO t3 VALUES (77,'h'), (88,'g');
 
 SET SESSION optimizer_switch = 'outer_join_with_cache=on';
 SET SESSION join_cache_level = 7;
-#BUG:SEQUOIASQLMAINSTREAM-1242
-#SELECT t3.a
-#  FROM t1 LEFT JOIN
-#       (t2 LEFT OUTER JOIN t3 ON t2.b = t3.b) ON t2.a = t1.b
-#    WHERE t3.a BETWEEN 3 AND 11 OR t1.a <= t2.c;
+SELECT t3.a
+  FROM t1 LEFT JOIN
+       (t2 LEFT OUTER JOIN t3 ON t2.b = t3.b) ON t2.a = t1.b
+    WHERE t3.a BETWEEN 3 AND 11 OR t1.a <= t2.c;
 
 SET SESSION optimizer_switch = 'outer_join_with_cache=off';
 SET SESSION join_cache_level = DEFAULT;
