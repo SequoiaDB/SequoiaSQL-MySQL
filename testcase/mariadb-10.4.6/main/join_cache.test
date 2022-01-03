@@ -594,7 +594,8 @@ SELECT City.Name, Country.Name FROM City,Country
 #        CountryLanguage.Percentage > 50 AND
 #        LENGTH(Language) < LENGTH(City.Name) - 2;
 
-#BUG:
+#BUG:SEQUOIASQLMAINSTREAM-1242
+#--sorted_result
 #SELECT City.Name, Country.Name, CountryLanguage.Language
 #  FROM City,Country,CountryLanguage
 #  WHERE City.Country=Country.Code AND
@@ -840,6 +841,8 @@ SELECT City.Name, Country.Name FROM City,Country
 #        CountryLanguage.Percentage > 50 AND
 #        LENGTH(Language) < LENGTH(City.Name) - 2;
 
+#BUG:SEQUOIASQLMAINSTREAM-1242
+#--sorted_result
 #SELECT City.Name, Country.Name, CountryLanguage.Language
 #  FROM City,Country,CountryLanguage
 #  WHERE City.Country=Country.Code AND
@@ -880,7 +883,8 @@ SELECT City.Name, Country.Name FROM City,Country
 #        CountryLanguage.Percentage > 50 AND
 #        LENGTH(Language) < LENGTH(City.Name) - 2;
 
-#BUG:
+#BUG:SEQUOIASQLMAINSTREAM-1242
+#--sorted_result
 #SELECT City.Name, Country.Name, CountryLanguage.Language
 #  FROM City,Country,CountryLanguage
 #  WHERE City.Country=Country.Code AND
