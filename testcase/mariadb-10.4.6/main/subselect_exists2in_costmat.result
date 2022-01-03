@@ -69,17 +69,17 @@ Argentina
 Australia
 Bolivia
 Brazil
-Egypt
-South Africa
-Ethiopia
-Indonesia
-India
-Iran
 Canada
-Kazakstan
+Chad
 China
 Colombia
 Congo, The Democratic Republic of the
+Egypt
+Ethiopia
+India
+Indonesia
+Iran
+Kazakstan
 Libyan Arab Jamahiriya
 Mali
 Mauritania
@@ -87,10 +87,10 @@ Mexico
 Mongolia
 Niger
 Peru
-Saudi Arabia
-Sudan
-Chad
 Russian Federation
+Saudi Arabia
+South Africa
+Sudan
 United States
 drop database subselect_exists2in_world;
 set optimizer_switch=@subselect_mat_cost;
