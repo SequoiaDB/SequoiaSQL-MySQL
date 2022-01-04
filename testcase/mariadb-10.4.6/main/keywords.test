@@ -3,9 +3,10 @@
 #
 
 --disable_warnings
-drop table if exists t1;
+drop database if exists test_keywords;
 --enable_warnings
-
+create database test_keywords;
+use test_keywords;
 create table t1 (time time, date date, timestamp timestamp,
 quarter int, week int, year int, timestampadd int, timestampdiff int);
 insert into t1 values ("12:22:22","97:02:03","1997-01-02",1,2,3,4,5);
@@ -259,3 +260,5 @@ DROP TABLE raise;
 
 CREATE TABLE reuse (reuse int);
 DROP TABLE reuse;
+
+drop database test_keywords;

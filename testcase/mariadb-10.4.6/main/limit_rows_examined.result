@@ -1,3 +1,6 @@
+drop database if exists test_limit_rows_examined;
+create database test_limit_rows_examined;
+use test_limit_rows_examined;
 call mtr.add_suppression("Sort aborted.*");
 set @save_join_cache_level = @@join_cache_level;
 create table t1 (c1 char(2));
@@ -608,3 +611,4 @@ Warnings:
 Warning	1931	Query execution was interrupted. The query examined at least 22 rows, which exceeds LIMIT ROWS EXAMINED (21). The query result may be incomplete
 drop view v;
 drop table t1, t2;
+drop database test_limit_rows_examined;

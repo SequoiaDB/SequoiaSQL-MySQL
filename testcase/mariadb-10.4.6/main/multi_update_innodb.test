@@ -1,5 +1,9 @@
 --source include/have_sequoiadb.inc
-
+--disable_warnings
+drop database if exists test_multi_update_innodb;
+--enable_warnings
+create database test_multi_update_innodb;
+use test_multi_update_innodb;
 --echo #
 --echo # BUG#57373: Multi update+SequoiaDB reports ER_KEY_NOT_FOUND if a
 --echo #            table is updated twice
@@ -246,3 +250,4 @@ DROP TABLE t3,t4;
 SET @@sql_mode=@save_sql_mode;
 
 --echo # End of 10.2 tests
+drop database test_multi_update_innodb;

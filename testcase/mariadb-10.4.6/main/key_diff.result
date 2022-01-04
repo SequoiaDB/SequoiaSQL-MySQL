@@ -1,4 +1,6 @@
-drop table if exists t1;
+drop database if exists test_key_diff;
+create database test_key_diff;
+use test_key_diff;
 CREATE TABLE t1 (
 a char(5) NOT NULL,
 b char(4) NOT NULL,
@@ -45,3 +47,4 @@ select * from t1 where a='a';
 a	b
 a	a
 drop table t1;
+drop database test_key_diff;

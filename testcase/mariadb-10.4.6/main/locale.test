@@ -1,6 +1,9 @@
 --disable_warnings
-DROP TABLE IF EXISTS t1;
+DROP DATABASE IF EXISTS test_locale;
 --enable_warnings
+
+create database test_locale;
+use test_locale;
 
 --echo Start of 5.4 tests
 
@@ -182,3 +185,5 @@ select date_format('2001-10-01', '%c %b %M', 'rm_CH');
 select date_format('2001-12-01', '%c %b %M', 'rm_CH');
 select date_format('2001-01-06', '%w %a %W', 'de_CH');
 select date_format('2001-09-01', '%c %b %M', 'de_CH');
+
+drop database test_locale;

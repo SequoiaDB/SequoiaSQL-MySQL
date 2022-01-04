@@ -1,3 +1,6 @@
+drop database if exists test_multi_update_innodb;
+create database test_multi_update_innodb;
+use test_multi_update_innodb;
 #
 # BUG#57373: Multi update+SequoiaDB reports ER_KEY_NOT_FOUND if a
 #            table is updated twice
@@ -199,3 +202,4 @@ DROP VIEW v1;
 DROP TABLE t3,t4;
 SET @@sql_mode=@save_sql_mode;
 # End of 10.2 tests
+drop database test_multi_update_innodb;

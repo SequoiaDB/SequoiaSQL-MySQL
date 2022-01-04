@@ -3,11 +3,13 @@
 #
 
 --disable_warnings
-drop table if exists t0, t1, t2, t3, t4, t5, t10, t11, t12;
-drop view if exists v1, v2, v3, v4;
-drop procedure if exists p1;
+#drop table if exists t0, t1, t2, t3, t4, t5, t10, t11, t12;
+#drop view if exists v1, v2, v3, v4;
+#drop procedure if exists p1;
+drop database if exists test_subselect_sj;
 --enable_warnings
-
+create database test_subselect_sj;
+use test_subselect_sj;
 set @subselect_sj_tmp= @@optimizer_switch;
 set optimizer_switch='semijoin=on,firstmatch=on,loosescan=on';
 set optimizer_switch='mrr=on,mrr_sort_keys=on,index_condition_pushdown=on';
@@ -448,9 +450,8 @@ VALUES (1,'g','g'), (2,'v','v'), (3,'t','t'), (4,'u','u'), (5,'n','n');
 
 #EXPLAIN EXTENDED SELECT vkey FROM t0 WHERE pk IN 
 #  (SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey);
---sorted_result
 SELECT vkey FROM t0 WHERE pk IN 
-  (SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey);
+  (SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey) order by vkey;
 
 DROP TABLE t0;
 
@@ -2297,10 +2298,10 @@ analyze table t1,t2;
 #SELECT a, b, d FROM t1, t2
 #WHERE ( b, d ) IN
 #  ( SELECT b, d FROM t1, t2 WHERE b = c );
---sorted_result
 SELECT a, b, d FROM t1, t2
 WHERE ( b, d ) IN
-  ( SELECT b, d FROM t1, t2 WHERE b = c );
+  ( SELECT b, d FROM t1, t2 WHERE b = c )
+order by a, b, d;
 
 DROP TABLE t1, t2;
 
@@ -2950,3 +2951,4 @@ drop table t1,t2;
 
 # The following command must be the last one the file 
 set optimizer_switch=@subselect_sj_tmp;
+drop database test_subselect_sj;

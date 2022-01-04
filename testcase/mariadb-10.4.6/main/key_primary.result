@@ -1,4 +1,6 @@
-drop table if exists t1;
+drop database if exists test_key_primary;
+create database test_key_primary;
+use test_key_primary;
 create table t1 (t1 char(3) primary key);
 insert into t1 values("ABC");
 insert into t1 values("ABA");
@@ -11,3 +13,4 @@ t1
 select * from t1 where t1 like "a_\%";
 t1
 drop table t1;
+drop database test_key_primary;

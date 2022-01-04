@@ -1,4 +1,6 @@
-drop table if exists t1, t2;
+drop database if exists test_multi_update_tiny_hash;
+create database test_multi_update_tiny_hash;
+use test_multi_update_tiny_hash;
 #
 # Bug #36676: multiupdate using LEFT JOIN updates only
 #             first row or fails with an error:
@@ -43,3 +45,4 @@ s1
 b
 DROP TABLE t1, t2;
 # End of 5.0 tests
+drop database test_multi_update_tiny_hash;

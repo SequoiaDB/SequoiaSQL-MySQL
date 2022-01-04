@@ -1,4 +1,6 @@
-drop table if exists t0, t1, t2, t3, t4, t5, t11, t12, t21, t22;
+drop database if exists test_subselect3;
+create database test_subselect3;
+use test_subselect3;
 set @subselect3_tmp= @@optimizer_switch;
 set optimizer_switch='semijoin=on,firstmatch=on,loosescan=on,semijoin_with_cache=on';
 set join_cache_level=1;
@@ -229,7 +231,7 @@ cc	3	NULL
 aa	1	1
 dd	NULL	0
 bb	NULL	NULL
-select oref, a from t2 where a in (select ie from t1 where oref=t2.oref);
+select oref, a from t2 where a in (select ie from t1 where oref=t2.oref) order by oref, a;
 oref	a
 aa	1
 ff	2
@@ -309,10 +311,10 @@ cc	3	NULL
 aa	1	1
 dd	NULL	0
 bb	NULL	NULL
-select oref, a from t2 where a in (select ie from t1 where oref=t2.oref);
+select oref, a from t2 where a in (select ie from t1 where oref=t2.oref) order by oref, a;
 oref	a
-ff	2
 aa	1
+ff	2
 select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
 oref	a
 bb	2
@@ -328,10 +330,10 @@ cc	3	NULL
 aa	1	1
 dd	NULL	0
 bb	NULL	NULL
-select oref, a from t2 where a in (select ie from t1 where oref=t2.oref);
+select oref, a from t2 where a in (select ie from t1 where oref=t2.oref) order by oref, a;
 oref	a
-ff	2
 aa	1
+ff	2
 select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
 oref	a
 bb	2
@@ -467,10 +469,10 @@ cc	2	0
 cc	NULL	NULL
 aa	1	1
 bb	NULL	NULL
-select oref, a from t2 where a in (select ie from t1 where oref=t2.oref);
+select oref, a from t2 where a in (select ie from t1 where oref=t2.oref) order by oref,a;
 oref	a
-cc	5
 aa	1
+cc	5
 select oref, a from t2 where a not in (select ie from t1 where oref=t2.oref);
 oref	a
 ee	NULL
@@ -1079,3 +1081,4 @@ NULL	r	1
 DROP TABLE t1,t2;
 End of 5.6 tests
 set @@optimizer_switch=@subselect3_tmp;
+drop database test_subselect3;

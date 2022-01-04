@@ -1,6 +1,11 @@
 #
 # MDEV-371 Unique indexes for blobs
 #
+--disable_warnings
+drop database if exists test_long_unique_update;
+--enable_warnings
+create database test_long_unique_update;
+use test_long_unique_update;
 --echo #structure of tests;
 --echo #1 test of table containing single unique blob column;
 --echo #2 test of table containing another unique int/ varchar etc column; 
@@ -155,3 +160,4 @@ update t1 set e=e+1, g=g+1 where a>0;
 update ignore t1 set e=e+1, g=g+1 where a>0;
 select * from t1 ;
 drop table t1;
+drop database test_long_unique_update;

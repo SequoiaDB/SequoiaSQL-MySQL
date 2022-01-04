@@ -1,6 +1,6 @@
-drop table if exists t0, t1, t2, t3, t4, t5, t10, t11, t12;
-drop view if exists v1, v2, v3, v4;
-drop procedure if exists p1;
+drop database if exists test_subselect_sj;
+create database test_subselect_sj;
+use test_subselect_sj;
 set @subselect_sj_tmp= @@optimizer_switch;
 set optimizer_switch='semijoin=on,firstmatch=on,loosescan=on';
 set optimizer_switch='mrr=on,mrr_sort_keys=on,index_condition_pushdown=on';
@@ -341,13 +341,13 @@ KEY vkey(vkey)
 INSERT INTO t0 
 VALUES (1,'g','g'), (2,'v','v'), (3,'t','t'), (4,'u','u'), (5,'n','n');
 SELECT vkey FROM t0 WHERE pk IN 
-(SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey);
+(SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey) order by vkey;
 vkey
 g
-v
+n
 t
 u
-n
+v
 DROP TABLE t0;
 # End of bug#46556
 
@@ -2008,26 +2008,27 @@ INSERT INTO t2 VALUES
 analyze table t1,t2;
 SELECT a, b, d FROM t1, t2
 WHERE ( b, d ) IN
-( SELECT b, d FROM t1, t2 WHERE b = c );
+( SELECT b, d FROM t1, t2 WHERE b = c )
+order by a, b, d;
 a	b	d
-2	1	2
-7	1	2
-8	4	2
 1	2	1
-4	2	1
-10	2	1
-3	3	3
-6	3	3
-9	3	3
+1	2	1
 2	1	2
-7	1	2
-8	4	2
+2	1	2
+3	3	3
+3	3	3
+4	2	1
+4	2	1
 5	5	5
-3	3	3
 6	3	3
+6	3	3
+7	1	2
+7	1	2
+8	4	2
+8	4	2
 9	3	3
-1	2	1
-4	2	1
+9	3	3
+10	2	1
 10	2	1
 DROP TABLE t1, t2;
 # Another testcase for the above that still uses LooseScan:
@@ -2564,3 +2565,4 @@ insert into t1 select 'xxx' from dual where 'xxx' in (select a2 from t2);
 drop table t1,t2;
 # End of 5.5 test
 set optimizer_switch=@subselect_sj_tmp;
+drop database test_subselect_sj;

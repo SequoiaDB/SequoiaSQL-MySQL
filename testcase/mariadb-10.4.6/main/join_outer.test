@@ -5,9 +5,11 @@
 #
 
 --disable_warnings
-drop table if exists t0,t1,t2,t3,t4,t5;
+#drop table if exists t0,t1,t2,t3,t4,t5;
+drop database if exists test_join_outer;
 --enable_warnings
-
+create database test_join_outer;
+use test_join_outer;
 SET @save_optimizer_switch=@@optimizer_switch;
 SET optimizer_switch=ifnull(@optimizer_switch_for_join_outer_test,'outer_join_with_cache=off');
 if (`select @join_cache_level_for_join_outer_test is null`)
@@ -1649,19 +1651,17 @@ INSERT INTO t1 VALUES (8,5,9);
 #SELECT t1.b, t2.c, t2.d FROM t2 JOIN t1 ON t2.c = t1.a
 #  WHERE t1.pk BETWEEN 5 AND 6 AND t1.b IS NULL OR t1.b = 5
 #ORDER BY t1.b;
---sorted_result
 SELECT t1.b, t2.c, t2.d FROM t2 JOIN t1 ON t2.c = t1.a
   WHERE t1.pk BETWEEN 5 AND 6 AND t1.b IS NULL OR t1.b = 5
-ORDER BY t1.b,t2.c;
+ORDER BY t1.b,t2.c,t2.d;
 
 #EXPLAIN EXTENDED
 #SELECT t1.b, t2.c, t2.d FROM t2 LEFT JOIN t1 ON t2.c = t1.a
 #  WHERE t1.pk BETWEEN 5 AND 6 AND t1.b IS NULL OR t1.b = 5
 #ORDER BY t1.b;
---sorted_result
 SELECT t1.b, t2.c, t2.d FROM t2 LEFT JOIN t1 ON t2.c = t1.a
   WHERE t1.pk BETWEEN 5 AND 6 AND t1.b IS NULL OR t1.b = 5
-ORDER BY t1.b,t2.c;
+ORDER BY t1.b,t2.c,t2.d;
 
 DROP TABLE t1,t2;
 
@@ -2246,3 +2246,4 @@ drop view v4;
 drop table t1,t2,t3,t4;
 
 SET optimizer_switch=@save_optimizer_switch;
+drop database test_join_outer;

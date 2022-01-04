@@ -2,6 +2,12 @@
 # Tests for LIMIT ROWS EXAMINED, MDEV-28
 #
 #BUG #SEQUOIASQLMAINSTREAM-518
+--disable_warnings
+drop database if exists test_limit_rows_examined;
+--enable_warnings
+
+create database test_limit_rows_examined;
+use test_limit_rows_examined;
 
 call mtr.add_suppression("Sort aborted.*");
 
@@ -597,3 +603,4 @@ drop table t1, t2;
 #explain extended
 #select * from t1, t2 where c1 = c2 LIMIT ROWS EXAMINED 2;
 #drop table t1,t2;
+drop database test_limit_rows_examined;

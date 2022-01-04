@@ -3,9 +3,11 @@
 #
 
 --disable_warnings
-drop table if exists t1;
+drop database if exists test_limit;
 --enable_warnings
 
+create database test_limit;
+use test_limit;
 create table t1 (a int not null default 0 primary key, b int not null default 0);
 insert into t1 () values ();		# Testing default values
 insert into t1 values (1,1),(2,1),(3,1);
@@ -129,3 +131,4 @@ SELECT * FROM mysql.slow_log WHERE sql_text != 'foo' LIMIT 0;
 SELECT * FROM mysql.help_topic WHERE help_category_id != example LIMIT 0;
 
 --echo End of 5.5 tests
+drop database test_limit;

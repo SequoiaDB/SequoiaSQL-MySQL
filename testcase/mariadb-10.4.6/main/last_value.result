@@ -1,5 +1,6 @@
-drop table if exists t1;
-drop database if exists mysqltest;
+drop database if exists test_last_value;
+create database test_last_value;
+use test_last_value;
 CREATE TABLE t1 (a INT, b INT, c INT, d INT);
 INSERT INTO t1 VALUES (1,3,0,NULL),(2,2,0,NULL),(3,4,0,NULL),(4,2,0,NULL);
 SELECT * FROM t1;
@@ -71,3 +72,4 @@ def					@last_b	251	16777215	10	Y	0	39	8
 2001-02-03
 SELECT LAST_VALUE();
 ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ')' at line 1
+drop database test_last_value;

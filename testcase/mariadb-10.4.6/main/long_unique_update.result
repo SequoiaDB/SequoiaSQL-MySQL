@@ -1,3 +1,6 @@
+drop database if exists test_long_unique_update;
+create database test_long_unique_update;
+use test_long_unique_update;
 #structure of tests;
 #1 test of table containing single unique blob column;
 #2 test of table containing another unique int/ varchar etc column; 
@@ -273,3 +276,4 @@ a	b	c	d	e	f	g
 8	8	8	8	8	8	8
 9	9	9	9	10	9	10
 drop table t1;
+drop database test_long_unique_update;

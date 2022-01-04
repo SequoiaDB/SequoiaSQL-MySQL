@@ -4,9 +4,10 @@
 #
 
 --disable_warnings
-drop table if exists t1, t2;
+drop database if exists test_multi_update_tiny_hash;
 --enable_warnings
-
+create database test_multi_update_tiny_hash;
+use test_multi_update_tiny_hash;
 --echo #
 --echo # Bug #36676: multiupdate using LEFT JOIN updates only
 --echo #             first row or fails with an error:
@@ -59,3 +60,4 @@ DROP TABLE t1, t2;
 
 
 --echo # End of 5.0 tests
+drop database test_multi_update_tiny_hash;
