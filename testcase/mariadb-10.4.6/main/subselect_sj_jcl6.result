@@ -11,9 +11,9 @@ Variable_name	Value
 join_cache_level	6
 set @optimizer_switch_for_subselect_sj_test=@@optimizer_switch;
 set @join_cache_level_for_subselect_sj_test=@@join_cache_level;
-drop table if exists t0, t1, t2, t3, t4, t5, t10, t11, t12;
-drop view if exists v1, v2, v3, v4;
-drop procedure if exists p1;
+drop database if exists test_subselect_sj;
+create database test_subselect_sj;
+use test_subselect_sj;
 set @subselect_sj_tmp= @@optimizer_switch;
 set optimizer_switch='semijoin=on,firstmatch=on,loosescan=on';
 set optimizer_switch='mrr=on,mrr_sort_keys=on,index_condition_pushdown=on';
@@ -354,7 +354,7 @@ KEY vkey(vkey)
 INSERT INTO t0 
 VALUES (1,'g','g'), (2,'v','v'), (3,'t','t'), (4,'u','u'), (5,'n','n');
 SELECT vkey FROM t0 WHERE pk IN 
-(SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey);
+(SELECT t1.pk FROM t0 t1 JOIN t0 t2 ON t2.vkey = t1.vnokey) order by vkey;
 vkey
 g
 n
@@ -2021,12 +2021,11 @@ INSERT INTO t2 VALUES
 analyze table t1,t2;
 SELECT a, b, d FROM t1, t2
 WHERE ( b, d ) IN
-( SELECT b, d FROM t1, t2 WHERE b = c );
+( SELECT b, d FROM t1, t2 WHERE b = c )
+order by a, b, d;
 a	b	d
 1	2	1
 1	2	1
-10	2	1
-10	2	1
 2	1	2
 2	1	2
 3	3	3
@@ -2042,6 +2041,8 @@ a	b	d
 8	4	2
 9	3	3
 9	3	3
+10	2	1
+10	2	1
 DROP TABLE t1, t2;
 # Another testcase for the above that still uses LooseScan:
 create table t0(a int primary key);
@@ -2577,9 +2578,13 @@ insert into t1 select 'xxx' from dual where 'xxx' in (select a2 from t2);
 drop table t1,t2;
 # End of 5.5 test
 set optimizer_switch=@subselect_sj_tmp;
+drop database test_subselect_sj;
 #
 # BUG#49129: Wrong result with IN-subquery with join_cache_level=6 and firstmatch=off
 #
+drop database if exists test_subselect_sj_jcl6;
+CREATE DATABASE test_subselect_sj_jcl6;
+USE test_subselect_sj_jcl6;
 CREATE TABLE t0 (a INT);
 INSERT INTO t0 VALUES (0),(1),(2),(3),(4);
 CREATE TABLE t1 (a INT, b INT, KEY(a));
@@ -2748,3 +2753,4 @@ join_cache_level	2
 set @@optimizer_switch=@save_optimizer_switch_jcl6;
 set @optimizer_switch_for_subselect_sj_test=NULL;
 set @join_cache_level_subselect_sj_test=NULL;
+DROP DATABASE test_subselect_sj_jcl6;

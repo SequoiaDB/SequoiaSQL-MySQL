@@ -21,6 +21,13 @@ set @join_cache_level_for_subselect_sj_test=@@join_cache_level;
 --echo #
 --echo # BUG#49129: Wrong result with IN-subquery with join_cache_level=6 and firstmatch=off
 --echo #
+
+--disable_warnings
+drop database if exists test_subselect_sj_jcl6;
+--enable_warnings
+
+CREATE DATABASE test_subselect_sj_jcl6;
+USE test_subselect_sj_jcl6;
 CREATE TABLE t0 (a INT);
 INSERT INTO t0 VALUES (0),(1),(2),(3),(4);
 CREATE TABLE t1 (a INT, b INT, KEY(a));
@@ -215,3 +222,4 @@ show variables like 'join_cache_level';
 set @@optimizer_switch=@save_optimizer_switch_jcl6;
 set @optimizer_switch_for_subselect_sj_test=NULL;
 set @join_cache_level_subselect_sj_test=NULL;
+DROP DATABASE test_subselect_sj_jcl6;
