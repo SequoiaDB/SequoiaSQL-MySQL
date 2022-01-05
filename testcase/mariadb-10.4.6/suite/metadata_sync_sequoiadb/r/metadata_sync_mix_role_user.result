@@ -1,4 +1,8 @@
 connection conn1;
+set session server_ha_wait_sync_timeout = 10;
+connection conn2;
+set session server_ha_wait_sync_timeout = 10;
+connection conn1;
 DROP ROLE IF EXISTS metaSync_mix_role1;
 DROP ROLE IF EXISTS metaSync_mix_role2;
 DROP USER IF EXISTS 'metaSync_mix_ruser1'@'localhost';
@@ -64,5 +68,9 @@ User	Host
 SELECT user, host FROM mysql.user WHERE user = 'metaSync_mix_ruser2';
 User	Host
 set server_ha_wait_sync_timeout = 0;
+connection conn1;
+set session server_ha_wait_sync_timeout = default;
+connection conn2;
+set session server_ha_wait_sync_timeout = default;
 disconnect conn1;
 disconnect conn2;

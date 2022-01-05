@@ -1,4 +1,8 @@
 connection conn1;
+set session server_ha_wait_sync_timeout = 10;
+connection conn2;
+set session server_ha_wait_sync_timeout = 10;
+connection conn1;
 DROP USER IF EXISTS "metasync_user1"@"localhost";
 DROP USER IF EXISTS "metasync_user2"@"localhost";
 DROP USER IF EXISTS "metasync_user3"@"localhost";
@@ -83,5 +87,9 @@ SELECT user, host, password_expired FROM mysql.user WHERE user = 'metasync_user2
 User	Host	password_expired
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metasync_user3';
 User	Host	password_expired
+connection conn1;
+set session server_ha_wait_sync_timeout = default;
+connection conn2;
+set session server_ha_wait_sync_timeout = default;
 disconnect conn1;
 disconnect conn2;

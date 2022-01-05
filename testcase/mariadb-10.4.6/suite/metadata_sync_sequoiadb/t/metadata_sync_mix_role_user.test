@@ -3,6 +3,11 @@
 --source include/have_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
 
+connection conn1;
+set session server_ha_wait_sync_timeout = 10;
+connection conn2;
+set session server_ha_wait_sync_timeout = 10;
+
 # connect to conn1, clear roles in the beginning
 connection conn1;
 --disable_warnings
@@ -70,6 +75,11 @@ SHOW GRANTS FOR 'metaSync_mix_ruser2'@'localhost';
 SELECT user, host FROM mysql.user WHERE user = 'metaSync_mix_ruser1';
 SELECT user, host FROM mysql.user WHERE user = 'metaSync_mix_ruser2';
 set server_ha_wait_sync_timeout = 0;
+
+connection conn1;
+set session server_ha_wait_sync_timeout = default;
+connection conn2;
+set session server_ha_wait_sync_timeout = default;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc

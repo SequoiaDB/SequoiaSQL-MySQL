@@ -1,6 +1,11 @@
 --source include/have_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
 
+connection conn1;
+set session server_ha_wait_sync_timeout = 10;
+connection conn2;
+set session server_ha_wait_sync_timeout = 10;
+
 #seqDB-23102,seqDB-23105
 connection conn1;
 --disable_warnings
@@ -15,7 +20,6 @@ CREATE TABLE t1(a INT NOT NULL, b INT, c INT);
 
 connection conn2;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 10;
 --disable_warnings
 drop user if exists metadata_sync_user_23102;
 flush privileges;
@@ -25,7 +29,6 @@ flush privileges;
 
 connection conn1;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 10;
 GRANT create,alter,drop ON t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
@@ -309,14 +312,12 @@ drop user if exists metadata_sync_user_23104;
 --enable_warnings
 create user 'metadata_sync_user_23104';
 flush privileges;
-set server_ha_wait_sync_timeout = 0;
 
 connection conn1;
 create function hello23104 (s char(20)) returns char(50) deterministic return concat('Hello,' , s , '!');
 GRANT alter routine ON function metadata_sync_23104.hello23104 TO metadata_sync_user_23104@'%' IDENTIFIED BY 'metadata_sync_user_23104' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 0;
 
 #Bug #SEQUOIASQLMAINSTREAM-907
 connect ( conn3, $mysql_host2, 'metadata_sync_user_23104', 'metadata_sync_user_23104', $mysql_db, $mysql_port2 );
@@ -358,7 +359,11 @@ connection conn1;
 drop database metadata_sync_23104;
 drop database metadata_sync_user_parallel;
 #SEQUOIASQLMAINSTREAM-949
-set server_ha_wait_sync_timeout = 0;
+
+connection conn1;
+set session server_ha_wait_sync_timeout = default;
+connection conn2;
+set session server_ha_wait_sync_timeout = default;
 
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
 --source include/uninstall_sequoiadb.inc
