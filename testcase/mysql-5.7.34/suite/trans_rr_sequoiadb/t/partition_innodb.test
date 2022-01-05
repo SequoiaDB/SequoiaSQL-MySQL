@@ -1,5 +1,6 @@
 --source include/not_embedded.inc
 --source include/have_partition.inc
+--source ../inc/sequoiadb_version_greater_than5.inc
 #--source include/have_innodb.inc
 
 CREATE DATABASE test_partition_innodb;

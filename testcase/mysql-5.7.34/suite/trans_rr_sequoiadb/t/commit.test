@@ -1,4 +1,5 @@
 --source include/have_sequoiadb.inc
+--source ../inc/sequoiadb_version_greater_than5.inc
 # (#Case #16710)
 
 connect (con1,localhost,root,,);

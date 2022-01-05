@@ -21,7 +21,7 @@
 
 # The server must support partitioning.
 --source include/have_partition.inc
-
+--source ../inc/sequoiadb_version_greater_than5.inc
 
 #------------------------------------------------------------------------------#
 # Engine specific settings and requirements
