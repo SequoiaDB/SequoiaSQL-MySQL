@@ -62,7 +62,7 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     if (sep) {
       *sep = 0;
     }
-    sdb_filename_to_tablename(tmp_name, table_name, table_name_max_size + 1,
+    sdb_filename_to_tablename(tmp_name, table_name, SDB_TABLE_NAME_MAX_LEN,
                               true);
     if (int(strlen(table_name)) >= table_name_max_size) {
       rc = ER_TOO_LONG_IDENT;
