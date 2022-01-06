@@ -20,12 +20,12 @@ let $MYSQLD_DATADIR= `SELECT @@datadir`;
 #
 # failed: 40006: collection name should not include '.'
 # SEQUOIASQLMAINSTREAM-1156
-#--error 40006
-#CREATE TABLE t1 (a INT)
-#PARTITION BY RANGE (a)
-#(PARTITION p0 VALUES LESS THAN (6),
-# PARTITION `p1....................` VALUES LESS THAN (9),
-# PARTITION p2 VALUES LESS THAN MAXVALUE);
+--error 40006
+CREATE TABLE t1 (a INT)
+PARTITION BY RANGE (a)
+(PARTITION p0 VALUES LESS THAN (6),
+ PARTITION `p1....................` VALUES LESS THAN (9),
+ PARTITION p2 VALUES LESS THAN MAXVALUE);
 
 CREATE TABLE t1 (a INT)
 PARTITION BY RANGE (a)
@@ -43,10 +43,8 @@ INSERT INTO t1 VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10);
 # SEQUOIASQLMAINSTREAM-1137
 --error 1025
 RENAME TABLE t1 TO `t2_............................end`;
---error 1025
 RENAME TABLE t1 TO `t2_############################end`;
 #                      1234567890123456789012345678
-RENAME TABLE t1 TO `t201234567890123456789012345678end`;
 # t2_ + end
 #     .MY[ID] or .frm
 #         #P#p[012]
@@ -58,7 +56,7 @@ RENAME TABLE t1 TO `t201234567890123456789012345678end`;
 --list_files $MYSQLD_DATADIR/test t2*
 --sorted_result
 SHOW TABLES;
-SELECT * FROM `t2_############################end`;
+SELECT * FROM `t2_############################end` ORDER BY a;
 RENAME TABLE `t2_############################end` to t1;
 --echo # List of files in database `test`, should be all t1-files here
 --list_files $MYSQLD_DATADIR/test t1*
