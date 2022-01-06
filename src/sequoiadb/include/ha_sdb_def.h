@@ -21,6 +21,8 @@
 #define SDB_CS_NAME_MAX_SIZE 127
 #define SDB_CL_NAME_MAX_SIZE 127
 #define SDB_RG_NAME_MAX_SIZE 127
+#define SDB_CHARSET_MAX_SIZE 4
+#define SDB_TABLE_NAME_MAX_LEN (SDB_CHARSET_MAX_SIZE * NAME_CHAR_LEN)
 #define SDB_CL_FULL_NAME_MAX_SIZE \
   (SDB_CS_NAME_MAX_SIZE + 1 + SDB_CL_NAME_MAX_SIZE)
 // table_name + partition name + sub partition name
