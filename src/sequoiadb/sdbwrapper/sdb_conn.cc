@@ -38,6 +38,36 @@ static int sdb_proc_id() {
 #endif
 }
 
+void sdb_error_callback(const char *error_obj, uint32 obj_size, int32 flag,
+                        const char *description, const char *detail) {
+  Sdb_conn *connection = NULL;
+  uint32 error_size = 0;
+  // get error message from SequoiaDB
+  if (0 == check_sdb_in_thd(current_thd, &connection, false)) {
+    error_size = connection->m_error_size;
+    if (error_size > 0 && error_size < obj_size) {
+      my_free(connection->m_error_message);
+      connection->m_error_message = NULL;
+      connection->m_error_size = 0;
+    }
+
+    if (error_size < obj_size) {
+      int32 tmp_size = obj_size + 50;
+      connection->m_error_message = (char *)my_malloc(
+          PSI_INSTRUMENT_ME, tmp_size, MYF(MY_WME | MY_ZEROFILL));
+      if (connection->m_error_message) {
+        connection->m_error_size = tmp_size;
+      }
+    }
+
+    if (obj_size > 0) {
+      memcpy(connection->m_error_message, error_obj, obj_size);
+    } else if (connection->m_error_size >= sizeof(int32)) {
+      memset(connection->m_error_message, 0, sizeof(int32));
+    }
+  }
+}
+
 /* caller should catch the exception. */
 void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
   bson::BSONObjBuilder builder(240);
@@ -146,6 +176,8 @@ Sdb_conn::Sdb_conn(my_thread_id tid, bool server_ha_conn)
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
   rollback_on_timeout = false;
+  m_error_message = NULL;
+  m_error_size = 0;
 }
 
 Sdb_conn::~Sdb_conn() {}
@@ -299,7 +331,7 @@ int Sdb_conn::do_connect(bool use_orig_conn) {
         m_print_screen = true;
         const char *err_detail = "Failed to set session attributes";
         try {
-          if (0 == get_last_result_obj(error_obj, false)) {
+          if (0 == get_last_error(error_obj)) {
             err_detail = error_obj.getStringField(SDB_FIELD_DETAIL);
             if (0 == strlen(errmsg)) {
               err_detail = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
@@ -1488,13 +1520,13 @@ error:
 
 int Sdb_conn::get_last_error(bson::BSONObj &errObj) {
   int rc = SDB_ERR_OK;
+  const char *obj_data = NULL;
   if (!m_connection) {
     rc = SDB_NOT_CONNECTED;
     goto error;
   }
-  rc = m_connection->getLastErrorObj(errObj);
-  if (rc) {
-    goto error;
+  if ((obj_data = get_error_message())) {
+    errObj = bson::BSONObj(obj_data);
   }
 done:
   return rc;

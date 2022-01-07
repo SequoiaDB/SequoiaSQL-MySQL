@@ -7,7 +7,7 @@ const char *ha_error_string(Sdb_conn &sdb_conn, int rc, char err_buf[]) {
   memset(err_buf, '0', HA_BUF_LEN);
   if (rc > SDB_ERR_INNER_CODE_BEGIN && rc < SDB_ERR_INNER_CODE_END) {
     bson::BSONObj result;
-    if (sdb_conn.get_last_result_obj(result, false)) {
+    if (sdb_conn.get_last_error(result)) {
       sprintf(err_buf, "failed to get sequoiadb error, error code is: %d", rc);
     } else {
       const char *err = result.getStringField(SDB_FIELD_DESCRIPTION);

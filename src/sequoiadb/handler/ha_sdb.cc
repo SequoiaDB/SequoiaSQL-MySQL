@@ -1324,10 +1324,9 @@ int sdb_batched_keys_ranges::expand_buf(int n_ranges) {
   old_ptr = m_keys_buf;
   /* Realloc the buffer */
   int records_buf_size = sizeof(sdb_key_range_info) * n_ranges;
-  ptr = (uchar *)sdb_multi_malloc(sdb_key_memory_batched_keys_buf,
-                                  MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
-                                  keys_buf_size, &m_records_buf,
-                                  records_buf_size, NullS);
+  ptr = (uchar *)sdb_multi_malloc(
+      sdb_key_memory_batched_keys_buf, MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
+      keys_buf_size, &m_records_buf, records_buf_size, NullS);
   if (NULL == ptr) {
     rc = HA_ERR_OUT_OF_MEM;
     SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
@@ -6543,7 +6542,7 @@ int ha_sdb::analyze(THD *thd, HA_CHECK_OPT *check_opt) {
       const char *error_msg = NULL;
       char error_msg_buff[128] = {0};
 
-      if (0 == conn->get_last_result_obj(error_obj, false)) {
+      if (0 == conn->get_last_error(error_obj)) {
         error_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
         if (0 == strlen(error_msg)) {
           error_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
@@ -8540,177 +8539,183 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
     }
     goto done;
   }
-
-  // get error message from SequoiaDB
-  if (0 == check_sdb_in_thd(ha_thd(), &connection, false)) {
-    if (0 == connection->get_last_result_obj(error_obj, false)) {
-      detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
-      if (detail_msg[0] != '\0') {
-        error_msg = detail_msg;
-      } else {
-        desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
-        if (desp_msg[0] != '\0') {
-          error_msg = desp_msg;
-        }
-      }
-    } else if (connection->get_print_screen()) {
-      error_msg = connection->get_err_msg();
-    }
-  }
-
-  // simplify the msg for HA DML statement retry in mariadb
-  if (ha_is_open() && SDB_CLIENT_CATA_VER_OLD == get_sdb_code(sdb_rc)) {
-    error_msg = NULL;
-  }
-
-  switch (get_sdb_code(error)) {
-    case SDB_UPDATE_SHARD_KEY:
-      if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
-        push_warning(ha_thd(), Sql_condition::SL_WARNING, error, error_msg);
-      } else {
-        my_printf_error(error, "%s", MYF(0), error_msg);
-      }
-      break;
-    case SDB_VALUE_OVERFLOW:
-      thd_sdb = thd_get_thd_sdb(ha_thd());
-      if (!error_obj.isEmpty() && thd_sdb) {
-        bson::BSONElement elem, elem_type;
-        const char *field_name = NULL;
-        elem = error_obj.getField(SDB_FIELD_CURRENT_FIELD);
-        if (bson::Object != elem.type()) {
-          SDB_LOG_WARNING("Invalid type: '%d' of '%s' in err msg.", elem.type(),
-                          SDB_FIELD_CURRENT_FIELD);
-          field_name = "Invalid";
+  try {
+    // get error message from SequoiaDB
+    if (0 == check_sdb_in_thd(ha_thd(), &connection, false)) {
+      if (0 == connection->get_last_error(error_obj)) {
+        detail_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
+        if (detail_msg[0] != '\0') {
+          error_msg = detail_msg;
         } else {
-          field_name = elem.Obj().firstElementFieldName();
-        }
-        if (ha_thd()->variables.sql_mode & MODE_NO_UNSIGNED_SUBTRACTION) {
-          // if MODE_NO_UNSIGNED_SUBTRACTION is set, just print warning
-          if (!ha_thd()->get_stmt_da()->is_ok()) {
-            ha_thd()->get_stmt_da()->set_ok_status(0, 0, NULL);
+          desp_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
+          if (desp_msg[0] != '\0') {
+            error_msg = desp_msg;
           }
-          sdb_thd_reset_condition_info(ha_thd());
-          // the row that cause this warning must be accounted into found rows.
-          thd_sdb->found++;
-          push_warning_printf(
-              ha_thd(), Sql_condition::SL_WARNING, ER_WARN_DATA_OUT_OF_RANGE,
-              ER(ER_WARN_DATA_OUT_OF_RANGE), field_name, thd_sdb->found);
+        }
+      } else if (connection->get_print_screen()) {
+        error_msg = connection->get_err_msg();
+      }
+    }
+
+    // simplify the msg for HA DML statement retry in mariadb
+    if (ha_is_open() && SDB_CLIENT_CATA_VER_OLD == get_sdb_code(sdb_rc)) {
+      error_msg = NULL;
+    }
+
+    switch (get_sdb_code(error)) {
+      case SDB_UPDATE_SHARD_KEY:
+        if (sdb_lex_ignore(ha_thd()) && SDB_WARNING == sdb_error_level) {
+          push_warning(ha_thd(), Sql_condition::SL_WARNING, error, error_msg);
         } else {
-          // fetch Field from 'error_obj'
-          elem_type = elem.Obj().getField(field_name);
-          // if value of integer expression is big than BIGINT,
-          // 'CurrentField' will become 'decimal'.
-          if (updated_field && updated_value &&
-              bson::NumberDecimal == elem_type.type() &&
-              MYSQL_TYPE_NEWDECIMAL != updated_field->type() &&
-              MYSQL_TYPE_DECIMAL != updated_field->type()) {
-            char buf[256];
-            String str(buf, sizeof(buf), system_charset_info);
-            str.length(0);
-            updated_value->print(&str, QT_NO_DATA_EXPANSION);
-            my_error(
-                ER_DATA_OUT_OF_RANGE, MYF(0),
-                updated_value->unsigned_flag ? "BIGINT UNSIGNED" : "BIGINT",
-                str.c_ptr_safe());
-          } else if (updated_field && updated_value &&
-                     (bson::NumberLong == elem_type.type() ||
-                      bson::NumberInt == elem_type.type())) {
-            // get integer value from 'error_obj' and put it into updated_field
-            if (bson::NumberInt == elem_type.type()) {
-              updated_field->store(elem_type.Int());
-            } else {
-              updated_field->store(elem_type.Long());
+          my_printf_error(error, "%s", MYF(0), error_msg);
+        }
+        break;
+      case SDB_VALUE_OVERFLOW:
+        thd_sdb = thd_get_thd_sdb(ha_thd());
+        if (!error_obj.isEmpty() && thd_sdb) {
+          bson::BSONElement elem, elem_type;
+          const char *field_name = NULL;
+          elem = error_obj.getField(SDB_FIELD_CURRENT_FIELD);
+          if (bson::Object != elem.type()) {
+            SDB_LOG_WARNING("Invalid type: '%d' of '%s' in err msg.",
+                            elem.type(), SDB_FIELD_CURRENT_FIELD);
+            field_name = "Invalid";
+          } else {
+            field_name = elem.Obj().firstElementFieldName();
+          }
+          if (ha_thd()->variables.sql_mode & MODE_NO_UNSIGNED_SUBTRACTION) {
+            // if MODE_NO_UNSIGNED_SUBTRACTION is set, just print warning
+            if (!ha_thd()->get_stmt_da()->is_ok()) {
+              ha_thd()->get_stmt_da()->set_ok_status(0, 0, NULL);
             }
-            // 1. if save_in_field succeed, print overflow error msg.
-            //       actually this shouldn't happen.
-            // 2. if thd error flag is set in save_in_field, my_error
-            //       is invoked in save_in_field.
-            // 3. if save_in_field set thd warning flag, print warning msg.
-            if (!updated_value->save_in_field(updated_field, false)) {
+            sdb_thd_reset_condition_info(ha_thd());
+            // the row that cause this warning must be accounted into found
+            // rows.
+            thd_sdb->found++;
+            push_warning_printf(
+                ha_thd(), Sql_condition::SL_WARNING, ER_WARN_DATA_OUT_OF_RANGE,
+                ER(ER_WARN_DATA_OUT_OF_RANGE), field_name, thd_sdb->found);
+          } else {
+            // fetch Field from 'error_obj'
+            elem_type = elem.Obj().getField(field_name);
+            // if value of integer expression is big than BIGINT,
+            // 'CurrentField' will become 'decimal'.
+            if (updated_field && updated_value &&
+                bson::NumberDecimal == elem_type.type() &&
+                MYSQL_TYPE_NEWDECIMAL != updated_field->type() &&
+                MYSQL_TYPE_DECIMAL != updated_field->type()) {
+              char buf[256];
+              String str(buf, sizeof(buf), system_charset_info);
+              str.length(0);
+              updated_value->print(&str, QT_NO_DATA_EXPANSION);
+              my_error(
+                  ER_DATA_OUT_OF_RANGE, MYF(0),
+                  updated_value->unsigned_flag ? "BIGINT UNSIGNED" : "BIGINT",
+                  str.c_ptr_safe());
+            } else if (updated_field && updated_value &&
+                       (bson::NumberLong == elem_type.type() ||
+                        bson::NumberInt == elem_type.type())) {
+              // get integer value from 'error_obj' and put it into
+              // updated_field
+              if (bson::NumberInt == elem_type.type()) {
+                updated_field->store(elem_type.Int());
+              } else {
+                updated_field->store(elem_type.Long());
+              }
+              // 1. if save_in_field succeed, print overflow error msg.
+              //       actually this shouldn't happen.
+              // 2. if thd error flag is set in save_in_field, my_error
+              //       is invoked in save_in_field.
+              // 3. if save_in_field set thd warning flag, print warning msg.
+              if (!updated_value->save_in_field(updated_field, false)) {
+                my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), field_name,
+                         thd_sdb->updated + 1);
+              } else if (!ha_thd()->get_stmt_da()->is_error()) {
+                if (!ha_thd()->get_stmt_da()->is_ok()) {
+                  ha_thd()->get_stmt_da()->set_ok_status(0, 0, NULL);
+                }
+                sdb_thd_reset_condition_info(ha_thd());
+                // the row that cause this error must be accounted into found
+                // rows.
+                thd_sdb->found++;
+                push_warning_printf(ha_thd(), Sql_condition::SL_WARNING,
+                                    ER_WARN_DATA_OUT_OF_RANGE,
+                                    ER(ER_WARN_DATA_OUT_OF_RANGE), field_name,
+                                    thd_sdb->found);
+              } else {
+                thd_sdb->found = 0;
+              }
+            } else {
               my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), field_name,
                        thd_sdb->updated + 1);
-            } else if (!ha_thd()->get_stmt_da()->is_error()) {
-              if (!ha_thd()->get_stmt_da()->is_ok()) {
-                ha_thd()->get_stmt_da()->set_ok_status(0, 0, NULL);
-              }
-              sdb_thd_reset_condition_info(ha_thd());
-              // the row that cause this error must be accounted into found
-              // rows.
-              thd_sdb->found++;
-              push_warning_printf(ha_thd(), Sql_condition::SL_WARNING,
-                                  ER_WARN_DATA_OUT_OF_RANGE,
-                                  ER(ER_WARN_DATA_OUT_OF_RANGE), field_name,
-                                  thd_sdb->found);
-            } else {
-              thd_sdb->found = 0;
             }
-          } else {
-            my_error(ER_WARN_DATA_OUT_OF_RANGE, MYF(0), field_name,
-                     thd_sdb->updated + 1);
+            updated_value = NULL;
+            updated_field = NULL;
           }
-          updated_value = NULL;
-          updated_field = NULL;
+          thd_sdb->updated = 0;
         }
-        thd_sdb->updated = 0;
+        break;
+      case SDB_IXM_DUP_KEY: {
+        const char *idx_name = NULL;
+        // ignore the return error.
+        get_dup_info(error_obj, &idx_name);
+        if (idx_name) {
+          my_printf_error(ER_DUP_ENTRY,
+                          "Duplicate entry '%-.192s' for key '%s'", MYF(0),
+                          m_dup_value.toString().c_str(), idx_name);
+        } else {
+          my_printf_error(ER_DUP_KEY, ER(ER_DUP_KEY), MYF(0), table_name);
+        }
+        break;
       }
-      break;
-    case SDB_IXM_DUP_KEY: {
-      const char *idx_name = NULL;
-      // ignore the return error.
-      get_dup_info(error_obj, &idx_name);
-      if (idx_name) {
-        my_printf_error(ER_DUP_ENTRY, "Duplicate entry '%-.192s' for key '%s'",
-                        MYF(0), m_dup_value.toString().c_str(), idx_name);
-      } else {
-        my_printf_error(ER_DUP_KEY, ER(ER_DUP_KEY), MYF(0), table_name);
+      case SDB_NET_CANNOT_CONNECT: {
+        my_printf_error(error, "Unable to connect to the specified address",
+                        MYF(0));
+        break;
       }
-      break;
-    }
-    case SDB_NET_CANNOT_CONNECT: {
-      my_printf_error(error, "Unable to connect to the specified address",
-                      MYF(0));
-      break;
-    }
-    case SDB_SEQUENCE_EXCEEDED: {
-      my_error(ER_AUTOINC_READ_FAILED, MYF(0));
-      break;
-    }
-    case SDB_TIMEOUT: {
-      if (NULL == error_msg) {
-        my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
-      } else if (strncmp(error_msg, SDB_ACQUIRE_TRANSACTION_LOCK,
-                         strlen(SDB_ACQUIRE_TRANSACTION_LOCK)) == 0) {
-        if (sdb_use_transaction(ha_thd()) &&
-            sdb_rollback_on_timeout(ha_thd())) {
+      case SDB_SEQUENCE_EXCEEDED: {
+        my_error(ER_AUTOINC_READ_FAILED, MYF(0));
+        break;
+      }
+      case SDB_TIMEOUT: {
+        if (NULL == error_msg) {
+          my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
+        } else if (strncmp(error_msg, SDB_ACQUIRE_TRANSACTION_LOCK,
+                           strlen(SDB_ACQUIRE_TRANSACTION_LOCK)) == 0) {
+          if (sdb_use_transaction(ha_thd()) &&
+              sdb_rollback_on_timeout(ha_thd())) {
 #ifdef IS_MARIADB
-          /*
-            MariaDB not clear the option_bits OPTION_BEGIN flag after rollback
-            transaction implicitly. Cause the next transaction still be begin
-            transaction after implict transaction rollback.
-          */
-          connection->set_rollback_on_timeout(TRUE);
+            /*
+              MariaDB not clear the option_bits OPTION_BEGIN flag after rollback
+              transaction implicitly. Cause the next transaction still be begin
+              transaction after implict transaction rollback.
+            */
+            connection->set_rollback_on_timeout(TRUE);
 #endif
-          thd_mark_transaction_to_rollback(ha_thd(), 1);
+            thd_mark_transaction_to_rollback(ha_thd(), 1);
+          }
+          my_error(ER_LOCK_WAIT_TIMEOUT, MYF(0));
+        } else {
+          my_printf_error(error, "%s", MYF(0), error_msg);
         }
-        my_error(ER_LOCK_WAIT_TIMEOUT, MYF(0));
-      } else {
-        my_printf_error(error, "%s", MYF(0), error_msg);
+        break;
       }
-      break;
-    }
-    case SDB_SEQUENCE_VALUE_USED: {
-      // For sequences: SETVAL(sequence) failed.
-      break;
-    }
-    default:
-      if (NULL == error_msg) {
-        my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
-      } else {
-        my_printf_error(error, "%s", MYF(0), error_msg);
+      case SDB_SEQUENCE_VALUE_USED: {
+        // For sequences: SETVAL(sequence) failed.
+        break;
       }
-      break;
+      default:
+        if (NULL == error_msg) {
+          my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
+        } else {
+          my_printf_error(error, "%s", MYF(0), error_msg);
+        }
+        break;
+    }
+  } catch (std::exception &e) {
+    my_printf_error(ER_INTERNAL_ERROR, "table:%s.%s, excetion:%s", MYF(0),
+                    db_name, table_name, e.what());
   }
-
 done:
   if (connection) {
     connection->clear_err_msg();
@@ -9002,6 +9007,13 @@ static int sdb_close_connection(handlerton *hton, THD *thd) {
   DBUG_ENTER("sdb_close_connection");
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   if (NULL != thd_sdb) {
+    Sdb_conn *connection = NULL;
+    if (0 == check_sdb_in_thd(thd, &connection, false) &&
+        connection->m_error_message) {
+      my_free(connection->m_error_message);
+      connection->m_error_message = NULL;
+      connection->m_error_size = 0;
+    }
     Thd_sdb::release(thd_sdb);
     thd_set_thd_sdb(thd, NULL);
   }
@@ -9134,6 +9146,9 @@ static int sdb_init_func(void *p) {
     SDB_LOG_ERROR("Failed to setup connection, rc=%d", rc);
     return 1;
   }
+
+  sdbclient::sdbSetErrorOnReplyCallback(
+      (sdbclient::ERROR_ON_REPLY_FUNC)sdb_error_callback);
 
   return 0;
 }
