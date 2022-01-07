@@ -822,8 +822,6 @@ drop user 'table_ddl_dml_parallel_user'@'%';
 FLUSH PRIVILEGES;
 create user 'table_ddl_dml_parallel_user';
 GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
-Warnings:
-Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
 FLUSH PRIVILEGES;
 connection conn2;
 alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
@@ -852,10 +850,8 @@ alter table t1 add index a(a);
 set server_ha_wait_sync_timeout = 0;
 connection conn2;
 explain select * from t1 force index(a);
-id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index	NULL	a	5	NULL	0	0.00	Using index
-Warnings:
-Note	1003	/* select#1 */ select `metadata_sync_table_ddl_dml_parallel`.`t1`.`a` AS `a` from `metadata_sync_table_ddl_dml_parallel`.`t1` FORCE INDEX (`a`)
+id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
+1	SIMPLE	t1	index	NULL	a	5	NULL	0	Using index
 connection conn1;
 set server_ha_wait_sync_timeout = 10;
 drop index a on t1;

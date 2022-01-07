@@ -745,10 +745,12 @@ drop database if exists table_ddl_dml_parallel_user;
 GRANT USAGE ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
 drop user 'table_ddl_dml_parallel_user'@'%';
 FLUSH PRIVILEGES;
---enable_warnings
+
 create user 'table_ddl_dml_parallel_user';
 GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+
+--enable_warnings
 
 connection conn2;
 alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
@@ -779,8 +781,10 @@ set server_ha_wait_sync_timeout = 10;
 alter table t1 add index a(a);
 set server_ha_wait_sync_timeout = 0;
 
+--disable_warnings
 connection conn2;
 explain select * from t1 force index(a);
+--enable_warnings
 
 connection conn1;
 set server_ha_wait_sync_timeout = 10;
