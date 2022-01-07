@@ -43,7 +43,6 @@ int set_thd_context(THD *thd) {
   thd->set_new_thread_id();
 
   mysql_thread_set_psi_id(thd->thread_id());
-  thd->thread_stack = (char *)&thd;
 
   if (my_thread_init() || thd->store_globals()) {
     thd->fatal_error();
@@ -130,7 +129,6 @@ int set_thd_context(THD* thd) {
 #endif
 
   /* The following must be called before DBUG_ENTER */
-  thd->thread_stack = (char*)&thd;
   if (thd->store_globals()) {
     rc = ER_OUT_OF_RESOURCES;
     return rc;

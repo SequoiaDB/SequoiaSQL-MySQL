@@ -82,6 +82,7 @@ static THD *create_ha_thd() {
     goto error;
   }
   // set thd context
+  thd->thread_stack = (char *)&thd;
   if (0 != set_thd_context(thd)) {
     delete thd;
     thd = NULL;
@@ -1366,7 +1367,6 @@ static int recover_meta_data(ha_recover_replay_thread *ha_thread,
   clear_udf_init_side_effect();
 
   // restore current thd after udf_init changed current thd
-  ha_thread->thd->thread_stack = (char *)&ha_thread->thd;
   ha_thread->thd->store_globals();
 #endif
 
