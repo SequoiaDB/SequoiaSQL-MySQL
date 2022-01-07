@@ -439,7 +439,7 @@ static int sdb_prefer_inst_check(THD *thd, struct st_mysql_sys_var *var,
   session_attrs->set_preferred_instance(prefer_inst);
   rc = conn->set_my_session_attr();
   if (rc != SDB_OK) {
-    if (0 == conn->get_last_result_obj(error_obj, false)) {
+    if (0 == conn->get_last_error(error_obj)) {
       error_msg = error_obj.getStringField(SDB_FIELD_DETAIL);
       if (0 == strlen(error_msg)) {
         error_msg = error_obj.getStringField(SDB_FIELD_DESCRIPTION);

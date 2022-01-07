@@ -232,6 +232,9 @@ class Sdb_session_attrs {
   ulonglong session_attrs_mask;
 };
 
+void sdb_error_callback(const char *error_obj, uint32 obj_size, int32 flag,
+                        const char *description, const char *detail);
+
 class Sdb_conn {
  public:
   Sdb_conn(my_thread_id tid, bool server_ha_conn = false);
@@ -422,6 +425,20 @@ class Sdb_conn {
 
   void set_print_screen(bool print_screen) { m_print_screen = print_screen; }
 
+  bool is_error_obj_empty() {
+    if (m_error_size < 5 || *(int32 *)m_error_message < 5) {
+      return true;
+    }
+    return false;
+  }
+
+  const char *get_error_message() {
+    if (!is_error_obj_empty()) {
+      return m_error_message;
+    }
+    return NULL;
+  }
+
  protected:
   int retry(boost::function<int()> func);
 
@@ -436,6 +453,10 @@ class Sdb_conn {
   virtual int get_connection() = 0;
 
   virtual void release_connection() = 0;
+
+ public:
+  char *m_error_message;
+  uint32 m_error_size;
 
  protected:
   sdbclient::sdb *m_connection;
