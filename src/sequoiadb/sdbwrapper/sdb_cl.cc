@@ -48,7 +48,7 @@ done:
 error:
   if (IS_SDB_NET_ERR(rc)) {
     bool is_transaction = m_conn->is_transaction_on();
-    if (!is_transaction && retry_times-- > 0 && 0 == m_conn->connect()) {
+    if (!is_transaction && retry_times-- > 0 && 0 == m_conn->reconnect()) {
       goto retry;
     }
   }

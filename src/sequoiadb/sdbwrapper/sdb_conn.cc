@@ -166,7 +166,7 @@ done:
   return rc;
 error:
   if (IS_SDB_NET_ERR(rc)) {
-    if (!m_transaction_on && retry_times-- > 0 && 0 == connect()) {
+    if (!m_transaction_on && retry_times-- > 0 && 0 == reconnect()) {
       goto retry;
     }
   }
@@ -175,6 +175,14 @@ error:
 }
 
 int Sdb_conn::connect() {
+  return do_connect(false);
+}
+
+int Sdb_conn::reconnect() {
+  return do_connect(true);
+}
+
+int Sdb_conn::do_connect(bool use_orig_conn) {
   int rc = SDB_ERR_OK;
   bool is_connected = false;
   String password;
@@ -186,7 +194,7 @@ int Sdb_conn::connect() {
     m_is_authenticated = false;
     ha_sdb_conn_addrs conn_addrs;
 
-    rc = get_connection();
+    rc = use_orig_conn ? raw_connect(sdb_conn_str) : get_connection();
     if (SDB_ERR_OK != rc) {
       if (SDB_NET_CANNOT_CONNECT != rc) {
         switch (rc) {
@@ -1590,6 +1598,44 @@ int Sdb_conn::analyze(const bson::BSONObj &options) {
   return retry(boost::bind(conn_analyze, m_connection, &options));
 }
 
+int Sdb_conn::raw_connect(const char *conn_addr) {
+  int rc = 0;
+  ha_sdb_conn_addrs conn_addrs;
+  String password;
+
+  rc = conn_addrs.parse_conn_addrs(conn_addr);
+  if (SDB_ERR_OK != rc) {
+    snprintf(errmsg, sizeof(errmsg),
+             "Failed to parse connection addresses, rc=%d", rc);
+    goto error;
+  }
+
+  if (sdb_has_password_str()) {
+    rc = sdb_get_password(password);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
+    rc = m_connection->connect(conn_addrs.get_conn_addrs(),
+                               conn_addrs.get_conn_num(), sdb_user,
+                               password.ptr());
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
+
+  } else {
+    rc = m_connection->connect(conn_addrs.get_conn_addrs(),
+                               conn_addrs.get_conn_num(), sdb_user,
+                               sdb_password_token, sdb_password_cipherfile);
+    if (SDB_ERR_OK != rc) {
+      goto error;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 sdbclient::sdbConnectionPool Sdb_pool_conn::conn_pool;
 
 int Sdb_pool_conn::init() {
@@ -1713,44 +1759,8 @@ Sdb_normal_conn::~Sdb_normal_conn() {
 }
 
 int Sdb_normal_conn::get_connection() {
-  int rc = 0;
-  ha_sdb_conn_addrs conn_addrs;
-  String password;
-
   m_connection = &m_connection_obj;
-
-  rc = conn_addrs.parse_conn_addrs(m_conn_addr);
-  if (SDB_ERR_OK != rc) {
-    snprintf(errmsg, sizeof(errmsg),
-             "Failed to parse connection addresses, rc=%d", rc);
-    goto error;
-  }
-
-  if (sdb_has_password_str()) {
-    rc = sdb_get_password(password);
-    if (SDB_ERR_OK != rc) {
-      goto error;
-    }
-    rc = m_connection->connect(conn_addrs.get_conn_addrs(),
-                               conn_addrs.get_conn_num(), sdb_user,
-                               password.ptr());
-    if (SDB_ERR_OK != rc) {
-      goto error;
-    }
-
-  } else {
-    rc = m_connection->connect(conn_addrs.get_conn_addrs(),
-                               conn_addrs.get_conn_num(), sdb_user,
-                               sdb_password_token, sdb_password_cipherfile);
-    if (SDB_ERR_OK != rc) {
-      goto error;
-    }
-  }
-
-done:
-  return rc;
-error:
-  goto done;
+  return raw_connect(m_conn_addr);
 }
 
 void Sdb_normal_conn::release_connection() {

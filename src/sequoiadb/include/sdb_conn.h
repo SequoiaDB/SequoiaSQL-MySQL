@@ -240,6 +240,8 @@ class Sdb_conn {
 
   int connect();
 
+  int reconnect();
+
   my_thread_id thread_id();
 
   int begin_transaction(uint tx_isolation = ISO_REPEATABLE_READ);
@@ -436,6 +438,14 @@ class Sdb_conn {
   virtual int get_connection() = 0;
 
   virtual void release_connection() = 0;
+
+ private:
+  // use original connection object if use_orig_conn is set
+  int do_connect(bool use_orig_conn);
+
+ protected:
+  // use original connection
+  int raw_connect(const char *conn_addr);
 
  protected:
   sdbclient::sdb *m_connection;
