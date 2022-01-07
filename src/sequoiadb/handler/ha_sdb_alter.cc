@@ -2968,7 +2968,8 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
   char *tbl_name = NULL;
   char *new_fullname = NULL;
   uint name_len = 0;
-  char tmp_name_buf[SDB_CL_NAME_MAX_SIZE] = {0};
+  char tmp_name_buf[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  char fullname_buf[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   int scl_id = 0;
 
   Sdb_cl mcl;
@@ -3009,6 +3010,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
 
     scl_id = rand();
     bo_it = bson::BSONObjIterator(m_old_scl_info);
+
     while (bo_it.more()) {
       bson::BSONElement ele = bo_it.next();
       bson::BSONElement scl_name_ele;
@@ -3025,9 +3027,11 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
         rc = SDB_ERR_INVALID_ARG;
         goto error;
       }
-      db_name = m_mcl_cs;
-      tbl_name = (char *)(strstr(scl_name_ele.valuestr(), ".") + 1);
-      snprintf(tmp_name_buf, SDB_CL_NAME_MAX_SIZE, "%s-%d", m_new_mcl_tmp_name,
+
+      strncpy(fullname_buf, scl_name_ele.valuestr(), sizeof(fullname_buf));
+      fullname_buf[sizeof(fullname_buf) - 1] = 0;
+      sdb_tmp_split_cl_fullname(fullname_buf, &db_name, &tbl_name);
+      snprintf(tmp_name_buf, sizeof(tmp_name_buf), "%s-%d", m_new_mcl_tmp_name,
                scl_id++);
       rc = sdb_copy_cl(m_conn, db_name, tbl_name, db_name, tmp_name_buf,
                        SDB_COPY_WITHOUT_INDEX);
@@ -3163,7 +3167,8 @@ int Sdb_cl_copyer::rename_old_cl() {
   char *cl_fullname = NULL;
   char *db_name = NULL;
   char *tbl_name = NULL;
-  char tmp_name_buf[SDB_CL_NAME_MAX_SIZE];
+  char tmp_name_buf[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  char fullname_buf[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   char *new_fullname = NULL;
   uint name_len = 0;
   int scl_id = rand();
@@ -3174,12 +3179,15 @@ int Sdb_cl_copyer::rename_old_cl() {
     bson::BSONObj obj = it.next().embeddedObject();
     cl_fullname =
         const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
-    db_name = m_mcl_cs;
-    tbl_name = strstr(cl_fullname, ".") + 1;
-    snprintf(tmp_name_buf, SDB_CL_NAME_MAX_SIZE, "%s-%d", m_old_mcl_tmp_name,
+
+    strncpy(fullname_buf, cl_fullname, sizeof(fullname_buf));
+    fullname_buf[sizeof(fullname_buf) - 1] = 0;
+    sdb_tmp_split_cl_fullname(fullname_buf, &db_name, &tbl_name);
+    snprintf(tmp_name_buf, sizeof(tmp_name_buf), "%s-%d", m_old_mcl_tmp_name,
              scl_id++);
     DBUG_PRINT("info",
                ("cs: %s, from: %s, to: %s", db_name, tbl_name, tmp_name_buf));
+
     rc = m_conn->rename_cl(db_name, tbl_name, tmp_name_buf, &tbl_mapping);
     if (rc != 0) {
       goto error;
@@ -3211,8 +3219,11 @@ error:
       right_cl_name =
           const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
       right_cl_name = strchr(right_cl_name, '.') + 1;
-      db_name = m_mcl_cs;
-      tbl_name = strstr(cl_fullname, ".") + 1;
+
+      strncpy(fullname_buf, cl_fullname, sizeof(fullname_buf));
+      fullname_buf[sizeof(fullname_buf) - 1] = 0;
+      sdb_tmp_split_cl_fullname(fullname_buf, &db_name, &tbl_name);
+
       tmp_rc =
           m_conn->rename_cl(db_name, tbl_name, right_cl_name, &tbl_mapping);
       if (tmp_rc != 0) {
