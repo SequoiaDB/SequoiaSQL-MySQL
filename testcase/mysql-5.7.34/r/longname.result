@@ -1,0 +1,14 @@
+set names utf8;
+drop database if exists longname;
+Warnings:
+Note	1008	Can't drop database 'longname'; database doesn't exist
+create database longname;
+use longname;
+create table ççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççç (a int);
+insert into ççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççç values(1);
+select * from ççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççç;
+a
+1
+1
+create table çççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççç (a int);
+ERROR HY000: Got error 1059 'There is no error object' from SequoiaDB
