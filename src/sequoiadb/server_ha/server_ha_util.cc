@@ -10,11 +10,16 @@ const char *ha_error_string(Sdb_conn &sdb_conn, int rc, char err_buf[]) {
     if (sdb_conn.get_last_error(result)) {
       sprintf(err_buf, "failed to get sequoiadb error, error code is: %d", rc);
     } else {
-      const char *err = result.getStringField(SDB_FIELD_DESCRIPTION);
-      if (0 == strlen(err)) {
-        err = result.getStringField(SDB_FIELD_DETAIL);
+      const char *err = result.getStringField(SDB_FIELD_DETAIL);
+      if ('\0' == err[0]) {
+        err = result.getStringField(SDB_FIELD_DESCRIPTION);
       }
-      snprintf(err_buf, HA_BUF_LEN, "%s", err);
+      if ('\0' == err[0]) {
+        sprintf(err_buf, "failed to get sequoiadb error, error code is: %d",
+                rc);
+      } else {
+        snprintf(err_buf, HA_BUF_LEN, "%s", err);
+      }
     }
   } else {
     snprintf(err_buf, HA_BUF_LEN, "connector internal error code: %d", rc);
