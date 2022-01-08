@@ -42,8 +42,9 @@ void sdb_error_callback(const char *error_obj, uint32 obj_size, int32 flag,
                         const char *description, const char *detail) {
   Sdb_conn *connection = NULL;
   uint32 error_size = 0;
+  THD *thd = current_thd;
   // get error message from SequoiaDB
-  if (0 == check_sdb_in_thd(current_thd, &connection, false)) {
+  if (thd != NULL && 0 == check_sdb_in_thd(thd, &connection, false)) {
     error_size = connection->m_error_size;
     if (error_size < obj_size) {
       int32 tmp_size = obj_size + 50;
