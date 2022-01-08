@@ -4295,6 +4295,7 @@ int ha_sdb::rnd_next(uchar *buf) {
   bson::BSONObj condition;
   bson::BSONObj order_by = SDB_EMPTY_BSON;
   bson::BSONObj hint = SDB_EMPTY_BSON;
+  bson::BSONObjBuilder builder;
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = HA_ERR_END_OF_FILE;
@@ -4337,6 +4338,21 @@ int ha_sdb::rnd_next(uchar *buf) {
     SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
     SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
     const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+    try {
+      /*table scan with sort and limit can push hint({"":""}) to SequoiaDB
+        to prefer to index scan when 'select * from tbl order by a limit
+        ??'.*/
+      if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
+          !order_by.isEmpty() && sdb_is_single_table(ha_thd())) {
+        builder.append("", "");
+      }
+
+      hint = builder.obj();
+    }
+    SDB_EXCEPTION_CATCHER(rc,
+                          "Failed to read next for table:%s.%s, exception:%s",
+                          db_name, table_name, e.what());
+
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
         sdb_is_single_table(ha_thd())) {
       if (sdb_can_push_down_limit(ha_thd(), sdb_condition, SDB_JOIN_UNKNOWN)) {
