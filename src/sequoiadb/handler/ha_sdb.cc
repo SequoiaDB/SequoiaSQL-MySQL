@@ -1704,13 +1704,18 @@ int ha_sdb::reset() {
   DBUG_ENTER("ha_sdb::reset");
   DBUG_PRINT("info", ("table name %s, handler %p", table_name, this));
 
-#ifdef IS_MARIADB
   Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  Sdb_conn *connection = NULL;
+#ifdef IS_MARIADB
   if (thd_sdb && thd_sdb->part_del_ren_ctx) {
     delete thd_sdb->part_del_ren_ctx;
     thd_sdb->part_del_ren_ctx = NULL;
   }
 #endif
+  if (0 == check_sdb_in_thd(ha_thd(), &connection, false)) {
+    connection->clear_error_message();
+  }
+
   if (NULL != collection) {
     delete collection;
     collection = NULL;

@@ -441,6 +441,13 @@ class Sdb_conn {
     return NULL;
   }
 
+  void clear_error_message() {
+    if (m_error_message && m_error_size > sizeof(int32)) {
+      /*clear the error message*/
+      memset(m_error_message, 0, sizeof(int32));
+    }
+  }
+
  protected:
   int retry(boost::function<int()> func);
 
@@ -457,8 +464,8 @@ class Sdb_conn {
   virtual void release_connection() = 0;
 
  private:
-   // use original connection object if use_orig_conn is set
-   int do_connect(bool use_orig_conn);
+  // use original connection object if use_orig_conn is set
+  int do_connect(bool use_orig_conn);
 
  public:
   char *m_error_message;

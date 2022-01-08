@@ -45,14 +45,13 @@ void sdb_error_callback(const char *error_obj, uint32 obj_size, int32 flag,
   // get error message from SequoiaDB
   if (0 == check_sdb_in_thd(current_thd, &connection, false)) {
     error_size = connection->m_error_size;
-    if (error_size > 0 && error_size < obj_size) {
-      my_free(connection->m_error_message);
-      connection->m_error_message = NULL;
-      connection->m_error_size = 0;
-    }
-
     if (error_size < obj_size) {
       int32 tmp_size = obj_size + 50;
+      if (connection->m_error_message) {
+        my_free(connection->m_error_message);
+        connection->m_error_message = NULL;
+        connection->m_error_size = 0;
+      }
 #ifdef IS_MARIADB
       connection->m_error_message =
           (char *)my_malloc(tmp_size, MYF(MY_WME | MY_ZEROFILL));
@@ -1533,7 +1532,8 @@ int Sdb_conn::get_last_error(bson::BSONObj &errObj) {
     goto error;
   }
   if ((obj_data = get_error_message())) {
-    errObj = bson::BSONObj(obj_data);
+    errObj = bson::BSONObj(obj_data).getOwned();
+    clear_error_message();
   }
 done:
   return rc;
