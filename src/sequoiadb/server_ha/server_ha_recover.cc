@@ -1531,9 +1531,9 @@ static int replay_sql_stmt_loop(ha_recover_replay_thread *ha_thread,
         goto sleep_secs;
       }
       rc = sdb_conn.get_cl(sdb_group_name, HA_SQL_LOG_CL, sql_log_cl);
-      sql_print_error(
-          "HA: Unable to get SQL log table '%s', sequoiadb error: %s",
-          HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to get SQL log table '%s', sequoiadb error: %s",
+                  HA_SQL_LOG_CL, ha_error_string(sdb_conn, rc, err_buf));
       rc = sdb_conn.get_cl(sdb_group_name, HA_INSTANCE_STATE_CL, inst_state_cl);
       HA_RC_CHECK(
           rc, error,
