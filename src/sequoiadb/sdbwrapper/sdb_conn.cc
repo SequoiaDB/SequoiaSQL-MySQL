@@ -53,14 +53,21 @@ void sdb_error_callback(const char *error_obj, uint32 obj_size, int32 flag,
 
     if (error_size < obj_size) {
       int32 tmp_size = obj_size + 50;
+#ifdef IS_MARIADB
+      connection->m_error_message =
+          (char *)my_malloc(tmp_size, MYF(MY_WME | MY_ZEROFILL));
+#elif IS_MYSQL
       connection->m_error_message = (char *)my_malloc(
           PSI_INSTRUMENT_ME, tmp_size, MYF(MY_WME | MY_ZEROFILL));
-      if (connection->m_error_message) {
-        connection->m_error_size = tmp_size;
+#endif
+      if (!connection->m_error_message) {
+        connection->m_error_size = 0;
+        return;
       }
+      connection->m_error_size = tmp_size;
     }
 
-    if (obj_size > 0) {
+    if (obj_size > 0 && connection->m_error_message) {
       memcpy(connection->m_error_message, error_obj, obj_size);
     } else if (connection->m_error_size >= sizeof(int32)) {
       memset(connection->m_error_message, 0, sizeof(int32));
