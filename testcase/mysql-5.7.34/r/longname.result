@@ -9,6 +9,5 @@ insert into çççççççççççççççççççççççççççççççççç
 select * from ççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççç;
 a
 1
-1
 create table çççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççççç (a int);
 ERROR HY000: Got error 1059 'There is no error object' from SequoiaDB
