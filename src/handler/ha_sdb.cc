@@ -3089,7 +3089,7 @@ done:
   RETURN
     return TRUE if do direct_count.
 */
-int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
+int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
   DBUG_ENTER("ha_sdb::optimize_count()");
   int rc = SDB_ERR_OK;
   bson::BSONObjBuilder count_cond_blder;
@@ -3153,6 +3153,9 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
         }
 
         if (count_query) {
+          if (select->item_list.elements > 1) {
+            read_one_record = true;
+          }
           count_cond_blder.appendElements(condition);
           condition = count_cond_blder.obj();
           SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
@@ -3167,7 +3170,6 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
       table_name, e.what());
 
 done:
-  can_direct = count_query;
   DBUG_RETURN(rc);
 error:
   goto done;
@@ -3178,7 +3180,7 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                               ha_rows &num_to_return, bool &direct_op) {
   DBUG_ENTER("ha_sdb::optimize_proccess");
   int rc = 0;
-  bool can_direct = false;
+  bool read_one_record = false;
   bson::BSONObj result;
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
@@ -3188,16 +3190,23 @@ int ha_sdb::optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
     if (SDB_ERR_OK != rc) {
       goto error;
     }
-    if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT)) {
-      rc = optimize_count(condition, can_direct);
-      if (SDB_ERR_OK == rc && can_direct) {
+    if ((sdb_get_optimizer_options(thd) & SDB_OPTIMIZER_OPTION_SELECT_COUNT) &&
+        !table->const_table) {
+      rc = optimize_count(condition, read_one_record);
+      if (SDB_ERR_OK == rc && count_query) {
         rc = collection->get_count(total_count, condition, hint);
         if (rc) {
           SDB_LOG_ERROR("Failed to get count on table:%s.%s. rc: %d", db_name,
                         table_name, rc);
           goto error;
         }
-        num_to_return = 1;
+        if (read_one_record) {
+          num_to_return = 1;
+        } else {
+          sdb_lex_first_select(ha_thd())->join->first_record = 1;
+          first_read = false;
+          num_to_return = 0;
+        }
       } else {
         goto error;
       }
@@ -3782,8 +3791,10 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
     rc = collection->aggregate(aggregate_obj);
   } else {
-    rc = collection->query(condition, selector, order_by, hint, num_to_skip,
-                           num_to_return, flag);
+    if (num_to_return != 0 || !direct_op) {
+      rc = collection->query(condition, selector, order_by, hint, num_to_skip,
+                             num_to_return, flag);
+    }
     if (use_multi_down) {
       // If use_multi_down, print 'limit+offset' for limit easy to understand.
       SDB_LOG_DEBUG(
@@ -4373,8 +4384,10 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
       rc = collection->aggregate(aggregate_obj);
     } else {
-      rc = collection->query(condition, selector, order_by, hint, num_to_skip,
-                             num_to_return, flag);
+      if (num_to_return != 0 || !direct_op) {
+        rc = collection->query(condition, selector, order_by, hint, num_to_skip,
+                               num_to_return, flag);
+      }
 
       SDB_LOG_DEBUG(
           "Query message: condition[%s], selector[%s], order_by[%s], "
