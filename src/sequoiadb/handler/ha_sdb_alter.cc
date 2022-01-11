@@ -1807,8 +1807,10 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   // Mariadb support for altering ignore table ... syntax.
 #ifdef IS_MARIADB
   if (ha_alter_info->ignore &&
-      (ha_alter_info->handler_flags &
-       (ALTER_ADD_PK_INDEX | ALTER_ADD_UNIQUE_INDEX))) {
+          (ha_alter_info->handler_flags &
+           (ALTER_ADD_PK_INDEX | ALTER_ADD_UNIQUE_INDEX)) ||
+      ha_alter_info->alter_info->requested_algorithm ==
+          Alter_info::ALTER_TABLE_ALGORITHM_INSTANT) {
     rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
     goto error;
   }
