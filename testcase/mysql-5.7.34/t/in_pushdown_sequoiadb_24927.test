@@ -1,0 +1,38 @@
+# Case 24927
+
+--source include/have_sequoiadb.inc
+
+set sequoiadb_debug_log=on;
+
+--disable_warnings
+drop table if exists in_pushdown_sequoiadb24927;
+--enable_warnings
+
+create table in_pushdown_sequoiadb24927 (a int, b int, c int, key(b))engine=sequoiadb;
+insert into in_pushdown_sequoiadb24927 values(1,3,2),(2,1,1),(3,3,4),(4,2,4),(5,3,5);
+insert into in_pushdown_sequoiadb24927 values(1,3,2),(2,1,1),(3,3,4),(4,2,4),(5,3,5);
+insert into in_pushdown_sequoiadb24927 values(1,4,2),(2,5,1),(3,6,4),(4,5,4),(5,4,5);
+insert into in_pushdown_sequoiadb24927 values(1,4,2),(2,5,1),(3,6,4),(4,5,4),(5,4,5);
+
+select * from in_pushdown_sequoiadb24927 order by a,b,c;
+
+select count(1) from in_pushdown_sequoiadb24927 where a in (1,2,3);
+select count(1) from in_pushdown_sequoiadb24927 where b in (1,2,3);
+
+update in_pushdown_sequoiadb24927 set a = 2 where a in (1,2,3);
+select * from in_pushdown_sequoiadb24927 order by a,b,c;
+
+update in_pushdown_sequoiadb24927 set b = 2 where a in (1,2,3);
+select * from in_pushdown_sequoiadb24927 order by a,b,c;
+
+delete from in_pushdown_sequoiadb24927 where a in (1,2,3);
+select * from in_pushdown_sequoiadb24927 order by a,b,c;
+
+delete from in_pushdown_sequoiadb24927 where b in (1,2,3);
+select * from in_pushdown_sequoiadb24927 order by a,b,c;
+
+drop table in_pushdown_sequoiadb24927;
+
+set sequoiadb_debug_log=default;
+
+--source include/uninstall_sequoiadb.inc
