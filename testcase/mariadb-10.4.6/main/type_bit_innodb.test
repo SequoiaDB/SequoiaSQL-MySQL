@@ -2,8 +2,13 @@
 #
 # testing of the BIT column type
 #
-CREATE DATABASE test_type_date;
-USE test_type_date;
+
+--disable_warnings
+drop database if exists test_bit_innodb;
+--enable_warnings
+
+CREATE DATABASE test_type_bit_innodb;
+USE test_type_bit_innodb;
 
 select 0 + b'1';
 select 0 + b'0';
@@ -161,4 +166,4 @@ insert into t1 values (b'',b''),('','');
 select hex(f1), hex(f2) from t1;
 drop table t1;
 
-DROP DATABASE test_type_date;
+DROP DATABASE test_type_bit_innodb;

@@ -1,5 +1,6 @@
-CREATE DATABASE test_type_date;
-USE test_type_date;
+drop database if exists test_bit_innodb;
+CREATE DATABASE test_type_bit_innodb;
+USE test_type_bit_innodb;
 select 0 + b'1';
 0 + b'1'
 1
@@ -392,7 +393,7 @@ create table t1 (a bit(7)) engine=SequoiaDB;
 insert into t1 values (0x60);
 select * from t1;
 Catalog	Database	Table	Table_alias	Column	Column_alias	Type	Length	Max length	Is_null	Flags	Decimals	Charsetnr
-def	test_type_date	t1	t1	a	a	16	7	1	Y	32	0	63
+def	test_type_bit_innodb	t1	t1	a	a	16	7	1	Y	32	0	63
 a
 `
 drop table t1;
@@ -406,4 +407,4 @@ hex(f1)	hex(f2)
 0	0
 0	0
 drop table t1;
-DROP DATABASE test_type_date;
+DROP DATABASE test_type_bit_innodb;
