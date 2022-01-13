@@ -1,6 +1,6 @@
+drop DATABASE if exists group_min_max;
 CREATE DATABASE group_min_max;
 USE group_min_max;
-drop table if exists t1;
 create table t1 (
 a1 char(64), a2 char(64), b char(16), c char(16) not null, d char(16), dummy char(248) default ' '
 );
