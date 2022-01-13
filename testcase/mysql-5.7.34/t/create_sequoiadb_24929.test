@@ -1,0 +1,16 @@
+--source include/have_sequoiadb.inc
+
+drop table if exists CREATE_SEQUOIADB_24929;
+drop table if exists create_sequoiadb_24929;
+
+create table CREATE_SEQUOIADB_24929(a int);
+create table create_sequoiadb_24929(a int);
+
+insert into CREATE_SEQUOIADB_24929 values(1),(2),(3),(4),(5);
+insert into create_sequoiadb_24929 values(6),(7),(8),(9),(10);
+
+select * from CREATE_SEQUOIADB_24929 order by a;
+select * from create_sequoiadb_24929 order by a;
+
+drop table CREATE_SEQUOIADB_24929;
+drop table create_sequoiadb_24929;
