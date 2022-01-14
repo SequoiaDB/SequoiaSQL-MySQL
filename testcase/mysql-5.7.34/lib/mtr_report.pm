@@ -425,7 +425,12 @@ sub mtr_generate_xml_report($) {
       }
 
       $failure_comment= ": ".$1 if ($failure_log =~ /mysqltest: (.*)/);
-
+      # 根据官网进行修改，替换非法字符，防止解析错误
+      $failure_comment =~ s/&/&amp;/g;
+      $failure_comment =~ s/"/&quot;/g;
+      $failure_comment =~ s/'/&apos;/g;
+      $failure_comment =~ s/>/&lt;/g;
+      $failure_comment =~ s/</&gt;/g;
       # For large comments from mysql-test-run.pl, display a brief message in
       # the attribute 'message' and prepend details within the <failure> tag
       my @comment_patterns=
