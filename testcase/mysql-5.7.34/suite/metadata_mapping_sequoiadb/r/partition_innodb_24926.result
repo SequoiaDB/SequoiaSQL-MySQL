@@ -1,0 +1,44 @@
+connection group1_conn1;
+set sql_mode = 'ANSI_QUOTES';
+set character_set_client = utf8;
+set character_set_connection = utf8;
+drop database if exists partition_innodb_24926;
+set sql_mode=default;
+CREATE DATABASE partition_innodb_24926;
+DROP DATABASE partition_innodb_24926;
+CREATE DATABASE partition_innodb_24926;
+use partition_innodb_24926;
+CREATE TABLE partition_innodb_24926_t1 ( id INT NOT NULL, a INT, PRIMARY KEY( id ) ) ENGINE INNODB;
+CREATE TABLE partition_innodb_24926_t2 ( id INT ) ENGINE INNODB 
+PARTITION BY RANGE ( id ) 
+(PARTITION p0 VALUES LESS THAN (0), 
+PARTITION p1 VALUES LESS THAN (1) );
+ALTER TABLE partition_innodb_24926_t1 PARTITION BY RANGE ( id ) 
+SUBPARTITION BY HASH ( id ) 
+(PARTITION p0 VALUES LESS THAN (0) ( SUBPARTITION sp0 ), 
+PARTITION p1 VALUES LESS THAN (1) ( SUBPARTITION sp1 ), 
+PARTITION p2 VALUES LESS THAN (2) ( SUBPARTITION sp2 ) );
+SHOW CREATE TABLE partition_innodb_24926_t1;
+Table	Create Table
+partition_innodb_24926_t1	CREATE TABLE `partition_innodb_24926_t1` (
+  `id` int(11) NOT NULL,
+  `a` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY RANGE (`id`)
+SUBPARTITION BY HASH (`id`)
+(PARTITION `p0` VALUES LESS THAN (0)
+ (SUBPARTITION `sp0` ENGINE = InnoDB),
+ PARTITION `p1` VALUES LESS THAN (1)
+ (SUBPARTITION `sp1` ENGINE = InnoDB),
+ PARTITION `p2` VALUES LESS THAN (2)
+ (SUBPARTITION `sp2` ENGINE = InnoDB))
+SHOW CREATE TABLE partition_innodb_24926_t2;
+Table	Create Table
+partition_innodb_24926_t2	CREATE TABLE `partition_innodb_24926_t2` (
+  `id` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY RANGE (`id`)
+(PARTITION `p0` VALUES LESS THAN (0) ENGINE = InnoDB,
+ PARTITION `p1` VALUES LESS THAN (1) ENGINE = InnoDB)
+DROP DATABASE partition_innodb_24926;
