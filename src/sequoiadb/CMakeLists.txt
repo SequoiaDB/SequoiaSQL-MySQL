@@ -60,7 +60,7 @@ endif()
 message(STATUS "SDB_INCLUDE_DIR = ${SDB_INCLUDE_DIR}")
 include_directories(${SDB_INCLUDE_DIR})
 
-install(PROGRAMS "tools/init_metadata_mapping_table.sh"
+install(PROGRAMS "tools/sql_enable_mapping.sh"
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 set(SDB_LDFLAGS "-Wl,-rpath,$ORIGIN/../lib")
