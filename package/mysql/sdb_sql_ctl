@@ -420,7 +420,7 @@ function delete_inst()
    if [ "$FORCE_OP" == false ] && [ "$NEED_PRINTSCREEN" == false ]; then
       echo "Deleting an instance will delete the data directory"
       read -p "Do you want to delete instance?[y/N]" answer
-      answer=`echo ${answer} | tr -t [a-z] [A-Z]`
+      answer=`echo ${answer} | tr -t "[:lower:]" "[:upper:]"`
       test -z ${answer} && answer="N"
       case ${answer} in
          Y|YES)
