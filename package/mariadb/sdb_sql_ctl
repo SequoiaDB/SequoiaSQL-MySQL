@@ -501,6 +501,12 @@ function get_one_status()
    check_inst_exist $inst true
    . $CONF_INST_PATH/$inst.conf
    local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
+   local inst_group_name=`cat $SQLDATA/auto.cnf | awk -F'#' '{print $1}' | grep "^\s*server_ha_inst_group_name"`
+   inst_group_name=${inst_group_name#*=}
+   test "${inst_group_name:0:1}" == '"' && inst_group_name=${inst_group_name:1:-1}
+   if [ "${inst_group_name}" == "" ]; then
+      inst_group_name="-"
+   fi
 
    if test -s "$pid_file" ; then 
       read pid < "$pid_file"
@@ -529,11 +535,11 @@ function get_one_status()
       test "$port" == "" && port="-"
 
       # print
-      printf "%-10s %-10s %-10s %-40s %-40s\n" $inst $pid $port $SQLDATA $SQLLOG
+      printf "%-20s %-10s %-10s %-10s %-40s %-40s\n" $inst_group_name $inst $pid $port $SQLDATA $SQLLOG
       return 0
    elif [ $ret == 1 ]
    then
-      printf "%-10s %-10s %-10s %-40s %-40s\n" $inst "-" "-" $SQLDATA $SQLLOG
+      printf "%-20s %-10s %-10s %-10s %-40s %-40s\n" $inst_group_name $inst "-" "-" $SQLDATA $SQLLOG
       return 7
    else
       echo "ERROR: Fail to query $inst status, please verify log $CTL_LOG" >&2
@@ -552,7 +558,7 @@ function get_status()
       inst_list=$INST_NAME
    fi
 
-   printf "%-10s %-10s %-10s %-40s %-40s\n" "INSTANCE" "PID" "SVCNAME" "SQLDATA" "SQLLOG"
+   printf "%-20s %-10s %-10s %-10s %-40s %-40s\n" "INSTGROUPNAME" "INSTANCE" "PID" "SVCNAME" "SQLDATA" "SQLLOG"
 
    local total_cnt=0
    local run_cnt=0
@@ -758,7 +764,7 @@ function stop_inst()
    fi
 
    #stop
-   local pid=`get_one_status $inst | grep $inst | awk '{print $2}'`
+   local pid=`get_one_status $inst | grep $inst | awk '{print $3}'`
    
    echo "Stopping instance $inst (PID: $pid) ..."
    local start_line=0
@@ -1112,6 +1118,13 @@ function change_configure()
       echo "Parameter server_ha_inst_group_key requires a server restart to take effect"
    fi
 
+   # enable metadata mapping
+   if [ $SDB_ENABLE_MAPPING ]; then
+      sed -i '/sequoiadb_enable_mapping\s*=/d' $SQLDATA/auto.cnf
+      sed -i '/\[mysqld\]/a\sequoiadb_enable_mapping='$SDB_ENABLE_MAPPING'' $SQLDATA/auto.cnf
+      echo "Parameter sequoiadb_enable_mapping requires a server restart to take effect"
+   fi
+
    if [ ! -z $MAX_CON ]; then
       if [ $MAX_CON -lt 1 ];then
          MAX_CON=1
@@ -1276,6 +1289,7 @@ function build_help()
    echo "  --sdb-optimizer-options=SET                     Optimizer_options[=option[,option...]], where option can be 'direct_count', 'direct_delete', 'direct_update', 'direct_sort', 'direct_limit'"
    echo "  --inst-group-name=NAME                          Specify instance group name"
    echo "  --inst-group-key=KEY                            Specify instance group key"
+   echo "  --sdb-enable-mapping=BOOL                       Enable mapping function"
    echo "  --sdb-rollback-on-timeout=BOOL                  Roll back the complete transaction on lock wait timeout"
    echo "  --sdb-execute-only-in-mysql=BOOL                Commands execute only in mysql"
    echo "  --sdb-selector-pushdown-threshold=THRESHOLD     The threshold of selector push down to SequoiaDB"
@@ -1291,7 +1305,7 @@ function build_help()
 #Parse command line parameters
 test $# -eq 0 && { build_help && exit 64; }
 
-ARGS=`getopt -o hvD:l:p:s:f:a:w:g:k: --long help,version,print,baklog,force,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log: -n "${ME}" -- "$@"`
+ARGS=`getopt -o hvD:l:p:s:f:a:w:g:k: --long help,version,print,baklog,force,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-enable-mapping:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log: -n "${ME}" -- "$@"`
 ret=$?
 test $ret -ne 0 && exit $ret
 
@@ -1420,6 +1434,11 @@ do
                                               CHANGE_GROUP_KEY=1
                                               shift 2
                                               ;;
+      --sdb-enable-mapping)                   SDB_ENABLE_MAPPING=$2
+                                              test $SDB_ENABLE_MAPPING == "TRUE" -o $SDB_ENABLE_MAPPING == "FALSE" -o $SDB_ENABLE_MAPPING == "true" -o $SDB_ENABLE_MAPPING == "false" -o $SDB_ENABLE_MAPPING == "ON" -o $SDB_ENABLE_MAPPING == "OFF"  -o $SDB_ENABLE_MAPPING == "on" -o $SDB_ENABLE_MAPPING == "off" || \
+                                              err_para BOOL $SDB_ENABLE_MAPPING
+                                              shift 2
+                                              ;;
       --sdb-optimizer-options )               SDB_OPTIMIZER_OPTIONS=$2
                                               shift 2
                                               ;;
@@ -1515,7 +1534,8 @@ case "$1" in
                     -a -z "$SDB_REPLICA_SIZE" -a -z "$SDB_USE_TRANSACTION" -a -z "$SDB_OPTIMIZER_OPTIONS" -a -z "$SDB_ROLLBACK_ON_TIMEOUT" \
                     -a -z "$SDB_EXECUTE_ONLY_IN_MYSQL" -a -z "$SDB_SELECTOR_PUSHDOWN_THRESHOLD" -a -z "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD" \
                     -a -z "$SDB_LOCK_WAIT_TIMEOUT" -a -z "$SDB_USE_ROLLBACK_SEGMENTS" -a -z "$SDB_STATS_MODE" -a -z "$SDB_STATS_SAMPLE_NUM" \
-                    -a -z "$SDB_STATS_SAMPLE_PERCENT" -a -z "$SDB_STATS_CACHE" -a -z "$INST_GROUP_NAME" -a -z "$INST_GROUP_KEY" ]; then
+                    -a -z "$SDB_STATS_SAMPLE_PERCENT" -a -z "$SDB_STATS_CACHE" -a -z "$INST_GROUP_NAME" -a -z "$INST_GROUP_KEY" \
+                    -a -z "${SDB_ENABLE_MAPPING}" ]; then
                   echo "${ME}: No configure specified." 
                   exit 0
                   shift 1

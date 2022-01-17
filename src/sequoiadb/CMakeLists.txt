@@ -60,6 +60,9 @@ endif()
 message(STATUS "SDB_INCLUDE_DIR = ${SDB_INCLUDE_DIR}")
 include_directories(${SDB_INCLUDE_DIR})
 
+install(PROGRAMS "tools/init_metadata_mapping_table.sh"
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
 set(SDB_LDFLAGS "-Wl,-rpath,$ORIGIN/../lib")
 if(SDB_BUILT_IN)
   set(_SDB_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
