@@ -3406,6 +3406,9 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
 done:
   DBUG_RETURN(rc);
 error:
+#ifdef IS_MYSQL
+  print_error(rc, MYF(rc != ER_OUTOFMEMORY ? 0 : ME_FATALERROR));
+#endif
   if (thd_sdb && thd_sdb->part_alter_ctx) {
     delete thd_sdb->part_alter_ctx;
     thd_sdb->part_alter_ctx = NULL;
