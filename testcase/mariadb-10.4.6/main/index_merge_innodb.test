@@ -32,6 +32,7 @@ set optimizer_switch='rowid_filter=off';
 #the next one is disabled in MySQL too: Bug#45727
 --source include/index_merge2.inc
 
+# 标记：对index_merge_2sweeps.inc 作了排序的操作
 --source include/index_merge_2sweeps.inc
 --source include/index_merge_ror_cpk.inc
 
