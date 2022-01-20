@@ -1767,6 +1767,17 @@ enum_alter_inplace_result ha_sdb::filter_alter_columns(
     }
   }
 
+/*when the instant algorithn is specifued when using mariadb
+  we need to recommend it to be downgraded to the inplace
+  algotiehm according to the priority
+*/
+#ifdef IS_MARIADB
+  if (ha_alter_info->alter_info->requested_algorithm ==
+      Alter_info::ALTER_TABLE_ALGORITHM_INSTANT) {
+    rs = HA_ALTER_INPLACE_COPY_NO_LOCK;
+    goto error;
+  }
+#endif
   rs = HA_ALTER_INPLACE_NOCOPY_NO_LOCK;
 done:
   return rs;
@@ -1807,10 +1818,8 @@ enum_alter_inplace_result ha_sdb::check_if_supported_inplace_alter(
   // Mariadb support for altering ignore table ... syntax.
 #ifdef IS_MARIADB
   if (ha_alter_info->ignore &&
-          (ha_alter_info->handler_flags &
-           (ALTER_ADD_PK_INDEX | ALTER_ADD_UNIQUE_INDEX)) ||
-      ha_alter_info->alter_info->requested_algorithm ==
-          Alter_info::ALTER_TABLE_ALGORITHM_INSTANT) {
+      (ha_alter_info->handler_flags &
+       (ALTER_ADD_PK_INDEX | ALTER_ADD_UNIQUE_INDEX))) {
     rs = HA_ALTER_INPLACE_NOT_SUPPORTED;
     goto error;
   }
