@@ -1,7 +1,9 @@
 --source include/have_sequoiadb.inc
 
+--disable_warnings
 drop table if exists CREATE_SEQUOIADB_24929;
 drop table if exists create_sequoiadb_24929;
+--enable_warnings
 
 create table CREATE_SEQUOIADB_24929(a int);
 create table create_sequoiadb_24929(a int);
