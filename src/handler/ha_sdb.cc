@@ -3733,7 +3733,10 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
   }
 
-  flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+  rc = get_query_flag(thd_sql_command(ha_thd()), m_lock_type, flag);
+  if (rc != 0) {
+    goto error;
+  }
 
   try {
     if (hint_builder) {
@@ -4307,6 +4310,7 @@ error:
 int ha_sdb::rnd_next(uchar *buf) {
   DBUG_ENTER("ha_sdb::rnd_next()");
   int rc = 0;
+  int flag = 0;
   ha_rows num_to_skip = 0;
   ha_rows num_to_return = -1;
   bool direct_op = false;
@@ -4340,7 +4344,11 @@ int ha_sdb::rnd_next(uchar *buf) {
       order_by = field_order_condition;
     }
 
-    int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
+    rc = get_query_flag(thd_sql_command(ha_thd()), m_lock_type, flag);
+    if (rc != 0) {
+      goto error;
+    }
+
     rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                            direct_op);
     if (rc) {
@@ -4818,6 +4826,8 @@ error:
    SQLCOM_DELET/SQLCOM_UPDATE_MULTI/SQLCOM_DELETE_MULTI
 */
 bool ha_sdb::pushdown_autocommit() {
+  int rc = 0;
+  int flag = 0;
   bool can_push = false;
   int sql_command = SQLCOM_END;
 
@@ -4829,11 +4839,17 @@ bool ha_sdb::pushdown_autocommit() {
   }
 
   if (SQLCOM_SELECT == sql_command) {
-    if (!(get_query_flag(sql_command, m_lock_type) & QUERY_FOR_UPDATE)) {
+    rc = get_query_flag(sql_command, m_lock_type, flag);
+    if (rc != 0) {
+      can_push = false;
+      goto done;
+    }
+    if (!(flag & QUERY_FOR_UPDATE)) {
       can_push = true;
     }
   }
 
+done:
   return can_push;
 }
 
@@ -5883,25 +5899,52 @@ void ha_sdb::unlock_row() {
   //       unlock by _id or completed-record?
 }
 
-int ha_sdb::get_query_flag(const uint sql_command,
-                           enum thr_lock_type lock_type) {
+int ha_sdb::get_query_flag(const uint sql_command, enum thr_lock_type lock_type,
+                           int &query_flag) {
   /*
-    We always add flag QUERY_WITH_RETURNDATA to improve performance,
-    and we need to add the lock related flag QUERY_FOR_UPDATE in the following
-    cases:
-    1. SELECT ... FOR UPDATE
-    2. doing query in UPDATE ... or DELETE ...
-    3. SELECT ... LOCK IN SHARE MODE
+    1.We always add flag QUERY_WITH_RETURNDATA to improve performance,
+    2.we need to add the lock related flag QUERY_FOR_UPDATE in the following cases:
+      A. SELECT ... FOR UPDATE
+      B. doing query in UPDATE ... or DELETE ...
+    3.when we open multiple transactions for select we should use flag QUERY_FOR_SHARE prevent timeout 
+      A. SELECT ... LOCK IN SHARE MODE
   */
-  int query_flag = QUERY_WITH_RETURNDATA;
-  if ((lock_type >= TL_WRITE_CONCURRENT_INSERT &&
-       (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
-        SQLCOM_SELECT == sql_command || SQLCOM_UPDATE_MULTI == sql_command ||
-        SQLCOM_DELETE_MULTI == sql_command)) ||
-      TL_READ_WITH_SHARED_LOCKS == lock_type) {
+  int rc = 0;
+  int fix = 0;
+  int major = 0;
+  int minor = 0;
+  Sdb_conn *conn = NULL;
+  query_flag = QUERY_WITH_RETURNDATA;
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (rc != 0) {
+    goto error;
+  }
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (TL_READ_WITH_SHARED_LOCKS == lock_type) {
+    if (!(major < 3 ||                               // x < 3
+          (3 == major && minor < 2) ||               // 3.x < 3.2
+          (3 == major && 2 == minor && fix < 9) ||   // 3.2.x < 3.2.9
+          (3 == major && minor < 4) ||               // 3.x < 3.4
+          (3 == major && 4 == minor && fix < 5) ||   // 3.4.x < 3.4.5
+          (5 == major && 0 == minor && fix < 3))) {  // 5.0.x < 5.0.3
+      query_flag |= QUERY_FOR_SHARE;
+    }
+  }
+  if (lock_type >= TL_WRITE_CONCURRENT_INSERT &&
+      (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
+       SQLCOM_SELECT == sql_command || SQLCOM_UPDATE_MULTI == sql_command ||
+       SQLCOM_DELETE_MULTI == sql_command)) {
     query_flag |= QUERY_FOR_UPDATE;
   }
-  return query_flag;
+done:
+  return rc;
+error:
+  goto done;
 }
 
 const Item *ha_sdb::cond_push(const Item *cond) {
