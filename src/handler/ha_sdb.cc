@@ -3791,7 +3791,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     }
     rc = collection->aggregate(aggregate_obj);
   } else {
-    if (num_to_return != 0 || !direct_op) {
+    if (num_to_return != 0 || !count_query) {
       rc = collection->query(condition, selector, order_by, hint, num_to_skip,
                              num_to_return, flag);
     }
@@ -3807,15 +3807,24 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
           hint.toString(false, false).c_str(), org_num_to_return,
           org_num_to_skip, db_name, table_name);
     } else {
-      SDB_LOG_DEBUG(
-          "Query message: condition[%s], selector[%s], order_by[%s], hint[%s], "
-          "limit[%d], "
-          "offset[%d], table[%s.%s]",
-          condition.toString(false, false).c_str(),
-          selector.toString(false, false).c_str(),
-          order_by.toString(false, false).c_str(),
-          hint.toString(false, false).c_str(), num_to_return, num_to_skip,
-          db_name, table_name);
+      if (!count_query && num_to_return != 0) {
+        SDB_LOG_DEBUG(
+            "Query message: condition[%s], selector[%s], order_by[%s], "
+            "hint[%s], "
+            "limit[%d], "
+            "offset[%d], table[%s.%s]",
+            condition.toString(false, false).c_str(),
+            selector.toString(false, false).c_str(),
+            order_by.toString(false, false).c_str(),
+            hint.toString(false, false).c_str(), num_to_return, num_to_skip,
+            db_name, table_name);
+      } else {
+        SDB_LOG_DEBUG(
+            "Count message: condition[%s],hint[%s] "
+            "table[%s.%s]",
+            condition.toString(false, false).c_str(),
+            hint.toString(false, false).c_str(), db_name, table_name);
+      }
     }
   }
 
@@ -4384,22 +4393,30 @@ int ha_sdb::rnd_next(uchar *buf) {
       }
       rc = collection->aggregate(aggregate_obj);
     } else {
-      if (num_to_return != 0 || !direct_op) {
+      if (num_to_return != 0 || !count_query) {
         rc = collection->query(condition, selector, order_by, hint, num_to_skip,
                                num_to_return, flag);
       }
 
-      SDB_LOG_DEBUG(
-          "Query message: condition[%s], selector[%s], order_by[%s], "
-          "hint[%s], "
-          "limit[%d], "
-          "offset[%d], "
-          "table[%s.%s]",
-          condition.toString(false, false).c_str(),
-          selector.toString(false, false).c_str(),
-          order_by.toString(false, false).c_str(),
-          hint.toString(false, false).c_str(), num_to_return, num_to_skip,
-          db_name, table_name);
+      if (!count_query && num_to_return != 0) {
+        SDB_LOG_DEBUG(
+            "Query message: condition[%s], selector[%s], order_by[%s], "
+            "hint[%s], "
+            "limit[%d], "
+            "offset[%d], "
+            "table[%s.%s]",
+            condition.toString(false, false).c_str(),
+            selector.toString(false, false).c_str(),
+            order_by.toString(false, false).c_str(),
+            hint.toString(false, false).c_str(), num_to_return, num_to_skip,
+            db_name, table_name);
+      } else {
+        SDB_LOG_DEBUG(
+            "Count message: condition[%s],hint[%s] "
+            "table[%s.%s]",
+            condition.toString(false, false).c_str(),
+            hint.toString(false, false).c_str(), db_name, table_name);
+      }
     }
 
     if (rc != 0) {
