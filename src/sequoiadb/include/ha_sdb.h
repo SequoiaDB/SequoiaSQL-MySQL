@@ -569,7 +569,7 @@ class ha_sdb : public handler {
 
   my_bool get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond);
 
-  int get_query_flag(const uint sql_command, enum thr_lock_type lock_type);
+  int get_query_flag(const uint sql_command, enum thr_lock_type lock_type,int &query_flag);
 
   int update_stats(THD *thd, bool do_read_stat);
 
