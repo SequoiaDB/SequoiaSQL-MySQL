@@ -15160,17 +15160,17 @@ SELECT count(1) FROM t1;
 count(1)
 10
 [Note] SequoiaDB: optimizer count: 1, condition: {}, table: query_pushdown_test_sequoiadb.t1
-[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[0], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Count message: condition[{}],hint[{ "": "PRIMARY" }] table[query_pushdown_test_sequoiadb.t1]
 SELECT count(id) FROM t1;
 count(id)
 10
 [Note] SequoiaDB: optimizer count: 1, condition: { "id": { "$isnull": 0 } }, table: query_pushdown_test_sequoiadb.t1
-[Note] SequoiaDB: Query message: condition[{ "id": { "$isnull": 0 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[0], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Count message: condition[{ "id": { "$isnull": 0 } }],hint[{ "": "PRIMARY" }] table[query_pushdown_test_sequoiadb.t1]
 SELECT count(*) FROM t1;
 count(*)
 10
 [Note] SequoiaDB: optimizer count: 1, condition: {}, table: query_pushdown_test_sequoiadb.t1
-[Note] SequoiaDB: Query message: condition[{}], selector[{ "_id": null }], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[0], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Count message: condition[{}],hint[{ "": "PRIMARY" }] table[query_pushdown_test_sequoiadb.t1]
 SELECT count(id + age) FROM t1;
 count(id + age)
 10
@@ -15178,22 +15178,22 @@ SELECT id, count(*) FROM t1;
 id	count(*)
 x	10
 [Note] SequoiaDB: optimizer count: 1, condition: {}, table: query_pushdown_test_sequoiadb.t1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Count message: condition[{}],hint[{ "": "PRIMARY" }] table[query_pushdown_test_sequoiadb.t1]
 SELECT count(1) FROM t1 WHERE id >= 4;
 count(1)
 5
 [Note] SequoiaDB: optimizer count: 1, condition: { "id": { "$gte": 4 } }, table: query_pushdown_test_sequoiadb.t1
-[Note] SequoiaDB: Query message: condition[{ "id": { "$gte": 4 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[0], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Count message: condition[{ "id": { "$gte": 4 } }],hint[{ "": "PRIMARY" }] table[query_pushdown_test_sequoiadb.t1]
 SELECT count(name) FROM t1 WHERE id <= 3;
 count(name)
 5
 [Note] SequoiaDB: optimizer count: 1, condition: { "name": { "$isnull": 0 }, "id": { "$lte": 3 } }, table: query_pushdown_test_sequoiadb.t1
-[Note] SequoiaDB: Query message: condition[{ "name": { "$isnull": 0 }, "id": { "$lte": 3 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[0], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Count message: condition[{ "name": { "$isnull": 0 }, "id": { "$lte": 3 } }],hint[{ "": "PRIMARY" }] table[query_pushdown_test_sequoiadb.t1]
 SELECT count(*) FROM t1 WHERE name != "Bob" AND id < 5;
 count(*)
 5
 [Note] SequoiaDB: optimizer count: 1, condition: { "$and": [ { "name": { "$ne": "Bob" } }, { "id": { "$lt": 5 } } ] }, table: query_pushdown_test_sequoiadb.t1
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "name": { "$ne": "Bob" } }, { "id": { "$lt": 5 } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "PRIMARY" }], limit[0], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Count message: condition[{ "$and": [ { "name": { "$ne": "Bob" } }, { "id": { "$lt": 5 } } ] }],hint[{ "": "PRIMARY" }] table[query_pushdown_test_sequoiadb.t1]
 SELECT count(1) FROM t1 WHERE LENGTH(name) > id;
 count(1)
 5
