@@ -5,14 +5,14 @@ use test_errors_sequoiadb;
 create table t1 (a int, primary key(a))engine=sequoiadb COMMENT='sequoiadb:{ table_options: { ShardingKey: { a: 1 }, AutoSplit:true } }';
 insert into t1 values (1); 
 #BUG:SEQUOIASQLMAINSTREAM-1250
-#--error 1062
-#insert into t1 values (1);
+--error 1062
+insert into t1 values (1);
 --error 40178
 update ignore t1 set a = 2;
 set global sequoiadb_error_level=warning;
 #BUG:SEQUOIASQLMAINSTREAM-1250
-#--error 1062
-#insert into t1 values (1);
+--error 1062
+insert into t1 values (1);
 --enable_warnings
 update ignore t1 set a = 2;
 --disable_warnings
@@ -30,18 +30,18 @@ create table t1 (a char(10));
 insert into t1 values ('abc'),('bcd'),('abc'); 
 #BUG #SEQUOIASQLMAINSTREAM-203
 #BUG:SEQUOIASQLMAINSTREAM-1250
-#--error 1062
-#create unique index a on t1 (a); 
-#--error 1062
-#alter table t1 add unique a(a); 
+--error 1062
+create unique index a on t1 (a); 
+--error 1062
+alter table t1 add unique a(a); 
 drop table t1;
 
 # SEQUOIASQLMAINSTREAM-487 SEQUOIADBMAINSTREAM-7255
 # Testcase: seqDB-24293
 create table t1 ( id int, t longtext, index (`id`) ) ;
 #BUG:SEQUOIADBMAINSTREAM-7882
-#--error 40291
-#create index id1 on t1(id);
+--error 40291
+create index id1 on t1(id);
 --error 40024
 insert into t1 values(1, repeat('a',16773075));
 create index t_idx on t1(t(255));
@@ -83,8 +83,8 @@ create index idx_a on t1( b );
 create unique index idx_b on t1( b );
 insert into t1 values( 1, 1 );
 #BUG:SEQUOIASQLMAINSTREAM-1250
-#--error 1062
-#insert into t1 values( 2, 1 );
+--error 1062
+insert into t1 values( 2, 1 );
 drop table t1;
 
 #BUG #SEQUOIASQLMAINSTREAM-589
