@@ -1,1564 +1,9 @@
-CREATE TABLE t1(a VARCHAR(127), b INT, c DATE);
-INSERT INTO t1 VALUES ('a',3, '2000-01-01'),('a1',1,'2001-01-01'),('b',11,'2002-01-01'),('1',9,'2008-01-01'),('1.00',5,'2013-01-01'),('1.02',7,'2004-04-01'), ('1.01',6,'2009-11-01'), ('2001-01-01',13,'2019-05-01'), ('2001#01#01',22,'2006-02-01'),('2001.01.01',10,'2007-08-01'),('2019-01-01',21,'2011-09-01'),('2019.01.01',16,'2012-05-01'),('2019#01#01',13,'2016-06-06'),('2147483647',2,'2001-01-02'),('4294967294',-1,'2001-01-03'),('-4294967299',-9,'2001-01-05'),('922337203685477807',-13,'2001-01-11');
-SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
-a	b	c
-1	9	2008-01-01
-SELECT * FROM t1 WHERE a = CAST(1.00 AS CHAR);
-a	b	c
-1.00	5	2013-01-01
-SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
-a	b	c
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a > CAST(SUBSTRING('1234567abc', 5, 9) AS CHAR);
-a	b	c
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1.00' AS NCHAR);
-a	b	c
-1.00	5	2013-01-01
-SELECT * FROM t1 WHERE a = CAST(1.01 AS NCHAR);
-a	b	c
-1.01	6	2009-11-01
-SELECT * FROM t1 WHERE a < CAST(b AS NCHAR);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2019-01-01	21	2011-09-01
-SELECT * FROM t1 WHERE a >= CAST(CONCAT('123','abc','456') AS NCHAR);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
-a	b	c
-1.01	6	2009-11-01
-SELECT * FROM t1 WHERE a = CAST(1 AS BINARY);
-a	b	c
-1	9	2008-01-01
-SELECT * FROM t1 WHERE a < CAST(b AS BINARY);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2019-01-01	21	2011-09-01
-SELECT * FROM t1 WHERE a >= CAST(REPLACE('ab12c4','ab12','234') AS BINARY);
-a	b	c
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1.0' AS SIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warning	1292	Truncated incorrect INTEGER value: '1.0'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST(1.000 AS SIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(LENGTH('ab123cd456') AS SIGNED);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST('1' AS UNSIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST(1.01 AS UNSIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
-a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(RPAD('123abc4567',7,'00') AS UNSIGNED);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warning	1292	Truncated incorrect INTEGER value: '123abc4'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST(1.02 AS DECIMAL);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a <= CAST(922337203685477580800 AS DECIMAL);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(LPAD('123abc4567',5,'00') AS DECIMAL);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
-a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001#01#01' AS DATE);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001.01.01' AS DATE);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a > CAST('10000.01.01' AS DATE);
-a	b	c
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(c AS DATE);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a <= CAST(NOW() AS DATE);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1' AS DATETIME);
-a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001#01#01 23:59:00' AS DATETIME);
-a	b	c
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS DATETIME);
-a	b	c
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
-a	b	c
-Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a <= CAST(CURRENT_DATE() AS DATETIME);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1' AS TIME);
-a	b	c
-SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS TIME);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST('2001#01#01 23:59:00' AS TIME);
-a	b	c
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS TIME);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS TIME);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a < CAST(c AS TIME);
-a	b	c
--4294967299	-9	2001-01-05
-ALTER TABLE t1 ADD INDEX aIdx(a);
-SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
-a	b	c
-1	9	2008-01-01
-SELECT * FROM t1 WHERE a = CAST(1.00 AS CHAR);
-a	b	c
-1.00	5	2013-01-01
-SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
-a	b	c
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a > CAST(SUBSTRING('1234567abc', 5, 9) AS CHAR);
-a	b	c
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1.00' AS NCHAR);
-a	b	c
-1.00	5	2013-01-01
-SELECT * FROM t1 WHERE a = CAST(1.01 AS NCHAR);
-a	b	c
-1.01	6	2009-11-01
-SELECT * FROM t1 WHERE a < CAST(b AS NCHAR);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2019-01-01	21	2011-09-01
-SELECT * FROM t1 WHERE a >= CAST(CONCAT('123','abc','456') AS NCHAR);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
-a	b	c
-1.01	6	2009-11-01
-SELECT * FROM t1 WHERE a = CAST(1 AS BINARY);
-a	b	c
-1	9	2008-01-01
-SELECT * FROM t1 WHERE a < CAST(b AS BINARY);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2019-01-01	21	2011-09-01
-SELECT * FROM t1 WHERE a >= CAST(REPLACE('ab12c4','ab12','234') AS BINARY);
-a	b	c
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1.0' AS SIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warning	1292	Truncated incorrect INTEGER value: '1.0'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST(1.000 AS SIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(LENGTH('ab123cd456') AS SIGNED);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST('1' AS UNSIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST(1.01 AS UNSIGNED);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
-a	b	c
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(RPAD('123abc4567',7,'00') AS UNSIGNED);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warning	1292	Truncated incorrect INTEGER value: '123abc4'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST(1.02 AS DECIMAL);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a <= CAST(922337203685477580800 AS DECIMAL);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST(LPAD('123abc4567',5,'00') AS DECIMAL);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect DOUBLE value: '2001#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2001.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019#01#01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019-01-01'
-Warning	1292	Truncated incorrect DOUBLE value: '2019.01.01'
-Warning	1292	Truncated incorrect DOUBLE value: 'a'
-Warning	1292	Truncated incorrect DOUBLE value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
-a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001#01#01' AS DATE);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001.01.01' AS DATE);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a > CAST('10000.01.01' AS DATE);
-a	b	c
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(c AS DATE);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a <= CAST(NOW() AS DATE);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect date value: '-4294967299'
-Warning	1292	Truncated incorrect date value: '1'
-Warning	1292	Truncated incorrect date value: '1.00'
-Warning	1292	Truncated incorrect date value: '1.01'
-Warning	1292	Truncated incorrect date value: '1.02'
-Warning	1292	Truncated incorrect date value: '2147483647'
-Warning	1292	Truncated incorrect date value: '4294967294'
-Warning	1292	Truncated incorrect date value: '922337203685477807'
-Warning	1292	Truncated incorrect date value: 'a'
-Warning	1292	Truncated incorrect date value: 'a1'
-Warning	1292	Truncated incorrect date value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1' AS DATETIME);
-a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
-a	b	c
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001#01#01 23:59:00' AS DATETIME);
-a	b	c
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS DATETIME);
-a	b	c
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
-a	b	c
-Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a <= CAST(CURRENT_DATE() AS DATETIME);
-a	b	c
--4294967299	-9	2001-01-05
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect datetime value: '-4294967299'
-Warning	1292	Truncated incorrect datetime value: '1'
-Warning	1292	Truncated incorrect datetime value: '1.00'
-Warning	1292	Truncated incorrect datetime value: '1.01'
-Warning	1292	Truncated incorrect datetime value: '1.02'
-Warning	1292	Truncated incorrect datetime value: '2147483647'
-Warning	1292	Truncated incorrect datetime value: '4294967294'
-Warning	1292	Truncated incorrect datetime value: '922337203685477807'
-Warning	1292	Truncated incorrect datetime value: 'a'
-Warning	1292	Truncated incorrect datetime value: 'a1'
-Warning	1292	Truncated incorrect datetime value: 'b'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a = CAST('1' AS TIME);
-a	b	c
-SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS TIME);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST('2001#01#01 23:59:00' AS TIME);
-a	b	c
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS TIME);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS TIME);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
-a	b	c
-1	9	2008-01-01
-1.00	5	2013-01-01
-1.01	6	2009-11-01
-1.02	7	2004-04-01
-2001#01#01	22	2006-02-01
-2001-01-01	13	2019-05-01
-2001.01.01	10	2007-08-01
-2019#01#01	13	2016-06-06
-2019-01-01	21	2011-09-01
-2019.01.01	16	2012-05-01
-2147483647	2	2001-01-02
-4294967294	-1	2001-01-03
-922337203685477807	-13	2001-01-11
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warnings:
-a	3	2000-01-01
-a1	1	2001-01-01
-b	11	2002-01-01
-SELECT * FROM t1 WHERE a < CAST(c AS TIME);
-a	b	c
--4294967299	-9	2001-01-05
-DROP TABLE t1;
 CREATE TABLE t1(a DATE, b VARCHAR(127), c DATETIME );
 INSERT INTO t1 VALUES ('2001-01-01','1.00','2001-05-01 01:12:12'),('2001#01#01','1','2001-05-02 00:01:01'),('2001.01.01','1.01','2001-05-06 23:01:01'),('2000-11-11','a','2007-02-01 02:01:01'),('2000-11-11','a1','2004-04-03 19:20:00'),('2007-08-01','2147483647','2003-03-03 18:18:00'),('2009-09-01','4294967294','2012-12-03 08:10:00'),('2014-05-12','-4294967299','2006-10-02 08:00:02'),('2014-05-12','922337203685477807','2019-02-02 07:30:52'),('2000-07-01','-1','2004-01-04 10:10:10');
 SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
 a	b	c
-Warnings:
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1'
 SELECT * FROM t1 WHERE a < CAST(1.00 AS CHAR);
 a	b	c
-Warning	1292	Incorrect date value: '1.00' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(REPEAT('123a',3) AS CHAR);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1571,9 +16,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '123a123a123a' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '123a123a123a'
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1586,9 +28,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '1.00' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a != CAST(1.01 AS NCHAR);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1601,19 +40,10 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.01'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
 a	b	c
-Warning	1292	Incorrect date value: '3421bca' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '3421bca'
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
 a	b	c
-Warning	1292	Incorrect date value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.01'
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(1 AS BINARY);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1626,9 +56,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1'
-Warnings:
 SELECT * FROM t1 WHERE a <= CAST(REPLACE('ab12c4','ab12','234') AS BINARY);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1641,9 +68,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '234c4' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '234c4'
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1682,8 +106,6 @@ a	b	c
 2014-05-12	922337203685477807	2019-02-02 07:30:52
 SELECT * FROM t1 WHERE a = CAST('1' AS SIGNED);
 a	b	c
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1696,8 +118,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1710,18 +130,11 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '-2147483649' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
 a	b	c
 2007-08-01	2147483647	2003-03-03 18:18:00
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(INSERT('312abc',3,2,'00') AS SIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1734,18 +147,8 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '3100' for column 'a' at row 1
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.00' AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1758,12 +161,8 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '4294967297' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect date value: '18446744069414584317' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1771,13 +170,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(FLOOR(2147483647.2) AS UNSIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1790,12 +182,8 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
 a	b	c
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST(1.01 AS DECIMAL);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1808,8 +196,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <= CAST(922337203685477580800 AS DECIMAL);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1822,22 +208,11 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect date value: '9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
 a	b	c
 2007-08-01	2147483647	2003-03-03 18:18:00
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Truncated incorrect DECIMAL value: 'a'
-Warning	1292	Truncated incorrect DECIMAL value: 'a1'
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -1850,15 +225,8 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect date value: '-9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
 2001-01-01	1	2001-05-02 00:01:01
@@ -1912,8 +280,6 @@ a	b	c
 2014-05-12	922337203685477807	2019-02-02 07:30:52
 SELECT * FROM t1 WHERE a > CAST('1.00' AS DATETIME);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
 2001-01-01	1	2001-05-02 00:01:01
@@ -1999,8 +365,6 @@ SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS TIME);
 a	b	c
 SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
 a	b	c
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST('10000.01.01 00:00:00' AS TIME);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2013,8 +377,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2030,18 +392,8 @@ a	b	c
 ALTER TABLE t1 ADD INDEX aIdx(a);
 SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
 a	b	c
-Warnings:
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
 SELECT * FROM t1 WHERE a < CAST(1.00 AS CHAR);
 a	b	c
-Warning	1292	Incorrect date value: '1.00' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1.00' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(REPEAT('123a',3) AS CHAR);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2054,10 +406,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '123a123a123a' for column 'a' at row 1
-Warning	1292	Incorrect date value: '123a123a123a' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '123a123a123a'
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2070,10 +418,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '1.00' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1.00' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a != CAST(1.01 AS NCHAR);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2086,23 +430,10 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.01'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
 a	b	c
-Warning	1292	Incorrect date value: '3421bca' for column 'a' at row 1
-Warning	1292	Incorrect date value: '3421bca' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '3421bca'
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
 a	b	c
-Warning	1292	Incorrect date value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1.01' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(1 AS BINARY);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2115,10 +446,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1'
-Warnings:
 SELECT * FROM t1 WHERE a <= CAST(REPLACE('ab12c4','ab12','234') AS BINARY);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2131,10 +458,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '234c4' for column 'a' at row 1
-Warning	1292	Incorrect date value: '234c4' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '234c4'
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2173,11 +496,6 @@ a	b	c
 2014-05-12	922337203685477807	2019-02-02 07:30:52
 SELECT * FROM t1 WHERE a = CAST('1' AS SIGNED);
 a	b	c
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2190,9 +508,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '2147483647' for column 'a' at row 1
-Warning	1292	Incorrect date value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2205,19 +520,11 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '-2147483649' for column 'a' at row 1
-Warning	1292	Incorrect date value: '-2147483649' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
 a	b	c
 2007-08-01	2147483647	2003-03-03 18:18:00
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(INSERT('312abc',3,2,'00') AS SIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2230,26 +537,8 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '3100' for column 'a' at row 1
-Warning	1292	Incorrect date value: '3100' for column 'a' at row 1
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.00' AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2262,14 +551,8 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '4294967297' for column 'a' at row 1
-Warning	1292	Incorrect date value: '4294967297' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect date value: '18446744069414584317' for column 'a' at row 1
-Warning	1292	Incorrect date value: '18446744069414584317' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2277,13 +560,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(FLOOR(2147483647.2) AS UNSIGNED);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2296,13 +572,8 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '2147483647' for column 'a' at row 1
-Warning	1292	Incorrect date value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
 a	b	c
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST(1.01 AS DECIMAL);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2315,8 +586,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Incorrect date value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <= CAST(922337203685477580800 AS DECIMAL);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2329,22 +598,11 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect date value: '9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
 a	b	c
 2007-08-01	2147483647	2003-03-03 18:18:00
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Truncated incorrect DECIMAL value: 'a'
-Warning	1292	Truncated incorrect DECIMAL value: 'a1'
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2357,15 +615,8 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect date value: '-9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
 2001-01-01	1	2001-05-02 00:01:01
@@ -2419,8 +670,6 @@ a	b	c
 2014-05-12	922337203685477807	2019-02-02 07:30:52
 SELECT * FROM t1 WHERE a > CAST('1.00' AS DATETIME);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
 2001-01-01	1	2001-05-02 00:01:01
@@ -2506,10 +755,6 @@ SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS TIME);
 a	b	c
 SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
 a	b	c
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST('10000.01.01 00:00:00' AS TIME);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2522,10 +767,6 @@ a	b	c
 2009-09-01	4294967294	2012-12-03 08:10:00
 2014-05-12	-4294967299	2006-10-02 08:00:02
 2014-05-12	922337203685477807	2019-02-02 07:30:52
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
 2000-07-01	-1	2004-01-04 10:10:10
@@ -2543,15 +784,8 @@ CREATE TABLE t1(a DATETIME, b VARCHAR(127), c DATE );
 INSERT INTO t1 VALUES ('2001-05-01 01:12:12','1.00','2001-01-01'),('2001-05-02 00:01:01','1','2001#01#01'),('2001-05-06 23:01:01','1.01','2001.01.01'),('2007-02-01 02:01:01','a','2000-11-11'),('2004-04-03 19:20:00','a1','2000-11-11'),('2003-03-03 18:18:00','2147483647','2007-08-01'),('2012-12-03 08:10:00','4294967294','2009-09-01'),('2006-10-02 08:00:02','-4294967299','2014-05-12'),('2019-02-02 07:30:52','922337203685477807','2014-05-12'),('2004-01-04 10:10:10','-1','2000-07-01');
 SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
 a	b	c
-Warnings:
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1'
 SELECT * FROM t1 WHERE a < CAST(1.00 AS CHAR);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.00'
-Warning	1292	Incorrect datetime value: '1.00' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(REPEAT('123a',3) AS CHAR);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2564,9 +798,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '123a123a123a'
-Warning	1292	Incorrect datetime value: '123a123a123a' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2579,9 +810,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '1.00'
-Warning	1292	Incorrect datetime value: '1.00' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a != CAST(1.01 AS NCHAR);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2594,19 +822,10 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '1.01'
-Warning	1292	Incorrect datetime value: '1.01' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
 a	b	c
-Warning	1292	Incorrect datetime value: '3421bca'
-Warning	1292	Incorrect datetime value: '3421bca' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.01'
-Warning	1292	Incorrect datetime value: '1.01' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(1 AS BINARY);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2619,9 +838,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <= CAST(REPLACE('ab12c4','ab12','234') AS BINARY);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2634,9 +850,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '234c4'
-Warning	1292	Incorrect datetime value: '234c4' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2675,12 +888,8 @@ a	b	c
 2019-02-02 07:30:52	922337203685477807	2014-05-12
 SELECT * FROM t1 WHERE a = CAST('1' AS SIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2693,16 +902,9 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '-2147483649' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
 a	b	c
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(INSERT('312abc',3,2,'00') AS SIGNED);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2715,46 +917,21 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '3100' for column 'a' at row 1
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.00' AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '4294967297' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '18446744069414584317' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
 a	b	c
 2004-01-04 10:10:10	-1	2000-07-01
 2006-10-02 08:00:02	-4294967299	2014-05-12
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(FLOOR(2147483647.2) AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
 a	b	c
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST(1.01 AS DECIMAL);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2767,23 +944,10 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <= CAST(922337203685477580800 AS DECIMAL);
 a	b	c
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect datetime value: '9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
 a	b	c
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Truncated incorrect DECIMAL value: 'a'
-Warning	1292	Truncated incorrect DECIMAL value: 'a1'
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2796,15 +960,8 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect datetime value: '-9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2861,8 +1018,6 @@ a	b	c
 2019-02-02 07:30:52	922337203685477807	2014-05-12
 SELECT * FROM t1 WHERE a > CAST('1.00' AS DATETIME);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2957,8 +1112,6 @@ SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS TIME);
 a	b	c
 SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
 a	b	c
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST('10000.01.01 00:00:00' AS TIME);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2971,8 +1124,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -2988,18 +1139,8 @@ a	b	c
 ALTER TABLE t1 ADD INDEX aIdx(a);
 SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
 a	b	c
-Warnings:
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
 SELECT * FROM t1 WHERE a < CAST(1.00 AS CHAR);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.00'
-Warning	1292	Incorrect datetime value: '1.00' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.00' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(REPEAT('123a',3) AS CHAR);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3012,10 +1153,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '123a123a123a'
-Warning	1292	Incorrect datetime value: '123a123a123a' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '123a123a123a' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3028,10 +1165,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '1.00'
-Warning	1292	Incorrect datetime value: '1.00' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.00' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a != CAST(1.01 AS NCHAR);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3044,23 +1177,10 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '1.01'
-Warning	1292	Incorrect datetime value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.01' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
 a	b	c
-Warning	1292	Incorrect datetime value: '3421bca'
-Warning	1292	Incorrect datetime value: '3421bca' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '3421bca' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.01' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1.01' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(1 AS BINARY);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3073,10 +1193,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <= CAST(REPLACE('ab12c4','ab12','234') AS BINARY);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3089,10 +1205,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '234c4'
-Warning	1292	Incorrect datetime value: '234c4' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '234c4' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3131,16 +1243,8 @@ a	b	c
 2019-02-02 07:30:52	922337203685477807	2014-05-12
 SELECT * FROM t1 WHERE a = CAST('1' AS SIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '2147483647' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3153,17 +1257,9 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '-2147483649' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '-2147483649' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
 a	b	c
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(INSERT('312abc',3,2,'00') AS SIGNED);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3176,57 +1272,21 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '3100' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '3100' for column 'a' at row 1
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.00' AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '4294967297' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '4294967297' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '18446744069414584317' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '18446744069414584317' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
 a	b	c
 2004-01-04 10:10:10	-1	2000-07-01
 2006-10-02 08:00:02	-4294967299	2014-05-12
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(FLOOR(2147483647.2) AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect datetime value: '2147483647' for column 'a' at row 1
-Warning	1292	Incorrect datetime value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
 a	b	c
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST(1.01 AS DECIMAL);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3239,23 +1299,10 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Incorrect datetime value: '1' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <= CAST(922337203685477580800 AS DECIMAL);
 a	b	c
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect datetime value: '9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
 a	b	c
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Truncated incorrect DECIMAL value: 'a'
-Warning	1292	Truncated incorrect DECIMAL value: 'a1'
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3268,15 +1315,8 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect datetime value: '-9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3333,8 +1373,6 @@ a	b	c
 2019-02-02 07:30:52	922337203685477807	2014-05-12
 SELECT * FROM t1 WHERE a > CAST('1.00' AS DATETIME);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3429,10 +1467,6 @@ SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS TIME);
 a	b	c
 SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
 a	b	c
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST('10000.01.01 00:00:00' AS TIME);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3445,10 +1479,6 @@ a	b	c
 2007-02-01 02:01:01	a	2000-11-11
 2012-12-03 08:10:00	4294967294	2009-09-01
 2019-02-02 07:30:52	922337203685477807	2014-05-12
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
 2001-05-01 01:12:12	1.00	2001-01-01
@@ -3464,8 +1494,6 @@ a	b	c
 DROP TABLE t1;
 CREATE TABLE t1(a TIME, b VARCHAR(127), c DATETIME );
 INSERT INTO t1 VALUES ('10:22:33','1.00','2001-05-01 01:12:12'),('12:34:56.78','1','2001-05-02 00:01:01'),(10,'1.01','2001-05-06 23:01:01'),(1234,'a','2007-02-01 02:01:01'),(123456.78,'a1','2004-04-03 19:20:00'),(1234559.99,'2147483647','2003-03-03 18:18:00'),('1','4294967294','2012-12-03 08:10:00'),('1:23','-4294967299','2006-10-02 08:00:02'),('1:23:45','922337203685477807','2019-02-02 07:30:52'),('10.22','-1','2004-01-04 10:10:10'),("-10  1:22:33.45","11",'2001-05-01 01:12:12'),("20 10:22:33","12",'2010-05-01 01:12:12'),("1999-02-03 20:33:34","13",'2020-05-01 01:12:12'),(30,"14",'2030-05-01 01:12:12'),(1230,"15",'2002-05-01 01:12:12'),("1230","16",'2012-05-01 01:12:12'),("12:30","17",'2022-05-01 01:12:12'),("12:30:35","18",'2000-05-01 01:12:12'),("1 12:30:31.32","19",'2016-05-01 01:12:12');
-Warnings:
-Note	1292	Incorrect time value: '1999-02-03 20:33:34' for column 'a' at row 13
 SELECT * FROM t1 WHERE a < CAST(1.00 AS CHAR);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -3478,8 +1506,6 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '123a123a123a' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -3524,8 +1550,6 @@ SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
 a	b	c
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '3421bca' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
@@ -3567,8 +1591,6 @@ a	b	c
 12:34:57	1	2001-05-02 00:01:01
 12:34:57	a1	2004-04-03 19:20:00
 20:33:34	13	2020-05-01 01:12:12
-Warning	1292	Incorrect time value: '234c4' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
 a	b	c
 00:00:10	-1	2004-01-04 10:10:10
@@ -3620,8 +1642,6 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -3643,19 +1663,12 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '-2147483649' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
 00:00:01	4294967294	2012-12-03 08:10:00
 01:23:45	922337203685477807	2019-02-02 07:30:52
 123:46:00	2147483647	2003-03-03 18:18:00
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(INSERT('312abc',3,2,'00') AS SIGNED);
 a	b	c
 01:23:00	-4294967299	2006-10-02 08:00:02
@@ -3669,15 +1682,9 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.00' AS UNSIGNED);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -3699,12 +1706,8 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '4294967297' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect time value: '18446744069414584317' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -3713,13 +1716,6 @@ a	b	c
 01:23:00	-4294967299	2006-10-02 08:00:02
 01:23:45	922337203685477807	2019-02-02 07:30:52
 123:46:00	2147483647	2003-03-03 18:18:00
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(FLOOR(2147483647.2) AS UNSIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -3741,8 +1737,6 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
@@ -3787,23 +1781,12 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect time value: '9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
 00:00:01	4294967294	2012-12-03 08:10:00
 01:23:45	922337203685477807	2019-02-02 07:30:52
 123:46:00	2147483647	2003-03-03 18:18:00
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Truncated incorrect DECIMAL value: 'a'
-Warning	1292	Truncated incorrect DECIMAL value: 'a1'
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -3825,16 +1808,8 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect time value: '-9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
@@ -3924,9 +1899,6 @@ a	b	c
 -241:22:33	11	2001-05-01 01:12:12
 SELECT * FROM t1 WHERE a > CAST('1.00' AS DATETIME);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.00'
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
@@ -4067,9 +2039,6 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST('10000.01.01 00:00:00' AS TIME);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4080,9 +2049,6 @@ a	b	c
 00:12:30	15	2002-05-01 01:12:12
 00:12:30	16	2012-05-01 01:12:12
 00:12:34	a	2007-02-01 02:01:01
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warnings:
 ALTER TABLE t1 ADD INDEX aIdx(a);
 SELECT * FROM t1 WHERE a < CAST(1.00 AS CHAR);
 a	b	c
@@ -4096,9 +2062,6 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '123a123a123a' for column 'a' at row 1
-Warning	1292	Incorrect time value: '123a123a123a' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4143,9 +2106,6 @@ SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
 a	b	c
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '3421bca' for column 'a' at row 1
-Warning	1292	Incorrect time value: '3421bca' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
@@ -4187,9 +2147,6 @@ a	b	c
 12:34:57	1	2001-05-02 00:01:01
 12:34:57	a1	2004-04-03 19:20:00
 20:33:34	13	2020-05-01 01:12:12
-Warning	1292	Incorrect time value: '234c4' for column 'a' at row 1
-Warning	1292	Incorrect time value: '234c4' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
 a	b	c
 00:00:10	-1	2004-01-04 10:10:10
@@ -4241,9 +2198,6 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '2147483647' for column 'a' at row 1
-Warning	1292	Incorrect time value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4265,20 +2219,12 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '-2147483649' for column 'a' at row 1
-Warning	1292	Incorrect time value: '-2147483649' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
 00:00:01	4294967294	2012-12-03 08:10:00
 01:23:45	922337203685477807	2019-02-02 07:30:52
 123:46:00	2147483647	2003-03-03 18:18:00
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(INSERT('312abc',3,2,'00') AS SIGNED);
 a	b	c
 01:23:00	-4294967299	2006-10-02 08:00:02
@@ -4292,18 +2238,9 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warning	1292	Truncated incorrect INTEGER value: '3100bc'
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1.00' AS UNSIGNED);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4325,14 +2262,8 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '4294967297' for column 'a' at row 1
-Warning	1292	Incorrect time value: '4294967297' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
 a	b	c
-Warning	1292	Incorrect time value: '18446744069414584317' for column 'a' at row 1
-Warning	1292	Incorrect time value: '18446744069414584317' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4341,13 +2272,6 @@ a	b	c
 01:23:00	-4294967299	2006-10-02 08:00:02
 01:23:45	922337203685477807	2019-02-02 07:30:52
 123:46:00	2147483647	2003-03-03 18:18:00
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1105	Cast to unsigned converted negative integer to it's positive complement
-Warning	1292	Truncated incorrect INTEGER value: '1.00'
-Warning	1292	Truncated incorrect INTEGER value: '1.01'
-Warning	1292	Truncated incorrect INTEGER value: 'a'
-Warning	1292	Truncated incorrect INTEGER value: 'a1'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(FLOOR(2147483647.2) AS UNSIGNED);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4369,9 +2293,6 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Incorrect time value: '2147483647' for column 'a' at row 1
-Warning	1292	Incorrect time value: '2147483647' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
@@ -4416,23 +2337,12 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect time value: '9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
 00:00:01	4294967294	2012-12-03 08:10:00
 01:23:45	922337203685477807	2019-02-02 07:30:52
 123:46:00	2147483647	2003-03-03 18:18:00
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Truncated incorrect DECIMAL value: 'a'
-Warning	1292	Truncated incorrect DECIMAL value: 'a1'
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warning	1366	Incorrect DECIMAL value: '0' for column '' at row -1
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4454,16 +2364,8 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1264	Out of range value for column '(null)' at row 1
-Warning	1292	Incorrect time value: '-9999999999' for column 'a' at row 1
-Warnings:
 SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
-Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
@@ -4553,9 +2455,6 @@ a	b	c
 -241:22:33	11	2001-05-01 01:12:12
 SELECT * FROM t1 WHERE a > CAST('1.00' AS DATETIME);
 a	b	c
-Warning	1292	Incorrect datetime value: '1.00'
-Warning	1292	Incorrect datetime value: '1.00'
-Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
 00:00:01	4294967294	2012-12-03 08:10:00
@@ -4696,10 +2595,6 @@ a	b	c
 20:33:34	13	2020-05-01 01:12:12
 36:30:31	19	2016-05-01 01:12:12
 490:22:33	12	2010-05-01 01:12:12
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST('10000.01.01 00:00:00' AS TIME);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4710,10 +2605,6 @@ a	b	c
 00:12:30	15	2002-05-01 01:12:12
 00:12:30	16	2012-05-01 01:12:12
 00:12:34	a	2007-02-01 02:01:01
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warning	1292	Truncated incorrect time value: '10000.01.01 00:00:00'
-Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
 -241:22:33	11	2001-05-01 01:12:12
@@ -4727,4 +2618,716 @@ a	b	c
 01:23:00	-4294967299	2006-10-02 08:00:02
 01:23:45	922337203685477807	2019-02-02 07:30:52
 12:34:57	a1	2004-04-03 19:20:00
+DROP TABLE t1;
+CREATE TABLE t1(a TIMESTAMP, b VARCHAR(127), c DATE );
+INSERT INTO t1 VALUES ('2001-05-01 01:12:12','1.00','2001-01-01'),('2001-05-02 00:01:01','1','2001#01#01'),('2001-05-06 23:01:01','1.01','2001.01.01'),('2007-02-01 02:01:01','a','2000-11-11'),('2004-04-03 19:20:00','a1','2000-11-11'),('2003-03-03 18:18:00','2147483647','2007-08-01'),('2012-12-03 08:10:00','4294967294','2009-09-01'),('2006-10-02 08:00:02','-4294967299','2014-05-12'),('2019-02-02 07:30:52','922337203685477807','2014-05-12'),('2004-01-04 10:10:10','-1','2000-07-01');
+SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(1.00 AS CHAR);
+a	b	c
+SELECT * FROM t1 WHERE a > CAST(REPEAT('123a',3) AS CHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a != CAST(1.01 AS NCHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
+a	b	c
+SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
+a	b	c
+SELECT * FROM t1 WHERE a > CAST(1 AS BINARY);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST(REPLACE('ab12c4','ab12','234') AS BINARY);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST(b AS NCHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST(b AS BINARY);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a = CAST('1' AS SIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
+a	b	c
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST(INSERT('312abc',3,2,'00') AS SIGNED);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a = CAST('1.00' AS UNSIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
+a	b	c
+2004-01-04 10:10:10	-1	2000-07-01
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a < CAST(FLOOR(2147483647.2) AS UNSIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
+a	b	c
+SELECT * FROM t1 WHERE a <> CAST(1.01 AS DECIMAL);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST(922337203685477580800 AS DECIMAL);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001#01#01' AS DATE);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001.01.01' AS DATE);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST('9999.12.31' AS DATE);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(c AS DATE);
+a	b	c
+2003-03-03 18:18:00	2147483647	2007-08-01
+2006-10-02 08:00:02	-4294967299	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST(NOW() AS DATE);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST('1.00' AS DATETIME);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001#01#01 23:59:00' AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST('9999.12.31' AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
+a	b	c
+2003-03-03 18:18:00	2147483647	2007-08-01
+2006-10-02 08:00:02	-4294967299	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST(CURRENT_DATE() AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <> CAST('1.01' AS TIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS TIME);
+a	b	c
+SELECT * FROM t1 WHERE a <= CAST('2001#01#01 23:59:00' AS TIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS TIME);
+a	b	c
+SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST('10000.01.01 00:00:00' AS TIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a < CAST(c AS TIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+ALTER TABLE t1 ADD INDEX aIdx(a);
+SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(1.00 AS CHAR);
+a	b	c
+SELECT * FROM t1 WHERE a > CAST(REPEAT('123a',3) AS CHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <> CAST('1.00' AS NCHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a != CAST(1.01 AS NCHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST(REVERSE('acb1243') AS NCHAR);
+a	b	c
+SELECT * FROM t1 WHERE a = CAST('1.01' AS BINARY);
+a	b	c
+SELECT * FROM t1 WHERE a > CAST(1 AS BINARY);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST(REPLACE('ab12c4','ab12','234') AS BINARY);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST(b AS CHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST(b AS NCHAR);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST(b AS BINARY);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a = CAST('1' AS SIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(2147483647 AS SIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST(-2147483649 AS SIGNED);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a < CAST(b AS SIGNED);
+a	b	c
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST(INSERT('312abc',3,2,'00') AS SIGNED);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a = CAST('1.00' AS UNSIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(4294967297 AS UNSIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST(-4294967299 AS UNSIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(b AS UNSIGNED);
+a	b	c
+2004-01-04 10:10:10	-1	2000-07-01
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a < CAST(FLOOR(2147483647.2) AS UNSIGNED);
+a	b	c
+SELECT * FROM t1 WHERE a = CAST('1' AS DECIMAL);
+a	b	c
+SELECT * FROM t1 WHERE a <> CAST(1.01 AS DECIMAL);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST(922337203685477580800 AS DECIMAL);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(b AS DECIMAL);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST(CEILING(-922337203685477580800) AS DECIMAL);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001#01#01' AS DATE);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001.01.01' AS DATE);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST('9999.12.31' AS DATE);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST(c AS DATE);
+a	b	c
+2003-03-03 18:18:00	2147483647	2007-08-01
+2006-10-02 08:00:02	-4294967299	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST(NOW() AS DATE);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a > CAST('1.00' AS DATETIME);
+a	b	c
+SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001#01#01 23:59:00' AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST('9999.12.31' AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
+a	b	c
+2003-03-03 18:18:00	2147483647	2007-08-01
+2006-10-02 08:00:02	-4294967299	2014-05-12
+SELECT * FROM t1 WHERE a <= CAST(CURRENT_DATE() AS DATETIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a <> CAST('1.01' AS TIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS TIME);
+a	b	c
+SELECT * FROM t1 WHERE a <= CAST('2001#01#01 23:59:00' AS TIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS TIME);
+a	b	c
+SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
+a	b	c
+SELECT * FROM t1 WHERE a < CAST('10000.01.01 00:00:00' AS TIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
+SELECT * FROM t1 WHERE a < CAST(c AS TIME);
+a	b	c
+2001-05-01 01:12:12	1.00	2001-01-01
+2001-05-02 00:01:01	1	2001-01-01
+2001-05-06 23:01:01	1.01	2001-01-01
+2003-03-03 18:18:00	2147483647	2007-08-01
+2004-01-04 10:10:10	-1	2000-07-01
+2004-04-03 19:20:00	a1	2000-11-11
+2006-10-02 08:00:02	-4294967299	2014-05-12
+2007-02-01 02:01:01	a	2000-11-11
+2012-12-03 08:10:00	4294967294	2009-09-01
+2019-02-02 07:30:52	922337203685477807	2014-05-12
 DROP TABLE t1;
