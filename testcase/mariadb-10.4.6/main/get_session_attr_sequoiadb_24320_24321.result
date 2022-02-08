@@ -20,6 +20,13 @@ M	random	0	60	-1	0	3	1	0	1	0	1	MySQL:hostname:pid:tid
 set session sequoiadb_preferred_instance='M';
 set session sequoiadb_preferred_strict='on';
 set session sequoiadb_preferred_instance='1';
+select * from SDB_SESSION_ATTR_CURRENT;
+PREFERRED_INSTANCE	PREFERRED_INSTANCE_MODE	PREFERRED_STRICT	PREFERRED_PERIOD	TIMEOUT	TRANS_ISOLATION	TRANS_TIMEOUT	TRANS_USE_RBS	TRANS_LOCK_WAIT	TRANS_AUTO_COMMIT	TRANS_AUTO_ROLLBACK	TRANS_RC_COUNT	SOURCE
+1	random	1	60	-1	0	3	1	0	1	0	1	MySQL:hostname:pid:tid
+set session sequoiadb_preferred_instance='1,2';
+select * from SDB_SESSION_ATTR_CURRENT;
+PREFERRED_INSTANCE	PREFERRED_INSTANCE_MODE	PREFERRED_STRICT	PREFERRED_PERIOD	TIMEOUT	TRANS_ISOLATION	TRANS_TIMEOUT	TRANS_USE_RBS	TRANS_LOCK_WAIT	TRANS_AUTO_COMMIT	TRANS_AUTO_ROLLBACK	TRANS_RC_COUNT	SOURCE
+[ 1, 2 ]	random	1	60	-1	0	3	1	0	1	0	1	MySQL:hostname:pid:tid
 set session sequoiadb_preferred_instance='M';
 set session sequoiadb_preferred_instance_mode='ordered';
 set session sequoiadb_preferred_period=59;
