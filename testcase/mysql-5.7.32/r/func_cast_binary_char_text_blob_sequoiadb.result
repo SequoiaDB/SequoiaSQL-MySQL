@@ -1,3 +1,8 @@
+drop database if exists func_cast_binary_char_text_blob_sequoiadb;
+create database func_cast_binary_char_text_blob_sequoiadb;
+drop database func_cast_binary_char_text_blob_sequoiadb;
+create database func_cast_binary_char_text_blob_sequoiadb;
+use func_cast_binary_char_text_blob_sequoiadb;
 CREATE TABLE t1(a BINARY(127), b INT, c DATE);
 INSERT INTO t1 VALUES ('a',3, '2000-01-01'),('a1',1,'2001-01-01'),('b',11,'2002-01-01'),('1',9,'2008-01-01'),('1.00',5,'2013-01-01'),('1.02',7,'2004-04-01'), ('1.01',6,'2009-11-01'), ('2001-01-01',13,'2019-05-01'), ('2001#01#01',22,'2006-02-01'),('2001.01.01',10,'2007-08-01'),('2019-01-01',21,'2011-09-01'),('2019.01.01',16,'2012-05-01'),('2019#01#01',13,'2016-06-06'),('2147483647',2,'2001-01-02'),('4294967294',-1,'2001-01-03'),('-4294967299',-9,'2001-01-05'),('922337203685477807',-13,'2001-01-11');
 SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
@@ -3047,3 +3052,4 @@ SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
 -4294967299	-9	2001-01-05
 DROP TABLE t1;
+drop database func_cast_binary_char_text_blob_sequoiadb;

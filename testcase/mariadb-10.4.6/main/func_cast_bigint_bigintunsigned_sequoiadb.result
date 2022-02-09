@@ -1,3 +1,8 @@
+drop database if exists func_cast_bigint_bigintunsigned_sequoiadb;
+create database func_cast_bigint_bigintunsigned_sequoiadb;
+drop database func_cast_bigint_bigintunsigned_sequoiadb;
+create database func_cast_bigint_bigintunsigned_sequoiadb;
+use func_cast_bigint_bigintunsigned_sequoiadb;
 CREATE TABLE t1(a BIGINT, b INT, c DATE);
 INSERT INTO t1 VALUES (1,3, '2000-01-01'),(2,1,'2001-01-01'),('12',11,'2002-01-01'),('1',9,'2008-01-01'),(1.00,5,'2013-01-01'),(1.02,7,'2004-04-01'), ('1.01',6,'2009-11-01'), ('2001.01',13,'2019-05-01'), ('2001.0101',22,'2006-02-01'),('20010101',10,'2007-08-01'),('2019',21,'2011-09-01'),('201901.01',16,'2012-05-01'),('2.010101',13,'2016-06-06'),('-922337203685477807',2,'2001-01-02'),('922337203685477807',-1,'2001-01-03'),(-922337203685477807,-9,'2001-01-05'),(922337203685477807,-13,'2001-01-11');
 SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
@@ -302,23 +307,23 @@ a	b	c
 201901	16	2012-05-01
 922337203685477807	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
 Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
@@ -339,23 +344,23 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01' AS DATE);
 a	b	c
 20010101	10	2007-08-01
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
 Warning	1292	Incorrect datetime value: '10000.01.01'
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect datetime value: '10000.01.01'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATE);
@@ -377,22 +382,22 @@ a	b	c
 201901	16	2012-05-01
 922337203685477807	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warnings:
 SELECT * FROM t1 WHERE a <= CAST(NOW() AS DATE);
 a	b	c
@@ -429,23 +434,23 @@ a	b	c
 201901	16	2012-05-01
 922337203685477807	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
 Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
@@ -463,23 +468,23 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
 20010101	10	2007-08-01
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
@@ -501,22 +506,22 @@ a	b	c
 201901	16	2012-05-01
 922337203685477807	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warnings:
 SELECT * FROM t1 WHERE a <= CAST(CURRENT_DATE() AS DATETIME);
 a	b	c
@@ -610,10 +615,10 @@ SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
 -922337203685477807	-9	2001-01-05
 -922337203685477807	2	2001-01-02
-Warning	1292	Incorrect time value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect time value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect time value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect time value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect time value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect time value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect time value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect time value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warnings:
 ALTER TABLE t1 ADD INDEX aIdx(a);
 SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
@@ -925,23 +930,23 @@ a	b	c
 201901	16	2012-05-01
 922337203685477807	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
 Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
@@ -962,23 +967,23 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01' AS DATE);
 a	b	c
 20010101	10	2007-08-01
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
 Warning	1292	Incorrect datetime value: '10000.01.01'
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect datetime value: '10000.01.01'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATE);
@@ -1000,22 +1005,22 @@ a	b	c
 201901	16	2012-05-01
 922337203685477807	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warnings:
 SELECT * FROM t1 WHERE a <= CAST(NOW() AS DATE);
 a	b	c
@@ -1052,23 +1057,23 @@ a	b	c
 201901	16	2012-05-01
 922337203685477807	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
 Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
@@ -1086,23 +1091,23 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
 20010101	10	2007-08-01
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
@@ -1124,22 +1129,22 @@ a	b	c
 201901	16	2012-05-01
 922337203685477807	-1	2001-01-03
 922337203685477807	-13	2001-01-11
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warnings:
 SELECT * FROM t1 WHERE a <= CAST(CURRENT_DATE() AS DATETIME);
 a	b	c
@@ -1234,10 +1239,10 @@ SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
 -922337203685477807	-9	2001-01-05
 -922337203685477807	2	2001-01-02
-Warning	1292	Incorrect time value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect time value: '-922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect time value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect time value: '922337203685477807' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect time value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect time value: '-922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect time value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect time value: '922337203685477807' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warnings:
 DROP TABLE t1;
 CREATE TABLE t1(a BIGINT UNSIGNED, b INT, c DATE);
@@ -1547,22 +1552,22 @@ a	b	c
 2019	21	2011-09-01
 201901	16	2012-05-01
 Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warning	1292	Truncated incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
@@ -1589,23 +1594,23 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01' AS DATE);
 a	b	c
 20010101	10	2007-08-01
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
 Warning	1292	Incorrect datetime value: '10000.01.01'
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warning	1292	Truncated incorrect datetime value: '10000.01.01'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATE);
@@ -1627,22 +1632,22 @@ a	b	c
 20010101	10	2007-08-01
 2019	21	2011-09-01
 201901	16	2012-05-01
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warnings:
 SELECT * FROM t1 WHERE a <= CAST(NOW() AS DATE);
 a	b	c
@@ -1678,22 +1683,22 @@ a	b	c
 2019	21	2011-09-01
 201901	16	2012-05-01
 Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warning	1292	Truncated incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
@@ -1717,23 +1722,23 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
 20010101	10	2007-08-01
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warning	1292	Truncated incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
@@ -1755,22 +1760,22 @@ a	b	c
 20010101	10	2007-08-01
 2019	21	2011-09-01
 201901	16	2012-05-01
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warnings:
 SELECT * FROM t1 WHERE a <= CAST(CURRENT_DATE() AS DATETIME);
 a	b	c
@@ -1865,19 +1870,19 @@ a	b	c
 20010101	10	2007-08-01
 2019	21	2011-09-01
 201901	16	2012-05-01
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warnings:
 ALTER TABLE t1 ADD INDEX aIdx(a);
 SELECT * FROM t1 WHERE a = CAST('1' AS CHAR);
@@ -2191,22 +2196,22 @@ a	b	c
 2019	21	2011-09-01
 201901	16	2012-05-01
 Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warning	1292	Truncated incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
@@ -2233,23 +2238,23 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01' AS DATE);
 a	b	c
 20010101	10	2007-08-01
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
 Warning	1292	Incorrect datetime value: '10000.01.01'
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warning	1292	Truncated incorrect datetime value: '10000.01.01'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATE);
@@ -2271,22 +2276,22 @@ a	b	c
 20010101	10	2007-08-01
 2019	21	2011-09-01
 201901	16	2012-05-01
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warnings:
 SELECT * FROM t1 WHERE a <= CAST(NOW() AS DATE);
 a	b	c
@@ -2322,22 +2327,22 @@ a	b	c
 2019	21	2011-09-01
 201901	16	2012-05-01
 Warning	1292	Incorrect datetime value: '1'
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warning	1292	Truncated incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
@@ -2361,23 +2366,23 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
 20010101	10	2007-08-01
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warning	1292	Truncated incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
@@ -2399,22 +2404,22 @@ a	b	c
 20010101	10	2007-08-01
 2019	21	2011-09-01
 201901	16	2012-05-01
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 1
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 4
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 5
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 6
-Warning	1292	Incorrect datetime value: '1' for column `test_parallel_1`.`t1`.`a` at row 7
-Warning	1292	Incorrect datetime value: '12' for column `test_parallel_1`.`t1`.`a` at row 3
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect datetime value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 13
-Warning	1292	Incorrect datetime value: '2' for column `test_parallel_1`.`t1`.`a` at row 2
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 8
-Warning	1292	Incorrect datetime value: '2001' for column `test_parallel_1`.`t1`.`a` at row 9
-Warning	1292	Incorrect datetime value: '2019' for column `test_parallel_1`.`t1`.`a` at row 11
-Warning	1292	Incorrect datetime value: '201901' for column `test_parallel_1`.`t1`.`a` at row 12
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 1
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 4
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 5
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 6
+Warning	1292	Incorrect datetime value: '1' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 7
+Warning	1292	Incorrect datetime value: '12' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 3
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect datetime value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 13
+Warning	1292	Incorrect datetime value: '2' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 2
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 8
+Warning	1292	Incorrect datetime value: '2001' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 9
+Warning	1292	Incorrect datetime value: '2019' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 11
+Warning	1292	Incorrect datetime value: '201901' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 12
 Warnings:
 SELECT * FROM t1 WHERE a <= CAST(CURRENT_DATE() AS DATETIME);
 a	b	c
@@ -2509,18 +2514,19 @@ a	b	c
 20010101	10	2007-08-01
 2019	21	2011-09-01
 201901	16	2012-05-01
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 14
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 15
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 16
-Warning	1292	Incorrect time value: '18446744073709551615' for column `test_parallel_1`.`t1`.`a` at row 17
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 14
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 15
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 16
+Warning	1292	Incorrect time value: '18446744073709551615' for column `func_cast_bigint_bigintunsigned_sequoiadb`.`t1`.`a` at row 17
 Warnings:
 DROP TABLE t1;
+drop database func_cast_bigint_bigintunsigned_sequoiadb;

@@ -21,6 +21,16 @@
 
 --source include/have_sequoiadb.inc
 
+--disable_warnings
+
+drop database if exists func_cast_date_datetime_time_timestamp_sequoiadb;
+create database func_cast_date_datetime_time_timestamp_sequoiadb;
+drop database func_cast_date_datetime_time_timestamp_sequoiadb;
+create database func_cast_date_datetime_time_timestamp_sequoiadb;
+use func_cast_date_datetime_time_timestamp_sequoiadb;
+
+--enable_warnings
+
 #
 # cast(date as type)
 #
@@ -844,5 +854,6 @@ SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 
 DROP TABLE t1;
 
+drop database func_cast_date_datetime_time_timestamp_sequoiadb;
 
 --source include/uninstall_sequoiadb.inc

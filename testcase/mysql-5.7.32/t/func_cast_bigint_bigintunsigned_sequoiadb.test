@@ -10,6 +10,17 @@
 
 --source include/have_sequoiadb.inc
 
+--disable_warnings
+
+drop database if exists func_cast_bigint_bigintunsigned_sequoiadb;
+create database func_cast_bigint_bigintunsigned_sequoiadb;
+drop database func_cast_bigint_bigintunsigned_sequoiadb;
+create database func_cast_bigint_bigintunsigned_sequoiadb;
+use func_cast_bigint_bigintunsigned_sequoiadb;
+
+--enable_warnings
+
+
 #
 # cast(bigint as type)
 #
@@ -455,5 +466,7 @@ SELECT * FROM t1 WHERE a > CAST('-839:59:59.0000' AS TIME);
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 
 DROP TABLE t1;
+
+drop database func_cast_bigint_bigintunsigned_sequoiadb;
 
 --source include/uninstall_sequoiadb.inc
