@@ -534,8 +534,8 @@ function get_one_status()
       fi
       test "$port" == "" && port="-"
 
-	  #get start_time Mon Jan 24 22:10:01 2022 -> 2022-01-24-22:10:01
-	  local start_time=`ps -eo lstart,pid | grep $pid | awk '{print $1,$2,$3,$4,$5}'`
+      #get start_time Mon Jan 24 22:10:01 2022 -> 2022-01-24-22:10:01
+      local start_time=`ps -eo lstart,pid | grep -w "${pid}$" | awk '{print $1,$2,$3,$4,$5}'`
       if [ "$start_time" != "" ]; then
 	     start_time=`date "+%Y-%m-%d-%H:%M:%S" -d "$start_time"`
 	  else
