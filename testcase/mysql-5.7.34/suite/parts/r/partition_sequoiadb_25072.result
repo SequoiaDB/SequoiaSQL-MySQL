@@ -23,7 +23,7 @@ partition_sequoiadb_25072_1	CREATE TABLE `partition_sequoiadb_25072_1` (
  PARTITION p1 VALUES LESS THAN (2000) ENGINE = SequoiaDB) */
 INSERT INTO partition_sequoiadb_25072_1 VALUES(1,'1800-01-01','name1','company1');
 INSERT INTO partition_sequoiadb_25072_1 VALUES(2,'1999-01-01','name2','company2');
-SELECT * FROM partition_sequoiadb_25072_1;
+SELECT * FROM partition_sequoiadb_25072_1 ORDER BY id ASC;
 id	produced_date	name	company
 1	1800-01-01	name1	company1
 2	1999-01-01	name2	company2
@@ -39,7 +39,7 @@ partition_sequoiadb_25072_1	CREATE TABLE `partition_sequoiadb_25072_1` (
 /*!50100 PARTITION BY RANGE (YEAR(produced_date))
 (PARTITION p0 VALUES LESS THAN (1990) ENGINE = SequoiaDB) */
 INSERT INTO partition_sequoiadb_25072_1 VALUES(3,'1850-01-01','name3','company3');
-SELECT * FROM partition_sequoiadb_25072_1;
+SELECT * FROM partition_sequoiadb_25072_1 ORDER BY id ASC;
 id	produced_date	name	company
 1	1800-01-01	name1	company1
 3	1850-01-01	name3	company3
@@ -55,14 +55,14 @@ partition_sequoiadb_25072_2	CREATE TABLE `partition_sequoiadb_25072_2` (
 /*!50100 PARTITION BY RANGE (YEAR(produced_date))
 (PARTITION p0 VALUES LESS THAN (1990) ENGINE = SequoiaDB) */
 INSERT INTO partition_sequoiadb_25072_2 VALUES(4,'1900-01-01','name4','company4');
-SELECT * FROM partition_sequoiadb_25072_2;
+SELECT * FROM partition_sequoiadb_25072_2 ORDER BY id ASC;
 id	produced_date	name	company
 1	1800-01-01	name1	company1
 3	1850-01-01	name3	company3
 4	1900-01-01	name4	company4
 DROP TABLE partition_sequoiadb_25072_2;
-SHOW TABLES LIKE 'partition_sequoiadb_25072_2';
-Tables_in_test_parallel_1 (partition_sequoiadb_25072_2)
+SELECT table_name from information_schema.tables where table_name='partition_sequoiadb_25072_2';
+table_name
 CREATE TABLE partition_sequoiadb_25072_2 ( 
 id INT NOT NULL, 
 produced_date DATE, 

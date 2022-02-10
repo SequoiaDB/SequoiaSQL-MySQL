@@ -1,4 +1,4 @@
-#SEQUOIASQLMAINSTREAM-1187
+#SEQIOIASQLMAINSTREAM-1187
 #seqDB-25072
 
 --source include/have_sequoiadb.inc
@@ -29,7 +29,7 @@ ALTER TABLE partition_sequoiadb_25072_1 ADD PARTITION(partition p1 VALUES LESS T
 SHOW CREATE TABLE partition_sequoiadb_25072_1;
 INSERT INTO partition_sequoiadb_25072_1 VALUES(1,'1800-01-01','name1','company1');
 INSERT INTO partition_sequoiadb_25072_1 VALUES(2,'1999-01-01','name2','company2');
-SELECT * FROM partition_sequoiadb_25072_1;
+SELECT * FROM partition_sequoiadb_25072_1 ORDER BY id ASC;
 ALTER TABLE partition_sequoiadb_25072_1 DROP PARTITION p1;
 
 --disconnect con1
@@ -38,7 +38,7 @@ ALTER TABLE partition_sequoiadb_25072_1 DROP PARTITION p1;
 
 SHOW CREATE TABLE partition_sequoiadb_25072_1;
 INSERT INTO partition_sequoiadb_25072_1 VALUES(3,'1850-01-01','name3','company3');
-SELECT * FROM partition_sequoiadb_25072_1;
+SELECT * FROM partition_sequoiadb_25072_1 ORDER BY id ASC;
 RENAME TABLE partition_sequoiadb_25072_1 TO partition_sequoiadb_25072_2;
 
 --disconnect con1
@@ -47,14 +47,14 @@ RENAME TABLE partition_sequoiadb_25072_1 TO partition_sequoiadb_25072_2;
 
 SHOW CREATE TABLE partition_sequoiadb_25072_2;
 INSERT INTO partition_sequoiadb_25072_2 VALUES(4,'1900-01-01','name4','company4');
-SELECT * FROM partition_sequoiadb_25072_2;
+SELECT * FROM partition_sequoiadb_25072_2 ORDER BY id ASC;
 DROP TABLE partition_sequoiadb_25072_2;
 
 --disconnect con1
 --connect (con1, localhost, root)
 --connection con1
 
-SHOW TABLES LIKE 'partition_sequoiadb_25072_2';
+SELECT table_name from information_schema.tables where table_name='partition_sequoiadb_25072_2';
 CREATE TABLE partition_sequoiadb_25072_2 ( 
     id INT NOT NULL, 
     produced_date DATE, 
