@@ -249,7 +249,7 @@ select * from t1 where a = 1 and b is null order by a desc, b desc, c desc;
 #explain select * from t1 where a = 2 and b < 2 order by a desc,b desc;
 #explain select * from t1 where a = 1 order by b desc;
 #SEQUOIASQLMAINSTREAM-644
-select * from t1 where a = 1 order by b desc;
+select * from t1 where a = 1 order by b desc,a asc, c asc;
 #
 # Test things when we don't have NULL keys
 #
