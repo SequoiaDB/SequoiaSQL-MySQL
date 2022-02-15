@@ -116,14 +116,14 @@ function add_status_and_trigger()
   BEGIN
       declare result int(11);
       declare msg varchar(1000);
-      declare rows int;
+      declare return_rows int;
 
       select 1 into result from 
       \`${str_arr[$database_name]}\`.\`${str_arr[$table_name]}\` 
       where ${condition} limit 1;
-      select found_rows() into rows;
+      select found_rows() into return_rows;
 
-      IF rows <> 0 then
+      IF return_rows <> 0 then
         set msg = 'cannot delete a row in\
         ${str_arr[$referenced_database_name]}.${str_arr[$referenced_table_name]}:\ 
         a foreign key constraint on\ 
