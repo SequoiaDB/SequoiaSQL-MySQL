@@ -47,7 +47,7 @@ public class MetaDataMapping24609 extends MysqlTestBase {
         jdbc.createDatabase( csName );
     }
 
-    @Test(enabled = false)
+    @Test
     public void test() throws Exception {
         // 创建256个range分区表每个表包含2个分区
         for ( int i = 0; i < 256; i++ ) {
@@ -139,8 +139,8 @@ public class MetaDataMapping24609 extends MysqlTestBase {
                     + "add partition (partition p3 values less than(5000))" );
             Assert.fail( "should error but success" );
         } catch ( SQLException e ) {
-            // ERROR 1296 (HY000): Got error 30013 'There is no error object' from SequoiaDB
-            if ( e.getErrorCode() != 1296 ) {
+            // ERROR 30013 (HY000): Too many tables in current database, the upper limit is 10240
+            if ( e.getErrorCode() != 30013 ) {
                 throw e;
             }
         }
