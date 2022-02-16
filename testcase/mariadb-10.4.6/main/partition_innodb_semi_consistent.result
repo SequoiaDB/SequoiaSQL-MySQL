@@ -121,6 +121,9 @@ SELECT * FROM t1;
 a	b
 1	init+con1
 COMMIT;
+SELECT COUNT(*) FROM t2;
+COUNT(*)
+0
 SELECT * FROM t1;
 a	b
 1	init+con1
@@ -128,6 +131,13 @@ connection con2;
 SELECT * FROM t1;
 a	b
 1	init+con1+con2
+COMMIT;
+SELECT * FROM t1;
+a	b
+1	init+con1+con2
+SELECT * FROM t2;
+a
+NULL
 COMMIT;
 connection con1;
 # 3. test for updated key column:
@@ -148,6 +158,9 @@ SELECT * FROM t1;
 a	b
 2	init+con1
 COMMIT;
+SELECT COUNT(*) FROM t2;
+COUNT(*)
+0
 SELECT * FROM t1;
 a	b
 2	init+con1
@@ -155,6 +168,13 @@ connection con2;
 SELECT * FROM t1;
 a	b
 2	init+con1
+COMMIT;
+SELECT * FROM t1;
+a	b
+2	init+con1
+SELECT * FROM t2;
+a
+NULL
 connection default;
 disconnect con1;
 disconnect con2;

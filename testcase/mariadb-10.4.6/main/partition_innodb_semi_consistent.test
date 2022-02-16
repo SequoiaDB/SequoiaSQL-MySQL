@@ -147,18 +147,19 @@ connection con1;
 SELECT * FROM t1;
 COMMIT;
 
-let $bug31310 = 1;
-while ($bug31310)
-{
-  let $bug31310= `SELECT 1 - COUNT(*) FROM t2`;
-}
+SELECT COUNT(*) FROM t2;
+
 
 SELECT * FROM t1;
 
 connection con2;
---reap
+ --reap
 SELECT * FROM t1;
 COMMIT;
+SELECT * FROM t1;
+SELECT * FROM t2;
+COMMIT;
+
 
 connection con1;
 
@@ -183,17 +184,16 @@ connection con1;
 SELECT * FROM t1;
 COMMIT;
 
-let $bug31310 = 1;
-while ($bug31310)
-{
-  let $bug31310= `SELECT 1 - COUNT(*) FROM t2`;
-}
+SELECT COUNT(*) FROM t2;
 
 SELECT * FROM t1;
 
 connection con2;
 reap;
 SELECT * FROM t1;
+COMMIT;
+SELECT * FROM t1;
+SELECT * FROM t2;
 
 connection default;
 disconnect con1;
