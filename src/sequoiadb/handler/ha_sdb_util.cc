@@ -26,6 +26,25 @@
 
 bool sdb_version_cached = false;
 
+int sdb_parse_fullname(char *cs_name, char *cl_name, const char *fullname) {
+  uint cs_name_len = 0;
+  int rc = SDB_ERR_OK;
+  const char *sep_pos = strchr(fullname, '.');
+  DBUG_ASSERT(NULL != sep_pos && strlen(fullname) <= SDB_CL_FULL_NAME_MAX_SIZE);
+  if (NULL == sep_pos || strlen(fullname) > SDB_CL_FULL_NAME_MAX_SIZE) {
+    rc = HA_ERR_GENERIC;
+    goto error;
+  }
+  cs_name_len = sep_pos - fullname;
+  strncpy(cs_name, fullname, cs_name_len);
+  cs_name[cs_name_len] = 0;
+  strncpy(cl_name, sep_pos + 1, SDB_CL_NAME_MAX_SIZE);
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size) {
   int rc = 0;

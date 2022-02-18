@@ -111,16 +111,14 @@ class Sdb_cl_copyer : public Sql_alloc {
 
   int copy(ha_sdb *ha);
 
-  int swap(const char *from, const char *to);
+  int swap(const char *src, const char *dst);
 
   void replace_src_indexes(uint keys, const KEY *key_info);
 
   void replace_src_auto_inc(const bson::BSONObj &auto_inc_options);
 
  private:
-  int rename_new_cl();
-
-  int rename_old_cl();
+  int swap_sub_cl();
 
  private:
   Sdb_conn *m_conn;

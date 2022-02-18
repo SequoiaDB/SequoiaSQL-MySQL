@@ -50,6 +50,8 @@ enum enum_sequence_field {
 };
 #endif
 
+int sdb_parse_fullname(char *cs_name, char *cl_name, const char *fullname);
+
 int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
                          char *table_name, int table_name_max_size);
 

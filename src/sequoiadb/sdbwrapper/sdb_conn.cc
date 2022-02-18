@@ -838,11 +838,10 @@ int Sdb_conn::swap_cl(const char *db_name, const char *old_table_name,
     new_cl_name = new_ctx->get_mapping_cl();
   }
 
-  // not allowed swap if 'IsSpecifiedMapping' is different
-  DBUG_ASSERT(old_ctx->is_specified_mapping() ==
-              new_ctx->is_specified_mapping());
   // swap mapping configuration if they are different
-  if (old_ctx->is_part_table() != new_ctx->is_part_table()) {
+  if (old_ctx && new_ctx &&
+      (old_ctx->is_part_table() != new_ctx->is_part_table() ||
+       old_ctx->is_specified_mapping() != new_ctx->is_specified_mapping())) {
     rc = Name_mapping::swap(this, old_ctx, new_ctx);
     if (0 != rc) {
       goto error;
