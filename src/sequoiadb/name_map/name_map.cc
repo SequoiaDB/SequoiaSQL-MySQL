@@ -72,6 +72,11 @@ static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
       index_ref = BSON(NM_FIELD_DB_NAME << 1 << NM_FIELD_TABLE_NAME << 1);
       key_options = BSON(SDB_FIELD_UNIQUE << 1);
       rc = table_map.create_index(index_ref, NM_DB_TABLE_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       if (0 != rc) {
         SDB_LOG_ERROR(

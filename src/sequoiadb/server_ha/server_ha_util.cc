@@ -85,6 +85,11 @@ int ha_get_instance_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
 
       rc = cl.create_index(
           index_ref, HA_INST_OBJ_STATE_DB_TABLE_TYPE_INSTID_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(
           rc, error, "HA: Unable to create index for '%s', sequoiadb error: %s",
@@ -148,6 +153,11 @@ int ha_get_instance_state_cl(Sdb_conn &sdb_conn, const char *group_name,
           "HA: Unable to get instance state table '%s', sequoiadb error: %s",
           HA_INSTANCE_STATE_CL, ha_error_string(sdb_conn, rc, err_buf));
       rc = cl.create_index(index_ref, HA_INST_STATE_INSTID_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index for '%s', sequoiadb error: %s",
@@ -157,6 +167,11 @@ int ha_get_instance_state_cl(Sdb_conn &sdb_conn, const char *group_name,
       index_ref = BSON(HA_FIELD_JOIN_ID << 1);
       key_options = BSON(SDB_FIELD_UNIQUE << 1);
       rc = cl.create_index(index_ref, HA_INST_STATE_JOIN_ID_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index for '%s', sequoiadb error: %s",
@@ -208,6 +223,11 @@ int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
       key_options = BSON(SDB_FIELD_UNIQUE << 1);
       rc = cl.create_index(index_ref, HA_OBJ_STATE_DB_TABLE_TYPE_INDEX,
                            key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index for '%s', sequoiadb error: %s",
@@ -215,6 +235,11 @@ int ha_get_object_state_cl(Sdb_conn &sdb_conn, const char *group_name,
 
       index_ref = BSON(HA_FIELD_DB << 1 << HA_FIELD_SQL_ID << 1);
       rc = cl.create_index(index_ref, HA_OBJ_STATE_DB_SQLID_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index for '%s', sequoiadb error: %s",
@@ -263,6 +288,11 @@ int ha_get_lock_cl(Sdb_conn &sdb_conn, const char *group_name, Sdb_cl &lock_cl,
       key_options = BSON(SDB_FIELD_UNIQUE << 1);
       rc = lock_cl.create_index(index_ref, HA_LOCK_DB_TABLE_TYPE_INDEX,
                                 key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index for '%s', sequoiadb error: %s",
@@ -317,6 +347,11 @@ int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name,
 
       rc = registry_cl.create_index(index_ref, HA_REGISTRY_INSTID_INDEX,
                                     key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index on '%s', sequoiadb error: %s",
@@ -326,6 +361,11 @@ int ha_get_registry_cl(Sdb_conn &sdb_conn, const char *group_name,
       key_options = BSON(SDB_FIELD_UNIQUE << 1 << SDB_FIELD_NOT_NULL << 1);
       rc = registry_cl.create_index(index_ref, HA_REGISTRY_HOST_PORT_INDEX,
                                     key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index on '%s', sequoiadb error: %s",
@@ -385,6 +425,11 @@ int ha_get_pending_log_cl(Sdb_conn &sdb_conn, const char *group_name,
 
       rc = pending_log_cl.create_index(
           index_ref, HA_PENDING_LOG_PENDING_ID_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index on '%s', sequoiadb error: %s",
@@ -437,6 +482,11 @@ int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
 
       rc = pending_object_cl.create_index(
           index_ref, HA_PENDING_OBJECT_DB_TABLE_TYPE_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index on '%s', sequoiadb error: %s",
@@ -446,6 +496,11 @@ int ha_get_pending_object_cl(Sdb_conn &sdb_conn, const char *group_name,
       key_options = BSON(SDB_FIELD_UNIQUE << 0);
       rc = pending_object_cl.create_index(
           index_ref, HA_PENDING_OBJECT_SQLID_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
       rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
       HA_RC_CHECK(rc, error,
                   "HA: Unable to create index on '%s', sequoiadb error: %s",
