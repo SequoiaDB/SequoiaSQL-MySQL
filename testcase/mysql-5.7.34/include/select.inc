@@ -1412,8 +1412,7 @@ INSERT INTO t3 (period,name,companynr,price,price2) VALUES (1010,"clinker",512,7
 #insert into tmp select * from t3;
 #insert into t3 select * from tmp;
 
-#Bug #SEQUOIASQLMAINSTREAM-246 
-#alter table t3 add t2nr int not null auto_increment primary key first;
+alter table t3 add t2nr int not null auto_increment primary key first;
 
 #drop table tmp;
 
