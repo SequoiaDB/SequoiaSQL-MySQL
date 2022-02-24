@@ -26,4 +26,5 @@ select * from abcdefghabcdefghabcdefghabcdefgh魑魅魍魉魑魅魍魉魑魅魍�
 a
 3
 drop table abcdefghabcdefghabcdefghabcdefgh魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍;
+drop database longname;
 set names default;
