@@ -832,8 +832,11 @@ else
    db_name=`echo "SQL_NAME_MAPPING_${group_name}" | tr '[:lower:]' '[:upper:]'`
 fi
 final_db_name="${db_name}"
-db_name="TMP_${db_name}"
+tmp_db_prefix=`echo "${group_name}" | md5sum | tr a-z A-Z | cut -b 1-6`
+tmp_db_prefix="TMP_${tmp_db_prefix}"
+db_name="${tmp_db_prefix}_${db_name}"
 full_table_name="${db_name}.TABLE_MAPPING"
+drop_db_query="DROP DATABASE IF EXISTS ${db_name}"
 
 # get IPS and Ports of all instances
 get_hosts_and_ports
@@ -850,6 +853,7 @@ if [[ $rc == 2 ]];then
    echo "ERROR: Failed to check if mapping function is enabled."
    exit 18
 elif [[ $rc == 1 ]]; then   # mapping function is already open
+   execute_query "${drop_db_query}"
    exit 0
 fi
 
@@ -869,8 +873,7 @@ fi
 
 # create mapping table database
 echo "INFO: Creating temporary database '${db_name}'"
-drop_db_query="DROP DATABASE ${db_name}"
-query="CREATE DATABASE ${db_name}"
+query="CREATE DATABASE IF NOT EXISTS ${db_name}"
 execute_query "${query}"
 if [[ $? != 0 ]]; then
    echo "ERROR: Failed to create database '${db_name}'"
