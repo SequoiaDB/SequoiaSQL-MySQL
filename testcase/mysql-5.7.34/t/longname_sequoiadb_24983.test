@@ -21,5 +21,6 @@ CREATE table abcdefghabcdefghabcdefghabcdefgh魑魅魍魉魑魅魍魉魑魅魍�
 insert into abcdefghabcdefghabcdefghabcdefgh魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍 values(3); 
 select * from abcdefghabcdefghabcdefghabcdefgh魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍; 
 drop table abcdefghabcdefghabcdefghabcdefgh魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍魉魑魅魍;
+drop database longname;
 
 set names default;
