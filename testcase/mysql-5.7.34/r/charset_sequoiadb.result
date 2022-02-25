@@ -1,7 +1,12 @@
 set names utf8;
+DROP DATABASE IF EXISTS charset_sequoiadb;
+Warnings:
+Note	1008	Can't drop database 'charset_sequoiadb'; database doesn't exist
+CREATE DATABASE charset_sequoiadb;
+USE charset_sequoiadb;
 DROP TABLE IF EXISTS charset_sequoiadb;
 Warnings:
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb'
 SET SESSION sequoiadb_support_mode='';
 CREATE TABLE charset_sequoiadb ( 
 id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, 
@@ -148,14 +153,14 @@ create table charset_sequoiadb(a int primary key, b LONGTEXT, c int)CHARSET=lati
 ERROR HY000: The collation of column 'b' is not supported on strict mode. Try 'utf8mb4_bin' instead of 'latin1_bin'.
 DROP TABLE IF EXISTS charset_sequoiadb_1,charset_sequoiadb_2,charset_sequoiadb_3,charset_sequoiadb_4,charset_sequoiadb_5,charset_sequoiadb_6,charset_sequoiadb_7,charset_sequoiadb_8;
 Warnings:
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb_1'
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb_2'
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb_3'
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb_4'
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb_5'
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb_6'
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb_7'
-Note	1051	Unknown table 'test_parallel_1.charset_sequoiadb_8'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb_1'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb_2'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb_3'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb_4'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb_5'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb_6'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb_7'
+Note	1051	Unknown table 'charset_sequoiadb.charset_sequoiadb_8'
 SET SESSION sequoiadb_support_mode="";
 create table charset_sequoiadb_1(a int primary key, b CHAR(10), c int)CHARSET=latin1 COLLATE=latin1_bin;
 create table charset_sequoiadb_2(a int primary key, b SET("1"), c int)CHARSET=latin1 COLLATE=latin1_bin;
@@ -206,5 +211,6 @@ a	b	c
 1	test111	1
 2	test222	2
 DROP TABLE charset_sequoiadb_1,charset_sequoiadb_2,charset_sequoiadb_3,charset_sequoiadb_4,charset_sequoiadb_5,charset_sequoiadb_6,charset_sequoiadb_7,charset_sequoiadb_8;
+DROP DATABASE charset_sequoiadb;
 SET SESSION sequoiadb_support_mode=DEFAULT;
 set names default;
