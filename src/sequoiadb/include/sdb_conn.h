@@ -255,6 +255,10 @@ class Sdb_conn {
 
   inline bool is_transaction_on() { return m_transaction_on; }
 
+  inline void set_transaction(bool transaction) {
+    m_transaction_on = transaction;
+  }
+
   int get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
              const bool check_exist = false,
              Mapping_context *mapping_ctx = NULL);
@@ -335,7 +339,9 @@ class Sdb_conn {
 
   int analyze(const bson::BSONObj &options);
 
-  inline void set_pushed_autocommit() { pushed_autocommit = true; }
+  inline void set_pushed_autocommit(bool autocommit = true) {
+    pushed_autocommit = autocommit;
+  }
 
   inline bool get_pushed_autocommit() { return pushed_autocommit; }
 
@@ -449,6 +455,7 @@ class Sdb_conn {
       memset(m_error_message, 0, sizeof(int32));
     }
   }
+
  protected:
   int retry(boost::function<int()> func);
 
@@ -471,6 +478,7 @@ class Sdb_conn {
  public:
   char *m_error_message;
   uint32 m_error_size;
+
  protected:
   // use original connection
   int raw_connect(const char *conn_addr);

@@ -1704,9 +1704,9 @@ int ha_sdb::reset() {
   DBUG_ENTER("ha_sdb::reset");
   DBUG_PRINT("info", ("table name %s, handler %p", table_name, this));
 
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   Sdb_conn *connection = NULL;
 #ifdef IS_MARIADB
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
   if (thd_sdb && thd_sdb->part_del_ren_ctx) {
     delete thd_sdb->part_del_ren_ctx;
     thd_sdb->part_del_ren_ctx = NULL;
@@ -5711,6 +5711,7 @@ error:
 int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
   DBUG_ENTER("ha_sdb::rnd_pos()");
   int rc = 0;
+  int flag = 0;
   bson::BSONObjBuilder obj_builder;
   bson::OID oid;
   bson::BSONObj cond;
@@ -5737,8 +5738,18 @@ int ha_sdb::rnd_pos(uchar *buf, uchar *pos) {
     sdb_build_clientinfo(ha_thd(), builder);
     hint = builder.obj();
 
+    rc = get_query_flag(thd_sql_command(ha_thd()), m_lock_type, flag, true);
+    if (rc != 0) {
+      goto error;
+    }
+
+    rc = convert_autocommit_to_normal_trans();
+    if (rc != 0) {
+      goto error;
+    }
+
     rc = collection->query_one(cur_rec, cond, SDB_EMPTY_BSON, SDB_EMPTY_BSON,
-                               hint);
+                               hint, -1, flag);
     if (rc) {
       goto error;
     }
@@ -6329,6 +6340,31 @@ int ha_sdb::autocommit_statement(bool direct_op) {
   DBUG_PRINT("ha_sdb:info", ("pushdown autocommit flag: %d.",
                              (direct_op || conn->get_pushed_autocommit())));
 
+done:
+  return rc;
+}
+
+bool ha_sdb::convert_autocommit_to_normal_trans() {
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
+  if (0 != rc) {
+    goto done;
+  }
+
+  if (conn->get_pushed_autocommit()) {
+    conn->set_transaction(false);
+    conn->set_pushed_autocommit(false);
+    SDB_LOG_DEBUG("convert autocommit to normal transaction, autocommit: %d",
+                  conn->get_pushed_autocommit());
+    rc = conn->begin_transaction(ha_thd()->tx_isolation);
+    if (rc != 0) {
+      SDB_PRINT_ERROR(rc, "%s", conn->get_err_msg());
+      conn->clear_err_msg();
+      goto done;
+    }
+  }
 done:
   return rc;
 }
@@ -8502,14 +8538,13 @@ void ha_sdb::unlock_row() {
 }
 
 int ha_sdb::get_query_flag(const uint sql_command, enum thr_lock_type lock_type,
-                           int &query_flag) {
+                           int &query_flag, bool explicit_lock) {
   /*
    1.We always add flag QUERY_WITH_RETURNDATA to improve performance
-   2.we need to add the lock related flag QUERY_FOR_UPDATE in the following cases:
-    A. SELECT ... FOR UPDATE
-    B. doing query in UPDATE ... or DELETE ...
-   3.when we open multiple transactions for select we should use flag QUERY_FOR_SHARE prevent timeout
-    A. SELECT ... LOCK IN SHARE MODE
+   2.we need to add the lock related flag QUERY_FOR_UPDATE in the following
+   cases: A. SELECT ... FOR UPDATE B. doing query in UPDATE ... or DELETE ...
+   3.when we open multiple transactions for select we should use flag
+   QUERY_FOR_SHARE prevent timeout A. SELECT ... LOCK IN SHARE MODE
   */
   int rc = 0;
   int fix = 0;
@@ -8525,7 +8560,8 @@ int ha_sdb::get_query_flag(const uint sql_command, enum thr_lock_type lock_type,
   if (rc != 0) {
     goto error;
   }
-  if (TL_READ_WITH_SHARED_LOCKS == lock_type) {
+  if (TL_READ_WITH_SHARED_LOCKS == lock_type ||
+      (TL_READ == lock_type && explicit_lock)) {
     if (!(major < 3 ||                               // x < 3
           (3 == major && minor < 2) ||               // 3.x < 3.2
           (3 == major && 2 == minor && fix < 9) ||   // 3.2.x < 3.2.9
@@ -8538,7 +8574,10 @@ int ha_sdb::get_query_flag(const uint sql_command, enum thr_lock_type lock_type,
   if (lock_type >= TL_WRITE_CONCURRENT_INSERT &&
       (SQLCOM_UPDATE == sql_command || SQLCOM_DELETE == sql_command ||
        SQLCOM_SELECT == sql_command || SQLCOM_UPDATE_MULTI == sql_command ||
-       SQLCOM_DELETE_MULTI == sql_command)) {
+       SQLCOM_DELETE_MULTI == sql_command ||
+       (SQLCOM_INSERT == sql_command &&
+        explicit_lock)  // Insert into on duplicate
+       )) {
     query_flag |= QUERY_FOR_UPDATE;
   }
 done:
