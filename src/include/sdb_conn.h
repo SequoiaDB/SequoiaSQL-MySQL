@@ -234,6 +234,10 @@ class Sdb_conn {
 
   inline bool is_transaction_on() { return m_transaction_on; }
 
+  inline void set_transaction(bool transaction) {
+    m_transaction_on = transaction;
+  }
+
   int get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
              const bool check_exist = false);
 
@@ -268,7 +272,9 @@ class Sdb_conn {
 
   bool is_authenticated() { return m_is_authenticated; }
 
-  inline void set_pushed_autocommit() { pushed_autocommit = true; }
+  inline void set_pushed_autocommit(bool autocommit = true) {
+    pushed_autocommit = autocommit;
+  }
 
   inline bool get_pushed_autocommit() { return pushed_autocommit; }
 
