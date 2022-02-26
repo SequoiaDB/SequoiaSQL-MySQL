@@ -452,23 +452,43 @@ class ha_sdb : public handler {
     it again. This is a required method.
   */
   int rnd_init(bool scan);
+
   int rnd_end();
+
   int rnd_next(uchar *buf);
+
   int rnd_pos(uchar *buf, uchar *pos);
+
   void position(const uchar *record);
+
   int info(uint);
+
   int extra(enum ha_extra_function operation);
+
   int external_lock(THD *thd, int lock_type);
+
   bool pushdown_autocommit();
+
   int autocommit_statement(bool direct_op = false);
+
+  bool convert_autocommit_to_normal_trans();
+
   int start_statement(THD *thd, uint table_count);
+
   int delete_all_rows(void);
+
   int truncate();
+
   int analyze(THD *thd, HA_CHECK_OPT *check_opt);
+
   ha_rows records_in_range(uint inx, key_range *min_key, key_range *max_key);
+
   int delete_table(const char *from);
+
   int rename_table(const char *from, const char *to);
+
   int create(const char *name, TABLE *form, HA_CREATE_INFO *create_info);
+
   void update_create_info(HA_CREATE_INFO *create_info);
 
   THR_LOCK_DATA **store_lock(THD *thd, THR_LOCK_DATA **to,
@@ -559,7 +579,8 @@ class ha_sdb : public handler {
 
   my_bool get_cond_from_key(const KEY *unique_key, bson::BSONObj &cond);
 
-  int get_query_flag(const uint sql_command, enum thr_lock_type lock_type);
+  int get_query_flag(const uint sql_command, enum thr_lock_type lock_type,
+                     bool explicit_lock = false);
 
   int update_stats(THD *thd, bool do_read_stat);
 
