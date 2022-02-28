@@ -1,11 +1,7 @@
 package com.sequoiasql.metadatamapping;
 
-import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 
-import com.sequoiadb.threadexecutor.ResultStore;
-import com.sequoiadb.threadexecutor.ThreadExecutor;
-import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -13,10 +9,17 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import com.sequoiadb.base.Sequoiadb;
-import com.sequoiasql.testcommon.*;
+import com.sequoiadb.threadexecutor.ResultStore;
+import com.sequoiadb.threadexecutor.ThreadExecutor;
+import com.sequoiadb.threadexecutor.annotation.ExecuteOrder;
+import com.sequoiasql.testcommon.CommLib;
+import com.sequoiasql.testcommon.JdbcInterface;
+import com.sequoiasql.testcommon.JdbcInterfaceFactory;
+import com.sequoiasql.testcommon.JdbcWarpperType;
+import com.sequoiasql.testcommon.MysqlTestBase;
 
 /**
- * @Description seqDB-24609:表数量/映射表规则测试（M * N）
+ * @Description seqDB-24609:表数量/映射表规则测试（M * N）。默认10 * 1024。
  * @Author liuli
  * @Date 2021.11.13
  * @UpdateAuthor liuli
@@ -24,12 +27,14 @@ import com.sequoiasql.testcommon.*;
  * @version 1.10
  */
 public class MetaDataMapping24609 extends MysqlTestBase {
-    private String csName = "cs_24609";
-    private String clName = "cl_24609_";
+    private String dbName = "db_24609";
+    private String tableNamePrefix = "tb_24609_";
     private Sequoiadb sdb = null;
-    private int mappingCount = 1024;
-    private int mappingSize = 9;
+    // mappingCLNum max default: 10 * 1024
+    private int mappingCLNum = 3 * 1024; // value min: 1 * 1024 + 1
+    private int actCLcount = 0;
     private JdbcInterface jdbc;
+    private String instGroupName;
 
     @BeforeClass
     public void setUp() throws Exception {
@@ -37,122 +42,118 @@ public class MetaDataMapping24609 extends MysqlTestBase {
         if ( CommLib.isStandAlone( sdb ) ) {
             throw new SkipException( "is standalone skip testcase" );
         }
-        if ( sdb.isCollectionSpaceExist( csName ) ) {
-            sdb.dropCollectionSpace( csName );
+        if ( sdb.isCollectionSpaceExist( dbName ) ) {
+            sdb.dropCollectionSpace( dbName );
         }
 
         jdbc = JdbcInterfaceFactory
                 .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-        jdbc.dropDatabase( csName );
-        jdbc.createDatabase( csName );
+        jdbc.dropDatabase( dbName );
+        jdbc.createDatabase( dbName );
+
+        instGroupName = MetaDataMappingUtils
+                .getInstGroupName( sdb, MysqlTestBase.mysql1 ).toUpperCase();
     }
 
     @Test
     public void test() throws Exception {
-        // 创建256个range分区表每个表包含2个分区
+        // 创建256个range分区表，每个表包含2个分区，映射到sdb：256个主表（不计数）、256*2个子表
         for ( int i = 0; i < 256; i++ ) {
-            jdbc.update( "create table " + csName + "." + clName + "range" + i
-                    + "(a int,b int) partition by range(a) (partition p1 values less than(1500),partition p2 values less than(3000));" );
-            jdbc.update( "insert into " + csName + "." + clName + "range" + i
-                    + " values(1000,2000),(2000,2000)" );
+            jdbc.update( "create table " + dbName + "." + tableNamePrefix
+                    + "range_" + i + "(a int,b int) partition by range(a) ("
+                    + "partition p1 values less than(1500),"
+                    + "partition p2 values less than(3000));" );
+            jdbc.update( "insert into " + dbName + "." + tableNamePrefix
+                    + "range_" + i + " values(1000,2000),(2000,2000)" );
         }
-        // 创建256个hash分区表
+        actCLcount += 256 * 2;
+        checkSdbCS( true );
+
+        // 创建256个hash分区表，每个表4个分区，映射到sdb：256个分区表（自动切分表）
         for ( int i = 0; i < 256; i++ ) {
-            jdbc.update( "create table " + csName + "." + clName + "hash" + i
+            jdbc.update( "create table " + dbName + "." + tableNamePrefix
+                    + "hash_" + i
                     + "(a int,b int) partition by hash(a) partitions 4" );
-            jdbc.update( "insert into " + csName + "." + clName + "hash" + i
-                    + " values(1000,2000),(2000,2000)" );
+            jdbc.update( "insert into " + dbName + "." + tableNamePrefix
+                    + "hash_" + i + " values(1000,2000),(2000,2000)" );
         }
-        // 创建255个普通表
+        actCLcount += 256;
+
+        // 创建255个普通表，映射到sdb：255个普通表
         for ( int i = 0; i < 255; i++ ) {
-            jdbc.update( "create table " + csName + "." + clName + i
+            jdbc.update( "create table " + dbName + "." + tableNamePrefix + i
                     + "(a int,b int)" );
-            jdbc.update( "insert into " + csName + "." + clName + i
+            jdbc.update( "insert into " + dbName + "." + tableNamePrefix + i
                     + " values(1000,2000),(2000,2000)" );
         }
-        // 在一个range分区表中添加一个分区
-        jdbc.update( "alter table " + csName + "." + clName + "range1 "
+        actCLcount += 255;
+        // 此时映射到sdb的表个数：256*2+256+255 = 1024-1
+
+        // 在一个range分区表中添加一个分区，此时映射到sdb的表个数（有计数的表个数）：256*2+256+255+1 = 1024
+        jdbc.update( "alter table " + dbName + "." + tableNamePrefix
+                + "range_1 "
                 + "add partition (partition p3 values less than(5000))" );
-        // 校验sdb端的集合空间
-        String instanceGroupName = MetaDataMappingUtils
-                .getInstGroupName( sdb, MysqlTestBase.mysql1 ).toUpperCase();
-        Assert.assertTrue( sdb.isCollectionSpaceExist(
-                instanceGroupName + "#" + csName + "#1" ) );
-        Assert.assertFalse( sdb.isCollectionSpaceExist(
-                instanceGroupName + "#" + csName + "#2" ) );
+        actCLcount += 1;
+        checkSdbCS( true );
 
-        // 删除一个分区后再创建一个hash分区表
-        jdbc.update( "alter table " + csName + "." + clName + "range1 "
-                + "drop partition p3" );
-        jdbc.update( "create table " + csName + "." + clName + "hash" + 257
-                + "(a int,b int) partition by hash(a) partitions 4" );
-        // 校验sdb端的集合空间
-        Assert.assertTrue( sdb.isCollectionSpaceExist(
-                instanceGroupName + "#" + csName + "#1" ) );
-        Assert.assertFalse( sdb.isCollectionSpaceExist(
-                instanceGroupName + "#" + csName + "#2" ) );
+        // 删除一个分区后再创建一个hash分区表，此时映射到sdb的表个数不变：1024
+        jdbc.update( "alter table " + dbName + "." + tableNamePrefix
+                + "range_1 " + "drop partition p3" );
+        jdbc.update( "create table " + dbName + "." + tableNamePrefix + "hash"
+                + 257 + "(a int,b int) partition by hash(a) partitions 4" );
+        checkSdbCS( true );
 
-        // 再次在一个range分区表中添加一个分区
-        jdbc.update( "alter table " + csName + "." + clName + "range1 "
+        // 再次在一个range分区表中添加一个分区，此时映射到sdb的表个数（有计数的表个数）：1024+1
+        jdbc.update( "alter table " + dbName + "." + tableNamePrefix
+                + "range_1 "
                 + "add partition (partition p3 values less than(5000))" );
-        // 校验sdb端的集合空间
-        Assert.assertTrue( sdb.isCollectionSpaceExist(
-                instanceGroupName + "#" + csName + "#1" ) );
-        Assert.assertTrue( sdb.isCollectionSpaceExist(
-                instanceGroupName + "#" + csName + "#2" ) );
+        actCLcount += 1;
+        checkSdbCS( true );
 
-        // 现在一共存在1025个表，继续创建普通表，使表总数达到1024*10个
+        // 再次删除一个分区，此时映射到sdb的表个数不变：1024，此时#2存在range_1 p3分区表
+        jdbc.update( "alter table " + dbName + "." + tableNamePrefix
+                + "range_1 " + "drop partition p2" );
+        actCLcount -= 1;
+
+        // 继续创建普通表
         ThreadExecutor es = new ThreadExecutor( 2000000 );
-        int startNum = 1025;
-        int tableNum;
-        for ( tableNum = startNum + 512; tableNum < mappingCount
-                * mappingSize; tableNum = tableNum + 512 ) {
-            CreateTable createTable = new CreateTable( startNum, tableNum );
+        for ( int i = 0; i < mappingCLNum - actCLcount; i += 128 ) {
+            CreateTable createTable = new CreateTable( i, i + 128 );
             es.addWorker( createTable );
-            startNum = startNum + 512;
         }
-        es.addWorker( new CreateTable( startNum, mappingCount * mappingSize ) );
         es.run();
-
         // 校验sdb端的集合空间
-        for ( int i = 1; i < mappingSize + 1; i++ ) {
-            Assert.assertTrue( sdb.isCollectionSpaceExist(
-                    instanceGroupName + "#" + csName + "#" + i ) );
-        }
-        Assert.assertFalse( sdb.isCollectionSpaceExist( instanceGroupName + "#"
-                + csName + "#" + ( mappingSize + 1 ) ) );
+        actCLcount = mappingCLNum;
+        checkSdbCS( true );
 
-        // 再次创建一个普通表
-        try {
-            jdbc.update( "create table " + csName + "." + clName + "test"
-                    + "(a int,b int)" );
-            Assert.fail( "should error but success" );
-        } catch ( SQLException e ) {
-            if ( e.getErrorCode() != 30013 ) {
-                throw e;
+        // 当映射表个数达到默认的 10 * 1024 时，再次创建一个普通表或添加分区，超过默认的最大映射表个数创建失败
+        if ( mappingCLNum == 10 * 1024 ) {
+            // 创建普通表
+            try {
+                jdbc.update( "create table " + dbName + "." + tableNamePrefix
+                        + "test" + "(a int,b int)" );
+                Assert.fail( "should error but success" );
+            } catch ( SQLException e ) {
+                if ( e.getErrorCode() != 30013 ) {
+                    throw e;
+                }
             }
-        }
-
-        // 再次在一个range分区表中添加一个分区
-        try {
-            jdbc.update( "alter table " + csName + "." + clName + "range2 "
-                    + "add partition (partition p3 values less than(5000))" );
-            Assert.fail( "should error but success" );
-        } catch ( SQLException e ) {
-            // ERROR 30013 (HY000): Too many tables in current database, the upper limit is 10240
-            if ( e.getErrorCode() != 30013 ) {
-                throw e;
+            // range分区表添加一个分区
+            try {
+                jdbc.update( "alter table " + dbName + "." + tableNamePrefix
+                        + "range_2 "
+                        + "add partition (partition p3 values less than(5000))" );
+                Assert.fail( "should error but success" );
+            } catch ( SQLException e ) {
+                if ( e.getErrorCode() != 30013 ) {
+                    throw e;
+                }
             }
         }
 
         // mysql端删除数据库
-        jdbc.update( "drop database " + csName );
-
-        // sdb端校验集合空间被删除
-        for ( int i = 1; i < mappingSize + 1; i++ ) {
-            Assert.assertFalse( sdb.isCollectionSpaceExist(
-                    instanceGroupName + "#" + csName + "#" + i ) );
-        }
+        jdbc.update( "drop database " + dbName );
+        checkSdbCS( false );
     }
 
     @AfterClass
@@ -171,39 +172,73 @@ public class MetaDataMapping24609 extends MysqlTestBase {
         }
 
         @ExecuteOrder(step = 1)
-        public void exec() throws SQLException, InvocationTargetException,
-                ClassNotFoundException, InstantiationException,
-                NoSuchMethodException, IllegalAccessException {
+        public void exec() throws Exception {
             JdbcInterface jdbc = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-            int i = 0;
-            int failNum = 0;
             try {
-                for ( i = startNum; i < endNum; i++ ) {
-                    try {
-                        // 连续失败10次抛错
-                        if ( failNum > 10 ) {
-                            Assert.fail(
-                                    "10 consecutive failures, the number of tables may exceed the upper limit" );
+                for ( int i = startNum; i < endNum; i++ ) {
+                    int currTimes = 0;
+                    int retryTimes = 300;
+                    while ( currTimes <= retryTimes ) {
+                        try {
+                            jdbc.update( "create table " + dbName + "."
+                                    + tableNamePrefix + "thr_" + i
+                                    + "(a int,b int)" );
+                            jdbc.update( "insert into " + dbName + "."
+                                    + tableNamePrefix + "thr_" + i
+                                    + " values(1000,2000),(2000,2000)" );
+                            break;
+                        } catch ( SQLException e ) {
+                            // ERROR 30013 (HY000): Too many tables in current
+                            // database, the upper limit is 10 * 1024
+                            // SEQUOIASQLMAINSTREAM-1230
+                            if ( e.getErrorCode() == 30013
+                                    || e.getErrorCode() == 40190 ) {
+                                Thread.sleep(
+                                        ( ( int ) Math.random() * 200 ) + 100 );
+                                currTimes++;
+                                if ( currTimes >= retryTimes ) {
+                                    throw new Exception(
+                                            "Retry timeout, create table failed." );
+                                }
+                            } else {
+                                throw e;
+                            }
                         }
-                        jdbc.update( "create table " + csName + "." + clName + i
-                                + "(a int,b int)" );
-                        jdbc.update( "insert into " + csName + "." + clName + i
-                                + " values(1000,2000),(2000,2000)" );
-                        failNum = 0;
-                    } catch ( SQLException e ) {
-                        // ERROR 30013 (HY000): Too many tables in current
-                        // database, the upper limit is 10240
-                        if ( e.getErrorCode() != 30013 ) {
-                            throw e;
-                        }
-                        i--;
-                        failNum++;
                     }
                 }
             } finally {
                 jdbc.close();
             }
         }
+    }
+
+    /**
+     * 小库场景CS后缀编号默认#1开始
+     * 
+     * @throws Exception
+     */
+    private void checkSdbCS( boolean isExist ) throws Exception {
+        int num = actCLcount / 1024;
+        if ( ( actCLcount % 1024 ) > 0 )
+            num++;
+        for ( int i = 1; i <= num; i++ ) {
+            if ( isExist ) {
+                Assert.assertTrue(
+                        sdb.isCollectionSpaceExist(
+                                instGroupName + "#" + dbName + "#" + num ),
+                        "actCLcount = " + actCLcount + ", i = " + i );
+            } else {
+                Assert.assertFalse(
+                        sdb.isCollectionSpaceExist(
+                                instGroupName + "#" + dbName + "#" + num ),
+                        "actCLcount = " + actCLcount + ", i = " + i );
+            }
+        }
+        Assert.assertFalse(
+                sdb.isCollectionSpaceExist(
+                        instGroupName + "#" + dbName + "#" + ( num + 1 ) ),
+                "actCLcount = " + actCLcount + ", num =" + num );
+        Assert.assertFalse( sdb.isCollectionSpaceExist( dbName ) );
     }
 }
