@@ -29,7 +29,8 @@
 
     <test name="normaltest" parallel="classes" thread-count="5">
         <packages>
-            <package name="com.sequoiasql.datasrc"/>
+            <!--SEQUOIADBMAINSTREAM-8102暂时屏蔽-->
+            <!--<package name="com.sequoiasql.datasrc"/>-->
             <package name="com.sequoiasql.index"/>
         </packages>
     </test>
