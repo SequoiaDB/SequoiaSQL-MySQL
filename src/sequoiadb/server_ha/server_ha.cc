@@ -2176,15 +2176,6 @@ error:
   goto done;
 }
 
-// set mariadb THD::killed state to KILL_QUERY
-static void set_abort_query_flag(THD *thd) {
-#ifdef IS_MARIADB
-  thd->set_killed(KILL_QUERY);
-#else
-  // thd->killed = THD::KILL_QUERY;
-#endif
-}
-
 static void init_ha_event_general(ha_event_general &ha_event, const void *ev,
                                   ha_event_class_t event_class) {
   ha_event.general_error_code = -1;
@@ -4733,7 +4724,6 @@ done:
   set_overwrite_status(thd, event, false);
   DBUG_RETURN(rc);
 error:
-  set_abort_query_flag(thd);
   if (sql_info->sdb_conn) {
     ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
   }
