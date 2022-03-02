@@ -791,7 +791,7 @@ select * from t1 where a<=c;
 --sorted_result
 select * from t1 where time_to_sec(a) = 3020398;
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a asc limit 1 offset 2;
 
 drop table t1;
@@ -1103,7 +1103,7 @@ select * from t1 where year(a)=2012;
 --sorted_result
 select * from t1 where a > '10000-01-01 00:00:01.000000';
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a limit 1 offset 2;
 drop table t1;
 
@@ -1407,7 +1407,7 @@ select * from t1 where abs(a) = 32767;
 --sorted_result
 select * from t1 where a > -1;
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a asc limit 1 offset 2;
 
 drop table t1;
@@ -1508,7 +1508,7 @@ select * from t1 where a < c;
 select * from t1 where abs(a) = 65534;
 --sorted_result
 select * from t1 where a > -1;
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a limit 1 offset 2;
 
 drop table t1;
@@ -1714,7 +1714,7 @@ select * from t1 where abs(a) = 16777215;
 --sorted_result
 select * from t1 where a > -1;
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a limit 1 offset 2;
 
 drop table t1;
@@ -1817,7 +1817,7 @@ select * from t1 where abs(a) = 2147483646;
 --sorted_result
 select * from t1 where a > -2147483649;
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a asc limit 1 offset 2;
 
 drop table t1;
@@ -2026,7 +2026,7 @@ select * from t1 where abs(a) = 922337203685477806;
 --sorted_result
 select * from t1 where a > -922337203685477809;
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a asc limit 1 offset 2;
 
 drop table t1;
@@ -2135,7 +2135,7 @@ select * from t1 where abs(a) = 18446744073709551615;
 select * from t1 where a > -1;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a limit 1 offset 2;
 
 drop table t1;
@@ -2246,7 +2246,7 @@ select * from t1 where abs(a) = 999.99;
 --sorted_result
 select * from t1 where a > -10;
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a asc limit 1 offset 2;
 
 drop table t1;
@@ -2357,7 +2357,7 @@ select * from t1 where abs(a) = 999.97;
 --sorted_result
 select * from t1 where a > -1;
 
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 select * from t1 order by a limit 1 offset 2;
 
 drop table t1;

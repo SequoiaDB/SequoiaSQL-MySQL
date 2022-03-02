@@ -1946,7 +1946,7 @@ id	a	b	c
 select * from t1 where time_to_sec(a) = 3020398;
 id	a	b	c
 5	838:59:58	a	838:59:57
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 4	838:59:59	a	838:59:59
 5	838:59:58	a	838:59:57
@@ -2480,7 +2480,7 @@ id	a	b	c
 Warning	1292	Incorrect datetime value: '10000-01-01 00:00:01.000000' for column 'a' at row 1
 Warning	1292	Incorrect datetime value: '10000-01-01 00:00:01.000000' for column 'a' at row 1
 Warnings:
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 2	9999-12-31 23:59:59.999999	2	9999-12-31 23:59:59.999999
 6	9999-12-31 23:59:59.999998	6	9999-12-31 23:59:59.999997
@@ -3064,7 +3064,7 @@ id	a	b	c
 4	32767	4	32767
 5	32765	5	32769
 6	32766	6	32765
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 4	32767	4	32767
 6	32766	6	32765
@@ -3259,7 +3259,7 @@ id	a	b	c
 4	65535	4	65536
 5	65534	5	65533
 6	65533	6	65533
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 4	65535	4	65536
 5	65534	5	65533
@@ -3636,7 +3636,7 @@ id	a	b	c
 4	16777215	4	16777216
 5	16777214	5	16777215
 6	16777213	6	16777212
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 4	16777215	4	16777216
 5	16777214	5	16777215
@@ -3819,7 +3819,7 @@ id	a	b	c
 4	2147483647	4	2147483648
 5	2147483645	5	2147483644
 6	2147483646	6	2147483646
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 4	2147483647	4	2147483648
 6	2147483646	6	2147483646
@@ -4207,7 +4207,7 @@ id	a	b	c
 4	922337203685477807	4	922337203685477808.0
 5	922337203685477805	5	922337203685477804.0
 6	922337203685477806	6	922337203685477806.0
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 4	922337203685477807	4	922337203685477808.0
 6	922337203685477806	6	922337203685477806.0
@@ -4403,7 +4403,7 @@ id	a	b	c
 5	18446744073709551613	5	18446744073709551612.0
 6	18446744073709551614	6	18446744073709551614.0
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": -1 } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 4	18446744073709551615	4	18446744073709551616.0
 6	18446744073709551614	6	18446744073709551614.0
@@ -4604,7 +4604,7 @@ id	a	b	c
 5	999.98	3	999.97
 6	999.97	4	999.98
 7	0.00	7	0.00
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 1	999.99	0	999.99
 5	999.98	3	999.97
@@ -4765,7 +4765,7 @@ id	a	b	c
 2	999.99	2	999.99
 3	999.97	3	999.99
 4	999.98	4	999.97
-select * from t1 order by a desc;
+select * from t1 order by a desc,b desc,c desc;
 id	a	b	c
 2	999.99	2	999.99
 4	999.98	4	999.97
@@ -9573,8 +9573,8 @@ SELECT * FROM t1 WHERE tjrq = '2021-04-06' AND comcode = '2100' LIMIT 2;
 tjrq	xh	comcode
 2021-04-06	101	2100
 2021-04-06	101	2100
-[Note] SequoiaDB: Query message: condition[{ "tjrq": { "$et": {"$date": "2021-04-06"} } }], selector[{}], order_by[{ "tjrq": 1, "_id": 1 }], hint[{ "": "tjrq_index" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 [Note] SequoiaDB: Query message: condition[{ "comcode": { "$et": "2100" } }], selector[{}], order_by[{ "comcode": 1, "_id": 1 }], hint[{ "": "comcode_index" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
 SET SESSION optimizer_switch="index_merge_intersection=off";
 EXPLAIN SELECT * FROM t1 WHERE tjrq = '2021-04-06' AND comcode = '2100' LIMIT 2;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
@@ -15252,9 +15252,12 @@ Note	1003	/* select#1 */ select count(0) AS `count(*)` from `query_pushdown_test
 SELECT count(*) FROM t1 WHERE id in(1,2);
 count(*)
 2
+analyze table t1;
+Table	Op	Msg_type	Msg_text
+query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT count(name) FROM t1 WHERE id = 3 OR age > 18;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
-1	SIMPLE	t1	NULL	index_merge	PRIMARY,age	PRIMARY,age	4,5	NULL	8	100.00	Using sdb_sort_union(PRIMARY,age); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`id` = 3) or (`query_pushdown_test_sequoiadb`.`t1`.`age` > 18))
+1	SIMPLE	t1	NULL	index_merge	PRIMARY,age	PRIMARY,age	4,5	NULL	3	100.00	Using sdb_sort_union(PRIMARY,age); Using where with pushed condition ((`query_pushdown_test_sequoiadb`.`t1`.`id` = 3) or (`query_pushdown_test_sequoiadb`.`t1`.`age` > 18))
 Warnings:
 Note	1003	/* select#1 */ select count(`query_pushdown_test_sequoiadb`.`t1`.`name`) AS `count(name)` from `query_pushdown_test_sequoiadb`.`t1` where ((`query_pushdown_test_sequoiadb`.`t1`.`id` = 3) or (`query_pushdown_test_sequoiadb`.`t1`.`age` > 18))
 SELECT count(name) FROM t1 WHERE id = 3 OR age > 18;
