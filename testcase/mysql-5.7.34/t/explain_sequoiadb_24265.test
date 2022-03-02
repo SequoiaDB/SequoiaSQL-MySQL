@@ -1,4 +1,9 @@
 # Testcase: seqDB-24265
+--disable_warnings
+drop database if exists explain_sequoiadb_24265;
+--enable_warnings
+create database explain_sequoiadb_24265;
+drop database explain_sequoiadb_24265;
 
 create database explain_sequoiadb_24265;
 use explain_sequoiadb_24265;

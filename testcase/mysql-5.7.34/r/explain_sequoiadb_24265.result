@@ -1,3 +1,6 @@
+drop database if exists explain_sequoiadb_24265;
+create database explain_sequoiadb_24265;
+drop database explain_sequoiadb_24265;
 create database explain_sequoiadb_24265;
 use explain_sequoiadb_24265;
 drop table if exists t1,t2;
