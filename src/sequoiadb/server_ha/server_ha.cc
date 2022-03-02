@@ -4494,8 +4494,13 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       }
     }
     goto done;
-  } else if (!ha_thread.recover_finished) {  // current instance is recovering
+  } else if (!ha_thread.recover_finished ||  // current instance is recovering
+             SDB_COND_INJECT("test_point_wait_ha_recover")) {
     struct timespec abstime;
+    if (SDB_ERROR_INJECT_ERROR("fail_on_wait_ha_recover")) {
+      rc = SDB_HA_EXCEPTION;
+      goto error;
+    }
     sdb_set_clock_time(abstime, ha_wait_recover_timeout);
 
     SDB_LOG_INFO("HA: Waiting for completion of recover process");
