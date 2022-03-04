@@ -8477,13 +8477,54 @@ error:
   goto done;
 }
 
+bool ha_sdb::support_Async() {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
+  if (0 != rc) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (NULL == conn) {
+    goto error;
+  }
+
+  if (!(major < 3 ||                               // x < 3
+        ((3 == major && minor < 4) ||              // 3.x < 3.4
+         (3 == major && 4 == minor && fix < 5) ||  // 3.4.x < 3.4.5
+         (5 == major && 0 == minor && fix < 3))))  //  5.0.x < 5.0.3
+  {
+    supported = true;
+  } else {
+    supported = false;
+  }
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   DBUG_ENTER("ha_sdb::create");
 
   int rc = 0;
+  longlong tmp_taskID = -1;
   Sdb_conn *conn = NULL;
   THD *thd = ha_thd();
   Sdb_cl cl;
+  longlong *taskID = NULL;
   bool has_copy = false;
   bool created_cs = false;
   bool created_cl = false;
@@ -8666,16 +8707,43 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     }
   }
 
-  for (uint i = 0; i < form->s->keys; i++) {
-    rc = sdb_create_index(form->s->key_info + i, cl);
-    if (0 != rc) {
-      // we disabled sharding index,
-      // so do not ignore SDB_IXM_EXIST_COVERD_ONE
+  if (support_Async()) {
+    taskID = new (std::nothrow) longlong[form->s->keys]();
+    if (taskID == NULL) {
+      rc = HA_ERR_OUT_OF_MEM;
       goto error;
+    }
+
+    for (uint i = 0; i < form->s->keys; i++) {
+      rc = sdb_create_index(form->s->key_info + i, cl, taskID[i], true);
+      if (0 != rc) {
+        // we disabled sharding index,
+        // so do not ignore SDB_IXM_EXIST_COVERD_ONE
+        goto error;
+      }
+    }
+
+    rc = conn->waitTasks(taskID, (int)form->s->keys);
+    if (rc != 0) {
+      goto error;
+    }
+  } else {
+    for (uint i = 0; i < form->s->keys; i++) {
+      rc = sdb_create_index(form->s->key_info + i, cl, tmp_taskID, false);
+      if (0 != rc) {
+        // we disabled sharding index,
+        // so do not ignore SDB_IXM_EXIST_COVERD_ONE
+        goto error;
+      }
     }
   }
 
 done:
+  if (taskID != NULL) {
+    delete[] taskID;
+    taskID = NULL;
+  }
+
   if (0 == rc && !create_temporary && !has_copy && ha_is_open() &&
       !sdb_execute_only_in_mysql(ha_thd())) {
     // update cached cata version, it will be written into sequoiadb

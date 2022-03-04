@@ -2194,6 +2194,7 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   DBUG_ENTER("ha_sdb_part::create");
 
   int rc = 0;
+  longlong tmp_taskID = -1;
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
   bson::BSONObjBuilder build;
@@ -2206,7 +2207,7 @@ int ha_sdb_part::create(const char *name, TABLE *form,
   bool mapping_persisted = false;
   partition_info *part_info = form->part_info;
   bool sharded_by_phid = is_sharded_by_part_hash_id(part_info);
-
+  longlong *taskID = NULL;
   bool is_part_table = (RANGE_PARTITION == part_info->part_type ||
                         LIST_PARTITION == part_info->part_type);
   bson::BSONObj mapping_opts;
@@ -2376,24 +2377,48 @@ int ha_sdb_part::create(const char *name, TABLE *form,
       }
     }
 
-    for (uint i = 0; i < form->s->keys; i++) {
-      const KEY *key_info = form->s->key_info + i;
-
-      if ((key_info->flags & HA_NOSAME) && sharded_by_phid &&
-          !sdb_is_key_include_part_func_column(form, key_info)) {
-        rc = SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY;
-        convert_sdb_code(rc);
-        my_printf_error(
-            rc, "The unique index must include all fields in sharding key",
-            MYF(0));
+    if (support_Async()) {
+      taskID = new (std::nothrow) longlong[form->s->keys]();
+      if (taskID == NULL) {
+        rc = HA_ERR_OUT_OF_MEM;
         goto error;
       }
-
-      rc = sdb_create_index(key_info, cl, sharded_by_phid);
+      for (uint i = 0; i < form->s->keys; i++) {
+        const KEY *key_info = form->s->key_info + i;
+        if ((key_info->flags & HA_NOSAME) && sharded_by_phid &&
+            !sdb_is_key_include_part_func_column(form, key_info)) {
+          rc = SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY;
+          convert_sdb_code(rc);
+          my_printf_error(
+              rc, "The unique index must include all fields in sharding key",
+              MYF(0));
+          goto error;
+        }
+        rc = sdb_create_index(key_info, cl, taskID[i], true, sharded_by_phid);
+        if (rc != 0) {
+          goto error;
+        }
+      }
+      rc = conn->waitTasks(taskID, (int)form->s->keys);
       if (rc != 0) {
-        // we disabled sharding index,
-        // so do not ignore SDB_IXM_EXIST_COVERD_ONE
         goto error;
+      }
+    } else {
+      for (uint i = 0; i < form->s->keys; i++) {
+        const KEY *key_info = form->s->key_info + i;
+        if ((key_info->flags & HA_NOSAME) && sharded_by_phid &&
+            !sdb_is_key_include_part_func_column(form, key_info)) {
+          rc = SDB_SHARD_KEY_NOT_IN_UNIQUE_KEY;
+          convert_sdb_code(rc);
+          my_printf_error(
+              rc, "The unique index must include all fields in sharding key",
+              MYF(0));
+          goto error;
+        }
+        rc = sdb_create_index(key_info, cl, tmp_taskID, false, sharded_by_phid);
+        if (rc != 0) {
+          goto error;
+        }
       }
     }
   }
@@ -2406,6 +2431,10 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     ha_set_cata_version(db_name, table_name, cl.get_version());
   }
 done:
+  if (taskID != NULL) {
+    delete[] taskID;
+    taskID = NULL;
+  }
   // set 'execute_only_in_mysql' to true for 'create table as select ...'
   if (0 == rc && SQLCOM_CREATE_TABLE == thd_sql_command(ha_thd()) &&
       ha_is_open() && ha_is_executing_pending_log(ha_thd()) &&
@@ -3177,6 +3206,7 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
   DBUG_ENTER("ha_sdb_part::create_new_partition");
 
   int rc = 0;
+  longlong tmp_taskID = -1;
   Sdb_conn *conn = NULL;
   Sdb_cl scl;
   bson::BSONObj mcl_options;
@@ -3190,6 +3220,7 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
   Mapping_context_impl tbl_part_mapping;
   bson::BSONObj part_mapping_opts;
 
+  longlong *taskID = NULL;
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
     goto done;
@@ -3260,21 +3291,45 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
     goto error;
   }
 
-  for (uint i = 0; i < table->s->keys; i++) {
-    const KEY *key_info = table->s->key_info + i;
-
-    if ((key_info->flags & HA_NOSAME) && sharded_by_phid) {
-      DBUG_ASSERT(sdb_is_key_include_part_func_column(table, key_info));
-    }
-
-    rc = sdb_create_index(key_info, scl, sharded_by_phid);
-    if (rc != 0) {
-      // we disabled sharding index,
-      // so do not ignore SDB_IXM_EXIST_COVERD_ONE
+  if (support_Async()) {
+    taskID = new (std::nothrow) longlong[table->s->keys]();
+    if (taskID == NULL) {
+      rc = HA_ERR_OUT_OF_MEM;
       goto error;
     }
-  }
+    for (uint i = 0; i < table->s->keys; i++) {
+      const KEY *key_info = table->s->key_info + i;
 
+      if ((key_info->flags & HA_NOSAME) && sharded_by_phid) {
+        DBUG_ASSERT(sdb_is_key_include_part_func_column(table, key_info));
+      }
+      if (support_Async()) {
+        rc = sdb_create_index(key_info, scl, taskID[i], true, sharded_by_phid);
+        if (rc != 0) {
+          goto error;
+        }
+      }
+    }
+    rc = conn->waitTasks(taskID, table->s->keys);
+    if (rc != 0) {
+      goto error;
+    }
+  } else {
+    for (uint i = 0; i < table->s->keys; i++) {
+      const KEY *key_info = table->s->key_info + i;
+
+      if ((key_info->flags & HA_NOSAME) && sharded_by_phid) {
+        DBUG_ASSERT(sdb_is_key_include_part_func_column(table, key_info));
+      }
+      rc = sdb_create_index(key_info, scl, tmp_taskID, false, sharded_by_phid);
+      if (rc != 0) {
+        // we disabled sharding index,
+        // so do not ignore SDB_IXM_EXIST_COVERD_ONE
+
+        goto error;
+      }
+    }
+  }
   try {
     char *new_name = new char[SDB_CL_NAME_MAX_SIZE + 1];
     memcpy(new_name, scl_name, SDB_CL_NAME_MAX_SIZE + 1);
@@ -3285,6 +3340,10 @@ int ha_sdb_part::create_new_partition(TABLE *table, HA_CREATE_INFO *create_info,
                         e.what());
 
 done:
+  if (taskID != NULL) {
+    delete[] taskID;
+    taskID = NULL;
+  }
   DBUG_RETURN(rc);
 error:
   goto done;

@@ -142,7 +142,8 @@ error:
   goto done;
 }
 
-int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
+int sdb_create_index(const KEY *key_info, Sdb_cl &cl, longlong &taskID,
+                     bool support_Async, bool shard_by_part_id) {
   int rc = 0;
   bool is_unique = key_info->flags & HA_NOSAME;
   bool all_is_not_null = true;
@@ -191,11 +192,18 @@ int sdb_create_index(const KEY *key_info, Sdb_cl &cl, bool shard_by_part_id) {
         options_builder.append(SDB_FIELD_NOT_ARRAY, true);
       }
       options = options_builder.obj();
-      rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
+    }
+    if (support_Async) {
+      rc = cl.create_index_Async(taskID, key_obj, sdb_key_name(key_info),
+                                 options);
     } else {
-      bool enforced = is_unique && all_is_not_null;
-      rc =
-          cl.create_index(key_obj, sdb_key_name(key_info), is_unique, enforced);
+      if (is_not_null_supported(cl.get_conn())) {
+        rc = cl.create_index(key_obj, sdb_key_name(key_info), options);
+      } else {
+        bool enforced = is_unique && all_is_not_null;
+        rc = cl.create_index(key_obj, sdb_key_name(key_info), is_unique,
+                             enforced);
+      }
     }
     if (rc) {
       goto error;

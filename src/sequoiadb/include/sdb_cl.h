@@ -105,7 +105,12 @@ class Sdb_cl {
   int create_index(const bson::BSONObj &index_def, const CHAR *name,
                    const bson::BSONObj &options);
 
+  int create_index_Async(longlong &taskID, const bson::BSONObj &index_def,
+                         const CHAR *name, const bson::BSONObj &options);
+
   int drop_index(const char *name);
+
+  int drop_index_Async(longlong &taskID, const char *name);
 
   int truncate();
 
