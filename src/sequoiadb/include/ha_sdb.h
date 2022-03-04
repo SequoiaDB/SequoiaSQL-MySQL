@@ -111,7 +111,7 @@ class Sdb_cl_copyer : public Sql_alloc {
 
   int copy(ha_sdb *ha);
 
-  int rename(const char *from, const char *to);
+  int swap(const char *from, const char *to);
 
   void replace_src_indexes(uint keys, const KEY *key_info);
 
@@ -453,6 +453,8 @@ class ha_sdb : public handler {
 
   uint lock_count(void) const { return 0; }
 
+  int swap_table(const char *from, const char *to);
+
   /** @brief
     Unlike index_init(), rnd_init() can be called two consecutive times
     without rnd_end() in between (it only makes sense if scan=1). In this
@@ -567,7 +569,8 @@ class ha_sdb : public handler {
                                 bson::BSONObjBuilder &build);
 
   int get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
-                     bson::BSONObj &options);
+                     bson::BSONObj &options,
+                     bson::BSONObj *table_mapping = NULL);
 
   int get_default_sharding_key(TABLE *form, bson::BSONObj &options);
 
@@ -654,7 +657,7 @@ class ha_sdb : public handler {
 
   int prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
                                 char *old_table_name, char *new_table_name,
-                                bool &is_skip);
+                                bool &is_skip, bool swap_table = false);
   int before_del_ren_part();
 
   int after_del_ren_part();
@@ -719,6 +722,10 @@ class ha_sdb : public handler {
   enum_alter_inplace_result filter_alter_columns(
       TABLE *altered_table, Alter_inplace_info *ha_alter_info,
       ha_sdb_alter_ctx *ctx);
+
+ private:
+  // swap table if swap_table is true
+  int rename_or_swap_table(const char *from, const char *to, bool swap_table);
 
  protected:
   THR_LOCK_DATA lock_data;

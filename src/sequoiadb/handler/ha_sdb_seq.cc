@@ -261,7 +261,7 @@ done:
   return rc;
 error:
   if (created_cs) {
-    sdb_drop_empty_cs(*conn, db_name);
+    sdb_drop_empty_cs(*conn, tbl_ctx_impl.get_mapping_cs());
   } else if (created_seq) {
     conn->drop_seq(db_name, table_name, &tbl_ctx_impl);
   }

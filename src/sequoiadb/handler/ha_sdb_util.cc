@@ -81,11 +81,17 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     char part_buff[SDB_CL_NAME_MAX_SIZE + 1] = {0};
     char *part_name = sep + strlen(SDB_PART_SEP);
     char *sub_sep = strstr(part_name, SDB_SUB_PART_SEP);
+    char *tmp_sep = NULL;
     if (sub_sep) {
       *sub_sep = 0;
+    } else if ((tmp_sep = strstr(part_name, SDB_PART_TMP_SUFFIX))) {
+      *tmp_sep = 0;
     }
     sdb_filename_to_tablename(part_name, part_buff, sizeof(part_buff), true);
     strcat(table_name, part_buff);
+    if (tmp_sep) {
+      strcat(table_name, SDB_PART_TMP_SUFFIX);
+    }
     if (int(strlen(table_name)) >= table_name_max_size) {
       rc = ER_TOO_LONG_IDENT;
       goto error;
@@ -99,13 +105,21 @@ int sdb_parse_table_name(const char *from, char *db_name, int db_name_max_size,
     strcat(table_name, SDB_SUB_PART_SEP);
 
     char *sub_part_name = sub_sep + strlen(SDB_SUB_PART_SEP);
-    sdb_filename_to_tablename(sub_part_name, part_buff, sizeof(part_buff),
-                              true);
-    if (int(strlen(part_buff)) >= table_name_max_size) {
+    if (int(strlen(sub_part_name)) >= table_name_max_size) {
       rc = ER_TOO_LONG_IDENT;
       goto error;
     }
-    strcat(table_name, part_buff);
+    tmp_sep = strstr(sub_part_name, SDB_PART_TMP_SUFFIX);
+    if (NULL != tmp_sep) {
+      *tmp_sep = 0;
+    }
+    part_buff[0] = 0;
+    sdb_filename_to_tablename(sub_part_name, part_buff, sizeof(part_buff),
+                              true);
+    strcat(table_name, sub_part_name);
+    if (NULL != tmp_sep) {
+      strcat(table_name, SDB_PART_TMP_SUFFIX);
+    }
   } while (0);
 
   // scan db_name
@@ -608,7 +622,8 @@ void sdb_store_packlength(uchar *ptr, uint packlength, uint number,
 int sdb_parse_comment_options(const char *comment_str,
                               bson::BSONObj &table_options,
                               bool &explicit_not_auto_partition,
-                              bson::BSONObj *partition_options) {
+                              bson::BSONObj *partition_options,
+                              bson::BSONObj *table_mapping) {
   int rc = 0;
   bson::BSONObj comments;
   char *sdb_cmt_pos = NULL;
@@ -666,7 +681,14 @@ int sdb_parse_comment_options(const char *comment_str,
           }
           *partition_options = elem.embeddedObject().copy();
         }
-
+      }
+      // table mapping options
+      else if (0 == strcmp(elem.fieldName(), SDB_FIELD_TABLE_MAPPING)) {
+        if (table_mapping && bson::String == elem.type()) {
+          bson::BSONObj mapping =
+              BSON(SDB_FIELD_TABLE_MAPPING << elem.valuestr());
+          *table_mapping = mapping.copy();
+        }
       } else {
         rc = ER_WRONG_ARGUMENTS;
         my_printf_error(rc, "Invalid comment option '%s'.", MYF(0),
@@ -1311,4 +1333,36 @@ int sdb_check_collation(THD *thd, Field *field) {
 bool sdb_is_supported_charset(const CHARSET_INFO *cs) {
   return my_charset_same(cs, &SDB_COLLATION_UTF8MB4) ||
          my_charset_same(cs, &SDB_COLLATION_UTF8);
+}
+
+int sdb_set_mapping_name(Mapping_context_impl &tbl_mapping,
+                         bson::BSONObj *mapping_opts) {
+  DBUG_ENTER("sdb_set_mapping_name");
+  int rc = 0;
+  try {
+    if (mapping_opts && !mapping_opts->isEmpty()) {
+      char tmp_full_cl_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
+      const char *full_cl_name =
+          mapping_opts->getStringField(SDB_FIELD_TABLE_MAPPING);
+      const char *const_sep_pos = strstr(full_cl_name, ".");
+      if ('\0' == full_cl_name[0] || '.' == full_cl_name[0] ||
+          NULL == const_sep_pos || '\0' == const_sep_pos[1]) {
+        rc = ER_WRONG_ARGUMENTS;
+        my_printf_error(rc, "Mapping field format error", MYF(0));
+        goto error;
+      }
+      strcpy(tmp_full_cl_name, full_cl_name);
+      char *sep_pos = strstr(tmp_full_cl_name, ".");
+      sep_pos[0] = '\0';
+      tbl_mapping.set_mapping_cs(tmp_full_cl_name);
+      tbl_mapping.set_mapping_cl(sep_pos + 1);
+      tbl_mapping.set_specified_mapping_flag(true);
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to set mapping name, exception:%s",
+                        e.what());
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
 }

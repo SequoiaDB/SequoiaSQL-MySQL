@@ -775,36 +775,133 @@ error:
 }
 
 int Sdb_conn::rename_cl(const char *db_name, const char *old_tbl_name,
-                        const char *new_tbl_name,
-                        Mapping_context *mapping_ctx) {
+                        const char *new_tbl_name, Mapping_context *old_ctx) {
   int rc = 0;
   const char *cs_name = db_name;
   const char *old_cl_name = old_tbl_name;
   const char *new_cl_name = new_tbl_name;
+  bool need_rename_cl = true;
 
-  if (NULL != mapping_ctx) {
-    rc = Name_mapping::get_mapping(db_name, old_tbl_name, this, mapping_ctx);
+  if (old_ctx) {
+    rc = Name_mapping::get_mapping(db_name, old_tbl_name, this, old_ctx);
     if (HA_ERR_END_OF_FILE == rc) {
       rc = SDB_DMS_NOTEXIST;
       goto error;
     } else if (0 != rc) {
       goto error;
     }
-    cs_name = mapping_ctx->get_mapping_cs();
-    old_cl_name = mapping_ctx->get_mapping_cl();
+    cs_name = old_ctx->get_mapping_cs();
+    old_cl_name = old_ctx->get_mapping_cl();
+    need_rename_cl = !old_ctx->is_specified_mapping();
   }
-  rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name, old_cl_name,
-                         new_cl_name));
+
+  if (need_rename_cl) {
+    rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name, old_cl_name,
+                           new_cl_name));
+  }
   if (0 != rc) {
     goto error;
   }
-  if (NULL != mapping_ctx) {
+  if (old_ctx) {
     rc = Name_mapping::rename_mapping(db_name, old_tbl_name, new_tbl_name, this,
-                                      mapping_ctx);
+                                      old_ctx);
   }
 done:
   return rc;
 error:
+  goto done;
+}
+
+int Sdb_conn::swap_cl(const char *db_name, const char *old_table_name,
+                      const char *new_table_name, Mapping_context *old_ctx,
+                      Mapping_context *new_ctx) {
+  int rc = 0;
+  const char *cs_name = db_name;
+  const char *old_cl_name = old_table_name;
+  const char *new_cl_name = new_table_name;
+  char backup_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  bool mapping_swapped = false;
+
+  DBUG_ASSERT((!old_ctx && !new_ctx) || (old_ctx && new_ctx));
+  if (old_ctx && new_ctx) {
+    rc = Name_mapping::get_mapping(db_name, old_table_name, this, old_ctx);
+    if (0 != rc) {
+      goto error;
+    }
+    cs_name = old_ctx->get_mapping_cs();
+    old_cl_name = old_ctx->get_mapping_cl();
+
+    rc = Name_mapping::get_mapping(db_name, new_table_name, this, new_ctx);
+    if (0 != rc) {
+      goto error;
+    }
+    new_cl_name = new_ctx->get_mapping_cl();
+  }
+
+  // not allowed swap if 'IsSpecifiedMapping' is different
+  DBUG_ASSERT(old_ctx->is_specified_mapping() ==
+              new_ctx->is_specified_mapping());
+  // swap mapping configuration if they are different
+  if (old_ctx->is_part_table() != new_ctx->is_part_table()) {
+    rc = Name_mapping::swap(this, old_ctx, new_ctx);
+    if (0 != rc) {
+      goto error;
+    }
+    mapping_swapped = true;
+  }
+
+  sprintf(backup_name, "#tmp-%s", old_cl_name);
+  // rename old table to backup_name
+  rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name, old_cl_name,
+                         backup_name));
+  rc = (SDB_DMS_NOTEXIST == get_sdb_code(rc) ? 0 : rc);
+  if (0 != rc) {
+    goto error;
+  }
+
+  // rename new table to old table name
+  rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name, new_cl_name,
+                         old_cl_name));
+  rc = (SDB_DMS_NOTEXIST == get_sdb_code(rc) ? 0 : rc);
+  if (0 != rc) {
+    // try to rollback the first rename table operation
+    if (retry(boost::bind(conn_rename_cl, m_connection, cs_name, backup_name,
+                          old_cl_name))) {
+      SDB_LOG_WARNING("Failed to rename '%s' to '%s'", backup_name,
+                      old_cl_name);
+    }
+    goto error;
+  }
+
+  // rename backup_name to new table name
+  rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name, backup_name,
+                         new_cl_name));
+  rc = (SDB_DMS_NOTEXIST == get_sdb_code(rc) ? 0 : rc);
+  if (0 != rc) {
+    // try to rollback the upper rename table operations
+    int tmp_rc = retry(boost::bind(conn_rename_cl, m_connection, cs_name,
+                                   old_cl_name, new_cl_name));
+    if (tmp_rc) {
+      SDB_LOG_WARNING("Failed to rename '%s' to '%s'", old_cl_name,
+                      new_cl_name);
+    }
+    if (!tmp_rc && retry(boost::bind(conn_rename_cl, m_connection, cs_name,
+                                     backup_name, old_cl_name))) {
+      SDB_LOG_WARNING("Failed to rename '%s' to '%s'", backup_name,
+                      old_cl_name);
+    }
+    goto error;
+  }
+done:
+  return rc;
+error:
+  if (mapping_swapped) {
+    if (Name_mapping::swap(this, old_ctx, new_ctx)) {
+      SDB_LOG_WARNING(
+          "Failed to rollback swap mapping configuration from '%s' to '%s'",
+          old_table_name, new_table_name);
+    }
+  }
   goto done;
 }
 

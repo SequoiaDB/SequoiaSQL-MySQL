@@ -84,6 +84,21 @@ static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
             NM_TABLE_MAP, rc);
         goto error;
       }
+
+      index_ref = BSON(NM_FIELD_CS_NAME << 1 << NM_FIELD_CL_NAME << 1);
+      rc = table_map.create_index(index_ref, NM_CS_CL_INDEX, key_options);
+      if (SDB_IXM_CREATING == get_sdb_code(rc)) {
+        // the creating index task already exists, ignore this error
+        rc = 0;
+        goto done;
+      }
+      rc = (SDB_IXM_REDEF == get_sdb_code(rc)) ? 0 : rc;
+      if (0 != rc) {
+        SDB_LOG_ERROR(
+            "HA: Unable to create index for '%s', sequoiadb error: %d",
+            NM_TABLE_MAP, rc);
+        goto error;
+      }
       indexes_created = true;
     }
   }
@@ -141,6 +156,112 @@ error:
   goto done;
 }
 
+// check if collection space is already mapped to other database in SQL engine
+static int check_if_cs_can_map(Sdb_conn *sdb_conn,
+                               const char *sql_group_cs_name,
+                               const char *db_name, const char *cs_name,
+                               bool &can_map) {
+  int rc = 0;
+  bson::BSONObj obj;
+  const char *tmp_db_name = NULL;
+  // MAX_EXTRA_CHARS_LEN is the max length of extra chars(not include variables)
+  // in the query
+  static const int MAX_EXTRA_CHARS_LEN = 100;
+  // there are 3 variables about CS name in the query
+  char query[SDB_CS_NAME_MAX_SIZE * 2 + MAX_EXTRA_CHARS_LEN] = {0};
+  // SELECT CSName from SQL_NAME_MAPPING_MARIADB.TABLE_MAPPING
+  // WHERE DBName <> 'mariadb_test' AND CSName = 'mariadb_test' limit 1
+  snprintf(query, sizeof(query),
+           "SELECT %s,%s FROM %s.%s WHERE %s <> '%s' AND %s = '%s' limit 1",
+           NM_FIELD_DB_NAME, NM_FIELD_CS_NAME, sql_group_cs_name, NM_TABLE_MAP,
+           NM_FIELD_DB_NAME, db_name, NM_FIELD_CS_NAME, cs_name);
+
+  try {
+    rc = sdb_conn->execute(query);
+    rc = rc ? rc : sdb_conn->next(obj, false);
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to check if CS can map, exception: %s", e.what());
+  if (HA_ERR_END_OF_FILE == rc || SDB_DMS_EOC == rc) {
+    rc = 0;
+    can_map = true;
+    goto done;
+  }
+  if (0 != rc) {
+    SDB_LOG_ERROR(
+        "Failed to query mapping table while checking if collection space '%s' "
+        "is occupied, error: %d",
+        cs_name, rc);
+    goto error;
+  }
+  tmp_db_name = obj.getStringField(NM_FIELD_DB_NAME);
+  can_map = (!tmp_db_name || tmp_db_name[0] == '\0');
+  if (!can_map) {
+    SDB_LOG_INFO(
+        "Collection space '%s' is occupied by '%s' database is SQL engine",
+        cs_name, tmp_db_name);
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+// append collection spaces used by specified mapping collection
+// db.SQL_NAME_MAPPING_MARIADB.TABLE_MAPPING.aggregate
+// {$match: {DBName: "mariadb_test", IsSpecifiedMapping: 1}},
+// {$group: {_id: "$CSName"}})
+static int append_specified_mapping_cs(Sdb_conn *sdb_conn,
+                                       const char *sql_group_cs_name,
+                                       const char *db_name,
+                                       std::vector<string> &mapping_cs) {
+  int rc = SDB_ERR_OK;
+  ha_rows num_to_skip = 0;
+  ha_rows num_to_return = -1;
+  bson::BSONObj obj, condition, group_list_condition, order_by;
+  std::vector<bson::BSONObj> aggregate_obj;
+  Sdb_cl mapping_table;
+  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  if (0 != rc) {
+    SDB_LOG_ERROR(
+        "Failed to get mapping table while appending specified mapping "
+        "collection space, error: %d",
+        rc);
+    goto error;
+  }
+
+  try {
+    // {$match: {DBName: "mariadb_test", IsSpecifiedMapping: 1}}
+    condition =
+        BSON(NM_FIELD_DB_NAME << db_name << NM_FIELD_SPECIFIED_MAPPING << 1);
+    // {$group: {_id: "$CSName"}}
+    group_list_condition = BSON(SDB_OID_FIELD << "$CSName");
+    rc = sdb_build_aggregate_obj(condition, group_list_condition, order_by,
+                                 num_to_skip, num_to_return, aggregate_obj);
+    if (rc) {
+      goto error;
+    }
+    rc = mapping_table.aggregate(aggregate_obj);
+    rc = (rc == SDB_DMS_EOC) ? 0 : rc;
+    if (0 != rc) {
+      goto error;
+    }
+    while (0 == (rc = mapping_table.next(obj, false))) {
+      const char *cs_name = obj.getStringField(NM_FIELD_CS_NAME);
+      if ('\0' != cs_name[0]) {
+        mapping_cs.push_back(cs_name);
+      }
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to append specified mapping collection space, exception: %s",
+      e.what());
+  rc = (HA_ERR_END_OF_FILE == rc) ? 0 : rc;
+done:
+  return rc;
+error:
+  goto done;
+}
+
 int check_if_mapping_table_empty(Sdb_conn *conn, bool &is_empty) {
   int rc = SDB_ERR_OK;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
@@ -190,10 +311,116 @@ int Name_mapping::get_mapping(const char *db_name, const char *table_name,
   return get_table_mapping(db_name, table_name, conn, mapping_ctx);
 }
 
+int Name_mapping::get_reverse_mapping(const char *cs_name, const char *cl_name,
+                                      Sdb_conn *sdb_conn,
+                                      Mapping_context *mapping_ctx) {
+  return get_table_mapping(cs_name, cl_name, sdb_conn, mapping_ctx, true);
+}
+
 int Name_mapping::rename_mapping(const char *db_name, const char *from,
                                  const char *to, Sdb_conn *conn,
                                  Mapping_context *mapping_ctx) {
   return update_table_mapping(db_name, from, db_name, to, conn, mapping_ctx);
+}
+
+int Name_mapping::swap(Sdb_conn *sdb_conn, Mapping_context *from,
+                       Mapping_context *to) {
+  int rc = SDB_ERR_OK;
+  bool from_is_part_table = from->is_part_table();
+  bool to_is_part_table = to->is_part_table();
+  bool from_is_spec_mapping = from->is_specified_mapping();
+  bool to_is_spec_mapping = to->is_specified_mapping();
+  bool to_is_persisted = false;
+
+  to->set_part_table(from_is_part_table);
+  to->set_specified_mapping_flag(from_is_spec_mapping);
+  from->set_part_table(to_is_part_table);
+  from->set_specified_mapping_flag(to_is_spec_mapping);
+
+  rc = Name_mapping::persist_mapping(sdb_conn, to);
+  if (0 != rc) {
+    goto error;
+  }
+  to_is_persisted = true;
+  rc = Name_mapping::persist_mapping(sdb_conn, from);
+  if (0 != rc) {
+    goto error;
+  }
+done:
+  return rc;
+error:
+  to->set_part_table(to_is_part_table);
+  to->set_specified_mapping_flag(to_is_spec_mapping);
+  from->set_part_table(from_is_part_table);
+  from->set_specified_mapping_flag(from_is_spec_mapping);
+  if (to_is_persisted && Name_mapping::persist_mapping(sdb_conn, to)) {
+    SDB_LOG_WARNING(
+        "Failed to persist mapping for '%s' while rollback swap mapping", to);
+  }
+  goto done;
+}
+
+int Name_mapping::persist_mapping(Sdb_conn *sdb_conn,
+                                  Mapping_context *mapping_ctx) {
+  int rc = 0;
+  Sdb_cl mapping_table;
+  char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  bson::BSONObj rule, cond;
+  bson::BSONObjBuilder rule_builder, cond_builder;
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &lock_conn = pool_conn;
+
+  if (!m_enabled) {
+    goto done;
+  }
+  // create new connection if current transaction is on
+  if (sdb_conn->is_transaction_on()) {
+    rc = lock_conn.connect();
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
+      goto error;
+    }
+    sdb_conn = &lock_conn;
+  }
+  snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
+           NM_SQL_GROUP_PREFIX, m_sql_group);
+
+  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to get mapping table, error: %d", rc);
+    goto error;
+  }
+  try {
+    bool is_phy_table = !mapping_ctx->is_part_table();
+    bool is_specified_mapping = mapping_ctx->is_specified_mapping();
+    cond_builder.append(NM_FIELD_DB_NAME, mapping_ctx->get_db());
+    cond_builder.append(NM_FIELD_TABLE_NAME, mapping_ctx->get_table());
+    cond = cond_builder.done();
+
+    bson::BSONObjBuilder sub_builder(rule_builder.subobjStart("$set"));
+    sub_builder.append(NM_FIELD_CS_NAME, mapping_ctx->get_mapping_cs());
+    sub_builder.append(NM_FIELD_CL_NAME, mapping_ctx->get_mapping_cl());
+    sub_builder.append(NM_FIELD_IS_PHY_TABLE, (int)is_phy_table);
+    sub_builder.append(NM_FIELD_STATE, (int)mapping_ctx->get_mapping_state());
+    sub_builder.append(NM_FIELD_SPECIFIED_MAPPING, (int)is_specified_mapping);
+    sub_builder.doneFast();
+    rule = rule_builder.done();
+  }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to build bson while persisting '%s.%s' mapping",
+                        mapping_ctx->get_db(), mapping_ctx->get_table());
+  rc = mapping_table.upsert(rule, cond);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to persist mapping '%s.%s' to '%s.%s', error: %d",
+                  mapping_ctx->get_db(), mapping_ctx->get_table(),
+                  mapping_ctx->get_mapping_cs(), mapping_ctx->get_mapping_cl(),
+                  rc);
+    goto error;
+  }
+done:
+  return 0;
+error:
+  goto done;
 }
 
 int Name_mapping::get_fixed_mapping(const char *db_name, const char *table_name,
@@ -356,7 +583,8 @@ error:
 
 int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
                                     Sdb_conn *sdb_conn,
-                                    Mapping_context *mapping_ctx) {
+                                    Mapping_context *mapping_ctx,
+                                    bool get_reverse_mapping) {
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
@@ -369,6 +597,8 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
     goto done;
   }
   // no mapping for table name
+  mapping_ctx->set_db(db_name);
+  mapping_ctx->set_table(table_name);
   mapping_ctx->set_mapping_cl(table_name);
   if (!m_enabled) {
     mapping_ctx->set_mapping_cs(db_name);
@@ -390,8 +620,13 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   }
 
   try {
-    cond_builder.append(NM_FIELD_DB_NAME, db_name);
-    cond_builder.append(NM_FIELD_TABLE_NAME, table_name);
+    if (!get_reverse_mapping) {
+      cond_builder.append(NM_FIELD_DB_NAME, db_name);
+      cond_builder.append(NM_FIELD_TABLE_NAME, table_name);
+    } else {
+      cond_builder.append(NM_FIELD_CS_NAME, db_name);
+      cond_builder.append(NM_FIELD_CL_NAME, table_name);
+    }
     cond = cond_builder.done();
   }
   SDB_EXCEPTION_CATCHER(
@@ -401,6 +636,8 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   rc = mapping_table.query(cond);
   rc = rc ? rc : mapping_table.next(obj, false);
   if (0 == rc) {
+    mapping_ctx->set_db(obj.getStringField(NM_FIELD_DB_NAME));
+    mapping_ctx->set_table(obj.getStringField(NM_FIELD_TABLE_NAME));
     mapping_ctx->set_mapping_cs(obj.getStringField(NM_FIELD_CS_NAME));
     mapping_ctx->set_mapping_cl(obj.getStringField(NM_FIELD_CL_NAME));
     mapping_ctx->set_mapping_state(
@@ -408,6 +645,10 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
     DBUG_ASSERT(mapping_ctx->get_mapping_state() == NM_STATE_CREATING ||
                 mapping_ctx->get_mapping_state() == NM_STATE_CREATED);
     mapping_ctx->set_part_table(obj.getIntField(NM_FIELD_IS_PHY_TABLE) == 0);
+    bson::BSONElement elem = obj.getField(NM_FIELD_SPECIFIED_MAPPING);
+    if (bson::NumberInt == elem.type()) {
+      mapping_ctx->set_specified_mapping_flag(elem.numberInt() == 1);
+    }
   } else if (HA_ERR_END_OF_FILE == rc) {
     // mapping does not exist for HASH or KEY partition
     goto error;
@@ -435,11 +676,22 @@ int Name_mapping::add_table_mapping(const char *db_name, const char *table_name,
            NM_SQL_GROUP_PREFIX, m_sql_group);
   Sdb_pool_conn pool_conn(0, false);
   Sdb_conn &lock_conn = pool_conn;
+  bool is_specified_mapping = mapping_ctx->is_specified_mapping();
+
   // no mapping for table name
-  mapping_ctx->set_mapping_cl(table_name);
   if (!m_enabled) {
+    mapping_ctx->set_mapping_cl(table_name);
     mapping_ctx->set_mapping_cs(db_name);
     goto done;
+  }
+
+  if (!is_specified_mapping) {
+    mapping_ctx->set_mapping_cl(table_name);
+  } else {
+    strcpy(cs_name, mapping_ctx->get_mapping_cs());
+    cl_name = mapping_ctx->get_mapping_cl();
+    DBUG_ASSERT('\0' != cs_name[0]);
+    DBUG_ASSERT('\0' != cl_name[0]);
   }
 
   if (sdb_conn->is_transaction_on()) {
@@ -459,7 +711,9 @@ retry:
   }
 
   // 1. calculate mapping CS name
-  rc = calculate_mapping_cs(sdb_conn, db_name, cs_name, m_sql_group);
+  if (!is_specified_mapping) {
+    rc = calculate_mapping_cs(sdb_conn, db_name, cs_name, m_sql_group);
+  }
   if (0 != rc) {
     SDB_LOG_ERROR("Failed to calculate mapping CS, error: %d", rc);
     goto error;
@@ -478,6 +732,7 @@ retry:
     obj_builder.append(NM_FIELD_CL_NAME, cl_name);
     obj_builder.append(NM_FIELD_IS_PHY_TABLE, (int)is_phy_table);
     obj_builder.append(NM_FIELD_STATE, (int)NM_STATE_CREATING);
+    obj_builder.append(NM_FIELD_SPECIFIED_MAPPING, (int)is_specified_mapping);
     obj = obj_builder.done();
 
     rule = BSON("$set" << obj);
@@ -488,15 +743,43 @@ retry:
 
   rc = mapping_table.upsert(rule, cond);
   if (0 != rc) {
-    SDB_LOG_ERROR("Failed to add table mapping '%s.%s', error: %d", db_name,
-                  table_name, rc);
+    // convert error code, output proper error message while handling this error
+    if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
+      SDB_LOG_ERROR("Duplicate mapping on collection '%s.%s'", cs_name,
+                    cl_name);
+      rc = SDB_ERR_DUP_CL_MAPPING;
+    } else {
+      SDB_LOG_ERROR("Failed to add table mapping '%s.%s', error: %d", db_name,
+                    table_name, rc);
+    }
     goto error;
   }
   inserted = true;
 
   // 3.  check if the number of collection in 'cs_name' exceed the limit
-  rc = check_table_mapping_limit(sdb_conn, sql_group_cs_name, db_name, cs_name,
-                                 cl_cnt);
+  if (!is_specified_mapping) {
+    rc = check_table_mapping_limit(sdb_conn, sql_group_cs_name, db_name,
+                                   cs_name, cl_cnt);
+  } else {
+    bool can_map = true;
+    // check if mapping CS is occupied by only one database is SQL engine
+    rc = check_if_cs_can_map(sdb_conn, sql_group_cs_name, db_name, cs_name,
+                             can_map);
+    if (0 != rc) {
+      SDB_LOG_ERROR(
+          "Failed to check if Collection space '%s' has been occupied, error: "
+          "%d",
+          cs_name, rc);
+      goto error;
+    }
+    if (!can_map) {
+      SDB_LOG_ERROR(
+          "Collection space '%s' is occupied by another database in SQL engine",
+          cs_name);
+      rc = SDB_ERR_DUP_CS_MAPPING;
+      goto error;
+    }
+  }
   if (0 != rc) {
     SDB_LOG_ERROR(
         "Failed to check if the number of mapping in '%s' exceed the limit "
@@ -673,7 +956,7 @@ int Name_mapping::update_table_mapping(const char *src_db_name,
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
-  bson::BSONObj rule, cond, obj;
+  bson::BSONObj rule, cond;
   bson::BSONObjBuilder rule_builder, cond_builder;
   Sdb_pool_conn pool_conn(0, false);
   Sdb_conn &lock_conn = pool_conn;
@@ -703,9 +986,16 @@ int Name_mapping::update_table_mapping(const char *src_db_name,
     cond_builder.append(NM_FIELD_TABLE_NAME, src_table_name);
     cond = cond_builder.done();
 
-    obj = BSON(NM_FIELD_TABLE_NAME << dst_table_name << NM_FIELD_CL_NAME
-                                   << dst_table_name);
-    rule = BSON("$set" << obj);
+    bson::BSONObjBuilder sub_builder(rule_builder.subobjStart("$set"));
+    sub_builder.append(NM_FIELD_TABLE_NAME, dst_table_name);
+    if (!mapping_ctx->is_specified_mapping()) {
+      sub_builder.append(NM_FIELD_CL_NAME, dst_table_name);
+    }
+    if (mapping_ctx->is_part_table()) {
+      sub_builder.append(NM_FIELD_IS_PHY_TABLE, 0);
+    }
+    sub_builder.doneFast();
+    rule = rule_builder.done();
   }
   SDB_EXCEPTION_CATCHER(rc,
                         "Failed to build bson while updating '%s.%s' mapping",
@@ -762,6 +1052,20 @@ int Name_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn, const char *db_name,
       if (HA_ERR_END_OF_FILE == rc) {
         rc = 0;
       }
+
+      // append collection space used by specified mapping collection
+      char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+      snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
+               NM_SQL_GROUP_PREFIX, m_sql_group);
+      rc = append_specified_mapping_cs(sdb_conn, sql_group_cs_name, db_name,
+                                       mapping_cs);
+      if (0 != rc) {
+        SDB_LOG_ERROR(
+            "Failed to append collection space used by specified mapping "
+            "collection for '%s' database, error: %d",
+            db_name, rc);
+        goto error;
+      }
     }
   }
   SDB_EXCEPTION_CATCHER(
@@ -770,7 +1074,7 @@ int Name_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn, const char *db_name,
 done:
   return rc;
 error:
-  goto error;
+  goto done;
 }
 
 int Name_mapping::get_sequence_mapping_cs(const char *db_name,

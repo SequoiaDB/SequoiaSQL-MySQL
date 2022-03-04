@@ -269,7 +269,11 @@ class Sdb_conn {
                 Mapping_context *mapping_ctx = NULL);
 
   int rename_cl(const char *cs_name, const char *old_cl_name,
-                const char *new_cl_name, Mapping_context *mapping_ctx = NULL);
+                const char *new_cl_name, Mapping_context *old_ctx = NULL);
+
+  int swap_cl(const char *cs_name, const char *old_cl_name,
+              const char *new_cl_name, Mapping_context *mapping_ctx = NULL,
+              Mapping_context *new_ctx = NULL);
 
   int drop_cl(const char *cs_name, const char *cl_name,
               Mapping_context *mapping_ctx = NULL);

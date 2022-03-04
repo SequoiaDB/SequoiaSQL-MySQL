@@ -3147,7 +3147,7 @@ int Sdb_cl_copyer::rename_new_cl() {
   List_iterator_fast<char> list_it(m_new_scl_tmp_fullnames);
   bson::BSONObjIterator bo_it(m_old_scl_info);
   while ((cl_fullname = list_it++)) {
-    Mapping_context_impl tbl_mapping;
+    Mapping_context_impl tbl_mapping, tmp_mapping;
     bson::BSONObj obj = bo_it.next().embeddedObject();
     right_cl_name =
         const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
@@ -3156,7 +3156,8 @@ int Sdb_cl_copyer::rename_new_cl() {
     sdb_tmp_split_cl_fullname(cl_fullname, &db_name, &tbl_name);
     DBUG_PRINT("info",
                ("cs: %s, from: %s, to: %s", db_name, tbl_name, right_cl_name));
-    rc = m_conn->rename_cl(db_name, tbl_name, right_cl_name, &tbl_mapping);
+    rc = m_conn->swap_cl(db_name, tbl_name, right_cl_name, &tbl_mapping,
+                         &tmp_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -3186,7 +3187,7 @@ int Sdb_cl_copyer::rename_old_cl() {
 
   bson::BSONObjIterator it(m_old_scl_info);
   while (it.more()) {
-    Mapping_context_impl tbl_mapping;
+    Mapping_context_impl tbl_mapping, tmp_mapping;
     bson::BSONObj obj = it.next().embeddedObject();
     cl_fullname =
         const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
@@ -3199,7 +3200,8 @@ int Sdb_cl_copyer::rename_old_cl() {
     DBUG_PRINT("info",
                ("cs: %s, from: %s, to: %s", db_name, tbl_name, tmp_name_buf));
 
-    rc = m_conn->rename_cl(db_name, tbl_name, tmp_name_buf, &tbl_mapping);
+    rc = m_conn->swap_cl(db_name, tbl_name, tmp_name_buf, &tbl_mapping,
+                         &tmp_mapping);
     if (rc != 0) {
       goto error;
     }
@@ -3225,7 +3227,7 @@ error:
     bson::BSONObjIterator bo_it(m_old_scl_info);
     char *right_cl_name = NULL;
     while ((cl_fullname = list_it++)) {
-      Mapping_context_impl tbl_mapping;
+      Mapping_context_impl tbl_mapping, tmp_mapping;
       bson::BSONObj obj = bo_it.next().embeddedObject();
       right_cl_name =
           const_cast<char *>(obj.getField(SDB_FIELD_SUBCL_NAME).valuestr());
@@ -3235,8 +3237,8 @@ error:
       fullname_buf[sizeof(fullname_buf) - 1] = 0;
       sdb_tmp_split_cl_fullname(fullname_buf, &db_name, &tbl_name);
 
-      tmp_rc =
-          m_conn->rename_cl(db_name, tbl_name, right_cl_name, &tbl_mapping);
+      tmp_rc = m_conn->swap_cl(db_name, tbl_name, right_cl_name, &tbl_mapping,
+                               &tmp_mapping);
       if (tmp_rc != 0) {
         SDB_LOG_WARNING("Failed to rollback rename cl from [%s.%s] to [%s]",
                         db_name, right_cl_name, tbl_name);
@@ -3246,10 +3248,10 @@ error:
   goto done;
 }
 
-int Sdb_cl_copyer::rename(const char *from, const char *to) {
+int Sdb_cl_copyer::swap(const char *from, const char *to) {
   DBUG_ENTER("Sdb_cl_copyer::rename");
   int rc = 0;
-  Mapping_context_impl src_tbl_mapping;
+  Mapping_context_impl src_tbl_mapping, dst_tbl_mapping;
   try {
     if (0 == strcmp(from, m_mcl_name)) {
       m_old_mcl_tmp_name = const_cast<char *>(to);
@@ -3263,8 +3265,9 @@ int Sdb_cl_copyer::rename(const char *from, const char *to) {
       from, to, e.what());
 
   DBUG_PRINT("info", ("cs: %s, from: %s, to: %s", m_mcl_cs, from, to));
-  rc = m_conn->rename_cl(m_mcl_cs, const_cast<char *>(from),
-                         const_cast<char *>(to), &src_tbl_mapping);
+  rc = m_conn->swap_cl(m_mcl_cs, const_cast<char *>(from),
+                       const_cast<char *>(to), &src_tbl_mapping,
+                       &dst_tbl_mapping);
   if (rc != 0) {
     goto error;
   }

@@ -75,7 +75,9 @@
 #define NM_FIELD_CL_COUNT "CLCount"
 #define NM_FIELD_IS_PHY_TABLE "IsPhysicalTable"
 #define NM_FIELD_STATE "State"
+#define NM_FIELD_SPECIFIED_MAPPING "IsSpecifiedMapping"
 #define NM_DB_TABLE_INDEX "MappingTableDBTableIndex"
+#define NM_CS_CL_INDEX "MappingTableCSCLIndex"
 
 #define SDB_MAX_RETRY_TIME 3
 
@@ -202,6 +204,7 @@
 #define SDB_FIELD_USE_PARTITION "use_partition"
 #define SDB_FIELD_TABLE_OPTIONS "table_options"
 #define SDB_FIELD_PARTITION_OPTIONS "partition_options"
+#define SDB_FIELD_TABLE_MAPPING "mapping"
 
 #define SDB_FIELD_UNIQUEID "UniqueID"
 #define SDB_FIELD_DETAILS "Details"

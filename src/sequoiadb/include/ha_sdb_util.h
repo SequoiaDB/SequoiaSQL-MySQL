@@ -23,6 +23,7 @@
 #include <client.hpp>
 #include "ha_sdb_errcode.h"
 #include "sdb_conn.h"
+#include "mapping_context_impl.h"
 
 extern bool sdb_version_cached;
 
@@ -94,7 +95,8 @@ void sdb_store_packlength(uchar *ptr, uint packlength, uint number,
 int sdb_parse_comment_options(const char *comment_str,
                               bson::BSONObj &table_options,
                               bool &explicit_not_auto_partition,
-                              bson::BSONObj *partition_options = NULL);
+                              bson::BSONObj *partition_options = NULL,
+                              bson::BSONObj *table_mapping = NULL);
 
 int sdb_build_clientinfo(THD *thd, bson::BSONObjBuilder &hint_builder);
 
@@ -105,6 +107,8 @@ bool sdb_is_geom_type_diff(Field *old_field, Field *new_field);
 bool sdb_is_type_diff(Field *old_field, Field *new_field);
 
 bool sdb_is_single_table(THD *thd);
+
+bool str_end_with(const char *str, const char *sub_str);
 
 int sdb_convert_sub2main_partition_name(char *part_tb_name, char *table_name);
 
@@ -144,6 +148,15 @@ void sdb_set_clock_time(struct timespec &abstime, ulonglong sec);
 int sdb_check_collation(THD *thd, Field *field);
 
 bool sdb_is_supported_charset(const CHARSET_INFO *cs1);
+
+int sdb_build_aggregate_obj(bson::BSONObj &condition,
+                            bson::BSONObj &group_list_condition,
+                            bson::BSONObj &order_by, ha_rows &num_to_skip,
+                            ha_rows &num_to_return,
+                            std::vector<bson::BSONObj> &aggregate_obj);
+
+int sdb_set_mapping_name(Mapping_context_impl &tbl_mapping,
+                         bson::BSONObj *mapping_opts);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

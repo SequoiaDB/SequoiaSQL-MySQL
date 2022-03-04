@@ -9,19 +9,32 @@ class Mapping_context_impl : public Mapping_context {
   Sdb_share *m_share;
   enum_mapping_state m_state;
   bool m_is_part_table;
+  bool m_is_specified_mapping;
   char m_cs_name[SDB_CS_NAME_MAX_SIZE + 1];
   char m_cl_name[SDB_CL_NAME_MAX_SIZE + 1];
+  char m_db[SDB_CS_NAME_MAX_SIZE + 1];
+  char m_table[SDB_CL_NAME_MAX_SIZE + 1];
 
  public:
   Mapping_context_impl()
-      : m_share(NULL), m_state(NM_STATE_NONE), m_is_part_table(false) {
+      : m_share(NULL),
+        m_state(NM_STATE_NONE),
+        m_is_part_table(false),
+        m_is_specified_mapping(false) {
     m_cs_name[0] = '\0';
     m_cl_name[0] = '\0';
+    m_db[0] = '\0';
+    m_table[0] = '\0';
   }
   Mapping_context_impl(bool is_part_table)
-      : m_share(NULL), m_state(NM_STATE_NONE), m_is_part_table(is_part_table) {
+      : m_share(NULL),
+        m_state(NM_STATE_NONE),
+        m_is_part_table(is_part_table),
+        m_is_specified_mapping(false) {
     m_cs_name[0] = '\0';
     m_cl_name[0] = '\0';
+    m_db[0] = '\0';
+    m_table[0] = '\0';
   }
   void set_share_cache(Sdb_share *share) { m_share = share; }
 
@@ -33,13 +46,24 @@ class Mapping_context_impl : public Mapping_context {
   void set_mapping_state(enum_mapping_state state) { m_state = state; }
   bool is_part_table() { return m_is_part_table; }
   void set_part_table(bool is_part_table) { m_is_part_table = is_part_table; }
+  bool is_specified_mapping() { return m_is_specified_mapping; }
+  void set_specified_mapping_flag(bool specified) {
+    m_is_specified_mapping = specified;
+  }
+  const char *get_db() { return m_db; }
+  const char *get_table() { return m_table; }
+  void set_db(const char *db_name) { strcpy(m_db, db_name); }
+  void set_table(const char *table_name) { strcpy(m_table, table_name); }
 
   void reset() {
     m_share = NULL;
     m_state = NM_STATE_NONE;
     m_is_part_table = false;
+    m_is_specified_mapping = false;
     m_cs_name[0] = '\0';
     m_cl_name[0] = '\0';
+    m_db[0] = '\0';
+    m_table[0] = '\0';
   }
 };
 #endif

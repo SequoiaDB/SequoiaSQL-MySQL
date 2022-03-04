@@ -43,6 +43,7 @@
 #include "ha_sdb_ctx.h"
 #include "name_map.h"
 #include "mapping_context_impl.h"
+#include <boost/unordered_set.hpp>
 
 #ifdef IS_MYSQL
 #include <table_trigger_dispatcher.h>
@@ -572,69 +573,201 @@ done:
   DBUG_VOID_RETURN;
 }
 
-int sdb_rename_sub_cl4part_table(Sdb_conn *conn, char *db_name,
-                                 char *old_table_name, char *new_table_name) {
-  DBUG_ENTER("sdb_rename_sub_cl4part_table");
-  int rc = 0;
-  char part_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-  uint prefix_len = 0;
-  char new_sub_cl_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-  Mapping_context_impl tbl_mapping;
+static int sdb_get_partition_names(
+    Sdb_conn *conn, char *db_name, char *old_table_name,
+    boost::unordered_set<std::string> &tbl_parts) {
+  DBUG_ENTER("get_partition_names");
+  int rc = SDB_ERR_OK;
   try {
     bson::BSONObj obj;
+    Mapping_context_impl part_mapping;
+    const char *sub_cl_name = NULL, *cl_name = NULL;
+    const char *sep_pos = NULL, *tab_part_name = NULL;
+    char cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+    size_t cs_name_len = 0;
     rc = conn->snapshot(obj, SDB_SNAP_CATALOG, db_name, old_table_name,
-                        &tbl_mapping);
-    if (SDB_DMS_EOC == get_sdb_code(rc)) {
+                        &part_mapping);
+    if (SDB_DMS_EOC == get_sdb_code(rc) || HA_ERR_END_OF_FILE == rc) {
       rc = 0;
       goto done;
     }
     if (rc != 0) {
-      SDB_LOG_ERROR("%s", conn->get_err_msg());
-      conn->clear_err_msg();
       goto error;
     }
 
+    // fetch table partition info
     if (obj.getField(SDB_FIELD_ISMAINCL).booleanSafe()) {
-      snprintf(part_prefix, SDB_CL_NAME_MAX_SIZE, "%s%s", old_table_name,
-               SDB_PART_SEP);
-      prefix_len = strlen(part_prefix);
-      char db_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-      snprintf(db_prefix, SDB_CS_NAME_MAX_SIZE, "%s#%s#",
-               Name_mapping::get_sql_group(), db_name);
-
       bson::BSONObj sub_cl_arr = obj.getField(SDB_FIELD_CATAINFO).Obj();
       bson::BSONObjIterator it(sub_cl_arr);
       while (it.more()) {
+        part_mapping.reset();
         bson::BSONObj ele = it.next().Obj();
-        char *sub_cl_name = const_cast<char *>(
+        sub_cl_name = const_cast<char *>(
             ele.getField(SDB_FIELD_SUBCL_NAME).valuestrsafe());
-        if (0 != strncmp(sub_cl_name, db_name, strlen(db_name)) &&
-            0 != strncmp(sub_cl_name, db_prefix, strlen(db_prefix))) {
-          continue;
-        }
-        sub_cl_name = strstr(sub_cl_name, ".") + 1;
-
-        Mapping_context_impl src_cl_mapping;
-        if (strncmp(sub_cl_name, part_prefix, prefix_len) != 0) {
-          continue;
-        }
-
-        const char *part_name = sub_cl_name + prefix_len;
-        uint name_len =
-            strlen(new_table_name) + strlen(SDB_PART_SEP) + strlen(part_name);
-        if (name_len > SDB_CL_NAME_MAX_SIZE) {
-          rc = ER_WRONG_ARGUMENTS;
-          my_printf_error(rc, "Too long table name", MYF(0));
-          goto done;
-        }
-        sprintf(new_sub_cl_name, "%s%s%s", new_table_name, SDB_PART_SEP,
-                part_name);
-
-        rc = conn->rename_cl(db_name, sub_cl_name, new_sub_cl_name,
-                             &src_cl_mapping);
-        if (rc != 0) {
+        sep_pos = strstr(sub_cl_name, ".");
+        cl_name = sep_pos + 1;
+        cs_name_len = sep_pos - sub_cl_name;
+        strncpy(cs_name, sub_cl_name, cs_name_len);
+        cs_name[cs_name_len] = '\0';
+        rc = Name_mapping::get_reverse_mapping(cs_name, cl_name, conn,
+                                               &part_mapping);
+        if (0 != rc) {
+          SDB_LOG_ERROR("Failed to get mapping for %s.%s, error: %d", cs_name,
+                        cl_name, rc);
           goto error;
         }
+        tab_part_name = part_mapping.get_table();
+        tbl_parts.insert(strstr(tab_part_name, SDB_PART_SEP) +
+                         sizeof(SDB_PART_SEP) - 1);
+      }
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get partition names, exception:%s",
+                        e.what());
+done:
+  DBUG_RETURN(rc);
+error:
+  SDB_LOG_ERROR("%s", conn->get_err_msg());
+  conn->clear_err_msg();
+  goto done;
+}
+
+static int sdb_rename_partitions(Sdb_conn *sdb_conn, const char *db_name,
+                                 const char *old_table_name,
+                                 const char *new_table_name,
+                                 boost::unordered_set<std::string> &parts) {
+  int rc = SDB_ERR_OK;
+  DBUG_ENTER("sdb_rename_partitions");
+  char from_tab_part_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  char to_tab_part_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  boost::unordered_set<std::string> renamed_parts;
+  boost::unordered_set<std::string>::iterator it;
+  Mapping_context_impl tmp_tbl_mapping;
+
+  try {
+    for (it = parts.begin(); it != parts.end(); it++) {
+      tmp_tbl_mapping.reset();
+      snprintf(from_tab_part_name, SDB_CL_NAME_MAX_SIZE, "%s%s%s",
+               old_table_name, SDB_PART_SEP, it->c_str());
+      snprintf(to_tab_part_name, SDB_CL_NAME_MAX_SIZE, "%s%s%s", new_table_name,
+               SDB_PART_SEP, it->c_str());
+      rc = sdb_conn->rename_cl(db_name, from_tab_part_name, to_tab_part_name,
+                               &tmp_tbl_mapping);
+      if (0 != rc) {
+        goto error;
+      }
+      renamed_parts.insert(it->c_str());
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Unexpected error while renaming partitions, exception:%s", e.what());
+done:
+  DBUG_RETURN(rc);
+error:
+  // try to revert rename partitions operations, ignore errors
+  for (it = renamed_parts.begin(); it != renamed_parts.end(); it++) {
+    tmp_tbl_mapping.reset();
+    snprintf(from_tab_part_name, SDB_CL_NAME_MAX_SIZE, "%s%s%s", new_table_name,
+             SDB_PART_SEP, it->c_str());
+    snprintf(to_tab_part_name, SDB_CL_NAME_MAX_SIZE, "%s%s%s", old_table_name,
+             SDB_PART_SEP, it->c_str());
+    if (sdb_conn->rename_cl(db_name, from_tab_part_name, to_tab_part_name,
+                            &tmp_tbl_mapping)) {
+      SDB_LOG_WARNING(
+          "Failed to revert rename partition(from '%s' to '%s') operation",
+          from_tab_part_name, to_tab_part_name);
+    }
+  }
+  goto done;
+}
+
+// swap partitions for partition table
+static int sdb_swap_partitions(
+    Sdb_conn *sdb_conn, const char *db_name, const char *old_table_name,
+    const char *new_table_name,
+    boost::unordered_set<std::string> &old_tbl_parts,
+    boost::unordered_set<std::string> &new_tbl_parts) {
+  int rc = SDB_ERR_OK;
+  char backup_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  DBUG_ENTER("sdb_swap_partitions");
+  sprintf(backup_name, "#tmp-%s", old_table_name);
+
+  // rename original table to temporary table
+  rc = sdb_rename_partitions(sdb_conn, db_name, old_table_name, backup_name,
+                             old_tbl_parts);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to swap partitions between '%s' and '%s' on step 1",
+                  old_table_name, backup_name);
+    goto error;
+  }
+
+  // rename new table to old table
+  rc = sdb_rename_partitions(sdb_conn, db_name, new_table_name, old_table_name,
+                             new_tbl_parts);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to swap partitions between '%s' and '%s' on step 2",
+                  new_table_name, old_table_name);
+    sdb_rename_partitions(sdb_conn, db_name, backup_name, old_table_name,
+                          old_tbl_parts);
+    goto error;
+  }
+
+  // rename temporary table to new table
+  rc = sdb_rename_partitions(sdb_conn, db_name, backup_name, new_table_name,
+                             old_tbl_parts);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to swap partitions between '%s' and '%s' on step 3",
+                  backup_name, new_table_name);
+    sdb_rename_partitions(sdb_conn, db_name, old_table_name, new_table_name,
+                          new_tbl_parts);
+    sdb_rename_partitions(sdb_conn, db_name, backup_name, old_table_name,
+                          old_tbl_parts);
+    goto error;
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int sdb_rename_or_swap_sub_cl4part_table(Sdb_conn *conn, char *db_name,
+                                         char *old_table_name,
+                                         char *new_table_name,
+                                         bool swap_table = false) {
+  DBUG_ENTER("sdb_rename_or_swap_sub_cl4part_table");
+  int rc = 0;
+  try {
+    boost::unordered_set<std::string> old_tbl_parts, new_tbl_parts, total_parts;
+    boost::unordered_set<std::string>::iterator it;
+    // get old table partitions
+    rc = sdb_get_partition_names(conn, db_name, old_table_name, old_tbl_parts);
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to get old table partition names, error:%d", rc);
+      goto error;
+    }
+    // get new table partitions
+    rc = sdb_get_partition_names(conn, db_name, new_table_name, new_tbl_parts);
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to get new table partition names, error:%d", rc);
+      goto error;
+    }
+    // merge partitions
+    total_parts.insert(old_tbl_parts.begin(), old_tbl_parts.end());
+    total_parts.insert(new_tbl_parts.begin(), new_tbl_parts.end());
+
+    if (swap_table) {  // swap partitions
+      rc = sdb_swap_partitions(conn, db_name, old_table_name, new_table_name,
+                               old_tbl_parts, new_tbl_parts);
+      if (0 != rc) {
+        SDB_LOG_ERROR("Failed to swap partitions between '%s' and '%s'",
+                      old_table_name, new_table_name);
+        goto error;
+      }
+    } else {  // rename partitions
+      rc = sdb_rename_partitions(conn, db_name, old_table_name, new_table_name,
+                                 total_parts);
+      if (0 != rc) {
+        goto error;
       }
     }
   }
@@ -7077,6 +7210,7 @@ int ha_sdb::delete_table(const char *from) {
                   (sdb_alter_partition_flags(thd) &
                    (SDB_PARTITION_ALTER_FLAG &
                     ~(ALTER_PARTITION_INFO | ALTER_PARTITION_REMOVE))));
+  is_part = false;
 #endif
   Thd_sdb *thd_sdb = NULL;
   char part_tab_name[SDB_PART_TAB_NAME_SIZE + 1] = {0};
@@ -7173,7 +7307,20 @@ int ha_sdb::delete_table(const char *from) {
 done:
   DBUG_RETURN(rc);
 error:
+  if (HA_ERR_END_OF_FILE == rc) {
+    rc = HA_ERR_NO_SUCH_TABLE;
+  }
   goto done;
+}
+
+int ha_sdb::swap_table(const char *from, const char *to) {
+  DBUG_ENTER("ha_sdb::swap_table");
+  DBUG_RETURN(rename_or_swap_table(from, to, true));
+}
+
+int ha_sdb::rename_table(const char *from, const char *to) {
+  DBUG_ENTER("ha_sdb::rename_table");
+  DBUG_RETURN(rename_or_swap_table(from, to, false));
 }
 
 #ifdef IS_MARIADB
@@ -7205,7 +7352,8 @@ error:
 }
 
 int sdb_rename_main_cl(Sdb_conn *conn, const char *old_db_name,
-                       const char *old_table_name, const char *new_table_name) {
+                       const char *old_table_name, const char *new_table_name,
+                       bool swap_table = false) {
   int rc = 0;
   const char *pos = NULL;
   const char *part_sep = NULL;
@@ -7232,8 +7380,14 @@ int sdb_rename_main_cl(Sdb_conn *conn, const char *old_db_name,
   memcpy(new_main_cl_name, new_table_name, new_main_cl_len);
   new_main_cl_name[new_main_cl_len] = '\0';
   Mapping_context_impl src_tbl_mapping;
-  rc = conn->rename_cl(old_db_name, old_main_cl_name, new_main_cl_name,
-                       &src_tbl_mapping);
+  if (swap_table) {
+    Mapping_context_impl dst_tbl_mapping;
+    rc = conn->swap_cl(old_db_name, old_main_cl_name, new_main_cl_name,
+                       &src_tbl_mapping, &dst_tbl_mapping);
+  } else {
+    rc = conn->rename_cl(old_db_name, old_main_cl_name, new_main_cl_name,
+                         &src_tbl_mapping);
+  }
   if (rc != 0) {
     goto error;
   }
@@ -7246,7 +7400,8 @@ error:
 
 int ha_sdb::prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
                                       char *old_table_name,
-                                      char *new_table_name, bool &is_skip) {
+                                      char *new_table_name, bool &is_skip,
+                                      bool swap_table) {
   int rc = 0;
   int main_cl_len = 0;
   int sub_cl_len = 0;
@@ -7299,7 +7454,8 @@ int ha_sdb::prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
             sdb_alter_partition_flags(thd) & ALTER_PARTITION_INFO ||
             !sdb_alter_partition_flags(thd)))) {
         // rename main_cl
-        rc = sdb_rename_main_cl(conn, db_name, old_table_name, new_table_name);
+        rc = sdb_rename_main_cl(conn, db_name, old_table_name, new_table_name,
+                                swap_table);
         if (rc != 0) {
           goto error;
         }
@@ -7324,7 +7480,8 @@ int ha_sdb::prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
          (sdb_alter_partition_flags(thd) & ALTER_PARTITION_REMOVE ||
           sdb_alter_partition_flags(thd) & ALTER_PARTITION_INFO ||
           !sdb_alter_partition_flags(thd)))) {
-      rc = sdb_rename_main_cl(conn, db_name, old_table_name, new_table_name);
+      rc = sdb_rename_main_cl(conn, db_name, old_table_name, new_table_name,
+                              swap_table);
       if (rc != 0) {
         goto error;
       }
@@ -7345,8 +7502,9 @@ error:
 }
 #endif
 
-int ha_sdb::rename_table(const char *from, const char *to) {
-  DBUG_ENTER("ha_sdb::rename_table");
+int ha_sdb::rename_or_swap_table(const char *from, const char *to,
+                                 bool swap_table) {
+  DBUG_ENTER("ha_sdb::rename_swap_table");
 
   Sdb_cl cl;
   bool new_is_tmp = false;
@@ -7362,6 +7520,9 @@ int ha_sdb::rename_table(const char *from, const char *to) {
                   (sdb_alter_partition_flags(thd) &
                    (SDB_PARTITION_ALTER_FLAG &
                     ~(ALTER_PARTITION_INFO | ALTER_PARTITION_REMOVE))));
+  // TODO: remove 'prepare_rename_part_table', 'prepare_delete_part_table'
+  // thd_sdb->part_del_ren_ctx and thd_sdb->part_alter_ctx.
+  is_part = false;
 #endif
   char old_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char old_table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
@@ -7395,7 +7556,8 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   }
 
   if (thd_sdb && thd_sdb->part_alter_ctx &&
-      thd_sdb->part_alter_ctx->skip_rename_table(new_part_tab_name)) {
+      thd_sdb->part_alter_ctx->skip_rename_table(
+          swap_table ? old_part_tab_name : new_part_tab_name)) {
     if (thd_sdb->part_alter_ctx->empty()) {
       delete thd_sdb->part_alter_ctx;
       thd_sdb->part_alter_ctx = NULL;
@@ -7433,8 +7595,9 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   }
 
   if (SQLCOM_ALTER_TABLE == thd_sql_command(thd) && thd_sdb &&
-      thd_sdb->cl_copyer) {
-    rc = thd_sdb->cl_copyer->rename(old_table_name, new_table_name);
+      thd_sdb->cl_copyer && swap_table) {
+    // alter table with copy algorithm always swap CL
+    rc = thd_sdb->cl_copyer->swap(old_table_name, new_table_name);
     if (rc != 0) {
       goto error;
     }
@@ -7447,13 +7610,14 @@ int ha_sdb::rename_table(const char *from, const char *to) {
     }
     goto done;
   }
-#ifdef IS_MYSQL
-  rc = sdb_rename_sub_cl4part_table(conn, old_db_name, old_table_name,
-                                    new_table_name);
+
+  rc = sdb_rename_or_swap_sub_cl4part_table(conn, old_db_name, old_table_name,
+                                            new_table_name, swap_table);
   if (0 != rc) {
     goto error;
   }
-#elif IS_MARIADB
+
+#ifdef IS_MARIADB
   rc = try_rename_as_sequence(conn, old_db_name, old_table_name, new_table_name,
                               renamed);
   if (rc) {
@@ -7465,7 +7629,7 @@ int ha_sdb::rename_table(const char *from, const char *to) {
 
   if (is_part) {
     rc = prepare_rename_part_table(thd, conn, old_db_name, old_table_name,
-                                   new_table_name, is_skip);
+                                   new_table_name, is_skip, swap_table);
     if (rc) {
       goto error;
     }
@@ -7478,8 +7642,14 @@ int ha_sdb::rename_table(const char *from, const char *to) {
   }
 #endif
 
-  rc = conn->rename_cl(old_db_name, old_table_name, new_table_name,
-                       &src_tbl_mapping);
+  if (swap_table) {
+    Mapping_context_impl dst_tbl_mapping;
+    rc = conn->swap_cl(old_db_name, old_table_name, new_table_name,
+                       &src_tbl_mapping, &dst_tbl_mapping);
+  } else {
+    rc = conn->rename_cl(old_db_name, old_table_name, new_table_name,
+                         &src_tbl_mapping);
+  }
 #ifdef IS_MARIADB
   if (is_part && SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
     rc = 0;
@@ -7500,11 +7670,13 @@ error:
 set_cata_version:
   if (ha_is_open()) {
     Mapping_context_impl tbl_tmp_mapping;
-    rc = conn->get_cl(new_db_name, new_table_name, cl, true, &tbl_tmp_mapping);
+    const char *tmp_db_name = (swap_table ? old_db_name : new_db_name);
+    const char *tmp_tbl_name = (swap_table ? old_table_name : new_table_name);
+    rc = conn->get_cl(tmp_db_name, tmp_tbl_name, cl, true, &tbl_tmp_mapping);
     if (0 != rc) {
       goto error;
     }
-    ha_set_cata_version(new_db_name, new_table_name, cl.get_version());
+    ha_set_cata_version(tmp_db_name, tmp_tbl_name, cl.get_version());
   }
   goto done;
 }
@@ -8020,7 +8192,8 @@ error:
 }
 
 int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
-                           bson::BSONObj &options) {
+                           bson::BSONObj &options,
+                           bson::BSONObj *table_mapping) {
   int rc = 0;
   bson::BSONObj sharding_key;
   bson::BSONObj table_options;
@@ -8043,7 +8216,7 @@ int ha_sdb::get_cl_options(TABLE *form, HA_CREATE_INFO *create_info,
   if (create_info && create_info->comment.str) {
     rc = sdb_parse_comment_options(create_info->comment.str, table_options,
                                    explicit_not_auto_partition,
-                                   &partition_options);
+                                   &partition_options, table_mapping);
     if (explicit_not_auto_partition) {
       filter_partition_options(table_options, table_options);
     }
@@ -8314,10 +8487,12 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
   bool has_copy = false;
   bool created_cs = false;
   bool created_cl = false;
+  bool mapping_persisted = false;
   bool create_temporary = (create_info->options & HA_LEX_CREATE_TMP_TABLE);
   bson::BSONObj options;
   bson::BSONObj auto_inc_options;
   bson::BSONObjBuilder build;
+  bson::BSONObj mapping_opts;
   Mapping_context_impl tbl_mapping;
   if (sdb_execute_only_in_mysql(ha_thd())) {
     rc = 0;
@@ -8339,6 +8514,16 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
 
   rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
+  if (0 != rc) {
+    goto error;
+  }
+
+  rc = get_cl_options(form, create_info, options, &mapping_opts);
+  if (0 != rc) {
+    goto error;
+  }
+
+  rc = sdb_set_mapping_name(tbl_mapping, &mapping_opts);
   if (0 != rc) {
     goto error;
   }
@@ -8442,11 +8627,6 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       }
     }
 
-    rc = get_cl_options(form, create_info, options);
-    if (0 != rc) {
-      goto error;
-    }
-
     // Merge auto_inc_options into options.
     rc = merge_auto_inc_option(options, auto_inc_options, build);
     if (rc) {
@@ -8458,6 +8638,7 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
     if (0 != rc) {
       goto error;
     }
+    mapping_persisted = true;
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to create table:%s.%s, exception:%s",
                         db_name, table_name, e.what());
@@ -8514,9 +8695,11 @@ error:
   handle_sdb_error(rc, MYF(0));
   if (created_cl) {
     conn->drop_cl(db_name, table_name, &tbl_mapping);
+  } else if (mapping_persisted) {
+    Name_mapping::delete_mapping(db_name, table_name, conn, &tbl_mapping);
   }
   if (created_cs) {
-    sdb_drop_empty_cs(*conn, db_name);
+    sdb_drop_empty_cs(*conn, tbl_mapping.get_mapping_cs());
   }
   goto done;
 }
@@ -8705,7 +8888,9 @@ void ha_sdb::print_error(int error, myf errflag) {
       handle_sdb_error(error, errflag);
       break;
     }
-    case SDB_ERR_TOO_MANY_TABLES: {
+    case SDB_ERR_TOO_MANY_TABLES:
+    case SDB_ERR_DUP_CS_MAPPING:
+    case SDB_ERR_DUP_CL_MAPPING: {
       handle_sdb_error(error, errflag);
       break;
     }
@@ -8728,10 +8913,26 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   Sdb_conn *connection = NULL;
   sdb_rc = get_sdb_code(error);
   if (sdb_rc >= SDB_ERR_OK) {
-    if (SDB_ERR_TOO_MANY_TABLES == sdb_rc) {
-      my_printf_error(
-          sdb_rc, "Too many tables in current database, the upper limit is %d",
-          MYF(0), sdb_mapping_unit_size * sdb_mapping_unit_count);
+    switch (sdb_rc) {
+      case SDB_ERR_TOO_MANY_TABLES: {
+        my_error(ER_GET_ERRNO, MYF(0), sdb_rc,
+                 "Too many tables in current database, the upper limit is %d",
+                 sdb_mapping_unit_size * sdb_mapping_unit_count);
+        break;
+      }
+      case SDB_ERR_DUP_CL_MAPPING: {
+        my_error(ER_GET_ERRNO, MYF(0), sdb_rc,
+                 "Collection is already mapped to another table in SQL engine");
+        break;
+      }
+      case SDB_ERR_DUP_CS_MAPPING: {
+        my_error(ER_GET_ERRNO, MYF(0), sdb_rc,
+                 "Collection space is already mapped to another database in "
+                 "SQL engine");
+        break;
+      }
+      default:
+        break;
     }
     goto done;
   }

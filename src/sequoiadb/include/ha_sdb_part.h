@@ -355,13 +355,15 @@ class ha_sdb_part : public ha_sdb
 
   int get_cl_options(TABLE* form, HA_CREATE_INFO* create_info,
                      bson::BSONObj& options, bson::BSONObj& partition_options,
-                     bool& explicit_not_auto_partition);
+                     bool& explicit_not_auto_partition,
+                     bson::BSONObj* table_mapping = NULL);
 
   int get_scl_options(partition_info* part_info, partition_element* part_elem,
                       const bson::BSONObj& mcl_options,
                       const bson::BSONObj& partition_options,
                       bool explicit_not_auto_partition,
-                      bson::BSONObj& scl_options);
+                      bson::BSONObj& scl_options,
+                      bson::BSONObj* table_mapping = NULL);
 
   int get_attach_options(partition_info* part_info,
                          partition_element* part_elem, uint curr_part_id,
@@ -612,6 +614,8 @@ class ha_sdb_part_wrapper : public ha_partition {
   }
 
   int rename_partitions(const char* path);
+
+  int swap_partitions(const char* path);
 
   int truncate_partition(Alter_info* alter_info, bool* binlog_stmt);
 

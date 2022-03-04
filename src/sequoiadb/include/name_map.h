@@ -70,9 +70,18 @@ class Name_mapping {
   static int get_mapping(const char *db_name, const char *table_name,
                          Sdb_conn *sdb_conn, Mapping_context *mapping_ctx);
 
+  static int get_reverse_mapping(const char *cs_name, const char *cl_name,
+                                 Sdb_conn *sdb_conn,
+                                 Mapping_context *mapping_ctx);
+
   static int rename_mapping(const char *db_name, const char *from,
                             const char *to, Sdb_conn *sdb_conn,
                             Mapping_context *mapping_ctx);
+
+  static int swap(Sdb_conn *sdb_conn, Mapping_context *from,
+                  Mapping_context *to);
+
+  static int persist_mapping(Sdb_conn *sdb_conn, Mapping_context *mapping_ctx);
 
   static int get_fixed_mapping(const char *db_name, const char *table_name,
                                Mapping_context *mapping_ctx);
@@ -91,8 +100,8 @@ class Name_mapping {
                                   char *cs_name, const char *sql_group_name);
 
   static int get_table_mapping(const char *db_name, const char *table_name,
-                               Sdb_conn *sdb_conn,
-                               Mapping_context *mapping_ctx);
+                               Sdb_conn *sdb_conn, Mapping_context *mapping_ctx,
+                               bool get_reverse_mapping = false);
 
   static int add_table_mapping(const char *db_name, const char *table_name,
                                Sdb_conn *sdb_conn,
