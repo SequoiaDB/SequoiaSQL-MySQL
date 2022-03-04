@@ -186,7 +186,7 @@ function check_enable_mapping_flag
    done
 
    if [[ ${mapping_enabled} == 1 ]]; then
-      echo "INFO: Mapping function has been enabled"
+      echo "INFO: Mapping function has been enabled for instance group '${group_name}'"
    fi
    return ${mapping_enabled}
 }
@@ -634,7 +634,7 @@ cat <<EOF
 
       // build mysql shell command and run this command by Cmd.run method
       var cmd = new Cmd();
-      var shellCmd = '${BIN_PATH}/mysql -u${MYSQL_USER} -p${MYSQL_PASSWD}';
+      var shellCmd = '${BIN_PATH}/mysql -u${MYSQL_USER} --password=${MYSQL_PASSWD}';
       shellCmd += ' -h' + hostName + ' -P' + port + ' -e ' + '"' + sqlCmd + '"';
       cmd.run(shellCmd);
       if ( 0 != cmd.getLastRet()) {
@@ -735,7 +735,7 @@ function build_mapping_table()
 ##################################
 ME=$(basename "$0")
 
-ARGS=`getopt -o vhu:p --long version,help,standalone,manual-restart,instance:,user:,password: -n "${ME}" -- "$@"`
+ARGS=`getopt -o p::vhu: --long version,help,standalone,manual-restart,instance:,user:,password: -n "${ME}" -- "$@"`
 test $? -ne 0 && exit 10
 
 # get path
@@ -757,9 +757,16 @@ do
       -u )                                    MYSQL_USER=$2
                                               shift 2
                                               ;;
-      -p )                                    PROMPT_MYSQL_PASSWD=true
-                                              shift
-                                              ;;
+      -p )
+         case $2 in
+            "")                  PROMPT_MYSQL_PASSWD=true
+                                 shift 2
+                                 ;;
+            *)                   MYSQL_PASSWD=$2
+                                 shift 2
+                                 ;;
+          esac
+          ;;
       --instance )                            INST_NAME=$2
                                               shift 2
                                               ;;
@@ -807,11 +814,7 @@ if [ "${PROMPT_MYSQL_PASSWD}" == true -a "${MYSQL_PASSWD}" == "" ]; then
 fi
 
 # build mysql login command
-if [ "${MYSQL_PASSWD}" != "" ]; then
-   MYSQL_LOGIN="$BIN_PATH/mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} -p${MYSQL_PASSWD}"
-else
-   MYSQL_LOGIN="$BIN_PATH/mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER}"
-fi
+MYSQL_LOGIN="$BIN_PATH/mysql -h${MYSQL_HOST} -P${MYSQL_PORT} -u${MYSQL_USER} --password=${MYSQL_PASSWD}"
 
 # get lower case table names
 msg=$($MYSQL_LOGIN -e "SELECT @@lower_case_table_names" 2>&1)
@@ -916,3 +919,4 @@ if [[ $? != 0 ]]; then
    echo "ERROR: Failed to drop temporary database '${db_name}'"
    exit 16
 fi
+echo "INFO: Enable mapping function for instance group '${group_name}' successfully"
