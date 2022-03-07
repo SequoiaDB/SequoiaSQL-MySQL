@@ -20,7 +20,6 @@
 #include <client.hpp>
 #include <partition_element.h>
 #include "sdb_conn.h"
-#include "ha_sdb_ctx.h"
 #include <boost/shared_ptr.hpp>
 
 extern handlerton* sdb_hton;
@@ -73,10 +72,6 @@ class Thd_sdb {
   // For ALTER TABLE in ALGORITHM COPY
   Sdb_cl_copyer* cl_copyer;
 
-  Sdb_part_alter_ctx* part_alter_ctx;
-#ifdef IS_MARIADB
-  Sdb_part_del_ren_ctx* part_del_ren_ctx;
-#endif
  private:
   THD* m_thd;
   my_thread_id m_thread_id;

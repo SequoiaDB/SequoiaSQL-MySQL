@@ -653,11 +653,6 @@ class ha_sdb : public handler {
                           ulonglong nb_desired_values, ulonglong *first_value,
                           ulonglong *nb_reserved_values);
 
-  int prepare_delete_part_table(THD *thd, bool &is_skip);
-
-  int prepare_rename_part_table(THD *thd, Sdb_conn *conn, char *db_name,
-                                char *old_table_name, char *new_table_name,
-                                bool &is_skip, bool swap_table = false);
   int before_del_ren_part();
 
   int after_del_ren_part();

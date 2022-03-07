@@ -714,10 +714,6 @@ Thd_sdb::Thd_sdb(THD *thd)
   if (ha_is_open()) {
     m_conn.set_check_collection_version(true);
   }
-  part_alter_ctx = NULL;
-#ifdef IS_MARIADB
-  part_del_ren_ctx = NULL;
-#endif
 
   (void)sdb_hash_init(&open_table_shares, table_alias_charset, 5, 0, 0,
                       (my_hash_get_key)thd_sdb_share_get_key,
@@ -725,16 +721,6 @@ Thd_sdb::Thd_sdb(THD *thd)
 }
 
 Thd_sdb::~Thd_sdb() {
-  if (part_alter_ctx) {
-    delete part_alter_ctx;
-    part_alter_ctx = NULL;
-  }
-#ifdef IS_MARIADB
-  if (part_del_ren_ctx) {
-    delete part_del_ren_ctx;
-    part_del_ren_ctx = NULL;
-  }
-#endif
   my_hash_free(&open_table_shares);
 }
 

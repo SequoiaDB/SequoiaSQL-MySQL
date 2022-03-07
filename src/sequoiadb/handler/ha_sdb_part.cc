@@ -28,7 +28,6 @@
 #include <my_check_opt.h>
 #include "bson/lib/md5.hpp"
 #include "ha_sdb_log.h"
-#include "ha_sdb_ctx.h"
 #include "server_ha.h"
 #include "ha_sdb_util.h"
 #include <boost/unordered_set.hpp>
@@ -2533,12 +2532,6 @@ int ha_sdb_part::close(void) {
 
 int ha_sdb_part::reset() {
   DBUG_ENTER("ha_sdb_part::reset");
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
-  if (thd_sdb && thd_sdb->part_alter_ctx) {
-    delete thd_sdb->part_alter_ctx;
-    thd_sdb->part_alter_ctx = NULL;
-  }
-
   std::map<uint, char *>::iterator it = m_new_part_id2cl_name.begin();
   while (it != m_new_part_id2cl_name.end()) {
     delete it->second;
@@ -3467,10 +3460,6 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   thd_sdb = thd_get_thd_sdb(ha_thd());
   DBUG_ASSERT(thd_sdb);
 
-  if (thd_sdb->part_alter_ctx) {
-    delete thd_sdb->part_alter_ctx;
-  }
-
   // update cached cata version, it will be written into sequoiadb
   if (ha_is_open()) {
     ha_set_cata_version(db_name, table_name, mcl.get_version());
@@ -3481,10 +3470,6 @@ error:
 #ifdef IS_MYSQL
   print_error(rc, MYF(rc != ER_OUTOFMEMORY ? 0 : ME_FATALERROR));
 #endif
-  if (thd_sdb && thd_sdb->part_alter_ctx) {
-    delete thd_sdb->part_alter_ctx;
-    thd_sdb->part_alter_ctx = NULL;
-  }
   goto done;
 }
 
