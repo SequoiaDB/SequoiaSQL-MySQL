@@ -134,7 +134,7 @@ public class MetaDataMapping24609 extends MysqlTestBase {
                         + "test" + "(a int,b int)" );
                 Assert.fail( "should error but success" );
             } catch ( SQLException e ) {
-                if ( e.getErrorCode() != 30013 ) {
+                if ( e.getErrorCode() != 1030 ) {
                     throw e;
                 }
             }
@@ -145,7 +145,7 @@ public class MetaDataMapping24609 extends MysqlTestBase {
                         + "add partition (partition p3 values less than(5000))" );
                 Assert.fail( "should error but success" );
             } catch ( SQLException e ) {
-                if ( e.getErrorCode() != 30013 ) {
+                if ( e.getErrorCode() != 1030 ) {
                     throw e;
                 }
             }
@@ -189,10 +189,9 @@ public class MetaDataMapping24609 extends MysqlTestBase {
                                     + " values(1000,2000),(2000,2000)" );
                             break;
                         } catch ( SQLException e ) {
-                            // ERROR 30013 (HY000): Too many tables in current
-                            // database, the upper limit is 10 * 1024
-                            // SEQUOIASQLMAINSTREAM-1230
-                            if ( e.getErrorCode() == 30013
+                            // ERROR 1030: Got error 30013 from storage engine
+                            // ERROR 40190: Incompatible lock
+                            if ( e.getErrorCode() == 1030
                                     || e.getErrorCode() == 40190 ) {
                                 Thread.sleep(
                                         ( ( int ) Math.random() * 200 ) + 100 );
