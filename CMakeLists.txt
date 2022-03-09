@@ -333,6 +333,10 @@ install(PROGRAMS "${PROJECT_PACKAGE_SUB_DIR}/sdb_sql_ctl"
         DESTINATION "bin")
 install(PROGRAMS "${PROJECT_PACKAGE_SUB_DIR}/sequoiasql-${SDB_PROJECT_TYPE}-daemon"
         DESTINATION "bin")
+install(PROGRAMS "${PROJECT_PACKAGE_SUB_DIR}/sequoiasql-${SDB_PROJECT_TYPE}.sysv"
+        DESTINATION "bin")
+install(FILES "${PROJECT_PACKAGE_SUB_DIR}/sequoiasql-${SDB_PROJECT_TYPE}.systemd"
+        DESTINATION "bin")
 install(PROGRAMS "${PROJECT_PACKAGE_DIR}/common/compatible.sh"
         DESTINATION "./")
 install(PROGRAMS "${PROJECT_PACKAGE_DIR}/common/preUninstall.sh"

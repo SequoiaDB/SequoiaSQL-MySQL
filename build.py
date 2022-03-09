@@ -351,7 +351,7 @@ class ProjectMgr:
         return 0
 
     def package(self):
-        pack_command = ['make', 'package']
+        pack_command = ['make', 'buildpackage']
         rc = self.__execute_make_cmd(pack_command)
         if 0 != rc:
             print("Build TGZ package for the project failed: {}".format(rc))
