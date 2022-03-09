@@ -22,6 +22,22 @@ endif()
 # Use lower case in the package name
 string(TOLOWER ${PACKAGE_NAME} CPACK_PACKAGE_FILE_NAME)
 
+if(PACK_TEST)    
+  add_custom_target(buildpackage
+      COMMAND bash -c "tar zcvf ${PACKAGE_NAME}.tar.gz *"
+      WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
+      DEPENDS ${CMAKE_INSTALL_PREFIX}
+      COMMENT "build package..."
+      )
+else()
+  add_custom_target(buildpackage
+      COMMAND bash -c "tar zcvf ${PACKAGE_NAME}.tar.gz * --exclude=mysql-test"
+      WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
+      DEPENDS ${CMAKE_INSTALL_PREFIX}
+      COMMENT "build package..."
+      )
+endif()
+
 set(CPACK_SOURCE_GENERATOR "TGZ")
 set(CPACK_GENERATOR "TGZ")
 
