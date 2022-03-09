@@ -742,10 +742,21 @@ const char *Sdb_conn::get_err_msg() {
 }
 
 int Sdb_conn::waitTasks(const longlong *taskIDs, int num) {
+  int rc = SDB_ERR_OK;
   if (!m_connection) {
     return SDB_NOT_CONNECTED;
   }
-  return m_connection->waitTasks(taskIDs, num);
+
+  rc = m_connection->waitTasks(taskIDs, num);
+  if (0 != rc) {
+    goto error;
+  }
+
+done:
+  return rc;
+error:
+  convert_sdb_code(rc);
+  goto done;
 }
 void Sdb_conn::save_err_msg() {
   get_err_msg();
