@@ -281,6 +281,7 @@ SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
 Warning	1292	Incorrect datetime value: '1'
 Warning	1292	Incorrect datetime value: '1'
+Warning	1292	Incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
@@ -339,6 +340,7 @@ SELECT * FROM t1 WHERE a = CAST('1' AS DATETIME);
 a	b	c
 Warning	1292	Incorrect datetime value: '1'
 Warning	1292	Incorrect datetime value: '1'
+Warning	1292	Incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
@@ -354,6 +356,7 @@ a	b	c
 922337203685477807	-13	2001-01-11
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
+Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
@@ -823,6 +826,7 @@ a	b	c
 922337203685477807	-13	2001-01-11
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
+Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
@@ -1208,6 +1212,7 @@ SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
 Warning	1292	Incorrect datetime value: '1'
 Warning	1292	Incorrect datetime value: '1'
+Warning	1292	Incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
@@ -1270,6 +1275,7 @@ SELECT * FROM t1 WHERE a = CAST('1' AS DATETIME);
 a	b	c
 Warning	1292	Incorrect datetime value: '1'
 Warning	1292	Incorrect datetime value: '1'
+Warning	1292	Incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
@@ -1291,6 +1297,7 @@ a	b	c
 18446744073709551615	2	2001-01-02
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
+Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
@@ -1392,6 +1399,7 @@ a	b	c
 20010101	10	2007-08-01
 2019	21	2011-09-01
 201901	16	2012-05-01
+Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
@@ -1778,6 +1786,7 @@ SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
+Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
 a	b	c
@@ -1880,6 +1889,9 @@ a	b	c
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
+Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
 a	b	c
+DROP TABLE t1;
+drop database func_cast_bigint_bigintunsigned_sequoiadb;

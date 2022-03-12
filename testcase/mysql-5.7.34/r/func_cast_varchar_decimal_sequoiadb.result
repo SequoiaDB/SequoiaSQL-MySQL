@@ -1832,6 +1832,7 @@ a	b	c
 SELECT * FROM t1 WHERE a = CAST('1' AS DATE);
 a	b	c
 Warning	1292	Incorrect datetime value: '1'
+Warning	1292	Incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01' AS DATE);
 a	b	c
@@ -1893,6 +1894,7 @@ a	b	c
 SELECT * FROM t1 WHERE a = CAST('1' AS DATETIME);
 a	b	c
 Warning	1292	Incorrect datetime value: '1'
+Warning	1292	Incorrect datetime value: '1'
 Warnings:
 SELECT * FROM t1 WHERE a >= CAST('2001-01-01 00:00:00' AS DATETIME);
 a	b	c
@@ -1902,6 +1904,7 @@ SELECT * FROM t1 WHERE a >= CAST('2001.01.01 01:00:00' AS DATETIME);
 a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
+Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
@@ -2009,6 +2012,7 @@ a	b	c
 4294967294	-13	2001-01-11
 4294967294	-9	2001-01-05
 4294967294	2	2001-01-02
+Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
@@ -2363,6 +2367,7 @@ a	b	c
 SELECT * FROM t1 WHERE a > CAST('10000.01.01 03:00:00' AS DATETIME);
 a	b	c
 Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
+Warning	1292	Incorrect datetime value: '10000.01.01 03:00:00'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS DATETIME);
 a	b	c
@@ -2469,6 +2474,7 @@ a	b	c
 4294967294	-13	2001-01-11
 4294967294	-9	2001-01-05
 4294967294	2	2001-01-02
+Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warning	1292	Truncated incorrect time value: '-839:59:59.0000'
 Warnings:
 SELECT * FROM t1 WHERE a < CAST(c AS TIME);
