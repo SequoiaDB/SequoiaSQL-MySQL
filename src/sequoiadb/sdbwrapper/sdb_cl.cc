@@ -501,54 +501,10 @@ error:
   goto done;
 }
 
-int cl_create_index_Async(longlong *taskID, sdbclient::sdbCollection *cl,
-                          Sdb_conn *conn, const bson::BSONObj *index_def,
-                          const CHAR *name, const bson::BSONObj *options,
-                          char *errmsg) {
-  int rc = SDB_ERR_OK;
-  int rs = SDB_ERR_OK;
-  bool is_old = false;
-
-  try {
-    rc = cl->createIndexAsync(*taskID, *index_def, name, *options);
-    if (SDB_IXM_REDEF == rc) {
-      rc = SDB_ERR_OK;
-      goto done;
-    }
-    if (SDB_IXM_EXIST == rc) {
-      conn->set_print_screen(true);
-      conn->save_err_msg();
-      rs = is_old_version_index(cl, *index_def, name, *options, is_old, errmsg);
-      if (SDB_OK != rs) {
-        goto error;
-      }
-      if (is_old) {
-        conn->set_print_screen(false);
-        conn->clear_err_msg();
-        rc = SDB_ERR_OK;
-        goto done;
-      }
-    }
-  }
-  SDB_EXCEPTION_CATCHER(
-      rc, "Failed to create index2 of collection, exception:%s", e.what());
-done:
-  return rc;
-error:
-  rc = rs ? rs : rc;
-  goto done;
-}
-
 int Sdb_cl::create_index(const bson::BSONObj &index_def, const CHAR *name,
                          const bson::BSONObj &options) {
   return retry(boost::bind(cl_create_index2, &m_cl, get_conn(), &index_def,
                            name, &options, get_errmsg()));
-}
-
-int Sdb_cl::create_index_Async(longlong &taskID, const bson::BSONObj &index_def,
-                               const CHAR *name, const bson::BSONObj &options) {
-  return retry(boost::bind(cl_create_index_Async, &taskID, &m_cl, get_conn(),
-                           &index_def, name, &options, get_errmsg()));
 }
 
 int cl_drop_index(sdbclient::sdbCollection *cl, const char *name) {
@@ -567,29 +523,8 @@ error:
   goto done;
 }
 
-int cl_drop_index_Async(sdbclient::sdbCollection *cl, const char *name,
-                        longlong *taskID) {
-  int rc = SDB_ERR_OK;
-  try {
-    rc = cl->dropIndexAsync(*taskID, name);
-    if (SDB_IXM_NOTEXIST == rc) {
-      rc = SDB_ERR_OK;
-    }
-  }
-  SDB_EXCEPTION_CATCHER(rc, "Failed to drop collection index, exception:%s",
-                        e.what());
-done:
-  return rc;
-error:
-  goto done;
-}
-
 int Sdb_cl::drop_index(const char *name) {
   return retry(boost::bind(cl_drop_index, &m_cl, name));
-}
-
-int Sdb_cl::drop_index_Async(longlong &taskID, const char *name) {
-  return retry(boost::bind(cl_drop_index_Async, &m_cl, name, &taskID));
 }
 
 int cl_truncate(sdbclient::sdbCollection *cl) {

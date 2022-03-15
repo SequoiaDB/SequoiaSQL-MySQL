@@ -53,8 +53,8 @@ inline int get_variable_key_length(const uchar *A) {
   return (int)(((uint16)(A[0])) + ((uint16)(A[1]) << 8));
 }
 
-int sdb_create_index(const KEY *key_info, Sdb_cl &cl, longlong &taskID,
-                     bool support_Async, bool shard_by_part_id = false);
+int sdb_create_index(const KEY *key_info, Sdb_cl &cl,
+                     bool shard_by_part_id = false);
 
 int sdb_get_idx_order(KEY *key_info, bson::BSONObj &order, int order_direction,
                       bool secondary_sort_oid);

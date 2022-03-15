@@ -741,12 +741,6 @@ const char *Sdb_conn::get_err_msg() {
   return errmsg;
 }
 
-int Sdb_conn::waitTasks(const longlong *taskIDs, int num) {
-  if (!m_connection) {
-    return SDB_NOT_CONNECTED;
-  }
-  return m_connection->waitTasks(taskIDs, num);
-}
 void Sdb_conn::save_err_msg() {
   get_err_msg();
 }

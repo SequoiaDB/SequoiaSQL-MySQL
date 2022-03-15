@@ -259,8 +259,6 @@ class Sdb_conn {
     m_transaction_on = transaction;
   }
 
-  int waitTasks(const longlong *taskIDs, int num);
-
   int get_cl(const char *cs_name, const char *cl_name, Sdb_cl &cl,
              const bool check_exist = false,
              Mapping_context *mapping_ctx = NULL);

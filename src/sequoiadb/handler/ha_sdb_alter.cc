@@ -1518,103 +1518,36 @@ error:
   goto done;
 }
 
-bool key_has_not_exist(List<KEY> keys, KEY *key) {
-  List_iterator<KEY> iter(keys);
-  KEY *key_info = NULL;
-  while ((key_info = iter++)) {
-    if (key_info == key) {
-      return false;
-    }
-  }
-  return true;
-}
-
-int create_index(Sdb_conn *m_conn, Sdb_cl &cl, List<KEY> &add_keys,
-                 bool support_Async, bool shard_by_part_hash_id = false) {
-  int i = 0;
+int create_index(Sdb_cl &cl, List<KEY> &add_keys,
+                 bool shard_by_part_hash_id = false) {
   int rc = 0;
-  longlong tmp_taskID = -1;
   KEY *key_info = NULL;
-  longlong *taskID = NULL;
   List_iterator<KEY> it(add_keys);
 
-  if (support_Async) {
-    taskID = new (std::nothrow) longlong[add_keys.elements]();
-    if (taskID == NULL) {
-      rc = HA_ERR_OUT_OF_MEM;
+  while ((key_info = it++)) {
+    rc = sdb_create_index(key_info, cl, shard_by_part_hash_id);
+    if (rc) {
       goto error;
-    }
-    while ((key_info = it++)) {
-      rc = sdb_create_index(key_info, cl, taskID[i], true,
-                            shard_by_part_hash_id);
-      if (rc) {
-        goto error;
-      }
-      i++;
-    }
-    rc = m_conn->waitTasks(taskID, (int)add_keys.elements);
-    if (rc != 0) {
-      goto error;
-    }
-  } else {
-    while ((key_info = it++)) {
-      rc = sdb_create_index(key_info, cl, tmp_taskID, false,
-                            shard_by_part_hash_id);
-      if (rc) {
-        goto error;
-      }
     }
   }
-
 done:
-  if (taskID != NULL) {
-    delete[] taskID;
-    taskID = NULL;
-  }
   return rc;
 error:
   goto done;
 }
 
-int drop_index(Sdb_conn *conn, Sdb_cl &cl, List<KEY> &drop_keys,
-               bool drop_async) {
+int drop_index(Sdb_cl &cl, List<KEY> &drop_keys) {
   int rc = 0;
   List_iterator<KEY> it(drop_keys);
   KEY *key_info = NULL;
-  longlong *taskID = NULL;
-  int i = 0;
 
-  if (drop_async) {
-    taskID = new (std::nothrow) longlong[drop_keys.elements]();
-    if (taskID == NULL) {
-      rc = HA_ERR_OUT_OF_MEM;
+  while ((key_info = it++)) {
+    rc = cl.drop_index(sdb_key_name(key_info));
+    if (rc) {
       goto error;
-    }
-    while ((key_info = it++)) {
-      rc = cl.drop_index_Async(taskID[i], sdb_key_name(key_info));
-      i++;
-      if (rc) {
-        goto error;
-      }
-    }
-    rc = conn->waitTasks(taskID, drop_keys.elements);
-    if (rc != 0) {
-      goto error;
-    }
-  } else {
-    while ((key_info = it++)) {
-      rc = cl.drop_index(sdb_key_name(key_info));
-      if (rc) {
-        goto error;
-      }
     }
   }
-
 done:
-  if (taskID != NULL) {
-    delete[] taskID;
-    taskID = NULL;
-  }
   return rc;
 error:
   goto done;
@@ -2105,15 +2038,13 @@ int sdb_append_index_to_be_rebuild(TABLE *table, TABLE *altered_table,
         new_has_not_null = is_all_field_not_null(new_key_info);
 
         if (old_has_not_null != new_has_not_null) {
-          if (key_has_not_exist(drop_keys, old_key_info) &&
-              drop_keys.push_back(old_key_info)) {
+          if (drop_keys.push_back(old_key_info)) {
             rc = HA_ERR_OUT_OF_MEM;
             my_error(rc, MYF(0));
             goto error;
           }
 
-          if (key_has_not_exist(add_keys, new_key_info) &&
-              add_keys.push_back(new_key_info)) {
+          if (add_keys.push_back(new_key_info)) {
             rc = HA_ERR_OUT_OF_MEM;
             my_error(rc, MYF(0));
             goto error;
@@ -2401,7 +2332,7 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
     }
 
     if (!drop_keys.is_empty()) {
-      rc = drop_index(conn, cl, drop_keys, support_Async());
+      rc = drop_index(cl, drop_keys);
       if (0 != rc) {
         goto error;
       }
@@ -2414,9 +2345,9 @@ bool ha_sdb::inplace_alter_table(TABLE *altered_table,
         goto error;
       }
     }
+
     if (!add_keys.is_empty()) {
-      rc = create_index(conn, cl, add_keys, support_Async(),
-                        having_part_hash_id());
+      rc = create_index(cl, add_keys, having_part_hash_id());
       if (0 != rc) {
         goto error;
       }
@@ -2819,25 +2750,17 @@ error:
 /*
  *Exception catcher need to be added when call this function.
  */
-int sdb_copy_index(Sdb_conn *conn, Sdb_cl &src_cl, Sdb_cl &dst_cl,
-                   bool support_Async) {
+int sdb_copy_index(Sdb_cl &src_cl, Sdb_cl &dst_cl) {
   DBUG_ENTER("sdb_copy_index");
   int rc = 0;
   uint i = 0;
-  longlong *taskID = NULL;
   std::vector<bson::BSONObj> infos;
 
   rc = src_cl.get_indexes(infos);
   if (rc != 0) {
     goto error;
   }
-  if (support_Async) {
-    taskID = new (std::nothrow) longlong[infos.size()]();
-    if (taskID == NULL) {
-      rc = HA_ERR_OUT_OF_MEM;
-      goto error;
-    }
-  }
+
   for (i = 0; i < infos.size(); ++i) {
     bson::BSONElement index_def_ele;
     bson::BSONObj index_def;
@@ -2913,32 +2836,18 @@ int sdb_copy_index(Sdb_conn *conn, Sdb_cl &src_cl, Sdb_cl &dst_cl,
         // if supoort notArray, mysql createIndex notArray should true
         builder.append(SDB_FIELD_NOT_ARRAY, not_array);
       }
-    }
-    if (support_Async) {
-      rc = dst_cl.create_index_Async(taskID[i], key, name, builder.obj());
+      rc = dst_cl.create_index(key, name, builder.obj());
+      if (rc != 0) {
+        goto error;
+      }
     } else {
-      if (support_not_null) {
-        rc = dst_cl.create_index(key, name, builder.obj());
-      } else {
-        rc = dst_cl.create_index(key, name, unique, enforced);
+      rc = dst_cl.create_index(key, name, unique, enforced);
+      if (rc != 0) {
+        goto error;
       }
     }
-    if (rc != 0) {
-      goto error;
-    }
   }
-  if (support_Async) {
-    rc = conn->waitTasks(taskID, infos.size());
-  }
-  if (rc != 0) {
-    goto error;
-  }
-
 done:
-  if (taskID != NULL) {
-    delete[] taskID;
-    taskID = NULL;
-  }
   DBUG_RETURN(rc);
 error:
   if (SDB_ERR_INVALID_ARG == rc) {
@@ -2954,9 +2863,8 @@ error:
   auto-increment field and so on.
 */
 int sdb_copy_cl(Sdb_conn *conn, char *src_db_name, char *src_tbl_name,
-                char *dst_db_name, char *dst_tbl_name, bool support_async,
-                int flags = 0, bool *is_main_cl = NULL,
-                bson::BSONObj *scl_info = NULL) {
+                char *dst_db_name, char *dst_tbl_name, int flags = 0,
+                bool *is_main_cl = NULL, bson::BSONObj *scl_info = NULL) {
   DBUG_ENTER("sdb_copy_cl");
   DBUG_PRINT("info", ("src: %s.%s, dst: %s.%s", src_db_name, src_tbl_name,
                       dst_db_name, dst_tbl_name));
@@ -3031,9 +2939,11 @@ int sdb_copy_cl(Sdb_conn *conn, char *src_db_name, char *src_tbl_name,
         goto error;
       }
     }
+
     step = copy_index;
+
     if (!(flags & SDB_COPY_WITHOUT_INDEX)) {
-      rc = sdb_copy_index(conn, src_cl, dst_cl, support_async);
+      rc = sdb_copy_index(src_cl, dst_cl);
       if (rc != 0) {
         goto error;
       }
@@ -3063,67 +2973,6 @@ error:
           dst_db_name, dst_tbl_name, tmp_rc);
     }
   }
-  goto done;
-}
-
-int copy_replace_index(const KEY *key_info, Sdb_cl &mcl, Sdb_conn *conn,
-                       bool support_Async, longlong keys) {
-  int rc = 0;
-  longlong tmp_taskID = -1;
-  longlong *taskID = NULL;
-  if (support_Async) {
-    taskID = new (std::nothrow) longlong[keys]();
-    if (taskID == NULL) {
-      rc = HA_ERR_OUT_OF_MEM;
-      goto error;
-    }
-    for (uint i = 0; i < keys; i++) {
-      rc = sdb_create_index(key_info + i, mcl, taskID[i], true);
-      if (0 != rc) {
-        // we disabled sharding index,
-        // so do not ignore SDB_IXM_EXIST_COVERD_ONE
-        goto error;
-      }
-    }
-    rc = conn->waitTasks(taskID, (int)keys);
-    if (rc != 0) {
-      goto error;
-    }
-  } else {
-    for (uint i = 0; i < keys; ++i) {
-      rc = sdb_create_index(key_info + i, mcl, tmp_taskID, false);
-      if (rc != 0) {
-        goto error;
-      }
-    }
-  }
-
-done:
-  if (taskID != NULL) {
-    delete[] taskID;
-    taskID = NULL;
-  }
-  return rc;
-error:
-  goto done;
-}
-
-int copy_not_replace_index(char *mcl_cs, char *mcl_name, Sdb_cl &mcl,
-                           Sdb_conn *conn, longlong keys, bool support_Async) {
-  int rc = 0;
-  Sdb_cl old_mcl;
-  Mapping_context_impl old_tbl_mapping;
-  rc = conn->get_cl(mcl_cs, mcl_name, old_mcl, false, &old_tbl_mapping);
-  if (rc != 0) {
-    goto error;
-  }
-  rc = sdb_copy_index(conn, old_mcl, mcl, support_Async);
-  if (rc != 0) {
-    goto error;
-  }
-done:
-  return rc;
-error:
   goto done;
 }
 
@@ -3162,7 +3011,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
   }
   try {
     rc = sdb_copy_cl(m_conn, m_mcl_cs, m_mcl_name, m_new_cs, m_new_mcl_tmp_name,
-                     ha->support_Async(), flags, &is_main_cl, &scl_info);
+                     flags, &is_main_cl, &scl_info);
     if (rc != 0) {
       goto error;
     }
@@ -3205,7 +3054,7 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
       snprintf(tmp_name_buf, sizeof(tmp_name_buf), "%s-%d", m_new_mcl_tmp_name,
                scl_id++);
       rc = sdb_copy_cl(m_conn, db_name, tbl_name, db_name, tmp_name_buf,
-                       ha->support_Async(), SDB_COPY_WITHOUT_INDEX);
+                       SDB_COPY_WITHOUT_INDEX);
       if (rc != 0) {
         goto error;
       }
@@ -3239,14 +3088,23 @@ int Sdb_cl_copyer::copy(ha_sdb *ha) {
                         e.what());
 
   if (m_replace_index) {
-    rc = copy_replace_index(m_key_info, mcl, m_conn, ha->support_Async(),
-                            m_keys);
+    for (uint i = 0; i < m_keys; ++i) {
+      rc = sdb_create_index(m_key_info + i, mcl);
+      if (rc != 0) {
+        goto error;
+      }
+    }
   } else {
-    rc = copy_not_replace_index(m_mcl_cs, m_mcl_name, mcl, m_conn, m_keys,
-                                ha->support_Async());
-  }
-  if (rc != 0) {
-    goto error;
+    Sdb_cl old_mcl;
+    Mapping_context_impl old_tbl_mapping;
+    rc = m_conn->get_cl(m_mcl_cs, m_mcl_name, old_mcl, false, &old_tbl_mapping);
+    if (rc != 0) {
+      goto error;
+    }
+    rc = sdb_copy_index(old_mcl, mcl);
+    if (rc != 0) {
+      goto error;
+    }
   }
 
   if (m_replace_autoinc && !m_auto_inc_options.isEmpty()) {

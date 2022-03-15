@@ -498,7 +498,7 @@ class ha_sdb : public handler {
   int delete_table(const char *from);
 
   int rename_table(const char *from, const char *to);
-  bool support_Async();
+
   int create(const char *name, TABLE *form, HA_CREATE_INFO *create_info);
 
   void update_create_info(HA_CREATE_INFO *create_info);
