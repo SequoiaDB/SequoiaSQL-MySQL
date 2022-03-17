@@ -420,6 +420,118 @@ inline static int add_slock(Sdb_cl &lock_cl, const char *db_name,
   return rc;
 }
 
+// prepare 'U' lock record with another Sdb_conn
+static int prepare_ulock_record(const char *db_name, const char *table_name,
+                                const char *op_type,
+                                ha_sql_stmt_info *sql_info) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObj obj, hint;
+  bson::BSONObjBuilder obj_builder;
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &sdb_conn = pool_conn;
+  Sdb_cl lock_cl;
+  SDB_LOG_DEBUG(
+      "HA: Unable to add 'U' lock on '%s.%s.%s', prepare 'U' lock record",
+      db_name, table_name, op_type);
+  try {
+    rc = sdb_conn.connect();
+    rc = rc ? rc
+            : ha_get_lock_cl(sdb_conn, ha_thread.sdb_group_name, lock_cl,
+                             ha_get_sys_meta_group());
+    if (rc) {
+      goto sdb_error;
+    }
+    obj_builder.append(HA_FIELD_DB, db_name);
+    obj_builder.append(HA_FIELD_TABLE, table_name);
+    obj_builder.append(HA_FIELD_TYPE, op_type);
+    obj_builder.append(HA_FIELD_VERSION, 1);
+    obj = obj_builder.done();
+    rc = lock_cl.insert(obj, hint);
+    if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
+      rc = 0;
+    }
+    if (0 != rc) {
+      goto sdb_error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to prepare 'U' lock record '%s.%s.%s', exception:%s", db_name,
+      table_name, op_type, e.what());
+done:
+  return rc;
+error:
+  goto done;
+sdb_error:
+  ha_error_string(sdb_conn, rc, sql_info->err_message);
+  SDB_LOG_ERROR("HA: Failed to prepare 'U' lock record, error: %s",
+                sql_info->err_message);
+  goto done;
+}
+
+// add 'U' lock used to fix bug SEQUOIASQLMAINSTREAM-1293
+static int add_ulock(Sdb_cl &lock_cl, const char *db_name,
+                     const char *table_name, const char *op_type,
+                     ha_sql_stmt_info *sql_info) {
+  int rc = 0;
+  bson::BSONObj cond, obj;
+  bson::BSONObjBuilder cond_builder;
+  Sdb_conn *sdb_conn = sql_info->sdb_conn;
+  try {
+    cond_builder.append(HA_FIELD_DB, db_name);
+    cond_builder.append(HA_FIELD_TABLE, table_name);
+    cond_builder.append(HA_FIELD_TYPE, op_type);
+    cond = cond_builder.done();
+    // add 'U' lock for current SQL object
+    rc = lock_cl.query(cond, obj, obj, obj, 0, -1, QUERY_FOR_UPDATE);
+    if (rc) {
+      SDB_LOG_ERROR("HA: Failed to add 'U' lock for '%s.%s.%s', error: %s",
+                    db_name, table_name, op_type, sdb_conn->get_err_msg());
+      goto sdb_error;
+    }
+    rc = lock_cl.next(obj, false);
+    if (0 != rc && HA_ERR_END_OF_FILE != rc) {
+      SDB_LOG_ERROR("HA: Failed to add 'U' lock for '%s.%s.%s', error: %s",
+                    db_name, table_name, op_type, sdb_conn->get_err_msg());
+      goto sdb_error;
+    }
+
+    // found lock record, add 'U' lock succeed
+    if (!rc && !obj.isEmpty()) {
+      goto done;
+    }
+
+    // prepare record for 'U' lock
+    rc = prepare_ulock_record(db_name, table_name, op_type, sql_info);
+    if (0 != rc) {
+      goto error;
+    }
+
+    // add 'U' lock after prepare record for 'U' lock
+    rc = lock_cl.query(cond, obj, obj, obj, 0, -1, QUERY_FOR_UPDATE);
+    if (0 != rc) {
+      SDB_LOG_ERROR("HA: Failed to add 'U' lock for '%s.%s.%s', error: %s",
+                    db_name, table_name, op_type, sdb_conn->get_err_msg());
+      goto sdb_error;
+    }
+    rc = lock_cl.next(obj, false);
+    if (0 != rc) {
+      SDB_LOG_ERROR("HA: Failed to add 'U' lock for '%s.%s.%s', error: %s",
+                    db_name, table_name, op_type, sdb_conn->get_err_msg());
+      goto sdb_error;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc,
+                        "Failed to add 'U' lock on '%s.%s.%s', exception:%s",
+                        db_name, table_name, op_type, e.what());
+done:
+  return rc;
+error:
+  goto done;
+sdb_error:
+  ha_error_string(*sdb_conn, rc, sql_info->err_message);
+  goto done;
+}
+
 // add 'X' lock for an object
 inline static int add_xlock(Sdb_cl &lock_cl, const char *db_name,
                             const char *table_name, const char *op_type,
@@ -434,52 +546,6 @@ inline static int add_xlock(Sdb_cl &lock_cl, const char *db_name,
     ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
   }
   return rc;
-}
-
-// try to lock a record in 'HALock' table
-// 1. set a shorter 'TransTimeout' before add 'X' lock
-// 2. try locking again 2 times after timeout
-inline static int try_add_xlock(Sdb_conn &sdb_conn, Sdb_cl &lock_cl,
-                                const bson::BSONObj &cond, bson::BSONObj &obj) {
-  static const int MAX_TRY_COUNT = 3;
-
-  int rc = 0;
-  int save_trans_timeout = -1;
-  int tmp_trans_timeout = -1;
-  bson::BSONObj attr;
-  rc = sdb_conn.get_session_attr(attr);
-  if (rc) {
-    goto error;
-  }
-  save_trans_timeout = attr.getIntField(HA_TRANSACTION_TIMEOUT);
-  DBUG_ASSERT(save_trans_timeout >= 0);
-
-  // set 'TransTimeout', try 3 times at most
-  tmp_trans_timeout = save_trans_timeout / MAX_TRY_COUNT;
-  if (0 == tmp_trans_timeout) {
-    // set min 'TransTimeout' if tmp_trans_timeout is zero
-    tmp_trans_timeout = 1;
-  }
-  attr = BSON(HA_TRANSACTION_TIMEOUT << tmp_trans_timeout);
-  rc = sdb_conn.set_session_attr(attr);
-  if (0 == rc) {
-    for (int i = 0; i < MAX_TRY_COUNT; i++) {
-      rc = lock_cl.upsert(obj, cond);
-      if (0 == rc || SDB_TIMEOUT != get_sdb_code(rc)) {
-        // add X lock succeeded or extra error
-        break;
-      } else {
-        sleep(1);
-      }
-    }
-    // restore TransTimeout
-    attr = BSON(HA_TRANSACTION_TIMEOUT << save_trans_timeout);
-    sdb_conn.set_session_attr(attr);
-  }
-done:
-  return rc;
-error:
-  goto done;
 }
 
 // add extra lock for objects involved in current SQL statement
@@ -508,8 +574,8 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
     }
     table_name = HA_EMPTY_STRING;
     op_type = HA_OPERATION_TYPE_DB;
-    SDB_LOG_DEBUG("HA: Add 'X' lock for database '%s'", db_name);
-    rc = add_xlock(lock_cl, db_name, table_name, op_type, sql_info);
+    SDB_LOG_DEBUG("HA: Add 'U' lock for database '%s'", db_name);
+    rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
     if (rc) {
       goto error;
     }
@@ -523,9 +589,9 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       SDB_LOG_DEBUG("HA: Add 'S' lock for database '%s'", db_name);
       rc = add_slock(lock_cl, db_name, table_name, op_type, sql_info);
       if (HA_ERR_END_OF_FILE == rc) {
-        SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'X' lock for '%s:%s'",
+        SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'U' lock for '%s:%s'",
                       db_name, table_name);
-        rc = add_xlock(lock_cl, db_name, table_name, op_type, sql_info);
+        rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
       }
       if (rc) {
         goto error;
@@ -544,9 +610,9 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       SDB_LOG_DEBUG("HA: Add 'S' lock for database '%s'", db_name);
       rc = add_slock(lock_cl, db_name, table_name, op_type, sql_info);
       if (HA_ERR_END_OF_FILE == rc) {
-        SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'X' lock for '%s:%s'",
+        SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'U' lock for '%s:%s'",
                       db_name, table_name);
-        rc = add_xlock(lock_cl, db_name, table_name, op_type, sql_info);
+        rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
       }
       if (rc) {
         goto error;
@@ -564,7 +630,7 @@ static int pre_lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       if (HA_ERR_END_OF_FILE == rc) {
         SDB_LOG_DEBUG("HA: Failed to add 'S' lock, add 'X' lock for '%s:%s'",
                       db_name, table_name);
-        rc = add_xlock(lock_cl, db_name, table_name, op_type, sql_info);
+        rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
       }
       if (rc) {
         goto error;
@@ -612,14 +678,9 @@ static int lock_objects(THD *thd, ha_sql_stmt_info *sql_info) {
       continue;
     }
 
-    cond = BSON(HA_FIELD_DB << db_name << HA_FIELD_TABLE << table_name
-                            << HA_FIELD_TYPE << op_type);
-    obj = BSON("$inc" << BSON(HA_FIELD_VERSION << 1));
-
-    SDB_LOG_DEBUG("HA: Add 'X' lock for '%s:%s'", db_name, table_name);
-    rc = try_add_xlock(*sql_info->sdb_conn, lock_cl, cond, obj);
+    SDB_LOG_DEBUG("HA: Add 'U' lock for '%s:%s'", db_name, table_name);
+    rc = add_ulock(lock_cl, db_name, table_name, op_type, sql_info);
     if (rc) {
-      ha_error_string(*sdb_conn, rc, sql_info->err_message);
       goto error;
     }
   }
