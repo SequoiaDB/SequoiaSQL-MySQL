@@ -89,7 +89,7 @@ function rename_cl()
    fi
    local sdb_js=`cat <<EOF
       try {
-         println("INFO: '${final_db_name}.TABLE_MAPPING' is already exist, rebuild it");
+         println("INFO: Rebuild '${final_db_name}.TABLE_MAPPING'");
          db.dropCS('${final_db_name}');
       } catch ( e ) {
          if ( SDB_DMS_CS_NOTEXIST == e ) {
@@ -555,16 +555,28 @@ cat <<EOF
          var shellCmd = cmdPrefix + "${BIN_PATH}/sdb_sql_ctl listinst | grep '/" + port + "' | awk '{print \$1}'";
          println("INFO: Get instance name by " + shellCmd);
          cmd.run(shellCmd);
+         if ( 0 != cmd.getLastRet())
+         {
+            throw "ERROR: Failed to list instances, error code: " + cmd.getLastRet();
+         }
          var instName = cmd.getLastOut().trim();
          println("INFO: Set " + instName + " mapping function to ${enable} and restart it");
          
          // enable mapping for instance
          shellCmd = cmdPrefix + "${BIN_PATH}/sdb_sql_ctl chconf " + instName + " --sdb-enable-mapping=" + "${enable}";
          cmd.run(shellCmd);
+         if ( 0 != cmd.getLastRet())
+         {
+            throw "ERROR: Failed to enable mapping for '" + instName + "', error code: " + cmd.getLastRet();
+         }
 
          // restart instance
          shellCmd = cmdPrefix + "${BIN_PATH}/sdb_sql_ctl restart " + instName;
          cmd.run(shellCmd);
+         if (0 != cmd.getLastRet())
+         {
+            throw "ERROR: Failed to restart '" + instName + "', error code: " + cmd.getLastRet();
+         }
       }
    }
 EOF
@@ -697,9 +709,22 @@ function build_mapping_table()
    sdb_js=`enable_table_mapping_and_restart_inst "ON"`
    msg=$($INSTALL_DIR/bin/sdb -s "${sdb_js}")
    if [[ $? != 0 ]]; then
+      # drop mapping table
+      $INSTALL_DIR/bin/sdb -s "db.${final_db_name}.dropCL('TABLE_MAPPING')"
+      if [[ $? != 0 ]]; then
+         echo "WARNING: Failed to drop mapping table '${final_db_name}.TABLE_MAPPING'"
+      fi
+
       echo "${msg}" | sed 's/^.*uncaught exception: //'
+      echo "INFO: Failed to enable mapping for instances in group '${group_name}', start rollback to initial state"
       sdb_js=`enable_table_mapping_and_restart_inst "OFF"`
       msg=$($INSTALL_DIR/bin/sdb -s "${sdb_js}")
+      if [[ $? != 0 ]]; then
+         echo "${msg}" | sed 's/^.*uncaught exception: //'
+         echo "ERROR: Failed to rollback to initial state"
+      else
+         echo "INFO: Rollback to initial state successfully"
+      fi
       $INSTALL_DIR/bin/sdb -s "quit"
       return 1
    fi   
