@@ -564,7 +564,7 @@ int Name_mapping::remove_table_mapping(const char *db_name,
     if (mapping_ctx->is_part_table()) {
       bson::BSONObj obj;
       char part_prefix[SDB_CL_NAME_MAX_SIZE + 1] = {0};
-      snprintf(part_prefix, SDB_CL_NAME_MAX_SIZE, "%s#P#", table_name);
+      snprintf(part_prefix, SDB_CL_NAME_MAX_SIZE, "^%s#P#", table_name);
       obj = BSON("$regex" << part_prefix);
       cond = BSON(NM_FIELD_DB_NAME << db_name << NM_FIELD_TABLE_NAME << obj);
       rc = mapping_table.del(cond);
@@ -712,13 +712,13 @@ int Name_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn, const char *db_name,
         goto done;
       }
     }
-    // list(SDB_SNAP_COLLECTIONSPACES, {Name: {$regex: "GroupName#DBName#"}})
+    // list(SDB_SNAP_COLLECTIONSPACES, {Name: {$regex: "^GroupName#DBName#"}})
     rc = build_escaped_sep_name(db_name, escaped_db_name);
     if (0 != rc) {
       SDB_LOG_ERROR("database '%s' name is too long", db_name);
       goto error;
     }
-    sprintf(cs_prefix, "%s#%s#", m_sql_group, escaped_db_name);
+    sprintf(cs_prefix, "^%s#%s#", m_sql_group, escaped_db_name);
     regex = BSON("$regex" << cs_prefix);
     cond = BSON(SDB_FIELD_NAME << regex);
     rc = sdb_conn->list(SDB_SNAP_COLLECTIONSPACES, cond);
@@ -746,7 +746,7 @@ int Name_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn, const char *db_name,
 done:
   return rc;
 error:
-  goto error;
+  goto done;
 }
 
 int Name_mapping::get_sequence_mapping_cs(const char *db_name,
