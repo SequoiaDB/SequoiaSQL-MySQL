@@ -56,7 +56,8 @@ public class SqlDataSource24203 extends MysqlTestBase {
                 + "(id int,value varchar(50),age int);" );
     }
 
-    @Test
+    // SEQUOIADBMAINSTREAM-8183 因该问题单暂时屏蔽
+    @Test(enabled = false)
     public void test() throws Exception {
         // 创建插入数据存储过程1
         jdbc.update( "create procedure " + csName + "." + "insertValue1()"
