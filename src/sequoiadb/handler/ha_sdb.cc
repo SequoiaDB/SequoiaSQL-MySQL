@@ -1687,6 +1687,9 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   Sdb_cl cl;
   Sdb_conn *connection = NULL;
   bool is_share_created = false;
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &tmp_conn = pool_conn;
+  Sdb_conn *sdb_conn = NULL;
 
   get_sdb_share(name, table, share, is_share_created);
   if (!share) {
@@ -1730,8 +1733,20 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
 
   tbl_ctx_impl.reset();
   tbl_ctx_impl.set_share_cache(share.get());
-  rc =
-      Name_mapping::get_mapping(db_name, table_name, connection, &tbl_ctx_impl);
+  sdb_conn = connection;
+  if (SQLCOM_CREATE_TABLE == thd_sql_command(ha_thd()) &&
+      sdb_conn->is_transaction_on() &&
+      SDB_TRANS_ISO_RR ==
+          sdb_conn->get_session_attrs()->get_trans_isolation()) {
+    rc = tmp_conn.connect();
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d",
+                    tmp_conn.get_err_msg());
+      goto error;
+    }
+    sdb_conn = &tmp_conn;
+  }
+  rc = Name_mapping::get_mapping(db_name, table_name, sdb_conn, &tbl_ctx_impl);
   if (sdb_execute_only_in_mysql(ha_thd()) && HA_ERR_END_OF_FILE == rc) {
     rc = 0;
     goto done;
@@ -1883,7 +1898,6 @@ int ha_sdb::reset() {
 #ifdef IS_MYSQL
   key_parts = 0;
 #endif
-  tbl_ctx_impl.reset();
   DBUG_RETURN(0);
 }
 
