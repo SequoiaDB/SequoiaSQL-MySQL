@@ -668,6 +668,50 @@ error:
   goto done;
 }
 
+// callback function for setting transaction isolation level
+int sdb_set_transaction_isolation_level(THD *thd) {
+  Sdb_conn *sdb_conn = NULL;
+  ulong current_thd_tx_isolation = SDB_TRANS_ISO_RR;
+  Sdb_session_attrs *sdb_conn_attrs = NULL;
+  int major = 0, minor = 0, fix = 0;
+  int rc = check_sdb_in_thd(thd, &sdb_conn, true);
+  if (HA_ERR_OUT_OF_MEM == rc) {
+    goto error;
+  }
+  // ignore Sdb_conn.connect() error
+  if (0 != rc) {
+    rc = 0;
+    goto done;
+  }
+
+  rc = sdb_get_version(*sdb_conn, major, minor, fix);
+  if (0 != rc) {
+    SDB_LOG_ERROR(
+        "Failed to get SequoiaDB version while setting transaction isolation "
+        "level, error: %s",
+        sdb_conn->get_err_msg());
+    goto error;
+  }
+
+  // convert iso isolation level to SequoiaDB isolation level
+  current_thd_tx_isolation =
+      sdb_conn->convert_to_sdb_isolation(thd->tx_isolation, major);
+  sdb_conn_attrs = sdb_conn->get_session_attrs();
+  if (current_thd_tx_isolation != sdb_conn_attrs->get_trans_isolation()) {
+    sdb_conn_attrs->set_trans_isolation(current_thd_tx_isolation);
+    rc = sdb_conn->set_my_session_attr();
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to set transaction level, error: %s",
+                    sdb_conn->get_err_msg());
+      goto error;
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 void sdb_init_vars_check_and_update_funcs() {
   sdb_set_connection_addr = &sdb_set_conn_addr;
   sdb_set_user = &sdb_set_usr;
@@ -684,6 +728,7 @@ void sdb_init_vars_check_and_update_funcs() {
   sdb_set_preferred_strict = &sdb_set_prefer_strict;
   sdb_set_preferred_period = &sdb_set_prefer_period;
   sdb_connection_addr_check = &sdb_conn_addr_check;
+  THD::sdb_set_tran_iso_level_callback = &sdb_set_transaction_isolation_level;
 }
 uchar *thd_sdb_share_get_key(THD_SDB_SHARE *thd_sdb_share, size_t *length,
                              my_bool not_used MY_ATTRIBUTE((unused))) {

@@ -116,6 +116,8 @@ class Sdb_session_attrs {
     }
   }
 
+  inline ulong get_trans_isolation() { return trans_isolation; }
+
   inline void set_trans_auto_rollback(const bool auto_rollback) {
     trans_auto_rollback = auto_rollback;
     set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK_MASK);
