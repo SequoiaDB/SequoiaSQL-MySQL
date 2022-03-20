@@ -2176,15 +2176,6 @@ error:
   goto done;
 }
 
-// set mariadb THD::killed state to KILL_QUERY
-static void set_abort_query_flag(THD *thd) {
-#ifdef IS_MARIADB
-  thd->set_killed(KILL_QUERY);
-#else
-  // thd->killed = THD::KILL_QUERY;
-#endif
-}
-
 static void init_ha_event_general(ha_event_general &ha_event, const void *ev,
                                   ha_event_class_t event_class) {
   ha_event.general_error_code = -1;
@@ -4494,8 +4485,13 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
       }
     }
     goto done;
-  } else if (!ha_thread.recover_finished) {  // current instance is recovering
+  } else if (!ha_thread.recover_finished ||  // current instance is recovering
+             SDB_COND_INJECT("test_point_wait_ha_recover")) {
     struct timespec abstime;
+    if (SDB_ERROR_INJECT_ERROR("fail_on_wait_ha_recover")) {
+      rc = SDB_HA_EXCEPTION;
+      goto error;
+    }
     sdb_set_clock_time(abstime, ha_wait_recover_timeout);
 
     SDB_LOG_INFO("HA: Waiting for completion of recover process");
@@ -4728,7 +4724,6 @@ done:
   set_overwrite_status(thd, event, false);
   DBUG_RETURN(rc);
 error:
-  set_abort_query_flag(thd);
   if (sql_info->sdb_conn) {
     ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
   }

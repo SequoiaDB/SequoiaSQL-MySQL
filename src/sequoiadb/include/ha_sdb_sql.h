@@ -28,6 +28,7 @@
 #include <sql_insert.h>
 #include <mysql/psi/psi_memory.h>
 #include <sql_lex.h>
+#include "my_dbug.h"
 
 typedef class st_select_lex_unit SELECT_LEX_UNIT;
 
@@ -140,6 +141,12 @@ typedef char *range_id_t;
 #endif
 
 #endif
+
+#define SDB_ERROR_INJECT_CRASH(code) \
+  DBUG_EVALUATE_IF(code, (DBUG_SUICIDE(), 0), 0)
+#define SDB_ERROR_INJECT_ERROR(code) \
+  DBUG_EVALUATE_IF(code, (my_error(ER_UNKNOWN_ERROR, MYF(0)), TRUE), 0)
+#define SDB_COND_INJECT(code) DBUG_EVALUATE_IF(code, TRUE, FALSE)
 
 /*
   MariaDB extra definations.
