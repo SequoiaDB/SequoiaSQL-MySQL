@@ -2410,6 +2410,20 @@ int ha_sdb_part::create(const char *name, TABLE *form,
     if (0 != rc) {
       goto error;
     }
+
+    if (tbl_ctx_impl.is_specified_mapping() &&
+        sdb_create_table_like(ha_thd())) {
+      rc = HA_ERR_UNSUPPORTED;
+      TABLE_LIST *src_table =
+          ha_thd()->lex->create_last_non_select_table->next_global;
+      const char *src_db_name = src_table->get_db_name();
+      const char *src_table_name = src_table->get_table_name();
+      SDB_PRINT_ERROR(rc,
+                      "Creating table from mapped table %s.%s is not supported",
+                      src_db_name, src_table_name);
+      goto error;
+    }
+
     // alter table with copy algorithm
     if (tbl_ctx_impl.is_specified_mapping() &&
         SQLCOM_ALTER_TABLE == thd_sql_command(ha_thd())) {

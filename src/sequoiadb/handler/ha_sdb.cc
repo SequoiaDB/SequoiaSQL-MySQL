@@ -8274,6 +8274,13 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       const char *src_table_name = src_table->get_table_name();
       Sdb_cl_copyer cl_copyer(conn, src_db_name, src_table_name, db_name,
                               table_name);
+      if (tbl_mapping.is_specified_mapping()) {
+        rc = HA_ERR_UNSUPPORTED;
+        SDB_PRINT_ERROR(
+            rc, "Creating table from mapped table %s.%s is not supported",
+            src_db_name, src_table_name);
+        goto error;
+      }
       rc = cl_copyer.copy(this);
       if (rc != 0) {
         if (HA_ERR_OUT_OF_MEM == rc || HA_ERR_INTERNAL_ERROR == rc) {
