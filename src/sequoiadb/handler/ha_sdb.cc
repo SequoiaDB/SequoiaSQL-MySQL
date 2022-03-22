@@ -8247,6 +8247,14 @@ int ha_sdb::create(const char *name, TABLE *form, HA_CREATE_INFO *create_info) {
       rc = HA_WRONG_CREATE_OPTION;
       goto error;
     }
+
+    if (tbl_mapping.is_specified_mapping()) {
+      rc = HA_ERR_UNSUPPORTED;
+      SDB_PRINT_ERROR(
+          rc,
+          "Creating temporary table with specified mapping is not supported");
+      goto error;
+    }
   }
 
   for (Field **fields = form->field; *fields; fields++) {
