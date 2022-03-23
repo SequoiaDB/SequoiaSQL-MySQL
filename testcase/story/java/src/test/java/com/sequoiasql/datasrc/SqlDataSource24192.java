@@ -66,7 +66,8 @@ public class SqlDataSource24192 extends MysqlTestBase {
         jdbcSdbConn.createDatabase( csName );
     }
 
-    @Test
+    //因问题单SEQUOIASQLMAINSTREAM-1341暂时屏蔽
+    @Test(enabled = false)
     public void test() throws Exception {
         String fullTableName = csName + "." + mainclName;
         jdbcSdbConn.update( "create table " + fullTableName
