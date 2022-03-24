@@ -104,22 +104,17 @@ public class SqlDataSource24207 extends MysqlTestBase {
     private class Insert extends ResultStore {
         @ExecuteOrder(step = 1)
         public void exec() throws Exception {
+            JdbcInterface jdbcWarpper = JdbcInterfaceFactory
+                    .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
             try {
-                JdbcInterface jdbcWarpper = JdbcInterfaceFactory
-                        .build( JdbcWarpperType.JdbcWarpperOfHaInst1 );
-                try {
-                    jdbcWarpper.update( "call " + csName + ".insertValue()" );
-                } catch ( SQLException e ) {
-                    if ( !( e.getMessage()
-                            .equals( "Collection is truncated" ) ) ) {
-                        throw e;
-                    }
-                }
-                jdbcWarpper.close();
+                jdbcWarpper.update( "call " + csName + ".insertValue()" );
             } catch ( SQLException e ) {
-                if ( !( e.getMessage().equals( "Collection is truncated" ) ) ) {
+                if ( !( e.getMessage().equals( "Collection is truncated" )
+                        || e.getMessage().equals( "Incompatible lock" ) ) ) {
                     throw e;
                 }
+            } finally {
+                jdbcWarpper.close();
             }
         }
     }
@@ -129,8 +124,15 @@ public class SqlDataSource24207 extends MysqlTestBase {
         public void exec() throws Exception {
             JdbcInterface jdbcWarpper = JdbcInterfaceFactory
                     .build( JdbcWarpperType.JdbcWarpperOfHaInst2 );
-            jdbcWarpper.update( "truncate " + csName + "." + clName );
-            jdbcWarpper.close();
+            try {
+                jdbcWarpper.update( "truncate " + csName + "." + clName );
+            } catch ( SQLException e ) {
+                if ( !( e.getMessage().equals( "Incompatible lock" ) ) ) {
+                    throw e;
+                }
+            } finally {
+                jdbcWarpper.close();
+            }
         }
 
     }
