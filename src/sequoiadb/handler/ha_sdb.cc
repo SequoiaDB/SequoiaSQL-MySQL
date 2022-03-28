@@ -573,7 +573,7 @@ done:
 }
 
 static int sdb_get_partition_names(
-    Sdb_conn *conn, char *db_name, char *old_table_name,
+    Sdb_conn *conn, char *db_name, char *table_name,
     boost::unordered_set<std::string> &tbl_parts) {
   DBUG_ENTER("get_partition_names");
   int rc = SDB_ERR_OK;
@@ -584,7 +584,7 @@ static int sdb_get_partition_names(
     const char *sep_pos = NULL, *tab_part_name = NULL;
     char cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
     size_t cs_name_len = 0;
-    rc = conn->snapshot(obj, SDB_SNAP_CATALOG, db_name, old_table_name,
+    rc = conn->snapshot(obj, SDB_SNAP_CATALOG, db_name, table_name,
                         &part_mapping);
     if (SDB_DMS_EOC == get_sdb_code(rc) || HA_ERR_END_OF_FILE == rc) {
       rc = 0;
@@ -592,6 +592,18 @@ static int sdb_get_partition_names(
     }
     if (rc != 0) {
       goto error;
+    }
+
+    // get table mapping prepare check if current table is partition table
+    if (sdb_enable_mapping) {
+      part_mapping.reset();
+      rc = Name_mapping::get_mapping(db_name, table_name, conn, &part_mapping);
+      if (0 != rc) {
+        goto error;
+      }
+      if (!part_mapping.is_part_table()) {
+        goto done;
+      }
     }
 
     // fetch table partition info
