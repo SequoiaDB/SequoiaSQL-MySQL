@@ -7425,7 +7425,6 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
   bson::BSONObj up_bound;
   bson::BSONObj attach_options;
   const char *upper_scl_name = NULL;
-  char upper_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   char dropped_scl_full_name[SDB_CL_FULL_NAME_MAX_SIZE + 1] = {0};
   char part_table_name[SDB_CL_NAME_MAX_SIZE] = {0};
   Sdb_cl main_cl;
@@ -7475,7 +7474,8 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto done;
   }
 
-  sprintf(dropped_scl_full_name, "%s.%s", db_name, part_name);
+  sprintf(dropped_scl_full_name, "%s.%s", table_part_mapping.get_mapping_cs(),
+          table_part_mapping.get_mapping_cl());
   try {
     // Get the low bound and up bound of the sub cl dropped.
     bson::BSONObj dropped_low_bound;
@@ -7508,8 +7508,6 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
       low_bound = item.getField(SDB_FIELD_LOW_BOUND).Obj();
       if (low_bound.equal(dropped_up_bound)) {
         upper_scl_name = item.getField(SDB_FIELD_SUBCL_NAME).valuestrsafe();
-        strncpy(upper_scl_full_name, upper_scl_name,
-                SDB_CL_FULL_NAME_MAX_SIZE + 1);
         low_bound = dropped_low_bound;
         up_bound = item.getField(SDB_FIELD_UP_BOUND).Obj();
         break;
@@ -7530,8 +7528,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
     goto error;
   }
 
-  upper_scl_name = strstr(upper_scl_full_name, ".") + 1;
-  rc = main_cl.detach_collection(db_name, upper_scl_name, &subcl_mapping);
+  rc = main_cl.detach_collection(upper_scl_name);
   if (rc != 0) {
     goto error;
   }
@@ -7546,8 +7543,7 @@ int ha_sdb::drop_partition(THD *thd, char *db_name, char *part_name) {
       rc, "Failed to drop partition for table:%s.%s, exception:%s", db_name,
       table_name, e.what());
 
-  rc = main_cl.attach_collection(db_name, upper_scl_name, attach_options,
-                                 &subcl_mapping);
+  rc = main_cl.attach_collection(upper_scl_name, attach_options);
   if (rc != 0) {
     goto error;
   }
