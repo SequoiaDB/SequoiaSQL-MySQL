@@ -835,7 +835,7 @@ function change_configure()
 
    get_one_status $INST_NAME >> /dev/null
    if [ $? == 0 ];then
-      echo "Enter password:"
+      echo "Enter the SQL user password, if the password is empty, type ENTER:"
       read -s passwd
    fi
 
