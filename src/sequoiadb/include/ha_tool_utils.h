@@ -46,6 +46,9 @@ typedef unsigned char uchar;
 #define HA_TOOL_HELP_PASSWD                                                   \
   "Password to use when connecting to sequoiadb, default: \"\". If password " \
   "is not given it's asked from the tty"
+#define HA_TOOL_INST_GROUP_USER_PASSWD                                \
+  "New password for instance group user, default: \"\". If password " \
+  "is not given it's asked from the tty"
 #define HA_TOOL_HELP_NAME "Instance group name"
 #define HA_TOOL_HELP_KEY "Key used to encrypt random password, default: \"\""
 #define HA_TOOL_HELP_TOKEN \
@@ -104,6 +107,9 @@ typedef struct st_args {
 
   // check if user input 'user', 'password', 'verbose' argument
   bool is_user_set, is_password_set, verbose;
+
+  bool set_new_password;
+  std::string new_password;
 
   // sdb replication group name
   std::string data_group;
