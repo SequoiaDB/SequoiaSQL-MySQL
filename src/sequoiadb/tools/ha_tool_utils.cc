@@ -345,6 +345,7 @@ void ha_init_default_args(st_args &cmd_args) {
   cmd_args.inst_host = "";
   cmd_args.inst_hostname = "";
   cmd_args.inst_port = 0;
+  cmd_args.set_new_password = false;
 }
 
 // translate ssl error code to human-readable string

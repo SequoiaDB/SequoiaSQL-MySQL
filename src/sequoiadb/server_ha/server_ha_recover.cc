@@ -469,10 +469,16 @@ static int ensure_inst_group_user(ha_recover_replay_thread *ha_thread,
               "HA: Failed to drop instance group user, mysql error: %d", rc);
 
   // 2. create instance group user
-  snprintf(sql_str, HA_BUF_LEN,
-           "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s' IDENTIFIED BY '%s' "
-           "WITH GRANT OPTION",
+  snprintf(sql_str, HA_BUF_LEN, "CREATE USER '%s'@'%s' IDENTIFIED BY '%s' ",
            user, "%", ha_inst_group_passwd);
+  rc = server_ha_query(ha_thread->thd, sql_str, strlen(sql_str));
+  HA_RC_CHECK(rc, error,
+              "HA: Failed to create instance group user, mysql error: %d", rc);
+
+  // grant rights for instance group user
+  snprintf(sql_str, HA_BUF_LEN,
+           "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s' WITH GRANT OPTION", user,
+           "%");
   rc = server_ha_query(ha_thread->thd, sql_str, strlen(sql_str));
   HA_RC_CHECK(rc, error,
               "HA: Failed to create instance group user, mysql error: %d", rc);
@@ -741,9 +747,10 @@ static void build_mysqldump_command(char *cmd, const ha_dump_source &src,
                   "--ignore-table mysql.innodb_table_stats ");
 
   end += snprintf(cmd + end, max_cmd_len, "--events=1 ");
-  end += snprintf(
-      cmd + end, max_cmd_len, "-u%s -h%s -p%s -P%d --exec-only-in-mysql -f > ",
-      ha_inst_group_user, src.dump_host, ha_inst_group_passwd, src.dump_port);
+  end += snprintf(cmd + end, max_cmd_len,
+                  "-u%s -h%s --password=%s -P%d --exec-only-in-mysql -f > ",
+                  ha_inst_group_user, src.dump_host, ha_inst_group_passwd,
+                  src.dump_port);
 
   int index = dump_sysdb ? 1 : 0;
   end += snprintf(cmd + end, max_cmd_len, "%s ", src.dump_files[index]);
@@ -1264,9 +1271,10 @@ error:
 static void build_source_command(char *cmd, int max_cmd_len,
                                  const char *file_name) {
   int end = 0;
-  end += snprintf(cmd, max_cmd_len, "%s/bin/mysql -u%s -p%s -h%s -P%d ",
-                  mysql_home_ptr, ha_inst_group_user, ha_inst_group_passwd,
-                  ha_local_host_ip, mysqld_port);
+  end +=
+      snprintf(cmd, max_cmd_len, "%s/bin/mysql -u%s --password=%s -h%s -P%d ",
+               mysql_home_ptr, ha_inst_group_user, ha_inst_group_passwd,
+               ha_local_host_ip, mysqld_port);
   end += snprintf(cmd + end, max_cmd_len,
                   "-e 'set sequoiadb_execute_only_in_mysql = 1; source ");
   end += snprintf(cmd + end, max_cmd_len, "%s;' -f", file_name);
