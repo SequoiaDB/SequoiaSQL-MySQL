@@ -2078,6 +2078,8 @@ int ha_sdb::check_and_set_options(const char *old_options_str,
   bson::BSONObj old_part_opt, new_part_opt;
   bson::BSONObjBuilder builder;
   bson::BSONObj diff_options;
+  bson::BSONObj old_mapping, new_mapping;
+  const char *old_mapping_name = NULL, *new_mapping_name = NULL;
 
   /*
     Parse options of COMMENT, and compare their different elements. Then set the
@@ -2098,10 +2100,12 @@ int ha_sdb::check_and_set_options(const char *old_options_str,
   }
 
   rc = sdb_parse_comment_options(old_options_str, old_tab_opt,
-                                 old_explicit_not_auto_part, &old_part_opt);
+                                 old_explicit_not_auto_part, &old_part_opt,
+                                 &old_mapping);
   DBUG_ASSERT(0 == rc);
   rc = sdb_parse_comment_options(new_options_str, new_tab_opt,
-                                 new_explicit_not_auto_part, &new_part_opt);
+                                 new_explicit_not_auto_part, &new_part_opt,
+                                 &new_mapping);
   if (0 != rc) {
     goto error;
   }
@@ -2136,6 +2140,15 @@ int ha_sdb::check_and_set_options(const char *old_options_str,
   /* 3. table_options */
   rc = sdb_filter_tab_opt(old_tab_opt, new_tab_opt, builder);
   if (0 != rc) {
+    goto error;
+  }
+
+  /* 4. mapping option*/
+  old_mapping_name = old_mapping.getStringField(SDB_FIELD_TABLE_MAPPING);
+  new_mapping_name = new_mapping.getStringField(SDB_FIELD_TABLE_MAPPING);
+  if (0 != strcmp(old_mapping_name, new_mapping_name)) {
+    rc = HA_ERR_WRONG_COMMAND;
+    my_printf_error(rc, "Alter mapping option is not supported", MYF(0));
     goto error;
   }
 
