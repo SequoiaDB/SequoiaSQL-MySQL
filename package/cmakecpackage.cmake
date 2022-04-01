@@ -32,7 +32,8 @@ if(PACK_TEST)
       )
 else()
   add_custom_target(buildpackage
-      COMMAND bash -c "tar zcvf ${PACKAGE_NAME}.tar.gz * --exclude=mysql-test"
+      COMMAND bash -c "rm -rf mysql-test"
+      COMMAND bash -c "tar zcvf ${PACKAGE_NAME}.tar.gz *"
       COMMAND bash -c " mv ${PACKAGE_NAME}.tar.gz ${CMAKE_SOURCE_DIR}/build"
       WORKING_DIRECTORY "${CMAKE_INSTALL_PREFIX}"
       DEPENDS ${CMAKE_INSTALL_PREFIX}
