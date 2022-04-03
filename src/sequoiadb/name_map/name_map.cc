@@ -27,6 +27,8 @@ bool Name_mapping::m_enabled = false;
 int Name_mapping::m_mapping_unit_size = NM_MAPPING_UNIT_SIZE;
 int Name_mapping::m_mapping_unit_count = NM_MAPPING_UNIT_COUNT;
 bool Name_mapping::m_prefer_origin_name = true;
+int (*Name_mapping::fix_sdb_conn_attrs)(Sdb_conn *conn,
+                                        bool *need_create_new_conn);
 
 static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
                             Sdb_cl &table_map) {
@@ -340,6 +342,10 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   bson::BSONObjBuilder cond_builder;
   const char *cs_name = mapping_ctx->get_mapping_cs();
   const char *cl_name = mapping_ctx->get_mapping_cl();
+  Sdb_pool_conn pool_conn(0, false);
+  Sdb_conn &tmp_conn = pool_conn;
+  Sdb_conn *tmp_sdb_conn = sdb_conn;
+
   // use the cached name mapping
   if ('\0' != cs_name[0] && '\0' != cl_name[0]) {
     goto done;
@@ -353,7 +359,25 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
 
-  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  if (fix_sdb_conn_attrs) {
+    bool need_create_new_conn = false;
+    rc = fix_sdb_conn_attrs(sdb_conn, &need_create_new_conn);
+    if (0 != rc) {
+      goto error;
+    }
+
+    if (need_create_new_conn) {
+      rc = tmp_conn.connect();
+      if (0 != rc) {
+        SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %s",
+                      tmp_conn.get_err_msg());
+        goto error;
+      }
+      tmp_sdb_conn = &tmp_conn;
+    }
+  }
+
+  rc = get_table_map_cl(*tmp_sdb_conn, sql_group_cs_name, mapping_table);
   if (SDB_CLS_GRP_NOT_EXIST == get_sdb_code(rc)) {
     // group used to store mapping info does not exist, use original name
     mapping_ctx->set_mapping_cs(db_name);

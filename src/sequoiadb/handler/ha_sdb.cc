@@ -1756,7 +1756,6 @@ int ha_sdb::reset() {
   m_use_default_impl = false;
   is_join_bka = false;
   key_parts = 0;
-  tbl_ctx_impl.reset();
   DBUG_RETURN(0);
 }
 

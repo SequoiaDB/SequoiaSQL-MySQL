@@ -28,6 +28,7 @@
 #include <strfunc.h>
 #include "sdb_cl.h"
 #include "ha_sdb.h"
+#include "name_map.h"
 
 // Complete the struct declaration
 struct st_mysql_sys_var {
@@ -668,6 +669,55 @@ error:
   goto done;
 }
 
+/**
+  Fix sequoiadb connection attributes according to thd.
+  @param sdb_conn                    original sequoiadb connection
+  @param need_create_new_conn        indicate the invoker to create new
+                                     connection
+
+  @retval 0                Success.
+  @retval not 0            Failure.
+*/
+int sdb_fix_conn_attrs_by_thd(Sdb_conn *sdb_conn, bool *need_create_new_conn) {
+  int rc = SDB_ERR_OK;
+  THD *thd = current_thd;
+  Sdb_session_attrs *sdb_conn_attrs = sdb_conn->get_session_attrs();
+
+  if (NULL == thd) {
+    goto done;
+  }
+  // handle create table t2 as select * from t1
+  if (sdb_conn->is_transaction_on()) {
+    if (SQLCOM_CREATE_TABLE == thd_sql_command(thd) &&
+        SDB_TRANS_ISO_RR == sdb_conn_attrs->get_trans_isolation() &&
+        NULL != need_create_new_conn) {
+      // we can not resue this connection
+      *need_create_new_conn = true;
+      goto done;
+    }
+  }
+  // prepare sequoiadb connection session attributes
+  rc = sdb_conn->prepare_session_attrs();
+  if (0 != rc) {
+    SDB_LOG_ERROR(
+        "Failed to fix sequoiadb connection attributes by thread attributes, "
+        "error: %s",
+        sdb_conn->get_err_msg());
+    goto error;
+  }
+  // set session attributes for sequoiadb connection
+  rc = sdb_conn->set_my_session_attr();
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to fix SequoiaDB connection attributes, error: %s",
+                  sdb_conn->get_err_msg());
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
 void sdb_init_vars_check_and_update_funcs() {
   sdb_set_connection_addr = &sdb_set_conn_addr;
   sdb_set_user = &sdb_set_usr;
@@ -684,6 +734,7 @@ void sdb_init_vars_check_and_update_funcs() {
   sdb_set_preferred_strict = &sdb_set_prefer_strict;
   sdb_set_preferred_period = &sdb_set_prefer_period;
   sdb_connection_addr_check = &sdb_conn_addr_check;
+  Name_mapping::fix_sdb_conn_attrs = &sdb_fix_conn_attrs_by_thd;
 }
 uchar *thd_sdb_share_get_key(THD_SDB_SHARE *thd_sdb_share, size_t *length,
                              my_bool not_used MY_ATTRIBUTE((unused))) {
@@ -796,6 +847,12 @@ int check_sdb_in_thd(THD *thd, Sdb_conn **conn, bool validate_conn) {
   DBUG_ASSERT(thd_sdb->is_slave_thread() == thd->slave_thread);
   *conn = thd_sdb->get_conn();
 
+  if (thd_sdb->valid_conn() && thd_sdb->conn_is_authenticated()) {
+    rc = sdb_fix_conn_attrs_by_thd(thd_sdb->get_conn());
+    if (0 != rc) {
+      goto error;
+    }
+  }
 done:
   return rc;
 error:

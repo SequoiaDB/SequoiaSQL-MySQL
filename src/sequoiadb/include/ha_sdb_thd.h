@@ -100,4 +100,7 @@ int check_sdb_in_thd(THD* thd, Sdb_conn** conn, bool validate_conn = false);
 
 void sdb_init_vars_check_and_update_funcs();
 
+int sdb_fix_conn_attrs_by_thd(Sdb_conn* sdb_conn,
+                              bool* need_create_new_conn = NULL);
+
 #endif /* SDB_THD__H */

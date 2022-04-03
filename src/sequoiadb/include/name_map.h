@@ -29,6 +29,8 @@ class Name_mapping {
   static bool m_prefer_origin_name;
 
  public:
+  static int (*fix_sdb_conn_attrs)(Sdb_conn *conn, bool *need_create_new_conn);
+
   static void enable_name_mapping(bool enable) { m_enabled = enable; }
 
   static void set_sql_group(const char *sql_group) {

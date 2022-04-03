@@ -45,6 +45,7 @@ class Sdb_session_attrs {
   ~Sdb_session_attrs(){};
 
   void reset() {
+    last_source_str[0] = '\0';
     last_trans_isolation = SDB_TRANS_ISO_INVALID;
     last_trans_timeout = SDB_LOCK_WAIT_TIMEOUT_INVALID;
     last_trans_auto_commit = SDB_DEFAULT_TRANS_AUTO_COMMIT;
@@ -100,10 +101,16 @@ class Sdb_session_attrs {
 
   inline void set_source(const char *hostname, const int proc_id,
                          const ulonglong thread_id) {
-    snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
+    char new_source[PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + 64] = {0};
+    snprintf(new_source, sizeof(new_source), "%s%s%s:%d:%llu", PREFIX_THREAD_ID,
              strlen(hostname) ? ":" : "", hostname, proc_id, thread_id);
-    set_attrs_mask(SDB_SESSION_ATTR_SOURCE_MASK);
-    attr_count++;
+    if (0 != strcmp(new_source, source_str)) {
+      snprintf(source_str, sizeof(source_str), "%s%s%s:%d:%llu",
+               PREFIX_THREAD_ID, strlen(hostname) ? ":" : "", hostname, proc_id,
+               thread_id);
+      set_attrs_mask(SDB_SESSION_ATTR_SOURCE_MASK);
+      attr_count++;
+    }
   }
 
   inline const char *get_source() { return source_str; }
@@ -116,10 +123,15 @@ class Sdb_session_attrs {
     }
   }
 
-  inline void set_trans_auto_rollback(const bool auto_rollback) {
-    trans_auto_rollback = auto_rollback;
-    set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK_MASK);
-    attr_count++;
+  inline ulong get_trans_isolation() { return trans_isolation; }
+
+  inline void set_trans_auto_rollback(const bool auto_rollback,
+                                      bool init = false) {
+    if (init || trans_auto_rollback != auto_rollback) {
+      trans_auto_rollback = auto_rollback;
+      set_attrs_mask(SDB_SESSION_ATTR_TRANS_AUTO_ROLLBACK_MASK);
+      attr_count++;
+    }
   }
 
   inline void set_trans_auto_commit(const bool auto_commit, bool init = false) {
@@ -201,6 +213,7 @@ class Sdb_session_attrs {
   inline bool get_last_trans_auto_commit() { return last_trans_auto_commit; }
 
  private:
+  char last_source_str[PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + 64]; /*Source*/
   ulong last_trans_isolation;
   int last_trans_timeout;
   bool last_trans_auto_commit;
@@ -244,6 +257,8 @@ class Sdb_conn {
   int connect();
 
   int reconnect();
+
+  bool is_connected() { return (is_valid() && is_authenticated());}
 
   my_thread_id thread_id();
 
@@ -326,6 +341,8 @@ class Sdb_conn {
   int get_session_attr(bson::BSONObj &option);
 
   int set_session_attr(const bson::BSONObj &option);
+
+  int prepare_session_attrs(bool init = false);
 
   int interrupt_operation();
 

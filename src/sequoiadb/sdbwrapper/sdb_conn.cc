@@ -141,6 +141,10 @@ void Sdb_session_attrs::attrs_to_obj(bson::BSONObj *attr_obj) {
 }
 
 void Sdb_session_attrs::save_last_attrs() {
+  if (test_attrs_mask(SDB_SESSION_ATTR_SOURCE_MASK)) {
+    strncpy(last_source_str, source_str,
+            PREFIX_THREAD_ID_LEN + HOST_NAME_MAX + 64);
+  }
   if (test_attrs_mask(SDB_SESSION_ATTR_TRANS_ISOLATION_MASK)) {
     last_trans_isolation = trans_isolation;
   }
@@ -268,88 +272,33 @@ int Sdb_conn::do_connect(bool use_orig_conn) {
       goto error;
     }
     is_connected = true;
-
-    const char *hostname = NULL;
-    int hostname_len = (int)strlen(glob_hostname);
-
-    if (0 >= hostname_len) {
-      static char empty[] = "";
-      hostname = empty;
-    } else {
-      hostname = glob_hostname;
-    }
-
-    int major = 0, minor = 0, fix = 0;
-    rc = sdb_get_version(*this, major, minor, fix);
-    if (rc != 0) {
-      snprintf(errmsg, sizeof(errmsg), "Failed to begin transaction, rc:%d",
-               rc);
-      goto error;
-    }
-
     session_attrs = get_session_attrs();
     session_attrs->reset();
-    session_attrs->set_preferred_instance(sdb_preferred_instance(current_thd));
-    session_attrs->set_preferred_instance_mode(
-        sdb_preferred_instance_mode(current_thd));
-
-    /*The pre version of SequoiaDB(3.2.5) and SequoiaDB(3.4.1) has no
-     * Preferred_period attrs.*/
-    if (!(major < 3 || (3 == major && minor < 2) ||
-          (3 == major && 2 == minor && fix < 5) ||
-          (3 == major && 4 == minor && fix < 1))) {
-      session_attrs->set_preferred_period(sdb_preferred_period(current_thd));
+    // prepare session attributes by THD
+    rc = prepare_session_attrs(true);
+    if (0 != rc) {
+      SDB_LOG_ERROR(
+          "Failed to prepare sequoiadb connection session attributes before "
+          "connect, error: %s",
+          get_err_msg());
+      goto error;
     }
-    /*The pre version of SequoiaDB(3.2) has no Source/Trans/Preferred_strict
-     * attrs.*/
-    if (!(major < 3 || (3 == major && minor < 2))) {
-      /* Sdb restart but not restart mysql client, session_attrs need to reset
-        and reset the session attrs. */
-      session_attrs->set_source(hostname, sdb_proc_id(),
-                                (ulonglong)thread_id());
-      session_attrs->set_trans_auto_rollback(false);
-      session_attrs->set_preferred_strict(sdb_preferred_strict(current_thd),
-                                          true);
-
-      /* Server HA conn:
-         1. use transaction.
-         2. default lock wait timeout, use rbs.
-      */
-      bool use_transaction =
-          m_is_server_ha_conn || sdb_use_transaction(current_thd);
-      if (use_transaction) {
-        if (m_is_server_ha_conn) {
-          session_attrs->set_trans_auto_commit(true, true);
-        } else {
-          session_attrs->set_trans_auto_commit(true, true);
-          session_attrs->set_trans_timeout(sdb_lock_wait_timeout(current_thd));
-          session_attrs->set_trans_use_rollback_segments(
-              sdb_use_rollback_segments(current_thd), true);
-        }
-      } else {
-        session_attrs->set_trans_auto_commit(false, true);
-      }
-      if (m_check_collection_version) {
-        session_attrs->set_check_collection_version(true);
-      }
-
-      rc = set_my_session_attr();
-      if (SDB_ERR_OK != rc) {
-        m_print_screen = true;
-        const char *err_detail = "Failed to set session attributes";
-        try {
-          if (0 == get_last_error(error_obj)) {
-            err_detail = error_obj.getStringField(SDB_FIELD_DETAIL);
-            if (0 == strlen(errmsg)) {
-              err_detail = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
-            }
+    rc = set_my_session_attr();
+    if (SDB_ERR_OK != rc) {
+      m_print_screen = true;
+      const char *err_detail = "Failed to set session attributes";
+      try {
+        if (0 == get_last_error(error_obj)) {
+          err_detail = error_obj.getStringField(SDB_FIELD_DETAIL);
+          if (0 == strlen(errmsg)) {
+            err_detail = error_obj.getStringField(SDB_FIELD_DESCRIPTION);
           }
-        } catch (std::exception &e) {
-          // Use default error message.
         }
-        snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s", err_detail);
-        goto error;
+      } catch (std::exception &e) {
+        // Use default error message.
       }
+      snprintf(errmsg, SDB_ERR_BUFF_SIZE, "%s", err_detail);
+      goto error;
     }
     m_is_authenticated = true;
   }
@@ -1535,6 +1484,12 @@ int Sdb_conn::get_last_error(bson::BSONObj &errObj) {
   if ((obj_data = get_error_message())) {
     errObj = bson::BSONObj(obj_data).getOwned();
     clear_error_message();
+  } else {
+    // if the connection is not initialized by check_sdb_in_thd
+    rc = m_connection->getLastErrorObj(errObj);
+    if (0 != rc) {
+      goto error;
+    }
   }
 done:
   return rc;
@@ -1580,6 +1535,78 @@ int Sdb_conn::set_session_attr(const bson::BSONObj &option) {
 
 int conn_interrupt(sdbclient::sdb *connection) {
   return connection->interruptOperation();
+}
+
+int Sdb_conn::prepare_session_attrs(bool init) {
+  int rc = SDB_ERR_OK;
+  int major = 0, minor = 0, fix = 0;
+  ulong tx_iso = SDB_TRANS_ISO_RU;
+  Sdb_session_attrs *session_attrs = get_session_attrs();
+  bool trans_is_on = is_transaction_on();
+
+  THD *thd = current_thd;
+  rc = sdb_get_version(*this, major, minor, fix);
+  if (rc != 0) {
+    snprintf(errmsg, sizeof(errmsg), "Failed to begin transaction, rc:%d", rc);
+    goto error;
+  }
+
+  session_attrs->set_preferred_instance(sdb_preferred_instance(thd));
+  session_attrs->set_preferred_instance_mode(sdb_preferred_instance_mode(thd));
+  if (!trans_is_on) {
+    tx_iso = convert_to_sdb_isolation(thd->tx_isolation, major);
+    session_attrs->set_trans_isolation(tx_iso);
+  }
+  /*The pre version of SequoiaDB(3.2.5) and SequoiaDB(3.4.1) has no
+   * Preferred_period attrs.*/
+  if (!(major < 3 || (3 == major && minor < 2) ||
+        (3 == major && 2 == minor && fix < 5) ||
+        (3 == major && 4 == minor && fix < 1))) {
+    session_attrs->set_preferred_period(sdb_preferred_period(thd));
+  }
+  /*The pre version of SequoiaDB(3.2) has no Source/Trans/Preferred_strict
+   * attrs.*/
+  if (!(major < 3 || (3 == major && minor < 2))) {
+    /* Sdb restart but not restart mysql client, session_attrs need to reset
+      and reset the session attrs. */
+    session_attrs->set_source(glob_hostname, sdb_proc_id(),
+                              (ulonglong)thread_id());
+    if (!trans_is_on) {
+      session_attrs->set_trans_auto_rollback(false, init);
+    }
+    session_attrs->set_preferred_strict(sdb_preferred_strict(thd), init);
+
+    /* Server HA conn:
+       1. use transaction.
+       2. default lock wait timeout, use rbs.
+    */
+    bool use_transaction = m_is_server_ha_conn || sdb_use_transaction(thd);
+    if (use_transaction) {
+      if (m_is_server_ha_conn) {
+        if (!trans_is_on) {
+          session_attrs->set_trans_auto_commit(true, init);
+        }
+      } else {
+        session_attrs->set_trans_timeout(sdb_lock_wait_timeout(thd));
+        if (!trans_is_on) {
+          session_attrs->set_trans_auto_commit(true, init);
+          session_attrs->set_trans_use_rollback_segments(
+              sdb_use_rollback_segments(thd), init);
+        }
+      }
+    } else {
+      if (!trans_is_on) {
+        session_attrs->set_trans_auto_commit(false, init);
+      }
+    }
+    if (m_check_collection_version) {
+      session_attrs->set_check_collection_version(true);
+    }
+  }
+done:
+  return rc;
+error:
+  goto done;
 }
 
 int Sdb_conn::interrupt_operation() {
