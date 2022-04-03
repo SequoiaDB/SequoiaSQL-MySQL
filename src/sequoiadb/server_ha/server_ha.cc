@@ -3626,9 +3626,23 @@ static int wait_latest_state_before_query(THD *thd, ha_sql_stmt_info *sql_info,
     goto error;
   }
 
-  rc = sql_info->sdb_conn->connect();
-  if (rc) {
-    goto error;
+  // the thd session attributes maybe changed, the Sdb_conn(for HA) session
+  // attributes need to be consistent with thd
+  if (sql_info->sdb_conn->is_connected()) {
+    rc = sdb_fix_conn_attrs_by_thd(sql_info->sdb_conn);
+    if (0 != rc) {
+      SDB_LOG_ERROR(
+          "Failed to fix sequoiadb connection session attributes, error: %s",
+          sql_info->sdb_conn->get_err_msg());
+      ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
+  } else {
+    rc = sql_info->sdb_conn->connect();
+    if (rc) {
+      ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
+      goto error;
+    }
   }
 
   // get objects for current query
@@ -4785,7 +4799,7 @@ done:
   set_overwrite_status(thd, event, false);
   DBUG_RETURN(rc);
 error:
-  if (sql_info->sdb_conn) {
+  if (sql_info->sdb_conn && '\0' == sql_info->err_message[0]) {
     ha_error_string(*sql_info->sdb_conn, rc, sql_info->err_message);
   }
 
