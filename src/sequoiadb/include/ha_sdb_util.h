@@ -27,7 +27,13 @@
 
 extern bool sdb_version_cached;
 
-#define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
+#ifndef SDB_MIN
+#define SDB_MIN(A, B) ((A) < (B) ? (A) : (B))
+#endif
+
+#ifndef SDB_MAX
+#define SDB_MAX(A, B) ((A) > (B) ? (A) : (B))
+#endif
 
 enum enum_compress_type {
   SDB_COMPRESS_TYPE_NONE = 0,

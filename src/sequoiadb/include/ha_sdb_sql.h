@@ -57,6 +57,12 @@ typedef class st_select_lex_unit SELECT_LEX_UNIT;
 #endif
 #endif
 
+#ifdef IS_MYSQL
+#define SDB_HA_MRR_SUPPORT_SORRTED HA_MRR_SUPPORT_SORTED
+#elif IS_MARIADB
+#define SDB_HA_MRR_SUPPORT_SORRTED HA_MRR_SORTED
+#endif
+
 /*
   MySQL extra definations.
 */
@@ -275,6 +281,12 @@ typedef enum sdb_join_type {
   SDB_JOIN_MULTI_RANGE
 } sdb_join_type;
 
+#if defined IS_MYSQL
+typedef enum key_range_flags sdb_key_range_flag;
+#elif defined IS_MARIADB
+typedef uint sdb_key_range_flag;
+#endif
+
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
                          size_t pre_alloc_size MY_ATTRIBUTE((unused)));
@@ -490,4 +502,7 @@ int sdb_thd_query_length(THD *thd);
 String sdb_thd_rewritten_query(THD *thd);
 
 ulonglong sdb_thd_os_id(THD *thd);
+
+TABLE_REF &get_table_ref(TABLE *table);
+
 #endif

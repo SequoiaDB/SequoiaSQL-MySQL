@@ -178,6 +178,8 @@ class sdb_batched_keys_ranges {
 
   int fill_ranges_buf(KEY_MULTI_RANGE &cur_range);
 
+  void build_probing_key();
+
   sdb_key_range_info *ranges_buf_first();
 
   sdb_key_range_info *ranges_buf_next();
@@ -196,6 +198,8 @@ class sdb_batched_keys_ranges {
   TABLE *m_table;
   uint m_active_index;
   bool m_is_mrr_assoc;
+
+  uchar *m_key_probing;  // build probing key to search the hash buff.
 };
 
 class ha_sdb : public handler {
@@ -405,15 +409,19 @@ class ha_sdb : public handler {
   ha_rows multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
                                 uint *bufsz, uint *flags, Cost_estimate *cost);
 
-#ifdef IS_MARIADB
+  bool sdb_can_push_in_from_range(uint keyno, KEY_MULTI_RANGE *cur_range);
+
   bool choose_mrr_impl(uint keyno, uint *bufsz, uint *flags,
-                       Cost_estimate *cost);
+                       Cost_estimate *cost, bool reset_cost);
 
   ha_rows multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
-                                      void *seq_init_param, uint n_ranges,
+                                      void *seq_init_param, uint n_ranges_arg,
                                       uint *bufsz, uint *flags,
                                       Cost_estimate *cost);
-#endif
+
+  int multi_range_read_next_first();
+
+  void choose_index_condition_methods();
 
   int multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
                             uint n_ranges, uint mode, HANDLER_BUFFER *buf);
@@ -710,6 +718,31 @@ class ha_sdb : public handler {
                             bson::BSONObj &auto_inc_options,
                             bson::BSONObjBuilder &builder);
 
+  void range_get_idx_val_incld(KEY_MULTI_RANGE &range, bool &start_incld,
+                               bool &end_incld);
+
+  void append_infinity_element(bson::BSONObjBuilder &rang_arr_blder,
+                               const char *field_name, sdb_key_range_flag flag);
+
+  void build_single_range(bson::BSONObjBuilder &rang_arr_blder,
+                          bson::BSONObj &range_cond_idx,
+                          const KEY_MULTI_RANGE &cur_range,
+                          const bool closed_range, const uint key_parts,
+                          const uint prefix_num, const bool start_range);
+
+  void build_single_equal_range(bson::BSONObjBuilder &rang_equal_blder,
+                                bson::BSONObj &range_cond_idx);
+
+  /*The caller need to catch the exception.*/
+  void build_single_equal_with_null_range(bson::BSONObjBuilder &rang_arr_blder,
+                                          bson::BSONObj &range_cond_idx,
+                                          const bool start_range,
+                                          const enum ha_rkey_function flag);
+
+  bool is_range_supported();
+
+  int create_range_obj(bson::BSONObjBuilder &hint_builder);
+
   int create_condition_in_for_mrr(bson::BSONObj &condition);
 
   enum_alter_inplace_result filter_alter_columns(
@@ -770,6 +803,8 @@ class ha_sdb : public handler {
   st_order *sdb_group_list;
 
   bool m_use_default_impl;
+  bool m_last_range_obj_is_full; /* range bson obj is full or not. */
+  sdb_index_cond_methods m_method;
   sdb_batched_keys_ranges m_batched_keys_ranges;
 };
 #endif

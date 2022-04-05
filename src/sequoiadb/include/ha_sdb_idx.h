@@ -21,6 +21,16 @@
 #include <boost/shared_ptr.hpp>
 #include "sdb_cl.h"
 
+typedef enum sdb_index_cond_methods {
+  IDX_COND_USING_IN = 1,      /* Using $in to do index search. */
+  IDX_COND_USING_RANGE,       /* Using $range in hint when do index search. */
+  IDX_COND_USING_RANGE_EQUAL, /* Using $range with isAllEqual = true when do
+                                 index search. */
+  IDX_COND_USING_RANGE_EQUAL_MAYBE_NULL, /* Using $range with isALLEqual = false
+                                            cause the key_part maybe null.*/
+  IDX_COND_INVALID = -1                  /* Invalid enumeration. */
+} sdb_index_cond_methods;
+
 const static uint16 NULL_BITS = 1;
 
 struct Sdb_index_stat {

@@ -29,15 +29,7 @@
 #include "ha_sdb_sql.h"
 #include "sql_table.h"
 
-#ifndef MIN
-#define MIN(A, B) ((A) < (B) ? (A) : (B))
-#endif
-
-#ifndef MAX
-#define MAX(A, B) ((A) > (B) ? (A) : (B))
-#endif
-
-#define SDB_ROUND(x, min, max) (MIN(MAX((x), (min)), (max)))
+#define SDB_ROUND(x, min, max) (SDB_MIN(SDB_MAX((x), (min)), (max)))
 
 #define SDB_DEF_RANGE_SIGNED_MAX (99999999.9)
 #define SDB_DEF_RANGE_SIGNED_MIN (-99999999.9)
@@ -1085,8 +1077,8 @@ ha_rows Sdb_match_cnt_estimator::eval() {
              ("Records = min(%d, ceil(TotalRecords * Selectivity)) "
               "= min(%d, round(%llu * %f))",
               MIN_MATCH_COUNT, MIN_MATCH_COUNT, m_total_records, selectivity));
-  records =
-      MAX(MIN_MATCH_COUNT, (ulonglong)((selectivity * m_total_records) + 0.5));
+  records = SDB_MAX(MIN_MATCH_COUNT,
+                    (ulonglong)((selectivity * m_total_records) + 0.5));
 done:
   DBUG_PRINT("exit", ("Records: %lld", records));
   DBUG_RETURN(records);
@@ -1161,7 +1153,7 @@ void Sdb_match_cnt_estimator::eval_eq_selectivity(uint field_nr,
                           "= min(%f, 2 / %llu)",
                           EQ_DEFAULT_SELECTIVITY, EQ_DEFAULT_SELECTIVITY,
                           m_total_records));
-      cur_selectivity = MIN(EQ_DEFAULT_SELECTIVITY, 2.0 / m_total_records);
+      cur_selectivity = SDB_MIN(EQ_DEFAULT_SELECTIVITY, 2.0 / m_total_records);
     }
     DBUG_PRINT("info",
                ("Selectivity = Selectivity * CurrentSelectivity = %f * %f",
@@ -1275,7 +1267,7 @@ void Sdb_match_cnt_estimator::eval_range_selectivity(
          "(MaxValue - MinValue)) = max(%f, (%f - %f) / (%f - %f))",
          min_sel, min_sel, end_value, start_value, max_value, min_value));
     cur_selectivity =
-        MAX(min_sel, (end_value - start_value) / (max_value - min_value));
+        SDB_MAX(min_sel, (end_value - start_value) / (max_value - min_value));
   }
 
   DBUG_PRINT("info",
@@ -1343,7 +1335,7 @@ double Sdb_match_cnt_estimator::convert_str_to_scalar(
   // Convert initial characters to fraction
   {
     const char *ptr = str->ptr();
-    uint length = MIN(STR_SCALAR_MAX_LEN, str->length());
+    uint length = SDB_MIN(STR_SCALAR_MAX_LEN, str->length());
     uint8 base = STR_SCALAR_MAX - STR_SCALAR_MIN + 1;
     double denom = base;
 
@@ -1557,11 +1549,11 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
             // e.g.: DOUBLE(5, 2) UNSIGNED => [0, 999.99]
             min_value = 0;
             max_value = log_10[m - d] - (1.0 / log_10[d]);
-            max_value = MIN(max_value, SDB_DEF_RANGE_UNSIGNED_MAX);
+            max_value = SDB_MIN(max_value, SDB_DEF_RANGE_UNSIGNED_MAX);
           } else {
             // e.g.: DOUBLE(5, 2) => [-999.99, 999.99]
             max_value = log_10[m - d] - (1.0 / log_10[d]);
-            max_value = MIN(max_value, SDB_DEF_RANGE_SIGNED_MAX);
+            max_value = SDB_MIN(max_value, SDB_DEF_RANGE_SIGNED_MAX);
             min_value = (-max_value) * SDB_NEGATIVE_SHRINKAGE_RATIO;
           }
         }
@@ -1577,11 +1569,11 @@ void sdb_init_min_max_value_arr(KEY *key_info, double *min_value_arr,
           // e.g.: DECIMAL(5, 2) UNSIGNED => [0, 999.99]
           min_value = 0;
           max_value = log_10[m - d] - (1.0 / log_10[d]);
-          max_value = MIN(max_value, SDB_DEF_RANGE_UNSIGNED_MAX);
+          max_value = SDB_MIN(max_value, SDB_DEF_RANGE_UNSIGNED_MAX);
         } else {
           // e.g.: DECIMAL(5, 2) => [-999.99, 999.99]
           max_value = log_10[m - d] - (1.0 / log_10[d]);
-          max_value = MIN(max_value, SDB_DEF_RANGE_SIGNED_MAX);
+          max_value = SDB_MIN(max_value, SDB_DEF_RANGE_SIGNED_MAX);
           min_value = (-max_value) * SDB_NEGATIVE_SHRINKAGE_RATIO;
         }
         break;
