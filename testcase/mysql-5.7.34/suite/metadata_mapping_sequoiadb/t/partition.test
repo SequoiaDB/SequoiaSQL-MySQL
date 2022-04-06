@@ -458,9 +458,8 @@ alter table t1 drop partition p6;
 show create table t1;
 select * from t1 order by a;
 insert into t1 values (1,0), (2,10), (3,20), (4,30), (5,40), (5,49);
-# failed: 1526: Table has no partition for value from column_list
---error 1526
 insert into t1 values (0, -1);
+# failed: 1526: Table has no partition for value from column_list
 --error 1526
 insert into t1 values (6, 59);
 select * from t1 order by a;
