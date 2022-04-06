@@ -3853,7 +3853,7 @@ ha_rows ha_sdb::multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
   }
 
   *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
-  if (n_ranges_arg <= 1 || choose_mrr_impl(keyno, bufsz, flags, cost, false)) {
+  if (choose_mrr_impl(keyno, bufsz, flags, cost, false)) {
     DBUG_PRINT("info", ("Default MRR implementation choosen"));
     m_use_default_impl = true;
   } else {
@@ -3910,7 +3910,7 @@ ha_rows ha_sdb::multi_range_read_info_const(uint keyno, RANGE_SEQ_IF *seq,
     goto error;
   }
 
-  if (n_ranges_arg <= 1 || choose_mrr_impl(keyno, bufsz, flags, cost, false)) {
+  if (choose_mrr_impl(keyno, bufsz, flags, cost, false)) {
     /* Default implementation is choosen */
     DBUG_PRINT("info", ("Default MRR implementation choosen"));
     m_use_default_impl = true;
@@ -4035,7 +4035,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
     goto error;
   }
 
-  if (choose_mrr_impl(active_index, &bufsz, &flags, &cost, false)) {
+  if (n_ranges <= 1 || choose_mrr_impl(active_index, &bufsz, &flags, &cost, false)) {
     m_use_default_impl = true;
     goto done;
   }
