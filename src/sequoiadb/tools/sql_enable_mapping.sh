@@ -445,9 +445,9 @@ function build_init_mapping_table_sql_cmd()
 {
    local full_table_name=$1
 cat <<EOF
-INSERT INTO ${full_table_name}
+INSERT INTO ${full_table_name} (DBName, TableName, CSName, CLName, IsPhysicalTable)
    SELECT PARTS.TABLE_SCHEMA collate 'utf8_bin' AS DBName, PARTS.TABLE_NAME collate 'utf8_bin' AS TableName, PARTS.TABLE_SCHEMA AS CSName,
-          PARTS.TABLE_NAME AS CLName, 1 AS IsPhysicalTable, 1 AS State
+          PARTS.TABLE_NAME AS CLName, 1 AS IsPhysicalTable
    FROM information_schema.PARTITIONS AS PARTS, information_schema.TABLES AS TBLS
    WHERE PARTS.TABLE_SCHEMA = TBLS.TABLE_SCHEMA AND TBLS.TABLE_SCHEMA != '${db_name}' AND
          PARTS.TABLE_NAME = TBLS.TABLE_NAME AND ENGINE = 'SequoiaDB' AND TABLE_TYPE = 'BASE TABLE' AND
@@ -456,7 +456,7 @@ INSERT INTO ${full_table_name}
    UNION
    SELECT PARTS.TABLE_SCHEMA collate 'utf8_bin' AS DBName, CONCAT(PARTS.TABLE_NAME, '#P#', PARTITION_NAME) collate 'utf8_bin' AS TableName,
           PARTS.TABLE_SCHEMA AS CSName, CONCAT(PARTS.TABLE_NAME, '#P#', PARTITION_NAME) AS CLName,
-          1 AS IsPhysicalTable, 1 AS State
+          1 AS IsPhysicalTable
    FROM information_schema.PARTITIONS AS PARTS, information_schema.TABLES AS TBLS
    WHERE PARTS.TABLE_SCHEMA = TBLS.TABLE_SCHEMA AND TBLS.TABLE_SCHEMA != '${db_name}' AND
          PARTS.TABLE_NAME = TBLS.TABLE_NAME AND ENGINE = 'SequoiaDB' AND TABLE_TYPE = 'BASE TABLE' AND
@@ -464,12 +464,14 @@ INSERT INTO ${full_table_name}
    GROUP BY DBName collate 'utf8_bin', TableName collate 'utf8_bin', PARTITION_NAME collate 'utf8_bin'
    UNION
    SELECT PARTS.TABLE_SCHEMA collate 'utf8_bin' AS DBName,PARTS.TABLE_NAME collate 'utf8_bin' AS TableName, PARTS.TABLE_SCHEMA AS CSName,
-          PARTS.TABLE_NAME AS CLName, 0 AS IsPhysicalTable, 1 AS State
+          PARTS.TABLE_NAME AS CLName, 0 AS IsPhysicalTable
    FROM information_schema.PARTITIONS AS PARTS, information_schema.TABLES AS TBLS 
    WHERE PARTS.TABLE_SCHEMA = TBLS.TABLE_SCHEMA AND TBLS.TABLE_SCHEMA != '${db_name}' AND
          PARTS.TABLE_NAME = TBLS.TABLE_NAME AND ENGINE = 'SequoiaDB'  AND TABLE_TYPE = 'BASE TABLE' AND 
          (PARTITION_METHOD != 'KEY' AND PARTITION_METHOD != 'HASH' AND PARTITION_METHOD IS NOT NULL)
    GROUP BY DBName collate 'utf8_bin', TableName collate 'utf8_bin'
+   UNION
+   SELECT '', '', '', '', 0
 EOF
 }
 
@@ -916,7 +918,8 @@ query=`cat <<EOF
      CSName char(128),
      CLName char(128),
      IsPhysicalTable int,
-     State int
+     State int default 1,
+     IsSpecifiedMapping int default 0
    ) COMMENT = "sequoiadb: { table_options: { Group: 'SysMetaGroup' } }"
 EOF`
 echo "INFO: Creating mapping table '${full_table_name}'"

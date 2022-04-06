@@ -265,34 +265,20 @@ error:
   goto done;
 }
 
-int check_if_mapping_table_empty(Sdb_conn *conn, bool &is_empty) {
+int get_mapping_table_count(Sdb_conn *conn, longlong &count) {
   int rc = SDB_ERR_OK;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   Sdb_cl mapping_table;
-  longlong count = 0;
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, Name_mapping::get_sql_group());
-  rc = get_table_map_cl(*conn, sql_group_cs_name, mapping_table);
-  if (SDB_CLS_GRP_NOT_EXIST == get_sdb_code(rc)) {
-    SDB_LOG_INFO(
-        "'SysMetaGroup' data group does not exist, "
-        "mapping function is not enabled");
-    is_empty = true;
-    rc = 0;
-    goto done;
-  }
+  rc = conn->get_cl(sql_group_cs_name, NM_TABLE_MAP, mapping_table, true);
   if (0 != rc) {
-    SDB_LOG_ERROR("Failed to get mapping table handler, error: %d", rc);
     goto error;
   }
-  rc = mapping_table.get_count(count);
+  rc =  mapping_table.get_count(count);
   if (0 != rc) {
-    SDB_LOG_ERROR("Failed to get number of record for '%s.%s', error: %d",
-                  sql_group_cs_name, NM_TABLE_MAP, rc);
     goto error;
   }
-  DBUG_ASSERT(count >= 0);
-  is_empty = (count == 0);
 done:
   return rc;
 error:

@@ -214,6 +214,7 @@ typedef struct st_recover_replay_thread {
 
   // playback progress of current thread
   int playback_progress;
+  bool mutexes_and_conds_inited;
 
   THD *thd;
   my_thread_handle thread;

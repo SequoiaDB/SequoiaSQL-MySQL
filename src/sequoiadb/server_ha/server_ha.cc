@@ -5212,6 +5212,102 @@ static void init_cond_with_clock_monotonic(PSI_cond_key key,
   }
 }
 
+// check if 'sequoiadb_enable_mappping' can be set to 'ON' or 'OFF'
+static int check_mapping_enabled_flag() {
+  DBUG_ENTER("check_mapping_enabled_flag");
+  int rc = SDB_ERR_OK;
+  bool data_group_is_set = false;
+  Sdb_pool_conn pool_conn(0, true);
+  Sdb_conn &sdb_conn = pool_conn;
+  Sdb_cl config_cl;
+  bson::BSONObj obj;
+  bson::BSONElement elem;
+  const char *data_group = NULL;
+  bool mapping_table_exists = true;
+  longlong count = 0;
+
+  SDB_LOG_INFO("Start check 'sequoiadb_enable_mapping' flag");
+  SDB_LOG_INFO("'sequoiadb_enable_mapping' is '%s'",
+               sdb_enable_mapping ? "ON" : "OFF");
+  rc = sdb_conn.connect();
+  HA_RC_CHECK(rc, error, "Failed to connect SequoiaDB, error: %s",
+              sdb_conn.get_err_msg());
+
+  // get data group name if current instance is in some instance group
+  if ('\0' != ha_inst_group_name[0]) {  // instance group name is not empty
+    rc = sdb_conn.get_cl(ha_thread.sdb_group_name, HA_CONFIG_CL, config_cl);
+    HA_RC_CHECK(rc, error, "Failed to get '%s', error: %d", HA_CONFIG_CL, rc);
+
+    rc = config_cl.query();
+    HA_RC_CHECK(rc, error, "Failed to query '%s', error: %d", HA_CONFIG_CL, rc);
+
+    rc = config_cl.next(obj, false);
+    HA_RC_CHECK(rc, error, "Failed to get data from '%s', error: %d",
+                HA_CONFIG_CL, rc);
+
+    elem = obj.getField(HA_FIELD_DATA_GROUP);
+    // set data group if 'DataGroup' in HAConfig is not empty
+    if (bson::String == elem.type()) {
+      ha_set_data_group(elem.valuestr());
+    }
+  }
+
+  // if instance group is bind to a data group, mapping function
+  // should be enabled
+  data_group = ha_get_data_group();
+  if ('\0' != data_group[0]) {
+    SDB_LOG_INFO("Current instance group '%s' is bind to data group '%s'",
+                 ha_inst_group_name, data_group);
+    if (!sdb_enable_mapping) {
+      // if data group is set and metadata mapping is not enabled, report error
+      SDB_LOG_ERROR(
+          "'sequoiadb_enable_mapping' should be enabled "
+          "when data group is set");
+      rc = SDB_HA_EXCEPTION;
+      goto error;
+    }
+    // should not use original name if 'DataGroup' is set
+    Name_mapping::set_prefer_origin_name(false);
+    goto done;
+  }
+
+  rc = get_mapping_table_count(&sdb_conn, count);
+  if (SDB_DMS_CS_NOTEXIST == get_sdb_code(rc) ||
+      SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+    // mapping table does not exist
+    rc = 0;
+    mapping_table_exists = false;
+  }
+  HA_RC_CHECK(rc, error, "Failed to get mapping table count, error: %d", rc);
+
+  // if mapping table exists and not empty, should not disable mapping
+  if (!sdb_enable_mapping && mapping_table_exists && 0 != count) {
+    SDB_LOG_ERROR("Can't disable mapping when mapping table is not empty");
+    rc = SDB_HA_EXCEPTION;
+    goto error;
+  }
+
+  // if mapping table does not exist, should not enable mapping function
+  if (sdb_enable_mapping && !mapping_table_exists) {
+    SDB_LOG_ERROR("Can't enable mapping when mapping table doesn't exist");
+    SDB_LOG_INFO(
+        "Mapping function can be enabled by 'sql_enable_mapping.sh' script");
+    rc = SDB_HA_EXCEPTION;
+    goto error;
+  }
+
+  // mapping table should not be empty if mapping is enabled
+  if (sdb_enable_mapping && mapping_table_exists && 0 == count) {
+    SDB_LOG_ERROR("The mapping table is empty, it was not initialized correctly");
+    rc = SDB_HA_EXCEPTION;
+    goto error;
+  }
+done:
+  DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
 // HA plugin initialization entry
 static int server_ha_init(void *p) {
   DBUG_ENTER("server_ha_init");
@@ -5243,6 +5339,18 @@ static int server_ha_init(void *p) {
   ha_thread.stopped = false;
   ha_thread.recover_finished = false;
   ha_thread.is_open = false;
+  ha_thread.mutexes_and_conds_inited = false;
+
+  // Init metadata mapping module and set configuration
+  Name_mapping::enable_name_mapping(sdb_enable_mapping);
+  Name_mapping::set_sql_group(ha_inst_group_name);
+  Name_mapping::set_mapping_unit_size(sdb_mapping_unit_size);
+  Name_mapping::set_mapping_unit_count(sdb_mapping_unit_count);
+
+  // check if mapping can be enabled or disabled
+  if (!opt_bootstrap && check_mapping_enabled_flag()) {
+    DBUG_RETURN(SDB_HA_EXCEPTION);
+  }
 
   if (strlen(ha_inst_group_name) && !opt_bootstrap) {
     // 1. create HA thread
@@ -5283,6 +5391,7 @@ static int server_ha_init(void *p) {
                      &pending_log_replayer.stopped_mutex, MY_MUTEX_INIT_FAST);
     my_thread_attr_init(&pending_log_replayer.thread_attr);
     pending_log_replayer.thd = NULL;
+    ha_thread.mutexes_and_conds_inited = true;
     if (mysql_thread_create(
             HA_KEY_PENDING_LOG_REPLAY_THREAD, &pending_log_replayer.thread,
             &pending_log_replayer.thread_attr, ha_replay_pending_logs,
@@ -5292,12 +5401,6 @@ static int server_ha_init(void *p) {
     }
     ha_thread.is_open = true;
   }
-
-  // Init metadata mapping module and set configuration
-  Name_mapping::enable_name_mapping(sdb_enable_mapping);
-  Name_mapping::set_sql_group(ha_inst_group_name);
-  Name_mapping::set_mapping_unit_size(sdb_mapping_unit_size);
-  Name_mapping::set_mapping_unit_count(sdb_mapping_unit_count);
 
   if (sdb_enable_mapping) {
     SDB_LOG_INFO(
@@ -5326,7 +5429,8 @@ static int server_ha_deinit(void *p __attribute__((unused))) {
   }
 
   // destroy mutexes and conds
-  if (strlen(ha_inst_group_name) && !opt_bootstrap) {
+  if (strlen(ha_inst_group_name) && !opt_bootstrap &&
+      ha_thread.mutexes_and_conds_inited) {
     mysql_cond_destroy(&ha_thread.recover_finished_cond);
     mysql_mutex_destroy(&ha_thread.recover_finished_mutex);
     mysql_cond_destroy(&ha_thread.replay_stopped_cond);

@@ -361,6 +361,8 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
   bson::BSONObj obj;
   bson::BSONElement elem;
   Sdb_cl config_cl;
+  bool mapping_table_exist = true;
+  const char *data_group = NULL;
 
   rc = sdb_conn.get_cl(ha_thread->sdb_group_name, HA_CONFIG_CL, config_cl);
   HA_RC_CHECK(rc, error,
@@ -381,35 +383,6 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
   if (rc) {
     goto error;
   }
-
-  elem = obj.getField(HA_FIELD_DATA_GROUP);
-  if (bson::String == elem.type()) {
-    ha_set_data_group(elem.valuestr());
-    const char *data_group = ha_get_data_group();
-    // if data group for is set and metadata mapping is not set, report error
-    if ('\0' != data_group[0] && !sdb_enable_mapping) {
-      SDB_LOG_ERROR("Metadata mapping is not enabled while data group is set");
-      rc = SDB_HA_EXCEPTION;
-      goto error;
-    } else if (sdb_enable_mapping && '\0' != data_group[0]) {
-      // if data group is set and 'sequoiadb_enable_mapping' is set
-      Name_mapping::set_prefer_origin_name(false);
-    }
-  } else {
-    bool is_empty = true;
-    rc = check_if_mapping_table_empty(&sdb_conn, is_empty);
-    if (0 != rc) {
-      SDB_LOG_ERROR("Failed to check if mapping table is empty");
-      goto error;
-    }
-    if (!is_empty && !sdb_enable_mapping) {
-      SDB_LOG_ERROR(
-          "Can't disable mapping function while mapping table is not empty");
-      rc = SDB_HA_EXCEPTION;
-      goto error;
-    }
-  }
-
   config_obj = obj;
 done:
   return rc;

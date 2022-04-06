@@ -128,5 +128,5 @@ class Name_mapping {
                                      const char *table_name,
                                      Mapping_context *mapping_ctx);
 };
-int check_if_mapping_table_empty(Sdb_conn *conn, bool &is_empty);
+int get_mapping_table_count(Sdb_conn *conn, longlong &count);
 #endif
