@@ -1476,7 +1476,8 @@ int sdb_batched_keys_ranges::expand_buf(int n_ranges) {
   int records_buf_size = sizeof(sdb_key_range_info) * n_ranges;
   ptr = (uchar *)sdb_multi_malloc(
       sdb_key_memory_batched_keys_buf, MYF(MY_WME | MY_ZEROFILL), &m_keys_buf,
-      keys_buf_size, &m_records_buf, records_buf_size, NullS);
+      keys_buf_size, &m_records_buf, records_buf_size, &m_key_probing,
+      m_key_length, NullS);
   if (NULL == ptr) {
     rc = HA_ERR_OUT_OF_MEM;
     SDB_LOG_ERROR("Fail to init batched keys buff. rc: %d", rc);
