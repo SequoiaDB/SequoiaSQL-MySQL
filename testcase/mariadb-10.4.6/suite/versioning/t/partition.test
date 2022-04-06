@@ -6,8 +6,17 @@
 set system_versioning_alter_history=keep;
 --echo # Check conventional partitioning on temporal tables
 
+drop database if exists test_versioning_partition;
 create database test_versioning_partition;
 use test_versioning_partition;
+
+set @@session.time_zone='+00:00';
+let $default_engine= `select @@default_storage_engine`;
+#let $non_default_engine= `select if(@@default_storage_engine = 'InnoDB', 'MyISAM', 'InnoDB')`;
+let $non_default_engine= `select if(@@default_storage_engine = 'SequoiaDB', 'SequoiaDB', 'SequoiaDB')`;
+let $sys_datatype_expl= timestamp(6);
+let $sys_datatype_expl_uc= TIMESTAMP(6);
+let $sys_datatype_max= timestamp'2038-01-19 03:14:07.999999';
 
 --replace_result $sys_datatype_expl SYS_DATATYPE
 #--echo $sys_datatype_expl
@@ -416,17 +425,17 @@ partition by system_time interval 1 hour (
     partition p0 history, partition pn current);
 
 set @ts=(select partition_description from information_schema.partitions
-  where table_schema='test' and table_name='t1' and partition_name='p0');
+  where table_schema='test_versioning_partition' and table_name='t1' and partition_name='p0');
 
 alter table t1 add column b int;
-select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test' and table_name='t1';
+select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test_versioning_partition' and table_name='t1';
 alter table t1 add partition (partition p1 history, partition p2 history);
-select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test' and table_name='t1';
+select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test_versioning_partition' and table_name='t1';
 alter table t1 drop partition p0;
-select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test' and table_name='t1';
+select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test_versioning_partition' and table_name='t1';
 --error ER_VERS_DROP_PARTITION_INTERVAL
 alter table t1 drop partition p2;
-select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test' and table_name='t1';
+select partition_name,partition_ordinal_position,partition_method,timediff(partition_description, @ts) from information_schema.partitions where table_schema='test_versioning_partition' and table_name='t1';
 
 --echo #
 --echo # MDEV-15103 Assertion in ha_partition::part_records() for updating VIEW
@@ -507,7 +516,4 @@ partition by system_time interval column_get(column_create(7,7), 7 as int) secon
 show create table t1;
 
 --echo # Test cleanup
-drop database test;
-create database test;
-
 drop database test_versioning_partition;
