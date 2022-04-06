@@ -1650,7 +1650,8 @@ int Sdb_conn::prepare_session_attrs(bool init) {
   session_attrs->set_preferred_instance(sdb_preferred_instance(thd));
   session_attrs->set_preferred_instance_mode(sdb_preferred_instance_mode(thd));
   if (!trans_is_on) {
-    tx_iso = convert_to_sdb_isolation(thd->tx_isolation, major);
+    tx_iso = convert_to_sdb_isolation(
+        thd ? thd->tx_isolation : ISO_REPEATABLE_READ, major);
     session_attrs->set_trans_isolation(tx_iso);
   }
   /*The pre version of SequoiaDB(3.2.5) and SequoiaDB(3.4.1) has no
