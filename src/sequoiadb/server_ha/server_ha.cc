@@ -5085,6 +5085,27 @@ int ha_write_empty_sql_log(const char *db_name, const char *table_name,
       goto done;
     }
 
+    // the thd session attributes maybe changed, the Sdb_conn(for HA) session
+    // attributes need to be consistent with thd
+    if (sdb_conn->is_connected()) {
+      rc = sdb_fix_conn_attrs_by_thd(sdb_conn);
+      if (0 != rc) {
+        SDB_LOG_ERROR(
+            "Failed to fix sequoiadb connection session attributes, error: %s",
+            ha_error_string(*sdb_conn, rc, sql_info->err_message));
+        goto error;
+      }
+    } else {
+      rc = sdb_conn->connect();
+      if (0 != rc) {
+        SDB_LOG_ERROR(
+            "Failed to connect to SequoiaDB while writing empty SQL log, "
+            "error: %s",
+            ha_error_string(*sdb_conn, rc, sql_info->err_message));
+        goto error;
+      }
+    }
+
     rc = ha_get_lock_cl(*sdb_conn, ha_thread.sdb_group_name, lock_cl,
                         ha_get_sys_meta_group());
     if (rc) {
