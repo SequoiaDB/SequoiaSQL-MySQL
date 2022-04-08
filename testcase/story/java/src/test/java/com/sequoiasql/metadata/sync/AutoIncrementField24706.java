@@ -1,4 +1,4 @@
-package com.sequoiasql.metadatasync;
+package com.sequoiasql.metadata.sync;
 
 import com.sequoiadb.base.Sequoiadb;
 import com.sequoiasql.testcommon.*;
