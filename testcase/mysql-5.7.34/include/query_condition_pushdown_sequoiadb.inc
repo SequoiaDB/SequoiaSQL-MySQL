@@ -2682,14 +2682,20 @@ SELECT * FROM t1 WHERE a IN ("hello", "hello1");
 --source include/query_pushdown_condition_sequoiadb.inc
 --sorted_result
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE a IN ("hello ", "hello1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("hello ", "hello1 ");
+SELECT * FROM t1 WHERE a IN ("hello ", "hello1 ","hello");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE a IN ("HELLO ", "HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("HELLO ", "HELLO1 ");
+SELECT * FROM t1 WHERE a IN ("HELLO ", "HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%hello";
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -2772,8 +2778,10 @@ SELECT * FROM t1 WHERE b IN ("hello", "hello1");
 SELECT * FROM t1 WHERE b IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE b IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE b IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE b IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE b IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "%hello";
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -2856,8 +2864,10 @@ SELECT * FROM t1 WHERE c IN ("hello", "hello1");
 SELECT * FROM t1 WHERE c IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE c IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE c IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE c IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE c IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "%hello";
 --sorted_result
@@ -2934,8 +2944,10 @@ SELECT * FROM t1 WHERE d IN ("hello", "hello1");
 SELECT * FROM t1 WHERE d IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE d IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE d IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE d IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE d IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "%hello";
 --sorted_result
@@ -3043,14 +3055,20 @@ SELECT * FROM t1 WHERE a <=> e;
 SELECT * FROM t1 WHERE a IN ("hello", "hello1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE a IN ("hello ", "hello1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("hello ", "hello1 ");
+SELECT * FROM t1 WHERE a IN ("hello ", "hello1 ","hello");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE a IN ("HELLO ", "HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN ("HELLO ", "HELLO1 ");
+SELECT * FROM t1 WHERE a IN ("HELLO ", "HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319
+#SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%hello";
 --sorted_result
@@ -3126,10 +3144,12 @@ SELECT * FROM t1 WHERE b <=> e;
 SELECT * FROM t1 WHERE b IN ("hello", "hello1");
 --sorted_result
 SELECT * FROM t1 WHERE b IN ("HELLO", "HELLO1");
---sorted_result
-SELECT * FROM t1 WHERE b IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE b IN (" hello", " hello1");
 --sorted_result
 SELECT * FROM t1 WHERE b IN (" HELLO ", " HELLO1 ");
+--sorted_result
+SELECT * FROM t1 WHERE b IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE b LIKE "%hello";
 --sorted_result
@@ -3207,8 +3227,10 @@ SELECT * FROM t1 WHERE c IN ("hello", "hello1");
 SELECT * FROM t1 WHERE c IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE c IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE c IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE c IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE c IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE c LIKE "%hello";
 --sorted_result
@@ -3282,8 +3304,10 @@ SELECT * FROM t1 WHERE d IN ("hello", "hello1");
 SELECT * FROM t1 WHERE d IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE d IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319
+#SELECT * FROM t1 WHERE d IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE d IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE d IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE d LIKE "%hello";
 --sorted_result
@@ -3454,8 +3478,10 @@ SELECT * FROM t1 WHERE a IN ("hello", "hello1");
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" hello", " hello1");
+#SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%hello";
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -3542,8 +3568,10 @@ SELECT * FROM t1 WHERE a IN ("hello", "hello1");
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319
+#SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%hello";
 --sorted_result
@@ -3685,8 +3713,10 @@ SELECT * FROM t1 WHERE a IN ("hello", "hello1");
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319
+#SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%hello";
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -3768,8 +3798,10 @@ SELECT * FROM t1 WHERE a IN ("hello", "hello1");
 SELECT * FROM t1 WHERE a IN ("HELLO", "HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a IN (" hello", " hello1");
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
 --sorted_result
-SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ");
+SELECT * FROM t1 WHERE a IN (" HELLO ", " HELLO1 ","HELLO","HELLO1");
 --sorted_result
 SELECT * FROM t1 WHERE a LIKE "%hello";
 --sorted_result

@@ -367,7 +367,9 @@ create table t1 (id integer primary key auto_increment, txt text not null, uniqu
 #--error ER_DUP_ENTRY
 #insert into t1 (txt) values ('Chevy'), ('CHEVY');
 alter table t1 drop index txt_index, add index txt_index (txt(20));
-insert into t1 (txt) values ('Chevy ');
+#BUG:SEQUOIASQLMAINSTREAM-319(23)
+#insert into t1 (txt) values ('Chevy ');
+insert into t1 (txt) values ('Chevy');
 #Bug #SEQUOIASQLMAINSTREAM-204
 select * from t1 where txt='Chevy';
 select * from t1 where txt='Chevy ';
