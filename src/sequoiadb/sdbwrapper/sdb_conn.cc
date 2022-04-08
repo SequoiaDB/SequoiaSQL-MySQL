@@ -1553,7 +1553,7 @@ int Sdb_conn::prepare_session_attrs(bool init) {
 
   session_attrs->set_preferred_instance(sdb_preferred_instance(thd));
   session_attrs->set_preferred_instance_mode(sdb_preferred_instance_mode(thd));
-  if (!trans_is_on) {
+  if (!trans_is_on && thd) {
     tx_iso = convert_to_sdb_isolation(thd->tx_isolation, major);
     session_attrs->set_trans_isolation(tx_iso);
   }
