@@ -324,7 +324,7 @@ cat <<EOF
          if ( "${SHOW_LONG_STYLE}" != "") {
             println(print_long_style(mappings[i], max_name_lens));
          } else if (i > 0) { // do not print header for short style
-            println(print_short_style(mappings[i], full_table_name));
+            println(print_short_style(mappings[i], full_cl_name));
          }
       }
    } catch (e) {
