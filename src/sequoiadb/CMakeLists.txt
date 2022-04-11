@@ -62,6 +62,8 @@ include_directories(${SDB_INCLUDE_DIR})
 
 install(PROGRAMS "tools/sql_enable_mapping.sh"
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(PROGRAMS "tools/sql_get_mapping.sh"
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 
 set(SDB_LDFLAGS "-Wl,-rpath,$ORIGIN/../lib")
 if(SDB_BUILT_IN)
