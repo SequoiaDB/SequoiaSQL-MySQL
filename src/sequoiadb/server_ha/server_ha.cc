@@ -1247,6 +1247,15 @@ static inline void build_session_attributes(THD *thd, char *session_attrs) {
   end += snprintf(session_attrs + end, HA_MAX_SESSION_ATTRS_LEN,
                   ",@@session.foreign_key_checks=%d",
                   thd_test_options(thd, OPTION_NO_FOREIGN_KEY_CHECKS) ? 0 : 1);
+
+  if (SQLCOM_ALTER_TABLE == sql_command) {
+    end += snprintf(session_attrs + end, HA_MAX_SESSION_ATTRS_LEN,
+                    ",@@session.sequoiadb_use_transaction=%d",
+                    sdb_use_transaction(thd) ? 1 : 0);
+    end += snprintf(session_attrs + end, HA_MAX_SESSION_ATTRS_LEN,
+                    ",@@session.sequoiadb_alter_table_overhead_threshold=%lld",
+                    sdb_alter_table_overhead_threshold(thd));
+  }
 }
 
 // update cached cata version for alter partition table
@@ -4656,9 +4665,23 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
         goto error;
       }
 
+      // simulate crash or error scenes before writing pending log
+      if (SDB_ERROR_INJECT_CRASH("crash_before_writing_pending_log") ||
+          SDB_ERROR_INJECT_ERROR("fail_before_writing_pending_log")) {
+        rc = SDB_HA_EXCEPTION;
+        goto error;
+      }
+
       // write pending logs for current metadata operation
       rc = write_pending_log(thd, sql_info, event);
       if (rc) {
+        goto error;
+      }
+
+      // simulate crash or error scenes after writing pending log
+      if (SDB_ERROR_INJECT_CRASH("crash_after_writing_pending_log") ||
+          SDB_ERROR_INJECT_ERROR("fail_after_writing_pending_log")) {
+        rc = SDB_HA_EXCEPTION;
         goto error;
       }
     } catch (std::bad_alloc &e) {
@@ -4676,6 +4699,14 @@ static int persist_sql_stmt(THD *thd, ha_event_class_t event_class,
     SDB_LOG_DEBUG("HA: At the end of persisting SQL: %s, thread: %p",
                   query_without_password(thd, sql_info), thd);
     sql_info->single_query = NULL;
+    // simulate crash or error while writing SQL log
+    if (SDB_ERROR_INJECT_CRASH("crash_while_writing_sql_log") ||
+        SDB_ERROR_INJECT_ERROR("fail_while_writing_sql_log")) {
+      sql_info->tables = NULL;
+      sql_info->sdb_conn->rollback_transaction();
+      rc = SDB_HA_EXCEPTION;
+      goto error;
+    }
     try {
       if (can_write_sql_log(thd, sql_info, event.general_error_code) ||
           is_pending_log_ignorable_error(thd)) {
