@@ -2078,6 +2078,7 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
   Mapping_context_impl scl_tmp_mapping, scl_mapping;
   List_iterator_fast<partition_element> part_it(part_info->partitions);
   partition_element *part_elem;
+  std::list<char *> cl_fullnames;
 
   while ((part_elem = part_it++)) {
 #ifdef IS_MARIADB
@@ -2131,6 +2132,27 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
 
     rc =
         mcl.attach_collection(db_name, part_name, attach_options, &scl_mapping);
+
+    // save name of collection that was not created in this function
+    // if collection is already attached, rc is SDB_RELINK_SUB_CL
+    if (0 == rc && !created_cl) {
+      size_t full_cl_len = strlen(scl_mapping.get_mapping_cs()) +
+                           strlen(scl_mapping.get_mapping_cl()) + 1;
+      // memory will be released automatically after current query
+      char *full_cl_name = (char *)thd_calloc(current_thd, full_cl_len + 1);
+      if (NULL == full_cl_name) {
+        mcl.detach_collection(db_name, part_name, &scl_mapping);
+        SDB_LOG_ERROR("OOM while saving name for existing collection '%s.%s'",
+                      scl_mapping.get_mapping_cs(),
+                      scl_mapping.get_mapping_cl());
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
+      sprintf(full_cl_name, "%s.%s", scl_mapping.get_mapping_cs(),
+               scl_mapping.get_mapping_cl());
+      cl_fullnames.push_back(full_cl_name);
+    }
+
     if (SDB_BOUND_CONFLICT == get_sdb_code(rc) &&
         is_sharded_by_part_hash_id(part_info)) {
       my_printf_error(rc, "Partition name '%s' conflicted on hash value",
@@ -2189,6 +2211,17 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
 done:
   DBUG_RETURN(rc);
 error:
+  // detach collections that were not created in this function
+  {
+    for (std::list<char *>::iterator it = cl_fullnames.begin();
+         it != cl_fullnames.end(); it++) {
+      int tmp_rc = mcl.detach_collection(*it);
+      if (0 != tmp_rc) {
+        SDB_LOG_WARNING("Failed to detach '%s' from '%s', error: %d", *it,
+                        mcl.get_cl_name(), rc);
+      }
+    }
+  }
   if (created_cl) {
     handle_sdb_error(rc, MYF(0));
     conn->drop_cl(db_name, part_name, &scl_tmp_mapping);
