@@ -185,6 +185,17 @@ static int list_instances(sdbclient::sdb &conn,
                    "sequoiadb error: %s",
                    ha_sdb_error_string(conn, rc));
 
+  // get max length of data group field
+  int data_group_width = 0;
+  rc = get_field_max_len(registry_cl, HA_FIELD_DATA_GROUP, cond, data_group_width);
+  HA_TOOL_RC_CHECK(rc, rc,
+                   "Error: failed to get max length of 'DataGroup' field, "
+                   "sequoiadb error: %s",
+                   ha_sdb_error_string(conn, rc));
+  
+ if (data_group_width < (int)strlen(HA_FIELD_DATA_GROUP)) {
+    data_group_width = strlen(HA_FIELD_DATA_GROUP);
+  }
   if (inst_group_name_width < (int)strlen(HA_FIELD_INSTANCE_GROUP_NAME)) {
     inst_group_name_width = strlen(HA_FIELD_INSTANCE_GROUP_NAME);
   }
@@ -206,6 +217,7 @@ static int list_instances(sdbclient::sdb &conn,
 
   inst_group_name_width += TAB_WIDTH;
   hostname_width += TAB_WIDTH;
+  data_group_width += TAB_WIDTH;
   int inst_id_width = MAX_INSTANCE_ID_LEN + TAB_WIDTH;
   int ip_width = MAX_IP_LEN + TAB_WIDTH;
   int port_width = MAX_PORT_LEN + TAB_WIDTH;
@@ -216,7 +228,8 @@ static int list_instances(sdbclient::sdb &conn,
        << HA_FIELD_INSTANCE_GROUP_NAME << setw(inst_id_width)
        << HA_FIELD_INSTANCE_ID << setw(hostname_width) << HA_FIELD_HOST_NAME
        << setw(port_width) << COLUMN_SVC_NAME << setw(type_width)
-       << HA_FIELD_DB_TYPE << endl;
+       << HA_FIELD_DB_TYPE << setw(data_group_width)
+       << HA_FIELD_DATA_GROUP << endl;
 
   // print instance global configuration
   while (!(rc = cursor.next(result, false))) {
@@ -227,10 +240,16 @@ static int list_instances(sdbclient::sdb &conn,
     int port = result.getIntField(HA_FIELD_PORT);
     const char *db_type = result.getStringField(HA_FIELD_DB_TYPE);
 
+    //get data group
+    const char * data_group = NULL;
+    data_group = result.getStringField(HA_FIELD_DATA_GROUP);
+    if ('\0' == data_group[0])
+	data_group = "-";
+	
     cout << setiosflags(ios::left) << setw(inst_group_name_width)
          << inst_group_name << setw(inst_id_width) << inst_id
          << setw(hostname_width) << inst_host_name << setw(port_width) << port
-         << setw(type_width) << db_type << endl;
+         << setw(type_width) << db_type << setw(data_group_width) << data_group << endl;	
   }
 
   rc = (SDB_DMS_EOC == rc) ? 0 : rc;

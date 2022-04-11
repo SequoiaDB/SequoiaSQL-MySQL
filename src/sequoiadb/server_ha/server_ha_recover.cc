@@ -950,6 +950,7 @@ static int register_instance_id(ha_recover_replay_thread *ha_thread,
   obj_builder.append(HA_FIELD_PORT, mysqld_port);
   obj_builder.append(HA_FIELD_HOST_NAME, glob_hostname);
   obj_builder.append(HA_FIELD_INSTANCE_GROUP_NAME, ha_thread->group_name);
+  obj_builder.append(HA_FIELD_DATA_GROUP, ha_get_data_group());
 
   // if can't find instance information from global config table
   if (obj.isEmpty()) {
