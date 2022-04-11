@@ -3,6 +3,14 @@
 #
 
 --disable_warnings
+drop database if exists index_merge_intersect_dml;
+--enable_warnings
+create database index_merge_intersect_dml;
+drop database index_merge_intersect_dml;
+create database index_merge_intersect_dml;
+use index_merge_intersect_dml;
+
+--disable_warnings
 DROP TABLE IF EXISTS t1,t2;
 --enable_warnings
 
@@ -221,4 +229,4 @@ SELECT * FROM t1 WHERE t1.ID=1 AND EXISTS (
 
 DROP TABLE t1;
 DROP TABLE t2;
-
+DROP DATABASE index_merge_intersect_dml;
