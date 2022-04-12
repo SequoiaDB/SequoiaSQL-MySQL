@@ -3638,6 +3638,13 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
         } else {
           DBUG_ASSERT(0);
         }
+        /* use start range to build the hint end range obj when it is an equal
+         * range. */
+        if (mrr_cur_range.range_flag & UNIQUE_RANGE ||
+            mrr_cur_range.range_flag & EQ_RANGE) {
+          end_cond_idx = start_cond_idx;
+        }
+
         prefix_num_arr.append(prefix_num);
         /*Build the end range from start_cond_idx.*/
         BSONObjBuilder sub_arr_end_blder(value_sub_arr.subobjStart());
@@ -3830,8 +3837,7 @@ ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
     goto done;
   }
   *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
-  if ((*flags & HA_MRR_USE_DEFAULT_IMPL) ||
-      choose_mrr_impl(keyno, bufsz, flags, cost, true)) {
+  if (choose_mrr_impl(keyno, bufsz, flags, cost, true)) {
     DBUG_PRINT("info", ("Default MRR implementation choosen"));
   } else {
     DBUG_PRINT("info", ("Sdb Batched Keys access implementation choosen"));
@@ -4035,7 +4041,8 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
     goto error;
   }
 
-  if (n_ranges <= 1 || choose_mrr_impl(active_index, &bufsz, &flags, &cost, false)) {
+  if (n_ranges <= 1 ||
+      choose_mrr_impl(active_index, &bufsz, &flags, &cost, false)) {
     m_use_default_impl = true;
     goto done;
   }
