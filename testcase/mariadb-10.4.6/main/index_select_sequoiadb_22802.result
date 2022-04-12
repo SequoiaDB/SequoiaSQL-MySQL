@@ -1,5 +1,6 @@
 CREATE DATABASE index_select_sequoiadb_22802;
 use index_select_sequoiadb_22802;
+set optimizer_switch='mrr=on,mrr_cost_based=off';
 CREATE TABLE t1 (
 a TINYINT UNSIGNED,
 b TINYINT UNSIGNED
@@ -252,4 +253,5 @@ a	b
 65535	2
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 DROP TABLE t1;
+set optimizer_switch=default;
 DROP DATABASE index_select_sequoiadb_22802;

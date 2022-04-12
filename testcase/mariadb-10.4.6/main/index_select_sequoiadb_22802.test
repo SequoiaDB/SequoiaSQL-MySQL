@@ -6,6 +6,7 @@
 CREATE DATABASE index_select_sequoiadb_22802;
 use index_select_sequoiadb_22802;
 
+set optimizer_switch='mrr=on,mrr_cost_based=off';
 #tinyint
 CREATE TABLE t1 (
   a TINYINT UNSIGNED,
@@ -152,5 +153,6 @@ SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 --source include/query_pushdown_condition_sequoiadb.inc
 DROP TABLE t1;
 
+set optimizer_switch=default;
 DROP DATABASE index_select_sequoiadb_22802;
 --source include/uninstall_sequoiadb.inc
