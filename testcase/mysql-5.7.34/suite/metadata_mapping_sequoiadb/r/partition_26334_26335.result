@@ -1,0 +1,156 @@
+set sql_mode = 'ANSI_QUOTES';
+set character_set_client = utf8;
+set character_set_connection = utf8;
+drop database if exists partition_26334_26335;
+set sql_mode=default;
+set sql_mode = 'ANSI_QUOTES';
+set character_set_client = utf8;
+set character_set_connection = utf8;
+drop database if exists partition_26334_26335;
+set sql_mode=default;
+create database partition_26334_26335;
+use partition_26334_26335;
+create table clearX(a int);
+drop database partition_26334_26335;
+create database partition_26334_26335;
+use partition_26334_26335;
+create table clearX(a int);
+drop database partition_26334_26335;
+create database partition_26334_26335;
+use partition_26334_26335;
+CREATE TABLE t1 ( id INT NOT NULL, a INT, PRIMARY KEY( id ) ) ENGINE INNODB;
+ALTER TABLE t1 PARTITION BY RANGE ( id )
+SUBPARTITION BY HASH ( id )
+(PARTITION p0 VALUES LESS THAN (0) ( SUBPARTITION sp0 ),
+PARTITION p1 VALUES LESS THAN (1) ( SUBPARTITION sp1 ),
+PARTITION p2 VALUES LESS THAN (2) ( SUBPARTITION sp2 ) );
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `a` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY RANGE (`id`)
+SUBPARTITION BY HASH (`id`)
+(PARTITION `p0` VALUES LESS THAN (0)
+ (SUBPARTITION `sp0` ENGINE = InnoDB),
+ PARTITION `p1` VALUES LESS THAN (1)
+ (SUBPARTITION `sp1` ENGINE = InnoDB),
+ PARTITION `p2` VALUES LESS THAN (2)
+ (SUBPARTITION `sp2` ENGINE = InnoDB))
+INSERT INTO t1 (id, a) VALUES (-1, 54465), (0, 89754), (1, 24926);
+SELECT * FROM t1;
+id	a
+-1	54465
+0	89754
+1	24926
+create database partition_26334_26335;
+use partition_26334_26335;
+CREATE TABLE t1 ( id INT NOT NULL, a INT, PRIMARY KEY( id ) ) ENGINE INNODB;
+ALTER TABLE t1 PARTITION BY RANGE ( id )
+SUBPARTITION BY HASH ( id )
+(PARTITION p0 VALUES LESS THAN (0) ( SUBPARTITION sp0 ),
+PARTITION p1 VALUES LESS THAN (1) ( SUBPARTITION sp1 ),
+PARTITION p2 VALUES LESS THAN (2) ( SUBPARTITION sp2 ) );
+SHOW CREATE TABLE t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `a` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY RANGE (`id`)
+SUBPARTITION BY HASH (`id`)
+(PARTITION `p0` VALUES LESS THAN (0)
+ (SUBPARTITION `sp0` ENGINE = InnoDB),
+ PARTITION `p1` VALUES LESS THAN (1)
+ (SUBPARTITION `sp1` ENGINE = InnoDB),
+ PARTITION `p2` VALUES LESS THAN (2)
+ (SUBPARTITION `sp2` ENGINE = InnoDB))
+INSERT INTO t1 (id, a) VALUES (-1, 54465), (0, 89754), (1, 24926);
+SELECT * FROM t1;
+id	a
+-1	54465
+0	89754
+1	24926
+create table t2 like t1;
+show tables;
+Tables_in_partition_26334_26335
+t1
+t2
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `a` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY RANGE (`id`)
+SUBPARTITION BY HASH (`id`)
+(PARTITION `p0` VALUES LESS THAN (0)
+ (SUBPARTITION `sp0` ENGINE = InnoDB),
+ PARTITION `p1` VALUES LESS THAN (1)
+ (SUBPARTITION `sp1` ENGINE = InnoDB),
+ PARTITION `p2` VALUES LESS THAN (2)
+ (SUBPARTITION `sp2` ENGINE = InnoDB))
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `id` int(11) NOT NULL,
+  `a` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY RANGE (`id`)
+SUBPARTITION BY HASH (`id`)
+(PARTITION `p0` VALUES LESS THAN (0)
+ (SUBPARTITION `sp0` ENGINE = InnoDB),
+ PARTITION `p1` VALUES LESS THAN (1)
+ (SUBPARTITION `sp1` ENGINE = InnoDB),
+ PARTITION `p2` VALUES LESS THAN (2)
+ (SUBPARTITION `sp2` ENGINE = InnoDB))
+select * from t1 order by a;
+id	a
+1	24926
+-1	54465
+0	89754
+select * from t2 order by a;
+id	a
+create table t2 select * from t1;
+show tables;
+Tables_in_partition_26334_26335
+t1
+t2
+show create table t1;
+Table	Create Table
+t1	CREATE TABLE `t1` (
+  `id` int(11) NOT NULL,
+  `a` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+ PARTITION BY RANGE (`id`)
+SUBPARTITION BY HASH (`id`)
+(PARTITION `p0` VALUES LESS THAN (0)
+ (SUBPARTITION `sp0` ENGINE = InnoDB),
+ PARTITION `p1` VALUES LESS THAN (1)
+ (SUBPARTITION `sp1` ENGINE = InnoDB),
+ PARTITION `p2` VALUES LESS THAN (2)
+ (SUBPARTITION `sp2` ENGINE = InnoDB))
+show create table t2;
+Table	Create Table
+t2	CREATE TABLE `t2` (
+  `id` int(11) NOT NULL,
+  `a` int(11) DEFAULT NULL
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+select * from t1 order by a;
+id	a
+1	24926
+-1	54465
+0	89754
+select * from t2 order by a;
+id	a
+1	24926
+-1	54465
+0	89754
+drop database partition_26334_26335;
+drop database partition_26334_26335;
