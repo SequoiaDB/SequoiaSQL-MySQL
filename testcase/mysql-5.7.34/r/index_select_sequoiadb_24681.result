@@ -3,7 +3,6 @@ create database index_select_sequoiadb_24681;
 drop database index_select_sequoiadb_24681;
 create database index_select_sequoiadb_24681;
 use index_select_sequoiadb_24681;
-set session sequoiadb_support_mode='';
 CREATE TABLE indoc_info  (
 INDOC_NO bigint(20) NOT NULL COMMENT '收文编号',
 DOCRC_UNIT_APLTN varchar(256) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
