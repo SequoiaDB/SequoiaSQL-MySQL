@@ -429,7 +429,7 @@ SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.P
        (CountryLanguage.Country=Country.Code AND Language='English')
   WHERE 
        Country.Population > 10000000
-order by Name desc,IF(ISNULL(CountryLanguage.Country) desc,Percentage desc;
+order by Name desc,2 desc;
 
 show variables like 'join_buffer_size';
 set join_cache_level=4;
@@ -485,7 +485,7 @@ SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.P
        (CountryLanguage.Country=Country.Code AND Language='English')
   WHERE 
        Country.Population > 10000000
-order by Name desc,IF(ISNULL(CountryLanguage.Country) desc,Percentage desc;
+order by Name desc,2 desc;
 
 
 #--replace_column 9 #
@@ -573,7 +573,7 @@ SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.P
        (CountryLanguage.Country=Country.Code AND Language='English')
   WHERE 
        Country.Population > 10000000
-order by Name desc,IF(ISNULL(CountryLanguage.Country) desc,Percentage desc;
+order by Name desc,2 desc;
 
 set join_cache_level=6;
 show variables like 'join_cache_level';
@@ -629,7 +629,7 @@ SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.P
        (CountryLanguage.Country=Country.Code AND Language='English')
   WHERE 
        Country.Population > 10000000
-order by Name desc,IF(ISNULL(CountryLanguage.Country) desc,Percentage desc;
+order by Name desc,2 desc;
 
 set join_cache_level=7;
 show variables like 'join_cache_level';
@@ -684,7 +684,7 @@ SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.P
        (CountryLanguage.Country=Country.Code AND Language='English')
   WHERE 
        Country.Population > 10000000
-order by Name desc,IF(ISNULL(CountryLanguage.Country) desc,Percentage desc;
+order by Name desc,2 desc;
 
 set join_cache_level=8;
 show variables like 'join_cache_level';
@@ -739,7 +739,7 @@ SELECT Country.Name, IF(ISNULL(CountryLanguage.Country), NULL, CountryLanguage.P
        (CountryLanguage.Country=Country.Code AND Language='English')
   WHERE 
        Country.Population > 10000000
-order by Name desc,IF(ISNULL(CountryLanguage.Country) desc,Percentage desc;
+order by Name desc,2 desc;
 
 set join_buffer_size=256;
 show variables like 'join_buffer_size';
