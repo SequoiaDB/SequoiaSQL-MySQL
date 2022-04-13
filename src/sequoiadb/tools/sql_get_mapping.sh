@@ -144,7 +144,6 @@ function get_inst_name()
 
 function build_sdb_conn_js()
 {
-   
 cat <<EOF
    var db;
    var user = '${SDB_USER}', passwd = '${SDB_PASSWD}';
@@ -193,11 +192,15 @@ function init_sequoiadb_conn()
 function build_prepare_get_mapping_js()
 {
 cat << EOF
-   function fix_max_name_length(elems, name_lens)
+   function calculate_max_len_for_each_column(mappings, max_lens)
    {
-      for (var i = 0; i < name_lens.length; i++)
+      var column_num = max_lens.length;
+      for (var i = 0; i < column_num; i++)
       {
-         name_lens[i] = Math.max(elems[i].length, name_lens[i]);
+         for (var j = 0; j < mappings.length; j++)
+         {
+            max_lens[i] = Math.max(mappings[j][i].length, max_lens[i]);
+         }
       }
    }
 
@@ -235,11 +238,27 @@ cat << EOF
    function print_long_style(mapping, max_name_lens)
    {
       var str = "";
+      var tab_width = 4;
       for (var i = 0; i < max_name_lens.length; i++)
       {
-         str += mapping[i] + repeat(" ", max_name_lens[i] + 4 - mapping[i].length);
+         str += mapping[i] + repeat(" ", max_name_lens[i] + tab_width - mapping[i].length);
       }
       return str;
+   }
+
+   function append_result_to_mappings(cur, mappings)
+   {
+      var obj = null;
+      while((obj = cur.next() != null))
+      {
+         if (cur.current().toObj().DBName == "")
+         {
+            continue; // skip empty mapping
+         }
+         var elem = new Array();
+         push_mapping(elem, cur.current().toObj());
+         mappings.push(elem);
+      }
    }
 EOF
 }
@@ -250,7 +269,7 @@ function prepare_get_mapping()
    local sdb_js=`build_prepare_get_mapping_js`
    msg=$($INSTALL_DIR/bin/sdb -s "${sdb_js}")
    if [ $? != 0 ]; then
-      echo "${msg}"
+      echo "${msg}" | sed 's/^.*uncaught exception: //'
       return 1
    fi
    return 0
@@ -262,16 +281,13 @@ function build_get_mapping_js()
 cat <<EOF
    var full_table_name = '${TABLE_NAME}';
    var full_cl_name = '${CL_NAME}';
-   var max_name_lens = ["DBName".length, "TableName".length, "CSName".length, "CLName".length];
+   var max_lens_of_column = ["DBName".length, "TableName".length, "CSName".length, "CLName".length];
    try {
-      var obj = null;
       var mapping_cs_name = "SQL_NAME_MAPPING_" + '${upper_inst_group_name}';
       println("DEBUG: Get mapping information from '" + mapping_cs_name + ".TABLE_MAPPING'");
       var mapping_cl = db.getCS(mapping_cs_name).getCL("TABLE_MAPPING");
       var db_name, table_name, cs_name, cl_name;
-      var mappings = [];
-      var header = ["DBName", "TableName", "CSName", "CLName"];
-      mappings.push(header);
+      var mappings = [["DBName", "TableName", "CSName", "CLName"]];
 
       if ("" != full_table_name) {
          println("DEBUG: Get mapping for table '" + full_table_name + "'");
@@ -282,22 +298,12 @@ cat <<EOF
          var table_name_regex = "^" + db_table[1] + "#P#";
          var cur = mapping_cl.find({DBName: db_name, TableName: db_table[1]});
          println("DEBUG: DBName cond is '" + db_name + "', TableName cond is '" + db_table[1] + "'");
+         append_result_to_mappings(cur, mappings);
 
-         while((obj = cur.next() != null)) {
-            var elem = new Array();
-            push_mapping(elem, cur.current().toObj());
-            fix_max_name_length(elem, max_name_lens);
-            mappings.push(elem);
-         }
          // find mapping for table partition
          cur = mapping_cl.find({DBName: db_name, TableName: {\$regex: table_name_regex}});
          println("DEBUG: DBName cond is '" + db_name + "', TableName regex cond is '" + table_name_regex + "'");
-         while((obj = cur.next() != null)) {
-            var elem = new Array();
-            push_mapping(elem, cur.current().toObj());
-            fix_max_name_length(elem, max_name_lens);
-            mappings.push(elem);
-         }
+         append_result_to_mappings(cur, mappings);
       } else if ("" != full_cl_name) {
          println("DEBUG: Get mapping for collection '" + full_cl_name + "'");
          var cs_cl_name = full_cl_name.split('.');
@@ -305,30 +311,26 @@ cat <<EOF
          cl_name = cs_cl_name[1];
          println("DEBUG: CSName cond '" + cs_name + "', CLName cond '" + cl_name + "'");
          var cur = mapping_cl.find({CSName: cs_name, CLName: cl_name});
-         while((obj = cur.next() != null)) {
-            var elem = new Array();
-            push_mapping(elem, cur.current().toObj());
-            fix_max_name_length(elem, max_name_lens);
-            mappings.push(elem);
-         }
+         append_result_to_mappings(cur, mappings);
       } else {
          var cur = mapping_cl.find();
-         while((obj = cur.next() != null)) {
-            var elem = new Array();
-            push_mapping(elem, cur.current().toObj());
-            fix_max_name_length(elem, max_name_lens);
-            mappings.push(elem);
-         }
+         append_result_to_mappings(cur, mappings);
       }
+
+      calculate_max_len_for_each_column(mappings, max_lens_of_column);
       for (var i = 0; i < mappings.length && mappings.length > 1; i++) {
          if ( "${SHOW_LONG_STYLE}" != "") {
-            println(print_long_style(mappings[i], max_name_lens));
+            println(print_long_style(mappings[i], max_lens_of_column));
          } else if (i > 0) { // do not print header for short style
             println(print_short_style(mappings[i], full_cl_name));
          }
       }
    } catch (e) {
-      throw "ERROR: Failed to get mapping, error " + getLastErrMsg();
+      if (SDB_DMS_CS_NOTEXIST == e || SDB_DMS_NOTEXIST == e) {
+        throw "ERROR: Mapping table SQL_NAME_MAPPING_" + '${upper_inst_group_name}' + ".TABLE_MAPPING does not exist.";
+      } else {
+        throw "ERROR: Failed to get mapping, error " + getLastErrMsg();
+      }
    }
 EOF
 }
@@ -343,14 +345,14 @@ function get_mapping()
    local sdb_js=`build_get_mapping_js`
    msg=$($INSTALL_DIR/bin/sdb -s "${sdb_js}")
    if [ $? != 0 ]; then
-      echo "${msg}"
+      echo "${msg}" | sed 's/^.*uncaught exception: //' | egrep "${log_prefix}"
       return 1
    fi
 
    if [ "" != "${VERBOSE}" ]; then
-      echo "${msg}"
+      echo "${msg}" | sed 's/^.*uncaught exception: //'
    else
-      echo "${msg}" | egrep -v "DEBUG"
+      echo "${msg}" | sed 's/^.*uncaught exception: //' |  egrep -v "DEBUG"
    fi
    return 0
 }
