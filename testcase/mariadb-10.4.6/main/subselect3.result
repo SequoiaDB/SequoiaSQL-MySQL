@@ -393,10 +393,10 @@ cc	3	NULL	NULL
 bb	NULL	NULL	NULL
 aa	1	1	1
 dd	1	NULL	0
-select oref, a, b from t2 where (a,b) in (select ie1,ie2 from t1 where oref=t2.oref);
+select oref, a, b from t2 where (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) order by oref desc, a desc, b desc;
 oref	a	b
-aa	1	1
 ff	2	2
+aa	1	1
 select oref, a, b from t2 where (a,b) not in (select ie1,ie2 from t1 where oref=t2.oref);
 oref	a	b
 bb	2	1
@@ -434,7 +434,7 @@ cc	3	NULL	NULL
 bb	NULL	NULL	NULL
 aa	1	1	1
 dd	1	NULL	0
-select oref, a, b from t2 where (a,b) in (select ie1,ie2 from t1 where oref=t2.oref);
+select oref, a, b from t2 where (a,b) in (select ie1,ie2 from t1 where oref=t2.oref) order by oref desc, a desc, b desc;
 oref	a	b
 ff	2	2
 aa	1	1
