@@ -82,15 +82,10 @@ public class CommentMapping25548 extends MysqlTestBase {
 
         // 检查sdb端的cl是否存在及数据是否正确
         Assert.assertTrue( cs.isCollectionExist( clName ) );
-
-        int exp = 1;
-        BSONObject selector = new BasicBSONObject( "_id",
-                new BasicBSONObject( "$include", 0 ) );
-        BSONObject sort = new BasicBSONObject( "id", 1 );
-        DBCursor cursor = cl.query( null, selector, sort, null );
-        while ( cursor.hasNext() ) {
-            Assert.assertTrue( cursor.getNext().get( "id" ) == exp );
-        }
+        
+        Integer expData = new Integer( 1 );
+        Object actData = cl.queryOne().get( "id" );
+        Assert.assertEquals( expData, actData );
     }
 
     @AfterClass

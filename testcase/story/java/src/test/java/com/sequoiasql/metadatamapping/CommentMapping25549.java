@@ -96,14 +96,9 @@ public class CommentMapping25549 extends MysqlTestBase {
         Assert.assertTrue( cs.isCollectionExist( mclName ) );
         Assert.assertTrue( cs.isCollectionExist( sclName ) );
 
-        int exp = 1;
-        BSONObject selector = new BasicBSONObject( "_id",
-                new BasicBSONObject( "$include", 0 ) );
-        BSONObject sort = new BasicBSONObject( "id", 1 );
-        DBCursor cursor = mcl.query( null, selector, sort, null );
-        while ( cursor.hasNext() ) {
-            Assert.assertTrue( cursor.getNext().get( "id" ) == exp );
-        }
+        Integer expData = new Integer( 1 );
+        Object actData = mcl.queryOne().get( "id" );
+        Assert.assertEquals( expData, actData );
     }
 
     @AfterClass
