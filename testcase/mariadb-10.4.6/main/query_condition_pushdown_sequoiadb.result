@@ -7873,6 +7873,7 @@ a
 9
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
+set optimizer_switch='mrr=on,mrr_cost_based=off';
 CREATE TABLE t1 ( id INT AUTO_INCREMENT, a BIGINT, c CHAR(64), KEY(id, c), KEY(c) );
 INSERT INTO t1(a,c) VALUES (1,'op'),(-1,'bc'),(10,'123'),(1,'tf'),(-9,'001'),(15,'9a'),(0,'abc'),(5,'jk'),(19,'123'),(9,'hello'),(1,'bc');
 SELECT * FROM t1 ORDER BY id LIMIT 3;

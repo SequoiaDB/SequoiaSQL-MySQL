@@ -3,6 +3,7 @@
 # limit pushdown testing
 #
 #SEQUOIASQLMAINSTREAM-291
+set optimizer_switch='mrr=on,mrr_cost_based=off';
 CREATE TABLE t1 ( id INT AUTO_INCREMENT, a BIGINT, c CHAR(64), KEY(id, c), KEY(c) );
 INSERT INTO t1(a,c) VALUES (1,'op'),(-1,'bc'),(10,'123'),(1,'tf'),(-9,'001'),(15,'9a'),(0,'abc'),(5,'jk'),(19,'123'),(9,'hello'),(1,'bc');
 #seqDB-22379
