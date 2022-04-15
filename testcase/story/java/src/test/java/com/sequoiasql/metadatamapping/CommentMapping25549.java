@@ -95,10 +95,7 @@ public class CommentMapping25549 extends MysqlTestBase {
         // 检查sdb端的集合和数据正确性
         Assert.assertTrue( cs.isCollectionExist( mclName ) );
         Assert.assertTrue( cs.isCollectionExist( sclName ) );
-
-        Integer expData = new Integer( 1 );
-        Object actData = mcl.queryOne().get( "id" );
-        Assert.assertEquals( expData, actData );
+        Assert.assertEquals( mcl.getCount(), 1 );
     }
 
     @AfterClass

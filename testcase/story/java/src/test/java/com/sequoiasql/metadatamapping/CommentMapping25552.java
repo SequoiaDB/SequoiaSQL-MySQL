@@ -137,10 +137,7 @@ public class CommentMapping25552 extends MysqlTestBase {
         Assert.assertTrue( cs.isCollectionExist( mclName ) );
         Assert.assertTrue( cs.isCollectionExist( sclName1 ) );
         Assert.assertTrue( cs.isCollectionExist( sclName2 ) );
-
-        Integer expData = new Integer( 1 );
-        Object actData = maincl.queryOne().get( "id" );
-        Assert.assertEquals( expData, actData );
+        Assert.assertEquals( maincl.getCount(), 1 );
     }
 
     @AfterClass
