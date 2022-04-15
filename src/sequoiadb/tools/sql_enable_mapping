@@ -912,6 +912,7 @@ fi
 
 # create mapping table
 query=`cat <<EOF
+   DROP TABLE IF EXISTS ${full_table_name};
    CREATE TABLE ${full_table_name}(
      DBName char(128),
      TableName char(128),
