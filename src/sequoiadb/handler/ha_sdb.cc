@@ -3877,6 +3877,20 @@ done:
 error:
   goto done;
 }
+
+int ha_sdb::multi_range_read_explain_info(uint mrr_mode, char *str,
+                                          size_t size) {
+  const static char *use_mrr = "Using MRR";
+
+  if (!(mrr_mode & HA_MRR_USE_DEFAULT_IMPL)) {
+    size_t used_str_len = strlen(use_mrr);
+    size_t copy_len = MY_MIN(used_str_len, size);
+    memcpy(str, use_mrr, copy_len);
+    return (int)copy_len;
+  }
+  return 0;
+}
+
 #elif IS_MYSQL
 /*MySQL inherited*/
 ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,

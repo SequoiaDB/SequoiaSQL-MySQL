@@ -418,6 +418,7 @@ class ha_sdb : public handler {
                                       void *seq_init_param, uint n_ranges_arg,
                                       uint *bufsz, uint *flags,
                                       Cost_estimate *cost);
+  int multi_range_read_explain_info(uint mrr_mode, char *str, size_t size);
 
   int multi_range_read_next_first();
 
