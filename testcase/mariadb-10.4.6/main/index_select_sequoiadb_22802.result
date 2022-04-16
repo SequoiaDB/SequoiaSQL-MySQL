@@ -29,7 +29,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 19 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE b<2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	b,ba	ba	2	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	b,ba	ba	2	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE b<2;
 a	b
 1	1
@@ -40,14 +40,14 @@ index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a>19;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a>19;
 a	b
 20	20
 [Note] SequoiaDB: Query message: condition[{ "a": { "$gt": 19 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE b<2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	b,ba	ba	2	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	b,ba	ba	2	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE b<2;
 a	b
 1	1
@@ -74,7 +74,7 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
@@ -97,7 +97,7 @@ index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	2	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
@@ -136,7 +136,7 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ba	4	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ba	4	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
@@ -147,7 +147,7 @@ index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a>65533 AND b<3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	3	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	3	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a>65533 AND b<3;
 a	b
 65535	2
@@ -174,7 +174,7 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ba	5	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ba	5	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 a	b
 65535	2
@@ -185,7 +185,7 @@ index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	9	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	9	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a>=65534 AND b<=3;
 a	b
 65535	2
@@ -212,7 +212,7 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=SequoiaDB DEFAULT CHARSET=latin1
 EXPLAIN SELECT * FROM t1 WHERE a in (1,2,3);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	8	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,ab	ab	8	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a in (1,2,3);
 a	b
 1	1
@@ -221,7 +221,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	b,ba	ba	9	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	b,ba	ba	9	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 a	b
 1	1
@@ -235,7 +235,7 @@ index_select_sequoiadb_22802.t1	analyze	status	Engine-independent statistics col
 index_select_sequoiadb_22802.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE a in (1,2,3);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	8	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,ab	ab	8	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE a in (1,2,3);
 a	b
 1	1
@@ -244,7 +244,7 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 EXPLAIN SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	b,ba	ba	9	NULL	#	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	b,ba	ba	9	NULL	#	Using where with pushed condition; Using index; Using MRR
 SELECT * FROM t1 WHERE b BETWEEN 1 and 3;
 a	b
 1	1
