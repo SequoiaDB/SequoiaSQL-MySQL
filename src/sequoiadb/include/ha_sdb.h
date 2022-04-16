@@ -812,6 +812,7 @@ class ha_sdb : public handler {
   bool m_use_default_impl;
   bool m_last_range_obj_is_full; /* range bson obj is full or not. */
   sdb_index_cond_methods m_method;
+  bool m_use_position;
   sdb_batched_keys_ranges m_batched_keys_ranges;
 };
 #endif
