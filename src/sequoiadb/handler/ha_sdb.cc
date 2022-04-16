@@ -1907,6 +1907,8 @@ int ha_sdb::reset() {
   sdb_order = NULL;
   sdb_group_list = NULL;
   m_batched_keys_ranges.deinit();
+  m_mode = 0;
+  m_seq_init_param = NULL;
   m_use_default_impl = false;
   is_join_bka = false;
 #ifdef IS_MYSQL
@@ -3560,10 +3562,10 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
     BSONArrayBuilder value_arr(
         idx_val_blder.subarrayStart(SDB_IDX_RANGE_VALUE));
 
+    int mrr_range_no = 0;
     // last $range is full, need start from last mrr_cur_range.
     while (m_last_range_obj_is_full ||
            !(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
-      bool batched_keys_need_fill = m_last_range_obj_is_full ? false : true;
       m_last_range_obj_is_full = false;
       bool start_incld = true;
       bool end_incld = true;
@@ -3576,9 +3578,10 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
         //$range is full, break the current iterator in ranges.
         m_last_range_obj_is_full = true;
       }
-
+      mrr_range_no++;
       /*If it is BKA join, should fill the ranges buf.*/
-      if (batched_keys_need_fill && m_batched_keys_ranges.initialized()) {
+      if (!m_batched_keys_ranges.filled_done() &&
+          m_batched_keys_ranges.initialized()) {
         rc = m_batched_keys_ranges.fill_ranges_buf(mrr_cur_range);
         if (SDB_OK != rc) {
           goto error;
@@ -3588,8 +3591,6 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
       /* The batched keys buffer need to fill all the ranges even if the range
          bson obj is full. */
       if (m_last_range_obj_is_full) {
-        range_seq_t reserve_mrr_iter = mrr_iter;
-        KEY_MULTI_RANGE reserve_mrr_range = mrr_cur_range;
         while (!(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
           /*If it is BKA join, should fill the ranges buf.*/
           if (m_batched_keys_ranges.initialized()) {
@@ -3599,8 +3600,12 @@ int ha_sdb::create_range_obj(bson::BSONObjBuilder &hint_builder) {
             }
           }
         }
-        mrr_iter = reserve_mrr_iter;
-        mrr_cur_range = reserve_mrr_range;
+        mrr_iter = mrr_funcs.init(m_seq_init_param, ranges_in_seq, m_mode);
+        int goto_range_no = 0;
+        while (goto_range_no < mrr_range_no &&
+               !(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
+          goto_range_no++;
+        }
         break;
       }
       bson::BSONObj start_cond_idx;
@@ -3706,6 +3711,7 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
         dbug_tmp_use_all_columns(table, table->read_set);
     bitmap_set_bit(table->read_set, key_part->field->field_index);
 
+    int mrr_range_no = 0;
     while (m_last_range_obj_is_full ||
            !(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
       m_last_range_obj_is_full = false;
@@ -3716,8 +3722,9 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
         //$range is full, break the current iterator in ranges.
         m_last_range_obj_is_full = true;
       }
-
-      if (m_batched_keys_ranges.initialized()) {
+      mrr_range_no++;
+      if (!m_batched_keys_ranges.filled_done() &&
+          m_batched_keys_ranges.initialized()) {
         rc = m_batched_keys_ranges.fill_ranges_buf(mrr_cur_range);
         if (SDB_OK != rc) {
           goto error;
@@ -3725,8 +3732,6 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
       }
 
       if (m_last_range_obj_is_full) {
-        range_seq_t reserve_mrr_iter = mrr_iter;
-        KEY_MULTI_RANGE reserve_mrr_range = mrr_cur_range;
         while (!(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
           /*If it is BKA join, should fill the ranges buf.*/
           if (m_batched_keys_ranges.initialized()) {
@@ -3736,8 +3741,12 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
             }
           }
         }
-        mrr_iter = reserve_mrr_iter;
-        mrr_cur_range = reserve_mrr_range;
+        mrr_iter = mrr_funcs.init(m_seq_init_param, ranges_in_seq, m_mode);
+        int goto_range_no = 0;
+        while (goto_range_no < mrr_range_no &&
+               !(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
+          goto_range_no++;
+        }
         break;
       }
 
@@ -4054,6 +4063,11 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   if (SDB_OK != rc) {
     goto error;
   }
+
+  mrr_funcs = *seq;
+  ranges_in_seq = n_ranges;
+  m_mode = mode;
+  m_seq_init_param = seq_init_param;
 
   if (n_ranges <= 1 ||
       choose_mrr_impl(active_index, &bufsz, &flags, &cost, false)) {

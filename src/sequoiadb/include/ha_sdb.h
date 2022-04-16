@@ -184,6 +184,10 @@ class sdb_batched_keys_ranges {
 
   sdb_key_range_info *ranges_buf_next();
 
+  bool filled_done() {
+    return (m_keys_buf_idx < m_used_elements_cnt) ? false : true;
+  }
+
  private:
   HASH m_ranges_buf;
   uchar *m_keys_buf;
@@ -803,6 +807,8 @@ class ha_sdb : public handler {
   st_order *sdb_order;
   st_order *sdb_group_list;
 
+  uint m_mode;
+  void *m_seq_init_param;
   bool m_use_default_impl;
   bool m_last_range_obj_is_full; /* range bson obj is full or not. */
   sdb_index_cond_methods m_method;
