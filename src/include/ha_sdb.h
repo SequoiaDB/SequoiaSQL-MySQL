@@ -589,4 +589,5 @@ class ha_sdb : public handler {
   st_order *sdb_order;
   st_order *sdb_group_list;
   bool can_pushdown_cond_in;
+  bool m_use_position;
 };

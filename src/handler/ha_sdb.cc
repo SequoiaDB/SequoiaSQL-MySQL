@@ -1085,6 +1085,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   updated_field = NULL;
   sdb_order = NULL;
   sdb_group_list = NULL;
+  m_use_position = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1298,6 +1299,7 @@ int ha_sdb::reset() {
   direct_limit = false;
   sdb_order = NULL;
   sdb_group_list = NULL;
+  m_use_position = false;
 
   DBUG_RETURN(0);
 }
@@ -3392,6 +3394,7 @@ int ha_sdb::build_index_position(const KEY *key_info,
   int resered = hint_pos_builder.bb().getReserveBytes();
   BSONObjBuilder index_value_builder(
       hint_pos_builder.subobjStart(SDB_IDX_ADVANCE_VALUE));
+  m_use_position = false;
 
   try {
     if (key_info->user_defined_key_parts > 1) {
@@ -3470,6 +3473,7 @@ int ha_sdb::build_index_position(const KEY *key_info,
         index_value_builder.done();
         hint_pos_builder.append(SDB_IDX_ADVANCE_TYPE, type);
         hint_pos_builder.append(SDB_IDX_ADVANCE_PREFIX_NUM, prefix_num);
+        m_use_position = true;
       }
 
       if (sdb_debug_log(current_thd)) {
@@ -5981,6 +5985,10 @@ int ha_sdb::get_query_flag(const uint sql_command, enum thr_lock_type lock_type,
        )) {
     query_flag |= QUERY_FOR_UPDATE;
   }
+
+  if (m_use_position){
+    query_flag |= QUERY_FORCE_HINT;
+    }
 done:
   return rc;
 error:
@@ -6253,6 +6261,16 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
           thd_mark_transaction_to_rollback(ha_thd(), 1);
         }
         my_error(ER_LOCK_WAIT_TIMEOUT, MYF(0));
+      } else {
+        my_printf_error(error, "%s", MYF(0), error_msg);
+      }
+      break;
+    }
+    case SDB_RTN_INVALID_HINT: {
+      if (thd_sql_command(ha_thd()) == SQLCOM_SELECT ) {
+        my_printf_error(ER_GET_ERRNO,
+                        "Got error %d from storage engine,Invalid hint",
+                        MYF(0), error);
       } else {
         my_printf_error(error, "%s", MYF(0), error_msg);
       }
