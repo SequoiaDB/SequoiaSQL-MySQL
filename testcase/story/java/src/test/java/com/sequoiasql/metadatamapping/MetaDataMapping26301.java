@@ -17,7 +17,6 @@ import org.testng.annotations.Test;
  * @LastEditors   : Xiao ZhenFan
  */
 
-
 public class MetaDataMapping26301 extends MysqlTestBase {
     private String clName = "TABLE_MAPPING";
     private String dbName = "db_26301";
@@ -67,12 +66,14 @@ public class MetaDataMapping26301 extends MysqlTestBase {
                 + "  PARTITION p3 VALUES LESS THAN (2020)\n" + ");" );
 
         // 获取元数据映射CS名称
+        String instanceGroupName = MetaDataMappingUtils.getInstGroupName( sdb,
+                MysqlTestBase.mysql1 );
         DBCursor cursor1 = sdb.listCollectionSpaces();
-        String mappingCLName = "";
+        String mappingCSName = "";
         while ( cursor1.hasNext() ) {
             String currentCSName = ( String ) cursor1.getNext().get( "Name" );
-            if ( currentCSName.contains( "SQL_NAME_MAPPING_" ) ) {
-                mappingCLName = currentCSName;
+            if ( currentCSName.contains( instanceGroupName.toUpperCase() ) ) {
+                mappingCSName = currentCSName;
                 break;
             }
         }
@@ -83,7 +84,7 @@ public class MetaDataMapping26301 extends MysqlTestBase {
         int actCount1 = 0;
         BasicBSONObject options = new BasicBSONObject();
         options.put( "DBName", dbName );
-        DBCursor cursor2 = sdb.getCollectionSpace( mappingCLName )
+        DBCursor cursor2 = sdb.getCollectionSpace( mappingCSName )
                 .getCollection( clName ).query( options, null, null, null );
         while ( cursor2.hasNext() ) {
             cursor2.getNext();
@@ -96,7 +97,7 @@ public class MetaDataMapping26301 extends MysqlTestBase {
         jdbc.update( "drop table " + dbName + "." + tbName1 + ";" );
         int expCount2 = 5;
         int actCount2 = 0;
-        cursor2 = sdb.getCollectionSpace( mappingCLName )
+        cursor2 = sdb.getCollectionSpace( mappingCSName )
                 .getCollection( clName ).query( options, null, null, null );
         while ( cursor2.hasNext() ) {
             cursor2.getNext();
