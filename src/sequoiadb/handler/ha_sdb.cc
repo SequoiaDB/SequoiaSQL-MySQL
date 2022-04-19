@@ -9507,7 +9507,7 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
         if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
           my_printf_error(ER_GET_ERRNO,
                           "Got error %d from storage engine, invalid hint.",
-                          error);
+                          MYF(0), error);
           SDB_LOG_ERROR(
               "Got error %d from storage engine, invalid hint, "
               "db_name:%s, table_name:%s.",
