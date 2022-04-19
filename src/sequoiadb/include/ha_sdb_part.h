@@ -529,7 +529,7 @@ class ha_sdb_part_wrapper : public ha_partition {
   int truncate() { return m_file[0]->ha_truncate(); }
 
   void start_bulk_insert(ha_rows rows, uint flags) {
-    return m_file[0]->ha_start_bulk_insert(rows, flags);
+    m_file[0]->ha_start_bulk_insert(rows, flags);
   }
 
   int end_bulk_insert() { return m_file[0]->ha_end_bulk_insert(); }
@@ -552,7 +552,6 @@ class ha_sdb_part_wrapper : public ha_partition {
     handler* file = m_file[0];
     file->position(record);
     memcpy(ref, file->ref, file->ref_length);
-    return;
   }
 
   int rnd_pos(uchar* buf, uchar* pos) {
@@ -693,7 +692,7 @@ class ha_sdb_part_wrapper : public ha_partition {
     return m_file[0]->store_lock(thd, to, lock_type);
   }
 
-  void unlock_row() { return m_file[0]->unlock_row(); }
+  void unlock_row() { m_file[0]->unlock_row(); }
 
   void try_semi_consistent_read(bool) {}
 
@@ -737,10 +736,11 @@ class ha_sdb_part_wrapper : public ha_partition {
   void get_auto_increment(ulonglong offset, ulonglong increment,
                           ulonglong nb_desired_values, ulonglong* first_value,
                           ulonglong* nb_reserved_values) {
-    return;
+    m_file[0]->get_auto_increment(offset, increment, nb_desired_values,
+                                  first_value, nb_reserved_values);
   }
 
-  void release_auto_increment() { return; };
+  void release_auto_increment() { };
 
   TABLE_LIST* get_next_global_for_child() { return NULL; }
 
@@ -804,7 +804,7 @@ class ha_sdb_part_wrapper : public ha_partition {
     return handler::ft_init_ext(flags, inx, key);
   }
 
-  void ft_end() { return handler::ft_end(); }
+  void ft_end() { handler::ft_end(); }
 
   int ft_read(uchar* buf) { return handler::ft_read(buf); }
 
