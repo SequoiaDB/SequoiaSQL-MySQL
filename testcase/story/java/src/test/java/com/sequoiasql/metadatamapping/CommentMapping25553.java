@@ -86,19 +86,8 @@ public class CommentMapping25553 extends MysqlTestBase {
         }
         
         // 检查sdb端的集合及数据
-        // SEQUOIASQLMAINSTREAM-1336
-        /*
         Assert.assertTrue( cs.isCollectionExist( clName ));
-        
-        int exp = 1;
-        BSONObject selector = new BasicBSONObject( "_id",
-           new BasicBSONObject( "$include", 0 ) );
-        BSONObject sort = new BasicBSONObject( "id", 1 );
-        DBCursor cursor = cl.query( null, selector, sort, null );
-        while ( cursor.hasNext() ) {
-            Assert.assertTrue( cursor.getNext().get("id") == exp );
-        }    
-        */
+        Assert.assertEquals( cl.getCount(), 1 ); 
     }
 
     @AfterClass
