@@ -2897,7 +2897,6 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
   } else if (is_deleting && table->versioned() &&
              (TABLE_TYPE_PART == share->table_type)) {
     // TODO:  Replace after supporting update sharding key.
-    Field *end_field = table->vers_end_field();
     bson::BSONObj obj;
     bson::BSONObjBuilder obj_builder;
     bson::BSONObjIterator it(cur_rec);
@@ -2920,8 +2919,9 @@ int ha_sdb::update_row(const uchar *old_data, const uchar *new_data) {
     try {
       while (it.more()) {
         bson::BSONElement elem = it.next();
-        if (0 == strcmp(elem.fieldName(), sdb_field_name(end_field))) {
-          obj_builder.append(new_obj.getField(sdb_field_name(end_field)));
+        bson::BSONElement e = new_obj.getField(elem.fieldName());
+        if (bson::EOO != e.type()) {
+          obj_builder.append(e);
           continue;
         }
         obj_builder.append(elem);

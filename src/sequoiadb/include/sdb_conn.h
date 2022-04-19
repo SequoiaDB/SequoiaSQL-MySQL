@@ -258,7 +258,7 @@ class Sdb_conn {
 
   int reconnect();
 
-  bool is_connected() { return (is_valid() && is_authenticated());}
+  bool is_connected() { return (is_valid() && is_authenticated()); }
 
   my_thread_id thread_id();
 
