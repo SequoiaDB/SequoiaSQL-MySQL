@@ -2149,7 +2149,7 @@ int ha_sdb_part::create_and_attach_scl(Sdb_conn *conn, Sdb_cl &mcl,
         goto error;
       }
       sprintf(full_cl_name, "%s.%s", scl_mapping.get_mapping_cs(),
-               scl_mapping.get_mapping_cl());
+              scl_mapping.get_mapping_cl());
       cl_fullnames.push_back(full_cl_name);
     }
 
