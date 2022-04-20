@@ -3363,7 +3363,11 @@ int ha_sdb_part::change_partitions_low(HA_CREATE_INFO *create_info,
   }
 
   if (RANGE_PARTITION == m_part_info->part_type ||
-      LIST_PARTITION == m_part_info->part_type) {
+      LIST_PARTITION == m_part_info->part_type
+#ifdef IS_MARIADB
+      || VERSIONING_PARTITION == m_part_info->part_type
+#endif
+  ) {
     rc = detach_and_attach_scl(mcl);
     if (rc != 0) {
       goto error;
