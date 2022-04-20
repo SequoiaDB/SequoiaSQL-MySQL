@@ -1309,7 +1309,7 @@ select t2.fld3 from t2 where fld3 LIKE 'don_t_find_me_please%';
 
 select t2.fld3 from t2 where fld3 >= 'honeysuckle' and fld3 <= 'honoring' order by fld3;
 #explain select t2.fld3 from t2 where fld3 >= 'honeysuckle' and fld3 <= 'honoring' order by fld3;
-select fld1,fld3 from t2 where fld3="Colombo" or fld3 = "nondecreasing" order by fld3;
+select fld1,fld3 from t2 where fld3="Colombo" or fld3 = "nondecreasing" order by fld1 desc,fld3 desc;
 
 # 
 # Search with a key having a constant with many occurrences
