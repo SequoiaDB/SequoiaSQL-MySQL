@@ -20,7 +20,6 @@ set binlog_format=mixed;
 set session transaction isolation level repeatable read;
 set autocommit=0;
 update t1 set a=10 where a=5;
-ERROR HY000: Lock wait timeout exceeded; try restarting transaction
 commit;
 connection a;
 commit;
@@ -29,7 +28,8 @@ set session transaction isolation level read committed;
 update t1 set a=10 where a=5;
 connection a;
 select * from t1 where a=2 for update;
-ERROR HY000: Lock wait timeout exceeded; try restarting transaction
+a
+2
 select * from t1 where a=2 limit 1 for update;
 a
 2
