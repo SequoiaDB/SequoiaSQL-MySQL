@@ -8704,6 +8704,14 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
     const char *dst_tab_opt = strstr(create_info->comment.str, SDB_COMMENT);
     src_tab_opt = src_tab_opt ? src_tab_opt : "";
     dst_tab_opt = dst_tab_opt ? dst_tab_opt : "";
+    bool need_check_comment =
+        (src_table->table->s->db_type() == create_info->db_type);
+#ifdef IS_MARIADB
+    // in mariadb, if the src_table is a partition table, then it's engine
+    // will be 'partition' and it maybe different to engine of the new table,
+    // it's also forbidden to change comment in this situation
+    need_check_comment |= (partition_hton == src_table->table->s->db_type());
+#endif
 
     DBUG_ASSERT(thd_sdb);
     /*
@@ -8720,9 +8728,7 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
     }
 #endif
     TABLE_SHARE *s = src_table->table->s;
-    if (s->db_type() == create_info->db_type &&
-        s->get_table_ref_type() != TABLE_REF_TMP_TABLE &&
-        !(s->partition_info_str && s->partition_info_str_len)) {
+    if (need_check_comment && s->get_table_ref_type() != TABLE_REF_TMP_TABLE) {
       if (strcmp(src_tab_opt, dst_tab_opt) != 0) {
         rc = HA_ERR_WRONG_COMMAND;
         my_printf_error(rc,
@@ -8730,6 +8736,10 @@ int ha_sdb::copy_cl_if_alter_table(THD *thd, Sdb_conn *conn, char *db_name,
                         "Try drop and create again.",
                         MYF(0));
         goto error;
+      }
+
+      if (s->partition_info_str || s->partition_info_str_len) {
+        goto done;
       }
 
       *has_copy = true;
