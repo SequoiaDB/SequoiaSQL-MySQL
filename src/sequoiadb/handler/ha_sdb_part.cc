@@ -2112,9 +2112,16 @@ bool ha_sdb_part::check_if_alter_table_options(THD *thd,
     SQL_I_List<TABLE_LIST> &table_list = sdb_lex_first_select(thd)->table_list;
     DBUG_ASSERT(table_list.elements == 1);
     TABLE_LIST *src_table = table_list.first;
-
-    if (src_table->table->s->db_type() == create_info->db_type &&
-        src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE) {
+    bool need_check_comment =
+        (src_table->table->s->db_type() == create_info->db_type);
+#ifdef IS_MARIADB
+    // in mariadb, if the src_table is a normal table(not partition table)
+    // then it's engine will be 'SequoiaDB' and it's different to engine of
+    // the new table, it's also forbidden to change comment in this situation
+    need_check_comment |= (sdb_hton == src_table->table->s->db_type());
+#endif
+    if (src_table->table->s->get_table_ref_type() != TABLE_REF_TMP_TABLE &&
+        need_check_comment) {
       const char *src_tab_opt =
           strstr(src_table->table->s->comment.str, SDB_COMMENT);
       const char *dst_tab_opt = strstr(create_info->comment.str, SDB_COMMENT);
