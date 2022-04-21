@@ -424,21 +424,6 @@ id
 2
 COMMIT;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-BEGIN;
-SELECT * FROM t1;
-ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
-ROLLBACK;
-SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-BEGIN;
-SELECT * FROM t1;
-ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
-ROLLBACK;
-SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-BEGIN;
-SELECT * FROM t1;
-ERROR HY000: SequoiaDB engine not support transaction serializable isolation. Please set transaction_isolation to other level and restart transaction
-ROLLBACK;
 DROP TABLE t1;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 create table t1(a int, b int, c int);
@@ -1523,7 +1508,9 @@ set session autocommit=on;
 drop table t1;
 create table t1(a int, b int, c int);
 insert into t1 values(1,1,1);
-set session transaction_isolation='read-committed';
+set session tx_isolation='read-committed';
+Warnings:
+Warning	1287	'@@tx_isolation' is deprecated and will be removed in a future release. Please use '@@transaction_isolation' instead
 set session sequoiadb_use_rollback_segments=off;
 begin;
 update t1 set a=2 where a=1;
@@ -1555,7 +1542,9 @@ rollback;
 set session sequoiadb_use_transaction=on;
 rollback;
 drop table t1;
-set session transaction_isolation='read-uncommitted';
+set session tx_isolation='read-uncommitted';
+Warnings:
+Warning	1287	'@@tx_isolation' is deprecated and will be removed in a future release. Please use '@@transaction_isolation' instead
 create table t1(a int);
 begin;
 insert into t1 values(1);
@@ -1564,6 +1553,8 @@ select * from t1;
 a
 1
 rollback;
-set session transaction_isolation='REPEATABLE-READ';
+set session tx_isolation='REPEATABLE-READ';
+Warnings:
+Warning	1287	'@@tx_isolation' is deprecated and will be removed in a future release. Please use '@@transaction_isolation' instead
 rollback;
 drop table t1;

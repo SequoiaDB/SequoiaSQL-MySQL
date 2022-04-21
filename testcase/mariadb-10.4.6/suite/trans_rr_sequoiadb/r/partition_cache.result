@@ -160,7 +160,7 @@ connection default;
 connection default
 SELECT sql_cache count(*) FROM t2 WHERE s2 = 'w';
 count(*)
-2
+1
 COMMIT;
 show status like "Qcache_queries_in_cache";
 Variable_name	Value
