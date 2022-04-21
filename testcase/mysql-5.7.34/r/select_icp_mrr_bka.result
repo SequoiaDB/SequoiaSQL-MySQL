@@ -134,7 +134,7 @@ select t2.fld3 from t2 where fld3 >= 'honeysuckle' and fld3 <= 'honoring' order 
 fld3
 honeysuckle
 honoring
-select fld1,fld3 from t2 where fld3="Colombo" or fld3 = "nondecreasing" order by fld3;
+select fld1,fld3 from t2 where fld3="Colombo" or fld3 = "nondecreasing" order by fld1 desc,fld3 desc;
 fld1	fld3
 148504	Colombo
 068305	Colombo
