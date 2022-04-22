@@ -42,6 +42,7 @@ id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	Extra
 set @ts=(select row_end from t1 for system_time all where i=1);
 select * from t1 for system_time all where row_end = @ts;
 i
+1
 explain partitions select * from t1 for system_time all where row_end = @ts;
 id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	p1_p1sp0,p1_p1sp1	#	NULL	NULL	NULL	NULL	#	#
