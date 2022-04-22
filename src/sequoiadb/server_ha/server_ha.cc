@@ -5320,6 +5320,18 @@ static int check_mapping_enabled_flag() {
     }
     // should not use original name if 'DataGroup' is set
     Name_mapping::set_prefer_origin_name(false);
+    // make sure that mapping table exists
+    rc = ensure_mapping_table(sdb_conn);
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to check mapping table, error: %d, %s", rc,
+                    sdb_conn.get_err_msg());
+      goto error;
+    }
+    // get 'NoTrans' flag from mapping table
+    rc = get_non_trans_flag(sdb_conn);
+    if (0 != rc) {
+      goto error;
+    }
     goto done;
   }
 
@@ -5350,9 +5362,18 @@ static int check_mapping_enabled_flag() {
 
   // mapping table should not be empty if mapping is enabled
   if (sdb_enable_mapping && mapping_table_exists && 0 == count) {
-    SDB_LOG_ERROR("The mapping table is empty, it was not initialized correctly");
+    SDB_LOG_ERROR(
+        "The mapping table is empty, it was not initialized correctly");
     rc = SDB_HA_EXCEPTION;
     goto error;
+  }
+
+  // get 'NoTrans' flag from mapping table
+  if (mapping_table_exists) {
+    rc = get_non_trans_flag(sdb_conn);
+    if (0 != rc) {
+      goto error;
+    }
   }
 done:
   DBUG_RETURN(rc);

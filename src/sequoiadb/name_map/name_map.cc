@@ -27,11 +27,46 @@ bool Name_mapping::m_enabled = false;
 int Name_mapping::m_mapping_unit_size = NM_MAPPING_UNIT_SIZE;
 int Name_mapping::m_mapping_unit_count = NM_MAPPING_UNIT_COUNT;
 bool Name_mapping::m_prefer_origin_name = true;
-int (*Name_mapping::fix_sdb_conn_attrs)(Sdb_conn *conn,
-                                        bool *need_create_new_conn);
+bool Name_mapping::m_support_no_trans = false;
+Sdb_simple_pool_conn Name_mapping::m_conn_pool;
 
-static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
-                            Sdb_cl &table_map) {
+// if TABLE_MAPPING is non-transactional table, use connection built in thd
+// or get connection from simple connection pool
+static int get_mapping_connection(Sdb_simple_pool_conn &conn_pool,
+                                  Sdb_conn *conn, bool support_no_trans,
+                                  Sdb_conn **sdb_conn) {
+  int rc = SDB_ERR_OK;
+  if (support_no_trans) {
+    *sdb_conn = conn;
+    goto done;
+  }
+  rc = conn_pool.get_connection(sdb_conn);
+  if (0 != rc) {
+    SDB_LOG_ERROR(
+        "Failed to get SequoiaDB connection from connection pool, error: %d",
+        rc);
+    goto error;
+  }
+done:
+  return rc;
+error:
+  goto done;
+}
+
+// if TABLE_MAPPING is not non-transactional table, put current connection
+// into simple connection pool
+static int recycle_mapping_connection(Sdb_simple_pool_conn &conn_pool,
+                                      bool support_no_trans,
+                                      Sdb_conn *sdb_conn) {
+  if (!support_no_trans && sdb_conn) {
+    conn_pool.release_connection(sdb_conn);
+  }
+  return SDB_ERR_OK;
+}
+
+static int get_or_create_mapping_table(Sdb_conn &sdb_conn,
+                                       const char *sql_group_name,
+                                       Sdb_cl &table_map) {
   static bool indexes_created = false;
   const char *sql_group_cs_name = sql_group_name;
 
@@ -42,6 +77,7 @@ static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
     rc = sdb_conn.get_cl(sql_group_cs_name, NM_TABLE_MAP, table_map, true);
     if (SDB_DMS_CS_NOTEXIST == get_sdb_code(rc) ||
         SDB_DMS_NOTEXIST == get_sdb_code(rc)) {
+      bson::BSONObj trans_flags;
       SDB_LOG_INFO("NM: Creating table '%s.%s'", sql_group_cs_name,
                    NM_TABLE_MAP);
       cl_options = BSON(SDB_FIELD_GROUP << NM_SYS_META_GROUP);
@@ -60,6 +96,19 @@ static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
         SDB_LOG_ERROR("NM: Unable to get table '%s', sequoiadb error: %d",
                       NM_TABLE_MAP, rc);
         goto error;
+      }
+
+      // try to set 'NoTrans' flag for 'TABLE_MAPPING', ignore error
+      rc = sdb_conn.get_cl(sql_group_cs_name, NM_TABLE_MAP, table_map);
+      if (0 != rc) {
+        SDB_LOG_ERROR("NM: Unable to get table '%s.%s', sequoiadb error: %d",
+                      sql_group_cs_name, NM_TABLE_MAP, rc);
+        goto error;
+      }
+      trans_flags = BSON(SDB_CL_ATTR_NO_TRANS << true);
+      if (0 == table_map.set_attributes(trans_flags)) {
+        SDB_LOG_INFO("'%s' is non-transactional table.", NM_TABLE_MAP);
+        Name_mapping::set_no_trans_flag(true);
       }
     }
 
@@ -106,6 +155,60 @@ static int get_table_map_cl(Sdb_conn &sdb_conn, const char *sql_group_name,
   }
   SDB_EXCEPTION_CATCHER(rc, "Failed to get mapping table '%s', exception:%s",
                         NM_TABLE_MAP, e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+// make sure that mapping table exists
+int ensure_mapping_table(Sdb_conn &sdb_conn) {
+  Sdb_cl mapping_table;
+  char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
+           NM_SQL_GROUP_PREFIX, Name_mapping::get_sql_group());
+  return get_or_create_mapping_table(sdb_conn, sql_group_cs_name,
+                                     mapping_table);
+}
+
+// mark if 'TABLE_MAPPING' is non-transactional table
+int get_non_trans_flag(Sdb_conn &sdb_conn) {
+  int rc = SDB_ERR_OK;
+  bson::BSONObj obj;
+  char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  bson::BSONElement attribute;
+  int cl_attribute = 0;
+  bool support_no_trans = false;
+  snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
+           NM_SQL_GROUP_PREFIX, Name_mapping::get_sql_group());
+
+  // get 'NoTrans' attribute and set it into Name_mapping
+  rc =
+      sdb_conn.snapshot(obj, SDB_SNAP_CATALOG, sql_group_cs_name, NM_TABLE_MAP);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to execute snapshot, error: %d, %s", rc,
+                  sdb_conn.get_err_msg());
+    goto error;
+  }
+
+  // Collection attributes
+  attribute = obj.getField(SDB_FIELD_ATTRIBUTE);
+  if (attribute.type() != bson::NumberInt) {
+    SDB_LOG_ERROR(
+        "Collection attribute fetched from snapshot is not an integer");
+    rc = SDB_ERR_INVALID_ARG;
+    goto error;
+  }
+  cl_attribute = attribute.numberInt();
+  support_no_trans = (cl_attribute & SDB_DMS_MB_ATTR_NOTRANS);
+  Name_mapping::set_no_trans_flag(support_no_trans);
+  if (support_no_trans) {
+    SDB_LOG_INFO("%s.%s is non-transactional table.", sql_group_cs_name,
+                 NM_TABLE_MAP);
+  } else {
+    SDB_LOG_INFO("%s.%s is transactional table, use connection pool.",
+                 sql_group_cs_name, NM_TABLE_MAP);
+  }
 done:
   return rc;
 error:
@@ -223,7 +326,7 @@ static int append_specified_mapping_cs(Sdb_conn *sdb_conn,
   bson::BSONObj obj, condition, group_list_condition, order_by;
   std::vector<bson::BSONObj> aggregate_obj;
   Sdb_cl mapping_table;
-  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  rc = get_or_create_mapping_table(*sdb_conn, sql_group_cs_name, mapping_table);
   if (0 != rc) {
     SDB_LOG_ERROR(
         "Failed to get mapping table while appending specified mapping "
@@ -275,7 +378,7 @@ int get_mapping_table_count(Sdb_conn *conn, longlong &count) {
   if (0 != rc) {
     goto error;
   }
-  rc =  mapping_table.get_count(count);
+  rc = mapping_table.get_count(count);
   if (0 != rc) {
     goto error;
   }
@@ -312,7 +415,7 @@ int Name_mapping::rename_mapping(const char *db_name, const char *from,
   return update_table_mapping(db_name, from, db_name, to, conn, mapping_ctx);
 }
 
-int Name_mapping::swap(Sdb_conn *sdb_conn, Mapping_context *from,
+int Name_mapping::swap(Sdb_conn *conn, Mapping_context *from,
                        Mapping_context *to) {
   int rc = SDB_ERR_OK;
   bool from_is_part_table = from->is_part_table();
@@ -320,6 +423,11 @@ int Name_mapping::swap(Sdb_conn *sdb_conn, Mapping_context *from,
   bool from_is_spec_mapping = from->is_specified_mapping();
   bool to_is_spec_mapping = to->is_specified_mapping();
   bool to_is_persisted = false;
+  Sdb_conn *sdb_conn = NULL;
+  rc = get_mapping_connection(m_conn_pool, conn, m_support_no_trans, &sdb_conn);
+  if (0 != rc) {
+    goto error;
+  }
 
   to->set_part_table(from_is_part_table);
   to->set_specified_mapping_flag(from_is_spec_mapping);
@@ -336,6 +444,7 @@ int Name_mapping::swap(Sdb_conn *sdb_conn, Mapping_context *from,
     goto error;
   }
 done:
+  recycle_mapping_connection(m_conn_pool, m_support_no_trans, sdb_conn);
   return rc;
 error:
   to->set_part_table(to_is_part_table);
@@ -356,25 +465,14 @@ int Name_mapping::persist_mapping(Sdb_conn *sdb_conn,
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj rule, cond;
   bson::BSONObjBuilder rule_builder, cond_builder;
-  Sdb_pool_conn pool_conn(0, false);
-  Sdb_conn &lock_conn = pool_conn;
 
   if (!m_enabled) {
     goto done;
   }
-  // create new connection if current transaction is on
-  if (sdb_conn->is_transaction_on()) {
-    rc = lock_conn.connect();
-    if (0 != rc) {
-      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
-      goto error;
-    }
-    sdb_conn = &lock_conn;
-  }
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
 
-  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  rc = get_or_create_mapping_table(*sdb_conn, sql_group_cs_name, mapping_table);
   if (0 != rc) {
     SDB_LOG_ERROR("Failed to get mapping table, error: %d", rc);
     goto error;
@@ -407,7 +505,7 @@ int Name_mapping::persist_mapping(Sdb_conn *sdb_conn,
     goto error;
   }
 done:
-  return 0;
+  return rc;
 error:
   goto done;
 }
@@ -571,7 +669,7 @@ error:
 }
 
 int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
-                                    Sdb_conn *sdb_conn,
+                                    Sdb_conn *conn,
                                     Mapping_context *mapping_ctx,
                                     bool get_reverse_mapping) {
   int rc = 0;
@@ -581,9 +679,7 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   bson::BSONObjBuilder cond_builder;
   const char *cs_name = mapping_ctx->get_mapping_cs();
   const char *cl_name = mapping_ctx->get_mapping_cl();
-  Sdb_pool_conn pool_conn(0, false);
-  Sdb_conn &tmp_conn = pool_conn;
-  Sdb_conn *tmp_sdb_conn = sdb_conn;
+  Sdb_conn *sdb_conn = NULL;
 
   // use the cached name mapping
   if ('\0' != cs_name[0] && '\0' != cl_name[0]) {
@@ -600,25 +696,11 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
 
-  if (fix_sdb_conn_attrs) {
-    bool need_create_new_conn = false;
-    rc = fix_sdb_conn_attrs(sdb_conn, &need_create_new_conn);
-    if (0 != rc) {
-      goto error;
-    }
-
-    if (need_create_new_conn) {
-      rc = tmp_conn.connect();
-      if (0 != rc) {
-        SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %s",
-                      tmp_conn.get_err_msg());
-        goto error;
-      }
-      tmp_sdb_conn = &tmp_conn;
-    }
+  rc = get_mapping_connection(m_conn_pool, conn, m_support_no_trans, &sdb_conn);
+  if (0 != rc) {
+    goto error;
   }
-
-  rc = get_table_map_cl(*tmp_sdb_conn, sql_group_cs_name, mapping_table);
+  rc = get_or_create_mapping_table(*sdb_conn, sql_group_cs_name, mapping_table);
   if (SDB_CLS_GRP_NOT_EXIST == get_sdb_code(rc)) {
     // group used to store mapping info does not exist, use original name
     mapping_ctx->set_mapping_cs(db_name);
@@ -667,13 +749,14 @@ int Name_mapping::get_table_mapping(const char *db_name, const char *table_name,
     SDB_LOG_ERROR("Failed to query table mapping collection, error: %d", rc);
   }
 done:
+  recycle_mapping_connection(m_conn_pool, m_support_no_trans, sdb_conn);
   return rc;
 error:
   goto done;
 }
 
 int Name_mapping::add_table_mapping(const char *db_name, const char *table_name,
-                                    Sdb_conn *sdb_conn,
+                                    Sdb_conn *conn,
                                     Mapping_context *mapping_ctx) {
   int rc = 0, retry_count = 0, cl_cnt = 0;
   Sdb_cl mapping_table;
@@ -685,8 +768,7 @@ int Name_mapping::add_table_mapping(const char *db_name, const char *table_name,
   const char *cl_name = table_name;
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
-  Sdb_pool_conn pool_conn(0, false);
-  Sdb_conn &lock_conn = pool_conn;
+  Sdb_conn *sdb_conn = NULL;
   bool is_specified_mapping = mapping_ctx->is_specified_mapping();
 
   // no mapping for table name
@@ -705,17 +787,12 @@ int Name_mapping::add_table_mapping(const char *db_name, const char *table_name,
     DBUG_ASSERT('\0' != cl_name[0]);
   }
 
-  if (sdb_conn->is_transaction_on()) {
-    rc = lock_conn.connect();
-    if (0 != rc) {
-      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
-      goto error;
-    }
-    sdb_conn = &lock_conn;
+  rc = get_mapping_connection(m_conn_pool, conn, m_support_no_trans, &sdb_conn);
+  if (0 != rc) {
+    goto error;
   }
-
 retry:
-  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  rc = get_or_create_mapping_table(*sdb_conn, sql_group_cs_name, mapping_table);
   if (0 != rc) {
     SDB_LOG_ERROR("Failed to get mapping table, error: %d", rc);
     goto error;
@@ -822,6 +899,7 @@ retry:
   mapping_ctx->set_mapping_state(NM_STATE_CREATING);
   mapping_ctx->set_part_table(!is_phy_table);
 done:
+  recycle_mapping_connection(m_conn_pool, m_support_no_trans, sdb_conn);
   return rc;
 error:
   if (inserted) {
@@ -834,35 +912,29 @@ error:
 }
 
 int Name_mapping::remove_table_mapping(const char *db_name,
-                                       const char *table_name,
-                                       Sdb_conn *sdb_conn,
+                                       const char *table_name, Sdb_conn *conn,
                                        Mapping_context *mapping_ctx) {
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj cond;
   bson::BSONObjBuilder cond_builder;
-  Sdb_pool_conn pool_conn(0, false);
-  Sdb_conn &lock_conn = pool_conn;
+  Sdb_conn *sdb_conn = NULL;
 
   if (!m_enabled) {
     goto done;
   }
 
-  // create new connection if current transaction is on
-  if (sdb_conn->is_transaction_on()) {
-    rc = lock_conn.connect();
-    if (0 != rc) {
-      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
-      goto error;
-    }
-    sdb_conn = &lock_conn;
+  rc = get_mapping_connection(m_conn_pool, conn, m_support_no_trans, &sdb_conn);
+  if (0 != rc) {
+    goto error;
   }
   try {
     snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
              NM_SQL_GROUP_PREFIX, m_sql_group);
 
-    rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+    rc = get_or_create_mapping_table(*sdb_conn, sql_group_cs_name,
+                                     mapping_table);
     if (0 != rc) {
       SDB_LOG_ERROR("Failed to get mapping table, error: %d", rc);
       goto error;
@@ -897,39 +969,35 @@ int Name_mapping::remove_table_mapping(const char *db_name,
       rc, "Failed to build bson while removing '%s.%s' mapping, exception:%s",
       db_name, table_name, e.what());
 done:
-  return 0;
+  recycle_mapping_connection(m_conn_pool, m_support_no_trans, sdb_conn);
+  return rc;
 error:
   goto done;
 }
 
 int Name_mapping::set_table_mapping_state(const char *db_name,
                                           const char *table_name,
-                                          Sdb_conn *sdb_conn,
+                                          Sdb_conn *conn,
                                           Mapping_context *mapping_ctx) {
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj rule, cond, obj;
   bson::BSONObjBuilder rule_builder, cond_builder;
+  Sdb_conn *sdb_conn = NULL;
 
-  Sdb_pool_conn pool_conn(0, false);
-  Sdb_conn &lock_conn = pool_conn;
   if (!m_enabled) {
     goto done;
   }
-  // create new connection if current transaction is on
-  if (sdb_conn->is_transaction_on()) {
-    rc = lock_conn.connect();
-    if (0 != rc) {
-      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
-      goto error;
-    }
-    sdb_conn = &lock_conn;
+
+  rc = get_mapping_connection(m_conn_pool, conn, m_support_no_trans, &sdb_conn);
+  if (0 != rc) {
+    goto error;
   }
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
 
-  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  rc = get_or_create_mapping_table(*sdb_conn, sql_group_cs_name, mapping_table);
   if (0 != rc) {
     SDB_LOG_ERROR("Failed to get mapping table, error: %d", rc);
     goto error;
@@ -953,7 +1021,8 @@ int Name_mapping::set_table_mapping_state(const char *db_name,
     goto error;
   }
 done:
-  return 0;
+  recycle_mapping_connection(m_conn_pool, m_support_no_trans, sdb_conn);
+  return rc;
 error:
   goto done;
 }
@@ -962,32 +1031,27 @@ int Name_mapping::update_table_mapping(const char *src_db_name,
                                        const char *src_table_name,
                                        const char *dst_db_name,
                                        const char *dst_table_name,
-                                       Sdb_conn *sdb_conn,
+                                       Sdb_conn *conn,
                                        Mapping_context *mapping_ctx) {
   int rc = 0;
   Sdb_cl mapping_table;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj rule, cond;
   bson::BSONObjBuilder rule_builder, cond_builder;
-  Sdb_pool_conn pool_conn(0, false);
-  Sdb_conn &lock_conn = pool_conn;
+  Sdb_conn *sdb_conn = NULL;
 
   if (!m_enabled) {
     goto done;
   }
-  // create new connection if current transaction is on
-  if (sdb_conn->is_transaction_on()) {
-    rc = lock_conn.connect();
-    if (0 != rc) {
-      SDB_LOG_ERROR("Failed to connect to SequoiaDB, error: %d", rc);
-      goto error;
-    }
-    sdb_conn = &lock_conn;
+
+  rc = get_mapping_connection(m_conn_pool, conn, m_support_no_trans, &sdb_conn);
+  if (0 != rc) {
+    goto error;
   }
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
 
-  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  rc = get_or_create_mapping_table(*sdb_conn, sql_group_cs_name, mapping_table);
   if (0 != rc) {
     SDB_LOG_ERROR("Failed to get mapping table, error: %d", rc);
     goto error;
@@ -1018,17 +1082,19 @@ int Name_mapping::update_table_mapping(const char *src_db_name,
     goto error;
   }
 done:
-  return 0;
+  recycle_mapping_connection(m_conn_pool, m_support_no_trans, sdb_conn);
+  return rc;
 error:
   goto done;
 }
 
-int Name_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn, const char *db_name,
+int Name_mapping::get_mapping_cs_by_db(Sdb_conn *conn, const char *db_name,
                                        std::vector<string> &mapping_cs) {
   int rc = 0;
   char cs_prefix[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   char escaped_db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   bson::BSONObj obj, cond, regex;
+  Sdb_conn *sdb_conn = NULL;
 
   try {
     if (!m_enabled || m_prefer_origin_name) {
@@ -1036,6 +1102,12 @@ int Name_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn, const char *db_name,
       if (!m_enabled) {
         goto done;
       }
+    }
+
+    rc = get_mapping_connection(m_conn_pool, conn, m_support_no_trans,
+                                &sdb_conn);
+    if (0 != rc) {
+      goto error;
     }
     // list(SDB_SNAP_COLLECTIONSPACES, {Name: {$regex: "^GroupName#DBName#"}})
     rc = build_escaped_sep_name(db_name, escaped_db_name);
@@ -1083,6 +1155,7 @@ int Name_mapping::get_mapping_cs_by_db(Sdb_conn *sdb_conn, const char *db_name,
       rc, "Failed to getting mapping for database:%s, exception:%s", db_name,
       e.what());
 done:
+  recycle_mapping_connection(m_conn_pool, m_support_no_trans, sdb_conn);
   return rc;
 error:
   goto done;
@@ -1123,19 +1196,23 @@ error:
   goto done;
 }
 
-int Name_mapping::remove_table_mappings(Sdb_conn *sdb_conn,
-                                        const char *db_name) {
+int Name_mapping::remove_table_mappings(Sdb_conn *conn, const char *db_name) {
   int rc = 0;
   Sdb_cl mapping_table;
   bson::BSONObj cond, hint;
+  Sdb_conn *sdb_conn = NULL;
   char sql_group_cs_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
   if (!m_enabled) {
     goto done;
   }
   snprintf(sql_group_cs_name, SDB_CS_NAME_MAX_SIZE, "%s_%s",
            NM_SQL_GROUP_PREFIX, m_sql_group);
+  rc = get_mapping_connection(m_conn_pool, conn, m_support_no_trans, &sdb_conn);
+  if (0 != rc) {
+    goto error;
+  }
 
-  rc = get_table_map_cl(*sdb_conn, sql_group_cs_name, mapping_table);
+  rc = get_or_create_mapping_table(*sdb_conn, sql_group_cs_name, mapping_table);
   if (SDB_CLS_GRP_NOT_EXIST == get_sdb_code(rc)) {
     rc = 0;
     goto done;
@@ -1156,6 +1233,7 @@ int Name_mapping::remove_table_mappings(Sdb_conn *sdb_conn,
     goto error;
   }
 done:
+  recycle_mapping_connection(m_conn_pool, m_support_no_trans, sdb_conn);
   return rc;
 error:
   goto done;

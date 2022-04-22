@@ -117,6 +117,23 @@ EOF`
    return $rc;
 }
 
+function set_non_trans_flag()
+{
+   local msg
+   local final_db_name=$1
+   local sdb_js=`cat <<EOF
+      try {
+         println("INFO: Try to set 'NoTrans' flag for '${final_db_name}.TABLE_MAPPING'");
+         db.${final_db_name}.TABLE_MAPPING.setAttributes({'NoTrans': true});
+      } catch ( e ) {
+         println("INFO: Failed to set 'NoTrans' flag for mapping table, ignore error: " + getLastErrMsg());
+      }
+EOF`
+   # echo "INFO: execute sdb command: ${sdb_js}"
+   msg=$($INSTALL_DIR/bin/sdb -s "${sdb_js}")
+   echo "${msg}" | sed 's/^.*uncaught exception: //'
+}
+
 function get_hosts_and_ports()
 {
    local rc=0
@@ -705,6 +722,9 @@ function build_mapping_table()
       $INSTALL_DIR/bin/sdb -s "quit"
       return $rc;
    fi
+
+   # try to set 'NoTrans' flags, ignore error if fails
+   set_non_trans_flag "${final_db_name}"
 
    # enable mapping for remote SQL instances
    echo "INFO: Enable mapping for instances in group '${group_name}'"

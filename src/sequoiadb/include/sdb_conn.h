@@ -477,6 +477,8 @@ class Sdb_conn {
     }
   }
 
+  void enable_raw_connect(bool raw_connect) { m_enable_raw_conn = raw_connect; }
+
  protected:
   int retry(boost::function<int()> func);
 
@@ -518,6 +520,7 @@ class Sdb_conn {
   bool rollback_on_timeout;
   Sdb_session_attrs session_attrs;
   bool m_print_screen;
+  bool m_enable_raw_conn;
 };
 
 class Sdb_pool_conn : public Sdb_conn {
@@ -552,4 +555,21 @@ class Sdb_normal_conn : public Sdb_conn {
   const char *m_conn_addr;
 };
 
+class Sdb_simple_pool_conn {
+ public:
+  Sdb_simple_pool_conn(int max_conn_num = SDB_DEF_MAX_CONN_NUM)
+      : m_actives(0), m_max_conn_num(max_conn_num) {}
+  ~Sdb_simple_pool_conn();
+
+  int get_connection(Sdb_conn **conn);
+  int release_connection(Sdb_conn *conn);
+  int close();
+
+ private:
+  Sdb_mutex m_lock;
+  std::list<Sdb_conn *> m_idle_list;
+  std::list<Sdb_conn *> m_working_list;
+  int m_actives;
+  int m_max_conn_num;
+};
 #endif

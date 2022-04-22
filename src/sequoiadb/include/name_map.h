@@ -17,8 +17,10 @@
 #define NAME_MAP__H
 #include "sdb_conn.h"
 #include "mapping_context.h"
+#include "ha_sdb_lock.h"
 
 class Sdb_conn;
+class Sdb_simple_pool_conn;
 
 class Name_mapping {
  private:
@@ -27,9 +29,13 @@ class Name_mapping {
   static int m_mapping_unit_size;
   static int m_mapping_unit_count;
   static bool m_prefer_origin_name;
+  static bool m_support_no_trans;
+  static Sdb_simple_pool_conn m_conn_pool;
 
  public:
-  static int (*fix_sdb_conn_attrs)(Sdb_conn *conn, bool *need_create_new_conn);
+  static void set_no_trans_flag(bool support_no_trans) {
+    m_support_no_trans = support_no_trans;
+  }
 
   static void enable_name_mapping(bool enable) { m_enabled = enable; }
 
@@ -83,8 +89,6 @@ class Name_mapping {
   static int swap(Sdb_conn *sdb_conn, Mapping_context *from,
                   Mapping_context *to);
 
-  static int persist_mapping(Sdb_conn *sdb_conn, Mapping_context *mapping_ctx);
-
   static int get_fixed_mapping(const char *db_name, const char *table_name,
                                Mapping_context *mapping_ctx);
 
@@ -94,6 +98,8 @@ class Name_mapping {
   static int remove_table_mappings(Sdb_conn *sdb_conn, const char *db_name);
 
  private:
+  static int persist_mapping(Sdb_conn *sdb_conn, Mapping_context *mapping_ctx);
+
   static int calculate_mapping_slot(Sdb_conn *sdb_conn,
                                     const char *sql_group_cs_name,
                                     const char *db_name, int &slot);
@@ -129,4 +135,8 @@ class Name_mapping {
                                      Mapping_context *mapping_ctx);
 };
 int get_mapping_table_count(Sdb_conn *conn, longlong &count);
+
+int get_non_trans_flag(Sdb_conn &sdb_conn);
+
+int ensure_mapping_table(Sdb_conn &sdb_conn);
 #endif

@@ -183,7 +183,8 @@ Sdb_conn::Sdb_conn(my_thread_id tid, bool server_ha_conn)
       m_is_authenticated(false),
       m_is_server_ha_conn(server_ha_conn),
       m_check_collection_version(false),
-      m_print_screen(false) {
+      m_print_screen(false),
+      m_enable_raw_conn(false) {
   // Only init the first bit to save cpu.
   errmsg[0] = '\0';
   rollback_on_timeout = false;
@@ -272,6 +273,10 @@ int Sdb_conn::do_connect(bool use_orig_conn) {
       goto error;
     }
     is_connected = true;
+    if (m_enable_raw_conn) {
+      m_is_authenticated = true;
+      goto done;
+    }
     session_attrs = get_session_attrs();
     session_attrs->reset();
     // prepare session attributes by THD
@@ -1930,4 +1935,98 @@ void Sdb_normal_conn::release_connection() {
   m_cursor.close();
   m_connection->disconnect();
   m_connection = NULL;
+}
+
+Sdb_simple_pool_conn::~Sdb_simple_pool_conn() {
+  close();
+}
+
+int Sdb_simple_pool_conn::get_connection(Sdb_conn **sdb_conn) {
+  int rc = SDB_ERR_OK;
+  static int MAX_TRY_TIMES = 3;
+  int try_times = 0;
+  m_lock.lock();
+  while (try_times < MAX_TRY_TIMES) {
+    try_times++;
+    if (!m_idle_list.empty()) {
+      *sdb_conn = m_idle_list.front();
+      m_idle_list.pop_front();
+      if (!(*sdb_conn)->is_connected()) {
+        SDB_LOG_INFO(
+            "Connection in simple connection pool is not valid, try to "
+            "reconnect");
+        rc = (*sdb_conn)->reconnect();
+        if (0 != rc) {
+          SDB_LOG_ERROR("Failed to reconnect, error: %s",
+                        (*sdb_conn)->get_err_msg());
+          delete (*sdb_conn);
+          m_actives--;
+          goto error;
+        }
+      }
+      m_working_list.push_back(*sdb_conn);
+      break;
+    }
+
+    // too many connections, wait other thread release connection
+    if (m_actives >= m_max_conn_num) {
+      m_lock.unlock();
+      sleep(1);
+      m_lock.lock();
+      continue;
+    }
+
+    *sdb_conn = new (std::nothrow) Sdb_normal_conn(0, sdb_conn_str);
+    if (NULL == (*sdb_conn)) {
+      rc = SDB_ERR_OOM;
+      goto error;
+    }
+
+    // do not set any session attributes, use default session attributes
+    (*sdb_conn)->enable_raw_connect(true);
+    rc = (*sdb_conn)->connect();
+    if (0 != rc) {
+      SDB_LOG_ERROR("Failed to connect SequoiaDB, error: %s",
+                    (*sdb_conn)->get_err_msg());
+      delete (*sdb_conn);
+      (*sdb_conn) = NULL;
+      goto error;
+    }
+    // push new connection into working list
+    m_working_list.push_back(*sdb_conn);
+    m_actives++;
+    SDB_LOG_DEBUG(
+        "There are %d connetions in connection pool of mapping function",
+        m_actives);
+    break;
+  }
+  if (NULL == (*sdb_conn)) {
+    SDB_LOG_ERROR("Timeout while getting connection from connection pool");
+    rc = SDB_ERR_WAIT_TIMEOUT;
+    goto error;
+  }
+done:
+  m_lock.unlock();
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_simple_pool_conn::release_connection(Sdb_conn *sdb_conn) {
+  if (NULL != sdb_conn) {
+    Sdb_mutex_guard guard(m_lock);
+    m_working_list.remove(sdb_conn);
+    m_idle_list.push_back(sdb_conn);
+  }
+  return SDB_ERR_OK;
+}
+
+int Sdb_simple_pool_conn::close() {
+  Sdb_mutex_guard grard(m_lock);
+  DBUG_ASSERT(m_working_list.empty());
+  for (std::list<Sdb_conn *>::iterator it = m_idle_list.begin();
+       it != m_idle_list.end(); it++) {
+    delete (*it);
+  }
+  return SDB_ERR_OK;
 }
