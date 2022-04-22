@@ -1,7 +1,9 @@
 set system_versioning_alter_history=keep;
 # Check conventional partitioning on temporal tables
+drop database if exists test_versioning_partition;
 create database test_versioning_partition;
 use test_versioning_partition;
+set @@session.time_zone='+00:00';
 create or replace table t1 (
 x int,
 row_start SYS_DATATYPE as row start invisible,
@@ -101,8 +103,7 @@ partition p1 current);
 ERROR HY000: Wrong partitions for `t1`: must have at least one HISTORY and exactly one last CURRENT
 alter table t1 add partition (
 partition p1 history);
-Warnings:
-Warning	4115	Maybe missing parameters: no rotation condition for multiple HISTORY partitions.
+ERROR HY000: System-versioned tables do not support ADD PARTITION and REORGANIZE PARTITION
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
@@ -110,12 +111,10 @@ t1	CREATE TABLE `t1` (
 ) ENGINE=DEFAULT_ENGINE DEFAULT CHARSET=latin1 WITH SYSTEM VERSIONING
  PARTITION BY SYSTEM_TIME 
 (PARTITION `p0` HISTORY ENGINE = DEFAULT_ENGINE,
- PARTITION `p1` HISTORY ENGINE = DEFAULT_ENGINE,
  PARTITION `pn` CURRENT ENGINE = DEFAULT_ENGINE)
 insert into t1 values (1), (2);
 alter table t1 drop partition pn;
 ERROR HY000: Wrong partitions for `t1`: must have at least one HISTORY and exactly one last CURRENT
-alter table t1 drop partition p1;
 alter table t1 drop partition p0;
 ERROR HY000: Wrong partitions for `t1`: must have at least one HISTORY and exactly one last CURRENT
 select x from t1;
@@ -258,13 +257,28 @@ delete from t1 where x < 4;
 delete from t1;
 select * from t1 partition (p0);
 x
+1
+2
+3
 select * from t1 partition (p1);
 x
+4
+5
+6
 insert into t1 values (7), (8);
+Warnings:
+Warning	4114	Versioned table `test_versioning_partition`.`t1`: partition `p1` is full, add more HISTORY partitions
 ### warn about full partition
 delete from t1;
+Warnings:
+Warning	4114	Versioned table `test_versioning_partition`.`t1`: partition `p1` is full, add more HISTORY partitions
 select * from t1 partition (p1) order by x;
 x
+4
+5
+6
+7
+8
 ### Assertion in ALTER on warning from partitioning LIMIT [#446]
 create or replace table t1 (x int) with system versioning;
 insert into t1 values (1), (2);
