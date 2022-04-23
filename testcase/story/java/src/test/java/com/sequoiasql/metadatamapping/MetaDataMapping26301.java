@@ -2,6 +2,10 @@ package com.sequoiasql.metadatamapping;
 
 import com.sequoiadb.base.*;
 import com.sequoiasql.testcommon.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.BasicBSONObject;
 import org.testng.Assert;
 import org.testng.SkipException;
@@ -78,6 +82,19 @@ public class MetaDataMapping26301 extends MysqlTestBase {
             }
         }
         cursor1.close();
+        
+        // debug
+        System.out.println( "mappingCSName :" +  mappingCSName);
+        jdbc.update( "use " + dbName + ";" );
+        List< String > tables = jdbc.query( "show tables ;" );
+        System.out.println( tables );
+        List< String > listCL = new ArrayList<>();
+        DBCursor cursor = sdb.listCollections();
+        while ( cursor.hasNext() ) {
+            listCL.add( cursor.getNext().toString() );
+        }
+        cursor.close();
+        System.out.println( listCL );
 
         // 验证映射表记录数的正确性
         int expCount1 = 10;
