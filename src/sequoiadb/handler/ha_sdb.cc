@@ -3225,7 +3225,6 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   int rc = 0;
   bool enabled = false;
   bool is_mrr_assoc = false;
-  bool is_sorted_mode = false;
 
   m_use_default_impl = false;
   rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
@@ -3235,7 +3234,6 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
 #ifdef IS_MYSQL
   enabled = !hint_key_state(ha_thd(), table, active_index, MRR_HINT_ENUM,
                             OPTIMIZER_SWITCH_MRR);
-  is_sorted_mode = mode & HA_MRR_SORTED;
 #elif IS_MARIADB
   // enabled = !((mode & HA_MRR_SINGLE_POINT) &&
   //            optimizer_flag(ha_thd(), OPTIMIZER_SWITCH_MRR_SORT_KEYS));
@@ -3243,7 +3241,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   // is_sorted_mode;
 #endif
 
-  if (enabled || is_sorted_mode || n_ranges <= 1) {
+  if (enabled || n_ranges <= 1) {
     m_use_default_impl = true;
     goto done;
   }
@@ -3347,7 +3345,6 @@ int ha_sdb::multi_range_read_next(range_id_t *range_info) {
     query, to reduce IO.
   */
   if (first_read) {
-    first_read = false;
     bson::BSONObj condition;
     bson::BSONObj condition_idx;
     bson::BSONObjBuilder hint_builder;
@@ -4069,55 +4066,59 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &can_direct) {
   count_query = false;
   try {
     if (only_one_func && sdb_is_single_table(ha_thd()) && !order && !group &&
-        optimize_with_materialization &&
-        SDB_JOIN_UNKNOWN == sdb_get_join_type(ha_thd(), mrr_iter) &&
-        (SDB_COND_UNCALLED == sdb_condition->status ||
-         SDB_COND_SUPPORTED == sdb_condition->status) &&
-        !sdb_condition->has_null_func) {
-      List_iterator<Item> li(select->item_list);
-      Item *item;
-      while ((item = li++)) {
-        if (item->type() == Item::SUM_FUNC_ITEM) {
-          Item_sum *sum_item = (Item_sum *)item;
-          /* arg_count = 2: 'select count(distinct a,b)' */
-          if (sum_item->has_with_distinct() || sum_item->get_arg_count() > 1 ||
-              sum_item->sum_func() != Item_sum::COUNT_FUNC) {
-            count_query = false;
-            goto done;
-          }
-          Item::Type type = sum_item->get_arg(0)->type();
-          if (type == Item::FIELD_ITEM) {
-            if (select->group_list.elements >= 1) {
+        optimize_with_materialization) {
+      sdb_join_type cur_type = sdb_get_join_type(ha_thd(), mrr_iter);
+      if ((SDB_JOIN_UNKNOWN == cur_type ||
+           (SDB_JOIN_MULTI_RANGE == cur_type && !m_use_default_impl)) &&
+          (SDB_COND_UNCALLED == sdb_condition->status ||
+           SDB_COND_SUPPORTED == sdb_condition->status) &&
+          !sdb_condition->has_null_func) {
+        List_iterator<Item> li(select->item_list);
+        Item *item;
+        while ((item = li++)) {
+          if (item->type() == Item::SUM_FUNC_ITEM) {
+            Item_sum *sum_item = (Item_sum *)item;
+            /* arg_count = 2: 'select count(distinct a,b)' */
+            if (sum_item->has_with_distinct() ||
+                sum_item->get_arg_count() > 1 ||
+                sum_item->sum_func() != Item_sum::COUNT_FUNC) {
+              count_query = false;
+              goto done;
+            }
+            Item::Type type = sum_item->get_arg(0)->type();
+            if (type == Item::FIELD_ITEM) {
+              if (select->group_list.elements >= 1) {
+                count_query = false;
+                goto done;
+              }
+            }
+            /* support count(const) and count(field), not support count(func) */
+            if (type == Item::FIELD_ITEM) {
+              count_query = true;
+              count_cond_blder.append(
+                  sdb_field_name(((Item_field *)sum_item->get_arg(0))->field),
+                  BSON("$isnull" << 0));
+#if defined IS_MYSQL
+            } else if (type == Item::INT_ITEM || sum_item->const_item()) {
+#elif defined IS_MARIADB
+            } else if (type == Item::CONST_ITEM || sum_item->const_item()) {
+#endif
+              // count(*)
+              count_query = true;
+            } else {
               count_query = false;
               goto done;
             }
           }
-          /* support count(const) and count(field), not support count(func) */
-          if (type == Item::FIELD_ITEM) {
-            count_query = true;
-            count_cond_blder.append(
-                sdb_field_name(((Item_field *)sum_item->get_arg(0))->field),
-                BSON("$isnull" << 0));
-#if defined IS_MYSQL
-          } else if (type == Item::INT_ITEM || sum_item->const_item()) {
-#elif defined IS_MARIADB
-          } else if (type == Item::CONST_ITEM || sum_item->const_item()) {
-#endif
-            // count(*)
-            count_query = true;
-          } else {
-            count_query = false;
-            goto done;
-          }
         }
-      }
 
-      if (count_query) {
-        count_cond_blder.appendElements(condition);
-        condition = count_cond_blder.obj();
-        SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
-                      count_query, condition.toString(false, false).c_str(),
-                      db_name, table_name);
+        if (count_query) {
+          count_cond_blder.appendElements(condition);
+          condition = count_cond_blder.obj();
+          SDB_LOG_DEBUG("optimizer count: %d, condition: %s, table: %s.%s",
+                        count_query, condition.toString(false, false).c_str(),
+                        db_name, table_name);
+        }
       }
     }
   }
