@@ -138,7 +138,8 @@ public class SqlDataSource24205 extends MysqlTestBase {
             try {
                 jdbcWarpper.update( "call " + csName + ".insertValue()" );
             } catch ( SQLException e ) {
-                if ( !( e.getMessage().equals( "Collection is truncated" ) ) ) {
+                if ( !( e.getMessage().equals( "Collection is truncated" )
+                        || e.getMessage().equals( "Incompatible lock" ) ) ) {
                     throw e;
                 }
             }
