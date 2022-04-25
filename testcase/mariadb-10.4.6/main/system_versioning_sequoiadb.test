@@ -3,10 +3,12 @@
 #Case 23352#Case 23353#Case 23354#Case 23355
 #Case 23348
 
-#seqDB-23351, seqDB-23346
+#seqDB-23351 seqDB-23346 seqDB-26429
 #
 # Test create/alter/drop System-Versioning table
 #
+--source include/have_partition.inc
+
 --error ER_VERS_FIELD_WRONG_TYPE
 CREATE TABLE t1 (   # trx_id, should return fail
   id int primary key,
@@ -360,4 +362,20 @@ UPDATE t1 SET y = y * 2 WHERE x < 3;
 DELETE FROM t1 WHERE x > 2;
 SELECT x,y FROM t1 ORDER BY x;
 SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY x,y;
+DROP TABLE t1;
+
+# seqDB-26429
+CREATE TABLE t1(
+   id INT NULL auto_increment,
+   date_1 DATE,
+   date_2 DATE,
+   PERIOD FOR date_period(date_1, date_2), KEY(id)) WITH SYSTEM VERSIONING
+PARTITION BY SYSTEM_TIME LIMIT 3
+(PARTITION p0 HISTORY,
+ PARTITION p1 HISTORY,
+ PARTITION p_cur CURRENT);
+INSERT INTO t1(date_1,date_2) VALUES('1999-01-01', '2010-12-12'),('2010-01-01', '2018-12-12');
+SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id;
+DELETE FROM t1 FOR PORTION OF date_period FROM '2000-01-01' TO '2005-01-01';
+SELECT * FROM t1 FOR SYSTEM_TIME ALL ORDER BY id;
 DROP TABLE t1;
