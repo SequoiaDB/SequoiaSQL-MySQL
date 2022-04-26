@@ -24,12 +24,12 @@ Sdb_part_alter_ctx::~Sdb_part_alter_ctx() {
   std::list<char *>::iterator it;
 
   for (it = m_skip_list4delete.begin(); it != m_skip_list4delete.end(); ++it) {
-    delete *it;
+    delete[] *it;
   }
   m_skip_list4delete.clear();
 
   for (it = m_skip_list4rename.begin(); it != m_skip_list4rename.end(); ++it) {
-    delete *it;
+    delete[] *it;
   }
   m_skip_list4rename.clear();
 }
@@ -218,7 +218,7 @@ bool Sdb_part_alter_ctx::skip_delete_table(const char *table_name) {
   std::list<char *> &lst = m_skip_list4delete;
   for (it = lst.begin(); it != lst.end(); ++it) {
     if (0 == strcmp(*it, table_name)) {
-      delete *it;
+      delete[] *it;
       lst.erase(it);
       rs = true;
       break;
@@ -233,7 +233,7 @@ bool Sdb_part_alter_ctx::skip_rename_table(const char *new_table_name) {
   std::list<char *> &lst = m_skip_list4rename;
   for (it = lst.begin(); it != lst.end(); ++it) {
     if (0 == strcmp(*it, new_table_name)) {
-      delete *it;
+      delete[] *it;
       lst.erase(it);
       rs = true;
       break;

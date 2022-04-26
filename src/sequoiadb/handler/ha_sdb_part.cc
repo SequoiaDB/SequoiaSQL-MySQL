@@ -305,7 +305,7 @@ ha_sdb_part_share::ha_sdb_part_share() : m_main_part_name_hashs(NULL) {}
 
 ha_sdb_part_share::~ha_sdb_part_share() {
   if (m_main_part_name_hashs) {
-    delete m_main_part_name_hashs;
+    delete[] m_main_part_name_hashs;
   }
 }
 
@@ -318,7 +318,7 @@ bool ha_sdb_part_share::populate_main_part_name(partition_info *part_info) {
   uint i = 0;
 
   if (m_main_part_name_hashs) {
-    delete m_main_part_name_hashs;
+    delete[] m_main_part_name_hashs;
   }
 
   m_main_part_name_hashs = new (std::nothrow) longlong[part_info->num_parts];
@@ -339,7 +339,7 @@ done:
   return rs;
 error:
   if (m_main_part_name_hashs) {
-    delete m_main_part_name_hashs;
+    delete[] m_main_part_name_hashs;
     m_main_part_name_hashs = NULL;
   }
   goto done;
@@ -1656,7 +1656,7 @@ error:
 ha_sdb_part::~ha_sdb_part() {
   std::map<uint, char *>::iterator it = m_new_part_id2cl_name.begin();
   while (it != m_new_part_id2cl_name.end()) {
-    delete it->second;
+    delete[] it->second;
     ++it;
   }
   m_new_part_id2cl_name.clear();
