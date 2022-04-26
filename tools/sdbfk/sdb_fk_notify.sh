@@ -109,9 +109,9 @@ function add_status_and_trigger()
 
   add_tri_sql="
   USE \`${str_arr[$referenced_database_name]}\`
-  DROP trigger if exists ${res_md5};
+  DROP trigger if exists \`${res_md5}\`;
   delimiter $
-  CREATE trigger ${res_md5} before delete on \`${str_arr[$referenced_table_name]}\` 
+  CREATE trigger \`${res_md5}\` before delete on \`${str_arr[$referenced_table_name]}\` 
   for each row
   BEGIN
       declare result int(11);
@@ -196,7 +196,7 @@ function drop_trigger()
 {
   drop_sql="
     use \`${str_arr[$referenced_database_name]}\`
-    drop trigger ${str_arr[$trigger_name]};
+    drop trigger \`${str_arr[$trigger_name]}\`;
   "
   exec_sql "${drop_sql}"
   return 
