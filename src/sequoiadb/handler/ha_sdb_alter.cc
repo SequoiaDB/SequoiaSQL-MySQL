@@ -1204,6 +1204,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
     bson::BSONObjBuilder name_builder;
     bson::BSONObjBuilder cast_builder;
+    bson::BSONObjBuilder cond_builder;
     List_iterator_fast<Col_alter_info> changed_it;
     Col_alter_info *info = NULL;
     sql_mode_t sql_mode = ha_thd()->variables.sql_mode;
@@ -1244,6 +1245,10 @@ int ha_sdb::alter_column(TABLE *altered_table,
 
       if (!field->is_real_null(offset) &&
           !(field->flags & NO_DEFAULT_VALUE_FLAG)) {
+        bson::BSONObjBuilder isnull_builder(
+            cond_builder.subobjStart(sdb_field_name(field)));
+        isnull_builder.append("$isnull", 1);
+        isnull_builder.done();
         rc = append_default_value(set_builder, field);
         if (rc != 0) {
           rc = ER_WRONG_ARGUMENTS;
@@ -1252,6 +1257,10 @@ int ha_sdb::alter_column(TABLE *altered_table,
         }
       } else if (!field->maybe_null()) {
         if (!(field->flags & AUTO_INCREMENT_FLAG)) {
+          bson::BSONObjBuilder isnull_builder(
+              cond_builder.subobjStart(sdb_field_name(field)));
+          isnull_builder.append("$isnull", 1);
+          isnull_builder.done();
           rc = append_zero_value(set_builder, field);
           if (SDB_ERR_OK != rc) {
             goto error;
@@ -1400,7 +1409,7 @@ int ha_sdb::alter_column(TABLE *altered_table,
           goto done;
         }
       }
-      rc = cl.update(builder.obj(), SDB_EMPTY_BSON, hint,
+      rc = cl.update(builder.obj(), cond_builder.obj(), hint,
                      UPDATE_KEEP_SHARDINGKEY);
       if (rc != 0) {
         goto error;
