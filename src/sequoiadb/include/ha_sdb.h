@@ -760,6 +760,7 @@ class ha_sdb : public handler {
   st_order *sdb_group_list;
 
   bool m_use_default_impl;
+  bool m_use_position;
   sdb_batched_keys_ranges m_batched_keys_ranges;
 #ifdef IS_MARIADB  // TODO: temp to make mariadb compile succeed.
   bool is_join_bka;

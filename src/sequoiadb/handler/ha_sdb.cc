@@ -1476,6 +1476,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   sdb_order = NULL;
   sdb_group_list = NULL;
   m_use_default_impl = false;
+  m_use_position = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1754,6 +1755,7 @@ int ha_sdb::reset() {
   sdb_group_list = NULL;
   m_batched_keys_ranges.deinit();
   m_use_default_impl = false;
+  m_use_position = false;
   is_join_bka = false;
   key_parts = 0;
   DBUG_RETURN(0);
@@ -4377,6 +4379,7 @@ int ha_sdb::build_index_position(const KEY *key_info,
   int resered = hint_pos_builder.bb().getReserveBytes();
   BSONObjBuilder index_value_builder(
       hint_pos_builder.subobjStart(SDB_IDX_ADVANCE_VALUE));
+  m_use_position = false;
 
   try {
     if (key_info->user_defined_key_parts > 1) {
@@ -8469,6 +8472,9 @@ int ha_sdb::get_query_flag(const uint sql_command, enum thr_lock_type lock_type,
   ) {
     query_flag |= QUERY_FOR_UPDATE;
   }
+  if (m_use_position) {
+    query_flag |= QUERY_FORCE_HINT;
+  }
   return query_flag;
 }
 
@@ -8783,6 +8789,21 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
         // For sequences: SETVAL(sequence) failed.
         break;
       }
+      case SDB_RTN_INVALID_HINT: {
+        if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
+          my_printf_error(ER_GET_ERRNO,
+                          "Got error %d from storage engine, invalid hint.",
+                          MYF(0),error);
+          SDB_LOG_ERROR(
+              "Got error %d from storage engine, invalid hint, "
+              "db_name:%s, table_name:%s.",
+              error, db_name, table_name);
+        } else {
+          my_printf_error(error, "%s", MYF(0), error_msg);
+        }
+        break;
+      }
+
       default:
         if (NULL == error_msg) {
           my_error(ER_GET_ERRNO, MYF(0), error, SDB_DEFAULT_FILL_MESSAGE);
