@@ -426,7 +426,7 @@ class ha_sdb : public handler {
 
   int create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update);
 
-  int optimize_count(bson::BSONObj &condition, bool &can_direct);
+  int optimize_count(bson::BSONObj &condition, bool &read_one_record);
 
   bool optimize_delete(bson::BSONObj &condition);
 
