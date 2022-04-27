@@ -197,6 +197,10 @@ static int i_s_store_elem_to_field(TABLE *table, bson::BSONElement &elem) {
       field->store(elem.booleanSafe() ? 1 : 0);
       break;
     }
+    case MYSQL_TYPE_NULL: {
+      // This field is not used. Skip it.
+      break;
+    }
     default: {
       DBUG_ASSERT(0);
       rc = 1;
