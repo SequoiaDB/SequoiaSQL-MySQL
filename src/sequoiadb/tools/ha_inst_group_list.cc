@@ -129,7 +129,7 @@ static int list_instances(sdbclient::sdb &conn,
   // get collection space 'HASysGlobalInfo' handle
   rc = conn.getCollectionSpace(HA_GLOBAL_INFO, global_info_cs);
   if (SDB_DMS_CS_NOTEXIST == rc) {
-    cout << "Error: no initialized instance group in current cluster" << endl;
+    cout << "Info: no initialized instance group in current cluster" << endl;
     return rc;
   }
   HA_TOOL_RC_CHECK(rc, rc,

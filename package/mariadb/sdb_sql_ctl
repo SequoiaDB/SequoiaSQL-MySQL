@@ -103,7 +103,7 @@ function check_svcname_available()
    local rc=$?
    if [ $rc == 0 -a $exp_available == false  ]; then
       exec_cmd_with_print "echo \"ERROR: instance port $inst_port is already in use\"" "$sql_log"
-      echo "ERROR: Fail to check svcname available, please verify log $sql_log" >&2
+      echo "ERROR: instance port $inst_port is already in use" >&2
       return 11
    fi
    
