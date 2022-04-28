@@ -5,6 +5,8 @@ use information_schema;
 # seqDB-24320
 set session tx_isolation='READ-COMMITTED';
 desc SDB_SESSION_ATTR_CURRENT;
+select PREFERRED_INSTANCE from SDB_SESSION_ATTR_CURRENT;
+select PREFERRED_INSTANCE,PREFERRED_INSTANCE_MODE from SDB_SESSION_ATTR_CURRENT;
 --replace_column 13 MySQL:hostname:pid:tid
 select * from SDB_SESSION_ATTR_CURRENT;
 # 修改会话属性
