@@ -4458,6 +4458,7 @@ int ha_sdb::build_index_position(const KEY *key_info,
         index_value_builder.done();
         hint_pos_builder.append(SDB_IDX_ADVANCE_TYPE, type);
         hint_pos_builder.append(SDB_IDX_ADVANCE_PREFIX_NUM, prefix_num);
+        m_use_position = true;
       }
 
       if (sdb_debug_log(current_thd)) {
