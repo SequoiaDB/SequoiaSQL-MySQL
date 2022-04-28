@@ -31,6 +31,8 @@
         <packages>
             <package name="com.sequoiasql.datasrc"/>
             <package name="com.sequoiasql.index"/>
+            <package name="com.sequoiasql.crud"/>
+            <package name="com.sequoiasql.ddl"/>
         </packages>
     </test>
 
