@@ -5505,8 +5505,24 @@ int ha_sdb::rnd_next(uchar *buf) {
 
       {
         int flag = get_query_flag(thd_sql_command(ha_thd()), m_lock_type);
-        sdb_build_clientinfo(ha_thd(), builder);
-        hint = builder.obj();
+        SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
+        SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
+        const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
+        try {
+          /*table scan with sort and limit can push hint({"":""}) to SequoiaDB
+            to prefer to index scan when 'select * from tbl order by a limit
+            ??'.*/
+          if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
+              !order_by.isEmpty() && sdb_is_single_table(ha_thd())) {
+            builder.append("", "");
+          }
+
+          sdb_build_clientinfo(ha_thd(), builder);
+          hint = builder.obj();
+        }
+        SDB_EXCEPTION_CATCHER(
+            rc, "Failed to read next for table:%s.%s, exception:%s", db_name,
+            table_name, e.what());
         rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                                direct_op);
         if (rc) {
@@ -5526,9 +5542,6 @@ int ha_sdb::rnd_next(uchar *buf) {
           rc = collection->query_and_remove(condition, selector, order_by, hint,
                                             0, num_to_return, flag);
         } else {
-          SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
-          SELECT_LEX_UNIT *const unit = sdb_lex_unit(ha_thd());
-          const bool use_limit = unit->select_limit_cnt != HA_POS_ERROR;
           if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
               sdb_is_single_table(ha_thd()) &&
               (sdb_get_optimizer_options(ha_thd()) &
