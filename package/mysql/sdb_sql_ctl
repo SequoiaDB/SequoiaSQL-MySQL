@@ -530,12 +530,20 @@ function get_one_status()
       fi
       test "$port" == "" && port="-"
 
+      #get start_time Mon Jan 24 22:10:01 2022 -> 2022-01-24-22:10:01
+      local start_time=`ps -eo lstart,pid | grep -w "${pid}$" | awk '{print $1,$2,$3,$4,$5}'`
+      if [ "$start_time" != "" ]; then
+	     start_time=`date "+%Y-%m-%d-%H:%M:%S" -d "$start_time"`
+	  else
+	     start_time="-"
+      fi
+		
       # print
-      printf "%-10s %-10s %-10s %-40s %-40s\n" $inst $pid $port $SQLDATA $SQLLOG
+      printf "%-10s %-10s %-10s %-25s %-40s %-40s\n" $inst $pid $port $start_time $SQLDATA $SQLLOG
       return 0
    elif [ $ret == 1 ]
    then
-      printf "%-10s %-10s %-10s %-40s %-40s\n" $inst "-" "-" $SQLDATA $SQLLOG
+      printf "%-10s %-10s %-10s %-25s %-40s %-40s\n" $inst "-" "-" "-" $SQLDATA $SQLLOG
       return 7
    else
       echo "ERROR: Fail to query $inst status, please verify log $CTL_LOG" >&2
@@ -554,7 +562,7 @@ function get_status()
       inst_list=$INST_NAME
    fi
 
-   printf "%-10s %-10s %-10s %-40s %-40s\n" "INSTANCE" "PID" "SVCNAME" "SQLDATA" "SQLLOG"
+   printf "%-10s %-10s %-10s %-25s %-40s %-40s\n" "INSTANCE" "PID" "SVCNAME" "STARTTIME" "SQLDATA" "SQLLOG"
 
    local total_cnt=0
    local run_cnt=0
