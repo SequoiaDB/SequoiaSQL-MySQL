@@ -22,6 +22,7 @@
 #   20    fail to write file
 #   21    svcname isn't in range ( 0, 65536 )
 #   22    can not find configure file
+#   23    invalid parameter
 #   30    instance group name can't be empty
 #   31    instance already exists in instance group
 #   32    failed to remove instance from instance group
@@ -80,6 +81,17 @@ function check_svcname_para()
    fi
 }
 
+function check_instname_valid()
+{
+   if [[ "$INST_NAME" =~ ^[a-zA-Z][a-zA-Z0-9_]*$ ]]; then
+      return 0
+   else
+      echo "ERROR: Invalid parameter, the instance name must start with a letter and can contain letters, digits and underscores" >&2
+      echo "ERROR: Invalid parameter, the instance name must start with a letter and can contain letters, digits and underscores" >> $CTL_LOG
+      return 23
+   fi
+}
+
 function check_svcname_available()
 {
    local inst_port=$1
@@ -108,7 +120,7 @@ function check_exist_in_svc()
    local exp_exist=$2
 
    local act_exist=false
-   test -f $CONF_SVC_PATH/$inst.conf && act_exist=true
+   test -f "$CONF_SVC_PATH/${inst}.conf" && act_exist=true
 
    if [ $exp_exist == false -a $act_exist == true  ]; then
       echo "ERROR: Instance $inst has been already added to service" >&2
@@ -198,7 +210,7 @@ function exec_cmd()
 
    if [ $cur_user == "root" ]
    then
-      su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;$cmd"
+      su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;${cmd}"
       return $?
    else
       eval "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;${cmd}"
@@ -227,7 +239,7 @@ function exec_cmd_with_print()
 
    if [ $cur_user == "root" ]
    then
-      msg=$(su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;$cmd" 2>&1)
+      msg=$(su - $SQL_USER -c "export LC_TIME=C;export LD_LIBRARY_PATH=$INSTALL_PATH/lib;${cmd}" 2>&1)
       rc=$?
       if test -n "$msg"; then
           su - $SQL_USER -c "echo -e \"$msg\" >> $log_file 2>&1"
@@ -261,7 +273,7 @@ function check_inst_exist()
    local exp_exist=$2
 
    local act_exist=false
-   test -f $CONF_INST_PATH/$inst.conf && act_exist=true
+   test -f "$CONF_INST_PATH/${inst}.conf" && act_exist=true
 
    if [ $exp_exist == false -a $act_exist == true ]; then
       echo "ERROR: instance $inst already exists" >&2
@@ -283,9 +295,9 @@ function list_inst()
    fi
 
    local i=0
-   for file in `find $CONF_INST_PATH -name "*.conf"`
+   find $CONF_INST_PATH -name "*.conf" | while read fname
    do
-      . $file
+      . "${fname}"
       printf "%-10s %-40s %-40s\n" $INSTNAME $SQLDATA $SQLLOG
       i=$(($i+1))
    done
@@ -295,6 +307,10 @@ function list_inst()
 
 function add_inst()
 {
+   #check instance name is valid
+   check_instname_valid
+   test $? -ne 0 && { echo "ERROR: Failed to create instance \"${INST_NAME}\"" >&2 && exit 23; }
+
    #check argument
    if [[ ${SQL_DATA:0:1} != "/" ]]; then
       SQL_DATA=$(pwd)/$SQL_DATA    #relative path
@@ -432,7 +448,7 @@ function add_to_svc()
    check_exist_in_svc $INST_NAME false
    check_inst_exist $INST_NAME true
 
-   . $CONF_INST_PATH/$INST_NAME.conf
+   . "$CONF_INST_PATH/${INST_NAME}.conf"
 
    echo "Adding instance $INST_NAME to service ..."
 
@@ -478,17 +494,17 @@ function delete_inst()
    fi
 
    #delete file
-   . $CONF_INST_PATH/$INST_NAME.conf
+   . "$CONF_INST_PATH/${INST_NAME}.conf"
    if [ "$NEED_BACKUPLOG" == false ]; then
-      exec_cmd "rm -rf $SQLLOG"
+      exec_cmd "rm -rf \"${SQLLOG}\""
    else
       local cur_time=`date +%F-%T`
       local backup_dir=${INSTALL_DIR}/backup_log
       test -d "${backup_dir}" || exec_cmd "mkdir -p ${backup_dir}"
-      exec_cmd "mv $SQLLOG ${backup_dir}/${INST_NAME}.log.${cur_time}"
+      exec_cmd "mv \"${SQLLOG}\" \"${backup_dir}/${INST_NAME}.log.${cur_time}\""
       echo "instance logs ${INST_NAME}.log.${cur_time} are backed up to the ${backup_dir} directory"
    fi
-   exec_cmd "rm -rf $SQLDATA $CONF_INST_PATH/$INST_NAME.conf $CONF_SVC_PATH/$INST_NAME.conf"
+   exec_cmd "rm -rf \"$SQLDATA\" \"$CONF_INST_PATH/${INST_NAME}.conf\" \"$CONF_SVC_PATH/${INST_NAME}.conf\""
    echo "ok"
 }
 
@@ -499,7 +515,7 @@ function get_one_status()
    local pid
    
    check_inst_exist $inst true
-   . $CONF_INST_PATH/$inst.conf
+   . "$CONF_INST_PATH/${inst}.conf"
    local pid_file=`cat $SQLDATA/auto.cnf | grep "^\s*pid-file" |awk -F'[ =]' '{print $NF }'`
 
    if test -s "$pid_file" ; then 
@@ -632,8 +648,8 @@ function refresh_conf()
 {
    local inst=$1
    local log_error=""
-   local inst_conf=$CONF_INST_PATH/$inst.conf
-   . $inst_conf
+   local inst_conf="$CONF_INST_PATH/${inst}.conf"
+   . "${inst_conf}"
    local auto_conf=$SQLDATA/auto.cnf
    local log_error_info=`cat $auto_conf | grep "^[[:blank:]]*log[-_]error[[:blank:]]*="`
 
@@ -647,7 +663,7 @@ function refresh_conf()
      log_error="$SQLDATA/`hostname`.err"
    fi
   
-   sed -i "/SQLLOG/cSQLLOG=$log_error" $inst_conf
+   sed -i "/SQLLOG/cSQLLOG=$log_error" "${inst_conf}"
 }
 
 function start_inst()
@@ -755,7 +771,7 @@ function stop_inst()
    local inst=$1
    check_inst_exist $inst true
 
-   . $CONF_INST_PATH/$inst.conf
+   . "$CONF_INST_PATH/${inst}.conf"
 
    #check instance start or not
    get_one_status $inst > /dev/null
@@ -766,7 +782,7 @@ function stop_inst()
    fi
 
    #stop
-   local pid=`get_one_status $inst | grep $inst | awk '{print $2}'`
+   local pid=`get_one_status $inst | awk '{print $3}'`
    
    echo "Stopping instance $inst (PID: $pid) ..."
    local start_line=0
@@ -829,7 +845,7 @@ function change_configure_online()
    local para_name=$2
    local para_value=$3
    
-   . $CONF_INST_PATH/$inst.conf
+   . "$CONF_INST_PATH/${inst}.conf"
    local socket_file=`cat $SQLDATA/auto.cnf | grep "^\s*socket" |awk -F'[ =]' '{print $NF }'`
    
    get_one_status $inst >> /dev/null
@@ -948,7 +964,7 @@ function clear_inst_configuration()
 function join_inst_group()
 {
    check_inst_exist $INST_NAME true
-   . $CONF_INST_PATH/$INST_NAME.conf
+   . "$CONF_INST_PATH/${INST_NAME}.conf"
 
    if [ "$INST_GROUP_NAME" == "" ]; then
       echo "ERROR: instance group name can't be empty"
@@ -1021,7 +1037,7 @@ function join_inst_group()
 function leave_inst_group()
 {
    check_inst_exist $INST_NAME true
-   . $CONF_INST_PATH/$INST_NAME.conf
+   . "$CONF_INST_PATH/${INST_NAME}.conf"
 
    if [ "$INST_GROUP_NAME" == "" ]; then
       echo "ERROR: instance group name can't be empty"
@@ -1087,7 +1103,7 @@ function change_configure()
    #check instance exists or not
    if [ ! -z $INST_NAME ];then
       check_inst_exist $INST_NAME true
-      . $CONF_INST_PATH/$INST_NAME.conf
+      . "$CONF_INST_PATH/${INST_NAME}.conf"
    fi
 
    echo "Changing configure of instance $INST_NAME ..."
