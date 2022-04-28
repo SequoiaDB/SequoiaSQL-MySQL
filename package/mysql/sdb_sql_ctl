@@ -474,7 +474,7 @@ function delete_inst()
    if [ "$FORCE_OP" == false ] && [ "$NEED_PRINTSCREEN" == false ]; then
       echo "Deleting an instance will delete the data directory"
       read -p "Do you want to delete instance?[y/N]" answer
-      answer=`echo ${answer} | tr -t [a-z] [A-Z]`
+      answer=`echo ${answer} | tr -t "[:lower:]" "[:upper:]"`
       test -z ${answer} && answer="N"
       case ${answer} in
          Y|YES)
@@ -984,7 +984,7 @@ function join_inst_group()
          echo "Adding an instance to an instance group will clear the instance metadata during next startup if it's not the first instance to join the instance group"
       fi
       read -p "Do you want to add instance '$INST_NAME' to instance group '$INST_GROUP_NAME'?[y/N]" answer
-      answer=`echo ${answer} | tr -t [a-z] [A-Z]`
+      answer=`echo ${answer} | tr -t "[:lower:]" "[:upper:]"`
       test -z ${answer} && answer="N"
       case ${answer} in
          Y|YES)
@@ -1050,7 +1050,7 @@ function leave_inst_group()
       #prompt user whether to remove instance from instance group
       echo "Remove instance '$INST_NAME' from instance group '$INST_GROUP_NAME' will restart instance if it's running"
       read -p "Do you want to remove instance '$INST_NAME' from instance group '$INST_GROUP_NAME'?[y/N]" answer
-      answer=`echo ${answer} | tr -t [a-z] [A-Z]`
+      answer=`echo ${answer} | tr -t "[:lower:]" "[:upper:]"`
       test -z ${answer} && answer="N"
       case ${answer} in
          Y|YES)
