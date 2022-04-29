@@ -784,7 +784,7 @@ function stop_inst()
    fi
 
    #stop
-   local pid=`get_one_status $inst | awk '{print $3}'`
+   local pid=`get_one_status $inst | awk '{print $2}'`
    
    echo "Stopping instance $inst (PID: $pid) ..."
    local start_line=0
