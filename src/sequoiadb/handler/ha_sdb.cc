@@ -4073,8 +4073,7 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
       if ((SDB_JOIN_UNKNOWN == cur_type ||
            (SDB_JOIN_MULTI_RANGE == cur_type && !m_use_default_impl)) &&
           (SDB_COND_UNCALLED == sdb_condition->status ||
-           SDB_COND_SUPPORTED == sdb_condition->status) &&
-          !sdb_condition->has_null_func) {
+           SDB_COND_SUPPORTED == sdb_condition->status)) {
         List_iterator<Item> li(select->item_list);
         Item *item;
         while ((item = li++)) {

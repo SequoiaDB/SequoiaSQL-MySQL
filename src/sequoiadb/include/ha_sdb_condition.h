@@ -97,7 +97,6 @@ class ha_sdb_cond_ctx : public Sql_alloc {
   TABLE *table;
   MY_BITMAP where_cond_set;
   MY_BITMAP pushed_cond_set;
-  bool has_null_func;
   bool sub_sel;
 };
 
