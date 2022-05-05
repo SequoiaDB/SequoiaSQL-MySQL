@@ -89,7 +89,7 @@ std::string ha_base64_encode(const std::vector<uchar> &binary) {
 }
 
 // Assumes no newlines or extra characters in encoded string
-std::vector<uchar> ha_base64_ecode(char *encoded) {
+std::vector<uchar> ha_base64_decode(const char *encoded) {
   boost::interprocess::unique_ptr<BIO, BIOFreeAll> b64(BIO_new(BIO_f_base64()));
   BIO_set_flags(b64.get(), BIO_FLAGS_BASE64_NO_NL);
   BIO *source = BIO_new_mem_buf(encoded, -1);  // read-only source
@@ -146,23 +146,77 @@ int ha_evp_digest(const string &str, uchar digest[], HA_EVP_MD_TYPE type) {
   return SDB_HA_OK;
 }
 
-int ha_aes_128_cbc_encrypt(const string &str, uchar *cipher, const uchar *key,
-                           const uchar *iv) {
-  assert(cipher != NULL);
-  assert(key != NULL);
-  assert(iv != NULL);
-
-  int outlen = 0;
-  EVP_CIPHER_CTX *evp_ctx;
-  evp_ctx = EVP_CIPHER_CTX_new();
-  EVP_CipherInit_ex(evp_ctx, EVP_aes_128_cbc(), NULL, key, iv, 1);
-
-  EVP_CipherUpdate(evp_ctx, cipher, &outlen, (uchar *)str.c_str(),
-                   str.length());
-  EVP_CipherFinal(evp_ctx, cipher + outlen, &outlen);
+static int aes_128_cbc(const std::vector<uchar> &in, std::vector<uchar> &out,
+                       const uchar *key, const uchar *iv, bool encrypt) {
+  assert(key != NULL && iv != NULL);
+  const int ENCRYPT_BLOCK_MAX_LEN = 256;
+  int evp_rc = 0, outlen = 0, encrypt_pos = 0, rest = 0;
+  uchar outbuf[ENCRYPT_BLOCK_MAX_LEN + EVP_MAX_BLOCK_LENGTH] = {0};
+  EVP_CIPHER_CTX *evp_ctx = EVP_CIPHER_CTX_new();
+  if (NULL == evp_ctx) {
+    goto error;
+  }
+  /* Set key and IV */
+  if (!EVP_CipherInit_ex(evp_ctx, EVP_aes_128_cbc(), NULL, key, iv, encrypt)) {
+    goto error;
+  }
+  rest = in.size();
+  while (0 != rest) {
+    /* Set length of data block to be encrypted */
+    int encrypt_block_len =
+        (rest > ENCRYPT_BLOCK_MAX_LEN) ? ENCRYPT_BLOCK_MAX_LEN : rest;
+    /* Encrypt current data block */
+    if (!EVP_CipherUpdate(evp_ctx, outbuf, &outlen, &in[encrypt_pos],
+                          encrypt_block_len)) {
+      goto error;
+    }
+    /* Save ciphertext of current data block */
+    out.insert(out.end(), outbuf, outbuf + outlen);
+    /* Move to next data block to be encrypted */
+    encrypt_pos += encrypt_block_len;
+    rest -= encrypt_block_len;
+  }
+  if (!EVP_CipherFinal(evp_ctx, outbuf, &outlen)) {
+    goto error;
+  }
+  out.insert(out.end(), outbuf, outbuf + outlen);
+done:
   EVP_CIPHER_CTX_free(evp_ctx);
+  return evp_rc;
+error:
+  // get EVP error code
+  evp_rc = ERR_get_error();
+  goto done;
+}
 
-  return SDB_HA_OK;
+int ha_aes_128_cbc_encrypt(const std::string &plaintext,
+                           std::vector<uchar> &ciphertext, const uchar *key,
+                           const uchar *iv) {
+  std::vector<uchar> plain_text(plaintext.begin(), plaintext.end());
+  return aes_128_cbc(plain_text, ciphertext, key, iv, true);
+}
+
+int ha_aes_128_cbc_encrypt(const std::vector<uchar> &plaintext,
+                           std::vector<uchar> &ciphertext, const uchar *key,
+                           const uchar *iv) {
+  return aes_128_cbc(plaintext, ciphertext, key, iv, true);
+}
+
+int ha_aes_128_cbc_decrypt(const std::vector<uchar> &ciphertext,
+                           std::string &plaintext, const uchar *key,
+                           const uchar *iv) {
+  std::vector<uchar> plain_text;
+  int rc = aes_128_cbc(ciphertext, plain_text, key, iv, false);
+  if (0 == rc) {
+    plaintext.insert(plaintext.end(), plain_text.begin(), plain_text.end());
+  }
+  return rc;
+}
+
+int ha_aes_128_cbc_decrypt(const std::vector<uchar> &ciphertext,
+                           std::vector<uchar> &plaintext, const uchar *key,
+                           const uchar *iv) {
+  return aes_128_cbc(ciphertext, plaintext, key, iv, false);
 }
 
 // create 'AuthString' field value for 'HAUser'
