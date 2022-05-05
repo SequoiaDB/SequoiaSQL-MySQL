@@ -33,6 +33,8 @@
 
 typedef unsigned char uchar;
 
+#define HA_TOOL_HELP_DOC_INST_GROUP_CHPASS \
+  "Change password for instance group user.\v"
 #define HA_TOOL_HELP_DOC_INIT_INST_GROUP "Init instance group information.\v"
 #define HA_TOOL_HELP_DOC_CLEAR_INST_GROUP \
   "Clear instance group information from sequoiadb.\v"
@@ -152,8 +154,21 @@ std::vector<uchar> ha_base64_decode(const char *encoded);
 
 int ha_random_string(std::string &out, uint len);
 
-int ha_aes_128_cbc_encrypt(const std::string &str, uchar *cipher,
-                           const uchar *md5_key, const uchar *md5_iv);
+int ha_aes_128_cbc_encrypt(const std::string &plaintext,
+                           std::vector<uchar> &ciphertext, const uchar *key,
+                           const uchar *iv);
+
+int ha_aes_128_cbc_encrypt(const std::vector<uchar> &plaintext,
+                           std::vector<uchar> &ciphertext, const uchar *key,
+                           const uchar *iv);
+
+int ha_aes_128_cbc_decrypt(const std::vector<uchar> &ciphertext,
+                           std::string &plaintext, const uchar *key,
+                           const uchar *iv);
+
+int ha_aes_128_cbc_decrypt(const std::vector<uchar> &ciphertext,
+                           std::vector<uchar> &plaintext, const uchar *key,
+                           const uchar *iv);
 
 int ha_evp_digest(const std::string &str, uchar digest[], HA_EVP_MD_TYPE type);
 

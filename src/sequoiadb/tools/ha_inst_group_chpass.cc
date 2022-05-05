@@ -29,7 +29,7 @@
 #include "ha_tool_utils.h"
 
 using namespace std;
-static char doc[] = HA_TOOL_HELP_DOC_INIT_INST_GROUP;
+static char doc[] = HA_TOOL_HELP_DOC_INST_GROUP_CHPASS;
 const char *argp_program_bug_address = 0;
 const char *argp_program_version = 0;
 static char args_doc[] = HA_TOOL_HELP_DOC_INST_GROUP_NAME;
@@ -109,6 +109,98 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
+// check if key is correct
+static int check_key(sdbclient::sdb &conn, const st_args &args) {
+  int rc = SDB_HA_OK;
+  sdbclient::sdbCollectionSpace inst_group_cs;
+  sdbclient::sdbCollection ha_config_cl;
+  sdbclient::sdbCursor cursor;
+  bson::BSONObj result, cond;
+  rc = conn.getCollectionSpace(args.inst_group_name.c_str(), inst_group_cs);
+  HA_TOOL_RC_CHECK(rc, rc, "Error: failed to get CS '%s', error: %s",
+                   args.inst_group_name.c_str(), ha_sdb_error_string(conn, rc));
+
+  rc = inst_group_cs.getCollection(HA_CONFIG_CL, ha_config_cl);
+  HA_TOOL_RC_CHECK(rc, rc, "Error: failed to get CL '%s', error: %s",
+                   HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+
+  try {
+    long long count = 0;
+    const int COUNT_OF_HA_CONFIG = 1;
+    uchar md5_iv[HA_MD5_BYTE_LEN] = {0};
+    uchar md5_password[HA_MD5_BYTE_LEN] = {0};
+    uchar md5_key[HA_MD5_BYTE_LEN] = {0};
+    string md5_password_str, password;
+
+    // make sure that only one record in 'HAConfig'
+    rc = ha_config_cl.getCount(count);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to get count from '%s' table, error: %s",
+                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+    if (COUNT_OF_HA_CONFIG != count) {
+      cerr << "Error: instance group configuration is not correct" << endl;
+      return SDB_HA_EXCEPTION;
+    }
+
+    rc = ha_config_cl.query(cursor, cond);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to get instance group configuration from "
+                     "'%s' table, error: %s",
+                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+
+    // only one record in 'HAConfig'
+    rc = cursor.next(result, true);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to get result from '%s' table, error: %s",
+                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+
+    string config_iv = result.getStringField(HA_FIELD_IV);
+    string config_cipher_password =
+        result.getStringField(HA_FIELD_CIPHER_PASSWORD);
+    string config_md5_password = result.getStringField(HA_FIELD_MD5_PASSWORD);
+
+    // calculcate md5 for 'iv', 'key'
+    rc = ha_evp_digest(config_iv, md5_iv, HA_EVP_MD5);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
+
+    rc = ha_evp_digest(args.key, md5_key, HA_EVP_MD5);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
+
+    // decode base64-formated ciphertext, get original ciphertext
+    std::vector<uchar> password_cipher =
+        ha_base64_decode(config_cipher_password.c_str());
+
+    // decrypt ciphertext, get original password
+    rc = ha_aes_128_cbc_decrypt(password_cipher, password, md5_key, md5_iv);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to decrypt password by key, %s, please "
+                     "check if key is correct",
+                     ha_error_string(rc).c_str());
+
+    // get MD5 of password
+    rc = ha_evp_digest(password, md5_password, HA_EVP_MD5);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
+    boost::algorithm::hex(md5_password, md5_password + HA_MD5_BYTE_LEN,
+                          std::back_inserter(md5_password_str));
+
+    // check if decrypted password is same to original password
+    if (config_md5_password != md5_password_str) {
+      cout << "Error: decrypted password is inconsistent with original "
+              "password"
+           << endl;
+      return SDB_HA_EXCEPTION;
+    }
+
+    if (args.verbose) {
+      cout << "Info: original password is " << password << endl;
+    }
+  } catch (std::exception &e) {
+    cerr << "Error: unexpected error: " << e.what() << endl;
+    return SDB_HA_EXCEPTION;
+  }
+  return rc;
+}
+
 static int update_password(sdbclient::sdb &conn, const st_args &args) {
   const string key = args.key;
   string password_md5_hex_str;
@@ -119,24 +211,20 @@ static int update_password(sdbclient::sdb &conn, const st_args &args) {
   bson::BSONObj rule;
   bson::BSONObjBuilder builder;
   int rc = SDB_HA_OK;
-  std::vector<uchar> cipher;
   uchar md5_iv[HA_MD5_BYTE_LEN] = {0};
   uchar md5_password[HA_MD5_BYTE_LEN] = {0};
   uchar md5_key[HA_MD5_BYTE_LEN] = {0};
-  const int BASE_EXCRYPT_BLOCK_SIZE = 16;
 
   try {
-    int cipher_len = (password.length() / BASE_EXCRYPT_BLOCK_SIZE + 1) *
-                     BASE_EXCRYPT_BLOCK_SIZE;
-    std::vector<uchar> cipher(cipher_len, 0);
-
+    std::vector<uchar> cipher;
     rc = conn.getCollectionSpace(args.inst_group_name.c_str(), inst_group_cs);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to get CS '%s', error: %s",
-                     args.inst_group_name.c_str(), ha_error_string(rc).c_str());
+                     args.inst_group_name.c_str(),
+                     ha_sdb_error_string(conn, rc));
 
     rc = inst_group_cs.getCollection(HA_CONFIG_CL, ha_config_cl);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to get CL '%s', error: %s",
-                     HA_CONFIG_CL, ha_error_string(rc).c_str());
+                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
 
     // generate random 'iv' and 'password' string
     rc = ha_random_string(iv, HA_MD5_BYTE_LEN);
@@ -155,7 +243,7 @@ static int update_password(sdbclient::sdb &conn, const st_args &args) {
     HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
 
     // encrypt password with 'iv' and 'key'
-    rc = ha_aes_128_cbc_encrypt(password, &cipher[0], md5_key, md5_iv);
+    rc = ha_aes_128_cbc_encrypt(password, cipher, md5_key, md5_iv);
     HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
 
     // encode to base64
@@ -177,7 +265,8 @@ static int update_password(sdbclient::sdb &conn, const st_args &args) {
     return SDB_HA_EXCEPTION;
   }
   rc = ha_config_cl.update(rule);
-  HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
+  HA_TOOL_RC_CHECK(rc, rc, "Error: failed to update '%s', error: %s",
+                   HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
   return SDB_HA_OK;
 }
 
@@ -198,6 +287,16 @@ int main(int argc, char *argv[]) {
       cmd_args.new_password =
           ha_get_password("Enter instance group user password: ", false);
     }
+
+    if (cmd_args.new_password.length() > HA_MAX_PASSWD_LEN) {
+      cerr << "Error: password is too long, max password length is "
+           << HA_MAX_PASSWD_LEN << endl;
+      return SDB_HA_EXCEPTION;
+    }
+
+    rc = check_key(conn, cmd_args);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to check key");
+
     rc = update_password(conn, cmd_args);
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to update password for instance group");

@@ -205,18 +205,18 @@ static int init_config(const st_args &args,
   string password_md5_hex_str, name_md5_hex_str;
   string iv, password, auth_str, encoded;
 
-  uchar cipher[HA_SHA256_BYTE_LEN] = {0};
+  std::vector<uchar> cipher;
   uchar md5_iv[HA_MD5_BYTE_LEN] = {0};
   uchar md5_password[HA_MD5_BYTE_LEN] = {0};
   uchar md5_key[HA_MD5_BYTE_LEN] = {0};
   uchar md5_name[HA_MD5_BYTE_LEN] = {0};
 
-  // generate random 'iv' and 'password' string
-  int rc = 0;
+  // generate random 'iv' and 'password' string with length HA_MD5_BYTE_LEN
+  int rc = SDB_HA_OK, password_len = HA_MD5_BYTE_LEN;
   rc = ha_random_string(iv, HA_MD5_BYTE_LEN);
   HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
 
-  rc = ha_random_string(password, HA_MD5_BYTE_LEN);
+  rc = ha_random_string(password, password_len);
   HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
 
   // calculcate md5 for 'iv', 'password', 'key', 'name'
@@ -241,8 +241,7 @@ static int init_config(const st_args &args,
   HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
 
   // encode to base64
-  const std::vector<uchar> binary(cipher, cipher + 32);
-  encoded = ha_base64_encode(binary);
+  encoded = ha_base64_encode(cipher);
 
   rc = ha_create_mysql_auth_string(password, auth_str);
   HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
