@@ -308,8 +308,15 @@ sub mtr_generate_xml_report($) {
 
     my $time = $tinfo->{'timer'} / 1000.0;
     if ( $tinfo->{'result'} eq 'MTR_RES_FAILED' ) {
+      my $logcontents = $tinfo->{'logfile-failed'} || $tinfo->{'logfile'};
+      $logcontents= $logcontents.$tinfo->{'warnings'}."\n";
+      # remove any double ] that would end the cdata
+      $logcontents =~ s/]]/\x{fffd}/g;
+      # replace wide characters that aren't allowed in XML 1.0
+      $logcontents =~ s/[\x00-\x08\x0B\x0C\x0E-\x1F]/\x{fffd}/g;
+
       print $xml_report_file "    <testcase name=\"$tname\" status=\"run\" time=\"$time\" classname=\"$tsuite\" >\n";
-      print $xml_report_file "       <failure message=\"test failed:\" type=\"\"><![CDATA[$tinfo->{'comment'}]]></failure>\n";
+      print $xml_report_file "       <failure message=\"test failed:\" type=\"\">\n\t\t<![CDATA[\n".$logcontents."\n\t]]>\n\t</failure>\n";
       print $xml_report_file "    </testcase>\n";
     }
     elsif ( $tinfo->{'result'} eq 'MTR_RES_SKIPPED' ) {
