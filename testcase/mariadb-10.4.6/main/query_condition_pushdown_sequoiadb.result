@@ -7880,34 +7880,34 @@ id	a	c
 1	1	op
 2	-1	bc
 3	10	123
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[3], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[3], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 ORDER BY id LIMIT 2 OFFSET 4;
 id	a	c
 5	-9	001
 6	15	9a
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[2], offset[4], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[2], offset[4], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE NOT a > 3 ORDER BY id LIMIT 2;
 id	a	c
 1	1	op
 2	-1	bc
-[Note] SequoiaDB: Query message: condition[{ "a": { "$lte": 3 } }], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[2], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$lte": 3 } }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[2], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE id >= 5 AND a < 10 OR c = 'abc' ORDER BY id LIMIT 2 OFFSET 1;
 id	a	c
 7	0	abc
 8	5	jk
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "id": { "$gte": 5 } }, { "a": { "$lt": 10 } } ] }, { "c": { "$et": "abc" } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[2], offset[1], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "$and": [ { "id": { "$gte": 5 } }, { "a": { "$lt": 10 } } ] }, { "c": { "$et": "abc" } } ] }], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[2], offset[1], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 ORDER BY id LIMIT 3 OFFSET 1;
 id	a	c
 2	-1	bc
 3	10	123
 4	1	tf
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[3], offset[1], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[3], offset[1], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE c > 'a' ORDER BY a,c LIMIT 3 OFFSET 2;
 id	a	c
 11	1	bc
 1	1	op
 4	1	tf
-[Note] SequoiaDB: Query message: condition[{ "c": { "$gt": "a" } }], selector[{}], order_by[{ "a": 1, "c": 1 }], hint[{}], limit[3], offset[2], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "c": { "$gt": "a" } }], selector[{}], order_by[{ "a": 1, "c": 1 }], hint[{ "": "" }], limit[3], offset[2], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE id > LENGTH(c) ORDER BY id LIMIT 3;
 id	a	c
 4	1	tf
@@ -7926,7 +7926,7 @@ id	a	c
 1	1	op
 4	1	tf
 8	5	jk
-[Note] SequoiaDB: Query message: condition[{ "id": { "$lte": 10 } }], selector[{}], order_by[{ "a": 1, "id": 1 }], hint[{}], limit[4], offset[2], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "id": { "$lte": 10 } }], selector[{}], order_by[{ "a": 1, "id": 1 }], hint[{ "": "" }], limit[4], offset[2], table[query_pushdown_test_sequoiadb.t1]
 SELECT id, FLOOR(id/2) AS s, COUNT(*) AS c FROM t1 ignore index(id,c) GROUP BY id,c ORDER BY id,c;
 id	s	c
 1	0	1
@@ -7984,7 +7984,7 @@ id	a	c
 SELECT FOUND_ROWS();
 FOUND_ROWS()
 11
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "id": 1 }], hint[{ "": "" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 CREATE TABLE t2 ( id INT, vc VARCHAR(16));
 INSERT INTO t2 VALUES (1,'op'),(-1,'bc'),(10,'123'),(7,'ui'),(18,'123'),(10,'hello'),(0,'bc');
 SELECT * FROM t2 LEFT JOIN t1 ignore index(id,c) ON t2.id = t1.id ORDER BY t2.id LIMIT 3 OFFSET 1;
@@ -13458,7 +13458,7 @@ select * from t1 where a=3 or b>0 order by a,b limit 2 offset 2;
 a	b
 3	3
 5	5
-[Note] SequoiaDB: Query message: condition[{ "$or": [ { "a": { "$et": 3 } }, { "b": { "$gt": 0 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{}], limit[2], offset[2], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$or": [ { "a": { "$et": 3 } }, { "b": { "$gt": 0 } } ] }], selector[{}], order_by[{ "a": 1, "b": 1 }], hint[{ "": "" }], limit[2], offset[2], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a=3 or b>0 group by a,b limit 2 offset 2;
 a	b
 3	3
@@ -13468,7 +13468,7 @@ select * from t1 where a in(3, 5, 6, 2) order by a desc, b limit 2 offset 2;
 a	b
 5	5
 3	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 3, 5, 6, 2 ] } }], selector[{}], order_by[{ "a": -1, "b": 1 }], hint[{}], limit[2], offset[2], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$in": [ 3, 5, 6, 2 ] } }], selector[{}], order_by[{ "a": -1, "b": 1 }], hint[{ "": "" }], limit[2], offset[2], table[query_pushdown_test_sequoiadb.t1]
 select * from t1 where a in(3, 5, 6, 2) group by a limit 2 offset 2;
 a	b
 5	5
