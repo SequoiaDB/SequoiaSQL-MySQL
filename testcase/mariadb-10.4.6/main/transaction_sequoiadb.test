@@ -3,10 +3,10 @@
 
 --source include/have_sequoiadb.inc
 
-let $tx_iso= `SELECT @@tx_isolation`;
-if($tx_iso == 'REPEATABLE-READ'){
+let $tx_iso = SELECT TRANS_ISOLATION FROM information_schema.SDB_SESSION_ATTR_CURRENT;
+if( $tx_iso == 3 ){
     echo $tx_iso;
-    skip TRANSACTION ISOLATION LEVEL is RR, but the result of this test is for RC
+    skip the testcase, the TRANS_ISOLATION is 3;
 }
 
 --disable_query_log
@@ -481,28 +481,28 @@ SELECT * FROM t1;
 COMMIT;
 SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
-SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-disconnect con1;
+#SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+#disconnect con1;
 
 #Bug #SEQUOIASQLMAINSTREAM-721
-connect (con1, localhost, root);
-connection con1;
-BEGIN;
---error 131
-SELECT * FROM t1;
-ROLLBACK;
+#connect (con1, localhost, root);
+#connection con1;
+#BEGIN;
+#--error 131
+#SELECT * FROM t1;
+#ROLLBACK;
 
-SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-BEGIN;
---error 131
-SELECT * FROM t1;
-ROLLBACK;
+#SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+#BEGIN;
+#--error 131
+#SELECT * FROM t1;
+#ROLLBACK;
 
-SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
-BEGIN;
---error 131
-SELECT * FROM t1;
-ROLLBACK;
+#SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+#BEGIN;
+#--error 131
+#SELECT * FROM t1;
+#ROLLBACK;
 
 connection default;
 DROP TABLE t1;
