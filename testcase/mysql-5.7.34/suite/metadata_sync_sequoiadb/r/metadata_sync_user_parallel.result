@@ -1,15 +1,15 @@
+set session server_ha_wait_sync_timeout = 10;
+set session server_ha_wait_sync_timeout = 10;
 drop database if exists metadata_sync_23102;
 drop database if exists metadata_sync_user_parallel;
 create database metadata_sync_23102;
 create database metadata_sync_user_parallel;
 use metadata_sync_23102;
 CREATE TABLE t1(a INT NOT NULL, b INT, c INT);
-set server_ha_wait_sync_timeout = 10;
 drop user if exists metadata_sync_user_23102;
 flush privileges;
 create user 'metadata_sync_user_23102'@'%' IDENTIFIED BY 'metadata_sync_user_23102';
 flush privileges;
-set server_ha_wait_sync_timeout = 10;
 GRANT create,alter,drop ON t1 TO metadata_sync_user_23102@'%' IDENTIFIED BY 'metadata_sync_user_23102' WITH GRANT OPTION;
 Warnings:
 Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
@@ -151,13 +151,11 @@ use metadata_sync_23104;
 drop user if exists metadata_sync_user_23104;
 create user 'metadata_sync_user_23104';
 flush privileges;
-set server_ha_wait_sync_timeout = 0;
 create function hello23104 (s char(20)) returns char(50) deterministic return concat('Hello,' , s , '!');
 GRANT alter routine ON function metadata_sync_23104.hello23104 TO metadata_sync_user_23104@'%' IDENTIFIED BY 'metadata_sync_user_23104' WITH GRANT OPTION;
 Warnings:
 Warning	1287	Using GRANT statement to modify existing user's properties other than privileges is deprecated and will be removed in future release. Use ALTER USER statement for this operation.
 FLUSH PRIVILEGES;
-set server_ha_wait_sync_timeout = 0;
 alter function metadata_sync_23104.hello23104 comment 'test';
 revoke alter routine on function metadata_sync_23104.hello23104 from metadata_sync_user_23104@'%';
 FLUSH PRIVILEGES;
@@ -176,4 +174,5 @@ select metadata_sync_23104.hello23104('world');
 ERROR 42000: execute command denied to user 'metadata_sync_user_23104'@'%' for routine 'metadata_sync_23104.hello23104'
 drop database metadata_sync_23104;
 drop database metadata_sync_user_parallel;
-set server_ha_wait_sync_timeout = 0;
+set session server_ha_wait_sync_timeout = default;
+set session server_ha_wait_sync_timeout = default;

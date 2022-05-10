@@ -129,18 +129,6 @@ a
 2
 3
 connection conn1;
-alter table t1 auto_increment = 2002;
-connection conn2;
-insert into t1 values(),(),();
-select * from t1 order by a;
-a
-1
-2
-3
-2002
-2003
-2004
-connection conn1;
 alter table t1 change a col1 int auto_increment;
 connection conn2;
 insert into t1 values(),(),();
@@ -829,12 +817,15 @@ a	b	c
 1	1	1
 connection conn1;
 drop database if exists table_ddl_dml_parallel_user;
+GRANT USAGE ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
+drop user 'table_ddl_dml_parallel_user'@'%';
+FLUSH PRIVILEGES;
 create user 'table_ddl_dml_parallel_user';
 GRANT SELECT ON metadata_sync_table_ddl_dml_parallel.* TO table_ddl_dml_parallel_user@'%' IDENTIFIED BY 'table_ddl_dml_parallel_user' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 connection conn2;
 alter definer=table_ddl_dml_parallel_user view v1 as select * from t1;
-connect   conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $port1 ;
+connect   conn3, $mysql_host1, 'table_ddl_dml_parallel_user', 'table_ddl_dml_parallel_user', $mysql_db, $mysql_port1 ;
 connection conn3;
 use metadata_sync_table_ddl_dml_parallel;
 select * from v1 order by a;

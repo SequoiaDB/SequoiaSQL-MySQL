@@ -3,6 +3,11 @@
 --source include/have_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_connect_sequoiadb.inc
 
+connection conn1;
+set session server_ha_wait_sync_timeout = 10;
+connection conn2;
+set session server_ha_wait_sync_timeout = 10;
+
 # connect to conn1, clear users in the beginning
 connection conn1;
 --disable_warnings
@@ -83,6 +88,11 @@ SHOW GRANTS FOR 'metasync_user3'@'localhost';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metasync_user1_new';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metasync_user2_new';
 SELECT user, host, password_expired FROM mysql.user WHERE user = 'metasync_user3';
+
+connection conn1;
+set session server_ha_wait_sync_timeout = default;
+connection conn2;
+set session server_ha_wait_sync_timeout = default;
 
 --source include/uninstall_sequoiadb.inc
 --source suite/metadata_sync_sequoiadb/inc/insts_disconnect_sequoiadb.inc
