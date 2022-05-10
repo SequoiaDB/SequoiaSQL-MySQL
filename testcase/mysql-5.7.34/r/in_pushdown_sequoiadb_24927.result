@@ -30,10 +30,13 @@ a	b	c
 select count(1) from in_pushdown_sequoiadb24927 where a in (1,2,3);
 count(1)
 12
+[Note] SequoiaDB: Count message: condition[{ "a": { "$in": [ 1, 2, 3 ] } }],hint[{}] table[test_parallel_1.in_pushdown_sequoiadb24927]
 select count(1) from in_pushdown_sequoiadb24927 where b in (1,2,3);
 count(1)
 10
+[Note] SequoiaDB: Count message: condition[{ "b": { "$in": [ 1, 2, 3 ] } }],hint[{ "": "b" }] table[test_parallel_1.in_pushdown_sequoiadb24927]
 update in_pushdown_sequoiadb24927 set a = 2 where a in (1,2,3);
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "a": 2 } }, condition: { "a": { "$in": [ 1, 2, 3 ] } }, table: test_parallel_1.in_pushdown_sequoiadb24927
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 a	b	c
 2	1	1
@@ -57,6 +60,7 @@ a	b	c
 5	4	5
 5	4	5
 update in_pushdown_sequoiadb24927 set b = 2 where a in (1,2,3);
+[Note] SequoiaDB: optimizer update: 1, rule: { "$set": { "b": 2 } }, condition: { "a": { "$in": [ 1, 2, 3 ] } }, table: test_parallel_1.in_pushdown_sequoiadb24927
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 a	b	c
 2	2	1
@@ -80,6 +84,7 @@ a	b	c
 5	4	5
 5	4	5
 delete from in_pushdown_sequoiadb24927 where a in (1,2,3);
+[Note] SequoiaDB: optimizer delete: 1, condition: { "a": { "$in": [ 1, 2, 3 ] } }, table: test_parallel_1.in_pushdown_sequoiadb24927
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 a	b	c
 4	2	4
@@ -91,6 +96,7 @@ a	b	c
 5	4	5
 5	4	5
 delete from in_pushdown_sequoiadb24927 where b in (1,2,3);
+[Note] SequoiaDB: optimizer delete: 1, condition: { "b": { "$in": [ 1, 2, 3 ] } }, table: test_parallel_1.in_pushdown_sequoiadb24927
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 a	b	c
 4	5	4
