@@ -17,18 +17,28 @@ insert into in_pushdown_sequoiadb24927 values(1,4,2),(2,5,1),(3,6,4),(4,5,4),(5,
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 
 select count(1) from in_pushdown_sequoiadb24927 where a in (1,2,3);
+--source include/query_pushdown_condition_sequoiadb.inc
 select count(1) from in_pushdown_sequoiadb24927 where b in (1,2,3);
+--source include/query_pushdown_condition_sequoiadb.inc
 
 update in_pushdown_sequoiadb24927 set a = 2 where a in (1,2,3);
+--source include/query_pushdown_condition_sequoiadb.inc
+
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 
 update in_pushdown_sequoiadb24927 set b = 2 where a in (1,2,3);
+--source include/query_pushdown_condition_sequoiadb.inc
+
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 
 delete from in_pushdown_sequoiadb24927 where a in (1,2,3);
+--source include/query_pushdown_condition_sequoiadb.inc
+
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 
 delete from in_pushdown_sequoiadb24927 where b in (1,2,3);
+--source include/query_pushdown_condition_sequoiadb.inc
+
 select * from in_pushdown_sequoiadb24927 order by a,b,c;
 
 drop table in_pushdown_sequoiadb24927;
