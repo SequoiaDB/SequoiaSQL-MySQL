@@ -50,7 +50,6 @@ void ha_sdb_cond_ctx::reset() {
   status = SDB_COND_UNCALLED;
   bitmap_clear_all(&pushed_cond_set);
   bitmap_clear_all(&where_cond_set);
-  has_null_func = false;
   clear();
 }
 
@@ -312,12 +311,10 @@ Sdb_item *ha_sdb_cond_ctx::create_sdb_item(Item_func *cond_item) {
       break;
     }
     case Item_func::ISNULL_FUNC: {
-      has_null_func = true;
       item = new Sdb_func_isnull();
       break;
     }
     case Item_func::ISNOTNULL_FUNC: {
-      has_null_func = true;
       item = new Sdb_func_isnotnull();
       break;
     }
