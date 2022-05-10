@@ -70,6 +70,11 @@
 #define HA_FIELD_MD5_PASSWORD "MD5Password"
 #define HA_FIELD_EXPLICITS_DEFAULTS_TIMESTAMP "ExplicitDefaultsTimestamp"
 #define HA_FIELD_DATA_GROUP "DataGroup"
+#define HA_FIELD_CONFIG_TYPE "ConfigType"
+
+// configuration type in HAConfig
+#define HA_CONFIG_TYPE_CONFIG "HA_CONFIG"
+#define HA_DEF_COUNT_OF_CONFIG 1
 
 #define HA_FIELD_SQL_ID "SQLID"
 #define HA_FIELD_DB "DB"
@@ -110,6 +115,7 @@
 #define HA_PENDING_LOG_PENDING_ID_INDEX "PendingLogPendingIDIndex"
 #define HA_PENDING_OBJECT_DB_TABLE_TYPE_INDEX "PendingObjectDBTableTypeIndex"
 #define HA_PENDING_OBJECT_SQLID_INDEX "PendingObjectSQLIDIndex"
+#define HA_CONFIG_CONFIG_TYPE_INDEX "ConfigConfigTypeIndex"
 
 #define HA_LOOPBACK_ADDRESS "127.0.0.1"
 

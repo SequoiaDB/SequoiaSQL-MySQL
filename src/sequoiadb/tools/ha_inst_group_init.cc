@@ -466,8 +466,20 @@ int main(int argc, char *argv[]) {
                      "sequoiadb error: %s",
                      HA_SQL_LOG_CL, sdb_err);
 
+    // create index on 'ConfigType' for 'HAConfig'
+    index_ref = BSON(HA_FIELD_CONFIG_TYPE << 1);
+    key_options = BSON(SDB_FIELD_UNIQUE << 1);
+    rc = inst_group_config_cl.createIndex(
+        index_ref, HA_CONFIG_CONFIG_TYPE_INDEX, key_options);
+    sdb_err = rc ? ha_sdb_error_string(conn, rc) : "";
+    HA_TOOL_ERR_GOTO(rc, clear_inst_group_cs,
+                     "Error: failed to create index on '%s', "
+                     "sequoiadb error: %s",
+                     HA_CONFIG_CL, sdb_err);
+
     // init 'HAConfig'
     builder.reset();
+    builder.append(HA_FIELD_CONFIG_TYPE, HA_CONFIG_TYPE_CONFIG);
     builder.append(HA_FIELD_AUTH_STRING, ha_config.auth_str);
     builder.append(HA_FIELD_HOST, HA_MYSQL_AUTH_HOSTS);
     builder.append(HA_FIELD_IV, ha_config.iv);

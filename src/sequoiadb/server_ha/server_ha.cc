@@ -5272,7 +5272,7 @@ static int check_mapping_enabled_flag() {
   Sdb_pool_conn pool_conn(0, true);
   Sdb_conn &sdb_conn = pool_conn;
   Sdb_cl config_cl;
-  bson::BSONObj obj;
+  bson::BSONObj obj, cond;
   bson::BSONElement elem;
   const char *data_group = NULL;
   bool mapping_table_exists = true;
@@ -5290,7 +5290,13 @@ static int check_mapping_enabled_flag() {
     rc = sdb_conn.get_cl(ha_thread.sdb_group_name, HA_CONFIG_CL, config_cl);
     HA_RC_CHECK(rc, error, "Failed to get '%s', error: %d", HA_CONFIG_CL, rc);
 
-    rc = config_cl.query();
+    try {
+      cond = BSON(HA_FIELD_CONFIG_TYPE << HA_CONFIG_TYPE_CONFIG);
+    }
+    SDB_EXCEPTION_CATCHER(
+        rc, "Unexpected error '%d' while check 'sequoiadb_enable_mapping' flag",
+        rc);
+    rc = config_cl.query(cond);
     HA_RC_CHECK(rc, error, "Failed to query '%s', error: %d", HA_CONFIG_CL, rc);
 
     rc = config_cl.next(obj, false);
@@ -5380,6 +5386,91 @@ done:
 error:
   goto done;
 }
+/*
+   1. create index on ConfigType of 'HAConfig' if it does not exist.
+   2. set ConfigType field for the first record if it does not exist.
+   it must be consistent with the logic of 'upgrade_config_table' in
+   ha_inst_group_chpass.cc
+*/
+static int upgrade_config_table() {
+  Sdb_pool_conn pool_conn(0, true);
+  Sdb_conn &sdb_conn = pool_conn;
+  Sdb_cl config_cl;
+  bson::BSONObj obj, config_type, index_info;
+  int rc = SDB_ERR_OK;
+  longlong count = 0;
+  bool index_exist = true;
+  char err_buf[HA_BUF_LEN] = {0};
+  rc = sdb_conn.connect();
+  HA_RC_CHECK(rc, error, "Failed to connect SequoiaDB, error: %s",
+              ha_error_string(sdb_conn, rc, err_buf));
+
+  rc = sdb_conn.get_cl(ha_thread.sdb_group_name, HA_CONFIG_CL, config_cl);
+  HA_RC_CHECK(rc, error, "Failed to get '%s', error: %s", HA_CONFIG_CL,
+              ha_error_string(sdb_conn, rc, err_buf));
+
+  rc = config_cl.get_index(HA_CONFIG_CONFIG_TYPE_INDEX, index_info);
+  if (SDB_IXM_NOTEXIST == get_sdb_code(rc)) {
+    SDB_LOG_INFO("HA: Index '%s' does not exist", HA_CONFIG_CONFIG_TYPE_INDEX);
+    index_exist = false;
+    rc = 0;
+  }
+  HA_RC_CHECK(rc, error, "Failed to get index '%s' from '%s', error: %s",
+              HA_CONFIG_CONFIG_TYPE_INDEX, HA_CONFIG_CL,
+              ha_error_string(sdb_conn, rc, err_buf));
+
+  try {
+    if (!index_exist) {
+      SDB_LOG_INFO("HA: Create index '%s' on '%s'", HA_CONFIG_CONFIG_TYPE_INDEX,
+                   HA_CONFIG_CL);
+      bson::BSONObj index_ref, key_options;
+      index_ref = BSON(HA_FIELD_CONFIG_TYPE << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = config_cl.create_index(index_ref, HA_CONFIG_CONFIG_TYPE_INDEX,
+                                  key_options);
+      int sdb_rc = get_sdb_code(rc);
+      rc = (SDB_IXM_EXIST == sdb_rc || SDB_IXM_REDEF == sdb_rc) ? 0 : rc;
+      HA_RC_CHECK(rc, error,
+                  "HA: Unable to create index on '%s', sequoiadb error: %s",
+                  HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+    }
+    // set ConfigType field if there is only one record in 'HAConfig'
+    rc = config_cl.get_count(count);
+    HA_RC_CHECK(rc, error,
+                "HA: Failed to get count from: %s, sequoiadb error: %s",
+                HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+    // only one record in 'HAConfig', set 'ConfigType' for 'HAConfig'
+    if (HA_DEF_COUNT_OF_CONFIG == count) {
+      const char *config_type_str = NULL;
+      rc = config_cl.query();
+      HA_RC_CHECK(rc, error, "Failed to get data from '%s', error: %s",
+                  HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      rc = config_cl.next(obj, false);
+      HA_RC_CHECK(rc, error, "Failed to get data from '%s', error: %s",
+                  HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
+
+      config_type_str = obj.getStringField(HA_FIELD_CONFIG_TYPE);
+      if (0 != strcmp(config_type_str, HA_CONFIG_TYPE_CONFIG)) {
+        SDB_LOG_INFO("HA: Set '%s' field to '%s' for the only one record",
+                     HA_FIELD_CONFIG_TYPE, HA_CONFIG_TYPE_CONFIG);
+        config_type = BSON(HA_FIELD_CONFIG_TYPE << HA_CONFIG_TYPE_CONFIG);
+        obj = BSON("$set" << config_type);
+        rc = config_cl.update(obj);
+        HA_RC_CHECK(rc, error, "Failed to set '%s' field for '%s', error: %s",
+                    HA_FIELD_CONFIG_TYPE, HA_CONFIG_CL,
+                    ha_error_string(sdb_conn, rc, err_buf));
+      }
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to upgrade '%s', error: %d", HA_CONFIG_CL,
+                        rc);
+done:
+  return rc;
+error:
+  goto done;
+}
 
 // HA plugin initialization entry
 static int server_ha_init(void *p) {
@@ -5419,6 +5510,10 @@ static int server_ha_init(void *p) {
   Name_mapping::set_sql_group(ha_inst_group_name);
   Name_mapping::set_mapping_unit_size(sdb_mapping_unit_size);
   Name_mapping::set_mapping_unit_count(sdb_mapping_unit_count);
+
+  if (!opt_bootstrap && 0 != ha_inst_group_name[0] && upgrade_config_table()) {
+    DBUG_RETURN(SDB_HA_EXCEPTION);
+  }
 
   // check if mapping can be enabled or disabled
   if (!opt_bootstrap && check_mapping_enabled_flag()) {

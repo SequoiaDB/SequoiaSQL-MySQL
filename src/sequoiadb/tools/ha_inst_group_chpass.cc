@@ -109,6 +109,90 @@ static error_t parse_option(int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
+/*
+  1. create index on ConfigType of 'HAConfig' if it does not exist.
+  2. set ConfigType field for the first record if it does not exist.
+  it must be consistent with the logic of 'upgrade_config_table' in server_ha.cc
+*/
+static int upgrade_config_table(sdbclient::sdb &conn, const st_args &args) {
+  int rc = SDB_HA_OK;
+  sdbclient::sdbCollectionSpace inst_group_cs;
+  sdbclient::sdbCollection ha_config_cl;
+  bson::BSONObj obj, config_type, index_info;
+  long long count = 0;
+  bool index_exist = true;
+  try {
+    rc = conn.getCollectionSpace(args.inst_group_name.c_str(), inst_group_cs);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to get CS '%s', error: %s",
+                     args.inst_group_name.c_str(),
+                     ha_sdb_error_string(conn, rc));
+
+    rc = inst_group_cs.getCollection(HA_CONFIG_CL, ha_config_cl);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to get CL '%s', error: %s",
+                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+
+    rc = ha_config_cl.getIndex(HA_CONFIG_CONFIG_TYPE_INDEX, index_info);
+    if (SDB_IXM_NOTEXIST == rc) {
+      cout << "Info: index '" << HA_CONFIG_CONFIG_TYPE_INDEX
+           << "' does not exist" << endl;
+      index_exist = false;
+      rc = 0;
+    }
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to get index on '%s', sequoiadb error: %s",
+                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+
+    if (!index_exist) {
+      cout << "Info: create index '" << HA_CONFIG_CONFIG_TYPE_INDEX << "' on "
+           << HA_CONFIG_CL << endl;
+      // create index "ConfigConfigTypeIndex", ignore index exist error
+      bson::BSONObj index_ref, key_options;
+      // create index on 'ConfigType' for 'HAConfig'
+      index_ref = BSON(HA_FIELD_CONFIG_TYPE << 1);
+      key_options = BSON(SDB_FIELD_UNIQUE << 1);
+      rc = ha_config_cl.createIndex(index_ref, HA_CONFIG_CONFIG_TYPE_INDEX,
+                                    key_options);
+      rc = (SDB_IXM_EXIST == rc || SDB_IXM_REDEF == rc) ? 0 : rc;
+      HA_TOOL_RC_CHECK(
+          rc, rc, "Error: failed to create index on '%s', sequoiadb error: %s",
+          HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+    }
+    // set ConfigType field if there is only one record in 'HAConfig'
+    rc = ha_config_cl.getCount(count);
+    HA_TOOL_RC_CHECK(rc, rc,
+                     "Error: failed to get count from '%s' table, error: %s",
+                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+
+    if (HA_DEF_COUNT_OF_CONFIG == count) {
+      sdbclient::sdbCursor cursor;
+      const char *config_type_str = NULL;
+      rc = ha_config_cl.query(cursor);
+      HA_TOOL_RC_CHECK(rc, rc, "Failed to get data from '%s', error: %s",
+                       HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+
+      rc = cursor.next(obj, true);
+      HA_TOOL_RC_CHECK(rc, rc, "Failed to get data from '%s', error: %s",
+                       HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
+
+      config_type_str = obj.getStringField(HA_FIELD_CONFIG_TYPE);
+      if (0 != strcmp(config_type_str, HA_CONFIG_TYPE_CONFIG)) {
+        cout << "Info: set '" << HA_FIELD_CONFIG_TYPE << "' field to "
+             << HA_CONFIG_CL << " for the only one record" << endl;
+        config_type = BSON(HA_FIELD_CONFIG_TYPE << HA_CONFIG_TYPE_CONFIG);
+        obj = BSON("$set" << config_type);
+        rc = ha_config_cl.update(obj);
+        HA_TOOL_RC_CHECK(rc, rc, "failed to set '%s' field for '%s', error: %s",
+                         HA_FIELD_CONFIG_TYPE, HA_CONFIG_CL,
+                         ha_sdb_error_string(conn, rc));
+      }
+    }
+  } catch (std::exception &e) {
+    cerr << "Error: unexpected error: " << e.what() << endl;
+    return SDB_HA_EXCEPTION;
+  }
+  return rc;
+}
+
 // check if key is correct
 static int check_key(sdbclient::sdb &conn, const st_args &args) {
   int rc = SDB_HA_OK;
@@ -125,30 +209,18 @@ static int check_key(sdbclient::sdb &conn, const st_args &args) {
                    HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
 
   try {
-    long long count = 0;
-    const int COUNT_OF_HA_CONFIG = 1;
     uchar md5_iv[HA_MD5_BYTE_LEN] = {0};
     uchar md5_password[HA_MD5_BYTE_LEN] = {0};
     uchar md5_key[HA_MD5_BYTE_LEN] = {0};
     string md5_password_str, password;
 
-    // make sure that only one record in 'HAConfig'
-    rc = ha_config_cl.getCount(count);
-    HA_TOOL_RC_CHECK(rc, rc,
-                     "Error: failed to get count from '%s' table, error: %s",
-                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
-    if (COUNT_OF_HA_CONFIG != count) {
-      cerr << "Error: instance group configuration is not correct" << endl;
-      return SDB_HA_EXCEPTION;
-    }
-
+    cond = BSON(HA_FIELD_CONFIG_TYPE << HA_CONFIG_TYPE_CONFIG);
     rc = ha_config_cl.query(cursor, cond);
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to get instance group configuration from "
                      "'%s' table, error: %s",
                      HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
 
-    // only one record in 'HAConfig'
     rc = cursor.next(result, true);
     HA_TOOL_RC_CHECK(rc, rc,
                      "Error: failed to get result from '%s' table, error: %s",
@@ -208,7 +280,7 @@ static int update_password(sdbclient::sdb &conn, const st_args &args) {
   string password = args.new_password;
   sdbclient::sdbCollectionSpace inst_group_cs;
   sdbclient::sdbCollection ha_config_cl;
-  bson::BSONObj rule;
+  bson::BSONObj rule, cond;
   bson::BSONObjBuilder builder;
   int rc = SDB_HA_OK;
   uchar md5_iv[HA_MD5_BYTE_LEN] = {0};
@@ -226,6 +298,7 @@ static int update_password(sdbclient::sdb &conn, const st_args &args) {
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to get CL '%s', error: %s",
                      HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
 
+    cond = BSON(HA_FIELD_CONFIG_TYPE << HA_CONFIG_TYPE_CONFIG);
     // generate random 'iv' and 'password' string
     rc = ha_random_string(iv, HA_MD5_BYTE_LEN);
     HA_TOOL_RC_CHECK(rc, rc, "Error: %s", ha_error_string(rc).c_str());
@@ -260,13 +333,13 @@ static int update_password(sdbclient::sdb &conn, const st_args &args) {
     sub_builder.append(HA_FIELD_MD5_PASSWORD, password_md5_hex_str);
     sub_builder.doneFast();
     rule = builder.done();
+    rc = ha_config_cl.update(rule, cond);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to update '%s', error: %s",
+                     HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
   } catch (std::exception &e) {
     cerr << "Error: unexpected error: " << e.what() << endl;
     return SDB_HA_EXCEPTION;
   }
-  rc = ha_config_cl.update(rule);
-  HA_TOOL_RC_CHECK(rc, rc, "Error: failed to update '%s', error: %s",
-                   HA_CONFIG_CL, ha_sdb_error_string(conn, rc));
   return SDB_HA_OK;
 }
 
@@ -293,6 +366,9 @@ int main(int argc, char *argv[]) {
            << HA_MAX_PASSWD_LEN << endl;
       return SDB_HA_EXCEPTION;
     }
+
+    rc = upgrade_config_table(conn, cmd_args);
+    HA_TOOL_RC_CHECK(rc, rc, "Error: failed to upgrade '%s'", HA_CONFIG_CL);
 
     rc = check_key(conn, cmd_args);
     HA_TOOL_RC_CHECK(rc, rc, "Error: failed to check key");

@@ -358,11 +358,10 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
   char err_buf[HA_BUF_LEN] = {0};
   bool explicit_defaults_ts = 0;
 
-  bson::BSONObj obj;
+  longlong count = 0;
+  bson::BSONObj obj, cond;
   bson::BSONElement elem;
   Sdb_cl config_cl;
-  bool mapping_table_exist = true;
-  const char *data_group = NULL;
 
   rc = sdb_conn.get_cl(ha_thread->sdb_group_name, HA_CONFIG_CL, config_cl);
   HA_RC_CHECK(rc, error,
@@ -370,7 +369,13 @@ static int load_and_check_inst_config(ha_recover_replay_thread *ha_thread,
               "sequoiadb error: %s",
               HA_CONFIG_CL, ha_error_string(sdb_conn, rc, err_buf));
 
-  if (0 == (rc = config_cl.query())) {
+  try {
+    cond = BSON(HA_FIELD_CONFIG_TYPE << HA_CONFIG_TYPE_CONFIG);
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Unexpected error '%d' while loading instance group config", rc);
+
+  if (0 == (rc = config_cl.query(cond))) {
     rc = config_cl.next(obj, true);
   }
   HA_RC_CHECK(rc, error,

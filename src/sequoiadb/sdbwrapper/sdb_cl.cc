@@ -662,6 +662,24 @@ int Sdb_cl::get_indexes(std::vector<bson::BSONObj> &infos) {
   return retry(boost::bind(cl_get_indexes, &m_cl, &infos));
 }
 
+int cl_get_index(sdbclient::sdbCollection *cl, const char *index_name,
+                 bson::BSONObj *index_info) {
+  int rc = SDB_ERR_OK;
+  try {
+    rc = cl->getIndex(index_name, *index_info);
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to get index of collection, exception:%s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int Sdb_cl::get_index(const char *index_name, bson::BSONObj &index_info) {
+  return retry(boost::bind(cl_get_index, &m_cl, index_name, &index_info));
+}
+
 int cl_attach_collection(sdbclient::sdbCollection *cl,
                          const char *sub_cl_fullname,
                          const bson::BSONObj *options) {
