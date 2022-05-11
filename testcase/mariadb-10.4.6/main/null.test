@@ -1,4 +1,10 @@
 # Initialise
+drop database if exists test_null;
+create database test_null;
+drop database test_null;
+create database test_null;
+use test_null;
+
 --disable_warnings
 drop table if exists t1, t2;
 --enable_warnings
@@ -1177,6 +1183,7 @@ INSERT INTO t1 VALUES (1),(2),(3);
 #SELECT * FROM t1 WHERE ((c1 IS NOT NULL) >= (NOT TRUE)) IS NOT NULL;
 SELECT * FROM t1 WHERE ((c1 IS NOT NULL) >= (NOT TRUE)) IS NOT NULL;
 DROP TABLE t1;
+drop database test_null;
 
 
 --echo #
