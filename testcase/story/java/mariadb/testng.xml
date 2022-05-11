@@ -29,7 +29,6 @@
 
     <test name="normaltest" parallel="classes" thread-count="5">
         <packages>
-            <package name="com.sequoiasql.datasrc"/>
             <package name="com.sequoiasql.index"/>
             <package name="com.sequoiasql.crud"/>
             <package name="com.sequoiasql.ddl"/>
