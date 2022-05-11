@@ -35,7 +35,7 @@ prepare stmt1 from "GRANT create,alter,drop ON t1 TO metadata_sync_user_23106@'%
 execute stmt1;
 deallocate prepare stmt1;
 FLUSH PRIVILEGES;
-connect   conn3, $mysql_host1, 'metadata_sync_user_23106', 'metadata_sync_user_23106', $mysql_db, $port1 ;
+connect   conn3, $mysql_host1, 'metadata_sync_user_23106', 'metadata_sync_user_23106', $mysql_db, $mysql_port1 ;
 connection conn3;
 prepare stmt1 from "alter table metadata_prepare.t1 add column d int;";
 execute stmt1;
@@ -46,7 +46,7 @@ prepare stmt1 from "revoke create,alter,drop on metadata_prepare.t1 from metadat
 execute stmt1;
 deallocate prepare stmt1;
 flush privileges;
-connect   conn3, $mysql_host1, 'metadata_sync_user_23106', 'metadata_sync_user_23106', $mysql_db, $port1 ;
+connect   conn3, $mysql_host1, 'metadata_sync_user_23106', 'metadata_sync_user_23106', $mysql_db, $mysql_port1 ;
 connection conn3;
 prepare stmt1 from "alter table metadata_prepare.t1 drop column d";
 execute stmt1;
