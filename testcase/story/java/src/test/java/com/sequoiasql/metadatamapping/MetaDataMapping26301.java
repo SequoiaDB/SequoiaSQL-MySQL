@@ -2,6 +2,10 @@ package com.sequoiasql.metadatamapping;
 
 import com.sequoiadb.base.*;
 import com.sequoiasql.testcommon.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.BasicBSONObject;
 import org.testng.Assert;
 import org.testng.SkipException;
@@ -16,7 +20,6 @@ import org.testng.annotations.Test;
  * @LastEditTime  : 2022.03.31
  * @LastEditors   : Xiao ZhenFan
  */
-
 
 public class MetaDataMapping26301 extends MysqlTestBase {
     private String clName = "TABLE_MAPPING";
@@ -67,23 +70,38 @@ public class MetaDataMapping26301 extends MysqlTestBase {
                 + "  PARTITION p3 VALUES LESS THAN (2020)\n" + ");" );
 
         // 获取元数据映射CS名称
+        String instanceGroupName = MetaDataMappingUtils.getInstGroupName( sdb,
+                MysqlTestBase.mysql1 );
         DBCursor cursor1 = sdb.listCollectionSpaces();
-        String mappingCLName = "";
+        String mappingCSName = "";
         while ( cursor1.hasNext() ) {
             String currentCSName = ( String ) cursor1.getNext().get( "Name" );
-            if ( currentCSName.contains( "SQL_NAME_MAPPING_" ) ) {
-                mappingCLName = currentCSName;
+            if ( currentCSName.contains( instanceGroupName.toUpperCase() ) ) {
+                mappingCSName = currentCSName;
                 break;
             }
         }
         cursor1.close();
+        
+        // debug
+        System.out.println( "mappingCSName :" +  mappingCSName);
+        jdbc.update( "use " + dbName + ";" );
+        List< String > tables = jdbc.query( "show tables ;" );
+        System.out.println( tables );
+        List< String > listCL = new ArrayList<>();
+        DBCursor cursor = sdb.listCollections();
+        while ( cursor.hasNext() ) {
+            listCL.add( cursor.getNext().toString() );
+        }
+        cursor.close();
+        System.out.println( listCL );
 
         // 验证映射表记录数的正确性
         int expCount1 = 10;
         int actCount1 = 0;
         BasicBSONObject options = new BasicBSONObject();
         options.put( "DBName", dbName );
-        DBCursor cursor2 = sdb.getCollectionSpace( mappingCLName )
+        DBCursor cursor2 = sdb.getCollectionSpace( mappingCSName )
                 .getCollection( clName ).query( options, null, null, null );
         while ( cursor2.hasNext() ) {
             cursor2.getNext();
@@ -96,7 +114,7 @@ public class MetaDataMapping26301 extends MysqlTestBase {
         jdbc.update( "drop table " + dbName + "." + tbName1 + ";" );
         int expCount2 = 5;
         int actCount2 = 0;
-        cursor2 = sdb.getCollectionSpace( mappingCLName )
+        cursor2 = sdb.getCollectionSpace( mappingCSName )
                 .getCollection( clName ).query( options, null, null, null );
         while ( cursor2.hasNext() ) {
             cursor2.getNext();
