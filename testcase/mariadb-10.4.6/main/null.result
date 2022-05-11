@@ -1,3 +1,10 @@
+drop database if exists test_null;
+Warnings:
+Note	1008	Can't drop database 'test_null'; database doesn't exist
+create database test_null;
+drop database test_null;
+create database test_null;
+use test_null;
 drop table if exists t1, t2;
 select null,\N,isnull(null),isnull(1/0),isnull(1/0 = null),ifnull(null,1),ifnull(null,"TRUE"),ifnull("TRUE","ERROR"),1/0 is null,1 is not null;
 NULL	NULL	isnull(null)	isnull(1/0)	isnull(1/0 = null)	ifnull(null,1)	ifnull(null,"TRUE")	ifnull("TRUE","ERROR")	1/0 is null	1 is not null
@@ -1713,7 +1720,7 @@ set names utf8;
 create table t1 (f1 varchar(10));
 insert into t1 values ('2015-12-31');
 select power( timestamp( nullif( '2002-09-08', f1 ) ), 24 ) from t1;
-ERROR 22003: DOUBLE value is out of range in 'pow(cast((case when '2002-09-08' = `X`.`t1`.`f1` then NULL else '2002-09-08' end) as datetime(6)),24)'
+ERROR 22003: DOUBLE value is out of range in 'pow(cast((case when '2002-09-08' = `test_null`.`t1`.`f1` then NULL else '2002-09-08' end) as datetime(6)),24)'
 drop table t1;
 CREATE TABLE t1 (f1 INT);
 INSERT INTO t1 VALUES (1),(2);
@@ -1756,6 +1763,7 @@ c1
 2
 3
 DROP TABLE t1;
+drop database test_null;
 #
 # End of 10.1 tests
 #

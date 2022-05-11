@@ -4,6 +4,11 @@
 
 --source include/have_sequoiadb.inc
 
+drop database if exists test_null;
+create database test_null;
+drop database test_null;
+create database test_null;
+use test_null;
 # Initialise
 --disable_warnings
 drop table if exists t1, t2;
@@ -271,6 +276,7 @@ CREATE TABLE t2 SELECT IFNULL(NULL, b) FROM t1;
 DESCRIBE t2;
 
 DROP TABLE t1, t2;
+drop database test_null;
 
 --echo # End of 5.0 tests
 

@@ -1,3 +1,10 @@
+drop database if exists test_null;
+Warnings:
+Note	1008	Can't drop database 'test_null'; database doesn't exist
+create database test_null;
+drop database test_null;
+create database test_null;
+use test_null;
 drop table if exists t1, t2;
 select null,\N,isnull(null),isnull(1/0),isnull(1/0 = null),ifnull(null,1),ifnull(null,"TRUE"),ifnull("TRUE","ERROR"),1/0 is null,1 is not null;
 NULL	NULL	isnull(null)	isnull(1/0)	isnull(1/0 = null)	ifnull(null,1)	ifnull(null,"TRUE")	ifnull("TRUE","ERROR")	1/0 is null	1 is not null
@@ -355,4 +362,5 @@ DESCRIBE t2;
 Field	Type	Null	Key	Default	Extra
 IFNULL(NULL, b)	decimal(1,0) unsigned	YES		NULL	
 DROP TABLE t1, t2;
+drop database test_null;
 # End of 5.0 tests
