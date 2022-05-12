@@ -134,16 +134,16 @@ public class CommentMapping25547 extends MysqlTestBase {
                 + "` (\n  `id` int(11) DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT"
                 + " CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='sequoiadb:"
                 + " { mapping:''" + csName1 + "." + mclName + "'' }'\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (10) COMMENT = 'sequoiadb: "
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (10) COMMENT = 'sequoiadb: "
                 + "{ mapping:\\'" + csName1 + "." + clName1 + "\\' }' ENGINE ="
-                + " SequoiaDB,\n PARTITION p1 VALUES LESS THAN (20) COMMENT = "
+                + " SequoiaDB,\n PARTITION `p1` VALUES LESS THAN (20) COMMENT = "
                 + "'sequoiadb: { mapping:\\'" + csName2 + "." + hashclName1
-                + "\\' }' ENGINE = SequoiaDB,\n PARTITION p2 VALUES LESS THAN "
+                + "\\' }' ENGINE = SequoiaDB,\n PARTITION `p2` VALUES LESS THAN "
                 + "(30) COMMENT = 'sequoiadb: { mapping:\\'" + csName1 + "."
-                + clName2 + "\\' }' ENGINE = SequoiaDB,\n PARTITION p3 VALUES "
+                + clName2 + "\\' }' ENGINE = SequoiaDB,\n PARTITION `p3` VALUES "
                 + "LESS THAN (40) COMMENT = 'sequoiadb: { mapping:\\'" + csName2
-                + "." + hashclName2 + "\\' }' ENGINE = SequoiaDB) */" );
+                + "." + hashclName2 + "\\' }' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         List< String > act2 = jdbc.query(
@@ -175,19 +175,19 @@ public class CommentMapping25547 extends MysqlTestBase {
                 + "` (\n  `id` int(11) DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT"
                 + " CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='sequoiadb:"
                 + " { mapping:''" + csName1 + "." + mclName + "'' }'\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (10) COMMENT = 'sequoiadb: "
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (10) COMMENT = 'sequoiadb: "
                 + "{ mapping:\\'" + csName1 + "." + clName1 + "\\' }' ENGINE ="
-                + " SequoiaDB,\n PARTITION p1 VALUES LESS THAN (20) COMMENT = "
+                + " SequoiaDB,\n PARTITION `p1` VALUES LESS THAN (20) COMMENT = "
                 + "'sequoiadb: { mapping:\\'" + csName2 + "." + hashclName1
-                + "\\' }' ENGINE = SequoiaDB,\n PARTITION p2 VALUES LESS THAN "
+                + "\\' }' ENGINE = SequoiaDB,\n PARTITION `p2` VALUES LESS THAN "
                 + "(30) COMMENT = 'sequoiadb: { mapping:\\'" + csName1 + "."
-                + clName2 + "\\' }' ENGINE = SequoiaDB,\n PARTITION p3 VALUES "
+                + clName2 + "\\' }' ENGINE = SequoiaDB,\n PARTITION `p3` VALUES "
                 + "LESS THAN (40) COMMENT = 'sequoiadb: { mapping:\\'" + csName2
                 + "." + hashclName2 + "\\' }' ENGINE = SequoiaDB,\n PARTITION"
-                + " p4 VALUES LESS THAN (50) COMMENT = 'sequoiadb: { mapping:"
+                + " `p4` VALUES LESS THAN (50) COMMENT = 'sequoiadb: { mapping:"
                 + "\\'" + csName1 + "." + clName3 + "\\' }' ENGINE = "
-                + "SequoiaDB) */" );
+                + "SequoiaDB)" );
         Assert.assertEquals( act4, exp4 );
 
         // 插入数据
@@ -208,17 +208,17 @@ public class CommentMapping25547 extends MysqlTestBase {
                 + "` (\n  `id` int(11) DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT"
                 + " CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='sequoiadb:"
                 + " { mapping:''" + csName1 + "." + mclName + "'' }'\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p1 VALUES LESS THAN (20) COMMENT = "
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p1` VALUES LESS THAN (20) COMMENT = "
                 + "'sequoiadb: { mapping:\\'" + csName2 + "." + hashclName1
-                + "\\' }' ENGINE = SequoiaDB,\n PARTITION p2 VALUES LESS THAN "
+                + "\\' }' ENGINE = SequoiaDB,\n PARTITION `p2` VALUES LESS THAN "
                 + "(30) COMMENT = 'sequoiadb: { mapping:\\'" + csName1 + "."
-                + clName2 + "\\' }' ENGINE = SequoiaDB,\n PARTITION p3 VALUES "
+                + clName2 + "\\' }' ENGINE = SequoiaDB,\n PARTITION `p3` VALUES "
                 + "LESS THAN (40) COMMENT = 'sequoiadb: { mapping:\\'" + csName2
                 + "." + hashclName2 + "\\' }' ENGINE = SequoiaDB,\n PARTITION"
-                + " p4 VALUES LESS THAN (50) COMMENT = 'sequoiadb: { mapping:"
+                + " `p4` VALUES LESS THAN (50) COMMENT = 'sequoiadb: { mapping:"
                 + "\\'" + csName1 + "." + clName3 + "\\' }' ENGINE = "
-                + "SequoiaDB) */" );
+                + "SequoiaDB)" );
         Assert.assertEquals( act6, exp6 );
 
         // 插入数据
@@ -255,11 +255,11 @@ public class CommentMapping25547 extends MysqlTestBase {
         exp9.add( tbName + "|CREATE TABLE `" + tbName
                 + "` (\n  `id` int(11) DEFAULT NULL\n) ENGINE=SequoiaDB "
                 + "DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50100 PARTITION BY RANGE (id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (10) ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (20) ENGINE = SequoiaDB,\n"
-                + " PARTITION p2 VALUES LESS THAN (30) ENGINE = SequoiaDB,\n"
-                + " PARTITION p3 VALUES LESS THAN (40) ENGINE = SequoiaDB) */" );
+                + " PARTITION BY RANGE (`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (10) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p1` VALUES LESS THAN (20) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p2` VALUES LESS THAN (30) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p3` VALUES LESS THAN (40) ENGINE = SequoiaDB)" );
         Assert.assertEquals( act9, exp9 );
 
         // 插入数据

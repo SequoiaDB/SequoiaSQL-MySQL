@@ -103,25 +103,25 @@ public class CommentMapping25597 extends MysqlTestBase {
         String exp1 = "[" + tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `id` int(11) NOT NULL,\n" + "  PRIMARY KEY (`id`)\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p1` VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
                 + csName + "." + sclName0 + "\"}' ENGINE = SequoiaDB,\n";
         for ( int i = 0; i < 4; i++ ) {
             int tbIndex = i + 1;
             int partIndex = i + 2;
             String addtbName = "scl_25597_" + tbIndex;
             if ( flag[ i ] == 1 && i < 3 ) {
-                exp1 += " PARTITION p" + partIndex + " VALUES LESS THAN ("
+                exp1 += " PARTITION `p" + partIndex + "` VALUES LESS THAN ("
                         + rangeValue[ i ]
                         + ") COMMENT = 'sequoiadb: { mapping: \"" + csName + "."
                         + addtbName + "\"}' ENGINE = SequoiaDB,\n";
             }
             if ( i == 3 ) {
-                exp1 += " PARTITION p" + partIndex + " VALUES LESS THAN ("
+                exp1 += " PARTITION `p" + partIndex + "` VALUES LESS THAN ("
                         + rangeValue[ i ]
                         + ") COMMENT = 'sequoiadb: { mapping: \"" + csName + "."
-                        + addtbName + "\"}' ENGINE = SequoiaDB) */]";
+                        + addtbName + "\"}' ENGINE = SequoiaDB)]";
             }
         }
 

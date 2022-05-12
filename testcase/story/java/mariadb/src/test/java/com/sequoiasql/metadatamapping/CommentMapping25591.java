@@ -106,13 +106,13 @@ public class CommentMapping25591 extends MysqlTestBase {
         exp1.add( tbName + "|CREATE TABLE `" + tbName + "` (\n  `id` int(11)"
                 + " DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4"
                 + " COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping:''"
-                + csName1 + "." + clName + "'' }'\n/*!50500 PARTITION BY RANGE"
-                + "  COLUMNS(id)\n(PARTITION p0 VALUES LESS THAN (5) COMMENT ="
+                + csName1 + "." + clName + "'' }'\n PARTITION BY RANGE"
+                + "  COLUMNS(`id`)\n(PARTITION `p0` VALUES LESS THAN (5) COMMENT ="
                 + " 'sequoiadb: { mapping:\\'" + csName2 + "." + clName
                 + "\\' }"
-                + "' ENGINE = SequoiaDB,\n PARTITION p1 VALUES LESS THAN (10)"
+                + "' ENGINE = SequoiaDB,\n PARTITION `p1` VALUES LESS THAN (10)"
                 + " COMMENT = 'sequoiadb: { mapping:\\'" + csName3 + "."
-                + clName + "\\' }' ENGINE = SequoiaDB) */" );
+                + clName + "\\' }' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         // 检查数据正确性

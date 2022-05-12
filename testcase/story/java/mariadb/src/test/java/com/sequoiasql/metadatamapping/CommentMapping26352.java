@@ -109,13 +109,13 @@ public class CommentMapping26352 extends MysqlTestBase {
         exp1.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `id` int(11) DEFAULT NULL\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) COMMENT = 'sequoiadb: { mapping: \""
                 + csName1 + "." + sclName1 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION `p1` VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
                 + csName1 + "." + sclName2 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p2 VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
-                + csName1 + "." + sclName3 + "\"}' ENGINE = SequoiaDB) */" );
+                + " PARTITION `p2` VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
+                + csName1 + "." + sclName3 + "\"}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         // 查询第二个实例组的表结构失败，报错信息为表不存在
@@ -177,13 +177,13 @@ public class CommentMapping26352 extends MysqlTestBase {
         exp1.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `id` int(11) DEFAULT NULL\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) COMMENT = 'sequoiadb: { mapping: \""
                 + csName1 + "." + sclName1 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION `p1` VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
                 + csName1 + "." + sclName2 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p2 VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
-                + csName1 + "." + sclName3 + "\"}' ENGINE = SequoiaDB) */" );
+                + " PARTITION `p2` VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
+                + csName1 + "." + sclName3 + "\"}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         // 检查实例组2创建的表的结构的正确性
@@ -193,13 +193,13 @@ public class CommentMapping26352 extends MysqlTestBase {
         exp2.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `id` int(11) DEFAULT NULL\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) COMMENT = 'sequoiadb: { mapping: \""
                 + csName2 + "." + sclName1 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION `p1` VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
                 + csName2 + "." + sclName2 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p2 VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
-                + csName2 + "." + sclName3 + "\"}' ENGINE = SequoiaDB) */" );
+                + " PARTITION `p2` VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
+                + csName2 + "." + sclName3 + "\"}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act2, exp2 );
 
         // 分别写入数据到2个实例组的表，表数据覆盖所有分区，写入后检查数据正确性
@@ -259,12 +259,12 @@ public class CommentMapping26352 extends MysqlTestBase {
         exp1.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `id` int(11) DEFAULT NULL\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p1` VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
                 + csName1 + "." + sclName2 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p2 VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
-                + csName1 + "." + sclName3 + "\"}' ENGINE = SequoiaDB) */" );
+                + " PARTITION `p2` VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
+                + csName1 + "." + sclName3 + "\"}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         // 检查实例组2创建的表的结构的正确性
@@ -274,12 +274,12 @@ public class CommentMapping26352 extends MysqlTestBase {
         exp2.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `id` int(11) DEFAULT NULL\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p1` VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
                 + csName2 + "." + sclName5 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p2 VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
-                + csName2 + "." + sclName6 + "\"}' ENGINE = SequoiaDB) */" );
+                + " PARTITION `p2` VALUES LESS THAN (15) COMMENT = 'sequoiadb: { mapping: \""
+                + csName2 + "." + sclName6 + "\"}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act2, exp2 );
 
         // 分别写入数据到2个实例组的表，表数据覆盖所有分区，写入后检查数据正确性

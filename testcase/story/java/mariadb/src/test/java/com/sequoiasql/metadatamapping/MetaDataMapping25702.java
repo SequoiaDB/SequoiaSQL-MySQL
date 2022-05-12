@@ -82,10 +82,9 @@ public class MetaDataMapping25702 extends MysqlTestBase {
         List< String > exp1 = new ArrayList<>();
         exp1.add( tbNewName + "|CREATE TABLE `" + tbNewName + "` (\n  `a` "
                 + "int(11) DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET="
-                + "utf8mb4 COLLATE=utf8mb4_bin\n/*!50100 PARTITION BY RANGE (a)"
-                + "\n(PARTITION p0 VALUES LESS THAN (10) ENGINE = SequoiaDB,"
-                + "\n PARTITION p1 VALUES LESS THAN (20) ENGINE = SequoiaDB)"
-                + " */" );
+                + "utf8mb4 COLLATE=utf8mb4_bin\n PARTITION BY RANGE (`a`)"
+                + "\n(PARTITION `p0` VALUES LESS THAN (10) ENGINE = SequoiaDB,"
+                + "\n PARTITION `p1` VALUES LESS THAN (20) ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         // 检查数据正确性

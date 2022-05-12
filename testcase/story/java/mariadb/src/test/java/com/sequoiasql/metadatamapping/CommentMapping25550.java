@@ -85,11 +85,11 @@ public class CommentMapping25550 extends MysqlTestBase {
         List< String > exp1 = new ArrayList<>();
         exp1.add( tbName + "|CREATE TABLE `" + tbName + "` (\n  `id` int(11)"
                 + " DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
-                + "COLLATE=utf8mb4_bin\n/*!50100 PARTITION BY RANGE (id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) COMMENT = 'sequoiadb: { "
+                + "COLLATE=utf8mb4_bin\n PARTITION BY RANGE (`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) COMMENT = 'sequoiadb: { "
                 + "mapping:\\'" + csName + "." + clName1 + "\\' }' ENGINE = "
-                + "SequoiaDB,\n PARTITION p1 VALUES LESS THAN (10)"
-                + " ENGINE = SequoiaDB) */" );
+                + "SequoiaDB,\n PARTITION `p1` VALUES LESS THAN (10)"
+                + " ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         List< String > act2 = jdbc.query(
@@ -125,13 +125,13 @@ public class CommentMapping25550 extends MysqlTestBase {
         List< String > exp3 = new ArrayList<>();
         exp3.add( tbName + "|CREATE TABLE `" + tbName + "` (\n  `id` int(11) "
                 + "DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
-                + "COLLATE=utf8mb4_bin\n/*!50100 PARTITION BY RANGE (id)\n("
-                + "PARTITION p0 VALUES LESS THAN (5) COMMENT = 'sequoiadb: "
+                + "COLLATE=utf8mb4_bin\n PARTITION BY RANGE (`id`)\n("
+                + "PARTITION `p0` VALUES LESS THAN (5) COMMENT = 'sequoiadb: "
                 + "{ mapping:\\'" + csName + "." + clName1 + "\\' }' ENGINE = "
-                + "SequoiaDB,\n PARTITION p1 VALUES LESS THAN (10) ENGINE = "
-                + "SequoiaDB,\n PARTITION p2 VALUES LESS THAN (15) COMMENT = "
+                + "SequoiaDB,\n PARTITION `p1` VALUES LESS THAN (10) ENGINE = "
+                + "SequoiaDB,\n PARTITION `p2` VALUES LESS THAN (15) COMMENT = "
                 + "'sequoiadb: { mapping:\\'" + csName + "." + clName2
-                + "\\' }' ENGINE = SequoiaDB) */" );
+                + "\\' }' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act4, exp3 );
 
         // 插入数据到所有分区
@@ -154,10 +154,10 @@ public class CommentMapping25550 extends MysqlTestBase {
         List< String > exp5 = new ArrayList<>();
         exp5.add( tbName + "|CREATE TABLE `" + tbName + "` (\n  `id` int(11) "
                 + "DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
-                + "COLLATE=utf8mb4_bin\n/*!50100 PARTITION BY RANGE (id)\n"
-                + "(PARTITION p2 VALUES LESS THAN (15) COMMENT = 'sequoiadb: "
+                + "COLLATE=utf8mb4_bin\n PARTITION BY RANGE (`id`)\n"
+                + "(PARTITION `p2` VALUES LESS THAN (15) COMMENT = 'sequoiadb: "
                 + "{ mapping:\\'" + csName + "." + clName2 + "\\' }' ENGINE = "
-                + "SequoiaDB) */" );
+                + "SequoiaDB)" );
         Assert.assertEquals( act6, exp5 );
 
         // 插入数据
@@ -188,9 +188,9 @@ public class CommentMapping25550 extends MysqlTestBase {
         List< String > exp8 = new ArrayList<>();
         exp8.add( tbName + "|CREATE TABLE `" + tbName + "` (\n  `id` int(11)"
                 + " DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
-                + "COLLATE=utf8mb4_bin\n/*!50100 PARTITION BY RANGE (id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) ENGINE = SequoiaDB,\n "
-                + "PARTITION p1 VALUES LESS THAN (10) ENGINE = SequoiaDB) */" );
+                + "COLLATE=utf8mb4_bin\n PARTITION BY RANGE (`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) ENGINE = SequoiaDB,\n "
+                + "PARTITION `p1` VALUES LESS THAN (10) ENGINE = SequoiaDB)" );
         Assert.assertEquals( act9, exp8 );
 
         // 插入数据

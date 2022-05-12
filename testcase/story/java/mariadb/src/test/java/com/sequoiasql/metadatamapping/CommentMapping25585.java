@@ -130,8 +130,8 @@ public class CommentMapping25585 extends MysqlTestBase {
                 + "` (\n  `id` int(11) DEFAULT NULL,\n  `num` int(11) DEFAULT "
                 + "NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE="
                 + "utf8mb4_bin COMMENT='sequoiadb: { mapping:''" + csName + "."
-                + mclName1 + "'' }'\n/*!50100 PARTITION BY KEY (id)\n"
-                + "PARTITIONS 4 */" );
+                + mclName1 + "'' }'\n PARTITION BY KEY (`id`)\n"
+                + "PARTITIONS 4" );
         Assert.assertEquals( act1, exp1 );
 
         List< String > act2 = jdbc.query(
@@ -141,12 +141,12 @@ public class CommentMapping25585 extends MysqlTestBase {
                 + "` (\n  `id` int(11) DEFAULT NULL,\n  `num` int(11) DEFAULT "
                 + "NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE="
                 + "utf8mb4_bin COMMENT='sequoiadb: { mapping:''" + csName + "."
-                + mclName2 + "'' }'\n/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (10) COMMENT = 'sequoiadb: "
+                + mclName2 + "'' }'\n PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (10) COMMENT = 'sequoiadb: "
                 + "{ mapping:\\'" + csName + "." + sclName3 + "\\' }' ENGINE ="
-                + " SequoiaDB,\n PARTITION p1 VALUES LESS THAN (20) COMMENT = "
+                + " SequoiaDB,\n PARTITION `p1` VALUES LESS THAN (20) COMMENT = "
                 + "'sequoiadb: { mapping:\\'" + csName + "." + sclName4
-                + "\\' }" + "' ENGINE = SequoiaDB) */" );
+                + "\\' }" + "' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act2, exp2 );
 
         // 检查表数据正确性

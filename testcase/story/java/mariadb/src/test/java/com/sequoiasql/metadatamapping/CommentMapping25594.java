@@ -146,12 +146,12 @@ public class CommentMapping25594 extends MysqlTestBase {
                 + " DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
                 + "COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping:''"
                 + csName + "." + mclName + postfix
-                + "'' }'\n/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (10) COMMENT = 'sequoiadb: { "
+                + "'' }'\n PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (10) COMMENT = 'sequoiadb: { "
                 + "mapping:\\'" + csName + "." + sclName + postfix + "\\' }' "
-                + "ENGINE = SequoiaDB,\n PARTITION p1 VALUES LESS THAN (20) "
+                + "ENGINE = SequoiaDB,\n PARTITION `p1` VALUES LESS THAN (20) "
                 + "COMMENT = 'sequoiadb: { mapping:\\'" + csName + "." + clName
-                + "\\' }'" + " ENGINE = SequoiaDB) */" );
+                + "\\' }'" + " ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         // 插入数据到所有分区

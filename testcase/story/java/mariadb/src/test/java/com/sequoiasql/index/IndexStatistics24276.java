@@ -66,8 +66,8 @@ public class IndexStatistics24276 extends MysqlTestBase {
                 .query( "explain select * from " + fullCLName
                         + " force index(idxA,idxB) where a=10 or b= 10" )
                 .toString().split( "\\|" );
-        Assert.assertEquals( actExplain[ 4 ], "index_merge" );
-        Assert.assertEquals( actExplain[ 6 ], "idxA,idxB" );
+        Assert.assertEquals( actExplain[ 3 ], "index_merge" );
+        Assert.assertEquals( actExplain[ 4 ], "idxA,idxB" );
 
         List< String > actData = jdbcWarpperMgr.query( "select * from "
                 + fullCLName + " force index(idxA,idxB) where a=10 or b= 10" );

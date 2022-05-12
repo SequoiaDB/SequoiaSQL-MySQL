@@ -94,14 +94,14 @@ public class CommentMapping25577 extends MysqlTestBase {
         exp1.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `id` int(11) NOT NULL,\n" + "  PRIMARY KEY (`id`)\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) ENGINE = SequoiaDB,\n"
-                + " PARTITION p2 VALUES LESS THAN (15) ENGINE = SequoiaDB,\n"
-                + " PARTITION p3 VALUES LESS THAN (20) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p1` VALUES LESS THAN (10) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p2` VALUES LESS THAN (15) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p3` VALUES LESS THAN (20) COMMENT = 'sequoiadb: { mapping: \""
                 + csName + "." + sclName1 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p4 VALUES LESS THAN (25) COMMENT = 'sequoiadb: { mapping: \""
-                + csName + "." + sclName2 + "\"}' ENGINE = SequoiaDB) */" );
+                + " PARTITION `p4` VALUES LESS THAN (25) COMMENT = 'sequoiadb: { mapping: \""
+                + csName + "." + sclName2 + "\"}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
         List< String > exp2 = new ArrayList<>();
         exp2 = Arrays.asList( "16", "21" );
@@ -127,14 +127,14 @@ public class CommentMapping25577 extends MysqlTestBase {
         exp4.add( tbNewName + "|CREATE TABLE `" + tbNewName + "` (\n"
                 + "  `id` int(11) NOT NULL,\n" + "  PRIMARY KEY (`id`)\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) ENGINE = SequoiaDB,\n"
-                + " PARTITION p2 VALUES LESS THAN (15) ENGINE = SequoiaDB,\n"
-                + " PARTITION p3 VALUES LESS THAN (20) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p1` VALUES LESS THAN (10) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p2` VALUES LESS THAN (15) ENGINE = SequoiaDB,\n"
+                + " PARTITION `p3` VALUES LESS THAN (20) COMMENT = 'sequoiadb: { mapping: \""
                 + csName + "." + sclName1 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p4 VALUES LESS THAN (25) COMMENT = 'sequoiadb: { mapping: \""
-                + csName + "." + sclName2 + "\"}' ENGINE = SequoiaDB) */" );
+                + " PARTITION `p4` VALUES LESS THAN (25) COMMENT = 'sequoiadb: { mapping: \""
+                + csName + "." + sclName2 + "\"}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act4, exp4 );
 
         act3 = jdbc.query( "select * from " + dbName + "." + tbNewName

@@ -83,11 +83,11 @@ public class CommentMapping25565 extends MysqlTestBase {
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
                 + "COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping: \""
                 + csName + "." + mclName + "\"}'\n"
-                + "/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) COMMENT = 'sequoiadb: { mapping: \""
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) COMMENT = 'sequoiadb: { mapping: \""
                 + csName + "." + sclName1 + "\"}' ENGINE = SequoiaDB,\n"
-                + " PARTITION p1 VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
-                + csName + "." + sclName2 + "\"}' ENGINE = SequoiaDB) */" );
+                + " PARTITION `p1` VALUES LESS THAN (10) COMMENT = 'sequoiadb: { mapping: \""
+                + csName + "." + sclName2 + "\"}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         // 检查sdb已存在指定的表

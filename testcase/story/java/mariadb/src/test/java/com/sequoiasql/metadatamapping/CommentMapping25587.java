@@ -119,12 +119,12 @@ public class CommentMapping25587 extends MysqlTestBase {
         exp1.add( tbName_old + "|CREATE TABLE `" + tbName_old
                 + "` (\n  `id` int(11) DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT"
                 + " CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='sequoiadb:"
-                + " { mapping:''" + csName + "." + mclName + "'' }'\n/*!50500"
-                + " PARTITION BY RANGE  COLUMNS(id)\n(PARTITION p0 VALUES LESS"
+                + " { mapping:''" + csName + "." + mclName + "'' }'\n"
+                + " PARTITION BY RANGE  COLUMNS(`id`)\n(PARTITION `p0` VALUES LESS"
                 + " THAN (10) COMMENT = 'sequoiadb: { mapping:\\'" + csName
-                + "." + sclName1 + "\\' }' ENGINE = SequoiaDB,\n PARTITION p1 "
+                + "." + sclName1 + "\\' }' ENGINE = SequoiaDB,\n PARTITION `p1` "
                 + "VALUES LESS THAN (20) COMMENT = 'sequoiadb: { mapping:\\'"
-                + csName + "." + sclName2 + "\\' }' ENGINE = SequoiaDB) */" );
+                + csName + "." + sclName2 + "\\' }' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         List< String > act2 = jdbc.query( "select * from " + dbName + "."

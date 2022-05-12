@@ -108,12 +108,12 @@ public class CommentMapping25546 extends MysqlTestBase {
                 + " DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
                 + "COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping:''"
                 + csName + "." + mclName
-                + "'' }'\n/*!50500 PARTITION BY RANGE  COLUMNS(id)\n"
-                + "(PARTITION p0 VALUES LESS THAN (5) COMMENT = 'sequoiadb: { "
+                + "'' }'\n PARTITION BY RANGE  COLUMNS(`id`)\n"
+                + "(PARTITION `p0` VALUES LESS THAN (5) COMMENT = 'sequoiadb: { "
                 + "mapping:\\'" + csName + "." + sclName1 + "\\' }' ENGINE = "
-                + "SequoiaDB,\n PARTITION p1 VALUES LESS THAN (10) COMMENT = "
+                + "SequoiaDB,\n PARTITION `p1` VALUES LESS THAN (10) COMMENT = "
                 + "'sequoiadb: { mapping:\\'" + csName + "." + sclName2
-                + "\\' }'" + " ENGINE = SequoiaDB) */" );
+                + "\\' }'" + " ENGINE = SequoiaDB)" );
         Assert.assertEquals( act1, exp1 );
 
         List< String > act2 = jdbc.query(
@@ -141,15 +141,15 @@ public class CommentMapping25546 extends MysqlTestBase {
         exp3.add( tbName + "|CREATE TABLE `" + tbName + "` (\n  `id` int(11) "
                 + "DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
                 + "COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping:''"
-                + csName + "." + mclName + "'' }'\n/*!50500 PARTITION BY "
-                + "RANGE  COLUMNS(id)\n(PARTITION p0 VALUES LESS THAN (5) "
+                + csName + "." + mclName + "'' }'\n PARTITION BY "
+                + "RANGE  COLUMNS(`id`)\n(PARTITION `p0` VALUES LESS THAN (5) "
                 + "COMMENT = 'sequoiadb: { mapping:\\'" + csName + "."
-                + sclName1 + "\\' }' ENGINE = SequoiaDB,\n PARTITION p1 VALUES"
+                + sclName1 + "\\' }' ENGINE = SequoiaDB,\n PARTITION `p1` VALUES"
                 + " LESS THAN (10) COMMENT = 'sequoiadb: { mapping:\\'"
                 + csName + "." + sclName2 + "\\' }' ENGINE = SequoiaDB,\n "
-                + "PARTITION p2 VALUES LESS THAN (15) COMMENT = 'sequoiadb: "
+                + "PARTITION `p2` VALUES LESS THAN (15) COMMENT = 'sequoiadb: "
                 + "{ mapping:\\'" + csName + "." + clName + "\\' }' ENGINE ="
-                + " SequoiaDB) */" );
+                + " SequoiaDB)" );
         Assert.assertEquals( act4, exp3 );
 
         // 插入数据到所有分区
@@ -173,10 +173,10 @@ public class CommentMapping25546 extends MysqlTestBase {
         exp5.add( tbName + "|CREATE TABLE `" + tbName + "` (\n  `id` int(11) "
                 + "DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
                 + "COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping:''"
-                + csName + "." + mclName + "'' }'\n/*!50500 PARTITION BY RANGE"
-                + "  COLUMNS(id)\n(PARTITION p2 VALUES LESS THAN (15) COMMENT ="
+                + csName + "." + mclName + "'' }'\n PARTITION BY RANGE"
+                + "  COLUMNS(`id`)\n(PARTITION `p2` VALUES LESS THAN (15) COMMENT ="
                 + " 'sequoiadb: { mapping:\\'" + csName + "." + clName + "\\' "
-                + "}' ENGINE = SequoiaDB) */" );
+                + "}' ENGINE = SequoiaDB)" );
         Assert.assertEquals( act6, exp5 );
 
         // 插入数据到所有分区
@@ -209,10 +209,9 @@ public class CommentMapping25546 extends MysqlTestBase {
         List< String > exp8 = new ArrayList<>();
         exp8.add( tbName + "|CREATE TABLE `" + tbName + "` (\n  `id` int(11)"
                 + " DEFAULT NULL\n) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
-                + "COLLATE=utf8mb4_bin\n/*!50500 PARTITION BY RANGE  COLUMNS"
-                + "(id)\n(PARTITION p0 VALUES LESS THAN (5) ENGINE = SequoiaDB"
-                + ",\n PARTITION p1 VALUES LESS THAN (10) ENGINE = SequoiaDB)"
-                + " */" );
+                + "COLLATE=utf8mb4_bin\n PARTITION BY RANGE  COLUMNS"
+                + "(`id`)\n(PARTITION `p0` VALUES LESS THAN (5) ENGINE = SequoiaDB"
+                + ",\n PARTITION `p1` VALUES LESS THAN (10) ENGINE = SequoiaDB)");
         Assert.assertEquals( act9, exp8 );
 
         // 插入数据

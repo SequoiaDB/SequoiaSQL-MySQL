@@ -88,7 +88,7 @@ public class CommentMapping25558 extends MysqlTestBase {
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
                 + "COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping: \""
                 + csName + "." + mclName + "\"}'\n"
-                + "/*!50100 PARTITION BY KEY (id)\n" + "PARTITIONS 2 */" );
+                + " PARTITION BY KEY (`id`)\n" + "PARTITIONS 2" );
         Assert.assertEquals( act1, exp1 );
         List< String > act2 = jdbc.query(
                 "select * from " + dbName + "." + tbName + " order by id;" );
@@ -114,7 +114,7 @@ public class CommentMapping25558 extends MysqlTestBase {
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
                 + "COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping: \""
                 + csName + "." + mclName + "\"}'\n"
-                + "/*!50100 PARTITION BY KEY (id)\n" + "PARTITIONS 2 */" );
+                + " PARTITION BY KEY (`id`)\n" + "PARTITIONS 2" );
         Assert.assertEquals( act4, exp4 );
         List< String > act5 = jdbc.query(
                 "select * from " + dbName + "." + tbNewName + " order by id;" );
@@ -141,7 +141,7 @@ public class CommentMapping25558 extends MysqlTestBase {
         exp6.add( tbName + "|CREATE TABLE `" + tbName + "` (\n"
                 + "  `id` int(11) NOT NULL,\n" + "  PRIMARY KEY (`id`)\n"
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin\n"
-                + "/*!50100 PARTITION BY KEY (id)\n" + "PARTITIONS 2 */" );
+                + " PARTITION BY KEY (`id`)\n" + "PARTITIONS 2" );
         Assert.assertEquals( act6, exp6 );
         jdbc.update( "insert into " + dbName + "." + tbName + " values(1);" );
         List< String > act7 = jdbc.query(

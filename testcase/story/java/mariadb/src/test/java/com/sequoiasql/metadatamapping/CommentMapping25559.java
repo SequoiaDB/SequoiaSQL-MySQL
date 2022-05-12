@@ -76,7 +76,7 @@ public class CommentMapping25559 extends MysqlTestBase {
                 + ") ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 "
                 + "COLLATE=utf8mb4_bin COMMENT='sequoiadb: { mapping: \""
                 + csName + "." + mclName + "\"}'\n"
-                + "/*!50100 PARTITION BY KEY (id)\n" + "PARTITIONS 2 */" );
+                + " PARTITION BY KEY (`id`)\n" + "PARTITIONS 2" );
         Assert.assertEquals( act1, exp1 );
     }
 
