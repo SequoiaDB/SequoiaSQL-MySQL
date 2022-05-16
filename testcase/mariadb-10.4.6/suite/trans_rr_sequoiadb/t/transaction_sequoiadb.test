@@ -2,7 +2,7 @@
 #Case 22435#Case 22436#Case 22449#Case 22450#Case 23038#Case 23039
 
 --source include/have_sequoiadb.inc
---source ../inc/sequoiadb_version_greater_than5.inc
+--source include/sequoiadb_version_lt_5_skip.inc
 
 --disable_query_log
 CALL mtr.add_suppression(".*failed to query with condition.*rc: 40013");

@@ -1,12 +1,6 @@
 --source include/not_embedded.inc
 --source include/have_partition.inc
-#--source include/have_SEQUOIADB.inc
-
-let $tx_iso= `SELECT @@tx_isolation`;
-if($tx_iso == 'REPEATABLE-READ'){
-    echo $tx_iso;
-    skip TRANSACTION ISOLATION LEVEL is RR, but the result of this test is for RC
-}
+--source include/include/sequoiadb_version_gte_5_skip.inc
 
 
 call mtr.add_suppression("Deadlock found when trying to get lock; try restarting transaction");

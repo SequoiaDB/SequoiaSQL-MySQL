@@ -1,7 +1,6 @@
 -- source include/have_partition.inc
 -- source include/not_embedded.inc
--- source ../inc/sequoiadb_version_greater_than5.inc
-#-- source include/have_innodb.inc
+--source include/sequoiadb_version_lt_5_skip.inc
 
 --disable_warnings
 drop table if exists t1;
