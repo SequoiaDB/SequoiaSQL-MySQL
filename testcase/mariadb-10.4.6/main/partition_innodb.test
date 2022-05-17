@@ -1,6 +1,6 @@
 --source include/not_embedded.inc
 --source include/have_partition.inc
---source include/include/sequoiadb_version_gte_5_skip.inc
+--source include/sequoiadb_version_gte_5_skip.inc
 
 
 call mtr.add_suppression("Deadlock found when trying to get lock; try restarting transaction");
