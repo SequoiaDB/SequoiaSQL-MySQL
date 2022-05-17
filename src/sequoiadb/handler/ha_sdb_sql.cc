@@ -326,7 +326,7 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
   QEP_TAB *tab = NULL;
   QUICK_SELECT_I *quick = NULL;
   JOIN *const join = sdb_lex_first_select(thd)->join;
-  if (!rseq || !join->qep_tab) {
+  if (!join->qep_tab) {
     goto error;
   }
   if (join->need_tmp) {
@@ -356,6 +356,7 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
 
     // Use MULTI_RANGE.
     if (QUICK_SELECT_I::QS_TYPE_RANGE == quick->get_type()) {
+      DBUG_ASSERT(rseq);  
       QUICK_RANGE_SEQ_CTX *ctx = (QUICK_RANGE_SEQ_CTX *)rseq;
       QUICK_RANGE *const *tmp_it = ctx->first;
       while (ctx->first != ctx->last) {
@@ -990,7 +991,7 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
   QUICK_SELECT_I *quick = NULL;
   JOIN *const join = sdb_lex_first_select(thd)->join;
   JOIN_TAB *tab = NULL;
-  if (!rseq || !join->join_tab) {
+  if (!join->join_tab) {
     goto error;
   }
   tab = join->join_tab + (join->tables_list ? join->const_tables : 0);
@@ -1020,6 +1021,7 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
 
     // Use MULTI_RANGE.
     if (QUICK_SELECT_I::QS_TYPE_RANGE == quick->get_type()) {
+      DBUG_ASSERT(rseq);
       QUICK_RANGE_SEQ_CTX *ctx = (QUICK_RANGE_SEQ_CTX *)rseq;
       QUICK_RANGE **tmp_it = ctx->first;
       while (ctx->first != ctx->last) {
