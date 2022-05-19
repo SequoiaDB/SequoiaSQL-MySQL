@@ -108,7 +108,7 @@ static int get_field_max_len(sdbclient::sdbCollection &registry_cl,
   sdbclient::sdbCursor cursor;
 
   selector = BSON(field_name << BSON("$strlen" << 1));
-  order_by = BSON(field_name << 1);
+  order_by = BSON(field_name << SDB_SORT_DESC);
   rc = registry_cl.query(cursor, cond, selector, order_by, obj, 0, 1);
   rc = rc ? rc : cursor.next(result, false);
   if (0 == rc) {
