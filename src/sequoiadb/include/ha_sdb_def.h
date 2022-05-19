@@ -18,6 +18,8 @@
 
 #include <client.hpp>
 
+#define SDB_SORT_ASC 1
+#define SDB_SORT_DESC -1
 #define SDB_CS_NAME_MAX_SIZE 127
 #define SDB_CL_NAME_MAX_SIZE 127
 #define SDB_RG_NAME_MAX_SIZE 127
