@@ -211,7 +211,7 @@ public class RenameTable24576 extends MysqlTestBase {
             } catch ( SQLException e ) {
                 saveResult( e.getErrorCode(), e );
                 if ( e.getErrorCode() != 1050 && e.getErrorCode() != 1117
-                        && e.getErrorCode() != 1017 ) {
+                        && e.getErrorCode() != 1017 && e.getErrorCode() != 1146 ) {
                     throw e;
                 }
             }
