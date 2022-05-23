@@ -4,12 +4,12 @@
     <parent>
         <groupId>com.sequoiasql</groupId>
         <artifactId>sequoiasql-testcase-base</artifactId>
-        <version>3.4</version>
+        <version>master</version>
         <relativePath>../../../testcase-base/pom.xml</relativePath>
     </parent>
 
     <groupId>com.sequoiasql</groupId>
-    <artifactId>sequoiasql-java</artifactId>
+    <artifactId>sequoiasql-mysql-5.7.34</artifactId>
     <packaging>jar</packaging>
 
     <build>

@@ -5,7 +5,7 @@
 
    <groupId>com.sequoiasql</groupId>
    <artifactId>sequoiasql-testcase-base</artifactId>
-   <version>3.4</version>
+   <version>master</version>
    <packaging>pom</packaging>
 
    <properties>
@@ -71,6 +71,7 @@
          <scope>system</scope>
          <systemPath>${sdbdriver.dir}/sequoiadb-driver-${sdbdriver.version}.jar</systemPath>
       </dependency>
+      
       <dependency>
          <groupId>com.sequoiadb</groupId>
          <artifactId>threadexecutor</artifactId>
