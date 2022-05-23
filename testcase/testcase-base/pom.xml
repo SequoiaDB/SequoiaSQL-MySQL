@@ -4,7 +4,7 @@
    <modelVersion>4.0.0</modelVersion>
 
    <groupId>com.sequoiasql</groupId>
-   <artifactId>sequoiasql-testcase-base</artifactId>
+   <artifactId>sequoiasql-v3.4-testcase-base</artifactId>
    <version>3.4</version>
    <packaging>pom</packaging>
 
