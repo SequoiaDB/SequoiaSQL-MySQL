@@ -1,8 +1,6 @@
+drop database if exists test_select;
 CREATE DATABASE test_select;
 USE test_select;
-drop table if exists t1,t2,t3,t4,t11;
-drop table if exists t1_1,t1_2,t9_1,t9_2,t1aa,t2aa;
-drop view if exists v1;
 SET @save_optimizer_switch=@@optimizer_switch;
 SET optimizer_switch=ifnull(@optimizer_switch_for_select_test,'outer_join_with_cache=off');
 set join_cache_level=1;
@@ -414,24 +412,25 @@ key (period),
 key (name)
 );
 create temporary table tmp engine = sequoiadb select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
+alter table tmp add t2nr int not null auto_increment primary key first;
 alter table t3 add t2nr int not null auto_increment primary key first;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
 drop table tmp;
 SET BIG_TABLES=1;
 select distinct concat(fld3," ",fld3) as namn from t2,t3 where t2.fld1=t3.t2nr order by namn limit 10;
@@ -4146,56 +4145,56 @@ INSERT INTO t5 VALUES (20),(5);
 CREATE TABLE t6(f1 int);
 INSERT INTO t6 VALUES (9),(7);
 SET SESSION join_buffer_size = 2176;
-SELECT STRAIGHT_JOIN * FROM t2, (t1 LEFT JOIN (t3,t4) ON t1.f1 = t4.f1), t5, t6;
+SELECT STRAIGHT_JOIN t2.f1,t1.f1,t3.f1,t4.f1,t4.f2,t5.f1,t6.f1 FROM t2, (t1 LEFT JOIN (t3,t4) ON t1.f1 = t4.f1), t5, t6 order by t2.f1,t1.f1,t5.f1,t6.f1;
 f1	f1	f1	f1	f2	f1	f1
-3	9	NULL	NULL	NULL	20	9
-7	9	NULL	NULL	NULL	20	9
-18	9	NULL	NULL	NULL	20	9
-3	9	NULL	NULL	NULL	20	9
-7	9	NULL	NULL	NULL	20	9
-3	9	NULL	NULL	NULL	20	7
-7	9	NULL	NULL	NULL	20	7
-18	9	NULL	NULL	NULL	20	7
-3	9	NULL	NULL	NULL	20	7
-7	9	NULL	NULL	NULL	20	7
-18	9	NULL	NULL	NULL	20	9
-3	9	NULL	NULL	NULL	20	9
+3	9	NULL	NULL	NULL	5	7
+3	9	NULL	NULL	NULL	5	7
+3	9	NULL	NULL	NULL	5	7
+3	9	NULL	NULL	NULL	5	7
 3	9	NULL	NULL	NULL	5	9
+3	9	NULL	NULL	NULL	5	9
+3	9	NULL	NULL	NULL	5	9
+3	9	NULL	NULL	NULL	5	9
+3	9	NULL	NULL	NULL	20	7
+3	9	NULL	NULL	NULL	20	7
+3	9	NULL	NULL	NULL	20	7
+3	9	NULL	NULL	NULL	20	7
+3	9	NULL	NULL	NULL	20	9
+3	9	NULL	NULL	NULL	20	9
+3	9	NULL	NULL	NULL	20	9
+3	9	NULL	NULL	NULL	20	9
+7	9	NULL	NULL	NULL	5	7
+7	9	NULL	NULL	NULL	5	7
+7	9	NULL	NULL	NULL	5	7
+7	9	NULL	NULL	NULL	5	7
 7	9	NULL	NULL	NULL	5	9
+7	9	NULL	NULL	NULL	5	9
+7	9	NULL	NULL	NULL	5	9
+7	9	NULL	NULL	NULL	5	9
+7	9	NULL	NULL	NULL	20	7
+7	9	NULL	NULL	NULL	20	7
+7	9	NULL	NULL	NULL	20	7
+7	9	NULL	NULL	NULL	20	7
+7	9	NULL	NULL	NULL	20	9
+7	9	NULL	NULL	NULL	20	9
+7	9	NULL	NULL	NULL	20	9
+7	9	NULL	NULL	NULL	20	9
+18	9	NULL	NULL	NULL	5	7
+18	9	NULL	NULL	NULL	5	7
+18	9	NULL	NULL	NULL	5	7
+18	9	NULL	NULL	NULL	5	7
+18	9	NULL	NULL	NULL	5	9
+18	9	NULL	NULL	NULL	5	9
+18	9	NULL	NULL	NULL	5	9
 18	9	NULL	NULL	NULL	5	9
 18	9	NULL	NULL	NULL	20	7
-3	9	NULL	NULL	NULL	20	7
-3	9	NULL	NULL	NULL	5	7
-7	9	NULL	NULL	NULL	5	7
-18	9	NULL	NULL	NULL	5	7
-3	9	NULL	NULL	NULL	5	9
-7	9	NULL	NULL	NULL	5	9
-18	9	NULL	NULL	NULL	5	9
-3	9	NULL	NULL	NULL	5	9
-7	9	NULL	NULL	NULL	20	9
-3	9	NULL	NULL	NULL	5	7
-7	9	NULL	NULL	NULL	5	7
-18	9	NULL	NULL	NULL	5	7
-3	9	NULL	NULL	NULL	5	7
-7	9	NULL	NULL	NULL	20	7
-18	9	NULL	NULL	NULL	20	9
-3	9	NULL	NULL	NULL	20	9
-7	9	NULL	NULL	NULL	20	9
-18	9	NULL	NULL	NULL	20	9
-7	9	NULL	NULL	NULL	5	9
 18	9	NULL	NULL	NULL	20	7
-3	9	NULL	NULL	NULL	20	7
-7	9	NULL	NULL	NULL	20	7
 18	9	NULL	NULL	NULL	20	7
-7	9	NULL	NULL	NULL	5	7
-18	9	NULL	NULL	NULL	5	9
-3	9	NULL	NULL	NULL	5	9
-7	9	NULL	NULL	NULL	5	9
-18	9	NULL	NULL	NULL	5	9
-18	9	NULL	NULL	NULL	5	7
-3	9	NULL	NULL	NULL	5	7
-7	9	NULL	NULL	NULL	5	7
-18	9	NULL	NULL	NULL	5	7
+18	9	NULL	NULL	NULL	20	7
+18	9	NULL	NULL	NULL	20	9
+18	9	NULL	NULL	NULL	20	9
+18	9	NULL	NULL	NULL	20	9
+18	9	NULL	NULL	NULL	20	9
 SET SESSION join_buffer_size = DEFAULT;
 DROP TABLE t1,t2,t3,t4,t5,t6;
 #

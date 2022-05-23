@@ -5,16 +5,19 @@
 #
 # Simple select test
 #
+--disable_warnings
+drop database if exists test_select;
+--enable_warnings
 
 CREATE DATABASE test_select;
 USE test_select;
 
---disable_warnings
-drop table if exists t1,t2,t3,t4,t11;
+#--disable_warnings
+#drop table if exists t1,t2,t3,t4,t11;
 # The following may be left from older tests
-drop table if exists t1_1,t1_2,t9_1,t9_2,t1aa,t2aa;
-drop view if exists v1;
---enable_warnings
+#drop table if exists t1_1,t1_2,t9_1,t9_2,t1aa,t2aa;
+#drop view if exists v1;
+#--enable_warnings
 
 SET @save_optimizer_switch=@@optimizer_switch;
 SET optimizer_switch=ifnull(@optimizer_switch_for_select_test,'outer_join_with_cache=off');
@@ -1403,28 +1406,32 @@ INSERT INTO t3 (period,name,companynr,price,price2) VALUES (1010,"clinker",512,7
 --enable_query_log
 
 create temporary table tmp engine = sequoiadb select * from t3;
+#CI-567：tmp表和t3表，前移增加主键字段操作，用于后续批量插入数据时通过order by指定内部顺序
+alter table tmp add t2nr int not null auto_increment primary key first;
+alter table t3 add t2nr int not null auto_increment primary key first;
 
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
-insert into tmp select * from t3;
-insert into t3 select * from tmp;
+#CI-567：修改批量插入数据语句，增加主键排序字段确保数据顺序一致
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
+insert into tmp(period,name,companynr,price,price2) select period,name,companynr,price,price2 from t3 order by t2nr;
+insert into t3(period,name,companynr,price,price2) select period,name,companynr,price,price2 from tmp order by t2nr;
 #insert into tmp select * from t3;
 #insert into t3 select * from tmp;
 
-alter table t3 add t2nr int not null auto_increment primary key first;
+#alter table t3 add t2nr int not null auto_increment primary key first;
 
 drop table tmp;
 
@@ -4195,7 +4202,7 @@ SET SESSION join_buffer_size = 2176;
 
 #EXPLAIN
 #SELECT STRAIGHT_JOIN * FROM t2, (t1 LEFT JOIN (t3,t4) ON t1.f1 = t4.f1), t5, t6;
-SELECT STRAIGHT_JOIN * FROM t2, (t1 LEFT JOIN (t3,t4) ON t1.f1 = t4.f1), t5, t6;
+SELECT STRAIGHT_JOIN t2.f1,t1.f1,t3.f1,t4.f1,t4.f2,t5.f1,t6.f1 FROM t2, (t1 LEFT JOIN (t3,t4) ON t1.f1 = t4.f1), t5, t6 order by t2.f1,t1.f1,t5.f1,t6.f1;
 
 SET SESSION join_buffer_size = DEFAULT;
 
