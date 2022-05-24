@@ -5,7 +5,7 @@
         <groupId>com.sequoiasql</groupId>
         <artifactId>sequoiasql-v3.4-testcase-base</artifactId>
         <version>3.4</version>
-        <relativePath>../../testcase-base/pom.xml</relativePath>
+        <relativePath>../../../testcase-base/pom.xml</relativePath>
     </parent>
 
     <groupId>com.sequoiasql</groupId>
