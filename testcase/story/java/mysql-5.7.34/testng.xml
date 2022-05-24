@@ -33,6 +33,7 @@
             <package name="com.sequoiasql.index"/>
             <package name="com.sequoiasql.crud"/>
             <package name="com.sequoiasql.ddl"/>
+            <package name="com.sequoiasql.mysql"/>
         </packages>
     </test>
 
