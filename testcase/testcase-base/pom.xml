@@ -59,6 +59,12 @@
       </dependency>
 
       <dependency>
+         <groupId>org.mariadb.jdbc</groupId>
+         <artifactId>mariadb-java-client</artifactId>
+         <version>3.0.0-alpha</version>
+      </dependency>
+
+      <dependency>
          <groupId>com.sequoiadb</groupId>
          <artifactId>sequoiadb-driver</artifactId>
          <version>${sdbdriver.version}</version>
