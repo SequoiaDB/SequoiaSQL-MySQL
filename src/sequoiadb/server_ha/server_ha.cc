@@ -5270,12 +5270,12 @@ static int server_ha_init(void *p) {
 
   // build instance group collection space name
   int len = strlen(HA_INST_GROUP_PREFIX) + strlen(ha_inst_group_name);
-  if (len > HA_MAX_INST_GROUP_NAME_LEN) {
+  if (len > SDB_CS_NAME_MAX_SIZE) {
     sql_print_error("HA: Instance group name '%s' is too long",
                     ha_inst_group_name);
     DBUG_RETURN(SDB_HA_INIT_ERR);
   }
-  snprintf(ha_thread.sdb_group_name, HA_MAX_INST_GROUP_NAME_LEN, "%s%s",
+  snprintf(ha_thread.sdb_group_name, SDB_CS_NAME_MAX_SIZE, "%s%s",
            HA_INST_GROUP_PREFIX, ha_inst_group_name);
 
   // copy instance group key into ha_thread.group_key

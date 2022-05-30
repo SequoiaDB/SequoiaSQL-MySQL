@@ -183,7 +183,7 @@ typedef struct st_recover_replay_thread {
   // instance group name
   const char *group_name;
   // instance group collection space name
-  char sdb_group_name[HA_MAX_INST_GROUP_NAME_LEN];
+  char sdb_group_name[SDB_CS_NAME_MAX_SIZE + 1];
   // instance group key
   char group_key[HA_MAX_KEY_LEN + 1];
   // set true if HA is turned on

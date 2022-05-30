@@ -297,6 +297,12 @@ int main(int argc, char *argv[]) {
                      SDB_HA_INVALID_PARAMETER,
                      "Error: multiple data groups are not supported");
 
+    HA_TOOL_RC_CHECK(
+        cmd_args.inst_group_name.length() > HA_MAX_INST_GROUP_NAME_LEN,
+        SDB_HA_INVALID_PARAMETER,
+        "Error: instance group name is too long, the limit is %d",
+        HA_MAX_INST_GROUP_NAME_LEN);
+
     string orig_name = cmd_args.inst_group_name;
     rc = ha_init_sequoiadb_connection(conn, cmd_args);
     HA_TOOL_RC_CHECK(rc, rc,

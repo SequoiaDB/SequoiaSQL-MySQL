@@ -33,7 +33,7 @@
 #define HA_DEFAULT_HOST "localhost:11810"
 #define HA_DEFAULT_CIPHER_FILE "~/sequoiadb/passwd"
 
-#define HA_MAX_INST_GROUP_NAME_LEN 127
+#define HA_MAX_INST_GROUP_NAME_LEN 100
 #define HA_MAX_SHOW_LEN 1
 #define HA_BUF_LEN 1024
 
