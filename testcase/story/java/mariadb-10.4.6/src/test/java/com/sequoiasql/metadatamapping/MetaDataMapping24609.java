@@ -55,7 +55,7 @@ public class MetaDataMapping24609 extends MysqlTestBase {
                 .getInstGroupName( sdb, MysqlTestBase.mysql1 ).toUpperCase();
     }
 
-    @Test
+    @Test(enabled=false) //CI-622
     public void test() throws Exception {
         // 创建256个range分区表，每个表包含2个分区，映射到sdb：256个主表（不计数）、256*2个子表
         for ( int i = 0; i < 256; i++ ) {
