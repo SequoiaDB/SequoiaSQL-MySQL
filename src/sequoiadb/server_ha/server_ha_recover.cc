@@ -675,8 +675,8 @@ static int set_dump_source(ha_recover_replay_thread *ha_thread,
       int port = result.getIntField(HA_FIELD_PORT);
       rc = SDB_HA_INCONSIST_PARA;
       sql_print_error(
-          "HA: Current instance 'lower_case_table_names'(%d) is "
-          "different from instance '%s:%d'(%d)",
+          "HA: Current instance 'lower_case_table_names=%d' is "
+          "different from instance %s:%d 'lower_case_table_names=%d'",
           lower_case_table_names, host_name, port, src_case_names);
       goto error;
     }
