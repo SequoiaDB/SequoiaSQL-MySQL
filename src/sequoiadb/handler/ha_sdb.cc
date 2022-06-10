@@ -8834,6 +8834,10 @@ void ha_sdb::print_error(int error, myf errflag) {
       handle_sdb_error(error, errflag);
       break;
     }
+    case SDB_ERR_TOO_MANY_TABLES: {
+      handle_sdb_error(error, errflag);
+      break;
+    }
     default: { break; }
   }
   handler::print_error(error, errflag);
@@ -8854,7 +8858,7 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
   sdb_rc = get_sdb_code(error);
   if (sdb_rc >= SDB_ERR_OK) {
     if (SDB_ERR_TOO_MANY_TABLES == sdb_rc) {
-      my_printf_error(sdb_rc,
+      my_printf_error(ER_GET_ERRNO,
                       "Too many tables in current database, "
                       "the upper limit is %d",
                       MYF(0), sdb_mapping_unit_count * sdb_mapping_unit_size);
