@@ -16,5 +16,3 @@ DROP DATABASE metasync_loaddata_23088;
 connection conn2;
 SHOW CREATE DATABASE metasync_loaddata_23088;
 ERROR 42000: Unknown database 'metasync_loaddata_23088'
-disconnect conn1;
-disconnect conn2;

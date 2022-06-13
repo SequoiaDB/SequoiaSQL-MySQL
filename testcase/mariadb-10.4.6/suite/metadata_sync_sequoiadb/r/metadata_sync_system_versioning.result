@@ -144,5 +144,3 @@ DROP DATABASE metasync_system_versioning_23500;
 connection conn2;
 SHOW CREATE DATABASE metasync_system_versioning_23500;
 ERROR 42000: Unknown database 'metasync_system_versioning_23500'
-disconnect conn1;
-disconnect conn2;

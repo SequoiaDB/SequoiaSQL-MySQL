@@ -56,5 +56,3 @@ DROP DATABASE metasync_index;
 connection conn2;
 SHOW CREATE DATABASE metasync_index;
 ERROR 42000: Unknown database 'metasync_index'
-disconnect conn1;
-disconnect conn2;

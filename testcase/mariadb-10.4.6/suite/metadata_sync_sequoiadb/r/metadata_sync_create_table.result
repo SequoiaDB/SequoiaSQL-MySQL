@@ -802,5 +802,3 @@ ERROR 42S02: Table 'metasync_create_tables.ts1' doesn't exist
 show create table vs1;
 ERROR 42S02: Table 'metasync_create_tables.vs1' doesn't exist
 drop database metasync_create_tables;
-disconnect conn1;
-disconnect conn2;

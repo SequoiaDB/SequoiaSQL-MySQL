@@ -275,5 +275,3 @@ DROP DATABASE metasync_seq;
 connection conn2;
 SHOW CREATE DATABASE metasync_seq;
 ERROR 42000: Unknown database 'metasync_seq'
-disconnect conn1;
-disconnect conn2;

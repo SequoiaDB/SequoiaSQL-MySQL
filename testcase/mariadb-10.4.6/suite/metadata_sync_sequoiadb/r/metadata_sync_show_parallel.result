@@ -125,5 +125,3 @@ connection conn2;
 show index from metadata_sync_show_parallel.t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 drop database metadata_sync_show_parallel;
-disconnect conn1;
-disconnect conn2;

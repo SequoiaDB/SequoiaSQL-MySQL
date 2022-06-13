@@ -616,5 +616,3 @@ DROP DATABASE metasync_alter_tables;
 connection conn2;
 SHOW CREATE DATABASE metasync_alter_tables;
 ERROR 42000: Unknown database 'metasync_alter_tables'
-disconnect conn1;
-disconnect conn2;

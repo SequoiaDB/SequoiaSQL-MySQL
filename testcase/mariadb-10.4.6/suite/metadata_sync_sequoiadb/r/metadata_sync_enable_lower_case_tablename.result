@@ -57,5 +57,3 @@ DROP DATABASE metaSync_Enable_24157;
 connection conn2;
 SHOW CREATE DATABASE metaSync_Enable_24157;
 ERROR 42000: Unknown database 'metasync_enable_24157'
-disconnect conn1;
-disconnect conn2;

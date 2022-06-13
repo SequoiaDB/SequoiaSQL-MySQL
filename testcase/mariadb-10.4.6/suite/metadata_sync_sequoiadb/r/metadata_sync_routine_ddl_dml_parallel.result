@@ -300,5 +300,3 @@ INSERT INTO t1(b, c) VALUES (200, 300);
 ERROR HY000: Field 'a' doesn't have a default value
 drop table t1;
 drop database metadata_sync_routine_ddl_dml_parallel;
-disconnect conn1;
-disconnect conn2;

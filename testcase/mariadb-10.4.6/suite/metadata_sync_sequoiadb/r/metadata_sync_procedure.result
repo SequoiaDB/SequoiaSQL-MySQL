@@ -4231,5 +4231,3 @@ SHOW CREATE DATABASE metasync_procedure;
 ERROR 42000: Unknown database 'metasync_procedure'
 SHOW CREATE DATABASE metasync_scptpkg;
 ERROR 42000: Unknown database 'metasync_scptpkg'
-disconnect conn1;
-disconnect conn2;

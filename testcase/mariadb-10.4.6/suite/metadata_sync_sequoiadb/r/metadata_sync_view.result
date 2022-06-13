@@ -53,5 +53,3 @@ DROP DATABASE metasync_view;
 connection conn2;
 SHOW CREATE DATABASE metasync_view;
 ERROR 42000: Unknown database 'metasync_view'
-disconnect conn1;
-disconnect conn2;

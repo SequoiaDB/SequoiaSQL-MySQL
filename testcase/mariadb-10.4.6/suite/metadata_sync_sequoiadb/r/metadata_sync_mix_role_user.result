@@ -72,5 +72,3 @@ connection conn1;
 set session server_ha_wait_sync_timeout = default;
 connection conn2;
 set session server_ha_wait_sync_timeout = default;
-disconnect conn1;
-disconnect conn2;

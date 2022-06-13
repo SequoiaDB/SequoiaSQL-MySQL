@@ -57,5 +57,3 @@ drop database metadata_sync_database_ddl_dml_parallel;
 connection conn2;
 call metadata_sync_database_ddl_dml_parallel.metadata_sync_ddl_dml_parallel();
 ERROR 42000: PROCEDURE metadata_sync_database_ddl_dml_parallel.metadata_sync_ddl_dml_parallel does not exist
-disconnect conn1;
-disconnect conn2;
