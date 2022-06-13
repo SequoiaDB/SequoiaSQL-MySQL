@@ -30,5 +30,3 @@ DROP SERVER IF EXISTS metasync_s2;
 connection conn2;
 SELECT * FROM mysql.servers;
 Server_name	Host	Db	Username	Password	Port	Socket	Wrapper	Owner
-disconnect conn1;
-disconnect conn2;

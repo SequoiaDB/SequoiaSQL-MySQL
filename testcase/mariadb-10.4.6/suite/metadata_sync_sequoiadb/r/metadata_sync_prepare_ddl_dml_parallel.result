@@ -119,5 +119,3 @@ execute stmt1;
 a
 1
 deallocate prepare stmt1;
-disconnect conn1;
-disconnect conn2;

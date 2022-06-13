@@ -16,5 +16,3 @@ id
 DROP TABLE t1;
 DROP TABLE t2;
 DROP DATABASE create_tmp_table_as_select;
-disconnect conn1;
-disconnect conn2;

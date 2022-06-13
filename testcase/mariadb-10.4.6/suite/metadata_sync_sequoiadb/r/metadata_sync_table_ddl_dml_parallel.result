@@ -885,5 +885,3 @@ connection conn2;
 desc t1;
 ERROR 42S02: Table 'metadata_sync_table_ddl_dml_parallel.t1' doesn't exist
 drop database metadata_sync_table_ddl_dml_parallel;
-disconnect conn1;
-disconnect conn2;

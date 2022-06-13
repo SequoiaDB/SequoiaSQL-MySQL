@@ -35,5 +35,3 @@ connection conn2;
 SHOW CREATE DATABASE metasync_sql_pushdown;
 ERROR 42000: Unknown database 'metasync_sql_pushdown'
 SET SESSION sequoiadb_sql_push_down = default;
-disconnect conn1;
-disconnect conn2;

@@ -134,5 +134,3 @@ DROP DATABASE metasync_event;
 connection conn1;
 SHOW CREATE DATABASE metasync_event;
 ERROR 42000: Unknown database 'metasync_event'
-disconnect conn1;
-disconnect conn2;

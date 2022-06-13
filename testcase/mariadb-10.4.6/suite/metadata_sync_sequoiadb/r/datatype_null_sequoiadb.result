@@ -86,5 +86,3 @@ id	field1	field2	field3	field4	field5	field6	field7	field8	field9	field10	field1
 2	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 connection conn1;
 drop database datatype_null_sequoiadb;
-disconnect conn1;
-disconnect conn2;

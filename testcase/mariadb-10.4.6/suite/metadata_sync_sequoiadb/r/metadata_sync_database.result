@@ -141,5 +141,3 @@ ERROR 42000: Unknown database 'metasync_\4E36\FE57\FE56\FE54\3010\3011| \4F60\59
 SET sql_mode=default;
 SET character_set_client = default;
 SET character_set_connection = default;
-disconnect conn1;
-disconnect conn2;

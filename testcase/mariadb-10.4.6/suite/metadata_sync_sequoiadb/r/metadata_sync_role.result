@@ -27,5 +27,3 @@ SELECT * FROM mysql.roles_mapping WHERE Role = 'metaSync_role1';
 Host	User	Role	Admin_option
 SELECT * FROM mysql.roles_mapping WHERE Role = 'metaSync_role2';
 Host	User	Role	Admin_option
-disconnect conn1;
-disconnect conn2;

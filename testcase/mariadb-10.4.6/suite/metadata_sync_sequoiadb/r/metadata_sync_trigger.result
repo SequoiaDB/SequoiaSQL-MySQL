@@ -61,5 +61,3 @@ DROP DATABASE metasync_trigger;
 connection conn2;
 SHOW CREATE DATABASE metasync_trigger;
 ERROR 42000: Unknown database 'metasync_trigger'
-disconnect conn1;
-disconnect conn2;

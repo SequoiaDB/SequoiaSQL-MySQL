@@ -34,5 +34,3 @@ drop database test;
 connection conn2;
 SHOW CREATE DATABASE test;
 ERROR 42000: Unknown database 'test'
-disconnect conn1;
-disconnect conn2;

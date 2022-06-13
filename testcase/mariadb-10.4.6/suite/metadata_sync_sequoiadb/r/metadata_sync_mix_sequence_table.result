@@ -80,5 +80,3 @@ connection conn2;
 set server_ha_wait_sync_timeout = 0;
 SHOW CREATE DATABASE metaSync_mix_seq_table;
 ERROR 42000: Unknown database 'metasync_mix_seq_table'
-disconnect conn1;
-disconnect conn2;

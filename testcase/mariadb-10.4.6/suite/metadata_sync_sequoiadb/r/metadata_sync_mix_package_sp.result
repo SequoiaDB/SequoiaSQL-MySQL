@@ -102,5 +102,3 @@ DROP DATABASE metasync_mix_pkg_sp;
 connection conn2;
 SHOW CREATE DATABASE metasync_mix_pkg_sp;
 ERROR 42000: Unknown database 'metasync_mix_pkg_sp'
-disconnect conn1;
-disconnect conn2;

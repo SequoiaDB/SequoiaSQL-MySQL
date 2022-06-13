@@ -167,5 +167,3 @@ DROP DATABASE metasync_pkg;
 connection conn2;
 SHOW CREATE DATABASE metasync_pkg;
 ERROR 42000: Unknown database 'metasync_pkg'
-disconnect conn1;
-disconnect conn2;
