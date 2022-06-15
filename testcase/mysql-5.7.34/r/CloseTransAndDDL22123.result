@@ -1,0 +1,42 @@
+drop table if exists CloseTransAndDDL22123;
+set session sequoiadb_use_transaction=off;
+set session sequoiadb_execute_only_in_mysql=on;
+create table CloseTransAndDDL22123(a int(5),b int(5),c int(5),d int(5));
+show tables like 'CloseTransAndDDL22123';
+Tables_in_test_parallel_1 (CloseTransAndDDL22123)
+CloseTransAndDDL22123
+drop table CloseTransAndDDL22123;
+set session sequoiadb_execute_only_in_mysql=off;
+create table CloseTransAndDDL22123(a int(5),b int(5),c int(5),d int(5));
+set session sequoiadb_execute_only_in_mysql=on;
+alter table CloseTransAndDDL22123 rename CloseTransAndDDL22123_2;
+alter table CloseTransAndDDL22123_2 comment "表2";
+alter table CloseTransAndDDL22123_2 default character set utf8 collate utf8_general_ci;
+alter table CloseTransAndDDL22123_2 add e int(5);
+alter table CloseTransAndDDL22123_2 modify c char(5);
+alter table CloseTransAndDDL22123_2 drop d;
+alter table CloseTransAndDDL22123_2 change a a int(5) primary key auto_increment;
+alter table CloseTransAndDDL22123_2 change a a int(5) unsigned not null;
+alter table CloseTransAndDDL22123_2 add index index_b(b),add index index_c(c);
+alter table CloseTransAndDDL22123_2 drop index index_b;
+show create table CloseTransAndDDL22123_2;
+Table	Create Table
+CloseTransAndDDL22123_2	CREATE TABLE `CloseTransAndDDL22123_2` (
+  `a` int(5) unsigned NOT NULL,
+  `b` int(5) DEFAULT NULL,
+  `c` char(5) DEFAULT NULL,
+  `e` int(5) DEFAULT NULL,
+  PRIMARY KEY (`a`),
+  KEY `index_c` (`c`)
+) ENGINE=SequoiaDB DEFAULT CHARSET=utf8 COMMENT='表2'
+drop table CloseTransAndDDL22123_2;
+show tables like 'CloseTransAndDDL22123_2';
+Tables_in_test_parallel_1 (CloseTransAndDDL22123_2)
+drop database if exists db_22123;
+create database db_22123;
+show databases like 'db_22123';
+Database (db_22123)
+db_22123
+drop database db_22123;
+show databases like 'db_22123';
+Database (db_22123)
