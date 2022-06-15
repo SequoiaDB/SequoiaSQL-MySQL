@@ -424,7 +424,8 @@ class ha_sdb : public handler {
   int create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
                       bson::BSONObjBuilder &builder);
 
-  int create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update);
+  int create_modifier_obj(bson::BSONObjBuilder &rule, bool *optimizer_update,
+                          List<Item> *field_list, List<Item> *value_list);
 
   int optimize_count(bson::BSONObj &condition, bool &read_one_record);
 
@@ -432,6 +433,8 @@ class ha_sdb : public handler {
 
   int optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
                       bool &optimizer_update);
+
+  int direct_dup_update();
 
   int optimize_proccess(bson::BSONObj &rule, bson::BSONObj &condition,
                         bson::BSONObj &selector, bson::BSONObj &hint,
@@ -692,6 +695,8 @@ class ha_sdb : public handler {
 
   bool is_inc_rule_supported();
 
+  bool is_dup_update_supported();
+
   bool is_idx_stat_valid(Sdb_idx_stat_ptr &ptr);
 
   int fetch_index_stat(KEY *key_info, Sdb_index_stat &s);
@@ -734,6 +739,8 @@ class ha_sdb : public handler {
   bool m_ignore_dup_key;
   bool m_write_can_replace;
   bool m_insert_with_update;
+  bool m_direct_dup_update;
+  bson::BSONObj m_modify_obj;
   bool m_secondary_sort_rowid;
   bool m_use_bulk_insert;
   bool m_del_ren_main_cl;

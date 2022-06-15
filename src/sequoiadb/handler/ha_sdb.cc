@@ -98,7 +98,7 @@ PSI_memory_key key_memory_sequence_cache;
 static PSI_memory_key key_memory_sdb_share;
 static PSI_memory_key sdb_key_memory_blobroot;
 static PSI_memory_key sdb_key_memory_batched_keys_hash;
-static PSI_memory_key sdb_key_memory_batched_keys_buf;
+static PSI_memory_key sdb_key_memory_batched_keys_buf MY_ATTRIBUTE((unused));
 
 #ifdef IS_MYSQL
 #define sdb_ha_statistic_increment(offset) \
@@ -480,9 +480,6 @@ void sdb_set_affected_rows(THD *thd) {
   }
 
   if (!da->is_ok()) {
-    thd_sdb->deleted = 0;
-    thd_sdb->found = 0;
-    thd_sdb->updated = 0;
     goto done;
   }
 
@@ -495,39 +492,55 @@ void sdb_set_affected_rows(THD *thd) {
        SQLCOM_INSERT_SELECT == thd_sql_command(thd)) &&
       sdb_execute_only_in_mysql(thd)) {
     da->reset_diagnostics_area();
-    char buff[MYSQL_ERRMSG_SIZE];
+    char buff[MYSQL_ERRMSG_SIZE] = {0};
     my_snprintf(buff, sizeof(buff), ER(ER_INSERT_INFO), 0, 0, 0);
     my_ok(thd, 0, 0, buff);
   }
 
-  // For SQLCOM_INSERT, SQLCOM_REPLACE, SQLCOM_INSERT_SELECT...
-  if (thd_sdb->duplicated) {
-    ulonglong &dup_num = thd_sdb->duplicated;
-    bool replace_on_dup = thd_sdb->replace_on_dup;
-    ulonglong inserted_num = da->affected_rows();
-    ulonglong affected_num = 0;
-    char buff[MYSQL_ERRMSG_SIZE];
+  /*"replace into ..." or "insert into .. on duplicate key update."*/
+  if (thd_sdb->inserted || thd_sdb->modified || thd_sdb->duplicated) {
+    ulonglong inserted = thd_sdb->inserted;
+    ulonglong modified = thd_sdb->modified;
+    ulonglong duplicated = thd_sdb->duplicated;
+    bool replace_into = thd_sdb->replace_into;
+    bool insert_on_duplicate = thd_sdb->insert_on_duplicate;
+    // one modified row act as two affeced rows.
+    ulonglong affected_num = inserted + 2 * modified;
+    // bool has_found_rows = false;
+    char buff[MYSQL_ERRMSG_SIZE] = {0};
 
-    if (replace_on_dup) {
-      affected_num = inserted_num + dup_num;
-    } else {
+    if (duplicated) {
+      /*non "replace into" or "insert into on duplicate key update" need push
+       * warning.*/
+      if (!(replace_into || insert_on_duplicate)) {
 #ifdef IS_MARIADB
-      if (!(thd->variables.old_behavior &
-            OLD_MODE_NO_DUP_KEY_WARNINGS_WITH_IGNORE))
+        if (!(thd->variables.old_behavior &
+              OLD_MODE_NO_DUP_KEY_WARNINGS_WITH_IGNORE))
 #endif
-      {
-        push_warning_printf(thd, Sql_condition::SL_WARNING, ER_DUP_ENTRY,
-                            "%lld duplicated records were ignored", dup_num);
+        {
+          push_warning_printf(thd, Sql_condition::SL_WARNING, ER_DUP_ENTRY,
+                              "%lld duplicated records were ignored",
+                              duplicated);
+        }
       }
-      affected_num = inserted_num - dup_num;
     }
-    my_snprintf(buff, sizeof(buff), ER(ER_INSERT_INFO), (long)inserted_num,
-                (long)dup_num, (long)sdb_da_current_statement_cond_count(da));
+    /* bulk insert need print Records and Duplicates. */
+    if (thd_sdb->records > 1) {
+      /*insert into on duplicate key update use the modified as duplicate rows*/
+      duplicated = insert_on_duplicate ? modified : duplicated;
+      my_snprintf(buff, sizeof(buff), ER(ER_INSERT_INFO),
+                  (long)thd_sdb->records, (long)duplicated,
+                  (long)sdb_da_current_statement_cond_count(da));
+    }
+#ifdef IS_MARIADB
+    /*MariaDB add affected_num in my_ok(), so need to clear original num.*/
+    thd->affected_rows = 0;
+#endif
     da->reset_diagnostics_area();
     my_ok(thd, affected_num, last_insert_id, buff);
-    DBUG_PRINT("info", ("%llu records duplicated", dup_num));
-    dup_num = 0;
+    DBUG_PRINT("info", ("%llu records duplicated", duplicated));
     sdb_query_cache_invalidate(thd, !thd_sdb->get_auto_commit());
+    goto done;
   }
 
   // For SQLCOM_UPDATE...
@@ -535,7 +548,7 @@ void sdb_set_affected_rows(THD *thd) {
     ulonglong &found = thd_sdb->found;
     ulonglong &updated = thd_sdb->updated;
     bool has_found_rows = false;
-    char buff[MYSQL_ERRMSG_SIZE];
+    char buff[MYSQL_ERRMSG_SIZE] = {0};
 
     my_snprintf(buff, sizeof(buff), ER(ER_UPDATE_INFO), (long)found,
                 (long)updated, (long)sdb_da_current_statement_cond_count(da));
@@ -1442,6 +1455,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_ignore_dup_key = false;
   m_write_can_replace = false;
   m_insert_with_update = false;
+  m_direct_dup_update = false;
+  m_modify_obj = SDB_EMPTY_BSON;
   m_secondary_sort_rowid = false;
   m_use_bulk_insert = false;
   m_del_ren_main_cl = false;
@@ -1735,8 +1750,11 @@ int ha_sdb::reset() {
   count_query = false;
   m_ignore_dup_key = false;
   m_write_can_replace = false;
+  m_modify_obj = SDB_EMPTY_BSON;
+  m_direct_dup_update = false;
   m_insert_with_update = false;
   m_secondary_sort_rowid = false;
+  m_bulk_insert_total = 0;
   m_use_bulk_insert = false;
   m_del_ren_main_cl = false;
   m_has_update_insert_id = false;
@@ -2434,6 +2452,8 @@ error:
 
 void ha_sdb::start_bulk_insert(ha_rows rows) {
   THD *thd = ha_thd();
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  thd_sdb->records = rows;
   if (!sdb_use_bulk_insert) {
     m_use_bulk_insert = false;
     return;
@@ -2466,7 +2486,6 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   }
 
   m_bulk_insert_total = rows;
-  m_use_bulk_insert = true;
 }
 
 int ha_sdb::get_dup_info(bson::BSONObj &result, const char **idx_name) {
@@ -2520,15 +2539,16 @@ template <class T>
 int ha_sdb::insert_row(T &rows, uint row_count) {
   int rc = SDB_ERR_OK;
   int flag = 0;
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+  THD *thd = ha_thd();
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
 
   DBUG_ASSERT(NULL != collection);
-  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(ha_thd()));
+  DBUG_ASSERT(collection->thread_id() == sdb_thd_id(thd));
   DBUG_ASSERT(NULL != thd_sdb);
 
   try {
     bson::BSONObj result;
-    int sql_command = thd_sql_command(ha_thd());
+    int sql_command = thd_sql_command(thd);
     bool using_vers_sys = false;
     bool replace_into_for_vers_sys = false;
 
@@ -2545,6 +2565,17 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
     if (SQLCOM_REPLACE == sql_command || SQLCOM_REPLACE_SELECT == sql_command) {
       m_write_can_replace = true;
     }
+
+    /*If already do replace into, but triggers comming in after replace into,
+      should use previous replace into.*/
+    if (!thd_sdb->replace_into) {
+      thd_sdb->replace_into = m_write_can_replace;
+    }
+    /*If already do insert into .. on duplicate, but triggers
+      comming in, should use previous insert into on duplicate.*/
+    if (!thd_sdb->insert_on_duplicate) {
+      thd_sdb->insert_on_duplicate = m_insert_with_update;
+    }
 #ifdef IS_MARIADB
     using_vers_sys = table->versioned();
 #endif
@@ -2557,51 +2588,90 @@ int ha_sdb::insert_row(T &rows, uint row_count) {
       replace_into_for_vers_sys = true;
     }
 
+    bson::BSONObj hint;
+    uint64 size_of_modify = m_direct_dup_update ? m_modify_obj.objsize() : 0;
+    // size of modify obj and 96 reserved for client info.
+    bson::BSONObjBuilder builder(96 + size_of_modify);
+    sdb_build_clientinfo(thd, builder);
+    flag = FLG_INSERT_RETURNNUM;
     if (m_insert_with_update) {
-      flag = 0;
+      // insert into ... on duplicate key update
+      if (m_direct_dup_update) {
+        flag |= FLG_INSERT_UPDATEONDUP;
+        builder.appendElements(m_modify_obj);
+      }
     } else if (m_write_can_replace) {
-      flag = FLG_INSERT_REPLACEONDUP | FLG_INSERT_RETURNNUM;
+      flag |= FLG_INSERT_REPLACEONDUP;
     } else if (m_ignore_dup_key) {
-      flag = FLG_INSERT_CONTONDUP | FLG_INSERT_RETURNNUM;
+      flag |= FLG_INSERT_CONTONDUP;
     }
 
-    bson::BSONObj hint;
-    bson::BSONObjBuilder builder(96);
-    sdb_build_clientinfo(ha_thd(), builder);
-    hint = builder.obj();
+    // Do not specify the hint under the version of 3.6.1/3.4.5/5.0.4 to prevent
+    // failing during roll upgrade on the side of SequoiaDB.
+    if (is_dup_update_supported()) {
+      hint = builder.obj();
+    } else {
+      hint = SDB_EMPTY_BSON;
+    }
 
     rc = collection->insert(rows, hint, flag, &result);
     if (SDB_IXM_DUP_KEY == get_sdb_code(rc)) {
-      int rs = SDB_ERR_OK;
       const char *idx_name = NULL;
-      rs = get_dup_info(result, &idx_name);
-      if (SDB_ERR_OK != rs) {
-        rc = rs;
-        goto error;
-      }
-      /* Cannot support when
-       * REPLACE INTO ... for system-versioned tables
-       * INSERT ... ON DUPLICATE KEY UPDATE ... when sdb doesn't return
-       * duplication info.
-       */
-      if (replace_into_for_vers_sys || (idx_name && m_insert_with_update)) {
-        // Return this code so that mysql can call ::update_row().
-        rc = HA_ERR_FOUND_DUPP_KEY;
+      bool no_dup_key_warning = false;
+#ifdef IS_MARIADB
+      no_dup_key_warning = thd->variables.old_behavior &
+                           OLD_MODE_NO_DUP_KEY_WARNINGS_WITH_IGNORE;
+#endif
+      /*Duplicated occured again after direct insert into .. on duplicate,
+        need return and print duplicated key error.
+      */
+      if (m_direct_dup_update && !sdb_lex_ignore(ha_thd())) {
+        handle_sdb_error(SDB_IXM_DUP_KEY, MYF(0));
+      } else {
+        int rs = SDB_ERR_OK;
+        rs = get_dup_info(result, &idx_name);
+        if (SDB_ERR_OK != rs) {
+          rc = rs;
+          goto error;
+        }
+        /* Cannot support when
+         * REPLACE INTO ... for system-versioned tables
+         * INSERT ... ON DUPLICATE KEY UPDATE ... when sdb doesn't return
+         * duplication info.
+         */
+        if (replace_into_for_vers_sys || (idx_name && m_insert_with_update)) {
+          // Return this code so that mysql can call ::update_row().
+          rc = HA_ERR_FOUND_DUPP_KEY;
+        }
+        if (m_direct_dup_update && !no_dup_key_warning) {
+          push_warning_printf(ha_thd(), Sql_condition::SL_WARNING, ER_DUP_ENTRY,
+                              "Duplicate entry '%-.192s' for key '%s'",
+                              m_dup_value.toString().c_str(), idx_name);
+          rc = SDB_OK;
+        }
       }
     }
 
     if (flag & FLG_INSERT_RETURNNUM) {
-      bson::BSONElement be_dup_num = result.getField(SDB_FIELD_DUP_NUM);
-      if (be_dup_num.isNumber()) {
-        thd_sdb->duplicated += be_dup_num.numberLong();
+      // "insert into ... on duplicate key update" or "replace into .."
+      bson::BSONElement inserted_num = result.getField(SDB_FIELD_INSERTED_NUM);
+      if (inserted_num.isNumber()) {
+        thd_sdb->inserted += inserted_num.numberLong();
       }
-      thd_sdb->replace_on_dup = m_write_can_replace;
+      bson::BSONElement modified_num = result.getField(SDB_FIELD_MODIFIED_NUM);
+      if (modified_num.isNumber()) {
+        thd_sdb->modified += modified_num.numberLong();
+      }
+      bson::BSONElement duplicated_num = result.getField(SDB_FIELD_DUP_NUM);
+      if (duplicated_num.isNumber()) {
+        thd_sdb->duplicated += duplicated_num.numberLong();
+      }
     }
-
     update_last_insert_id();
     stats.records += row_count;
     update_incr_stat(row_count);
   }
+
   SDB_EXCEPTION_CATCHER(rc, "Failed to insert row table:%s.%s, exception:%s",
                         db_name, table_name, e.what());
 done:
@@ -2710,6 +2780,7 @@ int ha_sdb::get_deleted_rows(bson::BSONObj &result, ulonglong *deleted) {
 int ha_sdb::write_row(uchar *buf) {
   int rc = 0;
   THD *thd = ha_thd();
+  bson::BSONObjBuilder modify_builder;
   bson::BSONObj obj;
   bson::BSONObj tmp_obj;
   ulonglong auto_inc = 0;
@@ -2780,6 +2851,13 @@ int ha_sdb::write_row(uchar *buf) {
   rc = row_to_obj(buf, obj, TRUE, FALSE, tmp_obj, auto_inc_explicit_used);
   if (rc != 0) {
     goto error;
+  }
+
+  if (is_dup_update_supported() && m_insert_with_update) {
+    rc = direct_dup_update();
+    if (SDB_OK != rc) {
+      goto error;
+    }
   }
 
   if (m_use_bulk_insert) {
@@ -3499,6 +3577,44 @@ error:
   goto done;
 }
 
+// SequoiaDB doesn't support hint with "$Modify" before v3.6.1, v5.0.4
+// and 3.4.5.
+bool ha_sdb::is_dup_update_supported() {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 4) ||              // 3.x < 3.4
+      (3 == major && 4 == minor && fix < 5) ||  // 3.4.x < 3.4.5
+      (3 == major && 6 == minor && fix < 1) ||  // 3.6.x < 3.6.1
+      (5 == major && 0 == minor && fix < 4)) {  // 5.0.x < 5.0.4
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int ha_sdb::create_field_rule(const char *field_name, Item_field *value,
                               bson::BSONObjBuilder &builder) {
   int rc = SDB_ERR_OK;
@@ -3541,6 +3657,12 @@ int ha_sdb::create_set_rule(Field *rfield, Item *value, bool *optimizer_update,
     sdb_thd_reset_condition_info(thd);
     goto error;
   }
+
+  if (rfield->is_null()) {
+    builder.appendNull(sdb_field_name(rfield));
+    goto done;
+  }
+
   /* set a = -100 (FUNC_ITEM:'-', INT_ITEM:100) */
   rc = field_to_obj(rfield, builder);
   if (0 != rc) {
@@ -3671,7 +3793,9 @@ error:
   goto done;
 }
 
-int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
+int ha_sdb::create_modifier_obj(bson::BSONObjBuilder &rule,
+                                bool *optimizer_update, List<Item> *field_list,
+                                List<Item> *value_list) {
   DBUG_ENTER("ha_sdb::create_modifier_obj()");
   int rc = 0;
   Field *rfield = NULL;
@@ -3695,11 +3819,10 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
       alloc_root(&table->mem_root, bitmap_buffer_size(table->s->fields)));
   bitmap_init(&const_col_map, bitbuf, table->s->fields, 0);
 
-  SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
-  List<Item> *const item_list = &select_lex->item_list;
-  List<Item> *const update_value_list = sdb_update_values_list(ha_thd());
+  List<Item> *item_list = field_list;
+  List<Item> *update_value_list = value_list;
   List_iterator_fast<Item> f(*item_list), v(*update_value_list);
-
+  *optimizer_update = true;
   try {
     while (*optimizer_update && (fld = f++)) {
       ha_sdb_update_arg upd_arg;
@@ -3855,13 +3978,19 @@ int ha_sdb::create_modifier_obj(bson::BSONObj &rule, bool *optimizer_update) {
     set_obj = set_builder.obj();
     inc_obj = inc_builder.obj();
 
-    if (!set_obj.isEmpty() && !inc_obj.isEmpty()) {
-      rule = BSON("$set" << set_obj << "$inc" << inc_obj);
-    } else if (!set_obj.isEmpty()) {
-      rule = BSON("$set" << set_obj);
-    } else if (!inc_obj.isEmpty()) {
-      rule = BSON("$inc" << inc_obj);
+    if (set_obj.isEmpty() && inc_obj.isEmpty()) {
+      *optimizer_update = false;
     }
+
+    if (!set_obj.isEmpty() && !inc_obj.isEmpty()) {
+      rule.append("$set", set_obj);
+      rule.append("$inc", inc_obj);
+    } else if (!set_obj.isEmpty()) {
+      rule.append("$set", set_obj);
+    } else if (!inc_obj.isEmpty()) {
+      rule.append("$inc", inc_obj);
+    }
+    rule.done();
   }
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to create modify object, table:%s.%s, exception:%s", db_name,
@@ -3947,13 +4076,18 @@ int ha_sdb::optimize_update(bson::BSONObj &rule, bson::BSONObj &condition,
     goto done;
   }
 
-  optimizer_update = true;
-  rc = create_modifier_obj(rule, &optimizer_update);
-  if (rc) {
-    optimizer_update = false;
-    goto error;
+  {
+    List<Item> *field_list = &select_lex->item_list;
+    List<Item> *update_value_list = sdb_update_values_list(ha_thd());
+    bson::BSONObjBuilder sub_builder;
+    rc = create_modifier_obj(sub_builder, &optimizer_update, field_list,
+                             update_value_list);
+    if (rc) {
+      optimizer_update = false;
+      goto error;
+    }
+    rule = sub_builder.obj();
   }
-
 done:
   DBUG_PRINT("ha_sdb:info",
              ("optimizer update: %d, rule: %s, condition: %s", optimizer_update,
@@ -4132,6 +4266,101 @@ int ha_sdb::optimize_count(bson::BSONObj &condition, bool &read_one_record) {
 
 done:
   DBUG_RETURN(rc);
+error:
+  goto done;
+}
+
+int ha_sdb::direct_dup_update() {
+  int rc = SDB_OK;
+  THD *thd = ha_thd();
+  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
+  bool has_triggers = false;
+  bool has_update_def = false;
+  bool has_check = false;
+  bool non_table_list = false;
+  SELECT_LEX *const select_lex = sdb_lex_first_select(ha_thd());
+  TABLE_LIST *const table_list = select_lex->get_table_list();
+  bool using_vers_sys = false;
+  bool using_period = false;
+  bson::BSONObjBuilder modify_builder;
+
+#ifdef IS_MARIADB
+  using_vers_sys = table->versioned();
+  using_period = table->s->period.constr_name.str ? true : false;
+#endif
+
+  /*insert into v1 SELECT 1, the table_list of select 1 is a virtual table and
+    is null*/
+  non_table_list = (NULL == table_list) ? true : false;
+
+  if (non_table_list) {
+    m_direct_dup_update = false;
+    goto done;
+  }
+
+  has_triggers = sdb_has_update_triggers(table);
+  if (!non_table_list) {
+    has_check = table_list->check_option || sdb_is_view(table_list);
+  }
+
+  for (Field **fields = table->field; *fields; fields++) {
+    Field *field = *fields;
+    if (sdb_field_has_update_def_func(field) &&
+        bitmap_is_set(table->write_set, field->field_index)) {
+      has_update_def = true;
+      break;
+    }
+  }
+
+  /* Cannot do insert into ... on duplicate key update optimize
+     in the he following cases.
+     - triggers
+     - generate columns
+     - with check option
+  */
+  if (has_triggers || has_update_def || has_check || using_vers_sys ||
+      using_period ||
+      !(sdb_lex_current_select(ha_thd()) == sdb_lex_first_select(ha_thd()))) {
+    m_direct_dup_update = false;
+    goto done;
+  }
+
+  /* use "hint:{$Modify:{OP:"update", Update:{...}}}" to handle
+     "insert into ... on duplicate key update" */
+  try {
+    if (m_insert_with_update) {
+      List<Item> empty_list;
+      List<Item> *update_fields = NULL;
+      List<Item> *update_values = NULL;
+      bson::BSONObjBuilder sub_builder(
+          modify_builder.subobjStart(SDB_HINT_FIELD_MODIFY));
+      sub_builder.append(SDB_HINT_FIELD_MODIFY_OP,
+                         SDB_HINT_FIELD_MODIFY_OP_UPDATE);
+      bson::BSONObjBuilder update_builder(
+          sub_builder.subobjStart(SDB_HINT_FIELD_MODIFY_UPDATE));
+      sdb_get_update_field_list_and_value_list(thd, &update_fields,
+                                               &update_values);
+      rc = create_modifier_obj(update_builder, &m_direct_dup_update,
+                               update_fields, update_values);
+      if (SDB_OK != rc) {
+        goto error;
+      }
+      sub_builder.done();
+      /*some case like "on duplicate key update a=a+b+b" can not direct dup
+       * update*/
+      if (m_direct_dup_update) {
+        m_modify_obj = modify_builder.obj();
+        m_use_bulk_insert = thd_sdb->records > 1 ? true : false;
+      } else {
+        m_use_bulk_insert = false;
+      }
+    }
+  }
+  SDB_EXCEPTION_CATCHER(
+      rc, "Failed to optimize dup update for table:%s.%s, exception:%s",
+      db_name, table_name, e.what());
+done:
+  return rc;
 error:
   goto done;
 }
@@ -6020,7 +6249,6 @@ int ha_sdb::extra(enum ha_extra_function operation) {
       break;
     case HA_EXTRA_INSERT_WITH_UPDATE:
       m_insert_with_update = true;
-      m_use_bulk_insert = false;
     case HA_EXTRA_SECONDARY_SORT_ROWID:
       m_secondary_sort_rowid = true;
       break;
@@ -8733,9 +8961,8 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
                 // rows.
                 thd_sdb->found++;
                 push_warning_printf(ha_thd(), Sql_condition::SL_WARNING,
-                                    ER_WARN_DATA_OUT_OF_RANGE,
-                                    ER(ER_WARN_DATA_OUT_OF_RANGE), field_name,
-                                    thd_sdb->found);
+                                    ER_DUP_ENTRY, ER(ER_WARN_DATA_OUT_OF_RANGE),
+                                    field_name, thd_sdb->found);
               } else {
                 thd_sdb->found = 0;
               }
@@ -8802,7 +9029,7 @@ void ha_sdb::handle_sdb_error(int error, myf errflag) {
         if (thd_sql_command(ha_thd()) == SQLCOM_SELECT) {
           my_printf_error(ER_GET_ERRNO,
                           "Got error %d from storage engine, invalid hint.",
-                          MYF(0),error);
+                          MYF(0), error);
           SDB_LOG_ERROR(
               "Got error %d from storage engine, invalid hint, "
               "db_name:%s, table_name:%s.",

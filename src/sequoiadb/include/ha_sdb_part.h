@@ -740,7 +740,7 @@ class ha_sdb_part_wrapper : public ha_partition {
                                   first_value, nb_reserved_values);
   }
 
-  void release_auto_increment() { };
+  void release_auto_increment(){};
 
   TABLE_LIST* get_next_global_for_child() { return NULL; }
 

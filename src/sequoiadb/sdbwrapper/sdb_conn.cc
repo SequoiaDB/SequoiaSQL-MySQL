@@ -235,7 +235,6 @@ int Sdb_conn::do_connect(bool use_orig_conn) {
   if (!(is_valid() && is_authenticated())) {
     m_transaction_on = false;
     m_is_authenticated = false;
-    ha_sdb_conn_addrs conn_addrs;
 
     rc = use_orig_conn ? raw_connect(sdb_conn_str) : get_connection();
     if (SDB_ERR_OK != rc) {

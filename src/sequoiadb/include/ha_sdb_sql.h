@@ -369,6 +369,12 @@ bool sdb_field_has_update_def_func(const Field *field);
 
 Field *sdb_field_clone(Field *field, MEM_ROOT *root);
 
+bool sdb_is_insert_into_on_duplicate(THD *thd);
+
+void sdb_get_update_field_list_and_value_list(THD *thd,
+                                              List<Item> **update_fields,
+                                              List<Item> **update_values);
+
 Item *sdb_get_gcol_item(const Field *field);
 
 MY_BITMAP *sdb_get_base_columns_map(const Field *field);

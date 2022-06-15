@@ -144,9 +144,17 @@
 #define SDB_FIELD_GENERATED "Generated"
 #define SDB_FIELD_INITIAL "Initial"
 #define SDB_FIELD_LAST_GEN_ID "LastGenerateID"
+
+/*Hint client info*/
 #define SDB_FIELD_INFO "$ClientInfo"
 #define SDB_FIELD_PORT "ClientPort"
 #define SDB_FIELD_QID "ClientQID"
+
+/*Hint modify info*/
+#define SDB_HINT_FIELD_MODIFY "$Modify"
+#define SDB_HINT_FIELD_MODIFY_OP "OP"
+#define SDB_HINT_FIELD_MODIFY_OP_UPDATE "update"
+#define SDB_HINT_FIELD_MODIFY_UPDATE "Update"
 
 #define SDB_FIELD_SHARDING_KEY "ShardingKey"
 #define SDB_FIELD_SHARDING_TYPE "ShardingType"
@@ -184,6 +192,7 @@
 #define SDB_FIELD_ENFORCED2 "enforced"
 #define SDB_FIELD_KEY "key"
 
+#define SDB_FIELD_INSERTED_NUM "InsertedNum"
 #define SDB_FIELD_UPDATED_NUM "UpdatedNum"
 #define SDB_FIELD_MODIFIED_NUM "ModifiedNum"
 #define SDB_FIELD_DELETED_NUM "DeletedNum"

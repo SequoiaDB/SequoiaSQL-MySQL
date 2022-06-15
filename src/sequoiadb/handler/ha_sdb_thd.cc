@@ -758,6 +758,11 @@ Thd_sdb::Thd_sdb(THD *thd)
   updated = 0;
   deleted = 0;
   duplicated = 0;
+  inserted = 0;
+  modified = 0;
+  records = 0;
+  replace_into = false;
+  insert_on_duplicate = false;
   cl_copyer = NULL;
   unexpected_id_err_query_id = 0;
 
@@ -807,6 +812,11 @@ void Thd_sdb::reset() {
   updated = 0;
   deleted = 0;
   duplicated = 0;
+  inserted = 0;
+  modified = 0;
+  records = 0;
+  replace_into = false;
+  insert_on_duplicate = false;
   unexpected_id_err_query_id = 0;
 }
 

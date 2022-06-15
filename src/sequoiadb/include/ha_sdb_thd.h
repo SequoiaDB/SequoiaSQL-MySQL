@@ -63,8 +63,12 @@ class Thd_sdb {
   ulonglong updated;
   ulonglong deleted;
   ulonglong duplicated;
+  ulonglong inserted;
+  ulonglong modified;
+  ulonglong records;
   query_id_t unexpected_id_err_query_id;
-  bool replace_on_dup;
+  bool insert_on_duplicate;
+  bool replace_into;
 
   // store stats info for each open table share
   // update stats of m_share after transaction commit

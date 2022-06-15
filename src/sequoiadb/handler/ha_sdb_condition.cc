@@ -460,6 +460,11 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
       type = update_item->field_type();
       item_fld = (Item_field *)update_item;
 
+      if (item_fld->field->table != upd_arg->my_field->table) {
+        *upd_arg->optimizer_update = false;
+        break;
+      }
+
       if (0 == strcmp(sdb_field_name(item_fld->field),
                       sdb_field_name(upd_arg->my_field))) {
         if (0 == my_field_cnt) {
@@ -471,8 +476,12 @@ void sdb_traverse_update(const Item *update_item, void *arg) {
             *upd_arg->optimizer_update = false;
             break;
           }
-
+          TABLE *table = item_fld->field->table;
+          my_bitmap_map *old_write_map =
+              dbug_tmp_use_all_columns(table, table->write_set);
+          bitmap_set_bit(table->write_set, item_fld->field->field_index);
           item_fld->field->store(0);
+          dbug_tmp_restore_column_map(table->write_set, old_write_map);
           if (item_fld->field->is_null()) {
             item_fld->field->set_notnull();
           }

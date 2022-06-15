@@ -555,6 +555,25 @@ Field *sdb_field_clone(Field *field, MEM_ROOT *root) {
   return field->clone(root);
 }
 
+bool sdb_is_insert_into_on_duplicate(THD *thd) {
+  Sql_cmd_insert_base *insert_cmd = (Sql_cmd_insert_base *)thd->lex->m_sql_cmd;
+  if (DUP_UPDATE == insert_cmd->duplicates) {
+    return true;
+  }
+  return false;
+}
+
+void sdb_get_update_field_list_and_value_list(THD *thd,
+                                              List<Item> **update_fields,
+                                              List<Item> **update_values) {
+  DBUG_ASSERT(sdb_is_insert_into_on_duplicate(thd));
+  Sql_cmd_insert_base *insert_cmd = (Sql_cmd_insert_base *)thd->lex->m_sql_cmd;
+  DBUG_ASSERT(insert_cmd->insert_update_list.elements ==
+              insert_cmd->insert_value_list.elements);
+  *update_fields = &insert_cmd->insert_update_list;
+  *update_values = &insert_cmd->insert_value_list;
+}
+
 Item *sdb_get_gcol_item(const Field *field) {
   DBUG_ASSERT(field->gcol_info && field->gcol_info->expr_item);
   return field->gcol_info->expr_item;
@@ -662,8 +681,10 @@ void sdb_query_cache_invalidate(THD *thd, bool all) {
   } else {
     table_list = thd->lex->insert_table_leaf;
   }
-  query_cache.invalidate_single(thd, table_list,
-                                sdb_is_transaction_stmt(thd, all));
+  if (table_list) {
+    query_cache.invalidate_single(thd, table_list,
+                                  sdb_is_transaction_stmt(thd, all));
+  }
 }
 
 bool sdb_table_has_gcol(TABLE *table) {
@@ -1197,6 +1218,21 @@ Field *sdb_field_clone(Field *field, MEM_ROOT *root) {
   return field->clone(root, (my_ptrdiff_t)0);
 }
 
+bool sdb_is_insert_into_on_duplicate(THD *thd) {
+  if (DUP_UPDATE == thd->lex->duplicates) {
+    return true;
+  }
+  return false;
+}
+
+void sdb_get_update_field_list_and_value_list(THD *thd,
+                                              List<Item> **update_fields,
+                                              List<Item> **update_values) {
+  DBUG_ASSERT(sdb_is_insert_into_on_duplicate(thd));
+  *update_fields = &thd->lex->update_list;
+  *update_values = &thd->lex->value_list;
+}
+
 Item *sdb_get_gcol_item(const Field *field) {
   DBUG_ASSERT(field->vcol_info && field->vcol_info->expr);
   return field->vcol_info->expr;
@@ -1321,8 +1357,10 @@ bool sdb_create_table_like(THD *thd) {
 }
 
 void sdb_query_cache_invalidate(THD *thd, bool all) {
-  query_cache_invalidate3(thd, thd->lex->query_tables,
-                          sdb_is_transaction_stmt(thd, all));
+  if (thd->lex->query_tables) {
+    query_cache_invalidate3(thd, thd->lex->query_tables,
+                            sdb_is_transaction_stmt(thd, all));
+  }
 }
 
 bool sdb_table_has_gcol(TABLE *table) {
