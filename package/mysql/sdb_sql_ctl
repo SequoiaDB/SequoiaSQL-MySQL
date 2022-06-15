@@ -295,7 +295,7 @@ function list_inst()
    fi
 
    local i=0
-   find $CONF_INST_PATH -name "*.conf" | while read fname
+   find $CONF_INST_PATH -name "*.conf" | sort | while read fname
    do
       . "${fname}"
       printf "%-10s %-40s %-40s\n" $INSTNAME $SQLDATA $SQLLOG
