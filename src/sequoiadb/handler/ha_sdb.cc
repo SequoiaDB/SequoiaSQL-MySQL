@@ -615,6 +615,11 @@ static int sdb_get_partition_names(
     if (obj.getField(SDB_FIELD_ISMAINCL).booleanSafe()) {
       bson::BSONObj sub_cl_arr = obj.getField(SDB_FIELD_CATAINFO).Obj();
       bson::BSONObjIterator it(sub_cl_arr);
+      // prefix of full partition name, eg: 'table_name#P#'
+      char full_part_name_prefix[SDB_CL_NAME_MAX_SIZE + 1 +
+                                 sizeof(SDB_PART_SEP) - 1] = {0};
+      sprintf(full_part_name_prefix, "%s#P#", table_name);
+      size_t prefix_len = strlen(full_part_name_prefix);
       while (it.more()) {
         part_mapping.reset();
         bson::BSONObj ele = it.next().Obj();
@@ -633,8 +638,18 @@ static int sdb_get_partition_names(
           goto error;
         }
         tab_part_name = part_mapping.get_table();
-        tbl_parts.insert(strstr(tab_part_name, SDB_PART_SEP) +
-                         sizeof(SDB_PART_SEP) - 1);
+        if (0 == strncmp(full_part_name_prefix, tab_part_name, prefix_len)) {
+          tbl_parts.insert(strstr(tab_part_name, SDB_PART_SEP) +
+                           sizeof(SDB_PART_SEP) - 1);
+        } else {
+          // 1. table in SQL instance is not a partition table
+          // 2. and its corresponding collection in SDB is a main collection
+          // 3. current sub collection is not start with 'table_name#P#'
+          SDB_LOG_INFO("Partition '%s' of '%s' is not start with '%s'",
+                       tab_part_name, table_name, full_part_name_prefix);
+          tbl_parts.clear();
+          break;
+        }
       }
     }
   }
