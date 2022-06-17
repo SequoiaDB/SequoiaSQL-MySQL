@@ -1,7 +1,9 @@
 --source include/have_sequoiadb.inc
 
 --disable_warnings
-drop table if exists DDL_20109;
+drop database if exists db_20109;
+create database db_20109;
+use db_20109;
 --enable_warnings
 
 #创建表
@@ -41,10 +43,8 @@ drop table DDL_20109_2;
 show tables like 'DDL_20109_2';
 
 #删除/创建数据库，检查结果
---disable_warnings
-drop database if exists db_20109;
---enable_warnings
+drop database db_20109;
+show databases like 'db_20109';
 create database db_20109;
 show databases like 'db_20109';
 drop database db_20109;
-show databases like 'db_20109';
