@@ -289,9 +289,6 @@ class Sdb_func_like : public Sdb_func_bin_op {
   virtual ~Sdb_func_like();
 
   virtual int to_bson(bson::BSONObj &obj);
-  virtual int push_sdb_item(Sdb_item *cond_item) {
-    return SDB_ERR_COND_UNEXPECTED_ITEM;
-  }
   virtual const char *name() { return "like"; }
   virtual Item_func::Functype type() { return Item_func::LIKE_FUNC; }
 

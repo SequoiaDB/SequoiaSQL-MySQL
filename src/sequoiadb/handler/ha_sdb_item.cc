@@ -1376,12 +1376,13 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
   int rc = SDB_ERR_OK;
   Item_field *item_field = NULL;
   Item *item_tmp = NULL;
-  Item_string *item_val = NULL;
-  String *str_val_org;
+  String str_val;
+  String *str_val_org = &str_val;
   String str_val_conv;
   std::string regex_val;
   bson::BSONObjBuilder regex_builder;
   bool pre_match_all = false;
+  const CHARSET_INFO *field_charset = NULL;
 
   if (!is_finished || para_list.elements != para_num_max) {
     rc = SDB_ERR_COND_INCOMPLETED;
@@ -1402,13 +1403,14 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
     while (!para_list.is_empty()) {
       item_tmp = para_list.pop();
       if (Item::FIELD_ITEM != item_tmp->type()) {
-        if (!sdb_is_string_item(item_tmp)  // only support string
-            || item_val != NULL) {
+        // 1. check whether the value of item_tmp is const
+        // 2. the left and right operand values of LIKE can not both be get here
+        // 3. check whether get a string value from item_tmp
+        if (!((Item_func*)item_tmp)->const_item() || str_val_org->ptr() != NULL ||
+                !sdb_get_item_string_value(item_tmp, &str_val_org)) {
           rc = SDB_ERR_COND_UNEXPECTED_ITEM;
           goto error;
         }
-
-        item_val = (Item_string *)item_tmp;
       } else {
         if (item_field != NULL) {
           // not support: field1 like field2
@@ -1416,6 +1418,7 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
           goto error;
         }
         item_field = (Item_field *)item_tmp;
+        field_charset = item_field->collation.collation;
 
         // only support the string-field
         if ((item_field->field_type() != MYSQL_TYPE_VARCHAR &&
@@ -1434,9 +1437,13 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
       }
     }
 
-    str_val_org = item_val->val_str(NULL);
-    rc =
-        sdb_convert_charset(*str_val_org, str_val_conv, &SDB_COLLATION_UTF8MB4);
+    if (!sdb_is_string_item(item_tmp) && field_charset != &SDB_COLLATION_UTF8MB4
+          && item_tmp->collation.collation != &SDB_COLLATION_UTF8MB4) {
+      rc = SDB_ERR_COND_UNEXPECTED_ITEM;
+      goto error;
+    }
+    
+    rc = sdb_convert_charset(*str_val_org, str_val_conv, &SDB_COLLATION_UTF8MB4);
     if (rc) {
       goto error;
     }
@@ -1543,6 +1550,7 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
     if (buf_pos >= SDB_MATCH_FIELD_SIZE_MAX) {
       // reserve 2 byte for character and '\'
       rc = SDB_ERR_SIZE_OVF;
+      goto error;
     }
 
     if ('%' == *p_cur || '_' == *p_cur) {
@@ -1630,4 +1638,6 @@ int Sdb_func_like::get_regex_str(const char *like_str, size_t len,
   }
 done:
   DBUG_RETURN(rc);
+error:
+  goto done;
 }
