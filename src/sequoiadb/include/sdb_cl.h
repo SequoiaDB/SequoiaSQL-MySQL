@@ -148,7 +148,8 @@ class Sdb_cl {
   void clear_errmsg() { errmsg[0] = '\0'; }
   bool is_error() { return (errmsg[0] == '\0') ? FALSE : TRUE; }
 
-  int get_index_stat(const char *index_name, bson::BSONObj &obj);
+  int get_index_stat(const char *index_name, bson::BSONObj &obj,
+                     bool detail = false);
 
   Sdb_conn *get_conn();
 

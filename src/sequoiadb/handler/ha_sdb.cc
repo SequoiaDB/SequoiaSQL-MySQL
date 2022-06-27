@@ -5272,7 +5272,7 @@ int ha_sdb::obj_to_row(bson::BSONObj &obj, uchar *buf) {
       }
 
       if (check_element_type_compatible(elem, field)) {
-        rc = bson_element_to_field(elem, field);
+        rc = sdb_bson_element_to_field(elem, field, &blobroot);
         if (0 != rc) {
           goto error;
         }
@@ -5390,139 +5390,6 @@ bool ha_sdb::check_element_type_compatible(bson::BSONElement &elem,
   }
 
   return compatible;
-}
-
-void ha_sdb::raw_store_blob(Field_blob *blob, const char *data, uint len) {
-  uint packlength = blob->pack_length_no_ptr();
-#if defined IS_MYSQL
-  bool low_byte_first = table->s->db_low_byte_first;
-#elif defined IS_MARIADB
-  bool low_byte_first = true;
-#endif
-  sdb_store_packlength(blob->ptr, packlength, len, low_byte_first);
-  memcpy(blob->ptr + packlength, &data, sizeof(char *));
-}
-
-int ha_sdb::bson_element_to_field(const bson::BSONElement elem, Field *field) {
-  int rc = SDB_ERR_OK;
-
-  DBUG_ASSERT(0 == strcmp(elem.fieldName(), sdb_field_name(field)));
-
-  switch (elem.type()) {
-    case bson::NumberInt:
-    case bson::NumberLong: {
-      longlong nr = elem.numberLong();
-      field->store(nr, false);
-      break;
-    }
-    case bson::NumberDouble: {
-      double nr = elem.numberDouble();
-      field->store(nr);
-      break;
-    }
-    case bson::BinData: {
-      int len = 0;
-      const char *data = elem.binData(len);
-      if (field->flags & BLOB_FLAG) {
-        raw_store_blob((Field_blob *)field, data, len);
-      } else {
-        field->store(data, len, &my_charset_bin);
-      }
-      break;
-    }
-    case bson::String: {
-      if (field->flags & BLOB_FLAG) {
-        // TEXT is a kind of blob
-        const char *data = elem.valuestr();
-        uint len = elem.valuestrsize() - 1;
-        const CHARSET_INFO *field_charset = ((Field_str *)field)->charset();
-
-        if (!sdb_is_supported_charset(field_charset)) {
-          String org_str(data, len, &SDB_COLLATION_UTF8MB4);
-          String conv_str;
-          uchar *new_data = NULL;
-          rc = sdb_convert_charset(org_str, conv_str, field_charset);
-          if (rc) {
-            goto error;
-          }
-
-          new_data = (uchar *)alloc_root(&blobroot, conv_str.length());
-          if (!new_data) {
-            rc = HA_ERR_OUT_OF_MEM;
-            goto error;
-          }
-
-          memcpy(new_data, conv_str.ptr(), conv_str.length());
-          memcpy(&data, &new_data, sizeof(uchar *));
-          len = conv_str.length();
-        }
-
-        raw_store_blob((Field_blob *)field, data, len);
-      } else {
-        // DATETIME is stored as string, too.
-        field->store(elem.valuestr(), elem.valuestrsize() - 1,
-                     &SDB_COLLATION_UTF8MB4);
-      }
-      break;
-    }
-    case bson::NumberDecimal: {
-      bson::bsonDecimal valTmp = elem.numberDecimal();
-      string strValTmp = valTmp.toString();
-      field->store(strValTmp.c_str(), strValTmp.length(), &my_charset_bin);
-      break;
-    }
-    case bson::Date: {
-      MYSQL_TIME time_val;
-      struct timeval tv;
-      struct tm tm_val;
-
-      longlong millisec = (longlong)(elem.date());
-      tv.tv_sec = millisec / 1000;
-      tv.tv_usec = millisec % 1000 * 1000;
-      localtime_r((const time_t *)(&tv.tv_sec), &tm_val);
-
-      time_val.year = tm_val.tm_year + 1900;
-      time_val.month = tm_val.tm_mon + 1;
-      time_val.day = tm_val.tm_mday;
-      time_val.hour = 0;
-      time_val.minute = 0;
-      time_val.second = 0;
-      time_val.second_part = 0;
-      time_val.neg = 0;
-      time_val.time_type = MYSQL_TIMESTAMP_DATE;
-      if ((time_val.month < 1 || time_val.day < 1) ||
-          (time_val.year > 9999 || time_val.month > 12 || time_val.day > 31)) {
-        // Invalid date, the field has been reset to zero,
-        // so no need to store.
-      } else {
-        sdb_field_store_time(field, &time_val);
-      }
-      break;
-    }
-    case bson::Timestamp: {
-      struct timeval tv;
-      longlong millisec = (longlong)(elem.timestampTime());
-      longlong microsec = elem.timestampInc();
-      tv.tv_sec = millisec / 1000;
-      tv.tv_usec = millisec % 1000 * 1000 + microsec;
-      sdb_field_store_timestamp(field, &tv);
-      break;
-    }
-    case bson::Bool: {
-      bool val = elem.boolean();
-      field->store(val ? 1 : 0, true);
-      break;
-    }
-    case bson::Object:
-    default:
-      rc = SDB_ERR_TYPE_UNSUPPORTED;
-      goto error;
-  }
-
-done:
-  return rc;
-error:
-  goto done;
 }
 
 int ha_sdb::cur_row(uchar *buf) {
@@ -6889,9 +6756,10 @@ bool ha_sdb::is_idx_stat_valid(Sdb_idx_stat_ptr &ptr) {
     Invalid in following cases:
     1. statistics doesn't exist;
     2. sequoiadb_stats_cache was changed.(ON => OFF or OFF => ON)
+    3. sequoiadb_stats_cache_level is higher than the current;
   */
-  // TODO: check if expired.
-  return (ptr.get() && ptr->version == sdb_stats_cache_version);
+  return (ptr.get() && ptr->version == sdb_stats_cache_version &&
+          ptr->level >= sdb_get_stats_cache_level(ha_thd()));
 }
 
 int ha_sdb::ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr) {
@@ -6909,15 +6777,23 @@ int ha_sdb::ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr) {
     /*
       Refresh index statistics in table share.
     */
-    new_stat = new (std::nothrow) Sdb_index_stat();
+    if (is_mcv_supported() &&
+        SDB_STATS_LVL_MCV == sdb_get_stats_cache_level(ha_thd())) {
+      new_stat = new (std::nothrow) Sdb_index_stat_mcv();
+    } else {
+      new_stat = new (std::nothrow) Sdb_index_stat();
+    }
+
     if (NULL == new_stat) {
       rc = HA_ERR_OUT_OF_MEM;
       goto error;
     }
+
     rc = new_stat->init(key_info, sdb_stats_cache_version);
     if (rc != 0) {
       goto error;
     }
+
     if (sdb_stats_cache) {
       rc = fetch_index_stat(key_info, *new_stat);
       if (rc != 0) {
@@ -6983,6 +6859,42 @@ error:
   goto done;
 }
 
+bool ha_sdb::is_mcv_supported() {
+  bool supported = false;
+  int major = 0;
+  int minor = 0;
+  int fix = 0;
+  int rc = 0;
+  Sdb_conn *conn = NULL;
+
+  rc = check_sdb_in_thd(ha_thd(), &conn, false);
+  if (rc != 0) {
+    goto error;
+  }
+  DBUG_ASSERT(conn->thread_id() == sdb_thd_id(ha_thd()));
+
+  rc = sdb_get_version(*conn, major, minor, fix);
+  if (rc != 0) {
+    goto error;
+  }
+
+  if (major < 3 ||                              // x < 3
+      (3 == major && minor < 4) ||              // 3.x < 3.2
+      (3 == major && 4 == minor && fix < 5) ||  // 3.4.x < 3.4.6
+      (5 == major && 0 == minor && fix < 4) ||  // 5.0.x < 5.0.4
+      (3 == major && 6 == minor && fix < 0)) {  // 3.6.x < 3.6.1
+    supported = false;
+  } else {
+    supported = true;
+  }
+
+done:
+  return supported;
+error:
+  supported = false;
+  goto done;
+}
+
 int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
   DBUG_ENTER("ha_sdb::fetch_index_stat");
   int rc = 0;
@@ -6990,6 +6902,7 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
   Sdb_conn *conn = NULL;
   Sdb_cl cl;
   bson::BSONObj obj;
+  bool need_detail = (SDB_STATS_LVL_MCV == s.level);
 
   if (!is_index_stat_supported()) {
     s.sample_records = 0;
@@ -7000,24 +6913,29 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
   if (0 != rc) {
     goto error;
   }
+
   rc = conn->get_cl(db_name, table_name, cl, false, &tbl_ctx_impl);
   if (rc != 0) {
     goto error;
   }
-  rc = cl.get_index_stat(sdb_key_name(key_info), obj);
+
+  rc = cl.get_index_stat(sdb_key_name(key_info), obj, need_detail);
   if (SDB_INVALIDARG == get_sdb_code(rc)) {
     s.sample_records = 0;
     rc = 0;
     goto done;
   }
+
   if (SDB_IXM_STAT_NOTEXIST == get_sdb_code(rc)) {
     s.sample_records = 0;
     rc = 0;
     goto done;
   }
+
   if (rc != 0) {
     goto error;
   }
+
   try {
     s.null_frac = 0;
     bson::BSONElement min_ele;
@@ -7041,6 +6959,24 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
         int i = 0;
         while (sub_it.more()) {
           s.distinct_val_num[i++] = sub_it.next().numberInt();
+        }
+      } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_MCV)) {
+        bson::BSONObj mcv_obj = ele.Obj();
+        bson::BSONObjIterator sub_it(mcv_obj);
+        Sdb_index_stat_mcv *s_mcv = static_cast<Sdb_index_stat_mcv *>(&s);
+        bson::BSONObj arr_frac;
+        bson::BSONObj arr_values_obj;
+        while (sub_it.more()) {
+          bson::BSONElement it_obj = sub_it.next();
+          if (0 == strcmp(it_obj.fieldName(), SDB_FIELD_FRAC)) {
+            arr_frac = it_obj.Obj();
+          } else if (0 == strcmp(it_obj.fieldName(), SDB_FIELD_VALUES)) {
+            arr_values_obj = it_obj.Obj();
+          }
+        }
+        rc = sdb_fill_mcv_stat(key_info, arr_frac, arr_values_obj, *s_mcv);
+        if (rc != 0) {
+          goto error;
         }
       }
     }
@@ -7070,7 +7006,12 @@ ha_rows ha_sdb::records_in_range(uint keynr, key_range *min_key,
   Sdb_idx_stat_ptr &stat_ptr = share->idx_stat_arr[keynr];
 
   // Here ignore it's errors, because it's not necessary.
-  ensure_index_stat(key_info, stat_ptr);
+  rc = ensure_index_stat(key_info, stat_ptr);
+  if (rc) {
+    push_warning_printf(ha_thd(), Sql_condition::SL_WARNING, ER_INTERNAL_ERROR,
+                        "Failed to load index statistics, rc: %d", rc);
+    rc = 0;
+  }
 
   rc = ensure_stats(ha_thd());
   if (rc) {

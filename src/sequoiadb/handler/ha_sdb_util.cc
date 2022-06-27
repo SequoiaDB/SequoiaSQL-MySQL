@@ -1097,6 +1097,56 @@ bool sdb_is_binary_type(Field *field) {
   return is_bin;
 }
 
+bool sdb_is_fixed_len_type(Field *field) {
+  bool is_fixed_len_type = true;
+  switch (field->real_type()) {
+    case MYSQL_TYPE_TINY:
+    case MYSQL_TYPE_SHORT:
+    case MYSQL_TYPE_INT24:
+    case MYSQL_TYPE_LONG:
+    case MYSQL_TYPE_LONGLONG:
+    case MYSQL_TYPE_FLOAT:
+    case MYSQL_TYPE_DOUBLE:
+    case MYSQL_TYPE_TIME:
+    case MYSQL_TYPE_TIME2:
+    case MYSQL_TYPE_DATE:
+    case MYSQL_TYPE_NEWDATE:
+    case MYSQL_TYPE_DATETIME:
+    case MYSQL_TYPE_DATETIME2:
+    case MYSQL_TYPE_TIMESTAMP:
+    case MYSQL_TYPE_TIMESTAMP2:
+    case MYSQL_TYPE_DECIMAL:
+    case MYSQL_TYPE_NEWDECIMAL:
+    case MYSQL_TYPE_SET:
+    case MYSQL_TYPE_ENUM:
+    case MYSQL_TYPE_BIT:
+    case MYSQL_TYPE_YEAR: {
+      is_fixed_len_type = true;
+      break;
+    }
+    case MYSQL_TYPE_STRING:
+    case MYSQL_TYPE_VAR_STRING:
+    case MYSQL_TYPE_VARCHAR:
+    case MYSQL_TYPE_TINY_BLOB:
+    case MYSQL_TYPE_BLOB:
+    case MYSQL_TYPE_MEDIUM_BLOB:
+    case MYSQL_TYPE_LONG_BLOB:
+    case MYSQL_TYPE_GEOMETRY:
+#ifdef IS_MYSQL
+    case MYSQL_TYPE_JSON:
+#endif
+    {
+      is_fixed_len_type = false;
+      break;
+    }
+    default: {
+      DBUG_ASSERT(0);
+      break;
+    }
+  }
+  return is_fixed_len_type;
+}
+
 // Get the version of remote SequoiaDB cluster.
 int sdb_get_version(Sdb_conn &conn, int &major, int &minor, int &fix,
                     bool use_cached) {
@@ -1314,4 +1364,143 @@ int sdb_check_collation(THD *thd, Field *field) {
 bool sdb_is_supported_charset(const CHARSET_INFO *cs) {
   return my_charset_same(cs, &SDB_COLLATION_UTF8MB4) ||
          my_charset_same(cs, &SDB_COLLATION_UTF8);
+}
+
+void sdb_raw_store_blob(Field_blob *blob, const char *data, uint len) {
+  uint packlength = blob->pack_length_no_ptr();
+#if defined IS_MYSQL
+  bool low_byte_first = blob->table->s->db_low_byte_first;
+#elif defined IS_MARIADB
+  bool low_byte_first = true;
+#endif
+  sdb_store_packlength(blob->ptr, packlength, len, low_byte_first);
+  memcpy(blob->ptr + packlength, &data, sizeof(char *));
+}
+
+int sdb_bson_element_to_field(const bson::BSONElement elem, Field *field,
+                              MEM_ROOT *blobroot) {
+  int rc = SDB_ERR_OK;
+
+  DBUG_ASSERT(0 == strcmp(elem.fieldName(), sdb_field_name(field)));
+
+  switch (elem.type()) {
+    case bson::NumberInt:
+    case bson::NumberLong: {
+      longlong nr = elem.numberLong();
+      field->store(nr, false);
+      break;
+    }
+    case bson::NumberDouble: {
+      double nr = elem.numberDouble();
+      field->store(nr);
+      break;
+    }
+    case bson::BinData: {
+      int len = 0;
+      const char *data = elem.binData(len);
+      if (field->flags & BLOB_FLAG) {
+        sdb_raw_store_blob((Field_blob *)field, data, len);
+      } else {
+        field->store(data, len, &my_charset_bin);
+      }
+      break;
+    }
+    case bson::String: {
+      if (field->flags & BLOB_FLAG) {
+        // TEXT is a kind of blob
+        const char *data = elem.valuestr();
+        uint len = elem.valuestrsize() - 1;
+        const CHARSET_INFO *field_charset = ((Field_str *)field)->charset();
+
+        if (!sdb_is_supported_charset(field_charset)) {
+          String org_str(data, len, &SDB_COLLATION_UTF8MB4);
+          String conv_str;
+          uchar *new_data = NULL;
+          rc = sdb_convert_charset(org_str, conv_str, field_charset);
+          if (rc) {
+            goto error;
+          }
+
+          if (!blobroot) {
+            rc = HA_ERR_INTERNAL_ERROR;
+            goto error;
+          }
+
+          new_data = (uchar *)alloc_root(blobroot, conv_str.length());
+          if (!new_data) {
+            rc = HA_ERR_OUT_OF_MEM;
+            goto error;
+          }
+
+          memcpy(new_data, conv_str.ptr(), conv_str.length());
+          memcpy(&data, &new_data, sizeof(uchar *));
+          len = conv_str.length();
+        }
+
+        sdb_raw_store_blob((Field_blob *)field, data, len);
+      } else {
+        // DATETIME is stored as string, too.
+        field->store(elem.valuestr(), elem.valuestrsize() - 1,
+                     &SDB_COLLATION_UTF8MB4);
+      }
+      break;
+    }
+    case bson::NumberDecimal: {
+      bson::bsonDecimal valTmp = elem.numberDecimal();
+      string strValTmp = valTmp.toString();
+      field->store(strValTmp.c_str(), strValTmp.length(), &my_charset_bin);
+      break;
+    }
+    case bson::Date: {
+      MYSQL_TIME time_val;
+      struct timeval tv;
+      struct tm tm_val;
+
+      longlong millisec = (longlong)(elem.date());
+      tv.tv_sec = millisec / 1000;
+      tv.tv_usec = millisec % 1000 * 1000;
+      localtime_r((const time_t *)(&tv.tv_sec), &tm_val);
+
+      time_val.year = tm_val.tm_year + 1900;
+      time_val.month = tm_val.tm_mon + 1;
+      time_val.day = tm_val.tm_mday;
+      time_val.hour = 0;
+      time_val.minute = 0;
+      time_val.second = 0;
+      time_val.second_part = 0;
+      time_val.neg = 0;
+      time_val.time_type = MYSQL_TIMESTAMP_DATE;
+      if ((time_val.month < 1 || time_val.day < 1) ||
+          (time_val.year > 9999 || time_val.month > 12 || time_val.day > 31)) {
+        // Invalid date, the field has been reset to zero,
+        // so no need to store.
+      } else {
+        sdb_field_store_time(field, &time_val);
+      }
+      break;
+    }
+    case bson::Timestamp: {
+      struct timeval tv;
+      longlong millisec = (longlong)(elem.timestampTime());
+      longlong microsec = elem.timestampInc();
+      tv.tv_sec = millisec / 1000;
+      tv.tv_usec = millisec % 1000 * 1000 + microsec;
+      sdb_field_store_timestamp(field, &tv);
+      break;
+    }
+    case bson::Bool: {
+      bool val = elem.boolean();
+      field->store(val ? 1 : 0, true);
+      break;
+    }
+    case bson::Object:
+    default:
+      rc = SDB_ERR_TYPE_UNSUPPORTED;
+      goto error;
+  }
+
+done:
+  return rc;
+error:
+  goto done;
 }

@@ -46,6 +46,7 @@ static const my_bool SDB_DEFAULT_STATS_CACHE = TRUE;
 static const int SDB_DEFAULT_STATS_MODE = 1;
 static const int SDB_DEFAULT_STATS_SAMPLE_NUM = 200;
 static const double SDB_DEFAULT_STATS_SAMPLE_PERCENT = 0.0;
+static const uint SDB_DEFAULT_STATS_CACHE_LEVEL = SDB_STATS_LVL_MCV;
 /*temp parameter "OPTIMIZER_SWITCH_SELECT_COUNT", need remove later*/
 static const my_bool OPTIMIZER_SWITCH_SELECT_COUNT = TRUE;
 
@@ -426,10 +427,10 @@ static MYSQL_SYSVAR_BOOL(stats_cache, sdb_stats_cache, PLUGIN_VAR_OPCMDARG,
 
 static MYSQL_SYSVAR_INT(stats_mode, sdb_stats_mode, PLUGIN_VAR_OPCMDARG,
                         "Mode of analysis. 1: sampling analysis; "
-                        "2. full data analysis; "
-                        "3. generate default statistics; "
-                        "4. load statistics into the cache; "
-                        "5. clear cached statistics; "
+                        "2: full data analysis; "
+                        "3: generate default statistics; "
+                        "4: load statistics into the cache; "
+                        "5: clear cached statistics; "
                         "(Default: 1)"
                         /*进行统计信息分析的模式。*/,
                         NULL, NULL, SDB_DEFAULT_STATS_MODE, 1, 5, 0);
@@ -449,6 +450,15 @@ static MYSQL_SYSVAR_DOUBLE(stats_sample_percent, sdb_stats_sample_percent,
                            /*索引统计信息抽样的记录比例。*/,
                            NULL, NULL, SDB_DEFAULT_STATS_SAMPLE_PERCENT, 0.0,
                            100.0, 0);
+
+static MYSQL_THDVAR_UINT(stats_cache_level, PLUGIN_VAR_OPCMDARG,
+                         "The index statistics cache level. 1: cache the base"
+                         " statistics; 2. cache the MCV statistics; "
+                         " (Default: 2)"
+                         /*索引统计信息缓存级别。*/,
+                         NULL, NULL, SDB_DEFAULT_STATS_CACHE_LEVEL,
+                         SDB_STATS_LVL_BASE, SDB_STATS_LVL_MCV, 0);
+
 static MYSQL_THDVAR_INT(lock_wait_timeout, PLUGIN_VAR_OPCMDARG,
                         "Timeout in seconds a SequoiaDB transaction may wait "
                         "for a lock before being rolled back. (Default: 60)"
@@ -543,6 +553,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(stats_mode),
     MYSQL_SYSVAR(stats_sample_num),
     MYSQL_SYSVAR(stats_sample_percent),
+    MYSQL_SYSVAR(stats_cache_level),
     MYSQL_SYSVAR(lock_wait_timeout),
     MYSQL_SYSVAR(use_rollback_segments),
     MYSQL_SYSVAR(preferred_instance),
@@ -761,4 +772,8 @@ void sdb_set_debug_log(THD *thd, bool val) {
 
 ulonglong sdb_get_support_mode(THD *thd) {
   return (enum_sdb_support_mode)THDVAR(thd, support_mode);
+}
+
+sdb_index_stat_level sdb_get_stats_cache_level(THD *thd) {
+  return (sdb_index_stat_level)THDVAR(thd, stats_cache_level);
 }

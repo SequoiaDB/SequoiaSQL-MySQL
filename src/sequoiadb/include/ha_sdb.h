@@ -531,8 +531,6 @@ class ha_sdb : public handler {
 
   bool check_element_type_compatible(bson::BSONElement &elem, Field *field);
 
-  int bson_element_to_field(const bson::BSONElement elem, Field *field);
-
   int row_to_obj(uchar *buf, bson::BSONObj &obj, bool gen_oid, bool output_null,
                  bson::BSONObj &null_obj, bool auto_inc_explicit_used);
 
@@ -653,8 +651,6 @@ class ha_sdb : public handler {
   int after_del_ren_part();
 #endif
 
-  void raw_store_blob(Field_blob *blob, const char *data, uint len);
-
   /* Additional processes provided to derived classes*/
   virtual int pre_row_to_obj(bson::BSONObjBuilder &builder) { return 0; }
 
@@ -708,6 +704,8 @@ class ha_sdb : public handler {
   int merge_auto_inc_option(bson::BSONObj &options,
                             bson::BSONObj &auto_inc_options,
                             bson::BSONObjBuilder &builder);
+
+  bool is_mcv_supported();
 
   int create_condition_in_for_mrr(bson::BSONObj &condition);
 

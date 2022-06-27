@@ -1187,6 +1187,23 @@ bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
   return item_val->get_time(thd, ltime);
 }
 
+<<<<<<< HEAD
+=======
+bool sdb_get_item_string_value(Item *item, String **str) {
+  if (Item::CACHE_ITEM == item->type()) {
+    *str = ((Item_cache *)item)->get_item()->val_str();
+  } else {
+    *str = item->val_str();
+  }
+
+  if (*str == NULL || (*str)->ptr() == NULL) {
+    return false;
+  }
+
+  return true;
+}
+
+>>>>>>> c21ea81... SEQUOIASQLMAINSTREAM-1373 Improve index statistics by MCV
 bool sdb_is_current_timestamp(Field *field) {
   return (MYSQL_TYPE_DATETIME == field->type() ||
           MYSQL_TYPE_TIMESTAMP == field->type()) &&

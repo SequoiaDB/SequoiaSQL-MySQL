@@ -26,7 +26,13 @@
 
 extern bool sdb_version_cached;
 
-#define SDB_MIN(x, y) (((x) < (y)) ? (x) : (y))
+#ifndef SDB_MIN
+#define SDB_MIN(A, B) ((A) < (B) ? (A) : (B))
+#endif
+
+#ifndef SDB_MAX
+#define SDB_MAX(A, B) ((A) > (B) ? (A) : (B))
+#endif
 
 enum enum_compress_type {
   SDB_COMPRESS_TYPE_NONE = 0,
@@ -122,6 +128,8 @@ bool sdb_is_string_type(Field *field);
 
 bool sdb_is_binary_type(Field *field);
 
+bool sdb_is_fixed_len_type(Field *field);
+
 inline void sdb_invalidate_version_cache() {
   sdb_version_cached = false;
 }
@@ -144,6 +152,13 @@ void sdb_set_clock_time(struct timespec &abstime, ulonglong sec);
 int sdb_check_collation(THD *thd, Field *field);
 
 bool sdb_is_supported_charset(const CHARSET_INFO *cs1);
+
+/**
+  @param blobroot The memory root to convert charset for type TEXT.
+                  If NULL, charset conversion would be disabled.
+*/
+int sdb_bson_element_to_field(const bson::BSONElement elem, Field *field,
+                              MEM_ROOT *blobroot = NULL);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

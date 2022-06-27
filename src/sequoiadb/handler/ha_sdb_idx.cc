@@ -948,7 +948,248 @@ error:
 void Sdb_index_stat::fini() {
   if (distinct_val_num) {
     free(distinct_val_num);
+    distinct_val_num = NULL;
   }
+}
+
+void Sdb_index_stat_mcv::fini() {
+  if (value_array) {
+    free(value_array);
+    value_array = NULL;
+  }
+  if (frac_array) {
+    free(frac_array);
+    frac_array = NULL;
+  }
+  if (str_buffer) {
+    free(str_buffer);
+    str_buffer = NULL;
+  }
+}
+
+int sdb_fill_mcv_value(const KEY *key_info, const bson::BSONObj &value,
+                       Sdb_index_stat_mcv &s, uint value_idx) {
+  int rc = 0;
+  try {
+    bson::BSONObjIterator field_it(value);
+    uint key_count = key_info->user_defined_key_parts;
+    uint i = 0;
+    uchar *mcv_part_ptr = s.value_array + value_idx * s.value_len;
+
+    while (i < key_count && field_it.more()) {
+      bson::BSONElement bson_ele = field_it.next();
+      KEY_PART_INFO *kp_info = key_info->key_part + i;
+      Field *field = kp_info->field;
+      bool is_fixed_len_type = sdb_is_fixed_len_type(field);
+      bool is_null = false;
+
+      // fill the null byte
+      if (field->real_maybe_null()) {
+        uchar &null_byte = mcv_part_ptr[0];
+        if (bson_ele.type() == bson::Undefined ||
+            bson_ele.type() == bson::jstNULL) {
+          null_byte = field->null_bit;
+          is_null = true;
+        } else {
+          null_byte = 0;
+        }
+        mcv_part_ptr += 1;
+      }
+
+      // fill the value
+      if (is_fixed_len_type) {
+        if (!is_null) {
+          rc = sdb_bson_element_to_field(bson_ele, field);
+          if (rc != 0) {
+            rc = HA_ERR_INTERNAL_ERROR;
+            goto error;
+          }
+          field->get_key_image(mcv_part_ptr, kp_info->length, Field::itRAW);
+
+        } else {
+          memset(mcv_part_ptr, 0, kp_info->length);
+        }
+        mcv_part_ptr += kp_info->length;
+
+      } else {
+        if (!is_null) {
+          String val_str;
+          uint len = 0;
+          uchar *str_buf_end = s.str_buffer + s.str_buffer_len;
+
+          rc = sdb_bson_element_to_field(bson_ele, field);
+          if (rc != 0) {
+            rc = HA_ERR_INTERNAL_ERROR;
+            goto error;
+          }
+          field->val_str(&val_str);
+          // For string types, as prefix may exists, if the data length is
+          // longer than prefix, do truncate.
+          uint key_part_length = key_info->key_part[i].length;
+          uint key_char_num = key_part_length / field->charset()->mbmaxlen;
+          len = my_charpos(field->charset(), val_str.ptr(),
+                           val_str.ptr() + val_str.length(), key_char_num);
+          len = SDB_MIN(len, val_str.length());
+
+          DBUG_ASSERT((s.str_buffer_len + sizeof(uint16) + len) <=
+                      s.str_buffer_capacity);
+
+          int4store(mcv_part_ptr, s.str_buffer_len);
+          int2store(str_buf_end, len);
+          str_buf_end += sizeof(uint16);
+          memcpy(str_buf_end, val_str.ptr(), len);
+          str_buf_end += len;
+          s.str_buffer_len = str_buf_end - s.str_buffer;
+
+        } else {
+          memset(mcv_part_ptr, 0, sizeof(uint));
+        }
+        mcv_part_ptr += sizeof(uint);
+      }
+      ++i;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to fill the MCV value, exception:%s",
+                        e.what());
+done:
+  return rc;
+error:
+  goto done;
+}
+
+int sdb_fill_mcv_stat(const KEY *key_info, const bson::BSONObj &frac_obj,
+                      const bson::BSONObj &values_obj, Sdb_index_stat_mcv &s) {
+  int rc = SDB_OK;
+  uint key_count = key_info->user_defined_key_parts;
+  TABLE *table = key_info->table;
+  bson::BSONObjIterator frac_it(frac_obj);
+  bson::BSONObjIterator values_it(values_obj);
+  my_bitmap_map *org_bitmap[2] = {NULL, NULL};
+  enum_check_fields org_check_field_status = CHECK_FIELD_IGNORE;
+  uint i = 0;
+  uchar *tmp_buffer = NULL;
+  uint total_str_field_len = 0;
+
+  dbug_tmp_use_all_columns(table, org_bitmap, table->read_set,
+                           table->write_set);
+  org_check_field_status = table->in_use->count_cuted_fields;
+  table->in_use->count_cuted_fields = CHECK_FIELD_IGNORE;
+
+  if (s.level != SDB_STATS_LVL_MCV) {
+    goto done;
+  }
+
+  // 1. init array_elem_count and value_len
+  s.array_elem_count = frac_obj.nFields();
+
+  if (0 == s.array_elem_count) {
+    goto done;
+  }
+
+  for (i = 0; i < key_count; ++i) {
+    KEY_PART_INFO *key_part = key_info->key_part + i;
+    bool is_fixed_len_type = sdb_is_fixed_len_type(key_part->field);
+    if (key_part->field->real_maybe_null()) {
+      s.value_len += 1;
+    }
+    if (is_fixed_len_type) {
+      s.value_len += key_part->length;
+    } else {
+      s.value_len += sizeof(uint);
+      total_str_field_len += (sizeof(uint16) + key_part->length);
+    }
+  }
+
+  // 2. init frac_array and total_frac
+  s.frac_array = (uint16 *)malloc(s.array_elem_count * sizeof(uint16));
+  if (NULL == s.frac_array) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  i = 0;
+  s.total_frac = 0;
+  while (frac_it.more()) {
+    s.frac_array[i] = frac_it.next().numberInt();
+    s.total_frac += s.frac_array[i];
+    ++i;
+  }
+
+  // 3. init value_array
+  s.value_array = (uchar *)malloc(s.array_elem_count * s.value_len);
+  if (NULL == s.value_array) {
+    rc = HA_ERR_OUT_OF_MEM;
+    goto error;
+  }
+
+  // 4. init str_buffer. give it a size that always big enough
+  s.str_buffer_capacity = s.array_elem_count * total_str_field_len;
+  if (s.str_buffer_capacity > 0) {
+    s.str_buffer = (uchar *)malloc(s.str_buffer_capacity);
+    if (NULL == s.str_buffer) {
+      rc = HA_ERR_OUT_OF_MEM;
+      goto error;
+    }
+  }
+
+  // 5. fill the values to value_array(and str_buffer)
+  try {
+    i = 0;
+    while (values_it.more()) {
+      bson::BSONObj val = values_it.next().Obj();
+      rc = sdb_fill_mcv_value(key_info, val, s, i);
+      if (rc) {
+        goto error;
+      }
+      ++i;
+    }
+  }
+  SDB_EXCEPTION_CATCHER(rc, "Failed to fill the MCV value, exception:%s",
+                        e.what());
+
+  // shrink the str_buffer if needed, to save the memory
+  {
+    double str_buf_usage = (double)s.str_buffer_len / s.str_buffer_capacity;
+    const double str_buf_usage_threshold = 0.8;
+
+    if (str_buf_usage < str_buf_usage_threshold) {
+      tmp_buffer = s.str_buffer;
+      s.str_buffer = (uchar *)malloc(s.str_buffer_len);
+      if (NULL == s.str_buffer) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
+      memcpy(s.str_buffer, tmp_buffer, s.str_buffer_len);
+      s.str_buffer_capacity = s.str_buffer_len;
+    }
+  }
+
+done:
+  if (tmp_buffer) {
+    free(tmp_buffer);
+  }
+  dbug_tmp_restore_column_maps(table->read_set, table->write_set, org_bitmap);
+  table->in_use->count_cuted_fields = org_check_field_status;
+  return rc;
+error:
+  s.array_elem_count = 0;
+  s.value_len = 0;
+  s.total_frac = 0;
+  if (s.frac_array) {
+    free(s.frac_array);
+    s.frac_array = NULL;
+  }
+  if (s.value_array) {
+    free(s.value_array);
+    s.value_array = NULL;
+  }
+  s.str_buffer_len = 0;
+  s.str_buffer_capacity = 0;
+  if (s.str_buffer) {
+    free(s.str_buffer);
+    s.str_buffer = NULL;
+  }
+  goto done;
 }
 
 /**
@@ -967,7 +1208,8 @@ class Sdb_match_cnt_estimator {
     m_is_all_null = true;
   }
 
-  ha_rows eval();
+  ha_rows eval_base();
+  ha_rows eval_mcv();
 
  private:
   void debug_print_stat();
@@ -988,6 +1230,26 @@ class Sdb_match_cnt_estimator {
   double convert_str_to_scalar(const KEY_PART_INFO *key_part,
                                const uchar *key_ptr);
 
+  void eval_eq_selectivity_mcv(double &selectivity);
+
+  void eval_range_selectivity_mcv(double &selectivity);
+
+  void binary_search_mcv(const key_range *key_value, bool &has_found,
+                         int *low_bound = NULL, int *up_bound = NULL,
+                         int *near_index = NULL);
+
+  uchar *get_mcv_value(Sdb_index_stat_mcv *s, uint i) {
+    return s->value_array + i * s->value_len;
+  }
+
+  int cmp_mcv_value(const key_range *key_value, uchar *mcv_value);
+
+  bool is_start_key_included();
+
+  bool is_end_key_included();
+
+  double get_selectivity_out_of_mcv(double default_selectivity);
+
  private:
   Sdb_idx_stat_ptr m_ptr;
   KEY *m_key_info;
@@ -997,8 +1259,8 @@ class Sdb_match_cnt_estimator {
   bool m_is_all_null;
 };
 
-ha_rows Sdb_match_cnt_estimator::eval() {
-  DBUG_ENTER("Sdb_match_cnt_estimator::eval");
+ha_rows Sdb_match_cnt_estimator::eval_base() {
+  DBUG_ENTER("Sdb_match_cnt_estimator::eval_base");
   DBUG_PRINT("info", ("index name: %s", sdb_key_name(m_key_info)));
 
   ha_rows records = ~(ha_rows)0;
@@ -1082,12 +1344,77 @@ ha_rows Sdb_match_cnt_estimator::eval() {
   }
 
   DBUG_PRINT("info",
-             ("Records = min(%d, ceil(TotalRecords * Selectivity)) "
-              "= min(%d, round(%llu * %f))",
+             ("Records = max(%d, ceil(TotalRecords * Selectivity)) "
+              "= max(%d, round(%llu * %f))",
+              MIN_MATCH_COUNT, MIN_MATCH_COUNT, m_total_records, selectivity));
+  records = SDB_MAX(MIN_MATCH_COUNT,
+                    (ulonglong)((selectivity * m_total_records) + 0.5));
+done:
+  DBUG_PRINT("exit", ("Records: %lld", records));
+  DBUG_RETURN(records);
+}
+
+ha_rows Sdb_match_cnt_estimator::eval_mcv() {
+  DBUG_ENTER("Sdb_match_cnt_estimator::eval_mcv");
+  DBUG_PRINT("info", ("index name: %s", sdb_key_name(m_key_info)));
+
+  ha_rows records = ~(ha_rows)0;
+  const uchar *start_key_ptr = NULL;
+  const uchar *end_key_ptr = NULL;
+  uint start_key_len = 0;
+  uint end_key_len = 0;
+  my_bitmap_map *org_bitmap = NULL;
+  TABLE *table = m_key_info->table;
+  double selectivity = 1.0;
+
+  org_bitmap = dbug_tmp_use_all_columns(table, table->write_set);
+
+  if (0 == m_total_records) {
+    DBUG_PRINT("info", ("no records in table"));
+    // Don't return 0, which may cancel the query!
+    records = MIN_MATCH_COUNT;
+    goto done;
+  }
+
+  if (NULL == m_ptr.get()) {
+    DBUG_PRINT("info", ("statistics not initialized"));
+    records = MIN_MATCH_COUNT;
+    goto done;
+  }
+
+  if (~(ha_rows)0 == m_ptr->sample_records || 0 == m_ptr->sample_records) {
+    DBUG_PRINT("info", ("no mcv statistics"));
+    records = eval_base();
+    goto done;
+  } else {
+    // TODO: it is hard to print all the MCV, but any other way to show it?
+    // debug_print_stat();
+  }
+
+  if (m_start_key) {
+    start_key_ptr = m_start_key->key;
+    start_key_len = m_start_key->length;
+  }
+  if (m_end_key) {
+    end_key_ptr = m_end_key->key;
+    end_key_len = m_end_key->length;
+  }
+
+  if (start_key_ptr && end_key_ptr && start_key_len == end_key_len &&
+      0 == memcmp(start_key_ptr, end_key_ptr, start_key_len)) {
+    eval_eq_selectivity_mcv(selectivity);
+  } else {
+    eval_range_selectivity_mcv(selectivity);
+  }
+
+  DBUG_PRINT("info",
+             ("Records = max(%d, ceil(TotalRecords * Selectivity)) "
+              "= max(%d, round(%llu * %f))",
               MIN_MATCH_COUNT, MIN_MATCH_COUNT, m_total_records, selectivity));
   records =
       MAX(MIN_MATCH_COUNT, (ulonglong)((selectivity * m_total_records) + 0.5));
 done:
+  dbug_tmp_restore_column_map(table->write_set, org_bitmap);
   DBUG_PRINT("exit", ("Records: %lld", records));
   DBUG_RETURN(records);
 }
@@ -1284,6 +1611,293 @@ void Sdb_match_cnt_estimator::eval_range_selectivity(
   selectivity *= cur_selectivity;
 
   DBUG_PRINT("info", ("Selectivity: %f", selectivity));
+}
+
+/**
+  @param key_value  The value to be searched in mcv array
+  @param has_found  The value if found or not
+  @param low_bound  Consider more than one sample is matched, this parameter
+                    return the min index of the matched in array.
+  @param up_bound   Return the max index of the matched in array.
+  @param near_index If not found, here return the near index of the value that
+                    right smaller than the key value. Note than if the key
+                    value smaller than all the MCV elements, -1 will be return.
+*/
+void Sdb_match_cnt_estimator::binary_search_mcv(const key_range *key_value,
+                                                bool &has_found, int *low_bound,
+                                                int *up_bound,
+                                                int *near_index) {
+  DBUG_ASSERT(SDB_STATS_LVL_MCV == m_ptr->level);
+
+  Sdb_index_stat_mcv *s_mcv = static_cast<Sdb_index_stat_mcv *>(m_ptr.get());
+  uchar *mcv_value = NULL;
+  int left_index = 0;
+  int right_index = s_mcv->array_elem_count - 1;
+  int mid_index = 0;
+
+  has_found = false;
+
+  while (left_index <= right_index) {
+    mid_index = (right_index + left_index) / 2;
+    mcv_value = get_mcv_value(s_mcv, mid_index);
+    int res = cmp_mcv_value(key_value, mcv_value);
+    if (res > 0) {
+      left_index = mid_index + 1;
+    } else if (res < 0) {
+      right_index = mid_index - 1;
+    } else {
+      has_found = true;
+      break;
+    }
+  }
+
+  if (has_found) {
+    if (low_bound) {
+      // search the same key on left
+      *low_bound = mid_index;
+      while (*low_bound - 1 >= 0) {
+        mcv_value = get_mcv_value(s_mcv, *low_bound - 1);
+        if (0 == cmp_mcv_value(key_value, mcv_value)) {
+          *low_bound -= 1;
+        } else {
+          break;
+        }
+      }
+    }
+
+    if (up_bound) {
+      // search the same key on right
+      *up_bound = mid_index;
+      while (*up_bound + 1 <= (int)(s_mcv->array_elem_count - 1)) {
+        mcv_value = get_mcv_value(s_mcv, *up_bound + 1);
+        if (0 == cmp_mcv_value(key_value, mcv_value)) {
+          *up_bound += 1;
+        } else {
+          break;
+        }
+      }
+    }
+
+  } else {
+    if (near_index) {
+      // return the index that right smaller than the key value
+      mcv_value = get_mcv_value(s_mcv, mid_index);
+      if (cmp_mcv_value(key_value, mcv_value) > 0) {
+        *near_index = mid_index;
+      } else {
+        *near_index = mid_index - 1;
+      }
+    }
+  }
+
+  return;
+}
+
+void Sdb_match_cnt_estimator::eval_eq_selectivity_mcv(double &selectivity) {
+  DBUG_ASSERT(SDB_STATS_LVL_MCV == m_ptr->level);
+
+  Sdb_index_stat_mcv *s_mcv = static_cast<Sdb_index_stat_mcv *>(m_ptr.get());
+  int low_bound = 0;
+  int up_bound = 0;
+  bool has_found = false;
+
+  // binary search the key in MCV
+  binary_search_mcv(m_start_key, has_found, &low_bound, &up_bound);
+
+  if (has_found) {
+    int sum_frac = 0;
+    for (int i = low_bound; i <= up_bound; ++i) {
+      sum_frac += s_mcv->frac_array[i];
+    }
+    selectivity = ((double)sum_frac / STAT_FRACTION_SCALE);
+    DBUG_PRINT("info", ("Selectivity = mcv.frac[ val ] = %f", selectivity));
+
+  } else {
+    selectivity = get_selectivity_out_of_mcv(EQ_DEFAULT_SELECTIVITY);
+  }
+
+  DBUG_PRINT("info", ("Selectivity: %f", selectivity));
+}
+
+double Sdb_match_cnt_estimator::get_selectivity_out_of_mcv(
+    double default_selectivity) {
+  DBUG_ASSERT(SDB_STATS_LVL_MCV == m_ptr->level);
+
+  Sdb_index_stat_mcv *s_mcv = static_cast<Sdb_index_stat_mcv *>(m_ptr.get());
+  double total_frac =
+      SDB_MAX(((double)s_mcv->total_frac / STAT_FRACTION_SCALE), 1.0);
+  DBUG_PRINT("info", ("Selectivity = ( 1 - sum( mcv.frac ) ) *  %f "
+                      "= ( 1 - %f ) * %f",
+                      default_selectivity, total_frac, default_selectivity));
+  double selectivity = (1.0 - total_frac) * default_selectivity;
+  return selectivity;
+}
+
+bool Sdb_match_cnt_estimator::is_start_key_included() {
+  switch (m_start_key->flag) {
+    case HA_READ_AFTER_KEY:
+      return false;
+    case HA_READ_KEY_OR_NEXT:
+    case HA_READ_KEY_EXACT:
+    default:
+      return true;
+  }
+}
+
+bool Sdb_match_cnt_estimator::is_end_key_included() {
+  switch (m_end_key->flag) {
+    case HA_READ_BEFORE_KEY:
+      return false;
+    case HA_READ_KEY_OR_PREV:
+    case HA_READ_PREFIX_LAST:
+    case HA_READ_PREFIX_LAST_OR_PREV:
+    case HA_READ_AFTER_KEY:
+    default:
+      return true;
+  }
+}
+
+void Sdb_match_cnt_estimator::eval_range_selectivity_mcv(double &selectivity) {
+  Sdb_index_stat_mcv *s_mcv = static_cast<Sdb_index_stat_mcv *>(m_ptr.get());
+  bool has_found = false;
+  int start_idx = 0;
+  int end_idx = 0;
+  int near_idx = 0;
+  uint16 sum_frac = 0;
+
+  if (m_start_key) {
+    if (is_start_key_included()) {
+      binary_search_mcv(m_start_key, has_found, &start_idx, NULL, &near_idx);
+    } else {
+      binary_search_mcv(m_start_key, has_found, NULL, &start_idx, &near_idx);
+      if (has_found) {
+        start_idx += 1;
+      }
+    }
+
+    if (!has_found) {
+      start_idx = near_idx + 1;
+    }
+
+    if (start_idx >= (int)s_mcv->array_elem_count) {
+      selectivity = get_selectivity_out_of_mcv(RANGE_DEFAULT_SELECTIVITY);
+      goto done;
+    }
+  } else {
+    start_idx = 0;
+  }
+
+  if (m_end_key) {
+    if (is_end_key_included()) {
+      binary_search_mcv(m_end_key, has_found, NULL, &end_idx, &near_idx);
+    } else {
+      binary_search_mcv(m_end_key, has_found, &end_idx, NULL, &near_idx);
+      if (has_found) {
+        end_idx -= 1;
+      }
+    }
+
+    if (!has_found) {
+      end_idx = near_idx;
+    }
+
+    if (end_idx < 0) {
+      selectivity = get_selectivity_out_of_mcv(RANGE_DEFAULT_SELECTIVITY);
+      goto done;
+    }
+  } else {
+    end_idx = s_mcv->array_elem_count - 1;
+  }
+
+  if (start_idx > end_idx) {
+    selectivity = get_selectivity_out_of_mcv(RANGE_DEFAULT_SELECTIVITY);
+    goto done;
+  }
+
+  for (int i = start_idx; i <= end_idx; ++i) {
+    sum_frac += s_mcv->frac_array[i];
+  }
+  selectivity = ((double)sum_frac / STAT_FRACTION_SCALE);
+  DBUG_PRINT("info", ("Selectivity = mcv.frac[ m ] + ... + mcv.frac[ n ] = %f",
+                      selectivity));
+
+done:
+  DBUG_PRINT("info", ("Selectivity: %f", selectivity));
+  return;
+}
+
+int Sdb_match_cnt_estimator::cmp_mcv_value(const key_range *key_value,
+                                           uchar *mcv_value) {
+  int cmp = 0;
+  KEY_PART_INFO *kp_info = m_key_info->key_part;
+  const uchar *key_part_ptr = key_value->key;
+  const uchar *key_part_ptr_end = key_part_ptr + key_value->length;
+  uchar *mcv_part_ptr = mcv_value;
+
+  while (key_part_ptr < key_part_ptr_end) {
+    Field *field = kp_info->field;
+    bool is_fixed_len_type = sdb_is_fixed_len_type(field);
+    bool cmp_done = false;
+    const uchar *kp_ptr_start = key_part_ptr;
+
+    // keypart format: [null_byte] | <value_byte>
+    // Compare the NULL attribute
+    if (field->real_maybe_null()) {
+      bool key_part_is_null = key_part_ptr[0];
+      bool mcv_part_is_null = mcv_part_ptr[0];
+      if (!key_part_is_null && !mcv_part_is_null) {
+        cmp_done = false;
+      } else {
+        if (key_part_is_null && mcv_part_is_null) {
+          cmp = 0;
+        } else if (key_part_is_null && !mcv_part_is_null) {
+          cmp = -1;
+        } else if (!key_part_is_null && mcv_part_is_null) {
+          cmp = 1;
+        }
+        cmp_done = true;
+      }
+      mcv_part_ptr += 1;
+      key_part_ptr += 1;
+    }
+
+    // Compare the value
+    if (is_fixed_len_type) {
+      if (!cmp_done) {
+        field->set_key_image(key_part_ptr, kp_info->length);
+        cmp = field->cmp(mcv_part_ptr);
+      }
+      mcv_part_ptr += kp_info->length;
+      key_part_ptr = kp_ptr_start + kp_info->store_length;
+
+    } else {
+      if (!cmp_done) {
+        field->set_key_image(key_part_ptr, kp_info->length);
+        String key_val_str;
+        field->val_str(&key_val_str);
+        uint16 key_val_len = SDB_MIN(kp_info->length, key_val_str.length());
+
+        uchar *str_buf = ((Sdb_index_stat_mcv *)m_ptr.get())->str_buffer;
+        uint str_buf_offset = uint4korr(mcv_part_ptr);
+        uchar *str_value = str_buf + str_buf_offset;
+        uint16 mcv_str_len = uint2korr(str_value);
+        uchar *mcv_str_ptr = str_value + sizeof(uint16);
+
+        cmp = my_strnncoll(field->charset(), (const uchar *)(key_val_str.ptr()),
+                           key_val_len, mcv_str_ptr, mcv_str_len);
+      }
+      mcv_part_ptr += sizeof(uint);
+      key_part_ptr = kp_ptr_start + kp_info->store_length;
+    }
+
+    if (cmp != 0) {
+      break;
+    }
+
+    kp_info++;
+  }
+
+  return cmp;
 }
 
 /**
@@ -1809,7 +2423,15 @@ ha_rows sdb_estimate_match_count(Sdb_idx_stat_ptr stat_ptr, KEY *key_info,
                                  ha_rows total_records,
                                  const key_range *start_key,
                                  const key_range *end_key) {
-  return Sdb_match_cnt_estimator(stat_ptr, key_info, total_records, start_key,
-                                 end_key)
-      .eval();
+  // TODO: base rule and mcv rule may be splitted to two classes?
+  Sdb_match_cnt_estimator estimator(stat_ptr, key_info, total_records,
+                                    start_key, end_key);
+  ha_rows res = 0;
+  if (SDB_STATS_LVL_MCV == stat_ptr->level &&
+      SDB_STATS_LVL_MCV == sdb_get_stats_cache_level(current_thd)) {
+    res = estimator.eval_mcv();
+  } else {
+    res = estimator.eval_base();
+  }
+  return res;
 }

@@ -789,12 +789,13 @@ int Sdb_cl::get_detail(sdbclient::sdbCursor &cursor) {
 }
 
 int cl_get_index_stat(sdbclient::sdbCollection *cl, const char *index_name,
-                      bson::BSONObj *obj) {
-  return cl->getIndexStat(index_name, *obj);
+                      bson::BSONObj *obj, bool detail) {
+  return cl->getIndexStat(index_name, *obj, detail);
 }
 
-int Sdb_cl::get_index_stat(const char *index_name, bson::BSONObj &obj) {
-  return retry(boost::bind(cl_get_index_stat, &m_cl, index_name, &obj));
+int Sdb_cl::get_index_stat(const char *index_name, bson::BSONObj &obj,
+                           bool detail) {
+  return retry(boost::bind(cl_get_index_stat, &m_cl, index_name, &obj, detail));
 }
 
 void Sdb_cl::set_version(int version) {

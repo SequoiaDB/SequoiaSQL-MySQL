@@ -20,6 +20,7 @@
 #include <client.hpp>
 #include <boost/shared_ptr.hpp>
 #include "sdb_cl.h"
+#include "ha_sdb_conf.h"
 
 const static uint16 NULL_BITS = 1;
 
@@ -30,6 +31,7 @@ struct Sdb_index_stat {
   uint null_frac;
   ha_rows sample_records;
   uint version;
+  sdb_index_stat_level level;
 
   int init(KEY *arg_key, uint arg_version);
 
@@ -42,10 +44,70 @@ struct Sdb_index_stat {
     null_frac = 0;
     sample_records = ~(ha_rows)0;
     version = 0;
+    level = SDB_STATS_LVL_BASE;
   }
 
-  ~Sdb_index_stat() { fini(); }
+  virtual ~Sdb_index_stat() { fini(); }
 };
+
+/*
+  value_array: Every value is in fixed length. The fixed length is value_len.
+               Specially, the long variable value is only store the offset of
+               str_buffer, and the value is stored on str_buffer.
+  str_buffer: The buffer for variable value(string). The values are stored
+              compactly. Format is like '<str_len> | <str_content>'.
+  frac_array: The fracation array.
+
+  Example:
+  MCV in JSON:
+    Values: [ { i: 1, s: "abc" }, { i: 3, s: "123456" }, ... ]
+    Frac: [ 2000, 1000, ... ]
+
+  Result:
+    value_array: [
+      [ 0x00000001, // i:1
+        0x00000000 ], // "abc" offset in str_buffer is 0
+      [ 0x00000003, // i:3
+        0x00000005 ], // "12345" offset in str_buffer is 5
+      ...
+    ]
+    str_buffer: [
+      [ 0x0003, // "abc" length is 3
+        'a', 'b', 'c' ],
+      [ 0x0006, // "123456" length is 6
+        '1', '2', '3', '4', '5', '6' ],
+      ...
+    ]
+    frac_array: [ 2000, 1000, ... ]
+*/
+struct Sdb_index_stat_mcv : public Sdb_index_stat {
+  uint value_len;
+  uchar *value_array;
+  uint16 *frac_array;
+  uint array_elem_count;
+  uchar *str_buffer;
+  uint str_buffer_len;
+  uint str_buffer_capacity;
+  uint16 total_frac;
+
+  void fini();
+
+  Sdb_index_stat_mcv() {
+    value_len = 0;
+    value_array = NULL;
+    frac_array = NULL;
+    array_elem_count = 0;
+    str_buffer = NULL;
+    str_buffer_len = 0;
+    str_buffer_capacity = 0;
+    level = SDB_STATS_LVL_MCV;
+  }
+
+  virtual ~Sdb_index_stat_mcv() { fini(); };
+};
+
+int sdb_fill_mcv_stat(const KEY *key_info, const bson::BSONObj &frac_obj,
+                      const bson::BSONObj &values_obj, Sdb_index_stat_mcv &s);
 
 typedef boost::shared_ptr<Sdb_index_stat> Sdb_idx_stat_ptr;
 
