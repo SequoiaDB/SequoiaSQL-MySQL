@@ -10311,7 +10311,7 @@ id	a	b	c	d
 5	ab	ab	ab	ab
 7	abc	abc	abc	abc
 9	abd	abd	abd	abd
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "ab" } }, { "a": { "$lt": "ab�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE b LIKE "中%";
 id	a	b	c	d
 17	中	中	中	中
@@ -10337,7 +10337,7 @@ id	a	b	c	d
 20	中文	中文	中文	中文
 21	中文1	中文1	中文1	中文1
 22	中文123456	中文123456	中文123456	中文123456
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "ä¸­æ–‡" } }, { "a": { "$lt": "ä¸­æ–‡�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE a LIKE "a%%";
 id	a	b	c	d
 10	abcd	abcd	abcd	abcd
@@ -10450,7 +10450,7 @@ SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
 id	a	b	c	d
 7	abc	abc	abc	abc
 9	abd	abd	abd	abd
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^ab.$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE b LIKE "_中";
 id	a	b	c	d
 18	1中	1中	1中	1中
@@ -10465,7 +10465,7 @@ id	a	b	c	d
 SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
 id	a	b	c	d
 21	中文1	中文1	中文1	中文1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^ä¸­æ–‡.$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 CREATE INDEX a ON t1(a(16));
 CREATE INDEX b ON t1(b(16));
 CREATE INDEX c ON t1(c(16));
