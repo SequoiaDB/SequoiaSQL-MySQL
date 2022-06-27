@@ -528,7 +528,6 @@ bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
 }
 
 bool sdb_get_item_string_value(Item *item, String **str) {
-
   *str = &(item->str_value);
   if (*str == NULL || (*str)->ptr() == NULL) {
     *str = item->val_str(*str);
@@ -1187,11 +1186,9 @@ bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
 }
 
 bool sdb_get_item_string_value(Item *item, String **str) {
-
   if (Item::CACHE_ITEM == item->type()) {
-    *str = ((Item_cache*)item)->get_item()->val_str();
-  }
-  else {
+    *str = ((Item_cache *)item)->get_item()->val_str();
+  } else {
     *str = item->val_str();
   }
 

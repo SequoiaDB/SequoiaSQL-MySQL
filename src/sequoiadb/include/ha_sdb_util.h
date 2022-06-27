@@ -134,6 +134,8 @@ bool sdb_is_string_type(Field *field);
 
 bool sdb_is_binary_type(Field *field);
 
+bool sdb_is_fixed_len_type(Field *field);
+
 inline void sdb_invalidate_version_cache() {
   sdb_version_cached = false;
 }
@@ -165,6 +167,13 @@ int sdb_build_aggregate_obj(bson::BSONObj &condition,
 
 int sdb_set_mapping_name(Mapping_context_impl &tbl_mapping,
                          bson::BSONObj *mapping_opts);
+
+/**
+  @param blobroot The memory root to convert charset for type TEXT.
+                  If NULL, charset conversion would be disabled.
+*/
+int sdb_bson_element_to_field(const bson::BSONElement elem, Field *field,
+                              MEM_ROOT *blobroot = NULL);
 
 class Sdb_encryption {
   static const uint KEY_LEN = 32;

@@ -382,7 +382,7 @@ done:
   return rs;
 error:
   if (m_main_part_name_hashs) {
-    delete []m_main_part_name_hashs;
+    delete[] m_main_part_name_hashs;
     m_main_part_name_hashs = NULL;
   }
   goto done;

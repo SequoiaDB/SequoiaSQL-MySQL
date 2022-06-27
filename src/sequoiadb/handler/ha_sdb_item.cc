@@ -1406,8 +1406,9 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
         // 1. check whether the value of item_tmp is const
         // 2. the left and right operand values of LIKE can not both be get here
         // 3. check whether get a string value from item_tmp
-        if (!((Item_func*)item_tmp)->const_item() || str_val_org->ptr() != NULL ||
-                !sdb_get_item_string_value(item_tmp, &str_val_org)) {
+        if (!((Item_func *)item_tmp)->const_item() ||
+            str_val_org->ptr() != NULL ||
+            !sdb_get_item_string_value(item_tmp, &str_val_org)) {
           rc = SDB_ERR_COND_UNEXPECTED_ITEM;
           goto error;
         }
@@ -1437,13 +1438,15 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
       }
     }
 
-    if (!sdb_is_string_item(item_tmp) && field_charset != &SDB_COLLATION_UTF8MB4
-          && item_tmp->collation.collation != &SDB_COLLATION_UTF8MB4) {
+    if (!sdb_is_string_item(item_tmp) &&
+        field_charset != &SDB_COLLATION_UTF8MB4 &&
+        item_tmp->collation.collation != &SDB_COLLATION_UTF8MB4) {
       rc = SDB_ERR_COND_UNEXPECTED_ITEM;
       goto error;
     }
-    
-    rc = sdb_convert_charset(*str_val_org, str_val_conv, &SDB_COLLATION_UTF8MB4);
+
+    rc =
+        sdb_convert_charset(*str_val_org, str_val_conv, &SDB_COLLATION_UTF8MB4);
     if (rc) {
       goto error;
     }

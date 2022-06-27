@@ -76,6 +76,11 @@ class ha_sdb_conn_addrs {
   int conn_num;
 };
 
+typedef enum sdb_index_stat_level {
+  SDB_STATS_LVL_BASE = 1,
+  SDB_STATS_LVL_MCV = 2
+} sdb_index_stat_level;
+
 int sdb_encrypt_password();
 bool sdb_has_password_str();
 int sdb_get_password(String &res);
@@ -95,6 +100,7 @@ bool sdb_preferred_strict(THD *thd);
 int sdb_preferred_period(THD *thd);
 bool sdb_debug_log(THD *thd);
 void sdb_set_debug_log(THD *thd, bool val);
+sdb_index_stat_level sdb_get_stats_cache_level(THD *thd);
 
 extern char *sdb_conn_str;
 extern char *sdb_user;
