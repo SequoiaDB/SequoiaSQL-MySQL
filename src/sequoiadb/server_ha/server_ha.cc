@@ -1554,6 +1554,16 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       goto error;
     }
 
+    // set latest version for object associated with the empty log
+    if (0 == query.length()) {
+      snprintf(cached_record_key, HA_MAX_CACHED_RECORD_KEY_LEN, "%s-%s-%s",
+               db_name, table_name, op_type);
+      ha_cached_record *cached_record = ha_get_cached_record(cached_record_key);
+      if (cached_record && cached_record->cata_version > cata_version) {
+        cata_version = cached_record->cata_version;
+      }
+    }
+
     if (lock_conn_ptr->is_transaction_on()) {
       rc = lock_conn.connect();
       if (rc) {
