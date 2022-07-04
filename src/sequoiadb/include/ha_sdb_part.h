@@ -333,7 +333,7 @@ class ha_sdb_part : public ha_sdb
   enum_alter_inplace_result check_if_supported_inplace_alter(
       TABLE* altered_table, Alter_inplace_info* ha_alter_info) {
     if (ha_alter_info->handler_flags &
-        (Alter_info::ADD_FOREIGN_KEY || Alter_info::DROP_FOREIGN_KEY)) {
+        (Alter_info::ADD_FOREIGN_KEY | Alter_info::DROP_FOREIGN_KEY)) {
       my_error(ER_FOREIGN_KEY_ON_PARTITIONED, MYF(0));
       return HA_ALTER_INPLACE_NOT_SUPPORTED;
     }
