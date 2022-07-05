@@ -526,6 +526,20 @@ bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
   }
 }
 
+bool sdb_get_item_string_value(Item *item, String **str) {
+
+  *str = &(item->str_value);
+  if (*str == NULL || (*str)->ptr() == NULL) {
+    *str = item->val_str(*str);
+  }
+
+  if (*str == NULL || (*str)->ptr() == NULL) {
+    return false;
+  }
+
+  return true;
+}
+
 bool sdb_is_current_timestamp(Field *field) {
   return real_type_with_now_as_default(field->real_type()) &&
          field->has_insert_default_function();
@@ -1185,6 +1199,22 @@ time_round_mode_t sdb_thd_time_round_mode(THD *thd) {
 
 bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
   return item_val->get_time(thd, ltime);
+}
+
+bool sdb_get_item_string_value(Item *item, String **str) {
+
+  if (Item::CACHE_ITEM == item->type()) {
+    *str = ((Item_cache*)item)->get_item()->val_str();
+  }
+  else {
+    *str = item->val_str();
+  }
+
+  if (*str == NULL || (*str)->ptr() == NULL) {
+    return false;
+  }
+
+  return true;
 }
 
 bool sdb_is_current_timestamp(Field *field) {

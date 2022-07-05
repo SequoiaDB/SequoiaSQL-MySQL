@@ -394,6 +394,8 @@ bool sdb_item_get_date(THD *thd, Item *item, MYSQL_TIME *ltime,
 
 bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime);
 
+bool sdb_get_item_string_value(Item *item, String **str);
+
 bool sdb_item_like_escape_is_evaluated(Item *item);
 
 bool sdb_is_string_item(Item *item);
