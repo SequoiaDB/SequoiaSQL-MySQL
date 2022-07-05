@@ -358,6 +358,7 @@ static bool is_meta_sql(THD *thd, const ha_event_general &event) {
     case SQLCOM_CREATE_SERVER:
     case SQLCOM_DROP_SERVER:
     case SQLCOM_ALTER_SERVER:
+    case SQLCOM_ANALYZE:
 #ifdef IS_MARIADB
     case SQLCOM_CREATE_PACKAGE:
     case SQLCOM_DROP_PACKAGE:
@@ -372,6 +373,13 @@ static bool is_meta_sql(THD *thd, const ha_event_general &event) {
     case SQLCOM_DROP_SEQUENCE:
 #endif
       is_meta_sql = true;
+      break;
+    case SQLCOM_FLUSH:
+      // "FLUSH TABLES" is not allowed to sync
+      is_meta_sql = (thd->lex->type == REFRESH_TABLES &&
+                     sdb_lex_first_select(thd)->get_table_list());
+      break;
+    default:
       break;
   }
   return is_meta_sql;
@@ -1450,8 +1458,9 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
       }
       oom = query.append(general_query);
     } else {
-      // skip temporary tables for drop/alter/rename/create table sql
-      if (SQLCOM_DROP_TABLE == sql_command ||
+      // skip temporary tables for analyze/drop/alter/rename/create table sql
+      if (SQLCOM_ANALYZE == sql_command || SQLCOM_FLUSH == sql_command ||
+          SQLCOM_DROP_TABLE == sql_command ||
           SQLCOM_ALTER_TABLE == sql_command ||
           SQLCOM_RENAME_TABLE == sql_command ||
           SQLCOM_CREATE_TABLE == sql_command
@@ -1506,13 +1515,15 @@ static int write_sql_log_and_states(THD *thd, ha_sql_stmt_info *sql_info,
                  SQLCOM_CREATE_VIEW == sql_command ||
                  SQLCOM_ALTER_EVENT == sql_command ||
                  SQLCOM_ALTER_TABLE == sql_command || is_dcl_meta_sql(thd) ||
-                 SQLCOM_CREATE_TABLE == sql_command) {
+                 SQLCOM_CREATE_TABLE == sql_command ||
+                 SQLCOM_ANALYZE == sql_command || SQLCOM_FLUSH == sql_command) {
         // 1. creating view depends on multiple tables and functions
         // 2. grant/revoke operation may depends on table/fun/proc
         // 3. 'create/drop user' can hold multiple users
         // 4. 'alter event/table rename' hold two objects
         // 5. 'create table dst2(a int primary key default(next value for ts1))'
         //    depend on sequence(just for mariadb).
+        // 6. analyze/flush table t1, t2, t3;
 
         // write SQL statement just for the first object
         if (first_object) {
@@ -3106,7 +3117,6 @@ int get_query_objects(THD *thd, ha_sql_stmt_info *sql_info) {
 
   ha_table_list *ha_tbl_list = NULL;
   switch (sql_command) {
-    case SQLCOM_ANALYZE:
     // fix bug SEQUOIASQLMAINSTREAM-921
     case SQLCOM_LOAD:
     case SQLCOM_SHOW_FIELDS:
@@ -4928,13 +4938,12 @@ void ha_set_cata_version(const char *db_name, const char *table_name,
   }
 }
 
-static int write_empty_sql_log_for_object(
-    const char *db_name, const char *table_name, const char *op_type,
-    int driver_cata_version, Sdb_cl &sql_log_cl, Sdb_cl &obj_state_cl,
-    Sdb_cl &inst_obj_state_cl) {
+static int write_sync_log(const char *db_name, const char *table_name,
+                          const char *op_type, int driver_cata_version,
+                          Sdb_cl &sql_log_cl, Sdb_cl &obj_state_cl,
+                          Sdb_cl &inst_obj_state_cl, const char *query) {
   int rc = 0;
-  DBUG_ENTER("write_object_empty_log");
-  bool write_empty_log = false;
+  DBUG_ENTER("write_sync_log");
   bson::BSONObj obj, cond, hint;
   THD *thd = current_thd;
   char cached_record_key[NAME_LEN * 2 + 20] = {0};
@@ -4942,6 +4951,7 @@ static int write_empty_sql_log_for_object(
   Sdb_pool_conn pool_conn(0, false);
   Sdb_conn &lock_conn = pool_conn;
   bson::BSONObjBuilder cond_builder, obj_builder;
+  bool need_write_sync_log = true;
 
   try {
     cond_builder.append(HA_FIELD_DB, db_name);
@@ -4961,19 +4971,21 @@ static int write_empty_sql_log_for_object(
     // rc is 0 or HA_ERR_END_OF_FILE
     if (HA_ERR_END_OF_FILE == rc) {
       // can't find object state for current table
-      write_empty_log = true;
+      need_write_sync_log = true;
     } else if (0 == strcmp(op_type, HA_OPERATION_TYPE_DB)) {
       // if database SQL Log state exists
       goto done;
     } else {
-      // if driver cata version is greater than cata version in 'HAObjectState'
-      // write an empty SQL log, and set 'CataVersion' to driver cata version
+      // if driver cata version is greater than or equal to cata version
+      // in 'HAObjectState' write an empty SQL log, and set 'CataVersion'
+      // to driver cata version
       int object_cata_version = obj.getIntField(HA_FIELD_CAT_VERSION);
-      write_empty_log = (driver_cata_version > object_cata_version);
-      if (write_empty_log) {
+      need_write_sync_log = (driver_cata_version >= object_cata_version);
+      if (need_write_sync_log) {
         SDB_LOG_DEBUG(
-            "HA: Write an empty log for '%s.%s', new cata version is %d",
-            db_name, table_name, driver_cata_version);
+            "HA: Write a sync log for '%s.%s' with query '%s', new cata "
+            "version is %d",
+            db_name, table_name, query, driver_cata_version);
       }
     }
 
@@ -4982,7 +4994,7 @@ static int write_empty_sql_log_for_object(
       goto error;
     }
 
-    if (write_empty_log) {
+    if (need_write_sync_log) {
       int sql_id = 0;
       int charset_num = my_charset_utf8mb4_bin.number;
 
@@ -5014,13 +5026,13 @@ static int write_empty_sql_log_for_object(
       }
       DBUG_ASSERT(sql_id > 0);
 
-      // write empty SQL log
+      // write sync log
       obj_builder.reset();
       obj_builder.append(HA_FIELD_SQL_ID, sql_id);
       obj_builder.append(HA_FIELD_DB, db_name);
       obj_builder.append(HA_FIELD_TABLE, table_name);
       obj_builder.append(HA_FIELD_TYPE, op_type);
-      obj_builder.append(HA_FIELD_SQL, HA_EMPTY_STRING);
+      obj_builder.append(HA_FIELD_SQL, query);
       obj_builder.append(HA_FIELD_OWNER, ha_thread.instance_id);
       obj_builder.append(HA_FIELD_SESSION_ATTRS, HA_EMPTY_STRING);
       obj_builder.append(HA_FIELD_CLIENT_CHARSET_NUM, charset_num);
@@ -5097,10 +5109,10 @@ error:
 
 // write an empty SQL log for tables before sequoiadb-sql-3.4.2
 // and background split operation
-int ha_write_empty_sql_log(const char *db_name, const char *table_name,
-                           int driver_cata_version) {
+int ha_write_sync_log(const char *db_name, const char *table_name,
+                      const char *query, int driver_cata_version) {
   int rc = 0;
-  DBUG_ENTER("write_empty_sql_log");
+  DBUG_ENTER("ha_write_sync_log");
 
   ha_sql_stmt_info *sql_info = NULL;
   Sdb_conn *sdb_conn = NULL;
@@ -5130,8 +5142,7 @@ int ha_write_empty_sql_log(const char *db_name, const char *table_name,
       rc = sdb_conn->connect();
       if (0 != rc) {
         SDB_LOG_ERROR(
-            "Failed to connect to SequoiaDB while writing empty SQL log, "
-            "error: %s",
+            "Failed to connect to SequoiaDB while writing sync log, error: %s",
             ha_error_string(*sdb_conn, rc, sql_info->err_message));
         goto error;
       }
@@ -5190,15 +5201,19 @@ int ha_write_empty_sql_log(const char *db_name, const char *table_name,
       goto error;
     }
 
-    rc = write_empty_sql_log_for_object(db_name, HA_EMPTY_STRING,
-                                        HA_OPERATION_TYPE_DB, 0, sql_log_cl,
-                                        obj_state_cl, inst_obj_state_cl);
+    // write an empty log for database if 'HAObjectState' table does not
+    // have state information for the database
+    rc = write_sync_log(db_name, HA_EMPTY_STRING, HA_OPERATION_TYPE_DB, 0,
+                        sql_log_cl, obj_state_cl, inst_obj_state_cl,
+                        HA_EMPTY_STRING);
     if (rc) {
       goto error;
     }
-    rc = write_empty_sql_log_for_object(
-        db_name, table_name, HA_OPERATION_TYPE_TABLE, driver_cata_version,
-        sql_log_cl, obj_state_cl, inst_obj_state_cl);
+
+    // write the real sync log for table
+    rc = write_sync_log(db_name, table_name, HA_OPERATION_TYPE_TABLE,
+                        driver_cata_version, sql_log_cl, obj_state_cl,
+                        inst_obj_state_cl, query);
     if (rc) {
       goto error;
     }

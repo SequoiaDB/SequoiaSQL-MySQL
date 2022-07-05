@@ -526,6 +526,12 @@ static MYSQL_SYSVAR_INT(mapping_unit_count, sdb_mapping_unit_count,
                         /*映射组的数量, 范围[10, 50]。*/,
                         NULL, NULL, 10, 10, 50, 10);
 
+static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
+                        "Statistics refresh time threshold. Unit: hours"
+                        "(Default: 48)"
+                        /* 统计信息刷新时间阈值, 范围[0, 720]，单位：小时。*/,
+                        NULL, NULL, 48, 0, 720, 1);
+
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
     MYSQL_SYSVAR(user),
@@ -564,6 +570,7 @@ struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(enable_mapping),
     MYSQL_SYSVAR(mapping_unit_size),
     MYSQL_SYSVAR(mapping_unit_count),
+    MYSQL_SYSVAR(stats_flush_time_threshold),
     NULL};
 
 ha_sdb_conn_addrs::ha_sdb_conn_addrs() : conn_num(0) {
@@ -776,4 +783,8 @@ ulonglong sdb_get_support_mode(THD *thd) {
 
 sdb_index_stat_level sdb_get_stats_cache_level(THD *thd) {
   return (sdb_index_stat_level)THDVAR(thd, stats_cache_level);
+}
+
+int sdb_stats_flush_time_threshold(THD *thd) {
+  return THDVAR(thd, stats_flush_time_threshold);
 }
