@@ -715,6 +715,7 @@ let $cond =
 #eval
 #EXPLAIN SELECT Name, Country, Population FROM City WHERE
 #$cond;
+--sorted_result
 eval 
 SELECT Name, Country, Population FROM City WHERE
 $cond;

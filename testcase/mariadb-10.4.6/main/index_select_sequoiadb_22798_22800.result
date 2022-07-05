@@ -1,3 +1,4 @@
+set session sequoiadb_stats_cache_level=1;
 CREATE DATABASE index_select_sequoiadb_22798_22800;
 use index_select_sequoiadb_22798_22800;
 CREATE TABLE t1 (
@@ -299,3 +300,4 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 }, "b": { "$et": 1 } }], selector[{ "a": null, "b": null }], order_by[{ "a": 1, "b": 1 }], hint[{ "": "ab" }], limit[-1], offset[0], table[index_select_sequoiadb_22798_22800.t1]
 DROP TABLE t1;
 DROP DATABASE index_select_sequoiadb_22798_22800;
+set session sequoiadb_stats_cache_level=default;

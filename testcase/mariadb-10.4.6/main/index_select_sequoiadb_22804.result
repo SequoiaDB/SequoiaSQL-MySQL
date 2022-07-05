@@ -1,3 +1,4 @@
+set session sequoiadb_stats_cache_level=1;
 CREATE DATABASE index_select_sequoiadb_22804;
 USE index_select_sequoiadb_22804;
 create table t1 (a float(7,1) unsigned, b float(7,1) unsigned);
@@ -447,3 +448,4 @@ a	b
 10013.1	10013.1
 10017.1	10017.1
 DROP DATABASE index_select_sequoiadb_22804;
+set session sequoiadb_stats_cache_level=default;

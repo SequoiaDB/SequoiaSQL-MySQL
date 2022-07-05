@@ -3,6 +3,8 @@
 --source include/big_test.inc
 --source include/have_sequoiadb.inc
 
+set session sequoiadb_stats_cache_level=1;
+
 CREATE DATABASE index_select_sequoiadb_22798_22800;
 use index_select_sequoiadb_22798_22800;
 
@@ -170,4 +172,7 @@ SELECT * FROM t1 WHERE b=1 AND a=1;
 DROP TABLE t1;
 
 DROP DATABASE index_select_sequoiadb_22798_22800;
+
+set session sequoiadb_stats_cache_level=default;
+
 --source include/uninstall_sequoiadb.inc

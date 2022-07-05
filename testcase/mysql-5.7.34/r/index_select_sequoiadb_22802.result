@@ -1,3 +1,4 @@
+set session sequoiadb_stats_cache_level=1;
 CREATE DATABASE index_select_sequoiadb_22802;
 use index_select_sequoiadb_22802;
 CREATE TABLE t1 (
@@ -280,3 +281,4 @@ a	b
 [Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$gte": 1 } }, { "b": { "$lte": 3 } } ] }], selector[{ "a": null, "b": null }], order_by[{ "b": 1, "a": 1 }], hint[{ "": "ba" }], limit[-1], offset[0], table[index_select_sequoiadb_22802.t1]
 DROP TABLE t1;
 DROP DATABASE index_select_sequoiadb_22802;
+set session sequoiadb_stats_cache_level=default;
