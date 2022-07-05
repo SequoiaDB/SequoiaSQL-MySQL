@@ -156,15 +156,40 @@ void free_sdb_share(Sdb_share *share) {
   DBUG_VOID_RETURN;
 }
 
+static Sdb_share *build_new_sdb_share(const char *name, uint idx_count) {
+  char *tmp_name = NULL;
+  uint length = (uint)strlen(name);
+  Sdb_share *tmp_share = NULL;
+  Sdb_idx_stat_ptr *idx_stat_arr = NULL;
+  if (sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
+                       &tmp_share, sizeof(*tmp_share), &tmp_name, length + 1,
+                       &idx_stat_arr, sizeof(*idx_stat_arr) * idx_count,
+                       NullS)) {
+    // use free_sdb_share to free Sdb_share allocated by sdb_multi_malloc
+    tmp_share->table_name_length = length;
+    tmp_share->table_name = tmp_name;
+    strncpy(tmp_share->table_name, name, length);
+    tmp_share->stat.init();
+    thr_lock_init(&tmp_share->lock);
+    tmp_share->idx_stat_arr = idx_stat_arr;
+    tmp_share->idx_count = idx_count;
+    tmp_share->table_type = TABLE_TYPE_UNDEFINE;
+    tmp_share->last_reset_time = time(NULL);
+    tmp_share->first_loaded_static_total_records = ~(ha_rows)0;
+    tmp_share->expired = false;
+    for (uint i = 0; i < idx_count; ++i) {
+      idx_stat_arr[i].reset();
+    }
+  }
+  return tmp_share;
+}
+
 static void get_sdb_share(const char *table_name, TABLE *table,
                           boost::shared_ptr<Sdb_share> &ssp, bool &is_created) {
   DBUG_ENTER("get_sdb_share");
   Sdb_share *share = NULL;
-  char *tmp_name = NULL;
   uint length = (uint)strlen(table_name);
-  Sdb_idx_stat_ptr *idx_stat_arr = NULL;
   uint idx_count = table->s->keys;
-  enum Sdb_table_type table_type = TABLE_TYPE_UNDEFINE;
   boost::shared_ptr<Sdb_share> *tmp_ptr;
 
   mysql_mutex_lock(&sdb_mutex);
@@ -176,12 +201,11 @@ static void get_sdb_share(const char *table_name, TABLE *table,
   */
   void *ptr = my_hash_search(&sdb_open_tables, (uchar *)table_name, length);
   if (!ptr) {
-    if (!sdb_multi_malloc(key_memory_sdb_share, MYF(MY_WME | MY_ZEROFILL),
-                          &share, sizeof(*share), &tmp_name, length + 1,
-                          &idx_stat_arr, sizeof(*idx_stat_arr) * idx_count,
-                          NullS)) {
+    share = build_new_sdb_share(table_name, idx_count);
+    if (NULL == share) {
       goto error;
     }
+
     if (!(tmp_ptr = (boost::shared_ptr<Sdb_share> *)sdb_my_malloc(
               key_memory_sdb_share, sizeof(boost::shared_ptr<Sdb_share>),
               MYF(MY_WME | MY_ZEROFILL)))) {
@@ -190,17 +214,6 @@ static void get_sdb_share(const char *table_name, TABLE *table,
     }
     // use free_sdb_share to free Sdb_share allocated by sdb_multi_malloc
     tmp_ptr->reset(share, free_sdb_share);
-    share->table_name_length = length;
-    share->table_name = tmp_name;
-    strncpy(share->table_name, table_name, length);
-    share->stat.init();
-    thr_lock_init(&share->lock);
-    share->idx_stat_arr = idx_stat_arr;
-    share->idx_count = idx_count;
-    share->table_type = table_type;
-    for (uint i = 0; i < idx_count; ++i) {
-      idx_stat_arr[i].reset();
-    }
 
     // put Sdb_share smart ptr into sdb_open_tables
     // use my_free to free tmp_ptr after delete from sdb_open_tables
@@ -210,7 +223,6 @@ static void get_sdb_share(const char *table_name, TABLE *table,
       my_free(tmp_ptr);
       goto error;
     }
-
     is_created = true;
   } else {
     tmp_ptr = (boost::shared_ptr<Sdb_share> *)ptr;
@@ -1440,6 +1452,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
     : handler(hton, table_arg) {
   active_index = MAX_KEY;
   share = null_ptr;
+  m_sdb_table_type = TABLE_TYPE_UNDEFINE;
   m_lock_type = TL_IGNORE;
   collection = NULL;
   first_read = true;
@@ -1591,6 +1604,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   stats.table_in_mem_estimate = 0;
 #endif
 
+  strcpy(m_path, name);
   rc = sdb_parse_table_name(name, db_name, SDB_CS_NAME_MAX_SIZE, table_name,
                             SDB_CL_NAME_MAX_SIZE);
   if (rc != 0) {
@@ -1655,13 +1669,11 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
       connection->clear_err_msg();
       goto error;
     }
-    share->mutex.lock();
     if (obj.getField(SDB_FIELD_SHARDING_KEY).type() == bson::Object) {
-      share->table_type = TABLE_TYPE_PART;
+      share->table_type = m_sdb_table_type = TABLE_TYPE_PART;
     } else {
-      share->table_type = TABLE_TYPE_GENERAL;
+      share->table_type = m_sdb_table_type = TABLE_TYPE_GENERAL;
     }
-    share->mutex.unlock();
   }
 #endif
 
@@ -1735,6 +1747,11 @@ int ha_sdb::reset() {
   if (NULL != collection) {
     delete collection;
     collection = NULL;
+  }
+
+  // release local share in handler
+  if (share && share->expired) {
+    share = null_ptr;
   }
 
   // don't release bson element cache, so that we can reuse it
@@ -5820,6 +5837,16 @@ int ha_sdb::info(uint flag) {
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     if (flag & HA_STATUS_VARIABLE) {
+      // make sure share is not empty
+      if (!share) {
+        bool is_share_created = false;
+        get_sdb_share(m_path, table, share, is_share_created);
+        if (!share) {
+          rc = HA_ERR_OUT_OF_MEM;
+          SDB_LOG_ERROR("Failed to build a new 'Sdb_share', error: %s", rc);
+          goto error;
+        }
+      }
       rc = update_stats(ha_thd(), false);
       if (0 != rc) {
         goto error;
@@ -5869,6 +5896,12 @@ int ha_sdb::info(uint flag) {
       } else {
         stats.records = stat.total_records;
       }
+
+      // use static 'TotalRecords' if it's set
+      if (sdb_stats_flush_time_threshold(ha_thd()) &&
+          ~(ha_rows)0 != share->first_loaded_static_total_records) {
+        stats.records = share->first_loaded_static_total_records;
+      }
       DBUG_PRINT("info", ("read info from share, table name: %s, records: %d, ",
                           table_name, (int)stats.records));
     }
@@ -5882,7 +5915,6 @@ int ha_sdb::info(uint flag) {
     */
     for (uint i = 0; i < table->s->keys; i++) {
       KEY *key_info = &table->key_info[i];
-      Sdb_idx_stat_ptr &ptr = share->idx_stat_arr[i];
       uint key_part_count = key_info->user_defined_key_parts;
 
       if (!key_info->rec_per_key) {
@@ -5891,9 +5923,14 @@ int ha_sdb::info(uint flag) {
 
       // statistics are needed when multi-table joining
       if (!sdb_is_single_table(ha_thd())) {
-        ensure_index_stat(key_info, ptr);
+        int tmp_rc = ensure_stats(ha_thd(), i);
+        if (tmp_rc) {
+          SDB_LOG_WARNING("Failed to load index statistics, rc: %d", tmp_rc);
+        }
       }
 
+      // index statistics was loaded into share by ensure_stats
+      Sdb_idx_stat_ptr &ptr = share->idx_stat_arr[i];
       if (!ptr.get()) {
         continue;
       }
@@ -5982,15 +6019,12 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
   Sdb_statistics stat;
   Sdb_cl cl;
   int rc = 0;
+  DBUG_ASSERT(share);
 
-  if (!do_read_stat) {
-    /* Get shared statistics */
-    if (share) {
-      share->mutex.lock();
-      stat = share->stat;
-      share->mutex.unlock();
-    }
-  } else {
+  if (do_read_stat) {
+    // new Sdb_share shared_ptr
+    boost::shared_ptr<Sdb_share> new_share_ptr;
+    Sdb_share *new_share = NULL;
     /* Request statistics from SequoiaDB */
     Sdb_conn *conn = NULL;
     rc = check_sdb_in_thd(thd, &conn, true);
@@ -6038,18 +6072,44 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
       stat.total_data_free_space = stat.page_size;
     }
 
+    // build new Sdb_share instead of local 'share' with 'stat'
+    new_share = build_new_sdb_share(m_path, table->s->keys);
+    if (NULL == new_share) {
+      rc = HA_ERR_OUT_OF_MEM;
+      SDB_LOG_ERROR("Failed to build new 'Sdb_share', error: %d", rc);
+      goto error;
+    }
+    // set Sdb_share table_type and table statistics
+    new_share->table_type = m_sdb_table_type;
+    new_share->stat = stat;
+    // point to the new Sdb_share
+    new_share_ptr.reset(new_share, free_sdb_share);
     /* Update shared statistics with fresh data */
-    if (share) {
-      Sdb_mutex_guard guard(share->mutex);
-      share->stat = stat;
+    {
+      mysql_mutex_lock(&sdb_mutex);
+      boost::shared_ptr<Sdb_share> *glob_ssp =
+          (boost::shared_ptr<Sdb_share> *)my_hash_search(
+              &sdb_open_tables, (uchar *)share->table_name,
+              share->table_name_length);
+      // set 'Sdb_share' to expired status, share of the handler of other
+      // sessions will be set to null_ptr in 'ha_sdb::reset()'
+      share->expired = true;
+      // let the global and the local shared_ptr point to the new Sdb_share
+      if (glob_ssp) {
+        (*glob_ssp) = new_share_ptr;
+      }
+      share = new_share_ptr;
+      mysql_mutex_unlock(&sdb_mutex);
     }
   }
 
-  stats.block_size = (uint)stat.page_size;
-  stats.data_file_length = (ulonglong)stat.total_data_pages * stat.page_size;
-  stats.index_file_length = (ulonglong)stat.total_index_pages * stat.page_size;
-  stats.delete_length = (ulonglong)stat.total_data_free_space;
-  stats.records = (ha_rows)stat.total_records;
+  stats.block_size = (uint)share->stat.page_size;
+  stats.data_file_length =
+      (ulonglong)share->stat.total_data_pages * share->stat.page_size;
+  stats.index_file_length =
+      (ulonglong)share->stat.total_index_pages * share->stat.page_size;
+  stats.delete_length = (ulonglong)share->stat.total_data_free_space;
+  stats.records = share->stat.total_records;
   if (stats.records != 0) {
     stats.mean_rec_length =
         (ulong)((stats.data_file_length - stats.delete_length) / stats.records);
@@ -6068,11 +6128,24 @@ error:
   goto done;
 }
 
-int ha_sdb::ensure_stats(THD *thd) {
+int ha_sdb::ensure_stats(THD *thd, int keynr) {
   /*Try to get statistics from the table share.
     If it's invalid, then try to read from sdb again.*/
   DBUG_ENTER("ha_sdb::ensure_stats");
   int rc = 0;
+
+  // make sure share is not empty
+  if (!share) {
+    bool is_share_created = false;
+    get_sdb_share(m_path, table, share, is_share_created);
+    if (!share) {
+      rc = HA_ERR_OUT_OF_MEM;
+      SDB_LOG_ERROR("Failed to build a new 'Sdb_share', error: %s", rc);
+      goto error;
+    }
+  }
+
+  // stats.records will be reset in ha_sdb::reset()
   if ((~(ha_rows)0) == stats.records) {
     rc = update_stats(thd, false);
     if (0 != rc) {
@@ -6085,9 +6158,24 @@ int ha_sdb::ensure_stats(THD *thd) {
       }
     }
   }
-
   DBUG_PRINT("info", ("stats.records: %d, share->stat.total_records: %d.",
                       int(stats.records), int(share->stat.total_records)));
+
+  // get index statistics
+  rc = ensure_index_stat(keynr);
+  if (0 != rc) {
+    SDB_LOG_ERROR("Failed to load index statistics, error: %d", rc);
+    goto error;
+  }
+
+  // fix records value in ha_statistics if index statistics exists
+  if (sdb_stats_flush_time_threshold(ha_thd()) &&
+      (~(ha_rows)0) != share->first_loaded_static_total_records) {
+    if ((~(ha_rows)0) == stats.records) {
+      stats.records = share->first_loaded_static_total_records;
+    }
+  }
+
   /* not update stats in the mode of execute_only_in_mysql. */
   /*Exec SQL which pushed down to sdb no need to update stats.*/
   if (sdb_execute_only_in_mysql(thd) ||
@@ -6280,7 +6368,7 @@ int ha_sdb::ensure_collection(THD *thd) {
             "driver cached version %d for table '%s.%s', "
             "try to write an empty sql log",
             inst_cata_version, driver_cata_version, db_name, table_name);
-        rc = ha_write_empty_sql_log(db_name, table_name, driver_cata_version);
+        rc = ha_write_sync_log(db_name, table_name, "", driver_cata_version);
         if (rc) {
           goto error;
         }
@@ -6527,12 +6615,14 @@ int ha_sdb::external_lock(THD *thd, int lock_type) {
     // after handle each table
     if (!sdb_use_transaction(thd) && incr_stat &&
         0 != incr_stat->no_uncommitted_rows_count) {
-      Sdb_mutex_guard guard(share->mutex);
-      int64 &share_rows = share->stat.total_records;
       int &incr_rows = incr_stat->no_uncommitted_rows_count;
-      share_rows = (share_rows + incr_rows > 0) ? share_rows + incr_rows : 0;
+      my_atomic_add64(&share->stat.total_records, incr_rows);
+      if (share->stat.total_records < 0) {
+        share->stat.total_records = 0;
+      }
       incr_rows = 0;
-      DBUG_PRINT("info", ("share total records: %lld", share_rows));
+      DBUG_PRINT("info",
+                 ("share total records: %lld", share->stat.total_records));
     }
 
     if (!--thd_sdb->lock_count) {
@@ -6639,7 +6729,6 @@ int ha_sdb::delete_all_rows() {
 
   rc = collection->del(cond, hint, FLG_DELETE_RETURNNUM, &result);
   if (0 == rc) {
-    Sdb_mutex_guard guard(share->mutex);
     if (incr_stat) {
       int &incr_rows = incr_stat->no_uncommitted_rows_count;
       incr_rows = -(share->stat.total_records + incr_rows);
@@ -6680,7 +6769,6 @@ int ha_sdb::truncate() {
 
   rc = collection->truncate();
   if (0 == rc) {
-    Sdb_mutex_guard guard(share->mutex);
     update_incr_stat(-share->stat.total_records);
     stats.records = 0;
   }
@@ -6762,45 +6850,94 @@ bool ha_sdb::is_idx_stat_valid(Sdb_idx_stat_ptr &ptr) {
           ptr->level >= sdb_get_stats_cache_level(ha_thd()));
 }
 
-int ha_sdb::ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr) {
+int ha_sdb::ensure_index_stat(int keynr) {
   DBUG_ENTER("ha_sdb::ensure_index_stat");
   int rc = 0;
   Sdb_index_stat *new_stat = NULL;
+  KEY *key_info = table->key_info + keynr;
 
-  if (!is_idx_stat_valid(ptr)) {
-    Sdb_mutex_guard guard(share->mutex);
+  // build a new 'Sdb_share' if new index statistics is loaded into 'Sdb_share'
+  // 'idx_stat_arr' in 'Sdb_share' is not allowed to change, because the
+  // following situation is not safe:
+  // 1. thread #1 execute p = p3;
+  // 2. thread #2 execute p3.reset();
+  if (key_info && keynr >= 0 && share && share->idx_count &&
+      keynr < (int)share->idx_count) {
+    Sdb_idx_stat_ptr ptr = share->idx_stat_arr[keynr];
+    if (!is_idx_stat_valid(ptr)) {
+      // 1. build a new Sdb_share
+      boost::shared_ptr<Sdb_share> new_share_ptr;
+      // build new Sdb_share instead of local 'share' with 'stat'
+      Sdb_share *new_share = build_new_sdb_share(m_path, share->idx_count);
+      if (NULL == new_share) {
+        rc = HA_ERR_OUT_OF_MEM;
+        SDB_LOG_ERROR("Failed to build new 'Sdb_share', error: %d", rc);
+        goto error;
+      }
+      // set Sdb_share table_type and table statistics
+      new_share->table_type = m_sdb_table_type;
+      new_share->stat = share->stat;
+      // point to the new Sdb_share
+      new_share_ptr.reset(new_share, free_sdb_share);
 
-    if (is_idx_stat_valid(ptr)) {
-      goto done;
-    }
+      // 2. build current index statistics
+      if (is_mcv_supported() &&
+          SDB_STATS_LVL_MCV == sdb_get_stats_cache_level(ha_thd())) {
+        new_stat = new (std::nothrow) Sdb_index_stat_mcv();
+      } else {
+        new_stat = new (std::nothrow) Sdb_index_stat();
+      }
 
-    /*
-      Refresh index statistics in table share.
-    */
-    if (is_mcv_supported() &&
-        SDB_STATS_LVL_MCV == sdb_get_stats_cache_level(ha_thd())) {
-      new_stat = new (std::nothrow) Sdb_index_stat_mcv();
-    } else {
-      new_stat = new (std::nothrow) Sdb_index_stat();
-    }
+      if (NULL == new_stat) {
+        rc = HA_ERR_OUT_OF_MEM;
+        goto error;
+      }
 
-    if (NULL == new_stat) {
-      rc = HA_ERR_OUT_OF_MEM;
-      goto error;
-    }
-
-    rc = new_stat->init(key_info, sdb_stats_cache_version);
-    if (rc != 0) {
-      goto error;
-    }
-
-    if (sdb_stats_cache) {
-      rc = fetch_index_stat(key_info, *new_stat);
+      rc = new_stat->init(key_info, sdb_stats_cache_version);
       if (rc != 0) {
         goto error;
       }
+
+      if (sdb_stats_cache) {
+        rc = fetch_index_stat(key_info, *new_stat);
+        if (rc != 0) {
+          goto error;
+        }
+      }
+
+      // 3. copy old index statistics into new_share_ptr
+      for (uint i = 0; i < share->idx_count; i++) {
+        new_share_ptr->idx_stat_arr[i] = share->idx_stat_arr[i];
+      }
+
+      // 4. set current index statistics
+      new_share_ptr->idx_stat_arr[keynr].reset(new_stat);
+
+      // 5. update global and local shared statistics with fresh data
+      {
+        mysql_mutex_lock(&sdb_mutex);
+        boost::shared_ptr<Sdb_share> *glob_ssp =
+            (boost::shared_ptr<Sdb_share> *)my_hash_search(
+                &sdb_open_tables, (uchar *)share->table_name,
+                share->table_name_length);
+        // set 'Sdb_share' to expired status, share of the handler of other
+        // sessions will be set to null_ptr in 'ha_sdb::reset()'
+        share->expired = true;
+        // let the global and the local shared_ptr point to the new Sdb_share
+        if (glob_ssp) {
+          (*glob_ssp) = new_share_ptr;
+        }
+        share = new_share_ptr;
+        mysql_mutex_unlock(&sdb_mutex);
+      }
+
+      // 6. set the first loaded 'TotalRecords' if it's not set
+      if (~(ha_rows)0 == share->first_loaded_static_total_records &&
+          0 != new_stat->static_total_records) {
+        share->first_loaded_static_total_records =
+            new_stat->static_total_records;
+      }
     }
-    ptr.reset(new_stat);
   }
 
 done:
@@ -6906,6 +7043,7 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
 
   if (!is_index_stat_supported()) {
     s.sample_records = 0;
+    s.static_total_records = 0;
     goto done;
   }
 
@@ -6922,12 +7060,14 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
   rc = cl.get_index_stat(sdb_key_name(key_info), obj, need_detail);
   if (SDB_INVALIDARG == get_sdb_code(rc)) {
     s.sample_records = 0;
+    s.static_total_records = 0;
     rc = 0;
     goto done;
   }
 
   if (SDB_IXM_STAT_NOTEXIST == get_sdb_code(rc)) {
     s.sample_records = 0;
+    s.static_total_records = 0;
     rc = 0;
     goto done;
   }
@@ -6953,6 +7093,8 @@ int ha_sdb::fetch_index_stat(KEY *key_info, Sdb_index_stat &s) {
         s.null_frac += ele.numberLong();
       } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_SAMPLE_RECORDS)) {
         s.sample_records = ele.numberLong();
+      } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_TOTAL_RECORDS)) {
+        s.static_total_records = ele.numberLong();
       } else if (0 == strcmp(ele.fieldName(), SDB_FIELD_DISTINCT_VAL_NUM)) {
         bson::BSONObj arr = ele.Obj();
         bson::BSONObjIterator sub_it(arr);
@@ -6999,27 +7141,16 @@ ha_rows ha_sdb::records_in_range(uint keynr, key_range *min_key,
                                  key_range *max_key) {
   DBUG_ENTER("ha_sdb::records_in_range");
   DBUG_ASSERT(keynr < MAX_KEY);
-
+  KEY *key_info = table->key_info + keynr;
   int rc = 0;
   ha_rows records = ~(ha_rows)0;
-  KEY *key_info = table->key_info + keynr;
-  Sdb_idx_stat_ptr &stat_ptr = share->idx_stat_arr[keynr];
-
-  // Here ignore it's errors, because it's not necessary.
-  rc = ensure_index_stat(key_info, stat_ptr);
-  if (rc) {
-    push_warning_printf(ha_thd(), Sql_condition::SL_WARNING, ER_INTERNAL_ERROR,
-                        "Failed to load index statistics, rc: %d", rc);
-    rc = 0;
-  }
-
-  rc = ensure_stats(ha_thd());
+  rc = ensure_stats(ha_thd(), keynr);
   if (rc) {
     goto error;
   }
 
-  records = sdb_estimate_match_count(stat_ptr, key_info, stats.records, min_key,
-                                     max_key);
+  records = sdb_estimate_match_count(share->idx_stat_arr[keynr], key_info,
+                                     stats.records, min_key, max_key);
 
 done:
   DBUG_RETURN(records);
@@ -7888,7 +8019,7 @@ void ha_sdb::update_incr_stat(int incr) {
   DBUG_ENTER("ha_sdb::update_incr_stat");
   if (!sdb_use_transaction(current_thd) && table->pos_in_table_list &&
       is_temporary_table(table->pos_in_table_list)) {
-    share->stat.total_records += incr;
+    my_atomic_add64(&share->stat.total_records, incr);
   } else if (incr_stat) {
     incr_stat->no_uncommitted_rows_count += incr;
     DBUG_PRINT("info", ("increase records: %d", incr));
@@ -9073,6 +9204,114 @@ static void init_sdb_psi_keys(void) {
 }
 #endif
 
+// check if statistics need to be refreshed
+static bool need_flush_stats_info(Sdb_share *share, THD *thd) {
+  DBUG_ENTER("need_flush_stats_info");
+  int64 udi_counter = share->stat.udi_counter;
+  // 10 million
+  const static int RECORDS_THRESHOLD = 10000000;
+  // 0.5 million
+  const static int COUNTER_THRESHOLD = 500000;
+  // 10 percent
+  const static double PERCENTAGE_THRESHOLD = 0.1;
+  // use to convert ulonglong time to hours
+  const static int SECS2HOURS_RATE = 3600;
+  bool do_flush_stats = false;
+  ha_rows total_records = share->first_loaded_static_total_records;
+  if (~(ha_rows)0 == total_records) {
+    total_records = share->stat.total_records;
+  }
+
+  if (0 == sdb_stats_flush_time_threshold(thd) ||
+      ~(ha_rows)0 == total_records) {
+    DBUG_RETURN(do_flush_stats);
+  }
+  bool under_records_threshold = (total_records < RECORDS_THRESHOLD);
+  DBUG_EXECUTE_IF("stats_flush_percent_test",
+                  { under_records_threshold = (total_records < 1000); });
+
+  double changed_percentage = 0.0;
+  if (under_records_threshold) {
+    do_flush_stats = udi_counter >= COUNTER_THRESHOLD;
+    DBUG_EXECUTE_IF("stats_flush_percent_test",
+                    { do_flush_stats = (udi_counter >= 50); });
+  } else {  // total_records >= RECORDS_THRESHOLD
+    changed_percentage = (udi_counter * 1.0 / total_records);
+    do_flush_stats = (changed_percentage >= PERCENTAGE_THRESHOLD);
+  }
+
+  int stats_flush_time_threshold = sdb_stats_flush_time_threshold(thd);
+  if (!do_flush_stats && stats_flush_time_threshold > 0) {
+    time_t curr_time = time(NULL);
+    double last_query_interval = static_cast<double>(
+        (curr_time - share->last_reset_time) * 1.0 / SECS2HOURS_RATE);
+
+    DBUG_EXECUTE_IF("stats_flush_time_threshold_test",
+                    { last_query_interval = last_query_interval * 3600; });
+
+    do_flush_stats = (last_query_interval >= stats_flush_time_threshold);
+  }
+  // need to refresh statistics for current table
+  DBUG_RETURN(do_flush_stats);
+}
+
+// write 'FLUSH TABLE XXXX' statement into 'HASQLLog'
+static void write_flush_stats_info_log(THD *thd, const char *full_tab_name) {
+  DBUG_ENTER("write_flush_stats_info_log");
+  int rc = SDB_ERR_OK;
+  char db_name[SDB_CS_NAME_MAX_SIZE + 1] = {0};
+  char table_name[SDB_CL_NAME_MAX_SIZE + 1] = {0};
+  Mapping_context_impl tbl_ctx_impl;
+  Sdb_cl cl;
+  Sdb_conn *conn = NULL;
+
+  // used to store flush table command 'FLUSH TABLE XXX'
+  const static char FLUSH_CMD_PPREFIX[] = "FLUSH TABLE ";
+  const static char FLUSH_CMD_COMMENT[] = " /* Generated by CRUD */";
+  char query[SDB_CL_NAME_MAX_SIZE + 1 + sizeof(FLUSH_CMD_PPREFIX) - 1 +
+             sizeof(FLUSH_CMD_COMMENT) - 1] = {0};
+  rc = sdb_parse_table_name(full_tab_name, db_name, SDB_CS_NAME_MAX_SIZE,
+                            table_name, SDB_CL_NAME_MAX_SIZE);
+  if (0 != rc) {
+    SDB_LOG_WARNING(
+        "Table name[%s] can't be parsed while writing flush stats info log, "
+        "error: %d",
+        full_tab_name, rc);
+    goto error;
+  }
+
+  // not applicable for temporary table
+  if (sdb_is_tmp_table(full_tab_name, table_name)) {
+    goto done;
+  }
+  strcpy(query, FLUSH_CMD_PPREFIX);
+  strcat(query, table_name);
+  strcat(query, FLUSH_CMD_COMMENT);
+  rc = check_sdb_in_thd(thd, &conn, false);
+  if (0 != rc) {
+    SDB_LOG_WARNING(
+        "Failed to execute 'check_sdb_in_thd' while writing log of refresh "
+        "statistics, error: %d",
+        rc);
+    goto error;
+  }
+
+  rc = conn->get_cl(db_name, table_name, cl, true, &tbl_ctx_impl);
+  if (rc != SDB_ERR_OK) {
+    SDB_LOG_WARNING(
+        "Failed to get collection '%s.%s' while writing "
+        "flush table command, error: %s, code: %d",
+        db_name, table_name, conn->get_err_msg(), rc);
+    conn->clear_err_msg();
+    goto error;
+  }
+  ha_write_sync_log(db_name, table_name, query, cl.get_version());
+done:
+  DBUG_VOID_RETURN;
+error:
+  goto done;
+}
+
 static void update_shares_stats(THD *thd) {
   DBUG_ENTER("update_shares_stats");
 
@@ -9084,20 +9323,81 @@ static void update_shares_stats(THD *thd) {
         (THD_SDB_SHARE *)my_hash_element(&thd_sdb->open_table_shares, i);
     struct Sdb_local_table_statistics *local_stat = &thd_share->stat;
     boost::shared_ptr<Sdb_share> share(thd_share->share_ptr);
+    char tmp_table_name[FN_REFLEN + 1] = {0};
+    int &incr_rows = local_stat->no_uncommitted_rows_count;
 
-    if (local_stat->no_uncommitted_rows_count) {
-      Sdb_mutex_guard guard(share->mutex);
-      int64 &share_rows = share->stat.total_records;
-      int &incr_rows = local_stat->no_uncommitted_rows_count;
-      DBUG_ASSERT(int64(~(ha_rows)0) != share_rows);  // should never be invalid
-
-      if (int64(~(ha_rows)0) != share_rows) {
-        DBUG_PRINT("info", ("Update row_count for %s, row_count: %lld, with:%d",
-                            share->table_name, share_rows, incr_rows));
-        share_rows = (share_rows + incr_rows > 0) ? share_rows + incr_rows : 0;
-      }
-      incr_rows = 0;
+    // statistics of temporary table generated by 'sql_pushdown' hints is
+    // not saved in 'Sdb_share', refer to 'ensure_stats'
+    if (!(sdb_execute_only_in_mysql(thd) || thd->variables.sdb_sql_pushdown)) {
+      // should never be invalid
+      DBUG_ASSERT(int64(~(ha_rows)0) != share->stat.total_records);
     }
+
+    if (int64(~(ha_rows)0) != share->stat.total_records) {
+      DBUG_PRINT("info",
+                 ("Update row_count for %s, row_count: %lld, with:%d",
+                  share->table_name, share->stat.total_records, incr_rows));
+      my_atomic_add64(&share->stat.total_records, incr_rows);
+      if (share->stat.total_records < 0) {
+        share->stat.total_records = 0;
+      }
+    }
+
+    if (incr_rows) {
+      // update UDI counter
+      my_atomic_add64(&share->stat.udi_counter, abs(incr_rows));
+    }
+
+    // check if current stats need to be flushed. disable statistics refresh
+    // operation if 'sequoiadb_stats_flush_time_threshold' is 0
+    bool need_flush_stats =
+        ha_is_open() && need_flush_stats_info(share.get(), thd);
+    if (need_flush_stats) {
+      const static int MAX_DATATIME_LEN = 19;
+      char last_reset_time[MAX_DATATIME_LEN + 1] = {0};
+      char now_datetime[MAX_DATATIME_LEN + 1] = {0};
+      time_t now_timestamp = time(NULL);
+      const char *time_unit = "hours";
+      DBUG_EXECUTE_IF("stats_flush_time_threshold_test",
+                      { time_unit = "seconds"; });
+
+      strftime(last_reset_time, MAX_DATATIME_LEN + 1, "%Y-%m-%d %H:%M:%S",
+               localtime(&share->last_reset_time));
+      strftime(now_datetime, MAX_DATATIME_LEN + 1, "%Y-%m-%d %H:%M:%S",
+               localtime(&now_timestamp));
+      SDB_LOG_DEBUG("Refresh statistics for table '%s'", share->table_name);
+      SDB_LOG_DEBUG(
+          "Records %lld, UDI counter %lld, share last refresh time '%s', now "
+          "time '%s'.",
+          share->stat.total_records, share->stat.udi_counter, last_reset_time,
+          now_datetime);
+      SDB_LOG_DEBUG(
+          "'sequoiadb_stats_flush_time_threshold' is %d %s, %ld %s since last "
+          "refresh of statistics",
+          sdb_stats_flush_time_threshold(thd), time_unit,
+          now_timestamp - share->last_reset_time, time_unit);
+      strcpy(tmp_table_name, share->table_name);
+      // invalid statistics information for current instance
+
+      // remove global 'Sdb_share' from 'sdb_open_tables'
+      mysql_mutex_lock(&sdb_mutex);
+      void *ptr = my_hash_search(&sdb_open_tables, (uchar *)share->table_name,
+                                 share->table_name_length);
+      if (ptr) {
+        my_hash_delete(&sdb_open_tables, (uchar *)ptr);
+      }
+      // set 'Sdb_share' to expired status, share of the handler of the current
+      // session will be set to null_ptr in 'ha_sdb::reset()'
+      share->expired = true;
+      share = null_ptr;
+      mysql_mutex_unlock(&sdb_mutex);
+    }
+
+    // write sync log for table in the current query
+    if (need_flush_stats) {
+      write_flush_stats_info_log(thd, tmp_table_name);
+    }
+    incr_rows = 0;
   }
 
   DBUG_VOID_RETURN;

@@ -50,7 +50,8 @@ struct Sdb_statistics {
   int32 total_data_pages;
   int32 total_index_pages;
   int64 total_data_free_space;
-  int64 total_records;
+  int64 volatile total_records;
+  int64 volatile udi_counter;
 
   Sdb_statistics() { init(); }
 
@@ -60,7 +61,10 @@ struct Sdb_statistics {
     total_index_pages = 0;
     total_data_free_space = 0;
     total_records = ~(int64)0;
+    udi_counter = 0;
   }
+
+  void reset() { init(); }
 };
 
 enum Sdb_table_type {
@@ -71,7 +75,7 @@ enum Sdb_table_type {
 
 struct Sdb_share {
   char mapping_cs[SDB_CS_NAME_MAX_SIZE + 1];
-  char mapping_cl[SDB_CS_NAME_MAX_SIZE + 1];
+  char mapping_cl[SDB_CL_NAME_MAX_SIZE + 1];
   char *table_name;
   enum Sdb_table_type table_type;
   uint table_name_length;
@@ -79,7 +83,10 @@ struct Sdb_share {
   Sdb_statistics stat;
   Sdb_idx_stat_ptr *idx_stat_arr;
   uint idx_count;
+  time_t last_reset_time;
   Sdb_mutex mutex;
+  bool expired;
+  ha_rows first_loaded_static_total_records;
 
   ~Sdb_share() {
     // shouldn't call this, use free_sdb_share release Sdb_share
@@ -585,7 +592,7 @@ class ha_sdb : public handler {
 
   int update_stats(THD *thd, bool do_read_stat);
 
-  int ensure_stats(THD *thd);
+  int ensure_stats(THD *thd, int keynr = -1);
 
   int build_auto_inc_option(const Field *field,
                             const HA_CREATE_INFO *create_info,
@@ -699,7 +706,7 @@ class ha_sdb : public handler {
 
   bool is_index_stat_supported();
 
-  int ensure_index_stat(KEY *key_info, Sdb_idx_stat_ptr &ptr);
+  int ensure_index_stat(int keynr = -1);
 
   int merge_auto_inc_option(bson::BSONObj &options,
                             bson::BSONObj &auto_inc_options,
@@ -759,10 +766,12 @@ class ha_sdb : public handler {
   bson::BSONObj m_dup_value;
   /*use std::shared_ptr instead of self-defined use count*/
   boost::shared_ptr<Sdb_share> share;
+  enum Sdb_table_type m_sdb_table_type;
   Item *updated_value;
   Field *updated_field;
   st_order *sdb_order;
   st_order *sdb_group_list;
+  char m_path[FN_REFLEN + 1];
 
   bool m_use_default_impl;
   bool m_use_position;

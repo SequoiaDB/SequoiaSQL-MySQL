@@ -924,6 +924,7 @@ int Sdb_index_stat::init(KEY *key_info, uint arg_version) {
 
   null_frac = 0;
   sample_records = ~(ha_rows)0;
+  static_total_records = ~(ha_rows)0;
 
   // Allocate all arrays in once,
   count = key_info->user_defined_key_parts;

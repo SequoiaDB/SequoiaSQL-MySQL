@@ -221,6 +221,7 @@
 #define SDB_FIELD_TOTAL_INDEX_PAGES "TotalIndexPages"
 #define SDB_FIELD_TOTAL_DATA_FREE_SPACE "TotalDataFreeSpace"
 #define SDB_FIELD_TOTAL_RECORDS "TotalRecords"
+#define SDB_FIELD_STATS_TIMESTAMP "StatTimestamp"
 
 #define SDB_FIELD_COLLECTION_SPACE "CollectionSpace"
 #define SDB_FIELD_COLLECTION "Collection"

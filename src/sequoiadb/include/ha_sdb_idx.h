@@ -30,6 +30,8 @@ struct Sdb_index_stat {
   double *max_value_arr;
   uint null_frac;
   ha_rows sample_records;
+  // static total records in index statistics information
+  ha_rows static_total_records;
   uint version;
   sdb_index_stat_level level;
 
@@ -43,6 +45,7 @@ struct Sdb_index_stat {
     max_value_arr = NULL;
     null_frac = 0;
     sample_records = ~(ha_rows)0;
+    static_total_records = ~(ha_rows)0;
     version = 0;
     level = SDB_STATS_LVL_BASE;
   }

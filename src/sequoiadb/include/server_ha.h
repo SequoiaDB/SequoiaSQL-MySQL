@@ -240,8 +240,8 @@ bool ha_is_aborting();
 int ha_get_cata_version(const char *db_name, const char *table_name);
 void ha_set_cata_version(const char *db_name, const char *table_name,
                          int version);
-int ha_write_empty_sql_log(const char *db_name, const char *table_name,
-                           int driver_cata_version);
+int ha_write_sync_log(const char *db_name, const char *table_name,
+                      const char *query, int driver_cata_version);
 int ha_get_latest_cata_version(const char *db_name, const char *table_name,
                                int &version);
 bool ha_is_stmt_first_table(const char *db_name, const char *table_name);

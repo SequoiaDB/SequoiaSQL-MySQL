@@ -3497,7 +3497,6 @@ int ha_sdb_part::truncate_partition_low() {
   }
 done:
   if (0 == rc) {
-    Sdb_mutex_guard guard(share->mutex);
     ulonglong truncated_records = get_used_stats(share->stat.total_records);
     update_incr_stat(-truncated_records);
     stats.records -= SDB_MIN(truncated_records, stats.records);
