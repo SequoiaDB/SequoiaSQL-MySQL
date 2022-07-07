@@ -356,7 +356,7 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
 
     // Use MULTI_RANGE.
     if (QUICK_SELECT_I::QS_TYPE_RANGE == quick->get_type()) {
-      DBUG_ASSERT(rseq);  
+      DBUG_ASSERT(rseq);
       QUICK_RANGE_SEQ_CTX *ctx = (QUICK_RANGE_SEQ_CTX *)rseq;
       QUICK_RANGE *const *tmp_it = ctx->first;
       while (ctx->first != ctx->last) {
@@ -527,7 +527,6 @@ bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
 }
 
 bool sdb_get_item_string_value(Item *item, String **str) {
-
   *str = &(item->str_value);
   if (*str == NULL || (*str)->ptr() == NULL) {
     *str = item->val_str(*str);
@@ -1202,11 +1201,9 @@ bool sdb_get_item_time(Item *item_val, THD *thd, MYSQL_TIME *ltime) {
 }
 
 bool sdb_get_item_string_value(Item *item, String **str) {
-
   if (Item::CACHE_ITEM == item->type()) {
-    *str = ((Item_cache*)item)->get_item()->val_str();
-  }
-  else {
+    *str = ((Item_cache *)item)->get_item()->val_str();
+  } else {
     *str = item->val_str();
   }
 
