@@ -759,8 +759,6 @@ class ha_sdb : public handler {
       TABLE *altered_table, Alter_inplace_info *ha_alter_info,
       ha_sdb_alter_ctx *ctx);
 
-  
-
  private:
   // swap table if swap_table is true
   int rename_or_swap_table(const char *from, const char *to, bool swap_table);
