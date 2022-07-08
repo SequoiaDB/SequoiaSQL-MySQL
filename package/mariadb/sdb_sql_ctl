@@ -1249,7 +1249,11 @@ function change_configure()
    if [ ! -z $SDB_STATS_CACHE ]; then
       change_configure_online "$INST_NAME" "sequoiadb_stats_cache" "$SDB_STATS_CACHE"
    fi
-   
+
+   if [ ! -z $OPTIMIZER_LIMIT_PUSHDOWN_THRESHOLD ]; then
+      change_configure_online "$INST_NAME" "optimizer_limit_pushdown_threshold" "$OPTIMIZER_LIMIT_PUSHDOWN_THRESHOLD"
+   fi
+
    echo "ok"
 }
 
@@ -1277,7 +1281,7 @@ function build_help()
    echo "  ${ME} chconf     <INSTNAME> [-P PORT]                            [-a MAX-CON] [--sdb-conn-addr=ADDR] [--sdb-user=USER] [--sdb-passwd=PASSWD] [--sdb-auto-partition=BOOL] [--sdb-use-bulk-insert=BOOL] [--sdb-bulk-insert-size=SIZE]
 [--sdb-use-autocommit=BOOL] [--sdb-debug-log=BOOL] [--sdb-token=TOKEN] [--sdb-cipherfile=PATH] [--sdb-error-level=ENUM] [--sdb-replica-size=SIZE] [--sdb-use-transaction=BOOL] [--sdb-optimizer-options=SET]
 [--sdb-rollback-on-timeout=BOOL] [--sdb-execute-only-in-mysql=BOOL] [--sdb-selector-pushdown-threshold=THRESHOLD] [--sdb-alter-table-overhead-threshold=THRESHOLD] [--sdb-lock-wait-timeout=TIMEOUT] [--sdb-use-rollback-segments=BOOL]
-[--sdb-stats-mode=MODE] [--sdb-stats-sample-num=NUM] [--sdb-stats-sample-percent=DOUBLE] [--sdb-stats-cache=BOOL] [--inst-group-name=NAME] [--inst-group-key=KEY]"
+[--sdb-stats-mode=MODE] [--sdb-stats-sample-num=NUM] [--sdb-stats-sample-percent=DOUBLE] [--sdb-stats-cache=BOOL] [--inst-group-name=NAME] [--inst-group-key=KEY] [--optimizer-limit-pushdown-threshold=THRESHOLD]"
    echo ""
    echo "Options:"
    echo "  -D DATADIR                                      location of the database storage area"
@@ -1319,12 +1323,13 @@ function build_help()
    echo "  --sdb-stats-sample-num=NUM                      Number of sample records for index statistics. (Default: 200)"
    echo "  --sdb-stats-sample-percent=DOUBLE               Percentage of sample records for index statistics. (Default: 0.0)"
    echo "  --sdb-stats-cache=BOOL                          Load statistics information into cache from SequoiaDB. Default: ON) (Defaults to on; use --skip-sequoiadb-stats-cache to disable.)"
+   echo "  --optimizer-limit-pushdown-threshold            The threshold control the limit pushdown on first table which is block-based joined. (Default: 100)"
    echo "  -v, --version                                   output version information, then exit"
 }
 #Parse command line parameters
 test $# -eq 0 && { build_help && exit 64; }
 
-ARGS=`getopt -o hvD:l:p:P:s:f:a:w:g:k: --long help,version,print,baklog,force,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-enable-mapping:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log: -n "${ME}" -- "$@"`
+ARGS=`getopt -o hvD:l:p:P:s:f:a:w:g:k: --long help,version,print,baklog,force,sdb-conn-addr:,sdb-user:,sdb-passwd:,sdb-use-partition:,sdb-auto-partition:,sdb-use-bulk-insert:,sdb-bulk-insert-size:,sdb-use-autocommit:,sdb-token:,sdb-cipherfile:,sdb-error-level:,sdb-replica-size:,sdb-use-transaction:,inst-group-name:,inst-group-key:,sdb-enable-mapping:,sdb-optimizer-options:,sdb-rollback-on-timeout:,sdb-execute-only-in-mysql:,sdb-selector-pushdown-threshold:,sdb-alter-table-overhead-threshold:,sdb-lock-wait-timeout:,sdb-use-rollback-segments:,sdb-stats-mode:,sdb-stats-sample-num:,sdb-stats-sample-percent:,sdb-stats-cache:,sdb-debug-log:,optimizer-limit-pushdown-threshold: -n "${ME}" -- "$@"`
 ret=$?
 test $ret -ne 0 && exit $ret
 
@@ -1512,6 +1517,10 @@ do
                                               err_para BOOL $SDB_DEBUG_LOG
                                               shift 2
                                               ;;
+      --optimizer-limit-pushdown-threshold )  OPTIMIZER_LIMIT_PUSHDOWN_THRESHOLD=$2
+                                              check_num_para "OPTIMIZER-LIMIT-PUSHDOWN-THRESHOLD" "$OPTIMIZER_LIMIT_PUSHDOWN_THRESHOLD"
+                                              shift 2
+                                              ;;
       -v | --version)                         show_version
                                               exit 0
                                               ;;
@@ -1558,7 +1567,7 @@ case "$1" in
                     -a -z "$SDB_EXECUTE_ONLY_IN_MYSQL" -a -z "$SDB_SELECTOR_PUSHDOWN_THRESHOLD" -a -z "$SDB_ALTER_TABLE_OVERHEAD_THRESHOLD" \
                     -a -z "$SDB_LOCK_WAIT_TIMEOUT" -a -z "$SDB_USE_ROLLBACK_SEGMENTS" -a -z "$SDB_STATS_MODE" -a -z "$SDB_STATS_SAMPLE_NUM" \
                     -a -z "$SDB_STATS_SAMPLE_PERCENT" -a -z "$SDB_STATS_CACHE" -a -z "$INST_GROUP_NAME" -a -z "$INST_GROUP_KEY" \
-                    -a -z "${SDB_ENABLE_MAPPING}" ]; then
+                    -a -z "${SDB_ENABLE_MAPPING}" -a -z "$OPTIMIZER_LIMIT_PUSHDOWN_THRESHOLD" ]; then
                   echo "${ME}: No configure specified." 
                   exit 0
                   shift 1
