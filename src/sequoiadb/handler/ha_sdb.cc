@@ -1751,6 +1751,7 @@ int ha_sdb::reset() {
 
   // release local share in handler
   if (share && share->expired) {
+    SDB_LOG_DEBUG("Release local statistics for current handler");
     share = null_ptr;
   }
 
@@ -5837,8 +5838,8 @@ int ha_sdb::info(uint flag) {
 
   if (sdb_execute_only_in_mysql(ha_thd())) {
     if (flag & HA_STATUS_VARIABLE) {
-      // make sure share is not empty
-      if (!share) {
+      // make sure share is not empty and has not expired
+      if (!share || share->expired) {
         bool is_share_created = false;
         get_sdb_share(m_path, table, share, is_share_created);
         if (!share) {
@@ -6140,8 +6141,8 @@ int ha_sdb::ensure_stats(THD *thd, int keynr) {
   DBUG_ENTER("ha_sdb::ensure_stats");
   int rc = 0;
 
-  // make sure share is not empty
-  if (!share) {
+  // make sure share is not empty and has not expired
+  if (!share || share->expired) {
     bool is_share_created = false;
     get_sdb_share(m_path, table, share, is_share_created);
     if (!share) {
@@ -9231,7 +9232,7 @@ static bool need_flush_stats_info(Sdb_share *share, THD *thd) {
   bool do_flush_stats = false;
   ha_rows total_records = share->first_loaded_static_total_records;
   if (~(ha_rows)0 == total_records) {
-    total_records = share->stat.total_records;
+    total_records = share->stat.last_flush_total_records;
   }
 
   if (0 == sdb_stats_flush_time_threshold(thd) ||
@@ -9372,6 +9373,10 @@ static void update_shares_stats(THD *thd) {
       const char *time_unit = "hours";
       DBUG_EXECUTE_IF("stats_flush_time_threshold_test",
                       { time_unit = "seconds"; });
+      ha_rows total_records = share->first_loaded_static_total_records;
+      if (~(ha_rows)0 == total_records) {
+        total_records = share->stat.last_flush_total_records;
+      }
 
       strftime(last_reset_time, MAX_DATATIME_LEN + 1, "%Y-%m-%d %H:%M:%S",
                localtime(&share->last_reset_time));
@@ -9381,13 +9386,19 @@ static void update_shares_stats(THD *thd) {
       SDB_LOG_DEBUG(
           "Records %lld, UDI counter %lld, share last refresh time '%s', now "
           "time '%s'.",
-          share->stat.total_records, share->stat.udi_counter, last_reset_time,
+          total_records, share->stat.udi_counter, last_reset_time,
           now_datetime);
       SDB_LOG_DEBUG(
           "'sequoiadb_stats_flush_time_threshold' is %d %s, %ld %s since last "
           "refresh of statistics",
           sdb_stats_flush_time_threshold(thd), time_unit,
           now_timestamp - share->last_reset_time, time_unit);
+
+      // reset value of 'last_flush_total_records' to 'total_records'
+      // reset 'udi_counter' to 0
+      share->stat.last_flush_total_records = share->stat.total_records;
+      share->stat.udi_counter = 0;
+
       strcpy(tmp_table_name, share->table_name);
       // invalid statistics information for current instance
 

@@ -1171,6 +1171,7 @@ int Sdb_conn::get_cl_stats_by_get_detail(const char *cs_name,
   stats.total_index_pages = 0;
   stats.total_data_free_space = 0;
   stats.total_records = 0;
+  stats.last_flush_total_records = 0;
 
   try {
     while (!(rc = cursor.next(obj, false))) {
@@ -1250,6 +1251,7 @@ int Sdb_conn::get_cl_stats_by_get_detail(const char *cs_name,
 
   stats.total_data_pages /= (stats.page_size / PAGE_SIZE_MIN);
   stats.total_index_pages /= (stats.page_size / PAGE_SIZE_MIN);
+  stats.last_flush_total_records = stats.total_records;
 
 done:
   cursor.close();
@@ -1350,6 +1352,7 @@ int Sdb_conn::get_cl_stats_by_snapshot(const char *db_name,
   stats.total_data_free_space =
       obj.getField(SDB_FIELD_TOTAL_DATA_FREE_SPACE).numberLong();
   stats.total_records = obj.getField(SDB_FIELD_TOTAL_RECORDS).numberLong();
+  stats.last_flush_total_records = stats.total_records;
 
 done:
   execute_done();
