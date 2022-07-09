@@ -52,6 +52,7 @@ struct Sdb_statistics {
   int64 total_data_free_space;
   int64 volatile total_records;
   int64 volatile udi_counter;
+  int64 volatile last_flush_total_records;
 
   Sdb_statistics() { init(); }
 
@@ -62,6 +63,7 @@ struct Sdb_statistics {
     total_data_free_space = 0;
     total_records = ~(int64)0;
     udi_counter = 0;
+    last_flush_total_records = ~(int64)0;
   }
 
   void reset() { init(); }
@@ -84,7 +86,6 @@ struct Sdb_share {
   Sdb_idx_stat_ptr *idx_stat_arr;
   uint idx_count;
   time_t last_reset_time;
-  Sdb_mutex mutex;
   bool expired;
   ha_rows first_loaded_static_total_records;
 
