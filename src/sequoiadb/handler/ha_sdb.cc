@@ -6091,12 +6091,18 @@ int ha_sdb::update_stats(THD *thd, bool do_read_stat) {
           (boost::shared_ptr<Sdb_share> *)my_hash_search(
               &sdb_open_tables, (uchar *)share->table_name,
               share->table_name_length);
-      // set 'Sdb_share' to expired status, share of the handler of other
-      // sessions will be set to null_ptr in 'ha_sdb::reset()'
-      share->expired = true;
       // let the global and the local shared_ptr point to the new Sdb_share
       if (glob_ssp) {
+        // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
+        // 'Sdb_share' in 'sdb_open_tables', because the global and the
+        // local shared_ptr may not point to the same 'Sdb_share'
+        (*glob_ssp)->expired = true;
         (*glob_ssp) = new_share_ptr;
+      } else {
+        // set expired state for new shared_ptr, use only one time if current
+        // 'Sdb_share' has been removed(in 'update_shares_stats' function) from
+        // 'sdb_open_tables'
+        new_share_ptr->expired = true;
       }
       share = new_share_ptr;
       mysql_mutex_unlock(&sdb_mutex);
@@ -6920,12 +6926,18 @@ int ha_sdb::ensure_index_stat(int keynr) {
             (boost::shared_ptr<Sdb_share> *)my_hash_search(
                 &sdb_open_tables, (uchar *)share->table_name,
                 share->table_name_length);
-        // set 'Sdb_share' to expired status, share of the handler of other
-        // sessions will be set to null_ptr in 'ha_sdb::reset()'
-        share->expired = true;
         // let the global and the local shared_ptr point to the new Sdb_share
         if (glob_ssp) {
+          // fix bug SEQUOIASQLMAINSTREAM-1424 set expired state for
+          // 'Sdb_share' in 'sdb_open_tables', because the global and the
+          // local shared_ptr may not point to the same 'Sdb_share'
+          (*glob_ssp)->expired = true;
           (*glob_ssp) = new_share_ptr;
+        } else {
+          // set expired state for new shared_ptr, use only one time if current
+          // 'Sdb_share' has been removed(in 'update_shares_stats' function)
+          // from 'sdb_open_tables'
+          new_share_ptr->expired = true;
         }
         share = new_share_ptr;
         mysql_mutex_unlock(&sdb_mutex);
@@ -9384,6 +9396,9 @@ static void update_shares_stats(THD *thd) {
       void *ptr = my_hash_search(&sdb_open_tables, (uchar *)share->table_name,
                                  share->table_name_length);
       if (ptr) {
+        // set expired state for 'Sdb_share' to be removed from
+        // 'sdb_open_tables', let handlers in other session release their shares
+        (*((boost::shared_ptr<Sdb_share> *)ptr))->expired = true;
         my_hash_delete(&sdb_open_tables, (uchar *)ptr);
       }
       // set 'Sdb_share' to expired status, share of the handler of the current
