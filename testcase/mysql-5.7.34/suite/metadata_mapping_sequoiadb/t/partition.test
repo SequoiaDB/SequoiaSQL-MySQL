@@ -218,8 +218,6 @@ insert into t1 values (15, 15), (16, 16);
 select * from t1 order by a;
 select * from t1 where a >= 15 order by a;
 # 创建索引
-# RROR 1506 (HY000): Foreign keys are not yet supported in conjunction with partitioning
---error 1506
 create index idx on t1(id);
 show index from t1;
 # 删除分区
@@ -238,6 +236,7 @@ show create table t1;
 insert into t1 values (1, 1), (2, 2), (3,3), (4,4), (5,5), (6,6), (7,7), (8,8), (9,9), (10,10), (11,11), (12,12), (13,13), (14,14), (15, 15), (16, 16);
 select * from t1 order by a;
 # 创建索引
+--error 1061
 create index idx on t1(id);
 show index from t1;
 select * from t1 where id > 2 order by id;
@@ -333,8 +332,6 @@ insert into t1 values (15, 15), (16, 16);
 select * from t1 order by a;
 select * from t1 where a >= 15 order by a;
 # 创建索引
-# RROR 1506 (HY000): Foreign keys are not yet supported in conjunction with partitioning
---error 1506
 create index idx on t1(id);
 show index from t1;
 # 删除分区
@@ -353,6 +350,7 @@ show create table t1;
 insert into t1 values (1, 1), (2, 2), (3,3), (4,4), (5,5), (6,6), (7,7), (8,8), (9,9), (10,10), (11,11), (12,12), (13,13), (14,14), (15, 15), (16, 16);
 select * from t1 order by a;
 # 创建索引
+--error 1061
 create index idx on t1(id);
 show index from t1;
 select * from t1 where id > 2 order by id;
@@ -448,8 +446,6 @@ insert into t1 values (6, 59);
 select * from t1 order by a;
 select * from t1 where a >= 50 order by a;
 # 创建索引
-# RROR 1506 (HY000): Foreign keys are not yet supported in conjunction with partitioning
---error 1506
 create index idx on t1(id);
 show index from t1;
 # 删除分区
@@ -470,6 +466,7 @@ show create table t1;
 insert into t1 values (0,-1), (1,0), (2,10), (3,20), (4,30), (5,40), (5,49), (6, 59);
 select * from t1 order by a;
 # 创建索引
+--error 1061
 create index idx on t1(id);
 show index from t1;
 select * from t1 where id > 1 order by id;

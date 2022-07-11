@@ -916,15 +916,16 @@ id	a
 15	15
 16	16
 create index idx on t1(id);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 show index from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
+t1	1	idx	1	id	A	NULL	NULL	NULL		BTREE		
 alter table t1 drop partition p0;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
-  `a` int(11) NOT NULL
+  `a` int(11) NOT NULL,
+  KEY `idx` (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 /*!50500 PARTITION BY LIST  COLUMNS(a)
 (PARTITION p1 VALUES IN (3,4) ENGINE = SequoiaDB,
@@ -1002,7 +1003,8 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
-  `a` int(11) NOT NULL
+  `a` int(11) NOT NULL,
+  KEY `idx` (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 insert into t1 values (1, 1), (2, 2), (3,3), (4,4), (5,5), (6,6), (7,7), (8,8), (9,9), (10,10), (11,11), (12,12), (13,13), (14,14), (15, 15), (16, 16);
 select * from t1 order by a;
@@ -1052,6 +1054,7 @@ id	a
 16	16
 16	16
 create index idx on t1(id);
+ERROR 42000: Duplicate key name 'idx'
 show index from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	1	idx	1	id	A	NULL	NULL	NULL		BTREE		
@@ -1603,15 +1606,16 @@ id	a
 15	15
 16	16
 create index idx on t1(id);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 show index from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
+t1	1	idx	1	id	A	NULL	NULL	NULL		BTREE		
 alter table t1 drop partition p0;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
-  `a` int(11) NOT NULL
+  `a` int(11) NOT NULL,
+  KEY `idx` (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 /*!50500 PARTITION BY LIST  COLUMNS(a)
 SUBPARTITION BY HASH (a)
@@ -1690,7 +1694,8 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
-  `a` int(11) NOT NULL
+  `a` int(11) NOT NULL,
+  KEY `idx` (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 insert into t1 values (1, 1), (2, 2), (3,3), (4,4), (5,5), (6,6), (7,7), (8,8), (9,9), (10,10), (11,11), (12,12), (13,13), (14,14), (15, 15), (16, 16);
 select * from t1 order by a;
@@ -1740,6 +1745,7 @@ id	a
 16	16
 16	16
 create index idx on t1(id);
+ERROR 42000: Duplicate key name 'idx'
 show index from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	1	idx	1	id	A	NULL	NULL	NULL		BTREE		
@@ -2185,16 +2191,17 @@ select * from t1 where a >= 50 order by a;
 id	a
 6	59
 create index idx on t1(id);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 show index from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
+t1	1	idx	1	id	A	NULL	NULL	NULL		BTREE		
 alter table t1 drop partition p0;
 alter table t1 drop partition p6;
 show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
-  `a` int(11) NOT NULL
+  `a` int(11) NOT NULL,
+  KEY `idx` (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 /*!50500 PARTITION BY RANGE  COLUMNS(a)
 SUBPARTITION BY KEY (id)
@@ -2246,7 +2253,8 @@ show create table t1;
 Table	Create Table
 t1	CREATE TABLE `t1` (
   `id` int(11) NOT NULL,
-  `a` int(11) NOT NULL
+  `a` int(11) NOT NULL,
+  KEY `idx` (`id`)
 ) ENGINE=SequoiaDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 insert into t1 values (0,-1), (1,0), (2,10), (3,20), (4,30), (5,40), (5,49), (6, 59);
 select * from t1 order by a;
@@ -2273,6 +2281,7 @@ id	a
 5	49
 6	59
 create index idx on t1(id);
+ERROR 42000: Duplicate key name 'idx'
 show index from t1;
 Table	Non_unique	Key_name	Seq_in_index	Column_name	Collation	Cardinality	Sub_part	Packed	Null	Index_type	Comment	Index_comment
 t1	1	idx	1	id	A	NULL	NULL	NULL		BTREE		
