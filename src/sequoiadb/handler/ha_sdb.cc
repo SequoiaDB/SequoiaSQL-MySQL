@@ -6861,7 +6861,16 @@ int ha_sdb::ensure_index_stat(int keynr) {
   DBUG_ENTER("ha_sdb::ensure_index_stat");
   int rc = 0;
   Sdb_index_stat *new_stat = NULL;
+  // ensure that at least one index statistics is populated if 'idx_count' in
+  // 'Sdb_share' is not zero
+  if (keynr < 0 && share && share->idx_count) {
+    keynr = 0;
+  }
   KEY *key_info = table->key_info + keynr;
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
+  }
 
   // build a new 'Sdb_share' if new index statistics is loaded into 'Sdb_share'
   // 'idx_stat_arr' in 'Sdb_share' is not allowed to change, because the
@@ -7160,6 +7169,10 @@ ha_rows ha_sdb::records_in_range(uint keynr, key_range *min_key,
   rc = ensure_stats(ha_thd(), keynr);
   if (rc) {
     goto error;
+  }
+
+  if (sdb_execute_only_in_mysql(ha_thd())) {
+    goto done;
   }
 
   records = sdb_estimate_match_count(share->idx_stat_arr[keynr], key_info,
