@@ -17,19 +17,19 @@
 #define MYSQL_SERVER
 #endif
 
+#include "ha_sdb_item.h"
+#include "ha_sdb_def.h"
+#include "ha_sdb_errcode.h"
+#include "ha_sdb_log.h"
+#include "ha_sdb_util.h"
+#include <my_dbug.h>
 #include <my_global.h>
 #include <sql_time.h>
-#include <my_dbug.h>
 #include <tzfile.h>
-#include "ha_sdb_item.h"
-#include "ha_sdb_errcode.h"
-#include "ha_sdb_util.h"
-#include "ha_sdb_def.h"
-#include "ha_sdb_log.h"
 
 #ifdef IS_MYSQL
-#include <json_dom.h>
 #include <item_json_func.h>
+#include <json_dom.h>
 #endif
 
 #define BSON_APPEND(field_name, value, obj, arr_builder) \
@@ -1447,7 +1447,10 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
 
     rc =
         sdb_convert_charset(*str_val_org, str_val_conv, &SDB_COLLATION_UTF8MB4);
-    if (rc) {
+    // some binary convert to string with '\0' in the middle, can not pushdown
+    // use strnlen to check this condition
+    if (rc || strnlen(str_val_conv.ptr(), str_val_conv.length()) !=
+                  str_val_conv.length()) {
       goto error;
     }
     rc = get_regex_str(str_val_conv.ptr(), str_val_conv.length(), regex_val,
