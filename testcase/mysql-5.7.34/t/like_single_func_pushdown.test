@@ -1,6 +1,7 @@
 #seqDB-26641
 --source include/have_sequoiadb.inc
 
+create database like_single_func_pushdown;
 --disable_warnings
 drop database if exists like_single_func_pushdown;
 --enable_warnings
@@ -11,7 +12,7 @@ set session sequoiadb_debug_log=on;
 set session sequoiadb_support_mode='';
 
 --disable_warnings
-drop table if exists t1;
+drop table if exists t1, t2, t3, t4, t5;
 --enable_warnings
 
 create table t1(
@@ -674,13 +675,12 @@ select * from t4 where a like aes_encrypt('abc','key');
 select * from t5 where a like aes_encrypt('abc','key');
 --source include/query_pushdown_condition_sequoiadb.inc
 
-#compress #SEQUOIASQLMAINSTREAM-1421
-#select compress('abc'),compress(123);
-#insert into t1 values(compress('abc')),(compress(123));
-#select * from t1 where a like compress('abc') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
-#select * from t1 where a like compress(123) order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#compress
+select compress('abc'),compress(123);
+select * from t1 where a like compress('abc') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
+select * from t1 where a like compress(123) order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #md5
 select md5('abc'),md5(123);
@@ -1732,11 +1732,11 @@ insert into t1 values(inet_ntoa('167773449'));
 select * from t1 where a like inet_ntoa('167773449') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-#inet6_aton #SEQUOIASQLMAINSTREAM-1421
-#select inet6_aton('10.0.5.9');
-#insert into t1 values(inet6_aton('10.0.5.9'));
-#select * from t1 where a like inet6_aton('10.0.5.9') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#inet6_aton
+select inet6_aton('10.0.5.9');
+insert into t1 values(inet6_aton('10.0.5.9'));
+select * from t1 where a like inet6_aton('10.0.5.9') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #inet6_ntoa
 select inet6_ntoa(0x0A000509);
@@ -2065,15 +2065,15 @@ insert into t1 values(st_astext(st_geomcollfromtext("multilinestring((10 10,11 1
 select * from t1 where a like st_astext(st_geomcollfromtext("multilinestring((10 10,11 11),(9 9,10 10))")) order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-#st_mpointfromtext #SEQUOIASQLMAINSTREAM-1421
-#select st_mpointfromtext('multipoint(1 1,2 2,3 3)');
-#select * from t1 where a like st_mpointfromtext('multipoint(1 1,2 2,3 3)') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#st_mpointfromtext
+select st_mpointfromtext('multipoint(1 1,2 2,3 3)');
+select * from t1 where a like st_mpointfromtext('multipoint(1 1,2 2,3 3)') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
-#point #SEQUOIASQLMAINSTREAM-1421
-#select point(1,2);
-#select * from t1 where a like point(1,2) order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#point
+select point(1,2);
+select * from t1 where a like point(1,2) order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #st_astext
 select st_astext(st_geomfromtext('linestring(1 1,2 2,3 3)'));
@@ -2355,6 +2355,6 @@ select * from t1 where a like st_astext(st_validate(st_geomfromtext('linestring(
 
 set session sequoiadb_debug_log=default;
 set sequoiadb_support_mode=default;
-drop table t1,t2,t3,t4,t5;
+drop table t1, t2, t3, t4, t5;
 drop database like_single_func_pushdown;
 --source include/uninstall_sequoiadb.inc

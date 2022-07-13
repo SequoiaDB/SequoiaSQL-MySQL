@@ -1,3 +1,4 @@
+create database like_combining_funcs_pushdown;
 drop database if exists like_combining_funcs_pushdown;
 create database like_combining_funcs_pushdown;
 use like_combining_funcs_pushdown;

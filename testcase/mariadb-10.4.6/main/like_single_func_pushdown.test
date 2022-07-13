@@ -1,6 +1,7 @@
 #seqDB-26641
 --source include/have_sequoiadb.inc
 
+create database like_single_func_pushdown;
 --disable_warnings
 drop database if exists like_single_func_pushdown;
 --enable_warnings
@@ -757,13 +758,12 @@ select * from t4 where a like aes_encrypt('abc','key');
 select * from t5 where a like aes_encrypt('abc','key');
 --source include/query_pushdown_condition_sequoiadb.inc
 
-#compress #SEQUOIASQLMAINSTREAM-1421
-#select compress('abc'),compress(123);
-#insert into t1 values(compress('abc')),(compress(123));
-#select * from t1 where a like compress('abc') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
-#select * from t1 where a like compress(123) order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#compress
+select compress('abc'),compress(123);
+select * from t1 where a like compress('abc') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
+select * from t1 where a like compress(123) order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #decode
 select decode(encode('test','key'),'key'),decode(encode(875,'key'),'key'); 
@@ -1792,11 +1792,10 @@ insert into t1 values(inet_ntoa('167773449'));
 select * from t1 where a like inet_ntoa('167773449') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-#inet6_aton #SEQUOIASQLMAINSTREAM-1421
-#select inet6_aton('10.0.5.9');
-#insert into t1 values(inet6_aton('10.0.5.9'));
-#select * from t1 where a like inet6_aton('10.0.5.9') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#inet6_aton
+select inet6_aton('10.0.5.9');
+select * from t1 where a like inet6_aton('10.0.5.9') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #inet6_ntoa
 select inet6_ntoa(0x0A000509);
@@ -2172,31 +2171,30 @@ insert into t1 values(astext(endpoint(geomfromtext('linestring(1 1,2 2,3 3)'))))
 select * from t1 where a like astext(endpoint(geomfromtext('linestring(1 1,2 2,3 3)'))) order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-#SEQUOIASQLMAINSTREAM-1421
 #multilinestring
-#select mlinefromtext('multilinestring((10 48,10 21,10 0))');
-#select * from t1 where a like mlinefromtext('multilinestring((10 48,10 21,10 0))') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+select mlinefromtext('multilinestring((10 48,10 21,10 0))');
+select * from t1 where a like mlinefromtext('multilinestring((10 48,10 21,10 0))') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #multipoint
-#select mlinefromtext('multipoint(1 1,11 11,11 21,21 21)');
-#select * from t1 where a like mlinefromtext('multipoint(1 1,11 11,11 21,21 21)') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+select mlinefromtext('multipoint(1 1,11 11,11 21,21 21)');
+select * from t1 where a like mlinefromtext('multipoint(1 1,11 11,11 21,21 21)') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #multipolygon
-#select mlinefromtext('multipolygon(((28 26,28 0,84 0,84 42,28 26)))');
-#select * from t1 where a like mlinefromtext('multipolygon(((28 26,28 0,84 0,84 42,28 26)))') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+select mlinefromtext('multipolygon(((28 26,28 0,84 0,84 42,28 26)))');
+select * from t1 where a like mlinefromtext('multipolygon(((28 26,28 0,84 0,84 42,28 26)))') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #point
-#select point(1,2);
-#select * from t1 where a like point(1,2) order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+select point(1,2);
+select * from t1 where a like point(1,2) order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #polygon
-#select polyfromtext('polygon((10 10,20 10,20 20,10 20,10 10))');
-#select * from t1 where a like polyfromtext('polygon((10 10,20 10,20 20,10 20,10 10))') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+select polyfromtext('polygon((10 10,20 10,20 20,10 20,10 10))');
+select * from t1 where a like polyfromtext('polygon((10 10,20 10,20 20,10 20,10 10))') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #st_intersection
 select st_astext(st_intersection(st_geomfromtext('linestring(1 1,3 3)'),st_geomfromtext('linestring(1 3,3 1)')));
@@ -2558,30 +2556,30 @@ insert into t1 values(st_astext(st_linefromtext("multilinestring((10 10,11 11),(
 select * from t1 where a like st_astext(st_linefromtext("multilinestring((10 10,11 11),(9 9,10 10))")) order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-#mlinefromtext #SEQUOIASQLMAINSTREAM-1421
-#select mlinefromtext('point(2 2)');
-#select * from t1 where a like mlinefromtext('point(2 2)') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#mlinefromtext 
+select mlinefromtext('point(2 2)');
+select * from t1 where a like mlinefromtext('point(2 2)') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
-#mpointfromtext #SEQUOIASQLMAINSTREAM-1421
-#select mpointfromtext('point(2 2)');
-#select * from t1 where a like mpointfromtext('point(2 2)') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+#mpointfromtext 
+select mpointfromtext('point(2 2)');
+select * from t1 where a like mpointfromtext('point(2 2)') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #mpolyfromtext
-#select mpolyfromtext('point(2 2)');
-#select * from t1 where a like mpolyfromtext('point(2 2)') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+select mpolyfromtext('point(2 2)');
+select * from t1 where a like mpolyfromtext('point(2 2)') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #st_pointfromtext
-#select st_pointfromtext('point(10 10)');
-#select * from t1 where a like st_pointfromtext('point(10 10)') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+select st_pointfromtext('point(10 10)');
+select * from t1 where a like st_pointfromtext('point(10 10)') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #st_polyfromtext
-#select st_polyfromtext('point(10 10)');
-#select * from t1 where a like st_polyfromtext('point(10 10)') order by a;
-#--source include/query_pushdown_condition_sequoiadb.inc
+select st_polyfromtext('point(10 10)');
+select * from t1 where a like st_polyfromtext('point(10 10)') order by a;
+--source include/query_pushdown_condition_sequoiadb.inc
 
 #-----------------------------------------------geographic functions------------------------------------------#
 

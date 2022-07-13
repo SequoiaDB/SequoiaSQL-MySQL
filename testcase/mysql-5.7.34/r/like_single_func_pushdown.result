@@ -1,9 +1,10 @@
+create database like_single_func_pushdown;
 drop database if exists like_single_func_pushdown;
 create database like_single_func_pushdown;
 use like_single_func_pushdown;
 set session sequoiadb_debug_log=on;
 set session sequoiadb_support_mode='';
-drop table if exists t1;
+drop table if exists t1, t2, t3, t4, t5;
 create table t1(
 a varchar(514) charset utf8mb4 collate utf8mb4_bin
 );
@@ -1095,6 +1096,15 @@ a
 select * from t5 where a like aes_encrypt('abc','key');
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t5]
+select compress('abc'),compress(123);
+compress('abc')	compress(123)
+   xœKLJ M'	   xœ342 - —
+select * from t1 where a like compress('abc') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select * from t1 where a like compress(123) order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select md5('abc'),md5(123);
 md5('abc')	md5(123)
 900150983cd24fb0d6963f7d28e17f72	202cb962ac59075b964b07152d234b70
@@ -2627,6 +2637,16 @@ select * from t1 where a like inet_ntoa('167773449') order by a;
 a
 10.0.5.9
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^10\\.0\\.5\\.9$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select inet6_aton('10.0.5.9');
+inet6_aton('10.0.5.9')
+
+ 	
+insert into t1 values(inet6_aton('10.0.5.9'));
+select * from t1 where a like inet6_aton('10.0.5.9') order by a;
+a
+
+ 	
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select inet6_ntoa(0x0A000509);
 inet6_ntoa(0x0A000509)
 10.0.5.9
@@ -3188,6 +3208,18 @@ select * from t1 where a like st_astext(st_geomcollfromtext("multilinestring((10
 a
 MULTILINESTRING((10 10,11 11),(9 9,10 10))
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^MULTILINESTRING\\(\\(10 10,11 11\\),\\(9 9,10 10\\)\\)$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select st_mpointfromtext('multipoint(1 1,2 2,3 3)');
+st_mpointfromtext('multipoint(1 1,2 2,3 3)')
+                   ð?      ð?          @       @         @      @
+select * from t1 where a like st_mpointfromtext('multipoint(1 1,2 2,3 3)') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select point(1,2);
+point(1,2)
+             ð?       @
+select * from t1 where a like point(1,2) order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select st_astext(st_geomfromtext('linestring(1 1,2 2,3 3)'));
 st_astext(st_geomfromtext('linestring(1 1,2 2,3 3)'))
 LINESTRING(1 1,2 2,3 3)
@@ -3778,5 +3810,5 @@ LINESTRING(0 0,1 1)
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^LINESTRING\\(0 0,1 1\\)$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 set session sequoiadb_debug_log=default;
 set sequoiadb_support_mode=default;
-drop table t1,t2,t3,t4,t5;
+drop table t1, t2, t3, t4, t5;
 drop database like_single_func_pushdown;

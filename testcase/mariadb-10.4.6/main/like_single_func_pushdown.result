@@ -1,3 +1,4 @@
+create database like_single_func_pushdown;
 drop database if exists like_single_func_pushdown;
 create database like_single_func_pushdown;
 use like_single_func_pushdown;
@@ -1242,6 +1243,15 @@ a
 select * from t5 where a like aes_encrypt('abc','key');
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t5]
+select compress('abc'),compress(123);
+compress('abc')	compress(123)
+   xœKLJ M'	   xœ342 - —
+select * from t1 where a like compress('abc') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select * from t1 where a like compress(123) order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select decode(encode('test','key'),'key'),decode(encode(875,'key'),'key');
 decode(encode('test','key'),'key')	decode(encode(875,'key'),'key')
 test	875
@@ -2766,6 +2776,13 @@ select * from t1 where a like inet_ntoa('167773449') order by a;
 a
 10.0.5.9
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^10\\.0\\.5\\.9$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select inet6_aton('10.0.5.9');
+inet6_aton('10.0.5.9')
+
+ 	
+select * from t1 where a like inet6_aton('10.0.5.9') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select inet6_ntoa(0x0A000509);
 inet6_ntoa(0x0A000509)
 10.0.5.9
@@ -3439,6 +3456,36 @@ select * from t1 where a like astext(endpoint(geomfromtext('linestring(1 1,2 2,3
 a
 POINT(3 3)
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^POINT\\(3 3\\)$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select mlinefromtext('multilinestring((10 48,10 21,10 0))');
+mlinefromtext('multilinestring((10 48,10 21,10 0))')
+                      $@      H@      $@      5@      $@        
+select * from t1 where a like mlinefromtext('multilinestring((10 48,10 21,10 0))') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select mlinefromtext('multipoint(1 1,11 11,11 21,21 21)');
+mlinefromtext('multipoint(1 1,11 11,11 21,21 21)')
+                   ð?      ð?         &@      &@         &@      5@         5@      5@
+select * from t1 where a like mlinefromtext('multipoint(1 1,11 11,11 21,21 21)') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select mlinefromtext('multipolygon(((28 26,28 0,84 0,84 42,28 26)))');
+mlinefromtext('multipolygon(((28 26,28 0,84 0,84 42,28 26)))')
+                         <@      :@      <@              U@              U@      E@      <@      :@
+select * from t1 where a like mlinefromtext('multipolygon(((28 26,28 0,84 0,84 42,28 26)))') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select point(1,2);
+point(1,2)
+             ð?       @
+select * from t1 where a like point(1,2) order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select polyfromtext('polygon((10 10,20 10,20 20,10 20,10 10))');
+polyfromtext('polygon((10 10,20 10,20 20,10 20,10 10))')
+                   $@      $@      4@      $@      4@      4@      $@      4@      $@      $@
+select * from t1 where a like polyfromtext('polygon((10 10,20 10,20 20,10 20,10 10))') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select st_astext(st_intersection(st_geomfromtext('linestring(1 1,3 3)'),st_geomfromtext('linestring(1 3,3 1)')));
 st_astext(st_intersection(st_geomfromtext('linestring(1 1,3 3)'),st_geomfromtext('linestring(1 3,3 1)')))
 POINT(2 2)
@@ -4353,6 +4400,36 @@ MULTILINESTRING((10 10,11 11),(9 9,10 10))
 MULTILINESTRING((10 10,11 11),(9 9,10 10))
 MULTILINESTRING((10 10,11 11),(9 9,10 10))
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^MULTILINESTRING\\(\\(10 10,11 11\\),\\(9 9,10 10\\)\\)$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select mlinefromtext('point(2 2)');
+mlinefromtext('point(2 2)')
+              @       @
+select * from t1 where a like mlinefromtext('point(2 2)') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select mpointfromtext('point(2 2)');
+mpointfromtext('point(2 2)')
+              @       @
+select * from t1 where a like mpointfromtext('point(2 2)') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select mpolyfromtext('point(2 2)');
+mpolyfromtext('point(2 2)')
+              @       @
+select * from t1 where a like mpolyfromtext('point(2 2)') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select st_pointfromtext('point(10 10)');
+st_pointfromtext('point(10 10)')
+             $@      $@
+select * from t1 where a like st_pointfromtext('point(10 10)') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+select st_polyfromtext('point(10 10)');
+st_polyfromtext('point(10 10)')
+             $@      $@
+select * from t1 where a like st_polyfromtext('point(10 10)') order by a;
+a
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 set session sequoiadb_debug_log=default;
 set sequoiadb_support_mode=default;
 drop table t1, t2, t3, t4, t5;
