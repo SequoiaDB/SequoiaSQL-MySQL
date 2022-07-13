@@ -530,7 +530,7 @@ static MYSQL_THDVAR_INT(stats_flush_time_threshold, PLUGIN_VAR_OPCMDARG,
                         "Statistics refresh time threshold. Unit: hours"
                         "(Default: 48)"
                         /* 统计信息刷新时间阈值, 范围[0, 720]，单位：小时。*/,
-                        NULL, NULL, 48, 0, 720, 1);
+                        NULL, NULL, 0, 0, 720, 1);
 
 struct st_mysql_sys_var *sdb_sys_vars[] = {
     MYSQL_SYSVAR(conn_addr),
