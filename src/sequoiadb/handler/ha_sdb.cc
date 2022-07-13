@@ -5887,8 +5887,13 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to index read one for table:%s.%s, exception:%s", db_name,
       table_name, e.what());
-  rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
-                         direct_op);
+  if (ha_thd()->optimizer_switch_flag(
+          OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
+      ha_thd()->optimizer_switch_flag(
+          OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)) {
+    rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
+                           direct_op);
+  }
   if (rc) {
     goto error;
   }
@@ -5912,7 +5917,11 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     sdb_join_type type = SDB_JOIN_UNKNOWN;
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
         sdb_is_single_table(ha_thd()) &&
-        (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_LIMIT)) {
+        ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_LIMIT) &&
+         (ha_thd()->optimizer_switch_flag(
+              OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
+          ha_thd()->optimizer_switch_flag(
+              OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)))) {
       type = sdb_get_join_type(ha_thd(), mrr_iter);
       if (sdb_can_push_down_limit(ha_thd(), sdb_condition, type)) {
         // org_num_to_return/org_num_to_skip keep the initial value for easy
@@ -6528,8 +6537,13 @@ int ha_sdb::rnd_next(uchar *buf) {
         SDB_EXCEPTION_CATCHER(
             rc, "Failed to read next for table:%s.%s, exception:%s", db_name,
             table_name, e.what());
-        rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
-                               direct_op);
+        if (ha_thd()->optimizer_switch_flag(
+                OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
+            ha_thd()->optimizer_switch_flag(
+                OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)) {
+          rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
+                                 direct_op);
+        }
         if (rc) {
           goto error;
         }
@@ -6549,8 +6563,12 @@ int ha_sdb::rnd_next(uchar *buf) {
         } else {
           if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
               sdb_is_single_table(ha_thd()) &&
-              (sdb_get_optimizer_options(ha_thd()) &
-               SDB_OPTIMIZER_OPTION_LIMIT)) {
+              ((sdb_get_optimizer_options(ha_thd()) &
+                SDB_OPTIMIZER_OPTION_LIMIT) &&
+               (ha_thd()->optimizer_switch_flag(
+                    OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
+                ha_thd()->optimizer_switch_flag(
+                    OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)))) {
             if (sdb_can_push_down_limit(ha_thd(), sdb_condition,
                                         SDB_JOIN_UNKNOWN)) {
               num_to_return = select_lex->get_limit();
@@ -6761,7 +6779,11 @@ int ha_sdb::info(uint flag) {
   if (first_info) {
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT &&
         sdb_is_single_table(ha_thd()) &&
-        (sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_SORT)) {
+        ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_SORT) &&
+         (ha_thd()->optimizer_switch_flag(
+              OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
+          ha_thd()->optimizer_switch_flag(
+              OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)))) {
       rc = sdb_handle_sort_condition(
           ha_thd(), table, &sdb_condition, &sdb_order, &sdb_group_list,
           direct_sort, field_order_condition, group_list_condition);
