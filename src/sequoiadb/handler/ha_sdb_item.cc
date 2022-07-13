@@ -1447,7 +1447,10 @@ int Sdb_func_like::to_bson(bson::BSONObj &obj) {
 
     rc =
         sdb_convert_charset(*str_val_org, str_val_conv, &SDB_COLLATION_UTF8MB4);
-    if (rc) {
+    // some binary convert to string with '\0' in the middle, can not pushdown
+    // use strnlen to check this condition
+    if (rc || strnlen(str_val_conv.ptr(), str_val_conv.length()) !=
+                  str_val_conv.length()) {
       goto error;
     }
     rc = get_regex_str(str_val_conv.ptr(), str_val_conv.length(), regex_val,
