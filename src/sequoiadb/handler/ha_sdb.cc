@@ -5887,10 +5887,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
   SDB_EXCEPTION_CATCHER(
       rc, "Failed to index read one for table:%s.%s, exception:%s", db_name,
       table_name, e.what());
-  if (ha_thd()->optimizer_switch_flag(
-          OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
-      ha_thd()->optimizer_switch_flag(
-          OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)) {
+  if (sdb_check_condition_pushdown_switch(ha_thd())) {
     rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                            direct_op);
   }
@@ -5918,10 +5915,7 @@ int ha_sdb::index_read_one(bson::BSONObj condition, int order_direction,
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT && use_limit &&
         sdb_is_single_table(ha_thd()) &&
         ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_LIMIT) &&
-         (ha_thd()->optimizer_switch_flag(
-              OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
-          ha_thd()->optimizer_switch_flag(
-              OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)))) {
+         sdb_check_condition_pushdown_switch(ha_thd()))) {
       type = sdb_get_join_type(ha_thd(), mrr_iter);
       if (sdb_can_push_down_limit(ha_thd(), sdb_condition, type)) {
         // org_num_to_return/org_num_to_skip keep the initial value for easy
@@ -6537,10 +6531,7 @@ int ha_sdb::rnd_next(uchar *buf) {
         SDB_EXCEPTION_CATCHER(
             rc, "Failed to read next for table:%s.%s, exception:%s", db_name,
             table_name, e.what());
-        if (ha_thd()->optimizer_switch_flag(
-                OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
-            ha_thd()->optimizer_switch_flag(
-                OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)) {
+        if (sdb_check_condition_pushdown_switch(ha_thd())) {
           rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                                  direct_op);
         }
@@ -6565,10 +6556,7 @@ int ha_sdb::rnd_next(uchar *buf) {
               sdb_is_single_table(ha_thd()) &&
               ((sdb_get_optimizer_options(ha_thd()) &
                 SDB_OPTIMIZER_OPTION_LIMIT) &&
-               (ha_thd()->optimizer_switch_flag(
-                    OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
-                ha_thd()->optimizer_switch_flag(
-                    OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)))) {
+               sdb_check_condition_pushdown_switch(ha_thd()))) {
             if (sdb_can_push_down_limit(ha_thd(), sdb_condition,
                                         SDB_JOIN_UNKNOWN)) {
               num_to_return = select_lex->get_limit();
@@ -6780,10 +6768,7 @@ int ha_sdb::info(uint flag) {
     if (thd_sql_command(ha_thd()) == SQLCOM_SELECT &&
         sdb_is_single_table(ha_thd()) &&
         ((sdb_get_optimizer_options(ha_thd()) & SDB_OPTIMIZER_OPTION_SORT) &&
-         (ha_thd()->optimizer_switch_flag(
-              OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
-          ha_thd()->optimizer_switch_flag(
-              OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN)))) {
+         sdb_check_condition_pushdown_switch(ha_thd()))) {
       rc = sdb_handle_sort_condition(
           ha_thd(), table, &sdb_condition, &sdb_order, &sdb_group_list,
           direct_sort, field_order_condition, group_list_condition);
