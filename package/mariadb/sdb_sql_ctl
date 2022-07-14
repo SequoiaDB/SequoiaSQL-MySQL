@@ -42,6 +42,12 @@ PIDFILE=""
 SOCKETFILE=""
 PROCESS_WAIT_TIME=60
 ME=$(basename "$0")
+INSTNAME_FIELD="INSTNAME"
+SQLDATA_FIELD="SQLDATA"
+SQLLOG_FIELD="SQLLOG"
+INSTNAME_MAX_LENGTH="${#INSTNAME_FIELD}"    # 8
+SQLDATA_MAX_LENGTH="${#SQLDATA_FIELD}"      # 7
+SQLLOG_MAX_LENGTH="${#SQLLOG_FIELD}"        # 6
 
 function lack_para()
 {
@@ -508,6 +514,23 @@ function delete_inst()
    echo "ok"
 }
 
+function get_max_length()
+{
+   local inst=$1
+   check_inst_exist "${inst}" true
+   . "$CONF_INST_PATH/${inst}.conf"
+
+   if [ "${INSTNAME_MAX_LENGTH}" -lt "${#inst}" ]; then
+      INSTNAME_MAX_LENGTH="${#inst}"
+   fi
+   if [ "${SQLDATA_MAX_LENGTH}" -lt "${#SQLDATA}" ]; then
+      SQLDATA_MAX_LENGTH="${#SQLDATA}"
+   fi
+   if [ "${SQLLOG_MAX_LENGTH}" -lt "${#SQLLOG}" ]; then
+      SQLLOG_MAX_LENGTH="${#SQLLOG}"
+   fi
+}
+
 function get_one_status()
 {
    local inst=$1
@@ -553,11 +576,11 @@ function get_one_status()
       fi
 		
       # print
-      printf "%-10s %-10s %-10s %-25s %-40s %-40s\n" $inst $pid $port $start_time $SQLDATA $SQLLOG
+      printf "%-$[${INSTNAME_MAX_LENGTH}+5]s %-10s %-10s %-25s %-$[${SQLDATA_MAX_LENGTH}+5]s %-$[${SQLLOG_MAX_LENGTH}+5]s\n" $inst $pid $port $start_time $SQLDATA $SQLLOG
       return 0
    elif [ $ret == 1 ]
    then
-      printf "%-10s %-10s %-10s %-25s %-40s %-40s\n" $inst "-" "-" "-" $SQLDATA $SQLLOG
+      printf "%-$[${INSTNAME_MAX_LENGTH}+5]s %-10s %-10s %-25s %-$[${SQLDATA_MAX_LENGTH}+5]s %-$[${SQLLOG_MAX_LENGTH}+5]s\n" $inst "-" "-" "-" $SQLDATA $SQLLOG
       return 7
    else
       echo "ERROR: Fail to query $inst status, please verify log $CTL_LOG" >&2
@@ -576,7 +599,18 @@ function get_status()
       inst_list=$INST_NAME
    fi
 
-   printf "%-10s %-10s %-10s %-25s %-40s %-40s\n" "INSTANCE" "PID" "SVCNAME" "STARTTIME" "SQLDATA" "SQLLOG"
+   if [ -z "${inst_list}" ]
+   then
+      printf "%-10s %-5s %-10s %-12s %-10s %-10s\n" "INSTANCE" "PID" "SVCNAME" "STARTTIME" "SQLDATA" "SQLLOG"
+      printf "Total: 0; Run: 0\n"
+      return 0
+   fi
+
+   for inst in $inst_list
+   do
+      get_max_length $inst
+   done
+   printf "%-$[${INSTNAME_MAX_LENGTH}+5]s %-10s %-10s %-25s %-$[${SQLDATA_MAX_LENGTH}+5]s %-$[${SQLLOG_MAX_LENGTH}+5]s\n" "INSTANCE" "PID" "SVCNAME" "STARTTIME" "SQLDATA" "SQLLOG"
 
    local total_cnt=0
    local run_cnt=0
