@@ -1,11 +1,11 @@
 #seqDB-26641
 --source include/have_sequoiadb.inc
 
-create database like_single_func_pushdown;
 --disable_warnings
 drop database if exists like_single_func_pushdown;
 --enable_warnings
-
+create database like_single_func_pushdown;
+drop database like_single_func_pushdown;
 create database like_single_func_pushdown;
 use like_single_func_pushdown;
 set session sequoiadb_debug_log=on;
@@ -2117,7 +2117,8 @@ select * from t1 where a like column_add('',(a),'abc') order by a;
 
 #column_check
 select * from t1 where a like column_check((a)) order by a;
---source include/query_pushdown_condition_sequoiadb.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/: ".*",/: "",/'
 
 #column_create
 select * from t1 where a like column_create((a),'b') order by a;
@@ -2125,11 +2126,13 @@ select * from t1 where a like column_create((a),'b') order by a;
 
 #column_delete
 select * from t1 where a like column_delete('',(a),'b') order by a;
---source include/query_pushdown_condition_sequoiadb.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/: ".*",/: "",/'
 
 #column_exists
 select * from t1 where a like column_exists('',(a)) order by a;
---source include/query_pushdown_condition_sequoiadb.inc
+--replace_regex /^([^s]*)\[Note\]/[Note]/
+--exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/: ".*",/: "",/'
 
 #column_get
 select * from t1 where a like column_get('',a as char) order by a;

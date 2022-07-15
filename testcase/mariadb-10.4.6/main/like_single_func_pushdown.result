@@ -1,5 +1,6 @@
-create database like_single_func_pushdown;
 drop database if exists like_single_func_pushdown;
+create database like_single_func_pushdown;
+drop database like_single_func_pushdown;
 create database like_single_func_pushdown;
 use like_single_func_pushdown;
 set session sequoiadb_debug_log=on;
@@ -3384,14 +3385,14 @@ a
 0
 0
 0
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select * from t1 where a like column_create((a),'b') order by a;
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select * from t1 where a like column_delete('',(a),'b') order by a;
 a
 
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select * from t1 where a like column_exists('',(a)) order by a;
 a
 0
@@ -3407,7 +3408,7 @@ a
 0
 0
 0
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select * from t1 where a like column_get('',a as char) order by a;
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]

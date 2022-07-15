@@ -1,11 +1,11 @@
 #seqDB-26641
 --source include/have_sequoiadb.inc
 
-create database like_single_func_pushdown;
 --disable_warnings
 drop database if exists like_single_func_pushdown;
 --enable_warnings
-
+create database like_single_func_pushdown;
+drop database like_single_func_pushdown;
 create database like_single_func_pushdown;
 use like_single_func_pushdown;
 set session sequoiadb_debug_log=on;
