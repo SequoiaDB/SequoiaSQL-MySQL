@@ -389,21 +389,19 @@ select * from t2 where a like rpad((a),5,'b');
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #rtrim
-select rtrim('abc   '),rtrim(123   );
-insert into t1 values(rtrim('abc   ')), (rtrim(123   ));
+select rtrim('abc   '),rtrim('123   ');
+insert into t1 values(rtrim('abc   ')), (rtrim('123   '));
 select * from t1 where a like rtrim('abc   ') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
-select * from t1 where a like rtrim(123   ) order by a;
+select * from t1 where a like rtrim('123   ') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 select * from t2 where a like rtrim((a));
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #soundex
-select soundex('abc'),soundex(123);
-insert into t1 values(soundex('abc')), (soundex(123));
+select soundex('abc');
+insert into t1 values(soundex('abc'));
 select * from t1 where a like soundex('abc') order by a;
---source include/query_pushdown_condition_sequoiadb.inc
-select * from t1 where a like soundex(123) order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 select * from t2 where a like soundex((a));
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1595,9 +1593,9 @@ select * from t5 where a like bit_count(5);
 #----------------------------information functions-----------------------------------#
 
 #benchmark
-select benchmark(1,1);
-insert into t1 values(benchmark(1,1));
-select * from t1 where a like benchmark(1,1) order by a;
+select benchmark(1,1+1);
+insert into t1 values(benchmark(1,1+1));
+select * from t1 where a like benchmark(1,1+1) order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #charset

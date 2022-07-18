@@ -586,16 +586,16 @@ a
 select * from t2 where a like rpad((a),5,'b');
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
-select rtrim('abc   '),rtrim(123   );
-rtrim('abc   ')	rtrim(123   )
+select rtrim('abc   '),rtrim('123   ');
+rtrim('abc   ')	rtrim('123   ')
 abc	123
-insert into t1 values(rtrim('abc   ')), (rtrim(123   ));
+insert into t1 values(rtrim('abc   ')), (rtrim('123   '));
 select * from t1 where a like rtrim('abc   ') order by a;
 a
 abc
 abc
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^abc$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select * from t1 where a like rtrim(123   ) order by a;
+select * from t1 where a like rtrim('123   ') order by a;
 a
 123
 123
@@ -603,18 +603,14 @@ a
 select * from t2 where a like rtrim((a));
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
-select soundex('abc'),soundex(123);
-soundex('abc')	soundex(123)
-A120	
-insert into t1 values(soundex('abc')), (soundex(123));
+select soundex('abc');
+soundex('abc')
+A120
+insert into t1 values(soundex('abc'));
 select * from t1 where a like soundex('abc') order by a;
 a
 A120
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^A120$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select * from t1 where a like soundex(123) order by a;
-a
-
-[Note] SequoiaDB: Query message: condition[{ "a": "" }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select * from t2 where a like soundex((a));
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
@@ -2629,11 +2625,11 @@ a
 select * from t5 where a like bit_count(5);
 a
 [Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t5]
-select benchmark(1,1);
-benchmark(1,1)
+select benchmark(1,1+1);
+benchmark(1,1+1)
 0
-insert into t1 values(benchmark(1,1));
-select * from t1 where a like benchmark(1,1) order by a;
+insert into t1 values(benchmark(1,1+1));
+select * from t1 where a like benchmark(1,1+1) order by a;
 a
 0
 0
@@ -3139,34 +3135,6 @@ a
 1
 1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2');
-json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2')
-1
-insert into t1 values(json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2'));
-select * from t1 where a like json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2') order by a;
-a
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select json_extract('[10,20]','$[1]');
 json_extract('[10,20]','$[1]')
 20
@@ -3357,7 +3325,6 @@ a
 1
 1
 1
-1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select json_value('{"x":[0,1],"y":"[0,1]","z":"Monty"}','$.z');
 json_value('{"x":[0,1],"y":"[0,1]","z":"Monty"}','$.z')
@@ -3367,58 +3334,29 @@ select * from t1 where a like json_value('{"x":[0,1],"y":"[0,1]","z":"Monty"}','
 a
 Monty
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^Monty$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select * from t1 where a like column_add('',(a),'abc') order by a;
+select * from t2 where a like column_add('',(a),'abc') order by a;
 a
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select * from t1 where a like column_check((a)) order by a;
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
+select * from t2 where a like column_check((a)) order by a;
 a
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select * from t1 where a like column_create((a),'b') order by a;
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
+select * from t2 where a like column_create((a),'b') order by a;
 a
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select * from t1 where a like column_delete('',(a),'b') order by a;
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
+select * from t2 where a like column_delete('',(a),'b') order by a;
 a
-
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select * from t1 where a like column_exists('',(a)) order by a;
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
+select * from t2 where a like column_exists('',(a)) order by a;
 a
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-0
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
-select * from t1 where a like column_get('',a as char) order by a;
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
+select * from t2 where a like column_get('',a as char) order by a;
 a
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
+[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t2]
 select * from t1 where a like column_json('') order by a;
 a
-
 [Note] SequoiaDB: Query message: condition[{ "a": "" }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select * from t1 where a like column_list('') order by a;
 a
-
 [Note] SequoiaDB: Query message: condition[{ "a": "" }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select st_astext(st_buffer(st_geomfromtext('point(0 0)'),0));
 st_astext(st_buffer(st_geomfromtext('point(0 0)'),0))
@@ -3547,7 +3485,6 @@ a
 1
 1
 1
-1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select st_astext(st_envelope(st_geomfromtext('linestring(1 1,2 2)')));
 st_astext(st_envelope(st_geomfromtext('linestring(1 1,2 2)')))
@@ -3602,7 +3539,6 @@ a
 1
 1
 1
-1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select st_issimple(geomfromtext('point(1 2)'));
 st_issimple(geomfromtext('point(1 2)'))
@@ -3610,7 +3546,6 @@ st_issimple(geomfromtext('point(1 2)'))
 insert into t1 values(st_issimple(geomfromtext('point(1 2)')));
 select * from t1 where a like st_issimple(geomfromtext('point(1 2)')) order by a;
 a
-1
 1
 1
 1
@@ -3664,7 +3599,6 @@ st_contains(st_geomfromtext('point(174 149)'),st_geomfromtext('point(174 149)'))
 insert into t1 values(st_contains(st_geomfromtext('point(174 149)'),st_geomfromtext('point(174 149)')));
 select * from t1 where a like st_contains(st_geomfromtext('point(174 149)'),st_geomfromtext('point(174 149)')) order by a;
 a
-1
 1
 1
 1
@@ -3964,7 +3898,6 @@ a
 1
 1
 1
-1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select * from t2 where a like mbrcontains(null,st_geomfromtext('point(1 1)'));
 a
@@ -4066,7 +3999,6 @@ a
 1
 1
 1
-1
 [Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^1$", "$options": "s" } }], selector[{}], order_by[{ "a": 1 }], hint[{}], limit[-1], offset[0], table[like_single_func_pushdown.t1]
 select mbroverlaps(geomfromtext('polygon((0 0,0 3,3 3,3 0,0 0))'),geomfromtext('polygon((3 3,3 6,6 6,6 3,3 3))'));
 mbroverlaps(geomfromtext('polygon((0 0,0 3,3 3,3 0,0 0))'),geomfromtext('polygon((3 3,3 6,6 6,6 3,3 3))'))
@@ -4103,7 +4035,6 @@ mbrtouches(geomfromtext('polygon((0 0,0 3,3 3,3 0,0 0))'),geomfromtext('polygon(
 insert into t1 values(mbrtouches(geomfromtext('polygon((0 0,0 3,3 3,3 0,0 0))'),geomfromtext('polygon((3 3,3 6,6 6,6 3,3 3))')));
 select * from t1 where a like mbrtouches(geomfromtext('polygon((0 0,0 3,3 3,3 0,0 0))'),geomfromtext('polygon((3 3,3 6,6 6,6 3,3 3))')) order by a;
 a
-1
 1
 1
 1
@@ -4253,7 +4184,6 @@ st_numinteriorrings(st_geomfromtext('polygon((0 0,0 3,3 0,0 0),(1 1,1 2,2 1,1 1)
 insert into t1 values(st_numinteriorrings(st_geomfromtext('polygon((0 0,0 3,3 0,0 0),(1 1,1 2,2 1,1 1))')));
 select * from t1 where a like st_numinteriorrings(st_geomfromtext('polygon((0 0,0 3,3 0,0 0),(1 1,1 2,2 1,1 1))')) order by a;
 a
-1
 1
 1
 1

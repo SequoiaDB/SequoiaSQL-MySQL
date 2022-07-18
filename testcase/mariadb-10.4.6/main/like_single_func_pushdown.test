@@ -389,21 +389,19 @@ select * from t2 where a like rpad((a),5,'b');
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #rtrim
-select rtrim('abc   '),rtrim(123   );
-insert into t1 values(rtrim('abc   ')), (rtrim(123   ));
+select rtrim('abc   '),rtrim('123   ');
+insert into t1 values(rtrim('abc   ')), (rtrim('123   '));
 select * from t1 where a like rtrim('abc   ') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
-select * from t1 where a like rtrim(123   ) order by a;
+select * from t1 where a like rtrim('123   ') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 select * from t2 where a like rtrim((a));
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #soundex
-select soundex('abc'),soundex(123);
-insert into t1 values(soundex('abc')), (soundex(123));
+select soundex('abc');
+insert into t1 values(soundex('abc'));
 select * from t1 where a like soundex('abc') order by a;
---source include/query_pushdown_condition_sequoiadb.inc
-select * from t1 where a like soundex(123) order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 select * from t2 where a like soundex((a));
 --source include/query_pushdown_condition_sequoiadb.inc
@@ -1661,9 +1659,9 @@ select * from t5 where a like bit_count(5);
 #--------------------------------information functions-------------------------------------#
 
 #benchmark
-select benchmark(1,1);
-insert into t1 values(benchmark(1,1));
-select * from t1 where a like benchmark(1,1) order by a;
+select benchmark(1,1+1);
+insert into t1 values(benchmark(1,1+1));
+select * from t1 where a like benchmark(1,1+1) order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #charset
@@ -1977,12 +1975,6 @@ insert into t1 values(json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2'));
 select * from t1 where a like json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
-#json_exists
-select json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2');
-insert into t1 values(json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2'));
-select * from t1 where a like json_exists('{"key1":"xxxx","key2":[1,2,3]}','$.key2') order by a;
---source include/query_pushdown_condition_sequoiadb.inc
-
 #json_extract
 select json_extract('[10,20]','$[1]');
 insert into t1 values(json_extract('[10,20]','$[1]'));
@@ -2112,30 +2104,30 @@ select * from t1 where a like json_value('{"x":[0,1],"y":"[0,1]","z":"Monty"}','
 #-----------------------------------------------dynamic columns functions------------------------------------#
 
 #column_add
-select * from t1 where a like column_add('',(a),'abc') order by a;
+select * from t2 where a like column_add('',(a),'abc') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #column_check
-select * from t1 where a like column_check((a)) order by a;
+select * from t2 where a like column_check((a)) order by a;
 --replace_regex /^([^s]*)\[Note\]/[Note]/
 --exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/: ".*",/: "",/'
 
 #column_create
-select * from t1 where a like column_create((a),'b') order by a;
+select * from t2 where a like column_create((a),'b') order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #column_delete
-select * from t1 where a like column_delete('',(a),'b') order by a;
+select * from t2 where a like column_delete('',(a),'b') order by a;
 --replace_regex /^([^s]*)\[Note\]/[Note]/
 --exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/: ".*",/: "",/'
 
 #column_exists
-select * from t1 where a like column_exists('',(a)) order by a;
+select * from t2 where a like column_exists('',(a)) order by a;
 --replace_regex /^([^s]*)\[Note\]/[Note]/
 --exec grep -w "Query message" $MYSQLTEST_VARDIR/log/mysqld.1.err | tail -1 | sed 's/: ".*",/: "",/'
 
 #column_get
-select * from t1 where a like column_get('',a as char) order by a;
+select * from t2 where a like column_get('',a as char) order by a;
 --source include/query_pushdown_condition_sequoiadb.inc
 
 #column_json
