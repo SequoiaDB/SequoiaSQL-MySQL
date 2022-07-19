@@ -5,10 +5,10 @@ set session sequoiadb_support_mode = "";
 set session sequoiadb_stats_flush_time_threshold = 48;
 
 --disable_warnings
-drop table if exists tb_26719_1;
-drop table if exists tb_26719_2;
+drop database if exists db_26719;
 --enable_warnings
 
+use db_26719;
 create table tb_26719_1 ( 
   id int not null auto_increment, 
   prdt_no varchar(1024) character set utf8 default null, 
@@ -46,17 +46,15 @@ insert into tb_26719_2 values(1),(2),(3),(4),(5);
 
 insert tb_26719_1 values (null,"123","123"),(null,"123","123"),(null,"123","123"),(null,"123","123"),(null,"123","123"); 
 
+--disable_warnings
 explain select alias1.cust_no from tb_26719_1 as alias1 left join tb_26719_1 as alias2 join tb_26719_2 as alias3 on alias2.cust_no on alias1.prdt_no where alias1.id and alias1.id<3 or alias1.id and alias3.id; 
-
 explain select alias1.cust_no from tb_26719_1 as alias1 left join tb_26719_1 as alias2 join tb_26719_2 as alias3 on alias2.cust_no on alias1.prdt_no where alias1.id and alias1.id<3 or alias1.id and alias3.id; 
 
 flush table tb_26719_1; 
-
 explain select alias1.cust_no from tb_26719_1 as alias1 left join tb_26719_1 as alias2 join tb_26719_2 as alias3 on alias2.cust_no on alias1.prdt_no where alias1.id and alias1.id<3 or alias1.id and alias3.id; 
+--enable_warnings
 
-
-drop table tb_26719_1 ;
-drop table tb_26719_2 ;
+drop database db_26719 ;
 
 set session sequoiadb_stats_flush_time_threshold = default ;
 set session sequoiadb_support_mode = default;
