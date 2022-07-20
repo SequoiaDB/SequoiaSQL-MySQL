@@ -17,10 +17,11 @@ if (`select locate('materialization', @@optimizer_switch) > 0`)
 {
   set optimizer_switch='materialization=off';
 }
-if (`select locate('index_condition_pushdown', @@optimizer_switch) > 0`) 
-{
-  set optimizer_switch='index_condition_pushdown=off';
-}
+#SEQUOIASQLMAINSTREAM-1426
+#if (`select locate('index_condition_pushdown', @@optimizer_switch) > 0`) 
+#{
+#  set optimizer_switch='index_condition_pushdown=off';
+#}
 if (`select locate('mrr', @@optimizer_switch) > 0`) 
 {
   set optimizer_switch='mrr=off';

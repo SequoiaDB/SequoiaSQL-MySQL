@@ -1,3 +1,8 @@
+drop database if exists test_order_by_sortkey;
+create database test_order_by_sortkey;
+drop database test_order_by_sortkey;
+create database test_order_by_sortkey;
+use test_order_by_sortkey;
 CREATE TABLE t1(
 f0 int auto_increment PRIMARY KEY,
 f1 int,
@@ -159,3 +164,4 @@ Sort_range	0
 Sort_rows	0
 Sort_scan	0
 DROP TABLE t1, tmp;
+drop database test_order_by_sortkey;
