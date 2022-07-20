@@ -58,3 +58,5 @@ drop database db_26719 ;
 set session sequoiadb_stats_flush_time_threshold = default ;
 set session sequoiadb_support_mode = default;
 --source include/uninstall_sequoiadb.inc
+
+
