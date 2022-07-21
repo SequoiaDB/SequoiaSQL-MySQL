@@ -6463,7 +6463,7 @@ bool ha_sdb::convert_autocommit_to_normal_trans() {
   if (conn->get_pushed_autocommit()) {
     conn->set_transaction(false);
     conn->set_pushed_autocommit(false);
-    SDB_LOG_DEBUG("convert autocommit to normal transaction, autocommit: %d",
+    SDB_LOG_DEBUG("Convert autocommit to normal transaction, autocommit: %d",
                   conn->get_pushed_autocommit());
     rc = conn->begin_transaction(ha_thd()->tx_isolation);
     if (rc != 0) {
