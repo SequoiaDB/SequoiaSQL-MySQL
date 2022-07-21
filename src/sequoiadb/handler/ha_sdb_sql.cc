@@ -113,6 +113,12 @@ void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
   init_alloc_root(key, mem_root, block_size, pre_alloc_size);
 }
 
+bool sdb_check_condition_pushdown_switch(THD *thd) {
+  return (
+      thd->optimizer_switch_flag(OPTIMIZER_SWITCH_ENGINE_CONDITION_PUSHDOWN) &&
+      thd->optimizer_switch_flag(OPTIMIZER_SWITCH_INDEX_CONDITION_PUSHDOWN));
+}
+
 my_thread_id sdb_thd_id(THD *thd) {
   return thd->thread_id();
 }
@@ -813,6 +819,10 @@ void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
                          size_t pre_alloc_size MY_ATTRIBUTE((unused))) {
   init_alloc_root(mem_root, name, block_size, pre_alloc_size, MYF(0));
+}
+
+bool sdb_check_condition_pushdown_switch(THD *thd) {
+  return optimizer_flag(thd, OPTIMIZER_SWITCH_INDEX_COND_PUSHDOWN);
 }
 
 my_thread_id sdb_thd_id(THD *thd) {

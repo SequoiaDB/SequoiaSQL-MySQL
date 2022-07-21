@@ -346,6 +346,7 @@ void sdb_thd_reset_condition_info(THD *thd);
 
 bool sdb_is_transaction_stmt(THD *thd, bool all);
 
+bool sdb_check_condition_pushdown_switch(THD *thd);
 // About Field
 const char *sdb_field_name(const Field *f);
 
