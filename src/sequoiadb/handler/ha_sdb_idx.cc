@@ -1726,7 +1726,7 @@ double Sdb_match_cnt_estimator::get_selectivity_out_of_mcv(
 
   Sdb_index_stat_mcv *s_mcv = static_cast<Sdb_index_stat_mcv *>(m_ptr.get());
   double total_frac =
-      SDB_MAX(((double)s_mcv->total_frac / STAT_FRACTION_SCALE), 1.0);
+      SDB_MIN(((double)s_mcv->total_frac / STAT_FRACTION_SCALE), 1.0);
   DBUG_PRINT("info", ("Selectivity = ( 1 - sum( mcv.frac ) ) *  %f "
                       "= ( 1 - %f ) * %f",
                       default_selectivity, total_frac, default_selectivity));
