@@ -99,6 +99,12 @@ int server_ha_query(THD *thd, const char *query, size_t q_len) {
   thd->proc_info = 0;
   thd->lex->sql_command = SQLCOM_END;
 
+  // reset rewritten query, so rewritten query will not always displayed
+  // in result of 'show processlist' command
+  if (thd->rewritten_query().length() > 0) {
+    thd->reset_rewritten_query();
+  }
+
   /* Performance Schema Interface instrumentation, end */
   MYSQL_END_STATEMENT(thd->m_statement_psi, thd->get_stmt_da());
   thd->m_statement_psi = NULL;
