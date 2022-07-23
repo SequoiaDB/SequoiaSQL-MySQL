@@ -2504,6 +2504,7 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   }
 
   m_bulk_insert_total = rows;
+  m_use_bulk_insert = true;
 }
 
 int ha_sdb::get_dup_info(bson::BSONObj &result, const char **idx_name) {
