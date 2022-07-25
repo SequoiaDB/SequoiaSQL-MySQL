@@ -8,6 +8,14 @@
 #
 # All the sort keys fit in memory, but the addon fields do not.
 #
+--disable_warnings
+drop database if exists test_order_by_sortkey;
+--enable_warnings
+create database test_order_by_sortkey;
+drop database test_order_by_sortkey;
+create database test_order_by_sortkey;
+
+use test_order_by_sortkey;
 CREATE TABLE t1(
   f0 int auto_increment PRIMARY KEY,
   f1 int,
@@ -73,5 +81,6 @@ SELECT * FROM t2 where f1 =
 SHOW SESSION STATUS LIKE 'Sort%';
 
 DROP TABLE t1, t2, tmp;
+drop database test_order_by_sortkey;
 
 --source include/uninstall_sequoiadb.inc
