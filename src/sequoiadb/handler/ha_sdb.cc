@@ -9666,6 +9666,10 @@ static void sdb_kill_connection(handlerton *hton, THD *thd) {
   }
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(thd));
   tid = connection->thread_id();
+  /*The connection has release by others.*/
+  if (!connection->is_valid()) {
+    goto done;
+  }
   rc = connection->interrupt_operation();
   if (SDB_ERR_OK != rc) {
     SDB_PRINT_ERROR(rc,
