@@ -1,3 +1,4 @@
+set session sequoiadb_stats_cache_level=1;
 CREATE DATABASE index_select_sequoiadb_22807;
 USE index_select_sequoiadb_22807;
 create table t1 (a bit(64), b bit(64));
@@ -703,3 +704,4 @@ a	b
 29	29
 drop table t1;
 DROP DATABASE index_select_sequoiadb_22807;
+set session sequoiadb_stats_cache_level=default;

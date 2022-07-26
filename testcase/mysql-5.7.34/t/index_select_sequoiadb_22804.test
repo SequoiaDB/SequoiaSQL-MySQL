@@ -3,6 +3,8 @@
 --source include/big_test.inc
 --source include/have_sequoiadb.inc
 
+set session sequoiadb_stats_cache_level=1;
+
 CREATE DATABASE index_select_sequoiadb_22804;
 USE index_select_sequoiadb_22804;
 
@@ -244,6 +246,8 @@ select * from t1 where a between 10000.1 and 90000.1 limit 5;
 # clear env
 #
 DROP DATABASE index_select_sequoiadb_22804;
+
+set session sequoiadb_stats_cache_level=default;
 
 --source include/uninstall_sequoiadb.inc
 

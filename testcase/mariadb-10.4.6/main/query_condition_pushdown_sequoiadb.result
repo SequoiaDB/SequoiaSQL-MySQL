@@ -8034,7 +8034,7 @@ SELECT * FROM t1 WHERE id < 4 OR c <= 'bc' LIMIT 1,2;
 id	a	c
 2	-99	bc
 3	-99	123
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
 EXPLAIN SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	index_merge	id,c	id,c	4,65	NULL	7	Using sort_union(id,c); Using where with pushed condition
@@ -8042,7 +8042,7 @@ SELECT * FROM t1 WHERE id <= 4 OR c > 'abc' LIMIT 2 OFFSET 3;
 id	a	c
 4	-99	tf
 8	5	jk
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
 EXPLAIN SELECT * FROM t1 WHERE id IN (1,2,6) LIMIT 1,2;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	id	id	4	NULL	6	Using where with pushed condition
@@ -8171,7 +8171,7 @@ id	field3
 1	1
 2	2
 [Note] SequoiaDB: Query message: condition[{ "field3": { "$et": 2 } }], selector[{ "_id": null, "field3": null }], order_by[{ "field3": 1, "_id": 1 }], hint[{ "": "field3" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
 set session sequoiadb_optimizer_options = "direct_count,direct_delete,direct_update,direct_limit";
 EXPLAIN SELECT field4 FROM t1 ORDER BY field4;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
@@ -8795,7 +8795,7 @@ id	a	b	c	d
 5	ab	ab	ab	ab
 7	abc	abc	abc	abc
 9	abd	abd	abd	abd
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "ab" } }, { "a": { "$lt": "ab�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE b LIKE "中%";
 id	a	b	c	d
 17	中	中	中	中
@@ -8821,7 +8821,7 @@ id	a	b	c	d
 20	中文	中文	中文	中文
 21	中文1	中文1	中文1	中文1
 22	中文123456	中文123456	中文123456	中文123456
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "a": { "$gte": "ä¸­æ–‡" } }, { "a": { "$lt": "ä¸­æ–‡�" } } ] }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE a LIKE "a%%";
 id	a	b	c	d
 10	abcd	abcd	abcd	abcd
@@ -8934,7 +8934,7 @@ SELECT * FROM t1 WHERE a LIKE CONCAT("ab","_");
 id	a	b	c	d
 7	abc	abc	abc	abc
 9	abd	abd	abd	abd
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^ab.$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE b LIKE "_中";
 id	a	b	c	d
 18	1中	1中	1中	1中
@@ -8949,7 +8949,7 @@ id	a	b	c	d
 SELECT * FROM t1 WHERE a LIKE CONCAT("中文","_");
 id	a	b	c	d
 21	中文1	中文1	中文1	中文1
-[Note] SequoiaDB: Query message: condition[{}], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "a": { "$regex": "^ä¸­æ–‡.$", "$options": "s" } }], selector[{}], order_by[{}], hint[{}], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 CREATE INDEX a ON t1(a(16));
 CREATE INDEX b ON t1(b(16));
 CREATE INDEX c ON t1(c(16));
@@ -13837,17 +13837,17 @@ query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics co
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 FORCE INDEX(ka) WHERE a = 1 AND b = 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	ref	ka	ka	5	const	3	Using where with pushed condition
+1	SIMPLE	t1	ref	ka	ka	5	const	2	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 FORCE INDEX(kb) WHERE a = 1 AND b = 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	ref	kb	kb	5	const	2	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE a = 1 AND b = 1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	ka,kb	kb,ka	5,5	NULL	1	Using intersect(kb,ka); Using where with pushed condition; Using index
+1	SIMPLE	t1	index_merge	ka,kb	ka,kb	5,5	NULL	1	Using intersect(ka,kb); Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a = 1 AND b = 1;
 a	b
 1	1
-[Note] SequoiaDB: Query message: condition[{ "a": { "$et": 1 } }], selector[{}], order_by[{ "a": 1, "_id": 1 }], hint[{ "": "ka" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "b": { "$et": 1 } }], selector[{}], order_by[{ "b": 1, "_id": 1 }], hint[{ "": "kb" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 DROP TABLE t1;
 CREATE TABLE t1 ( 
 a tinyint NOT NULL, 
@@ -13927,7 +13927,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	9	Using where with pushed condition; Using index
 EXPLAIN SELECT * from t1 WHERE a>10;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	11	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,ab	ab	1	NULL	10	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE a<10;
 a	b
 1	1
@@ -14163,25 +14163,25 @@ a	b	c
 2	2	2
 3	3	3
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 3 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
 ANALYZE TABLE t1;
 Table	Op	Msg_type	Msg_text
 query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics collected
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	ab,ba,a,b,c	a	5	NULL	2	Using where with pushed condition
+1	SIMPLE	t1	range	ab,ba,a,b,c	c	5	NULL	2	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	ab,ba,a,b,c	b	5	NULL	2	Using where with pushed condition
+1	SIMPLE	t1	range	ab,ba,a,b,c	b	5	NULL	3	Using where with pushed condition
 EXPLAIN SELECT * FROM t1 WHERE NOT (b > 3 AND a >= 3);
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	index_merge	ab,ba,a,b	b,a	5,5	NULL	4	Using sort_union(b,a); Using where with pushed condition
+1	SIMPLE	t1	index_merge	ab,ba,a,b	b,a	5,5	NULL	5	Using sort_union(b,a); Using where with pushed condition
 SELECT * FROM t1 WHERE b <= 3 AND a <= 3 AND c < 3;
 a	b	c
 1	1	1
 2	2	2
-[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
+[Note] SequoiaDB: Query message: condition[{ "$and": [ { "b": { "$lte": 3 } }, { "a": { "$lte": 3 } }, { "c": { "$lt": 3 } } ] }], selector[{}], order_by[{ "c": 1 }], hint[{ "": "c" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
 SELECT * FROM t1 WHERE (a <= 3 OR c <= 4) AND b <= 3;
 a	b	c
 1	1	1
@@ -14194,7 +14194,7 @@ a	b	c
 2	2	2
 3	3	3
 [Note] SequoiaDB: Query message: condition[{ "a": { "$lt": 3 } }], selector[{}], order_by[{ "a": 1 }], hint[{ "": "a" }], limit[-1], offset[0], table[query_pushdown_test_sequoiadb.t1]
-[Note] SequoiaDB: convert autocommit to normal transaction, autocommit: 0
+[Note] SequoiaDB: Convert autocommit to normal transaction, autocommit: 0
 DROP TABLE t1;
 CREATE TABLE t1 (
 a float NOT NULL,
@@ -14225,7 +14225,7 @@ query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics co
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	4	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	4	NULL	10	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 a	b
 2.1	2.10
@@ -14331,7 +14331,7 @@ query_pushdown_test_sequoiadb.t1	analyze	status	Engine-independent statistics co
 query_pushdown_test_sequoiadb.t1	analyze	status	OK
 EXPLAIN SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
-1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	5	NULL	9	Using where with pushed condition; Using index
+1	SIMPLE	t1	range	PRIMARY,b,ab,ba	ab	5	NULL	10	Using where with pushed condition; Using index
 SELECT * FROM t1 WHERE b>1.1 AND a<10.1;
 a	b
 2	2.10

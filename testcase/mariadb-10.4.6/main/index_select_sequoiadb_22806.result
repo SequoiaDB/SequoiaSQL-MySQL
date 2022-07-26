@@ -1,3 +1,4 @@
+set session sequoiadb_stats_cache_level=1;
 CREATE DATABASE index_select_sequoiadb_22806;
 USE index_select_sequoiadb_22806;
 create table t1 (a date, b date);
@@ -630,3 +631,4 @@ Table	Op	Msg_type	Msg_text
 index_select_sequoiadb_22806.t1	analyze	status	Engine-independent statistics collected
 index_select_sequoiadb_22806.t1	analyze	status	OK
 DROP DATABASE index_select_sequoiadb_22806;
+set session sequoiadb_stats_cache_level=default;
