@@ -7116,6 +7116,9 @@ int ha_sdb::extra(enum ha_extra_function operation) {
     case HA_EXTRA_SECONDARY_SORT_ROWID:
       m_secondary_sort_rowid = true;
       break;
+    case HA_EXTRA_BKA_BASED_JOIN:
+      is_join_bka = true;
+      break;
     // To make them effective until ::reset(), ignore this reset here.
     case HA_EXTRA_NO_IGNORE_DUP_KEY:
     case HA_EXTRA_WRITE_CANNOT_REPLACE:
