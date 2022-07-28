@@ -834,6 +834,8 @@ error:
 }
 
 // Make sure THD has a Thd_sdb struct allocated and associated
+// TODO: The parameter `validate_conn` is hard to decide. We should find an
+// other way to handle the reconnection problem!
 int check_sdb_in_thd(THD *thd, Sdb_conn **conn, bool validate_conn) {
   int rc = 0;
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);

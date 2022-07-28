@@ -1672,6 +1672,12 @@ int Sdb_conn::raw_connect(const char *conn_addr) {
   ha_sdb_conn_addrs conn_addrs;
   String password;
 
+  if (!m_connection) {
+    DBUG_ASSERT(FALSE);
+    rc = SDB_NET_NOT_CONNECT;
+    goto error;
+  }
+
   rc = conn_addrs.parse_conn_addrs(conn_addr);
   if (SDB_ERR_OK != rc) {
     snprintf(errmsg, sizeof(errmsg),

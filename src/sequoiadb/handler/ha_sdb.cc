@@ -6863,8 +6863,12 @@ bool ha_sdb::is_idx_stat_valid(Sdb_idx_stat_ptr &ptr) {
     2. sequoiadb_stats_cache was changed.(ON => OFF or OFF => ON)
     3. sequoiadb_stats_cache_level is higher than the current;
   */
+  sdb_index_stat_level current_level = sdb_get_stats_cache_level(ha_thd());
+  if (!is_mcv_supported()) {
+    current_level = SDB_STATS_LVL_BASE;
+  }
   return (ptr.get() && ptr->version == sdb_stats_cache_version &&
-          ptr->level >= sdb_get_stats_cache_level(ha_thd()));
+          ptr->level >= current_level);
 }
 
 int ha_sdb::ensure_index_stat(int keynr) {
@@ -7001,7 +7005,7 @@ bool ha_sdb::is_index_stat_supported() {
   int rc = 0;
   Sdb_conn *conn = NULL;
 
-  rc = check_sdb_in_thd(ha_thd(), &conn, false);
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
   if (rc != 0) {
     goto error;
   }
@@ -7036,7 +7040,7 @@ bool ha_sdb::is_mcv_supported() {
   int rc = 0;
   Sdb_conn *conn = NULL;
 
-  rc = check_sdb_in_thd(ha_thd(), &conn, false);
+  rc = check_sdb_in_thd(ha_thd(), &conn, true);
   if (rc != 0) {
     goto error;
   }
