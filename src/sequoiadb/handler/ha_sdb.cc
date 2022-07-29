@@ -5900,6 +5900,15 @@ int ha_sdb::info(uint flag) {
   }
 
   if (flag & HA_STATUS_VARIABLE) {
+    if (!share || share->expired) {
+      bool is_share_created = false;
+      get_sdb_share(m_path, table, share, is_share_created);
+      if (!share) {
+        rc = HA_ERR_OUT_OF_MEM;
+        SDB_LOG_ERROR("Failed to build a new 'Sdb_share', error: %s", rc);
+        goto error;
+      }
+    }
     if (!(flag & HA_STATUS_NO_LOCK)) {
       rc = update_stats(ha_thd(), true);
       if (0 != rc) {
