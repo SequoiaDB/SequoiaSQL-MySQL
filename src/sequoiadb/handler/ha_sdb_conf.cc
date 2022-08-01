@@ -19,6 +19,7 @@
 
 #include "ha_sdb_conf.h"
 #include "ha_sdb_def.h"
+#include "ha_sdb_util.h"
 
 // Complete the struct declaration
 struct st_mysql_sys_var {

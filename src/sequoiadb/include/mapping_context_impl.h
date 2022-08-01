@@ -2,11 +2,11 @@
 #define MAPPING_CONTEXT_IMPL__H
 #include "ha_sdb_def.h"
 #include "mapping_context.h"
-struct Sdb_share;
+#include "ha_sdb_share.h"
 
 class Mapping_context_impl : public Mapping_context {
  private:
-  Sdb_share *m_share;
+  boost::shared_ptr<Sdb_share> *m_share;
   enum_mapping_state m_state;
   bool m_is_part_table;
   char m_cs_name[SDB_CS_NAME_MAX_SIZE + 1];
@@ -23,7 +23,7 @@ class Mapping_context_impl : public Mapping_context {
     m_cs_name[0] = '\0';
     m_cl_name[0] = '\0';
   }
-  void set_share_cache(Sdb_share *share) { m_share = share; }
+  void set_share_cache(boost::shared_ptr<Sdb_share> *share) { m_share = share; }
 
   const char *get_mapping_cs();
   void set_mapping_cs(const char *cs_name);

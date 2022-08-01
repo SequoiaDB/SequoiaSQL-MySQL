@@ -1628,7 +1628,7 @@ int ha_sdb::open(const char *name, int mode, uint test_if_locked) {
   DBUG_ASSERT(connection->thread_id() == sdb_thd_id(ha_thd()));
 
   tbl_ctx_impl.reset();
-  tbl_ctx_impl.set_share_cache(share.get());
+  tbl_ctx_impl.set_share_cache(&share);
   rc =
       Name_mapping::get_mapping(db_name, table_name, connection, &tbl_ctx_impl);
   if (sdb_execute_only_in_mysql(ha_thd()) && HA_ERR_END_OF_FILE == rc) {

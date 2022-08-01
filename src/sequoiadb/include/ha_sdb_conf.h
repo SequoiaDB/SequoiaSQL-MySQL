@@ -18,7 +18,6 @@
 
 #include <my_global.h>
 #include "ha_sdb_lock.h"
-#include "ha_sdb_util.h"
 #include <mysql/plugin.h>
 #include <sql_string.h>
 
