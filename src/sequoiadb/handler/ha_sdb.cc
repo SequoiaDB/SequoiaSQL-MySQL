@@ -1473,7 +1473,8 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_secondary_sort_rowid = false;
   m_use_bulk_insert = false;
   m_del_ren_main_cl = false;
-  m_bulk_insert_total = 0;
+  /* Invalid max num of default value. */
+  m_bulk_insert_predicted_rows = ~(ha_rows)0;
   m_has_update_insert_id = false;
   total_count = 0;
   count_query = false;
@@ -1772,7 +1773,7 @@ int ha_sdb::reset() {
   m_direct_dup_update = false;
   m_insert_with_update = false;
   m_secondary_sort_rowid = false;
-  m_bulk_insert_total = 0;
+  m_bulk_insert_predicted_rows = ~(ha_rows)0;
   m_use_bulk_insert = false;
   m_del_ren_main_cl = false;
   m_has_update_insert_id = false;
@@ -2472,6 +2473,7 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
   THD *thd = ha_thd();
   Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   thd_sdb->records = rows;
+  m_bulk_insert_predicted_rows = thd_sdb->records;
   if (!sdb_use_bulk_insert) {
     m_use_bulk_insert = false;
     return;
@@ -2503,7 +2505,6 @@ void ha_sdb::start_bulk_insert(ha_rows rows) {
     return;
   }
 
-  m_bulk_insert_total = rows;
   m_use_bulk_insert = true;
 }
 
@@ -2879,10 +2880,20 @@ int ha_sdb::write_row(uchar *buf) {
     }
   }
 
+  /*The thd_sdb->records will be 0 if the server does not know how many rows
+    would be inserted. This can occur when performing INSERT...SELECT or load
+    data .. into table ..But we need to return Records after statement. So we
+    need to use thd_sdb->records to save the exactly total rows of bulk
+    insert.*/
+  if (0 == m_bulk_insert_predicted_rows) {
+    Thd_sdb *thd_sdb = thd_get_thd_sdb(ha_thd());
+    thd_sdb->records++;
+  }
+
   if (m_use_bulk_insert) {
     m_bulk_insert_rows.push_back(obj);
     if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size ||
-        (int)m_bulk_insert_rows.size() == m_bulk_insert_total) {
+        (int)m_bulk_insert_rows.size() == m_bulk_insert_predicted_rows) {
       rc = flush_bulk_insert();
       if (rc != 0) {
         goto error;

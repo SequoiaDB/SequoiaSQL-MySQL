@@ -750,7 +750,7 @@ class ha_sdb : public handler {
   bool m_secondary_sort_rowid;
   bool m_use_bulk_insert;
   bool m_del_ren_main_cl;
-  int m_bulk_insert_total;
+  ha_rows m_bulk_insert_predicted_rows;
   std::vector<bson::BSONObj> m_bulk_insert_rows;
   Sdb_obj_cache<bson::BSONElement> m_bson_element_cache;
   bool m_has_update_insert_id;
