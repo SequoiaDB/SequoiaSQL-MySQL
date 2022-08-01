@@ -694,7 +694,7 @@ int sdb_create_condition_from_key(TABLE *table, KEY *key_info,
         Field *field = key_part->field;
         uint store_length = key_part->store_length;
 
-        if (key_part->null_bit) {
+        if (key_part->null_bit || 0 == ranges[i]->length) {
           if (*key_ptr) {
             /*
               We got "IS [NOT] NULL" condition against nullable column. We
