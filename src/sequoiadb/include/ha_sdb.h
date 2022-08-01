@@ -31,6 +31,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include "mapping_context_impl.h"
+#include "ha_sdb_share.h"
 
 /* Make entry to sql_class method. */
 extern "C" {
@@ -41,59 +42,6 @@ int thd_slave_thread(const MYSQL_THD thd);
 
 extern HASH sdb_temporary_sequence_cache;
 extern PSI_memory_key key_memory_sequence_cache;
-
-/*
-  Stats that can be retrieved from SequoiaDB.
-*/
-struct Sdb_statistics {
-  int32 page_size;
-  int32 total_data_pages;
-  int32 total_index_pages;
-  int64 total_data_free_space;
-  int64 volatile total_records;
-  int64 volatile udi_counter;
-  int64 volatile last_flush_total_records;
-
-  Sdb_statistics() { init(); }
-
-  void init() {
-    page_size = 0;
-    total_data_pages = 0;
-    total_index_pages = 0;
-    total_data_free_space = 0;
-    total_records = ~(int64)0;
-    udi_counter = 0;
-    last_flush_total_records = ~(int64)0;
-  }
-
-  void reset() { init(); }
-};
-
-enum Sdb_table_type {
-  TABLE_TYPE_UNDEFINE = 0,
-  TABLE_TYPE_GENERAL,
-  TABLE_TYPE_PART
-};
-
-struct Sdb_share {
-  char mapping_cs[SDB_CS_NAME_MAX_SIZE + 1];
-  char mapping_cl[SDB_CL_NAME_MAX_SIZE + 1];
-  char *table_name;
-  enum Sdb_table_type table_type;
-  uint table_name_length;
-  THR_LOCK lock;
-  Sdb_statistics stat;
-  Sdb_idx_stat_ptr *idx_stat_arr;
-  uint idx_count;
-  time_t last_reset_time;
-  bool expired;
-  ha_rows first_loaded_static_total_records;
-
-  ~Sdb_share() {
-    // shouldn't call this, use free_sdb_share release Sdb_share
-    DBUG_ASSERT(0);
-  }
-};
 
 typedef struct st_sequence_cache {
   char *sequence_name;

@@ -13,6 +13,10 @@
   along with this program; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
 
+#ifndef MYSQL_SERVER
+#define MYSQL_SERVER
+#endif
+
 #include "server_ha.h"
 #include "server_ha_util.h"
 #include "server_ha_recover.h"
@@ -37,6 +41,7 @@
 #include "tztime.h"
 #include "sql_time.h"
 #include "name_map.h"
+#include "ha_sdb_util.h"
 
 #ifdef IS_MARIADB
 #include "server_ha_sql_rewrite.h"
