@@ -71,12 +71,12 @@ insert into test_type(id) values(1);
 use datatype_null_sequoiadb;
 insert into test_type(id) values(2);
 use datatype_null_sequoiadb;
-select * from test_type;
+select * from test_type order by id;
 id	field1	field2	field3	field4	field5	field6	field7	field8	field9	field10	field11	field12	field13	field14	field15	field16	field17	field18	field19	field20	field21	field22	field23	field24	field25	field26	field27	field28
 1	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 2	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 use datatype_null_sequoiadb;
-select * from test_type;
+select * from test_type order by id;
 id	field1	field2	field3	field4	field5	field6	field7	field8	field9	field10	field11	field12	field13	field14	field15	field16	field17	field18	field19	field20	field21	field22	field23	field24	field25	field26	field27	field28
 1	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
 2	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL
