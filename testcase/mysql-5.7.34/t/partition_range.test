@@ -248,11 +248,15 @@ subpartitions 2
  partition p1 values less than(2));
 insert into t1 values (null,0),(null,1),(0,0),(0,1),(1,0),(1,1);
 
+--sorted_result
 select * from t1 where a is null;
 --sorted_result
 select * from t1 where a >= 0;
+--sorted_result
 select * from t1 where a < 0;
+--sorted_result
 select * from t1 where a <= 0;
+--sorted_result
 select * from t1 where a > 1;
 --disable_result_log
 analyze table t1;
