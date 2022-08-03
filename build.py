@@ -40,6 +40,11 @@ class OptionsMgr:
             action='store_true'
         )
         build_opt_group.add_argument(
+            '--hybrid',default=False,
+            help='Build hybrid version .Default: False',
+            action='store_true'
+        )
+        build_opt_group.add_argument(
             '--dd', default=False,
             help='Build debug version. Default: False',
             action='store_true'
@@ -200,6 +205,9 @@ class OptionsMgr:
             cmake_arguments.append('-DENTERPRISE=ON')
         else:
             cmake_arguments.append('-DENTERPRISE=OFF')
+
+        if self.args.hybrid:
+            cmake_arguments.append('-DHYBRID=ON')
 
         if self.args.dd:
             cmake_arguments.append('-DCMAKE_BUILD_TYPE=Debug')

@@ -31,6 +31,7 @@ option(ENTERPRISE "Build enterprise edition" OFF)
 option(SDB_BUILT_IN "Build the sequoiadb plugin into mysqld" ON)
 option(PACK_TEST "Set to true if you want to include testcases in the run
                   package" ON)
+option(HYBRID "Build hybrid " OFF)
 
 # Find out with target(s) to be build.
 if(MYSQL AND MARIADB)
