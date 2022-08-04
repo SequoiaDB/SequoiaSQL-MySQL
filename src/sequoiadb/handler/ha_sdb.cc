@@ -7072,8 +7072,8 @@ bool ha_sdb::is_mcv_supported() {
   }
 
   if (major < 3 ||                              // x < 3
-      (3 == major && minor < 4) ||              // 3.x < 3.2
-      (3 == major && 4 == minor && fix < 6) ||  // 3.4.x < 3.4.6
+      (3 == major && minor < 4) ||              // 3.x < 3.4
+      (3 == major && 4 == minor && fix < 8) ||  // 3.4.x < 3.4.8
       (5 == major && 0 == minor && fix < 4) ||  // 5.0.x < 5.0.4
       (3 == major && 6 == minor && fix < 1)) {  // 3.6.x < 3.6.1
     supported = false;
