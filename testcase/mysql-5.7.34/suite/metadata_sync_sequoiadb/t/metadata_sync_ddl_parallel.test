@@ -828,7 +828,7 @@ ALTER PROCEDURE p1
 # check metadatas after alter 
 connection conn1;
 SHOW CREATE VIEW v1;
-SELECT * FROM v1;
+SELECT * FROM v1 order by id;
 connection conn2;
 --replace_regex /DEFINER=`.*`@/DEFINER=`x`@/
 SHOW CREATE PROCEDURE p1;
