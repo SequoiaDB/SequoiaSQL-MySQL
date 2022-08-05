@@ -39,7 +39,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,b,ab,ba	PRIMARY	4	const	#	
 SELECT * FROM information_schema.statistics WHERE table_name='t1';
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	NON_UNIQUE	INDEX_SCHEMA	INDEX_NAME	SEQ_IN_INDEX	COLUMN_NAME	COLLATION	CARDINALITY	SUB_PART	PACKED	NULLABLE	INDEX_TYPE	COMMENT	INDEX_COMMENT
-def	index_select_sequoiadb_22808_22809	t1	0	index_select_sequoiadb_22808_22809	PRIMARY	1	a	A	NULL	NULL	NULL		BTREE		
+def	index_select_sequoiadb_22808_22809	t1	0	index_select_sequoiadb_22808_22809	PRIMARY	1	a	A	10	NULL	NULL		BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	ab	1	a	A	NULL	NULL	NULL		BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	ab	2	b	A	NULL	NULL	NULL	YES	BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	b	1	b	A	NULL	NULL	NULL	YES	BTREE		
@@ -48,7 +48,7 @@ def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	b
 LOAD DATA INFILE '../../std_data/loaddata_5w_sequoiadb.dat' INTO TABLE t1(a,b);
 SELECT * FROM information_schema.statistics WHERE table_name='t1';
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	NON_UNIQUE	INDEX_SCHEMA	INDEX_NAME	SEQ_IN_INDEX	COLUMN_NAME	COLLATION	CARDINALITY	SUB_PART	PACKED	NULLABLE	INDEX_TYPE	COMMENT	INDEX_COMMENT
-def	index_select_sequoiadb_22808_22809	t1	0	index_select_sequoiadb_22808_22809	PRIMARY	1	a	A	NULL	NULL	NULL		BTREE		
+def	index_select_sequoiadb_22808_22809	t1	0	index_select_sequoiadb_22808_22809	PRIMARY	1	a	A	10	NULL	NULL		BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	ab	1	a	A	NULL	NULL	NULL		BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	ab	2	b	A	NULL	NULL	NULL	YES	BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	b	1	b	A	NULL	NULL	NULL	YES	BTREE		
@@ -63,7 +63,7 @@ id	select_type	table	type	possible_keys	key	key_len	ref	rows	Extra
 1	SIMPLE	t1	const	PRIMARY,b,ab,ba	PRIMARY	4	const	#	
 SELECT * FROM information_schema.statistics WHERE table_name='t1';
 TABLE_CATALOG	TABLE_SCHEMA	TABLE_NAME	NON_UNIQUE	INDEX_SCHEMA	INDEX_NAME	SEQ_IN_INDEX	COLUMN_NAME	COLLATION	CARDINALITY	SUB_PART	PACKED	NULLABLE	INDEX_TYPE	COMMENT	INDEX_COMMENT
-def	index_select_sequoiadb_22808_22809	t1	0	index_select_sequoiadb_22808_22809	PRIMARY	1	a	A	NULL	NULL	NULL		BTREE		
+def	index_select_sequoiadb_22808_22809	t1	0	index_select_sequoiadb_22808_22809	PRIMARY	1	a	A	52763	NULL	NULL		BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	ab	1	a	A	NULL	NULL	NULL		BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	ab	2	b	A	NULL	NULL	NULL	YES	BTREE		
 def	index_select_sequoiadb_22808_22809	t1	1	index_select_sequoiadb_22808_22809	b	1	b	A	NULL	NULL	NULL	YES	BTREE		
