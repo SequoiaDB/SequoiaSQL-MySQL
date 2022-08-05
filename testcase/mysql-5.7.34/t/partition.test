@@ -294,14 +294,13 @@ create table t1 (a int)
 partition by hash (a);
 # SEQUOIASQLMAINSTREAM-1089
 # # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
---error 1506
 create index i on t1 (a);
 insert into t1 values (1);
 insert into t1 select * from t1;
---error 1506
+--error 1061
 create index i on t1 (a);
 #sequoiadb allows only one index with same scene
---error 1506
+--error 40291
 create index i2 on t1 (a);
 drop table t1;
 
@@ -471,7 +470,6 @@ SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 # SEQUOIASQLMAINSTREAM-1089
 # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
---error 1506
 ALTER TABLE t1 ADD INDEX b USING HASH (b);
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
@@ -1728,7 +1726,6 @@ partition by key(a);
 insert into t1 values (1);
 # SEQUOIASQLMAINSTREAM-1089
 # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
---error 1506
 create index inx1 on t1(a);
 drop table t1;
 
@@ -2252,7 +2249,6 @@ SET SQL_MODE= @orig_sql_mode;
 create table t1 (s1 int) partition by hash(s1) partitions 2;
 # SEQUOIASQLMAINSTREAM-1089
 # failed: 1506: Foreign keys are not yet supported in conjunction with partitioning
---error 1506
 create index i on t1 (s1);
 insert into t1 values (1);
 insert into t1 select s1 from t1;
@@ -2264,7 +2260,6 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
---error 1506
 create index i on t1 (s1);
 insert into t1 values (1);
 insert into t1 select s1 from t1;
@@ -2276,7 +2271,6 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
---error 1506
 create index i on t1 (s1);
 insert into t1 values (20);
 insert into t1 select s1 from t1;
@@ -2288,7 +2282,6 @@ drop table t1;
 create table t1 (s1 int) partition by range(s1) 
         (partition pa1 values less than (10),
          partition pa2 values less than MAXVALUE);
---error 1506
 create index i on t1 (s1);
 insert into t1 values (1), (2), (3), (4), (5), (6), (7), (8);
 insert into t1 select s1 from t1;

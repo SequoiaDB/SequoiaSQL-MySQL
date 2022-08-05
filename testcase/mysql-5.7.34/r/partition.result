@@ -257,13 +257,12 @@ drop table t1;
 create table t1 (a int)
 partition by hash (a);
 create index i on t1 (a);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 insert into t1 values (1);
 insert into t1 select * from t1;
 create index i on t1 (a);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
+ERROR 42000: Duplicate key name 'i'
 create index i2 on t1 (a);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
+ERROR HY000: The scene of index 'i2' is covered by the existing index 'i'
 drop table t1;
 CREATE TABLE t1 (a INT, FOREIGN KEY (a) REFERENCES t0 (a))
 PARTITION BY HASH (a);
@@ -491,7 +490,6 @@ SELECT SUM(c) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 SUM(c)
 400
 ALTER TABLE t1 ADD INDEX b USING HASH (b);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 SELECT COUNT(*) FROM t1 WHERE b NOT IN ( 1,2,6,7,9,10,11 );
 COUNT(*)
 24
@@ -1457,7 +1455,6 @@ create table t1 (a int) engine=sequoiadb
 partition by key(a);
 insert into t1 values (1);
 create index inx1 on t1(a);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 drop table t1;
 create table t1 (a int)
 PARTITION BY KEY (a)
@@ -1841,7 +1838,6 @@ DROP TABLE t1;
 SET SQL_MODE= @orig_sql_mode;
 create table t1 (s1 int) partition by hash(s1) partitions 2;
 create index i on t1 (s1);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 insert into t1 values (1);
 insert into t1 select s1 from t1;
 insert into t1 select s1 from t1;
@@ -1861,7 +1857,6 @@ create table t1 (s1 int) partition by range(s1)
 (partition pa1 values less than (10),
 partition pa2 values less than MAXVALUE);
 create index i on t1 (s1);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 insert into t1 values (1);
 insert into t1 select s1 from t1;
 insert into t1 select s1 from t1;
@@ -1881,7 +1876,6 @@ create table t1 (s1 int) partition by range(s1)
 (partition pa1 values less than (10),
 partition pa2 values less than MAXVALUE);
 create index i on t1 (s1);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 insert into t1 values (20);
 insert into t1 select s1 from t1;
 insert into t1 select s1 from t1;
@@ -1901,7 +1895,6 @@ create table t1 (s1 int) partition by range(s1)
 (partition pa1 values less than (10),
 partition pa2 values less than MAXVALUE);
 create index i on t1 (s1);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 insert into t1 values (1), (2), (3), (4), (5), (6), (7), (8);
 insert into t1 select s1 from t1;
 insert into t1 select s1 from t1;

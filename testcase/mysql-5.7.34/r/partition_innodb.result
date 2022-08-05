@@ -205,8 +205,10 @@ KEY parent_id (parent_id)
 ) ENGINE=SequoiaDB;
 ALTER TABLE t1 PARTITION BY HASH (id) PARTITIONS 1;
 ALTER TABLE t1 ADD CONSTRAINT test_ibfk_1 FOREIGN KEY (parent_id) REFERENCES t2 (id);
+ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 ALTER TABLE t1 PARTITION BY HASH (id) PARTITIONS 2;
 ALTER TABLE t1 ADD CONSTRAINT test_ibfk_1 FOREIGN KEY (parent_id) REFERENCES t2 (id);
+ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 DROP TABLE t1, t2;
 create table t1 (a varchar(5), b int signed, c varchar(10), d datetime)
 partition by range columns(b,c)
@@ -444,7 +446,6 @@ drop table t1;
 CREATE TABLE t1 (a INT) ENGINE=SequoiaDB
 PARTITION BY list(a) (PARTITION p1 VALUES IN (1));
 CREATE INDEX i1 ON t1 (a);
-ERROR HY000: Foreign keys are not yet supported in conjunction with partitioning
 DROP TABLE t1;
 #
 # Bug#54783: optimize table crashes with invalid timestamp default value and NO_ZERO_DATE
