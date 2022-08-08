@@ -2893,7 +2893,7 @@ int ha_sdb::write_row(uchar *buf) {
   if (m_use_bulk_insert) {
     m_bulk_insert_rows.push_back(obj);
     if ((int)m_bulk_insert_rows.size() >= sdb_bulk_insert_size ||
-        (int)m_bulk_insert_rows.size() == m_bulk_insert_predicted_rows) {
+        (ha_rows)m_bulk_insert_rows.size() == m_bulk_insert_predicted_rows) {
       rc = flush_bulk_insert();
       if (rc != 0) {
         goto error;
@@ -4303,7 +4303,6 @@ error:
 int ha_sdb::direct_dup_update() {
   int rc = SDB_OK;
   THD *thd = ha_thd();
-  Thd_sdb *thd_sdb = thd_get_thd_sdb(thd);
   bool has_triggers = false;
   bool has_update_def = false;
   bool has_check = false;
@@ -4380,9 +4379,12 @@ int ha_sdb::direct_dup_update() {
        * update*/
       if (m_direct_dup_update) {
         m_modify_obj = modify_builder.obj();
-        m_use_bulk_insert = thd_sdb->records > 1 ? true : false;
-      } else {
-        m_use_bulk_insert = false;
+        /*Insert with single row or start_bulk_insert never been called should
+          not enable bulk insert.*/
+        m_use_bulk_insert = (1 == m_bulk_insert_predicted_rows ||
+                             ~(ha_rows)0 == m_bulk_insert_predicted_rows)
+                                ? false
+                                : true;
       }
     }
   }
@@ -4390,6 +4392,9 @@ int ha_sdb::direct_dup_update() {
       rc, "Failed to optimize dup update for table:%s.%s, exception:%s",
       db_name, table_name, e.what());
 done:
+  if (!m_direct_dup_update) {
+    m_use_bulk_insert = false;
+  }
   return rc;
 error:
   goto done;
