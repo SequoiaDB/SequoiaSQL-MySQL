@@ -827,7 +827,7 @@ commit;
 SELECT * FROM t1;
 id	dt	data
 1	2018-04-25 10:18:00	11
-2	2018-04-25 10:18:01	22
+2	2018-04-25 10:18:01	2
 3	2018-04-25 10:18:02	3
 DROP TABLE t1;
 DROP DATABASE test_partition_innodb;
