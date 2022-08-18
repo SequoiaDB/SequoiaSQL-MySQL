@@ -77,9 +77,9 @@ function(prepare_sql_source sql_source_root sql_name)
                WORKING_DIRECTORY "${sql_source_root}"
                RESULT_VARIABLE tar_result
             )
-            set(MYSLQ_SRC_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}-3.4.4")
+            set(MYSQL_SRC_NAME "${SDB_PROJECT_TYPE}-${SQL_VERSION}-3.4.4")
             execute_process(
-               COMMAND bash -c "mv -f ${MYSLQ_SRC_NAME}/* ./; rm -r ${MYSLQ_SRC_NAME}"
+               COMMAND bash -c "mv -f ${MYSQL_SRC_NAME}/* ./; rm -r ${MYSQL_SRC_NAME}"
                WORKING_DIRECTORY "${sql_source_root}"
                RESULT_VARIABLE tar_result
             )
