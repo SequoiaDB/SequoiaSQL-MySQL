@@ -356,7 +356,7 @@ sdb_join_type sdb_get_join_type(THD *thd, range_seq_t rseq) {
 
     // Use MULTI_RANGE.
     if (QUICK_SELECT_I::QS_TYPE_RANGE == quick->get_type()) {
-      DBUG_ASSERT(rseq);  
+      DBUG_ASSERT(rseq);
       QUICK_RANGE_SEQ_CTX *ctx = (QUICK_RANGE_SEQ_CTX *)rseq;
       QUICK_RANGE *const *tmp_it = ctx->first;
       while (ctx->first != ctx->last) {
@@ -795,6 +795,11 @@ String sdb_thd_rewritten_query(THD *thd) {
 ulonglong sdb_thd_os_id(THD *thd) {
   return my_thread_os_id();
 }
+
+TABLE_REF &get_table_ref(TABLE *table) {
+  return table->reginfo.qep_tab->ref();
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1483,4 +1488,9 @@ String sdb_thd_rewritten_query(THD *thd) {
 ulonglong sdb_thd_os_id(THD *thd) {
   return (ulonglong)thd->os_thread_id;
 }
+
+TABLE_REF &get_table_ref(TABLE *table) {
+  return table->reginfo.join_tab->ref;
+}
+
 #endif
