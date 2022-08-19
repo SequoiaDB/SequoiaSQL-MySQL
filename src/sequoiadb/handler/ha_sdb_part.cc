@@ -2962,15 +2962,13 @@ bool ha_sdb_part::having_part_hash_id() {
 // Test if explicit PARTITION() clause. Reject the HASH and KEY partitions.
 int ha_sdb_part::test_if_explicit_partition(bool *explicit_partition) {
   int rc = 0;
-  SELECT_LEX *select_lex = NULL;
   TABLE_LIST *table_list = NULL;
 
   if (explicit_partition) {
     *explicit_partition = false;
   }
 
-  if ((select_lex = sdb_lex_current_select(ha_thd())) &&
-      (table_list = select_lex->get_table_list()) &&
+  if (table && (table_list = table->pos_in_table_list) &&
       table_list->partition_names && table_list->partition_names->elements) {
     DBUG_ASSERT(table && table->s && table->s->ha_share);
     Partition_share *part_share =
