@@ -3239,6 +3239,18 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
     bson::BSONObjBuilder value_builder(128);
 
     while (!(range_res = mrr_funcs.next(mrr_iter, &mrr_cur_range))) {
+      if (key_part->null_bit &&  // Nullable key part
+          *mrr_cur_range.start_key.key &&
+          (mrr_cur_range.range_flag & EQ_RANGE)) {  // null range.
+        /* Null range comes here only on the case:
+         * 1. Equal range.
+         * 2. Null range on Nullable keypart but with HA_MRR_NO_NULL_ENDPOINTS
+         * so just ignore null range and continue next range,
+         * HA_MRR_NO_NULL_ENDPOINTS can guarantee null rejecting.
+         */
+        continue;
+      }
+
       rc = sdb_get_key_part_value(key_part, mrr_cur_range.start_key.key, "$et",
                                   false, value_builder);
       if (rc != 0) {
@@ -3289,12 +3301,6 @@ ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
   res = handler::multi_range_read_info(keyno, n_ranges, n_rows, bufsz, flags,
                                        cost);
   DBUG_ASSERT(!res);
-
-  if (!(*flags & HA_MRR_NO_NULL_ENDPOINTS)) {  // NULL range can not bka.
-    /* Default implementation is choosen */
-    DBUG_PRINT("info", ("Default MRR implementation choosen"));
-    goto done;
-  }
 
   if (*flags & HA_MRR_USE_DEFAULT_IMPL) {
     const bool mrr_on = hint_key_state(ha_thd(), table, keyno, MRR_HINT_ENUM,
@@ -3360,43 +3366,64 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
     int range_res = 0;
     KEY_MULTI_RANGE cur_range;
     KEY *key_info = table->key_info + active_index;
+    TABLE_REF table_ref = get_table_ref(table);
+    const key_part_map keypart_map = make_prev_keypart_map(table_ref.key_parts);
     const KEY_PART_INFO *key_part = key_info->key_part;
     is_mrr_assoc = !MY_TEST(mode & HA_MRR_NO_ASSOCIATION);
     first_read = true;
+
     /* not bka join need check if push $in conditon here. */
+    /* $in check for:
+       (1) Key part is not a prefix index.
+       (2) mrr with association.
+       (3) only one range.
+    */
     if (!is_join_bka) {
-      /*
-        Check whether $in condition is usable:
-        1. All ranges are equal.
-        2. Only one key part. That means we don't support
-           `WHERE (f1,f2) in((v1,v2), (v3,v4))`
-        3. Key part is not a prefix index.
-        4. No NULL range.
-        5. No range association(for BKA join)
-      */
-      if ((key_part->key_part_flag & HA_PART_KEY_SEG) ||
-          !((mode & HA_MRR_NO_ASSOCIATION) ||
-            (mode & HA_MRR_NO_NULL_ENDPOINTS)) ||
-          1 == n_ranges) {
+      if ((key_part->key_part_flag & HA_PART_KEY_SEG) ||  // (1)
+          is_mrr_assoc ||                                 // (2)
+          1 == n_ranges) {                                // (3)
         m_use_default_impl = true;
         goto done;
       }
     }
 
+    /*
+      Check whether $in condition is usable:
+      (1) Only one key part. That means we don't support
+         `WHERE (f1,f2) in((v1,v2), (v3,v4))`
+      (2) All ranges are equal.
+      (3) Key part is not a prefix index.
+      (4.1) All not null range or
+      (4.2) Null range on Nullable keypart but ref condition is null rejecting
+    */
     while (!(range_res = mrr_funcs.next(mrr_iter, &cur_range))) {
       key_range &start_key = cur_range.start_key;
       key_range &end_key = cur_range.end_key;
-      if ((start_key.keypart_map == end_key.keypart_map &&  // Only one key part
-           my_count_bits(start_key.keypart_map) == 1) &&
+      if ((start_key.keypart_map == end_key.keypart_map &&
+           my_count_bits(start_key.keypart_map) == 1) &&  // (1)
 
-          (MY_TEST(cur_range.range_flag & EQ_RANGE) &&  // Is equal range
+          (MY_TEST(cur_range.range_flag & EQ_RANGE) &&  // (2)
            HA_READ_KEY_EXACT == start_key.flag &&
            start_key.length == end_key.length &&
-           0 == memcmp(start_key.key, end_key.key, start_key.length)) &&
-
-          !(key_part->null_bit && *start_key.key)  // Not a NULL
-      ) {
-        // can pushdown, continue
+           0 == memcmp(start_key.key, end_key.key, start_key.length))) {
+        if (key_part->null_bit &&  // (4.2.a) Nullable key part
+            *start_key.key &&
+            (cur_range.range_flag & EQ_RANGE)) {  // (4.2.b) null range
+          if (table_ref.null_rejecting &&
+              table_ref.null_rejecting == keypart_map) {
+            // can pushdown, continue
+            /* Null range on Nullable keypart but ref condition is null
+             * rejecting so just ignore null range and continue next range,
+             * null_rejecting can guarantee no need null result.
+             */
+          } else {
+            m_use_default_impl = true;
+            mrr_iter = seq->init(seq_init_param, n_ranges, mode);
+            goto done;
+          }
+        } else {  // (4.1) Not nullablle or does not exists null range.
+          // can pushdown, continue
+        }
       } else {
         m_use_default_impl = true;
         mrr_iter = seq->init(seq_init_param, n_ranges, mode);
@@ -5658,7 +5685,7 @@ int ha_sdb::rnd_next(uchar *buf) {
         SDB_EXCEPTION_CATCHER(
             rc, "Failed to read next for table:%s.%s, exception:%s", db_name,
             table_name, e.what());
-            
+
         if (sdb_check_condition_pushdown_switch(ha_thd())) {
           rc = optimize_proccess(rule, condition, selector, hint, num_to_return,
                                  direct_op);

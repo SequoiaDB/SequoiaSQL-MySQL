@@ -814,6 +814,11 @@ String sdb_thd_rewritten_query(THD *thd) {
 ulonglong sdb_thd_os_id(THD *thd) {
   return my_thread_os_id();
 }
+
+TABLE_REF &get_table_ref(TABLE *table) {
+  return table->reginfo.qep_tab->ref();
+}
+
 #elif defined IS_MARIADB
 void sdb_init_alloc_root(MEM_ROOT *mem_root, PSI_memory_key key,
                          const char *name, size_t block_size,
@@ -1520,4 +1525,9 @@ String sdb_thd_rewritten_query(THD *thd) {
 ulonglong sdb_thd_os_id(THD *thd) {
   return (ulonglong)thd->os_thread_id;
 }
+
+TABLE_REF &get_table_ref(TABLE *table) {
+  return table->reginfo.join_tab->ref;
+}
+
 #endif

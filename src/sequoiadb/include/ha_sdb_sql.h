@@ -499,4 +499,7 @@ int sdb_thd_query_length(THD *thd);
 String sdb_thd_rewritten_query(THD *thd);
 
 ulonglong sdb_thd_os_id(THD *thd);
+
+TABLE_REF &get_table_ref(TABLE *table);
+
 #endif
