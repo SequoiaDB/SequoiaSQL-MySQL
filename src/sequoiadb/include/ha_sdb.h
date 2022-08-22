@@ -777,5 +777,6 @@ class ha_sdb : public handler {
   sdb_index_cond_methods m_method;
   bool m_use_position;
   sdb_batched_keys_ranges m_batched_keys_ranges;
+  bool m_null_rejecting;
 };
 #endif

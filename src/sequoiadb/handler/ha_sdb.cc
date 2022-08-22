@@ -1682,6 +1682,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   m_last_range_obj_is_full = false;
   m_method = IDX_COND_INVALID;
   m_use_position = false;
+  m_null_rejecting = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1970,6 +1971,7 @@ int ha_sdb::reset() {
 #endif
   m_last_range_obj_is_full = false;
   m_method = IDX_COND_INVALID;
+  m_null_rejecting = false;
   DBUG_RETURN(0);
 }
 
@@ -3848,6 +3850,26 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
         m_last_range_obj_is_full = true;
       }
       mrr_range_no++;
+      if (key_part->null_bit &&  // Nullable key part
+          *mrr_cur_range.start_key.key &&
+          (mrr_cur_range.range_flag & EQ_RANGE)) {  // null range.
+        /* Null range comes here only on the case:
+         * (1) Equal range.
+         * (2) Null range on Nullable keypart but ref condition is null
+         * so just ignore null range and continue next range,
+         * table_ref.null_rejecting can guarantee null rejecting.
+         */
+
+        if (m_null_rejecting) {
+          continue;
+        } else {
+          DBUG_ASSERT(false);
+          SDB_LOG_DEBUG("Cannot create $in condition for NULL condition.");
+          rc = HA_ERR_INTERNAL_ERROR;
+          goto error;
+        }
+      }
+
       if (!m_batched_keys_ranges.filled_done() &&
           m_batched_keys_ranges.initialized()) {
         rc = m_batched_keys_ranges.fill_ranges_buf(mrr_cur_range);
@@ -3965,11 +3987,6 @@ ha_rows ha_sdb::multi_range_read_info(uint keyno, uint n_ranges, uint n_rows,
   rows = handler::multi_range_read_info(keyno, n_ranges, n_rows, key_parts,
                                         bufsz, flags, cost);
   DBUG_ASSERT(!rows);
-  if (!(*flags & HA_MRR_NO_NULL_ENDPOINTS)) {  // NULL range can not bka.
-    /* Default implementation is choosen */
-    DBUG_PRINT("info", ("Default MRR implementation choosen"));
-    goto done;
-  }
   *flags &= ~HA_MRR_IMPLEMENTATION_FLAGS;
   if (choose_mrr_impl(keyno, bufsz, flags, cost, true)) {
     DBUG_PRINT("info", ("Default MRR implementation choosen"));
@@ -4089,14 +4106,39 @@ bool ha_sdb::sdb_can_push_in_from_range(uint keyno,
   const KEY_PART_INFO *key_part = key_info->key_part;
   key_range &start_key = cur_range->start_key;
   key_range &end_key = cur_range->end_key;
-  if ((start_key.keypart_map == end_key.keypart_map &&  // Only one key part
+  TABLE_REF table_ref = get_table_ref(table);
+  const key_part_map keypart_map = make_prev_keypart_map(table_ref.key_parts);
+  m_null_rejecting =
+      (table_ref.null_rejecting && table_ref.null_rejecting == keypart_map);
+  /*
+    Check whether $in condition is usable:
+    (1) Only one key part. That means we don't support
+       `WHERE (f1,f2) in((v1,v2), (v3,v4))`
+    (2) All ranges are equal.
+    (3) Key part is not a prefix index has moved to ha_sdb::choose_mrr_impl()
+    (4.1) All not null range or
+    (4.2) Null range on Nullable keypart but ref condition is null rejecting
+  */
+  if ((start_key.keypart_map == end_key.keypart_map &&  // (1) Only one key part
        my_count_bits(start_key.keypart_map) == 1) &&
-      (MY_TEST(cur_range->range_flag & EQ_RANGE) &&  // Is equal range
+      (MY_TEST(cur_range->range_flag & EQ_RANGE) &&  // (2) Is equal range
        HA_READ_KEY_EXACT == start_key.flag &&
        start_key.length == end_key.length &&
-       0 == memcmp(start_key.key, end_key.key, start_key.length)) &&
-      !(key_part->null_bit && *start_key.key)  // Not a NULL
-  ) {
+       0 == memcmp(start_key.key, end_key.key, start_key.length))) {
+    if (key_part->null_bit &&  // (4.2) null key part
+        *start_key.key && (cur_range->range_flag & EQ_RANGE)) {  // NULL range
+      if (m_null_rejecting) {
+        // can pushdown, continue
+        /* Null range on Nullable keypart but with ref condition is null
+         * so just ignore null range and continue next range,
+         * table_ref.null_rejecting can guarantee null rejecting.
+         */
+      } else {
+        can_pushdown_in = false;
+      }
+    } else {  // Not nullable or does not exists null range.
+      // can pushdown, continue.
+    }
   } else {
     can_pushdown_in = false;
   }
@@ -4184,6 +4226,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   const KEY_PART_INFO *key_part = key_info->key_part;
   is_mrr_assoc = !MY_TEST(mode & HA_MRR_NO_ASSOCIATION);
 
+  m_null_rejecting = false;
   rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
   if (SDB_OK != rc) {
     goto error;
