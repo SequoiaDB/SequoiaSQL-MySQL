@@ -1506,6 +1506,7 @@ ha_sdb::ha_sdb(handlerton *hton, TABLE_SHARE *table_arg)
   sdb_group_list = NULL;
   m_use_default_impl = false;
   m_use_position = false;
+  m_null_rejecting = false;
 }
 
 ha_sdb::~ha_sdb() {
@@ -1795,6 +1796,7 @@ int ha_sdb::reset() {
   m_use_position = false;
   is_join_bka = false;
   key_parts = 0;
+  m_null_rejecting = false;
   DBUG_RETURN(0);
 }
 
@@ -3244,11 +3246,18 @@ int ha_sdb::create_condition_in_for_mrr(bson::BSONObj &condition) {
           (mrr_cur_range.range_flag & EQ_RANGE)) {  // null range.
         /* Null range comes here only on the case:
          * 1. Equal range.
-         * 2. Null range on Nullable keypart but with HA_MRR_NO_NULL_ENDPOINTS
+         * 2. Null range on Nullable keypart but ref condition is null rejecting
          * so just ignore null range and continue next range,
-         * HA_MRR_NO_NULL_ENDPOINTS can guarantee null rejecting.
+         * condition null_rejecting can guarantee null rejecting.
          */
-        continue;
+        if (m_null_rejecting) {
+          continue;
+        } else {
+          DBUG_ASSERT(false);
+          SDB_LOG_DEBUG("Cannot create $in condition for NULL condition.");
+          rc = HA_ERR_INTERNAL_ERROR;
+          goto error;
+        }
       }
 
       rc = sdb_get_key_part_value(key_part, mrr_cur_range.start_key.key, "$et",
@@ -3342,6 +3351,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
   bool enabled = false;
   bool is_mrr_assoc = false;
 
+  m_null_rejecting = false;
   m_use_default_impl = false;
   rc = handler::multi_range_read_init(seq, seq_init_param, n_ranges, mode, buf);
   if (SDB_OK != rc) {
@@ -3368,6 +3378,8 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
     KEY *key_info = table->key_info + active_index;
     TABLE_REF table_ref = get_table_ref(table);
     const key_part_map keypart_map = make_prev_keypart_map(table_ref.key_parts);
+    m_null_rejecting =
+        (table_ref.null_rejecting && table_ref.null_rejecting == keypart_map);
     const KEY_PART_INFO *key_part = key_info->key_part;
     is_mrr_assoc = !MY_TEST(mode & HA_MRR_NO_ASSOCIATION);
     first_read = true;
@@ -3409,8 +3421,7 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
         if (key_part->null_bit &&  // (4.2.a) Nullable key part
             *start_key.key &&
             (cur_range.range_flag & EQ_RANGE)) {  // (4.2.b) null range
-          if (table_ref.null_rejecting &&
-              table_ref.null_rejecting == keypart_map) {
+          if (m_null_rejecting) {
             // can pushdown, continue
             /* Null range on Nullable keypart but ref condition is null
              * rejecting so just ignore null range and continue next range,

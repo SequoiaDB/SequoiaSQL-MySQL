@@ -729,5 +729,6 @@ class ha_sdb : public handler {
   bool is_join_bka;
   uint key_parts;
 #endif
+  bool m_null_rejecting;
 };
 #endif
