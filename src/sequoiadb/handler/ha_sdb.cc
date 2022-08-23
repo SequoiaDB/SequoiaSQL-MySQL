@@ -1592,8 +1592,9 @@ void sdb_batched_keys_ranges::build_probing_key() {
   memset(m_key_probing, 0, m_key_length);
   uchar *key_probing_ptr = m_key_probing;
   /* search the hashed buff need use the key_parts of table_ref.*/
-  TABLE_REF table_ref = get_table_ref(m_table);
-  for (uint i = 0; i < table_ref.key_parts; i++, key_part++) {
+  TABLE_REF *table_ref = get_table_ref(m_table);
+  DBUG_ASSERT(table_ref);
+  for (uint i = 0; i < table_ref->key_parts; i++, key_part++) {
     Field *fld = m_table->field[key_part->fieldnr - 1];
     uchar *fld_ptr = fld->ptr;
     int fld_start_pos = 0;
@@ -4106,10 +4107,16 @@ bool ha_sdb::sdb_can_push_in_from_range(uint keyno,
   const KEY_PART_INFO *key_part = key_info->key_part;
   key_range &start_key = cur_range->start_key;
   key_range &end_key = cur_range->end_key;
-  TABLE_REF table_ref = get_table_ref(table);
-  const key_part_map keypart_map = make_prev_keypart_map(table_ref.key_parts);
-  m_null_rejecting =
-      (table_ref.null_rejecting && table_ref.null_rejecting == keypart_map);
+  TABLE_REF *table_ref = get_table_ref(table);
+  const key_part_map keypart_map = 0;
+  if (table_ref) {
+    make_prev_keypart_map(table_ref->key_parts);
+    m_null_rejecting =
+        (table_ref->null_rejecting && table_ref->null_rejecting == keypart_map);
+  } else {
+    /* table_ref is null, cannot determine null_rejecting.*/
+    m_null_rejecting = false;
+  }
   /*
     Check whether $in condition is usable:
     (1) Only one key part. That means we don't support
@@ -4156,10 +4163,11 @@ void ha_sdb::choose_index_condition_methods() {
   const uchar *key_ptr = NULL;
   KEY *key_info = table->key_info + active_index;
   const KEY_PART_INFO *key_part = key_info->key_part;
-  TABLE_REF table_ref = get_table_ref(table);
+  TABLE_REF *table_ref = get_table_ref(table);
 
   if (is_join_bka) {
-    key_parts = table_ref.key_parts;
+    DBUG_ASSERT(table_ref);
+    key_parts = table_ref->key_parts;
   } else {
     key_parts = key_info->user_defined_key_parts;
   }
