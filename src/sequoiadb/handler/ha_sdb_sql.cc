@@ -815,8 +815,13 @@ ulonglong sdb_thd_os_id(THD *thd) {
   return my_thread_os_id();
 }
 
-TABLE_REF &get_table_ref(TABLE *table) {
-  return table->reginfo.qep_tab->ref();
+TABLE_REF *get_table_ref(TABLE *table) {
+  /* TABLE::refinfo is a struct member.
+     REGINFO::qep_tab is a pointer member*/
+  if (table && table->reginfo.qep_tab) {
+    return &table->reginfo.qep_tab->ref();
+  }
+  return NULL;
 }
 
 #elif defined IS_MARIADB
@@ -1526,8 +1531,14 @@ ulonglong sdb_thd_os_id(THD *thd) {
   return (ulonglong)thd->os_thread_id;
 }
 
-TABLE_REF &get_table_ref(TABLE *table) {
-  return table->reginfo.join_tab->ref;
+TABLE_REF *get_table_ref(TABLE *table) {
+  /* TABLE::refinfo is a struct member.
+     REGINFO::join_tab is a pointer member
+     JOIN_TAB::ref is a struct member.*/
+  if (table && table->reginfo.join_tab) {
+    return &table->reginfo.join_tab->ref;
+  }
+  return NULL;
 }
 
 #endif

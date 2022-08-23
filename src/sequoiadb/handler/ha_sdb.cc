@@ -3376,10 +3376,16 @@ int ha_sdb::multi_range_read_init(RANGE_SEQ_IF *seq, void *seq_init_param,
     int range_res = 0;
     KEY_MULTI_RANGE cur_range;
     KEY *key_info = table->key_info + active_index;
-    TABLE_REF table_ref = get_table_ref(table);
-    const key_part_map keypart_map = make_prev_keypart_map(table_ref.key_parts);
-    m_null_rejecting =
-        (table_ref.null_rejecting && table_ref.null_rejecting == keypart_map);
+    TABLE_REF *table_ref = get_table_ref(table);
+    const key_part_map keypart_map = 0;
+    if (table_ref) {
+      make_prev_keypart_map(table_ref->key_parts);
+      m_null_rejecting = (table_ref->null_rejecting &&
+                          table_ref->null_rejecting == keypart_map);
+    } else {
+      /* table_ref is null, cannot determine null_rejecting.*/
+      m_null_rejecting = false;
+    }
     const KEY_PART_INFO *key_part = key_info->key_part;
     is_mrr_assoc = !MY_TEST(mode & HA_MRR_NO_ASSOCIATION);
     first_read = true;
